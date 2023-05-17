@@ -18,10 +18,11 @@ package main
 
 import (
 	"flag"
+	"os"
+
 	"github.com/labring/sealos/controllers/account/controllers"
 	"github.com/labring/sealos/controllers/account/controllers/cache"
 	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)

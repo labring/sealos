@@ -19,11 +19,12 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/labring/sealos/controllers/pkg/database"
-	gonanoid "github.com/matoous/go-nanoid/v2"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/labring/sealos/controllers/pkg/database"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 
 	"github.com/labring/sealos/controllers/user/controllers/helper"
 
@@ -137,6 +138,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		id, err := gonanoid.New(12)
 		if err != nil {
 			r.Logger.Error(err, "create id failed", "id", id, "payment", payment)
+			return ctrl.Result{}, nil
 		}
 		err = dbClient.SaveBillingsWithAccountBalance(&accountv1.AccountBalanceSpec{
 			OrderID: id,
@@ -144,7 +146,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			Owner:   getUsername(payment.Namespace),
 			Time:    metav1.Time{Time: now},
 			Type:    accountv1.Recharge,
-			Details: payment.ToJson(),
+			Details: payment.ToJSON(),
 		})
 		if err != nil {
 			r.Logger.Error(err, "save billings failed", "id", id, "payment", payment)

@@ -19,16 +19,17 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/go-logr/logr"
 	"github.com/labring/sealos/controllers/pkg/database"
 	"k8s.io/apimachinery/pkg/runtime"
-	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"time"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 )

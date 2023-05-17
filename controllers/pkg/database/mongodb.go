@@ -3,6 +3,10 @@ package database
 import (
 	"context"
 	"fmt"
+	"math"
+	"strings"
+	"time"
+
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/pkg/common"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -12,9 +16,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/sync/errgroup"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"math"
-	"strings"
-	"time"
 )
 
 const (
@@ -32,7 +33,7 @@ const (
 )
 
 type MongoDB struct {
-	Url          string
+	URL          string
 	Client       *mongo.Client
 	DBName       string
 	MonitorConn  string
@@ -59,7 +60,7 @@ func (m *MongoDB) GetBillingLastUpdateTime(owner string, _type accountv1.Type) (
 		"owner": owner,
 		"type":  _type,
 	}
-	findOneOptions := options.FindOne().SetSort(bson.D{{"time", -1}})
+	findOneOptions := options.FindOne().SetSort(bson.D{primitive.E{Key: "time", Value: -1}})
 	var result bson.M
 	err := m.getBillingCollection().FindOne(context.Background(), filter, findOneOptions).Decode(&result)
 
@@ -78,7 +79,6 @@ func (m *MongoDB) GetBillingLastUpdateTime(owner string, _type accountv1.Type) (
 }
 
 func (m *MongoDB) SaveBillingsWithAccountBalance(accountBalanceSpec *accountv1.AccountBalanceSpec) error {
-
 	// Time    metav1.Time `json:"time" bson:"time"`
 	// time字段如果为time.Time类型无法转换为json crd，所以使用metav1.Time，但是使用metav1.Time无法插入到mongo中，所以需要转换为time.Time
 
@@ -275,7 +275,7 @@ func (m *MongoDB) GenerateMeteringData(startTime, endTime time.Time, prices map[
 func (m *MongoDB) GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error) {
 	filter := bson.M{"category": category, "property": property}
 	// sort by time desc
-	opts := options.FindOne().SetSort(bson.M{"time": -1})
+	opts := options.FindOne().SetSort(bson.D{primitive.E{Key: "time", Value: -1}})
 
 	var result struct {
 		Time time.Time `bson:"time"`
@@ -291,15 +291,15 @@ func (m *MongoDB) GetUpdateTimeForCategoryAndPropertyFromMetering(category strin
 	return result.Time, nil
 }
 
-func (m *MongoDB) queryBillingRecordsByOrderId(billingRecordQuery *accountv1.BillingRecordQuery, owner string) error {
+func (m *MongoDB) queryBillingRecordsByOrderID(billingRecordQuery *accountv1.BillingRecordQuery, owner string) error {
 	if billingRecordQuery.Spec.OrderID == "" {
 		return fmt.Errorf("order id is empty")
 	}
 	billingColl := m.getBillingCollection()
 	matchStage := bson.D{
-		{"$match", bson.D{
-			{"order_id", billingRecordQuery.Spec.OrderID},
-			{"owner", owner},
+		primitive.E{Key: "$match", Value: bson.D{
+			primitive.E{Key: "order_id", Value: billingRecordQuery.Spec.OrderID},
+			primitive.E{Key: "owner", Value: owner},
 		}},
 	}
 	var billingRecords []accountv1.AccountBalanceSpec
@@ -333,37 +333,41 @@ func (m *MongoDB) queryBillingRecordsByOrderId(billingRecordQuery *accountv1.Bil
 
 func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecordQuery, owner string) (err error) {
 	if billingRecordQuery.Spec.OrderID != "" {
-		return m.queryBillingRecordsByOrderId(billingRecordQuery, owner)
+		return m.queryBillingRecordsByOrderID(billingRecordQuery, owner)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	billingColl := m.getBillingCollection()
-	timeMatchValue := bson.D{{"$gte", billingRecordQuery.Spec.StartTime.Time}, {"$lte", billingRecordQuery.Spec.EndTime.Time}}
+	timeMatchValue := bson.D{primitive.E{Key: "$gte", Value: billingRecordQuery.Spec.StartTime.Time}, primitive.E{Key: "$lte", Value: billingRecordQuery.Spec.EndTime.Time}}
 	matchStage := bson.D{
-		{"$match", bson.D{
-			{"time", timeMatchValue},
-			{"owner", owner},
-		}},
+		primitive.E{
+			Key: "$match", Value: bson.D{
+				primitive.E{Key: "time", Value: timeMatchValue},
+				primitive.E{Key: "owner", Value: owner},
+			},
+		},
 	}
 
 	if billingRecordQuery.Spec.Type != -1 {
 		matchStage = bson.D{
-			{"$match", bson.D{
-				{"time", timeMatchValue},
-				{"owner", owner},
-				{"type", billingRecordQuery.Spec.Type},
-			}},
+			primitive.E{
+				Key: "$match", Value: bson.D{
+					primitive.E{Key: "time", Value: timeMatchValue},
+					primitive.E{Key: "owner", Value: owner},
+					primitive.E{Key: "type", Value: billingRecordQuery.Spec.Type},
+				},
+			},
 		}
 	}
 
 	// Pipeline for getting the paginated data
 	pipeline := bson.A{
 		matchStage,
-		bson.D{{"$sort", bson.D{{"time", -1}}}},
-		bson.D{{"$skip", (billingRecordQuery.Spec.Page - 1) * billingRecordQuery.Spec.PageSize}},
-		bson.D{{"$limit", billingRecordQuery.Spec.PageSize}},
+		bson.D{primitive.E{Key: "$sort", Value: bson.D{primitive.E{Key: "time", Value: -1}}}},
+		bson.D{primitive.E{Key: "$skip", Value: (billingRecordQuery.Spec.Page - 1) * billingRecordQuery.Spec.PageSize}},
+		bson.D{primitive.E{Key: "$limit", Value: billingRecordQuery.Spec.PageSize}},
 	}
 
 	pipelineAll := bson.A{
@@ -371,35 +375,35 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	}
 
 	pipelineCountAndAmount := bson.A{
-		bson.D{{"$match", bson.D{
-			{"time", timeMatchValue},
-			{"owner", owner},
-			{"type", accountv1.Consumption},
+		bson.D{{Key: "$match", Value: bson.D{
+			{Key: "time", Value: timeMatchValue},
+			{Key: "owner", Value: owner},
+			{Key: "type", Value: accountv1.Consumption},
 		}}},
-		bson.D{{"$addFields", bson.D{
-			{"costsArray", bson.D{{"$objectToArray", "$costs"}}},
+		bson.D{{Key: "$addFields", Value: bson.D{
+			{Key: "costsArray", Value: bson.D{{Key: "$objectToArray", Value: "$costs"}}},
 		}}},
-		bson.D{{"$unwind", "$costsArray"}},
-		bson.D{{"$group", bson.D{
-			{"_id", bson.D{
-				{"type", "$type"},
-				{"key", "$costsArray.k"},
+		bson.D{{Key: "$unwind", Value: "$costsArray"}},
+		bson.D{{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: bson.D{
+				{Key: "type", Value: "$type"},
+				{Key: "key", Value: "$costsArray.k"},
 			}},
-			{"total", bson.D{{"$sum", "$costsArray.v"}}},
-			{"count", bson.D{{"$sum", 1}}},
+			{Key: "total", Value: bson.D{{Key: "$sum", Value: "$costsArray.v"}}},
+			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
 		}}},
 	}
 
 	pipelineRechargeAmount := bson.A{
-		bson.D{{"$match", bson.D{
-			{"time", timeMatchValue},
-			{"owner", owner},
-			{"type", accountv1.Recharge},
+		bson.D{{Key: "$match", Value: bson.D{
+			{Key: "time", Value: timeMatchValue},
+			{Key: "owner", Value: owner},
+			{Key: "type", Value: accountv1.Recharge},
 		}}},
-		bson.D{{"$group", bson.D{
-			{"_id", nil},
-			{"totalRechargeAmount", bson.D{{"$sum", "$amount"}}},
-			{"count", bson.D{{"$sum", 1}}},
+		bson.D{{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: nil},
+			{Key: "totalRechargeAmount", Value: bson.D{{Key: "$sum", Value: "$amount"}}},
+			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
 		}}},
 	}
 
@@ -522,15 +526,15 @@ func (m *MongoDB) CreateBillingIfNotExist() error {
 	_, err = m.getBillingCollection().Indexes().CreateMany(ctx, []mongo.IndexModel{
 		{
 			// 唯一索引 owner + order_id
-			Keys:    bson.D{{"owner", 1}, {"order_id", 1}},
+			Keys:    bson.D{primitive.E{Key: "owner", Value: 1}, primitive.E{Key: "order_id", Value: 1}},
 			Options: options.Index().SetUnique(true),
 		},
 		{
 			// owner + time + type 索引
 			Keys: bson.D{
-				{"owner", 1},
-				{"time", 1},
-				{"type", 1},
+				primitive.E{Key: "owner", Value: 1},
+				primitive.E{Key: "time", Value: 1},
+				primitive.E{Key: "type", Value: 1},
 			},
 		},
 	})
@@ -558,8 +562,8 @@ func (m *MongoDB) CreateTimeSeriesIfNotExist(dbName, collectionName string) erro
 
 	// If the collection does not exist, create it
 	cmd := bson.D{
-		{Key: "create", Value: collectionName},
-		{Key: "timeseries", Value: bson.D{{Key: "timeField", Value: "time"}}},
+		primitive.E{Key: "create", Value: collectionName},
+		primitive.E{Key: "timeseries", Value: bson.D{{Key: "timeField", Value: "time"}}},
 	}
 	return m.Client.Database(dbName).RunCommand(context.TODO(), cmd).Err()
 }
@@ -578,6 +582,7 @@ func NewMongoDB(ctx context.Context, URL string) (Interface, error) {
 	err = client.Ping(ctx, nil)
 	return &MongoDB{
 		Client:       client,
+		URL:          URL,
 		DBName:       DefaultDBName,
 		MeteringConn: DefaultMeteringConn,
 		MonitorConn:  DefaultMonitorConn,

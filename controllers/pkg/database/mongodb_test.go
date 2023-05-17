@@ -3,15 +3,16 @@ package database
 import (
 	"context"
 	"fmt"
+	"os"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/dustin/go-humanize"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"go.mongodb.org/mongo-driver/mongo"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
-	"reflect"
 	"sigs.k8s.io/yaml"
-	"testing"
-	"time"
 )
 
 func TestMongoDB_GetMeteringOwnerTimeResult(t *testing.T) {
@@ -118,7 +119,7 @@ func TestMongoDB_QueryBillingRecords(t *testing.T) {
 
 func TestMongoDB_SaveBillingsWithAccountBalance(t *testing.T) {
 	type fields struct {
-		Url          string
+		URL          string
 		Client       *mongo.Client
 		DBName       string
 		MonitorConn  string
@@ -136,7 +137,7 @@ func TestMongoDB_SaveBillingsWithAccountBalance(t *testing.T) {
 		accountBalanceSpecs[i] = &accountv1.AccountBalanceSpec{
 			OrderID: fmt.Sprintf("random_order_id_%d", i+1),
 			Owner:   "ns-vd1k1dk3",
-			Time:    metav1.Time{time.Date(2023, 5, 9, 5, 0, 0, 0, time.UTC)},
+			Time:    metav1.Time{Time: time.Date(2023, 5, 9, 5, 0, 0, 0, time.UTC)},
 			Type:    0,
 			Costs: map[string]int64{
 				"cpu":     int64(1000 + i),
@@ -150,7 +151,7 @@ func TestMongoDB_SaveBillingsWithAccountBalance(t *testing.T) {
 		accountBalanceSpecs[i] = &accountv1.AccountBalanceSpec{
 			OrderID: fmt.Sprintf("random_order_id_recharge%d", i+1),
 			Owner:   "ns-vd1k1dk3",
-			Time:    metav1.Time{time.Date(2023, 5, 9, 5, 0, 0, 0, time.UTC)},
+			Time:    metav1.Time{Time: time.Date(2023, 5, 9, 5, 0, 0, 0, time.UTC)},
 			Type:    1,
 			Amount:  int64(1000 + i),
 		}
@@ -202,7 +203,7 @@ func TestMongoDB_SaveBillingsWithAccountBalance(t *testing.T) {
 
 func TestMongoDB_getBillingCollection(t *testing.T) {
 	type fields struct {
-		Url          string
+		URL          string
 		Client       *mongo.Client
 		DBName       string
 		MonitorConn  string
@@ -219,7 +220,7 @@ func TestMongoDB_getBillingCollection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &MongoDB{
-				Url:          tt.fields.Url,
+				URL:          tt.fields.URL,
 				Client:       tt.fields.Client,
 				DBName:       tt.fields.DBName,
 				MonitorConn:  tt.fields.MonitorConn,
@@ -235,7 +236,7 @@ func TestMongoDB_getBillingCollection(t *testing.T) {
 
 func TestMongoDB_getMeteringCollection(t *testing.T) {
 	type fields struct {
-		Url          string
+		URL          string
 		Client       *mongo.Client
 		DBName       string
 		MonitorConn  string
@@ -252,7 +253,7 @@ func TestMongoDB_getMeteringCollection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &MongoDB{
-				Url:          tt.fields.Url,
+				URL:          tt.fields.URL,
 				Client:       tt.fields.Client,
 				DBName:       tt.fields.DBName,
 				MonitorConn:  tt.fields.MonitorConn,
@@ -268,7 +269,7 @@ func TestMongoDB_getMeteringCollection(t *testing.T) {
 
 func TestMongoDB_getMonitorCollection(t *testing.T) {
 	type fields struct {
-		Url          string
+		URL          string
 		Client       *mongo.Client
 		DBName       string
 		MonitorConn  string
@@ -286,7 +287,7 @@ func TestMongoDB_getMonitorCollection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &MongoDB{
-				Url:          tt.fields.Url,
+				URL:          tt.fields.URL,
 				Client:       tt.fields.Client,
 				DBName:       tt.fields.DBName,
 				MonitorConn:  tt.fields.MonitorConn,

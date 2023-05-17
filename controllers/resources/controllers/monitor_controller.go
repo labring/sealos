@@ -19,17 +19,14 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/labring/sealos/controllers/account/controllers"
-	"github.com/labring/sealos/controllers/pkg/common"
-	"github.com/labring/sealos/controllers/pkg/database"
-	v1 "github.com/labring/sealos/controllers/user/api/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"math"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"time"
 
 	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
+	"github.com/labring/sealos/controllers/pkg/common"
+	"github.com/labring/sealos/controllers/pkg/database"
+	v1 "github.com/labring/sealos/controllers/user/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -241,22 +238,22 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient datab
 	return err
 }
 
-func (r *MonitorReconciler) syncResourceQuota(ctx context.Context, nsName string) error {
-	quota := &corev1.ResourceQuota{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      controllers.ResourceQuotaPrefix + nsName,
-			Namespace: nsName,
-		},
-	}
-
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
-		quota.Spec.Hard = controllers.DefaultResourceQuota()
-		return nil
-	}); err != nil {
-		return fmt.Errorf("sync resource quota failed: %v", err)
-	}
-	return nil
-}
+//func (r *MonitorReconciler) syncResourceQuota(ctx context.Context, nsName string) error {
+//	quota := &corev1.ResourceQuota{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      controllers.ResourceQuotaPrefix + nsName,
+//			Namespace: nsName,
+//		},
+//	}
+//
+//	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
+//		quota.Spec.Hard = controllers.DefaultResourceQuota()
+//		return nil
+//	}); err != nil {
+//		return fmt.Errorf("sync resource quota failed: %v", err)
+//	}
+//	return nil
+//}
 
 //func getResourceValue(resourceName corev1.ResourceName, quantity *resource.Quantity) int64 {
 //	if quantity != nil && quantity.MilliValue() != 0 {

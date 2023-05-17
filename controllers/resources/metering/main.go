@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/labring/sealos/controllers/pkg/database"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/labring/sealos/controllers/pkg/database"
 
 	"github.com/labring/sealos/pkg/utils/flags"
 	"github.com/labring/sealos/pkg/utils/logger"

@@ -18,6 +18,7 @@ package v1
 
 import (
 	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -81,7 +82,7 @@ type PaymentList struct {
 	Items           []Payment `json:"items"`
 }
 
-func (p *Payment) ToJson() string {
+func (p *Payment) ToJSON() string {
 	return `{
 	"spec": {
 		"userID": "` + p.Spec.UserID + `",

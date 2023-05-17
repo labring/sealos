@@ -19,10 +19,11 @@ package v1
 import (
 	"context"
 	"fmt"
-	admissionV1 "k8s.io/api/admission/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"strings"
+
+	admissionV1 "k8s.io/api/admission/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"

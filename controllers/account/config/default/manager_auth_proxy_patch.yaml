@@ -37,6 +37,9 @@ spec:
               name: account-manager-configmap
           - secretRef:
               name: payment-secret
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
         env:
           - name: ACCOUNT_NAMESPACE
             value: "sealos-system"
