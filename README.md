@@ -70,14 +70,14 @@ Some Screen Shots of `Sealos Desktop`:
 
 > Installing a highly available Kubernetes cluster with Calico as the container network interface (CNI).
 
-Here, the Cluster images `kubernetes:v1.24.0` and `calico:v3.24.1` stored in the registry are fully compliant with the OCI standard. However, if you prefer to use flannel, it is also an option.
+Here, the Cluster images `kubernetes:v1.24.0-4.2.0` and `calico:v3.24.1` stored in the registry are fully compliant with the OCI standard. However, if you prefer to use flannel, it is also an option.
 
 ```bash
 # Download and install Sealos, which is a binary tool written in Golang. Simply download it and copy it to the bin directory. You can also download it from the release page.
-$ wget  https://github.com/labring/sealos/releases/download/v4.1.4/sealos_4.1.4_linux_amd64.tar.gz  && \
-    tar -zxvf sealos_4.1.4_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin 
+$ wget  https://github.com/labring/sealos/releases/download/v4.2.0/sealos_4.2.0_linux_amd64.tar.gz  && \
+    tar -zxvf sealos_4.2.0_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin 
 # Create a cluster
-$ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
+$ sealos run labring/kubernetes:v1.25.0-4.2.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
@@ -88,7 +88,7 @@ $ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24
 > Single host
 
 ```bash
-$ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1
+$ sealos run labring/kubernetes:v1.25.0-4.2.0 labring/helm:v3.8.2 labring/calico:v3.24.1
 ```
 
 > Building a custom Cluster image
@@ -111,7 +111,7 @@ And now everything is ready.
 ## Use Kubernetes Cluster image with cri-docker runtime
 
 ```bash
-sealos run labring/kubernetes-docker:v1.20.8-4.1.4 labring/calico:v3.22.1 \
+sealos run labring/kubernetes-docker:v1.20.8-4.2.0 labring/calico:v3.22.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
