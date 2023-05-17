@@ -1,12 +1,10 @@
-/* eslint-disable @next/next/no-img-element */
 import AppWindow from '@/components/app_window';
 import MoreButton from '@/components/more_button';
 import useAppStore from '@/stores/app';
-
 import { TApp } from '@/types';
-import { Box, Flex, Grid, GridItem, Text } from '@chakra-ui/react';
+import { Box, Flex, Grid, GridItem, Image, Text } from '@chakra-ui/react';
 import dynamic from 'next/dynamic';
-import { MouseEvent, useCallback, useEffect, useMemo } from 'react';
+import { MouseEvent, useCallback, useEffect } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
@@ -98,7 +96,13 @@ export default function DesktopContent(props: any) {
                   boxShadow={'0px 1.16667px 2.33333px rgba(0, 0, 0, 0.2)'}
                   backgroundColor={'rgba(244, 246, 248, 0.9)'}
                 >
-                  <img width={'100%'} height={'100%'} alt="app" src={item?.icon}></img>
+                  <Image
+                    width="100%"
+                    height="100%"
+                    src={item?.icon}
+                    fallbackSrc="/images/sealos.svg"
+                    alt="user avator"
+                  />
                 </Box>
                 <Text
                   textShadow={'0px 1px 2px rgba(0, 0, 0, 0.4)'}
