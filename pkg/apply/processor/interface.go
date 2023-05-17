@@ -21,7 +21,6 @@ import (
 	"path"
 
 	"github.com/containers/storage"
-	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/constants"
@@ -33,7 +32,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
 	"github.com/labring/sealos/pkg/utils/rand"
-	"github.com/labring/sealos/pkg/utils/strings"
+	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 )
 
 type Interface interface {
@@ -72,11 +71,11 @@ func SyncClusterStatus(cluster *v2.Cluster, bdah buildah.Interface, reset bool) 
 				ImageName:  ctr.ImageName,
 				Name:       ctr.ContainerName,
 			}
-			if err = OCIToImageMount(mount, bdah); err != nil {
+			if err = OCIToImageMount(bdah, mount); err != nil {
 				return err
 			}
 
-			if reset || strings.InList(ctr.ImageName, cluster.Spec.Image) {
+			if reset || stringsutil.InList(ctr.ImageName, cluster.Spec.Image) {
 				cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
 			}
 		}
@@ -89,16 +88,21 @@ type imageInspector interface {
 	InspectImage(imgName string, opts ...string) (*buildah.InspectOutput, error)
 }
 
-func OCIToImageMount(mount *v2.MountImage, inspector imageInspector) error {
-	oci, err := inspector.InspectImage(mount.ImageName)
+func inspectImage(iist imageInspector, image string) (*buildah.InspectOutput, error) {
+	ret, err := iist.InspectImage(image)
 	if err != nil {
 		if errors.Is(err, storage.ErrImageUnknown) || errors.Is(err, storage.ErrNotAnImage) {
 			logger.Debug("cannot find image in local storage, trying to inspect from remote")
-			oci, err = inspector.InspectImage(mount.ImageName, "docker")
+			ret, err = iist.InspectImage(image, "docker")
 		}
-		if err != nil {
-			return err
-		}
+	}
+	return ret, err
+}
+
+func OCIToImageMount(inspector imageInspector, mount *v2.MountImage) error {
+	oci, err := inspectImage(inspector, mount.ImageName)
+	if err != nil {
+		return err
 	}
 
 	mount.Env = maps.ListToMap(oci.OCIv1.Config.Env)
@@ -153,33 +157,6 @@ func MirrorRegistry(cluster *v2.Cluster, mounts []v2.MountImage) error {
 	return mirror.MirrorTo(context.Background(), registries...)
 }
 
-func CheckImageType(cluster *v2.Cluster, bd buildah.Interface) error {
-	imageTypes := sets.NewString()
-	for _, image := range cluster.Spec.Image {
-		oci, err := bd.InspectImage(image)
-		if err != nil {
-			return err
-		}
-		if oci.OCIv1.Config.Labels != nil {
-			imageType := oci.OCIv1.Config.Labels[v2.ImageTypeKey]
-			imageVersion := oci.OCIv1.Config.Labels[v2.ImageTypeVersionKey]
-			if imageType != "" {
-				imageTypes.Insert(imageType)
-				if imageType == string(v2.RootfsImage) && !strings.InList(imageVersion, v2.ImageVersionList) {
-					return fmt.Errorf("can't apply rootfs type images and version %s not %+v", imageVersion, v2.ImageVersionList)
-				}
-			}
-		} else {
-			imageTypes.Insert(string(v2.AppImage))
-		}
-	}
-	if !imageTypes.Has(string(v2.RootfsImage)) {
-		return errors.New("can't apply application type images only since RootFS type image is not applied yet")
-	}
-
-	return nil
-}
-
 func getIndexOfContainerInMounts(mounts []v2.MountImage, imageName string) int {
 	for idx, m := range mounts {
 		if m.ImageName == imageName {
@@ -189,21 +166,39 @@ func getIndexOfContainerInMounts(mounts []v2.MountImage, imageName string) int {
 	return -1
 }
 
-func MountClusterImages(cluster *v2.Cluster, bd buildah.Interface) error {
-	err := bd.Pull(cluster.Spec.Image, buildah.WithPullPolicyOption(buildah.PullIfMissing.String()))
-	if err != nil {
-		return err
-	}
-	if err := CheckImageType(cluster, bd); err != nil {
-		return err
-	}
+func MountClusterImages(bdah buildah.Interface, cluster *v2.Cluster, skipApp bool) error {
 	if cluster.Status.Mounts == nil {
 		cluster.Status.Mounts = make([]v2.MountImage, 0)
 	}
+	var hasRootfsType bool
 	for _, img := range cluster.Spec.Image {
+		info, err := inspectImage(bdah, img)
+		if err != nil {
+			return err
+		}
+		var imageType string
+		if info.OCIv1.Config.Labels != nil {
+			imageType = info.OCIv1.Config.Labels[v2.ImageTypeKey]
+			imageVersion := info.OCIv1.Config.Labels[v2.ImageTypeVersionKey]
+			if imageType == string(v2.RootfsImage) {
+				if !stringsutil.InList(imageVersion, v2.ImageVersionList) {
+					return fmt.Errorf("can't apply rootfs type images and version %s not %+v",
+						imageVersion, v2.ImageVersionList)
+				}
+				hasRootfsType = true
+			}
+		}
+		if imageType != "" && imageType != string(v2.RootfsImage) && imageType != string(v2.PatchImage) && skipApp {
+			// then it's an application type image
+			continue
+		}
+
+		err = bdah.Pull([]string{img}, buildah.WithPullPolicyOption(buildah.PullIfMissing.String()))
+		if err != nil {
+			return err
+		}
 		idx := getIndexOfContainerInMounts(cluster.Status.Mounts, img)
 		var ctrName string
-		// reuse container name
 		if idx >= 0 {
 			ctrName = cluster.Status.Mounts[idx].Name
 		} else {
@@ -211,7 +206,7 @@ func MountClusterImages(cluster *v2.Cluster, bd buildah.Interface) error {
 		}
 		// recreate container anyway, this function call will remount the mount point of the image
 		// since after the host reboot, the `merged` dir will become an empty dir when we using `overlayfs` as driver
-		bderInfo, err := bd.Create(ctrName, img)
+		bderInfo, err := bdah.Create(ctrName, img)
 		if err != nil {
 			return err
 		}
@@ -220,7 +215,7 @@ func MountClusterImages(cluster *v2.Cluster, bd buildah.Interface) error {
 			ImageName:  img,
 			MountPoint: bderInfo.MountPoint,
 		}
-		if err = OCIToImageMount(mount, bd); err != nil {
+		if err = OCIToImageMount(bdah, mount); err != nil {
 			return err
 		}
 		if idx >= 0 {
@@ -228,6 +223,10 @@ func MountClusterImages(cluster *v2.Cluster, bd buildah.Interface) error {
 		} else {
 			cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
 		}
+	}
+
+	if !hasRootfsType {
+		return errors.New("can't apply application type images only since RootFS type image is not applied yet")
 	}
 	return nil
 }

@@ -83,11 +83,10 @@ func (c *Applier) Apply() error {
 		case *processor.CheckError, *processor.PreProcessError:
 			return
 		}
-		logger.Debug("write cluster file to local storage: %s", clusterPath)
+		logger.Debug("save objects into local: %s, objects: %v", clusterPath, c.getWriteBackObjects())
 		saveErr := yaml.MarshalYamlToFile(clusterPath, c.getWriteBackObjects()...)
 		if saveErr != nil {
-			logger.Error("write cluster file to local storage: %s error, %s", clusterPath, saveErr)
-			logger.Debug("complete write back file: \n %v", c.getWriteBackObjects())
+			logger.Error("failed to serialize into file: %s error, %s", clusterPath, saveErr)
 		}
 	}()
 	c.initStatus()

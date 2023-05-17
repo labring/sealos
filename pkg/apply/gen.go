@@ -68,7 +68,7 @@ func genImageInfo(imageName string) (*v1beta1.MountImage, error) {
 		ImageName:  imageName,
 		MountPoint: "",
 	}
-	if err = processor.OCIToImageMount(mount, bder); err != nil {
+	if err = processor.OCIToImageMount(bder, mount); err != nil {
 		return nil, err
 	}
 	return mount, nil

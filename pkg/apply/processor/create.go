@@ -87,7 +87,7 @@ func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 }
 
 func (c *CreateProcessor) preProcess(cluster *v2.Cluster) error {
-	if err := MountClusterImages(cluster, c.Buildah); err != nil {
+	if err := MountClusterImages(c.Buildah, cluster, false); err != nil {
 		return err
 	}
 	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())

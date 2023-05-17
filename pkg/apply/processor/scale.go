@@ -162,8 +162,8 @@ func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-	//cluster status might be overwriten by inappropriate usage, add mounts if loss.
-	if err = MountClusterImages(cluster, c.Buildah); err != nil {
+	// cluster status might be overwrite by inappropriate usage, add mounts if loss.
+	if err = MountClusterImages(c.Buildah, cluster, true); err != nil {
 		return err
 	}
 	if c.IsScaleUp {
