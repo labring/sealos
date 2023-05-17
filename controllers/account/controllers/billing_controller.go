@@ -20,13 +20,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-logr/logr"
-	"github.com/google/uuid"
 	v12 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/pkg/database"
 	v1 "github.com/labring/sealos/controllers/user/api/v1"
-	"github.com/labring/sealos/controllers/user/controllers/helper"
 	corev1 "k8s.io/api/core/v1"
-	rbacV1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
@@ -37,6 +34,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/matoous/go-nanoid/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -55,6 +53,7 @@ type BillingReconciler struct {
 	Scheme   *runtime.Scheme
 	mongoURL string
 	logr.Logger
+	AccountSystemNamespace string
 }
 
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
@@ -93,7 +92,7 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if ns.DeletionTimestamp != nil {
-		// TODO delete owner annotation namespace
+		r.Logger.V(1).Info("namespace is deleting", "namespace", ns)
 		return ctrl.Result{}, nil
 	}
 
@@ -142,70 +141,25 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	//}
 	now := time.Now()
 	currentHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.UTC)
-	lastUpdateTime := currentHourTime.Add(-1 * time.Hour)
-	if ns.Annotations[BillingAnnotationLastUpdateTime] != "" {
-		lastUpdateTime, err = time.Parse(time.RFC3339, ns.Annotations[BillingAnnotationLastUpdateTime])
-		if err != nil {
-			r.Logger.Error(err, "parse last update time failed", "lastUpdateTime", ns.Annotations[BillingAnnotationLastUpdateTime])
-		}
+	queryTime := currentHourTime.Add(-1 * time.Hour)
+	if exist, lastUpdateTime, _ := dbClient.GetBillingLastUpdateTime(own, v12.Consumption); exist {
 		if lastUpdateTime.Equal(currentHourTime) || lastUpdateTime.After(currentHourTime) {
 			return ctrl.Result{Requeue: true, RequeueAfter: time.Until(currentHourTime.Add(1*time.Hour + 10*time.Minute))}, nil
+		}
+		// 24小时内的数据，从上次更新时间开始计算，否则从当前时间起算
+		if lastUpdateTime.After(currentHourTime.Add(-24 * time.Hour)) {
+			queryTime = lastUpdateTime
 		}
 	}
 
 	// 计算上次billing到当前的时间之间的整点，左开右闭
-	for t := lastUpdateTime.Truncate(time.Hour).Add(time.Hour); t.Before(currentHourTime) || t.Equal(currentHourTime); t = t.Add(time.Hour) {
+	for t := queryTime.Truncate(time.Hour).Add(time.Hour); t.Before(currentHourTime) || t.Equal(currentHourTime); t = t.Add(time.Hour) {
 		if err = r.billingWithHourTime(ctx, t.UTC(), nsListStr, ns.Name, dbClient); err != nil {
 			r.Logger.Error(err, "billing with hour time failed", "time", t.Format(time.RFC3339))
 			return ctrl.Result{}, err
 		}
 	}
-	ns.Annotations[BillingAnnotationLastUpdateTime] = currentHourTime.Format(time.RFC3339)
-	if err := r.Update(ctx, ns); err != nil {
-		r.Logger.Error(err, "update namespace failed")
-	}
 	return ctrl.Result{Requeue: true, RequeueAfter: time.Until(currentHourTime.Add(1*time.Hour + 10*time.Minute))}, nil
-}
-
-func (r *BillingReconciler) syncRoleAndRoleBinding(ctx context.Context, name, namespace string) error {
-	role := rbacV1.Role{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "userAccountRole-" + name,
-			Namespace: "account-system",
-		},
-	}
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &role, func() error {
-		role.Rules = []rbacV1.PolicyRule{
-			{
-				APIGroups:     []string{"account.sealos.io"},
-				Resources:     []string{"accounts"},
-				Verbs:         []string{"get", "watch", "list"},
-				ResourceNames: []string{name},
-			},
-		}
-		return nil
-	}); err != nil {
-		return fmt.Errorf("create role failed: %v,username: %v,namespace: %v", err, name, namespace)
-	}
-	roleBinding := rbacV1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "userAccountRoleBinding-" + name,
-			Namespace: "account-system",
-		},
-	}
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &roleBinding, func() error {
-		roleBinding.RoleRef = rbacV1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "Role",
-			Name:     role.Name,
-		}
-		roleBinding.Subjects = helper.GetUsersSubject(name)
-
-		return nil
-	}); err != nil {
-		return fmt.Errorf("create roleBinding failed: %v,rolename: %v,username: %v,ns: %v", err, role.Name, name, namespace)
-	}
-	return nil
 }
 
 func (r *BillingReconciler) billingWithHourTime(ctx context.Context, queryTime time.Time, nsListStr []string, ownNs string, dbClient database.Interface) error {
@@ -216,18 +170,18 @@ func (r *BillingReconciler) billingWithHourTime(ctx context.Context, queryTime t
 	}
 	if billing != nil {
 		if billing.Amount != 0 {
-			_uuid, err := uuid.NewUUID()
+			id, err := gonanoid.New(12)
 			if err != nil {
-				return fmt.Errorf("create uuid failed: %w", err)
+				return fmt.Errorf("create id failed: %w", err)
 			}
 			// create accountbalance
 			accountBalance := v12.AccountBalance{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      getUsername(ownNs) + "-" + queryTime.Format("20060102150405"),
-					Namespace: "sealos-system",
+					Namespace: r.AccountSystemNamespace,
 				},
 				Spec: v12.AccountBalanceSpec{
-					OrderID: _uuid.String(),
+					OrderID: id,
 					Amount:  billing.Amount,
 					Costs:   billing.Costs,
 					Owner:   getUsername(ownNs),
@@ -278,7 +232,7 @@ func (r *BillingReconciler) initDB() error {
 			r.Logger.V(5).Info("disconnect mongo client failed", "err", err)
 		}
 	}()
-	return mongoClient.CreateBillingTimeSeriesIfNotExist()
+	return mongoClient.CreateBillingIfNotExist()
 }
 
 //func (r *BillingReconciler) syncQueryRoleAndRoleBinding(ctx context.Context, name, namespace string) error {
@@ -328,6 +282,10 @@ func (r *BillingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger = ctrl.Log.WithName("controller").WithName("Billing")
 	if err := r.initDB(); err != nil {
 		r.Logger.Error(err, "init db failed")
+	}
+	r.AccountSystemNamespace = os.Getenv(ACCOUNTNAMESPACEENV)
+	if r.AccountSystemNamespace == "" {
+		r.AccountSystemNamespace = DEFAULTACCOUNTNAMESPACE
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Namespace{}, builder.WithPredicates(predicate.Funcs{

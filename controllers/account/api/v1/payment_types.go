@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -45,6 +46,8 @@ type PaymentSpec struct {
 	UserID string `json:"userID,omitempty"`
 	// Amount is the amount of recharge
 	Amount int64 `json:"amount,omitempty"`
+	// e.g. wechat, alipay, creditcard, etc.
+	PaymentMethod string `json:"paymentMethod,omitempty"`
 }
 
 // PaymentStatus defines the observed state of Payment
@@ -76,6 +79,21 @@ type PaymentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Payment `json:"items"`
+}
+
+func (p *Payment) ToJson() string {
+	return `{
+	"spec": {
+		"userID": "` + p.Spec.UserID + `",
+		"amount": ` + fmt.Sprint(p.Spec.Amount) + `,
+		"paymentMethod": "` + p.Spec.PaymentMethod + `"
+	},
+	"status": {
+		"tradeNO": "` + p.Status.TradeNO + `",
+		"paymentURL": "` + p.Status.CodeURL + `",
+		"status": "` + p.Status.Status + `"
+	}
+}`
 }
 
 func init() {

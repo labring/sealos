@@ -7,6 +7,7 @@ import (
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"go.mongodb.org/mongo-driver/mongo"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"os"
 	"reflect"
 	"sigs.k8s.io/yaml"
 	"testing"
@@ -16,7 +17,8 @@ import (
 func TestMongoDB_GetMeteringOwnerTimeResult(t *testing.T) {
 	dbCTX := context.Background()
 
-	m, err := NewMongoDB(dbCTX, "mongodb://192.168.64.21:27017/")
+	//"mongodb://192.168.64.21:27017/"
+	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
 	if err != nil {
 		t.Errorf("failed to connect mongo: error = %v", err)
 	}
@@ -40,7 +42,7 @@ func TestMongoDB_GetMeteringOwnerTimeResult(t *testing.T) {
 func TestMongoDB_QueryBillingRecords(t *testing.T) {
 	dbCTX := context.Background()
 
-	m, err := NewMongoDB(dbCTX, "mongodb://192.168.64.21:27017/")
+	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
 	if err != nil {
 		t.Errorf("failed to connect mongo: error = %v", err)
 	}
@@ -176,7 +178,7 @@ func TestMongoDB_SaveBillingsWithAccountBalance(t *testing.T) {
 
 	dbCTX := context.Background()
 
-	m, err := NewMongoDB(dbCTX, "mongodb://192.168.64.21:27017/")
+	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
 	if err != nil {
 		t.Errorf("failed to connect mongo: error = %v", err)
 	}
@@ -188,11 +190,11 @@ func TestMongoDB_SaveBillingsWithAccountBalance(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := m.CreateBillingTimeSeriesIfNotExist(); err != nil {
-				t.Errorf("failed to create billing time series: error = %v", err)
+			if err := m.CreateBillingIfNotExist(); err != nil {
+				t.Fatalf("failed to create billing time series: error = %v", err)
 			}
 			if err := m.SaveBillingsWithAccountBalance(tt.args.accountBalanceSpec); (err != nil) != tt.wantErr {
-				t.Errorf("SaveBillingsWithAccountBalance() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("SaveBillingsWithAccountBalance() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -274,9 +276,10 @@ func TestMongoDB_getMonitorCollection(t *testing.T) {
 		BillingConn  string
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		want   *mongo.Collection
+		name     string
+		fields   fields
+		collTime time.Time
+		want     *mongo.Collection
 	}{
 		// TODO: Add test cases.
 	}
@@ -290,7 +293,7 @@ func TestMongoDB_getMonitorCollection(t *testing.T) {
 				MeteringConn: tt.fields.MeteringConn,
 				BillingConn:  tt.fields.BillingConn,
 			}
-			if got := m.getMonitorCollection(); !reflect.DeepEqual(got, tt.want) {
+			if got := m.getMonitorCollection(tt.collTime); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getMonitorCollection() = %v, want %v", got, tt.want)
 			}
 		})
@@ -322,4 +325,27 @@ func TestNewMongoDB(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMongoDB_GetBillingLastUpdateTime(t *testing.T) {
+	dbCTX := context.Background()
+
+	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
+	if err != nil {
+		t.Errorf("failed to connect mongo: error = %v", err)
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+
+	exist, lastUpdateTime, err := m.GetBillingLastUpdateTime("vlemql0v", 0)
+	if err != nil {
+		t.Fatalf("failed to get billing last update time: error = %v", err)
+	}
+	if !exist {
+		t.Fatalf(" billing last update time not exist")
+	}
+	t.Logf("lastUpdateTime: %v", lastUpdateTime)
 }

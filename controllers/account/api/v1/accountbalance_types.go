@@ -51,8 +51,8 @@ type AccountBalanceSpec struct {
 	Costs   Costs       `json:"costs,omitempty" bson:"costs,omitempty"`
 	// TODO will delete field in future
 	//Timestamp int64 `json:"timestamp,omitempty"`
-	Amount int64 `json:"amount,omitempty" bson:"amount"`
-	//Details          string                            `json:"details,omitempty" bson:"details,omitempty"`
+	Amount  int64  `json:"amount,omitempty" bson:"amount"`
+	Details string `json:"details,omitempty" bson:"details,omitempty"`
 	//ResourceInfoList meteringcommonv1.ResourceInfoList `json:"resourceInfoList,omitempty"`
 }
 

@@ -24,11 +24,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	"time"
 
@@ -96,6 +94,7 @@ func (r *BillingRecordQueryReconciler) Reconcile(ctx context.Context, req ctrl.R
 	//check options
 
 	if err = CheckOpts(billingRecordQuery); err != nil {
+		//TODO update status
 		return ctrl.Result{}, err
 	}
 
@@ -104,8 +103,11 @@ func (r *BillingRecordQueryReconciler) Reconcile(ctx context.Context, req ctrl.R
 		r.Logger.Error(err, "query billing records failed")
 		return ctrl.Result{Requeue: true}, err
 	}
-	err = r.Status().Update(ctx, billingRecordQuery)
-	return ctrl.Result{Requeue: true, RequeueAfter: time.Minute * 4}, err
+	if err = r.Status().Update(ctx, billingRecordQuery); err != nil {
+		r.Logger.Error(err, "update billing record query status failed")
+		return ctrl.Result{Requeue: true}, err
+	}
+	return ctrl.Result{Requeue: true, RequeueAfter: time.Minute * 4}, nil
 }
 
 func CheckOpts(billingRecordQuery *accountv1.BillingRecordQuery) error {
@@ -122,7 +124,7 @@ func (r *BillingRecordQueryReconciler) SetupWithManager(mgr ctrl.Manager) error 
 	}
 	r.Logger = log.Log.WithName("billingrecordquery-controller")
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&accountv1.BillingRecordQuery{}, builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}))).
+		For(&accountv1.BillingRecordQuery{}).
 		Watches(&source.Kind{Type: &accountv1.PriceQuery{}}, &handler.EnqueueRequestForObject{}).
 		Complete(r)
 }
@@ -145,6 +147,9 @@ func (r *BillingRecordQueryReconciler) ReconcilePriceQuery(ctx context.Context, 
 			Price:        v.Price,
 		})
 	}
-	err = r.Status().Update(ctx, priceQuery)
+	if err = r.Status().Update(ctx, priceQuery); err != nil {
+		r.Logger.Error(err, "update price query status failed")
+		return ctrl.Result{Requeue: true}, err
+	}
 	return ctrl.Result{Requeue: true, RequeueAfter: time.Minute * 4}, err
 }

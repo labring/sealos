@@ -41,7 +41,7 @@ type BillingRecordQueryStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	PageLength      int                  `json:"pageLength"`
 	RechargeAmount  int64                `json:"rechargeAmount"`
-	DeductionAmount Costs                `json:"deductionAmount"`
+	DeductionAmount Costs                `json:"deductionAmount,omitempty"`
 	Items           []AccountBalanceSpec `json:"item,omitempty"`
 }
 

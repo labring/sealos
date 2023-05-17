@@ -43,6 +43,7 @@ spec:
                 format: int64
                 type: integer
               chargeList:
+                description: delete in the future
                 items:
                   properties:
                     accountBalanceName:

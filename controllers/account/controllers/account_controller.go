@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/labring/sealos/controllers/pkg/database"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 	"os"
 	"strconv"
 	"time"
@@ -133,15 +134,21 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{}, fmt.Errorf("update payment failed: %v", err)
 		}
 
+		id, err := gonanoid.New(12)
+		if err != nil {
+			r.Logger.Error(err, "create id failed", "id", id, "payment", payment)
+		}
 		err = dbClient.SaveBillingsWithAccountBalance(&accountv1.AccountBalanceSpec{
-			OrderID: payment.Status.TradeNO,
+			OrderID: id,
 			Amount:  payment.Spec.Amount,
-			Owner:   payment.Namespace,
+			Owner:   getUsername(payment.Namespace),
 			Time:    metav1.Time{Time: now},
 			Type:    accountv1.Recharge,
+			Details: payment.ToJson(),
 		})
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("save billing failed: %v", err)
+			r.Logger.Error(err, "save billings failed", "id", id, "payment", payment)
+			return ctrl.Result{}, nil
 		}
 	case pay.StatusProcessing, pay.StatusNotPay:
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, nil
@@ -306,7 +313,7 @@ func (r *AccountReconciler) updateDeductionBalance(ctx context.Context, accountB
 	}()
 	err = dbClient.SaveBillingsWithAccountBalance(&accountBalance.Spec)
 	if err != nil {
-		return fmt.Errorf("save billings with accountBlance failed: %v", err)
+		r.Logger.Error(err, "save billings with accountBalance failed", "accountBalance", accountBalance.Spec)
 	}
 	return nil
 }

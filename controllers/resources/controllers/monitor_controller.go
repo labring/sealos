@@ -19,10 +19,14 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/labring/sealos/controllers/account/controllers"
 	"github.com/labring/sealos/controllers/pkg/common"
 	"github.com/labring/sealos/controllers/pkg/database"
+	v1 "github.com/labring/sealos/controllers/user/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"math"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"time"
 
 	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
@@ -97,7 +101,7 @@ func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if err = r.Get(ctx, req.NamespacedName, &namespace); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	if err = r.podResourceUsage(ctx, dbClient, namespace.Name); err != nil {
+	if err = r.podResourceUsage(ctx, dbClient, namespace); err != nil {
 		r.Logger.Error(err, "monitor pod resource", "namespace", namespace.Name)
 		return ctrl.Result{Requeue: true}, err
 	}
@@ -165,28 +169,34 @@ func (r *MonitorReconciler) preApply() error {
 	}()
 
 	//_ = createCompoundIndex(mongoClient, SealosResourcesDBName, SealosMonitorCollectionName)
-	err = dbClient.CreateMonitorTimeSeriesIfNotExist()
-	if err != nil {
+	if err = dbClient.CreateMonitorTimeSeriesIfNotExist(time.Now().UTC()); err != nil {
 		r.Logger.Error(err, "create table time series failed")
 	}
 	return nil
 }
 
-func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient database.Interface, namespace string) error {
+func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient database.Interface, namespace corev1.Namespace) error {
 	timeStamp := time.Now().UTC()
 	var (
 		quota   = corev1.ResourceQuota{}
 		podList = corev1.PodList{}
 	)
-	if err := r.List(context.Background(), &podList, &client.ListOptions{Namespace: namespace}); err != nil {
+	if err := r.List(context.Background(), &podList, &client.ListOptions{Namespace: namespace.Name}); err != nil {
 		return err
 	}
 	rs := initResources()
-	if err := r.Get(ctx, client.ObjectKey{Name: meteringv1.ResourceQuotaPrefix + namespace, Namespace: namespace}, &quota); err != nil {
+	if err := r.Get(ctx, client.ObjectKey{Name: meteringv1.ResourceQuotaPrefix + namespace.Name, Namespace: namespace.Name}, &quota); err != nil {
 		if client.IgnoreNotFound(err) != nil {
 			return err
 		}
-		r.Logger.Info("no resource quota", "namespace", namespace)
+		if _, ok := namespace.GetAnnotations()[v1.UserAnnotationOwnerKey]; ok {
+			//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
+			//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
+			//if err = r.syncResourceQuota(ctx, namespace.Name); err != nil {
+			//	r.Logger.Error(err, "sync resource quota failed", "namespace", namespace.Name)
+			//}
+			r.Logger.Error(fmt.Errorf("resources quota is empty"), "", "namespace", namespace.Name)
+		}
 		rs[corev1.ResourceStorage].detail = "no resource quota"
 	} else {
 		rs[corev1.ResourceStorage].Add(*quota.Status.Used.Name("requests.storage", resource.BinarySI))
@@ -210,25 +220,42 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient datab
 		}
 	}
 	err := dbClient.InsertMonitor(ctx, &common.Monitor{
-		Category: namespace,
+		Category: namespace.Name,
 		Property: corev1.ResourceCPU.String(),
 		Value:    getResourceValue(corev1.ResourceCPU, rs),
 		Time:     timeStamp,
 		Detail:   rs[corev1.ResourceCPU].String(),
 	}, &common.Monitor{
-		Category: namespace,
+		Category: namespace.Name,
 		Property: corev1.ResourceMemory.String(),
 		Value:    getResourceValue(corev1.ResourceMemory, rs),
 		Time:     timeStamp,
 		Detail:   rs[corev1.ResourceMemory].String(),
 	}, &common.Monitor{
-		Category: namespace,
+		Category: namespace.Name,
 		Property: corev1.ResourceStorage.String(),
 		Value:    getResourceValue(corev1.ResourceStorage, rs),
 		Time:     timeStamp,
 		Detail:   rs[corev1.ResourceStorage].String(),
 	})
 	return err
+}
+
+func (r *MonitorReconciler) syncResourceQuota(ctx context.Context, nsName string) error {
+	quota := &corev1.ResourceQuota{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      controllers.ResourceQuotaPrefix + nsName,
+			Namespace: nsName,
+		},
+	}
+
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
+		quota.Spec.Hard = controllers.DefaultResourceQuota()
+		return nil
+	}); err != nil {
+		return fmt.Errorf("sync resource quota failed: %v", err)
+	}
+	return nil
 }
 
 //func getResourceValue(resourceName corev1.ResourceName, quantity *resource.Quantity) int64 {

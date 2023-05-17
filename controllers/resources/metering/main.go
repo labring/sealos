@@ -90,9 +90,12 @@ func PreApply() error {
 			logger.Error("disconnect mongo client failed: %v", err)
 		}
 	}()
-	err = dbClient.CreateMeteringTimeSeriesIfNotExist()
-	if err != nil {
-		logger.Warn("create compound index failed: %v", err)
+
+	if err = dbClient.CreateMeteringTimeSeriesIfNotExist(); err != nil {
+		logger.Warn("create metering time series failed: %v", err)
+	}
+	if err = CreateMonitorTimeSeries(dbClient, time.Now().UTC()); err != nil {
+		logger.Warn("create monitor time series failed: %v", err)
 	}
 	return executeTask()
 }
@@ -114,13 +117,21 @@ func executeTask() error {
 	if err != nil {
 		return fmt.Errorf("failed to get all prices map: %v", err)
 	}
-	now := time.Now()
+	now := time.Now().UTC()
 	startTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-1, 0, 0, 0, time.UTC)
 	endTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.UTC)
 	if err := dbClient.GenerateMeteringData(startTime, endTime, prices); err != nil {
 		return fmt.Errorf("failed to generate metering data: %v", err)
 	}
+	// create tomorrow monitor time series
+	if err := CreateMonitorTimeSeries(dbClient, now.Add(24*time.Hour)); err != nil {
+		return fmt.Errorf("failed to create monitor time series: %v", err)
+	}
 	return nil
+}
+
+func CreateMonitorTimeSeries(dbClient database.Interface, collTime time.Time) error {
+	return dbClient.CreateMonitorTimeSeriesIfNotExist(collTime)
 }
 
 func main() {

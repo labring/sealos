@@ -7,6 +7,7 @@ import (
 	"github.com/labring/sealos/controllers/pkg/common"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/sync/errgroup"
@@ -53,25 +54,27 @@ func (m *MongoDB) Disconnect(ctx context.Context) error {
 	return m.Client.Disconnect(ctx)
 }
 
-func (m *MongoDB) GetPrices() *accountv1.PriceQuery {
-	//collection := mongoClient.Database(SealosResourcesDBName).Collection(SealosPricesCollectionName)
-	//ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	//defer cancel()
-	//cursor, err := collection.Find(ctx, bson.M{})
-	//if err != nil {
-	//	return nil, fmt.Errorf("get all prices error: %v", err)
-	//}
-	//var prices []Price
-	//if err = cursor.All(ctx, &prices); err != nil {
-	//	return nil, fmt.Errorf("get all prices error: %v", err)
-	//}
-	//var pricesMap = make(map[string]Price, len(prices))
-	//for i := range prices {
-	//	pricesMap[strings.ToLower(prices[i].Property)] = prices[i]
-	//}
-	//return pricesMap, nil
-	m.getMonitorCollection()
-	return nil
+func (m *MongoDB) GetBillingLastUpdateTime(owner string, _type accountv1.Type) (bool, time.Time, error) {
+	filter := bson.M{
+		"owner": owner,
+		"type":  _type,
+	}
+	findOneOptions := options.FindOne().SetSort(bson.D{{"time", -1}})
+	var result bson.M
+	err := m.getBillingCollection().FindOne(context.Background(), filter, findOneOptions).Decode(&result)
+
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return false, time.Time{}, nil
+		}
+		return false, time.Time{}, err
+	}
+	// Assuming that the `time` field is stored as a `primitive.DateTime`
+	if resultTime, ok := result["time"].(primitive.DateTime); ok {
+		return true, resultTime.Time().UTC(), nil
+	}
+
+	return false, time.Time{}, fmt.Errorf("failed to convert time field to primitive.DateTime: %v", result["time"])
 }
 
 func (m *MongoDB) SaveBillingsWithAccountBalance(accountBalanceSpec *accountv1.AccountBalanceSpec) error {
@@ -89,6 +92,9 @@ func (m *MongoDB) SaveBillingsWithAccountBalance(accountBalanceSpec *accountv1.A
 		"type":     accountBalanceSpec.Type,
 		"costs":    accountBalanceSpec.Costs,
 		"amount":   accountBalanceSpec.Amount,
+	}
+	if accountBalanceSpec.Details != "" {
+		accountBalanceDoc["details"] = accountBalanceSpec.Details
 	}
 	_, err := m.getBillingCollection().InsertOne(context.Background(), accountBalanceDoc)
 	return err
@@ -149,6 +155,8 @@ func (m *MongoDB) GetMeteringOwnerTimeResult(queryTime time.Time, queryCategorie
 	return nil, nil
 }
 
+// InsertMonitor insert monitor data to mongodb collection monitor + time (eg: monitor_20200101)
+// The monitor data is saved daily 2020-12-01 00:00:00 - 2020-12-01 23:59:59 => monitor_20201201
 func (m *MongoDB) InsertMonitor(ctx context.Context, monitors ...*common.Monitor) error {
 	if len(monitors) == 0 {
 		return nil
@@ -157,7 +165,7 @@ func (m *MongoDB) InsertMonitor(ctx context.Context, monitors ...*common.Monitor
 	for i := range monitors {
 		manyMonitor = append(manyMonitor, monitors[i])
 	}
-	_, err := m.getMonitorCollection().InsertMany(ctx, manyMonitor)
+	_, err := m.getMonitorCollection(monitors[0].Time).InsertMany(ctx, manyMonitor)
 	return err
 }
 
@@ -179,6 +187,8 @@ func (m *MongoDB) GetAllPricesMap() (map[string]common.Price, error) {
 	return pricesMap, nil
 }
 
+// 2020-12-01 23:00:00 - 2020-12-02 00:00:00
+// 2020-12-02 00:00:00 - 2020-12-02 01:00:00
 func (m *MongoDB) GenerateMeteringData(startTime, endTime time.Time, prices map[string]common.Price) error {
 	filter := bson.M{
 		"time": bson.M{
@@ -186,7 +196,7 @@ func (m *MongoDB) GenerateMeteringData(startTime, endTime time.Time, prices map[
 			"$lt":  endTime,
 		},
 	}
-	cursor, err := m.getMonitorCollection().Find(context.Background(), filter)
+	cursor, err := m.getMonitorCollection(startTime).Find(context.Background(), filter)
 	if err != nil {
 		return fmt.Errorf("find monitors error: %v", err)
 	}
@@ -480,8 +490,14 @@ func (m *MongoDB) getMeteringCollection() *mongo.Collection {
 	return m.Client.Database(m.DBName).Collection(m.MeteringConn)
 }
 
-func (m *MongoDB) getMonitorCollection() *mongo.Collection {
-	return m.Client.Database(m.DBName).Collection(m.MonitorConn)
+func (m *MongoDB) getMonitorCollection(collTime time.Time) *mongo.Collection {
+	// 2020-12-01 00:00:00 - 2020-12-01 23:59:59
+	return m.Client.Database(m.DBName).Collection(m.getMonitorCollectionName(collTime))
+}
+
+func (m *MongoDB) getMonitorCollectionName(collTime time.Time) string {
+	// 按天计算尾缀，如202012月1号 尾缀为20201201
+	return fmt.Sprintf("%s_%s", m.MonitorConn, collTime.Format("20060102"))
 }
 
 func (m *MongoDB) getPricesCollection() *mongo.Collection {
@@ -492,13 +508,41 @@ func (m *MongoDB) getBillingCollection() *mongo.Collection {
 	return m.Client.Database(m.DBName).Collection(m.BillingConn)
 }
 
-func (m *MongoDB) CreateBillingTimeSeriesIfNotExist() error {
-	return m.CreateTimeSeriesIfNotExist(m.DBName, m.BillingConn)
+func (m *MongoDB) CreateBillingIfNotExist() error {
+	if exist, err := m.collectionExist(m.DBName, m.BillingConn); exist || err != nil {
+		return err
+	}
+	ctx := context.Background()
+	err := m.Client.Database(m.DBName).CreateCollection(ctx, m.BillingConn)
+	if err != nil {
+		return fmt.Errorf("failed to create collection for billing: %w", err)
+	}
+
+	// 创建索引
+	_, err = m.getBillingCollection().Indexes().CreateMany(ctx, []mongo.IndexModel{
+		{
+			// 唯一索引 owner + order_id
+			Keys:    bson.D{{"owner", 1}, {"order_id", 1}},
+			Options: options.Index().SetUnique(true),
+		},
+		{
+			// owner + time + type 索引
+			Keys: bson.D{
+				{"owner", 1},
+				{"time", 1},
+				{"type", 1},
+			},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create index for billing: %w", err)
+	}
+	return nil
 }
 
 // CreateMonitorTimeSeriesIfNotExist creates the time series table for monitor
-func (m *MongoDB) CreateMonitorTimeSeriesIfNotExist() error {
-	return m.CreateTimeSeriesIfNotExist(m.DBName, m.MonitorConn)
+func (m *MongoDB) CreateMonitorTimeSeriesIfNotExist(collTime time.Time) error {
+	return m.CreateTimeSeriesIfNotExist(m.DBName, m.getMonitorCollectionName(collTime))
 }
 
 // CreateMeteringTimeSeriesIfNotExist creates the time series table for metering
@@ -508,24 +552,30 @@ func (m *MongoDB) CreateMeteringTimeSeriesIfNotExist() error {
 
 func (m *MongoDB) CreateTimeSeriesIfNotExist(dbName, collectionName string) error {
 	// Check if the collection already exists
-	collections, err := m.Client.Database(dbName).ListCollectionNames(context.Background(), bson.M{"name": collectionName})
-	if err != nil {
+	if exist, err := m.collectionExist(dbName, collectionName); exist || err != nil {
 		return err
 	}
 
 	// If the collection does not exist, create it
-	if len(collections) == 0 {
-		cmd := bson.D{
-			{Key: "create", Value: collectionName},
-			{Key: "timeseries", Value: bson.D{{Key: "timeField", Value: "time"}}},
-		}
-		err = m.Client.Database(dbName).RunCommand(context.TODO(), cmd).Err()
+	cmd := bson.D{
+		{Key: "create", Value: collectionName},
+		{Key: "timeseries", Value: bson.D{{Key: "timeField", Value: "time"}}},
 	}
-	return err
+	return m.Client.Database(dbName).RunCommand(context.TODO(), cmd).Err()
+}
+
+func (m *MongoDB) collectionExist(dbName, collectionName string) (bool, error) {
+	// Check if the collection already exists
+	collections, err := m.Client.Database(dbName).ListCollectionNames(context.Background(), bson.M{"name": collectionName})
+	return len(collections) > 0, err
 }
 
 func NewMongoDB(ctx context.Context, URL string) (Interface, error) {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(URL))
+	if err != nil {
+		return nil, err
+	}
+	err = client.Ping(ctx, nil)
 	return &MongoDB{
 		Client:       client,
 		DBName:       DefaultDBName,

@@ -48,6 +48,8 @@ spec:
                   format: int64
                   type: integer
                 type: object
+              details:
+                type: string
               order_id:
                 type: string
               owner:

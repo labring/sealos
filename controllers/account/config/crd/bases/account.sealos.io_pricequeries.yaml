@@ -5,20 +5,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: payments.account.sealos.io
+  name: pricequeries.account.sealos.io
 spec:
   group: account.sealos.io
   names:
-    kind: Payment
-    listKind: PaymentList
-    plural: payments
-    singular: payment
+    kind: PriceQuery
+    listKind: PriceQueryList
+    plural: pricequeries
+    singular: pricequery
   scope: Namespaced
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Payment is the Schema for the payments API
+        description: PriceQuery is the Schema for the pricequeries API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,32 +33,26 @@ spec:
           metadata:
             type: object
           spec:
-            description: PaymentSpec defines the desired state of Payment
-            properties:
-              amount:
-                description: Amount is the amount of recharge
-                format: int64
-                type: integer
-              paymentMethod:
-                description: e.g. wechat, alipay, creditcard, etc.
-                type: string
-              userID:
-                description: UserID is the user id who want to recharge
-                type: string
+            description: PriceQuerySpec defines the desired state of PriceQuery
             type: object
           status:
-            description: PaymentStatus defines the observed state of Payment
+            description: PriceQueryStatus defines the observed state of PriceQuery
             properties:
-              codeURL:
-                description: CodeURL is the codeURL of wechatpay
-                type: string
-              status:
-                description: Status is the status of wechatpay, charging, closed,
-                  timeout
-                type: string
-              tradeNO:
-                description: TradeNO is the tradeNO of wechatpay
-                type: string
+              billingRecords:
+                items:
+                  properties:
+                    discountType:
+                      type: string
+                    price:
+                      format: int64
+                      type: integer
+                    resourceType:
+                      type: string
+                  required:
+                  - price
+                  - resourceType
+                  type: object
+                type: array
             type: object
         type: object
     served: true

@@ -10,6 +10,7 @@ import (
 type Interface interface {
 	//InitDB() error
 	GetMeteringOwnerTimeResult(queryTime time.Time, queryCategories, queryProperties []string, queryOwner string) (*MeteringOwnerTimeResult, error)
+	GetBillingLastUpdateTime(owner string, _type accountv1.Type) (bool, time.Time, error)
 	SaveBillingsWithAccountBalance(accountBalanceSpec *accountv1.AccountBalanceSpec) error
 	QueryBillingRecords(billingRecordQuery *accountv1.BillingRecordQuery, owner string) error
 	GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error)
@@ -17,12 +18,13 @@ type Interface interface {
 	GenerateMeteringData(startTime, endTime time.Time, prices map[string]common.Price) error
 	InsertMonitor(ctx context.Context, monitors ...*common.Monitor) error
 	Disconnect(ctx context.Context) error
-	TimeSeries
+	Creator
 }
 
-type TimeSeries interface {
-	CreateBillingTimeSeriesIfNotExist() error
-	CreateMonitorTimeSeriesIfNotExist() error
+type Creator interface {
+	CreateBillingIfNotExist() error
+	//suffix by day, eg： monitor_20200101
+	CreateMonitorTimeSeriesIfNotExist(collTime time.Time) error
 	CreateMeteringTimeSeriesIfNotExist() error
 }
 
