@@ -11,7 +11,7 @@ use (
 	./controllers/infra
 	./controllers/metering
 	./controllers/terminal
-	./controllers/notification
+	./controllers/lafcloud
 	./controllers/user
 	./controllers/resources
 	./service/auth

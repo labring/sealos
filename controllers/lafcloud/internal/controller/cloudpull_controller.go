@@ -29,7 +29,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -38,7 +37,7 @@ import (
 )
 
 // CloudClientReconciler reconciles a CloudClient object
-type CloudClientReconciler struct {
+type CloudPullReconciler struct {
 	client.Client
 	Scheme        *runtime.Scheme
 	CloudClient   cloudclient.CloudClient
@@ -48,6 +47,8 @@ type CloudClientReconciler struct {
 	Notification  ntf.Notification
 	// The latest time of Cloud update
 	CloudTime int64
+	CycleTime int64
+	CloudURL  string
 }
 
 //+kubebuilder:rbac:groups=cloudclient.sealos.io,resources=cloudclients,verbs=get;list;watch;create;update;patch;delete
@@ -63,7 +64,7 @@ type CloudClientReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
-func (r *CloudClientReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
+func (r *CloudPullReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
 	lgr := log.FromContext(ctx)
 	lgr.Info("enter CloudClientReconciler")
 
@@ -72,14 +73,14 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (
 
 	// get notification from Cloud
 	if err := r.CloudClient.Get(); err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{RequeueAfter: time.Duration(r.CycleTime)}, err
 	}
 
 	//Get the total json strings
 	var CloudTexts []cloudclient.CloudText
 	if err := json.Unmarshal(r.CloudClient.ResponseBody, &CloudTexts); err != nil {
 		logger.Info("The jsonString from Cloud is error ", "Error: ", err)
-		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
+		return ctrl.Result{RequeueAfter: time.Duration(r.CycleTime)}, nil
 	}
 
 	//per json string parse once
@@ -94,52 +95,47 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (
 			continue
 		}
 	}
-	return ctrl.Result{RequeueAfter: time.Second * 10}, nil
+	return ctrl.Result{RequeueAfter: time.Duration(r.CycleTime)}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *CloudClientReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *CloudPullReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.init()
 
-	namespace := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "system-notification",
-		},
-	}
-	if err := r.Client.Create(context.Background(), namespace); client.IgnoreAlreadyExists(err) != nil {
-		logger.Error("The CloudController failed to start: ", err)
-		return err
+	namespace := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: "start-instance"},
 	}
 
-	if err := r.Create(context.Background(), &r.StartInstance); err != nil {
-		if client.IgnoreAlreadyExists(err) == nil {
-			logger.Info("The CloudClient startInstance: ", err)
+	// create the "StartInstance" namespace
+	if err := r.Create(context.Background(), &namespace); err != nil {
+		if client.IgnoreAlreadyExists(err) != nil {
+			logger.Error("can't create the namespace: ", err)
+			return err
 		}
 	}
+	// create the cloudclient startinstance
+	if err := r.Create(context.Background(), &r.StartInstance); client.IgnoreAlreadyExists(err) != nil {
+		logger.Error("Create the start instance error ", err)
+		return err
+	}
+	r.CycleTime = r.StartInstance.Spec.CycleTime
+	r.CloudURL = r.StartInstance.Spec.CloudURL
+	r.CloudClient.SetURL(r.CloudURL)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cloudclientv1.CloudClient{}).
 		Complete(r)
 }
 
-func (r *CloudClientReconciler) init() {
+func (r *CloudPullReconciler) init() {
 	//cloud client init
-	r.CloudClient.Init()
 	r.CloudTime = 0
-	//create a startInstance
-	r.StartInstance = cloudclientv1.CloudClient{}
-	r.StartInstance.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "cloudclient.sealos.io",
-		Version: "v1",
-		Kind:    "CloudClient",
-	})
-	r.StartInstance.SetNamespace("default")
-	r.StartInstance.SetName("startinstance")
+	r.StartInstance = cloudclientv1.NewStartInstance()
 	//get a cloudhandler
 	r.CloudHandler = *handler.NewCloudHandler()
 }
 
-func (r *CloudClientReconciler) Process(ctx context.Context) error {
+func (r *CloudPullReconciler) Process(ctx context.Context) error {
 	r.CloudHandler.Init(&r.CloudTXT, &r.Notification)
 	//build cr
 	if err := r.CloudHandler.BuildCloudCR(); err != nil {
