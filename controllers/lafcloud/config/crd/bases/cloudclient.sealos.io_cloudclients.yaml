@@ -35,10 +35,13 @@ spec:
           spec:
             description: CloudClientSpec defines the desired state of CloudClient
             properties:
-              foo:
-                description: Foo is an example field of CloudClient. Edit cloudclient_types.go
-                  to remove/update
+              Cycle-Time:
+                format: int64
+                type: integer
+              URL:
                 type: string
+            required:
+            - URL
             type: object
           status:
             description: CloudClientStatus defines the observed state of CloudClient
