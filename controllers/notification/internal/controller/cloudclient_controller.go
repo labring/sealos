@@ -43,7 +43,6 @@ type CloudClientReconciler struct {
 	Scheme        *runtime.Scheme
 	CloudClient   cloudclient.CloudClient
 	StartInstance cloudclientv1.CloudClient
-	NS            types.NamespacedName
 	CloudHandler  handler.CloudHandler
 	CloudTXT      cloudclient.CloudText
 	Notification  ntf.Notification
@@ -79,7 +78,7 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (
 	//Get the total json strings
 	var CloudTexts []cloudclient.CloudText
 	if err := json.Unmarshal(r.CloudClient.ResponseBody, &CloudTexts); err != nil {
-		logger.Error("The jsonString from Cloud is error ", "Error: ", err)
+		logger.Info("The jsonString from Cloud is error ", "Error: ", err)
 		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 	}
 
@@ -136,12 +135,8 @@ func (r *CloudClientReconciler) init() {
 	})
 	r.StartInstance.SetNamespace("default")
 	r.StartInstance.SetName("startinstance")
-	r.NS = types.NamespacedName{Namespace: "default"}
 	//get a cloudhandler
 	r.CloudHandler = *handler.NewCloudHandler()
-	//init resource
-	r.Notification = ntf.Notification{}
-	r.CloudTXT = cloudclient.CloudText{}
 }
 
 func (r *CloudClientReconciler) Process(ctx context.Context) error {
@@ -150,11 +145,30 @@ func (r *CloudClientReconciler) Process(ctx context.Context) error {
 	if err := r.CloudHandler.BuildCloudCR(); err != nil {
 		return err
 	}
-	//apply cr
-	if err := r.Client.Create(ctx, &r.Notification); err != nil {
-		logger.Info("create the cloud cr error ", err)
-		return err
+	var tmp ntf.Notification
+
+	key := types.NamespacedName{Namespace: r.Notification.Namespace, Name: r.Notification.Name}
+
+	if err := r.Client.Get(ctx, key, &tmp); err == nil {
+		if err0 := r.Client.Update(ctx, &tmp); err0 != nil {
+			logger.Info("update the cloud cr error ", err0)
+			return err0
+		}
+		logger.Info("update the cloud cr success")
+	} else {
+		//apply cr
+		if client.IgnoreNotFound(err) == nil {
+			if err1 := r.Client.Create(ctx, &r.Notification); err1 != nil {
+				logger.Info("create the cloud cr error ", err1)
+				return err1
+			}
+			logger.Info("create the cloud cr success")
+		} else {
+			logger.Error(err)
+			return err
+		}
 	}
+
 	r.CloudHandler.Reset()
 	r.Notification = ntf.Notification{}
 	r.CloudTXT = cloudclient.CloudText{}
