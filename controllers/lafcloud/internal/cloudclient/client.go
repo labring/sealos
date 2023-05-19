@@ -26,19 +26,21 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
+// data struct from cloud
 type CloudText struct {
 	ID string `json:"_id"`
 	ntf.NotificationSpec
 }
 
-type ClientCTX struct {
+// data stuct to cloud
+type ClientText struct {
 	Time int64 `json:"Time"`
 }
 
 type CloudClient struct {
 	CloudURL string
-
-	ctx ClientCTX
+	//data to cloud
+	ctx ClientText
 
 	ResponseBody []byte
 	RequestBody  []byte
@@ -47,8 +49,19 @@ type CloudClient struct {
 	client       http.Client
 }
 
-func (cc *CloudClient) Get() error {
-	if err := cc.CreateRequest(); err != nil {
+func (cc *CloudClient) JSONGen() error {
+	var err error
+	var JSONString []byte
+	if JSONString, err = json.Marshal(cc.ctx); err != nil {
+		logger.Error("CloudClient error ", "can't parse to JsonString", err)
+		return err
+	}
+	cc.RequestBody = JSONString
+	return nil
+}
+
+func (cc *CloudClient) Pull(method string, url string) error {
+	if err := cc.CreateRequest(method, url); err != nil {
 		return err
 	}
 	if err := cc.SendRequest(); err != nil {
@@ -57,11 +70,11 @@ func (cc *CloudClient) Get() error {
 	return cc.ReadAll()
 }
 
-func (cc *CloudClient) CreateRequest() error {
+func (cc *CloudClient) CreateRequest(method string, url string) error {
 	if err := cc.JSONGen(); err != nil {
 		return err
 	}
-	req, err := http.NewRequest("POST", cc.CloudURL, bytes.NewBuffer(cc.RequestBody))
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(cc.RequestBody))
 	if err != nil {
 		logger.Error("CloudClient can't generate a new Http Reaquest ", err)
 		return err
@@ -84,14 +97,13 @@ func (cc *CloudClient) SendRequest() error {
 	return nil
 }
 
-func (cc *CloudClient) JSONGen() error {
-	var err error
-	var JSONString []byte
-	if JSONString, err = json.Marshal(cc.ctx); err != nil {
-		logger.Error("CloudClient error ", "can't parse to JsonString", err)
+func (cc *CloudClient) Do() error {
+	resp, err := cc.client.Do(cc.Request)
+	defer cc.Request.Body.Close()
+	if err != nil {
 		return err
 	}
-	cc.RequestBody = JSONString
+	cc.Response = resp
 	return nil
 }
 
@@ -103,16 +115,6 @@ func (cc *CloudClient) ReadAll() error {
 		return err
 	}
 	cc.ResponseBody = resp
-	return nil
-}
-
-func (cc *CloudClient) Do() error {
-	resp, err := cc.client.Do(cc.Request)
-	defer cc.Request.Body.Close()
-	if err != nil {
-		return err
-	}
-	cc.Response = resp
 	return nil
 }
 
