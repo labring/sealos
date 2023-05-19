@@ -71,8 +71,8 @@ func (r *CloudPullReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ct
 	defer r.CloudClient.Clear()
 	r.CloudClient.SetTime(r.CloudTime)
 
-	// get notification from Cloud
-	if err := r.CloudClient.Get(); err != nil {
+	// pull notification from Cloud
+	if err := r.CloudClient.Pull("POST", r.CloudClient.CloudURL); err != nil {
 		return ctrl.Result{RequeueAfter: time.Duration(r.CycleTime)}, err
 	}
 
@@ -136,6 +136,7 @@ func (r *CloudPullReconciler) init() {
 }
 
 func (r *CloudPullReconciler) Process(ctx context.Context) error {
+	//parse cloud text ==> notification cr
 	r.CloudHandler.Init(&r.CloudTXT, &r.Notification)
 	//build cr
 	if err := r.CloudHandler.BuildCloudCR(); err != nil {
