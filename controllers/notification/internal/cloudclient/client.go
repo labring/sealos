@@ -27,12 +27,8 @@ import (
 )
 
 type CloudText struct {
-	ID         string   `json:"_id"`
-	Type       string   `json:"Type"`
-	Title      string   `json:"Title"`
-	Message    string   `json:"Message"`
-	Timestamp  int64    `json:"Timestamp"`
-	Importance ntf.Type `json:"Importance"`
+	ID string `json:"_id"`
+	ntf.NotificationSpec
 }
 
 type ClientCTX struct {
