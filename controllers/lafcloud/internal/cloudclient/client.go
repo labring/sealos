@@ -76,6 +76,7 @@ func (cc *CloudClient) SendRequest() error {
 		logger.Info("CloudClient doesn't have a correct HTTP request")
 		return errors.New("CloudClient doesn't have a correct HTTP request")
 	}
+
 	if err := cc.Do(); err != nil {
 		logger.Info("CloudClient failed to send HTTP request ", err)
 		return err
@@ -115,9 +116,8 @@ func (cc *CloudClient) Do() error {
 	return nil
 }
 
-func (cc *CloudClient) Init() {
-	cc.CloudURL = "https://hfx0m9.laf.dev/CloudPublish"
-	cc.ctx.Time = 0
+func (cc *CloudClient) SetURL(url string) {
+	cc.CloudURL = url
 }
 
 func (cc *CloudClient) SetTime(time int64) {

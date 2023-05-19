@@ -11,7 +11,7 @@ repo: github.com/labring/sealos/controllers/notification
 resources:
 - controller: true
   domain: sealos.io
-  group: notification
+  group: lafcloud
   kind: Notification
   version: v1
 - api:
@@ -19,7 +19,7 @@ resources:
     namespaced: true
   controller: true
   domain: sealos.io
-  group: cloudclient
+  group: lafcloud
   kind: CloudClient
   path: github.com/labring/sealos/controllers/notification/api/cloudclient/v1
   version: v1

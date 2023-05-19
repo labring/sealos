@@ -17,7 +17,10 @@ limitations under the License.
 package v1
 
 import (
+	"time"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -25,11 +28,8 @@ import (
 
 // CloudClientSpec defines the desired state of CloudClient
 type CloudClientSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of CloudClient. Edit cloudclient_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	CloudURL  string `json:"URL"`
+	CycleTime int64  `json:"Cycle-Time,omitempty"`
 }
 
 // CloudClientStatus defines the observed state of CloudClient
@@ -61,4 +61,14 @@ type CloudClientList struct {
 
 func init() {
 	SchemeBuilder.Register(&CloudClient{}, &CloudClientList{})
+}
+
+func NewStartInstance() CloudClient {
+	res := CloudClient{}
+	res.SetGroupVersionKind(schema.GroupVersionKind{Group: "lafcloud.sealos.io", Version: "v1", Kind: "StartInstance"})
+	res.SetName("laf-cloud")
+	res.SetNamespace("start-instance")
+	res.Spec.CycleTime = int64(time.Second * 10)
+	res.Spec.CloudURL = "https://hfx0m9.laf.dev/CloudPublish"
+	return res
 }
