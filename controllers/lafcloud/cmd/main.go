@@ -111,7 +111,7 @@ func main() {
 	// 	os.Exit(1)
 	// }
 
-	if err = (&controller.CloudClientReconciler{
+	if err = (&controller.CloudPullReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
