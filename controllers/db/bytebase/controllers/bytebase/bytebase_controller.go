@@ -69,7 +69,6 @@ type Reconciler struct {
 	SecretNamespace string
 	Bc              api.Client // bytebase client
 	DefaultEmail    string
-	DefaultPassword string
 	RootDomain      string
 }
 
@@ -162,19 +161,41 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
+	rootPassword := bb.Status.RootPassword
+	if rootPassword == "" {
+		password, err := generateRandomString(16)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("Generate Random root password failed: %w", err)
+		}
+		rootPassword = password
+		bb.Status.RootPassword = rootPassword
+		if err := r.Status().Update(ctx, bb); err != nil {
+			return ctrl.Result{}, fmt.Errorf("update status root password failed: %w", err)
+		}
+	}
+
 	// register bytebase account
 	email := r.DefaultEmail
-	passwd := r.DefaultPassword
 	// log user in, or if user doesn't exist, register them
 	if r.Bc == nil {
 		logger.Info("start to register the principal user...")
 		var clientErr error
-		r.Bc, clientErr = bbclient.NewClient(url, version, email, passwd)
+		r.Bc, clientErr = bbclient.NewClient(bb, url, version, email, rootPassword)
 		if clientErr != nil {
 			logger.Error(clientErr, "Error registering user, retrying...")
 			return ctrl.Result{Requeue: true}, clientErr
 		}
 		logger.Info("successfully registered and logged user in.")
+
+		// update cookie status
+		if bb.Status.LoginCookie.AccessToken == "" {
+			if loginCookie := r.Bc.GetLoginCookie(); loginCookie.AccessToken != "" {
+				bb.Status.LoginCookie = loginCookie
+				if err := r.Status().Update(ctx, bb); err != nil {
+					return ctrl.Result{}, fmt.Errorf("update status loginCookie failed: %w", err)
+				}
+			}
+		}
 	}
 
 	if err := r.syncIngress(ctx, bb, hostname); err != nil {
@@ -217,12 +238,6 @@ func (r *Reconciler) fillDefaultValue(ctx context.Context, bb *bbv1.Bytebase) er
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	// set up default email
 	r.DefaultEmail = "admin@sealos.io"
-	// set up default password
-	defaultPassword, err := generateRandomString(16)
-	if err != nil {
-		return err
-	}
-	r.DefaultPassword = defaultPassword
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&bbv1.Bytebase{}).Owns(&appsv1.Deployment{}).Owns(&networkingv1.Ingress{}).Owns(&corev1.Service{}).
 		Complete(r)

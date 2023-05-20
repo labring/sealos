@@ -6,10 +6,6 @@ type AuthRequest struct {
 	Web      bool   `json:"web"`
 }
 
-type AuthResponse struct {
-	Token string `json:"token"`
-}
-
 type UserType int32
 
 // https://github.com/bytebase/bytebase/blob/main/proto/generated-go/v1/auth_service.pb.go
@@ -45,4 +41,11 @@ type GetUserResponse struct {
 	Title      string `json:"title"`
 	State      string `json:"state"`
 	ServiceKey string `json:"serviceKey"`
+}
+
+// All needed cookies after login
+type LoginCookie struct {
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+	User         string `json:"user"`
 }
