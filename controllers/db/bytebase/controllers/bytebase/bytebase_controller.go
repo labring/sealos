@@ -165,7 +165,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if rootPassword == "" {
 		password, err := generateRandomString(16)
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("Generate Random root password failed: %w", err)
+			return ctrl.Result{}, fmt.Errorf("generate Random root password failed: %w", err)
 		}
 		rootPassword = password
 		bb.Status.RootPassword = rootPassword
