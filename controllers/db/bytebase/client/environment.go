@@ -1,11 +1,11 @@
 package client
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	api "github.com/labring/sealos/controllers/db/bytebase/client/api"
 )
@@ -17,7 +17,7 @@ func (c *Client) CreateEnvironment(ctx context.Context, environmentID string, cr
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/%s/environments?environmentId=%s", c.url, c.version, environmentID), strings.NewReader(string(payload)))
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/%s/environments?environmentId=%s", c.url, c.version, environmentID), bytes.NewReader(payload))
 	if err != nil {
 		return nil, err
 	}

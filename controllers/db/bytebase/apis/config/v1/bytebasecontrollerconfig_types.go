@@ -36,7 +36,6 @@ type BytebaseControllerConfig struct {
 	SecretName                             string `json:"secretName,omitempty"`
 	SecretNamespace                        string `json:"secretNamespace,omitempty"`
 	Debug                                  bool   `json:"debug,omitempty"`
-	Debug2                                 bool   `json:"debug2,omitempty"`
 }
 
 func init() {

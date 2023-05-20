@@ -39,7 +39,7 @@ func (r *Reconciler) syncNginxIngress(ctx context.Context, bb *bbv1.Bytebase, ho
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, ingress, func() error {
-		cookies, err := r.getClientCookie()
+		cookies, err := r.getClientCookie(bb)
 		if err != nil {
 			return err
 		}
@@ -71,19 +71,18 @@ func (r *Reconciler) syncNginxIngress(ctx context.Context, bb *bbv1.Bytebase, ho
 	return nil
 }
 
-func (r *Reconciler) getClientCookie() ([]string, error) {
-	c := r.Bc
-	headers, err := c.GetHeaders()
-	if err != nil {
-		return nil, err
-	}
-	accessToken := headers.Get("Grpc-Metadata-Bytebase-Access-Token")
-	refreshToken := headers.Get("Grpc-Metadata-Bytebase-Refresh-Token")
-	user := headers.Get("Grpc-Metadata-Bytebase-User")
+func (r *Reconciler) getClientCookie(bb *bbv1.Bytebase) ([]string, error) {
 	cookies := []string{}
-	cookies = append(cookies, fmt.Sprintf("access-token=%s", accessToken))
-	cookies = append(cookies, fmt.Sprintf("refresh-token=%s", refreshToken))
-	cookies = append(cookies, fmt.Sprintf("user=%s", user))
+	if bb.Status.LoginCookie.AccessToken != "" {
+		cookies = append(cookies, fmt.Sprintf("access-token=%s", bb.Status.LoginCookie.AccessToken))
+	}
+	if bb.Status.LoginCookie.RefreshToken != "" {
+		cookies = append(cookies, fmt.Sprintf("refresh-token=%s", bb.Status.LoginCookie.RefreshToken))
+	}
+	if bb.Status.LoginCookie.User != "" {
+		cookies = append(cookies, fmt.Sprintf("user=%s", bb.Status.LoginCookie.User))
+	}
+
 	return cookies, nil
 }
 
@@ -191,20 +190,13 @@ func (r *Reconciler) syncDeployment(ctx context.Context, bb *bbv1.Bytebase, host
 				return err
 			}
 			// to be compatible with ingress host, hostname must start with a lower case letter
-			*hostname = "t" + letterID()
+			*hostname = "bb" + letterID()
 			deployment.Spec.Template.Spec.Hostname = *hostname
 		} else {
 			*hostname = deployment.Spec.Template.Spec.Hostname
 		}
 
-		externalURL := bb.Spec.ExternalURL
-		if externalURL == "" {
-			externalURL = Protocol + deployment.Spec.Template.Spec.Hostname + DefaultDomainSuffix
-			bb.Spec.ExternalURL = externalURL
-			if err := r.Update(ctx, bb); err != nil {
-				return err
-			}
-		}
+		externalURL := Protocol + deployment.Spec.Template.Spec.Hostname + DefaultDomainSuffix
 
 		args = []string{
 			"--data",
