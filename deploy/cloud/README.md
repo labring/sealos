@@ -6,6 +6,27 @@
 1. A cloud domain and dns to your k8s cluster. Suppose your domain name is `cloud.example.io`.
 2. A TLS cert that resolves `cloud.example.io` and `*.cloud.example.io`
 
+Here is one way to get a TLS cert by using acme.sh with alidns.
+
+1. install [acme.sh](https://github.com/acmesh-official/acme.sh)
+2. get your alidns access key and secret key
+3. run following command to get a TLS cert
+
+    ```shell
+    export Ali_Key="<your ali key>"
+    export Ali_Secret="<your ali secret>"
+    
+    acme.sh --issue --dns dns_ali -d "cloud.example.io" -d "*.cloud.example.io"
+    ```
+
+4. base64 encode your cert and key, and save the output which will be used in the next step
+    ```shell
+        base64 -w 0 ~/.acme.sh/${<your domian path>}/fullchain.cer
+        base64 -w 0 ~/.acme.sh/${<your domian path>}/${<your domian>}.key
+    ```
+
+Other dns api please read: https://github.com/acmesh-official/acme.sh/wiki/dnsapi
+
 ### kubernetes cluster
 ```shell
 sealos gen labring/kubernetes:v1.25.6 \
@@ -59,16 +80,16 @@ metadata:
   name: secret
 spec:
   path: manifests/tls-secret.yaml
-  match: ghcr.io/labring/sealos-cloud:dev
+  match: docker.io/labring/sealos-cloud:dev
   strategy: merge
   data: |
     data:
-      tls.crt: <your-tls.crt-base64>
-      tls.key: <your-tls.key-base64>
+      tls.crt: <your-fullchain.cer-base64>
+      tls.key: <your-${your domain}.key-base64>
 ```
 
 ------
 ## run sealos cloud cluster image
 ```shell
-sealos run ghcr.io/labring/sealos-cloud:dev --config-file tls-secret.yaml --env cloudDomain="cloud.example.com"
+sealos run docker.io/labring/sealos-cloud:dev --env cloudDomain="cloud.example.com" --config-file tls-secret.yaml
 ```
