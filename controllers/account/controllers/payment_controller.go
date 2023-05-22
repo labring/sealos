@@ -69,7 +69,7 @@ func (r *PaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if p.Status.Status == "" {
 		p.Status.Status = "Created"
 		if err := r.Status().Update(ctx, p); err != nil {
-			r.Logger.Error(err, "update payment failed: %v", *p)
+			r.Logger.Error(err, "update payment failed: %v", "payment", *p)
 			return ctrl.Result{Requeue: true}, err
 		}
 	}
@@ -84,7 +84,7 @@ func (r *PaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	p.Status.TradeNO = tradeNO
 
 	if err := r.Status().Update(ctx, p); err != nil {
-		r.Logger.Error(err, "update payment failed: %v", *p)
+		r.Logger.Error(err, "update payment failed: %v", "payment", *p)
 		return ctrl.Result{}, err
 	}
 
