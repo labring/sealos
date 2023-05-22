@@ -25,14 +25,11 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/filesystem"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
-
-type Interface interface {
-	MirrorTo(context.Context, ...string) error
-}
 
 type scp struct {
 	pathResolver PathResolver
@@ -40,7 +37,7 @@ type scp struct {
 	mounts       []v2.MountImage
 }
 
-func (s *scp) MirrorTo(ctx context.Context, hosts ...string) error {
+func (s *scp) Sync(ctx context.Context, hosts ...string) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -84,6 +81,6 @@ func getUntarCommands(pathResolver PathResolver) string {
 	)
 }
 
-func New(pathResolver PathResolver, ssh ssh.Interface, mounts []v2.MountImage) Interface {
+func New(pathResolver PathResolver, ssh ssh.Interface, mounts []v2.MountImage) filesystem.RegistrySyncer {
 	return &scp{pathResolver, ssh, mounts}
 }
