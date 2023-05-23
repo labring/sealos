@@ -19,8 +19,10 @@ package registry
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"golang.org/x/sync/errgroup"
 
@@ -31,13 +33,13 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-type scp struct {
+type sshMode struct {
 	pathResolver PathResolver
 	ssh          ssh.Interface
 	mounts       []v2.MountImage
 }
 
-func (s *scp) Sync(ctx context.Context, hosts ...string) error {
+func (s *sshMode) Sync(ctx context.Context, hosts ...string) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -82,5 +84,8 @@ func getUntarCommands(pathResolver PathResolver) string {
 }
 
 func New(pathResolver PathResolver, ssh ssh.Interface, mounts []v2.MountImage) filesystem.RegistrySyncer {
-	return &scp{pathResolver, ssh, mounts}
+	if strings.ToLower(os.Getenv("REGISTRY_SYNC_EXPERIMENTAL")) == "true" {
+		return &syncMode{mounts: mounts}
+	}
+	return &sshMode{pathResolver, ssh, mounts}
 }
