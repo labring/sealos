@@ -49,20 +49,23 @@ spec:
         description: Bytebase is the Schema for the bytebases API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
           spec:
             description: BytebaseSpec defines the desired state of Bytebase
             properties:
-              externalURL:
-                type: string
               image:
-                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run "make" to regenerate code after modifying this file'
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "make" to regenerate code after modifying this file'
                 type: string
               ingressType:
                 default: nginx
@@ -91,10 +94,28 @@ spec:
             description: BytebaseStatus defines the observed state of Bytebase
             properties:
               availableReplicas:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state of cluster Important: Run "make" to regenerate code after modifying this file'
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
                 format: int32
                 type: integer
               domain:
+                type: string
+              loginCookie:
+                description: All needed cookies after login
+                properties:
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+                  user:
+                    type: string
+                required:
+                - accessToken
+                - refreshToken
+                - user
+                type: object
+              rootPassword:
                 type: string
             required:
             - availableReplicas
@@ -528,7 +549,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: ghcr.io/sealos-bytebase-controller:latest
+        image: ghcr.io/labring/sealos-db-bytebase-controller:dev
         livenessProbe:
           httpGet:
             path: /healthz
