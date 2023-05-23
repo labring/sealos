@@ -74,6 +74,7 @@ jobs:
     strategy:
       matrix:
 <<<<<<< HEAD
+<<<<<<< HEAD
         module:
           - { name: user, path: user }
           - { name: terminal, path: terminal }
@@ -91,7 +92,13 @@ jobs:
 =======
         module: [ user, terminal, metering, infra, cluster, imagehub, account, app, lafcloud ]
 >>>>>>> bdfc8515 (delete the notification controller and add the lafcloud controller)
+<<<<<<< HEAD
 >>>>>>> d9d0bbec (delete the notification controller and add the lafcloud controller)
+=======
+=======
+        module: [ user, terminal, metering, infra, cluster, imagehub, account, app, cloud ]
+>>>>>>> 777d7c73 (modify the workflow file add a cloud module)
+>>>>>>> b62b5a6e (modify the workflow file add a cloud module)
     steps:
       - name: Checkout
         uses: actions/checkout@v3
