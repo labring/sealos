@@ -10,24 +10,24 @@ on:
   workflow_dispatch:
     inputs:
       push_image:
-        description: 'Push images'
+        description: "Push images"
         required: false
         type: boolean
         default: false
       release_tag:
-        description: 'Release images'
-        default: 'dev'
+        description: "Release images"
+        default: "dev"
         required: false
         type: string
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths:
       - "controllers/**"
       - ".github/workflows/controllers.yml"
       - "!**/*.md"
       - "!**/*.yaml"
   pull_request:
-    branches: [ "*" ]
+    branches: ["*"]
     paths:
       - "controllers/**"
       - ".github/workflows/controllers.yml"
@@ -52,7 +52,7 @@ jobs:
         run: bash ./scripts/resolve-modules.sh ./controllers
 
   golangci-lint:
-    needs: [ resolve-modules ]
+    needs: [resolve-modules]
     runs-on: ubuntu-20.04
     strategy:
       matrix: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
@@ -77,7 +77,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ user, terminal, metering, infra, cluster, imagehub, account, app]
+        module:
+          - { name: user, path: user }
+          - { name: terminal, path: terminal }
+          - { name: metering, path: metering }
+          - { name: infra, path: infra }
+          - { name: cluster, path: cluster }
+          - { name: imagehub, path: imagehub }
+          - { name: account, path: account }
+          - { name: app, path: app }
+          - { name: db-bytebase, path: db/bytebase }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -92,19 +101,19 @@ jobs:
       - name: Install Dependencies
         run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
 
-      - name: Build ${{ matrix.module }} amd64
-        working-directory: controllers/${{ matrix.module }}
+      - name: Build ${{ matrix.module.name }} amd64
+        working-directory: controllers/${{ matrix.module.path }}
         run: |
           GOARCH=amd64 make build
-          mv bin/manager bin/controller-${{ matrix.module }}-amd64
-          chmod +x bin/controller-${{ matrix.module }}-amd64
+          mv bin/manager bin/controller-${{ matrix.module.name }}-amd64
+          chmod +x bin/controller-${{ matrix.module.name }}-amd64
 
-      - name: Build ${{ matrix.module }} arm64
-        working-directory: controllers/${{ matrix.module }}
+      - name: Build ${{ matrix.module.name }} arm64
+        working-directory: controllers/${{ matrix.module.path }}
         run: |
           GOARCH=arm64 make build
-          mv bin/manager bin/controller-${{ matrix.module }}-arm64
-          chmod +x bin/controller-${{ matrix.module }}-arm64
+          mv bin/manager bin/controller-${{ matrix.module.name }}-arm64
+          chmod +x bin/controller-${{ matrix.module.name }}-arm64
 
       - name: Expose git commit data
         uses: rlespinasse/git-commit-data-action@v1
@@ -113,7 +122,7 @@ jobs:
         id: prepare
         run: |
           bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ inputs.release }}"  "${{ inputs.release_tag }}"
-          echo docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-controller >> $GITHUB_OUTPUT
+          echo docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module.name }}-controller >> $GITHUB_OUTPUT
 
       - # Add support for more platforms with QEMU (optional)
         # https://github.com/docker/setup-qemu-action
@@ -136,17 +145,17 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-controller
+            ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module.name }}-controller
           tags: |
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
             type=raw,value=dev,enable=true
             type=raw,value=${{ steps.prepare.outputs.tag_name }},enable=true
 
-      - name: build (and publish) ${{ matrix.module }} main image
+      - name: build (and publish) ${{ matrix.module.name }} main image
         uses: docker/build-push-action@v4
         with:
-          context: ./controllers/${{ matrix.module }}
-          file: ./controllers/${{ matrix.module }}/Dockerfile
+          context: ./controllers/${{ matrix.module.path }}
+          file: ./controllers/${{ matrix.module.path }}/Dockerfile
           # Push if it's a push event or if push_image is true
           push: ${{ (github.event_name == 'push') || (inputs.push_image == true) || (inputs.release == true) }}
           tags: ${{ steps.meta.outputs.tags }}
@@ -162,7 +171,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ user, terminal, metering, infra, cluster, imagehub, account, app ]
+        module:
+          - { name: user, path: user }
+          - { name: terminal, path: terminal }
+          - { name: metering, path: metering }
+          - { name: infra, path: infra }
+          - { name: cluster, path: cluster }
+          - { name: imagehub, path: imagehub }
+          - { name: account, path: account }
+          - { name: app, path: app }
+          - { name: db-bytebase, path: db/bytebase }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -176,9 +194,9 @@ jobs:
         id: prepare
         run: |
           bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ inputs.release }}"  "${{ inputs.release_tag }}"
-          echo old_docker_repo=ghcr.io/labring/sealos-${{ matrix.module }}-controller >> $GITHUB_OUTPUT          
-          echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-controller >> $GITHUB_OUTPUT
-          echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-controller >> $GITHUB_OUTPUT
+          echo old_docker_repo=ghcr.io/labring/sealos-${{ matrix.module.name }}-controller >> $GITHUB_OUTPUT
+          echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module.name }}-controller >> $GITHUB_OUTPUT
+          echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module.name }}-controller >> $GITHUB_OUTPUT
 
       - name: Download sealos
         uses: actions/download-artifact@v3
@@ -191,7 +209,7 @@ jobs:
           sudo mv /tmp/sealos /usr/bin/sealos
           sudo sealos version
       - name: Mutate image tag in deploy files
-        working-directory: controllers/${{ matrix.module }}/deploy
+        working-directory: controllers/${{ matrix.module.path }}/deploy
         run: |
           OLD_DOCKER_IMAGE_NAME=${{ steps.prepare.outputs.old_docker_repo }}:dev
           NEW_DOCKER_IMAGE_NAME=${{ steps.prepare.outputs.new_docker_repo }}:${{ steps.prepare.outputs.tag_name }}
@@ -202,8 +220,8 @@ jobs:
         run: |
           sudo sealos login -u ${{ github.repository_owner }} -p ${{ secrets.GH_PAT }} --debug ghcr.io
 
-      - name: Build ${{ matrix.module }}-controller cluster image
-        working-directory: controllers/${{ matrix.module }}/deploy
+      - name: Build ${{ matrix.module.name }}-controller cluster image
+        working-directory: controllers/${{ matrix.module.path }}/deploy
         run: |
           CLUSTER_IMAGE_NAME=${{ steps.prepare.outputs.cluster_repo }}:${{ steps.prepare.outputs.tag_name }}
           sudo sealos build -t ${CLUSTER_IMAGE_NAME}-amd64 --platform linux/amd64 -f Kubefile
@@ -227,5 +245,5 @@ jobs:
           issue-number: 251
           repository: labring-actions/cluster-image
           body: |
-            /imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-controller:${{ steps.prepare.outputs.tag_name }}
+            /imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module.name }}-controller:${{ steps.prepare.outputs.tag_name }}
           token: "${{ secrets.GH_PAT }}"
