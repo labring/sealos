@@ -1,9 +1,15 @@
-import { Flex, Text, Box } from '@chakra-ui/react';
+import { MoreAppsContext } from '@/components/layout';
+import { Box, Flex, Text } from '@chakra-ui/react';
+import { useContext } from 'react';
 import Iconfont from '../iconfont';
-
 export default function Index() {
+  const moreAppsContent = useContext(MoreAppsContext);
   return (
     <Flex
+      onClick={() => {
+        moreAppsContent?.setShowMoreApps(true);
+      }}
+      cursor={'pointer'}
       justifyContent={'center'}
       alignItems={'center'}
       w="110px"
