@@ -26,7 +26,7 @@ import (
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/config"
 	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/filesystem"
+	"github.com/labring/sealos/pkg/filesystem/rootfs"
 	"github.com/labring/sealos/pkg/guest"
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -114,7 +114,7 @@ func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 func (c *CreateProcessor) MountRootfs(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline MountRootfs in CreateProcessor.")
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
-	fs, err := filesystem.NewRootfsMounter(cluster.Status.Mounts)
+	fs, err := rootfs.NewRootfsMounter(cluster.Status.Mounts)
 	if err != nil {
 		return err
 	}

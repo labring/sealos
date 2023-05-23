@@ -153,8 +153,8 @@ func MirrorRegistry(cluster *v2.Cluster, mounts []v2.MountImage) error {
 	registries := cluster.GetRegistryIPAndPortList()
 	logger.Debug("registry nodes is: %+v", registries)
 	sshClient := ssh.NewSSHClient(&cluster.Spec.SSH, true)
-	mirror := registry.New(constants.NewData(cluster.GetName()), sshClient, mounts)
-	return mirror.MirrorTo(context.Background(), registries...)
+	syncer := registry.New(constants.NewData(cluster.GetName()), sshClient, mounts)
+	return syncer.Sync(context.Background(), registries...)
 }
 
 func getIndexOfContainerInMounts(mounts []v2.MountImage, imageName string) int {

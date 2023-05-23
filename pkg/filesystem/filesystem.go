@@ -17,11 +17,16 @@ limitations under the License.
 package filesystem
 
 import (
-	"github.com/labring/sealos/pkg/filesystem/rootfs"
+	"context"
+
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
-// NewRootfsMounter :according to the Metadata file content to determine what kind of Filesystem will be load.
-func NewRootfsMounter(images []v2.MountImage) (rootfs.Interface, error) {
-	return rootfs.NewDefaultRootfs(images)
+type Mounter interface {
+	MountRootfs(cluster *v2.Cluster, hosts []string) error
+	UnMountRootfs(cluster *v2.Cluster, hosts []string) error
+}
+
+type RegistrySyncer interface {
+	Sync(context.Context, ...string) error
 }
