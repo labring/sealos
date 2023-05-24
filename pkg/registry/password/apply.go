@@ -24,6 +24,7 @@ import (
 	"github.com/labring/sealos/pkg/clusterfile"
 
 	"github.com/modood/table"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
 	"github.com/labring/sealos/pkg/constants"
@@ -51,6 +52,8 @@ func (r *RegistryPasswdResults) RegisterFlags(fs *pflag.FlagSet) {
 	fs.StringVarP(&r.ClusterName, "cluster-name", "c", "default", "cluster name")
 	fs.StringVarP(&r.HtpasswdPath, "htpasswd-path", "p", "/etc/registry/registry_htpasswd", "registry passwd file path")
 	fs.StringVarP(&r.ImageCRIShimFilePath, "cri-shim-file-path", "f", "/etc/image-cri-shim.yaml", "image cri shim file path,if empty will not update image cri shim file")
+	_ = cobra.MarkFlagRequired(fs, "cluster-name")
+	_ = cobra.MarkFlagRequired(fs, "htpasswd-path")
 }
 
 type confirmPrint struct {
@@ -59,31 +62,21 @@ type confirmPrint struct {
 	Describe string
 }
 
-func (r *RegistryPasswdResults) Validate() *v1beta1.Cluster {
-	var cluster *v1beta1.Cluster
-	if r.ClusterName == "" {
-		logger.Error("cluster name is empty")
-		return nil
-	}
-	if r.HtpasswdPath == "" {
-		logger.Error("htpasswd path is empty")
-		return nil
-	}
+func (r *RegistryPasswdResults) Validate() (*v1beta1.Cluster, error) {
 	clusterPath := constants.Clusterfile(r.ClusterName)
 	if !fileutil.IsExist(clusterPath) {
-		logger.Error("cluster %s not exist", r.ClusterName)
-		return nil
+		logger.Warn("cluster %s not exist", r.ClusterName)
+		return nil, nil
 	}
 	clusterFile := clusterfile.NewClusterFile(clusterPath)
 	err := clusterFile.Process()
 	if err != nil {
-		logger.Error("cluster %s process error: %+v", r.ClusterName, err)
-		return nil
+		return nil, fmt.Errorf("cluster %s process error: %+v", r.ClusterName, err)
 	}
-	cluster = clusterFile.GetCluster()
+	cluster := clusterFile.GetCluster()
 	r.RegistryType = confirm.SelectInput("Please select registry type", []string{string(RegistryTypeRegistry), string(RegistryTypeContainerd), string(RegistryTypeDocker)})
 	if r.RegistryType == "" {
-		return nil
+		return nil, errors.New("invalid registry type")
 	}
 	r.RegistryUsername = confirm.Input("Please input registry username", "admin", func(input string) error {
 		if len(input) < 3 {
@@ -91,12 +84,9 @@ func (r *RegistryPasswdResults) Validate() *v1beta1.Cluster {
 		}
 		return nil
 	})
-	if r.RegistryUsername == "" {
-		return nil
-	}
 	r.RegistryPasswd = confirm.PasswordInput("Please input registry password")
-	if r.RegistryPasswd == "" {
-		return nil
+	if r.RegistryUsername == "" || r.RegistryPasswd == "" {
+		return nil, errors.New("must provide registry username and password")
 	}
 	prints := []confirmPrint{
 		{
@@ -132,9 +122,9 @@ func (r *RegistryPasswdResults) Validate() *v1beta1.Cluster {
 	}
 	table.OutputA(prints)
 	if yes, _ := confirm.Confirm("Are you sure to run this command?", "you have canceled to update registry passwd !"); !yes {
-		return nil
+		return nil, nil
 	}
-	return cluster
+	return cluster, nil
 }
 
 func (r *RegistryPasswdResults) Apply(cluster *v1beta1.Cluster) error {

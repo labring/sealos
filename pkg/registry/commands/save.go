@@ -18,8 +18,7 @@ package commands
 
 import (
 	"context"
-	"fmt"
-	"os"
+	"errors"
 
 	"github.com/docker/docker/api/types"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -30,83 +29,37 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-func newRegistryImageSaveCmd() *cobra.Command {
-	var registryImagePullCmd = &cobra.Command{
-		Use:   "save",
-		Short: "save registry images to local registry dir",
-	}
-	registryImagePullCmd.AddCommand(saveCmd("default"))
-	registryImagePullCmd.AddCommand(saveCmd("raw"))
-	return registryImagePullCmd
-}
-
-func saveCmd(cmdType string) *cobra.Command {
-	switch cmdType {
-	case "raw":
-		return saveRawCmd()
-	case "default":
-		return saveDefaultCmd()
-	default:
-		return saveDefaultCmd()
-	}
-}
-func saveDefaultCmd() *cobra.Command {
+func NewRegistryImageSaveCmd() *cobra.Command {
+	var auth map[string]types.AuthConfig
 	var images []string
-	var auth map[string]types.AuthConfig
-	flagsResults := registrySaveDefaultResults{
-		registrySaveResults: new(registrySaveResults),
-	}
-	var registryImagePullDefault = &cobra.Command{
-		Use:   "default [CONTEXT]",
-		Short: "registry images manager save to local dir by default type",
-		Run: func(cmd *cobra.Command, args []string) {
-			is := registry.NewImageSaver(context.Background(), flagsResults.registryPullMaxPullProcs, auth)
-			outImages, err := is.SaveImages(images, flagsResults.registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: flagsResults.registryPullArch})
-			if err != nil {
-				logger.Error("pull registry images is error: %s", err.Error())
-				os.Exit(1)
-			}
-			logger.Info("pull images list save to local : %+v", outImages)
-		},
-		Args: cobra.ExactArgs(1),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			var err error
-			images, err = buildimage.List(args[0])
-			if err != nil {
-				return err
-			}
-			auth, err = flagsResults.CheckAuth()
-			if err != nil {
-				return err
-			}
-			return nil
-		},
-	}
-	flags := registryImagePullDefault.Flags()
-	flags.SetInterspersed(false)
-	flagsResults.RegisterFlags(flags)
-	return registryImagePullDefault
-}
-
-func saveRawCmd() *cobra.Command {
-	var auth map[string]types.AuthConfig
 	flagsResults := registrySaveRawResults{
 		registrySaveResults: new(registrySaveResults),
 	}
-	var registryImagePullRaw = &cobra.Command{
-		Use:   "raw",
-		Short: "registry images manager save to local dir by raw type",
+	cmd := &cobra.Command{
+		Use:   "save",
+		Short: "save images to local registry dir",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			is := registry.NewImageSaver(context.Background(), flagsResults.registryPullMaxPullProcs, auth)
-			outImages, err := is.SaveImages(flagsResults.images, flagsResults.registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: flagsResults.registryPullArch})
+			outImages, err := is.SaveImages(images, flagsResults.registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: flagsResults.registryPullArch})
 			if err != nil {
-				return fmt.Errorf("pull registry images is error: %w", err)
+				return err
 			}
-			logger.Info("pull images list save to local : %+v", outImages)
+			logger.Info("images pulled: %+v", outImages)
 			return nil
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 || len(flagsResults.images) == 0 {
+				return errors.New("'--images' and args cannot be empty at the same time")
+			}
 			var err error
+			if len(flagsResults.images) > 0 {
+				images = flagsResults.images
+			} else {
+				images, err = buildimage.List(args[0])
+			}
+			if err != nil {
+				return err
+			}
 			auth, err = flagsResults.CheckAuth()
 			if err != nil {
 				return err
@@ -114,9 +67,8 @@ func saveRawCmd() *cobra.Command {
 			return nil
 		},
 	}
-	flags := registryImagePullRaw.Flags()
-	flags.SetInterspersed(false)
-	flagsResults.RegisterFlags(flags)
-	_ = registryImagePullRaw.MarkFlagRequired("images")
-	return registryImagePullRaw
+	fs := cmd.Flags()
+	fs.SetInterspersed(false)
+	flagsResults.RegisterFlags(fs)
+	return cmd
 }

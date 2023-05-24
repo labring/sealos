@@ -17,35 +17,32 @@ limitations under the License.
 package commands
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/registry/password"
-	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-func newRegistryPasswdCmd() *cobra.Command {
+func NewRegistryPasswdCmd() *cobra.Command {
 	flagsResults := password.RegistryPasswdResults{}
-	var cluster *v2.Cluster
 
 	var registryPasswdCmd = &cobra.Command{
 		Use:   "passwd",
-		Short: "update registry password",
+		Short: "configure registry password",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cluster, err := flagsResults.Validate()
+			if err != nil {
+				return err
+			}
+			if cluster == nil {
+				return nil
+			}
 			if err := flagsResults.Apply(cluster); err != nil {
 				return fmt.Errorf("registry passwd apply error: %v", err)
 			}
 			logger.Info("registry passwd apply success")
-			return nil
-		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			cluster = flagsResults.Validate()
-			if cluster == nil {
-				return errors.New("registry passwd validate error")
-			}
 			return nil
 		},
 	}
