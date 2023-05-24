@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	apisix "github.com/apache/apisix-ingress-controller/pkg/kube/apisix/apis/config/v2beta3"
@@ -51,6 +52,7 @@ func (r *AdminerReconciler) createNginxIngress(adminer *adminerv1.Adminer, host 
 			"nginx.ingress.kubernetes.io/cors-allow-origin":      cors,
 			"nginx.ingress.kubernetes.io/cors-allow-methods":     "PUT, GET, POST, PATCH, OPTIONS",
 			"nginx.ingress.kubernetes.io/cors-allow-credentials": "false",
+			"nginx.ingress.kubernetes.io/configuration-snippet":  r.getNginxConfigurationSnippet(),
 		},
 	}
 
@@ -156,4 +158,25 @@ func (r *AdminerReconciler) createApisixTLS(adminer *adminerv1.Adminer, host str
 	}
 
 	return apisixTLS
+}
+
+const (
+	defaultNginxConfigurationSnippet = `
+more_clear_headers "X-Frame-Options:";
+more_set_headers "Content-Security-Policy: default-src * blob: data: *.cloud.sealos.io cloud.sealos.io; img-src * data: blob: resource: *.cloud.sealos.io cloud.sealos.io; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.cloud.sealos.io cloud.sealos.io resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.cloud.sealos.io cloud.sealos.io resource: *.baidu.com *.bdstatic.com; frame-src 'self' cloud.sealos.io mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://cloud.sealos.io https://*.cloud.sealos.io";
+more_set_headers "X-Xss-Protection: 1; mode=block";
+
+if ($request_uri ~* \.(js|css|gif|jpe?g|png)) {
+expires 30d;
+add_header Cache-Control "public";
+}`
+	defaultConfigDomain = "cloud.sealos.io"
+)
+
+func (r *AdminerReconciler) getNginxConfigurationSnippet() string {
+	if defaultConfigDomain != r.adminerDomain {
+		return strings.ReplaceAll(defaultNginxConfigurationSnippet, defaultConfigDomain, r.adminerDomain)
+	}
+
+	return defaultNginxConfigurationSnippet
 }
