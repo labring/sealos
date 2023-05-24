@@ -80,14 +80,14 @@ jobs:
         module:
           -  { name: user, path: user }
           -  { name: terminal, path: terminal }
-          -  { name: metering, path: terminal }
+          -  { name: metering, path: metering }
           -  { name: infra, path: infra }
           -  { name: cluster, path: cluster }
           -  { name: imagehub, path: imagehub }
           -  { name: account, path: account }
           -  { name: app, path: app }
-          -  { name: db-bytebase, path: db-bytebase }
-          -  { name: db-adminer, path: db-adminer }
+          -  { name: db-bytebase, path: db/bytebase }
+          -  { name: db-adminer, path: db/adminer }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -106,7 +106,7 @@ jobs:
         working-directory: controllers/${{ matrix.module.path }}
         run: |
           GOARCH=amd64 make build
-          mv bin/manager bin/controller-${{ matrix.name }}-amd64
+          mv bin/manager bin/controller-${{ matrix.module.name }}-amd64
           chmod +x bin/controller-${{ matrix.module.name }}-amd64
 
       - name: Build ${{ matrix.module.name }} arm64
@@ -175,14 +175,14 @@ jobs:
         module:
           -  { name: user, path: user }
           -  { name: terminal, path: terminal }
-          -  { name: metering, path: terminal }
+          -  { name: metering, path: metering }
           -  { name: infra, path: infra }
           -  { name: cluster, path: cluster }
           -  { name: imagehub, path: imagehub }
           -  { name: account, path: account }
           -  { name: app, path: app }
-          -  { name: db-bytebase, path: db-bytebase }
-          -  { name: db-adminer, path: db-adminer }
+          -  { name: db-bytebase, path: db/bytebase }
+          -  { name: db-adminer, path: db/adminer }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -197,7 +197,7 @@ jobs:
         run: |
           bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ inputs.release }}"  "${{ inputs.release_tag }}"
           echo old_docker_repo=ghcr.io/labring/sealos-${{ matrix.module.name }}-controller >> $GITHUB_OUTPUT
-          echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-controller >> $GITHUB_OUTPUT
+          echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module.name }}-controller >> $GITHUB_OUTPUT
           echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module.name }}-controller >> $GITHUB_OUTPUT
 
       - name: Download sealos
