@@ -64,7 +64,7 @@ spec:
                 secretKeyRef:
                   name: mongo-secret
                   key: MONGO_PASSWORD
-          image: docker.io/bxy4543/resources-controller:v0.0.1
+          image: ghcr.io/labring/resources-controller:dev
           imagePullPolicy: Always
           livenessProbe:
             httpGet:

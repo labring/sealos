@@ -88,6 +88,7 @@ jobs:
           - { name: app, path: app }
           - { name: db-bytebase, path: db/bytebase }
           - { name: db-adminer, path: db/adminer }
+          - { name: resources, path: resources }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -183,6 +184,7 @@ jobs:
           - { name: app, path: app }
           - { name: db-bytebase, path: db/bytebase }
           - { name: db-adminer, path: db/adminer }
+          - { name: resources, path: resources }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
