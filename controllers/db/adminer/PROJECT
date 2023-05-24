@@ -1,0 +1,16 @@
+domain: sealos.io
+layout:
+- go.kubebuilder.io/v3
+projectName: adminer
+repo: github.com/labring/sealos
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: adminer
+  kind: Adminer
+  path: github.com/labring/sealos/controllers/db/adminer/api/v1
+  version: v1
+version: "3"
