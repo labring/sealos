@@ -29,7 +29,9 @@ import (
 // CloudClientSpec defines the desired state of CloudClient
 type CloudClientSpec struct {
 	CloudURL  string `json:"URL"`
-	CycleTime int64  `json:"Cycle-Time,omitempty"`
+	CycleTime int    `json:"Cycle-Time,omitempty"`
+	// +kubebuilder:validation:Optional
+	Date string `json:"Date,omitempty"`
 }
 
 // CloudClientStatus defines the observed state of CloudClient
@@ -59,6 +61,8 @@ type CloudClientList struct {
 	Items           []CloudClient `json:"items"`
 }
 
+const layout = "2006-01-02"
+
 func init() {
 	SchemeBuilder.Register(&CloudClient{}, &CloudClientList{})
 }
@@ -68,7 +72,8 @@ func NewStartInstance() CloudClient {
 	res.SetGroupVersionKind(schema.GroupVersionKind{Group: "cloud.sealos.io", Version: "v1", Kind: "StrategyInstance"})
 	res.SetName("cloud-pull")
 	res.SetNamespace("cloud-system")
-	res.Spec.CycleTime = int64(time.Second * 10)
+	res.Spec.CycleTime = 60 * 60 * 8
+	res.Spec.Date = time.Now().Format(layout)
 	res.Spec.CloudURL = "https://hfx0m9.laf.dev/ReadDatabaseNTF"
 	return res
 }
