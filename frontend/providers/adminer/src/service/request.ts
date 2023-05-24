@@ -1,7 +1,7 @@
 // http.ts
 import { ApiResp } from '@/interfaces/api';
 import useSessionStore from '@/stores/session';
-import axios, { AxiosRequestConfig, AxiosResponse, RawAxiosRequestHeaders } from 'axios';
+import axios, { InternalAxiosRequestConfig, AxiosResponse, AxiosRequestHeaders } from 'axios';
 
 const request = axios.create({
   baseURL: '/',
@@ -11,9 +11,9 @@ const request = axios.create({
 
 // request interceptor
 request.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config: InternalAxiosRequestConfig) => {
     // auto append service prefix
-    let _headers: RawAxiosRequestHeaders = config.headers || {};
+    let _headers: AxiosRequestHeaders = config.headers || {};
     const session = useSessionStore.getState().session;
 
     if (config.url && config.url?.startsWith('/api/')) {
