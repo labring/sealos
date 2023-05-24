@@ -23,10 +23,10 @@ import (
 )
 
 func newRegistryCmd() *cobra.Command {
-	var registryImageCmd = &cobra.Command{
+	var cmd = &cobra.Command{
 		Use:   "registry",
-		Short: "registry images manager",
+		Short: "registry related",
 	}
-	commands.RegisterRootCommand(registryImageCmd, rootCmd)
-	return registryImageCmd
+	cmd.AddCommand(commands.NewRegistryPasswdCmd())
+	return cmd
 }

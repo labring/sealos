@@ -61,11 +61,3 @@ func (opts *registrySaveRawResults) RegisterFlags(fs *pflag.FlagSet) {
 	opts.registrySaveResults.RegisterFlags(fs)
 	fs.StringSliceVar(&opts.images, "images", []string{}, "images list")
 }
-
-type registrySaveDefaultResults struct {
-	*registrySaveResults
-}
-
-func (opts *registrySaveDefaultResults) RegisterFlags(fs *pflag.FlagSet) {
-	opts.registrySaveResults.RegisterFlags(fs)
-}
