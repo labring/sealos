@@ -73,7 +73,7 @@ func (r *CloudPullReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	CycleTime := r.Strategy.Spec.CycleTime
+	CycleTime := time.Duration(r.Strategy.Spec.CycleTime) * time.Second
 	CloudURL := r.Strategy.Spec.CloudURL
 	defer r.CloudClient.Clear()
 	r.CloudClient.SetTime(r.CloudTime)
@@ -89,7 +89,7 @@ func (r *CloudPullReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	var CloudTexts []cloudclient.CloudText
 	if err := json.Unmarshal(r.CloudClient.ResponseBody, &CloudTexts); err != nil {
 		logger.Info("failed to decode the json string ", "Error: ", err)
-		return ctrl.Result{RequeueAfter: time.Duration(CycleTime)}, nil
+		return ctrl.Result{RequeueAfter: CycleTime}, nil
 	}
 
 	//per json string parse once
@@ -104,7 +104,7 @@ func (r *CloudPullReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			continue
 		}
 	}
-	return ctrl.Result{RequeueAfter: time.Duration(CycleTime)}, nil
+	return ctrl.Result{RequeueAfter: CycleTime}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -123,9 +123,10 @@ func (r *CloudPullReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *CloudPullReconciler) init() {
-	//cloud client init
-	r.CloudTime = 0
+
 	r.Strategy = cloudclientv1.NewStartInstance()
+	timeTmp, _ := time.Parse("2006-01-02", r.Strategy.Spec.Date)
+	r.CloudTime = timeTmp.Unix() - int64(7)*24*60*60
 	//get a cloudhandler
 	r.CloudHandler = handler.NewCloudHandler()
 	r.Output = []ntf.Notification{}
