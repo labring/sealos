@@ -23,10 +23,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/labring/sealos/pkg/registry/helpers"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/utils/exec"
 
-	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/template"
@@ -110,7 +111,7 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 	}
 
 	root := constants.NewData(cluster.Name).RootFSPath()
-	regInfo := bootstrap.GetRegistryInfo(sshCtx, root, cluster.GetRegistryIPAndPort())
+	regInfo := helpers.GetRegistryInfo(sshCtx, root, cluster.GetRegistryIPAndPort())
 
 	regStatus, err := n.getRegistryStatus(crictlPath, pauseImage, fmt.Sprintf("%s:%s", regInfo.Domain, regInfo.Port))
 	if err != nil {
