@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type HandlerFunc func(ntf *ntf.Notification, namespaceName string)
+type handlerFunc func(ntf *ntf.Notification, namespaceName string)
 
 const (
 	Group   string = "notification.sealos.io"
@@ -63,7 +63,7 @@ func (h *CloudHandler) BuildCloudCR() error {
 		}
 	}
 	//add namespace & name to CR
-	var handlerMap = map[string]HandlerFunc{
+	var handlerMap = map[string]handlerFunc{
 		"ns":   h.processNS,
 		"adm":  h.processADM,
 		"root": h.processROOT,
@@ -104,9 +104,9 @@ func (h *CloudHandler) buildCloudCR(notification *ntf.Notification, namespace st
 func (h *CloudHandler) processNS(Ntf *ntf.Notification, namespaceName string) {
 	h.buildCloudCR(Ntf, namespaceName)
 }
-func (h *CloudHandler) processADM(Ntf *ntf.Notification, namespaceName string) {
+func (h *CloudHandler) processADM(_ *ntf.Notification, namespaceName string) {
 	logger.Info("no logic for adm-user")
 }
-func (h *CloudHandler) processROOT(Ntf *ntf.Notification, namespaceName string) {
+func (h *CloudHandler) processROOT(_ *ntf.Notification, namespaceName string) {
 	logger.Info("no logic for root-user")
 }
