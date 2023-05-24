@@ -24,7 +24,6 @@ import (
 	"github.com/labring/sealos/pkg/clusterfile"
 
 	"github.com/modood/table"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
 	"github.com/labring/sealos/pkg/constants"
@@ -52,8 +51,6 @@ func (r *RegistryPasswdResults) RegisterFlags(fs *pflag.FlagSet) {
 	fs.StringVarP(&r.ClusterName, "cluster-name", "c", "default", "cluster name")
 	fs.StringVarP(&r.HtpasswdPath, "htpasswd-path", "p", "/etc/registry/registry_htpasswd", "registry passwd file path")
 	fs.StringVarP(&r.ImageCRIShimFilePath, "cri-shim-file-path", "f", "/etc/image-cri-shim.yaml", "image cri shim file path,if empty will not update image cri shim file")
-	_ = cobra.MarkFlagRequired(fs, "cluster-name")
-	_ = cobra.MarkFlagRequired(fs, "htpasswd-path")
 }
 
 type confirmPrint struct {
@@ -63,6 +60,12 @@ type confirmPrint struct {
 }
 
 func (r *RegistryPasswdResults) Validate() (*v1beta1.Cluster, error) {
+	if r.ClusterName == "" {
+		return nil, errors.New("cluster name is empty")
+	}
+	if r.HtpasswdPath == "" {
+		return nil, errors.New("htpasswd path is empty")
+	}
 	clusterPath := constants.Clusterfile(r.ClusterName)
 	if !fileutil.IsExist(clusterPath) {
 		logger.Warn("cluster %s not exist", r.ClusterName)

@@ -167,34 +167,31 @@ sealctl hosts list --path /custom/path/hosts
 
 ### registry保存命令
 
-`registry save` 命令用于将远程的 Docker 镜像拉取到本地并保存在指定的目录中。这对于在离线或者内网环境中部署容器镜像特别有用。它支持两种模式：`default` 和 `raw`。
-
-- `default` 模式会根据解析出的镜像列表自动获取镜像。这些镜像列表来源于 charts 目录、manifests 目录和 images 目录。
-- `raw` 模式允许用户直接指定要保存的镜像列表。
+`registry save` 命令用于将远程的 Docker 镜像拉取到本地并保存在指定的目录中。这对于在离线或者内网环境中部署容器镜像特别有用。
 
 在执行 `registry save` 命令时，将自动获取 `sealos login` 认证信息进行仓库认证。
 
-**子命令**
+**使用说明**
 
-1. `default [CONTEXT]`
+1. 使用context自动获取镜像
 
    使用默认方式拉取并保存镜像。这种模式会自动解析 `charts` 目录、`manifests` 目录和 `images` 目录以获取镜像列表。
 
    **使用示例**
 
  ```shell
- sealctl registry save default my-context
+ sealctl registry save --registry-dir=/tmp/registry1 my-context
  ```
 
 
-2. `raw`
+2. 指定镜像列表方式
 
-   使用原始方式拉取并保存镜像。
+   使用参数传入镜像列表
 
    **使用示例**
 
   ```shell
-  sealctl registry save raw --images my-image:latest
+  sealctl registry save --registry-dir=/tmp/registry2 --images=docker.io/library/busybox:latest
   ```
 
 **选项**
@@ -204,32 +201,7 @@ sealctl hosts list --path /custom/path/hosts
 - `--max-procs`: 拉取镜像时使用的最大并行进程数。
 - `--registry-dir`: 保存镜像的本地目录。
 - `--arch`: 镜像的目标架构，例如：`amd64`、`arm64` 等。
-
-对于 `raw` 子命令，还有以下额外选项：
-
 - `--images`: 需要拉取并保存的镜像列表，以逗号分隔。例如："my-image1:latest,my-image2:v1.0"。
-
-**使用文档**
-
-要使用 `sealctl registry save` 命令，请按照以下步骤操作：
-
-1. 根据需要选择子命令（`default` 或 `raw`）。
-2. 为子命令提供必要的选项和参数。
-3. 执行命令，镜像将从远程仓库拉取并保存到指定的本地目录。
-
-**示例**
-
-保存默认上下文中的镜像：
-
-```shell
-sealctl registry save default my-context
-```
-
-使用原始方式保存指定镜像：
-
-```shell
-sealctl registry save raw --images my-image:latest
-```
 
 ### ipvs配置管理命令
 

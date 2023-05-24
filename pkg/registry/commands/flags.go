@@ -37,7 +37,7 @@ type registrySaveResults struct {
 func (opts *registrySaveResults) RegisterFlags(fs *pflag.FlagSet) {
 	fs.SetInterspersed(false)
 	fs.StringVar(&opts.registryPullArch, "arch", runtime.GOARCH, "pull images arch")
-	fs.StringVar(&opts.registryPullRegistryDir, "data-dir", "/var/lib/registry", "registry data dir path")
+	fs.StringVar(&opts.registryPullRegistryDir, "registry-dir", "/var/lib/registry", "registry data dir path")
 	fs.IntVar(&opts.registryPullMaxPullProcs, "max-pull-procs", 5, "maximum number of goroutines for pulling")
 }
 
