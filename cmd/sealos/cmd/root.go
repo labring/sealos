@@ -96,7 +96,7 @@ func init() {
 	groups.Add(rootCmd)
 	filters := []string{}
 	templates.ActsAsRootCommand(rootCmd, filters, groups...)
-	rootCmd.AddCommand(system.NewConfigCmd())
+	rootCmd.AddCommand(system.NewEnvCmd())
 }
 
 // add unrelated command names that don't required buildah sdk.

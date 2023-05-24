@@ -31,11 +31,15 @@ import (
 type envSystemConfig struct{}
 
 func Get(key string) (string, error) {
-	return globalConfig.getValueOrDefault(key)
+	cfg, err := globalConfig.getValueOrDefault(key)
+	if err != nil {
+		return "", err
+	}
+	return cfg.DefaultValue, nil
 }
 
-func Set(key, value string) error {
-	return globalConfig.setValue(key, value)
+func GetConfig(key string) (*ConfigOption, error) {
+	return globalConfig.getValueOrDefault(key)
 }
 
 var globalConfig *envSystemConfig
@@ -45,24 +49,20 @@ func init() {
 }
 
 type ConfigOption struct {
-	Key           string
-	Description   string
-	DefaultValue  string
-	OSEnv         string
-	AllowedValues []string
+	Key          string
+	Description  string
+	DefaultValue string
+	OSEnv        string
 }
 
 var configOptions = []ConfigOption{
 	{
-		Key:           PromptConfigKey,
-		Description:   "toggle interactive prompting in the terminal.",
-		DefaultValue:  "enabled",
-		OSEnv:         "SEALOS_PROMPT",
-		AllowedValues: []string{"enabled", "disabled"},
+		Key:          PromptConfigKey,
+		Description:  "toggle interactive prompting in the terminal.",
+		DefaultValue: "enabled",
 	},
 	{
 		Key:          RuntimeRootConfigKey,
-		OSEnv:        "SEALOS_RUNTIME_ROOT",
 		Description:  "root directory for sealos actions.",
 		DefaultValue: path.Join(homedir.Get(), ".sealos"),
 	},
@@ -70,63 +70,40 @@ var configOptions = []ConfigOption{
 		Key:          DataRootConfigKey,
 		Description:  "cluster root directory for remote.",
 		DefaultValue: "/var/lib/sealos",
-		OSEnv:        "SEALOS_DATA_ROOT",
 	},
 	{
 		Key:          BuildahFormatConfigKey,
 		Description:  "`format` of the image manifest and metadata.",
 		DefaultValue: buildah.OCI,
-		OSEnv:        "BUILDAH_FORMAT",
 	},
 	{
-		Key:           ScpChecksumConfigKey,
-		Description:   "whether to check the md5sum value is consistent during the copy process",
-		DefaultValue:  "yes",
-		OSEnv:         "SEALOS_SCP_CHECKSUM",
-		AllowedValues: []string{"true", "false"},
+		Key:          ScpChecksumConfigKey,
+		Description:  "whether to check the md5sum value is consistent during the copy process",
+		DefaultValue: "yes",
 	},
 }
 
 const (
-	PromptConfigKey        = "prompt"
-	RuntimeRootConfigKey   = "sealos_runtime_root"
-	DataRootConfigKey      = "sealos_data_root"
-	BuildahFormatConfigKey = "buildah_format"
-	ScpChecksumConfigKey   = "scp_checksum"
+	PromptConfigKey        = "PROMPT"
+	RuntimeRootConfigKey   = "RUNTIME_ROOT"
+	DataRootConfigKey      = "DATA_ROOT"
+	BuildahFormatConfigKey = "BUILDAH_FORMAT"
+	ScpChecksumConfigKey   = "SCP_CHECKSUM"
 )
 
-func (*envSystemConfig) getValueOrDefault(key string) (string, error) {
+func (*envSystemConfig) getValueOrDefault(key string) (*ConfigOption, error) {
 	for _, option := range configOptions {
 		if option.Key == key {
 			if option.OSEnv == "" {
 				option.OSEnv = strings.ReplaceAll(strings.ToUpper(constants.AppName+"_"+option.Key), "-", "_")
 			}
 			if value, ok := os.LookupEnv(option.OSEnv); ok {
-				return value, nil
+				option.DefaultValue = value
 			}
-			return option.DefaultValue, nil
+			return &option, nil
 		}
 	}
-	return "", fmt.Errorf("not found config key %s", key)
-}
-
-func (*envSystemConfig) setValue(key, value string) error {
-	for _, option := range configOptions {
-		if option.Key == key {
-			if option.OSEnv == "" {
-				return fmt.Errorf("not support set key %s, env not set", key)
-			}
-			if option.AllowedValues != nil {
-				for _, allowedValue := range option.AllowedValues {
-					if allowedValue == value {
-						return os.Setenv(option.OSEnv, value)
-					}
-				}
-				return fmt.Errorf("value %s is not allowed for key %s", value, key)
-			}
-		}
-	}
-	return nil
+	return nil, fmt.Errorf("not found config key %s", key)
 }
 
 func ConfigOptions() []ConfigOption {

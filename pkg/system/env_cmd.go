@@ -17,16 +17,26 @@ limitations under the License.
 package system
 
 import (
-	"github.com/labring/sealos/pkg/template"
+	"fmt"
+
+	"github.com/spf13/cobra"
 )
 
-func NewExampleConfig() (string, error) {
-	defaultStr := `Display or change configuration settings for sealos.
-
-Current respected settings:
-{{range .Options}}- {{.Key}}: {{.Description}} env: {{.OSEnv}} (default: {{.DefaultValue}})
-{{end}}`
-	return template.RenderTemplate("system", defaultStr, map[string]interface{}{
-		"Options": configOptions,
-	})
+func NewEnvCmd() *cobra.Command {
+	var configCmd = &cobra.Command{
+		Use:   "env",
+		Short: "Display all envs for sealos",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			list := ConfigOptions()
+			for _, v := range list {
+				data, _ := GetConfig(v.Key)
+				if data == nil {
+					continue
+				}
+				println(fmt.Sprintf("%s=%s", data.OSEnv, data.DefaultValue))
+			}
+			return nil
+		},
+	}
+	return configCmd
 }
