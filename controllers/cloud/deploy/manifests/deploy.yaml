@@ -48,8 +48,9 @@ spec:
             description: CloudClientSpec defines the desired state of CloudClient
             properties:
               Cycle-Time:
-                format: int64
                 type: integer
+              Date:
+                type: string
               URL:
                 type: string
             required:
