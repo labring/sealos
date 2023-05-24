@@ -19,10 +19,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net"
+	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/containers/common/pkg/auth"
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/docker"
 	"github.com/containers/image/v5/docker/reference"
@@ -37,12 +40,37 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
+const (
+	localhost   = "127.0.0.1"
+	defaultPort = "5000"
+)
+
 // TODO: fallback to ssh mode when HTTP is not available
 type syncMode struct {
 	mounts []v2.MountImage
 }
 
 func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
+	sys := &types.SystemContext{
+		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
+	}
+	// login first
+	eg, ctx := errgroup.WithContext(ctx)
+	for i := range hosts {
+		host := hosts[i]
+		eg.Go(func() error {
+			dst, err := parseRegistryAddress(host)
+			if err != nil {
+				return err
+			}
+			username, password := getUserAndPassForRegistry(dst)
+			return loginRegistry(ctx, sys, username, password, dst)
+		})
+	}
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+
 	outerEg, ctx := errgroup.WithContext(ctx)
 	for i := range s.mounts {
 		mount := s.mounts[i]
@@ -70,15 +98,15 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 			for j := range hosts {
 				host := hosts[j]
 				eg.Go(func() error {
-					src, err := parseDefaultRegistryAddress("127.0.0.1", config.HTTP.Addr)
+					src, err := parseRegistryAddress(localhost, config.HTTP.Addr)
 					if err != nil {
 						return err
 					}
-					dst, err := parseDefaultRegistryAddress(host, "5000")
+					dst, err := parseRegistryAddress(host)
 					if err != nil {
 						return err
 					}
-					return syncRegistry(ctx, src, dst)
+					return syncRegistry(ctx, sys, src, dst)
 				})
 			}
 			go func() {
@@ -90,13 +118,18 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 	return outerEg.Wait()
 }
 
-func syncRegistry(ctx context.Context, src, dst string) error {
+func loginRegistry(ctx context.Context, sys *types.SystemContext, username, password, registry string) error {
+	return auth.Login(ctx, sys, &auth.LoginOptions{
+		Username: username,
+		Password: password,
+		Stdout:   io.Discard,
+	}, []string{registry})
+}
+
+func syncRegistry(ctx context.Context, sys *types.SystemContext, src, dst string) error {
 	policyContext, err := getPolicyContext()
 	if err != nil {
 		return err
-	}
-	sys := &types.SystemContext{
-		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
 	}
 	repos, err := docker.SearchRegistry(ctx, sys, src, "", 1<<10)
 	if err != nil {
@@ -131,6 +164,20 @@ func syncRegistry(ctx context.Context, src, dst string) error {
 		}
 	}
 	return nil
+}
+
+func getUserAndPassForRegistry(r string) (username string, password string) {
+	if v, ok := os.LookupEnv("DEFAULT_REGISTRY_USERNAME"); ok {
+		username = v
+	} else {
+		username = constants.DefaultRegistryUsername
+	}
+	if v, ok := os.LookupEnv("DEFAULT_REGISTRY_PASSWORD"); ok {
+		password = v
+	} else {
+		password = constants.DefaultRegistryPassword
+	}
+	return
 }
 
 func getPolicyContext() (*signature.PolicyContext, error) {
@@ -187,7 +234,7 @@ func getImageTags(ctx context.Context, sysCtx *types.SystemContext, repoRef refe
 	return tags, nil
 }
 
-func parseDefaultRegistryAddress(s string, port ...string) (string, error) {
+func parseRegistryAddress(s string, args ...string) (string, error) {
 	if strings.Contains(s, ":") {
 		host, _, err := net.SplitHostPort(s)
 		if err != nil {
@@ -196,14 +243,14 @@ func parseDefaultRegistryAddress(s string, port ...string) (string, error) {
 		s = host
 	}
 	var portStr string
-	if len(port) > 0 {
-		portStr = port[0]
+	if len(args) > 0 {
+		portStr = args[0]
 	}
 	if idx := strings.Index(portStr, ":"); idx >= 0 {
 		portStr = portStr[idx+1:]
 	}
 	if portStr == "" {
-		portStr = "5000"
+		portStr = defaultPort
 	}
 	return net.JoinHostPort(s, portStr), nil
 }
