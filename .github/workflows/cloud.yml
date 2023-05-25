@@ -1,21 +1,17 @@
 name: Build Cloud Cluster image
 
 on:
-  workflow_call:
-    inputs:
-      release:
-        required: false
-        type: boolean
-        default: false
+  create:
+    tags:
   workflow_dispatch:
     inputs:
       push_image:
-        description: 'Push images'
+        description: 'Push image'
         required: false
         type: boolean
         default: false
-      release_tag:
-        description: 'Release images'
+      push_image_tag:
+        description: 'Push image tag'
         default: 'dev'
         required: false
         type: string
@@ -44,7 +40,7 @@ jobs:
     uses: ./.github/workflows/import-save-sealos.yml
 
   build-cluster-image:
-    if: ${{ (github.event_name == 'push') || (inputs.push_image == true) || (inputs.release == true) }}
+    if: ${{ (github.event_name == 'push') || (inputs.push_image == true) }}
     needs:
       - save-sealos
     runs-on: ubuntu-latest
@@ -55,10 +51,18 @@ jobs:
           fetch-depth: 0
       - name: Expose git commit data
         uses: rlespinasse/git-commit-data-action@v1
+      - name: Check if tag
+        id: check_tag
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "isTag=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "isTag=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Prepare
         id: prepare
         run: |
-          bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ inputs.release }}"  "${{ inputs.release_tag }}"     
+          bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}"     
           echo repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud >> $GITHUB_OUTPUT
       - name: Download sealos
         uses: actions/download-artifact@v3
