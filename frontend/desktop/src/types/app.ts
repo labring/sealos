@@ -46,6 +46,7 @@ export type TAppConfig = {
     helpDropDown: boolean;
     helpDocs: boolean | string;
   };
+  displayType: 'normal' | 'hidden' | 'more ';
 };
 
 export type TApp = TAppConfig & TAppFront & { pid: number };

@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { authSession } from '@/services/backend/auth';
 import { GetUserDefaultNameSpace, K8sApi, ListCRD } from '../../../services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
+import { TApp } from '@/types';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -36,10 +37,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     //@ts-ignore
     const userArr = userResult?.body?.items.map((item: any) => {
-      return { key: `user-${item.metadata.name}`, ...item.spec };
+      return { key: `user-${item.metadata.name}`, ...item.spec, displayType: 'normal' };
     });
 
-    let apps = [...defaultArr, ...userArr];
+    let apps = [...defaultArr, ...userArr].filter((item: TApp) => item.displayType !== 'hidden');
 
     jsonRes(res, { data: apps });
   } catch (err) {

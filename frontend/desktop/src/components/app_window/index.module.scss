@@ -13,7 +13,7 @@
   width: 100%;
   height: 100%;
   border-radius: 6px;
-  transition: all cubic-bezier(0.85, 0.14, 0.14, 0.85) 250ms;
+  transition: all cubic-bezier(0.85, 0.14, 0.14, 0.85) 150ms;
   transform-origin: center;
   display: flex;
   flex-direction: column;
@@ -40,11 +40,11 @@
   }
 
   &[data-size='minimize'] {
-    left: 50%;
-    height: 0px;
-    width: 0px;
-    top: 90%;
-    transform: scale(0.6);
+    top: 10%;
+    left: 20%;
+    width: 60%;
+    height: 80%;
+    transform: scale(0.1) translate(0, 0) !important;
     transform-origin: bottom;
     opacity: 0;
     pointer-events: none;

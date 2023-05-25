@@ -18,6 +18,7 @@ const UserMenu = dynamic(() => import('@/components/user_menu'), {
 
 export default function DesktopContent(props: any) {
   const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
+  const renderApps = apps.filter((item: TApp) => item?.displayType === 'normal');
   const [maxItems, setMaxItems] = useState(10);
   const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
     e.preventDefault();
@@ -77,8 +78,8 @@ export default function DesktopContent(props: any) {
           templateColumns={'repeat(5, 72px)'}
           gap={'36px'}
         >
-          {apps &&
-            apps.slice(0, maxItems).map((item: TApp, index) => (
+          {renderApps &&
+            renderApps.slice(0, maxItems).map((item: TApp, index) => (
               <GridItem
                 w="72px"
                 h="100px"

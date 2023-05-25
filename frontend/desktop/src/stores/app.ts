@@ -31,6 +31,7 @@ export class AppInfo {
     helpDropDown: boolean;
     helpDocs: boolean | string;
   };
+  displayType: 'normal' | 'hidden' | 'more ';
   constructor(app: TApp, pid: number) {
     this.isShow = false;
     this.zIndex = 1;
@@ -47,6 +48,7 @@ export class AppInfo {
     this.name = app.name;
     this.key = app.key;
     this.pid = pid;
+    this.displayType = app.displayType;
   }
 }
 
