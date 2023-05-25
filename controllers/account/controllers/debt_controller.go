@@ -102,7 +102,7 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, nil
 	}
 	// now should get debt and account
-	r.Logger.Info("debt info", "debt", debt)
+	//r.Logger.Info("debt info", "debt", debt)
 
 	if err := r.reconcileDebtStatus(ctx, debt, account); err != nil {
 		r.Logger.Error(err, "reconcile debt status error")
@@ -238,9 +238,9 @@ func (r *DebtReconciler) deleteUserResource(ctx context.Context, namespace strin
 			}
 			for _, item := range u.Items {
 				r.Logger.Info("delete resource", "resource name:", item.GetName(), "get GVK", item.GroupVersionKind())
-				if err := r.Delete(ctx, &item); client.IgnoreNotFound(err) != nil {
-					return err
-				}
+				//if err := r.Delete(ctx, &item); client.IgnoreNotFound(err) != nil {
+				//	return err
+				//}
 			}
 		}
 	}

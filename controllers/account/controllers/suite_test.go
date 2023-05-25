@@ -19,6 +19,7 @@ package controllers
 import (
 	"path/filepath"
 	"testing"
+	"time"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 
@@ -80,3 +81,40 @@ var _ = AfterSuite(func() {
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
+
+func TestCalculateBillingHours(t *testing.T) {
+	//lastUpdateTime := time.Date(2021, 11, 1, 10, 35, 20, 0, time.UTC)
+	//currentHourTime := time.Date(2021, 11, 1, 14, 0, 0, 0, time.UTC)
+
+	lastUpdateTime := time.Date(2021, 11, 1, 10, 0, 0, 0, time.UTC)
+	currentHourTime := time.Date(2021, 11, 1, 14, 0, 0, 0, time.UTC)
+	//lastUpdateTime := time.Date(2021, 11, 1, 14, 0, 0, 0, time.UTC)
+	//currentHourTime := time.Date(2021, 11, 1, 14, 0, 0, 0, time.UTC)
+
+	expected := []time.Time{
+		time.Date(2021, 11, 1, 11, 0, 0, 0, time.UTC),
+		time.Date(2021, 11, 1, 12, 0, 0, 0, time.UTC),
+		time.Date(2021, 11, 1, 13, 0, 0, 0, time.UTC),
+		time.Date(2021, 11, 1, 14, 0, 0, 0, time.UTC),
+	}
+
+	result := CalculateBillingHours(lastUpdateTime, currentHourTime)
+
+	if len(result) != len(expected) {
+		t.Fatalf("expected %d billing hours, but got %d", len(expected), len(result))
+	}
+
+	for i := range result {
+		if !result[i].Equal(expected[i]) {
+			t.Errorf("expected billing hour %v, but got %v", expected[i], result[i])
+		}
+	}
+}
+
+func CalculateBillingHours(lastUpdateTime, currentHourTime time.Time) []time.Time {
+	needBillingHours := make([]time.Time, 0)
+	for t := lastUpdateTime.Truncate(time.Hour).Add(time.Hour); t.Before(currentHourTime) || t.Equal(currentHourTime); t = t.Add(time.Hour) {
+		needBillingHours = append(needBillingHours, t)
+	}
+	return needBillingHours
+}

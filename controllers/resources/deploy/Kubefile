@@ -1,0 +1,12 @@
+FROM scratch
+
+USER 65532:65532
+
+COPY registry registry
+COPY manifests manifests
+
+ENV DEFAULT_NAMESPACE resources-system
+ENV MONGO_URI "mongodb://mongo:27017/resources"
+
+
+CMD ['kubectl create secret generic mongo-secret -n "${DEFAULT_NAMESPACE}" --from-literal=MONGO_URI="${MONGO_URI}" ','kubectl apply -f manifests/ -n "${DEFAULT_NAMESPACE}"']
