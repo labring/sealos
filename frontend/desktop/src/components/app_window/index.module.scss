@@ -40,10 +40,10 @@
   }
 
   &[data-size='minimize'] {
-    left: 20%;
-    height: 80%;
-    width: 60%;
-    top: calc(100% + 10px);
+    left: 50%;
+    height: 0px;
+    width: 0px;
+    top: 90%;
     transform: scale(0.6);
     transform-origin: bottom;
     opacity: 0;
