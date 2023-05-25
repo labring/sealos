@@ -21,8 +21,10 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/containers/common/pkg/auth"
 	"github.com/containers/image/v5/copy"
@@ -62,10 +64,23 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 		// defer cancel async commands
 		defer cancel()
 		go func(ctx context.Context, host string) {
+			logger.Debug("running temporary registry on host %s", host)
 			if err := s.ssh.CmdAsyncWithContext(ctx, host, getRegistryServeCommand(s.pathResolver, defaultTemporaryPort)); err != nil {
 				logger.Error(err)
 			}
 		}(ctx, hosts[i])
+	}
+
+	var endpoints []string
+	for i := range hosts {
+		ep, err := parseRegistryAddress(hosts[i], defaultTemporaryPort)
+		if err != nil {
+			return err
+		}
+		if !waitUntilHTTPListen("http://"+ep, time.Second*3) {
+			return fmt.Errorf("cannot detect whether registry %s is listening, check manually", ep)
+		}
+		endpoints = append(endpoints, ep)
 	}
 
 	outerEg, ctx := errgroup.WithContext(ctx)
@@ -80,14 +95,10 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 			config.Log.AccessLog.Disabled = true
 			errCh := handler.Run(ctx, config)
 			eg, _ := errgroup.WithContext(ctx)
-			for j := range hosts {
-				host := hosts[j]
+			for j := range endpoints {
+				dst := endpoints[j]
 				eg.Go(func() error {
 					src, err := parseRegistryAddress(localhost, config.HTTP.Addr)
-					if err != nil {
-						return err
-					}
-					dst, err := parseRegistryAddress(host, defaultTemporaryPort)
 					if err != nil {
 						return err
 					}
@@ -103,8 +114,26 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 	return outerEg.Wait()
 }
 
+func waitUntilHTTPListen(endpoint string, tw time.Duration) bool {
+	for {
+		select {
+		case <-time.After(tw):
+			return false
+		default:
+			resp, err := http.DefaultClient.Get(endpoint)
+			if err == nil {
+				_, _ = io.Copy(io.Discard, resp.Body)
+				resp.Body.Close()
+				return true
+			}
+			logger.Warn(err)
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+}
+
 func getRegistryServeCommand(pathResolver PathResolver, port string) string {
-	return fmt.Sprintf("%s registry serve -p %s --disable-logging %s",
+	return fmt.Sprintf("%s registry serve -p %s --disable-logging=true %s",
 		pathResolver.RootFSSealctlPath(), port, pathResolver.RootFSRegistryPath(),
 	)
 }

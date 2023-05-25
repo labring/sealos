@@ -84,7 +84,7 @@ func getUntarCommands(pathResolver PathResolver) string {
 
 func New(pathResolver PathResolver, ssh ssh.Interface, mounts []v2.MountImage) filesystem.RegistrySyncer {
 	if v, _ := system.Get(system.RegistrySyncExperimentalConfigKey); v == "true" {
-		return &syncMode{mounts: mounts}
+		return &syncMode{pathResolver, ssh, mounts}
 	}
 	return &sshMode{pathResolver, ssh, mounts}
 }

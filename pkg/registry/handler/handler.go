@@ -28,6 +28,7 @@ import (
 	"github.com/distribution/distribution/v3/registry/handlers"
 	"github.com/distribution/distribution/v3/registry/listener"
 
+	// registry filesystem driver
 	_ "github.com/distribution/distribution/v3/registry/storage/driver/filesystem"
 	log "github.com/sirupsen/logrus"
 )
