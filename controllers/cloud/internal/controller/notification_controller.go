@@ -54,7 +54,6 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	logger.Info("get notification in ntf_controller")
 	return ctrl.Result{}, nil
 }
 
