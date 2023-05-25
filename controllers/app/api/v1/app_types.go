@@ -31,11 +31,25 @@ type MenuData struct {
 	HelpDocs     string `json:"helpDocs,omitempty"`
 }
 
+type DisplayType string
+
+// data types
+const (
+	DisplayNormal DisplayType = "normal"
+	DisplayMore   DisplayType = "more"
+	DisplayHidden DisplayType = "hidden"
+)
+
 // AppSpec defines the desired state of App
 type AppSpec struct {
-	Name     string   `json:"name,omitempty"`
-	Icon     string   `json:"icon,omitempty"`
-	Type     string   `json:"type,omitempty"`
+	Name string `json:"name,omitempty"`
+	Icon string `json:"icon,omitempty"`
+	Type string `json:"type,omitempty"`
+
+	//+kubebuilder:validation:Enum={ normal, more, hidden, }
+	//+kubebuilder:validation:Optional
+	DisplayType DisplayType `json:"displayType,omitempty"`
+
 	Data     Data     `json:"data,omitempty"`
 	MenuData MenuData `json:"menuData,omitempty"`
 }
