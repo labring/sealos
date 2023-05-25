@@ -38,6 +38,9 @@ func NewRegistryImageSaveCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "save",
 		Short: "save images to local registry dir",
+		Example: `
+sealctl registry save --registry-dir=/tmp/registry .
+sealctl registry save --registry-dir=/tmp/registry --images=docker.io/library/busybox:latest`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			is := registry.NewImageSaver(context.Background(), flagsResults.registryPullMaxPullProcs, auth)
 			outImages, err := is.SaveImages(images, flagsResults.registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: flagsResults.registryPullArch})
@@ -48,7 +51,7 @@ func NewRegistryImageSaveCmd() *cobra.Command {
 			return nil
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 || len(flagsResults.images) == 0 {
+			if len(args) == 0 && len(flagsResults.images) == 0 {
 				return errors.New("'--images' and args cannot be empty at the same time")
 			}
 			var err error

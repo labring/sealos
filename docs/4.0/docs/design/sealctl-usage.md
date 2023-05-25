@@ -161,34 +161,31 @@ sealctl hosts list --path /custom/path/hosts
 
 ### registry save Command
 
-The `registry save`  command is used to pull remote Docker images to the local machine and save them in a specified directory. This is especially useful for deploying container images in offline or internal network environments. It supports two modes: default and raw.
-
-- The `default` mode automatically fetches images based on the parsed image list. These image lists are sourced from the charts directory, manifests directory, and images directory.
-- The `raw` mode allows users to directly specify the list of images to be saved.
+The `registry save`  command is used to pull remote Docker images to the local machine and save them in a specified directory. This is especially useful for deploying container images in offline or internal network environments.
 
 When executing the `registry save` command, the authentication information from `sealos login` will be automatically obtained for repository authentication.
 
-**Subcommands**
+**Usage**
 
-1. `default [CONTEXT]`
+1. Using context lookup images
 
    Pull and save images using the default method. This mode automatically parses the `charts` directory, `manifests` directory, and `images` directory to obtain the image list.
 
    **Usage Example**
 
  ```shell
- sealctl registry save default my-context
+ sealctl registry save --registry-dir=/tmp/registry1 my-context
  ```
 
 
-2. `raw`
+2. Using images args
 
-   Pull and save images using the raw method.
+   Pull and save images using the specified image list.
 
    **Usage Example**
 
   ```shell
-  sealctl registry save raw --images my-image:latest
+  sealctl registry save --registry-dir=/tmp/registry2 --images=docker.io/library/busybox:latest
   ```
 
 **Options**
@@ -198,32 +195,8 @@ The following options apply to the `save` command and its subcommands:
 - `--max-procs`: The maximum number of parallel processes to use when pulling images.
 - `--registry-dir`: The local directory to save the images.
 - `--arch`: The target architecture of the images, such as: amd64, arm64, etc.
-
-For the `raw` subcommand, there are also the following additional options:
-
 - `--images`:  The list of images to pull and save, separated by commas. For example: "my-image1:latest,my-image2:v1.0".
 
-**Usage Documentation**
-
-To use the  `sealctl registry save` command, follow these steps:
-
-1. Choose a subcommand (`default` or `raw`) as needed.
-2. Provide the necessary options and parameters for the subcommand.
-3. Execute the command, and the images will be pulled from the remote repository and saved to the specified local directory.
-
-**Examples**
-
-Save images from the default context:
-
-```shell
-sealctl registry save default my-context
-```
-
-Save a specified image using the raw method:
-
-```shell
-sealctl registry save raw --images my-image:latest
-```
 
 ### ipvs Configuration Management Command
 

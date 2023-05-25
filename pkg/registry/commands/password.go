@@ -37,6 +37,7 @@ func NewRegistryPasswdCmd() *cobra.Command {
 				return err
 			}
 			if cluster == nil {
+				logger.Error("registry passwd apply error: cluster is nil")
 				return nil
 			}
 			if err := flagsResults.Apply(cluster); err != nil {
