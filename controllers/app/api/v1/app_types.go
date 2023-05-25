@@ -40,8 +40,20 @@ type AppSpec struct {
 	MenuData MenuData `json:"menuData,omitempty"`
 }
 
+type DisplayStatusType string
+
+// data types
+const (
+	DisplayStatusNormal DisplayStatusType = "normal"
+	DisplayStatusMore   DisplayStatusType = "more"
+	DisplayStatusHidden DisplayStatusType = "hidden"
+)
+
 // AppStatus defines the observed state of App
 type AppStatus struct {
+	//+kubebuilder:validation:Enum={ normal, more, hidden, }
+	//+kubebuilder:validation:Optional
+	DisplayStatus DisplayStatusType `json:"displayStatus,omitempty"`
 }
 
 //+kubebuilder:object:root=true
