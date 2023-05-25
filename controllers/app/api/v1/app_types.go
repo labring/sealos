@@ -51,7 +51,7 @@ const (
 
 // AppStatus defines the observed state of App
 type AppStatus struct {
-	//+kubebuilder:validation:Enum={ normal, more, hidden }
+	//+kubebuilder:validation:Enum={ normal, more, hidden, }
 	//+kubebuilder:validation:Optional
 	DisplayStatus DisplayStatusType `json:"displayStatus,omitempty"`
 }
