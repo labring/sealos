@@ -64,7 +64,7 @@ spec:
                 secretKeyRef:
                   name: mongo-secret
                   key: MONGO_PASSWORD
-          image: ghcr.io/labring/resources-controller:dev
+          image: ghcr.io/labring/sealos-resources-controller:dev
           imagePullPolicy: Always
           livenessProbe:
             httpGet:
