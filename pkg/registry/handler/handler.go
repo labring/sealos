@@ -77,9 +77,12 @@ func configureLogging(ctx context.Context, config *configuration.Configuration) 
 	if config.Log.AccessLog.Disabled {
 		logger.Out = io.Discard
 	}
-	logLevel, err := log.ParseLevel(string(config.Log.Level))
+	var logLevel log.Level
+	lvl, err := log.ParseLevel(string(config.Log.Level))
 	if err != nil {
 		logLevel = log.ErrorLevel
+	} else {
+		logLevel = lvl
 	}
 	logger.SetLevel(logLevel)
 	logEntry := log.NewEntry(logger)
