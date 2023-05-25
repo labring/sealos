@@ -122,6 +122,14 @@ export default function Index(props: any) {
           id="floatButtonNav"
           className={clsx(styles.container, dragging ? styles.notrans : '')}
           data-open={isOpen}
+          onMouseEnter={(e) => {
+            if (suction !== Suction.None) return;
+            onOpen();
+          }}
+          onMouseLeave={(e) => {
+            if (suction !== Suction.None) return;
+            onClose();
+          }}
         >
           <div
             className={clsx(styles.floatBtn, dragging ? styles.notrans : '')}

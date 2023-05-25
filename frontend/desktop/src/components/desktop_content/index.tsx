@@ -4,7 +4,7 @@ import useAppStore from '@/stores/app';
 import { TApp } from '@/types';
 import { Box, Flex, Grid, GridItem, Image, Text } from '@chakra-ui/react';
 import dynamic from 'next/dynamic';
-import { MouseEvent, useCallback, useEffect } from 'react';
+import { MouseEvent, useCallback, useEffect, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
@@ -18,7 +18,8 @@ const UserMenu = dynamic(() => import('@/components/user_menu'), {
 
 export default function DesktopContent(props: any) {
   const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
-
+  const renderApps = apps.filter((item: TApp) => item?.displayType === 'normal');
+  const [maxItems, setMaxItems] = useState(10);
   const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
     e.preventDefault();
     if (item?.name) {
@@ -77,8 +78,8 @@ export default function DesktopContent(props: any) {
           templateColumns={'repeat(5, 72px)'}
           gap={'36px'}
         >
-          {apps &&
-            apps.map((item: TApp, index) => (
+          {renderApps &&
+            renderApps.slice(0, maxItems).map((item: TApp, index) => (
               <GridItem
                 w="72px"
                 h="100px"
