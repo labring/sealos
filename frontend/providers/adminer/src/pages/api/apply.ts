@@ -3,6 +3,7 @@ import { generateKubeBlockClusterTemplate } from '@/interfaces/kubeblock';
 import { authSession } from '@/service/auth';
 import { ApplyYaml, CRDMeta, GetCRD, GetUserDefaultNameSpace, K8sApi } from '@/service/kubernetes';
 import { jsonRes } from '@/service/response';
+import { HttpError } from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 const AdminerMeta: CRDMeta = {
@@ -30,17 +31,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const adminerName = 'adminer-' + kube_user.name;
     const namespace = GetUserDefaultNameSpace(kube_user.name);
 
-    // get kubeblock clusters
-    const connections = await generateKubeBlockClusterTemplate(kc, namespace);
+    let connections: string[] = [];
+    try {
+      // get kubeblock clusters
+      connections = await generateKubeBlockClusterTemplate(kc, namespace);
+    } catch (error) {
+      // console.log(error);
+    }
 
-    // always apply cr, for new db cluster may be added
-    const adminerYaml = generateAdminerTemplate({
-      namespace: namespace,
-      adminerName: adminerName,
-      currentTime: new Date().toISOString(),
-      connections: connections
-    });
-    const result = await ApplyYaml(kc, adminerYaml);
+    try {
+      // always apply cr, for new db cluster may be added
+      const adminerYaml = generateAdminerTemplate({
+        namespace: namespace,
+        adminerName: adminerName,
+        currentTime: new Date().toISOString(),
+        connections: connections
+      });
+      const result = await ApplyYaml(kc, adminerYaml);
+    } catch (error) {
+      const errHttp = error as HttpError;
+      if (!errHttp || errHttp.response.statusCode !== 409) {
+        throw error;
+      }
+    }
 
     // continue to get user namespace crd
     let adminerMetaUser = { ...AdminerMeta };
@@ -61,7 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // console.log(error)
     }
 
-    jsonRes(res, { code: 201, data: result, message: '' });
+    jsonRes(res, { code: 201, data: null, message: '' });
   } catch (error) {
     // console.log(error)
     jsonRes(res, { code: 500, error });
