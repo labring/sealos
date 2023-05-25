@@ -51,12 +51,11 @@ func (c *Client) wrapCommands(cmds ...string) string {
 	return fmt.Sprintf("sudo -u %s -H bash -c '%s'", c.Option.user, strings.Join(cmds, "; "))
 }
 
-// CmdAsync not actually asynchronously, just print output asynchronously
-func (c *Client) CmdAsync(host string, cmds ...string) error {
+func (c *Client) CmdAsyncWithContext(ctx context.Context, host string, cmds ...string) error {
 	cmd := c.wrapCommands(cmds...)
 	if c.isLocalAction(host) {
 		logger.Debug("start to run command `%s` via exec", cmd)
-		return exec.Cmd("bash", "-c", cmd)
+		return exec.CmdWithContext(ctx, "bash", "-c", cmd)
 	}
 	logger.Debug("start to exec `%s` on %s", cmd, host)
 	client, session, err := c.Connect(host)
@@ -86,16 +85,32 @@ func (c *Client) CmdAsync(host string, cmds ...string) error {
 	eg.Go(func() error { return c.handlePipe(host, stderr, &out, c.stdout) })
 	eg.Go(func() error { return c.handlePipe(host, stdout, &out, c.stdout) })
 
-	if err := session.Start(cmd); err != nil {
-		return fmt.Errorf("start command `%s` on %s: %v", cmd, host, err)
-	}
-	if err = eg.Wait(); err != nil {
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- func() error {
+			if err := session.Start(cmd); err != nil {
+				return fmt.Errorf("start command `%s` on %s: %v", cmd, host, err)
+			}
+			if err = eg.Wait(); err != nil {
+				return err
+			}
+			if err = session.Wait(); err != nil {
+				return fmt.Errorf("run command `%s` on %s, output: %s, error: %v,", cmd, host, out.b.String(), err)
+			}
+			return nil
+		}()
+	}()
+	select {
+	case <-ctx.Done():
+		return nil
+	case err = <-errCh:
 		return err
 	}
-	if err = session.Wait(); err != nil {
-		return fmt.Errorf("run command `%s` on %s, output: %s, error: %v,", cmd, host, out.b.String(), err)
-	}
-	return nil
+}
+
+// CmdAsync not actually asynchronously, just print output asynchronously
+func (c *Client) CmdAsync(host string, cmds ...string) error {
+	return c.CmdAsyncWithContext(context.Background(), host, cmds...)
 }
 
 func (c *Client) Cmd(host, cmd string) ([]byte, error) {
