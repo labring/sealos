@@ -42,7 +42,7 @@ import (
 const (
 	localhost            = "127.0.0.1"
 	defaultPort          = "5000"
-	defaultTemporaryPort = 5050
+	defaultTemporaryPort = "5050"
 )
 
 // TODO: fallback to ssh mode when HTTP is not available
@@ -62,14 +62,7 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 		// defer cancel async commands
 		defer cancel()
 		go func(ctx context.Context, host string) {
-			errCh := make(chan error, 1)
-			go func() {
-				errCh <- s.ssh.CmdAsync(host, getRegistryServeCommand(s.pathResolver, defaultTemporaryPort))
-			}()
-			select {
-			case <-ctx.Done():
-				return
-			case err := <-errCh:
+			if err := s.ssh.CmdAsyncWithContext(ctx, host, getRegistryServeCommand(s.pathResolver, defaultTemporaryPort)); err != nil {
 				logger.Error(err)
 			}
 		}(ctx, hosts[i])
@@ -94,7 +87,7 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 					if err != nil {
 						return err
 					}
-					dst, err := parseRegistryAddress(host)
+					dst, err := parseRegistryAddress(host, defaultTemporaryPort)
 					if err != nil {
 						return err
 					}
@@ -110,8 +103,8 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 	return outerEg.Wait()
 }
 
-func getRegistryServeCommand(pathResolver PathResolver, port int) string {
-	return fmt.Sprintf("%s registry serve -p %d --disable-logging %s",
+func getRegistryServeCommand(pathResolver PathResolver, port string) string {
+	return fmt.Sprintf("%s registry serve -p %s --disable-logging %s",
 		pathResolver.RootFSSealctlPath(), port, pathResolver.RootFSRegistryPath(),
 	)
 }
