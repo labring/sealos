@@ -113,6 +113,13 @@ spec:
             type: object
           status:
             description: AppStatus defines the observed state of App
+            properties:
+              displayStatus:
+                enum:
+                - normal
+                - more
+                - ""
+                type: string
             type: object
         type: object
     served: true
