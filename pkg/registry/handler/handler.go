@@ -19,12 +19,16 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 
 	"github.com/distribution/distribution/v3/configuration"
 	dcontext "github.com/distribution/distribution/v3/context"
 	"github.com/distribution/distribution/v3/registry/handlers"
+	"github.com/distribution/distribution/v3/registry/listener"
+
+	_ "github.com/distribution/distribution/v3/registry/storage/driver/filesystem"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -33,8 +37,12 @@ version: 0.1
 storage:
   filesystem:
     rootdirectory: %s
+  maintenance:
+    uploadpurging:
+      enabled: false
 http:
   addr: :%d
+  secret: asecretforlocaldevelopment
 `
 
 func getFreePort() (port int, err error) {
@@ -49,26 +57,63 @@ func getFreePort() (port int, err error) {
 	return
 }
 
-func NewConfigWithRoot(root string) (*configuration.Configuration, error) {
-	port, err := getFreePort()
-	if err != nil {
-		return nil, err
+func NewConfig(root string, port int) (*configuration.Configuration, error) {
+	if port <= 0 {
+		var err error
+		port, err = getFreePort()
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	s := fmt.Sprintf(tpl, root, port)
 	rd := bytes.NewReader([]byte(s))
 	return configuration.Parse(rd)
 }
 
-func New(ctx context.Context, config *configuration.Configuration) (*http.Server, error) {
-	// disable logging output
+func configureLogging(ctx context.Context, config *configuration.Configuration) context.Context {
+	// disable logging output or increase logging level
 	logger := log.New()
-	logger.SetLevel(log.ErrorLevel)
+	if config.Log.AccessLog.Disabled {
+		logger.Out = io.Discard
+	}
+	logLevel, err := log.ParseLevel(string(config.Log.Level))
+	if err != nil {
+		logLevel = log.ErrorLevel
+	}
+	logger.SetLevel(logLevel)
 	logEntry := log.NewEntry(logger)
 	ctx = dcontext.WithLogger(ctx, logEntry)
 	dcontext.SetDefaultLogger(logEntry)
+	return ctx
+}
 
-	app := handlers.NewApp(ctx, config)
+func New(ctx context.Context, config *configuration.Configuration) (*http.Server, error) {
+	ctx = configureLogging(ctx, config)
 	return &http.Server{
-		Handler: app,
+		Handler: handlers.NewApp(ctx, config),
 	}, nil
+}
+
+func Run(ctx context.Context, config *configuration.Configuration) chan error {
+	errCh := make(chan error, 1)
+	srv, err := New(ctx, config)
+	if err != nil {
+		errCh <- err
+		return errCh
+	}
+	ln, err := listener.NewListener(config.HTTP.Net, config.HTTP.Addr)
+	if err != nil {
+		errCh <- err
+		return errCh
+	}
+	go func() {
+		errCh <- srv.Serve(ln)
+	}()
+	go func() {
+		// once receive nil or error then server will shutdown
+		<-errCh
+		_ = srv.Shutdown(ctx)
+	}()
+	return errCh
 }

@@ -23,7 +23,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/labring/sealos/pkg/registry/filesystem"
 	manifest2 "github.com/labring/sealos/pkg/registry/imagemanifest"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -163,7 +162,7 @@ func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig
 	config := configuration.Configuration{
 		Proxy: authConfigToProxy(auth),
 		Storage: configuration.Storage{
-			filesystem.DriverName: configuration.Parameters{configRootDir: rootdir},
+			"filesystem": configuration.Parameters{configRootDir: rootdir},
 		},
 	}
 	var err error

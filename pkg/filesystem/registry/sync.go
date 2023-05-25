@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -31,69 +30,62 @@ import (
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/types"
-	"github.com/distribution/distribution/v3/registry/listener"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/registry/handler"
+	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (
-	localhost   = "127.0.0.1"
-	defaultPort = "5000"
+	localhost            = "127.0.0.1"
+	defaultPort          = "5000"
+	defaultTemporaryPort = 5050
 )
 
 // TODO: fallback to ssh mode when HTTP is not available
 type syncMode struct {
-	mounts []v2.MountImage
+	pathResolver PathResolver
+	ssh          ssh.Interface
+	mounts       []v2.MountImage
 }
 
 func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 	sys := &types.SystemContext{
 		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
 	}
-	// login first
-	eg, ctx := errgroup.WithContext(ctx)
+	// run `sealctl registry serve` to start a temporary registry
 	for i := range hosts {
-		host := hosts[i]
-		eg.Go(func() error {
-			dst, err := parseRegistryAddress(host)
-			if err != nil {
-				return err
+		ctx, cancel := context.WithCancel(ctx)
+		// defer cancel async commands
+		defer cancel()
+		go func(ctx context.Context, host string) {
+			errCh := make(chan error, 1)
+			go func() {
+				errCh <- s.ssh.CmdAsync(host, getRegistryServeCommand(s.pathResolver, defaultTemporaryPort))
+			}()
+			select {
+			case <-ctx.Done():
+				return
+			case err := <-errCh:
+				logger.Error(err)
 			}
-			username, password := getUserAndPassForRegistry(dst)
-			return loginRegistry(ctx, sys, username, password, dst)
-		})
-	}
-	if err := eg.Wait(); err != nil {
-		return err
+		}(ctx, hosts[i])
 	}
 
 	outerEg, ctx := errgroup.WithContext(ctx)
 	for i := range s.mounts {
 		mount := s.mounts[i]
 		outerEg.Go(func() error {
-			config, err := handler.NewConfigWithRoot(filepath.Join(mount.MountPoint, constants.RegistryDirName))
+			config, err := handler.NewConfig(
+				filepath.Join(mount.MountPoint, constants.RegistryDirName), 0)
 			if err != nil {
 				return err
 			}
-			ln, err := listener.NewListener(config.HTTP.Net, config.HTTP.Addr)
-			if err != nil {
-				return err
-			}
-			srv, err := handler.New(ctx, config)
-			if err != nil {
-				return err
-			}
-			errCh := make(chan error, 1)
-			go func() {
-				errCh <- srv.Serve(ln)
-			}()
-			defer func() {
-				_ = srv.Shutdown(ctx)
-			}()
+			config.Log.AccessLog.Disabled = true
+			errCh := handler.Run(ctx, config)
 			eg, _ := errgroup.WithContext(ctx)
 			for j := range hosts {
 				host := hosts[j]
@@ -118,6 +110,13 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 	return outerEg.Wait()
 }
 
+func getRegistryServeCommand(pathResolver PathResolver, port int) string {
+	return fmt.Sprintf("%s registry serve -p %d --disable-logging %s",
+		pathResolver.RootFSSealctlPath(), port, pathResolver.RootFSRegistryPath(),
+	)
+}
+
+//lint:ignore U1000 Ignore unused function temporarily for debugging
 func loginRegistry(ctx context.Context, sys *types.SystemContext, username, password, registry string) error {
 	return auth.Login(ctx, sys, &auth.LoginOptions{
 		Username: username,
@@ -164,20 +163,6 @@ func syncRegistry(ctx context.Context, sys *types.SystemContext, src, dst string
 		}
 	}
 	return nil
-}
-
-func getUserAndPassForRegistry(r string) (username string, password string) {
-	if v, ok := os.LookupEnv("DEFAULT_REGISTRY_USERNAME"); ok {
-		username = v
-	} else {
-		username = constants.DefaultRegistryUsername
-	}
-	if v, ok := os.LookupEnv("DEFAULT_REGISTRY_PASSWORD"); ok {
-		password = v
-	} else {
-		password = constants.DefaultRegistryPassword
-	}
-	return
 }
 
 func getPolicyContext() (*signature.PolicyContext, error) {

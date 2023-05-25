@@ -19,16 +19,15 @@ package registry
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/filesystem"
 	"github.com/labring/sealos/pkg/ssh"
+	"github.com/labring/sealos/pkg/system"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -84,7 +83,7 @@ func getUntarCommands(pathResolver PathResolver) string {
 }
 
 func New(pathResolver PathResolver, ssh ssh.Interface, mounts []v2.MountImage) filesystem.RegistrySyncer {
-	if strings.ToLower(os.Getenv("REGISTRY_SYNC_EXPERIMENTAL")) == "true" {
+	if v, _ := system.Get(system.RegistrySyncExperimentalConfigKey); v == "true" {
 		return &syncMode{mounts: mounts}
 	}
 	return &sshMode{pathResolver, ssh, mounts}
