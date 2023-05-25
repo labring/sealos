@@ -71,7 +71,7 @@ spec:
                 enum:
                 - normal
                 - more
-                - ""
+                - hidden
                 type: string
             type: object
         type: object
