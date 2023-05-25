@@ -13,18 +13,6 @@ on:
       - "*"
 
 jobs:
-  workflow-frontend:
-    uses: ./.github/workflows/frontend.yml
-    with:
-      release: true
-  workflow-services:
-    uses: ./.github/workflows/services.yml
-    with:
-      release: true
-  workflow-controllers:
-    uses: ./.github/workflows/controllers.yml
-    with:
-      release: true
   goreleaser:
     runs-on: ubuntu-20.04
     steps:
