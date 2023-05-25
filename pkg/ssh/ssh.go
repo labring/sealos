@@ -45,6 +45,7 @@ type Interface interface {
 	Fetch(host, src, dst string) error
 	// CmdAsync exec commands on remote host asynchronously
 	CmdAsync(host string, cmds ...string) error
+	CmdAsyncWithContext(ctx context.Context, host string, cmds ...string) error
 	// Cmd exec command on remote host, and return combined standard output and standard error
 	Cmd(host, cmd string) ([]byte, error)
 	// CmdToString exec command on remote host, and return spilt standard output by separator and standard error
