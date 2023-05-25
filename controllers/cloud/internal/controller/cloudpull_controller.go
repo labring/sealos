@@ -18,36 +18,23 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	cloudclientv1 "github.com/labring/sealos/controllers/cloud/api/cloudclient/v1"
-	cloudclient "github.com/labring/sealos/controllers/cloud/internal/cloudclient"
-	handler "github.com/labring/sealos/controllers/cloud/internal/handler"
-	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
+	cloud "github.com/labring/sealos/controllers/cloud/internal/cloud_tool"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	"k8s.io/apimachinery/pkg/types"
 )
 
 // CloudClientReconciler reconciles a CloudClient object
 type CloudPullReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	//some tools
-	CloudClient  cloudclient.CloudClient
-	CloudHandler *handler.CloudHandler
-	//controller strategy
+	Cloud    cloud.CloudClient
+	Scheme   *runtime.Scheme
 	Strategy cloudclientv1.CloudClient
-
-	Input  cloudclient.CloudText
-	Output []ntf.Notification
-
-	CloudTime int64
 }
 
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch
@@ -67,44 +54,24 @@ type CloudPullReconciler struct {
 func (r *CloudPullReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	lgr := log.FromContext(ctx)
 	lgr.Info("enter CloudClientReconciler")
-
+	defer r.Cloud.Reset()
 	if err := r.Client.Get(ctx, req.NamespacedName, &r.Strategy); err != nil {
 		logger.Error("failed to get cloudpull strategy")
 		return ctrl.Result{}, err
 	}
 
-	CycleTime := time.Duration(r.Strategy.Spec.CycleTime) * time.Second
-	CloudURL := r.Strategy.Spec.CloudURL
-	defer r.CloudClient.Clear()
-	r.CloudClient.SetTime(r.CloudTime)
-	r.CloudClient.SetURL(CloudURL)
-	r.CloudClient.SetMethod("POST")
-
+	cycletime := time.Duration(r.Strategy.Spec.CycleTime) * time.Second
+	cloudURL := r.Strategy.Spec.CloudURL
+	logger.Info("cycletime: ", cycletime)
 	// pull notification from Cloud
-	if err := r.CloudClient.Pull(); err != nil {
+	if err := cloud.CloudPull(&r.Cloud, "POST", cloudURL); err != nil {
+		return ctrl.Result{RequeueAfter: cycletime}, nil
+	}
+	logger.Info("success to pull from cloud")
+	if err := cloud.CloudCreateCR(&r.Cloud, r.Client); err != nil {
 		return ctrl.Result{}, err
 	}
-
-	//Get the total json strings
-	var CloudTexts []cloudclient.CloudText
-	if err := json.Unmarshal(r.CloudClient.ResponseBody, &CloudTexts); err != nil {
-		logger.Info("failed to decode the json string ", "Error: ", err)
-		return ctrl.Result{RequeueAfter: CycleTime}, nil
-	}
-
-	//per json string parse once
-	for _, CloudText := range CloudTexts {
-		r.Input = CloudText
-		if r.CloudTime < CloudText.Timestamp {
-			r.CloudTime = CloudText.Timestamp
-		}
-		//Apply cloud notification cr
-		if err := r.Process(ctx); err != nil {
-			logger.Info("failed to apply a Cloud notification")
-			continue
-		}
-	}
-	return ctrl.Result{RequeueAfter: CycleTime}, nil
+	return ctrl.Result{RequeueAfter: cycletime}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -123,52 +90,7 @@ func (r *CloudPullReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *CloudPullReconciler) init() {
-
 	r.Strategy = cloudclientv1.NewStartInstance()
 	timeTmp, _ := time.Parse("2006-01-02", r.Strategy.Spec.Date)
-	r.CloudTime = timeTmp.Unix() - int64(7)*24*60*60
-	//get a cloudhandler
-	r.CloudHandler = handler.NewCloudHandler()
-	r.Output = []ntf.Notification{}
-}
-
-func (r *CloudPullReconciler) Process(ctx context.Context) error {
-	//parse cloud text ==> notification cr
-	r.initHandler(&r.Input, r.Output, r.Client)
-	//build cr
-	if err := r.CloudHandler.BuildCloudCR(); err != nil {
-		return err
-	}
-	r.Output = r.CloudHandler.Output
-	var tmp ntf.Notification
-	//apply cr
-	var err error
-	for _, res := range r.Output {
-		key := types.NamespacedName{Namespace: res.Namespace, Name: res.Name}
-		if err = r.Client.Get(ctx, key, &tmp); err == nil {
-			res.ResourceVersion = tmp.ResourceVersion
-			if err = r.Client.Update(ctx, &res); err != nil {
-				logger.Info("failed to update", "notification id: ", res.Name, "Error: ", err)
-			}
-		} else {
-			if client.IgnoreNotFound(err) == nil {
-				if err = r.Client.Create(ctx, &res); err != nil {
-					logger.Info("failed to create", "notification id: ", res.Name, "Error: ", err)
-				}
-			} else {
-				logger.Error("unknown error for cloud", "notification id: ", res.Name, "Error: ", err)
-			}
-		}
-	}
-
-	r.CloudHandler.Reset()
-	r.Output = []ntf.Notification{}
-	r.Input = cloudclient.CloudText{}
-	return err
-}
-
-func (r *CloudPullReconciler) initHandler(cloudtext *cloudclient.CloudText, notification []ntf.Notification, client client.Client) {
-	r.CloudHandler.Input = cloudtext
-	r.CloudHandler.Output = notification
-	r.CloudHandler.Client = client
+	r.Cloud.SetTime(timeTmp.Unix() - int64(7)*24*60*60)
 }
