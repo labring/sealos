@@ -5,19 +5,19 @@
   top: 0;
   left: 0;
   padding: 88px 52px 48px 52px;
-  backdrop-filter: blur(150px);
-  transition: all 0.5s cubic-bezier(0.39, 0.575, 0.565, 1);
-
+  transition: all ease-in-out 200ms;
   &[data-show='true'] {
     visibility: visible;
     opacity: 1;
+    backdrop-filter: blur(150px);
+    transform: scale(1);
   }
 
   &[data-show='false'] {
     opacity: 0;
+    transform: scale(1.2);
     visibility: hidden;
     z-index: -5;
-    transform: scale(0.1);
   }
 }
 
@@ -25,6 +25,7 @@
   grid-column-gap: 126px;
   grid-row-gap: 48px;
 }
+
 @media screen and (max-width: 1200px) {
   .appsContainer {
     grid-column-gap: 50px;

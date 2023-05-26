@@ -2,7 +2,7 @@
 import useAppStore from '@/stores/app';
 import { Box, Flex, Image } from '@chakra-ui/react';
 import clsx from 'clsx';
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import Draggable, { DraggableEventHandler } from 'react-draggable';
 import styles from './index.module.scss';
 
@@ -91,6 +91,9 @@ export default function AppWindow(props: {
           background={'#F7F8FA'}
           className={'windowHeader'}
           borderRadius={'6px 6px 0 0'}
+          onClick={() => {
+            setToHighestLayerById(pid);
+          }}
           onDoubleClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -179,16 +182,10 @@ export default function AppWindow(props: {
             </Box>
           </Flex>
         </Flex>
-        {/* app switch mask */}
-        <div
-          className={styles.appMask}
-          onClick={() => {
-            setToHighestLayerById(pid);
-          }}
-          style={{ pointerEvents: wnapp.zIndex !== maxZIndex ? 'unset' : 'none' }}
-        ></div>
+
         {/* app window content */}
         <Flex flexGrow={1} overflow={'hidden'} borderRadius={'0 0 6px 6px'} position={'relative'}>
+          {/* Drag necessary to improve fluency */}
           {dragging && (
             <Box
               position={'absolute'}
@@ -198,6 +195,14 @@ export default function AppWindow(props: {
               zIndex={8888}
             ></Box>
           )}
+          {/* app switch mask */}
+          <div
+            className={styles.appMask}
+            onClick={() => {
+              setToHighestLayerById(pid);
+            }}
+            style={{ pointerEvents: wnapp.zIndex !== maxZIndex ? 'unset' : 'none' }}
+          ></div>
           {props.children}
         </Flex>
       </div>

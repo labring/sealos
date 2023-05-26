@@ -51,16 +51,19 @@ export default function Notification(props: TNotification) {
       }
     }
   );
+  const [unread_notes, read_notes] = useMemo(() => {
+    const unread: NotificationItem[] = [];
+    const read: NotificationItem[] = [];
 
-  const unread_notes = useMemo(
-    () => notification?.filter((item: NotificationItem) => !item?.metadata?.labels?.isRead),
-    [notification]
-  );
+    notification?.forEach((item: NotificationItem) =>
+      !item?.metadata?.labels?.isRead ? unread.push(item) : read.push(item)
+    );
 
-  const read_notes = useMemo(
-    () => notification?.filter((item: NotificationItem) => item?.metadata?.labels?.isRead),
-    [notification]
-  );
+    const compareByTimestamp = (a: NotificationItem, b: NotificationItem) =>
+      b?.spec?.timestamp - a?.spec?.timestamp;
+
+    return [unread.sort(compareByTimestamp), read.sort(compareByTimestamp)];
+  }, [notification]);
 
   const notifications = activeTab === 'unread' ? unread_notes : read_notes;
 
@@ -146,10 +149,14 @@ export default function Notification(props: TNotification) {
                     <Text flexShrink={0} mt="4px" noOfLines={1} className={clsx(styles.desc)}>
                       {item?.spec?.message}
                     </Text>
-                    <Flex mt="4px" className={clsx(styles.desc, styles.footer)}>
+                    <Flex
+                      mt="4px"
+                      justifyContent={'space-between'}
+                      className={clsx(styles.desc, styles.footer)}
+                    >
                       <Text>来自「{item?.spec?.from}」</Text>
-                      <Text className="inline-block ml-auto">
-                        {formatTime(item?.spec?.timestamp || '', 'YYYY-MM-DD HH:mm')}
+                      <Text>
+                        {formatTime((item?.spec?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}
                       </Text>
                     </Flex>
                   </Flex>
@@ -174,7 +181,7 @@ export default function Notification(props: TNotification) {
             >
               <Text>来自「{msgDetail?.spec?.from}」</Text>
               <Box display={'inline-block'} ml={'auto'}>
-                {formatTime(msgDetail?.spec?.timestamp || '', 'YYYY-MM-DD HH:mm')}
+                {formatTime((msgDetail?.spec?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}
               </Box>
             </Flex>
             <Text
