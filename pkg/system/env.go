@@ -19,7 +19,7 @@ package system
 import (
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/containers/buildah"
@@ -63,18 +63,19 @@ var configOptions = []ConfigOption{
 	},
 	{
 		Key:          RuntimeRootConfigKey,
-		Description:  "root directory for sealos actions.",
-		DefaultValue: path.Join(homedir.Get(), ".sealos"),
+		Description:  "root directory for runtime actions.",
+		DefaultValue: filepath.Join(homedir.Get(), fmt.Sprintf(".%s", constants.AppName)),
 	},
 	{
 		Key:          DataRootConfigKey,
 		Description:  "cluster root directory for remote.",
-		DefaultValue: "/var/lib/sealos",
+		DefaultValue: filepath.Join("/var/lib", constants.AppName),
 	},
 	{
 		Key:          BuildahFormatConfigKey,
 		Description:  "`format` of the image manifest and metadata.",
 		DefaultValue: buildah.OCI,
+		OSEnv:        BuildahFormatConfigKey,
 	},
 	{
 		Key:          ScpChecksumConfigKey,
