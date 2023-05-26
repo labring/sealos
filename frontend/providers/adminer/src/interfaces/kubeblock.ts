@@ -77,11 +77,46 @@ export async function generateKubeBlockClusterTemplate(
 
           const username = atob(secret.body.data['username']);
           const password = atob(secret.body.data['postgres-password']);
-          const host = atob(secret.body.data['host']);
-          const port = atob(secret.body.data['port']);
+          const endpoint = atob(secret.body.data['endpoint']);
 
-          const pgConnection = 'pgsql://' + username + ':' + password + '@' + host + ':' + port;
-          connections.push(pgConnection);
+          const connection = 'pgsql://' + username + ':' + password + '@' + endpoint;
+          connections.push(connection);
+        } else if (clusterType === 'apecloud-mysql') {
+          // get secret
+          const secretName = item.metadata.name + '-conn-credential';
+          const secret = await secretClient.readNamespacedSecret(
+            secretName,
+            item.metadata.namespace
+          );
+
+          if (!secret.body?.data) {
+            continue;
+          }
+
+          const username = atob(secret.body.data['username']);
+          const password = atob(secret.body.data['password']);
+          const endpoint = atob(secret.body.data['endpoint']);
+
+          const connection = 'mysql://' + username + ':' + password + '@' + endpoint;
+          connections.push(connection);
+        } else if (clusterType === 'mongodb') {
+          // get secret
+          const secretName = item.metadata.name + '-conn-credential';
+          const secret = await secretClient.readNamespacedSecret(
+            secretName,
+            item.metadata.namespace
+          );
+
+          if (!secret.body?.data) {
+            continue;
+          }
+
+          const username = atob(secret.body.data['username']);
+          const password = atob(secret.body.data['password']);
+          const endpoint = atob(secret.body.data['endpoint']);
+
+          const connection = 'mongo://' + username + ':' + password + '@' + endpoint;
+          connections.push(connection);
         }
       }
     }
