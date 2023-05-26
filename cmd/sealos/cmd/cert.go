@@ -73,6 +73,5 @@ func newCertCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied exec action")
 	cmd.Flags().StringVar(&altNames, "alt-names", "", "add domain or ip in certs, sealos.io or 10.103.97.2")
-	setCommandUnrelatedToBuildah(cmd)
 	return cmd
 }

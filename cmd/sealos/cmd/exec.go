@@ -72,6 +72,5 @@ func newExecCmd() *cobra.Command {
 	execCmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied exec action")
 	execCmd.Flags().StringVarP(&roles, "roles", "r", "", "run command on nodes with role")
 	execCmd.Flags().StringSliceVar(&ips, "ips", []string{}, "run command on nodes with ip address")
-	setCommandUnrelatedToBuildah(execCmd)
 	return execCmd
 }

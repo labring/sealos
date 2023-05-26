@@ -99,9 +99,8 @@ func init() {
 	rootCmd.AddCommand(system.NewEnvCmd())
 }
 
-// add unrelated command names that don't required buildah sdk.
-func setCommandUnrelatedToBuildah(cmd *cobra.Command) {
-	buildah.AddUnrelatedCommandNames(cmd.Name())
+func setRequireBuildahAnnotation(cmd *cobra.Command) {
+	buildah.SetRequireBuildahAnnotation(cmd)
 }
 
 func onBootOnDie() {
