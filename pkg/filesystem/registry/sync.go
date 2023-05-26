@@ -133,7 +133,7 @@ func waitUntilHTTPListen(endpoint string, tw time.Duration) bool {
 }
 
 func getRegistryServeCommand(pathResolver PathResolver, port string) string {
-	return fmt.Sprintf("%s registry serve -p %s --disable-logging=true %s",
+	return fmt.Sprintf("%s registry serve filesystem -p %s --disable-logging=true %s",
 		pathResolver.RootFSSealctlPath(), port, pathResolver.RootFSRegistryPath(),
 	)
 }
