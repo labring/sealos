@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package cloud_tool
+package cloudtool
 
 import (
 	"context"
@@ -36,7 +36,7 @@ type Cloud interface {
 
 type HandlerCR interface {
 	getCRs() []ntf.Notification
-	produceCR(namespaceGroup map[string][]string) error
+	produceCR(namespaceGroup map[string][]string)
 }
 
 func CloudPull(cloud Cloud, method string, url string) error {
