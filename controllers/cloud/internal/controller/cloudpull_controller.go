@@ -21,7 +21,7 @@ import (
 	"time"
 
 	cloudclientv1 "github.com/labring/sealos/controllers/cloud/api/cloudclient/v1"
-	cloud "github.com/labring/sealos/controllers/cloud/internal/cloud_tool"
+	cloud "github.com/labring/sealos/controllers/cloud/internal/cloudtool"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -65,7 +65,7 @@ func (r *CloudPullReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	logger.Info("cycletime: ", cycletime)
 	// pull notification from Cloud
 	if err := cloud.CloudPull(&r.Cloud, "POST", cloudURL); err != nil {
-		return ctrl.Result{RequeueAfter: cycletime}, nil
+		return ctrl.Result{}, err
 	}
 	logger.Info("success to pull from cloud")
 	if err := cloud.CloudCreateCR(&r.Cloud, r.Client); err != nil {
