@@ -296,7 +296,8 @@ export const json2Ingress = (data: AppEditType) => {
     },
     WS: {
       'nginx.ingress.kubernetes.io/proxy-read-timeout': '3600',
-      'nginx.ingress.kubernetes.io/proxy-send-timeout': '3600'
+      'nginx.ingress.kubernetes.io/proxy-send-timeout': '3600',
+      'nginx.ingress.kubernetes.io/backend-protocol': 'WS',
     }
   };
 

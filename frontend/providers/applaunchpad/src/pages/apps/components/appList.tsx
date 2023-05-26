@@ -149,7 +149,7 @@ const AppList = ({
       title: '实例数',
       key: 'activeReplicas',
       render: (item: AppListItemType) => (
-        <Flex>
+        <Flex whiteSpace={'nowrap'}>
           <Box color={'myGray.900'}>活跃: {item.activeReplicas}</Box>
           {item.minReplicas !== item.maxReplicas && (
             <Box>
