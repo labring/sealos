@@ -21,6 +21,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/kubectl/pkg/util/templates"
 
+	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -54,7 +55,7 @@ func init() {
 	})
 
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logger")
-
+	buildah.RegisterRootCommand(rootCmd)
 	groups := templates.CommandGroups{
 		{
 			Message: "Network Management Commands:",
@@ -72,6 +73,10 @@ func init() {
 				newStaticPodCmd(),
 				newTokenCmd(),
 			},
+		},
+		{
+			Message:  "Container and Image Commands:",
+			Commands: buildah.AllSubCommands(),
 		},
 	}
 	groups.Add(rootCmd)
