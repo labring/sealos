@@ -73,8 +73,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-<<<<<<< HEAD
-<<<<<<< HEAD
         module:
           - { name: user, path: user }
           - { name: terminal, path: terminal }
@@ -86,19 +84,8 @@ jobs:
           - { name: app, path: app }
           - { name: db-bytebase, path: db/bytebase }
           - { name: db-adminer, path: db/adminer }
-<<<<<<< HEAD
           - { name: resources, path: resources }
-=======
-=======
-        module: [ user, terminal, metering, infra, cluster, imagehub, account, app, lafcloud ]
->>>>>>> bdfc8515 (delete the notification controller and add the lafcloud controller)
-<<<<<<< HEAD
->>>>>>> d9d0bbec (delete the notification controller and add the lafcloud controller)
-=======
-=======
-        module: [ user, terminal, metering, infra, cluster, imagehub, account, app, cloud ]
->>>>>>> 777d7c73 (modify the workflow file add a cloud module)
->>>>>>> b62b5a6e (modify the workflow file add a cloud module)
+          - { name: cloud, path: cloud }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -190,7 +177,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-<<<<<<< HEAD
         module:
           - { name: user, path: user }
           - { name: terminal, path: terminal }
@@ -202,13 +188,8 @@ jobs:
           - { name: app, path: app }
           - { name: db-bytebase, path: db/bytebase }
           - { name: db-adminer, path: db/adminer }
-<<<<<<< HEAD
           - { name: resources, path: resources }
-=======
-=======
-        module: [ user, terminal, metering, infra, cluster, imagehub, account, app, notification ]
->>>>>>> 58e63dcb (Modify the code logic for creating and updating the Cloud Custom Resource (CR))
->>>>>>> 41cca0b7 (Modify the code logic for creating and updating the Cloud Custom Resource (CR))
+          - { name: cloud, path: cloud }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
