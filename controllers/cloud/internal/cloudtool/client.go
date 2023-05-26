@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package cloud_tool
+package cloudtool
 
 import (
 	"bytes"
@@ -46,8 +46,8 @@ type CloudClient struct {
 	req  *http.Request
 	resp *http.Response
 
-	req_body  []byte
-	resp_body []byte
+	reqBody  []byte
+	respBody []byte
 
 	crs []ntf.Notification
 
@@ -79,8 +79,8 @@ func (cc *CloudClient) createRequest() error {
 		logger.Error("failed to generate a new Http Reaquest", err)
 		return err
 	}
-	cc.req_body = body
-	req, err = http.NewRequest(cc.method, cc.url, bytes.NewBuffer(cc.req_body))
+	cc.reqBody = body
+	req, err = http.NewRequest(cc.method, cc.url, bytes.NewBuffer(cc.reqBody))
 	if err != nil {
 		logger.Error("CloudClient can't generate a new Http Reaquest ", err)
 		return err
@@ -124,7 +124,7 @@ func (cc *CloudClient) readResponse() error {
 		logger.Error("CloudClient failed to get HTTP response body ", err)
 		return err
 	}
-	cc.resp_body = body
+	cc.respBody = body
 	return nil
 }
 
@@ -135,11 +135,11 @@ func (cc *CloudClient) setCloudArgs(method string, url string) {
 }
 
 // produce the crs data
-func (cc *CloudClient) produceCR(namespaceGroup map[string][]string) error {
+func (cc *CloudClient) produceCR(namespaceGroup map[string][]string) {
 	var events []CloudResponse
-	if err := json.Unmarshal(cc.resp_body, &events); err != nil {
+	if err := json.Unmarshal(cc.respBody, &events); err != nil {
 		logger.Info("failed to decode the json string ", "Error: ", err)
-		return err
+		return
 	}
 	for _, event := range events {
 		if event.Timestamp > cc.timestamp {
@@ -149,7 +149,7 @@ func (cc *CloudClient) produceCR(namespaceGroup map[string][]string) error {
 			cc.buildCR(prefix, namespaces, event)
 		}
 	}
-	return nil
+	return
 }
 
 func (cc *CloudClient) buildCR(prefix string, namespaces []string, event CloudResponse) {
@@ -185,7 +185,7 @@ func (cc *CloudClient) processADM(notification *ntf.Notification, namespaceName 
 	notification.Namespace = namespaceName
 	notification.Name = prefix + event.ID
 }
-func (cc *CloudClient) processROOT(_ *ntf.Notification, namespaceName string, event CloudResponse) {
+func (cc *CloudClient) processROOT(_ *ntf.Notification, _ string, _ CloudResponse) {
 	logger.Info("no logic for root-user")
 }
 
@@ -198,12 +198,12 @@ func (cc *CloudClient) SetTime(time int64) {
 }
 
 func (cc *CloudClient) Reset() {
-	cc.req_body = nil
-	cc.resp_body = nil
+	cc.reqBody = nil
+	cc.respBody = nil
 	cc.crs = nil
 }
 
 func (cc *CloudClient) IsEmpty() bool {
-	logger.Info(cc.resp_body)
-	return cc.resp_body == nil
+	logger.Info(cc.respBody)
+	return cc.respBody == nil
 }
