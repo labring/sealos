@@ -18,6 +18,8 @@ package controllers
 
 import (
 	"context"
+	"strings"
+
 	"github.com/go-logr/logr"
 	"github.com/labring/sealos/controllers/user/controllers/helper"
 	v1 "k8s.io/api/core/v1"
@@ -29,7 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"strings"
 )
 
 // NamespaceReconciler reconciles a Namespace object
