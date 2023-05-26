@@ -124,9 +124,10 @@ func waitUntilHTTPListen(endpoint string, tw time.Duration) bool {
 			if err == nil {
 				_, _ = io.Copy(io.Discard, resp.Body)
 				resp.Body.Close()
+				logger.Info("registry %s is listening , connect success", endpoint)
 				return true
 			}
-			logger.Warn(err)
+			logger.Warn("connect to %s error: %v", endpoint, err)
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
