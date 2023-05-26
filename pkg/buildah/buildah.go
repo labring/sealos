@@ -108,7 +108,6 @@ func RegisterGlobalFlags(fs *pflag.FlagSet) error {
 var (
 	globalFlagResults globalFlags
 	rootCmd           *cobra.Command
-	unrelatedCommands = []string{"version"}
 	postRunHooks      []func() error
 )
 
@@ -122,7 +121,7 @@ func markFlagsHidden(fs *pflag.FlagSet, names ...string) error {
 }
 
 func AllImageSubCommands() []*cobra.Command {
-	return []*cobra.Command{
+	cmds := []*cobra.Command{
 		newBuildCommand(),
 		newCreateCmd(),
 		newDiffCommand(),
@@ -139,16 +138,20 @@ func AllImageSubCommands() []*cobra.Command {
 		newSaveCommand(),
 		newTagCommand(),
 	}
+	SetRequireBuildahAnnotation(cmds...)
+	return cmds
 }
 
 func AllContainerSubCommands() []*cobra.Command {
-	return []*cobra.Command{
+	cmds := []*cobra.Command{
 		newContainersCommand(),
 		newFromCommand(),
 		newMountCommand(),
 		newRMCommand(),
 		newUmountCommand(),
 	}
+	SetRequireBuildahAnnotation(cmds...)
+	return cmds
 }
 
 func AllSubCommands() []*cobra.Command {
@@ -170,15 +173,32 @@ func RegisterPostRun(fn func() error) {
 	postRunHooks = append(postRunHooks, fn)
 }
 
-func AddUnrelatedCommandNames(names ...string) {
-	unrelatedCommands = append(unrelatedCommands, names...)
+const (
+	requireBuildahAnnotationKey = "buildah-required"
+	requireBuildahAnnotationVal = "true"
+)
+
+// SetRequireBuildahAnnotation explicit call this function on commands that
+// require buildah module dependency
+func SetRequireBuildahAnnotation(cmds ...*cobra.Command) {
+	for i := range cmds {
+		if cmds[i].Annotations == nil {
+			cmds[i].Annotations = map[string]string{}
+		}
+		cmds[i].Annotations[requireBuildahAnnotationKey] = requireBuildahAnnotationVal
+	}
 }
 
-func skipPreRun(cmd *cobra.Command) bool {
-	for _, name := range unrelatedCommands {
-		if name == cmd.Name() {
+func requirePreRun(cmd *cobra.Command) bool {
+	for {
+		if cmd == nil {
+			break
+		}
+		if cmd.Annotations != nil &&
+			cmd.Annotations[requireBuildahAnnotationKey] == requireBuildahAnnotationVal {
 			return true
 		}
+		cmd = cmd.Parent()
 	}
 	return false
 }
@@ -188,7 +208,7 @@ func wrapPrePersistentRun(cmd *cobra.Command) {
 	case cmd.PersistentPreRun != nil:
 		run := cmd.PersistentPreRun
 		cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-			if !skipPreRun(cmd) {
+			if requirePreRun(cmd) {
 				bailOnError(TrySetupWithDefaults(defaultSetters...), "unable to setup")
 			}
 			run(cmd, args)
@@ -196,14 +216,14 @@ func wrapPrePersistentRun(cmd *cobra.Command) {
 	case cmd.PersistentPreRunE != nil:
 		runE := cmd.PersistentPreRunE
 		cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-			if !skipPreRun(cmd) {
+			if requirePreRun(cmd) {
 				bailOnError(TrySetupWithDefaults(defaultSetters...), "unable to setup")
 			}
 			return runE(cmd, args)
 		}
 	default:
 		cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-			if !skipPreRun(cmd) {
+			if requirePreRun(cmd) {
 				bailOnError(TrySetupWithDefaults(defaultSetters...), "unable to setup")
 			}
 		}

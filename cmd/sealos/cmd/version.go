@@ -52,7 +52,6 @@ func newVersionCmd() *cobra.Command {
 	}
 	versionCmd.Flags().BoolVar(&shortPrint, "short", false, "if true, print just the version number.")
 	versionCmd.Flags().StringVarP(&output, "output", "o", "yaml", "One of 'yaml' or 'json'")
-	setCommandUnrelatedToBuildah(versionCmd)
 	return versionCmd
 }
 

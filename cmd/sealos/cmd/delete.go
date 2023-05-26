@@ -71,6 +71,7 @@ func newDeleteCmd() *cobra.Command {
 			logger.Info(getContact())
 		},
 	}
+	setRequireBuildahAnnotation(deleteCmd)
 	deleteArgs.RegisterFlags(deleteCmd.Flags(), "removed", "remove")
 	deleteCmd.Flags().BoolVar(&processor.ForceDelete, "force", false, "we also can input an --force flag to delete cluster by force")
 	return deleteCmd
