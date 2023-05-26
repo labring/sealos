@@ -27,17 +27,18 @@ import (
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/filesystem"
 	"github.com/labring/sealos/pkg/ssh"
+	"github.com/labring/sealos/pkg/system"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-type scp struct {
+type sshMode struct {
 	pathResolver PathResolver
 	ssh          ssh.Interface
 	mounts       []v2.MountImage
 }
 
-func (s *scp) Sync(ctx context.Context, hosts ...string) error {
+func (s *sshMode) Sync(ctx context.Context, hosts ...string) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -82,5 +83,8 @@ func getUntarCommands(pathResolver PathResolver) string {
 }
 
 func New(pathResolver PathResolver, ssh ssh.Interface, mounts []v2.MountImage) filesystem.RegistrySyncer {
-	return &scp{pathResolver, ssh, mounts}
+	if v, _ := system.Get(system.RegistrySyncExperimentalConfigKey); v == "true" {
+		return &syncMode{pathResolver, ssh, mounts}
+	}
+	return &sshMode{pathResolver, ssh, mounts}
 }

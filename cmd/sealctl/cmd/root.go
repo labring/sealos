@@ -18,12 +18,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/spf13/cobra"
 	"k8s.io/kubectl/pkg/util/templates"
 
 	"github.com/labring/sealos/pkg/buildah"
-
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -44,7 +42,9 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		if rootCmd.SilenceErrors {
+			fmt.Fprintln(os.Stderr, err)
+		}
 		os.Exit(1)
 	}
 }
@@ -56,7 +56,6 @@ func init() {
 
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logger")
 	buildah.RegisterRootCommand(rootCmd)
-
 	groups := templates.CommandGroups{
 		{
 			Message: "Network Management Commands:",

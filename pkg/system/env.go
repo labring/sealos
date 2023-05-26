@@ -81,14 +81,20 @@ var configOptions = []ConfigOption{
 		Description:  "whether to check the md5sum value is consistent during the copy process",
 		DefaultValue: "yes",
 	},
+	{
+		Key:          RegistrySyncExperimentalConfigKey,
+		Description:  "enable registry sync experimental feature",
+		DefaultValue: "false",
+	},
 }
 
 const (
-	PromptConfigKey        = "PROMPT"
-	RuntimeRootConfigKey   = "RUNTIME_ROOT"
-	DataRootConfigKey      = "DATA_ROOT"
-	BuildahFormatConfigKey = "BUILDAH_FORMAT"
-	ScpChecksumConfigKey   = "SCP_CHECKSUM"
+	PromptConfigKey                   = "PROMPT"
+	RuntimeRootConfigKey              = "RUNTIME_ROOT"
+	DataRootConfigKey                 = "DATA_ROOT"
+	BuildahFormatConfigKey            = "BUILDAH_FORMAT"
+	ScpChecksumConfigKey              = "SCP_CHECKSUM"
+	RegistrySyncExperimentalConfigKey = "REGISTRY_SYNC_EXPERIMENTAL"
 )
 
 func (*envSystemConfig) getValueOrDefault(key string) (*ConfigOption, error) {

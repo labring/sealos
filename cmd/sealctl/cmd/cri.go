@@ -36,9 +36,6 @@ func newCRICmd() *cobra.Command {
 	var criCmd = &cobra.Command{
 		Use:   "cri",
 		Short: "cri manager",
-		//Run: func(cmd *cobra.Command, args []string) {
-		//
-		//},
 	}
 	criCmd.AddCommand(newCGroupDriverCmd())
 	criCmd.AddCommand(newCRISocketCmd())
