@@ -6,7 +6,7 @@
 
 .windowContainer {
   will-change: transform;
-  position: absolute;
+  position: fixed;
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.25), 0px 0px 1px rgba(0, 0, 0, 0.25);
   top: 0;
   left: 0;

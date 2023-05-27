@@ -2,6 +2,7 @@ import { MoreAppsContext } from '@/components/layout';
 import { Box, Flex, Text } from '@chakra-ui/react';
 import { useContext } from 'react';
 import Iconfont from '../iconfont';
+
 export default function Index() {
   const moreAppsContent = useContext(MoreAppsContext);
   return (
