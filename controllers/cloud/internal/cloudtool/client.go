@@ -149,7 +149,6 @@ func (cc *CloudClient) produceCR(namespaceGroup map[string][]string) {
 			cc.buildCR(prefix, namespaces, event)
 		}
 	}
-	return
 }
 
 func (cc *CloudClient) buildCR(prefix string, namespaces []string, event CloudResponse) {
