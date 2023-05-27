@@ -1,7 +1,11 @@
 package cmd
 
 import (
+	"os"
+
 	"k8s.io/apimachinery/pkg/util/json"
+
+	"github.com/labring/sealos/test/e2e/testhelper/settings"
 
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
 )
@@ -61,15 +65,35 @@ type CRICycle interface {
 	CRIImagePull(name string) error
 }
 
+func isDebug() bool {
+	if val, _ := os.LookupEnv(settings.TestDEBUG); val == "true" {
+		return true
+	}
+	return false
+}
+
+func SetDebug() {
+	_ = os.Setenv(settings.TestDEBUG, "true")
+}
+
 func (s *SealosCmd) Apply(args *ApplyOptions) error {
+	if isDebug() {
+		args.Debug = true
+	}
 	return s.Executor.AsyncExec(s.BinPath, append([]string{"apply"}, args.Args()...)...)
 }
 
 func (s *SealosCmd) Build(args *BuildOptions) error {
+	if isDebug() {
+		args.Debug = true
+	}
 	return s.Executor.AsyncExec(s.BinPath, append([]string{"build"}, args.Args()...)...)
 }
 
 func (s *SealosCmd) Create(args *CreateOptions) ([]byte, error) {
+	if isDebug() {
+		args.Debug = true
+	}
 	if args.Short {
 		return s.Executor.Exec(s.BinPath, append([]string{"create"}, args.Args()...)...)
 	}
@@ -77,22 +101,37 @@ func (s *SealosCmd) Create(args *CreateOptions) ([]byte, error) {
 }
 
 func (s *SealosCmd) Add(args *AddOptions) error {
+	if isDebug() {
+		args.Debug = true
+	}
 	return s.Executor.AsyncExec(s.BinPath, append([]string{"add"}, args.Args()...)...)
 }
 
 func (s *SealosCmd) Delete(args *DeleteOptions) error {
+	if isDebug() {
+		args.Debug = true
+	}
 	return s.Executor.AsyncExec(s.BinPath, append([]string{"delete"}, args.Args()...)...)
 }
 
 func (s *SealosCmd) Run(args *RunOptions) error {
+	if isDebug() {
+		args.Debug = true
+	}
 	return s.Executor.AsyncExec(s.BinPath, append([]string{"run"}, args.Args()...)...)
 }
 
 func (s *SealosCmd) Reset(args *ResetOptions) error {
+	if isDebug() {
+		args.Debug = true
+	}
 	return s.Executor.AsyncExec(s.BinPath, append([]string{"reset"}, args.Args()...)...)
 }
 
 func (s *SealosCmd) Cert(args *CertOptions) error {
+	if isDebug() {
+		args.Debug = true
+	}
 	return s.Executor.AsyncExec(s.BinPath, append([]string{"cert"}, args.Args()...)...)
 }
 

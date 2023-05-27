@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package registry
+package save
 
 import (
 	"bufio"
@@ -23,7 +23,8 @@ import (
 	"strings"
 	"sync"
 
-	manifest2 "github.com/labring/sealos/pkg/registry/imagemanifest"
+	"github.com/labring/sealos/pkg/registry/save/lib/distributionpkg/proxy"
+	"github.com/labring/sealos/pkg/registry/save/lib/imagemanifest"
 
 	"github.com/google/go-containerregistry/pkg/name"
 
@@ -45,24 +46,23 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/passwd"
-	"github.com/labring/sealos/pkg/registry/distributionpkg/proxy"
 	"github.com/labring/sealos/pkg/utils/http"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (
-	HTTPS           = "https://"
-	HTTP            = "http://"
-	defaultProxyURL = "https://registry-1.docker.io"
-	configRootDir   = "rootdirectory"
-
+	HTTPS            = "https://"
+	HTTP             = "http://"
+	defaultProxyURL  = "https://registry-1.docker.io"
+	configRootDir    = "rootdirectory"
+	defaultDomain    = "docker.io"
 	manifestV2       = "application/vnd.docker.distribution.manifest.v2+json"
 	manifestOCI      = "application/vnd.oci.image.manifest.v1+json"
 	manifestList     = "application/vnd.docker.distribution.manifest.list.v2+json"
 	manifestOCIIndex = "application/vnd.oci.image.index.v1+json"
 )
 
-func (is *DefaultImage) SaveImages(images []string, dir string, platform v1.Platform) ([]string, error) {
+func (is *defaultImage) SaveImages(images []string, dir string, platform v1.Platform) ([]string, error) {
 	logger.Debug("trying to save images: %+v for platform: %s", images,
 		strings.Join([]string{platform.OS, platform.Architecture, platform.Variant}, ","))
 	// init a pipe for display pull message
@@ -191,7 +191,7 @@ func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig
 	return proxyRegistry, nil
 }
 
-func (is *DefaultImage) save(nameds []name.Reference, platform v1.Platform, registry distribution.Namespace) error {
+func (is *defaultImage) save(nameds []name.Reference, platform v1.Platform, registry distribution.Namespace) error {
 	repo, err := is.getRepository(nameds[0], registry)
 	if err != nil {
 		return err
@@ -210,7 +210,7 @@ func (is *DefaultImage) save(nameds []name.Reference, platform v1.Platform, regi
 	return nil
 }
 
-func (is *DefaultImage) getRepository(named name.Reference, registry distribution.Namespace) (distribution.Repository, error) {
+func (is *defaultImage) getRepository(named name.Reference, registry distribution.Namespace) (distribution.Repository, error) {
 	repoName, err := reference.WithName(named.Context().RepositoryStr())
 	if err != nil {
 		return nil, fmt.Errorf("get repository name error: %v", err)
@@ -222,7 +222,7 @@ func (is *DefaultImage) getRepository(named name.Reference, registry distributio
 	return repo, nil
 }
 
-func (is *DefaultImage) saveManifestAndGetDigest(nameds []name.Reference, repo distribution.Repository, platform v1.Platform) ([]digest.Digest, error) {
+func (is *defaultImage) saveManifestAndGetDigest(nameds []name.Reference, repo distribution.Repository, platform v1.Platform) ([]digest.Digest, error) {
 	manifest, err := repo.Manifests(is.ctx, make([]distribution.ManifestServiceOption, 0)...)
 	if err != nil {
 		return nil, fmt.Errorf("get manifest service error: %v", err)
@@ -266,7 +266,7 @@ func (is *DefaultImage) saveManifestAndGetDigest(nameds []name.Reference, repo d
 	return imageDigests, nil
 }
 
-func (is *DefaultImage) handleManifest(manifest distribution.ManifestService, imagedigest digest.Digest, platform v1.Platform) (digest.Digest, error) {
+func (is *defaultImage) handleManifest(manifest distribution.ManifestService, imagedigest digest.Digest, platform v1.Platform) (digest.Digest, error) {
 	mani, err := manifest.Get(is.ctx, imagedigest, make([]distribution.ManifestServiceOption, 0)...)
 	if err != nil {
 		return digest.Digest(""), fmt.Errorf("get image manifest error: %v", err)
@@ -280,7 +280,7 @@ func (is *DefaultImage) handleManifest(manifest distribution.ManifestService, im
 	case manifestV2, manifestOCI:
 		return imagedigest, nil
 	case manifestList, manifestOCIIndex:
-		imageDigest, err := manifest2.GetImageManifestDigest(p, platform)
+		imageDigest, err := imagemanifest.GetImageManifestDigest(p, platform)
 		if err != nil {
 			return digest.Digest(""), fmt.Errorf("get digest from manifest list error: %v", err)
 		}
@@ -289,7 +289,7 @@ func (is *DefaultImage) handleManifest(manifest distribution.ManifestService, im
 		//OCI image or image index - no media type in the content
 
 		//First see if it is a list
-		imageDigest, _ := manifest2.GetImageManifestDigest(p, platform)
+		imageDigest, _ := imagemanifest.GetImageManifestDigest(p, platform)
 		if imageDigest != "" {
 			return imageDigest, nil
 		}
@@ -300,7 +300,7 @@ func (is *DefaultImage) handleManifest(manifest distribution.ManifestService, im
 	}
 }
 
-func (is *DefaultImage) saveBlobs(imageDigests []digest.Digest, repo distribution.Repository) error {
+func (is *defaultImage) saveBlobs(imageDigests []digest.Digest, repo distribution.Repository) error {
 	manifest, err := repo.Manifests(is.ctx, make([]distribution.ManifestServiceOption, 0)...)
 	if err != nil {
 		return fmt.Errorf("failed to get blob service: %v", err)
@@ -324,7 +324,7 @@ func (is *DefaultImage) saveBlobs(imageDigests []digest.Digest, repo distributio
 				return err
 			}
 
-			blobList, err := manifest2.GetBlobList(blobListJSON)
+			blobList, err := imagemanifest.GetBlobList(blobListJSON)
 			if err != nil {
 				return fmt.Errorf("failed to get blob list: %v", err)
 			}

@@ -53,6 +53,7 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 	sys := &types.SystemContext{
 		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
 	}
+	logger.Info("using syncMode syncing registry images to hosts %v", hosts)
 	// run `sealctl registry serve` to start a temporary registry
 	for i := range hosts {
 		ctx, cancel := context.WithCancel(ctx)
@@ -97,7 +98,10 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 					if err != nil {
 						return err
 					}
-					return sync.Image(ctx, sys, src, dst, copy.CopyAllImages)
+					if !sync.WaitUntilHTTPListen("http://"+src, time.Second*3) {
+						return fmt.Errorf("cannot detect whether registry %s is listening, check manually", src)
+					}
+					return sync.ToRegistry(ctx, sys, src, dst, copy.CopySystemImage)
 				})
 			}
 			go func() {

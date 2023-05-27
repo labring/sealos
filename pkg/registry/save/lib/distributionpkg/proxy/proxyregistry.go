@@ -22,11 +22,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/labring/sealos/pkg/registry/distributionpkg/client"
-	"github.com/labring/sealos/pkg/registry/distributionpkg/client/auth"
-	"github.com/labring/sealos/pkg/registry/distributionpkg/client/auth/challenge"
-	"github.com/labring/sealos/pkg/registry/distributionpkg/client/transport"
-	"github.com/labring/sealos/pkg/registry/distributionpkg/proxy/scheduler"
+	"github.com/labring/sealos/pkg/registry/save/lib/distributionpkg/client"
+	"github.com/labring/sealos/pkg/registry/save/lib/distributionpkg/client/auth"
+	"github.com/labring/sealos/pkg/registry/save/lib/distributionpkg/client/auth/challenge"
+	"github.com/labring/sealos/pkg/registry/save/lib/distributionpkg/client/transport"
+	"github.com/labring/sealos/pkg/registry/save/lib/distributionpkg/proxy/scheduler"
 
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"

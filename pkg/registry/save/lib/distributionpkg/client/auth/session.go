@@ -24,9 +24,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labring/sealos/pkg/registry/distributionpkg/client"
-	"github.com/labring/sealos/pkg/registry/distributionpkg/client/auth/challenge"
-	"github.com/labring/sealos/pkg/registry/distributionpkg/client/transport"
+	"github.com/labring/sealos/pkg/registry/save/lib/distributionpkg/client"
+	"github.com/labring/sealos/pkg/registry/save/lib/distributionpkg/client/auth/challenge"
+	"github.com/labring/sealos/pkg/registry/save/lib/distributionpkg/client/transport"
 )
 
 var (

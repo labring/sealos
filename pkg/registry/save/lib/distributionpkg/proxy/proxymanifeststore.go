@@ -18,7 +18,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/labring/sealos/pkg/registry/distributionpkg/proxy/scheduler"
+	"github.com/labring/sealos/pkg/registry/save/lib/distributionpkg/proxy/scheduler"
 
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/reference"

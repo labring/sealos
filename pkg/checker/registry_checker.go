@@ -21,11 +21,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/labring/sealos/pkg/registry/crane"
+
 	"github.com/labring/sealos/pkg/registry/helpers"
 
 	"github.com/docker/docker/api/types"
-
-	"github.com/labring/sealos/pkg/registry"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
@@ -100,7 +100,7 @@ func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
 		Username: regInfo.Username,
 		Password: regInfo.Password,
 	}
-	_, err = registry.NewRegistry(status.RegistryDomain, cfg)
+	_, err = crane.NewRegistry(status.RegistryDomain, cfg)
 	if err != nil {
 		status.Error = fmt.Errorf("get registry interface error: %w", err).Error()
 		return nil

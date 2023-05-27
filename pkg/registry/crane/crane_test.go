@@ -14,53 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package registry
+package crane
 
 import (
-	"context"
-	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/docker/docker/api/types"
-
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-
-	"github.com/stretchr/testify/require"
 )
-
-func TestGetAuthInfo(t *testing.T) {
-	t.Run("no credentials found", func(t *testing.T) {
-		authConfigs, err := GetAuthInfo(nil)
-		require.NoError(t, err)
-		require.Empty(t, authConfigs)
-	})
-	t.Run("has credentials found", func(t *testing.T) {
-		t.Setenv("DOCKER_CONFIG", filepath.Join("testdata"))
-		authConfigs, err := GetAuthInfo(nil)
-		require.NoError(t, err)
-		require.NotEmpty(t, authConfigs)
-		t.Logf("%+v", authConfigs)
-	})
-}
-
-func TestSaveImages(t *testing.T) {
-	//t.Setenv("DOCKER_CONFIG", filepath.Join("testdata"))
-	//authConfigs, _ := GetAuthInfo(nil)
-	save := NewImageSaver(context.TODO(), 5, nil)
-	t.Run("no credentials found", func(t *testing.T) {
-		_ = os.Mkdir("testdata/registry", 0755)
-		defer os.RemoveAll("testdata/registry")
-		imgs, err := save.SaveImages([]string{"registry.cn-shenzhen.aliyuncs.com/cnmirror/rook:v1.9.8"}, "testdata/registry", v1.Platform{
-			Architecture: "amd64",
-		})
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		t.Logf("images: %+v", imgs)
-	})
-}
 
 func TestGetImageDigestFromAuth(t *testing.T) {
 	t.Setenv("DOCKER_CONFIG", filepath.Join("testdata"))

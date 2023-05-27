@@ -23,14 +23,19 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/containers/common/pkg/retry"
+
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/docker"
+	"github.com/containers/image/v5/docker/daemon"
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/containers/image/v5/signature"
+	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
 
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -40,11 +45,12 @@ const (
 	defaultPort = "5000"
 )
 
-func Image(ctx context.Context, sys *types.SystemContext, src, dst string, selection copy.ImageListSelection) error {
+func ToRegistry(ctx context.Context, sys *types.SystemContext, src, dst string, selection copy.ImageListSelection) error {
 	policyContext, err := getPolicyContext()
 	if err != nil {
 		return err
 	}
+	logger.Debug("sync registry from %s to %s", src, dst)
 	repos, err := docker.SearchRegistry(ctx, sys, src, "", 1<<10)
 	if err != nil {
 		return err
@@ -57,6 +63,7 @@ func Image(ctx context.Context, sys *types.SystemContext, src, dst string, selec
 		if err != nil {
 			return err
 		}
+
 		refs, err := imagesToCopyFromRepo(ctx, sys, named)
 		if err != nil {
 			return err
@@ -67,23 +74,72 @@ func Image(ctx context.Context, sys *types.SystemContext, src, dst string, selec
 			if err != nil {
 				return err
 			}
-			_, err = copy.Image(ctx, policyContext, destRef, refs[j], &copy.Options{
-				SourceCtx:          sys,
-				DestinationCtx:     sys,
-				ImageListSelection: selection,
-			})
-			if err != nil {
+			logger.Debug("copy image using registry sync mode: %s", destRef.DockerReference().String())
+			err = retry.RetryIfNecessary(ctx, func() error {
+				_, err = copy.Image(ctx, policyContext, destRef, refs[j], &copy.Options{
+					SourceCtx:          sys,
+					DestinationCtx:     sys,
+					ImageListSelection: selection,
+				})
 				return err
+			}, getRetryOptions())
+			if err != nil {
+				logger.Warn("copy image %s failed: %s", refs[j].DockerReference().String(), err.Error())
 			}
 		}
 	}
 	return nil
 }
 
-func getPolicyContext() (*signature.PolicyContext, error) {
-	policy, err := signature.DefaultPolicy(nil)
+func getRetryOptions() *retry.RetryOptions {
+	return &retry.RetryOptions{
+		MaxRetry: 5,
+	}
+}
+
+func ToImage(ctx context.Context, sys *types.SystemContext, src types.ImageReference, dst string, selection copy.ImageListSelection) error {
+	allSrcImage := src.DockerReference().String()
+	var repo string
+	parts := strings.SplitN(allSrcImage, "/", 2)
+	if len(parts) == 2 && (strings.ContainsRune(parts[0], '.') || strings.ContainsRune(parts[0], ':')) {
+		// The first part of the repository is treated as the registry domain
+		// iff it contains a '.' or ':' character, otherwise it is all repository
+		// and the domain defaults to Docker Hub.
+		_ = parts[0]
+		repo = parts[1]
+	}
+	//named.
+	dstImage := strings.Join([]string{dst, repo}, "/")
+	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", dstImage))
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("invalid destination name %s: %v", dst, err)
+	}
+	policyContext, err := getPolicyContext()
+	if err != nil {
+		return err
+	}
+	logger.Debug("copy image using registry sync mode: %s", repo)
+	return retry.RetryIfNecessary(ctx, func() error {
+		_, err = copy.Image(ctx, policyContext, destRef, src, &copy.Options{
+			SourceCtx:          sys,
+			DestinationCtx:     sys,
+			ImageListSelection: selection,
+			ReportWriter:       os.Stdout,
+		})
+		return err
+	}, getRetryOptions())
+}
+
+func getPolicyContext() (*signature.PolicyContext, error) {
+	policy := &signature.Policy{
+		Default: []signature.PolicyRequirement{
+			signature.NewPRInsecureAcceptAnything(),
+		},
+		Transports: map[string]signature.PolicyTransportScopes{
+			daemon.Transport.Name(): {
+				"": signature.PolicyRequirements{signature.NewPRInsecureAcceptAnything()},
+			},
+		},
 	}
 	return signature.NewPolicyContext(policy)
 }
