@@ -227,10 +227,13 @@ func (r *AdminerReconciler) syncDeployment(ctx context.Context, adminer *adminer
 			},
 			VolumeMounts: []corev1.VolumeMount{
 				{
-					Name:      "servers-volume",
-					MountPath: "/var/www/html/servers.php",
-					SubPath:   "servers.php",
-					ReadOnly:  true,
+					Name: "servers-volume",
+					// Note: we cannot use subpath since k8s cannot auto update it's mounts.
+					// @see: https://kubernetes.io/docs/concepts/configuration/secret/#mounted-secrets-are-updated-automatically
+					MountPath: "/var/www/html/servers",
+					// MountPath: "/var/www/html/servers.php",
+					// SubPath:   "servers.php",
+					ReadOnly: true,
 				},
 			},
 		},
