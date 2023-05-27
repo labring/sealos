@@ -13,3 +13,4 @@ spec:
     nameColor: text-black
     helpDropDown: false
     helpDocs:
+  displayType: normal
