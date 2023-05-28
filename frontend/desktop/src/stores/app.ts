@@ -5,7 +5,7 @@ import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import AppStateManager from '../utils/ProcessManager';
 import { formatUrl } from '@/utils/format';
-import { minBy, remove } from 'lodash';
+import { minBy, remove, cloneDeep } from 'lodash';
 export class AppInfo {
   pid: number;
   isShow: boolean;
@@ -37,12 +37,12 @@ export class AppInfo {
     this.zIndex = 1;
     this.size = 'maximize';
     this.cacheSize = 'maximize';
-    this.style = structuredClone(app.style);
+    this.style = cloneDeep(app.style);
     this.mouseDowning = false;
-    this.menuData = structuredClone(app.menuData);
-    this.gallery = structuredClone(app.gallery);
-    this.extra = structuredClone(app.extra);
-    this.data = structuredClone(app.data);
+    this.menuData = cloneDeep(app.menuData);
+    this.gallery = cloneDeep(app.gallery);
+    this.extra = cloneDeep(app.extra);
+    this.data = cloneDeep(app.data);
     this.type = app.type;
     this.icon = app.icon;
     this.name = app.name;
