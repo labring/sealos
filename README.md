@@ -120,7 +120,7 @@ sealos run labring/kubernetes-docker:v1.20.8-4.2.0 labring/calico:v3.22.1 \
 
 + Visit the [Sealos website](https://sealos.io/) for full documentation and useful links.
 + Join our [Discord server](https://discord.gg/7bPNZfsjJu) is to chat with Sealos developers and other Sealos users. This is a good place to learn about Sealos and Kubernetes, ask questions, and share your experiences.
-+ Tweet at @sealosio on Twitter.
++ Tweet at @sealosio on [Twitter](https://twitter.com/sealosio) and follow us.
 + Create [GitHub Issues](https://github.com/labring/sealos/issues/new/choose) for bug reports and feature requests.
 
 ## Roadmap
