@@ -28,6 +28,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/labring/sealos/pkg/system"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -306,6 +307,9 @@ func init() {
 }
 
 func maybeSetupLogrusLogger() (err error) {
+	if logLevelVal, _ := system.Get(system.BuildahLogLevelConfigKey); logLevelVal != "" {
+		globalFlagResults.LogLevel = logLevelVal
+	}
 	logrusLvl, err := logrus.ParseLevel(globalFlagResults.LogLevel)
 	if err != nil {
 		return fmt.Errorf("unable to parse log level: %w", err)

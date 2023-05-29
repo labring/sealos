@@ -96,7 +96,7 @@ func init() {
 	groups.Add(rootCmd)
 	filters := []string{}
 	templates.ActsAsRootCommand(rootCmd, filters, groups...)
-	rootCmd.AddCommand(system.NewEnvCmd())
+	rootCmd.AddCommand(system.NewEnvCmd(constants.AppName))
 }
 
 func setRequireBuildahAnnotation(cmd *cobra.Command) {

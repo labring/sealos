@@ -78,13 +78,18 @@ var configOptions = []ConfigOption{
 		OSEnv:        BuildahFormatConfigKey,
 	},
 	{
+		Key:         BuildahLogLevelConfigKey,
+		Description: `the log level to be used in buildah modules, either "trace", "debug", "info", "warn", "error", "fatal", or "panic".`,
+		OSEnv:       BuildahLogLevelConfigKey,
+	},
+	{
 		Key:          ScpChecksumConfigKey,
-		Description:  "whether to check the md5sum value is consistent during the copy process",
+		Description:  "whether to check the md5sum value is consistent during the copy process.",
 		DefaultValue: "yes",
 	},
 	{
 		Key:          RegistrySyncExperimentalConfigKey,
-		Description:  "enable registry sync experimental feature",
+		Description:  "enable registry sync experimental feature.",
 		DefaultValue: "false",
 	},
 }
@@ -94,6 +99,7 @@ const (
 	RuntimeRootConfigKey              = "RUNTIME_ROOT"
 	DataRootConfigKey                 = "DATA_ROOT"
 	BuildahFormatConfigKey            = "BUILDAH_FORMAT"
+	BuildahLogLevelConfigKey          = "BUILDAH_LOG_LEVEL"
 	ScpChecksumConfigKey              = "SCP_CHECKSUM"
 	RegistrySyncExperimentalConfigKey = "REGISTRY_SYNC_EXPERIMENTAL"
 )
