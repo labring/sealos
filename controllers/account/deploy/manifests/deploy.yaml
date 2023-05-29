@@ -778,6 +778,20 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - namespaces/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - namespaces/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
   - pods
   verbs:
   - create
@@ -787,6 +801,20 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - pods/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - ""
   resources:
@@ -803,6 +831,18 @@ rules:
   - metering.common.sealos.io
   resources:
   - extensionresourceprices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - notification.sealos.io
+  resources:
+  - notifications
   verbs:
   - create
   - delete
@@ -1007,6 +1047,14 @@ spec:
             secretKeyRef:
               key: MONGO_PASSWORD
               name: mongo-secret
+        - name: ApproachingDeletionPeriod
+          value: "345600"
+        - name: ImminentDeletionPeriod
+          value: "259200"
+        - name: FinalDeletionPeriod
+          value: "604800"
+        - name: DebtDetectionCycleSeconds
+          value: "60"
         envFrom:
         - configMapRef:
             name: account-manager-configmap
@@ -1040,6 +1088,7 @@ spec:
             memory: 64Mi
         securityContext:
           allowPrivilegeEscalation: false
+          runAsNonRoot: true
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
@@ -1122,6 +1171,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - '*'
   sideEffects: None

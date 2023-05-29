@@ -40,9 +40,15 @@ const (
 	defaultUserSystemNamespace = "user-system"
 )
 
+const (
+	DebtSchedulerName     = "sealos-debt-scheduler"
+	PreviousSchedulerName = "sealos-debt/previousScheduler"
+	PodPhaseSuspended     = "Suspended"
+)
+
 var logger = logf.Log.WithName("debt-resource")
 
-//+kubebuilder:webhook:path=/validate-v1-sealos-cloud,mutating=true,failurePolicy=ignore,groups="*",resources=*,verbs=create;update,versions=v1,name=debt.sealos.io,admissionReviewVersions=v1,sideEffects=None
+//+kubebuilder:webhook:path=/validate-v1-sealos-cloud,mutating=true,failurePolicy=ignore,groups="*",resources=*,verbs=create;update;delete,versions=v1,name=debt.sealos.io,admissionReviewVersions=v1,sideEffects=None
 // +kubebuilder:object:generate=false
 
 type DebtValidate struct {
@@ -65,10 +71,11 @@ func init() {
 }
 func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admission.Response {
 	logger.V(1).Info("checking user", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.gvrk", getGVRK(req))
-	// skip delete request
-	if req.Operation == admissionV1.Delete {
+	// skip delete request (删除quota资源除外)
+	if req.Operation == admissionV1.Delete && !strings.Contains(getGVRK(req), "quotas") {
 		return admission.Allowed("")
 	}
+
 	for _, g := range req.UserInfo.Groups {
 		switch g {
 		// if user is kubernetes-admin, pass it
