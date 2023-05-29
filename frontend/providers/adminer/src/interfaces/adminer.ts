@@ -1,4 +1,4 @@
-import * as yaml from 'js-yaml';
+import * as k8s from '@kubernetes/client-node';
 
 export type AdminerStatus = {
   availableReplicas: number;
@@ -9,12 +9,22 @@ export type AdminerForm = {
   namespace: string;
   currentTime: string;
   adminerName: string;
-  connections: Array<string>;
+  connections: string[];
 };
 
+export type AdminerSpec = {
+  keepalived: string;
+  ingressType: string;
+  connections: string[];
+};
+
+export interface AdminerObject extends k8s.KubernetesObject {
+  spec: AdminerSpec;
+}
+
 // this template is suite for golang(kubernetes and sealos)'s template engine
-export const generateAdminerTemplate = (form: AdminerForm): string => {
-  const temp = {
+export const generateAdminerTemplate = (form: AdminerForm): AdminerObject => {
+  return {
     apiVersion: 'adminer.db.sealos.io/v1',
     kind: 'Adminer',
     metadata: {
@@ -26,14 +36,8 @@ export const generateAdminerTemplate = (form: AdminerForm): string => {
     },
     spec: {
       keepalived: '4h',
+      ingressType: 'nginx',
       connections: form.connections
     }
   };
-
-  try {
-    const result = yaml.dump(temp);
-    return result;
-  } catch (error) {
-    return '';
-  }
 };
