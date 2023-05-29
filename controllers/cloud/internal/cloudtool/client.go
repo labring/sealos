@@ -83,12 +83,13 @@ func (cc *CloudClient) getResponse(req *http.Request) (*http.Response, error) {
 		return nil, errors.New("no http request")
 	}
 	//logger.Error(cc.CloudURL)
-	if resp, err := cc.do(req); err != nil {
+	var resp *http.Response
+	var err error
+	if resp, err = cc.do(req); err != nil {
 		logger.Info("failed to send HTTP request ", err)
 		return nil, err
-	} else {
-		return resp, nil
 	}
+	return resp, nil
 }
 
 func (cc *CloudClient) do(req *http.Request) (*http.Response, error) {
