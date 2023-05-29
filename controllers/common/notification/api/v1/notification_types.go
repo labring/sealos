@@ -17,7 +17,11 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+	"strings"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Type string
@@ -63,4 +67,50 @@ type NotificationList struct {
 
 func init() {
 	SchemeBuilder.Register(&Notification{}, &NotificationList{})
+}
+
+type NotificationMgr struct {
+	ntf Notification
+}
+
+func (m *NotificationMgr) SetAll(name string, namespace string, title string, timestamp int64, importance Type, from string, message string) {
+	m.SetNameNamespace(name, namespace)
+	m.SetTitle(title)
+	m.SetMessage(message)
+	m.SetImportance(importance)
+	m.SetFrom(from)
+}
+
+func (m *NotificationMgr) SetTitle(title string) {
+	m.ntf.Spec.Title = title
+}
+
+func (m *NotificationMgr) SetNameNamespace(name string, namespace string) {
+	m.ntf.Name = name
+	m.ntf.Namespace = namespace
+}
+
+func (m *NotificationMgr) SetTime(timestamp int64) {
+	m.ntf.Spec.Timestamp = timestamp
+}
+
+func (m *NotificationMgr) SetImportance(importance Type) {
+	m.ntf.Spec.Importance = importance
+}
+
+func (m *NotificationMgr) SetFrom(from string) {
+	m.ntf.Spec.From = from
+}
+
+func (m *NotificationMgr) SetMessage(message string) {
+	if !strings.HasSuffix(message, "\n") {
+		message += "\n"
+	}
+	title := "Dear Customer:\n\t"
+	tail := "Thank you for your support of Sealos."
+	m.ntf.Spec.Message = title + message + tail
+}
+
+func SendNotification(m NotificationMgr, client client.Client) error {
+	return client.Create(context.Background(), &m.ntf)
 }
