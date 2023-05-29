@@ -17,6 +17,7 @@ package cloudtool
 
 import (
 	"context"
+	"net/http"
 	"strings"
 	"time"
 
@@ -28,38 +29,39 @@ import (
 )
 
 type Cloud interface {
-	setCloudArgs(method string, url string)
-	createRequest() error
-	getResponse() error
-	readResponse() error
+	setCloudArgs(method string, url string) interface{}
+	createRequest(interface{}) (*http.Request, error)
+	getResponse(*http.Request) (*http.Response, error)
+	readResponse(*http.Response) ([]byte, error)
 }
 
 type HandlerCR interface {
-	getCRs() []ntf.Notification
-	produceCR(namespaceGroup map[string][]string)
+	produceCR(map[string][]string, []byte) []ntf.Notification
 }
 
-func CloudPull(cloud Cloud, method string, url string) error {
-	cloud.setCloudArgs(method, url)
-	if err := cloud.createRequest(); err != nil {
-		return err
+func CloudPull(cloud Cloud, method string, url string) ([]byte, error) {
+	content := cloud.setCloudArgs(method, url)
+	var req *http.Request
+	var resp *http.Response
+	var err error
+	if req, err = cloud.createRequest(content); err != nil {
+		return nil, err
 	}
-	if err := cloud.getResponse(); err != nil {
-		return err
+	if resp, err = cloud.getResponse(req); err != nil {
+		return nil, err
 	}
-	return cloud.readResponse()
+	return cloud.readResponse(resp)
 }
 
-func CloudCreateCR(h HandlerCR, client cl.Client) error {
+func CloudCreateCR(h HandlerCR, client cl.Client, resp []byte) error {
 	start := time.Now()
-	namespaceGroup, err := getnamespaceGroup(client)
+	namespaceGroup, err := getNamespaceGroup(client)
 	duration := time.Since(start)
 	logger.Info("duration of getnamespaceGroup:", duration)
 	if err != nil {
 		return err
 	}
-	h.produceCR(namespaceGroup)
-	CRs := h.getCRs()
+	CRs := h.produceCR(namespaceGroup, resp)
 	for _, res := range CRs {
 		var tmp ntf.Notification
 		key := types.NamespacedName{Namespace: res.Namespace, Name: res.Name}
@@ -81,7 +83,7 @@ func CloudCreateCR(h HandlerCR, client cl.Client) error {
 	return nil
 }
 
-func getnamespaceGroup(client cl.Client) (map[string][]string, error) {
+func getNamespaceGroup(client cl.Client) (map[string][]string, error) {
 	namespaceList := &corev1.NamespaceList{}
 	if err := client.List(context.Background(), namespaceList); err != nil {
 		logger.Error("failed to get namespace resource ", err)
@@ -89,9 +91,9 @@ func getnamespaceGroup(client cl.Client) (map[string][]string, error) {
 	}
 	//divide namespace to diff groups
 	var namespaceGroup = map[string][]string{
-		"ns":   {},
-		"adm":  {},
-		"root": {},
+		"ns-":   {},
+		"adm-":  {},
+		"root-": {},
 	}
 	for _, namespace := range namespaceList.Items {
 		for prefix := range namespaceGroup {
