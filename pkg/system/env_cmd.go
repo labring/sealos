@@ -18,25 +18,31 @@ package system
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
 
-func NewEnvCmd() *cobra.Command {
-	var configCmd = &cobra.Command{
+func NewEnvCmd(appName string) *cobra.Command {
+	var verbose bool
+	var cmd = &cobra.Command{
 		Use:   "env",
-		Short: "Display all envs for sealos",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Short: fmt.Sprintf("prints out all the environment information in use by %s", appName),
+		Run: func(cmd *cobra.Command, args []string) {
 			list := ConfigOptions()
 			for _, v := range list {
 				data, _ := GetConfig(v.Key)
 				if data == nil {
 					continue
 				}
-				println(fmt.Sprintf("%s=%s", data.OSEnv, data.DefaultValue))
+				fmt.Fprintf(os.Stdout, "%s=%s", data.OSEnv, data.DefaultValue)
+				if verbose {
+					fmt.Fprintf(os.Stdout, "\t# %s", data.Description)
+				}
+				fmt.Fprintf(os.Stdout, "\n")
 			}
-			return nil
 		},
 	}
-	return configCmd
+	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "more verbose output")
+	return cmd
 }
