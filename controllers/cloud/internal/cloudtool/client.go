@@ -38,31 +38,20 @@ type CloudRequest struct {
 }
 
 type CloudClient struct {
-	content   CloudRequest
 	method    string
 	url       string
 	timestamp int64
-
-	req  *http.Request
-	resp *http.Response
-
-	reqBody  []byte
-	respBody []byte
-
-	crs []ntf.Notification
-
-	client http.Client
 }
 
 type handlerFunc func(*CloudClient, *ntf.Notification, string, CloudResponse)
 
 var handlerMap = map[string]handlerFunc{
-	"ns":   (*CloudClient).processNS,
-	"adm":  (*CloudClient).processADM,
-	"root": (*CloudClient).processROOT,
+	"ns-":   (*CloudClient).processNS,
+	"adm-":  (*CloudClient).processADM,
+	"root-": (*CloudClient).processROOT,
 }
 
-func parse(content CloudRequest) ([]byte, error) {
+func parse(content interface{}) ([]byte, error) {
 	var err error
 	var JSONString []byte
 	if JSONString, err = json.Marshal(content); err != nil {
@@ -71,87 +60,88 @@ func parse(content CloudRequest) ([]byte, error) {
 	return JSONString, err
 }
 
-func (cc *CloudClient) createRequest() error {
+func (cc *CloudClient) createRequest(content interface{}) (*http.Request, error) {
 	var err error
 	var body []byte
 	var req *http.Request
-	if body, err = parse(cc.content); err != nil {
+	if body, err = parse(content); err != nil {
 		logger.Error("failed to generate a new Http Reaquest", err)
-		return err
+		return nil, err
 	}
-	cc.reqBody = body
-	req, err = http.NewRequest(cc.method, cc.url, bytes.NewBuffer(cc.reqBody))
+	req, err = http.NewRequest(cc.method, cc.url, bytes.NewBuffer(body))
 	if err != nil {
 		logger.Error("CloudClient can't generate a new Http Reaquest ", err)
-		return err
+		return nil, err
 	}
-	cc.req = req
-	cc.req.Header.Set("Content-Type", "application/json")
-	return nil
+	req.Header.Set("Content-Type", "application/json")
+	return req, nil
 }
 
-func (cc *CloudClient) getResponse() error {
-	if cc.req == nil {
+func (cc *CloudClient) getResponse(req *http.Request) (*http.Response, error) {
+	if req == nil {
 		logger.Info("no http request")
-		return errors.New("no http request")
+		return nil, errors.New("no http request")
 	}
 	//logger.Error(cc.CloudURL)
-	if err := cc.do(); err != nil {
+	if resp, err := cc.do(req); err != nil {
 		logger.Info("failed to send HTTP request ", err)
-		return err
+		return nil, err
+	} else {
+		return resp, nil
 	}
-	return nil
 }
 
-func (cc *CloudClient) do() error {
-	defer cc.req.Body.Close()
+func (cc *CloudClient) do(req *http.Request) (*http.Response, error) {
+	defer req.Body.Close()
 	var err error
 	var resp *http.Response
-	resp, err = cc.client.Do(cc.req)
-	cc.resp = resp
+	client := http.Client{}
+	resp, err = client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return resp, nil
 }
 
-func (cc *CloudClient) readResponse() error {
-	defer cc.resp.Body.Close()
+func (cc *CloudClient) readResponse(resp *http.Response) ([]byte, error) {
+	defer resp.Body.Close()
 	var err error
 	var body []byte
-	body, err = io.ReadAll(cc.resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		logger.Error("CloudClient failed to get HTTP response body ", err)
-		return err
+		return nil, err
 	}
-	cc.respBody = body
-	return nil
+	return body, nil
 }
 
-func (cc *CloudClient) setCloudArgs(method string, url string) {
+func (cc *CloudClient) setCloudArgs(method string, url string) interface{} {
 	cc.method = method
 	cc.url = url
-	cc.content = CloudRequest{Timestamp: cc.timestamp}
+	content := CloudRequest{Timestamp: cc.timestamp}
+	return content
 }
 
 // produce the crs data
-func (cc *CloudClient) produceCR(namespaceGroup map[string][]string) {
+func (cc *CloudClient) produceCR(namespaceGroup map[string][]string, resp []byte) []ntf.Notification {
 	var events []CloudResponse
-	if err := json.Unmarshal(cc.respBody, &events); err != nil {
+	var crs []ntf.Notification
+	if err := json.Unmarshal(resp, &events); err != nil {
 		logger.Info("failed to decode the json string ", "Error: ", err)
-		return
+		return nil
 	}
 	for _, event := range events {
 		if event.Timestamp > cc.timestamp {
 			cc.timestamp = event.Timestamp
 		}
 		for prefix, namespaces := range namespaceGroup {
-			cc.buildCR(prefix, namespaces, event)
+			cc.buildCR(prefix, namespaces, event, &crs)
 		}
 	}
+	return crs
 }
 
-func (cc *CloudClient) buildCR(prefix string, namespaces []string, event CloudResponse) {
+func (cc *CloudClient) buildCR(prefix string, namespaces []string, event CloudResponse, crs *[]ntf.Notification) {
 	addNameNamespace := handlerMap[prefix]
 	for _, namespace := range namespaces {
 		if namespace == "" {
@@ -160,7 +150,7 @@ func (cc *CloudClient) buildCR(prefix string, namespaces []string, event CloudRe
 		var Ntf ntf.Notification
 		specCopy(&Ntf, event)
 		addNameNamespace(cc, &Ntf, namespace, event)
-		cc.crs = append(cc.crs, Ntf)
+		*crs = append(*crs, Ntf)
 	}
 }
 
@@ -188,21 +178,6 @@ func (cc *CloudClient) processROOT(_ *ntf.Notification, _ string, _ CloudRespons
 	logger.Info("no logic for root-user")
 }
 
-func (cc *CloudClient) getCRs() []ntf.Notification {
-	return cc.crs
-}
-
 func (cc *CloudClient) SetTime(time int64) {
 	cc.timestamp = time
-}
-
-func (cc *CloudClient) Reset() {
-	cc.reqBody = nil
-	cc.respBody = nil
-	cc.crs = nil
-}
-
-func (cc *CloudClient) IsEmpty() bool {
-	logger.Info(cc.respBody)
-	return cc.respBody == nil
 }

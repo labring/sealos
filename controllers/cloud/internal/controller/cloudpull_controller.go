@@ -54,7 +54,6 @@ type CloudPullReconciler struct {
 func (r *CloudPullReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	lgr := log.FromContext(ctx)
 	lgr.Info("enter CloudClientReconciler")
-	defer r.Cloud.Reset()
 	if err := r.Client.Get(ctx, req.NamespacedName, &r.Strategy); err != nil {
 		logger.Error("failed to get cloudpull strategy")
 		return ctrl.Result{}, err
@@ -63,12 +62,14 @@ func (r *CloudPullReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	cycletime := time.Duration(r.Strategy.Spec.CycleTime) * time.Second
 	cloudURL := r.Strategy.Spec.CloudURL
 	logger.Info("cycletime: ", cycletime)
+	var cloudreq []byte
+	var err error
 	// pull notification from Cloud
-	if err := cloud.CloudPull(&r.Cloud, "POST", cloudURL); err != nil {
+	if cloudreq, err = cloud.CloudPull(&r.Cloud, "POST", cloudURL); err != nil {
 		return ctrl.Result{}, err
 	}
 	logger.Info("success to pull from cloud")
-	if err := cloud.CloudCreateCR(&r.Cloud, r.Client); err != nil {
+	if err := cloud.CloudCreateCR(&r.Cloud, r.Client, cloudreq); err != nil {
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{RequeueAfter: cycletime}, nil
