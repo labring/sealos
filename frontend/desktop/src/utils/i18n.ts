@@ -16,7 +16,7 @@ i18n
   // for all options read: https://www.i18next.com/overview/configuration-options
   .init({
     fallbackLng: 'zh',
-    debug: false,
+    debug: process.env.NODE_ENV === 'development',
 
     interpolation: {
       escapeValue: false // not needed for react as it escapes by default

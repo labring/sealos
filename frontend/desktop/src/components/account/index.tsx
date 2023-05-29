@@ -8,9 +8,11 @@ import JsYaml from 'js-yaml';
 import { useRouter } from 'next/router';
 import { useMemo } from 'react';
 import Iconfont from '../iconfont';
+import { useTranslation } from 'react-i18next';
 
 export default function Index({ accountDisclosure }: { accountDisclosure: UseDisclosureProps }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const { delSession, getSession } = useSessionStore();
   const { user, kubeconfig } = getSession();
   const { copyData } = useCopyData();
@@ -64,7 +66,7 @@ export default function Index({ accountDisclosure }: { accountDisclosure: UseDis
         <Flex justifyContent={'end'} alignItems={'center'} overflow={'hidden'} onClick={logout}>
           <Iconfont iconName="icon-logout" width={14} height={14} color="#24282C"></Iconfont>
           <Text ml="6px" color={'#24282C'} fontSize={'12px'} fontWeight={500}>
-            退出账号
+            {t('退出账号')}
           </Text>
         </Flex>
         <Flex mt="8px" justifyContent={'center'} alignItems={'center'} flexDirection={'column'}>

@@ -1,14 +1,14 @@
 {
-  "SwitchLanguage": "Switch Language",
-  "SideBar": {
-    "CostOverview": "Cost Overview",
-    "BillingDetails": "Billing Details",
-    "ValuationStandard": "Standard"
-  },
-  "Valuation": {
-    "Standard": "ValuationStandard",
-    "Name": "Name",
-    "Unit": "Unit",
-    "Price": "Price"
-  }
+  "Cost Center": "Cost Center",
+  "Laf on SealOS": "Laf on SealOS",
+  "App Launchpad": "App Launchpad",
+  "Sealos Document": "Sealos Document",
+  "Terminal": "Terminal",
+  "more apps": "more apps",
+  "消息中心": "Message Center",
+  "已读": "Have read",
+  "未读": "unread",
+  "全部已读": "read all",
+  "退出账号": "log out",
+  "来自": "from"
 }

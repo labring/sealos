@@ -5,12 +5,14 @@ import { useState } from 'react';
 import Account from '@/components/account';
 import { useDisclosure } from '@chakra-ui/react';
 import useSessionStore from '@/stores/session';
+import { useTranslation } from 'react-i18next';
 
 export default function Index(props: any) {
   const [showNotification, setShowNotification] = useState(false);
   const [notificationAmount, setNotificationAmount] = useState(0);
   const accountDisclosure = useDisclosure();
   const userInfo = useSessionStore((state) => state.getSession());
+  const { t, i18n } = useTranslation();
   if (!userInfo) return null;
 
   return (
@@ -21,6 +23,21 @@ export default function Index(props: any) {
       right={'48px'}
       cursor={'pointer'}
     >
+      {/* notification */}
+      <Flex
+        w="32px"
+        h="32px"
+        borderRadius={'50%'}
+        background={'rgba(244, 246, 248, 0.7)'}
+        justifyContent={'center'}
+        alignItems={'center'}
+        position={'relative'}
+        boxShadow={'0px 1.2px 2.3px rgba(0, 0, 0, 0.2)'}
+        mx="16px"
+        onClick={() => i18n.changeLanguage(i18n.language === 'en' ? 'zh' : 'en')}
+      >
+        {i18n.language}
+      </Flex>
       {/* notification */}
       <Flex
         w="32px"

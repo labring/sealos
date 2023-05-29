@@ -6,8 +6,10 @@ import { TApp } from '@/types';
 import Iconfont from '../iconfont';
 import styles from './index.module.scss';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 
 export default function Index() {
+  const { t } = useTranslation();
   const moreAppsContent = useContext(MoreAppsContext);
   const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
   const itemsPerPage = 30; // Number of apps per page
@@ -40,7 +42,7 @@ export default function Index() {
           textShadow={'0px 1px 2px rgba(0, 0, 0, 0.4)'}
           lineHeight={'140%'}
         >
-          更多应用
+          {t('more apps')}
         </Text>
       </Flex>
       <Flex alignItems={'center'}>
@@ -114,7 +116,7 @@ export default function Index() {
                   fontSize={'10px'}
                   lineHeight={'16px'}
                 >
-                  {item?.name}
+                  {t(item?.name)}
                 </Text>
               </GridItem>
             ))}
