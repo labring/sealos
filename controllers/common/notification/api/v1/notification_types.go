@@ -75,6 +75,7 @@ type NotificationMgr struct {
 
 func (m *NotificationMgr) SetAll(name string, namespace string, title string, timestamp int64, importance Type, from string, message string) {
 	m.SetNameNamespace(name, namespace)
+	m.SetTime(timestamp)
 	m.SetTitle(title)
 	m.SetMessage(message)
 	m.SetImportance(importance)
