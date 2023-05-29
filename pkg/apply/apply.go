@@ -18,6 +18,7 @@ package apply
 
 import (
 	"fmt"
+
 	"os"
 	"path/filepath"
 
@@ -47,6 +48,8 @@ func NewApplierFromFile(path string, args *Args) (applydrivers.Interface, error)
 	if cluster.Name == "" {
 		return nil, fmt.Errorf("cluster name cannot be empty, make sure %s file is correct", path)
 	}
+
+	CheckAndInitialize(cluster)
 
 	localpath := constants.Clusterfile(cluster.Name)
 	cf := clusterfile.NewClusterFile(localpath)

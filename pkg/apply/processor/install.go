@@ -25,12 +25,11 @@ import (
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/config"
-	"github.com/labring/sealos/pkg/filesystem"
+	"github.com/labring/sealos/pkg/filesystem/rootfs"
 	"github.com/labring/sealos/pkg/guest"
 	runtime "github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/confirm"
-	"github.com/labring/sealos/pkg/utils/images"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/rand"
 )
@@ -160,7 +159,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 			ImageName:  img,
 		}
 
-		if err = OCIToImageMount(mount, c.Buildah); err != nil {
+		if err = OCIToImageMount(c.Buildah, mount); err != nil {
 			return err
 		}
 		cluster.SetMountImage(mount)
@@ -177,7 +176,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 func (c *InstallProcessor) UpgradeIfNeed(cluster *v2.Cluster) error {
 	logger.Info("Executing UpgradeIfNeed Pipeline in InstallProcessor")
 	for _, img := range c.NewMounts {
-		version := images.GetKubeVersionFromImage(img)
+		version := img.KubeVersion()
 		if version == "" {
 			continue
 		}
@@ -234,7 +233,7 @@ func (c *InstallProcessor) MountRootfs(cluster *v2.Cluster) error {
 		return nil
 	}
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
-	fs, err := filesystem.NewRootfsMounter(c.NewMounts)
+	fs, err := rootfs.NewRootfsMounter(c.NewMounts)
 	if err != nil {
 		return err
 	}

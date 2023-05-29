@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Run GitHub File Sync
-        uses: BetaHuhn/repo-file-sync-action@v1.16.5
+        uses: BetaHuhn/repo-file-sync-action@v1.21.0
         with:
           GH_PAT: ${{ secrets.GH_PAT }}
           CONFIG_PATH: .github/sync_docs.yml

@@ -85,6 +85,8 @@ func newBuildCommand() *cobra.Command {
 
 	bailOnError(markFlagsHidden(flags, "tls-verify"), "")
 	bailOnError(markFlagsHidden(flags, append(flagsInBuildCommandToBeHidden(), flagsAssociatedWithPlatform()...)...), "")
+	buildCommand.SetUsageTemplate(UsageTemplate())
+
 	return buildCommand
 }
 

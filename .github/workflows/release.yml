@@ -3,6 +3,7 @@ name: Release
 env:
   # Common versions
   GO_VERSION: "1.20"
+  DEFAULT_OWNER: "labring"
 
 on:
   workflow_dispatch:
@@ -25,20 +26,6 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: Prepare
-        id: prepare
-        run: |
-          TAG=${GITHUB_REF#refs/tags/}
-          echo tag_name=${TAG} >> $GITHUB_OUTPUT
-
-      - name: Note
-        id: Note
-        env:
-          VERSION: ${{ steps.prepare.outputs.tag_name }}
-          USERNAME: ${{ github.repository_owner }}
-        run: |
-          cd scripts/release && bash note.sh
-
       - name: Install Dependencies
         run: |
           sudo apt update && sudo apt install -y gcc-aarch64-linux-gnu \
@@ -50,14 +37,66 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GH_PAT }}
+          password: ${{ secrets.GH_RELEASE_PAT }}
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
         with:
-          args: release --rm-dist --release-notes=scripts/release/Note.md
+          args: release --clean --release-footer-tmpl=scripts/release/footer.md.tmpl --release-header-tmpl=scripts/release/head.md.tmpl
         env:
           USERNAME: ${{ github.repository_owner }}
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GH_RELEASE_PAT }}
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
 
+  sync:
+    runs-on: ubuntu-20.04
+    needs:
+      - goreleaser
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Fetch Current version
+        id: get-current-tag
+        uses: actions-ecosystem/action-get-latest-tag@v1.6.0
+      - name: Build sealos image
+        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          issue-number: 251
+          repository: labring-actions/cluster-image
+          body: |
+            /imagebuild_apps sealos ${{steps.get-current-tag.outputs.tag }}
+          token: "${{ secrets.GH_PAT }}"
+  changelog:
+    runs-on: ubuntu-20.04
+    needs:
+      - goreleaser
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Fetch Current version
+        id: get-current-tag
+        uses: actions-ecosystem/action-get-latest-tag@v1.6.0
+      - run: git fetch --prune --prune-tags
+      - run: git tag -l 'v*'
+      - name: Generator changelog
+        run: ./scripts/changelog.sh ${{ github.repository }}
+      - uses: peter-evans/create-pull-request@v5
+        with:
+          title: 'docs: Automated Changelog Update for ${{steps.get-current-tag.outputs.tag }}'
+          body: |
+            copilot:all
+            
+            Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
+          commit-message: |
+            🤖 add release changelog using rebot.
+          branch: changelog-${{steps.get-current-tag.outputs.tag }}
+          base: main
+          signoff: true
+          delete-branch: true
+          token: ${{ secrets.GH_RELEASE_PAT }}
+          reviewers: cuisongliu

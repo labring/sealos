@@ -75,7 +75,7 @@ func newCreateCmd() *cobra.Command {
 			} else {
 				fmt.Println(info.MountPoint)
 			}
-			if !IsRootless() {
+			if !unshare.IsRootless() {
 				return nil
 			}
 			args = args[1:]

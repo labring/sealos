@@ -69,13 +69,13 @@ func (r *PaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if p.Status.Status == "" {
 		p.Status.Status = "Created"
 		if err := r.Status().Update(ctx, p); err != nil {
-			r.Logger.Error(err, "update payment failed: %v", *p)
+			r.Logger.Error(err, "update payment failed: %v", "payment", *p)
 			return ctrl.Result{Requeue: true}, err
 		}
 	}
 	tradeNO := pay.GetRandomString(32)
-	//  in cloud.sealos 10000 = 1¥ and in wechatPay 100 = 1$，so need to Amount/100
-	codeURL, err := pay.WechatPay(p.Spec.Amount/100, p.Spec.UserID, tradeNO, "", "")
+	// change to prices 1000000 = 1¥ and in wechatPay 100 = 1¥，so need to Amount/10000
+	codeURL, err := pay.WechatPay(p.Spec.Amount/10000, p.Spec.UserID, tradeNO, "", "")
 	if err != nil {
 		r.Logger.Error(err, "get codeURL failed")
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, err
@@ -84,7 +84,7 @@ func (r *PaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	p.Status.TradeNO = tradeNO
 
 	if err := r.Status().Update(ctx, p); err != nil {
-		r.Logger.Error(err, "update payment failed: %v", *p)
+		r.Logger.Error(err, "update payment failed: %v", "payment", *p)
 		return ctrl.Result{}, err
 	}
 

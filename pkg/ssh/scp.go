@@ -130,6 +130,47 @@ func (c *Client) Copy(host, localPath, remotePath string) error {
 	return c.doCopy(sftpClient, host, localPath, remotePath, bar)
 }
 
+func (c *Client) Fetch(host, src, dst string) error {
+	if c.isLocalAction(host) {
+		return file.RecursionCopy(src, dst)
+	}
+
+	logger.Debug("fetch remote file %s to %s", src, dst)
+	sshClient, sftpClient, err := c.sftpConnect(host)
+	if err != nil {
+		return fmt.Errorf("failed to connect: %s", err)
+	}
+	defer func() {
+		_ = sftpClient.Close()
+		_ = sshClient.Close()
+	}()
+
+	rfp, err := sftpClient.Open(src)
+	if err != nil {
+		return fmt.Errorf("failed to open remote file %s: %v", src, err)
+	}
+	defer func() {
+		_ = rfp.Close()
+	}()
+	if file.IsDir(dst) {
+		dst = filepath.Join(dst, filepath.Base(src))
+	} else if file.IsFile(dst) {
+		return fmt.Errorf("local file %s already exists", dst)
+	} else {
+		if err := file.MkDirs(filepath.Dir(dst)); err != nil {
+			return err
+		}
+	}
+
+	created, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer created.Close()
+	_, err = io.Copy(rfp, created)
+	return err
+}
+
 func (c *Client) doCopy(client *sftp.Client, host, src, dest string, epu *progressbar.ProgressBar) error {
 	lfp, err := os.Stat(src)
 	if err != nil {
@@ -208,7 +249,7 @@ func checkIfRemoteFileExists(client *sftp.Client, fp string) (bool, error) {
 }
 
 func isCheckFileMD5() bool {
-	if v, err := system.Get(system.ScpCheckSumConfigKey); err == nil {
+	if v, err := system.Get(system.ScpChecksumConfigKey); err == nil {
 		boolVal, _ := strconv.ParseBool(v)
 		return boolVal
 	}

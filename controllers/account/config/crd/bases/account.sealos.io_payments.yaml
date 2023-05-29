@@ -39,6 +39,9 @@ spec:
                 description: Amount is the amount of recharge
                 format: int64
                 type: integer
+              paymentMethod:
+                description: e.g. wechat, alipay, creditcard, etc.
+                type: string
               userID:
                 description: UserID is the user id who want to recharge
                 type: string

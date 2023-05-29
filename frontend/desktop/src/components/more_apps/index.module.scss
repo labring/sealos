@@ -1,0 +1,45 @@
+.container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 88px 52px 48px 52px;
+  transition: all ease-in-out 200ms;
+  &[data-show='true'] {
+    visibility: visible;
+    opacity: 1;
+    backdrop-filter: blur(150px);
+    transform: scale(1);
+  }
+
+  &[data-show='false'] {
+    opacity: 0;
+    transform: scale(1.2);
+    visibility: hidden;
+    z-index: -5;
+  }
+}
+
+.appsContainer {
+  grid-column-gap: 126px;
+  grid-row-gap: 48px;
+}
+
+@media screen and (max-width: 1200px) {
+  .appsContainer {
+    grid-column-gap: 50px;
+    grid-row-gap: 48px;
+  }
+}
+
+@media screen and (max-width: 778px) {
+  .appsContainer {
+    grid-column-gap: 20px;
+    grid-row-gap: 48px;
+  }
+  .container {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}

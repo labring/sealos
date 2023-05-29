@@ -282,7 +282,7 @@ func getAllInstanceIP(infra *infrav1.Infra) []string {
 
 // get sealos version from cluster
 func getSealosVersion(cluster *v1.Cluster) string {
-	if v, ok := cluster.Annotations["sealos.io/version"]; ok && v != "" {
+	if v, ok := cluster.Annotations[common.SealosVersionAnnotation]; ok && v != "" {
 		return v
 	}
 	return defaultSealosVersion
@@ -332,21 +332,22 @@ EOF`, clusterfile)
 			return fmt.Errorf("parse sealos version failed: %v", err2)
 		}
 		if *currentVersion != sealosVersion {
-			if err := c.CmdAsync(EIP, []string{downloadSealos}...); err != nil {
+			if err = c.CmdAsync(EIP, downloadSealos); err != nil {
 				return fmt.Errorf("download sealos failed: %v", err)
 			}
 		}
 	} else {
-		if err := c.CmdAsync(EIP, []string{downloadSealos}...); err != nil {
+		if err = c.CmdAsync(EIP, downloadSealos); err != nil {
 			return fmt.Errorf("download sealos failed: %v", err)
 		}
 	}
 
-	cmds := []string{createClusterfile, applyClusterfileCmd}
-	if err := c.CmdAsync(EIP, cmds...); err != nil {
+	if err = c.CmdAsync(EIP, createClusterfile); err != nil {
+		return fmt.Errorf("create clusterfile failed: %v", err)
+	}
+	if err = c.CmdAsync(EIP, applyClusterfileCmd); err != nil {
 		return fmt.Errorf("apply clusterfile failed: %v", err)
 	}
-
 	return nil
 }
 

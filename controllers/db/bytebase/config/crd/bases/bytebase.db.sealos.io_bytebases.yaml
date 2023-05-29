@@ -51,8 +51,6 @@ spec:
           spec:
             description: BytebaseSpec defines the desired state of Bytebase
             properties:
-              externalURL:
-                type: string
               image:
                 description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                   Important: Run "make" to regenerate code after modifying this file'
@@ -90,6 +88,22 @@ spec:
                 format: int32
                 type: integer
               domain:
+                type: string
+              loginCookie:
+                description: All needed cookies after login
+                properties:
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+                  user:
+                    type: string
+                required:
+                - accessToken
+                - refreshToken
+                - user
+                type: object
+              rootPassword:
                 type: string
             required:
             - availableReplicas

@@ -66,8 +66,9 @@ type AccountStatus struct {
 	Balance int64 `json:"balance,omitempty"`
 
 	//Deduction amount
-	DeductionBalance int64    `json:"deductionBalance,omitempty"`
-	ChargeList       []Charge `json:"chargeList,omitempty"`
+	DeductionBalance int64 `json:"deductionBalance,omitempty"`
+	// delete in the future
+	ChargeList []Charge `json:"chargeList,omitempty"`
 }
 
 //+kubebuilder:object:root=true

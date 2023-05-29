@@ -1,16 +1,17 @@
 // import MockInstalAPPs from 'mock/installedApps';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { authSession } from 'services/backend/auth';
+import { authSession } from '@/services/backend/auth';
 import { GetUserDefaultNameSpace, K8sApi, ListCRD } from '../../../services/backend/kubernetes';
-import { JsonResp } from '../response';
+import { jsonRes } from '@/services/backend/response';
+import { TApp } from '@/types';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const kubeconfig = await authSession(req.headers);
-    const kc = K8sApi(kubeconfig);
+    const kc = await authSession(req.headers);
+
     const kube_user = kc.getCurrentUser();
     if (kube_user === null) {
-      return res.status(400);
+      return jsonRes(res, { code: 403, message: 'user is null' });
     }
 
     const defaultMeta = {
@@ -36,17 +37,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     //@ts-ignore
     const userArr = userResult?.body?.items.map((item: any) => {
-      return { key: `user-${item.metadata.name}`, ...item.spec };
+      return { key: `user-${item.metadata.name}`, ...item.spec, displayType: 'normal' };
     });
 
-    let apps = [...defaultArr, ...userArr];
+    let apps = [...defaultArr, ...userArr].filter((item: TApp) => item.displayType !== 'hidden');
 
-    // if (process.env.NODE_ENV === 'development') {
-    //   apps = apps.concat(MockInstalAPPs)
-    // }
-    JsonResp(apps, res);
+    jsonRes(res, { data: apps });
   } catch (err) {
-    // console.log(err);
-    JsonResp([], res);
+    console.log(err);
+    jsonRes(res, { code: 500, data: err });
   }
 }

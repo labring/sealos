@@ -74,7 +74,3 @@ func newExecCmd() *cobra.Command {
 	execCmd.Flags().StringSliceVar(&ips, "ips", []string{}, "run command on nodes with ip address")
 	return execCmd
 }
-
-func init() {
-	rootCmd.AddCommand(newExecCmd())
-}

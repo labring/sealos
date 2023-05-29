@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/libimage"
@@ -30,8 +31,8 @@ import (
 )
 
 type Runtime struct {
-	store           storage.Store
-	libimageRuntime *libimage.Runtime
+	storage.Store
+	*libimage.Runtime
 }
 
 func getRuntimeWithStoreAndSystemContext(store storage.Store, sc *types.SystemContext) (*Runtime, error) {
@@ -40,8 +41,8 @@ func getRuntimeWithStoreAndSystemContext(store storage.Store, sc *types.SystemCo
 		return nil, err
 	}
 	return &Runtime{
-		store:           store,
-		libimageRuntime: libimageRuntime,
+		Store:   store,
+		Runtime: libimageRuntime,
 	}, nil
 }
 
@@ -63,7 +64,7 @@ func getRuntime(c *cobra.Command) (*Runtime, error) {
 func (r *Runtime) getLayerID(id string, diffType DiffType) (string, error) {
 	var lastErr error
 	if diffType&DiffImage == DiffImage {
-		toImage, _, err := r.libimageRuntime.LookupImage(id, nil)
+		toImage, _, err := r.Runtime.LookupImage(id, nil)
 		if err == nil {
 			return toImage.TopLayer(), nil
 		}
@@ -71,7 +72,7 @@ func (r *Runtime) getLayerID(id string, diffType DiffType) (string, error) {
 	}
 
 	if diffType&DiffContainer == DiffContainer {
-		toCtr, err := r.store.Container(id)
+		toCtr, err := r.Store.Container(id)
 		if err == nil {
 			return toCtr.LayerID, nil
 		}
@@ -79,7 +80,7 @@ func (r *Runtime) getLayerID(id string, diffType DiffType) (string, error) {
 	}
 
 	if diffType == DiffAll {
-		toLayer, err := r.store.Layer(id)
+		toLayer, err := r.Store.Layer(id)
 		if err == nil {
 			return toLayer.ID, nil
 		}
@@ -98,7 +99,10 @@ func (r *Runtime) pullOrLoadImages(ctx context.Context, args ...string) ([]strin
 		}
 		switch tr.Name() {
 		case TransportDocker, TransportContainersStorage:
-			pullImages, err := r.libimageRuntime.Pull(ctx, ref, config.PullPolicyMissing, &libimage.PullOptions{
+			if tr.Name() == TransportDocker {
+				ref = strings.TrimPrefix(ref, "//")
+			}
+			pullImages, err := r.Runtime.Pull(ctx, ref, config.PullPolicyMissing, &libimage.PullOptions{
 				CopyOptions: libimage.CopyOptions{
 					Writer: os.Stderr,
 				},
@@ -118,7 +122,7 @@ func (r *Runtime) pullOrLoadImages(ctx context.Context, args ...string) ([]strin
 				}
 				ref = filepath.Join(cwd, ref)
 			}
-			images, err := r.libimageRuntime.Load(ctx, ref, &libimage.LoadOptions{
+			images, err := r.Runtime.Load(ctx, ref, &libimage.LoadOptions{
 				CopyOptions: libimage.CopyOptions{
 					Writer: os.Stderr,
 				},

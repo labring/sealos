@@ -42,11 +42,8 @@ func newApplyCmd() *cobra.Command {
 			logger.Info(getContact())
 		},
 	}
+	setRequireBuildahAnnotation(applyCmd)
 	applyCmd.Flags().StringVarP(&clusterFile, "Clusterfile", "f", "Clusterfile", "apply a kubernetes cluster")
 	applyArgs.RegisterFlags(applyCmd.Flags())
 	return applyCmd
-}
-
-func init() {
-	rootCmd.AddCommand(newApplyCmd())
 }

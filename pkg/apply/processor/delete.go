@@ -18,21 +18,18 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/labring/sealos/pkg/bootstrap"
-
-	"github.com/labring/sealos/pkg/utils/strings"
-
-	"github.com/labring/sealos/pkg/constants"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"golang.org/x/sync/errgroup"
 
+	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/clusterfile"
-	"github.com/labring/sealos/pkg/filesystem"
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/filesystem/rootfs"
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/strings"
 )
 
 var ForceDelete bool
@@ -71,7 +68,7 @@ func (d DeleteProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 }
 
 func (d *DeleteProcessor) PreProcess(cluster *v2.Cluster) error {
-	return SyncClusterStatus(cluster, d.Buildah, true)
+	return NewPreProcessError(SyncClusterStatus(cluster, d.Buildah, true))
 }
 
 func (d *DeleteProcessor) UndoBootstrap(cluster *v2.Cluster) error {
@@ -95,7 +92,7 @@ func (d *DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 		hosts = append(hosts, cluster.GetRegistryIPAndPort())
 	}
 	// umount don't care imageMounts
-	fs, err := filesystem.NewRootfsMounter(nil)
+	fs, err := rootfs.NewRootfsMounter(nil)
 	if err != nil {
 		return err
 	}

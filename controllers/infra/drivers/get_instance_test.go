@@ -33,7 +33,7 @@ func TestDriver_GetInstances(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "sealos-infra",
 						Namespace: "sealos-infra-ns",
-						UID:       "0abafc31-735b-4a9c-923f-493af2ed1b25",
+						UID:       "b5919c2f-969b-47fd-b9a1-d8d36c28049a",
 					},
 					Spec: v1.InfraSpec{
 						AvailabilityZone: "cn-hangzhou-i",

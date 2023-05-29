@@ -65,7 +65,7 @@ func newRunCmd() *cobra.Command {
 		Long:    `sealos run labring/kubernetes:v1.24.0 --masters [arg] --nodes [arg]`,
 		Example: exampleRun,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			images, err := args2Images(args, transport)
+			images, err := buildah.PreloadIfTarFile(args, transport)
 			if err != nil {
 				return err
 			}
@@ -83,6 +83,7 @@ func newRunCmd() *cobra.Command {
 			logger.Info(getContact())
 		},
 	}
+	setRequireBuildahAnnotation(runCmd)
 	runArgs.RegisterFlags(runCmd.Flags())
 	runCmd.Flags().BoolVar(new(bool), "single", false, "run cluster in single mode")
 	if err := runCmd.Flags().MarkDeprecated("single", "it defaults to running cluster in single mode when there are no master and node"); err != nil {
@@ -92,12 +93,4 @@ func newRunCmd() *cobra.Command {
 	runCmd.Flags().StringVarP(&transport, "transport", "t", buildah.OCIArchive,
 		fmt.Sprintf("load image transport from tar archive file.(optional value: %s, %s)", buildah.OCIArchive, buildah.DockerArchive))
 	return runCmd
-}
-
-func init() {
-	rootCmd.AddCommand(newRunCmd())
-}
-
-func args2Images(args []string, transport string) ([]string, error) {
-	return buildah.PreloadIfTarFile(args, transport)
 }

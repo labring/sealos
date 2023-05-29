@@ -1,0 +1,9 @@
+FROM scratch
+COPY tars tars
+COPY etc etc
+COPY scripts scripts
+COPY manifests manifests
+
+ENV cloudDomain="cloud.example.com"
+
+CMD ["bash scripts/init.sh"]

@@ -20,14 +20,7 @@ import (
 	"bytes"
 	crand "crypto/rand"
 	"math/big"
-	"math/rand"
-	"time"
 )
-
-func Rand(a int) int {
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return rnd.Intn(a)
-}
 
 func Generator(len int) string {
 	var container string

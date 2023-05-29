@@ -13,6 +13,9 @@ sealos gen [flags]
 ### Examples
 
 ```bash
+generate a single-node cluster using the default settings:
+    sealos gen labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1
+
 generate a cluster with multi images, specify masters and nodes:
     sealos gen labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
         --masters 192.168.0.2,192.168.0.3,192.168.0.4 \

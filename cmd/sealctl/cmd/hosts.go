@@ -108,7 +108,3 @@ func newHostsDeleteCmd() *cobra.Command {
 
 	return hostsDeleteCmd
 }
-
-func init() {
-	rootCmd.AddCommand(newHostsCmd())
-}

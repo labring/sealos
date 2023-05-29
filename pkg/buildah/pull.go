@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/containers/buildah"
@@ -98,21 +99,22 @@ func newPullCommand() *cobra.Command {
 	var (
 		opts = newDefaultPullOptions()
 
-		pullDescription = `  Pulls an image from a registry and stores it locally.
-  An image can be pulled using its tag or digest. If a tag is not
+		pullDescription = `  Pull images from a registry and stores it locally.
+  Images can be pulled using its tag or digest. If a tag is not
   specified, the image with the 'latest' tag (if it exists) is pulled.`
 	)
 
 	pullCommand := &cobra.Command{
 		Use:   "pull",
-		Short: "Pull an image from the specified location",
+		Short: "Pull images from the specified location",
 		Long:  pullDescription,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return pullCmd(cmd, args, opts)
 		},
 		Example: fmt.Sprintf(`%[1]s pull imagename
   %[1]s pull docker-daemon:imagename:imagetag
-  %[1]s pull myregistry/myrepository/imagename:imagetag`, rootCmd.CommandPath()),
+  %[1]s pull myregistry/myrepository/imagename:imagetag
+  %[1]s pull imageID1 imageID2 imageID3`, rootCmd.CommandPath()),
 	}
 	pullCommand.SetUsageTemplate(UsageTemplate())
 
@@ -127,9 +129,6 @@ func pullCmd(c *cobra.Command, args []string, iopts *pullOptions) error {
 	}
 	if err := buildahcli.VerifyFlagsArgsOrder(args); err != nil {
 		return err
-	}
-	if len(args) > 1 {
-		return errors.New("too many arguments specified")
 	}
 	if err := setDefaultFlagsWithSetters(c, setDefaultTLSVerifyFlag); err != nil {
 		return err
@@ -150,11 +149,11 @@ func pullCmd(c *cobra.Command, args []string, iopts *pullOptions) error {
 	if err != nil {
 		return err
 	}
-	ids, err := doPull(c, store, systemContext, []string{args[0]}, iopts)
+	ids, err := doPull(c, store, systemContext, args, iopts)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%s\n", ids[0])
+	fmt.Printf("%s\n", strings.Join(ids, ","))
 	return nil
 }
 

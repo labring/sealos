@@ -21,7 +21,6 @@ import (
 	"runtime"
 	"runtime/pprof"
 
-	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/config"
 	"github.com/containers/storage"
 	"github.com/containers/storage/pkg/unshare"
@@ -109,7 +108,6 @@ func RegisterGlobalFlags(fs *pflag.FlagSet) error {
 var (
 	globalFlagResults globalFlags
 	rootCmd           *cobra.Command
-	unrelatedCommands = []string{"version"}
 	postRunHooks      []func() error
 )
 
@@ -122,41 +120,50 @@ func markFlagsHidden(fs *pflag.FlagSet, names ...string) error {
 	return nil
 }
 
-func subCommands() []*cobra.Command {
-	return []*cobra.Command{
+func AllImageSubCommands() []*cobra.Command {
+	cmds := []*cobra.Command{
 		newBuildCommand(),
-		newContainersCommand(),
 		newCreateCmd(),
 		newDiffCommand(),
-		newFromCommand(),
-		newImagesCommand(),
 		newInspectCommand(),
+		newImagesCommand(),
 		newLoadCommand(),
 		newLoginCommand(),
 		newLogoutCommand(),
 		newManifestCommand(),
-		newMountCommand(),
 		newMergeCommand(),
 		newPullCommand(),
 		newPushCommand(),
-		newRMCommand(),
 		newRMICommand(),
 		newSaveCommand(),
 		newTagCommand(),
-		newUmountCommand(),
-		newUnshareCommand(),
 	}
+	SetRequireBuildahAnnotation(cmds...)
+	return cmds
+}
+
+func AllContainerSubCommands() []*cobra.Command {
+	cmds := []*cobra.Command{
+		newContainersCommand(),
+		newFromCommand(),
+		newMountCommand(),
+		newRMCommand(),
+		newUmountCommand(),
+	}
+	SetRequireBuildahAnnotation(cmds...)
+	return cmds
+}
+
+func AllSubCommands() []*cobra.Command {
+	return append(AllContainerSubCommands(), append(AllImageSubCommands(), newUnshareCommand())...)
 }
 
 func RegisterRootCommand(cmd *cobra.Command) {
-	os.Setenv("TMPDIR", parse.GetTempDir())
 	rootCmd = cmd
 	cmd.SilenceUsage = true
-	err := RegisterGlobalFlags(cmd.PersistentFlags())
-	bailOnError(err, "failed to register global flags")
+	bailOnError(RegisterGlobalFlags(cmd.PersistentFlags()), "failed to register global flags")
 	wrapPrePersistentRun(cmd)
 	wrapPostPersistentRun(cmd)
-	cmd.AddCommand(subCommands()...)
 }
 
 func RegisterPostRun(fn func() error) {
@@ -166,15 +173,32 @@ func RegisterPostRun(fn func() error) {
 	postRunHooks = append(postRunHooks, fn)
 }
 
-func AddUnrelatedCommandNames(names ...string) {
-	unrelatedCommands = append(unrelatedCommands, names...)
+const (
+	requireBuildahAnnotationKey = "buildah-required"
+	requireBuildahAnnotationVal = "true"
+)
+
+// SetRequireBuildahAnnotation explicit call this function on commands that
+// require buildah module dependency
+func SetRequireBuildahAnnotation(cmds ...*cobra.Command) {
+	for i := range cmds {
+		if cmds[i].Annotations == nil {
+			cmds[i].Annotations = map[string]string{}
+		}
+		cmds[i].Annotations[requireBuildahAnnotationKey] = requireBuildahAnnotationVal
+	}
 }
 
-func skipUnrelatedCommandRun(cmd *cobra.Command) bool {
-	for _, name := range unrelatedCommands {
-		if name == cmd.Name() {
+func requirePreRun(cmd *cobra.Command) bool {
+	for {
+		if cmd == nil {
+			break
+		}
+		if cmd.Annotations != nil &&
+			cmd.Annotations[requireBuildahAnnotationKey] == requireBuildahAnnotationVal {
 			return true
 		}
+		cmd = cmd.Parent()
 	}
 	return false
 }
@@ -184,27 +208,24 @@ func wrapPrePersistentRun(cmd *cobra.Command) {
 	case cmd.PersistentPreRun != nil:
 		run := cmd.PersistentPreRun
 		cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-			if skipUnrelatedCommandRun(cmd) {
-				return
+			if requirePreRun(cmd) {
+				bailOnError(TrySetupWithDefaults(defaultSetters...), "unable to setup")
 			}
-			bailOnError(TrySetupWithDefaults(defaultSetters...), "unable to setup")
 			run(cmd, args)
 		}
 	case cmd.PersistentPreRunE != nil:
 		runE := cmd.PersistentPreRunE
 		cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-			if skipUnrelatedCommandRun(cmd) {
-				return nil
+			if requirePreRun(cmd) {
+				bailOnError(TrySetupWithDefaults(defaultSetters...), "unable to setup")
 			}
-			bailOnError(TrySetupWithDefaults(defaultSetters...), "unable to setup")
 			return runE(cmd, args)
 		}
 	default:
 		cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-			if skipUnrelatedCommandRun(cmd) {
-				return
+			if requirePreRun(cmd) {
+				bailOnError(TrySetupWithDefaults(defaultSetters...), "unable to setup")
 			}
-			bailOnError(TrySetupWithDefaults(defaultSetters...), "unable to setup")
 		}
 	}
 }

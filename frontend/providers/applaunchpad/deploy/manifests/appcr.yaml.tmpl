@@ -1,0 +1,16 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: applaunchpad
+  namespace: app-system
+spec:
+  data:
+    desc: App Launchpad
+    url: "https://applaunchpad.{{ .cloudDomain }}"
+  icon: "https://applaunchpad.{{ .cloudDomain }}/logo.svg"
+  menuData:
+    helpDropDown: false
+    nameColor: text-black
+  name: App Launchpad
+  type: iframe
+  displayType: normal

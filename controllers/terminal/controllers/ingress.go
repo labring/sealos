@@ -17,6 +17,7 @@ limitations under the License.
 package controllers
 
 import (
+	"fmt"
 	"time"
 
 	apisix "github.com/apache/apisix-ingress-controller/pkg/kube/apisix/apis/config/v2beta3"
@@ -31,16 +32,21 @@ const (
 	AuthType = "basicAuth"
 )
 
-func (r *TerminalReconciler) createNginxIngress(terminal *terminalv1.Terminal, host string, snippet string) *networkingv1.Ingress {
+func (r *TerminalReconciler) createNginxIngress(terminal *terminalv1.Terminal, host string) *networkingv1.Ingress {
+	cors := fmt.Sprintf("https://%s,https://*.%s", r.terminalDomain, r.terminalDomain)
+
 	objectMeta := metav1.ObjectMeta{
 		Name:      terminal.Name,
 		Namespace: terminal.Namespace,
 		Annotations: map[string]string{
-			"kubernetes.io/ingress.class":                       "nginx",
-			"nginx.ingress.kubernetes.io/rewrite-target":        "/",
-			"nginx.ingress.kubernetes.io/proxy-send-timeout":    "86400",
-			"nginx.ingress.kubernetes.io/proxy-read-timeout":    "86400",
-			"nginx.ingress.kubernetes.io/configuration-snippet": snippet,
+			"kubernetes.io/ingress.class":                        "nginx",
+			"nginx.ingress.kubernetes.io/rewrite-target":         "/",
+			"nginx.ingress.kubernetes.io/proxy-send-timeout":     "86400",
+			"nginx.ingress.kubernetes.io/proxy-read-timeout":     "86400",
+			"nginx.ingress.kubernetes.io/enable-cors":            "true",
+			"nginx.ingress.kubernetes.io/cors-allow-origin":      cors,
+			"nginx.ingress.kubernetes.io/cors-allow-methods":     "PUT, GET, POST, PATCH, OPTIONS",
+			"nginx.ingress.kubernetes.io/cors-allow-credentials": "false",
 		},
 	}
 

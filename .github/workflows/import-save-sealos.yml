@@ -1,0 +1,18 @@
+name: Import Save sealos from version
+
+on:
+  workflow_call:
+
+jobs:
+  save-sealos:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install sealos
+        uses: labring/sealos-action@v0.0.7
+        with:
+          sealosVersion: "4.1.7"
+      - name: Save Binaries
+        uses: actions/upload-artifact@v3
+        with:
+          name: sealos
+          path: /usr/bin/sealos

@@ -37,20 +37,39 @@ spec:
               name: account-manager-configmap
           - secretRef:
               name: payment-secret
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
         env:
           - name: ACCOUNT_NAMESPACE
             value: "sealos-system"
           - name: NAMESPACE_NAME
             value: "user-system"
           - name: NEW_ACCOUNT_AMOUNT
-            value: "50000"
+            value: "5000000"
           - name: WHITELIST
-            value: "terminals.Terminal.terminal.sealos.io/v1,payments.Payment.account.sealos.io/v1"
+            value: "terminals.Terminal.terminal.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1"
           - name: ACCOUNT_SYSTEM_NAMESPACE
             valueFrom:
               fieldRef:
                 apiVersion: v1
                 fieldPath: metadata.namespace
+          - name: MONGO_URI
+            valueFrom:
+              secretKeyRef:
+                name: mongo-secret
+                key: MONGO_URI
+          - name: MONGO_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: mongo-secret
+                key: MONGO_USERNAME
+          - name: MONGO_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mongo-secret
+                key: MONGO_PASSWORD
+        image: registry.cn-hangzhou.aliyuncs.com/bxy4543/account-controller:v0.0.4
         args:
         - "--health-probe-bind-address=:8081"
         - "--metrics-bind-address=127.0.0.1:8080"

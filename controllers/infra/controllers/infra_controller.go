@@ -117,7 +117,6 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 
 		r.recorder.Eventf(infra, corev1.EventTypeNormal, "start to reconcile instance", "%s/%s", infra.Namespace, infra.Name)
-
 		if err := r.applier.ReconcileInstance(infra, r.driver[infra.Spec.Platform]); err != nil {
 			r.recorder.Eventf(infra, corev1.EventTypeWarning, "reconcile infra failed", "%v", err)
 			return err
@@ -197,9 +196,9 @@ func (r *InfraReconciler) SetupWithManager(mgr ctrl.Manager, opts InfraReconcile
 	var err error
 	for _, driverName := range common.DriverList {
 		r.driver[driverName], err = drivers.NewDriver(driverName)
-	}
-	if err != nil {
-		return fmt.Errorf("new driver error: %v", err)
+		if err != nil {
+			return fmt.Errorf("new %s driver error: %v", driverName, err)
+		}
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&infrav1.Infra{}, builder.WithPredicates(

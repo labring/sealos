@@ -41,7 +41,3 @@ func newStatusCmd() *cobra.Command {
 	checkCmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied status action")
 	return checkCmd
 }
-
-func init() {
-	rootCmd.AddCommand(newStatusCmd())
-}

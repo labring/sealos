@@ -26,6 +26,7 @@ spec:
     nameColor: text-black
     helpDropDown:
     helpDocs:
+  displayType: normal
 ```
 
 ![appyaml.png](./image/app-yaml.png)

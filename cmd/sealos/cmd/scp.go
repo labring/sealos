@@ -75,7 +75,3 @@ func newScpCmd() *cobra.Command {
 	scpCmd.Flags().StringSliceVar(&ips, "ips", []string{}, "copy file to nodes with ip address")
 	return scpCmd
 }
-
-func init() {
-	rootCmd.AddCommand(newScpCmd())
-}

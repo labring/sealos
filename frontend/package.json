@@ -1,0 +1,11 @@
+{
+  "name": "kf-web",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "format": "prettier --config \"./.prettierrc.js\" --write \"./*/*/src/**/*.{ts,tsx,scss}\""
+  },
+  "devDependencies": {
+    "prettier": "^2.8.4"
+  }
+}

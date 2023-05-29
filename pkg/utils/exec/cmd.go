@@ -15,6 +15,7 @@
 package exec
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -23,9 +24,9 @@ import (
 	strutil "github.com/labring/sealos/pkg/utils/strings"
 )
 
-func Cmd(name string, args ...string) error {
+func CmdWithContext(ctx context.Context, name string, args ...string) error {
 	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
-	cmd := exec.Command(name, args[:]...) // #nosec
+	cmd := exec.CommandContext(ctx, name, args[:]...) // #nosec
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout

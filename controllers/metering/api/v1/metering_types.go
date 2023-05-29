@@ -43,7 +43,7 @@ Spec:
     	owner: fanux
     	namespace: string
         resources: v1.ResourceList // resource type
-		timeInterval:59 // time interval
+		timeInterval:60 // time interval
 */
 
 // MeteringSpec defines the desired state of Metering

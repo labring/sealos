@@ -19,12 +19,10 @@ package strings
 import (
 	"bytes"
 	"fmt"
-	"math/rand"
 	"net"
 	"regexp"
 	"sort"
 	"strings"
-	"time"
 	"unicode"
 
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -112,17 +110,6 @@ func ContainList(list []string, toComplete string) (containerList []string) {
 		}
 	}
 	return
-}
-
-// RandString 生成随机字符串
-func RandString(len int) string {
-	var r = rand.New(rand.NewSource(time.Now().Unix()))
-	bytes := make([]byte, len)
-	for i := 0; i < len; i++ {
-		b := r.Intn(26) + 65
-		bytes[i] = byte(b)
-	}
-	return string(bytes)
 }
 
 func IsEmptyLine(str string) bool {

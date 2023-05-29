@@ -19,7 +19,7 @@ func DeleteKeyPairs(api ECSDeleteKeyPairAPI, request *ecs.DeleteKeyPairsRequest)
 }
 
 func (d Driver) deleteKeyPair(infra *v1.Infra) error {
-	client := d.Client
+	client := d.ECSClient
 	deleteKeyPairRequest := &ecs.DeleteKeyPairsRequest{
 		RpcRequest:   ecs.CreateDeleteKeyPairsRequest().RpcRequest,
 		KeyPairNames: "[\"" + infra.Spec.SSH.PkName + "\"]",

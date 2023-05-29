@@ -41,7 +41,7 @@ func (d Driver) createAndAttachVolumes(infra *v1.Infra, host *v1.Hosts, disks []
 }
 
 func (d Driver) createAndAttachVolume(infra *v1.Infra, host *v1.Hosts, disk v1.Disk) error {
-	client := d.Client
+	client := d.ECSClient
 	eg, _ := errgroup.WithContext(context.Background())
 	availabilityZone := infra.Spec.AvailabilityZone
 	if availabilityZone == "" {
@@ -51,13 +51,14 @@ func (d Driver) createAndAttachVolume(infra *v1.Infra, host *v1.Hosts, disk v1.D
 
 	for _, v := range host.Metadata {
 		createDiskRequest := &ecs.CreateDiskRequest{
-			RpcRequest:   ecs.CreateCreateDiskRequest().RpcRequest,
-			ZoneId:       infra.Spec.AvailabilityZone,
-			DiskCategory: disk.VolumeType,
-			Size:         requests.Integer(strconv.Itoa(disk.Capacity)),
-			Tag:          &createDiskTag,
+			RpcRequest:      ecs.CreateCreateDiskRequest().RpcRequest,
+			ZoneId:          infra.Spec.AvailabilityZone,
+			DiskCategory:    disk.VolumeType,
+			Size:            requests.Integer(strconv.Itoa(disk.Capacity)),
+			Tag:             &createDiskTag,
+			ResourceGroupId: d.ResourceGroupID,
 		}
-		createDiskResponse, err := CreateVolume(d.Client, createDiskRequest)
+		createDiskResponse, err := CreateVolume(client, createDiskRequest)
 		if err != nil {
 			return fmt.Errorf("create volume failed: %v", err)
 		}

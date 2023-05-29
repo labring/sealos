@@ -22,6 +22,9 @@ import (
 	"os"
 	"strings"
 
+	admissionV1 "k8s.io/api/admission/v1"
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/go-logr/logr"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -31,23 +34,15 @@ import (
 )
 
 const (
-	saPrefix             = "system:serviceaccount"
-	mastersGroup         = "system:masters"
-	kubeSystemNamespace  = "kube-system"
-	defaultUserNamespace = "user-system"
+	saPrefix                   = "system:serviceaccount"
+	mastersGroup               = "system:masters"
+	kubeSystemNamespace        = "kube-system"
+	defaultUserSystemNamespace = "user-system"
 )
 
 var logger = logf.Log.WithName("debt-resource")
 
-//func (i *Debt) SetupWebhookWithManager(mgr ctrl.Manager) error {
-//	m := &DebtMutator{Client: mgr.GetClient()}
-//	return ctrl.NewWebhookManagedBy(mgr).
-//		For(i).
-//		WithDefaulter(m).
-//		Complete()
-//}
-
-//+kubebuilder:webhook:path=/mutate-v1-sealos-cloud,mutating=true,failurePolicy=ignore,groups="*",resources=*,verbs=create;update,versions=v1,name=mpod.kb.io,admissionReviewVersions=v1,sideEffects=None
+//+kubebuilder:webhook:path=/validate-v1-sealos-cloud,mutating=true,failurePolicy=ignore,groups="*",resources=*,verbs=create;update,versions=v1,name=debt.sealos.io,admissionReviewVersions=v1,sideEffects=None
 // +kubebuilder:object:generate=false
 
 type DebtValidate struct {
@@ -57,7 +52,7 @@ type DebtValidate struct {
 func getUserNamespace() string {
 	userNamespace := os.Getenv("USER_NAMESPACE")
 	if userNamespace == "" {
-		return defaultUserNamespace
+		return defaultUserSystemNamespace
 	}
 	return userNamespace
 }
@@ -70,6 +65,10 @@ func init() {
 }
 func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admission.Response {
 	logger.V(1).Info("checking user", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.gvrk", getGVRK(req))
+	// skip delete request
+	if req.Operation == admissionV1.Delete {
+		return admission.Allowed("")
+	}
 	for _, g := range req.UserInfo.Groups {
 		switch g {
 		// if user is kubernetes-admin, pass it
@@ -103,6 +102,8 @@ func getGVRK(req admission.Request) string {
 }
 
 func isWhiteList(req admission.Request) bool {
+	// check if it is in whitelist
+	// default: "terminals.Terminal.terminal.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1"
 	whitelists := os.Getenv("WHITELIST")
 	if whitelists == "" {
 		return false
@@ -120,16 +121,22 @@ func isWhiteList(req admission.Request) bool {
 }
 
 func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsName string) admission.Response {
-	nsList := &corev1.NamespaceList{}
-	if err := c.List(ctx, nsList, client.MatchingFields{"name": nsName}); err != nil {
-		logger.Error(err, "list ns error", "naName", nsName, "nsList", nsList)
-		return admission.ValidationResponse(true, nsName)
+	//nsList := &corev1.NamespaceList{}
+	//if err := c.List(ctx, nsList, client.MatchingFields{"name": nsName}); err != nil {
+	//	logger.Error(err, "list ns error", "naName", nsName, "nsList", nsList)
+	//	return admission.ValidationResponse(true, nsName)
+	//}
+	// skip check if nsName is empty or equal to user system namespace
+	if nsName == "" || nsName == getUserNamespace() {
+		return admission.Allowed("")
 	}
-
-	//ns name unique in k8s
-	ns := nsList.Items[0]
+	ns := &corev1.Namespace{}
+	if err := c.Get(ctx, types.NamespacedName{Name: nsName, Namespace: nsName}, ns); err != nil {
+		return admission.Allowed("namespace not found")
+	}
 	// Check if it is a user namespace
 	user, ok := ns.Annotations[userv1.UserAnnotationOwnerKey]
+	logger.V(1).Info("check user namespace", "ns.name", ns.Name, "ns", ns)
 	if !ok {
 		return admission.ValidationResponse(true, fmt.Sprintf("this namespace is not user namespace %s,or have not create", ns.Name))
 	}
@@ -141,9 +148,9 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsNam
 	}
 
 	for _, account := range accountList.Items {
-		if account.Status.Balance-account.Status.DeductionBalance < 0 {
-			return admission.ValidationResponse(false, fmt.Sprintf("account balance less than 0,now account is %.2f¥", float64(account.Status.Balance-account.Status.DeductionBalance)/10000))
+		if account.Status.Balance < account.Status.DeductionBalance {
+			return admission.ValidationResponse(false, fmt.Sprintf("account balance less than 0,now account is %.2f¥", float64(account.Status.Balance-account.Status.DeductionBalance)/1000000))
 		}
 	}
-	return admission.ValidationResponse(true, "")
+	return admission.Allowed("pass user " + user)
 }

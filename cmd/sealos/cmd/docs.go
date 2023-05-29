@@ -32,7 +32,6 @@ func newDocsCmd() *cobra.Command {
 		},
 	}
 	docsCmd.Flags().StringVarP(&docsPath, "path", "p", "./docs/api", "path to output docs")
-
 	return docsCmd
 }
 

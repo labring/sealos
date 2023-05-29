@@ -21,10 +21,55 @@ import (
 
 	"github.com/docker/docker/api/types"
 
-	"github.com/labring/sealos/pkg/utils/exec"
-	img "github.com/labring/sealos/pkg/utils/images"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
+
+// ListImages gets all images currently on the machine.
+//func (m *kubeGenericRuntimeManager) ListImages() ([]kubecontainer.Image, error) {
+//	var images []kubecontainer.Image
+//
+//	allImages, err := m.imageService.ListImages(nil)
+//	if err != nil {
+//		klog.ErrorS(err, "Failed to list images")
+//		return nil, err
+//	}
+//
+//	for _, img := range allImages {
+//		images = append(images, kubecontainer.Image{
+//			ID:          img.Id,
+//			Size:        int64(img.Size_),
+//			RepoTags:    img.RepoTags,
+//			RepoDigests: img.RepoDigests,
+//			Spec:        toKubeContainerImageSpec(img),
+//		})
+//	}
+//
+//	return images, nil
+//}
+//for _, image := range images {
+//		klog.V(5).InfoS("Adding image ID to currentImages", "imageID", image.ID)
+//		currentImages.Insert(image.ID)
+//
+//		// New image, set it as detected now.
+//		if _, ok := im.imageRecords[image.ID]; !ok {
+//			klog.V(5).InfoS("Image ID is new", "imageID", image.ID)
+//			im.imageRecords[image.ID] = &imageRecord{
+//				firstDetected: detectTime,
+//			}
+//		}
+//
+//		// Set last used time to now if the image is being used.
+//		if isImageUsed(image.ID, imagesInUse) {
+//			klog.V(5).InfoS("Setting Image ID lastUsed", "imageID", image.ID, "lastUsed", now)
+//			im.imageRecords[image.ID].lastUsed = now
+//		}
+//
+//		klog.V(5).InfoS("Image ID has size", "imageID", image.ID, "size", image.Size)
+//		im.imageRecords[image.ID].size = image.Size
+//
+//		klog.V(5).InfoS("Image ID is pinned", "imageID", image.ID, "pinned", image.Pinned)
+//		im.imageRecords[image.ID].pinned = image.Pinned
+//	}
 
 // replaceImage replaces the image name to a new valid image name with the private registry.
 func replaceImage(image, action string, authConfig map[string]types.AuthConfig) (newImage string, isReplace bool, cfg *types.AuthConfig) {
@@ -35,18 +80,8 @@ func replaceImage(image, action string, authConfig map[string]types.AuthConfig) 
 	// note:
 	// but kubelet sometimes will invoke imageService.RemoveImage() or something else. The req.Image.Image will the original name.
 	// so we'd better tag "sealos.hub:5000/library/nginx:1.1.1" with original name "req.Image.Image" After "rsp, err := (*s.imageService).PullImage(ctx, req)".
-	//for image id]
-	newImage = image
-	images, err := exec.RunBashCmd("crictl images -q")
-	if err != nil {
-		logger.Warn("error executing `crictl images -q`: %s", err.Error())
-		return
-	}
-	if img.IsImageID(images, image) {
-		logger.Info("image %s already exist, skipping", image)
-		return
-	}
-	newImage, _, cfg, err = registry.GetImageManifestFromAuth(image, authConfig)
+	//for image id] this is mistake, we should replace the image name, not the image id.
+	newImage, _, cfg, err := registry.GetImageManifestFromAuth(image, authConfig)
 	if err != nil {
 		logger.Warn("get image %s manifest error %s", newImage, err.Error())
 		logger.Debug("image %s not found in registry, skipping", image)

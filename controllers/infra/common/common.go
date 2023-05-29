@@ -15,11 +15,8 @@ const (
 	TrySleepTime          = time.Second
 	TRUELable             = "true"
 	SealosInfraFinalizer  = "infra.sealos.io/finalizers"
-	InfraSecretPrefix     = "infra-secret"
-	InfraVolumeIndex      = "infra.sealos.io/volumes/index"
 	VolumeInfraID         = "infra.sealos.io/volumes/infraID"
 	InstanceState         = "instance-state-name"
-	DefaultRegion         = "cn-north-1b"
 	KeyPairUser           = "sealos.io/keypair/user"
 	ArchAmd64             = "amd64"
 	ArchArm64             = "arm64"
@@ -27,7 +24,28 @@ const (
 	AliyunKeyPairPrefix   = "infra"
 	DefaultNamespace      = "default"
 	MasterO               = "master0"
+	CPUResourceName       = "infra/CPU"
+	MemoryResourceName    = "infra/Memory"
+	VolumeResourceName    = "infra/Volume"
+	InfraSystemNamespace  = "infra-system"
+	InfraDataAnnotation   = "infra.sealos.io/data"
 )
 
 var DefaultRootVolumeSize = int32(40)
 var DriverList = []string{"aliyun", "aws"}
+var CPUMap = map[string]int64{
+	"t2.medium":     2,
+	"t2.large":      2,
+	"t2.xlarge":     4,
+	"ecs.c7.large":  2,
+	"ecs.g7.large":  2,
+	"ecs.g7.xlarge": 4,
+}
+var MemoryMap = map[string]int64{
+	"t2.medium":     4,
+	"t2.large":      8,
+	"t2.xlarge":     16,
+	"ecs.c7.large":  4,
+	"ecs.g7.large":  8,
+	"ecs.g7.xlarge": 16,
+}

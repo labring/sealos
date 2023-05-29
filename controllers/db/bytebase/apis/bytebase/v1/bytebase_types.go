@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"github.com/labring/sealos/controllers/db/bytebase/client/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -42,8 +43,6 @@ type BytebaseSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=nginx
 	IngressType IngressType `json:"ingressType"`
-	// +kubebuilder:validation:Optional
-	ExternalURL string `json:"externalURL"`
 	// +kubebuilder:validation:Required
 	// +kubebuilder:default=8080
 	Port intstr.IntOrString `json:"port"`
@@ -55,6 +54,11 @@ type BytebaseStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	AvailableReplicas int32  `json:"availableReplicas"`
 	Domain            string `json:"domain"`
+
+	// +kubebuilder:validation:Optional
+	LoginCookie api.LoginCookie `json:"loginCookie"`
+	// +kubebuilder:validation:Optional
+	RootPassword string `json:"rootPassword"`
 }
 
 // +kubebuilder:object:root=true

@@ -23,13 +23,14 @@ func (d Driver) createKeyPair(infra *v1.Infra) error {
 	if infra.Spec.SSH.PkData != "" {
 		return nil
 	}
-	client := d.Client
+	client := d.ECSClient
 	keyPairName := getKeyPairName(infra)
 	keyPairTag := getKeyPairTag(infra)
 	createKeyPairRequest := &ecs.CreateKeyPairRequest{
-		RpcRequest:  ecs.CreateCreateKeyPairRequest().RpcRequest,
-		KeyPairName: keyPairName,
-		Tag:         keyPairTag,
+		RpcRequest:      ecs.CreateCreateKeyPairRequest().RpcRequest,
+		KeyPairName:     keyPairName,
+		Tag:             keyPairTag,
+		ResourceGroupId: d.ResourceGroupID,
 	}
 
 	result, err := CreateKeyPair(client, createKeyPairRequest)

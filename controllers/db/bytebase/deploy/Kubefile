@@ -1,0 +1,13 @@
+FROM scratch
+
+USER 65532:65532
+
+COPY registry registry
+COPY manifests manifests
+
+ENV userNamespace="bytebase-system"
+ENV rootDomain="cloud.sealos.io"
+ENV wildcardCertSecretName="wildcard-cert"
+ENV wildcardCertSecretNamespace="sealos-system"
+
+CMD ["kubectl apply -f manifests"]

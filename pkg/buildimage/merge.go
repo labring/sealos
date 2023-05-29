@@ -62,7 +62,7 @@ func MergeDockerfileFromImages(imageObjList []map[string]v1.Image) (string, erro
 	}
 	t := template.New("")
 	t, err := t.Parse(
-		`FROM {{ .Image0 }}
+		`FROM scratch
 MAINTAINER labring
 {{- if .Labels }}
 LABEL {{ .Labels }}
@@ -89,8 +89,7 @@ COPY --from={{.}}   . .
 		"Envs":        maps.MapToStringBySpilt(envs, " \\\n\t"),
 		"Entrypoints": strings.Join(entrypoints, ","),
 		"CMDs":        strings.Join(cmds, ","),
-		"Images":      imageNames[1:],
-		"Image0":      imageNames[0],
+		"Images":      imageNames,
 	}
 
 	out := bytes.NewBuffer(nil)

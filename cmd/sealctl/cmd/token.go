@@ -48,7 +48,3 @@ func newTokenCmd() *cobra.Command {
 	}
 	return tokenCmd
 }
-
-func init() {
-	rootCmd.AddCommand(newTokenCmd())
-}

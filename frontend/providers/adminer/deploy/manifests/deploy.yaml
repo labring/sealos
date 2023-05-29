@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: adminer-frontend
+  name: adminer-frontend
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: adminer-frontend-config
+  namespace: adminer-frontend
+data:
+  config.yaml: |-
+    addr: :3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: adminer-frontend
+  namespace: adminer-frontend
+spec:
+  selector:
+    matchLabels:
+      app: adminer-frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: adminer-frontend
+    spec:
+      containers:
+        - name: adminer-frontend
+          resources:
+            limits:
+              cpu: 100m
+              memory: 500Mi
+            requests:
+              cpu: 10m
+              memory: 128Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+          # do not modify this image, it is used for CI/CD
+          image: ghcr.io/labring/sealos-adminer-frontend:dev
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: adminer-frontend-volume
+              mountPath: /config.yaml
+              subPath: config.yaml
+      volumes:
+        - name: adminer-frontend-volume
+          configMap:
+            name: adminer-frontend-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: adminer-frontend
+  name: adminer-frontend
+  namespace: adminer-frontend
+spec:
+  ports:
+    - name: http
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
+  selector:
+    app: adminer-frontend
