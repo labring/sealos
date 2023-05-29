@@ -1,6 +1,5 @@
 import * as k8s from '@kubernetes/client-node';
 import http from 'http';
-import * as yaml from 'js-yaml';
 
 export type CRDMeta = {
   group: string; // group
@@ -63,43 +62,48 @@ export async function GetCRD(
     .getNamespacedCustomObject(meta.group, meta.version, meta.namespace, meta.plural, name);
 }
 
-export async function ApplyYaml(
+export async function CreateOrReplaceYaml(
   kc: k8s.KubeConfig,
-  spec_str: string
+  specs: k8s.KubernetesObject[]
 ): Promise<k8s.KubernetesObject[]> {
   const client = k8s.KubernetesObjectApi.makeApiClient(kc);
-  const specs = yaml.loadAll(spec_str) as k8s.KubernetesObject[];
   const validSpecs = specs.filter((s) => s && s.kind && s.metadata);
-  const created: k8s.KubernetesObject[] = [];
+  const succeed = [] as k8s.KubernetesObject[];
+
   for (const spec of validSpecs) {
-    // this is to convince the old version of TypeScript that metadata exists even though we already filtered specs
-    // without metadata out
     spec.metadata = spec.metadata || {};
     spec.metadata.annotations = spec.metadata.annotations || {};
     delete spec.metadata.annotations['kubectl.kubernetes.io/last-applied-configuration'];
     spec.metadata.annotations['kubectl.kubernetes.io/last-applied-configuration'] =
       JSON.stringify(spec);
+
     try {
-      // try to get the resource, if it does not exist an error will be thrown and we will end up in the catch
-      // block.
-      // TODO: temp fix
-      await client.read(spec as any);
-      // await client.read<k8s.KubernetesObject>(spec as any);
-      // we got the resource, so it exists, so patch it
-      //
-      // Note that this could fail if the spec refers to a custom resource. For custom resources you may need
-      // to specify a different patch merge strategy in the content-type header.
-      //
-      // See: https://github.com/kubernetes/kubernetes/issues/97423
-      const response = await client.patch(spec);
-      created.push(response.body);
-    } catch (e) {
-      // we did not get the resource, so it does not exist, so create it
-      const response = await client.create(spec);
-      created.push(response.body);
+      // @ts-ignore
+      const { body } = await client.read(spec);
+      // update resource
+      const response = await client.replace({
+        ...spec,
+        metadata: {
+          ...spec.metadata,
+          resourceVersion: body.metadata?.resourceVersion
+        }
+      });
+      succeed.push(response.body);
+    } catch (e: any) {
+      // no yaml, create it
+      if (e?.body?.code && +e?.body?.code === 404) {
+        try {
+          const response = await client.create(spec);
+          succeed.push(response.body);
+        } catch (error: any) {
+          return Promise.reject(error);
+        }
+      } else {
+        return Promise.reject(e);
+      }
     }
   }
-  return created;
+  return succeed;
 }
 
 export function CheckIsInCluster(): [boolean, string] {
