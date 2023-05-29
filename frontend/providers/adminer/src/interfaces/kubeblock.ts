@@ -22,8 +22,24 @@ export interface KubeBlockClusterStatus {
 
 const labelName = 'clusterdefinition.kubeblocks.io/name';
 
+export interface KubeBlockClusterType {
+  driver: string;
+}
+
+const clusterTypeMap: Record<string, KubeBlockClusterType> = {
+  postgresql: {
+    driver: 'pgsql'
+  },
+  'apecloud-mysql': {
+    driver: 'mysql'
+  },
+  mongodb: {
+    driver: 'mongodb'
+  }
+};
+
 // this template is suite for golang(kubernetes and sealos)'s template engine
-export async function generateKubeBlockClusterTemplate(
+export async function generateKubeBlockClusters(
   kc: k8s.KubeConfig,
   namespace: string
 ): Promise<string[]> {
@@ -57,68 +73,40 @@ export async function generateKubeBlockClusterTemplate(
         continue;
       }
 
-      if (item.metadata?.labels && item.metadata.labels[labelName] !== '') {
-        const clusterType = item.metadata.labels[labelName];
-        if (!item.metadata.name || !item.metadata.namespace) {
-          continue;
-        }
-
-        if (clusterType === 'postgresql') {
-          // get secret
-          const secretName = item.metadata.name + '-conn-credential';
-          const secret = await secretClient.readNamespacedSecret(
-            secretName,
-            item.metadata.namespace
-          );
-
-          if (!secret.body?.data) {
-            continue;
-          }
-
-          const username = atob(secret.body.data['username']);
-          const password = atob(secret.body.data['postgres-password']);
-          const endpoint = atob(secret.body.data['endpoint']);
-
-          const connection = 'pgsql://' + username + ':' + password + '@' + endpoint;
-          connections.push(connection);
-        } else if (clusterType === 'apecloud-mysql') {
-          // get secret
-          const secretName = item.metadata.name + '-conn-credential';
-          const secret = await secretClient.readNamespacedSecret(
-            secretName,
-            item.metadata.namespace
-          );
-
-          if (!secret.body?.data) {
-            continue;
-          }
-
-          const username = atob(secret.body.data['username']);
-          const password = atob(secret.body.data['password']);
-          const endpoint = atob(secret.body.data['endpoint']);
-
-          const connection = 'mysql://' + username + ':' + password + '@' + endpoint;
-          connections.push(connection);
-        } else if (clusterType === 'mongodb') {
-          // get secret
-          const secretName = item.metadata.name + '-conn-credential';
-          const secret = await secretClient.readNamespacedSecret(
-            secretName,
-            item.metadata.namespace
-          );
-
-          if (!secret.body?.data) {
-            continue;
-          }
-
-          const username = atob(secret.body.data['username']);
-          const password = atob(secret.body.data['password']);
-          const endpoint = atob(secret.body.data['endpoint']);
-
-          const connection = 'mongo://' + username + ':' + password + '@' + endpoint;
-          connections.push(connection);
-        }
+      if (!item.metadata || !item.metadata.name || !item.metadata.namespace) {
+        continue;
       }
+
+      if (!item.metadata.labels || item.metadata.labels[labelName] === '') {
+        continue;
+      }
+
+      const clusterType = item.metadata.labels[labelName];
+      const clusterTypeObj = clusterTypeMap[clusterType];
+      if (!clusterTypeObj) {
+        continue;
+      }
+
+      // get secret
+      const secretName = item.metadata.name + '-conn-credential';
+      const secret = await secretClient.readNamespacedSecret(secretName, item.metadata.namespace);
+
+      if (
+        !secret.body?.data ||
+        secret.body.data['username'] === '' ||
+        secret.body.data['password'] === '' ||
+        secret.body.data['endpoint'] === ''
+      ) {
+        continue;
+      }
+
+      const username = atob(secret.body.data['username']);
+      const password = atob(secret.body.data['password']);
+      const endpoint = atob(secret.body.data['endpoint']);
+
+      const connection = clusterTypeObj.driver + '://' + username + ':' + password + '@' + endpoint;
+
+      connections.push(connection);
     }
 
     return Promise.resolve(connections);

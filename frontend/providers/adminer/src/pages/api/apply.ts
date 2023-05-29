@@ -1,7 +1,14 @@
-import { generateAdminerTemplate, AdminerStatus } from '@/interfaces/adminer';
-import { generateKubeBlockClusterTemplate } from '@/interfaces/kubeblock';
+import { AdminerStatus, generateAdminerTemplate } from '@/interfaces/adminer';
+import { generateKubeBlockClusters } from '@/interfaces/kubeblock';
+import { generateZalanDoPostgresClusters } from '@/interfaces/zalando';
 import { authSession } from '@/service/auth';
-import { ApplyYaml, CRDMeta, GetCRD, GetUserDefaultNameSpace, K8sApi } from '@/service/kubernetes';
+import {
+  CRDMeta,
+  CreateOrReplaceYaml,
+  GetCRD,
+  GetUserDefaultNameSpace,
+  K8sApi
+} from '@/service/kubernetes';
 import { jsonRes } from '@/service/response';
 import { HttpError } from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -34,7 +41,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let connections: string[] = [];
     try {
       // get kubeblock clusters
-      connections = await generateKubeBlockClusterTemplate(kc, namespace);
+      connections = await generateKubeBlockClusters(kc, namespace);
+
+      if (process.env.ZALANDO_ENABLED === '1') {
+        const zalandoConnections = await generateZalanDoPostgresClusters(kc, namespace);
+        connections = connections.concat(zalandoConnections);
+      }
     } catch (error) {
       // console.log(error);
     }
@@ -47,7 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         currentTime: new Date().toISOString(),
         connections: connections
       });
-      const result = await ApplyYaml(kc, adminerYaml);
+      await CreateOrReplaceYaml(kc, [adminerYaml]);
     } catch (error) {
       const errHttp = error as HttpError;
       if (!errHttp || errHttp.response.statusCode !== 409) {

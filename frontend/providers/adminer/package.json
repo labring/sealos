@@ -10,12 +10,12 @@
   },
   "dependencies": {
     "@kubernetes/client-node": "0.18.1",
-    "@tanstack/react-query": "^4.29.7",
+    "@tanstack/react-query": "^4.29.11",
     "axios": "1.4.0",
     "clsx": "^1.2.1",
     "immer": "^10.0.2",
     "js-yaml": "^4.1.0",
-    "next": "13.4.3",
+    "next": "13.4.4",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "sealos-desktop-sdk": "^0.1.12",
@@ -24,11 +24,11 @@
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.5",
-    "@types/node": "20.2.3",
-    "@types/react": "18.2.6",
+    "@types/node": "20.2.5",
+    "@types/react": "18.2.7",
     "@types/react-dom": "18.2.4",
     "eslint": "8.41.0",
-    "eslint-config-next": "13.4.3",
+    "eslint-config-next": "13.4.4",
     "sass": "^1.62.1"
   }
 }
