@@ -21,6 +21,8 @@ import (
 	"os"
 	"path"
 
+	"github.com/labring/sealos/test/e2e/testhelper/cmd"
+
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
 
 	"github.com/labring/sealos/test/e2e/suites/operators"
@@ -81,38 +83,8 @@ var _ = Describe("E2E_sealos_images_test", func() {
 		})
 
 	})
-	Context("sealos images build suit", func() {
-		var tmpdir string
-		BeforeEach(func() {
-			By("build image from dockerfile")
-			dFile := config.Dockerfile{
-				Images: []string{"docker.io/altinity/clickhouse-operator:0.18.4", "docker.io/altinity/metrics-exporter:0.18.4"},
-			}
-			tmpdir, err = dFile.Write()
-			utils.CheckErr(err, fmt.Sprintf("failed to create dockerfile: %v", err))
-		})
-		AfterEach(func() {
-			err = os.RemoveAll(tmpdir)
-			utils.CheckErr(err, fmt.Sprintf("failed to remove dir %s: %v", tmpdir, err))
-		})
-		It("images build default image", func() {
-			err = fakeClient.Image.BuildImage("test-build-image:clickhouse", tmpdir, operators.BuildOptions{
-				MaxPullProcs: 5,
-				SaveImage:    true,
-			})
-			utils.CheckErr(err)
-		})
-		It("images build Compress image", func() {
-			err = fakeClient.Image.BuildImage("test-build-image:clickhouse-compress", tmpdir, operators.BuildOptions{
-				Compression:  "gzip",
-				MaxPullProcs: 5,
-				SaveImage:    true,
-			})
-			utils.CheckErr(err)
-		})
-	})
-	Context("sealos images build Compress and run suit", func() {
-		It("images build Compress image running cluster", func() {
+	Context("sealos images build and run suit", func() {
+		It("images build image running cluster", func() {
 
 			By("write dockerfile")
 			dFile := config.Dockerfile{
@@ -130,7 +102,6 @@ var _ = Describe("E2E_sealos_images_test", func() {
 			By("build image")
 			err = fakeClient.Image.BuildImage("test-build-image:rootfs-sealctl", tmpdir, operators.BuildOptions{
 				MaxPullProcs: 5,
-				Compression:  "gzip",
 			})
 			utils.CheckErr(err)
 
@@ -139,6 +110,46 @@ var _ = Describe("E2E_sealos_images_test", func() {
 				err = fakeClient.Cluster.Reset()
 				utils.CheckErr(err, fmt.Sprintf("failed to reset Compress cluster run: %v", err))
 			}()
+			err = fakeClient.Cluster.Run(images...)
+			utils.CheckErr(err, fmt.Sprintf("failed to run Compress images %v: %v", images, err))
+			err = fakeClient.CRI.Pull("docker.io/altinity/clickhouse-operator:0.18.4")
+			utils.CheckErr(err, fmt.Sprintf("failed to pull image docker.io/altinity/clickhouse-operator:0.18.4: %v", err))
+			err = fakeClient.CRI.ImageList()
+			utils.CheckErr(err, fmt.Sprintf("failed to list images: %v", err))
+			err = fakeClient.CRI.HasImage("sealos.hub:5000/altinity/clickhouse-operator:0.18.4")
+			utils.CheckErr(err, fmt.Sprintf("failed to validate image sealos.hub:5000/altinity/clickhouse-operator:0.18.4: %v", err))
+		})
+
+	})
+	Context("sealos images build and run suit by sync feature", func() {
+		It("images build image running cluster", func() {
+			By("write dockerfile")
+			_ = os.Setenv("SEALOS_REGISTRY_SYNC_EXPERIMENTAL", "true")
+			dFile := config.Dockerfile{
+				Images:    []string{"docker.io/altinity/clickhouse-operator:0.18.4", "docker.io/altinity/metrics-exporter:0.18.4"},
+				BaseImage: "labring/kubernetes:v1.25.0",
+				Copys:     []string{"sealctl opt/"},
+			}
+			tmpdir, err := dFile.Write()
+			utils.CheckErr(err, fmt.Sprintf("failed to create dockerfile: %v", err))
+
+			By("copy sealctl to rootfs")
+			err = fakeClient.CmdInterface.Copy("/tmp/sealctl", path.Join(tmpdir, "sealctl"))
+			utils.CheckErr(err, fmt.Sprintf("failed to copy sealctl to rootfs: %v", err))
+
+			By("build image")
+			err = fakeClient.Image.BuildImage("test-build-image:rootfs-sealctl", tmpdir, operators.BuildOptions{
+				MaxPullProcs: 5,
+			})
+			utils.CheckErr(err)
+
+			images := []string{"test-build-image:rootfs-sealctl", "labring/helm:v3.8.2", "labring/calico:v3.24.1"}
+			defer func() {
+				err = fakeClient.Cluster.Reset()
+				utils.CheckErr(err, fmt.Sprintf("failed to reset Compress cluster run: %v", err))
+				_ = os.Unsetenv("SEALOS_REGISTRY_SYNC_EXPERIMENTAL")
+			}()
+			cmd.SetDebug()
 			err = fakeClient.Cluster.Run(images...)
 			utils.CheckErr(err, fmt.Sprintf("failed to run Compress images %v: %v", images, err))
 			err = fakeClient.CRI.Pull("docker.io/altinity/clickhouse-operator:0.18.4")

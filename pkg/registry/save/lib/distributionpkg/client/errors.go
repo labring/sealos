@@ -21,7 +21,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/labring/sealos/pkg/registry/distributionpkg/client/auth/challenge"
+	"github.com/labring/sealos/pkg/registry/save/lib/distributionpkg/client/auth/challenge"
 
 	"github.com/distribution/distribution/v3/registry/api/errcode"
 )

@@ -27,7 +27,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labring/sealos/pkg/registry/distributionpkg/client/transport"
+	"github.com/labring/sealos/pkg/registry/save/lib/distributionpkg/client/transport"
 
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/reference"

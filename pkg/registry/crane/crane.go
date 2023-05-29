@@ -12,57 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package registry
+package crane
 
 import (
-	"fmt"
 	"runtime"
 	"strings"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 
 	name2 "github.com/google/go-containerregistry/pkg/name"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 
-	"github.com/containers/image/v5/pkg/docker/config"
-	imagetypes "github.com/containers/image/v5/types"
 	"github.com/docker/docker/api/types"
 	"github.com/google/go-containerregistry/pkg/crane"
 
-	"github.com/labring/sealos/pkg/registry/authn"
 	"github.com/labring/sealos/pkg/utils/http"
 )
 
-// this package contains some utils to handle docker image name
-const (
-	defaultDomain = "docker.io"
-)
-
-func GetAuthInfo(sys *imagetypes.SystemContext) (map[string]types.AuthConfig, error) {
-	creds, err := config.GetAllCredentials(sys)
-	if err != nil {
-		return nil, err
-	}
-	auths := make(map[string]types.AuthConfig, 0)
-
-	for domain, cred := range creds {
-		logger.Debug("GetAuthInfo getCredentials domain: %s", domain, cred.Username)
-		reg, err := NewRegistry(domain, ToAuthConfig(cred))
-		if err == nil {
-			auths[domain] = types.AuthConfig{
-				Username:      cred.Username,
-				Password:      cred.Password,
-				ServerAddress: fmt.Sprintf("%s://%s", reg.Scheme(), reg.RegistryStr()),
-				IdentityToken: cred.IdentityToken,
-			}
-		}
-	}
-	return auths, nil
-}
-
 func GetCraneOptions(authConfig map[string]types.AuthConfig) []crane.Option {
-	return []crane.Option{crane.WithAuthFromKeychain(authn.NewDefaultKeychain(authConfig)), crane.WithTransport(http.DefaultSkipVerify)}
+	return []crane.Option{crane.WithAuthFromKeychain(NewDefaultKeychain(authConfig)), crane.WithTransport(http.DefaultSkipVerify)}
 }
 
 func GetImageManifestFromAuth(image string, authConfig map[string]types.AuthConfig) (newImage string, data []byte, cfg *types.AuthConfig, err error) {

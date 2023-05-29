@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	registry2 "github.com/labring/sealos/pkg/registry"
+	registry2 "github.com/labring/sealos/pkg/registry/crane"
 
 	types2 "github.com/docker/docker/api/types"
 

@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package registry
+package save
 
 import (
 	"context"
+
+	"github.com/labring/sealos/pkg/system"
 
 	"github.com/google/go-containerregistry/pkg/name"
 
@@ -31,7 +33,7 @@ type Registry interface {
 	SaveImages(images []string, dir string, platform v1.Platform) ([]string, error)
 }
 
-type DefaultImage struct {
+type defaultImage struct {
 	ctx            context.Context
 	domainToImages map[string][]name.Reference
 	progressOut    progress.Output
@@ -39,17 +41,45 @@ type DefaultImage struct {
 	auths          map[string]types.AuthConfig
 }
 
+type tmpRegistryImage struct {
+	ctx          context.Context
+	maxPullProcs int
+	auths        map[string]types.AuthConfig
+}
+
 func NewImageSaver(ctx context.Context, maxPullProcs int, auths map[string]types.AuthConfig) Registry {
+	if v, _ := system.Get(system.RegistrySyncExperimentalConfigKey); v == "true" {
+		return newTmpRegistrySaver(ctx, maxPullProcs, auths)
+	}
+
+	return newDefaultRegistrySaver(ctx, maxPullProcs, auths)
+}
+
+func newDefaultRegistrySaver(ctx context.Context, maxPullProcs int, auths map[string]types.AuthConfig) Registry {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 	if auths == nil {
 		auths = make(map[string]types.AuthConfig)
 	}
-	return &DefaultImage{
+	return &defaultImage{
 		ctx:            ctx,
 		domainToImages: make(map[string][]name.Reference),
 		maxPullProcs:   maxPullProcs,
 		auths:          auths,
+	}
+}
+
+func newTmpRegistrySaver(ctx context.Context, maxPullProcs int, auths map[string]types.AuthConfig) Registry {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if auths == nil {
+		auths = make(map[string]types.AuthConfig)
+	}
+	return &tmpRegistryImage{
+		ctx:          ctx,
+		maxPullProcs: maxPullProcs,
+		auths:        auths,
 	}
 }

@@ -20,12 +20,13 @@ import (
 	"context"
 	"errors"
 
+	"github.com/labring/sealos/pkg/registry/save"
+
 	"github.com/docker/docker/api/types"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/buildimage"
-	"github.com/labring/sealos/pkg/registry"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -42,7 +43,7 @@ func NewRegistryImageSaveCmd() *cobra.Command {
 sealctl registry save --registry-dir=/tmp/registry .
 sealctl registry save --registry-dir=/tmp/registry --images=docker.io/library/busybox:latest`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			is := registry.NewImageSaver(context.Background(), flagsResults.registryPullMaxPullProcs, auth)
+			is := save.NewImageSaver(context.Background(), flagsResults.registryPullMaxPullProcs, auth)
 			outImages, err := is.SaveImages(images, flagsResults.registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: flagsResults.registryPullArch})
 			if err != nil {
 				return err

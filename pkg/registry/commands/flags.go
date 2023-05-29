@@ -21,10 +21,11 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/labring/sealos/pkg/registry/crane"
+
 	"github.com/docker/docker/api/types"
 	"github.com/spf13/pflag"
 
-	"github.com/labring/sealos/pkg/registry"
 	"github.com/labring/sealos/pkg/utils/file"
 )
 
@@ -45,7 +46,7 @@ func (opts *registrySaveResults) CheckAuth() (map[string]types.AuthConfig, error
 	if !file.IsExist(opts.registryPullRegistryDir) {
 		_ = os.MkdirAll(opts.registryPullRegistryDir, 0755)
 	}
-	cfg, err := registry.GetAuthInfo(nil)
+	cfg, err := crane.GetAuthInfo(nil)
 	if err != nil {
 		return nil, fmt.Errorf("auth info is error: %w", err)
 	}

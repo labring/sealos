@@ -15,11 +15,11 @@ const (
 	TestImageTar       = Prefix + "IMAGE_TAR"
 	TestPatchImageName = Prefix + "PATCH_IMAGE_NAME"
 	TestPatchImageTar  = Prefix + "PATCH_IMAGE_TAR"
-
-	TestInfra         = Prefix + "EST_INFRA"
-	TestClusterName   = Prefix + "CLUSTER_NAME"
-	TestDir           = Prefix + "TEST_DIR"
-	TestSealosBinPath = Prefix + "SEALOS_BIN_PATH"
+	TestDEBUG          = Prefix + "DEBUG"
+	TestInfra          = Prefix + "EST_INFRA"
+	TestClusterName    = Prefix + "CLUSTER_NAME"
+	TestDir            = Prefix + "TEST_DIR"
+	TestSealosBinPath  = Prefix + "SEALOS_BIN_PATH"
 )
 
 func GetEnvWithDefault(key, defaultValue string) string {

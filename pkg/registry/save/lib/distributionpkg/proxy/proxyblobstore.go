@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/labring/sealos/pkg/registry/distributionpkg/proxy/scheduler"
+	"github.com/labring/sealos/pkg/registry/save/lib/distributionpkg/proxy/scheduler"
 
 	"github.com/distribution/distribution/v3"
 	dcontext "github.com/distribution/distribution/v3/context"
