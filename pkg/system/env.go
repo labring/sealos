@@ -89,7 +89,7 @@ var configOptions = []ConfigOption{
 	},
 	{
 		Key:          RegistrySyncExperimentalConfigKey,
-		Description:  "enable registry sync experimental feature.",
+		Description:  "enable registry sync experimental feature.Using filesystem copy registry image and save remote registry to local registry",
 		DefaultValue: "false",
 	},
 }

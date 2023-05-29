@@ -18,11 +18,13 @@ package e2e
 
 import (
 	"fmt"
+	"os"
 	"path"
+
+	"github.com/labring/sealos/test/e2e/testhelper/cmd"
 
 	"github.com/labring/sealos/test/e2e/suites/operators"
 	"github.com/labring/sealos/test/e2e/testhelper/config"
-	"github.com/labring/sealos/test/e2e/testhelper/settings"
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
 
 	"github.com/labring/sealos/test/e2e/suites/checkers"
@@ -55,7 +57,6 @@ var _ = Describe("E2E_sealos_filesystem_test", func() {
 			By("build image")
 			err = fakeClient.Image.BuildImage("kubernetes-filesystem:v1.25.0", tmpdir, operators.BuildOptions{
 				MaxPullProcs: 5,
-				Compression:  "gzip",
 			})
 			utils.CheckErr(err, fmt.Sprintf("failed to build image: %v", err))
 		})
@@ -78,18 +79,19 @@ var _ = Describe("E2E_sealos_filesystem_test", func() {
 			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
 
-		It("sealos registry filesystem suit", func() {
+		It("sealos filesystem sync registry suit", func() {
 			By("run kubernetes-filesystem:v1.25.0 for registry")
-			cmd := fmt.Sprintf("SEALOS_REGISTRY_SYNC_EXPERIMENTAL=true %s run kubernetes-filesystem:v1.25.0 --debug", settings.E2EConfig.SealosBinPath)
-			err = fakeClient.CmdInterface.AsyncExec("bash", "-c", cmd)
+			_ = os.Setenv("SEALOS_REGISTRY_SYNC_EXPERIMENTAL", "true")
+			cmd.SetDebug()
+			err = fakeClient.Cluster.Run("kubernetes-filesystem:v1.25.0")
 			utils.CheckErr(err)
 			err = fakeClient.CmdInterface.AsyncExec("crictl", "images")
 			utils.CheckErr(err)
-			cmd = fmt.Sprintf("SEALOS_REGISTRY_SYNC_EXPERIMENTAL=true %s run labring/calico:v3.25.0 --debug", settings.E2EConfig.SealosBinPath)
-			err = fakeClient.CmdInterface.AsyncExec("bash", "-c", cmd)
+			err = fakeClient.Cluster.Run("labring/calico:v3.25.0")
 			utils.CheckErr(err)
 			err = fakeClient.CmdInterface.AsyncExec("crictl", "images")
 			utils.CheckErr(err)
+			_ = os.Unsetenv("SEALOS_REGISTRY_SYNC_EXPERIMENTAL")
 		})
 	})
 

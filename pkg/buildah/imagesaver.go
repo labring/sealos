@@ -22,6 +22,9 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/labring/sealos/pkg/registry/crane"
+	"github.com/labring/sealos/pkg/registry/save"
+
 	"github.com/containerd/containerd/platforms"
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/image/v5/types"
@@ -32,7 +35,6 @@ import (
 
 	"github.com/labring/sealos/pkg/buildimage"
 	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/registry"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/flags"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -91,11 +93,11 @@ func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.System
 	if len(images) == 0 {
 		return compress()
 	}
-	auths, err := registry.GetAuthInfo(sys)
+	auths, err := crane.GetAuthInfo(sys)
 	if err != nil {
 		return err
 	}
-	is := registry.NewImageSaver(getContext(), opts.maxPullProcs, auths)
+	is := save.NewImageSaver(getContext(), opts.maxPullProcs, auths)
 
 	for _, pf := range platforms {
 		images, err = is.SaveImages(images, registryDir, pf)
