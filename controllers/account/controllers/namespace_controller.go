@@ -26,9 +26,6 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/watch"
 
@@ -297,25 +294,25 @@ func (r *NamespaceReconciler) recreatePod(ctx context.Context, oldPod corev1.Pod
 	return nil
 }
 
-func (r *NamespaceReconciler) deleteInfraResources(ctx context.Context, namespace string) error {
-
-	u := unstructured.UnstructuredList{}
-	u.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "infra.sealos.io",
-		Version: "v1",
-		Kind:    "infra",
-	})
-	if err := r.Client.List(ctx, &u, client.InNamespace(namespace)); err != nil {
-		return client.IgnoreNotFound(err)
-	}
-	for _, item := range u.Items {
-		r.Log.Info("delete resource", "resource name:", item.GetName(), "get GVK", item.GroupVersionKind())
-		if err := r.Client.Delete(ctx, &item); err != nil {
-			return client.IgnoreNotFound(err)
-		}
-	}
-	return nil
-}
+//func (r *NamespaceReconciler) deleteInfraResources(ctx context.Context, namespace string) error {
+//
+//	u := unstructured.UnstructuredList{}
+//	u.SetGroupVersionKind(schema.GroupVersionKind{
+//		Group:   "infra.sealos.io",
+//		Version: "v1",
+//		Kind:    "infra",
+//	})
+//	if err := r.Client.List(ctx, &u, client.InNamespace(namespace)); err != nil {
+//		return client.IgnoreNotFound(err)
+//	}
+//	for _, item := range u.Items {
+//		r.Log.Info("delete resource", "resource name:", item.GetName(), "get GVK", item.GroupVersionKind())
+//		if err := r.Client.Delete(ctx, &item); err != nil {
+//			return client.IgnoreNotFound(err)
+//		}
+//	}
+//	return nil
+//}
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {

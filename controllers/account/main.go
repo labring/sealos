@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/labring/sealos/controllers/account/controllers/cache"
+	v1 "github.com/labring/sealos/controllers/common/notification/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -53,6 +54,7 @@ func init() {
 
 	utilruntime.Must(accountv1.AddToScheme(scheme))
 	utilruntime.Must(meteringcommonv1.AddToScheme(scheme))
+	utilruntime.Must(v1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -89,6 +91,10 @@ func main() {
 		Scheme: mgr.GetScheme(),
 		Mapper: mgr.GetRESTMapper(),
 	})
+	if err != nil {
+		setupLog.Error(err, "unable to get watch client")
+		os.Exit(1)
+	}
 	if err = (&controllers.AccountReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),

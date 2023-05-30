@@ -77,7 +77,8 @@ spec:
             value: "604800"
           - name: DebtDetectionCycleSeconds
             value: "60"
-        image: registry.cn-hangzhou.aliyuncs.com/bxy4543/account-controller:v0.0.4
+        image: ghcr.io/labring/sealos-account-controller:dev
+        imagePullPolicy: Always
         args:
         - "--health-probe-bind-address=:8081"
         - "--metrics-bind-address=127.0.0.1:8080"

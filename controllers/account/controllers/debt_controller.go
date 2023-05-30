@@ -22,6 +22,8 @@ import (
 	"strconv"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	v1 "github.com/labring/sealos/controllers/common/notification/api/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -149,7 +151,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		}
 		update = SetDebtStatus(debt, accountv1.WarningPeriod)
 		if err := r.sendWarningNotice(ctx, userNamespace); err != nil {
-			return err
+			r.Logger.Error(err, "send warning notice error")
 		}
 	case accountv1.WarningPeriod:
 		/*
@@ -172,7 +174,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		}
 		update = SetDebtStatus(debt, accountv1.ApproachingDeletionPeriod)
 		if err := r.sendApproachingDeletionNotice(ctx, userNamespace); err != nil {
-			return err
+			r.Logger.Error(err, "sendApproachingDeletionNotice error")
 		}
 
 	case accountv1.ApproachingDeletionPeriod:
@@ -195,9 +197,9 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		}
 		update = SetDebtStatus(debt, accountv1.ImminentDeletionPeriod)
 		if err := r.sendImminentDeletionNotice(ctx, userNamespace); err != nil {
-			return err
+			r.Logger.Error(err, "sendImminentDeletionNotice error")
 		}
-		if err := r.SuspendUserResource(ctx, GetUserNamespace(account.Name)); err != nil {
+		if err := r.SuspendUserResource(ctx, userNamespace); err != nil {
 			return err
 		}
 	case accountv1.ImminentDeletionPeriod:
@@ -212,7 +214,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		if oweamount >= 0 {
 			update = SetDebtStatus(debt, accountv1.NormalPeriod)
 			// 恢复用户资源
-			if err := r.ResumeUserResource(ctx, GetUserNamespace(account.Name)); err != nil {
+			if err := r.ResumeUserResource(ctx, userNamespace); err != nil {
 				return err
 			}
 			//TODO 撤销最终删除消息通知
@@ -225,9 +227,9 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		// TODO 暂时只暂停资源，后续会添加真正删除全部资源逻辑, 或直接删除namespace
 		update = SetDebtStatus(debt, accountv1.FinalDeletionPeriod)
 		if err := r.sendFinalDeletionNotice(ctx, userNamespace); err != nil {
-			return err
+			r.Error(err, "sendFinalDeletionNotice error")
 		}
-		if err := r.SuspendUserResource(ctx, GetUserNamespace(account.Name)); err != nil {
+		if err := r.SuspendUserResource(ctx, userNamespace); err != nil {
 			return err
 		}
 	case accountv1.FinalDeletionPeriod:
@@ -240,12 +242,12 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			update = SetDebtStatus(debt, accountv1.NormalPeriod)
 
 			// TODO 暂时非真正完全删除，仍可恢复用户资源，后续会添加真正删除全部资源逻辑，不在执行恢复逻辑
-			if err := r.ResumeUserResource(ctx, GetUserNamespace(account.Name)); err != nil {
+			if err := r.ResumeUserResource(ctx, userNamespace); err != nil {
 				return err
 			}
 			break
 		}
-		if err := r.SuspendUserResource(ctx, GetUserNamespace(account.Name)); err != nil {
+		if err := r.SuspendUserResource(ctx, userNamespace); err != nil {
 			return err
 		}
 	//兼容老版本
@@ -315,17 +317,23 @@ var NoticeTemplate = map[int]string{
 
 func (r *DebtReconciler) sendNotice(ctx context.Context, namespace string, noticeType int) error {
 	now := time.Now().UTC().Unix()
-	ntf := v1.Notification{}
-	ntf.Namespace = namespace
-	ntf.Name = "debt-notice-" + strconv.FormatInt(now, 10)
-	ntf.Spec = v1.NotificationSpec{
-		Title:      "Debt Notice",
-		Message:    NoticeTemplate[noticeType],
-		Timestamp:  now,
-		From:       "debt-system",
-		Importance: v1.High,
+	ntf := v1.Notification{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "debt-notice" + strconv.Itoa(noticeType),
+			Namespace: namespace,
+		},
+		Spec: v1.NotificationSpec{
+			Title:      "Debt Notice",
+			Message:    NoticeTemplate[noticeType],
+			From:       "Debt-System",
+			Importance: v1.High,
+		},
 	}
-	return r.Client.Create(ctx, &ntf)
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, &ntf, func() error {
+		ntf.Spec.Timestamp = now
+		return nil
+	})
+	return err
 }
 
 func (r *DebtReconciler) sendWarningNotice(ctx context.Context, namespace string) error {
@@ -406,10 +414,10 @@ type OnlyCreatePredicate struct {
 	predicate.Funcs
 }
 
-func (OnlyCreatePredicate) Update(e event.UpdateEvent) bool {
+func (OnlyCreatePredicate) Update(_ event.UpdateEvent) bool {
 	return false
 }
 
-func (OnlyCreatePredicate) Create(e event.CreateEvent) bool {
+func (OnlyCreatePredicate) Create(_ event.CreateEvent) bool {
 	return true
 }

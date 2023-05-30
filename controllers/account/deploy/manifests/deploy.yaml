@@ -1060,7 +1060,7 @@ spec:
             name: account-manager-configmap
         - secretRef:
             name: payment-secret
-        image: registry.cn-hangzhou.aliyuncs.com/bxy4543/account-controller:v0.0.4
+        image: ghcr.io/labring/sealos-account-controller:dev
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
