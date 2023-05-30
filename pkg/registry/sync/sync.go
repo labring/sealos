@@ -190,20 +190,21 @@ func getImageTags(ctx context.Context, sysCtx *types.SystemContext, repoRef refe
 	return tags, nil
 }
 
-func WaitUntilHTTPListen(endpoint string, tw time.Duration) bool {
+func WaitUntilHTTPListen(endpoint string, tw time.Duration) error {
+	var err error
 	for {
 		select {
 		case <-time.After(tw):
-			return false
+			return err
 		default:
-			resp, err := http.DefaultClient.Get(endpoint)
+			var resp *http.Response
+			resp, err = http.DefaultClient.Get(endpoint)
 			if err == nil {
 				_, _ = io.Copy(io.Discard, resp.Body)
 				resp.Body.Close()
-				logger.Info("registry %s is listening , connect success", endpoint)
-				return true
+				logger.Debug("connect to registry %s successfully", endpoint)
+				return nil
 			}
-			logger.Warn("connect to %s error: %v", endpoint, err)
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
