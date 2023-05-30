@@ -18,9 +18,6 @@ package registry
 
 import (
 	"context"
-	"fmt"
-	"path/filepath"
-	"strconv"
 
 	"golang.org/x/sync/errgroup"
 
@@ -29,7 +26,6 @@ import (
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/system"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type sshMode struct {
@@ -56,10 +52,7 @@ func (s *sshMode) Sync(ctx context.Context, hosts ...string) error {
 						constants.IsRegistryDir)
 				})
 			}
-			if err := eg.Wait(); err != nil {
-				return err
-			}
-			return s.ssh.CmdAsync(host, getUntarCommands(s.pathResolver))
+			return eg.Wait()
 		})
 	}
 	return outerEg.Wait()
@@ -69,17 +62,6 @@ type PathResolver interface {
 	RootFSSealctlPath() string
 	RootFSRegistryPath() string
 	RootFSPath() string
-}
-
-func getUntarCommands(pathResolver PathResolver) string {
-	return fmt.Sprintf(`%[1]s untar -h > /dev/null 2>&1 \
-	&& %[1]s untar -o %s --debug=%s --clear=true %s \
-	|| (echo 'skip decompressing registry contents')`,
-		pathResolver.RootFSSealctlPath(),
-		filepath.Join(pathResolver.RootFSPath(), "registry", "docker"),
-		strconv.FormatBool(logger.IsDebugMode()),
-		filepath.Join(pathResolver.RootFSPath(), "registry", "compressed"),
-	)
 }
 
 func New(pathResolver PathResolver, ssh ssh.Interface, mounts []v2.MountImage) filesystem.RegistrySyncer {

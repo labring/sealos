@@ -91,7 +91,6 @@ func (f *fakeImageClient) BuildImage(image, context string, opts BuildOptions) e
 		Tag:          image,
 		SaveImage:    opts.SaveImage,
 		Context:      context,
-		Compression:  opts.Compression,
 		MaxPullProcs: opts.MaxPullProcs,
 		Pull:         opts.Pull,
 		Debug:        true,
