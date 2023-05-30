@@ -63,7 +63,7 @@ var configOptions = []ConfigOption{
 	},
 	{
 		Key:          RuntimeRootConfigKey,
-		Description:  "root directory for runtime actions.",
+		Description:  "root directory for persistent runtime actions/configs.",
 		DefaultValue: filepath.Join(homedir.Get(), fmt.Sprintf(".%s", constants.AppName)),
 	},
 	{
@@ -85,11 +85,11 @@ var configOptions = []ConfigOption{
 	{
 		Key:          ScpChecksumConfigKey,
 		Description:  "whether to check the md5sum value is consistent during the copy process.",
-		DefaultValue: "yes",
+		DefaultValue: "true",
 	},
 	{
 		Key:          RegistrySyncExperimentalConfigKey,
-		Description:  "enable registry sync experimental feature.Using filesystem copy registry image and save remote registry to local registry",
+		Description:  "enable registry sync experimental feature, using containers/image module to save and sync images",
 		DefaultValue: "false",
 	},
 }
