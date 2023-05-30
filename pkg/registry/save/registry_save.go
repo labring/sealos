@@ -51,8 +51,8 @@ func (is *tmpRegistryImage) SaveImages(images []string, dir string, platform v1.
 		return nil, err
 	}
 	errCh := handler.Run(is.ctx, config)
-	if !sync.WaitUntilHTTPListen("http://"+ep, time.Second*3) {
-		return nil, fmt.Errorf("cannot detect whether registry %s is listening, check manually", ep)
+	if err = sync.WaitUntilHTTPListen("http://"+ep, time.Second*3); err != nil {
+		return nil, err
 	}
 	if platform.OS == "" {
 		platform.OS = "linux"
