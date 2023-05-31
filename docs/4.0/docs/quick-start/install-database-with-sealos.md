@@ -44,7 +44,7 @@ MYSQL_PASSWORD=123456
 MYSQL_DATABASE=wordpress
 ```
 
-<img src="./images/image-20230531220308549.png" style="zoom:67%;" />
+![](./images/image-20230531220308549.png)
 
 ![](./images/image-202305312203085400.png)
 
