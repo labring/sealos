@@ -1,4 +1,4 @@
-# Quick installation of low-code platform Appsmith
+# Quick installation of Appsmith
 
 [Appsmith](https://github.com/appsmithorg/appsmith) is an open-source platform to build, deploy, and maintain internal apps. You can build anything from simple CRUD apps, admin panels, dashboards to custom business apps and complicated multi-step workflows.
 
