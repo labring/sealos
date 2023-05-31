@@ -42,7 +42,7 @@ MYSQL_PASSWORD=123456
 MYSQL_DATABASE=wordpress
 ```
 
-![](./images/image-20230531220308544.png)
+![](./images/image-20230531220308549.png)
 
 ![](./images/image-202305312203085400.png)
 
