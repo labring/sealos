@@ -10,7 +10,7 @@ WordPress requires installation and use in conjunction with a MySQL database. In
 
 ### App Launchpad
 
-![](D:/sealos/docs/4.0/docs/examples/wordpress/images/image-20230531215519853.png)
+![](./images/image-20230531215519853.png)
 
 ### Basic configuration
 
@@ -50,9 +50,9 @@ MYSQL_PASSWORD=123456
 MYSQL_DATABASE=wordpress
 ```
 
-<img src="./images/image-20230531220308544.png" style="zoom: 67%;" />
+![](./images/image-20230531220308544.png)
 
-<img src="./images/image-20230531220549563.png"  />
+![](./images/image-20230531220549563.png)
 
 After filling out all the required information in the configuration form, you can now go ahead and install the WordPress application.
 

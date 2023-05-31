@@ -54,9 +54,9 @@ MYSQL_PASSWORD=123456
 MYSQL_DATABASE=wordpress
 ```
 
-<img src="./images/image-20230531220308544.png" style="zoom: 50%;" />
+![](./images/image-20230531220308544.png)
 
-<img src="./images/image-20230531220549563.png" style="zoom: 80%;" />
+![](./images/image-20230531220549563.png)
 
 至此，配置表单基本已经完成，开始安装应用。
 
