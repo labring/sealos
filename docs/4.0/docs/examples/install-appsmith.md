@@ -4,13 +4,13 @@
 
 ## Step 1: open the App Launchpad application
 
-![](./images/1.png)
+![](./image/appsmith-1.png)
 
 ## Step 2: create a new application
 
 - In App Launchpad, click "New Application" to create a new application.
 
-![](./images/2.png)
+![](./image/appsmith-2.png)
 
 ## Step 3: application deployment
 
@@ -28,7 +28,7 @@
   
   - number of instances (custom): 1
 
-![](./images/3.png)
+![](./image/appsmith-3.png)
 
 - Network configuration:
   
@@ -36,19 +36,19 @@
   
   - Public network access: enabled
 
-![](./images/4.png)
+![](./image/appsmith-4.png)
 
 - Advanced configuration:
   
   - Customize local storage and persist Appsmith data (15 GB is recommended).
 
-![](./images/5.png)
+![](./image/appsmith-5.png)
 
 ## Step 4: deploy the application
 
 - Click "deploy Application" to start deploying the application.
 
-![](./images/6.png)
+![](./image/appsmith-6.png)
 
 ## Step 5: access the application
 
@@ -56,10 +56,10 @@
 
 - When STATUS is Running, you can directly access the public network address.
 
-![](./images/7.png)
+![](./image/appsmith-7.png)
 
 - The visit was successful!
 
-![](./images/8.png)
+![](./image/appsmith-8.png)
 
 
