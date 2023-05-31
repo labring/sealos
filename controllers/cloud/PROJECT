@@ -23,4 +23,22 @@ resources:
   kind: CloudClient
   path: github.com/labring/sealos/controllers/cloud/api/cloudclient/v1
   version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: license
+  kind: License
+  path: github.com/labring/sealos/controllers/cloud/api/license/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: request
+  kind: Request
+  path: github.com/labring/sealos/controllers/cloud/api/request/v1
+  version: v1
 version: "3"

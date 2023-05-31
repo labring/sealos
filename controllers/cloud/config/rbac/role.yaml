@@ -40,6 +40,32 @@ rules:
   - list
   - watch
 - apiGroups:
+  - license.sealos.io
+  resources:
+  - licenses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - license.sealos.io
+  resources:
+  - licenses/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - license.sealos.io
+  resources:
+  - licenses/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - notification.sealos.io
   resources:
   - notifications

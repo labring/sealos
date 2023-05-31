@@ -1,0 +1,27 @@
+# permissions for end users to view requests.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: request-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: cloud
+    app.kubernetes.io/part-of: cloud
+    app.kubernetes.io/managed-by: kustomize
+  name: request-viewer-role
+rules:
+- apiGroups:
+  - request.sealos.io
+  resources:
+  - requests
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - request.sealos.io
+  resources:
+  - requests/status
+  verbs:
+  - get
