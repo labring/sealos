@@ -102,7 +102,9 @@ const Header = ({
 
   return (
     <Flex h={'86px'} alignItems={'center'}>
-      <MyIcon name="arrowLeft" cursor={'pointer'} onClick={router.back} />
+      <Button variant={'unstyled'} onClick={router.back} lineHeight={1}>
+        <MyIcon name="arrowLeft" />
+      </Button>
       <Box ml={8} mr={3} fontSize={'3xl'} fontWeight={'bold'}>
         {appName}
       </Box>

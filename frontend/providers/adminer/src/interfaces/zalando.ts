@@ -48,7 +48,8 @@ export async function generateZalanDoPostgresClusters(
 
       // get secret
       const rootdb = item.spec.databases?.rootdb || 'root';
-      const secretName = rootdb + '.' + item.metadata.name + '.credentials.postgresql.acid.zalan.do';
+      const secretName =
+        rootdb + '.' + item.metadata.name + '.credentials.postgresql.acid.zalan.do';
       const secret = await secretClient.readNamespacedSecret(secretName, item.metadata.namespace);
 
       if (!secret.body?.data) {
