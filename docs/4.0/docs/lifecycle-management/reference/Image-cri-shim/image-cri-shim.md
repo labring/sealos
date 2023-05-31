@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# image-cri-shim组件
+# image-cri-shim 使用指南
 
 ## 工作原理
 
@@ -53,7 +53,6 @@ image-cri-shim 的主要功能是自动识别镜像名称，让用户在使用 K
 image-cri-shim 的架构如下图所示：
 
 ![](images/image-cri-shim.png)
-
 
 
 ## 使用说明

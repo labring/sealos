@@ -3,7 +3,7 @@ sidebar_position: 1
 ---
 
 
-# cert证书管理命令
+# cert 证书管理命令
 
 `cert` 命令用于生成 Kubernetes 集群所需的证书文件。在 Kubernetes 集群中，证书用于确保组件之间的通信安全，例如 API server、kubelet 和 etcd 等。证书通过 TLS（Transport Layer Security）协议实现加密，以确保数据在传输过程中的保密性和完整性。
 

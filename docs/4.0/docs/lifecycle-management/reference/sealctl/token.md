@@ -2,7 +2,7 @@
 sidebar_position: 8
 ---
 
-# token管理命令
+# token 管理命令
 
 `sealctl token` 命令的主要目的是为了生成一个用于连接主节点（master）和工作节点（node）的 token。在 Kubernetes 集群中，当您想要将一个新的工作节点加入到集群时，通常需要提供一个 token 作为身份验证。这个 token 确保只有拥有正确 token 的工作节点才能加入到集群中。
 

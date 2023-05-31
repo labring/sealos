@@ -114,7 +114,7 @@ osm:
 helm package .
 ```
 
-![image](https://user-images.githubusercontent.com/14962503/179480436-aa3fcf60-a89c-4f84-bb92-c5762f64d91a.png)
+![](images/01.png)
 
 ### 修改 image list
 
@@ -131,7 +131,7 @@ COPY . .
 CMD ["helm install osm scienson-osm-0.1.1.tgz --namespace osm --create-namespace"]
 ```
 
-![image](https://user-images.githubusercontent.com/14962503/179480360-87b813a6-de85-4829-a801-3cd82cd8f604.png)
+![](images/02.png)
 
 ### 构建镜像
 

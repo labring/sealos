@@ -1,6 +1,4 @@
-
-
-# 集群生命周期管理
+# 介绍
 
 sealos 可以帮助用户非常好的管理整个集群的生命周期。
 
@@ -65,7 +63,7 @@ $ sealos run labring/redis-operator:3.1.4
 
 如：
 
-[构建一个 ingress 集群镜像](https://www.sealos.io/docs/getting-started/build-example-cloudimage)
+[构建一个 ingress 集群镜像](https://docs.sealos.io/docs/lifecycle-management/quick-start/build-ingress-cluster-image)
 
 也可以定制一个完全属于自己的 kubernetes:
 
