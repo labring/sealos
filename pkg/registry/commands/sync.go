@@ -42,14 +42,9 @@ func NewSyncRegistryCommand() *cobra.Command {
 }
 
 func runSync(ctx context.Context, source, dst string) error {
-	sep, err := sync.ParseRegistryAddress(source)
-	if err != nil {
-		return err
-	}
-	dep, err := sync.ParseRegistryAddress(dst)
-	if err != nil {
-		return err
-	}
+	sep := sync.ParseRegistryAddress(source)
+	dep := sync.ParseRegistryAddress(dst)
+
 	eg, _ := errgroup.WithContext(ctx)
 	probeCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()

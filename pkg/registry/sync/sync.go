@@ -185,24 +185,19 @@ func getImageTags(ctx context.Context, sysCtx *types.SystemContext, repoRef refe
 	return tags, nil
 }
 
-func ParseRegistryAddress(s string, args ...string) (string, error) {
+func ParseRegistryAddress(s string, args ...string) string {
+	if strings.Contains(s, ":") {
+		return s
+	}
+
 	var portStr string
 	if len(args) > 0 {
 		portStr = args[0]
+	} else {
+		portStr = defaultPort
 	}
-	if strings.Contains(s, ":") {
-		var err error
-		s, portStr, err = net.SplitHostPort(s)
-		if err != nil {
-			return "", err
-		}
-	}
-
 	if idx := strings.Index(portStr, ":"); idx >= 0 {
 		portStr = portStr[idx+1:]
 	}
-	if portStr == "" {
-		portStr = defaultPort
-	}
-	return net.JoinHostPort(s, portStr), nil
+	return net.JoinHostPort(s, portStr)
 }

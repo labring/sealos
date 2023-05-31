@@ -44,14 +44,11 @@ func (is *tmpRegistryImage) SaveImages(images []string, dir string, platform v1.
 		return nil, err
 	}
 	config.Log.AccessLog.Disabled = true
-	ep, err := sync.ParseRegistryAddress(localhost, config.HTTP.Addr)
-	if err != nil {
-		return nil, err
-	}
 	errCh := handler.Run(is.ctx, config)
 
 	probeCtx, cancel := context.WithTimeout(is.ctx, time.Second*3)
 	defer cancel()
+	ep := sync.ParseRegistryAddress(localhost, config.HTTP.Addr)
 	if err = httputils.WaitUntilEndpointAlive(probeCtx, "http://"+ep); err != nil {
 		return nil, err
 	}

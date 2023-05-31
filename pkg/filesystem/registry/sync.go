@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"strings"
+	stdsync "sync"
 	"time"
-
-	"github.com/labring/sealos/pkg/registry/sync"
 
 	"github.com/containers/common/pkg/auth"
 	"github.com/containers/image/v5/copy"
@@ -32,6 +32,7 @@ import (
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/registry/handler"
+	"github.com/labring/sealos/pkg/registry/sync"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	httputils "github.com/labring/sealos/pkg/utils/http"
@@ -72,17 +73,17 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 	probeCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 	eg, _ := errgroup.WithContext(probeCtx)
+	mutex := &stdsync.Mutex{}
 	for i := range hosts {
 		host := hosts[i]
 		eg.Go(func() error {
-			ep, err := sync.ParseRegistryAddress(host, defaultTemporaryPort)
-			if err != nil {
+			ep := sync.ParseRegistryAddress(trimPortStr(host), defaultTemporaryPort)
+			if err := httputils.WaitUntilEndpointAlive(probeCtx, "http://"+ep); err != nil {
 				return err
 			}
-			if err = httputils.WaitUntilEndpointAlive(probeCtx, "http://"+ep); err != nil {
-				return err
-			}
+			mutex.Lock()
 			endpoints = append(endpoints, ep)
+			mutex.Unlock()
 			return nil
 		})
 	}
@@ -103,14 +104,10 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 			errCh := handler.Run(ctx, config)
 
 			eg, inner := errgroup.WithContext(ctx)
-
 			for j := range endpoints {
 				dst := endpoints[j]
 				eg.Go(func() error {
-					src, err := sync.ParseRegistryAddress(localhost, config.HTTP.Addr)
-					if err != nil {
-						return err
-					}
+					src := sync.ParseRegistryAddress(localhost, config.HTTP.Addr)
 					probeCtx, cancel := context.WithTimeout(inner, time.Second*3)
 					defer cancel()
 					if err = httputils.WaitUntilEndpointAlive(probeCtx, "http://"+src); err != nil {
@@ -126,6 +123,13 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 		})
 	}
 	return outerEg.Wait()
+}
+
+func trimPortStr(s string) string {
+	if idx := strings.Index(s, ":"); idx > 0 {
+		return s[:idx]
+	}
+	return s
 }
 
 func getRegistryServeCommand(pathResolver PathResolver, port string) string {
