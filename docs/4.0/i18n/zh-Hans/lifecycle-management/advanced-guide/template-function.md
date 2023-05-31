@@ -2,7 +2,7 @@
 sidebar_position: 1
 ---
 
-# Sealos实战：模板引入与函数增强
+# 模板引入与函数增强
 
 在 Sealos 的镜像构建过程中，"tmpl" 后缀的文件在 "etc"、"scripts" 和 "manifests" 这三个目录下的文件会被特殊处理。
 

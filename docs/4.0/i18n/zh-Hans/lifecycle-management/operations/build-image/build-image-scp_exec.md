@@ -2,7 +2,7 @@
 sidebar_position: 6
 ---
 
-# 高效构建：使用 sealos exec 和 scp 命令构建集群镜像
+# 使用 exec 和 scp 命令构建集群镜像
 
 默认情况下，`sealos run xx` 只会在第一个主节点上运行命令和复制文件。当你希望在特定节点或所有节点上运行命令或复制文件时，你可以在构建集群镜像时使用 `sealos exec` 或 `sealos scp` 命令。
 

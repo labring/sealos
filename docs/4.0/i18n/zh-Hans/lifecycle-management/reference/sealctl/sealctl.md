@@ -2,7 +2,6 @@
 sidebar_position: 0
 ---
 
-
 # Sealctl 使用指南
 
 Sealos 提供 sealctl 是使用 Sealos 与 集群节点进行操作的命令行工具。它包括以下几个子命令：

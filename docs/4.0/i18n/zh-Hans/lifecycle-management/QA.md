@@ -29,3 +29,6 @@ sealos exec -r master,node "image-cri-shim -v"
 
 升级sealos 4.1.7+
 
+> function "semverCompare" not defined
+
+升级到 sealos 4.1.4+
