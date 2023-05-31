@@ -1,41 +1,41 @@
-# Introduction to Sealos Cloud
+# What is Sealos
 
-The vast and complex nature of the cloud-native ecosystem undoubtedly makes many enterprises feel helpless, and this ecosystem still lacks a user-friendly and ready-to-use distribution. The cloud-native market still urgently needs a cloud operating system to further reduce the threshold and cost of cloud-native.
+The vastness and complexity of the cloud-native ecosystem undoubtedly leaves many businesses in disarray, yearning for an efficient, ready-to-use distribution, which this ecosystem sorely lacks. The cloud-native market is in dire need of a cloud operating system to further reduce barriers and costs.
 
-The advent of Sealos opens a new window for enterprises. It provides enterprises and developers with a brand new choice, which only requires the installation of a cloud operating system in both public and private clouds. It can make various applications run stably and securely on the operating system, and solve all kinds of dependency problems required by the application.
+The advent of Sealos opens a new window for enterprises. It provides a novel choice for businesses and developers alike, necessitating only the installation of a cloud operating system, regardless of public or private cloud use. It allows various applications to operate stably and securely, tackling all sorts of dependency issues they might require.
 
-The philosophy that Sealos adheres to is: **Cloud can be as simple as Linux**. You can install it and start using it immediately, just like using Linux, without too much fuss during the use process. The only difference is that Linux is installed on a single server, while Sealos is installed in the entire data center.
+Sealos adheres to the philosophy that **cloud usage can be as simple as Linux**. You can commence usage right after installation, as you would with Linux, without entanglement in excessive complexities. The sole difference is that while Linux is installed on a single server, Sealos is installed across an entire data center.
 
-In the architecture of Sealos, **there is no essential difference between public and private clouds**. They should be different instances of the same set of code, and the only difference is the difference in configuration and installed applications. Installation on the intranet is a private cloud, and providing services to the outside world on the public network becomes a public cloud.
+In Sealos's architecture, **there's no essential difference between public and private clouds**. They should be separate instances of the same codebase, the only distinction lying in their configuration and installed applications. Installing it on an intranet renders it a private cloud, while offering services on the public internet converts it into a public cloud.
 
-We firmly believe that with the continuous development and progress of Sealos, the future cloud will be more open and simpler. The beauty of cloud computing will belong to all providers of computing power, and the value of the cloud will be shared by all participants in cloud computing. **They will be able to enjoy the convenience brought by cloud computing in a diversified market environment in a more economical way.**
+We firmly believe that with the continuous development and advancement of Sealos, the future of cloud computing will be more open, more straightforward. The benefits of cloud computing should belong to all providers of computational power, and the value of the cloud should be shared by all participants of cloud computing. **They will be able to enjoy the various conveniences of cloud computing in a more economical fashion in a diversified market environment.**
 
 ## Overview
 
-Sealos is a **cloud operating system distribution based on Kubernetes**. It abandons the traditional cloud computing architecture and turns to a new architecture with Kubernetes as the cloud kernel in a cloud-native way, enabling enterprises to use the cloud as easily as using a personal computer.
+Sealos is a **cloud operating system distribution** based on the Kubernetes kernel. It adopts a cloud-native approach, discarding traditional cloud computing architecture, and shifting towards a new architecture with Kubernetes as the cloud kernel. This allows enterprises to use the cloud **as effortlessly as they would use a personal computer**.
 
-Users can install any highly available distributed application on Kubernetes with one click, just like using a personal computer, with almost no professional delivery and operation and maintenance costs. At the same time, using the unique cluster image capability, users can package any distributed application into an OCI image, freely combine various distributed applications, and easily customize the required cloud. Through powerful and flexible application store functions, it can meet the diverse needs of various users.
+Users will be able to install any high-availability distributed application on Kubernetes with the click of a button, similar to using a personal computer. It practically requires no professional delivery or operational costs. Simultaneously, utilizing unique cluster imaging capabilities, users can package any distributed application into an OCI image, freely combine a variety of distributed applications, and easily customize their desired cloud. The powerful and flexible app store function can meet the diverse needs of various users.
 
-## Applicable Scenarios & Advantages
+## Scenarios & Advantages
 
-Sealos is a powerful business operation platform that can perfectly support various applications such as Java, Go, Python, PHP, etc., regardless of programming language limitations. The platform provides a stable operating environment for applications and solves backend dependency issues, such as databases, object storage, and message queues. Furthermore, it can flexibly handle application configuration management, service discovery, public network exposure, and automatic scaling.
+Sealos is a powerful business operating platform, providing flawless support for various applications such as Java, Go, Python, PHP, and more, unrestricted by the programming language. The platform offers a stable operating environment for applications and resolves backend dependency issues like databases, object storage, and messaging queues. Further, it can flexibly handle application configuration management, service discovery, public network exposure, and automatic scaling issues.
 
 ### Public Cloud
 
-If your business needs to run in a public cloud environment, then you can directly use [Sealos' public cloud service](https://cloud.sealos.io).
+If your business requires operation within a public cloud environment, you can directly use the [public cloud services provided by Sealos](https://cloud.sealos.io).
 
-1. **Login to use Kubernetes directly**: No need to install a Kubernetes cluster, Sealos provides the ability for **multi-tenant** to share a Kubernetes in the public network environment. In addition, it provides strong isolation capabilities to ensure the data security of each tenant.
-2. **Save resources and reduce costs**: Only need to pay for containers, and the automatic scaling function fundamentally solves the problem of resource waste, which can save 10% to 40% of costs.
-3. **Easily achieve public network access**: Automatically assign a second-level domain name for your business to help you easily achieve public network access, and also support custom domain name binding.
-4. **Efficient database service**: Provides a service that can create highly available databases in seconds, allowing businesses to directly access databases through service discovery intranet DNS.
-5. **User-friendly operation experience**: The built-in terminal directly supports command-line operation of the Kubernetes cluster, and also supports the deployment of the Kubernetes management interface, allowing you to have a good experience on Sealos regardless of whether you are familiar with cloud-native technology.
+1. **Instant Kubernetes Usage Upon Login**: There is no need to install a Kubernetes cluster. Sealos provides the ability for **multiple tenants** to share a Kubernetes on the public internet. It also offers strong isolation capabilities to ensure the data safety of each tenant.
+2. **Resource Saving and Cost Reduction**: You only pay for the container. The automatic scaling function fundamentally solves the problem of resource wastage, saving between 10% to 40% in costs.
+3. **Easy Public Network Access**: Sealos automatically assigns a secondary domain name to your business, helping you achieve easy public network access. It also supports custom domain name binding.
+4. **Efficient Database Service**: Sealos offers a service that allows businesses to create high-availability databases within seconds. Through service discovery, the internal network DNS can connect directly to the database.
+5. **User-Friendly Operating Experience**: Sealos has an in-built terminal that supports command-line operation of the Kubernetes cluster, and also supports the deployment of the Kubernetes management interface, allowing you to have a good user experience on Sealos, regardless of your familiarity with cloud-native technology.
 
 ### Private Cloud
 
-Sealos cloud operating system is **100% open source and free**, and you can find all the source code on [GitHub](https://github.com/labring/sealos). Therefore, all the functions of **Sealos public cloud** can also be deployed in a private cloud environment to meet your more diversified business needs.
+The Sealos cloud operating system is **100% open source and free**. You can find all source code on [GitHub](https://github.com/labring/sealos), which means all features of the **Sealos Public Cloud** can also be deployed in a private cloud environment to meet more diversified business needs.
 
-### Powerful application delivery capabilities
+### Strong Application Delivery Capability
 
-- Sealos has excellent Kubernetes lifecycle management capabilities and can also customize the Kubernetes environment freely.
-- Sealos can package the entire cluster and deliver it to the customer environment with one click. All services and businesses can be delivered as a whole.
-- Unlike Docker, which mainly focuses on single-machine images, Sealos can go further and package the **entire cluster** or a certain distributed application.
+- Sealos has excellent Kubernetes life cycle management capabilities, and you can freely customize the Kubernetes environment.
+- Sealos can package an entire cluster and deliver it to the customer environment with a single click. All services and businesses can be delivered as a whole.
+- Unlike Docker, which mainly focuses on single-machine imaging, Sealos goes further, packaging the **entire cluster** or a distributed application.
