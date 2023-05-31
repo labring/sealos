@@ -3,7 +3,7 @@
 ![](/docs/4.0/img/sealos-left-dark.png#gh-dark-mode-only)
 ![](/docs/4.0/img/sealos-left.png#gh-light-mode-only)
 
-A Cloud Operating System designed for managing Cloud Native applications
+A Cloud Operating System designed for managing cloud-native applications
 
 </h2>
 
@@ -19,107 +19,54 @@ A Cloud Operating System designed for managing Cloud Native applications
 
 <br />
 
-[![discord](https://theme.zdassets.com/theme_assets/678183/cc59daa07820943e943c2fc283b9079d7003ff76.svg)](https://discord.gg/7bPNZfsjJu)
+[![discord](https://theme.zdassets.com/theme_assets/678183/cc59daa07820943e943c2fc283b9079d7003ff76.svg)](https://discord.gg/eHyXHtSE)
 
 </div>
 
-![](https://user-images.githubusercontent.com/8912557/236477759-3532fdec-c355-4f8d-92ef-9f6fce3c50da.png)
+![](/docs/4.0/img/sealos-desktop.webp)
 
-> [Docs](https://www.sealos.io/docs/Intro) | [简体中文](https://www.sealos.io/zh-Hans/docs/Intro) ｜ [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
+> [Docs](https://www.sealos.io/docs/Intro) | [简体中文](README_zh.md) ｜ [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
 
-## Use Sealos to run a Kubernetes cluster
 
-[![asciicast](https://asciinema.org/a/519263.svg)](https://asciinema.org/a/519263?speed=3)
-
-## Run your app on Sealos
+## Deploy your app on Sealos
 
 [Try online demo](https://cloud.sealos.io)
 
-Run nginx on Sealos in 30 seconds.
+Deploy Nginx on Sealos in 30 seconds.
 
-![](https://user-images.githubusercontent.com/8912557/236479998-c4949070-a4bc-4900-bfe8-d8b3b4728e60.png)
+![](/docs/4.0/img/app-launchpad.png)
 
-Some Screen Shots of `Sealos Desktop`:
+Some Screen Shots of Sealos:
 
 <div align="center">
 
-| Sealos Terminal | Sealos App Launchpad |
+| Terminal | App Launchpad |
 | :---: | :---: |
-| ![](https://user-images.githubusercontent.com/8912557/236481248-1bd521ae-b483-440a-8177-ae90081f8973.png) | ![](https://user-images.githubusercontent.com/8912557/236480220-5a3f09c1-8e75-4727-a398-244d86f32133.png) |
+| ![](/docs/4.0/img/terminal.jpg) | ![](/docs/4.0/img/app-launchpad-1.jpg) |
+| PostgreSQL | Bytebase |
+| ![](/docs/4.0/img/postgresql.webp) | ![](/docs/4.0/img/bytebase.webp) |
 
 </div>
 
 ## Core features
 
-- Run any application on Sealos.
-  - Run nginx on sealos in 30s.
-  - Run you own project on sealos, like some java/go/python/node.js webserver.
-  - Run you website static files on sealos.
-  - Run database and some stateful applications on sealos.
-- ☸️ Manage clusters lifecycle
-  - [x] Quickly install HA Kubernetes clusters.
-  - [x] Add / remove nodes, Clean the cluster.
-- 💻 Download and deploy OCI-compatible distributed applications.
-  - [x] OpenEBS, MinIO, Ingress, PostgreSQL, MySQL, Redis, etc.
-- 🛠️ Customize your own distributed applications.
-  - [x] Utilizing Dockerfile to build images of distributed applications while preserving all of their dependencies.
-  - [x] Push images of distributed applications to Docker Hub.
-  - [x] Integrate various applications to construct a personalized Cloud platform.
+✅ **Instant Kubernetes Usage Upon Login**: There is no need to install a Kubernetes cluster. Sealos provides the ability for **multiple tenants** to share a Kubernetes on the public internet. It also offers strong  isolation capabilities to ensure the data safety of each tenant.
 
-## Quickstart
+✅ **Swiftly deploy any application on Sealos**: With the in-built App Launchpad, effortlessly deploy any application in an astonishingly short span of time.
 
-> Installing a highly available Kubernetes cluster with Calico as the container network interface (CNI).
+✅ **Resource Saving and Cost Reduction**: You only pay for the container. The automatic scaling function fundamentally solves the problem of resource wastage, saving between 10% to 40% in costs.
 
-Here, the Cluster images `kubernetes:v1.24.0-4.2.0` and `calico:v3.24.1` stored in the registry are fully compliant with the OCI standard. However, if you prefer to use flannel, it is also an option.
+✅ **Easy Public Network Access**: Sealos automatically assigns a secondary domain name to your business,  helping you achieve easy public network access. It also supports custom  domain name binding.
 
-```bash
-# Download and install Sealos, which is a binary tool written in Golang. Simply download it and copy it to the bin directory. You can also download it from the release page.
-$ wget  https://github.com/labring/sealos/releases/download/v4.2.0/sealos_4.2.0_linux_amd64.tar.gz  && \
-    tar -zxvf sealos_4.2.0_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin 
-# Create a cluster
-$ sealos run labring/kubernetes:v1.25.0-4.2.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
-     --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
-     --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
-```
+✅ **Efficient Database Service**: Sealos offers a service that allows businesses to create  high-availability databases within seconds. Through service discovery,  the internal network DNS can connect directly to the database.
 
-* Supported Kubernetes versions: [240+ Kubernetes versions](https://hub.docker.com/r/labring/kubernetes/tags) [Kubernetes with cri-docker runtime](https://hub.docker.com/r/labring/kubernetes-docker/tags)
-* Other [images for distributed applications](https://hub.docker.com/u/labring)
+✅ **User-Friendly Operating Experience**: Sealos has an in-built terminal that supports command-line operation of the Kubernetes cluster, and also has in-built App Launchpad, allowing you to have a good user experience on Sealos, regardless of your familiarity with cloud-native  technology.
 
-> Single host
-
-```bash
-$ sealos run labring/kubernetes:v1.25.0-4.2.0 labring/helm:v3.8.2 labring/calico:v3.24.1
-```
-
-> Building a custom Cluster image
-
-Reference [Building an Example CloudImage](https://www.sealos.io/docs/getting-started/build-example-cloudimage).
-
-> Storage, Message queue, Database, etc.
-
-Don't be shocked by the following:
-
-```bash
-sealos run labring/helm:v3.8.2 # install helm
-sealos run labring/openebs:v1.9.0 # install openebs
-sealos run labring/minio-operator:v4.4.16 labring/ingress-nginx:4.1.0 \
-   labring/mysql-operator:8.0.23-14.1 labring/redis-operator:3.1.4 # oneliner
-```
-
-And now everything is ready.
-
-## Use Kubernetes Cluster image with cri-docker runtime
-
-```bash
-sealos run labring/kubernetes-docker:v1.20.8-4.2.0 labring/calico:v3.22.1 \
-     --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
-     --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
-```
 
 ## Community & support
 
 + Visit the [Sealos website](https://sealos.io/) for full documentation and useful links.
-+ Join our [Discord server](https://discord.gg/7bPNZfsjJu) is to chat with Sealos developers and other Sealos users. This is a good place to learn about Sealos and Kubernetes, ask questions, and share your experiences.
++ Join our [Discord server](https://discord.gg/eHyXHtSE) is to chat with Sealos developers and other Sealos users. This is a good place to learn about Sealos and Kubernetes, ask questions, and share your experiences.
 + Tweet at @sealosio on [Twitter](https://twitter.com/sealosio) and follow us.
 + Create [GitHub Issues](https://github.com/labring/sealos/issues/new/choose) for bug reports and feature requests.
 
@@ -138,9 +85,7 @@ Have a look through [existing Issues](https://github.com/labring/sealos/issues?q
 ## Links
 
 - [Sealos Action](https://github.com/labring/sealos-action)
-- [Sealos Rebot](https://github.com/labring/gh-rebot)
-- [Bug Verify Example](https://github.com/labring-actions/bug-verify)
-- [Application Image](https://github.com/labring-actions/cluster-image)
+- [Cluster Image](https://github.com/labring-actions/cluster-image)
 - [Rootfs Image](https://github.com/labring-actions/runtime)
 - [Buildah](https://github.com/containers/buildah) The functionalities of Buildah are extensively utilized in Sealos 4.0 to ensure that cluster images are compatible with OCI standard.
 
