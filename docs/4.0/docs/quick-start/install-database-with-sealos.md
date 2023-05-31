@@ -1,3 +1,7 @@
+---
+sidebar_position: 3
+---
+
 # Quickly Install MySQL & MongoDB
 
 Databases are important tools for data management, used to efficiently store and access data. Both MySQL and MongoDB are important open source database management systems.

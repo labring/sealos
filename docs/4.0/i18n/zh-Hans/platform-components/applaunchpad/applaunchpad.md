@@ -1,3 +1,7 @@
+---
+sidebar_position: 1
+---
+
 # App Launchpad 介绍
 
 App Launchpad 是一个单镜像部署工具，可以帮助你在 5 分钟内完成镜像部署上线。

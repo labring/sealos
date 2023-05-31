@@ -1,3 +1,7 @@
+---
+sidebar_position: 4
+---
+
 # DB Provider 介绍
 
 DB Provider 是一个数据库集群部署工具，可以帮助你快速部署数据库集群。支持 MySQL, PostgreSQL 和 MongoDB。目前 DB Provider 属于测试版本。

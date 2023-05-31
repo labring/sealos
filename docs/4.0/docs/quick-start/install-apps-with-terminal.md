@@ -1,3 +1,7 @@
+---
+sidebar_position: 2
+---
+
 # Swiftly Install Applications with Terminal
 
 For those proficient in Kubernetes and container basics, terminal command-line deployment presents an optimal solution. This document showcases Nginx as an example, elucidating the application deployment process via terminal.
