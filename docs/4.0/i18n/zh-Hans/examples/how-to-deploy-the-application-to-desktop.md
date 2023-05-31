@@ -29,7 +29,7 @@ spec:
   displayType: normal
 ```
 
-![appyaml.png](./image/app-yaml.png)
+![appyaml.png](./images/app-yaml.png)
 
 ### apply yaml
 
@@ -37,6 +37,6 @@ spec:
 kubectl apply -f app.yaml
 ```
 
-![apply](./image/app-apply-command.png)
+![apply](./images/app-apply-command.png)
 
 ### 刷新浏览器，桌面即可看到 App

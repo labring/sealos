@@ -2,7 +2,7 @@
 
 Deploy Halo Blogging Platform swiftly on Sealos
 
-![](./images/img-1.png)
+![](./images/halo_img-1.png)
 
 Halo is a powerful and easy-to-use open-source website building tool. 
 This article will introduce how to deploy Halo on Sealos, while deploying PostgreSQL on Sealos can help you easily manage and maintain the database to meet different business needs.
@@ -11,25 +11,25 @@ This article will introduce how to deploy Halo on Sealos, while deploying Postgr
 
 ### First, open Sealos and click on "More Apps" to enter the PostgreSQL deployment interface:
 
-![](./images/img-2.png)
+![](./images/halo_img-2.png)
 
 ### Fill in the configuration
 
 In the PostgreSQL deployment interface, click on "Create Cluster" and fill in the relevant configuration information as prompted.
 
-![](./images/img-3.png)
+![](./images/halo_img-3.png)
 
 After entering the corresponding configuration, click on "Create Cluster":
 
-![](./images/img-4.png)
+![](./images/halo_img-4.png)
 
 ### Check the database configuration:
 
-![](./images/img-5.png)
+![](./images/halo_img-5.png)
 
 Save the generated configuration containing the database username, password, and connection method for use in the following Halo configuration:
 
-![](./images/img-6.png)
+![](./images/halo_img-6.png)
 
 > The PostgreSQL configuration can be seen in the image as follows:
 >
@@ -43,9 +43,9 @@ Save the generated configuration containing the database username, password, and
 
 ### Open App Launchpad
 
-![](./images/img-7.png)
+![](./images/halo_img-7.png)
 
-![](./images/img-8.png)
+![](./images/halo_img-8.png)
 
 ### Fill in the configuration
 
@@ -94,39 +94,39 @@ Database link format (here we use the postgresql format):
 
 ### Network configuration
 
-![](./images/img-9.png)
+![](./images/halo_img-9.png)
 
 ### Environment variable configuration
 
-![](./images/img-10.png)
+![](./images/halo_img-10.png)
 
 ### Configure Persistent Storage Volume
 
 Mount `/root/.halo2` directory to persist Halo data:
 
-![](./images/img-11.png)
+![](./images/halo_img-11.png)
 
 ## Step 3: Access Halo via the Public Network
 
 After successfully launching the application, you can access Halo through the public network address for configuration:
 
-![](./images/img-12.png)
+![](./images/halo_img-12.png)
 
-![](./images/img-13.png)
+![](./images/halo_img-13.png)
 
 ### **Initialize Halo**
 
-![](./images/img-14.png)
+![](./images/halo_img-14.png)
 
-![](./images/img-15.png)
+![](./images/halo_img-15.png)
 
 ### **First Halo:**
 
-![](./images/img-16.png)
+![](./images/halo_img-16.png)
 
-![](./images/img-17.png)
+![](./images/halo_img-17.png)
 
-![](./images/img-18.png)
+![](./images/halo_img-18.png)
 
 ## FAQ
 
@@ -134,19 +134,19 @@ After successfully launching the application, you can access Halo through the pu
 
 #### Enter the App Launchpad and click on "Logs":
 
-![](./images/img-19.png)
+![](./images/halo_img-19.png)
 
-![](./images/img-20.png)
+![](./images/halo_img-20.png)
 
 You can see the following information in the logs: Username: `admin` Password: `QTu2J2xgUQ3ngqUo`
 
 #### Alternatively, you can view the logs by executing the following command in the terminal:
 
-![](./images/img-21.png)
+![](./images/halo_img-21.png)
 
 ```
 root@td3q8uc46:~# kubectl logs halo-0 | grep 'Generated random password:' | tail -1
 2023-05-30T13:32:16.942+08:00  INFO 7 --- [-controller-t-1] r.h.app.security.SuperAdminInitializer   : === Generated random password: QTu2J2xgUQ3ngqUo for super administrator: admin ===
 ```
 
-![](./images/img-22.png)
+![](./images/halo_img-22.png)
