@@ -12,7 +12,7 @@
 
 ① 先创建一个 Nginx Deployment 的部署清单：
 
-```YAML
+```yaml
 # deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -46,7 +46,7 @@ spec:
 
 ② 再创建一个 Nginx Service 的部署清单：
 
-```YAML
+```yaml
 # service.yaml
 apiVersion: v1
 kind: Service
@@ -66,14 +66,14 @@ spec:
 
 ③ 执行以下命令通过部署清单创建 Deployment 和 Service：
 
-```Bash
+```bash
 kubectl apply -f deployment.yaml
 kubectl apply -f service.yaml
 ```
 
 测试是否能正常访问 Nginx：
 
-```Bash
+```bash
 $ kubectl get pod -l app=nginx
 NAME                     READY   STATUS    RESTARTS   AGE
 nginx-7546c75fb4-572x9   1/1     Running   0          5m37s
@@ -112,7 +112,7 @@ Commercial support is available at
 
 ④ 如果你想把 Nginx 暴露到外网，并通过外网域名进行访问，还需要创建一个 Ingress 资源。先创建一个部署清单：
 
-```YAML
+```yaml
 # ingress.yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -154,7 +154,7 @@ spec:
 
 ⑤ 再执行以下命令通过部署清单创建 Ingress 资源：
 
-```Bash
+```bash
 $ kubectl apply -f ingress.yaml
 ```
 

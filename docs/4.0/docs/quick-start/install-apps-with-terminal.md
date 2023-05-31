@@ -12,7 +12,7 @@ Upon initializing the terminal application, a default terminal window is assigne
 
 ① First, create a deployment manifest for Nginx Deployment:
 
-```YAML
+```yaml
 # deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -46,7 +46,7 @@ spec:
 
 ② Subsequently, construct a deployment manifest for Nginx Service:
 
-```YAML
+```yaml
 # service.yaml
 apiVersion: v1
 kind: Service
@@ -66,14 +66,14 @@ spec:
 
 ③ Execute the following commands to generate Deployment and Service from the deployment manifest:
 
-```Bash
+```bash
 kubectl apply -f deployment.yaml
 kubectl apply -f service.yaml
 ```
 
 Assess if Nginx can be accessed normally:
 
-```Bash
+```bash
 $ kubectl get pod -l app=nginx
 NAME                     READY   STATUS    RESTARTS   AGE
 nginx-7546c75fb4-572x9   1/1     Running   0          5m37s
@@ -112,7 +112,7 @@ Commercial support is available at
 
 ④ If you desire to expose Nginx to the internet, enabling access via external network domain, you'll need to create an Ingress resource. Start by creating a deployment manifest:
 
-```YAML
+```yaml
 # ingress.yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -154,7 +154,7 @@ spec:
 
 ⑤ Execute the following command to create an Ingress resource from the deployment manifest:
 
-```Bash
+```bash
 $ kubectl apply -f ingress.yaml
 ```
 
