@@ -15,24 +15,22 @@
 package save
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	stdsync "sync"
 	"time"
 
-	"github.com/containers/image/v5/transports/alltransports"
-
-	"github.com/google/go-containerregistry/pkg/name"
-
 	"github.com/containers/image/v5/copy"
+	"github.com/containers/image/v5/transports/alltransports"
 	itype "github.com/containers/image/v5/types"
+	"github.com/google/go-containerregistry/pkg/name"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/registry/handler"
 	"github.com/labring/sealos/pkg/registry/sync"
-
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-
+	httputils "github.com/labring/sealos/pkg/utils/http"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -46,14 +44,15 @@ func (is *tmpRegistryImage) SaveImages(images []string, dir string, platform v1.
 		return nil, err
 	}
 	config.Log.AccessLog.Disabled = true
-	ep, err := sync.ParseRegistryAddress(localhost, config.HTTP.Addr)
-	if err != nil {
-		return nil, err
-	}
 	errCh := handler.Run(is.ctx, config)
-	if err = sync.WaitUntilHTTPListen("http://"+ep, time.Second*3); err != nil {
+
+	probeCtx, cancel := context.WithTimeout(is.ctx, time.Second*3)
+	defer cancel()
+	ep := sync.ParseRegistryAddress(localhost, config.HTTP.Addr)
+	if err = httputils.WaitUntilEndpointAlive(probeCtx, "http://"+ep); err != nil {
 		return nil, err
 	}
+
 	if platform.OS == "" {
 		platform.OS = "linux"
 	}

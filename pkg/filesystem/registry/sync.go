@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"strings"
+	stdsync "sync"
 	"time"
-
-	"github.com/labring/sealos/pkg/registry/sync"
 
 	"github.com/containers/common/pkg/auth"
 	"github.com/containers/image/v5/copy"
@@ -32,8 +32,10 @@ import (
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/registry/handler"
+	"github.com/labring/sealos/pkg/registry/sync"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	httputils "github.com/labring/sealos/pkg/utils/http"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -56,7 +58,7 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 	logger.Info("using sync mode syncing images to hosts %v", hosts)
 	// run `sealctl registry serve` to start a temporary registry
 	for i := range hosts {
-		ctx, cancel := context.WithCancel(ctx)
+		cmdCtx, cancel := context.WithCancel(ctx)
 		// defer cancel async commands
 		defer cancel()
 		go func(ctx context.Context, host string) {
@@ -64,19 +66,29 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 			if err := s.ssh.CmdAsyncWithContext(ctx, host, getRegistryServeCommand(s.pathResolver, defaultTemporaryPort)); err != nil {
 				logger.Error(err)
 			}
-		}(ctx, hosts[i])
+		}(cmdCtx, hosts[i])
 	}
 
 	var endpoints []string
+	probeCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	eg, _ := errgroup.WithContext(probeCtx)
+	mutex := &stdsync.Mutex{}
 	for i := range hosts {
-		ep, err := sync.ParseRegistryAddress(hosts[i], defaultTemporaryPort)
-		if err != nil {
-			return err
-		}
-		if err = sync.WaitUntilHTTPListen("http://"+ep, time.Second*3); err != nil {
-			return err
-		}
-		endpoints = append(endpoints, ep)
+		host := hosts[i]
+		eg.Go(func() error {
+			ep := sync.ParseRegistryAddress(trimPortStr(host), defaultTemporaryPort)
+			if err := httputils.WaitUntilEndpointAlive(probeCtx, "http://"+ep); err != nil {
+				return err
+			}
+			mutex.Lock()
+			endpoints = append(endpoints, ep)
+			mutex.Unlock()
+			return nil
+		})
+	}
+	if err := eg.Wait(); err != nil {
+		return err
 	}
 
 	outerEg, ctx := errgroup.WithContext(ctx)
@@ -90,18 +102,18 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 			}
 			config.Log.AccessLog.Disabled = true
 			errCh := handler.Run(ctx, config)
-			eg, _ := errgroup.WithContext(ctx)
+
+			eg, inner := errgroup.WithContext(ctx)
 			for j := range endpoints {
 				dst := endpoints[j]
 				eg.Go(func() error {
-					src, err := sync.ParseRegistryAddress(localhost, config.HTTP.Addr)
-					if err != nil {
+					src := sync.ParseRegistryAddress(localhost, config.HTTP.Addr)
+					probeCtx, cancel := context.WithTimeout(inner, time.Second*3)
+					defer cancel()
+					if err = httputils.WaitUntilEndpointAlive(probeCtx, "http://"+src); err != nil {
 						return err
 					}
-					if err = sync.WaitUntilHTTPListen("http://"+src, time.Second*3); err != nil {
-						return err
-					}
-					return sync.ToRegistry(ctx, sys, src, dst, copy.CopySystemImage)
+					return sync.ToRegistry(inner, sys, src, dst, copy.CopySystemImage)
 				})
 			}
 			go func() {
@@ -111,6 +123,13 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 		})
 	}
 	return outerEg.Wait()
+}
+
+func trimPortStr(s string) string {
+	if idx := strings.Index(s, ":"); idx > 0 {
+		return s[:idx]
+	}
+	return s
 }
 
 func getRegistryServeCommand(pathResolver PathResolver, port string) string {
