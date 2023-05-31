@@ -21,7 +21,7 @@ Basic usage and basic concepts of kubernetes are required.
 [cloud terminal](https://www.sealos.io/docs/cloud/apps/terminal/) It is the recommended tool to operate sealos cloud through CLI.
 You can also debug other pod svc, etc, utilizing the terminal.
 
-If you need a separate database instance，[sealos pgsql](https://www.sealos.io/docs/cloud/apps/postgres/) is a good choice, you can create a pgsql database in minutes.
+If you need a separate database instance，[sealos PostgreSQL](https://www.sealos.io/docs/cloud/apps/postgres/) is a good choice, you can create a PostgreSQL database in minutes.
 
 If you need a separate customized kubernetes cluster, you can use [sealos cloud provider](https://www.sealos.io/docs/cloud/apps/scp/).
 It only takes five minutes to create a kubernetes cluster with high availability. The creation is 2 to 3 times faster than similar products!
