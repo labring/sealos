@@ -2,7 +2,7 @@
 
 在 Sealos 上快速部署 Halo 博客平台
 
-![](./images/img-1.png)
+![](./images/halo_img-1.png)
 
 Halo 是一款强大易用的开源建站工具，本文将介绍如何在 Sealos 上部署 Halo，同时在 Sealos 上部署 PostgreSQL 可以帮助你轻松地管理和维护数据库，以满足不同的业务需求。
 
@@ -10,25 +10,25 @@ Halo 是一款强大易用的开源建站工具，本文将介绍如何在 Sealo
 
 ### 首先，打开 Sealos 并点击「更多应用」，进入 PostgreSQL 的部署界面：
 
-![](./images/img-2.png)
+![](./images/halo_img-2.png)
 
 ### 填写配置
 
 在 PostgreSQL 的部署界面中，点击「创建集群」，按照提示填写相关配置信息。
 
-![](./images/img-3.png)
+![](./images/halo_img-3.png)
 
 依次输入对应配置后点击创建集群:
 
-![](./images/img-4.png)
+![](./images/halo_img-4.png)
 
 ### 查看数据库配置：
 
-![](./images/img-5.png)
+![](./images/halo_img-5.png)
 
 保存这里生成的配置中包含数据库的用户名密码以及数据库连接方式，用于下文 Halo 中配置：
 
-![](./images/img-6.png)
+![](./images/halo_img-6.png)
 
 > 图中可以看到 PostgreSQL 配置如下：
 >
@@ -42,9 +42,9 @@ Halo 是一款强大易用的开源建站工具，本文将介绍如何在 Sealo
 
 ### **打开 App Launchpad**
 
-![](./images/img-7.png)
+![](./images/halo_img-7.png)
 
-![](./images/img-8.png)
+![](./images/halo_img-8.png)
 
 ### 填写配置
 
@@ -93,39 +93,39 @@ halo.security.initializer.superadminpassword=sealos
 
 ### 网络配置
 
-![](./images/img-9.png)
+![](./images/halo_img-9.png)
 
 ### 环境变量配置
 
-![](./images/img-10.png)
+![](./images/halo_img-10.png)
 
 ### **配置持久化存储卷**
 
 挂载 `/root/.halo2` 目录来持久化 halo 数据 :
 
-![](./images/img-11.png)
+![](./images/halo_img-11.png)
 
 ## 步骤 3: 使用外网访问 Halo
 
 成功启动应用后，即可通过外网访问地址访问 Halo 进行配置：
 
-![](./images/img-12.png)
+![](./images/halo_img-12.png)
 
-![](./images/img-13.png)
+![](./images/halo_img-13.png)
 
 ### **初始化 Halo**
 
-![](./images/img-14.png)
+![](./images/halo_img-14.png)
 
-![](./images/img-15.png)
+![](./images/halo_img-15.png)
 
 ### **First Halo**
 
-![](./images/img-16.png)
+![](./images/halo_img-16.png)
 
-![](./images/img-17.png)
+![](./images/halo_img-17.png)
 
-![](./images/img-18.png)
+![](./images/halo_img-18.png)
 
 ## FAQ
 
@@ -133,19 +133,19 @@ halo.security.initializer.superadminpassword=sealos
 
 #### 进入 App Launchpad，点击日志查看
 
-![](./images/img-19.png)
+![](./images/halo_img-19.png)
 
-![](./images/img-20.png)
+![](./images/halo_img-20.png)
 
 可以看到这里的日志中：用户名：`admin`    密码：`QTu2J2xgUQ3ngqUo`
 
 #### 或终端执行如下命令查看日志
 
-![](./images/img-21.png)
+![](./images/halo_img-21.png)
 
 ```
 root@td3q8uc46:~# kubectl logs halo-0 | grep 'Generated random password:' | tail -1
 2023-05-30T13:32:16.942+08:00  INFO 7 --- [-controller-t-1] r.h.app.security.SuperAdminInitializer   : === Generated random password: QTu2J2xgUQ3ngqUo for super administrator: admin ===
 ```
 
-![](./images/img-22.png)
+![](./images/halo_img-22.png)
