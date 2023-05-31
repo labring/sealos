@@ -1,6 +1,6 @@
-# 如何在 sealos cloud 上用 kubeblocks 部署pgsql
+# 如何在 sealos cloud 上用 kubeblocks 部署PostgreSQL
 
-## 创建一个 pgsql 实例
+## 创建一个 PostgreSQL 实例
 
 点击 terminal 图标，直接编写 yaml 文件即可.
 
@@ -56,7 +56,7 @@ spec:
   tolerations: []
 ```
 
-## 连接 pgsql 实例
+## 连接 PostgreSQL 实例
 ### 本地连接
 
 获取地址到访问的步骤：
@@ -79,9 +79,9 @@ spec:
 
 4. 指令：`psql -h <hostname> -p <port> -U <username> <database>`，连入指定数据库
 
-## 修改 pgsql 状态
+## 修改 PostgreSQL 状态
 
-改变 pgsql 的方式都是通过 `kubectl apply -f <yaml>` 的方式进行
+改变 PostgreSQL 的方式都是通过 `kubectl apply -f <yaml>` 的方式进行
 
 ### 垂直扩容
 
@@ -160,7 +160,7 @@ spec:
   - componentName: postgresql # mysql
 ```
 
-## 备份并恢复 pgsql
+## 备份并恢复 PostgreSQL
 
 ### 准备工作
 

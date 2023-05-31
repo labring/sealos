@@ -1,11 +1,11 @@
 # 如何在 sealos cloud 上运行 bytebase
 
-如果在 kubernetes 上运行 bytebase, 需要用户准备一个 kubernetes 集群，pgsql 数据库实例，甚至存储驱动, ingress 对外访问。 在 sealos cloud 上可以轻松解决这
+如果在 kubernetes 上运行 bytebase, 需要用户准备一个 kubernetes 集群，PostgreSQL 数据库实例，甚至存储驱动, ingress 对外访问。 在 sealos cloud 上可以轻松解决这
 些依赖，并快速启动 bytebase.
 
 首先登录 [sealos cloud](https://cloud.sealos.io)
 
-## 创建一个 pgsql 实例
+## 创建一个 PostgreSQL 实例
 
 点击 postgres 图标，创建集群即可，[参考文档](https://www.sealos.io/docs/cloud/apps/postgres/)
 
@@ -15,7 +15,7 @@
 
 需要修改的部分：
 1. 启动参数里面的域名，需要修改成用户自己的，且需要与下面 ingress 的配置一致，如 "bytebase.clodu.sealos.io"
-2. 启动参数里面数据库访问设置，从 sealos cloud 上启动好的 pgsql 详细信息中复制即可
+2. 启动参数里面数据库访问设置，从 sealos cloud 上启动好的 PostgreSQL 详细信息中复制即可
 3. Ingress 里面的域名配置，域名需要唯一
 
 bytebase.yaml:

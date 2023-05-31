@@ -161,7 +161,7 @@ spec:
   - componentName: postgresql # mysql
 ```
 
-## Backup and restore pgsql
+## Backup and restore PostgreSQL
 
 ### Prepare work
 
