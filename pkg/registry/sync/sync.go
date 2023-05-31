@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -41,7 +42,7 @@ const (
 	defaultPort = "5000"
 )
 
-func ToRegistry(ctx context.Context, sys *types.SystemContext, src, dst string, selection copy.ImageListSelection) error {
+func ToRegistry(ctx context.Context, sys *types.SystemContext, src, dst string, reportWriter io.Writer, selection copy.ImageListSelection) error {
 	policyContext, err := getPolicyContext()
 	if err != nil {
 		return err
@@ -53,6 +54,9 @@ func ToRegistry(ctx context.Context, sys *types.SystemContext, src, dst string, 
 	}
 	if len(repos) == 0 {
 		return nil
+	}
+	if reportWriter == nil {
+		reportWriter = io.Discard
 	}
 	for i := range repos {
 		named, err := parseRepositoryReference(fmt.Sprintf("%s/%s", src, repos[i].Name))
@@ -76,6 +80,7 @@ func ToRegistry(ctx context.Context, sys *types.SystemContext, src, dst string, 
 					SourceCtx:          sys,
 					DestinationCtx:     sys,
 					ImageListSelection: selection,
+					ReportWriter:       reportWriter,
 				})
 				return err
 			}, getRetryOptions())

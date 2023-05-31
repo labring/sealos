@@ -17,6 +17,7 @@ package commands
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	imagecopy "github.com/containers/image/v5/copy"
@@ -35,13 +36,16 @@ func NewSyncRegistryCommand() *cobra.Command {
 		Short:   "sync all images from one registry to another",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runSync(cmd.Context(), args[0], args[1])
+			return runSync(cmd, args[0], args[1])
 		},
 	}
 	return cmd
 }
 
-func runSync(ctx context.Context, source, dst string) error {
+func runSync(cmd *cobra.Command, source, dst string) error {
+	ctx := cmd.Context()
+	out := cmd.OutOrStdout()
+
 	sep := sync.ParseRegistryAddress(source)
 	dep := sync.ParseRegistryAddress(dst)
 
@@ -62,5 +66,9 @@ func runSync(ctx context.Context, source, dst string) error {
 	sysCtx := &types.SystemContext{
 		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
 	}
-	return sync.ToRegistry(ctx, sysCtx, sep, dep, imagecopy.CopySystemImage)
+	if err := sync.ToRegistry(ctx, sysCtx, sep, dep, out, imagecopy.CopySystemImage); err != nil {
+		return err
+	}
+	fmt.Fprintln(out, "Sync completed")
+	return nil
 }

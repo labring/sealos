@@ -44,6 +44,7 @@ func WaitUntilEndpointAlive(ctx context.Context, endpoint string) error {
 	if err != nil {
 		return err
 	}
+	logger.Debug("checking if endpoint %s is alive", u.String())
 	for {
 		select {
 		case <-ctx.Done():
