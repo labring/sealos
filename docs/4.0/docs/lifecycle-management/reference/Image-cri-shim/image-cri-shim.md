@@ -48,6 +48,14 @@ image-cri-shim 的主要功能是自动识别镜像名称，让用户在使用 K
 
 最后，kubelet 使用从 image-cri-shim 获取的镜像名称来部署容器。这个过程对用户是透明的，用户无需手动指定镜像名称，从而简化了容器部署流程并提高了便利性。
 
+## 架构图
+
+image-cri-shim 的架构如下图所示：
+
+![](images/image-cri-shim.png)
+
+
+
 ## 使用说明
 
 ```yaml

@@ -1,3 +1,3 @@
 ---
-sidebar_position: 
+sidebar_position: 6
 ---
