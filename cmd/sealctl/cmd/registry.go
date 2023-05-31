@@ -26,7 +26,6 @@ func newRegistryCmd() *cobra.Command {
 		Use:   "registry",
 		Short: "registry related",
 	}
-	cmd.AddCommand(commands.NewRegistryImageSaveCmd())
 	cmd.AddCommand(commands.NewServeRegistryCommand())
 	return cmd
 }

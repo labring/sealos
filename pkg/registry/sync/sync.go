@@ -20,16 +20,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/containers/common/pkg/retry"
-
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/docker"
 	"github.com/containers/image/v5/docker/daemon"
@@ -50,7 +46,7 @@ func ToRegistry(ctx context.Context, sys *types.SystemContext, src, dst string, 
 	if err != nil {
 		return err
 	}
-	logger.Debug("sync registry from %s to %s", src, dst)
+	logger.Debug("syncing registry from %s to %s", src, dst)
 	repos, err := docker.SearchRegistry(ctx, sys, src, "", 1<<10)
 	if err != nil {
 		return err
@@ -74,7 +70,7 @@ func ToRegistry(ctx context.Context, sys *types.SystemContext, src, dst string, 
 			if err != nil {
 				return err
 			}
-			logger.Debug("copy image using registry sync mode: %s", destRef.DockerReference().String())
+			logger.Debug("syncing %s", destRef.DockerReference().String())
 			err = retry.RetryIfNecessary(ctx, func() error {
 				_, err = copy.Image(ctx, policyContext, destRef, refs[j], &copy.Options{
 					SourceCtx:          sys,
@@ -84,7 +80,7 @@ func ToRegistry(ctx context.Context, sys *types.SystemContext, src, dst string, 
 				return err
 			}, getRetryOptions())
 			if err != nil {
-				logger.Warn("copy image %s failed: %s", refs[j].DockerReference().String(), err.Error())
+				return fmt.Errorf("failed to copy image %s: %v", refs[j].DockerReference().String(), err)
 			}
 		}
 	}
@@ -118,7 +114,6 @@ func ToImage(ctx context.Context, sys *types.SystemContext, src types.ImageRefer
 	if err != nil {
 		return err
 	}
-	logger.Debug("copy image using registry sync mode: %s", repo)
 	return retry.RetryIfNecessary(ctx, func() error {
 		_, err = copy.Image(ctx, policyContext, destRef, src, &copy.Options{
 			SourceCtx:          sys,
@@ -190,37 +185,19 @@ func getImageTags(ctx context.Context, sysCtx *types.SystemContext, repoRef refe
 	return tags, nil
 }
 
-func WaitUntilHTTPListen(endpoint string, tw time.Duration) error {
-	var err error
-	for {
-		select {
-		case <-time.After(tw):
-			return err
-		default:
-			var resp *http.Response
-			resp, err = http.DefaultClient.Get(endpoint)
-			if err == nil {
-				_, _ = io.Copy(io.Discard, resp.Body)
-				resp.Body.Close()
-				logger.Debug("connect to registry %s successfully", endpoint)
-				return nil
-			}
-			time.Sleep(100 * time.Millisecond)
-		}
-	}
-}
 func ParseRegistryAddress(s string, args ...string) (string, error) {
-	if strings.Contains(s, ":") {
-		host, _, err := net.SplitHostPort(s)
-		if err != nil {
-			return "", err
-		}
-		s = host
-	}
 	var portStr string
 	if len(args) > 0 {
 		portStr = args[0]
 	}
+	if strings.Contains(s, ":") {
+		var err error
+		s, portStr, err = net.SplitHostPort(s)
+		if err != nil {
+			return "", err
+		}
+	}
+
 	if idx := strings.Index(portStr, ":"); idx >= 0 {
 		portStr = portStr[idx+1:]
 	}
