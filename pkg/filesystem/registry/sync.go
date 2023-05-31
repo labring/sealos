@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	stdsync "sync"
@@ -113,7 +114,7 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 					if err = httputils.WaitUntilEndpointAlive(probeCtx, "http://"+src); err != nil {
 						return err
 					}
-					return sync.ToRegistry(inner, sys, src, dst, copy.CopySystemImage)
+					return sync.ToRegistry(inner, sys, src, dst, os.Stdout, copy.CopySystemImage)
 				})
 			}
 			go func() {
