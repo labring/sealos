@@ -2,9 +2,9 @@
 sidebar_position: 9
 ---
 
-# SealOS：sealctl tar 与 sealctl untar 命令详解与使用指南
+# tar 与 untar 命令详解
 
-SealOS 提供了 `sealctl tar` 和 `sealctl untar` 命令以便于用户进行文件或文件夹的压缩和解压。本文将详细介绍这两个命令的使用方法。
+Sealos 提供了 `sealctl tar` 和 `sealctl untar` 命令以便于用户进行文件或文件夹的压缩和解压。本文将详细介绍这两个命令的使用方法。
 
 ## sealctl tar 命令
 

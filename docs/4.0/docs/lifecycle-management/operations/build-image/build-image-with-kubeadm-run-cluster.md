@@ -94,4 +94,3 @@ spec:
 **⚠️ 注意：**
 
 + 您可以参考[官方文档](https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta2/)或使用`kubeadm config print init-defaults`命令打印kubeadm配置。
-+ 对于实验用途，请参阅[CLI文档](https://www.sealos.io/docs/cli/apply#experimental)。
