@@ -1,149 +1,111 @@
-<h2 align="center">
 
-![](/docs/4.0/img/sealos-left-dark.png#gh-dark-mode-only)
-![](/docs/4.0/img/sealos-left.png#gh-light-mode-only)
 
-A Cloud Operating System designed for managing Cloud Native applications
+# 集群生命周期管理
 
-</h2>
+sealos 可以帮助用户非常好的管理整个集群的生命周期。
 
-<div align="center">
+可以用 sealos 安装一个不包含任何组件的裸 kubernetes 集群。
+也可以用 sealos 在 kubernetes 之上通过集群镜像能力组装各种上层分布式应用，如数据库消息队列等。
 
-[![Open in Dev Container](https://img.shields.io/static/v1?label=Dev%20Container&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/labring/sealos)
-[![Build Status](https://github.com/labring/sealos/actions/workflows/release.yml/badge.svg)](https://github.com/labring/sealos/actions)
-[![](https://img.shields.io/docker/pulls/labring/kubernetes)](https://hub.docker.com/r/labring/kubernetes)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_shield)
-[![codecov](https://codecov.io/gh/labring/sealos/branch/main/graph/badge.svg?token=e41ZDcj06N)](https://codecov.io/gh/labring/sealos)
-[![Website](https://img.shields.io/website?url=https%3A%2F%2Fpostwoman.io&logo=Postwoman)](https://sealos.io)
-[![OSCS Status](https://www.oscs1024.com/platform/badge/labring/sealos.svg?size=small)](https://www.oscs1024.com/project/labring/sealos?ref=badge_small)
+可以用 sealos 安装一个单节点的 kubernetes 开发环境。
+也可以用 sealos 构建数千节点的生产高可用集群。
 
-<br />
+可以用 sealos 自由伸缩集群，备份恢复，释放集群等。
+也可以即便在离线环境中也可以非常好的使用 sealos 来运行 kubernetes.
 
-[![discord](https://theme.zdassets.com/theme_assets/678183/cc59daa07820943e943c2fc283b9079d7003ff76.svg)](https://discord.gg/7bPNZfsjJu)
+![](images/sealos.webp)
 
-</div>
+- [x] 支持 ARM，v1.20 以上版本离线包支持 containerd 与 docker 集成
+- [x] 99年证书, 支持集群备份，升级
+- [x] 不依赖 ansible haproxy keepalived, 一个二进制工具，0依赖
+- [x] 离线安装，不同 kubernetes 版本使用不同的集群镜像即可
+- [x] 高可用通过 ipvs 实现的 localLB，占用资源少，稳定可靠，类似 kube-proxy 的实现
+- [x] 几乎可兼容所有支持 systemd 的 x86_64 架构的环境
+- [x] 轻松实现集群节点的增加/删除
+- [x] 数万用户在线上环境使用 sealos，稳定可靠
+- [x] 支持集群镜像，自由组合定制你需要的集群，如 openebs 存储+数据库+minio 对象存储
 
-![](https://user-images.githubusercontent.com/8912557/236477759-3532fdec-c355-4f8d-92ef-9f6fce3c50da.png)
 
-> [Docs](https://www.sealos.io/docs/Intro) | [简体中文](https://www.sealos.io/zh-Hans/docs/Intro) ｜ [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
 
-## Use Sealos to run a Kubernetes cluster
-
-[![asciicast](https://asciinema.org/a/519263.svg)](https://asciinema.org/a/519263?speed=3)
-
-## Run your app on Sealos
-
-[Try online demo](https://cloud.sealos.io)
-
-Run nginx on Sealos in 30 seconds.
-
-![](https://user-images.githubusercontent.com/8912557/236479998-c4949070-a4bc-4900-bfe8-d8b3b4728e60.png)
-
-Some Screen Shots of `Sealos Desktop`:
-
-<div align="center">
-
-| Sealos Terminal | Sealos App Launchpad |
-| :---: | :---: |
-| ![](https://user-images.githubusercontent.com/8912557/236481248-1bd521ae-b483-440a-8177-ae90081f8973.png) | ![](https://user-images.githubusercontent.com/8912557/236480220-5a3f09c1-8e75-4727-a398-244d86f32133.png) |
-
-</div>
-
-## Core features
-
-- Run any application on Sealos.
-  - Run nginx on sealos in 30s.
-  - Run you own project on sealos, like some java/go/python/node.js webserver.
-  - Run you website static files on sealos.
-  - Run database and some stateful applications on sealos.
-- ☸️ Manage clusters lifecycle
-  - [x] Quickly install HA Kubernetes clusters.
-  - [x] Add / remove nodes, Clean the cluster.
-- 💻 Download and deploy OCI-compatible distributed applications.
-  - [x] OpenEBS, MinIO, Ingress, PostgreSQL, MySQL, Redis, etc.
-- 🛠️ Customize your own distributed applications.
-  - [x] Utilizing Dockerfile to build images of distributed applications while preserving all of their dependencies.
-  - [x] Push images of distributed applications to Docker Hub.
-  - [x] Integrate various applications to construct a personalized Cloud platform.
-
-## Quickstart
-
-> Installing a highly available Kubernetes cluster with Calico as the container network interface (CNI).
-
-Here, the Cluster images `kubernetes:v1.24.0-4.2.0` and `calico:v3.24.1` stored in the registry are fully compliant with the OCI standard. However, if you prefer to use flannel, it is also an option.
+## 使用sealos运行一个kubernetes集群
 
 ```bash
-# Download and install Sealos, which is a binary tool written in Golang. Simply download it and copy it to the bin directory. You can also download it from the release page.
-$ wget  https://github.com/labring/sealos/releases/download/v4.2.0/sealos_4.2.0_linux_amd64.tar.gz  && \
-    tar -zxvf sealos_4.2.0_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin 
+$ curl -sfL  https://raw.githubusercontent.com/labring/sealos/v4.2.0/scripts/install.sh \
+    | sh -s v4.2.0 labring/sealos
 # Create a cluster
 $ sealos run labring/kubernetes:v1.25.0-4.2.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
 
-* Supported Kubernetes versions: [240+ Kubernetes versions](https://hub.docker.com/r/labring/kubernetes/tags) [Kubernetes with cri-docker runtime](https://hub.docker.com/r/labring/kubernetes-docker/tags)
-* Other [images for distributed applications](https://hub.docker.com/u/labring)
+[![asciicast](https://asciinema.org/a/519263.svg)](https://asciinema.org/a/519263?speed=3)
 
-> Single host
 
-```bash
-$ sealos run labring/kubernetes:v1.25.0-4.2.0 labring/helm:v3.8.2 labring/calico:v3.24.1
+
+## 运行集群上的各种分布式应用
+
+可以通过 `sealos run` 命令来运行集群(目前是kubernetes)之上的各种分布式应用，像数据库，消息队列，AI 能力甚至企业级 SaaS 软件。
+
+如：
+
+```shell
+# MySQL cluster
+$ sealos run labring/mysql-operator:8.0.23-14.1
+
+# Clickhouse cluster
+$ sealos run labring/clickhouse:0.18.4
+
+# Redis cluster
+$ sealos run labring/redis-operator:3.1.4
 ```
 
-> Building a custom Cluster image
+## 自定义集群
 
-Reference [Building an Example CloudImage](https://www.sealos.io/docs/getting-started/build-example-cloudimage).
+对于 sealos 生态没有的集群镜像，用户可以使用非常方便的方式来自己构建和定制属于自己的集群镜像。
 
-> Storage, Message queue, Database, etc.
+如：
 
-Don't be shocked by the following:
+[构建一个 ingress 集群镜像](https://www.sealos.io/docs/getting-started/build-example-cloudimage)
 
-```bash
-sealos run labring/helm:v3.8.2 # install helm
-sealos run labring/openebs:v1.9.0 # install openebs
-sealos run labring/minio-operator:v4.4.16 labring/ingress-nginx:4.1.0 \
-   labring/mysql-operator:8.0.23-14.1 labring/redis-operator:3.1.4 # oneliner
+也可以定制一个完全属于自己的 kubernetes:
+
+Sealfile:
+```shell
+FROM kubernetes:v1.25.0
+COPY flannel-chart .
+COPY mysql-chart .
+CMD ["helm install flannel flannel-chart", "helm install mysql mysql-chart"]
 ```
 
-And now everything is ready.
-
-## Use Kubernetes Cluster image with cri-docker runtime
-
-```bash
-sealos run labring/kubernetes-docker:v1.20.8-4.2.0 labring/calico:v3.22.1 \
-     --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
-     --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
+```shell
+sealos build -t my-kuberentes:v1.25.0 .
+sealos run my-kuberentes:v1.25.0 ...
 ```
 
-## Community & support
 
-+ Visit the [Sealos website](https://sealos.io/) for full documentation and useful links.
-+ Join our [Discord server](https://discord.gg/7bPNZfsjJu) is to chat with Sealos developers and other Sealos users. This is a good place to learn about Sealos and Kubernetes, ask questions, and share your experiences.
-+ Tweet at @sealosio on [Twitter](https://twitter.com/sealosio) and follow us.
-+ Create [GitHub Issues](https://github.com/labring/sealos/issues/new/choose) for bug reports and feature requests.
 
-## Roadmap
+# FAQ
 
-Sealos maintains a [public roadmap](https://github.com/orgs/labring/projects/4/views/9). It gives a a high-level view of the main priorities for the project, the maturity of different features and projects, and how to influence the project direction.
+> sealos 是 kubernetes 安装工具吗？
 
-## Contributing & Development
+安装部署是 sealos 一个最基本的小功能，就像单机操作系统也有 boot 模块一样，sealos 的 boot 模块可以很好的管理整个 kubernetes 在
+任何场景下生命周期管理问题。
 
-Have a look through [existing Issues](https://github.com/labring/sealos/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc) and [Pull Requests](https://github.com/labring/sealos/pulls?q=is%3Apr+is%3Aopen+sort%3Aupdated-desc) that you could help with. If you'd like to request a feature or report a bug, please [create a GitHub Issue](https://github.com/labring/sealos/issues/new/choose) using one of the templates provided.
+> 不是很懂 kubernetes 是否能很友好的使用 sealos？
 
-[See contribution guide →](./CONTRIBUTING.md)
+可以的，就像是不懂 linux kernel 也能很容易的使用 ubuntu 一样，关键看使用者是什么样的角色，比如一个 DBA 只需要在 sealos 上
+安装一个数据库应用即可来做数据库管理 SQL 调优等，而无需关心 kubernetes 的存在。
 
-[See development guide →](./DEVELOPGUIDE.md)
+> sealos 和 rancher kubesphere 有什么区别？
 
-## Links
+定位不同，sealos 的设计理念是 "化整为零，自由组装，大道至简"，利用 kubernetes 的能力使用非常简单的方式提供给用户真正想要的东西。
+也就是说用户想要的不一定是 kubernetes，大众用户需要的是一个具体的能力，而且可能都不一样。
 
-- [Sealos Action](https://github.com/labring/sealos-action)
-- [Sealos Rebot](https://github.com/labring/gh-rebot)
-- [Bug Verify Example](https://github.com/labring-actions/bug-verify)
-- [Application Image](https://github.com/labring-actions/cluster-image)
-- [Rootfs Image](https://github.com/labring-actions/runtime)
-- [Buildah](https://github.com/containers/buildah) The functionalities of Buildah are extensively utilized in Sealos 4.0 to ensure that cluster images are compatible with OCI standard.
+操作系统的特点是用户需要什么它就是什么，极其灵活，不会给用户带来额外负担。
 
-<!-- ## License -->
+如 windows 对于一个游戏玩家来说就是个游戏机, 对于程序员来说就是用来写代码的工具，对于美工来说就是用来修图的。 操作系统的形态取决于使用者是谁，装了什么应用。
 
-<!-- [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_large) -->
+那 sealos 云操作系统也一样，sealos 本身通过 sealos core, sealos hub, sealos desktop 把分布式应用管理好即可， 剩下一切能力让应用层去扩展。
+
+分布式应用是 sealos 上的一等公民，一切皆应用。
+
