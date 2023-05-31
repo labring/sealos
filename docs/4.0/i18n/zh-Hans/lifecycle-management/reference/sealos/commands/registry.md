@@ -4,7 +4,7 @@ sidebar_position: 8
 
 # registry容器镜像仓库命令
 
-## SealOS：sealos registry save 命令详解与使用指南
+## Sealos：sealos registry save 命令详解与使用指南
 
 `registry save` 命令用于将远程的 Docker 镜像拉取到本地并保存在指定的目录中。这对于在离线或者内网环境中部署容器镜像特别有用。
 
@@ -42,9 +42,9 @@ sidebar_position: 8
 - `--arch`: 镜像的目标架构，例如：`amd64`、`arm64` 等。
 - `--images`: 需要拉取并保存的镜像列表，以逗号分隔。例如："my-image1:latest,my-image2:v1.0"。
 
-## SealOS：sealos registry serve 命令详解与使用指南
+## Sealos：sealos registry serve 命令详解与使用指南
 
-在构建并管理 Docker 镜像仓库过程中，SealOS 提供了 `sealos registry serve` 命令以方便用户进行相关操作。本文将详细介绍 `sealos registry serve` 命令的使用方法和示例。
+在构建并管理 Docker 镜像仓库过程中，Sealos 提供了 `sealos registry serve` 命令以方便用户进行相关操作。本文将详细介绍 `sealos registry serve` 命令的使用方法和示例。
 
 ## 基本介绍
 

@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# image-cri-shim组件
+# image-cri-shim 使用指南
 
 ## 工作原理
 

@@ -2,9 +2,9 @@
 sidebar_position: 2
 ---
 
-# Sealos实战：配置和自定义应用镜像及其运行时环境
+# 配置和自定义应用镜像及其运行时环境
 
-SealOS 提供了一种使用 `Config` 对象来在运行时对文件进行补丁操作的方式。本文将详细介绍这一操作的过程和使用方法。
+Sealos 提供了一种使用 `Config` 对象来在运行时对文件进行补丁操作的方式。本文将详细介绍这一操作的过程和使用方法。
 
 ## `Config` 对象简介
 
@@ -180,7 +180,7 @@ spec:
 
 ## 使用 `Config` 对象
 
-由于 `kubelet` 配置中的 `localDNS` 字段需要匹配 `node-local-dns` 的监听地址，因此在 Clusterfile 中必须预先定义。同时，我们希望有灵活性地修改 `node-local-dns` 的配置，因此我们使用 `Config` 在 SealOS 实际调用 `helm` 命令之前对 `charts/node-local-dns.values.yaml` 文件进行补丁操作。
+由于 `kubelet` 配置中的 `localDNS` 字段需要匹配 `node-local-dns` 的监听地址，因此在 Clusterfile 中必须预先定义。同时，我们希望有灵活性地修改 `node-local-dns` 的配置，因此我们使用 `Config` 在 Sealos 实际调用 `helm` 命令之前对 `charts/node-local-dns.values.yaml` 文件进行补丁操作。
 
 关于 `Config` 对象的字段，我们简要介绍一下：
 
@@ -195,7 +195,7 @@ spec:
   - `override`：覆盖文件中的内容。
 - `spec.data`：要应用的数据。
 
-运行 SealOS apply：
+运行 Sealos apply：
 
 ```bash
 sudo sealos apply -f Clusterfile --set localDNS.enabled=true --set localDNS.bind=169.254.20.11 --set localDNS.image=node-local-dns:1.3.2

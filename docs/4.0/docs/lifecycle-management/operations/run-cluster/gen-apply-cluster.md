@@ -2,7 +2,7 @@
 sidebar_position: 1
 ---
 
-# 自定义安装配置
+# 自定义配置安装
 
 1. 运行 `sealos gen` 生成一个 Clusterfile，例如：
 
@@ -52,7 +52,7 @@ status: {}
 
 </details>
 
-2. 将 [calico Clusterfile](https://github.com/labring/sealos/blob/main/applications/calico/Clusterfile) 追加到生成的 Clusterfile 后，然后更新集群配置。例如，要修改 pods 的 CIDR 范围，就可以修改 `networking.podSubnet` 和 `spec.data.spec.calicoNetwork.ipPools.cidr` 字段。最终的 Clusterfile 会像是这样:
+2. 生成 Clusterfile 后，然后更新集群配置。例如，要修改 pods 的 CIDR 范围，就可以修改 `networking.podSubnet` 和 `spec.data.spec.calicoNetwork.ipPools.cidr` 字段。最终的 Clusterfile 会像是这样:
 
 <details>
 <summary>Clusterfile</summary>
@@ -124,4 +124,3 @@ spec:
 **注意：**
 
 - 可以参考[官方文档](https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta2/)或运行 `kubeadm config print init-defaults` 命令来打印 kubeadm 配置。
-- 实验性功能使用方法请查看 [CLI](https://www.sealos.io/docs/cli/apply#experimental)。

@@ -2,7 +2,7 @@
 sidebar_position: 10
 ---
 
-# Sealos 集群镜像说明文档
+# Kubernetes 集群镜像说明文档
 
 本文档主要介绍 Sealos 官方提供的 rootfs 类型集群镜像，包括镜像名称、镜像类型以及镜像版本等方面的说明。
 

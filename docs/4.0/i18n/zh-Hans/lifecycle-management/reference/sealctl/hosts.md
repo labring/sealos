@@ -2,7 +2,7 @@
 sidebar_position: 4
 ---
 
-# hosts配置管理命令
+# hosts 配置管理命令
 
 `hosts` 命令是用于管理操作系统的 hosts 文件。hosts 文件是一个用于解析域名到 IP 地址的文件，通常在本地系统中用于覆盖 DNS 解析。通过修改 hosts 文件，您可以为一个特定的域名分配一个自定义的 IP 地址，而不必依赖 DNS 服务器。
 

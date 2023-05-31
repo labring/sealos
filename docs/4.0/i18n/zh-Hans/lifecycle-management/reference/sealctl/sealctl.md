@@ -3,7 +3,7 @@ sidebar_position: 0
 ---
 
 
-# sealctl
+# Sealctl 使用指南
 
 Sealos 提供 sealctl 是使用 Sealos 与 集群节点进行操作的命令行工具。它包括以下几个子命令：
 
@@ -18,7 +18,7 @@ Sealos 提供 sealctl 是使用 Sealos 与 集群节点进行操作的命令行�
 7. `static_pod`：管理静态Pod，可以创建静态Pod的配置。
 8. `token`：生成和管理访问令牌，用于授权访问Kubernetes集群。
 
-通过这些子命令，您可以方便地管理和配置您的SealOS系统，实现对容器、镜像仓库、网络等各个方面的控制。
+通过这些子命令，您可以方便地管理和配置您的Sealos系统，实现对容器、镜像仓库、网络等各个方面的控制。
 
 
 
