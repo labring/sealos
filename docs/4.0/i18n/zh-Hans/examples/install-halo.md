@@ -1,3 +1,7 @@
+---
+sidebar_position: 3
+---
+
 # 快速安装 Halo
 
 在 Sealos 上快速部署 Halo 博客平台

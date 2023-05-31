@@ -1,3 +1,7 @@
+---
+sidebar_position: 3
+---
+
 # Quick Installation of Halo Blogging Platform
 
 Deploy Halo Blogging Platform swiftly on Sealos

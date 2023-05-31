@@ -1,3 +1,7 @@
+---
+sidebar_position: 1
+---
+
 # 使用 App Launchpad 快速安装应用
 
 Sealos 的桌面环境类似于单机操作系统 macOS 或 Windows 的桌面环境，桌面上的每个图标都是一个 App，类似于 Windows 的快捷方式。与单机操作系统一样，Sealos 也有系统自带的 App，要想在这个云操作系统中快速安装应用，就需要用到系统自带的 App Launchpad。

@@ -1,3 +1,7 @@
+---
+sidebar_position: 1
+---
+
 # Quickly Install WordPress
 
 WordPress is a powerful, user-friendly and open source content management system (CMS) that can be used to publish websites, news, blogs and other content online. It provides convenient methods for content editing, publishing and updating, and can also be highly customized through themes and plugins. WordPress has become a very successful and popular CMS system, with over 30 million websites built on WordPress worldwide.
