@@ -1,4 +1,4 @@
-# 快速安装低代码平台 Appsmith
+# 快速安装 Appsmith
 
 [Appsmith](https://github.com/appsmithorg/appsmith) 是一个用于构建、部署和维护内部应用程序的开源平台。您可以构建任何东西，从简单的 CRUD 应用程序、管理面板、仪表板到自定义业务应用程序和复杂的多步骤工作流。
 

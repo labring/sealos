@@ -1,4 +1,4 @@
-# 快速安装低代码平台 PagePlug
+# 快速安装 PagePlug
 
 [PagePlug](https://github.com/cloudtogo/pageplug) 是 [Appsmith](https://github.com/appsmithorg/appsmith) 的中国化项目，基于 Appsmith 做了整体性能优化及汉化，也集合了特色表单解决方案 Formily 组件、图表解决方案 Echarts 组件、低代码小程序开发等，是面向研发使用的一个开源的、声明式的、可视化的、符合开发者直觉的前端低代码框架。
 
