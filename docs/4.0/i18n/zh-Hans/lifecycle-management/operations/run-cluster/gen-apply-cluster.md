@@ -2,7 +2,7 @@
 sidebar_position: 1
 ---
 
-# 自定义安装配置
+# 自定义配置安装
 
 1. 运行 `sealos gen` 生成一个 Clusterfile，例如：
 
