@@ -30,6 +30,6 @@ func newRegistryCmd() *cobra.Command {
 	cmd.AddCommand(commands.NewRegistryPasswdCmd())
 	cmd.AddCommand(commands.NewRegistryImageSaveCmd())
 	cmd.AddCommand(commands.NewSyncRegistryCommand())
-
+	cmd.AddCommand(commands.NewServeRegistryCommand())
 	return cmd
 }
