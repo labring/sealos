@@ -8,29 +8,29 @@ Sealos 提供了 DB Provider 工具，可以可视化的部署数据库。
 
 ### 1.1 从桌面打开 DB Provider 工具。
 
-![1. 打开 DB Provider](./imgs/db1.png)
+![1. 打开 DB Provider](./images/open-dbprovider.png)
 
 ### 1.2 新建 MongoDB 数据库
 
-![](./imgs/fast1.png)
+![](./images/fast1.png)
 
 可以选择 3 种数据库，这里先创建一个 MongoDB。规格建议选择 0.5C 512Mi 以上。
 
-![](./imgs/fast2.png)
+![](./images/fast2.png)
 
 ### 1.3 新建 PostgreSQL 数据库
 
-![](./imgs/fast3.png)
+![](./images/fast3.png)
 
 由于 PostgreSQL 中需要存储向量数据，需要的容量较大，初始容量可以稍微设置高一点。
 
-![](./imgs/fast4.png)
+![](./images/fast4.png)
 
 ### 1.4 查看数据库连接参数
 
 可以在进入数据库详情，查看每个数据库的连接参数，包括: host, port, username, password 以及 connectionUrl。
-![](./imgs/fast5.png)
-![](./imgs/fast6.png)
+![](./images/fast5.png)
+![](./images/fast6.png)
 
 ## 2. 初始化 PostgreSQL 数据库
 
@@ -38,7 +38,7 @@ Sealos 提供了 DB Provider 工具，可以可视化的部署数据库。
 
 可以在 PostgreSQL 数据库详情里一键连接数据库。
 
-![](./imgs/fast7.png)
+![](./images/fast7.png)
 
 ### 2.2 执行 init.sql 内容
 
@@ -61,13 +61,13 @@ CREATE INDEX IF NOT EXISTS idx_model_data_md5_q_a_user_id_kb_id ON modelData (md
 CREATE INDEX IF NOT EXISTS vector_index ON modelData USING ivfflat (vector vector_cosine_ops) WITH (lists = 1000);
 ```
 
-![](./imgs/fast8.png)
+![](./images/fast8.png)
 
 ### 2.3 验证初始化
 
 执行 `\d modeldata` 查看表的详请，查看是否符合预期。
 
-![](./imgs/fast19.png)
+![](./images/fast19.png)
 
 ## 3. 部署 FastGpt
 
@@ -75,16 +75,16 @@ Sealos 提供了 App Launchpad 工具，可以快速的部署单镜像服务。
 
 ### 3.1 从桌面打开 App Launchpad
 
-![](./imgs/fast9.png)
+![](./images/fast9.png)
 
 ### 3.2 进入新建应用
 
-![](./imgs/fast10.png)
+![](./images/fast10.png)
 
 ### 3.3 填写相关参数
 
-![](./imgs/fast11.png)
-![](./imgs/fast12.png)
+![](./images/fast11.png)
+![](./images/fast12.png)
 
 | 关键变量名   | 描述                                                                                                                                                                    |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -121,11 +121,11 @@ OPENAI_TRAINING_KEY=sk-xxx
 GPT4KEY=sk-xxx
 ```
 
-![](./imgs/fast15.png)
+![](./images/fast15.png)
 
 ### 3.3 访问页面
 
 通过 App Launchpad 提供的外网地址或者自定义域名去访问 FastGpt。
 
-![](./imgs/fast17.png)
-![](./imgs/fast18.png)
+![](./images/fast17.png)
+![](./images/fast18.png)
