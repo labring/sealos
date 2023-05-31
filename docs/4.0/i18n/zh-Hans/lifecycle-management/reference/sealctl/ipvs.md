@@ -2,7 +2,7 @@
 sidebar_position: 6
 ---
 
-# ipvs配置管理命令
+# ipvs 配置管理命令
 
 `ipvs` 命令用于创建和管理本地的 IPVS 负载均衡。IPVS（IP Virtual Server）是 Linux 内核中的一个模块，它允许在内核空间实现高性能的负载均衡。`ipvs` 命令通过管理虚拟服务器和真实服务器的映射关系，实现对服务的负载均衡。
 

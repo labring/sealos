@@ -2,11 +2,11 @@
 sidebar_position: 5
 ---
 
-# registry容器镜像仓库命令
+# registry 容器镜像仓库命令
 
 ## Sealos：sealctl registry serve 命令详解与使用指南
 
-在构建并管理 Docker 镜像仓库过程中，SealOS 提供了 `sealctl registry serve` 命令以方便用户进行相关操作。本文将详细介绍 `sealctl registry serve` 命令的使用方法和示例。
+在构建并管理 Docker 镜像仓库过程中，Sealos 提供了 `sealctl registry serve` 命令以方便用户进行相关操作。本文将详细介绍 `sealctl registry serve` 命令的使用方法和示例。
 
 ## 基本介绍
 
