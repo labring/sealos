@@ -4,13 +4,13 @@
 
 ## 步骤 1：打开 App Launchpad 应用
 
-![](images/1.png)
+![](./images/1.png)
 
 ## 步骤 2：新建应用
 
 - 在 App Launchpad 中，点击「新建应用」来创建一个新的应用。
 
-![](images/2.png)
+![](./images/2.png)
 
 ## 步骤 3：应用部署
 
@@ -28,7 +28,7 @@
   
   - 实例数（自定义）：1
 
-![](images/3.png)
+![](./images/3.png)
 
 - 网络配置：
   
@@ -36,19 +36,19 @@
   
   - 外网访问：开启
 
-![](images/4.png)
+![](./images/4.png)
 
 - 高级配置：
   
   - 自定义本地存储，持久化 Appsmith 的数据（推荐 15 G）。
 
-![](images/5.png)
+![](./images/5.png)
 
 ## 步骤 4：部署应用
 
 - 点击「部署应用」开始部署应用。
 
-![](images/6.png)
+![](./images/6.png)
 
 ## 步骤 5：访问应用
 
@@ -56,10 +56,10 @@
 
 - 当 STATUS 为 Running，即可直接访问外网地址。
 
-![](images/7.png)
+![](./images/7.png)
 
 - 访问成功！
 
-![](images/8.png)
+![](./images/8.png)
 
 
