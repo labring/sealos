@@ -1,4 +1,4 @@
-# Quick installation of low-code platform PagePlug
+# Quick installation of PagePlug
 
 [PagePlug](https://github.com/cloudtogo/pageplug) is a Chinese project of [Appsmith](https://github.com/appsmithorg/appsmith), which optimizes the overall performance and Sinicizes based on Appsmith, and also integrates the characteristic form solution Formily component, chart solution Echarts component, low code Mini Program development, etc.
 Is an open source, declarative, visual, intuitive front-end low-code framework for research and development.
