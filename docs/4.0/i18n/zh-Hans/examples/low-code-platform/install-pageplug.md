@@ -4,13 +4,13 @@
 
 ## 步骤 1：打开 App Launchpad 应用
 
-![](../image/pageplug-1.png)
+![](../images/pageplug-1.png)
 
 ## 步骤 2：新建应用
 
 - 在 App Launchpad 中，点击「新建应用」来创建一个新的应用。
 
-![](../image/pageplug-2.png)
+![](../images/pageplug-2.png)
 
 ## 步骤 3：应用部署
 
@@ -28,7 +28,7 @@
   
   - 实例数（自定义）：1
 
-![](../image/pageplug-3.png)
+![](../images/pageplug-3.png)
 
 - 网络配置：
   
@@ -36,36 +36,36 @@
   
   - 外网访问：开启
 
-![](../image/pageplug-4.png)
+![](../images/pageplug-4.png)
 
 - 高级配置：
   
   - 自定义本地存储，持久化 PagePlug 的数据。
 
-![](../image/pageplug-5.png)
+![](../images/pageplug-5.png)
 
 ## 步骤 4：部署应用
 
 - 点击「部署应用」开始部署应用。
 
-![](../image/pageplug-6.png)
+![](../images/pageplug-6.png)
 
 ## 步骤 5：访问应用
 
 - 点击「详情」查看，当应用的 STATUS 由 Pending 变为 Running，则表明该应用已成功启动。
 
-![](../image/pageplug-7.png)
+![](../images/pageplug-7.png)
 
-![](../image/pageplug-8.png)
+![](../images/pageplug-8.png)
 
 - 当 STATUS 为 Running，即可直接访问外网地址。
 
-![](../image/pageplug-9.png)
+![](../images/pageplug-9.png)
 
 - 若访问出现 503 异常，等待一会重试即可。
 
-![](../image/pageplug-10.png)
+![](../images/pageplug-10.png)
 
 - 访问成功！
 
-![](../image/pageplug-11.png)
+![](../images/pageplug-11.png)
