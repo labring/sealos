@@ -5,13 +5,13 @@ Is an open source, declarative, visual, intuitive front-end low-code framework f
 
 ## Step 1: open the App Launchpad application
 
-![](./image/pageplug-1.png)
+![](./images/pageplug-1.png)
 
 ## Step 2: create a new application
 
 - In App Launchpad, click "New Application" to create a new application.
 
-![](./image/pageplug-2.png)
+![](./images/pageplug-2.png)
 
 ## Step 3: application deployment
 
@@ -29,7 +29,7 @@ Is an open source, declarative, visual, intuitive front-end low-code framework f
   
   - Number of instances (custom): 1
 
-![](./image/pageplug-3.png)
+![](./images/pageplug-3.png)
 
 - Network configuration:
   
@@ -37,36 +37,36 @@ Is an open source, declarative, visual, intuitive front-end low-code framework f
   
   - Public network access: enabled
 
-![](./image/pageplug-4.png)
+![](./images/pageplug-4.png)
 
 - Advanced configuration:
   
   - Customize local storage and persist PagePlug data.
 
-![](./image/pageplug-5.png)
+![](./images/pageplug-5.png)
 
 ## Step 4: deploy the application
 
 - Click "deploy Application" to start deploying the application.
 
-![](./image/pageplug-6.png)
+![](./images/pageplug-6.png)
 
 ## Step 5: access the application
 
 - Click "details" to view, when the STATUS of the application has changed from Pending to Running, it indicates that the application has been launched successfully.
 
-![](./image/pageplug-7.png)
+![](./images/pageplug-7.png)
 
-![](./image/pageplug-8.png)
+![](./images/pageplug-8.png)
 
 - When STATUS is Running, you can directly access the public network address.
 
-![](./image/pageplug-9.png)
+![](./images/pageplug-9.png)
 
 - If a 503 exception occurs in the access, wait for a while and try again.
 
-![](./image/pageplug-10.png)
+![](./images/pageplug-10.png)
 
 - The visit was successful!
 
-![](./image/pageplug-11.png)
+![](./images/pageplug-11.png)
