@@ -16,3 +16,5 @@ fanux/sealos-site:
     dest: docs/lifecycle-management/DEVELOPGUIDE.md
   - source: DEVELOPGUIDE.md
     dest: i18n/zh-Hans/docusaurus-plugin-content-docs/current/lifecycle-management/DEVELOPGUIDE.md
+  - source: docs/sidebar.json
+    dest: sidebar.json
