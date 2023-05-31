@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# 构建基于Helm Charts 的集群镜像
+# 构建基于 Helm Charts 的集群镜像
 
 让我们以最简单的 nginx 应用程序为例，介绍如何基于 Helm Charts 构建一个基于 nginx 的集群镜像。
 

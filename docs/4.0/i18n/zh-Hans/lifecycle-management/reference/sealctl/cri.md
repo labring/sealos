@@ -2,7 +2,7 @@
 sidebar_position: 2
 ---
 
-# CRI 容器管理命令
+# CRI 容器管理
 
 `cri` 命令是用于管理和检查 Kubernetes 集群中的容器运行时（Container Runtime Interface，CRI）环境。容器运行时是负责运行容器的底层技术，如 Docker、containerd 或者 CRI-O 等。在 Kubernetes 中，容器运行时用于启动、停止和管理容器，以支持集群中的工作负载。
 

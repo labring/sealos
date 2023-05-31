@@ -2,7 +2,7 @@
 sidebar_position: 5
 ---
 
-# 构建基于go-template的集群镜像
+# 构建基于 go-template 的集群镜像
 
 在构建集群镜像的过程中，我们可以使用 `--env` 选项通过sealos命令行传递一些变量。这些环境变量可以被Kubefile的 `CMD` 命令或者yaml文件模板所使用。
 

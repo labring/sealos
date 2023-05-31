@@ -1,8 +1,14 @@
 ---
-sidebar_position: 0
+sidebar_position: 1
 ---
 
-# 使用 Clusterfile 部署集群
+# apply 启动集群
+
+`sealos apply` 是 Sealos 命令行工具中的一个重要命令，用于在 Kubernetes 集群中运行集群镜像。本指南将详细介绍其使用方法和选项。
+
+## 基本用法
+
+`sealos apply` 命令的基本用法如下：
 
 ```shell
 $ sealos apply -f Clusterfile
@@ -43,65 +49,36 @@ spec:
     user: root
 ```
 
-增加删除节点都可以编辑 `.sealos/default/Clusterfile` 文件然后重新 `sealos apply -f Clusterfile` 即可。
+这条命令会根据指定的 `Clusterfile` 文件在 Kubernetes 集群中运行集群镜像。
 
-## 使用模版（实验性功能）
+## 选项
 
-我们也可以使用 Go 模版语法来编写 Clusterfile（就像 [Helm](https://helm.sh/) 一样，但暂不支持部分模版函数，如 `include`/`tpl`/`require`/`lookup`）。 例如，创建 `Clusterfile.yaml` 如下：
+`sealos apply` 命令提供了多种选项，用于定制命令的行为：
 
-```yaml
-apiVersion: apps.sealos.io/v1beta1
-kind: Cluster
-metadata:
-  name: {{ .Values.clusterName }}
-spec:
-  hosts:
-    - ips: {{ .Values.masters | toYaml | nindent 8 }}
-      roles: ["master", "amd64"]
-    {{- with .Values.nodes }}
-    - ips: {{ . | toYaml | nindent 8 }}
-      roles: ["node", "amd64"]
-    {{- end }}
-  image: {{ .Values.images | toYaml | nindent 4 }}
-  ssh:
-    passwd: {{ env "SSH_PASSWORD" .Values.ssh.passwd }}
-    pk: {{ default "~/.ssh/id_rsa" .Values.ssh.pk }}
-    port: {{ default 22 .Values.ssh.port | int }}
-    user: {{ default "root" .Values.ssh.user }}
----
-apiVersion: kubeadm.k8s.io/v1beta3
-kind: ClusterConfiguration
-networking:
-  dnsDomain: {{ default "cluster.local" .Values.networking.dnsDomain }}
-  serviceSubnet: {{ default "10.96.0.0/18" .Values.networking.serviceSubnet }}
-  podSubnet: {{ default "100.64.0.0/17" .Values.networking.podSubnet }}
-```
+- `-f, --Clusterfile='Clusterfile'`: 指定要应用的集群文件。默认为 `Clusterfile`。
+- `--config-file=[]`: 指定自定义Config文件的路径，用于替换或者修改资源。
+- `--env=[]`: 设置在命令执行过程中要使用的环境变量。
+- `--set=[]`: 在命令行上设置值，一般是替换模板的值。
+- `--values=[]`: 指定要应用到 `Clusterfile` 的values文件，一般是用于模板方式。
 
-随后，创建一个自定义的 values 文件 `example.values.yaml`：
+每个选项后面都可以跟随一个或多个参数。多个参数之间用逗号分隔。
 
-```yaml
-clusterName: default
-images:
-  - dockerhub.tencentcloudcr.com/labring/kubernetes:v1.23.8
-  - dockerhub.tencentcloudcr.com/labring/calico:v3.24.1
-masters:
-  - 10.74.16.27:22
-  - 10.74.16.140:22
-  - 10.74.16.101:22
-nodes: []
-ssh:
-  # passwd: notSetYet
-  pk: /path/to/private/key/file
-  port: 22
-  user: root
-networking:
-  dnsDomain: cluster.local
-  serviceSubnet: 10.96.0.0/18
-  podSubnet: 100.64.0.0/17
-```
-
-然后就可以像这样部署集群了：
+例如，你可以使用 `--set` 选项在命令行上设置一些值：
 
 ```shell
-$ sealos apply -f Clusterfile.yaml --values example.values.yaml --set clusterName=testlocal --env SSH_PASSWORD=s3cret 
+sealos apply -f Clusterfile --set key1=value1,key2=value2
 ```
+
+这条命令会将 `key1` 和 `key2` 的值设置为 `value1` 和 `value2`，然后应用 `Clusterfile`。
+
+同样，你也可以使用 `--values` 选项指定一个值文件：
+
+```shell
+sealos apply -f Clusterfile --values values.yaml
+```
+
+这条命令会根据 `values.yaml` 文件中的值应用 `Clusterfile`。
+
+**更多示例请参考[启动镜像](https://docs.sealos.io/docs/lifecycle-management/operations/run-cluster/)**
+
+以上就是 `sealos apply` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。

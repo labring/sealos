@@ -3,6 +3,7 @@ sidebar_position: 7
 ---
 
 # 使用构建镜像自定义 Kubernetes 集群
+
 本指南介绍如何使用 `kubeadm config` 构建自定义镜像来自定义 Kubernetes 集群。
 
 ## 构建自定义镜像

@@ -3,7 +3,7 @@ sidebar_position: 3
 ---
 
 
-# hostname 获取操作系统主机名命令
+# hostname 获取主机名
 
 获取操作系统的主机名：
 

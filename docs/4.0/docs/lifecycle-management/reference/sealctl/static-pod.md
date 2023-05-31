@@ -2,7 +2,7 @@
 sidebar_position: 7
 ---
 
-# static-pod 管理命令
+# static-pod 配置
 
 `static-pod` 命令用于生成静态 Pod，这些 Pod 是由 kubelet 直接管理的，而不是通过 API 服务器。静态 Pod 在某些场景下非常有用，比如设置和管理 Kubernetes 集群中的控制平面组件。
 
