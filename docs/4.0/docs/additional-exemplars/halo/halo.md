@@ -1,12 +1,10 @@
-# 如何快速安装Halo 博客平台：
+# 如何快速安装 Halo 博客平台：
 
-在sealos上快速部署halo博客平台:
+在 Sealos 上快速部署 halo 博客平台 :
 
 ![img.png](./images/img-1.png)
 
-Halo是一款强大易用的开源建站工具，本文将介绍如何在 sealos 上部署Halo，同时在 sealos 上部署 PostgreSQL 可以帮助你轻松地管理和维护数据库，以满足不同的业务需求。
-
-
+Halo 是一款强大易用的开源建站工具，本文将介绍如何在 Sealos 上部署 Halo，同时在 Sealos 上部署 PostgreSQL 可以帮助你轻松地管理和维护数据库，以满足不同的业务需求。
 
 ## 步骤 1：在 Sealos 中部署 PostgreSQL
 
@@ -28,11 +26,11 @@ Halo是一款强大易用的开源建站工具，本文将介绍如何在 sealos
 
 ![img.png](./images/img-5.png)
 
-保存这里生成的配置中包含数据库的用户名密码以及数据库连接方式，用于下文Halo中配置：
+保存这里生成的配置中包含数据库的用户名密码以及数据库连接方式，用于下文 Halo 中配置：
 
 ![img.png](./images/img-6.png)
 
-> 图中可以看到pgsql配置如下：
+> 图中可以看到 pgsql 配置如下：
 >
 > Username:root
 >
@@ -40,19 +38,13 @@ Halo是一款强大易用的开源建站工具，本文将介绍如何在 sealos
 >
 > pg dns: acid-halo-pg.ns-sy32q9p9.svc.cluster.local:5432
 
-
-
-## **步骤2: 在Sealos中部署 Halo**
+## **步骤 2: 在 Sealos 中部署 Halo**
 
 ### **打开 App Launchpad**
 
 ![img.png](./images/img-7.png)
 
-
-
 ![img.png](./images/img-8.png)
-
-
 
 ### 填写配置
 
@@ -60,15 +52,13 @@ Halo是一款强大易用的开源建站工具，本文将介绍如何在 sealos
 
 - 镜像名称设置为 `halohub/halo:2.5`
 
-- CPU 和存储应根据实际情况进行配置，memory需要 `500Mi` 的内存才能启动 Halo，这里可以参考官方prepare：https://docs.halo.run/getting-started/prepare
+- CPU 和存储应根据实际情况进行配置，memory 需要 `500Mi` 的内存才能启动 Halo，这里可以参考官方 prepare：https://docs.halo.run/getting-started/prepare
 
 - 暴露端口应为 `8090`。同时，设置为外网访问将自动为应用配置一个出口域名用于外网访问，同时需要在 Halo 中进行配置该地址
 
-- 环境变量包括数据库配置和其他相关配置。需要注意的是，你需要根据你在[步骤 1](#1) 中设置的用户名、密码和 DNS 来配置数据库连接信息。同时，你还需要为 Halo 配置超级管理员的用户名和密码。
+- 环境变量包括数据库配置和其他相关配置。需要注意的是，你需要根据你在 [步骤 1](#1) 中设置的用户名、密码和 DNS 来配置数据库连接信息。同时，你还需要为 Halo 配置超级管理员的用户名和密码。
 
-  
-
-配置Helo环境变量:
+配置 Helo 环境变量 :
 
 ```Bash
 spring.sql.init.platform=postgresql
@@ -92,7 +82,7 @@ halo.security.initializer.superadminpassword=sealos
 | halo.security.initializer.superadminusername | 初始超级管理员用户名                                     |
 | halo.security.initializer.superadminpassword | 初始超级管理员密码                                       |
 
-数据库的链接格式（这里我们使用postgresql的格式）：
+数据库的链接格式（这里我们使用 postgresql 的格式）：
 
 | 链接方式    | 链接地址格式                                                 | spring.sql.init.platform |
 | ----------- | ------------------------------------------------------------ | ------------------------ |
@@ -101,12 +91,9 @@ halo.security.initializer.superadminpassword=sealos
 | MariaDB     | r2dbc:pool:mariadb://{HOST}:{PORT}/{DATABASE}                | mysql                    |
 | H2 Database | r2dbc:h2:file:///${halo.work-dir}/db/halo-next?MODE=MySQL&DB_CLOSE_ON_EXIT=FALSE | h2                       |
 
-
-
 ### 网络配置
 
 ![img.png](./images/img-9.png)
-
 
 ### 环境变量配置
 
@@ -114,21 +101,19 @@ halo.security.initializer.superadminpassword=sealos
 
 ### **配置持久化存储卷：**
 
-挂载`/root/.halo2`目录来持久化halo数据:
+挂载 `/root/.halo2` 目录来持久化 halo 数据 :
 
 ![img.png](./images/img-11.png)
 
+## 步骤 3: 使用外网访问 Halo
 
-
-## 步骤3: 使用外网访问 Halo
-
-成功启动应用后，即可通过外网访问地址访问Halo进行配置：
+成功启动应用后，即可通过外网访问地址访问 Halo 进行配置：
 
 ![img.png](./images/img-12.png)
 
 ![img.png](./images/img-13.png)
 
-### **初始化Halo：**
+### **初始化 Halo：**
 
 ![img.png](./images/img-14.png)
 
@@ -138,27 +123,17 @@ halo.security.initializer.superadminpassword=sealos
 
 ![img.png](./images/img-16.png)
 
-
-
 ![img.png](./images/img-17.png)
 
-
-
 ![img.png](./images/img-18.png)
-
-
 
 ## FAQ：
 
 ### 忘记密码：
 
-#### 进入launchpad，点击日志查看：
-
-
+#### 进入 launchpad，点击日志查看：
 
 ![img.png](./images/img-19.png)
-
-
 
 ![img.png](./images/img-20.png)
 
