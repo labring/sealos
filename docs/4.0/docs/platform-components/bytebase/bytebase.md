@@ -1,4 +1,4 @@
-# Bytebase on Sealos
+# Bytebase
 
 Bytebase is an open-source database DevOps tool, it's the GitLab for managing databases throughout the application development lifecycle. It offers a web-based workspace for DBAs and Developers to collaborate and manage the database change safely and efficiently.
 
