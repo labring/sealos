@@ -97,8 +97,8 @@ const Pods = ({
       title: 'Cpu',
       key: 'cpu',
       render: (item: PodDetailType) => (
-        <Box h={'35px'} w={'120px'}>
-          <PodLineChart type="green" cpu={item.cpu} data={item.usedCpu.slice(-8)} />
+        <Box h={'45px'} w={'120px'}>
+          <PodLineChart type="green" limit={item.cpu} data={item.usedCpu.slice(-8)} />
         </Box>
       )
     },
@@ -107,7 +107,7 @@ const Pods = ({
       key: 'memory',
       render: (item: PodDetailType) => (
         <Box h={'45px'} w={'120px'}>
-          <PodLineChart type="deepBlue" data={item.usedMemory.slice(-8)} />
+          <PodLineChart type="deepBlue" limit={item.memory} data={item.usedMemory.slice(-8)} />
         </Box>
       )
     },
@@ -185,7 +185,7 @@ const Pods = ({
   ];
 
   return (
-    <Box h={'100%'} py={7}>
+    <Box h={'100%'} py={5}>
       <Flex px={6} alignItems={'center'}>
         <MyIcon name="podList" w={'14px'} color={'myGray.500'} />
         <Box ml={3} flex={1} color={'myGray.600'}>

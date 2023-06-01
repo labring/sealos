@@ -188,8 +188,8 @@ const Logs = ({
             <Box mb={3}>
               CPU ({((pod.usedCpu[pod.usedCpu.length - 1] / pod.cpu) * 100).toFixed(2)}%)
             </Box>
-            <Box h={'60px'} w={'100%'}>
-              <PodLineChart type="cpu" cpu={pod.cpu} data={pod.usedCpu} />
+            <Box h={'80px'} w={'100%'}>
+              <PodLineChart type={'blue'} limit={pod.cpu} data={pod.usedCpu} />
             </Box>
           </Box>
           <Box>
@@ -197,8 +197,8 @@ const Logs = ({
               内存 ({((pod.usedMemory[pod.usedMemory.length - 1] / pod.memory) * 100).toFixed(2)}
               %)
             </Box>
-            <Box h={'60px'} w={'100%'}>
-              <PodLineChart type="memory" data={pod.usedMemory} />
+            <Box h={'80px'} w={'100%'}>
+              <PodLineChart type={'purple'} limit={pod.memory} data={pod.usedMemory} />
             </Box>
           </Box>
         </Grid>

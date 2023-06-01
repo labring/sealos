@@ -17,9 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       });
 
     /* delete all sources */
-    const response = await Promise.allSettled([
-      k8sApp.deleteNamespacedDeployment(name, namespace), // delete deploy
-      k8sApp.deleteNamespacedStatefulSet(name, namespace), // delete stateFuleSet
+    const delDependent = await Promise.allSettled([
       k8sCore.deleteNamespacedService(name, namespace), // delete service
       k8sCore.deleteNamespacedConfigMap(name, namespace), // delete configMap
       k8sCore.deleteNamespacedSecret(name, namespace), // delete secret
@@ -54,7 +52,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     ]);
 
     /* find not 404 error */
-    response.forEach((item) => {
+    delDependent.forEach((item) => {
+      if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
+        throw new Error('删除 App 异常');
+      }
+    });
+
+    // delete deploy and statefulSet
+    const delApp = await Promise.allSettled([
+      k8sApp.deleteNamespacedDeployment(name, namespace), // delete deploy
+      k8sApp.deleteNamespacedStatefulSet(name, namespace) // delete stateFuleSet
+    ]);
+
+    /* find not 404 error */
+    delApp.forEach((item) => {
       if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
         throw new Error('删除 App 异常');
       }

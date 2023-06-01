@@ -1,15 +1,14 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import * as echarts from 'echarts';
-import { printMemory } from '@/utils/tools';
 import { useGlobalStore } from '@/store/global';
 
 const PodLineChart = ({
   type,
-  cpu = 1000000,
+  limit = 1000000,
   data
 }: {
-  type: 'cpu' | 'memory' | 'green' | 'deepBlue';
-  cpu?: number; // cpu limit
+  type: 'blue' | 'deepBlue' | 'green' | 'purple';
+  limit: number;
   data: number[];
 }) => {
   const { screenWidth } = useGlobalStore();
@@ -18,7 +17,7 @@ const PodLineChart = ({
   const myChart = useRef<echarts.ECharts>();
 
   const map = {
-    cpu: {
+    blue: {
       backgroundColor: {
         type: 'linear',
         x: 0,
@@ -37,11 +36,30 @@ const PodLineChart = ({
         ],
         global: false // 缺省为 false
       },
-      lineColor: '#36ADEF',
-      max: 100,
-      formatter: (e: any[]) => `${((e[0].value / cpu) * 100).toFixed(2)}%`
+      lineColor: '#36ADEF'
     },
-    memory: {
+    deepBlue: {
+      backgroundColor: {
+        type: 'linear',
+        x: 0,
+        y: 0,
+        x2: 0,
+        y2: 1,
+        colorStops: [
+          {
+            offset: 0,
+            color: 'rgba(47, 112, 237, 0.42)' // 0% 处的颜色
+          },
+          {
+            offset: 1,
+            color: 'rgba(94, 159, 235, 0)'
+          }
+        ],
+        global: false
+      },
+      lineColor: '#3293EC'
+    },
+    purple: {
       backgroundColor: {
         type: 'linear',
         x: 0,
@@ -60,8 +78,7 @@ const PodLineChart = ({
         ],
         global: false // 缺省为 false
       },
-      lineColor: '#8172D8',
-      formatter: (e: any[]) => printMemory(e[0].value)
+      lineColor: '#8172D8'
     },
     green: {
       backgroundColor: {
@@ -83,108 +100,92 @@ const PodLineChart = ({
         global: false // 缺省为 false
       },
       lineColor: '#00A9A6',
-      max: 100,
-      formatter: (e: any[]) => `${((e[0].value / cpu) * 100).toFixed(2)}%`
-    },
-    deepBlue: {
-      backgroundColor: {
-        type: 'linear',
-        x: 0,
-        y: 0,
-        x2: 0,
-        y2: 1,
-        colorStops: [
-          {
-            offset: 0,
-            color: 'rgba(47, 112, 237, 0.42)' // 0% 处的颜色
-          },
-          {
-            offset: 1,
-            color: 'rgba(94, 159, 235, 0)'
-          }
-        ],
-        global: false
-      },
-      lineColor: '#3293EC',
-      formatter: (e: any[]) => printMemory(e[0].value)
+      max: 100
     }
   };
 
-  const option = useRef({
-    xAxis: {
-      type: 'category',
-      show: false,
-      boundaryGap: false,
-      data: data.map((_, i) => i)
-    },
-    yAxis: {
-      type: 'value',
-      show: false,
-      boundaryGap: false,
-      max: map[type].max
-    },
-    grid: {
-      show: false,
-      left: 5,
-      right: 5,
-      top: 5,
-      bottom: 5
-    },
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'line'
+  const option = useMemo(
+    () => ({
+      xAxis: {
+        type: 'category',
+        show: false,
+        boundaryGap: false,
+        data: data.map((_, i) => i)
       },
-      formatter: map[type].formatter
-    },
-    series: [
-      {
-        data: data,
-        type: 'line',
-        showSymbol: false,
-        smooth: true,
-        animationDuration: 300,
-        animationEasingUpdate: 'linear',
-        areaStyle: {
-          color: map[type].backgroundColor
+      yAxis: {
+        type: 'value',
+        boundaryGap: false,
+        splitNumber: 2,
+        max: 100,
+        min: 0
+      },
+      grid: {
+        show: false,
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 2
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'line'
         },
-        lineStyle: {
-          width: '1',
-          color: map[type].lineColor
-        },
-        itemStyle: {
-          width: 1.5,
-          color: map[type].lineColor
-        },
-        emphasis: {
-          // highlight
-          disabled: true
+        formatter: (e: any[]) => `${e[0]?.value || 0}%`
+      },
+      series: [
+        {
+          data: new Array(data.length).fill(0),
+          type: 'line',
+          showSymbol: false,
+          smooth: true,
+          animationDuration: 300,
+          animationEasingUpdate: 'linear',
+          areaStyle: {
+            color: map[type].backgroundColor
+          },
+          lineStyle: {
+            width: '1',
+            color: map[type].lineColor
+          },
+          itemStyle: {
+            width: 1.5,
+            color: map[type].lineColor
+          },
+          emphasis: {
+            // highlight
+            disabled: true
+          }
         }
-      }
-    ]
-  });
+      ]
+    }),
+    [limit, type]
+  );
 
+  // init chart
   useEffect(() => {
     if (!Dom.current || myChart?.current?.getOption()) return;
     myChart.current = echarts.init(Dom.current);
-    myChart.current && myChart.current.setOption(option.current);
+    myChart.current && myChart.current.setOption(option);
   }, [Dom]);
 
   // data changed, update
   useEffect(() => {
     if (!myChart.current || !myChart?.current?.getOption()) return;
-    const x = option.current.xAxis.data;
-    option.current.xAxis.data = [...x.slice(1), x[x.length - 1] + 1];
-    option.current.series[0].data = data;
-    myChart.current.setOption(option.current);
-  }, [data]);
 
-  // cpu changed, update
+    const uniData = data.map((item) => ((item / limit) * 100).toFixed(2));
+
+    const x = option.xAxis.data;
+    option.xAxis.data = [...x.slice(1), x[x.length - 1] + 1];
+    option.series[0].data = uniData;
+    myChart.current.setOption(option);
+  }, [data, limit]);
+
+  // limit changed, update
   useEffect(() => {
     if (!myChart.current || !myChart?.current?.getOption()) return;
-    option.current.tooltip.formatter = map[type].formatter;
-    myChart.current.setOption(option.current);
-  }, [cpu]);
+    myChart.current.setOption(option);
+  }, [limit, option, type]);
 
   // resize chart
   useEffect(() => {

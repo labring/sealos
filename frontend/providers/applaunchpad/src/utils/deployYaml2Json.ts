@@ -176,9 +176,9 @@ export const json2StatefulSet = (data: AppEditType) => {
                   : [],
               resources: {
                 requests: {
-                  cpu: `${str2Num(Math.floor(data.cpu / 2))}m`,
+                  cpu: `${str2Num(Math.floor(data.cpu * 0.1))}m`,
                   // cpu: '5m',
-                  memory: `${str2Num(Math.floor(data.memory / 2))}Mi`
+                  memory: `${str2Num(Math.floor(data.memory * 0.1))}Mi`
                 },
                 limits: {
                   cpu: `${str2Num(data.cpu)}m`,
@@ -295,8 +295,9 @@ export const json2Ingress = (data: AppEditType) => {
       'nginx.ingress.kubernetes.io/rewrite-target': '/$2'
     },
     WS: {
-      'nginx.ingress.kubernetes.io/proxy-read-timeout': 3600,
-      'nginx.ingress.kubernetes.io/proxy-send-timeout': 3600
+      'nginx.ingress.kubernetes.io/proxy-read-timeout': '3600',
+      'nginx.ingress.kubernetes.io/proxy-send-timeout': '3600',
+      'nginx.ingress.kubernetes.io/backend-protocol': 'WS'
     }
   };
 

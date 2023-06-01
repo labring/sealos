@@ -165,7 +165,7 @@ export const theme = extendTheme({
         color: 'myGray.900',
         fontSize: 'md',
         height: '100%',
-        overflowY: 'auto',
+        overflow: 'overlay',
         fontWeight: 400
       }
     }

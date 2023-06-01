@@ -13,7 +13,7 @@ const Empty = () => {
       flexDirection="column"
       alignItems="center"
       justifyContent="center"
-      bg={'#F7F8FA'}
+      bg={'#F3F4F5'}
     >
       <MyIcon name={'noEvents'} color={'transparent'} width={'80px'} height={'80px'} />
       <Box py={8}>您还没有新建应用</Box>

@@ -194,25 +194,28 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                 </Box>
                 <AccordionIcon />
               </AccordionButton>
-              <AccordionPanel py={0}>
-                {app.envs.map((env) => (
-                  <Flex key={env.key} mb={3}>
-                    <Box flex={'0 0 110px'} w={0} color={'blackAlpha.800'}>
-                      {env.key}
-                    </Box>
-                    <Box
-                      color={'blackAlpha.600'}
-                      flex={'1 0 0'}
-                      textOverflow={'ellipsis'}
-                      overflow={'hidden'}
-                      whiteSpace={'nowrap'}
-                      onClick={() => copyData(env.value)}
-                      cursor={'pointer'}
-                    >
-                      <Tooltip label={env.value}>{env.value}</Tooltip>
-                    </Box>
-                  </Flex>
-                ))}
+              <AccordionPanel pt={0} pb={app.envs.length === 0 ? 0 : 3}>
+                <table className={styles.table}>
+                  <tbody>
+                    {app.envs.map((env) => (
+                      <tr key={env.key}>
+                        <th>{env.key}</th>
+                        <Tooltip label={env.value}>
+                          <th
+                            className={styles.textEllipsis}
+                            style={{
+                              userSelect: 'auto',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => copyData(env.value)}
+                          >
+                            {env.value}
+                          </th>
+                        </Tooltip>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </AccordionPanel>
             </AccordionItem>
           </Accordion>
