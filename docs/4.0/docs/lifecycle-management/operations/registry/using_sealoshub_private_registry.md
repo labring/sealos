@@ -1,3 +1,7 @@
+---
+sidebar_position: 2
+---
+
 # 如何使用 sealos作为私有容器仓库
 
 ## 工作原理
