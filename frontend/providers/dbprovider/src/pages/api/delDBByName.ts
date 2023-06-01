@@ -16,18 +16,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
 
     // del role
-    const delDepend = await Promise.allSettled([
+    await Promise.all([
       k8sAuth.deleteNamespacedRole(name, namespace),
       k8sAuth.deleteNamespacedRoleBinding(name, namespace),
       k8sCore.deleteNamespacedServiceAccount(name, namespace)
     ]);
-
-    /* find not 404 error */
-    delDepend.forEach((item) => {
-      if (item.status === 'rejected' && item?.reason?.body?.code !== 404) {
-        throw new Error('删除 App 异常');
-      }
-    });
 
     // delete cluster
     await k8sCustomObjects.deleteNamespacedCustomObject(
