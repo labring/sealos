@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import React, { useRef, useState } from 'react';
 import Draggable, { DraggableEventHandler } from 'react-draggable';
 import styles from './index.module.scss';
+import { useTranslation } from 'react-i18next';
 
 export default function AppWindow(props: {
   style?: React.CSSProperties;
@@ -21,6 +22,7 @@ export default function AppWindow(props: {
     findAppInfoById,
     maxZIndex
   } = useAppStore();
+  const { t } = useTranslation();
   const wnapp = findAppInfoById(pid);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const dragDom = useRef<HTMLDivElement>(null);
@@ -114,7 +116,7 @@ export default function AppWindow(props: {
               height={'14px'}
             />
             <Box ml="8px" color={wnapp?.menuData?.nameColor} fontSize={'12px'} fontWeight={400}>
-              {wnapp?.name}
+              {t(wnapp?.name)}
             </Box>
           </Flex>
           <Flex ml={'auto'}>

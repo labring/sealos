@@ -42,7 +42,7 @@ export default function Index() {
           textShadow={'0px 1px 2px rgba(0, 0, 0, 0.4)'}
           lineHeight={'140%'}
         >
-          {t('more apps')}
+          {t('More Apps')}
         </Text>
       </Flex>
       <Flex alignItems={'center'}>

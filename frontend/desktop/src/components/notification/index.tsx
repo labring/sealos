@@ -110,7 +110,7 @@ export default function Notification(props: TNotification) {
           >
             <Iconfont iconName="icon-left" color="#239BF2" width={32} height={32} />
           </Box>
-          <Text>{activePage === 'index' ? t('消息中心') : msgDetail?.spec?.title}</Text>
+          <Text>{activePage === 'index' ? t('Message Center') : msgDetail?.spec?.title}</Text>
         </Flex>
         {activePage === 'index' ? (
           <>
@@ -119,14 +119,14 @@ export default function Notification(props: TNotification) {
                 className={clsx(activeTab === 'unread' && styles.active, styles.tab)}
                 onClick={() => setActiveTab('unread')}
               >
-                {t('未读')} ({unread_notes?.length || 0})
+                {t('unread')} ({unread_notes?.length || 0})
               </Box>
               <Box
                 ml={'12px'}
                 className={clsx(activeTab === 'read' && styles.active, styles.tab)}
                 onClick={() => setActiveTab('read')}
               >
-                {t('已读')}
+                {t('Have read')}
               </Box>
               <Text
                 ml={'auto'}
@@ -134,7 +134,7 @@ export default function Notification(props: TNotification) {
                 className={styles.tab}
                 onClick={() => markAllAsRead()}
               >
-                {t('全部已读')}
+                {t('read all')}
               </Text>
             </Flex>
             <Flex pt={'9px'} pb="12px" direction={'column'} h="430px" className={styles.scrollWrap}>
@@ -157,7 +157,7 @@ export default function Notification(props: TNotification) {
                       className={clsx(styles.desc, styles.footer)}
                     >
                       <Text>
-                        {t('来自')}「{item?.spec?.from}」
+                        {t('from')}「{item?.spec?.from}」
                       </Text>
                       <Text>
                         {formatTime((item?.spec?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}
@@ -184,7 +184,7 @@ export default function Notification(props: TNotification) {
               fontWeight="400"
             >
               <Text>
-                {t('来自')}「{msgDetail?.spec?.from}」
+                {t('from')}「{msgDetail?.spec?.from}」
               </Text>
               <Box display={'inline-block'} ml={'auto'}>
                 {formatTime((msgDetail?.spec?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}

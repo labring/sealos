@@ -28,7 +28,7 @@ export default function Index() {
         <Iconfont iconName="icon-apps" width={20} height={20} color="#ffffff"></Iconfont>
       </Box>
       <Text color={'#FFFFFF'} fontSize={'14px'} fontWeight={500}>
-        {t('more apps')}
+        {t('More Apps')}
       </Text>
     </Flex>
   );

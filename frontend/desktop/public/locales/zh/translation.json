@@ -1,14 +1,14 @@
 {
   "Cost Center": "费用中心",
-  "Laf on SealOS": "Laf on SealOS",
+  "Laf on Sealos": "函数计算",
   "App Launchpad": "应用中心",
   "Sealos Document": "文档中心",
   "Terminal": "终端",
-  "more apps": "更多应用",
-  "消息中心": "消息中心",
-  "已读": "已读",
-  "未读": "未读",
-  "全部已读": "全部已读",
-  "退出账号": "退出账号",
-  "来自": "来自"
+  "More Apps": "更多应用",
+  "Message Center": "消息中心",
+  "Have read": "已读",
+  "unread": "未读",
+  "read all": "全部已读",
+  "log out": "退出账号",
+  "from": "来自"
 }

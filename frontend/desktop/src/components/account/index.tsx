@@ -69,7 +69,7 @@ export default function Index({ accountDisclosure }: { accountDisclosure: UseDis
           </Text>
           <Iconfont iconName="icon-logout" width={14} height={14} color="#24282C"></Iconfont>
           <Text ml="6px" color={'#24282C'} fontSize={'12px'} fontWeight={500} onClick={logout}>
-            {t('退出账号')}
+            {t('log out')}
           </Text>
         </Flex>
         <Flex mt="8px" justifyContent={'center'} alignItems={'center'} flexDirection={'column'}>
