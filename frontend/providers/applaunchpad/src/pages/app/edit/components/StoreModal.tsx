@@ -20,6 +20,7 @@ import {
 } from '@chakra-ui/react';
 import { useForm } from 'react-hook-form';
 import MyFormControl from '@/components/FormControl';
+import { useTranslation } from 'next-i18next';
 
 export type StoreType = {
   id?: string;
@@ -43,6 +44,7 @@ const StoreModal = ({
   successCb: (e: StoreType) => void;
   closeCb: () => void;
 }) => {
+  const { t } = useTranslation();
   const type = useMemo(() => (!!defaultValue.id ? 'create' : 'edit'), [defaultValue]);
   const minVal = useMemo(
     () => (isEditStore ? defaultValue.value : 1),
@@ -73,7 +75,7 @@ const StoreModal = ({
           <ModalCloseButton />
           <ModalBody>
             <FormControl mb={5} isInvalid={!!errors.value}>
-              <Box mb={1}>容量</Box>
+              <Box mb={1}>{t('capacity')} </Box>
               <Tooltip label={`容量范围: ${minVal}~20 Gi`}>
                 <NumberInput max={20} min={minVal} step={1} position={'relative'}>
                   <Box
@@ -108,7 +110,7 @@ const StoreModal = ({
               </Tooltip>
             </FormControl>
             <MyFormControl showError errorText={errors.path?.message} pb={0}>
-              <Box mb={1}>挂载路径</Box>
+              <Box mb={1}>{t('mount path')}</Box>
               <Input
                 placeholder="如：/data"
                 title={isEditStore ? '不允许修改挂载路径' : ''}
@@ -132,7 +134,7 @@ const StoreModal = ({
 
           <ModalFooter>
             <Button w={'110px'} variant={'primary'} onClick={handleSubmit(successCb)}>
-              确认
+              {t('Confirm')}
             </Button>
           </ModalFooter>
         </ModalContent>

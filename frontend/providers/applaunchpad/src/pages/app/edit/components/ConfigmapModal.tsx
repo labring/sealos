@@ -16,6 +16,7 @@ import {
 } from '@chakra-ui/react';
 import { useForm } from 'react-hook-form';
 import MyFormControl from '@/components/FormControl';
+import { useTranslation } from 'next-i18next';
 
 export type ConfigMapType = {
   id?: string;
@@ -37,6 +38,7 @@ const ConfigmapModal = ({
   successCb: (e: ConfigMapType) => void;
   closeCb: () => void;
 }) => {
+  const { t } = useTranslation();
   const type = useMemo(() => (!!defaultValue.id ? 'create' : 'edit'), [defaultValue]);
   const {
     register,
@@ -63,7 +65,7 @@ const ConfigmapModal = ({
           <ModalCloseButton />
           <ModalBody>
             <MyFormControl showError errorText={errors.mountPath?.message}>
-              <Box mb={1}>文件名</Box>
+              <Box mb={1}>{t('filename')}</Box>
               <Input
                 placeholder="文件名，如 /etc/kubernetes/admin.conf "
                 {...register('mountPath', {
@@ -82,7 +84,7 @@ const ConfigmapModal = ({
               />
             </MyFormControl>
             <FormControl isInvalid={!!errors.value}>
-              <Box mb={1}>文件值</Box>
+              <Box mb={1}>{t('file value')} </Box>
               <Textarea
                 rows={5}
                 {...register('value', {
@@ -94,7 +96,7 @@ const ConfigmapModal = ({
 
           <ModalFooter>
             <Button w={'110px'} variant={'primary'} onClick={handleSubmit(successCb)}>
-              确认
+              {t('Confirm')}
             </Button>
           </ModalFooter>
         </ModalContent>

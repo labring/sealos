@@ -10,6 +10,7 @@ import {
   Button,
   Textarea
 } from '@chakra-ui/react';
+import { useTranslation } from 'next-i18next';
 
 const EditEnvs = ({
   defaultVal,
@@ -20,6 +21,7 @@ const EditEnvs = ({
   successCb: (e: { key: string; value: string }[]) => void;
   onClose: () => void;
 }) => {
+  const { t } = useTranslation();
   const [inputVal, setInputVal] = useState(defaultVal);
 
   const onSubmit = useCallback(() => {
@@ -53,7 +55,7 @@ const EditEnvs = ({
     <Modal isOpen onClose={onClose}>
       <ModalOverlay />
       <ModalContent maxH={'90vh'} maxW={'90vw'} minW={'600px'} w={'auto'}>
-        <ModalHeader>编辑环境变量</ModalHeader>
+        <ModalHeader>{t('Edit Env Variable')}</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <Textarea
@@ -73,7 +75,7 @@ const EditEnvs = ({
 
         <ModalFooter>
           <Button w={'110px'} variant={'primary'} onClick={onSubmit}>
-            确认
+            {t('Confirm')}
           </Button>
         </ModalFooter>
       </ModalContent>

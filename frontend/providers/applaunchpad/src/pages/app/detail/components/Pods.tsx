@@ -23,6 +23,7 @@ import MyIcon from '@/components/Icon';
 import { PodStatusEnum } from '@/constants/app';
 import { useConfirm } from '@/hooks/useConfirm';
 import MyMenu from '@/components/Menu';
+import { useTranslation } from 'next-i18next';
 
 const LogsModal = dynamic(() => import('./LogsModal'));
 const DetailModel = dynamic(() => import('./PodDetailModal'), { ssr: false });
@@ -36,12 +37,13 @@ const Pods = ({
   loading: boolean;
   appName: string;
 }) => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [logsPodIndex, setLogsPodIndex] = useState<number>();
   const [detailPodIndex, setDetailPodIndex] = useState<number>();
   const { Loading } = useLoading();
   const { openConfirm: openConfirmRestart, ConfirmChild: RestartConfirmChild } = useConfirm({
-    content: '请确认重启 Pod？'
+    content: 'Please confirm to restart the Pod?'
   });
 
   const handleRestartPod = useCallback(
@@ -49,12 +51,12 @@ const Pods = ({
       try {
         await restartPodByName(podName);
         toast({
-          title: `重启 ${podName} 成功`,
+          title: `${t('Restart')}  ${podName} ${t('success')}`,
           status: 'success'
         });
       } catch (err) {
         toast({
-          title: `重启 ${podName} 出现异常`,
+          title: `${t('Restart')}  ${podName} 出现异常`,
           status: 'warning'
         });
         console.log(err);
@@ -123,7 +125,7 @@ const Pods = ({
             px={3}
             onClick={() => setDetailPodIndex(i)}
           >
-            详情
+            {t('Details')}
           </Button>
           <MyMenu
             width={100}
@@ -145,7 +147,7 @@ const Pods = ({
                 child: (
                   <>
                     <MyIcon name={'terminal'} w={'14px'} />
-                    <Box ml={2}>终端</Box>
+                    <Box ml={2}>{t('Terminal')}</Box>
                   </>
                 ),
                 onClick: () => {
@@ -163,7 +165,7 @@ const Pods = ({
                 child: (
                   <>
                     <MyIcon name={'log'} w={'14px'} />
-                    <Box ml={2}>日志</Box>
+                    <Box ml={2}>{t('Log')}</Box>
                   </>
                 ),
                 onClick: () => setLogsPodIndex(i)
@@ -172,7 +174,7 @@ const Pods = ({
                 child: (
                   <>
                     <MyIcon name={'restart'} />
-                    <Box ml={2}>重启</Box>
+                    <Box ml={2}>{t('Restart')} </Box>
                   </>
                 ),
                 onClick: openConfirmRestart(() => handleRestartPod(item.podName))

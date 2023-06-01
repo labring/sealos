@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAppStore } from '@/store/app';
 import { useLoading } from '@/hooks/useLoading';
 import { useRouter } from 'next/router';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 export default function Home() {
   const router = useRouter();
@@ -41,4 +42,12 @@ export default function Home() {
       <Loading loading={isLoading} />
     </>
   );
+}
+
+export async function getStaticProps({ locale }: { locale: any }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale))
+    }
+  };
 }
