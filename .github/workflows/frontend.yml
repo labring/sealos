@@ -6,36 +6,36 @@ on:
   workflow_dispatch:
     inputs:
       push_image:
-        description: 'Push image'
+        description: "Push image"
         required: false
         type: boolean
         default: false
       push_image_tag:
-        description: 'Push image tag'
-        default: 'dev'
+        description: "Push image tag"
+        default: "dev"
         required: false
         type: string
   push:
-    branches: ['main']
+    branches: ["main"]
     paths:
-      - 'frontend/desktop/**'
-      - 'frontend/providers/**'
-      - '.github/workflows/frontend.yml'
-      - '!**/*.md'
-      - '!**/*.yaml'
+      - "frontend/desktop/**"
+      - "frontend/providers/**"
+      - ".github/workflows/frontend.yml"
+      - "!**/*.md"
+      - "!**/*.yaml"
   pull_request:
-    branches: ['*']
+    branches: ["*"]
     paths:
-      - 'frontend/desktop/**'
-      - 'frontend/providers/**'
-      - '.github/workflows/frontend.yml'
-      - '!**/*.md'
-      - '!**/*.yaml'
+      - "frontend/desktop/**"
+      - "frontend/providers/**"
+      - ".github/workflows/frontend.yml"
+      - "!**/*.md"
+      - "!**/*.yaml"
 
 env:
   # Common versions
-  GO_VERSION: '1.20'
-  DEFAULT_OWNER: 'labring'
+  GO_VERSION: "1.20"
+  DEFAULT_OWNER: "labring"
 
 jobs:
   image-build:
@@ -49,6 +49,7 @@ jobs:
             providers/bytebase,
             providers/imagehub,
             providers/terminal,
+            providers/dbprovider,
             desktop,
           ]
     steps:
@@ -128,6 +129,7 @@ jobs:
             providers/bytebase,
             providers/imagehub,
             providers/terminal,
+            providers/dbprovider,
             desktop,
           ]
     steps:
@@ -202,4 +204,4 @@ jobs:
           repository: labring-actions/cluster-image
           body: |
             /imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ env.MODULE_NAME }}-frontend:${{ steps.prepare.outputs.tag_name }}
-          token: '${{ secrets.GH_PAT }}'
+          token: "${{ secrets.GH_PAT }}"
