@@ -11,7 +11,6 @@ import { useConfirm } from '@/hooks/useConfirm';
 import throttle from 'lodash/throttle';
 import { useGlobalStore } from '@/store/global';
 import { useLoading } from '@/hooks/useLoading';
-import { getServiceEnv, SEALOS_DOMAIN } from '@/store/static';
 
 import 'nprogress/nprogress.css';
 import 'react-day-picker/dist/style.css';
@@ -33,7 +32,7 @@ const queryClient = new QueryClient({
   }
 });
 
-export default function App({ Component, pageProps }: AppProps) {
+export default function App({ Component, pageProps, domain }: AppProps & { domain: string }) {
   const { setScreenWidth, loading } = useGlobalStore();
   const { Loading } = useLoading();
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -42,7 +41,6 @@ export default function App({ Component, pageProps }: AppProps) {
   });
 
   useEffect(() => {
-    getServiceEnv();
     NProgress.start();
     const response = createSealosApp();
 
@@ -55,7 +53,7 @@ export default function App({ Component, pageProps }: AppProps) {
         console.log('App is not running in desktop');
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
           openConfirm(() => {
-            window.open(`https://${SEALOS_DOMAIN}`, '_self');
+            window.open(`https://${domain}`, '_self');
           })();
         }
       }
@@ -63,7 +61,7 @@ export default function App({ Component, pageProps }: AppProps) {
     NProgress.done();
 
     return response;
-  }, [openConfirm]);
+  }, [openConfirm, domain]);
 
   // add resize event
   useEffect(() => {
@@ -98,3 +96,7 @@ export default function App({ Component, pageProps }: AppProps) {
     </>
   );
 }
+
+App.getInitialProps = async () => {
+  return { domain: process.env.SEALOS_DOMAIN || 'cloud.sealos.io' };
+};
