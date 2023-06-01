@@ -530,3 +530,16 @@ export const json2Backup = ({
   };
   return yaml.dump(template);
 };
+
+export const limitRangeYaml = `
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: ${getUserNamespace()}
+spec:
+  limits:
+    - default:
+        cpu: 50m
+        memory: 64Mi
+      type: Container
+`
