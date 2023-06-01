@@ -79,7 +79,7 @@ func GetAuthInfo(sys *types2.SystemContext) (map[string]types.AuthConfig, error)
 	auths := make(map[string]types.AuthConfig, 0)
 
 	for domain, cred := range creds {
-		logger.Debug("GetAuthInfo getCredentials domain: %s", domain, cred.Username)
+		logger.Debug("GetAuthInfo getCredentials domain: %s, username: %s", domain, cred.Username)
 		reg, err := NewRegistry(domain, ToAuthConfig(cred))
 		if err == nil {
 			auths[domain] = types.AuthConfig{

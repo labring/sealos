@@ -70,7 +70,7 @@ sealos inspect --type image imageWithTag
 
 以下是 `sealos inspect` 命令的一些常用参数：
 
-- `-f, --format`：使用 Go 模板格式显示输出结果。
+- `-f, --format`：使用 Go 模板格式显示输出结果。**模板结构代码[InspectOutput](https://github.com/labring/sealos/blob/f8a17787822714c5fdf21f2a75cc86fadb88adfa/pkg/buildah/inspect.go#L189)**
 
 - `-t, --type`：指定查看的类型，可以是容器（`container`）或镜像（`image`）。
 
