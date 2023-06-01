@@ -38,6 +38,7 @@ const PodLineChart = ({
         global: false // 缺省为 false
       },
       lineColor: '#36ADEF',
+      max: 100,
       formatter: (e: any[]) => `${((e[0].value / cpu) * 100).toFixed(2)}%`
     },
     memory: {
@@ -82,6 +83,7 @@ const PodLineChart = ({
         global: false // 缺省为 false
       },
       lineColor: '#00A9A6',
+      max: 100,
       formatter: (e: any[]) => `${((e[0].value / cpu) * 100).toFixed(2)}%`
     },
     deepBlue: {
@@ -118,7 +120,8 @@ const PodLineChart = ({
     yAxis: {
       type: 'value',
       show: false,
-      boundaryGap: false
+      boundaryGap: false,
+      max: map[type].max
     },
     grid: {
       show: false,
