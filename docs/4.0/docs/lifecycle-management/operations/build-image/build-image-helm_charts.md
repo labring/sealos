@@ -187,7 +187,7 @@ root@ubuntu:~# helm -n nginx ls
 
 默认情况下，在构建镜像时，sealos 只解析默认的 values.yml 文件，但是你也可以为 sealos 提供自定义的 values.yaml 文件。
 
-自定义 values 文件必须放在与你的 Chart 相同的目录中，并且必须以 `<chart-name>.values.yaml` 的形式命名，例如 `loki-stack.values.yaml`。
+**自定义 values 文件必须放在与你的 Chart 相同的目录中，并且必须以 `<chart-name>.values.yaml` 的形式命名，例如 `loki-stack.values.yaml`。**
 
 ```shell
 .

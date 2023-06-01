@@ -32,3 +32,10 @@ sealos exec -r master,node "image-cri-shim -v"
 > function "semverCompare" not defined
 
 升级到 sealos 4.1.4+
+
+> 如何开启buildah的debug日志
+
+```shell
+BUILDAH_LOG_LEVEL=debug sealos images
+```
+
