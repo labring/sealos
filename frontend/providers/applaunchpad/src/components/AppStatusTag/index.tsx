@@ -3,12 +3,22 @@ import { Flex, Box } from '@chakra-ui/react';
 import type { AppStatusMapType } from '@/types/app';
 import { appStatusMap } from '@/constants/app';
 
-const AppStatusTag = ({ status, isPause }: { status: AppStatusMapType; isPause: boolean }) => {
+const AppStatusTag = ({
+  status,
+  isPause,
+  showBorder = false
+}: {
+  status: AppStatusMapType;
+  isPause: boolean;
+  showBorder: boolean;
+}) => {
   const statusMap = useMemo(() => (isPause ? appStatusMap.pause : status), [isPause, status]);
   return (
     <Flex
       color={statusMap.color}
       backgroundColor={statusMap.backgroundColor}
+      border={showBorder ? '1px solid' : 'none'}
+      borderColor={status.color}
       py={2}
       px={3}
       borderRadius={'24px'}

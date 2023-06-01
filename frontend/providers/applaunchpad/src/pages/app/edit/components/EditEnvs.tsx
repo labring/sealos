@@ -52,18 +52,21 @@ const EditEnvs = ({
   return (
     <Modal isOpen onClose={onClose}>
       <ModalOverlay />
-      <ModalContent maxW={'600px'}>
+      <ModalContent maxH={'90vh'} maxW={'90vw'} minW={'600px'} w={'auto'}>
         <ModalHeader>编辑环境变量</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <Textarea
             h={'350px'}
+            maxH={'100%'}
             value={inputVal}
-            resize={'none'}
+            resize={'both'}
             bg={'myWhite.300'}
             placeholder={
               '环境变量，可用冒号或等号，换行分隔。例如:\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n- env1=test'
             }
+            overflowX={'auto'}
+            whiteSpace={'nowrap'}
             onChange={(e) => setInputVal(e.target.value)}
           />
         </ModalBody>

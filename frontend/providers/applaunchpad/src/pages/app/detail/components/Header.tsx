@@ -105,10 +105,10 @@ const Header = ({
       <Button variant={'unstyled'} onClick={router.back} lineHeight={1}>
         <MyIcon name="arrowLeft" />
       </Button>
-      <Box ml={8} mr={3} fontSize={'3xl'} fontWeight={'bold'}>
+      <Box ml={5} mr={3} fontSize={'3xl'} fontWeight={'bold'}>
         {appName}
       </Box>
-      <AppStatusTag status={appStatus} isPause={isPause} />
+      <AppStatusTag status={appStatus} isPause={isPause} showBorder />
       {!isLargeScreen && (
         <Box mx={4}>
           <Button

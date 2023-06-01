@@ -653,12 +653,13 @@ const Form = ({
                     <Box
                       bg={'myGray.100'}
                       w={'46px'}
-                      h={'28px'}
-                      lineHeight={'28px'}
+                      py={'2px'}
                       ml={3}
                       fontSize={'sm'}
                       borderRadius={'20px'}
                       color={'myGray.600'}
+                      border={'1px solid'}
+                      borderColor={'myGray.200'}
                     >
                       选填
                     </Box>
@@ -688,7 +689,7 @@ const Form = ({
 
                   <Divider my={'24px'} bg={'myGray.100'} />
 
-                  <Box w={'320px'}>
+                  <Box w={'100%'}>
                     <Box className={styles.formSecondTitle}>环境变量</Box>
                     <table className={styles.table}>
                       <tbody>
