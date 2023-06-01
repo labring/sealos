@@ -16,10 +16,8 @@ export const getDBSecret = (data: { dbName: string; dbType: DBType }) =>
   GET<SecretResponse>(`/api/getSecretByName`, data);
 export const delDBByName = (name: string) => DELETE('/api/delDBByName', { name });
 
-export const applyYamlList = (yamlList: string[], type: 'create' | 'replace') =>
+export const applyYamlList = (yamlList: string[], type: 'create' | 'replace'|'update') =>
   POST('/api/applyYamlList', { yamlList, type });
-export const updateYamlList = (yamlList: string[]) =>
-  POST('/api/applyYamlList', { yamlList, type: 'update' });
 
 export const getPodsByDBName = (name: string) =>
   GET('/api/pod/getPodsByDBName', { name }).then((res) => res.map(adaptPod));
@@ -39,7 +37,7 @@ export const restartPodByName = (podName: string) => GET(`/api/pod/restartPod?po
 /* db operation */
 export const restartDB = (data: { dbName: string; dbType: DBType }) => {
   const yaml = json2Restart(data);
-  return updateYamlList([yaml]);
+  return applyYamlList([yaml],'update');
 };
 
 export const pauseDBByName = (data: { dbName: string; dbType: DBType }) => {
@@ -47,7 +45,7 @@ export const pauseDBByName = (data: { dbName: string; dbType: DBType }) => {
     ...data,
     type: 'Stop'
   });
-  return updateYamlList([yaml]);
+  return applyYamlList([yaml],'update');
 };
 
 export const startDBByName = (data: { dbName: string; dbType: DBType }) => {
@@ -55,5 +53,5 @@ export const startDBByName = (data: { dbName: string; dbType: DBType }) => {
     ...data,
     type: 'Start'
   });
-  return updateYamlList([yaml]);
+  return applyYamlList([yaml],'update');
 };

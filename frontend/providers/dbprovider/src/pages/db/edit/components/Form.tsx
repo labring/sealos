@@ -256,7 +256,7 @@ const Form = ({
                   setVal={(e) => {
                     setValue('cpu', CpuSlideMarkList[e].value);
                   }}
-                  max={7}
+                  max={CpuSlideMarkList.length-1}
                   min={0}
                   step={1}
                 />
@@ -272,7 +272,7 @@ const Form = ({
                   setVal={(e) => {
                     setValue('memory', MemorySlideMarkList[e].value);
                   }}
-                  max={8}
+                  max={MemorySlideMarkList.length-1}
                   min={0}
                   step={1}
                 />

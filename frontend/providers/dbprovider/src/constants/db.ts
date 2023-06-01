@@ -1,4 +1,5 @@
 import { DBEditType, DBDetailType, PodDetailType, BackupStatusMapType } from '@/types/db';
+import { CpuSlideMarkList,MemorySlideMarkList } from './editApp';
 
 export const crLabelKey = 'sealos-db-provider-cr';
 
@@ -177,8 +178,8 @@ export const defaultDBEditValue: DBEditType = {
   dbVersion: DBVersionMap[DBTypeEnum.postgresql][0].id,
   dbName: 'dbname',
   replicas: 1,
-  cpu: 100,
-  memory: 64,
+  cpu: CpuSlideMarkList[0].value,
+  memory: MemorySlideMarkList[0].value,
   storage: 1
 };
 
