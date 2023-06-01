@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/labring/sealos/pkg/buildah"
@@ -94,9 +95,11 @@ func init() {
 		},
 	}
 	groups.Add(rootCmd)
-	filters := []string{}
+	filters := []string{"options"}
 	templates.ActsAsRootCommand(rootCmd, filters, groups...)
+
 	rootCmd.AddCommand(system.NewEnvCmd(constants.AppName))
+	rootCmd.AddCommand(optionsCommand(os.Stdout))
 }
 
 func setRequireBuildahAnnotation(cmd *cobra.Command) {
@@ -124,4 +127,19 @@ func errExit(err error) {
 		logger.Error(err)
 		os.Exit(1)
 	}
+}
+
+func optionsCommand(out io.Writer) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "options",
+		Short: "Print the list of flags inherited by all commands",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Usage()
+		},
+	}
+	cmd.SetOut(out)
+	cmd.SetErr(out)
+
+	templates.UseOptionsTemplates(cmd)
+	return cmd
 }
