@@ -23,8 +23,8 @@ export default function Index(props: any) {
       right={'48px'}
       cursor={'pointer'}
     >
-      {/* notification */}
-      <Flex
+      {/* i18n */}
+      {/* <Flex
         w="32px"
         h="32px"
         borderRadius={'50%'}
@@ -37,7 +37,7 @@ export default function Index(props: any) {
         onClick={() => i18n.changeLanguage(i18n.language === 'en' ? 'zh' : 'en')}
       >
         {i18n.language}
-      </Flex>
+      </Flex> */}
       {/* notification */}
       <Flex
         w="32px"

@@ -182,7 +182,14 @@ export default function AppWindow(props: {
             </Box>
           </Flex>
         </Flex>
-
+        {/* app switch mask */}
+        <div
+          className={styles.appMask}
+          onClick={() => {
+            setToHighestLayerById(pid);
+          }}
+          style={{ pointerEvents: wnapp.zIndex !== maxZIndex ? 'unset' : 'none' }}
+        ></div>
         {/* app window content */}
         <Flex flexGrow={1} overflow={'hidden'} borderRadius={'0 0 6px 6px'} position={'relative'}>
           {/* Drag necessary to improve fluency */}
@@ -195,14 +202,6 @@ export default function AppWindow(props: {
               zIndex={8888}
             ></Box>
           )}
-          {/* app switch mask */}
-          <div
-            className={styles.appMask}
-            onClick={() => {
-              setToHighestLayerById(pid);
-            }}
-            style={{ pointerEvents: wnapp.zIndex !== maxZIndex ? 'unset' : 'none' }}
-          ></div>
           {props.children}
         </Flex>
       </div>
