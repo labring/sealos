@@ -66,7 +66,7 @@ const EditEnvs = ({
               '环境变量，可用冒号或等号，换行分隔。例如:\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n- env1=test'
             }
             overflowX={'auto'}
-            whiteSpace={'nowrap'}
+            whiteSpace={inputVal === '' ? 'pre' : 'nowrap'}
             onChange={(e) => setInputVal(e.target.value)}
           />
         </ModalBody>
