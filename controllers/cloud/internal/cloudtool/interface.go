@@ -29,8 +29,7 @@ import (
 )
 
 type Cloud interface {
-	setCloudArgs(method string, url string) interface{}
-	createRequest(interface{}) (*http.Request, error)
+	createRequest(method string, url string, content interface{}) (*http.Request, error)
 	getResponse(*http.Request) (*http.Response, error)
 	readResponse(*http.Response) ([]byte, error)
 }
@@ -39,12 +38,11 @@ type HandlerCR interface {
 	produceCR(map[string][]string, []byte) []ntf.Notification
 }
 
-func CloudPull(cloud Cloud, method string, url string) ([]byte, error) {
-	content := cloud.setCloudArgs(method, url)
+func CloudPull(cloud Cloud, method string, url string, content interface{}) ([]byte, error) {
 	var req *http.Request
 	var resp *http.Response
 	var err error
-	if req, err = cloud.createRequest(content); err != nil {
+	if req, err = cloud.createRequest(method, url, content); err != nil {
 		return nil, err
 	}
 	if resp, err = cloud.getResponse(req); err != nil {

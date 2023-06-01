@@ -37,18 +37,16 @@ type CloudRequest struct {
 	Timestamp int64 `json:"Timestamp"`
 }
 
-type CloudClient struct {
-	method    string
-	url       string
+type ClientPull struct {
 	timestamp int64
 }
 
-type handlerFunc func(*CloudClient, *ntf.Notification, string, CloudResponse)
+type handlerFunc func(*ClientPull, *ntf.Notification, string, CloudResponse)
 
 var handlerMap = map[string]handlerFunc{
-	"ns-":   (*CloudClient).processNS,
-	"adm-":  (*CloudClient).processADM,
-	"root-": (*CloudClient).processROOT,
+	"ns-":   (*ClientPull).processNS,
+	"adm-":  (*ClientPull).processADM,
+	"root-": (*ClientPull).processROOT,
 }
 
 func parse(content interface{}) ([]byte, error) {
@@ -60,7 +58,7 @@ func parse(content interface{}) ([]byte, error) {
 	return JSONString, err
 }
 
-func (cc *CloudClient) createRequest(content interface{}) (*http.Request, error) {
+func (cc *ClientPull) createRequest(method string, url string, content interface{}) (*http.Request, error) {
 	var err error
 	var body []byte
 	var req *http.Request
@@ -68,7 +66,7 @@ func (cc *CloudClient) createRequest(content interface{}) (*http.Request, error)
 		logger.Error("failed to generate a new Http Reaquest", err)
 		return nil, err
 	}
-	req, err = http.NewRequest(cc.method, cc.url, bytes.NewBuffer(body))
+	req, err = http.NewRequest(method, url, bytes.NewBuffer(body))
 	if err != nil {
 		logger.Error("CloudClient can't generate a new Http Reaquest ", err)
 		return nil, err
@@ -77,7 +75,7 @@ func (cc *CloudClient) createRequest(content interface{}) (*http.Request, error)
 	return req, nil
 }
 
-func (cc *CloudClient) getResponse(req *http.Request) (*http.Response, error) {
+func (cc *ClientPull) getResponse(req *http.Request) (*http.Response, error) {
 	if req == nil {
 		logger.Info("no http request")
 		return nil, errors.New("no http request")
@@ -92,7 +90,7 @@ func (cc *CloudClient) getResponse(req *http.Request) (*http.Response, error) {
 	return resp, nil
 }
 
-func (cc *CloudClient) do(req *http.Request) (*http.Response, error) {
+func (cc *ClientPull) do(req *http.Request) (*http.Response, error) {
 	defer req.Body.Close()
 	var err error
 	var resp *http.Response
@@ -104,7 +102,7 @@ func (cc *CloudClient) do(req *http.Request) (*http.Response, error) {
 	return resp, nil
 }
 
-func (cc *CloudClient) readResponse(resp *http.Response) ([]byte, error) {
+func (cc *ClientPull) readResponse(resp *http.Response) ([]byte, error) {
 	defer resp.Body.Close()
 	var err error
 	var body []byte
@@ -116,15 +114,8 @@ func (cc *CloudClient) readResponse(resp *http.Response) ([]byte, error) {
 	return body, nil
 }
 
-func (cc *CloudClient) setCloudArgs(method string, url string) interface{} {
-	cc.method = method
-	cc.url = url
-	content := CloudRequest{Timestamp: cc.timestamp}
-	return content
-}
-
 // produce the crs data
-func (cc *CloudClient) produceCR(namespaceGroup map[string][]string, resp []byte) []ntf.Notification {
+func (cc *ClientPull) produceCR(namespaceGroup map[string][]string, resp []byte) []ntf.Notification {
 	var events []CloudResponse
 	var crs []ntf.Notification
 	if err := json.Unmarshal(resp, &events); err != nil {
@@ -142,7 +133,7 @@ func (cc *CloudClient) produceCR(namespaceGroup map[string][]string, resp []byte
 	return crs
 }
 
-func (cc *CloudClient) buildCR(prefix string, namespaces []string, event CloudResponse, crs *[]ntf.Notification) {
+func (cc *ClientPull) buildCR(prefix string, namespaces []string, event CloudResponse, crs *[]ntf.Notification) {
 	addNameNamespace := handlerMap[prefix]
 	for _, namespace := range namespaces {
 		if namespace == "" {
@@ -163,22 +154,26 @@ func specCopy(notification *ntf.Notification, event CloudResponse) {
 	notification.Spec.Importance = event.Importance
 }
 
-func (cc *CloudClient) processNS(notification *ntf.Notification, namespaceName string, event CloudResponse) {
+func (cc *ClientPull) processNS(notification *ntf.Notification, namespaceName string, event CloudResponse) {
 	prefix := "ntf-"
 	//metadata
 	notification.Namespace = namespaceName
 	notification.Name = prefix + event.ID
 }
-func (cc *CloudClient) processADM(notification *ntf.Notification, namespaceName string, event CloudResponse) {
+func (cc *ClientPull) processADM(notification *ntf.Notification, namespaceName string, event CloudResponse) {
 	prefix := "ntf-"
 	//metadata
 	notification.Namespace = namespaceName
 	notification.Name = prefix + event.ID
 }
-func (cc *CloudClient) processROOT(_ *ntf.Notification, _ string, _ CloudResponse) {
+func (cc *ClientPull) processROOT(_ *ntf.Notification, _ string, _ CloudResponse) {
 	logger.Info("no logic for root-user")
 }
 
-func (cc *CloudClient) SetTime(time int64) {
+func (cc *ClientPull) SetTime(time int64) {
 	cc.timestamp = time
+}
+
+func GetTime(cc *ClientPull) int64 {
+	return cc.timestamp
 }

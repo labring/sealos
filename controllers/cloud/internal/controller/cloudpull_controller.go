@@ -26,13 +26,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // CloudClientReconciler reconciles a CloudClient object
 type CloudPullReconciler struct {
 	client.Client
-	Cloud    cloud.CloudClient
+	Cloud    cloud.ClientPull
 	Scheme   *runtime.Scheme
 	Strategy cloudclientv1.CloudClient
 }
@@ -52,8 +51,7 @@ type CloudPullReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *CloudPullReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	lgr := log.FromContext(ctx)
-	lgr.Info("enter CloudClientReconciler")
+	logger.Info("enter CloudClientReconciler")
 	if err := r.Client.Get(ctx, req.NamespacedName, &r.Strategy); err != nil {
 		logger.Error("failed to get cloudpull strategy")
 		return ctrl.Result{}, err
@@ -62,10 +60,11 @@ func (r *CloudPullReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	cycletime := time.Duration(r.Strategy.Spec.CycleTime) * time.Second
 	cloudURL := r.Strategy.Spec.CloudURL
 	logger.Info("cycletime: ", cycletime)
+	content := cloud.CloudRequest{Timestamp: cloud.GetTime(&r.Cloud)}
 	var cloudreq []byte
 	var err error
 	// pull notification from Cloud
-	if cloudreq, err = cloud.CloudPull(&r.Cloud, "POST", cloudURL); err != nil {
+	if cloudreq, err = cloud.CloudPull(&r.Cloud, "POST", cloudURL, content); err != nil {
 		return ctrl.Result{}, err
 	}
 	logger.Info("success to pull from cloud")
