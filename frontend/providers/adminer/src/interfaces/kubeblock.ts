@@ -34,7 +34,7 @@ const clusterTypeMap: Record<string, KubeBlockClusterType> = {
     driver: 'mysql'
   },
   mongodb: {
-    driver: 'mongodb'
+    driver: 'mongo'
   }
 };
 
