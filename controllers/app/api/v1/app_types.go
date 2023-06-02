@@ -40,8 +40,8 @@ const (
 	DisplayHidden DisplayType = "hidden"
 )
 
-// AppSpec defines the desired state of App
-type AppSpec struct {
+// AppMeta Base Information
+type AppMeta struct {
 	Name string `json:"name,omitempty"`
 	Icon string `json:"icon,omitempty"`
 	Type string `json:"type,omitempty"`
@@ -52,6 +52,14 @@ type AppSpec struct {
 
 	Data     Data     `json:"data,omitempty"`
 	MenuData MenuData `json:"menuData,omitempty"`
+}
+
+// AppSpec defines the desired state of App
+type AppSpec struct {
+	AppMeta `json:",inline"`
+
+	//+kubebuilder:validation:Optional
+	I18N *map[string]AppMeta `json:"i18n,omitempty"`
 }
 
 // AppStatus defines the observed state of App
