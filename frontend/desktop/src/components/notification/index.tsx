@@ -119,14 +119,14 @@ export default function Notification(props: TNotification) {
                 className={clsx(activeTab === 'unread' && styles.active, styles.tab)}
                 onClick={() => setActiveTab('unread')}
               >
-                {t('unread')} ({unread_notes?.length || 0})
+                {t('Unread')} ({unread_notes?.length || 0})
               </Box>
               <Box
                 ml={'12px'}
                 className={clsx(activeTab === 'read' && styles.active, styles.tab)}
                 onClick={() => setActiveTab('read')}
               >
-                {t('Have read')}
+                {t('Have Read')}
               </Box>
               <Text
                 ml={'auto'}
