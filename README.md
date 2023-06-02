@@ -25,30 +25,31 @@ A Cloud Operating System designed for managing cloud-native applications
 
 ![](/docs/4.0/img/sealos-desktop.webp)
 
-> [Docs](https://www.sealos.io/docs/Intro) | [简体中文](README_zh.md) ｜ [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
+> [Docs](https://sealos.io/en/docs/Intro) | [简体中文](README_zh.md) ｜ [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
 
+Sealos is a cloud operating system distribution based on the Kubernetes kernel. It adopts a cloud-native approach, discarding traditional cloud computing architecture, and shifting towards a new architecture with Kubernetes as the cloud kernel. This allows enterprises to use the cloud as effortlessly as they would use a personal computer.
 
-## Deploy your app on Sealos
+## 🚀 Deploy your app on Sealos
 
 [Try online demo](https://cloud.sealos.io)
 
-Deploy Nginx on Sealos in 30 seconds.
+🕓 Deploy Nginx on Sealos in 30 seconds.
 
 ![](/docs/4.0/img/app-launchpad.png)
 
-Some Screen Shots of Sealos:
+🔍 Some Screen Shots of Sealos:
 
 <div align="center">
 
 | Terminal | App Launchpad |
 | :---: | :---: |
 | ![](/docs/4.0/img/terminal.jpg) | ![](/docs/4.0/img/app-launchpad-1.jpg) |
-| PostgreSQL | Bytebase |
-| ![](/docs/4.0/img/postgresql.webp) | ![](/docs/4.0/img/bytebase.webp) |
+| Database | Serverless |
+| ![](/docs/4.0/img/database.webp) | ![](/docs/4.0/img/laf.webp) |
 
 </div>
 
-## Core features
+## 💡 Core features
 
 ✅ **Instant Kubernetes Usage Upon Login**: There is no need to install a Kubernetes cluster. Sealos provides the ability for **multiple tenants** to share a Kubernetes on the public internet. It also offers strong  isolation capabilities to ensure the data safety of each tenant.
 
@@ -63,24 +64,24 @@ Some Screen Shots of Sealos:
 ✅ **User-Friendly Operating Experience**: Sealos has an in-built terminal that supports command-line operation of the Kubernetes cluster, and also has in-built App Launchpad, allowing you to have a good user experience on Sealos, regardless of your familiarity with cloud-native  technology.
 
 
-## Community & support
+## 🏘️ Community & support
 
-+ Visit the [Sealos website](https://sealos.io/) for full documentation and useful links.
-+ Join our [Discord server](https://discord.gg/eHyXHtSE) is to chat with Sealos developers and other Sealos users. This is a good place to learn about Sealos and Kubernetes, ask questions, and share your experiences.
-+ Tweet at @sealosio on [Twitter](https://twitter.com/sealosio) and follow us.
-+ Create [GitHub Issues](https://github.com/labring/sealos/issues/new/choose) for bug reports and feature requests.
++ 🌐 Visit the [Sealos website](https://sealos.io/) for full documentation and useful links.
++ 💬 Join our [Discord server](https://discord.gg/eHyXHtSE) is to chat with Sealos developers and other Sealos users. This is a good place to learn about Sealos and Kubernetes, ask questions, and share your experiences.
++ 🐦 Tweet at @sealosio on [Twitter](https://twitter.com/sealosio) and follow us.
++ 🐞 Create [GitHub Issues](https://github.com/labring/sealos/issues/new/choose) for bug reports and feature requests.
 
-## Roadmap
+## 🚧 Roadmap
 
 Sealos maintains a [public roadmap](https://github.com/orgs/labring/projects/4/views/9). It gives a a high-level view of the main priorities for the project, the maturity of different features and projects, and how to influence the project direction.
 
-## Contributing & Development
+## 👩‍💻 Contributing & Development
 
 Have a look through [existing Issues](https://github.com/labring/sealos/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc) and [Pull Requests](https://github.com/labring/sealos/pulls?q=is%3Apr+is%3Aopen+sort%3Aupdated-desc) that you could help with. If you'd like to request a feature or report a bug, please [create a GitHub Issue](https://github.com/labring/sealos/issues/new/choose) using one of the templates provided.
 
-[See contribution guide →](./CONTRIBUTING.md)
+📖 [See contribution guide →](./CONTRIBUTING.md)
 
-[See development guide →](./DEVELOPGUIDE.md)
+🔧 [See development guide →](./DEVELOPGUIDE.md)
 
 ## Links
 
