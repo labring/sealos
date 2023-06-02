@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { Flex, Box } from '@chakra-ui/react';
 import type { YamlItemType } from '@/types';
-import { json2CreateCluster, json2Account,limitRangeYaml } from '@/utils/json2Yaml';
+import { json2CreateCluster, json2Account, limitRangeYaml } from '@/utils/json2Yaml';
 import { useForm } from 'react-hook-form';
 import { editModeMap } from '@/constants/editApp';
 import { defaultDBEditValue } from '@/constants/db';
@@ -85,8 +85,8 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const submitSuccess = useCallback(async () => {
     setIsLoading(true);
     try {
-      !isEdit && await applyYamlList([limitRangeYaml],'create')
-    } catch (err) { }
+      !isEdit && (await applyYamlList([limitRangeYaml], 'create'));
+    } catch (err) {}
     try {
       const data = yamlList.map((item) => item.value);
 
@@ -96,13 +96,13 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         title: applySuccess,
         status: 'success'
       });
-      router.back();
+      router.replace(`/db/detail?name=${formHook.getValues('dbName')}`);
     } catch (error) {
       console.error(error);
       setErrorMessage(JSON.stringify(error));
     }
     setIsLoading(false);
-  }, [applySuccess, isEdit, router, setIsLoading, toast, yamlList]);
+  }, [applySuccess, formHook, isEdit, router, setIsLoading, toast, yamlList]);
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {

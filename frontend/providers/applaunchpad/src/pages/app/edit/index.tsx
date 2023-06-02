@@ -128,11 +128,10 @@ const EditApp = ({ appName }: { appName?: string }) => {
       const data = yamlList.map((item) => item.value);
       if (appName) {
         await putApp(data, appName);
-        router.back();
       } else {
         await postDeployApp(data);
-        router.push(`/apps`);
       }
+      router.replace(`/app/detail?name=${formHook.getValues('appName')}`);
       toast({
         title: applySuccess,
         status: 'success'
@@ -142,7 +141,7 @@ const EditApp = ({ appName }: { appName?: string }) => {
       setErrorMessage(JSON.stringify(error));
     }
     setIsLoading(false);
-  }, [applySuccess, appName, router, setIsLoading, toast, yamlList]);
+  }, [setIsLoading, yamlList, appName, router, formHook, toast, applySuccess]);
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {

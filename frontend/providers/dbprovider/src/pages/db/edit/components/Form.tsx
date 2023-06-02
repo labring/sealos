@@ -238,11 +238,12 @@ const Form = ({
                     disabled={isEdit}
                     title={isEdit ? '不允许修改应用名称' : ''}
                     autoFocus={true}
+                    placeholder={'字母开头，仅能包含小写字母、数字和 -'}
                     {...register('dbName', {
                       required: '应用名称不能为空',
                       pattern: {
-                        value: /^[a-z0-9]+([-.][a-z0-9]+)*$/g,
-                        message: '应用名只能包含小写字母、数字、-和.'
+                        value: /^[a-z]+([-.][a-z0-9]+)*$/g,
+                        message: '应用名只能包含小写字母、数字和 -'
                       }
                     })}
                   />
@@ -256,7 +257,7 @@ const Form = ({
                   setVal={(e) => {
                     setValue('cpu', CpuSlideMarkList[e].value);
                   }}
-                  max={CpuSlideMarkList.length-1}
+                  max={CpuSlideMarkList.length - 1}
                   min={0}
                   step={1}
                 />
@@ -272,7 +273,7 @@ const Form = ({
                   setVal={(e) => {
                     setValue('memory', MemorySlideMarkList[e].value);
                   }}
-                  max={MemorySlideMarkList.length-1}
+                  max={MemorySlideMarkList.length - 1}
                   min={0}
                   step={1}
                 />
@@ -301,7 +302,7 @@ const Form = ({
                   }}
                 />
               </Flex>
-              <FormControl isInvalid={!!errors.dbName} w={'500px'}>
+              <FormControl isInvalid={!!errors.storage} w={'500px'}>
                 <Flex alignItems={'center'}>
                   <Label>存储容量</Label>
                   <Tooltip label={`容量范围: ${minStorage}~200 Gi`}>

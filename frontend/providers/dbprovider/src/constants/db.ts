@@ -1,5 +1,5 @@
 import { DBEditType, DBDetailType, PodDetailType, BackupStatusMapType } from '@/types/db';
-import { CpuSlideMarkList,MemorySlideMarkList } from './editApp';
+import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
 
 export const crLabelKey = 'sealos-db-provider-cr';
 

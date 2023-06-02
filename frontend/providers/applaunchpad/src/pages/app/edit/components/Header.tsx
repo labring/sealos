@@ -6,6 +6,7 @@ import JSZip from 'jszip';
 import type { YamlItemType } from '@/types/index';
 import { downLoadBold } from '@/utils/tools';
 import dayjs from 'dayjs';
+import { useGlobalStore } from '@/store/global';
 
 const Header = ({
   appName,
@@ -21,6 +22,7 @@ const Header = ({
   applyBtnText: string;
 }) => {
   const router = useRouter();
+  const { lastRoute } = useGlobalStore();
 
   const handleExportYaml = useCallback(async () => {
     const zip = new JSZip();
@@ -37,7 +39,7 @@ const Header = ({
 
   return (
     <Flex w={'100%'} px={10} h={'86px'} alignItems={'center'}>
-      <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.back()}>
+      <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace(lastRoute)}>
         <MyIcon name="arrowLeft" />
         <Box ml={6} fontWeight={'bold'} color={'black'} fontSize={'3xl'}>
           {title}

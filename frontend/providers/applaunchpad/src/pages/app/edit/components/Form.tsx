@@ -284,11 +284,12 @@ const Form = ({
                     disabled={isEdit}
                     title={isEdit ? '不允许修改应用名称' : ''}
                     autoFocus={true}
+                    placeholder={'字母开头，仅能包含小写字母、数字和 -'}
                     {...register('appName', {
                       required: '应用名称不能为空',
                       pattern: {
-                        value: /^[a-z0-9]+([-.][a-z0-9]+)*$/g,
-                        message: '应用名只能包含小写字母、数字、-和.'
+                        value: /^[a-z]+([-.][a-z0-9]+)*$/g,
+                        message: '应用名只能包含小写字母、数字和 -'
                       }
                     })}
                   />

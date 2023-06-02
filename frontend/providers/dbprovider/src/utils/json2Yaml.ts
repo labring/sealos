@@ -60,7 +60,7 @@ export const json2CreateCluster = (data: DBEditType) => {
                         storage: `${data.storage}Gi`
                       }
                     },
-                    storageClassName: 'openebs-lvmpv-backup'
+                    storageClassName: 'openebs-backup'
                   }
                 }
               ]
@@ -102,7 +102,8 @@ export const json2CreateCluster = (data: DBEditType) => {
                       requests: {
                         storage: `${data.storage}Gi`
                       }
-                    }
+                    },
+                    storageClassName: 'openebs-backup'
                   }
                 }
               ]
@@ -147,7 +148,8 @@ export const json2CreateCluster = (data: DBEditType) => {
                       requests: {
                         storage: `${data.storage}Gi`
                       }
-                    }
+                    },
+                    storageClassName: 'openebs-backup'
                   }
                 }
               ]
@@ -497,7 +499,7 @@ export const json2BackupPvc = ({
           storage: `${storage}Gi`
         }
       },
-      storageClassName: 'openebs-lvmpv-backup',
+      storageClassName: 'openebs-backup',
       volumeMode: 'Filesystem'
     }
   };
@@ -542,4 +544,4 @@ spec:
         cpu: 50m
         memory: 64Mi
       type: Container
-`
+`;

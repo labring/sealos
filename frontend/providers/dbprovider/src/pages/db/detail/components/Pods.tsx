@@ -96,60 +96,44 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
           >
             详情
           </Button>
-          <MyMenu
-            width={100}
-            Button={
-              <MenuButton
-                w={'32px'}
-                h={'32px'}
-                borderRadius={'sm'}
-                _hover={{
-                  bg: 'myWhite.400',
-                  color: 'hover.iconBlue'
-                }}
-              >
-                <MyIcon name={'more'} px={3} />
-              </MenuButton>
-            }
-            menuList={[
-              // {
-              //   child: (
-              //     <>
-              //       <MyIcon name={'terminal'} w={'14px'} />
-              //       <Box ml={2}>终端</Box>
-              //     </>
-              //   ),
-              //   onClick: () => {
-              //     const defaultCommand = `kubectl exec -it ${item.podName} -c ${dbName} -- sh -c "clear; (bash || ash || sh)"`;
-              //     sealosApp.runEvents('openDesktopApp', {
-              //       appKey: 'system-terminal',
-              //       query: {
-              //         defaultCommand
-              //       },
-              //       messageData: { type: 'new terminal', command: defaultCommand }
-              //     });
-              //   }
-              // },
-              {
-                child: (
-                  <>
-                    <MyIcon name={'log'} w={'14px'} />
-                    <Box ml={2}>日志</Box>
-                  </>
-                ),
-                onClick: () => setLogsPodIndex(i)
-              },
-              {
-                child: (
-                  <>
-                    <MyIcon name={'restart'} />
-                    <Box ml={2}>重启</Box>
-                  </>
-                ),
-                onClick: openConfirmRestart(() => handleRestartPod(item.podName))
+          {item.status.value === PodStatusEnum.Running && (
+            <MyMenu
+              width={100}
+              Button={
+                <MenuButton
+                  w={'32px'}
+                  h={'32px'}
+                  borderRadius={'sm'}
+                  _hover={{
+                    bg: 'myWhite.400',
+                    color: 'hover.iconBlue'
+                  }}
+                >
+                  <MyIcon name={'more'} px={3} />
+                </MenuButton>
               }
-            ]}
-          />
+              menuList={[
+                {
+                  child: (
+                    <>
+                      <MyIcon name={'log'} w={'14px'} />
+                      <Box ml={2}>日志</Box>
+                    </>
+                  ),
+                  onClick: () => setLogsPodIndex(i)
+                },
+                {
+                  child: (
+                    <>
+                      <MyIcon name={'restart'} />
+                      <Box ml={2}>重启</Box>
+                    </>
+                  ),
+                  onClick: openConfirmRestart(() => handleRestartPod(item.podName))
+                }
+              ]}
+            />
+          )}
         </Flex>
       )
     }
