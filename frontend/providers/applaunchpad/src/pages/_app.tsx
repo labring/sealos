@@ -86,7 +86,7 @@ export default function App({ Component, pageProps }: AppProps) {
     return () => {
       setLastRoute(router.asPath);
     };
-  }, [router.asPath, setLastRoute]);
+  }, [router.pathname, setLastRoute]);
 
   return (
     <>
