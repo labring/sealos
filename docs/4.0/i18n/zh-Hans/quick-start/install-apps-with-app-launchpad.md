@@ -2,17 +2,19 @@
 sidebar_position: 1
 ---
 
-# 使用 App Launchpad 快速安装应用
+# 在应用管理中快速安装应用
 
-Sealos 的桌面环境类似于单机操作系统 macOS 或 Windows 的桌面环境，桌面上的每个图标都是一个 App，类似于 Windows 的快捷方式。与单机操作系统一样，Sealos 也有系统自带的 App，要想在这个云操作系统中快速安装应用，就需要用到系统自带的 App Launchpad。
+Sealos 的桌面环境类似于单机操作系统 macOS 或 Windows 的桌面环境，桌面上的每个图标都是一个 App，类似于 Windows 的快捷方式。与单机操作系统一样，Sealos 也有系统自带的 App，要想在这个云操作系统中快速安装应用，就需要用到系统自带的 App：**应用管理**。
+
+关于应用管理的详细信息请参阅 [应用管理介绍](../platform-components/applaunchpad/applaunchpad.md)
 
 > 下面将演示如何在 Sealos 云操作系统中快速安装一些比较常见的应用。
 
 ## 快速安装 Nginx
 
-首先打开 App Launchpad。
+首先打开**应用管理**。
 
-![](./images/app-launchpad.jpg)
+![](./images/app-launchpad-zh.webp)
 
 点击「新建应用」。
 
@@ -34,9 +36,9 @@ Sealos 的桌面环境类似于单机操作系统 macOS 或 Windows 的桌面环
 
 ## 快速安装 Nextcloud
 
-再来看一个例子，我们来使用 App Launchpad 快速安装开源的私人网盘应用 Nextcloud。
+再来看一个例子，在**应用管理**中快速安装开源的私人网盘应用 Nextcloud。
 
-与之前的例子一样，在 App Launchpad 中点击「新建应用」。依次输入应用名和镜像名，选择合适的 CPU 和内存，并开启外网访问。
+与之前的例子一样，在**应用管理**中点击「新建应用」。依次输入应用名和镜像名，选择合适的 CPU 和内存，并开启外网访问。
 
 ![](./images/app-deployment-2.png)
 
