@@ -94,16 +94,19 @@ metadata:
   namespace: app-system
 spec:
   data:
-    desc: sealos CLoud Terminal
+    desc: sealos Terminal
     url: ""
   icon: /images/terminal.svg
   menuData:
-    helpDocs: https://www.sealos.io/docs/cloud/apps/terminal/
+    helpDocs: https://www.sealos.io/docs/apps/terminal/
     helpDropDown: false
     nameColor: text-black
   name: Terminal
   type: iframe
   displayType: normal
+  i18n:
+    zh-Hans:
+      name: 终端
 ---
 apiVersion: app.sealos.io/v1
 kind: App
