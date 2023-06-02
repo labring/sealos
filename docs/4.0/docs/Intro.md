@@ -16,6 +16,8 @@ Sealos is a **cloud operating system distribution** based on the Kubernetes kern
 
 Users will be able to install any high-availability distributed application on Kubernetes with the click of a button, similar to using a personal computer. It practically requires no professional delivery or operational costs. Simultaneously, utilizing unique cluster imaging capabilities, users can package any distributed application into an OCI image, freely combine a variety of distributed applications, and easily customize their desired cloud. The powerful and flexible app store function can meet the diverse needs of various users.
 
+![](./images/sealos-desktop.webp)
+
 ## Scenarios & Advantages
 
 Sealos is a powerful business operating platform, providing flawless support for various applications such as Java, Go, Python, PHP, and more, unrestricted by the programming language. The platform offers a stable operating environment for applications and resolves backend dependency issues like databases, object storage, and messaging queues. Further, it can flexibly handle application configuration management, service discovery, public network exposure, and automatic scaling issues.
