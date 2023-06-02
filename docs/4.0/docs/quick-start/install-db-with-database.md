@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# Swiftly Install MySQL/PgSQL/MongoDB with Database
+# Swiftly Install MySQL/PostgreSQL/MongoDB with Database
 
 Databases are important means of data management and can be used to efficiently store and access data. MySQL, PostgreSQL, and MongoDB are all important database management systems.
 
