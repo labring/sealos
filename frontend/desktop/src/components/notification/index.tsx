@@ -134,7 +134,7 @@ export default function Notification(props: TNotification) {
                 className={styles.tab}
                 onClick={() => markAllAsRead()}
               >
-                {t('read all')}
+                {t('Read All')}
               </Text>
             </Flex>
             <Flex pt={'9px'} pb="12px" direction={'column'} h="430px" className={styles.scrollWrap}>
@@ -157,7 +157,7 @@ export default function Notification(props: TNotification) {
                       className={clsx(styles.desc, styles.footer)}
                     >
                       <Text>
-                        {t('from')}「{item?.spec?.from}」
+                        {t('From')}「{item?.spec?.from}」
                       </Text>
                       <Text>
                         {formatTime((item?.spec?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}
@@ -184,7 +184,7 @@ export default function Notification(props: TNotification) {
               fontWeight="400"
             >
               <Text>
-                {t('from')}「{msgDetail?.spec?.from}」
+                {t('From')}「{msgDetail?.spec?.from}」
               </Text>
               <Box display={'inline-block'} ml={'auto'}>
                 {formatTime((msgDetail?.spec?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}

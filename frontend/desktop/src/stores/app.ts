@@ -32,6 +32,7 @@ export class AppInfo {
     helpDocs: boolean | string;
   };
   displayType: 'normal' | 'hidden' | 'more ';
+  i18n?: any;
   constructor(app: TApp, pid: number) {
     this.isShow = false;
     this.zIndex = 1;
@@ -49,6 +50,7 @@ export class AppInfo {
     this.key = app.key;
     this.pid = pid;
     this.displayType = app.displayType;
+    this.i18n = app?.i18n;
   }
 }
 

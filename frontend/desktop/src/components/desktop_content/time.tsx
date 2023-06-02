@@ -16,7 +16,6 @@ const WeekDay = {
 export default function TimeComponent(props: any) {
   const [time, setTime] = useState(new Date().toString());
   const { i18n } = useTranslation();
-  console.log(i18n.language);
 
   useEffect(() => {
     const timer = setInterval(() => {

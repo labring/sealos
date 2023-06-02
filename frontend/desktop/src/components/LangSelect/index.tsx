@@ -20,12 +20,10 @@ const langIcon = (
 
 const LANG_MAP = {
   en: {
-    label: 'English',
-    icon: '🇺🇸'
+    label: 'English'
   },
   zh: {
-    label: '中文',
-    icon: '🇨🇳'
+    label: '中文'
   }
 } as const;
 
