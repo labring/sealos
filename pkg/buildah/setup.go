@@ -98,15 +98,16 @@ location = "docker.io/labring"
 
 const (
 	defaultRootStorageConf = `[storage]
-  driver = "overlay"
-  runroot = "/run/containers/storage"
-  graphroot = "/var/lib/containers/storage"`
+driver = "overlay"
+runroot = "/run/containers/storage"
+graphroot = "/var/lib/containers/storage"`
 	defaultRootlessStorageConf = `[storage]
-  driver = "overlay"
-  runroot = "/run/user/%d"`
-	mountProgramSnippet = `
-  [storage.options]
-    mount_program = "/bin/fuse-overlayfs"`
+driver = "overlay"
+runroot = "/run/user/%d"`
+	storageOptionsOverlaySnippet = `
+[storage.options.overlay]
+mount_program = "/bin/fuse-overlayfs"
+mountopt = "nodev,fsync=0"`
 )
 
 // todo: what if running by containerd?
@@ -133,7 +134,7 @@ func setupStorageConfigFile() error {
 		content = defaultRootStorageConf
 	}
 	if unshare.IsRootless() || isRunningInContainer() {
-		content += mountProgramSnippet
+		content += storageOptionsOverlaySnippet
 	}
 	return writeFileIfNotExists(DefaultConfigFile, []byte(content))
 }
