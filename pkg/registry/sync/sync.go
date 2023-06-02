@@ -42,7 +42,21 @@ const (
 	defaultPort = "5000"
 )
 
-func ToRegistry(ctx context.Context, sys *types.SystemContext, src, dst string, reportWriter io.Writer, selection copy.ImageListSelection) error {
+type Options struct {
+	Sys       *types.SystemContext
+	Source    string
+	Target    string
+	Writer    io.Writer
+	Selection copy.ImageListSelection
+	SkipError bool
+}
+
+func ToRegistry(ctx context.Context, opts *Options) error {
+	src := opts.Source
+	dst := opts.Target
+	sys := opts.Sys
+	reportWriter := opts.Writer
+	selection := opts.Selection
 	policyContext, err := getPolicyContext()
 	if err != nil {
 		return err

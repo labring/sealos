@@ -114,7 +114,15 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 					if err = httputils.WaitUntilEndpointAlive(probeCtx, "http://"+src); err != nil {
 						return err
 					}
-					return sync.ToRegistry(inner, sys, src, dst, os.Stdout, copy.CopySystemImage)
+					opts := &sync.Options{
+						Sys:       sys,
+						Source:    src,
+						Target:    dst,
+						Writer:    os.Stdout,
+						Selection: copy.CopySystemImage,
+						SkipError: false,
+					}
+					return sync.ToRegistry(inner, opts)
 				})
 			}
 			go func() {

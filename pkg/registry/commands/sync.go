@@ -30,19 +30,21 @@ import (
 )
 
 func NewSyncRegistryCommand() *cobra.Command {
+	var skipError bool
 	cmd := &cobra.Command{
 		Use:     "sync source dst",
 		Aliases: []string{"copy"},
 		Short:   "sync all images from one registry to another",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runSync(cmd, args[0], args[1])
+			return runSync(cmd, args[0], args[1], skipError)
 		},
 	}
+	cmd.Flags().BoolVar(&skipError, "skip-error", false, "skip error when syncing images")
 	return cmd
 }
 
-func runSync(cmd *cobra.Command, source, dst string) error {
+func runSync(cmd *cobra.Command, source, dst string, skipError bool) error {
 	ctx := cmd.Context()
 	out := cmd.OutOrStdout()
 
@@ -66,7 +68,15 @@ func runSync(cmd *cobra.Command, source, dst string) error {
 	sysCtx := &types.SystemContext{
 		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
 	}
-	if err := sync.ToRegistry(ctx, sysCtx, sep, dep, out, imagecopy.CopySystemImage); err != nil {
+	opts := &sync.Options{
+		Sys:       sysCtx,
+		Source:    sep,
+		Target:    dst,
+		Writer:    out,
+		Selection: imagecopy.CopySystemImage,
+		SkipError: skipError,
+	}
+	if err := sync.ToRegistry(ctx, opts); err != nil {
 		return err
 	}
 	fmt.Fprintln(out, "Sync completed")
