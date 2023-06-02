@@ -4,13 +4,13 @@ sidebar_position: 3
 
 # Swiftly Install MySQL/PgSQL/MongoDB with Database
 
-Databases are important means of data management and can be used to efficiently store and access data. MySQL, PostgreSQL, and MongoDB are all important database management systems. \
+Databases are important means of data management and can be used to efficiently store and access data. MySQL, PostgreSQL, and MongoDB are all important database management systems.
 
-* MySQL is an open-source relational database management system with high performance, reliability, and scalability. It also supports standardized SQL language and extended SQL syntax.
+* MySQL is an open-source relational database management system with high performance, reliability, and scalability. It also supports standardized SQL language and extended SQL syntax
 
-* PostgreSQL is also an open-source relational database management system that supports transaction, concurrency control, and multi-version control. These features make PostgreSQL a reliable, efficient, and secure database solution.
+* PostgreSQL is also an open-source relational database management system that supports transaction, concurrency control, and multi-version control. These features make PostgreSQL a reliable, efficient, and secure database solution
 
-* MongoDB is a document-oriented NoSQL database management system that supports flexible data modeling, fast read and write speeds, and easy horizontal scaling for better performance and availability, as per the requirements.
+* MongoDB is a document-oriented NoSQL database management system that supports flexible data modeling, fast read and write speeds, and easy horizontal scaling for better performance and availability, as per the requirements
 
 > Sealos has good support for quick installation and configuration of databases. The following example will demonstrate how to use Sealos to quickly install MySQL.
 
@@ -34,7 +34,7 @@ Databases are important means of data management and can be used to efficiently 
 
 ![](./images/Pasted%20image%2020230602152916.png)
 
-6. Click on 'One-Click Connection' to start using it in the Terminal.
+6. Click on 'One-Click Connection' to start using it in the Terminal
 
 ![](./images/Pasted%20image%2020230602152336.png)
 
