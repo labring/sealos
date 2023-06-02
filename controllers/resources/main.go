@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 
@@ -77,13 +78,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.MonitorReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Monitor")
-		os.Exit(1)
-	}
+	//if err = (&controllers.MonitorReconciler{
+	//	Client: mgr.GetClient(),
+	//	Scheme: mgr.GetScheme(),
+	//}).SetupWithManager(mgr); err != nil {
+	//	setupLog.Error(err, "unable to create controller", "controller", "Monitor")
+	//	os.Exit(1)
+	//}
 
 	//+kubebuilder:scaffold:builder
 
@@ -97,8 +98,28 @@ func main() {
 	}
 
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem running manager")
+	//if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	//	setupLog.Error(err, "problem running manager")
+	//	os.Exit(1)
+	//}
+	go func() {
+		if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+			setupLog.Error(err, "problem running manager")
+			os.Exit(1)
+		}
+	}()
+
+	reconciler, err := controllers.NewMonitorReconciler(mgr)
+	if err != nil {
+		setupLog.Error(err, "failed to init monitor reconciler")
+		os.Exit(1)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if err := reconciler.StartReconciler(ctx); err != nil {
+		setupLog.Error(err, "failed to start monitor reconciler")
 		os.Exit(1)
 	}
 }

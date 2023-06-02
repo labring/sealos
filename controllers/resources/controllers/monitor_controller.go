@@ -21,43 +21,51 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"strings"
+	"sync"
 	"time"
 
+	"golang.org/x/sync/semaphore"
+
+	"github.com/labring/sealos/pkg/utils/logger"
+
+	"github.com/go-logr/logr"
+	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
 	"github.com/labring/sealos/controllers/pkg/common"
 	"github.com/labring/sealos/controllers/pkg/database"
 	v1 "github.com/labring/sealos/controllers/user/api/v1"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	"github.com/go-logr/logr"
-	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // MonitorReconciler reconciles a Monitor object
 type MonitorReconciler struct {
 	client.Client
 	logr.Logger
-	Interval  time.Duration
-	Scheme    *runtime.Scheme
-	mongoOpts struct {
-		uri      string
-		username string
-		password string
-	}
+	Interval          time.Duration
+	Scheme            *runtime.Scheme
+	mongoUrl          string
+	stopCh            chan struct{}
+	wg                sync.WaitGroup
+	periodicReconcile time.Duration
 }
 
 type quantity struct {
 	*resource.Quantity
 	detail string
 }
+
+const (
+	namespaceMonitorResources                    = "NAMESPACE-RESOURCES"
+	namespaceResourcePod, namespaceResourceInfra = "pod", "infra"
+	MaxConcurrencyLimit                          = 1000
+)
+
+var namespaceMonitorFuncs = make(map[string]func(ctx context.Context, dbClient database.Interface, namespace *corev1.Namespace) error)
 
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list
@@ -68,24 +76,121 @@ type quantity struct {
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras/status,verbs=get;list;watch
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras/finalizers,verbs=get;list;watch
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Monitor object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
-func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
+	r := &MonitorReconciler{
+		Client:            mgr.GetClient(),
+		Logger:            ctrl.Log.WithName("controllers").WithName("Monitor"),
+		stopCh:            make(chan struct{}),
+		periodicReconcile: 1 * time.Minute,
+		mongoUrl:          os.Getenv(database.MongoURL),
+	}
+	if r.mongoUrl == "" {
+		return nil, fmt.Errorf("mongo uri is empty")
+	}
+	r.initNamespaceFuncs()
+	if err := r.preApply(); err != nil {
+		return nil, err
+	}
+	r.startPeriodicReconcile()
+	return r, nil
+}
 
-	//TODO get mongo connect url from configmap or secret
+func (r *MonitorReconciler) initNamespaceFuncs() {
+	res := os.Getenv(namespaceMonitorResources)
+	if res == "" {
+		res = namespaceResourcePod
+	}
+	//utils.GetEnvWithDefault(namespaceMonitorResources, namespaceResourcePod), ","
+	namespaceResourceList := strings.Split(res, ",")
+	for _, res := range namespaceResourceList {
+		switch res {
+		case namespaceResourcePod:
+			namespaceMonitorFuncs[namespaceResourcePod] = r.podResourceUsage
+		case namespaceResourceInfra:
+			namespaceMonitorFuncs[namespaceResourceInfra] = r.infraResourceUsage
+		}
+	}
+}
+
+func (r *MonitorReconciler) StartReconciler(ctx context.Context) error {
+	for {
+		select {
+		//case namespaceName := <-r.namespaceQueue:
+		//	if err := r.processNamespace(ctx, namespaceName); err != nil {
+		//		r.Logger.Error(err, "failed to process namespace", "namespace", namespaceName)
+		//	}
+		//case namespaceList := <-r.namespaceListQueue:
+		//	r.Logger.Info("process namespace list", "namespaceList len", len(namespaceList.Items))
+		//	if err := r.processNamespaceList(ctx, namespaceList); err != nil {
+		//		r.Logger.Error(err, "failed to process namespace", "namespaceList", namespaceList)
+		//	}
+		case <-ctx.Done():
+			r.stopPeriodicReconcile()
+			return nil
+		}
+	}
+}
+
+func (r *MonitorReconciler) startPeriodicReconcile() {
+	r.wg.Add(1)
+	go func() {
+		defer r.wg.Done()
+		waitTime := time.Until(time.Now().Truncate(time.Minute).Add(1 * time.Minute))
+		if waitTime > 0 {
+			logger.Info("wait for first reconcile", "waitTime", waitTime)
+			time.Sleep(waitTime)
+		}
+		ticker := time.NewTicker(r.periodicReconcile)
+		for {
+			select {
+			case <-ticker.C:
+				r.enqueueNamespacesForReconcile()
+			case <-r.stopCh:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+}
+
+func (r *MonitorReconciler) stopPeriodicReconcile() {
+	close(r.stopCh)
+	r.wg.Wait()
+}
+
+func (r *MonitorReconciler) enqueueNamespacesForReconcile() {
+	ctx := context.Background()
+	r.Logger.Info("enqueue namespaces for reconcile", "time", time.Now().Format(time.RFC3339))
+
+	namespaceList := &corev1.NamespaceList{}
+	if err := r.Client.List(ctx, namespaceList); err != nil {
+		r.Logger.Error(err, "failed to list namespaces")
+		return
+	}
+
+	if err := r.processNamespaceList(ctx, namespaceList); err != nil {
+		r.Logger.Error(err, "failed to process namespace", "time", time.Now().Format(time.RFC3339))
+	}
+	//r.namespaceListQueue <- namespaceList
+
+	//for i := range namespaceList.Items {
+	//	r.namespaceQueue <- &namespaceList.Items[i]
+	//}
+}
+
+func (r *MonitorReconciler) processNamespaceList(ctx context.Context, namespaceList *corev1.NamespaceList) error {
+	logger.Info("start processNamespaceList", "namespaceList len", len(namespaceList.Items), "time", time.Now().Format(time.RFC3339))
+	if len(namespaceList.Items) == 0 {
+		r.Logger.Error(fmt.Errorf("no namespace to process"), "")
+		return nil
+	}
+	wg := sync.WaitGroup{}
+	wg.Add(len(namespaceList.Items))
 	dbCtx := context.Background()
-	dbClient, err := database.NewMongoDB(dbCtx, r.mongoOpts.uri)
+	dbClient, err := database.NewMongoDB(dbCtx, r.mongoUrl)
 	if err != nil {
 		r.Logger.Error(err, "connect mongo client failed")
-		return ctrl.Result{Requeue: true}, err
+		return err
 	}
 	defer func() {
 		err := dbClient.Disconnect(dbCtx)
@@ -93,68 +198,50 @@ func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			r.Logger.V(5).Info("disconnect mongo client failed", "err", err)
 		}
 	}()
-
-	var namespace corev1.Namespace
-	if err = r.Get(ctx, req.NamespacedName, &namespace); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+	concurrencyLimit := len(namespaceList.Items)
+	if concurrencyLimit > MaxConcurrencyLimit {
+		concurrencyLimit = MaxConcurrencyLimit
 	}
-	if err = r.podResourceUsage(ctx, dbClient, namespace); err != nil {
-		r.Logger.Error(err, "monitor pod resource", "namespace", namespace.Name)
-		return ctrl.Result{Requeue: true}, err
+	sem := semaphore.NewWeighted(int64(concurrencyLimit))
+	for i := range namespaceList.Items {
+		go func(namespace *corev1.Namespace) {
+			defer wg.Done()
+			if err := sem.Acquire(context.Background(), 1); err != nil {
+				fmt.Printf("Failed to acquire semaphore: %v\n", err)
+				return
+			}
+			defer sem.Release(1)
+			if err := r.processNamespace(ctx, dbClient, namespace); err != nil {
+				r.Logger.Error(err, "failed to process namespace", "namespace", namespace.Name)
+			}
+		}(&namespaceList.Items[i])
 	}
-	if err = r.infraResourceUsage(ctx, dbClient, namespace.Name); err != nil {
-		r.Logger.Error(err, "monitor infra resource", "namespace", namespace.Name)
-		return ctrl.Result{Requeue: true}, err
-	}
-
-	return ctrl.Result{Requeue: true, RequeueAfter: 1 * time.Minute}, nil
+	wg.Wait()
+	logger.Info("end processNamespaceList", "time", time.Now().Format("2006-01-02 15:04:05"))
+	return nil
 }
 
-// SetupWithManager sets up the controller with the Manager.
-func (r *MonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	r.Logger = log.Log.WithName("monitor-controller")
-	//TODO get interval
-	r.Interval = time.Minute
-	//TODO get mongo connect url from configmap or secret
-	//r.mongoConnectUrl = "mongodb://192.168.64.17:27017"
-	r.mongoOpts = struct {
-		uri      string
-		username string
-		password string
-	}{
-		uri:      os.Getenv(database.MongoURL),
-		username: os.Getenv(database.MongoUsername),
-		password: os.Getenv(database.MongoPassword),
+func (r *MonitorReconciler) processNamespace(ctx context.Context, dbClient database.Interface, namespace *corev1.Namespace) error {
+	for res := range namespaceMonitorFuncs {
+		if err := namespaceMonitorFuncs[res](ctx, dbClient, namespace); err != nil {
+			r.Logger.Error(err, "monitor namespace resource", "resource", res, "namespace", namespace.Name)
+			return err
+		}
 	}
-	switch {
-	case r.mongoOpts.uri == "":
-		return fmt.Errorf("mongo uri is empty")
-	}
-	if err := r.preApply(); err != nil {
-		return err
-	}
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Namespace{}, builder.WithPredicates(predicate.Funcs{
-			CreateFunc: func(createEvent event.CreateEvent) bool {
-				return true
-			},
-			UpdateFunc: func(updateEvent event.UpdateEvent) bool {
-				return false
-			},
-			DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
-				return false
-			},
-			GenericFunc: func(genericEvent event.GenericEvent) bool {
-				return false
-			},
-		})).
-		Complete(r)
+	//if err := r.podResourceUsage(ctx, dbClient, namespace); err != nil {
+	//	r.Logger.Error(err, "monitor pod resource", "namespace", namespace.Name)
+	//	return err
+	//}
+	//if err = r.infraResourceUsage(ctx, dbClient, namespace.Name); err != nil {
+	//	r.Logger.Error(err, "monitor infra resource", "namespace", namespace.Name)
+	//	return ctrl.Result{Requeue: true}, err
+	//}
+	return nil
 }
 
 func (r *MonitorReconciler) preApply() error {
 	ctx := context.Background()
-	dbClient, err := database.NewMongoDB(ctx, r.mongoOpts.uri)
-	//mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(r.mongoOpts.uri).SetAuth(options.Credential{Username: r.mongoOpts.username, Password: r.mongoOpts.password}))
+	dbClient, err := database.NewMongoDB(ctx, r.mongoUrl)
 	if err != nil {
 		return fmt.Errorf("failed to connect mongo: %v", err)
 	}
@@ -165,14 +252,13 @@ func (r *MonitorReconciler) preApply() error {
 		}
 	}()
 
-	//_ = createCompoundIndex(mongoClient, SealosResourcesDBName, SealosMonitorCollectionName)
 	if err = dbClient.CreateMonitorTimeSeriesIfNotExist(time.Now().UTC()); err != nil {
 		r.Logger.Error(err, "create table time series failed")
 	}
 	return nil
 }
 
-func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient database.Interface, namespace corev1.Namespace) error {
+func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient database.Interface, namespace *corev1.Namespace) error {
 	timeStamp := time.Now().UTC()
 	var (
 		quota   = corev1.ResourceQuota{}
@@ -216,51 +302,37 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient datab
 			}
 		}
 	}
-	err := dbClient.InsertMonitor(ctx, &common.Monitor{
-		Category: namespace.Name,
-		Property: corev1.ResourceCPU.String(),
-		Value:    getResourceValue(corev1.ResourceCPU, rs),
-		Time:     timeStamp,
-		Detail:   rs[corev1.ResourceCPU].String(),
-	}, &common.Monitor{
-		Category: namespace.Name,
-		Property: corev1.ResourceMemory.String(),
-		Value:    getResourceValue(corev1.ResourceMemory, rs),
-		Time:     timeStamp,
-		Detail:   rs[corev1.ResourceMemory].String(),
-	}, &common.Monitor{
-		Category: namespace.Name,
-		Property: corev1.ResourceStorage.String(),
-		Value:    getResourceValue(corev1.ResourceStorage, rs),
-		Time:     timeStamp,
-		Detail:   rs[corev1.ResourceStorage].String(),
-	})
-	return err
+	cpuValue, memoryValue, storageValue := getResourceValue(corev1.ResourceCPU, rs), getResourceValue(corev1.ResourceMemory, rs), getResourceValue(corev1.ResourceStorage, rs)
+	var monitors []*common.Monitor
+	if cpuValue > 0 {
+		monitors = append(monitors, &common.Monitor{
+			Category: namespace.Name,
+			Property: corev1.ResourceCPU.String(),
+			Value:    cpuValue,
+			Time:     timeStamp,
+			Detail:   rs[corev1.ResourceCPU].String(),
+		})
+	}
+	if memoryValue > 0 {
+		monitors = append(monitors, &common.Monitor{
+			Category: namespace.Name,
+			Property: corev1.ResourceMemory.String(),
+			Value:    memoryValue,
+			Time:     timeStamp,
+			Detail:   rs[corev1.ResourceMemory].String(),
+		})
+	}
+	if storageValue > 0 {
+		monitors = append(monitors, &common.Monitor{
+			Category: namespace.Name,
+			Property: corev1.ResourceStorage.String(),
+			Value:    storageValue,
+			Time:     timeStamp,
+			Detail:   rs[corev1.ResourceStorage].String(),
+		})
+	}
+	return dbClient.InsertMonitor(ctx, monitors...)
 }
-
-//func (r *MonitorReconciler) syncResourceQuota(ctx context.Context, nsName string) error {
-//	quota := &corev1.ResourceQuota{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      controllers.ResourceQuotaPrefix + nsName,
-//			Namespace: nsName,
-//		},
-//	}
-//
-//	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
-//		quota.Spec.Hard = controllers.DefaultResourceQuota()
-//		return nil
-//	}); err != nil {
-//		return fmt.Errorf("sync resource quota failed: %v", err)
-//	}
-//	return nil
-//}
-
-//func getResourceValue(resourceName corev1.ResourceName, quantity *resource.Quantity) int64 {
-//	if quantity != nil && quantity.MilliValue() != 0 {
-//		return int64(math.Ceil(float64(quantity.MilliValue()) / float64(common.PricesUnit[resourceName].MilliValue())))
-//	}
-//	return 0
-//}
 
 func getResourceValue(resourceName corev1.ResourceName, res map[corev1.ResourceName]*quantity) int64 {
 	quantity := res[resourceName]
@@ -278,10 +350,9 @@ func initResources() (rs map[corev1.ResourceName]*quantity) {
 	return
 }
 
-func (r *MonitorReconciler) infraResourceUsage(ctx context.Context, dbClient database.Interface, namespace string) error {
+func (r *MonitorReconciler) infraResourceUsage(ctx context.Context, dbClient database.Interface, namespace *corev1.Namespace) error {
 	var infraList infrav1.InfraList
-
-	if err := r.List(ctx, &infraList, client.InNamespace(namespace)); err != nil {
+	if err := r.List(ctx, &infraList, client.InNamespace(namespace.Name)); err != nil {
 		return err
 	}
 	if len(infraList.Items) == 0 {
@@ -311,28 +382,27 @@ func (r *MonitorReconciler) infraResourceUsage(ctx context.Context, dbClient dat
 		getResourceValue(corev1.ResourceMemory, infraResources),
 		getResourceValue(corev1.ResourceStorage, infraResources)
 	var monitors []*common.Monitor
-	switch {
-	case cpuUsage != 0:
+	if cpuUsage != 0 {
 		monitors = append(monitors, &common.Monitor{
-			Category: namespace,
+			Category: namespace.Name,
 			Property: common.PropertyInfraCPU,
 			Value:    cpuUsage,
 			Time:     timeStamp,
 			//Detail:   "",
 		})
-		fallthrough
-	case memUsage != 0:
+	}
+	if memUsage != 0 {
 		monitors = append(monitors, &common.Monitor{
-			Category: namespace,
+			Category: namespace.Name,
 			Property: common.PropertyInfraMemory,
 			Value:    memUsage,
 			Time:     timeStamp,
 			//Detail:   "",
 		})
-		fallthrough
-	case storUsage != 0:
+	}
+	if storUsage != 0 {
 		monitors = append(monitors, &common.Monitor{
-			Category: namespace,
+			Category: namespace.Name,
 			Property: common.PropertyInfraDisk,
 			Value:    storUsage,
 			Time:     timeStamp,

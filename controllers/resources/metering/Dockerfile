@@ -1,5 +1,8 @@
-FROM docker.io/library/alpine:latest
+FROM gcr.io/distroless/static:nonroot
+ARG TARGETARCH
 
-COPY bin-metering /metering
+WORKDIR /
+USER 65532:65532
 
-ENTRYPOINT ["/metering", "start"]
+COPY bin/controller-resources-metering-$TARGETARCH /manager
+ENTRYPOINT ["/manager", "start"]
