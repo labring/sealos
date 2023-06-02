@@ -46,6 +46,7 @@ export type TAppConfig = {
     helpDropDown: boolean;
     helpDocs: boolean | string;
   };
+  i18n?: any;
   displayType: 'normal' | 'hidden' | 'more ';
 };
 

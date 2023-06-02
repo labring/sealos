@@ -9,7 +9,7 @@ import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 
 export default function Index() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const moreAppsContent = useContext(MoreAppsContext);
   const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
   const itemsPerPage = 30; // Number of apps per page
@@ -79,7 +79,7 @@ export default function Index() {
           templateColumns={'repeat(5, 72px)'}
         >
           {paginatedApps &&
-            paginatedApps.map((item: TApp, index) => (
+            paginatedApps.map((item: TApp, index: number) => (
               <GridItem
                 w="72px"
                 h="100px"
@@ -116,7 +116,9 @@ export default function Index() {
                   fontSize={'10px'}
                   lineHeight={'16px'}
                 >
-                  {t(item?.name)}
+                  {item?.i18n?.[i18n?.language]?.name
+                    ? item?.i18n?.[i18n?.language]?.name
+                    : t(item?.name)}
                 </Text>
               </GridItem>
             ))}
