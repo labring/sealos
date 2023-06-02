@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# 使用 Database 快速安装数据库
+# 使用数据库快速安装 MySQL/PostgreSQL/MongDB
 
 数据库是数据管理的重要手段 , 可用于高效地存储和访问数据。MySQL、PostgreSQL 和 MongoDB 都是重要的数据库管理系统。
 
@@ -16,7 +16,7 @@ sidebar_position: 3
 
 # 快速安装 MySQL
 
-1. 打开 Database
+1. 打开数据库
 
 ![](./images/database-launch.png)
 
