@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # 使用 Database 快速安装数据库
 
-数据库是数据管理的重要手段 , 可用于高效地存储和访问数据。MySQL、PostgreSQL 和 MongoDB 都是重要的数据库管理系统。 \
+数据库是数据管理的重要手段 , 可用于高效地存储和访问数据。MySQL、PostgreSQL 和 MongoDB 都是重要的数据库管理系统。
 
 * MySQL 是一个开源的关系型数据库管理系统，具有高性能、高可靠性和可扩展性的特点，同时也支持标准化的 SQL 语言和扩展的 SQL 语法。
 
@@ -18,28 +18,28 @@ sidebar_position: 3
 
 1. 打开 Database
 
-![](./imagesimages/Pasted%20image%2020230602151308.png)
+![](./images/Pasted%20image%2020230602151308.png)
 
 2. 点击新建数据库，完成基础配置设置
 
-![](./imagesimages/Pasted%20image%2020230602152005.png)
+![](./images/Pasted%20image%2020230602152005.png)
 
 3. 点击部署集群，等待集群创建成功
 
-![](./imagesimages/Pasted%20image%2020230602152025.png)
+![](./images/Pasted%20image%2020230602152025.png)
 
 4. 集群创建成功后，点击详情查看更多细节
 
-![](./imagesimages/Pasted%20image%2020230602152158.png)
+![](./images/Pasted%20image%2020230602152158.png)
 
-![](./imagesimages/Pasted%20image%2020230602152916.png)
+![](./images/Pasted%20image%2020230602152916.png)
 
 6. 点击一键连接，就可以在命令行使用了
 
-![](./imagesimages/Pasted%20image%2020230602152336.png)
+![](./images/Pasted%20image%2020230602152336.png)
 
 # 快速安装 PostgreSQL 和 MongoDB
 
 PostgreSQL 和 MongoDB 数据库的安装和 MySQL 类似，需要在基础配置界面选择数据库的类型
 
-![](./imagesimages/Pasted%20image%2020230602153312.png)
+![](./images/Pasted%20image%2020230602153312.png)
