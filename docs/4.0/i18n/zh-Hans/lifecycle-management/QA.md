@@ -45,12 +45,12 @@ spec:
         app: sealoscli
     spec:
       containers:
-      - image: #用你的sealos镜像替换
-        name: sealoscli
-        stdin: true
-        stdinOnce: true
-        securityContext:
-          privileged: true
+        - image: #用你的sealos镜像替换
+          name: sealoscli
+          stdin: true
+          stdinOnce: true
+          securityContext:
+            privileged: true
 ```
 
 2. 创建Dockerfile。以下是一个例子，根据需要进行修改。
@@ -86,9 +86,7 @@ sealos build --arch arm64 --build-arg TARGETOS=linux --build-arg TARGETARCH=arm6
 
 ### Q1：如何选择Kubernetes运行时？
 
-Sealos会根据您选择的镜像决定使用哪种运行
-
-时。如果选择了kubernetes-docker镜像，Sealos将使用Docker作为运行时；如果选择了kubernetes-crio镜像，Sealos将使用CRI-O作为运行时。
+Sealos会根据您选择的镜像决定使用哪种运行时。如果选择了kubernetes-docker镜像，Sealos将使用Docker作为运行时；如果选择了kubernetes-crio镜像，Sealos将使用CRI-O作为运行时。
 
 ## 版本兼容性问题
 
