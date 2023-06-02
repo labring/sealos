@@ -18,28 +18,28 @@ sidebar_position: 3
 
 1. 打开 Database
 
-![](./images/Pasted%20image%2020230602151308.png)
+![](./images/database-launch.png)
 
 2. 点击新建数据库，完成基础配置设置
 
-![](./images/Pasted%20image%2020230602152005.png)
+![](./images/database-configure.png)
 
 3. 点击部署集群，等待集群创建成功
 
-![](./images/Pasted%20image%2020230602152025.png)
+![](./images/database-creating.png)
 
 4. 集群创建成功后，点击详情查看更多细节
 
-![](./images/Pasted%20image%2020230602152158.png)
+![](./images/database-more1.png)
 
-![](./images/Pasted%20image%2020230602152916.png)
+![](./images/database-more2.png)
 
-6. 点击一键连接，就可以在命令行使用了
+5. 点击一键连接，就可以在命令行使用了
 
-![](./images/Pasted%20image%2020230602152336.png)
+![](./images/database-connect.png)
 
 # 快速安装 PostgreSQL 和 MongoDB
 
 PostgreSQL 和 MongoDB 数据库的安装和 MySQL 类似，需要在基础配置界面选择数据库的类型
 
-![](./images/Pasted%20image%2020230602153312.png)
+![](./images/database-select.png)

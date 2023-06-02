@@ -18,28 +18,28 @@ Databases are important means of data management and can be used to efficiently 
 
 1. Open Database
 
-![](./images/Pasted%20image%2020230602151308.png)
+![](./images/database-launch.png)
 
 2. Click on 'Create New Database' to complete the basic configuration setup
 
-![](./images/Pasted%20image%2020230602152005.png)
+![](./images/database-configure.png)
 
 3. Click on 'Deploy Cluster' and wait for the cluster to be created successfully
 
-![](./images/Pasted%20image%2020230602152025.png)
+![](./images/database-creating.png)
 
 4. After the cluster is successfully created, click on 'Details' to view more details
 
-![](./images/Pasted%20image%2020230602152158.png)
+![](./images/database-more1.png)
 
-![](./images/Pasted%20image%2020230602152916.png)
+![](./images/database-more2.png)
 
-6. Click on 'One-Click Connection' to start using it in the Terminal
+5. Click on 'One-Click Connection' to start using it in the Terminal
 
-![](./images/Pasted%20image%2020230602152336.png)
+![](./images/database-connect.png)
 
 # Quick Install of PostgreSQL and MongoDB
 
 Installing PostgreSQL and MongoDB databases is similar to MySQL. You need to select the type of database in the basic configuration interface
 
-![](./images/Pasted%20image%2020230602153312.png)
+![](./images/database-select.png)
