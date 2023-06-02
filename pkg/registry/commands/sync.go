@@ -73,8 +73,7 @@ func runSync(cmd *cobra.Command, source, dst string, skipError bool) error {
 		Source:    sep,
 		Target:    dst,
 		Writer:    out,
-		Selection: imagecopy.CopySystemImage,
-		SkipError: skipError,
+		Selection: imagecopy.CopyAllImages,
 	}
 	if err := sync.ToRegistry(ctx, opts); err != nil {
 		return err

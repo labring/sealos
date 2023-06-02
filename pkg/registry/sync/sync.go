@@ -88,18 +88,19 @@ func ToRegistry(ctx context.Context, opts *Options) error {
 			if err != nil {
 				return err
 			}
+			ref := refs[j]
 			logger.Debug("syncing %s", destRef.DockerReference().String())
 			err = retry.RetryIfNecessary(ctx, func() error {
-				_, err = copy.Image(ctx, policyContext, destRef, refs[j], &copy.Options{
+				_, copyErr := copy.Image(ctx, policyContext, destRef, ref, &copy.Options{
 					SourceCtx:          sys,
 					DestinationCtx:     sys,
 					ImageListSelection: selection,
 					ReportWriter:       reportWriter,
 				})
-				return err
+				return copyErr
 			}, getRetryOptions())
 			if err != nil {
-				return fmt.Errorf("failed to copy image %s: %v", refs[j].DockerReference().String(), err)
+				logger.Warn("failed to copy image %s: %v", refs[j].DockerReference().String(), err)
 			}
 		}
 	}
@@ -108,7 +109,7 @@ func ToRegistry(ctx context.Context, opts *Options) error {
 
 func getRetryOptions() *retry.RetryOptions {
 	return &retry.RetryOptions{
-		MaxRetry: 5,
+		MaxRetry: 3,
 	}
 }
 

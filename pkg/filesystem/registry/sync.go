@@ -120,7 +120,6 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 						Target:    dst,
 						Writer:    os.Stdout,
 						Selection: copy.CopySystemImage,
-						SkipError: false,
 					}
 					return sync.ToRegistry(inner, opts)
 				})
