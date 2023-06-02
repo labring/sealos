@@ -48,4 +48,4 @@ linters-settings:
 # https://github.com/golangci/golangci/wiki/Configuration
 service:
   # use the fixed version to not introduce new linters unexpectedly
-  golangci-lint-version: v1.52.2
+  golangci-lint-version: latest
