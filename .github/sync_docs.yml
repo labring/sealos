@@ -8,13 +8,13 @@ fanux/sealos-site:
   - source: docs/4.0/img/
     dest: static/docs/4.0/img/
     deleteOrphaned: true
-  - source: README.md
-    dest: docs/Intro.md
   - source: CONTRIBUTING.md
-    dest: docs/CONTRIBUTING.md
+    dest: docs/lifecycle-management/CONTRIBUTING.md
   - source: CONTRIBUTING.md
-    dest: i18n/zh-Hans/docusaurus-plugin-content-docs/current/CONTRIBUTING.md
+    dest: i18n/zh-Hans/docusaurus-plugin-content-docs/current/lifecycle-management/CONTRIBUTING.md
   - source: DEVELOPGUIDE.md
-    dest: docs/DEVELOPGUIDE.md
+    dest: docs/lifecycle-management/DEVELOPGUIDE.md
   - source: DEVELOPGUIDE.md
-    dest: i18n/zh-Hans/docusaurus-plugin-content-docs/current/DEVELOPGUIDE.md
+    dest: i18n/zh-Hans/docusaurus-plugin-content-docs/current/lifecycle-management/DEVELOPGUIDE.md
+  - source: docs/4.0/sidebar.json
+    dest: sidebar.json

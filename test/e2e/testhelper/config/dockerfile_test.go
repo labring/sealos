@@ -26,6 +26,7 @@ func TestDockerfile_Write(t *testing.T) {
 		Images            []string
 		KubeadmYaml       string
 		BaseImage         string
+		Copys             []string
 		dockerfileContent string
 	}
 	tests := []struct {
@@ -41,6 +42,22 @@ func TestDockerfile_Write(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "yaml",
+			fields: fields{
+				BaseImage:   "docker.io/labring/kubernetes:v1.18.4",
+				KubeadmYaml: "testyaml",
+			},
+			wantErr: false,
+		},
+		{
+			name: "copy",
+			fields: fields{
+				BaseImage: "docker.io/labring/kubernetes:v1.18.4",
+				Copys:     []string{"/tmp/sealctl /opt/"},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -48,6 +65,7 @@ func TestDockerfile_Write(t *testing.T) {
 				Images:            tt.fields.Images,
 				KubeadmYaml:       tt.fields.KubeadmYaml,
 				BaseImage:         tt.fields.BaseImage,
+				Copys:             tt.fields.Copys,
 				dockerfileContent: tt.fields.dockerfileContent,
 			}
 			got, err := d.Write()

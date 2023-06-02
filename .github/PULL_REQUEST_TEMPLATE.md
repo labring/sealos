@@ -1,3 +1,4 @@
+copilot:all
 <!-- 
 If you are developing a feature, please provide documentation.
 If you are solving a bug, please associate the corresponding issue.

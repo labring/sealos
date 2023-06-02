@@ -54,7 +54,7 @@ const AppDetail = ({ appName }: { appName: string }) => {
   );
 
   return (
-    <Flex flexDirection={'column'} height={'100vh'} backgroundColor={'#F7F8FA'} px={9} pb={4}>
+    <Flex flexDirection={'column'} height={'100vh'} backgroundColor={'#F3F4F5'} px={9} pb={4}>
       <Box>
         <Header
           appName={appName}
@@ -71,7 +71,7 @@ const AppDetail = ({ appName }: { appName: string }) => {
           flex={'0 0 410px'}
           w={'410px'}
           mr={4}
-          overflowY={'auto'}
+          overflow={'overlay'}
           zIndex={1}
           transition={'0.4s'}
           bg={'white'}
@@ -98,7 +98,7 @@ const AppDetail = ({ appName }: { appName: string }) => {
             borderRadius={'md'}
             flex={'1 0 0'}
             h={0}
-            overflowY={'auto'}
+            overflow={'overlay'}
           >
             <Pods pods={appDetailPods} appName={appName} loading={!podsLoaded} />
           </Box>

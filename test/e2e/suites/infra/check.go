@@ -19,8 +19,9 @@ package infra
 import (
 	"fmt"
 
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
+
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/test/e2e/testhelper"
 	"github.com/labring/sealos/test/e2e/testhelper/settings"
 )
 
@@ -57,28 +58,28 @@ func (f *FakeInfra) PreSetEnv() {
 
 func (f *FakeInfra) PreCheckEnv() {
 	if f.InfraDriver == "aliyun" {
-		testhelper.CheckEnvSetting([]string{"ALIYUN_REGION_ID", "ALIYUN_ACCESS_KEY_ID", "ALIYUN_ACCESS_KEY_SECRET", "ALIYUN_REGION_ID"})
+		utils.CheckEnvSetting([]string{"ALIYUN_REGION_ID", "ALIYUN_ACCESS_KEY_ID", "ALIYUN_ACCESS_KEY_SECRET", "ALIYUN_REGION_ID"})
 	}
 	if f.ImageName == "" {
 		if f.ImageTar != "" {
-			testhelper.CheckErr(fmt.Errorf("image name is empty, please set env %s", settings.TestImageName))
+			utils.CheckErr(fmt.Errorf("image name is empty, please set env %s", settings.TestImageName))
 		}
 	}
 	logger.Info("e2e test image name is %s", f.ImageName)
 	logger.Info("e2e test infra driver is %s", f.InfraDriver)
 	if f.ImageTar != "" {
-		if !testhelper.IsFileExist(f.ImageTar) {
-			testhelper.CheckErr(fmt.Errorf("image tar is not exist, path: %s", f.ImageTar))
+		if !utils.IsFileExist(f.ImageTar) {
+			utils.CheckErr(fmt.Errorf("image tar is not exist, path: %s", f.ImageTar))
 		}
 		logger.Info("e2e test image tar path is %s", f.ImageTar)
 	}
 	if f.PatchImageTar != "" {
-		if !testhelper.IsFileExist(f.PatchImageTar) {
-			testhelper.CheckErr(fmt.Errorf("image tar is not exist, path: %s", f.PatchImageTar))
+		if !utils.IsFileExist(f.PatchImageTar) {
+			utils.CheckErr(fmt.Errorf("image tar is not exist, path: %s", f.PatchImageTar))
 		}
 		logger.Info("e2e test patch image tar path is %s", f.PatchImageTar)
 		if f.PatchImageName == "" {
-			testhelper.CheckErr(fmt.Errorf("patch image name is empty, please set env %s", settings.TestPatchImageName))
+			utils.CheckErr(fmt.Errorf("patch image name is empty, please set env %s", settings.TestPatchImageName))
 		}
 		logger.Info("e2e test patch image name is %s", f.PatchImageName)
 	}

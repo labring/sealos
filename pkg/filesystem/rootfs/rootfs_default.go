@@ -26,6 +26,7 @@ import (
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
+	"github.com/labring/sealos/pkg/filesystem"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/exec"
@@ -173,6 +174,11 @@ func renderTemplatesWithEnv(mountDir string, ipList []string, p env.Interface) e
 	return nil
 }
 
-func NewDefaultRootfs(mounts []v2.MountImage) (Interface, error) {
+func newDefaultRootfs(mounts []v2.MountImage) (filesystem.Mounter, error) {
 	return &defaultRootfs{mounts: mounts}, nil
+}
+
+// NewRootfsMounter :according to the Metadata file content to determine what kind of Filesystem will be load.
+func NewRootfsMounter(images []v2.MountImage) (filesystem.Mounter, error) {
+	return newDefaultRootfs(images)
 }

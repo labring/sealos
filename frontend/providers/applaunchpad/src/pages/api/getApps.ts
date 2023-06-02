@@ -10,6 +10,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
+    const domain = process.env.SEALOS_DOMAIN || 'cloud.sealos.io';
+
     const response = await Promise.allSettled([
       k8sApp.listNamespacedDeployment(
         namespace,
@@ -17,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         undefined,
         undefined,
         undefined,
-        `${process.env.SEALOS_DOMAIN}/app-deploy-manager`
+        `${domain}/app-deploy-manager`
       ),
       k8sApp.listNamespacedStatefulSet(
         namespace,
@@ -25,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         undefined,
         undefined,
         undefined,
-        `${process.env.SEALOS_DOMAIN}/app-deploy-manager`
+        `${domain}/app-deploy-manager`
       )
     ]);
 

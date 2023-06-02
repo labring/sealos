@@ -21,10 +21,11 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/labring/sealos/pkg/registry/crane"
+
 	"github.com/docker/docker/api/types"
 	"github.com/spf13/pflag"
 
-	"github.com/labring/sealos/pkg/registry"
 	"github.com/labring/sealos/pkg/utils/file"
 )
 
@@ -37,7 +38,7 @@ type registrySaveResults struct {
 func (opts *registrySaveResults) RegisterFlags(fs *pflag.FlagSet) {
 	fs.SetInterspersed(false)
 	fs.StringVar(&opts.registryPullArch, "arch", runtime.GOARCH, "pull images arch")
-	fs.StringVar(&opts.registryPullRegistryDir, "data-dir", "/var/lib/registry", "registry data dir path")
+	fs.StringVar(&opts.registryPullRegistryDir, "registry-dir", "/var/lib/registry", "registry data dir path")
 	fs.IntVar(&opts.registryPullMaxPullProcs, "max-pull-procs", 5, "maximum number of goroutines for pulling")
 }
 
@@ -45,7 +46,7 @@ func (opts *registrySaveResults) CheckAuth() (map[string]types.AuthConfig, error
 	if !file.IsExist(opts.registryPullRegistryDir) {
 		_ = os.MkdirAll(opts.registryPullRegistryDir, 0755)
 	}
-	cfg, err := registry.GetAuthInfo(nil)
+	cfg, err := crane.GetAuthInfo(nil)
 	if err != nil {
 		return nil, fmt.Errorf("auth info is error: %w", err)
 	}
@@ -60,12 +61,4 @@ type registrySaveRawResults struct {
 func (opts *registrySaveRawResults) RegisterFlags(fs *pflag.FlagSet) {
 	opts.registrySaveResults.RegisterFlags(fs)
 	fs.StringSliceVar(&opts.images, "images", []string{}, "images list")
-}
-
-type registrySaveDefaultResults struct {
-	*registrySaveResults
-}
-
-func (opts *registrySaveDefaultResults) RegisterFlags(fs *pflag.FlagSet) {
-	opts.registrySaveResults.RegisterFlags(fs)
 }

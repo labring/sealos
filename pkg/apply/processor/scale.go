@@ -26,7 +26,7 @@ import (
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/config"
 	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/filesystem"
+	"github.com/labring/sealos/pkg/filesystem/rootfs"
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
@@ -127,7 +127,7 @@ func (c ScaleProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 		logger.Warn("delete process unmount rootfs skip is cluster not mount rootfs")
 		return nil
 	}
-	fs, err := filesystem.NewRootfsMounter(cluster.Status.Mounts)
+	fs, err := rootfs.NewRootfsMounter(cluster.Status.Mounts)
 	if err != nil {
 		return err
 	}
@@ -162,8 +162,8 @@ func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-	//cluster status might be overwriten by inappropriate usage, add mounts if loss.
-	if err = MountClusterImages(cluster, c.Buildah); err != nil {
+	// cluster status might be overwrite by inappropriate usage, add mounts if loss.
+	if err = MountClusterImages(c.Buildah, cluster, true); err != nil {
 		return err
 	}
 	if c.IsScaleUp {
@@ -231,7 +231,7 @@ func (c *ScaleProcessor) MountRootfs(cluster *v2.Cluster) error {
 	// since app type images are only sent to the first master, in
 	// cluster scaling scenario we don't need to sent app images repeatedly.
 	// so filter out rootfs/patch type
-	fs, err := filesystem.NewRootfsMounter(filterNoneApplicationMounts(cluster.Status.Mounts))
+	fs, err := rootfs.NewRootfsMounter(filterNoneApplicationMounts(cluster.Status.Mounts))
 	if err != nil {
 		return err
 	}

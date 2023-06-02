@@ -1,17 +1,20 @@
-import React, { Dispatch, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { Box, Flex, Button } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 import MyIcon from '@/components/Icon';
 import JSZip from 'jszip';
 import type { YamlItemType } from '@/types/index';
 import { downLoadBold } from '@/utils/tools';
+import dayjs from 'dayjs';
 
 const Header = ({
+  appName,
   title,
   yamlList,
   applyCb,
   applyBtnText
 }: {
+  appName: string;
   title: string;
   yamlList: YamlItemType[];
   applyCb: () => void;
@@ -25,8 +28,12 @@ const Header = ({
       zip.file(item.filename, item.value);
     });
     const res = await zip.generateAsync({ type: 'blob' });
-    downLoadBold(res, 'application/zip', 'yaml.zip');
-  }, [yamlList]);
+    downLoadBold(
+      res,
+      'application/zip',
+      appName ? `${appName}.zip` : `yaml${dayjs().format('YYYYMMDDHHmmss')}.zip`
+    );
+  }, [appName, yamlList]);
 
   return (
     <Flex w={'100%'} px={10} h={'86px'} alignItems={'center'}>

@@ -21,7 +21,8 @@ class MasterSDK {
     message = '',
     data = {}
   }: MasterReplyMessageType) {
-    if (!source) return;
+    // if not define source or source is self(Not need send message to self). Skip it
+    if (!source || source === window) return;
 
     source.postMessage(
       {

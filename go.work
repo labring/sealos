@@ -5,12 +5,14 @@ use (
 	./controllers/account
 	./controllers/app
 	./controllers/cluster
+	./controllers/db/adminer
 	./controllers/db/bytebase
 	./controllers/imagehub
 	./controllers/infra
 	./controllers/metering
 	./controllers/terminal
 	./controllers/user
+	./controllers/resources
 	./service/auth
 	./service/hub
 	./service/payment

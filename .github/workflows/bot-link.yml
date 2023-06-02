@@ -1,0 +1,38 @@
+name: Github Rebot for Link check error
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+
+jobs:
+  linkChecker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Link Checker
+        id: lychee
+        uses: lycheeverse/lychee-action@v1.7.0
+        with:
+          # For parameter description, see https://github.com/lycheeverse/lychee#commandline-parameters
+          # -E, --exclude-all-private    Exclude all private IPs from checking.
+          # -i, --insecure               Proceed for server connections considered insecure (invalid TLS)
+          # -n, --no-progress            Do not show progress bar.
+          # -t, --timeout <timeout>      Website timeout in seconds from connect to response finished [default:20]
+          # --max-concurrency <max-concurrency>    Maximum number of concurrent network requests [default: 128]
+          # -a --accept <accept>                      Comma-separated list of accepted status codes for valid links
+
+          # docs/.vitepress/dist the site directory to check
+          # ./*.md all markdown files in the root directory
+          args: --verbose  -E -i --no-progress --exclude-path './CHANGELOG' './**/*.md'
+        env:
+          GITHUB_TOKEN: ${{secrets.GH_PAT}}
+
+      - name: Create Issue From File
+        if: env.lychee_exit_code != 0
+        uses: peter-evans/create-issue-from-file@v4
+        with:
+          title: Link Checker Report
+          content-filepath: ./lychee/out.md
+          labels: report, automated issue,kind/documentation
+          token: ${{secrets.GH_PAT}}

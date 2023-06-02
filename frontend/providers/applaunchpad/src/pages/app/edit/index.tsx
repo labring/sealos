@@ -62,7 +62,6 @@ const EditApp = ({ appName }: { appName?: string }) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const formOnchangeDebounce = useCallback(
     debounce((data: AppEditType) => {
-      console.log('update data');
       try {
         setYamlList([
           {
@@ -119,7 +118,7 @@ const EditApp = ({ appName }: { appName?: string }) => {
   );
   // watch form change, compute new yaml
   formHook.watch((data) => {
-    !!data && formOnchangeDebounce(data as AppEditType);
+    data && formOnchangeDebounce(data as AppEditType);
     setForceUpdate(!forceUpdate);
   });
 
@@ -129,6 +128,7 @@ const EditApp = ({ appName }: { appName?: string }) => {
       const data = yamlList.map((item) => item.value);
       if (appName) {
         await putApp(data, appName);
+        router.back();
       } else {
         await postDeployApp(data);
         router.push(`/apps`);
@@ -207,9 +207,10 @@ const EditApp = ({ appName }: { appName?: string }) => {
         alignItems={'center'}
         h={'100%'}
         minWidth={'1024px'}
-        backgroundColor={'#F7F8FA'}
+        backgroundColor={'#F3F4F5'}
       >
         <Header
+          appName={formHook.getValues('appName')}
           title={title}
           yamlList={yamlList}
           applyBtnText={applyBtnText}

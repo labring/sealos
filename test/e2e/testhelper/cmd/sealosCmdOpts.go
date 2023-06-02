@@ -73,7 +73,6 @@ type BuildOptions struct {
 	BuildContext       []string
 	BuildArg           []string
 	CertDir            string
-	Compress           bool
 	Creds              string
 	Context            string
 	DisableCompression bool
@@ -157,7 +156,6 @@ func (bo *BuildOptions) Args() []string {
 		appendFlagsWithValues("--debug", bo.Debug).
 		appendFlagsWithValues("--build-context", bo.BuildContext).
 		appendFlagsWithValues("--cert-dir", bo.CertDir).
-		appendFlagsWithValues("--compress", bo.Compress).
 		appendFlagsWithValues("--creds", bo.Creds).
 		appendFlagsWithValues("--disable-compression", bo.DisableCompression).
 		appendFlagsWithValues("--dns", bo.DNS).

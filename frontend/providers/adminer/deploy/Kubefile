@@ -1,0 +1,12 @@
+FROM scratch
+
+USER 65532:65532
+
+COPY registry registry
+COPY manifests manifests
+
+ENV certSecretName="wildcard-cert"
+ENV cloudDomain="cloud.example.com"
+ENV zalandoEnabled="0"
+
+CMD ["kubectl apply -f manifests"]

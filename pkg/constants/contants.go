@@ -40,6 +40,8 @@ func GetHomeDir() string {
 	return homedir.Get()
 }
 
+var AppName = "sealos"
+
 var Contact = `
       ___           ___           ___           ___       ___           ___
      /\  \         /\  \         /\  \         /\__\     /\  \         /\  \

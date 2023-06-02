@@ -25,17 +25,14 @@ svg {
   margin: 0;
 }
 
-body {
+body,
+#__next {
   height: 100vh;
   width: 100vw;
 }
 
 iframe {
   border: none;
-}
-
-#__next {
-  height: 100%;
 }
 
 ::-webkit-scrollbar,

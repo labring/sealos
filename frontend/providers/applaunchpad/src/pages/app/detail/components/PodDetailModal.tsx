@@ -24,7 +24,6 @@ import { useLoading } from '@/hooks/useLoading';
 import MyIcon from '@/components/Icon';
 import { streamFetch } from '@/services/streamFetch';
 import { useToast } from '@/hooks/useToast';
-import { SEALOS_DOMAIN } from '@/store/static';
 import MyMenu from '@/components/Menu';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 
@@ -189,8 +188,8 @@ const Logs = ({
             <Box mb={3}>
               CPU ({((pod.usedCpu[pod.usedCpu.length - 1] / pod.cpu) * 100).toFixed(2)}%)
             </Box>
-            <Box h={'60px'} w={'100%'}>
-              <PodLineChart type="cpu" cpu={pod.cpu} data={pod.usedCpu} />
+            <Box h={'80px'} w={'100%'}>
+              <PodLineChart type={'blue'} limit={pod.cpu} data={pod.usedCpu} />
             </Box>
           </Box>
           <Box>
@@ -198,8 +197,8 @@ const Logs = ({
               内存 ({((pod.usedMemory[pod.usedMemory.length - 1] / pod.memory) * 100).toFixed(2)}
               %)
             </Box>
-            <Box h={'60px'} w={'100%'}>
-              <PodLineChart type="memory" data={pod.usedMemory} />
+            <Box h={'80px'} w={'100%'}>
+              <PodLineChart type={'purple'} limit={pod.memory} data={pod.usedMemory} />
             </Box>
           </Box>
         </Grid>
@@ -248,7 +247,7 @@ const Logs = ({
           <Flex position={'relative'} flexDirection={'column'} h={'100%'}>
             <Flex mb={4} alignItems={'center'}>
               <Box color={'myGray.600'}>Events</Box>
-              {events.length > 0 && SEALOS_DOMAIN === 'cloud.sealos.io' && (
+              {events.length > 0 && (
                 <Button
                   ml={3}
                   size={'sm'}

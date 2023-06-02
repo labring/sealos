@@ -15,6 +15,7 @@
 package ssh
 
 import (
+	"context"
 	"strings"
 	"sync"
 
@@ -104,12 +105,12 @@ func (cc *clusterClient) Copy(host, src, dst string) error {
 	return client.Copy(host, src, dst)
 }
 
-func (cc *clusterClient) CopyR(host, src, dst string) error {
+func (cc *clusterClient) Fetch(host, src, dst string) error {
 	client, err := cc.getClientForHost(host)
 	if err != nil {
 		return err
 	}
-	return client.CopyR(host, src, dst)
+	return client.Fetch(host, src, dst)
 }
 
 func (cc *clusterClient) CmdAsync(host string, cmds ...string) error {
@@ -118,6 +119,14 @@ func (cc *clusterClient) CmdAsync(host string, cmds ...string) error {
 		return err
 	}
 	return client.CmdAsync(host, cmds...)
+}
+
+func (cc *clusterClient) CmdAsyncWithContext(ctx context.Context, host string, cmds ...string) error {
+	client, err := cc.getClientForHost(host)
+	if err != nil {
+		return err
+	}
+	return client.CmdAsyncWithContext(ctx, host, cmds...)
 }
 
 func (cc *clusterClient) Cmd(host, cmd string) ([]byte, error) {

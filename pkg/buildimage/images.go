@@ -34,7 +34,7 @@ import (
 
 func ParseYamlImages(dir string) ([]string, error) {
 	if !file.IsExist(dir) {
-		logger.Debug("path %s is not exists", dir)
+		logger.Debug("path %s is not exists,skip", dir)
 		return nil, nil
 	}
 	list := sets.NewString()
@@ -77,6 +77,7 @@ func formalizeImages(images []string) (res []string) {
 
 func ParseShimImages(dir string) ([]string, error) {
 	if dir == "" || !file.IsExist(dir) {
+		logger.Debug("path %s is not exists,skip", dir)
 		return nil, nil
 	}
 	list := sets.NewString()
@@ -110,7 +111,6 @@ func List(dir string) ([]string, error) {
 	if err != nil {
 		return nil, wrapGetImageErr(err, yamlDir)
 	}
-
 	shimDir := path.Join(dir, constants.ImagesDirName, constants.ImageShimDirName)
 	shimImgs, err := ParseShimImages(shimDir)
 	if err != nil {

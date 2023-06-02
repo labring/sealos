@@ -1,11 +1,11 @@
 package client
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/labring/sealos/controllers/db/bytebase/client/api"
 )
@@ -42,7 +42,7 @@ func (c *Client) CreateInstance(ctx context.Context, environmentID, instanceID s
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/%s/environments/%s/instances?instanceId=%s", c.url, c.version, environmentID, instanceID), strings.NewReader(string(payload)))
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/%s/environments/%s/instances?instanceId=%s", c.url, c.version, environmentID, instanceID), bytes.NewReader(payload))
 
 	if err != nil {
 		return nil, err

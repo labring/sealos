@@ -13,6 +13,7 @@ spec:
     nameColor: text-black
   name: Kubernetes-Dashboard
   type: iframe
+  displayType: hide
 ---
 apiVersion: app.sealos.io/v1
 kind: App
@@ -30,6 +31,7 @@ spec:
     nameColor: text-black
   name: Postgres
   type: app
+  displayType: normal
 ---
 apiVersion: app.sealos.io/v1
 kind: App
@@ -47,6 +49,7 @@ spec:
     nameColor: '#0073D7'
   name: sealos cloud provider
   type: app
+  displayType: more
 ---
 apiVersion: app.sealos.io/v1
 kind: App
@@ -64,6 +67,7 @@ spec:
     nameColor: text-black
   name: Sealos Document
   type: iframe
+  displayType: normal
 ---
 apiVersion: app.sealos.io/v1
 kind: App
@@ -81,6 +85,7 @@ spec:
     nameColor: text-black
   name: Image Hub
   type: iframe
+  displayType: normal
 ---
 apiVersion: app.sealos.io/v1
 kind: App
@@ -98,6 +103,7 @@ spec:
     nameColor: text-black
   name: Terminal
   type: iframe
+  displayType: normal
 ---
 apiVersion: app.sealos.io/v1
 kind: App
@@ -114,3 +120,4 @@ spec:
     nameColor: text-black
     helpDropDown: false
     helpDocs:
+  displayType: normal

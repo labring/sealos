@@ -1,8 +1,9 @@
 import yaml from 'js-yaml';
 import type { AppEditType } from '@/types/app';
 import { strToBase64, str2Num, pathFormat, pathToNameFormat } from '@/utils/tools';
-import { SEALOS_DOMAIN } from '@/store/static';
+import { SEALOS_DOMAIN, INGRESS_SECRET } from '@/store/static';
 import { maxReplicasKey, minReplicasKey } from '@/constants/app';
+import dayjs from 'dayjs';
 
 export const json2Development = (data: AppEditType) => {
   const template = {
@@ -21,7 +22,7 @@ export const json2Development = (data: AppEditType) => {
       }
     },
     spec: {
-      replicas: str2Num(data.replicas),
+      replicas: str2Num(data.hpa.use ? data.hpa.minReplicas : data.replicas),
       revisionHistoryLimit: 1,
       selector: {
         matchLabels: {
@@ -38,7 +39,8 @@ export const json2Development = (data: AppEditType) => {
       template: {
         metadata: {
           labels: {
-            app: data.appName
+            app: data.appName,
+            restartTime: `${dayjs().format('YYYYMMDDHHmmss')}`
           }
         },
         spec: {
@@ -73,20 +75,8 @@ export const json2Development = (data: AppEditType) => {
                   memory: `${str2Num(data.memory)}Mi`
                 }
               },
-              command: (() => {
-                try {
-                  return JSON.parse(data.runCMD);
-                } catch (error) {
-                  return [];
-                }
-              })(),
-              args: (() => {
-                try {
-                  return JSON.parse(data.cmdParam);
-                } catch (error) {
-                  return [];
-                }
-              })(),
+              command: data.runCMD.split(' ').filter((item) => item),
+              args: data.cmdParam.split(' ').filter((item) => item),
               ports: [
                 {
                   containerPort: str2Num(data.containerOutPort)
@@ -186,9 +176,9 @@ export const json2StatefulSet = (data: AppEditType) => {
                   : [],
               resources: {
                 requests: {
-                  cpu: `${str2Num(Math.floor(data.cpu / 2))}m`,
+                  cpu: `${str2Num(Math.floor(data.cpu * 0.1))}m`,
                   // cpu: '5m',
-                  memory: `${str2Num(Math.floor(data.memory / 2))}Mi`
+                  memory: `${str2Num(Math.floor(data.memory * 0.1))}Mi`
                 },
                 limits: {
                   cpu: `${str2Num(data.cpu)}m`,
@@ -196,20 +186,8 @@ export const json2StatefulSet = (data: AppEditType) => {
                   memory: `${str2Num(data.memory)}Mi`
                 }
               },
-              command: (() => {
-                try {
-                  return JSON.parse(data.runCMD);
-                } catch (error) {
-                  return [];
-                }
-              })(),
-              args: (() => {
-                try {
-                  return JSON.parse(data.cmdParam);
-                } catch (error) {
-                  return [];
-                }
-              })(),
+              command: data.runCMD.split(' ').filter((item) => item),
+              args: data.cmdParam.split(' ').filter((item) => item),
               ports: [
                 {
                   containerPort: str2Num(data.containerOutPort)
@@ -296,16 +274,20 @@ export const json2Ingress = (data: AppEditType) => {
   const host = data.accessExternal.selfDomain
     ? data.accessExternal.selfDomain
     : `${data.accessExternal.outDomain}.${SEALOS_DOMAIN}`;
-  const secretName = data.accessExternal.selfDomain
-    ? data.appName
-    : `wildcard-${SEALOS_DOMAIN.replace(/\./g, '-')}-cert`;
+  const secretName = data.accessExternal.selfDomain ? data.appName : INGRESS_SECRET;
 
   // different protocol annotations
   const map = {
     HTTP: {
       'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
       'nginx.ingress.kubernetes.io/backend-protocol': 'HTTP',
-      'nginx.ingress.kubernetes.io/rewrite-target': '/$2'
+      'nginx.ingress.kubernetes.io/rewrite-target': '/$2',
+      'nginx.ingress.kubernetes.io/client-body-buffer-size': '64k',
+      'nginx.ingress.kubernetes.io/proxy-buffer-size': '64k',
+      'nginx.ingress.kubernetes.io/server-snippet':
+        'client_header_buffer_size 64k;\nlarge_client_header_buffers 4 128k;\n',
+      'nginx.ingress.kubernetes.io/configuration-snippet':
+        'if ($request_uri ~* \\.(js|css|gif|jpe?g|png)) {\n  expires 30d;\n  add_header Cache-Control "public";\n}\n'
     },
     GRPC: {
       'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
@@ -313,8 +295,9 @@ export const json2Ingress = (data: AppEditType) => {
       'nginx.ingress.kubernetes.io/rewrite-target': '/$2'
     },
     WS: {
-      'nginx.ingress.kubernetes.io/proxy-read-timeout': 3600,
-      'nginx.ingress.kubernetes.io/proxy-send-timeout': 3600
+      'nginx.ingress.kubernetes.io/proxy-read-timeout': '3600',
+      'nginx.ingress.kubernetes.io/proxy-send-timeout': '3600',
+      'nginx.ingress.kubernetes.io/backend-protocol': 'WS'
     }
   };
 

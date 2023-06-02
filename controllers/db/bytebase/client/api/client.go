@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"net/http"
 )
 
 // Client is the API message for Bytebase OpenAPI client.
@@ -12,7 +11,8 @@ type Client interface {
 	Login(*AuthRequest) (int, error)
 	// Signup will register the user
 	Signup(*CreateUserRequest) (int, error)
-	GetHeaders() (http.Header, error)
+	// GetLoginCookie get the inside login cookie.
+	GetLoginCookie() LoginCookie
 
 	// Environment
 	// CreateEnvironment creates the environment.

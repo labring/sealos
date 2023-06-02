@@ -15,6 +15,8 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 )
@@ -27,12 +29,14 @@ func newDocsCmd() *cobra.Command {
 		Short:   "generate API reference",
 		Example: `sealos docs`,
 		Args:    cobra.NoArgs,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return os.MkdirAll(docsPath, 0755)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return doc.GenMarkdownTree(rootCmd, docsPath)
 		},
 	}
 	docsCmd.Flags().StringVarP(&docsPath, "path", "p", "./docs/api", "path to output docs")
-	setCommandUnrelatedToBuildah(docsCmd)
 	return docsCmd
 }
 

@@ -21,13 +21,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/docker/docker/api/types"
+	"github.com/labring/sealos/pkg/registry/crane"
 
-	"github.com/labring/sealos/pkg/registry"
+	"github.com/labring/sealos/pkg/registry/helpers"
+
+	"github.com/docker/docker/api/types"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/template"
@@ -92,14 +93,14 @@ func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
 		return nil
 	}
 	root := constants.NewData(cluster.Name).RootFSPath()
-	regInfo := bootstrap.GetRegistryInfo(sshCtx, root, cluster.GetRegistryIPAndPort())
+	regInfo := helpers.GetRegistryInfo(sshCtx, root, cluster.GetRegistryIPAndPort())
 	status.Auth = fmt.Sprintf("%s:%s", regInfo.Username, regInfo.Password)
 	status.RegistryDomain = fmt.Sprintf("%s:%s", regInfo.Domain, regInfo.Port)
 	cfg := types.AuthConfig{
 		Username: regInfo.Username,
 		Password: regInfo.Password,
 	}
-	_, err = registry.NewRegistry(status.RegistryDomain, cfg)
+	_, err = crane.NewRegistry(status.RegistryDomain, cfg)
 	if err != nil {
 		status.Error = fmt.Errorf("get registry interface error: %w", err).Error()
 		return nil

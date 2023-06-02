@@ -56,6 +56,13 @@ const LogsModal = ({
       abortSignal: controller,
       firstResponse() {
         setIsLoading(false);
+        setTimeout(() => {
+          if (!LogBox.current) return;
+
+          LogBox.current.scrollTo({
+            top: LogBox.current.scrollHeight
+          });
+        }, 500);
       },
       onMessage(text) {
         setLogs((state) => {
@@ -67,7 +74,7 @@ const LogsModal = ({
           if (!LogBox.current) return;
           const isBottom =
             LogBox.current.scrollTop === 0 ||
-            LogBox.current.scrollTop + LogBox.current.clientHeight + 100 >=
+            LogBox.current.scrollTop + LogBox.current.clientHeight + 200 >=
               LogBox.current.scrollHeight;
 
           isBottom &&
@@ -85,7 +92,7 @@ const LogsModal = ({
     return () => {
       controller?.abort();
     };
-  }, [watchLogs]);
+  }, []);
 
   const exportLogs = useCallback(async () => {
     const allLogs = await getPodLogs({

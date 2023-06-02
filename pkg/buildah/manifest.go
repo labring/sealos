@@ -123,10 +123,9 @@ func newManifestCommand() *cobra.Command {
 		manifestPushOpts            pushOptions
 	)
 	manifestCommand := &cobra.Command{
-		Use:    "manifest",
-		Hidden: true,
-		Short:  "Manipulate manifest lists and image indexes",
-		Long:   manifestDescription,
+		Use:   "manifest",
+		Short: "Manipulate manifest lists and image indexes",
+		Long:  manifestDescription,
 		Example: fmt.Sprintf(`%[1]s manifest create localhost/list
   %[1]s manifest add localhost/list localhost/image
   %[1]s manifest annotate --annotation A=B localhost/list localhost/image

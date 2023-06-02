@@ -1,13 +1,16 @@
 import { IncomingHttpHeaders } from 'http';
+import { K8sApi } from '@/services/backend/kubernetes';
 
 export const authSession = async (header: IncomingHttpHeaders) => {
-  if (!header) return Promise.reject('缺少凭证');
-  const { authorization } = header;
-  if (!authorization) return Promise.reject('缺少凭证');
-
   try {
-    const kubeconfig: string = decodeURIComponent(authorization);
-    return Promise.resolve(kubeconfig);
+    if (!header?.authorization) {
+      return Promise.reject('缺少凭证');
+    }
+
+    const kubeconfig = decodeURIComponent(header.authorization);
+    const kc = K8sApi(kubeconfig);
+
+    return Promise.resolve(kc);
   } catch (err) {
     return Promise.reject('凭证错误');
   }

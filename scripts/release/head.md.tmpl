@@ -2,109 +2,27 @@
 
 We are excited to announce the official release of Sealos {{ .Tag }} 🎉🎉!
 
-## Sealos Cloud: Powerful Cloud Operating System Distribution
+## Sealos : A Cloud Operating System designed for managing cloud-native applications
 
-Sealos Cloud is a cloud operating system distribution with Kubernetes at its core. Users can directly use Sealos Cloud or run Sealos in their private environment to have the same capabilities as Sealos Cloud. Sealos Cloud offers a range of advantages, including a sleek product experience, fully open-source architecture, consistent public and private cloud experiences, cross-platform compatibility, and highly competitive pricing.
+Sealos is a cloud operating system distribution based on the Kubernetes kernel. It adopts a cloud-native approach, discarding traditional cloud computing architecture, and shifting towards a new architecture with Kubernetes as the cloud kernel. This allows enterprises to use the cloud as effortlessly as they would use a personal computer.
 
-### Sealos Cloud Usage Guide
+## Deploy your app on Sealos
 
-Sealos Cloud offers you exceptional public cloud services for cloud-native applications, making it easy to manage cloud-native applications. Sealos Cloud provides two ways to use: cloud access and private access. The online mode is now officially launched, and offline mode will be introduced in future releases.
+[Try online demo](https://cloud.sealos.io)
 
-#### Cloud Access
+## Core features
 
-Cloud access is provided by directly accessing the cloud services provided by Sealos Cloud. Just enter the following link in your browser to start using the powerful features of Sealos Cloud immediately:
+✅ **Instant Kubernetes Usage Upon Login**: There is no need to install a Kubernetes cluster. Sealos provides the ability for **multiple tenants** to share a Kubernetes on the public internet. It also offers strong  isolation capabilities to ensure the data safety of each tenant.
 
-```
-https://cloud.sealos.io
-```
+✅ **Swiftly deploy any application on Sealos**: With the in-built App Launchpad, effortlessly deploy any application in an astonishingly short span of time.
 
-Cloud access allows you to access and manage your cloud-native applications anytime, anywhere, without any additional configuration and deployment. This makes the online mode an ideal choice for quickly getting started with Sealos Cloud.
+✅ **Resource Saving and Cost Reduction**: You only pay for the container. The automatic scaling function fundamentally solves the problem of resource wastage, saving between 10% to 40% in costs.
 
-### Component Introduction
+✅ **Easy Public Network Access**: Sealos automatically assigns a secondary domain name to your business,  helping you achieve easy public network access. It also supports custom  domain name binding.
 
-Sealos Cloud's main features are divided into the frontend interface, backend API services, and Kubernetes Operator, working together to provide a complete cloud-native application management experience.
+✅ **Efficient Database Service**: Sealos offers a service that allows businesses to create  high-availability databases within seconds. Through service discovery,  the internal network DNS can connect directly to the database.
 
-#### Main Components
+✅ **User-Friendly Operating Experience**: Sealos has an in-built terminal that supports command-line operation of the Kubernetes cluster, and also has in-built App Launchpad, allowing you to have a good user experience on Sealos, regardless of your familiarity with cloud-native  technology.
 
-- **Auth-Service**：Provides authentication services using casdoor, ensuring the security and accuracy of user identities.
-- **Image Hub**：Sealos image repository-related services, making it easy for users to manage and use images.
-- **Desktop**：Public cloud frontend service, providing a friendly user interface and operation experience.
-- **User**：User and user group management services, making it easy for administrators to assign and manage user permissions.
-- **Account** & **Metering**：Provides billing and account capabilities, helping users to reasonably control and plan costs.
-- **App**：Provides the Sealos Cloud desktop application, making it easier for users to use and manage cloud services.
-- **Infra**：Provides basic settings, currently supports AWS and Alibaba Cloud, and may support more cloud service providers in the future.
-- **Cluster**：One-click cluster startup on Sealos Cloud, simplifying the cluster deployment and management process.
-- **Terminal**：Terminal services on Sealos Cloud, providing convenient access and management of cloud services.
+For more detailed documentation about Sealos , please visit `https://sealos.io/docs/Intro`.
 
-For more detailed documentation about Sealos Cloud, please visit `https://sealos.io/docs/cloud/Intro`.
-
-
-## Sealos Boot: Professional Cloud-Native Application Management Tool
-
-Sealos Boot is the core component of Sealos, mainly responsible for the lifecycle management of clusters, downloading and deploying OCI-compatible distributed applications, and customizing distributed applications.
-
-
-### How to Install
-
-#### Binary Installation
-
-```shell
-    curl -sfL  https://raw.githubusercontent.com/{{ .Env.USERNAME }}/{{ .ProjectName }}/{{ .Tag }}/scripts/install.sh \
-    | sh -s {{ .Tag }} {{ .Env.USERNAME }}/{{ .ProjectName }}
-```
-
-{{ if eq .Prerelease ""}}
-
-#### Yum Repository Installation
-
-Add the following content to the  `/etc/yum.repos.d/sealos.repo` file：
-
-```
-[sealos]
-name=Sealos Repository
-baseurl=https://yum.repo.sealos.io/
-enabled=1
-gpgcheck=0
-```
-
-Then run:
-
-```shell
-yum install sealos
-```
-
-#### APT Repository Installation
-
-Add the following content to the `/etc/apt/sources.list.d/sealos.list`  file：
-
-```
-deb [trusted=yes] https://apt.repo.sealos.io/ /
-```
-
-Then run:
-
-```bash
-apt-get update
-apt-get install sealos
-```
-
-{{ end }}
-
-### Component Introduction
-
-Sealos provides two Docker containers: sealos and lvscare, as well as two binary files: sealctl and image-cri-shim. Below is a brief introduction to these components:
-
-- Sealos Container: This container is the core component of the Sealos project, responsible for deploying and managing Kubernetes clusters and distributed applications. It offers a range of command-line tools to help users quickly build and maintain clusters.
-- lvscare Container: This container is used to support load balancing management within Kubernetes clusters. It can monitor node status in real-time, ensuring that the load balancer always routes traffic to available nodes.
-- sealctl Binary: This is a command-line tool provided by the Sealos project, used to simplify cluster management tasks such as certificate management, IPVS, hosts, and cluster certificates.
-- image-cri-shim Binary: This component is a CRI adapter for the Sealos project, supporting different container runtimes (such as Docker and containerd). It allows Sealos to seamlessly integrate with multiple runtimes, enhancing the project's flexibility and scalability.
-
-### Quick Start
-
-```shell
-# Create a cluster
-sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
-    --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
-    --nodes 192.168.64.21,192.168.64.19 \
-    --passwd your-own-ssh-passwd
-```

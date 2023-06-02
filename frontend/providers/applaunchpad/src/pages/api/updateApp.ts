@@ -80,17 +80,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     // load all yaml to json
     const jsonYaml = yamlList.map((item) => yaml.loadAll(item)).flat() as DeployKindsType[];
 
-    // get statefulSet yaml
-    const stateFulSet = jsonYaml.find(
-      (item) => item.kind === YamlKindEnum.StatefulSet
-    ) as V1StatefulSet;
-
     // Compare kind, filter out the resources to be deleted
     const delArr = deleteArr.filter(
       (item) => !jsonYaml.find((yaml: any) => yaml.kind === item.kind)
     );
 
-    // pvc
+    // get statefulSet yaml
+    const stateFulSet = jsonYaml.find(
+      (item) => item.kind === YamlKindEnum.StatefulSet
+    ) as V1StatefulSet;
+
+    // filer delete pvc
     let allPvc: V1PersistentVolumeClaim[] = [];
     if (stateFulSet && stateFulSet?.spec?.volumeClaimTemplates) {
       const {
@@ -105,65 +105,63 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       );
       allPvc = data;
     }
+    const pvcUpdateArr = allPvc.map((pvc) => {
+      const volume = stateFulSet.spec?.volumeClaimTemplates?.find(
+        (volume) => volume.metadata?.annotations?.path === pvc.metadata?.annotations?.path
+      );
+      // check whether delete
+      if (!volume) {
+        console.log(`delete pvc: ${pvc.metadata?.name}`);
+        return k8sCore.deleteNamespacedPersistentVolumeClaim(pvc.metadata?.name || '', namespace);
+      }
+      // check storage change
+      if (
+        pvc.metadata?.name &&
+        pvc.metadata?.annotations?.value &&
+        pvc.spec?.resources?.requests?.storage &&
+        pvc.metadata?.annotations?.value !== volume.metadata?.annotations?.value
+      ) {
+        const pvcName = pvc.metadata.name;
+        const jsonPatch = [
+          {
+            op: 'replace',
+            path: '/spec/resources/requests/storage',
+            value: `${volume.metadata?.annotations?.value}Gi`
+          },
+          {
+            op: 'replace',
+            path: '/metadata/annotations/value',
+            value: `${volume.metadata?.annotations?.value}`
+          }
+        ];
+        console.log(`replace ${pvcName} storage: ${volume.metadata?.annotations?.value}Gi`);
+        return k8sCore
+          .patchNamespacedPersistentVolumeClaim(
+            pvcName,
+            namespace,
+            jsonPatch,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            {
+              headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH }
+            }
+          )
+          .catch((err) => {
+            console.log(`delete pvc error:`);
+            return Promise.reject(err?.body);
+          });
+      }
+    });
 
-    // delete and patch  resource
+    // delete resource
     const deleteAndPatchRes = (
       await Promise.allSettled([
         k8sApp.deleteNamespacedStatefulSet(appName, namespace), // focus delete stateFulSEt
         ...delArr.map((item) => item.delApi().then(() => console.log(`delete ${item.kind}`))),
-        ...allPvc.map((pvc) => {
-          const volume = stateFulSet.spec?.volumeClaimTemplates?.find(
-            (volume) => volume.metadata?.annotations?.path === pvc.metadata?.annotations?.path
-          );
-          // check whether delete
-          if (!volume) {
-            console.log(`delete pvc: ${pvc.metadata?.name}`);
-            return k8sCore.deleteNamespacedPersistentVolumeClaim(
-              pvc.metadata?.name || '',
-              namespace
-            );
-          }
-          // check storage change
-          if (
-            pvc.metadata?.name &&
-            pvc.metadata?.annotations?.value &&
-            pvc.spec?.resources?.requests?.storage &&
-            pvc.metadata?.annotations?.value !== volume.metadata?.annotations?.value
-          ) {
-            const pvcName = pvc.metadata.name;
-            const jsonPatch = [
-              {
-                op: 'replace',
-                path: '/spec/resources/requests/storage',
-                value: `${volume.metadata?.annotations?.value}Gi`
-              },
-              {
-                op: 'replace',
-                path: '/metadata/annotations/value',
-                value: `${volume.metadata?.annotations?.value}`
-              }
-            ];
-            console.log(`replace ${pvcName} storage: ${volume.metadata?.annotations?.value}Gi`);
-            return k8sCore
-              .patchNamespacedPersistentVolumeClaim(
-                pvcName,
-                namespace,
-                jsonPatch,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                {
-                  headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH }
-                }
-              )
-              .catch((err) => {
-                console.log(`delete pvc error:`);
-                return Promise.reject(err?.body);
-              });
-          }
-        })
+        ...pvcUpdateArr
       ])
     ).filter((item: any) => item?.reason?.statusCode !== 404);
     console.log('delete and patch result', deleteAndPatchRes);

@@ -32,7 +32,7 @@ spec:
             path: /service/auth(/|$)(.*)
             backend:
               service:
-                name: service-auth
+                name: auth-service-manager
                 port:
                   number: 8080
   tls:
@@ -47,7 +47,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/rewrite-target: /$2
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
   name: sealos-login
   namespace: sealos
 spec:

@@ -20,12 +20,10 @@ import (
 	"flag"
 	"os"
 
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
-	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
-
 	"github.com/labring/sealos/controllers/account/controllers"
 	"github.com/labring/sealos/controllers/account/controllers/cache"
+	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -115,6 +113,21 @@ func main() {
 		setupLog.Info("disable all webhooks")
 	} else {
 		mgr.GetWebhookServer().Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient()}})
+	}
+
+	if err = (&controllers.BillingRecordQueryReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "BillingRecordQuery")
+		os.Exit(1)
+	}
+	if err = (&controllers.BillingReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Billing")
+		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
 

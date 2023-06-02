@@ -1,9 +1,9 @@
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { OAuthToken, Session, UserInfo } from '../../interfaces/session';
-import request from '../../services/request';
-import useSessionStore from '../../stores/session';
+import { OAuthToken, Session, UserInfo } from '@/types';
+import request from '@/services/request';
+import useSessionStore from '@/stores/session';
 
 const Callback: NextPage = () => {
   const [redirect, setRedirect] = useState('');

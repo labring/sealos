@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Box, Flex, Grid, Link } from '@chakra-ui/react';
 import type { AppDetailType } from '@/types/app';
 import PodLineChart from '@/components/PodLineChart';
-import { useCopyData } from '@/utils/tools';
+import { printMemory, useCopyData } from '@/utils/tools';
 import dayjs from 'dayjs';
 import { getUserNamespace } from '@/utils/user';
 import { SEALOS_DOMAIN } from '@/store/static';
@@ -29,10 +29,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
     () => `${((app.usedCpu[app.usedCpu.length - 1] / app.cpu) * 100).toFixed(2)}%`,
     [app]
   );
-  const memoryUsed = useMemo(
-    () => `${((app.usedMemory[app.usedMemory.length - 1] / app.memory) * 100).toFixed(2)}%`,
-    [app]
-  );
+  const memoryUsed = useMemo(() => printMemory(app.usedMemory[app.usedMemory.length - 1]), [app]);
 
   return (
     <Box px={6} py={6} position={'relative'}>
@@ -59,20 +56,20 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             <Box mb={2} fontSize={'sm'}>
               CPU&ensp;({cpuUsed})
             </Box>
-            <Box h={'60px'}>
-              <PodLineChart data={app.usedCpu.slice(-15)} type={'cpu'} cpu={app.cpu} />
+            <Box h={'80px'}>
+              <PodLineChart type={'blue'} data={app.usedCpu.slice(-15)} limit={app.cpu} />
             </Box>
           </Box>
           <Box>
             <Box mb={2} fontSize={'sm'}>
               内存&ensp;({memoryUsed})
             </Box>
-            <Box h={'60px'}>
-              <PodLineChart type="memory" data={app.usedMemory.slice(-15)} />
+            <Box h={'80px'}>
+              <PodLineChart type={'purple'} data={app.usedMemory.slice(-15)} limit={app.memory} />
             </Box>
           </Box>
         </Grid>
-        <Flex mt={5} alignItems={'center'}>
+        <Flex mt={3} alignItems={'center'}>
           <MyIcon name={'network'} w={'14px'} color={'myGray.500'} />
           <Box ml={3} color={'myGray.600'}>
             网络配置

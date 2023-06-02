@@ -38,7 +38,7 @@ func (c RemoteCmd) Copy(src string, dst string) error {
 }
 
 func (c RemoteCmd) CopyR(dst string, src string) error {
-	return c.Interface.CopyR(c.Host, dst, src)
+	return c.Interface.Fetch(c.Host, src, dst)
 }
 
 // RemoteCmd implements the Interface for remote command execution using SSH

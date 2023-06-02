@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/labring/sealos/pkg/buildah"
@@ -83,19 +84,26 @@ func init() {
 			},
 		},
 		{
+			Message: "Experimental Commands:",
+			Commands: []*cobra.Command{
+				newRegistryCmd(),
+			},
+		},
+		{
 			Message:  "Container and Image Commands:",
 			Commands: buildah.AllSubCommands(),
 		},
 	}
 	groups.Add(rootCmd)
-	filters := []string{}
+	filters := []string{"options"}
 	templates.ActsAsRootCommand(rootCmd, filters, groups...)
-	rootCmd.AddCommand(system.NewConfigCmd())
+
+	rootCmd.AddCommand(system.NewEnvCmd(constants.AppName))
+	rootCmd.AddCommand(optionsCommand(os.Stdout))
 }
 
-// add unrelated command names that don't required buildah sdk.
-func setCommandUnrelatedToBuildah(cmd *cobra.Command) {
-	buildah.AddUnrelatedCommandNames(cmd.Name())
+func setRequireBuildahAnnotation(cmd *cobra.Command) {
+	buildah.SetRequireBuildahAnnotation(cmd)
 }
 
 func onBootOnDie() {
@@ -119,4 +127,19 @@ func errExit(err error) {
 		logger.Error(err)
 		os.Exit(1)
 	}
+}
+
+func optionsCommand(out io.Writer) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "options",
+		Short: "Print the list of flags inherited by all commands",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Usage()
+		},
+	}
+	cmd.SetOut(out)
+	cmd.SetErr(out)
+
+	templates.UseOptionsTemplates(cmd)
+	return cmd
 }

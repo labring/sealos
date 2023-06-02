@@ -653,12 +653,13 @@ const Form = ({
                     <Box
                       bg={'myGray.100'}
                       w={'46px'}
-                      h={'28px'}
-                      lineHeight={'28px'}
+                      py={'2px'}
                       ml={3}
                       fontSize={'sm'}
                       borderRadius={'20px'}
                       color={'myGray.600'}
+                      border={'1px solid'}
+                      borderColor={'myGray.200'}
                     >
                       选填
                     </Box>
@@ -672,7 +673,7 @@ const Form = ({
                     <Input
                       w={'320px'}
                       bg={getValues('runCMD') ? 'myWhite.500' : 'myWhite.400'}
-                      placeholder='如：["/bin/bash", "-c"]'
+                      placeholder="空格分开,如: /bin/bash -c"
                       {...register('runCMD')}
                     />
                   </FormControl>
@@ -681,14 +682,14 @@ const Form = ({
                     <Input
                       w={'320px'}
                       bg={getValues('cmdParam') ? 'myWhite.500' : 'myWhite.400'}
-                      placeholder='如：["HOSTNAME", "PORT"] '
+                      placeholder="空格分开,如: HOSTNAME PORT"
                       {...register('cmdParam')}
                     />
                   </FormControl>
 
                   <Divider my={'24px'} bg={'myGray.100'} />
 
-                  <Box w={'320px'}>
+                  <Box w={'100%'}>
                     <Box className={styles.formSecondTitle}>环境变量</Box>
                     <table className={styles.table}>
                       <tbody>
@@ -716,7 +717,7 @@ const Form = ({
                       leftIcon={<MyIcon name="edit" />}
                       onClick={onOpenEditEnvs}
                     >
-                      编辑境变量
+                      编辑环境变量
                     </Button>
                   </Box>
 

@@ -88,7 +88,3 @@ func newLvscareCmd() *cobra.Command {
 	lvscareCmd.Flags().BoolVar(&printBool, "print", false, "is print yaml")
 	return lvscareCmd
 }
-
-func init() {
-	rootCmd.AddCommand(newStaticPodCmd())
-}

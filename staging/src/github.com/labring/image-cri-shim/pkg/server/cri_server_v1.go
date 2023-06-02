@@ -52,7 +52,11 @@ func (s *v1ImageService) ImageStatus(ctx context.Context,
 	req *api.ImageStatusRequest) (*api.ImageStatusResponse, error) {
 	logger.Debug("ImageStatus: %+v", req)
 	if req.Image != nil {
-		req.Image.Image, _, _ = replaceImage(req.Image.Image, "ImageStatus", s.OfflineCRIConfigs)
+		if id, _ := s.GetImageRefByID(ctx, req.Image.Image); id != "" {
+			req.Image.Image = id
+		} else {
+			req.Image.Image, _, _ = replaceImage(req.Image.Image, "ImageStatus", s.OfflineCRIConfigs)
+		}
 	}
 	rsp, err := s.imageClient.ImageStatus(ctx, req)
 
@@ -93,7 +97,11 @@ func (s *v1ImageService) RemoveImage(ctx context.Context,
 	req *api.RemoveImageRequest) (*api.RemoveImageResponse, error) {
 	logger.Debug("RemoveImage: %+v", req)
 	if req.Image != nil {
-		req.Image.Image, _, _ = replaceImage(req.Image.Image, "RemoveImage", s.OfflineCRIConfigs)
+		if id, _ := s.GetImageRefByID(ctx, req.Image.Image); id != "" {
+			req.Image.Image = id
+		} else {
+			req.Image.Image, _, _ = replaceImage(req.Image.Image, "RemoveImage", s.OfflineCRIConfigs)
+		}
 	}
 	rsp, err := s.imageClient.RemoveImage(ctx, req)
 
@@ -114,4 +122,20 @@ func (s *v1ImageService) ImageFsInfo(ctx context.Context,
 	}
 
 	return rsp, err
+}
+
+func (s *v1ImageService) GetImageRefByID(ctx context.Context, image string) (string, error) {
+	resp, err := s.imageClient.ImageStatus(ctx, &api.ImageStatusRequest{
+		Image: &api.ImageSpec{
+			Image: image,
+		},
+	})
+	if err != nil {
+		logger.Warn("Failed to get image %s status: %v", image, err)
+		return "", err
+	}
+	if resp.Image == nil {
+		return "", nil
+	}
+	return resp.Image.Id, nil
 }

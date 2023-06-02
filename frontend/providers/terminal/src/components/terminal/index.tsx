@@ -80,7 +80,7 @@ function Terminal({ url }: { url: string }) {
   return (
     <Flex w="100%" h="100%" color="white" bg="#2b2b2b" overflow={'hidden'}>
       <Flex
-        backgroundColor={'#2C3035'}
+        backgroundColor={'#1A1A1A'}
         userSelect={'none'}
         flexDirection={'column'}
         cursor={'pointer'}
@@ -92,7 +92,7 @@ function Terminal({ url }: { url: string }) {
           pl="16px"
           alignItems={'center'}
           borderBottom={'2px solid #232528'}
-          _hover={{ background: '#282B30' }}
+          _hover={{ background: '#232323' }}
           onClick={debounce(() => newTerminal(), 500)}
         >
           <Iconfont
@@ -112,8 +112,8 @@ function Terminal({ url }: { url: string }) {
                 py="12px"
                 pl="16px"
                 pr="12px"
-                bg={item?.id === tabId ? '#232528' : ''}
-                _hover={{ bg: item?.id === tabId ? '#232528' : '#282b30' }}
+                bg={item?.id === tabId ? '#2B2B2B' : ''}
+                _hover={{ bg: item?.id === tabId ? '#2B2B2B' : '#232323' }}
                 key={item?.id}
                 alignItems="center"
                 onClick={() => onTabChange(item?.id)}

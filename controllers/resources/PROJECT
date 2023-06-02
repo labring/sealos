@@ -1,0 +1,22 @@
+domain: sealos.io
+layout:
+- go.kubebuilder.io/v3
+projectName: resources
+repo: github.com/labring/sealos
+resources:
+- controller: true
+  domain: sealos.io
+  group: resources
+  kind: Metering
+  version: v1alpha1
+- controller: true
+  domain: sealos.io
+  group: resources
+  kind: Monitor
+  version: v1alpha1
+- controller: true
+  domain: sealos.io
+  group: resources
+  kind: Billing
+  version: v1alpha1
+version: "3"

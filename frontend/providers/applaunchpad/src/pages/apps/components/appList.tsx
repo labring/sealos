@@ -119,7 +119,7 @@ const AppList = ({
       title: '状态',
       key: 'status',
       render: (item: AppListItemType) => (
-        <AppStatusTag status={item.status} isPause={item.isPause} />
+        <AppStatusTag status={item.status} isPause={item.isPause} showBorder={false} />
       )
     },
     {
@@ -132,7 +132,7 @@ const AppList = ({
       key: 'cpu',
       render: (item: AppListItemType) => (
         <Box h={'35px'} w={['120px', '130px', '140px']}>
-          <PodLineChart type="cpu" cpu={item.cpu} data={item.usedCpu.slice(-10)} />
+          <PodLineChart type="blue" limit={item.cpu} data={item.usedCpu.slice(-10)} />
         </Box>
       )
     },
@@ -141,7 +141,7 @@ const AppList = ({
       key: 'storage',
       render: (item: AppListItemType) => (
         <Box h={'35px'} w={['120px', '130px', '140px']}>
-          <PodLineChart type="memory" data={item.useMemory.slice(-10)} />
+          <PodLineChart type="purple" limit={item.memory} data={item.useMemory.slice(-10)} />
         </Box>
       )
     },
@@ -149,7 +149,7 @@ const AppList = ({
       title: '实例数',
       key: 'activeReplicas',
       render: (item: AppListItemType) => (
-        <Flex>
+        <Flex whiteSpace={'nowrap'}>
           <Box color={'myGray.900'}>活跃: {item.activeReplicas}</Box>
           {item.minReplicas !== item.maxReplicas && (
             <Box>
@@ -253,7 +253,7 @@ const AppList = ({
   ];
 
   return (
-    <Box backgroundColor={'#F7F8FA'} px={'34px'} minH="100vh">
+    <Box backgroundColor={'#F3F4F5'} px={'34px'} minH="100vh">
       <Flex h={'88px'} alignItems={'center'}>
         <Box mr={4} p={2} backgroundColor={'#FEFEFE'} border={theme.borders.sm} borderRadius={'sm'}>
           <MyIcon name="logo" w={'24px'} h={'24px'} />

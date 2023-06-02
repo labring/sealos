@@ -1,113 +1,32 @@
-import { useState, useCallback, useMemo, MouseEvent, useRef, useEffect } from 'react';
-import { masterApp, createMasterAPP } from 'sealos-desktop-sdk/master';
-import PgSql from 'applications/pgsql';
-import clsx from 'clsx';
-import { APPTYPE } from 'constants/app_type';
-import useAppStore, { TApp } from 'stores/app';
-import AppIcon from '../app_icon';
-import AppWindow from '../app_window';
-import IframeApp from './iframe_app';
+import AppWindow from '@/components/app_window';
+import MoreButton from '@/components/more_button';
+import useAppStore from '@/stores/app';
+import { TApp } from '@/types';
+import { Box, Flex, Grid, GridItem, Image, Text } from '@chakra-ui/react';
+import dynamic from 'next/dynamic';
+import { MouseEvent, useCallback, useContext, useEffect, useState } from 'react';
+import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
+import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
 
-export default function DesktopContent() {
-  const {
-    installedApps: apps,
-    openedApps,
-    openApp,
-    updateAppOrder,
-    updateAppsMousedown
-  } = useAppStore((state) => state);
+const TimeComponent = dynamic(() => import('./time'), {
+  ssr: false
+});
+const UserMenu = dynamic(() => import('@/components/user_menu'), {
+  ssr: false
+});
 
-  /* icon orders */
-  const itemsLen = 18 * 8; // x:18, y:8
-  const gridItems = useMemo(
-    () =>
-      new Array(itemsLen).fill(null).map((_, i) => {
-        const app = apps.find((item) => item.order === i);
-        return !!app ? { ...app } : null;
-      }),
-    [apps, itemsLen]
-  );
-  /* dragging icon */
-  const [downingItemIndex, setDowningItemIndex] = useState<number>();
+export default function DesktopContent(props: any) {
+  const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
+  const renderApps = apps.filter((item: TApp) => item?.displayType === 'normal');
+  const [maxItems, setMaxItems] = useState(10);
 
-  const isBrowser = typeof window !== 'undefined';
-  const DesktopDom = useMemo(
-    () => (isBrowser ? document.getElementById('desktop') : null),
-    [isBrowser]
-  );
-  const desktopWidth = DesktopDom?.offsetWidth || 0;
-  const desktopHeight = DesktopDom?.offsetHeight || 0;
-
-  const lastDownIconTime = useRef({ appName: '', time: Date.now() });
-
-  function renderApp(appItem: TApp) {
-    switch (appItem.type) {
-      case APPTYPE.APP:
-        if (appItem.name === 'Postgres') {
-          return <PgSql />;
-        }
-        return null;
-
-      case APPTYPE.IFRAME:
-        return <IframeApp appItem={appItem} isShow={appItem.size !== 'minimize'} />;
-
-      default:
-        break;
+  const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
+    e.preventDefault();
+    if (item?.name) {
+      openApp(item);
     }
-  }
-
-  const onDrop = useCallback(
-    (e: any, i: number) => {
-      setDowningItemIndex(undefined);
-      const dom: Element = e.target;
-      /* if it doesnot contain "app-item", it drop in a appGrid */
-      if (!dom.classList.contains('app-item')) return;
-
-      if (downingItemIndex === undefined || gridItems[downingItemIndex] === null) return;
-
-      // @ts-ignore nextline
-      updateAppOrder(gridItems[downingItemIndex], i);
-    },
-    [downingItemIndex, gridItems, updateAppOrder]
-  );
-
-  /**
-   * click a app. if app is "mouseDowning", open it. Otherwise add "mouseDowing" to it.
-   */
-  const onclickDesktop = useCallback(
-    (e: MouseEvent<HTMLDivElement>) => {
-      /* find app target */
-      let target = e.target as Element;
-      while (target && target !== e.currentTarget && !target?.classList.contains('app')) {
-        target = target?.parentElement as Element;
-      }
-
-      const app = apps.find((item) => item.name === target.getAttribute('data-app'));
-
-      /* target is app */
-      if (app) {
-        updateAppsMousedown(app, true);
-
-        /* double click, open app */
-        if (
-          lastDownIconTime.current.appName === app.name &&
-          Date.now() - lastDownIconTime.current.time < 500
-        ) {
-          openApp(app);
-        }
-
-        lastDownIconTime.current = {
-          appName: app.name,
-          time: Date.now()
-        };
-      } else {
-        // target is blank
-        updateAppsMousedown(apps[0], false);
-      }
-    },
-    [apps, openApp, updateAppsMousedown]
-  );
+  };
 
   /**
    * open app
@@ -123,14 +42,18 @@ export default function DesktopContent() {
       messageData?: Record<string, any>;
     }) => {
       const app = apps.find((item) => item.key === appKey);
+      const runningApp = runningInfo.find((item) => item.key === appKey);
       if (!app) return;
       openApp(app, query);
+      if (runningApp) {
+        setToHighestLayerById(runningApp.pid);
+      }
       // post message
       const iframe = document.getElementById(`app-window-${appKey}`) as HTMLIFrameElement;
       if (!iframe) return;
       iframe.contentWindow?.postMessage(messageData, app.data.url);
     },
-    [apps, openApp]
+    [apps, openApp, runningInfo, setToHighestLayerById]
   );
 
   useEffect(() => {
@@ -143,45 +66,69 @@ export default function DesktopContent() {
 
   return (
     <div id="desktop" className={styles.desktop}>
-      {/* 已安装的应用 */}
-      <div className={styles.desktopCont} onClick={onclickDesktop}>
-        {gridItems.map((item, i: number) => {
-          return (
-            <div
-              key={i}
-              className={`app-item ${styles.dskItem}`}
-              draggable={i === downingItemIndex}
-              onMouseDown={() => item && setDowningItemIndex(i)}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => onDrop(e, i)}
-            >
-              {!!item ? (
-                <div
-                  className={`app ${styles.dskApp} ${item.mouseDowning ? styles.active : ''}`}
-                  data-app={item.name}
+      <Flex w="100%" h="100%" alignItems={'center'} flexDirection={'column'}>
+        <Box mt="12vh" minW={'508px'}>
+          <TimeComponent />
+        </Box>
+        {/* desktop apps */}
+        <Grid
+          mt="50px"
+          minW={'508px'}
+          maxH={'300px'}
+          templateRows={'repeat(2, 100px)'}
+          templateColumns={'repeat(5, 72px)'}
+          gap={'36px'}
+        >
+          {renderApps &&
+            renderApps.slice(0, maxItems).map((item: TApp, index) => (
+              <GridItem
+                w="72px"
+                h="100px"
+                key={index}
+                userSelect="none"
+                cursor={'pointer'}
+                onClick={(e) => handleDoubleClick(e, item)}
+              >
+                <Box
+                  w="72px"
+                  h="72px"
+                  p={'15px'}
+                  border={'1px solid #FFFFFF'}
+                  borderRadius={8}
+                  boxShadow={'0px 1.16667px 2.33333px rgba(0, 0, 0, 0.2)'}
+                  backgroundColor={'rgba(244, 246, 248, 0.9)'}
                 >
-                  <div className={`${styles.dskIcon}`}>
-                    <AppIcon className={clsx('prtclk')} src={item.icon} width="100%" />
-                  </div>
-                  <div className={styles.appName}>{item.name}</div>
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
+                  <Image
+                    width="100%"
+                    height="100%"
+                    src={item?.icon}
+                    fallbackSrc="/images/sealos.svg"
+                    alt="user avator"
+                  />
+                </Box>
+                <Text
+                  textShadow={'0px 1px 2px rgba(0, 0, 0, 0.4)'}
+                  textAlign={'center'}
+                  mt="8px"
+                  color={'#FFFFFF'}
+                  // fontWeight={400}
+                  fontSize={'10px'}
+                  lineHeight={'16px'}
+                >
+                  {item?.name}
+                </Text>
+              </GridItem>
+            ))}
+        </Grid>
+        <MoreButton />
+        <UserMenu />
+      </Flex>
 
-      {/* 打开的应用窗口 */}
-      {openedApps.map((appItem) => {
+      {/* opened apps */}
+      {runningInfo.map((process) => {
         return (
-          <AppWindow
-            key={appItem.name}
-            style={{ height: '100vh' }}
-            app={appItem}
-            desktopWidth={desktopWidth}
-            desktopHeight={desktopHeight}
-          >
-            {renderApp(appItem)}
+          <AppWindow key={process.pid} style={{ height: '100vh' }} pid={process.pid}>
+            <IframeWindow pid={process.pid} />
           </AppWindow>
         );
       })}

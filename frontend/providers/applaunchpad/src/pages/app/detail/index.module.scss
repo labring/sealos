@@ -31,6 +31,26 @@
   overflow: hidden;
 }
 
+.table {
+  border-radius: 2px;
+  overflow: hidden;
+  table-layout: fixed;
+  width: 100%;
+  background-color: #fff;
+
+  th {
+    border: 1px solid #eff0f1;
+    text-align: left;
+    padding: 8px;
+    user-select: all;
+    font-weight: 500;
+  }
+
+  tr:nth-child(even) {
+    background-color: #eff0f1;
+  }
+}
+
 @keyframes blink {
   from,
   to {
