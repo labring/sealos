@@ -59,7 +59,6 @@ export default function Index() {
           onClick={(e) => {
             e.stopPropagation();
             if (currentPage <= 1) return;
-            console.log(1);
             setCurrentPage((state) => state - 1);
           }}
         >
@@ -136,7 +135,6 @@ export default function Index() {
           onClick={(e) => {
             e.stopPropagation();
             if (currentPage >= totalPages) return;
-            console.log(1);
             setCurrentPage((state) => state + 1);
           }}
         >
