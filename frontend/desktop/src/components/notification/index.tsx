@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import request from '@/services/request';
 import { formatTime } from '@/utils/tools';
 import styles from './index.module.scss';
+import { useTranslation } from 'next-i18next';
 
 type NotificationItem = {
   metadata: {
@@ -32,6 +33,7 @@ type TNotification = {
 };
 
 export default function Notification(props: TNotification) {
+  const { t } = useTranslation();
   const { isShow, onClose, onAmount } = props;
   const [activeTab, setActiveTab] = useState<'read' | 'unread'>('unread');
   const [activePage, setActivePage] = useState<'index' | 'detail'>('index');
@@ -108,7 +110,7 @@ export default function Notification(props: TNotification) {
           >
             <Iconfont iconName="icon-left" color="#239BF2" width={32} height={32} />
           </Box>
-          <Text>{activePage === 'index' ? '消息中心' : msgDetail?.spec?.title}</Text>
+          <Text>{activePage === 'index' ? t('Message Center') : msgDetail?.spec?.title}</Text>
         </Flex>
         {activePage === 'index' ? (
           <>
@@ -117,14 +119,14 @@ export default function Notification(props: TNotification) {
                 className={clsx(activeTab === 'unread' && styles.active, styles.tab)}
                 onClick={() => setActiveTab('unread')}
               >
-                未读 ({unread_notes?.length || 0})
+                {t('Unread')} ({unread_notes?.length || 0})
               </Box>
               <Box
                 ml={'12px'}
                 className={clsx(activeTab === 'read' && styles.active, styles.tab)}
                 onClick={() => setActiveTab('read')}
               >
-                已读
+                {t('Have Read')}
               </Box>
               <Text
                 ml={'auto'}
@@ -132,7 +134,7 @@ export default function Notification(props: TNotification) {
                 className={styles.tab}
                 onClick={() => markAllAsRead()}
               >
-                全部已读
+                {t('Read All')}
               </Text>
             </Flex>
             <Flex pt={'9px'} pb="12px" direction={'column'} h="430px" className={styles.scrollWrap}>
@@ -154,7 +156,9 @@ export default function Notification(props: TNotification) {
                       justifyContent={'space-between'}
                       className={clsx(styles.desc, styles.footer)}
                     >
-                      <Text>来自「{item?.spec?.from}」</Text>
+                      <Text>
+                        {t('From')}「{item?.spec?.from}」
+                      </Text>
                       <Text>
                         {formatTime((item?.spec?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}
                       </Text>
@@ -179,7 +183,9 @@ export default function Notification(props: TNotification) {
               fontSize="10px"
               fontWeight="400"
             >
-              <Text>来自「{msgDetail?.spec?.from}」</Text>
+              <Text>
+                {t('From')}「{msgDetail?.spec?.from}」
+              </Text>
               <Box display={'inline-block'} ml={'auto'}>
                 {formatTime((msgDetail?.spec?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}
               </Box>

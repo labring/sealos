@@ -5,7 +5,11 @@ import useAppStore from '@/stores/app';
 import Head from 'next/head';
 import { createContext, useEffect, useState } from 'react';
 import styles from './index.module.scss';
-import MoreApps from '@/components/more_apps';
+import dynamic from 'next/dynamic';
+
+const MoreApps = dynamic(() => import('@/components/more_apps'), {
+  ssr: false
+});
 interface IMoreAppsContext {
   showMoreApps: boolean;
   setShowMoreApps: (value: boolean) => void;

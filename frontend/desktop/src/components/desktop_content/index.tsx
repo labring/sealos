@@ -1,5 +1,4 @@
 import AppWindow from '@/components/app_window';
-import MoreButton from '@/components/more_button';
 import useAppStore from '@/stores/app';
 import { TApp } from '@/types';
 import { Box, Flex, Grid, GridItem, Image, Text } from '@chakra-ui/react';
@@ -8,6 +7,7 @@ import { MouseEvent, useCallback, useContext, useEffect, useState } from 'react'
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
+import { useTranslation } from 'next-i18next';
 
 const TimeComponent = dynamic(() => import('./time'), {
   ssr: false
@@ -15,8 +15,12 @@ const TimeComponent = dynamic(() => import('./time'), {
 const UserMenu = dynamic(() => import('@/components/user_menu'), {
   ssr: false
 });
+const MoreButton = dynamic(() => import('@/components/more_button'), {
+  ssr: false
+});
 
 export default function DesktopContent(props: any) {
+  const { t, i18n } = useTranslation();
   const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
   const renderApps = apps.filter((item: TApp) => item?.displayType === 'normal');
   const [maxItems, setMaxItems] = useState(10);
@@ -115,7 +119,9 @@ export default function DesktopContent(props: any) {
                   fontSize={'10px'}
                   lineHeight={'16px'}
                 >
-                  {item?.name}
+                  {item?.i18n?.[i18n?.language]?.name
+                    ? item?.i18n?.[i18n?.language]?.name
+                    : t(item?.name)}
                 </Text>
               </GridItem>
             ))}

@@ -6,8 +6,10 @@ import { TApp } from '@/types';
 import Iconfont from '../iconfont';
 import styles from './index.module.scss';
 import clsx from 'clsx';
+import { useTranslation } from 'next-i18next';
 
 export default function Index() {
+  const { t, i18n } = useTranslation();
   const moreAppsContent = useContext(MoreAppsContext);
   const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
   const itemsPerPage = 30; // Number of apps per page
@@ -40,7 +42,7 @@ export default function Index() {
           textShadow={'0px 1px 2px rgba(0, 0, 0, 0.4)'}
           lineHeight={'140%'}
         >
-          更多应用
+          {t('More Apps')}
         </Text>
       </Flex>
       <Flex alignItems={'center'}>
@@ -57,7 +59,6 @@ export default function Index() {
           onClick={(e) => {
             e.stopPropagation();
             if (currentPage <= 1) return;
-            console.log(1);
             setCurrentPage((state) => state - 1);
           }}
         >
@@ -77,7 +78,7 @@ export default function Index() {
           templateColumns={'repeat(5, 72px)'}
         >
           {paginatedApps &&
-            paginatedApps.map((item: TApp, index) => (
+            paginatedApps.map((item: TApp, index: number) => (
               <GridItem
                 w="72px"
                 h="100px"
@@ -114,7 +115,9 @@ export default function Index() {
                   fontSize={'10px'}
                   lineHeight={'16px'}
                 >
-                  {item?.name}
+                  {item?.i18n?.[i18n?.language]?.name
+                    ? item?.i18n?.[i18n?.language]?.name
+                    : t(item?.name)}
                 </Text>
               </GridItem>
             ))}
@@ -132,7 +135,6 @@ export default function Index() {
           onClick={(e) => {
             e.stopPropagation();
             if (currentPage >= totalPages) return;
-            console.log(1);
             setCurrentPage((state) => state + 1);
           }}
         >

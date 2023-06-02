@@ -2,8 +2,10 @@ import { MoreAppsContext } from '@/components/layout';
 import { Box, Flex, Text } from '@chakra-ui/react';
 import { useContext } from 'react';
 import Iconfont from '../iconfont';
+import { useTranslation } from 'next-i18next';
 
 export default function Index() {
+  const { t } = useTranslation();
   const moreAppsContent = useContext(MoreAppsContext);
   return (
     <Flex
@@ -26,7 +28,7 @@ export default function Index() {
         <Iconfont iconName="icon-apps" width={20} height={20} color="#ffffff"></Iconfont>
       </Box>
       <Text color={'#FFFFFF'} fontSize={'14px'} fontWeight={500}>
-        更多应用
+        {t('More Apps')}
       </Text>
     </Flex>
   );

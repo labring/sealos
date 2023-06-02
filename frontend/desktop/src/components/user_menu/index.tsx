@@ -1,10 +1,9 @@
-import { Box, Flex, Image } from '@chakra-ui/react';
-import Iconfont from '../iconfont';
-import Notification from '@/components/notification';
-import { useState } from 'react';
 import Account from '@/components/account';
-import { useDisclosure } from '@chakra-ui/react';
+import Notification from '@/components/notification';
 import useSessionStore from '@/stores/session';
+import { Box, Flex, Image, useDisclosure } from '@chakra-ui/react';
+import { useState } from 'react';
+import Iconfont from '../iconfont';
 
 export default function Index(props: any) {
   const [showNotification, setShowNotification] = useState(false);

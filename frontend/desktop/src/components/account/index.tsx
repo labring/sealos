@@ -1,16 +1,19 @@
+import LangSelect from '@/components/LangSelect';
 import { useCopyData } from '@/hooks/useCopyData';
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import download from '@/utils/downloadFIle';
-import { Image, Box, Flex, Text, UseDisclosureProps } from '@chakra-ui/react';
+import { Box, Flex, Image, Text, UseDisclosureProps } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import JsYaml from 'js-yaml';
+import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useMemo } from 'react';
 import Iconfont from '../iconfont';
 
 export default function Index({ accountDisclosure }: { accountDisclosure: UseDisclosureProps }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const { delSession, getSession } = useSessionStore();
   const { user, kubeconfig } = getSession();
   const { copyData } = useCopyData();
@@ -34,7 +37,7 @@ export default function Index({ accountDisclosure }: { accountDisclosure: UseDis
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     delSession();
-    router.reload();
+    router.push('/', '/', { locale: 'en' });
   };
 
   return (
@@ -61,10 +64,11 @@ export default function Index({ accountDisclosure }: { accountDisclosure: UseDis
         p="20px"
         backdropFilter={'blur(150px)'}
       >
-        <Flex justifyContent={'end'} alignItems={'center'} overflow={'hidden'} onClick={logout}>
+        <Flex justifyContent={'end'} alignItems={'center'} overflow={'hidden'}>
+          <LangSelect mr="auto" />
           <Iconfont iconName="icon-logout" width={14} height={14} color="#24282C"></Iconfont>
-          <Text ml="6px" color={'#24282C'} fontSize={'12px'} fontWeight={500}>
-            退出账号
+          <Text ml="6px" color={'#24282C'} fontSize={'12px'} fontWeight={500} onClick={logout}>
+            {t('Log Out')}
           </Text>
         </Flex>
         <Flex mt="8px" justifyContent={'center'} alignItems={'center'} flexDirection={'column'}>
