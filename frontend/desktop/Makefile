@@ -1,7 +1,7 @@
 
-SERVICE_NAME=desktop-frontend
+SERVICE_NAME=zhujingyang/desktop-frontend
 # Image URL to use all building/pushing image targets
-IMG ?= $(SERVICE_NAME):latest
+IMG ?= $(SERVICE_NAME):1.3.7
 
 .PHONY: all
 all: docker-build-and-push

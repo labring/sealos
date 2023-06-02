@@ -2,7 +2,7 @@ import { MoreAppsContext } from '@/components/layout';
 import { Box, Flex, Text } from '@chakra-ui/react';
 import { useContext } from 'react';
 import Iconfont from '../iconfont';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 
 export default function Index() {
   const { t } = useTranslation();

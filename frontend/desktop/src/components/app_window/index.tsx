@@ -5,7 +5,7 @@ import clsx from 'clsx';
 import React, { useRef, useState } from 'react';
 import Draggable, { DraggableEventHandler } from 'react-draggable';
 import styles from './index.module.scss';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 
 export default function AppWindow(props: {
   style?: React.CSSProperties;

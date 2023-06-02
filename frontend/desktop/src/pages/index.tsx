@@ -1,12 +1,13 @@
 import Layout from '@/components/layout';
-import { useRouter } from 'next/router';
-import { useEffect } from 'react';
 import useSessionStore from '@/stores/session';
 import { useColorMode } from '@chakra-ui/react';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
 
 const destination = process.env.NEXT_PUBLIC_SERVICE + 'auth/login';
 
-export default function Home(props: any) {
+const Home = (props: any) => {
   const router = useRouter();
   const { colorMode, toggleColorMode } = useColorMode();
   const isUserLogin = useSessionStore((s) => s.isUserLogin);
@@ -23,4 +24,13 @@ export default function Home(props: any) {
   }, [router, isUserLogin]);
 
   return <Layout>{props.children}</Layout>;
+};
+
+export async function getStaticProps({ locale }: { locale: any }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale))
+    }
+  };
 }
+export default Home;

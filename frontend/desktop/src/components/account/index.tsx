@@ -1,18 +1,19 @@
+import LangSelect from '@/components/LangSelect';
 import { useCopyData } from '@/hooks/useCopyData';
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import download from '@/utils/downloadFIle';
-import { Image, Box, Flex, Text, UseDisclosureProps } from '@chakra-ui/react';
+import { Box, Flex, Image, Text, UseDisclosureProps } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import JsYaml from 'js-yaml';
+import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useMemo } from 'react';
 import Iconfont from '../iconfont';
-import { useTranslation } from 'react-i18next';
 
 export default function Index({ accountDisclosure }: { accountDisclosure: UseDisclosureProps }) {
   const router = useRouter();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { delSession, getSession } = useSessionStore();
   const { user, kubeconfig } = getSession();
   const { copyData } = useCopyData();
@@ -64,9 +65,7 @@ export default function Index({ accountDisclosure }: { accountDisclosure: UseDis
         backdropFilter={'blur(150px)'}
       >
         <Flex justifyContent={'end'} alignItems={'center'} overflow={'hidden'}>
-          <Text mr="auto" onClick={() => i18n.changeLanguage(i18n.language === 'en' ? 'zh' : 'en')}>
-            {i18n.language}
-          </Text>
+          <LangSelect mr="auto" />
           <Iconfont iconName="icon-logout" width={14} height={14} color="#24282C"></Iconfont>
           <Text ml="6px" color={'#24282C'} fontSize={'12px'} fontWeight={500} onClick={logout}>
             {t('log out')}

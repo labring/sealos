@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import request from '@/services/request';
 import { formatTime } from '@/utils/tools';
 import styles from './index.module.scss';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 
 type NotificationItem = {
   metadata: {

@@ -6,7 +6,7 @@ import { TApp } from '@/types';
 import Iconfont from '../iconfont';
 import styles from './index.module.scss';
 import clsx from 'clsx';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 
 export default function Index() {
   const { t, i18n } = useTranslation();

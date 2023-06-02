@@ -1,7 +1,7 @@
 import { formatTime } from '@/utils/tools';
 import { Flex, Text } from '@chakra-ui/react';
+import { useTranslation } from 'next-i18next';
 import { useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 const WeekDay = {
   Sunday: '周日',
@@ -15,7 +15,7 @@ const WeekDay = {
 
 export default function TimeComponent(props: any) {
   const [time, setTime] = useState(new Date().toString());
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   console.log(i18n.language);
 
   useEffect(() => {
@@ -46,13 +46,13 @@ export default function TimeComponent(props: any) {
       <Text fontWeight={500} fontSize={'64px'} textShadow={'0px 1px 2px rgba(0, 0, 0, 0.4)'}>
         {formatTime(time, 'HH:mm')}
       </Text>
-      {i18n.language === 'zh' ? (
+      {i18n.language === 'en' ? (
         <Text fontWeight={500} textShadow={'0px 1px 2px rgba(0, 0, 0, 0.4)'}>
-          {formatTime(time, 'YYYY年MM月DD日')} {day}
+          {formatTime(time, 'YYYY/MM/DD')} {formatTime(time, 'dddd')}
         </Text>
       ) : (
         <Text fontWeight={500} textShadow={'0px 1px 2px rgba(0, 0, 0, 0.4)'}>
-          {formatTime(time, 'YYYY/MM/DD')} {formatTime(time, 'dddd')}
+          {formatTime(time, 'YYYY年MM月DD日')} {day}
         </Text>
       )}
     </Flex>

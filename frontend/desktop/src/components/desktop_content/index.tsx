@@ -7,7 +7,7 @@ import { MouseEvent, useCallback, useContext, useEffect, useState } from 'react'
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 
 const TimeComponent = dynamic(() => import('./time'), {
   ssr: false

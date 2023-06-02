@@ -27,6 +27,7 @@
     "js-yaml": "^4.1.0",
     "lodash": "^4.17.21",
     "next": "13.3.0",
+    "next-i18next": "^13.2.2",
     "next-pwa": "^5.6.0",
     "nprogress": "^0.2.0",
     "qrcode.react": "^3.1.0",
