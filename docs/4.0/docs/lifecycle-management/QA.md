@@ -1,75 +1,139 @@
 # 常见问题与解决方案
 
-## 一、构建与代理
+使用Sealos时，您可能会遇到一些问题。以下是一些常见问题的答案和解决方法。
 
-### 如何在build阶段设置代理服务?
+## 镜像构建问题
 
-在执行build命令时，可以设置HTTP_PROXY环境变量以配置代理服务。
+### Q1: 在构建阶段如何设置代理服务？
+
+在执行构建命令时，可以通过设置HTTP_PROXY环境变量来配置代理服务。
 
 ```shell
 HTTP_PROXY=socket5://127.0.0.1:7890 sealos build xxxxx
 ```
 
-### 如何开启buildah的debug日志?
+### Q2：如何启用buildah的调试日志？
 
-如果您需要查看buildah的debug日志，可以通过设置BUILDAH_LOG_LEVEL环境变量来开启。
+若需要查看buildah的调试日志，可以通过设定`BUILDAH_LOG_LEVEL`环境变量实现。
 
 ```shell
 BUILDAH_LOG_LEVEL=debug sealos images
 ```
 
-## 二、运行时选择
+### Q3：如何在Pod中执行Sealos构建？
 
-### 搭建k8s如何选择运行时？
+若在Pod中执行Sealos构建，请按以下步骤操作：
 
-根据您选择的镜像，sealos将使用不同的运行时。如果您选择了kuberletes-docker镜像，sealos将使用docker作为运行时；如果选择了kuberletes-crio镜像，则使用crio作为运行时。
+1. 在Pod中构建镜像，可用以下YAML配置创建Deployment。
 
-## 三、版本兼容性问题
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: sealoscli
+  name: sealoscli
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sealoscli
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: sealoscli
+    spec:
+      containers:
+      - image: #用你的sealos镜像替换
+        name: sealoscli
+        stdin: true
+        stdinOnce: true
+        securityContext:
+          privileged: true
+```
 
-### 出现报错："Applied to cluster error: failed to init exec auth.sh failed exit status 127"
+2. 创建Dockerfile。以下是一个例子，根据需要进行修改。
 
-这个问题通常与您使用的sealos版本和镜像版本不匹配有关。请确认您的镜像版本和sealos的版本是对应的。
+```dockerfile
+FROM bitnami/minideb:buster
 
-例如，如果您正在使用形如kubernetes:v1.xx.x的版本，您可能需要升级sealos，尤其在您使用了老版本的sealos，但sealos集群镜像使用的是最新版时。
+ARG TARGETOS
+ARG TARGETARCH
 
-另一个解决方法是选择对应版本的sealos镜像。例如，如果您的sealos版本是4.1.3，那么您的集群镜像应该选择形如kuberntes:v1.24.0-4.1.3的版本。
+LABEL from=bitnami/minideb:buster platform=rootcloud team=oam tag=buster name=base
 
-通过确保镜像版本和sealos版本的匹配，您可以避免这类问题的出现。
+RUN sed -i "s@http://deb.debian.org@http://mirrors.aliyun.com@g" /etc/apt/sources.list && sed -i "s@http://security.debian.org@http://mirrors.aliyun.com/debian-security@g" /etc/apt/sources.list
+RUN install_packages curl iputils-ping net-tools telnet procps vim wget jq
 
-## 四、文件和目录位置
+ENV LANG=C.UTF-8
+ENV LANGUAGE=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV TZ=Asia/Shanghai
+```
 
-### 如何修改/root/.sealos默认目录的存储位置
+3. 在Pod中执行构建命令。
 
-如果您需要修改默认的存储位置，可以设置SEALOS_RUNTIME_ROOT环境变量，然后运行sealos命令。为了方便，建议您将这个环境变量设置为全局的，这样您在其他命令或场景中也可以方便地使用。
+```shell
+sealos build --arch arm64 --build-arg TARGETOS=linux --build-arg TARGETARCH=arm64 -t test  -f Dockerfile .
+```
+
+### Q4：执行Sealos构建时遇到“lgetxattr /var/lib/containers/storage/overlay/0c2afe770ec7870ad4639f18a1b50b3a84718f95c8907f3d54e14dbf0a01d50d/merged/dev/ptmx: no such device”错误？
+
+这个问题可能与`fuse-overlayfs`的版本有关。建议您从[这里](https://github.com/containers/fuse-overlayfs/releases)下载最新版本进行替换。
+
+## 运行时选择问题
+
+### Q1：如何选择Kubernetes运行时？
+
+Sealos会根据您选择的镜像决定使用哪种运行时。如果选择了kubernetes-docker镜像，Sealos将使用Docker作为运行时；如果选择了kubernetes-crio镜像，Sealos将使用CRI-O作为运行时。
+
+## 版本兼容性问题
+
+### Q1：报错："Applied to cluster error: failed to init exec auth.sh failed exit status 127"？
+
+此问题常因您使用的sealos版本和镜像版本不匹配造成。请确认您的镜像版本和sealos的版本是匹配的。
+
+例如，若您正使用形如kubernetes:v1.xx.x的版本，可能需要升级sealos，特别是在使用较老版本的sealos，而sealos集群镜像则使用了最新版时。
+
+另一种解决方法是选择对应版本的sealos镜像。比如，如果您的sealos版本是4.1.3，那么集群镜像应选择形如kuberntes:v1.24.0-4.1.3的版本。
+
+确保镜像版本和sealos版本的匹配，可以帮助避免此类问题。
+
+## 文件和目录位置问题
+
+### Q1：如何修改`/root/.sealos`默认目录的存储位置？
+
+若需修改默认的存储位置，可以设置SEALOS_RUNTIME_ROOT环境变量，然后运行sealos命令。建议您将这个环境变量设置为全局的，这样在其他命令或场景中也可以方便使用。
 
 ```shell
 export SEALOS_RUNTIME_ROOT=/data/.sealos 
 sealos run labring/kubernetes:v1.24.0
 ```
 
-### 如何修改/var/lib/sealos默认目录的存储位置
+### Q2：如何修改`/var/lib/sealos`默认目录的存储位置？
 
-如果您需要修改默认的存储位置，可以设置SEALOS_DATA_ROOT环境变量，然后运行sealos命令。同样，为了方便，建议您将这个环境变量设置为全局的。
+若需修改默认的存储位置，可以设置SEALOS_DATA_ROOT环境变量，然后运行sealos命令。同样，建议您将这个环境变量设置为全局的。
 
 ```shell
 export SEALOS_DATA_ROOT=/data/sealos 
 sealos run labring/kubernetes:v1.24.0
 ```
 
-### ssh传输文件时,如何操作可以禁止检查文件的md5
+### Q3：ssh传输文件时，如何禁止检查文件的md5？
 
-在网络环境良好的情况下，禁用md5检查可以大幅提升传输速度。如果您不想在ssh传输文件时检查文件的md5，可以设置SEALOS_SCP_CHECKSUM环境变量为false来禁用这个功能。为了便于多场景使用，建议将此环境变量设置为全局。
+在网络环境良好时，禁用md5检查可以极大提升传输速度。若不想在ssh传输文件时检查文件的md5，可将SEALOS_SCP_CHECKSUM环境变量设置为false以禁用此功能。建议将此环境变量设为全局，以便在多场景下使用。
 
 ```shell
 export SEALOS_SCP_CHECKSUM=false
 sealos run labring/kubernetes:v1.24.0
 ```
 
-## 五、其他问题
+## 其他问题
 
-### image-cri-shim导致端口大量占用，耗尽服务器socket资源
+### Q1：image-cri-shim导致端口大量占用，耗尽服务器socket资源？
 
-当出现此问题时，您可以尝试以下命令来解决：
+出现此问题时，可通过以下命令解决：
 
 ```shell
 wget https://github.com/labring/sealos/releases/download/v4.2.0/sealos_4.2.0_linux_amd64.tar.gz && tar xvf sealos_4.2.0_linux_amd64.tar.gz image-cri-shim
@@ -79,14 +143,12 @@ sealos exec -r master,node "systemctl start image-cri-shim"
 sealos exec -r master,node "image-cri-shim -v"
 ```
 
-### 报错[ERROR FileAvailable--etc-kubernetes-kubelet.conf]: /etc/kubernetes/kubelet.conf already exists
+### Q2：报错"[ERROR FileAvailable--etc-kubernetes-kubelet.conf]: /etc/kubernetes/kubelet.conf already exists"
 
-若出现此问题，您可能需要升级到sealos 4.1.7+。
+此问题可通过升级至Sealos 4.1.7+来解决。
 
-### 报错："function "semverCompare" not defined"
+### Q3：报错："function "semverCompare" not defined"
 
-如果您在使用sealos时遇到了这个错误，您需要升级到sealos 4.1.4+。
+此问题可通过升级至Sealos 4.1.4+来解决。
 
----
-
-希望以上内容能帮助解决您在使用sealos时遇到的问题。如果还有其他问题，欢迎随时提出。
+我们希望这些解答能帮助您解决在使用Sealos过程中遇到的问题。如果还有其他问题，欢迎随时提问。
