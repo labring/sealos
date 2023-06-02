@@ -12,6 +12,7 @@ import throttle from 'lodash/throttle';
 import { useGlobalStore } from '@/store/global';
 import { useLoading } from '@/hooks/useLoading';
 import { getServiceEnv, SEALOS_DOMAIN } from '@/store/static';
+import { useRouter } from 'next/router';
 
 import 'nprogress/nprogress.css';
 import '@/styles/reset.scss';
@@ -33,7 +34,8 @@ const queryClient = new QueryClient({
 });
 
 export default function App({ Component, pageProps }: AppProps) {
-  const { setScreenWidth, loading } = useGlobalStore();
+  const router = useRouter();
+  const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
   const { Loading } = useLoading();
   const { openConfirm, ConfirmChild } = useConfirm({
     title: '跳转提示',
@@ -78,6 +80,13 @@ export default function App({ Component, pageProps }: AppProps) {
       window.removeEventListener('resize', resize);
     };
   }, [setScreenWidth]);
+
+  // record route
+  useEffect(() => {
+    return () => {
+      setLastRoute(router.asPath);
+    };
+  }, [router.asPath, setLastRoute]);
 
   return (
     <>

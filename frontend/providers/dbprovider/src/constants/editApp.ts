@@ -40,6 +40,6 @@ export const MemorySlideMarkList = [
   { label: '5G', value: 5120 },
   { label: '6G', value: 6144 },
   { label: '7G', value: 7168 },
-  { label: '8G', value: 8192 },
+  { label: '8G', value: 8192 }
   // { label: '16G', value: 16384 }
 ];

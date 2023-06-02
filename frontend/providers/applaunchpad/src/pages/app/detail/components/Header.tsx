@@ -102,7 +102,7 @@ const Header = ({
 
   return (
     <Flex h={'86px'} alignItems={'center'}>
-      <Button variant={'unstyled'} onClick={router.back} lineHeight={1}>
+      <Button variant={'unstyled'} onClick={() => router.replace('/apps')} lineHeight={1}>
         <MyIcon name="arrowLeft" />
       </Button>
       <Box ml={5} mr={3} fontSize={'3xl'} fontWeight={'bold'}>

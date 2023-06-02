@@ -7,6 +7,8 @@ type State = {
   setScreenWidth: (e: number) => void;
   loading: boolean;
   setLoading: (val: boolean) => void;
+  lastRoute: string;
+  setLastRoute: (val: string) => void;
 };
 
 export const useGlobalStore = create<State>()(
@@ -22,6 +24,12 @@ export const useGlobalStore = create<State>()(
       setLoading(val: boolean) {
         set((state) => {
           state.loading = val;
+        });
+      },
+      lastRoute: '/',
+      setLastRoute(val) {
+        set((state) => {
+          state.lastRoute = val;
         });
       }
     }))

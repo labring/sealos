@@ -16,7 +16,7 @@ export const getDBSecret = (data: { dbName: string; dbType: DBType }) =>
   GET<SecretResponse>(`/api/getSecretByName`, data);
 export const delDBByName = (name: string) => DELETE('/api/delDBByName', { name });
 
-export const applyYamlList = (yamlList: string[], type: 'create' | 'replace'|'update') =>
+export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | 'update') =>
   POST('/api/applyYamlList', { yamlList, type });
 
 export const getPodsByDBName = (name: string) =>
@@ -37,7 +37,7 @@ export const restartPodByName = (podName: string) => GET(`/api/pod/restartPod?po
 /* db operation */
 export const restartDB = (data: { dbName: string; dbType: DBType }) => {
   const yaml = json2Restart(data);
-  return applyYamlList([yaml],'update');
+  return applyYamlList([yaml], 'update');
 };
 
 export const pauseDBByName = (data: { dbName: string; dbType: DBType }) => {
@@ -45,7 +45,7 @@ export const pauseDBByName = (data: { dbName: string; dbType: DBType }) => {
     ...data,
     type: 'Stop'
   });
-  return applyYamlList([yaml],'update');
+  return applyYamlList([yaml], 'update');
 };
 
 export const startDBByName = (data: { dbName: string; dbType: DBType }) => {
@@ -53,5 +53,5 @@ export const startDBByName = (data: { dbName: string; dbType: DBType }) => {
     ...data,
     type: 'Start'
   });
-  return applyYamlList([yaml],'update');
+  return applyYamlList([yaml], 'update');
 };

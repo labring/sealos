@@ -99,7 +99,7 @@ const Header = ({
 
   return (
     <Flex h={'86px'} alignItems={'center'}>
-      <Button variant={'unstyled'} onClick={router.back} lineHeight={1}>
+      <Button variant={'unstyled'} onClick={() => router.replace('/dbs')} lineHeight={1}>
         <MyIcon name="arrowLeft" />
       </Button>
       <Box mx={5} fontSize={'3xl'} fontWeight={'bold'}>

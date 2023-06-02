@@ -11,6 +11,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import throttle from 'lodash/throttle';
 import { useGlobalStore } from '@/store/global';
 import { useLoading } from '@/hooks/useLoading';
+import { useRouter } from 'next/router';
 
 import 'nprogress/nprogress.css';
 import 'react-day-picker/dist/style.css';
@@ -33,7 +34,8 @@ const queryClient = new QueryClient({
 });
 
 export default function App({ Component, pageProps, domain }: AppProps & { domain: string }) {
-  const { setScreenWidth, loading } = useGlobalStore();
+  const router = useRouter();
+  const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
   const { Loading } = useLoading();
   const { openConfirm, ConfirmChild } = useConfirm({
     title: '跳转提示',
@@ -77,6 +79,13 @@ export default function App({ Component, pageProps, domain }: AppProps & { domai
       window.removeEventListener('resize', resize);
     };
   }, [setScreenWidth]);
+
+  // record route
+  useEffect(() => {
+    return () => {
+      setLastRoute(router.asPath);
+    };
+  }, [router.asPath, setLastRoute]);
 
   return (
     <>

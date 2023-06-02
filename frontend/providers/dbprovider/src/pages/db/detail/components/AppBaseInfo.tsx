@@ -5,7 +5,7 @@ import { useCopyData, printMemory } from '@/utils/tools';
 import MyIcon from '@/components/Icon';
 import { getDBSecret } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
-import { DBTypeEnum, defaultDBDetail } from '@/constants/db';
+import { DBStatusEnum, DBTypeEnum, defaultDBDetail } from '@/constants/db';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
 const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
@@ -120,12 +120,17 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
         </Box>
       ))}
       {/* secret */}
-      {secret && (
+      {secret && db.status.value === DBStatusEnum.Running && (
         <>
           <Flex mt={6} alignItems={'center'} color={'myGray.500'}>
             <MyIcon w={'16px'} name={'analyze'}></MyIcon>
             <Box ml={2}>连接信息</Box>
-            <Button ml={3} size={'xs'} onClick={onclickConnectDB}>
+            <Button
+              ml={3}
+              size={'xs'}
+              disabled={db.status.value !== DBStatusEnum.Running}
+              onClick={onclickConnectDB}
+            >
               一键连接
             </Button>
           </Flex>
