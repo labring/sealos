@@ -8,11 +8,11 @@ FastGpt Git 上推荐使用 docker 部署，因此在 Sealos 上也可以很方�
 
 ## 1. 创建两个数据库
 
-Sealos 提供了 DB Provider 工具，可以可视化的部署数据库。
+Sealos 提供了 **数据库** 工具，可以可视化的部署数据库。
 
-### 1.1 从桌面打开 DB Provider 工具。
+### 1.1 从桌面打开 **数据库** 工具。
 
-![1. 打开 DB Provider](./images/open-provider.png)
+![1. 打开 **数据库**](./images/open-dbprovider.png)
 
 ### 1.2 新建 MongoDB 数据库
 
@@ -62,7 +62,8 @@ CREATE TABLE IF NOT EXISTS modelData (
 CREATE INDEX IF NOT EXISTS modelData_userId_index ON modelData USING HASH (user_id);
 CREATE INDEX IF NOT EXISTS modelData_kbId_index ON modelData USING HASH (kb_id);
 CREATE INDEX IF NOT EXISTS idx_model_data_md5_q_a_user_id_kb_id ON modelData (md5(q), md5(a), user_id, kb_id);
-CREATE INDEX IF NOT EXISTS vector_index ON modelData USING ivfflat (vector vector_cosine_ops) WITH (lists = 1000);
+CREATE INDEX IF NOT EXISTS vector_index  ON modeldata USING ivfflat (vector vector_ip_ops) WITH (lists = 100);
+SET ivfflat.probes = 10;
 ```
 
 ![](./images/fast8.png)
@@ -75,9 +76,9 @@ CREATE INDEX IF NOT EXISTS vector_index ON modelData USING ivfflat (vector vecto
 
 ## 3. 部署 FastGpt
 
-Sealos 提供了 App Launchpad 工具，可以快速的部署单镜像服务。
+Sealos 提供了 **应用管理** 工具，可以快速的部署单镜像服务。
 
-### 3.1 从桌面打开 App Launchpad
+### 3.1 从桌面打开 **应用管理**
 
 ![](./images/fast9.png)
 
@@ -90,14 +91,14 @@ Sealos 提供了 App Launchpad 工具，可以快速的部署单镜像服务。
 ![](./images/fast11.png)
 ![](./images/fast12.png)
 
-| 关键变量名   | 描述                                                                                                                                                                    |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 应用名称     | 随便填写                                                                                                                                                                |
-| 镜像名       | 官网镜像: registry.cn-hangzhou.aliyuncs.com/fastgpt/fastgpt:latest                                                                                                      |
-| CPU 和内存   | 按需                                                                                                                                                                    |
-| 容器暴露端口 | 必须为 3000                                                                                                                                                             |
-| 外网访问     | 打开。App Launchpad 自动分配了域名，可以直接使用，也可以自定义域名。                                                                                                    |
-| 环境变量     | 参考[FastGpt docker-compose.yaml](https://github.com/c121914yu/FastGPT/blob/main/docs/deploy/fastgpt/docker-compose.yml)。数据库部分变量，可以直接复制 [1.4] 里的内容。 |
+| 关键变量名   | 描述                                                                                                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 应用名称     | 随便填写                                                                                                                                                                 |
+| 镜像名       | 官网镜像: registry.cn-hangzhou.aliyuncs.com/fastgpt/fastgpt:latest                                                                                                       |
+| CPU 和内存   | 按需                                                                                                                                                                     |
+| 容器暴露端口 | 必须为 3000                                                                                                                                                              |
+| 外网访问     | 打开。App Launchpad 自动分配了域名，可以直接使用，也可以自定义域名。                                                                                                     |
+| 环境变量     | 参考 [FastGpt docker-compose.yaml](https://github.com/c121914yu/FastGPT/blob/main/docs/deploy/fastgpt/docker-compose.yml)。数据库部分变量，可以直接复制 [1.4] 里的内容。 |
 
 下面是一份去掉注释后的环境变量，可以直接复制修改使用。
 
@@ -129,7 +130,7 @@ GPT4KEY=sk-xxx
 
 ### 3.3 访问页面
 
-通过 App Launchpad 提供的外网地址或者自定义域名去访问 FastGpt。
+通过 **应用管理** 提供的外网地址或者自定义域名去访问 FastGpt。
 
 ![](./images/fast17.png)
 ![](./images/fast18.png)

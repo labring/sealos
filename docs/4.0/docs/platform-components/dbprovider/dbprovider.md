@@ -2,9 +2,9 @@
 sidebar_position: 4
 ---
 
-# DB Provider 介绍
+# 数据库 APP 介绍
 
-DB Provider 是一个数据库集群部署工具，可以帮助你快速部署数据库集群。支持 MySQL, PostgreSQL 和 MongoDB。目前 DB Provider 属于测试版本。
+**数据库** 是一个应用的核心组成，Sealos 提供了一个数据库集群部署管理工具，可以帮助你快速部署数据库集群。目前支持 MySQL, PostgreSQL 和 MongoDB。目前 **数据库** 属于测试版本。
 
 - [x] 集群 CRUD
 - [x] 一键直连数据库
@@ -18,13 +18,13 @@ DB Provider 是一个数据库集群部署工具，可以帮助你快速部署�
 
 ## 快速开始
 
-以部署一个 PostgreSQL 数据库为例，体验 DB Provider 的便捷性。
+以部署一个 PostgreSQL 数据库为例，体验 **数据库** 的便捷性。
 
 只需 6 步即可完成部署和访问：
 
-1. 从 Sealos 桌面进入 DB Provider 应用。
+1. 从 Sealos 桌面进入 **数据库** 应用。
 
-![1. 打开 DB Provider](./imgs/db1.png)
+![1. 打开 **数据库**](./imgs/db1.png)
 
 2. 点击新建集群。
 
