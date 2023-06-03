@@ -1,10 +1,9 @@
 import Iconfont from '@/components/iconfont';
-import request from '@/service/request';
 import { Box, Flex, Text } from '@chakra-ui/react';
 import { debounce } from 'lodash';
 import { nanoid } from 'nanoid';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styles from './index.module.scss';
 
 type Terminal = {
@@ -12,9 +11,10 @@ type Terminal = {
   command?: string;
 };
 
-function Terminal({ url }: { url: string }) {
+function Terminal({ url, site }: { url: string; site: string }) {
   const [tabId, setTabId] = useState(nanoid(6));
   const router = useRouter();
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const { query } = router;
 
   const [tabContents, setTabContents] = useState<Terminal[]>([
@@ -29,26 +29,23 @@ function Terminal({ url }: { url: string }) {
 
   useEffect(() => {
     const event = async (e: MessageEvent) => {
-      console.log(e);
+      const whitelist = [url, site];
+      if (!whitelist.includes(e.origin)) return;
       try {
         if (e.data.type === 'new terminal' && e.data.command) {
           newTerminal(decodeURIComponent(e.data.command));
         }
-      } catch (error) {}
+        if (e.data?.ttyd === 'ready') {
+          const command = iframeRef.current?.getAttribute('data-command');
+          iframeRef?.current?.contentWindow?.postMessage({ command: command }, url);
+        }
+      } catch (error) {
+        console.log(error, 'error');
+      }
     };
     window.addEventListener('message', event);
     return () => window.removeEventListener('message', event);
-  }, []);
-
-  const onLoadIframe = (e: any, item: Terminal) => {
-    try {
-      if (item.command) {
-        setTimeout(() => {
-          e?.target?.contentWindow?.postMessage({ command: item.command }, url);
-        }, 1000);
-      }
-    } catch (error) {}
-  };
+  }, [site, url]);
 
   const newTerminal = (command?: string) => {
     const temp = nanoid(6);
@@ -150,7 +147,8 @@ function Terminal({ url }: { url: string }) {
         return (
           <Box flexGrow={1} key={item?.id} display={item?.id === tabId ? 'block' : 'none'}>
             <iframe
-              onLoad={(e) => onLoadIframe(e, item)}
+              ref={iframeRef}
+              data-command={item?.command}
               className={styles.iframeWindow}
               id={tabId}
               src={url}
