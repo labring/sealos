@@ -31,9 +31,11 @@ import (
 	"github.com/containers/image/v5/docker"
 	"github.com/containers/image/v5/docker/daemon"
 	"github.com/containers/image/v5/docker/reference"
+	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
+	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -75,6 +77,13 @@ func ToRegistry(ctx context.Context, sys *types.SystemContext, src, dst string, 
 				return err
 			}
 			logger.Debug("syncing %s", destRef.DockerReference().String())
+			isMultiple, err := supportsMultipleImages(ctx, sys, refs[j])
+			if err != nil {
+				return err
+			}
+			if isMultiple {
+				selection = copy.CopyAllImages
+			}
 			err = retry.RetryIfNecessary(ctx, func() error {
 				_, err = copy.Image(ctx, policyContext, destRef, refs[j], &copy.Options{
 					SourceCtx:          sys,
@@ -82,6 +91,11 @@ func ToRegistry(ctx context.Context, sys *types.SystemContext, src, dst string, 
 					ImageListSelection: selection,
 					ReportWriter:       reportWriter,
 				})
+				if err != nil && strings.Contains(err.Error(), "manifest unknown") && isMultiple {
+					// ignore error
+					logger.Warn("unexpected: %v", err)
+					err = nil
+				}
 				return err
 			}, getRetryOptions())
 			if err != nil {
@@ -90,6 +104,27 @@ func ToRegistry(ctx context.Context, sys *types.SystemContext, src, dst string, 
 		}
 	}
 	return nil
+}
+
+func supportsMultipleImages(ctx context.Context, sys *types.SystemContext, ref types.ImageReference) (bool, error) {
+	imagesrc, err := ref.NewImageSource(ctx, sys)
+	if err != nil {
+		return false, err
+	}
+	defer imagesrc.Close()
+	_, contentType, err := imagesrc.GetManifest(ctx, nil)
+	if err != nil {
+		return false, err
+	}
+	for _, typ := range []string{
+		imgspecv1.MediaTypeImageIndex,
+		manifest.DockerV2ListMediaType,
+	} {
+		if contentType == typ {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func getRetryOptions() *retry.RetryOptions {
