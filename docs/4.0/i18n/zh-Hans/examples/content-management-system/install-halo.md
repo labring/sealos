@@ -123,7 +123,7 @@ halo.security.initializer.superadminpassword=sealos
 
 ### 忘记密码
 
-#### 进入 App Launchpad，点击日志查看
+#### 进入 「应用管理」，点击日志查看
 
 ![](../images/halo_img-19.png)
 

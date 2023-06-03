@@ -14,7 +14,7 @@ sidebar_position: 1
 
 ### 步骤 2: 新建应用
 
-在 App Launchpad 中，点击「新建应用」来创建一个新的应用。
+在 「应用管理」 中，点击「新建应用」来创建一个新的应用。
 
 ![](../images/uptimekuma_img-2.png)
 

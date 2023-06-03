@@ -6,7 +6,7 @@ sidebar_position: 1
 
 
 
-![](../images/uptimekuma_img-10.png)
+![](./assets/uptime-kuma_img-10.png)
 
 [Uptime Kuma](https://github.com/louislam/uptime-kuma) is an open-source and easy-to-use server monitoring tool. It helps you monitor the real-time status, response time, and other key metrics of your server to ensure that it always remains in optimal condition. If you want to quickly install Uptime Kuma, follow these steps:
 
