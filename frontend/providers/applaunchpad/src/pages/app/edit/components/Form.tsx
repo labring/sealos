@@ -288,8 +288,8 @@ const Form = ({
                     {...register('appName', {
                       required: '应用名称不能为空',
                       pattern: {
-                        value: /^[a-z]+([-.][a-z0-9]+)*$/g,
-                        message: '应用名只能包含小写字母、数字和 -'
+                        value: /^[a-z][a-z0-9]+([-.][a-z0-9]+)*$/g,
+                        message: '应用名只能包含小写字母、数字和 -,并且字母开头。'
                       }
                     })}
                   />
