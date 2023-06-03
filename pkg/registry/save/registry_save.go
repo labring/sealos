@@ -22,9 +22,7 @@ import (
 	"time"
 
 	"github.com/containers/image/v5/copy"
-	"github.com/containers/image/v5/transports/alltransports"
 	itype "github.com/containers/image/v5/types"
-	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"golang.org/x/sync/errgroup"
 
@@ -75,23 +73,9 @@ func (is *tmpRegistryImage) SaveImages(images []string, dir string, platform v1.
 				<-numCh
 				mu.Unlock()
 			}()
-			src, err := name.ParseReference(img)
+			srcRef, err := sync.ImageNameToReference(sys, img, is.auths)
 			if err != nil {
-				return fmt.Errorf("ref invalid source name %s: %v", img, err)
-			}
-			reg := src.Context().RegistryStr()
-			info, ok := is.auths[reg]
-			if sys != nil && ok {
-				sys.DockerAuthConfig = &itype.DockerAuthConfig{
-					Username:      info.Username,
-					Password:      info.Password,
-					IdentityToken: info.IdentityToken,
-				}
-			}
-			image := src.Name()
-			srcRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", image))
-			if err != nil {
-				return fmt.Errorf("invalid source name %s: %v", src, err)
+				return err
 			}
 			err = sync.ToImage(is.ctx, sys, srcRef, ep, copy.CopySystemImage)
 			if err != nil {

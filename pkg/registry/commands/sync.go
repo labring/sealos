@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package commands
 
 import (
@@ -21,7 +22,6 @@ import (
 	"time"
 
 	imagecopy "github.com/containers/image/v5/copy"
-	"github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 
@@ -30,23 +30,31 @@ import (
 )
 
 func NewSyncRegistryCommand() *cobra.Command {
-	var skipError bool
+	opts := globalOptions{}
 	cmd := &cobra.Command{
-		Use:     "sync source dst",
-		Aliases: []string{"copy"},
-		Short:   "sync all images from one registry to another",
-		Args:    cobra.ExactArgs(2),
+		Use:   "sync SOURCE_REGISTRY DST_REGISTRY",
+		Short: "sync all images from one registry to another",
+		Args:  cobra.ExactArgs(2),
+		Example: fmt.Sprintf(`%[1]s registry sync 127.0.0.1:9090 sealos.hub:5000
+%[1]s registry sync -a 127.0.0.1:9090 sealos.hub:5000`, rootCmd.CommandPath()),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runSync(cmd, args[0], args[1], skipError)
+			return runSync(cmd, args[0], args[1], opts)
 		},
 	}
-	cmd.Flags().BoolVar(&skipError, "skip-error", false, "skip error when syncing images")
+	fs := cmd.Flags()
+	fs.SetInterspersed(false)
+	opts.RegisterFlags(fs)
 	return cmd
 }
 
-func runSync(cmd *cobra.Command, source, dst string, skipError bool) error {
+func runSync(cmd *cobra.Command, source, dst string, opts globalOptions) error {
 	ctx := cmd.Context()
 	out := cmd.OutOrStdout()
+
+	imageListSelection := imagecopy.CopySystemImage
+	if opts.all {
+		imageListSelection = imagecopy.CopyAllImages
+	}
 
 	sep := sync.ParseRegistryAddress(source)
 	dep := sync.ParseRegistryAddress(dst)
@@ -65,17 +73,17 @@ func runSync(cmd *cobra.Command, source, dst string, skipError bool) error {
 		return err
 	}
 
-	sysCtx := &types.SystemContext{
-		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
+	sys := opts.newSystemContext()
+
+	syncOpts := &sync.Options{
+		SystemContext: sys,
+		Source:        sep,
+		Target:        dst,
+		ReportWriter:  out,
+		Selection:     imageListSelection,
+		OmitError:     true,
 	}
-	opts := &sync.Options{
-		Sys:       sysCtx,
-		Source:    sep,
-		Target:    dst,
-		Writer:    out,
-		Selection: imagecopy.CopyAllImages,
-	}
-	if err := sync.ToRegistry(ctx, opts); err != nil {
+	if err := sync.ToRegistry(ctx, syncOpts); err != nil {
 		return err
 	}
 	fmt.Fprintln(out, "Sync completed")

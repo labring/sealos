@@ -27,9 +27,11 @@ func newRegistryCmd() *cobra.Command {
 		Use:   "registry",
 		Short: "registry related",
 	}
+	commands.SetRootCommand(rootCmd)
 	cmd.AddCommand(commands.NewRegistryPasswdCmd())
+	cmd.AddCommand(commands.NewServeRegistryCommand())
 	cmd.AddCommand(commands.NewRegistryImageSaveCmd())
 	cmd.AddCommand(commands.NewSyncRegistryCommand())
-	cmd.AddCommand(commands.NewServeRegistryCommand())
+	cmd.AddCommand(commands.NewCopyRegistryCommand())
 	return cmd
 }

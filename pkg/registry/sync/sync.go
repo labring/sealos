@@ -26,6 +26,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/google/go-containerregistry/pkg/name"
+
 	"github.com/containers/common/pkg/retry"
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/docker"
@@ -34,6 +36,7 @@ import (
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
+	dtype "github.com/docker/docker/api/types"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -43,19 +46,19 @@ const (
 )
 
 type Options struct {
-	Sys       *types.SystemContext
-	Source    string
-	Target    string
-	Writer    io.Writer
-	Selection copy.ImageListSelection
-	SkipError bool
+	SystemContext *types.SystemContext
+	Source        string
+	Target        string
+	ReportWriter  io.Writer
+	Selection     copy.ImageListSelection
+	OmitError     bool
 }
 
 func ToRegistry(ctx context.Context, opts *Options) error {
 	src := opts.Source
 	dst := opts.Target
-	sys := opts.Sys
-	reportWriter := opts.Writer
+	sys := opts.SystemContext
+	reportWriter := opts.ReportWriter
 	selection := opts.Selection
 	policyContext, err := getPolicyContext()
 	if err != nil {
@@ -100,6 +103,9 @@ func ToRegistry(ctx context.Context, opts *Options) error {
 				return copyErr
 			}, getRetryOptions())
 			if err != nil {
+				if !opts.OmitError {
+					return err
+				}
 				logger.Warn("failed to copy image %s: %v", refs[j].DockerReference().String(), err)
 			}
 		}
@@ -113,6 +119,28 @@ func getRetryOptions() *retry.RetryOptions {
 	}
 }
 
+func ImageNameToReference(sys *types.SystemContext, img string, auth map[string]dtype.AuthConfig) (types.ImageReference, error) {
+	src, err := name.ParseReference(img)
+	if err != nil {
+		return nil, fmt.Errorf("ref invalid source name %s: %v", img, err)
+	}
+	reg := src.Context().RegistryStr()
+	info, ok := auth[reg]
+	if sys != nil && ok {
+		sys.DockerAuthConfig = &types.DockerAuthConfig{
+			Username:      info.Username,
+			Password:      info.Password,
+			IdentityToken: info.IdentityToken,
+		}
+	}
+	image := src.Name()
+	srcRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", image))
+	if err != nil {
+		return nil, fmt.Errorf("invalid source name %s: %v", src, err)
+	}
+	return srcRef, nil
+}
+
 func ToImage(ctx context.Context, sys *types.SystemContext, src types.ImageReference, dst string, selection copy.ImageListSelection) error {
 	allSrcImage := src.DockerReference().String()
 	var repo string
@@ -124,6 +152,7 @@ func ToImage(ctx context.Context, sys *types.SystemContext, src types.ImageRefer
 		_ = parts[0]
 		repo = parts[1]
 	}
+	logger.Debug("syncing image from %s to %s", allSrcImage, dst)
 	//named.
 	dstImage := strings.Join([]string{dst, repo}, "/")
 	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", dstImage))
