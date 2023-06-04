@@ -1,3 +1,5 @@
+#Usage in github: https://github.com/actions/labeler
+
 area/command:
   - any: [ 'cmd/**/*' ]
 
@@ -8,7 +10,8 @@ area/qa:
   - 'QA.md'
 
 area/test:
-  - any: [ '**/*_test.go','test/**/*' ]
+  - '**/*_test.go'
+  - 'test/**/*'
 
 
 area/imageCRIShim:
@@ -24,7 +27,9 @@ area/clusterfile:
   - any: [ 'pkg/clusterfile/**/*' ]
 
 area/config:
-  - any: [ 'pkg/config/**/*','pkg/env/**/*','pkg/template/**/*' ]
+  - any: [ 'pkg/config/**/*' ]
+  - any: [ 'pkg/env/**/*' ]
+  - any: [ 'pkg/template/**/*' ]
 
 area/guest:
   - any: [ 'pkg/guest/**/*' ]
@@ -48,7 +53,8 @@ area/ipvs:
   - any: [ 'pkg/ipvs/**/*' ]
 
 area/ssh:
-  - any: [ 'pkg/ssh/**/*' ,'pkg/remote/**/*' ]
+  - any: [ 'pkg/ssh/**/*' ]
+  - any: [ 'pkg/remote/**/*' ]
 
 area/registry:
   - any: [ 'pkg/registry/**/*' ]
@@ -57,13 +63,32 @@ area/runtime:
   - any: [ 'pkg/runtime/**/*' ]
 
 area/api:
-  - any: [ 'pkg/types/**/*','**/*_types.go' ]
+  - any: [ 'pkg/types/**/*']
+  - any: [ '**/*_types.go' ]
 
 area/cloud:
   - any: [ 'controllers/**/*' ]
+  - any: [ 'service/**/*' ]
+  - any: ['docs/4.0/docs/**', '!docs/4.0/docs/lifecycle-management/**']
+  - any: ['docs/4.0/i18n/zh-Hans/**', '!docs/4.0/i18n/zh-Hans/lifecycle-management/**']
+
+area/lifecycle-management:
+  - any: [ 'pkg/**/*' ]
+  - any: [ 'staging/**/*' ]
+  - any: [ 'docs/4.0/docs/lifecycle-management/*' ]
+  - any: [ 'docs/4.0/i18n/zh-Hans/lifecycle-management/*' ]
+
 
 area/frontend:
   - any: [ 'frontend/**/*' ]
 
 area/ci:
-  - any: [ '.github/**/*','scripts/**/*' ,'docker/**/*' ,'deploy/**/*' ,'.golangci.yml' ,'.goreleaser.yml','Makefile' ]
+  - 'scripts/**/*'
+  - 'docker/**/*'
+  - 'deploy/**/*'
+  - '.golangci.yml'
+  - '.goreleaser.yml'
+  - 'Makefile'
+
+area/workflow:
+  - any: [ '.github/**' ]
