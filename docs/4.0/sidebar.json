@@ -1,8 +1,12 @@
 [
   {
-    "type": "doc",
-    "id": "Intro",
-    "label": "Intro"
+    "type": "category",
+    "label": "Intro",
+    "link": {
+      "type": "doc",
+      "id": "Intro"
+    },
+    "items": ["Intro/Architecture"]
   },
   {
     "type": "category",
@@ -32,10 +36,10 @@
     "type": "category",
     "label": "Cluster Lifecycle Management",
     "link": {
-      "type": "generated-index"
+      "type": "doc",
+      "id": "lifecycle-management/Intro"
     },
     "items": [
-      "lifecycle-management/Intro",
       {
         "type": "category",
         "label": "Quick Start",
