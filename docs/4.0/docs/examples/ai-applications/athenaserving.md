@@ -96,7 +96,7 @@ $ sealos run registry.cn-qingdao.aliyuncs.com/labring/athenaserving:v2.0.0rc1
 3. HTTP call AI demo capability MMOCR capability
 
 MMOCR is an open source toolbox based on PyTorch and mmdetection, focusing on text detection, text recognition and
-corresponding downstream tasks such as key information extraction. It is part of the OpenMMLab project. [Project address](https://github.com/open-mmlab/mmocr/blob/main/README_zh-CN.md) In [wrapper.py](https://github.com/iflytek/aiges/blob/master/demo/mmocr/wrapper/wrapper_v2.py), we use python to easily convert [text + detection and recognition ability](https://mmocr.readthedocs.io/zh_CN/latest/demo.html#id4) encapsulates the ability to deploy into `ASF` as an HTTP API. After deploying `ASF` using Sealos, you can use the following script to modify the `url` value to complete the call to
+corresponding downstream tasks such as key information extraction. It is part of the OpenMMLab project. [Project address](https://github.com/open-mmlab/mmocr/blob/main/README_zh-CN.md) In [wrapper.py](https://github.com/iflytek/aiges_demo/blob/f5061b3b9a4d05f491cfdc21c525e22f8239b760/mmocr/wrapper/wrapper_v2.py), we use python to easily convert [text + detection and recognition ability](https://mmocr.readthedocs.io/zh_CN/latest/demo.html#id4) encapsulates the ability to deploy into `ASF` as an HTTP API. After deploying `ASF` using Sealos, you can use the following script to modify the `url` value to complete the call to
 the `MMOCR (text + detection)` AI capability.
 
 ```python
@@ -211,7 +211,7 @@ MMocr Result: box located at [223, 214, 240, 214, 240, 226, 223, 226], box score
 To implement new AI capabilities, you should develop and build your AI Capability image according to the loader Spec Sheet. And then deploy it to the cluster.
 
 How to build your custom AI capability image, please refer
-to:[Fastly create wrapper.py](https://iflytek.github.io/athena_website/docs/%E5%8A%A0%E8%BD%BD%E5%99%A8/Python%E6%8F%92%E4%BB%B6)
+to:[Fastly create wrapper.py](https://iflytek.github.io/athena_website/docs/current/%E5%8A%A0%E8%BD%BD%E5%99%A8/Python%E6%8F%92%E4%BB%B6)
 
 ## More
 

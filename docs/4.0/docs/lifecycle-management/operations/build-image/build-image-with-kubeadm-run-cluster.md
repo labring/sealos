@@ -94,4 +94,4 @@ spec:
 
 **⚠️ 注意：**
 
-+ 您可以参考[官方文档](https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta2/)或使用`kubeadm config print init-defaults`命令打印kubeadm配置。
++ 您可以参考[官方文档](https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-config/)或使用`kubeadm config print init-defaults`命令打印kubeadm配置。

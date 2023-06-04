@@ -94,7 +94,7 @@ $ sealos run registry.cn-qingdao.aliyuncs.com/labring/athenaserving:v2.0.0rc1
 
 3. HTTP 调用 AI 演示 MMOCR 功能
 
-MMOCR 是基于 PyTorch 和 mmdetection 的开源工具箱，专注于文本检测，文本识别以及相应的关键信息提取等下游任务。 它是 OpenMMLab 项目的一部分。[项目地址](https://github.com/open-mmlab/mmocr/blob/main/README_zh-CN.md) 在 [wrapper.py](https://github.com/iflytek/aiges/blob/master/demo/mmocr/wrapper/wrapper_v2.py) 中，我们使用 python 轻而易举的将 [文本+检测识别 ](https://mmocr.readthedocs.io/zh_CN/latest/demo.html#id4)功能封装部署到 `ASF ` 作为 HTTP API。使用 sealos 部署完 `ASF` 后，可以使用如下脚本修改 `url` 的值，即可完成调用 `MMOCR(文本+检测)` AI 功能调用。
+MMOCR 是基于 PyTorch 和 mmdetection 的开源工具箱，专注于文本检测，文本识别以及相应的关键信息提取等下游任务。 它是 OpenMMLab 项目的一部分。[项目地址](https://github.com/open-mmlab/mmocr/blob/main/README_zh-CN.md) 在 [https://github.com/iflytek/aiges_demo/blob/f5061b3b9a4d05f491cfdc21c525e22f8239b760/mmocr/wrapper/wrapper_v2.py) 中，我们使用 python 轻而易举的将 [文本+检测识别 ](https://mmocr.readthedocs.io/zh_CN/latest/demo.html#id4)功能封装部署到 `ASF ` 作为 HTTP API。使用 sealos 部署完 `ASF` 后，可以使用如下脚本修改 `url` 的值，即可完成调用 `MMOCR(文本+检测)` AI 功能调用。
 
 ```python
 import requests
@@ -207,7 +207,7 @@ MMocr Result: box located at [223, 214, 240, 214, 240, 226, 223, 226], box score
 
 要实现新的 AI 功能，您应该根据 loader Spec Sheet 开发和构建您的 AI 功能图像。然后部署到集群中。
 
-如何构建自定义 AI 功能镜像，请参考: [快速构建 wrapper.py](https://iflytek.github.io/athena_website/docs/%E5%8A%A0%E8%BD%BD%E5%99%A8/Python%E6%8F%92%E4%BB%B6)
+如何构建自定义 AI 功能镜像，请参考: [快速构建 wrapper.py](https://iflytek.github.io/athena_website/docs/current/%E5%8A%A0%E8%BD%BD%E5%99%A8/Python%E6%8F%92%E4%BB%B6)
 
 ## 更多
 
