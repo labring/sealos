@@ -8,111 +8,97 @@ sidebar_position: 1
 
 > By deploying **WordPress** with **Sealos**, you can greatly reduce deployment time and start users' content publishing journey at lightning speed.
 
-WordPress requires installation and use in conjunction with a MySQL database. In this example, we will first show how to install a MySQL database, then demonstrate the process of installing WordPress, and how to connect to the installed MySQL database.
+WordPress requires a MySQL database to be installed and used together. As a best practice for using Sealos, it is recommended to deploy the MySQL database independently using a database application, and quickly install WordPress based on the independent database.
 
-## Step 1: Install the MySQL database
 
-### App Launchpad
+## Create MySQL instance
 
-![](./images/image-20230531215519853.png)
+In the **Database** application, quickly set up the required database instance and wait for the database deployment to be completed.
 
-### Basic configuration
+![](./images/wordpress_15.png)
 
-Click *Create Application* to enter the application installation configuration interface and complete the basic configuration settings.
+![](./images/wordpress_16.png)
 
-- Specify a unique username
-- Specify the image to pull (recommend using the official image, default is latest version)
-- Configure CPU and memory resources for the application（MySQL requires at least 1 CPU core and 512MB of memory）
+![](./images/wordpress_17.png)
 
-![](D:/sealos/docs/4.0/docs/examples/wordpress/images/image-20230531215812925.png)
+## Create a New Database
 
-### Network configuration
+When installing a MySQL instance through the **Database** application, user-defined databases are not automatically created. When connecting an application to the MySQL database, you need to manually create the corresponding database in the MySQL instance.
 
-Set the exposed port for the network configuration of the container to 3306, which is the default port number for MySQL.
+You can access the database terminal command line in the following ways:
 
-![](./images/image-20230531220157623.png)
+![](./images/wordpress_12.png)
+![](./images/wordpress_13.png)
 
-### Advanced configuration
+Alternatively, you can access the database terminal command line using the following methods:
 
-In the advanced configuration section, you need to configure the database environment variables and add data volumes.
+`mysql -u username -p -h yourhost`
 
-Recommend env setting:
+![](./images/wordpress_14.png)
 
-- MYSQL_ROOT_PASSWORD
-- MYSQL_USER
-- MYSQL_PASSWORD
-- MYSQL_DATABASE
+After successfully connecting to the database, you can create a new database using the following command:
 
-The data volume is mounted at `/var/lib/mysql` for the official MySQL image, though may differ for other images. With this option, you can configure the storage space allocated to the WordPress application
+`CREATE DATABASE yourdb;`
 
-Below, a configuration example is given.
+At this point, you have manually created a user-defined database in the MySQL instance.
 
-```Plain
-MYSQL_ROOT_PASSWORD=123456    
-MYSQL_USER=sealos
-MYSQL_PASSWORD=123456
-MYSQL_DATABASE=wordpress
-```
+## App Launchpad
 
-![](./images/image-20230531220308544.png)
+Click on App Launchpad to enter the installation interface.
 
-![](./images/image-20230531220549563.png)
+![](./images/wordpress_1.png)
 
-After filling out all the required information in the configuration form, you can now go ahead and install the WordPress application.
+## Basic Configuration
 
-### Install Application
+Begin by setting a custom application name and selecting the image to install. Sealos supports both public and private image sources. In this example, the official image source is used, and if no image version is specified, the latest version will be pulled by default.
 
-After filling out the configuration form, click the 'Install' button to start the WordPress installation process. Then, wait for the WordPress application to install successfully.
+Next, configure CPU and memory resources for WordPress. WordPress is very lightweight, and a small amount of resources is sufficient to ensure the normal operation of the program.
 
-![](./images/image-20230531220713237.png)
+![](./images/wordpress_8.png)
 
-By this point, the MySQL database has been successfully installed. Next, we will begin the actual WordPress installation.
+## NetWork Configuration
 
-**Note: If the database installation fails, it is recommended to directly delete the current instance and create a new instance, rather than making changes based on this.**
+For network configuration, enable external access, and Sealos will automatically assign an exit domain name for users to access from the internet. If the user has already registered their custom domain, they can create a CNAME record pointing to the assigned exit domain name, allowing the custom domain to be used to access the installed application.
 
-## Step 2: Install WordPress
+Note: In subsequent demonstrations, a randomly generated exit domain name by Sealos will be used.
 
-The overall WordPress installation procedure is largely similar to the MySQL installation process. I recommend using the official WordPress image, without specifying an image version number and defaulting to 'latest'. In hardware requirements, WordPress is very lightweight, with 0.1 CPU cores and 64MB of memory being sufficient to guarantee a successful application installation.
+![](./images/wordpress_9.png)
 
-![](./images/image-20230531220826831.png)
 
-For network configuration:
+## Advanced Configuration
 
-- Enable external network access
-- Sealos will assign an outbound domain name for external access
-- Users can CNAME their custom domain name to this outbound domain name
-- Then they can use their custom domain name to access the WordPress installation.
+In the advanced configuration, you need to configure the environment variables for WordPress based on the actual database situation.
 
-**Note: In the following demonstration, we are using the outbound domain name randomly generated by Sealos.**
+In the advanced configuration, you need to set environment variables and local storage for WordPress.
 
-![](./images/image-20230531220939116.png)
-
-Advanced configuration, configure environment variables and local storage for WordPress. Common WordPress environment variables are as follows:
+Common WordPress environment variables are shown below:
 
 ```Plain
-WORDPRESS_DB_HOST     Database IP Address
-WORDPRESS_DB_USER     Database username
-WORDPRESS_DB_PASSWORD Database password
+WORDPRESS_DB_HOST       IP address of the database instance
+WORDPRESS_DB_USER       Database user for connection
+WORDPRESS_DB_PASSWORD   User password required for connecting to the database
+WORDPRESS_DB_NAME       Name of the connected database
 ```
 
-According to the previous MySQL installation example, you can configure the environment variables as follows:
+Based on the previously installed MySQL example, you can configure the environment variables as follows:
 
 ```Plain
-WORDPRESS_DB_HOST=mysql.ns-biy7854k.svc.cluster.local:3306
-WORDPRESS_DB_USER=sealos
-WORDPRESS_DB_PASSWORD=123456
-WORDPRESS_DB_NAME=wordpress
+WORDPRESS_DB_HOST=mysql-host:3306
+WORDPRESS_DB_USER=root
+WORDPRESS_DB_PASSWORD=root passwd
+WORDPRESS_DB_NAME=yourdb
 ```
 
-The data volume mount location for the official WordPress image is `/var/www/html`, and the user can allocate storage space for the application as needed.
+The storage volume mount point for the official WordPress image is: /var/www/html. Users can allocate storage space for the application according to their needs.
 
-With these configurations, the WordPress installation was also successful. By clicking 'Details' and accessing the assigned public IP address or domain name, you can now successfully view your WordPress site.
+With this, WordPress is also successfully installed. Click on the details, and you can successfully access it through the external network address.
 
-![](./images/image-20230531221323316.png)
+![](./images/wordpress_10.png)
 
-By clicking that link, if the following page appears, it proves that the installation was successful:
+Click on the link, and the following page shows that the installation was successful:
 
-![](./images/image-20230531231028666.png)
+![](./images/wordpress_11.png)
 
-**Note: If the installation fails, first check for network issues, then check the environment variable settings. If the database environment variables are incorrectly configured, please recreate the database instance instead of making changes.**
+**Note: If the deployment fails, first check whether the user-defined database that WordPress is trying to access exists in the MySQL instance.**
+
 
