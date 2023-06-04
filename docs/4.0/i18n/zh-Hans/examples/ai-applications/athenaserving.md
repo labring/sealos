@@ -97,7 +97,7 @@ $ sealos run registry.cn-qingdao.aliyuncs.com/labring/athenaserving:v2.0.0rc1
 
 MMOCR 是基于PyTorch 和mmdetection 的开源工具箱，专注于文本检测，文本识别以及相应的下游任务，如关键信息提取。 它是OpenMMLab
 项目的一部分。[项目地址](https://github.com/open-mmlab/mmocr/blob/main/README_zh-CN.md)
-在[wrapper.py](https://github.com/iflytek/aiges/blob/master/demo/mmocr/wrapper/wrapper_v2.py)
+在[wrapper.py](https://github.com/iflytek/aiges_demo/blob/f5061b3b9a4d05f491cfdc21c525e22f8239b760/mmocr/wrapper/wrapper_v2.py)
 中，我们使用python轻而易举的将 [文本+检测识别能力](https://mmocr.readthedocs.io/zh_CN/latest/demo.html#id4)封装成为一个可部署到 `ASF`中部署成为HTTP API的能力。
 使用Sealos 部署完 `ASF` 后， 您可以使用如下脚本， 修改其中的`url`值，即可完成调用 `MMOCR(文本+检测)`AI能力。
 
@@ -212,7 +212,7 @@ MMocr Result: box located at [223, 214, 240, 214, 240, 226, 223, 226], box score
 
 新的AI能力，需要您按照加载器规范，开发并构建出您的 AI能力镜像，之后即可部署到集群。
 
-如何构建您的自定义AI能力镜像，请参考: [快速构建wrapper.py](https://iflytek.github.io/athena_website/docs/%E5%8A%A0%E8%BD%BD%E5%99%A8/Python%E6%8F%92%E4%BB%B6)
+如何构建您的自定义AI能力镜像，请参考: [快速构建wrapper.py](https://iflytek.github.io/athena_website/docs/current/%E5%8A%A0%E8%BD%BD%E5%99%A8/Python%E6%8F%92%E4%BB%B6)
 
 ## 更多详细内容
 
