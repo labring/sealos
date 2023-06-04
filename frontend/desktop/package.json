@@ -21,8 +21,6 @@
     "eslint-config-next": "13.3.0",
     "framer-motion": "^10.12.3",
     "i18next": "^22.4.14",
-    "i18next-browser-languagedetector": "^7.0.1",
-    "i18next-http-backend": "^2.2.0",
     "immer": "^10.0.1",
     "js-yaml": "^4.1.0",
     "lodash": "^4.17.21",

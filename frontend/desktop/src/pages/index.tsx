@@ -26,10 +26,10 @@ const Home = (props: any) => {
   return <Layout>{props.children}</Layout>;
 };
 
-export async function getStaticProps({ locale }: { locale: any }) {
+export async function getServerSideProps(content: any) {
   return {
     props: {
-      ...(await serverSideTranslations(locale))
+      ...(await serverSideTranslations(content.locale))
     }
   };
 }

@@ -37,7 +37,7 @@ export default function Index({ accountDisclosure }: { accountDisclosure: UseDis
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     delSession();
-    router.push('/', '/', { locale: 'en' });
+    router.reload();
   };
 
   return (
