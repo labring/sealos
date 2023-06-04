@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # 快速安装 WordPress
 
-WordPress 是一款功能强大、易用、开源的内容管理系统 (CMS), 可以用于在互联网上发布网站、新闻、博客等内容。它提供了便捷的内容编辑、发布和更新方法 , 同时也可以通过主题和插件进行高度自定义。WordPress 已经成为非常成功和普及的 CMS 系统 , 在全球有超过 3 千万个网站使用 WordPress 搭建。
+[WordPress](https://github.com/WordPress/WordPress) 是一款功能强大、易用、开源的内容管理系统 (CMS), 可以用于在互联网上发布网站、新闻、博客等内容。它提供了便捷的内容编辑、发布和更新方法 , 同时也可以通过主题和插件进行高度自定义。WordPress 已经成为非常成功和普及的 CMS 系统 , 在全球有超过 3 千万个网站使用 WordPress 搭建。
 
 > 使用 Sealos 安装 WordPress，可以大幅度减少安装时间，极速开启用户的内容输出之旅。
 

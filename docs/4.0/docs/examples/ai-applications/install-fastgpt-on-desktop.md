@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # 快速安装 FastGpt AI 知识库
 
-FastGpt Git 上推荐使用 docker 部署，因此在 Sealos 上也可以很方便的部署。FastGpt 依赖了 MongoDB 和 PostgreSQL，下面教程仅介绍如何在 Sealos 上部署这两个数据库及 FastGpt 镜像，对于 FastGpt 的环境变量详解及使用说明不详细展开。具体可查阅[FastGpt Git](https://github.com/c121914yu/FastGPT)。
+FastGpt Git 上推荐使用 docker 部署，因此在 Sealos 上也可以很方便的部署。FastGpt 依赖了 MongoDB 和 PostgreSQL，下面教程仅介绍如何在 Sealos 上部署这两个数据库及 FastGpt 镜像，对于 FastGpt 的环境变量详解及使用说明不详细展开。具体可查阅 [FastGpt Git](https://github.com/c121914yu/FastGPT)。
 
 ## 1. 创建两个数据库
 

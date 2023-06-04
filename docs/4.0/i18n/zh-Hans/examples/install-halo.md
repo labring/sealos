@@ -8,7 +8,7 @@ sidebar_position: 3
 
 ![](./images/halo_img-1.png)
 
-Halo 是一款强大易用的开源建站工具，本文将介绍如何在 Sealos 上部署 Halo，同时在 Sealos 上部署 PostgreSQL 可以帮助你轻松地管理和维护数据库，以满足不同的业务需求。
+[Halo](https://github.com/halo-dev/halo) 是一款强大易用的开源建站工具，本文将介绍如何在 Sealos 上部署 Halo，同时在 Sealos 上部署 PostgreSQL 可以帮助你轻松地管理和维护数据库，以满足不同的业务需求。
 
 ## 步骤 1：在 Sealos 中部署 PostgreSQL
 
