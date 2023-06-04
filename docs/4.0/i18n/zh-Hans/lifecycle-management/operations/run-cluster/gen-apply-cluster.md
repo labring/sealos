@@ -123,4 +123,4 @@ spec:
 
 **注意：**
 
-- 可以参考[官方文档](https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta2/)或运行 `kubeadm config print init-defaults` 命令来打印 kubeadm 配置。
+- 可以参考[官方文档](https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-config/)或运行 `kubeadm config print init-defaults` 命令来打印 kubeadm 配置。

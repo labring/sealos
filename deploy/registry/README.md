@@ -34,8 +34,8 @@ sequenceDiagram
 
 ## Pre-Requirements
 
-1. [sealos Cloud](../../cloud/README.md) for auth.
-2. [sealos cluster](installl_base-server.md) for registry.
+1. [sealos Cloud](../cloud/README.md) for auth.
+2. [sealos clxuster](./install_base_server.md) for registry.
 
 ### A running sealos kubernetes cluster
 
@@ -62,8 +62,8 @@ with at least svc(s) below:
 
 ### Choice what network gateway to use:
 
-1. [APISIX](manifests/apisix/README.md) :point_left: Recommended
-2. [Ingress-NGINX](manifests/ingress-nginx/README.md)
+1. [APISIX](../cloud-deprecated/manifests/apisix/README.md) :point_left: Recommended
+2. [Ingress-NGINX](../cloud-deprecated/manifests/ingress-nginx/README.md)
 
 ### Modification of config.yml
 
