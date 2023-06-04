@@ -8,7 +8,7 @@ Deploy Halo Blogging Platform swiftly on Sealos
 
 ![](./images/halo_img-1.png)
 
-Halo is a powerful and easy-to-use open-source website building tool. 
+[Halo](https://github.com/halo-dev/halo) is a powerful and easy-to-use open-source website building tool. 
 This article will introduce how to deploy Halo on Sealos, while deploying PostgreSQL on Sealos can help you easily manage and maintain the database to meet different business needs.
 
 ## Step 1: Deploy PostgreSQL on Sealos

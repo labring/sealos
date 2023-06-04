@@ -17,9 +17,11 @@ code (according to established standards) into grpc/HTTP services
 * AIGES And Language Wrapper
 
 - C/C++ Wrapper
+  
   ![](/docs/4.0/img/ai-applications/c++.png)
 
 - Python Wrapper
+  
   ![](/docs/4.0/img/ai-applications/python.png)
 
 
@@ -71,7 +73,9 @@ $ sealos run labring/kubernetes:v1.19.16 labring/calico:v3.24.1   --masters 192.
 ```
 
 ![](/docs/4.0/img/ai-applications/sealos4-run-k8s.png)
+
 ![](/docs/4.0/img/ai-applications/sealos4-run-k8s-2.png)
+
 ![](/docs/4.0/img/ai-applications/sealos4-run-k8s-3.png)
 
 * Install helm
@@ -82,7 +86,6 @@ $ sealos run labring/helm:v3.8.2
 * Install openebs
 ```shell
 $ sealos run labring/openebs:v1.9.0 
-
 ```
 
 ```shell
@@ -93,12 +96,7 @@ $ sealos run registry.cn-qingdao.aliyuncs.com/labring/athenaserving:v2.0.0rc1
 3. HTTP call AI demo capability MMOCR capability
 
 MMOCR is an open source toolbox based on PyTorch and mmdetection, focusing on text detection, text recognition and
-corresponding downstream tasks such as key information extraction. It is part of the OpenMMLab
-project. [Project address](https://github.com/open-mmlab/mmocr/blob/main/README_zh-CN.md)
-In [wrapper.py](https://github.com/iflytek/aiges/blob/master/demo/mmocr/wrapper/wrapper_v2.py), we use python to easily
-convert [text + detection and recognition ability] (https ://mmocr.readthedocs.io/zh_CN/latest/demo.html#id4)
-encapsulates the ability to deploy into `ASF` as an HTTP API.
-After deploying `ASF` using Sealos, you can use the following script to modify the `url` value to complete the call to
+corresponding downstream tasks such as key information extraction. It is part of the OpenMMLab project. [Project address](https://github.com/open-mmlab/mmocr/blob/main/README_zh-CN.md) In [wrapper.py](https://github.com/iflytek/aiges/blob/master/demo/mmocr/wrapper/wrapper_v2.py), we use python to easily convert [text + detection and recognition ability](https://mmocr.readthedocs.io/zh_CN/latest/demo.html#id4) encapsulates the ability to deploy into `ASF` as an HTTP API. After deploying `ASF` using Sealos, you can use the following script to modify the `url` value to complete the call to
 the `MMOCR (text + detection)` AI capability.
 
 ```python

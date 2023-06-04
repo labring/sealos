@@ -1,4 +1,4 @@
-# 如何在 sealos cloud 上用 kubeblocks 部署PostgreSQL
+# 如何在 sealos cloud 上用 kubeblocks 部署 PostgreSQL
 
 ## 创建一个 PostgreSQL 实例
 
