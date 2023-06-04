@@ -2,19 +2,21 @@ maintainers:
 
 - fanux
 - cuisongliu
-- ysicing
-- oldthreefeng
-- zhangguanzhang
-- berlinsaint
+- fengxsong
+- bxy4543
+- LeezQ
+- yangchuansheng
+- zzjin
 
 reviewers:
 
 - fanux
 - cuisongliu
-- berlinsaint
+- zzjin
 
 approvers:
 
 - fanux
 - cuisongliu
-- berlinsaint
+- zzjin
+

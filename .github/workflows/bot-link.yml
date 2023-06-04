@@ -24,7 +24,7 @@ jobs:
 
           # docs/.vitepress/dist the site directory to check
           # ./*.md all markdown files in the root directory
-          args: --verbose  -E -i --no-progress --exclude-path './CHANGELOG' './**/*.md'
+          args: --verbose './**/*.md'
         env:
           GITHUB_TOKEN: ${{secrets.GH_PAT}}
 
