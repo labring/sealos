@@ -14,4 +14,4 @@ jobs:
         id: lychee
         uses: lycheeverse/lychee-action@v1.7.0
         with:
-          args: --config ../../lychee.toml
+          config: lychee.toml
