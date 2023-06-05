@@ -2,7 +2,7 @@
 sidebar_position: 4
 ---
 
-# Introduction to the Terminal App
+# Terminal
 
 Integrated within the Sealos Cloud Operating System is the Terminal, an application of profound potency. Mirroring the terminal in standalone operating systems, it facilitates users to interact directly with the operating system, executing various operations via command entry.
 
