@@ -80,7 +80,7 @@ sealos build --arch arm64 --build-arg TARGETOS=linux --build-arg TARGETARCH=arm6
 
 ### Q4：执行Sealos构建时遇到“lgetxattr /var/lib/containers/storage/overlay/0c2afe770ec7870ad4639f18a1b50b3a84718f95c8907f3d54e14dbf0a01d50d/merged/dev/ptmx: no such device”错误？
 
-这个问题可能与`fuse-overlayfs`的版本有关。建议您从[这里](https://github.com/containers/fuse-overlayfs/releases)下载最新版本进行替换。
+这个问题可能与`fuse-overlayfs`的版本有关。建议您从[这里](https://github.com/containers/fuse-overlayfs/releases)下载最新版本下载并替换`/bin/fuse-overlayfs`。
 
 ## 运行时选择问题
 
@@ -99,6 +99,12 @@ Sealos会根据您选择的镜像决定使用哪种运行时。如果选择了ku
 另一种解决方法是选择对应版本的sealos镜像。比如，如果您的sealos版本是4.1.3，那么集群镜像应选择形如kuberntes:v1.24.0-4.1.3的版本。
 
 确保镜像版本和sealos版本的匹配，可以帮助避免此类问题。
+
+### Q2: 如果您在集群中新增了其他域名，或者修改了 service 的 CIDR，并且在添加 master 时出现了错误
+
+为了解决这个问题，Sealos 团队在 4.2.0 版本进行了相应的修复。具体的修复内容和讨论可以在这个 pull request 中查看：https://github.com/labring/sealos/pull/2943。
+
+所以，如果您遇到了这个问题，我们建议您升级到 Sealos 4.2.0 版本。更新后的版本应该能够正确处理这些变更，并且在添加 master 时不会出现错误。
 
 ## 文件和目录位置问题
 
@@ -128,6 +134,7 @@ sealos run labring/kubernetes:v1.24.0
 export SEALOS_SCP_CHECKSUM=false
 sealos run labring/kubernetes:v1.24.0
 ```
+
 
 ## 其他问题
 
