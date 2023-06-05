@@ -7,7 +7,11 @@ import { useEffect, useState } from 'react';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import styles from './index.module.scss';
 
-export default function Index() {
+type ServiceEnv = {
+  site: string;
+};
+
+export default function Index(props: ServiceEnv) {
   const { setSession, isUserLogin } = useSessionStore();
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -30,8 +34,8 @@ export default function Index() {
     onSuccess: (res) => {
       if (res?.data?.code === 200 && res?.data?.data) {
         const url = res?.data?.data;
-        // setIsLoading(false);
-        // setUrl(url);
+        setIsLoading(false);
+        setUrl(url);
         fetch(url, { mode: 'cors' })
           .then((res) => {
             if (res.status === 200) {
@@ -41,9 +45,6 @@ export default function Index() {
           })
           .catch((err) => {});
       }
-    },
-    onError: (err) => {
-      console.log(err, 'err');
     },
     refetchInterval: url === '' ? 500 : false,
     enabled: url === ''
@@ -69,13 +70,22 @@ export default function Index() {
   }
 
   if (!isUserLogin() && process.env.NODE_ENV === 'production') {
-    const tempUrl = process.env.NEXT_PUBLIC_SITE;
     return (
       <div className={styles.err}>
-        please go to &nbsp;<a href={tempUrl}>{tempUrl}</a>
+        please go to &nbsp;<a href={props.site}>{props.site}</a>
       </div>
     );
   }
 
-  return <div className={styles.container}>{!!url && <Terminal url={url} />}</div>;
+  return (
+    <div className={styles.container}>{!!url && <Terminal url={url} site={props.site} />}</div>
+  );
+}
+
+export async function getServerSideProps() {
+  return {
+    props: {
+      site: process.env.SITE
+    }
+  };
 }
