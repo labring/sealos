@@ -18,6 +18,6 @@ Using the following diagram as an example:
 For various applications on Sealos, they can interact directly with `Kubernetes` services, or interact with various CRD controllers such as Terminal Controller and Ingress-Nginx Controller, etc.
 Applications can also call each other, for example, a database created by a user in the **Database** application can directly invoke the **Terminal** application and automatically connect to the database for debugging.
 
-For more information, please refer to the [link](../platform-components) documentation.
+For more information, please refer to the [link](../../platform-components) documentation.
 
 ![Application](./images/application_light.png#gh-light-mode-only)![Application](./images/application_dark.png#gh-dark-mode-only)
