@@ -2,7 +2,7 @@
 sidebar_position: 2
 ---
 
-# 数据库 APP 介绍
+# 数据库
 
 **数据库** 是一个应用的核心组成，Sealos 提供了一个数据库集群部署管理工具，可以帮助你快速部署数据库集群。目前支持 MySQL, PostgreSQL 和 MongoDB。目前 **数据库** 属于测试版本。
 
