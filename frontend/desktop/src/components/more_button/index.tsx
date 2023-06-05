@@ -1,4 +1,4 @@
-import { MoreAppsContext } from '@/components/layout';
+import { MoreAppsContext } from '@/pages/index';
 import { Box, Flex, Text } from '@chakra-ui/react';
 import { useContext } from 'react';
 import Iconfont from '../iconfont';

@@ -1,6 +1,6 @@
 import { paymentMeta } from '@/types';
 import { authSession } from '@/services/backend/auth';
-import { GetCRD, GetUserDefaultNameSpace } from '@/services/backend/kubernetes';
+import { GetCRD, GetUserDefaultNameSpace } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 

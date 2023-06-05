@@ -5,6 +5,8 @@ npm-debug.log
 README.md
 .next
 .git
+.env.local
+config.yaml
 
 .yalc/
 yalc.lock

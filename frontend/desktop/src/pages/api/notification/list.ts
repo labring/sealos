@@ -1,5 +1,5 @@
 import { authSession } from '@/services/backend/auth';
-import { CRDMeta, GetUserDefaultNameSpace, ListCRD } from '@/services/backend/kubernetes';
+import { CRDMeta, GetUserDefaultNameSpace, ListCRD } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 

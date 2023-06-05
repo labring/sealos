@@ -14,17 +14,8 @@ request.interceptors.request.use(
     let _headers: AxiosHeaders = config.headers || {};
 
     const session = useSessionStore.getState().session;
-
     if (config.url && config.url?.startsWith('/api/')) {
       _headers['Authorization'] = encodeURIComponent(session?.kubeconfig || '');
-    } else if (process.env.NEXT_PUBLIC_SERVICE) {
-      config.url = process.env.NEXT_PUBLIC_SERVICE + config.url;
-      if (session?.token?.access_token) {
-        const token = session.token.access_token;
-        if (token) {
-          _headers['Authorization'] = `Bearer ${token}`;
-        }
-      }
     }
 
     if (!config.headers || config.headers['Content-Type'] === '') {
