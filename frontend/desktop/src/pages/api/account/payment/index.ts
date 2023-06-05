@@ -1,6 +1,6 @@
 import { generatePaymentCrd, PaymentForm } from '@/types';
 import { authSession } from '@/services/backend/auth';
-import { ApplyYaml, GetUserDefaultNameSpace } from '@/services/backend/kubernetes';
+import { ApplyYaml, GetUserDefaultNameSpace } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import crypto from 'crypto';
 import type { NextApiRequest, NextApiResponse } from 'next';

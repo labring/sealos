@@ -1,6 +1,6 @@
 import { Box, Flex, Grid, GridItem, Text, Image } from '@chakra-ui/react';
 import { useContext, MouseEvent, useState } from 'react';
-import { MoreAppsContext } from '@/components/layout';
+import { MoreAppsContext } from '@/pages/index';
 import useAppStore from '@/stores/app';
 import { TApp } from '@/types';
 import Iconfont from '../iconfont';
