@@ -3,3 +3,5 @@ verbose = "info"
 exclude_all_private = true
 insecure = true
 no_progress = true
+check = ["./**/*.md"]
+timeout = 20
