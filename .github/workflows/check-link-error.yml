@@ -14,4 +14,5 @@ jobs:
         id: lychee
         uses: lycheeverse/lychee-action@v1.7.0
         with:
-          config: lychee.toml
+          fail: true
+          args: --verbose --no-progress './**/*.md'
