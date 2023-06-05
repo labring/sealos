@@ -1,0 +1,34 @@
+name: 📝 Documentation Suggestion
+description: Suggest an improvement or addition to the official documentation
+title: 'Docs: brief description of your suggestion'
+labels: kind/documentation
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for making a suggestion to improve our documentation. 
+
+        Please fill in as much of the following form as you're able.
+  - type: input
+    attributes:
+      label: Documentation Section
+      description: The section of the documentation where your suggestion applies.
+      placeholder: eg. Installation Guide
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What is the current documentation state?
+      description: Briefly describe the current state of the section.
+  - type: textarea
+    attributes:
+      label: What is your suggestion?
+      description: Please describe your suggestion for improving or adding to the documentation.
+  - type: textarea
+    attributes:
+      label: Why is this change beneficial?
+      description: Explain why you believe your suggestion will improve the documentation.
+  - type: textarea
+    attributes:
+      label: Additional information
+      description: Provide any other details or context that might be helpful for us to understand your suggestion.
