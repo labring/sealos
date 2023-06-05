@@ -1,6 +1,7 @@
 name: Check-LinkError
 
 on:
+  push:
   pull_request:
 
 jobs:
@@ -13,4 +14,4 @@ jobs:
         id: lychee
         uses: lycheeverse/lychee-action@v1.7.0
         with:
-          config: lychee.toml
+          args: --config ../../lychee.toml

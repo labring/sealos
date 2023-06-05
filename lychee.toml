@@ -5,3 +5,4 @@ insecure = true
 no_progress = true
 check = ["./**/*.md"]
 timeout = 20
+fail = true
