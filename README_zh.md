@@ -39,6 +39,7 @@ Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以
 * [在 Sealos 上 运行 WordPress](https://sealos.io/docs/examples/blog-platform/install-wordpress)
 * [在 Sealos 上 运行 Uptime Kuma 拨测系统](https://sealos.io/docs/examples/dial-testing-system/install-uptime-kuma)
 * [在 Sealos 上 运行低代码平台](https://sealos.io/docs/category/low-code-platform)
+* [在 Sealos 上 运行搭建聊天应用](https://sealos.io/docs/examples/social-communication/install-tailchat)
 
 ![](/docs/4.0/img/app-launchpad-zh.png)
 
