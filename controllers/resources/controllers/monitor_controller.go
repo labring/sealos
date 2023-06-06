@@ -48,7 +48,7 @@ type MonitorReconciler struct {
 	logr.Logger
 	Interval          time.Duration
 	Scheme            *runtime.Scheme
-	mongoUrl          string
+	mongoURL          string
 	stopCh            chan struct{}
 	wg                sync.WaitGroup
 	periodicReconcile time.Duration
@@ -82,9 +82,9 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 		Logger:            ctrl.Log.WithName("controllers").WithName("Monitor"),
 		stopCh:            make(chan struct{}),
 		periodicReconcile: 1 * time.Minute,
-		mongoUrl:          os.Getenv(database.MongoURL),
+		mongoURL:          os.Getenv(database.MongoURL),
 	}
-	if r.mongoUrl == "" {
+	if r.mongoURL == "" {
 		return nil, fmt.Errorf("mongo uri is empty")
 	}
 	r.initNamespaceFuncs()
@@ -113,22 +113,23 @@ func (r *MonitorReconciler) initNamespaceFuncs() {
 }
 
 func (r *MonitorReconciler) StartReconciler(ctx context.Context) error {
-	for {
-		select {
-		//case namespaceName := <-r.namespaceQueue:
-		//	if err := r.processNamespace(ctx, namespaceName); err != nil {
-		//		r.Logger.Error(err, "failed to process namespace", "namespace", namespaceName)
-		//	}
-		//case namespaceList := <-r.namespaceListQueue:
-		//	r.Logger.Info("process namespace list", "namespaceList len", len(namespaceList.Items))
-		//	if err := r.processNamespaceList(ctx, namespaceList); err != nil {
-		//		r.Logger.Error(err, "failed to process namespace", "namespaceList", namespaceList)
-		//	}
-		case <-ctx.Done():
-			r.stopPeriodicReconcile()
-			return nil
-		}
-	}
+	//select {
+	//case namespaceName := <-r.namespaceQueue:
+	//	if err := r.processNamespace(ctx, namespaceName); err != nil {
+	//		r.Logger.Error(err, "failed to process namespace", "namespace", namespaceName)
+	//	}
+	//case namespaceList := <-r.namespaceListQueue:
+	//	r.Logger.Info("process namespace list", "namespaceList len", len(namespaceList.Items))
+	//	if err := r.processNamespaceList(ctx, namespaceList); err != nil {
+	//		r.Logger.Error(err, "failed to process namespace", "namespaceList", namespaceList)
+	//	}
+	//case <-ctx.Done():
+	//	r.stopPeriodicReconcile()
+	//	return nil
+	//}
+	<-ctx.Done()
+	r.stopPeriodicReconcile()
+	return nil
 }
 
 func (r *MonitorReconciler) startPeriodicReconcile() {
@@ -187,7 +188,7 @@ func (r *MonitorReconciler) processNamespaceList(ctx context.Context, namespaceL
 	wg := sync.WaitGroup{}
 	wg.Add(len(namespaceList.Items))
 	dbCtx := context.Background()
-	dbClient, err := database.NewMongoDB(dbCtx, r.mongoUrl)
+	dbClient, err := database.NewMongoDB(dbCtx, r.mongoURL)
 	if err != nil {
 		r.Logger.Error(err, "connect mongo client failed")
 		return err
@@ -241,7 +242,7 @@ func (r *MonitorReconciler) processNamespace(ctx context.Context, dbClient datab
 
 func (r *MonitorReconciler) preApply() error {
 	ctx := context.Background()
-	dbClient, err := database.NewMongoDB(ctx, r.mongoUrl)
+	dbClient, err := database.NewMongoDB(ctx, r.mongoURL)
 	if err != nil {
 		return fmt.Errorf("failed to connect mongo: %v", err)
 	}
