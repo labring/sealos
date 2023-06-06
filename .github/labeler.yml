@@ -75,8 +75,8 @@ area/cloud:
 area/lifecycle-management:
   - any: [ 'pkg/**/*' ]
   - any: [ 'staging/**/*' ]
-  - any: [ 'docs/4.0/docs/lifecycle-management/*' ]
-  - any: [ 'docs/4.0/i18n/zh-Hans/lifecycle-management/*' ]
+  - any: [ 'docs/4.0/docs/lifecycle-management/**/*' ]
+  - any: [ 'docs/4.0/i18n/zh-Hans/lifecycle-management/**/*' ]
 
 
 area/frontend:
@@ -91,4 +91,4 @@ area/ci:
   - 'Makefile'
 
 area/workflow:
-  - any: [ '.github/**' ]
+  - any: [ '.github/**/*' ]

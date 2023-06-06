@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	stdsync "sync"
@@ -114,7 +113,32 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 					if err = httputils.WaitUntilEndpointAlive(probeCtx, "http://"+src); err != nil {
 						return err
 					}
-					return sync.ToRegistry(inner, sys, src, dst, os.Stdout, copy.CopySystemImage)
+					opts := []*sync.Options{
+						{
+							SystemContext: sys,
+							Source:        src,
+							Target:        dst,
+							Selection:     copy.CopyAllImages,
+							OmitError:     false,
+						},
+						{
+							SystemContext: sys,
+							Source:        src,
+							Target:        dst,
+							Selection:     copy.CopySystemImage,
+							OmitError:     false,
+						},
+					}
+					for _, opt := range opts {
+						if err = sync.ToRegistry(inner, opt); err == nil {
+							return nil
+						}
+						if !strings.Contains(err.Error(), "manifest unknown") {
+							return err
+						}
+						logger.Warn("failed to sync images to %s, manifest unknown retrying", dst)
+					}
+					return nil
 				})
 			}
 			go func() {
