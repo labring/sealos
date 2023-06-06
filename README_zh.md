@@ -25,7 +25,7 @@
 
 ![](/docs/4.0/img/sealos-desktop.webp)
 
-> [文档](https://www.sealos.io/docs/Intro) | [English](README.md) ｜ [发展规划](https://github.com/orgs/labring/projects/4/views/9)
+> [文档](https://www.sealos.io/docs/Intro) | [English](README.md) | [发展规划](https://github.com/orgs/labring/projects/4/views/9)
 
 Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以云原生的方式，抛弃了传统的云计算架构，转向以 Kubernetes 为云内核的新架构，使企业能够**像使用个人电脑一样**简单地使用云。
 
@@ -37,8 +37,8 @@ Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以
 * [在 Sealos 上 30 秒内轻松部署 Nginx](https://sealos.io/docs/quick-start/install-apps-with-app-launchpad)
 * [在 Sealos 上 30 秒启动 mysql/pgsql/mongo 高可用数据库](https://sealos.io/docs/quick-start/install-db-with-database)
 * [在 Sealos 上 运行 WordPress](https://sealos.io/docs/examples/wordpress-with-sealos)
-* [在 Sealos 上 运行 Uptime Kuma 拨测系统](https://sealos.io/docs/examples/install-uptime-kuma)
-* [在 Sealos 上 运行低代码平台](https://sealos.io/docs/examples/low-code-platform/install-appsmith)
+* [在 Sealos 上 运行 Uptime Kuma 拨测系统](https://sealos.io/docs/examples/dial-testing-system/install-uptime-kuma)
+* [在 Sealos 上 运行低代码平台](https://sealos.io/docs/category/low-code-platform)
 
 ![](/docs/4.0/img/app-launchpad-zh.png)
 
