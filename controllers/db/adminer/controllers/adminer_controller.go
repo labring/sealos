@@ -313,7 +313,10 @@ func (r *AdminerReconciler) syncDeployment(ctx context.Context, adminer *adminer
 		return err
 	}
 
-	if adminer.Status.AvailableReplicas != deployment.Status.AvailableReplicas {
+	// Note: Since secret+service+ingress are "almost" instancely ready,
+	// so we just only to check if deploy+pod is ready for cr to update ready.
+	// only when deployment is ready and pod is ready, we update status.
+	if deployment.Status.ReadyReplicas > 0 && deployment.Status.AvailableReplicas > 0 {
 		adminer.Status.AvailableReplicas = deployment.Status.AvailableReplicas
 		return r.Status().Update(ctx, adminer)
 	}
