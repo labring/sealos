@@ -14,21 +14,18 @@ import request from "@/services/request";
 import useSessionStore from "@/stores/session";
 import { Session } from "@/types";
 import router from "next/router";
-
 export async function getServerSideProps(context: any) {
-  const wechat_client_id = process.env.WECHAT_CLIENT_ID
-  const github_client_id = process.env.GITHUB_CLIENT_ID
-  const service_protocol = process.env.SERVICE_PROTOCOL
-  const private_protocol = process.env.PRIVATE_PROTOCOL
+  const wechat_client_id = process.env.WECHAT_CLIENT_ID 
+  const github_client_id = process.env.GITHUB_CLIENT_ID 
+  const service_protocol = process.env.SERVICE_PROTOCOL 
+  const private_protocol = process.env.PRIVATE_PROTOCOL 
   const callback_url = process.env.CALLBACK_URL
-  const wechat_callback = process.env.WECHAT_CALLBACK_URL
   const props = {
     wechat_client_id,
     github_client_id,
     callback_url,
     service_protocol,
     private_protocol,
-    wechat_callback
   }
   return {
     props
@@ -42,14 +39,12 @@ export default function Login(
     callback_url = '',
     service_protocol = '',
     private_protocol = '',
-    wechat_callback = ''
   }: {
     wechat_client_id: string,
     github_client_id: string,
     callback_url: string,
     service_protocol: string,
     private_protocol: string,
-    wechat_callback: string
   }
 ) {
   const setSessionProp = useSessionStore(s => s.setSessionProp)
@@ -92,7 +87,7 @@ export default function Login(
         const state = generateState()
         oauthLogin({
           provider: 'wechat',
-          url: `https://open.weixin.qq.com/connect/qrconnect?appid=${wechat_client_id}&redirect_uri=${wechat_callback}&response_type=code&state=${state}&scope=snsapi_login&#wechat_redirect`
+          url: `https://open.weixin.qq.com/connect/qrconnect?appid=${wechat_client_id}&redirect_uri=${callback_url}&response_type=code&state=${state}&scope=snsapi_login&#wechat_redirect`
         })
 
       }
