@@ -35,7 +35,6 @@ export function K8sApi(config: string): k8s.KubeConfig {
       }
     });
   }
-
   return kc;
 }
 
@@ -80,9 +79,10 @@ export async function ListCRD(
   response: http.IncomingMessage;
   body: object;
 }> {
-  return kc
+  const data = await kc
     .makeApiClient(k8s.CustomObjectsApi)
     .listNamespacedCustomObject(meta.group, meta.version, meta.namespace, meta.plural);
+  return data
 }
 
 export async function ApplyYaml(

@@ -39,3 +39,5 @@ tests/*
 
 .yalc/
 yalc.lock
+
+config.yaml

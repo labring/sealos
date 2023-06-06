@@ -16,3 +16,24 @@ export function appWaitSeconds(ms: number) {
     }, ms);
   });
 }
+export async function getBase64FromRemote(url: string) {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const blobToBase64 = (blob: Blob) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onload = () => {
+        const dataUrl = reader.result;
+        resolve(dataUrl);
+      };
+      reader.onerror = (error) => {
+        reject(error);
+      };
+    });
+
+    return await blobToBase64(blob);
+  } catch {
+    return '';
+  }
+}
