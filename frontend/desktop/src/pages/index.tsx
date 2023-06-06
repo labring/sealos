@@ -43,14 +43,15 @@ export default function Home() {
   );
 }
 
-export async function getServerSideProps(content: any) {
+export async function getServerSideProps({req, res, locales}:any) {
+  const local = req?.cookies?.NEXT_LOCALE || 'en';
   return {
     props: {
       ...(await serverSideTranslations(
-        content.req.cookies.NEXT_LOCALE,
+        local,
         undefined,
         null,
-        content.locales
+        locales || []
       ))
     }
   };
