@@ -13,6 +13,7 @@ import { useGlobalStore } from '@/store/global';
 import { useLoading } from '@/hooks/useLoading';
 import { getServiceEnv, SEALOS_DOMAIN } from '@/store/static';
 import { useRouter } from 'next/router';
+import { appWithTranslation } from 'next-i18next';
 
 import 'nprogress/nprogress.css';
 import '@/styles/reset.scss';
@@ -33,13 +34,13 @@ const queryClient = new QueryClient({
   }
 });
 
-export default function App({ Component, pageProps }: AppProps) {
+const App = ({ Component, pageProps }: AppProps) => {
   const router = useRouter();
   const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
   const { Loading } = useLoading();
   const { openConfirm, ConfirmChild } = useConfirm({
-    title: '跳转提示',
-    content: '该应用不允许单独使用，点击确认前往 Sealos Desktop 使用。'
+    title: 'jump_prompt',
+    content: 'jump_message'
   });
 
   useEffect(() => {
@@ -105,4 +106,6 @@ export default function App({ Component, pageProps }: AppProps) {
       </QueryClientProvider>
     </>
   );
-}
+};
+
+export default appWithTranslation(App);

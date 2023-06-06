@@ -10,6 +10,7 @@ import AppBaseInfo from './components/AppBaseInfo';
 import Pods from './components/Pods';
 import dynamic from 'next/dynamic';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 const AppMainInfo = dynamic(() => import('./components/AppMainInfo'), { ssr: false });
 
@@ -119,12 +120,20 @@ const AppDetail = ({ appName }: { appName: string }) => {
   );
 };
 
-export default AppDetail;
-
-export async function getServerSideProps(context: any) {
-  const appName = context.query?.name || '';
+export async function getServerSideProps(content: any) {
+  const appName = content?.query?.name || '';
 
   return {
-    props: { appName }
+    props: {
+      appName,
+      ...(await serverSideTranslations(
+        content.req.cookies.NEXT_LOCALE,
+        undefined,
+        null,
+        content.locales
+      ))
+    }
   };
 }
+
+export default AppDetail;

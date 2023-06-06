@@ -3,20 +3,20 @@ import type { AppEditType } from '@/types/app';
 export const editModeMap = (isEdit: boolean) => {
   if (isEdit) {
     return {
-      title: '变更应用',
-      applyBtnText: '更新应用',
-      applyMessage: '确认更新应用?',
-      applySuccess: '更新成功',
-      applyError: '更新失败'
+      title: 'Update Application',
+      applyBtnText: 'Update Application',
+      applyMessage: 'Confirm Update Application?',
+      applySuccess: 'Update Successful',
+      applyError: 'Update Failed'
     };
   }
 
   return {
-    title: '应用部署',
-    applyBtnText: '部署应用',
-    applyMessage: '确认部署应用?',
-    applySuccess: '部署成功',
-    applyError: '部署失败'
+    title: 'Application Deployment',
+    applyBtnText: 'Deploy Application',
+    applyMessage: 'Confirm Deploy Application?',
+    applySuccess: 'Deployment Successful',
+    applyError: 'Deployment Failed'
   };
 };
 

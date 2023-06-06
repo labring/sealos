@@ -8,8 +8,10 @@ import { getUserNamespace } from '@/utils/user';
 import { SEALOS_DOMAIN } from '@/store/static';
 import MyIcon from '@/components/Icon';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
+import { useTranslation } from 'next-i18next';
 
 const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
+  const { t } = useTranslation();
   const { copyData } = useCopyData();
   const inlineNetwork = useMemo(
     () => `http://${app.appName}.${getUserNamespace()}.svc.cluster.local:${app.containerOutPort}`,
@@ -37,10 +39,11 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
         <Flex alignItems={'center'}>
           <MyIcon name={'listen'} w={'14px'} color={'myGray.500'} />
           <Box ml={3} color={'myGray.600'}>
-            实时监控
+            {t('Real-time Monitoring')}
           </Box>
           <Box ml={2} color={'myGray.400'}>
-            (更新时间{dayjs().format('hh:mm:ss')})
+            ({t('Update Time')}&ensp;
+            {dayjs().format('hh:mm:ss')})
           </Box>
         </Flex>
         <Grid
@@ -62,7 +65,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           </Box>
           <Box>
             <Box mb={2} fontSize={'sm'}>
-              内存&ensp;({memoryUsed})
+              {t('Memory')}&ensp;({memoryUsed})
             </Box>
             <Box h={'80px'}>
               <PodLineChart type={'purple'} data={app.usedMemory.slice(-15)} limit={app.memory} />
@@ -72,7 +75,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
         <Flex mt={3} alignItems={'center'}>
           <MyIcon name={'network'} w={'14px'} color={'myGray.500'} />
           <Box ml={3} color={'myGray.600'}>
-            网络配置
+            {t('Network Configuration')}
           </Box>
         </Flex>
         <Flex mt={2}>
@@ -86,7 +89,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             backgroundColor={'myWhite.400'}
             borderRadius={'sm'}
           >
-            <Box mr={3}>内网地址</Box>
+            <Box mr={3}>{t('Intranet Address')}</Box>
             <Box flex={'1 0 0'} w={0} color={'myGray.600'}>
               {inlineNetwork}
             </Box>
@@ -112,7 +115,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             backgroundColor={'myWhite.400'}
             borderRadius={'sm'}
           >
-            <Box mr={3}>外网地址</Box>
+            <Box mr={3}>{t('External Address')}</Box>
             {outlineNetwork ? (
               <>
                 <Link
@@ -138,7 +141,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               </>
             ) : (
               <Box flex={'1 0 0'} w={0} userSelect={'none'} color={'black'}>
-                未开启
+                {t('未开启')}
               </Box>
             )}
           </Flex>

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Flex, Box } from '@chakra-ui/react';
 import type { AppStatusMapType } from '@/types/app';
 import { appStatusMap } from '@/constants/app';
+import { useTranslation } from 'next-i18next';
 
 const AppStatusTag = ({
   status,
@@ -12,6 +13,7 @@ const AppStatusTag = ({
   isPause: boolean;
   showBorder: boolean;
 }) => {
+  const { t } = useTranslation();
   const statusMap = useMemo(() => (isPause ? appStatusMap.pause : status), [isPause, status]);
   return (
     <Flex
@@ -29,7 +31,7 @@ const AppStatusTag = ({
     >
       <Box w={'10px'} h={'10px'} borderRadius={'10px'} backgroundColor={statusMap.dotColor}></Box>
       <Box ml={2} flex={1}>
-        {statusMap.label}
+        {t(statusMap.label)}
       </Box>
     </Flex>
   );

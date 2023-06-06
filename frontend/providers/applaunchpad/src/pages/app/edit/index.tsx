@@ -28,6 +28,7 @@ import Yaml from './components/Yaml';
 import dynamic from 'next/dynamic';
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 import { useGlobalStore } from '@/store/global';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 const EditApp = ({ appName }: { appName?: string }) => {
   const { toast } = useToast();
@@ -238,11 +239,20 @@ const EditApp = ({ appName }: { appName?: string }) => {
   );
 };
 
-export default EditApp;
+export async function getServerSideProps(content: any) {
+  const appName = content?.query?.name || '';
 
-export async function getServerSideProps(context: any) {
-  const appName = context?.query?.name || '';
   return {
-    props: { appName }
+    props: {
+      appName,
+      ...(await serverSideTranslations(
+        content.req.cookies.NEXT_LOCALE,
+        undefined,
+        null,
+        content.locales
+      ))
+    }
   };
 }
+
+export default EditApp;

@@ -10,6 +10,7 @@ import AppStatusTag from '@/components/AppStatusTag';
 import MyIcon from '@/components/Icon';
 import { EditIcon } from '@chakra-ui/icons';
 import dynamic from 'next/dynamic';
+import { useTranslation } from 'next-i18next';
 
 const DelModal = dynamic(() => import('./DelModal'));
 
@@ -28,6 +29,7 @@ const Header = ({
   setShowSlider: Dispatch<boolean>;
   refetch: () => void;
 }) => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { toast } = useToast();
   const {
@@ -36,10 +38,10 @@ const Header = ({
     onClose: onCloseDelModal
   } = useDisclosure();
   const { openConfirm: openRestartConfirm, ConfirmChild: RestartConfirmChild } = useConfirm({
-    content: '确认重启该应用?'
+    content: 'Confirm to restart this application?'
   });
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
-    content: '请注意，暂停状态下无法变更应用，并且如果您使用了存储卷，存储券仍会收费，请确认！'
+    content: 'pause_message'
   });
 
   const [loading, setLoading] = useState(false);
@@ -49,7 +51,7 @@ const Header = ({
       setLoading(true);
       await restartAppByName(appName);
       toast({
-        title: '重启成功',
+        title: `${t('Reboot Success')}`,
         status: 'success'
       });
     } catch (error: any) {
@@ -120,7 +122,7 @@ const Header = ({
             bg={'white'}
             onClick={() => setShowSlider(true)}
           >
-            详情
+            {t('Details')}
           </Button>
         </Box>
       )}
@@ -138,7 +140,7 @@ const Header = ({
           bg={'white'}
           onClick={handleStartApp}
         >
-          继续
+          {t('Continue')}
         </Button>
       ) : (
         <Button
@@ -151,7 +153,7 @@ const Header = ({
           bg={'white'}
           onClick={onOpenPause(handlePauseApp)}
         >
-          暂停
+          {t('Pause')}
         </Button>
       )}
       {!isPause && (
@@ -167,7 +169,7 @@ const Header = ({
             router.push(`/app/edit?name=${appName}`);
           }}
         >
-          变更
+          {t('Update')}
         </Button>
       )}
 
@@ -182,7 +184,7 @@ const Header = ({
           onClick={openRestartConfirm(handleRestartApp)}
           isLoading={loading}
         >
-          重启
+          {t('Restart')}
         </Button>
       )}
       <Button
@@ -197,7 +199,7 @@ const Header = ({
         isDisabled={loading}
         onClick={onOpenDelModal}
       >
-        删除
+        {t('Delete')}
       </Button>
       <RestartConfirmChild />
       <PauseChild />

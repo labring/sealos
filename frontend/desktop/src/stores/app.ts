@@ -65,7 +65,6 @@ const useAppStore = create<TOSState>()(
       runner: new AppStateManager([]),
       init: async () => {
         const res = await request('/api/desktop/getInstalledApps');
-        console.log(res)
         set((state) => {
           state.installedApps = res?.data?.map((app: TApp) => new AppInfo(app, -1));
           state.runner.loadApps(state.installedApps.map((app) => app.key));

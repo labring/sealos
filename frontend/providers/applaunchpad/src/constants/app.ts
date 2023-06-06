@@ -6,28 +6,28 @@ export enum AppStatusEnum {
 }
 export const appStatusMap = {
   [AppStatusEnum.running]: {
-    label: '运行中',
+    label: 'Running',
     value: AppStatusEnum.running,
     color: '#00A9A6',
     backgroundColor: '#E6F6F6',
     dotColor: '#00A9A6'
   },
   [AppStatusEnum.waiting]: {
-    label: '创建中',
+    label: 'Creating',
     value: AppStatusEnum.waiting,
     color: '#787A90',
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
   },
   [AppStatusEnum.error]: {
-    label: '有异常',
+    label: 'Abnormality Detected',
     value: AppStatusEnum.error,
     color: '#FF5B6E',
     backgroundColor: '#FFEBED',
     dotColor: '#FF5B6E'
   },
   [AppStatusEnum.pause]: {
-    label: '已暂停',
+    label: 'Paused',
     value: AppStatusEnum.pause,
     color: '#8172D8',
     backgroundColor: '#F2F1FB',
