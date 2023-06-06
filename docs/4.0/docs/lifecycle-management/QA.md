@@ -1,4 +1,8 @@
-# 常见问题与解决方案
+---
+sidebar_position: 1
+---
+
+# 常见问题
 
 使用Sealos时，您可能会遇到一些问题。以下是一些常见问题的答案和解决方法。
 
@@ -45,12 +49,12 @@ spec:
         app: sealoscli
     spec:
       containers:
-      - image: #用你的sealos镜像替换
-        name: sealoscli
-        stdin: true
-        stdinOnce: true
-        securityContext:
-          privileged: true
+        - image: #用你的sealos镜像替换
+          name: sealoscli
+          stdin: true
+          stdinOnce: true
+          securityContext:
+            privileged: true
 ```
 
 2. 创建Dockerfile。以下是一个例子，根据需要进行修改。
