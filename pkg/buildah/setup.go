@@ -56,6 +56,7 @@ func init() {
 		DefaultConfigFile, err = types.DefaultConfigFile(true)
 		bailOnError(err, "")
 	}
+	logger.Debug("using file %s as container storage config", DefaultConfigFile)
 
 	// config path
 	if unshare.IsRootless() {
