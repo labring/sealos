@@ -97,11 +97,8 @@ Sealos会根据您选择的镜像决定使用哪种运行时。如果选择了ku
 ### Q1：报错："Applied to cluster error: failed to init exec auth.sh failed exit status 127"？
 
 此问题常因您使用的sealos版本和镜像版本不匹配造成。请确认您的镜像版本和sealos的版本是匹配的。
-
 例如，若您正使用形如kubernetes:v1.xx.x的版本，可能需要升级sealos，特别是在使用较老版本的sealos，而sealos集群镜像则使用了最新版时。
-
 另一种解决方法是选择对应版本的sealos镜像。比如，如果您的sealos版本是4.1.3，那么集群镜像应选择形如kuberntes:v1.24.0-4.1.3的版本。
-
 确保镜像版本和sealos版本的匹配，可以帮助避免此类问题。
 
 ### Q2: 如果您在集群中新增了其他域名，或者修改了 service 的 CIDR，并且在添加 master 时出现了错误
@@ -139,6 +136,7 @@ export SEALOS_SCP_CHECKSUM=false
 sealos run labring/kubernetes:v1.24.0
 ```
 
+
 ## 其他问题
 
 ### Q1：image-cri-shim导致端口大量占用，耗尽服务器socket资源？
@@ -162,3 +160,19 @@ sealos exec -r master,node "image-cri-shim -v"
 此问题可通过升级至Sealos 4.1.4+来解决。
 
 我们希望这些解答能帮助您解决在使用Sealos过程中遇到的问题。如果还有其他问题，欢迎随时提问。
+
+## 使用技巧
+
+### Q1: 如何清理 Sealos 集群的缓存文件
+
+> 在使用 Sealos 集群时，安装过程中可能会在本地存储一些缓存文件，这些文件会重复占用磁盘空间。那么，如何清理这些缓存文件以释放磁盘空间呢？
+
+我们提供了一个非常简单的解决方案，只需要执行以下命令：
+
+```shell
+sealos unmount --all && sealos rm --all
+```
+这个命令的作用是移除所有缓存的 Sealos 集群镜像文件，以及所有的相关挂载点。--all 选项表示处理所有相关文件和挂载点。
+执行这个命令后，所有 Sealos 集群的缓存文件就会被清理掉，从而释放出被它们占用的磁盘空间。
+这是一个非常有用的技巧，特别是对于在磁盘空间有限的环境中运行 Sealos 集群的用户来说。在你感觉磁盘空间被占用过多时，不妨尝试执行这个命令来释放一些空间。
+请注意，这个命令只会删除缓存文件，不会影响已经运行的集群。也就是说，执行这个命令后，你的集群仍然可以正常运行。
