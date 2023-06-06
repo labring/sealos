@@ -31,6 +31,9 @@ import (
 )
 
 var (
+	// use the defaultOverrideConfigFile var as default
+	storageConfEnv                     = "CONTAINERS_STORAGE_CONF"
+	defaultOverrideConfigFile          = "/etc/containers/storage.conf"
 	DefaultConfigFile                  string
 	DefaultSignaturePolicyPath         = config.DefaultSignaturePolicyPath
 	DefaultRootlessSignaturePolicyPath = "containers/policy.json"
@@ -41,17 +44,22 @@ var (
 
 func init() {
 	_ = os.Setenv("TMPDIR", parse.GetTempDir())
-	var err error
-	DefaultConfigFile, err = types.DefaultConfigFile(unshare.IsRootless())
-	if err != nil {
-		logger.Fatal(err)
+
+	// storage config path
+	if path, ok := os.LookupEnv(storageConfEnv); ok {
+		DefaultConfigFile = path
+	} else if !unshare.IsRootless() {
+		DefaultConfigFile = defaultOverrideConfigFile
+	} else {
+		var err error
+		DefaultConfigFile, err = types.DefaultConfigFile(true)
+		bailOnError(err, "")
 	}
+
 	// config path
 	if unshare.IsRootless() {
 		configHome, err := homedir.GetConfigHome()
-		if err != nil {
-			logger.Fatal(err)
-		}
+		bailOnError(err, "")
 		DefaultSignaturePolicyPath = filepath.Join(configHome, DefaultRootlessSignaturePolicyPath)
 		DefaultRegistriesFilePath = filepath.Join(configHome, DefaultRootlessRegistriesFilePath)
 	}
