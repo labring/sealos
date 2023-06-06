@@ -92,6 +92,11 @@ var configOptions = []ConfigOption{
 		Description:  "enable registry sync experimental feature, using containers/image module to save and sync images",
 		DefaultValue: "false",
 	},
+	{
+		Key:         ContainerStorageConfEnvKey,
+		Description: "path of container storage config file, setting this env will override the default location",
+		OSEnv:       ContainerStorageConfEnvKey,
+	},
 }
 
 const (
@@ -100,6 +105,7 @@ const (
 	DataRootConfigKey                 = "DATA_ROOT"
 	BuildahFormatConfigKey            = "BUILDAH_FORMAT"
 	BuildahLogLevelConfigKey          = "BUILDAH_LOG_LEVEL"
+	ContainerStorageConfEnvKey        = "CONTAINERS_STORAGE_CONF"
 	ScpChecksumConfigKey              = "SCP_CHECKSUM"
 	RegistrySyncExperimentalConfigKey = "REGISTRY_SYNC_EXPERIMENTAL"
 )
