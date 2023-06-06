@@ -25,7 +25,7 @@ A Cloud Operating System designed for managing cloud-native applications
 
 ![](/docs/4.0/img/sealos-desktop.webp)
 
-> [Docs](https://sealos.io/en/docs/Intro) | [简体中文](README_zh.md) ｜ [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
+> [Docs](https://sealos.io/en/docs/Intro) | [简体中文](README_zh.md) | [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
 
 Sealos is a cloud operating system distribution based on the Kubernetes kernel. It adopts a cloud-native approach, discarding traditional cloud computing architecture, and shifting towards a new architecture with Kubernetes as the cloud kernel. This allows enterprises to use the cloud as effortlessly as they would use a personal computer.
 
@@ -33,7 +33,11 @@ Sealos is a cloud operating system distribution based on the Kubernetes kernel. 
 
 [Try online demo](https://cloud.sealos.io)
 
-🕓 Deploy Nginx on Sealos in 30 seconds.
+* [Easily Deploy Nginx in 30 Seconds on Sealos](https://sealos.io/docs/quick-start/install-apps-with-app-launchpad)
+* [Start a mysql/pgsql/mongo highly available database in 30 seconds on Sealos](https://sealos.io/docs/quick-start/install-db-with-database)
+* [Running WordPress on Sealos](https://docs.sealos.io/docs/examples/blog-platform/install-wordpress)
+* [Running the Uptime Kuma dial test system on Sealos](https://docs.sealos.io/docs/examples/dial-testing-system/install-uptime-kuma)
+* [Running a low-code platform on Sealos](https://docs.sealos.io/docs/category/low-code-platform)
 
 ![](/docs/4.0/img/app-launchpad.png)
 
