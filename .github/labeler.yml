@@ -13,6 +13,8 @@ area/test:
   - '**/*_test.go'
   - 'test/**/*'
 
+area/buildah:
+  - any: [ 'pkg/buildah/**/*' ]
 
 area/imageCRIShim:
   - any: [ 'staging/src/github.com/labring/image-cri-shim/**/*' ]
