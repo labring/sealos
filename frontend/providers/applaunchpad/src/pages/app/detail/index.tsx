@@ -120,11 +120,19 @@ const AppDetail = ({ appName }: { appName: string }) => {
   );
 };
 
-export async function getServerSideProps(context: any) {
-  const appName = context?.query?.name || '';
+export async function getServerSideProps(content: any) {
+  const appName = content?.query?.name || '';
 
   return {
-    props: { appName, ...(await serverSideTranslations(context?.locale)) }
+    props: {
+      appName,
+      ...(await serverSideTranslations(
+        content.req.cookies.NEXT_LOCALE,
+        undefined,
+        null,
+        content.locales
+      ))
+    }
   };
 }
 

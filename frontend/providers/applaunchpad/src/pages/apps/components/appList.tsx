@@ -14,7 +14,9 @@ import dynamic from 'next/dynamic';
 import MyMenu from '@/components/Menu';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useTranslation } from 'next-i18next';
-import LangSelect from '@/components/LangSelect';
+const LangSelect = dynamic(() => import('@/components/LangSelect'), {
+  ssr: false
+});
 
 const DelModal = dynamic(() => import('@/pages/app/detail/components/DelModal'));
 
@@ -25,7 +27,7 @@ const AppList = ({
   apps: AppListItemType[];
   refetchApps: () => void;
 }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { setLoading } = useGlobalStore();
   const { toast } = useToast();
   const theme = useTheme();
@@ -54,7 +56,7 @@ const AppList = ({
       }
       setLoading(false);
     },
-    [setLoading, toast]
+    [setLoading, t, toast]
   );
 
   const handlePauseApp = useCallback(

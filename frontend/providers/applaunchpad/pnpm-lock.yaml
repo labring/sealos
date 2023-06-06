@@ -46,6 +46,9 @@ dependencies:
   immer:
     specifier: ^9.0.19
     version: 9.0.21
+  js-cookie:
+    specifier: ^3.0.5
+    version: 3.0.5
   js-yaml:
     specifier: ^4.1.0
     version: 4.1.0
@@ -105,6 +108,9 @@ devDependencies:
   '@svgr/webpack':
     specifier: ^6.5.1
     version: 6.5.1
+  '@types/js-cookie':
+    specifier: ^3.0.3
+    version: 3.0.3
   '@types/js-yaml':
     specifier: ^4.0.5
     version: 4.0.5
@@ -3079,6 +3085,10 @@ packages:
       hoist-non-react-statics: 3.3.2
     dev: false
 
+  /@types/js-cookie@3.0.3:
+    resolution: {integrity: sha512-Xe7IImK09HP1sv2M/aI+48a20VX+TdRJucfq4vfRVy6nWN8PYPOEnlMRSgxJAgYQIXJVL8dZ4/ilAM7dWNaOww==}
+    dev: true
+
   /@types/js-yaml@4.0.5:
     resolution: {integrity: sha512-FhpRzf927MNQdRZP0J5DLIdTXhjLYzeUTmLAu69mnVksLH9CJY3IuSeEgbKUki7GQZm0WqDkGzyxju2EZGD2wA==}
 
@@ -5033,6 +5043,11 @@ packages:
     resolution: {integrity: sha512-SgjXLpP7jhQkUNKL6RpowoR/IF4QKE+WjLDMpNnh2vmhiFs67NftrNpvFtgbwpvRdtueFliahYYWz9E+XZZQlg==}
     dev: false
     optional: true
+
+  /js-cookie@3.0.5:
+    resolution: {integrity: sha512-cEiJEAEoIbWfCZYKWhVwFuvPX1gETRYPw6LlaTKoxD3s2AkXzkCjnp6h0V77ozyqj0jakteJ4YqDJT830+lVGw==}
+    engines: {node: '>=14'}
+    dev: false
 
   /js-sdsl@4.4.0:
     resolution: {integrity: sha512-FfVSdx6pJ41Oa+CF7RDaFmTnCaFhua+SNYQX74riGOpl96x+2jQCqEfQ2bnXu/5DPCqlRuiqyvTJM0Qjz26IVg==}

@@ -26,6 +26,7 @@
     "framer-motion": "^9.0.4",
     "i18next": "^22.5.0",
     "immer": "^9.0.19",
+    "js-cookie": "^3.0.5",
     "js-yaml": "^4.1.0",
     "jszip": "^3.10.1",
     "lodash": "^4.17.21",
@@ -47,6 +48,7 @@
   },
   "devDependencies": {
     "@svgr/webpack": "^6.5.1",
+    "@types/js-cookie": "^3.0.3",
     "@types/js-yaml": "^4.0.5",
     "@types/lodash": "^4.14.191",
     "@types/node": "18.13.0",

@@ -1,5 +1,6 @@
-import { Text, Menu, MenuButton, MenuItem, MenuList, MenuButtonProps } from '@chakra-ui/react';
-import { useRouter } from 'next/router';
+import { setCookie } from '@/utils/cookieUtils';
+import { Menu, MenuButton, MenuButtonProps, MenuItem, MenuList, Text } from '@chakra-ui/react';
+import { useTranslation } from 'react-i18next';
 
 const langIcon = (
   <svg
@@ -28,8 +29,7 @@ const LANG_MAP = {
 } as const;
 
 const LangSelect: React.FC<MenuButtonProps> = (props) => {
-  const router = useRouter();
-  const { pathname, asPath, query, locale } = router;
+  const { i18n } = useTranslation();
 
   return (
     <Menu autoSelect={false}>
@@ -43,10 +43,10 @@ const LangSelect: React.FC<MenuButtonProps> = (props) => {
             display="flex"
             alignItems="center"
             fontSize="sm"
-            {...(key === locale ? { bg: 'A7Gray.200' } : {})}
+            {...(key === i18n.language ? { bg: 'A7Gray.200' } : {})}
             onClick={() => {
-              document.cookie = `NEXT_LOCALE=${key}; max-age=31536000; path=/`;
-              router.push({ pathname, query }, asPath, { locale: key });
+              setCookie('NEXT_LOCALE', key, { expires: 7 });
+              i18n.changeLanguage(key);
             }}
           >
             <Text>{lang.label}</Text>

@@ -8,7 +8,7 @@ import { useLoading } from '@/hooks/useLoading';
 import { useRouter } from 'next/router';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
-export default function Home() {
+const Home = () => {
   const router = useRouter();
   const { appList, setAppList, intervalLoadPods } = useAppStore();
   const { Loading } = useLoading();
@@ -42,12 +42,19 @@ export default function Home() {
       <Loading loading={isLoading} />
     </>
   );
-}
+};
 
-export async function getStaticProps({ locale }: { locale: any }) {
+export async function getServerSideProps(content: any) {
   return {
     props: {
-      ...(await serverSideTranslations(locale))
+      ...(await serverSideTranslations(
+        content.req.cookies.NEXT_LOCALE,
+        undefined,
+        null,
+        content.locales
+      ))
     }
   };
 }
+
+export default Home;

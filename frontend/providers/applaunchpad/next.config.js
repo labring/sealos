@@ -16,19 +16,6 @@ const nextConfig = {
         use: ['@svgr/webpack']
       }
     ])
-    if (!isServer) {
-      config.resolve = {
-        ...config.resolve,
-        fallback: {
-          ...config.resolve.fallback,
-          fs: false,
-        },
-      }
-    }
-    config.module = {
-      ...config.module,
-      exprContextCritical: false,
-    }
     config.plugins = [...config.plugins, ...analyzer]
     return config
   }
