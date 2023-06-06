@@ -99,10 +99,10 @@
     "type": "category",
     "label": "Cluster Lifecycle Management",
     "link": {
-      "type": "generated-index"
+      "type": "doc",
+      "id": "lifecycle-management/lifecycle-management"
     },
     "items": [
-      "lifecycle-management/Intro",
       {
         "type": "category",
         "label": "Quick Start",
