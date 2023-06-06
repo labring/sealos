@@ -345,7 +345,7 @@ func giveGift(amount int64) int64 {
 	var ratio int64
 	switch {
 	case amount < 299:
-		ratio = 0
+		return 0
 	case amount < 599:
 		ratio = 10
 	case amount < 1999:
