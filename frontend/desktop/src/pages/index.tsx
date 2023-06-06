@@ -1,23 +1,20 @@
-import Layout from '@/components/layout';
-import { useRouter } from 'next/router';
-import { createContext, useEffect, useState } from 'react';
-import useSessionStore from '@/stores/session';
-import { useColorMode } from '@chakra-ui/react';
-import useAppStore from '@/stores/app';
 import DesktopContent from '@/components/desktop_content';
 import FloatButton from '@/components/floating_button';
-import dynamic from 'next/dynamic';
+import Layout from '@/components/layout';
+import MoreApps from '@/components/more_apps';
+import useAppStore from '@/stores/app';
+import useSessionStore from '@/stores/session';
+import { useColorMode } from '@chakra-ui/react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useRouter } from 'next/router';
+import { createContext, useEffect, useState } from 'react';
 const destination = '/signin';
-const MoreApps = dynamic(() => import('@/components/more_apps'), {
-  ssr: false
-});
 interface IMoreAppsContext {
   showMoreApps: boolean;
   setShowMoreApps: (value: boolean) => void;
 }
 export const MoreAppsContext = createContext<IMoreAppsContext | null>(null);
-export default function Home(props: any) {
+export default function Home() {
   const router = useRouter();
   const { colorMode, toggleColorMode } = useColorMode();
   const isUserLogin = useSessionStore((s) => s.isUserLogin);
@@ -35,21 +32,26 @@ export default function Home(props: any) {
     }
   }, [router, isUserLogin, init]);
 
-  return <Layout>
-    <MoreAppsContext.Provider value={{ showMoreApps, setShowMoreApps }}>
-      <DesktopContent />
-      <FloatButton />
-      <MoreApps />
-    </MoreAppsContext.Provider>
-
-
-  </Layout>;
-};
+  return (
+    <Layout>
+      <MoreAppsContext.Provider value={{ showMoreApps, setShowMoreApps }}>
+        <DesktopContent />
+        <FloatButton />
+        <MoreApps />
+      </MoreAppsContext.Provider>
+    </Layout>
+  );
+}
 
 export async function getServerSideProps(content: any) {
   return {
     props: {
-      ...(await serverSideTranslations(content.locale))
+      ...(await serverSideTranslations(
+        content.req.cookies.NEXT_LOCALE,
+        undefined,
+        null,
+        content.locales
+      ))
     }
   };
 }

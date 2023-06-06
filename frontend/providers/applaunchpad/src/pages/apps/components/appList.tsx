@@ -14,9 +14,7 @@ import dynamic from 'next/dynamic';
 import MyMenu from '@/components/Menu';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useTranslation } from 'next-i18next';
-const LangSelect = dynamic(() => import('@/components/LangSelect'), {
-  ssr: false
-});
+import LangSelect from '@/components/LangSelect';
 
 const DelModal = dynamic(() => import('@/pages/app/detail/components/DelModal'));
 

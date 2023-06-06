@@ -1,3 +1,4 @@
+import { setCookie } from '@/utils/cookieUtils';
 import { Menu, MenuButton, MenuButtonProps, MenuItem, MenuList, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 
@@ -44,6 +45,7 @@ const LangSelect: React.FC<MenuButtonProps> = (props) => {
             fontSize="sm"
             {...(key === i18n.language ? { bg: 'A7Gray.200' } : {})}
             onClick={() => {
+              setCookie('NEXT_LOCALE', key, { expires: 7 });
               i18n.changeLanguage(key);
             }}
           >
