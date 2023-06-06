@@ -15,6 +15,7 @@
 package buildah
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -111,7 +112,7 @@ runroot = "/run/containers/storage"
 graphroot = "/var/lib/containers/storage"`
 	defaultRootlessStorageConf = `[storage]
 driver = "overlay"
-runroot = "/run/user/%d"`
+runroot = "%s"`
 	storageOptionsOverlaySnippet = `
 [storage.options.overlay]
 mount_program = "/bin/fuse-overlayfs"
@@ -137,7 +138,16 @@ func setupRegistriesFile() error {
 func setupStorageConfigFile() error {
 	var content string
 	if unshare.IsRootless() {
-		content = fmt.Sprintf(defaultRootlessStorageConf, unshare.GetRootlessUID())
+		runRoot := fmt.Sprintf("/run/user/%d", unshare.GetRootlessUID())
+		if err := os.MkdirAll(runRoot, 0755); err != nil && errors.Is(err, os.ErrPermission) {
+			// has not permission, then use cache home
+			cacheHome, err := homedir.GetCacheHome()
+			if err != nil {
+				return err
+			}
+			runRoot = cacheHome
+		}
+		content = fmt.Sprintf(defaultRootlessStorageConf, runRoot)
 	} else {
 		content = defaultRootStorageConf
 	}
