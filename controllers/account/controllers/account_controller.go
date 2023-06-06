@@ -126,7 +126,8 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 		}()
 		now := time.Now().UTC()
-		account.Status.Balance += payment.Spec.Amount
+		var gift = giveGift(payment.Spec.Amount)
+		account.Status.Balance += payment.Spec.Amount + gift
 		if err := r.Status().Update(ctx, account); err != nil {
 			return ctrl.Result{}, fmt.Errorf("update account failed: %v", err)
 		}
@@ -338,4 +339,23 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&source.Kind{Type: &accountv1.Payment{}}, &handler.EnqueueRequestForObject{}).
 		Watches(&source.Kind{Type: &accountv1.AccountBalance{}}, &handler.EnqueueRequestForObject{}).
 		Complete(r)
+}
+
+func giveGift(amount int64) int64 {
+	var ratio int64
+	switch {
+	case amount < 299:
+		ratio = 0
+	case amount < 599:
+		ratio = 10
+	case amount < 1999:
+		ratio = 15
+	case amount < 4999:
+		ratio = 20
+	case amount < 19999:
+		ratio = 25
+	default:
+		ratio = 30
+	}
+	return amount * ratio / 100
 }
