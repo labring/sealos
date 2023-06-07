@@ -86,7 +86,7 @@ func init() {
 		{
 			Message: "Experimental Commands:",
 			Commands: []*cobra.Command{
-				newRegistryCmd(),
+				newRegistryCmd(rootCmd.Name()),
 			},
 		},
 		{

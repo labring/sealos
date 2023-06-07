@@ -22,16 +22,15 @@ import (
 	"github.com/labring/sealos/pkg/registry/commands"
 )
 
-func newRegistryCmd() *cobra.Command {
+func newRegistryCmd(examplePrefix string) *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "registry",
 		Short: "registry related",
 	}
-	commands.SetRootCommand(rootCmd)
 	cmd.AddCommand(commands.NewRegistryPasswdCmd())
 	cmd.AddCommand(commands.NewServeRegistryCommand())
-	cmd.AddCommand(commands.NewRegistryImageSaveCmd())
-	cmd.AddCommand(commands.NewSyncRegistryCommand())
-	cmd.AddCommand(commands.NewCopyRegistryCommand())
+	cmd.AddCommand(commands.NewRegistryImageSaveCmd(examplePrefix))
+	cmd.AddCommand(commands.NewSyncRegistryCommand(examplePrefix))
+	cmd.AddCommand(commands.NewCopyRegistryCommand(examplePrefix))
 	return cmd
 }
