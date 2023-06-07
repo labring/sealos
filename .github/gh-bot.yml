@@ -1,5 +1,12 @@
 version: v1
 debug: true
+action:
+  printConfig: false
+  release:
+    retry: 15s
+    actionName: Release
+    allowOps:
+      - cuisongliu
 bot:
   prefix: /
   spe: _
@@ -10,12 +17,6 @@ bot:
   username: sealos-ci-robot
 repo:
   org: false
-
-release:
-  retry: 15s
-  action: Release
-  allowOps:
-    - cuisongliu
 
 message:
   success: |
