@@ -186,10 +186,11 @@ func NewSealosCertMetaData(certPATH, certEtcdPATH string, apiServerIPAndDomains 
 	data.DNSDomain = DNSDomain
 	data.APIServer.IPs = make(map[string]net.IP)
 	data.APIServer.DNSNames = make(map[string]string)
-	svcFirstIP, _, err := net.ParseCIDR(SvcCIDR)
+	_, svcNet, err := net.ParseCIDR(SvcCIDR)
 	if err != nil {
 		return nil, err
 	}
+	svcFirstIP := svcNet.IP
 	svcFirstIP[len(svcFirstIP)-1]++ //取svc第一个ip
 	data.APIServer.IPs[svcFirstIP.String()] = svcFirstIP
 
