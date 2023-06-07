@@ -3,7 +3,7 @@
 ## [Pre-Requirements](../../README.md)
 
 ### Install ingress-nginx and cert-manager
-1. [ingress-nginx](https://kubernetes.io/docs/tutorials/ingress/nginx-ingress/)  
+1. [ingress-nginx](https://kubernetes.github.io/ingress-nginx/deploy/)  
  *If you are using a bare-metal hosts, you will wish to install `hostNetwork`+`DaemonSet` ingress-nginx.*  
  *See more: https://kubernetes.github.io/ingress-nginx/deploy/baremetal/#via-the-host-network*
 2. [cert-manager](https://cert-manager.io/)
@@ -48,4 +48,3 @@ May be there are new taints like *`NoSchedule`*, just delete them all.
 * https://www.cnblogs.com/ssgeek/p/12421917.html
 * https://kubernetes.github.io/ingress-nginx/troubleshooting/
 
-       
