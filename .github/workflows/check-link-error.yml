@@ -26,15 +26,18 @@ jobs:
         if: ${{ (github.event_name != 'push') && always() }}
         id: output_result
         run: |
-          echo "# 🤖 Generated LinkReport by Action using lychee\n" > .dummy.report.md
-          cat lychee/out.md >> .dummy.report.md
-          cat .dummy.report.md
-          
+#          echo "# 🤖 Generated LinkReport by Action using lychee\n" > .dummy.report.md
+          cat lychee/out.md > .dummy.report.md
+          report="$(cat .dummy.report.md)"
+          echo "REPORT_LINK=$report" >> $GITHUB_ENV
+          echo $report
 
-      - uses: Correlatio-company/Pull-Request-Comments@V1.1
-        if: ${{ (github.event_name != 'push') && always() }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+      - name: Run Python Script Output Commenter
+        uses: OrjanSkarnes/pull-request-commenter@1.2.3
         with:
-          filename: .dummy.report.md
-          tag: lychee-report
+          comment-body: ${{ env.REPORT_LINK }}
+          comment-search-includes: "# 🤖 Generated LinkReport by Action using lychee"
+          comment-title: "# 🤖 Generated LinkReport by Action using lychee"
+          comment-edit-mode: replace
+          fail-on-output: true
+          github-token: ${{ secrets.GH_PAT }}
