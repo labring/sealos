@@ -285,7 +285,6 @@ const Form = ({
                   min={1}
                   max={20}
                   hoverText={isEdit ? '不支持修改实例数' : '实例数范围：1~20'}
-                  disabled={isEdit}
                   setVal={(val) => {
                     register('replicas', {
                       required: '实例数不能为空',

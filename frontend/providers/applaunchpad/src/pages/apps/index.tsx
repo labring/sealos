@@ -2,11 +2,10 @@ import { useEffect } from 'react';
 import Empty from './components/empty';
 import AppList from './components/appList';
 import { useQuery } from '@tanstack/react-query';
-// import Loading from '@/components/Loading';
 import { useAppStore } from '@/store/app';
 import { useLoading } from '@/hooks/useLoading';
 import { useRouter } from 'next/router';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { serviceSideProps } from '@/utils/i18n';
 
 const Home = () => {
   const router = useRouter();
@@ -47,12 +46,7 @@ const Home = () => {
 export async function getServerSideProps(content: any) {
   return {
     props: {
-      ...(await serverSideTranslations(
-        content.req.cookies.NEXT_LOCALE,
-        undefined,
-        null,
-        content.locales
-      ))
+      ...(await serviceSideProps(content))
     }
   };
 }

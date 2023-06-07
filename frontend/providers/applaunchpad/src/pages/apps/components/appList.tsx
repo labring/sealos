@@ -178,7 +178,7 @@ const AppList = ({
             mr={5}
             variant={'base'}
             leftIcon={<MyIcon name={'detail'} transform={'translateY(-1px)'} />}
-            w={'68px'}
+            px={3}
             onClick={() => router.push(`/app/detail?name=${item.name}`)}
           >
             {t('Details')}
