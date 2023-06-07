@@ -7,8 +7,6 @@ on:
 jobs:
   linkChecker:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
     steps:
       - uses: actions/checkout@v3
       - name: Link Checker
@@ -17,27 +15,26 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         with:
-          fail: true
+          fail: false
           args: --verbose './**/*.md'
           format: 'markdown'
-          output: 'lychee/out.md'
+          output: out.md
 
       - name: Output the result
-        if: ${{ (github.event_name != 'push') && always() }}
         id: output_result
         run: |
-#          echo "# 🤖 Generated LinkReport by Action using lychee\n" > .dummy.report.md
-          cat lychee/out.md > .dummy.report.md
-          report="$(cat .dummy.report.md)"
-          echo "REPORT_LINK=$report" >> $GITHUB_ENV
-          echo $report
+          cat out.md > .dummy.report.md
+          cat .dummy.report.md
 
-      - name: Run Python Script Output Commenter
-        uses: OrjanSkarnes/pull-request-commenter@1.2.3
+      - uses: labring-actions/Pull-Request-Comments-hidden-tags@v1.3
+        if: ${{ (github.event_name != 'push') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         with:
-          comment-body: ${{ env.REPORT_LINK }}
-          comment-search-includes: "# 🤖 Generated LinkReport by Action using lychee"
-          comment-title: "# 🤖 Generated LinkReport by Action using lychee"
-          comment-edit-mode: replace
-          fail-on-output: true
-          github-token: ${{ secrets.GH_PAT }}
+          filename: .dummy.report.md
+          tag: report-linkChecker
+
+      - name: Exit result
+        run: |
+          echo "Output exit code is ${{ env.lychee_exit_code }}"
+          exit ${{ env.lychee_exit_code }}
