@@ -127,7 +127,32 @@ export SEALOS_DATA_ROOT=/data/sealos
 sealos run labring/kubernetes:v1.24.0
 ```
 
-### Q3：ssh传输文件时，如何禁止检查文件的md5？
+### Q3: 如何修改 Sealos 镜像数据和状态的存储路径?
+
+> 在使用 Sealos 集群时，可能需要改变默认的镜像数据存储路径和状态数据的存储路径。默认情况下，这些数据被存储在 `/etc/containers/storage.conf` 文件定义的位置。
+
+1. **查看当前存储配置**
+   首先，我们可以使用下面的命令来查看当前的镜像存储配置：
+    ```
+    sealos images --debug
+    ```
+   这个命令会打印出包含当前存储配置的文件，例如：
+    ```
+    2023-06-07T16:27:02 debug using file /etc/containers/storage.conf as container storage config
+    REPOSITORY   TAG   IMAGE ID   CREATED   SIZE
+    ```
+2. **修改镜像数据存储路径**
+   如果你希望更改镜像数据的存储路径，你可以编辑 `/etc/containers/storage.conf` 文件。在这个文件中，找到并修改 `graphroot` 字段设置为新的路径。例如：
+    ```
+    vim /etc/containers/storage.conf
+    ```
+   在编辑器中，将 `graphroot` 字段的值修改为你希望的新路径。
+3. **修改状态数据存储路径**
+   参考 Buildah 的设计，Sealos 同样提供了状态数据存储路径的设置。在同样的配置文件 `/etc/containers/storage.conf` 中，找到并修改 `runroot` 字段为新的路径。
+
+通过以上步骤，你可以将 Sealos 集群的镜像数据和状态数据保存到新的地址。每次运行 Sealos 命令时，它都将使用你在 `graphroot` 和 `runroot` 中设置的新路径来分别存储镜像数据和状态数据。
+
+### Q4：ssh传输文件时，如何禁止检查文件的md5？
 
 在网络环境良好时，禁用md5检查可以极大提升传输速度。若不想在ssh传输文件时检查文件的md5，可将SEALOS_SCP_CHECKSUM环境变量设置为false以禁用此功能。建议将此环境变量设为全局，以便在多场景下使用。
 

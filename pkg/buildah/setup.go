@@ -21,6 +21,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/labring/sealos/pkg/system"
+
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/config"
 	"github.com/containers/storage/pkg/homedir"
@@ -33,7 +35,6 @@ import (
 
 var (
 	// use the defaultOverrideConfigFile var as default
-	storageConfEnv                     = "CONTAINERS_STORAGE_CONF"
 	defaultOverrideConfigFile          = "/etc/containers/storage.conf"
 	DefaultConfigFile                  string
 	DefaultSignaturePolicyPath         = config.DefaultSignaturePolicyPath
@@ -47,7 +48,7 @@ func init() {
 	_ = os.Setenv("TMPDIR", parse.GetTempDir())
 
 	// storage config path
-	if path, ok := os.LookupEnv(storageConfEnv); ok {
+	if path, ok := os.LookupEnv(system.ContainerStorageConfEnvKey); ok {
 		DefaultConfigFile = path
 	} else if !unshare.IsRootless() {
 		DefaultConfigFile = defaultOverrideConfigFile
@@ -56,8 +57,6 @@ func init() {
 		DefaultConfigFile, err = types.DefaultConfigFile(true)
 		bailOnError(err, "")
 	}
-	logger.Debug("using file %s as container storage config", DefaultConfigFile)
-
 	// config path
 	if unshare.IsRootless() {
 		configHome, err := homedir.GetConfigHome()
@@ -137,6 +136,7 @@ func setupRegistriesFile() error {
 }
 
 func setupStorageConfigFile() error {
+	logger.Debug("using file %s as container storage config", DefaultConfigFile)
 	var content string
 	if unshare.IsRootless() {
 		runRoot := fmt.Sprintf("/run/user/%d", unshare.GetRootlessUID())
