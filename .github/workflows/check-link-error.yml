@@ -1,0 +1,40 @@
+name: Check-LinkError
+
+on:
+  - push
+  - pull_request_target
+
+jobs:
+  linkChecker:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Link Checker
+        id: lychee
+        uses: lycheeverse/lychee-action@v1.7.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        with:
+          fail: true
+          args: --verbose './**/*.md'
+          format: 'markdown'
+          output: 'lychee/out.md'
+
+      - name: Output the result
+        if: ${{ (github.event_name != 'push') && always() }}
+        id: output_result
+        run: |
+          echo "# 🤖 Generated LinkReport by Action using lychee\n" > .dummy.report.md
+          cat lychee/out.md >> .dummy.report.md
+          cat .dummy.report.md
+          
+
+      - uses: Correlatio-company/Pull-Request-Comments@V1.1
+        if: ${{ (github.event_name != 'push') && always() }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        with:
+          filename: .dummy.report.md
+          tag: lychee-report

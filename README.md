@@ -35,7 +35,7 @@ Sealos is a cloud operating system distribution based on the Kubernetes kernel. 
 
 * [Easily Deploy Nginx in 30 Seconds on Sealos](https://sealos.io/docs/quick-start/install-apps-with-app-launchpad)
 * [Start a mysql/pgsql/mongo highly available database in 30 seconds on Sealos](https://sealos.io/docs/quick-start/install-db-with-database)
-* [Running WordPress on Sealos](https://docs.sealos.io/docs/examples/blog-platform/install-wordpress)
+* [Running WordPress on Sealos](https://sealos.io/docs/examples/blog-platform/install-wordpress)
 * [Running the Uptime Kuma dial test system on Sealos](https://docs.sealos.io/docs/examples/dial-testing-system/install-uptime-kuma)
 * [Running a low-code platform on Sealos](https://docs.sealos.io/docs/category/low-code-platform)
 

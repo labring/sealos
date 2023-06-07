@@ -133,8 +133,6 @@ cd -
     COPY registry ./registry
     CMD ["kubectl apply -f manifests/xxx"]
    ```
-5. commit pr to cluster-image
-   code:  https://github.com/labring/cluster-image/blob/main/applications/sealos-app-controller/dev/init.sh
 
 ## Example: how to build sealos on macOS(ARM64) using multipass
 
