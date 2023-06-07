@@ -29,8 +29,6 @@ spec:
       containers:
       - command:
         - /manager
-        args:
-        - --leader-elect
         env:
           - name: MONGO_URI
             valueFrom:
