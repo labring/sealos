@@ -21,15 +21,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/spf13/pflag"
-
 	imagecopy "github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/registry/crane"
-
 	"github.com/labring/sealos/pkg/registry/sync"
 	httputils "github.com/labring/sealos/pkg/utils/http"
 )
@@ -47,6 +45,7 @@ func (opts *globalOptions) RegisterFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&opts.overrideVariant, "override-variant", "", "use `VARIANT` instead of the running architecture variant for choosing images")
 	fs.BoolVarP(&opts.all, "all", "a", false, "Sync all images if SOURCE-IMAGE is a list")
 }
+
 func (opts *globalOptions) newSystemContext() *types.SystemContext {
 	ctx := &types.SystemContext{
 		ArchitectureChoice:          opts.overrideArch,
@@ -56,14 +55,15 @@ func (opts *globalOptions) newSystemContext() *types.SystemContext {
 	}
 	return ctx
 }
-func NewCopyRegistryCommand() *cobra.Command {
+
+func NewCopyRegistryCommand(examplePrefix string) *cobra.Command {
 	opts := globalOptions{}
 	cmd := &cobra.Command{
-		Use:   "copy SOURCE-IMAGE DST_REGISTRY",
-		Short: "copy one image from one registry to another",
+		Use:   "copy SOURCE_IMAGE DST_REGISTRY",
+		Short: "copy single one image to registry",
 		Args:  cobra.ExactArgs(2),
 		Example: fmt.Sprintf(`%[1]s registry copy docker.io/labring/kubernetes:v1.25.0 sealos.hub:5000
-%[1]s registry copy -a docker.io/labring/kubernetes:v1.25.0 sealos.hub:5000`, rootCmd.CommandPath()),
+%[1]s registry copy -a docker.io/labring/kubernetes:v1.25.0 sealos.hub:5000`, examplePrefix),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runCopy(cmd, args[0], args[1], opts)
 		},

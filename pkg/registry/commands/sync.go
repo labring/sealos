@@ -29,14 +29,14 @@ import (
 	httputils "github.com/labring/sealos/pkg/utils/http"
 )
 
-func NewSyncRegistryCommand() *cobra.Command {
+func NewSyncRegistryCommand(examplePrefix string) *cobra.Command {
 	opts := globalOptions{}
 	cmd := &cobra.Command{
 		Use:   "sync SOURCE_REGISTRY DST_REGISTRY",
 		Short: "sync all images from one registry to another",
 		Args:  cobra.ExactArgs(2),
 		Example: fmt.Sprintf(`%[1]s registry sync 127.0.0.1:9090 sealos.hub:5000
-%[1]s registry sync -a 127.0.0.1:9090 sealos.hub:5000`, rootCmd.CommandPath()),
+%[1]s registry sync -a 127.0.0.1:9090 sealos.hub:5000`, examplePrefix),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runSync(cmd, args[0], args[1], opts)
 		},
