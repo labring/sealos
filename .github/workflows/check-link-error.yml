@@ -24,16 +24,16 @@ jobs:
           output: 'lychee/out.md'
 
       - name: Output the result
-        if: ${{ (github.event_name != 'push') || always() }}
+        if: ${{ (github.event_name != 'push') && always() }}
         run: |
           echo "# 🤖 Generated LinkReport by Action using lychee\n" > .dummy.report.md
-          echo lychee/out.md >> .dummy.report.md
+          cat lychee/out.md >> .dummy.report.md
+          cat .dummy.report.md
+          message="$(cat .dummy.report.md)"
+          echo "GithubExport=$message" >> $GITHUB_ENV
 
-      - name: Add a comment to the PR
-        uses: Correlatio-company/Pull-Request-Comments@V1.1
-        if: ${{ (github.event_name != 'push') || always() }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+      - uses: dannyskoog/pull-request-comment@v1
+        if: ${{ (github.event_name != 'push') && always() }}
         with:
-          filename: .dummy.report.md
-          tag: lychee-report
+          message: ${{ env.GithubExport }}
+          marker: <!-- lychee-report -->
