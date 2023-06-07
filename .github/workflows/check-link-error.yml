@@ -7,8 +7,6 @@ on:
 jobs:
   linkChecker:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
     steps:
       - uses: actions/checkout@v3
       - name: Link Checker
@@ -17,24 +15,26 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         with:
-          fail: true
+          fail: false
           args: --verbose './**/*.md'
           format: 'markdown'
-          output: 'lychee/out.md'
+          output: out.md
 
       - name: Output the result
-        if: ${{ (github.event_name != 'push') && always() }}
         id: output_result
         run: |
-          echo "# 🤖 Generated LinkReport by Action using lychee\n" > .dummy.report.md
-          cat lychee/out.md >> .dummy.report.md
+          cat out.md > .dummy.report.md
           cat .dummy.report.md
-          
 
-      - uses: Correlatio-company/Pull-Request-Comments@V1.1
-        if: ${{ (github.event_name != 'push') && always() }}
+      - uses: labring-actions/Pull-Request-Comments-hidden-tags@v1.3
+        if: ${{ (github.event_name != 'push') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         with:
           filename: .dummy.report.md
-          tag: lychee-report
+          tag: report-linkChecker
+
+      - name: Exit result
+        run: |
+          echo "Output exit code is ${{ env.lychee_exit_code }}"
+          exit ${{ env.lychee_exit_code }}
