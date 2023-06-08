@@ -1,4 +1,5 @@
 import { AppStatusEnum, PodStatusEnum } from '@/constants/app';
+import { YamlKindEnum } from '@/utils/adapt';
 import type {
   V1Deployment,
   V1ConfigMap,
@@ -133,3 +134,9 @@ export interface PodEvent {
   firstTime: string;
   lastTime: string;
 }
+
+export type AppPatchPropsType = (
+  | { type: 'delete'; kind: `${YamlKindEnum}` }
+  | { type: 'patch'; kind: `${YamlKindEnum}`; value: DeployKindsType }
+  | { type: 'create'; kind: `${YamlKindEnum}`; value: string }
+)[];

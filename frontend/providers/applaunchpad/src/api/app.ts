@@ -7,12 +7,15 @@ import {
   adaptMetrics,
   adaptEvents
 } from '@/utils/adapt';
-import { obj2Query } from './tools';
+import type { AppPatchPropsType } from '@/types/app';
 
 export const postDeployApp = (yamlList: string[]) => POST('/api/applyApp', { yamlList });
 
-export const putApp = (yamlList: string[], appName: string) =>
-  POST('/api/updateApp', { yamlList, appName });
+export const putApp = (data: {
+  patch: AppPatchPropsType;
+  appName: string;
+  stateFulSetYaml?: string;
+}) => POST('/api/updateApp', data);
 
 export const getMyApps = () =>
   GET<V1Deployment & V1StatefulSet[]>('/api/getApps').then((res) => res.map(adaptAppListItem));

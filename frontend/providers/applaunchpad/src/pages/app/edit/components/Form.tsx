@@ -455,8 +455,8 @@ const Form = ({
                         placeholder="hpa对象"
                         value={getValues('hpa.target')}
                         list={[
-                          { id: 'cpu', label: 'CPU target value' },
-                          { id: 'memory', label: 'Memory target value' }
+                          { id: 'cpu', label: 'CPU value' },
+                          { id: 'memory', label: 'Memory value' }
                         ]}
                         onchange={(val: any) => setValue('hpa.target', val)}
                       />

@@ -482,7 +482,7 @@ export const json2HPA = (data: AppEditType) => {
           policies: [
             {
               type: 'Pods',
-              value: 3,
+              value: 1,
               periodSeconds: 60
             }
           ]

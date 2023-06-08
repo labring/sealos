@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { authSession } from '@/services/backend/auth';
-import { GetUserDefaultNameSpace, K8sApi, ListCRD } from '@/services/backend/kubernetes/user';
+import { GetUserDefaultNameSpace, ListCRD } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import { TApp } from '@/types';
 

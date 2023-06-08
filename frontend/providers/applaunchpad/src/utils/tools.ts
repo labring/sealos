@@ -2,6 +2,10 @@ import dayjs from 'dayjs';
 import { useToast } from '@/hooks/useToast';
 import { AppEditType } from '@/types/app';
 import { defaultEditVal } from '@/constants/editApp';
+import yaml from 'js-yaml';
+import { DeployKindsType } from '@/types/app';
+import type { AppPatchPropsType } from '@/types/app';
+import { YamlKindEnum } from './adapt';
 
 /**
  * copy text data
@@ -196,7 +200,7 @@ export const formatPodTime = (createTimeStamp: Date = new Date()) => {
 };
 
 /**
- * 下载文件到本地
+ * download file
  */
 export function downLoadBold(content: BlobPart, type: string, fileName: string) {
   // 创建一个 Blob 对象
@@ -213,3 +217,43 @@ export function downLoadBold(content: BlobPart, type: string, fileName: string) 
   // 模拟点击 a 标签下载文件
   link.click();
 }
+
+/**
+ * patch yamlList and get action
+ */
+export const patchYamlList = (oldYamlList: string[], newYamlList: string[]) => {
+  const oldJsonYaml = oldYamlList.map((item) => yaml.loadAll(item)).flat() as DeployKindsType[];
+  const newJsonYaml = newYamlList.map((item) => yaml.loadAll(item)).flat() as DeployKindsType[];
+
+  const actions: AppPatchPropsType = [];
+
+  // find delete
+  oldJsonYaml.forEach((oldYaml) => {
+    const item = newJsonYaml.find((item) => item.kind === oldYaml.kind);
+    if (!item) {
+      actions.push({
+        type: 'delete',
+        kind: oldYaml.kind as `${YamlKindEnum}`
+      });
+    }
+  });
+  // find create and patch
+  newJsonYaml.forEach((newYaml) => {
+    const patchYaml = oldJsonYaml.find((item) => item.kind === newYaml.kind);
+    if (patchYaml) {
+      actions.push({
+        type: 'patch',
+        kind: newYaml.kind as `${YamlKindEnum}`,
+        value: newYaml
+      });
+    } else {
+      actions.push({
+        type: 'create',
+        kind: newYaml.kind as `${YamlKindEnum}`,
+        value: yaml.dump(newYaml)
+      });
+    }
+  });
+
+  return actions;
+};
