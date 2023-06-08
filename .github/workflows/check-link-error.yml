@@ -38,6 +38,7 @@ jobs:
           cat report.md
       - name: Gh Rebot for Sealos
         uses: labring/gh-rebot@v0.0.6
+        if: ${{ (github.event_name != 'push') }}
         with:
           version: v0.0.6
         env:
