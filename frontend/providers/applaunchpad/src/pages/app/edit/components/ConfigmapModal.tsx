@@ -55,12 +55,12 @@ const ConfigmapModal = ({
       title: '修改ConfigMap'
     }
   };
-  console.log(listNames);
+
   return (
     <>
       <Modal isOpen onClose={closeCb}>
         <ModalOverlay />
-        <ModalContent maxW={'590px'}>
+        <ModalContent maxH={'90vh'} maxW={'90vw'} minW={'600px'} w={'auto'}>
           <ModalHeader>{textMap[type].title}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
@@ -86,7 +86,8 @@ const ConfigmapModal = ({
             <FormControl isInvalid={!!errors.value}>
               <Box mb={1}>{t('file value')} </Box>
               <Textarea
-                rows={5}
+                rows={10}
+                resize={'both'}
                 {...register('value', {
                   required: '文件值不能为空'
                 })}

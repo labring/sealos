@@ -29,6 +29,7 @@ import dynamic from 'next/dynamic';
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 import { useGlobalStore } from '@/store/global';
 import { serviceSideProps } from '@/utils/i18n';
+import { patchYamlList } from '@/utils/tools';
 
 const formData2Yamls = (data: AppEditType) => [
   {
@@ -130,7 +131,16 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     try {
       const yamls = yamlList.map((item) => item.value);
       if (appName) {
-        await putApp(yamls, appName);
+        const patch = patchYamlList(
+          appOldYamls.current.map((item) => item.value),
+          yamls
+        );
+
+        await putApp({
+          patch,
+          appName,
+          stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value
+        });
       } else {
         await postDeployApp(yamls);
       }

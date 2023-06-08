@@ -5,13 +5,19 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { YamlKindEnum } from '@/utils/adapt';
 import yaml from 'js-yaml';
-import type { DeployKindsType } from '@/types/app';
 import type { V1StatefulSet, V1PersistentVolumeClaim } from '@kubernetes/client-node';
 import { PatchUtils } from '@kubernetes/client-node';
+import type { AppPatchPropsType } from '@/types/app';
+
+export type Props = {
+  patch: AppPatchPropsType;
+  stateFulSetYaml?: string;
+  appName: string;
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
-  const { yamlList, appName }: { yamlList: string[]; appName: string } = req.body;
-  if (!yamlList || yamlList.length === 0 || !appName) {
+  const { patch, stateFulSetYaml, appName }: Props = req.body;
+  if (!patch || patch.length === 0 || !appName) {
     jsonRes(res, {
       code: 500,
       error: 'params error'
@@ -31,23 +37,103 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
-    // Resources that may need to be deleted
-    const deleteArr = [
+    const crMap: Record<
+      `${YamlKindEnum}`,
       {
-        kind: YamlKindEnum.Deployment,
-        delApi: () => k8sApp.deleteNamespacedDeployment(appName, namespace)
+        patch: (jsonPatch: Object) => Promise<any>;
+        delete: () => Promise<any>;
+      }
+    > = {
+      [YamlKindEnum.Deployment]: {
+        patch: (jsonPatch: Object) =>
+          k8sApp.patchNamespacedDeployment(
+            appName,
+            namespace,
+            jsonPatch,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH } }
+          ),
+        delete: () => k8sApp.deleteNamespacedDeployment(appName, namespace)
       },
-      {
-        kind: YamlKindEnum.ConfigMap,
-        delApi: () => k8sCore.deleteNamespacedConfigMap(appName, namespace)
+      [YamlKindEnum.StatefulSet]: {
+        patch: (jsonPatch: Object) =>
+          k8sApp.patchNamespacedStatefulSet(
+            appName,
+            namespace,
+            jsonPatch,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH } }
+          ),
+        delete: () => k8sApp.deleteNamespacedStatefulSet(appName, namespace)
       },
-      {
-        kind: YamlKindEnum.Ingress,
-        delApi: () => k8sNetworkingApp.deleteNamespacedIngress(appName, namespace)
+      [YamlKindEnum.Service]: {
+        patch: (jsonPatch: Object) =>
+          k8sCore.patchNamespacedService(
+            appName,
+            namespace,
+            jsonPatch,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH } }
+          ),
+        delete: () => k8sCore.deleteNamespacedService(appName, namespace)
       },
-      {
-        kind: YamlKindEnum.Issuer,
-        delApi: () =>
+      [YamlKindEnum.ConfigMap]: {
+        patch: (jsonPatch: Object) =>
+          k8sCore.patchNamespacedConfigMap(
+            appName,
+            namespace,
+            jsonPatch,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH } }
+          ),
+        delete: () => k8sCore.deleteNamespacedConfigMap(appName, namespace)
+      },
+      [YamlKindEnum.Ingress]: {
+        patch: (jsonPatch: Object) =>
+          k8sNetworkingApp.patchNamespacedIngress(
+            appName,
+            namespace,
+            jsonPatch,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH } }
+          ),
+        delete: () => k8sNetworkingApp.deleteNamespacedIngress(appName, namespace)
+      },
+      [YamlKindEnum.Issuer]: {
+        patch: (jsonPatch: Object) =>
+          k8sCustomObjects.patchNamespacedCustomObject(
+            'cert-manager.io',
+            'v1',
+            namespace,
+            'issuers',
+            appName,
+            jsonPatch,
+            undefined,
+            undefined,
+            undefined,
+            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
+          ),
+        delete: () =>
           k8sCustomObjects.deleteNamespacedCustomObject(
             'cert-manager.io',
             'v1',
@@ -56,9 +142,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             appName
           )
       },
-      {
-        kind: YamlKindEnum.Certificate,
-        delApi: () =>
+      [YamlKindEnum.Certificate]: {
+        patch: (jsonPatch: Object) =>
+          k8sCustomObjects.patchNamespacedCustomObject(
+            'cert-manager.io',
+            'v1',
+            namespace,
+            'certificates',
+            appName,
+            jsonPatch,
+            undefined,
+            undefined,
+            undefined,
+            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
+          ),
+        delete: () =>
           k8sCustomObjects.deleteNamespacedCustomObject(
             'cert-manager.io',
             'v1',
@@ -67,77 +165,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             appName
           )
       },
-      {
-        kind: YamlKindEnum.HorizontalPodAutoscaler,
-        delApi: () => k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, namespace)
-      },
-      {
-        kind: YamlKindEnum.Secret,
-        delApi: () => k8sCore.deleteNamespacedSecret(appName, namespace)
-      }
-    ];
-
-    // load all yaml to json
-    const jsonYaml = yamlList.map((item) => yaml.loadAll(item)).flat() as DeployKindsType[];
-
-    // Compare kind, filter out the resources to be deleted
-    const delArr = deleteArr.filter(
-      (item) => !jsonYaml.find((yaml: any) => yaml.kind === item.kind)
-    );
-
-    // get statefulSet yaml
-    const stateFulSet = jsonYaml.find(
-      (item) => item.kind === YamlKindEnum.StatefulSet
-    ) as V1StatefulSet;
-
-    // filer delete pvc
-    let allPvc: V1PersistentVolumeClaim[] = [];
-    if (stateFulSet && stateFulSet?.spec?.volumeClaimTemplates) {
-      const {
-        body: { items: data }
-      } = await k8sCore.listNamespacedPersistentVolumeClaim(
-        namespace,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        `app=${appName}`
-      );
-      allPvc = data;
-    }
-    const pvcUpdateArr = allPvc.map((pvc) => {
-      const volume = stateFulSet.spec?.volumeClaimTemplates?.find(
-        (volume) => volume.metadata?.annotations?.path === pvc.metadata?.annotations?.path
-      );
-      // check whether delete
-      if (!volume) {
-        console.log(`delete pvc: ${pvc.metadata?.name}`);
-        return k8sCore.deleteNamespacedPersistentVolumeClaim(pvc.metadata?.name || '', namespace);
-      }
-      // check storage change
-      if (
-        pvc.metadata?.name &&
-        pvc.metadata?.annotations?.value &&
-        pvc.spec?.resources?.requests?.storage &&
-        pvc.metadata?.annotations?.value !== volume.metadata?.annotations?.value
-      ) {
-        const pvcName = pvc.metadata.name;
-        const jsonPatch = [
-          {
-            op: 'replace',
-            path: '/spec/resources/requests/storage',
-            value: `${volume.metadata?.annotations?.value}Gi`
-          },
-          {
-            op: 'replace',
-            path: '/metadata/annotations/value',
-            value: `${volume.metadata?.annotations?.value}`
-          }
-        ];
-        console.log(`replace ${pvcName} storage: ${volume.metadata?.annotations?.value}Gi`);
-        return k8sCore
-          .patchNamespacedPersistentVolumeClaim(
-            pvcName,
+      [YamlKindEnum.HorizontalPodAutoscaler]: {
+        patch: (jsonPatch: Object) =>
+          k8sAutoscaling.patchNamespacedHorizontalPodAutoscaler(
+            appName,
             namespace,
             jsonPatch,
             undefined,
@@ -145,36 +176,144 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             undefined,
             undefined,
             undefined,
-            {
-              headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH }
-            }
-          )
-          .catch((err) => {
-            console.log(`delete pvc error:`);
-            return Promise.reject(err?.body);
-          });
+            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH } }
+          ),
+        delete: () => k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, namespace)
+      },
+      [YamlKindEnum.Secret]: {
+        patch: (jsonPatch: Object) =>
+          k8sCore.patchNamespacedSecret(
+            appName,
+            namespace,
+            jsonPatch,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH } }
+          ),
+        delete: () => k8sCore.deleteNamespacedSecret(appName, namespace)
+      },
+      [YamlKindEnum.PersistentVolumeClaim]: {
+        patch: (jsonPatch: Object) => Promise.resolve(''),
+        delete: () => Promise.resolve('')
       }
-    });
+    };
 
-    // delete resource
-    const deleteAndPatchRes = (
-      await Promise.allSettled([
-        k8sApp.deleteNamespacedStatefulSet(appName, namespace), // focus delete stateFulSEt
-        ...delArr.map((item) => item.delApi().then(() => console.log(`delete ${item.kind}`))),
-        ...pvcUpdateArr
-      ])
-    ).filter((item: any) => item?.reason?.statusCode !== 404);
-    console.log('delete and patch result', deleteAndPatchRes);
+    // create
+    await Promise.all(
+      patch.map((item) => {
+        const cr = crMap[item.kind];
+        if (!cr || item.type !== 'create') {
+          return;
+        }
+        return applyYamlList([item.value], 'create');
+      })
+    );
 
-    // apply new yaml
-    const applyRes = await applyYamlList(yamlList, 'replace');
+    // patch
+    await Promise.all(
+      patch.map((item) => {
+        const cr = crMap[item.kind];
+        if (!cr || item.type !== 'patch' || !item.value?.metadata) {
+          return;
+        }
+        console.log('patch cr', item.kind);
+        return cr.patch(item.value);
+      })
+    );
 
-    jsonRes(res, {
-      data: {
-        applyRes,
-        deleteAndPatchRes
-      }
-    });
+    // delete
+    await Promise.all(
+      patch.map((item) => {
+        const cr = crMap[item.kind];
+        if (!cr || item.type !== 'delete') {
+          return;
+        }
+        console.log('delete cr', item.kind);
+        return cr.delete();
+      })
+    );
+
+    // update pvc data
+    if (stateFulSetYaml) {
+      const stateFulSet = yaml.load(stateFulSetYaml) as V1StatefulSet;
+      // filer delete pvc
+      const allPvc: V1PersistentVolumeClaim[] = await (async () => {
+        if (stateFulSet && stateFulSet?.spec?.volumeClaimTemplates) {
+          const {
+            body: { items: data }
+          } = await k8sCore.listNamespacedPersistentVolumeClaim(
+            namespace,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            `app=${appName}`
+          );
+          return data;
+        }
+        return [];
+      })();
+      await Promise.all(
+        allPvc.map((pvc) => {
+          const volume = stateFulSet.spec?.volumeClaimTemplates?.find(
+            (volume) => volume.metadata?.annotations?.path === pvc.metadata?.annotations?.path
+          );
+          // check whether delete
+          if (!volume) {
+            console.log(`delete pvc: ${pvc.metadata?.name}`);
+            return k8sCore.deleteNamespacedPersistentVolumeClaim(
+              pvc.metadata?.name || '',
+              namespace
+            );
+          }
+          // check storage change
+          if (
+            pvc.metadata?.name &&
+            pvc.metadata?.annotations?.value &&
+            pvc.spec?.resources?.requests?.storage &&
+            pvc.metadata?.annotations?.value !== volume.metadata?.annotations?.value
+          ) {
+            const pvcName = pvc.metadata.name;
+            const jsonPatch = [
+              {
+                op: 'replace',
+                path: '/spec/resources/requests/storage',
+                value: `${volume.metadata?.annotations?.value}Gi`
+              },
+              {
+                op: 'replace',
+                path: '/metadata/annotations/value',
+                value: `${volume.metadata?.annotations?.value}`
+              }
+            ];
+            console.log(`replace ${pvcName} storage: ${volume.metadata?.annotations?.value}Gi`);
+            return k8sCore
+              .patchNamespacedPersistentVolumeClaim(
+                pvcName,
+                namespace,
+                jsonPatch,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                {
+                  headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH }
+                }
+              )
+              .catch((err) => {
+                console.log(`replace pvc error:`);
+                return Promise.reject(err?.body);
+              });
+          }
+        })
+      );
+    }
+
+    jsonRes(res);
   } catch (err: any) {
     jsonRes(res, {
       code: 500,
