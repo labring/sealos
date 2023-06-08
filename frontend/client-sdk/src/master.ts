@@ -176,8 +176,6 @@ class MasterSDK {
    * return desktop  language
    */
   private getLanguage(data: AppSendMessageType, source: MessageEventSource, origin: string) {
-    const lng = getCookie('NEXT_LOCALE');
-
     if (this.session) {
       this.replyAppMessage({
         source,
@@ -185,7 +183,7 @@ class MasterSDK {
         messageId: data.messageId,
         success: true,
         data: {
-          lng: lng ? lng : 'en'
+          lng: getCookie('NEXT_LOCALE') || 'en'
         }
       });
     } else {

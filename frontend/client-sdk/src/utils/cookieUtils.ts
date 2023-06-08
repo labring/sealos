@@ -1,15 +1,14 @@
-export const getCookie = (name: string): string | undefined => {
-  if (typeof document === 'undefined' || !name) {
-    return undefined;
-  }
+import { CookieAttributes } from 'js-cookie';
+import Cookies from 'js-cookie';
 
-  const cookies: string[] = document.cookie ? document.cookie.split('; ') : [];
-  const cookieMap: { [key: string]: string } = {};
+export const setCookie = (key: string, value: string, options?: CookieAttributes) => {
+  Cookies.set(key, value, options);
+};
 
-  for (let i = 0; i < cookies.length; i++) {
-    const [cookieName, cookieValue] = cookies[i].split('=');
-    cookieMap[decodeURIComponent(cookieName)] = decodeURIComponent(cookieValue);
-  }
+export const getCookie = (key: string) => {
+  return Cookies.get(key);
+};
 
-  return cookieMap[name];
+export const removeCookie = (key: string) => {
+  Cookies.remove(key);
 };
