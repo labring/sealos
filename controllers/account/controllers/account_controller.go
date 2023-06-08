@@ -363,21 +363,35 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+const (
+	BaseUnit         = 1_000_000
+	Threshold1       = 299 * BaseUnit
+	Threshold2       = 599 * BaseUnit
+	Threshold3       = 1999 * BaseUnit
+	Threshold4       = 4999 * BaseUnit
+	Threshold5       = 19999 * BaseUnit
+	Ratio1     int64 = 10
+	Ratio2     int64 = 15
+	Ratio3     int64 = 20
+	Ratio4     int64 = 25
+	Ratio5     int64 = 30
+)
+
 func giveGift(amount int64) int64 {
 	var ratio int64
 	switch {
-	case amount < 299:
+	case amount < Threshold1:
 		return 0
-	case amount < 599:
-		ratio = 10
-	case amount < 1999:
-		ratio = 15
-	case amount < 4999:
-		ratio = 20
-	case amount < 19999:
-		ratio = 25
+	case amount < Threshold2:
+		ratio = Ratio1
+	case amount < Threshold3:
+		ratio = Ratio2
+	case amount < Threshold4:
+		ratio = Ratio3
+	case amount < Threshold5:
+		ratio = Ratio4
 	default:
-		ratio = 30
+		ratio = Ratio5
 	}
 	return amount * ratio / 100
 }
