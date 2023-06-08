@@ -19,15 +19,10 @@ package controllers
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/go-logr/logr"
-	"github.com/labring/endpoints-operator/library/controller"
-	"github.com/labring/sealos/controllers/user/controllers/helper"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
@@ -43,7 +38,6 @@ type UserGroupBindingReconciler struct {
 	cache    cache.Cache
 	*runtime.Scheme
 	client.Client
-	finalizer *controller.Finalizer
 }
 
 //+kubebuilder:rbac:groups=user.sealos.io,resources=usergroupbindings,verbs=get;list;watch;create;update;patch;delete
@@ -69,18 +63,17 @@ func (r *UserGroupBindingReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	if err := r.Get(ctx, req.NamespacedName, userGroupBinding); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-
-	if ok, err := r.finalizer.RemoveFinalizer(ctx, userGroupBinding, controller.DefaultFunc); ok {
-		return ctrl.Result{}, err
+	//ugn
+	if !strings.HasPrefix(userGroupBinding.Name, "ugn") {
+		return ctrl.Result{}, nil
 	}
-
-	if ok, err := r.finalizer.AddFinalizer(ctx, userGroupBinding); ok {
-		if err != nil {
-			return ctrl.Result{}, err
+	if userGroupBinding.DeletionTimestamp.IsZero() {
+		if len(userGroupBinding.Finalizers) == 0 && len(userGroupBinding.OwnerReferences) == 0 {
+			_ = r.Delete(ctx, userGroupBinding)
+			return ctrl.Result{}, nil
 		}
-		return r.reconcile(ctx, userGroupBinding)
 	}
-	return ctrl.Result{}, errors.New("reconcile error from Finalizer")
+	return ctrl.Result{}, errors.New("not found userGroupBinding migrate")
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -93,97 +86,10 @@ func (r *UserGroupBindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if r.Recorder == nil {
 		r.Recorder = mgr.GetEventRecorderFor(controllerName)
 	}
-	if r.finalizer == nil {
-		r.finalizer = controller.NewFinalizer(r.Client, "sealos.io/user.group.binding.finalizers")
-	}
 	r.Scheme = mgr.GetScheme()
 	r.cache = mgr.GetCache()
 	r.Logger.V(1).Info("init reconcile controller user group binding")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.UserGroupBinding{}).
 		Complete(r)
-}
-func (r *UserGroupBindingReconciler) updateStatus(ctx context.Context, nn types.NamespacedName, status *userv1.UserGroupBindingStatus) error {
-	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		original := &userv1.UserGroupBinding{}
-		if err := r.Get(ctx, nn, original); err != nil {
-			return err
-		}
-		original.Status = *status
-		return r.Client.Status().Update(ctx, original)
-	})
-}
-
-func (r *UserGroupBindingReconciler) initStatus(_ context.Context, ugBinding *userv1.UserGroupBinding) {
-	var initializedCondition = userv1.Condition{
-		Type:               userv1.Initialized,
-		Status:             v1.ConditionTrue,
-		Reason:             string(userv1.Initialized),
-		Message:            "user group binding has been initialized",
-		LastTransitionTime: metav1.Now(),
-		LastHeartbeatTime:  metav1.Now(),
-	}
-	ugBinding.Status.Phase = userv1.UserPending
-	ugBinding.Status.ObservedGeneration = ugBinding.Generation
-	if !helper.IsConditionTrue(ugBinding.Status.Conditions, initializedCondition) {
-		ugBinding.Status.Conditions = helper.UpdateCondition(ugBinding.Status.Conditions, initializedCondition)
-	}
-}
-func (r *UserGroupBindingReconciler) syncFinalStatus(_ context.Context, ugBinding *userv1.UserGroupBinding) {
-	condition := &userv1.Condition{
-		Type:               userv1.Ready,
-		Status:             v1.ConditionTrue,
-		LastTransitionTime: metav1.Now(),
-		LastHeartbeatTime:  metav1.Now(),
-		Reason:             string(userv1.Ready),
-		Message:            "UserGroupBinding is available now",
-	}
-	defer r.saveCondition(ugBinding, condition)
-
-	if !helper.IsConditionsTrue(ugBinding.Status.Conditions) {
-		condition.LastHeartbeatTime = metav1.Now()
-		condition.Status = v1.ConditionFalse
-		condition.Reason = "Not" + string(userv1.Ready)
-		condition.Message = "UserGroupBinding is not available now"
-		ugBinding.Status.Phase = userv1.UserUnknown
-	} else {
-		ugBinding.Status.Phase = userv1.UserActive
-	}
-}
-func (r *UserGroupBindingReconciler) saveCondition(ugBinding *userv1.UserGroupBinding, condition *userv1.Condition) {
-	if !helper.IsConditionTrue(ugBinding.Status.Conditions, *condition) {
-		ugBinding.Status.Conditions = helper.UpdateCondition(ugBinding.Status.Conditions, *condition)
-	}
-}
-
-func (r *UserGroupBindingReconciler) pipeline(ctx context.Context, ugBinding *userv1.UserGroupBinding, pipelines []func(ctx context.Context, ugBinding *userv1.UserGroupBinding)) error {
-	for _, fn := range pipelines {
-		fn(ctx, ugBinding)
-	}
-	if ugBinding.Status.Phase != userv1.UserUnknown {
-		ugBinding.Status.Phase = userv1.UserActive
-	}
-	err := r.updateStatus(ctx, types.NamespacedName{Name: ugBinding.Name}, ugBinding.Status.DeepCopy())
-	if err != nil {
-		r.Recorder.Eventf(ugBinding, v1.EventTypeWarning, "SyncStatus", "Sync status %s is error: %v", ugBinding.Name, err)
-		return err
-	}
-	return nil
-}
-
-func (r *UserGroupBindingReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
-	ugBinding, ok := obj.(*userv1.UserGroupBinding)
-	if !ok {
-		return ctrl.Result{}, errors.New("obj convert UserGroup is error")
-	}
-	if ugBinding.Subject.Kind == "User" {
-		ctr := &UserGroupUserBindingController{
-			r,
-		}
-		return ctr.doReconcile(ctx, ugBinding)
-	}
-	ctr := &UserGroupNamespaceBindingController{
-		r,
-	}
-	return ctr.doReconcile(ctx, ugBinding)
 }

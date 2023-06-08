@@ -26,8 +26,6 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	rbacV1 "k8s.io/api/rbac/v1"
-
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -133,26 +131,4 @@ func GetKubernetesHost(config *rest.Config) string {
 		return config.Host
 	}
 	return "https://" + net.JoinHostPort(host, port)
-}
-
-func GetDefaultNamespace() string {
-	return os.Getenv("NAMESPACE_NAME")
-}
-
-func GetUsersSubject(user string) []rbacV1.Subject {
-	defaultNamespace := GetDefaultNamespace()
-	if defaultNamespace == "" {
-		defaultNamespace = "default"
-	}
-	return []rbacV1.Subject{
-		{
-			Kind:      "ServiceAccount",
-			Name:      user,
-			Namespace: defaultNamespace,
-		},
-	}
-}
-
-func GetUsersNamespace(user string) string {
-	return fmt.Sprintf("ns-%s", user)
 }

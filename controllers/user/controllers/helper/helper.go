@@ -45,6 +45,15 @@ func IsConditionsTrue(conditions []v1.Condition) bool {
 	return true
 }
 
+func GetCondition(conditions []v1.Condition, condition *v1.Condition) *v1.Condition {
+	for _, con := range conditions {
+		if con.Type == condition.Type {
+			return &con
+		}
+	}
+	return condition
+}
+
 // UpdateCondition updates condition in cluster conditions using giving condition
 // adds condition if not existed
 func UpdateCondition(conditions []v1.Condition, condition v1.Condition) []v1.Condition {
