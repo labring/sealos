@@ -69,17 +69,18 @@ class ClientSDK {
 
     const listenCb = ({ data, origin }: MessageEvent<AppMessageType>) => {
       try {
-        if ('apiName' in data && this?.apiFun[data?.apiName]) {
-          this.apiFun[data.apiName](data);
-        }
-        if ('messageId' in data) {
-          if (!data?.messageId) return;
-          if (!this.callback.has(data?.messageId)) return;
-          this.desktopOrigin = origin;
+        if (origin && (origin === window.location.origin || origin === data?.masterOrigin)) {
+          if ('apiName' in data && this?.apiFun[data?.apiName]) {
+            this.apiFun[data.apiName](data);
+          }
+          if ('messageId' in data) {
+            if (!this.callback.has(data?.messageId)) return;
+            this.desktopOrigin = origin;
 
-          // @ts-ignore nextline
-          this.callback.get(data.messageId)(data);
-          this.callback.delete(data?.messageId);
+            // @ts-ignore nextline
+            this.callback.get(data.messageId)(data);
+            this.callback.delete(data?.messageId);
+          }
         }
       } catch (error) {
         console.log(error);
