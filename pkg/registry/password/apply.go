@@ -19,9 +19,9 @@ package password
 import (
 	"errors"
 	"fmt"
-	"path"
-
 	"github.com/labring/sealos/pkg/clusterfile"
+	"path"
+	"strings"
 
 	"github.com/modood/table"
 	"github.com/spf13/pflag"
@@ -146,23 +146,51 @@ func (r *RegistryPasswdResults) Apply(cluster *v1beta1.Cluster) error {
 	registry.Username = r.RegistryUsername
 	registry.Password = r.RegistryPasswd
 	shim.Auth = fmt.Sprintf("%s:%s", r.RegistryUsername, r.RegistryPasswd)
+	passwordErrorIP := make([]string, 0)
 	for _, v := range cluster.GetRegistryIPAndPortList() {
 		if err := r.upgrade.UpdateRegistryPasswd(registry, r.HtpasswdPath, v, RegistryType(r.RegistryType)); err != nil {
-			return err
+			logger.Debug("update registry passwd error: %s", err.Error())
+			passwordErrorIP = append(passwordErrorIP, v)
 		}
 	}
 	logger.Info("update registry passwd success")
+	configErrorIP := make([]string, 0)
+	shimConfigErrorIP := make([]string, 0)
 	etcPath := path.Join(root, constants.EtcDirName, helpers.RegistryCustomConfig)
 	for _, v := range cluster.GetAllIPS() {
 		if err := r.upgrade.UpdateRegistryConfig(registry, etcPath, v); err != nil {
-			return err
+			logger.Debug("update registry config error: %s", err.Error())
+			configErrorIP = append(configErrorIP, v)
 		}
 		if r.ImageCRIShimFilePath == "" {
 			continue
 		}
 		if err := r.upgrade.UpdateImageShimConfig(shim, r.ImageCRIShimFilePath, v); err != nil {
-			return err
+			logger.Debug("update image cri shim config error: %s", err.Error())
+			shimConfigErrorIP = append(shimConfigErrorIP, v)
 		}
+	}
+	if len(passwordErrorIP) > 0 || len(configErrorIP) > 0 || len(shimConfigErrorIP) > 0 {
+		logger.Error("update registry passwd or config error,please check")
+		prints := []confirmPrint{
+			{
+				Name:     "RegistryPasswdIP",
+				Value:    strings.Join(passwordErrorIP, ","),
+				Describe: "registry password error ip",
+			},
+			{
+				Name:     "ConfigIP",
+				Value:    strings.Join(configErrorIP, ","),
+				Describe: "config error ip",
+			},
+			{
+				Name:     "ShimConfigIP",
+				Value:    strings.Join(shimConfigErrorIP, ","),
+				Describe: "image cri shim config error ip",
+			},
+		}
+		table.OutputA(prints)
+		return nil
 	}
 	logger.Info("update cri shim config and registry config success")
 	return nil
