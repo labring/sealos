@@ -1,6 +1,12 @@
-import type { MasterReplyMessageType, AppSendMessageType, Session } from './types';
-import { isBrowser } from './utils';
 import { API_NAME } from './constants';
+import type {
+  AppSendMessageType,
+  MasterReplyMessageType,
+  MasterSendMessageType,
+  Session
+} from './types';
+import { isBrowser } from './utils';
+import { getCookie } from './utils/cookieUtils';
 
 class MasterSDK {
   private readonly eventBus = new Map<string, (e?: any) => any>();
@@ -8,7 +14,8 @@ class MasterSDK {
     [key: string]: (data: AppSendMessageType, source: MessageEventSource, origin: string) => void;
   } = {
     [API_NAME.USER_GET_INFO]: (data, source, origin) => this.getUserInfo(data, source, origin),
-    [API_NAME.EVENT_BUS]: (data, source, origin) => this.runEventBus(data, source, origin)
+    [API_NAME.EVENT_BUS]: (data, source, origin) => this.runEventBus(data, source, origin),
+    [API_NAME.GET_LANGUAGE]: (data, source, origin) => this.getLanguage(data, source, origin)
   };
 
   constructor() {}
@@ -161,6 +168,42 @@ class MasterSDK {
         success: false,
         message: 'no login in'
       });
+    }
+  }
+
+  /**
+   * return desktop  language
+   */
+  private getLanguage(data: AppSendMessageType, source: MessageEventSource, origin: string) {
+    if (this.session) {
+      this.replyAppMessage({
+        source,
+        origin,
+        messageId: data.messageId,
+        success: true,
+        data: {
+          lng: getCookie('NEXT_LOCALE') ? getCookie('NEXT_LOCALE') : 'en'
+        }
+      });
+    } else {
+      this.replyAppMessage({
+        source,
+        origin,
+        messageId: data.messageId,
+        success: false,
+        message: 'no login in'
+      });
+    }
+  }
+
+  /**
+   * send message to all app
+   */
+  sendMessageToAll(data: MasterSendMessageType) {
+    const iframes = document.querySelectorAll('iframe');
+    for (let i = 0; i < iframes.length; i++) {
+      const iframe = iframes[i];
+      iframe.contentWindow?.postMessage(data, iframe?.src);
     }
   }
 }
