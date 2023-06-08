@@ -85,12 +85,11 @@ const App = ({ Component, pageProps }: AppProps) => {
     };
   }, [setScreenWidth]);
 
-  const changeI18n = (data: any) => {
-    setCookie('NEXT_LOCALE', data.currentLanguage, { expires: 30 });
-    i18n.changeLanguage(data.currentLanguage);
-  };
-
   useEffect(() => {
+    const changeI18n = (data: any) => {
+      setCookie('NEXT_LOCALE', data.currentLanguage, { expires: 30 });
+      i18n.changeLanguage(data.currentLanguage);
+    };
     return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
   }, []);
 
