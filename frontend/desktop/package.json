@@ -43,7 +43,7 @@
     "react-draggable": "^4.4.5",
     "react-i18next": "^12.2.0",
     "sass": "^1.62.0",
-    "sealos-desktop-sdk": "^0.1.13",
+    "sealos-desktop-sdk": "^0.1.14",
     "typescript": "5.0.4",
     "uuid": "^9.0.0",
     "zustand": "^4.3.7"

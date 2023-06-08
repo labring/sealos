@@ -94,7 +94,7 @@ export default function DesktopContent(props: any) {
                 <Box
                   w="72px"
                   h="72px"
-                  p={'15px'}
+                  p={'12px'}
                   border={'1px solid #FFFFFF'}
                   borderRadius={8}
                   boxShadow={'0px 1.16667px 2.33333px rgba(0, 0, 0, 0.2)'}

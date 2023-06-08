@@ -1,6 +1,8 @@
 import { setCookie } from '@/utils/cookieUtils';
 import { Menu, MenuButton, MenuButtonProps, MenuItem, MenuList, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
+import { EVENT_NAME } from 'sealos-desktop-sdk';
+import { masterApp } from 'sealos-desktop-sdk/master';
 
 const langIcon = (
   <svg
@@ -45,6 +47,13 @@ const LangSelect: React.FC<MenuButtonProps> = (props) => {
             fontSize="sm"
             {...(key === i18n.language ? { bg: 'A7Gray.200' } : {})}
             onClick={() => {
+              masterApp.sendMessageToAll({
+                apiName: 'event-bus',
+                eventName: EVENT_NAME.CHANGE_I18N,
+                data: {
+                  currentLanguage: key
+                }
+              });
               setCookie('NEXT_LOCALE', key, { expires: 30 });
               i18n.changeLanguage(key);
             }}

@@ -112,8 +112,8 @@ export default function AppWindow(props: {
               src={wnapp?.icon}
               fallbackSrc="/images/sealos.svg"
               alt={wnapp?.name}
-              width={'14px'}
-              height={'14px'}
+              width={'20px'}
+              height={'20px'}
             />
             <Box ml="8px" color={wnapp?.menuData?.nameColor} fontSize={'12px'} fontWeight={400}>
               {t(wnapp?.name)}
