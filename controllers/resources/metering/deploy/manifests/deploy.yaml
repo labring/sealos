@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: metering-manager
+  name: resources-metering-manager
+  namespace: resources-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: metering-manager
+  template:
+    metadata:
+      labels:
+        control-plane: metering-manager
+    spec:
+      containers:
+        - image: ghcr.io/labring/sealos-resources-metering-controller:dev
+          name: resource-metering
+          command:
+            - "--show-path"
+            - "--debug"
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 5m
+              memory: 64Mi
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          env:
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: MONGO_URI
+          imagePullPolicy: Always

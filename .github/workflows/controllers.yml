@@ -16,14 +16,14 @@ on:
         required: false
         type: string
   push:
-    branches: ["main"]
+    branches: [ "main" ]
     paths:
       - "controllers/**"
       - ".github/workflows/controllers.yml"
       - "!**/*.md"
       - "!**/*.yaml"
   pull_request:
-    branches: ["*"]
+    branches: [ "*" ]
     paths:
       - "controllers/**"
       - ".github/workflows/controllers.yml"
@@ -48,7 +48,7 @@ jobs:
         run: bash ./scripts/resolve-modules.sh ./controllers
 
   golangci-lint:
-    needs: [resolve-modules]
+    needs: [ resolve-modules ]
     runs-on: ubuntu-20.04
     strategy:
       matrix: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
@@ -85,6 +85,7 @@ jobs:
           - { name: db-bytebase, path: db/bytebase }
           - { name: db-adminer, path: db/adminer }
           - { name: resources, path: resources }
+          - { name: resources-metering, path: resources/metering }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -188,6 +189,7 @@ jobs:
           - { name: db-bytebase, path: db/bytebase }
           - { name: db-adminer, path: db/adminer }
           - { name: resources, path: resources }
+          - { name: resources-metering, path: resources/metering }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
