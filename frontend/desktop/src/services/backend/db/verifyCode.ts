@@ -1,4 +1,4 @@
-import client from "./mongodb";
+import { connectToDatabase } from "./mongodb";
 
 type TVerification_Codes = {
   phone: string;
@@ -7,8 +7,9 @@ type TVerification_Codes = {
 }
 
 async function connectToUserCollection() {
+  const client = await connectToDatabase();
   const collection = client.db().collection<TVerification_Codes>('verification_codes');
-  console.log('connect to verification_codes collection')
+  // console.log('connect to verification_codes collection')
   await collection.createIndex({ createdTime: 1 }, { expireAfterSeconds: 60 * 5 })
   return collection;
 }
