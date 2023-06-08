@@ -1,3 +1,4 @@
+import { PROVIDERS, Provider } from '@/types/user';
 import dayjs from 'dayjs';
 
 export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
@@ -37,3 +38,4 @@ export async function getBase64FromRemote(url: string) {
     return '';
   }
 }
+
