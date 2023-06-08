@@ -44,7 +44,7 @@ async function watchClusterObject({
         name,
       );
       if (JSON.stringify(body) !== JSON.stringify(lastbody)) {
-        console.log(`Status for ${name} has changed:`);
+        // console.log(`Status for ${name} has changed:`);
         lastbody = body;
         // @ts-ignore        
         return body.status.kubeConfig as string
@@ -73,7 +73,7 @@ async function setUserKubeconfig(kc: k8s.KubeConfig,uid:string) {
     throw new Error(`Multiple resources found with labels ${JSON.stringify(labelSelector)}`);
   } else if (response.body.items.length === 0) {
     // 如果没有匹配项，则创建新的资源对象并保存到 Kubernetes 中
-    console.log('create')
+    // console.log('create')
     const resourceObj = {
       apiVersion: 'user.sealos.io/v1',
       kind: resourceType,
@@ -86,10 +86,10 @@ async function setUserKubeconfig(kc: k8s.KubeConfig,uid:string) {
       },
     };
     await client.createClusterCustomObject(group, version, plural, resourceObj);
-    console.log(`Created new ${resourceType} with labels ${JSON.stringify(labelSelector)}`);
+    // console.log(`Created new ${resourceType} with labels ${JSON.stringify(labelSelector)}`);
   } else {
     // 更新匹配的资源对象的标签并保存到 Kubernetes 中
-    console.log('patch')
+    // console.log('patch')
     const existingResource = response.body.items[0];
     existingResource.metadata.labels = {
       uid,
@@ -104,7 +104,7 @@ async function setUserKubeconfig(kc: k8s.KubeConfig,uid:string) {
         'Content-Type': 'application/json-patch+json'
       }
     });
-    console.log(`Updated existing ${resourceType} with labels ${JSON.stringify(labelSelector)}`);
+    // console.log(`Updated existing ${resourceType} with labels ${JSON.stringify(labelSelector)}`);
   }
   return name
 }

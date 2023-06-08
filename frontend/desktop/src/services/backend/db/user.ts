@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid';
 
 async function connectToUserCollection() {
   const collection = client.db().collection<User>('user');
-  console.log('connect to user collection')
+  // console.log('connect to user collection')
   await collection.createIndex({ uid: 1 }, { unique: true })
   return collection
 }
