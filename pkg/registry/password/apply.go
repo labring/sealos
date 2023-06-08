@@ -19,13 +19,13 @@ package password
 import (
 	"errors"
 	"fmt"
-	"github.com/labring/sealos/pkg/clusterfile"
 	"path"
 	"strings"
 
 	"github.com/modood/table"
 	"github.com/spf13/pflag"
 
+	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/registry/helpers"
 	"github.com/labring/sealos/pkg/ssh"
