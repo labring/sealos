@@ -50,6 +50,7 @@ jobs:
             providers/imagehub,
             providers/terminal,
             providers/dbprovider,
+            providers/costcenter,
             desktop,
           ]
     steps:
@@ -130,6 +131,7 @@ jobs:
             providers/imagehub,
             providers/terminal,
             providers/dbprovider,
+            providers/costcenter,
             desktop,
           ]
     steps:
