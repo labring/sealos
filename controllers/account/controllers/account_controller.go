@@ -364,17 +364,18 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func giveGift(amount int64) int64 {
+	const BaseUnit = 1_000_000
 	var ratio int64
 	switch {
-	case amount < 299:
+	case amount < 299*BaseUnit:
 		return 0
-	case amount < 599:
+	case amount < 599*BaseUnit:
 		ratio = 10
-	case amount < 1999:
+	case amount < 1999*BaseUnit:
 		ratio = 15
-	case amount < 4999:
+	case amount < 4999*BaseUnit:
 		ratio = 20
-	case amount < 19999:
+	case amount < 19999*BaseUnit:
 		ratio = 25
 	default:
 		ratio = 30
