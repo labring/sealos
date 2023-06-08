@@ -18,9 +18,12 @@ package v1
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
+
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	admissionV1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -89,6 +92,23 @@ func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admissi
 			logger.V(1).Info("check for user", "user", req.UserInfo.Username, "ns: ", req.Namespace)
 			if isWhiteList(req) {
 				return admission.ValidationResponse(true, "")
+			}
+			// Check if the request is for resourcequota resource
+			if req.Kind.Kind == "ResourceQuota" {
+				// Check if the operation is UPDATE or DELETE
+				switch req.Operation {
+				case admissionV1.Create, admissionV1.Update, admissionV1.Delete:
+					quota := &v1.ObjectMeta{}
+					err := json.Unmarshal(req.Object.Raw, quota)
+					if err != nil {
+						logger.Error(err, "failed to unmarshal request quota object")
+						return admission.Allowed("")
+					}
+					logger.V(1).Info("checking quota", "quota", quota)
+					if quota.Name == "quota-"+req.Namespace || quota.Name == "debt-limit0" {
+						return admission.Denied(fmt.Sprintf("ns %s request %s permission denied", req.Namespace, req.Operation))
+					}
+				}
 			}
 			return checkOption(ctx, logger, d.Client, req.Namespace)
 		default:

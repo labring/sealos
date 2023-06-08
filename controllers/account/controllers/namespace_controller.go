@@ -38,6 +38,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const DebtLimit0Name = "debt-limit0"
+
 // NamespaceReconciler reconciles a Namespace object
 type NamespaceReconciler struct {
 	Client client.WithWatch
@@ -156,8 +158,9 @@ func GetLimit0ResourceQuota(namespace string) *corev1.ResourceQuota {
 	quota.Name = "debt-limit0"
 	quota.Namespace = namespace
 	quota.Spec.Hard = corev1.ResourceList{
-		corev1.ResourceLimitsCPU:    resource.MustParse("0"),
-		corev1.ResourceLimitsMemory: resource.MustParse("0"),
+		corev1.ResourceLimitsCPU:       resource.MustParse("0"),
+		corev1.ResourceLimitsMemory:    resource.MustParse("0"),
+		corev1.ResourceRequestsStorage: resource.MustParse("0"),
 	}
 	return &quota
 }

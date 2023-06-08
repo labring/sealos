@@ -32,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -130,16 +129,11 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	//
 	//}
 	nsListStr = append(nsListStr, ns.Name)
-	if err = r.syncResourceQuota(ctx, ns.Name); err != nil {
-		r.Error(err, "Failed to syncResourceQuota")
-		return ctrl.Result{}, err
-	}
-	r.Logger.Info("syncResourceQuota success", "nsListStr", nsListStr)
-	// TODO sync query role and rolebinding
-	//if err = r.syncQueryRoleAndRoleBinding(ctx, own, ns.Name); err != nil {
-	//	r.Error(err, "Failed to syncQueryRoleAndRoleBinding")
+	//if err = r.syncResourceQuota(ctx, ns.Name); err != nil {
+	//	r.Error(err, "Failed to syncResourceQuota")
 	//	return ctrl.Result{}, err
 	//}
+	//r.Logger.Info("syncResourceQuota success", "nsListStr", nsListStr)
 	now := time.Now()
 	currentHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.UTC)
 	queryTime := currentHourTime.Add(-1 * time.Hour)
@@ -199,23 +193,6 @@ func (r *BillingReconciler) billingWithHourTime(ctx context.Context, queryTime t
 		}
 	} else {
 		r.Logger.Info("billing is nil", "queryTime", queryTime.Format(time.RFC3339))
-	}
-	return nil
-}
-
-func (r *BillingReconciler) syncResourceQuota(ctx context.Context, nsName string) error {
-	quota := &corev1.ResourceQuota{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      ResourceQuotaPrefix + nsName,
-			Namespace: nsName,
-		},
-	}
-
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
-		quota.Spec.Hard = DefaultResourceQuota()
-		return nil
-	}); err != nil {
-		return fmt.Errorf("sync resource quota failed: %v", err)
 	}
 	return nil
 }
