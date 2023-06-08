@@ -1,14 +1,18 @@
-import { useEffect } from 'react';
-import Empty from './components/empty';
-import AppList from './components/appList';
-import { useQuery } from '@tanstack/react-query';
-import { useAppStore } from '@/store/app';
 import { useLoading } from '@/hooks/useLoading';
-import { useRouter } from 'next/router';
+import { useAppStore } from '@/store/app';
+import { setCookie } from '@/utils/cookieUtils';
 import { serviceSideProps } from '@/utils/i18n';
+import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'next-i18next';
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
+import { sealosApp } from 'sealos-desktop-sdk/app';
+import AppList from './components/appList';
+import Empty from './components/empty';
 
 const Home = () => {
   const router = useRouter();
+  const { i18n } = useTranslation();
   const { appList, setAppList, intervalLoadPods } = useAppStore();
   const { Loading } = useLoading();
   const { isLoading, refetch } = useQuery(['appListQuery'], setAppList);
@@ -30,6 +34,22 @@ const Home = () => {
     router.prefetch('/app/detail');
     router.prefetch('/app/edit');
   }, [router]);
+
+  const changeI18n = (data: any) => {
+    setCookie('NEXT_LOCALE', data.currentLanguage, { expires: 30 });
+    i18n.changeLanguage(data.currentLanguage);
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await sealosApp.getLanguage();
+        if (res?.lng) {
+          changeI18n(res.lng);
+        }
+      } catch (err) {}
+    })();
+  }, []);
 
   return (
     <>

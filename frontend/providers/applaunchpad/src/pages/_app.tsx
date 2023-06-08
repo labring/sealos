@@ -7,16 +7,18 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Router from 'next/router';
 import NProgress from 'nprogress'; //nprogress module
 import { sealosApp, createSealosApp } from 'sealos-desktop-sdk/app';
+import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { useConfirm } from '@/hooks/useConfirm';
 import throttle from 'lodash/throttle';
 import { useGlobalStore } from '@/store/global';
 import { useLoading } from '@/hooks/useLoading';
 import { getServiceEnv, SEALOS_DOMAIN } from '@/store/static';
 import { useRouter } from 'next/router';
-import { appWithTranslation } from 'next-i18next';
+import { appWithTranslation, useTranslation } from 'next-i18next';
 
 import 'nprogress/nprogress.css';
 import '@/styles/reset.scss';
+import { setCookie } from '@/utils/cookieUtils';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -36,6 +38,7 @@ const queryClient = new QueryClient({
 
 const App = ({ Component, pageProps }: AppProps) => {
   const router = useRouter();
+  const { i18n } = useTranslation();
   const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
   const { Loading } = useLoading();
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -81,6 +84,15 @@ const App = ({ Component, pageProps }: AppProps) => {
       window.removeEventListener('resize', resize);
     };
   }, [setScreenWidth]);
+
+  const changeI18n = (data: any) => {
+    setCookie('NEXT_LOCALE', data.currentLanguage, { expires: 30 });
+    i18n.changeLanguage(data.currentLanguage);
+  };
+
+  useEffect(() => {
+    return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
+  }, []);
 
   // record route
   useEffect(() => {
