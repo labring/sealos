@@ -16,7 +16,6 @@ export type AppSendMessageType = {
 };
 
 export type MasterSendMessageType = {
-  masterOrigin: string;
   apiName: string; // Received the master's message and executed the api name
   eventName: EVENT_NAME;
   data: Record<string, any>;
