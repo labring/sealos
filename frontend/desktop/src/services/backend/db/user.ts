@@ -1,8 +1,9 @@
-import client from './mongodb';
+import {connectToDatabase} from './mongodb';
 import { Provider } from '@/types/user';
 import { v4 as uuid } from 'uuid';
 
 async function connectToUserCollection() {
+  const client = await connectToDatabase()
   const collection = client.db().collection<User>('user');
   // console.log('connect to user collection')
   await collection.createIndex({ uid: 1 }, { unique: true })

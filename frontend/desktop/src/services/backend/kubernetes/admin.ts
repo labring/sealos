@@ -19,8 +19,8 @@ async function watchClusterObject({
   version,
   plural,
   name,
-  interval = 500,
-  timeout = 5000,
+  interval = 1000,
+  timeout = 15000,
 }: {
   kc: k8s.KubeConfig,
   group: string,
@@ -36,22 +36,28 @@ async function watchClusterObject({
   const client = kc.makeApiClient(k8s.CustomObjectsApi);
   while (true) {
     await new Promise((resolve) => setTimeout(resolve, interval));
+    let body = null
     try {
-      const { body } = await client.getClusterCustomObjectStatus(
+      const data = await client.getClusterCustomObjectStatus(
         group,
         version,
         plural,
         name,
       );
-      if (JSON.stringify(body) !== JSON.stringify(lastbody)) {
+      body = data.body;
+      // @ts-ignore
+      if ("status" in body && "kubeConfig" in body.status && JSON.stringify(body) !== JSON.stringify(lastbody)) {
         // console.log(`Status for ${name} has changed:`);
         lastbody = body;
-        // @ts-ignore        
+        // console.log('getkubeConfig', body)
+        // console.log('getkubeConfig', body.status.kubeC)
+        // @ts-ignore
         return body.status.kubeConfig as string
       }
     } catch (err) {
       console.error(`Failed to get status for ${name}: ${err}`);
     }
+    // console.log('body', body)
     if (Date.now() - startTime >= timeout) {
       console.error(`Timed out after ${timeout} ms.`);
       break;
