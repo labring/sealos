@@ -54,7 +54,7 @@ const LangSelect: React.FC<MenuButtonProps> = (props) => {
                   currentLanguage: key
                 }
               });
-              setCookie('NEXT_LOCALE', key, { expires: 30 });
+              setCookie('NEXT_LOCALE', key, { expires: 30, sameSite: 'None', secure: true });
               i18n.changeLanguage(key);
             }}
           >

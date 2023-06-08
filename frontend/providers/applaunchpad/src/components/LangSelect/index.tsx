@@ -45,7 +45,7 @@ const LangSelect: React.FC<MenuButtonProps> = (props) => {
             fontSize="sm"
             {...(key === i18n.language ? { bg: 'A7Gray.200' } : {})}
             onClick={() => {
-              setCookie('NEXT_LOCALE', key, { expires: 30 });
+              setCookie('NEXT_LOCALE', key, { expires: 30, sameSite: 'None', secure: true });
               i18n.changeLanguage(key);
             }}
           >

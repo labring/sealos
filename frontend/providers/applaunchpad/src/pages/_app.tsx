@@ -87,7 +87,11 @@ const App = ({ Component, pageProps }: AppProps) => {
 
   useEffect(() => {
     const changeI18n = (data: any) => {
-      setCookie('NEXT_LOCALE', data.currentLanguage, { expires: 30 });
+      setCookie('NEXT_LOCALE', data.currentLanguage, {
+        expires: 30,
+        sameSite: 'None',
+        secure: true
+      });
       i18n.changeLanguage(data.currentLanguage);
     };
     return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);

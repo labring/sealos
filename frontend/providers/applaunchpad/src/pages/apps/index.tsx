@@ -38,7 +38,11 @@ const Home = () => {
   useEffect(() => {
     (async () => {
       const changeI18n = (data: any) => {
-        setCookie('NEXT_LOCALE', data.currentLanguage, { expires: 30 });
+        setCookie('NEXT_LOCALE', data.currentLanguage, {
+          expires: 30,
+          sameSite: 'None',
+          secure: true
+        });
         i18n.changeLanguage(data.currentLanguage);
       };
       try {
