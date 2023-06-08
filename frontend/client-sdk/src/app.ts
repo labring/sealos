@@ -68,19 +68,16 @@ class ClientSDK {
     this.commonConfig.clientLocation = window.location.origin;
 
     const listenCb = ({ data, origin, source }: MessageEvent<AppMessageType>) => {
-      try {
-        if (!source) return;
-        if ('apiName' in data && this?.apiFun[data?.apiName]) {
-          return this.apiFun[data.apiName](data);
-        }
-        if ('messageId' in data && this.callback.has(data?.messageId)) {
-          this.desktopOrigin = origin;
-          // @ts-ignore nextline
-          this.callback.get(data.messageId)(data);
-          this.callback.delete(data?.messageId);
-        }
-      } catch (error) {
-        console.log(error);
+      const { apiName, messageId } = data || {};
+      if (!source) return;
+      if (apiName && this?.apiFun[data?.apiName]) {
+        return this.apiFun[data.apiName](data);
+      }
+      if (messageId && this.callback.has(data?.messageId)) {
+        this.desktopOrigin = origin;
+        // @ts-ignore nextline
+        this.callback.get(data.messageId)(data);
+        this.callback.delete(data?.messageId);
       }
     };
 
