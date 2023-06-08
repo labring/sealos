@@ -6,13 +6,14 @@
     "moduleResolution": "node",
     "noEmitOnError": true,
     "lib": [
-        "es2017",
-        "DOM"
+      "es2017",
+      "DOM"
     ],
     "strict": true,
     "esModuleInterop": false,
     "allowJs": true,
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "allowSyntheticDefaultImports": true
   },
   "include": [
     "./src/**/*.ts"
