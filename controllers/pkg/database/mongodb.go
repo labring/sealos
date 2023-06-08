@@ -255,7 +255,6 @@ func (m *MongoDB) GenerateMeteringData(startTime, endTime time.Time, prices map[
 				Time:     endTime,
 				Amount:   int64(unitValue * float64(prices[property].Price)),
 				Value:    int64(unitValue),
-				Status:   0,
 				//Detail:   "",
 			}
 			_category, _property := category, property

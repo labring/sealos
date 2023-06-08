@@ -20,10 +20,14 @@ import (
 	"flag"
 	"os"
 
-	"github.com/labring/sealos/controllers/account/controllers"
 	"github.com/labring/sealos/controllers/account/controllers/cache"
-	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
+	v1 "github.com/labring/sealos/controllers/common/notification/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/labring/sealos/controllers/account/controllers"
+	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -50,6 +54,7 @@ func init() {
 
 	utilruntime.Must(accountv1.AddToScheme(scheme))
 	utilruntime.Must(meteringcommonv1.AddToScheme(scheme))
+	utilruntime.Must(v1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -82,7 +87,14 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-
+	watchClient, err := client.NewWithWatch(mgr.GetConfig(), client.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	if err != nil {
+		setupLog.Error(err, "unable to get watch client")
+		os.Exit(1)
+	}
 	if err = (&controllers.AccountReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -127,6 +139,21 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Billing")
+		os.Exit(1)
+	}
+
+	if err = (&controllers.PodReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Pod")
+		os.Exit(1)
+	}
+	if err = (&controllers.NamespaceReconciler{
+		Client: watchClient,
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Namespace")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

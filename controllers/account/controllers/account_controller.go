@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/labring/sealos/controllers/pkg/database"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 
@@ -216,7 +218,27 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	}
 	r.Logger.Info("account created,will charge new account some money", "account", account, "stringAmount", stringAmount)
 
+	if err := r.syncResourceQuota(ctx, userNamespace); err != nil {
+		return nil, fmt.Errorf("sync resource quota failed: %v", err)
+	}
 	return &account, nil
+}
+
+func (r *AccountReconciler) syncResourceQuota(ctx context.Context, nsName string) error {
+	quota := &corev1.ResourceQuota{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ResourceQuotaPrefix + nsName,
+			Namespace: nsName,
+		},
+	}
+
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
+		quota.Spec.Hard = DefaultResourceQuota()
+		return nil
+	}); err != nil {
+		return fmt.Errorf("sync resource quota failed: %v", err)
+	}
+	return nil
 }
 
 func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, namespace string) error {

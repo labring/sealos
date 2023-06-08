@@ -72,8 +72,8 @@ type Monitor struct {
 	Property string    `json:"property" bson:"property"`
 	Time     time.Time `json:"time" bson:"time"`
 	Value    int64     `json:"value" bson:"value"`
-	Status   int       `json:"status" bson:"status"`
-	Detail   string    `json:"detail" bson:"detail"`
+	//Status   int       `json:"status" bson:"status"`
+	Detail string `json:"detail" bson:"detail"`
 }
 
 //| Category   | Property | Time       | Value (average value) | Amount (value * price) | Detail | Status |
@@ -90,7 +90,7 @@ type Metering struct {
 	Time     time.Time `json:"time" bson:"time"`
 	Detail   string    `json:"detail" bson:"detail"`
 	// 0 -> not settled, 1 -> settled, -1 -> deleted, -2 -> refunded
-	Status int `json:"status" bson:"status"`
+	//Status int `json:"status" bson:"status"`
 }
 
 type QuantityDetail struct {

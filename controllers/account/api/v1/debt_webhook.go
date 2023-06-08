@@ -18,9 +18,12 @@ package v1
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
+
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	admissionV1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -40,9 +43,15 @@ const (
 	defaultUserSystemNamespace = "user-system"
 )
 
+const (
+	DebtSchedulerName     = "sealos-debt-scheduler"
+	PreviousSchedulerName = "sealos-debt/previousScheduler"
+	PodPhaseSuspended     = "Suspended"
+)
+
 var logger = logf.Log.WithName("debt-resource")
 
-//+kubebuilder:webhook:path=/validate-v1-sealos-cloud,mutating=true,failurePolicy=ignore,groups="*",resources=*,verbs=create;update,versions=v1,name=debt.sealos.io,admissionReviewVersions=v1,sideEffects=None
+//+kubebuilder:webhook:path=/validate-v1-sealos-cloud,mutating=true,failurePolicy=ignore,groups="*",resources=*,verbs=create;update;delete,versions=v1,name=debt.sealos.io,admissionReviewVersions=v1,sideEffects=None
 // +kubebuilder:object:generate=false
 
 type DebtValidate struct {
@@ -65,10 +74,11 @@ func init() {
 }
 func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admission.Response {
 	logger.V(1).Info("checking user", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.gvrk", getGVRK(req))
-	// skip delete request
-	if req.Operation == admissionV1.Delete {
+	// skip delete request (删除quota资源除外)
+	if req.Operation == admissionV1.Delete && !strings.Contains(getGVRK(req), "quotas") {
 		return admission.Allowed("")
 	}
+
 	for _, g := range req.UserInfo.Groups {
 		switch g {
 		// if user is kubernetes-admin, pass it
@@ -82,6 +92,23 @@ func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admissi
 			logger.V(1).Info("check for user", "user", req.UserInfo.Username, "ns: ", req.Namespace)
 			if isWhiteList(req) {
 				return admission.ValidationResponse(true, "")
+			}
+			// Check if the request is for resourcequota resource
+			if req.Kind.Kind == "ResourceQuota" {
+				// Check if the operation is UPDATE or DELETE
+				switch req.Operation {
+				case admissionV1.Create, admissionV1.Update, admissionV1.Delete:
+					quota := &v1.ObjectMeta{}
+					err := json.Unmarshal(req.Object.Raw, quota)
+					if err != nil {
+						logger.Error(err, "failed to unmarshal request quota object")
+						return admission.Allowed("")
+					}
+					logger.V(1).Info("checking quota", "quota", quota)
+					if quota.Name == "quota-"+req.Namespace || quota.Name == "debt-limit0" {
+						return admission.Denied(fmt.Sprintf("ns %s request %s permission denied", req.Namespace, req.Operation))
+					}
+				}
 			}
 			return checkOption(ctx, logger, d.Client, req.Namespace)
 		default:
