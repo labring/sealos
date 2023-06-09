@@ -20,8 +20,9 @@ import (
 	"context"
 	"strings"
 
+	"github.com/labring/sealos/controllers/user/controllers/helper/config"
+
 	"github.com/go-logr/logr"
-	"github.com/labring/sealos/controllers/user/controllers/helper"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -63,7 +64,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				if ns.Labels == nil {
 					ns.Labels = map[string]string{}
 				}
-				ns.Labels = helper.SetPodSecurity(ns.Labels)
+				ns.Labels = config.SetPodSecurity(ns.Labels)
 				return nil
 			})
 			if err != nil {

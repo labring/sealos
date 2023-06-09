@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package helper
+package kubeconfig
 
 import (
 	"crypto"
@@ -29,6 +29,8 @@ import (
 	"math/big"
 	"net"
 	"time"
+
+	confighelper "github.com/labring/sealos/controllers/user/controllers/helper/config"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -70,11 +72,7 @@ func encodeCertPEM(cert *x509.Certificate) []byte {
 	return pem.EncodeToMemory(&block)
 }
 
-type Cert struct {
-	*Config
-}
-
-func (c *Cert) KubeConfig(config *rest.Config, _ client.Client) (*api.Config, error) {
+func (c *CertConfig) Apply(config *rest.Config, _ client.Client) (*api.Config, error) {
 	// make sure cadata is loaded into config under incluster mode
 	if err := rest.LoadTLSFiles(config); err != nil {
 		return nil, err
@@ -84,11 +82,11 @@ func (c *Cert) KubeConfig(config *rest.Config, _ client.Client) (*api.Config, er
 		return nil, fmt.Errorf("error reading by config:  %s", err.Error())
 	}
 	caCert := certs[0]
-	caKey, err := tryLoadKeyFromDisk(c.CAKeyFile)
+	caKey, err := tryLoadKeyFromDisk(c.caKeyFile)
 	if err != nil {
 		return nil, fmt.Errorf("load ca key file failed %s", err)
 	}
-	clientCert, clientKey, err := newCertAndKey(caCert, caKey, c.User, c.Groups, c.DNSNames, c.IPAddresses, c.ExpirationSeconds)
+	clientCert, clientKey, err := newCertAndKey(caCert, caKey, c.user, c.groups, c.dnsNames, c.ipAddresses, c.expirationSeconds)
 	if err != nil {
 		return nil, fmt.Errorf("new client key failed %s", err)
 	}
@@ -97,23 +95,23 @@ func (c *Cert) KubeConfig(config *rest.Config, _ client.Client) (*api.Config, er
 		return nil, fmt.Errorf("encode client key failed %s", err)
 	}
 	encodedClientCert := encodeCertPEM(clientCert)
-	ctx := fmt.Sprintf("%s@%s", c.User, c.ClusterName)
+	ctx := fmt.Sprintf("%s@%s", c.user, c.clusterName)
 	return &api.Config{
 		Clusters: map[string]*api.Cluster{
-			c.ClusterName: {
+			c.clusterName: {
 				Server:                   GetKubernetesHost(config),
 				CertificateAuthorityData: encodeCertPEM(caCert),
 			},
 		},
 		Contexts: map[string]*api.Context{
 			ctx: {
-				Cluster:   c.ClusterName,
-				AuthInfo:  c.User,
-				Namespace: GetUsersNamespace(c.User),
+				Cluster:   c.clusterName,
+				AuthInfo:  c.user,
+				Namespace: confighelper.GetUsersNamespace(c.user),
 			},
 		},
 		AuthInfos: map[string]*api.AuthInfo{
-			c.User: {
+			c.user: {
 				ClientCertificateData: encodedClientCert,
 				ClientKeyData:         encodedClientKey,
 			},

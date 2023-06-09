@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package helper
+package kubeconfig
 
 import (
 	"context"
@@ -99,7 +99,7 @@ var _ = Describe("user kubeconfig ", func() {
 				},
 				Subjects: []rbacv1.Subject{
 					{
-						Kind:      "User",
+						Kind:      "user",
 						Name:      "cuisongliu",
 						Namespace: "default",
 						APIGroup:  "rbac.authorization.k8s.io",
@@ -127,14 +127,10 @@ var _ = Describe("user kubeconfig ", func() {
 			_ = os.RemoveAll("output")
 		})
 		It("empty csr generate", func() {
-			gen := NewGenerate(&Config{
-				User:              "cuisongliu",
-				DNSNames:          []string{"apiserver.cluster.local"},
-				IPAddresses:       nil,
-				ExpirationSeconds: 100000000,
-			})
+			defaultConfig := NewConfig("cuisongliu", "", 100000000)
+			gen := defaultConfig.WithCsrConfig([]string{}, []string{"apiserver.cluster.local"}, nil, nil)
 			By("start to get kubeconfig")
-			config, err := gen.KubeConfig(cfg, k8sClient)
+			config, err := gen.Apply(cfg, k8sClient)
 			Expect(err).To(BeNil())
 			Expect(config).NotTo(BeNil())
 			if info, ok := config.AuthInfos["cuisongliu"]; ok {
@@ -174,16 +170,10 @@ var _ = Describe("user kubeconfig ", func() {
 			Expect(errStatus).To(Equal(metav1.StatusReasonForbidden))
 		})
 		It("token generate", func() {
-			gen := NewGenerate(&Config{
-				User:                    "cuisongliu",
-				DNSNames:                []string{"apiserver.cluster.local"},
-				IPAddresses:             nil,
-				ExpirationSeconds:       100000000,
-				ServiceAccount:          true,
-				ServiceAccountNamespace: "test",
-			})
+			defaultConfig := NewConfig("cuisongliu", "", 100000000)
+			gen := defaultConfig.WithServiceAccountConfig("test", nil)
 			By("start to get kubeconfig")
-			config, err := gen.KubeConfig(cfg, k8sClient)
+			config, err := gen.Apply(cfg, k8sClient)
 			Expect(err).To(BeNil())
 			Expect(config).NotTo(BeNil())
 			kubeData, err := clientcmd.Write(*config)
@@ -208,13 +198,10 @@ var _ = Describe("user kubeconfig ", func() {
 			Expect(errStatus).To(Equal(metav1.StatusReasonForbidden))
 		})
 		It("webhook generate", func() {
-
-			gen := NewGenerate(&Config{
-				Webhook:    true,
-				WebhookURL: "https://192.168.64.1:6443",
-			})
+			defaultConfig := NewConfig("cuisongliu", "", 100000000)
+			gen := defaultConfig.WithWebhookConfigConfig("https://192.168.64.1:6443")
 			By("start to get kubeconfig")
-			config, err := gen.KubeConfig(cfg, k8sClient)
+			config, err := gen.Apply(cfg, k8sClient)
 			Expect(err).To(BeNil())
 			Expect(config).NotTo(BeNil())
 			kubeData, err := clientcmd.Write(*config)

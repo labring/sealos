@@ -18,15 +18,13 @@ package controllers
 
 import (
 	"context"
-	"errors"
 
 	"github.com/go-logr/logr"
-	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -65,7 +63,7 @@ func (r *UserGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return ctrl.Result{}, nil
 		}
 	}
-	return ctrl.Result{}, errors.New("not found userGroup migrate")
+	return ctrl.Result{Requeue: true}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

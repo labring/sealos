@@ -27,8 +27,6 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
-	"github.com/labring/sealos/controllers/user/controllers/cache"
-
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -127,18 +125,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	//if err = (&controllers.UserExpirationReconciler{
-	//	Client: mgr.GetClient(),
-	//	Scheme: mgr.GetScheme(),
-	//}).SetupWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create controller", "controller", "Secret")
-	//	os.Exit(1)
-	//}
-
-	if err = cache.SetupCache(mgr); err != nil {
-		setupLog.Error(err, "unable to cache controller")
-		os.Exit(1)
-	}
 	if os.Getenv("DISABLE_WEBHOOKS") == "true" {
 		setupLog.Info("disable all webhooks")
 	} else {
@@ -146,15 +132,6 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "User")
 			os.Exit(1)
 		}
-		//setupLog.Info("add ug and ugb webhooks")
-		//if err = (&userv1.UserGroup{}).SetupWebhookWithManager(mgr); err != nil {
-		//	setupLog.Error(err, "unable to create webhook", "webhook", "UserGroup")
-		//	os.Exit(1)
-		//}
-		//if err = (&userv1.UserGroupBinding{}).SetupWebhookWithManager(mgr); err != nil {
-		//	setupLog.Error(err, "unable to create webhook", "webhook", "UserGroupBinding")
-		//	os.Exit(1)
-		//}
 	}
 
 	//+kubebuilder:scaffold:builder

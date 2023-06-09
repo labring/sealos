@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -43,9 +42,6 @@ type UserGroupBindingReconciler struct {
 //+kubebuilder:rbac:groups=user.sealos.io,resources=usergroupbindings,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=user.sealos.io,resources=usergroupbindings/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=user.sealos.io,resources=usergroupbindings/finalizers,verbs=update
-//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -73,7 +69,7 @@ func (r *UserGroupBindingReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			return ctrl.Result{}, nil
 		}
 	}
-	return ctrl.Result{}, errors.New("not found userGroupBinding migrate")
+	return ctrl.Result{Requeue: true}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
