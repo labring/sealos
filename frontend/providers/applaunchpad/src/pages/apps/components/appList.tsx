@@ -149,7 +149,7 @@ const AppList = ({
       )
     },
     {
-      title: 'Number of Instances',
+      title: 'Replicas',
       key: 'activeReplicas',
       render: (item: AppListItemType) => (
         <Flex whiteSpace={'nowrap'}>
@@ -165,7 +165,7 @@ const AppList = ({
       )
     },
     {
-      title: 'Storage Capacity',
+      title: 'Storage',
       key: 'store',
       render: (item: AppListItemType) => <>{item.storeAmount > 0 ? `${item.storeAmount}Gi` : '-'}</>
     },
@@ -273,7 +273,8 @@ const AppList = ({
         <Box flex={1}></Box>
 
         <Button
-          flex={'0 0 155px'}
+          flex={'0 0 auto'}
+          px={3}
           h={'40px'}
           colorScheme={'primary'}
           leftIcon={<MyIcon name={'plus'} w={'12px'} />}

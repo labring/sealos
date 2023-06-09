@@ -166,7 +166,7 @@ const Form = ({
 
   const Label = ({
     children,
-    w = 80,
+    w = 'auto',
     ...props
   }: {
     children: string;
@@ -279,7 +279,7 @@ const Form = ({
             <Box px={'42px'} py={'24px'}>
               <FormControl mb={7} isInvalid={!!errors.appName} w={'500px'}>
                 <Flex alignItems={'center'}>
-                  <Label>{t('App Name')}</Label>
+                  <Label w={80}>{t('App Name')}</Label>
                   <Input
                     disabled={isEdit}
                     title={isEdit ? '不允许修改应用名称' : ''}
@@ -297,7 +297,7 @@ const Form = ({
               </FormControl>
               <Box mb={7}>
                 <Flex alignItems={'center'}>
-                  <Label>{t('Image')}</Label>
+                  <Label w={80}>{t('Image')}</Label>
                   <Tabs
                     w={'126px'}
                     size={'sm'}
@@ -321,10 +321,10 @@ const Form = ({
                     }}
                   />
                 </Flex>
-                <Box mt={4} pl={10} borderLeft={theme.borders.base}>
+                <Box mt={4} pl={8} borderLeft={theme.borders.base}>
                   <FormControl isInvalid={!!errors.imageName} w={'500px'}>
                     <Flex alignItems={'center'}>
-                      <Label>{t('Image Name')}</Label>
+                      <Label w={110}>{t('Image Name')}</Label>
                       <Input
                         value={getValues('imageName')}
                         backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
@@ -346,7 +346,7 @@ const Form = ({
                     <>
                       <FormControl mt={5} isInvalid={!!errors.secret?.username} w={'500px'}>
                         <Flex alignItems={'center'}>
-                          <Label>{t('Username')}</Label>
+                          <Label w={110}>{t('Username')}</Label>
                           <Input
                             backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
                             placeholder={`${t('Username for the image registry')}`}
@@ -358,7 +358,7 @@ const Form = ({
                       </FormControl>
                       <FormControl mt={5} isInvalid={!!errors.secret?.password} w={'500px'}>
                         <Flex alignItems={'center'}>
-                          <Label>{t('Password')}</Label>
+                          <Label w={110}>{t('Password')}</Label>
                           <Input
                             type={'password'}
                             placeholder={`${t('Password for the image registry')}`}
@@ -371,10 +371,10 @@ const Form = ({
                       </FormControl>
                       <FormControl mt={5} isInvalid={!!errors.secret?.serverAddress} w={'500px'}>
                         <Flex alignItems={'center'}>
-                          <Label w={110}>{t('Image registry address')}</Label>
+                          <Label w={110}>{t('Image address')}</Label>
                           <Input
                             backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
-                            placeholder={`${t('Image registry address')}`}
+                            placeholder={`${t('Image address')}`}
                             {...register('secret.serverAddress', {
                               required: '私有镜像, 地址不能为空'
                             })}
@@ -386,7 +386,7 @@ const Form = ({
                 </Box>
               </Box>
               <Flex mb={10} pr={3} alignItems={'flex-start'}>
-                <Label w={60}>{t('CPU')}</Label>
+                <Label w={70}>{t('CPU')}</Label>
                 <MySlider
                   markList={CpuSlideMarkList}
                   activeVal={getValues('cpu')}
@@ -402,7 +402,7 @@ const Form = ({
                 </Box>
               </Flex>
               <Flex mb={8} pr={3} alignItems={'center'}>
-                <Label w={60}>{t('Memory')}</Label>
+                <Label w={70}>{t('Memory')}</Label>
                 <MySlider
                   markList={MemorySlideMarkList}
                   activeVal={getValues('memory')}
@@ -425,7 +425,7 @@ const Form = ({
             </Box>
             <Box px={'42px'} py={'24px'}>
               <Tabs
-                w={'165px'}
+                w={'195px'}
                 size={'sm'}
                 list={[
                   {
@@ -489,7 +489,7 @@ const Form = ({
                     </Flex>
 
                     <Flex mt={5} pb={5} pr={3} alignItems={'center'}>
-                      <Label w={100}>{t('Number of Instances')}</Label>
+                      <Label w={100}>{t('Replicas')}</Label>
                       <MyRangeSlider
                         min={1}
                         max={20}
@@ -504,7 +504,7 @@ const Form = ({
                   </>
                 ) : (
                   <Flex alignItems={'center'}>
-                    <Label>{t('Number of Instances')}</Label>
+                    <Label mr={4}>{t('Replicas')}</Label>
                     <RangeInput
                       value={getValues('replicas')}
                       min={1}
@@ -540,7 +540,7 @@ const Form = ({
             <Box px={'42px'} py={'24px'}>
               <FormControl mb={5}>
                 <Flex alignItems={'center'}>
-                  <Box flex={'0 0 100px'}>{t('Expose Container Ports')}</Box>
+                  <Label mr={3}>{t('Container Ports')}</Label>
                   <Input
                     type={'number'}
                     bg={getValues('containerOutPort') ? 'myWhite.500' : 'myWhite.400'}
@@ -584,7 +584,7 @@ const Form = ({
                   <Box pl={10} borderLeft={theme.borders.base}>
                     <FormControl mt={5}>
                       <Flex alignItems={'center'}>
-                        <Box flex={'0 0 80px'}>{t('protocol')}</Box>
+                        <Box mr={4}>{t('protocol')}</Box>
                         <MySelect
                           width={'120px'}
                           value={getValues('accessExternal.backendProtocol')}
@@ -599,7 +599,7 @@ const Form = ({
                     </FormControl>
                     <FormControl mt={5}>
                       <Flex alignItems={'center'} color={'myGray.500'}>
-                        <Box flex={'0 0 80px'}>{t('Export Domain')}:&nbsp;</Box>
+                        <Label w={110}>{t('Export Domain')}</Label>
                         <Box userSelect={'all'}>
                           {getValues('accessExternal.outDomain')}.{SEALOS_DOMAIN}
                         </Box>
@@ -607,7 +607,7 @@ const Form = ({
                     </FormControl>
                     <FormControl mt={5}>
                       <Flex alignItems={'center'}>
-                        <Box flex={'0 0 80px'}>{t('Custom domain')}</Box>
+                        <Label w={110}>{t('Custom domain')}</Label>
                         <Input
                           w={'320px'}
                           bg={
