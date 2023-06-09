@@ -14,7 +14,7 @@ import MyIcon from '../Icon';
 import { formatPodTime } from '@/utils/tools';
 
 const DBStatusTag = ({
-  conditions,
+  conditions = [],
   status,
   showBorder = false
 }: {

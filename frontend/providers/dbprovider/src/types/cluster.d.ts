@@ -16,7 +16,7 @@ export type KbPgClusterType = {
     uid: string;
   };
   spec: KubeBlockClusterSpec;
-  status: KubeBlockClusterStatus;
+  status?: KubeBlockClusterStatus;
 };
 
 export interface KubeBlockClusterSpec {

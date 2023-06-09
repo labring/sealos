@@ -55,23 +55,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             undefined,
             undefined,
             undefined,
-            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH } }
+            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
           ),
         delete: () => k8sApp.deleteNamespacedDeployment(appName, namespace)
       },
       [YamlKindEnum.StatefulSet]: {
         patch: (jsonPatch: Object) =>
-          k8sApp.patchNamespacedStatefulSet(
-            appName,
-            namespace,
-            jsonPatch,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH } }
-          ),
+          k8sApp
+            .deleteNamespacedStatefulSet(appName, namespace)
+            .then(() => k8sApp.createNamespacedStatefulSet(namespace, jsonPatch)),
         delete: () => k8sApp.deleteNamespacedStatefulSet(appName, namespace)
       },
       [YamlKindEnum.Service]: {
@@ -85,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             undefined,
             undefined,
             undefined,
-            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH } }
+            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
           ),
         delete: () => k8sCore.deleteNamespacedService(appName, namespace)
       },
@@ -100,7 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             undefined,
             undefined,
             undefined,
-            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH } }
+            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
           ),
         delete: () => k8sCore.deleteNamespacedConfigMap(appName, namespace)
       },
@@ -115,7 +107,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             undefined,
             undefined,
             undefined,
-            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH } }
+            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
           ),
         delete: () => k8sNetworkingApp.deleteNamespacedIngress(appName, namespace)
       },
@@ -201,6 +193,73 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
     };
 
+    // update pvc data
+    const stateFulSet = stateFulSetYaml ? (yaml.load(stateFulSetYaml) as V1StatefulSet) : {};
+    // filer delete pvc
+    const {
+      body: { items: allPvc }
+    } = await k8sCore.listNamespacedPersistentVolumeClaim(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `app=${appName}`
+    );
+    await Promise.all(
+      allPvc.map((pvc) => {
+        const volume = stateFulSet?.spec?.volumeClaimTemplates?.find(
+          (volume) => volume.metadata?.annotations?.path === pvc.metadata?.annotations?.path
+        );
+
+        // check whether delete
+        if (!volume) {
+          console.log(`delete pvc: ${pvc.metadata?.name}`);
+          return k8sCore.deleteNamespacedPersistentVolumeClaim(pvc.metadata?.name || '', namespace);
+        }
+        // check storage change
+        if (
+          pvc.metadata?.name &&
+          pvc.metadata?.annotations?.value &&
+          pvc.spec?.resources?.requests?.storage &&
+          pvc.metadata?.annotations?.value !== volume.metadata?.annotations?.value
+        ) {
+          const pvcName = pvc.metadata.name;
+          const jsonPatch = [
+            {
+              op: 'replace',
+              path: '/spec/resources/requests/storage',
+              value: `${volume.metadata?.annotations?.value}Gi`
+            },
+            {
+              op: 'replace',
+              path: '/metadata/annotations/value',
+              value: `${volume.metadata?.annotations?.value}`
+            }
+          ];
+          console.log(`replace ${pvcName} storage: ${volume.metadata?.annotations?.value}Gi`);
+          return k8sCore
+            .patchNamespacedPersistentVolumeClaim(
+              pvcName,
+              namespace,
+              jsonPatch,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              {
+                headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH }
+              }
+            )
+            .catch((err) => {
+              console.log(`replace pvc error:`);
+              return Promise.reject(err?.body);
+            });
+        }
+      })
+    );
+
     // create
     await Promise.all(
       patch.map((item) => {
@@ -235,83 +294,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         return cr.delete();
       })
     );
-
-    // update pvc data
-    if (stateFulSetYaml) {
-      const stateFulSet = yaml.load(stateFulSetYaml) as V1StatefulSet;
-      // filer delete pvc
-      const allPvc: V1PersistentVolumeClaim[] = await (async () => {
-        if (stateFulSet && stateFulSet?.spec?.volumeClaimTemplates) {
-          const {
-            body: { items: data }
-          } = await k8sCore.listNamespacedPersistentVolumeClaim(
-            namespace,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            `app=${appName}`
-          );
-          return data;
-        }
-        return [];
-      })();
-      await Promise.all(
-        allPvc.map((pvc) => {
-          const volume = stateFulSet.spec?.volumeClaimTemplates?.find(
-            (volume) => volume.metadata?.annotations?.path === pvc.metadata?.annotations?.path
-          );
-          // check whether delete
-          if (!volume) {
-            console.log(`delete pvc: ${pvc.metadata?.name}`);
-            return k8sCore.deleteNamespacedPersistentVolumeClaim(
-              pvc.metadata?.name || '',
-              namespace
-            );
-          }
-          // check storage change
-          if (
-            pvc.metadata?.name &&
-            pvc.metadata?.annotations?.value &&
-            pvc.spec?.resources?.requests?.storage &&
-            pvc.metadata?.annotations?.value !== volume.metadata?.annotations?.value
-          ) {
-            const pvcName = pvc.metadata.name;
-            const jsonPatch = [
-              {
-                op: 'replace',
-                path: '/spec/resources/requests/storage',
-                value: `${volume.metadata?.annotations?.value}Gi`
-              },
-              {
-                op: 'replace',
-                path: '/metadata/annotations/value',
-                value: `${volume.metadata?.annotations?.value}`
-              }
-            ];
-            console.log(`replace ${pvcName} storage: ${volume.metadata?.annotations?.value}Gi`);
-            return k8sCore
-              .patchNamespacedPersistentVolumeClaim(
-                pvcName,
-                namespace,
-                jsonPatch,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                {
-                  headers: { 'Content-type': PatchUtils.PATCH_FORMAT_STRATEGIC_MERGE_PATCH }
-                }
-              )
-              .catch((err) => {
-                console.log(`replace pvc error:`);
-                return Promise.reject(err?.body);
-              });
-          }
-        })
-      );
-    }
 
     jsonRes(res);
   } catch (err: any) {

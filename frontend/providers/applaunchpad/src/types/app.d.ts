@@ -137,6 +137,6 @@ export interface PodEvent {
 
 export type AppPatchPropsType = (
   | { type: 'delete'; kind: `${YamlKindEnum}` }
-  | { type: 'patch'; kind: `${YamlKindEnum}`; value: DeployKindsType }
+  | { type: 'patch'; kind: `${YamlKindEnum}`; value: Record<string, any> }
   | { type: 'create'; kind: `${YamlKindEnum}`; value: string }
 )[];

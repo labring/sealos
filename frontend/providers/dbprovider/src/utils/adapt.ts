@@ -25,7 +25,7 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
     storage:
       db.spec?.componentSpecs?.[0]?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage ||
       '-',
-    conditions: db.status.conditions || []
+    conditions: db?.status?.conditions || []
   };
 };
 
@@ -46,7 +46,7 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
     storage: storageFormatToNum(
       db.spec?.componentSpecs?.[0]?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage
     ),
-    conditions: db.status.conditions || []
+    conditions: db?.status?.conditions || []
   };
 };
 
