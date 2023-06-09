@@ -9,6 +9,7 @@ sealos pull ghcr.io/labring/sealos-cloud-applaunchpad-frontend:dev
 sealos pull ghcr.io/labring/sealos-cloud-dbprovider-frontend:dev
 sealos pull ghcr.io/labring/sealos-cloud-auth-service:dev
 
+
 sealos save -o tars/user.tar ghcr.io/labring/sealos-cloud-user-controller:dev
 sealos save -o tars/terminal.tar ghcr.io/labring/sealos-cloud-terminal-controller:dev
 sealos save -o tars/app.tar ghcr.io/labring/sealos-cloud-app-controller:dev
