@@ -672,18 +672,18 @@ const Form = ({
                   <FormControl mb={5}>
                     <Box mb={3}>{t('Run command')}</Box>
                     <Input
-                      w={'320px'}
+                      w={'350px'}
                       bg={getValues('runCMD') ? 'myWhite.500' : 'myWhite.400'}
-                      placeholder={`${t('Separated by spaces')} /bin/bash -c`}
+                      placeholder={`${t('Such as')} sleep 10 && /bin/bash -c`}
                       {...register('runCMD')}
                     />
                   </FormControl>
                   <FormControl>
                     <Box mb={3}>{t('Command parameters')}</Box>
                     <Input
-                      w={'320px'}
+                      w={'350px'}
                       bg={getValues('cmdParam') ? 'myWhite.500' : 'myWhite.400'}
-                      placeholder={`${t('Separated by spaces')} HOSTNAME PORT`}
+                      placeholder={`${t('Separated by spaces')} Hostname Port`}
                       {...register('cmdParam')}
                     />
                   </FormControl>
