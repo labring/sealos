@@ -94,6 +94,15 @@ const App = ({ Component, pageProps }: AppProps) => {
       });
       i18n.changeLanguage(data.currentLanguage);
     };
+    (async () => {
+      try {
+        const lang = await sealosApp.getLanguage();
+        changeI18n({
+          currentLanguage: lang.lng
+        });
+      } catch (error) {}
+    })();
+
     return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
   }, []);
 
