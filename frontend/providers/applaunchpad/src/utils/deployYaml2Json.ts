@@ -75,7 +75,7 @@ export const json2Development = (data: AppEditType) => {
                   memory: `${str2Num(data.memory)}Mi`
                 }
               },
-              command: data.runCMD.split(' ').filter((item) => item),
+              command: data.runCMD ? [data.runCMD] : [],
               args: data.cmdParam.split(' ').filter((item) => item),
               ports: [
                 {
@@ -186,7 +186,7 @@ export const json2StatefulSet = (data: AppEditType) => {
                   memory: `${str2Num(data.memory)}Mi`
                 }
               },
-              command: data.runCMD.split(' ').filter((item) => item),
+              command: data.runCMD ? [data.runCMD] : [],
               args: data.cmdParam.split(' ').filter((item) => item),
               ports: [
                 {

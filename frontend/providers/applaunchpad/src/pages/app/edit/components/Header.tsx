@@ -50,8 +50,9 @@ const Header = ({
       <Box flex={1}></Box>
       <Button
         h={'40px'}
-        flex={'0 0 140px'}
         mr={5}
+        px={4}
+        minW={'140px'}
         bg={'myWhite.600'}
         borderColor={'myGray.200'}
         variant={'base'}
@@ -59,7 +60,7 @@ const Header = ({
       >
         {t('Export')} Yaml
       </Button>
-      <Button flex={'0 0 140px'} h={'40px'} variant={'primary'} onClick={applyCb}>
+      <Button px={4} minW={'140px'} h={'40px'} variant={'primary'} onClick={applyCb}>
         {t(applyBtnText)}
       </Button>
     </Flex>

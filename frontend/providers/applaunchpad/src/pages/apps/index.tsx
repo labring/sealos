@@ -35,25 +35,6 @@ const Home = () => {
     router.prefetch('/app/edit');
   }, [router]);
 
-  useEffect(() => {
-    (async () => {
-      const changeI18n = (data: any) => {
-        setCookie('NEXT_LOCALE', data.currentLanguage, {
-          expires: 30,
-          sameSite: 'None',
-          secure: true
-        });
-        i18n.changeLanguage(data.currentLanguage);
-      };
-      try {
-        const res = await sealosApp.getLanguage();
-        if (res?.lng) {
-          changeI18n(res.lng);
-        }
-      } catch (err) {}
-    })();
-  }, []);
-
   return (
     <>
       {appList.length === 0 && !isLoading ? (
