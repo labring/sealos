@@ -4,11 +4,9 @@ import request from '@/service/request';
 import useSessionStore from '@/stores/session';
 import { formatMoney } from '@/utils/format';
 import { Box, Button, Flex, Image, Text } from '@chakra-ui/react';
-import { useIsFetching, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery  } from '@tanstack/react-query';
 import styles from './user.module.scss';
 
-import useNotEnough from '@/hooks/useNotEnough';
-import { useEffect, lazy, useState } from 'react';
 import useOverviewStore from '@/stores/overview';
 import { useTranslation } from 'next-i18next';
 

@@ -45,6 +45,7 @@ Router.events.on('routeChangeComplete', () => NProgress.done());
 Router.events.on('routeChangeError', () => NProgress.done());
 
 const App = ({ Component, pageProps }: AppProps) => {
+  
   useEffect(() => {
     const changeI18n = (data: any) => {
       setCookie('NEXT_LOCALE', data.currentLanguage, {
@@ -54,6 +55,14 @@ const App = ({ Component, pageProps }: AppProps) => {
       });
       i18n?.changeLanguage(data.currentLanguage);
     };
+    (async () => {
+      try {
+        const lang = await sealosApp.getLanguage();
+        changeI18n({
+          currentLanguage: lang.lng
+        });
+      } catch (error) {}
+    })();
     return sealosApp.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
   }, []);
   

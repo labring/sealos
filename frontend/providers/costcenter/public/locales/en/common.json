@@ -20,6 +20,7 @@
   "Select Amount": "Select Amount",
   "Recent Transactions": "Recent Transactions",
   "Cost Trend": "Cost Trend",
+  "Total Cost": "Total Cost",
   "Income And Expense": "Income And Expense",
   "Deduction": "Deduction",
   "Cost Distribution": "Cost Distribution",
@@ -46,5 +47,8 @@
   "All": "All",
   "Total": "Total",
   "Page": "Page",
-  "View Discount Rules":"View recharge discount rules."
+  "View Discount Rules":"View recharge discount rules.",
+  "Cancel": "Cancel",
+  "Not Enough Balance": "Insufficient balance, please recharge immediately.",
+  "Insufficient Balance":"Insufficient balance"
 }
