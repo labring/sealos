@@ -21,6 +21,7 @@
   "Cost Trend": "成本趋势",
   "Income And Expense": "收支",
   "Deduction": "扣费",
+  "Total Cost": "总成本",
   "Cost Distribution": "成本分布",
   "Expenditure": "支出",
   "Recharge Amount": "充值金额",
@@ -46,5 +47,8 @@
   "All": "全部",
   "Total": "总数",
   "Page": "页",
-  "View Discount Rules":"查看优惠规则"
+  "View Discount Rules":"查看优惠规则",
+  "Cancel":"取消",
+  "Not Engough Balance":"余额不足，请立即充值。",
+  "Insufficient Balance":"余额不足"
 }

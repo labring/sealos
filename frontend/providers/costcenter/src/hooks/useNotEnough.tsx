@@ -12,44 +12,47 @@ import {
 } from '@chakra-ui/react';
 import { formatMoney } from '@/utils/format';
 import useOverviewStore from '@/stores/overview';
+import { useTranslation } from 'next-i18next';
 export default function useNotEnough() {
   const { isOpen, onOpen, onClose } = useDisclosure({
     defaultIsOpen: true
   });
   const { balance } = useOverviewStore(state => state)
   const _openRecharge = useOverviewStore(state => state.setRecharge)
+  const { t } = useTranslation()
   const openRecharge = () => _openRecharge(true)
   function handleConfirm(): void {
     onClose()
     openRecharge()
   }
   const NotEnoughModal = () => {
+
     return (
       <Modal isOpen={isOpen && balance < 0} onClose={onClose}>
         <ModalOverlay />
-        <ModalContent w="400px" h={'180px'}>
-          <ModalHeader>余额不足</ModalHeader>
+        <ModalContent w="400px">
+          <ModalHeader>{t("Insufficient Balance")}</ModalHeader>
           <ModalCloseButton />
           <Flex
             pt="4px"
-            mb="36px"
+            mb="30px"
             mx={'24px'}
             flexDirection="column"
             justifyContent="center"
             alignItems="center"
           >
             <Text color="#7B838B" fontWeight={'normal'}>
-              您的账户余额：¥{formatMoney(balance)}, 余额不足，请立即充值
+              {t('Balance')}：¥{formatMoney(balance)}, {t('Not Engough Balance')}
             </Text>
             <Flex
               w={'full'}
               justify={'flex-end'}
               fontWeight='500'
+              mt={'20px'}
             >
               <Button
                 size="primary"
                 variant="unstyled"
-                mt="12px"
                 width='80px'
                 height='36px'
 
@@ -67,17 +70,16 @@ export default function useNotEnough() {
 
                 onClick={() => onClose()}
               >
-                取消
+                {t('Cancel')}
               </Button>
               <Button
                 size="primary"
                 variant="primary"
-                mt="12px"
                 width={'114px'}
                 fontWeight='500'
                 onClick={() => handleConfirm()}
               >
-                立刻充值
+                {t('Charge')}
               </Button>
 
             </Flex>
