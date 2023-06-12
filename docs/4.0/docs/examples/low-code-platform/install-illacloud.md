@@ -22,7 +22,9 @@
 
   - CPU (recommended): 0.5 Core
 
-  - Memory (recommended): 512 MB
+  - Memory (recommended): 512 MB 
+  
+  - Note: both the CPU and Memory configuration here is the minimum requirement, you may use more based on your needs.
 
 - deployment mode:
 
@@ -42,7 +44,7 @@
 
 - Advanced configuration:
 
-  - Customize local storage and persist ILLA Cloud data (15 GB is recommended).
+  - Customize local database and drive for ILLA Cloud (use 1GB here but you may use more according to your needs).
 
 ![illa3](../images/illa3.jpg)
 
