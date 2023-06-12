@@ -1,5 +1,5 @@
 import { Flex, Text, Heading, Img } from '@chakra-ui/react';
-import { Card,  CardBody} from '@chakra-ui/react';
+import { Card, CardBody } from '@chakra-ui/react';
 import down_icon from '@/assert/ic_round-trending-down.svg';
 import up_icon from '@/assert/ic_round-trending-up.svg';
 import { useMemo } from 'react';

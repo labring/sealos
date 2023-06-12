@@ -1,4 +1,3 @@
-
 import {
   Button,
   Flex,
@@ -8,7 +7,7 @@ import {
   ModalHeader,
   ModalOverlay,
   Text,
-  useDisclosure,
+  useDisclosure
 } from '@chakra-ui/react';
 import { formatMoney } from '@/utils/format';
 import useOverviewStore from '@/stores/overview';
@@ -17,21 +16,20 @@ export default function useNotEnough() {
   const { isOpen, onOpen, onClose } = useDisclosure({
     defaultIsOpen: true
   });
-  const { balance } = useOverviewStore(state => state)
-  const _openRecharge = useOverviewStore(state => state.setRecharge)
-  const { t } = useTranslation()
-  const openRecharge = () => _openRecharge(true)
+  const { balance } = useOverviewStore((state) => state);
+  const _openRecharge = useOverviewStore((state) => state.setRecharge);
+  const { t } = useTranslation();
+  const openRecharge = () => _openRecharge(true);
   function handleConfirm(): void {
-    onClose()
-    openRecharge()
+    onClose();
+    openRecharge();
   }
   const NotEnoughModal = () => {
-
     return (
       <Modal isOpen={isOpen && balance < 0} onClose={onClose}>
         <ModalOverlay />
         <ModalContent w="400px">
-          <ModalHeader>{t("Insufficient Balance")}</ModalHeader>
+          <ModalHeader>{t('Insufficient Balance')}</ModalHeader>
           <ModalCloseButton />
           <Flex
             pt="4px"
@@ -44,30 +42,21 @@ export default function useNotEnough() {
             <Text color="#7B838B" fontWeight={'normal'}>
               {t('Balance')}：¥{formatMoney(balance)}, {t('Not Engough Balance')}
             </Text>
-            <Flex
-              w={'full'}
-              justify={'flex-end'}
-              fontWeight='500'
-              mt={'20px'}
-            >
+            <Flex w={'full'} justify={'flex-end'} fontWeight="500" mt={'20px'}>
               <Button
                 size="primary"
                 variant="unstyled"
-                width='80px'
-                height='36px'
-
+                width="80px"
+                height="36px"
                 /* White/600 */
-                background='#F4F6F8'
-
+                background="#F4F6F8"
                 /* Gray modern/200 */
-                border='1px solid #DEE0E2'
-                borderRadius='4px'
-                mr='12px'
-                fontWeight='500'
+                border="1px solid #DEE0E2"
+                borderRadius="4px"
+                mr="12px"
+                fontWeight="500"
                 /* Gray modern/600 */
-                color='#5A646E'
-
-
+                color="#5A646E"
                 onClick={() => onClose()}
               >
                 {t('Cancel')}
@@ -76,15 +65,12 @@ export default function useNotEnough() {
                 size="primary"
                 variant="primary"
                 width={'114px'}
-                fontWeight='500'
+                fontWeight="500"
                 onClick={() => handleConfirm()}
               >
                 {t('Charge')}
               </Button>
-
             </Flex>
-
-
           </Flex>
         </ModalContent>
       </Modal>

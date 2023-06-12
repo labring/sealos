@@ -20,6 +20,7 @@ type Menu = {
 export default function SideBar() {
   const router = useRouter();
   const { t } = useTranslation();
+
   const menus: Menu[] = [
     {
       id: 'CostOverview',

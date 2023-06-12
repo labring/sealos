@@ -1,6 +1,6 @@
 import * as yaml from 'js-yaml';
 import { CRDMeta } from '@/types/crd';
-import { getMonth, getYear} from 'date-fns';
+import { getMonth, getYear } from 'date-fns';
 export type PaymentForm = {
   paymentName: string;
   namespace: string;
@@ -52,8 +52,8 @@ export const NOW_WEEK = 0;
 export const START_TIME = new Date(2023, 0, 1);
 export const END_TIME = new Date();
 export const valuationMap = new Map([
-  ['cpu', { unit: 'Core', scale: 1000, bg: '#33BABB',idx:0 }],
-  ['memory', { unit: 'GiB', scale: 1024, bg: '#36ADEF',idx:1 }],
-  ['storage', { unit: 'GiB', scale: 1024, bg: '#8172D8', idx:2 }]
+  ['cpu', { unit: 'Core', scale: 1000, bg: '#33BABB', idx: 0 }],
+  ['memory', { unit: 'GiB', scale: 1024, bg: '#36ADEF', idx: 1 }],
+  ['storage', { unit: 'GiB', scale: 1024, bg: '#8172D8', idx: 2 }]
 ]);
-export const AMOUNT_LIST = [299, 599, 1999, 4999, 19999]
+export const AMOUNT_LIST = [299, 599, 1999, 4999, 19999];

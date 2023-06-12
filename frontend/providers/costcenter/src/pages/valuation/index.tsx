@@ -4,13 +4,20 @@ import { useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
 import { ValuationData } from '@/types/valuation';
 import { valuationMap } from '@/constants/payment';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useTranslation } from 'next-i18next';
+import { useTranslation, withTranslation } from 'next-i18next';
 import { ApiResp } from '@/types/api';
-export default function Valuation() {
-  const { t } = useTranslation();
-  const { data: _data } = useQuery(['valuation'], () => request<any, ApiResp<ValuationData>>('/api/price'));
+import { getCookie } from '@/utils/cookieUtils';
+function Valuation() {
+  const { t, i18n, ready } = useTranslation();
+  const cookie = getCookie('NEXT_LOCALE');
+  useEffect(() => {
+    i18n.changeLanguage(cookie);
+  }, [cookie, i18n]);
+  const { data: _data } = useQuery(['valuation'], () =>
+    request<any, ApiResp<ValuationData>>('/api/price')
+  );
 
   const data = useMemo(
     () =>
@@ -40,11 +47,7 @@ export default function Valuation() {
       p={'24px'}
       overflowY={'auto'}
     >
-      <Flex
-        alignSelf={'flex-start'}
-        mb="80px"
-        align={'center'}
-      >
+      <Flex alignSelf={'flex-start'} mb="80px" align={'center'}>
         <Img src={letter_icon.src} w={'24px'} h={'24px'} mr={'18px'}></Img>
         <Heading size="lg">{t('Valuation.Standard')}</Heading>
       </Flex>
@@ -95,6 +98,7 @@ export default function Valuation() {
     // </KeepAlive>
   );
 }
+export default withTranslation()(Valuation);
 export async function getServerSideProps(content: any) {
   const locale = content?.req?.cookies?.NEXT_LOCALE || 'zh';
   return {

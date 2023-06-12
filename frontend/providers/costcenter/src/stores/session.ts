@@ -7,6 +7,7 @@ import * as yaml from 'js-yaml';
 
 type SessionState = {
   session: Session;
+  locale: string;
   setSession: (ss: Session) => void;
   setSessionProp: (key: keyof Session, value: any) => void;
   getSession: () => Session;
@@ -20,6 +21,7 @@ const useSessionStore = create<SessionState>()(
     persist(
       immer((set, get) => ({
         session: {} as Session,
+        locale: 'en',
         setSession: (ss: Session) => set({ session: ss }),
         setSessionProp: (key: keyof Session, value: any) => {
           set((state) => {

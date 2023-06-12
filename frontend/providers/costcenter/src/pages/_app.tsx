@@ -1,5 +1,5 @@
 import Layout from '@/layout';
-import { sealosApp, createSealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { theme } from '@/styles/chakraTheme';
 import '@/styles/globals.scss';
@@ -33,7 +33,6 @@ if (typeof window !== 'undefined') {
   });
 
   persistQueryClient({
-    // queryClient,
     persister: syncStoragePersister,
     queryClient: queryClient
   });
@@ -45,7 +44,6 @@ Router.events.on('routeChangeComplete', () => NProgress.done());
 Router.events.on('routeChangeError', () => NProgress.done());
 
 const App = ({ Component, pageProps }: AppProps) => {
-  
   useEffect(() => {
     const changeI18n = (data: any) => {
       setCookie('NEXT_LOCALE', data.currentLanguage, {
@@ -55,17 +53,23 @@ const App = ({ Component, pageProps }: AppProps) => {
       });
       i18n?.changeLanguage(data.currentLanguage);
     };
+
     (async () => {
       try {
         const lang = await sealosApp.getLanguage();
         changeI18n({
           currentLanguage: lang.lng
         });
-      } catch (error) {}
+      } catch (error) {
+        changeI18n('zh');
+      }
     })();
-    return sealosApp.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
+    sealosApp.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
+    return () => {
+      sealosApp.removeAppEventListen(EVENT_NAME.CHANGE_I18N);
+    };
   }, []);
-  
+
   return (
     <QueryClientProvider client={queryClient}>
       <ChakraProvider theme={theme}>

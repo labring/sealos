@@ -8,49 +8,47 @@ import { BillingData, BillingSpec } from '@/types/billing';
 import { Box, Flex, Heading, Img } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { addDays, differenceInDays, formatISO, subDays, subSeconds } from 'date-fns';
-import { useTranslation } from 'next-i18next';
+import { useTranslation, withTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Buget } from '../../components/cost_overview/buget';
 import UserCard from '../../components/cost_overview/components/user';
 import { Cost } from '../../components/cost_overview/cost';
 import { Trend } from '../../components/cost_overview/trend';
+import { getCookie } from '@/utils/cookieUtils';
 
 function CostOverview() {
-  const { t } = useTranslation();
-  // const updateSource = useOverviewStore(state => state.updateSource)
-  // const billingItems = useOverviewStore(state => state.items)
+  const { t, i18n, ready } = useTranslation();
+  const cookie = getCookie('NEXT_LOCALE');
+  useEffect(() => {
+    i18n.changeLanguage(cookie);
+  }, [cookie, i18n]);
   const startTime = useOverviewStore((state) => state.startTime);
   const endTime = useOverviewStore((state) => state.endTime);
   const { NotEnoughModal } = useNotEnough();
 
-  const { data, isLoading, isSuccess, isError } = useQuery(
-    ['billing', { startTime, endTime }],
-    () => {
-      const start = startTime;
-      const end = subSeconds(addDays(endTime, 1), 1);
-      const delta = differenceInDays(end, start);
-      // console.log(delta, start, end);
-      const pre = subDays(start, delta);
-      // console.log(pre, start, end)
-      const spec: BillingSpec = {
-        startTime: formatISO(pre, { representation: 'complete' }),
-        // pre,
-        endTime: formatISO(end, { representation: 'complete' }),
-        // start,
-        page: 1,
-        pageSize: (delta + 1) * 48,
-        type: -1,
-        orderID: ''
-      };
-      return request<any, { data: BillingData }, { spec: BillingSpec }>('/api/billing', {
-        method: 'POST',
-        data: {
-          spec
-        }
-      });
-    }
-  );
+  const { data } = useQuery(['billing', { startTime, endTime }], () => {
+    const start = startTime;
+    const end = subSeconds(addDays(endTime, 1), 1);
+    const delta = differenceInDays(end, start);
+    const pre = subDays(start, delta);
+    const spec: BillingSpec = {
+      startTime: formatISO(pre, { representation: 'complete' }),
+      // pre,
+      endTime: formatISO(end, { representation: 'complete' }),
+      // start,
+      page: 1,
+      pageSize: (delta + 1) * 48,
+      type: -1,
+      orderID: ''
+    };
+    return request<any, { data: BillingData }, { spec: BillingSpec }>('/api/billing', {
+      method: 'POST',
+      data: {
+        spec
+      }
+    });
+  });
   const billingItems = useMemo(() => data?.data.status.item.filter((v, i) => i < 3) || [], [data]);
 
   return (
@@ -66,8 +64,8 @@ function CostOverview() {
           overflowY={'auto'}
         >
           <Flex wrap={'wrap'}>
-            <Flex  mb={'24px'} mr="24px" align={'center'}>
-              <Img src={bar_icon.src} w={'24px'} h={'24px'} mr='18px'></Img>
+            <Flex mb={'24px'} mr="24px" align={'center'}>
+              <Img src={bar_icon.src} w={'24px'} h={'24px'} mr="18px"></Img>
               <Heading size="lg">{t('SideBar.CostOverview')} </Heading>
             </Flex>
             <Box mb={'24px'}>
