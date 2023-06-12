@@ -36,11 +36,6 @@ function sealos_run_controller {
   # \ 1 > /dev/null
 }
 
-function sealos_run_service {
-  # run auth service
-  sealos run tars/auth.tar --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret" --env callbackUrl="$cloudDomain/login/callback" --env ssoEndpoint="login.$cloudDomain" --env casdoorMysqlRootPassword="$(tr -cd 'a-z0-9' </dev/urandom | head -c16)"
-  # \ 1 > /dev/null
-}
 
 function sealos_run_frontend {
   sealos run tars/frontend-desktop.tar --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret"
@@ -61,8 +56,6 @@ function install {
   kubectl apply -f manifests
   # sealos run controllers
   sealos_run_controller
-  # sealos run services
-  sealos_run_service
   # sealos run frontends
   sealos_run_frontend
 }
