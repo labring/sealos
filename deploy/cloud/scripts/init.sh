@@ -40,11 +40,9 @@ function sealos_run_controller {
 function sealos_run_frontend {
   sealos run tars/frontend-desktop.tar --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret"
 
-  sealos run tars/frontend-applaunchpad.tar --env cloudDomain=$cloudDomain --env ingressSecret="wildcard-secret"
+  sealos run tars/frontend-applaunchpad.tar --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret"
 
   sealos run tars/frontend-terminal.tar --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret"
-
-  sealos run tars/frontend-dbprovider.tar --env cloudDomain=$cloudDomain --env ingressSecret="wildcard-secret"
 }
 
 
