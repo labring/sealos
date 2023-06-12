@@ -68,6 +68,7 @@ func (sac *ServiceAccountConfig) applyServiceAccount(_ *rest.Config, client clie
 		}
 		return nil
 	})
+	sac.secretName = sa.Secrets[0].Name
 	return err
 }
 
@@ -75,7 +76,6 @@ func (sac *ServiceAccountConfig) applySecret(_ *rest.Config, client client.Clien
 	if sac.sa != nil {
 		return nil
 	}
-	sac.secretName = sac.getSecretName()
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      sac.secretName,
@@ -91,6 +91,9 @@ func (sac *ServiceAccountConfig) applySecret(_ *rest.Config, client client.Clien
 		secret.Annotations["sealos.io/user.expirationSeconds"] = strconv.Itoa(int(sac.expirationSeconds))
 		return nil
 	})
+	sac.sa = &v1.ServiceAccount{}
+	sac.sa.Name = sac.user
+	sac.sa.Namespace = sac.namespace
 	return err
 }
 
