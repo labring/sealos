@@ -4,7 +4,7 @@ import request from '@/service/request';
 import useSessionStore from '@/stores/session';
 import { formatMoney } from '@/utils/format';
 import { Box, Button, Flex, Image, Text } from '@chakra-ui/react';
-import { useQuery  } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import styles from './user.module.scss';
 
 import useOverviewStore from '@/stores/overview';
@@ -45,10 +45,8 @@ export default function UserCard() {
 
             <Image
               ml="auto"
-              src={
-                session?.user?.avatar
-              }
-              fallbackSrc='/sealos.svg'
+              src={session?.user?.avatar}
+              fallbackSrc="/sealos.svg"
               alt="user"
               width={'36px'}
               height={'36px'}

@@ -1,7 +1,7 @@
 import useSessionStore from '@/stores/session';
 import { Box, Flex, Link, Spinner, Text } from '@chakra-ui/react';
 import clsx from 'clsx';
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import styles from './index.module.scss';
 import SideBar from './sidebar';
@@ -42,7 +42,8 @@ export default function Layout({ children }: any) {
                 cloud.sealos.io
               </Link>
             </Text>
-          ) : (<></>
+          ) : (
+            <></>
             // <Spinner
             //   thickness="4px"
             //   speed="0.65s"

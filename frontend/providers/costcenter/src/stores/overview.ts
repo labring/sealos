@@ -13,7 +13,7 @@ import {
   isBefore,
   parseISO,
   subDays,
-  subSeconds,
+  subSeconds
 } from 'date-fns';
 import { INITAL_SOURCE } from '@/constants/billing';
 import { formatMoney } from '@/utils/format';
@@ -25,7 +25,7 @@ type OverviewState = {
   selectedMonth: number;
   selectedYear: number;
   selectedWeek: number;
-  balance:number;
+  balance: number;
   source: any[][];
   cpu: number;
   storage: number;
@@ -34,7 +34,7 @@ type OverviewState = {
   endTime: Date;
   preItems: BillingItem[];
   items: BillingItem[];
-  reCharge:boolean;
+  reCharge: boolean;
   setMonth: (month: number) => void;
   setYear: (year: number) => void;
   setWeek: (week: number) => void;
@@ -42,19 +42,18 @@ type OverviewState = {
   setEndTime: (time: Date) => void;
   setSource: (source: any[][]) => void;
   updateSource: () => void;
-  setBalance: (balance:number) => void;
-  setRecharge:(reCharge:boolean)=>void;
+  setBalance: (balance: number) => void;
+  setRecharge: (reCharge: boolean) => void;
 };
 
 const useOverviewStore = create<OverviewState>()(
   devtools(
-    // persist(
     immer((set, get) => ({
       selectedMonth: NOW_MONTH,
       selectedYear: NOW_YEAR,
       selectedWeek: NOW_WEEK,
-      reCharge:false,
-      balance:0,
+      reCharge: false,
+      balance: 0,
       cpu: -1,
       storage: -1,
       memory: -1,
@@ -63,7 +62,7 @@ const useOverviewStore = create<OverviewState>()(
       preItems: [],
       items: [],
       source: INITAL_SOURCE as any,
-      setRecharge:(reCharge)=>set({reCharge}),
+      setRecharge: (reCharge) => set({ reCharge }),
       setWeek: (week) => set({ selectedWeek: week }),
       setMonth: (month) => set({ selectedMonth: month }),
       setYear: (year) => set({ selectedYear: year }),
@@ -71,27 +70,12 @@ const useOverviewStore = create<OverviewState>()(
       // swithBy: (target: By) => set({ by: target }),
       setStartTime: (time) => set({ startTime: time }),
       setEndTime: (time) => set({ endTime: time }),
-      setBalance:(balance)=>set({balance}),
+      setBalance: (balance) => set({ balance }),
       updateSource: async () => {
-        // let start = new Date(get().selectedYear, get().selectedMonth);
-
-        // let end: Date;
-        // let pre: Date;
-        // if (get().by === By.month) {
-        //   end = addMonths(start, 1);
-        //   pre = subMonths(start, 1);
-        // } else {
-        //   // 保证是第一个周的周日
-        //   start = addWeeks(subDays(start, getDay(start)), get().selectedWeek);
-        //   end = addWeeks(start, 1);
-        //   pre = subWeeks(start, 1);
-        // }
         const start = get().startTime;
-        const end = subSeconds(addDays(get().endTime,1),1);
+        const end = subSeconds(addDays(get().endTime, 1), 1);
         const delta = differenceInDays(end, start);
-        // console.log(delta, start, end);
         const pre = subDays(start, delta);
-        // console.log(pre, start, end)
         const spec: BillingSpec = {
           startTime: formatISO(pre, { representation: 'complete' }),
           // pre,
@@ -129,10 +113,10 @@ const useOverviewStore = create<OverviewState>()(
             ...data.status.item
               .filter((item) => item.type === 0 && isAfter(parseISO(item.time), start))
               .map<[string, number, number, number, number]>((item) => [
-                format(parseISO(item.time),'yyyy-MM-dd'),
+                format(parseISO(item.time), 'yyyy-MM-dd'),
                 // getTime(parseISO(item.time)),
-                item.costs.cpu ||0,
-                item.costs.memory ||0,
+                item.costs.cpu || 0,
+                item.costs.memory || 0,
                 item.costs.storage || 0,
                 item.amount
               ])
@@ -164,10 +148,6 @@ const useOverviewStore = create<OverviewState>()(
         });
       }
     }))
-    // {
-    //   name: 'overview_store'
-    // }
-    // )
   )
 );
 

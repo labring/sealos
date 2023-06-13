@@ -33,9 +33,9 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       return jsonRes(resp, { data: paymentStatusResp });
     } else {
       throw new Error('payment not found');
-    } 
+    }
   } catch (error) {
     console.log(error);
-    jsonRes(resp, { code: 500, message: "pay error" });
+    jsonRes(resp, { code: 500, message: 'pay error' });
   }
 }

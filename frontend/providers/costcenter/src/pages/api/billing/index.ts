@@ -16,10 +16,10 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       return jsonRes(resp, { code: 401, message: 'user null' });
     }
     const namespace = 'ns-' + user.name;
-    const body = req.body
-    let spec: BillingSpec = body.spec
-    if(!spec ) {
-      return jsonRes(resp, {code: 400,error:'参数错误'})
+    const body = req.body;
+    let spec: BillingSpec = body.spec;
+    if (!spec) {
+      return jsonRes(resp, { code: 400, error: '参数错误' });
     }
     const hash = crypto.createHash('sha256').update(JSON.stringify(spec));
     const name = hash.digest('hex');
@@ -43,16 +43,16 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000));
     } finally {
       const { body } = await GetCRD(kc, meta, name);
-      
-      if(!('item' in (body as BillingData).status)) {
-        (body as BillingData).status.item = []
+
+      if (!('item' in (body as BillingData).status)) {
+        (body as BillingData).status.item = [];
       }
-      if(!('deductionAmount' in (body as BillingData).status)) {
+      if (!('deductionAmount' in (body as BillingData).status)) {
         (body as BillingData).status.deductionAmount = {
-          cpu:0,
-          memory:0,
-          storage:0
-        }
+          cpu: 0,
+          memory: 0,
+          storage: 0
+        };
       }
       return jsonRes(resp, {
         code: 200,
@@ -61,6 +61,6 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     }
   } catch (error) {
     console.log(error);
-    jsonRes(resp, { code: 500, error: 'get billing error'});
+    jsonRes(resp, { code: 500, error: 'get billing error' });
   }
 }
