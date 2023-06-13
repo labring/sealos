@@ -372,12 +372,8 @@ func (r *AdminerReconciler) syncDeployment(ctx context.Context, adminer *adminer
 		return err
 	}
 
-	if deployment.Status.ReadyReplicas != 0 {
-		adminer.Status.AvailableReplicas = deployment.Status.ReadyReplicas
-		return r.Status().Update(ctx, adminer)
-	}
-
-	return nil
+	adminer.Status.AvailableReplicas = deployment.Status.ReadyReplicas
+	return r.Status().Update(ctx, adminer)
 }
 
 func (r *AdminerReconciler) syncService(ctx context.Context, adminer *adminerv1.Adminer) error {
