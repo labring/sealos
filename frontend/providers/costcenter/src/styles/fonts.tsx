@@ -1,4 +1,4 @@
-import { Global } from '@emotion/react'
+import { Global } from '@emotion/react';
 
 const Fonts = () => (
   <Global
@@ -10,6 +10,6 @@ const Fonts = () => (
         src: url('/fonts/PingFang-SC-Regular.ttf');
       }`}
   />
-)
+);
 
-export default Fonts
+export default Fonts;

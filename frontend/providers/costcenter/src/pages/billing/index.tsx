@@ -25,9 +25,14 @@ import { LIST_TYPE } from '@/constants/billing';
 import SelectRange from '@/components/billing/selectDateRange';
 import useOverviewStore from '@/stores/overview';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useTranslation } from 'next-i18next';
-export default function Billing() {
-  const { t } = useTranslation();
+import { useTranslation, withTranslation } from 'next-i18next';
+import { getCookie } from '@/utils/cookieUtils';
+function Billing() {
+  const { t, i18n, ready } = useTranslation();
+  const cookie = getCookie('NEXT_LOCALE');
+  useEffect(() => {
+    i18n.changeLanguage(cookie);
+  }, [cookie, i18n]);
   const startTime = useOverviewStore((state) => state.startTime);
   const endTime = useOverviewStore((state) => state.endTime);
   const [selectType, setType] = useState<-1 | 0 | 1>(-1);
@@ -69,7 +74,7 @@ export default function Billing() {
 
   return (
     <Flex flexDirection="column" w="100%" h="100%" bg={'white'} p="24px">
-      <Flex  mr="24px" align={'center'}>
+      <Flex mr="24px" align={'center'}>
         <Img src={receipt_icon.src} w={'24px'} h={'24px'} mr={'18px'} dropShadow={'#24282C'}></Img>
         <Heading size="lg">{t('SideBar.BillingDetails')}</Heading>
       </Flex>
@@ -258,7 +263,7 @@ export default function Billing() {
     </Flex>
   );
 }
-
+export default Billing;
 export async function getServerSideProps(content: any) {
   const locale = content?.req?.cookies?.NEXT_LOCALE || 'zh';
   return {

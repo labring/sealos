@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       return jsonRes(resp, { code: 401, message: 'user null' });
     }
     const namespace = 'ns-' + user.name;
-    const name = 'prices'
+    const name = 'prices';
     const crdSchema = {
       apiVersion: `account.sealos.io/v1`,
       kind: 'PriceQuery',
@@ -22,7 +22,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         name,
         namespace
       },
-      spec:{}
+      spec: {}
     };
     const meta: CRDMeta = {
       group: 'account.sealos.io',

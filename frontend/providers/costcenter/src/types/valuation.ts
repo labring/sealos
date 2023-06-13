@@ -5,14 +5,14 @@ export type ValuationStandard = {
 };
 
 export type ValuationData = {
-    apiVersion: 'account.sealos.io/v1';
-    kind: 'PriceQuery';
-    metadata: any
-    spec: {};
-    status: {
-      billingRecords: {
-        price: number;
-        resourceType: string;
-      }[];
-    };
+  apiVersion: 'account.sealos.io/v1';
+  kind: 'PriceQuery';
+  metadata: any;
+  spec: {};
+  status: {
+    billingRecords: {
+      price: number;
+      resourceType: string;
+    }[];
+  };
 };

@@ -25,10 +25,8 @@ export function BillingTable({ data }: { data: BillingItem[] }) {
                   borderTopRightRadius: '10px',
                   background: '#F1F4F6'
                 }}
-
               >
                 {t(item)}
-
               </Th>
             ))}
           </Tr>
@@ -51,7 +49,11 @@ export function BillingTable({ data }: { data: BillingItem[] }) {
                       align={'center'}
                       justify={'space-evenly'}
                     >
-                      <Img src={!item.type ? lineDown.src : lineUp.src} w="13.14px" mr={'6px'}></Img>
+                      <Img
+                        src={!item.type ? lineDown.src : lineUp.src}
+                        w="13.14px"
+                        mr={'6px'}
+                      ></Img>
                       <Text>{!item.type ? t('Deduction') : t('Charge')}</Text>
                     </Flex>
                   </Flex>
