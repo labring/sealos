@@ -54,6 +54,46 @@ spec:
                   url:
                     type: string
                 type: object
+              displayType:
+                enum:
+                - normal
+                - more
+                - hidden
+                type: string
+              i18n:
+                additionalProperties:
+                  description: AppMeta Base Information
+                  properties:
+                    data:
+                      properties:
+                        desc:
+                          type: string
+                        url:
+                          type: string
+                      type: object
+                    displayType:
+                      enum:
+                      - normal
+                      - more
+                      - hidden
+                      type: string
+                    icon:
+                      type: string
+                    menuData:
+                      properties:
+                        helpDocs:
+                          type: string
+                        helpDropDown:
+                          type: boolean
+                        nameColor:
+                          type: string
+                      type: object
+                    name:
+                      type: string
+                    type:
+                      type: string
+                  type: object
+                type: object
               icon:
                 type: string
               menuData:
@@ -309,7 +349,7 @@ metadata:
   name: app-controller-manager
   namespace: app-system
 spec:
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       control-plane: controller-manager
