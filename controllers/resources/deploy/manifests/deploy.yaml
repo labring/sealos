@@ -58,6 +58,22 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - resourcequotas
   verbs:
   - get
@@ -95,32 +111,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - resources.sealos.io
-  resources:
-  - meterings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - resources.sealos.io
-  resources:
-  - meterings/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - resources.sealos.io
-  resources:
-  - meterings/status
-  verbs:
-  - get
-  - patch
-  - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
