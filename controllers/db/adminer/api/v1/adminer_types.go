@@ -54,7 +54,9 @@ type AdminerStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="Keepalived",type=string,JSONPath=".spec.keepalived"
+//+kubebuilder:printcolumn:name="Available",type=string,JSONPath=".status.availableReplicas"
 //+kubebuilder:printcolumn:name="Domain",type=string,JSONPath=".status.domain"
+//+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Adminer is the Schema for the adminers API
 type Adminer struct {
