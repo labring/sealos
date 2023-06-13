@@ -48,8 +48,11 @@ function sealos_run_frontend {
 
 function install {
   # read env
-  read_env etc/sealos/cloud.env  # mock tls
+  read_env etc/sealos/cloud.env
+  # mock tls
   mock_tls $cloudDomain
+  # add cert for cloud domain
+  sealos cert --alt-name="$cloudDomain"
   # kubectl apply namespace and secret
   kubectl apply -f manifests
   # sealos run controllers
