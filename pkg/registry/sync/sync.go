@@ -46,12 +46,12 @@ const (
 )
 
 type Options struct {
-	SystemContext *types.SystemContext
-	Source        string
-	Target        string
-	ReportWriter  io.Writer
-	Selection     copy.ImageListSelection
-	OmitError     bool
+	Source           string
+	Target           string
+	SelectionOptions []copy.ImageListSelection
+	OmitError        bool
+	SystemContext    *types.SystemContext
+	ReportWriter     io.Writer
 }
 
 func ToRegistry(ctx context.Context, opts *Options) error {
@@ -59,12 +59,11 @@ func ToRegistry(ctx context.Context, opts *Options) error {
 	dst := opts.Target
 	sys := opts.SystemContext
 	reportWriter := opts.ReportWriter
-	selection := opts.Selection
+
 	policyContext, err := getPolicyContext()
 	if err != nil {
 		return err
 	}
-	logger.Debug("syncing registry from %s to %s", src, dst)
 	repos, err := docker.SearchRegistry(ctx, sys, src, "", 1<<10)
 	if err != nil {
 		return err
@@ -75,6 +74,7 @@ func ToRegistry(ctx context.Context, opts *Options) error {
 	if reportWriter == nil {
 		reportWriter = io.Discard
 	}
+	logger.Debug("syncing repos %v from %s to %s", repos, src, dst)
 	for i := range repos {
 		named, err := parseRepositoryReference(fmt.Sprintf("%s/%s", src, repos[i].Name))
 		if err != nil {
@@ -92,21 +92,22 @@ func ToRegistry(ctx context.Context, opts *Options) error {
 				return err
 			}
 			ref := refs[j]
-			logger.Debug("syncing %s", destRef.DockerReference().String())
-			err = retry.RetryIfNecessary(ctx, func() error {
-				_, copyErr := copy.Image(ctx, policyContext, destRef, ref, &copy.Options{
-					SourceCtx:          sys,
-					DestinationCtx:     sys,
-					ImageListSelection: selection,
-					ReportWriter:       reportWriter,
-				})
-				return copyErr
-			}, getRetryOptions())
-			if err != nil {
-				if !opts.OmitError {
-					return err
+			for s := range opts.SelectionOptions {
+				logger.Debug("syncing %s with selection %v", destRef.DockerReference().String(), opts.SelectionOptions[s])
+				if err = retry.RetryIfNecessary(ctx, func() error {
+					_, copyErr := copy.Image(ctx, policyContext, destRef, ref, &copy.Options{
+						SourceCtx:          sys,
+						DestinationCtx:     sys,
+						ImageListSelection: opts.SelectionOptions[s],
+						ReportWriter:       reportWriter,
+					})
+					return copyErr
+				}, getRetryOptions()); err != nil {
+					if !opts.OmitError {
+						return err
+					}
+					logger.Warn("failed to copy image %s: %v", refs[j].DockerReference().String(), err)
 				}
-				logger.Warn("failed to copy image %s: %v", refs[j].DockerReference().String(), err)
 			}
 		}
 	}
