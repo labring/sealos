@@ -236,7 +236,7 @@ jobs:
         uses: peter-evans/create-or-update-comment@v1
         if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
         with:
-          issue-number: 251
+          issue-number: 359
           repository: labring-actions/cluster-image
           body: |
             /imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-service:${{ steps.prepare.outputs.tag_name }}

@@ -64,7 +64,7 @@ jobs:
         if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
         uses: peter-evans/create-or-update-comment@v1
         with:
-          issue-number: 251
+          issue-number: 359
           repository: labring-actions/cluster-image
           body: |
             /imagebuild_apps sealos ${{steps.get-current-tag.outputs.tag }}
