@@ -47,7 +47,7 @@ Sealos is a cloud operating system distribution based on the Kubernetes kernel. 
 
 | Terminal | App Launchpad |
 | :---: | :---: |
-| ![](/docs/4.0/img/terminal.jpg) | ![](/docs/4.0/img/app-launchpad-1.jpg) |
+| ![](/docs/4.0/img/terminal.webp) | ![](/docs/4.0/img/app-launchpad-1.webp) |
 | Database | Serverless |
 | ![](/docs/4.0/img/database.webp) | ![](/docs/4.0/img/laf.webp) |
 
