@@ -93,16 +93,20 @@ func ToRegistry(ctx context.Context, opts *Options) error {
 			}
 			ref := refs[j]
 			for s := range opts.SelectionOptions {
-				logger.Debug("syncing %s with selection %v", destRef.DockerReference().String(), opts.SelectionOptions[s])
+				selection := opts.SelectionOptions[s]
+				logger.Debug("syncing %s with selection %v", destRef.DockerReference().String(), selection)
 				if err = retry.RetryIfNecessary(ctx, func() error {
 					_, copyErr := copy.Image(ctx, policyContext, destRef, ref, &copy.Options{
 						SourceCtx:          sys,
 						DestinationCtx:     sys,
-						ImageListSelection: opts.SelectionOptions[s],
+						ImageListSelection: selection,
 						ReportWriter:       reportWriter,
 					})
 					return copyErr
 				}, getRetryOptions()); err != nil {
+					if strings.Contains(err.Error(), "manifest unknown") && selection == copy.CopyAllImages {
+						continue
+					}
 					if !opts.OmitError {
 						return err
 					}
