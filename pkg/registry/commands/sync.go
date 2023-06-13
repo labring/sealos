@@ -73,15 +73,15 @@ func runSync(cmd *cobra.Command, source, dst string, opts globalOptions) error {
 		return err
 	}
 
-	sys := opts.newSystemContext()
-
 	syncOpts := &sync.Options{
-		SystemContext: sys,
+		SystemContext: opts.newSystemContext(),
 		Source:        sep,
 		Target:        dst,
 		ReportWriter:  out,
-		Selection:     imageListSelection,
-		OmitError:     true,
+		SelectionOptions: []imagecopy.ImageListSelection{
+			imageListSelection,
+		},
+		OmitError: true,
 	}
 	if err := sync.ToRegistry(ctx, syncOpts); err != nil {
 		return err
