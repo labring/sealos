@@ -25,7 +25,7 @@ export default function SideBar() {
     {
       id: 'CostOverview',
       url: '/cost_overview',
-      value: t('SideBar.CostOverview'),
+      value: 'SideBar.CostOverview',
       icon: bar_icon,
       aicon: bar_a_icon
     },

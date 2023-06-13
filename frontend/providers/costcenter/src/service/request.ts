@@ -2,6 +2,7 @@
 import { ApiResp } from '@/types/api';
 import useSessionStore from '@/stores/session';
 import axios, { AxiosRequestConfig, AxiosResponse, RawAxiosRequestHeaders } from 'axios';
+import { ValuationData } from '@/types/valuation';
 const request = axios.create({
   baseURL: '/',
   withCredentials: true,

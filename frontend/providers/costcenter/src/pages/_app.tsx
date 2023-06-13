@@ -6,7 +6,7 @@ import '@/styles/globals.scss';
 import { ChakraProvider } from '@chakra-ui/react';
 import { persistQueryClient, removeOldestQuery } from '@tanstack/react-query-persist-client';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Hydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { AppProps } from 'next/app';
 import Fonts from '@/styles/fonts';
 import Router from 'next/router';
@@ -14,7 +14,7 @@ import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 import 'react-day-picker/dist/style.css';
 import { appWithTranslation, i18n } from 'next-i18next';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { setCookie } from '@/utils/cookieUtils';
 
 const queryClient = new QueryClient({
@@ -69,7 +69,7 @@ const App = ({ Component, pageProps }: AppProps) => {
       sealosApp.removeAppEventListen(EVENT_NAME.CHANGE_I18N);
     };
   }, []);
-
+  
   return (
     <QueryClientProvider client={queryClient}>
       <ChakraProvider theme={theme}>

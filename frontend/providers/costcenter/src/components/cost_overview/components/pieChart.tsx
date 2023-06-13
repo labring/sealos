@@ -23,34 +23,11 @@ echarts.use([
   DatasetComponent
 ]);
 
-export default function CostChart() {
+export default function CostChart({ data }: { data: BillingData['status']['deductionAmount'] }) {
   const { t } = useTranslation();
-  const startTime = useOverviewStore((state) => state.startTime);
-  const endTime = useOverviewStore((state) => state.endTime);
-  const { data } = useQuery(['billing', { startTime, endTime }], () => {
-    const start = startTime;
-    const end = subSeconds(addDays(endTime, 1), 1);
-    const delta = differenceInDays(end, start);
-    const spec: BillingSpec = {
-      startTime: formatISO(start, { representation: 'complete' }),
-      // pre,
-      endTime: formatISO(end, { representation: 'complete' }),
-      // start,
-      page: 1,
-      pageSize: (delta + 1) * 48,
-      type: -1,
-      orderID: ''
-    };
-    return request<any, { data: BillingData }, { spec: BillingSpec }>('/api/billing', {
-      method: 'POST',
-      data: {
-        spec
-      }
-    });
-  });
-  const cpu = useMemo(() => data?.data.status.deductionAmount.cpu || 0, [data]);
-  const memory = useMemo(() => data?.data.status.deductionAmount.memory || 0, [data]);
-  const storage = useMemo(() => data?.data.status.deductionAmount.storage || 0, [data]);
+  const cpu = useMemo(() => data.cpu || 0, [data]);
+  const memory = useMemo(() => data.memory || 0, [data]);
+  const storage = useMemo(() => data.storage || 0, [data]);
   const radius = useBreakpointValue({
     xl: ['45%', '70%'],
     lg: ['45%', '70%'],

@@ -2,7 +2,7 @@
 import useRecharge from '@/hooks/useRecharge';
 import request from '@/service/request';
 import useSessionStore from '@/stores/session';
-import { formatMoney } from '@/utils/format';
+import { displayMoney, formatMoney } from '@/utils/format';
 import { Box, Button, Flex, Image, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import styles from './user.module.scss';
@@ -58,7 +58,7 @@ export default function UserCard() {
           </Text>
           <Flex alignItems="center">
             <Text fontSize="24px" fontWeight="500">
-              ¥ {formatMoney(balance)}
+              ¥ {displayMoney(formatMoney(balance))}
             </Text>
             <Button ml="auto" w="78px" h="32px" bg={'white'} color="black" onClick={rechargeOpen}>
               {t('Charge')}
