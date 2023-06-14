@@ -40,10 +40,6 @@ type UserExpirationReconciler struct {
 	finalizer *controller.Finalizer
 }
 
-//+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=secrets/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=core,resources=secrets/finalizers,verbs=update
-
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
