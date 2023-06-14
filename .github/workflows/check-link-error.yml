@@ -3,6 +3,7 @@ name: Check-LinkError
 on:
   - push
   - pull_request_target
+  - workflow_dispatch
 
 jobs:
   linkChecker:
@@ -23,8 +24,10 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Link Checker
         run: |
+          set +e
           lychee --verbose --format 'markdown' './**/*.md'
           exit_code=$?
+          set -e
           echo "lychee_exit_code=$exit_code" >> $GITHUB_ENV
 
       - name: Output the result
@@ -38,7 +41,7 @@ jobs:
           cat report.md
       - name: Gh Rebot for Sealos
         uses: labring/gh-rebot@v0.0.6
-        if: ${{ (github.event_name != 'push') }}
+        if: ${{ (github.event_name == 'pull_request_target') }}
         with:
           version: v0.0.6
         env:
