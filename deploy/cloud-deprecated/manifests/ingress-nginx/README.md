@@ -45,6 +45,5 @@ May be there are new taints like *`NoSchedule`*, just delete them all.
 
 ## REF:
 
-* https://www.cnblogs.com/ssgeek/p/12421917.html
 * https://kubernetes.github.io/ingress-nginx/troubleshooting/
 
