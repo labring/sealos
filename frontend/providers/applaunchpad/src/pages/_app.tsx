@@ -12,7 +12,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import throttle from 'lodash/throttle';
 import { useGlobalStore } from '@/store/global';
 import { useLoading } from '@/hooks/useLoading';
-import { getServiceEnv, SEALOS_DOMAIN } from '@/store/static';
+import { getServiceEnv, getUserPrice, SEALOS_DOMAIN } from '@/store/static';
 import { useRouter } from 'next/router';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
@@ -48,8 +48,10 @@ const App = ({ Component, pageProps }: AppProps) => {
   });
 
   useEffect(() => {
-    getServiceEnv();
     NProgress.start();
+
+    getServiceEnv();
+    getUserPrice();
     const response = createSealosApp();
 
     (async () => {

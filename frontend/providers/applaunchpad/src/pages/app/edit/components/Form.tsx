@@ -36,6 +36,7 @@ import Tabs from '@/components/Tabs';
 import Tip from '@/components/Tip';
 import MySelect from '@/components/Select';
 import { useTranslation } from 'next-i18next';
+import PriceBox from './PriceBox';
 import dynamic from 'next/dynamic';
 
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
@@ -261,6 +262,13 @@ const Form = ({
               </Box>
             ))}
           </Box>
+          <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>
+            <PriceBox
+              cpu={getValues('cpu')}
+              memory={getValues('memory')}
+              storage={getValues('storeList').reduce((sum, item) => sum + item.value, 0)}
+            />
+          </Box>
         </Box>
 
         <Box
@@ -455,8 +463,8 @@ const Form = ({
                         placeholder="hpa对象"
                         value={getValues('hpa.target')}
                         list={[
-                          { id: 'cpu', label: 'CPU value' },
-                          { id: 'memory', label: 'Memory value' }
+                          { id: 'cpu', label: 'CPU' },
+                          { id: 'memory', label: 'Memory' }
                         ]}
                         onchange={(val: any) => setValue('hpa.target', val)}
                       />

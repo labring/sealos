@@ -9,7 +9,6 @@ import {
   ModalCloseButton,
   Button,
   FormControl,
-  FormErrorMessage,
   Box,
   Textarea,
   Input
@@ -39,7 +38,7 @@ const ConfigmapModal = ({
   closeCb: () => void;
 }) => {
   const { t } = useTranslation();
-  const type = useMemo(() => (!!defaultValue.id ? 'create' : 'edit'), [defaultValue]);
+  const type = useMemo(() => (!defaultValue.id ? 'create' : 'edit'), [defaultValue]);
   const {
     register,
     handleSubmit,
@@ -49,10 +48,10 @@ const ConfigmapModal = ({
   });
   const textMap = {
     create: {
-      title: '添加ConfigMap'
+      title: 'Add'
     },
     edit: {
-      title: '修改ConfigMap'
+      title: 'Update'
     }
   };
 
@@ -61,7 +60,7 @@ const ConfigmapModal = ({
       <Modal isOpen onClose={closeCb}>
         <ModalOverlay />
         <ModalContent maxH={'90vh'} maxW={'90vw'} minW={'600px'} w={'auto'}>
-          <ModalHeader>{textMap[type].title}</ModalHeader>
+          <ModalHeader>{t(textMap[type].title)} ConfigMap</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <MyFormControl showError errorText={errors.mountPath?.message}>

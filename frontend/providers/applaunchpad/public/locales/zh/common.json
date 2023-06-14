@@ -117,5 +117,8 @@
   "Image address": "镜像仓库地址",
   "https": "https",
   "grpcs": "grpcs",
-  "websocket": "websocket"
+  "websocket": "websocket",
+  "TotalPrice": "总价",
+  "Day": "天",
+  "AnticipatedPrice": "预估价格"
 }

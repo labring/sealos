@@ -141,7 +141,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               </>
             ) : (
               <Box flex={'1 0 0'} w={0} userSelect={'none'} color={'black'}>
-                {t('未开启')}
+                {t('Not Enabled')}
               </Box>
             )}
           </Flex>
