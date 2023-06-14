@@ -205,7 +205,6 @@ func (r *UserReconciler) syncNamespace(ctx context.Context, user *userv1.User) c
 	}
 	condition = helper.GetCondition(user.Status.Conditions, condition)
 	defer r.saveCondition(user, condition)
-	userName := user.Annotations[userAnnotationOwnerKey]
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		var change controllerutil.OperationResult
 		var err error
@@ -223,14 +222,13 @@ func (r *UserReconciler) syncNamespace(ctx context.Context, user *userv1.User) c
 			r.Logger.V(1).Info("define namespace User namespace is created", "isCreated", isCreated, "namespace", ns.Name)
 		}
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, ns, func() error {
+			ns.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
+			ns.Labels = config.SetPodSecurity(ns.Labels)
 			if !isCreated {
 				if err = controllerutil.SetControllerReference(user, ns, r.Scheme); err != nil {
 					return err
 				}
 			}
-			ns.Annotations = map[string]string{userAnnotationOwnerKey: userName}
-			ns.Labels = config.SetPodSecurity(ns.Labels)
-
 			return nil
 		}); err != nil {
 			return fmt.Errorf("unable to create namespace by User: %w", err)
@@ -259,7 +257,6 @@ func (r *UserReconciler) syncRole(ctx context.Context, user *userv1.User) contex
 	}
 	condition = helper.GetCondition(user.Status.Conditions, condition)
 	defer r.saveCondition(user, condition)
-	userName := user.Annotations[userAnnotationOwnerKey]
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		var change controllerutil.OperationResult
 		var err error
@@ -268,7 +265,7 @@ func (r *UserReconciler) syncRole(ctx context.Context, user *userv1.User) contex
 		role.Namespace = config.GetUsersNamespace(user.Name)
 		role.Labels = map[string]string{}
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, role, func() error {
-			role.Annotations = map[string]string{userAnnotationOwnerKey: userName}
+			role.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
 			role.Rules = config.GetUserRole()
 			return controllerutil.SetControllerReference(user, role, r.Scheme)
 		}); err != nil {
@@ -297,7 +294,6 @@ func (r *UserReconciler) syncRoleBinding(ctx context.Context, user *userv1.User)
 	}
 	condition = helper.GetCondition(user.Status.Conditions, condition)
 	defer r.saveCondition(user, condition)
-	userName := user.Annotations[userAnnotationOwnerKey]
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		var change controllerutil.OperationResult
 		var err error
@@ -306,7 +302,7 @@ func (r *UserReconciler) syncRoleBinding(ctx context.Context, user *userv1.User)
 		roleBinding.Namespace = config.GetUsersNamespace(user.Name)
 		roleBinding.Labels = map[string]string{}
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, roleBinding, func() error {
-			roleBinding.Annotations = map[string]string{userAnnotationOwnerKey: userName}
+			roleBinding.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
 			roleBinding.RoleRef = v12.RoleRef{
 				APIGroup: v12.GroupName,
 				Kind:     "Role",
@@ -345,7 +341,6 @@ func (r *UserReconciler) syncServiceAccount(ctx context.Context, user *userv1.Us
 	condition = helper.GetCondition(user.Status.Conditions, condition)
 	ctx = context.WithValue(ctx, ctxKey("reNew"), false)
 	defer r.saveCondition(user, condition)
-	userName := user.Annotations[userAnnotationOwnerKey]
 	sa := &v1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      user.Name,
@@ -371,7 +366,7 @@ func (r *UserReconciler) syncServiceAccount(ctx context.Context, user *userv1.Us
 		}
 		secretName := kubeconfig.SecretName(user.Name)
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, sa, func() error {
-			sa.Annotations = map[string]string{userAnnotationOwnerKey: userName}
+			sa.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
 			if len(sa.Secrets) == 0 {
 				sa.Secrets = []v1.ObjectReference{
 					{
