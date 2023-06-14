@@ -1,13 +1,15 @@
-import Cookies, { CookieAttributes } from 'js-cookie';
+import Cookies from 'js-cookie';
 
-export const setCookie = (key: string, value: string, options?: CookieAttributes) => {
-  Cookies.set(key, value, options);
+export const LANG_KEY = 'NEXT_LOCALE_LANG';
+
+export const setLangStore = (value: string) => {
+  return Cookies.set(LANG_KEY, value, { expires: 30, sameSite: 'None', secure: true });
 };
 
-export const getCookie = (key: string) => {
-  return Cookies.get(key);
+export const getLangStore = () => {
+  return Cookies.get(LANG_KEY);
 };
 
-export const removeCookie = (key: string) => {
-  Cookies.remove(key);
+export const removeLangStore = () => {
+  Cookies.remove(LANG_KEY);
 };
