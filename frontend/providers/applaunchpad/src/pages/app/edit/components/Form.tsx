@@ -733,9 +733,7 @@ const Form = ({
                   <Divider my={'24px'} bg={'myGray.100'} />
 
                   <Box>
-                    <Box className={styles.formSecondTitle}>
-                      Configmap {t('Configuration File')}
-                    </Box>
+                    <Box className={styles.formSecondTitle}>{t('Configuration File')}</Box>
                     {configMaps.map((item, index) => (
                       <Flex key={item.id} _notLast={{ mb: 5 }} alignItems={'center'}>
                         <Flex
@@ -782,7 +780,7 @@ const Form = ({
                       leftIcon={<MyIcon name="plus" />}
                       w={'320px'}
                     >
-                      {t('Add')} configmap
+                      {t('Add')} {t('Configuration File')}
                     </Button>
                   </Box>
 

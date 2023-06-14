@@ -120,5 +120,22 @@
   "websocket": "websocket",
   "TotalPrice": "总价",
   "Day": "天",
-  "AnticipatedPrice": "预估价格"
+  "AnticipatedPrice": "预估价格",
+  "Pods List": "实例列表",
+  "Number of Instances": "实例数",
+  "Pod Name": "实例名",
+  "Restarts Num": "重启次数",
+  "Age": "启动时长",
+  "Items": "个实例",
+  "Mount Path Auth": "挂载路径需满足: /^[0-9a-zA-Z_/][0-9a-zA-Z_/.-]*[0-9a-zA-Z_/]$/",
+  "File Name": "文件名",
+  "Filename can not empty": "文件名不能为空",
+  "File Value can not empty": "文件值不能为空",
+  "ConfigMap Conflict": "ConfigMap Path Conflict",
+  "Storage path can not empty": "挂载路径不能为空",
+  "Storage Range": "容量范围",
+  "Storage Value can not empty": "容量不能为空",
+  "Min Storage Value": "容量最小为",
+  "Max Storage Value": "容量最大为",
+  "Can not change storage path": "不允许修改挂载路径"
 }

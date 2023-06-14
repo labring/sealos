@@ -237,7 +237,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                 _hover={{ backgroundColor: 'transparent' }}
               >
                 <Box flex={1} color={'blackAlpha.800'}>
-                  ConfigMap {t('Configuration File')}
+                  {t('Configuration File')}
                 </Box>
                 <AccordionIcon />
               </AccordionButton>
