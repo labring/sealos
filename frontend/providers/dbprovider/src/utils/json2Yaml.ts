@@ -4,6 +4,7 @@ import { str2Num } from '@/utils/tools';
 import { DBTypeEnum, DBComponentNameMap } from '@/constants/db';
 import { crLabelKey } from '@/constants/db';
 import { getUserNamespace } from './user';
+import dayjs from 'dayjs';
 
 export const json2CreateCluster = (data: DBEditType) => {
   const resources = {
@@ -353,7 +354,7 @@ export const json2VerticalScale = (data: DBEditType) => {
     apiVersion: 'apps.kubeblocks.io/v1alpha1',
     kind: 'OpsRequest',
     metadata: {
-      name: 'ops-verticalscaling',
+      name: `ops-verticalscaling-${dayjs().format('YYYYMMDDHHmmss')}`,
       labels: {
         [crLabelKey]: data.dbName
       }
@@ -387,7 +388,7 @@ export const json2VolumeExpansion = ({ dbName, storage, dbType }: DBEditType) =>
     apiVersion: 'apps.kubeblocks.io/v1alpha1',
     kind: 'OpsRequest',
     metadata: {
-      name: 'ops-volume-expansion',
+      name: `ops-volume-expansion-${dayjs().format('YYYYMMDDHHmmss')}`,
       labels: {
         [crLabelKey]: dbName
       }
@@ -417,7 +418,7 @@ export const json2Upgrade = ({ dbName, dbVersion }: DBEditType) => {
     apiVersion: 'apps.kubeblocks.io/v1alpha1',
     kind: 'OpsRequest',
     metadata: {
-      name: 'ops-upgrade',
+      name: `ops-upgrade-${dayjs().format('YYYYMMDDHHmmss')}`,
       labels: {
         [crLabelKey]: dbName
       }
@@ -438,7 +439,7 @@ export const json2StartOrStop = ({ dbName, type }: { dbName: string; type: 'Star
     apiVersion: 'apps.kubeblocks.io/v1alpha1',
     kind: 'OpsRequest',
     metadata: {
-      name: 'ops-stop',
+      name: `ops-stop-${dayjs().format('YYYYMMDDHHmmss')}`,
       labels: {
         [crLabelKey]: dbName
       }
@@ -456,7 +457,7 @@ export const json2Restart = ({ dbName, dbType }: { dbName: string; dbType: DBTyp
     apiVersion: 'apps.kubeblocks.io/v1alpha1',
     kind: 'OpsRequest',
     metadata: {
-      name: 'ops-restart',
+      name: `ops-restart-${dayjs().format('YYYYMMDDHHmmss')}`,
       labels: {
         [crLabelKey]: dbName
       }
