@@ -22,8 +22,6 @@ Git with a cup of tea! Painless self-hosted all-in-one software development serv
 
 - Basic configuration:
 
-  
-
   - Application name (custom): gitea
   - Image name (default latest version): gitea/gitea:latest-rootless
   - CPU (recommended): 1 Core
@@ -31,15 +29,11 @@ Git with a cup of tea! Painless self-hosted all-in-one software development serv
 
 - Deployment mode:
 
-  
-  
   - Number of instances (custom): 1
 
 ![](../images/gitea-3.png)
 
 - Network configuration:
-
-  
 
   - Container  port: 3000
   - Accessible to the Public: enabled
@@ -48,12 +42,8 @@ Git with a cup of tea! Painless self-hosted all-in-one software development serv
 
 - Advanced configuration:
 
-  
-
   - Custom local storage, persist Gitea data (recommended 1 G).
-
-
-
+  
 ![](../images/gitea-5.png)
 
 ## Step 5: Deploy the application
@@ -76,14 +66,11 @@ Git with a cup of tea! Painless self-hosted all-in-one software development serv
 
 - Basic configuration:
 
-  
-
   - Cluster type: mysql
   - Database version: ac-mysql-8.0.30
   - CPU (recommended): 1 Core
   - Memory (recommended): 1 G
-
-
+  
 ![](../images/gitea-11.png)
 
 - After deployment is successful, enter the details page to view the MySQL connection information
@@ -110,16 +97,13 @@ Create the database needed for Gitea
 
 - When the STATUS is Running, you can directly access the external address.
 
-
 ![](../images/gitea-7.png)
 
 - After accessing the external address, enter the configuration page and configure according to the details of the MySQL just created
 
-
 ![](../images/gitea-15.png)
 
 - After configuring, click Install, wait for a while and you can enter the login page, deployment successful!
-
 
 ![](../images/gitea-16.png)
 
