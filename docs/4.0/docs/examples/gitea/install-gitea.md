@@ -1,119 +1,114 @@
-# 快速安装Gitea
+# Quick Installation of Gitea
 
-Gitea 是一个自己托管的Git服务程序。他和GitHub, Bitbucket or Gitlab等比较类似。Gitea的首要目标是创建一个极易安装，运行非常快速，安装和使用体验良好的自建 Git 服务。
+Gitea is a self-hosted Git service program. It is similar to GitHub, Bitbucket, or Gitlab. Gitea's primary goal is to create a self-hosted Git service that is extremely easy to install, runs very fast, and has a good installation and usage experience.
 
-## 步骤 1：登陆Sealos
+## Step 1: Log in to Sealos
 
-- 进入[sealos](https://cloud.sealos.io/)官网
+- Go to the [sealos](https://cloud.sealos.io/) official website
 
-![](images/gitea-0.png)
+![](../images/gitea-0.png)
 
-## 步骤 2：打开 「应用管理」 应用
+## Step 2: Open the App Launchpad 
 
-![](images/gitea-1.png)
+![](../images/gitea-1.png)
 
-## 步骤 3：新建应用
+## Step 3: Create a new application
 
-- 在 「应用管理」 中，点击「新建应用」来创建一个新的应用。
+- In App Launchpad, click "Create New Application" to create a new application.
 
-![](images/gitea-2.png)
+![](../images/gitea-2.png)
 
-## 步骤 4：应用部署
+## Step 4: Application deployment
 
-- 基础配置：
+- Basic configuration:
 
-  - 应用名称（自定义）：gitea
-  - 镜像名（默认最新版本）：gitea/gitea:latest-rootless
-  - CPU（推荐）：1 Core
-  - 内存（推荐）：1 G
+  - Application name (custom): gitea
+  - Image name (default latest version): gitea/gitea:latest-rootless
+  - CPU (recommended): 1 Core
+  - Memory (recommended): 1 G
+- Deployment mode:
 
-- 部署模式：
+  - Number of instances (custom): 1
 
-  - 实例数（自定义）：1
+![](../images/gitea-3.png)
 
-  ![](images/gitea-3.png)
+- Network configuration:
+  - Container  port: 3000
+  - Accessible to the Public: enabled
 
-- 网络配置：
+![](../images/gitea-4.png)
 
-  - 容器暴露端口：3000
-  - 外网访问：开启
+Advanced configuration:
 
-  ![](images/gitea-4.png)
+- Custom local storage, persist Gitea data (recommended 1 G).
 
-- 高级配置：
-  - 自定义本地存储，持久化 Gitea的数据（推荐 1 G）。
-  - ![](images/gitea-5.png)
 
-## 步骤 5：部署应用
+![](../images/gitea-5.png)
 
-- 点击「部署应用」开始部署应用。
+## Step 5: Deploy the application
 
-![](images/gitea-6.png)
+- Click「Deploy Application」 to start deploying the application.![](images/gitea-6.png)
 
-## 步骤6：配置数据库
+## Step 6: Configure the database
 
-- #### 通过sealos为gitea配置MySQL数据库
+- #### Configure MySQL database for Gitea via Sealos
 
-  - 进入Database
+  - Click Database
 
-![](images/gitea-9.png)
+![](../images/gitea-9.png)
 
-- 新建数据库
+- Create a new database
 
-![](images/gitea-10.png)
+![](../images/gitea-10.png)
 
-- 部署集群
 
-- 基础配置：
 
-  - 集群类型：mysql
-  - 数据库版本：ac-mysql-8.0.30
-  - CPU（推荐）：1 Core
-  - 内存（推荐）：1 G
+- Basic configuration:
+  - Cluster type: mysql
+  - Database version: ac-mysql-8.0.30
+  - CPU (recommended): 1 Core
+  - Memory (recommended): 1 G
 
-  
 
-![](images/gitea-11.png)
+![](../images/gitea-11.png)
 
-- 部署成功后进入详情页面查看mysql连接信息
+- After deployment is successful, enter the details page to view the MySQL connection information
 
-![](images/gitea-12.png)
+![](../images/gitea-12.png)
 
-- 点击一键连接进入mysql终端连接
+- Click "One-click Connection" to enter the MySQL terminal connection
 
-  
+![](../images/gitea-13.png)
 
-![](images/gitea-13.png)
-
-- 执行
+- Execute
 
 ```sql
 CREATE DATABASE giteadb CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci';
 ```
 
-创建gitea所需要的数据库
+Create the database needed for Gitea
 
-![](images/gitea-14.png)
+![](../images/gitea-14.png)
 
-## 步骤 7：访问应用
+## Step 7: Access the application
 
-- 点击「App Launchpad」查看，当应用的 STATUS 由 Pending 变为 Running，则表明该应用已成功启动。
+- Click 「App Launchpad」 to view.When the application's STATUS changes from Pending to Running, it means the application has started successfully.
 
-- 当 STATUS 为 Running，即可直接访问外网地址。
+- When the STATUS is Running, you can directly access the external address.
 
-  ![](images/gitea-7.png)
-
-  
-
-- 访问外网地址后进入到配置页面，根据刚刚创建的mysql的详情页面进行配置
+  ![](../images/gitea-7.png)
 
   
 
-![](images/gitea-15.png)
+- After accessing the external address, enter the configuration page and configure according to the details of the MySQL just created
 
-- 配置好后点击安装，等待一会便可进入到登陆页面，部署成功！
+  
 
-  ![](images/gitea-16.png)
+![](../images/gitea-15.png)
 
-- ![](images/gitea-17.png)
+After configuring, click Install, wait for a while and you can enter the login page, deployment successful!
+
+![](../images/gitea-16.png)
+
+![](../images/gitea-17.png)
 
