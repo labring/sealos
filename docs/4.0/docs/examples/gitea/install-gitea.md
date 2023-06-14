@@ -4,7 +4,7 @@ Gitea is a self-hosted Git service program. It is similar to GitHub, Bitbucket, 
 
 ## Step 1: Log in to Sealos
 
-- Go to the [sealos](https://cloud.sealos.io/) official website
+- Go to the [Sealos](https://cloud.sealos.io/) official website
 
 ![](../images/gitea-0.png)
 

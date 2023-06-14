@@ -1,10 +1,10 @@
-# 快速安装Gitea
+# 快速安装 Gitea
 
-Gitea 是一个自己托管的Git服务程序。他和GitHub, Bitbucket or Gitlab等比较类似。Gitea的首要目标是创建一个极易安装，运行非常快速，安装和使用体验良好的自建 Git 服务。
+Gitea 是一个自己托管的 Git 服务程序。他和 GitHub, Bitbucket or Gitlab 等比较类似。Gitea 的首要目标是创建一个极易安装，运行非常快速，安装和使用体验良好的自建 Git 服务。
 
-## 步骤 1：登陆Sealos
+## 步骤 1：登陆 Sealos
 
-- 进入[sealos](https://cloud.sealos.io/)官网
+- 进入 [Sealos](https://cloud.sealos.io/) 官网
 
 ![](../images/gitea-0.png)
 
@@ -41,8 +41,9 @@ Gitea 是一个自己托管的Git服务程序。他和GitHub, Bitbucket or Gitla
   ![](../images/gitea-4.png)
 
 - 高级配置：
-  - 自定义本地存储，持久化 Gitea的数据（推荐 1 G）。
-  - ![](../images/gitea-5.png)
+  - 自定义本地存储，持久化 Gitea 的数据（推荐 1 G）。
+
+![](../images/gitea-5.png)
 
 ## 步骤 5：部署应用
 
@@ -52,9 +53,9 @@ Gitea 是一个自己托管的Git服务程序。他和GitHub, Bitbucket or Gitla
 
 ## 步骤6：配置数据库
 
-- #### 通过sealos为gitea配置MySQL数据库
+- #### 通过 Sealos 为 Gitea 配置Mysql数据库
 
-  - 进入Database
+  - 进入 Database
 
 ![](../images/gitea-9.png)
 
@@ -75,11 +76,11 @@ Gitea 是一个自己托管的Git服务程序。他和GitHub, Bitbucket or Gitla
 
 ![](../images/gitea-11.png)
 
-- 部署成功后进入详情页面查看mysql连接信息
+- 部署成功后进入详情页面查看 Mysql 连接信息
 
 ![](../images/gitea-12.png)
 
-- 点击一键连接进入mysql终端连接
+- 点击一键连接进入 Mysql 终端连接
 
   
 
@@ -91,7 +92,7 @@ Gitea 是一个自己托管的Git服务程序。他和GitHub, Bitbucket or Gitla
 CREATE DATABASE giteadb CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci';
 ```
 
-创建gitea所需要的数据库
+创建 Gitea 所需要的数据库
 
 ![](../images/gitea-14.png)
 
@@ -105,7 +106,7 @@ CREATE DATABASE giteadb CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci';
 
   
 
-- 访问外网地址后进入到配置页面，根据刚刚创建的mysql的详情页面进行配置
+- 访问外网地址后进入到配置页面，根据刚刚创建的 Mysql 的详情页面进行配置
 
   
 
