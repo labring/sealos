@@ -121,6 +121,12 @@ func ToRegistry(ctx context.Context, opts *Options) error {
 func getRetryOptions() *retry.RetryOptions {
 	return &retry.RetryOptions{
 		MaxRetry: 3,
+		IsErrorRetryable: func(err error) bool {
+			if strings.Contains(err.Error(), "500 Internal Server Error") {
+				return true
+			}
+			return retry.IsErrorRetryable(err)
+		},
 	}
 }
 
