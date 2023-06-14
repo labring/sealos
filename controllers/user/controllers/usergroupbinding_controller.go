@@ -18,11 +18,13 @@ package controllers
 
 import (
 	"context"
-	"strings"
 
 	"github.com/go-logr/logr"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -55,9 +57,26 @@ func (r *UserGroupBindingReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	if err := r.Get(ctx, req.NamespacedName, userGroupBinding); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	//ugn
-	if !strings.HasPrefix(userGroupBinding.Name, "ugn") {
-		return ctrl.Result{}, nil
+	if userGroupBinding.Subject.Name != "" && userGroupBinding.Subject.Kind == "Namespace" {
+		userName := userGroupBinding.Annotations[userAnnotationOwnerKey]
+		if userName == "" {
+			return ctrl.Result{}, nil
+		}
+		user := &userv1.User{}
+		if err := r.Get(ctx, client.ObjectKey{Name: userName}, user); err != nil {
+			return ctrl.Result{}, err
+		}
+		ns := &v1.Namespace{}
+		if err := r.Get(ctx, client.ObjectKey{Name: userGroupBinding.Subject.Name}, ns); err != nil {
+			return ctrl.Result{}, err
+		}
+		_, err := controllerutil.CreateOrUpdate(ctx, r.Client, ns, func() error {
+			ns.SetOwnerReferences([]metav1.OwnerReference{})
+			return controllerutil.SetControllerReference(user, ns, r.Scheme)
+		})
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 	if userGroupBinding.DeletionTimestamp.IsZero() {
 		if len(userGroupBinding.Finalizers) == 0 && len(userGroupBinding.OwnerReferences) == 0 {
