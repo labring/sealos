@@ -52,13 +52,13 @@ type NamespaceReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	r.Logger.V(1).Info("start reconcile for ns")
 	ns := &v1.Namespace{}
 	if err := r.Get(ctx, req.NamespacedName, ns); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	if strings.HasPrefix(ns.Name, "ns-") {
+		r.Logger.V(1).Info("start reconcile for ns", "ns", ns.Name)
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			change, err := controllerutil.CreateOrUpdate(ctx, r.Client, ns, func() error {
 				if ns.Labels == nil {

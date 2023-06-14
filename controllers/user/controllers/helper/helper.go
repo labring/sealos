@@ -54,6 +54,13 @@ func GetCondition(conditions []v1.Condition, condition *v1.Condition) *v1.Condit
 	return condition
 }
 
+func DiffCondition(condition1 *v1.Condition, condition2 *v1.Condition) bool {
+	if condition1.Reason != condition2.Reason || condition1.Status != condition2.Status || condition1.Message != condition2.Message {
+		return true
+	}
+	return false
+}
+
 // UpdateCondition updates condition in cluster conditions using giving condition
 // adds condition if not existed
 func UpdateCondition(conditions []v1.Condition, condition v1.Condition) []v1.Condition {
@@ -64,7 +71,7 @@ func UpdateCondition(conditions []v1.Condition, condition v1.Condition) []v1.Con
 	for i, cond := range conditions {
 		if cond.Type == condition.Type {
 			hasCondition = true
-			if cond.Reason != condition.Reason || cond.Status != condition.Status || cond.Message != condition.Message {
+			if DiffCondition(conditions[i].DeepCopy(), condition.DeepCopy()) {
 				conditions[i] = condition
 			}
 		}
