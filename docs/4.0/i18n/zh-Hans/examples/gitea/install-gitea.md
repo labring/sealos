@@ -1,6 +1,6 @@
 # 快速安装 Gitea
 
-Gitea 是一个自己托管的 Git 服务程序。他和 GitHub, Bitbucket or Gitlab 等比较类似。Gitea 的首要目标是创建一个极易安装，运行非常快速，安装和使用体验良好的自建 Git 服务。
+喝杯茶吧！无痛自托管多合一软件开发服务，包括 Git 托管、代码审查、团队协作、包注册和 CI/CD。
 
 ## 步骤 1：登陆 Sealos
 
@@ -22,6 +22,8 @@ Gitea 是一个自己托管的 Git 服务程序。他和 GitHub, Bitbucket or Gi
 
 - 基础配置：
 
+  
+
   - 应用名称（自定义）：gitea
   - 镜像名（默认最新版本）：gitea/gitea:latest-rootless
   - CPU（推荐）：1 Core
@@ -29,11 +31,15 @@ Gitea 是一个自己托管的 Git 服务程序。他和 GitHub, Bitbucket or Gi
 
 - 部署模式：
 
+  
+
   - 实例数（自定义）：1
 
   ![](../images/gitea-3.png)
 
 - 网络配置：
+
+  
 
   - 容器暴露端口：3000
   - 外网访问：开启
@@ -41,6 +47,9 @@ Gitea 是一个自己托管的 Git 服务程序。他和 GitHub, Bitbucket or Gi
   ![](../images/gitea-4.png)
 
 - 高级配置：
+  
+  
+  
   - 自定义本地存储，持久化 Gitea 的数据（推荐 1 G）。
 
 ![](../images/gitea-5.png)
@@ -53,7 +62,7 @@ Gitea 是一个自己托管的 Git 服务程序。他和 GitHub, Bitbucket or Gi
 
 ## 步骤6：配置数据库
 
-- #### 通过 Sealos 为 Gitea 配置Mysql数据库
+- #### 通过 Sealos 为 Gitea 配置 MySQL 数据库
 
   - 进入 Database
 
@@ -67,22 +76,22 @@ Gitea 是一个自己托管的 Git 服务程序。他和 GitHub, Bitbucket or Gi
 
 - 基础配置：
 
+  
+  
   - 集群类型：mysql
   - 数据库版本：ac-mysql-8.0.30
   - CPU（推荐）：1 Core
   - 内存（推荐）：1 G
-
   
 
 ![](../images/gitea-11.png)
 
-- 部署成功后进入详情页面查看 Mysql 连接信息
+- 部署成功后进入详情页面查看 MySQL 连接信息
 
 ![](../images/gitea-12.png)
 
-- 点击一键连接进入 Mysql 终端连接
+- 点击一键连接进入 MySQL 终端连接
 
-  
 
 ![](../images/gitea-13.png)
 
@@ -102,13 +111,13 @@ CREATE DATABASE giteadb CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci';
 
 - 当 STATUS 为 Running，即可直接访问外网地址。
 
-  ![](../images/gitea-7.png)
 
-  
+![](../images/gitea-7.png)
 
-- 访问外网地址后进入到配置页面，根据刚刚创建的 Mysql 的详情页面进行配置
 
-  
+
+- 访问外网地址后进入到配置页面，根据刚刚创建的 MySQL 的详情页面进行配
+
 
 ![](../images/gitea-15.png)
 

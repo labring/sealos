@@ -1,6 +1,6 @@
 # Quick Installation of Gitea
 
-Gitea is a self-hosted Git service program. It is similar to GitHub, Bitbucket, or Gitlab. Gitea's primary goal is to create a self-hosted Git service that is extremely easy to install, runs very fast, and has a good installation and usage experience.
+Git with a cup of tea! Painless self-hosted all-in-one software development service, includes Git hosting, code review, team collaboration, package registry and CI/CD.
 
 ## Step 1: Log in to Sealos
 
@@ -22,32 +22,45 @@ Gitea is a self-hosted Git service program. It is similar to GitHub, Bitbucket, 
 
 - Basic configuration:
 
+  
+
   - Application name (custom): gitea
   - Image name (default latest version): gitea/gitea:latest-rootless
   - CPU (recommended): 1 Core
   - Memory (recommended): 1 G
+
 - Deployment mode:
 
+  
+  
   - Number of instances (custom): 1
 
 ![](../images/gitea-3.png)
 
 - Network configuration:
+
+  
+
   - Container  port: 3000
   - Accessible to the Public: enabled
 
 ![](../images/gitea-4.png)
 
-Advanced configuration:
+- Advanced configuration:
 
-- Custom local storage, persist Gitea data (recommended 1 G).
+  
+
+  - Custom local storage, persist Gitea data (recommended 1 G).
+
 
 
 ![](../images/gitea-5.png)
 
 ## Step 5: Deploy the application
 
-- Click「Deploy Application」 to start deploying the application.![](images/gitea-6.png)
+- Click「Deploy Application」 to start deploying the application.
+
+![](../images/gitea-6.png)
 
 ## Step 6: Configure the database
 
@@ -61,9 +74,10 @@ Advanced configuration:
 
 ![](../images/gitea-10.png)
 
-
-
 - Basic configuration:
+
+  
+
   - Cluster type: mysql
   - Database version: ac-mysql-8.0.30
   - CPU (recommended): 1 Core
@@ -96,17 +110,16 @@ Create the database needed for Gitea
 
 - When the STATUS is Running, you can directly access the external address.
 
-  ![](../images/gitea-7.png)
 
-  
+![](../images/gitea-7.png)
 
 - After accessing the external address, enter the configuration page and configure according to the details of the MySQL just created
 
-  
 
 ![](../images/gitea-15.png)
 
-After configuring, click Install, wait for a while and you can enter the login page, deployment successful!
+- After configuring, click Install, wait for a while and you can enter the login page, deployment successful!
+
 
 ![](../images/gitea-16.png)
 
