@@ -54,9 +54,8 @@
 
 ## 步骤6：配置数据库
 
-- #### 通过 Sealos 为 Gitea 配置 MySQL 数据库
-
-  - 进入 Database
+- 通过 Sealos 为 Gitea 配置 MySQL 数据库
+- 进入 Database
 
 ![](../images/gitea-9.png)
 
@@ -73,6 +72,7 @@
   - CPU（推荐）：1 Core
   - 内存（推荐）：1 G
   
+
 ![](../images/gitea-11.png)
 
 - 部署成功后进入详情页面查看 MySQL 连接信息

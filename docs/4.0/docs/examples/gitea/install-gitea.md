@@ -44,6 +44,7 @@ Git with a cup of tea! Painless self-hosted all-in-one software development serv
 
   - Custom local storage, persist Gitea data (recommended 1 G).
   
+
 ![](../images/gitea-5.png)
 
 ## Step 5: Deploy the application
@@ -54,9 +55,8 @@ Git with a cup of tea! Painless self-hosted all-in-one software development serv
 
 ## Step 6: Configure the database
 
-- #### Configure MySQL database for Gitea via Sealos
-
-  - Click Database
+- Configure MySQL database for Gitea via Sealos
+- Click Database
 
 ![](../images/gitea-9.png)
 
@@ -71,6 +71,7 @@ Git with a cup of tea! Painless self-hosted all-in-one software development serv
   - CPU (recommended): 1 Core
   - Memory (recommended): 1 G
   
+
 ![](../images/gitea-11.png)
 
 - After deployment is successful, enter the details page to view the MySQL connection information
