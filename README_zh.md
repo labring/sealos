@@ -97,9 +97,7 @@ Sealos 维护了一个[公开的发展路线图](https://github.com/orgs/labring
 
 ## 🔗 链接
 
-- [Sealos Action](https://github.com/labring/sealos-action)
-- [集群镜像](https://github.com/labring-actions/cluster-image)
-- [Rootfs镜像](https://github.com/labring-actions/runtime)
+- [Laf](https://github.com/labring/laf) 是 Sealos 上的一款函数计算应用，让写代码像写博客一样简单，随时随地发布上线。
 - [Buildah](https://github.com/containers/buildah) 在 Sealos 4.0 中，我们广泛地利用了 Buildah 的能力，以确保集群镜像与 OCI 标准兼容。
 
 <!-- ## License -->
