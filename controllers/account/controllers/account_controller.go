@@ -113,7 +113,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, fmt.Errorf("query order failed: %v", err)
 	}
 	r.Logger.V(1).Info("query order status", "status", status)
-	switch status {
+	switch *status.TradeState {
 	case pay.StatusSuccess:
 		dbCtx := context.Background()
 		dbClient, err := database.NewMongoDB(dbCtx, r.MongoDBURI)
@@ -128,12 +128,14 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 		}()
 		now := time.Now().UTC()
-		var gift = giveGift(payment.Spec.Amount)
-		account.Status.Balance += payment.Spec.Amount + gift
+		payAmount := *status.Amount.Total * 10000
+		//1¥ = 100WechatPayAmount; 1 WechatPayAmount = 10000 SealosAmount
+		var gift = giveGift(payAmount)
+		account.Status.Balance += payAmount + gift
 		if err := r.Status().Update(ctx, account); err != nil {
 			return ctrl.Result{}, fmt.Errorf("update account failed: %v", err)
 		}
-		payment.Status.Status = status
+		payment.Status.Status = pay.StatusSuccess
 		if err := r.Status().Update(ctx, payment); err != nil {
 			return ctrl.Result{}, fmt.Errorf("update payment failed: %v", err)
 		}

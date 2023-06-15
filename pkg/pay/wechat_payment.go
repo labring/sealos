@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/wechatpay-apiv3/wechatpay-go/services/payments"
+
 	"github.com/wechatpay-apiv3/wechatpay-go/core"
 	"github.com/wechatpay-apiv3/wechatpay-go/core/option"
 	"github.com/wechatpay-apiv3/wechatpay-go/services/payments/native"
@@ -57,11 +59,11 @@ func NewClient(ctx context.Context, opts ...core.ClientOption) (*core.Client, er
 	return core.NewClient(ctx, opts...)
 }
 
-func QueryOrder(orderID string) (string, error) {
+func QueryOrder(orderID string) (*payments.Transaction, error) {
 	ctx := context.Background()
 	client, err := NewClient(context.Background())
 	if err != nil {
-		return "", fmt.Errorf("new wechat pay client err:%s", err)
+		return nil, fmt.Errorf("new wechat pay client err:%s", err)
 	}
 	svc := native.NativeApiService{Client: client}
 	resp, _, err := svc.QueryOrderByOutTradeNo(ctx,
@@ -71,9 +73,9 @@ func QueryOrder(orderID string) (string, error) {
 		},
 	)
 	if err != nil {
-		return "", fmt.Errorf("call QueryOrder err:%s", err)
+		return nil, fmt.Errorf("call QueryOrder err:%s", err)
 	}
-	return *resp.TradeState, nil
+	return resp, nil
 }
 
 // 1 ¥ = amount 100

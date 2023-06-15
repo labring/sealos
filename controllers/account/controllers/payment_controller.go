@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -98,6 +99,6 @@ func (r *PaymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger = ctrl.Log.WithName(controllerName)
 	r.Logger.V(1).Info("init reconcile controller payment")
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&accountv1.Payment{}).
+		For(&accountv1.Payment{}, builder.WithPredicates(OnlyCreatePredicate{})).
 		Complete(r)
 }
