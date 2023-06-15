@@ -26,7 +26,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         Authorization: `Bearer ${access_token}`,
       }
     })).json()) as TgithubUser;
-
     const data = await getOauthRes({provider: 'github', id: "" + id, name, avatar_url})
     return jsonRes<Session>(res, {
       data,
