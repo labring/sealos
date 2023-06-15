@@ -101,24 +101,17 @@ func (c *Dumper) WriteFiles() (err error) {
 		}
 		configData := []byte(config.Spec.Data)
 		configPath := filepath.Join(c.RootPath, config.Spec.Path)
-		//only the YAML format is supported
+		// only the YAML format is supported
 		switch config.Spec.Strategy {
 		case v1beta1.Merge:
 			configData, err = getMergeConfigData(configPath, configData)
-			if err != nil {
-				return err
-			}
 		case v1beta1.Insert:
 			configData, err = getAppendOrInsertConfigData(configPath, configData, true)
-			if err != nil {
-				return err
-			}
 		case v1beta1.Append:
 			configData, err = getAppendOrInsertConfigData(configPath, configData, false)
-			if err != nil {
-				return err
-			}
-		case v1beta1.Override:
+		}
+		if err != nil {
+			return err
 		}
 		err = file.WriteFile(configPath, configData)
 		if err != nil {
