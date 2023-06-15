@@ -70,16 +70,12 @@ func (k *KubeadmRuntime) UpdateCert(certs []string) error {
 
 func (k *KubeadmRuntime) saveNewKubeadmConfig() error {
 	logger.Info("start to save new kubeadm config...")
-	cli, err := kubernetes.NewKubernetesClient(k.getContentData().AdminFile(), k.getMaster0IPAPIServer())
-	if err != nil {
-		return err
-	}
-	data, err := kubernetes.GetKubeadmConfig(cli.Kubernetes())
+	data, err := k.getKubeExpansion().FetchKubeadmConfig(context.Background())
 	if err != nil {
 		return err
 	}
 	//unmarshal data from configmap
-	obj, err := yaml.UnmarshalData([]byte(data.Data[ClusterConfiguration]))
+	obj, err := yaml.UnmarshalData([]byte(data))
 	if err != nil {
 		return err
 	}

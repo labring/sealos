@@ -22,6 +22,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	versionutil "k8s.io/apimachinery/pkg/util/version"
+
 	"github.com/imdario/mergo"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
@@ -271,4 +273,20 @@ func typeConversion(kind string) k8sruntime.Object {
 		return &proxy.KubeProxyConfiguration{}
 	}
 	return nil
+}
+
+func (k *KubeadmRuntime) setFeatureGatesConfiguration() {
+	extraArgs := []map[string]string{k.ClusterConfiguration.ControllerManager.ExtraArgs, k.ClusterConfiguration.APIServer.ExtraArgs, k.ClusterConfiguration.Scheduler.ExtraArgs}
+	if versionutil.MustParseSemantic(k.getKubeVersion()).LessThan(versionutil.MustParseSemantic("1.19.0")) {
+		delete(extraArgs[0], "cluster-signing-duration")
+		extraArgs[0]["experimental-cluster-signing-duration"] = "87600h"
+	}
+	for i, args := range extraArgs {
+		if args["feature-gates"] != "" {
+			args["feature-gates"] = UpdateFeatureGatesConfiguration(args["feature-gates"], k.getKubeVersion()).(string)
+		}
+		extraArgs[i] = args
+	}
+
+	k.KubeletConfiguration.FeatureGates = UpdateFeatureGatesConfiguration(k.KubeletConfiguration.FeatureGates, k.getKubeVersion()).(map[string]bool)
 }

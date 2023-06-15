@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/labring/sealos/pkg/client-go/kubernetes"
+
 	"github.com/labring/sealos/pkg/utils/yaml"
 
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -33,6 +35,7 @@ type KubeadmRuntime struct {
 	Registry *v2.RegistryConfig
 	*KubeadmConfig
 	*Config
+	cli kubernetes.Client
 }
 
 //nolint:all
@@ -54,7 +57,7 @@ func (k *KubeadmRuntime) Init() error {
 	return k.pipeline("init", pipeline)
 }
 
-func (k *KubeadmRuntime) GetAdminKubeconfig() ([]byte, error) {
+func (k *KubeadmRuntime) GetKubeadmConfig() ([]byte, error) {
 	k.KubeadmConfig = k.ClusterFileKubeConfig
 	if err := k.ConvertInitConfigConversion(); err != nil {
 		return nil, err
@@ -84,7 +87,7 @@ type Interface interface {
 	SyncNodeIPVS(mastersIPList, nodeIPList []string) error
 	UpdateCert(certs []string) error
 	UpgradeCluster(version string) error
-	GetAdminKubeconfig() ([]byte, error)
+	GetKubeadmConfig() ([]byte, error)
 }
 
 func (k *KubeadmRuntime) Reset() error {
