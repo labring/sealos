@@ -108,7 +108,7 @@ const App = ({ Component, pageProps }: AppProps) => {
         });
       } catch (error) {
         changeI18n({
-          currentLanguage: 'en'
+          currentLanguage: 'zh'
         });
       }
     })();
