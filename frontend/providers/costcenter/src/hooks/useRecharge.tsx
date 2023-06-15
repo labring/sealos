@@ -195,7 +195,7 @@ function useRecharge() {
                     ))}
                   </Flex>
                 </Flex>
-                <Flex alignSelf={'flex-start'} align={'center'}  mb={'20px'}>
+                <Flex alignSelf={'flex-start'} align={'center'} mb={'20px'}>
                   <Text color="#7B838B" mr={'28px'}>
                     {t('Recharge Amount')}
                   </Text>
@@ -244,7 +244,13 @@ function useRecharge() {
                   </Text>
                   <Text>￥{getFavorable(amount)}</Text>
                 </Flex>
-                <OuterLink href="https://zdc6i2.laf.dev/sealos-discount" text={t('View Discount Rules')} ></OuterLink>
+                <Box width={'full'}>
+                  <OuterLink
+                    href="https://zdc6i2.laf.dev/sealos-discount"
+                    text={t('View Discount Rules')}
+                  ></OuterLink>
+                </Box>
+
                 <Button
                   size="primary"
                   variant="primary"

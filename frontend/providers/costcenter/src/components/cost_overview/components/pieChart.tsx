@@ -3,15 +3,11 @@ import { TooltipComponent, LegendComponent, DatasetComponent } from 'echarts/com
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 import { PieChart } from 'echarts/charts';
 import { LabelLayout } from 'echarts/features';
-import { CanvasRenderer, SVGRenderer } from 'echarts/renderers';
-import useOverviewStore from '@/stores/overview';
+import { CanvasRenderer } from 'echarts/renderers';
 import { formatMoney } from '@/utils/format';
 import { useMemo } from 'react';
 import { useBreakpointValue } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
-import request from '@/service/request';
-import { BillingSpec, BillingData } from '@/types/billing';
-import { subSeconds, addDays, differenceInDays, formatISO } from 'date-fns';
+import { BillingData } from '@/types/billing';
 import { useTranslation } from 'next-i18next';
 
 echarts.use([

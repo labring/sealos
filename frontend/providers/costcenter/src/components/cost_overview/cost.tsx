@@ -2,7 +2,7 @@ import { Flex, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { memo } from 'react';
-import Notfound from './components/notFound';
+import Notfound from '@/components/notFound';
 import useBillingData from '@/hooks/useBillingData';
 const Chart = dynamic(() => import('./components/pieChart'), {
   ssr: false
@@ -17,7 +17,9 @@ export const Cost = memo(function Cost() {
           {t('Cost Distribution')}
         </Text>
       </Flex>
-      {isInitialLoading || !data?.data?.status?.deductionAmount || data.data.status.deductionAmount.cpu == 0? (
+      {isInitialLoading ||
+      !data?.data?.status?.deductionAmount ||
+      data.data.status.deductionAmount.cpu == 0 ? (
         <Flex justify={'center'} align={'center'} flex={1}>
           <Notfound></Notfound>
         </Flex>

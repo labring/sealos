@@ -51,5 +51,7 @@
   "Cancel": "Cancel",
   "Not Enough Balance": "Insufficient balance, please recharge immediately.",
   "Insufficient Balance": "Insufficient balance",
-  "No Data Available":"No Data Available"
+  "No Data Available":"No Data Available",
+  "Predict Detail":"Predict future 30-day costs based on current resource usage",
+  "Next month cost estimation":"Next month cost estimation"
 }

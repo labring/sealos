@@ -25,9 +25,9 @@ import { LIST_TYPE } from '@/constants/billing';
 import SelectRange from '@/components/billing/selectDateRange';
 import useOverviewStore from '@/stores/overview';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useTranslation, withTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next';
 import { getCookie } from '@/utils/cookieUtils';
-import NotFound from '@/components/cost_overview/components/notFound';
+import NotFound from '@/components/notFound';
 
 function Billing() {
   const { t, i18n, ready } = useTranslation();
@@ -187,7 +187,7 @@ function Billing() {
           </Button>
         </Flex>
       </Flex>
-      {(isSuccess && tableResult.length > 0) ? (
+      {isSuccess && tableResult.length > 0 ? (
         <>
           <Box overflow={'auto'}>
             <BillingTable

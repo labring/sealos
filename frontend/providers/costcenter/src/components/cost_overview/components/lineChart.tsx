@@ -11,25 +11,10 @@ import {
 import { LineChart } from 'echarts/charts';
 import { UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
-import useOverviewStore from '@/stores/overview';
 import { INITAL_SOURCE } from '@/constants/billing';
-import { BillingSpec, BillingData, BillingItem } from '@/types/billing';
-import { useQuery } from '@tanstack/react-query';
-import {
-  subSeconds,
-  addDays,
-  differenceInDays,
-  subDays,
-  formatISO,
-  parseISO,
-  format,
-  isSameDay,
-  startOfDay
-} from 'date-fns';
-import request from '@/service/request';
+import { BillingItem } from '@/types/billing';
+import { parseISO, format, isSameDay, startOfDay } from 'date-fns';
 import { formatMoney } from '@/utils/format';
-import { use, useMemo } from 'react';
-import { start } from 'nprogress';
 import { useTranslation } from 'next-i18next';
 
 echarts.use([

@@ -12,11 +12,15 @@ import { Cost } from '@/components/cost_overview/cost';
 import { Trend } from '@/components/cost_overview/trend';
 import { getCookie } from '@/utils/cookieUtils';
 import useBillingData from '@/hooks/useBillingData';
-import NotFound from '@/components/cost_overview/components/notFound';
+import NotFound from '@/components/notFound';
 import { QueryClient } from '@tanstack/react-query';
 import request from '@/service/request';
+import useBillingStore from '@/stores/billing';
 function CostOverview() {
   const { t, i18n } = useTranslation();
+  const updateCPU = useBillingStore((state) => state.updateCpu);
+  const updateMemory = useBillingStore((state) => state.updateMemory);
+  const updateStorage = useBillingStore((state) => state.updateStorage);
   const cookie = getCookie('NEXT_LOCALE');
   useEffect(() => {
     i18n.changeLanguage(cookie);
@@ -26,9 +30,16 @@ function CostOverview() {
   const { data, isInitialLoading } = useBillingData();
   const billingItems = useMemo(() => data?.data?.status.item.filter((v, i) => i < 3) || [], [data]);
   useEffect(() => {
+    if (billingItems.length === 0) return;
+    const item = billingItems[0].costs;
+    updateCPU(item.cpu || 0);
+    updateMemory(item.memory || 0);
+    updateStorage(item.storage || 0);
+  }, [billingItems, updateCPU, updateMemory, updateStorage]);
+  useEffect(() => {
     // 并发预加载
-    new QueryClient().prefetchQuery(['valuation'], () => request('/api/price'))
-  }, [])
+    new QueryClient().prefetchQuery(['valuation'], () => request('/api/price'));
+  }, []);
   return (
     <>
       <Flex h={'100%'}>

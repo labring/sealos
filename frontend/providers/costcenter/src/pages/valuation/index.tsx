@@ -4,21 +4,22 @@ import { useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
 import { ValuationData } from '@/types/valuation';
 import { valuationMap } from '@/constants/payment';
-import { use, useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useTranslation } from 'next-i18next';
 import { ApiResp } from '@/types/api';
 import { getCookie } from '@/utils/cookieUtils';
 import { CYCLE } from '@/constants/valuation';
 import OuterLink from '@/components/outerLink';
-import useBillingStore from '@/stores/billing';
+import NotFound from '@/components/notFound';
+import PredictCard from '@/components/valuation/predictCard';
 type CardItem = {
   title: string;
   price: number[];
   unit: string;
   bg: string;
   idx: number;
-}
+};
 
 function Valuation() {
   const { t, i18n } = useTranslation();
@@ -27,15 +28,6 @@ function Valuation() {
   useEffect(() => {
     i18n.changeLanguage(cookie);
   }, [cookie, i18n]);
-  // 有优化的空间
-  const state = useBillingStore()
-  const leastCost = useMemo(() => [
-    { name: 'CPU', cost: state.cpu * 30 },
-    { name: 'memory', cost: state.memory * 30 },
-    { name: 'storage', cost: state.storage * 30 },
-    { name: t('total'), cost: (state.cpu + state.memory + state.storage) * 30 },
-  ], [state.cpu, state.memory, state.storage])
-
   const { data: _data } = useQuery(['valuation'], () =>
     request<any, ApiResp<ValuationData>>('/api/price')
   );
@@ -74,58 +66,57 @@ function Valuation() {
       </Flex>
       <Flex direction={'column'}>
         <Flex gap={'52px'} flexWrap={'wrap'} justify={'center'} mt={'24px'}>
-          {data?.map((item) => <Flex
-            key={item.title}
-            direction={'column'}
-            justify="space-evenly"
-            align={'center'}
-            boxSizing="border-box"
-            width="240px"
-            height="339px"
-            background="#F1F4F6"
-            borderWidth={'1px'}
-            borderColor="#EFF0F1"
-            borderRadius="4px"
-          >
-            <Flex align={'center'}>
-              <Box borderRadius="2px" bg={item.bg} w={'16px'} h={'16px'} mr={'8px'}></Box>
-              <Text fontSize={'16px'}>{item.title}</Text>
-            </Flex>
-            <Heading w="127px" display={'flex'} justifyContent="center" alignContent={'center'}>
-              ￥{item.price[0]}
-            </Heading>
-            <Text ml="4px">
-              {item.unit}/ {t('Hour')}
-            </Text>
-            <Box>
-              {CYCLE.map((_item, idx) => (
-                <Flex
-                  key={idx}
-                  justify="space-between"
-                  w="192px"
-                  borderTop={'dashed 1px #DEE0E2'}
-                  py={'8px'}
-                >
-                  <Box>{item.price[idx + 1]}</Box>
-                  <Box>{`￥${item.unit}/${t(_item)}`}</Box>
+          {data ? (
+            data?.map((item) => (
+              <Flex
+                key={item.title}
+                direction={'column'}
+                justify="space-evenly"
+                align={'center'}
+                boxSizing="border-box"
+                width="240px"
+                height="339px"
+                background="#F1F4F6"
+                borderWidth={'1px'}
+                borderColor="#EFF0F1"
+                borderRadius="4px"
+              >
+                <Flex align={'center'}>
+                  <Box borderRadius="2px" bg={item.bg} w={'16px'} h={'16px'} mr={'8px'}></Box>
+                  <Text fontSize={'16px'}>{item.title}</Text>
                 </Flex>
-              ))}
-            </Box>
-          </Flex>)}
+                <Heading w="127px" display={'flex'} justifyContent="center" alignContent={'center'}>
+                  ￥{item.price[0]}
+                </Heading>
+                <Text ml="4px">
+                  {item.unit}/ {t('Hour')}
+                </Text>
+                <Box>
+                  {CYCLE.map((_item, idx) => (
+                    <Flex
+                      key={idx}
+                      justify="space-between"
+                      w="192px"
+                      borderTop={'dashed 1px #DEE0E2'}
+                      py={'8px'}
+                    >
+                      <Box>{item.price[idx + 1]}</Box>
+                      <Box>{`￥${item.unit}/${t(_item)}`}</Box>
+                    </Flex>
+                  ))}
+                </Box>
+              </Flex>
+            ))
+          ) : (
+            <NotFound></NotFound>
+          )}
         </Flex>
         <Flex mt={'36px'} direction={'column'}>
-          <Flex align={'center'}>
-            <Text mr={'17px '}>下个月成本预估</Text>
-            <OuterLink text={'根据当前资源用量预测未来 30 天费用'} href={'#'}></OuterLink>
+          <Flex align={'center'} mb={'20px'}>
+            <Text mr={'17px '}>{t('Next month cost estimation')}</Text>
+            <OuterLink text={t('Predict Detail')} href={'#'}></OuterLink>
           </Flex>
-          <Flex wrap={'wrap'}>
-            {
-              leastCost.map((item) => (<Flex key={item.name}>
-                <Flex justify={'center'} align={'center'}>{item.name}</Flex>
-                <Flex justify={'center'} align={'center'}>￥{item.cost}</Flex>
-              </Flex>))
-            }
-          </Flex>
+          <PredictCard></PredictCard>
         </Flex>
       </Flex>
     </Flex>

@@ -19,7 +19,7 @@ type Menu = {
 
 export default function SideBar() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, ready } = useTranslation();
 
   const menus: Menu[] = [
     {
@@ -46,36 +46,37 @@ export default function SideBar() {
   ];
   return (
     <Flex flexDirection="column">
-      {menus.map((item) => {
-        return (
-          <Flex
-            key={item.value}
-            py={'10px'}
-            px={['10px', '10px', '10px', '20px']}
-            alignItems={'center'}
-            onClick={() => {
-              router.push(item.url);
-            }}
-            as="button"
-          >
-            <Flex h={4} alignItems={'center'}>
-              <Img
-                src={router.route == item.url ? item.aicon.src : item.icon.src}
-                width={'18px'}
-                alt="icon of module"
-              />
-            </Flex>
-            <Text
-              color={router.route === item.url ? '#000000' : '#7B838B'}
-              ml="10px"
-              my="9px"
-              display={['none', 'none', 'none', 'flex']}
+      {ready &&
+        menus.map((item) => {
+          return (
+            <Flex
+              key={item.value}
+              py={'10px'}
+              px={['10px', '10px', '10px', '20px']}
+              alignItems={'center'}
+              onClick={() => {
+                router.push(item.url);
+              }}
+              as="button"
             >
-              {t(item.value)}
-            </Text>
-          </Flex>
-        );
-      })}
+              <Flex h={4} alignItems={'center'}>
+                <Img
+                  src={router.route == item.url ? item.aicon.src : item.icon.src}
+                  width={'18px'}
+                  alt="icon of module"
+                />
+              </Flex>
+              <Text
+                color={router.route === item.url ? '#000000' : '#7B838B'}
+                ml="10px"
+                my="9px"
+                display={['none', 'none', 'none', 'flex']}
+              >
+                {t(item.value)}
+              </Text>
+            </Flex>
+          );
+        })}
     </Flex>
   );
 }

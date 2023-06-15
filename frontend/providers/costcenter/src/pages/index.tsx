@@ -7,6 +7,6 @@ export default function Index() {
   useEffect(() => {
     router.push('/cost_overview');
   }, [router]);
-  
+
   return <div></div>;
 }

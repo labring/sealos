@@ -14,7 +14,7 @@ import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 import 'react-day-picker/dist/style.css';
 import { appWithTranslation, i18n } from 'next-i18next';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { setCookie } from '@/utils/cookieUtils';
 
 const queryClient = new QueryClient({
@@ -38,7 +38,6 @@ if (typeof window !== 'undefined') {
   });
 }
 
-//Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
 Router.events.on('routeChangeComplete', () => NProgress.done());
 Router.events.on('routeChangeError', () => NProgress.done());
@@ -69,7 +68,7 @@ const App = ({ Component, pageProps }: AppProps) => {
       sealosApp.removeAppEventListen(EVENT_NAME.CHANGE_I18N);
     };
   }, []);
-  
+
   return (
     <QueryClientProvider client={queryClient}>
       <ChakraProvider theme={theme}>

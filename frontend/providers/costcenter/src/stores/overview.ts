@@ -67,7 +67,6 @@ const useOverviewStore = create<OverviewState>()(
       setMonth: (month) => set({ selectedMonth: month }),
       setYear: (year) => set({ selectedYear: year }),
       setSource: (source) => set({ source: source }),
-      // swithBy: (target: By) => set({ by: target }),
       setStartTime: (time) => set({ startTime: time }),
       setEndTime: (time) => set({ endTime: time }),
       setBalance: (balance) => set({ balance }),

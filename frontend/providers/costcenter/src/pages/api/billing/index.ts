@@ -61,6 +61,6 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     }
   } catch (error) {
     console.log(error);
-    jsonRes(resp, { code: 500, error: 'get billing error' });
+    jsonRes(resp, { code: 500, message: 'get billing error' });
   }
 }

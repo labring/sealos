@@ -51,5 +51,7 @@
   "Cancel": "取消",
   "Not Engough Balance": "余额不足，请立即充值。",
   "Insufficient Balance": "余额不足",
-  "No Data Available":"暂无数据"
+  "No Data Available":"暂无数据",
+  "Predict Detail":"根据当前资源用量预测未来 30 天费用",
+  "Next month cost estimation":"下月费用预估"
 }
