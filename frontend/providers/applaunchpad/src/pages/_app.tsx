@@ -106,7 +106,7 @@ const App = ({ Component, pageProps }: AppProps) => {
         });
       } catch (error) {
         changeI18n({
-          currentLanguage: 'en'
+          currentLanguage: 'zh'
         });
       }
     })();
@@ -124,7 +124,7 @@ const App = ({ Component, pageProps }: AppProps) => {
   useEffect(() => {
     const lang = getLangStore() || 'en';
     i18n?.changeLanguage?.(lang);
-  }, [refresh]);
+  }, [refresh, router.pathname]);
 
   return (
     <>

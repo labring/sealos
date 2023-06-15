@@ -14,7 +14,7 @@ const PriceBox = ({
   cpu,
   memory,
   storage,
-  pods
+  pods = [1, 1]
 }: resourcePriceResponse & { pods: [number, number] }) => {
   const { t } = useTranslation();
 
@@ -44,7 +44,7 @@ const PriceBox = ({
   return (
     <Box>
       <Box>
-        <strong>{t('AnticipatedPrice')}</strong> (1{t('Day')})
+        <strong>{t('AnticipatedPrice')}</strong> ({t('Perday')})
       </Box>
       {priceList.map((item) => (
         <Flex key={item.label} alignItems={'center'} mt={3}>

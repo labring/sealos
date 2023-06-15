@@ -131,5 +131,6 @@
   "Storage Value can not empty": "Storage Value can not empty",
   "Min Storage Value": "Min Storage Value",
   "Max Storage Value": "Max Storage Value",
-  "Can not change storage path": "Can not change storage path"
+  "Can not change storage path": "Can not change storage path",
+  "Perday": "Perday"
 }

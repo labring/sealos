@@ -138,5 +138,6 @@
   "Storage Value can not empty": "容量不能为空",
   "Min Storage Value": "容量最小为",
   "Max Storage Value": "容量最大为",
-  "Can not change storage path": "不允许修改挂载路径"
+  "Can not change storage path": "不允许修改挂载路径",
+  "Perday": "每日"
 }
