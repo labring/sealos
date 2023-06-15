@@ -19,8 +19,9 @@ package controllers
 import (
 	"context"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
