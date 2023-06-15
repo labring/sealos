@@ -16,7 +16,7 @@ jobs:
       - name: Gh Rebot for Sealos
         uses: labring/gh-rebot@v0.0.6
         with:
-          version: v0.0.6
+          version: v0.0.7-rc1
         env:
           SEALOS_TYPE: "/comment"
           GH_TOKEN: "${{ secrets.GH_PAT }}"
