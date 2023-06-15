@@ -13,15 +13,6 @@ webhooks:
       namespace: system
       path: /validate-v1-sealos-cloud
   failurePolicy: Ignore
-  namespaceSelector:
-    matchExpressions:
-      - key: metadata.name
-        operator: NotIn
-        values:
-          - account-system
-          - kube-system
-          - sealos-system
-          - sealos
   name: debt.sealos.io
   rules:
   - apiGroups:

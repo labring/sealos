@@ -41,6 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -53,6 +54,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(accountv1.AddToScheme(scheme))
+	utilruntime.Must(userv1.AddToScheme(scheme))
 	utilruntime.Must(meteringcommonv1.AddToScheme(scheme))
 	utilruntime.Must(v1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme

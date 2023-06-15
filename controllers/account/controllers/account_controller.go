@@ -23,12 +23,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/labring/sealos/controllers/user/controllers/helper/config"
-
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/labring/sealos/controllers/pkg/database"
 	gonanoid "github.com/matoous/go-nanoid/v2"
+
+	userV1 "github.com/labring/sealos/controllers/user/api/v1"
 
 	"github.com/go-logr/logr"
 
@@ -67,6 +67,7 @@ type AccountReconciler struct {
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts/finalizers,verbs=update
+//+kubebuilder:rbac:groups=user.sealos.io,resources=users,verbs=get;list;watch
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances/status,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
@@ -77,6 +78,13 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// delete payments that exist for more than 5 minutes
 	if err := r.DeletePayment(ctx); err != nil {
 		r.Logger.Error(err, "delete payment failed")
+	}
+	user := &userV1.User{}
+	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, user); err == nil {
+		_, err = r.syncAccount(ctx, user.Name, r.AccountSystemNamespace, "ns-"+user.Name)
+		return ctrl.Result{}, err
+	} else if client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, err
 	}
 
 	accountBalance := accountv1.AccountBalance{}
@@ -275,7 +283,13 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 			Kind:     "Role",
 			Name:     role.Name,
 		}
-		roleBinding.Subjects = config.GetUsersSubject(name)
+		roleBinding.Subjects = []rbacV1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      name,
+				Namespace: namespace,
+			},
+		}
 
 		return nil
 	}); err != nil {
@@ -362,6 +376,7 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&accountv1.Account{}).
 		Watches(&source.Kind{Type: &accountv1.Payment{}}, &handler.EnqueueRequestForObject{}).
 		Watches(&source.Kind{Type: &accountv1.AccountBalance{}}, &handler.EnqueueRequestForObject{}).
+		Watches(&source.Kind{Type: &userV1.User{}}, &handler.EnqueueRequestForObject{}).
 		Complete(r)
 }
 
