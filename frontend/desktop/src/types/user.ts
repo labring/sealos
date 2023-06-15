@@ -1,8 +1,3 @@
-export const userCRD = {
-  Group: "user.sealos.io",
-  Version: "v1",
-  Resource: "users",
-} 
 
 export type TgithubToken = {
   access_token: string,
@@ -68,4 +63,5 @@ export type TgithubUser = {
   updated_at: string,
 }
 // if default, uid
-export type Provider = 'github' | 'wechat' | 'phone' | 'default'
+export const PROVIDERS = ['github', 'wechat', 'phone', 'uid'] as const
+export type Provider = typeof PROVIDERS[number]

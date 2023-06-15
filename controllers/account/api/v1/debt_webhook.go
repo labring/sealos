@@ -89,7 +89,7 @@ func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admissi
 			logger.V(1).Info("pass for kube-system")
 			return admission.ValidationResponse(true, "")
 		case userSaGroup:
-			logger.V(1).Info("check for user", "user", req.UserInfo.Username, "ns: ", req.Namespace)
+			logger.V(1).Info("check for user", "user", req.UserInfo.Username, "ns: ", req.Namespace, "name: ", req.Name, "Operation", req.Operation)
 			if isWhiteList(req) {
 				return admission.ValidationResponse(true, "")
 			}
