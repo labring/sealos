@@ -106,7 +106,7 @@ const App = ({ Component, pageProps }: AppProps) => {
         });
       } catch (error) {
         changeI18n({
-          currentLanguage: 'zh'
+          currentLanguage: 'en'
         });
       }
     })();
@@ -116,12 +116,15 @@ const App = ({ Component, pageProps }: AppProps) => {
 
   // record route
   useEffect(() => {
-    const lang = getLangStore() || 'en';
-    i18n?.changeLanguage?.(lang);
     return () => {
       setLastRoute(router.asPath);
     };
-  }, [refresh, router.pathname]);
+  }, [router.pathname]);
+
+  useEffect(() => {
+    const lang = getLangStore() || 'en';
+    i18n?.changeLanguage?.(lang);
+  }, [refresh]);
 
   return (
     <>

@@ -264,6 +264,11 @@ const Form = ({
           </Box>
           <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>
             <PriceBox
+              pods={
+                getValues('hpa.use')
+                  ? [getValues('hpa.minReplicas') || 1, getValues('hpa.maxReplicas') || 2]
+                  : [getValues('replicas') || 1, getValues('replicas') || 1]
+              }
               cpu={getValues('cpu')}
               memory={getValues('memory')}
               storage={getValues('storeList').reduce((sum, item) => sum + item.value, 0)}

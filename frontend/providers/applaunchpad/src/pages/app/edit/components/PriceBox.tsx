@@ -10,7 +10,12 @@ export const colorMap = {
   storage: '#8172D8'
 };
 
-const PriceBox = ({ cpu, memory, storage }: resourcePriceResponse) => {
+const PriceBox = ({
+  cpu,
+  memory,
+  storage,
+  pods
+}: resourcePriceResponse & { pods: [number, number] }) => {
   const { t } = useTranslation();
 
   const priceList = useMemo(() => {
@@ -19,23 +24,33 @@ const PriceBox = ({ cpu, memory, storage }: resourcePriceResponse) => {
     const storageP = +(SOURCE_PRICE.storage * storage * 24).toFixed(2);
     const totalP = +(cpuP + memoryP + storageP).toFixed(2);
 
+    const podScale = (val: number) => {
+      const min = (val * pods[0]).toFixed(2);
+      const max = (val * pods[1]).toFixed(2);
+      return pods[0] === pods[1] ? `￥${min}` : `￥${min} ~ ${max}`;
+    };
+
     return [
-      { label: 'CPU', color: '#33BABB', value: cpuP },
-      { label: 'Memory', color: '#36ADEF', value: memoryP },
-      { label: 'Storage', color: '#8172D8', value: storageP },
-      { label: 'TotalPrice', color: '#485058', value: totalP }
+      {
+        label: 'CPU',
+        color: '#33BABB',
+        value: podScale(cpuP)
+      },
+      { label: 'Memory', color: '#36ADEF', value: podScale(memoryP) },
+      { label: 'Storage', color: '#8172D8', value: podScale(storageP) },
+      { label: 'TotalPrice', color: '#485058', value: podScale(totalP) }
     ];
-  }, [cpu, memory, storage]);
+  }, [cpu, memory, pods, storage]);
   return (
     <Box>
       <Box>
-        <strong>{t('AnticipatedPrice')}</strong> (1 Pod/{t('Day')})
+        <strong>{t('AnticipatedPrice')}</strong> (1{t('Day')})
       </Box>
       {priceList.map((item) => (
         <Flex key={item.label} alignItems={'center'} mt={3}>
           <Box bg={item.color} w={'8px'} h={'8px'} borderRadius={'10px'} mr={2}></Box>
-          <Box flex={'0 0 70px'}>{t(item.label)}:</Box>
-          <Box>￥{item.value}</Box>
+          <Box flex={'0 0 65px'}>{t(item.label)}:</Box>
+          <Box>{item.value}</Box>
         </Flex>
       ))}
       <Box></Box>

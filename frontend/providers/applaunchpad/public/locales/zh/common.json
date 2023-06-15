@@ -9,6 +9,7 @@
   "CPU": "CPU",
   "Memory": "内存",
   "Replicas": "实例数",
+  "Pod": "实例",
   "Operation": "操作",
   "Running": "运行中",
   "Paused": "已暂停",
