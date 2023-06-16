@@ -62,7 +62,7 @@ const Pods = ({
         console.log(err);
       }
     },
-    [toast]
+    [t, toast]
   );
 
   const columns: {
@@ -81,12 +81,12 @@ const Pods = ({
       )
     },
     {
-      title: 'status',
+      title: 'Status',
       key: 'status',
       render: (item: PodDetailType) => <Box color={item.status.color}>{item.status.label}</Box>
     },
     {
-      title: 'Restarts',
+      title: 'Restarts Num',
       key: 'restarts',
       dataIndex: 'restarts'
     },
@@ -114,7 +114,7 @@ const Pods = ({
       )
     },
     {
-      title: 'control',
+      title: 'Operation',
       key: 'control',
       render: (item: PodDetailType, i: number) => (
         <Flex>
@@ -191,9 +191,11 @@ const Pods = ({
       <Flex px={6} alignItems={'center'}>
         <MyIcon name="podList" w={'14px'} color={'myGray.500'} />
         <Box ml={3} flex={1} color={'myGray.600'}>
-          Pods List
+          {t('Pods List')}
         </Box>
-        <Box color={'myGray.500'}>{pods.length} Items</Box>
+        <Box color={'myGray.500'}>
+          {pods.length} {t('Items')}
+        </Box>
       </Flex>
       <TableContainer mt={5} overflow={'auto'}>
         <Table variant={'simple'} backgroundColor={'white'}>
@@ -207,7 +209,7 @@ const Pods = ({
                   backgroundColor={'#F8F8FA'}
                   fontWeight={'500'}
                 >
-                  {item.title}
+                  {t(item.title)}
                 </Th>
               ))}
             </Tr>

@@ -9,7 +9,6 @@ import {
   ModalCloseButton,
   Button,
   FormControl,
-  FormErrorMessage,
   Box,
   Textarea,
   Input
@@ -39,7 +38,7 @@ const ConfigmapModal = ({
   closeCb: () => void;
 }) => {
   const { t } = useTranslation();
-  const type = useMemo(() => (!!defaultValue.id ? 'create' : 'edit'), [defaultValue]);
+  const type = useMemo(() => (!defaultValue.id ? 'create' : 'edit'), [defaultValue]);
   const {
     register,
     handleSubmit,
@@ -49,10 +48,10 @@ const ConfigmapModal = ({
   });
   const textMap = {
     create: {
-      title: '添加ConfigMap'
+      title: 'Add'
     },
     edit: {
-      title: '修改ConfigMap'
+      title: 'Update'
     }
   };
 
@@ -61,22 +60,22 @@ const ConfigmapModal = ({
       <Modal isOpen onClose={closeCb}>
         <ModalOverlay />
         <ModalContent maxH={'90vh'} maxW={'90vw'} minW={'600px'} w={'auto'}>
-          <ModalHeader>{textMap[type].title}</ModalHeader>
+          <ModalHeader>{t(textMap[type].title)} ConfigMap</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <MyFormControl showError errorText={errors.mountPath?.message}>
               <Box mb={1}>{t('filename')}</Box>
               <Input
-                placeholder="文件名，如 /etc/kubernetes/admin.conf "
+                placeholder={`${t('File Name')}: /etc/kubernetes/admin.conf`}
                 {...register('mountPath', {
-                  required: '文件名不能为空',
+                  required: t('Filename can not empty') || 'Filename can not empty',
                   pattern: {
-                    value: /^[0-9a-zA-Z/][0-9a-zA-Z/.-]*[0-9a-zA-Z/]$/,
-                    message: `文件名需满足: [a-z0-9]([-a-z0-9]*[a-z0-9])?`
+                    value: /^[0-9a-zA-Z_/][0-9a-zA-Z_/.-]*[0-9a-zA-Z_/]$/,
+                    message: t('Mount Path Auth')
                   },
                   validate: (e) => {
                     if (listNames.includes(e.toLocaleLowerCase())) {
-                      return '与其他 configMap 路径冲突';
+                      return t('ConfigMap Path Conflict') || 'ConfigMap Path Conflict';
                     }
                     return true;
                   }
@@ -89,7 +88,7 @@ const ConfigmapModal = ({
                 rows={10}
                 resize={'both'}
                 {...register('value', {
-                  required: '文件值不能为空'
+                  required: t('File Value can not empty') || 'File Value can not empty'
                 })}
               />
             </FormControl>

@@ -59,10 +59,10 @@ const StoreModal = ({
   });
   const textMap = {
     create: {
-      title: '添加存储卷'
+      title: `${t('Update')} ${t('Storage')}`
     },
     edit: {
-      title: '修改存储卷'
+      title: `${t('Add')} ${t('Storage')}`
     }
   };
 
@@ -76,7 +76,7 @@ const StoreModal = ({
           <ModalBody>
             <FormControl mb={5} isInvalid={!!errors.value}>
               <Box mb={1}>{t('capacity')} </Box>
-              <Tooltip label={`容量范围: ${minVal}~20 Gi`}>
+              <Tooltip label={`${t('Storage Range')}: ${minVal}~20 Gi`}>
                 <NumberInput max={20} min={minVal} step={1} position={'relative'}>
                   <Box
                     position={'absolute'}
@@ -89,14 +89,14 @@ const StoreModal = ({
                   </Box>
                   <NumberInputField
                     {...register('value', {
-                      required: '容量不能为空',
+                      required: t('Storage Value can not empty') || 'Storage Value can not empty',
                       min: {
                         value: minVal,
-                        message: `容量最为为 ${minVal} Gi`
+                        message: `${t('Min Storage Value')} ${minVal} Gi`
                       },
                       max: {
                         value: 20,
-                        message: '容量最大为 20 Gi'
+                        message: `${t('Max Storage Value')} 20 Gi`
                       },
                       valueAsNumber: true
                     })}
@@ -109,21 +109,25 @@ const StoreModal = ({
                 </NumberInput>
               </Tooltip>
             </FormControl>
-            <MyFormControl showError errorText={errors.path?.message} pb={0}>
+            <MyFormControl showError errorText={errors.path?.message} pb={2}>
               <Box mb={1}>{t('mount path')}</Box>
               <Input
                 placeholder="如：/data"
-                title={isEditStore ? '不允许修改挂载路径' : ''}
+                title={
+                  isEditStore
+                    ? t('Can not change storage path') || 'Can not change storage path'
+                    : ''
+                }
                 disabled={isEditStore}
                 {...register('path', {
-                  required: '挂载路径不能为空',
+                  required: t('Storage path can not empty') || 'Storage path can not empty',
                   pattern: {
-                    value: /^[0-9a-zA-Z/][0-9a-zA-Z/.-]*[0-9a-zA-Z/]$/,
-                    message: `挂在路径需满足: [a-z0-9]([-a-z0-9]*[a-z0-9])?`
+                    value: /^[0-9a-zA-Z_/][0-9a-zA-Z_/.-]*[0-9a-zA-Z_/]$/,
+                    message: t('Mount Path Auth')
                   },
                   validate: (e) => {
                     if (listNames.includes(e.toLocaleLowerCase())) {
-                      return '与其他存储路径冲突';
+                      return t('ConfigMap Path Conflict') || 'ConfigMap Path Conflict';
                     }
                     return true;
                   }
