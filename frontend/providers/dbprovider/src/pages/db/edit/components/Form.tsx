@@ -17,7 +17,6 @@ import { UseFormReturn } from 'react-hook-form';
 import { useRouter } from 'next/router';
 import RangeInput from '@/components/RangeInput';
 import MySlider from '@/components/Slider';
-import MyRangeSlider from '@/components/RangeSlider';
 import MyIcon from '@/components/Icon';
 import type { QueryType } from '@/types';
 import type { DBEditType } from '@/types/db';
@@ -26,9 +25,9 @@ import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/editApp';
 import Tabs from '@/components/Tabs';
 import MySelect from '@/components/Select';
 import { DBTypeList, DBVersionMap } from '@/constants/db';
+import { useTranslation } from 'next-i18next';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
-import styles from './index.module.scss';
 import { obj2Query } from '@/api/tools';
 import { throttle } from 'lodash';
 
@@ -42,6 +41,7 @@ const Form = ({
   minStorage: number;
 }) => {
   if (!formHook) return null;
+  const { t } = useTranslation();
 
   const router = useRouter();
   const { name } = router.query as QueryType;
@@ -57,7 +57,7 @@ const Form = ({
   const navList = [
     {
       id: 'baseInfo',
-      label: '基础配置',
+      label: 'Basic',
       icon: 'formInfo'
     }
   ];
@@ -93,7 +93,7 @@ const Form = ({
 
   const Label = ({
     children,
-    w = 80,
+    w = 'auto',
     ...props
   }: {
     children: string;
@@ -139,8 +139,8 @@ const Form = ({
         <Box>
           <Tabs
             list={[
-              { id: 'form', label: '配置表单' },
-              { id: 'yaml', label: 'YAML 文件' }
+              { id: 'form', label: 'Config Form' },
+              { id: 'yaml', label: 'YAML File' }
             ]}
             activeId={'form'}
             onChange={() =>
@@ -204,15 +204,15 @@ const Form = ({
           <Box id={'baseInfo'} {...boxStyles}>
             <Box {...headerStyles}>
               <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'myGray.500'} />
-              基础配置
+              {t('Basic')}
             </Box>
             <Box px={'42px'} py={'24px'}>
               <Flex alignItems={'center'} mb={7}>
-                <Label>集群类型</Label>
+                <Label w={80}>{t('Type')}</Label>
                 <MySelect
                   isDisabled={isEdit}
                   width={'130px'}
-                  placeholder="集群类型"
+                  placeholder={`${t('DataBase')} ${t('Type')}`}
                   value={getValues('dbType')}
                   list={DBTypeList}
                   onchange={(val: any) => {
@@ -222,10 +222,10 @@ const Form = ({
                 />
               </Flex>
               <Flex alignItems={'center'} mb={7}>
-                <Label>数据库版本</Label>
+                <Label w={80}>{t('Version')}</Label>
                 <MySelect
                   width={'200px'}
-                  placeholder="数据库版本"
+                  placeholder={`${t('DataBase')} ${t('Version')}`}
                   value={getValues('dbVersion')}
                   list={DBVersionMap[getValues('dbType')]}
                   onchange={(val: any) => setValue('dbVersion', val)}
@@ -233,24 +233,24 @@ const Form = ({
               </Flex>
               <FormControl mb={7} isInvalid={!!errors.dbName} w={'500px'}>
                 <Flex alignItems={'center'}>
-                  <Label>集群名称</Label>
+                  <Label w={80}>{t('Name')}</Label>
                   <Input
                     disabled={isEdit}
-                    title={isEdit ? '不允许修改应用名称' : ''}
+                    title={isEdit ? t('Cannot Change Name') || '' : ''}
                     autoFocus={true}
-                    placeholder={'字母开头，仅能包含小写字母、数字和 -'}
+                    placeholder={t('DataBase Name Regex') || ''}
                     {...register('dbName', {
-                      required: '应用名称不能为空',
+                      required: t('DataBase Name Empty') || '',
                       pattern: {
                         value: /^[a-z][a-z0-9]+([-.][a-z0-9]+)*$/g,
-                        message: '应用名只能包含小写字母、数字和 -,并且字母开头。'
+                        message: t('DataBase Name Regex Error')
                       }
                     })}
                   />
                 </Flex>
               </FormControl>
               <Flex mb={10} pr={3} alignItems={'flex-start'}>
-                <Label w={80}>CPU</Label>
+                <Label w={85}>CPU</Label>
                 <MySlider
                   markList={CpuSlideMarkList}
                   activeVal={getValues('cpu')}
@@ -266,7 +266,7 @@ const Form = ({
                 </Box>
               </Flex>
               <Flex mb={'50px'} pr={3} alignItems={'center'}>
-                <Label w={80}>内存</Label>
+                <Label w={85}>{t('Memory')}</Label>
                 <MySlider
                   markList={MemorySlideMarkList}
                   activeVal={getValues('memory')}
@@ -279,22 +279,21 @@ const Form = ({
                 />
               </Flex>
               <Flex mb={8} alignItems={'center'}>
-                <Label>实例数</Label>
+                <Label w={80}>{t('Replicas')}</Label>
                 <RangeInput
                   value={getValues('replicas')}
                   min={1}
                   max={20}
-                  hoverText={isEdit ? '不支持修改实例数' : '实例数范围：1~20'}
                   setVal={(val) => {
                     register('replicas', {
-                      required: '实例数不能为空',
+                      required: t('Replicas Cannot Empty') || '',
                       min: {
                         value: 1,
-                        message: '实例数最小为1'
+                        message: `${t('Min Replicas')}1`
                       },
                       max: {
                         value: 20,
-                        message: '实例数最大为20'
+                        message: `${t('Max Replicas')}20`
                       }
                     });
                     setValue('replicas', val || 1);
@@ -303,8 +302,8 @@ const Form = ({
               </Flex>
               <FormControl isInvalid={!!errors.storage} w={'500px'}>
                 <Flex alignItems={'center'}>
-                  <Label>存储容量</Label>
-                  <Tooltip label={`容量范围: ${minStorage}~200 Gi`}>
+                  <Label w={80}>{t('Storage')}</Label>
+                  <Tooltip label={`${t('Storage Range')}${minStorage}~200 Gi`}>
                     <NumberInput
                       max={200}
                       min={minStorage}
@@ -315,14 +314,14 @@ const Form = ({
                     >
                       <NumberInputField
                         {...register('storage', {
-                          required: '容量不能为空',
+                          required: t('Storage Cannot Empty') || 'Storage Cannot Empty',
                           min: {
                             value: minStorage,
-                            message: `容量最为为 ${minStorage} Gi`
+                            message: `${t('Storage Min')}${minStorage} Gi`
                           },
                           max: {
                             value: 200,
-                            message: '容量最大为 200 Gi'
+                            message: `${t('Storage Max')}200 Gi`
                           },
                           valueAsNumber: true
                         })}

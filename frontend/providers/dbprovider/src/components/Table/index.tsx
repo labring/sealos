@@ -1,5 +1,6 @@
-import React, { useCallback, useMemo } from 'react';
+import React from 'react';
 import { Box, BoxProps, Grid, Flex } from '@chakra-ui/react';
+import { useTranslation } from 'next-i18next';
 
 interface Props extends BoxProps {
   columns: {
@@ -12,6 +13,7 @@ interface Props extends BoxProps {
 }
 
 const Table = ({ columns, data }: Props) => {
+  const { t } = useTranslation();
   return (
     <Grid templateColumns={`repeat(${columns.length},1fr)`} overflowX={'auto'}>
       {columns.map((item, i) => (
@@ -31,7 +33,7 @@ const Table = ({ columns, data }: Props) => {
             borderRightRadius: 'md'
           }}
         >
-          {item.title}
+          {t(item.title)}
         </Box>
       ))}
       {data.map((item: any, index1) =>

@@ -25,6 +25,7 @@ import { useToast } from '@/hooks/useToast';
 import MyMenu from '@/components/Menu';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import { defaultPod } from '@/constants/db';
+import { useTranslation } from 'next-i18next';
 
 import styles from '../index.module.scss';
 
@@ -41,6 +42,7 @@ const Logs = ({
   setPodDetail: (name: string) => void;
   closeFn: () => void;
 }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const controller = useRef(new AbortController());
   const { Loading } = useLoading();
@@ -137,7 +139,10 @@ const Logs = ({
       });
     } catch (err: any) {
       toast({
-        title: typeof err === 'string' ? err : err?.message || '智能分析出错了~',
+        title:
+          typeof err === 'string'
+            ? err
+            : err?.message || t('Event Analyze Error') || 'Event Analyze Error',
         status: 'warning',
         duration: 5000,
         isClosable: true
@@ -145,7 +150,7 @@ const Logs = ({
       onCloseAnalysesModel();
     }
     onEndAnalyses();
-  }, [events, onCloseAnalysesModel, onEndAnalyses, onOpenAnalyses, onStartAnalyses, toast]);
+  }, [events, onCloseAnalysesModel, onEndAnalyses, onOpenAnalyses, onStartAnalyses, t, toast]);
 
   return (
     <Modal isOpen={true} onClose={closeFn} size={'sm'} isCentered>
@@ -154,7 +159,7 @@ const Logs = ({
         <ModalCloseButton fontSize={16} top={6} right={6} />
         <Flex p={7} pb={2} alignItems={'center'}>
           <Box mr={3} fontSize={'xl'} fontWeight={'bold'}>
-            Pod 详情
+            Pod {t('Details')}
           </Box>
           <Box px={3}>
             <MyMenu
@@ -185,7 +190,7 @@ const Logs = ({
         <Grid py={5} flex={'1 0 0'} h={0} px={7} gridTemplateColumns={'450px 1fr'} gridGap={4}>
           <Flex flexDirection={'column'} h={'100%'}>
             <Box mb={4} color={'myGray.600'}>
-              详情
+              {t('Details')}
             </Box>
             <Box
               flex={'1 0 0'}
@@ -195,7 +200,7 @@ const Logs = ({
               py={3}
               overflow={'overlay'}
             >
-              <RenderItem label="状态">
+              <RenderItem label="Status">
                 <Box as="span" color={pod.status.color}>
                   {pod.status.label}
                 </Box>
@@ -235,7 +240,7 @@ const Logs = ({
                   leftIcon={<MyIcon name={'analyze'} />}
                   onClick={onclickAnalyses}
                 >
-                  智能分析
+                  {t('Event Analyze')}
                 </Button>
               )}
             </Flex>

@@ -3,9 +3,10 @@ import DBList from './components/dbList';
 import { useQuery } from '@tanstack/react-query';
 import { useDBStore } from '@/store/db';
 import { useLoading } from '@/hooks/useLoading';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { serviceSideProps } from '@/utils/i18n';
 
-export default function Home() {
+function Home() {
   const { dbList, setDBList } = useDBStore();
   const { Loading } = useLoading();
   const [initialized, setInitialized] = useState(false);
@@ -29,3 +30,13 @@ export default function Home() {
     </>
   );
 }
+
+export async function getServerSideProps(content: any) {
+  return {
+    props: {
+      ...(await serviceSideProps(content))
+    }
+  };
+}
+
+export default Home;

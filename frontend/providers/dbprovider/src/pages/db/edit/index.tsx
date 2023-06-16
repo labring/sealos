@@ -16,6 +16,8 @@ import { useDBStore } from '@/store/db';
 import { useLoading } from '@/hooks/useLoading';
 import dynamic from 'next/dynamic';
 import { useGlobalStore } from '@/store/global';
+import { serviceSideProps } from '@/utils/i18n';
+import { useTranslation } from 'next-i18next';
 import { adaptDBForm } from '@/utils/adapt';
 import Header from './components/Header';
 import Form from './components/Form';
@@ -23,6 +25,7 @@ import Yaml from './components/Yaml';
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
 const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yaml' }) => {
+  const { t } = useTranslation();
   const router = useRouter();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -33,7 +36,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const { loadDBDetail } = useDBStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!dbName);
   const { openConfirm, ConfirmChild } = useConfirm({
-    content: applyMessage
+    content: t(applyMessage)
   });
   const isEdit = useMemo(() => !!dbName, [dbName]);
 
@@ -106,7 +109,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
-      if (!obj) return '提交表单错误';
+      if (!obj) return t('Submit Error');
       if (!!obj.message) {
         return obj.message;
       }
@@ -119,7 +122,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       duration: 3000,
       isClosable: true
     });
-  }, [formHook.formState.errors, toast]);
+  }, [formHook.formState.errors, t, toast]);
 
   useQuery(
     ['init'],
@@ -199,6 +202,6 @@ export async function getServerSideProps(context: any) {
   const tabType = context?.query?.type || 'form';
 
   return {
-    props: { dbName, tabType }
+    props: { ...(await serviceSideProps(context)), dbName, tabType }
   };
 }

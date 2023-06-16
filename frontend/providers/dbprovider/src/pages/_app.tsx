@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import type { AppProps } from 'next/app';
 import { ChakraProvider } from '@chakra-ui/react';
@@ -7,11 +7,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Router from 'next/router';
 import NProgress from 'nprogress'; //nprogress module
 import { sealosApp, createSealosApp } from 'sealos-desktop-sdk/app';
+import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { useConfirm } from '@/hooks/useConfirm';
 import throttle from 'lodash/throttle';
 import { useGlobalStore } from '@/store/global';
 import { useLoading } from '@/hooks/useLoading';
 import { useRouter } from 'next/router';
+import { appWithTranslation, useTranslation } from 'next-i18next';
+import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 
 import 'nprogress/nprogress.css';
 import 'react-day-picker/dist/style.css';
@@ -33,10 +36,12 @@ const queryClient = new QueryClient({
   }
 });
 
-export default function App({ Component, pageProps, domain }: AppProps & { domain: string }) {
+function App({ Component, pageProps, domain }: AppProps & { domain: string }) {
   const router = useRouter();
+  const { i18n } = useTranslation();
   const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
   const { Loading } = useLoading();
+  const [refresh, setRefresh] = useState(false);
   const { openConfirm, ConfirmChild } = useConfirm({
     title: '跳转提示',
     content: '该应用不允许单独使用，点击确认前往 Sealos Desktop 使用。'
@@ -80,12 +85,43 @@ export default function App({ Component, pageProps, domain }: AppProps & { domai
     };
   }, [setScreenWidth]);
 
+  useEffect(() => {
+    const changeI18n = async (data: any) => {
+      const lastLang = getLangStore();
+      const newLang = data.currentLanguage;
+      if (lastLang !== newLang) {
+        i18n.changeLanguage(newLang);
+        setLangStore(newLang);
+        setRefresh((state) => !state);
+      }
+    };
+    (async () => {
+      try {
+        const lang = await sealosApp.getLanguage();
+        changeI18n({
+          currentLanguage: lang.lng
+        });
+      } catch (error) {
+        changeI18n({
+          currentLanguage: 'en'
+        });
+      }
+    })();
+
+    return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
+  }, []);
+
   // record route
   useEffect(() => {
     return () => {
       setLastRoute(router.asPath);
     };
-  }, [router.pathname, setLastRoute]);
+  }, [router.pathname]);
+
+  useEffect(() => {
+    const lang = getLangStore() || 'en';
+    i18n?.changeLanguage?.(lang);
+  }, [refresh, router.pathname]);
 
   return (
     <>
@@ -109,3 +145,5 @@ export default function App({ Component, pageProps, domain }: AppProps & { domai
 App.getInitialProps = async () => {
   return { domain: process.env.SEALOS_DOMAIN || 'cloud.sealos.io' };
 };
+
+export default appWithTranslation(App);
