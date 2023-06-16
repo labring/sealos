@@ -36,6 +36,7 @@ import Tabs from '@/components/Tabs';
 import Tip from '@/components/Tip';
 import MySelect from '@/components/Select';
 import { useTranslation } from 'next-i18next';
+import PriceBox from './PriceBox';
 import dynamic from 'next/dynamic';
 
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
@@ -261,6 +262,18 @@ const Form = ({
               </Box>
             ))}
           </Box>
+          <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>
+            <PriceBox
+              pods={
+                getValues('hpa.use')
+                  ? [getValues('hpa.minReplicas') || 1, getValues('hpa.maxReplicas') || 2]
+                  : [getValues('replicas') || 1, getValues('replicas') || 1]
+              }
+              cpu={getValues('cpu')}
+              memory={getValues('memory')}
+              storage={getValues('storeList').reduce((sum, item) => sum + item.value, 0)}
+            />
+          </Box>
         </Box>
 
         <Box
@@ -455,8 +468,8 @@ const Form = ({
                         placeholder="hpa对象"
                         value={getValues('hpa.target')}
                         list={[
-                          { id: 'cpu', label: 'CPU value' },
-                          { id: 'memory', label: 'Memory value' }
+                          { id: 'cpu', label: 'CPU' },
+                          { id: 'memory', label: 'Memory' }
                         ]}
                         onchange={(val: any) => setValue('hpa.target', val)}
                       />
@@ -725,9 +738,7 @@ const Form = ({
                   <Divider my={'24px'} bg={'myGray.100'} />
 
                   <Box>
-                    <Box className={styles.formSecondTitle}>
-                      Configmap {t('Configuration File')}
-                    </Box>
+                    <Box className={styles.formSecondTitle}>{t('Configuration File')}</Box>
                     {configMaps.map((item, index) => (
                       <Flex key={item.id} _notLast={{ mb: 5 }} alignItems={'center'}>
                         <Flex
@@ -774,7 +785,7 @@ const Form = ({
                       leftIcon={<MyIcon name="plus" />}
                       w={'320px'}
                     >
-                      {t('Add')} configmap
+                      {t('Add')} {t('Configuration File')}
                     </Button>
                   </Box>
 

@@ -63,7 +63,7 @@ const DelModal = ({
               'Are you sure you want to delete this application? If you proceed, all data for this project will be deleted.'
             )}
             <Box my={3}>
-              {t('Please enter')}
+              {t('Please enter')}{' '}
               <Box as={'span'} color={'myGray.900'} fontWeight={'bold'} userSelect={'all'}>
                 {appName}
               </Box>{' '}

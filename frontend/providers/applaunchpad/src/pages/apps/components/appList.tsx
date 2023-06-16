@@ -14,7 +14,6 @@ import dynamic from 'next/dynamic';
 import MyMenu from '@/components/Menu';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useTranslation } from 'next-i18next';
-import LangSelect from '@/components/LangSelect';
 
 const DelModal = dynamic(() => import('@/pages/app/detail/components/DelModal'));
 
@@ -112,7 +111,7 @@ const AppList = ({
       key: 'name',
       render: (item: AppListItemType) => {
         return (
-          <Box pl={4} color={'myGray.900'} fontSize={'md'}>
+          <Box pl={4} color={'myGray.900'} fontSize={'md'} fontWeight={'bold'}>
             {item.name}
           </Box>
         );
