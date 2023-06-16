@@ -1,4 +1,5 @@
-import React, { FormEventHandler, MouseEventHandler, useEffect, useMemo, useRef, useState } from "react";
+import React, { FormEventHandler, MouseEventHandler, use, useEffect, useMemo, useRef, useState } from "react";
+import { Image } from "@chakra-ui/react";
 import Layout from "@/components/layout";
 import githubIcon from "public/images/github.svg";
 import wechatIcon from "public/images/wechat.svg";
@@ -8,29 +9,17 @@ import saveIcon from 'public/images/ant-design_safety-outlined.svg'
 import closeIcon from 'public/icons/close_white.svg'
 import warnIcon from 'public/icons/warning.svg'
 import NextLink from 'next/link'
-import { FormErrorMessage, InputGroup, InputLeftAddon, InputRightAddon, Link } from '@chakra-ui/react'
+import { Box, FormErrorMessage, InputGroup, InputLeftAddon, InputRightAddon, Link, useDisclosure } from '@chakra-ui/react'
 import { Button, Flex, FormControl, FormLabel, Img, Input, Radio, Text } from "@chakra-ui/react";
 import request from "@/services/request";
 import useSessionStore from "@/stores/session";
 import { Session } from "@/types";
 import router from "next/router";
-export async function getServerSideProps(context: any) {
-  const wechat_client_id = process.env.WECHAT_CLIENT_ID 
-  const github_client_id = process.env.GITHUB_CLIENT_ID 
-  const service_protocol = process.env.SERVICE_PROTOCOL 
-  const private_protocol = process.env.PRIVATE_PROTOCOL 
-  const callback_url = process.env.CALLBACK_URL
-  const props = {
-    wechat_client_id,
-    github_client_id,
-    callback_url,
-    service_protocol,
-    private_protocol,
-  }
-  return {
-    props
-  }
-}
+import LangSelect from "@/components/LangSelect";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import { i18n, useTranslation } from "next-i18next";
+import { get } from "lodash";
+import { getCookie } from "@/utils/cookieUtils";
 
 export default function Login(
   {
@@ -47,6 +36,12 @@ export default function Login(
     private_protocol: string,
   }
 ) {
+  const { t, i18n } = useTranslation()
+  useEffect(() => {
+    const cookie = getCookie('NEXT_LOCALE')
+    i18n?.changeLanguage(cookie || 'en')
+  }, [])
+  const disclosure = useDisclosure()
   const setSessionProp = useSessionStore(s => s.setSessionProp)
   const setProvider = useSessionStore(s => s.setProvider)
   const generateState = useSessionStore(s => s.generateState)
@@ -100,15 +95,15 @@ export default function Login(
   const getSign: FormEventHandler = async (e) => {
     e.preventDefault()
     if (!isAgree) {
-      setError('请阅读并同意下方协议')
+      setError(t('Read and agree') || 'Please read and agree to the agreement below')
       return
     }
     if (!checkIsVaild) {
-      setError('验证码错误')
+      setError(t('Invalid verification code') || 'Invalid verification code')
       return
     }
     if (!isValidPhoneNumber()) {
-      setError('请输入有效的手机号码')
+      setError(t('Invalid mobile number') || 'Invalid mobile number')
       return
     }
     setIsLoading(true)
@@ -127,7 +122,7 @@ export default function Login(
   const getCode: MouseEventHandler = async (e) => {
     e.preventDefault()
     if (!isValidPhoneNumber()) {
-      setError('请输入有效的手机号码')
+      setError(t('Invalid mobile number') || 'Invalid mobile number')
       return
     }
     setRemainTime(60)
@@ -203,7 +198,7 @@ export default function Login(
               borderRight='1px solid rgba(0, 0, 0, 0.4)'
             >+86</Text></InputLeftAddon>
 
-            <Input type='tel' placeholder='手机号' mx={'12px'}
+            <Input type='tel' placeholder={t('phone number tips') || ''} mx={'12px'}
               variant={'unstyled'}
               bg={'transparent'}
               id="phoneNumber"
@@ -222,7 +217,7 @@ export default function Login(
                 onClick={
                   getCode
                 }>
-                获取验证码
+                {t('Get Code')}
               </Link> : <Text >{remainTime} s</Text>
               }
             </InputRightAddon>
@@ -233,7 +228,7 @@ export default function Login(
             >
               <Img src={saveIcon.src}></Img>
             </InputLeftAddon>
-            <Input type='password' placeholder='6 位验证码' pl={'12px'} value={checkValue}
+            <Input type='password' placeholder={t('verify code tips') || ''} pl={'12px'} value={checkValue}
               variant={'unstyled'}
               id="verifyCode"
 
@@ -264,17 +259,16 @@ export default function Login(
               fontWeight='400'
               fontSize='12px'
               lineHeight='140%'
-
               color='#FFFFFF'>
-              我已阅读并同意 <Link
+              {t('agree policy')} <Link
                 href={service_protocol}
                 _hover={
                   { color: 'rgba(94, 189, 242, 1)', borderBottom: '1px solid rgba(94, 189, 242, 1)' }
-                }>服务协议</Link> 和 <Link
+                }>{t('Service Agreement')}</Link> {t('and')} <Link
                   href={private_protocol}
                   _hover={
                     { color: 'rgba(94, 189, 242, 1)', borderBottom: '1px solid rgba(94, 189, 242, 1)' }
-                  }>隐私协议</Link></Text>
+                  }>{t('Privacy Policy')}</Link></Text>
           </Radio>
 
           <Button
@@ -297,7 +291,7 @@ export default function Login(
               }
             }
           >
-            {isLoading ? "Loading..." : "Login"}
+            {isLoading ? (t('Loading') || 'Loading') + "..." : t('Log In') || "Log In"}
           </Button>
           {/* </Box> */}
 
@@ -311,8 +305,61 @@ export default function Login(
         </Flex>
 
       </FormControl>
-
+      <Flex
+        alignItems={'center'}
+        position={'absolute'}
+        top={'42px'}
+        right={'42px'}
+        cursor={'pointer'}
+        gap={'16px'}
+      > <Flex
+        w="36px"
+        h="36px"
+        borderRadius={'50%'}
+        background={'rgba(244, 246, 248, 0.7)'}
+        justifyContent={'center'}
+        alignItems={'center'}
+        position={'relative'}
+        boxShadow={'0px 1.2px 2.3px rgba(0, 0, 0, 0.2)'}
+      >
+          <Box onClick={() => disclosure.onOpen()}>
+            <Image
+              width={'20px'}
+              height={'20px'}
+              borderRadius="full"
+              src='/images/language.svg'
+              fallbackSrc="/images/sealos.svg"
+              alt="user avator"
+            />
+          </Box>
+          <LangSelect disclosure={disclosure} i18n={i18n} />
+        </Flex>
+      </Flex>
     </Layout >
   );
+}
+export async function getServerSideProps({ req, res, locales }: any) {
+  const local = req?.cookies?.NEXT_LOCALE || 'en';
+  const wechat_client_id = process.env.WECHAT_CLIENT_ID
+  const github_client_id = process.env.GITHUB_CLIENT_ID
+  const service_protocol = process.env.SERVICE_PROTOCOL
+  const private_protocol = process.env.PRIVATE_PROTOCOL
+  const callback_url = process.env.CALLBACK_URL
+  const props = {
+    ...(await serverSideTranslations(
+      local,
+      undefined,
+      null,
+      locales || []
+    )),
+    wechat_client_id,
+    github_client_id,
+    callback_url,
+    service_protocol,
+    private_protocol,
+  }
+  return {
+    props
+  }
 }
 

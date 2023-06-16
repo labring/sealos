@@ -4,6 +4,18 @@
   "Have Read": "已读",
   "Unread": "未读",
   "Read All": "全部已读",
+  "Log In": "登录",
+  "Loading": "加载中",
   "Log Out": "退出账号",
-  "From": "来自"
+  "From": "来自",
+  "verify code tips":"6位验证码",
+  "phone number tips":"手机号码",
+  "Invalid mobile number":"无效的手机号码",
+  "Invalid verify code":"无效的验证码",
+  "Read and agree":"请阅读并同意下方协议",
+  "agree policy":"我已阅读并同意",
+  "and":"和",
+  "Service Agreement":"服务协议",
+  "Privacy Policy":"隐私政策",
+  "Get Code":"获取验证码"
 }

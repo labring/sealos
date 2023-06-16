@@ -1,9 +1,8 @@
-import LangSelect from '@/components/LangSelect';
 import { useCopyData } from '@/hooks/useCopyData';
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import download from '@/utils/downloadFIle';
-import { Box, Flex, Image, Text, UseDisclosureProps } from '@chakra-ui/react';
+import { Box, Flex, Image, Stack, Text, UseDisclosureProps } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import JsYaml from 'js-yaml';
 import { useTranslation } from 'next-i18next';
@@ -11,7 +10,7 @@ import { useRouter } from 'next/router';
 import { useMemo } from 'react';
 import Iconfont from '../iconfont';
 
-export default function Index({ accountDisclosure }: { accountDisclosure: UseDisclosureProps }) {
+export default function Index({ disclosure }: { disclosure: UseDisclosureProps }) {
   const router = useRouter();
   const { t } = useTranslation();
   const { delSession, getSession } = useSessionStore();
@@ -41,20 +40,16 @@ export default function Index({ accountDisclosure }: { accountDisclosure: UseDis
   };
 
   return (
-    <>
+    disclosure.isOpen ? <>
       <Box
         position={'fixed'}
-        top={0}
-        left={0}
-        bottom={0}
-        right={0}
+        inset={0}
         zIndex={'998'}
-        onClick={accountDisclosure.onClose}
+        onClick={disclosure.onClose}
       ></Box>
       <Box
         w="297px"
-        h="347px"
-        bg="rgba(255, 255, 255, 0.75)"
+        bg="rgba(255, 255, 255, 0.6)"
         boxShadow={'0px 1px 2px rgba(0, 0, 0, 0.2)'}
         position={'absolute'}
         top="48px"
@@ -65,7 +60,6 @@ export default function Index({ accountDisclosure }: { accountDisclosure: UseDis
         backdropFilter={'blur(150px)'}
       >
         <Flex justifyContent={'end'} alignItems={'center'} overflow={'hidden'}>
-          <LangSelect mr="auto" />
           <Iconfont iconName="icon-logout" width={14} height={14} color="#24282C"></Iconfont>
           <Text ml="6px" color={'#24282C'} fontSize={'12px'} fontWeight={500} onClick={logout}>
             {t('Log Out')}
@@ -89,8 +83,12 @@ export default function Index({ accountDisclosure }: { accountDisclosure: UseDis
               <Iconfont iconName="icon-copy2" width={16} height={16} color="#7B838B"></Iconfont>
             </Box>
           </Flex>
-          <Box w="100%" mt="24px" bg="rgba(255, 255, 255, 0.6)" borderRadius={'4px'}>
-            <Flex h="60px" alignItems={'center'}>
+          <Stack direction={'column'}
+            width={'100%'}
+            mt="24px" bg="rgba(255, 255, 255, 0.6)"
+            borderRadius={'4px'}
+          >
+            <Flex h="54px" alignItems={'center'} borderBottom={'1px solid #0000001A'}>
               <Text ml="16px">kubeconfig</Text>
 
               <Box ml="auto" onClick={() => download('kubeconfig.yaml', kubeconfig)}>
@@ -105,9 +103,38 @@ export default function Index({ accountDisclosure }: { accountDisclosure: UseDis
                 <Iconfont iconName="icon-copy2" width={16} height={16} color="#219BF4"></Iconfont>
               </Box>
             </Flex>
-          </Box>
+            <Flex h="54px" alignItems={'center'}>
+              <Text ml="16px">kubeconfig</Text>
+
+              <Box ml="auto" onClick={() => download('kubeconfig.yaml', kubeconfig)}>
+                <Iconfont
+                  iconName="icon-download"
+                  width={16}
+                  height={16}
+                  color="#219BF4"
+                ></Iconfont>
+              </Box>
+              <Box ml="8px" mr="20px" onClick={() => copyData(kubeconfig)}>
+                <Iconfont iconName="icon-copy2" width={16} height={16} color="#219BF4"></Iconfont>
+              </Box>
+            </Flex>
+            <Flex h="55px" alignItems={'center'}>
+              <Text ml="16px">kubeconfig</Text>
+
+              <Box ml="auto" onClick={() => download('kubeconfig.yaml', kubeconfig)}>
+                <Iconfont
+                  iconName="icon-download"
+                  width={16}
+                  height={16}
+                  color="#219BF4"
+                ></Iconfont>
+              </Box>
+              <Box ml="8px" mr="20px" onClick={() => copyData(kubeconfig)}>
+                <Iconfont iconName="icon-copy2" width={16} height={16} color="#219BF4"></Iconfont>
+              </Box>
+            </Flex>
+          </Stack>
         </Flex>
-      </Box>
-    </>
+      </Box></> : <></>
   );
 }

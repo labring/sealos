@@ -8,8 +8,9 @@ export const k8sFormatTime = (time: string | number | Date) => {
 }
 // 1¥=10000
 export const formatMoney = (money: number) => {
-  return (money / 10000).toFixed(2);
+  return (money / 1000000)
 };
+export const deFormatMoney = (money: number) => (money * 1000000)
 
 export function formatUrl(url: string, query: Record<string, string>) {
   let queryStr = '';

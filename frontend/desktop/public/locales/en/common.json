@@ -11,5 +11,17 @@
   "Unread": "Unread",
   "Read All": "Read All",
   "Log Out": "Log Out",
-  "From": "From"
+  "Log In": "Log In",
+  "Loading": "Loading",
+  "From": "From",
+  "verify code tips":"6-digit Verification Code",
+  "phone number tips":"Phone Number",
+  "Invalid mobile number":"Invalid mobile number",
+  "Invalid verification code":"Invalid verification code",
+  "Read and agree":"Please read and agree to the agreement below",
+  "agree policy":"I have read and agree to the",
+  "Service Agreement":"Service Agreement",
+  "and":"and",
+  "Privacy Policy":"Privacy Policy",
+  "Get Code":"verification code"
 }
