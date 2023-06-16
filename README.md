@@ -27,7 +27,7 @@ A Cloud Operating System designed for managing cloud-native applications
 
 > [Docs](https://sealos.io/en/docs/Intro) | [简体中文](README_zh.md) | [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
 
-Sealos is a cloud operating system distribution based on the Kubernetes kernel. It adopts a cloud-native approach, discarding traditional cloud computing architecture, and shifting towards a new architecture with Kubernetes as the cloud kernel. This allows enterprises to use the cloud as effortlessly as they would use a personal computer.
+Sealos['siːləs] is a cloud operating system distribution based on the Kubernetes kernel. This allows enterprises to use the cloud as effortlessly as they would use a personal computer.
 
 ## 🚀 Deploy your app on Sealos
 
@@ -89,9 +89,7 @@ Have a look through [existing Issues](https://github.com/labring/sealos/issues?q
 
 ## Links
 
-- [Sealos Action](https://github.com/labring/sealos-action)
-- [Cluster Image](https://github.com/labring-actions/cluster-image)
-- [Rootfs Image](https://github.com/labring-actions/runtime)
+- [Laf](https://github.com/labring/laf) is a function as a service application on sealos.
 - [Buildah](https://github.com/containers/buildah) The functionalities of Buildah are extensively utilized in Sealos 4.0 to ensure that cluster images are compatible with OCI standard.
 
 <!-- ## License -->
