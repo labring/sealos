@@ -1161,6 +1161,14 @@ webhooks:
       path: /validate-v1-sealos-cloud
   failurePolicy: Ignore
   name: debt.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: metadata.name
+        operator: NotIn
+        values:
+          - account-system
+          - kube-system
+          - calico-system
   rules:
   - apiGroups:
     - '*'
