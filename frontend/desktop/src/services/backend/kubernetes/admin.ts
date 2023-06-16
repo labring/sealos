@@ -46,10 +46,8 @@ async function watchClusterObject({
       body = data.body;
       // @ts-ignore
       if ("status" in body && "kubeConfig" in body.status && JSON.stringify(body) !== JSON.stringify(lastbody)) {
-        // console.log(`Status for ${name} has changed:`);
+
         lastbody = body;
-        // console.log('getkubeConfig', body)
-        // console.log('getkubeConfig', body.status.kubeC)
         // @ts-ignore
         return body.status.kubeConfig as string
       }
@@ -76,7 +74,7 @@ async function setUserKubeconfig(kc: k8s.KubeConfig, uid: string, k8s_username: 
     plural,
     k8s_username
   )
-    .then(res =>  res.body as UserCR)
+    .then(res => res.body as UserCR)
     .catch(res => {
       const body = res.body as StatusCR
       if (body.kind === 'Status' && res.body.reason === 'NotFound' && res.body.code === 404) {
@@ -115,7 +113,29 @@ async function setUserKubeconfig(kc: k8s.KubeConfig, uid: string, k8s_username: 
   }
   return k8s_username
 }
-
+// 系统迁移
+async function setUserKubeconfigByuid(kc: k8s.KubeConfig, uid: string) {
+  const resourceType = 'User';
+  const group = 'user.sealos.io';
+  const version = 'v1';
+  const plural = 'users';
+  const labelSelector = `uid=${uid}`;
+  let name: string = ''
+  const client = kc.makeApiClient(k8s.CustomObjectsApi);
+  const { response } = (await client.listClusterCustomObject(group, version, plural, undefined, undefined, undefined, undefined, labelSelector)) as unknown as { response: { body: { items: any[] } } };
+  if (response.body.items.length === 0) {
+    console.log(`Created new ${resourceType} with labels ${JSON.stringify(labelSelector)}`);
+  } else {
+    // 找name
+    const existingResource = response.body.items[response.body.items.length - 1];
+    name = existingResource.metadata.name
+  }
+  return name
+}
+export const getUserKubeconfigByuid = async (uid: string) => {
+  const kc = K8sApiDefault()
+  return await setUserKubeconfigByuid(kc, uid)
+}
 export const getUserKubeconfig = async (uid: string, k8s_username: string) => {
   const kc = K8sApiDefault()
   const group = 'user.sealos.io';

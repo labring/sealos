@@ -8,6 +8,7 @@ import * as OpenApi from '@alicloud/openapi-client'
 import * as Util from '@alicloud/tea-util'
 import { jsonRes } from '@/services/backend/response';
 import { addOrUpdateCode, checkSendable } from '@/services/backend/db/verifyCode';
+import { enableSms } from '@/services/enable';
 const accessKeyId = process.env.ALI_ACCESS_KEY_ID
 const accessKeySecret = process.env.ALI_ACCESS_KEY_SECRET
 const templateCode = process.env.ALI_TEMPLATE_CODE
@@ -15,6 +16,9 @@ const signName = process.env.ALI_SIGN_NAME
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
+    if(!enableSms()){
+      throw new Error('SMS is not enabled')
+    }
     const { phoneNumbers } = req.body;
     if (!await checkSendable(phoneNumbers)) {
       return jsonRes(res, {

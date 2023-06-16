@@ -1,5 +1,6 @@
 import { connectToDatabase } from './mongodb';
 import { PROVIDERS, Provider } from '@/types/user';
+import { hashPassword } from '@/utils/crypto';
 import { customAlphabet } from 'nanoid';
 import { v4 as uuid } from 'uuid';
 const LetterBytes = "abcdefghijklmnopqrstuvwxyz0123456789"
@@ -11,12 +12,13 @@ async function connectToUserCollection() {
   const collection = client.db().collection<User>('user');
   await collection.createIndex({ uid: 1 }, { unique: true })
   await collection.createIndex({ 'k8s_users.name': 1 }, { unique: true, sparse: true })
+  await collection.createIndex({ 'password_user': 1 }, { unique: true, sparse: true })
   return collection
 }
 export interface K8s_user {
   name: string;
 }
-interface User {
+type User = {
   uid: string;
   avatar_url: string;
   name: string;
@@ -25,6 +27,8 @@ interface User {
   phone?: string;
   k8s_users?: K8s_user[];
   created_time: string;
+  password?: string;
+  password_user?: string;
 }
 
 export async function queryUser({ id, provider }:
@@ -63,22 +67,15 @@ export async function createUser({ id, provider, name, avatar_url }: {
   }
   return user
 }
-export async function updateUser({ id, provider, name, avatar_url }: {
+export async function updateUser({ id, provider, data }: {
   id: string,
   provider: Provider,
-  name?: string,
-  avatar_url?: string
+  data: Partial<Omit<User, 'provider'>>
 }) {
   const users = await connectToUserCollection();
-
-  let _user = {
-  } as any
-  name && (_user.name = name)
-  avatar_url && (_user.avatar_url = avatar_url)
-
   let user = null
   if (verifyProvider(provider)) {
-    user = await users.updateOne({ [provider]: id }, { $set: _user });
+    user = await users.updateOne({ [provider]: id }, { $set: data });
   } else {
     throw new Error('provider error')
   }
@@ -87,11 +84,11 @@ export async function updateUser({ id, provider, name, avatar_url }: {
 export async function addK8sUser({ id, provider, k8s_user }: {
   id: string,
   provider: Provider,
-  k8s_user?: K8s_user
+  k8s_user?: K8s_user,
 }) {
   const users = await connectToUserCollection();
-  
-  if(k8s_user === undefined) {
+
+  if (k8s_user === undefined) {
     k8s_user = { name: await get_k8s_username() }
   }
   if (verifyProvider(provider)) {
@@ -109,13 +106,47 @@ export async function removeK8sUser({ id, provider, k8s_username }: {
   const users = await connectToUserCollection();
   let result = null
   if (verifyProvider(provider)) {
-    result = await users.updateOne({ [provider]: id }, { $pull: { k8s_users: {name: k8s_username} } });
+    result = await users.updateOne({ [provider]: id }, { $pull: { k8s_users: { name: k8s_username } } });
   } else {
     throw new Error('provider error')
   }
   return result
 }
 
+// export async function createUserByPassword({ name, password }: {
+//   name: string,
+//   password: string
+// }) {
+//   const users = await connectToUserCollection();
+//   const avatar_url = ''
+//   let uid = uuid()
+//   const k8s_username = await get_k8s_username()
+//   let user: User = {
+//     uid,
+//     avatar_url,
+//     name,
+//     password_user: name,
+//     created_time: new Date().toISOString(),
+//     k8s_users: [{ name: k8s_username }],
+//     password
+//   }
+//   await users.insertOne(user);
+//   return user
+// }
+// export async function verifyPassword({ name, password }: {
+//   name: string,
+//   password: string
+// }) {
+//   const users = await connectToUserCollection();
+//   const user = await users.findOne({ password_user: name })
+//   if (!user) {
+//     return false
+//   }
+//   return user.password === hashPassword(password)
+// }
+function verifyProvider(provider: string): provider is Provider {
+  return PROVIDERS.includes(provider as Provider)
+}
 async function get_k8s_username() {
   const users = await connectToUserCollection();
   let k8s_username = nanoid()
@@ -130,36 +161,16 @@ async function get_k8s_username() {
   }
   return k8s_username
 }
-
-function verifyProvider(provider: string): provider is Provider {
-  return PROVIDERS.includes(provider as Provider)
+export async function removeUser({ id, provider }: {
+  id: string,
+  provider: Provider
+}) {
+  const users = await connectToUserCollection();
+  let user = null
+  if (verifyProvider(provider)) {
+    user = await users.deleteOne({ [provider]: id });
+  } else {
+    throw new Error('provider error')
+  }
+  return user
 }
-
-// export async function removeUser({ id, provider, name, avatar_url }: {
-//   id: string,
-//   provider: Provider,
-//   name?: string,
-//   avatar_url?: string
-// }) {
-//   const users = await connectToUserCollection();
-
-//   let user = null
-//   switch (provider) {
-//     case 'github':
-//       user = await users.deleteOne({ github: id });
-//       break;
-//     case 'wechat':
-//       user = await users.deleteOne({ wechat: id });
-//       break;
-//     case 'phone':
-//       user = await users.deleteOne({ phone: id });
-//       break;
-//     case 'default':
-//       user = await users.deleteOne({ uid: id });
-//       break;
-//     default:
-//       throw new Error('provider error')
-//       break;
-//   }
-//   return user
-// }

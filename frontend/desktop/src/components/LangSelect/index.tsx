@@ -1,69 +1,66 @@
 import { setCookie } from '@/utils/cookieUtils';
-import { Menu, MenuButton, MenuButtonProps, MenuItem, MenuList, Text } from '@chakra-ui/react';
-import { useTranslation } from 'next-i18next';
+import { Box, Button,  Stack,  UseDisclosureProps } from '@chakra-ui/react';
+import { I18n, useTranslation } from 'next-i18next';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { masterApp } from 'sealos-desktop-sdk/master';
 
-const langIcon = (
-  <svg
-    viewBox="0 0 24 24"
-    focusable="false"
-    width="1em"
-    height="1em"
-    fill="currentColor"
-    aria-hidden="true"
-  >
-    <path d="M0 0h24v24H0z" fill="none" />
-    <path
-      d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z "
-      className="css-c4d79v"
-    />
-  </svg>
-);
+const LANG_LIST = [
+  { value: 'en', label: 'English' },
+  { value: 'zh', label: '中文' }
+]
+function LangSelect({ disclosure, i18n }: { disclosure: UseDisclosureProps, i18n: I18n | null }) {
+  // const { i18n, ready } = useTranslation();
 
-const LANG_MAP = {
-  en: {
-    label: 'English'
-  },
-  zh: {
-    label: '中文'
-  }
-} as const;
-
-const LangSelect: React.FC<MenuButtonProps> = (props) => {
-  const { i18n } = useTranslation();
-
-  return (
-    <Menu autoSelect={false}>
-      <MenuButton p="4px" {...props}>
-        {langIcon}
-      </MenuButton>
-      <MenuList w="max-content" minW="120px">
-        {Object.entries(LANG_MAP).map(([key, lang]) => (
-          <MenuItem
-            key={key}
-            display="flex"
-            alignItems="center"
-            fontSize="sm"
-            {...(key === i18n.language ? { bg: 'A7Gray.200' } : {})}
-            onClick={() => {
-              masterApp.sendMessageToAll({
-                apiName: 'event-bus',
-                eventName: EVENT_NAME.CHANGE_I18N,
-                data: {
-                  currentLanguage: key
-                }
-              });
-              setCookie('NEXT_LOCALE', key, { expires: 30, sameSite: 'None', secure: true });
-              i18n.changeLanguage(key);
-            }}
-          >
-            <Text>{lang.label}</Text>
-          </MenuItem>
-        ))}
-      </MenuList>
-    </Menu>
-  );
+  return disclosure.isOpen ? <><Box
+    position={'fixed'}
+    inset={0}
+    zIndex={'998'}
+    onClick={disclosure.onClose}
+  ></Box>
+    <Stack
+      p={'6px'}
+      boxSizing='border-box'
+      minW={'94px'}
+      shadow={'0px 0px 1px 0px #798D9F40, 0px 2px 4px 0px #A1A7B340'}
+      position={'absolute'}
+      top="48px"
+      right={0}
+      bg="rgba(255, 255, 255, 0.6)"
+      boxShadow={'0px 1px 2px rgba(0, 0, 0, 0.2)'}
+      zIndex={'999'}
+      borderRadius={'4px'}
+    >
+      {LANG_LIST.map((item, index) => <Button
+        fontStyle='normal'
+        fontWeight='400'
+        fontSize='12px'
+        variant={'unstyled'}
+        key={item.label}
+        pl={'4px'}
+        py={'6px'}
+        display={'flex'}
+        justifyContent={'flex-start'}
+        {...item.value === i18n?.language ? {
+          bg: 'rgba(0, 0, 0, 0.05)',
+          color: '#0884DD',
+        } : {}
+        }
+        w='full'
+        onClick={() => {
+          masterApp?.sendMessageToAll({
+            apiName: 'event-bus',
+            eventName: EVENT_NAME.CHANGE_I18N,
+            data: {
+              currentLanguage: item.value
+            }
+          });
+          setCookie('NEXT_LOCALE', item.value, { expires: 30, sameSite: 'None', secure: true });
+          i18n?.changeLanguage(item.value);
+        }}
+      >
+        {item.label}
+      </Button>)}
+    </Stack ></> : <></>
 };
 
 export default LangSelect;

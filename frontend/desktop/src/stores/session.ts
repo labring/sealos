@@ -10,6 +10,8 @@ type SessionState = {
   session: Session;
   provider?: Provider;
   oauth_state: string;
+  newUser?: boolean;
+  updateUser:()=>void;
   setSession: (ss: Session) => void;
   setSessionProp: (key: keyof Session, value: any) => void;
   getSession: () => Session;
@@ -28,7 +30,9 @@ const useSessionStore = create<SessionState>()(
         session: {} as Session,
         provider: undefined,
         oauth_state: '',
+        newUser: false,
         setSession: (ss: Session) => set({ session: ss }),
+        updateUser:()=>set((state)=>{state.newUser = true}),
         setSessionProp: (key: keyof Session, value: any) => {
           set((state) => {
             state.session[key] = value;
