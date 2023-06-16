@@ -3,7 +3,7 @@
 ![](/docs/4.0/img/sealos-left-dark.png#gh-dark-mode-only)
 ![](/docs/4.0/img/sealos-left.png#gh-light-mode-only)
 
-A Cloud Operating System designed for managing cloud-native applications
+A Cloud Operating System designed for managing cloud-native applications.
 
 </h2>
 
@@ -27,7 +27,7 @@ A Cloud Operating System designed for managing cloud-native applications
 
 > [Docs](https://sealos.io/en/docs/Intro) | [简体中文](README_zh.md) | [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
 
-Sealos is a cloud operating system distribution based on the Kubernetes kernel. It adopts a cloud-native approach, discarding traditional cloud computing architecture, and shifting towards a new architecture with Kubernetes as the cloud kernel. This allows enterprises to use the cloud as effortlessly as they would use a personal computer.
+Sealos['siːləs] is a cloud operating system distribution based on the Kubernetes kernel. Use the cloud like using a personal computer.
 
 ## 🚀 Deploy your app on Sealos
 
