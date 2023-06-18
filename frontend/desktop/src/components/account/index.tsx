@@ -9,6 +9,9 @@ import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useMemo } from 'react';
 import Iconfont from '../iconfont';
+import { ApiResp } from '@/types';
+import useRecharge from '@/hooks/useRecharge';
+import { formatMoney } from '@/utils/format';
 
 export default function Index({ disclosure }: { disclosure: UseDisclosureProps }) {
   const router = useRouter();
@@ -26,13 +29,17 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureProps }
     }
   }, [kubeconfig]);
 
-  const { data } = useQuery(['getAccount'], () => request('/api/account/getAmount'));
+  const { data } = useQuery(['getAccount'], () => request<any, ApiResp<{ balance: number, deductionBalance: number, status: string }>>('/api/account/getAmount'));
 
-  let real_balance = data?.data?.balance ?? 0;
-  if (data?.data?.deductionBalance) {
-    real_balance = real_balance - data.data.deductionBalance;
-  }
+  const balance = useMemo(() => {
+    let real_balance = data?.data?.balance || 0;
+    if (data?.data?.deductionBalance) {
+      real_balance -= data?.data.deductionBalance;
+    }
+    return real_balance
+  }, [data])
 
+  const {RechargeModal,onOpen} = useRecharge({})
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     delSession();
@@ -88,19 +95,11 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureProps }
             mt="24px" bg="rgba(255, 255, 255, 0.6)"
             borderRadius={'4px'}
           >
-            <Flex h="54px" alignItems={'center'} borderBottom={'1px solid #0000001A'}>
-              <Text ml="16px">kubeconfig</Text>
+            <Flex h="54px" alignItems={'center'} borderBottom={'1px solid #0000001A'} p='16px'>
+              <Text>{t('Balance')}: ￥{formatMoney(balance).toFixed(2)}</Text>
 
-              <Box ml="auto" onClick={() => download('kubeconfig.yaml', kubeconfig)}>
-                <Iconfont
-                  iconName="icon-download"
-                  width={16}
-                  height={16}
-                  color="#219BF4"
-                ></Iconfont>
-              </Box>
-              <Box ml="8px" mr="20px" onClick={() => copyData(kubeconfig)}>
-                <Iconfont iconName="icon-copy2" width={16} height={16} color="#219BF4"></Iconfont>
+              <Box ml="auto" onClick={() =>onOpen()} color={'#219BF4'} fontWeight='500' fontSize='12px'>
+                {t('Charge')}
               </Box>
             </Flex>
             <Flex h="54px" alignItems={'center'}>
@@ -118,23 +117,10 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureProps }
                 <Iconfont iconName="icon-copy2" width={16} height={16} color="#219BF4"></Iconfont>
               </Box>
             </Flex>
-            <Flex h="55px" alignItems={'center'}>
-              <Text ml="16px">kubeconfig</Text>
-
-              <Box ml="auto" onClick={() => download('kubeconfig.yaml', kubeconfig)}>
-                <Iconfont
-                  iconName="icon-download"
-                  width={16}
-                  height={16}
-                  color="#219BF4"
-                ></Iconfont>
-              </Box>
-              <Box ml="8px" mr="20px" onClick={() => copyData(kubeconfig)}>
-                <Iconfont iconName="icon-copy2" width={16} height={16} color="#219BF4"></Iconfont>
-              </Box>
-            </Flex>
           </Stack>
         </Flex>
-      </Box></> : <></>
+      </Box>
+      <RechargeModal balance={balance}></RechargeModal>
+      </> : <></>
   );
 }

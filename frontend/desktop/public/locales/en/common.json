@@ -14,6 +14,7 @@
   "Log In": "Log In",
   "Loading": "Loading",
   "From": "From",
+  "Balance": "Balance",
   "verify code tips":"6-digit Verification Code",
   "phone number tips":"Phone Number",
   "Invalid mobile number":"Invalid mobile number",
@@ -23,5 +24,17 @@
   "Service Agreement":"Service Agreement",
   "and":"and",
   "Privacy Policy":"Privacy Policy",
-  "Get Code":"verification code"
+  "Get Code":"verification code",
+  "Total Amount": "Total Amount",
+  "Payment Result": "Payment Result",
+  "Payment Successful": "Payment Successful",
+  "In Payment": "In Payment ...",
+  "Bonus": "Bonus",
+  "Select Amount": "Select Amount",
+  "View Discount Rules":"View recharge discount rules.",
+  "Payment Status": "Payment Status",
+  "Scan with WeChat": "Scan with WeChat",
+  "Charge": "Charge",
+  "Order Number": "Order Number",
+  "Confirm": "Confirm"
 }

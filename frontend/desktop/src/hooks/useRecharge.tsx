@@ -22,15 +22,14 @@ import {
 } from '@chakra-ui/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useCallback } from 'react';
-import wechat_icon from '@/assert/ic_baseline-wechat.svg';
-import vector from '@/assert/Vector.svg';
+// import wechat_icon from '/images/ic_baseline-wechat.svg';
+// import vector from '/images/Vector.svg';
 import { deFormatMoney, formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import { getFavorable } from '@/utils/tools';
-import uil_info_circle from '@/assert/uil_info-circle.svg';
-import leftVector from '@/assert/material-symbols_arrow-back-ios-rounded.svg'
+// import uil_info_circle from '/images/uil_info-circle.svg';
 import { ApiResp } from '@/types/api';
 import { Pay, Payment } from '@/types';
 export const AMOUNT_LIST = [299, 599, 1999, 4999, 19999]
@@ -44,32 +43,10 @@ function useRecharge(props: {
   const { t } = useTranslation();
   const { isOpen, onOpen, onClose: _onClose } = useDisclosure();
 
-  const RechargeModal = () => {
-    
+  const RechargeModal = ({balance}:{balance:number}) => {
     const [step, setStep] = useState(1);
     const [amount, setAmount] = useState(AMOUNT_LIST[0]);
-    const { data: balanceData } = useQuery({
-      queryKey: ['getAccount'],
-      queryFn: () => request<any, ApiResp<{ balance: number, deductionBalance: number, status: string }>>('/api/account/getAmount'),
-      onSuccess(data) {
-        setTimeout(() => {
-          if (data?.data?.status === 'SUCCESS') {
-            createPaymentRes.reset();
-            setComplete(3)
-            props.onPaySuccess?.()
-            onClose();
-            setComplete(0)
-          }
-        }, 3000);
-      }
-    })
-    const balance = useMemo(() => {
-      let real_balance = balanceData?.data?.balance || 0;
-      if (balanceData?.data?.deductionBalance) {
-        real_balance -= balanceData?.data.deductionBalance;
-      }
-      return real_balance
-    }, [balanceData])
+
     // 整个流程跑通需要状态管理, 0 初始态， 1 创建支付单， 2 支付中, 3 支付成功
     const [complete, setComplete] = useState<0 | 1 | 2 | 3>(0)
     const [paymentName, setPaymentName] = useState('');
@@ -162,7 +139,7 @@ function useRecharge(props: {
                   {t('Balance')}
                 </Text>
                 <Text mt="4px" color="#24282C" fontSize="24px" fontWeight={'medium'}>
-                  ¥ {formatMoney(balance)}
+                  ¥ {formatMoney(balance).toFixed(2)}
                 </Text>
               </Flex>
               <Flex direction={'column'} mb={'20px'}>
@@ -251,10 +228,10 @@ function useRecharge(props: {
                   <NumberInputStepper
                   >
                     <NumberIncrementStepper>
-                      <Img src={vector.src}></Img>
+                      <Img src={'/images/Vector.svg'}></Img>
                     </NumberIncrementStepper>
                     <NumberDecrementStepper>
-                      <Img src={vector.src} transform={'rotate(180deg)'}></Img>
+                      <Img src={'/images/Vector.svg'} transform={'rotate(180deg)'}></Img>
                     </NumberDecrementStepper>
                   </NumberInputStepper>
                 </NumberInput>
@@ -274,7 +251,7 @@ function useRecharge(props: {
                 <Text>￥{getFavorable(amount)}</Text>
               </Flex>
               <Flex alignSelf={'flex-start'} align={'center'} mt={'20px'}>
-                <Img src={uil_info_circle.src} w={'18px'} h='18px' mr={'5px'}></Img>
+                <Img src='/images/uil_info-circle.svg' w={'18px'} h='18px' mr={'5px'}></Img>
                 <Link
                   fontStyle='normal'
                   fontWeight='400'
@@ -299,7 +276,7 @@ function useRecharge(props: {
           </> : <>
 
             <ModalHeader m={'24px'} p={'0'} position={'absolute'} display={'flex'} alignItems={'center'} height={'33px'}>
-              <Img src={leftVector.src} w={'20px'} h={'20px'} mr={'16px'} display={'inline-block'} verticalAlign={'middle'} cursor={'pointer'} onClick={() => {
+              <Img src='/images/Vector.svg' w={'20px'} transform={'rotate(-90deg)'} h={'20px'} mr={'16px'} display={'inline-block'} verticalAlign={'middle'} cursor={'pointer'} onClick={() => {
                 cancalPay()
               }}></Img>
               <Text>{t('Recharge Amount')}</Text>
@@ -319,7 +296,7 @@ function useRecharge(props: {
                     style={{ margin: '0 auto' }}
                     imageSettings={{
                       // 二维码中间的logo图片
-                      src: wechat_icon.src,
+                      src: '/images/ic_baseline-wechat.svg',
                       height: 40,
                       width: 40,
                       excavate: true // 中间图片所在的位置是否镂空
