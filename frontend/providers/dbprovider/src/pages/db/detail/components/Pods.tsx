@@ -23,17 +23,19 @@ import { useQuery } from '@tanstack/react-query';
 import { useDBStore } from '@/store/db';
 import MyMenu from '@/components/Menu';
 import MyIcon from '@/components/Icon';
+import { useTranslation } from 'next-i18next';
 
 const LogsModal = dynamic(() => import('./LogsModal'), { ssr: false });
 const DetailModel = dynamic(() => import('./PodDetailModal'), { ssr: false });
 
 const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [logsPodIndex, setLogsPodIndex] = useState<number>();
   const [detailPodIndex, setDetailPodIndex] = useState<number>();
   const { Loading } = useLoading();
   const { openConfirm: openConfirmRestart, ConfirmChild: RestartConfirmChild } = useConfirm({
-    content: '请确认重启 Pod？'
+    content: t('Confirm Restart Pod') || 'Confirm Restart Pod'
   });
   const { intervalLoadPods, dbPods } = useDBStore();
 
@@ -42,18 +44,18 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
       try {
         await restartPodByName(podName);
         toast({
-          title: `重启 ${podName} 成功`,
+          title: `${t('Restart')} ${podName} ${t('Success')}`,
           status: 'success'
         });
       } catch (err) {
         toast({
-          title: `重启 ${podName} 出现异常`,
+          title: `${t('Restart')} ${podName} ${t('Have Error')}`,
           status: 'warning'
         });
         console.log(err);
       }
     },
-    [toast]
+    [t, toast]
   );
 
   const columns: {
@@ -68,7 +70,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
       dataIndex: 'podName'
     },
     {
-      title: 'status',
+      title: 'Status',
       key: 'status',
       render: (item: PodDetailType) => <Box color={item.status.color}>{item.status.label}</Box>
     },
@@ -83,7 +85,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
       dataIndex: 'age'
     },
     {
-      title: 'control',
+      title: 'Operation',
       key: 'control',
       render: (item: PodDetailType, i: number) => (
         <Flex>
@@ -94,7 +96,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
             px={3}
             onClick={() => setDetailPodIndex(i)}
           >
-            详情
+            {t('Details')}
           </Button>
           {item.status.value === PodStatusEnum.Running && (
             <MyMenu
@@ -117,7 +119,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
                   child: (
                     <>
                       <MyIcon name={'log'} w={'14px'} />
-                      <Box ml={2}>日志</Box>
+                      <Box ml={2}>{t('Logs')}</Box>
                     </>
                   ),
                   onClick: () => setLogsPodIndex(i)
@@ -126,7 +128,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
                   child: (
                     <>
                       <MyIcon name={'restart'} />
-                      <Box ml={2}>重启</Box>
+                      <Box ml={2}>{t('Restart')}</Box>
                     </>
                   ),
                   onClick: openConfirmRestart(() => handleRestartPod(item.podName))
@@ -164,7 +166,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
                   backgroundColor={'#F8F8FA'}
                   fontWeight={'500'}
                 >
-                  {item.title}
+                  {t(item.title)}
                 </Th>
               ))}
             </Tr>

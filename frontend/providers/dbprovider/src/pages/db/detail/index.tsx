@@ -6,18 +6,20 @@ import { useToast } from '@/hooks/useToast';
 import { useLoading } from '@/hooks/useLoading';
 import { useGlobalStore } from '@/store/global';
 import { defaultDBDetail } from '@/constants/db';
+import { serviceSideProps } from '@/utils/i18n';
 import { useRouter } from 'next/router';
 import Header from './components/Header';
 import AppBaseInfo from './components/AppBaseInfo';
 import Pods from './components/Pods';
-import BackupTable from './components/BackupTable';
 import RangeDate from '@/components/RangeDate';
+import { useTranslation } from 'next-i18next';
 
 const AppDetail = ({ dbName, listType }: { dbName: string; listType: 'pod' | 'backup' }) => {
   const router = useRouter();
+  const { t } = useTranslation();
   const listNav = useRef([
-    { label: '实例列表', value: 'pod' }
-    // { label: '备份列表', value: 'backup' }
+    { label: 'Replicas List', value: 'pod' }
+    // { label: 'Backup List', value: 'backup' }
   ]);
   const theme = useTheme();
   const { toast } = useToast();
@@ -96,7 +98,7 @@ const AppDetail = ({ dbName, listType }: { dbName: string; listType: 'pod' | 'ba
                         router.replace(`/db/detail?name=${dbName}&listType=${item.value}`)
                     })}
               >
-                {item.label}
+                {t(item.label)}
               </Box>
             ))}
             <Box flex={1}></Box>
@@ -136,6 +138,6 @@ export async function getServerSideProps(context: any) {
   const listType = context.query?.listType || 'pod';
 
   return {
-    props: { dbName, listType }
+    props: { ...(await serviceSideProps(context)), dbName, listType }
   };
 }

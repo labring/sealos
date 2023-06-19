@@ -9,9 +9,11 @@ import {
   useDisclosure,
   Button
 } from '@chakra-ui/react';
+import { useTranslation } from 'next-i18next';
 
-export const useConfirm = ({ title = '提示', content }: { title?: string; content: string }) => {
+export const useConfirm = ({ title = 'Prompt', content }: { title?: string; content: string }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { t } = useTranslation();
   const cancelRef = useRef(null);
   const confirmCb = useRef<any>();
   const cancelCb = useRef<any>();
@@ -33,7 +35,7 @@ export const useConfirm = ({ title = '提示', content }: { title?: string; cont
           <AlertDialogOverlay>
             <AlertDialogContent>
               <AlertDialogHeader fontSize="lg" fontWeight="bold">
-                {title}
+                {t(title)}
               </AlertDialogHeader>
 
               <AlertDialogBody>{content}</AlertDialogBody>
@@ -46,7 +48,7 @@ export const useConfirm = ({ title = '提示', content }: { title?: string; cont
                     typeof cancelCb.current === 'function' && cancelCb.current();
                   }}
                 >
-                  取消
+                  {t('Cancel')}
                 </Button>
                 <Button
                   ml={3}
@@ -56,14 +58,14 @@ export const useConfirm = ({ title = '提示', content }: { title?: string; cont
                     typeof confirmCb.current === 'function' && confirmCb.current();
                   }}
                 >
-                  确认
+                  {t('Confirm')}
                 </Button>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialogOverlay>
         </AlertDialog>
       ),
-      [content, isOpen, onClose, title]
+      [content, isOpen, onClose, t, title]
     )
   };
 };

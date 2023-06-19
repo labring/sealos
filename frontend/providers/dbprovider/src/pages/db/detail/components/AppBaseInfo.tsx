@@ -7,8 +7,10 @@ import { getDBSecret } from '@/api/db';
 import { useQuery } from '@tanstack/react-query';
 import { DBStatusEnum, DBTypeEnum, defaultDBDetail } from '@/constants/db';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { useTranslation } from 'next-i18next';
 
 const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
+  const { t } = useTranslation();
   const { copyData } = useCopyData();
   const [showSecret, setShowSecret] = useState(false);
 
@@ -29,16 +31,16 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   >(
     () => [
       {
-        name: '集群信息',
+        name: 'Basic Info',
         iconName: 'appType',
         items: [
-          { label: '创建时间', value: db.createTime },
-          { label: '集群类型', value: db.dbType },
-          { label: '集群版本', value: db.dbVersion }
+          { label: 'Creation Time', value: db.createTime },
+          { label: 'DataBase Type', value: db.dbType },
+          { label: 'DataBase Version', value: db.dbVersion }
         ]
       },
       {
-        name: '配置信息',
+        name: 'Config Info',
         iconName: 'settings',
         items: [
           { label: 'Limit CPU', value: `${db.cpu / 1000} Core` },
@@ -83,7 +85,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
         >
           <Flex alignItems={'center'} color={'myGray.500'}>
             <MyIcon w={'16px'} name={info.iconName as any}></MyIcon>
-            <Box ml={2}>{info.name}</Box>
+            <Box ml={2}>{t(info.name)}</Box>
           </Flex>
           <Box mt={3} p={4} backgroundColor={'myWhite.400'} borderRadius={'sm'}>
             {info.items.map((item, i) => (
@@ -95,7 +97,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 }}
               >
                 <Box flex={'0 0 110px'} w={0} color={'blackAlpha.800'}>
-                  {item.label}
+                  {t(item.label)}
                 </Box>
                 <Box
                   color={'blackAlpha.600'}
@@ -124,14 +126,14 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
         <>
           <Flex mt={6} alignItems={'center'} color={'myGray.500'}>
             <MyIcon w={'16px'} name={'analyze'}></MyIcon>
-            <Box ml={2}>连接信息</Box>
+            <Box ml={2}>{t('Connection Info')}</Box>
             <Button
               ml={3}
               size={'xs'}
               disabled={db.status.value !== DBStatusEnum.Running}
               onClick={onclickConnectDB}
             >
-              一键连接
+              {t('Direct Connection')}
             </Button>
           </Flex>
           <Box

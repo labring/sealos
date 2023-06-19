@@ -47,6 +47,7 @@
   "Intelligent Analysis": "Intelligent Analysis",
   "Problem Analysis": "Problem Analysis",
   "Export": "Export",
+  "Copy Success": "Copy Success",
   "Edit Environment Variables": "Edit Environment Variables",
   "Application Deployment": "Application Deployment",
   "Creating": "Creating",
@@ -132,5 +133,6 @@
   "Min Storage Value": "Min Storage Value",
   "Max Storage Value": "Max Storage Value",
   "Can not change storage path": "Can not change storage path",
-  "Perday": "Perday"
+  "Perday": "Perday",
+  "Submit Error": "Submit Error"
 }

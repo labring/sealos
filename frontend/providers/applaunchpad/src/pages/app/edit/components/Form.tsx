@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -13,7 +13,6 @@ import {
   AccordionItem,
   AccordionPanel,
   AccordionIcon,
-  Link,
   useTheme,
   useDisclosure
 } from '@chakra-ui/react';
@@ -36,6 +35,7 @@ import Tabs from '@/components/Tabs';
 import Tip from '@/components/Tip';
 import MySelect from '@/components/Select';
 import { useTranslation } from 'next-i18next';
+import { INSTALL_ACCOUNT } from '@/store/static';
 import PriceBox from './PriceBox';
 import dynamic from 'next/dynamic';
 
@@ -262,18 +262,20 @@ const Form = ({
               </Box>
             ))}
           </Box>
-          <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>
-            <PriceBox
-              pods={
-                getValues('hpa.use')
-                  ? [getValues('hpa.minReplicas') || 1, getValues('hpa.maxReplicas') || 2]
-                  : [getValues('replicas') || 1, getValues('replicas') || 1]
-              }
-              cpu={getValues('cpu')}
-              memory={getValues('memory')}
-              storage={getValues('storeList').reduce((sum, item) => sum + item.value, 0)}
-            />
-          </Box>
+          {INSTALL_ACCOUNT && (
+            <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>
+              <PriceBox
+                pods={
+                  getValues('hpa.use')
+                    ? [getValues('hpa.minReplicas') || 1, getValues('hpa.maxReplicas') || 2]
+                    : [getValues('replicas') || 1, getValues('replicas') || 1]
+                }
+                cpu={getValues('cpu')}
+                memory={getValues('memory')}
+                storage={getValues('storeList').reduce((sum, item) => sum + item.value, 0)}
+              />
+            </Box>
+          )}
         </Box>
 
         <Box

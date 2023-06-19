@@ -27,8 +27,8 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
       <Box>
         <Tabs
           list={[
-            { id: 'form', label: '配置表单' },
-            { id: 'yaml', label: 'YAML 文件' }
+            { id: 'form', label: 'Config Form' },
+            { id: 'yaml', label: 'YAML File' }
           ]}
           activeId={'yaml'}
           onChange={() =>

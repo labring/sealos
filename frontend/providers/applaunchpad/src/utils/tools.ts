@@ -6,14 +6,16 @@ import yaml from 'js-yaml';
 import { DeployKindsType } from '@/types/app';
 import type { AppPatchPropsType } from '@/types/app';
 import { YamlKindEnum } from './adapt';
+import { useTranslation } from 'next-i18next';
 
 /**
  * copy text data
  */
 export const useCopyData = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   return {
-    copyData: (data: string, title: string = '复制成功') => {
+    copyData: (data: string, title: string = 'Copy Success') => {
       try {
         const textarea = document.createElement('textarea');
         textarea.value = data;
@@ -22,14 +24,14 @@ export const useCopyData = () => {
         document.execCommand('copy');
         document.body.removeChild(textarea);
         toast({
-          title,
+          title: t(title),
           status: 'success',
           duration: 1000
         });
       } catch (error) {
         console.error(error);
         toast({
-          title: '复制失败',
+          title: t('Copy Failed'),
           status: 'error'
         });
       }

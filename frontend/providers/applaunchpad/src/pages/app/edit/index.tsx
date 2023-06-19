@@ -30,6 +30,7 @@ const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 import { useGlobalStore } from '@/store/global';
 import { serviceSideProps } from '@/utils/i18n';
 import { patchYamlList } from '@/utils/tools';
+import { useTranslation } from 'next-i18next';
 
 const formData2Yamls = (data: AppEditType) => [
   {
@@ -80,6 +81,7 @@ const formData2Yamls = (data: AppEditType) => [
 ];
 
 const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) => {
+  const { t } = useTranslation();
   const appOldYamls = useRef<YamlItemType[]>([]);
   const { toast } = useToast();
   const { Loading, setIsLoading } = useLoading();
@@ -159,7 +161,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
-      if (!obj) return '提交表单错误';
+      if (!obj) return t('Submit Error');
       if (!!obj.message) {
         return obj.message;
       }
@@ -172,7 +174,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       duration: 3000,
       isClosable: true
     });
-  }, [formHook.formState.errors, toast]);
+  }, [formHook.formState.errors, t, toast]);
 
   useQuery(
     ['init'],

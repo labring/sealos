@@ -26,91 +26,91 @@ export enum DBStatusEnum {
 }
 export const dbStatusMap = {
   [DBStatusEnum.Creating]: {
-    label: '创建中',
+    label: 'Creating',
     value: DBStatusEnum.Creating,
     color: '#787A90',
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
   },
   [DBStatusEnum.Starting]: {
-    label: '启动中',
+    label: 'Starting',
     value: DBStatusEnum.Starting,
     color: '#787A90',
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
   },
   [DBStatusEnum.Stopping]: {
-    label: '暂停中',
+    label: 'Pausing',
     value: DBStatusEnum.Stopping,
     color: '#8172D8',
     backgroundColor: '#F2F1FB',
     dotColor: '#8172D8'
   },
   [DBStatusEnum.Stopped]: {
-    label: '已暂停',
+    label: 'Paused',
     value: DBStatusEnum.Stopped,
     color: '#8172D8',
     backgroundColor: '#F2F1FB',
     dotColor: '#8172D8'
   },
   [DBStatusEnum.Running]: {
-    label: '运行中',
+    label: 'Running',
     value: DBStatusEnum.Running,
     color: '#00A9A6',
     backgroundColor: '#E6F6F6',
     dotColor: '#00A9A6'
   },
   [DBStatusEnum.Updating]: {
-    label: '变更中',
+    label: 'Updating',
     value: DBStatusEnum.Updating,
     color: '#787A90',
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
   },
   [DBStatusEnum.SpecUpdating]: {
-    label: '修改中',
+    label: 'Updating',
     value: DBStatusEnum.SpecUpdating,
     color: '#787A90',
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
   },
   [DBStatusEnum.Rebooting]: {
-    label: '重启中',
+    label: 'Restarting',
     value: DBStatusEnum.Rebooting,
     color: '#787A90',
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
   },
   [DBStatusEnum.Upgrade]: {
-    label: '升级中',
+    label: 'Updating',
     value: DBStatusEnum.Upgrade,
     color: '#787A90',
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
   },
   [DBStatusEnum.VerticalScaling]: {
-    label: '变更中',
+    label: 'Updating',
     value: DBStatusEnum.VerticalScaling,
     color: '#787A90',
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
   },
   [DBStatusEnum.VolumeExpanding]: {
-    label: '扩容中',
+    label: 'Updating',
     value: DBStatusEnum.VolumeExpanding,
     color: '#787A90',
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
   },
   [DBStatusEnum.Failed]: {
-    label: '有异常',
+    label: 'Failed',
     value: DBStatusEnum.Failed,
     color: '#FF5B6E',
     backgroundColor: '#FFEBED',
     dotColor: '#FF5B6E'
   },
   [DBStatusEnum.UnKnow]: {
-    label: '未知',
+    label: 'Creating',
     value: DBStatusEnum.UnKnow,
     color: '#787A90',
     backgroundColor: '#F5F5F8',
