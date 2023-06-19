@@ -187,7 +187,7 @@ const Form = ({
                     h={'20px'}
                     color={activeNav === item.id ? 'myGray.500' : 'myGray.400'}
                   />
-                  <Box ml={4}>{item.label}</Box>
+                  <Box ml={4}>{t(item.label)}</Box>
                 </Flex>
               </Box>
             ))}

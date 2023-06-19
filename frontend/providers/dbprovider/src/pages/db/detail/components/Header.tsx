@@ -124,7 +124,7 @@ const Header = ({
             bg={'white'}
             onClick={() => setShowSlider(true)}
           >
-            {t('Detail')}
+            {t('Details')}
           </Button>
         </Box>
       )}

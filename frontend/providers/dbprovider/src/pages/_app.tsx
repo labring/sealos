@@ -103,7 +103,7 @@ function App({ Component, pageProps, domain }: AppProps & { domain: string }) {
         });
       } catch (error) {
         changeI18n({
-          currentLanguage: 'en'
+          currentLanguage: 'zh'
         });
       }
     })();
