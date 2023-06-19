@@ -272,6 +272,7 @@ replace (
 
 replace (
 	github.com/containers/common => github.com/containers/common v0.53.1-0.20230613173441-e1ea4d9a74e5
+	github.com/containers/storage => github.com/containers/storage v1.46.1
 	github.com/docker/docker => github.com/docker/docker v23.0.6+incompatible
 	github.com/imdario/mergo => github.com/imdario/mergo v0.3.13
 	github.com/vishvananda/netlink => github.com/vishvananda/netlink v1.1.0
