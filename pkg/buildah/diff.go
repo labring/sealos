@@ -20,6 +20,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/containers/common/libimage"
 	"github.com/containers/storage/pkg/archive"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -117,6 +118,7 @@ func newDiffCommand() *cobra.Command {
 			rootCmd.CommandPath()),
 	}
 	opts.RegisterFlags(cmd.Flags())
+	cmd.Flags().AddFlagSet(getPlatformFlags())
 	cmd.SetUsageTemplate(UsageTemplate())
 	return cmd
 }
@@ -159,7 +161,7 @@ func runDiff(c *cobra.Command, args []string, opts *diffOption) error {
 
 	ctx := getContext()
 	if diffType == DiffImage {
-		if args, err = r.pullOrLoadImages(ctx, args...); err != nil {
+		if args, err = r.PullOrLoadImages(ctx, args, libimage.CopyOptions{}); err != nil {
 			return err
 		}
 	}
