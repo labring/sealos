@@ -15,6 +15,8 @@
 package buildah
 
 import (
+	"github.com/containers/common/libimage"
+
 	"github.com/labring/sealos/pkg/utils/file"
 )
 
@@ -27,7 +29,7 @@ func PreloadIfTarFile(images []string, transport string) ([]string, error) {
 	for i := range images {
 		if file.IsTarFile(images[i]) {
 			ref := FormatReferenceWithTransportName(transport, images[i])
-			names, err := r.pullOrLoadImages(getContext(), ref)
+			names, err := r.PullOrLoadImages(getContext(), []string{ref}, libimage.CopyOptions{})
 			if err != nil {
 				return nil, err
 			}
