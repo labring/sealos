@@ -18,15 +18,17 @@ import receipt_icon from '@/assert/receipt_long_black.svg';
 import arrow_icon from '@/assert/Vector.svg';
 import arrow_left_icon from '@/assert/toleft.svg';
 import magnifyingGlass_icon from '@/assert/magnifyingGlass.svg';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import request from '@/service/request';
-import { BillingData, BillingSpec, BillingItem } from '@/types/billing';
+import { BillingData, BillingSpec } from '@/types/billing';
 import { LIST_TYPE } from '@/constants/billing';
 import SelectRange from '@/components/billing/selectDateRange';
 import useOverviewStore from '@/stores/overview';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useTranslation, withTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next';
 import { getCookie } from '@/utils/cookieUtils';
+import NotFound from '@/components/notFound';
+
 function Billing() {
   const { t, i18n, ready } = useTranslation();
   const cookie = getCookie('NEXT_LOCALE');
@@ -42,7 +44,7 @@ function Billing() {
   const [pageSize, setPageSize] = useState(10);
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isSuccess, isError } = useQuery(
+  const { data, isLoading, isSuccess } = useQuery(
     ['billing', { currentPage, startTime, endTime }],
     () => {
       let spec = {} as BillingSpec;
@@ -65,7 +67,6 @@ function Billing() {
     },
     {
       onSuccess(data) {
-        // setTableResult(data.data.status?.item || [])
         setTotalPage(data.data.status.pageLength);
       }
     }
@@ -98,8 +99,6 @@ function Billing() {
                 fontWeight="400"
                 fontSize="12px"
                 lineHeight="140%"
-                // bgColor={'#F6F8F9'}
-                // shadow={'0px 0px 4px 0px #A8DBFF'}
                 border={'1px solid #DEE0E2'}
                 bg={'#F6F8F9'}
                 _expanded={{
@@ -113,11 +112,6 @@ function Billing() {
                 borderRadius={'2px'}
               >
                 {LIST_TYPE[selectType + 1].title}
-                {/* <Img src={arrow_icon.src} transition={'all'} _expanded={
-                {
-                  transform: 'rotate(-180deg)'
-                }
-              }></Img> */}
               </Button>
             </PopoverTrigger>
             <PopoverContent
@@ -193,7 +187,7 @@ function Billing() {
           </Button>
         </Flex>
       </Flex>
-      {isSuccess ? (
+      {isSuccess && tableResult.length > 0 ? (
         <>
           <Box overflow={'auto'}>
             <BillingTable
@@ -257,7 +251,7 @@ function Billing() {
         </>
       ) : (
         <Flex direction={'column'} w="full" align={'center'} flex={'1'} h={'0'} justify={'center'}>
-          {isError && <div>retry</div>}
+          <NotFound></NotFound>
         </Flex>
       )}
     </Flex>

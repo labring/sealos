@@ -6,7 +6,6 @@ import {
   Button,
   Flex,
   Img,
-  Input,
   Link,
   Modal,
   ModalCloseButton,
@@ -23,17 +22,17 @@ import {
 } from '@chakra-ui/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
-import { memo, use, useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import wechat_icon from '@/assert/ic_baseline-wechat.svg';
 import vector from '@/assert/Vector.svg';
 import { deFormatMoney, formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import { getFavorable } from '@/utils/favorable';
 import { AMOUNT_LIST } from '@/constants/payment';
-import uil_info_circle from '@/assert/uil_info-circle.svg';
 import leftVector from '@/assert/material-symbols_arrow-back-ios-rounded.svg';
 import { ApiResp } from '@/types/api';
 import { Pay, Payment } from '@/types/payment';
+import OuterLink from '@/components/outerLink';
 function useRecharge() {
   const { t } = useTranslation();
 
@@ -196,7 +195,7 @@ function useRecharge() {
                     ))}
                   </Flex>
                 </Flex>
-                <Flex alignSelf={'flex-start'} align={'center'}>
+                <Flex alignSelf={'flex-start'} align={'center'} mb={'20px'}>
                   <Text color="#7B838B" mr={'28px'}>
                     {t('Recharge Amount')}
                   </Text>
@@ -245,18 +244,13 @@ function useRecharge() {
                   </Text>
                   <Text>￥{getFavorable(amount)}</Text>
                 </Flex>
-                <Flex alignSelf={'flex-start'} align={'center'} mt={'20px'}>
-                  <Img src={uil_info_circle.src} w={'18px'} h="18px" mr={'5px'}></Img>
-                  <Link
-                    fontStyle="normal"
-                    fontWeight="400"
-                    fontSize="12px"
-                    color="#1D8CDC"
+                <Box width={'full'}>
+                  <OuterLink
                     href="https://zdc6i2.laf.dev/sealos-discount"
-                  >
-                    {t('View Discount Rules')}
-                  </Link>
-                </Flex>
+                    text={t('View Discount Rules')}
+                  ></OuterLink>
+                </Box>
+
                 <Button
                   size="primary"
                   variant="primary"

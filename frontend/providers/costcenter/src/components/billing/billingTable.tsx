@@ -38,7 +38,7 @@ export function BillingTable({ data }: { data: BillingItem[] }) {
                 <Td>{item.order_id}</Td>
                 <Td>{format(parseISO(item.time), 'MM-dd HH:mm')}</Td>
                 <Td>
-                  <Flex align={'center'} justify={'center'} width={'full'} height={'full'}>
+                  <Flex align={'center'} width={'full'} height={'full'}>
                     <Flex
                       px={'12px'}
                       py={'4px'}

@@ -6,7 +6,7 @@ import '@/styles/globals.scss';
 import { ChakraProvider } from '@chakra-ui/react';
 import { persistQueryClient, removeOldestQuery } from '@tanstack/react-query-persist-client';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Hydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { AppProps } from 'next/app';
 import Fonts from '@/styles/fonts';
 import Router from 'next/router';
@@ -38,7 +38,6 @@ if (typeof window !== 'undefined') {
   });
 }
 
-//Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
 Router.events.on('routeChangeComplete', () => NProgress.done());
 Router.events.on('routeChangeError', () => NProgress.done());

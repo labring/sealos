@@ -11,25 +11,10 @@ import {
 import { LineChart } from 'echarts/charts';
 import { UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
-import useOverviewStore from '@/stores/overview';
 import { INITAL_SOURCE } from '@/constants/billing';
-import { BillingSpec, BillingData } from '@/types/billing';
-import { useQuery } from '@tanstack/react-query';
-import {
-  subSeconds,
-  addDays,
-  differenceInDays,
-  subDays,
-  formatISO,
-  parseISO,
-  format,
-  isSameDay,
-  startOfDay
-} from 'date-fns';
-import request from '@/service/request';
+import { BillingItem } from '@/types/billing';
+import { parseISO, format, isSameDay, startOfDay } from 'date-fns';
 import { formatMoney } from '@/utils/format';
-import { useMemo } from 'react';
-import { start } from 'nprogress';
 import { useTranslation } from 'next-i18next';
 
 echarts.use([
@@ -43,35 +28,11 @@ echarts.use([
   UniversalTransition
 ]);
 
-export default function Trend() {
-  const startTime = useOverviewStore((state) => state.startTime);
-  const endTime = useOverviewStore((state) => state.endTime);
+export default function Trend({ data }: { data: BillingItem[] }) {
   const { t } = useTranslation();
-  const { data } = useQuery(['billing', { startTime, endTime }], () => {
-    const start = startTime;
-
-    const end = subSeconds(addDays(endTime, 1), 1);
-    const delta = differenceInDays(end, start);
-    const spec: BillingSpec = {
-      startTime: formatISO(start, { representation: 'complete' }),
-      // pre,
-      endTime: formatISO(end, { representation: 'complete' }),
-      // start,
-      page: 1,
-      pageSize: (delta + 1) * 48,
-      type: -1,
-      orderID: ''
-    };
-    return request<any, { data: BillingData }, { spec: BillingSpec }>('/api/billing', {
-      method: 'POST',
-      data: {
-        spec
-      }
-    });
-  });
   const source = [
     ...INITAL_SOURCE,
-    ...(data?.data?.status.item
+    ...(data
       .filter((v) => v.type === 0)
       .map<[Date, number, number, number, number]>((item) => [
         parseISO(item.time),
