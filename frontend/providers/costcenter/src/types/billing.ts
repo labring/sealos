@@ -12,7 +12,7 @@ export type BillingSpec =
     };
 export type BillingItem = {
   amount: number;
-  costs: {
+  costs?: {
     cpu?: number;
     memory?: number;
     storage?: number;

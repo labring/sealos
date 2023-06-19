@@ -36,9 +36,9 @@ export default function Trend({ data }: { data: BillingItem[] }) {
       .filter((v) => v.type === 0)
       .map<[Date, number, number, number, number]>((item) => [
         parseISO(item.time),
-        item.costs.cpu || 0,
-        item.costs.memory || 0,
-        item.costs.storage || 0,
+        item.costs?.cpu || 0,
+        item.costs?.memory || 0,
+        item.costs?.storage || 0,
         item.amount
       ])
       // 归并为当天的开始
@@ -133,8 +133,9 @@ export default function Trend({ data }: { data: BillingItem[] }) {
         // 创建外层 div 元素
         const resDom = document.createElement('div');
         resDom.style.background = '#FFFFFF';
-        resDom.style.width = '162px';
-        resDom.style.height = '79px';
+        // resDom.style.width = '';
+        resDom.style.padding = '16px';
+        // resDom.style.height = '79px';
         resDom.style.padding = '16px';
         resDom.style.border = '1px solid rgba(205, 213, 218, 1)';
         resDom.style.borderRadius = '4px';

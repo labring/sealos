@@ -114,9 +114,9 @@ const useOverviewStore = create<OverviewState>()(
               .map<[string, number, number, number, number]>((item) => [
                 format(parseISO(item.time), 'yyyy-MM-dd'),
                 // getTime(parseISO(item.time)),
-                item.costs.cpu || 0,
-                item.costs.memory || 0,
-                item.costs.storage || 0,
+                item.costs?.cpu || 0,
+                item.costs?.memory || 0,
+                item.costs?.storage || 0,
                 item.amount
               ])
               .reduce<[string, number, number, number, number][]>((pre, cur) => {

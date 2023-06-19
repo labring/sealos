@@ -1,5 +1,5 @@
 export type Payment = {
-  paymentName: 'ec66fdeb-e105-4b1d-9dff-52c082ae2bdf';
+  paymentName: string;
   extra: {
     apiVersion: 'account.sealos.io/v1';
     kind: 'Payment';
