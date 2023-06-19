@@ -89,7 +89,11 @@ func (r *Runtime) getLayerID(id string, diffType DiffType) (string, error) {
 	return "", fmt.Errorf("%s not found: %w", id, lastErr)
 }
 
-func (r *Runtime) pullOrLoadImages(ctx context.Context, args ...string) ([]string, error) {
+func (r *Runtime) PullOrLoadImages(ctx context.Context, args []string, options libimage.CopyOptions) ([]string, error) {
+	copyOpts := options
+	if copyOpts.Writer == nil {
+		copyOpts.Writer = os.Stderr
+	}
 	var result []string
 	for i := range args {
 		name := args[i]
@@ -103,9 +107,7 @@ func (r *Runtime) pullOrLoadImages(ctx context.Context, args ...string) ([]strin
 				ref = strings.TrimPrefix(ref, "//")
 			}
 			pullImages, err := r.Runtime.Pull(ctx, ref, config.PullPolicyMissing, &libimage.PullOptions{
-				CopyOptions: libimage.CopyOptions{
-					Writer: os.Stderr,
-				},
+				CopyOptions: copyOpts,
 			})
 			if err != nil {
 				return nil, err
@@ -123,9 +125,7 @@ func (r *Runtime) pullOrLoadImages(ctx context.Context, args ...string) ([]strin
 				ref = filepath.Join(cwd, ref)
 			}
 			images, err := r.Runtime.Load(ctx, ref, &libimage.LoadOptions{
-				CopyOptions: libimage.CopyOptions{
-					Writer: os.Stderr,
-				},
+				CopyOptions: copyOpts,
 			})
 			if err != nil {
 				return nil, err
