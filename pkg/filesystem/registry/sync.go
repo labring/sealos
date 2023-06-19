@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"strconv"
 	"strings"
-	stdsync "sync"
 	"time"
 
 	"github.com/containers/common/pkg/auth"
@@ -41,8 +41,9 @@ import (
 )
 
 const (
-	localhost            = "127.0.0.1"
-	defaultTemporaryPort = "5050"
+	localhost     = "127.0.0.1"
+	defaultPort   = 5000
+	temporaryPort = 5050
 )
 
 // TODO: fallback to ssh mode when HTTP is not available
@@ -61,6 +62,35 @@ func shouldSkip(mounts []v2.MountImage) bool {
 	return true
 }
 
+func useDefaultOrServeTemporaryRegistry(ctx context.Context, execer ssh.Interface, pathResolver PathResolver, addr string, defaultPort, temporaryPort int) (string, func(), error) {
+	host := trimPortStr(addr)
+
+	probeCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	defaultEndpoint := sync.ParseRegistryAddress(host, strconv.Itoa(defaultPort))
+	if err := httputils.WaitUntilEndpointAlive(probeCtx, defaultEndpoint); err == nil {
+		logger.Debug("using default registry %s", defaultEndpoint)
+		return defaultEndpoint, nil, nil
+	}
+
+	// default endpoint is not alive, run `sealctl registry serve` to start a temporary registry
+	cmdctx, cmdcancel := context.WithCancel(ctx)
+	go func(ctx context.Context, host string) {
+		logger.Debug("running temporary registry on host %s", host)
+		if err := execer.CmdAsyncWithContext(ctx, host, getRegistryServeCommand(pathResolver, strconv.Itoa(temporaryPort))); err != nil {
+			logger.Error(err)
+		}
+	}(cmdctx, addr)
+
+	temporaryEndpoint := sync.ParseRegistryAddress(host, strconv.Itoa(temporaryPort))
+	probeCtx, cancel = context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	if err := httputils.WaitUntilEndpointAlive(probeCtx, temporaryEndpoint); err != nil {
+		return "", cmdcancel, err
+	}
+	return temporaryEndpoint, cmdcancel, nil
+}
+
 func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 	if shouldSkip(s.mounts) {
 		return nil
@@ -69,39 +99,18 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
 	}
 	logger.Info("using sync mode syncing images to hosts %v", hosts)
-	// run `sealctl registry serve` to start a temporary registry
-	for i := range hosts {
-		cmdCtx, cancel := context.WithCancel(ctx)
-		// defer cancel async commands
-		defer cancel()
-		go func(ctx context.Context, host string) {
-			logger.Debug("running temporary registry on host %s", host)
-			if err := s.ssh.CmdAsyncWithContext(ctx, host, getRegistryServeCommand(s.pathResolver, defaultTemporaryPort)); err != nil {
-				logger.Error(err)
-			}
-		}(cmdCtx, hosts[i])
-	}
 
 	var endpoints []string
-	probeCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
-	eg, _ := errgroup.WithContext(probeCtx)
-	mutex := &stdsync.Mutex{}
+
 	for i := range hosts {
-		host := hosts[i]
-		eg.Go(func() error {
-			ep := sync.ParseRegistryAddress(trimPortStr(host), defaultTemporaryPort)
-			if err := httputils.WaitUntilEndpointAlive(probeCtx, "http://"+ep); err != nil {
-				return err
-			}
-			mutex.Lock()
-			endpoints = append(endpoints, ep)
-			mutex.Unlock()
-			return nil
-		})
-	}
-	if err := eg.Wait(); err != nil {
-		return err
+		ep, cancel, err := useDefaultOrServeTemporaryRegistry(ctx, s.ssh, s.pathResolver, hosts[i], defaultPort, temporaryPort)
+		if err != nil {
+			return err
+		}
+		if cancel != nil {
+			defer cancel()
+		}
+		endpoints = append(endpoints, ep)
 	}
 
 	outerEg, ctx := errgroup.WithContext(ctx)
