@@ -273,7 +273,7 @@ const AppList = ({
 
         <Button
           flex={'0 0 auto'}
-          px={3}
+          px={5}
           h={'40px'}
           colorScheme={'primary'}
           leftIcon={<MyIcon name={'plus'} w={'12px'} />}

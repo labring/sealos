@@ -41,6 +41,7 @@ const PriceBox = ({
       { label: 'TotalPrice', color: '#485058', value: podScale(totalP) }
     ];
   }, [cpu, memory, pods, storage]);
+
   return (
     <Box>
       <Box>
