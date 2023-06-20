@@ -206,13 +206,13 @@ docker build -t java-demo .
     insert into test values (1,'Sealos');
     ```
 
-## Step 11: Open the "Application Management" application
+## Step 11: Open the "App Launchpad" application
 
 ![](/images/java-example-3.png)
 
 ## Step 12: Create a new application
 
-- In "Application Management", click on "Create New Application" to create a new application.
+- In "App Launchpad", click on "Create New Application" to create a new application.
 
 ![](/images/java-example-4.png)
 

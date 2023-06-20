@@ -93,13 +93,13 @@ Replace `your_image_name` with your image name and tag.
 
 ![](/images/java-example-0.png)
 
-## Step 5: Open the "Application Management" App
+## Step 5: Open the "App Launchpad" App
 
 ![](/images/java-example-3.png)
 
 ## Step 6: Create a New Application
 
-- In "Application Management", click "Create New Application" to create a new application.
+- In "App Launchpad", click "Create New Application" to create a new application.
 
 ![](/images/java-example-4.png)
 
@@ -107,7 +107,7 @@ Replace `your_image_name` with your image name and tag.
 
 - Basic Configuration:
   - Application Name (custom): go-demo
-  - Image Name (**Step 5** pushed image): damager6666/demo:latest
+  - Image Name: damager6666/demo:latest
   - CPU (recommended): 1 Core
   - Memory (recommended): 1 G
 - Deployment Mode:

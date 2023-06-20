@@ -166,13 +166,13 @@ CMD ["npm", "start"]
     insert into test values (1,'Sealos');
     ```
 
-## Step 9: Open the "Application Management" application
+## Step 9: Open the "App Launchpad" application
 
 ![](/images/java-example-3.png)
 
 ## Step 10: Create a new application
 
-- In "Application Management", click "Create New Application" to create a new application.
+- In App Launchpad", click "Create New Application" to create a new application.
 
 ![](/images/java-example-4.png)
 
@@ -202,7 +202,7 @@ CMD ["npm", "start"]
 
 ## Step 13: Access the application
 
-- Click "Application Management" to view the application status. When the STATUS changes from Pending to Running, it means that the application has been successfully launched.
+- Click "App Launchpad" to view the application status. When the STATUS changes from Pending to Running, it means that the application has been successfully launched.
 - When the STATUS is Running, you can directly access the external network address.
 
 ![](/images/java-example-8.png)
