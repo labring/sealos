@@ -89,3 +89,31 @@ spec:
         - name: desktop-frontend-volume
           configMap:
             name: desktop-frontend-config
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: auth-system-manager-role
+rules:
+- apiGroups: ["user.sealos.io"]
+  resources: ["users"]
+  verbs: ["list", "get", "create", "update", "patch", "watch"]
+- apiGroups: ["user.sealos.io"]
+  resources: ["users/status"]
+  verbs: ["list", "get", "create", "update", "patch", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: auth-system-manager-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: auth-system-manager-role
+subjects:
+- kind: ServiceAccount
+  name: auth-manager
+  namespace: sealos
+- kind: ServiceAccount
+  name: desktop-frontend
+  namespace: sealos

@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/labring/sealos/pkg/utils/retry"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/labring/sealos/controllers/pkg/database"
@@ -242,13 +244,15 @@ func (r *AccountReconciler) syncResourceQuota(ctx context.Context, nsName string
 		},
 	}
 
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
-		quota.Spec.Hard = DefaultResourceQuota()
+	return retry.Retry(10, 1*time.Second, func() error {
+		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
+			quota.Spec.Hard = DefaultResourceQuota()
+			return nil
+		}); err != nil {
+			return fmt.Errorf("sync resource quota failed: %v", err)
+		}
 		return nil
-	}); err != nil {
-		return fmt.Errorf("sync resource quota failed: %v", err)
-	}
-	return nil
+	})
 }
 
 func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, namespace string) error {
