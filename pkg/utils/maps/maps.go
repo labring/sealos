@@ -25,8 +25,8 @@ import (
 
 func MapToStringBySpilt(data map[string]string, spilt string) string {
 	result := make([]string, len(data))
-	for _, k := range yaml.SortedMapKeys(data) {
-		result = append(result, fmt.Sprintf("%s=%s", k, data[k]))
+	for i, k := range yaml.SortedMapKeys(data) {
+		result[i] = fmt.Sprintf("%s=%s", k, data[k])
 	}
 	return strings.Join(result, spilt)
 }

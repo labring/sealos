@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/labring/sealos/pkg/client-go/kubernetes"
+
 	strings2 "github.com/labring/sealos/pkg/utils/strings"
 
 	"golang.org/x/sync/errgroup"
@@ -203,6 +205,23 @@ func (k *KubeadmRuntime) getContentData() constants.Data {
 	return constants.NewData(k.getClusterName())
 }
 
-func GetConstantData(clusterName string) constants.Data {
-	return constants.NewData(clusterName)
+func (k *KubeadmRuntime) getKubeInterface() kubernetes.Client {
+	if k.cli != nil {
+		return k.cli
+	}
+	cli, err := kubernetes.NewKubernetesClient(k.getContentData().AdminFile(), k.getMaster0IPAPIServer())
+	if err != nil {
+		logger.Error("get kube client failed %v", err)
+		return nil
+	}
+	k.cli = cli
+	return cli
+}
+
+func (k *KubeadmRuntime) getKubeExpansion() kubernetes.Expansion {
+	ki := k.getKubeInterface()
+	if ki != nil {
+		return kubernetes.NewKubeExpansion(ki.Kubernetes())
+	}
+	return nil
 }

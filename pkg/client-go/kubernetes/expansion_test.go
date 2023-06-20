@@ -17,6 +17,7 @@ limitations under the License.
 package kubernetes
 
 import (
+	"context"
 	"testing"
 
 	"k8s.io/client-go/kubernetes"
@@ -42,7 +43,8 @@ func TestGetKubeadmConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetKubeadmConfig(tt.args.client)
+			ke := NewKubeExpansion(tt.args.client)
+			got, err := ke.FetchKubeadmConfig(context.Background())
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetKubeadmConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return

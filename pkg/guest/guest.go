@@ -49,7 +49,7 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
 
 	kubeConfig := filepath.Join(constants.GetHomeDir(), ".kube", "config")
 	if !fileutil.IsExist(kubeConfig) {
-		adminFile := runtime.GetConstantData(cluster.Name).AdminFile()
+		adminFile := constants.NewData(cluster.Name).AdminFile()
 		data, err := fileutil.ReadAll(adminFile)
 		if err != nil {
 			return fmt.Errorf("read admin.conf error in guest: %w", err)
