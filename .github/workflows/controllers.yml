@@ -254,12 +254,17 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
 
-      - name: Sync Images
-        uses: peter-evans/create-or-update-comment@v1
+      - name: Renew issue and Sync Images
+        uses: labring/gh-rebot@v0.0.6
         if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
         with:
-          issue-number: 359
-          repository: labring-actions/cluster-image
-          body: |
-            /imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module.name }}-controller:${{ steps.prepare.outputs.tag_name }}
-          token: "${{ secrets.GH_PAT }}"
+          version: v0.0.8-rc1
+        env:
+          GH_TOKEN: "${{ secrets.GH_PAT }}"
+          SEALOS_TYPE: "issue_renew"
+          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
+          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
+          SEALOS_ISSUE_LABEL: "dayly-report"
+          SEALOS_ISSUE_TYPE: "day"
+          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
+          SEALOS_COMMENT_BODY: "/imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module.name }}-controller:${{ steps.prepare.outputs.tag_name }}"

@@ -60,15 +60,21 @@ jobs:
       - name: Fetch Current version
         id: get-current-tag
         uses: actions-ecosystem/action-get-latest-tag@v1.6.0
-      - name: Build sealos image
+      - name: Renew issue and Sync Images
+        uses: labring/gh-rebot@v0.0.6
         if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-        uses: peter-evans/create-or-update-comment@v1
         with:
-          issue-number: 359
-          repository: labring-actions/cluster-image
-          body: |
-            /imagebuild_apps sealos ${{steps.get-current-tag.outputs.tag }}
-          token: "${{ secrets.GH_PAT }}"
+          version: v0.0.8-rc1
+        env:
+          GH_TOKEN: "${{ secrets.GH_PAT }}"
+          SEALOS_TYPE: "issue_renew"
+          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
+          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
+          SEALOS_ISSUE_LABEL: "dayly-report"
+          SEALOS_ISSUE_TYPE: "day"
+          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
+          SEALOS_COMMENT_BODY: "/imagebuild_apps sealos ${{steps.get-current-tag.outputs.tag }}"
+
   changelog:
     runs-on: ubuntu-20.04
     needs:
