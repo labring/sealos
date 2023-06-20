@@ -1,0 +1,12 @@
+apiVersion: imagehub.sealos.io/v1
+kind: Repository
+metadata:
+  labels:
+    app.kubernetes.io/name: repository
+    app.kubernetes.io/instance: repository-sample
+    app.kubernetes.io/part-of: imagehub
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: imagehub
+  name: repository-sample
+spec:
+  # TODO(user): Add fields here

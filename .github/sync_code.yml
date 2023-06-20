@@ -1,0 +1,9 @@
+labring/lvscare:
+  - source: staging/src/github.com/labring/lvscare/
+    dest: .
+    deleteOrphaned: true
+
+labring/image-cri-shim:
+  - source: staging/src/github.com/labring/image-cri-shim/
+    dest: .
+    deleteOrphaned: true

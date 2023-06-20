@@ -1,0 +1,35 @@
+.tabs {
+  .closeIcon {
+    display: none;
+  }
+
+  &:hover {
+    .closeIcon {
+      display: block;
+    }
+  }
+
+  &[data-isactive='true'] {
+    .closeIcon {
+      display: block;
+    }
+  }
+}
+
+.iframeWindow {
+  width: 100%;
+  height: 100%;
+}
+
+.containerLeft {
+  width: 200px;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+@media (max-width: 768px) {
+  .containerLeft {
+    width: 136px;
+    font-size: 12px;
+  }
+}

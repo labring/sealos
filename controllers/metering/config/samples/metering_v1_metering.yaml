@@ -1,0 +1,6 @@
+apiVersion: metering.sealos.io/v1
+kind: Metering
+metadata:
+  name: metering-sample
+spec:
+  # TODO(user): Add fields here

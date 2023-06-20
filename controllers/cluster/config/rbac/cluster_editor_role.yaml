@@ -1,0 +1,24 @@
+# permissions for end users to edit clusters.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-editor-role
+rules:
+- apiGroups:
+  - cluster.sealos.io
+  resources:
+  - clusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.sealos.io
+  resources:
+  - clusters/status
+  verbs:
+  - get

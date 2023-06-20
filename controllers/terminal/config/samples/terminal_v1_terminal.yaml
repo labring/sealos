@@ -1,0 +1,14 @@
+apiVersion: terminal.sealos.io/v1
+kind: Terminal
+metadata:
+  name: terminal-sample
+  annotations:
+    lastUpdateTime: "2022-08-15T14:22:49+08:00"
+spec:
+  user: ccl
+  token: abc
+  apiServer: https://192.168.49.2:8443
+  ttyImage: ghcr.io/cuisongliu/go-docker-dev:1.18.4
+  replicas: 1
+  keepalived: 11h
+  ingressType: nginx

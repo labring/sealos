@@ -1,0 +1,5 @@
+FROM alpine:latest
+RUN apk add --no-cache ipset iptables
+ARG Bin
+COPY $Bin /usr/bin/$Bin
+ENTRYPOINT ["/usr/bin/$Bin"]

@@ -1,0 +1,24 @@
+# permissions for end users to edit debts.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: debt-editor-role
+rules:
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - debts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - debts/status
+  verbs:
+  - get

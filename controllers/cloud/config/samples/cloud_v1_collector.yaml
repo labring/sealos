@@ -1,0 +1,12 @@
+apiVersion: cloud.sealos.io/v1
+kind: Collector
+metadata:
+  labels:
+    app.kubernetes.io/name: collector
+    app.kubernetes.io/instance: collector-sample
+    app.kubernetes.io/part-of: controller
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: controller
+  name: collector-sample
+spec:
+  # TODO(user): Add fields here

@@ -1,0 +1,9 @@
+FROM gcr.dockerproxy.com/distroless/static:nonroot
+
+ARG TARGETARCH
+WORKDIR /
+USER 65532:65532
+
+COPY bin/controller-cloud-$TARGETARCH /manager
+
+ENTRYPOINT ["/manager"]

@@ -1,0 +1,4 @@
+conf/auth.yaml
+service-auth
+service-auth-amd64
+service-auth-arm64

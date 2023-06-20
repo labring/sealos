@@ -1,0 +1,24 @@
+# permissions for end users to edit terminals.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: terminal-editor-role
+rules:
+- apiGroups:
+  - terminal.sealos.io
+  resources:
+  - terminals
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - terminal.sealos.io
+  resources:
+  - terminals/status
+  verbs:
+  - get

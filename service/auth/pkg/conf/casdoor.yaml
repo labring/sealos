@@ -1,0 +1,258 @@
+# Copyright © 2022 sealos.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-root-credentials
+  namespace: sealos
+type: Opaque
+data:
+  # base64 encoded string
+  password: MTIzNDU2Cg==
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: casdoor-config
+  namespace: sealos
+data:
+  app.conf: |-
+    appname = casdoor
+    httpport = 8000
+    runmode = dev
+    SessionOn = true
+    copyrequestbody = true
+    driverName = mysql
+    dataSourceName = ${DATA_SOURCE_NAME}
+    dbName = casdoor
+    tableNamePrefix =
+    showSql = false
+    redisEndpoint =
+    defaultStorageProvider =
+    isCloudIntranet = false
+    authState = "casdoor"
+    socks5Proxy = "127.0.0.1:10808"
+    verificationCodeTimeout = 10
+    initScore = 2000
+    logPostOnly = true
+    origin =
+    staticBaseUrl = ""
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: casdoor
+  namespace: sealos
+  labels:
+    app: casdoor
+spec:
+  ports:
+    - protocol: TCP
+      port: 8000
+  selector:
+    app: casdoor
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: casdoor
+  namespace: sealos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: casdoor
+  template:
+    metadata:
+      labels:
+        app: casdoor
+    spec:
+      containers:
+        - name: casdoor-server
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+          image: casbin/casdoor:latest
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args: ["-c", "./server --createDatabase=true"]
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          volumeMounts:
+            - name: casdoor-conf-volume
+              mountPath: /conf/app.conf
+              subPath: app.conf
+          env:
+            - name: RUNNING_IN_DOCKER
+              value: "true"
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-root-credentials
+                  key: password
+            - name: DATA_SOURCE_NAME
+              value: root:$(MYSQL_ROOT_PASSWORD)@tcp(mysql.sealos.svc.cluster.local:3306)/
+      volumes:
+        - name: casdoor-conf-volume
+          configMap:
+            name: casdoor-config
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: sealos
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: mysql
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: sealos
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+          image: bitnami/mysql:8.0.31
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-root-credentials
+                  key: password
+          ports:
+            - containerPort: 3306
+              name: mysql
+          volumeMounts:
+            - name: mysql-persistent-storage
+              mountPath: /bitnami/mysql/data
+      volumes:
+        - name: mysql-persistent-storage
+          persistentVolumeClaim:
+            claimName: mysql-pv-claim
+
+---
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: service-auth-storage-class
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    openebs.io/cas-type: local
+    cas.openebs.io/config: |
+      - name: StorageType
+        value: hostpath
+      - name: BasePath
+        value: /service-auth
+provisioner: openebs.io/local
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+
+---
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: mysql-pv-claim
+  namespace: sealos
+  annotations:
+    volume.beta.kubernetes.io/storage-class: service-auth-storage-class
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5G
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: casdoor-local-cdn
+  namespace: sealos
+spec:
+  selector:
+    matchLabels:
+      app: casdoor-local-cdn
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: casdoor-local-cdn
+    spec:
+      containers:
+        - name: docker-casbin
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+          image: labring/docker-casbin:main
+          ports:
+            - containerPort: 8080
+              name: nginx
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: casdoor-local-cdn
+  namespace: sealos
+  labels:
+    app: casdoor-local-cdn
+spec:
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  selector:
+    app: casdoor-local-cdn

@@ -1,0 +1,5 @@
+### get login
+http://localhost:8080/login
+
+### get token
+http://localhost:8080/config

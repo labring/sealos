@@ -1,0 +1,9 @@
+shim: /var/run/image-cri-shim.sock
+cri: /run/crio/crio.sock
+address: http://{{ .registryDomain }}:{{ .registryPort }}
+force: true
+debug: false
+image: /var/lib/image-cri-shim
+{{ if not .SEALOS_SYS_KUBE_VERSION }}sync: 0{{ else }}{{ if and (ne .SEALOS_SYS_KUBE_VERSION "") (semverCompare "^1.26.0" .SEALOS_SYS_KUBE_VERSION) }}version: v1{{ else }}version: v1alpha2{{ end }}{{ end  }}
+timeout: 15m
+auth: {{ .registryUsername }}:{{ .registryPassword }}

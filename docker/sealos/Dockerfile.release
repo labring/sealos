@@ -1,0 +1,8 @@
+FROM ubuntu:18.04
+
+COPY sealos /usr/bin/
+
+# nosemgrep: dockerfile.security.missing-user.missing-user
+ENTRYPOINT ["/usr/bin/sealos"]
+# nosemgrep: dockerfile.security.missing-user.missing-user
+CMD ["--help"]

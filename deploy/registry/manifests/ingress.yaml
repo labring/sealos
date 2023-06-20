@@ -1,0 +1,59 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: cluster-issuer-docker-registry
+  namespace: docker-registry-system
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@sealos.io
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: hub-sealos-cn
+  namespace: docker-registry-system
+spec:
+  secretName: hub-sealos-cn-cert
+  dnsNames:
+    - hub.sealos.cn
+  issuerRef:
+    name: cluster-issuer-docker-registry
+    kind: ClusterIssuer
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: docker-registry-ingress
+  namespace: docker-registry-system
+  labels:
+    app: hub-service
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/proxy-body-size: 4096m
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
+spec:
+  rules:
+    - host: hub.sealos.cn
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: docker-registry-service
+                port:
+                  number: 5000
+  tls:
+    - hosts:
+        - hub.sealos.cn
+      secretName: hub-sealos-cn-cert

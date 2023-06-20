@@ -1,0 +1,96 @@
+#Usage in github: https://github.com/actions/labeler
+
+area/command:
+  - any: [ 'cmd/**/*' ]
+
+kind/documentation:
+  - any: [ 'docs/**/*' ]
+
+area/qa:
+  - 'QA.md'
+
+area/test:
+  - '**/*_test.go'
+  - 'test/**/*'
+
+area/buildah:
+  - any: [ 'pkg/buildah/**/*' ]
+
+area/imageCRIShim:
+  - any: [ 'staging/src/github.com/labring/image-cri-shim/**/*' ]
+
+area/lvscare:
+  - any: [ 'staging/src/github.com/labring/lvscare/**/*' ]
+
+area/bootstrap:
+  - any: [ 'pkg/bootstrap/**/*' ]
+
+area/clusterfile:
+  - any: [ 'pkg/clusterfile/**/*' ]
+
+area/config:
+  - any: [ 'pkg/config/**/*' ]
+  - any: [ 'pkg/env/**/*' ]
+  - any: [ 'pkg/template/**/*' ]
+
+area/guest:
+  - any: [ 'pkg/guest/**/*' ]
+
+area/env:
+  - any: [ 'pkg/system/**/*' ]
+
+area/filesystem:
+  - any: [ 'pkg/filesystem/**/*' ]
+
+area/build:
+  - any: [ 'pkg/buildimage/**/*' ]
+
+area/apply:
+  - any: [ 'pkg/apply/**/*' ]
+
+area/check:
+  - any: [ 'pkg/checker/**/*' ]
+
+area/ipvs:
+  - any: [ 'pkg/ipvs/**/*' ]
+
+area/ssh:
+  - any: [ 'pkg/ssh/**/*' ]
+  - any: [ 'pkg/remote/**/*' ]
+
+area/registry:
+  - any: [ 'pkg/registry/**/*' ]
+
+area/runtime:
+  - any: [ 'pkg/runtime/**/*' ]
+
+area/api:
+  - any: [ 'pkg/types/**/*']
+  - any: [ '**/*_types.go' ]
+
+area/cloud:
+  - any: [ 'controllers/**/*' ]
+  - any: [ 'service/**/*' ]
+  - any: ['docs/4.0/docs/**', '!docs/4.0/docs/lifecycle-management/**']
+  - any: ['docs/4.0/i18n/zh-Hans/**', '!docs/4.0/i18n/zh-Hans/lifecycle-management/**']
+
+area/lifecycle-management:
+  - any: [ 'pkg/**/*' ]
+  - any: [ 'staging/**/*' ]
+  - any: [ 'docs/4.0/docs/lifecycle-management/**/*' ]
+  - any: [ 'docs/4.0/i18n/zh-Hans/lifecycle-management/**/*' ]
+
+
+area/frontend:
+  - any: [ 'frontend/**/*' ]
+
+area/ci:
+  - 'scripts/**/*'
+  - 'docker/**/*'
+  - 'deploy/**/*'
+  - '.golangci.yml'
+  - '.goreleaser.yml'
+  - 'Makefile'
+
+area/workflow:
+  - any: [ '.github/**/*' ]
