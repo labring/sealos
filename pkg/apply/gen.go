@@ -55,7 +55,7 @@ func NewClusterFromGenArgs(imageNames []string, args *RunArgs) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return rtInterface.GetAdminKubeconfig()
+	return rtInterface.GetKubeadmConfig()
 }
 
 func genImageInfo(imageName string) (*v1beta1.MountImage, error) {

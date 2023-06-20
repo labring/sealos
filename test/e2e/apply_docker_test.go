@@ -30,7 +30,7 @@ import (
 	"github.com/labring/sealos/test/e2e/suites/checkers"
 )
 
-var _ = Describe("E2E_sealos_apply_test", func() {
+var _ = Describe("E2E_sealos_apply_docker_test", func() {
 	var (
 		fakeClient         *operators.FakeClient
 		err                error
@@ -42,11 +42,11 @@ var _ = Describe("E2E_sealos_apply_test", func() {
 			err = fakeClient.Cluster.Reset()
 			utils.CheckErr(err, fmt.Sprintf("failed to reset cluster for earch cluster: %v", err))
 		})
-		It("sealos apply single by containerd", func() {
+		It("sealos apply single by docker", func() {
 
 			By("generate Clusterfile")
 			clusterfileConfig := config.Clusterfile{
-				BinData:  "testdata/containerd-svc-sans.yaml",
+				BinData:  "testdata/docker-svc-sans.yaml",
 				Replaces: map[string]string{"127.0.0.1": utils.GetLocalIpv4()},
 			}
 			applyfile, err := clusterfileConfig.Write()
@@ -56,7 +56,7 @@ var _ = Describe("E2E_sealos_apply_test", func() {
 			err = fakeClient.Cluster.Apply(applyfile)
 			utils.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
 			opts := &checkers.FakeOpts{
-				Socket:      "",
+				Socket:      "/var/run/cri-dockerd.sock",
 				Cgroup:      "",
 				PodCIDR:     "",
 				ServiceCIDR: "100.55.0.0/16",
@@ -68,7 +68,7 @@ var _ = Describe("E2E_sealos_apply_test", func() {
 			err = fakeCheckInterface.Verify()
 			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
-		It("sealos apply single by containerd-buildimage", func() {
+		It("sealos apply single by docker-buildimage", func() {
 
 			By("build image from dockerfile")
 			kubeadm := `
@@ -80,29 +80,29 @@ networking:
 `
 			dFile := config.Dockerfile{
 				KubeadmYaml: kubeadm,
-				BaseImage:   "labring/kubernetes:v1.25.0",
+				BaseImage:   "labring/kubernetes-docker:v1.25.0",
 			}
 			var tmpdir string
 			tmpdir, err = dFile.Write()
 			utils.CheckErr(err, fmt.Sprintf("failed to create dockerfile: %v", err))
-			err = fakeClient.Image.BuildImage("apply-hack-containerd:kubeadm-network", tmpdir, operators.BuildOptions{
+			err = fakeClient.Image.BuildImage("apply-hack-docker:kubeadm-network", tmpdir, operators.BuildOptions{
 				MaxPullProcs: 5,
 				SaveImage:    true,
 			})
 			utils.CheckErr(err, fmt.Sprintf("failed to build image: %v", err))
-
 			By("generate Clusterfile")
 			clusterfileConfig := config.Clusterfile{
-				BinData:  "testdata/custome-containerd-svc.yaml",
-				Replaces: map[string]string{"127.0.0.1": utils.GetLocalIpv4(), "labring/kubernetes:v1.25.0": "apply-hack-containerd:kubeadm-network"},
+				BinData:  "testdata/custome-docker-svc.yaml",
+				Replaces: map[string]string{"127.0.0.1": utils.GetLocalIpv4(), "labring/kubernetes-docker:v1.25.0": "apply-hack-docker:kubeadm-network"},
 			}
 			applyfile, err := clusterfileConfig.Write()
 			utils.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
+
 			By("apply kubernete image using build image")
 			err = fakeClient.Cluster.Apply(applyfile)
 			utils.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
 			opts := &checkers.FakeOpts{
-				Socket:      "",
+				Socket:      "/var/run/cri-dockerd.sock",
 				Cgroup:      "",
 				PodCIDR:     "10.160.0.0/12",
 				ServiceCIDR: "100.56.0.0/16",

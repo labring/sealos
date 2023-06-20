@@ -15,14 +15,13 @@
 package runtime
 
 import (
+	"context"
 	"fmt"
 	"path"
 	"path/filepath"
 	"time"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
-	"github.com/labring/sealos/pkg/client-go/kubernetes"
 
 	v1 "k8s.io/api/core/v1"
 
@@ -137,6 +136,7 @@ func (k *KubeadmRuntime) MergeKubeadmConfig() error {
 		}
 	}
 	k.setKubeadmAPIVersion()
+	k.setFeatureGatesConfiguration()
 	return k.validateVIP(k.getVip())
 }
 
@@ -206,16 +206,12 @@ func (k *KubeadmRuntime) setCertSANS(certs []string) {
 
 func (k *KubeadmRuntime) fetchKubeadmConfig() error {
 	logger.Info("fetch certSANs from kubeadm configmap")
-	cli, err := kubernetes.NewKubernetesClient(k.getContentData().AdminFile(), k.getMaster0IPAPIServer())
-	if err != nil {
-		return err
-	}
-	data, err := kubernetes.GetKubeadmConfig(cli.Kubernetes())
+	data, err := k.getKubeExpansion().FetchKubeadmConfig(context.Background())
 	if err != nil {
 		return err
 	}
 	//unmarshal data from configmap
-	obj, err := yaml.UnmarshalData([]byte(data.Data[ClusterConfiguration]))
+	obj, err := yaml.UnmarshalData([]byte(data))
 	if err != nil {
 		return err
 	}

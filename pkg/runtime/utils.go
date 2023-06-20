@@ -20,20 +20,17 @@ import (
 	"context"
 	"fmt"
 
-	v127 "github.com/labring/sealos/pkg/runtime/defaults/v127"
+	"github.com/labring/sealos/pkg/utils/maps"
 
-	_default "github.com/labring/sealos/pkg/runtime/defaults"
-	v125 "github.com/labring/sealos/pkg/runtime/defaults/v125"
-	"github.com/labring/sealos/pkg/utils/versionutil"
-
-	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/utils/logger"
+	versionutil "k8s.io/apimachinery/pkg/util/version"
 
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/labring/sealos/pkg/client-go/kubernetes"
+	"github.com/labring/sealos/pkg/constants"
+	_default "github.com/labring/sealos/pkg/runtime/defaults"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (
@@ -64,18 +61,8 @@ func (k *KubeadmRuntime) SendJoinMasterKubeConfigs(masters []string, files ...st
 }
 
 func (k *KubeadmConfig) FetchDefaultKubeadmConfig() string {
-	version := k.ImageKubeVersion
-	switch {
-	case versionutil.Compare(version, V1250) && !versionutil.Compare(version, V1270):
-		logger.Debug("using v125 kubeadm config")
-		return v125.DefaultKubeadmConfig
-	case versionutil.Compare(version, V1270):
-		logger.Debug("using v127 kubeadm config")
-		return v127.DefaultKubeadmConfig
-	default:
-		logger.Debug("using default kubeadm config")
-		return _default.DefaultKubeadmConfig
-	}
+	logger.Debug("using default kubeadm config")
+	return _default.DefaultKubeadmConfig
 }
 
 func (k *KubeadmRuntime) ReplaceKubeConfigV1991V1992(masters []string) bool {
@@ -124,22 +111,52 @@ func (k *KubeadmRuntime) sendFileToHosts(Hosts []string, src, dst string) error 
 
 func (k *KubeadmRuntime) RemoveNodeFromK8sClient(ip string) error {
 	logger.Info("start to remove node from k8s %s", ip)
-	cli, err := kubernetes.NewKubernetesClient(k.getContentData().AdminFile(), k.getMaster0IPAPIServer())
-	if err != nil {
-		return fmt.Errorf("kubernetes client get node %s failed %v,skip delete node", ip, err)
-	}
 	ctx := context.Background()
-	hostname, err := kubernetes.GetHostNameFromInternalIP(cli.Kubernetes(), ip)
+	hostname, err := k.getKubeExpansion().FetchHostNameFromInternalIP(ctx, ip)
 	if err != nil {
 		return fmt.Errorf("kubernetes client get hostname %s failed %v,skip delete node", ip, err)
 	}
 	deletePropagation := v1.DeletePropagationBackground
-	err = cli.Kubernetes().CoreV1().Nodes().Delete(ctx, hostname, v1.DeleteOptions{PropagationPolicy: &deletePropagation})
+	err = k.getKubeInterface().Kubernetes().CoreV1().Nodes().Delete(ctx, hostname, v1.DeleteOptions{PropagationPolicy: &deletePropagation})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return fmt.Errorf("not find target delete node ip: %s", ip)
 		}
 		return fmt.Errorf("kubernetes client delete node %s failed %v,skip delete node", ip, err)
+	}
+	return nil
+}
+
+var featureGatesUpdate = map[string][]string{
+	"CSIStorageCapacity":  {"LessThan", "v1.21.0"},
+	"TTLAfterFinished":    {"AtLeast", "v1.24.0"},
+	"EphemeralContainers": {"AtLeast", "v1.26.0"},
+}
+
+func deleteFeatureMap[T string | bool](currentFeature map[string]T, versionStr string) map[string]T {
+	for k, v := range featureGatesUpdate {
+		if v[0] == "LessThan" &&
+			versionutil.MustParseSemantic(versionStr).LessThan(versionutil.MustParseSemantic(v[1])) {
+			delete(currentFeature, k)
+		}
+		if v[0] == "AtLeast" &&
+			versionutil.MustParseSemantic(versionStr).AtLeast(versionutil.MustParseSemantic(v[1])) {
+			delete(currentFeature, k)
+		}
+	}
+	return currentFeature
+}
+
+func UpdateFeatureGatesConfiguration(featureGates any, version string) any {
+	switch x := featureGates.(type) {
+	case string:
+		currentFeature := maps.StringToMap(x, ",")
+		currentFeature = deleteFeatureMap(currentFeature, version)
+		return maps.MapToStringBySpilt(currentFeature, ",")
+	case map[string]bool:
+		newFeature := x
+		newFeature = deleteFeatureMap(newFeature, version)
+		return newFeature
 	}
 	return nil
 }

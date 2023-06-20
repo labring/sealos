@@ -29,7 +29,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 )
 
-var _ = Describe("E2E_sealos_run_test", func() {
+var _ = Describe("E2E_sealos_run_docker_test", func() {
 	var (
 		fakeClient         *operators.FakeClient
 		err                error
@@ -41,19 +41,17 @@ var _ = Describe("E2E_sealos_run_test", func() {
 			err = fakeClient.Cluster.Reset()
 			utils.CheckErr(err, fmt.Sprintf("failed to reset cluster for earch cluster: %v", err))
 		})
-		It("sealos run single by containerd", func() {
-			images := []string{"labring/kubernetes:v1.25.0", "labring/helm:v3.8.2", "labring/calico:v3.24.1"}
+		It("sealos run single by docker", func() {
+			images := []string{"labring/kubernetes-docker:v1.25.0", "labring/helm:v3.8.2", "labring/calico:v3.24.1"}
 			err = fakeClient.Cluster.Run(images...)
 			utils.CheckErr(err, fmt.Sprintf("failed to Run new cluster for single: %v", err))
-			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", &checkers.FakeOpts{
-				Images: images,
-			})
+			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", &checkers.FakeOpts{Socket: "/var/run/cri-dockerd.sock", Images: images})
 			utils.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
 			err = fakeCheckInterface.Verify()
 			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
 
-		It("sealos run single by containerd-buildimage", func() {
+		It("sealos run single by docker-buildimage", func() {
 
 			By("build image from dockerfile")
 			kubeadm := `
@@ -64,7 +62,7 @@ networking:
 `
 			dFile := config.Dockerfile{
 				KubeadmYaml: kubeadm,
-				BaseImage:   "labring/kubernetes:v1.25.0",
+				BaseImage:   "labring/kubernetes-docker:v1.25.0",
 			}
 			var tmpdir string
 			tmpdir, err = dFile.Write()
@@ -79,7 +77,7 @@ networking:
 			images := []string{"test-build-image:kubeadm-servicecidr", "labring/helm:v3.8.2", "labring/calico:v3.24.1"}
 			err = fakeClient.Cluster.Run(images...)
 			utils.CheckErr(err, fmt.Sprintf("failed to Run new cluster for single: %v", err))
-			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", &checkers.FakeOpts{ServiceCIDR: "100.55.0.0/16", Images: images})
+			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", &checkers.FakeOpts{ServiceCIDR: "100.55.0.0/16", Socket: "/var/run/cri-dockerd.sock", Images: images})
 			utils.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
 			err = fakeCheckInterface.Verify()
 			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))

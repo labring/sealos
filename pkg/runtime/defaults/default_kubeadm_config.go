@@ -67,7 +67,7 @@ controllerManager:
   extraArgs:
     bind-address: 0.0.0.0
     feature-gates: TTLAfterFinished=true,EphemeralContainers=true
-    experimental-cluster-signing-duration: 876000h
+    cluster-signing-duration: 876000h
   extraVolumes:
     - hostPath: /etc/localtime
       mountPath: /etc/localtime
@@ -172,6 +172,9 @@ registerNode: true
 nodeStatusMaxImages: 50
 enableProfilingHandler: true
 enableSystemLogHandler: true
+featureGates:
+  TTLAfterFinished: true
+  EphemeralContainers: true
 ---
 apiVersion: kubeadm.k8s.io/v1beta2
 kind: JoinConfiguration
