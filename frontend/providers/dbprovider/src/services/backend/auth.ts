@@ -1,5 +1,4 @@
 import type { NextApiRequest } from 'next';
-import { IncomingHttpHeaders } from 'http';
 import { ERROR_ENUM } from '../error';
 
 export const authSession = async (req: NextApiRequest) => {

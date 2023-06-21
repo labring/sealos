@@ -109,5 +109,11 @@
   "Backup Time": "备份时间",
   "The backup task has been created successfully !": "备份任务创建成功！",
   "Restore Success": "恢复备份成功",
-  "The restore task has been created failed !": "恢复备份任务创建失败"
+  "The restore task has been created failed !": "恢复备份任务创建失败",
+  "Anticipated Price": "预估价格",
+  "Perday": "每日",
+  "Total Price": "总价",
+  "Database Name": "新数据库名",
+  "Restore Database": "恢复数据库备份",
+  "Restore Backup Tip": "恢复备份会创建一个新的数据库，你需要提供新的数据库名，并且不能与当前数据库重名。"
 }

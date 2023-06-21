@@ -90,5 +90,6 @@
   "Confirm Create Backup": "Confirm Create Backup?",
   "Confirm delete the backup": "Confirm delete the backup",
   "Basic Info": "Basic",
-  "Restore Backup Tip": "Restoring the backup will create a new database, and you will need to provide the name of the new data, which cannot be the same as the current database."
+  "Restore Backup Tip": "Restoring the backup will create a new database, and you will need to provide the name of the new data, which cannot be the same as the current database.",
+  "Total Price": "Total"
 }
