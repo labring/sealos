@@ -1,5 +1,5 @@
 import { DBTypeEnum, DBStatusEnum, PodStatusEnum } from '@/constants/db';
-import { BackupStatusEnum } from '@/constants/backup';
+import { BackupStatusEnum, BackupTypeEnum } from '@/constants/backup';
 import type {
   V1Deployment,
   V1ConfigMap,
@@ -105,9 +105,9 @@ export interface BackupStatusMapType {
 export interface BackupItemType {
   id: string;
   name: string;
+  remark: string;
   status: BackupStatusMapType;
   startTime: Date;
-  endTime: Date;
-  storage: number;
-  type: 'auto' | 'manual';
+  failureReason?: string;
+  type: `${BackupTypeEnum}`;
 }

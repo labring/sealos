@@ -1,25 +1,28 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Modal,
   ModalOverlay,
   ModalContent,
   ModalHeader,
-  ModalFooter,
   ModalBody,
   ModalCloseButton,
-  Input,
   Box,
   Button,
   useTheme,
-  Flex
+  Flex,
+  Input
 } from '@chakra-ui/react';
-import MyIcon from '@/components/Icon';
 import { useConfirm } from '@/hooks/useConfirm';
 import { createBackup } from '@/api/backup';
 import { useMutation } from '@tanstack/react-query';
 import { getErrText } from '@/utils/tools';
 import { useToast } from '@/hooks/useToast';
-import { DBTypeEnum } from '@/constants/db';
+import { customAlphabet } from 'nanoid';
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 6);
+import Tip from '@/components/Tip';
+import { InfoOutlineIcon } from '@chakra-ui/icons';
+import { useTranslation } from 'next-i18next';
+import { useForm } from 'react-hook-form';
 
 enum NavEnum {
   manual = 'manual',
@@ -28,25 +31,34 @@ enum NavEnum {
 
 const BackupModal = ({
   dbName,
-  dbType,
   onClose,
   onSuccess
 }: {
   dbName: string;
-  dbType: `${DBTypeEnum}`;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { toast } = useToast();
 
   const { openConfirm, ConfirmChild } = useConfirm({
-    title: '确认创建备份任务？',
-    content: `建议在业务低峰期备份实例。 备份期间，请勿执行DDL操作，避免锁表导致备份失败。
-若数据量较大，花费的时问可能较长，请耐心等待。 点击 【开始备份】
-后，将在1分钟后开始备份。`
+    title: t('Confirm') || 'Confirm',
+    content: t('Manual Backup Tip'),
+    confirmText: 'Start Backup'
   });
   const [currentNav, setCurrentNav] = useState<`${NavEnum}`>(NavEnum.manual);
+  const {
+    register: manualRegister,
+    handleSubmit: handleSubmitManual,
+    getValues: getManualValues
+  } = useForm({
+    defaultValues: {
+      backupName: `${dbName}-${nanoid()}`,
+      remark: ''
+    }
+  });
+
   const navStyle = useCallback(
     (nav: `${NavEnum}`) => ({
       px: 4,
@@ -67,18 +79,24 @@ const BackupModal = ({
   );
 
   const { mutate: onclickBackup, isLoading } = useMutation({
-    mutationFn: () => createBackup({ dbName, dbType, storage: 1 }),
+    mutationFn: () => {
+      return createBackup({
+        backupName: getManualValues('backupName'),
+        remark: getManualValues('remark'),
+        dbName
+      });
+    },
     onSuccess() {
       toast({
         status: 'success',
-        title: '备份任务创建成功'
+        title: t('The backup task has been created successfully !')
       });
       onClose();
     },
     onError(err) {
       toast({
         status: 'error',
-        title: getErrText(err, '创建备份任务失败')
+        title: t(getErrText(err, 'The backup task has been created failed !'))
       });
     }
   });
@@ -88,40 +106,44 @@ const BackupModal = ({
       <Modal isOpen onClose={onClose} isCentered>
         <ModalOverlay />
         <ModalContent maxW={'min(960px, 90vw)'} h={'480px'}>
-          <ModalHeader>数据库备份</ModalHeader>
+          <ModalHeader>{t('Backup Database')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody display={'flex'} pb={8}>
             <Box flex={'0 0 220px'} pr={4} borderRight={theme.borders.sm} borderRightWidth={'2px'}>
-              <Box {...navStyle(NavEnum.manual)}>手动备份</Box>
-              <Box {...navStyle(NavEnum.auto)}>自动备份</Box>
+              <Box {...navStyle(NavEnum.manual)}>{t('Manual Backup')}</Box>
+              {/* <Box {...navStyle(NavEnum.auto)}>{t('Auto Backup')}</Box> */}
             </Box>
             {currentNav === NavEnum.manual && (
-              <Flex flex={'1 0 0'} flexDirection={'column'} alignItems={'center'}>
-                <Box
-                  w={'400px'}
-                  bg={'#FFFAE5'}
-                  borderRadius={'md'}
-                  textAlign={'center'}
-                  px={6}
-                  py={4}
-                >
-                  <MyIcon name={'warning'} mb={2}></MyIcon>
-                  <Box>
-                    建议在业务低峰期备份实例。 备份期间，请勿执行DDL操作，避免锁表导致备份失败。
-                    若数据量较大，花费的时问可能较长，请耐心等待。 点击 【开始备份】
-                    后，将在1分钟后开始备份。
-                  </Box>
+              <Flex flexDirection={'column'} px={'50px'}>
+                <Tip
+                  icon={<InfoOutlineIcon fontSize={'16px'} />}
+                  size="sm"
+                  text={t('Manual Backup Tip')}
+                />
+                <Box flex={1}>
+                  <Flex mt={8} alignItems={'center'}>
+                    <Box flex={'0 0 80px'}>{t('Backup Name')}</Box>
+                    <Input
+                      maxW={'300px'}
+                      bg={'myWhite.300'}
+                      {...manualRegister('backupName', {
+                        required: t('Backup Name cannot empty') || 'Backup Name cannot empty'
+                      })}
+                    />
+                  </Flex>
+                  <Flex mt={7} alignItems={'center'}>
+                    <Box flex={'0 0 80px'}>{t('Remark')}</Box>
+                    <Input maxW={'300px'} bg={'myWhite.300'} {...manualRegister('remark')} />
+                  </Flex>
                 </Box>
-                <Box mt={6}>
+                <Box mt={6} textAlign={'end'}>
                   <Button
                     isLoading={isLoading}
                     variant={'primary'}
-                    mr={3}
-                    onClick={openConfirm(onclickBackup)}
+                    onClick={() => handleSubmitManual(openConfirm(onclickBackup))()}
                   >
-                    xxx元 | 开始备份
+                    {t('Start Backup')}
                   </Button>
-                  <Button>取消</Button>
                 </Box>
               </Flex>
             )}

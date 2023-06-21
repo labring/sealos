@@ -18,7 +18,6 @@ const map = {
   settings: require('./icons/settings.svg').default,
   copy: require('./icons/copy.svg').default,
   continue: require('./icons/continue.svg').default,
-  appType: require('./icons/appType.svg').default,
   noEvents: require('./icons/noEvents.svg').default,
   warning: require('./icons/warning.svg').default,
   analyze: require('./icons/analyze.svg').default,
@@ -26,7 +25,11 @@ const map = {
   log: require('./icons/log.svg').default,
   statusDetail: require('./icons/statusDetail.svg').default,
   read: require('./icons/read.svg').default,
-  unread: require('./icons/unread.svg').default
+  unread: require('./icons/unread.svg').default,
+  connection: require('./icons/connection.svg').default,
+  info: require('./icons/info.svg').default,
+  restore: require('./icons/restore.svg').default,
+  download: require('./icons/download.svg').default
 };
 
 const MyIcon = ({

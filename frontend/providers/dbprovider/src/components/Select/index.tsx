@@ -36,7 +36,7 @@ const MySelect = ({
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
-    <Menu autoSelect={false} onOpen={() => !isDisabled && onOpen} onClose={onClose}>
+    <Menu autoSelect={false} onOpen={() => !isDisabled && onOpen()} onClose={onClose}>
       <MenuButton as={'span'}>
         <Button
           width={width}
@@ -48,9 +48,12 @@ const MySelect = ({
           {...(isOpen
             ? {
                 boxShadow: '0px 0px 4px #A8DBFF',
-                borderColor: 'myBlue.600'
+                borderColor: 'myBlue.600',
+                bg: 'transparent'
               }
-            : {})}
+            : {
+                bg: 'myWhite.300'
+              })}
           {...props}
         >
           {list?.find((item) => item.id === value)?.label || placeholder}

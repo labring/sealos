@@ -11,7 +11,15 @@ import {
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 
-export const useConfirm = ({ title = 'Prompt', content }: { title?: string; content: string }) => {
+export const useConfirm = ({
+  title = 'Prompt',
+  content,
+  confirmText = 'Confirm'
+}: {
+  title?: string;
+  content: string;
+  confirmText?: string;
+}) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { t } = useTranslation();
   const cancelRef = useRef(null);
@@ -58,14 +66,14 @@ export const useConfirm = ({ title = 'Prompt', content }: { title?: string; cont
                     typeof confirmCb.current === 'function' && confirmCb.current();
                   }}
                 >
-                  {t('Confirm')}
+                  {t(confirmText)}
                 </Button>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialogOverlay>
         </AlertDialog>
       ),
-      [content, isOpen, onClose, t, title]
+      [confirmText, content, isOpen, onClose, t, title]
     )
   };
 };

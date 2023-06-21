@@ -141,19 +141,12 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
     }
   ];
 
-  const { isInitialLoading } = useQuery(
-    ['intervalLoadPods'],
-    () => {
-      intervalLoadPods(dbName);
-      return null;
-    },
-    {
-      refetchInterval: 3000
-    }
-  );
+  const { isInitialLoading } = useQuery(['intervalLoadPods'], () => intervalLoadPods(dbName), {
+    refetchInterval: 3000
+  });
 
   return (
-    <Box h={'100%'}>
+    <Box h={'100%'} position={'relative'}>
       <TableContainer overflow={'overlay'}>
         <Table variant={'simple'} backgroundColor={'white'}>
           <Thead>
@@ -227,4 +220,4 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
   );
 };
 
-export default Pods;
+export default React.memo(Pods);

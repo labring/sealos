@@ -49,20 +49,13 @@ const Tip = ({ size = 'md', text, icon, theme, ...props }: Props) => {
   }, [theme]);
 
   return (
-    <Flex
-      alignItems={'center'}
-      borderRadius={'sm'}
-      {...sizeMap}
-      {...themeMap}
-      whiteSpace={'nowrap'}
-      {...props}
-    >
+    <Flex alignItems={'center'} borderRadius={'sm'} {...sizeMap} {...themeMap} {...props}>
       {icon ? (
-        <Flex alignItems={'center'} mr={2} w={sizeMap.fontSize} h={sizeMap.fontSize}>
+        <Flex alignItems={'center'} mr={2}>
           {icon}
         </Flex>
       ) : null}
-      {text}
+      <Box>{text}</Box>
     </Flex>
   );
 };

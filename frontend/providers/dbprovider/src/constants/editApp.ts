@@ -3,7 +3,7 @@ export const editModeMap = (isEdit: boolean) => {
     return {
       title: 'Update DataBase',
       applyBtnText: 'Update',
-      applyMessage: 'Confirm Deploy DataBase?',
+      applyMessage: 'Confirm Update DataBase?',
       applySuccess: 'Update Successful',
       applyError: 'Update Failed'
     };
@@ -35,11 +35,10 @@ export const MemorySlideMarkList = [
   { label: '512Mi', value: 512 },
   { label: '1G', value: 1024 },
   { label: '2G', value: 2048 },
-  { label: '3G', value: 3072 },
   { label: '4G', value: 4096 },
-  { label: '5G', value: 5120 },
   { label: '6G', value: 6144 },
-  { label: '7G', value: 7168 },
-  { label: '8G', value: 8192 }
-  // { label: '16G', value: 16384 }
+  { label: '8G', value: 8192 },
+  { label: '12G', value: 12288 },
+  { label: '16G', value: 16384 },
+  { label: '32G', value: 32768 }
 ];

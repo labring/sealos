@@ -1,10 +1,9 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { DBDetailType, DBListItemType, PodDetailType, BackupItemType } from '@/types/db';
+import type { DBDetailType, DBListItemType, PodDetailType } from '@/types/db';
 import { getMyDBList, getPodsByDBName, getDBByName } from '@/api/db';
 import { defaultDBDetail } from '@/constants/db';
-import { getBackupList } from '@/api/backup';
 
 type State = {
   dbList: DBListItemType[];
@@ -12,9 +11,7 @@ type State = {
   dbDetail: DBDetailType;
   loadDBDetail: (name: string, init?: boolean) => Promise<DBDetailType>;
   dbPods: PodDetailType[];
-  intervalLoadPods: (dbName: string) => Promise<string>;
-  backups: BackupItemType[];
-  intervalLoadBackups: (dbName: string) => Promise<string>;
+  intervalLoadPods: (dbName: string) => Promise<null>;
 };
 
 export const useDBStore = create<State>()(
@@ -43,26 +40,13 @@ export const useDBStore = create<State>()(
       dbPods: [],
       intervalLoadPods: async (dbName: string) => {
         if (!dbName) return Promise.reject('db name is empty');
-        // get pod and update
-        const pods = await getPodsByDBName(dbName);
 
-        set((state) => {
-          state.dbPods = pods;
+        return getPodsByDBName(dbName).then((pods) => {
+          set((state) => {
+            state.dbPods = pods;
+          });
+          return null;
         });
-
-        return 'finish';
-      },
-      backups: [],
-      intervalLoadBackups: async (dbName: string) => {
-        if (!dbName) return Promise.reject('db name is empty');
-        // get pod and update
-        const backups = await getBackupList(dbName);
-        console.log(backups);
-        set((state) => {
-          state.backups = backups;
-        });
-
-        return 'finish';
       }
     }))
   )
