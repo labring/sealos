@@ -28,7 +28,9 @@ import (
 	cloud "github.com/labring/sealos/controllers/cloud/internal/tools"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // NotificationReconciler reconciles a Notification object
@@ -60,20 +62,27 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		Uid:       "f4bf10cd-28b3-4384-92ec-24fa006f14d2",
 		Timestamp: r.NotificationMgr.TimeLastPull,
 	}
+	r.logger.Info("Starting to get cluster user")
+	em := r.NotificationMgr.GetNameSpace(ctx, r.Client)
+	if em != nil {
+		r.logger.Error(em.Concat(": "), "GetNamespace error")
+		return ctrl.Result{RequeueAfter: time.Second * 5}, em.Concat(": ")
+	}
 	//---------------------------------------------------------------------------//
 	r.logger.Info("Starting to communicate with cloud")
 	httpResp, em := cloud.CommunicateWithCloud("POST", url, requestBody)
 	if em != nil {
 		r.logger.Error(cloud.LoadError("CommunicateWithCloud", em).Concat(": "), "failed to communicate with cloud")
-	}
-	if !cloud.IsSuccessfulStatusCode(httpResp.StatusCode) {
-		r.logger.Error(errors.New(http.StatusText(httpResp.StatusCode)), "HttpBody:", string(httpResp.Body))
 		return ctrl.Result{RequeueAfter: time.Second * 5}, errors.New(http.StatusText(httpResp.StatusCode))
 	}
+	if !cloud.IsSuccessfulStatusCode(httpResp.StatusCode) {
+		r.logger.Error(errors.New(http.StatusText(httpResp.StatusCode)), string(httpResp.Body))
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+	}
 	var content = []cloud.NotificationResponse{}
-	if em := cloud.Convert(httpResp.Body, content, r.NotificationMgr); em != nil {
+	if em := cloud.Convert(httpResp.Body, &content, r.NotificationMgr); em != nil {
 		r.logger.Error(em.Concat(": "), "failed to convert")
-		return ctrl.Result{RequeueAfter: time.Second * 5}, em.Concat(": ")
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	}
 	//---------------------------------------------------------------------------//
 	r.logger.Info("Starting to deliver notifications to cluster users")
@@ -86,8 +95,10 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				Pos:                pos,
 				Size:               len(r.NotificationMgr.NotificationCache),
 				Ns:                 nsName,
+				RWMutex:            &r.NotificationMgr.RWMutex,
 				UserNameSpaceGroup: r.NotificationMgr.UserNameSpaceGroup,
 				AdmNamespaceGroup:  r.NotificationMgr.AdmNamespaceGroup,
+				NotificationCache:  r.NotificationMgr.NotificationCache,
 			}
 			go cloud.AsyncCloudTask(r.NotificationMgr.ErrorChannel, &wg, ctx, r.Client, tk)
 		}
@@ -101,24 +112,27 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 	//---------------------------------------------------------------------------//
 	r.logger.Info("Starting the update operation")
-	if time.Now().Unix() > r.NotificationMgr.ExpireToUpdateUser {
-		r.NotificationMgr.ExpireToUpdateUser += int64(time.Hour * 1)
-		em := r.NotificationMgr.GetNameSpace(ctx, r.Client)
-		if em != nil {
-			r.logger.Error(em.Concat(": "), "GetNamespace error")
-			return ctrl.Result{RequeueAfter: time.Second * 5}, em.Concat(": ")
-		}
-	}
+
 	if time.Now().Unix() > r.NotificationMgr.ExpireToUpdate {
 		r.NotificationMgr.UpdateManager(ctx, r.Client)
 	}
-	return ctrl.Result{RequeueAfter: time.Second * 3600}, em.Concat(": ")
+	r.logger.Info("The task of the notification module has been completed.")
+	return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *NotificationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("NotificationReconcile")
 	r.NotificationMgr = cloud.NewNotificationManager()
-	return ctrl.NewControllerManagedBy(mgr).For(&cloudv1.CloudClient{}).
+
+	nameFilter := cloud.CloudStartName
+	namespaceFilter := cloud.Namespace
+	Predicates := predicate.NewPredicateFuncs(func(obj client.Object) bool {
+		return obj.GetName() == nameFilter &&
+			obj.GetNamespace() == namespaceFilter
+	})
+
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&cloudv1.CloudClient{}, builder.WithPredicates(Predicates)).
 		Complete(r)
 }
