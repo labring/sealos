@@ -1,0 +1,27 @@
+# permissions for end users to view cloudclients.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: cloudclient-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: cloud-controller
+    app.kubernetes.io/part-of: cloud-controller
+    app.kubernetes.io/managed-by: kustomize
+  name: cloudclient-viewer-role
+rules:
+- apiGroups:
+  - cloud.sealos.io
+  resources:
+  - cloudclients
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cloud.sealos.io
+  resources:
+  - cloudclients/status
+  verbs:
+  - get
