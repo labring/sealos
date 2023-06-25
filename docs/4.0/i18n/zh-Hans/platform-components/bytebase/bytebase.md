@@ -5,7 +5,7 @@ sidebar_position: 3
 
 Bytebase 是一个开源的数据库管理工具。在整个项目周期中，可将其类比于负责管理数据库的 GitLab 。DBA 和开发者可直接于它提供的网页工作环境中，有效率及安全地进行协作及数据库管理。
 
-更多 Bytebase 的相关信息和用法请参考其[官方网站](https://www.bytebase.com/docs/tutorials/overview/).
+更多 Bytebase 的相关信息和用法请参考其[官方网站](https://www.bytebase.com/docs/).
 
 ## 特性
 * Bytebase 提供的强大数据库管理能力

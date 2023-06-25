@@ -6,7 +6,7 @@ sidebar_position: 3
 
 Bytebase is an open-source database DevOps tool, it's the GitLab for managing databases throughout the application development lifecycle. It offers a web-based workspace for DBAs and Developers to collaborate and manage the database change safely and efficiently.
 
-For more information and usage of Bytebase, please refer to [the official website](https://www.bytebase.com/docs/tutorials/overview/).
+For more information and usage of Bytebase, please refer to [the official website](https://www.bytebase.com/docs/).
 
 ## Feature
 

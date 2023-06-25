@@ -26,11 +26,17 @@ Sealos is a powerful business operating platform, providing flawless support for
 
 If your business requires operation within a public cloud environment, you can directly use the [public cloud services provided by Sealos](https://cloud.sealos.io).
 
-1. **Instant Kubernetes Usage Upon Login**: There is no need to install a Kubernetes cluster. Sealos provides the ability for **multiple tenants** to share a Kubernetes on the public internet. It also offers strong isolation capabilities to ensure the data safety of each tenant.
-2. **Resource Saving and Cost Reduction**: You only pay for the container. The automatic scaling function fundamentally solves the problem of resource wastage, saving between 10% to 40% in costs.
-3. **Easy Public Network Access**: Sealos automatically assigns a secondary domain name to your business, helping you achieve easy public network access. It also supports custom domain name binding.
-4. **Efficient Database Service**: Sealos offers a service that allows businesses to create high-availability databases within seconds. Through service discovery, the internal network DNS can connect directly to the database.
-5. **User-Friendly Operating Experience**: Sealos has an in-built terminal that supports command-line operation of the Kubernetes cluster, and also supports the deployment of the Kubernetes management interface, allowing you to have a good user experience on Sealos, regardless of your familiarity with cloud-native technology.
+#### Capabilities of Sealos
+
+- **Application Management**: Rapid deployment of any distributed application with public network access capabilities.
+- **Database Management**: Instant creation of highly available databases, supporting MySQL, PostgreSQL, MongoDB, and Redis.
+- **Easy Public Network Access**: Businesses are automatically allocated secondary domain names, making public network access easy, and custom domain binding is also supported.
+
+#### Advantages of Sealos
+
+- **Resource Saving, Cost Reduction**: You only pay for containers. The automatic scaling fundamentally solves the problem of resource wastage, saving substantial costs.
+- **High Universality, No Cognitive Load**: Users can focus exclusively on their business, without being troubled by irrelevant complexities. Regardless of the user's proficiency with Kubernetes, Sealos can be used with ease.
+- **Balance of Flexibility and Security**: Its unique multi-tenant sharing mechanism can achieve effective isolation and collaboration of resources while ensuring security.
 
 ### Private Cloud
 
