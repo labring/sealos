@@ -98,7 +98,12 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if ok, err := r.finalizer.RemoveFinalizer(ctx, user, controller.DefaultFunc); ok {
+	if ok, err := r.finalizer.RemoveFinalizer(ctx, user, func(ctx context.Context, obj client.Object) error {
+		ns := &v1.Namespace{}
+		ns.Name = config.GetUsersNamespace(user.Name)
+		_ = r.Delete(ctx, ns)
+		return nil
+	}); ok {
 		return ctrl.Result{}, err
 	}
 
