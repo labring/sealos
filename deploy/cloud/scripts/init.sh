@@ -28,7 +28,7 @@ function sealos_run_controller {
   # \ 1 > /dev/null
 
   # run terminal controller
-  sealos run tars/terminal.tar --env cloudDomain=$cloudDomain --env userNamespace="user-system" --env wildcardCertSecretName="wildcard-secret" --env wildcardCertSecretNamespace="sealos-system"
+  sealos run tars/terminal.tar --env cloudDomain=$cloudDomain --env userNamespace="user-system" --env wildcardCertSecretName="wildcard-cert" --env wildcardCertSecretNamespace="sealos-system"
   # \ 1 > /dev/null
 
   # run app controller
@@ -38,11 +38,11 @@ function sealos_run_controller {
 
 
 function sealos_run_frontend {
-  sealos run tars/frontend-desktop.tar --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret"
+  sealos run tars/frontend-desktop.tar --env cloudDomain=$cloudDomain --env certSecretName="wildcard-cert"
 
-  sealos run tars/frontend-applaunchpad.tar --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret"
+  sealos run tars/frontend-applaunchpad.tar --env cloudDomain=$cloudDomain --env certSecretName="wildcard-cert"
 
-  sealos run tars/frontend-terminal.tar --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret"
+  sealos run tars/frontend-terminal.tar --env cloudDomain=$cloudDomain --env certSecretName="wildcard-cert"
 }
 
 
