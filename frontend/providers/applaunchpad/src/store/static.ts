@@ -2,7 +2,7 @@ import { getEnvs, getResourcePrice } from '@/api/platform';
 import type { Response as resourcePriceResponse } from '@/pages/api/platform/resourcePrice';
 
 export let SEALOS_DOMAIN = 'cloud.sealos.io';
-export let INGRESS_SECRET = 'wildcard-secret';
+export let INGRESS_SECRET = 'wildcard-cert';
 export let SOURCE_PRICE: resourcePriceResponse = {
   cpu: 0.067,
   memory: 0.033792,
