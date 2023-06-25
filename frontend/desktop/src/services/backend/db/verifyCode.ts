@@ -55,5 +55,6 @@ export async function checkCode({ phone, code }: { phone: string, code: string }
       $gt: new Date().getTime() - 5 * 60 * 1000
     },
   })
+  console.log(phone, code, result, 'checkable result')
   return !!result
 }

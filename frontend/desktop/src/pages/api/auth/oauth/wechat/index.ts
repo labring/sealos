@@ -1,7 +1,6 @@
 
 import { NextApiRequest, NextApiResponse } from "next";
 import { jsonRes } from "@/services/backend/response";
-// import  * as OAuth from 'wechat-oauth'
 
 const APP_ID = process.env.WECHAT_CLIENT_ID!;
 const APP_SECRET = process.env.WECHAT_CLIENT_SECRET!;
@@ -9,8 +8,12 @@ import { TWechatToken, TWechatUser } from "@/types/user";
 import { Session} from "@/types/session";
 import { getBase64FromRemote } from "@/utils/tools";
 import { getOauthRes } from "@/services/backend/oauth";
+import { enableWechat } from "@/services/enable";
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
+    if (!enableWechat()) {
+      throw new Error('wechat clinet is not defined')
+    }
     const { code } = req.body;
     const url = `https://api.weixin.qq.com/sns/oauth2/access_token?appid=${APP_ID}&secret=${APP_SECRET}&code=${code}&grant_type=authorization_code`;
     const { access_token, openid } = (await (await fetch(url, { headers: { Accept: 'application/json' } })).json()) as TWechatToken
