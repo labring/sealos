@@ -21,16 +21,22 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
+	"github.com/go-logr/logr"
 	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
+	"github.com/labring/sealos/controllers/cloud/internal/controller/util"
+	cloud "github.com/labring/sealos/controllers/cloud/internal/tools"
 )
 
 // LicenseReconciler reconciles a License object
 type LicenseReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme     *runtime.Scheme
+	logger     logr.Logger
+	configPath string
 }
 
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=licenses,verbs=get;list;watch;create;update;patch;delete
@@ -47,7 +53,7 @@ type LicenseReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	r.logger.Info("Enter LicenseReconcile", "namespace:", req.Namespace, "name", req.Name)
 
 	// TODO(user): your logic here
 
@@ -56,7 +62,15 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.configPath = util.ConfigPath
+	r.logger = ctrl.Log.WithName("LicenseReconcile")
+	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
+		return object.GetName() == cloud.LicenseName &&
+			object.GetNamespace() == cloud.Namespace &&
+			object.GetLabels() != nil &&
+			object.GetLabels()["isRead"] == "false"
+	})
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&cloudv1.License{}).
+		For(&cloudv1.License{}, builder.WithPredicates(Predicate)).
 		Complete(r)
 }

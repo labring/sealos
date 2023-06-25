@@ -19,16 +19,23 @@ package controller
 import (
 	"context"
 
+	"github.com/go-logr/logr"
+	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
+	"github.com/labring/sealos/controllers/cloud/internal/controller/util"
+	cloud "github.com/labring/sealos/controllers/cloud/internal/tools"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // CollectorReconciler reconciles a Collector object
 type CollectorReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme     *runtime.Scheme
+	logger     logr.Logger
+	configPath string
 }
 
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=collectors,verbs=get;list;watch;create;update;patch;delete
@@ -45,7 +52,7 @@ type CollectorReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	r.logger.Info("Enter NotificationReconcile", "namespace:", req.Namespace, "name", req.Name)
 
 	// TODO(user): your logic here
 
@@ -54,8 +61,16 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *CollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.configPath = util.ConfigPath
+	r.logger = ctrl.Log.WithName("CollectorReconcile")
+
+	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
+		return object.GetName() == cloud.ClientStartName &&
+			object.GetNamespace() == cloud.Namespace &&
+			object.GetLabels() != nil &&
+			object.GetLabels()["isRead"] == "false"
+	})
 	return ctrl.NewControllerManagedBy(mgr).
-		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
-		// For().
+		For(&cloudv1.CloudClient{}, builder.WithPredicates(Predicate)).
 		Complete(r)
 }

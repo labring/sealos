@@ -25,8 +25,11 @@ import (
 
 	"github.com/go-logr/logr"
 	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
+	"github.com/labring/sealos/controllers/cloud/internal/controller/util"
 	cloud "github.com/labring/sealos/controllers/cloud/internal/tools"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,6 +42,7 @@ type NotificationReconciler struct {
 	Scheme          *runtime.Scheme
 	NotificationMgr *cloud.NotificationManager
 	logger          logr.Logger
+	configPath      string
 }
 
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update
@@ -57,13 +61,25 @@ type NotificationReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter NotificationReconcile", "namespace:", req.Namespace, "name", req.Name)
-	var url string = "https://anqp0y.laf.dev/NotificationHandle"
+	config, err := util.ReadConfigFile(r.configPath, r.logger)
+	if err != nil {
+		r.logger.Error(err, "failed to read config")
+		return ctrl.Result{}, err
+	}
+	var url = config.NotificationURL
+	var clusterScret corev1.Secret
+	resource := util.NewImportanctResource(&clusterScret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
+	em := util.GetImportantResource(ctx, r.Client, &resource)
+	if em != nil {
+		r.logger.Error(em.Concat(": "), "failed to get cluster secret")
+		return ctrl.Result{}, em.Concat(": ")
+	}
 	var requestBody = cloud.NotificationRequest{
-		Uid:       "f4bf10cd-28b3-4384-92ec-24fa006f14d2",
+		Uid:       string(clusterScret.Data["uid"]),
 		Timestamp: r.NotificationMgr.TimeLastPull,
 	}
 	r.logger.Info("Starting to get cluster user")
-	em := r.NotificationMgr.GetNameSpace(ctx, r.Client)
+	em = r.NotificationMgr.GetNameSpace(ctx, r.Client)
 	if em != nil {
 		r.logger.Error(em.Concat(": "), "GetNamespace error")
 		return ctrl.Result{RequeueAfter: time.Second * 5}, em.Concat(": ")
@@ -124,15 +140,14 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 func (r *NotificationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("NotificationReconcile")
 	r.NotificationMgr = cloud.NewNotificationManager()
-
-	nameFilter := cloud.CloudStartName
-	namespaceFilter := cloud.Namespace
-	Predicates := predicate.NewPredicateFuncs(func(obj client.Object) bool {
-		return obj.GetName() == nameFilter &&
-			obj.GetNamespace() == namespaceFilter
+	r.configPath = util.ConfigPath
+	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
+		return object.GetName() == cloud.ClientStartName &&
+			object.GetNamespace() == cloud.Namespace &&
+			object.GetLabels() != nil &&
+			object.GetLabels()["isRead"] == "false"
 	})
-
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&cloudv1.CloudClient{}, builder.WithPredicates(Predicates)).
+		For(&cloudv1.CloudClient{}, builder.WithPredicates(Predicate)).
 		Complete(r)
 }
