@@ -20,29 +20,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return;
   }
 
-  const group = 'dataprotection.kubeblocks.io';
-  const version = 'v1alpha1';
-  const plural = 'backups';
-
   try {
-    const { k8sCustomObjects, namespace } = await getK8s({
-      kubeconfig: await authSession(req)
-    });
-
-    const { body } = (await k8sCustomObjects.listNamespacedCustomObject(
-      group,
-      version,
-      namespace,
-      plural,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      `${crLabelKey}=${dbName}`
-    )) as { body: { items: any[] } };
-
     jsonRes(res, {
-      data: body?.items || []
+      data: await getBackups({ dbName, req })
     });
   } catch (err: any) {
     jsonRes(res, {
@@ -50,4 +30,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       error: err
     });
   }
+}
+
+export async function getBackups({ dbName, req }: Props & { req: NextApiRequest }) {
+  const group = 'dataprotection.kubeblocks.io';
+  const version = 'v1alpha1';
+  const plural = 'backups';
+
+  const { k8sCustomObjects, namespace } = await getK8s({
+    kubeconfig: await authSession(req)
+  });
+
+  const { body } = (await k8sCustomObjects.listNamespacedCustomObject(
+    group,
+    version,
+    namespace,
+    plural,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    `${crLabelKey}=${dbName}`
+  )) as { body: { items: any[] } };
+
+  return body?.items || [];
 }

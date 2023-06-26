@@ -115,5 +115,10 @@
   "Total Price": "总价",
   "Database Name": "新数据库名",
   "Restore Database": "恢复数据库备份",
-  "Restore Backup Tip": "恢复备份会创建一个新的数据库，你需要提供新的数据库名，并且不能与当前数据库重名。"
+  "Restore Backup Tip": "恢复备份会创建一个新的数据库，你需要提供新的数据库名，并且不能与当前数据库重名。",
+  "Delete successful": "删除成功",
+  "Delete Failed": "删除出现意外",
+  "Backup Database": "备份数据库",
+  "Manual Backup": "手动备份",
+  "Auto Backup": "自动备份"
 }

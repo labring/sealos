@@ -108,7 +108,7 @@ const AppDetail = ({ dbName, listType }: { dbName: string; listType: `${TabEnum}
             ))}
             <Box flex={1}></Box>
             {listType === 'pod' && <Box color={'myGray.500'}>{dbPods.length} Items</Box>}
-            {listType === 'backup' && (
+            {listType === 'backup' && !BackupTableRef.current?.backupProcessing && (
               <Flex alignItems={'center'}>
                 <Button ml={3} variant={'primary'} onClick={BackupTableRef.current?.openBackup}>
                   {t('Backup')}

@@ -72,7 +72,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
     {
       title: 'Status',
       key: 'status',
-      render: (item: PodDetailType) => <Box color={item.status.color}>{item.status.label}</Box>
+      render: (item: PodDetailType) => <Box color={item.status.color}>{t(item.status.label)}</Box>
     },
     {
       title: 'Restarts',

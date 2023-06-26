@@ -125,7 +125,7 @@ function App({ Component, pageProps, domain }: AppProps & { domain: string }) {
   useEffect(() => {
     const lang = getLangStore() || 'en';
     i18n?.changeLanguage?.(lang);
-  }, [refresh, router.pathname]);
+  }, [refresh, router.asPath]);
 
   return (
     <>

@@ -1,4 +1,11 @@
-import React, { forwardRef, useCallback, ForwardedRef, useImperativeHandle, useState } from 'react';
+import React, {
+  forwardRef,
+  useCallback,
+  ForwardedRef,
+  useImperativeHandle,
+  useState,
+  useMemo
+} from 'react';
 import {
   Box,
   Button,
@@ -21,7 +28,7 @@ import dynamic from 'next/dynamic';
 import { useQuery } from '@tanstack/react-query';
 import { useConfirm } from '@/hooks/useConfirm';
 import dayjs from 'dayjs';
-import { backupTypeMap } from '@/constants/backup';
+import { BackupStatusEnum, backupTypeMap } from '@/constants/backup';
 import { useTranslation } from 'next-i18next';
 import { deleteBackup } from '@/api/backup';
 import { getErrText } from '@/utils/tools';
@@ -33,6 +40,7 @@ const RestoreModal = dynamic(() => import('./RestoreModal'));
 
 export type ComponentRef = {
   openBackup: () => void;
+  backupProcessing: boolean;
 };
 
 const BackupTable = ({ db }: { db: DBDetailType }, ref: ForwardedRef<ComponentRef>) => {
@@ -66,6 +74,13 @@ const BackupTable = ({ db }: { db: DBDetailType }, ref: ForwardedRef<ComponentRe
       refetchInterval: 3000
     }
   );
+
+  // hav processing backup
+  const backupProcessing = useMemo(
+    () => !!backups.find((item) => item.status.value === BackupStatusEnum.InProgress),
+    [backups]
+  );
+  console.log(backupProcessing);
 
   const confirmDel = useCallback(
     async (name: string) => {
@@ -141,35 +156,37 @@ const BackupTable = ({ db }: { db: DBDetailType }, ref: ForwardedRef<ComponentRe
     {
       title: 'Operation',
       key: 'control',
-      render: (item: BackupItemType) => (
-        <Flex>
-          <Tooltip label={t('Restore Backup')}>
-            <Flex {...operationIconBoxStyles} onClick={() => setRestoreBackupName(item.name)}>
-              <MyIcon name={'restore'} {...operationIconStyles} />
-            </Flex>
-          </Tooltip>
-          {/* <Tooltip label={t('Download Backup')}>
+      render: (item: BackupItemType) =>
+        item.status.value !== BackupStatusEnum.InProgress ? (
+          <Flex>
+            <Tooltip label={t('Restore Backup')}>
+              <Flex {...operationIconBoxStyles} onClick={() => setRestoreBackupName(item.name)}>
+                <MyIcon name={'restore'} {...operationIconStyles} />
+              </Flex>
+            </Tooltip>
+            {/* <Tooltip label={t('Download Backup')}>
             <Flex {...operationIconBoxStyles}>
               <MyIcon {...operationIconStyles} name={'download'} w={'16px'} />
             </Flex>
           </Tooltip> */}
-          <Tooltip label={t('Delete Backup')}>
-            <Flex
-              {...operationIconBoxStyles}
-              mr={0}
-              _hover={{ bg: '#EFF0F1', color: 'red.600' }}
-              onClick={openConfirmDel(() => confirmDel(item.name))}
-            >
-              <MyIcon name={'delete'} {...operationIconStyles} />
-            </Flex>
-          </Tooltip>
-        </Flex>
-      )
+            <Tooltip label={t('Delete Backup')}>
+              <Flex
+                {...operationIconBoxStyles}
+                mr={0}
+                _hover={{ bg: '#EFF0F1', color: 'red.600' }}
+                onClick={openConfirmDel(() => confirmDel(item.name))}
+              >
+                <MyIcon name={'delete'} {...operationIconStyles} />
+              </Flex>
+            </Tooltip>
+          </Flex>
+        ) : null
     }
   ];
 
   useImperativeHandle(ref, () => ({
-    openBackup: onOpenBackupModal
+    openBackup: onOpenBackupModal,
+    backupProcessing
   }));
 
   return (

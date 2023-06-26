@@ -19,21 +19,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return;
   }
 
-  const group = 'dataprotection.kubeblocks.io';
-  const version = 'v1alpha1';
-  const plural = 'backups';
-
   try {
-    const { k8sCustomObjects, namespace } = await getK8s({
-      kubeconfig: await authSession(req)
+    await delBackupByName({
+      backupName,
+      req
     });
-    await k8sCustomObjects.deleteNamespacedCustomObject(
-      group,
-      version,
-      namespace,
-      plural,
-      backupName
-    );
 
     jsonRes(res);
   } catch (err: any) {
@@ -42,4 +32,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       error: err
     });
   }
+}
+
+export async function delBackupByName({ backupName, req }: Props & { req: NextApiRequest }) {
+  const group = 'dataprotection.kubeblocks.io';
+  const version = 'v1alpha1';
+  const plural = 'backups';
+
+  const { k8sCustomObjects, namespace } = await getK8s({
+    kubeconfig: await authSession(req)
+  });
+  await k8sCustomObjects.deleteNamespacedCustomObject(
+    group,
+    version,
+    namespace,
+    plural,
+    backupName
+  );
 }
