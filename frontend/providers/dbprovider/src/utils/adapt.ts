@@ -79,11 +79,12 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
   return {
     ...pod,
     podName: pod.metadata?.name || 'pod name',
-    // @ts-ignore
-    status: podStatusMap[pod.status?.phase] || podStatusMap.Failed,
+    status: pod.status?.containerStatuses || [],
     nodeName: pod.spec?.nodeName || 'node name',
     ip: pod.status?.podIP || 'pod ip',
-    restarts: pod.status?.containerStatuses ? pod.status?.containerStatuses[0].restartCount : 0,
+    restarts: pod.status?.containerStatuses
+      ? pod.status?.containerStatuses.reduce((sum, item) => sum + item.restartCount, 0)
+      : 0,
     age: formatPodTime(pod.metadata?.creationTimestamp),
     cpu: cpuFormatToM(pod.spec?.containers?.[0]?.resources?.limits?.cpu || '0'),
     memory: memoryFormatToMi(pod.spec?.containers?.[0]?.resources?.limits?.memory || '0')

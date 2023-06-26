@@ -9,7 +9,8 @@ import type {
   V1HorizontalPodAutoscaler,
   V1Pod,
   SinglePodMetrics,
-  V1StatefulSet
+  V1StatefulSet,
+  V1ContainerStatus
 } from '@kubernetes/client-node';
 
 export type DBType = `${DBTypeEnum}`;
@@ -71,14 +72,9 @@ export interface DBConditionItemType {
   type: string;
 }
 
-export interface PodStatusMapType {
-  label: string;
-  value: `${PodStatusEnum}`;
-  color: string;
-}
 export interface PodDetailType extends V1Pod {
   podName: string;
-  status: PodStatusMapType;
+  status: V1ContainerStatus[];
   nodeName: string;
   ip: string;
   restarts: number;

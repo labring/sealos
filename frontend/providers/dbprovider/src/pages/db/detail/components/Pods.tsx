@@ -24,6 +24,7 @@ import { useDBStore } from '@/store/db';
 import MyMenu from '@/components/Menu';
 import MyIcon from '@/components/Icon';
 import { useTranslation } from 'next-i18next';
+import PodStatus from '@/components/PodStatus';
 
 const LogsModal = dynamic(() => import('./LogsModal'), { ssr: false });
 const DetailModel = dynamic(() => import('./PodDetailModal'), { ssr: false });
@@ -70,9 +71,9 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
       dataIndex: 'podName'
     },
     {
-      title: 'Status',
-      key: 'status',
-      render: (item: PodDetailType) => <Box color={item.status.color}>{t(item.status.label)}</Box>
+      title: 'Containers',
+      key: 'containers',
+      render: (item: PodDetailType) => <PodStatus containerStatuses={item.status} />
     },
     {
       title: 'Restarts',
@@ -98,44 +99,42 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
           >
             {t('Details')}
           </Button>
-          {item.status.value === PodStatusEnum.Running && (
-            <MyMenu
-              width={100}
-              Button={
-                <MenuButton
-                  w={'32px'}
-                  h={'32px'}
-                  borderRadius={'sm'}
-                  _hover={{
-                    bg: 'myWhite.400',
-                    color: 'hover.iconBlue'
-                  }}
-                >
-                  <MyIcon name={'more'} px={3} />
-                </MenuButton>
+          <MyMenu
+            width={100}
+            Button={
+              <MenuButton
+                w={'32px'}
+                h={'32px'}
+                borderRadius={'sm'}
+                _hover={{
+                  bg: 'myWhite.400',
+                  color: 'hover.iconBlue'
+                }}
+              >
+                <MyIcon name={'more'} px={3} />
+              </MenuButton>
+            }
+            menuList={[
+              {
+                child: (
+                  <>
+                    <MyIcon name={'log'} w={'14px'} />
+                    <Box ml={2}>{t('Logs')}</Box>
+                  </>
+                ),
+                onClick: () => setLogsPodIndex(i)
+              },
+              {
+                child: (
+                  <>
+                    <MyIcon name={'restart'} />
+                    <Box ml={2}>{t('Restart')}</Box>
+                  </>
+                ),
+                onClick: openConfirmRestart(() => handleRestartPod(item.podName))
               }
-              menuList={[
-                {
-                  child: (
-                    <>
-                      <MyIcon name={'log'} w={'14px'} />
-                      <Box ml={2}>{t('Logs')}</Box>
-                    </>
-                  ),
-                  onClick: () => setLogsPodIndex(i)
-                },
-                {
-                  child: (
-                    <>
-                      <MyIcon name={'restart'} />
-                      <Box ml={2}>{t('Restart')}</Box>
-                    </>
-                  ),
-                  onClick: openConfirmRestart(() => handleRestartPod(item.podName))
-                }
-              ]}
-            />
-          )}
+            ]}
+          />
         </Flex>
       )
     }
@@ -188,12 +187,10 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
           dbName={dbName}
           dbType={dbType}
           podName={dbPods[logsPodIndex]?.podName || ''}
-          pods={dbPods
-            .filter((pod) => pod.status.value === PodStatusEnum.Running)
-            .map((item, i) => ({
-              alias: `${dbName}-${i + 1}`,
-              podName: item.podName
-            }))}
+          pods={dbPods.map((item, i) => ({
+            alias: `${dbName}-${i + 1}`,
+            podName: item.podName
+          }))}
           podAlias={`${dbName}-${logsPodIndex + 1}`}
           setLogsPodName={(name: string) =>
             setLogsPodIndex(dbPods.findIndex((item) => item.podName === name))

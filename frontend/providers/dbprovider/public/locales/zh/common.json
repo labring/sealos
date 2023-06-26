@@ -120,5 +120,6 @@
   "Delete Failed": "删除出现意外",
   "Backup Database": "备份数据库",
   "Manual Backup": "手动备份",
-  "Auto Backup": "自动备份"
+  "Auto Backup": "自动备份",
+  "Containers": "容器"
 }

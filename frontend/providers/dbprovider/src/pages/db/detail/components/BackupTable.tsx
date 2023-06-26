@@ -80,7 +80,6 @@ const BackupTable = ({ db }: { db: DBDetailType }, ref: ForwardedRef<ComponentRe
     () => !!backups.find((item) => item.status.value === BackupStatusEnum.InProgress),
     [backups]
   );
-  console.log(backupProcessing);
 
   const confirmDel = useCallback(
     async (name: string) => {
