@@ -160,6 +160,32 @@ rules:
   - patch
   - update
 - apiGroups:
+  - account.sealos.io
+  resources:
+  - transfers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - transfers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - transfers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - apps
   resources:
   - daemonsets
