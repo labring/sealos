@@ -61,6 +61,7 @@ type NotificationReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter NotificationReconcile", "namespace:", req.Namespace, "name", req.Name)
+	r.logger.Info("Start to get the url to pull notification...")
 	config, err := util.ReadConfigFile(r.configPath, r.logger)
 	if err != nil {
 		r.logger.Error(err, "failed to read config")
@@ -69,36 +70,44 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	var url = config.NotificationURL
 	var clusterScret corev1.Secret
 	resource := util.NewImportanctResource(&clusterScret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
+
+	r.logger.Info("Start to get the secret resource for uid...")
 	em := util.GetImportantResource(ctx, r.Client, &resource)
 	if em != nil {
 		r.logger.Error(em.Concat(": "), "failed to get cluster secret")
 		return ctrl.Result{}, em.Concat(": ")
 	}
-	var requestBody = cloud.NotificationRequest{
-		Uid:       string(clusterScret.Data["uid"]),
-		Timestamp: r.NotificationMgr.TimeLastPull,
-	}
+
 	r.logger.Info("Starting to get cluster user")
 	em = r.NotificationMgr.GetNameSpace(ctx, r.Client)
 	if em != nil {
 		r.logger.Error(em.Concat(": "), "GetNamespace error")
 		return ctrl.Result{RequeueAfter: time.Second * 5}, em.Concat(": ")
 	}
+
+	r.logger.Info("Start to pull notification from cloud...")
+	var requestBody = cloud.NotificationRequest{
+		Uid:       string(clusterScret.Data["uid"]),
+		Timestamp: r.NotificationMgr.TimeLastPull,
+	}
+
 	//---------------------------------------------------------------------------//
 	r.logger.Info("Starting to communicate with cloud")
 	httpResp, em := cloud.CommunicateWithCloud("POST", url, requestBody)
 	if em != nil {
 		r.logger.Error(cloud.LoadError("CommunicateWithCloud", em).Concat(": "), "failed to communicate with cloud")
-		return ctrl.Result{RequeueAfter: time.Second * 5}, errors.New(http.StatusText(httpResp.StatusCode))
+		return ctrl.Result{}, errors.New(http.StatusText(httpResp.StatusCode))
 	}
 	if !cloud.IsSuccessfulStatusCode(httpResp.StatusCode) {
 		r.logger.Error(errors.New(http.StatusText(httpResp.StatusCode)), string(httpResp.Body))
-		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+		return ctrl.Result{}, errors.New(http.StatusText(httpResp.StatusCode))
 	}
+
+	r.logger.Info("Starting to communicate with cloud")
 	var content = []cloud.NotificationResponse{}
 	if em := cloud.Convert(httpResp.Body, &content, r.NotificationMgr); em != nil {
 		r.logger.Error(em.Concat(": "), "failed to convert")
-		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+		return ctrl.Result{}, em.Concat(": ")
 	}
 	//---------------------------------------------------------------------------//
 	r.logger.Info("Starting to deliver notifications to cluster users")
@@ -128,12 +137,11 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 	//---------------------------------------------------------------------------//
 	r.logger.Info("Starting the update operation")
-
 	if time.Now().Unix() > r.NotificationMgr.ExpireToUpdate {
 		r.NotificationMgr.UpdateManager(ctx, r.Client)
 	}
 	r.logger.Info("The task of the notification module has been completed.")
-	return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+	return ctrl.Result{RequeueAfter: time.Second * 60}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

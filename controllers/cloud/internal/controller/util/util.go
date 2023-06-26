@@ -35,101 +35,24 @@ import (
 
 const ConfigPath = "/etc/config/config.json"
 
-type Config struct {
-	CollectorURL    string `json:"CollectorURL"`
-	NotificationURL string `json:"NotificationURL"`
-	RegisterURL     string `json:"RegisterURL"`
-	CloudSyncURL    string `json:"CloudSyncURL"`
-	// Add other fields here to support future expansion needs.
-}
-
-func ReadConfigFile(filepath string, logger logr.Logger) (Config, error) {
+func ReadConfigFile(filepath string, logger logr.Logger) (cloud.Config, error) {
 	data, err := os.ReadFile(filepath)
 	if err != nil {
 		logger.Error(err, "failed to read config file:")
-		return Config{}, err
+		return cloud.Config{}, err
 	}
 
-	var config Config
+	var config cloud.Config
 	err = json.Unmarshal(data, &config)
 	if err != nil {
 		logger.Error(err, "failed to parse config file:")
-		return Config{}, err
+		return cloud.Config{}, err
 	}
 
 	return config, nil
 }
 
-func GetUID(client cl.Client, logger logr.Logger) (string, *cloud.ErrorMgr) {
-	var clusterUIDSecret corev1.Secret
-
-	secretName := cloud.SecretName
-	secretNamespace := cloud.Namespace
-
-	ctx := context.Background()
-
-	if err := client.Get(ctx, types.NamespacedName{Name: secretName, Namespace: secretNamespace}, &clusterUIDSecret); err != nil {
-		return "", cloud.NewErrorMgr("GetUID", "client.Get", err.Error())
-	}
-	uidBytes, ok := clusterUIDSecret.Data["uid"]
-	if !ok {
-		return "", cloud.NewErrorMgr("GetUID", "client.Get", "no uid field from Secret")
-	}
-
-	uid := string(uidBytes)
-	return uid, nil
-}
-
-func GetToken(client cl.Client, logger logr.Logger) (string, *cloud.ErrorMgr) {
-	var clusterTokenSecret corev1.Secret
-
-	ctx := context.Background()
-
-	if err := client.Get(ctx, types.NamespacedName{Name: cloud.SecretName, Namespace: cloud.Namespace}, &clusterTokenSecret); err != nil {
-		return "", cloud.NewErrorMgr("GetToken", "client.Get", err.Error())
-	}
-	uidBytes, ok := clusterTokenSecret.Data["token"]
-	if !ok {
-		return "", cloud.NewErrorMgr("GetToken", "client.Get", "no token field from Secret")
-	}
-
-	uid := string(uidBytes)
-	return uid, nil
-}
-
-func UpdateToken(client cl.Client, token string, logger logr.Logger) *cloud.ErrorMgr {
-	var clusterTokenSecret corev1.Secret
-	clusterTokenSecret.Data = make(map[string][]byte)
-
-	clusterTokenSecret.SetName(cloud.SecretName)
-	clusterTokenSecret.SetNamespace(cloud.Namespace)
-	clusterTokenSecret.Data["token"] = []byte(token)
-	ctx := context.Background()
-
-	if err := client.Update(ctx, &clusterTokenSecret); err != nil {
-		return cloud.NewErrorMgr("UpdateToken", "client.Update", err.Error())
-	}
-
-	return nil
-}
-
-func UpdatePublicKey(client cl.Client, publicKey string, logger logr.Logger) *cloud.ErrorMgr {
-	var clusterTokenSecret corev1.Secret
-	clusterTokenSecret.Data = make(map[string][]byte)
-
-	clusterTokenSecret.SetName(cloud.SecretName)
-	clusterTokenSecret.SetNamespace(cloud.Namespace)
-	clusterTokenSecret.Data["publicKey"] = []byte(publicKey)
-	ctx := context.Background()
-
-	if err := client.Update(ctx, &clusterTokenSecret); err != nil {
-		return cloud.NewErrorMgr("UpdatePublicKey", "client.Update", err.Error())
-	}
-
-	return nil
-}
-
-type OptionCallBack func(cl.Object)
+type OptionCallBack func(ctx context.Context, client cl.Client) error
 
 type ImportantResourcePolicy interface {
 	Get(ctx context.Context, client cl.Client) error
@@ -155,20 +78,17 @@ func (ir *ImportanctResource) Get(ctx context.Context, client cl.Client) error {
 }
 
 func (ir *ImportanctResource) Update(ctx context.Context, client cl.Client) error {
-	return client.Get(ctx, ir.identifier, ir.resource)
+	return client.Update(ctx, ir.resource)
 }
 
 func (ir *ImportanctResource) Restrict(ctx context.Context, client cl.Client) error {
-	var license cloudv1.License
 	if ir.options != nil {
-		ir.options(&license)
+		return ir.options(ctx, client)
 	}
-	return client.Get(ctx, ir.identifier, ir.resource)
+	return nil
 }
 
 // This function is used to retrieve certain variables considered as important resources by this module, such as Secrets and ConfigMaps.
-//
-//	When the retrieved resource is a License, a callback function can be embedded to obtain the status during restriction.
 func GetImportantResource(ctx context.Context, client cl.Client, policy ImportantResourcePolicy) *cloud.ErrorMgr {
 	var logger = ctrl.Log.WithName("GetImportantResource")
 	expire := time.Now().Add(time.Hour).Unix()
@@ -191,20 +111,16 @@ func GetImportantResource(ctx context.Context, client cl.Client, policy Importan
 	return cloud.NewErrorMgr("GetImportantResource failed, time out")
 }
 
-func UpdateImportanceResource(ctx context.Context, client cl.Client, policy ImportantResourcePolicy) *cloud.ErrorMgr {
-	return nil
-}
-
 // ----------------------------------------------------------------------------------------------------------//
 
 type RegisterAndStartData struct {
 	clusterScret *corev1.Secret
-	config       Config
+	config       cloud.Config
 	ctx          context.Context
 	client       cl.Client
 }
 
-func NewRegisterAndStartData(clusterScret *corev1.Secret, config Config,
+func NewRegisterAndStartData(clusterScret *corev1.Secret, config cloud.Config,
 	ctx context.Context, client cl.Client) RegisterAndStartData {
 	return RegisterAndStartData{
 		clusterScret: clusterScret,

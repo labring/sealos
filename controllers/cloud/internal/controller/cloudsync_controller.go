@@ -18,12 +18,16 @@ package controller
 
 import (
 	"context"
+	"errors"
+	"net/http"
 
 	"github.com/go-logr/logr"
 	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
 	"github.com/labring/sealos/controllers/cloud/internal/controller/util"
 	cloud "github.com/labring/sealos/controllers/cloud/internal/tools"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,8 +37,10 @@ import (
 // CloudSyncReconciler reconciles a CloudSync object
 type CloudSyncReconciler struct {
 	client.Client
-	Scheme     *runtime.Scheme
-	logger     logr.Logger
+	Scheme   *runtime.Scheme
+	logger   logr.Logger
+	needSync bool
+
 	configPath string
 }
 
@@ -52,9 +58,47 @@ type CloudSyncReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	r.logger.Info("Enter NotificationReconcile", "namespace:", req.Namespace, "name", req.Name)
+	r.logger.Info("Enter CloudSyncReconcile", "namespace:", req.Namespace, "name", req.Name)
+	var err error
+	var config cloud.Config
+	var secret corev1.Secret
+	var sync cloud.SyncRequest
+	var resp cloud.SyncResponse
 
-	// TODO(user): your logic here
+	r.logger.Info("Start to get the CloudSync URL...")
+	config, err = util.ReadConfigFile(r.configPath, r.logger)
+	if err != nil {
+		r.logger.Error(err, "failed to read config")
+		return ctrl.Result{}, err
+	}
+	url := config.CloudSyncURL
+	r.logger.Info("Start to get resources that need sync...")
+	resource := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
+	em := util.GetImportantResource(ctx, r.Client, &resource)
+	if em != nil {
+		r.logger.Error(em.Concat(": "), "failed to get resource secret")
+		return ctrl.Result{}, em.Concat(": ")
+	}
+	sync.UID = string(secret.Data["uid"])
+	if r.needSync {
+		r.logger.Info("Start to communicate with cloud...")
+		httpBody, em := cloud.CommunicateWithCloud("POST", url, sync)
+		if em != nil {
+			r.logger.Error(em.Concat(": "), "failed to communicate with cloud")
+			return ctrl.Result{}, em.Concat(": ")
+		}
+		if cloud.IsSuccessfulStatusCode(httpBody.StatusCode) {
+			err := errors.New(http.StatusText(httpBody.StatusCode))
+			r.logger.Error(err, err.Error())
+			return ctrl.Result{}, err
+		}
+		em = cloud.Convert(httpBody.Body, &resp)
+		if em != nil {
+			r.logger.Error(em.Concat(": "), "failed to convert to cloud.SyncResponse")
+			return ctrl.Result{}, em.Concat(": ")
+		}
+	}
+	r.logger.Info("Start to sync the resources...")
 
 	return ctrl.Result{}, nil
 }
@@ -63,7 +107,7 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 func (r *CloudSyncReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.configPath = util.ConfigPath
 	r.logger = ctrl.Log.WithName("CloudSyncReconcile")
-
+	r.needSync = true
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
 		return object.GetName() == cloud.ClientStartName &&
 			object.GetNamespace() == cloud.Namespace &&
