@@ -54,11 +54,7 @@ export const pathFormat = (str: string) => {
   return `./${str}`;
 };
 export const pathToNameFormat = (str: string) => {
-  if (!str.startsWith('/')) return str.replace(/(\/|\.)/g, '-').toLocaleLowerCase();
-  return str
-    .substring(1)
-    .replace(/(\/|\.)/g, '-')
-    .toLocaleLowerCase();
+  return str.replace(/(\/|\.)/g, 'vn-').toLocaleLowerCase();
 };
 
 /**
