@@ -36,31 +36,29 @@ export const appStatusMap = {
 };
 
 export enum PodStatusEnum {
-  Pending = 'Pending',
-  Running = 'Running',
-  Failed = 'Failed',
-  Unknown = 'Unknown'
+  waiting = 'waiting',
+  running = 'running',
+  terminated = 'terminated'
 }
 export const podStatusMap = {
-  [PodStatusEnum.Running]: {
-    label: 'Running',
-    value: PodStatusEnum.Running,
+  [PodStatusEnum.running]: {
+    label: 'running',
+    value: PodStatusEnum.running,
     color: '#00A9A6'
   },
-  [PodStatusEnum.Pending]: {
-    label: 'Pending',
-    value: PodStatusEnum.Pending,
-    color: '#787A90'
+  [PodStatusEnum.waiting]: {
+    label: 'waiting',
+    value: PodStatusEnum.waiting,
+    color: '#787A90',
+    reason: '',
+    message: ''
   },
-  [PodStatusEnum.Failed]: {
-    label: 'Failed',
-    value: PodStatusEnum.Failed,
-    color: '#FF5B6E'
-  },
-  [PodStatusEnum.Unknown]: {
-    label: 'Unknown',
-    value: PodStatusEnum.Unknown,
-    color: '#FF5B6E'
+  [PodStatusEnum.terminated]: {
+    label: 'terminated',
+    value: PodStatusEnum.terminated,
+    color: '#8172D8',
+    reason: '',
+    message: ''
   }
 };
 

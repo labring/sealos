@@ -43,7 +43,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           </Box>
           <Box ml={2} color={'myGray.400'}>
             ({t('Update Time')}&ensp;
-            {dayjs().format('hh:mm:ss')})
+            {dayjs().format('HH:mm:ss')})
           </Box>
         </Flex>
         <Grid

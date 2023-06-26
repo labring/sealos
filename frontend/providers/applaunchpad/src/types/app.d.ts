@@ -106,6 +106,8 @@ export interface PodStatusMapType {
   label: string;
   value: `${PodStatusEnum}`;
   color: string;
+  reason?: string;
+  message?: string;
 }
 export interface PodDetailType extends V1Pod {
   podName: string;
@@ -118,6 +120,8 @@ export interface PodDetailType extends V1Pod {
   usedMemory: number[];
   cpu: number;
   memory: number;
+  podReason?: string;
+  podMessage?: string;
 }
 export interface PodMetrics {
   podName: string;
