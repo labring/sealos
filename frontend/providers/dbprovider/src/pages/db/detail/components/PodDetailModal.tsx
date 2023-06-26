@@ -200,11 +200,6 @@ const Logs = ({
               py={3}
               overflow={'overlay'}
             >
-              <RenderItem label="Status">
-                <Box as="span" color={pod.status.color}>
-                  {pod.status.label}
-                </Box>
-              </RenderItem>
               <RenderItem label="Restarts">{pod.restarts}</RenderItem>
               <RenderItem label="Age">{pod.age}</RenderItem>
               <RenderItem label="Pod Name">{pod.podName}</RenderItem>
@@ -232,7 +227,7 @@ const Logs = ({
           <Flex position={'relative'} flexDirection={'column'} h={'100%'}>
             <Flex mb={4} alignItems={'center'}>
               <Box color={'myGray.600'}>Events</Box>
-              {events.length > 0 && (
+              {/* {events.length > 0 && (
                 <Button
                   ml={3}
                   size={'sm'}
@@ -242,7 +237,7 @@ const Logs = ({
                 >
                   {t('Event Analyze')}
                 </Button>
-              )}
+              )} */}
             </Flex>
             <Box flex={'1 0 0'} h={0} overflowY={'auto'}>
               {events.map((event, i) => (
