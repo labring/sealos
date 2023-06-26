@@ -42,13 +42,11 @@ func (c *Client) Ping(host string) error {
 	return client.Close()
 }
 
-// wrapCommands just placeholder for now
 func (c *Client) wrapCommands(cmds ...string) string {
 	if !c.Option.sudo || c.Option.user == defaultUsername {
 		return strings.Join(cmds, "; ")
 	}
-	// run as user provided and set HOME env, then run `bash -c` in a sub-shell
-	return fmt.Sprintf("sudo -u %s -H bash -c '%s'", c.Option.user, strings.Join(cmds, "; "))
+	return fmt.Sprintf("sudo -E /bin/bash -c '%s'", strings.Join(cmds, "; "))
 }
 
 func (c *Client) CmdAsyncWithContext(ctx context.Context, host string, cmds ...string) error {
