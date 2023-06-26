@@ -174,6 +174,9 @@ func MountClusterImages(bdah buildah.Interface, cluster *v2.Cluster, skipApp boo
 	for _, img := range cluster.Spec.Image {
 		info, err := inspectImage(bdah, img)
 		if err != nil {
+			if skipApp {
+				continue
+			}
 			return err
 		}
 		var imageType string
