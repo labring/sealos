@@ -2,9 +2,7 @@ package bytebase
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
-	"strconv"
 
 	api "github.com/labring/sealos/controllers/db/bytebase/client/api"
 	corev1 "k8s.io/api/core/v1"
@@ -29,7 +27,7 @@ func (r *Reconciler) syncInstance(ctx context.Context, req ctrl.Request) error {
 		return err
 	}
 	if err := r.syncKbCluster(ctx, req); err != nil {
-		errorMessage := "failed to set up postgres instance"
+		errorMessage := "failed to set up kubeblocks instance"
 		logger.Error(err, errorMessage)
 		return err
 	}
@@ -82,20 +80,11 @@ func (r *Reconciler) syncKbCluster(ctx context.Context, req ctrl.Request) error 
 			logger.Error(err, "failed to fetch cluster connection credentials")
 			return err
 		}
-		rawBytes, decodingErr := base64.StdEncoding.DecodeString(string(secret.Data["username"]))
-		if decodingErr != nil {
-			logger.Error(decodingErr, "failed to decode username")
-			return decodingErr
-		}
-		dataSourceUserName = string(rawBytes)
-		rawBytes, decodingErr = base64.StdEncoding.DecodeString(string(secret.Data["password"]))
-		if decodingErr != nil {
-			logger.Error(decodingErr, "failed to decode password")
-			return decodingErr
-		}
-		dataSourceUserPasswd = string(rawBytes)
-		dataSourcePort = strconv.FormatInt(int64(dbSvc.Spec.Ports[0].Port), 10)
-		dataSourceHost = dbSvc.Spec.ClusterIP
+		logger.Info("got secret. initialize instance now.")
+		dataSourceUserName = string(secret.Data["username"])
+		dataSourceUserPasswd = string(secret.Data["password"])
+		dataSourcePort = string(secret.Data["port"])
+		dataSourceHost = string(secret.Data["host"])
 
 		dataSourceMessages := []*api.DataSourceMessage{}
 		dsm := api.DataSourceMessage{

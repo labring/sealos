@@ -18,18 +18,6 @@ rules:
   - update
   - watch
 - apiGroups:
-  - acid.zalan.do
-  resources:
-  - postgresqls
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apisix.apache.org
   resources:
   - apisixroutes
