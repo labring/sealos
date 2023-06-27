@@ -5,7 +5,7 @@ on:
 jobs:
   cherry-pick:
     name: Cherry Pick
-    if: github.event.issue.pull_request != '' && contains(github.event.comment.body, '/cherry-pick') && github.event.comment.author_association == 'COLLABORATOR'
+    if: github.event.issue.pull_request != '' && contains(github.event.comment.body, '/cherry-pick') && github.event.comment.user.login=='sealos-ci-robot'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the latest code
