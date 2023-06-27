@@ -120,31 +120,25 @@ export const dbStatusMap = {
 
 /* pod */
 export enum PodStatusEnum {
-  Pending = 'Pending',
-  Running = 'Running',
-  Failed = 'Failed',
-  Unknown = 'Unknown'
+  waiting = 'waiting',
+  running = 'running',
+  terminated = 'terminated'
 }
 export const podStatusMap = {
-  [PodStatusEnum.Running]: {
-    label: 'Running',
-    value: PodStatusEnum.Running,
-    color: '#00A9A6'
+  [PodStatusEnum.running]: {
+    label: 'running',
+    value: PodStatusEnum.running,
+    bg: '#47C8BF'
   },
-  [PodStatusEnum.Pending]: {
-    label: 'Pending',
-    value: PodStatusEnum.Pending,
-    color: '#787A90'
+  [PodStatusEnum.waiting]: {
+    label: 'waiting',
+    value: PodStatusEnum.waiting,
+    bg: '#D5D6E1'
   },
-  [PodStatusEnum.Failed]: {
-    label: 'Failed',
-    value: PodStatusEnum.Failed,
-    color: '#FF5B6E'
-  },
-  [PodStatusEnum.Unknown]: {
-    label: 'Unknown',
-    value: PodStatusEnum.Unknown,
-    color: '#FF5B6E'
+  [PodStatusEnum.terminated]: {
+    label: 'terminated',
+    value: PodStatusEnum.terminated,
+    bg: '#9A8EE0'
   }
 };
 
@@ -178,9 +172,9 @@ export const defaultDBEditValue: DBEditType = {
   dbVersion: DBVersionMap[DBTypeEnum.postgresql][0].id,
   dbName: 'dbname',
   replicas: 1,
-  cpu: CpuSlideMarkList[0].value,
-  memory: MemorySlideMarkList[0].value,
-  storage: 1
+  cpu: CpuSlideMarkList[1].value,
+  memory: MemorySlideMarkList[1].value,
+  storage: 3
 };
 
 export const defaultDBDetail: DBDetailType = {
@@ -193,7 +187,7 @@ export const defaultDBDetail: DBDetailType = {
 
 export const defaultPod: PodDetailType = {
   podName: '',
-  status: podStatusMap[PodStatusEnum.Pending],
+  status: [],
   nodeName: '',
   ip: '',
   restarts: 0,

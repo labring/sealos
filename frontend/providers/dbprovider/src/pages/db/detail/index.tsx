@@ -1,35 +1,40 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Flex, Button, useTheme } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useDBStore } from '@/store/db';
 import { useToast } from '@/hooks/useToast';
 import { useLoading } from '@/hooks/useLoading';
 import { useGlobalStore } from '@/store/global';
-import { defaultDBDetail } from '@/constants/db';
 import { serviceSideProps } from '@/utils/i18n';
 import { useRouter } from 'next/router';
 import Header from './components/Header';
 import AppBaseInfo from './components/AppBaseInfo';
 import Pods from './components/Pods';
-import RangeDate from '@/components/RangeDate';
+import BackupTable, { type ComponentRef } from './components/BackupTable';
 import { useTranslation } from 'next-i18next';
 
-const AppDetail = ({ dbName, listType }: { dbName: string; listType: 'pod' | 'backup' }) => {
+enum TabEnum {
+  pod = 'pod',
+  backup = 'backup'
+}
+
+const AppDetail = ({ dbName, listType }: { dbName: string; listType: `${TabEnum}` }) => {
+  const BackupTableRef = useRef<ComponentRef>(null);
   const router = useRouter();
   const { t } = useTranslation();
   const listNav = useRef([
-    { label: 'Replicas List', value: 'pod' }
-    // { label: 'Backup List', value: 'backup' }
+    { label: 'Replicas List', value: TabEnum.pod },
+    { label: 'Backup List', value: TabEnum.backup }
   ]);
   const theme = useTheme();
   const { toast } = useToast();
   const { Loading } = useLoading();
   const { screenWidth } = useGlobalStore();
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth]);
-  const { dbDetail = defaultDBDetail, loadDBDetail, dbPods } = useDBStore();
+  const { dbDetail, loadDBDetail, dbPods } = useDBStore();
   const [showSlider, setShowSlider] = useState(false);
 
-  useQuery(['loadDBDetail', 'intervalLoadPods'], () => loadDBDetail(dbName), {
+  useQuery([dbName, 'loadDBDetail', 'intervalLoadPods'], () => loadDBDetail(dbName), {
     refetchInterval: 3000,
     onError(err) {
       router.replace('/dbs');
@@ -103,16 +108,17 @@ const AppDetail = ({ dbName, listType }: { dbName: string; listType: 'pod' | 'ba
             ))}
             <Box flex={1}></Box>
             {listType === 'pod' && <Box color={'myGray.500'}>{dbPods.length} Items</Box>}
-            {listType === 'backup' && (
+            {listType === 'backup' && !BackupTableRef.current?.backupProcessing && (
               <Flex alignItems={'center'}>
-                <RangeDate />
-                <Button ml={3}>确认</Button>
+                <Button ml={3} variant={'primary'} onClick={BackupTableRef.current?.openBackup}>
+                  {t('Backup')}
+                </Button>
               </Flex>
             )}
           </Flex>
           <Box flex={'1 0 0'} h={0}>
             {listType === 'pod' && <Pods dbName={dbName} dbType={dbDetail.dbType} />}
-            {/* {listType === 'backup' && <BackupTable dbName={dbName} />} */}
+            {listType === 'backup' && <BackupTable ref={BackupTableRef} db={dbDetail} />}
           </Box>
         </Flex>
       </Flex>
@@ -135,7 +141,7 @@ export default AppDetail;
 
 export async function getServerSideProps(context: any) {
   const dbName = context.query?.name || '';
-  const listType = context.query?.listType || 'pod';
+  const listType = context.query?.listType || TabEnum.pod;
 
   return {
     props: { ...(await serviceSideProps(context)), dbName, listType }

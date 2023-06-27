@@ -235,7 +235,6 @@ const Header = ({
       {isOpenBackupModal && (
         <BackupModal
           dbName={db.dbName}
-          dbType={db.dbType}
           onClose={onCloseBackupModal}
           onSuccess={() => {
             toast({
@@ -249,4 +248,4 @@ const Header = ({
   );
 };
 
-export default Header;
+export default React.memo(Header);

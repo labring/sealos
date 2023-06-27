@@ -3,6 +3,8 @@ import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
+import { getBackups } from './backup/getBackupList';
+import { delBackupByName } from './backup/delBackup';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -14,6 +16,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const { namespace, k8sCustomObjects, k8sAuth, k8sCore } = await getK8s({
       kubeconfig: await authSession(req)
     });
+
+    // get backup and delete
+    const backups = await getBackups({ dbName: name, req });
+    await Promise.all(
+      backups.map((item) => delBackupByName({ backupName: item.metadata.name, req }))
+    );
 
     // del role
     await Promise.all([

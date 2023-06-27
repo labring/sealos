@@ -15,6 +15,7 @@ import { useLoading } from '@/hooks/useLoading';
 import { useRouter } from 'next/router';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
+import { getUserPrice } from '@/store/static';
 
 import 'nprogress/nprogress.css';
 import 'react-day-picker/dist/style.css';
@@ -85,6 +86,7 @@ function App({ Component, pageProps, domain }: AppProps & { domain: string }) {
     };
   }, [setScreenWidth]);
 
+  // init
   useEffect(() => {
     const changeI18n = async (data: any) => {
       const lastLang = getLangStore();
@@ -95,6 +97,8 @@ function App({ Component, pageProps, domain }: AppProps & { domain: string }) {
         setRefresh((state) => !state);
       }
     };
+
+    getUserPrice();
     (async () => {
       try {
         const lang = await sealosApp.getLanguage();
@@ -121,7 +125,7 @@ function App({ Component, pageProps, domain }: AppProps & { domain: string }) {
   useEffect(() => {
     const lang = getLangStore() || 'en';
     i18n?.changeLanguage?.(lang);
-  }, [refresh, router.pathname]);
+  }, [refresh, router.asPath]);
 
   return (
     <>

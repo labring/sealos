@@ -5,8 +5,14 @@ import { DBTypeEnum, DBComponentNameMap } from '@/constants/db';
 import { crLabelKey } from '@/constants/db';
 import { getUserNamespace } from './user';
 import dayjs from 'dayjs';
+import {
+  BackupTypeEnum,
+  BACKUP_TYPE_LABEL_KEY,
+  BACKUP_REMARK_LABEL_KEY,
+  BACKUP_LABEL_KEY
+} from '@/constants/backup';
 
-export const json2CreateCluster = (data: DBEditType) => {
+export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
   const resources = {
     limits: {
       cpu: `${str2Num(Math.floor(data.cpu))}m`,
@@ -21,7 +27,11 @@ export const json2CreateCluster = (data: DBEditType) => {
     finalizers: ['cluster.kubeblocks.io/finalizer'],
     labels: {
       'clusterdefinition.kubeblocks.io/name': data.dbType,
-      'clusterversion.kubeblocks.io/name': data.dbVersion
+      'clusterversion.kubeblocks.io/name': data.dbVersion,
+      [crLabelKey]: data.dbName
+    },
+    annotations: {
+      ...(backupName ? { [BACKUP_LABEL_KEY]: JSON.stringify({ [data.dbType]: backupName }) } : {})
     },
     name: data.dbName
   };
@@ -167,6 +177,11 @@ export const json2CreateCluster = (data: DBEditType) => {
 };
 
 export const json2Account = (data: DBEditType) => {
+  const commonLabels = {
+    [crLabelKey]: data.dbName,
+    'app.kubernetes.io/instance': data.dbName,
+    'app.kubernetes.io/managed-by': 'kbcli'
+  };
   const map = {
     [DBTypeEnum.postgresql]: [
       {
@@ -174,8 +189,7 @@ export const json2Account = (data: DBEditType) => {
         kind: 'ServiceAccount',
         metadata: {
           labels: {
-            'app.kubernetes.io/instance': data.dbName,
-            'app.kubernetes.io/managed-by': 'kbcli'
+            ...commonLabels
           },
           name: data.dbName
         }
@@ -185,8 +199,7 @@ export const json2Account = (data: DBEditType) => {
         kind: 'Role',
         metadata: {
           labels: {
-            'app.kubernetes.io/instance': data.dbName,
-            'app.kubernetes.io/managed-by': 'kbcli'
+            ...commonLabels
           },
           name: data.dbName
         },
@@ -218,8 +231,7 @@ export const json2Account = (data: DBEditType) => {
         kind: 'RoleBinding',
         metadata: {
           labels: {
-            'app.kubernetes.io/instance': data.dbName,
-            'app.kubernetes.io/managed-by': 'kbcli'
+            ...commonLabels
           },
           name: data.dbName
         },
@@ -243,8 +255,7 @@ export const json2Account = (data: DBEditType) => {
         kind: 'ServiceAccount',
         metadata: {
           labels: {
-            'app.kubernetes.io/instance': data.dbName,
-            'app.kubernetes.io/managed-by': 'kbcli'
+            ...commonLabels
           },
           name: data.dbName
         }
@@ -254,8 +265,7 @@ export const json2Account = (data: DBEditType) => {
         kind: 'Role',
         metadata: {
           labels: {
-            'app.kubernetes.io/instance': data.dbName,
-            'app.kubernetes.io/managed-by': 'kbcli'
+            ...commonLabels
           },
           name: data.dbName
         },
@@ -272,8 +282,7 @@ export const json2Account = (data: DBEditType) => {
         kind: 'RoleBinding',
         metadata: {
           labels: {
-            'app.kubernetes.io/instance': data.dbName,
-            'app.kubernetes.io/managed-by': 'kbcli'
+            ...commonLabels
           },
           name: data.dbName
         },
@@ -297,8 +306,7 @@ export const json2Account = (data: DBEditType) => {
         kind: 'ServiceAccount',
         metadata: {
           labels: {
-            'app.kubernetes.io/instance': 'mong',
-            'app.kubernetes.io/managed-by': 'kbcli'
+            ...commonLabels
           },
           name: data.dbName
         }
@@ -308,8 +316,7 @@ export const json2Account = (data: DBEditType) => {
         kind: 'Role',
         metadata: {
           labels: {
-            'app.kubernetes.io/instance': 'mong',
-            'app.kubernetes.io/managed-by': 'kbcli'
+            ...commonLabels
           },
           name: data.dbName
         },
@@ -326,8 +333,7 @@ export const json2Account = (data: DBEditType) => {
         kind: 'RoleBinding',
         metadata: {
           labels: {
-            'app.kubernetes.io/instance': 'mong',
-            'app.kubernetes.io/managed-by': 'kbcli'
+            ...commonLabels
           },
           name: data.dbName
         },
@@ -475,46 +481,16 @@ export const json2Restart = ({ dbName, dbType }: { dbName: string; dbType: DBTyp
   return yaml.dump(template);
 };
 
-export const json2BackupPvc = ({
-  crName,
-  dbName,
-  storage
-}: {
-  crName: string;
-  dbName: string;
-  storage: number;
-}) => {
-  const template = {
-    apiVersion: 'v1',
-    kind: 'PersistentVolumeClaim',
-    metadata: {
-      name: `${crName}-pvc`,
-      labels: {
-        [crLabelKey]: dbName
-      }
-    },
-    spec: {
-      accessModes: ['ReadWriteOnce'],
-      resources: {
-        requests: {
-          storage: `${storage}Gi`
-        }
-      },
-      storageClassName: 'openebs-backup',
-      volumeMode: 'Filesystem'
-    }
-  };
-  return yaml.dump(template);
-};
-
 export const json2Backup = ({
-  crName,
+  name,
   dbName,
-  backupPolicyName
+  backupPolicyName,
+  remark = ''
 }: {
-  crName: string;
+  name: string;
   dbName: string;
   backupPolicyName: string;
+  remark?: string;
 }) => {
   const template = {
     apiVersion: 'dataprotection.kubeblocks.io/v1alpha1',
@@ -522,9 +498,11 @@ export const json2Backup = ({
     metadata: {
       finalizers: ['dataprotection.kubeblocks.io/finalizer'],
       labels: {
-        [crLabelKey]: dbName
+        [crLabelKey]: dbName,
+        [BACKUP_TYPE_LABEL_KEY]: BackupTypeEnum.manual,
+        [BACKUP_REMARK_LABEL_KEY]: remark
       },
-      name: `${crName}-backup`
+      name
     },
     spec: {
       backupPolicyName,

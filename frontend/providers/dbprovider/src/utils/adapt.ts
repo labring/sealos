@@ -3,11 +3,16 @@ import type { CoreV1EventList, V1Pod } from '@kubernetes/client-node';
 import type { DBListItemType, DBDetailType, DBEditType, PodDetailType, PodEvent } from '@/types/db';
 import { dbStatusMap, podStatusMap } from '@/constants/db';
 import { cpuFormatToM, memoryFormatToMi, storageFormatToNum } from '@/utils/tools';
-import type { KbPgClusterType, KbPodType } from '@/types/cluster';
+import type { KbPgClusterType } from '@/types/cluster';
 import { formatPodTime } from '@/utils/tools';
 import type { BackupItemType } from '../types/db';
 import type { BackupCRItemType } from '@/types/backup';
-import { backupStatusMap } from '@/constants/backup';
+import {
+  backupStatusMap,
+  BackupTypeEnum,
+  BACKUP_REMARK_LABEL_KEY,
+  BACKUP_TYPE_LABEL_KEY
+} from '@/constants/backup';
 
 export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
   // compute store amount
@@ -19,7 +24,7 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
       db?.status?.phase && dbStatusMap[db?.status?.phase]
         ? dbStatusMap[db?.status?.phase]
         : dbStatusMap.UnKnow,
-    createTime: dayjs(db.metadata?.creationTimestamp).format('YYYY/MM/DD hh:mm'),
+    createTime: dayjs(db.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
     cpu: cpuFormatToM(db.spec?.componentSpecs?.[0]?.resources.limits.cpu),
     memory: cpuFormatToM(db.spec?.componentSpecs?.[0]?.resources.limits.memory),
     storage:
@@ -32,7 +37,7 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
 export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
   return {
     id: db.metadata?.uid || ``,
-    createTime: dayjs(db.metadata?.creationTimestamp).format('YYYY/MM/DD hh:mm'),
+    createTime: dayjs(db.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
     status:
       db?.status?.phase && dbStatusMap[db?.status?.phase]
         ? dbStatusMap[db?.status?.phase]
@@ -74,11 +79,12 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
   return {
     ...pod,
     podName: pod.metadata?.name || 'pod name',
-    // @ts-ignore
-    status: podStatusMap[pod.status?.phase] || podStatusMap.Failed,
+    status: pod.status?.containerStatuses || [],
     nodeName: pod.spec?.nodeName || 'node name',
     ip: pod.status?.podIP || 'pod ip',
-    restarts: pod.status?.containerStatuses ? pod.status?.containerStatuses[0].restartCount : 0,
+    restarts: pod.status?.containerStatuses
+      ? pod.status?.containerStatuses.reduce((sum, item) => sum + item.restartCount, 0)
+      : 0,
     age: formatPodTime(pod.metadata?.creationTimestamp),
     cpu: cpuFormatToM(pod.spec?.containers?.[0]?.resources?.limits?.cpu || '0'),
     memory: memoryFormatToMi(pod.spec?.containers?.[0]?.resources?.limits?.memory || '0')
@@ -109,10 +115,10 @@ export const adaptBackup = (backup: BackupCRItemType): BackupItemType => {
   return {
     id: backup.metadata.uid,
     name: backup.metadata.name,
-    status: backupStatusMap[backup.status.phase],
-    startTime: backup.status.startTimestamp,
-    endTime: backup.status.completionTimestamp,
-    storage: 10,
-    type: 'manual'
+    status: backupStatusMap[backup.status.phase] || backupStatusMap.UnKnow,
+    startTime: backup.metadata.creationTimestamp,
+    type: (backup.metadata.labels[BACKUP_TYPE_LABEL_KEY] as `${BackupTypeEnum}`) || 'UnKnow',
+    remark: backup.metadata.labels[BACKUP_REMARK_LABEL_KEY] || '-',
+    failureReason: backup.status?.failureReason
   };
 };

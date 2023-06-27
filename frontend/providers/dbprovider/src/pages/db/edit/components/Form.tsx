@@ -20,14 +20,14 @@ import MySlider from '@/components/Slider';
 import MyIcon from '@/components/Icon';
 import type { QueryType } from '@/types';
 import type { DBEditType } from '@/types/db';
-import { customAlphabet } from 'nanoid';
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/editApp';
 import Tabs from '@/components/Tabs';
 import MySelect from '@/components/Select';
 import { DBTypeList, DBVersionMap } from '@/constants/db';
 import { useTranslation } from 'next-i18next';
+import PriceBox from './PriceBox';
+import { INSTALL_ACCOUNT } from '@/store/static';
 
-const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 import { obj2Query } from '@/api/tools';
 import { throttle } from 'lodash';
 
@@ -192,6 +192,17 @@ const Form = ({
               </Box>
             ))}
           </Box>
+
+          {INSTALL_ACCOUNT && (
+            <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>
+              <PriceBox
+                pods={[getValues('replicas') || 1, getValues('replicas') || 1]}
+                cpu={getValues('cpu')}
+                memory={getValues('memory')}
+                storage={getValues('storage')}
+              />
+            </Box>
+          )}
         </Box>
         <Box
           id={'form-container'}
@@ -333,6 +344,7 @@ const Form = ({
                         <NumberDecrementStepper />
                       </NumberInputStepper>
                       <Box
+                        zIndex={1}
                         position={'absolute'}
                         right={10}
                         top={'50%'}

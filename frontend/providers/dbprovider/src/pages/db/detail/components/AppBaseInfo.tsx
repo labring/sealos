@@ -32,7 +32,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     () => [
       {
         name: 'Basic Info',
-        iconName: 'appType',
+        iconName: 'info',
         items: [
           { label: 'Creation Time', value: db.createTime },
           { label: 'DataBase Type', value: db.dbType },
@@ -125,7 +125,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       {secret && db.status.value === DBStatusEnum.Running && (
         <>
           <Flex mt={6} alignItems={'center'} color={'myGray.500'}>
-            <MyIcon w={'16px'} name={'analyze'}></MyIcon>
+            <MyIcon w={'16px'} name={'connection'}></MyIcon>
             <Box ml={2}>{t('Connection Info')}</Box>
             <Button
               ml={3}
@@ -151,7 +151,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
               onClick={() => setShowSecret(!showSecret)}
             >
               <MyIcon
-                name={showSecret ? 'unread' : 'read'}
+                name={showSecret ? 'read' : 'unread'}
                 w={'26px'}
                 color={'myGray.600'}
               ></MyIcon>

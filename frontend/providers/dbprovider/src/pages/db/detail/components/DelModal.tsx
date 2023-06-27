@@ -34,20 +34,20 @@ const DelModal = ({
       setLoading(true);
       await delDBByName(dbName);
       toast({
-        title: '删除成功',
+        title: t('Delete successful'),
         status: 'success'
       });
       onSuccess();
       onClose();
     } catch (error: any) {
       toast({
-        title: typeof error === 'string' ? error : error.message || '删除出现了意外',
+        title: typeof error === 'string' ? error : error.message || t('Delete Failed'),
         status: 'error'
       });
       console.error(error);
     }
     setLoading(false);
-  }, [dbName, toast, onSuccess, onClose]);
+  }, [dbName, toast, t, onSuccess, onClose]);
 
   return (
     <Modal isOpen onClose={onClose}>

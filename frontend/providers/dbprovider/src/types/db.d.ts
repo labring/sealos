@@ -1,5 +1,5 @@
 import { DBTypeEnum, DBStatusEnum, PodStatusEnum } from '@/constants/db';
-import { BackupStatusEnum } from '@/constants/backup';
+import { BackupStatusEnum, BackupTypeEnum } from '@/constants/backup';
 import type {
   V1Deployment,
   V1ConfigMap,
@@ -9,7 +9,8 @@ import type {
   V1HorizontalPodAutoscaler,
   V1Pod,
   SinglePodMetrics,
-  V1StatefulSet
+  V1StatefulSet,
+  V1ContainerStatus
 } from '@kubernetes/client-node';
 
 export type DBType = `${DBTypeEnum}`;
@@ -71,14 +72,9 @@ export interface DBConditionItemType {
   type: string;
 }
 
-export interface PodStatusMapType {
-  label: string;
-  value: `${PodStatusEnum}`;
-  color: string;
-}
 export interface PodDetailType extends V1Pod {
   podName: string;
-  status: PodStatusMapType;
+  status: V1ContainerStatus[];
   nodeName: string;
   ip: string;
   restarts: number;
@@ -105,9 +101,9 @@ export interface BackupStatusMapType {
 export interface BackupItemType {
   id: string;
   name: string;
+  remark: string;
   status: BackupStatusMapType;
   startTime: Date;
-  endTime: Date;
-  storage: number;
-  type: 'auto' | 'manual';
+  failureReason?: string;
+  type: `${BackupTypeEnum}`;
 }

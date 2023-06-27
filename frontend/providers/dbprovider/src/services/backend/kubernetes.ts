@@ -65,7 +65,6 @@ export async function createYaml(
       delete spec.metadata.annotations['kubectl.kubernetes.io/last-applied-configuration'];
       spec.metadata.annotations['kubectl.kubernetes.io/last-applied-configuration'] =
         JSON.stringify(spec);
-
       console.log('create yaml: ', spec.kind);
       const response = await client.create(spec);
       created.push(response.body);

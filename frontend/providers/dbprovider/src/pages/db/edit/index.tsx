@@ -96,7 +96,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       await applyYamlList(data, isEdit ? 'replace' : 'create');
 
       toast({
-        title: applySuccess,
+        title: t(applySuccess),
         status: 'success'
       });
       router.replace(`/db/detail?name=${formHook.getValues('dbName')}`);
@@ -105,7 +105,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       setErrorMessage(JSON.stringify(error));
     }
     setIsLoading(false);
-  }, [applySuccess, formHook, isEdit, router, setIsLoading, toast, yamlList]);
+  }, [applySuccess, formHook, isEdit, router, setIsLoading, t, toast, yamlList]);
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {

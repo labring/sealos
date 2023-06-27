@@ -3,27 +3,29 @@ import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { crLabelKey } from '@/constants/db';
 
 export type Props = {
-  dbName: string;
+  backupName: string;
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
-  const { dbName } = req.query as Props;
+  const { backupName } = req.query as Props;
 
-  if (!dbName) {
+  if (!backupName) {
     jsonRes(res, {
       code: 500,
-      error: 'params error'
+      error: 'backupName is empty'
     });
     return;
   }
 
   try {
-    jsonRes(res, {
-      data: await getBackups({ dbName, req })
+    await delBackupByName({
+      backupName,
+      req
     });
+
+    jsonRes(res);
   } catch (err: any) {
     jsonRes(res, {
       code: 500,
@@ -32,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   }
 }
 
-export async function getBackups({ dbName, req }: Props & { req: NextApiRequest }) {
+export async function delBackupByName({ backupName, req }: Props & { req: NextApiRequest }) {
   const group = 'dataprotection.kubeblocks.io';
   const version = 'v1alpha1';
   const plural = 'backups';
@@ -40,18 +42,11 @@ export async function getBackups({ dbName, req }: Props & { req: NextApiRequest 
   const { k8sCustomObjects, namespace } = await getK8s({
     kubeconfig: await authSession(req)
   });
-
-  const { body } = (await k8sCustomObjects.listNamespacedCustomObject(
+  await k8sCustomObjects.deleteNamespacedCustomObject(
     group,
     version,
     namespace,
     plural,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    `${crLabelKey}=${dbName}`
-  )) as { body: { items: any[] } };
-
-  return body?.items || [];
+    backupName
+  );
 }

@@ -11,7 +11,7 @@ sh frontend/scripts/initFormat.sh
 
 ```bash
 # dev
-echo '35.220.136.161 apiserver.cluster.local' | sudo tee -a /etc/hosts
+echo '34.96.232.236 apiserver.cluster.local' | sudo tee -a /etc/hosts
 # io
 echo '35.240.227.100 apiserver.cluster.local' | sudo tee -a /etc/hosts
 # cn
