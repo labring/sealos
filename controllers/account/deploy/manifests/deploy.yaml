@@ -549,6 +549,7 @@ spec:
             properties:
               amount:
                 format: int64
+                minimum: 1000000
                 type: integer
               to:
                 type: string

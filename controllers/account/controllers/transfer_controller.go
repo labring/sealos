@@ -70,6 +70,7 @@ func (r *TransferReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if time.Since(transfer.CreationTimestamp.Time) > time.Minute*3 {
 		return ctrl.Result{}, r.Delete(ctx, &transfer)
 	}
+	transfer.Status.Progress = accountv1.TransferStateCompleted
 	pipeLine := []func(ctx context.Context, transfer *accountv1.Transfer) error{
 		r.check,
 		r.TransferOutSaver,
@@ -79,11 +80,11 @@ func (r *TransferReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		if err := f(ctx, &transfer); err != nil {
 			transfer.Status.Reason = err.Error()
 			transfer.Status.Progress = accountv1.TransferStateFailed
-			if err := r.Status().Update(ctx, &transfer); err != nil {
-				return ctrl.Result{}, fmt.Errorf("update transfer status failed: %w", err)
-			}
 			break
 		}
+	}
+	if err := r.Status().Update(ctx, &transfer); err != nil {
+		return ctrl.Result{}, fmt.Errorf("update transfer status failed: %w", err)
 	}
 	return ctrl.Result{RequeueAfter: 3 * time.Minute}, nil
 }

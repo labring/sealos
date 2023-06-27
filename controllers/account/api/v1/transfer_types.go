@@ -34,8 +34,9 @@ const (
 
 // TransferSpec defines the desired state of Transfer
 type TransferSpec struct {
-	To     string `json:"to"`
-	Amount int64  `json:"amount"`
+	To string `json:"to"`
+	// +kubebuilder:validation:Minimum=1000000
+	Amount int64 `json:"amount"`
 }
 
 // TransferStatus defines the observed state of Transfer
