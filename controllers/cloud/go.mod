@@ -73,5 +73,4 @@ require (
 replace (
 	github.com/labring/sealos => ../../
 	github.com/labring/sealos/controllers/cloud => ../../controllers/cloud
-	github.com/labring/sealos/controllers/common => ../../controllers/common
 )

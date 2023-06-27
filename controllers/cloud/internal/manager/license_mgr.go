@@ -54,7 +54,7 @@ func NewLicenseMonitorRequest(secret corev1.Secret) (LicenseMonitorRequest, *Err
 	return lmr, nil
 }
 
-func LicenseRestrict(ctx context.Context, client cl.Client) error {
+func LicenseRestrict(_ context.Context, _ cl.Client) error {
 	// 投递一个cr，通知account，将余额清零
 	return nil
 }

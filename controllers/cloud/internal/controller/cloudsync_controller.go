@@ -128,7 +128,7 @@ func (r *CloudSyncReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return object.GetName() == cloud.ClientStartName &&
 			object.GetNamespace() == cloud.Namespace &&
 			object.GetLabels() != nil &&
-			object.GetLabels()["isRead"] == "false"
+			object.GetLabels()["isRead"] == util.FALSE
 	})
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cloudv1.CloudClient{}, builder.WithPredicates(Predicate)).

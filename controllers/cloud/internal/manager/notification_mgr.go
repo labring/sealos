@@ -70,8 +70,8 @@ func (nm *NotificationManager) GetNameSpace(ctx context.Context, client cl.Clien
 	return nil
 }
 
-func (nm *NotificationManager) UpdateManager(ctx context.Context, client cl.Client) {
-	nm.ExpireToUpdate += int64(time.Duration(72 * time.Hour))
+func (nm *NotificationManager) UpdateManager() {
+	nm.ExpireToUpdate += int64(72 * time.Hour)
 	nm.NotificationCache = []ntf.Notification{}
 	resetMapValues(nm.AdmNamespaceGroup)
 	resetMapValues(nm.UserNameSpaceGroup)
@@ -93,7 +93,7 @@ func (nm *NotificationManager) callbackConvert(data interface{}) error {
 	if !ok {
 		return errors.New("error type, expected []Notification")
 	}
-	var timestamp int64 = 0
+	var timestamp int64
 	for _, notification := range *notifications {
 		if timestamp < notification.Timestamp {
 			timestamp = notification.Timestamp
@@ -141,7 +141,7 @@ func (nt NotificationTask) Work(ctx context.Context, client cl.Client) error {
 				break
 			}
 			if err = client.Create(ctx, notificationCopy, cl.FieldOwner(Namespace)); cl.IgnoreAlreadyExists(err) != nil {
-				retries += 1
+				retries++
 				waitTime := time.Duration(math.Pow(2, float64(retries-1))) * time.Second
 				time.Sleep(waitTime)
 				continue

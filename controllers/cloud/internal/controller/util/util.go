@@ -35,6 +35,11 @@ import (
 
 const ConfigPath = "/etc/config/config.json"
 
+const (
+	TRUE  = "true"
+	FALSE = "false"
+)
+
 func ReadConfigFile(filepath string, logger logr.Logger) (cloud.Config, error) {
 	data, err := os.ReadFile(filepath)
 	if err != nil {
@@ -52,12 +57,12 @@ func ReadConfigFile(filepath string, logger logr.Logger) (cloud.Config, error) {
 	return config, nil
 }
 
-type OptionCallBack func(ctx context.Context, client cl.Client) error
+type OptionCallBack func(ctx context.Context, client cl.Client)
 
 type ImportantResourcePolicy interface {
 	Get(ctx context.Context, client cl.Client) error
 	Update(ctx context.Context, client cl.Client) error
-	Restrict(ctx context.Context, client cl.Client) error
+	Restrict(ctx context.Context, client cl.Client)
 }
 
 type ImportanctResource struct {
@@ -81,11 +86,10 @@ func (ir *ImportanctResource) Update(ctx context.Context, client cl.Client) erro
 	return client.Update(ctx, ir.resource)
 }
 
-func (ir *ImportanctResource) Restrict(ctx context.Context, client cl.Client) error {
+func (ir *ImportanctResource) Restrict(ctx context.Context, client cl.Client) {
 	if ir.options != nil {
-		return ir.options(ctx, client)
+		ir.options(ctx, client)
 	}
-	return nil
 }
 
 // This function is used to retrieve certain variables considered as important resources by this module, such as Secrets and ConfigMaps.
@@ -102,7 +106,7 @@ func GetImportantResource(ctx context.Context, client cl.Client, policy Importan
 			return cloud.NewErrorMgr("GetImportantResource failed", "restrict the cluster", err.Error())
 		default:
 			time.Sleep(time.Second * 10)
-			logger.Info("failed to get importance resouce,retrying...")
+			logger.Info("failed to get importance resource,retrying...")
 		}
 		if time.Now().Unix() > expire {
 			break
@@ -114,19 +118,18 @@ func GetImportantResource(ctx context.Context, client cl.Client, policy Importan
 // ----------------------------------------------------------------------------------------------------------//
 
 type RegisterAndStartData struct {
-	clusterScret *corev1.Secret
-	config       cloud.Config
 	ctx          context.Context
 	client       cl.Client
+	clusterScret *corev1.Secret
+	config       cloud.Config
 }
 
-func NewRegisterAndStartData(clusterScret *corev1.Secret, config cloud.Config,
-	ctx context.Context, client cl.Client) RegisterAndStartData {
+func NewRegisterAndStartData(ctx context.Context, client cl.Client, clusterScret *corev1.Secret, config cloud.Config) RegisterAndStartData {
 	return RegisterAndStartData{
-		clusterScret: clusterScret,
-		config:       config,
 		ctx:          ctx,
 		client:       client,
+		clusterScret: clusterScret,
+		config:       config,
 	}
 }
 
@@ -152,7 +155,7 @@ func RegisterAndStart(data RegisterAndStartData) *cloud.ErrorMgr {
 	if !ok {
 		return cloud.NewErrorMgr("RegisterAndStart", "the Yaml of cloud secret if error, less registered label")
 	}
-	if value != "true" {
+	if value != TRUE {
 		em := data.Register()
 		if em != nil {
 			return cloud.LoadError("RegisterAndStart", em)
@@ -214,7 +217,7 @@ func (rd *RegisterAndStartData) startCloudClient() *cloud.ErrorMgr {
 	if err := rd.client.Get(rd.ctx, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.ClientStartName}, &startInstance); err != nil {
 		if apierrors.IsNotFound(err) {
 			startInstance.Labels = make(map[string]string)
-			startInstance.Labels["isRead"] = "false"
+			startInstance.Labels["isRead"] = FALSE
 			if err := rd.client.Create(rd.ctx, &startInstance); err != nil {
 				return cloud.NewErrorMgr("startCloudClient", "client.Create", err.Error())
 			}
@@ -225,7 +228,7 @@ func (rd *RegisterAndStartData) startCloudClient() *cloud.ErrorMgr {
 		if startInstance.Labels == nil {
 			startInstance.Labels = make(map[string]string)
 		}
-		startInstance.Labels["isRead"] = "false"
+		startInstance.Labels["isRead"] = FALSE
 		if err := rd.client.Update(rd.ctx, &startInstance); err != nil {
 			return cloud.NewErrorMgr("startCloudClient", "client.Update", err.Error())
 		}
@@ -234,7 +237,7 @@ func (rd *RegisterAndStartData) startCloudClient() *cloud.ErrorMgr {
 	if startInstance.Labels == nil {
 		startInstance.Labels = make(map[string]string)
 	}
-	startInstance.Labels["isRead"] = "true"
+	startInstance.Labels["isRead"] = TRUE
 	if err := rd.client.Update(rd.ctx, &startInstance); err != nil {
 		return cloud.NewErrorMgr("startCloudClient", "client.Update", err.Error())
 	}
@@ -257,7 +260,7 @@ func SubmitLicense(ctx context.Context, client cl.Client, cluster corev1.Secret,
 				if license.Labels == nil {
 					license.Labels = make(map[string]string)
 				}
-				license.Labels["isRead"] = "false"
+				license.Labels["isRead"] = FALSE
 				err := client.Create(ctx, &license)
 				if err == nil {
 					return nil
@@ -271,7 +274,7 @@ func SubmitLicense(ctx context.Context, client cl.Client, cluster corev1.Secret,
 			if license.Labels == nil {
 				license.Labels = make(map[string]string)
 			}
-			license.Labels["isRead"] = "false"
+			license.Labels["isRead"] = FALSE
 			err := client.Update(ctx, &license)
 			if err == nil {
 				return nil

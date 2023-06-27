@@ -47,7 +47,7 @@ const (
 type PolicyAction string
 
 type NotificationRequest struct {
-	Uid       string `json:"uid"`
+	UID       string `json:"uid"`
 	Timestamp int64  `json:"timestamp"`
 }
 
@@ -59,7 +59,7 @@ type NotificationResponse struct {
 	Timestamp int64  `json:"timestamp"`
 }
 
-type HttpResponse struct {
+type HTTPResponse struct {
 	ContentType string
 	StatusCode  int
 	Body        []byte
@@ -91,7 +91,7 @@ type Resource struct {
 	Disk    string `json:"disk"`
 }
 
-type HttpBody struct {
+type HTTPBody struct {
 	ContentType string
 	StatusCode  int
 	Body        []byte
@@ -101,7 +101,7 @@ type ConvertOptions interface {
 	callbackConvert(data interface{}) error
 }
 
-func CommunicateWithCloud(method string, url string, content interface{}) (HttpResponse, *ErrorMgr) {
+func CommunicateWithCloud(method string, url string, content interface{}) (HTTPResponse, *ErrorMgr) {
 	var req *http.Request
 	var resp *http.Response
 	var err error
@@ -109,11 +109,11 @@ func CommunicateWithCloud(method string, url string, content interface{}) (HttpR
 	// create a http request to cloud
 	req, em = sendRequest(method, url, content)
 	if em != nil {
-		return HttpResponse{}, LoadError("sendRequest", em)
+		return HTTPResponse{}, LoadError("sendRequest", em)
 	}
 	resp, em = getResponse(req)
 	if err != nil {
-		return HttpResponse{}, LoadError("getResponse", em)
+		return HTTPResponse{}, LoadError("getResponse", em)
 	}
 	defer resp.Body.Close()
 	return readResponse(resp)
@@ -151,7 +151,7 @@ type Worker interface {
 	Work(ctx context.Context, client cl.Client) error
 }
 
-func AsyncCloudTask(errorchannel chan *ErrorMgr, wg *sync.WaitGroup, ctx context.Context, client cl.Client, wk Worker) {
+func AsyncCloudTask(ctx context.Context, client cl.Client, errorchannel chan *ErrorMgr, wg *sync.WaitGroup, wk Worker) {
 	defer wg.Done()
 	if err := wk.Work(ctx, client); err != nil {
 		errorchannel <- NewErrorMgr("asyncCloudTask", err.Error())
@@ -194,15 +194,15 @@ func getResponse(req *http.Request) (*http.Response, *ErrorMgr) {
 	return resp, nil
 }
 
-func readResponse(resp *http.Response) (HttpResponse, *ErrorMgr) {
+func readResponse(resp *http.Response) (HTTPResponse, *ErrorMgr) {
 	defer resp.Body.Close()
-	var err error
-	var http_resp HttpResponse
-	http_resp.Body, err = io.ReadAll(resp.Body)
-	http_resp.ContentType = resp.Header.Get(ContentType)
-	http_resp.StatusCode = resp.StatusCode
+	var httpResp HTTPResponse
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return HttpResponse{}, NewErrorMgr(err.Error())
+		return HTTPResponse{}, NewErrorMgr(err.Error())
 	}
-	return http_resp, nil
+	httpResp.Body = bodyBytes
+	httpResp.ContentType = resp.Header.Get(ContentType)
+	httpResp.StatusCode = resp.StatusCode
+	return httpResp, nil
 }

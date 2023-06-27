@@ -87,7 +87,7 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	r.logger.Info("Start to pull notification from cloud...")
 	var requestBody = cloud.NotificationRequest{
-		Uid:       string(clusterScret.Data["uid"]),
+		UID:       string(clusterScret.Data["uid"]),
 		Timestamp: r.NotificationMgr.TimeLastPull,
 	}
 
@@ -125,7 +125,7 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				AdmNamespaceGroup:  r.NotificationMgr.AdmNamespaceGroup,
 				NotificationCache:  r.NotificationMgr.NotificationCache,
 			}
-			go cloud.AsyncCloudTask(r.NotificationMgr.ErrorChannel, &wg, ctx, r.Client, tk)
+			go cloud.AsyncCloudTask(ctx, r.Client, r.NotificationMgr.ErrorChannel, &wg, tk)
 		}
 	}
 	go func() {
@@ -138,7 +138,7 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	//---------------------------------------------------------------------------//
 	r.logger.Info("Starting the update operation")
 	if time.Now().Unix() > r.NotificationMgr.ExpireToUpdate {
-		r.NotificationMgr.UpdateManager(ctx, r.Client)
+		r.NotificationMgr.UpdateManager()
 	}
 	r.logger.Info("The task of the notification module has been completed.")
 	return ctrl.Result{RequeueAfter: time.Second * 60}, nil

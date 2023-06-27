@@ -65,18 +65,17 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	r.logger.Info("Try to get the cloud secret resource...")
-	var resource util.ImportanctResource = util.NewImportanctResource(&clusterSecret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
+	resource := util.NewImportanctResource(&clusterSecret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
 	if em := util.GetImportantResource(ctx, r.Client, &resource); em != nil {
 		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.Secret")
 		return ctrl.Result{}, em.Concat(": ")
 	}
 	if value, ok := clusterSecret.Labels["registered"]; ok && value == "true" {
 		r.logger.Info("Cluster has registered")
-
 	}
 
 	r.logger.Info("Try to register and start the cloud module")
-	rasd := util.NewRegisterAndStartData(&clusterSecret, config, ctx, r.Client)
+	rasd := util.NewRegisterAndStartData(ctx, r.Client, &clusterSecret, config)
 	em := util.RetryRegisterAndStart(r.logger, 5, rasd, util.RegisterAndStart)
 	if em != nil {
 		r.logger.Error(em.Concat(": "), "failed to register and start")

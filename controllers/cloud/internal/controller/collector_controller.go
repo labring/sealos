@@ -51,7 +51,7 @@ type CollectorReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
-func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *CollectorReconciler) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter NotificationReconcile", "namespace:", req.Namespace, "name", req.Name)
 
 	// TODO(user): your logic here
@@ -68,7 +68,7 @@ func (r *CollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return object.GetName() == cloud.ClientStartName &&
 			object.GetNamespace() == cloud.Namespace &&
 			object.GetLabels() != nil &&
-			object.GetLabels()["isRead"] == "false"
+			object.GetLabels()["isRead"] == util.FALSE
 	})
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cloudv1.CloudClient{}, builder.WithPredicates(Predicate)).

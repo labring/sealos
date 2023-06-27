@@ -41,9 +41,9 @@ type SyncRequest struct {
 }
 
 func IsConfigMapChanged(resp SyncResponse, cm *corev1.ConfigMap) bool {
-	var changed bool = false
-	var configMapJson map[string]string
-	if err := json.Unmarshal([]byte(cm.Data["config.json"]), &configMapJson); err != nil {
+	var changed bool
+	var configMapJSON map[string]string
+	if err := json.Unmarshal([]byte(cm.Data["config.json"]), &configMapJSON); err != nil {
 		panic(err)
 	}
 	newConfigMapValue := reflect.ValueOf(resp)
@@ -56,16 +56,16 @@ func IsConfigMapChanged(resp SyncResponse, cm *corev1.ConfigMap) bool {
 		cmKey := fieldName
 
 		if cmValue, ok := cm.Data[cmKey]; !ok || cmValue != fieldValue {
-			configMapJson[fieldName] = fieldValue
+			configMapJSON[fieldName] = fieldValue
 			changed = true
 		}
 	}
 	if changed {
-		updatedJson, err := json.Marshal(configMapJson)
+		updatedJSON, err := json.Marshal(configMapJSON)
 		if err != nil {
 			panic(err)
 		}
-		cm.Data["config.json"] = string(updatedJson)
+		cm.Data["config.json"] = string(updatedJSON)
 	}
 
 	return changed
