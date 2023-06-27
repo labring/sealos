@@ -23,6 +23,8 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+
 	"github.com/go-logr/logr"
 	v12 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/pkg/database"
@@ -253,7 +255,7 @@ func (r *BillingReconciler) initDB() error {
 //}
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *BillingReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *BillingReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	if r.mongoURL = os.Getenv(database.MongoURL); r.mongoURL == "" {
 		return fmt.Errorf("env %s is empty", database.MongoURL)
 	}
@@ -281,6 +283,7 @@ func (r *BillingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return false
 			},
 		})).
+		WithOptions(rateOpts).
 		Complete(r)
 }
 

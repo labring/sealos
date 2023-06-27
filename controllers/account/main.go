@@ -21,6 +21,9 @@ import (
 	"os"
 	"time"
 
+	utilcontroller "github.com/labring/sealos/controllers/pkg/utils"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+
 	"github.com/labring/sealos/controllers/account/controllers/cache"
 	v1 "github.com/labring/sealos/controllers/common/notification/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -66,6 +69,8 @@ func main() {
 		metricsAddr          string
 		enableLeaderElection bool
 		probeAddr            string
+		concurrent           int
+		rateLimiterOptions   utilcontroller.RateLimiterOptions
 		leaseDuration        time.Duration
 		renewDeadline        time.Duration
 		retryPeriod          time.Duration
@@ -75,12 +80,14 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.IntVar(&concurrent, "concurrent", 5, "The number of concurrent cluster reconciles.")
 	flag.DurationVar(&leaseDuration, "leader-elect-lease-duration", 60*time.Second, "Duration that non-leader candidates will wait to force acquire leadership.")
 	flag.DurationVar(&renewDeadline, "leader-elect-renew-deadline", 40*time.Second, "Duration the acting master will retry refreshing leadership before giving up.")
 	flag.DurationVar(&retryPeriod, "leader-elect-retry-period", 5*time.Second, "Duration the LeaderElector clients should wait between tries of actions.")
 	opts := zap.Options{
 		Development: true,
 	}
+	rateLimiterOptions.BindFlags(flag.CommandLine)
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
@@ -93,9 +100,9 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "a63686c3.sealos.io",
-		//LeaseDuration:          &leaseDuration,
-		//RenewDeadline:          &renewDeadline,
-		//RetryPeriod:            &retryPeriod,
+		LeaseDuration:          &leaseDuration,
+		RenewDeadline:          &renewDeadline,
+		RetryPeriod:            &retryPeriod,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -109,24 +116,28 @@ func main() {
 		setupLog.Error(err, "unable to get watch client")
 		os.Exit(1)
 	}
+	rateOpts := controller.Options{
+		MaxConcurrentReconciles: concurrent,
+		RateLimiter:             utilcontroller.GetRateLimiter(rateLimiterOptions),
+	}
 	if err = (&controllers.AccountReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(mgr, rateOpts); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Account")
 		os.Exit(1)
 	}
 	if err = (&controllers.PaymentReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(mgr, rateOpts); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Payment")
 		os.Exit(1)
 	}
 	if err = (&controllers.DebtReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(mgr, rateOpts); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Debt")
 		os.Exit(1)
 	}
@@ -144,14 +155,14 @@ func main() {
 	if err = (&controllers.BillingRecordQueryReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(mgr, rateOpts); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "BillingRecordQuery")
 		os.Exit(1)
 	}
 	if err = (&controllers.BillingReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(mgr, rateOpts); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Billing")
 		os.Exit(1)
 	}

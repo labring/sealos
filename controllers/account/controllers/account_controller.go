@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+
 	"github.com/labring/sealos/pkg/utils/retry"
 
 	corev1 "k8s.io/api/core/v1"
@@ -364,7 +366,7 @@ func (r *AccountReconciler) updateDeductionBalance(ctx context.Context, accountB
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	const controllerName = "account_controller"
 	r.Logger = ctrl.Log.WithName(controllerName)
 	r.Logger.V(1).Info("init reconcile controller account")
@@ -381,6 +383,7 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&source.Kind{Type: &accountv1.Payment{}}, &handler.EnqueueRequestForObject{}).
 		Watches(&source.Kind{Type: &accountv1.AccountBalance{}}, &handler.EnqueueRequestForObject{}).
 		Watches(&source.Kind{Type: &userV1.User{}}, &handler.EnqueueRequestForObject{}).
+		WithOptions(rateOpts).
 		Complete(r)
 }
 
