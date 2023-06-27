@@ -42,8 +42,8 @@ func (k *KubeadmRuntime) getKubeVersion() string {
 
 // old implementation doesn't consider multiple rootfs images; here get the first rootfs image
 func (k *KubeadmRuntime) getKubeVersionFromImage() string {
-	img := k.Cluster.GetRootfsImage("")
-	if img.Labels == nil {
+	img := k.Cluster.GetRootfsImage()
+	if img == nil || img.Labels == nil {
 		return ""
 	}
 	return img.Labels[v1beta1.ImageKubeVersionKey]

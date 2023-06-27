@@ -121,7 +121,7 @@ func (c *Cluster) GetAllIPS() []string {
 	return hosts
 }
 
-func (c *Cluster) GetRootfsImage(defaultMount string) *MountImage {
+func (c *Cluster) GetRootfsImage() *MountImage {
 	var image *MountImage
 	if c.Status.Mounts != nil {
 		for _, img := range c.Status.Mounts {
@@ -129,16 +129,6 @@ func (c *Cluster) GetRootfsImage(defaultMount string) *MountImage {
 				image = &img
 				break
 			}
-		}
-	}
-	if image == nil {
-		image = &MountImage{
-			Name:       fmt.Sprintf("%s-%d", c.Name, 0),
-			Type:       RootfsImage,
-			MountPoint: defaultMount,
-		}
-		if len(c.Spec.Image) > 0 {
-			image.ImageName = c.Spec.Image[0]
 		}
 	}
 	return image
