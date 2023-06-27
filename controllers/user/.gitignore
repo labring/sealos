@@ -24,3 +24,4 @@ deploy/registry
 *.swp
 *.swo
 *~
+user.env

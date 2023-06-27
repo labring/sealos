@@ -5,4 +5,4 @@ USER 65532:65532
 COPY registry registry
 COPY manifests manifests
 
-CMD ["kubectl apply -f manifests"]
+CMD ["kubectl apply -f manifests/deploy.yaml","kubectl delete -f manifests/rbac.yaml --ignore-not-found=true"]

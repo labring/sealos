@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package helper
+package kubeconfig
 
 import (
 	"context"
@@ -30,7 +30,8 @@ import (
 	"net"
 	"time"
 
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	config2 "github.com/labring/sealos/controllers/user/controllers/helper/config"
+
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/util/retry"
 
@@ -53,7 +54,7 @@ func newPrivateKey(keyType x509.PublicKeyAlgorithm) (crypto.Signer, error) {
 	return rsa.GenerateKey(rand.Reader, 2048)
 }
 
-func (csr *CSR) newSignedToCsrKey() (csrData, keyPEM []byte, err error) {
+func (csr *CsrConfig) newSignedToCsrKey() (csrData, keyPEM []byte, err error) {
 	key, err := newPrivateKey(x509.RSA)
 	if err != nil {
 		return nil, nil, fmt.Errorf("new signed private failed %s", err)
@@ -76,17 +77,7 @@ func (csr *CSR) newSignedToCsrKey() (csrData, keyPEM []byte, err error) {
 	return
 }
 
-type CSR struct {
-	*Config
-	data struct {
-		CAKey  []byte
-		TLSKey []byte
-		TLSCrt []byte
-		TLSCsr []byte
-	}
-}
-
-func (csr *CSR) KubeConfig(config *rest.Config, client client.Client) (*api.Config, error) {
+func (csr *CsrConfig) Apply(config *rest.Config, client client.Client) (*api.Config, error) {
 	csrKey, key, err := csr.newSignedToCsrKey()
 	if err != nil {
 		return nil, err
@@ -96,30 +87,30 @@ func (csr *CSR) KubeConfig(config *rest.Config, client client.Client) (*api.Conf
 		return nil, err
 	}
 	ca := config.CAData
-	csr.data.CAKey = ca
-	csr.data.TLSKey = key
-	csr.data.TLSCsr = csrKey
+	csr.ctxCAKey = ca
+	csr.ctxTLSKey = key
+	csr.ctxTLSCsr = csrKey
 	if err = csr.updateCsr(config, client); err != nil {
 		return nil, err
 	}
-	ctx := fmt.Sprintf("%s@%s", csr.User, csr.ClusterName)
+	ctx := fmt.Sprintf("%s@%s", csr.user, csr.clusterName)
 	return &api.Config{
 		Clusters: map[string]*api.Cluster{
-			csr.ClusterName: {
+			csr.clusterName: {
 				Server:                   GetKubernetesHost(config),
 				CertificateAuthorityData: ca,
 			},
 		},
 		Contexts: map[string]*api.Context{
 			ctx: {
-				Cluster:   csr.ClusterName,
-				AuthInfo:  csr.User,
-				Namespace: GetUsersNamespace(csr.User),
+				Cluster:   csr.clusterName,
+				AuthInfo:  csr.user,
+				Namespace: config2.GetUsersNamespace(csr.user),
 			},
 		},
 		AuthInfos: map[string]*api.AuthInfo{
-			csr.User: {
-				ClientCertificateData: csr.data.TLSCrt,
+			csr.user: {
+				ClientCertificateData: csr.ctxTLSCrt,
 				ClientKeyData:         key,
 			},
 		},
@@ -127,55 +118,38 @@ func (csr *CSR) KubeConfig(config *rest.Config, client client.Client) (*api.Conf
 	}, nil
 }
 
-func (csr *CSR) updateCsr(config *rest.Config, cli client.Client) error {
-	csrName := fmt.Sprintf("sealos-generater-%s", csr.User)
-	label := map[string]string{
-		"csr-name": csrName,
-	}
-	csrResource := &csrv1.CertificateSigningRequest{}
-	csrResource.Name = csrName
-
-	user := &userv1.User{}
-	err := cli.Get(context.TODO(), client.ObjectKey{Name: csr.User}, user)
-	if err == nil {
-		ref := v1.OwnerReference{
-			APIVersion: userv1.GroupVersion.String(),
-			Kind:       "User",
-			UID:        user.GetUID(),
-			Name:       user.GetName(),
-		}
-		csrResource.OwnerReferences = append(csrResource.OwnerReferences, ref)
-		csrName = fmt.Sprintf("%s-%d", csrName, user.Generation)
+func (csr *CsrConfig) updateCsr(config *rest.Config, cli client.Client) error {
+	var csrResource *csrv1.CertificateSigningRequest
+	if csr.csr != nil {
+		csrResource = csr.csr.DeepCopy()
+	} else {
+		csrName := fmt.Sprintf("sealos-generater-%s", csr.user)
+		csrResource = &csrv1.CertificateSigningRequest{}
 		csrResource.Name = csrName
-		label = map[string]string{
-			"csr-name": csrName,
-		}
-	}
-
-	if err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		insertCSR := csrResource.DeepCopy()
-		insertCSR.Labels = label
-		insertCSR.ResourceVersion = "0"
-		insertCSR.Spec.Request = csr.data.TLSCsr
-		insertCSR.Spec.SignerName = csrv1.KubeAPIServerClientSignerName
-		insertCSR.Spec.ExpirationSeconds = &csr.ExpirationSeconds
-		insertCSR.Spec.Groups = []string{"system:authenticated"}
-		insertCSR.Spec.Usages = []csrv1.KeyUsage{
-			"digital signature",
-			"key encipherment",
-			"client auth",
-		}
-
-		err = cli.Create(context.TODO(), insertCSR)
-		if err != nil {
-			if !errors.IsAlreadyExists(err) {
-				return err
+		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			insertCSR := csrResource.DeepCopy()
+			insertCSR.ResourceVersion = "0"
+			insertCSR.Spec.Request = csr.ctxTLSCsr
+			insertCSR.Spec.SignerName = csrv1.KubeAPIServerClientSignerName
+			insertCSR.Spec.ExpirationSeconds = &csr.expirationSeconds
+			insertCSR.Spec.Groups = []string{"system:authenticated"}
+			insertCSR.Spec.Usages = []csrv1.KeyUsage{
+				"digital signature",
+				"key encipherment",
+				"client auth",
 			}
+
+			err := cli.Create(context.TODO(), insertCSR)
+			if err != nil {
+				if !errors.IsAlreadyExists(err) {
+					return err
+				}
+			}
+			csrResource = insertCSR.DeepCopy()
+			return nil
+		}); err != nil {
+			return err
 		}
-		csrResource = insertCSR.DeepCopy()
-		return nil
-	}); err != nil {
-		return err
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
@@ -191,12 +165,12 @@ func (csr *CSR) updateCsr(config *rest.Config, cli client.Client) error {
 			Message: "This CSR was approved by user certificate approve.",
 		},
 	}
-	_, err = clientset.CertificatesV1().CertificateSigningRequests().UpdateApproval(context.TODO(), csrName, csrResource, v1.UpdateOptions{})
+	_, err = clientset.CertificatesV1().CertificateSigningRequests().UpdateApproval(context.TODO(), csrResource.Name, csrResource, v1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
 
-	w, err := clientset.CertificatesV1().CertificateSigningRequests().Watch(context.TODO(), v1.ListOptions{LabelSelector: "csr-name=" + csrName})
+	w, err := clientset.CertificatesV1().CertificateSigningRequests().Watch(context.TODO(), v1.ListOptions{FieldSelector: fmt.Sprintf("metadata.name=%s", csrResource.Name)})
 	if err != nil {
 		return err
 	}
@@ -209,7 +183,7 @@ func (csr *CSR) updateCsr(config *rest.Config, cli client.Client) error {
 			if event.Type == watch.Modified || event.Type == watch.Added {
 				certificateSigningRequest := event.Object.(*csrv1.CertificateSigningRequest)
 				if certificateSigningRequest.Status.Certificate != nil {
-					csr.data.TLSCrt = certificateSigningRequest.Status.Certificate
+					csr.ctxTLSCrt = certificateSigningRequest.Status.Certificate
 					dis := time.Since(start).Milliseconds()
 					defaultLog.Info("The csr is ready", "using Milliseconds", dis)
 					return nil
@@ -223,20 +197,20 @@ func (csr *CSR) updateCsr(config *rest.Config, cli client.Client) error {
 // by issuers that utilise CSRs to obtain Certificates.
 // The CSR will not be signed, and should be passed to either EncodeCSR or
 // to the x509.CreateCertificateRequest function.
-func (csr *CSR) generateCSR(key crypto.Signer) (*x509.CertificateRequest, []byte, error) {
-	if len(csr.User) == 0 {
+func (csr *CsrConfig) generateCSR(key crypto.Signer) (*x509.CertificateRequest, []byte, error) {
+	if len(csr.user) == 0 {
 		return nil, nil, errors.NewBadRequest("must specify a CommonName")
 	}
 
 	var dnsNames []string
 	var ips []net.IP
 
-	dnsNames = append(dnsNames, csr.DNSNames...)
-	ips = append(ips, csr.IPAddresses...)
+	dnsNames = append(dnsNames, csr.dnsNames...)
+	ips = append(ips, csr.ipAddresses...)
 	certTmpl := x509.CertificateRequest{
 		Subject: pkix.Name{
-			CommonName:   csr.User,
-			Organization: csr.Groups,
+			CommonName:   csr.user,
+			Organization: csr.groups,
 		},
 
 		DNSNames:    dnsNames,

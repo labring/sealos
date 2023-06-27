@@ -107,12 +107,6 @@ var _ = BeforeSuite(func() {
 	err = (&User{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&UserGroup{}).SetupWebhookWithManager(mgr)
-	Expect(err).NotTo(HaveOccurred())
-
-	err = (&UserGroupBinding{}).SetupWebhookWithManager(mgr)
-	Expect(err).NotTo(HaveOccurred())
-
 	//+kubebuilder:scaffold:webhook
 
 	go func() {

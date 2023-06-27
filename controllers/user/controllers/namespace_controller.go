@@ -20,8 +20,9 @@ import (
 	"context"
 	"strings"
 
+	"github.com/labring/sealos/controllers/user/controllers/helper/config"
+
 	"github.com/go-logr/logr"
-	"github.com/labring/sealos/controllers/user/controllers/helper"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -51,19 +52,19 @@ type NamespaceReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	r.Logger.V(1).Info("start reconcile for ns")
 	ns := &v1.Namespace{}
 	if err := r.Get(ctx, req.NamespacedName, ns); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	if strings.HasPrefix(ns.Name, "ns-") {
+		r.Logger.V(1).Info("start reconcile for ns", "ns", ns.Name)
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			change, err := controllerutil.CreateOrUpdate(ctx, r.Client, ns, func() error {
 				if ns.Labels == nil {
 					ns.Labels = map[string]string{}
 				}
-				ns.Labels = helper.SetPodSecurity(ns.Labels)
+				ns.Labels = config.SetPodSecurity(ns.Labels)
 				return nil
 			})
 			if err != nil {

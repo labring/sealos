@@ -21,11 +21,11 @@ import (
 	"flag"
 	"os"
 
+	utilcontroller "github.com/labring/sealos/controllers/pkg/utils"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-
-	"github.com/labring/sealos/controllers/user/controllers/cache"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -52,15 +52,20 @@ func init() {
 }
 
 func main() {
-	var metricsAddr string
-	var enableLeaderElection bool
-	var probeAddr string
+	var (
+		metricsAddr          string
+		enableLeaderElection bool
+		probeAddr            string
+		concurrent           int
+		rateLimiterOptions   utilcontroller.RateLimiterOptions
+	)
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-
+	flag.IntVar(&concurrent, "concurrent", 5, "The number of concurrent cluster reconciles.")
+	rateLimiterOptions.BindFlags(flag.CommandLine)
 	opts := zap.Options{
 		Development: true,
 	}
@@ -92,7 +97,11 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-	if err = (&controllers.UserReconciler{}).SetupWithManager(mgr); err != nil {
+	rateOpts := controllers.ReconcilerOptions{
+		MaxConcurrentReconciles: concurrent,
+		RateLimiter:             utilcontroller.GetRateLimiter(rateLimiterOptions),
+	}
+	if err = (&controllers.UserReconciler{}).SetupWithManager(mgr, rateOpts); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		os.Exit(1)
 	}
@@ -116,32 +125,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	//if err = (&controllers.UserExpirationReconciler{
-	//	Client: mgr.GetClient(),
-	//	Scheme: mgr.GetScheme(),
-	//}).SetupWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create controller", "controller", "Secret")
-	//	os.Exit(1)
-	//}
-
-	if err = cache.SetupCache(mgr); err != nil {
-		setupLog.Error(err, "unable to cache controller")
-		os.Exit(1)
-	}
 	if os.Getenv("DISABLE_WEBHOOKS") == "true" {
 		setupLog.Info("disable all webhooks")
 	} else {
 		if err = (&userv1.User{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "User")
-			os.Exit(1)
-		}
-		setupLog.Info("add ug and ugb webhooks")
-		if err = (&userv1.UserGroup{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "UserGroup")
-			os.Exit(1)
-		}
-		if err = (&userv1.UserGroupBinding{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "UserGroupBinding")
 			os.Exit(1)
 		}
 	}

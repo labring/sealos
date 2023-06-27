@@ -14,9 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package helper
+package kubeconfig
 
 import (
+	"fmt"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"k8s.io/client-go/rest"
@@ -24,24 +26,19 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
-type Webhook struct {
-	*Config
-}
-
-func (c *Webhook) KubeConfig(_ *rest.Config, _ client.Client) (*api.Config, error) {
+func (c *WebhookConfig) Apply(_ *rest.Config, _ client.Client) (*api.Config, error) {
 	// make sure cadata is loaded into config under incluster mode
-	ctx := "webhook"
+	ctx := fmt.Sprintf("%s@%s", c.user, c.clusterName)
 	return &api.Config{
 		Clusters: map[string]*api.Cluster{
-			c.ClusterName: {
-				Server:                c.WebhookURL,
+			c.clusterName: {
+				Server:                c.webhookURL,
 				InsecureSkipTLSVerify: true,
 			},
 		},
-
 		Contexts: map[string]*api.Context{
 			ctx: {
-				Cluster:  c.ClusterName,
+				Cluster:  c.clusterName,
 				AuthInfo: "webhook-user",
 			},
 		},

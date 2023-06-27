@@ -23,12 +23,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/labring/sealos/controllers/user/controllers/helper/config"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/labring/sealos/controllers/pkg/database"
 	gonanoid "github.com/matoous/go-nanoid/v2"
-
-	"github.com/labring/sealos/controllers/user/controllers/helper"
 
 	"github.com/go-logr/logr"
 
@@ -275,7 +275,7 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 			Kind:     "Role",
 			Name:     role.Name,
 		}
-		roleBinding.Subjects = helper.GetUsersSubject(name)
+		roleBinding.Subjects = config.GetUsersSubject(name)
 
 		return nil
 	}); err != nil {
