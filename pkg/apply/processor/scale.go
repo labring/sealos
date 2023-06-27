@@ -167,6 +167,9 @@ func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 		return err
 	}
 	if c.IsScaleUp {
+		if cluster.GetRootfsImage().KubeVersion() == "" {
+			return fmt.Errorf("rootfs image not found kube version")
+		}
 		clusterPath := constants.Clusterfile(cluster.Name)
 		obj := []interface{}{cluster}
 		if configs := c.ClusterFile.GetConfigs(); len(configs) > 0 {
