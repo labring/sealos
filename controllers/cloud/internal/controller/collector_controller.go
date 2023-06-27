@@ -22,7 +22,7 @@ import (
 	"github.com/go-logr/logr"
 	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
 	"github.com/labring/sealos/controllers/cloud/internal/controller/util"
-	cloud "github.com/labring/sealos/controllers/cloud/internal/tools"
+	cloud "github.com/labring/sealos/controllers/cloud/internal/manager"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"

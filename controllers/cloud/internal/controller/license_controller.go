@@ -33,7 +33,7 @@ import (
 	"github.com/go-logr/logr"
 	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
 	"github.com/labring/sealos/controllers/cloud/internal/controller/util"
-	cloud "github.com/labring/sealos/controllers/cloud/internal/tools"
+	cloud "github.com/labring/sealos/controllers/cloud/internal/manager"
 )
 
 // LicenseReconciler reconciles a License object

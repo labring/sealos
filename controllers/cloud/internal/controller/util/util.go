@@ -25,7 +25,7 @@ import (
 
 	"github.com/go-logr/logr"
 	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
-	cloud "github.com/labring/sealos/controllers/cloud/internal/tools"
+	cloud "github.com/labring/sealos/controllers/cloud/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
