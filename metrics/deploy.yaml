@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crd-exporter
+  namespace: sealos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crd-exporter
+  template:
+    metadata:
+      labels:
+        app: crd-exporter
+    spec:
+      serviceAccountName: crd-exporter-sa
+      containers:
+        - name: crd-exporter
+          image: registry.cn-hangzhou.aliyuncs.com/bxy4543/user-exporter:v0.0.1
+          imagePullPolicy: Always
+          ports:
+            - name: metrics
+              containerPort: 8000
+          envFrom:
+            - secretRef:
+                name: metrics-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: crd-exporter
+  namespace: sealos
+  labels:
+    app: crd-exporter
+spec:
+  selector:
+    app: crd-exporter
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: metrics
+      name: metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: crd-exporter
+  namespace: sealos
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: crd-exporter
+  endpoints:
+    - port: metrics
+      interval: 300s
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: crd-exporter-sa
+  namespace: sealos
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: crd-exporter-clusterrole
+rules:
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - users
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: crd-exporter-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: crd-exporter-clusterrole
+subjects:
+  - kind: ServiceAccount
+    name: crd-exporter-sa
+    namespace: sealos

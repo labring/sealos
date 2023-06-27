@@ -14,6 +14,7 @@ type Interface interface {
 	GetBillingLastUpdateTime(owner string, _type accountv1.Type) (bool, time.Time, error)
 	SaveBillingsWithAccountBalance(accountBalanceSpec *accountv1.AccountBalanceSpec) error
 	QueryBillingRecords(billingRecordQuery *accountv1.BillingRecordQuery, owner string) error
+	GetBillingCount(accountType accountv1.Type) (count, amount int64, err error)
 	GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error)
 	GetAllPricesMap() (map[string]common.Price, error)
 	GenerateMeteringData(startTime, endTime time.Time, prices map[string]common.Price) error

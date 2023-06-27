@@ -489,6 +489,33 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	return nil
 }
 
+func (m *MongoDB) GetBillingCount(accountType accountv1.Type) (count, amount int64, err error) {
+	filter := bson.M{"type": accountType}
+	cursor, err := m.getBillingCollection().Find(context.Background(), filter)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer cursor.Close(context.Background())
+	var accountBalanceList []AccountBalanceSpecBSON
+	err = cursor.All(context.Background(), &accountBalanceList)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to decode all billing record: %w", err)
+	}
+	for i := range accountBalanceList {
+		count++
+		amount += accountBalanceList[i].Amount
+	}
+	//for cursor.Next(context.Background()) {
+	//	var accountBalance AccountBalanceSpecBSON
+	//	if err := cursor.Decode(&accountBalance); err != nil {
+	//		return 0, 0, err
+	//	}
+	//	count++
+	//	amount += accountBalance.Amount
+	//}
+	return
+}
+
 func (m *MongoDB) getMeteringCollection() *mongo.Collection {
 	return m.Client.Database(m.DBName).Collection(m.MeteringConn)
 }
