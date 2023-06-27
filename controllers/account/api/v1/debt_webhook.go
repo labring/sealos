@@ -61,9 +61,12 @@ func init() {
 	kubeSystemGroup = fmt.Sprintf("%s:%s", saPrefix, kubeSystemNamespace)
 }
 func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admission.Response {
-	logger.V(1).Info("checking user", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.gvrk", getGVRK(req))
+	logger.V(1).Info("checking user", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.gvrk", getGVRK(req), "req.Operation", req.Operation)
 	// skip delete request (删除quota资源除外)
 	if req.Operation == admissionV1.Delete && !strings.Contains(getGVRK(req), "quotas") {
+		if req.Kind.Kind == "Namespace" {
+			return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
+		}
 		return admission.Allowed("")
 	}
 
