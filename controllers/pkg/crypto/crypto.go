@@ -26,7 +26,7 @@ import (
 	v1 "github.com/labring/sealos/controllers/cloud/api/v1"
 )
 
-const field = "amt"
+//const field = "amt"
 
 func IsLicenseValid(license v1.License) (map[string]interface{}, bool) {
 	publicKey, err := parseRSAPublicKeyFromPEM(license.Spec.Key)

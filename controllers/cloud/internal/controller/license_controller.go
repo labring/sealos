@@ -44,7 +44,6 @@ type LicenseReconciler struct {
 	MonitorCache cloud.LicenseMonitorResult
 	needMonitor  bool
 	configPath   string
-	cache        map[string]interface{}
 }
 
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=licenses,verbs=get;list;watch;create;update;patch;delete

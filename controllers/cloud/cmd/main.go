@@ -103,13 +103,13 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Collector")
 		os.Exit(1)
 	}
-	if err = (&controller.CloudSyncReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "CloudSync")
-		os.Exit(1)
-	}
+	// if err = (&controller.CloudSyncReconciler{
+	// 	Client: mgr.GetClient(),
+	// 	Scheme: mgr.GetScheme(),
+	// }).SetupWithManager(mgr); err != nil {
+	// 	setupLog.Error(err, "unable to create controller", "controller", "CloudSync")
+	// 	os.Exit(1)
+	// }
 	if err = (&controller.LicenseReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),

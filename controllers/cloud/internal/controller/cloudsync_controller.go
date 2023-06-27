@@ -37,9 +37,10 @@ import (
 // CloudSyncReconciler reconciles a CloudSync object
 type CloudSyncReconciler struct {
 	client.Client
-	Scheme   *runtime.Scheme
-	logger   logr.Logger
-	needSync bool
+	Scheme    *runtime.Scheme
+	logger    logr.Logger
+	needSync  bool
+	syncCache cloud.SyncResponse
 
 	configPath string
 }
@@ -64,7 +65,7 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	var secret corev1.Secret
 	var sync cloud.SyncRequest
 	var resp cloud.SyncResponse
-
+	var configmap corev1.ConfigMap
 	r.logger.Info("Start to get the CloudSync URL...")
 	config, err = util.ReadConfigFile(r.configPath, r.logger)
 	if err != nil {
@@ -73,12 +74,19 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 	url := config.CloudSyncURL
 	r.logger.Info("Start to get resources that need sync...")
-	resource := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
-	em := util.GetImportantResource(ctx, r.Client, &resource)
+	resource1 := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
+	resource2 := util.NewImportanctResource(&configmap, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.ConfigName})
+	em := util.GetImportantResource(ctx, r.Client, &resource1)
 	if em != nil {
 		r.logger.Error(em.Concat(": "), "failed to get resource secret")
 		return ctrl.Result{}, em.Concat(": ")
 	}
+	em = util.GetImportantResource(ctx, r.Client, &resource2)
+	if em != nil {
+		r.logger.Error(em.Concat(": "), "failed to get resource configmap")
+		return ctrl.Result{}, em.Concat(": ")
+	}
+
 	sync.UID = string(secret.Data["uid"])
 	if r.needSync {
 		r.logger.Info("Start to communicate with cloud...")
@@ -97,9 +105,17 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			r.logger.Error(em.Concat(": "), "failed to convert to cloud.SyncResponse")
 			return ctrl.Result{}, em.Concat(": ")
 		}
+		r.syncCache = resp
 	}
-	r.logger.Info("Start to sync the resources...")
-
+	if ok := cloud.IsConfigMapChanged(resp, &configmap); ok {
+		r.logger.Info("Start to sync the resources...")
+		if err := r.Client.Update(ctx, &configmap); err != nil {
+			r.needSync = false
+			return ctrl.Result{}, err
+		}
+	}
+	r.needSync = true
+	r.syncCache = cloud.SyncResponse{}
 	return ctrl.Result{}, nil
 }
 
