@@ -230,7 +230,6 @@ func (r *Reconciler) fillDefaultValue(ctx context.Context, bb *bbv1.Bytebase) er
 	if hasUpdate {
 		return r.Update(ctx, bb)
 	}
-
 	return nil
 }
 

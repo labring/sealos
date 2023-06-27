@@ -80,16 +80,16 @@ rules:
 - apiGroups:
   - bytebase.db.sealos.io
   resources:
-  - bytebases/status
+  - bytebases/finalizers
   verbs:
-  - get
-  - patch
   - update
 - apiGroups:
   - bytebase.db.sealos.io
   resources:
-  - bytebases/finalizers
+  - bytebases/status
   verbs:
+  - get
+  - patch
   - update
 - apiGroups:
   - ""
