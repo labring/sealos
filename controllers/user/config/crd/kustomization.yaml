@@ -3,8 +3,6 @@
 # It should be run by config/default
 resources:
 - bases/user.sealos.io_users.yaml
-- bases/user.sealos.io_usergroups.yaml
-- bases/user.sealos.io_usergroupbindings.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

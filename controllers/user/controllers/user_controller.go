@@ -37,7 +37,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	"github.com/labring/sealos/controllers/user/controllers/migrate"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/rest"
 	kubecontroller "sigs.k8s.io/controller-runtime/pkg/controller"
@@ -162,8 +161,6 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 		r.syncKubeConfig,
 		r.syncRole,
 		r.syncRoleBinding,
-		r.syncOwnerUG,
-		r.syncOwnerUGNamespaceBinding,
 		r.syncFinalStatus,
 	}
 
@@ -564,35 +561,6 @@ func syncReNewConfig(user *userv1.User) (*api.Config, *string, error) {
 		}
 	}
 	return apiConfig, event, err
-}
-
-func (r *UserReconciler) syncOwnerUG(ctx context.Context, user *userv1.User) context.Context {
-	userConditionType := userv1.ConditionType("OwnerUGSyncReady")
-	user.Status.Conditions = helper.DeleteCondition(user.Status.Conditions, userConditionType)
-	ug := &userv1.UserGroup{}
-	err := r.Client.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("ug-%s", user.Name)}, ug)
-	if err == nil {
-		migrate.SetOwner(ctx, r.Client, ug, nil)
-		migrate.RemoveFinalizer(ctx, r.Client, ug, migrate.UGFinalizer)
-	}
-	return ctx
-}
-
-func (r *UserReconciler) syncOwnerUGNamespaceBinding(ctx context.Context, user *userv1.User) context.Context {
-	userConditionType := userv1.ConditionType("OwnerUGNamespaceBindingSyncReady")
-	user.Status.Conditions = helper.DeleteCondition(user.Status.Conditions, userConditionType)
-	ugBinding := &userv1.UserGroupBinding{}
-	err := r.Client.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("ugn-%s", user.Name)}, ugBinding)
-	if err == nil {
-		migrate.SetOwner(ctx, r.Client, ugBinding, nil)
-		migrate.RemoveFinalizer(ctx, r.Client, ugBinding, migrate.UGBindingFinalizer)
-	}
-	uguBinding := &userv1.UserGroupBinding{}
-	err = r.Client.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("ugu-%s", user.Name)}, uguBinding)
-	if err == nil {
-		migrate.RemoveFinalizer(ctx, r.Client, uguBinding, migrate.UGBindingFinalizer)
-	}
-	return ctx
 }
 
 func (r *UserReconciler) syncFinalStatus(ctx context.Context, user *userv1.User) context.Context {
