@@ -25,7 +25,8 @@ import {
   podStatusMap,
   pauseKey,
   maxReplicasKey,
-  minReplicasKey
+  minReplicasKey,
+  PodStatusEnum
 } from '@/constants/app';
 import { cpuFormatToM, memoryFormatToMi, formatPodTime, atobSecretYaml } from '@/utils/tools';
 import type { DeployKindsType, AppEditType } from '@/types/app';
@@ -48,7 +49,7 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
     name: app.metadata?.name || 'app name',
     status: appStatusMap.running,
     isPause: !!app?.metadata?.annotations?.[pauseKey],
-    createTime: dayjs(app.metadata?.creationTimestamp).format('YYYY/MM/DD hh:mm'),
+    createTime: dayjs(app.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
     cpu: cpuFormatToM(app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu || '0'),
     memory: memoryFormatToMi(
       app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory || '0'
@@ -63,12 +64,30 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
 };
 
 export const adaptPod = (pod: V1Pod): PodDetailType => {
-  // console.log(pod);
   return {
     ...pod,
     podName: pod.metadata?.name || 'pod name',
     // @ts-ignore
-    status: podStatusMap[pod.status?.phase] || podStatusMap.Failed,
+    status: (() => {
+      const container = pod.status?.containerStatuses || [];
+      if (container.length > 0) {
+        const stateObj = container[0].state;
+        if (stateObj) {
+          const stateKeys = Object.keys(stateObj);
+          const key = stateKeys?.[0] as `${PodStatusEnum}`;
+          if (key === PodStatusEnum.running) {
+            return podStatusMap[PodStatusEnum.running];
+          }
+          if (key && podStatusMap[key]) {
+            return {
+              ...podStatusMap[key],
+              ...stateObj[key]
+            };
+          }
+        }
+      }
+      return podStatusMap.waiting;
+    })(),
     nodeName: pod.spec?.nodeName || 'node name',
     ip: pod.status?.podIP || 'pod ip',
     restarts: pod.status?.containerStatuses ? pod.status?.containerStatuses[0].restartCount : 0,
@@ -151,7 +170,7 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
   return {
     id: appDeploy.metadata?.uid || ``,
     appName: appDeploy.metadata?.name || 'app Name',
-    createTime: dayjs(appDeploy.metadata?.creationTimestamp).format('YYYY-MM-DD hh:mm'),
+    createTime: dayjs(appDeploy.metadata?.creationTimestamp).format('YYYY-MM-DD HH:mm'),
     status: appStatusMap.running,
     isPause: !!appDeploy?.metadata?.annotations?.[pauseKey],
     imageName:
@@ -211,6 +230,7 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
     secret: atobSecretYaml(deployKindsMap?.Secret?.data?.['.dockerconfigjson']),
     storeList: deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates
       ? deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates.map((item) => ({
+          name: item.metadata?.name || '',
           path: item.metadata?.annotations?.path || '',
           value: Number(item.metadata?.annotations?.value || 0)
         }))

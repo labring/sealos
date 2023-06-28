@@ -149,7 +149,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
       router.replace(`/app/detail?name=${formHook.getValues('appName')}`);
       toast({
-        title: applySuccess,
+        title: t(applySuccess),
         status: 'success'
       });
     } catch (error) {
@@ -157,7 +157,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       setErrorMessage(JSON.stringify(error));
     }
     setIsLoading(false);
-  }, [setIsLoading, yamlList, appName, router, formHook, toast, applySuccess]);
+  }, [setIsLoading, yamlList, appName, router, formHook, toast, t, applySuccess]);
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {

@@ -10,7 +10,8 @@ import {
   Td,
   TableContainer,
   Flex,
-  MenuButton
+  MenuButton,
+  Tooltip
 } from '@chakra-ui/react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { restartPodByName } from '@/api/app';
@@ -24,6 +25,7 @@ import { PodStatusEnum } from '@/constants/app';
 import { useConfirm } from '@/hooks/useConfirm';
 import MyMenu from '@/components/Menu';
 import { useTranslation } from 'next-i18next';
+import { QuestionOutlineIcon } from '@chakra-ui/icons';
 
 const LogsModal = dynamic(() => import('./LogsModal'));
 const DetailModel = dynamic(() => import('./PodDetailModal'), { ssr: false });
@@ -83,7 +85,23 @@ const Pods = ({
     {
       title: 'Status',
       key: 'status',
-      render: (item: PodDetailType) => <Box color={item.status.color}>{item.status.label}</Box>
+      render: (item: PodDetailType) => (
+        <Box color={item.status.color}>
+          {item.status.label}
+          {!!item.status.reason && (
+            <Tooltip
+              label={`Reason: ${item.status.reason}${
+                item.status.message ? `\nMessage: ${item.status.message}` : ''
+              }`}
+              whiteSpace={'pre-wrap'}
+              wordBreak={'break-all'}
+              maxW={'400px'}
+            >
+              <QuestionOutlineIcon ml={1} />
+            </Tooltip>
+          )}
+        </Box>
+      )
     },
     {
       title: 'Restarts Num',
@@ -237,7 +255,7 @@ const Pods = ({
           appName={appName}
           podName={pods[logsPodIndex]?.podName || ''}
           pods={pods
-            .filter((pod) => pod.status.value === PodStatusEnum.Running)
+            .filter((pod) => pod.status.value === PodStatusEnum.running)
             .map((item, i) => ({
               alias: `${appName}-${i + 1}`,
               podName: item.podName

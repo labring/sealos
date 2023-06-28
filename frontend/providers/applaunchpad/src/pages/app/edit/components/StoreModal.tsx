@@ -21,15 +21,18 @@ import {
 import { useForm } from 'react-hook-form';
 import MyFormControl from '@/components/FormControl';
 import { useTranslation } from 'next-i18next';
+import { pathToNameFormat } from '@/utils/tools';
 
 export type StoreType = {
   id?: string;
+  name: string;
   path: string;
   value: number;
 };
 
 const StoreModal = ({
   defaultValue = {
+    name: '',
     path: '',
     value: 1
   },
@@ -52,6 +55,7 @@ const StoreModal = ({
   );
   const {
     register,
+    setValue,
     handleSubmit,
     formState: { errors }
   } = useForm({
@@ -130,6 +134,9 @@ const StoreModal = ({
                       return t('ConfigMap Path Conflict') || 'ConfigMap Path Conflict';
                     }
                     return true;
+                  },
+                  onChange(e) {
+                    setValue('name', pathToNameFormat(e.target.value));
                   }
                 })}
               />
