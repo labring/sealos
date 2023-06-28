@@ -28,6 +28,25 @@ import (
 	"github.com/labring/sealos/pkg/utils/maps"
 )
 
+func escapeDollarSign(s string, cmd bool) string {
+	if cmd {
+		return strings.ReplaceAll(s, "$", "\\$")
+	}
+	var buffer bytes.Buffer
+	for i := 0; i < len(s); i++ {
+		if s[i] == '$' {
+			if i+1 < len(s) && s[i+1] == '(' {
+				buffer.WriteByte(s[i])
+			} else {
+				buffer.WriteString("\\$")
+			}
+		} else {
+			buffer.WriteByte(s[i])
+		}
+	}
+	return buffer.String()
+}
+
 func MergeDockerfileFromImages(imageObjList []map[string]v1.Image) (string, error) {
 	var labels map[string]string
 	var envs map[string]string
@@ -52,13 +71,13 @@ func MergeDockerfileFromImages(imageObjList []map[string]v1.Image) (string, erro
 		labels[v1beta1.ImageTypeKey] = string(v1beta1.RootfsImage)
 	}
 	for i, label := range labels {
-		labels[i] = "\"" + strings.ReplaceAll(label, "$", "\\$") + "\""
+		labels[i] = "\"" + escapeDollarSign(label, false) + "\""
 	}
 	for i, entrypoint := range entrypoints {
-		entrypoints[i] = "\"" + strings.ReplaceAll(entrypoint, "$", "\\$") + "\""
+		entrypoints[i] = "\"" + escapeDollarSign(entrypoint, true) + "\""
 	}
 	for i, cmd := range cmds {
-		cmds[i] = "\"" + strings.ReplaceAll(cmd, "$", "\\$") + "\""
+		cmds[i] = "\"" + escapeDollarSign(cmd, true) + "\""
 	}
 	t := template.New("")
 	t, err := t.Parse(
