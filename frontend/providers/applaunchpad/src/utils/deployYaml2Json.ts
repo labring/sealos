@@ -201,7 +201,7 @@ export const json2StatefulSet = (data: AppEditType) => {
                   subPath: pathFormat(item.mountPath)
                 })),
                 ...data.storeList.map((item) => ({
-                  name: pathToNameFormat(item.path),
+                  name: item.name,
                   mountPath: item.path
                 }))
               ]
@@ -229,7 +229,7 @@ export const json2StatefulSet = (data: AppEditType) => {
             path: store.path,
             value: `${store.value}`
           },
-          name: pathToNameFormat(store.path)
+          name: store.name
         },
         spec: {
           accessModes: ['ReadWriteOnce'],

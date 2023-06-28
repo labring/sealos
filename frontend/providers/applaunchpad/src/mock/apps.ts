@@ -322,5 +322,5 @@ export const MOCK_APP_DETAIL: AppDetailType = {
     password: 'string',
     serverAddress: 'string'
   },
-  storeList: [{ path: '/data', value: 2 }]
+  storeList: [{ name: 'vn-data', path: '/data', value: 2 }]
 };

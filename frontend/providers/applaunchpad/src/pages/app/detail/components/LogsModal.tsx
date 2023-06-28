@@ -87,7 +87,7 @@ const LogsModal = ({
       }
     });
     return controller;
-  }, [appName, podName]);
+  }, [appName, closeFn, podName]);
 
   useEffect(() => {
     const controller = watchLogs();

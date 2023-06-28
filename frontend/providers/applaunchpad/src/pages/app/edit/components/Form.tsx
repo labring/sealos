@@ -846,7 +846,7 @@ const Form = ({
 
                     <Button
                       mt={3}
-                      onClick={() => setStoreEdit({ path: '', value: 1 })}
+                      onClick={() => setStoreEdit({ name: '', path: '', value: 1 })}
                       variant={'base'}
                       leftIcon={<MyIcon name="plus" />}
                       w={'320px'}
@@ -904,6 +904,7 @@ const Form = ({
               setValue(
                 'storeList',
                 storeList.map((item) => ({
+                  name: item.id === e.id ? e.name : item.name,
                   path: item.id === e.id ? e.path : item.path,
                   value: item.id === e.id ? e.value : item.value
                 }))

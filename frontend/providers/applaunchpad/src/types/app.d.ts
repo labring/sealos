@@ -86,6 +86,7 @@ export interface AppEditType {
     value: string;
   }[];
   storeList: {
+    name: string;
     path: string;
     value: number;
   }[];
