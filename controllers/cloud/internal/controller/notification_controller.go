@@ -27,6 +27,7 @@ import (
 	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
 	"github.com/labring/sealos/controllers/cloud/internal/controller/util"
 	cloud "github.com/labring/sealos/controllers/cloud/internal/manager"
+	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -41,10 +42,13 @@ type NotificationReconciler struct {
 	client.Client
 	Scheme          *runtime.Scheme
 	NotificationMgr *cloud.NotificationManager
+	Users           cloud.UserCategory
 	logger          logr.Logger
 	configPath      string
 }
 
+//+kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=get;list;watch
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=notifications,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=notifications/status,verbs=get;update;patch
@@ -61,6 +65,12 @@ type NotificationReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter NotificationReconcile", "namespace:", req.Namespace, "name", req.Name)
+
+	if em := r.Users.GetNameSpace(ctx, r.Client); em != nil {
+		err := em.Concat(": ")
+		r.logger.Error(err, "failed to get users info")
+		return ctrl.Result{}, err
+	}
 	r.logger.Info("Start to get the url to pull notification...")
 	config, err := util.ReadConfigFile(r.configPath, r.logger)
 	if err != nil {
@@ -78,20 +88,12 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, em.Concat(": ")
 	}
 
-	r.logger.Info("Starting to get cluster user")
-	em = r.NotificationMgr.GetNameSpace(ctx, r.Client)
-	if em != nil {
-		r.logger.Error(em.Concat(": "), "GetNamespace error")
-		return ctrl.Result{RequeueAfter: time.Second * 5}, em.Concat(": ")
-	}
-
 	r.logger.Info("Start to pull notification from cloud...")
 	var requestBody = cloud.NotificationRequest{
 		UID:       string(clusterScret.Data["uid"]),
 		Timestamp: r.NotificationMgr.TimeLastPull,
 	}
 
-	//---------------------------------------------------------------------------//
 	r.logger.Info("Starting to communicate with cloud")
 	httpResp, em := cloud.CommunicateWithCloud("POST", url, requestBody)
 	if em != nil {
@@ -103,45 +105,38 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, errors.New(http.StatusText(httpResp.StatusCode))
 	}
 
-	r.logger.Info("Starting to communicate with cloud")
-	var content = []cloud.NotificationResponse{}
-	if em := cloud.Convert(httpResp.Body, &content, r.NotificationMgr); em != nil {
-		r.logger.Error(em.Concat(": "), "failed to convert")
+	var notificationResp []cloud.NotificationResponse
+	var notificationCache []ntf.Notification
+	em = cloud.Convert(httpResp.Body, &notificationResp)
+	if em != nil {
+		err := em.Concat(": ")
+		r.logger.Error(err, "failed to convert notifications")
 		return ctrl.Result{}, em.Concat(": ")
 	}
-	//---------------------------------------------------------------------------//
-	r.logger.Info("Starting to deliver notifications to cluster users")
+	r.logger.Info("Starting to delivery notifications")
+	for _, body := range notificationResp {
+		notificationCache = append(notificationCache, cloud.NotificationResponseToNotification(body))
+	}
 	var wg sync.WaitGroup
-	r.NotificationMgr.ErrorChannel = make(chan *cloud.ErrorMgr)
-	for _, targetMap := range []map[string]int{r.NotificationMgr.AdmNamespaceGroup, r.NotificationMgr.UserNameSpaceGroup} {
-		for nsName, pos := range targetMap {
+	errchan := make(chan error)
+	for _, targetMap := range r.Users {
+		for ns := range targetMap.Iter() {
 			wg.Add(1)
-			var tk = cloud.NotificationTask{
-				Pos:                pos,
-				Size:               len(r.NotificationMgr.NotificationCache),
-				Ns:                 nsName,
-				RWMutex:            &r.NotificationMgr.RWMutex,
-				UserNameSpaceGroup: r.NotificationMgr.UserNameSpaceGroup,
-				AdmNamespaceGroup:  r.NotificationMgr.AdmNamespaceGroup,
-				NotificationCache:  r.NotificationMgr.NotificationCache,
-			}
-			go cloud.AsyncCloudTask(ctx, r.Client, r.NotificationMgr.ErrorChannel, &wg, tk)
+			notificationTask := cloud.NewNotificationTask(ctx, r.Client, ns, notificationCache)
+			go cloud.AsyncCloudTask(&wg, errchan, &notificationTask)
 		}
 	}
 	go func() {
 		wg.Wait()
-		close(r.NotificationMgr.ErrorChannel)
+		close(errchan)
 	}()
-	for em := range r.NotificationMgr.ErrorChannel {
-		r.logger.Error(errors.New("notification error"), em.Concat(": ").Error())
+	for err := range errchan {
+		if err != nil {
+			r.logger.Error(err, "failed to delivery notification")
+		}
 	}
-	//---------------------------------------------------------------------------//
-	r.logger.Info("Starting the update operation")
-	if time.Now().Unix() > r.NotificationMgr.ExpireToUpdate {
-		r.NotificationMgr.UpdateManager()
-	}
-	r.logger.Info("The task of the notification module has been completed.")
-	return ctrl.Result{RequeueAfter: time.Second * 60}, nil
+	r.NotificationMgr.InitTime()
+	return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -149,6 +144,7 @@ func (r *NotificationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("NotificationReconcile")
 	r.NotificationMgr = cloud.NewNotificationManager()
 	r.configPath = util.ConfigPath
+	r.Users = cloud.UserCategory{}
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
 		return object.GetName() == cloud.ClientStartName &&
 			object.GetNamespace() == cloud.Namespace &&

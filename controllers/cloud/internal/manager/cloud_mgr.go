@@ -18,14 +18,11 @@ package manager
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 	"reflect"
 	"sync"
-
-	cl "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -63,12 +60,6 @@ type HTTPResponse struct {
 	ContentType string
 	StatusCode  int
 	Body        []byte
-}
-
-type Collector struct {
-	UID      string   `json:"uid"`
-	InfoType string   `json:"infoType"`
-	Resource Resource `json:"clusterResource,omitempty"`
 }
 
 type ClusterInfo struct {
@@ -119,7 +110,7 @@ func CommunicateWithCloud(method string, url string, content interface{}) (HTTPR
 	return readResponse(resp)
 }
 
-func Convert(body []byte, content interface{}, options ...ConvertOptions) *ErrorMgr {
+func Convert(body []byte, content interface{}) *ErrorMgr {
 	if body == nil {
 		return NewErrorMgr("Convert", "the body is empty")
 	}
@@ -131,12 +122,6 @@ func Convert(body []byte, content interface{}, options ...ConvertOptions) *Error
 	if err := json.Unmarshal(body, content); err != nil {
 		return NewErrorMgr("Convert", "json.Unmarshal", err.Error())
 	}
-	if len(options) > 0 {
-		err := options[0].callbackConvert(content)
-		if err != nil {
-			return NewErrorMgr("Convert", "callbackConvert", err.Error())
-		}
-	}
 
 	return nil
 }
@@ -145,20 +130,14 @@ func IsSuccessfulStatusCode(statusCode int) bool {
 	return statusCode == http.StatusOK || statusCode == http.StatusCreated || statusCode == http.StatusAccepted || statusCode == http.StatusNoContent
 }
 
-//**************************************************************************//
-
-type Worker interface {
-	Work(ctx context.Context, client cl.Client) error
+type Task interface {
+	Run() error
 }
 
-func AsyncCloudTask(ctx context.Context, client cl.Client, errorchannel chan *ErrorMgr, wg *sync.WaitGroup, wk Worker) {
+func AsyncCloudTask(wg *sync.WaitGroup, errChannel chan error, tk Task) {
 	defer wg.Done()
-	if err := wk.Work(ctx, client); err != nil {
-		errorchannel <- NewErrorMgr("asyncCloudTask", err.Error())
-	}
+	errChannel <- tk.Run()
 }
-
-//**************************************************************************//
 
 func sendRequest(method string, url string, content interface{}) (*http.Request, *ErrorMgr) {
 	var body []byte
@@ -168,7 +147,6 @@ func sendRequest(method string, url string, content interface{}) (*http.Request,
 	if body, err = json.Marshal(content); err != nil {
 		return nil, NewErrorMgr("json.Marshal", err.Error())
 	}
-
 	req, err = http.NewRequest(method, url, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, NewErrorMgr("http.NewRequest", err.Error())

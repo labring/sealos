@@ -36,6 +36,7 @@ import (
 type CloudClientReconciler struct {
 	client.Client
 	Scheme     *runtime.Scheme
+	Users      cloud.UserCategory
 	logger     logr.Logger
 	configPath string
 }
@@ -57,7 +58,10 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	r.logger.Info("Enter CloudClientReconcile", "namespace:", req.Namespace, "name", req.Name)
 
 	r.logger.Info("Start the cloud module...")
-
+	if err := r.Users.GetNameSpace(ctx, r.Client); err != nil {
+		r.logger.Error(err.Concat(": "), "failed to get users info")
+		return ctrl.Result{}, err.Concat(": ")
+	}
 	var clusterSecret corev1.Secret
 	var config, err = util.ReadConfigFile(r.configPath, r.logger)
 	if err != nil {
@@ -71,12 +75,13 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, em.Concat(": ")
 	}
 	if value, ok := clusterSecret.Labels["registered"]; ok && value == "true" {
-		r.logger.Info("Cluster has registered")
+		r.logger.Info("Cluster has registered...")
+	} else {
+		r.logger.Info("Try to register and start the cloud module...")
 	}
 
-	r.logger.Info("Try to register and start the cloud module")
-	rasd := util.NewRegisterAndStartData(ctx, r.Client, &clusterSecret, config)
-	em := util.RetryRegisterAndStart(r.logger, 5, rasd, util.RegisterAndStart)
+	rasd := util.NewRegisterAndStartData(ctx, r.Client, &clusterSecret, r.Users, config, r.logger)
+	em := util.RegisterAndStart(rasd)
 	if em != nil {
 		r.logger.Error(em.Concat(": "), "failed to register and start")
 		return ctrl.Result{}, em.Concat(": ")
@@ -88,6 +93,7 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 // SetupWithManager sets up the controller with the Manager.
 func (r *CloudClientReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.configPath = util.ConfigPath
+	r.Users = cloud.UserCategory{}
 	r.logger = ctrl.Log.WithName("CloudClientReconcile")
 
 	nameFilter := cloud.CloudStartName

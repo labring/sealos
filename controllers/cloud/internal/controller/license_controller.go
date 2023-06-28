@@ -42,6 +42,7 @@ type LicenseReconciler struct {
 	Scheme       *runtime.Scheme
 	logger       logr.Logger
 	MonitorCache cloud.LicenseMonitorResult
+	Users        cloud.UserCategory
 	needMonitor  bool
 	configPath   string
 }
@@ -65,6 +66,11 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	var secret corev1.Secret
 	var licenseMonitorData cloud.LicenseMonitorRequest
 	var LicenseMonitorRes cloud.LicenseMonitorResult
+	if em := r.Users.GetNameSpace(ctx, r.Client); em != nil {
+		err := em.Concat(": ")
+		r.logger.Error(err, "failed to get users info")
+		return ctrl.Result{}, err
+	}
 	r.logger.Info("Attempting to retrieve license-related resources...")
 	resource1 := util.NewImportanctResource(&license, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.LicenseName})
 	resource2 := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
@@ -110,9 +116,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		r.MonitorCache = LicenseMonitorRes
 	}
 	r.logger.Info("Start to initiate the delivery process")
-	// fmt.Println("*****************************************************************")
-	// fmt.Println(LicenseMonitorRes.LicensePolicy)
-	// fmt.Println("*****************************************************************")
+
 	switch LicenseMonitorRes.LicensePolicy {
 	case cloud.Keep:
 		break
@@ -130,12 +134,11 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				r.logger.Error(em.Concat(": "), "failed to submit new license when check license")
 				return ctrl.Result{}, em.Concat(": ")
 			}
+			util.SubmitNotification(ctx, r.Client, r.logger, r.Users, cloud.AdmPrefix, LicenseMonitorRes.Description)
 		}
 	}
 	r.logger.Info("Success to complete the delivery process")
 	r.needMonitor = true
-	// 集群管理员的消息通知，提示到账
-
 	return ctrl.Result{RequeueAfter: time.Second * 60}, nil
 }
 
@@ -143,6 +146,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.configPath = util.ConfigPath
 	r.logger = ctrl.Log.WithName("LicenseReconcile")
+	r.Users = cloud.UserCategory{}
 	r.needMonitor = true
 
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {

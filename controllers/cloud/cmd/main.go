@@ -22,6 +22,7 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
@@ -96,20 +97,20 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Notification")
 		os.Exit(1)
 	}
-	// if err = (&controller.CollectorReconciler{
-	// 	Client: mgr.GetClient(),
-	// 	Scheme: mgr.GetScheme(),
-	// }).SetupWithManager(mgr); err != nil {
-	// 	setupLog.Error(err, "unable to create controller", "controller", "Collector")
-	// 	os.Exit(1)
-	// }
-	// if err = (&controller.CloudSyncReconciler{
-	// 	Client: mgr.GetClient(),
-	// 	Scheme: mgr.GetScheme(),
-	// }).SetupWithManager(mgr); err != nil {
-	// 	setupLog.Error(err, "unable to create controller", "controller", "CloudSync")
-	// 	os.Exit(1)
-	// }
+	if err = (&controller.CollectorReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Collector")
+		os.Exit(1)
+	}
+	if err = (&controller.CloudSyncReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "CloudSync")
+		os.Exit(1)
+	}
 	if err = (&controller.LicenseReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),

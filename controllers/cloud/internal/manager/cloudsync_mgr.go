@@ -44,7 +44,7 @@ func IsConfigMapChanged(resp SyncResponse, cm *corev1.ConfigMap) bool {
 	var changed bool
 	var configMapJSON map[string]string
 	if err := json.Unmarshal([]byte(cm.Data["config.json"]), &configMapJSON); err != nil {
-		panic(err)
+		return false
 	}
 	newConfigMapValue := reflect.ValueOf(resp)
 	newConfigMapType := newConfigMapValue.Type()

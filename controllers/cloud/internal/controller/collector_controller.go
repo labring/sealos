@@ -18,12 +18,19 @@ package controller
 
 import (
 	"context"
+	"errors"
+	"net/http"
+	"strconv"
+	"sync"
+	"time"
 
 	"github.com/go-logr/logr"
 	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
 	"github.com/labring/sealos/controllers/cloud/internal/controller/util"
 	cloud "github.com/labring/sealos/controllers/cloud/internal/manager"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,12 +58,71 @@ type CollectorReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
-func (r *CollectorReconciler) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result, error) {
-	r.logger.Info("Enter NotificationReconcile", "namespace:", req.Namespace, "name", req.Name)
+func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	r.logger.Info("Enter CollectorReconcile", "namespace:", req.Namespace, "name", req.Name)
 
-	// TODO(user): your logic here
+	config, err := util.ReadConfigFile(r.configPath, r.logger)
+	if err != nil {
+		r.logger.Error(err, "failed to read config")
+		return ctrl.Result{}, err
+	}
 
-	return ctrl.Result{}, nil
+	var secret corev1.Secret
+	resource := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
+
+	r.logger.Info("Start to get the node info of the cluster")
+	clusterResource := cloud.NewClusterResource()
+	totalNodesResource := cloud.NewTotalNodesResource(`\w+\.com/gpu`)
+
+	nodeList := &corev1.NodeList{}
+	err = r.Client.List(ctx, nodeList)
+	if err != nil {
+		r.logger.Error(err, "failed to get node info of the cluster")
+		return ctrl.Result{}, err
+	}
+	pvList := &corev1.PersistentVolumeList{}
+	err = r.Client.List(ctx, pvList)
+	if err != nil {
+		r.logger.Error(err, "failed to get PV info of the cluster")
+		return ctrl.Result{}, err
+	}
+
+	clusterResource.Nodes = strconv.Itoa(len(nodeList.Items))
+	r.logger.Info("Start get the cpu&gpu&memory info of the cluster")
+	var wg sync.WaitGroup
+	for _, node := range nodeList.Items {
+		wg.Add(1)
+		go totalNodesResource.GetGPUCPUMemoryResource(&node, &wg)
+	}
+	wg.Wait()
+	for _, pv := range pvList.Items {
+		storage := pv.Spec.Capacity[corev1.ResourceStorage]
+		totalNodesResource.TotalPVCapacity.Add(storage)
+	}
+	clusterResource.CPU = totalNodesResource.TotalCPU.String()
+	clusterResource.GPU = totalNodesResource.TotalGPU.String()
+	clusterResource.Memory = totalNodesResource.TotalMemory.String()
+	clusterResource.Disk = totalNodesResource.TotalPVCapacity.String()
+
+	util.GetImportantResource(ctx, r.Client, &resource)
+	collector := cloud.CollectorInfo{
+		UID:             string(secret.Data["uid"]),
+		InfoType:        cloud.ResourceOnCluster,
+		ClusterResource: clusterResource,
+	}
+	r.logger.Info("Start to collector the node info of the cluster")
+	httpBody, em := cloud.CommunicateWithCloud("POST", config.CollectorURL, collector)
+	if em != nil {
+		r.logger.Error(em.Concat(": "), "failed to communicate with cloud")
+		return ctrl.Result{}, err
+	}
+	if !cloud.IsSuccessfulStatusCode(httpBody.StatusCode) {
+		err := errors.New(http.StatusText(httpBody.StatusCode))
+		r.logger.Error(err, err.Error())
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{RequeueAfter: time.Minute * 5}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

@@ -95,7 +95,7 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			r.logger.Error(em.Concat(": "), "failed to communicate with cloud")
 			return ctrl.Result{}, em.Concat(": ")
 		}
-		if cloud.IsSuccessfulStatusCode(httpBody.StatusCode) {
+		if !cloud.IsSuccessfulStatusCode(httpBody.StatusCode) {
 			err := errors.New(http.StatusText(httpBody.StatusCode))
 			r.logger.Error(err, err.Error())
 			return ctrl.Result{}, err

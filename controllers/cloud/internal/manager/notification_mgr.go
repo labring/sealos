@@ -18,92 +18,79 @@ package manager
 
 import (
 	"context"
-	"errors"
-	"math"
 	"strings"
-	"sync"
 	"time"
 
 	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	cl "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+type Target string
 
 const (
 	UserPrefix string = "ns-"
 	AdmPrefix  string = "adm-"
 )
 
-const maxRetries = 3
+const (
+	ToUser Target = "user"
+	ToAdm  Target = "adm"
+)
 
 type NotificationManager struct {
-	RWMutex            sync.RWMutex
-	TimeLastPull       int64
-	ExpireToUpdate     int64
-	ExpireToUpdateUser int64
-	UserNameSpaceGroup map[string]int
-	AdmNamespaceGroup  map[string]int
-	ErrorChannel       chan *ErrorMgr
-	NotificationCache  []ntf.Notification
+	TimeLastPull int64
+}
+
+func (nm *NotificationManager) InitTime() {
+	now := time.Now()
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	nm.TimeLastPull = startOfDay.Unix()
 }
 
 type NotificationTask struct {
-	Size               int
-	Pos                int
-	Ns                 string
-	RWMutex            *sync.RWMutex
-	UserNameSpaceGroup map[string]int
-	AdmNamespaceGroup  map[string]int
-	NotificationCache  []ntf.Notification
+	ctx               context.Context
+	client            cl.Client
+	Ns                string
+	NotificationCache []ntf.Notification
 }
 
-func (nm *NotificationManager) GetNameSpace(ctx context.Context, client cl.Client) *ErrorMgr {
-	nsList := &corev1.NamespaceList{}
-	if err := client.List(ctx, nsList); err != nil {
-		return NewErrorMgr("client.List", err.Error())
+func NewNotificationTask(ctx context.Context, client cl.Client, ns string, cache []ntf.Notification) NotificationTask {
+	return NotificationTask{
+		ctx:               ctx,
+		client:            client,
+		Ns:                ns,
+		NotificationCache: cache,
 	}
-	for _, ns := range nsList.Items {
-		addNamespaceIfMissing(UserPrefix, nm.UserNameSpaceGroup, ns.Name)
-		addNamespaceIfMissing(AdmPrefix, nm.AdmNamespaceGroup, ns.Name)
+}
+
+func (nt *NotificationTask) Run() error {
+	for _, data := range nt.NotificationCache {
+		data.Namespace = nt.Ns
+		var tmp ntf.Notification
+		err := nt.client.Get(nt.ctx, types.NamespacedName{Namespace: data.Namespace, Name: data.Name}, &tmp)
+		if err == nil {
+			continue
+		} else if apierrors.IsNotFound(err) {
+			err := nt.client.Create(nt.ctx, &data)
+			if err == nil {
+				continue
+			}
+			return err
+		} else {
+			return err
+		}
 	}
 	return nil
-}
-
-func (nm *NotificationManager) UpdateManager() {
-	nm.ExpireToUpdate += int64(72 * time.Hour)
-	nm.NotificationCache = []ntf.Notification{}
-	resetMapValues(nm.AdmNamespaceGroup)
-	resetMapValues(nm.UserNameSpaceGroup)
 }
 
 func NewNotificationManager() *NotificationManager {
 	return &NotificationManager{
-		TimeLastPull:       time.Now().Add(-7 * 24 * time.Hour).Unix(),
-		ExpireToUpdateUser: time.Now().Unix(),
-		ExpireToUpdate:     time.Now().Unix(),
-		UserNameSpaceGroup: make(map[string]int),
-		AdmNamespaceGroup:  make(map[string]int),
-		NotificationCache:  make([]ntf.Notification, 0),
+		TimeLastPull: time.Now().Add(-14 * 24 * time.Hour).Unix(),
 	}
-}
-
-func (nm *NotificationManager) callbackConvert(data interface{}) error {
-	notifications, ok := data.(*[]NotificationResponse)
-	if !ok {
-		return errors.New("error type, expected []Notification")
-	}
-	var timestamp int64
-	for _, notification := range *notifications {
-		if timestamp < notification.Timestamp {
-			timestamp = notification.Timestamp
-		}
-		nm.NotificationCache = append(nm.NotificationCache, NotificationResponseToNotification(notification))
-	}
-	if timestamp > nm.TimeLastPull {
-		nm.TimeLastPull = timestamp
-	}
-	return nil
 }
 
 func NotificationResponseToNotification(resp NotificationResponse) ntf.Notification {
@@ -117,58 +104,68 @@ func NotificationResponseToNotification(resp NotificationResponse) ntf.Notificat
 	return res
 }
 
-func (nt NotificationTask) Work(ctx context.Context, client cl.Client) error {
-	if nt.Pos >= nt.Size {
-		return nil
-	}
-	var targetMap map[string]int
-	if strings.HasPrefix(nt.Ns, UserPrefix) {
-		targetMap = nt.UserNameSpaceGroup
-	} else {
-		targetMap = nt.AdmNamespaceGroup
-	}
-	cnt := nt.Pos
-	var ok = true
-	var err error
-	nt.RWMutex.RLock()
-	for _, notification := range nt.NotificationCache[nt.Pos:] {
-		retries := 0
-		notificationCopy := notification.DeepCopy()
-		notificationCopy.SetNamespace(nt.Ns)
-		for {
-			if retries > maxRetries {
-				ok = false
-				break
-			}
-			if err = client.Create(ctx, notificationCopy, cl.FieldOwner(Namespace)); cl.IgnoreAlreadyExists(err) != nil {
-				retries++
-				waitTime := time.Duration(math.Pow(2, float64(retries-1))) * time.Second
-				time.Sleep(waitTime)
-				continue
-			}
-			break
-		}
-		cnt++
-	}
-	nt.RWMutex.RUnlock()
-	nt.RWMutex.Lock()
-	defer nt.RWMutex.Unlock()
-	targetMap[nt.Ns] = cnt
-	if ok {
-		return nil
-	}
-	return errors.New("DeliverCR Error: " + "namespace: " + nt.Ns + " err: " + err.Error())
+type Set interface {
+	Add(item string)
+	Remove(item string)
+	Contains(item string) bool
+	Iter() <-chan string
 }
 
-func addNamespaceIfMissing(prefix string, targetMap map[string]int, nsName string) {
-	if strings.HasPrefix(nsName, prefix) {
-		if _, ok := targetMap[nsName]; !ok {
-			targetMap[nsName] = 0
+type StringSet struct {
+	set map[string]struct{}
+}
+
+func NewStringSet() *StringSet {
+	return &StringSet{set: make(map[string]struct{})}
+}
+
+func (s *StringSet) Add(item string) {
+	s.set[item] = struct{}{}
+}
+
+func (s *StringSet) Remove(item string) {
+	delete(s.set, item)
+}
+
+func (s *StringSet) Contains(item string) bool {
+	_, exists := s.set[item]
+	return exists
+}
+
+func (s *StringSet) Iter() <-chan string {
+	ch := make(chan string)
+	go func() {
+		for item := range s.set {
+			ch <- item
 		}
+		close(ch)
+	}()
+	return ch
+}
+
+type UserCategory map[string]Set
+
+type Users interface {
+	Add(prefix string, nsName string)
+}
+
+func (uc UserCategory) Add(prefix string, nsName string) {
+	if strings.HasPrefix(nsName, prefix) {
+		if _, exists := uc[prefix]; !exists {
+			uc[prefix] = NewStringSet()
+		}
+		uc[prefix].Add(nsName)
 	}
 }
-func resetMapValues(m map[string]int) {
-	for k := range m {
-		m[k] = 0
+
+func (uc *UserCategory) GetNameSpace(ctx context.Context, client cl.Client) *ErrorMgr {
+	nsList := &corev1.NamespaceList{}
+	if err := client.List(ctx, nsList); err != nil {
+		return NewErrorMgr("client.List", err.Error())
 	}
+	for _, ns := range nsList.Items {
+		uc.Add(UserPrefix, ns.Name)
+		uc.Add(AdmPrefix, ns.Name)
+	}
+	return nil
 }
