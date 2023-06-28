@@ -48,7 +48,7 @@ spec:
           - name: NEW_ACCOUNT_AMOUNT
             value: "5000000"
           - name: WHITELIST
-            value: "terminals.Terminal.terminal.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1"
+            value: "notifications.Notification.notification.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1"
           - name: ACCOUNT_SYSTEM_NAMESPACE
             valueFrom:
               fieldRef:
@@ -59,16 +59,6 @@ spec:
               secretKeyRef:
                 name: mongo-secret
                 key: MONGO_URI
-          - name: MONGO_USERNAME
-            valueFrom:
-              secretKeyRef:
-                name: mongo-secret
-                key: MONGO_USERNAME
-          - name: MONGO_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: mongo-secret
-                key: MONGO_PASSWORD
           - name: ApproachingDeletionPeriod
             value: "345600"
           - name: ImminentDeletionPeriod
@@ -76,7 +66,7 @@ spec:
           - name: FinalDeletionPeriod
             value: "604800"
           - name: DebtDetectionCycleSeconds
-            value: "60"
+            value: "300"
         image: ghcr.io/labring/sealos-account-controller:dev
         imagePullPolicy: Always
         args:

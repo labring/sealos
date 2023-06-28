@@ -23,12 +23,18 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/labring/sealos/controllers/user/controllers/helper/config"
+	retry2 "k8s.io/client-go/util/retry"
+
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+
+	"github.com/labring/sealos/pkg/utils/retry"
 
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/labring/sealos/controllers/pkg/database"
 	gonanoid "github.com/matoous/go-nanoid/v2"
+
+	userV1 "github.com/labring/sealos/controllers/user/api/v1"
 
 	"github.com/go-logr/logr"
 
@@ -67,6 +73,7 @@ type AccountReconciler struct {
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts/finalizers,verbs=update
+//+kubebuilder:rbac:groups=user.sealos.io,resources=users,verbs=get;list;watch
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances/status,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
@@ -77,6 +84,13 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// delete payments that exist for more than 5 minutes
 	if err := r.DeletePayment(ctx); err != nil {
 		r.Logger.Error(err, "delete payment failed")
+	}
+	user := &userV1.User{}
+	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, user); err == nil {
+		_, err = r.syncAccount(ctx, user.Name, r.AccountSystemNamespace, "ns-"+user.Name)
+		return ctrl.Result{}, err
+	} else if client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, err
 	}
 
 	accountBalance := accountv1.AccountBalance{}
@@ -234,13 +248,15 @@ func (r *AccountReconciler) syncResourceQuota(ctx context.Context, nsName string
 		},
 	}
 
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
-		quota.Spec.Hard = DefaultResourceQuota()
+	return retry.Retry(10, 1*time.Second, func() error {
+		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
+			quota.Spec.Hard = DefaultResourceQuota()
+			return nil
+		}); err != nil {
+			return fmt.Errorf("sync resource quota failed: %v", err)
+		}
 		return nil
-	}); err != nil {
-		return fmt.Errorf("sync resource quota failed: %v", err)
-	}
-	return nil
+	})
 }
 
 func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, namespace string) error {
@@ -250,18 +266,24 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 			Namespace: r.AccountSystemNamespace,
 		},
 	}
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &role, func() error {
-		role.Rules = []rbacV1.PolicyRule{
-			{
-				APIGroups:     []string{"account.sealos.io"},
-				Resources:     []string{"accounts"},
-				Verbs:         []string{"get", "watch", "list"},
-				ResourceNames: []string{name},
-			},
+	err := retry2.RetryOnConflict(retry2.DefaultRetry, func() error {
+		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &role, func() error {
+			role.Rules = []rbacV1.PolicyRule{
+				{
+					APIGroups:     []string{"account.sealos.io"},
+					Resources:     []string{"accounts"},
+					Verbs:         []string{"get", "watch", "list"},
+					ResourceNames: []string{name},
+				},
+			}
+			return nil
+		}); err != nil {
+			return fmt.Errorf("create role failed: %v,username: %v,namespace: %v", err, name, namespace)
 		}
 		return nil
-	}); err != nil {
-		return fmt.Errorf("create role failed: %v,username: %v,namespace: %v", err, name, namespace)
+	})
+	if err != nil {
+		return err
 	}
 	roleBinding := rbacV1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -275,7 +297,13 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 			Kind:     "Role",
 			Name:     role.Name,
 		}
-		roleBinding.Subjects = config.GetUsersSubject(name)
+		roleBinding.Subjects = []rbacV1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      name,
+				Namespace: namespace,
+			},
+		}
 
 		return nil
 	}); err != nil {
@@ -346,7 +374,7 @@ func (r *AccountReconciler) updateDeductionBalance(ctx context.Context, accountB
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	const controllerName = "account_controller"
 	r.Logger = ctrl.Log.WithName(controllerName)
 	r.Logger.V(1).Info("init reconcile controller account")
@@ -362,6 +390,8 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&accountv1.Account{}).
 		Watches(&source.Kind{Type: &accountv1.Payment{}}, &handler.EnqueueRequestForObject{}).
 		Watches(&source.Kind{Type: &accountv1.AccountBalance{}}, &handler.EnqueueRequestForObject{}).
+		Watches(&source.Kind{Type: &userV1.User{}}, &handler.EnqueueRequestForObject{}).
+		WithOptions(rateOpts).
 		Complete(r)
 }
 

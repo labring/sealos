@@ -22,6 +22,8 @@ import (
 	"strconv"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v1 "github.com/labring/sealos/controllers/common/notification/api/v1"
@@ -372,7 +374,7 @@ func (r *DebtReconciler) updateNamespaceStatus(ctx context.Context, namespace, s
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	r.Logger = ctrl.Log.WithName("DebtController")
 	r.accountSystemNamespace = utils.GetEnvWithDefault(accountv1.AccountSystemNamespaceEnv, "account-system")
 	r.accountNamespace = utils.GetEnvWithDefault(ACCOUNTNAMESPACEENV, "sealos-system")
@@ -394,6 +396,7 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		// update status should not enter reconcile
 		For(&accountv1.Account{}, builder.WithPredicates(OnlyCreatePredicate{})).
+		WithOptions(rateOpts).
 		Complete(r)
 }
 

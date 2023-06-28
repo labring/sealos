@@ -18,12 +18,9 @@ package v1
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
-
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	admissionV1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -37,7 +34,7 @@ import (
 )
 
 const (
-	saPrefix                   = "system:serviceaccount"
+	saPrefix                   = "system:serviceaccounts"
 	mastersGroup               = "system:masters"
 	kubeSystemNamespace        = "kube-system"
 	defaultUserSystemNamespace = "user-system"
@@ -58,24 +55,18 @@ type DebtValidate struct {
 	Client client.Client
 }
 
-func getUserNamespace() string {
-	userNamespace := os.Getenv("USER_NAMESPACE")
-	if userNamespace == "" {
-		return defaultUserSystemNamespace
-	}
-	return userNamespace
-}
-
-var kubeSystemGroup, userSaGroup string
+var kubeSystemGroup string
 
 func init() {
-	kubeSystemGroup = fmt.Sprintf("%ss:%s", saPrefix, kubeSystemNamespace)
-	userSaGroup = fmt.Sprintf("%ss:%s", saPrefix, getUserNamespace())
+	kubeSystemGroup = fmt.Sprintf("%s:%s", saPrefix, kubeSystemNamespace)
 }
 func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admission.Response {
-	logger.V(1).Info("checking user", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.gvrk", getGVRK(req))
+	logger.V(1).Info("checking user", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.gvrk", getGVRK(req), "req.Operation", req.Operation)
 	// skip delete request (删除quota资源除外)
 	if req.Operation == admissionV1.Delete && !strings.Contains(getGVRK(req), "quotas") {
+		if req.Kind.Kind == "Namespace" {
+			return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
+		}
 		return admission.Allowed("")
 	}
 
@@ -88,27 +79,24 @@ func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admissi
 		case kubeSystemGroup:
 			logger.V(1).Info("pass for kube-system")
 			return admission.ValidationResponse(true, "")
-		case userSaGroup:
-			logger.V(1).Info("check for user", "user", req.UserInfo.Username, "ns: ", req.Namespace, "name: ", req.Name, "Operation", req.Operation)
-			if isWhiteList(req) {
-				return admission.ValidationResponse(true, "")
-			}
+		case fmt.Sprintf("%s:%s", saPrefix, req.Namespace):
+			logger.V(1).Info("check for user", "user", req.UserInfo.Username, "ns: ", req.Namespace, "name", req.Name, "Operation", req.Operation)
 			// Check if the request is for resourcequota resource
 			if req.Kind.Kind == "ResourceQuota" {
 				// Check if the operation is UPDATE or DELETE
-				switch req.Operation {
-				case admissionV1.Create, admissionV1.Update, admissionV1.Delete:
-					quota := &v1.ObjectMeta{}
-					err := json.Unmarshal(req.Object.Raw, quota)
-					if err != nil {
-						logger.Error(err, "failed to unmarshal request quota object")
-						return admission.Allowed("")
-					}
-					logger.V(1).Info("checking quota", "quota", quota)
-					if quota.Name == "quota-"+req.Namespace || quota.Name == "debt-limit0" {
-						return admission.Denied(fmt.Sprintf("ns %s request %s permission denied", req.Namespace, req.Operation))
-					}
+				switch req.Name {
+				case getDefaultQuotaName(req.Namespace), debtLimit0QuotaName:
+					return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
 				}
+			}
+			if req.Kind.Kind == "Namespace" && req.Name == req.Namespace {
+				return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
+			}
+			if req.Kind.Kind == "Payment" && req.Operation == admissionV1.Update {
+				return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
+			}
+			if isWhiteList(req) {
+				return admission.ValidationResponse(true, "")
 			}
 			return checkOption(ctx, logger, d.Client, req.Namespace)
 		default:
@@ -154,7 +142,7 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsNam
 	//	return admission.ValidationResponse(true, nsName)
 	//}
 	// skip check if nsName is empty or equal to user system namespace
-	if nsName == "" || nsName == getUserNamespace() {
+	if nsName == "" {
 		return admission.Allowed("")
 	}
 	ns := &corev1.Namespace{}
@@ -181,3 +169,9 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsNam
 	}
 	return admission.Allowed("pass user " + user)
 }
+
+func getDefaultQuotaName(namespace string) string {
+	return fmt.Sprintf("quota-%s", namespace)
+}
+
+const debtLimit0QuotaName = "debt-limit0"

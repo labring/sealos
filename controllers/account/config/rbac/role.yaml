@@ -319,3 +319,11 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - users
+  verbs:
+  - get
+  - list
+  - watch

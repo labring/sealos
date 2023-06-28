@@ -875,6 +875,14 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - users
+  verbs:
+  - get
+  - list
+  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -1000,7 +1008,7 @@ metadata:
   name: account-controller-manager
   namespace: account-system
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       control-plane: controller-manager
@@ -1026,7 +1034,7 @@ spec:
         - name: NEW_ACCOUNT_AMOUNT
           value: "5000000"
         - name: WHITELIST
-          value: terminals.Terminal.terminal.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1
+          value: notifications.Notification.notification.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1
         - name: ACCOUNT_SYSTEM_NAMESPACE
           valueFrom:
             fieldRef:
@@ -1037,16 +1045,6 @@ spec:
             secretKeyRef:
               key: MONGO_URI
               name: mongo-secret
-        - name: MONGO_USERNAME
-          valueFrom:
-            secretKeyRef:
-              key: MONGO_USERNAME
-              name: mongo-secret
-        - name: MONGO_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: MONGO_PASSWORD
-              name: mongo-secret
         - name: ApproachingDeletionPeriod
           value: "345600"
         - name: ImminentDeletionPeriod
@@ -1054,7 +1052,7 @@ spec:
         - name: FinalDeletionPeriod
           value: "604800"
         - name: DebtDetectionCycleSeconds
-          value: "60"
+          value: "300"
         envFrom:
         - configMapRef:
             name: account-manager-configmap
@@ -1081,11 +1079,11 @@ spec:
           periodSeconds: 10
         resources:
           limits:
-            cpu: 500m
-            memory: 512Mi
+            cpu: 1000m
+            memory: 1000Mi
           requests:
-            cpu: 10m
-            memory: 64Mi
+            cpu: 100m
+            memory: 640Mi
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true
@@ -1163,6 +1161,14 @@ webhooks:
       path: /validate-v1-sealos-cloud
   failurePolicy: Ignore
   name: debt.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: metadata.name
+        operator: NotIn
+        values:
+          - account-system
+          - kube-system
+          - calico-system
   rules:
   - apiGroups:
     - '*'
