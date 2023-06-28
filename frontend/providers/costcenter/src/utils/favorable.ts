@@ -1,23 +1,10 @@
 // 根据当前费用计算优惠金额
-export const getFavorable = (amount: number) => {
-  let ratio: number;
-  switch (true) {
-    case amount < 299:
-      return 0;
-    case amount < 599:
-      ratio = 10;
-      break;
-    case amount < 1999:
-      ratio = 15;
-      break;
-    case amount < 4999:
-      ratio = 20;
-      break;
-    case amount < 19999:
-      ratio = 25;
-      break;
-    default:
-      ratio = 30;
-  }
-  return Math.floor((amount * ratio) / 100);
-};
+export const getFavorable =
+  (steps: number[] = [], ratios: number[] = []) =>
+  (amount: number) => {
+    let ratio = 0;
+
+    const step = [...steps].reverse().findIndex((step) => amount >= step);
+    if (ratios.length > step && step > -1) ratio = [...ratios].reverse()[step];
+    return Math.floor((amount * ratio) / 100);
+  };

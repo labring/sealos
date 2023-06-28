@@ -32,9 +32,9 @@ function CostOverview() {
   useEffect(() => {
     if (billingItems.length === 0) return;
     const item = billingItems[0].costs;
-    updateCPU(item.cpu || 0);
-    updateMemory(item.memory || 0);
-    updateStorage(item.storage || 0);
+    updateCPU(item?.cpu || 0);
+    updateMemory(item?.memory || 0);
+    updateStorage(item?.storage || 0);
   }, [billingItems, updateCPU, updateMemory, updateStorage]);
   useEffect(() => {
     // 并发预加载

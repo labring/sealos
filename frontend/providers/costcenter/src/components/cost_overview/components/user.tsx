@@ -7,29 +7,26 @@ import { Box, Button, Flex, Image, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import styles from './user.module.scss';
 
-import useOverviewStore from '@/stores/overview';
 import { useTranslation } from 'next-i18next';
+import { useMemo } from 'react';
+import { ApiResp } from '@/types/api';
 
 export default function UserCard() {
   const { t } = useTranslation();
   const session = useSessionStore().getSession();
-  const balance = useOverviewStore((state) => state.balance);
-  const setBalance = useOverviewStore((state) => state.setBalance);
-  const setReccharge = useOverviewStore((state) => state.setRecharge);
-  const rechargeOpen = () => setReccharge(true);
-  const { RechargeModal } = useRecharge();
-  const { data } = useQuery({
+  const { RechargeModal, onOpen } = useRecharge({});
+  const { data: balance_raw } = useQuery({
     queryKey: ['getAccount'],
-    queryFn: () => request('/api/account/getAmount'),
-    onSuccess(data) {
-      let real_balance = data?.data?.balance || 0;
-      if (data?.data?.deductionBalance) {
-        real_balance -= data?.data.deductionBalance;
-      }
-      setBalance(real_balance);
-    }
+    queryFn: () =>
+      request<any, ApiResp<{ deductionBalance: number; balance: number }>>('/api/account/getAmount')
   });
-
+  const balance = useMemo(() => {
+    let real_balance = balance_raw?.data?.balance || 0;
+    if (balance_raw?.data?.deductionBalance) {
+      real_balance -= balance_raw?.data.deductionBalance;
+    }
+    return real_balance;
+  }, [balance_raw]);
   return (
     <>
       <Flex
@@ -60,13 +57,13 @@ export default function UserCard() {
             <Text fontSize="24px" fontWeight="500">
               ¥ {displayMoney(formatMoney(balance))}
             </Text>
-            <Button ml="auto" w="78px" h="32px" bg={'white'} color="black" onClick={rechargeOpen}>
+            <Button ml="auto" w="78px" h="32px" bg={'white'} color="black" onClick={() => onOpen()}>
               {t('Charge')}
             </Button>
           </Flex>
         </Box>
       </Flex>
-      <RechargeModal />
+      <RechargeModal balance={balance} />
     </>
   );
 }

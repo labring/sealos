@@ -59,9 +59,9 @@ export function BillingTable({ data }: { data: BillingItem[] }) {
                   </Flex>
                 </Td>
 
-                <Td>{!item.type ? '￥' + formatMoney(item.costs.cpu || 0) : '-'}</Td>
-                <Td>{!item.type ? '￥' + formatMoney(item.costs.memory || 0) : '-'}</Td>
-                <Td>{!item.type ? '￥' + formatMoney(item.costs.storage || 0) : '-'}</Td>
+                <Td>{!item.type ? '￥' + formatMoney(item.costs?.cpu || 0) : '-'}</Td>
+                <Td>{!item.type ? '￥' + formatMoney(item.costs?.memory || 0) : '-'}</Td>
+                <Td>{!item.type ? '￥' + formatMoney(item.costs?.storage || 0) : '-'}</Td>
                 <Td>{'￥' + formatMoney(item.amount)}</Td>
               </Tr>
             );
