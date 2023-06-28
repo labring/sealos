@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"time"
 
+	retry2 "k8s.io/client-go/util/retry"
+
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"github.com/labring/sealos/pkg/utils/retry"
@@ -264,18 +266,24 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 			Namespace: r.AccountSystemNamespace,
 		},
 	}
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &role, func() error {
-		role.Rules = []rbacV1.PolicyRule{
-			{
-				APIGroups:     []string{"account.sealos.io"},
-				Resources:     []string{"accounts"},
-				Verbs:         []string{"get", "watch", "list"},
-				ResourceNames: []string{name},
-			},
+	err := retry2.RetryOnConflict(retry2.DefaultRetry, func() error {
+		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &role, func() error {
+			role.Rules = []rbacV1.PolicyRule{
+				{
+					APIGroups:     []string{"account.sealos.io"},
+					Resources:     []string{"accounts"},
+					Verbs:         []string{"get", "watch", "list"},
+					ResourceNames: []string{name},
+				},
+			}
+			return nil
+		}); err != nil {
+			return fmt.Errorf("create role failed: %v,username: %v,namespace: %v", err, name, namespace)
 		}
 		return nil
-	}); err != nil {
-		return fmt.Errorf("create role failed: %v,username: %v,namespace: %v", err, name, namespace)
+	})
+	if err != nil {
+		return err
 	}
 	roleBinding := rbacV1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
