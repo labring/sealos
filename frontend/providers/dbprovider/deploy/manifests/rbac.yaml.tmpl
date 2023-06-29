@@ -8,7 +8,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cluster-version-reader
-  namespace: dbprovider-frontend
 rules:
   - apiGroups: ["apps.kubeblocks.io/v1alpha1"]
     resources: [ "clusterversions" ]
@@ -18,7 +17,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cluster-version-reader-rolebinding
-  namespace: dbprovider-frontend
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
