@@ -42,9 +42,9 @@ spec:
 ### How to run
 
 ```shell
-sealos run 
+sealos run \
     --env cloudDomain="cloud.sealos.io" \
     --env wildcardCertSecretName="wildcard-cert" \
-    docker.io/labring/sealos-cloud-desktop:dev
-    --config desktop-config.yaml
+    docker.io/labring/sealos-cloud-desktop:dev \
+    --config-file desktop-config.yaml 
 ```

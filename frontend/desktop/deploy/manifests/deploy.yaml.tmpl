@@ -134,12 +134,12 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: desktop-frontend-secret
-                  key: ali_sign_name
+                  key: ali_sms_sign_name
             - name: ALI_TEMPLATE_CODE
               valueFrom:
                 secretKeyRef:
                   name: desktop-frontend-secret
-                  key: ali_template_code
+                  key: ali_sms_template_code
 
           securityContext:
             runAsNonRoot: true
