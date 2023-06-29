@@ -64,12 +64,22 @@ func (c *Client) CmdToString(host, cmd, sep string) (string, error) {
 }
 
 func (c *Client) newClientAndSftpClient(host string) (*ssh.Client, *sftp.Client, error) {
-	sshClient, err := c.connect(host)
+	var (
+		sshClient  *ssh.Client
+		sftpClient *sftp.Client
+		err        error
+	)
+	sshClient, err = c.connect(host)
 	if err != nil {
 		return nil, nil, err
 	}
 	// create sftp client
-	sftpClient, err := sftp.NewClient(sshClient)
+	if c.Option.sudo || c.Option.user != defaultUsername {
+		sftpClient, err = NewSudoSftpClient(sshClient, c.password)
+	} else {
+		sftpClient, err = sftp.NewClient(sshClient)
+	}
+
 	return sshClient, sftpClient, err
 }
 
