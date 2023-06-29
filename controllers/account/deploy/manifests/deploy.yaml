@@ -511,6 +511,72 @@ status:
   conditions: []
   storedVersions: []
 ---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: transfers.account.sealos.io
+spec:
+  group: account.sealos.io
+  names:
+    kind: Transfer
+    listKind: TransferList
+    plural: transfers
+    singular: transfer
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Transfer is the Schema for the transfers API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: TransferSpec defines the desired state of Transfer
+            properties:
+              amount:
+                format: int64
+                minimum: 1000000
+                type: integer
+              to:
+                type: string
+            required:
+            - amount
+            - to
+            type: object
+          status:
+            description: TransferStatus defines the observed state of Transfer
+            properties:
+              progress:
+                type: integer
+              reason:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -711,6 +777,32 @@ rules:
   - account.sealos.io
   resources:
   - pricequeries/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - transfers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - transfers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - transfers/status
   verbs:
   - get
   - patch

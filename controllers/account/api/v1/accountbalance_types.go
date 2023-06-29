@@ -32,6 +32,8 @@ const (
 	Consumption Type = iota
 	// Recharge 充值
 	Recharge
+	TransferIn
+	TransferOut
 )
 
 const (

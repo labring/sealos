@@ -342,7 +342,11 @@ func (r *AccountReconciler) updateDeductionBalance(ctx context.Context, accountB
 		return err
 	}
 
-	account.Status.DeductionBalance += accountBalance.Spec.Amount
+	if accountBalance.Spec.Type == accountv1.TransferIn {
+		account.Status.Balance += accountBalance.Spec.Amount
+	} else {
+		account.Status.DeductionBalance += accountBalance.Spec.Amount
+	}
 
 	if err := r.Status().Update(ctx, account); err != nil {
 		r.Logger.Error(err, err.Error())
