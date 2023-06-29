@@ -44,7 +44,6 @@ type NotificationReconciler struct {
 	NotificationMgr *cloud.NotificationManager
 	Users           cloud.UserCategory
 	logger          logr.Logger
-	configPath      string
 }
 
 //+kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
@@ -65,30 +64,34 @@ type NotificationReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter NotificationReconcile", "namespace:", req.Namespace, "name", req.Name)
-
 	if em := r.Users.GetNameSpace(ctx, r.Client); em != nil {
 		err := em.Concat(": ")
 		r.logger.Error(err, "failed to get users info")
 		return ctrl.Result{}, err
 	}
-	r.logger.Info("Start to get the url to pull notification...")
-	config, err := util.ReadConfigFile(r.configPath, r.logger)
+	r.logger.Info("Start to get the resource for pull notification...")
+	var configMap corev1.ConfigMap
+	var url string
+	var clusterScret corev1.Secret
+	resource1 := util.NewImportanctResource(&configMap, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.ConfigName})
+	resource2 := util.NewImportanctResource(&clusterScret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
+	em := util.GetImportantResource(ctx, r.Client, &resource1)
+	if em != nil {
+		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.ConfigMap")
+		return ctrl.Result{}, em.Concat(": ")
+	}
+	em = util.GetImportantResource(ctx, r.Client, &resource2)
+	if em != nil {
+		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.Secret")
+		return ctrl.Result{}, em.Concat(": ")
+	}
+	config, err := util.ReadConfigFromConfigMap(cloud.ConfigName, &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to read config")
 		return ctrl.Result{}, err
 	}
-	var url = config.NotificationURL
-	var clusterScret corev1.Secret
-	resource := util.NewImportanctResource(&clusterScret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
-
-	r.logger.Info("Start to get the secret resource for uid...")
-	em := util.GetImportantResource(ctx, r.Client, &resource)
-	if em != nil {
-		r.logger.Error(em.Concat(": "), "failed to get cluster secret")
-		return ctrl.Result{}, em.Concat(": ")
-	}
-
 	r.logger.Info("Start to pull notification from cloud...")
+	url = config.NotificationURL
 	var requestBody = cloud.NotificationRequest{
 		UID:       string(clusterScret.Data["uid"]),
 		Timestamp: r.NotificationMgr.TimeLastPull,
@@ -113,6 +116,7 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		r.logger.Error(err, "failed to convert notifications")
 		return ctrl.Result{}, em.Concat(": ")
 	}
+
 	r.logger.Info("Starting to delivery notifications")
 	for _, body := range notificationResp {
 		notificationCache = append(notificationCache, cloud.NotificationResponseToNotification(body))
@@ -143,13 +147,13 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 func (r *NotificationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("NotificationReconcile")
 	r.NotificationMgr = cloud.NewNotificationManager()
-	r.configPath = util.ConfigPath
 	r.Users = cloud.UserCategory{}
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
 		return object.GetName() == cloud.ClientStartName &&
 			object.GetNamespace() == cloud.Namespace &&
 			object.GetLabels() != nil &&
-			object.GetLabels()["isRead"] == "false"
+			object.GetLabels()[cloud.IsRead] == cloud.FALSE &&
+			object.GetLabels()[cloud.ExternalNetworkAccessLabel] == cloud.Enabled
 	})
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cloudv1.CloudClient{}, builder.WithPredicates(Predicate)).

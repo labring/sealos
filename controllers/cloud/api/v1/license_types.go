@@ -25,6 +25,7 @@ import (
 
 // LicenseSpec defines the desired state of License
 type LicenseSpec struct {
+	UID   string `json:"uid,omitempty"`
 	Token string `json:"token,omitempty"`
 	Key   string `json:"key,omitempty"`
 }

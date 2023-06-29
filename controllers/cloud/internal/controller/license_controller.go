@@ -19,10 +19,7 @@ package controller
 import (
 	"context"
 	"errors"
-	"net/http"
-	"time"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -31,9 +28,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/go-logr/logr"
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
 	"github.com/labring/sealos/controllers/cloud/internal/controller/util"
 	cloud "github.com/labring/sealos/controllers/cloud/internal/manager"
+	"github.com/labring/sealos/controllers/pkg/crypto"
 )
 
 // LicenseReconciler reconciles a License object
@@ -44,7 +43,6 @@ type LicenseReconciler struct {
 	MonitorCache cloud.LicenseMonitorResult
 	Users        cloud.UserCategory
 	needMonitor  bool
-	configPath   string
 }
 
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=licenses,verbs=get;list;watch;create;update;patch;delete
@@ -63,97 +61,58 @@ type LicenseReconciler struct {
 func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter LicenseReconcile", "namespace:", req.Namespace, "name", req.Name)
 	var license cloudv1.License
-	var secret corev1.Secret
-	var licenseMonitorData cloud.LicenseMonitorRequest
-	var LicenseMonitorRes cloud.LicenseMonitorResult
-	if em := r.Users.GetNameSpace(ctx, r.Client); em != nil {
-		err := em.Concat(": ")
-		r.logger.Error(err, "failed to get users info")
-		return ctrl.Result{}, err
-	}
-	r.logger.Info("Attempting to retrieve license-related resources...")
-	resource1 := util.NewImportanctResource(&license, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.LicenseName})
-	resource2 := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
-	config, err := util.ReadConfigFile(r.configPath, r.logger)
+	err := r.Client.Get(ctx, types.NamespacedName{Namespace: req.Namespace, Name: req.Name}, &license)
 	if err != nil {
-		r.logger.Error(err, "util.ReadConfigFile, failed to read config")
+		r.logger.Error(err, "failed to get license cr", "namespace:", req.Namespace, "name:", req.Name)
 		return ctrl.Result{}, err
 	}
-	em := util.GetImportantResource(ctx, r.Client, &resource2)
-	if em != nil {
-		r.logger.Error(em.Concat(": "), "failed to GetImportantResource,secret")
-		return ctrl.Result{}, em.Concat(": ")
+	payload, ok := crypto.IsLicenseValid(license)
+	if !ok {
+		err := errors.New("error license")
+		r.logger.Error(err, "license invalid", "namespace:", req.Namespace, "name:", req.Name)
+		pack := cloud.NewNotificationPackage(cloud.MessageForLicense, cloud.From, "Your license is invalid")
+		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+		return ctrl.Result{}, err
 	}
-	em = util.GetImportantResource(ctx, r.Client, &resource1)
-	if em != nil {
-		r.logger.Error(em.Concat(": "), "failed to GetImportantResource,license")
-		return ctrl.Result{}, em.Concat(": ")
+	var account accountv1.Account
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: "account-system", Name: license.Spec.UID}, &account)
+	if err != nil {
+		r.logger.Error(err, "failed to get account cr", "namespace:", req.Namespace, "name:", req.Name)
+		return ctrl.Result{}, err
 	}
-	r.logger.Info("Successfully retrieved license-related resources...")
-
-	if r.needMonitor {
-		r.logger.Info("Initiating License verification process...")
-		licenseMonitorData, em = cloud.NewLicenseMonitorRequest(secret)
-		if em != nil {
-			r.logger.Error(em.Concat(": "), "failed to generate License Monitor")
-			return ctrl.Result{}, em.Concat(": ")
+	account.Status.EncryptBalance, err := rechargeBalance(account.Status.EncryptBalance, payload["amt"])
+	if err != nil {
+		r.logger.Error(err, "Recharge Failed", "namespace:", req.Namespace, "name:", req.Name)
+		if pack, err := cloud.NewNotificationPackage(cloud.MessageForLicense, cloud.From, "Recharge Failed"); err != nil {
+			r.logger.Error(err, "NewNotificationPackage", "namespace:", req.Namespace, "name:", req.Name)
+		} else {
+			util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
 		}
-		httpBody, em := cloud.CommunicateWithCloud("POST", config.LicenseMonitorURL, licenseMonitorData)
-		if em != nil {
-			r.logger.Error(em.Concat(": "), "failed to communicate with cloud")
-			return ctrl.Result{}, em.Concat(": ")
-		}
-		if !cloud.IsSuccessfulStatusCode(httpBody.StatusCode) {
-			err := errors.New(http.StatusText(httpBody.StatusCode))
-			r.logger.Error(err, http.StatusText(httpBody.StatusCode))
-			return ctrl.Result{}, err
-		}
-		em = cloud.Convert(httpBody.Body, &LicenseMonitorRes)
-		if em != nil {
-			r.logger.Error(em.Concat(": "), "failed to convert to cloud.License")
-			return ctrl.Result{}, em.Concat(": ")
-		}
-		r.MonitorCache = LicenseMonitorRes
+		return ctrl.Result{}, err
 	}
-	r.logger.Info("Start to initiate the delivery process")
-
-	switch LicenseMonitorRes.LicensePolicy {
-	case cloud.Keep:
-		break
-	default:
-		{
-			secret.Data["token"] = []byte(LicenseMonitorRes.Token)
-			secret.Data["key"] = []byte(LicenseMonitorRes.PublicKey)
-			if err := r.Client.Update(ctx, &secret); err != nil {
-				r.needMonitor = false
-				r.logger.Error(err, "failed to update secret")
-				return ctrl.Result{}, err
-			}
-			if em := util.SubmitLicense(ctx, r.Client, secret, time.Now().Add(time.Minute*5).Unix()); em != nil {
-				r.needMonitor = false
-				r.logger.Error(em.Concat(": "), "failed to submit new license when check license")
-				return ctrl.Result{}, em.Concat(": ")
-			}
-			util.SubmitNotification(ctx, r.Client, r.logger, r.Users, cloud.AdmPrefix, LicenseMonitorRes.Description)
-		}
+	err = r.Client.Update(ctx, &account)
+	if err != nil {
+		r.logger.Error(err, "Recharge Failed", "namespace:", req.Namespace, "name:", req.Name)
+		return ctrl.Result{}, err
 	}
-	r.logger.Info("Success to complete the delivery process")
-	r.needMonitor = true
-	return ctrl.Result{RequeueAfter: time.Second * 60}, nil
+	if pack, _ := cloud.NewNotificationPackage(cloud.MessageForLicense, cloud.From, "Recharge Failed"); err != nil {
+		r.logger.Error(err, "NewNotificationPackage", "namespace:", req.Namespace, "name:", req.Name)
+	} else {
+		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+	}
+	return ctrl.Result{}, err
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	r.configPath = util.ConfigPath
 	r.logger = ctrl.Log.WithName("LicenseReconcile")
 	r.Users = cloud.UserCategory{}
 	r.needMonitor = true
 
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
-		return object.GetName() == cloud.ClientStartName &&
-			object.GetNamespace() == cloud.Namespace &&
+		return object.GetName() == cloud.LicenseName &&
 			object.GetLabels() != nil &&
-			object.GetLabels()["isRead"] == "false"
+			object.GetLabels()[cloud.IsRead] == cloud.FALSE
 	})
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cloudv1.CloudClient{}, builder.WithPredicates(Predicate)).

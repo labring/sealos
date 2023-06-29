@@ -35,10 +35,9 @@ import (
 // CloudClientReconciler reconciles a CloudClient object
 type CloudClientReconciler struct {
 	client.Client
-	Scheme     *runtime.Scheme
-	Users      cloud.UserCategory
-	logger     logr.Logger
-	configPath string
+	Scheme *runtime.Scheme
+	Users  cloud.UserCategory
+	logger logr.Logger
 }
 
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=cloudclients,verbs=get;list;watch;create;update;patch;delete
@@ -62,25 +61,32 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		r.logger.Error(err.Concat(": "), "failed to get users info")
 		return ctrl.Result{}, err.Concat(": ")
 	}
-	var clusterSecret corev1.Secret
-	var config, err = util.ReadConfigFile(r.configPath, r.logger)
+	var secret corev1.Secret
+	var configMap corev1.ConfigMap
+
+	r.logger.Info("Try to get the cloud secret resource...")
+	resource1 := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
+	resource2 := util.NewImportanctResource(&configMap, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.ConfigName})
+	if em := util.GetImportantResource(ctx, r.Client, &resource1); em != nil {
+		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.Secret")
+		return ctrl.Result{}, em.Concat(": ")
+	}
+	if em := util.GetImportantResource(ctx, r.Client, &resource2); em != nil {
+		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.ConfigMap")
+		return ctrl.Result{}, em.Concat(": ")
+	}
+	var config, err = util.ReadConfigFromConfigMap(cloud.ConfigName, &configMap)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	r.logger.Info("Try to get the cloud secret resource...")
-	resource := util.NewImportanctResource(&clusterSecret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
-	if em := util.GetImportantResource(ctx, r.Client, &resource); em != nil {
-		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.Secret")
-		return ctrl.Result{}, em.Concat(": ")
-	}
-	if value, ok := clusterSecret.Labels["registered"]; ok && value == "true" {
+	if value, ok := secret.Labels["registered"]; ok && value == cloud.TRUE {
 		r.logger.Info("Cluster has registered...")
 	} else {
 		r.logger.Info("Try to register and start the cloud module...")
 	}
 
-	rasd := util.NewRegisterAndStartData(ctx, r.Client, &clusterSecret, r.Users, config, r.logger)
+	rasd := util.NewRegisterAndStartData(ctx, r.Client, &secret, r.Users, config, r.logger)
 	em := util.RegisterAndStart(rasd)
 	if em != nil {
 		r.logger.Error(em.Concat(": "), "failed to register and start")
@@ -92,7 +98,6 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *CloudClientReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	r.configPath = util.ConfigPath
 	r.Users = cloud.UserCategory{}
 	r.logger = ctrl.Log.WithName("CloudClientReconcile")
 
@@ -100,7 +105,8 @@ func (r *CloudClientReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	namespaceFilter := cloud.Namespace
 	Predicates := predicate.NewPredicateFuncs(func(obj client.Object) bool {
 		return obj.GetName() == nameFilter &&
-			obj.GetNamespace() == namespaceFilter
+			obj.GetNamespace() == namespaceFilter &&
+			obj.GetLabels()[cloud.ExternalNetworkAccessLabel] == cloud.Enabled
 	})
 
 	return ctrl.NewControllerManagedBy(mgr).

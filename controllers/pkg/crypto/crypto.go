@@ -17,16 +17,73 @@ limitations under the License.
 package crypto
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"errors"
+	"io"
 
 	jwt "github.com/golang-jwt/jwt/v4"
 	v1 "github.com/labring/sealos/controllers/cloud/api/v1"
 )
 
-//const field = "amt"
+var encryptionKey = []byte("0123456789ABCDEF0123456789ABCDEF")
+
+// Encrypt encrypts the given plaintext using AES-GCM.
+func Encrypt(plaintext []byte) (string, error) {
+	block, err := aes.NewCipher(encryptionKey)
+	if err != nil {
+		return "", err
+	}
+
+	nonce := make([]byte, 12)
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", err
+	}
+
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+
+	ciphertext := aesgcm.Seal(nil, nonce, plaintext, nil)
+	return base64.StdEncoding.EncodeToString(append(nonce, ciphertext...)), nil
+}
+
+// Decrypt decrypts the given ciphertext using AES-GCM.
+func Decrypt(ciphertextBase64 string) ([]byte, error) {
+	ciphertext, err := base64.StdEncoding.DecodeString(ciphertextBase64)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(ciphertext) < 12 {
+		return nil, errors.New("ciphertext too short")
+	}
+
+	block, err := aes.NewCipher(encryptionKey)
+	if err != nil {
+		return nil, err
+	}
+
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+
+	nonce := ciphertext[:12]
+	ciphertext = ciphertext[12:]
+	plaintext, err := aesgcm.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return plaintext, nil
+}
 
 func IsLicenseValid(license v1.License) (map[string]interface{}, bool) {
 	publicKey, err := parseRSAPublicKeyFromPEM(license.Spec.Key)

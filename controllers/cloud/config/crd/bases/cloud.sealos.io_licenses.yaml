@@ -39,6 +39,8 @@ spec:
                 type: string
               token:
                 type: string
+              uid:
+                type: string
             type: object
           status:
             description: LicenseStatus defines the observed state of License

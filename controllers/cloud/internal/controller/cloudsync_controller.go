@@ -41,8 +41,6 @@ type CloudSyncReconciler struct {
 	logger    logr.Logger
 	needSync  bool
 	syncCache cloud.SyncResponse
-
-	configPath string
 }
 
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=cloudsyncs,verbs=get;list;watch;create;update;patch;delete
@@ -66,27 +64,26 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	var sync cloud.SyncRequest
 	var resp cloud.SyncResponse
 	var configmap corev1.ConfigMap
-	r.logger.Info("Start to get the CloudSync URL...")
-	config, err = util.ReadConfigFile(r.configPath, r.logger)
-	if err != nil {
-		r.logger.Error(err, "failed to read config")
-		return ctrl.Result{}, err
-	}
-	url := config.CloudSyncURL
+
 	r.logger.Info("Start to get resources that need sync...")
 	resource1 := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
 	resource2 := util.NewImportanctResource(&configmap, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.ConfigName})
 	em := util.GetImportantResource(ctx, r.Client, &resource1)
 	if em != nil {
-		r.logger.Error(em.Concat(": "), "failed to get resource secret")
+		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.Secret")
 		return ctrl.Result{}, em.Concat(": ")
 	}
 	em = util.GetImportantResource(ctx, r.Client, &resource2)
 	if em != nil {
-		r.logger.Error(em.Concat(": "), "failed to get resource configmap")
+		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.ConfigMap")
 		return ctrl.Result{}, em.Concat(": ")
 	}
-
+	config, err = util.ReadConfigFromConfigMap(cloud.ConfigName, &configmap)
+	if err != nil {
+		r.logger.Error(err, "failed to read config")
+		return ctrl.Result{}, err
+	}
+	url := config.CloudSyncURL
 	sync.UID = string(secret.Data["uid"])
 	if r.needSync {
 		r.logger.Info("Start to communicate with cloud...")
@@ -121,14 +118,14 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *CloudSyncReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	r.configPath = util.ConfigPath
 	r.logger = ctrl.Log.WithName("CloudSyncReconcile")
 	r.needSync = true
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
 		return object.GetName() == cloud.ClientStartName &&
 			object.GetNamespace() == cloud.Namespace &&
 			object.GetLabels() != nil &&
-			object.GetLabels()["isRead"] == util.FALSE
+			object.GetLabels()[cloud.IsRead] == cloud.FALSE &&
+			object.GetLabels()[cloud.ExternalNetworkAccessLabel] == cloud.Enabled
 	})
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cloudv1.CloudClient{}, builder.WithPredicates(Predicate)).

@@ -18,10 +18,12 @@ package manager
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"time"
 
 	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -51,6 +53,26 @@ func (nm *NotificationManager) InitTime() {
 	nm.TimeLastPull = startOfDay.Unix()
 }
 
+type NotificationPackage struct {
+	Name    string
+	Title   string
+	From    string
+	Message string
+}
+
+func NewNotificationPackage(title string, from string, message string) NotificationPackage {
+	id, _ := gonanoid.New(12)
+	if id == "" {
+		id = strconv.Itoa(int(time.Now().Unix()))
+	}
+	return NotificationPackage{
+		Name:    id,
+		Title:   title,
+		From:    from,
+		Message: message,
+	}
+}
+
 type NotificationTask struct {
 	ctx               context.Context
 	client            cl.Client
@@ -65,6 +87,14 @@ func NewNotificationTask(ctx context.Context, client cl.Client, ns string, cache
 		Ns:                ns,
 		NotificationCache: cache,
 	}
+}
+
+func NotificationPackageToNotification(pack NotificationPackage) ntf.Notification {
+	var notification ntf.Notification
+	notification.Spec.From = pack.From
+	notification.Spec.Message = pack.Message
+	notification.Spec.Title = pack.Title
+	return notification
 }
 
 func (nt *NotificationTask) Run() error {

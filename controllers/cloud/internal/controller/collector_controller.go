@@ -40,9 +40,8 @@ import (
 // CollectorReconciler reconciles a Collector object
 type CollectorReconciler struct {
 	client.Client
-	Scheme     *runtime.Scheme
-	logger     logr.Logger
-	configPath string
+	Scheme *runtime.Scheme
+	logger logr.Logger
 }
 
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=collectors,verbs=get;list;watch;create;update;patch;delete
@@ -61,14 +60,27 @@ type CollectorReconciler struct {
 func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter CollectorReconcile", "namespace:", req.Namespace, "name", req.Name)
 
-	config, err := util.ReadConfigFile(r.configPath, r.logger)
+	var secret corev1.Secret
+	var configMap corev1.ConfigMap
+	resource1 := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
+	resource2 := util.NewImportanctResource(&configMap, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
+
+	em := util.GetImportantResource(ctx, r.Client, &resource1)
+	if em != nil {
+		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.Secret")
+		return ctrl.Result{}, em.Concat(": ")
+	}
+	em = util.GetImportantResource(ctx, r.Client, &resource2)
+	if em != nil {
+		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.ConfigMap")
+		return ctrl.Result{}, em.Concat(": ")
+	}
+
+	config, err := util.ReadConfigFromConfigMap(cloud.ConfigName, &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to read config")
 		return ctrl.Result{}, err
 	}
-
-	var secret corev1.Secret
-	resource := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
 
 	r.logger.Info("Start to get the node info of the cluster")
 	clusterResource := cloud.NewClusterResource()
@@ -104,7 +116,6 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	clusterResource.Memory = totalNodesResource.TotalMemory.String()
 	clusterResource.Disk = totalNodesResource.TotalPVCapacity.String()
 
-	util.GetImportantResource(ctx, r.Client, &resource)
 	collector := cloud.CollectorInfo{
 		UID:             string(secret.Data["uid"]),
 		InfoType:        cloud.ResourceOnCluster,
@@ -127,14 +138,13 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *CollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	r.configPath = util.ConfigPath
 	r.logger = ctrl.Log.WithName("CollectorReconcile")
 
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
 		return object.GetName() == cloud.ClientStartName &&
 			object.GetNamespace() == cloud.Namespace &&
 			object.GetLabels() != nil &&
-			object.GetLabels()["isRead"] == util.FALSE
+			object.GetLabels()[cloud.IsRead] == cloud.FALSE
 	})
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cloudv1.CloudClient{}, builder.WithPredicates(Predicate)).

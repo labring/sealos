@@ -19,9 +19,8 @@ package util
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
-	"os"
-	"strconv"
 	"sync"
 	"time"
 
@@ -36,24 +35,15 @@ import (
 	cl "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const ConfigPath = "/etc/config/config.json"
-
-const (
-	TRUE  = "true"
-	FALSE = "false"
-)
-
-func ReadConfigFile(filepath string, logger logr.Logger) (cloud.Config, error) {
-	data, err := os.ReadFile(filepath)
-	if err != nil {
-		logger.Error(err, "failed to read config file:")
+func ReadConfigFromConfigMap(expectName string, configMap *corev1.ConfigMap) (cloud.Config, error) {
+	if configMap.Name != expectName {
+		err := errors.New("not expected configmap")
 		return cloud.Config{}, err
 	}
 
 	var config cloud.Config
-	err = json.Unmarshal(data, &config)
+	err := json.Unmarshal([]byte(configMap.Data["config"]), &config)
 	if err != nil {
-		logger.Error(err, "failed to parse config file:")
 		return cloud.Config{}, err
 	}
 
@@ -130,13 +120,13 @@ func ResetUsageQuota(ctx context.Context, client cl.Client) error {
 		if license.Labels == nil {
 			license.Labels = make(map[string]string)
 		}
-		license.Labels["isDisabled"] = TRUE
+		license.Labels[cloud.IsDisabled] = cloud.TRUE
 		return client.Update(ctx, &license)
 	} else if apierrors.IsNotFound(err) {
 		license.Name = cloud.LicenseName
 		license.Namespace = cloud.Namespace
 		license.Labels = make(map[string]string)
-		license.Labels["isDisabled"] = TRUE
+		license.Labels[cloud.IsDisabled] = cloud.TRUE
 		return client.Create(ctx, &license)
 	}
 	return err
@@ -175,12 +165,13 @@ func RegisterAndStart(data RegisterAndStartData) *cloud.ErrorMgr {
 	if !ok {
 		return cloud.NewErrorMgr("RegisterAndStart", "the Yaml of cloud secret if error, less registered label")
 	}
-	if value != TRUE {
+	if value != cloud.TRUE {
 		em := data.Register()
 		if em != nil {
 			return cloud.LoadError("RegisterAndStart", em)
 		}
-		SubmitNotification(data.ctx, data.client, data.logger, data.Users, cloud.AdmPrefix, data.FreeLicense.Description)
+		pack := cloud.NewNotificationPackage(cloud.MessgaeForRegistration, cloud.From, data.FreeLicense.Description)
+		SubmitNotificationWithUserCategory(data.ctx, data.client, data.logger, data.Users, cloud.AdmPrefix, pack)
 	}
 	em := data.StartCloudModule()
 	if em != nil {
@@ -211,7 +202,7 @@ func (rd *RegisterAndStartData) Register() *cloud.ErrorMgr {
 	rd.clusterScret.Data["token"] = []byte(clusterInfo.License.Token)
 	rd.clusterScret.Data["key"] = []byte(clusterInfo.License.PublicKey)
 	rd.clusterScret.Data["uid"] = []byte(clusterInfo.UID)
-	rd.clusterScret.Labels["registered"] = TRUE
+	rd.clusterScret.Labels["registered"] = cloud.TRUE
 	// send a notification to cluster adm
 
 	err := rd.client.Update(rd.ctx, rd.clusterScret)
@@ -243,7 +234,7 @@ func (rd *RegisterAndStartData) startCloudClient() *cloud.ErrorMgr {
 	if err := rd.client.Get(rd.ctx, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.ClientStartName}, &startInstance); err != nil {
 		if apierrors.IsNotFound(err) {
 			startInstance.Labels = make(map[string]string)
-			startInstance.Labels["isRead"] = FALSE
+			startInstance.Labels["isRead"] = cloud.FALSE
 			if err := rd.client.Create(rd.ctx, &startInstance); err != nil {
 				return cloud.NewErrorMgr("startCloudClient", "client.Create", err.Error())
 			}
@@ -254,7 +245,7 @@ func (rd *RegisterAndStartData) startCloudClient() *cloud.ErrorMgr {
 		if startInstance.Labels == nil {
 			startInstance.Labels = make(map[string]string)
 		}
-		startInstance.Labels["isRead"] = FALSE
+		startInstance.Labels["isRead"] = cloud.FALSE
 		if err := rd.client.Update(rd.ctx, &startInstance); err != nil {
 			return cloud.NewErrorMgr("startCloudClient", "client.Update", err.Error())
 		}
@@ -263,20 +254,15 @@ func (rd *RegisterAndStartData) startCloudClient() *cloud.ErrorMgr {
 	if startInstance.Labels == nil {
 		startInstance.Labels = make(map[string]string)
 	}
-	startInstance.Labels["isRead"] = TRUE
+	startInstance.Labels["isRead"] = cloud.TRUE
 	if err := rd.client.Update(rd.ctx, &startInstance); err != nil {
 		return cloud.NewErrorMgr("startCloudClient", "client.Update", err.Error())
 	}
 	return nil
 }
 
-func SubmitNotification(ctx context.Context, client cl.Client, logger logr.Logger, users cloud.UserCategory, prefix string, message string) {
-	notification := ntf.Notification{}
-	notification.Name = prefix + strconv.Itoa(int(time.Now().Unix()))
-	notification.Spec.Message = message
-	notification.Spec.Title = "Registration successful, welcome!"
-	notification.Spec.From = "Sealos Cloud"
-	notification.Spec.Timestamp = time.Now().Unix()
+func SubmitNotificationWithUserCategory(ctx context.Context, client cl.Client, logger logr.Logger, users cloud.UserCategory, prefix string, pack cloud.NotificationPackage) {
+	notification := cloud.NotificationPackageToNotification(pack)
 	var wg sync.WaitGroup
 	errchan := make(chan error)
 	for ns := range users[prefix].Iter() {
@@ -291,6 +277,24 @@ func SubmitNotification(ctx context.Context, client cl.Client, logger logr.Logge
 	for err := range errchan {
 		if err != nil {
 			logger.Error(err, "Failed to deliver registration success.")
+		}
+	}
+}
+
+func SubmitNotificationWithUser(ctx context.Context, client cl.Client, logger logr.Logger, namespace string, pack cloud.NotificationPackage) {
+	notification := cloud.NotificationPackageToNotification(pack)
+	notificationTask := cloud.NewNotificationTask(ctx, client, namespace, []ntf.Notification{notification})
+	var wg sync.WaitGroup
+	errchan := make(chan error)
+	wg.Add(1)
+	go cloud.AsyncCloudTask(&wg, errchan, &notificationTask)
+	go func() {
+		wg.Wait()
+		close(errchan)
+	}()
+	for err := range errchan {
+		if err != nil {
+			logger.Error(err, "Failed to deliver notification success")
 		}
 	}
 }
@@ -311,7 +315,7 @@ func SubmitLicense(ctx context.Context, client cl.Client, cluster corev1.Secret,
 				if license.Labels == nil {
 					license.Labels = make(map[string]string)
 				}
-				license.Labels["isRead"] = FALSE
+				license.Labels["isRead"] = cloud.FALSE
 				err := client.Create(ctx, &license)
 				if err == nil {
 					return nil
@@ -325,7 +329,7 @@ func SubmitLicense(ctx context.Context, client cl.Client, cluster corev1.Secret,
 			if license.Labels == nil {
 				license.Labels = make(map[string]string)
 			}
-			license.Labels["isRead"] = FALSE
+			license.Labels["isRead"] = cloud.FALSE
 			err := client.Update(ctx, &license)
 			if err == nil {
 				return nil

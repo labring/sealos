@@ -41,4 +41,9 @@ resources:
   kind: CloudClient
   path: github.com/labring/sealos/controllers/cloud/api/v1
   version: v1
+- controller: true
+  domain: sealos.io
+  group: cloud
+  kind: LicenseMonitor
+  version: v1
 version: "3"

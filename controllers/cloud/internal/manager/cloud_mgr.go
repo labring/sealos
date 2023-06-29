@@ -27,7 +27,7 @@ import (
 
 const (
 	Namespace       string = "cloud-system"
-	LicenseName     string = "cloud-license"
+	LicenseName     string = "license"
 	SecretName      string = "cloud-secret"
 	ConfigName      string = "cloud-config"
 	CloudStartName  string = "cloud-start"
@@ -39,6 +39,22 @@ const (
 	ContentTypePlain = "text/plain"
 	ContentTypeHTML  = "text/html"
 	ContentTypeJSON  = "application/json"
+)
+
+const (
+	ExternalNetworkAccessLabel = "external-network-access"
+	IsDisabled                 = "isDisabled"
+	IsRead                     = "isRead"
+	Enabled                    = "enabled"
+	Disabled                   = "disabled"
+	TRUE                       = "true"
+	FALSE                      = "false"
+)
+
+const (
+	From                   = "Sealos Cloud"
+	MessgaeForRegistration = "Registration successful, welcome!"
+	MessageForLicense      = "License Renewal Successful"
 )
 
 type PolicyAction string
