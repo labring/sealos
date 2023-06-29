@@ -5,7 +5,7 @@ metadata:
   namespace: dbprovider-frontend
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   name: cluster-version-reader
   namespace: dbprovider-frontend
@@ -15,13 +15,13 @@ rules:
     verbs: [ "get", "watch", "list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
   name: cluster-version-reader-rolebinding
   namespace: dbprovider-frontend
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
+  kind: ClusterRole
   name: cluster-version-reader
 subjects:
   - kind: ServiceAccount
