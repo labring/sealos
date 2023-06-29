@@ -63,5 +63,7 @@ export type TgithubUser = {
   updated_at: string,
 }
 // if default, uid
-export const PROVIDERS = ['github', 'wechat', 'phone', 'uid'] as const
+export const PROVIDERS = ['github', 'wechat', 'phone', 'uid', 'password_user'] as const
 export type Provider = typeof PROVIDERS[number]
+
+export type TUserExist = {user: string, exist: boolean}

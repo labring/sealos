@@ -261,3 +261,8 @@ export async function GetClusterObject(
     name // resource name
   );
 }
+export async function GetConfigMap(kc: k8s.KubeConfig, namespace: string, name: string) {
+  const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+  const response = await k8sApi.readNamespacedConfigMap(name, namespace);
+  return response;
+}

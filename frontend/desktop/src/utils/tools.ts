@@ -1,4 +1,3 @@
-import { PROVIDERS, Provider } from '@/types/user';
 import dayjs from 'dayjs';
 
 export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
@@ -39,3 +38,12 @@ export async function getBase64FromRemote(url: string) {
   }
 }
 
+export const getFavorable =
+  (steps: number[] = [], ratios: number[] = []) =>
+  (amount: number) => {
+    let ratio = 0;
+
+    const step = [...steps].reverse().findIndex((step) => amount >= step);
+    if (ratios.length > step && step > -1) ratio = [...ratios].reverse()[step];
+    return Math.floor((amount * ratio) / 100);
+  };

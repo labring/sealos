@@ -16,6 +16,7 @@ interface IMoreAppsContext {
 export const MoreAppsContext = createContext<IMoreAppsContext | null>(null);
 export default function Home() {
   const router = useRouter();
+  const isUpdate = useSessionStore(s=>s.newUser)
   const { colorMode, toggleColorMode } = useColorMode();
   const isUserLogin = useSessionStore((s) => s.isUserLogin);
   const init = useAppStore((state) => state.init);
@@ -25,12 +26,12 @@ export default function Home() {
   const [showMoreApps, setShowMoreApps] = useState(false);
   useEffect(() => {
     const is_login = isUserLogin();
-    if (!is_login && router.pathname !== destination && router.asPath !== destination) {
+    if (!isUpdate || !is_login && router.pathname !== destination && router.asPath !== destination) {
       router.replace(destination);
     } else {
       init();
     }
-  }, [router, isUserLogin, init]);
+  }, [router, isUserLogin, init, isUpdate]);
 
   return (
     <Layout>

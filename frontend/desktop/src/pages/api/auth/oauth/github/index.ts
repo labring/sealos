@@ -6,8 +6,12 @@ import { TgithubToken, TgithubUser } from "@/types/user";
 
 import { Session } from "@/types/session";
 import { getOauthRes } from "@/services/backend/oauth";
+import { enableGithub } from "@/services/enable";
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
+    if (!enableGithub()) {
+      throw new Error('github clinet is not defined')
+    }
     const { code } = req.body;
     const url = ` https://github.com/login/oauth/access_token?client_id=${clientId}&client_secret=${clientSecret}&code=${code}`;
     const __data = (await (await fetch(url, { method: 'POST', headers: { Accept: 'application/json' } })).json()) as TgithubToken
@@ -26,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         Authorization: `Bearer ${access_token}`,
       }
     })).json()) as TgithubUser;
-    const data = await getOauthRes({provider: 'github', id: "" + id, name, avatar_url})
+    const data = await getOauthRes({ provider: 'github', id: "" + id, name, avatar_url })
     return jsonRes<Session>(res, {
       data,
       code: 200,
