@@ -28,7 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/go-logr/logr"
-	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
 	"github.com/labring/sealos/controllers/cloud/internal/controller/util"
 	cloud "github.com/labring/sealos/controllers/cloud/internal/manager"
@@ -63,44 +62,18 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	var license cloudv1.License
 	err := r.Client.Get(ctx, types.NamespacedName{Namespace: req.Namespace, Name: req.Name}, &license)
 	if err != nil {
-		r.logger.Error(err, "failed to get license cr", "namespace:", req.Namespace, "name:", req.Name)
+		r.logger.Error(err, "namespace:", req.Namespace, "name:", req.Name)
 		return ctrl.Result{}, err
 	}
 	payload, ok := crypto.IsLicenseValid(license)
 	if !ok {
 		err := errors.New("error license")
-		r.logger.Error(err, "license invalid", "namespace:", req.Namespace, "name:", req.Name)
-		pack := cloud.NewNotificationPackage(cloud.MessageForLicense, cloud.From, "Your license is invalid")
-		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
-		return ctrl.Result{}, err
+		r.logger.Error(err, "namespace:", req.Namespace, "name:", req.Name)
+		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Name, req.Namespace, "your license is valid")
+
 	}
-	var account accountv1.Account
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: "account-system", Name: license.Spec.UID}, &account)
-	if err != nil {
-		r.logger.Error(err, "failed to get account cr", "namespace:", req.Namespace, "name:", req.Name)
-		return ctrl.Result{}, err
-	}
-	account.Status.EncryptBalance, err := rechargeBalance(account.Status.EncryptBalance, payload["amt"])
-	if err != nil {
-		r.logger.Error(err, "Recharge Failed", "namespace:", req.Namespace, "name:", req.Name)
-		if pack, err := cloud.NewNotificationPackage(cloud.MessageForLicense, cloud.From, "Recharge Failed"); err != nil {
-			r.logger.Error(err, "NewNotificationPackage", "namespace:", req.Namespace, "name:", req.Name)
-		} else {
-			util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
-		}
-		return ctrl.Result{}, err
-	}
-	err = r.Client.Update(ctx, &account)
-	if err != nil {
-		r.logger.Error(err, "Recharge Failed", "namespace:", req.Namespace, "name:", req.Name)
-		return ctrl.Result{}, err
-	}
-	if pack, _ := cloud.NewNotificationPackage(cloud.MessageForLicense, cloud.From, "Recharge Failed"); err != nil {
-		r.logger.Error(err, "NewNotificationPackage", "namespace:", req.Namespace, "name:", req.Name)
-	} else {
-		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
-	}
-	return ctrl.Result{}, err
+
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

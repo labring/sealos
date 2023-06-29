@@ -51,12 +51,6 @@ const (
 	FALSE                      = "false"
 )
 
-const (
-	From                   = "Sealos Cloud"
-	MessgaeForRegistration = "Registration successful, welcome!"
-	MessageForLicense      = "License Renewal Successful"
-)
-
 type PolicyAction string
 
 type NotificationRequest struct {

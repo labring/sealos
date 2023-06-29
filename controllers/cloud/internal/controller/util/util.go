@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -170,8 +171,7 @@ func RegisterAndStart(data RegisterAndStartData) *cloud.ErrorMgr {
 		if em != nil {
 			return cloud.LoadError("RegisterAndStart", em)
 		}
-		pack := cloud.NewNotificationPackage(cloud.MessgaeForRegistration, cloud.From, data.FreeLicense.Description)
-		SubmitNotificationWithUserCategory(data.ctx, data.client, data.logger, data.Users, cloud.AdmPrefix, pack)
+		SubmitNotificationWithUserCategory(data.ctx, data.client, data.logger, data.Users, cloud.AdmPrefix, data.FreeLicense.Description)
 	}
 	em := data.StartCloudModule()
 	if em != nil {
@@ -261,8 +261,13 @@ func (rd *RegisterAndStartData) startCloudClient() *cloud.ErrorMgr {
 	return nil
 }
 
-func SubmitNotificationWithUserCategory(ctx context.Context, client cl.Client, logger logr.Logger, users cloud.UserCategory, prefix string, pack cloud.NotificationPackage) {
-	notification := cloud.NotificationPackageToNotification(pack)
+func SubmitNotificationWithUserCategory(ctx context.Context, client cl.Client, logger logr.Logger, users cloud.UserCategory, prefix string, message string) {
+	notification := ntf.Notification{}
+	notification.Name = prefix + strconv.Itoa(int(time.Now().Unix()))
+	notification.Spec.Message = message
+	notification.Spec.Title = "Registration successful, welcome!"
+	notification.Spec.From = "Sealos Cloud"
+	notification.Spec.Timestamp = time.Now().Unix()
 	var wg sync.WaitGroup
 	errchan := make(chan error)
 	for ns := range users[prefix].Iter() {
@@ -281,22 +286,14 @@ func SubmitNotificationWithUserCategory(ctx context.Context, client cl.Client, l
 	}
 }
 
-func SubmitNotificationWithUser(ctx context.Context, client cl.Client, logger logr.Logger, namespace string, pack cloud.NotificationPackage) {
-	notification := cloud.NotificationPackageToNotification(pack)
+func SubmitNotificationWithUser(ctx context.Context, client cl.Client, logger logr.Logger, name string, namespace string, message string) {
+	notification := ntf.Notification{}
+	notification.Name = name + "-" + "license" + "-" + strconv.Itoa(int(time.Now().Unix()))
+	notification.Spec.Message = message
+	notification.Spec.Title = "Registration successful, welcome!"
+	notification.Spec.From = "Sealos Cloud"
+	notification.Spec.Timestamp = time.Now().Unix()
 	notificationTask := cloud.NewNotificationTask(ctx, client, namespace, []ntf.Notification{notification})
-	var wg sync.WaitGroup
-	errchan := make(chan error)
-	wg.Add(1)
-	go cloud.AsyncCloudTask(&wg, errchan, &notificationTask)
-	go func() {
-		wg.Wait()
-		close(errchan)
-	}()
-	for err := range errchan {
-		if err != nil {
-			logger.Error(err, "Failed to deliver notification success")
-		}
-	}
 }
 
 func SubmitLicense(ctx context.Context, client cl.Client, cluster corev1.Secret, expire int64) *cloud.ErrorMgr {

@@ -137,7 +137,7 @@ func (r *LicenseMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				r.logger.Error(em.Concat(": "), "failed to submit new license when check license")
 				return ctrl.Result{}, em.Concat(": ")
 			}
-			//util.SubmitNotificationWithUserCategory(ctx, r.Client, r.logger, r.Users, cloud.AdmPrefix, LicenseMonitorRes.Description)
+			util.SubmitNotificationWithUserCategory(ctx, r.Client, r.logger, r.Users, cloud.AdmPrefix, LicenseMonitorRes.Description)
 		}
 	}
 	r.logger.Info("Success to complete the delivery process")
