@@ -18,12 +18,13 @@ package manager
 
 import (
 	"context"
+	"crypto/rand"
+	"io"
 	"strconv"
 	"strings"
 	"time"
 
 	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
-	gonanoid "github.com/matoous/go-nanoid/v2"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -55,15 +56,31 @@ func (nm *NotificationManager) InitTime() {
 
 type NotificationPackage struct {
 	Name    string
-	Title   string
-	From    string
-	Message string
+	Title   Title
+	From    Source
+	Message Message
 }
 
-func NewNotificationPackage(title string, from string, message string) NotificationPackage {
-	id, _ := gonanoid.New(12)
-	if id == "" {
-		id = strconv.Itoa(int(time.Now().Unix()))
+const (
+	idLength    = 12
+	letterBytes = "abcdefghijklmnopqrstuvwxyz0123456789"
+)
+
+func randStringBytes(n int) (string, error) {
+	bytes := make([]byte, n)
+	if _, err := io.ReadFull(rand.Reader, bytes); err != nil {
+		return "", err
+	}
+	for i, b := range bytes {
+		bytes[i] = letterBytes[b%byte(len(letterBytes))]
+	}
+	return string(bytes), nil
+}
+
+func NewNotificationPackage(title Title, from Source, message Message) NotificationPackage {
+	id, err := randStringBytes(idLength)
+	if err != nil || id == "" {
+		id = strings.ToLower(strconv.Itoa(int(time.Now().Unix())))
 	}
 	return NotificationPackage{
 		Name:    id,
@@ -76,30 +93,32 @@ func NewNotificationPackage(title string, from string, message string) Notificat
 type NotificationTask struct {
 	ctx               context.Context
 	client            cl.Client
-	Ns                string
+	Target            string
 	NotificationCache []ntf.Notification
 }
 
-func NewNotificationTask(ctx context.Context, client cl.Client, ns string, cache []ntf.Notification) NotificationTask {
+func NewNotificationTask(ctx context.Context, client cl.Client, target string, cache []ntf.Notification) NotificationTask {
 	return NotificationTask{
 		ctx:               ctx,
 		client:            client,
-		Ns:                ns,
+		Target:            target,
 		NotificationCache: cache,
 	}
 }
 
 func NotificationPackageToNotification(pack NotificationPackage) ntf.Notification {
 	var notification ntf.Notification
-	notification.Spec.From = pack.From
-	notification.Spec.Message = pack.Message
-	notification.Spec.Title = pack.Title
+	notification.Name = pack.Name
+	notification.Spec.Timestamp = time.Now().Unix()
+	notification.Spec.From = string(pack.From)
+	notification.Spec.Message = string(pack.Message)
+	notification.Spec.Title = string(pack.Title)
 	return notification
 }
 
 func (nt *NotificationTask) Run() error {
 	for _, data := range nt.NotificationCache {
-		data.Namespace = nt.Ns
+		data.Namespace = nt.Target
 		var tmp ntf.Notification
 		err := nt.client.Get(nt.ctx, types.NamespacedName{Namespace: data.Namespace, Name: data.Name}, &tmp)
 		if err == nil {

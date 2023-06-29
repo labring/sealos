@@ -68,29 +68,29 @@ func (r *LicenseMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	if em := r.Users.GetNameSpace(ctx, r.Client); em != nil {
 		err := em.Concat(": ")
 		r.logger.Error(err, "failed to get users info")
-		return ctrl.Result{}, err
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	}
 	r.logger.Info("Attempting to retrieve license-related resources...")
-	resource1 := util.NewImportanctResource(&license, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.LicenseName})
-	resource2 := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
+	resource1 := util.NewImportanctResource(&license, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.LicenseName)})
+	resource2 := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)})
 	em := util.GetImportantResource(ctx, r.Client, &resource2)
 	if em != nil {
 		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.Secret")
-		return ctrl.Result{}, em.Concat(": ")
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	}
 	em = util.GetImportantResource(ctx, r.Client, &resource1)
 	if em != nil {
 		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.ConfigMap")
-		return ctrl.Result{}, em.Concat(": ")
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	}
-	config, err := util.ReadConfigFromConfigMap(cloud.ConfigName, &configMap)
+	config, err := util.ReadConfigFromConfigMap(string(cloud.ConfigName), &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to read config")
-		return ctrl.Result{}, err
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	}
 	if err != nil {
 		r.logger.Error(err, "util.ReadConfigFile, failed to read config")
-		return ctrl.Result{}, err
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	}
 	r.logger.Info("Successfully retrieved license-related resources...")
 
@@ -99,22 +99,22 @@ func (r *LicenseMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		licenseMonitorData, em = cloud.NewLicenseMonitorRequest(secret)
 		if em != nil {
 			r.logger.Error(em.Concat(": "), "failed to generate License Monitor")
-			return ctrl.Result{}, em.Concat(": ")
+			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 		}
 		httpBody, em := cloud.CommunicateWithCloud("POST", config.LicenseMonitorURL, licenseMonitorData)
 		if em != nil {
 			r.logger.Error(em.Concat(": "), "failed to communicate with cloud")
-			return ctrl.Result{}, em.Concat(": ")
+			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 		}
 		if !cloud.IsSuccessfulStatusCode(httpBody.StatusCode) {
 			err := errors.New(http.StatusText(httpBody.StatusCode))
 			r.logger.Error(err, http.StatusText(httpBody.StatusCode))
-			return ctrl.Result{}, err
+			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 		}
 		em = cloud.Convert(httpBody.Body, &LicenseMonitorRes)
 		if em != nil {
 			r.logger.Error(em.Concat(": "), "failed to convert to cloud.License")
-			return ctrl.Result{}, em.Concat(": ")
+			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 		}
 		r.MonitorCache = LicenseMonitorRes
 	}
@@ -132,7 +132,7 @@ func (r *LicenseMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				r.logger.Error(err, "failed to update secret")
 				return ctrl.Result{}, err
 			}
-			if em := util.SubmitLicense(ctx, r.Client, secret, time.Now().Add(time.Minute*5).Unix()); em != nil {
+			if em := util.SubmitLicense(ctx, r.Client, secret); em != nil {
 				r.needMonitor = false
 				r.logger.Error(em.Concat(": "), "failed to submit new license when check license")
 				return ctrl.Result{}, em.Concat(": ")
@@ -152,11 +152,11 @@ func (r *LicenseMonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.needMonitor = true
 
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
-		return object.GetName() == cloud.ClientStartName &&
-			object.GetNamespace() == cloud.Namespace &&
+		return object.GetName() == string(cloud.ClientStartName) &&
+			object.GetNamespace() == string(cloud.Namespace) &&
 			object.GetLabels() != nil &&
-			object.GetLabels()[cloud.IsRead] == cloud.TRUE &&
-			object.GetLabels()[cloud.ExternalNetworkAccessLabel] == cloud.Enabled
+			object.GetLabels()[string(cloud.IsRead)] == cloud.TRUE &&
+			object.GetLabels()[string(cloud.ExternalNetworkAccessLabel)] == string(cloud.Enabled)
 	})
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cloudv1.CloudClient{}, builder.WithPredicates(Predicate)).

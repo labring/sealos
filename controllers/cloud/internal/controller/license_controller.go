@@ -19,7 +19,10 @@ package controller
 import (
 	"context"
 	"errors"
+	"strconv"
+	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -28,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/go-logr/logr"
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
 	"github.com/labring/sealos/controllers/cloud/internal/controller/util"
 	cloud "github.com/labring/sealos/controllers/cloud/internal/manager"
@@ -37,13 +41,16 @@ import (
 // LicenseReconciler reconciles a License object
 type LicenseReconciler struct {
 	client.Client
-	Scheme       *runtime.Scheme
-	logger       logr.Logger
-	MonitorCache cloud.LicenseMonitorResult
-	Users        cloud.UserCategory
-	needMonitor  bool
+	Scheme  *runtime.Scheme
+	logger  logr.Logger
+	Retries int
 }
 
+//+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=account.sealos.io,resources=accounts/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=notification.sealos.io,resources=notifications,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=licenses,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=licenses/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=licenses/finalizers,verbs=update
@@ -59,35 +66,112 @@ type LicenseReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter LicenseReconcile", "namespace:", req.Namespace, "name", req.Name)
+	if r.Retries > 5 {
+		return ctrl.Result{}, nil
+	}
+	r.Retries++
+	r.logger.Info("Start to get license...")
 	var license cloudv1.License
 	err := r.Client.Get(ctx, types.NamespacedName{Namespace: req.Namespace, Name: req.Name}, &license)
 	if err != nil {
-		r.logger.Error(err, "namespace:", req.Namespace, "name:", req.Name)
+		r.logger.Error(err, "failed to get license", "namespace:", req.Namespace, "name:", req.Name)
 		return ctrl.Result{}, err
 	}
+	r.logger.Info("Start to check license...")
 	payload, ok := crypto.IsLicenseValid(license)
 	if !ok {
 		err := errors.New("error license")
-		r.logger.Error(err, "namespace:", req.Namespace, "name:", req.Name)
-		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Name, req.Namespace, "your license is valid")
-
+		r.logger.Error(err, "license invalid", "namespace:", req.Namespace, "name:", req.Name)
+		pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.InvalidLicenseContent)
+		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+	}
+	r.logger.Info("Start to recharge...")
+	amount, err := util.InterfaceToInt64(payload["amt"])
+	if err != nil {
+		r.logger.Error(err, "license invalid", "namespace:", req.Namespace, "name:", req.Name)
+		pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.InvalidLicenseContent)
+		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+		return ctrl.Result{}, err
+	}
+	t, err := util.InterfaceToInt64(payload["iat"])
+	if err != nil {
+		r.logger.Error(err, "license invalid", "namespace:", req.Namespace, "name:", req.Name)
+		pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.InvalidLicenseContent)
+		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+		return ctrl.Result{}, err
+	}
+	if t < time.Now().Add(-24*time.Hour).Unix() {
+		r.logger.Error(err, "license invalid", "namespace:", req.Namespace, "name:", req.Name)
+		pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.LicenseTimeOutContent)
+		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+		return ctrl.Result{}, err
+	}
+	var licenseHistory corev1.ConfigMap
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.LicenseHistory)}, &licenseHistory)
+	if err != nil {
+		r.logger.Error(err, "failed to get license-history configmap", "namespace:", req.Namespace, "name:", req.Name)
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+	}
+	ok = util.CheckLicenseExists(&licenseHistory, license.Spec.Token)
+	if ok {
+		r.logger.Error(err, err.Error())
+		pack := cloud.NewNotificationPackage(cloud.DuplicateLicenseTitle, cloud.SEALOS, cloud.DuplicateLicenseContent)
+		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+		return ctrl.Result{}, err
 	}
 
+	var account accountv1.Account
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: "sealos-system", Name: license.Spec.UID}, &account)
+	if err != nil {
+		r.logger.Error(err, "failed to get account cr", "namespace:", req.Namespace, "name:", req.Name)
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+	}
+	charge := amount * cloud.BaseCount
+	account.Status.Balance += charge
+	encryptBalance := account.Status.EncryptBalance
+	encryptBalance, err = crypto.RechargeBalance(encryptBalance, charge)
+	if err != nil {
+		r.logger.Error(err, "Recharge Failed", "namespace:", req.Namespace, "name:", req.Name)
+		pack := cloud.NewNotificationPackage(cloud.RechargeFailedTitle, cloud.SEALOS, cloud.RechargeFailedContent)
+		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+	}
+	account.Status.EncryptBalance = encryptBalance
+	err = r.Client.Status().Update(ctx, &account)
+	if err != nil {
+		r.logger.Error(err, "Recharge Failed", "namespace:", req.Namespace, "name:", req.Name)
+		pack := cloud.NewNotificationPackage(cloud.RechargeFailedTitle, cloud.SEALOS, cloud.RechargeFailedContent)
+		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+	}
+
+	suffix := util.GetNextLicenseKeySuffix(licenseHistory.Data)
+	newLicenseKeyName := "license-" + strconv.Itoa(suffix)
+	if licenseHistory.Data == nil {
+		licenseHistory.Data = make(map[string]string)
+	}
+	licenseHistory.Data[newLicenseKeyName] = license.Spec.Token
+	err = r.Client.Update(ctx, &licenseHistory)
+	if err != nil {
+		r.logger.Error(err, "failed to store license")
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+	}
+	r.logger.Info("Success!")
+	pack := cloud.NewNotificationPackage(cloud.ValidLicenseTitle, cloud.SEALOS, cloud.ValidLicenseContent)
+	util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+	r.Retries = 0
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("LicenseReconcile")
-	r.Users = cloud.UserCategory{}
-	r.needMonitor = true
-
+	r.Retries = 0
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
-		return object.GetName() == cloud.LicenseName &&
-			object.GetLabels() != nil &&
-			object.GetLabels()[cloud.IsRead] == cloud.FALSE
+		return object.GetName() == string(cloud.LicenseName)
 	})
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&cloudv1.CloudClient{}, builder.WithPredicates(Predicate)).
+		For(&cloudv1.License{}, builder.WithPredicates(Predicate)).
 		Complete(r)
 }

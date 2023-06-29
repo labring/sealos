@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
 	"github.com/labring/sealos/controllers/cloud/internal/controller"
 	//+kubebuilder:scaffold:imports
@@ -47,6 +48,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(ntf.AddToScheme(scheme))
 	utilruntime.Must(cloudv1.AddToScheme(scheme))
+	utilruntime.Must(accountv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

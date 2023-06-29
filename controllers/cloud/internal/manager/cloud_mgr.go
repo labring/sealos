@@ -25,13 +25,24 @@ import (
 	"sync"
 )
 
+type Date string
+type Label string
+type Message string
+type Title string
+type Source string
+type TypeInfo string
+type Resource string
+
+const BaseCount = 1000000
+
 const (
-	Namespace       string = "cloud-system"
-	LicenseName     string = "license"
-	SecretName      string = "cloud-secret"
-	ConfigName      string = "cloud-config"
-	CloudStartName  string = "cloud-start"
-	ClientStartName string = "client-start"
+	Namespace       Resource = "cloud-system"
+	LicenseHistory  Resource = "cloud-license-history"
+	LicenseName     Resource = "license"
+	SecretName      Resource = "cloud-secret"
+	ConfigName      Resource = "cloud-config"
+	CloudStartName  Resource = "cloud-start"
+	ClientStartName Resource = "client-start"
 )
 
 const (
@@ -42,13 +53,31 @@ const (
 )
 
 const (
-	ExternalNetworkAccessLabel = "external-network-access"
-	IsDisabled                 = "isDisabled"
-	IsRead                     = "isRead"
-	Enabled                    = "enabled"
-	Disabled                   = "disabled"
-	TRUE                       = "true"
-	FALSE                      = "false"
+	SEALOS                     Source  = "Sealos Cloud"
+	InvalidLicenseTitle        Title   = "Invalid License"
+	ValidLicenseTitle          Title   = "License Activated"
+	RechargeFailedTitle        Title   = "Recharge failed"
+	DuplicateLicenseTitle      Title   = "Duplicate License"
+	RegistrationSuccessTitle   Title   = "Registration Success"
+	InvalidLicenseContent      Message = "The provided license is invalid. Please check and try."
+	LicenseTimeOutContent      Message = "The provided license has expired. Please check and try."
+	ValidLicenseContent        Message = "Your license has been successfully activated and is ready to use. Enjoy your experience!"
+	DuplicateLicenseContent    Message = "The provided license has already been used. Please use a different license."
+	RegistrationSuccessContent Message = "Congratulations! You have successfully registered. Welcome aboard!"
+	RechargeFailedContent      Message = "Your license failed to recharge."
+)
+
+const (
+	ExternalNetworkAccessLabel Label = "external-network-access"
+	IsDisabled                 Label = "isDisabled"
+	IsRead                     Label = "isRead"
+	Enabled                    Label = "enabled"
+	Disabled                   Label = "disabled"
+)
+
+const (
+	TRUE  = "true"
+	FALSE = "false"
 )
 
 type PolicyAction string
@@ -82,14 +111,6 @@ type License struct {
 	PublicKey     string       `json:"publicKey"`
 	Token         string       `json:"token"`
 	Description   string       `json:"description"`
-}
-
-type Resource struct {
-	NodeNum string `json:"nodes"`
-	GPU     string `json:"gpu"`
-	CPU     string `json:"cpu"`
-	Memery  string `json:"memery"`
-	Disk    string `json:"disk"`
 }
 
 type HTTPBody struct {

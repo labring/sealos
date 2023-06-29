@@ -1,12 +1,12 @@
 # Adds namespace to all resources.
-namespace: cloud-controller-system
+namespace: cloud-system
 
 # Value of this field is prepended to the
 # names of all resources, e.g. a deployment named
 # "wordpress" becomes "alices-wordpress".
 # Note that it should also match with the prefix (text before '-') of the namespace
 # field above.
-namePrefix: cloud-controller-
+namePrefix: cloud-
 
 # Labels to add to all resources and selectors.
 #labels:

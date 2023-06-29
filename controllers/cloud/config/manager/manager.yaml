@@ -70,7 +70,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: controller:latest
+        image: ghcr.io/labring/sealos-cloud-controller:latest
         name: manager
         securityContext:
           allowPrivilegeEscalation: false
@@ -100,3 +100,36 @@ spec:
             memory: 64Mi
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: license-history
+  namespace: cloud-system
+data:
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+  namespace: cloud-system
+data:
+  config.json: |
+    {
+      "CollectorURL": "https://anqp0y.laf.dev/CollectorHandle",
+      "NotificationURL": "https://anqp0y.laf.dev/NotificationHandle",
+      "RegisterURL": "https://anqp0y.laf.dev/RegisterHandle",
+      "CloudSyncURL": "https://anqp0y.laf.dev/CloudSyncHandle",
+      "LicenseMonitorURL": "https://anqp0y.laf.dev/LicenseMonitor"
+    }
+---
+apiVersion: cloud.sealos.io/v1
+kind: CloudClient
+metadata:
+  name: start
+  namespace: cloud-system
+  labels:
+    external-network-access: disabled
+spec:
+  name: Cloud-Launcher
+  description: This YAML file is responsible for launching the entire cloud module.

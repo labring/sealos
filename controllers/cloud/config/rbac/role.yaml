@@ -6,6 +6,26 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - account.sealos.io
+  resources:
+  - accounts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - accounts/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - cloud.sealos.io
   resources:
   - cloudclients
@@ -86,6 +106,32 @@ rules:
 - apiGroups:
   - cloud.sealos.io
   resources:
+  - licensemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cloud.sealos.io
+  resources:
+  - licensemonitors/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cloud.sealos.io
+  resources:
+  - licensemonitors/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cloud.sealos.io
+  resources:
   - licenses
   verbs:
   - create
@@ -138,6 +184,18 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - namespaces
   verbs:
   - create
@@ -160,4 +218,28 @@ rules:
   verbs:
   - get
   - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - notification.sealos.io
+  resources:
+  - notifications
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
   - watch

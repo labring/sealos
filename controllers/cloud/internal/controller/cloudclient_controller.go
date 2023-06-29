@@ -65,8 +65,8 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	var configMap corev1.ConfigMap
 
 	r.logger.Info("Try to get the cloud secret resource...")
-	resource1 := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
-	resource2 := util.NewImportanctResource(&configMap, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.ConfigName})
+	resource1 := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)})
+	resource2 := util.NewImportanctResource(&configMap, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ConfigName)})
 	if em := util.GetImportantResource(ctx, r.Client, &resource1); em != nil {
 		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.Secret")
 		return ctrl.Result{}, em.Concat(": ")
@@ -75,7 +75,7 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.ConfigMap")
 		return ctrl.Result{}, em.Concat(": ")
 	}
-	var config, err = util.ReadConfigFromConfigMap(cloud.ConfigName, &configMap)
+	var config, err = util.ReadConfigFromConfigMap(string(cloud.ConfigName), &configMap)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -104,9 +104,9 @@ func (r *CloudClientReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	nameFilter := cloud.CloudStartName
 	namespaceFilter := cloud.Namespace
 	Predicates := predicate.NewPredicateFuncs(func(obj client.Object) bool {
-		return obj.GetName() == nameFilter &&
-			obj.GetNamespace() == namespaceFilter &&
-			obj.GetLabels()[cloud.ExternalNetworkAccessLabel] == cloud.Enabled
+		return obj.GetName() == string(nameFilter) &&
+			obj.GetNamespace() == string(namespaceFilter) &&
+			obj.GetLabels()[string(cloud.ExternalNetworkAccessLabel)] == string(cloud.Enabled)
 	})
 
 	return ctrl.NewControllerManagedBy(mgr).

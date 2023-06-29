@@ -25,7 +25,9 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"io"
+	"strconv"
 
 	jwt "github.com/golang-jwt/jwt/v4"
 	v1 "github.com/labring/sealos/controllers/cloud/api/v1"
@@ -52,6 +54,27 @@ func Encrypt(plaintext []byte) (string, error) {
 
 	ciphertext := aesgcm.Seal(nil, nonce, plaintext, nil)
 	return base64.StdEncoding.EncodeToString(append(nonce, ciphertext...)), nil
+}
+
+func EncryptInt64(in int64) (string, error) {
+	return Encrypt([]byte(strconv.FormatInt(in, 10)))
+}
+
+func DecryptInt64(in string) (int64, error) {
+	out, err := Decrypt(in)
+	if err != nil {
+		return 0, fmt.Errorf("failed to decrpt balance: %w", err)
+	}
+	return strconv.ParseInt(string(out), 10, 64)
+}
+
+func RechargeBalance(balance string, amount int64) (string, error) {
+	balanceInt, err := DecryptInt64(balance)
+	if err != nil {
+		return "", fmt.Errorf("failed to recharge balance: %w", err)
+	}
+	balanceInt += amount
+	return EncryptInt64(balanceInt)
 }
 
 // Decrypt decrypts the given ciphertext using AES-GCM.

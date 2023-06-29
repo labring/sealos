@@ -62,8 +62,8 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	var secret corev1.Secret
 	var configMap corev1.ConfigMap
-	resource1 := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
-	resource2 := util.NewImportanctResource(&configMap, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
+	resource1 := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)})
+	resource2 := util.NewImportanctResource(&configMap, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)})
 
 	em := util.GetImportantResource(ctx, r.Client, &resource1)
 	if em != nil {
@@ -76,7 +76,7 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, em.Concat(": ")
 	}
 
-	config, err := util.ReadConfigFromConfigMap(cloud.ConfigName, &configMap)
+	config, err := util.ReadConfigFromConfigMap(string(cloud.ConfigName), &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to read config")
 		return ctrl.Result{}, err
@@ -141,10 +141,10 @@ func (r *CollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("CollectorReconcile")
 
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
-		return object.GetName() == cloud.ClientStartName &&
-			object.GetNamespace() == cloud.Namespace &&
+		return object.GetName() == string(cloud.ClientStartName) &&
+			object.GetNamespace() == string(cloud.Namespace) &&
 			object.GetLabels() != nil &&
-			object.GetLabels()[cloud.IsRead] == cloud.FALSE
+			object.GetLabels()[string(cloud.IsRead)] == string(cloud.FALSE)
 	})
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cloudv1.CloudClient{}, builder.WithPredicates(Predicate)).

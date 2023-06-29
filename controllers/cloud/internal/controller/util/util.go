@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"sync"
@@ -116,18 +117,18 @@ func GetImportantResource(ctx context.Context, client cl.Client, policy Importan
 
 func ResetUsageQuota(ctx context.Context, client cl.Client) error {
 	var license cloudv1.License
-	err := client.Get(ctx, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.LicenseName}, &license)
+	err := client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.LicenseName)}, &license)
 	if err == nil {
 		if license.Labels == nil {
 			license.Labels = make(map[string]string)
 		}
-		license.Labels[cloud.IsDisabled] = cloud.TRUE
+		license.Labels[string(cloud.IsDisabled)] = cloud.TRUE
 		return client.Update(ctx, &license)
 	} else if apierrors.IsNotFound(err) {
-		license.Name = cloud.LicenseName
-		license.Namespace = cloud.Namespace
+		license.Name = string(cloud.LicenseName)
+		license.Namespace = string(cloud.Namespace)
 		license.Labels = make(map[string]string)
-		license.Labels[cloud.IsDisabled] = cloud.TRUE
+		license.Labels[string(cloud.IsDisabled)] = cloud.TRUE
 		return client.Create(ctx, &license)
 	}
 	return err
@@ -213,25 +214,25 @@ func (rd *RegisterAndStartData) Register() *cloud.ErrorMgr {
 }
 
 func (rd *RegisterAndStartData) StartCloudModule() *cloud.ErrorMgr {
-	if !rd.submitLicense(time.Now().Add(time.Minute).Unix()) {
+	if !rd.SubmitLicense() {
 		return cloud.NewErrorMgr("StartCloudModule", "SubmitLicense", "failed to submit license")
 	}
 
-	if em := rd.startCloudClient(); em != nil {
+	if em := rd.StartCloudClient(); em != nil {
 		return cloud.LoadError("startCloudClient", em)
 	}
 	return nil
 }
 
-func (rd *RegisterAndStartData) submitLicense(expire int64) bool {
-	return SubmitLicense(rd.ctx, rd.client, *rd.clusterScret, expire) == nil
+func (rd *RegisterAndStartData) SubmitLicense() bool {
+	return SubmitLicense(rd.ctx, rd.client, *rd.clusterScret) == nil
 }
 
-func (rd *RegisterAndStartData) startCloudClient() *cloud.ErrorMgr {
+func (rd *RegisterAndStartData) StartCloudClient() *cloud.ErrorMgr {
 	var startInstance cloudv1.CloudClient
-	startInstance.SetName(cloud.ClientStartName)
-	startInstance.SetNamespace(cloud.Namespace)
-	if err := rd.client.Get(rd.ctx, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.ClientStartName}, &startInstance); err != nil {
+	startInstance.SetName(string(cloud.ClientStartName))
+	startInstance.SetNamespace(string(cloud.Namespace))
+	if err := rd.client.Get(rd.ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ClientStartName)}, &startInstance); err != nil {
 		if apierrors.IsNotFound(err) {
 			startInstance.Labels = make(map[string]string)
 			startInstance.Labels["isRead"] = cloud.FALSE
@@ -286,52 +287,90 @@ func SubmitNotificationWithUserCategory(ctx context.Context, client cl.Client, l
 	}
 }
 
-func SubmitNotificationWithUser(ctx context.Context, client cl.Client, logger logr.Logger, name string, namespace string, message string) {
-	notification := ntf.Notification{}
-	notification.Name = name + "-" + "license" + "-" + strconv.Itoa(int(time.Now().Unix()))
-	notification.Spec.Message = message
-	notification.Spec.Title = "Registration successful, welcome!"
-	notification.Spec.From = "Sealos Cloud"
-	notification.Spec.Timestamp = time.Now().Unix()
-	notificationTask := cloud.NewNotificationTask(ctx, client, namespace, []ntf.Notification{notification})
+func SubmitNotificationWithUser(ctx context.Context, client cl.Client, logger logr.Logger, target string, pack cloud.NotificationPackage) {
+	notification := cloud.NotificationPackageToNotification(pack)
+	notificationTask := cloud.NewNotificationTask(ctx, client, target, []ntf.Notification{notification})
+	var wg sync.WaitGroup
+	errchan := make(chan error)
+	wg.Add(1)
+	go cloud.AsyncCloudTask(&wg, errchan, &notificationTask)
+	go func() {
+		wg.Wait()
+		close(errchan)
+	}()
+	for err := range errchan {
+		if err != nil {
+			logger.Error(err, "Failed to deliver notification success")
+		}
+	}
 }
 
-func SubmitLicense(ctx context.Context, client cl.Client, cluster corev1.Secret, expire int64) *cloud.ErrorMgr {
-	for {
-		var license cloudv1.License
-		if time.Now().Unix() > expire {
-			return cloud.NewErrorMgr("SubmitLicense", "Time Out")
-		}
-		err := client.Get(ctx, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.LicenseName}, &license)
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				license.SetName(cloud.LicenseName)
-				license.SetNamespace(cloud.Namespace)
-				license.Spec.Token = string(cluster.Data["token"])
-				license.Spec.Key = string(cluster.Data["key"])
-				if license.Labels == nil {
-					license.Labels = make(map[string]string)
-				}
-				license.Labels["isRead"] = cloud.FALSE
-				err := client.Create(ctx, &license)
-				if err == nil {
-					return nil
-				}
-			}
-		} else {
-			license.SetName(cloud.LicenseName)
-			license.SetNamespace(cloud.Namespace)
+func SubmitLicense(ctx context.Context, client cl.Client, cluster corev1.Secret) *cloud.ErrorMgr {
+	var license cloudv1.License
+	err := client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.LicenseName)}, &license)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			license.SetName(string(cloud.LicenseName))
+			license.SetNamespace(string(cloud.Namespace))
 			license.Spec.Token = string(cluster.Data["token"])
 			license.Spec.Key = string(cluster.Data["key"])
 			if license.Labels == nil {
 				license.Labels = make(map[string]string)
 			}
 			license.Labels["isRead"] = cloud.FALSE
-			err := client.Update(ctx, &license)
+			err := client.Create(ctx, &license)
 			if err == nil {
 				return nil
 			}
 		}
-		time.Sleep(time.Second * 3)
+	} else {
+		license.SetName(string(cloud.LicenseName))
+		license.SetNamespace(string(cloud.Namespace))
+		license.Spec.Token = string(cluster.Data["token"])
+		license.Spec.Key = string(cluster.Data["key"])
+		if license.Labels == nil {
+			license.Labels = make(map[string]string)
+		}
+		license.Labels["isRead"] = cloud.FALSE
+		err := client.Update(ctx, &license)
+		if err == nil {
+			return nil
+		}
 	}
+	return nil
+}
+
+func InterfaceToInt64(value interface{}) (int64, error) {
+	switch v := value.(type) {
+	case int64:
+		return v, nil
+	case float64:
+		return int64(v), nil
+	default:
+		return 0, errors.New("cannot convert value of type to int64")
+	}
+}
+
+func GetNextLicenseKeySuffix(data map[string]string) int {
+	maxSuffix := 0
+
+	for key := range data {
+		var currentSuffix int
+		_, err := fmt.Sscanf(key, "license-%d", &currentSuffix)
+		if err == nil && currentSuffix > maxSuffix {
+			maxSuffix = currentSuffix
+		}
+	}
+
+	return maxSuffix + 1
+}
+
+func CheckLicenseExists(configMap *corev1.ConfigMap, license string) bool {
+	for _, storedLicense := range configMap.Data {
+		if storedLicense == license {
+			return true
+		}
+	}
+
+	return false
 }

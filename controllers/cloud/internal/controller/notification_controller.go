@@ -73,8 +73,8 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	var configMap corev1.ConfigMap
 	var url string
 	var clusterScret corev1.Secret
-	resource1 := util.NewImportanctResource(&configMap, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.ConfigName})
-	resource2 := util.NewImportanctResource(&clusterScret, types.NamespacedName{Namespace: cloud.Namespace, Name: cloud.SecretName})
+	resource1 := util.NewImportanctResource(&configMap, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ConfigName)})
+	resource2 := util.NewImportanctResource(&clusterScret, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)})
 	em := util.GetImportantResource(ctx, r.Client, &resource1)
 	if em != nil {
 		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.ConfigMap")
@@ -85,7 +85,7 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.Secret")
 		return ctrl.Result{}, em.Concat(": ")
 	}
-	config, err := util.ReadConfigFromConfigMap(cloud.ConfigName, &configMap)
+	config, err := util.ReadConfigFromConfigMap(string(cloud.ConfigName), &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to read config")
 		return ctrl.Result{}, err
@@ -149,11 +149,11 @@ func (r *NotificationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.NotificationMgr = cloud.NewNotificationManager()
 	r.Users = cloud.UserCategory{}
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
-		return object.GetName() == cloud.ClientStartName &&
-			object.GetNamespace() == cloud.Namespace &&
+		return object.GetName() == string(cloud.ClientStartName) &&
+			object.GetNamespace() == string(cloud.Namespace) &&
 			object.GetLabels() != nil &&
-			object.GetLabels()[cloud.IsRead] == cloud.FALSE &&
-			object.GetLabels()[cloud.ExternalNetworkAccessLabel] == cloud.Enabled
+			object.GetLabels()[string(cloud.IsRead)] == cloud.FALSE &&
+			object.GetLabels()[string(cloud.ExternalNetworkAccessLabel)] == string(cloud.Enabled)
 	})
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cloudv1.CloudClient{}, builder.WithPredicates(Predicate)).

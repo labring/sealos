@@ -43,7 +43,7 @@ type LicenseMonitorResult struct {
 }
 
 func NewLicenseMonitorRequest(secret corev1.Secret) (LicenseMonitorRequest, *ErrorMgr) {
-	if secret.Name != SecretName || secret.Namespace != Namespace {
+	if secret.Name != string(SecretName) || secret.Namespace != string(Namespace) {
 		return LicenseMonitorRequest{}, NewErrorMgr("NewLicenseMonitorRequest", "error secret")
 	}
 

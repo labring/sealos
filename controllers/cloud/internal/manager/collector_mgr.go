@@ -27,19 +27,17 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-type Date string
-
 const dateFormat = "2006-01-02"
 const Memory = "memory"
 
 const (
-	ResourceOnCluster string = "ClusterResource"
-	DailyUsage        string = "DailyUsage"
+	ResourceOnCluster TypeInfo = "ClusterResource"
+	DailyUsage        TypeInfo = "DailyUsage"
 )
 
 type CollectorInfo struct {
 	UID             string            `json:"uid"`
-	InfoType        string            `json:"infoType"`
+	InfoType        TypeInfo          `json:"infoType"`
 	DailyUsage      DailyClusterUsage `json:"dailyUsage,omitempty"`
 	ClusterResource ClusterResource   `json:"clusterResource,omitempty"`
 }
