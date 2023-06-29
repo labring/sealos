@@ -49,8 +49,6 @@ This `Dockerfile` defines a multi-stage build process. In the first stage, we us
 
 - Run the following command in the directory where the `Dockerfile` is located to build a Docker image for the Go application:
 
-Copy
-
 ```
 docker build -t your_image_name .
 ```
