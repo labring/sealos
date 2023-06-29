@@ -1,4 +1,4 @@
-import { DBEditType, DBDetailType, PodDetailType, BackupStatusMapType } from '@/types/db';
+import { DBEditType, DBDetailType, PodDetailType } from '@/types/db';
 import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
 
 export const crLabelKey = 'sealos-db-provider-cr';
@@ -151,11 +151,6 @@ export const DBTypeList = [
   { id: DBTypeEnum.mongodb, label: 'mongo' },
   { id: DBTypeEnum.mysql, label: 'mysql' }
 ];
-export const DBVersionMap = {
-  [DBTypeEnum.postgresql]: [{ id: 'postgresql-14.8.0', label: 'postgresql-14.8.0' }],
-  [DBTypeEnum.mongodb]: [{ id: 'mongodb-5.0.14', label: 'mongodb-5.0.14' }],
-  [DBTypeEnum.mysql]: [{ id: 'ac-mysql-8.0.30', label: 'ac-mysql-8.0.30' }]
-};
 export const DBComponentNameMap = {
   [DBTypeEnum.postgresql]: 'postgresql',
   [DBTypeEnum.mongodb]: 'mongo',
@@ -169,7 +164,7 @@ export const DBBackupPolicyNameMap = {
 
 export const defaultDBEditValue: DBEditType = {
   dbType: DBTypeEnum.postgresql,
-  dbVersion: DBVersionMap[DBTypeEnum.postgresql][0].id,
+  dbVersion: '',
   dbName: 'dbname',
   replicas: 1,
   cpu: CpuSlideMarkList[1].value,

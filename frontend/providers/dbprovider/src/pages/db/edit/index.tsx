@@ -19,6 +19,7 @@ import { useGlobalStore } from '@/store/global';
 import { serviceSideProps } from '@/utils/i18n';
 import { useTranslation } from 'next-i18next';
 import { adaptDBForm } from '@/utils/adapt';
+import { DBVersionMap } from '@/store/static';
 import Header from './components/Header';
 import Form from './components/Form';
 import Yaml from './components/Yaml';
@@ -52,7 +53,10 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
   // form
   const formHook = useForm<DBEditType>({
-    defaultValues: defaultDBEditValue
+    defaultValues: {
+      ...defaultDBEditValue,
+      dbVersion: DBVersionMap.postgresql[0]?.id
+    }
   });
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
