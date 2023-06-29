@@ -9,7 +9,7 @@ First, make sure you have installed the following tools:
 
 - Here, directly generate a basic Spring Boot project through [Spring Initializr](https://start.spring.io/).
 
-![](/images/java-example-1.png)
+![](images/java-example-1.png)
 
 - Open the project's `pom.xml` file and add the following content to the `<dependencies>` section to include the MySQL JDBC driver:
 
@@ -105,7 +105,7 @@ public class PersonController {
   mvn clean install
   ```
 
-![](/images/java-example-2.png)
+![](images/java-example-2.png)
 
 ## Step 5: Create a Docker Image
 
@@ -157,17 +157,17 @@ docker build -t java-demo .
 
 - Visit the [Sealos](https://cloud.sealos.io/) official website
 
-![](/images/java-example-0.png)
+![](images/java-example-0.png)
 
 ## Step 8: Open the "Database" application
 
-![](/images/java-example-10.png)
+![](images/java-example-10.png)
 
 ## Step 9: Create a database
 
 - Click on "Create New Database"
 
-![](/images/java-example-11.png)
+![](images/java-example-11.png)
 
 - Basic configuration:
   - Cluster type: mysql
@@ -180,7 +180,7 @@ docker build -t java-demo .
 
 ## Step 10: Configure the database
 
-![](/images/java-example-12.png)
+![](images/java-example-12.png)
 
 - Click on "One-click Connect to Database" and execute the following statements:
 
@@ -208,13 +208,13 @@ docker build -t java-demo .
 
 ## Step 11: Open the "App Launchpad" application
 
-![](/images/java-example-3.png)
+![](images/java-example-3.png)
 
 ## Step 12: Create a new application
 
 - In "App Launchpad", click on "Create New Application" to create a new application.
 
-![](/images/java-example-4.png)
+![](images/java-example-4.png)
 
 ## Step 13: Deploy the application
 
@@ -226,26 +226,26 @@ docker build -t java-demo .
 - Deployment mode:
   - Number of instances (custom): 1
 
-![](/images/java-example-5.png)
+![](images/java-example-5.png)
 
 - Network configuration:
   - Exposed container port: 8080
   - Public network access: enabled
 
-![](/images/java-example-6.png)
+![](images/java-example-6.png)
 
 ## Step 14: Deploy the application
 
 - Click on "Deploy Application" to start deploying the application.
 
-![](/images/java-example-7.png)
+![](images/java-example-7.png)
 
 ## Step 15: Access the application
 
 - Click on "Application Management" to view the application. When the application's STATUS changes from Pending to Running, it indicates that the application has started successfully.
 - When the STATUS is Running, you can directly access the public network address.
 
-![](/images/java-example-8.png)
+![](images/java-example-8.png)
 
 - Enter the following in your browser:
 
@@ -253,6 +253,7 @@ docker build -t java-demo .
 https://tmgkflgdlstl.cloud.sealos.io/getPersons
 ```
 
-
+![](images/java-example-13.png)
 
 - The page displays the data inserted into the database earlier, indicating that your Java application is now running on Sealos.
+

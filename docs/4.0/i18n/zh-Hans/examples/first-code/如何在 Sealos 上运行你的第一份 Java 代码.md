@@ -9,7 +9,7 @@
 
 - 这里直接通过 [Spring Initializr](https://start.spring.io/) 生成生成一个基本的 Spring Boot 项目。
 
-![](/images/java-example-1.png)
+![](images/java-example-1.png)
 
 - 打开项目的 `pom.xml` 文件，在 `<dependencies>` 部分添加以下内容，以包含MySQL JDBC驱动：
 
@@ -103,7 +103,7 @@ public class PersonController {
   mvn clean install
   ```
 
-  ​	![](/images/java-example-2.png)
+  ​	![](images/java-example-2.png)
 
 ## 步骤5：创建Docker镜像
 
@@ -166,17 +166,17 @@ docker build -t java-demo .
 
 - 进入 [Sealos](https://cloud.sealos.io/) 官网
 
-![](/images/java-example-0.png)
+![](images/java-example-0.png)
 
 ## 步骤8：打开 「数据库」 应用
 
-![](/images/java-example-10.png)
+![](images/java-example-10.png)
 
 ## 步骤9：创建数据库
 
 - 点击新建数据库
 
-![](/images/java-example-11.png)
+![](images/java-example-11.png)
 
 - 基础配置：
   - 集群类型：mysql
@@ -189,7 +189,7 @@ docker build -t java-demo .
 
 ## 步骤10：配置数据库
 
-![](/images/java-example-12.png)
+![](images/java-example-12.png)
 
 - 点击一键连接到数据库执行以下语句：
 
@@ -213,17 +213,17 @@ docker build -t java-demo .
 
     ```sql
     insert into test values (1,'Sealos');
-    ```  
+    ```
 
 ## 步骤11：打开 「应用管理」 应用
 
-![](/images/java-example-3.png)
+![](images/java-example-3.png)
 
 ## 步骤 12：新建应用
 
 - 在 「应用管理」 中，点击「新建应用」来创建一个新的应用。
 
-![](/images/java-example-4.png)
+![](images/java-example-4.png)
 
 ## 步骤13：应用部署
 
@@ -238,7 +238,7 @@ docker build -t java-demo .
 
   - 实例数（自定义）：1
 
-![](/images/java-example-5.png)
+![](images/java-example-5.png)
 
 - 网络配置：
 
@@ -246,20 +246,20 @@ docker build -t java-demo .
 
   - 外网访问：开启
 
-![](/images/java-example-6.png)
+![](images/java-example-6.png)
 
 ## 步骤14：部署应用
 
 - 点击「部署应用」开始部署应用。
 
-![](/images/java-example-7.png)
+![](images/java-example-7.png)
 
 ## 步骤15：访问应用
 
 - 点击「应用管理」查看，当应用的 STATUS 由 Pending 变为 Running，则表明该应用已成功启动。
 - 当 STATUS 为 Running，即可直接访问外网地址。
 
-![](/images/java-example-8.png)
+![](images/java-example-8.png)
 
 - 在浏览器上输入
 
@@ -267,6 +267,6 @@ docker build -t java-demo .
 https://tmgkflgdlstl.cloud.sealos.io/getPersons
 ```
 
-![](/images/java-example-13.png)
+![](images/java-example-13.png)
 
 - 页面上显示之间插入到数据库的数据 ，表示你的 Java 应用程序已经在 Sealos 上运行

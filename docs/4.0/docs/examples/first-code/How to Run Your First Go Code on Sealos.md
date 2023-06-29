@@ -91,17 +91,17 @@ Replace `your_image_name` with your image name and tag.
 
 - Go to the [Sealos](https://cloud.sealos.io/) official website
 
-![](/images/java-example-0.png)
+![](images/java-example-0.png)
 
 ## Step 5: Open the "App Launchpad" App
 
-![](/images/java-example-3.png)
+![](images/java-example-3.png)
 
 ## Step 6: Create a New Application
 
 - In "App Launchpad", click "Create New Application" to create a new application.
 
-![](/images/java-example-4.png)
+![](images/java-example-4.png)
 
 ## Step 7: Application Deployment
 
@@ -113,26 +113,26 @@ Replace `your_image_name` with your image name and tag.
 - Deployment Mode:
   - Number of Instances (custom): 1
 
-![](/images/java-example-5.png)
+![](images/java-example-5.png)
 
 - Network Configuration:
   - Container Exposed Port: 8080
   - Internet Access: Enable
 
-![](/images/java-example-6.png)
+![](images/java-example-6.png)
 
 ## Step 8: Deploy Application
 
 - Click "Deploy Application" to start deploying the application.
 
-![](/images/java-example-7.png)
+![](images/java-example-7.png)
 
 ## Step 9: Access Application
 
 - Click "Application Management" to view. When the application's STATUS changes from Pending to Running, it means the application has started successfully.
 - When STATUS is Running, you can directly access the external network address.
 
-![](/images/java-example-8.png)
+![](images/java-example-8.png)
 
 - In the browser, enter
 
@@ -140,6 +140,6 @@ Replace `your_image_name` with your image name and tag.
 https://tmgkflgdlstl.cloud.sealos.io/hello
 ```
 
-![](/images/java-example-9.png)
+![](images/java-example-9.png)
 
 - The page displays "Hello, World!", indicating that your Go application is running on Sealos.

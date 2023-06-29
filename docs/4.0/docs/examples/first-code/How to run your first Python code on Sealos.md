@@ -140,17 +140,17 @@ mysql-connector-python
 
 - Go to the [Sealos](https://cloud.sealos.io/) website.
 
-![](/images/java-example-0.png)
+![](images/java-example-0.png)
 
 ## Step 6: Open the "Database" application
 
-![](/images/java-example-10.png)
+![](images/java-example-10.png)
 
 ## Step 7: Create a database
 
 - Click "Create Database"
 
-![](/images/java-example-11.png)
+![](images/java-example-11.png)
 
 - Basic Configuration:
   - Cluster Type: mysql
@@ -163,7 +163,7 @@ mysql-connector-python
 
 ## Step 8: Configure the database
 
-![](/images/java-example-12.png)
+![](images/java-example-12.png)
 
 - Click "Connect to the Database" and execute the following SQL statements:
 
@@ -191,13 +191,13 @@ mysql-connector-python
 
 ## Step 9: Open the "App Management" application
 
-![](/images/java-example-3.png)
+![](images/java-example-3.png)
 
 ## Step 10: Create a new app
 
 - In "App Management", click "New App" to create a new app.
 
-![](/images/java-example-4.png)
+![](images/java-example-4.png)
 
 ## Step 11: App deployment
 
@@ -209,7 +209,7 @@ mysql-connector-python
 - Deployment Mode:
   - Number of Instances (Customized): 1
 
-![](/images/python-example-0.png)
+![](images/python-example-0.png)
 
 - Network Configuration:
   - Container Exposed Port: 5000
@@ -219,14 +219,14 @@ mysql-connector-python
 
 ## Step 12: Deploy the app
 
-![](/images/python-example-2.png)
+![](images/python-example-2.png)
 
 ## Step 13: Access the app
 
 - Click "App Management" to check when the STATUS of the app changes from "Pending" to "Running", indicating that the app has been successfully launched.
 - When the STATUS is Running, you can directly access the external network address.
 
-![](/images/python-example-3.png)
+![](images/python-example-3.png)
 
 - Enter the external network address in the browser to access the data that was just stored in MySQL, indicating that the program has been successfully deployed on Sealos.
 
@@ -234,4 +234,4 @@ mysql-connector-python
   https://mkqreaqfgwac.cloud.sealos.io/
   ```
 
-![](/images/python-example-4.png)
+![](images/python-example-4.png)

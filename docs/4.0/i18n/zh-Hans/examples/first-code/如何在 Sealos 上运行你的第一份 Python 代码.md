@@ -142,17 +142,17 @@ mysql-connector-python
 
 - 进入 [Sealos](https://cloud.sealos.io/) 官网
 
-![](/images/java-example-0.png)
+![](images/java-example-0.png)
 
 ## 步骤6：打开 「数据库」 应用
 
-![](/images/java-example-10.png)
+![](images/java-example-10.png)
 
 ## 步骤7：创建数据库
 
 - 点击新建数据库
 
-![](/images/java-example-11.png)
+![](images/java-example-11.png)
 
 - 基础配置：
   - 集群类型：mysql
@@ -165,7 +165,7 @@ mysql-connector-python
 
 ## 步骤8：配置数据库
 
-![](/images/java-example-12.png)
+![](images/java-example-12.png)
 
 - 点击一键连接到数据库执行以下语句：
 
@@ -195,13 +195,13 @@ mysql-connector-python
 
 ## 步骤9：打开 「应用管理」 应用
 
-![](/images/java-example-3.png)
+![](images/java-example-3.png)
 
 ## 步骤 10：新建应用
 
 - 在 「应用管理」 中，点击「新建应用」来创建一个新的应用。
 
-![](/images/java-example-4.png)
+![](images/java-example-4.png)
 
 ## 步骤11：应用部署
 
@@ -216,7 +216,7 @@ mysql-connector-python
 
   - 实例数（自定义）：1
 
-![](/images/python-example-0.png)
+![](images/python-example-0.png)
 
 - 网络配置：
 
@@ -225,18 +225,18 @@ mysql-connector-python
 
   - 外网访问：开启
 
-![](/images/python-example-1.png)
+![](images/python-example-1.png)
 
 ## 步骤12：部署应用
 
-![](/images/python-example-2.png)
+![](images/python-example-2.png)
 
 ## 步骤13：访问应用
 
 - 点击「应用管理」查看，当应用的 STATUS 由 Pending 变为 Running，则表明该应用已成功启动。
 - 当 STATUS 为 Running，即可直接访问外网地址。
 
-![](/images/python-example-3.png)
+![](images/python-example-3.png)
 
 - 在浏览器上输入外网地址，可以访问到刚刚存入到 MySQL 中的数据，表示程序已经成功 Sealos 上
 
@@ -244,4 +244,4 @@ mysql-connector-python
   https://mkqreaqfgwac.cloud.sealos.io/
   ```
 
-![](/images/python-example-4.png)
+![](images/python-example-4.png)
