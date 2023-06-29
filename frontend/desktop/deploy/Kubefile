@@ -7,4 +7,4 @@ COPY manifests manifests
 ENV cloudDomain="cloud.example.com"
 ENV certSecretName="wildcard-cert"
 
-CMD ["kubectl apply -f manifests/deploy.yaml -f manifests/ingress.yaml"]
+CMD ["kubectl apply -f manifests"]
