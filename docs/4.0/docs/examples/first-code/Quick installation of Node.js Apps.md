@@ -1,4 +1,4 @@
-# How to run your first Node.js code on Sealos
+# Quick installation of Node.js Apps
 
 First, make sure you have installed the following tools:
 

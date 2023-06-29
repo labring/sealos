@@ -1,4 +1,4 @@
-# How to Run Your First Vue Code on Sealos
+# Quick installation of Vue Apps
 
 First, make sure you have installed the following tools:
 

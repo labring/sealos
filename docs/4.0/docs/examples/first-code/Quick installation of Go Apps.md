@@ -1,4 +1,4 @@
-# How to Run Your First Go Code on Sealos
+# Quick installation of Go Apps
 
 First, make sure you have installed the following tools:
 
