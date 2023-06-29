@@ -4,7 +4,7 @@ import request from '@/service/request';
 import useSessionStore from '@/stores/session';
 import { displayMoney, formatMoney } from '@/utils/format';
 import { Box, Button, Flex, Image, Text } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
+import { QueryClient, useQuery } from '@tanstack/react-query';
 import styles from './user.module.scss';
 
 import { useTranslation } from 'next-i18next';
@@ -14,11 +14,17 @@ import { ApiResp } from '@/types/api';
 export default function UserCard() {
   const { t } = useTranslation();
   const session = useSessionStore().getSession();
-  const { RechargeModal, onOpen } = useRecharge({});
-  const { data: balance_raw } = useQuery({
+  const { data: balance_raw, refetch } = useQuery({
     queryKey: ['getAccount'],
     queryFn: () =>
       request<any, ApiResp<{ deductionBalance: number; balance: number }>>('/api/account/getAmount')
+  });
+  const queryClient = new QueryClient();
+  const { RechargeModal, onOpen } = useRecharge({
+    onPaySuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['billing'], exact: false });
+      refetch();
+    }
   });
   const balance = useMemo(() => {
     let real_balance = balance_raw?.data?.balance || 0;
