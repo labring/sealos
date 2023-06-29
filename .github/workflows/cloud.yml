@@ -11,8 +11,13 @@ on:
         type: boolean
         default: false
       push_image_tag:
-        description: 'Push image tag'
+        description: 'Push all-in-one image tag, default is dev'
         default: 'dev'
+        required: false
+        type: string
+      build_from:
+        description: 'Build all-in-one image from components image tag, default is nightly'
+        default: 'nightly'
         required: false
         type: string
   push:
@@ -85,6 +90,7 @@ jobs:
       - name: Build sealos cloud cluster image
         working-directory: deploy/cloud
         run: |
+          sed -i "s#nightly#${{ inputs.build_from }}#g" init.sh
           sudo bash init.sh
           sudo sealos build  -t ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }} -f Kubefile
           sudo sealos push ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }}
