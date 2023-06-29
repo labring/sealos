@@ -3,7 +3,7 @@ import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import download from '@/utils/downloadFIle';
 import { Box, Flex, Image, Stack, Text, UseDisclosureProps } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
+import { QueryClient, useQuery } from '@tanstack/react-query';
 import JsYaml from 'js-yaml';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
@@ -29,7 +29,7 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureProps }
     }
   }, [kubeconfig]);
 
-  const { data } = useQuery(['getAccount'], () => request<any, ApiResp<{ balance: number, deductionBalance: number, status: string }>>('/api/account/getAmount'));
+  const { data,refetch } = useQuery(['getAccount'], () => request<any, ApiResp<{ balance: number, deductionBalance: number, status: string }>>('/api/account/getAmount'));
 
   const balance = useMemo(() => {
     let real_balance = data?.data?.balance || 0;
@@ -38,8 +38,11 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureProps }
     }
     return real_balance
   }, [data])
-
-  const {RechargeModal,onOpen} = useRecharge({})
+  const {RechargeModal,onOpen} = useRecharge({
+    onPaySuccess: () => {
+      refetch()
+    }
+  })
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     delSession();
