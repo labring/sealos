@@ -55,11 +55,11 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 	}
 	//upgrade other control-planes and worker nodes
 	var upgradeNodes []string
-	for _, ip := range append(k.getMasterIPList(), k.getNodeIPList()...) {
-		if ip == k.getMaster0IP() {
+	for _, node := range append(k.getMasterIPAndPortList(), k.getNodeIPAndPortList()...) {
+		if node == k.getMaster0IPAndPort() {
 			continue
 		}
-		upgradeNodes = append(upgradeNodes, ip)
+		upgradeNodes = append(upgradeNodes, node)
 	}
 	logger.Info("start to upgrade other control-planes and worker nodes")
 	return k.upgradeOtherNodes(upgradeNodes, version)
