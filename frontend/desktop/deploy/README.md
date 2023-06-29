@@ -34,6 +34,8 @@ spec:
   strategy: merge
   data: |
     data:
+      mongodb_uri: <your-mongodb-uri-base64>
+      jwt_secret: <your-jwt-secret-base64>
       password_salt: <your-password-salt-base64>
 ```
 
