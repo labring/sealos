@@ -1,4 +1,4 @@
-# 使用Sealos与LVScare保障Kubernetes Master节点的高可用性
+# LVScare 使用指南
 
 ## 介绍
 

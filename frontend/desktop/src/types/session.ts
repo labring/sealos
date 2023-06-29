@@ -14,7 +14,7 @@ export type UserInfo = {
 export type KubeConfig = string;
 
 export type Session = {
-  token?: OAuthToken;
+  token: string; // jwt token
   user: UserInfo;
   kubeconfig: KubeConfig;
 };

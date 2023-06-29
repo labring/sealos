@@ -1,13 +1,13 @@
-import { useEffect } from 'react';
-import Empty from './components/empty';
-import AppList from './components/appList';
-import { useQuery } from '@tanstack/react-query';
-// import Loading from '@/components/Loading';
-import { useAppStore } from '@/store/app';
 import { useLoading } from '@/hooks/useLoading';
+import { useAppStore } from '@/store/app';
+import { serviceSideProps } from '@/utils/i18n';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/router';
+import { useEffect } from 'react';
+import AppList from './components/appList';
+import Empty from './components/empty';
 
-export default function Home() {
+const Home = () => {
   const router = useRouter();
   const { appList, setAppList, intervalLoadPods } = useAppStore();
   const { Loading } = useLoading();
@@ -41,4 +41,14 @@ export default function Home() {
       <Loading loading={isLoading} />
     </>
   );
+};
+
+export async function getServerSideProps(content: any) {
+  return {
+    props: {
+      ...(await serviceSideProps(content))
+    }
+  };
 }
+
+export default Home;

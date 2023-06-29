@@ -11,8 +11,13 @@ on:
         type: boolean
         default: false
       push_image_tag:
-        description: 'Push image tag'
+        description: 'Push all-in-one image tag, default is dev'
         default: 'dev'
+        required: false
+        type: string
+      build_from:
+        description: 'Build all-in-one image from components image tag, default is nightly'
+        default: 'nightly'
         required: false
         type: string
   push:
@@ -85,18 +90,24 @@ jobs:
       - name: Build sealos cloud cluster image
         working-directory: deploy/cloud
         run: |
+          sed -i "s#nightly#${{ inputs.build_from }}#g" init.sh
           sudo bash init.sh
           sudo sealos build  -t ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }} -f Kubefile
           sudo sealos push ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }}
 
       # todo: build multi-arch images
 
-      - name: Sync Images
-        uses: peter-evans/create-or-update-comment@v1
+      - name: Renew issue and Sync Images
+        uses: labring/gh-rebot@v0.0.6
         if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
         with:
-          issue-number: 251
-          repository: labring-actions/cluster-image
-          body: |
-            /imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud:${{ steps.prepare.outputs.tag_name }}
-          token: "${{ secrets.GH_PAT }}"
+          version: v0.0.8-rc1
+        env:
+          GH_TOKEN: "${{ secrets.GH_PAT }}"
+          SEALOS_TYPE: "issue_renew"
+          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
+          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
+          SEALOS_ISSUE_LABEL: "dayly-report"
+          SEALOS_ISSUE_TYPE: "day"
+          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
+          SEALOS_COMMENT_BODY: "/imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud:${{ steps.prepare.outputs.tag_name }}"

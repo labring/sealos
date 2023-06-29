@@ -18,6 +18,7 @@ import MyMenu from '@/components/Menu';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import { streamFetch } from '@/services/streamFetch';
 import { default as AnsiUp } from 'ansi_up';
+import { useTranslation } from 'next-i18next';
 
 const LogsModal = ({
   appName,
@@ -34,6 +35,7 @@ const LogsModal = ({
   setLogsPodName: (name: string) => void;
   closeFn: () => void;
 }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { Loading } = useLoading();
   const [logs, setLogs] = useState('');
@@ -85,7 +87,7 @@ const LogsModal = ({
       }
     });
     return controller;
-  }, [appName, podName]);
+  }, [appName, closeFn, podName]);
 
   useEffect(() => {
     const controller = watchLogs();
@@ -109,7 +111,7 @@ const LogsModal = ({
       <ModalContent className={styles.logs} display={'flex'} maxW={'90vw'} h={'90vh'} m={0}>
         <Flex p={4} alignItems={'center'}>
           <Box fontSize={'xl'} fontWeight={'bold'}>
-            Pod 日志
+            Pod {t('Log')}
           </Box>
           <Box px={3}>
             <MyMenu
@@ -137,7 +139,7 @@ const LogsModal = ({
             />
           </Box>
           <Button size={'sm'} onClick={exportLogs}>
-            导出
+            {t('Export')}
           </Button>
         </Flex>
         <ModalCloseButton />

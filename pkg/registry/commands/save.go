@@ -19,6 +19,7 @@ package commands
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/labring/sealos/pkg/registry/save"
 
@@ -30,7 +31,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-func NewRegistryImageSaveCmd() *cobra.Command {
+func NewRegistryImageSaveCmd(examplePrefix string) *cobra.Command {
 	var auth map[string]types.AuthConfig
 	var images []string
 	flagsResults := registrySaveRawResults{
@@ -39,9 +40,9 @@ func NewRegistryImageSaveCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "save",
 		Short: "save images to local registry dir",
-		Example: `
-sealctl registry save --registry-dir=/tmp/registry .
-sealctl registry save --registry-dir=/tmp/registry --images=docker.io/library/busybox:latest`,
+		Example: fmt.Sprintf(`
+%[1]s registry save --registry-dir=/tmp/registry .
+%[1]s registry save --registry-dir=/tmp/registry --images=docker.io/library/busybox:latest`, examplePrefix),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			is := save.NewImageSaver(context.Background(), flagsResults.registryPullMaxPullProcs, auth)
 			outImages, err := is.SaveImages(images, flagsResults.registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: flagsResults.registryPullArch})

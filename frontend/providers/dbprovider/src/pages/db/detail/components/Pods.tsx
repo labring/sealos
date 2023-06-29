@@ -23,17 +23,20 @@ import { useQuery } from '@tanstack/react-query';
 import { useDBStore } from '@/store/db';
 import MyMenu from '@/components/Menu';
 import MyIcon from '@/components/Icon';
+import { useTranslation } from 'next-i18next';
+import PodStatus from '@/components/PodStatus';
 
 const LogsModal = dynamic(() => import('./LogsModal'), { ssr: false });
 const DetailModel = dynamic(() => import('./PodDetailModal'), { ssr: false });
 
 const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [logsPodIndex, setLogsPodIndex] = useState<number>();
   const [detailPodIndex, setDetailPodIndex] = useState<number>();
   const { Loading } = useLoading();
   const { openConfirm: openConfirmRestart, ConfirmChild: RestartConfirmChild } = useConfirm({
-    content: '请确认重启 Pod？'
+    content: t('Confirm Restart Pod') || 'Confirm Restart Pod'
   });
   const { intervalLoadPods, dbPods } = useDBStore();
 
@@ -42,18 +45,18 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
       try {
         await restartPodByName(podName);
         toast({
-          title: `重启 ${podName} 成功`,
+          title: `${t('Restart')} ${podName} ${t('Success')}`,
           status: 'success'
         });
       } catch (err) {
         toast({
-          title: `重启 ${podName} 出现异常`,
+          title: `${t('Restart')} ${podName} ${t('Have Error')}`,
           status: 'warning'
         });
         console.log(err);
       }
     },
-    [toast]
+    [t, toast]
   );
 
   const columns: {
@@ -68,9 +71,9 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
       dataIndex: 'podName'
     },
     {
-      title: 'status',
-      key: 'status',
-      render: (item: PodDetailType) => <Box color={item.status.color}>{item.status.label}</Box>
+      title: 'Containers',
+      key: 'containers',
+      render: (item: PodDetailType) => <PodStatus containerStatuses={item.status} />
     },
     {
       title: 'Restarts',
@@ -83,7 +86,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
       dataIndex: 'age'
     },
     {
-      title: 'control',
+      title: 'Operation',
       key: 'control',
       render: (item: PodDetailType, i: number) => (
         <Flex>
@@ -94,64 +97,55 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
             px={3}
             onClick={() => setDetailPodIndex(i)}
           >
-            详情
+            {t('Details')}
           </Button>
-          {item.status.value === PodStatusEnum.Running && (
-            <MyMenu
-              width={100}
-              Button={
-                <MenuButton
-                  w={'32px'}
-                  h={'32px'}
-                  borderRadius={'sm'}
-                  _hover={{
-                    bg: 'myWhite.400',
-                    color: 'hover.iconBlue'
-                  }}
-                >
-                  <MyIcon name={'more'} px={3} />
-                </MenuButton>
+          <MyMenu
+            width={100}
+            Button={
+              <MenuButton
+                w={'32px'}
+                h={'32px'}
+                borderRadius={'sm'}
+                _hover={{
+                  bg: 'myWhite.400',
+                  color: 'hover.iconBlue'
+                }}
+              >
+                <MyIcon name={'more'} px={3} />
+              </MenuButton>
+            }
+            menuList={[
+              {
+                child: (
+                  <>
+                    <MyIcon name={'log'} w={'14px'} />
+                    <Box ml={2}>{t('Logs')}</Box>
+                  </>
+                ),
+                onClick: () => setLogsPodIndex(i)
+              },
+              {
+                child: (
+                  <>
+                    <MyIcon name={'restart'} />
+                    <Box ml={2}>{t('Restart')}</Box>
+                  </>
+                ),
+                onClick: openConfirmRestart(() => handleRestartPod(item.podName))
               }
-              menuList={[
-                {
-                  child: (
-                    <>
-                      <MyIcon name={'log'} w={'14px'} />
-                      <Box ml={2}>日志</Box>
-                    </>
-                  ),
-                  onClick: () => setLogsPodIndex(i)
-                },
-                {
-                  child: (
-                    <>
-                      <MyIcon name={'restart'} />
-                      <Box ml={2}>重启</Box>
-                    </>
-                  ),
-                  onClick: openConfirmRestart(() => handleRestartPod(item.podName))
-                }
-              ]}
-            />
-          )}
+            ]}
+          />
         </Flex>
       )
     }
   ];
 
-  const { isInitialLoading } = useQuery(
-    ['intervalLoadPods'],
-    () => {
-      intervalLoadPods(dbName);
-      return null;
-    },
-    {
-      refetchInterval: 3000
-    }
-  );
+  const { isInitialLoading } = useQuery(['intervalLoadPods'], () => intervalLoadPods(dbName), {
+    refetchInterval: 3000
+  });
 
   return (
-    <Box h={'100%'}>
+    <Box h={'100%'} position={'relative'}>
       <TableContainer overflow={'overlay'}>
         <Table variant={'simple'} backgroundColor={'white'}>
           <Thead>
@@ -164,7 +158,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
                   backgroundColor={'#F8F8FA'}
                   fontWeight={'500'}
                 >
-                  {item.title}
+                  {t(item.title)}
                 </Th>
               ))}
             </Tr>
@@ -193,12 +187,10 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
           dbName={dbName}
           dbType={dbType}
           podName={dbPods[logsPodIndex]?.podName || ''}
-          pods={dbPods
-            .filter((pod) => pod.status.value === PodStatusEnum.Running)
-            .map((item, i) => ({
-              alias: `${dbName}-${i + 1}`,
-              podName: item.podName
-            }))}
+          pods={dbPods.map((item, i) => ({
+            alias: `${dbName}-${i + 1}`,
+            podName: item.podName
+          }))}
           podAlias={`${dbName}-${logsPodIndex + 1}`}
           setLogsPodName={(name: string) =>
             setLogsPodIndex(dbPods.findIndex((item) => item.podName === name))
@@ -225,4 +217,4 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
   );
 };
 
-export default Pods;
+export default React.memo(Pods);

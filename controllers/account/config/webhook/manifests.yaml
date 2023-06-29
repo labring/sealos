@@ -22,6 +22,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - '*'
   sideEffects: None

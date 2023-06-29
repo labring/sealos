@@ -63,8 +63,8 @@ func newDefaultInspectResults() *inspectResults {
 
 func (opts *inspectResults) RegisterFlags(fs *pflag.FlagSet) {
 	fs.SetInterspersed(false)
-	fs.StringVarP(&opts.format, "format", "f", "", "use `format` as a Go template to format the output")
-	fs.StringVarP(&opts.inspectType, "type", "t", inspectTypeContainer, "look at the item of the specified `type` (container or image) and name")
+	fs.StringVarP(&opts.format, "format", "f", opts.format, "use `format` as a Go template to format the output")
+	fs.StringVarP(&opts.inspectType, "type", "t", opts.inspectType, "look at the item of the specified `type` (container or image) and name")
 }
 
 func newInspectCommand() *cobra.Command {
@@ -89,7 +89,12 @@ func newInspectCommand() *cobra.Command {
   %[1]s inspect --format '{{.OCIv1.Config.Env}}' alpine`, rootCmd.CommandPath()),
 	}
 	inspectCommand.SetUsageTemplate(UsageTemplate())
-	opts.RegisterFlags(inspectCommand.Flags())
+
+	fs := inspectCommand.Flags()
+	opts.RegisterFlags(fs)
+	// only useful for docker/container-storage transport
+	fs.AddFlagSet(getPlatformFlags())
+
 	return inspectCommand
 }
 

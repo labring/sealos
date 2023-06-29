@@ -1,6 +1,6 @@
 import { GET, POST, DELETE } from '@/services/request';
 import { adaptDBListItem, adaptDBDetail, adaptPod, adaptEvents } from '@/utils/adapt';
-import type { DBType } from '@/types/db';
+import type { DBType, PodDetailType } from '@/types/db';
 import { json2Restart } from '@/utils/json2Yaml';
 import { json2StartOrStop } from '../utils/json2Yaml';
 import type { SecretResponse } from '@/pages/api/getSecretByName';
@@ -19,7 +19,7 @@ export const delDBByName = (name: string) => DELETE('/api/delDBByName', { name }
 export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | 'update') =>
   POST('/api/applyYamlList', { yamlList, type });
 
-export const getPodsByDBName = (name: string) =>
+export const getPodsByDBName = (name: string): Promise<PodDetailType[]> =>
   GET('/api/pod/getPodsByDBName', { name }).then((res) => res.map(adaptPod));
 
 export const getPodLogs = (data: {

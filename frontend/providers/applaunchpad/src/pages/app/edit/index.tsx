@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { Flex, Box } from '@chakra-ui/react';
 import type { YamlItemType } from '@/types';
@@ -28,12 +28,64 @@ import Yaml from './components/Yaml';
 import dynamic from 'next/dynamic';
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 import { useGlobalStore } from '@/store/global';
+import { serviceSideProps } from '@/utils/i18n';
+import { patchYamlList } from '@/utils/tools';
+import { useTranslation } from 'next-i18next';
 
-const EditApp = ({ appName }: { appName?: string }) => {
+const formData2Yamls = (data: AppEditType) => [
+  {
+    filename: 'service.yaml',
+    value: json2Service(data)
+  },
+  data.storeList.length > 0
+    ? {
+        filename: 'statefulSet.yaml',
+        value: json2StatefulSet(data)
+      }
+    : {
+        filename: 'deployment.yaml',
+        value: json2Development(data)
+      },
+  ...(data.configMapList.length > 0
+    ? [
+        {
+          filename: 'configmap.yaml',
+          value: json2ConfigMap(data)
+        }
+      ]
+    : []),
+  ...(data.accessExternal.use
+    ? [
+        {
+          filename: 'ingress.yaml',
+          value: json2Ingress(data)
+        }
+      ]
+    : []),
+  ...(data.hpa.use
+    ? [
+        {
+          filename: 'hpa.yaml',
+          value: json2HPA(data)
+        }
+      ]
+    : []),
+  ...(data.secret.use
+    ? [
+        {
+          filename: 'secret.yaml',
+          value: json2Secret(data)
+        }
+      ]
+    : [])
+];
+
+const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) => {
+  const { t } = useTranslation();
+  const appOldYamls = useRef<YamlItemType[]>([]);
   const { toast } = useToast();
   const { Loading, setIsLoading } = useLoading();
   const router = useRouter();
-  const { type: tabType = 'form' } = router.query;
   const [forceUpdate, setForceUpdate] = useState(false);
   const { setAppDetail } = useAppStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
@@ -63,53 +115,7 @@ const EditApp = ({ appName }: { appName?: string }) => {
   const formOnchangeDebounce = useCallback(
     debounce((data: AppEditType) => {
       try {
-        setYamlList([
-          {
-            filename: 'service.yaml',
-            value: json2Service(data)
-          },
-          data.storeList.length > 0
-            ? {
-                filename: 'statefulSet.yaml',
-                value: json2StatefulSet(data)
-              }
-            : {
-                filename: 'deployment.yaml',
-                value: json2Development(data)
-              },
-          ...(data.configMapList.length > 0
-            ? [
-                {
-                  filename: 'configmap.yaml',
-                  value: json2ConfigMap(data)
-                }
-              ]
-            : []),
-          ...(data.accessExternal.use
-            ? [
-                {
-                  filename: 'ingress.yaml',
-                  value: json2Ingress(data)
-                }
-              ]
-            : []),
-          ...(data.hpa.use
-            ? [
-                {
-                  filename: 'hpa.yaml',
-                  value: json2HPA(data)
-                }
-              ]
-            : []),
-          ...(data.secret.use
-            ? [
-                {
-                  filename: 'secret.yaml',
-                  value: json2Secret(data)
-                }
-              ]
-            : [])
-        ]);
+        setYamlList(formData2Yamls(data));
       } catch (error) {
         console.log(error);
       }
@@ -125,15 +131,25 @@ const EditApp = ({ appName }: { appName?: string }) => {
   const submitSuccess = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = yamlList.map((item) => item.value);
+      const yamls = yamlList.map((item) => item.value);
       if (appName) {
-        await putApp(data, appName);
+        const patch = patchYamlList(
+          appOldYamls.current.map((item) => item.value),
+          yamls
+        );
+
+        await putApp({
+          patch,
+          appName,
+          stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value
+        });
       } else {
-        await postDeployApp(data);
+        await postDeployApp(yamls);
       }
+
       router.replace(`/app/detail?name=${formHook.getValues('appName')}`);
       toast({
-        title: applySuccess,
+        title: t(applySuccess),
         status: 'success'
       });
     } catch (error) {
@@ -141,11 +157,11 @@ const EditApp = ({ appName }: { appName?: string }) => {
       setErrorMessage(JSON.stringify(error));
     }
     setIsLoading(false);
-  }, [setIsLoading, yamlList, appName, router, formHook, toast, applySuccess]);
+  }, [setIsLoading, yamlList, appName, router, formHook, toast, t, applySuccess]);
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
-      if (!obj) return '提交表单错误';
+      if (!obj) return t('Submit Error');
       if (!!obj.message) {
         return obj.message;
       }
@@ -158,7 +174,7 @@ const EditApp = ({ appName }: { appName?: string }) => {
       duration: 3000,
       isClosable: true
     });
-  }, [formHook.formState.errors, toast]);
+  }, [formHook.formState.errors, t, toast]);
 
   useQuery(
     ['init'],
@@ -183,9 +199,10 @@ const EditApp = ({ appName }: { appName?: string }) => {
     {
       onSuccess(res) {
         if (!res) return;
-        setAlready(true);
+        appOldYamls.current = formData2Yamls(res);
         setDefaultStorePathList(res.storeList.map((item) => item.path));
         formHook.reset(adaptEditAppData(res));
+        setAlready(true);
       },
       onError(err) {
         toast({
@@ -238,11 +255,17 @@ const EditApp = ({ appName }: { appName?: string }) => {
   );
 };
 
-export default EditApp;
+export async function getServerSideProps(content: any) {
+  const appName = content?.query?.name || '';
+  const tabType = content?.query?.type || 'form';
 
-export async function getServerSideProps(context: any) {
-  const appName = context?.query?.name || '';
   return {
-    props: { appName }
+    props: {
+      appName,
+      tabType,
+      ...(await serviceSideProps(content))
+    }
   };
 }
+
+export default EditApp;

@@ -14,6 +14,7 @@ import MyMenu from '@/components/Menu';
 import { useConfirm } from '@/hooks/useConfirm';
 import { DBStatusEnum, DBComponentNameMap } from '@/constants/db';
 import { printMemory } from '@/utils/tools';
+import { useTranslation } from 'next-i18next';
 
 const DelModal = dynamic(() => import('@/pages/db/detail/components/DelModal'));
 
@@ -24,6 +25,7 @@ const DBList = ({
   dbList: DBListItemType[];
   refetchApps: () => void;
 }) => {
+  const { t } = useTranslation();
   const { setLoading } = useGlobalStore();
   const { toast } = useToast();
   const theme = useTheme();
@@ -31,7 +33,7 @@ const DBList = ({
 
   const [delAppName, setDelAppName] = useState('');
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
-    content: '请注意，暂停状态下无法变更应用，并且如果您使用了存储卷，存储券仍会收费，请确认！'
+    content: t('Pause Hint')
   });
 
   const handleRestartApp = useCallback(
@@ -40,19 +42,19 @@ const DBList = ({
         setLoading(true);
         await restartDB({ dbName: db.name, dbType: db.dbType });
         toast({
-          title: '重启成功',
+          title: t('Restart Success'),
           status: 'success'
         });
       } catch (error: any) {
         toast({
-          title: typeof error === 'string' ? error : error.message || '重启出现了意外',
+          title: typeof error === 'string' ? error : error.message || t('Restart Success'),
           status: 'error'
         });
         console.error(error, '==');
       }
       setLoading(false);
     },
-    [setLoading, toast]
+    [setLoading, t, toast]
   );
 
   const handlePauseApp = useCallback(
@@ -61,12 +63,12 @@ const DBList = ({
         setLoading(true);
         await pauseDBByName({ dbName: db.name, dbType: db.dbType });
         toast({
-          title: '应用已暂停',
+          title: t('Pause Success'),
           status: 'success'
         });
       } catch (error: any) {
         toast({
-          title: typeof error === 'string' ? error : error.message || '暂停应用出现了意外',
+          title: typeof error === 'string' ? error : error.message || t('Pause Error'),
           status: 'error'
         });
         console.error(error);
@@ -74,7 +76,7 @@ const DBList = ({
       setLoading(false);
       refetchApps();
     },
-    [refetchApps, setLoading, toast]
+    [refetchApps, setLoading, t, toast]
   );
 
   const handleStartApp = useCallback(
@@ -83,12 +85,12 @@ const DBList = ({
         setLoading(true);
         await startDBByName({ dbName: db.name, dbType: db.dbType });
         toast({
-          title: '应用已启动',
+          title: t('Start Success'),
           status: 'success'
         });
       } catch (error: any) {
         toast({
-          title: typeof error === 'string' ? error : error.message || '启动应用出现了意外',
+          title: typeof error === 'string' ? error : error.message || t('Start Error'),
           status: 'error'
         });
         console.error(error);
@@ -96,7 +98,7 @@ const DBList = ({
       setLoading(false);
       refetchApps();
     },
-    [refetchApps, setLoading, toast]
+    [refetchApps, setLoading, t, toast]
   );
 
   const columns: {
@@ -106,7 +108,7 @@ const DBList = ({
     render?: (item: DBListItemType) => JSX.Element;
   }[] = [
     {
-      title: '名字',
+      title: 'Name',
       key: 'name',
       render: (item: DBListItemType) => {
         return (
@@ -117,19 +119,19 @@ const DBList = ({
       }
     },
     {
-      title: '类型',
+      title: 'Type',
       key: 'dbType',
       render: (item: DBListItemType) => <>{DBComponentNameMap[item.dbType]}</>
     },
     {
-      title: '状态',
+      title: 'Status',
       key: 'status',
       render: (item: DBListItemType) => (
         <DBStatusTag conditions={item.conditions} status={item.status} />
       )
     },
     {
-      title: '创建时间',
+      title: 'Creation Time',
       dataIndex: 'createTime',
       key: 'createTime'
     },
@@ -139,17 +141,17 @@ const DBList = ({
       render: (item: DBListItemType) => <>{item.cpu / 1000}C</>
     },
     {
-      title: '内存',
+      title: 'Memory',
       key: 'memory',
       render: (item: DBListItemType) => <>{printMemory(item.memory)}</>
     },
     {
-      title: '容量',
+      title: 'Storage',
       key: 'storage',
       dataIndex: 'storage'
     },
     {
-      title: '操作',
+      title: 'Operation',
       key: 'control',
       render: (item: DBListItemType) => (
         <Flex>
@@ -157,10 +159,10 @@ const DBList = ({
             mr={5}
             variant={'base'}
             leftIcon={<MyIcon name={'detail'} transform={'translateY(-1px)'} />}
-            w={'68px'}
+            px={3}
             onClick={() => router.push(`/db/detail?name=${item.name}`)}
           >
-            详情
+            {t('Details')}
           </Button>
           <MyMenu
             width={100}
@@ -184,7 +186,7 @@ const DBList = ({
                       child: (
                         <>
                           <MyIcon name={'continue'} w={'14px'} />
-                          <Box ml={2}>启动</Box>
+                          <Box ml={2}>{t('Continue')}</Box>
                         </>
                       ),
                       onClick: () => handleStartApp(item)
@@ -195,7 +197,7 @@ const DBList = ({
                       child: (
                         <>
                           <MyIcon name={'change'} w={'14px'} />
-                          <Box ml={2}>变更</Box>
+                          <Box ml={2}>{t('Update')}</Box>
                         </>
                       ),
                       onClick: () => router.push(`/db/edit?name=${item.name}`)
@@ -204,7 +206,7 @@ const DBList = ({
                       child: (
                         <>
                           <MyIcon name={'restart'} />
-                          <Box ml={2}>重启</Box>
+                          <Box ml={2}>{t('Restart')}</Box>
                         </>
                       ),
                       onClick: () => handleRestartApp(item)
@@ -216,7 +218,7 @@ const DBList = ({
                       child: (
                         <>
                           <MyIcon name={'pause'} w={'14px'} />
-                          <Box ml={2}>暂停</Box>
+                          <Box ml={2}>{t('Pause')}</Box>
                         </>
                       ),
                       onClick: onOpenPause(() => handlePauseApp(item))
@@ -228,7 +230,7 @@ const DBList = ({
                 child: (
                   <>
                     <MyIcon name={'delete'} w={'12px'} />
-                    <Box ml={2}>删除</Box>
+                    <Box ml={2}>{t('Delete')}</Box>
                   </>
                 ),
                 onClick: () => setDelAppName(item.name)
@@ -247,7 +249,7 @@ const DBList = ({
           <MyIcon name="logo" w={'24px'} h={'24px'} />
         </Box>
         <Box fontSize={'2xl'} color={'black'}>
-          集群列表
+          {t('DBList')}
         </Box>
         <Box ml={3} color={'gray.500'}>
           ( {dbList.length} )
@@ -262,7 +264,7 @@ const DBList = ({
           variant={'primary'}
           onClick={() => router.push('/db/edit')}
         >
-          新建集群
+          {t('Create DB')}
         </Button>
       </Flex>
       <MyTable columns={columns} data={dbList} />

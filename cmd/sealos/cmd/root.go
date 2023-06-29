@@ -86,7 +86,7 @@ func init() {
 		{
 			Message: "Experimental Commands:",
 			Commands: []*cobra.Command{
-				newRegistryCmd(),
+				newRegistryCmd(rootCmd.Name()),
 			},
 		},
 		{
@@ -107,6 +107,7 @@ func setRequireBuildahAnnotation(cmd *cobra.Command) {
 }
 
 func onBootOnDie() {
+	logger.CfgConsoleAndFileLogger(debug, constants.LogPath(), "sealos", false)
 	val, err := system.Get(system.DataRootConfigKey)
 	errExit(err)
 	constants.DefaultClusterRootFsDir = val
@@ -119,7 +120,6 @@ func onBootOnDie() {
 		constants.Workdir(),
 	}
 	errExit(file.MkDirs(rootDirs...))
-	logger.CfgConsoleAndFileLogger(debug, constants.LogPath(), "sealos", false)
 }
 
 func errExit(err error) {

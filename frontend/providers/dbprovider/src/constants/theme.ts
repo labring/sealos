@@ -56,14 +56,14 @@ const Button = defineStyleConfig({
   },
   variants: {
     primary: {
-      backgroundColor: 'myGray.900',
+      bg: 'myGray.900',
       color: 'white',
       _hover: {
-        backgroundColor: 'myGray.700'
+        bg: 'myGray.700 !important'
       }
     },
     base: {
-      backgroundColor: 'myWhite.600',
+      bg: 'myWhite.600',
       color: 'myGray.900',
       border: '1px solid',
       borderColor: 'myGray.100',
@@ -84,7 +84,7 @@ const Input: ComponentStyleConfig = {
   variants: {
     outline: {
       field: {
-        backgroundColor: 'transparent',
+        bg: 'myWhite.300',
         border: '1px solid',
         borderRadius: 'base',
         borderColor: 'myGray.200',
@@ -106,27 +106,42 @@ const Input: ComponentStyleConfig = {
   }
 };
 const NumberInput = numInputMultiStyle({
-  baseStyle: numInputPart({
-    field: {
-      backgroundColor: 'transparent',
-      border: '1px solid',
-      borderRadius: 'base',
-      borderColor: 'myGray.200',
-      _focus: {
-        borderColor: 'myBlue.600 !important',
-        boxShadow: '0px 0px 4px #A8DBFF !important'
+  variants: {
+    outline: numInputPart({
+      field: {
+        bg: 'myWhite.300',
+        border: '1px solid',
+        borderRadius: 'base',
+        borderColor: 'myGray.200',
+        _focus: {
+          borderColor: 'myBlue.600 !important',
+          boxShadow: '0px 0px 4px #A8DBFF !important',
+          bg: 'transparent'
+        },
+        _disabled: {
+          color: 'myGray.400 !important',
+          bg: 'myWhite.300 !important'
+        }
       },
-      _disabled: {
-        color: 'myGray.400 !important',
-        bg: 'myWhite.300 !important'
+      stepper: {
+        bg: 'transparent',
+        border: 'none',
+        color: 'myGray.600',
+        _active: {
+          color: 'myBlue.600'
+        }
       }
-    }
-  })
+    })
+  },
+  defaultProps: {
+    variant: 'outline'
+  }
 });
 
 const Textarea: ComponentStyleConfig = {
   variants: {
     outline: {
+      bg: 'myWhite.300',
       border: '1px solid',
       borderRadius: 'base',
       borderColor: 'myGray.200',
@@ -171,9 +186,10 @@ const Switch = switchMultiStyle({
 
 const Tooltip = defineStyleConfig({
   baseStyle: {
-    backgroundColor: 'white',
+    p: 2,
+    bg: 'white',
     color: 'blackAlpha.800',
-    borderRadius: 'base',
+    borderRadius: '8px',
     boxShadow: '1px 1px 7px rgba(0,0,0,0.2)'
   }
 });

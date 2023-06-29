@@ -9,13 +9,13 @@ import {
   ModalCloseButton,
   Button,
   FormControl,
-  FormErrorMessage,
   Box,
   Textarea,
   Input
 } from '@chakra-ui/react';
 import { useForm } from 'react-hook-form';
 import MyFormControl from '@/components/FormControl';
+import { useTranslation } from 'next-i18next';
 
 export type ConfigMapType = {
   id?: string;
@@ -37,7 +37,8 @@ const ConfigmapModal = ({
   successCb: (e: ConfigMapType) => void;
   closeCb: () => void;
 }) => {
-  const type = useMemo(() => (!!defaultValue.id ? 'create' : 'edit'), [defaultValue]);
+  const { t } = useTranslation();
+  const type = useMemo(() => (!defaultValue.id ? 'create' : 'edit'), [defaultValue]);
   const {
     register,
     handleSubmit,
@@ -47,34 +48,34 @@ const ConfigmapModal = ({
   });
   const textMap = {
     create: {
-      title: '添加ConfigMap'
+      title: 'Add'
     },
     edit: {
-      title: '修改ConfigMap'
+      title: 'Update'
     }
   };
-  console.log(listNames);
+
   return (
     <>
       <Modal isOpen onClose={closeCb}>
         <ModalOverlay />
-        <ModalContent maxW={'590px'}>
-          <ModalHeader>{textMap[type].title}</ModalHeader>
+        <ModalContent maxH={'90vh'} maxW={'90vw'} minW={'600px'} w={'auto'}>
+          <ModalHeader>{t(textMap[type].title)} ConfigMap</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <MyFormControl showError errorText={errors.mountPath?.message}>
-              <Box mb={1}>文件名</Box>
+              <Box mb={1}>{t('filename')}</Box>
               <Input
-                placeholder="文件名，如 /etc/kubernetes/admin.conf "
+                placeholder={`${t('File Name')}: /etc/kubernetes/admin.conf`}
                 {...register('mountPath', {
-                  required: '文件名不能为空',
+                  required: t('Filename can not empty') || 'Filename can not empty',
                   pattern: {
-                    value: /^[0-9a-zA-Z/][0-9a-zA-Z/.-]*[0-9a-zA-Z/]$/,
-                    message: `文件名需满足: [a-z0-9]([-a-z0-9]*[a-z0-9])?`
+                    value: /^[0-9a-zA-Z_/][0-9a-zA-Z_/.-]*[0-9a-zA-Z_/]$/,
+                    message: t('Mount Path Auth')
                   },
                   validate: (e) => {
                     if (listNames.includes(e.toLocaleLowerCase())) {
-                      return '与其他 configMap 路径冲突';
+                      return t('ConfigMap Path Conflict') || 'ConfigMap Path Conflict';
                     }
                     return true;
                   }
@@ -82,11 +83,12 @@ const ConfigmapModal = ({
               />
             </MyFormControl>
             <FormControl isInvalid={!!errors.value}>
-              <Box mb={1}>文件值</Box>
+              <Box mb={1}>{t('file value')} </Box>
               <Textarea
-                rows={5}
+                rows={10}
+                resize={'both'}
                 {...register('value', {
-                  required: '文件值不能为空'
+                  required: t('File Value can not empty') || 'File Value can not empty'
                 })}
               />
             </FormControl>
@@ -94,7 +96,7 @@ const ConfigmapModal = ({
 
           <ModalFooter>
             <Button w={'110px'} variant={'primary'} onClick={handleSubmit(successCb)}>
-              确认
+              {t('Confirm')}
             </Button>
           </ModalFooter>
         </ModalContent>

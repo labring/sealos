@@ -23,10 +23,18 @@ import (
 	"strconv"
 	"time"
 
+	retry2 "k8s.io/client-go/util/retry"
+
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+
+	"github.com/labring/sealos/pkg/utils/retry"
+
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/labring/sealos/controllers/pkg/database"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 
-	"github.com/labring/sealos/controllers/user/controllers/helper"
+	userV1 "github.com/labring/sealos/controllers/user/api/v1"
 
 	"github.com/go-logr/logr"
 
@@ -65,6 +73,7 @@ type AccountReconciler struct {
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts/finalizers,verbs=update
+//+kubebuilder:rbac:groups=user.sealos.io,resources=users,verbs=get;list;watch
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances/status,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
@@ -75,6 +84,13 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// delete payments that exist for more than 5 minutes
 	if err := r.DeletePayment(ctx); err != nil {
 		r.Logger.Error(err, "delete payment failed")
+	}
+	user := &userV1.User{}
+	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, user); err == nil {
+		_, err = r.syncAccount(ctx, user.Name, r.AccountSystemNamespace, "ns-"+user.Name)
+		return ctrl.Result{}, err
+	} else if client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, err
 	}
 
 	accountBalance := accountv1.AccountBalance{}
@@ -106,12 +122,12 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, fmt.Errorf("get account failed: %v", err)
 	}
 
-	status, err := pay.QueryOrder(payment.Status.TradeNO)
+	orderResp, err := pay.QueryOrder(payment.Status.TradeNO)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("query order failed: %v", err)
 	}
-	r.Logger.V(1).Info("query order status", "status", status)
-	switch status {
+	r.Logger.V(1).Info("query order status", "orderResp", orderResp)
+	switch *orderResp.TradeState {
 	case pay.StatusSuccess:
 		dbCtx := context.Background()
 		dbClient, err := database.NewMongoDB(dbCtx, r.MongoDBURI)
@@ -126,11 +142,14 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 		}()
 		now := time.Now().UTC()
-		account.Status.Balance += payment.Spec.Amount
+		payAmount := *orderResp.Amount.Total * 10000
+		//1¥ = 100WechatPayAmount; 1 WechatPayAmount = 10000 SealosAmount
+		var gift = giveGift(payAmount)
+		account.Status.Balance += payAmount + gift
 		if err := r.Status().Update(ctx, account); err != nil {
 			return ctrl.Result{}, fmt.Errorf("update account failed: %v", err)
 		}
-		payment.Status.Status = status
+		payment.Status.Status = pay.StatusSuccess
 		if err := r.Status().Update(ctx, payment); err != nil {
 			return ctrl.Result{}, fmt.Errorf("update payment failed: %v", err)
 		}
@@ -160,7 +179,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 		return ctrl.Result{}, nil
 	default:
-		return ctrl.Result{}, fmt.Errorf("unknown status: %v", status)
+		return ctrl.Result{}, fmt.Errorf("unknown orderResp: %v", orderResp)
 	}
 
 	return ctrl.Result{}, nil
@@ -215,7 +234,29 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	}
 	r.Logger.Info("account created,will charge new account some money", "account", account, "stringAmount", stringAmount)
 
+	if err := r.syncResourceQuota(ctx, userNamespace); err != nil {
+		return nil, fmt.Errorf("sync resource quota failed: %v", err)
+	}
 	return &account, nil
+}
+
+func (r *AccountReconciler) syncResourceQuota(ctx context.Context, nsName string) error {
+	quota := &corev1.ResourceQuota{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ResourceQuotaPrefix + nsName,
+			Namespace: nsName,
+		},
+	}
+
+	return retry.Retry(10, 1*time.Second, func() error {
+		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
+			quota.Spec.Hard = DefaultResourceQuota()
+			return nil
+		}); err != nil {
+			return fmt.Errorf("sync resource quota failed: %v", err)
+		}
+		return nil
+	})
 }
 
 func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, namespace string) error {
@@ -225,18 +266,24 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 			Namespace: r.AccountSystemNamespace,
 		},
 	}
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &role, func() error {
-		role.Rules = []rbacV1.PolicyRule{
-			{
-				APIGroups:     []string{"account.sealos.io"},
-				Resources:     []string{"accounts"},
-				Verbs:         []string{"get", "watch", "list"},
-				ResourceNames: []string{name},
-			},
+	err := retry2.RetryOnConflict(retry2.DefaultRetry, func() error {
+		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &role, func() error {
+			role.Rules = []rbacV1.PolicyRule{
+				{
+					APIGroups:     []string{"account.sealos.io"},
+					Resources:     []string{"accounts"},
+					Verbs:         []string{"get", "watch", "list"},
+					ResourceNames: []string{name},
+				},
+			}
+			return nil
+		}); err != nil {
+			return fmt.Errorf("create role failed: %v,username: %v,namespace: %v", err, name, namespace)
 		}
 		return nil
-	}); err != nil {
-		return fmt.Errorf("create role failed: %v,username: %v,namespace: %v", err, name, namespace)
+	})
+	if err != nil {
+		return err
 	}
 	roleBinding := rbacV1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -250,7 +297,13 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 			Kind:     "Role",
 			Name:     role.Name,
 		}
-		roleBinding.Subjects = helper.GetUsersSubject(name)
+		roleBinding.Subjects = []rbacV1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      name,
+				Namespace: namespace,
+			},
+		}
 
 		return nil
 	}); err != nil {
@@ -321,7 +374,7 @@ func (r *AccountReconciler) updateDeductionBalance(ctx context.Context, accountB
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	const controllerName = "account_controller"
 	r.Logger = ctrl.Log.WithName(controllerName)
 	r.Logger.V(1).Info("init reconcile controller account")
@@ -337,5 +390,40 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&accountv1.Account{}).
 		Watches(&source.Kind{Type: &accountv1.Payment{}}, &handler.EnqueueRequestForObject{}).
 		Watches(&source.Kind{Type: &accountv1.AccountBalance{}}, &handler.EnqueueRequestForObject{}).
+		Watches(&source.Kind{Type: &userV1.User{}}, &handler.EnqueueRequestForObject{}).
+		WithOptions(rateOpts).
 		Complete(r)
+}
+
+const (
+	BaseUnit         = 1_000_000
+	Threshold1       = 299 * BaseUnit
+	Threshold2       = 599 * BaseUnit
+	Threshold3       = 1999 * BaseUnit
+	Threshold4       = 4999 * BaseUnit
+	Threshold5       = 19999 * BaseUnit
+	Ratio1     int64 = 10
+	Ratio2     int64 = 15
+	Ratio3     int64 = 20
+	Ratio4     int64 = 25
+	Ratio5     int64 = 30
+)
+
+func giveGift(amount int64) int64 {
+	var ratio int64
+	switch {
+	case amount < Threshold1:
+		return 0
+	case amount < Threshold2:
+		ratio = Ratio1
+	case amount < Threshold3:
+		ratio = Ratio2
+	case amount < Threshold4:
+		ratio = Ratio3
+	case amount < Threshold5:
+		ratio = Ratio4
+	default:
+		ratio = Ratio5
+	}
+	return amount * ratio / 100
 }

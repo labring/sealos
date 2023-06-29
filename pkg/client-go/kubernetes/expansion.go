@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/labring/sealos/pkg/utils/iputils"
+
 	ckubeadm "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 
 	v1 "k8s.io/api/core/v1"
@@ -32,16 +34,75 @@ var (
 	ControlPlaneComponents = []string{KubeAPIServer, KubeControllerManager, KubeScheduler}
 )
 
-// GetStaticPod computes hashes for a single Static Pod resource
-func GetStaticPod(client clientset.Interface, nodeName string, component string) (*v1.Pod, error) {
-	staticPodName := fmt.Sprintf("%s-%s", component, nodeName)
-	return client.CoreV1().Pods(metav1.NamespaceSystem).Get(context.TODO(), staticPodName, metav1.GetOptions{})
+type Expansion interface {
+	FetchStaticPod(ctx context.Context, nodeName string, component string) (*v1.Pod, error)
+	FetchKubeadmConfig(ctx context.Context) (string, error)
+	UpdateKubeadmConfig(ctx context.Context, clusterConfig string) error
+	FetchKubeletConfig(ctx context.Context) (string, error)
+	UpdateKubeletConfig(ctx context.Context, kubeletConfig string) error
+	FetchHostNameFromInternalIP(ctx context.Context, nodeIP string) (string, error)
 }
 
-func GetKubeadmConfig(client clientset.Interface) (*v1.ConfigMap, error) {
-	cm, err := client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(context.Background(), ckubeadm.KubeadmConfigConfigMap, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
+type kubeExpansion struct {
+	client clientset.Interface
+}
+
+func NewKubeExpansion(client clientset.Interface) Expansion {
+	return &kubeExpansion{
+		client: client,
 	}
-	return cm, nil
+}
+
+func (ke *kubeExpansion) FetchStaticPod(ctx context.Context, nodeName string, component string) (*v1.Pod, error) {
+	staticPodName := fmt.Sprintf("%s-%s", component, nodeName)
+	return ke.client.CoreV1().Pods(metav1.NamespaceSystem).Get(ctx, staticPodName, metav1.GetOptions{})
+}
+func (ke *kubeExpansion) FetchKubeadmConfig(ctx context.Context) (string, error) {
+	cm, err := ke.client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(ctx, ckubeadm.KubeadmConfigConfigMap, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return cm.Data[ckubeadm.ClusterConfigurationConfigMapKey], nil
+}
+func (ke *kubeExpansion) UpdateKubeadmConfig(ctx context.Context, clusterConfig string) error {
+	cm, err := ke.client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(ctx, ckubeadm.KubeadmConfigConfigMap, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	cm.Data[ckubeadm.ClusterConfigurationConfigMapKey] = clusterConfig
+	_, err = ke.client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Update(ctx, cm, metav1.UpdateOptions{})
+	return err
+}
+func (ke *kubeExpansion) FetchKubeletConfig(ctx context.Context) (string, error) {
+	cm, err := ke.client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(ctx, ckubeadm.KubeletBaseConfigurationConfigMap, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return cm.Data[ckubeadm.KubeletBaseConfigurationConfigMapKey], nil
+}
+func (ke *kubeExpansion) UpdateKubeletConfig(ctx context.Context, kubeletConfig string) error {
+	cm, err := ke.client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(ctx, ckubeadm.KubeletBaseConfigurationConfigMap, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	cm.Data[ckubeadm.KubeletBaseConfigurationConfigMap] = kubeletConfig
+	_, err = ke.client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Update(ctx, cm, metav1.UpdateOptions{})
+	return err
+}
+func (ke *kubeExpansion) FetchHostNameFromInternalIP(ctx context.Context, nodeIP string) (string, error) {
+	ip := iputils.GetHostIP(nodeIP)
+	nodeList, err := ke.client.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return "", fmt.Errorf("get node list failed: %v", err)
+	}
+	for _, node := range nodeList.Items {
+		for _, address := range node.Status.Addresses {
+			if address.Type == v1.NodeInternalIP {
+				if address.Address == ip {
+					return node.Name, nil
+				}
+			}
+		}
+	}
+	return "", fmt.Errorf("cannot find host with internal ip %v", ip)
 }

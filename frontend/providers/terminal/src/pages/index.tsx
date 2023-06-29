@@ -34,8 +34,10 @@ export default function Index(props: ServiceEnv) {
     onSuccess: (res) => {
       if (res?.data?.code === 200 && res?.data?.data) {
         const url = res?.data?.data;
-        setIsLoading(false);
-        setUrl(url);
+        if (process.env.NODE_ENV === 'development') {
+          setIsLoading(false);
+          setUrl(url);
+        }
         fetch(url, { mode: 'cors' })
           .then((res) => {
             if (res.status === 200) {

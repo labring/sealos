@@ -38,20 +38,18 @@ func Compare(v1, v2 string) bool {
 		logger.Error("error version format %s %s", v1, v2)
 		return false
 	}
-	if v1List[0] > v2List[0] {
-		return true
-	} else if v1List[0] < v2List[0] {
-		return false
+	for i := 0; i < len(v1List); i++ {
+		v1Num, _ := strconv.Atoi(v1List[i])
+		v2Num, _ := strconv.Atoi(v2List[i])
+
+		if v1Num > v2Num {
+			return true
+		} else if v1Num < v2Num {
+			return false
+		}
 	}
-	if v1List[1] > v2List[1] {
-		return true
-	} else if v1List[1] < v2List[1] {
-		return false
-	}
-	if v1List[2] >= v2List[2] {
-		return true
-	}
-	return false
+
+	return true
 }
 
 // assure version format right and new >=

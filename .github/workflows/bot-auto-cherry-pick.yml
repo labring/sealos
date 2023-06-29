@@ -1,0 +1,53 @@
+name: 'Github Rebot for Cherry Pick when PR is merged'
+on:
+  pull_request_target:
+    types:
+      - closed
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment cherry-pick command
+        uses: actions/github-script@v5
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr.merged) {
+              console.log("PR is not merged. Skipping...");
+              return;
+            }
+            if (!pr.milestone || !pr.milestone.title) {
+              console.log("Milestone is not set. Skipping...");
+              return;
+            }
+            const milestone = pr.milestone.title;
+            const ref = `heads/release-${milestone}`;
+            let branchExists;
+            try {
+              await github.rest.git.getRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: ref
+              });
+              branchExists = true;
+            } catch (error) {
+              if (error.status === 404) {
+                console.log(`Branch ${ref} does not exist. Skipping...`);
+                branchExists = false;
+              } else {
+                throw error; // Rethrow if it's another error
+              }
+            }
+            if (!branchExists) {
+              return;
+            }
+            const cherryPickCmd = `/cherry-pick release-${milestone}`;
+            console.log(`Adding comment: ${cherryPickCmd}`);
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: cherryPickCmd
+            });
+          github-token: ${{ secrets.GH_PAT }}

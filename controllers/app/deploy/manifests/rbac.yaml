@@ -19,5 +19,5 @@ roleRef:
   name: app-default-user
 subjects:
   - kind: Group
-    name: system:serviceaccounts:user-system
+    name: system:serviceaccounts
     apiGroup: rbac.authorization.k8s.io

@@ -26,6 +26,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/google/go-containerregistry/pkg/name"
+
 	"github.com/containers/common/pkg/retry"
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/docker"
@@ -34,6 +36,7 @@ import (
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
+	dtype "github.com/docker/docker/api/types"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -42,12 +45,25 @@ const (
 	defaultPort = "5000"
 )
 
-func ToRegistry(ctx context.Context, sys *types.SystemContext, src, dst string, reportWriter io.Writer, selection copy.ImageListSelection) error {
+type Options struct {
+	Source           string
+	Target           string
+	SelectionOptions []copy.ImageListSelection
+	OmitError        bool
+	SystemContext    *types.SystemContext
+	ReportWriter     io.Writer
+}
+
+func ToRegistry(ctx context.Context, opts *Options) error {
+	src := opts.Source
+	dst := opts.Target
+	sys := opts.SystemContext
+	reportWriter := opts.ReportWriter
+
 	policyContext, err := getPolicyContext()
 	if err != nil {
 		return err
 	}
-	logger.Debug("syncing registry from %s to %s", src, dst)
 	repos, err := docker.SearchRegistry(ctx, sys, src, "", 1<<10)
 	if err != nil {
 		return err
@@ -58,6 +74,7 @@ func ToRegistry(ctx context.Context, sys *types.SystemContext, src, dst string, 
 	if reportWriter == nil {
 		reportWriter = io.Discard
 	}
+	logger.Debug("syncing repos %v from %s to %s", repos, src, dst)
 	for i := range repos {
 		named, err := parseRepositoryReference(fmt.Sprintf("%s/%s", src, repos[i].Name))
 		if err != nil {
@@ -74,18 +91,27 @@ func ToRegistry(ctx context.Context, sys *types.SystemContext, src, dst string, 
 			if err != nil {
 				return err
 			}
-			logger.Debug("syncing %s", destRef.DockerReference().String())
-			err = retry.RetryIfNecessary(ctx, func() error {
-				_, err = copy.Image(ctx, policyContext, destRef, refs[j], &copy.Options{
-					SourceCtx:          sys,
-					DestinationCtx:     sys,
-					ImageListSelection: selection,
-					ReportWriter:       reportWriter,
-				})
-				return err
-			}, getRetryOptions())
-			if err != nil {
-				return fmt.Errorf("failed to copy image %s: %v", refs[j].DockerReference().String(), err)
+			ref := refs[j]
+			for s := range opts.SelectionOptions {
+				selection := opts.SelectionOptions[s]
+				logger.Debug("syncing %s with selection %v", destRef.DockerReference().String(), selection)
+				if err = retry.RetryIfNecessary(ctx, func() error {
+					_, copyErr := copy.Image(ctx, policyContext, destRef, ref, &copy.Options{
+						SourceCtx:          sys,
+						DestinationCtx:     sys,
+						ImageListSelection: selection,
+						ReportWriter:       reportWriter,
+					})
+					return copyErr
+				}, getRetryOptions()); err != nil {
+					if strings.Contains(err.Error(), "manifest unknown") && selection == copy.CopyAllImages {
+						continue
+					}
+					if !opts.OmitError {
+						return err
+					}
+					logger.Warn("failed to copy image %s: %v", refs[j].DockerReference().String(), err)
+				}
 			}
 		}
 	}
@@ -94,8 +120,36 @@ func ToRegistry(ctx context.Context, sys *types.SystemContext, src, dst string, 
 
 func getRetryOptions() *retry.RetryOptions {
 	return &retry.RetryOptions{
-		MaxRetry: 5,
+		MaxRetry: 3,
+		IsErrorRetryable: func(err error) bool {
+			if strings.Contains(err.Error(), "500 Internal Server Error") {
+				return true
+			}
+			return retry.IsErrorRetryable(err)
+		},
 	}
+}
+
+func ImageNameToReference(sys *types.SystemContext, img string, auth map[string]dtype.AuthConfig) (types.ImageReference, error) {
+	src, err := name.ParseReference(img)
+	if err != nil {
+		return nil, fmt.Errorf("ref invalid source name %s: %v", img, err)
+	}
+	reg := src.Context().RegistryStr()
+	info, ok := auth[reg]
+	if sys != nil && ok {
+		sys.DockerAuthConfig = &types.DockerAuthConfig{
+			Username:      info.Username,
+			Password:      info.Password,
+			IdentityToken: info.IdentityToken,
+		}
+	}
+	image := src.Name()
+	srcRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", image))
+	if err != nil {
+		return nil, fmt.Errorf("invalid source name %s: %v", src, err)
+	}
+	return srcRef, nil
 }
 
 func ToImage(ctx context.Context, sys *types.SystemContext, src types.ImageReference, dst string, selection copy.ImageListSelection) error {
@@ -109,6 +163,7 @@ func ToImage(ctx context.Context, sys *types.SystemContext, src types.ImageRefer
 		_ = parts[0]
 		repo = parts[1]
 	}
+	logger.Debug("syncing image from %s to %s", allSrcImage, dst)
 	//named.
 	dstImage := strings.Join([]string{dst, repo}, "/")
 	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", dstImage))

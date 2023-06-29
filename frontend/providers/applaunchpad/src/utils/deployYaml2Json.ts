@@ -75,7 +75,7 @@ export const json2Development = (data: AppEditType) => {
                   memory: `${str2Num(data.memory)}Mi`
                 }
               },
-              command: data.runCMD.split(' ').filter((item) => item),
+              command: data.runCMD ? [data.runCMD] : [],
               args: data.cmdParam.split(' ').filter((item) => item),
               ports: [
                 {
@@ -186,7 +186,7 @@ export const json2StatefulSet = (data: AppEditType) => {
                   memory: `${str2Num(data.memory)}Mi`
                 }
               },
-              command: data.runCMD.split(' ').filter((item) => item),
+              command: data.runCMD ? [data.runCMD] : [],
               args: data.cmdParam.split(' ').filter((item) => item),
               ports: [
                 {
@@ -201,7 +201,7 @@ export const json2StatefulSet = (data: AppEditType) => {
                   subPath: pathFormat(item.mountPath)
                 })),
                 ...data.storeList.map((item) => ({
-                  name: pathToNameFormat(item.path),
+                  name: item.name,
                   mountPath: item.path
                 }))
               ]
@@ -229,7 +229,7 @@ export const json2StatefulSet = (data: AppEditType) => {
             path: store.path,
             value: `${store.value}`
           },
-          name: pathToNameFormat(store.path)
+          name: store.name
         },
         spec: {
           accessModes: ['ReadWriteOnce'],
@@ -482,7 +482,7 @@ export const json2HPA = (data: AppEditType) => {
           policies: [
             {
               type: 'Pods',
-              value: 3,
+              value: 1,
               periodSeconds: 60
             }
           ]

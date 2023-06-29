@@ -30,7 +30,39 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        unit: [ 'E2E_sealos_images_test','E2E_sealos_cert_test','E2E_sealos_run_test','E2E_sealos_inspect_test','E2E_sealos_apply_test','E2E_sealos_filesystem_test' ]
+        unit:
+          [
+            E2E_sealos_images_test,
+            E2E_sealos_images_buildrun_test,
+            E2E_sealos_images_buildrun_feature_test,
+            E2E_sealos_cert_test,
+            E2E_sealos_run_test,
+            E2E_sealos_run_docker_test,
+            E2E_sealos_run_other_test,
+            E2E_sealos_inspect_test,
+            E2E_sealos_apply_test,
+            E2E_sealos_apply_docker_test,
+            E2E_sealos_apply_other_test,
+            E2E_sealos_filesystem_test,
+            E2E_sealos_runtime_version_119_test,
+            E2E_sealos_runtime_version_120_test,
+            E2E_sealos_runtime_version_121_test,
+            E2E_sealos_runtime_version_122_test,
+            E2E_sealos_runtime_version_123_test,
+            E2E_sealos_runtime_version_124_test,
+            E2E_sealos_runtime_version_125_test,
+            E2E_sealos_runtime_version_126_test,
+            E2E_sealos_runtime_version_127_test,
+            E2E_sealos_runtime_version_docker_119_test,
+            E2E_sealos_runtime_version_docker_120_test,
+            E2E_sealos_runtime_version_docker_121_test,
+            E2E_sealos_runtime_version_docker_122_test,
+            E2E_sealos_runtime_version_docker_123_test,
+            E2E_sealos_runtime_version_docker_124_test,
+            E2E_sealos_runtime_version_docker_125_test,
+            E2E_sealos_runtime_version_docker_126_test,
+            E2E_sealos_runtime_version_docker_127_test
+          ]
     runs-on: ubuntu-latest
     steps:
       - name: Download image-cri-shim

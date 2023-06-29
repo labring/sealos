@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+
 	"github.com/go-logr/logr"
 	"github.com/labring/sealos/controllers/pkg/database"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -119,7 +121,7 @@ func CheckOpts(billingRecordQuery *accountv1.BillingRecordQuery) error {
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *BillingRecordQueryReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *BillingRecordQueryReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	if r.MongoDBURI = os.Getenv(database.MongoURL); r.MongoDBURI == "" {
 		return fmt.Errorf("env %s is empty", database.MongoURL)
 	}
@@ -127,6 +129,7 @@ func (r *BillingRecordQueryReconciler) SetupWithManager(mgr ctrl.Manager) error 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&accountv1.BillingRecordQuery{}).
 		Watches(&source.Kind{Type: &accountv1.PriceQuery{}}, &handler.EnqueueRequestForObject{}).
+		WithOptions(rateOpts).
 		Complete(r)
 }
 

@@ -9,6 +9,7 @@ import { defaultDBDetail } from '@/constants/db';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
 import dynamic from 'next/dynamic';
+import { useTranslation } from 'next-i18next';
 
 const DelModal = dynamic(() => import('./DelModal'));
 const BackupModal = dynamic(() => import('./BackupModal'));
@@ -22,6 +23,7 @@ const Header = ({
   isLargeScreen: boolean;
   setShowSlider: Dispatch<boolean>;
 }) => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { toast } = useToast();
   const {
@@ -35,10 +37,10 @@ const Header = ({
     onClose: onCloseBackupModal
   } = useDisclosure();
   const { openConfirm: openRestartConfirm, ConfirmChild: RestartConfirmChild } = useConfirm({
-    content: '确认重启该应用?'
+    content: t('Confirm Restart')
   });
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
-    content: '请注意，暂停状态下无法变更应用，并且如果您使用了存储卷，存储券仍会收费，请确认！'
+    content: t('Pause Hint')
   });
 
   const [loading, setLoading] = useState(false);
@@ -48,54 +50,59 @@ const Header = ({
       setLoading(true);
       await restartDB(db);
       toast({
-        title: '重启成功',
+        title: 'Restart Success',
         status: 'success'
       });
     } catch (error: any) {
       toast({
-        title: typeof error === 'string' ? error : error.message || '重启出现了意外',
+        title:
+          typeof error === 'string'
+            ? error
+            : error.message || t('Restart Error') || 'Restart Error',
         status: 'error'
       });
       console.error(error);
     }
     setLoading(false);
-  }, [db, toast]);
+  }, [db, t, toast]);
 
   const handlePauseApp = useCallback(async () => {
     try {
       setLoading(true);
       await pauseDBByName(db);
       toast({
-        title: '应用已暂停',
+        title: t('Pause Success') || 'Pause Success',
         status: 'success'
       });
     } catch (error: any) {
       toast({
-        title: typeof error === 'string' ? error : error.message || '暂停应用出现了意外',
+        title:
+          typeof error === 'string' ? error : error.message || t('Pause Error') || 'Pause Error',
         status: 'error'
       });
       console.error(error);
     }
     setLoading(false);
-  }, [db, toast]);
+  }, [db, t, toast]);
 
   const handleStartApp = useCallback(async () => {
     try {
       setLoading(true);
       await startDBByName(db);
       toast({
-        title: '集群已启动',
+        title: t('Start Success') || 'Start Success',
         status: 'success'
       });
     } catch (error: any) {
       toast({
-        title: typeof error === 'string' ? error : error.message || '启动应用出现了意外',
+        title:
+          typeof error === 'string' ? error : error.message || t('Start Error') || 'Start Error',
         status: 'error'
       });
       console.error(error);
     }
     setLoading(false);
-  }, [db, toast]);
+  }, [db, t, toast]);
 
   return (
     <Flex h={'86px'} alignItems={'center'}>
@@ -117,7 +124,7 @@ const Header = ({
             bg={'white'}
             onClick={() => setShowSlider(true)}
           >
-            详情
+            {t('Details')}
           </Button>
         </Box>
       )}
@@ -137,7 +144,7 @@ const Header = ({
             router.push(`/db/edit?name=${db.dbName}`);
           }}
         >
-          变更
+          {t('Update')}
         </Button>
       )}
       {db.status.value === 'Stopped' ? (
@@ -151,7 +158,7 @@ const Header = ({
           bg={'white'}
           onClick={handleStartApp}
         >
-          继续
+          {t('Continue')}
         </Button>
       ) : (
         <Button
@@ -164,7 +171,7 @@ const Header = ({
           bg={'white'}
           onClick={onOpenPause(handlePauseApp)}
         >
-          暂停
+          {t('Pause')}
         </Button>
       )}
 
@@ -180,7 +187,7 @@ const Header = ({
             onClick={onOpenBackupModal}
             isLoading={loading}
           >
-            备份
+          {t('Backup')}
           </Button>
         </>
       )} */}
@@ -196,7 +203,7 @@ const Header = ({
           onClick={openRestartConfirm(handleRestartApp)}
           isLoading={loading}
         >
-          重启
+          {t('Restart')}
         </Button>
       )}
 
@@ -212,7 +219,7 @@ const Header = ({
         isDisabled={loading}
         onClick={onOpenDelModal}
       >
-        删除
+        {t('Delete')}
       </Button>
 
       {/* modal */}
@@ -228,7 +235,6 @@ const Header = ({
       {isOpenBackupModal && (
         <BackupModal
           dbName={db.dbName}
-          dbType={db.dbType}
           onClose={onCloseBackupModal}
           onSuccess={() => {
             toast({
@@ -242,4 +248,4 @@ const Header = ({
   );
 };
 
-export default Header;
+export default React.memo(Header);

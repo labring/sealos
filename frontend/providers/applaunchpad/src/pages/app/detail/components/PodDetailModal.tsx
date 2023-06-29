@@ -28,6 +28,7 @@ import MyMenu from '@/components/Menu';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 
 import styles from '../index.module.scss';
+import { useTranslation } from 'next-i18next';
 
 const Logs = ({
   pod = MOCK_PODS[0],
@@ -42,6 +43,7 @@ const Logs = ({
   setPodDetail: (name: string) => void;
   closeFn: () => void;
 }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const controller = useRef(new AbortController());
   const { Loading } = useLoading();
@@ -155,7 +157,7 @@ const Logs = ({
         <ModalCloseButton fontSize={16} top={6} right={6} />
         <Flex p={7} alignItems={'center'}>
           <Box mr={3} fontSize={'xl'} fontWeight={'bold'}>
-            Pod 详情
+            Pod {t('Details')}
           </Box>
           <Box px={3}>
             <MyMenu
@@ -194,7 +196,8 @@ const Logs = ({
           </Box>
           <Box>
             <Box mb={3}>
-              内存 ({((pod.usedMemory[pod.usedMemory.length - 1] / pod.memory) * 100).toFixed(2)}
+              {t('Memory')} (
+              {((pod.usedMemory[pod.usedMemory.length - 1] / pod.memory) * 100).toFixed(2)}
               %)
             </Box>
             <Box h={'80px'} w={'100%'}>
@@ -205,7 +208,7 @@ const Logs = ({
         <Grid py={5} flex={'1 0 0'} h={0} px={7} gridTemplateColumns={'450px 1fr'} gridGap={4}>
           <Flex flexDirection={'column'} h={'100%'}>
             <Box mb={4} color={'myGray.600'}>
-              详情
+              {t('Details')}
             </Box>
             <Box
               flex={'1 0 0'}
@@ -215,7 +218,7 @@ const Logs = ({
               py={3}
               overflowY={'auto'}
             >
-              <RenderItem label="状态">
+              <RenderItem label={t('Status')}>
                 <Box as="span" color={pod.status.color}>
                   {pod.status.label}
                 </Box>
@@ -255,7 +258,7 @@ const Logs = ({
                   leftIcon={<MyIcon name={'analyze'} />}
                   onClick={onclickAnalyses}
                 >
-                  智能分析
+                  {t('智能分析')}
                 </Button>
               )}
             </Flex>
@@ -303,7 +306,7 @@ const Logs = ({
                 >
                   <MyIcon name="noEvents" w={'48px'} h={'48px'} color={'transparent'} />
                   <Box mt={4} color={'myGray.600'}>
-                    暂无 Events
+                    {t('暂无')} Events
                   </Box>
                 </Flex>
               )}
@@ -316,7 +319,7 @@ const Logs = ({
       <Modal isOpen={isOpenAnalyses} onClose={onCloseAnalysesModel}>
         <ModalOverlay />
         <ModalContent maxW={'50vw'}>
-          <ModalHeader>Pod 问题分析</ModalHeader>
+          <ModalHeader>Pod {t('问题分析')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody position={'relative'}>
             <Box

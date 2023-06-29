@@ -1,4 +1,4 @@
-import { Box, Flex, Text } from '@chakra-ui/react';
+import { Box, Flex, Text, UseDisclosureProps } from '@chakra-ui/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import Iconfont from '@/components/iconfont';
@@ -27,14 +27,13 @@ type NotificationItem = {
 };
 
 type TNotification = {
-  isShow: boolean;
-  onClose: () => void;
+  disclosure: UseDisclosureProps
   onAmount: (amount: number) => void;
 };
 
 export default function Notification(props: TNotification) {
   const { t } = useTranslation();
-  const { isShow, onClose, onAmount } = props;
+  const { disclosure, onAmount } = props;
   const [activeTab, setActiveTab] = useState<'read' | 'unread'>('unread');
   const [activePage, setActivePage] = useState<'index' | 'detail'>('index');
   const [msgDetail, setMsgDetail] = useState<NotificationItem>();
@@ -87,122 +86,119 @@ export default function Notification(props: TNotification) {
     readMsgMutation.mutate(names);
   };
 
-  return (
-    <>
-      <Box
-        className={styles.bg}
-        onClick={onClose}
-        display={isShow ? 'block' : 'none'}
-        cursor={'auto'}
-      ></Box>
-      <Box className={clsx(styles.container)} data-show={isShow}>
-        <Flex
-          className={clsx(styles.title)}
-          h={'32px'}
-          alignItems={'center'}
-          justifyContent={'center'}
-          position="relative"
+  return disclosure.isOpen ? (<>
+    <Box
+      className={styles.bg}
+      onClick={disclosure.onClose}
+      cursor={'auto'}
+    ></Box>
+    <Box className={clsx(styles.container)}>
+      <Flex
+        className={clsx(styles.title)}
+        h={'32px'}
+        alignItems={'center'}
+        justifyContent={'center'}
+        position="relative"
+      >
+        <Box
+          className={clsx(styles.back_btn)}
+          onClick={() => setActivePage('index')}
+          data-active={activePage}
         >
-          <Box
-            className={clsx(styles.back_btn)}
-            onClick={() => setActivePage('index')}
-            data-active={activePage}
-          >
-            <Iconfont iconName="icon-left" color="#239BF2" width={32} height={32} />
-          </Box>
-          <Text>{activePage === 'index' ? t('Message Center') : msgDetail?.spec?.title}</Text>
-        </Flex>
-        {activePage === 'index' ? (
-          <>
-            <Flex>
-              <Box
-                className={clsx(activeTab === 'unread' && styles.active, styles.tab)}
-                onClick={() => setActiveTab('unread')}
-              >
-                {t('Unread')} ({unread_notes?.length || 0})
-              </Box>
-              <Box
-                ml={'12px'}
-                className={clsx(activeTab === 'read' && styles.active, styles.tab)}
-                onClick={() => setActiveTab('read')}
-              >
-                {t('Have Read')}
-              </Box>
-              <Text
-                ml={'auto'}
-                color={'#434F61'}
-                className={styles.tab}
-                onClick={() => markAllAsRead()}
-              >
-                {t('Read All')}
-              </Text>
-            </Flex>
-            <Flex pt={'9px'} pb="12px" direction={'column'} h="430px" className={styles.scrollWrap}>
-              {notifications?.map((item: NotificationItem) => {
-                return (
-                  <Flex
-                    mt={'8px'}
-                    direction={'column'}
-                    className={clsx(styles.message)}
-                    key={item?.metadata?.uid}
-                    onClick={() => goMsgDetail(item)}
-                  >
-                    <Text className={styles.title}>{item?.spec?.title}</Text>
-                    <Text flexShrink={0} mt="4px" noOfLines={1} className={clsx(styles.desc)}>
-                      {item?.spec?.message}
-                    </Text>
-                    <Flex
-                      mt="4px"
-                      justifyContent={'space-between'}
-                      className={clsx(styles.desc, styles.footer)}
-                    >
-                      <Text>
-                        {t('From')}「{item?.spec?.from}」
-                      </Text>
-                      <Text>
-                        {formatTime((item?.spec?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}
-                      </Text>
-                    </Flex>
-                  </Flex>
-                );
-              })}
-            </Flex>
-          </>
-        ) : (
-          <Box
-            h="430px"
-            w="100%"
-            mt="16px"
-            p="16px"
-            borderRadius={'12px'}
-            backgroundColor="rgba(255, 255, 255, 0.9)"
-          >
-            <Flex
-              className={clsx(styles.desc, styles.footer)}
-              color="#717D8A"
-              fontSize="10px"
-              fontWeight="400"
+          <Iconfont iconName="icon-left" color="#239BF2" width={32} height={32} />
+        </Box>
+        <Text>{activePage === 'index' ? t('Message Center') : msgDetail?.spec?.title}</Text>
+      </Flex>
+      {activePage === 'index' ? (
+        <>
+          <Flex>
+            <Box
+              className={clsx(activeTab === 'unread' && styles.active, styles.tab)}
+              onClick={() => setActiveTab('unread')}
             >
-              <Text>
-                {t('From')}「{msgDetail?.spec?.from}」
-              </Text>
-              <Box display={'inline-block'} ml={'auto'}>
-                {formatTime((msgDetail?.spec?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}
-              </Box>
-            </Flex>
+              {t('Unread')} ({unread_notes?.length || 0})
+            </Box>
+            <Box
+              ml={'12px'}
+              className={clsx(activeTab === 'read' && styles.active, styles.tab)}
+              onClick={() => setActiveTab('read')}
+            >
+              {t('Have Read')}
+            </Box>
             <Text
-              whiteSpace="pre-wrap"
-              mt="14px"
-              fontSize="12px"
-              fontWeight={400}
-              color="#000000"
-              className="overflow-auto"
+              ml={'auto'}
+              color={'#434F61'}
+              className={styles.tab}
+              onClick={() => markAllAsRead()}
             >
-              {msgDetail?.spec?.message}
+              {t('Read All')}
             </Text>
-          </Box>
-        )}
-      </Box>
-    </>
-  );
+          </Flex>
+          <Flex pt={'9px'} pb="12px" direction={'column'} h="430px" className={styles.scrollWrap}>
+            {notifications?.map((item: NotificationItem) => {
+              return (
+                <Flex
+                  mt={'8px'}
+                  direction={'column'}
+                  className={clsx(styles.message)}
+                  key={item?.metadata?.uid}
+                  onClick={() => goMsgDetail(item)}
+                >
+                  <Text className={styles.title}>{item?.spec?.title}</Text>
+                  <Text flexShrink={0} mt="4px" noOfLines={1} className={clsx(styles.desc)}>
+                    {item?.spec?.message}
+                  </Text>
+                  <Flex
+                    mt="4px"
+                    justifyContent={'space-between'}
+                    className={clsx(styles.desc, styles.footer)}
+                  >
+                    <Text>
+                      {t('From')}「{item?.spec?.from}」
+                    </Text>
+                    <Text>
+                      {formatTime((item?.spec?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}
+                    </Text>
+                  </Flex>
+                </Flex>
+              );
+            })}
+          </Flex>
+        </>
+      ) : (
+        <Box
+          h="430px"
+          w="100%"
+          mt="16px"
+          p="16px"
+          borderRadius={'12px'}
+          backgroundColor="rgba(255, 255, 255, 0.9)"
+        >
+          <Flex
+            className={clsx(styles.desc, styles.footer)}
+            color="#717D8A"
+            fontSize="10px"
+            fontWeight="400"
+          >
+            <Text>
+              {t('From')}「{msgDetail?.spec?.from}」
+            </Text>
+            <Box display={'inline-block'} ml={'auto'}>
+              {formatTime((msgDetail?.spec?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}
+            </Box>
+          </Flex>
+          <Text
+            whiteSpace="pre-wrap"
+            mt="14px"
+            fontSize="12px"
+            fontWeight={400}
+            color="#000000"
+            className="overflow-auto"
+          >
+            {msgDetail?.spec?.message}
+          </Text>
+        </Box>
+      )}
+    </Box>
+  </>) : <></>;
 }

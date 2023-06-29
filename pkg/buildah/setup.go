@@ -15,10 +15,13 @@
 package buildah
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/labring/sealos/pkg/system"
 
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/config"
@@ -31,6 +34,8 @@ import (
 )
 
 var (
+	// use the defaultOverrideConfigFile var as default
+	defaultOverrideConfigFile          = "/etc/containers/storage.conf"
 	DefaultConfigFile                  string
 	DefaultSignaturePolicyPath         = config.DefaultSignaturePolicyPath
 	DefaultRootlessSignaturePolicyPath = "containers/policy.json"
@@ -41,17 +46,21 @@ var (
 
 func init() {
 	_ = os.Setenv("TMPDIR", parse.GetTempDir())
-	var err error
-	DefaultConfigFile, err = types.DefaultConfigFile(unshare.IsRootless())
-	if err != nil {
-		logger.Fatal(err)
+
+	// storage config path
+	if path, ok := os.LookupEnv(system.ContainerStorageConfEnvKey); ok {
+		DefaultConfigFile = path
+	} else if !unshare.IsRootless() {
+		DefaultConfigFile = defaultOverrideConfigFile
+	} else {
+		var err error
+		DefaultConfigFile, err = types.DefaultConfigFile(true)
+		bailOnError(err, "")
 	}
 	// config path
 	if unshare.IsRootless() {
 		configHome, err := homedir.GetConfigHome()
-		if err != nil {
-			logger.Fatal(err)
-		}
+		bailOnError(err, "")
 		DefaultSignaturePolicyPath = filepath.Join(configHome, DefaultRootlessSignaturePolicyPath)
 		DefaultRegistriesFilePath = filepath.Join(configHome, DefaultRootlessRegistriesFilePath)
 	}
@@ -103,7 +112,7 @@ runroot = "/run/containers/storage"
 graphroot = "/var/lib/containers/storage"`
 	defaultRootlessStorageConf = `[storage]
 driver = "overlay"
-runroot = "/run/user/%d"`
+runroot = "%s"`
 	storageOptionsOverlaySnippet = `
 [storage.options.overlay]
 mount_program = "/bin/fuse-overlayfs"
@@ -127,9 +136,19 @@ func setupRegistriesFile() error {
 }
 
 func setupStorageConfigFile() error {
+	logger.Debug("using file %s as container storage config", DefaultConfigFile)
 	var content string
 	if unshare.IsRootless() {
-		content = fmt.Sprintf(defaultRootlessStorageConf, unshare.GetRootlessUID())
+		runRoot := fmt.Sprintf("/run/user/%d", unshare.GetRootlessUID())
+		if err := os.MkdirAll(runRoot, 0755); err != nil && errors.Is(err, os.ErrPermission) {
+			// has not permission, then use cache home
+			cacheHome, err := homedir.GetCacheHome()
+			if err != nil {
+				return err
+			}
+			runRoot = cacheHome
+		}
+		content = fmt.Sprintf(defaultRootlessStorageConf, runRoot)
 	} else {
 		content = defaultRootStorageConf
 	}

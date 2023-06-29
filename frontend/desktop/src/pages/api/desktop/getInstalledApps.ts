@@ -1,7 +1,6 @@
-// import MockInstalAPPs from 'mock/installedApps';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { authSession } from '@/services/backend/auth';
-import { GetUserDefaultNameSpace, K8sApi, ListCRD } from '../../../services/backend/kubernetes';
+import { GetUserDefaultNameSpace, ListCRD } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import { TApp } from '@/types';
 
@@ -27,7 +26,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       namespace: GetUserDefaultNameSpace(kube_user.name),
       plural: 'apps'
     };
-
     const defaultResult = await ListCRD(kc, defaultMeta);
     const userResult = await ListCRD(kc, meta);
 
@@ -44,7 +42,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     jsonRes(res, { data: apps });
   } catch (err) {
-    console.log(err);
     jsonRes(res, { code: 500, data: err });
   }
 }

@@ -1,9 +1,10 @@
 import { v4 } from 'uuid';
 import { API_NAME } from './constants';
+import { AppMessageType, AppSendMessageType, MasterReplyMessageType, Session } from './types';
 import { isBrowser } from './utils';
-import { AppSendMessageType, MasterReplyMessageType, Session } from './types';
 
 class ClientSDK {
+  private readonly eventBus = new Map<string, (e?: any) => any>();
   private initialized = false;
   private desktopOrigin = '*';
   private commonConfig = {
@@ -11,8 +12,12 @@ class ClientSDK {
     clientLocation: ''
   };
   private userSession: Session | undefined;
-
   private readonly callback = new Map<string, (data: MasterReplyMessageType) => void>();
+  private readonly apiFun: {
+    [key: string]: (data: AppMessageType) => void;
+  } = {
+    [API_NAME.EVENT_BUS]: (data) => this.runAppEvents(data)
+  };
 
   private sendMessageToMaster(
     apiName: `${API_NAME}`,
@@ -62,15 +67,18 @@ class ClientSDK {
     console.log('sealos app init');
     this.commonConfig.clientLocation = window.location.origin;
 
-    const listenCb = ({ data, origin }: MessageEvent<MasterReplyMessageType>) => {
-      if (!data.messageId) return;
-      if (!this.callback.has(data.messageId)) return;
-
-      this.desktopOrigin = origin;
-
-      // @ts-ignore nextline
-      this.callback.get(data.messageId)(data);
-      this.callback.delete(data.messageId);
+    const listenCb = ({ data, origin, source }: MessageEvent<AppMessageType>) => {
+      const { apiName, messageId } = data || {};
+      if (!source) return;
+      if (apiName && this?.apiFun[data?.apiName]) {
+        return this.apiFun[data.apiName](data);
+      }
+      if (messageId && this.callback.has(data?.messageId)) {
+        this.desktopOrigin = origin;
+        // @ts-ignore nextline
+        this.callback.get(data.messageId)(data);
+        this.callback.delete(data?.messageId);
+      }
     };
 
     /* add message listen to top */
@@ -91,6 +99,10 @@ class ClientSDK {
     return this.sendMessageToMaster(API_NAME.USER_GET_INFO);
   }
 
+  getLanguage(): Promise<{ lng: string }> {
+    return this.sendMessageToMaster(API_NAME.GET_LANGUAGE);
+  }
+
   /**
    * run master EventBus
    */
@@ -99,6 +111,46 @@ class ClientSDK {
       eventName,
       eventData
     });
+  }
+
+  /**
+   * add app event bus
+   */
+  addAppEventListen(name: string, fn: (e?: any) => any) {
+    if (this.eventBus.has(name)) {
+      console.error('event bus name repeat');
+      return;
+    }
+    if (typeof fn !== 'function') {
+      console.error('event is not a function');
+      return;
+    }
+    this.eventBus.set(name, fn);
+
+    return () => this.removeAppEventListen(name);
+  }
+
+  /**
+   * remove app event bus
+   */
+  removeAppEventListen(name: string) {
+    this.eventBus.delete(name);
+  }
+
+  /**
+   * run app event bus
+   */
+  private runAppEvents(data: AppMessageType) {
+    if ('eventName' in data) {
+      if (!this.eventBus.has(data.eventName)) {
+        console.error('event bus name does not exist');
+        return;
+      }
+      const eventFunction = this.eventBus.get(data.eventName);
+      if (eventFunction) {
+        eventFunction(data.data);
+      }
+    }
   }
 }
 

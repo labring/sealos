@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Box, Grid } from '@chakra-ui/react';
 import type { GridProps } from '@chakra-ui/react';
+import { useTranslation } from 'next-i18next';
 
 // @ts-ignore
 interface Props extends GridProps {
@@ -11,6 +12,8 @@ interface Props extends GridProps {
 }
 
 const Tabs = ({ list, size = 'md', activeId, onChange, ...props }: Props) => {
+  const { t } = useTranslation();
+
   const sizeMap = useMemo(() => {
     switch (size) {
       case 'sm':
@@ -63,7 +66,7 @@ const Tabs = ({ list, size = 'md', activeId, onChange, ...props }: Props) => {
             onChange(item.id);
           }}
         >
-          {item.label}
+          {t(item.label)}
         </Box>
       ))}
     </Grid>

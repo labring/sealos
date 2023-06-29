@@ -18,9 +18,15 @@ spec:
     - jsonPath: .spec.keepalived
       name: Keepalived
       type: string
+    - jsonPath: .status.availableReplicas
+      name: Available
+      type: string
     - jsonPath: .status.domain
       name: Domain
       type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
     name: v1
     schema:
       openAPIV3Schema:

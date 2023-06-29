@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -13,7 +13,6 @@ import {
   AccordionItem,
   AccordionPanel,
   AccordionIcon,
-  Link,
   useTheme,
   useDisclosure
 } from '@chakra-ui/react';
@@ -35,7 +34,9 @@ import { SEALOS_DOMAIN } from '@/store/static';
 import Tabs from '@/components/Tabs';
 import Tip from '@/components/Tip';
 import MySelect from '@/components/Select';
-
+import { useTranslation } from 'next-i18next';
+import { INSTALL_ACCOUNT } from '@/store/static';
+import PriceBox from './PriceBox';
 import dynamic from 'next/dynamic';
 
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
@@ -59,7 +60,7 @@ const Form = ({
   pxVal: number;
 }) => {
   if (!formHook) return null;
-
+  const { t } = useTranslation();
   const router = useRouter();
   const { name } = router.query as QueryType;
   const theme = useTheme();
@@ -96,7 +97,7 @@ const Form = ({
   const navList = [
     {
       id: 'baseInfo',
-      label: '基础配置',
+      label: 'Basic Config',
       icon: 'formInfo',
       isSetting:
         getValues('appName') &&
@@ -109,19 +110,19 @@ const Form = ({
     },
     {
       id: 'deployMode',
-      label: '部署模式',
+      label: 'Deployment Mode',
       icon: 'deployMode',
       isSetting: getValues('hpa.use') ? !!getValues('hpa.value') : !!getValues('replicas')
     },
     {
       id: 'network',
-      label: '网络配置',
+      label: 'Network Configuration',
       icon: 'network',
       isSetting: !!getValues('containerOutPort')
     },
     {
       id: 'settings',
-      label: '高级配置',
+      label: 'Advanced Configuration',
       icon: 'settings',
       isSetting:
         getValues('runCMD') ||
@@ -166,7 +167,7 @@ const Form = ({
 
   const Label = ({
     children,
-    w = 80,
+    w = 'auto',
     ...props
   }: {
     children: string;
@@ -212,8 +213,8 @@ const Form = ({
         <Box>
           <Tabs
             list={[
-              { id: 'form', label: '配置表单' },
-              { id: 'yaml', label: 'YAML 文件' }
+              { id: 'form', label: 'Config Form' },
+              { id: 'yaml', label: 'YAML File' }
             ]}
             activeId={'form'}
             onChange={() =>
@@ -256,11 +257,25 @@ const Form = ({
                     h={'20px'}
                     color={activeNav === item.id ? 'myGray.500' : 'myGray.400'}
                   />
-                  <Box ml={4}>{item.label}</Box>
+                  <Box ml={4}>{t(item.label)}</Box>
                 </Flex>
               </Box>
             ))}
           </Box>
+          {INSTALL_ACCOUNT && (
+            <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>
+              <PriceBox
+                pods={
+                  getValues('hpa.use')
+                    ? [getValues('hpa.minReplicas') || 1, getValues('hpa.maxReplicas') || 2]
+                    : [getValues('replicas') || 1, getValues('replicas') || 1]
+                }
+                cpu={getValues('cpu')}
+                memory={getValues('memory')}
+                storage={getValues('storeList').reduce((sum, item) => sum + item.value, 0)}
+              />
+            </Box>
+          )}
         </Box>
 
         <Box
@@ -274,12 +289,12 @@ const Form = ({
           <Box id={'baseInfo'} {...boxStyles}>
             <Box {...headerStyles}>
               <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'myGray.500'} />
-              基础配置
+              {t('Basic Config')}
             </Box>
             <Box px={'42px'} py={'24px'}>
               <FormControl mb={7} isInvalid={!!errors.appName} w={'500px'}>
                 <Flex alignItems={'center'}>
-                  <Label>应用名称</Label>
+                  <Label w={80}>{t('App Name')}</Label>
                   <Input
                     disabled={isEdit}
                     title={isEdit ? '不允许修改应用名称' : ''}
@@ -297,17 +312,17 @@ const Form = ({
               </FormControl>
               <Box mb={7}>
                 <Flex alignItems={'center'}>
-                  <Label>镜像源</Label>
+                  <Label w={80}>{t('Image')}</Label>
                   <Tabs
                     w={'126px'}
                     size={'sm'}
                     list={[
                       {
-                        label: '公共',
+                        label: 'public',
                         id: `public`
                       },
                       {
-                        label: '私有',
+                        label: 'private',
                         id: `private`
                       }
                     ]}
@@ -321,16 +336,16 @@ const Form = ({
                     }}
                   />
                 </Flex>
-                <Box mt={4} pl={10} borderLeft={theme.borders.base}>
+                <Box mt={4} pl={8} borderLeft={theme.borders.base}>
                   <FormControl isInvalid={!!errors.imageName} w={'500px'}>
                     <Flex alignItems={'center'}>
-                      <Label>镜像名</Label>
+                      <Label w={110}>{t('Image Name')}</Label>
                       <Input
                         value={getValues('imageName')}
                         backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
-                        placeholder="镜像名"
+                        placeholder={`${t('Image Name')}`}
                         {...register('imageName', {
-                          required: '镜像名不能为空',
+                          required: 'Image name cannot be empty.',
                           // pattern: {
                           //   value: /^.+\/.+:.+$/g,
                           //   message: '镜像名需满足 url/name:version 的格式'
@@ -346,10 +361,10 @@ const Form = ({
                     <>
                       <FormControl mt={5} isInvalid={!!errors.secret?.username} w={'500px'}>
                         <Flex alignItems={'center'}>
-                          <Label>用户名</Label>
+                          <Label w={110}>{t('Username')}</Label>
                           <Input
                             backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
-                            placeholder={'镜像仓库的用户名'}
+                            placeholder={`${t('Username for the image registry')}`}
                             {...register('secret.username', {
                               required: '私有镜像, 用户名不能为空'
                             })}
@@ -358,10 +373,10 @@ const Form = ({
                       </FormControl>
                       <FormControl mt={5} isInvalid={!!errors.secret?.password} w={'500px'}>
                         <Flex alignItems={'center'}>
-                          <Label>密码</Label>
+                          <Label w={110}>{t('Password')}</Label>
                           <Input
                             type={'password'}
-                            placeholder={'镜像仓库的密码'}
+                            placeholder={`${t('Password for the image registry')}`}
                             backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
                             {...register('secret.password', {
                               required: '私有镜像, 密码不能为空'
@@ -371,10 +386,10 @@ const Form = ({
                       </FormControl>
                       <FormControl mt={5} isInvalid={!!errors.secret?.serverAddress} w={'500px'}>
                         <Flex alignItems={'center'}>
-                          <Label w={110}>镜像仓库地址</Label>
+                          <Label w={110}>{t('Image address')}</Label>
                           <Input
                             backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
-                            placeholder={'镜像仓库的地址'}
+                            placeholder={`${t('Image address')}`}
                             {...register('secret.serverAddress', {
                               required: '私有镜像, 地址不能为空'
                             })}
@@ -386,7 +401,7 @@ const Form = ({
                 </Box>
               </Box>
               <Flex mb={10} pr={3} alignItems={'flex-start'}>
-                <Label w={60}>CPU</Label>
+                <Label w={70}>{t('CPU')}</Label>
                 <MySlider
                   markList={CpuSlideMarkList}
                   activeVal={getValues('cpu')}
@@ -402,7 +417,7 @@ const Form = ({
                 </Box>
               </Flex>
               <Flex mb={8} pr={3} alignItems={'center'}>
-                <Label w={60}>内存</Label>
+                <Label w={70}>{t('Memory')}</Label>
                 <MySlider
                   markList={MemorySlideMarkList}
                   activeVal={getValues('memory')}
@@ -421,19 +436,19 @@ const Form = ({
           <Box id={'deployMode'} {...boxStyles}>
             <Box {...headerStyles}>
               <MyIcon name={'deployMode'} mr={5} w={'20px'} color={'myGray.500'} />
-              部署模式
+              {t('Deployment Mode')}
             </Box>
             <Box px={'42px'} py={'24px'}>
               <Tabs
-                w={'165px'}
+                w={'195px'}
                 size={'sm'}
                 list={[
                   {
-                    label: '固定实例',
+                    label: 'Fixed instance',
                     id: `static`
                   },
                   {
-                    label: '弹性伸缩',
+                    label: 'Auto scaling',
                     id: `hpa`
                   }
                 ]}
@@ -455,8 +470,8 @@ const Form = ({
                         placeholder="hpa对象"
                         value={getValues('hpa.target')}
                         list={[
-                          { id: 'cpu', label: 'CPU目标值' },
-                          { id: 'memory', label: '内存目标值' }
+                          { id: 'cpu', label: 'CPU' },
+                          { id: 'memory', label: 'Memory' }
                         ]}
                         onchange={(val: any) => setValue('hpa.target', val)}
                       />
@@ -483,13 +498,13 @@ const Form = ({
                       <Tip
                         ml={4}
                         icon={<InfoOutlineIcon />}
-                        text="CPU 目标值为任一容器的 CPU 利用率"
+                        text="CPU target is the CPU utilization rate of any container"
                         size="sm"
                       />
                     </Flex>
 
                     <Flex mt={5} pb={5} pr={3} alignItems={'center'}>
-                      <Label w={100}>实例数</Label>
+                      <Label w={100}>{t('Replicas')}</Label>
                       <MyRangeSlider
                         min={1}
                         max={20}
@@ -504,7 +519,7 @@ const Form = ({
                   </>
                 ) : (
                   <Flex alignItems={'center'}>
-                    <Label>实例数</Label>
+                    <Label mr={4}>{t('Replicas')}</Label>
                     <RangeInput
                       value={getValues('replicas')}
                       min={1}
@@ -535,12 +550,12 @@ const Form = ({
           <Box id={'network'} {...boxStyles}>
             <Box {...headerStyles}>
               <MyIcon name={'network'} mr={5} w={'20px'} color={'myGray.500'} />
-              网络配置
+              {t('Network Configuration')}
             </Box>
             <Box px={'42px'} py={'24px'}>
               <FormControl mb={5}>
                 <Flex alignItems={'center'}>
-                  <Box flex={'0 0 100px'}>容器暴露端口</Box>
+                  <Label mr={3}>{t('Container Ports')}</Label>
                   <Input
                     type={'number'}
                     bg={getValues('containerOutPort') ? 'myWhite.500' : 'myWhite.400'}
@@ -559,7 +574,7 @@ const Form = ({
               <Box>
                 <Flex mb={5}>
                   <Box fontWeight={'bold'} mr={4}>
-                    外网访问
+                    {t('Accessible to the Public')}
                   </Box>
                   <Switch
                     size={'lg'}
@@ -584,7 +599,7 @@ const Form = ({
                   <Box pl={10} borderLeft={theme.borders.base}>
                     <FormControl mt={5}>
                       <Flex alignItems={'center'}>
-                        <Box flex={'0 0 80px'}>协议</Box>
+                        <Box mr={4}>{t('protocol')}</Box>
                         <MySelect
                           width={'120px'}
                           value={getValues('accessExternal.backendProtocol')}
@@ -599,7 +614,7 @@ const Form = ({
                     </FormControl>
                     <FormControl mt={5}>
                       <Flex alignItems={'center'} color={'myGray.500'}>
-                        <Box flex={'0 0 80px'}>出口域名</Box>
+                        <Label w={110}>{t('Export Domain')}</Label>
                         <Box userSelect={'all'}>
                           {getValues('accessExternal.outDomain')}.{SEALOS_DOMAIN}
                         </Box>
@@ -607,7 +622,7 @@ const Form = ({
                     </FormControl>
                     <FormControl mt={5}>
                       <Flex alignItems={'center'}>
-                        <Box flex={'0 0 80px'}>自定义域名</Box>
+                        <Label w={110}>{t('Custom domain')}</Label>
                         <Input
                           w={'320px'}
                           bg={
@@ -624,7 +639,7 @@ const Form = ({
                           mt={3}
                           size={'sm'}
                           icon={<InfoOutlineIcon />}
-                          text={`请将您的自定义域名 cname 到 ${getValues(
+                          text={`${t('Please CNAME your custom domain to')} ${getValues(
                             'accessExternal.outDomain'
                           )}.${SEALOS_DOMAIN}`}
                         />
@@ -650,7 +665,7 @@ const Form = ({
                 >
                   <Flex alignItems={'center'}>
                     <MyIcon name={'settings'} mr={5} w={'20px'} color={'myGray.500'} />
-                    <Box>高级配置</Box>
+                    <Box>{t('Advanced Configuration')}</Box>
                     <Box
                       bg={'myGray.100'}
                       w={'46px'}
@@ -662,7 +677,7 @@ const Form = ({
                       border={'1px solid'}
                       borderColor={'myGray.200'}
                     >
-                      选填
+                      {t('Option')}
                     </Box>
                   </Flex>
                   <AccordionIcon w={'1.3em'} h={'1.3em'} color={'myGray.700'} />
@@ -670,20 +685,20 @@ const Form = ({
 
                 <AccordionPanel px={'42px'} py={'24px'}>
                   <FormControl mb={5}>
-                    <Box mb={3}>运行命令</Box>
+                    <Box mb={3}>{t('Run command')}</Box>
                     <Input
-                      w={'320px'}
+                      w={'350px'}
                       bg={getValues('runCMD') ? 'myWhite.500' : 'myWhite.400'}
-                      placeholder="空格分开,如: /bin/bash -c"
+                      placeholder={`${t('Such as')} sleep 10 && /bin/bash -c`}
                       {...register('runCMD')}
                     />
                   </FormControl>
                   <FormControl>
-                    <Box mb={3}>命令参数</Box>
+                    <Box mb={3}>{t('Command parameters')}</Box>
                     <Input
-                      w={'320px'}
+                      w={'350px'}
                       bg={getValues('cmdParam') ? 'myWhite.500' : 'myWhite.400'}
-                      placeholder="空格分开,如: HOSTNAME PORT"
+                      placeholder={`${t('Separated by spaces')} Hostname Port`}
                       {...register('cmdParam')}
                     />
                   </FormControl>
@@ -691,7 +706,7 @@ const Form = ({
                   <Divider my={'24px'} bg={'myGray.100'} />
 
                   <Box w={'100%'}>
-                    <Box className={styles.formSecondTitle}>环境变量</Box>
+                    <Box className={styles.formSecondTitle}>{t('Environment Variables')}</Box>
                     <table className={styles.table}>
                       <tbody>
                         {envs.map((env) => (
@@ -718,14 +733,14 @@ const Form = ({
                       leftIcon={<MyIcon name="edit" />}
                       onClick={onOpenEditEnvs}
                     >
-                      编辑环境变量
+                      {t('Edit Environment Variables')}
                     </Button>
                   </Box>
 
                   <Divider my={'24px'} bg={'myGray.100'} />
 
                   <Box>
-                    <Box className={styles.formSecondTitle}>Configmap 配置文件</Box>
+                    <Box className={styles.formSecondTitle}>{t('Configuration File')}</Box>
                     {configMaps.map((item, index) => (
                       <Flex key={item.id} _notLast={{ mb: 5 }} alignItems={'center'}>
                         <Flex
@@ -772,7 +787,7 @@ const Form = ({
                       leftIcon={<MyIcon name="plus" />}
                       w={'320px'}
                     >
-                      新增 configmap
+                      {t('Add')} {t('Configuration File')}
                     </Button>
                   </Box>
 
@@ -781,13 +796,13 @@ const Form = ({
                   <Box>
                     <Flex alignItems={'center'} mb={'10px'}>
                       <Box className={styles.formSecondTitle} m={0}>
-                        本地存储
+                        {t('local storage')}
                       </Box>
                       <Tip
                         ml={4}
                         icon={<InfoOutlineIcon />}
                         size="sm"
-                        text="多个实例间数据不互通"
+                        text="multiple instances do not share data"
                       />
                     </Flex>
                     {storeList.map((item, index) => (
@@ -831,12 +846,12 @@ const Form = ({
 
                     <Button
                       mt={3}
-                      onClick={() => setStoreEdit({ path: '', value: 1 })}
+                      onClick={() => setStoreEdit({ name: '', path: '', value: 1 })}
                       variant={'base'}
                       leftIcon={<MyIcon name="plus" />}
                       w={'320px'}
                     >
-                      新增存储卷
+                      {t('Add volume')}
                     </Button>
                   </Box>
                 </AccordionPanel>
@@ -889,6 +904,7 @@ const Form = ({
               setValue(
                 'storeList',
                 storeList.map((item) => ({
+                  name: item.id === e.id ? e.name : item.name,
                   path: item.id === e.id ? e.path : item.path,
                   value: item.id === e.id ? e.value : item.value
                 }))

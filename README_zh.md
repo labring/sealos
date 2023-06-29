@@ -9,7 +9,7 @@
 
 <div align="center">
 
-[![Open in Dev Container](https://img.shields.io/static/v1?label=Dev%20Container&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/labring/sealos)
+[![Open in Dev Container](https://img.shields.io/static/v1?label=Dev%20Container&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/github/labring/sealos)
 [![Build Status](https://github.com/labring/sealos/actions/workflows/release.yml/badge.svg)](https://github.com/labring/sealos/actions)
 [![](https://img.shields.io/docker/pulls/labring/kubernetes)](https://hub.docker.com/r/labring/kubernetes)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_shield)
@@ -25,7 +25,7 @@
 
 ![](/docs/4.0/img/sealos-desktop.webp)
 
-> [文档](https://www.sealos.io/docs/Intro) | [English](README.md) ｜ [发展规划](https://github.com/orgs/labring/projects/4/views/9)
+> [文档](https://www.sealos.io/docs/Intro) | [English](README.md) | [发展规划](https://github.com/orgs/labring/projects/4/views/9)
 
 Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以云原生的方式，抛弃了传统的云计算架构，转向以 Kubernetes 为云内核的新架构，使企业能够**像使用个人电脑一样**简单地使用云。
 
@@ -36,9 +36,10 @@ Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以
 
 * [在 Sealos 上 30 秒内轻松部署 Nginx](https://sealos.io/docs/quick-start/install-apps-with-app-launchpad)
 * [在 Sealos 上 30 秒启动 mysql/pgsql/mongo 高可用数据库](https://sealos.io/docs/quick-start/install-db-with-database)
-* [在 Sealos 上 运行 WordPress](https://sealos.io/docs/examples/wordpress-with-sealos)
-* [在 Sealos 上 运行 Uptime Kuma 拨测系统](https://sealos.io/docs/examples/install-uptime-kuma)
-* [在 Sealos 上 运行低代码平台](https://sealos.io/docs/examples/low-code-platform/install-appsmith)
+* [在 Sealos 上 运行 WordPress](https://sealos.io/docs/examples/blog-platform/install-wordpress)
+* [在 Sealos 上 运行 Uptime Kuma 拨测系统](https://sealos.io/docs/examples/dial-testing-system/install-uptime-kuma)
+* [在 Sealos 上 运行低代码平台](https://sealos.io/docs/category/low-code-platform)
+* [在 Sealos 上 运行搭建聊天应用](https://sealos.io/docs/examples/social-communication/install-tailchat)
 
 ![](/docs/4.0/img/app-launchpad-zh.png)
 
@@ -97,9 +98,7 @@ Sealos 维护了一个[公开的发展路线图](https://github.com/orgs/labring
 
 ## 🔗 链接
 
-- [Sealos Action](https://github.com/labring/sealos-action)
-- [集群镜像](https://github.com/labring-actions/cluster-image)
-- [Rootfs镜像](https://github.com/labring-actions/runtime)
+- [Laf](https://github.com/labring/laf) 是 Sealos 上的一款函数计算应用，让写代码像写博客一样简单，随时随地发布上线。
 - [Buildah](https://github.com/containers/buildah) 在 Sealos 4.0 中，我们广泛地利用了 Buildah 的能力，以确保集群镜像与 OCI 标准兼容。
 
 <!-- ## License -->

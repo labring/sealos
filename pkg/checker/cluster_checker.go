@@ -53,31 +53,33 @@ func (n *ClusterChecker) Check(cluster *v2.Cluster, phase string) error {
 	if err != nil {
 		return err
 	}
+	ke := kubernetes.NewKubeExpansion(c.Kubernetes())
 	nodes, err := c.Kubernetes().CoreV1().Nodes().List(context.Background(), v1.ListOptions{})
 	if err != nil {
 		return err
 	}
 	healthyClient := kubernetes.NewKubeHealthy(c.Kubernetes(), 30*time.Second)
 	var NodeList []ClusterStatus
+	ctx := context.Background()
 	for _, node := range nodes.Items {
 		ip, _ := getNodeStatus(node)
 		cStatus := ClusterStatus{
 			IP:   ip,
 			Node: node.Name,
 		}
-		apiPod, err := kubernetes.GetStaticPod(c.Kubernetes(), node.Name, kubernetes.KubeAPIServer)
+		apiPod, err := ke.FetchStaticPod(ctx, node.Name, kubernetes.KubeAPIServer)
 		if err != nil {
 			return err
 		}
 		cStatus.KubeAPIServer = healthyClient.ForHealthyPod(apiPod)
 
-		controllerPod, err := kubernetes.GetStaticPod(c.Kubernetes(), node.Name, kubernetes.KubeControllerManager)
+		controllerPod, err := ke.FetchStaticPod(ctx, node.Name, kubernetes.KubeControllerManager)
 		if err != nil {
 			return err
 		}
 		cStatus.KubeControllerManager = healthyClient.ForHealthyPod(controllerPod)
 
-		schedulerPod, err := kubernetes.GetStaticPod(c.Kubernetes(), node.Name, kubernetes.KubeScheduler)
+		schedulerPod, err := ke.FetchStaticPod(ctx, node.Name, kubernetes.KubeScheduler)
 		if err != nil {
 			return err
 		}

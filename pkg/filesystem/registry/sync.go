@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	stdsync "sync"
@@ -36,6 +35,7 @@ import (
 	"github.com/labring/sealos/pkg/registry/sync"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/file"
 	httputils "github.com/labring/sealos/pkg/utils/http"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -52,7 +52,19 @@ type syncMode struct {
 	mounts       []v2.MountImage
 }
 
+func shouldSkip(mounts []v2.MountImage) bool {
+	for i := range mounts {
+		if file.IsDir(filepath.Join(mounts[i].MountPoint, constants.RegistryDirName)) {
+			return false
+		}
+	}
+	return true
+}
+
 func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
+	if shouldSkip(s.mounts) {
+		return nil
+	}
 	sys := &types.SystemContext{
 		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
 	}
@@ -94,10 +106,12 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 
 	outerEg, ctx := errgroup.WithContext(ctx)
 	for i := range s.mounts {
-		mount := s.mounts[i]
+		registryDir := filepath.Join(s.mounts[i].MountPoint, constants.RegistryDirName)
+		if !file.IsDir(registryDir) {
+			continue
+		}
 		outerEg.Go(func() error {
-			config, err := handler.NewConfig(
-				filepath.Join(mount.MountPoint, constants.RegistryDirName), 0)
+			config, err := handler.NewConfig(registryDir, 0)
 			if err != nil {
 				return err
 			}
@@ -114,7 +128,23 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 					if err = httputils.WaitUntilEndpointAlive(probeCtx, "http://"+src); err != nil {
 						return err
 					}
-					return sync.ToRegistry(inner, sys, src, dst, os.Stdout, copy.CopySystemImage)
+					opts := &sync.Options{
+						SystemContext: sys,
+						Source:        src,
+						Target:        dst,
+						SelectionOptions: []copy.ImageListSelection{
+							copy.CopyAllImages, copy.CopySystemImage,
+						},
+						OmitError: true,
+					}
+
+					if err = sync.ToRegistry(inner, opts); err == nil {
+						return nil
+					}
+					if !strings.Contains(err.Error(), "manifest unknown") {
+						return err
+					}
+					return nil
 				})
 			}
 			go func() {

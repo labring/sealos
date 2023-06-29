@@ -13,6 +13,7 @@ import {
 } from '@chakra-ui/react';
 import { delDBByName } from '@/api/db';
 import { useToast } from '@/hooks/useToast';
+import { useTranslation } from 'next-i18next';
 
 const DelModal = ({
   dbName,
@@ -23,6 +24,7 @@ const DelModal = ({
   onClose: () => void;
   onSuccess: () => void;
 }) => {
+  const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -32,41 +34,41 @@ const DelModal = ({
       setLoading(true);
       await delDBByName(dbName);
       toast({
-        title: '删除成功',
+        title: t('Delete successful'),
         status: 'success'
       });
       onSuccess();
       onClose();
     } catch (error: any) {
       toast({
-        title: typeof error === 'string' ? error : error.message || '删除出现了意外',
+        title: typeof error === 'string' ? error : error.message || t('Delete Failed'),
         status: 'error'
       });
       console.error(error);
     }
     setLoading(false);
-  }, [dbName, toast, onSuccess, onClose]);
+  }, [dbName, toast, t, onSuccess, onClose]);
 
   return (
     <Modal isOpen onClose={onClose}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>删除警告</ModalHeader>
+        <ModalHeader>{t('Delete Warning')}</ModalHeader>
         <ModalCloseButton />
         <ModalBody pb={4}>
           <Box color={'myGray.600'}>
-            如果确认要删除这个集群吗？如果执行此操作，将删除该集群的所有数据。
+            {t('Delete Hint')}
             <Box my={3}>
-              请输入{' '}
+              {t('Please Enter')}{' '}
               <Box as={'span'} color={'myGray.900'} fontWeight={'bold'} userSelect={'all'}>
                 {dbName}
               </Box>{' '}
-              确认
+              {t('Confirm')}
             </Box>
           </Box>
 
           <Input
-            placeholder={`请输入：${dbName}`}
+            placeholder={`${t('Please Enter')}：${dbName}`}
             value={inputValue}
             bg={'myWhite.300'}
             onChange={(e) => setInputValue(e.target.value)}
@@ -74,7 +76,7 @@ const DelModal = ({
         </ModalBody>
         <ModalFooter>
           <Button onClick={onClose} variant={'base'}>
-            取消
+            {t('Cancel')}
           </Button>
           <Button
             colorScheme="red"
@@ -84,7 +86,7 @@ const DelModal = ({
             isLoading={loading}
             onClick={handleDelApp}
           >
-            确认删除
+            {t('Confirm Delete')}
           </Button>
         </ModalFooter>
       </ModalContent>

@@ -29,24 +29,12 @@ spec:
       containers:
       - command:
         - /manager
-        args:
-        - --leader-elect
         env:
           - name: MONGO_URI
             valueFrom:
               secretKeyRef:
                 name: mongo-secret
                 key: MONGO_URI
-          - name: MONGO_USERNAME
-            valueFrom:
-              secretKeyRef:
-                name: mongo-secret
-                key: MONGO_USERNAME
-          - name: MONGO_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: mongo-secret
-                key: MONGO_PASSWORD
         image: ghcr.io/labring/sealos-resources-controller:dev
         imagePullPolicy: Always
         name: manager

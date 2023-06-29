@@ -1,21 +1,19 @@
 import AppWindow from '@/components/app_window';
+import MoreButton from '@/components/more_button';
 import useAppStore from '@/stores/app';
 import { TApp } from '@/types';
 import { Box, Flex, Grid, GridItem, Image, Text } from '@chakra-ui/react';
+import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
-import { MouseEvent, useCallback, useContext, useEffect, useState } from 'react';
+import { MouseEvent, useCallback, useEffect, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
-import { useTranslation } from 'next-i18next';
 
 const TimeComponent = dynamic(() => import('./time'), {
   ssr: false
 });
 const UserMenu = dynamic(() => import('@/components/user_menu'), {
-  ssr: false
-});
-const MoreButton = dynamic(() => import('@/components/more_button'), {
   ssr: false
 });
 
@@ -96,7 +94,7 @@ export default function DesktopContent(props: any) {
                 <Box
                   w="72px"
                   h="72px"
-                  p={'15px'}
+                  p={'12px'}
                   border={'1px solid #FFFFFF'}
                   borderRadius={8}
                   boxShadow={'0px 1.16667px 2.33333px rgba(0, 0, 0, 0.2)'}
@@ -115,7 +113,6 @@ export default function DesktopContent(props: any) {
                   textAlign={'center'}
                   mt="8px"
                   color={'#FFFFFF'}
-                  // fontWeight={400}
                   fontSize={'10px'}
                   lineHeight={'16px'}
                 >

@@ -1,11 +1,12 @@
-import { MoreAppsContext } from '@/components/layout';
+import { MoreAppsContext } from '@/pages/index';
 import { Box, Flex, Text } from '@chakra-ui/react';
 import { useContext } from 'react';
 import Iconfont from '../iconfont';
 import { useTranslation } from 'next-i18next';
 
-export default function Index() {
+export default function MoreButton() {
   const { t } = useTranslation();
+
   const moreAppsContent = useContext(MoreAppsContext);
   return (
     <Flex

@@ -34,7 +34,7 @@ export interface BackupCRItemType {
   kind: 'Backup';
   metadata: {
     annotations: Record<string, string>;
-    creationTimestamp: string;
+    creationTimestamp: Date;
     labels: Record<string, string>;
     name: string;
     uid: string;
@@ -50,6 +50,7 @@ export interface BackupCRItemType {
     expiration: Date;
     persistentVolumeClaimName: string;
     phase: `${BackupStatusEnum}`;
-    startTimestamp: Date;
+    startTimestamp?: Date;
+    failureReason?: string;
   };
 }

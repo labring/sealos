@@ -13,11 +13,10 @@ jobs:
     steps:
       - name: Checkout the latest code
         uses: actions/checkout@v3
-      - name: Download gh-rebot
-        run: |
-          sudo wget -q https://github.com/labring/gh-rebot/releases/download/${GH_REBOT_VERSION}/gh-rebot_${GH_REBOT_VERSION#v}_linux_amd64.tar.gz
-          sudo tar -zxf gh-rebot_${GH_REBOT_VERSION#v}_linux_amd64.tar.gz gh-rebot &&  chmod +x gh-rebot && sudo mv gh-rebot /usr/bin/gh-rebot
-          gh-rebot version
-      - name: Using sealos-rebot
-        run: |
-          gh-rebot comment
+      - name: Gh Rebot for Sealos
+        uses: labring/gh-rebot@v0.0.6
+        with:
+          version: v0.0.7-rc1
+        env:
+          SEALOS_TYPE: "/comment"
+          GH_TOKEN: "${{ secrets.GH_PAT }}"

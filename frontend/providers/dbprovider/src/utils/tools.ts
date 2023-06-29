@@ -1,13 +1,16 @@
 import dayjs from 'dayjs';
 import { useToast } from '@/hooks/useToast';
+import { useTranslation } from 'next-i18next';
 
 /**
  * copy text data
  */
 export const useCopyData = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
+
   return {
-    copyData: (data: string, title: string = '复制成功') => {
+    copyData: (data: string, title: string = 'Copy Success') => {
       try {
         const textarea = document.createElement('textarea');
         textarea.value = data;
@@ -16,14 +19,14 @@ export const useCopyData = () => {
         document.execCommand('copy');
         document.body.removeChild(textarea);
         toast({
-          title,
+          title: t(title),
           status: 'success',
           duration: 1000
         });
       } catch (error) {
         console.error(error);
         toast({
-          title: '复制失败',
+          title: t('Copy Failed'),
           status: 'error'
         });
       }
@@ -142,7 +145,7 @@ export const storageFormatToNum = (storage = '0') => {
  * print memory to Mi of Gi
  */
 export const printMemory = (val: number) => {
-  return val >= 1024 ? `${val / 1024} Gi` : `${val} Mi`;
+  return val >= 1024 ? `${Math.round(val / 1024)} Gi` : `${val} Mi`;
 };
 
 /**

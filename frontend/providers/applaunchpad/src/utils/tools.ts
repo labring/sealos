@@ -2,14 +2,20 @@ import dayjs from 'dayjs';
 import { useToast } from '@/hooks/useToast';
 import { AppEditType } from '@/types/app';
 import { defaultEditVal } from '@/constants/editApp';
+import yaml from 'js-yaml';
+import { DeployKindsType } from '@/types/app';
+import type { AppPatchPropsType } from '@/types/app';
+import { YamlKindEnum } from './adapt';
+import { useTranslation } from 'next-i18next';
 
 /**
  * copy text data
  */
 export const useCopyData = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   return {
-    copyData: (data: string, title: string = '复制成功') => {
+    copyData: (data: string, title: string = 'Copy Success') => {
       try {
         const textarea = document.createElement('textarea');
         textarea.value = data;
@@ -18,14 +24,14 @@ export const useCopyData = () => {
         document.execCommand('copy');
         document.body.removeChild(textarea);
         toast({
-          title,
+          title: t(title),
           status: 'success',
           duration: 1000
         });
       } catch (error) {
         console.error(error);
         toast({
-          title: '复制失败',
+          title: t('Copy Failed'),
           status: 'error'
         });
       }
@@ -48,11 +54,7 @@ export const pathFormat = (str: string) => {
   return `./${str}`;
 };
 export const pathToNameFormat = (str: string) => {
-  if (!str.startsWith('/')) return str.replace(/(\/|\.)/g, '-').toLocaleLowerCase();
-  return str
-    .substring(1)
-    .replace(/(\/|\.)/g, '-')
-    .toLocaleLowerCase();
+  return str.replace(/(\/|\.)/g, 'vn-').toLocaleLowerCase();
 };
 
 /**
@@ -196,7 +198,7 @@ export const formatPodTime = (createTimeStamp: Date = new Date()) => {
 };
 
 /**
- * 下载文件到本地
+ * download file
  */
 export function downLoadBold(content: BlobPart, type: string, fileName: string) {
   // 创建一个 Blob 对象
@@ -213,3 +215,43 @@ export function downLoadBold(content: BlobPart, type: string, fileName: string) 
   // 模拟点击 a 标签下载文件
   link.click();
 }
+
+/**
+ * patch yamlList and get action
+ */
+export const patchYamlList = (oldYamlList: string[], newYamlList: string[]) => {
+  const oldJsonYaml = oldYamlList.map((item) => yaml.loadAll(item)).flat() as DeployKindsType[];
+  const newJsonYaml = newYamlList.map((item) => yaml.loadAll(item)).flat() as DeployKindsType[];
+
+  const actions: AppPatchPropsType = [];
+
+  // find delete
+  oldJsonYaml.forEach((oldYaml) => {
+    const item = newJsonYaml.find((item) => item.kind === oldYaml.kind);
+    if (!item) {
+      actions.push({
+        type: 'delete',
+        kind: oldYaml.kind as `${YamlKindEnum}`
+      });
+    }
+  });
+  // find create and patch
+  newJsonYaml.forEach((newYaml) => {
+    const patchYaml = oldJsonYaml.find((item) => item.kind === newYaml.kind);
+    if (patchYaml) {
+      actions.push({
+        type: 'patch',
+        kind: newYaml.kind as `${YamlKindEnum}`,
+        value: newYaml
+      });
+    } else {
+      actions.push({
+        type: 'create',
+        kind: newYaml.kind as `${YamlKindEnum}`,
+        value: yaml.dump(newYaml)
+      });
+    }
+  });
+
+  return actions;
+};

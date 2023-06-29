@@ -778,6 +778,20 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - namespaces/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - namespaces/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
   - pods
   verbs:
   - create
@@ -787,6 +801,20 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - pods/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - ""
   resources:
@@ -803,6 +831,18 @@ rules:
   - metering.common.sealos.io
   resources:
   - extensionresourceprices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - notification.sealos.io
+  resources:
+  - notifications
   verbs:
   - create
   - delete
@@ -834,6 +874,14 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - users
+  verbs:
+  - get
+  - list
   - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -960,7 +1008,7 @@ metadata:
   name: account-controller-manager
   namespace: account-system
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       control-plane: controller-manager
@@ -986,7 +1034,7 @@ spec:
         - name: NEW_ACCOUNT_AMOUNT
           value: "5000000"
         - name: WHITELIST
-          value: terminals.Terminal.terminal.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1
+          value: notifications.Notification.notification.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1
         - name: ACCOUNT_SYSTEM_NAMESPACE
           valueFrom:
             fieldRef:
@@ -997,22 +1045,20 @@ spec:
             secretKeyRef:
               key: MONGO_URI
               name: mongo-secret
-        - name: MONGO_USERNAME
-          valueFrom:
-            secretKeyRef:
-              key: MONGO_USERNAME
-              name: mongo-secret
-        - name: MONGO_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: MONGO_PASSWORD
-              name: mongo-secret
+        - name: ApproachingDeletionPeriod
+          value: "345600"
+        - name: ImminentDeletionPeriod
+          value: "259200"
+        - name: FinalDeletionPeriod
+          value: "604800"
+        - name: DebtDetectionCycleSeconds
+          value: "300"
         envFrom:
         - configMapRef:
             name: account-manager-configmap
         - secretRef:
             name: payment-secret
-        image: registry.cn-hangzhou.aliyuncs.com/bxy4543/account-controller:v0.0.4
+        image: ghcr.io/labring/sealos-account-controller:dev
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
@@ -1033,13 +1079,14 @@ spec:
           periodSeconds: 10
         resources:
           limits:
-            cpu: 500m
-            memory: 512Mi
+            cpu: 1000m
+            memory: 1000Mi
           requests:
-            cpu: 10m
-            memory: 64Mi
+            cpu: 100m
+            memory: 640Mi
         securityContext:
           allowPrivilegeEscalation: false
+          runAsNonRoot: true
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
@@ -1114,6 +1161,14 @@ webhooks:
       path: /validate-v1-sealos-cloud
   failurePolicy: Ignore
   name: debt.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: metadata.name
+        operator: NotIn
+        values:
+          - account-system
+          - kube-system
+          - calico-system
   rules:
   - apiGroups:
     - '*'
@@ -1122,6 +1177,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - '*'
   sideEffects: None

@@ -125,6 +125,7 @@ func GetKubeConfig(uid string, timeout int) (string, error) {
 				status := event.Object.(*unstructured.Unstructured).Object["status"]
 				if status != nil {
 					if kubeConfig, ok := status.(map[string]interface{})["kubeConfig"]; ok {
+						w.Stop()
 						return kubeConfig.(string), nil
 					}
 				}

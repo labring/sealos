@@ -19,8 +19,10 @@ import styles from '../index.module.scss';
 import dynamic from 'next/dynamic';
 const ConfigMapDetailModal = dynamic(() => import('./ConfigMapDetailModal'));
 import { MOCK_APP_DETAIL } from '@/mock/apps';
+import { useTranslation } from 'next-i18next';
 
 const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { copyData } = useCopyData();
   const [detailConfigMap, setDetailConfigMap] = useState<{
@@ -41,11 +43,14 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   >(
     () => [
       {
-        name: '基本信息',
+        name: 'Basic Information',
         iconName: 'formInfo',
         items: [
-          { label: '创建时间', value: app.createTime },
-          { label: `镜像名${app.secret.use ? '（私有）' : ''}`, value: app.imageName },
+          { label: 'Creation Time', value: app.createTime },
+          {
+            label: `${t('Image Name')} ${app.secret.use ? '(Private)' : ''}`,
+            value: app.imageName
+          },
           { label: 'Limit CPU', value: `${app.cpu / 1000} Core` },
           {
             label: 'Limit Memory',
@@ -54,14 +59,17 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
         ]
       },
       {
-        name: '部署模式',
+        name: 'Deployment Mode',
         iconName: 'deployMode',
         items: app.hpa.use
           ? [
-              { label: `${app.hpa.target}目标值`, value: `${app.hpa.value}%` },
-              { label: '实例数', value: `${app.hpa.minReplicas} ~ ${app.hpa.maxReplicas}` }
+              { label: `${app.hpa.target} ${t('target_value')}`, value: `${app.hpa.value}%` },
+              {
+                label: 'Number of Instances',
+                value: `${app.hpa.minReplicas} ~ ${app.hpa.maxReplicas}`
+              }
             ]
-          : [{ label: `固定实例数`, value: `${app.replicas}` }]
+          : [{ label: `Number of Instances`, value: `${app.replicas}` }]
       }
     ],
     [app]
@@ -69,9 +77,9 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
 
   const appTags = useMemo(
     () => [
-      ...(app.accessExternal.use ? ['可外网访问'] : []),
-      ...(app.hpa.use ? ['弹性伸缩'] : ['固定实例']),
-      ...(app.storeList.length > 0 ? ['有状态'] : ['无状态'])
+      ...(app.accessExternal.use ? ['Accessible to the Public'] : []),
+      ...(app.hpa.use ? ['Auto scaling'] : ['Fixed instance']),
+      ...(app.storeList.length > 0 ? ['Stateful'] : ['Stateless'])
     ],
     [app]
   );
@@ -81,7 +89,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
       <>
         <Flex alignItems={'center'} color={'myGray.500'}>
           <MyIcon w={'16px'} name={'appType'}></MyIcon>
-          <Box ml={2}>应用类型</Box>
+          <Box ml={2}>{t('Application Type')}</Box>
         </Flex>
         <Flex mt={5}>
           {appTags.map((tag) => (
@@ -95,7 +103,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               px={4}
               py={1}
             >
-              {tag}
+              {t(tag)}
             </Tag>
           ))}
         </Flex>
@@ -109,7 +117,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
         >
           <Flex alignItems={'center'} color={'myGray.500'}>
             <MyIcon w={'16px'} name={info.iconName as any}></MyIcon>
-            <Box ml={2}>{info.name}</Box>
+            <Box ml={2}>{t(info.name)}</Box>
           </Flex>
           <Box mt={3} p={4} backgroundColor={'myWhite.400'} borderRadius={'sm'}>
             {info.items.map((item, i) => (
@@ -121,7 +129,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                 }}
               >
                 <Box flex={'0 0 110px'} w={0} color={'blackAlpha.800'}>
-                  {item.label}
+                  {t(item.label)}
                 </Box>
                 <Box
                   color={'blackAlpha.600'}
@@ -148,12 +156,12 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
       <Box mt={6}>
         <Flex alignItems={'center'} color={'myGray.500'}>
           <MyIcon w={'16px'} name={'settings'}></MyIcon>
-          <Box ml={2}>高级配置</Box>
+          <Box ml={2}>{t('Advanced Configuration')}</Box>
         </Flex>
         <Box mt={2} pt={4} backgroundColor={'myWhite.400'} borderRadius={'sm'}>
           {[
-            { label: '启动命令', value: app.runCMD || '未配置' },
-            { label: '运行参数', value: app.cmdParam || '未配置' }
+            { label: 'Command', value: app.runCMD || 'Not Configured' },
+            { label: 'Parameters', value: app.cmdParam || 'Not Configured' }
           ].map((item) => (
             <Flex
               key={item.label}
@@ -163,7 +171,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               px={4}
             >
               <Box flex={'0 0 80px'} w={0} color={'blackAlpha.800'}>
-                {item.label}
+                {t(item.label)}
               </Box>
               <Box
                 flex={1}
@@ -176,7 +184,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                 onClick={() => copyData(item.value)}
                 cursor={'pointer'}
               >
-                <Tooltip label={item.value}>{item.value}</Tooltip>
+                <Tooltip label={item.value}>{t(item.value)}</Tooltip>
               </Box>
             </Flex>
           ))}
@@ -190,7 +198,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                 _hover={{ backgroundColor: 'transparent' }}
               >
                 <Box flex={1} color={'blackAlpha.800'}>
-                  环境变量
+                  {t('Environment Variables')}
                 </Box>
                 <AccordionIcon />
               </AccordionButton>
@@ -229,7 +237,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                 _hover={{ backgroundColor: 'transparent' }}
               >
                 <Box flex={1} color={'blackAlpha.800'}>
-                  configMap 配置文件
+                  {t('Configuration File')}
                 </Box>
                 <AccordionIcon />
               </AccordionButton>
@@ -280,7 +288,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                 _hover={{ backgroundColor: 'transparent' }}
               >
                 <Box flex={1} color={'blackAlpha.800'}>
-                  存储卷
+                  {t('Storage')}
                 </Box>
                 <AccordionIcon />
               </AccordionButton>

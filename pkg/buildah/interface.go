@@ -20,6 +20,7 @@ import (
 
 	"github.com/containers/buildah"
 	"github.com/containers/buildah/pkg/parse"
+	"github.com/containers/common/libimage"
 	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/types"
 	"github.com/containers/storage"
@@ -235,7 +236,7 @@ func (impl *realImpl) ListContainers() ([]JSONContainer, error) {
 
 func (impl *realImpl) Load(input string, transport string) (string, error) {
 	ref := FormatReferenceWithTransportName(transport, input)
-	names, err := impl.runtime.pullOrLoadImages(getContext(), ref)
+	names, err := impl.runtime.PullOrLoadImages(getContext(), []string{ref}, libimage.CopyOptions{})
 	if err != nil {
 		return "", err
 	}

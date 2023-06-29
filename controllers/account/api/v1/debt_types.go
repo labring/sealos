@@ -25,20 +25,32 @@ const (
 	DebtStatusSmall  DebtStatusType = "Small"
 	DebtStatusMedium DebtStatusType = "Medium"
 	DebtStatusLarge  DebtStatusType = "Large"
-	DebtPrefix                      = "debt-"
-	NormalPrice                     = 0
-	// SmallBlockWaitSecond 7 days
-	SmallBlockWaitSecond = 7 * 24 * 60 * 60
-	// MediumBlockWaitSecond 4 days ,but now not use.
-	//MediumBlockWaitSecond = 4 * 24 * 60 * 60
+
+	NormalPeriod              DebtStatusType = "NormalPeriod"
+	WarningPeriod             DebtStatusType = "WarningPeriod"
+	ApproachingDeletionPeriod DebtStatusType = "ApproachingDeletionPeriod"
+	ImminentDeletionPeriod    DebtStatusType = "ImminentDeletionPeriod"
+	FinalDeletionPeriod       DebtStatusType = "FinalDeletionPeriod"
+
+	DebtPrefix = "debt-"
+	DaySecond  = 24 * 60 * 60
 )
 
 type DebtStatusType string
 
 var DefaultDebtConfig = map[DebtStatusType]int64{
-	DebtStatusNormal: NormalPrice,
-	DebtStatusSmall:  SmallBlockWaitSecond,
+	//DebtStatusNormal: NormalPrice,
+
+	//DebtStatusSmall:  SmallBlockWaitSecond,
 }
+
+const DebtNamespaceAnnoStatusKey = "debt.sealos/status"
+
+const (
+	NormalDebtNamespaceAnnoStatus  = "Normal"
+	SuspendDebtNamespaceAnnoStatus = "Suspend"
+	ResumeDebtNamespaceAnnoStatus  = "Resume"
+)
 
 // DebtSpec defines the desired state of Debt
 type DebtSpec struct {

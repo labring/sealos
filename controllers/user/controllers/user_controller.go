@@ -20,19 +20,33 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
+	"github.com/labring/sealos/controllers/user/controllers/helper/config"
+	"github.com/labring/sealos/controllers/user/controllers/helper/kubeconfig"
+
+	"sigs.k8s.io/controller-runtime/pkg/ratelimiter"
+
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	"github.com/labring/sealos/pkg/utils/hash"
+
+	v12 "k8s.io/api/rbac/v1"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	"github.com/labring/sealos/controllers/user/controllers/migrate"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/rest"
+	kubecontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"github.com/go-logr/logr"
 	"github.com/labring/endpoints-operator/library/controller"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers/helper"
 	v1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -48,12 +62,10 @@ import (
 
 var userAnnotationOwnerKey = userv1.UserAnnotationOwnerKey
 
-const clusterRoleByCreate = "sealos-user-create-role"
-
-const clusterRoleByManager = "sealos-user-manager-role"
-const clusterRoleByUser = "sealos-user-user-role"
-
-const roleNamespaceByUser = "cluster-admin"
+type ReconcilerOptions struct {
+	MaxConcurrentReconciles int
+	RateLimiter             ratelimiter.RateLimiter
+}
 
 // UserReconciler reconciles a User object
 type UserReconciler struct {
@@ -66,16 +78,9 @@ type UserReconciler struct {
 	finalizer *controller.Finalizer
 }
 
-//+kubebuilder:rbac:groups=user.sealos.io,resources=users,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=user.sealos.io,resources=users/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=user.sealos.io,resources=users/finalizers,verbs=update
-//+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests/approval,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=certificates.k8s.io,resources=signers,verbs=approve,resourceNames=kubernetes.io/kube-apiserver-client
-//+kubebuilder:rbac:groups=core,resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=serviceaccounts/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;list;watch;create;update;patch;delete
+type ctxKey string
+
+// +kubebuilder:rbac:groups=*,resources=*,verbs=*
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -93,7 +98,12 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if ok, err := r.finalizer.RemoveFinalizer(ctx, user, controller.DefaultFunc); ok {
+	if ok, err := r.finalizer.RemoveFinalizer(ctx, user, func(ctx context.Context, obj client.Object) error {
+		ns := &v1.Namespace{}
+		ns.Name = config.GetUsersNamespace(user.Name)
+		_ = r.Delete(ctx, ns)
+		return nil
+	}); ok {
 		return ctrl.Result{}, err
 	}
 
@@ -107,7 +117,7 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ReconcilerOptions) error {
 	const controllerName = "user_controller"
 	if r.Client == nil {
 		r.Client = mgr.GetClient()
@@ -125,9 +135,15 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger.V(1).Info("init reconcile controller user")
 	owner := &handler.EnqueueRequestForOwner{OwnerType: &userv1.User{}, IsController: true}
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&userv1.User{}).
-		Watches(&source.Kind{Type: &userv1.UserGroup{}}, owner).
-		Watches(&source.Kind{Type: &userv1.UserGroupBinding{}}, owner).
+		For(&userv1.User{}, builder.WithPredicates(
+			predicate.Or(predicate.GenerationChangedPredicate{}))).
+		Watches(&source.Kind{Type: &v1.ServiceAccount{}}, owner).
+		Watches(&source.Kind{Type: &v12.Role{}}, owner).
+		Watches(&source.Kind{Type: &v12.RoleBinding{}}, owner).
+		WithOptions(kubecontroller.Options{
+			MaxConcurrentReconciles: opts.MaxConcurrentReconciles,
+			RateLimiter:             opts.RateLimiter,
+		}).
 		Complete(r)
 }
 
@@ -138,16 +154,21 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 		return ctrl.Result{}, errors.New("obj convert user is error")
 	}
 
-	pipelines := []func(ctx context.Context, user *userv1.User){
+	pipelines := []func(ctx context.Context, user *userv1.User) context.Context{
 		r.initStatus,
+		r.syncNamespace,
+		r.syncServiceAccount,
+		r.syncServiceAccountSecrets,
 		r.syncKubeConfig,
+		r.syncRole,
+		r.syncRoleBinding,
 		r.syncOwnerUG,
 		r.syncOwnerUGNamespaceBinding,
 		r.syncFinalStatus,
 	}
 
 	for _, fn := range pipelines {
-		fn(ctx, user)
+		ctx = fn(ctx, user)
 	}
 	if user.Status.Phase != userv1.UserUnknown {
 		user.Status.Phase = userv1.UserActive
@@ -160,7 +181,7 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 	return ctrl.Result{}, nil
 }
 
-func (r *UserReconciler) initStatus(_ context.Context, user *userv1.User) {
+func (r *UserReconciler) initStatus(ctx context.Context, user *userv1.User) context.Context {
 	var initializedCondition = userv1.Condition{
 		Type:               userv1.Initialized,
 		Status:             v1.ConditionTrue,
@@ -174,22 +195,274 @@ func (r *UserReconciler) initStatus(_ context.Context, user *userv1.User) {
 	if !helper.IsConditionTrue(user.Status.Conditions, initializedCondition) {
 		user.Status.Conditions = helper.UpdateCondition(user.Status.Conditions, initializedCondition)
 	}
-}
-func (r *UserReconciler) saveCondition(user *userv1.User, condition *userv1.Condition) {
-	if !helper.IsConditionTrue(user.Status.Conditions, *condition) {
-		user.Status.Conditions = helper.UpdateCondition(user.Status.Conditions, *condition)
-	}
+	return ctx
 }
 
-func (r *UserReconciler) syncKubeConfig(_ context.Context, user *userv1.User) {
-	cfg := &helper.Config{
-		User:                    user.Name,
-		ExpirationSeconds:       user.Spec.CSRExpirationSeconds,
-		ServiceAccount:          true,
-		ServiceAccountNamespace: helper.GetDefaultNamespace(),
+func (r *UserReconciler) syncNamespace(ctx context.Context, user *userv1.User) context.Context {
+	namespaceConditionType := userv1.ConditionType("NamespaceSyncReady")
+	nsCondition := &userv1.Condition{
+		Type:               namespaceConditionType,
+		Status:             v1.ConditionTrue,
+		LastTransitionTime: metav1.Now(),
+		LastHeartbeatTime:  metav1.Now(),
+		Reason:             string(userv1.Ready),
+		Message:            "sync namespace successfully",
 	}
+	condition := helper.GetCondition(user.Status.Conditions, nsCondition)
+	defer func() {
+		if helper.DiffCondition(condition, nsCondition) {
+			r.saveCondition(user, nsCondition.DeepCopy())
+		}
+	}()
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var change controllerutil.OperationResult
+		var err error
+		ns := &v1.Namespace{}
+		ns.Name = config.GetUsersNamespace(user.Name)
+		ns.Labels = map[string]string{}
+		if err = r.Get(ctx, client.ObjectKeyFromObject(ns), ns); err != nil {
+			if !apierrors.IsNotFound(err) {
+				return err
+			}
+		}
+		var isCreated bool
+		if !ns.CreationTimestamp.IsZero() {
+			isCreated = true
+			r.Logger.V(1).Info("define namespace User namespace is created", "isCreated", isCreated, "namespace", ns.Name)
+		}
+		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, ns, func() error {
+			ns.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
+			ns.Labels = config.SetPodSecurity(ns.Labels)
+			ns.SetOwnerReferences([]metav1.OwnerReference{})
+			return controllerutil.SetControllerReference(user, ns, r.Scheme)
+		}); err != nil {
+			return fmt.Errorf("unable to create namespace by User: %w", err)
+		}
+		r.Logger.V(1).Info("create or update namespace by User", "OperationResult", change)
+		nsCondition.Message = fmt.Sprintf("sync namespace %s/%s successfully", ns.Name, ns.ResourceVersion)
+		return nil
+	}); err != nil {
+		helper.SetConditionError(nsCondition, "SyncUserError", err)
+		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncUser", "Sync User namespace %s is error: %v", user.Name, err)
+	}
+	return ctx
+}
+
+func (r *UserReconciler) syncRole(ctx context.Context, user *userv1.User) context.Context {
+	roleConditionType := userv1.ConditionType("RoleSyncReady")
+	roleCondition := &userv1.Condition{
+		Type:               roleConditionType,
+		Status:             v1.ConditionTrue,
+		LastTransitionTime: metav1.Now(),
+		LastHeartbeatTime:  metav1.Now(),
+		Reason:             string(userv1.Ready),
+		Message:            "sync namespace role successfully",
+	}
+	condition := helper.GetCondition(user.Status.Conditions, roleCondition)
+	defer func() {
+		if helper.DiffCondition(condition, roleCondition) {
+			r.saveCondition(user, roleCondition.DeepCopy())
+		}
+	}()
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var change controllerutil.OperationResult
+		var err error
+		role := &v12.Role{}
+		role.Name = user.Name
+		role.Namespace = config.GetUsersNamespace(user.Name)
+		role.Labels = map[string]string{}
+		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, role, func() error {
+			role.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
+			role.Rules = config.GetUserRole()
+			return controllerutil.SetControllerReference(user, role, r.Scheme)
+		}); err != nil {
+			return fmt.Errorf("unable to create namespace role by User: %w", err)
+		}
+		r.Logger.V(1).Info("create or update namespace role  by User", "OperationResult", change)
+		roleCondition.Message = fmt.Sprintf("sync namespace role %s/%s successfully", role.Name, role.ResourceVersion)
+		return nil
+	}); err != nil {
+		helper.SetConditionError(roleCondition, "SyncUserError", err)
+		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncUserRole", "Sync User namespace role %s is error: %v", user.Name, err)
+	}
+	return ctx
+}
+func (r *UserReconciler) syncRoleBinding(ctx context.Context, user *userv1.User) context.Context {
+	roleBindingConditionType := userv1.ConditionType("RoleBindingSyncReady")
+	rbCondition := &userv1.Condition{
+		Type:               roleBindingConditionType,
+		Status:             v1.ConditionTrue,
+		LastTransitionTime: metav1.Now(),
+		LastHeartbeatTime:  metav1.Now(),
+		Reason:             string(userv1.Ready),
+		Message:            "sync namespace role binding successfully",
+	}
+	condition := helper.GetCondition(user.Status.Conditions, rbCondition)
+	defer func() {
+		if helper.DiffCondition(condition, rbCondition) {
+			r.saveCondition(user, rbCondition.DeepCopy())
+		}
+	}()
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var change controllerutil.OperationResult
+		var err error
+		roleBinding := &v12.RoleBinding{}
+		roleBinding.Name = user.Name
+		roleBinding.Namespace = config.GetUsersNamespace(user.Name)
+		roleBinding.Labels = map[string]string{}
+		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, roleBinding, func() error {
+			roleBinding.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
+			roleBinding.RoleRef = v12.RoleRef{
+				APIGroup: v12.GroupName,
+				Kind:     "Role",
+				Name:     user.Name,
+			}
+			roleBinding.Subjects = config.GetNewUsersSubject(user.Name)
+			return controllerutil.SetControllerReference(user, roleBinding, r.Scheme)
+		}); err != nil {
+			return fmt.Errorf("unable to create namespace role binding by User: %w", err)
+		}
+		r.Logger.V(1).Info("create or update namespace role binding by User", "OperationResult", change)
+		rbCondition.Message = fmt.Sprintf("sync namespace role binding %s/%s successfully", roleBinding.Name, roleBinding.ResourceVersion)
+		return nil
+	}); err != nil {
+		helper.SetConditionError(rbCondition, "SyncUserError", err)
+		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncUserRoleBinding", "Sync User namespace role binding %s is error: %v", user.Name, err)
+	}
+	return ctx
+}
+func (r *UserReconciler) saveCondition(user *userv1.User, condition *userv1.Condition) {
+	user.Status.Conditions = helper.UpdateCondition(user.Status.Conditions, *condition)
+}
+
+func (r *UserReconciler) syncServiceAccount(ctx context.Context, user *userv1.User) context.Context {
+	saConditionType := userv1.ConditionType("ServiceAccountSyncReady")
+	saCondition := &userv1.Condition{
+		Type:               saConditionType,
+		Status:             v1.ConditionTrue,
+		LastTransitionTime: metav1.Now(),
+		LastHeartbeatTime:  metav1.Now(),
+		Reason:             string(userv1.Ready),
+		Message:            "sync namespace sa successfully",
+	}
+	condition := helper.GetCondition(user.Status.Conditions, saCondition)
+	defer func() {
+		if helper.DiffCondition(condition, saCondition) {
+			r.saveCondition(user, saCondition.DeepCopy())
+		}
+	}()
+	ctx = context.WithValue(ctx, ctxKey("reNew"), false)
+	sa := &v1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      user.Name,
+			Namespace: config.GetDefaultNamespace(),
+		},
+	}
+	_ = r.Delete(context.Background(), sa)
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var change controllerutil.OperationResult
+		var err error
+		sa = &v1.ServiceAccount{}
+		sa.Name = user.Name
+		sa.Namespace = config.GetUsersNamespace(user.Name)
+		sa.Labels = map[string]string{}
+		if err = r.Get(context.Background(), client.ObjectKey{
+			Namespace: config.GetUsersNamespace(user.Name),
+			Name:      user.Name,
+		}, sa); err != nil {
+			if apierrors.IsNotFound(err) {
+				ctx = context.WithValue(ctx, ctxKey("reNew"), true)
+				r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "sa %s not found, kubeConfig renew", user.Name)
+			}
+		}
+		secretName := kubeconfig.SecretName(user.Name)
+		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, sa, func() error {
+			sa.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
+			if len(sa.Secrets) == 0 {
+				sa.Secrets = []v1.ObjectReference{
+					{
+						Name: secretName,
+					},
+				}
+			}
+			return controllerutil.SetControllerReference(user, sa, r.Scheme)
+		}); err != nil {
+			return fmt.Errorf("unable to create namespace sa by User: %w", err)
+		}
+		r.Logger.V(1).Info("create or update namespace sa by User", "OperationResult", change)
+		if change == controllerutil.OperationResultCreated || change == controllerutil.OperationResultUpdated {
+			ctx = context.WithValue(ctx, ctxKey("reNew"), true)
+		}
+		saCondition.Message = fmt.Sprintf("sync namespace sa %s/%s successfully", sa.Name, sa.ResourceVersion)
+		return nil
+	}); err != nil {
+		helper.SetConditionError(saCondition, "SyncUserError", err)
+		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncUserServiceAccount", "Sync User namespace sa %s is error: %v", user.Name, err)
+	}
+	ctx = context.WithValue(ctx, ctxKey("serviceAccount"), sa)
+	return ctx
+}
+
+func (r *UserReconciler) syncServiceAccountSecrets(ctx context.Context, user *userv1.User) context.Context {
+	secretsConditionType := userv1.ConditionType("ServiceAccountSecretsSyncReady")
+	secretsCondition := &userv1.Condition{
+		Type:               secretsConditionType,
+		Status:             v1.ConditionTrue,
+		LastTransitionTime: metav1.Now(),
+		LastHeartbeatTime:  metav1.Now(),
+		Reason:             string(userv1.Ready),
+		Message:            "sync namespace secrets successfully",
+	}
+	condition := helper.GetCondition(user.Status.Conditions, secretsCondition)
+	defer func() {
+		if helper.DiffCondition(condition, secretsCondition) {
+			r.saveCondition(user, secretsCondition.DeepCopy())
+		}
+	}()
+	sa, ok := ctx.Value(ctxKey("serviceAccount")).(*v1.ServiceAccount)
+	if !ok {
+		helper.SetConditionError(secretsCondition, "SyncUserError", fmt.Errorf("syncServiceAccountSecrets serviceAccount not found"))
+		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Sync User namespace  syncServiceAccountSecrets %s is error: %v", user.Name, "serviceAccount not found")
+		return ctx
+	}
+
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		secretName := sa.Secrets[0].Name
+		secrets := &v1.Secret{}
+		secrets.Name = secretName
+		secrets.Namespace = config.GetUsersNamespace(user.Name)
+		var err error
+		if err = r.Get(ctx, client.ObjectKeyFromObject(secrets), secrets); err == nil {
+			return nil
+		}
+		var change controllerutil.OperationResult
+		if change, err = controllerutil.CreateOrUpdate(context.TODO(), r.Client, secrets, func() error {
+			if secrets.Annotations == nil {
+				secrets.Annotations = make(map[string]string, 0)
+			}
+			secrets.Type = v1.SecretTypeServiceAccountToken
+			secrets.Annotations[v1.ServiceAccountNameKey] = sa.Name
+			secrets.Annotations["sealos.io/user.expirationSeconds"] = strconv.Itoa(int(user.Spec.CSRExpirationSeconds))
+			return controllerutil.SetControllerReference(user, secrets, r.Scheme)
+		}); err != nil {
+			return fmt.Errorf("unable to create namespace sa secrets by User: %w", err)
+		}
+		r.Logger.V(1).Info("create or update namespace sa secrets by User", "OperationResult", change)
+		if change == controllerutil.OperationResultCreated || change == controllerutil.OperationResultUpdated {
+			ctx = context.WithValue(ctx, ctxKey("reNew"), true)
+		}
+		secretsCondition.Message = fmt.Sprintf("sync namespace sa sercrets %s/%s successfully", secrets.Name, secrets.ResourceVersion)
+		return nil
+	}); err != nil {
+		helper.SetConditionError(secretsCondition, "SyncUserError", err)
+		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncUserServiceAccount", "Sync User namespace sa %s is error: %v", user.Name, err)
+	}
+	return ctx
+}
+
+func (r *UserReconciler) syncKubeConfig(ctx context.Context, user *userv1.User) context.Context {
 	userConditionType := userv1.ConditionType("KubeConfigSyncReady")
-	condition := &userv1.Condition{
+	userCondition := &userv1.Condition{
 		Type:               userConditionType,
 		Status:             v1.ConditionTrue,
 		LastTransitionTime: metav1.Now(),
@@ -197,161 +470,132 @@ func (r *UserReconciler) syncKubeConfig(_ context.Context, user *userv1.User) {
 		Reason:             string(userv1.Ready),
 		Message:            "sync kube config successfully",
 	}
-	defer r.saveCondition(user, condition)
-	var config *api.Config
+	condition := helper.GetCondition(user.Status.Conditions, userCondition)
+	defer func() {
+		if helper.DiffCondition(condition, userCondition) {
+			r.saveCondition(user, userCondition.DeepCopy())
+		}
+	}()
+	sa, ok := ctx.Value(ctxKey("serviceAccount")).(*v1.ServiceAccount)
+	if !ok {
+		helper.SetConditionError(userCondition, "SyncUserError", fmt.Errorf("serviceAccount not found"))
+		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Sync User namespace  kubeconfig %s is error: %v", user.Name, "serviceAccount not found")
+		return ctx
+	}
+	cfg := kubeconfig.NewConfig(user.Name, "", user.Spec.CSRExpirationSeconds).WithServiceAccountConfig(config.GetUsersNamespace(user.Name), sa)
+	var apiConfig *api.Config
 	var err error
-	config, event, err := syncReNewConfig(user)
+	apiConfig, event, err := syncReNewConfig(user)
 	if event != nil {
 		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", *event)
 	}
 	user.Status.ObservedCSRExpirationSeconds = user.Spec.CSRExpirationSeconds
 	if err != nil {
-		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "syncReNewConfig %s is error: %v", user.Name, err)
-		return
+		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "syncReNewConfig event %s is error: %v", user.Name, err)
+		return ctx
 	}
-	if config == nil {
-		config, err = helper.NewGenerate(cfg).KubeConfig(r.config, r.Client)
-		if err != nil {
-			helper.SetConditionError(condition, "SyncKubeConfigError", err)
-			r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Sync KubeConfig %s is error: %v", user.Name, err)
-			return
+	if ok, val := ctx.Value(ctxKey("reNew")).(bool); ok {
+		if val {
+			apiConfig = nil
 		}
-		if config == nil {
-			helper.SetConditionError(condition, "SyncKubeConfigError", errors.New("api.config is nil"))
-			r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Sync KubeConfig %s is error: %v", user.Name, errors.New("api.config is nil"))
-			return
-		}
-		kubeData, err := clientcmd.Write(*config)
+	}
+	if apiConfig == nil {
+		apiConfig, err = cfg.Apply(r.config, r.Client)
 		if err != nil {
-			helper.SetConditionError(condition, "OutputKubeConfigError", err)
-			r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Output KubeConfig %s is error: %v", user.Name, err)
-			return
+			helper.SetConditionError(userCondition, "SyncKubeConfigError", err)
+			r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Sync KubeConfig apply %s is error: %v", user.Name, err)
+			return ctx
+		}
+		if apiConfig == nil {
+			helper.SetConditionError(userCondition, "SyncKubeConfigError", errors.New("api.config is nil"))
+			r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Sync KubeConfig apply %s is error: %v", user.Name, errors.New("api.config is nil"))
+			return ctx
+		}
+		kubeData, err := clientcmd.Write(*apiConfig)
+		if err != nil {
+			helper.SetConditionError(userCondition, "OutputKubeConfigError", err)
+			r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Output KubeConfig apply %s is error: %v", user.Name, err)
+			return ctx
 		}
 		user.Status.KubeConfig = string(kubeData)
+		userCondition.Message = fmt.Sprintf("renew sync kube config successfully hash %s", hash.ToString(user.Status.KubeConfig))
 	}
+	return ctx
 }
 
 func syncReNewConfig(user *userv1.User) (*api.Config, *string, error) {
-	var config *api.Config
+	var apiConfig *api.Config
 	var err error
 	var event *string
 	if user.Status.KubeConfig != "" && user.Spec.CSRExpirationSeconds == user.Status.ObservedCSRExpirationSeconds {
-		config, err = clientcmd.Load([]byte(user.Status.KubeConfig))
+		apiConfig, err = clientcmd.Load([]byte(user.Status.KubeConfig))
 		if err != nil {
 			return nil, nil, err
 		}
-		for _, ctx := range config.Contexts {
+		for _, ctx := range apiConfig.Contexts {
 			if ctx.Namespace == "" {
-				config = nil
+				apiConfig = nil
 				ev := fmt.Sprintf("User %s Namespace is empty", user.Name)
 				event = &ev
-				return config, event, err
+				return apiConfig, event, err
 			}
 		}
-		if info, ok := config.AuthInfos[user.Name]; ok {
+		if info, ok := apiConfig.AuthInfos[user.Name]; ok {
 			if info != nil {
 				if info.Token == "" {
-					config = nil
+					apiConfig = nil
 					ev := fmt.Sprintf("User %s Token is empty", user.Name)
 					event = &ev
-					return config, event, err
+					return apiConfig, event, err
 				}
 				if info.ClientCertificateData == nil {
-					return config, event, err
+					return apiConfig, event, err
 				}
-				cert, err := helper.DecodeX509CertificateBytes(info.ClientCertificateData)
+				cert, err := kubeconfig.DecodeX509CertificateBytes(info.ClientCertificateData)
 				if err != nil {
 					return nil, nil, err
 				}
 				if cert.NotAfter.Before(time.Now()) {
-					config = nil
+					apiConfig = nil
 					ev := fmt.Sprintf("ClientCertificateData %s is expired", user.Name)
 					event = &ev
 				}
 			}
 		}
 	}
-	return config, event, err
+	return apiConfig, event, err
 }
 
-func (r *UserReconciler) syncOwnerUG(ctx context.Context, user *userv1.User) {
+func (r *UserReconciler) syncOwnerUG(ctx context.Context, user *userv1.User) context.Context {
 	userConditionType := userv1.ConditionType("OwnerUGSyncReady")
-	condition := &userv1.Condition{
-		Type:               userConditionType,
-		Status:             v1.ConditionTrue,
-		LastTransitionTime: metav1.Now(),
-		LastHeartbeatTime:  metav1.Now(),
-		Reason:             string(userv1.Ready),
-		Message:            "sync owner ug successfully",
+	user.Status.Conditions = helper.DeleteCondition(user.Status.Conditions, userConditionType)
+	ug := &userv1.UserGroup{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("ug-%s", user.Name)}, ug)
+	if err == nil {
+		migrate.SetOwner(ctx, r.Client, ug, nil)
+		migrate.RemoveFinalizer(ctx, r.Client, ug, migrate.UGFinalizer)
 	}
-	defer r.saveCondition(user, condition)
-
-	ugName := fmt.Sprintf("ug-%s", user.Name)
-	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		ug := &userv1.UserGroup{}
-		ug.Name = ugName
-		var change controllerutil.OperationResult
-		var err error
-		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, ug, func() error {
-			if err = controllerutil.SetControllerReference(user, ug, r.Scheme); err != nil {
-				return err
-			}
-			ug.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
-			return nil
-		}); err != nil {
-			return fmt.Errorf("unable to create UserGroup: %w", err)
-		}
-		r.Logger.V(1).Info("create or update UserGroup ", "OperationResult", change)
-		return nil
-	}); err != nil {
-		helper.SetConditionError(condition, "SyncOwnerUGError", err)
-		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncOwnerUG", "Sync OwnerUG %s is error: %v", ugName, err)
-	}
+	return ctx
 }
 
-func (r *UserReconciler) syncOwnerUGNamespaceBinding(ctx context.Context, user *userv1.User) {
+func (r *UserReconciler) syncOwnerUGNamespaceBinding(ctx context.Context, user *userv1.User) context.Context {
 	userConditionType := userv1.ConditionType("OwnerUGNamespaceBindingSyncReady")
-	condition := &userv1.Condition{
-		Type:               userConditionType,
-		Status:             v1.ConditionTrue,
-		LastTransitionTime: metav1.Now(),
-		LastHeartbeatTime:  metav1.Now(),
-		Reason:             string(userv1.Ready),
-		Message:            "sync owner ug namespace binding successfully",
+	user.Status.Conditions = helper.DeleteCondition(user.Status.Conditions, userConditionType)
+	ugBinding := &userv1.UserGroupBinding{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("ugn-%s", user.Name)}, ugBinding)
+	if err == nil {
+		migrate.SetOwner(ctx, r.Client, ugBinding, nil)
+		migrate.RemoveFinalizer(ctx, r.Client, ugBinding, migrate.UGBindingFinalizer)
 	}
-	defer r.saveCondition(user, condition)
-
-	ugnBindingName := fmt.Sprintf("ugn-%s", user.Name)
-	nsName := fmt.Sprintf("ns-%s", user.Name)
-	ugName := fmt.Sprintf("ug-%s", user.Name)
-	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		ugBinding := &userv1.UserGroupBinding{}
-		ugBinding.Name = ugnBindingName
-		var change controllerutil.OperationResult
-		var err error
-		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, ugBinding, func() error {
-			if err = controllerutil.SetControllerReference(user, ugBinding, r.Scheme); err != nil {
-				return err
-			}
-			ugBinding.UserGroupRef = ugName
-			ugBinding.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
-			ugBinding.Subject = rbacv1.Subject{
-				Kind: "Namespace",
-				Name: nsName,
-			}
-			return nil
-		}); err != nil {
-			return fmt.Errorf("unable to create namespace UserGroupBinding: %w", err)
-		}
-		r.Logger.V(1).Info("create or update namespace UserGroupBinding", "OperationResult", change)
-		return nil
-	}); err != nil {
-		helper.SetConditionError(condition, "SyncOwnerUGNamespaceBindingError", err)
-		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncOwnerUGNamespaceBinding", "Sync OwnerUGNamespaceBinding %s is error: %v", ugnBindingName, err)
+	uguBinding := &userv1.UserGroupBinding{}
+	err = r.Client.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("ugu-%s", user.Name)}, uguBinding)
+	if err == nil {
+		migrate.RemoveFinalizer(ctx, r.Client, uguBinding, migrate.UGBindingFinalizer)
 	}
+	return ctx
 }
 
-func (r *UserReconciler) syncFinalStatus(_ context.Context, user *userv1.User) {
+func (r *UserReconciler) syncFinalStatus(ctx context.Context, user *userv1.User) context.Context {
 	condition := &userv1.Condition{
 		Type:               userv1.Ready,
 		Status:             v1.ConditionTrue,
@@ -371,6 +615,7 @@ func (r *UserReconciler) syncFinalStatus(_ context.Context, user *userv1.User) {
 	} else {
 		user.Status.Phase = userv1.UserActive
 	}
+	return ctx
 }
 
 func (r *UserReconciler) updateStatus(ctx context.Context, nn types.NamespacedName, status *userv1.UserStatus) error {

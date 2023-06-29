@@ -1,20 +1,20 @@
 export const editModeMap = (isEdit: boolean) => {
   if (isEdit) {
     return {
-      title: '变更集群',
-      applyBtnText: '更新集群',
-      applyMessage: '确认更新集群?',
-      applySuccess: '更新成功',
-      applyError: '更新失败'
+      title: 'Update DataBase',
+      applyBtnText: 'Update',
+      applyMessage: 'Confirm Update DataBase?',
+      applySuccess: 'Update Successful',
+      applyError: 'Update Failed'
     };
   }
 
   return {
-    title: '集群部署',
-    applyBtnText: '部署集群',
-    applyMessage: '确认部署集群?',
-    applySuccess: '部署成功',
-    applyError: '部署失败'
+    title: 'Deploy DataBase',
+    applyBtnText: 'Deploy',
+    applyMessage: 'Confirm Deploy DataBase?',
+    applySuccess: 'Deployment Successful',
+    applyError: 'Deployment Failed'
   };
 };
 
@@ -35,11 +35,10 @@ export const MemorySlideMarkList = [
   { label: '512Mi', value: 512 },
   { label: '1G', value: 1024 },
   { label: '2G', value: 2048 },
-  { label: '3G', value: 3072 },
   { label: '4G', value: 4096 },
-  { label: '5G', value: 5120 },
   { label: '6G', value: 6144 },
-  { label: '7G', value: 7168 },
-  { label: '8G', value: 8192 }
-  // { label: '16G', value: 16384 }
+  { label: '8G', value: 8192 },
+  { label: '12G', value: 12288 },
+  { label: '16G', value: 16384 },
+  { label: '32G', value: 32768 }
 ];

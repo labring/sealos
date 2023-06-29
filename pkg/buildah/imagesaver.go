@@ -55,6 +55,9 @@ func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.System
 	if err != nil {
 		return err
 	}
+	if len(images) == 0 {
+		return nil
+	}
 	auths, err := crane.GetAuthInfo(sys)
 	if err != nil {
 		return err

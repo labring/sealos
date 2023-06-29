@@ -46,7 +46,7 @@ export const useAppStore = create<State>()(
 
         // one pod running, app is running
         const appStatus =
-          pods.filter((pod) => pod.status.value === PodStatusEnum.Running).length > 0
+          pods.filter((pod) => pod.status.value === PodStatusEnum.running).length > 0
             ? appStatusMap.running
             : appStatusMap.waiting;
 

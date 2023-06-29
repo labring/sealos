@@ -1,4 +1,5 @@
 import { AppStatusEnum, PodStatusEnum } from '@/constants/app';
+import { YamlKindEnum } from '@/utils/adapt';
 import type {
   V1Deployment,
   V1ConfigMap,
@@ -85,6 +86,7 @@ export interface AppEditType {
     value: string;
   }[];
   storeList: {
+    name: string;
     path: string;
     value: number;
   }[];
@@ -105,6 +107,8 @@ export interface PodStatusMapType {
   label: string;
   value: `${PodStatusEnum}`;
   color: string;
+  reason?: string;
+  message?: string;
 }
 export interface PodDetailType extends V1Pod {
   podName: string;
@@ -117,6 +121,8 @@ export interface PodDetailType extends V1Pod {
   usedMemory: number[];
   cpu: number;
   memory: number;
+  podReason?: string;
+  podMessage?: string;
 }
 export interface PodMetrics {
   podName: string;
@@ -133,3 +139,9 @@ export interface PodEvent {
   firstTime: string;
   lastTime: string;
 }
+
+export type AppPatchPropsType = (
+  | { type: 'delete'; kind: `${YamlKindEnum}` }
+  | { type: 'patch'; kind: `${YamlKindEnum}`; value: Record<string, any> }
+  | { type: 'create'; kind: `${YamlKindEnum}`; value: string }
+)[];

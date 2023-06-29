@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Box, Flex, Card, useTheme } from '@chakra-ui/react';
+import { Box, Flex, useTheme } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useAppStore } from '@/store/app';
 import { useToast } from '@/hooks/useToast';
@@ -10,6 +10,7 @@ import AppBaseInfo from './components/AppBaseInfo';
 import Pods from './components/Pods';
 import dynamic from 'next/dynamic';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
+import { serviceSideProps } from '@/utils/i18n';
 
 const AppMainInfo = dynamic(() => import('./components/AppMainInfo'), { ssr: false });
 
@@ -119,12 +120,15 @@ const AppDetail = ({ appName }: { appName: string }) => {
   );
 };
 
-export default AppDetail;
-
-export async function getServerSideProps(context: any) {
-  const appName = context.query?.name || '';
+export async function getServerSideProps(content: any) {
+  const appName = content?.query?.name || '';
 
   return {
-    props: { appName }
+    props: {
+      appName,
+      ...(await serviceSideProps(content))
+    }
   };
 }
+
+export default AppDetail;

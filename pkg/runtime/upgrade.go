@@ -16,15 +16,14 @@ package runtime
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	str "strings"
 	"time"
 
+	"github.com/labring/sealos/pkg/utils/yaml"
+
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/labring/sealos/pkg/client-go/kubernetes"
-	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/versionutil"
 )
@@ -44,18 +43,9 @@ const (
 )
 
 func (k *KubeadmRuntime) upgradeCluster(version string) error {
-	//v1.25.0 some flag unsupported
-	if versionutil.Compare(version, V1250) {
-		logger.Info("Change ClusterConfiguration up to v1.25 if need.")
-		if err := k.ChangeConfigToV125(); err != nil {
-			return err
-		}
-	}
-	if versionutil.Compare(version, V1260) {
-		logger.Info("Kubernetes v1.26 will not support CRI v1alpha2.")
-		if err := confirmUpgrade(); err != nil {
-			return err
-		}
+	logger.Info("Change ClusterConfiguration up to newVersion if need.")
+	if err := k.autoUpdateConfig(version); err != nil {
+		return err
 	}
 	//upgrade master0
 	logger.Info("start to upgrade master0")
@@ -64,7 +54,7 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 		return err
 	}
 	//upgrade other control-planes and worker nodes
-	upgradeNodes := []string{}
+	var upgradeNodes []string
 	for _, ip := range append(k.getMasterIPList(), k.getNodeIPList()...) {
 		if ip == k.getMaster0IP() {
 			continue
@@ -156,41 +146,60 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string, version string) error {
 	return nil
 }
 
-func (k *KubeadmRuntime) ChangeConfigToV125() error {
-	cli, err := kubernetes.NewKubernetesClient(k.getContentData().AdminFile(), k.getMaster0IPAPIServer())
+func (k *KubeadmRuntime) autoUpdateConfig(version string) error {
+	ctx := context.Background()
+	clusterCfg, err := k.getKubeExpansion().FetchKubeadmConfig(ctx)
 	if err != nil {
-		logger.Info("get k8s-client failure : %s", err)
 		return err
 	}
-	KubeadmConfig, err := cli.Kubernetes().CoreV1().ConfigMaps("kube-system").Get(context.TODO(), "kubeadm-config", metaV1.GetOptions{})
+	kubeletCfg, err := k.getKubeExpansion().FetchKubeletConfig(ctx)
 	if err != nil {
-		logger.Info("get kubeadmConfig with k8s-client failure : %s", err)
 		return err
 	}
-	ccf := KubeadmConfig.Data[ClusterConfiguration]
-	logger.Debug("get configmap data:\n%s", ccf)
-
-	ccf = str.ReplaceAll(ccf, "TTLAfterFinished=true,", "")
-	ccf = str.ReplaceAll(ccf, "\n    experimental-cluster-signing-duration: 876000h", "")
-
-	logger.Debug("update config:\n%s", ccf)
-	KubeadmConfig.Data[ClusterConfiguration] = ccf
-	_, err = cli.Kubernetes().CoreV1().ConfigMaps("kube-system").Update(context.TODO(), KubeadmConfig, metaV1.UpdateOptions{})
+	logger.Debug("get cluster configmap data:\n%s", clusterCfg)
+	logger.Debug("get kubelet configmap data:\n%s", kubeletCfg)
+	allConfig := str.Join([]string{clusterCfg, kubeletCfg}, "\n---\n")
+	defaultKubeadmConfig, err := LoadKubeadmConfigs(allConfig, false, DecodeCRDFromString)
+	if err != nil {
+		logger.Info("decode cluster kubeadm config from kube failure : %s", err)
+		return err
+	}
+	kk := &KubeadmRuntime{
+		KubeadmConfig: defaultKubeadmConfig,
+	}
+	kk.setKubeVersion(version)
+	kk.setFeatureGatesConfiguration()
+	newClusterData, err := yaml.MarshalYamlConfigs(&k.ClusterConfiguration)
+	if err != nil {
+		logger.Info("encode cluster kubeadm config to yaml failure : %s", err)
+		return err
+	}
+	logger.Debug("update cluster config:\n%s", string(newClusterData))
+	err = k.getKubeExpansion().UpdateKubeadmConfig(ctx, string(newClusterData))
 	if err != nil {
 		logger.Info("update kubeadmConfig with k8s-client failure : %s", err)
 		return err
 	}
+
+	newKubeletData, err := yaml.MarshalYamlConfigs(&k.KubeletConfiguration)
+	if err != nil {
+		logger.Info("encode kubelet kubeadm config to yaml failure : %s", err)
+		return err
+	}
+	logger.Debug("update kubelet config:\n%s", string(newKubeletData))
+	err = k.getKubeExpansion().UpdateKubeletConfig(ctx, string(newKubeletData))
+	if err != nil {
+		logger.Info("update kubelet with k8s-client failure : %s", err)
+		return err
+	}
+
 	return nil
 }
 
 func (k *KubeadmRuntime) pingAPIServer() error {
-	cli, err := kubernetes.NewKubernetesClient(k.getContentData().AdminFile(), k.getMaster0IPAPIServer())
-	if err != nil {
-		return err
-	}
 	timeout := time.Now().Add(1 * time.Minute)
 	for {
-		_, err = cli.Kubernetes().CoreV1().Nodes().List(context.TODO(), metaV1.ListOptions{})
+		_, err := k.getKubeInterface().Kubernetes().CoreV1().Nodes().List(context.TODO(), metaV1.ListOptions{})
 		if err == nil {
 			break
 		}
@@ -224,17 +233,4 @@ func (k *KubeadmRuntime) changeCRIVersion(ip string) error {
 		"systemctl restart image-cri-shim",
 		"systemctl restart kubelet",
 	)
-}
-
-func confirmUpgrade() error {
-	prompt := "already upgrade to containerd v1.6.0 or higher."
-	cancel := "need to upgrade to containerd v1.6.0 or higher. And you can retry to upgrade cluster by the same command."
-	yes, err := confirm.Confirm(prompt, cancel)
-	if err != nil {
-		return err
-	}
-	if !yes {
-		return errors.New("cancelled")
-	}
-	return nil
 }

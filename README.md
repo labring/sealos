@@ -9,7 +9,7 @@ A Cloud Operating System designed for managing cloud-native applications
 
 <div align="center">
 
-[![Open in Dev Container](https://img.shields.io/static/v1?label=Dev%20Container&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/labring/sealos)
+[![Open in Dev Container](https://img.shields.io/static/v1?label=Dev%20Container&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/github/labring/sealos)
 [![Build Status](https://github.com/labring/sealos/actions/workflows/release.yml/badge.svg)](https://github.com/labring/sealos/actions)
 [![](https://img.shields.io/docker/pulls/labring/kubernetes)](https://hub.docker.com/r/labring/kubernetes)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_shield)
@@ -25,15 +25,19 @@ A Cloud Operating System designed for managing cloud-native applications
 
 ![](/docs/4.0/img/sealos-desktop.webp)
 
-> [Docs](https://sealos.io/en/docs/Intro) | [简体中文](README_zh.md) ｜ [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
+> [Docs](https://sealos.io/en/docs/Intro) | [简体中文](README_zh.md) | [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
 
-Sealos is a cloud operating system distribution based on the Kubernetes kernel. It adopts a cloud-native approach, discarding traditional cloud computing architecture, and shifting towards a new architecture with Kubernetes as the cloud kernel. This allows enterprises to use the cloud as effortlessly as they would use a personal computer.
+Sealos['siːləs] is a cloud operating system distribution based on the Kubernetes kernel. This allows enterprises to use the cloud as effortlessly as they would use a personal computer.
 
 ## 🚀 Deploy your app on Sealos
 
 [Try online demo](https://cloud.sealos.io)
 
-🕓 Deploy Nginx on Sealos in 30 seconds.
+* [Easily Deploy Nginx in 30 Seconds on Sealos](https://sealos.io/en/docs/quick-start/install-apps-with-app-launchpad)
+* [Start a mysql/pgsql/mongo highly available database in 30 seconds on Sealos](https://sealos.io/en/docs/quick-start/install-db-with-database)
+* [Running WordPress on Sealos](https://sealos.io/en/docs/examples/blog-platform/install-wordpress)
+* [Running the Uptime Kuma dial test system on Sealos](https://docs.sealos.io/en/docs/examples/dial-testing-system/install-uptime-kuma)
+* [Running a low-code platform on Sealos](https://docs.sealos.io/en/docs/category/low-code-platform)
 
 ![](/docs/4.0/img/app-launchpad.png)
 
@@ -43,7 +47,7 @@ Sealos is a cloud operating system distribution based on the Kubernetes kernel. 
 
 | Terminal | App Launchpad |
 | :---: | :---: |
-| ![](/docs/4.0/img/terminal.jpg) | ![](/docs/4.0/img/app-launchpad-1.jpg) |
+| ![](/docs/4.0/img/terminal.webp) | ![](/docs/4.0/img/app-launchpad-1.webp) |
 | Database | Serverless |
 | ![](/docs/4.0/img/database.webp) | ![](/docs/4.0/img/laf.webp) |
 
@@ -85,9 +89,7 @@ Have a look through [existing Issues](https://github.com/labring/sealos/issues?q
 
 ## Links
 
-- [Sealos Action](https://github.com/labring/sealos-action)
-- [Cluster Image](https://github.com/labring-actions/cluster-image)
-- [Rootfs Image](https://github.com/labring-actions/runtime)
+- [Laf](https://github.com/labring/laf) is a function as a service application on sealos.
 - [Buildah](https://github.com/containers/buildah) The functionalities of Buildah are extensively utilized in Sealos 4.0 to ensure that cluster images are compatible with OCI standard.
 
 <!-- ## License -->

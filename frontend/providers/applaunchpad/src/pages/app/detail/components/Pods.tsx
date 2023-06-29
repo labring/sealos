@@ -10,7 +10,8 @@ import {
   Td,
   TableContainer,
   Flex,
-  MenuButton
+  MenuButton,
+  Tooltip
 } from '@chakra-ui/react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { restartPodByName } from '@/api/app';
@@ -23,6 +24,8 @@ import MyIcon from '@/components/Icon';
 import { PodStatusEnum } from '@/constants/app';
 import { useConfirm } from '@/hooks/useConfirm';
 import MyMenu from '@/components/Menu';
+import { useTranslation } from 'next-i18next';
+import { QuestionOutlineIcon } from '@chakra-ui/icons';
 
 const LogsModal = dynamic(() => import('./LogsModal'));
 const DetailModel = dynamic(() => import('./PodDetailModal'), { ssr: false });
@@ -36,12 +39,13 @@ const Pods = ({
   loading: boolean;
   appName: string;
 }) => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [logsPodIndex, setLogsPodIndex] = useState<number>();
   const [detailPodIndex, setDetailPodIndex] = useState<number>();
   const { Loading } = useLoading();
   const { openConfirm: openConfirmRestart, ConfirmChild: RestartConfirmChild } = useConfirm({
-    content: '请确认重启 Pod？'
+    content: 'Please confirm to restart the Pod?'
   });
 
   const handleRestartPod = useCallback(
@@ -49,18 +53,18 @@ const Pods = ({
       try {
         await restartPodByName(podName);
         toast({
-          title: `重启 ${podName} 成功`,
+          title: `${t('Restart')}  ${podName} ${t('success')}`,
           status: 'success'
         });
       } catch (err) {
         toast({
-          title: `重启 ${podName} 出现异常`,
+          title: `${t('Restart')}  ${podName} 出现异常`,
           status: 'warning'
         });
         console.log(err);
       }
     },
-    [toast]
+    [t, toast]
   );
 
   const columns: {
@@ -79,12 +83,28 @@ const Pods = ({
       )
     },
     {
-      title: 'status',
+      title: 'Status',
       key: 'status',
-      render: (item: PodDetailType) => <Box color={item.status.color}>{item.status.label}</Box>
+      render: (item: PodDetailType) => (
+        <Box color={item.status.color}>
+          {item.status.label}
+          {!!item.status.reason && (
+            <Tooltip
+              label={`Reason: ${item.status.reason}${
+                item.status.message ? `\nMessage: ${item.status.message}` : ''
+              }`}
+              whiteSpace={'pre-wrap'}
+              wordBreak={'break-all'}
+              maxW={'400px'}
+            >
+              <QuestionOutlineIcon ml={1} />
+            </Tooltip>
+          )}
+        </Box>
+      )
     },
     {
-      title: 'Restarts',
+      title: 'Restarts Num',
       key: 'restarts',
       dataIndex: 'restarts'
     },
@@ -112,7 +132,7 @@ const Pods = ({
       )
     },
     {
-      title: 'control',
+      title: 'Operation',
       key: 'control',
       render: (item: PodDetailType, i: number) => (
         <Flex>
@@ -123,7 +143,7 @@ const Pods = ({
             px={3}
             onClick={() => setDetailPodIndex(i)}
           >
-            详情
+            {t('Details')}
           </Button>
           <MyMenu
             width={100}
@@ -145,7 +165,7 @@ const Pods = ({
                 child: (
                   <>
                     <MyIcon name={'terminal'} w={'14px'} />
-                    <Box ml={2}>终端</Box>
+                    <Box ml={2}>{t('Terminal')}</Box>
                   </>
                 ),
                 onClick: () => {
@@ -163,7 +183,7 @@ const Pods = ({
                 child: (
                   <>
                     <MyIcon name={'log'} w={'14px'} />
-                    <Box ml={2}>日志</Box>
+                    <Box ml={2}>{t('Log')}</Box>
                   </>
                 ),
                 onClick: () => setLogsPodIndex(i)
@@ -172,7 +192,7 @@ const Pods = ({
                 child: (
                   <>
                     <MyIcon name={'restart'} />
-                    <Box ml={2}>重启</Box>
+                    <Box ml={2}>{t('Restart')} </Box>
                   </>
                 ),
                 onClick: openConfirmRestart(() => handleRestartPod(item.podName))
@@ -189,9 +209,11 @@ const Pods = ({
       <Flex px={6} alignItems={'center'}>
         <MyIcon name="podList" w={'14px'} color={'myGray.500'} />
         <Box ml={3} flex={1} color={'myGray.600'}>
-          Pods List
+          {t('Pods List')}
         </Box>
-        <Box color={'myGray.500'}>{pods.length} Items</Box>
+        <Box color={'myGray.500'}>
+          {pods.length} {t('Items')}
+        </Box>
       </Flex>
       <TableContainer mt={5} overflow={'auto'}>
         <Table variant={'simple'} backgroundColor={'white'}>
@@ -205,7 +227,7 @@ const Pods = ({
                   backgroundColor={'#F8F8FA'}
                   fontWeight={'500'}
                 >
-                  {item.title}
+                  {t(item.title)}
                 </Th>
               ))}
             </Tr>
@@ -233,7 +255,7 @@ const Pods = ({
           appName={appName}
           podName={pods[logsPodIndex]?.podName || ''}
           pods={pods
-            .filter((pod) => pod.status.value === PodStatusEnum.Running)
+            .filter((pod) => pod.status.value === PodStatusEnum.running)
             .map((item, i) => ({
               alias: `${appName}-${i + 1}`,
               podName: item.podName

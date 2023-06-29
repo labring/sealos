@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { BoxProps, Flex, Box } from '@chakra-ui/react';
+import { useTranslation } from 'next-i18next';
 
 interface Props extends BoxProps {
   text: string;
@@ -9,6 +10,7 @@ interface Props extends BoxProps {
 }
 
 const Tip = ({ size = 'md', text, icon, theme, ...props }: Props) => {
+  const { t } = useTranslation();
   const sizeMap = useMemo(() => {
     switch (size) {
       case 'sm':
@@ -62,7 +64,7 @@ const Tip = ({ size = 'md', text, icon, theme, ...props }: Props) => {
           {icon}
         </Flex>
       ) : null}
-      {text}
+      {t(text)}
     </Flex>
   );
 };

@@ -14,6 +14,7 @@ import {
 import { delAppByName } from '@/api/app';
 import { useToast } from '@/hooks/useToast';
 import { useRouter } from 'next/router';
+import { useTranslation } from 'next-i18next';
 
 const DelModal = ({
   appName,
@@ -24,6 +25,7 @@ const DelModal = ({
   onClose: () => void;
   onSuccess: () => void;
 }) => {
+  const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -34,7 +36,7 @@ const DelModal = ({
       setLoading(true);
       await delAppByName(appName);
       toast({
-        title: '删除成功',
+        title: `${t('success')}`,
         status: 'success'
       });
       onSuccess();
@@ -53,17 +55,19 @@ const DelModal = ({
     <Modal isOpen onClose={onClose}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>删除警告</ModalHeader>
+        <ModalHeader>{t('Deletion warning')} </ModalHeader>
         <ModalCloseButton />
         <ModalBody pb={4}>
           <Box color={'myGray.600'}>
-            如果确认要删除这个应用吗？如果执行此操作，将删除该项目的所有数据。
+            {t(
+              'Are you sure you want to delete this application? If you proceed, all data for this project will be deleted.'
+            )}
             <Box my={3}>
-              请输入{' '}
+              {t('Please enter')}{' '}
               <Box as={'span'} color={'myGray.900'} fontWeight={'bold'} userSelect={'all'}>
                 {appName}
               </Box>{' '}
-              确认
+              {t('Confirm')}
             </Box>
           </Box>
 
@@ -76,7 +80,7 @@ const DelModal = ({
         </ModalBody>
         <ModalFooter>
           <Button onClick={onClose} variant={'base'}>
-            取消
+            {t('Cancel')}
           </Button>
           <Button
             colorScheme="red"
@@ -86,7 +90,7 @@ const DelModal = ({
             isLoading={loading}
             onClick={handleDelApp}
           >
-            确认删除
+            {t('Confirm deletion')}
           </Button>
         </ModalFooter>
       </ModalContent>

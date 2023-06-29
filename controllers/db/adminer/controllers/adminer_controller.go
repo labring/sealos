@@ -96,6 +96,8 @@ type AdminerReconciler struct {
 //-kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
 //-kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
 
+//-kubebuilder:rbac:groups=core,resources=endpoints,verbs=get;list;watch
+
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
@@ -164,10 +166,44 @@ func (r *AdminerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
+	// if err := r.waitEndpoints(ctx, adminer); err != nil {
+	// 	logger.Error(err, "endpoint wait failed")
+	// 	r.recorder.Eventf(adminer, corev1.EventTypeWarning, "endpoint wait failed", "%v", err)
+	// 	return ctrl.Result{}, err
+	// }
+
 	r.recorder.Eventf(adminer, corev1.EventTypeNormal, "Created", "create adminer success: %v", adminer.Name)
 	duration, _ := time.ParseDuration(adminer.Spec.Keepalived)
 	return ctrl.Result{RequeueAfter: duration}, nil
 }
+
+// func (r *AdminerReconciler) waitEndpoints(ctx context.Context, adminer *adminerv1.Adminer) error {
+// 	expectEp := &corev1.Endpoints{
+// 		ObjectMeta: metav1.ObjectMeta{
+// 			Name:      adminer.Name,
+// 			Namespace: adminer.Namespace,
+// 		},
+// 	}
+// 	if err := r.Get(ctx, client.ObjectKeyFromObject(expectEp), expectEp); err != nil {
+// 		return err
+// 	}
+// 	if len(expectEp.Subsets) == 0 {
+// 		return fmt.Errorf("endpoints not ready")
+// 	}
+// 	set := sets.NewString()
+// 	for _, subsets := range expectEp.Subsets {
+// 		for _, addr := range subsets.Addresses {
+// 			if addr.IP != "" && addr.TargetRef != nil && addr.TargetRef.Kind == "Pod" {
+// 				set = set.Insert(addr.IP)
+// 			}
+// 		}
+// 	}
+
+// 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+// 		adminer.Status.AvailableReplicas = int32(set.Len())
+// 		return r.Status().Update(ctx, adminer)
+// 	})
+// }
 
 func (r *AdminerReconciler) syncSecret(ctx context.Context, adminer *adminerv1.Adminer) error {
 	secret := &corev1.Secret{
@@ -235,6 +271,29 @@ func (r *AdminerReconciler) syncDeployment(ctx context.Context, adminer *adminer
 					// SubPath:   "servers.php",
 					ReadOnly: true,
 				},
+			},
+			// probes
+			StartupProbe: &corev1.Probe{
+				ProbeHandler: corev1.ProbeHandler{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/",
+						Port: intstr.FromInt(8080),
+					},
+				},
+				InitialDelaySeconds: 1,
+				PeriodSeconds:       1,
+				FailureThreshold:    30,
+			},
+			ReadinessProbe: &corev1.Probe{
+				ProbeHandler: corev1.ProbeHandler{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/",
+						Port: intstr.FromInt(8080),
+					},
+				},
+				InitialDelaySeconds: 1,
+				PeriodSeconds:       1,
+				TimeoutSeconds:      1,
 			},
 		},
 	}
@@ -313,12 +372,8 @@ func (r *AdminerReconciler) syncDeployment(ctx context.Context, adminer *adminer
 		return err
 	}
 
-	if adminer.Status.AvailableReplicas != deployment.Status.AvailableReplicas {
-		adminer.Status.AvailableReplicas = deployment.Status.AvailableReplicas
-		return r.Status().Update(ctx, adminer)
-	}
-
-	return nil
+	adminer.Status.AvailableReplicas = deployment.Status.ReadyReplicas
+	return r.Status().Update(ctx, adminer)
 }
 
 func (r *AdminerReconciler) syncService(ctx context.Context, adminer *adminerv1.Adminer) error {

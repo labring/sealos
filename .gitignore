@@ -19,3 +19,4 @@ node_modules
 vendor
 .vscode/
 pkg/registry/save/testdata/registry
+.dummy.report.md

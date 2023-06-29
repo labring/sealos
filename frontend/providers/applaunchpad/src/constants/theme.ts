@@ -151,9 +151,10 @@ const Switch = switchMultiStyle({
 
 const Tooltip = defineStyleConfig({
   baseStyle: {
+    p: 2,
     backgroundColor: 'white',
     color: 'blackAlpha.800',
-    borderRadius: 'base',
+    borderRadius: 'lg',
     boxShadow: '1px 1px 7px rgba(0,0,0,0.2)'
   }
 });

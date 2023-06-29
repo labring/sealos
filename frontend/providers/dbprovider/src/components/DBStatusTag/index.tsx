@@ -11,10 +11,11 @@ import {
 } from '@chakra-ui/react';
 import type { DBConditionItemType, DBStatusMapType } from '@/types/db';
 import MyIcon from '../Icon';
+import { useTranslation } from 'next-i18next';
 import { formatPodTime } from '@/utils/tools';
 
 const DBStatusTag = ({
-  conditions,
+  conditions = [],
   status,
   showBorder = false
 }: {
@@ -22,6 +23,7 @@ const DBStatusTag = ({
   status: DBStatusMapType;
   showBorder?: boolean;
 }) => {
+  const { t } = useTranslation();
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
@@ -42,7 +44,7 @@ const DBStatusTag = ({
       >
         <Box w={'10px'} h={'10px'} borderRadius={'10px'} backgroundColor={status.dotColor}></Box>
         <Box ml={2} flex={1}>
-          {status.label}
+          {t(status.label)}
         </Box>
         <MyIcon ml={3} w={'16px'} name={'statusDetail'} cursor={'pointer'} onClick={onOpen} />
       </Flex>
@@ -50,7 +52,7 @@ const DBStatusTag = ({
         <ModalOverlay />
         <ModalContent minW={'520px'}>
           <ModalHeader fontSize={'3xl'} display={'flex'}>
-            <Box flex={1}>{status.label}</Box>
+            <Box flex={1}>{t(status.label)}</Box>
             <Flex
               h={'32px'}
               w={'32px'}

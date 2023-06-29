@@ -19,14 +19,17 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/containers/buildah"
+	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/umask"
 	is "github.com/containers/image/v5/storage"
 	"github.com/containers/image/v5/types"
 	"github.com/containers/storage"
 	"github.com/containers/storage/pkg/unshare"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/labring/sealos/pkg/system"
 	wrapunshare "github.com/labring/sealos/pkg/unshare"
@@ -56,6 +59,15 @@ func setDefaultFlagsWithSetters(c *cobra.Command, setters ...func(*cobra.Command
 		}
 	}
 	return nil
+}
+
+func getPlatformFlags() *pflag.FlagSet {
+	fs := &pflag.FlagSet{}
+	fs.String("arch", runtime.GOARCH, "set the ARCH of the image to the provided value instead of the architecture of the host")
+	fs.String("os", runtime.GOOS, "set the OS to the provided value instead of the current operating system of the host")
+	fs.StringSlice("platform", []string{parse.DefaultPlatform()}, "set the OS/ARCH/VARIANT of the image to the provided value instead of the current operating system and architecture of the host (for example `linux/arm`)")
+	fs.String("variant", "", "override the `variant` of the specified image")
+	return fs
 }
 
 func flagsAssociatedWithPlatform() []string {
