@@ -49,6 +49,11 @@ spec:
             capabilities:
               drop:
                 - "ALL"
+          env:
+            - name: TTYD_IMAGE
+              value: {{ .ttydImage }}
+            - name: SITE
+              value: {{ .cloudDomain }}
           # do not modify this image, it is used for CI/CD
           image: ghcr.io/labring/sealos-terminal-frontend:dev
           imagePullPolicy: Always

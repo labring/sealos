@@ -90,7 +90,9 @@ jobs:
       - name: Build sealos cloud cluster image
         working-directory: deploy/cloud
         run: |
-          sed -i "s#nightly#${{ inputs.build_from }}#g" init.sh
+          [ -z "${{ inputs.build_from }}" ] && BuildFromTag="nightly" || BuildFromTag="${{ inputs.build_from }}"; echo "BuildFromTag=${BuildFromTag}" 
+          sed -i "s#nightly#${BuildFromTag}#g" init.sh
+          sed -i "s#nightly#${BuildFromTag}#g" etc/sealos/desktop-config.yaml
           sudo bash init.sh
           sudo sealos build  -t ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }} -f Kubefile
           sudo sealos push ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }}
