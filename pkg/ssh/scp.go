@@ -69,6 +69,12 @@ func (c *Client) newClientAndSftpClient(host string) (*ssh.Client, *sftp.Client,
 		sftpClient *sftp.Client
 		err        error
 	)
+
+	hostsClientMap.Mux.Lock()
+	defer hostsClientMap.Mux.Unlock()
+	if hc, ok := hostsClientMap.ClientMap[host]; ok {
+		return hc.SSHClient, hc.SftpClient, err
+	}
 	sshClient, err = c.connect(host)
 	if err != nil {
 		return nil, nil, err
@@ -78,6 +84,14 @@ func (c *Client) newClientAndSftpClient(host string) (*ssh.Client, *sftp.Client,
 		sftpClient, err = NewSudoSftpClient(sshClient, c.password)
 	} else {
 		sftpClient, err = sftp.NewClient(sshClient)
+	}
+
+	if err == nil {
+		hc := HostClient{
+			SSHClient:  sshClient,
+			SftpClient: sftpClient,
+		}
+		hostsClientMap.ClientMap[host] = hc
 	}
 
 	return sshClient, sftpClient, err
