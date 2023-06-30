@@ -34,6 +34,7 @@ spec:
       labels:
         app: dbprovider-frontend
     spec:
+      serviceAccountName: cluster-version-reader
       containers:
         - name: dbprovider-frontend
           securityContext:
