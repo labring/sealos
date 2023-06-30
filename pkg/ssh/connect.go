@@ -16,13 +16,13 @@ package ssh
 
 import (
 	"fmt"
-	"github.com/pkg/sftp"
 	"io"
 	"os"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 
 	"github.com/labring/sealos/pkg/unshare"
