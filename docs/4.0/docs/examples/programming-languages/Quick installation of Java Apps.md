@@ -1,4 +1,4 @@
-# How to Run Your First Java Code on Sealos
+# Quick installation of Java Apps
 
 First, make sure you have installed the following tools:
 

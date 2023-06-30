@@ -1,4 +1,4 @@
-# How to run your first Python code on Sealos
+# Quick installation of Python Apps
 
 First, make sure you have the following tools installed:
 

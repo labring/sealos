@@ -19,7 +19,7 @@
     "items": [
       {
         "type": "category",
-        "label": "deploy-first-code-on-sealos",
+        "label": "programming-languages",
         "link": {
           "type": "generated-index"
         },
