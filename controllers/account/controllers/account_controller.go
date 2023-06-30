@@ -125,15 +125,20 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("get account failed: %v", err)
 	}
+
 	if r.PrivateDeploy {
-		account.Status.Balance, err = crypto.DecryptInt64(account.Status.EncryptBalance)
+		encryptBalance := account.Status.EncryptBalance
+		encryptDeductionBalance := account.Status.EncryptDeductionBalance
+		balance, err := crypto.DecryptInt64(encryptBalance)
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("decrypt balance failed: %v", err)
 		}
-		account.Status.DeductionBalance, err = crypto.DecryptInt64(account.Status.EncryptDeductionBalance)
+		account.Status.Balance = balance
+		deductionBalance, err := crypto.DecryptInt64(encryptDeductionBalance)
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("decrypt deduction balance failed: %v", err)
 		}
+		account.Status.DeductionBalance = deductionBalance
 	}
 
 	orderResp, err := pay.QueryOrder(payment.Status.TradeNO)
