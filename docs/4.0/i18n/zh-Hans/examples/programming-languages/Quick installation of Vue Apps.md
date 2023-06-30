@@ -84,7 +84,7 @@ docker build -t my-vue-app .
 
 - 进入 [Sealos](https://cloud.sealos.io/) 官网
 
-![](/images/java-example-0.png)
+![](images/java-example-0.png)
 
 ## 步骤7：打开 「应用管理」 应用
 
