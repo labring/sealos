@@ -19,14 +19,16 @@ package kubernetes
 import (
 	"context"
 	"fmt"
-
-	"github.com/labring/sealos/pkg/utils/iputils"
-
-	ckubeadm "k8s.io/kubernetes/cmd/kubeadm/app/constants"
+	str "strings"
 
 	v1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
+	ckubeadm "k8s.io/kubernetes/cmd/kubeadm/app/constants"
+
+	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 var (
@@ -76,6 +78,17 @@ func (ke *kubeExpansion) UpdateKubeadmConfig(ctx context.Context, clusterConfig 
 func (ke *kubeExpansion) FetchKubeletConfig(ctx context.Context) (string, error) {
 	cm, err := ke.client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(ctx, ckubeadm.KubeletBaseConfigurationConfigMap, metav1.GetOptions{})
 	if err != nil {
+		if kerrors.IsNotFound(err) {
+			logger.Info("cannot find configMap %q, try to detect older versions", ckubeadm.KubeletBaseConfigurationConfigMap)
+			data, err := ke.fetchOldKubeletConfig(ctx)
+			if err != nil {
+				return "", err
+			}
+			if err = ke.cloneOldKubeletConfig(ctx, data); err != nil {
+				return "", err
+			}
+			return data, nil
+		}
 		return "", err
 	}
 	return cm.Data[ckubeadm.KubeletBaseConfigurationConfigMapKey], nil
@@ -105,4 +118,29 @@ func (ke *kubeExpansion) FetchHostNameFromInternalIP(ctx context.Context, nodeIP
 		}
 	}
 	return "", fmt.Errorf("cannot find host with internal ip %v", ip)
+}
+
+func (ke *kubeExpansion) fetchOldKubeletConfig(ctx context.Context) (string, error) {
+	kubeletBaseConfigurationConfigMapPrefix := fmt.Sprintf("%s-", ckubeadm.KubeletBaseConfigurationConfigMap)
+	cms, err := ke.client.CoreV1().ConfigMaps(metav1.NamespaceSystem).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return "", err
+	}
+	for _, cm := range cms.Items {
+		if str.HasPrefix(cm.Name, kubeletBaseConfigurationConfigMapPrefix) {
+			return cm.Data[ckubeadm.KubeletBaseConfigurationConfigMapKey], nil
+		}
+	}
+	return "", fmt.Errorf("cannot find config map with prefix %q", kubeletBaseConfigurationConfigMapPrefix)
+}
+
+func (ke *kubeExpansion) cloneOldKubeletConfig(ctx context.Context, data string) error {
+	cm := &v1.ConfigMap{Data: map[string]string{}}
+	cm.Name = ckubeadm.KubeletBaseConfigurationConfigMap
+	cm.Data[ckubeadm.KubeletBaseConfigurationConfigMapKey] = data
+	_, err := ke.client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Create(ctx, cm, metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
 }
