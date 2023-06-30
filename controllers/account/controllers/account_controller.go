@@ -165,10 +165,12 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		//1¥ = 100WechatPayAmount; 1 WechatPayAmount = 10000 SealosAmount
 		var gift = giveGift(payAmount)
 		if r.PrivateDeploy {
-			account.Status.EncryptBalance, err = crypto.RechargeBalance(account.Status.EncryptBalance, payAmount+gift)
+			encryptBalance := account.Status.EncryptBalance
+			encryptBalance, err = crypto.RechargeBalance(encryptBalance, payAmount+gift)
 			if err != nil {
 				return ctrl.Result{}, fmt.Errorf("recharge encrypt balance failed: %v", err)
 			}
+			account.Status.EncryptBalance = encryptBalance
 		}
 		account.Status.Balance += payAmount + gift
 		if err := r.Status().Update(ctx, account); err != nil {
@@ -254,10 +256,12 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		return nil, err
 	}
 	if r.PrivateDeploy {
-		account.Status.EncryptBalance, err = crypto.RechargeBalance(account.Status.EncryptBalance, int64(amount))
+		encryptBalance := account.Status.EncryptBalance
+		encryptBalance, err = crypto.RechargeBalance(encryptBalance, int64(amount))
 		if err != nil {
 			return nil, fmt.Errorf("recharge balance failed: %v", err)
 		}
+		account.Status.EncryptBalance = encryptBalance
 	}
 	account.Status.Balance += int64(amount)
 	if err := r.Status().Update(ctx, &account); err != nil {
@@ -380,17 +384,21 @@ func (r *AccountReconciler) updateDeductionBalance(ctx context.Context, accountB
 	}
 	if r.PrivateDeploy {
 		if accountBalance.Spec.Type == accountv1.TransferIn {
-			account.Status.EncryptBalance, err = crypto.RechargeBalance(account.Status.EncryptBalance, accountBalance.Spec.Amount)
+			encryptBalance := account.Status.EncryptBalance
+			encryptBalance, err = crypto.RechargeBalance(encryptBalance, accountBalance.Spec.Amount)
 			if err != nil {
 				r.Logger.Error(err, err.Error())
 				return err
 			}
+			account.Status.EncryptBalance = encryptBalance
 		} else {
-			account.Status.EncryptDeductionBalance, err = crypto.RechargeBalance(account.Status.EncryptDeductionBalance, accountBalance.Spec.Amount)
+			encryptDeductionBalance := account.Status.EncryptDeductionBalance
+			encryptDeductionBalance, err = crypto.RechargeBalance(encryptDeductionBalance, accountBalance.Spec.Amount)
 			if err != nil {
 				r.Logger.Error(err, err.Error())
 				return err
 			}
+			account.Status.EncryptDeductionBalance = encryptDeductionBalance
 		}
 	}
 
