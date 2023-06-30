@@ -137,6 +137,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
 		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	}
+
 	account.Status.EncryptBalance = encryptBalance
 	err = r.Client.Status().Update(ctx, &account)
 	if err != nil {
