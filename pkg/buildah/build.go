@@ -42,7 +42,7 @@ func newBuildCommand() *cobra.Command {
 	fromAndBudResults := buildahcli.FromAndBudResults{}
 	userNSResults := buildahcli.UserNSResults{}
 	namespaceResults := buildahcli.NameSpaceResults{}
-	sopts := saveOptions{}
+	sopts := saverOptions{}
 
 	buildCommand := &cobra.Command{
 		Use:     "build [CONTEXT]",
@@ -90,7 +90,7 @@ func newBuildCommand() *cobra.Command {
 	return buildCommand
 }
 
-func buildCmd(c *cobra.Command, inputArgs []string, sopts saveOptions, iopts buildahcli.BuildOptions) error {
+func buildCmd(c *cobra.Command, inputArgs []string, sopts saverOptions, iopts buildahcli.BuildOptions) error {
 	if flagChanged(c, "logfile") {
 		logfile, err := os.OpenFile(iopts.Logfile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
 		if err != nil {

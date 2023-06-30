@@ -43,7 +43,7 @@ func newMergeCommand() *cobra.Command {
 	userNSResults := buildahcli.UserNSResults{}
 	namespaceResults := buildahcli.NameSpaceResults{}
 	buildahInfo := &buildah.BuilderInfo{}
-	sopts := saveOptions{}
+	sopts := saverOptions{}
 	mergeCommand := &cobra.Command{
 		Use:   "merge",
 		Short: "merge multiple images into one",
