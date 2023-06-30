@@ -60,6 +60,7 @@ function App({ Component, pageProps, domain }: AppProps & { domain: string }) {
       } catch (err) {
         console.log('App is not running in desktop');
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
+          localStorage.removeItem('session');
           openConfirm(() => {
             window.open(`https://${domain}`, '_self');
           })();

@@ -51,7 +51,7 @@ export interface DBEditType {
   dbVersion: string;
   dbName: string;
   replicas: number;
-  cpu: number; //
+  cpu: number;
   memory: number;
   storage: number;
 }

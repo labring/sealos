@@ -6,7 +6,8 @@ export const crLabelKey = 'sealos-db-provider-cr';
 export enum DBTypeEnum {
   'postgresql' = 'postgresql',
   'mongodb' = 'mongodb',
-  'mysql' = 'apecloud-mysql'
+  'mysql' = 'apecloud-mysql',
+  'redis' = 'redis'
 }
 
 export enum DBStatusEnum {
@@ -149,17 +150,20 @@ export const minReplicasKey = 'deploy.cloud.sealos.io/minReplicas';
 export const DBTypeList = [
   { id: DBTypeEnum.postgresql, label: 'postgres' },
   { id: DBTypeEnum.mongodb, label: 'mongo' },
-  { id: DBTypeEnum.mysql, label: 'mysql' }
+  { id: DBTypeEnum.mysql, label: 'mysql' },
+  { id: DBTypeEnum.redis, label: 'redis' }
 ];
 export const DBComponentNameMap = {
   [DBTypeEnum.postgresql]: 'postgresql',
   [DBTypeEnum.mongodb]: 'mongo',
-  [DBTypeEnum.mysql]: 'mysql'
+  [DBTypeEnum.mysql]: 'mysql',
+  [DBTypeEnum.redis]: 'redis'
 };
 export const DBBackupPolicyNameMap = {
   [DBTypeEnum.postgresql]: 'postgresql',
   [DBTypeEnum.mongodb]: 'mongodb',
-  [DBTypeEnum.mysql]: 'mysql'
+  [DBTypeEnum.mysql]: 'mysql',
+  [DBTypeEnum.redis]: 'redis'
 };
 
 export const defaultDBEditValue: DBEditType = {
@@ -189,4 +193,21 @@ export const defaultPod: PodDetailType = {
   age: '1s',
   cpu: 1,
   memory: 1
+};
+
+export const RedisHAConfig = (ha = true) => {
+  if (ha) {
+    return {
+      cpu: 200,
+      memory: 200,
+      storage: 1,
+      replicas: 3
+    };
+  }
+  return {
+    cpu: 100,
+    memory: 100,
+    storage: 0,
+    replicas: 1
+  };
 };

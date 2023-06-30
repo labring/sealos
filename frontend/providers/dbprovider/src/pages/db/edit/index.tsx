@@ -25,6 +25,11 @@ import Form from './components/Form';
 import Yaml from './components/Yaml';
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
+const defaultEdit = {
+  ...defaultDBEditValue,
+  dbVersion: DBVersionMap.postgresql[0]?.id
+};
+
 const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yaml' }) => {
   const { t } = useTranslation();
   const router = useRouter();
@@ -53,10 +58,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
   // form
   const formHook = useForm<DBEditType>({
-    defaultValues: {
-      ...defaultDBEditValue,
-      dbVersion: DBVersionMap.postgresql[0]?.id
-    }
+    defaultValues: defaultEdit
   });
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -135,11 +137,11 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         setYamlList([
           {
             filename: 'cluster.yaml',
-            value: json2CreateCluster(defaultDBEditValue)
+            value: json2CreateCluster(defaultEdit)
           },
           {
             filename: 'account.yaml',
-            value: json2Account(defaultDBEditValue)
+            value: json2Account(defaultEdit)
           }
         ]);
         return null;

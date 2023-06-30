@@ -60,7 +60,8 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     const commandMap = {
       [DBTypeEnum.postgresql]: `psql '${secret.connection}'`,
       [DBTypeEnum.mongodb]: `mongosh '${secret.connection}'`,
-      [DBTypeEnum.mysql]: `mysql -h ${secret.host} -P ${secret.port} -u ${secret.username} -p${secret.password}`
+      [DBTypeEnum.mysql]: `mysql -h ${secret.host} -P ${secret.port} -u ${secret.username} -p${secret.password}`,
+      [DBTypeEnum.redis]: `redis-cli -h ${secret.host} -p ${secret.port}`
     };
 
     const defaultCommand = commandMap[db.dbType];

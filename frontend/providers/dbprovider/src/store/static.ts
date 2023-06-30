@@ -16,7 +16,8 @@ let retryVersion = 3;
 export let DBVersionMap: DBVersionMapType = {
   [DBTypeEnum.postgresql]: [],
   [DBTypeEnum.mongodb]: [],
-  [DBTypeEnum.mysql]: []
+  [DBTypeEnum.mysql]: [],
+  [DBTypeEnum.redis]: []
 };
 
 export const getUserPrice = async () => {

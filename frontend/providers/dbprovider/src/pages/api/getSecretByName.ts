@@ -38,6 +38,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         [DBTypeEnum.mysql]: {
           passwordKey: 'password',
           connectKey: 'mysql'
+        },
+        [DBTypeEnum.redis]: {
+          passwordKey: 'password',
+          connectKey: 'redis'
         }
       };
       // get secret
