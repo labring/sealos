@@ -69,6 +69,18 @@ var _ = Describe("E2E_sealos_images_test", func() {
 			err = fakeClient.Image.LoadImage("k8s.tar")
 			utils.CheckErr(err, fmt.Sprintf("failed to load image k8s.tar: %v", err))
 		})
+
+		It("images SaveMultiImage", func() {
+			err = fakeClient.Image.PullImage("docker.io/labring/kubernetes:v1.20.1", "labring/helm:v3.8.2")
+			utils.CheckErr(err, fmt.Sprintf("failed to pull images: %v", err))
+			err = fakeClient.Image.SaveMultiImage("k8s-multi.tar", "docker.io/labring/kubernetes:v1.20.1", "labring/helm:v3.8.2")
+			utils.CheckErr(err, fmt.Sprintf("failed to SaveMultiImage : %v", err))
+		})
+		It("images load multi image", func() {
+			err = fakeClient.Image.LoadImage("k8s-multi.tar")
+			utils.CheckErr(err, fmt.Sprintf("failed to load multi image k8s.tar: %v", err))
+		})
+
 		It("images merge image", func() {
 			err = fakeClient.Image.Merge("new:0.1.0", []string{"docker.io/labring/kubernetes:v1.20.1", "labring/helm:v3.8.2"})
 			utils.CheckErr(err, fmt.Sprintf("failed to merge image new:0.1.0: %v", err))

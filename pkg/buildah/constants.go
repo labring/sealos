@@ -31,8 +31,10 @@ import (
 )
 
 const (
-	OCIArchive    string = "oci-archive"
-	DockerArchive string = "docker-archive"
+	OCIArchive        string = "oci-archive"
+	OCIManifestDir    string = "oci-dir"
+	DockerArchive     string = "docker-archive"
+	DockerManifestDir string = "docker-dir"
 )
 
 var DefaultTransport = OCIArchive

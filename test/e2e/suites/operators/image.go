@@ -61,6 +61,10 @@ func (f *fakeImageClient) SaveImage(name, file string) error {
 	return f.SealosCmd.ImageSave(name, file, "")
 }
 
+func (f *fakeImageClient) SaveMultiImage(file string, name ...string) error {
+	return f.SealosCmd.ImageMultiSave(file, name...)
+}
+
 func (f *fakeImageClient) LoadImage(file string) error {
 	return f.SealosCmd.ImageLoad(file)
 }
