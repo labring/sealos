@@ -47,28 +47,34 @@ function gen_mongodb_uri() {
       echo "waiting for mongodb secret generated"
       sleep 5
     done
+    chmod +x scripts/gen-mongodb-uri.sh
     mongodb_uri=$(scripts/gen-mongodb-uri.sh)
   fi
 }
 
 function sealos_run_frontend {
   # mutate desktop config before running desktop
+  echo "mutate desktop config"
   mutate_desktop_config
 
+  echo "run desktop frontend"
   sealos run tars/frontend-desktop.tar \
     --env cloudDomain=$cloudDomain \
     --env certSecretName="wildcard-cert" \
     --env passwordEnabled="true" \
     --config-file etc/sealos/desktop-config.yaml
 
+  echo "run applaunchpad frontend"
   sealos run tars/frontend-applaunchpad.tar \
   --env cloudDomain=$cloudDomain \
   --env certSecretName="wildcard-cert"
 
+  echo "run terminal frontend"
   sealos run tars/frontend-terminal.tar \
   --env cloudDomain=$cloudDomain \
   --env certSecretName="wildcard-cert"
 
+  echo "run dbprovider frontend"
   sealos run tars/frontend-dbprovider.tar \
   --env cloudDomain=$cloudDomain \
   --env certSecretName="wildcard-cert"
@@ -93,7 +99,7 @@ function install {
   sealos cert --alt-name="$cloudDomain"
 
   # kubectl apply namespace, secret and mongodb
-  kubectl apply -f manifests/namespaces.yaml -f manifests/tls-secret.yaml
+  kubectl apply -f manifests/namespace.yaml -f manifests/tls-secret.yaml
 
   # gen mongodb uri
   gen_mongodb_uri
