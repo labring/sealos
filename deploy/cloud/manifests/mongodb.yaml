@@ -19,11 +19,11 @@ spec:
       replicas: 1
       resources:
         limits:
-          cpu: "2"
-          memory: 4Gi
-        requests:
           cpu: "1"
           memory: 2Gi
+        requests:
+          cpu: "0.5"
+          memory: 1Gi
       serviceAccountName: sealos-mongodb-sa
       volumeClaimTemplates:
         - name: data
