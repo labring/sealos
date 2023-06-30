@@ -35,6 +35,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 │   │   ├── background
 │   │   ├── desktop_content
 │   │   ├── floating_button
+│   │   ├── LangSelect
 │   │   ├── iconfont
 │   │   ├── layout
 │   │   ├── more_button
@@ -50,15 +51,21 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 │   │   ├── _document.tsx
 │   │   ├── api
 │   │   │   ├── account
+│   │   │   ├── auth
 │   │   │   ├── desktop
-│   │   │   └── notification
+│   │   │   ├── notification
+│   │   │   └── price
 │   │   ├── index.tsx
 │   │   └── login
 │   ├── services
 │   │   ├── backend
 │   │   │   ├── auth.ts
-│   │   │   ├── kubernetes.ts
+│   │   │   ├── oauth.ts
+│   │   │   ├── kubernetes
+│   │   │   │   ├── admin.ts
+│   │   │   │   └── user.ts
 │   │   │   └── response.ts
+│   │   ├── enable.ts
 │   │   └── request.ts
 │   ├── stores
 │   │   ├── app.ts
@@ -73,8 +80,10 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 │   │   ├── crd.ts
 │   │   ├── index.ts
 │   │   ├── payment.ts
+│   │   ├── user.ts
 │   │   └── session.ts
 │   └── utils
+│       ├── crypto.ts
 │       ├── ProcessManager.ts
 │       ├── delay.ts
 │       ├── downloadFIle.ts
@@ -148,11 +157,11 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ### 其它
 
-1. 获取登录凭证: 由于 login 页面不是在 desktop 项目里，所以需要从线上 sealos 获取登录凭证到本地开发: https://cloud.sealos.io/ 。复制 storage 里的 session 到 localhost 环境实现 mock 登录。
+1. 获取登录凭证: 由于 login 页面不是在 desktop 项目里，所以需要从线上 sealos 获取登录凭证到本地开发: <https://cloud.sealos.io/> 。复制 storage 里的 session 到 localhost 环境实现 mock 登录。
 
-2. Chakra ui https://chakra-ui.com/getting-started
+2. Chakra ui <https://chakra-ui.com/getting-started>
 
-3. TanStack Query 用法：https://cangsdarm.github.io/react-query-web-i18n/react
+3. TanStack Query 用法：<https://cangsdarm.github.io/react-query-web-i18n/react>
 
 4. 使用 vscode 进行单步调试
 
@@ -178,3 +187,44 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
    ```
 
    然后即可点击 vscode 的调试按钮进行调试,同时增加断点
+
+5. 环境变量说明
+
+- 登录功能的开关, 部署时要用`true`配置想要使用的登录方式。
+
+    ```bash
+    WECHAT_ENABLED=true
+    GITHUB_ENABLED=true
+    PASSWORD_ENABLED=true
+    SMS_ENABLED=true
+    ```
+
+- 每个登陆要配置的变量
+  - wechat
+
+    ```bash
+    WECHAT_CLIENT_ID=
+    WECHAT_CLIENT_SECRET=
+    ```  
+
+  - github
+
+    ```bash
+    GITHUB_CLIENT_ID=
+    GITHUB_CLIENT_SECRET=
+    ```
+
+  - password
+
+    ```bash
+    PASSWORD_SALT=
+    ```
+
+  - sms
+
+    ```bash
+    ALI_ACCESS_KEY_ID=
+    ALI_ACCESS_KEY_SECRET=
+    ALI_SIGN_NAME=
+    ALI_TEMPLATE_CODE=
+    ```

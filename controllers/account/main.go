@@ -24,14 +24,16 @@ import (
 	utilcontroller "github.com/labring/sealos/controllers/pkg/utils"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
-	"github.com/labring/sealos/controllers/account/controllers/cache"
 	v1 "github.com/labring/sealos/controllers/common/notification/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	"github.com/labring/sealos/controllers/account/controllers/cache"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/labring/sealos/controllers/account/controllers"
 	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
+
+	"github.com/labring/sealos/controllers/account/controllers"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -179,6 +181,13 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Namespace")
+		os.Exit(1)
+	}
+	if err = (&controllers.TransferReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Transfer")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

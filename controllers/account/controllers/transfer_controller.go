@@ -1,0 +1,184 @@
+/*
+Copyright 2023.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package controllers
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"strconv"
+	"time"
+
+	"github.com/go-logr/logr"
+	gonanoid "github.com/matoous/go-nanoid/v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+var MinBalance int64 = 10_000000
+
+// TransferReconciler reconciles a Transfer object
+type TransferReconciler struct {
+	Logger logr.Logger
+	client.Client
+	Scheme                 *runtime.Scheme
+	AccountSystemNamespace string
+}
+
+//TODO add user, account role
+//+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create
+//+kubebuilder:rbac:groups=account.sealos.io,resources=accounts/status,verbs=get
+//+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances/status,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=account.sealos.io,resources=transfers,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=account.sealos.io,resources=transfers/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=account.sealos.io,resources=transfers/finalizers,verbs=update
+
+// Reconcile is part of the main kubernetes reconciliation loop which aims to
+// move the current state of the cluster closer to the desired state.
+// TODO(user): Modify the Reconcile function to compare the state specified by
+// the Transfer object against the actual cluster state, and then
+// perform operations to make the cluster state reflect the state specified by
+// the user.
+//
+// For more details, check Reconcile and its Result here:
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
+func (r *TransferReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	transfer := accountv1.Transfer{}
+	if err := r.Get(ctx, req.NamespacedName, &transfer); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+	if time.Since(transfer.CreationTimestamp.Time) > time.Minute*3 {
+		return ctrl.Result{}, r.Delete(ctx, &transfer)
+	}
+	transfer.Status.Progress = accountv1.TransferStateCompleted
+	pipeLine := []func(ctx context.Context, transfer *accountv1.Transfer) error{
+		r.check,
+		r.TransferOutSaver,
+		r.TransferInSaver,
+	}
+	for _, f := range pipeLine {
+		if err := f(ctx, &transfer); err != nil {
+			transfer.Status.Reason = err.Error()
+			transfer.Status.Progress = accountv1.TransferStateFailed
+			break
+		}
+	}
+	if err := r.Status().Update(ctx, &transfer); err != nil {
+		return ctrl.Result{}, fmt.Errorf("update transfer status failed: %w", err)
+	}
+	return ctrl.Result{RequeueAfter: 3 * time.Minute}, nil
+}
+
+// SetupWithManager sets up the controller with the Manager.
+func (r *TransferReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.AccountSystemNamespace = os.Getenv(ACCOUNTNAMESPACEENV)
+	if r.AccountSystemNamespace == "" {
+		r.AccountSystemNamespace = DEFAULTACCOUNTNAMESPACE
+	}
+	r.Logger = ctrl.Log.WithName("transfer-controller")
+	if m := os.Getenv("TRANSFERMINBALANCE"); m != "" {
+		minBalance, err := strconv.ParseInt(m, 10, 64)
+		if err != nil {
+			r.Logger.Error(err, "parse min balance failed")
+		} else {
+			MinBalance = minBalance
+		}
+	}
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&accountv1.Transfer{}, builder.WithPredicates(OnlyCreatePredicate{})).
+		Complete(r)
+}
+
+func (r *TransferReconciler) TransferOutSaver(ctx context.Context, transfer *accountv1.Transfer) error {
+	id, err := gonanoid.New(12)
+	if err != nil {
+		return fmt.Errorf("create id failed: %w", err)
+	}
+	objMeta := metav1.ObjectMeta{
+		Name:      getUsername(transfer.Namespace) + "-" + time.Now().UTC().Format("20060102150405"),
+		Namespace: r.AccountSystemNamespace,
+	}
+	balanceSpec := accountv1.AccountBalanceSpec{
+		OrderID: id,
+		Amount:  transfer.Spec.Amount,
+		Owner:   getUsername(transfer.Namespace),
+		Time:    metav1.Time{Time: time.Now().UTC()},
+		Type:    accountv1.TransferOut,
+	}
+	from := accountv1.AccountBalance{
+		ObjectMeta: objMeta,
+		Spec:       balanceSpec,
+	}
+	if err := r.Create(ctx, &from); err != nil {
+		return fmt.Errorf("create transfer accountbalance failed: %w", err)
+	}
+	return nil
+}
+
+func (r *TransferReconciler) TransferInSaver(ctx context.Context, transfer *accountv1.Transfer) error {
+	id, err := gonanoid.New(12)
+	if err != nil {
+		return fmt.Errorf("create id failed: %w", err)
+	}
+	objMeta := metav1.ObjectMeta{
+		Name:      getUsername(transfer.Spec.To) + "-" + time.Now().UTC().Format("200601021504"),
+		Namespace: r.AccountSystemNamespace,
+	}
+	balanceSpec := accountv1.AccountBalanceSpec{
+		OrderID: id,
+		Amount:  transfer.Spec.Amount,
+		Owner:   getUsername(transfer.Spec.To),
+		Time:    metav1.Time{Time: time.Now().UTC()},
+		Type:    accountv1.TransferIn,
+	}
+	to := accountv1.AccountBalance{
+		ObjectMeta: objMeta,
+		Spec:       balanceSpec,
+	}
+	if err := r.Create(ctx, &to); err != nil {
+		return fmt.Errorf("create transfer accountbalance failed: %w", err)
+	}
+	return nil
+}
+
+func (r *TransferReconciler) check(ctx context.Context, transfer *accountv1.Transfer) error {
+	if transfer.Spec.Amount <= 0 {
+		return fmt.Errorf("amount must be greater than 0")
+	}
+	if transfer.Status.Progress == accountv1.TransferStateFailed {
+		return fmt.Errorf(transfer.Status.Reason)
+	}
+	from := transfer.Namespace
+	to := transfer.Spec.To
+	fromAccount := accountv1.Account{}
+	if r.Get(ctx, client.ObjectKey{Namespace: r.AccountSystemNamespace, Name: getUsername(from)}, &fromAccount) != nil {
+		return fmt.Errorf("owner %s account not found", from)
+	}
+	if fromAccount.Status.Balance < fromAccount.Status.DeductionBalance+transfer.Spec.Amount+MinBalance {
+		return fmt.Errorf("balance not enough")
+	}
+	if r.Get(ctx, client.ObjectKey{Namespace: r.AccountSystemNamespace, Name: getUsername(to)}, &accountv1.Account{}) != nil {
+		return fmt.Errorf("user %s account not found", transfer.Spec.To)
+	}
+	return nil
+}
