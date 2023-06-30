@@ -23,7 +23,7 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { useTranslation } from "next-i18next";
 import { getCookie } from "@/utils/cookieUtils";
 import { TUserExist } from "@/types/user";
-import { strongPassword } from "@/utils/crypto";
+import { strongPassword, strongUsername } from "@/utils/crypto";
 import { enableGithub, enablePassword, enableSms, enableWechat } from "@/services/enable";
 function usePassword({ setError }: { setError: React.Dispatch<React.SetStateAction<string>> }) {
   const { t } = useTranslation()
@@ -33,7 +33,15 @@ function usePassword({ setError }: { setError: React.Dispatch<React.SetStateActi
   // 是否为初次登录
   const [isFirst, setIsFirst] = useState(true)
   const verify = () => {
-    if (!username || !password.current || !strongPassword(password.current)) {
+    if(!strongUsername(username.current)){
+      setError(t('username tips')||'Username must be 3-16 characters, including letters, numbers')
+      return false
+    }
+    if(!strongPassword(password.current)){
+      setError(t('password tips')||'8 characters or more')
+      return false
+    }
+    if (!username || !password.current) {
       setError(t('Invalid username or password') || 'Invalid username or password')
       return false
     }
@@ -73,6 +81,7 @@ function usePassword({ setError }: { setError: React.Dispatch<React.SetStateActi
         <Input type='text' placeholder={t('Username') || ''} pl={'12px'} value={_username}
           variant={'unstyled'}
           fontSize='14px'
+          id="username"
           fontWeight='400'
           _autofill={{
             backgroundColor: 'transparent !important',
@@ -88,9 +97,10 @@ function usePassword({ setError }: { setError: React.Dispatch<React.SetStateActi
         >
           <Img src={lockIcon.src}></Img>
         </InputLeftAddon>
-        <Input type='password' placeholder={t('password tips') || ''} pl={'12px'} value={_password}
+        <Input type='password' placeholder={t('Password') || ''} pl={'12px'} value={_password}
           variant={'unstyled'}
           fontSize='14px'
+          id="password"
           fontWeight='400'
           _autofill={{
             backgroundColor: 'transparent !important',
@@ -112,6 +122,7 @@ function usePassword({ setError }: { setError: React.Dispatch<React.SetStateActi
       </InputLeftAddon>
       <Input type='password' placeholder={t('Verify password') || 'Verify password'} pl={'12px'} value={_password}
         fontSize='14px'
+        id="repassword"
         fontWeight='400'
         variant={'unstyled'}
         _autofill={{
@@ -383,7 +394,7 @@ export default function Login(
   // 确认密码后注册
   const signUpByPassword = async (e: { preventDefault: () => void; }) => {
     e.preventDefault()
-    if(confirmPassword()){
+    if(!confirmPassword()){
       return
     }
     setIsLoading(true)
@@ -425,13 +436,11 @@ export default function Login(
           sx={
             {
               '> div:not(:last-child):not(.chakra-tabs), > Button:not(:last-child)': {
-                width: '266px',
-                height: '42px',
+                width:'266px',
+                minH: '42px',
                 mb: '14px',
-                // backdropFilter: 'blur(50px)',
                 borderRadius: '4px',
                 p: '10px',
-
               },
               '> div:has(input)': {
                 background: 'rgba(255, 255, 255, 0.65)',
@@ -442,9 +451,10 @@ export default function Login(
           <FormErrorMessage position={'absolute'} top='0' display={'flex'}
             bg={'rgba(249, 78, 97, 1)'}
             transform={'translateY(-50%)'}
+            // width={'auto !important'}
           >
             <Img src={warnIcon.src} mr={'8px'}></Img>
-            <Text color={'#fff'}>{error}</Text>
+            <Text color={'#fff'} >{error}</Text>
             <Button variant={'unstyled'} ml={'auto'}
               display={'flex'}
               justifyContent={'flex-end'}
@@ -509,7 +519,6 @@ export default function Login(
 
               <Button
                 variant={'unstyled'}
-
                 background='linear-gradient(90deg, #000000 0%, rgba(36, 40, 44, 0.9) 98.29%)'
                 boxShadow='0px 4px 4px rgba(0, 0, 0, 0.25)'
                 color='#fff'
@@ -541,7 +550,7 @@ export default function Login(
                 <Img src='/images/Vector.svg' w={'20px'} transform={'rotate(-90deg)'} h={'20px'} mr={'16px'} display={'inline-block'} verticalAlign={'middle'} cursor={'pointer'} onClick={() => {
                   setPageState(0)
                 }}></Img>
-                <Text>{t('Recharge Amount')}</Text>
+                <Text>{t('Verify password')}</Text>
               </Flex>
               <ConfirmPasswordModal />
               <Button

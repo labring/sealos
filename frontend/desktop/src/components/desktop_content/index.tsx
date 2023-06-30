@@ -46,7 +46,7 @@ export default function DesktopContent(props: any) {
       const app = apps.find((item) => item.key === appKey);
       const runningApp = runningInfo.find((item) => item.key === appKey);
       if (!app) return;
-      openApp(app, query);
+      openApp(app, { query });
       if (runningApp) {
         setToHighestLayerById(runningApp.pid);
       }
