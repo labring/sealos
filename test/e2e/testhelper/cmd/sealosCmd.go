@@ -154,6 +154,11 @@ func (s *SealosCmd) ImageSave(image string, path string, archive string) error {
 	return s.Executor.AsyncExec(s.BinPath, "save", "-o", path, "--format", archive, image)
 }
 
+func (s *SealosCmd) ImageMultiSave(path string, name ...string) error {
+	param := append([]string{"save", "-m", "--format", "docker-archive", "-o", path}, name...)
+	return s.Executor.AsyncExec(s.BinPath, param...)
+}
+
 func (s *SealosCmd) ImageLoad(path string) error {
 	return s.Executor.AsyncExec(s.BinPath, "load", "-i", path)
 }
