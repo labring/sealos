@@ -79,16 +79,16 @@ spec:
 
             # set to true to enable password login, modify the PASSWORD_SALT env to change the salt
             - name: PASSWORD_ENABLED
-              value: {{ .passwordEnabled }}
+              value: "{{ .passwordEnabled }}"
             # set to true to enable github login
             - name: GITHUB_ENABLED
-              value: {{ .githubEnabled }}
+              value: "{{ .githubEnabled }}"
             # set to true to enable wechat login
             - name: WECHAT_ENABLED
-              value: {{ .wechatEnabled }}
+              value: "{{ .wechatEnabled }}"
             # set to true to enable sms login
             - name: SMS_ENABLED
-              value: {{ .smsEnabled }}
+              value: "{{ .smsEnabled }}"
 
             # github login env
             - name: GITHUB_CLIENT_ID
