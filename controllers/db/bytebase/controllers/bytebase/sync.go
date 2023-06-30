@@ -24,7 +24,6 @@ func (r *Reconciler) syncIngress(ctx context.Context, bb *bbv1.Bytebase, hostnam
 	switch bb.Spec.IngressType {
 	case bbv1.Nginx:
 		err = r.syncNginxIngress(ctx, bb, host)
-	//TODO: support apisix
 	default:
 		err = r.syncNginxIngress(ctx, bb, host)
 	}

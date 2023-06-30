@@ -31,8 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	acidv1 "github.com/zalando/postgres-operator/pkg/apis/acid.zalan.do/v1"
-
 	bytebasev1 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v1"
 	configv1 "github.com/labring/sealos/controllers/db/bytebase/apis/config/v1"
 	bytebasecontrollers "github.com/labring/sealos/controllers/db/bytebase/controllers/bytebase"
@@ -52,7 +50,6 @@ const (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(acidv1.AddToScheme(scheme))
 	utilruntime.Must(configv1.AddToScheme(scheme))
 	utilruntime.Must(bytebasev1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme

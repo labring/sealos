@@ -22,12 +22,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// +kubebuilder:validation:Enum=nginx;apisix
+// +kubebuilder:validation:Enum=nginx;
 type IngressType string
 
 const (
-	Nginx  IngressType = "nginx"
-	Apisix IngressType = "apisix"
+	Nginx IngressType = "nginx"
 )
 
 // BytebaseSpec defines the desired state of Bytebase

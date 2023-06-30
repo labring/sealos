@@ -60,6 +60,87 @@ spec:
       serviceAccountName: desktop-frontend
       containers:
         - name: desktop-frontend
+          env:
+            # callback url is used for oauth2 login, required
+            - name: CALLBACK_URL
+              value: https://{{ .cloudDomain }}/callback
+            # mongodb uri, required
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: mongodb_uri
+            # jwt secret, required
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: jwt_secret
+
+            # set to true to enable password login, modify the PASSWORD_SALT env to change the salt
+            - name: PASSWORD_ENABLED
+              value: "true"
+            # set to true to enable github login
+            - name: GITHUB_ENABLED
+              value: "false"
+            # set to true to enable wechat login
+            - name: WECHAT_ENABLED
+              value: "false"
+            # set to true to enable sms login
+            - name: SMS_ENABLED
+              value: "false"
+
+            # github login env
+            - name: GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: github_client_id
+            - name: GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: github_client_secret
+
+            # wechat login env
+            - name: WECHAT_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: wechat_client_id
+            - name: WECHAT_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: wechat_client_secret
+
+            # sms login env
+            - name: ALI_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: ali_sms_endpoint
+            - name: ALI_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: ali_access_key_id
+            - name: ALI_ACCESS_KEY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: ali_access_key_secret
+            - name: ALI_SIGN_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: ali_sms_sign_name
+            - name: ALI_TEMPLATE_CODE
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: ali_sms_template_code
+
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
@@ -68,7 +149,7 @@ spec:
               drop:
                 - "ALL"
           image: ghcr.io/labring/sealos-desktop-frontend:dev
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: desktop-frontend-volume
               mountPath: /config.yaml
@@ -80,40 +161,7 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
       volumes:
         - name: desktop-frontend-volume
           configMap:
             name: desktop-frontend-config
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: auth-system-manager-role
-rules:
-- apiGroups: ["user.sealos.io"]
-  resources: ["users"]
-  verbs: ["list", "get", "create", "update", "patch", "watch"]
-- apiGroups: ["user.sealos.io"]
-  resources: ["users/status"]
-  verbs: ["list", "get", "create", "update", "patch", "watch"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: auth-system-manager-role-binding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: auth-system-manager-role
-subjects:
-- kind: ServiceAccount
-  name: auth-manager
-  namespace: sealos
-- kind: ServiceAccount
-  name: desktop-frontend
-  namespace: sealos

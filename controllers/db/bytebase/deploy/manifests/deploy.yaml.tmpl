@@ -71,7 +71,6 @@ spec:
                 default: nginx
                 enum:
                 - nginx
-                - apisix
                 type: string
               keepalived:
                 type: string
@@ -195,42 +194,6 @@ rules:
   - ""
   resources:
   - events
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - acid.zalan.do
-  resources:
-  - postgresqls
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apisix.apache.org
-  resources:
-  - apisixroutes
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apisix.apache.org
-  resources:
-  - apisixtlses
   verbs:
   - create
   - delete
