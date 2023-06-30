@@ -47,6 +47,7 @@ spec:
 sealos run \
     --env cloudDomain="cloud.sealos.io" \
     --env wildcardCertSecretName="wildcard-cert" \
+    --env passwordEnabled="true" \
     docker.io/labring/sealos-cloud-desktop:dev \
     --config-file desktop-config.yaml 
 ```

@@ -1,0 +1,14 @@
+apiVersion: apps.sealos.io/v1beta1
+kind: Config
+metadata:
+  name: secret
+spec:
+  path: manifests/secret.yaml
+  # do not modify this image, it's used by ci.
+  match: ghcr.io/labring/sealos-cloud-desktop-frontend:nightly
+  strategy: merge
+  data: |
+    data:
+      mongodb_uri: <your-mongodb-uri-base64>
+      jwt_secret: <your-jwt-secret-base64>
+      password_salt: <your-password-salt-base64>

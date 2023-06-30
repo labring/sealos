@@ -6,6 +6,7 @@ sealos pull ghcr.io/labring/sealos-cloud-app-controller:nightly
 sealos pull ghcr.io/labring/sealos-cloud-desktop-frontend:nightly
 sealos pull ghcr.io/labring/sealos-cloud-terminal-frontend:nightly
 sealos pull ghcr.io/labring/sealos-cloud-applaunchpad-frontend:nightly
+sealos pull ghcr.io/labring/sealos-cloud-dbprovider-frontend:nightly
 
 
 
@@ -15,4 +16,4 @@ sealos save -o tars/app.tar ghcr.io/labring/sealos-cloud-app-controller:nightly
 sealos save -o tars/frontend-desktop.tar  ghcr.io/labring/sealos-cloud-desktop-frontend:nightly
 sealos save -o tars/frontend-terminal.tar  ghcr.io/labring/sealos-cloud-terminal-frontend:nightly
 sealos save -o tars/frontend-applaunchpad.tar ghcr.io/labring/sealos-cloud-applaunchpad-frontend:nightly
-
+sealos save -o tars/frontend-dbprovider.tar ghcr.io/labring/sealos-cloud-dbprovider-frontend:nightly

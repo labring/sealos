@@ -6,5 +6,9 @@ COPY manifests manifests
 
 ENV cloudDomain="cloud.example.com"
 ENV certSecretName="wildcard-cert"
+ENV passWordEnabled="false"
+ENV githubEnabled="false"
+ENV wechatEnabled="false"
+ENV smsEnabled="false"
 
 CMD ["kubectl apply -f manifests"]
