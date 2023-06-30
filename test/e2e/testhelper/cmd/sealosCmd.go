@@ -151,7 +151,7 @@ func (s *SealosCmd) ImageSave(image string, path string, archive string) error {
 	if archive == "" {
 		return s.Executor.AsyncExec(s.BinPath, "save", "-o", path, image)
 	}
-	return s.Executor.AsyncExec(s.BinPath, "save", "-o", path, "-t", archive, image)
+	return s.Executor.AsyncExec(s.BinPath, "save", "-o", path, "--format", archive, image)
 }
 
 func (s *SealosCmd) ImageLoad(path string) error {
