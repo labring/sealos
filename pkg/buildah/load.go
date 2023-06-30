@@ -58,7 +58,7 @@ func newLoadCommand() *cobra.Command {
 	return loadCommand
 }
 
-func load(cmd *cobra.Command, args []string, loadOpts *loadOptions) error {
+func load(cmd *cobra.Command, _ []string, loadOpts *loadOptions) error {
 	if len(loadOpts.input) > 0 {
 		// Download the input file if needed.
 		if strings.HasPrefix(loadOpts.input, "https://") || strings.HasPrefix(loadOpts.input, "http://") {
