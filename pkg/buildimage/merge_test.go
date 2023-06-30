@@ -120,3 +120,50 @@ COPY --from=cccc  . .`,
 		})
 	}
 }
+
+func Test_replaceDao(t *testing.T) {
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "default",
+			args: args{
+				s: "sealos.io",
+			},
+			want: "sealos.io",
+		},
+		{
+			name: "default",
+			args: args{
+				s: "sea$(ss)los.io",
+			},
+			want: "sea$(ss)los.io",
+		},
+		{
+			name: "default",
+			args: args{
+				s: "sea$sslos.io",
+			},
+			want: "sea\\$sslos.io",
+		},
+		{
+			name: "default",
+			args: args{
+				s: "sea$(s)sl$os.io",
+			},
+			want: "sea$(s)sl\\$os.io",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := escapeDollarSign(tt.args.s, true); got != tt.want {
+				t.Errorf("escapeDollarSign() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -64,9 +64,11 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
 		}()
 	}
 	sshInterface := ssh.NewSSHClient(&cluster.Spec.SSH, true)
-	logger.Debug("start to exec guest commands")
-	if err := sshInterface.CmdAsync(cluster.GetMaster0IPAndPort(), guestCMD...); err != nil {
-		return err
+	for _, cmd := range guestCMD {
+		logger.Debug("exec guest command: %s", cmd)
+		if err := sshInterface.CmdAsync(cluster.GetMaster0IPAndPort(), envInterface.WrapperShell(cluster.GetMaster0IP(), cmd)); err != nil {
+			return err
+		}
 	}
 	logger.Debug("finish to exec guest commands: %v", guestCMD)
 	return nil
