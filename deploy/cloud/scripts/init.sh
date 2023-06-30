@@ -84,8 +84,8 @@ function sealos_run_frontend {
 function mutate_desktop_config() {
   # mutate etc/sealos/desktop-config.yaml by using mongodb uri and two random base64 string
   sed -i -e "s;<your-mongodb-uri-base64>;$(echo -n "$mongodb_uri" | base64);" etc/sealos/desktop-config.yaml
-  sed -i -e "s;<your-jwt-secret-base64>;$(cat /dev/urandom | tr -dc 'a-z' | fold -w 64 | head -n 1 | base64);" etc/sealos/desktop-config.yaml
-  sed -i -e "s;<your-password-salt-base64>;$(cat /dev/urandom | tr -dc 'a-z' | fold -w 64 | head -n 1 | base64);" etc/sealos/desktop-config.yaml
+  sed -i -e "s;<your-jwt-secret-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
+  sed -i -e "s;<your-password-salt-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
 }
 
 function install {
@@ -94,9 +94,6 @@ function install {
 
   # mock tls
   mock_tls $cloudDomain
-
-  # add cert for cloud domain
-  sealos cert --alt-name="$cloudDomain"
 
   # kubectl apply namespace, secret and mongodb
   kubectl apply -f manifests/namespace.yaml -f manifests/tls-secret.yaml
