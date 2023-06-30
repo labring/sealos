@@ -50,7 +50,7 @@ var _ = Describe("E2E_sealos_run_other_test", func() {
 			utils.CheckErr(err, fmt.Sprintf("failed to Run new cluster for single using tar: %v", err))
 			err = fakeClient.Cluster.Run("labring/helm:v3.8.2")
 			utils.CheckErr(err, fmt.Sprintf("failed to running image for helm: %v", err))
-			newImages := []string{"localhost/labring/kubernetes:v1.25.0", "labring/helm:v3.8.2"}
+			newImages := []string{"docker.io/labring/kubernetes:v1.25.0", "labring/helm:v3.8.2"}
 			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", &checkers.FakeOpts{Images: newImages})
 			utils.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
 			err = fakeCheckInterface.Verify()

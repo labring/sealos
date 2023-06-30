@@ -35,17 +35,17 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-type saveOptions struct {
+type saverOptions struct {
 	maxPullProcs int
 	enabled      bool
 }
 
-func (opts *saveOptions) RegisterFlags(fs *pflag.FlagSet) {
+func (opts *saverOptions) RegisterFlags(fs *pflag.FlagSet) {
 	fs.IntVar(&opts.maxPullProcs, "max-pull-procs", 5, "maximum number of goroutines for pulling")
 	fs.BoolVar(&opts.enabled, "save-image", true, "store images that parsed from the specific directories")
 }
 
-func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.SystemContext, opts *saveOptions) error {
+func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.SystemContext, opts *saverOptions) error {
 	if !opts.enabled {
 		logger.Warn("save-image is disabled, skip pulling images")
 		return nil

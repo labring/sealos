@@ -41,6 +41,7 @@ type FakeImageInterface interface {
 	DockerArchiveImage(name string) error
 	OCIArchiveImage(name string) error
 	SaveImage(name, file string) error
+	SaveMultiImage(file string, name ...string) error
 	TagImage(name, newName string) error
 	LoadImage(file string) error
 	Create(name string, short bool) ([]byte, error)
