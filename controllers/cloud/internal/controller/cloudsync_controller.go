@@ -72,7 +72,7 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		r.logger.Error(err, "failed to get secret...")
 		return ctrl.Result{}, err
 	}
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ConfigName)}, &secret)
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ConfigName)}, &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to get configmap...")
 		return ctrl.Result{}, err
@@ -120,18 +120,16 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
-	r.logger.Info("", "old key:", string(secret.Data["key"]))
 	secret.Data["key"] = []byte(resp.Key)
 	err = r.Client.Update(ctx, &secret)
 	if err != nil {
 		r.needSync = false
 		return ctrl.Result{}, err
 	}
-	r.logger.Info("", "new key:", string(secret.Data["key"]))
 
 	r.needSync = true
 	r.syncCache = cloud.SyncResponse{}
-	return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+	return ctrl.Result{RequeueAfter: time.Second * 3600}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

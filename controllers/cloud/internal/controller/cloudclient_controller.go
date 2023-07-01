@@ -35,9 +35,10 @@ import (
 // CloudClientReconciler reconciles a CloudClient object
 type CloudClientReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	Users  cloud.UserCategory
-	logger logr.Logger
+	Scheme  *runtime.Scheme
+	Users   cloud.UserCategory
+	logger  logr.Logger
+	Retries int
 }
 
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=cloudclients,verbs=get;list;watch;create;update;patch;delete
@@ -55,7 +56,10 @@ type CloudClientReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctl ctrl.Result, err error) {
 	r.logger.Info("Enter CloudClientReconcile", "namespace:", req.Namespace, "name", req.Name)
-
+	if r.Retries > 5 {
+		return ctrl.Result{}, nil
+	}
+	r.Retries++
 	r.logger.Info("Start the cloud module...")
 	if err = r.Users.GetNameSpace(ctx, r.Client); err != nil {
 		r.logger.Error(err, "failed to get users info")
@@ -95,7 +99,7 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		r.logger.Error(err, "failed to register and start")
 		return ctrl.Result{}, err
 	}
-
+	r.Retries = 0
 	return ctrl.Result{}, nil
 }
 
@@ -103,7 +107,7 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 func (r *CloudClientReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Users = cloud.UserCategory{}
 	r.logger = ctrl.Log.WithName("CloudClientReconcile")
-
+	r.Retries = 0
 	nameFilter := cloud.CloudStartName
 	namespaceFilter := cloud.Namespace
 	Predicates := predicate.NewPredicateFuncs(func(obj client.Object) bool {

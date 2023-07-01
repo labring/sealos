@@ -131,7 +131,7 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{RequeueAfter: time.Minute * 5}, nil
+	return ctrl.Result{RequeueAfter: time.Minute * 60}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

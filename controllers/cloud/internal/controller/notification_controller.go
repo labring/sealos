@@ -74,6 +74,12 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	var url string
 	var clusterScret corev1.Secret
 
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)}, &clusterScret)
+	if err != nil {
+		r.logger.Error(err, "failed to get secret...")
+		return ctrl.Result{}, err
+	}
+
 	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ConfigName)}, &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to get configmap...")
@@ -134,7 +140,7 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		}
 	}
 	r.NotificationMgr.InitTime()
-	return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+	return ctrl.Result{RequeueAfter: time.Second * 3600}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

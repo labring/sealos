@@ -42,7 +42,7 @@ func ReadConfigFromConfigMap(expectName string, configMap *corev1.ConfigMap) (cl
 	}
 
 	var config cloud.Config
-	err := json.Unmarshal([]byte(configMap.Data["config"]), &config)
+	err := json.Unmarshal([]byte(configMap.Data["config.json"]), &config)
 	if err != nil {
 		return cloud.Config{}, err
 	}
@@ -116,9 +116,6 @@ func (rd *RegisterAndStartData) Register() error {
 	if rd.clusterScret.Data == nil {
 		rd.clusterScret.Data = make(map[string][]byte)
 	}
-	if rd.clusterScret.Data == nil {
-		rd.clusterScret.Data = make(map[string][]byte)
-	}
 	rd.clusterScret.Data["key"] = []byte(clusterInfo.Key)
 	rd.clusterScret.Data["uid"] = []byte(clusterInfo.UID)
 	rd.clusterScret.Labels["registered"] = cloud.TRUE
@@ -163,7 +160,7 @@ func (rd *RegisterAndStartData) StartCloudClient() error {
 			return fmt.Errorf("startCloudClient: client.Update: %w", err)
 		}
 	}
-	time.Sleep(time.Millisecond * 1000)
+	time.Sleep(time.Millisecond * 10000)
 	if startInstance.Labels == nil {
 		startInstance.Labels = make(map[string]string)
 	}
