@@ -19,6 +19,7 @@ package manager
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"reflect"
@@ -54,12 +55,14 @@ const (
 
 const (
 	SEALOS                     Source  = "Sealos Cloud"
+	ErrorLicenseTitle          Title   = "License Activation Failed"
 	InvalidLicenseTitle        Title   = "Invalid License"
 	ValidLicenseTitle          Title   = "License Activated"
 	RechargeFailedTitle        Title   = "Recharge failed"
 	DuplicateLicenseTitle      Title   = "Duplicate License"
 	RegistrationSuccessTitle   Title   = "Registration Success"
 	InvalidLicenseContent      Message = "The provided license is invalid. Please check and try."
+	ErrorLicenseTitleContent   Message = "License delivery encountered an unexpected error. Please ensure your cluster is operating normally..."
 	LicenseTimeOutContent      Message = "The provided license has expired. Please check and try."
 	ValidLicenseContent        Message = "Your license has been successfully activated and is ready to use. Enjoy your experience!"
 	DuplicateLicenseContent    Message = "The provided license has already been used. Please use a different license."
@@ -102,15 +105,13 @@ type HTTPResponse struct {
 }
 
 type ClusterInfo struct {
-	UID     string  `json:"uid"`
-	License License `json:"license"`
+	UID string `json:"uid"`
+	Key string `json:"key"`
 }
 
 type License struct {
-	LicensePolicy PolicyAction `json:"licensePolicy"`
-	PublicKey     string       `json:"publicKey"`
-	Token         string       `json:"token"`
-	Description   string       `json:"description"`
+	Token       string `json:"token"`
+	Description string `json:"description"`
 }
 
 type HTTPBody struct {
@@ -123,35 +124,34 @@ type ConvertOptions interface {
 	callbackConvert(data interface{}) error
 }
 
-func CommunicateWithCloud(method string, url string, content interface{}) (HTTPResponse, *ErrorMgr) {
+func CommunicateWithCloud(method string, url string, content interface{}) (HTTPResponse, error) {
 	var req *http.Request
 	var resp *http.Response
 	var err error
-	var em *ErrorMgr
 	// create a http request to cloud
-	req, em = sendRequest(method, url, content)
-	if em != nil {
-		return HTTPResponse{}, LoadError("sendRequest", em)
-	}
-	resp, em = getResponse(req)
+	req, err = sendRequest(method, url, content)
 	if err != nil {
-		return HTTPResponse{}, LoadError("getResponse", em)
+		return HTTPResponse{}, fmt.Errorf("sendRequest: %w", err)
+	}
+	resp, err = getResponse(req)
+	if err != nil {
+		return HTTPResponse{}, fmt.Errorf("getResponse: %w", err)
 	}
 	defer resp.Body.Close()
 	return readResponse(resp)
 }
 
-func Convert(body []byte, content interface{}) *ErrorMgr {
+func Convert(body []byte, content interface{}) error {
 	if body == nil {
-		return NewErrorMgr("Convert", "the body is empty")
+		return fmt.Errorf("Convert: the body is empty")
 	}
 	contentValue := reflect.ValueOf(content)
 	if contentValue.Kind() != reflect.Ptr || contentValue.IsNil() {
-		return NewErrorMgr("Convert", "content must be a non-nil pointer")
+		return fmt.Errorf("Convert: content must be a non-nil pointer")
 	}
 
 	if err := json.Unmarshal(body, content); err != nil {
-		return NewErrorMgr("Convert", "json.Unmarshal", err.Error())
+		return fmt.Errorf("Convert: json.Unmarshal: %w", err)
 	}
 
 	return nil
@@ -170,17 +170,17 @@ func AsyncCloudTask(wg *sync.WaitGroup, errChannel chan error, tk Task) {
 	errChannel <- tk.Run()
 }
 
-func sendRequest(method string, url string, content interface{}) (*http.Request, *ErrorMgr) {
+func sendRequest(method string, url string, content interface{}) (*http.Request, error) {
 	var body []byte
 	var req *http.Request
 	var err error
 
 	if body, err = json.Marshal(content); err != nil {
-		return nil, NewErrorMgr("json.Marshal", err.Error())
+		return nil, fmt.Errorf("json.Marshal: %w", err)
 	}
 	req, err = http.NewRequest(method, url, bytes.NewBuffer(body))
 	if err != nil {
-		return nil, NewErrorMgr("http.NewRequest", err.Error())
+		return nil, fmt.Errorf("http.NewRequest: %w", err)
 	}
 	if method == "POST" {
 		req.Header.Set(ContentType, ContentTypeJSON)
@@ -188,9 +188,9 @@ func sendRequest(method string, url string, content interface{}) (*http.Request,
 	return req, nil
 }
 
-func getResponse(req *http.Request) (*http.Response, *ErrorMgr) {
+func getResponse(req *http.Request) (*http.Response, error) {
 	if req == nil {
-		return nil, NewErrorMgr("getResponse", "no http request")
+		return nil, fmt.Errorf("getResponse: no http request")
 	}
 	defer req.Body.Close()
 	var resp *http.Response
@@ -198,17 +198,17 @@ func getResponse(req *http.Request) (*http.Response, *ErrorMgr) {
 	client := http.Client{}
 	resp, err = client.Do(req)
 	if err != nil {
-		return nil, NewErrorMgr("client.Do", err.Error())
+		return nil, fmt.Errorf("getResponse: %w", err)
 	}
 	return resp, nil
 }
 
-func readResponse(resp *http.Response) (HTTPResponse, *ErrorMgr) {
+func readResponse(resp *http.Response) (HTTPResponse, error) {
 	defer resp.Body.Close()
 	var httpResp HTTPResponse
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return HTTPResponse{}, NewErrorMgr(err.Error())
+		return HTTPResponse{}, fmt.Errorf("readResponse: %w", err)
 	}
 	httpResp.Body = bodyBytes
 	httpResp.ContentType = resp.Header.Get(ContentType)

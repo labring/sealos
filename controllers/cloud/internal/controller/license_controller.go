@@ -23,6 +23,7 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -67,45 +68,84 @@ type LicenseReconciler struct {
 func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter LicenseReconcile", "namespace:", req.Namespace, "name", req.Name)
 	if r.Retries > 5 {
+		pack := cloud.NewNotificationPackage(cloud.ValidLicenseTitle, cloud.SEALOS, cloud.ValidLicenseContent)
+		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
 		return ctrl.Result{}, nil
 	}
 	r.Retries++
-	r.logger.Info("Start to get license...")
+	r.logger.Info("Start to get license-related resource...")
+	var canConnectToExternalNetwork bool
 	var license cloudv1.License
+	var clientInstance cloudv1.CloudClient
+	var secret corev1.Secret
+	var config cloud.Config
+	var configMap corev1.ConfigMap
+	var payload map[string]interface{}
+	var ok bool
 	err := r.Client.Get(ctx, types.NamespacedName{Namespace: req.Namespace, Name: req.Name}, &license)
 	if err != nil {
 		r.logger.Error(err, "failed to get license", "namespace:", req.Namespace, "name:", req.Name)
 		return ctrl.Result{}, err
 	}
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.CloudStartName)}, &clientInstance)
+	if err != nil {
+		r.logger.Error(err, "failed to get cloudInstance")
+		return ctrl.Result{}, err
+	}
+	canConnectToExternalNetwork = (clientInstance.Labels[string(cloud.ExternalNetworkAccessLabel)] == string(cloud.Enabled))
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)}, &secret)
+	if err != nil {
+		r.logger.Error(err, "failed to get secret")
+		return ctrl.Result{}, err
+	}
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ConfigName)}, &configMap)
+	if err != nil {
+		r.logger.Error(err, "failed to get configMap")
+		return ctrl.Result{}, err
+	}
+	config, err = util.ReadConfigFromConfigMap(string(cloud.ConfigName), &configMap)
+	if err != nil {
+		r.logger.Error(err, "failed to read config from configMap")
+		return ctrl.Result{}, err
+	}
 	r.logger.Info("Start to check license...")
-	payload, ok := crypto.IsLicenseValid(license)
+	if clientInstance.Labels[string(cloud.ExternalNetworkAccessLabel)] == string(cloud.Enabled) {
+		license.Spec.Key = string(secret.Data["key"])
+	}
+
+	if canConnectToExternalNetwork {
+		payload, ok = cloud.LicenseCheckOnExternalNetworkAccess(license, secret, config.LicenseMonitorURL, r.logger)
+	} else {
+		payload, ok = cloud.LicenseCheckOnInternalNetwork(license)
+	}
 	if !ok {
-		err := errors.New("error license")
+		err = errors.New("error license")
 		r.logger.Error(err, "license invalid", "namespace:", req.Namespace, "name:", req.Name)
 		pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.InvalidLicenseContent)
 		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
-		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+		return ctrl.Result{}, nil
 	}
+
 	r.logger.Info("Start to recharge...")
 	amount, err := util.InterfaceToInt64(payload["amt"])
 	if err != nil {
 		r.logger.Error(err, "license invalid", "namespace:", req.Namespace, "name:", req.Name)
 		pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.InvalidLicenseContent)
 		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
-		return ctrl.Result{}, err
+		return ctrl.Result{}, nil
 	}
 	t, err := util.InterfaceToInt64(payload["iat"])
 	if err != nil {
 		r.logger.Error(err, "license invalid", "namespace:", req.Namespace, "name:", req.Name)
 		pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.InvalidLicenseContent)
 		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
-		return ctrl.Result{}, err
+		return ctrl.Result{}, nil
 	}
 	if t < time.Now().Add(-24*time.Hour).Unix() {
 		r.logger.Error(err, "license invalid", "namespace:", req.Namespace, "name:", req.Name)
 		pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.LicenseTimeOutContent)
 		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
-		return ctrl.Result{}, err
+		return ctrl.Result{}, nil
 	}
 	var licenseHistory corev1.ConfigMap
 	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.LicenseHistory)}, &licenseHistory)
@@ -146,7 +186,14 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
 		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	}
-
+	size := int64(0)
+	for _, value := range licenseHistory.Data {
+		size += int64(len(value))
+	}
+	maxSizeThreshold := resource.MustParse(cloud.MaxSizeThresholdStr)
+	if size >= maxSizeThreshold.Value() {
+		licenseHistory.Data = make(map[string]string)
+	}
 	suffix := util.GetNextLicenseKeySuffix(licenseHistory.Data)
 	newLicenseKeyName := "license-" + strconv.Itoa(suffix)
 	if licenseHistory.Data == nil {

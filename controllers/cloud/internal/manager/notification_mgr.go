@@ -207,10 +207,10 @@ func (uc UserCategory) Add(prefix string, nsName string) {
 	}
 }
 
-func (uc *UserCategory) GetNameSpace(ctx context.Context, client cl.Client) *ErrorMgr {
+func (uc *UserCategory) GetNameSpace(ctx context.Context, client cl.Client) error {
 	nsList := &corev1.NamespaceList{}
 	if err := client.List(ctx, nsList); err != nil {
-		return NewErrorMgr("client.List", err.Error())
+		return err
 	}
 	for _, ns := range nsList.Items {
 		uc.Add(UserPrefix, ns.Name)

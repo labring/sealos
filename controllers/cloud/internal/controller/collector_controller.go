@@ -62,18 +62,16 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	var secret corev1.Secret
 	var configMap corev1.ConfigMap
-	resource1 := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)})
-	resource2 := util.NewImportanctResource(&configMap, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)})
 
-	em := util.GetImportantResource(ctx, r.Client, &resource1)
-	if em != nil {
-		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.Secret")
-		return ctrl.Result{}, em.Concat(": ")
+	err := r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)}, &secret)
+	if err != nil {
+		r.logger.Error(err, "failed to get secret...")
+		return ctrl.Result{}, err
 	}
-	em = util.GetImportantResource(ctx, r.Client, &resource2)
-	if em != nil {
-		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.ConfigMap")
-		return ctrl.Result{}, em.Concat(": ")
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ConfigName)}, &configMap)
+	if err != nil {
+		r.logger.Error(err, "failed to get configmap...")
+		return ctrl.Result{}, err
 	}
 
 	config, err := util.ReadConfigFromConfigMap(string(cloud.ConfigName), &configMap)
@@ -122,9 +120,9 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		ClusterResource: clusterResource,
 	}
 	r.logger.Info("Start to collector the node info of the cluster")
-	httpBody, em := cloud.CommunicateWithCloud("POST", config.CollectorURL, collector)
-	if em != nil {
-		r.logger.Error(em.Concat(": "), "failed to communicate with cloud")
+	httpBody, err := cloud.CommunicateWithCloud("POST", config.CollectorURL, collector)
+	if err != nil {
+		r.logger.Error(err, "failed to communicate with cloud")
 		return ctrl.Result{}, err
 	}
 	if !cloud.IsSuccessfulStatusCode(httpBody.StatusCode) {

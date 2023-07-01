@@ -64,27 +64,22 @@ type NotificationReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter NotificationReconcile", "namespace:", req.Namespace, "name", req.Name)
-	if em := r.Users.GetNameSpace(ctx, r.Client); em != nil {
-		err := em.Concat(": ")
+	if err := r.Users.GetNameSpace(ctx, r.Client); err != nil {
 		r.logger.Error(err, "failed to get users info")
 		return ctrl.Result{}, err
 	}
 	r.logger.Info("Start to get the resource for pull notification...")
+	var err error
 	var configMap corev1.ConfigMap
 	var url string
 	var clusterScret corev1.Secret
-	resource1 := util.NewImportanctResource(&configMap, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ConfigName)})
-	resource2 := util.NewImportanctResource(&clusterScret, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)})
-	em := util.GetImportantResource(ctx, r.Client, &resource1)
-	if em != nil {
-		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.ConfigMap")
-		return ctrl.Result{}, em.Concat(": ")
+
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ConfigName)}, &configMap)
+	if err != nil {
+		r.logger.Error(err, "failed to get configmap...")
+		return ctrl.Result{}, err
 	}
-	em = util.GetImportantResource(ctx, r.Client, &resource2)
-	if em != nil {
-		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.Secret")
-		return ctrl.Result{}, em.Concat(": ")
-	}
+
 	config, err := util.ReadConfigFromConfigMap(string(cloud.ConfigName), &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to read config")
@@ -98,9 +93,9 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	r.logger.Info("Starting to communicate with cloud")
-	httpResp, em := cloud.CommunicateWithCloud("POST", url, requestBody)
-	if em != nil {
-		r.logger.Error(cloud.LoadError("CommunicateWithCloud", em).Concat(": "), "failed to communicate with cloud")
+	httpResp, err := cloud.CommunicateWithCloud("POST", url, requestBody)
+	if err != nil {
+		r.logger.Error(err, "failed to communicate with cloud")
 		return ctrl.Result{}, errors.New(http.StatusText(httpResp.StatusCode))
 	}
 	if !cloud.IsSuccessfulStatusCode(httpResp.StatusCode) {
@@ -110,11 +105,10 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	var notificationResp []cloud.NotificationResponse
 	var notificationCache []ntf.Notification
-	em = cloud.Convert(httpResp.Body, &notificationResp)
-	if em != nil {
-		err := em.Concat(": ")
+	err = cloud.Convert(httpResp.Body, &notificationResp)
+	if err != nil {
 		r.logger.Error(err, "failed to convert notifications")
-		return ctrl.Result{}, em.Concat(": ")
+		return ctrl.Result{}, err
 	}
 
 	r.logger.Info("Starting to delivery notifications")

@@ -17,44 +17,60 @@ limitations under the License.
 package manager
 
 import (
-	"context"
+	"net/http"
 
+	"github.com/go-logr/logr"
+	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
+	"github.com/labring/sealos/controllers/pkg/crypto"
 	corev1 "k8s.io/api/core/v1"
-	cl "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	Keep       PolicyAction = "KEEP"
-	Override   PolicyAction = "OVERRIDE"
-	Invalidate PolicyAction = "INVALIDATE"
-)
+const MaxSizeThresholdStr = "800Ki"
 
 type LicenseMonitorRequest struct {
 	UID   string `json:"uid"`
 	Token string `json:"token"`
-	Key   string `json:"key"`
 }
 
-type LicenseMonitorResult struct {
-	LicensePolicy PolicyAction `json:"licensePolicy,omitempty"`
-	PublicKey     string       `json:"publicKey"`
-	Token         string       `json:"token"`
-	Description   string       `json:"description,omitempty"`
+type LicenseMonitorResponse struct {
+	Key string `json:"key"`
 }
 
-func NewLicenseMonitorRequest(secret corev1.Secret) (LicenseMonitorRequest, *ErrorMgr) {
+func NewLicenseMonitorRequest(secret corev1.Secret) LicenseMonitorRequest {
 	if secret.Name != string(SecretName) || secret.Namespace != string(Namespace) {
-		return LicenseMonitorRequest{}, NewErrorMgr("NewLicenseMonitorRequest", "error secret")
+		return LicenseMonitorRequest{}
 	}
-
 	var lmr LicenseMonitorRequest
-	lmr.Key = string(secret.Data["key"])
 	lmr.Token = string(secret.Data["token"])
 	lmr.UID = string(secret.Data["uid"])
-	return lmr, nil
+	return lmr
 }
 
-func LicenseRestrict(_ context.Context, _ cl.Client) error {
-	// 投递一个cr，通知account，将余额清零
-	return nil
+func LicenseCheckOnExternalNetworkAccess(license cloudv1.License, secret corev1.Secret, url string, logger logr.Logger) (map[string]interface{}, bool) {
+	payload, ok := crypto.IsLicenseValid(license)
+	mr := NewLicenseMonitorRequest(secret)
+	if !ok {
+		var resp LicenseMonitorResponse
+		httpBody, err := CommunicateWithCloud("POST", url, mr)
+		if err != nil {
+			logger.Error(err, "failed to communicate with cloud")
+			return nil, false
+		}
+		if !IsSuccessfulStatusCode(httpBody.StatusCode) {
+			logger.Error(err, http.StatusText(httpBody.StatusCode))
+			return nil, false
+		}
+		err = Convert(httpBody.Body, &resp)
+		if err != nil {
+			logger.Error(err, "failed to convert")
+			return nil, false
+		}
+		license.Spec.Key = resp.Key
+		return crypto.IsLicenseValid(license)
+	}
+	return payload, ok
+}
+
+func LicenseCheckOnInternalNetwork(license cloudv1.License) (map[string]interface{}, bool) {
+	return crypto.IsLicenseValid(license)
 }

@@ -290,32 +290,6 @@ rules:
 - apiGroups:
   - cloud.sealos.io
   resources:
-  - licensemonitors
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - licensemonitors/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - licensemonitors/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
   - licenses
   verbs:
   - create
@@ -647,7 +621,6 @@ spec:
         command:
         - /manager
         image: ghcr.io/labring/sealos-cloud-controller:latest
-        imagePullPolicy: Always
         livenessProbe:
           httpGet:
             path: /healthz

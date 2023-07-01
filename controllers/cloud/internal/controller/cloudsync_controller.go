@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/go-logr/logr"
 	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
@@ -63,57 +64,74 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	var secret corev1.Secret
 	var sync cloud.SyncRequest
 	var resp cloud.SyncResponse
-	var configmap corev1.ConfigMap
+	var configMap corev1.ConfigMap
 
 	r.logger.Info("Start to get resources that need sync...")
-	resource1 := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)})
-	resource2 := util.NewImportanctResource(&configmap, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ConfigName)})
-	em := util.GetImportantResource(ctx, r.Client, &resource1)
-	if em != nil {
-		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.Secret")
-		return ctrl.Result{}, em.Concat(": ")
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)}, &secret)
+	if err != nil {
+		r.logger.Error(err, "failed to get secret...")
+		return ctrl.Result{}, err
 	}
-	em = util.GetImportantResource(ctx, r.Client, &resource2)
-	if em != nil {
-		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.ConfigMap")
-		return ctrl.Result{}, em.Concat(": ")
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ConfigName)}, &secret)
+	if err != nil {
+		r.logger.Error(err, "failed to get configmap...")
+		return ctrl.Result{}, err
 	}
-	config, err = util.ReadConfigFromConfigMap(string(cloud.ConfigName), &configmap)
+	config, err = util.ReadConfigFromConfigMap(string(cloud.ConfigName), &configMap)
+	if err != nil {
+		r.logger.Error(err, "failed to get config...")
+		return ctrl.Result{}, err
+	}
+	config, err = util.ReadConfigFromConfigMap(string(cloud.ConfigName), &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to read config")
 		return ctrl.Result{}, err
 	}
+
 	url := config.CloudSyncURL
 	sync.UID = string(secret.Data["uid"])
 	if r.needSync {
 		r.logger.Info("Start to communicate with cloud...")
-		httpBody, em := cloud.CommunicateWithCloud("POST", url, sync)
-		if em != nil {
-			r.logger.Error(em.Concat(": "), "failed to communicate with cloud")
-			return ctrl.Result{}, em.Concat(": ")
+		httpBody, err := cloud.CommunicateWithCloud("POST", url, sync)
+		if err != nil {
+			r.logger.Error(err, "failed to communicate with cloud")
+			return ctrl.Result{}, err
 		}
 		if !cloud.IsSuccessfulStatusCode(httpBody.StatusCode) {
 			err := errors.New(http.StatusText(httpBody.StatusCode))
 			r.logger.Error(err, err.Error())
 			return ctrl.Result{}, err
 		}
-		em = cloud.Convert(httpBody.Body, &resp)
-		if em != nil {
-			r.logger.Error(em.Concat(": "), "failed to convert to cloud.SyncResponse")
-			return ctrl.Result{}, em.Concat(": ")
+		err = cloud.Convert(httpBody.Body, &resp)
+		if err != nil {
+			r.logger.Error(err, "failed to convert to cloud.SyncResponse")
+			return ctrl.Result{}, err
 		}
 		r.syncCache = resp
+	} else {
+		resp = r.syncCache
 	}
-	if ok := cloud.IsConfigMapChanged(resp, &configmap); ok {
+	newConfig := resp.Config
+	if ok := cloud.IsConfigMapChanged(newConfig, &configMap); ok {
 		r.logger.Info("Start to sync the resources...")
-		if err := r.Client.Update(ctx, &configmap); err != nil {
+		if err := r.Client.Update(ctx, &configMap); err != nil {
 			r.needSync = false
 			return ctrl.Result{}, err
 		}
 	}
+
+	r.logger.Info("", "old key:", string(secret.Data["key"]))
+	secret.Data["key"] = []byte(resp.Key)
+	err = r.Client.Update(ctx, &secret)
+	if err != nil {
+		r.needSync = false
+		return ctrl.Result{}, err
+	}
+	r.logger.Info("", "new key:", string(secret.Data["key"]))
+
 	r.needSync = true
 	r.syncCache = cloud.SyncResponse{}
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

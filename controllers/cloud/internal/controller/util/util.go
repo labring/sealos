@@ -22,7 +22,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 
@@ -33,7 +32,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 	cl "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -50,88 +48,6 @@ func ReadConfigFromConfigMap(expectName string, configMap *corev1.ConfigMap) (cl
 	}
 
 	return config, nil
-}
-
-type OptionCallBack func(ctx context.Context, client cl.Client) error
-
-type ImportantResourcePolicy interface {
-	Get(ctx context.Context, client cl.Client) error
-	Update(ctx context.Context, client cl.Client) error
-	Restrict(ctx context.Context, client cl.Client) error
-}
-
-type ImportanctResource struct {
-	resource   cl.Object
-	identifier types.NamespacedName
-	options    OptionCallBack
-}
-
-func NewImportanctResource(r cl.Object, i types.NamespacedName) ImportanctResource {
-	return ImportanctResource{
-		resource:   r,
-		identifier: i,
-		options:    ResetUsageQuota,
-	}
-}
-
-func (ir *ImportanctResource) Get(ctx context.Context, client cl.Client) error {
-	return client.Get(ctx, ir.identifier, ir.resource)
-}
-
-func (ir *ImportanctResource) Update(ctx context.Context, client cl.Client) error {
-	return client.Update(ctx, ir.resource)
-}
-
-func (ir *ImportanctResource) Restrict(ctx context.Context, client cl.Client) error {
-	if ir.options != nil {
-		return ir.options(ctx, client)
-	}
-	return nil
-}
-
-// This function is used to retrieve certain variables considered as important resources by this module, such as Secrets and ConfigMaps.
-func GetImportantResource(ctx context.Context, client cl.Client, policy ImportantResourcePolicy) *cloud.ErrorMgr {
-	var logger = ctrl.Log.WithName("GetImportantResource")
-	expire := time.Now().Add(time.Hour).Unix()
-	for {
-		err := policy.Get(ctx, client)
-		switch {
-		case err == nil:
-			return nil
-		case apierrors.IsNotFound(err):
-			err := policy.Restrict(ctx, client)
-			if err != nil {
-				return cloud.NewErrorMgr("GetImportantResource failed, but restrict failed", err.Error())
-			}
-			return cloud.NewErrorMgr("GetImportantResource failed", "restrict the cluster", err.Error())
-		default:
-			time.Sleep(time.Second * 10)
-			logger.Info("failed to get importance resource,retrying...")
-		}
-		if time.Now().Unix() > expire {
-			break
-		}
-	}
-	return cloud.NewErrorMgr("GetImportantResource failed, time out")
-}
-
-func ResetUsageQuota(ctx context.Context, client cl.Client) error {
-	var license cloudv1.License
-	err := client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.LicenseName)}, &license)
-	if err == nil {
-		if license.Labels == nil {
-			license.Labels = make(map[string]string)
-		}
-		license.Labels[string(cloud.IsDisabled)] = cloud.TRUE
-		return client.Update(ctx, &license)
-	} else if apierrors.IsNotFound(err) {
-		license.Name = string(cloud.LicenseName)
-		license.Namespace = string(cloud.Namespace)
-		license.Labels = make(map[string]string)
-		license.Labels[string(cloud.IsDisabled)] = cloud.TRUE
-		return client.Create(ctx, &license)
-	}
-	return err
 }
 
 // ----------------------------------------------------------------------------------------------------------//
@@ -160,115 +76,106 @@ func NewRegisterAndStartData(ctx context.Context, client cl.Client, clusterScret
 
 // ----------------------------------------------------------------------------------------------------------//
 
-type RegisterAndStartCallBack func(data RegisterAndStartData) *cloud.ErrorMgr
+type RegisterAndStartCallBack func(data RegisterAndStartData) error
 
-func RegisterAndStart(data RegisterAndStartData) *cloud.ErrorMgr {
+func RegisterAndStart(data RegisterAndStartData) error {
 	value, ok := data.clusterScret.Labels["registered"]
 	if !ok {
-		return cloud.NewErrorMgr("RegisterAndStart", "the Yaml of cloud secret if error, less registered label")
+		return fmt.Errorf("RegisterAndStart: the Yaml of cloud secret if error, less registered label")
 	}
 	if value != cloud.TRUE {
-		em := data.Register()
-		if em != nil {
-			return cloud.LoadError("RegisterAndStart", em)
+		err := data.Register()
+		if err != nil {
+			return fmt.Errorf("RegisterAndStart: %w", err)
 		}
-		SubmitNotificationWithUserCategory(data.ctx, data.client, data.logger, data.Users, cloud.AdmPrefix, data.FreeLicense.Description)
+		pack := cloud.NewNotificationPackage(cloud.RegistrationSuccessTitle, cloud.SEALOS, cloud.RegistrationSuccessContent)
+		SubmitNotificationWithUserCategory(data.ctx, data.client, data.logger, data.Users, cloud.AdmPrefix, pack)
 	}
-	em := data.StartCloudModule()
-	if em != nil {
-		return cloud.LoadError("RegisterAndStart", em)
+	err := data.StartCloudModule()
+	if err != nil {
+		return fmt.Errorf("RegisterAndStart: %w", err)
 	}
 	return nil
 }
 
-func (rd *RegisterAndStartData) Register() *cloud.ErrorMgr {
+func (rd *RegisterAndStartData) Register() error {
 	url := rd.config.RegisterURL
 	// get&store the cluster info
-	httpbody, em := cloud.CommunicateWithCloud("GET", url, nil)
-	if em != nil {
-		return cloud.LoadError("Register", em)
+	httpbody, err := cloud.CommunicateWithCloud("GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("Register: %w", err)
 	}
 	if !cloud.IsSuccessfulStatusCode(httpbody.StatusCode) {
-		return cloud.NewErrorMgr("Register", http.StatusText(httpbody.StatusCode))
+		return fmt.Errorf("Register: %s", http.StatusText(httpbody.StatusCode))
 	}
 	var clusterInfo cloud.ClusterInfo
-	em = cloud.Convert(httpbody.Body, &clusterInfo)
-	if em != nil {
-		return cloud.LoadError("Register", em)
+	err = cloud.Convert(httpbody.Body, &clusterInfo)
+	if err != nil {
+		return fmt.Errorf("Register: %w", err)
 	}
 	if rd.clusterScret.Data == nil {
 		rd.clusterScret.Data = make(map[string][]byte)
 	}
-	rd.FreeLicense = clusterInfo.License
-	rd.clusterScret.Data["token"] = []byte(clusterInfo.License.Token)
-	rd.clusterScret.Data["key"] = []byte(clusterInfo.License.PublicKey)
+	if rd.clusterScret.Data == nil {
+		rd.clusterScret.Data = make(map[string][]byte)
+	}
+	rd.clusterScret.Data["key"] = []byte(clusterInfo.Key)
 	rd.clusterScret.Data["uid"] = []byte(clusterInfo.UID)
 	rd.clusterScret.Labels["registered"] = cloud.TRUE
 	// send a notification to cluster adm
 
-	err := rd.client.Update(rd.ctx, rd.clusterScret)
+	err = rd.client.Update(rd.ctx, rd.clusterScret)
 	if err != nil {
-		return cloud.NewErrorMgr("Register", "client.Update", err.Error())
+		return fmt.Errorf("Register: client.Update: %w", err)
 	}
 	return nil
 }
 
-func (rd *RegisterAndStartData) StartCloudModule() *cloud.ErrorMgr {
-	if !rd.SubmitLicense() {
-		return cloud.NewErrorMgr("StartCloudModule", "SubmitLicense", "failed to submit license")
-	}
-
-	if em := rd.StartCloudClient(); em != nil {
-		return cloud.LoadError("startCloudClient", em)
+func (rd *RegisterAndStartData) StartCloudModule() error {
+	if err := rd.StartCloudClient(); err != nil {
+		return fmt.Errorf("startCloudClient: %w", err)
 	}
 	return nil
 }
 
-func (rd *RegisterAndStartData) SubmitLicense() bool {
-	return SubmitLicense(rd.ctx, rd.client, *rd.clusterScret) == nil
-}
-
-func (rd *RegisterAndStartData) StartCloudClient() *cloud.ErrorMgr {
+func (rd *RegisterAndStartData) StartCloudClient() error {
 	var startInstance cloudv1.CloudClient
 	startInstance.SetName(string(cloud.ClientStartName))
 	startInstance.SetNamespace(string(cloud.Namespace))
 	if err := rd.client.Get(rd.ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ClientStartName)}, &startInstance); err != nil {
 		if apierrors.IsNotFound(err) {
 			startInstance.Labels = make(map[string]string)
-			startInstance.Labels["isRead"] = cloud.FALSE
+			startInstance.Labels[string(cloud.IsRead)] = cloud.FALSE
+			startInstance.Labels[string(cloud.ExternalNetworkAccessLabel)] = string(cloud.Enabled)
 			if err := rd.client.Create(rd.ctx, &startInstance); err != nil {
-				return cloud.NewErrorMgr("startCloudClient", "client.Create", err.Error())
+				return fmt.Errorf("startCloudClient: client.Create: %w", err)
 			}
 		} else {
-			return cloud.NewErrorMgr("startCloudClient", "client.Get", err.Error())
+			return fmt.Errorf("startCloudClient: client.Get: %w", err)
 		}
 	} else {
 		if startInstance.Labels == nil {
 			startInstance.Labels = make(map[string]string)
 		}
-		startInstance.Labels["isRead"] = cloud.FALSE
+		startInstance.Labels[string(cloud.IsRead)] = cloud.FALSE
+		startInstance.Labels[string(cloud.ExternalNetworkAccessLabel)] = string(cloud.Enabled)
 		if err := rd.client.Update(rd.ctx, &startInstance); err != nil {
-			return cloud.NewErrorMgr("startCloudClient", "client.Update", err.Error())
+			return fmt.Errorf("startCloudClient: client.Update: %w", err)
 		}
 	}
 	time.Sleep(time.Millisecond * 1000)
 	if startInstance.Labels == nil {
 		startInstance.Labels = make(map[string]string)
 	}
-	startInstance.Labels["isRead"] = cloud.TRUE
+	startInstance.Labels[string(cloud.IsRead)] = cloud.TRUE
 	if err := rd.client.Update(rd.ctx, &startInstance); err != nil {
-		return cloud.NewErrorMgr("startCloudClient", "client.Update", err.Error())
+		return fmt.Errorf("startCloudClient: client.Update: %w", err)
 	}
 	return nil
 }
 
-func SubmitNotificationWithUserCategory(ctx context.Context, client cl.Client, logger logr.Logger, users cloud.UserCategory, prefix string, message string) {
-	notification := ntf.Notification{}
-	notification.Name = prefix + strconv.Itoa(int(time.Now().Unix()))
-	notification.Spec.Message = message
-	notification.Spec.Title = "Registration successful, welcome!"
-	notification.Spec.From = "Sealos Cloud"
-	notification.Spec.Timestamp = time.Now().Unix()
+func SubmitNotificationWithUserCategory(ctx context.Context, client cl.Client, logger logr.Logger, users cloud.UserCategory, prefix string, pack cloud.NotificationPackage) {
+	notification := cloud.NotificationPackageToNotification(pack)
 	var wg sync.WaitGroup
 	errchan := make(chan error)
 	for ns := range users[prefix].Iter() {
@@ -305,7 +212,7 @@ func SubmitNotificationWithUser(ctx context.Context, client cl.Client, logger lo
 	}
 }
 
-func SubmitLicense(ctx context.Context, client cl.Client, cluster corev1.Secret) *cloud.ErrorMgr {
+func SubmitLicense(ctx context.Context, client cl.Client, cluster corev1.Secret) error {
 	var license cloudv1.License
 	err := client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.LicenseName)}, &license)
 	if err != nil {

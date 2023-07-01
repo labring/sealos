@@ -53,30 +53,33 @@ type CloudClientReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
-func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctl ctrl.Result, err error) {
 	r.logger.Info("Enter CloudClientReconcile", "namespace:", req.Namespace, "name", req.Name)
 
 	r.logger.Info("Start the cloud module...")
-	if err := r.Users.GetNameSpace(ctx, r.Client); err != nil {
-		r.logger.Error(err.Concat(": "), "failed to get users info")
-		return ctrl.Result{}, err.Concat(": ")
+	if err = r.Users.GetNameSpace(ctx, r.Client); err != nil {
+		r.logger.Error(err, "failed to get users info")
+		return ctrl.Result{}, err
 	}
 	var secret corev1.Secret
 	var configMap corev1.ConfigMap
 
-	r.logger.Info("Try to get the cloud secret resource...")
-	resource1 := util.NewImportanctResource(&secret, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)})
-	resource2 := util.NewImportanctResource(&configMap, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ConfigName)})
-	if em := util.GetImportantResource(ctx, r.Client, &resource1); em != nil {
-		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.Secret")
-		return ctrl.Result{}, em.Concat(": ")
-	}
-	if em := util.GetImportantResource(ctx, r.Client, &resource2); em != nil {
-		r.logger.Error(em.Concat(": "), "GetImportantResource error, corev1.ConfigMap")
-		return ctrl.Result{}, em.Concat(": ")
-	}
-	var config, err = util.ReadConfigFromConfigMap(string(cloud.ConfigName), &configMap)
+	r.logger.Info("Try to get the cloud secret&configmap resource...")
+
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)}, &secret)
 	if err != nil {
+		r.logger.Error(err, "failed to get secret...")
+		return ctrl.Result{}, err
+	}
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ConfigName)}, &configMap)
+	if err != nil {
+		r.logger.Error(err, "failed to get configmap...")
+		return ctrl.Result{}, err
+	}
+
+	config, err := util.ReadConfigFromConfigMap(string(cloud.ConfigName), &configMap)
+	if err != nil {
+		r.logger.Error(err, "failed to get config...")
 		return ctrl.Result{}, err
 	}
 
@@ -87,10 +90,10 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	rasd := util.NewRegisterAndStartData(ctx, r.Client, &secret, r.Users, config, r.logger)
-	em := util.RegisterAndStart(rasd)
-	if em != nil {
-		r.logger.Error(em.Concat(": "), "failed to register and start")
-		return ctrl.Result{}, em.Concat(": ")
+	err = util.RegisterAndStart(rasd)
+	if err != nil {
+		r.logger.Error(err, "failed to register and start")
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil

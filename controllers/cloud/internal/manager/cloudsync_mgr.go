@@ -34,19 +34,20 @@ type Config struct {
 
 type SyncResponse struct {
 	Config `json:",inline"`
+	Key    string `json:"key"`
 }
 
 type SyncRequest struct {
 	UID string `json:"uid"`
 }
 
-func IsConfigMapChanged(resp SyncResponse, cm *corev1.ConfigMap) bool {
+func IsConfigMapChanged(expect Config, cm *corev1.ConfigMap) bool {
 	var changed bool
 	var configMapJSON map[string]string
 	if err := json.Unmarshal([]byte(cm.Data["config.json"]), &configMapJSON); err != nil {
 		return false
 	}
-	newConfigMapValue := reflect.ValueOf(resp)
+	newConfigMapValue := reflect.ValueOf(expect)
 	newConfigMapType := newConfigMapValue.Type()
 
 	for i := 0; i < newConfigMapValue.NumField(); i++ {
