@@ -134,7 +134,6 @@ function useRecharge(props: {
     const [amount, setAmount] = useState(() => 0);
     const getBonus = useCallback(
       (amount: number) => {
-        console.log(ratios, steps);
         if (isSuccess && ratios && steps && ratios.length === steps.length)
           return getFavorable(steps, ratios)(amount);
         else return 0;

@@ -26,6 +26,7 @@
   "Expenditure": "支出",
   "Recharge Amount": "充值金额",
   "Select Amount": "选择金额",
+  "Transfer Amount": "转账金额",
   "Confirm": "确定",
   "Balance Recharge": "余额充值",
   "Order Number": "订单号",
@@ -53,5 +54,11 @@
   "Insufficient Balance": "余额不足",
   "No Data Available":"暂无数据",
   "Predict Detail":"根据当前资源用量预测未来 30 天费用",
-  "Next month cost estimation":"下月费用预估"
+  "Next month cost estimation":"下月费用预估",
+  "Recipient ID": "收款人的ID",
+  "Recipient": "收款",
+  "Transfer": "转账",
+  "Transfer Amount must be a integer": "转账金额必须为整数",
+  "Recipient ID is invalid": "收款人ID无效",
+  "Transfer Amount must be less than balance": "转账金额必须小于余额"
 }

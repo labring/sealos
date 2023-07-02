@@ -1,6 +1,6 @@
 import * as yaml from 'js-yaml';
 import { CRDMeta } from '@/types/crd';
-import { getMonth, getYear } from 'date-fns';
+import { getMonth, getTime, getYear } from 'date-fns';
 export type PaymentForm = {
   paymentName: string;
   namespace: string;
@@ -37,6 +37,38 @@ export const generatePaymentCrd = (form: PaymentForm) => {
 
   try {
     const result = yaml.dump(paymentCrd);
+    return result;
+  } catch (error) {
+    return '';
+  }
+};
+
+export const generateTransferCrd = ({
+  to,
+  amount,
+  namespace,
+  name
+}: {
+  to: string;
+  amount: number;
+  namespace: string;
+  name: string;
+}) => {
+  const TransferCrd = {
+    apiVersion: 'account.sealos.io/v1',
+    kind: 'Transfer',
+    metadata: {
+      name,
+      namespace
+    },
+    spec: {
+      to,
+      amount
+    }
+  };
+
+  try {
+    const result = yaml.dump(TransferCrd);
     return result;
   } catch (error) {
     return '';

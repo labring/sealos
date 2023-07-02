@@ -32,40 +32,60 @@ export function BillingTable({ data }: { data: BillingItem[] }) {
           </Tr>
         </Thead>
         <Tbody>
-          {data?.map((item) => {
-            return (
-              <Tr key={item.order_id} fontSize={'12px'}>
-                <Td>{item.order_id}</Td>
-                <Td>{format(parseISO(item.time), 'MM-dd HH:mm')}</Td>
-                <Td>
-                  <Flex align={'center'} width={'full'} height={'full'}>
-                    <Flex
-                      px={'12px'}
-                      py={'4px'}
-                      minW={'max-content'}
-                      bg={!item.type ? '#EBF7FD' : '#E6F6F6'}
-                      borderRadius="24px"
-                      color={!item.type ? '#0884DD' : '#00A9A6'}
-                      align={'center'}
-                      justify={'space-evenly'}
-                    >
-                      <Img
-                        src={!item.type ? lineDown.src : lineUp.src}
-                        w="13.14px"
-                        mr={'6px'}
-                      ></Img>
-                      <Text>{!item.type ? t('Deduction') : t('Charge')}</Text>
+          {data
+            ?.filter((item) => [0, 1, 2, 3].includes(item.type))
+            .map((item) => {
+              return (
+                <Tr key={item.order_id} fontSize={'12px'}>
+                  <Td>{item.order_id}</Td>
+                  <Td>{format(parseISO(item.time), 'MM-dd HH:mm')}</Td>
+                  <Td>
+                    {
+                      // 0:扣费 1:充值 2:收款 3:转账
+                    }
+                    <Flex align={'center'} width={'full'} height={'full'}>
+                      <Flex
+                        px={'12px'}
+                        py={'4px'}
+                        minW={'max-content'}
+                        {...([1, 2].includes(item.type)
+                          ? {
+                              bg: '#E6F6F6',
+                              color: '#00A9A6'
+                            }
+                          : {
+                              bg: '#EBF7FD',
+                              color: '#0884DD'
+                            })}
+                        borderRadius="24px"
+                        align={'center'}
+                        justify={'space-evenly'}
+                      >
+                        <Img
+                          src={[0, 3].includes(item.type) ? lineDown.src : lineUp.src}
+                          w="13.14px"
+                          mr={'6px'}
+                        ></Img>
+                        <Text>
+                          {item.type === 0
+                            ? t('Deduction')
+                            : item.type === 1
+                            ? t('Charge')
+                            : item.type === 2
+                            ? t('Recipient')
+                            : t('Transfer')}
+                        </Text>
+                      </Flex>
                     </Flex>
-                  </Flex>
-                </Td>
+                  </Td>
 
-                <Td>{!item.type ? '￥' + formatMoney(item.costs?.cpu || 0) : '-'}</Td>
-                <Td>{!item.type ? '￥' + formatMoney(item.costs?.memory || 0) : '-'}</Td>
-                <Td>{!item.type ? '￥' + formatMoney(item.costs?.storage || 0) : '-'}</Td>
-                <Td>{'￥' + formatMoney(item.amount)}</Td>
-              </Tr>
-            );
-          })}
+                  <Td>{!item.type ? '￥' + formatMoney(item.costs?.cpu || 0) : '-'}</Td>
+                  <Td>{!item.type ? '￥' + formatMoney(item.costs?.memory || 0) : '-'}</Td>
+                  <Td>{!item.type ? '￥' + formatMoney(item.costs?.storage || 0) : '-'}</Td>
+                  <Td>{'￥' + formatMoney(item.amount)}</Td>
+                </Tr>
+              );
+            })}
         </Tbody>
       </Table>
     </TableContainer>

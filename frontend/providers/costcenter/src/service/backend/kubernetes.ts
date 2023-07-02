@@ -269,3 +269,52 @@ export async function GetConfigMap(kc: k8s.KubeConfig, namespace: string, name: 
   const response = await k8sApi.readNamespacedConfigMap(name, namespace);
   return response;
 }
+export async function watchClusterObject({
+  kc,
+  group,
+  version,
+  plural,
+  name,
+  namespace,
+  CompareFn = (a, b) => JSON.stringify(a) !== JSON.stringify(b),
+  interval = 1000,
+  timeout = 15000
+}: {
+  kc: k8s.KubeConfig;
+  group: string;
+  version: string;
+  plural: string;
+  name: string;
+  CompareFn?: (a: any, b: any) => boolean;
+  namespace: string;
+  interval?: number;
+  timeout?: number;
+}) {
+  let lastbody;
+  const startTime = Date.now();
+  const client = kc.makeApiClient(k8s.CustomObjectsApi);
+  while (true) {
+    await new Promise((resolve) => setTimeout(resolve, interval));
+    let body = null;
+    try {
+      const data = await client.getNamespacedCustomObjectStatus(
+        group,
+        version,
+        namespace,
+        plural,
+        name
+      );
+      body = data.body;
+      if (body && CompareFn(lastbody, body)) {
+        lastbody = body;
+        return body;
+      }
+    } catch (err) {
+      console.error(`Failed to get status for ${name}: ${err}`);
+    }
+    if (Date.now() - startTime >= timeout) {
+      console.error(`Timed out after ${timeout} ms.`);
+      break;
+    }
+  }
+}
