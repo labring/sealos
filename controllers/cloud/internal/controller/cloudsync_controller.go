@@ -67,6 +67,7 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	var configMap corev1.ConfigMap
 
 	r.logger.Info("Start to get resources that need sync...")
+
 	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)}, &secret)
 	if err != nil {
 		r.logger.Error(err, "failed to get secret...")

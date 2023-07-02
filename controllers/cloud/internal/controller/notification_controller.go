@@ -102,7 +102,7 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	httpResp, err := cloud.CommunicateWithCloud("POST", url, requestBody)
 	if err != nil {
 		r.logger.Error(err, "failed to communicate with cloud")
-		return ctrl.Result{}, errors.New(http.StatusText(httpResp.StatusCode))
+		return ctrl.Result{}, err
 	}
 	if !cloud.IsSuccessfulStatusCode(httpResp.StatusCode) {
 		r.logger.Error(errors.New(http.StatusText(httpResp.StatusCode)), string(httpResp.Body))
