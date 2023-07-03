@@ -1,4 +1,4 @@
-import { DBEditType, DBDetailType, PodDetailType, BackupStatusMapType } from '@/types/db';
+import { DBEditType, DBDetailType, PodDetailType } from '@/types/db';
 import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
 
 export const crLabelKey = 'sealos-db-provider-cr';
@@ -6,7 +6,8 @@ export const crLabelKey = 'sealos-db-provider-cr';
 export enum DBTypeEnum {
   'postgresql' = 'postgresql',
   'mongodb' = 'mongodb',
-  'mysql' = 'apecloud-mysql'
+  'mysql' = 'apecloud-mysql',
+  'redis' = 'redis'
 }
 
 export enum DBStatusEnum {
@@ -149,27 +150,25 @@ export const minReplicasKey = 'deploy.cloud.sealos.io/minReplicas';
 export const DBTypeList = [
   { id: DBTypeEnum.postgresql, label: 'postgres' },
   { id: DBTypeEnum.mongodb, label: 'mongo' },
-  { id: DBTypeEnum.mysql, label: 'mysql' }
+  { id: DBTypeEnum.mysql, label: 'mysql' },
+  { id: DBTypeEnum.redis, label: 'redis' }
 ];
-export const DBVersionMap = {
-  [DBTypeEnum.postgresql]: [{ id: 'postgresql-14.8.0', label: 'postgresql-14.8.0' }],
-  [DBTypeEnum.mongodb]: [{ id: 'mongodb-5.0.14', label: 'mongodb-5.0.14' }],
-  [DBTypeEnum.mysql]: [{ id: 'ac-mysql-8.0.30', label: 'ac-mysql-8.0.30' }]
-};
 export const DBComponentNameMap = {
   [DBTypeEnum.postgresql]: 'postgresql',
   [DBTypeEnum.mongodb]: 'mongo',
-  [DBTypeEnum.mysql]: 'mysql'
+  [DBTypeEnum.mysql]: 'mysql',
+  [DBTypeEnum.redis]: 'redis'
 };
 export const DBBackupPolicyNameMap = {
   [DBTypeEnum.postgresql]: 'postgresql',
   [DBTypeEnum.mongodb]: 'mongodb',
-  [DBTypeEnum.mysql]: 'mysql'
+  [DBTypeEnum.mysql]: 'mysql',
+  [DBTypeEnum.redis]: 'redis'
 };
 
 export const defaultDBEditValue: DBEditType = {
   dbType: DBTypeEnum.postgresql,
-  dbVersion: DBVersionMap[DBTypeEnum.postgresql][0].id,
+  dbVersion: '',
   dbName: 'dbname',
   replicas: 1,
   cpu: CpuSlideMarkList[1].value,
@@ -194,4 +193,21 @@ export const defaultPod: PodDetailType = {
   age: '1s',
   cpu: 1,
   memory: 1
+};
+
+export const RedisHAConfig = (ha = true) => {
+  if (ha) {
+    return {
+      cpu: 200,
+      memory: 200,
+      storage: 1,
+      replicas: 3
+    };
+  }
+  return {
+    cpu: 100,
+    memory: 100,
+    storage: 0,
+    replicas: 1
+  };
 };

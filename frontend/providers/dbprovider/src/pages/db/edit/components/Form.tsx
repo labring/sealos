@@ -11,7 +11,8 @@ import {
   NumberInputStepper,
   NumberIncrementStepper,
   NumberDecrementStepper,
-  Tooltip
+  Tooltip,
+  Switch
 } from '@chakra-ui/react';
 import { UseFormReturn } from 'react-hook-form';
 import { useRouter } from 'next/router';
@@ -23,13 +24,16 @@ import type { DBEditType } from '@/types/db';
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/editApp';
 import Tabs from '@/components/Tabs';
 import MySelect from '@/components/Select';
-import { DBTypeList, DBVersionMap } from '@/constants/db';
+import { DBTypeEnum, DBTypeList, RedisHAConfig } from '@/constants/db';
+import { DBVersionMap } from '@/store/static';
 import { useTranslation } from 'next-i18next';
 import PriceBox from './PriceBox';
 import { INSTALL_ACCOUNT } from '@/store/static';
+import Tip from '@/components/Tip';
 
 import { obj2Query } from '@/api/tools';
 import { throttle } from 'lodash';
+import { InfoOutlineIcon } from '@chakra-ui/icons';
 
 const Form = ({
   formHook,
@@ -196,10 +200,25 @@ const Form = ({
           {INSTALL_ACCOUNT && (
             <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>
               <PriceBox
-                pods={[getValues('replicas') || 1, getValues('replicas') || 1]}
-                cpu={getValues('cpu')}
-                memory={getValues('memory')}
-                storage={getValues('storage')}
+                components={[
+                  {
+                    cpu: getValues('cpu'),
+                    memory: getValues('memory'),
+                    storage: getValues('storage'),
+                    replicas: [getValues('replicas') || 1, getValues('replicas') || 1]
+                  },
+                  ...(getValues('dbType') === DBTypeEnum.redis
+                    ? (() => {
+                        const config = RedisHAConfig(getValues('replicas') > 1);
+                        return [
+                          {
+                            ...config,
+                            replicas: [config.replicas, config.replicas]
+                          }
+                        ];
+                      })()
+                    : [])
+                ]}
               />
             </Box>
           )}
@@ -292,6 +311,7 @@ const Form = ({
               <Flex mb={8} alignItems={'center'}>
                 <Label w={80}>{t('Replicas')}</Label>
                 <RangeInput
+                  w={180}
                   value={getValues('replicas')}
                   min={1}
                   max={20}
@@ -310,12 +330,22 @@ const Form = ({
                     setValue('replicas', val || 1);
                   }}
                 />
+                {getValues('dbType') === DBTypeEnum.redis && getValues('replicas') > 1 && (
+                  <Tip
+                    ml={4}
+                    icon={<InfoOutlineIcon />}
+                    text="The multi-replica Redis includes High Availability (HA) nodes. Please note, the anticipated price already encompasses the cost for the HA nodes."
+                    size="sm"
+                  />
+                )}
               </Flex>
+
               <FormControl isInvalid={!!errors.storage} w={'500px'}>
                 <Flex alignItems={'center'}>
                   <Label w={80}>{t('Storage')}</Label>
                   <Tooltip label={`${t('Storage Range')}${minStorage}~200 Gi`}>
                     <NumberInput
+                      w={'180px'}
                       max={200}
                       min={minStorage}
                       step={1}

@@ -15,7 +15,7 @@ import { useLoading } from '@/hooks/useLoading';
 import { useRouter } from 'next/router';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
-import { getUserPrice } from '@/store/static';
+import { getUserPrice, getDBVersion } from '@/store/static';
 
 import 'nprogress/nprogress.css';
 import 'react-day-picker/dist/style.css';
@@ -60,6 +60,7 @@ function App({ Component, pageProps, domain }: AppProps & { domain: string }) {
       } catch (err) {
         console.log('App is not running in desktop');
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
+          localStorage.removeItem('session');
           openConfirm(() => {
             window.open(`https://${domain}`, '_self');
           })();
@@ -99,6 +100,8 @@ function App({ Component, pageProps, domain }: AppProps & { domain: string }) {
     };
 
     getUserPrice();
+    getDBVersion();
+
     (async () => {
       try {
         const lang = await sealosApp.getLanguage();
