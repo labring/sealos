@@ -37,6 +37,9 @@ spec:
       serviceAccountName: cluster-version-reader
       containers:
         - name: dbprovider-frontend
+          env:
+            - name: SEALOS_DOMAIN
+              value: {{ .cloudDomain }}
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

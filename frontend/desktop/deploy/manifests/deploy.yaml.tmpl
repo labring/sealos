@@ -90,6 +90,13 @@ spec:
             - name: SMS_ENABLED
               value: '{{ .smsEnabled }}'
 
+            # password login env
+            - name: PASSWORD_SALT
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: password_salt
+
             # github login env
             - name: GITHUB_CLIENT_ID
               valueFrom:
