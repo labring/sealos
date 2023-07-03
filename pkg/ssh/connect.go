@@ -19,14 +19,30 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 
 	"github.com/labring/sealos/pkg/unshare"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
+
+type HostClientMap struct {
+	ClientMap map[string]HostClient
+	Mux       sync.Mutex
+}
+
+type HostClient struct {
+	SSHClient  *ssh.Client
+	SftpClient *sftp.Client
+}
+
+var hostsClientMap = &HostClientMap{
+	ClientMap: make(map[string]HostClient),
+}
 
 func (c *Client) connect(host string) (*ssh.Client, error) {
 	ip, port := iputils.GetSSHHostIPAndPort(host)
