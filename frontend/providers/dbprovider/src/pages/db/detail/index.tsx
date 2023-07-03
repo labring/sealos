@@ -12,6 +12,7 @@ import AppBaseInfo from './components/AppBaseInfo';
 import Pods from './components/Pods';
 import BackupTable, { type ComponentRef } from './components/BackupTable';
 import { useTranslation } from 'next-i18next';
+import { DBTypeEnum } from '@/constants/db';
 
 enum TabEnum {
   pod = 'pod',
@@ -110,7 +111,19 @@ const AppDetail = ({ dbName, listType }: { dbName: string; listType: `${TabEnum}
             {listType === 'pod' && <Box color={'myGray.500'}>{dbPods.length} Items</Box>}
             {listType === 'backup' && !BackupTableRef.current?.backupProcessing && (
               <Flex alignItems={'center'}>
-                <Button ml={3} variant={'primary'} onClick={BackupTableRef.current?.openBackup}>
+                <Button
+                  ml={3}
+                  variant={'primary'}
+                  onClick={() => {
+                    if (dbDetail.dbType === DBTypeEnum.redis) {
+                      return toast({
+                        status: 'warning',
+                        title: t('Redis does not support backup at this time')
+                      });
+                    }
+                    BackupTableRef.current?.openBackup();
+                  }}
+                >
                   {t('Backup')}
                 </Button>
               </Flex>

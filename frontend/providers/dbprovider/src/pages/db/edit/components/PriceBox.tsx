@@ -11,36 +11,52 @@ export const colorMap = {
 };
 
 const PriceBox = ({
-  cpu,
-  memory,
-  storage,
-  pods = [1, 1]
-}: resourcePriceResponse & { pods: [number, number] }) => {
+  components = []
+}: {
+  components: {
+    cpu: number;
+    memory: number;
+    storage: number;
+    replicas: number[];
+  }[];
+}) => {
   const { t } = useTranslation();
-
   const priceList = useMemo(() => {
-    const cpuP = +((SOURCE_PRICE.cpu * cpu * 24) / 1000).toFixed(2);
-    const memoryP = +((SOURCE_PRICE.memory * memory * 24) / 1024).toFixed(2);
-    const storageP = +(SOURCE_PRICE.storage * storage * 24).toFixed(2);
-    const totalP = +(cpuP + memoryP + storageP).toFixed(2);
+    let cp = [0, 0];
+    let mp = [0, 0];
+    let sp = [0, 0];
+    let tp = [0, 0];
+    components.forEach(({ cpu, memory, storage, replicas }) => {
+      const cpuP = (SOURCE_PRICE.cpu * cpu * 24) / 1000;
+      const memoryP = (SOURCE_PRICE.memory * memory * 24) / 1024;
+      const storageP = SOURCE_PRICE.storage * storage * 24;
+      const totalP = cpuP + memoryP + storageP;
 
-    const podScale = (val: number) => {
-      const min = (val * pods[0]).toFixed(2);
-      const max = (val * pods[1]).toFixed(2);
-      return pods[0] === pods[1] ? `￥${min}` : `￥${min} ~ ${max}`;
+      replicas.forEach((item, i) => {
+        cp[i] += cpuP * item;
+        mp[i] += memoryP * item;
+        sp[i] += storageP * item;
+        tp[i] += totalP * item;
+      });
+    });
+
+    const podScale = (val: number[]) => {
+      return val[0] === val[1]
+        ? `￥${val[0].toFixed(2)}`
+        : `￥${val[0].toFixed(2)} ~ ${val[1].toFixed(2)}`;
     };
 
     return [
       {
         label: 'CPU',
         color: '#33BABB',
-        value: podScale(cpuP)
+        value: podScale(cp)
       },
-      { label: 'Memory', color: '#36ADEF', value: podScale(memoryP) },
-      { label: 'Storage', color: '#8172D8', value: podScale(storageP) },
-      { label: 'Total Price', color: '#485058', value: podScale(totalP) }
+      { label: 'Memory', color: '#36ADEF', value: podScale(mp) },
+      { label: 'Storage', color: '#8172D8', value: podScale(sp) },
+      { label: 'Total Price', color: '#485058', value: podScale(tp) }
     ];
-  }, [cpu, memory, pods, storage]);
+  }, [components]);
 
   return (
     <Box>

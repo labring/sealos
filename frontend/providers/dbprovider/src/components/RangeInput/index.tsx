@@ -46,6 +46,7 @@ const RangeInput = ({
   return (
     <Tooltip label={hoverText} closeOnClick={false}>
       <HStack
+        flex={`0 0 ${w}px`}
         w={`${w}px`}
         position={'relative'}
         borderBottom={`2px solid`}

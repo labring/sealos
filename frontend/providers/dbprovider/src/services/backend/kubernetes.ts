@@ -17,29 +17,40 @@ export function CheckIsInCluster(): [boolean, string] {
 }
 
 /* init api */
-export function K8sApi(config: string): k8s.KubeConfig {
+export function K8sApi(config = ''): k8s.KubeConfig {
   const kc = new k8s.KubeConfig();
-  kc.loadFromString(config);
+  config ? kc.loadFromString(config) : kc.loadFromCluster();
 
   const cluster = kc.getCurrentCluster();
 
-  if (cluster) {
+  if (cluster !== null) {
+    let server: k8s.Cluster;
+
     const [inCluster, hosts] = CheckIsInCluster();
-
-    const server: k8s.Cluster = {
-      name: cluster.name,
-      caData: cluster.caData,
-      caFile: cluster.caFile,
-      server: inCluster && hosts ? hosts : 'https://apiserver.cluster.local:6443',
-      skipTLSVerify: cluster.skipTLSVerify
-    };
-
+    if (inCluster && hosts !== '') {
+      server = {
+        name: cluster.name,
+        caData: cluster.caData,
+        caFile: cluster.caFile,
+        server: hosts,
+        skipTLSVerify: cluster.skipTLSVerify
+      };
+    } else {
+      server = {
+        name: cluster.name,
+        caData: cluster.caData,
+        caFile: cluster.caFile,
+        server: 'https://apiserver.cluster.local:6443',
+        skipTLSVerify: cluster.skipTLSVerify
+      };
+    }
     kc.clusters.forEach((item, i) => {
       if (item.name === cluster.name) {
         kc.clusters[i] = server;
       }
     });
   }
+
   return kc;
 }
 

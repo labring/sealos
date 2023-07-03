@@ -1,7 +1,7 @@
 import yaml from 'js-yaml';
 import type { DBEditType, DBType } from '@/types/db';
 import { str2Num } from '@/utils/tools';
-import { DBTypeEnum, DBComponentNameMap } from '@/constants/db';
+import { DBTypeEnum, DBComponentNameMap, RedisHAConfig } from '@/constants/db';
 import { crLabelKey } from '@/constants/db';
 import { getUserNamespace } from './user';
 import dayjs from 'dayjs';
@@ -35,6 +35,9 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
     },
     name: data.dbName
   };
+
+  const redisHA = RedisHAConfig(data.replicas > 1);
+
   const map = {
     [DBTypeEnum.postgresql]: [
       {
@@ -164,6 +167,87 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
                   }
                 }
               ]
+            }
+          ],
+          terminationPolicy: 'Delete',
+          tolerations: []
+        }
+      }
+    ],
+    [DBTypeEnum.redis]: [
+      {
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'Cluster',
+        metadata,
+        spec: {
+          affinity: {
+            nodeLabels: {},
+            podAntiAffinity: 'Preferred',
+            tenancy: 'SharedNode',
+            topologyKeys: []
+          },
+          clusterDefinitionRef: 'redis',
+          clusterVersionRef: data.dbVersion,
+          componentSpecs: [
+            {
+              componentDefRef: 'redis',
+              monitor: true,
+              name: 'redis',
+              replicas: data.replicas,
+              resources,
+              serviceAccountName: data.dbName,
+              switchPolicy: {
+                type: 'Noop'
+              },
+              volumeClaimTemplates: [
+                {
+                  name: 'data',
+                  spec: {
+                    accessModes: ['ReadWriteOnce'],
+                    resources: {
+                      requests: {
+                        storage: `${data.storage}Gi`
+                      }
+                    },
+                    storageClassName: 'openebs-backup'
+                  }
+                }
+              ]
+            },
+            {
+              componentDefRef: 'redis-sentinel',
+              monitor: true,
+              name: 'redis-sentinel',
+              replicas: redisHA.replicas,
+              resources: {
+                limits: {
+                  cpu: `${redisHA.cpu}m`,
+                  memory: `${redisHA.memory}Mi`
+                },
+                requests: {
+                  cpu: `${redisHA.cpu}m`,
+                  memory: `${redisHA.memory}Mi`
+                }
+              },
+              serviceAccountName: data.dbName,
+              ...(redisHA.storage > 0
+                ? {
+                    volumeClaimTemplates: [
+                      {
+                        name: 'data',
+                        spec: {
+                          accessModes: ['ReadWriteOnce'],
+                          resources: {
+                            requests: {
+                              storage: `${redisHA.storage}Gi`
+                            }
+                          },
+                          storageClassName: 'openebs-backup'
+                        }
+                      }
+                    ]
+                  }
+                : {})
             }
           ],
           terminationPolicy: 'Delete',
@@ -301,6 +385,57 @@ export const json2Account = (data: DBEditType) => {
       }
     ],
     [DBTypeEnum.mongodb]: [
+      {
+        apiVersion: 'v1',
+        kind: 'ServiceAccount',
+        metadata: {
+          labels: {
+            ...commonLabels
+          },
+          name: data.dbName
+        }
+      },
+      {
+        apiVersion: 'rbac.authorization.k8s.io/v1',
+        kind: 'Role',
+        metadata: {
+          labels: {
+            ...commonLabels
+          },
+          name: data.dbName
+        },
+        rules: [
+          {
+            apiGroups: [''],
+            resources: ['events'],
+            verbs: ['create']
+          }
+        ]
+      },
+      {
+        apiVersion: 'rbac.authorization.k8s.io/v1',
+        kind: 'RoleBinding',
+        metadata: {
+          labels: {
+            ...commonLabels
+          },
+          name: data.dbName
+        },
+        roleRef: {
+          apiGroup: 'rbac.authorization.k8s.io',
+          kind: 'Role',
+          name: data.dbName
+        },
+        subjects: [
+          {
+            kind: 'ServiceAccount',
+            name: data.dbName,
+            namespace: getUserNamespace()
+          }
+        ]
+      }
+    ],
+    [DBTypeEnum.redis]: [
       {
         apiVersion: 'v1',
         kind: 'ServiceAccount',
