@@ -112,14 +112,10 @@ func (c *Client) Copy(host, localPath, remotePath string) error {
 		return file.RecursionCopy(localPath, remotePath)
 	}
 	logger.Debug("remote copy files src %s to dst %s", localPath, remotePath)
-	sshClient, sftpClient, err := c.sftpConnect(host)
+	_, sftpClient, err := c.sftpConnect(host)
 	if err != nil {
 		return fmt.Errorf("failed to connect: %s", err)
 	}
-	defer func() {
-		_ = sftpClient.Close()
-		_ = sshClient.Close()
-	}()
 
 	f, err := os.Stat(localPath)
 	if err != nil {
@@ -160,14 +156,10 @@ func (c *Client) Fetch(host, src, dst string) error {
 	}
 
 	logger.Debug("fetch remote file %s to %s", src, dst)
-	sshClient, sftpClient, err := c.sftpConnect(host)
+	_, sftpClient, err := c.sftpConnect(host)
 	if err != nil {
 		return fmt.Errorf("failed to connect: %s", err)
 	}
-	defer func() {
-		_ = sftpClient.Close()
-		_ = sshClient.Close()
-	}()
 
 	rfp, err := sftpClient.Open(src)
 	if err != nil {
