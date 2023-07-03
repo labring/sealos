@@ -69,6 +69,12 @@ func (c *Client) newClientAndSftpClient(host string) (*ssh.Client, *sftp.Client,
 		sftpClient *sftp.Client
 		err        error
 	)
+
+	hostsClientMap.Mux.Lock()
+	defer hostsClientMap.Mux.Unlock()
+	if hc, ok := hostsClientMap.ClientMap[host]; ok {
+		return hc.SSHClient, hc.SftpClient, err
+	}
 	sshClient, err = c.connect(host)
 	if err != nil {
 		return nil, nil, err
@@ -78,6 +84,14 @@ func (c *Client) newClientAndSftpClient(host string) (*ssh.Client, *sftp.Client,
 		sftpClient, err = NewSudoSftpClient(sshClient, c.password)
 	} else {
 		sftpClient, err = sftp.NewClient(sshClient)
+	}
+
+	if err == nil {
+		hc := HostClient{
+			SSHClient:  sshClient,
+			SftpClient: sftpClient,
+		}
+		hostsClientMap.ClientMap[host] = hc
 	}
 
 	return sshClient, sftpClient, err
@@ -98,14 +112,10 @@ func (c *Client) Copy(host, localPath, remotePath string) error {
 		return file.RecursionCopy(localPath, remotePath)
 	}
 	logger.Debug("remote copy files src %s to dst %s", localPath, remotePath)
-	sshClient, sftpClient, err := c.sftpConnect(host)
+	_, sftpClient, err := c.sftpConnect(host)
 	if err != nil {
 		return fmt.Errorf("failed to connect: %s", err)
 	}
-	defer func() {
-		_ = sftpClient.Close()
-		_ = sshClient.Close()
-	}()
 
 	f, err := os.Stat(localPath)
 	if err != nil {
@@ -146,14 +156,10 @@ func (c *Client) Fetch(host, src, dst string) error {
 	}
 
 	logger.Debug("fetch remote file %s to %s", src, dst)
-	sshClient, sftpClient, err := c.sftpConnect(host)
+	_, sftpClient, err := c.sftpConnect(host)
 	if err != nil {
 		return fmt.Errorf("failed to connect: %s", err)
 	}
-	defer func() {
-		_ = sftpClient.Close()
-		_ = sshClient.Close()
-	}()
 
 	rfp, err := sftpClient.Open(src)
 	if err != nil {
