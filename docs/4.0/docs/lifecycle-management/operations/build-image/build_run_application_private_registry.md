@@ -151,6 +151,7 @@ sealos run labring/ingress-nginx:4.1.0
 sealos run docker.io/luanshaotong/osm:v0.1.1
 ```
 
+Notice: labring/helm should be set before labring/calico.
 If every step of the application installation goes smoothly, that's it. Otherwise, you may need to debug and clean up the cluster for reinstallation.
 
 ## Other Issues

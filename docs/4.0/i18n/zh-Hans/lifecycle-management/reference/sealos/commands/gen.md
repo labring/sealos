@@ -14,6 +14,8 @@ Sealos 的 `gen` 命令是用于生成 Kubernetes 集群的配置文件（Cluste
    sealos gen labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1
    ```
 
+注意：labring/helm 应当在 labring/calico 之前。
+
 2. 生成一个包含多个镜像、指定了主节点和工作节点的集群：
 
    ```bash
@@ -21,6 +23,8 @@ Sealos 的 `gen` 命令是用于生成 Kubernetes 集群的配置文件（Cluste
        --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
        --nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
    ```
+
+注意：labring/helm 应当在 labring/calico 之前。
 
 3. 指定 SSH 端口，对于所有服务器使用相同的 SSH 端口：
 

@@ -149,6 +149,7 @@ sealos run labring/ingress-nginx:4.1.0
 sealos run docker.io/luanshaotong/osm:v0.1.1
 ```
 
+注意：labring/helm 应当在 labring/calico 之前。
 如果每一步的应用安装顺利，即可，否则可能需要调试并清理集群重新安装。
 
 ## 其他问题
