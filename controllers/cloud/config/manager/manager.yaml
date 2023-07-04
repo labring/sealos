@@ -72,6 +72,12 @@ spec:
         - --leader-elect
         image: ghcr.io/labring/sealos-cloud-controller:latest
         name: manager
+        env:
+        - name: CAN_CONNECT_TO_EXTERNAL_NETWORK
+          valueFrom:
+            secretKeyRef:
+              name: cloud-env
+              key: canConnectToExternalNetwork
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -133,3 +139,12 @@ metadata:
 spec:
   name: Cloud-Launcher
   description: This YAML file is responsible for launching the entire cloud module.
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: env
+  namespace: cloud-system
+type: Opaque
+data:
+  canConnectToExternalNetwork: RmFsc2U= 

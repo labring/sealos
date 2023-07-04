@@ -528,6 +528,15 @@ metadata:
   namespace: cloud-system
 ---
 apiVersion: v1
+data:
+  canConnectToExternalNetwork: RmFsc2U=
+kind: Secret
+metadata:
+  name: cloud-env
+  namespace: cloud-system
+type: Opaque
+---
+apiVersion: v1
 kind: Service
 metadata:
   labels:
@@ -620,7 +629,13 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: ghcr.io/labring/sealos-cloud-controller:latest
+        env:
+        - name: CAN_CONNECT_TO_EXTERNAL_NETWORK
+          valueFrom:
+            secretKeyRef:
+              key: canConnectToExternalNetwork
+              name: cloud-env
+        image: registry.cn-hangzhou.aliyuncs.com/fckc/cloud-controller:v0.2.3
         livenessProbe:
           httpGet:
             path: /healthz

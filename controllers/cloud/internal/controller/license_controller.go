@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"errors"
+	"os"
 	"strconv"
 	"time"
 
@@ -29,6 +30,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/go-logr/logr"
@@ -68,7 +70,7 @@ type LicenseReconciler struct {
 func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter LicenseReconcile", "namespace:", req.Namespace, "name", req.Name)
 	if r.Retries > 5 {
-		pack := cloud.NewNotificationPackage(cloud.ValidLicenseTitle, cloud.SEALOS, cloud.ValidLicenseContent)
+		pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.InvalidLicenseContent)
 		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
 		return ctrl.Result{}, nil
 	}
@@ -76,7 +78,6 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	r.logger.Info("Start to get license-related resource...")
 	var canConnectToExternalNetwork bool
 	var license cloudv1.License
-	var clientInstance cloudv1.CloudClient
 	var secret corev1.Secret
 	var config cloud.Config
 	var configMap corev1.ConfigMap
@@ -87,12 +88,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		r.logger.Error(err, "failed to get license", "namespace:", req.Namespace, "name:", req.Name)
 		return ctrl.Result{}, err
 	}
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.CloudStartName)}, &clientInstance)
-	if err != nil {
-		r.logger.Error(err, "failed to get cloudInstance")
-		return ctrl.Result{}, err
-	}
-	canConnectToExternalNetwork = (clientInstance.Labels[string(cloud.ExternalNetworkAccessLabel)] == string(cloud.Enabled))
+	canConnectToExternalNetwork = os.Getenv("canConnectToExternalNetwork") == cloud.TRUE
 	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)}, &secret)
 	if err != nil {
 		r.logger.Error(err, "failed to get secret")
@@ -109,7 +105,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 	r.logger.Info("Start to check license...")
-	if clientInstance.Labels[string(cloud.ExternalNetworkAccessLabel)] == string(cloud.Enabled) {
+	if canConnectToExternalNetwork {
 		license.Spec.Key = string(secret.Data["key"])
 	}
 
@@ -141,7 +137,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
 		return ctrl.Result{}, nil
 	}
-	if t < time.Now().Add(-24*time.Hour).Unix() {
+	if t < time.Now().Add(-3*time.Hour).Unix() {
 		r.logger.Error(err, "license invalid", "namespace:", req.Namespace, "name:", req.Name)
 		pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.LicenseTimeOutContent)
 		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
@@ -155,7 +151,6 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 	ok = util.CheckLicenseExists(&licenseHistory, license.Spec.Token)
 	if ok {
-		r.logger.Error(err, err.Error())
 		pack := cloud.NewNotificationPackage(cloud.DuplicateLicenseTitle, cloud.SEALOS, cloud.DuplicateLicenseContent)
 		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
 		return ctrl.Result{}, err
@@ -216,9 +211,22 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("LicenseReconcile")
 	r.Retries = 0
-	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
-		return object.GetName() == string(cloud.LicenseName)
-	})
+	Predicate := predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return e.Object.GetName() == string(cloud.LicenseName)
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return e.ObjectNew.GetName() == string(cloud.LicenseName)
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			// Ignore delete events
+			return false
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return e.Object.GetName() == string(cloud.LicenseName)
+		},
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cloudv1.License{}, builder.WithPredicates(Predicate)).
 		Complete(r)
