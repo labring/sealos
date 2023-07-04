@@ -8,4 +8,5 @@ export function hashPassword(password: string): string {
 }
 
 export const verifyPassword = (password: string, hash: string): boolean => hashPassword(password) === hash
-export const strongPassword = (password: string): boolean => /^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/.test(password)
+export const strongPassword = (password: string): boolean => /^(?=.*\S).{8,}$/.test(password)
+export const strongUsername = (username: string): boolean => /^[a-zA-Z0-9_-]{3,16}$/.test(username)

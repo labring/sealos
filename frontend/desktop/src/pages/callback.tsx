@@ -5,7 +5,6 @@ import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import { Session } from '@/types';
 import { Flex, Spinner } from '@chakra-ui/react';
-import { updateUser } from '@/services/backend/db/user';
 const Callback: NextPage = () => {
   const router = useRouter();
   const setSessionProp = useSessionStore((s) => s.setSessionProp);

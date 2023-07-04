@@ -1,20 +1,20 @@
 import request from '@/services/request';
-import { APPTYPE, TApp, TOSState } from '@/types';
+import { APPTYPE, TApp, TOSState, WindowSize, displayType } from '@/types';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import AppStateManager from '../utils/ProcessManager';
 import { formatUrl } from '@/utils/format';
-import { minBy, remove, cloneDeep } from 'lodash';
+import { minBy, cloneDeep } from 'lodash';
 export class AppInfo {
   pid: number;
   isShow: boolean;
   zIndex: number;
-  size: 'maximize' | 'maxmin' | 'minimize';
-  cacheSize: 'maximize' | 'maxmin' | 'minimize';
+  size: WindowSize;
+  cacheSize: WindowSize;
   style: {};
   mouseDowning: boolean;
-  key: string;
+  key: `${'user' | 'system'}-${string}`;
   name: string;
   icon: string;
   type: APPTYPE;
@@ -23,7 +23,7 @@ export class AppInfo {
     desc: string;
   };
   // app gallery
-  gallery: string[];
+  gallery?: string[];
   extra?: {};
   // app top info
   menuData?: {
@@ -31,7 +31,7 @@ export class AppInfo {
     helpDropDown: boolean;
     helpDocs: boolean | string;
   };
-  displayType: 'normal' | 'hidden' | 'more ';
+  displayType: displayType;
   i18n?: any;
   constructor(app: TApp, pid: number) {
     this.isShow = false;
@@ -56,129 +56,157 @@ export class AppInfo {
 
 const useAppStore = create<TOSState>()(
   devtools(
-    immer<TOSState>((set, get) => ({
-      installedApps: [],
-      runningInfo: [],
-      // present of highest layer
-      currentAppPid: -1,
-      maxZIndex: 0,
-      runner: new AppStateManager([]),
-      init: async () => {
-        const res = await request('/api/desktop/getInstalledApps');
-        set((state) => {
-          state.installedApps = res?.data?.map((app: TApp) => new AppInfo(app, -1));
-          state.runner.loadApps(state.installedApps.map((app) => app.key));
-          state.maxZIndex = 0;
-        });
-      },
-      // should use pid to close app, but it don't support multi same app process now
-      closeAppById: (pid: number) => {
-        set((state) => {
-          state.runner.closeApp(pid);
-          // make sure the process is killed
-          state.runningInfo = state.runningInfo.filter((item) => item.pid !== pid);
-        });
-      },
-
-      installApp: (app: TApp) => {
-        set((state) => {
-          state.installedApps.push(new AppInfo(app, -1));
-          state.runner.loadApp(app.key);
-        });
-      },
-      findAppInfoById: (pid: number) => {
-        // make sure the process is running
-        return get().runningInfo.find((item) => item.pid === pid);
-      },
-      updateOpenedAppInfo: (app: AppInfo) => {
-        set((state) => {
-          state.runningInfo = state.runningInfo.map((_app) => {
-            if (_app.pid === app.pid) {
-              return app;
-            } else {
-              return _app;
-            }
+    persist(
+      immer<TOSState>((set, get) => ({
+        installedApps: [],
+        runningInfo: [],
+        // present of highest layer
+        currentAppPid: -1,
+        maxZIndex: 0,
+        launchQuery: {},
+        autolaunch: "",
+        runner: new AppStateManager([]),
+        init: async () => {
+          const res = await request('/api/desktop/getInstalledApps');
+          set((state) => {
+            state.installedApps = res?.data?.map((app: TApp) => new AppInfo(app, -1));
+            state.runner.loadApps(state.installedApps.map((app) => app.key));
+            state.maxZIndex = 0;
           });
-        });
-      },
-
-      /**
-       * update apps mousedown enum. app set to status, other apps set to false
-       */
-      updateAppsMousedown(app: TApp, status: boolean) {
-        set((state) => {
-          state.installedApps = state.installedApps.map((_app) => {
-            return _app.name === app.name
-              ? { ...app, mouseDowning: status }
-              : { ..._app, mouseDowning: false };
+          return get()
+        },
+        // should use pid to close app, but it don't support multi same app process now
+        closeAppById: (pid: number) => {
+          set((state) => {
+            state.runner.closeApp(pid);
+            // make sure the process is killed
+            state.runningInfo = state.runningInfo.filter((item) => item.pid !== pid);
           });
-        });
-      },
+        },
 
-      openApp: async (app: TApp, query: Record<string, string> = {}) => {
-        const zIndex = get().maxZIndex + 1;
-        // debugger
-        // 未支持多实例
-        let allreadyApp = get().runningInfo.find((x) => x.key === app.key);
-        if (allreadyApp) {
-          get().switchAppById(allreadyApp.pid);
-          get().setToHighestLayerById(allreadyApp.pid);
-          return;
-        }
-        // Up to 8 apps
-        if (get().runningInfo.length >= 8) {
-          get().deleteLeastUsedAppByIndex();
-        }
-        if (app.type === APPTYPE.LINK) {
-          window.open(app.data.url, '_blank');
-          return;
-        }
-        let run_app = get().runner.openApp(app.key);
-        const _app = new AppInfo(app, run_app.pid);
-        _app.zIndex = zIndex;
-        _app.size = 'maximize';
-        _app.isShow = true;
-        // add query to url
-        if (_app.data?.url && query) {
-          _app.data.url = formatUrl(_app.data.url, query);
-        }
+        installApp: (app: TApp) => {
+          set((state) => {
+            state.installedApps.push(new AppInfo(app, -1));
+            state.runner.loadApp(app.key);
+          });
+        },
+        findAppInfoById: (pid: number) => {
+          // make sure the process is running
+          return get().runningInfo.find((item) => item.pid === pid);
+        },
+        updateOpenedAppInfo: (app: AppInfo) => {
+          set((state) => {
+            state.runningInfo = state.runningInfo.map((_app) => {
+              if (_app.pid === app.pid) {
+                return app;
+              } else {
+                return _app;
+              }
+            });
+          });
+        },
 
-        set((state) => {
-          state.runningInfo.push(_app);
-          state.currentAppPid = _app.pid;
-          state.maxZIndex = zIndex;
-        });
-      },
-      // maximize app
-      switchAppById: (pid: number) => {
-        // const zIndex = get().maxZIndex + 1;
-        set((state) => {
-          let _app = state.runningInfo.find((item) => item.pid === pid);
-          if (!_app) return;
-          _app.isShow = true;
-          _app.size = _app.cacheSize;
-          state.setToHighestLayerById(pid);
-        });
-      },
-      // get switch floor function
-      setToHighestLayerById: (pid: number) => {
-        const zIndex = get().maxZIndex + 1;
-        set((state) => {
-          let _app = state.runningInfo.find((item) => item.pid === pid)!;
+        /**
+         * update apps mousedown enum. app set to status, other apps set to false
+         */
+        updateAppsMousedown(app: TApp, status: boolean) {
+          set((state) => {
+            state.installedApps = state.installedApps.map((_app) => {
+              return _app.name === app.name
+                ? { ...app, mouseDowning: status }
+                : { ..._app, mouseDowning: false };
+            });
+          });
+        },
+
+        openApp: async (app: TApp, _query) => {
+          const zIndex = get().maxZIndex + 1;
+          // debugger
+          // 未支持多实例
+          let alreadyApp = get().runningInfo.find((x) => x.key === app.key);
+          if (alreadyApp) {
+            get().switchAppById(alreadyApp.pid);
+            get().setToHighestLayerById(alreadyApp.pid);
+            return;
+          }
+          // Up to 8 apps
+          if (get().runningInfo.length >= 8) {
+            get().deleteLeastUsedAppByIndex();
+          }
+          if (app.type === APPTYPE.LINK) {
+            window.open(app.data.url, '_blank');
+            return;
+          }
+          let run_app = get().runner.openApp(app.key);
+          const _app = new AppInfo(app, run_app.pid);
           _app.zIndex = zIndex;
-          get().updateOpenedAppInfo(_app);
-          state.currentAppPid = pid;
-          state.maxZIndex = zIndex;
-        });
+          _app.size = 'maximize';
+          _app.isShow = true;
+          // add query to url
+          if (_app.data?.url && _query) {
+            const { query, raw } = _query;
+            if (query) _app.data.url = formatUrl(_app.data.url, query);
+            else if (raw) {
+              _app.data.url += `?${raw}`
+            }
+          }
+
+          set((state) => {
+            state.runningInfo.push(_app);
+            state.currentAppPid = _app.pid;
+            state.maxZIndex = zIndex;
+          });
+        },
+        // maximize app
+        switchAppById: (pid: number) => {
+          // const zIndex = get().maxZIndex + 1;
+          set((state) => {
+            let _app = state.runningInfo.find((item) => item.pid === pid);
+            if (!_app) return;
+            _app.isShow = true;
+            _app.size = _app.cacheSize;
+            state.setToHighestLayerById(pid);
+          });
+        },
+        // get switch floor function
+        setToHighestLayerById: (pid: number) => {
+          const zIndex = get().maxZIndex + 1;
+          set((state) => {
+            let _app = state.runningInfo.find((item) => item.pid === pid)!;
+            _app.zIndex = zIndex;
+            get().updateOpenedAppInfo(_app);
+            state.currentAppPid = pid;
+            state.maxZIndex = zIndex;
+          });
+        },
+        // currently active app
+        currentApp: () => get().findAppInfoById(get().currentAppPid),
+        // least used app
+        deleteLeastUsedAppByIndex: () => {
+          const appToDelete = minBy(get().runningInfo, (app) => app.zIndex);
+          get().runningInfo = get().runningInfo.filter((app) => app.pid !== appToDelete?.pid);
+        },
+        setAutoLaunch(autolaunch, launchQuery) {
+          set((state) => {
+            state.autolaunch = autolaunch;
+            state.launchQuery = launchQuery;
+          });
+        },
+        cancelAutoLaunch: () => {
+          set((state) => {
+            state.autolaunch = '';
+            state.launchQuery = {};
+          });
+        },
+      })), {
+      name: 'app',
+      partialize(state) {
+        return {
+          launchQuery: state.launchQuery,
+          autolaunch: state.autolaunch,
+        }
       },
-      // currently active app
-      currentApp: () => get().findAppInfoById(get().currentAppPid),
-      // least used app
-      deleteLeastUsedAppByIndex: () => {
-        const appToDelete = minBy(get().runningInfo, (app) => app.zIndex);
-        get().runningInfo = get().runningInfo.filter((app) => app.pid !== appToDelete?.pid);
-      }
-    }))
+    })
   )
 );
 

@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { authSession } from '@/services/backend/auth';
 import { GetUserDefaultNameSpace, ListCRD } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
-import { TApp } from '@/types';
+import { TApp, TAppCR, TAppCRList, TAppConfig } from '@/types';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -26,19 +26,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       namespace: GetUserDefaultNameSpace(kube_user.name),
       plural: 'apps'
     };
-    const defaultResult = await ListCRD(kc, defaultMeta);
-    const userResult = await ListCRD(kc, meta);
+    const defaultResult = await ListCRD(kc, defaultMeta) as {
+      body: TAppCRList
+    };
+    const userResult = await ListCRD(kc, meta) as {
+      body: TAppCRList
+    };
 
-    //@ts-ignore
-    const defaultArr = defaultResult?.body?.items.map((item: any) => {
+    const defaultArr = defaultResult?.body?.items.map<TAppConfig>((item) => {
       return { key: `system-${item.metadata.name}`, ...item.spec };
     });
-    //@ts-ignore
-    const userArr = userResult?.body?.items.map((item: any) => {
+    const userArr = userResult?.body?.items.map<TAppConfig>((item) => {
       return { key: `user-${item.metadata.name}`, ...item.spec, displayType: 'normal' };
     });
 
-    let apps = [...defaultArr, ...userArr].filter((item: TApp) => item.displayType !== 'hidden');
+    let apps = [...defaultArr, ...userArr].filter((item) => item.displayType !== 'hidden');
 
     jsonRes(res, { data: apps });
   } catch (err) {

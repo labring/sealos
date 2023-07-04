@@ -8,7 +8,7 @@ export enum APPTYPE {
 }
 
 export type WindowSize = 'maximize' | 'maxmin' | 'minimize';
-
+export type displayType = 'normal' | 'hidden' | 'more ';
 export type TAppFront = {
   isShow: boolean;
   zIndex: number;
@@ -25,7 +25,7 @@ export type TAppFront = {
 
 export type TAppConfig = {
   // app key
-  key: string;
+  key: `${'user' | 'system'}-${string}`;
   // app name
   name: string;
   // app icon
@@ -38,7 +38,7 @@ export type TAppConfig = {
     desc: string;
   };
   // app gallery
-  gallery: string[];
+  gallery?: string[];
   extra?: {};
   // app top info
   menuData?: {
@@ -47,7 +47,7 @@ export type TAppConfig = {
     helpDocs: boolean | string;
   };
   i18n?: any;
-  displayType: 'normal' | 'hidden' | 'more ';
+  displayType: displayType;
 };
 
 export type TApp = TAppConfig & TAppFront & { pid: number };
@@ -58,17 +58,25 @@ export type TOSState = {
   runner: AppStateManager;
   runningInfo: AppInfo[];
   currentAppPid: number;
+  autolaunch: string;
+  launchQuery: Record<string, string>;
+  // store deploy template
+  setAutoLaunch: (autolaunch: string, launchQuery: Record<string, string>) => void;
+  cancelAutoLaunch: () => void;
   // init desktop
-  init(): Promise<void>;
+  init(): Promise<TOSState>;
   // open app
-  openApp(app: TApp, query?: Record<string, string>): Promise<void>;
-  // close app
-  closeAppById: (pid: number) => void;
-  // get current runningApp
-  currentApp: () => AppInfo | undefined;
-  switchAppById: (pid: number) => void;
-  findAppInfoById: (pid: number) => AppInfo | undefined;
-  setToHighestLayerById: (pid: number) => void;
-  updateOpenedAppInfo: (app: TApp) => void;
-  deleteLeastUsedAppByIndex: () => void;
+  openApp(app: TApp, _query?: {
+    query?: Record<string, string>,
+    raw?: string
+  }): Promise<void>;
+// close app
+closeAppById: (pid: number) => void;
+// get current runningApp
+currentApp: () => AppInfo | undefined;
+switchAppById: (pid: number) => void;
+findAppInfoById: (pid: number) => AppInfo | undefined;
+setToHighestLayerById: (pid: number) => void;
+updateOpenedAppInfo: (app: TApp) => void;
+deleteLeastUsedAppByIndex: () => void;
 };

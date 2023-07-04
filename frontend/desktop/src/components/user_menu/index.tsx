@@ -25,12 +25,13 @@ export default function Index() {
         alt="user avator"
       />,
       click: () => switchLangDisclosure.onOpen(),
-      content: <LangSelect disclosure={switchLangDisclosure} i18n={i18n}/>
+      content: <LangSelect disclosure={switchLangDisclosure} i18n={i18n} key={'langselect'} />
     },
     {
       button: <Iconfont iconName="icon-notifications" width={20} height={20} color="#24282C"></Iconfont>,
       click: () => showDisclosure.onOpen(),
       content: <Notification
+        key={'notification'}
         disclosure={showDisclosure}
         onAmount={(amount) => setNotificationAmount(amount)}
       />
@@ -44,7 +45,7 @@ export default function Index() {
         alt="user avator"
       />,
       click: () => accountDisclosure.onOpen(),
-      content: <Account disclosure={accountDisclosure} />
+      content: <Account disclosure={accountDisclosure} key={'avatar'}/>
     }
   ]
   return (
