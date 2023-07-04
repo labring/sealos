@@ -22,7 +22,7 @@ export default function AppWindow(props: {
     findAppInfoById,
     maxZIndex
   } = useAppStore();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const wnapp = findAppInfoById(pid);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const dragDom = useRef<HTMLDivElement>(null);
@@ -49,8 +49,8 @@ export default function AppWindow(props: {
               ? 0
               : x
             : x > 1.1 * appHeaderWidth
-            ? 0
-            : x,
+              ? 0
+              : x,
         y: y < upperBoundary ? upperBoundary : y > lowerBoundary ? 0 : y
       });
     } else {
@@ -116,7 +116,9 @@ export default function AppWindow(props: {
               height={'20px'}
             />
             <Box ml="8px" color={wnapp?.menuData?.nameColor} fontSize={'12px'} fontWeight={400}>
-              {t(wnapp?.name)}
+              {wnapp?.i18n?.[i18n?.language]?.name
+                ? wnapp.i18n?.[i18n?.language]?.name
+                : t(wnapp?.name)}
             </Box>
           </Flex>
           <Flex ml={'auto'}>

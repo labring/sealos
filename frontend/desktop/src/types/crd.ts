@@ -1,4 +1,5 @@
 import { KubeConfig } from "@kubernetes/client-node";
+import { APPTYPE, displayType } from "./app";
 
 export type CRDMeta = {
   group: string; // group
@@ -61,4 +62,38 @@ export type StatusCR = {
     kind: "users",
   },
   code: 404,
+}
+export type TAppCR = {
+  apiVersion: 'app.sealos.io/v1',
+  kind: 'App'
+  metadata: {
+    annotations: any,
+    creationTimestamp: string,
+    generation: number,
+    labels: Record<string, string>,
+    name: string,
+    namespace: 'app-system'
+    resourceVersion: string
+    uid: string,
+  },
+  spec: {
+    data: Record<'url' | 'desc', string>,
+    displayType: displayType,
+    i18n: Record<'zh' | 'zh-Hans', { name: string }>,
+    icon: string,
+    menuData?: {
+      nameColor: string;
+      helpDropDown: boolean;
+      helpDocs: boolean | string;
+    },
+    name: string,
+    type: APPTYPE
+  }
+}
+
+export type TAppCRList = {
+  apiVersion: 'app.sealos.io/v1',
+  items: TAppCR[],
+  kind: 'AppList',
+  metadata: { continue: string, resourceVersion: string }
 }
