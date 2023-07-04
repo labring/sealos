@@ -43,10 +43,16 @@ const EditEnvs = ({
         return '';
       })
       .filter((item) => item)
-      .map((item) => ({
-        key: item[0].trim(),
-        value: item[1].trim()
-      }));
+      .map((item) => {
+        // remove quotation
+        const key = item[0].replace(/^['"]|['"]$/g, '').trim();
+        const value = item[1].replace(/^['"]|['"]$/g, '').trim();
+
+        return {
+          key,
+          value
+        };
+      });
     successCb(result);
     onClose();
   }, [inputVal, onClose, successCb]);
