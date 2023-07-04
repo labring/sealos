@@ -2,6 +2,7 @@ import DesktopContent from '@/components/desktop_content';
 import FloatButton from '@/components/floating_button';
 import Layout from '@/components/layout';
 import MoreApps from '@/components/more_apps';
+import { enableRecharge } from '@/services/enable';
 import useAppStore from '@/stores/app';
 import useSessionStore from '@/stores/session';
 import { useColorMode } from '@chakra-ui/react';
@@ -14,9 +15,10 @@ interface IMoreAppsContext {
   setShowMoreApps: (value: boolean) => void;
 }
 export const MoreAppsContext = createContext<IMoreAppsContext | null>(null);
-export default function Home() {
+export const RechargeEnabledContext = createContext<boolean>(false);
+export default function Home({rechargeEnabled}: {rechargeEnabled: boolean}) {
   const router = useRouter();
-  const isUpdate = useSessionStore(s=>s.newUser)
+  const isUpdate = useSessionStore(s => s.newUser)
   const { colorMode, toggleColorMode } = useColorMode();
   const isUserLogin = useSessionStore((s) => s.isUserLogin);
   const init = useAppStore((state) => state.init);
@@ -36,16 +38,19 @@ export default function Home() {
   return (
     <Layout>
       <MoreAppsContext.Provider value={{ showMoreApps, setShowMoreApps }}>
-        <DesktopContent />
-        <FloatButton />
-        <MoreApps />
+        <RechargeEnabledContext.Provider value={rechargeEnabled}>
+          <DesktopContent />
+          <FloatButton />
+          <MoreApps />
+        </ RechargeEnabledContext.Provider>
       </MoreAppsContext.Provider>
     </Layout>
   );
 }
 
-export async function getServerSideProps({req, res, locales}:any) {
+export async function getServerSideProps({ req, res, locales }: any) {
   const local = req?.cookies?.NEXT_LOCALE || 'en';
+  
   return {
     props: {
       ...(await serverSideTranslations(
@@ -53,7 +58,8 @@ export async function getServerSideProps({req, res, locales}:any) {
         undefined,
         null,
         locales || []
-      ))
+      )),
+      rechargeEnabled:  enableRecharge()
     }
   };
 }

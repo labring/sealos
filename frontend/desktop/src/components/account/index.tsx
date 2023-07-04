@@ -7,14 +7,16 @@ import { QueryClient, useQuery } from '@tanstack/react-query';
 import JsYaml from 'js-yaml';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useMemo } from 'react';
+import { useContext, useMemo } from 'react';
 import Iconfont from '../iconfont';
 import { ApiResp } from '@/types';
 import useRecharge from '@/hooks/useRecharge';
 import { formatMoney } from '@/utils/format';
+import { RechargeEnabledContext } from '@/pages';
 
 export default function Index({ disclosure }: { disclosure: UseDisclosureProps }) {
   const router = useRouter();
+  const rechargeEnabled = useContext(RechargeEnabledContext)
   const { t } = useTranslation();
   const { delSession, getSession } = useSessionStore();
   const { user, kubeconfig } = getSession();
@@ -101,9 +103,9 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureProps }
             <Flex h="54px" alignItems={'center'} borderBottom={'1px solid #0000001A'} p='16px'>
               <Text>{t('Balance')}: ￥{formatMoney(balance).toFixed(2)}</Text>
 
-              <Box ml="auto" onClick={() =>onOpen()} color={'#219BF4'} fontWeight='500' fontSize='12px'>
+              {rechargeEnabled && <Box ml="auto" onClick={() =>onOpen()} color={'#219BF4'} fontWeight='500' fontSize='12px'>
                 {t('Charge')}
-              </Box>
+              </Box>}
             </Flex>
             <Flex h="54px" alignItems={'center'}>
               <Text ml="16px">kubeconfig</Text>
@@ -123,7 +125,7 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureProps }
           </Stack>
         </Flex>
       </Box>
-      <RechargeModal balance={balance}></RechargeModal>
+      {rechargeEnabled && <RechargeModal balance={balance}></RechargeModal>}
       </> : <></>
   );
 }

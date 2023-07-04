@@ -5,7 +5,7 @@ import useNotEnough from '@/hooks/useNotEnough';
 import { Box, Flex, Heading, Img } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useEffect, useMemo } from 'react';
+import { createContext, useEffect, useMemo } from 'react';
 import { Buget } from '@/components/cost_overview/buget';
 import UserCard from '@/components/cost_overview/components/user';
 import { Cost } from '@/components/cost_overview/cost';
@@ -16,8 +16,19 @@ import NotFound from '@/components/notFound';
 import { QueryClient } from '@tanstack/react-query';
 import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
-import { addHours, isSameDay, isSameHour, parseISO } from 'date-fns';
-function CostOverview() {
+import { isSameDay, isSameHour, parseISO } from 'date-fns';
+import { enableRecharge, enableTransfer } from '@/service/enabled';
+export const TradeEnableContext = createContext({
+  rechargeEnabled: false,
+  transferEnabled: false
+});
+function CostOverview({
+  rechargeEnabled,
+  transferEnabled
+}: {
+  transferEnabled: boolean;
+  rechargeEnabled: boolean;
+}) {
   const { t, i18n } = useTranslation();
   const updateCPU = useBillingStore((state) => state.updateCpu);
   const updateMemory = useBillingStore((state) => state.updateMemory);
@@ -49,7 +60,7 @@ function CostOverview() {
     new QueryClient().prefetchQuery(['valuation'], () => request('/api/price'));
   }, []);
   return (
-    <>
+    <TradeEnableContext.Provider value={{ transferEnabled, rechargeEnabled }}>
       <Flex h={'100%'}>
         <Flex
           bg="white"
@@ -114,7 +125,7 @@ function CostOverview() {
         </Flex>
       </Flex>
       <NotEnoughModal></NotEnoughModal>
-    </>
+    </TradeEnableContext.Provider>
   );
 }
 
@@ -122,7 +133,9 @@ export async function getServerSideProps(content: any) {
   const locale = content?.req?.cookies?.NEXT_LOCALE || 'zh';
   return {
     props: {
-      ...(await serverSideTranslations(locale, undefined, null, content.locales))
+      ...(await serverSideTranslations(locale, undefined, null, content.locales)),
+      rechargeEnabled: enableRecharge(),
+      transferEnabled: enableTransfer()
     }
   };
 }

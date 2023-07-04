@@ -8,11 +8,13 @@ import { QueryClient, useQuery } from '@tanstack/react-query';
 import styles from './user.module.scss';
 
 import { useTranslation } from 'next-i18next';
-import { useMemo } from 'react';
+import { useContext, useMemo } from 'react';
 import { ApiResp } from '@/types/api';
 import useTransfer from '@/hooks/useTransfer';
+import { TradeEnableContext } from '@/pages/cost_overview';
 
 export default function UserCard() {
+  const { transferEnabled, rechargeEnabled } = useContext(TradeEnableContext);
   const { t } = useTranslation();
   const session = useSessionStore().getSession();
   const { data: balance_raw, refetch } = useQuery({
@@ -73,35 +75,39 @@ export default function UserCard() {
             ¥ {displayMoney(formatMoney(balance))}
           </Box>
           <Flex alignItems="center" alignSelf={'center'} gap="10px" mt={'20px !important'}>
-            <Button
-              w="78px"
-              h="32px"
-              bg={'white'}
-              color="black"
-              onClick={(e) => {
-                e.preventDefault();
-                transferOpen();
-              }}
-            >
-              {t('Transfer')}
-            </Button>
-            <Button
-              w="78px"
-              h="32px"
-              bg={'white'}
-              color="black"
-              onClick={(e) => {
-                e.preventDefault();
-                onOpen();
-              }}
-            >
-              {t('Charge')}
-            </Button>
+            {transferEnabled && (
+              <Button
+                w="78px"
+                h="32px"
+                bg={'white'}
+                color="black"
+                onClick={(e) => {
+                  e.preventDefault();
+                  transferOpen();
+                }}
+              >
+                {t('Transfer')}
+              </Button>
+            )}
+            {rechargeEnabled && (
+              <Button
+                w="78px"
+                h="32px"
+                bg={'white'}
+                color="black"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onOpen();
+                }}
+              >
+                {t('Charge')}
+              </Button>
+            )}
           </Flex>
         </Stack>
       </Flex>
-      <RechargeModal balance={balance} />
-      <TransferModal balance={balance} />
+      {rechargeEnabled && <RechargeModal balance={balance} />}
+      {transferEnabled && <TransferModal balance={balance} />}
     </>
   );
 }
