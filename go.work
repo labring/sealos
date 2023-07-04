@@ -11,6 +11,7 @@ use (
 	./controllers/infra
 	./controllers/metering
 	./controllers/terminal
+	./controllers/cloud
 	./controllers/user
 	./controllers/resources
 	./service/auth

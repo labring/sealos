@@ -19,12 +19,14 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/emicklei/go-restful/v3 v3.10.1
 	github.com/emirpasic/gods v1.18.1
+	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/go-containerregistry v0.15.2
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/imdario/mergo v0.3.16
 	github.com/labring/image-cri-shim v0.0.0
 	github.com/labring/lvscare v0.0.0
 	github.com/labring/sealos/controllers/account v0.0.0
+	github.com/labring/sealos/controllers/cloud v0.0.0-00010101000000-000000000000
 	github.com/labring/sealos/controllers/imagehub v0.0.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/modood/table v0.0.0-20220527013332-8d47e76dad33
@@ -283,6 +285,7 @@ replace (
 	github.com/labring/lvscare => ./staging/src/github.com/labring/lvscare
 	github.com/labring/sealos => ./
 	github.com/labring/sealos/controllers/account => ./controllers/account
+	github.com/labring/sealos/controllers/cloud => ./controllers/cloud
 	github.com/labring/sealos/controllers/imagehub => ./controllers/imagehub
 	github.com/labring/sealos/controllers/user => ./controllers/user
 )

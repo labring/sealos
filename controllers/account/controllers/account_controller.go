@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/crypto"
+
 	retry2 "k8s.io/client-go/util/retry"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -56,6 +58,7 @@ import (
 
 const (
 	ACCOUNTNAMESPACEENV         = "ACCOUNT_NAMESPACE"
+	PrivateDeployEnv            = "PRIVATE_DEPLOY"
 	DEFAULTACCOUNTNAMESPACE     = "sealos-system"
 	AccountAnnotationNewAccount = "account.sealos.io/new-account"
 	NEWACCOUNTAMOUNTENV         = "NEW_ACCOUNT_AMOUNT"
@@ -63,6 +66,7 @@ const (
 
 // AccountReconciler reconciles a Account object
 type AccountReconciler struct {
+	PrivateDeploy bool
 	client.Client
 	Scheme                 *runtime.Scheme
 	Logger                 logr.Logger
@@ -122,6 +126,21 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, fmt.Errorf("get account failed: %v", err)
 	}
 
+	if r.PrivateDeploy {
+		encryptBalance := account.Status.EncryptBalance
+		encryptDeductionBalance := account.Status.EncryptDeductionBalance
+		balance, err := crypto.DecryptInt64(encryptBalance)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("decrypt balance failed: %v", err)
+		}
+		account.Status.Balance = balance
+		deductionBalance, err := crypto.DecryptInt64(encryptDeductionBalance)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("decrypt deduction balance failed: %v", err)
+		}
+		account.Status.DeductionBalance = deductionBalance
+	}
+
 	orderResp, err := pay.QueryOrder(payment.Status.TradeNO)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("query order failed: %v", err)
@@ -145,6 +164,14 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		payAmount := *orderResp.Amount.Total * 10000
 		//1¥ = 100WechatPayAmount; 1 WechatPayAmount = 10000 SealosAmount
 		var gift = giveGift(payAmount)
+		if r.PrivateDeploy {
+			encryptBalance := account.Status.EncryptBalance
+			encryptBalance, err = crypto.RechargeBalance(encryptBalance, payAmount+gift)
+			if err != nil {
+				return ctrl.Result{}, fmt.Errorf("recharge encrypt balance failed: %v", err)
+			}
+			account.Status.EncryptBalance = encryptBalance
+		}
 		account.Status.Balance += payAmount + gift
 		if err := r.Status().Update(ctx, account); err != nil {
 			return ctrl.Result{}, fmt.Errorf("update account failed: %v", err)
@@ -227,6 +254,14 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		return nil
 	}); err != nil {
 		return nil, err
+	}
+	if r.PrivateDeploy {
+		encryptBalance := account.Status.EncryptBalance
+		encryptBalance, err = crypto.RechargeBalance(encryptBalance, int64(amount))
+		if err != nil {
+			return nil, fmt.Errorf("recharge balance failed: %v", err)
+		}
+		account.Status.EncryptBalance = encryptBalance
 	}
 	account.Status.Balance += int64(amount)
 	if err := r.Status().Update(ctx, &account); err != nil {
@@ -346,6 +381,25 @@ func (r *AccountReconciler) updateDeductionBalance(ctx context.Context, accountB
 		account.Status.Balance += accountBalance.Spec.Amount
 	} else {
 		account.Status.DeductionBalance += accountBalance.Spec.Amount
+	}
+	if r.PrivateDeploy {
+		if accountBalance.Spec.Type == accountv1.TransferIn {
+			encryptBalance := account.Status.EncryptBalance
+			encryptBalance, err = crypto.RechargeBalance(encryptBalance, accountBalance.Spec.Amount)
+			if err != nil {
+				r.Logger.Error(err, err.Error())
+				return err
+			}
+			account.Status.EncryptBalance = encryptBalance
+		} else {
+			encryptDeductionBalance := account.Status.EncryptDeductionBalance
+			encryptDeductionBalance, err = crypto.RechargeBalance(encryptDeductionBalance, accountBalance.Spec.Amount)
+			if err != nil {
+				r.Logger.Error(err, err.Error())
+				return err
+			}
+			account.Status.EncryptDeductionBalance = encryptDeductionBalance
+		}
 	}
 
 	if err := r.Status().Update(ctx, account); err != nil {
