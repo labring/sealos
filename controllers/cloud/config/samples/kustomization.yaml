@@ -1,0 +1,5 @@
+## Append samples of your project ##
+resources:
+- cloud_v1_license.yaml
+- cloud_v1_launcher.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples

@@ -2,7 +2,7 @@
 
 首先，确保你已经安装了以下工具：
 
-- Dokcer
+- Docker
 - Maven
 
 ## 步骤1：编写你的 Java 程序
