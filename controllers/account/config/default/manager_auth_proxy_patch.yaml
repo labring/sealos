@@ -33,8 +33,6 @@ spec:
             memory: 64Mi
       - name: manager
         envFrom:
-          - configMapRef:
-              name: account-manager-configmap
           - secretRef:
               name: payment-secret
         securityContext:

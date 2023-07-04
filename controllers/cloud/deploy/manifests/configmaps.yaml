@@ -1,0 +1,21 @@
+apiVersion: v1
+data:
+  config.json: |
+    {
+      "CollectorURL": "https://anqp0y.laf.dev/CollectorHandle",
+      "NotificationURL": "https://anqp0y.laf.dev/NotificationHandle",
+      "RegisterURL": "https://anqp0y.laf.dev/RegisterHandle",
+      "CloudSyncURL": "https://anqp0y.laf.dev/CloudSyncHandle",
+      "LicenseMonitorURL": "https://anqp0y.laf.dev/LicenseMonitor"
+    }
+kind: ConfigMap
+metadata:
+  name: cloud-config
+  namespace: cloud-system
+---
+apiVersion: v1
+data: null
+kind: ConfigMap
+metadata:
+  name: cloud-license-history
+  namespace: cloud-system

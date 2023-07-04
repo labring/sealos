@@ -506,37 +506,6 @@ subjects:
   namespace: cloud-system
 ---
 apiVersion: v1
-data:
-  config.json: |
-    {
-      "CollectorURL": "https://anqp0y.laf.dev/CollectorHandle",
-      "NotificationURL": "https://anqp0y.laf.dev/NotificationHandle",
-      "RegisterURL": "https://anqp0y.laf.dev/RegisterHandle",
-      "CloudSyncURL": "https://anqp0y.laf.dev/CloudSyncHandle",
-      "LicenseMonitorURL": "https://anqp0y.laf.dev/LicenseMonitor"
-    }
-kind: ConfigMap
-metadata:
-  name: cloud-config
-  namespace: cloud-system
----
-apiVersion: v1
-data: null
-kind: ConfigMap
-metadata:
-  name: cloud-license-history
-  namespace: cloud-system
----
-apiVersion: v1
-data:
-  canConnectToExternalNetwork: RmFsc2U=
-kind: Secret
-metadata:
-  name: cloud-env
-  namespace: cloud-system
-type: Opaque
----
-apiVersion: v1
 kind: Service
 metadata:
   labels:
@@ -631,11 +600,8 @@ spec:
         - /manager
         env:
         - name: CAN_CONNECT_TO_EXTERNAL_NETWORK
-          valueFrom:
-            secretKeyRef:
-              key: canConnectToExternalNetwork
-              name: cloud-env
-        image: ghcr.io/labring/sealos-cloud-controller:latest
+          value: {{ .canConnectToExternalNetwork } }
+        image: ghcr.io/labring/sealos-cloud-controller:dev
         livenessProbe:
           httpGet:
             path: /healthz
