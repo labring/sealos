@@ -601,7 +601,7 @@ spec:
         env:
         - name: CAN_CONNECT_TO_EXTERNAL_NETWORK
           value: {{ .canConnectToExternalNetwork } }
-        image: ghcr.io/labring/sealos-cloud-controller:latest
+        image: ghcr.io/labring/sealos-cloud-controller:dev
         livenessProbe:
           httpGet:
             path: /healthz
