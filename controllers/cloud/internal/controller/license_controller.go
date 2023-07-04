@@ -44,9 +44,10 @@ import (
 // LicenseReconciler reconciles a License object
 type LicenseReconciler struct {
 	client.Client
-	Scheme  *runtime.Scheme
-	logger  logr.Logger
-	Retries int
+	Scheme       *runtime.Scheme
+	needRecharge bool
+	logger       logr.Logger
+	Retries      int
 }
 
 //+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
@@ -70,7 +71,8 @@ type LicenseReconciler struct {
 func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter LicenseReconcile", "namespace:", req.Namespace, "name", req.Name)
 	if r.Retries > 5 {
-		pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.InvalidLicenseContent)
+		pack := cloud.NewNotificationPackage(cloud.UnKnownErrorOfLicense, cloud.SEALOS, cloud.UnKnownErrorOfLicenseCotentent)
+		r.logger.Info("over the max retries")
 		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
 		return ctrl.Result{}, nil
 	}
@@ -88,7 +90,20 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		r.logger.Error(err, "failed to get license", "namespace:", req.Namespace, "name:", req.Name)
 		return ctrl.Result{}, err
 	}
-	canConnectToExternalNetwork = os.Getenv("canConnectToExternalNetwork") == cloud.TRUE
+	if license.Labels == nil {
+		license.Labels = make(map[string]string)
+	}
+	license.Labels[string(cloud.IsRead)] = cloud.TRUE
+	if err = r.Client.Update(ctx, &license); err != nil {
+		r.logger.Error(err, "failed to update the license")
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+	}
+	canConnectToExternalNetwork = os.Getenv(cloud.NetWorkEnv) == cloud.TRUE
+	if canConnectToExternalNetwork {
+		r.logger.Info("can connect to ExternalNetwork")
+	} else {
+		r.logger.Info("can't connect to ExternalNetwork")
+	}
 	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)}, &secret)
 	if err != nil {
 		r.logger.Error(err, "failed to get secret")
@@ -110,7 +125,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if canConnectToExternalNetwork {
-		payload, ok = cloud.LicenseCheckOnExternalNetworkAccess(license, secret, config.LicenseMonitorURL, r.logger)
+		payload, ok = cloud.LicenseCheckOnExternalNetwork(license, secret, config.LicenseMonitorURL, r.logger)
 	} else {
 		payload, ok = cloud.LicenseCheckOnInternalNetwork(license)
 	}
@@ -118,28 +133,6 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		err = errors.New("error license")
 		r.logger.Error(err, "license invalid", "namespace:", req.Namespace, "name:", req.Name)
 		pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.InvalidLicenseContent)
-		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
-		return ctrl.Result{}, nil
-	}
-
-	r.logger.Info("Start to recharge...")
-	amount, err := util.InterfaceToInt64(payload["amt"])
-	if err != nil {
-		r.logger.Error(err, "license invalid", "namespace:", req.Namespace, "name:", req.Name)
-		pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.InvalidLicenseContent)
-		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
-		return ctrl.Result{}, nil
-	}
-	t, err := util.InterfaceToInt64(payload["iat"])
-	if err != nil {
-		r.logger.Error(err, "license invalid", "namespace:", req.Namespace, "name:", req.Name)
-		pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.InvalidLicenseContent)
-		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
-		return ctrl.Result{}, nil
-	}
-	if t < time.Now().Add(-3*time.Hour).Unix() {
-		r.logger.Error(err, "license invalid", "namespace:", req.Namespace, "name:", req.Name)
-		pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.LicenseTimeOutContent)
 		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
 		return ctrl.Result{}, nil
 	}
@@ -152,34 +145,60 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	ok = util.CheckLicenseExists(&licenseHistory, license.Spec.Token)
 	if ok {
 		pack := cloud.NewNotificationPackage(cloud.DuplicateLicenseTitle, cloud.SEALOS, cloud.DuplicateLicenseContent)
+		r.logger.Info("the license has been used")
 		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
 		return ctrl.Result{}, err
 	}
 
-	var account accountv1.Account
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: "sealos-system", Name: license.Spec.UID}, &account)
-	if err != nil {
-		r.logger.Error(err, "failed to get account cr", "namespace:", req.Namespace, "name:", req.Name)
-		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
-	}
-	charge := amount * cloud.BaseCount
-	account.Status.Balance += charge
-	encryptBalance := account.Status.EncryptBalance
-	encryptBalance, err = crypto.RechargeBalance(encryptBalance, charge)
-	if err != nil {
-		r.logger.Error(err, "Recharge Failed", "namespace:", req.Namespace, "name:", req.Name)
-		pack := cloud.NewNotificationPackage(cloud.RechargeFailedTitle, cloud.SEALOS, cloud.RechargeFailedContent)
-		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
-		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
-	}
+	if r.needRecharge {
+		r.logger.Info("Start to recharge...")
+		amount, err := util.InterfaceToInt64(payload["amt"])
+		if err != nil {
+			r.logger.Error(err, "license invalid", "namespace:", req.Namespace, "name:", req.Name)
+			pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.InvalidLicenseContent)
+			util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+			return ctrl.Result{}, nil
+		}
+		t, err := util.InterfaceToInt64(payload["iat"])
+		if err != nil {
+			r.logger.Error(err, "license invalid", "namespace:", req.Namespace, "name:", req.Name)
+			pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.InvalidLicenseContent)
+			util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+			return ctrl.Result{}, nil
+		}
+		if t < time.Now().Add(-3*time.Hour).Unix() {
+			r.logger.Error(err, "license invalid", "namespace:", req.Namespace, "name:", req.Name)
+			pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.LicenseTimeOutContent)
+			util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+			return ctrl.Result{}, nil
+		}
 
-	account.Status.EncryptBalance = encryptBalance
-	err = r.Client.Status().Update(ctx, &account)
-	if err != nil {
-		r.logger.Error(err, "Recharge Failed", "namespace:", req.Namespace, "name:", req.Name)
-		pack := cloud.NewNotificationPackage(cloud.RechargeFailedTitle, cloud.SEALOS, cloud.RechargeFailedContent)
-		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
-		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+		var account accountv1.Account
+		err = r.Client.Get(ctx, types.NamespacedName{Namespace: "sealos-system", Name: license.Spec.UID}, &account)
+		if err != nil {
+			r.logger.Error(err, "failed to get account cr", "namespace:", req.Namespace, "name:", req.Name)
+			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+		}
+		charge := amount * cloud.BaseCount
+		account.Status.Balance += charge
+		encryptBalance := account.Status.EncryptBalance
+		encryptBalance, err = crypto.RechargeBalance(encryptBalance, charge)
+		if err != nil {
+			r.logger.Error(err, "Recharge Failed, failed to encrypt the balance", "namespace:", req.Namespace, "name:", req.Name)
+			pack := cloud.NewNotificationPackage(cloud.RechargeFailedTitle, cloud.SEALOS, cloud.RechargeFailedContent)
+			util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+		}
+
+		account.Status.EncryptBalance = encryptBalance
+		err = r.Client.Status().Update(ctx, &account)
+		if err != nil {
+			r.logger.Error(err, "Recharge Failed, failed to modify the status", "namespace:", req.Namespace, "name:", req.Name)
+			pack := cloud.NewNotificationPackage(cloud.RechargeFailedTitle, cloud.SEALOS, cloud.RechargeFailedContent)
+			util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+		}
+		r.logger.Info("Recharge Success...")
 	}
 	size := int64(0)
 	for _, value := range licenseHistory.Data {
@@ -197,9 +216,12 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	licenseHistory.Data[newLicenseKeyName] = license.Spec.Token
 	err = r.Client.Update(ctx, &licenseHistory)
 	if err != nil {
+		r.needRecharge = false
+		r.Retries = 0
 		r.logger.Error(err, "failed to store license")
 		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	}
+	r.needRecharge = true
 	r.logger.Info("Success!")
 	pack := cloud.NewNotificationPackage(cloud.ValidLicenseTitle, cloud.SEALOS, cloud.ValidLicenseContent)
 	util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
@@ -211,12 +233,15 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("LicenseReconcile")
 	r.Retries = 0
+	r.needRecharge = true
 	Predicate := predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
-			return e.Object.GetName() == string(cloud.LicenseName)
+			return e.Object.GetName() == string(cloud.LicenseName) &&
+				e.Object.GetLabels() != nil && e.Object.GetLabels()[string(cloud.IsRead)] == cloud.FALSE
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			return e.ObjectNew.GetName() == string(cloud.LicenseName)
+			return e.ObjectNew.GetName() == string(cloud.LicenseName) &&
+				e.ObjectNew.GetLabels() != nil && e.ObjectNew.GetLabels()[string(cloud.IsRead)] == cloud.FALSE
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			// Ignore delete events

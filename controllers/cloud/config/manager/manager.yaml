@@ -130,7 +130,7 @@ data:
     }
 ---
 apiVersion: cloud.sealos.io/v1
-kind: CloudClient
+kind: Launcher
 metadata:
   name: start
   namespace: cloud-system

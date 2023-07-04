@@ -129,14 +129,14 @@ func (rd *RegisterAndStartData) Register() error {
 }
 
 func (rd *RegisterAndStartData) StartCloudModule() error {
-	if err := rd.StartCloudClient(); err != nil {
-		return fmt.Errorf("startCloudClient: %w", err)
+	if err := rd.StartLauncher(); err != nil {
+		return fmt.Errorf("startLauncher: %w", err)
 	}
 	return nil
 }
 
-func (rd *RegisterAndStartData) StartCloudClient() error {
-	var startInstance cloudv1.CloudClient
+func (rd *RegisterAndStartData) StartLauncher() error {
+	var startInstance cloudv1.Launcher
 	startInstance.SetName(string(cloud.ClientStartName))
 	startInstance.SetNamespace(string(cloud.Namespace))
 	if err := rd.client.Get(rd.ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ClientStartName)}, &startInstance); err != nil {
@@ -145,10 +145,10 @@ func (rd *RegisterAndStartData) StartCloudClient() error {
 			startInstance.Labels[string(cloud.IsRead)] = cloud.FALSE
 			startInstance.Labels[string(cloud.ExternalNetworkAccessLabel)] = string(cloud.Enabled)
 			if err := rd.client.Create(rd.ctx, &startInstance); err != nil {
-				return fmt.Errorf("startCloudClient: client.Create: %w", err)
+				return fmt.Errorf("startLauncher: client.Create: %w", err)
 			}
 		} else {
-			return fmt.Errorf("startCloudClient: client.Get: %w", err)
+			return fmt.Errorf("startLauncher: client.Get: %w", err)
 		}
 	} else {
 		if startInstance.Labels == nil {
@@ -157,7 +157,7 @@ func (rd *RegisterAndStartData) StartCloudClient() error {
 		startInstance.Labels[string(cloud.IsRead)] = cloud.FALSE
 		startInstance.Labels[string(cloud.ExternalNetworkAccessLabel)] = string(cloud.Enabled)
 		if err := rd.client.Update(rd.ctx, &startInstance); err != nil {
-			return fmt.Errorf("startCloudClient: client.Update: %w", err)
+			return fmt.Errorf("startLauncher: client.Update: %w", err)
 		}
 	}
 	time.Sleep(time.Millisecond * 10000)
@@ -166,7 +166,7 @@ func (rd *RegisterAndStartData) StartCloudClient() error {
 	}
 	startInstance.Labels[string(cloud.IsRead)] = cloud.TRUE
 	if err := rd.client.Update(rd.ctx, &startInstance); err != nil {
-		return fmt.Errorf("startCloudClient: client.Update: %w", err)
+		return fmt.Errorf("startLauncher: client.Update: %w", err)
 	}
 	return nil
 }

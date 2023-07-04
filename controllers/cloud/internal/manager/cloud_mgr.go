@@ -54,20 +54,22 @@ const (
 )
 
 const (
-	SEALOS                     Source  = "Sealos Cloud"
-	ErrorLicenseTitle          Title   = "License Activation Failed"
-	InvalidLicenseTitle        Title   = "Invalid License"
-	ValidLicenseTitle          Title   = "License Activated"
-	RechargeFailedTitle        Title   = "Recharge failed"
-	DuplicateLicenseTitle      Title   = "Duplicate License"
-	RegistrationSuccessTitle   Title   = "Registration Success"
-	InvalidLicenseContent      Message = "The provided license is invalid. Please check and try."
-	ErrorLicenseTitleContent   Message = "License delivery encountered an unexpected error. Please ensure your cluster is operating normally..."
-	LicenseTimeOutContent      Message = "The provided license has expired. Please check and try."
-	ValidLicenseContent        Message = "Your license has been successfully activated and is ready to use. Enjoy your experience!"
-	DuplicateLicenseContent    Message = "The provided license has already been used. Please use a different license."
-	RegistrationSuccessContent Message = "Congratulations! You have successfully registered. Welcome aboard!"
-	RechargeFailedContent      Message = "Your license failed to recharge."
+	SEALOS                         Source  = "Sealos Cloud"
+	ErrorLicenseTitle              Title   = "License Activation Failed"
+	InvalidLicenseTitle            Title   = "Invalid License"
+	UnKnownErrorOfLicense          Title   = "UnKnown error about license"
+	ValidLicenseTitle              Title   = "License Activated"
+	RechargeFailedTitle            Title   = "Recharge failed"
+	DuplicateLicenseTitle          Title   = "Duplicate License"
+	RegistrationSuccessTitle       Title   = "Registration Success"
+	InvalidLicenseContent          Message = "The provided license is invalid. Please check and try."
+	ErrorLicenseTitleContent       Message = "License delivery encountered an unexpected error. Please ensure your cluster is operating normally..."
+	UnKnownErrorOfLicenseCotentent Message = "During the license activation process, a location issue occurred, possibly due to network problems. If it affects your usage, please contact us."
+	LicenseTimeOutContent          Message = "The provided license has expired. Please check and try."
+	ValidLicenseContent            Message = "Your license has been successfully activated and is ready to use. Enjoy your experience!"
+	DuplicateLicenseContent        Message = "The provided license has already been used. Please use a different license."
+	RegistrationSuccessContent     Message = "Congratulations! You have successfully registered. Welcome aboard!"
+	RechargeFailedContent          Message = "Your license failed to recharge."
 )
 
 const (
@@ -76,6 +78,10 @@ const (
 	IsRead                     Label = "isRead"
 	Enabled                    Label = "enabled"
 	Disabled                   Label = "disabled"
+)
+
+const (
+	NetWorkEnv string = "CAN_CONNECT_TO_EXTERNAL_NETWORK"
 )
 
 const (

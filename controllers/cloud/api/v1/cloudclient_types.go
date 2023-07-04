@@ -23,14 +23,14 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// CloudClientSpec defines the desired state of CloudClient
-type CloudClientSpec struct {
+// LauncherSpec defines the desired state of Launcher
+type LauncherSpec struct {
 	Name        string `json:"name,omitempty"`
 	Description string `json:"description,omitempty"`
 }
 
-// CloudClientStatus defines the observed state of CloudClient
-type CloudClientStatus struct {
+// LauncherStatus defines the observed state of Launcher
+type LauncherStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -38,24 +38,24 @@ type CloudClientStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// CloudClient is the Schema for the cloudclients API
-type CloudClient struct {
+// Launcher is the Schema for the launchers API
+type Launcher struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   CloudClientSpec   `json:"spec,omitempty"`
-	Status CloudClientStatus `json:"status,omitempty"`
+	Spec   LauncherSpec   `json:"spec,omitempty"`
+	Status LauncherStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// CloudClientList contains a list of CloudClient
-type CloudClientList struct {
+// LauncherList contains a list of Launcher
+type LauncherList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []CloudClient `json:"items"`
+	Items           []Launcher `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&CloudClient{}, &CloudClientList{})
+	SchemeBuilder.Register(&Launcher{}, &LauncherList{})
 }

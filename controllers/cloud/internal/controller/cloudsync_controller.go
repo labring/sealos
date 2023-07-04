@@ -83,11 +83,6 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		r.logger.Error(err, "failed to get config...")
 		return ctrl.Result{}, err
 	}
-	config, err = util.ReadConfigFromConfigMap(string(cloud.ConfigName), &configMap)
-	if err != nil {
-		r.logger.Error(err, "failed to read config")
-		return ctrl.Result{}, err
-	}
 
 	url := config.CloudSyncURL
 	sync.UID = string(secret.Data["uid"])
@@ -95,7 +90,7 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		r.logger.Info("Start to communicate with cloud...")
 		httpBody, err := cloud.CommunicateWithCloud("POST", url, sync)
 		if err != nil {
-			r.logger.Error(err, "failed to communicate with cloud")
+			r.logger.Error(err, "failed to communicate with cloud...")
 			return ctrl.Result{}, err
 		}
 		if !cloud.IsSuccessfulStatusCode(httpBody.StatusCode) {
@@ -145,6 +140,6 @@ func (r *CloudSyncReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			object.GetLabels()[string(cloud.ExternalNetworkAccessLabel)] == string(cloud.Enabled)
 	})
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&cloudv1.CloudClient{}, builder.WithPredicates(Predicate)).
+		For(&cloudv1.Launcher{}, builder.WithPredicates(Predicate)).
 		Complete(r)
 }

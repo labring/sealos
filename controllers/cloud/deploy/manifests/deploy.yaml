@@ -17,20 +17,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: cloudclients.cloud.sealos.io
+  name: launchers.cloud.sealos.io
 spec:
   group: cloud.sealos.io
   names:
-    kind: CloudClient
-    listKind: CloudClientList
-    plural: cloudclients
-    singular: cloudclient
+    kind: Launcher
+    listKind: LauncherList
+    plural: launchers
+    singular: launcher
   scope: Namespaced
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: CloudClient is the Schema for the cloudclients API
+        description: Launcher is the Schema for the launchers API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -45,7 +45,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CloudClientSpec defines the desired state of CloudClient
+            description: LauncherSpec defines the desired state of Launcher
             properties:
               description:
                 type: string
@@ -53,7 +53,7 @@ spec:
                 type: string
             type: object
           status:
-            description: CloudClientStatus defines the observed state of CloudClient
+            description: LauncherStatus defines the observed state of Launcher
             type: object
         type: object
     served: true
@@ -212,32 +212,6 @@ rules:
 - apiGroups:
   - cloud.sealos.io
   resources:
-  - cloudclients
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - cloudclients/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - cloudclients/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
   - cloudsyncs
   verbs:
   - create
@@ -283,6 +257,32 @@ rules:
   - cloud.sealos.io
   resources:
   - collectors/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cloud.sealos.io
+  resources:
+  - launchers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cloud.sealos.io
+  resources:
+  - launchers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cloud.sealos.io
+  resources:
+  - launchers/status
   verbs:
   - get
   - patch
@@ -635,7 +635,7 @@ spec:
             secretKeyRef:
               key: canConnectToExternalNetwork
               name: cloud-env
-        image: registry.cn-hangzhou.aliyuncs.com/fckc/cloud-controller:v0.2.3
+        image: ghcr.io/labring/sealos-cloud-controller:latest
         livenessProbe:
           httpGet:
             path: /healthz
@@ -667,7 +667,7 @@ spec:
       terminationGracePeriodSeconds: 10
 ---
 apiVersion: cloud.sealos.io/v1
-kind: CloudClient
+kind: Launcher
 metadata:
   labels:
     external-network-access: disabled

@@ -145,6 +145,6 @@ func (r *CollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			object.GetLabels()[string(cloud.IsRead)] == string(cloud.FALSE)
 	})
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&cloudv1.CloudClient{}, builder.WithPredicates(Predicate)).
+		For(&cloudv1.Launcher{}, builder.WithPredicates(Predicate)).
 		Complete(r)
 }

@@ -38,7 +38,7 @@ resources:
   controller: true
   domain: sealos.io
   group: cloud
-  kind: CloudClient
+  kind: Launcher
   path: github.com/labring/sealos/controllers/cloud/api/v1
   version: v1
 version: "3"

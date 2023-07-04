@@ -32,8 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-// CloudClientReconciler reconciles a CloudClient object
-type CloudClientReconciler struct {
+// LauncherReconciler reconciles a Launcher object
+type LauncherReconciler struct {
 	client.Client
 	Scheme  *runtime.Scheme
 	Users   cloud.UserCategory
@@ -41,21 +41,21 @@ type CloudClientReconciler struct {
 	Retries int
 }
 
-//+kubebuilder:rbac:groups=cloud.sealos.io,resources=cloudclients,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=cloud.sealos.io,resources=cloudclients/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=cloud.sealos.io,resources=cloudclients/finalizers,verbs=update
+//+kubebuilder:rbac:groups=cloud.sealos.io,resources=launchers,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=cloud.sealos.io,resources=launchers/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=cloud.sealos.io,resources=launchers/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the CloudClient object against the actual cluster state, and then
+// the Launcher object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
-func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctl ctrl.Result, err error) {
-	r.logger.Info("Enter CloudClientReconcile", "namespace:", req.Namespace, "name", req.Name)
+func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctl ctrl.Result, err error) {
+	r.logger.Info("Enter LauncherReconcile", "namespace:", req.Namespace, "name", req.Name)
 	if r.Retries > 5 {
 		return ctrl.Result{}, nil
 	}
@@ -104,9 +104,9 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *CloudClientReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *LauncherReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Users = cloud.UserCategory{}
-	r.logger = ctrl.Log.WithName("CloudClientReconcile")
+	r.logger = ctrl.Log.WithName("LauncherReconcile")
 	r.Retries = 0
 	nameFilter := cloud.CloudStartName
 	namespaceFilter := cloud.Namespace
@@ -117,6 +117,6 @@ func (r *CloudClientReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	})
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&cloudv1.CloudClient{}, builder.WithPredicates(Predicates)).
+		For(&cloudv1.Launcher{}, builder.WithPredicates(Predicates)).
 		Complete(r)
 }

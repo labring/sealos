@@ -28,32 +28,6 @@ rules:
 - apiGroups:
   - cloud.sealos.io
   resources:
-  - cloudclients
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - cloudclients/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - cloudclients/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
   - cloudsyncs
   verbs:
   - create
@@ -99,6 +73,32 @@ rules:
   - cloud.sealos.io
   resources:
   - collectors/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cloud.sealos.io
+  resources:
+  - launchers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cloud.sealos.io
+  resources:
+  - launchers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cloud.sealos.io
+  resources:
+  - launchers/status
   verbs:
   - get
   - patch

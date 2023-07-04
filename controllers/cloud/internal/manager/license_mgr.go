@@ -36,19 +36,19 @@ type LicenseMonitorResponse struct {
 	Key string `json:"key"`
 }
 
-func NewLicenseMonitorRequest(secret corev1.Secret) LicenseMonitorRequest {
+func NewLicenseMonitorRequest(secret corev1.Secret, license cloudv1.License) LicenseMonitorRequest {
 	if secret.Name != string(SecretName) || secret.Namespace != string(Namespace) {
 		return LicenseMonitorRequest{}
 	}
 	var lmr LicenseMonitorRequest
-	lmr.Token = string(secret.Data["token"])
+	lmr.Token = license.Spec.Token
 	lmr.UID = string(secret.Data["uid"])
 	return lmr
 }
 
-func LicenseCheckOnExternalNetworkAccess(license cloudv1.License, secret corev1.Secret, url string, logger logr.Logger) (map[string]interface{}, bool) {
+func LicenseCheckOnExternalNetwork(license cloudv1.License, secret corev1.Secret, url string, logger logr.Logger) (map[string]interface{}, bool) {
 	payload, ok := crypto.IsLicenseValid(license)
-	mr := NewLicenseMonitorRequest(secret)
+	mr := NewLicenseMonitorRequest(secret, license)
 	if !ok {
 		var resp LicenseMonitorResponse
 		httpBody, err := CommunicateWithCloud("POST", url, mr)

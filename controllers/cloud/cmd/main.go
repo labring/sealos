@@ -121,11 +121,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "License")
 		os.Exit(1)
 	}
-	if err = (&controller.CloudClientReconciler{
+	if err = (&controller.LauncherReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "CloudClient")
+		setupLog.Error(err, "unable to create controller", "controller", "Launcher")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

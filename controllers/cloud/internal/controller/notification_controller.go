@@ -156,6 +156,6 @@ func (r *NotificationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			object.GetLabels()[string(cloud.ExternalNetworkAccessLabel)] == string(cloud.Enabled)
 	})
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&cloudv1.CloudClient{}, builder.WithPredicates(Predicate)).
+		For(&cloudv1.Launcher{}, builder.WithPredicates(Predicate)).
 		Complete(r)
 }

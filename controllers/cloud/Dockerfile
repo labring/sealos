@@ -1,4 +1,4 @@
-FROM gcr.dockerproxy.com/distroless/static:nonroot
+FROM gcr.io/distroless/static:nonroot
 ARG TARGETARCH
 
 WORKDIR /
