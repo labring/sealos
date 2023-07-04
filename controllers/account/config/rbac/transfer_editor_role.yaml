@@ -1,0 +1,24 @@
+# permissions for end users to edit transfers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: transfer-editor-role
+rules:
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - transfers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - transfers/status
+  verbs:
+  - get

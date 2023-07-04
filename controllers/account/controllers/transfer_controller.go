@@ -67,10 +67,10 @@ func (r *TransferReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if err := r.Get(ctx, req.NamespacedName, &transfer); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	transfer.Spec.From = getUsername(transfer.Namespace)
 	if time.Since(transfer.CreationTimestamp.Time) > time.Minute*3 {
 		return ctrl.Result{}, r.Delete(ctx, &transfer)
 	}
-	transfer.Status.Progress = accountv1.TransferStateCompleted
 	pipeLine := []func(ctx context.Context, transfer *accountv1.Transfer) error{
 		r.check,
 		r.TransferOutSaver,
@@ -82,6 +82,9 @@ func (r *TransferReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			transfer.Status.Progress = accountv1.TransferStateFailed
 			break
 		}
+	}
+	if transfer.Status.Progress != accountv1.TransferStateFailed {
+		transfer.Status.Progress = accountv1.TransferStateCompleted
 	}
 	if err := r.Status().Update(ctx, &transfer); err != nil {
 		return ctrl.Result{}, fmt.Errorf("update transfer status failed: %w", err)
@@ -124,6 +127,7 @@ func (r *TransferReconciler) TransferOutSaver(ctx context.Context, transfer *acc
 		Owner:   getUsername(transfer.Namespace),
 		Time:    metav1.Time{Time: time.Now().UTC()},
 		Type:    accountv1.TransferOut,
+		Details: transfer.ToJSON(),
 	}
 	from := accountv1.AccountBalance{
 		ObjectMeta: objMeta,
@@ -150,6 +154,7 @@ func (r *TransferReconciler) TransferInSaver(ctx context.Context, transfer *acco
 		Owner:   getUsername(transfer.Spec.To),
 		Time:    metav1.Time{Time: time.Now().UTC()},
 		Type:    accountv1.TransferIn,
+		Details: transfer.ToJSON(),
 	}
 	to := accountv1.AccountBalance{
 		ObjectMeta: objMeta,
@@ -167,6 +172,9 @@ func (r *TransferReconciler) check(ctx context.Context, transfer *accountv1.Tran
 	}
 	if transfer.Status.Progress == accountv1.TransferStateFailed {
 		return fmt.Errorf(transfer.Status.Reason)
+	}
+	if transfer.Status.Progress == accountv1.TransferStateCompleted {
+		return fmt.Errorf("transfer already completed")
 	}
 	from := transfer.Namespace
 	to := transfer.Spec.To

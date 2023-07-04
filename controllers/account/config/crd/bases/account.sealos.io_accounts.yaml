@@ -70,6 +70,12 @@ spec:
                 description: Deduction amount
                 format: int64
                 type: integer
+              encryptBalance:
+                description: EncryptBalance is to encrypt balance
+                type: string
+              encryptDeductionBalance:
+                description: EncryptDeductionBalance is to encrypt DeductionBalance
+                type: string
             type: object
         type: object
     served: true

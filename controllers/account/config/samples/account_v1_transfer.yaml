@@ -1,0 +1,6 @@
+apiVersion: account.sealos.io/v1
+kind: Transfer
+metadata:
+  name: transfer-sample
+spec:
+  # TODO(user): Add fields here
