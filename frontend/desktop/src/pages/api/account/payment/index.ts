@@ -4,9 +4,13 @@ import { ApplyYaml, GetUserDefaultNameSpace } from '@/services/backend/kubernete
 import { jsonRes } from '@/services/backend/response';
 import crypto from 'crypto';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { enableRecharge } from '@/services/enable';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
+    if(!enableRecharge()){
+      throw new Error('Recharge is not enabled');
+    }
     if (req.method !== 'POST') {
       return jsonRes(resp, { code: 405 });
     }

@@ -3,15 +3,18 @@ import useRecharge from '@/hooks/useRecharge';
 import request from '@/service/request';
 import useSessionStore from '@/stores/session';
 import { displayMoney, formatMoney } from '@/utils/format';
-import { Box, Button, Flex, Image, Text } from '@chakra-ui/react';
+import { Box, Button, Flex, Image, Stack, Text } from '@chakra-ui/react';
 import { QueryClient, useQuery } from '@tanstack/react-query';
 import styles from './user.module.scss';
 
 import { useTranslation } from 'next-i18next';
-import { useMemo } from 'react';
+import { useContext, useMemo } from 'react';
 import { ApiResp } from '@/types/api';
+import useTransfer from '@/hooks/useTransfer';
+import { TradeEnableContext } from '@/pages/cost_overview';
 
 export default function UserCard() {
+  const { transferEnabled, rechargeEnabled } = useContext(TradeEnableContext);
   const { t } = useTranslation();
   const session = useSessionStore().getSession();
   const { data: balance_raw, refetch } = useQuery({
@@ -22,6 +25,12 @@ export default function UserCard() {
   const queryClient = new QueryClient();
   const { RechargeModal, onOpen } = useRecharge({
     onPaySuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['billing'], exact: false });
+      refetch();
+    }
+  });
+  const { TransferModal, onOpen: transferOpen } = useTransfer({
+    onTransferSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['billing'], exact: false });
       refetch();
     }
@@ -38,11 +47,14 @@ export default function UserCard() {
       <Flex
         className={styles.userCard}
         boxShadow={'0 4px #BCBFC3,0 8px #DFE2E6'}
-        aspectRatio={'2/1'}
+        // aspectRatio={'2/1'}
+        pt="13px"
+        pb={'19px'}
         mb={'34px'}
+        px="16px"
         shrink={[1, 1, 1, 0]}
       >
-        <Box zIndex="2" flex={'1'}>
+        <Stack zIndex="2" flex={'1'}>
           <Flex alignItems={'center'}>
             <Text>{session?.user?.name}</Text>
 
@@ -56,20 +68,46 @@ export default function UserCard() {
               className={styles.avatar}
             />
           </Flex>
-          <Text fontSize="12px" fontWeight="400" mt="30px">
+          <Box fontSize="12px" fontWeight="400" alignSelf={'center'} mt="6px !important">
             {t('Balance')}
-          </Text>
-          <Flex alignItems="center">
-            <Text fontSize="24px" fontWeight="500">
-              ¥ {displayMoney(formatMoney(balance))}
-            </Text>
-            <Button ml="auto" w="78px" h="32px" bg={'white'} color="black" onClick={() => onOpen()}>
-              {t('Charge')}
-            </Button>
+          </Box>
+          <Box fontSize="24px" fontWeight="500" alignSelf={'center'} mt="3px !important">
+            ¥ {displayMoney(formatMoney(balance))}
+          </Box>
+          <Flex alignItems="center" alignSelf={'center'} gap="10px" mt={'20px !important'}>
+            {transferEnabled && (
+              <Button
+                w="78px"
+                h="32px"
+                bg={'white'}
+                color="black"
+                onClick={(e) => {
+                  e.preventDefault();
+                  transferOpen();
+                }}
+              >
+                {t('Transfer')}
+              </Button>
+            )}
+            {rechargeEnabled && (
+              <Button
+                w="78px"
+                h="32px"
+                bg={'white'}
+                color="black"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onOpen();
+                }}
+              >
+                {t('Charge')}
+              </Button>
+            )}
           </Flex>
-        </Box>
+        </Stack>
       </Flex>
-      <RechargeModal balance={balance} />
+      {rechargeEnabled && <RechargeModal balance={balance} />}
+      {transferEnabled && <TransferModal balance={balance} />}
     </>
   );
 }

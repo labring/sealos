@@ -35,6 +35,7 @@
   "Memory": "Memory",
   "Local Disk": "Local Disk",
   "Total Amount": "Total Amount",
+  "Transfer Amount": "Transfer Amount",
   "Payment Result": "Payment Result",
   "Payment Successful": "Payment Successful",
   "In Payment": "In Payment ...",
@@ -53,5 +54,11 @@
   "Insufficient Balance": "Insufficient balance",
   "No Data Available":"No Data Available",
   "Predict Detail":"Predict future 30-day costs based on current resource usage",
-  "Next month cost estimation":"Next month cost estimation"
+  "Next month cost estimation":"Next month cost estimation",
+  "Recipient ID": "Recipient ID",
+  "Transfer": "Transfer",
+  "Recipient": "Recipient",
+  "Transfer Amount must be a integer": "Transfer Amount must be a integer",
+  "Recipient ID is invalid": "Recipient ID is invalid",
+  "Transfer Amount must be less than balance": "Transfer Amount must be less than balance"
 }

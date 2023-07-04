@@ -20,7 +20,7 @@ export type BillingItem = {
   order_id: string;
   owner: string;
   time: string;
-  type: 0 | -1 | 1;
+  type: 0 | -1 | 1 | 2 | 3;
 };
 export type BillingData = {
   apiVersion: 'account.sealos.io/v1';

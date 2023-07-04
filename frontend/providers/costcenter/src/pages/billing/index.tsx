@@ -37,7 +37,7 @@ function Billing() {
   }, [cookie, i18n]);
   const startTime = useOverviewStore((state) => state.startTime);
   const endTime = useOverviewStore((state) => state.endTime);
-  const [selectType, setType] = useState<-1 | 0 | 1>(-1);
+  const [selectType, setType] = useState<-1 | 0 | 1 | 2 | 3>(-1);
   const [searchValue, setSearch] = useState('');
   const [totalPage, setTotalPage] = useState(1);
   const [currentPage, setcurrentPage] = useState(1);
@@ -111,7 +111,7 @@ function Billing() {
                 }}
                 borderRadius={'2px'}
               >
-                {LIST_TYPE[selectType + 1].title}
+                {t(LIST_TYPE[selectType + 1].title)}
               </Button>
             </PopoverTrigger>
             <PopoverContent
@@ -136,7 +136,7 @@ function Billing() {
                     setType(v.value);
                   }}
                 >
-                  {v.title}
+                  {t(v.title)}
                 </Button>
               ))}
             </PopoverContent>
@@ -180,7 +180,7 @@ function Billing() {
             }}
             onClick={(e) => {
               e.preventDefault();
-              queryClient.refetchQueries(['billing']);
+              queryClient.invalidateQueries(['billing']);
             }}
           >
             {t('Search')}

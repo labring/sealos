@@ -3,9 +3,13 @@ import { authSession } from '@/services/backend/auth';
 import { GetCRD, GetUserDefaultNameSpace } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { enableRecharge } from '@/services/enable';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
+    if(!enableRecharge()){
+      throw new Error('Recharge is not enabled');
+    }
     const kc = await authSession(req.headers);
     const { id } = req.query;
 

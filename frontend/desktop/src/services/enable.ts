@@ -6,3 +6,7 @@ export const enableSms = () => process.env.SMS_ENABLED === 'true' && !!process.e
     !!process.env.ALI_SIGN_NAME &&
     !!process.env.ALI_TEMPLATE_CODE
 export const enableWechat = () => process.env.WECHAT_ENABLED === 'true' && !!process.env.WECHAT_CLIENT_ID && !!process.env.WECHAT_CLIENT_SECRET;
+export const enableRecharge = () => {
+    console.log(process.env.RECHARGE_ENABLED)
+    return process.env.RECHARGE_ENABLED === 'true'
+};

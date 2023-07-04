@@ -5,7 +5,7 @@ import useNotEnough from '@/hooks/useNotEnough';
 import { Box, Flex, Heading, Img } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useEffect, useMemo } from 'react';
+import { createContext, useEffect, useMemo } from 'react';
 import { Buget } from '@/components/cost_overview/buget';
 import UserCard from '@/components/cost_overview/components/user';
 import { Cost } from '@/components/cost_overview/cost';
@@ -16,7 +16,19 @@ import NotFound from '@/components/notFound';
 import { QueryClient } from '@tanstack/react-query';
 import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
-function CostOverview() {
+import { isSameDay, isSameHour, parseISO } from 'date-fns';
+import { enableRecharge, enableTransfer } from '@/service/enabled';
+export const TradeEnableContext = createContext({
+  rechargeEnabled: false,
+  transferEnabled: false
+});
+function CostOverview({
+  rechargeEnabled,
+  transferEnabled
+}: {
+  transferEnabled: boolean;
+  rechargeEnabled: boolean;
+}) {
   const { t, i18n } = useTranslation();
   const updateCPU = useBillingStore((state) => state.updateCpu);
   const updateMemory = useBillingStore((state) => state.updateMemory);
@@ -29,19 +41,26 @@ function CostOverview() {
 
   const { data, isInitialLoading } = useBillingData();
   const billingItems = useMemo(() => data?.data?.status.item.filter((v, i) => i < 3) || [], [data]);
+  const costBillingItems = useMemo(
+    () => data?.data?.status.item.filter((v) => v.type === 0) || [],
+    [data]
+  );
   useEffect(() => {
-    if (billingItems.length === 0) return;
-    const item = billingItems[0].costs;
+    if (costBillingItems.length === 0) return;
+    const time = parseISO(costBillingItems[0].time);
+    const now = new Date();
+    if (!isSameDay(time, now) || !isSameHour(time, now)) return;
+    const item = costBillingItems[0].costs;
     updateCPU(item?.cpu || 0);
     updateMemory(item?.memory || 0);
     updateStorage(item?.storage || 0);
-  }, [billingItems, updateCPU, updateMemory, updateStorage]);
+  }, [costBillingItems, updateCPU, updateMemory, updateStorage]);
   useEffect(() => {
     // 并发预加载
     new QueryClient().prefetchQuery(['valuation'], () => request('/api/price'));
   }, []);
   return (
-    <>
+    <TradeEnableContext.Provider value={{ transferEnabled, rechargeEnabled }}>
       <Flex h={'100%'}>
         <Flex
           bg="white"
@@ -106,7 +125,7 @@ function CostOverview() {
         </Flex>
       </Flex>
       <NotEnoughModal></NotEnoughModal>
-    </>
+    </TradeEnableContext.Provider>
   );
 }
 
@@ -114,7 +133,9 @@ export async function getServerSideProps(content: any) {
   const locale = content?.req?.cookies?.NEXT_LOCALE || 'zh';
   return {
     props: {
-      ...(await serverSideTranslations(locale, undefined, null, content.locales))
+      ...(await serverSideTranslations(locale, undefined, null, content.locales)),
+      rechargeEnabled: enableRecharge(),
+      transferEnabled: enableTransfer()
     }
   };
 }
