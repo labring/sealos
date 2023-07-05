@@ -16,28 +16,4 @@ resources:
     defaulting: true
     validation: true
     webhookVersion: v1
-- api:
-    crdVersion: v1
-  controller: true
-  domain: sealos.io
-  group: user
-  kind: UserGroup
-  path: github.com/labring/sealos/controllers/user/api/v1
-  version: v1
-  webhooks:
-    defaulting: true
-    validation: true
-    webhookVersion: v1
-- api:
-    crdVersion: v1
-  controller: true
-  domain: sealos.io
-  group: user
-  kind: UserGroupBinding
-  path: github.com/labring/sealos/controllers/user/api/v1
-  version: v1
-  webhooks:
-    defaulting: true
-    validation: true
-    webhookVersion: v1
 version: "3"
