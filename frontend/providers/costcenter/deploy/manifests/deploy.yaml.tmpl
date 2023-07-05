@@ -35,6 +35,11 @@ spec:
     spec:
       containers:
         - name: costcenter-frontend
+          env:
+            - name: TRANSFER_ENABLED
+              value: '{{ .transferEnabled }}'
+            - name: RECHARGE_ENABLED
+              value: '{{ .rechargeEnabled }}'
           resources:
             limits:
               cpu: 100m
