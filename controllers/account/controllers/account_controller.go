@@ -153,7 +153,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		now := time.Now().UTC()
 		payAmount := *orderResp.Amount.Total * 10000
 		//1¥ = 100WechatPayAmount; 1 WechatPayAmount = 10000 SealosAmount
-		account.Status.EncryptBalance, err = crypto.RechargeBalance(account.Status.EncryptBalance, giveGift(payAmount))
+		err = crypto.RechargeBalance(account.Status.EncryptBalance, giveGift(payAmount))
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("recharge encrypt balance failed: %v", err)
 		}
@@ -243,7 +243,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	if err != nil {
 		return nil, fmt.Errorf("sync init balance failed: %v", err)
 	}
-	account.Status.EncryptBalance, err = crypto.RechargeBalance(account.Status.EncryptBalance, int64(amount))
+	err = crypto.RechargeBalance(account.Status.EncryptBalance, int64(amount))
 	if err != nil {
 		return nil, fmt.Errorf("recharge balance failed: %v", err)
 	}
@@ -365,19 +365,19 @@ func (r *AccountReconciler) updateDeductionBalance(ctx context.Context, accountB
 	}
 	switch accountBalance.Spec.Type {
 	case accountv1.TransferIn:
-		account.Status.EncryptBalance, err = crypto.RechargeBalance(account.Status.EncryptBalance, accountBalance.Spec.Amount)
+		err = crypto.RechargeBalance(account.Status.EncryptBalance, accountBalance.Spec.Amount)
 		if err != nil {
 			r.Logger.Error(err, err.Error())
 			return err
 		}
 	case accountv1.TransferOut:
-		account.Status.EncryptBalance, err = crypto.DeductBalance(account.Status.EncryptBalance, accountBalance.Spec.Amount)
+		err = crypto.DeductBalance(account.Status.EncryptBalance, accountBalance.Spec.Amount)
 		if err != nil {
 			r.Logger.Error(err, err.Error())
 			return err
 		}
 	case accountv1.Consumption:
-		account.Status.EncryptDeductionBalance, err = crypto.RechargeBalance(account.Status.EncryptDeductionBalance, accountBalance.Spec.Amount)
+		err = crypto.RechargeBalance(account.Status.EncryptDeductionBalance, accountBalance.Spec.Amount)
 		if err != nil {
 			r.Logger.Error(err, err.Error())
 			return err
@@ -415,30 +415,34 @@ func (r *AccountReconciler) updateDeductionBalance(ctx context.Context, accountB
 	return nil
 }
 
-func (r *AccountReconciler) updateAccountStatus(ctx context.Context, account *accountv1.Account) (err error) {
-	account.Status.Balance, err = crypto.DecryptInt64(*account.Status.EncryptBalance)
+func (r *AccountReconciler) updateAccountStatus(ctx context.Context, account *accountv1.Account) error {
+	balance, err := crypto.DecryptInt64(*account.Status.EncryptBalance)
 	if err != nil {
 		return fmt.Errorf("update decrypt balance failed: %v", err)
 	}
-	account.Status.DeductionBalance, err = crypto.DecryptInt64(*account.Status.EncryptDeductionBalance)
+	deductionBalance, err := crypto.DecryptInt64(*account.Status.EncryptDeductionBalance)
 	if err != nil {
 		return fmt.Errorf("update decrypt deduction balance failed: %v", err)
 	}
+	account.Status.Balance = balance
+	account.Status.DeductionBalance = deductionBalance
 	return r.Status().Update(ctx, account)
 }
 
 func (r *AccountReconciler) initBalance(account *accountv1.Account) (err error) {
 	if account.Status.EncryptBalance == nil {
-		account.Status.EncryptBalance, err = crypto.EncryptInt64(account.Status.Balance)
+		encryptBalance, err := crypto.EncryptInt64(account.Status.Balance)
 		if err != nil {
 			return fmt.Errorf("sync encrypt balance failed: %v", err)
 		}
+		account.Status.EncryptBalance = encryptBalance
 	}
 	if account.Status.EncryptDeductionBalance == nil {
-		account.Status.EncryptDeductionBalance, err = crypto.EncryptInt64(account.Status.DeductionBalance)
+		encryptDeductionBalance, err := crypto.EncryptInt64(account.Status.DeductionBalance)
 		if err != nil {
 			return fmt.Errorf("sync encrypt deduction balance failed: %v", err)
 		}
+		account.Status.EncryptDeductionBalance = encryptDeductionBalance
 	}
 	return nil
 }
