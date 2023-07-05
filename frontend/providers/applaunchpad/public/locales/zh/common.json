@@ -141,5 +141,11 @@
   "Can not change storage path": "不允许修改挂载路径",
   "Perday": "每日",
   "Submit Error": "提交表单错误",
-  "Copy Success": "复制成功"
+  "Copy Success": "复制成功",
+  "Application paused": "应用已暂停",
+  "Application failed": "暂停应用出现了意外",
+  "Restart Failed": "重启出现了意外",
+  "Start Failed": "启动应用出现了意外",
+  "Start Successful": "应用已启动",
+  "Total": "总共"
 }

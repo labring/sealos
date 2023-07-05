@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import { Box, Button, Flex, MenuButton } from '@chakra-ui/react';
 import { AppListItemType } from '@/types/app';
@@ -9,12 +9,12 @@ import { useTheme } from '@chakra-ui/react';
 import { useGlobalStore } from '@/store/global';
 import { useToast } from '@/hooks/useToast';
 import { restartAppByName, pauseAppByName, startAppByName } from '@/api/app';
-import MyTable from '@/components/Table';
 import dynamic from 'next/dynamic';
-import MyMenu from '@/components/Menu';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useTranslation } from 'next-i18next';
 
+import MyMenu from '@/components/Menu';
+import MyTable from '@/components/Table';
 const DelModal = dynamic(() => import('@/pages/app/detail/components/DelModal'));
 
 const AppList = ({
@@ -46,7 +46,7 @@ const AppList = ({
         });
       } catch (error: any) {
         toast({
-          title: typeof error === 'string' ? error : error.message || '重启出现了意外',
+          title: typeof error === 'string' ? error : error.message || t('Restart Failed'),
           status: 'error'
         });
         console.error(error, '==');
@@ -62,12 +62,12 @@ const AppList = ({
         setLoading(true);
         await pauseAppByName(appName);
         toast({
-          title: '应用已暂停',
+          title: t('Application paused'),
           status: 'success'
         });
       } catch (error: any) {
         toast({
-          title: typeof error === 'string' ? error : error.message || '暂停应用出现了意外',
+          title: typeof error === 'string' ? error : error.message || t('Application failed'),
           status: 'error'
         });
         console.error(error);
@@ -75,7 +75,7 @@ const AppList = ({
       setLoading(false);
       refetchApps();
     },
-    [refetchApps, setLoading, toast]
+    [refetchApps, setLoading, t, toast]
   );
 
   const handleStartApp = useCallback(
@@ -84,12 +84,12 @@ const AppList = ({
         setLoading(true);
         await startAppByName(appName);
         toast({
-          title: '应用已启动',
+          title: t('Start Successful'),
           status: 'success'
         });
       } catch (error: any) {
         toast({
-          title: typeof error === 'string' ? error : error.message || '启动应用出现了意外',
+          title: typeof error === 'string' ? error : error.message || t('Start Failed'),
           status: 'error'
         });
         console.error(error);
@@ -97,15 +97,17 @@ const AppList = ({
       setLoading(false);
       refetchApps();
     },
-    [refetchApps, setLoading, toast]
+    [refetchApps, setLoading, t, toast]
   );
 
-  const columns: {
-    title: string;
-    dataIndex?: keyof AppListItemType;
-    key: string;
-    render?: (item: AppListItemType) => JSX.Element;
-  }[] = [
+  const columns = useRef<
+    {
+      title: string;
+      dataIndex?: keyof AppListItemType;
+      key: string;
+      render?: (item: AppListItemType) => JSX.Element;
+    }[]
+  >([
     {
       title: 'Name',
       key: 'name',
@@ -157,7 +159,7 @@ const AppList = ({
           </Box>
           {item.minReplicas !== item.maxReplicas && (
             <Box>
-              &ensp;/&ensp;总共: {item.minReplicas}-{item.maxReplicas}
+              &ensp;/&ensp;{t('Total')}: {item.minReplicas}-{item.maxReplicas}
             </Box>
           )}
         </Flex>
@@ -254,7 +256,7 @@ const AppList = ({
         </Flex>
       )
     }
-  ];
+  ]);
 
   return (
     <Box backgroundColor={'#F3F4F5'} px={'34px'} minH="100vh">
@@ -283,7 +285,7 @@ const AppList = ({
           {t('Create Application')}
         </Button>
       </Flex>
-      <MyTable columns={columns} data={apps} />
+      <MyTable columns={columns.current} data={apps} />
       <PauseChild />
       {!!delAppName && (
         <DelModal appName={delAppName} onClose={() => setDelAppName('')} onSuccess={refetchApps} />
@@ -292,4 +294,4 @@ const AppList = ({
   );
 };
 
-export default AppList;
+export default React.memo(AppList);
