@@ -147,5 +147,6 @@
   "Restart Failed": "重启出现了意外",
   "Start Failed": "启动应用出现了意外",
   "Start Successful": "应用已启动",
-  "Total": "总共"
+  "Total": "总共",
+  "Waiting": "获取中"
 }

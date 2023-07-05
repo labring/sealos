@@ -8,7 +8,7 @@ import { MOCK_APP_DETAIL } from '@/mock/apps';
 
 type State = {
   appList: AppListItemType[];
-  setAppList: () => Promise<AppListItemType[]>;
+  setAppList: (init?: boolean) => Promise<AppListItemType[]>;
   appDetail?: AppDetailType;
   appDetailPods: PodDetailType[];
   setAppDetail: (appName: string) => Promise<AppDetailType>;
@@ -21,12 +21,26 @@ export const useAppStore = create<State>()(
       appList: [],
       appDetail: MOCK_APP_DETAIL,
       appDetailPods: [],
-      setAppList: async () => {
+      setAppList: async (init = false) => {
         const res = await getMyApps();
-        set((state) => {
-          state.appList = res;
+
+        const storeList = res.map((item) => {
+          const store = get().appList.find((app) => app.name === item.name);
+
+          if (!store || init) return item;
+
+          return {
+            ...item,
+            status: store.status,
+            usedCpu: store.usedCpu,
+            useMemory: store.useMemory
+          };
         });
-        return res;
+
+        set((state) => {
+          state.appList = storeList;
+        });
+        return storeList;
       },
       setAppDetail: async (appName: string) => {
         set((state) => {
@@ -48,7 +62,7 @@ export const useAppStore = create<State>()(
         const appStatus =
           pods.filter((pod) => pod.status.value === PodStatusEnum.running).length > 0
             ? appStatusMap.running
-            : appStatusMap.waiting;
+            : appStatusMap.creating;
 
         set((state) => {
           // update app detail

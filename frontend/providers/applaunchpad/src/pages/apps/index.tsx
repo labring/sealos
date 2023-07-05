@@ -24,7 +24,7 @@ const Home = () => {
     [appList]
   );
 
-  const { isLoading, refetch } = useQuery(['appListQuery'], setAppList, {
+  const { isLoading, refetch } = useQuery(['appListQuery'], () => setAppList(false), {
     onSettled(res) {
       if (!res) return;
       refreshList(res);
