@@ -63,13 +63,13 @@ type AccountSpec struct{}
 // AccountStatus defines the observed state of Account
 type AccountStatus struct {
 	// EncryptBalance is to encrypt balance
-	EncryptBalance string `json:"encryptBalance,omitempty"`
+	EncryptBalance *string `json:"encryptBalance,omitempty"`
 	// Recharge amount
 	Balance int64 `json:"balance,omitempty"`
 	//Deduction amount
 	DeductionBalance int64 `json:"deductionBalance,omitempty"`
 	// EncryptDeductionBalance is to encrypt DeductionBalance
-	EncryptDeductionBalance string `json:"encryptDeductionBalance,omitempty"`
+	EncryptDeductionBalance *string `json:"encryptDeductionBalance,omitempty"`
 	// delete in the future
 	ChargeList []Charge `json:"chargeList,omitempty"`
 }

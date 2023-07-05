@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -34,7 +36,8 @@ const (
 
 // TransferSpec defines the desired state of Transfer
 type TransferSpec struct {
-	To string `json:"to"`
+	From string `json:"from"`
+	To   string `json:"to"`
 	// +kubebuilder:validation:Minimum=1000000
 	Amount int64 `json:"amount"`
 }
@@ -68,4 +71,18 @@ type TransferList struct {
 
 func init() {
 	SchemeBuilder.Register(&Transfer{}, &TransferList{})
+}
+
+func (t *Transfer) ToJSON() string {
+	return `{
+	"spec": {
+		"from": "` + t.Spec.From + `",
+		"to": "` + t.Spec.To + `",
+		"amount": ` + fmt.Sprint(t.Spec.Amount) + `
+	},
+	"status": {
+		"reason": "` + t.Status.Reason + `",
+		"progress": "` + string(rune(t.Status.Progress)) + `"
+	}
+}`
 }

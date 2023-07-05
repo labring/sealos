@@ -181,16 +181,13 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 		charge := amount * cloud.BaseCount
 		account.Status.Balance += charge
-		encryptBalance := account.Status.EncryptBalance
-		encryptBalance, err = crypto.RechargeBalance(encryptBalance, charge)
+		err = crypto.RechargeBalance(account.Status.EncryptBalance, charge)
 		if err != nil {
 			r.logger.Error(err, "Recharge Failed, failed to encrypt the balance", "namespace:", req.Namespace, "name:", req.Name)
 			pack := cloud.NewNotificationPackage(cloud.RechargeFailedTitle, cloud.SEALOS, cloud.RechargeFailedContent)
 			util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
 			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 		}
-
-		account.Status.EncryptBalance = encryptBalance
 		err = r.Client.Status().Update(ctx, &account)
 		if err != nil {
 			r.logger.Error(err, "Recharge Failed, failed to modify the status", "namespace:", req.Namespace, "name:", req.Name)

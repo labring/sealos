@@ -56,8 +56,9 @@ func Encrypt(plaintext []byte) (string, error) {
 	return base64.StdEncoding.EncodeToString(append(nonce, ciphertext...)), nil
 }
 
-func EncryptInt64(in int64) (string, error) {
-	return Encrypt([]byte(strconv.FormatInt(in, 10)))
+func EncryptInt64(in int64) (*string, error) {
+	out, err := Encrypt([]byte(strconv.FormatInt(in, 10)))
+	return &out, err
 }
 
 func DecryptInt64(in string) (int64, error) {
@@ -68,13 +69,32 @@ func DecryptInt64(in string) (int64, error) {
 	return strconv.ParseInt(string(out), 10, 64)
 }
 
-func RechargeBalance(balance string, amount int64) (string, error) {
-	balanceInt, err := DecryptInt64(balance)
+func RechargeBalance(rawBalance *string, amount int64) error {
+	balanceInt, err := DecryptInt64(*rawBalance)
 	if err != nil {
-		return "", fmt.Errorf("failed to recharge balance: %w", err)
+		return fmt.Errorf("failed to recharge balance: %w", err)
 	}
 	balanceInt += amount
-	return EncryptInt64(balanceInt)
+	encryptBalance, err := EncryptInt64(balanceInt)
+	if err != nil {
+		return fmt.Errorf("failed to recharge balance: %w", err)
+	}
+	*rawBalance = *encryptBalance
+	return nil
+}
+
+func DeductBalance(balance *string, amount int64) error {
+	balanceInt, err := DecryptInt64(*balance)
+	if err != nil {
+		return fmt.Errorf("failed to deduct balance: %w", err)
+	}
+	balanceInt -= amount
+	encryptBalance, err := EncryptInt64(balanceInt)
+	if err != nil {
+		return fmt.Errorf("failed to deduct balance: %w", err)
+	}
+	*balance = *encryptBalance
+	return nil
 }
 
 // Decrypt decrypts the given ciphertext using AES-GCM.
