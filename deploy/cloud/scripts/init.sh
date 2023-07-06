@@ -25,7 +25,9 @@ function mock_tls {
 
 function sealos_run_controller {
   # run user controller
-  sealos run tars/user.tar
+  sealos run tars/user.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort="6443"
 
   # run terminal controller
   sealos run tars/terminal.tar \
