@@ -2,13 +2,13 @@
 sidebar_position: 1
 ---
 
-# 镜像构建与标准化目录配置
+# Image Building and Standard Directory Configuration
 
-在开展 Sealos 镜像构建任务前，我们建议先构建一个符合规范的目录结构。这样能够使构建过程更加规范，易于管理，同时也能降低出错率。这篇文章将详细指导你如何创建这样一个目录结构，并解释每个目录的用途。
+Before embarking on Sealos image building tasks, we suggest first constructing a directory structure that conforms to standards. This makes the building process more standardized, easier to manage, and reduces the likelihood of errors. This article will guide you in detail on how to create such a directory structure and explain the purpose of each directory.
 
-## 目录结构示例
+## Directory Structure Example
 
-一个完整的、符合规范的目录结构示例如下：
+A complete, standardized directory structure example is as follows:
 
 ```shell
 .
@@ -36,71 +36,69 @@ sidebar_position: 1
 └── registry
 ```
 
-## 目录描述
+## Directory Descriptions
 
-每个目录在构建过程中都扮演着特定的角色，以下是他们的详细描述：
+Each directory plays a specific role during the build process, and their detailed descriptions are as follows:
 
-- `Kubefile` (必需)：这个文件类似于 Dockerfile，是构建镜像的核心文件。它定义了构建过程中的各个步骤，如基础镜像选择、环境变量设置、文件复制等。
-- `manifests`：这个目录用于存放 Kubernetes 的 yaml 文件，这些文件描述了你的应用的配置信息，如 Pod、Service、Deployment 的配置。
-- `charts`：这个目录用于存放 Helm chart 文件，Helm chart 是 Kubernetes 的一个包管理工具，可以简化 Kubernetes 应用的部署和管理。
-- `images/shim`：这个目录用于存放无法从 yaml 文件或 Helm chart 中自动提取的镜像。在构建过程中，sealos 将自动拉取这些镜像。
-- `opt`：二进制文件存储在这里。
-- `registry`：这个目录用于存放构建过程中拉取到本地的镜像。在构建过程中，该目录将自动生成，无需手动创建。
-- `init.sh`：这个脚本在构建过程中由 GitHub Action 自动运行，你可以在这个脚本中编写一些自动化的工作，如初始化环境、预处理数据等。([cluster-image](https://github.com/labring-actions/cluster-image)的规则)
+- `Kubefile` (required): This file is similar to Dockerfile and is the core file for image building. It defines various steps in the build process, such as the selection of the base image, setting of environment variables, file copying, etc.
+- `manifests`: This directory is used to store Kubernetes yaml files, which describe the configuration information of your applications, such as Pod, Service, Deployment configurations.
+- `charts`: This directory is used to store Helm chart files. Helm chart is a package management tool for Kubernetes that simplifies the deployment and management of Kubernetes applications.
+- `images/shim`: This directory is used to store images that cannot be automatically extracted from yaml files or Helm charts. During the build process, sealos will automatically pull these images.
+- `opt`: Binary files are stored here.
+- `registry`: This directory is used to store images pulled locally during the build process. During the build process, this directory will be automatically generated, and there is no need to manually create it.
+- `init.sh`: This script is automatically run by GitHub Action during the build process. You can write some automated tasks in this script, such as initializing the environment, preprocessing data, etc. (Following the rules of [cluster-image](https://github.com/labring-actions/cluster-image))
 
-## Kubefile 参数
+## Kubefile Parameters
 
-`Kubefile` 文件是镜像构建的核心，它支持多种参数，以下是这些参数的详细解析：
+The `Kubefile` file is at the core of image building and supports various parameters. Below is a detailed analysis of these parameters:
 
 ```shell
 FROM labring/kubernetes:v1.24.0
 ENV version v1.1.0
 COPY manifests ./manifests
 COPY registry ./registry
-ENTRYPOINIT ["kubectl apply -f manifests/tigera-operator.yaml"]
+ENTRYPOINT ["kubectl apply -f manifests/tigera-operator.yaml"]
 CMD ["kubectl apply -f manifests/custom-resources.yaml"]
 ```
 
-各个参数的描述：
+Descriptions of each parameter:
 
-- `FROM`：这个指令用于设置构建的基础镜像，所有的构建步骤都基于这个镜像进行。
-- `LABEL`: `LABEL`定义一些sealos集群镜像的内部配置。
+- `FROM`: This directive is used to set the base image for building. All build steps are based on this image.
+- `LABEL`: `LABEL` defines some internal configurations of the sealos cluster image.
+  - `check`: Some check scripts operation before the cluster image runs.
+  - `clean`: Cleanup scripts for cluster reset or node deletion.
+  - `clean-registry`: The script to clean the image repository when the cluster is reset.
+  - `image`: The lvscare image address of the cluster (Sealos's IPVS image).
+  - `init`: Cluster initialization script.
 
-  - `check` 集群镜像运行前的一些检查脚本操作
-  - `clean` 集群reset或者节点删除的清理脚本
-  - `clean-registry` 集群reset时候的清理镜像仓库的脚本
-  - `image` 集群的lvscare镜像地址（sealos的IPVS镜像）
-  - `init` 集群初始化的脚本
-  - `init-registry` 集群初始化时启动容器镜像仓库的脚本
-  - `sealos.io.type` 集群镜像类型，目前主要是rootfs、application和patch。
-    - rootfs 是运行集群的基础镜像，比如kubernetes、kubernetes-docker这种包含镜像、二进制等集群所需的。（**每个节点都需要存在**）
-    - application 是应用镜像，比如calico、helm、istio等应用服务的镜像。(**只存储到master0节点**)
-    - patch是在rootfs镜像后需要调整的，是另一种修改rootfs镜像的方式（**还有一种方式是Config方式**），它会覆盖默认的集群运行的第一个镜像。
 
-  - `sealos.io.version` 镜像的版本号，目前开启的是v1beta1
-  - `version` 集群的版本号，当前是kubernetes的版本号
-  - `vip` 是VIP的地址，为修改IPVS的虚IP使用
+- `init-registry`: The script to start the container image repository when initializing the cluster.
+  - `sealos.io.type`: Cluster image type, currently mainly rootfs, application, and patch.
+    - Rootfs is the basic image for running the cluster, such as Kubernetes, Kubernetes-docker, which includes images, binaries, etc. required by the cluster (**required for each node**).
+    - Application is the application image, such as calico, helm, istio, etc. application service images. (**only stored on the master0 node**)
+    - Patch is needed to adjust after the rootfs image. It is another way to modify the rootfs image (**another method is the Config method**), it will overwrite the first image of the default cluster running.
+  - `sealos.io.version`: The version number of the image, currently the opened version is v1beta1.
+  - `version`: The version number of the cluster, currently it's the version number of Kubernetes.
+  - `vip`: It's the VIP address for modifying the IPVS virtual IP.
+- `ENV`: The `ENV` directive sets the environment variable `<key>` to the value `<value>`. (There will be some default environment variables in rootfs, which can modify some default parameters in rootfs, such as the username and password of the image repository, the storage directory of docker, containerd, etc.)
 
-- `ENV`：`ENV`指令将环境变量`<key>`设置为值`<value>`。（rootfs中默认会有一些默认的环境变量，可以修改rootfs中一些默认参数，比如镜像仓库的账号密码、docker、containerd的存储目录等等）
+  For specific cluster images, you need to inspect it specifically, check the corresponding environment variables with `sealos inspect` image, different versions of the image have slight differences.
+  - SEALOS_SYS_CRI_ENDPOINT: The criSocket of the current cluster image (different types of cluster images may be different).
+  - criData: Data directory of cri.
+  - defaultVIP: Default VIP address.
+  - disableApparmor: Whether to disable apparmor (containerd has this issue).
+  - registryConfig: Configuration directory of the container image repository.
+  - registryData: Data directory of the container image repository (because it's the directory that has been mounted, this configuration actually has no practical significance, it's actually stored under /var/lib/sealos).
+  - registryDomain: The default domain of the image repository.
+  - registryPassword: The password of the default image repository.
+  - registryPort: The password of the default image repository.
+  - registryUsername: The account of the default image repository.
+  - sandboxImage: Default sandbox_image for cri to start. (No need to write repo, just need to write image name, eg: pasue:3.7).
+- `COPY`: The `COPY` directive copies new files or directories from `<src>` and adds them to the file system path `<dest>` on the container. (**Note that the registry directory needs to be copied, otherwise the cluster has no container images**)
+- `ENTRYPOINT`: This directive is used to set the startup command for the image. When the image starts, this command will be executed.
+- `CMD`: This directive is also used to set the startup command for the image. However, the difference between it and the ENTRYPOINT directive is that if users provide a startup command when running the image (`sealos run --cmd`), the command in the CMD directive will be overridden.
 
-    具体的集群镜像需要具体查看，`sealos inspect`镜像看一下对应的环境变量，不同版本的镜像略有不同。
+During the build process, Sealos will also automatically set some built-in environment variables, including (environment variables with the prefix 'SEALOS_SYS' cannot be modified):
 
-  - SEALOS_SYS_CRI_ENDPOINT:  当前集群镜像的criSocket (不同类型集群镜像可能不同)
-  - criData:  cri的数据目录
-  - defaultVIP: 默认的VIP地址
-  - disableApparmor: 是否禁用apparmor (containerd有这个问题)
-  - registryConfig:  容器镜像仓库的配置目录
-  - registryData: 容器镜像仓库的数据目录（因为是目录进行了挂载，其实这个配置没有实际意义，它实际还是存储在/var/lib/sealos下面）
-  - registryDomain: 默认镜像仓库的域名
-  - registryPassword: 默认镜像仓库的密码
-  - registryPort:  默认镜像仓库的密码
-  - registryUsername: 默认镜像仓库的账户
-  - sandboxImage: 默认cri启动的sandbox_image。（无需写repo只需要写镜像名称，eg: pasue:3.7）
-- `COPY`：`COPY`指令从`<src>`复制新的文件或目录，并将它们添加到容器的文件系统路径`<dest>`上。(**注意，需要把registry目录进行拷贝，否则集群没有容器镜像**)
-- `ENTRYPOINT`：这个指令用于设置镜像的启动命令，当镜像启动时，这条命令会被执行。
-- `CMD`：这个指令也用于设置镜像的启动命令，但它与 ENTRYPOINT 指令的区别在于，如果用户在运行镜像时（`sealos run --cmd`）提供了启动命令，CMD 指令中的命令将会被覆盖。
-
-在构建过程中，Sealos 还会自动设置一些内置的环境变量，包括（前缀为'SEALOS_SYS'的环境变量无法被修改）：
-
-- SEALOS_SYS_KUBE_VERSION：Kubernetes的版本号，例如 v1.26.0
-- SEALOS_SYS_SEALOS_VERSION：Sealos的版本号，例如 4.1.3
+- SEALOS_SYS_KUBE_VERSION: The version number of Kubernetes, for example v1.26.0
+- SEALOS_SYS_SEALOS_VERSION: The version number of Sealos, for example 4.1.3.

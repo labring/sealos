@@ -2,14 +2,12 @@
 sidebar_position: 0
 ---
 
-# Sealos 集群镜像构建
+# Sealos Cluster Image Building
 
-在这个目录中，我们提供了多种不同的方法和技术，以帮助您有效地构建 Sealos 集群镜像。以下是目录文件的简短概述：
+In this directory, we provide a variety of different methods and techniques to help you effectively build Sealos cluster images. Here is a brief overview of the directory files:
 
-1. **基础构建**：这个部分包含了所有关于如何从零开始构建 Sealos 集群镜像的基本信息。包括安装 Sealos，创建和配置环境，以及运行构建命令的步骤。
+1. **Basic Building**: This section contains all the basic information on how to start building a Sealos cluster image from scratch. This includes installing Sealos, creating and configuring the environment, as well as the steps to run the build command.
 
-2. **高级构建**：如果你已经对 Sealos 有一定的了解，这个部分提供了更复杂、更具挑战性的构建方法，例如使用多阶段构建来减少镜像大小，或者使用 `sealos build` 命令的高级选项进行定制构建。
+2. **Advanced Building**: If you already have some understanding of Sealos, this section provides more complex and challenging building methods, such as using multi-stage builds to reduce image size, or using the advanced options of the `sealos build` command for custom building.
 
-
-
-我们希望这个目录可以为您提供在构建 Sealos 集群镜像过程中可能需要的所有信息和工具。如果有任何建议或疑问，欢迎随时联系我们。
+We hope this directory can provide all the information and tools you may need in the process of building Sealos cluster images. If you have any suggestions or questions, please feel free to contact us.

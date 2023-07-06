@@ -2,15 +2,15 @@
 sidebar_position: 5
 ---
 
-# 构建基于 go-template 的集群镜像
+# Building Cluster Images Based on go-template
 
-在构建集群镜像的过程中，我们可以使用 `--env` 选项通过sealos命令行传递一些变量。这些环境变量可以被Kubefile的 `CMD` 命令或者yaml文件模板所使用。
+During the process of building cluster images, we can use the `--env` option to pass some variables through the sealos command line. These environment variables can be used by the `CMD` command of the Kubefile or the yaml file template.
 
-## 在 Kubefile 中使用环境变量
+## Using Environment Variables in Kubefile
 
-这个示例定义了一个 `SERVICE_TYPE` 变量，它允许用户在安装应用程序时自定义服务暴露类型，并将参数传递给CMD中的helm命令。
+This example defines a `SERVICE_TYPE` variable that allows the user to customize the service exposure type when installing the application and pass parameters to the helm command in CMD.
 
-Kubefile 示例：
+Kubefile example:
 
 ```shell
 FROM scratch
@@ -20,15 +20,15 @@ COPY registry registry
 CMD ["helm upgrade --install nginx charts/nginx --namespace=nginx --create-namespace --set service.type=$(SERVICE_TYPE)"]
 ```
 
-运行集群应用并设置一个自定义的 `SERVICE_TYPE=LoadBalancer`，如果不设置，它将默认为 NodePort。
+Run the cluster application and set a custom `SERVICE_TYPE=LoadBalancer`, if not set, it will default to NodePort.
 
 ```shell
 sealos run labring/nginx:v1.23.1 --env SERVICE_TYPE=LoadBalancer
 ```
 
-## 在Yaml文件中使用环境变量
+## Using Environment Variables in Yaml Files
 
-准备一个简单的nginx服务的yaml文件，这个文件必须是 `*.tmpl` 扩展名，以便在运行 `sealos run --env` 命令时渲染。
+Prepare a simple nginx service yaml file, this file must be a `*.tmpl` extension to be rendered when running `sealos run --env` command.
 
 ```shell
 $ cat manifests/service.yaml.tmpl
@@ -51,7 +51,7 @@ spec:
     name: nginx
 ```
 
-下面是一个Kubefile样例，你可以在这里设置默认的环境变量。
+Here is a Kubefile example where you can set the default environment variables.
 
 ```shell
 FROM scratch
@@ -64,15 +64,15 @@ COPY registry registry
 CMD ["kubectl apply -f manifests/service.yaml"]
 ```
 
-当你构建镜像时，什么都不会发生，只有在运行应用程序时，它才会渲染。如果没有设置 `--env`，它将使用 Kubefile 的默认 ENV。
+When you build the image, nothing will happen, it only renders when running the application. If `--env` is not set, it will use the default ENV in Kubefile.
 
 ```shell
 sealos run labring/nginx:1.23.1 --env serviceType=LoadBalancer --env http_NodePort=30080 --env https_NodePort=30443
 ```
 
-你会发现 sealos 会在主节点的本地路径上基于 `service.yaml.tmpl` 渲染一个新的yaml文件 `service.yaml`。
+You will find that sealos renders a new yaml file `service.yaml` based on `service.yaml.tmpl` on the local path of the master node.
 
-**注意** 新版本的应用的rootfs放到了`/var/lib/sealos/data/default/applications`目录，每个应用都有独立的目录。
+**Note** The new version of the application's rootfs is placed in the `/var/lib/sealos/data/default/applications` directory, each application has its independent directory.
 
 ```shell
 root@node1:~# ls /var/lib/sealos/data/default/rootfs/manifests |grep service
@@ -80,7 +80,7 @@ service.yaml
 service.yaml.tmpl
 ```
 
-检查 yaml 内容：
+Check the yaml content:
 
 ```shell
 root@node1:~# cat /var/lib/sealos/data/default/rootfs/manifests/service.yaml
@@ -94,9 +94,7 @@ spec:
   type: NodePort
   ports:
     - port: 80
-      nodePort: 
-
-30080
+      nodePort: 30080
       name: http
     - port: 443
       nodePort: 30443
@@ -105,4 +103,4 @@ spec:
     name: nginx
 ```
 
-**注意：**所有类型的文件都支持这个特性（文件名后缀是.tmpl且构建目录在etc、scripts和manifests），你可以自己尝试一下。
+**Note:** All types of files support this feature (the file name suffix is .tmpl and the build directory is in etc, scripts, and manifests), you can try it yourself.

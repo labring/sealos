@@ -57,7 +57,7 @@ FROM labring/kubernetes:v1.24.0
 ENV version v1.1.0
 COPY manifests ./manifests
 COPY registry ./registry
-ENTRYPOINIT ["kubectl apply -f manifests/tigera-operator.yaml"]
+ENTRYPOINT ["kubectl apply -f manifests/tigera-operator.yaml"]
 CMD ["kubectl apply -f manifests/custom-resources.yaml"]
 ```
 
