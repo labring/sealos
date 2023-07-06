@@ -2,106 +2,104 @@
 sidebar_position: 6
 ---
 
-# push 上传镜像
+# push: Upload Images
 
-`sealos push` 是 Sealos 命令行工具中的一个命令，用于将镜像推送到指定的位置。这个命令在你需要将本地 Docker 镜像推送到远程镜像仓库的时候特别有用。本指南将详细介绍其使用方法。
+The `sealos push` command is a command in the Sealos command-line tool used to push images to a specified location. This command is particularly useful when you need to push local Docker images to a remote image registry. This guide will provide detailed instructions on how to use this command.
 
-## 基本用法
+## Basic Usage
 
-基本的 `sealos push` 命令格式如下：
+The basic format of the `sealos push` command is as follows:
 
 ```bash
 sealos push IMAGE_ID DESTINATION
 ```
 
-在上述命令中，`IMAGE_ID` 是你想要推送的镜像的 ID，而 `DESTINATION` 是你想要推送到的位置。 `DESTINATION` 使用 "transport:details" 格式，如果未指定，将复用源 IMAGE 作为 DESTINATION。
+In the above command, `IMAGE_ID` refers to the ID of the image you want to push, and `DESTINATION` refers to the location where you want to push the image. The `DESTINATION` uses the "transport:details" format, and if not specified, the source image will be reused as the destination.
 
-在 Sealos 中，传输方式定义了源镜像和目标镜像在复制过程中的格式和位置。以下是 Sealos 支持的各种传输方式：
+In Sealos, the transport specifies the format and location of the source and destination images during the copy process. Here are the various transports supported by Sealos:
 
-1. `containers-storage`: 此传输方式用于存储和管理在本地运行的容器。例如，使用 Podman 或 CRI-O 创建的容器的镜像。
+1. `containers-storage`: This transport is used for storing and managing containers running locally. For example, images of containers created using Podman or CRI-O.
 
-2. `dir`: 这种传输方式将镜像存储在本地文件系统的一个目录中，该目录结构符合 OCI 布局。
+2. `dir`: This transport stores images in a directory on the local file system, following the OCI layout.
 
-3. `docker`: 这种传输方式用于与 Docker 注册表进行交互，如 Docker Hub 或任何其他兼容的私有注册表。
+3. `docker`: This transport is used to interact with Docker registries such as Docker Hub or any other compatible private registry.
 
-4. `docker-archive`: 此传输方式将镜像存储为一个本地的 Docker tar 文件（`.tar`），这是 Docker 的原生格式。
+4. `docker-archive`: This transport stores images as a local Docker tar file (`.tar`), which is the native format of Docker.
 
-5. `docker-daemon`: 这种传输方式用于与本地 Docker 守护程序交互，可以从 Docker 守护程序中提取镜像，或者将镜像推送到 Docker 守护程序。
+5. `docker-daemon`: This transport is used to interact with the local Docker daemon, allowing extraction of images from the Docker daemon or pushing images to the Docker daemon.
 
-6. `oci`: 该传输方式将镜像存储在一个符合 OCI 布局的目录中，它是一种开放的容器镜像格式。
+6. `oci`: This transport stores images in a directory following the OCI layout, which is an open container image format.
 
-7. `oci-archive`: 这种传输方式将镜像存储为一个本地的 OCI tar 文件（`.tar`）。
+7. `oci-archive`: This transport stores images as a local OCI tar file (`.tar`).
 
-8. `ostree`: 这种传输方式将镜像存储在 OSTree 存储库中，这是一种支持原子升级和回滚的文件系统。
+8. `ostree`: This transport stores images in an OSTree repository, which is a file system that supports atomic upgrades and rollbacks.
 
-9. `sif`: 这是 Singularity SIF 格式，主要用于高性能计算和数据密集型应用。
+9. `sif`: This is the Singularity SIF format, primarily used for high-performance computing and data-intensive applications.
 
-示例：
+Examples:
 
-- 将一个镜像推送到 Docker 注册表：`sealos push my-image:latest docker://my-registry.example.com/my-image:latest`
+- Push an image to a Docker registry: `sealos push my-image:latest docker://my-registry.example.com/my-image:latest`
 
-- 将一个镜像从 Docker 守护程序导出：`sealos push docker-daemon:my-image:latest dir:/path/to/save/`
+- Export an image from the Docker daemon: `sealos push docker-daemon:my-image:latest dir:/path/to/save/`
 
-- 将一个镜像推送到本地的容器存储：`sealos push my-image:latest containers-storage:my-new-image:latest`
+- Push an image to local container storage: `sealos push my-image:latest containers-storage:my-new-image:latest`
 
-## 示例
+## Examples
 
-例如，你可以使用以下命令将一个镜像推送到 `registry.example.com` 的仓库：
+For example, you can use the following command to push an image to a repository at `registry.example.com`:
 
 ```bash
 sealos push my_image_id docker://registry.example.com/my_repository:my_tag
 ```
 
-## 可选参数
+## Optional Parameters
 
-- `--all`: 该参数用于推送清单列表引用的所有镜像。
+- `--all`: This parameter is used to push all images referenced by manifest lists.
 
-- `--authfile`: 该参数用于指定身份验证文件的路径。 可以使用 REGISTRY_AUTH_FILE 环境变量进行覆盖。
+- `--authfile`: This parameter specifies the path to the authentication file. It can be overridden using the `REGISTRY_AUTH_FILE` environment variable.
 
-- `--cert-dir`: 该参数用于指定访问注册表所需的证书的路径。
+- `--cert-dir`: This parameter specifies the path to the certificate required to access the registry.
 
-- `--compression-format`: 该参数用于指定要使用的压缩格式。
+- `--compression-format`: This parameter specifies the compression format to use.
 
-- `--compression-level`: 该参数用于指定要使用的压缩级别。
+- `--compression-level`: This parameter specifies the compression level to use.
 
-- `--cr-option` 参数是用于控制是否将镜像的自定义资源（Custom Resource，简称 CR）推送到目标镜像仓库的。
+- The `--cr-option` parameter controls whether to push custom resources (CRs) associated with the image to the target registry.
 
-  具体来说，这个参数的可选值包括：
+  Specifically, the available values for this parameter are:
 
-  - "yes": 将会把镜像以及其关联的 CR 都推送到目标镜像仓库。
+  - "yes": The image and its associated CRs will be pushed to the target registry.
 
-  - "no": 仅推送镜像，而不推送任何 CR。
+  - "no": Only the image will be pushed, and no CRs will be pushed.
 
-  - "only": 仅推送 CR，不推送镜像本身。
+  - "only": Only the CRs will be pushed, and the image itself will not be pushed.
 
-  - "auto": 根据镜像和 CR 的实际状态自动决定是否推送。例如，如果 CR 有更改或者不存在于目标仓库，就会被推送。
+  - "auto": The decision of whether to push the image and CRs will be made automatically based on their actual state. For example, if there are changes to the CRs or they do not exist in the target registry, they will be pushed.
 
-  请注意，这个参数主要在处理包含自定义资源（如 Kubernetes CRD 对象）的镜像时使用，它能够让你更加灵活地控制镜像和 CR 的推送过程。
+Please note that this parameter is primarily used when dealing with images that contain custom resources (such as Kubernetes CRD objects), allowing you to have more flexibility and control over the image and CR push process.
 
-- `--creds`: 该参数用于访问注册表，使用 `[username[:password]]` 形式。
+- `--creds`: This parameter is used to access the registry using the `[username[:password]]` format.
 
-- `--digestfile`: 该参数在复制图像后，将结果图像的摘要写入文件。
+- `--digestfile`: This parameter writes the digest of the resulting image to a file after the image is copied.
 
-- `-D`, `--disable-compression`: 该参数用于不压缩层。
+- `-D`, `--disable-compression`: This parameter disables layer compression.
 
-- `--encrypt-layer`: 该参数用于指定要加密的层，0 索引层索引支持负索引（例如，0 是第一层，-1 是最后一层）。 如果未定义，则在指定 encryption-key 标志时将加密所有层。
+- `--encrypt-layer`: This parameter specifies the layer(s) to encrypt, with 0-indexed layer indices supporting negative indices (e.g., 0 is the first layer, -1 is the last layer). If not defined, all layers will be encrypted when the encryption-key flag is specified.
 
-- `--encryption-key`: 该参数用于指定加密图像所需的密钥，与加密协议一起使用（例如，jwe:/path/to/key.pem）。
+- `--encryption-key`: This parameter specifies the key required to encrypt the image, used in conjunction with the encryption protocol (e.g., jwe:/path/to/key.pem).
 
-- `-f`, `--format`: 该参数用于指定目标中要使用的清单类型（oci, v2s1, 或 v2s2）（默认是源的清单类型，带回退）。
+- `-f`, `--format`: This parameter specifies the manifest type to use in the destination (oci, v2s1, or v2s2) (default is the manifest type of the source with fallback).
 
-- `-q`, `--quiet`: 该参数用于在推送图像时不输出进度信息。
+- `-q`, `--quiet`: This parameter suppresses progress information while pushing the image.
 
-- `--remove-signatures`: 该参数用于在推送图像时不复制签名。
+- `--remove-signatures`: This parameter does not copy signatures when pushing the image.
 
-- `--retry
+- `--retry`: This parameter specifies the number of retries to perform in case of push/pull failures.
 
-`: 该参数用于指定在推送/拉取失败时的重试次数。
+- `--retry-delay`: This parameter specifies the delay between retries in case of push/pull failures.
 
-- `--retry-delay`: 该参数用于指定在推送/拉取失败时重试之间的延迟。
+- `--rm`: This parameter removes the manifest list after a successful push.
 
-- `--rm`: 该参数用于在推送成功后删除清单列表。
+- `--sign-by`: This parameter signs the image with the GPG key of the specified `FINGERPRINT`.
 
-- `--sign-by`: 该参数用于使用指定的 `FINGERPRINT` 的 GPG 密钥签名图像。
-
-以上就是 `sealos push` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。
+These are the usage guidelines for the `sealos push` command. We hope this helps you. If you encounter any issues during the process, please feel free to ask us.

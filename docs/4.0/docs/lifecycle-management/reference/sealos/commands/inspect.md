@@ -2,78 +2,78 @@
 sidebar_position: 6
 ---
 
-# inspect 详细信息
+# inspect: Detailed Information
 
-Sealos 的 `inspect` 命令主要用于查看构建容器或已构建镜像的配置信息。该命令支持查看镜像或容器的详细信息，包括其元数据、环境变量、启动命令等。
+The `sealos inspect` command in Sealos is primarily used to view the configuration information of a built container or image. This command allows users to view detailed information about images or containers, including their metadata, environment variables, and startup commands.
 
-## 基本用法
+## Basic Usage
 
-使用 `sealos inspect` 命令查看指定容器或镜像的配置信息。例如，查看指定容器的配置：
+Use the `sealos inspect` command to view the configuration information of a specified container or image. For example, to view the configuration of a specific container:
 
 ```bash
 sealos inspect containerID
 ```
 
-或者查看指定镜像的配置：
+Or to view the configuration of a specific image:
 
 ```bash
 sealos inspect --type image imageWithTag
 ```
 
-## 示例
+## Examples
 
-以下是 `sealos inspect` 命令的一些常见示例：
+Here are some common examples of the `sealos inspect` command:
 
-1. 查看容器配置：
+1. View container configuration:
 
-    ```bash
-    sealos inspect containerID
-    ```
+   ```bash
+   sealos inspect containerID
+   ```
 
-2. 查看镜像配置：
+2. View image configuration:
 
-    ```bash
-    sealos inspect --type image imageWithTag
-    ```
-    
-3. 查看镜像ID的配置信息：
+   ```bash
+   sealos inspect --type image imageWithTag
+   ```
 
-    ```bash
-    sealos inspect --type image @imageID # 或直接输入imageID, '@' 是可选的
-    ```
+3. View configuration information for an image ID:
 
-4. 查看远程镜像仓库的配置信息：
+   ```bash
+   sealos inspect --type image @imageID # or directly input the imageID, '@' is optional
+   ```
 
-    ```bash
-    sealos inspect --type image docker://alpine:latest
-    ```
-    
-5. 查看本地OCI归档文件中镜像的配置信息：
+4. View configuration information for a remote image repository:
 
-    ```bash
-    sealos inspect --type image oci-archive:/abs/path/of/oci/tarfile.tar
-    ```
+   ```bash
+   sealos inspect --type image docker://alpine:latest
+   ```
 
-6. 查看本地Docker归档文件中镜像的配置信息：
+5. View configuration information for an image in a local OCI archive file:
 
-    ```bash
-    sealos inspect --type image docker-archive:/abs/path/of/docker/tarfile.tar
-    ```
+   ```bash
+   sealos inspect --type image oci-archive:/abs/path/of/oci/tarfile.tar
+   ```
 
-7. 使用 Go 模板格式显示镜像环境变量：
+6. View configuration information for an image in a local Docker archive file:
 
-    ```bash
-    sealos inspect --format '{{.OCIv1.Config.Env}}' alpine
-    ```
+   ```bash
+   sealos inspect --type image docker-archive:/abs/path/of/docker/tarfile.tar
+   ```
 
-## 参数
+7. Display image environment variables using Go template format:
 
-以下是 `sealos inspect` 命令的一些常用参数：
+   ```bash
+   sealos inspect --format '{{.OCIv1.Config.Env}}' alpine
+   ```
 
-- `-f, --format`：使用 Go 模板格式显示输出结果。**模板结构代码[InspectOutput](https://github.com/labring/sealos/blob/f8a17787822714c5fdf21f2a75cc86fadb88adfa/pkg/buildah/inspect.go#L189)**
+## Parameters
 
-- `-t, --type`：指定查看的类型，可以是容器（`container`）或镜像（`image`）。
+Here are some commonly used parameters of the `sealos inspect` command:
 
-根据你的需要，你可以结合使用这些参数，以获取特定的配置信息。例如，使用 `-t` 参数可以指定你想要查看的是容器的配置信息还是镜像的配置信息；使用 `-f` 参数，可以定义特定的输出格式，方便对输出结果进行处理或解析。
+- `-f, --format`: Use Go template format to display the output. **Template structure code [InspectOutput](https://github.com/labring/sealos/blob/f8a17787822714c5fdf21f2a75cc86fadb88adfa/pkg/buildah/inspect.go#L189)**.
 
-以上就是 `sealos inspect` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。
+- `-t, --type`: Specify the type to view, which can be either `container` or `image`.
+
+You can combine these parameters according to your needs to obtain specific configuration information. For example, using the `-t` parameter allows you to specify whether you want to view the configuration information of a container or an image. Using the `-f` parameter, you can define a specific output format for convenient processing or parsing of the output results.
+
+That concludes the usage guide for the `sealos inspect` command. We hope this information has been helpful to you. If you encounter any issues during usage, please feel free to ask us for assistance.

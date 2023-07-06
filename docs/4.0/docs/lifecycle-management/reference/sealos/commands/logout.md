@@ -2,25 +2,26 @@
 sidebar_position: 6
 ---
 
-# logout 登出仓库
+# logout: Log out of Registry
 
-`sealos logout` 命令用于在指定服务器上移除本地缓存的镜像仓库的账号和密码。
+The `sealos logout` command is used to remove locally cached account and password for an image registry on a specified server.
 
-## 用法：
+## Usage
 
-`sealos login [flags] [options] registryName` 
+```
+sealos logout [flags] [options] registryName
+```
 
-## 参数：
+## Flags
 
-以下是 `sealos login` 命令的参数：
+Here is the flag for the `sealos logout` command:
 
-- `--authfile=''`: 身份验证文件的路径。可以使用环境变量 REGISTRY_AUTH_FILE 来覆盖。
+- `--authfile=''`: Path to the authentication file. You can override it using the REGISTRY_AUTH_FILE environment variable.
 
-- `-a, --all=false`:  删除所有的认证信息。
+- `-a, --all=false`: Remove all authentication information.
 
+## Examples
 
-## 示例：
+Here is an example of logging out of the quay.io image registry: `sealos logout quay.io`
 
-- 登出到 quay.io 镜像仓库：`sealos logout quay.io `
-
-以上就是 `sealos logout` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。
+That concludes the usage guide for the `sealos logout` command. We hope this information has been helpful to you. If you have any further questions or encounter any issues during usage, please don't hesitate to reach out to us.

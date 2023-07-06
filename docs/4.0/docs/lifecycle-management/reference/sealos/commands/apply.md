@@ -2,19 +2,19 @@
 sidebar_position: 1
 ---
 
-# apply 启动集群
+# Starting a Cluster with `sealos apply`
 
-`sealos apply` 是 Sealos 命令行工具中的一个重要命令，用于在 Kubernetes 集群中运行集群镜像。本指南将详细介绍其使用方法和选项。
+`sealos apply` is an important command in the Sealos command-line tool used to run cluster images in a Kubernetes cluster. This guide provides detailed instructions on how to use the command and its options.
 
-## 基本用法
+## Basic Usage
 
-`sealos apply` 命令的基本用法如下：
+The basic usage of the `sealos apply` command is as follows:
 
 ```shell
 $ sealos apply -f Clusterfile
 ```
 
-Clusterfile 内容：
+Clusterfile content:
 
 ```yaml
 apiVersion: apps.sealos.io/v1beta1
@@ -22,7 +22,7 @@ kind: Cluster
 metadata:
   name: default
 spec:
-  # 服务器 IP 地址列表和角色
+  # Server IP addresses and roles
   hosts:
     - ips:
         - 192.168.0.2:22
@@ -49,36 +49,37 @@ spec:
     user: root
 ```
 
-这条命令会根据指定的 `Clusterfile` 文件在 Kubernetes 集群中运行集群镜像。
+This command will run cluster images in the Kubernetes cluster based on the specified `Clusterfile`.
 
-## 选项
 
-`sealos apply` 命令提供了多种选项，用于定制命令的行为：
+## Options
 
-- `-f, --Clusterfile='Clusterfile'`: 指定要应用的集群文件。默认为 `Clusterfile`。
-- `--config-file=[]`: 指定自定义Config文件的路径，用于替换或者修改资源。
-- `--env=[]`: 设置在命令执行过程中要使用的环境变量。
-- `--set=[]`: 在命令行上设置值，一般是替换模板的值。
-- `--values=[]`: 指定要应用到 `Clusterfile` 的values文件，一般是用于模板方式。
+The `sealos apply` command provides several options to customize its behavior:
 
-每个选项后面都可以跟随一个或多个参数。多个参数之间用逗号分隔。
+- `-f, --Clusterfile='Clusterfile'`: Specifies the Clusterfile to apply. Defaults to `Clusterfile`.
+- `--config-file=[]`: Specifies the path to a custom config file to replace or modify resources.
+- `--env=[]`: Sets environment variables to be used during command execution.
+- `--set=[]`: Sets values on the command line, usually for replacing template values.
+- `--values=[]`: Specifies values files to be applied to the `Clusterfile`, usually used for templating.
 
-例如，你可以使用 `--set` 选项在命令行上设置一些值：
+Each option can be followed by one or more parameters. Multiple parameters are separated by commas.
+
+For example, you can use the `--set` option to set values on the command line:
 
 ```shell
 sealos apply -f Clusterfile --set key1=value1,key2=value2
 ```
 
-这条命令会将 `key1` 和 `key2` 的值设置为 `value1` 和 `value2`，然后应用 `Clusterfile`。
+This command will set the values of `key1` and `key2` to `value1` and `value2`, and then apply the `Clusterfile`.
 
-同样，你也可以使用 `--values` 选项指定一个值文件：
+Similarly, you can use the `--values` option to specify a values file:
 
 ```shell
 sealos apply -f Clusterfile --values values.yaml
 ```
 
-这条命令会根据 `values.yaml` 文件中的值应用 `Clusterfile`。
+This command will apply the `Clusterfile` based on the values in the `values.yaml` file.
 
-**更多示例请参考[启动镜像](https://docs.sealos.io/docs/lifecycle-management/operations/run-cluster/)**
+**For more examples, please refer to the [Run Cluster](https://docs.sealos.io/docs/lifecycle-management/operations/run-cluster/) section.**
 
-以上就是 `sealos apply` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。
+That's it for the usage guide of the `sealos apply` command. We hope this helps you. If you have any questions or encounter any issues during the process, feel free to ask us.

@@ -2,59 +2,59 @@
 sidebar_position: 4
 ---
 
-# add 集群节点添加
+# Adding Cluster Nodes with `sealos add`
 
-`sealos add` 是 Sealos 命令行工具中的一个命令，主要用于向集群中添加节点。本指南将详细介绍其使用方法和选项。
+`sealos add` is a command in the Sealos command-line tool used to add nodes to a cluster. This guide provides detailed instructions on how to use the command and its options.
 
-**注意要保证控制节点的个数为奇数个以保证etcd可以正常选举**
+**Note: Make sure the number of control nodes is odd to ensure proper etcd leader election.**
 
-## 基本用法
+## Basic Usage
 
-### 添加节点
+### Adding Nodes
 
-要向集群中添加节点，可以使用 `--nodes` 选项：
+To add nodes to the cluster, you can use the `--nodes` option:
 
 ```bash
 sealos add --nodes x.x.x.x
 ```
 
-在上述命令中，`x.x.x.x` 应替换为你想要添加的节点的 IP 地址。
+In the above command, replace `x.x.x.x` with the IP address of the node you want to add.
 
-### 添加控制节点
+### Adding Control Nodes
 
-要向集群中添加控制节点，可以使用 `--masters` 选项：
+To add control nodes to the cluster, you can use the `--masters` option:
 
 ```bash
 sealos add --masters x.x.x.x
 ```
 
-### 同时添加控制节点和节点
+### Adding Control and Regular Nodes Together
 
-如果你想同时向集群中添加控制节点和节点，可以同时使用 `--masters` 和 `--nodes` 选项：
+If you want to add both control nodes and regular nodes to the cluster, you can use the `--masters` and `--nodes` options together:
 
 ```bash
 sealos add --masters x.x.x.x --nodes x.x.x.x
 sealos add --masters x.x.x.x-x.x.x.y --nodes x.x.x.x-x.x.x.y
 ```
 
-## 选项
+## Options
 
-`sealos add` 命令提供了以下选项：
+The `sealos add` command provides the following options:
 
-- `--cluster='default'`: 要执行加入操作的集群的名称。默认为 `default`。
+- `--cluster='default'`: The name of the cluster to perform the add operation. Defaults to `default`.
 
-- `--masters=''`: 要加入的主节点。
+- `--masters=''`: The control nodes to be added.
 
-- `--nodes=''`: 要加入的节点。
+- `--nodes=''`: The nodes to be added.
 
-每个选项后都可以跟随一个参数。
+Each option can be followed by an argument.
 
-## 使用示例
+## Usage Example
 
-以下是一个使用示例，该示例向集群中添加了 IP 地址为 `192.168.0.2` 的节点：
+Here's an example usage that adds a node with the IP address `192.168.0.2` to the cluster:
 
 ```bash
 sealos add --nodes 192.168.0.2
 ```
 
-以上就是 `sealos add` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。
+That's it for the usage guide of the `sealos add` command. We hope this helps you. If you have any questions or encounter any issues during the process, feel free to ask us.

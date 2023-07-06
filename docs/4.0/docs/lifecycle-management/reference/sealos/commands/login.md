@@ -2,38 +2,40 @@
 sidebar_position: 6
 ---
 
-# login 登录仓库
+# login: Log in to Registry
 
-`sealos login` 命令用于在指定服务器上登录容器注册表。登录注册表后，你可以拉取、推送镜像。
+The `sealos login` command is used to log in to a container registry on a specified server. Once logged in to the registry, you can pull and push images.
 
-## 用法：
+## Usage
 
-`sealos login [flags] [options] registryName` 
+```
+sealos login [flags] [options] registryName
+```
 
-## 参数：
+## Flags
 
-以下是 `sealos login` 命令的参数：
+Here are the flags for the `sealos login` command:
 
-- `--authfile=''`: 身份验证文件的路径。可以使用环境变量 REGISTRY_AUTH_FILE 来覆盖。
+- `--authfile=''`: Path to the authentication file. You can override it using the REGISTRY_AUTH_FILE environment variable.
 
-- `--cert-dir=''`: 使用指定路径的证书来访问镜像仓库。
+- `--cert-dir=''`: Use certificates from the specified path to access the image registry.
 
-- `--get-login=true`: 返回注册表的当前登录用户。
+- `--get-login=true`: Print the current login command for the registry.
 
-- `-k, --kubeconfig=''`: 使用 kubeconfig 登录到 sealos 镜像仓库 hub.sealos.io。
+- `-k, --kubeconfig=''`: Log in to the sealos image registry hub.sealos.io using the kubeconfig.
 
-- `-p, --password=''`: 注册表的密码。
+- `-p, --password=''`: Password for the registry.
 
-- `--password-stdin=false`: 从标准输入获取密码。
+- `--password-stdin=false`: Take the password from stdin.
 
-- `-u, --username=''`: 注册表的用户名。
+- `-u, --username=''`: Username for the registry.
 
-- `-v, --verbose=false`: 将更详细的信息写入标准输出。
+- `-v, --verbose=false`: Enable verbose output.
 
-## 示例：
+## Examples
 
-- 登录到 quay.io 注册表：`sealos login -u myusername -p mypassword quay.io `
+Here is an example of logging in to the quay.io registry: `sealos login -u myusername -p mypassword quay.io`
 
-注意，在使用 `sealos login` 命令时，你需要确保提供了正确的用户名和密码，否则登录过程可能会失败。如果你在登录过程中遇到问题，你可能需要检查你的用户名和密码，以确保它们没有输入错误或被遗忘。
+Note that when using the `sealos login` command, you need to ensure that you provide the correct username and password, otherwise the login process may fail. If you encounter any issues during the login process, you may need to check your username and password to ensure they are not entered incorrectly or forgotten.
 
-以上就是 `sealos login` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。
+That concludes the usage guide for the `sealos login` command. We hope this information has been helpful to you. If you have any further questions or encounter any issues during usage, please don't hesitate to reach out to us.

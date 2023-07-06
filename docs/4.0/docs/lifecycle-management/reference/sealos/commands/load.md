@@ -2,30 +2,32 @@
 sidebar_position: 6
 ---
 
-# load 加载镜像
+# load: Load Image
 
-`sealos load` 是一个用来从存档文件中加载镜像的命令。这对于需要从已有的存档文件中导入镜像非常有用，尤其是在没有网络连接的环境中。
+The `sealos load` command is used to load images from an archive file. This command is useful when you need to import images from existing archive files, especially in environments without internet connectivity.
 
-## 用法:
+## Usage
 
-`sealos load [flags] [options]`
+```
+sealos load [flags] [options]
+```
 
-## 参数:
+## Flags
 
-以下是 `sealos load` 命令的参数：
+Here are the flags for the `sealos load` command:
 
-- `-i, --input=''`: 从 tar 存档文件中加载镜像。
+- `-i, --input=''`: Load the image from a tar archive file.
 
-- `--platform=[linux/arm64/v8]`: 选择镜像时，优先使用指定的 OS/ARCH，而不是当前操作系统和架构。
+- `--platform=[linux/arm64/v8]`: When selecting images, prefer the specified OS/ARCH instead of the current operating system and architecture.
 
-- `-t, --transport='oci-archive'`: 从 tar 存档文件中加载镜像传输。可用选项有 oci-archive，docker-archive。
+- `-t, --transport='oci-archive'`: Specify the image transport when loading from a tar archive file. Available options are oci-archive and docker-archive.
 
-- `--variant=''`: 覆盖指定镜像的 `variant`。
+- `--variant=''`: Override the `variant` for the specified image.
 
-## 示例:
+## Examples
 
-- 从一个存档文件中加载镜像：`sealos load -i myimage.tar`
+Here is an example of loading an image from an archive file: `sealos load -i myimage.tar`
 
-注意，在使用 `sealos load` 命令时，你需要确保指定的存档文件存在，并且格式正确。如果你在导入镜像时遇到问题，你可能需要检查你的存档文件，以确保它们没有被损坏或格式化错误。
+Note that when using the `sealos load` command, you need to ensure that the specified archive file exists and is in the correct format. If you encounter any issues while importing the image, you may need to check your archive files to ensure they are not corrupted or formatted incorrectly.
 
-以上就是 `sealos load` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。
+That concludes the usage guide for the `sealos load` command. We hope this information has been helpful to you. If you have any further questions or encounter any issues during usage, please don't hesitate to reach out to us.

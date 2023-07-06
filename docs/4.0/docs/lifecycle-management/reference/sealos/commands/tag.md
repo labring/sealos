@@ -2,32 +2,32 @@
 sidebar_position: 6
 ---
 
-# tag 添加镜像名称
+# tag: Add Image Names
 
-`sealos tag` 是 Sealos 命令行工具中的一个命令，用于给本地存储的镜像添加一个或多个附加名称。这个命令可以帮助你更好地管理你的镜像。本指南将详细介绍其使用方法。
+The `sealos tag` command in Sealos is used to add one or more additional names to a locally stored image. This command helps you better manage your images. This guide provides detailed instructions on how to use it.
 
-## 基本用法
+## Basic Usage
 
-基本的 `sealos tag` 命令格式如下：
+The basic format of the `sealos tag` command is as follows:
 
 ```bash
 sealos tag imageName newName
 ```
 
-在上述命令中，`imageName` 是你要操作的镜像的名称，`newName` 是你想要添加的新标签。
+In the above command, `imageName` represents the name of the image you want to manipulate, and `newName` represents the new tag you want to add.
 
-## 示例
+## Examples
 
-例如，你可以使用以下命令给名为 `imageName` 的镜像添加一个新的名称 `firstNewName`：
+For example, you can use the following command to add a new name `firstNewName` to the image named `imageName`:
 
 ```bash
 sealos tag imageName firstNewName
 ```
 
-你也可以一次添加多个名称，例如，添加 `firstNewName` 和 `SecondNewName` 两个名称：
+You can also add multiple names at once. For example, to add two names `firstNewName` and `SecondNewName`, you can use the following command:
 
 ```bash
 sealos tag imageName firstNewName SecondNewName
 ```
 
-以上就是 `sealos tag` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。
+This concludes the usage guide for the `sealos tag` command. We hope you find it helpful. If you have any questions or encounter any issues during usage, feel free to ask us.
