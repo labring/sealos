@@ -28,7 +28,7 @@ import { useTranslation } from 'next-i18next';
 import { QuestionOutlineIcon } from '@chakra-ui/icons';
 
 const LogsModal = dynamic(() => import('./LogsModal'));
-const DetailModel = dynamic(() => import('./PodDetailModal'), { ssr: false });
+const DetailModel = dynamic(() => import('./PodDetailModal'));
 
 const Pods = ({
   pods = [],
@@ -286,4 +286,4 @@ const Pods = ({
   );
 };
 
-export default Pods;
+export default React.memo(Pods);

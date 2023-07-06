@@ -1,5 +1,6 @@
 export enum AppStatusEnum {
   running = 'running',
+  creating = 'creating',
   waiting = 'waiting',
   error = 'error',
   pause = 'pause'
@@ -12,9 +13,9 @@ export const appStatusMap = {
     backgroundColor: '#E6F6F6',
     dotColor: '#00A9A6'
   },
-  [AppStatusEnum.waiting]: {
+  [AppStatusEnum.creating]: {
     label: 'Creating',
-    value: AppStatusEnum.waiting,
+    value: AppStatusEnum.creating,
     color: '#787A90',
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
@@ -32,6 +33,13 @@ export const appStatusMap = {
     color: '#8172D8',
     backgroundColor: '#F2F1FB',
     dotColor: '#8172D8'
+  },
+  [AppStatusEnum.waiting]: {
+    label: 'Waiting',
+    value: AppStatusEnum.waiting,
+    color: '#787A90',
+    backgroundColor: '#F5F5F8',
+    dotColor: '#787A90'
   }
 };
 

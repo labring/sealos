@@ -339,4 +339,4 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   );
 };
 
-export default AppBaseInfo;
+export default React.memo(AppBaseInfo);

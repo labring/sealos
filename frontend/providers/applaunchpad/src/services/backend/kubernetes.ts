@@ -60,7 +60,7 @@ export async function CreateYaml(
   const created = [] as k8s.KubernetesObject[];
 
   try {
-    for (const spec of validSpecs) {
+    for await (const spec of validSpecs) {
       spec.metadata = spec.metadata || {};
       spec.metadata.annotations = spec.metadata.annotations || {};
       delete spec.metadata.annotations['kubectl.kubernetes.io/last-applied-configuration'];

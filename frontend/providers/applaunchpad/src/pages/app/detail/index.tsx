@@ -43,7 +43,7 @@ const AppDetail = ({ appName }: { appName: string }) => {
     ['intervalLoadPods'],
     () => {
       if (appDetail?.isPause) return null;
-      return intervalLoadPods(appName);
+      return intervalLoadPods(appName, true);
     },
     {
       refetchOnMount: true,
@@ -131,4 +131,4 @@ export async function getServerSideProps(content: any) {
   };
 }
 
-export default AppDetail;
+export default React.memo(AppDetail);

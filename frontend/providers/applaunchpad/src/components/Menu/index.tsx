@@ -24,7 +24,7 @@ const MyMenu = ({ width, Button, menuList }: Props) => {
   };
 
   return (
-    <Menu offset={[0, 10]} autoSelect={false}>
+    <Menu offset={[0, 10]} autoSelect={false} isLazy>
       {Button}
       <MenuList
         minW={`${width}px !important`}

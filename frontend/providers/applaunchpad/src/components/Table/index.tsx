@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React from 'react';
 import { Box, BoxProps, Grid, Flex } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 
@@ -64,4 +64,4 @@ const Table = ({ columns, data }: Props) => {
   );
 };
 
-export default Table;
+export default React.memo(Table);
