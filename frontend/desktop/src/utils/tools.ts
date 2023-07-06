@@ -40,10 +40,24 @@ export async function getBase64FromRemote(url: string) {
 
 export const getFavorable =
   (steps: number[] = [], ratios: number[] = []) =>
-  (amount: number) => {
-    let ratio = 0;
+    (amount: number) => {
+      let ratio = 0;
 
-    const step = [...steps].reverse().findIndex((step) => amount >= step);
-    if (ratios.length > step && step > -1) ratio = [...ratios].reverse()[step];
-    return Math.floor((amount * ratio) / 100);
+      const step = [...steps].reverse().findIndex((step) => amount >= step);
+      if (ratios.length > step && step > -1) ratio = [...ratios].reverse()[step];
+      return Math.floor((amount * ratio) / 100);
+    };
+export const retrySerially = <T>(fn: () => Promise<T>, times: number) => new Promise((res, rej) => {
+  let retries=0
+  const attempt = () => {
+    fn().then((_res)=>{
+      
+      res(_res)
+    }).catch((error) => {
+      retries++
+      console.log(`Attempt ${retries} failed: ${error}`)
+      retries < times ? attempt() : rej(error);
+    });
   };
+  attempt();
+});

@@ -29,7 +29,7 @@ const Callback: NextPage = () => {
             data = (await request.post<any, { data: Session, code: number }>('/api/auth/oauth/wechat', { code }))
             break;
           default:
-            throw Error('provider error')
+            throw new Error('provider error')
             break;
         }
         if (data.code === 200) {

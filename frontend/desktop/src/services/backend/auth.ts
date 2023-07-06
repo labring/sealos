@@ -32,7 +32,6 @@ export const verifyJWT: (token: string) => Promise<string | JwtPayload> = (token
 export const generateJWT = (
   uid: string
 ) => {
-  // console.log('generateJWT', jwtSecret, uid)
   return sign({ uid }, jwtSecret, {
     expiresIn: '7d'
   })

@@ -16,11 +16,8 @@ export async function connectToDatabase() {
     global.mongodb.on('close', () => {
       global.mongodb = null;
     })
-    // global.mongodb.on()
-    // mongoose.set('strictQuery', true);
     await global.mongodb.connect();
     return global.mongodb;
-    // console.log('mongo connected');
   } catch (error) {
     console.log('error->', 'mongo connect error');
     global.mongodb = null;
