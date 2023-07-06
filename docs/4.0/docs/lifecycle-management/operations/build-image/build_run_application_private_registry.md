@@ -2,27 +2,27 @@
 sidebar_position: 9
 ---
 
-# 使用私有镜像构建一个完整应用服务
+# Building a Complete Application Service Using a Private Image
 
-## 构建服务镜像
+## Building Service Image
 
-### helm 安装
+### helm Installation
 
 [https://github.com/helm/helm/releases](https://github.com/helm/helm/releases)
 
-安装 helm v3.9（需要代理）。
+Install helm v3.9 (proxy required).
 
-### 登陆镜像仓库
+### Log in to the Image Repository
 
-这一步是为了打包时拉得到镜像：
+This step is to pull the image during packaging:
 
 ```shell
 sealos login registry.cn-hangzhou.aliyuncs.com -u username -p password
 ```
 
-### 修改 helm chart
+### Modify helm chart
 
-下载 helm chart 模板：
+Download helm chart template:
 
 ```shell
 git clone https://github.com/luanshaotong/scienson_osm.git
@@ -62,7 +62,7 @@ spec:
               memory: 4096Mi
 ```
 
-用域名的方式解析服务：
+Resolve service via domain name:
 
 ```yaml title="templates/service.yaml"
 apiVersion: v1
@@ -79,7 +79,7 @@ spec:
       targetPort: 7001
 ```
 
-对公网暴露服务：
+Expose service to the public network:
 
 ```yaml title="templates/ingress.yaml"
 apiVersion: networking.k8s.io/v1
@@ -101,14 +101,14 @@ spec:
                   number: 80
 ```
 
-主要用于渲染副本数：
+Mainly used to render the number of replicas:
 
 ```yaml title="values.yaml"
 osm:
   replicaCount: 1
 ```
 
-### 打包 helm chart
+### Package helm chart
 
 ```shell
 helm package .
@@ -116,14 +116,14 @@ helm package .
 
 ![](images/01.png)
 
-### 修改 image list
+### Modify image list
 
 ```shell
 cat images/shim/osm
 registry.cn-hangzhou.aliyuncs.com/scienson/avatarsplver-osm:2022-07-11-21-05
 ```
 
-### 修改 Dockerfile
+### Modify Dockerfile
 
 ```dockerfile
 FROM scratch
@@ -133,33 +133,35 @@ CMD ["helm install osm scienson-osm-0.1.1.tgz --namespace osm --create-namespace
 
 ![](images/02.png)
 
-### 构建镜像
+### Build Image
 
 ```shell
 sealos build -f Dockerfile -t docker.io/luanshaotong/osm:v0.1.1 .
 ```
 
-## 测试部署
+## Test Deployment
 
 ```shell
-sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1  --masters 172.31.37.111
+sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1  --masters 
+
+172.31.37.111
 kubectl taint no node-role.kubernetes.io/master:NoSchedule-
 kubectl taint no node-role.kubernetes.io/control-plane:NoSchedule-
 sealos run labring/ingress-nginx:4.1.0
 sealos run docker.io/luanshaotong/osm:v0.1.1
 ```
 
-如果每一步的应用安装顺利，即可，否则可能需要调试并清理集群重新安装。
+If every step of the application installation goes smoothly, that's it. Otherwise, you may need to debug and clean up the cluster for reinstallation.
 
-## 其他问题
+## Other Issues
 
-### 清理集群
+### Cleaning Up the Cluster
 
-如果出现问题需要清理集群：
+If there are problems and you need to clean up the cluster:
 
 ```shell
 sealos reset
 rm /root/.sealos -rf
 ```
 
-重新安装即可。
+You can then reinstall.

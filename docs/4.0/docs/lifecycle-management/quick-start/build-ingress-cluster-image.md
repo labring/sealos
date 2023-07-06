@@ -2,11 +2,11 @@
 sidebar_position: 3
 ---
 
-# 构建一个 Ingress 集群镜像
+# Building an Ingress Cluster Image
 
-这里展示了如何用 helm 构建一个 nginx-ingress 集群镜像。
+Here we demonstrate how to build an nginx-ingress cluster image using Helm.
 
-## 下载 helm chart
+## Download the Helm Chart
 
 ```shell
 $ mkdir ingress-nginx && cd ingress-nginx
@@ -14,18 +14,18 @@ $ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 $ helm pull ingress-nginx/ingress-nginx
 ```
 
-随后就能找到下载的 chart：
+You will find the downloaded chart:
 
 ```shell
 $ ls
 ingress-nginx-4.1.0.tgz
 ```
 
-## 添加镜像列表
+## Add Image List
 
-sealos 会下载镜像列表中的镜像并缓存到 registry 目录。
+Sealos will download the images in the image list and cache them in the registry directory.
 
-目录必须形如 `images/shim/[your image list filename]`：
+The directory must be in the format `images/shim/[your image list filename]`:
 
 ```shell
 $ cat images/shim/nginxImages
@@ -33,7 +33,7 @@ k8s.gcr.io/ingress-nginx/controller:v1.2.0
 k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.1.1
 ```
 
-## 编写 Dockerfile
+## Write the Dockerfile
 
 ```Dockerfile
 FROM scratch
@@ -41,24 +41,22 @@ COPY ../examples .
 CMD ["helm install ingress-nginx ingress-nginx-4.1.0.tgz --namespace ingress-nginx --create-namespace"]
 ```
 
-## 构建集群镜像
+## Build the Cluster Image
 
 ```shell
 $ sealos build -f Dockerfile -t docker.io/fanux/ingress-nginx:v1.2.0 .
 ```
 
-sealos 在构建的时候会自动添加镜像列表中的镜像依赖到集群镜像中，通过神奇的方式保存了里面依赖的 Docker 镜像。
-并且在到别的环境中运行的时候更神奇的自动检测集群中是否有 Docker 镜像，有的话自动下载，没有的话才会去 k8s.gcr.io 下载。
-用户无需修改 helm chart 中的 docker 镜像地址，这里用到了镜像缓存代理的黑科技。
+Sealos will automatically add the image dependencies from the image list to the cluster image, magically saving the Docker images it depends on inside. When running in another environment, it will magically check if the Docker images exist in the cluster. If they do, it will automatically download them; otherwise, it will download them from k8s.gcr.io. Users do not need to modify the Docker image addresses in the Helm chart. This utilizes the black technology of image caching proxy.
 
-## 推送到镜像 registry
+## Push to the Image Registry
 
 ```shell
 $ sealos login docker.io
 $ sealos push docker.io/fanux/ingress-nginx:v1.2.0
 ```
 
-## 运行集群镜像
+## Run the Cluster Image
 
 ```shell
 $ sealos run docker.io/fanux/ingress-nginx:v1.2.0

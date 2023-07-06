@@ -2,9 +2,9 @@
 sidebar_position: 1
 ---
 
-# 自定义配置安装
+# Custom Configuration Installation
 
-1. 运行 `sealos gen` 生成一个 Clusterfile，例如：
+1. Run `sealos gen` to generate a Clusterfile, for example:
 
 ```shell
 $ sealos gen labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
@@ -12,7 +12,7 @@ $ sealos gen labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24
    --nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx' > Clusterfile
 ```
 
-生成的 Clusterfile 如下：
+The generated Clusterfile is as follows:
 
 <details>
 <summary>Clusterfile</summary>
@@ -52,7 +52,7 @@ status: {}
 
 </details>
 
-2. 生成 Clusterfile 后，然后更新集群配置。例如，要修改 pods 的 CIDR 范围，就可以修改 `networking.podSubnet` 和 `spec.data.spec.calicoNetwork.ipPools.cidr` 字段。最终的 Clusterfile 会像是这样:
+2. After generating the Clusterfile, update the cluster configuration. For example, to modify the CIDR range of pods, you can modify the `networking.podSubnet` and `spec.data.spec.calicoNetwork.ipPools.cidr` fields. The final Clusterfile would look like this:
 
 <details>
 <summary>Clusterfile</summary>
@@ -119,8 +119,8 @@ spec:
 
 </details>
 
-3. 运行 `sealos apply -f Clusterfile` 启动集群。集群运行成功后会把 Clusterfile 保存到 `.sealos/default/Clusterfile` 文件中，可以修改其中字段来重新 apply 对集群进行变更。
+3. Run `sealos apply -f Clusterfile` to start the cluster. After the cluster is successfully running, the Clusterfile will be saved in the `.sealos/default/Clusterfile` file. You can modify the fields in it to reapply changes to the cluster.
 
-**注意：**
+**Note:**
 
-- 可以参考[官方文档](https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-config/)或运行 `kubeadm config print init-defaults` 命令来打印 kubeadm 配置。
+- You can refer to the [official documentation](https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-config/) or run the `kubeadm config print init-defaults` command to print the kubeadm configuration.

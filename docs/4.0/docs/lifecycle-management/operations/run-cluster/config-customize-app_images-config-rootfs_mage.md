@@ -2,19 +2,19 @@
 sidebar_position: 2
 ---
 
-# 配置和自定义应用镜像及其运行时环境
+# Configuring and Customizing Application Images and Their Runtime Environment
 
-Sealos 提供了一种使用 `Config` 对象来在运行时对文件进行补丁操作的方式。本文将详细介绍这一操作的过程和使用方法。
+Sealos provides a way to patch files at runtime using the `Config` object. This article will provide detailed instructions on how to do this.
 
-## `Config` 对象简介
+## Introduction to the `Config` Object
 
-`Config` 是一个描述如何在运行时为特定应用镜像或运行列表中的所有镜像打补丁、创建或替换指定文件的对象。
+The `Config` is an object that describes how to patch, create, or replace specific files at runtime for a specific application image or all images in the runtime list.
 
-以我们需要使用包含 `node-local-dns` 的集群为例。
+Let's take the case where we need to use a cluster with `node-local-dns`.
 
-## 创建 `node-local-dns` 应用云镜像
+## Creating the Cloud Image for the `node-local-dns` Application
 
-首先，创建 `node-local-dns` 应用的云镜像：
+First, we create the cloud image for the `node-local-dns` application:
 
 ```bash
 $ tree node-local-dns
@@ -36,11 +36,11 @@ image:
 $ cd node-local-dns && sudo sealos build -t node-local-dns:1.3.2 -f Kubefile .
 ```
 
-这里的 chart 文件可以从 [这里](https://artifacthub.io/packages/helm/node-local-dns/node-local-dns) 下载。
+The chart file can be downloaded from [here](https://artifacthub.io/packages/helm/node-local-dns/node-local-dns).
 
-## 创建 `Clusterfile`
+## Creating a `Clusterfile`
 
-接着，我们创建一个 `Clusterfile`：
+Next, we create a `Clusterfile`:
 
 ```yaml
 {{- $kubeDNS := ipAt (default "10.96.0.0/18" .Values.networking.serviceSubnet) 10 -}}
@@ -85,15 +85,16 @@ spec:
       localDnsIp: {{ .Values.localDNS.bind }}
       zones:
         -
-
- zone: .:53
+          zone: .:53
           plugins:
             errors: true
             reload: true
             debug: false
             log:
               format: combined
-              classes: all
+              classes
+
+: all
             cache:
               parameters: 30
               denial:
@@ -178,35 +179,31 @@ spec:
 {{- end }
 ```
 
-## 使用 `Config` 对象
+## Using the `Config` Object
 
-由于 `kubelet` 配置中的 `localDNS` 字段需要匹配 `node-local-dns` 的监听地址，因此在 Clusterfile 中必须预先定义。同时，我们希望有灵活性地修改 `node-local-dns` 的配置，因此我们使用 `Config` 在 Sealos 实际调用 `helm` 命令之前对 `charts/node-local-dns.values.yaml` 文件进行补丁操作。
+Because the `localDNS` field in the `kubelet` configuration needs to match the listening address of `node-local-dns`, it must be pre-defined in the Clusterfile. At the same time, we want to modify the configuration of `node-local-dns` flexibly, so we use `Config` to patch the `charts/node-local-dns.values.yaml` file before Sealos actually calls the `helm` command.
 
-关于 `Config` 对象的字段，我们简要介绍一下：
+Here's a brief introduction to the fields of the `Config` object:
 
-- `metadata.name`：此名称不可与其他名称重复。
-- `spec.path`：应用镜像中的文件路径。
-- `spec.match`：可选项。当定义了 `match` 时，`Config` 将应用于与其匹配的镜像；否则，它将应用于所有镜像。
-- `spec.strategy`：可以是 `merge`、`insert`、`append` 或 `override`。
-  - `merge`：仅适用于 YAML/JSON
+- `metadata.name`: This name cannot be duplicated with other names.
+- `spec.path`: The file path in the application image.
+- `spec.match`: Optional. When `match` is defined, `Config` is applied to the image that matches it; otherwise, it is applied to all images.
+- `spec.strategy`: Can be `merge`, `insert`, `append`, or `override`.
+  - `merge`: Only applicable to YAML/JSON files.
+  - `insert`/`append`: Inserts data into the file.
+  - `override`: Overrides the contents of the file.
+- `spec.data`: The data to be applied.
 
- 文件。
-  - `insert`/`append`：将数据插入文件。
-  - `override`：覆盖文件中的内容。
-- `spec.data`：要应用的数据。
-
-运行 Sealos apply：
+Run Sealos apply:
 
 ```bash
 sudo sealos apply -f Clusterfile --set localDNS.enabled=true --set localDNS.bind=169.254.20.11 --set localDNS.image=node-local-dns:1.3.2
 ```
 
-## 更多用例
+## More Use Cases
+We can use this mechanism to customize pre-built images or customize the configuration of a specific component without rebuilding it. For example, adding custom containerd configuration.
 
-我们可以使用这种机制来定制已构建的镜像，或者在不重新构建的情况下定制某个组件的配置。例如，添加自定义的 containerd 配置。
-
-在首次运行之前，在 `Clusterfile` 中添加 `Config`。
-
+Before the initial run, add the Config in the Clusterfile.
 ```yaml
 ---
 ...

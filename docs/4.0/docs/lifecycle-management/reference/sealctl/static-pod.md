@@ -2,39 +2,37 @@
 sidebar_position: 7
 ---
 
-# static-pod 配置
+# Static Pod Configuration
 
-`static-pod` 命令用于生成静态 Pod，这些 Pod 是由 kubelet 直接管理的，而不是通过 API 服务器。静态 Pod 在某些场景下非常有用，比如设置和管理 Kubernetes 集群中的控制平面组件。
+The `static-pod` command is used to generate static Pods that are managed directly by kubelet instead of the API server. Static Pods are useful in certain scenarios, such as setting up and managing control plane components in a Kubernetes cluster.
 
-`sealctl static-pod` 命令提供了一种简便的方法，用于生成用于特定目的的静态 Pod 配置文件。目前，它主要支持生成 `lvscare` 静态 Pod，`lvscare` 是一种用于管理 IPVS 规则的工具。
+The `sealctl static-pod` command provides a convenient way to generate static Pod configuration files for specific purposes. Currently, it mainly supports generating the `lvscare` static Pod, which is a tool for managing IPVS rules.
 
-使用 `sealctl static-pod lvscare`，您可以根据指定的参数（如 VIP、主节点地址、镜像名称等）生成 `lvscare` 静态 Pod YAML 文件。然后，该文件可以存储在 kubelet 的静态 Pod 路径下，kubelet 将自动创建和管理相应的 Pod。
+Using `sealctl static-pod lvscare`, you can generate the `lvscare` static Pod YAML file based on specified parameters such as VIP, master node addresses, and image name. This file can then be stored in the static Pod path of kubelet, and kubelet will automatically create and manage the corresponding Pod.
 
-
-
-**用法**
+**Usage**
 
 ```shell
 sealctl static-pod lvscare [flags]
 ```
 
-**选项**
+**Options**
 
-- `--vip`: 默认 VIP IP（默认为 "10.103.97.2:6443"）。
-- `--name`: 生成 lvscare 静态 Pod 名称。
-- `--image`: 生成 lvscare 静态 Pod 镜像（默认为 `sealos.hub:5000/sealos/lvscare:latest`）。
-- `--masters`: 生成 master 地址列表。
-- `--print`: 是否打印 YAML。
+- `--vip`: Default VIP IP (default is "10.103.97.2:6443").
+- `--name`: Name of the generated lvscare static Pod.
+- `--image`: Image for the generated lvscare static Pod (default is `sealos.hub:5000/sealos/lvscare:latest`).
+- `--masters`: List of master addresses for the generated static Pod.
+- `--print`: Whether to print the YAML.
 
-**示例**
+**Examples**
 
-生成 lvscare 静态 Pod 文件并打印 YAML：
+Generate the lvscare static Pod file and print the YAML:
 
 ```shell
 sealctl static-pod lvscare --vip 10.103.97.2:6443 --name lvscare --image lvscare:latest --masters 192.168.0.2:6443,192.168.0.3:6443 --print
 ```
 
-如果没有使用 `--print` 选项，将直接生成配置文件到 `/etc/kubernetes/manifests` 并启用静态 Pod：
+If the `--print` option is not used, the configuration file will be directly generated in `/etc/kubernetes/manifests` and the static Pod will be enabled:
 
 ```shell
 sealctl static-pod lvscare --vip 10.103.97.2:6443 --name lvscare --image lvscare:latest --masters 192.168.0.2:6443,192.168.0.3:6443

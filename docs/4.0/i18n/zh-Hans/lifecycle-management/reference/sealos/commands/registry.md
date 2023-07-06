@@ -128,6 +128,7 @@ sealos registry passwd
 
 ### 注意事项
 
+**修改 registry 密码后,修改Clusterfile中的registry密码**
 修改 registry 密码后，所有使用该 registry 的节点和服务都需要更新配置，以使用新的密码进行身份验证。否则，它们将无法从该 registry 拉取或推送镜像。
 
 如果你不确定如何更新节点和服务的配置，建议在修改 registry 密码之前，先查阅相关文档或者寻求专业的技术支持。

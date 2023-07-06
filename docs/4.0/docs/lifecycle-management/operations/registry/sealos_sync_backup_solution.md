@@ -2,44 +2,44 @@
 sidebar_position: 1
 ---
 
-# 高效的Sealos集群镜像同步和备份策略
+# Efficient Sealos Cluster Image Synchronization and Backup Strategy
 
-在我们的日常工作中，可能会遇到一些常见的需求和问题，如：
+In our daily work, we may encounter some common needs and issues, such as:
 
-1. 需要定时备份集群里的镜像仓库，但不想全量同步。
-2. 需要使用外部镜像仓库，但还没有sealos集群镜像里的容器镜像。
-3. 容器镜像较大，希望避免在sealos运行时传输镜像文件，以减少带宽占用。
+1. Needing to regularly backup the image repository in the cluster, but not wanting to synchronize everything.
+2. Needing to use an external image repository, but the container images in the Sealos cluster image are not yet available.
+3. Container images are large, and there is a desire to avoid transferring image files during Sealos operation to reduce bandwidth usage.
 
-为了解决以上问题，sealos提供了一种优雅的解决方案。下面，我将一步步带你了解这个方案。
+To solve the above problems, Sealos provides an elegant solution. Below, I will guide you step by step to understand this solution.
 
-## 创建和启动临时仓库
+## Creating and Starting a Temporary Repository
 
-首先，我们需要集群镜像里的registry目录来进行镜像同步。因此，执行以下命令来拉取集群镜像并生成一个工作目录：
+First, we need the registry directory in the cluster image for image synchronization. Therefore, execute the following command to pull the cluster image and create a working directory:
 
 ```shell
 sealos pull labring/kubernetes:v1.24.0 
 sealos create labring/kubernetes:v1.24.0
 ```
 
-随后，我们在工作目录的registry目录启动一个临时registry。为了方便操作，我们可以固定一个端口，例如9090。然后，执行以下命令：
+Then, we start a temporary registry in the registry directory of the working directory. For convenience, we can fix a port, such as 9090. Then, execute the following command:
 
 ```shell
 sealos registry serve filesystem -p 9090 registry
 ```
 
-注意，这是一个常驻进程，同步完成前请确保服务可用。
+Note that this is a resident process. Please ensure the service is available before synchronization is complete.
 
-## 同步镜像
+## Image Synchronization
 
-下一步，我们将本地的集群镜像同步到集群里的sealos.hub:5000（或其他仓库）。在执行同步命令前，如果仓库需要认证，请先使用sealos login进行登录。然后，执行以下命令：
+Next, we synchronize the local cluster image to sealos.hub:5000 (or other repositories) in the cluster. Before executing the synchronization command, if the repository needs authentication, please first use sealos login to login. Then, execute the following command:
 
 ```shell
 sealos registry sync 127.0.0.1:9090 sealos.hub:5000
 ```
 
-## 结果展示
+## Results Display
 
-在执行了上述步骤后，你将看到类似以下的输出：
+After executing the above steps, you will see an output similar to the following:
 
 ```tex
 Getting image source signatures
@@ -79,7 +79,9 @@ Copying config 66e1443684 done
 Writing manifest to image destination
 Storing signatures
 Getting image source signatures
-Copying blob cd1468482c69 skipped: already exists
+Copying blob cd1468482
+
+c69 skipped: already exists
 Copying blob 9dd6bd026ac4 skipped: already exists
 Copying blob b0b160e41cf3 skipped: already exists
 Copying config b81513b3bf done
@@ -100,8 +102,8 @@ Storing signatures
 Sync completed
 ```
 
-可以看到，已经存在的镜像不会重复同步，这样可以实现增量镜像同步，使整个流程变得非常优雅和高效。
+As you can see, existing images will not be synchronized again, this can achieve incremental image synchronization, making the entire process very elegant and efficient.
 
 ---
 
-以上就是我们这次的解决方案，希望对你有所帮助。
+That's the solution we're presenting this time, I hope it's helpful to you.

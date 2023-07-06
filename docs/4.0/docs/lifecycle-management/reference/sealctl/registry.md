@@ -2,47 +2,46 @@
 sidebar_position: 5
 ---
 
-# registry 镜像仓库
+# Registry Image Repository
 
-## Sealos：sealctl registry serve 命令详解与使用指南
+## Sealos: Detailed Guide and Usage of `sealctl registry serve` Command
 
-在构建并管理 Docker 镜像仓库过程中，Sealos 提供了 `sealctl registry serve` 命令以方便用户进行相关操作。本文将详细介绍 `sealctl registry serve` 命令的使用方法和示例。
+Sealos provides the `sealctl registry serve` command to facilitate the construction and management of Docker image repositories. This document provides a detailed guide and usage examples for the `sealctl registry serve` command.
 
-### 基本介绍
+### Introduction
 
-`sealctl registry serve` 命令的主要作用是启动一个 Docker 分发镜像仓库服务器，支持两种模式：`filesystem` 和 `inmem`。
+The `sealctl registry serve` command is primarily used to start a Docker distribution image repository server. It supports two modes: `filesystem` and `inmem`.
 
-1. **Filesystem 模式**：在此模式下，sealctl 将运行一个针对指定目录的 Docker 分发镜像仓库服务器。该模式下，镜像数据将存储在硬盘上。**该命令还用于sealos做增量镜像同步**
+1. **Filesystem Mode**: In this mode, `sealctl` runs a Docker distribution image repository server for a specified directory. The image data is stored on disk in this mode. **This command is also used by Sealos for incremental image synchronization**.
 
-2. **In-memory 模式**：在此模式下，sealctl 将运行一个内存中的 Docker 分发镜像仓库服务器。该模式下，镜像数据仅保存在内存中，进程退出后数据将丢失。
+2. **In-memory Mode**: In this mode, `sealctl` runs an in-memory Docker distribution image repository server. The image data is only stored in memory, and the data will be lost when the process exits.
 
-### 命令参数
+### Command Options
 
-`sealctl registry serve filesystem ` 命令支持以下参数：
+The `sealctl registry serve filesystem` command supports the following options:
 
-- `--disable-logging`: 禁用日志输出，默认为 false。
-- `--log-level`: 配置日志级别，默认为 'error'。
-- `-p, --port`: 服务器监听的端口，默认为随机未使用的端口。
+- `--disable-logging`: Disable logging output (default is false).
+- `--log-level`: Configure the log level (default is 'error').
+- `-p, --port`: The port the server listens on (default is a randomly unused port).
 
-### 使用示例
+### Usage Examples
 
-以下是一些 `sealctl registry serve` 命令的使用示例：
+Here are some usage examples of the `sealctl registry serve` command:
 
-#### 在文件系统中启动镜像仓库服务器
+#### Start a Filesystem Image Repository Server
 
 ```bash
 sealctl registry serve filesystem --port=5000
 ```
 
-以上命令将在端口5000上启动一个文件系统镜像仓库服务器。
+The above command starts a filesystem image repository server on port 5000.
 
-#### 在内存中启动镜像仓库服务器
+#### Start an In-memory Image Repository Server
 
 ```bash
-sealctl registry serve inmem 
+sealctl registry serve inmem
 ```
 
-以上命令将启动一个内存镜像仓库服务器。该服务器在进程退出后，存储的数据将丢失。
+The above command starts an in-memory image repository server. The server will lose stored data when the process exits.
 
-通过 `sealctl registry serve` 命令，用户可以轻松地管理和操作 Docker 镜像仓库。无论是在开发环境，还是在生产环境中，它都是一个强大且易用的工具。
-
+With the `sealctl registry serve` command, users can easily manage and operate Docker image repositories. It is a powerful and user-friendly tool for both development and production environments.

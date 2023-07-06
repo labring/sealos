@@ -2,16 +2,16 @@
 sidebar_position: 0
 ---
 
-# Sealos 镜像仓库
+# Sealos Image Repository
 
-在这个目录中，我们提供了多种不同的方法和技术，以帮助您有效地管理容器镜像仓库。以下是目录文件的简短概述：
+In this directory, we provide a variety of different methods and technologies to help you effectively manage your container image repositories. Below is a brief overview of the directory files:
 
-1. **安全管理**：详细解释如何对 Docker Registry 进行安全设置，比如修改密码等。
+1. **Security Management**: Detailed explanations on how to set up security for the Docker Registry, such as changing passwords, etc.
 
-2. **镜像管理**：指导读者如何管理存储在 Registry 中的镜像，包括自启镜像仓库、同步镜像、保存镜像文件等操作。
+2. **Image Management**: Guides the reader on how to manage images stored in the Registry, including operations like auto-starting the image repository, synchronizing images, saving image files, etc.
 
-3. **镜像同步和备份**：分享如何进行镜像的同步和备份，防止重要数据的丢失。
+3. **Image Synchronization and Backup**: Shares how to synchronize and backup images, preventing the loss of important data.
 
-4. **Troubleshooting**：收集一些常见的问题及其解决方案，帮助读者快速解决在使用 Docker Registry 过程中遇到的问题。
+4. **Troubleshooting**: Collects some common problems and their solutions, helping readers to quickly solve problems encountered in the use of Docker Registry.
 
-我们希望这个目录可以为您提供在使用管理镜像仓库过程中可能需要的所有信息和工具。如果有任何建议或疑问，欢迎随时联系我们。
+We hope this directory can provide you with all the information and tools you might need in the process of managing image repositories. If you have any suggestions or questions, feel free to contact us at any time.

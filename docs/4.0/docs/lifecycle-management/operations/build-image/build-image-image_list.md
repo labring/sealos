@@ -2,11 +2,11 @@
 sidebar_position: 1
 ---
 
-# 构建基于镜像列表的集群镜像
+# Building Cluster Images Based on the Image List
 
-本文将指导你如何使用镜像列表构建集群镜像，包括如何构建单个镜像（基于预先存在的 Kubernetes 镜像）或从零开始构建应用镜像。
+This document will guide you on how to build cluster images using the image list, including how to build a single image (based on pre-existing Kubernetes images) or build an application image from scratch.
 
-## 目录结构
+## Directory Structure
 
 ```
 .
@@ -22,11 +22,11 @@ sidebar_position: 1
         └── registry
 ```
 
-## Dockerfile 构建
+## Dockerfile Building
 
-我们可以将所有内容构建到单个镜像（`FROM labring/kubernetes`）中，或者使用 `FROM scratch` 从头开始构建镜像。
+We can build all content into a single image (`FROM labring/kubernetes`) or use `FROM scratch` to build the image from scratch.
 
-### 单个镜像
+### Single Image
 
 ```dockerfile
 FROM labring/kubernetes:v1.24.0
@@ -36,9 +36,9 @@ COPY registry ./registry
 CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-resources.yaml"]
 ```
 
-### 应用镜像
+### Application Image
 
-此镜像不包括 Kubernetes，因此它应在已安装 Kubernetes 的集群中运行。
+This image does not include Kubernetes, so it should run in a cluster where Kubernetes is already installed.
 
 ```dockerfile
 FROM scratch
@@ -49,17 +49,17 @@ COPY manifests ./manifests
 CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-resources.yaml"]
 ```
 
-说明：
+Notes:
 
-1. `CalicoImageList`：Docker 镜像列表文件。
-2. `cni`：`kubectl apply` 的配置文件。
-3. `registry`：存储容器注册表数据的目录。
-4. `sealos build -t kubernetes-calico:1.24.0-amd64 --platform linux/amd64 -f Kubefile .`：构建 OCI 镜像的命令。
-5. `manifests`：将 yaml 文件中的镜像解析为 Docker 镜像列表。
+1. `CalicoImageList`: Docker image list file.
+2. `cni`: Configuration files for `kubectl apply`.
+3. `registry`: Directory for storing container registry data.
+4. `sealos build -t kubernetes-calico:1.24.0-amd64 --platform linux/amd64 -f Kubefile .`: Command for building the OCI image.
+5. `manifests`: Resolve images in the yaml file to a Docker image list.
 
-## 构建 Calico 镜像
+## Building Calico Image
 
-### 目录结构
+### Directory Structure
 
 ```
 .
@@ -69,11 +69,11 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
 │   └── tigera-operator.yaml
 ```
 
-### Dockerfile 构建
+### Dockerfile Building
 
-#### 全部在一起
+#### All Together
 
-此镜像包括 Kubernetes 和 Calico。
+This image includes both Kubernetes and Calico.
 
 ```dockerfile
 FROM labring/kubernetes:v1.24.0-amd64
@@ -81,9 +81,9 @@ COPY cni ./cni
 CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-resources.yaml"]
 ```
 
-#### 应用镜像
+#### Application Image
 
-此镜像仅包含 Calico。
+This image only contains Calico.
 
 ```dockerfile
 FROM scratch
@@ -91,19 +91,17 @@ COPY cni ./cni
 CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-resources.yaml"]
 ```
 
-说明：
+Notes:
 
-1. `cni`：`kubectl apply` 的配置文件。
-2. `sealos build -t kubernetes-calico:1.24.0-amd64 --platform linux/amd64  -f Kubefile .`：构建 OCI 镜像的命令。
+1. `cni`: Configuration files for `kubectl apply`.
+2. `sealos build -t kubernetes-calico:1.24.0-amd64 --platform linux/amd64  -f Kubefile .`: Command for building the OCI image.
 
-## 构建 OpenEBS 镜像
+## Building OpenEBS Image
 
-### 目录结构
+### Directory Structure
 
 ```
 .
-
-
 ├── Kubefile
 ├── cni
 │   ├── custom-resources.yaml
@@ -112,18 +110,20 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
     └── openebs-operator.yaml
 ```
 
-### Dockerfile 构建
+### Dockerfile Building
 
-#### 全部在一起
+#### All Together
 
 ```dockerfile
 FROM labring/oci-kubernetes-calico:1.24.0-amd64
 COPY cni ./cni
 COPY manifests ./manifests
-CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-resources.yaml","kubectl apply -f manifests/openebs-operator.yaml"]
+CMD ["kubectl apply -f cni/tigera
+
+-operator.yaml","kubectl apply -f cni/custom-resources.yaml","kubectl apply -f manifests/openebs-operator.yaml"]
 ```
 
-#### 应用镜像
+#### Application Image
 
 ```dockerfile
 FROM scratch
@@ -132,9 +132,9 @@ COPY manifests ./manifests
 CMD ["kubectl apply -f manifests/openebs-operator.yaml"]
 ```
 
-说明：
+Notes:
 
-1. `cni`：`kubectl apply` 的配置文件。
-2. `sealos build -t labring/kubernetes-calico-openebs:1.24.0-amd64 --platform linux/amd64  -f Kubefile .`：构建 OCI 镜像的命令。
+1. `cni`: Configuration files for `kubectl apply`.
+2. `sealos build -t labring/kubernetes-calico-openebs:1.24.0-amd64 --platform linux/amd64  -f Kubefile .`: Command for building the OCI image.
 
-建议：你需要将 Calico 的 CMD 添加到 OpenEBS 的 CMD 层，因为 Dockerfile 将覆盖较旧的层。
+Recommendation: You need to add the CMD of Calico to the CMD layer of OpenEBS because the Dockerfile will overwrite older layers.

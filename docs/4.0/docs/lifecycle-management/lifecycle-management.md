@@ -2,40 +2,40 @@
 sidebar_position: 0
 ---
 
-# 集群生命周期管理
+# Cluster Lifecycle Management
 
-Sealos 提供一套强大的工具，使得用户可以便利地管理整个集群的生命周期。
+Sealos provides a powerful set of tools that allow users to easily manage the entire lifecycle of a cluster.
 
-## 功能介绍
+## Features
 
-使用 Sealos，您可以安装一个不包含任何组件的裸 Kubernetes 集群。此外，Sealos 还可以在 Kubernetes 之上，通过集群镜像能力组装各种上层分布式应用，如数据库、消息队列等。
+With Sealos, you can install a bare Kubernetes cluster without any components. Additionally, Sealos can assemble various upper-layer distributed applications on top of Kubernetes using cluster image capabilities, such as databases, message queues, and more.
 
-Sealos 不仅可以安装一个单节点的 Kubernetes 开发环境，还能构建数千节点的生产高可用集群。
+Sealos not only allows you to install a single-node Kubernetes development environment but also enables you to build production-grade highly available clusters with thousands of nodes.
 
-Sealos 具有自由伸缩集群、备份恢复、释放集群等功能，即使在离线环境中，Sealos 也能提供出色的 Kubernetes 运行体验。
+Sealos offers features like cluster scaling, backup and recovery, and cluster release. It provides an excellent Kubernetes runtime experience even in offline environments.
 
-## 主要特性
+## Key Features
 
-- 支持 ARM，v1.20 以上版本离线包支持 containerd 与 docker 集成
-- 提供 99 年证书，支持集群备份，升级
-- 不依赖 ansible、haproxy、keepalived，一个二进制工具，零依赖
-- 提供离线安装，不同 Kubernetes 版本只需使用不同的集群镜像
-- 高可用性由 ipvs 实现的 localLB 提供，占用资源少，稳定可靠，类似 kube-proxy 的实现
-- 使用 image-cri-shim 自动识别镜像名称，使离线交付更方便
-- 几乎兼容所有支持 systemd 的 x86_64 架构的环境
-- 轻松实现集群节点的增加/删除
-- 已有数万用户在线上环境使用 Sealos，稳定可靠
-- 支持集群镜像，自由组合定制你需要的集群，如 openebs 存储+数据库+minio 对象存储
-- 使用 buildah 的 sdk 实现对镜像标准统一，完全兼容 OCI 的标准
+- ARM support. Offline packages v1.20 and above support integration with both containerd and Docker.
+- Provides 99-year certificates and supports cluster backup and upgrade.
+- Does not rely on Ansible, HAProxy, or Keepalived. It is a standalone binary tool with zero dependencies.
+- Provides offline installation. Different versions of Kubernetes only require different cluster images.
+- High availability is achieved through localLB based on IPVS, which consumes fewer resources and provides stability and reliability, similar to kube-proxy implementation.
+- Automatically recognizes image names using image-cri-shim, making offline delivery more convenient.
+- Almost compatible with all x86_64 architectures that support systemd.
+- Easy addition/deletion of cluster nodes.
+- Trusted by tens of thousands of users in production environments, stable and reliable.
+- Supports cluster images, allowing you to customize and combine the cluster components you need, such as OpenEBS storage + database + MinIO object storage.
+- Uses the SDK of Buildah to standardize the image format, fully compatible with OCI standards.
 
-## 使用 Sealos 运行 Kubernetes 集群
+## Running a Kubernetes Cluster with Sealos
 
-使用 Sealos 运行一个 Kubernetes 集群非常简单，只需以下步骤：
+Running a Kubernetes cluster with Sealos is straightforward. Just follow these steps:
 
 ```bash
 $ curl -sfL  https://raw.githubusercontent.com/labring/sealos/v4.2.0/scripts/install.sh \
     | sh -s v4.2.0 labring/sealos
-# 创建一个集群
+# Create a cluster
 $ sealos run labring/kubernetes:v1.25.0-4.2.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
@@ -43,28 +43,28 @@ $ sealos run labring/kubernetes:v1.25.0-4.2.0 labring/helm:v3.8.2 labring/calico
 
 [![asciicast](https://asciinema.org/a/519263.svg)](https://asciinema.org/a/519263?speed=3)
 
-## 在集群上运行分布式应用
+## Running Distributed Applications on the Cluster
 
-通过 `sealos run` 命令，您可以在集群上运行各种分布式应用，如数据库、消息队列、AI 能力，甚至企业级 SaaS 软件。例如：
+With the `sealos run` command, you can run various distributed applications on the cluster, such as databases, message queues, AI capabilities, and even enterprise-level SaaS software. For example:
 
 ```shell
-# MySQL 集群
+# MySQL cluster
 $ sealos run labring/mysql-operator:8.0.23-14.1
 
-# Clickhouse 集群
+# Clickhouse cluster
 $ sealos run labring/clickhouse:0.18.4
 
-# Redis 集群
+# Redis cluster
 $ sealos run labring/redis-operator:3.1.4
 ```
 
-## 自定义集群
+## Customizing the Cluster
 
-对于 Sealos 生态没有的集群镜像，用户可以方便地自己构建和定制属于自己的集群镜像。例如：
+For cluster images not available in the Sealos ecosystem, users can easily build and customize their own cluster images. For example:
 
-[构建一个 ingress 集群镜像](https://docs.sealos.io/docs/lifecycle-management/quick-start/build-ingress-cluster-image)
+[Building an Ingress Cluster Image](https://docs.sealos.io/docs/lifecycle-management/quick-start/build-ingress-cluster-image)
 
-您还可以定制一个完全属于自己的 Kubernetes：
+You can also customize your own Kubernetes cluster:
 
 Sealfile:
 
@@ -76,18 +76,18 @@ CMD ["helm install flannel flannel-chart", "helm install mysql mysql-chart"]
 ```
 
 ```shell
-sealos build -t my-kuberentes:v1.25.0 .
-sealos run my-kuberentes:v1.25.0 ...
+sealos build -t my-kubernetes:v1.25.0 .
+sealos run my-kubernetes:v1.25.0 ...
 ```
 
-## 常见问题
+## Frequently Asked Questions
 
-**sealos 是 Kubernetes 安装工具吗？**
+**Is Sealos a Kubernetes installation tool?**
 
-安装部署是 Sealos 的一个基本功能，如同单机操作系统有 boot 模块一样，Sealos 的 boot 模块可以很好地管理 Kubernetes 在任何场景下的生命周期。
+Installation and deployment are basic functions of Sealos, similar to the boot module in a single-node operating system. Sealos' boot module effectively manages the lifecycle of Kubernetes in any scenario.
 
-**sealos 和 rancher、kubesphere 有什么区别？**
+**What are the differences between Sealos, Rancher, and KubeSphere?**
 
-Sealos 的设计理念是 "化整为零，自由组装，大道至简"。Sealos 利用 Kubernetes 的能力，以简单的方式提供给用户真正需要的东西。用户需要的不一定是 Kubernetes，用户需要的是具体的能力。
+Sealos is designed with the philosophy of "simplifying complexity, freely assembling, and simplicity as the ultimate goal." Sealos leverages the capabilities of Kubernetes to provide users with exactly what they need in a simple way. Users may not necessarily need Kubernetes; what they need is specific functionality.
 
-Sealos 是极其灵活的，不会给用户带来额外负担。它的形态取决于用户的需求和安装的应用。Sealos 的核心是分布式应用，所有应用都是一等公民。
+Sealos is highly flexible and does not impose additional burdens on users. Its form depends on user requirements and the applications being installed. The core of Sealos is distributed applications, and all applications are treated equally.

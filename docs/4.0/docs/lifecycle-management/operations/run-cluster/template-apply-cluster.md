@@ -2,9 +2,9 @@
 sidebar_position: 2
 ---
 
-# 模板配置安装
+# Template Configuration Installation
 
-我们也可以使用 Go 模版语法来编写 Clusterfile（就像 [Helm](https://helm.sh/) 一样，但暂不支持部分模版函数，如 `include`/`tpl`/`require`/`lookup`）。 例如，创建 `Clusterfile.yaml` 如下：
+We can also use Go template syntax to write the Clusterfile (similar to [Helm](https://helm.sh/)), but partial template functions such as `include`/`tpl`/`require`/`lookup` are not supported yet. For example, create a `Clusterfile.yaml` as follows:
 
 ```yaml
 apiVersion: apps.sealos.io/v1beta1
@@ -34,7 +34,7 @@ networking:
   podSubnet: {{ default "100.64.0.0/17" .Values.networking.podSubnet }}
 ```
 
-随后，创建一个自定义的 values 文件 `example.values.yaml`：
+Then, create a custom values file `example.values.yaml`:
 
 ```yaml
 clusterName: default
@@ -57,8 +57,8 @@ networking:
   podSubnet: 100.64.0.0/17
 ```
 
-然后就可以像这样部署集群了：
+You can then deploy the cluster like this:
 
 ```shell
-$ sealos apply -f Clusterfile.yaml --values example.values.yaml --set clusterName=testlocal --env SSH_PASSWORD=s3cret 
+$ sealos apply -f Clusterfile.yaml --values example.values.yaml --set clusterName=testlocal --env SSH_PASSWORD=s3cret
 ```
