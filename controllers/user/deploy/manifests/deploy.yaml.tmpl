@@ -338,9 +338,9 @@ spec:
               apiVersion: v1
               fieldPath: metadata.namespace
         - name: SEALOS_CLOUD_HOST
-          value: cloud.sealos.io
+          value: {{ .cloudDomain }}
         - name: SEALOS_CLOUD_PORT
-          value: "443"
+          value: "{{ .cloudPort }}"
         image: ghcr.io/labring/sealos-user-controller:dev
         imagePullPolicy: Always
         livenessProbe:
