@@ -129,7 +129,11 @@ func Decrypt(ciphertextBase64 string) ([]byte, error) {
 }
 
 func IsLicenseValid(license v1.License) (map[string]interface{}, bool) {
-	publicKey, err := parseRSAPublicKeyFromPEM(license.Spec.Key)
+	decodeKey, err := base64.StdEncoding.DecodeString(license.Spec.Key)
+	if err != nil {
+		return nil, false
+	}
+	publicKey, err := parseRSAPublicKeyFromPEM(string(decodeKey))
 	if err != nil {
 		return nil, false
 	}
