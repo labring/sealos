@@ -1,4 +1,4 @@
-import React, { FormEventHandler, MouseEventHandler, useEffect, useMemo, useRef, useState } from "react";
+import React, { FormEventHandler, MouseEventHandler, useEffect, useRef, useState } from "react";
 import { Image, Tab, TabIndicator, TabList, Tabs } from "@chakra-ui/react";
 import { useQuery } from "@tanstack/react-query";
 import Layout from "@/components/layout";
@@ -33,12 +33,12 @@ function usePassword({ setError }: { setError: React.Dispatch<React.SetStateActi
   // 是否为初次登录
   const [isFirst, setIsFirst] = useState(true)
   const verify = () => {
-    if(!strongUsername(username.current)){
-      setError(t('username tips')||'Username must be 3-16 characters, including letters, numbers')
+    if (!strongUsername(username.current)) {
+      setError(t('username tips') || 'Username must be 3-16 characters, including letters, numbers')
       return false
     }
-    if(!strongPassword(password.current)){
-      setError(t('password tips')||'8 characters or more')
+    if (!strongPassword(password.current)) {
+      setError(t('password tips') || '8 characters or more')
       return false
     }
     if (!username || !password.current) {
@@ -148,7 +148,8 @@ function usePassword({ setError }: { setError: React.Dispatch<React.SetStateActi
 }
 function useSms({ setError }: { setError: React.Dispatch<React.SetStateAction<string>> }) {
   const { t } = useTranslation()
-
+  // 防止input失去焦点
+  const _remainTime = useRef(0);
   const phoneNumber = useRef('')
   const checkValue = useRef('')
   const isValidPhoneNumber =
@@ -171,9 +172,10 @@ function useSms({ setError }: { setError: React.Dispatch<React.SetStateAction<st
   const sign = () => request.post<any, ApiResp<Session>>('/api/auth/phone/verify', { phoneNumbers: phoneNumber.current, code: checkValue.current })
 
   const SmsModal = () => {
-    const [remainTime, setRemainTime] = useState(0);
+    
     const [_phone, setPhone] = useState(phoneNumber.current)
     const [_code, setCode] = useState(checkValue.current)
+    const [remainTime, setRemainTime] = useState(_remainTime.current);
     useEffect(() => {
       if (remainTime <= 0) return;
       const interval = setInterval(() => {
@@ -184,12 +186,21 @@ function useSms({ setError }: { setError: React.Dispatch<React.SetStateAction<st
     const getCode: MouseEventHandler = async (e) => {
       e.preventDefault()
       if (!isValidPhoneNumber()) {
-        setError(t('Invalid mobile number') || 'Invalid mobile number')
+        setError(t('Invalid phone number') || 'Invalid phone number')
         return
       }
       setRemainTime(60)
-      await request.post<any, Session>('/api/auth/phone/sms', { phoneNumbers: phoneNumber.current })
-      // vaildPhone()
+      _remainTime.current = 60
+      try {
+        const res = await request.post<any, ApiResp<any>>('/api/auth/phone/sms', { phoneNumbers: phoneNumber.current })
+        if (res.code !== 200 || res.message !== 'successfully') {
+          throw new Error('Get code failed')
+        }
+      } catch (err) {
+        setError(t('Get code failed') || 'Get code failed')
+        setRemainTime(0)
+        _remainTime.current = 0
+      }
     }
     return <><InputGroup variant={'unstyled'} bg='rgba(255, 255, 255, 0.65)' mt={'20px'}>
       <InputLeftAddon
@@ -394,7 +405,7 @@ export default function Login(
   // 确认密码后注册
   const signUpByPassword = async (e: { preventDefault: () => void; }) => {
     e.preventDefault()
-    if(!confirmPassword()){
+    if (!confirmPassword()) {
       return
     }
     setIsLoading(true)
@@ -436,7 +447,7 @@ export default function Login(
           sx={
             {
               '> div:not(:last-child):not(.chakra-tabs), > Button:not(:last-child)': {
-                width:'266px',
+                width: '266px',
                 minH: '42px',
                 mb: '14px',
                 borderRadius: '4px',
@@ -451,7 +462,7 @@ export default function Login(
           <FormErrorMessage position={'absolute'} top='0' display={'flex'}
             bg={'rgba(249, 78, 97, 1)'}
             transform={'translateY(-50%)'}
-            // width={'auto !important'}
+          // width={'auto !important'}
           >
             <Img src={warnIcon.src} mr={'8px'}></Img>
             <Text color={'#fff'} >{error}</Text>
