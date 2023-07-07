@@ -2,11 +2,11 @@
 sidebar_position: 6
 ---
 
-# pull: Pulling Images
+# Pull Image
 
-The `sealos pull` command is a useful command that allows you to download images from a container image registry and store them locally. You can specify the image to download using the image's tag or digest. If no tag is specified, the command will default to downloading the image with the 'latest' tag, if it exists.
+The `sealos pull` command is a very useful one that allows you to download images from the container image repository and store them locally. Users can obtain images by their tags or digests. If no tag is specified, the image with the 'latest' tag (if it exists) will be downloaded by default.
 
-By using this command, you can easily download the desired images from remote repositories, greatly improving work efficiency.
+By using this command, users can easily download the required images from remote repositories, greatly improving work efficiency.
 
 ## Usage:
 
@@ -14,33 +14,33 @@ By using this command, you can easily download the desired images from remote re
 
 ## Parameters:
 
-Here are the parameters for the `sealos pull` command:
+The following are the parameters of the `sealos pull` command:
 
-- `-a, --all-tags=false`: Download all tagged images from the repository.
+- `-a, --all-tags=false`: Download all tagged images in the repository.
 
-- `--authfile=''`: Path to the authentication file. You can override it with the `REGISTRY_AUTH_FILE` environment variable.
+- `--authfile=''`: The path to the authentication file. The REGISTRY_AUTH_FILE environment variable can be used to override it.
 
-- `--cert-dir=''`: Specify the path to the certificate used to access the image registry.
+- `--cert-dir=''`: The specified path to the certificate for accessing the image repository.
 
-- `--creds=''`: Use `[username[:password]]` to access the image registry.
+- `--creds=''`: Use `[username[:password]]` to access the image repository.
 
-- `--decryption-key=[]`: The key(s) required to decrypt the image.
+- `--decryption-key=[]`: The key needed to decrypt the image.
 
-- `--platform=[linux/arm64/v8]`: Prefer the specified OS/ARCH when selecting an image, instead of the current operating system and architecture.
+- `--platform=[linux/arm64/v8]`: When choosing an image, prioritize the specified OS/ARCH over the current operating system and architecture.
 
-- `--policy='missing'`: Set the policy, which can be 'missing', 'always', or 'never'.
+- `--policy='missing'`: Set the policy, the optional values include 'missing', 'always', 'never'.
 
-- `-q, --quiet=false`: Suppress progress information while pulling the image.
+- `-q, --quiet=false`: Do not output progress information when pulling images.
 
-- `--remove-signatures=false`: Do not copy signatures when pulling the image.
+- `--remove-signatures=false`: Do not copy signatures when pulling images.
 
-- `--retry=3`: Number of retries to perform if the pull fails.
+- `--retry=3`: The number of retries when the pull fails.
 
-- `--retry-delay=2s`: Delay between retries when the pull fails.
+- `--retry-delay=2s`: The delay between retries when the pull fails.
 
 ## Examples:
 
-- Pull a single image: `sealos pull my-image:latest`
+- Pull an image: `sealos pull my-image:latest`
 
 - Pull an image from the Docker daemon: `sealos pull docker-daemon:my-image:tag`
 
@@ -48,4 +48,4 @@ Here are the parameters for the `sealos pull` command:
 
 - Pull multiple images: `sealos pull imageID1 imageID2 imageID3`
 
-These are the usage guidelines for the `sealos push` command. We hope this helps you. If you encounter any issues during the process, please feel free to ask us.
+The above is a usage guide for the `sealos push` command, hoping to help you. If you encounter any problems during use, feel free to ask us.

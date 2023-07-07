@@ -2,19 +2,19 @@
 sidebar_position: 6
 ---
 
-# manifest: Image Manifest
+# Image Manifest
 
-The `sealos manifest` command in Sealos is used to create, modify, and push manifest lists and image indexes. These functionalities are primarily used for handling multi-architecture support for images. In the Docker and OCI image specifications, a manifest list (also known as a "fat manifest") or image index allows an image tag (such as `myimage:latest`) to be used across multiple hardware architectures (such as amd64, arm64, ppc64le, etc.).
+The `manifest` command of Sealos is used to create, modify, and push manifest lists and image indexes. These functions are mainly used to handle multi-architecture support of images. In Docker and OCI image specifications, manifest lists (also known as "fat manifests") or image indexes allow an image tag (like `myimage:latest`) to be used on various hardware architectures (like amd64, arm64, ppc64le, etc.).
 
-Here are some key subcommands of `manifest`:
+Here are some of the major `manifest` subcommands:
 
-1. `create`: Create a new manifest list or image index. Example: `sealos manifest create localhost/list`
-2. `add`: Add an image to a manifest list or image index. Example: `sealos manifest add localhost/list localhost/image`
-3. `annotate`: Add or update information in the entries of a manifest list or image index. Example: `sealos manifest annotate --annotation A=B localhost/list localhost/image`
-4. `inspect`: Display the contents of a manifest list or image index. Example: `sealos manifest inspect localhost/list`
-5. `push`: Push a manifest list or image index to a registry. Example: `sealos manifest push localhost/list transport:destination`
-6. `remove` and `rm`: Remove an entry from a manifest list or image index or completely delete a manifest list or image index. Example: `sealos manifest remove localhost/list sha256:entryManifestDigest` or `sealos manifest rm localhost/list`
+1. `create`: Creates a new manifest list or image index. Example: `sealos manifest create localhost/list`
+2. `add`: Adds an image to the manifest list or image index. Example: `sealos manifest add localhost/list localhost/image`
+3. `annotate`: Adds or updates information in entries of the manifest list or image index. Example: `sealos manifest annotate --annotation A=B localhost/list localhost/image`
+4. `inspect`: Displays the content of the manifest list or image index. Example: `sealos manifest inspect localhost/list`
+5. `push`: Pushes the manifest list or image index to the registry. Example: `sealos manifest push localhost/list transport:destination`
+6. `remove` and `rm`: Removes entries from the manifest list or image index, or completely deletes the manifest list or image index. Example: `sealos manifest remove localhost/list sha256:entryManifestDigest` or `sealos manifest rm localhost/list`
 
-With the `sealos manifest` command, you can manage manifest lists or image indexes flexibly, providing support for multi-architecture Docker or OCI images. Users can create custom manifest lists according to their needs, making it convenient to deploy and run Docker images on different hardware architectures.
+With the `sealos manifest` command, you can flexibly manage manifest lists or image indexes, providing support for multi-architecture Docker or OCI images. Users can create custom manifest lists according to their needs, making it convenient to deploy and run Docker images on different hardware architectures.
 
-If users want to build multi-architecture images using the manifest command, they can refer to the documentation [Building Multi-Architecture Cluster Images](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-multi-arch-image).
+Users who want to build multi-architecture images through the manifest command can refer to the document [Building Cluster Images that Support Multiple Architectures](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-multi-arch-image).

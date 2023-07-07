@@ -2,40 +2,38 @@
 sidebar_position: 6
 ---
 
-# login: Log in to Registry
+# Login to Repository
 
-The `sealos login` command is used to log in to a container registry on a specified server. Once logged in to the registry, you can pull and push images.
+The `sealos login` command is used to log into the container registry on the specified server. After logging into the registry, you can pull and push images.
 
-## Usage
+## Usage:
 
-```
-sealos login [flags] [options] registryName
-```
+`sealos login [flags] [options] registryName`
 
-## Flags
+## Parameters:
 
-Here are the flags for the `sealos login` command:
+Here are the parameters for the `sealos login` command:
 
-- `--authfile=''`: Path to the authentication file. You can override it using the REGISTRY_AUTH_FILE environment variable.
+- `--authfile=''`: Path to the authentication file. It can be overridden with the REGISTRY_AUTH_FILE environment variable.
 
-- `--cert-dir=''`: Use certificates from the specified path to access the image registry.
+- `--cert-dir=''`: Use certificates at the specified path to access the image repository.
 
-- `--get-login=true`: Print the current login command for the registry.
+- `--get-login=true`: Return the current login user for the registry.
 
-- `-k, --kubeconfig=''`: Log in to the sealos image registry hub.sealos.io using the kubeconfig.
+- `-k, --kubeconfig=''`: Log into the sealos image repository hub.sealos.io using kubeconfig.
 
 - `-p, --password=''`: Password for the registry.
 
-- `--password-stdin=false`: Take the password from stdin.
+- `--password-stdin=false`: Take the password from standard input.
 
 - `-u, --username=''`: Username for the registry.
 
-- `-v, --verbose=false`: Enable verbose output.
+- `-v, --verbose=false`: Write more detailed information to standard output.
 
-## Examples
+## Examples:
 
-Here is an example of logging in to the quay.io registry: `sealos login -u myusername -p mypassword quay.io`
+- Log into the quay.io registry: `sealos login -u myusername -p mypassword quay.io`
 
-Note that when using the `sealos login` command, you need to ensure that you provide the correct username and password, otherwise the login process may fail. If you encounter any issues during the login process, you may need to check your username and password to ensure they are not entered incorrectly or forgotten.
+Please note that when using the `sealos login` command, you need to make sure that you provide the correct username and password, otherwise the login process might fail. If you encounter problems during the login process, you might need to check your username and password to ensure they have not been entered incorrectly or forgotten.
 
-That concludes the usage guide for the `sealos login` command. We hope this information has been helpful to you. If you have any further questions or encounter any issues during usage, please don't hesitate to reach out to us.
+That's the usage guide for the `sealos login` command, and we hope it has been helpful. If you encounter any problems during usage, feel free to ask us.

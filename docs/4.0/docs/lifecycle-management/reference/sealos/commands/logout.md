@@ -2,26 +2,25 @@
 sidebar_position: 6
 ---
 
-# logout: Log out of Registry
+# Logout from Repository
 
-The `sealos logout` command is used to remove locally cached account and password for an image registry on a specified server.
+The `sealos logout` command is used to remove the locally cached account and password of the image repository on the specified server.
 
-## Usage
+## Usage:
 
-```
-sealos logout [flags] [options] registryName
-```
+`sealos logout [flags] [options] registryName`
 
-## Flags
+## Parameters:
 
-Here is the flag for the `sealos logout` command:
+Here are the parameters for the `sealos logout` command:
 
-- `--authfile=''`: Path to the authentication file. You can override it using the REGISTRY_AUTH_FILE environment variable.
+- `--authfile=''`: Path to the authentication file. It can be overridden with the REGISTRY_AUTH_FILE environment variable.
 
-- `-a, --all=false`: Remove all authentication information.
+- `-a, --all=false`: Delete all authentication information.
 
-## Examples
 
-Here is an example of logging out of the quay.io image registry: `sealos logout quay.io`
+## Examples:
 
-That concludes the usage guide for the `sealos logout` command. We hope this information has been helpful to you. If you have any further questions or encounter any issues during usage, please don't hesitate to reach out to us.
+- Logout from the quay.io image repository: `sealos logout quay.io`
+
+That's the usage guide for the `sealos logout` command, and we hope it has been helpful. If you encounter any problems during usage, feel free to ask us.

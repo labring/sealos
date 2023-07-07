@@ -2,11 +2,11 @@
 sidebar_position: 3
 ---
 
-# gen: Generate Cluster Configuration
+# Generate Cluster Configuration
 
-The `sealos gen` command in Sealos is used to generate the configuration file (Clusterfile) for a Kubernetes cluster, which can be later applied using the `sealos apply` command. The `gen` command helps users quickly generate a basic configuration file that can be modified and adjusted according to their needs.
+Sealos' `gen` command is used to generate a Kubernetes cluster configuration file (Clusterfile), which can then be applied using the `sealos apply` command. The `gen` command can help users quickly generate a basic configuration file, which can then be modified and adjusted according to their needs.
 
-Below are the basic usage and some common examples of the `sealos gen` command:
+Here are the basic usage of `sealos gen` command and some common examples:
 
 1. Generate a single-node cluster with default configuration:
 
@@ -14,7 +14,7 @@ Below are the basic usage and some common examples of the `sealos gen` command:
    sealos gen labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1
    ```
 
-2. Generate a cluster with multiple images, specified master and worker nodes:
+2. Generate a cluster that includes multiple images and specifies the master and worker nodes:
 
    ```bash
    sealos gen labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
@@ -22,7 +22,7 @@ Below are the basic usage and some common examples of the `sealos gen` command:
        --nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
    ```
 
-3. Specify the SSH port for all servers, using the same SSH port:
+3. Specify SSH port, for servers using the same SSH port:
 
    ```bash
    sealos gen labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
@@ -36,10 +36,10 @@ Below are the basic usage and some common examples of the `sealos gen` command:
        --nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --passwd 'xxx'
    ```
 
-Once the Clusterfile is generated, users can modify it according to their needs. They can add or modify environment variables and modify the cluster CIDR configuration. After making the necessary changes, users can create or update the cluster using the `sealos apply` command with the generated Clusterfile.
+After the Clusterfile is generated, users can modify this file according to their needs. Add or modify environment variables; modify the cluster cidr configuration. Once the modifications are done, users can use the `sealos apply` command to create or update the cluster based on this configuration file.
 
-Example documentation:
+Example explanations:
 
 - [Custom Configuration Installation](https://docs.sealos.io/docs/lifecycle-management/operations/run-cluster/gen-apply-cluster)
 
-That concludes the usage guide for the `sealos gen` command. We hope this information has been helpful to you. If you encounter any issues during usage, please feel free to ask us for assistance.
+That's the usage guide for the `sealos gen` command, and we hope it has been helpful. If you encounter any problems during usage, feel free to ask us.

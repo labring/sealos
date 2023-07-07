@@ -2,15 +2,15 @@
 sidebar_position: 4
 ---
 
-# delete: Remove Cluster Nodes
+# Delete Cluster Node Removal
 
-The `sealos delete` command is a command in the Sealos command-line tool used to remove nodes from a cluster. This guide provides detailed information on how to use this command and its options.
+`sealos delete` is a command in the Sealos command line tool, mainly used to remove nodes from the cluster. This guide will detail its usage and options.
 
-**Note: Ensure that the number of control nodes is odd to ensure proper etcd leader election.**
+**Note to ensure the number of control nodes is odd to ensure normal election of etcd**
 
 ## Basic Usage
 
-### Delete Nodes
+### Delete Node
 
 To remove a node from the cluster, you can use the `--nodes` option:
 
@@ -18,25 +18,25 @@ To remove a node from the cluster, you can use the `--nodes` option:
 sealos delete --nodes x.x.x.x
 ```
 
-In the above command, replace `x.x.x.x` with the IP address of the node you want to delete. If you accidentally delete the wrong node, you can restore it using the `sealos add` command:
+In the above command, `x.x.x.x` should be replaced with the IP address of the node you want to delete. If you accidentally delete the wrong node, you can use the `sealos add` command to recover it:
 
 ```bash
 sealos add --nodes x.x.x.x
 ```
 
-### Delete Control Nodes
+### Delete Control Node
 
-To remove control nodes from the cluster, you can use the `--masters` option:
+To remove a control node from the cluster, you can use the `--masters` option:
 
 ```bash
 sealos delete --masters x.x.x.x
 ```
 
-Please note that if you specify the `--masters` parameter, Sealos will remove your control nodes.
+Please note, if the `--masters` parameter is specified, sealos will delete your control node.
 
-### Delete Control Nodes and Nodes
+### Delete Control Node and Node
 
-If you want to delete both control nodes and regular nodes, you can use both the `--masters` and `--nodes` options together:
+If you want to delete both control nodes and nodes at the same time, you can use the `--masters` and `--nodes` options at the same time:
 
 ```bash
 sealos delete --masters x.x.x.x --nodes x.x.x.x
@@ -47,22 +47,22 @@ sealos delete --masters x.x.x.x-x.x.x.y --nodes x.x.x.x-x.x.x.y
 
 The `sealos delete` command provides the following options:
 
-- `--cluster='default'`: Specifies the name of the cluster on which the delete operation should be applied. Defaults to `default`.
+- `--cluster='default'`: The name of the cluster to which the deletion operation applies. The default is `default`.
 
-- `--force=false`: Allows input of a `--force` flag to forcefully remove the nodes.
+- `--force=false`: You can enter a `--force` flag to force delete nodes.
 
-- `--masters=''`: Specifies the control nodes to be removed.
+- `--masters=''`: The control nodes to be removed.
 
-- `--nodes=''`: Specifies the nodes to be removed.
+- `--nodes=''`: The nodes to be removed.
 
 Each option can be followed by an argument.
 
-## Usage Examples
+## Usage Example
 
-Here's an example that removes a node with the IP address `192.168.0.2`:
+Here is a usage example that deletes a node with the IP address of `192.168.0.2`:
 
 ```bash
 sealos delete --nodes 192.168.0.2
 ```
 
-That concludes the usage guide for the `sealos delete` command. We hope this information has been helpful to you. If you encounter any issues during the usage, please feel free to ask us for assistance.
+The above is the usage guide for the `sealos delete` command, hope it helps. If you encounter any problems during use, feel free to ask us.

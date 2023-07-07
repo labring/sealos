@@ -30,4 +30,4 @@ You can also add multiple names at once. For example, to add two names `firstNew
 sealos tag imageName firstNewName SecondNewName
 ```
 
-This concludes the usage guide for the `sealos tag` command. We hope you find it helpful. If you have any questions or encounter any issues during usage, feel free to ask us.
+This concludes the usage guide for the `sealos tag` command. We hope you find it helpful. If you have any questions or encounter any issues during usage, feel free to ask us. 

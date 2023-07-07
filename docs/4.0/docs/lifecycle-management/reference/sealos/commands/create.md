@@ -2,13 +2,13 @@
 sidebar_position: 6
 ---
 
-# create: Create Working Directory
+# Create Working Directory
 
-The `sealos create` command is a command in the Sealos command-line tool used to create a working directory for a cluster without actually running it. It is primarily used for inspection of the cluster image. This guide will provide detailed information on how to use this command and its options.
+`sealos create` is a command in the Sealos command line tool, mainly used for creating the cluster working directory without executing the CMD, so as to review the image. This guide will detail its usage and options.
 
 ## Basic Usage
 
-The `sealos create` command is used to create a working directory for a cluster without actually running it. It is mainly used for debugging or testing purposes. It can output the address of the cluster image, allowing you to verify if the cluster image content matches your expectations.
+The `sealos create` command is used to create a cluster working directory but does not actually run, mainly used for debugging or testing. It can output the address of the cluster image, you can check whether the content of the cluster image is consistent with the expectation.
 
 ```bash
 sealos create docker.io/labring/kubernetes:v1.24.0
@@ -20,22 +20,22 @@ In the above command, `clustername` represents the name of the cluster you want 
 
 The `sealos create` command provides the following options:
 
-- `-c, --cluster='default'`: Specifies the name of the cluster to create but not actually run. Defaults to `default`.
+- `-c, --cluster='default'`: The name of the cluster to be created but not actually run. The default is `default`.
 
-- `--platform='linux/arm64/v8'`: Sets the OS/architecture/version of the image to the provided value instead of the current OS and architecture of the host (e.g., `linux/arm`).
+- `--platform='linux/arm64/v8'`: Set the operating system/architecture/version of the image to the provided value, rather than the current operating system and architecture of the host (for example, `linux/arm`).
 
-- `--short=false`: If true, only prints the mount path.
+- `--short=false`: If true, only print the mount path.
 
 Each option can be followed by an argument.
 
 ## Example
 
-For example, you can use the following command to create a cluster named `mycluster` without actually running it:
+For example, you can use the following command to create a cluster named `mycluster`, but do not actually run it:
 
 ```bash
 sealos create docker.io/labring/kubernetes:v1.24.0
 ```
 
-This command will create a working directory for a cluster with the image name `docker.io/labring/kubernetes:v1.24.0` and output the address of the cluster image, but the cluster will not be actually running.
+This command will create a cluster working directory with an image name of `docker.io/labring/kubernetes:v1.24.0` and output the address of the cluster image, but the cluster will not actually run.
 
-That concludes the usage guide for the `sealos create` command. We hope this information has been helpful to you. If you encounter any issues during the usage, please feel free to ask us for assistance.
+The above is the usage guide for the `sealos create` command, hope it helps. If you encounter any problems during use, feel free to ask us.
