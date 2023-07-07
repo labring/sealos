@@ -2,9 +2,9 @@
 sidebar_position: 1
 ---
 
-# run: Run Cluster Images
+# Run: Execute Cluster Images
 
-The `sealos run` command in Sealos is a powerful and flexible tool that supports cluster initialization, application installation, executing multiple images, and creating single-node clusters. Below is a detailed explanation of the `sealos run` command and its parameters, along with some usage examples.
+The `run` command of Sealos is a powerful and flexible tool that supports cluster initialization, application installation, multi-image execution, single-node clusters, and more. Below is a detailed explanation and some usage examples of the `sealos run` command and its parameters.
 
 ## Command Overview
 
@@ -12,35 +12,35 @@ The `sealos run` command in Sealos is a powerful and flexible tool that supports
 sealos run <image> --masters [arg] --nodes [arg] [Options]
 ```
 
-The `<image>` parameter represents the name and version of the Docker image you want to run in the cluster. `--masters` and `--nodes` are the IP lists of the master and node nodes where you want to run this image.
+The `<image>` parameter is the name and version of the Docker image you want to run in the cluster. `--masters` and `--nodes` are the IP lists of the master and node nodes where you want to run this image.
 
 ### Option Explanation
 
-- `--cluster='default'`: The name of the cluster to perform the operation on.
+- `--cluster='default'`: The name of the cluster where the operation is to be run.
 
-- `--cmd=[]`: Overrides the CMD instruction in the image.
+- `--cmd=[]`: Overwrite the CMD instruction in the image.
 
-- `--config-file=[]`: Path to a custom configuration file to replace resources.
+- `--config-file=[]`: The path to the custom configuration file, used to replace resources.
 
-- `-e, --env=[]`: Environment variables to be set during command execution.
+- `-e, --env=[]`: The environment variables set during command execution.
 
-- `-f, --force=false`: Force overwrite the application in this cluster.
+- `-f, --force=false`: Forcefully overwrite the application in this cluster.
 
-- `--masters=''`: The master nodes to run on.
+- `--masters=''`: The master nodes to be run.
 
-- `--nodes=''`: The node nodes to run on.
+- `--nodes=''`: The node nodes to be run.
 
-- `-p, --passwd=''`: Authentication password to use.
+- `-p, --passwd=''`: Authenticate using the provided password.
 
-- `-i, --pk='/root/.ssh/id_rsa'`: The private key file from which to read the identity for public key authentication.
+- `-i, --pk='/root/.ssh/id_rsa'`: Choose the private key file from which to read the public key authentication identity.
 
-- `--pk-passwd=''`: Password to decrypt the PEM-encoded private key.
+- `--pk-passwd=''`: The password to decrypt the PEM-encoded private key.
 
-- `--port=22`: Connection port for the remote host.
+- `--port=22`: The connection port of the remote host.
 
-- `-t, --transport='oci-archive'`: Image transport to load from a tar archive file. (Valid values: oci-archive, docker-archive)
+- `-t, --transport='oci-archive'`: Load image transport from a tar archive file. (Optional values: oci-archive, docker-archive)
 
-- `-u, --user=''`: Username for authentication.
+- `-u, --user=''`: The username for authentication.
 
 ## Examples
 
@@ -56,13 +56,13 @@ sealos run labring/kubernetes:v1.24.0 labring/helm:v3.11.3  calico:v3.24.6 \
     --masters 192.168.64.2,192.168.64.22,192.168.64.20 --nodes 192.168.64.21,192.168.64.19
 ```
 
-3. Specify the InfraSSH port of the servers:
+3. Specify the InfraSSH port of the server:
 ```
 sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --port 24 --passwd 'xxx'
 ```
 
-4. Customize VIP Kubernetes cluster:
+4. Customize a VIP Kubernetes cluster:
 ```
 sealos run -e defaultVIP=10.103.97.2 labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
@@ -73,13 +73,12 @@ sealos run -e defaultVIP=10.103.97.2 labring/kubernetes:v1.24.0 --masters 192.16
 sealos run labring/kubernetes:v1.24.0 
 ```
 
-6. Create a cluster with custom environment variables:
+6. Create a cluster using custom environment variables:
 ```
 sealos run -e DashBoardPort=8443 mydashboard:latest  --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
-    --nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
+	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
 ```
 
-These examples showcase the power and flexibility of the `sealos run` command, allowing you to customize and adjust it according to your needs.
+These examples demonstrate the power and flexibility of the `sealos run` command, which can be customized and adjusted according to your needs.
 
-For more examples, please refer to the [Run Cluster](https://docs.sealos.io/docs/lifecycle-management/operations/run-cluster) documentation.
-
+For more examples, please refer to [Run Cluster](https://docs.sealos.io/docs/lifecycle-management/operations/run-cluster).

@@ -2,9 +2,9 @@
 sidebar_position: 2
 ---
 
-# reset: Resetting the Cluster
+# Reset Cluster
 
-`sealos reset` is a command in the Sealos command-line tool used to reset the entire cluster. This command is particularly useful when you want to completely clear cluster data or rebuild the cluster. This guide provides detailed instructions on how to use it.
+The `sealos reset` is a command in the Sealos command-line tool for resetting the entire cluster. This command is particularly useful when you want to completely clear cluster data or rebuild the cluster. This guide will detail how to use it.
 
 ## Basic Usage
 
@@ -14,11 +14,11 @@ The basic format of the `sealos reset` command is as follows:
 sealos reset --cluster cluster_name
 ```
 
-In the above command, `cluster_name` refers to the name of the cluster you want to reset.
+In the above command, `cluster_name` is the name of the cluster you want to reset.
 
-## Examples
+## Example
 
-For example, you can use the following command to reset a cluster named `mycluster`:
+For instance, you can use the following command to reset a cluster named `mycluster`:
 
 ```bash
 sealos reset --cluster mycluster
@@ -26,19 +26,19 @@ sealos reset --cluster mycluster
 
 ## Optional Parameters
 
-- `--force`: This parameter is used to force the cluster reset, even if the cluster reset operation fails to complete successfully.
+- `--force`: This parameter is used to force the reset of the cluster, even if the cluster reset operation has not been successfully completed.
 
 ```bash
 sealos reset --cluster mycluster --force
 ```
 
-- `--masters`: This parameter is used to specify the master nodes to reset.
+- `--masters`: This parameter is used to specify the master nodes to be reset.
 
 ```bash
 sealos reset --cluster mycluster --masters master1
 ```
 
-- `--nodes`: This parameter is used to specify the worker nodes to reset.
+- `--nodes`: This parameter is used to specify the worker nodes to be reset.
 
 ```bash
 sealos reset --cluster mycluster --nodes node1 node2
@@ -46,9 +46,9 @@ sealos reset --cluster mycluster --nodes node1 node2
 
 - `-p`, `--passwd`: This parameter is used to provide a password for authentication.
 
-- `-i`, `--pk`: This parameter is used to specify the file to read the identity (private key) for public key authentication.
+- `-i`, `--pk`: This parameter specifies the file to read the identity (private key) used for public key authentication.
 
-- `--pk-passwd`: This parameter is used to decrypt the passphrase-encrypted PEM encoded private key.
+- `--pk-passwd`: This parameter is used for the passphrase to decrypt the PEM-encoded private key.
 
 - `--port`: This parameter is used to specify the port of the remote host to connect to.
 
@@ -58,6 +58,4 @@ sealos reset --cluster mycluster --nodes node1 node2
 sealos reset --cluster mycluster --user username --pk /root/.ssh/id_rsa --pk-passwd yourpassword
 ```
 
-These are the optional parameters you can use with the `sealos reset` command. They provide additional flexibility and control over the cluster reset process.
-
-We hope this guide has been helpful in understanding how to use the `sealos reset` command. If you have any further questions or encounter any issues during the process, please feel free to ask us.
+The above is the usage guide for the `sealos reset` command. We hope it is helpful to you. If you encounter any problems during use, feel free to ask us any questions.
