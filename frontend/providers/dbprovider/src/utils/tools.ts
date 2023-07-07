@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import { useToast } from '@/hooks/useToast';
 import { useTranslation } from 'next-i18next';
+import { format, set, startOfDay, getDay, addHours } from 'date-fns';
 
 /**
  * copy text data
@@ -214,3 +215,32 @@ export const delay = (ms: number) =>
       resolve('');
     }, ms);
   });
+
+export const convertCronTime = (cronTime: string, offset: 8 | -8) => {
+  let [minute, hour, dayOfMonth, month, dayOfWeek] = cronTime.split(' ');
+
+  if (hour === '*') return cronTime;
+
+  const cronDate = set(startOfDay(new Date()), { hours: +hour, minutes: +minute });
+
+  const newCronDate = addHours(cronDate, offset);
+
+  // 更新 cron 时间表达式的各个部分
+  minute = format(newCronDate, 'mm');
+  hour = format(newCronDate, 'HH');
+
+  // 处理星期几
+  const daysOfWeek =
+    dayOfWeek === '*'
+      ? [dayOfWeek]
+      : dayOfWeek.split(',').map((day) => {
+          if (offset < 0) {
+            const newDay = +day + (+hour >= 16 ? -1 : 0);
+            return newDay === -1 ? '7' : String(newDay);
+          }
+          const newDay = +day + (+hour < 8 ? 1 : 0);
+          return newDay === 7 ? '0' : String(newDay);
+        });
+
+  return `${minute} ${hour} ${dayOfMonth} ${month} ${daysOfWeek.join(',')}`;
+};

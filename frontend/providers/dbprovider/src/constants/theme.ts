@@ -6,13 +6,20 @@ import {
   extendTheme
 } from '@chakra-ui/react';
 // @ts-ignore
-import { selectAnatomy, switchAnatomy, numberInputAnatomy } from '@chakra-ui/anatomy';
+import {
+  selectAnatomy,
+  switchAnatomy,
+  numberInputAnatomy,
+  checkboxAnatomy
+} from '@chakra-ui/anatomy';
 const { definePartsStyle: selectPart, defineMultiStyleConfig: selectMultiStyle } =
   createMultiStyleConfigHelpers(selectAnatomy.keys);
 const { definePartsStyle: switchPart, defineMultiStyleConfig: switchMultiStyle } =
   createMultiStyleConfigHelpers(switchAnatomy.keys);
 const { definePartsStyle: numInputPart, defineMultiStyleConfig: numInputMultiStyle } =
   createMultiStyleConfigHelpers(numberInputAnatomy.keys);
+const { definePartsStyle: checkboxPart, defineMultiStyleConfig: checkboxStyle } =
+  createMultiStyleConfigHelpers(checkboxAnatomy.keys);
 
 const Button = defineStyleConfig({
   baseStyle: {
@@ -181,7 +188,17 @@ const Switch = switchMultiStyle({
         bg: 'myGray.700'
       }
     }
-  })
+  }),
+  variants: {
+    deepLight: {
+      track: {
+        bg: 'myGray.200',
+        _checked: {
+          bg: 'myGray.700'
+        }
+      }
+    }
+  }
 });
 
 const Tooltip = defineStyleConfig({
@@ -192,6 +209,21 @@ const Tooltip = defineStyleConfig({
     borderRadius: '8px',
     boxShadow: '1px 1px 7px rgba(0,0,0,0.2)'
   }
+});
+
+const Checkbox = checkboxStyle({
+  baseStyle: checkboxPart({
+    control: defineStyle({
+      _checked: {
+        bg: 'black',
+        borderColor: 'black',
+        _hover: {
+          bg: 'black !important',
+          borderColor: 'black !important'
+        }
+      }
+    })
+  })
 });
 
 export const theme = extendTheme({
@@ -305,6 +337,7 @@ export const theme = extendTheme({
     Select,
     Switch,
     Textarea,
-    NumberInput
+    NumberInput,
+    Checkbox
   }
 });

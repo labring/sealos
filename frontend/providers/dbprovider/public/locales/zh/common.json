@@ -123,5 +123,16 @@
   "Auto Backup": "自动备份",
   "Containers": "容器",
   "Redis does not support backup at this time": "Redis 暂时不支持备份",
-  "The multi-replica Redis includes High Availability (HA) nodes. Please note, the anticipated price already encompasses the cost for the HA nodes.": "Redis 多副本包含 HA 节点，请悉知，预估价格已包含 HA 节点费用"
+  "The multi-replica Redis includes High Availability (HA) nodes. Please note, the anticipated price already encompasses the cost for the HA nodes.": "Redis 多副本包含 HA 节点，请悉知，预估价格已包含 HA 节点费用",
+  "Cycle Time": "循环周期",
+  "Monday": "周一",
+  "Tuesday": "周二",
+  "Wednesday": "周三",
+  "Thursday": "周四",
+  "Friday": "周五",
+  "Saturday": "周六",
+  "Sunday": "周日",
+  "Start Hour": "小时",
+  "Start Minute": "分钟",
+  "Save": "保存"
 }

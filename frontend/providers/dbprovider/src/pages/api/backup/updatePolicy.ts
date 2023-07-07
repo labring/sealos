@@ -3,20 +3,19 @@ import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { json2ManualBackup } from '@/utils/json2Yaml';
+import { PatchUtils } from '@kubernetes/client-node';
 import { DBBackupPolicyNameMap, DBTypeEnum } from '@/constants/db';
 
 export type Props = {
-  backupName: string;
   dbName: string;
-  remark?: string;
   dbType: `${DBTypeEnum}`;
+  patch: Object;
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
-  const { backupName, dbName, remark, dbType } = req.body as Props;
+  const { dbName, dbType, patch } = req.body as Props;
 
-  if (!dbName || !backupName || !dbType) {
+  if (!dbName || !dbType || !patch) {
     jsonRes(res, {
       code: 500,
       error: 'params error'
@@ -29,33 +28,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const plural = 'backuppolicies';
 
   try {
-    const { k8sCustomObjects, namespace, applyYamlList } = await getK8s({
+    const { k8sCustomObjects, namespace } = await getK8s({
       kubeconfig: await authSession(req)
     });
 
     // get backup backupolicies.dataprotection.kubeblocks.io
-    const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
+    await k8sCustomObjects.patchNamespacedCustomObject(
       group,
       version,
       namespace,
       plural,
-      `${dbName}-${DBBackupPolicyNameMap[dbType]}-backup-policy`
-    )) as { body: any };
-
-    const backupPolicyName = body?.metadata?.name;
-
-    if (!backupPolicyName) {
-      throw new Error('Cannot find backup policy');
-    }
-
-    const backupCr = json2ManualBackup({
-      name: backupName,
-      backupPolicyName,
-      remark
-    });
-
-    // create backup
-    await applyYamlList([backupCr], 'create');
+      `${dbName}-${DBBackupPolicyNameMap[dbType]}-backup-policy`,
+      patch,
+      undefined,
+      undefined,
+      undefined,
+      { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH } }
+    );
 
     jsonRes(res);
   } catch (err: any) {

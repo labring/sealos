@@ -50,7 +50,7 @@ export async function getBackups({ dbName, req }: Props & { req: NextApiRequest 
     undefined,
     undefined,
     undefined,
-    `${crLabelKey}=${dbName}`
+    `app.kubernetes.io/instance=${dbName}`
   )) as { body: { items: any[] } };
 
   return body?.items || [];

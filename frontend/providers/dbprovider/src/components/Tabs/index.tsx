@@ -36,6 +36,10 @@ const Tabs = ({ list, size = 'md', activeId, onChange, ...props }: Props) => {
         };
     }
   }, [size]);
+  const activeIndex = useMemo(
+    () => list.findIndex((item) => item.id === activeId),
+    [activeId, list]
+  );
   return (
     <Grid
       border={'1px solid #DEE0E2'}
@@ -46,12 +50,24 @@ const Tabs = ({ list, size = 'md', activeId, onChange, ...props }: Props) => {
       fontSize={sizeMap.fontSize}
       {...props}
     >
-      {list.map((item) => (
+      {list.map((item, i) => (
         <Box
           key={item.id}
           py={sizeMap.inlineP}
           borderRadius={'sm'}
+          position={'relative'}
           textAlign={'center'}
+          zIndex={1}
+          _before={{
+            content: '""',
+            position: 'absolute',
+            right: '0',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            w: i === list.length - 1 || i === activeIndex || i === activeIndex - 1 ? '0' : '1px',
+            h: '10px',
+            bg: '#DEE0E2'
+          }}
           {...(activeId === item.id
             ? {
                 boxShadow: '0px 2px 2px rgba(137, 156, 171, 0.25)',
@@ -66,7 +82,7 @@ const Tabs = ({ list, size = 'md', activeId, onChange, ...props }: Props) => {
             onChange(item.id);
           }}
         >
-          {t(item.label)}
+          <Box>{t(item.label)}</Box>
         </Box>
       ))}
     </Grid>

@@ -3,20 +3,18 @@ import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { json2ManualBackup } from '@/utils/json2Yaml';
+import { adaptPolicy } from '@/utils/adapt';
 import { DBBackupPolicyNameMap, DBTypeEnum } from '@/constants/db';
 
 export type Props = {
-  backupName: string;
   dbName: string;
-  remark?: string;
   dbType: `${DBTypeEnum}`;
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
-  const { backupName, dbName, remark, dbType } = req.body as Props;
+  const { dbName, dbType } = req.query as Props;
 
-  if (!dbName || !backupName || !dbType) {
+  if (!dbName || !dbType) {
     jsonRes(res, {
       code: 500,
       error: 'params error'
@@ -29,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const plural = 'backuppolicies';
 
   try {
-    const { k8sCustomObjects, namespace, applyYamlList } = await getK8s({
+    const { k8sCustomObjects, namespace } = await getK8s({
       kubeconfig: await authSession(req)
     });
 
@@ -42,22 +40,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       `${dbName}-${DBBackupPolicyNameMap[dbType]}-backup-policy`
     )) as { body: any };
 
-    const backupPolicyName = body?.metadata?.name;
-
-    if (!backupPolicyName) {
-      throw new Error('Cannot find backup policy');
-    }
-
-    const backupCr = json2ManualBackup({
-      name: backupName,
-      backupPolicyName,
-      remark
+    jsonRes(res, {
+      data: adaptPolicy(body)
     });
-
-    // create backup
-    await applyYamlList([backupCr], 'create');
-
-    jsonRes(res);
   } catch (err: any) {
     jsonRes(res, {
       code: 500,
@@ -65,3 +50,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
   }
 }
+
+export const getBackupPolicy = ({}: Props) => {};

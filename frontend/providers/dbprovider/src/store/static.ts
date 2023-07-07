@@ -14,10 +14,10 @@ let retryGetPrice = 3;
 let retryVersion = 3;
 
 export let DBVersionMap: DBVersionMapType = {
-  [DBTypeEnum.postgresql]: [],
-  [DBTypeEnum.mongodb]: [],
-  [DBTypeEnum.mysql]: [],
-  [DBTypeEnum.redis]: []
+  [DBTypeEnum.postgresql]: [{ id: 'postgresql-14.8.0', label: 'postgresql-14.8.0' }],
+  [DBTypeEnum.mongodb]: [{ id: 'mongodb-5.0.14', label: 'mongodb-5.0.14' }],
+  [DBTypeEnum.mysql]: [{ id: 'ac-mysql-8.0.30', label: 'ac-mysql-8.0.30' }],
+  [DBTypeEnum.redis]: [{ id: 'redis-7.0.6', label: 'redis-7.0.6' }]
 };
 
 export const getUserPrice = async () => {

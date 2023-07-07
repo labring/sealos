@@ -1,18 +1,13 @@
 import dayjs from 'dayjs';
 import type { CoreV1EventList, V1Pod } from '@kubernetes/client-node';
 import type { DBListItemType, DBDetailType, DBEditType, PodDetailType, PodEvent } from '@/types/db';
-import { dbStatusMap, podStatusMap } from '@/constants/db';
-import { cpuFormatToM, memoryFormatToMi, storageFormatToNum } from '@/utils/tools';
-import type { KbPgClusterType } from '@/types/cluster';
+import { dbStatusMap } from '@/constants/db';
+import { convertCronTime, cpuFormatToM, memoryFormatToMi, storageFormatToNum } from '@/utils/tools';
+import type { KbPgClusterType, KubeBlockBackupPolicyType } from '@/types/cluster';
 import { formatPodTime } from '@/utils/tools';
 import type { BackupItemType } from '../types/db';
-import type { BackupCRItemType } from '@/types/backup';
-import {
-  backupStatusMap,
-  BackupTypeEnum,
-  BACKUP_REMARK_LABEL_KEY,
-  BACKUP_TYPE_LABEL_KEY
-} from '@/constants/backup';
+import type { AutoBackupFormType, BackupCRItemType } from '@/types/backup';
+import { backupStatusMap, BackupTypeEnum, BACKUP_REMARK_LABEL_KEY } from '@/constants/backup';
 
 export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
   // compute store amount
@@ -112,13 +107,87 @@ export const adaptEvents = (events: CoreV1EventList): PodEvent[] => {
 };
 
 export const adaptBackup = (backup: BackupCRItemType): BackupItemType => {
+  const autoLabel = 'dataprotection.kubeblocks.io/autobackup';
   return {
     id: backup.metadata.uid,
     name: backup.metadata.name,
     status: backupStatusMap[backup.status.phase] || backupStatusMap.UnKnow,
     startTime: backup.metadata.creationTimestamp,
-    type: (backup.metadata.labels[BACKUP_TYPE_LABEL_KEY] as `${BackupTypeEnum}`) || 'UnKnow',
+    type: autoLabel in backup.metadata.labels ? BackupTypeEnum.auto : BackupTypeEnum.manual,
     remark: backup.metadata.labels[BACKUP_REMARK_LABEL_KEY] || '-',
     failureReason: backup.status?.failureReason
+  };
+};
+
+export const adaptPolicy = (policy: KubeBlockBackupPolicyType): AutoBackupFormType => {
+  function parseDate(str: string) {
+    const regex = /(\d+)([a-zA-Z]+)/;
+    const matches = str.match(regex);
+
+    if (matches && matches.length === 3) {
+      const number = parseInt(matches[1]);
+      const unit = matches[2];
+
+      return { number, unit };
+    }
+
+    return { number: 7, unit: 'd' };
+  }
+  function parseCron(str: string) {
+    const cronFields = convertCronTime(str, 8).split(' ');
+    const minuteField = cronFields[0];
+    const hourField = cronFields[1];
+    const weekField = cronFields[4];
+
+    //  week task
+    if (weekField !== '*') {
+      return {
+        hour: hourField.padStart(2, '0'),
+        minute: minuteField.padStart(2, '0'),
+        week: weekField.split(','),
+        type: 'week'
+      };
+    }
+    console.log(minuteField, hourField, weekField);
+
+    // every day
+    if (hourField !== '*') {
+      return {
+        hour: hourField.padStart(2, '0'),
+        minute: minuteField.padStart(2, '0'),
+        week: [],
+        type: 'day'
+      };
+    }
+
+    // every hour
+    if (minuteField !== '*') {
+      return {
+        hour: '00',
+        minute: minuteField.padStart(2, '0'),
+        week: [],
+        type: 'hour'
+      };
+    }
+
+    return {
+      hour: '18',
+      minute: '00',
+      week: [],
+      type: 'day'
+    };
+  }
+
+  const { number: saveTime, unit: saveType } = parseDate(policy.spec.retention.ttl);
+  const { hour, minute, week, type } = parseCron(policy.spec.schedule.datafile.cronExpression);
+
+  return {
+    start: policy.spec.schedule.datafile.enable,
+    type,
+    week,
+    hour,
+    minute,
+    saveTime,
+    saveType
   };
 };

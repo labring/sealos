@@ -31,11 +31,6 @@ const Header = ({
     onOpen: onOpenDelModal,
     onClose: onCloseDelModal
   } = useDisclosure();
-  const {
-    isOpen: isOpenBackupModal,
-    onOpen: onOpenBackupModal,
-    onClose: onCloseBackupModal
-  } = useDisclosure();
   const { openConfirm: openRestartConfirm, ConfirmChild: RestartConfirmChild } = useConfirm({
     content: t('Confirm Restart')
   });
@@ -110,7 +105,7 @@ const Header = ({
         <MyIcon name="arrowLeft" />
       </Button>
       <Box mx={5} fontSize={'3xl'} fontWeight={'bold'}>
-        {db.dbName}
+        {router.query.name || db.dbName}
       </Box>
       <DBStatusTag status={db.status} conditions={db.conditions} showBorder />
       {!isLargeScreen && (
@@ -230,18 +225,6 @@ const Header = ({
           dbName={db.dbName}
           onClose={onCloseDelModal}
           onSuccess={() => router.replace('/dbs')}
-        />
-      )}
-      {isOpenBackupModal && (
-        <BackupModal
-          dbName={db.dbName}
-          onClose={onCloseBackupModal}
-          onSuccess={() => {
-            toast({
-              status: 'success',
-              title: '已创建备份任务'
-            });
-          }}
         />
       )}
     </Flex>
