@@ -56,7 +56,7 @@ require (
 	k8s.io/api v0.26.3
 	k8s.io/apimachinery v0.26.3
 	k8s.io/client-go v0.26.2
-	k8s.io/kube-proxy v0.25.6
+	k8s.io/kube-proxy v1.18.4
 	k8s.io/kubectl v0.26.0
 	k8s.io/kubelet v0.25.6
 	k8s.io/kubernetes v1.25.6
