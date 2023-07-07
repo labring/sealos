@@ -64,7 +64,7 @@ const useAppStore = create<TOSState>()(
         currentAppPid: -1,
         maxZIndex: 0,
         launchQuery: {},
-        autolaunch: "",
+        autolaunch: '',
         runner: new AppStateManager([]),
         init: async () => {
           const res = await request('/api/desktop/getInstalledApps');
@@ -73,7 +73,7 @@ const useAppStore = create<TOSState>()(
             state.runner.loadApps(state.installedApps.map((app) => app.key));
             state.maxZIndex = 0;
           });
-          return get()
+          return get();
         },
         // should use pid to close app, but it don't support multi same app process now
         closeAppById: (pid: number) => {
@@ -147,7 +147,7 @@ const useAppStore = create<TOSState>()(
             const { query, raw } = _query;
             if (query) _app.data.url = formatUrl(_app.data.url, query);
             else if (raw) {
-              _app.data.url += `?${raw}`
+              _app.data.url += `?${raw}`;
             }
           }
 
@@ -197,16 +197,18 @@ const useAppStore = create<TOSState>()(
             state.autolaunch = '';
             state.launchQuery = {};
           });
-        },
-      })), {
-      name: 'app',
-      partialize(state) {
-        return {
-          launchQuery: state.launchQuery,
-          autolaunch: state.autolaunch,
         }
-      },
-    })
+      })),
+      {
+        name: 'app',
+        partialize(state) {
+          return {
+            launchQuery: state.launchQuery,
+            autolaunch: state.autolaunch
+          };
+        }
+      }
+    )
   )
 );
 
