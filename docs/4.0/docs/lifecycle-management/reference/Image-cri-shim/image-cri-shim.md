@@ -2,15 +2,15 @@
 sidebar_position: 3
 ---
 
-# image-cri-shim 使用指南
+# image-cri-shim User Guide
 
-## 工作原理
+## Overview
 
-image-cri-shim 是一个基于 CRI (Container Runtime Interface) 和 kubelet 的 gRPC (Google Remote Procedure Call) shim。CRI 是 Kubernetes 中用于与容器运行时进行交互的接口，而 kubelet 是负责维护容器运行状态和节点级别的资源管理的 Kubernetes 组件。
+image-cri-shim is a gRPC (Google Remote Procedure Call) shim based on CRI (Container Runtime Interface) and kubelet. CRI is the interface used in Kubernetes to interact with container runtimes, while kubelet is the Kubernetes component responsible for maintaining container runtime status and node-level resource management.
 
-image-cri-shim 的主要功能是自动识别镜像名称，让用户在使用 Kubernetes 部署容器时无需手动指定镜像名称。这样可以降低用户的操作难度，提高部署容器的便利性。
+The main functionality of image-cri-shim is automatic image name recognition, which eliminates the need for users to manually specify the image name when deploying containers with Kubernetes. This simplifies the container image deployment process and improves the convenience for users.
 
-在实际使用中，image-cri-shim 可以作为一个中间件，接收来自 kubelet 的请求，然后将请求转发给容器运行时。通过自动识别镜像名称，image-cri-shim 可以简化容器镜像的部署流程，减轻用户的操作负担。
+In practical usage, image-cri-shim serves as middleware that receives requests from kubelet and forwards them to the container runtime. By automatically recognizing the image name, image-cri-shim streamlines the deployment process of container images and reduces user burden.
 
 ```
 +------------+         +----------------+         +-------------------+
@@ -43,19 +43,18 @@ image-cri-shim 的主要功能是自动识别镜像名称，让用户在使用 K
 
 ```
 
-从上述流程图可以看出，用户创建一个包含容器信息的 Kubernetes YAML 清单，然后将该清单提交给 kubelet。kubelet 是 Kubernetes 节点上的代理，负责管理容器。
-接着，kubelet 将 CRI 请求发送给 image-cri-shim 中间件。image-cri-shim 的主要任务是自动识别镜像名称，它会处理这个 CRI 请求并获取相关的镜像信息。当 image-cri-shim 识别到镜像名称后，它会将 CRI 响应返回给 kubelet。
+From the above flowchart, it can be seen that a user creates a Kubernetes YAML manifest containing container information and submits the manifest to kubelet. kubelet, which acts as an agent on Kubernetes nodes, is responsible for managing containers.
+Next, kubelet sends a CRI request to the image-cri-shim middleware. The main task of image-cri-shim is to automatically recognize the image name. It processes the CRI request and retrieves relevant image information. Once image-cri-shim identifies the image name, it returns the CRI response to kubelet.
 
-最后，kubelet 使用从 image-cri-shim 获取的镜像名称来部署容器。这个过程对用户是透明的，用户无需手动指定镜像名称，从而简化了容器部署流程并提高了便利性。
+Finally, kubelet deploys the container using the image name obtained from image-cri-shim. This process is transparent to the user, as they do not need to manually specify the image name, simplifying the container deployment process and improving convenience.
 
-## 架构图
+## Architecture
 
-image-cri-shim 的架构如下图所示：
+The architecture of image-cri-shim is illustrated in the following diagram:
 
 ![](images/image-cri-shim.png)
 
-
-## 使用说明
+## Usage
 
 ```yaml
 shim: /var/run/image-cri-shim.sock
@@ -70,52 +69,56 @@ registries:
 - address: http://172.18.1.38:5000
   auth: admin:passw0rd
 ```
-这段配置文件是一个用于设置 image-cri-shim 的 YAML 格式文件。配置文件中包含了一些关键的参数，以下是每个参数的解释：
 
-1. shim: 指定 image-cri-shim 的 UNIX 套接字文件路径。这个路径用于与 kubelet 之间的通信。
-2. cri: 指定容器运行时（如 containerd）的 UNIX 套接字文件路径。image-cri-shim 会使用这个路径与容器运行时进行通信。
-3. address: 定义镜像仓库的地址。在本例中，镜像仓库地址为 http://sealos.hub:5000。
-4. force: 设置为 true 时，image-cri-shim 会在强制启动shim,无需等待cri启动后启动。
-5. debug: 设置为 true 时，启用调试模式，输出更多的日志信息。
-6. timeout: 定义镜像操作的超时时间。在本例中，超时时间为 15 分钟（15m）。
-7. auth: 定义用于访问镜像仓库的身份验证凭据。在本例中，用户名为 admin，密码为 passw0rd。
+The above configuration is a YAML file used to set the parameters of image-cri-shim. It includes several key parameters, and the explanation for each parameter is as follows:
 
-此外，配置文件还包含了一个 registries 列表，用于定义其他镜像仓库及其身份验证凭据。在这个例子中，只有一个其他仓库：
-- address: 该仓库的地址为 http://172.18.1.38:5000。
-- auth: 用于访问该仓库的身份验证凭据。在本例中，用户名为 admin，密码为 passw0rd。
-这个配置文件为 image-cri-shim 提供了所需的信息，以便正确地与 kubelet 和容器运行时（如 containerd）进行通信，以及访问和管理镜像仓库。
+1. shim: Specifies the UNIX socket file path
 
-注意: image-cri-shim 能够同时兼容 CRI API v1alpha2 和 v1。
+for image-cri-shim. This path is used for communication with kubelet.
+2. cri: Specifies the UNIX socket file path for the container runtime (e.g., containerd). image-cri-shim uses this path to communicate with the container runtime.
+3. address: Defines the address of the image registry. In this example, the registry address is http://sealos.hub:5000.
+4. force: When set to true, image-cri-shim forcefully starts the shim without waiting for the cri to start.
+5. debug: When set to true, enables debug mode and outputs more logging information.
+6. timeout: Defines the timeout for image operations. In this example, the timeout is set to 15 minutes (15m).
+7. auth: Defines the authentication credentials for accessing the image registry. In this example, the username is admin and the password is passw0rd.
 
-### 管理服务
+Additionally, the configuration file includes a list of registries, which defines other image registries and their authentication credentials. In this example, there is only one additional registry:
+- address: The address of the registry is http://172.18.1.38:5000.
+- auth: The authentication credentials for accessing the registry. In this example, the username is admin and the password is passw0rd.
 
-image-cri-shim 通常作为一个系统服务运行。要管理 image-cri-shim，您可以使用系统服务管理工具（如 systemctl）来启动、停止、重启或查看服务状态。首先，确保您已经正确地安装了 image-cri-shim 并将其配置为一个系统服务。
+This configuration file provides image-cri-shim with the necessary information to communicate with kubelet, the container runtime (such as containerd), and access and manage the image registry.
 
-1. 启动服务： `systemctl start image-cri-shim`
-2. 停止服务： `systemctl stop image-cri-shim`
-3. 重启服务： `systemctl restart image-cri-shim`
-4. 查看服务状态： `systemctl status image-cri-shim`
+Note: image-cri-shim is compatible with both CRI API v1alpha2 and v1.
 
-### 日志管理
+### Service Management
 
-要查看 image-cri-shim 服务的日志，您可以使用 journalctl 命令。journalctl 是一个用于查询和显示系统日志的工具，它与 systemd 服务管理器一起使用。
+image-cri-shim is typically run as a system service. To manage image-cri-shim, you can use system service management tools (such as systemctl) to start, stop, restart, or view the status of the service. First, make sure you have correctly installed image-cri-shim and configured it as a system service.
 
-以下是使用 journalctl 查看 image-cri-shim 服务日志的命令：
+1. Start the service: `systemctl start image-cri-shim`
+2. Stop the service: `systemctl stop image-cri-shim`
+3. Restart the service: `systemctl restart image-cri-shim`
+4. View the service status: `systemctl status image-cri-shim`
+
+### Log Management
+
+To view the logs of the image-cri-shim service, you can use the journalctl command. journalctl is a tool used to query and display system logs, and it is used in conjunction with the systemd service manager.
+
+Here are the commands to view the logs of the image-cri-shim service using journalctl:
 
 ```shell
 journalctl -u image-cri-shim
 ```
 
-这将显示 image-cri-shim 服务的全部日志。如果您希望实时查看日志，可以添加 -f 参数：
+This will display all logs of the image-cri-shim service. If you want to view the logs in real-time, you can add the -f option:
 
 ```shell
 journalctl -u image-cri-shim -f
 ```
 
-此外，您还可以根据时间过滤日志。例如，如果您只想查看过去一小时的日志，可以使用以下命令：
+Additionally, you can filter the logs by time. For example, if you only want to view the logs from the past hour, you can use the following command:
 
 ```shell
 journalctl -u image-cri-shim --since "1 hour ago"
 ```
 
-这些命令应该能帮助您查看和分析 image-cri-shim 服务的日志，从而更好地了解服务的运行状态和可能出现的问题。
+These commands should help you view and analyze the logs of the image-cri-shim service, allowing you to better understand the service's operation status and potential issues.

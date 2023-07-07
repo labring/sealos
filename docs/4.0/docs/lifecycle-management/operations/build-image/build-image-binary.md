@@ -2,28 +2,28 @@
 sidebar_position: 4
 ---
 
-# 构建基于二进制文件的集群镜像
+# Building Cluster Images Based on Binary Files
 
-此文档主要介绍了如何使用 `sealos` 工具将单一二进制文件（例如 `helm` 或 `kustomize`）打包为集群镜像，并将它们通过在主节点上部署集群镜像进行安装。以 `helm` 为例，我们将详细介绍如何将二进制文件打包成集群镜像。
+This document primarily details how to use the `sealos` tool to package a single binary file (like `helm` or `kustomize`) into a cluster image and install them by deploying the cluster image on the master node. Using `helm` as an example, we will thoroughly discuss how to package a binary file into a cluster image.
 
-## 创建构建工作空间
+## Create a Build Workspace
 
-首先，创建一个基础目录作为构建工作空间：
+Firstly, create a base directory to serve as a build workspace:
 
 ```shell
 $ mkdir ~/cluster-images
 ```
 
-在工作空间中，创建一个 `opt` 目录用于存储二进制文件：
+In the workspace, create an `opt` directory for storing the binary files:
 
 ```shell
 $ cd cluster-images
 $ mkdir opt/
 ```
 
-## 准备二进制文件
+## Prepare the Binary File
 
-接下来，我们准备 `helm` 二进制文件。在此，我们从 [github release](https://github.com/helm/helm/releases) 中下载：
+Next, we prepare the `helm` binary file. Here, we download from [github release](https://github.com/helm/helm/releases):
 
 ```shell
 wget https://get.helm.sh/helm-v3.10.1-linux-amd64.tar.gz
@@ -32,9 +32,9 @@ chmod a+x linux-amd64/helm
 mv linux-amd64/helm opt/
 ```
 
-## 创建构建镜像所需的 `Sealfile` 文件
+## Create the `Sealfile` Required for Building the Image
 
-创建一个名为 `Sealfile` 的文件，内容如下：
+Create a file named `Sealfile`, with the following content:
 
 ```shell
 FROM scratch
@@ -42,7 +42,7 @@ COPY opt ./opt
 CMD ["cp opt/helm /usr/bin/"]
 ```
 
-目前的目录结构如下：
+The current directory structure is as follows:
 
 ```
 .
@@ -51,38 +51,38 @@ CMD ["cp opt/helm /usr/bin/"]
     └── helm
 ```
 
-## 构建集群镜像
+## Build the Cluster Image
 
-现在，一切准备就绪，你可以开始构建集群镜像了：
+Now, everything is ready, and you can begin building the cluster image:
 
 ```shell
 sealos build -t labring/helm:v3.10.1 .
 ```
 
-**注意：** 首先你需要在本地主机上安装 `sealos` 命令。
+**Note:** Firstly, you need to install the `sealos` command on the local host.
 
-你可以查看构建日志来了解构建过程。
+You can view the build log to understand the building process.
 
 ```shell
 root@ubuntu:~/cluster-images# sealos build -t labring/helm:v3.10.1 .
 ...
 ```
 
-查看构建的镜像，现在所有依赖的二进制文件都已经构建进集群镜像中：
+View the built image, and now all the dependent binary files have been built into the cluster image:
 
 ```shell
 root@ubuntu:~/cluster-images# sealos images
 labring/helm                      v3.10.1          19ed4a24f0fe   3 minutes ago       45.1 MB
 ```
 
-## 推送镜像
+## Push the Image
 
-你可以将镜像推送至任何 Docker 镜像仓库，下面的命令将镜像推送到 dockerhub：
+You can push the image to any Docker image repository, the following command pushes the image to DockerHub:
 
 ```shell
 sealos push labring/helm:v3.10.1
 ```
 
-**注意：** 请使用 `sealos` 命令来操作集群镜像，不支持 Docker 命令。
+**Note:** Please use the `sealos` command to operate the cluster image; Docker commands are not supported.
 
-如果你使用的是私有镜像仓库，可以使用 `sealos login` 命令登录你的镜像仓库，然后再推送或者拉取镜像
+If you are using a private image repository, you can use the `sealos login` command to log into your image repository, then push or pull the image.

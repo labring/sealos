@@ -5,16 +5,16 @@ sidebar_position: 1
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# 安装sealos
+# Installing Sealos
 
-## 二进制自动下载
+## Binary Auto Download
 
 ```bash
 $ curl -sfL  https://raw.githubusercontent.com/labring/sealos/v4.2.0/scripts/install.sh \
     | sh -s v4.2.0 labring/sealos
 ```
 
-## 二进制手动下载
+## Binary Manual Download
 
 <Tabs groupId="arch">
   <TabItem value="amd64" label="amd64" default>
@@ -35,9 +35,9 @@ $ wget https://github.com/labring/sealos/releases/download/v4.2.0/sealos_4.2.0_l
   </TabItem>
 </Tabs>
 
-## 包管理工具安装
+## Package Management Tool Installation
 
-### DEB 源
+### DEB Repository
 
 ```bash
 echo "deb [trusted=yes] https://apt.fury.io/labring/ /" | sudo tee /etc/apt/sources.list.d/labring.list
@@ -45,7 +45,7 @@ sudo apt update
 sudo apt install sealos
 ```
 
-### RPM 源
+### RPM Repository
 
 ```bash
 sudo cat > /etc/yum.repos.d/labring.repo << EOF
@@ -59,17 +59,17 @@ sudo yum clean all
 sudo yum install sealos
 ```
 
-## 源码安装
+## Source Code Installation
 
-### 前置依赖
+### Prerequisites
 1. `linux`
-2. `git`  
-3. `golang` 1.20+  
+2. `git`
+3. `golang` 1.20+
 4. `libgpgme-dev libbtrfs-dev libdevmapper-dev`
 
-如果在 `arm64` 环境下需要添加 `:arm64` 后缀。
+If you are in an `arm64` environment, add the `:arm64` suffix.
 
-### 构建
+### Build
 
 ```bash
 # git clone the repo
@@ -77,4 +77,3 @@ git clone https://github.com/labring/sealos.git
 # just make it
 make build BINS=sealos
 ```
-

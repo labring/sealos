@@ -85,7 +85,6 @@ sealos registry serve inmem
 通过 `sealctl registry serve` 命令，用户可以轻松地管理和操作 Docker 镜像仓库。无论是在开发环境，还是在生产环境中，它都是一个强大且易用的工具。
 
 
-
 ## Sealos：sealos registry passwd 命令详解与使用指南
 
 在管理 Docker 镜像仓库过程中，Sealos 提供了 `sealos registry passwd` 命令以方便用户对集群registry进行密码修改。它提供了一种简便的方法，帮助用户修改 registry 的密码。
@@ -128,11 +127,10 @@ sealos registry passwd
 
 ### 注意事项
 
+**修改 registry 密码后,修改Clusterfile中的registry密码**
 修改 registry 密码后，所有使用该 registry 的节点和服务都需要更新配置，以使用新的密码进行身份验证。否则，它们将无法从该 registry 拉取或推送镜像。
 
 如果你不确定如何更新节点和服务的配置，建议在修改 registry 密码之前，先查阅相关文档或者寻求专业的技术支持。
-
-
 
 ## Sealos：`sealos registry sync` 命令详解与使用指南
 

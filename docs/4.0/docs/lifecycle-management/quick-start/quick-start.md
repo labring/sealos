@@ -2,36 +2,35 @@
 sidebar_position: 2
 ---
 
-# 快速开始
+# Quick Start
 
-## 先决条件 
+## Prerequisites
 
-sealos 是一个简单的 go 二进制文件，可以安装在大多数 Linux 操作系统中。
+Sealos is a simple Go binary that can be installed on most Linux operating systems.
 
-以下是一些基本的安装要求： 
+Here are some basic installation requirements:
 
-- 每个集群节点应该有不同的主机名。 主机名不要带下划线。
-- 所有节点的时间同步。 
-- 在 Kubernetes 集群的第一个节点上运行`sealos run`命令，目前集群外的节点不支持集群安装。 
-- 建议使用干净的操作系统来创建集群。不要自己装 Docker。
-- 支持大多数 Linux 发行版，例如：Ubuntu CentOS Rocky linux。 
-- 支持 [DockerHub](https://hub.docker.com/r/labring/kubernetes/tags) 中支持的 Kubernetes 版本。 
-- 支持使用 containerd 作为容器运行时。
-- 在公有云上请使用私有 IP。
+- Each cluster node should have a unique hostname. Hostnames should not contain underscores.
+- Time synchronization across all nodes.
+- Run the `sealos run` command on the first node of the Kubernetes cluster. Currently, cluster installation is not supported from outside the cluster.
+- It is recommended to use a clean operating system to create the cluster. Do not install Docker manually.
+- Supported on most Linux distributions, such as Ubuntu, CentOS, and Rocky Linux.
+- Supports Kubernetes versions supported in [DockerHub](https://hub.docker.com/r/labring/kubernetes/tags).
+- Supports containerd as the container runtime.
+- For public cloud deployments, use private IP addresses.
 
-### CPU 架构  
+### CPU Architecture
 
-目前支持 `amd64` 和 `arm64` 架构。
+Currently, `amd64` and `arm64` architectures are supported.
 
-
-## 单机安装 Kuberentes
+## Single-node Kubernetes Installation
 
 ```shell
 # sealos version must >= v4.1.0
 $ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single
 ```
 
-## 集群安装 Kuberentes
+## Multi-node Kubernetes Installation
 
 ```shell
 $ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
@@ -39,18 +38,18 @@ $ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
 
-参数说明：
+Parameter explanation:
 
-| 参数名 | 参数值示例 | 参数说明 |
-| --- | --- | --- |
-| --masters |  192.168.0.2 | kubernetes master 节点地址列表 |
-| --nodes | 192.168.0.3 | kubernetes node 节点地址列表 |
-| --ssh-passwd | [your-ssh-passwd] | ssh 登录密码 |
-|kubernetes | labring/kubernetes:v1.25.0 | kubernetes 镜像 |
+| Parameter | Example Value   | Description                              |
+| --------- | --------------- | ---------------------------------------- |
+| --masters | 192.168.0.2    | Kubernetes master node address list       |
+| --nodes   | 192.168.0.3    | Kubernetes node address list              |
+| --ssh-passwd | [your-ssh-passwd] | SSH login password                   |
+| kubernetes | labring/kubernetes:v1.25.0 | Kubernetes image |
 
-在干净的服务器上直接执行上面命令，不要做任何多余操作即可启动一个高可用的 kubernetes 集群。
+Execute the above command directly on a clean server without any additional operations to start a highly available Kubernetes cluster.
 
-## 安装各种分布式应用
+## Install Various Distributed Applications
 
 ```shell
 sealos run labring/helm:v3.8.2 # install helm
@@ -59,99 +58,100 @@ sealos run labring/minio-operator:v4.4.16 labring/ingress-nginx:4.1.0 \
    labring/mysql-operator:8.0.23-14.1 labring/redis-operator:3.1.4 # oneliner
 ```
 
-这样高可用的 mysql redis 等都有了，不用关心所有的依赖问题。
+With the above commands, you will have highly available MySQL, Redis, and more, without worrying about dependencies.
 
-## 增加节点
+## Adding Nodes
 
-增加 node 节点：
+Add a node:
 ```shell
 $ sealos add --nodes 192.168.64.21,192.168.64.19 
 ```
 
-增加 master 节点：
+Add a master node:
 ```shell
 $ sealos add --masters 192.168.64.21,192.168.64.19 
 ```
 
-## 删除节点
+## Deleting Nodes
 
-删除 node 节点：
+Delete a node:
 ```shell
 $ sealos delete --nodes 192.168.64.21,192.168.64.19 
 ```
 
-删除 master 节点：
+Delete a master node:
 ```shell
 $ sealos delete --masters 192.168.64.21,192.168.64.19  
 ```
 
-## 清理集群
+## Cleaning up the Cluster
 
 ```shell
 $ sealos reset
 ```
 
+## Offline Delivery
 
 
-## 离线交付
 
-离线环境只需要提前导入镜像，其它步骤与在线安装一致。
+For offline environments, you only need to import the images in advance. The remaining steps are the same as online installation.
 
-首先在有网络的环境中 save 安装包：
+First, save the installation package in an environment with internet access:
 ```shell
 $ sealos pull labring/kubernetes:v1.25.0
 $ sealos save -o kubernetes.tar labring/kubernetes:v1.25.0
 ```
-### load镜像并安装
+### Loading Images and Installation
 
-拷贝 kubernetes.tar 到离线环境, 使用 load 命令导入镜像即可：
+Copy the `kubernetes.tar` file to the offline environment and use the `load` command to import the images:
 
 ```shell
 $ sealos load -i kubernetes.tar
 ```
 
-剩下的安装方式与在线安装一致。
+The remaining installation steps are the same as the online installation.
 ```shell
-$ sealos images # 查看集群镜像是否导入成功
-$ sealos run kuberentes:v1.25.0  # 单机安装，集群安装同理
+$ sealos images # check if the cluster images are successfully imported
+$ sealos run kubernetes:v1.25.0  # Single-node installation, similar for cluster installation
 ```
 
-### 快速启动集群
+### Quick Start with Cluster Image
 
 ```shell
-$ sealos run kubernetes.tar # 单机安装，集群安装同理
+$ sealos run kubernetes.tar # Single-node installation, similar for cluster installation
 ```
 
 
+## Cluster Image Version Support
 
-## 集群镜像版本支持说明
+### Kubernetes with containerd (Kubernetes version >=1.18.0)
 
-### 支持 containerd 的 Kubernetes（k8s 版本 >=1.18.0）
+| Kubernetes Version | Sealos Version       | CRI Version | Image Version                   |
+| ------------------ | -------------------- | ----------- | ------------------------------- |
+| `<1.25`            | `>=v4.0.0`           | v1alpha2    | labring/kubernetes:v1.24.0 |
+| `>=1.25`           | `>=v4.1.0`           | v1alpha2    | labring/kubernetes:v1.25.0 |
+| `>=1.26`           | `>=v4.1.4-rc3`       | v1          | labring/kubernetes:v1.26.0 |
+| `>=1.27`           | `>=v4.2.0-alpha3`    | v1          | labring/kubernetes:v1.27.0 |
 
-| k8s 版本 | sealos 版本       | cri 版本 | 镜像版本                   |
-| -------- | ----------------- | -------- | -------------------------- |
-| `<1.25`  | `>=v4.0.0`        | v1alpha2 | labring/kubernetes:v1.24.0 |
-| `>=1.25` | `>=v4.1.0`        | v1alpha2 | labring/kubernetes:v1.25.0 |
-| `>=1.26` | `>=v4.1.4-rc3`    | v1       | labring/kubernetes:v1.26.0 |
-| `>=1.27` | `>=v4.2.0-alpha3` | v1       | labring/kubernetes:v1.27.0 |
+These images use containerd as the container runtime interface (CRI). containerd is a lightweight, high-performance container runtime that is compatible with Docker. Using containerd-based Kubernetes images can provide better performance and resource utilization.
 
-这些镜像使用 containerd 作为容器运行时（CRI）。containerd 是一种轻量级、高性能的容器运行时，与 Docker 兼容。使用 containerd 的 Kubernetes 镜像可以提供更高的性能和资源利用率。
+Depending on the Kubernetes version, you can choose different Sealos versions and CRI versions. For example, if you want to use Kubernetes v1.26.0, you can choose Sealos v4.1.4-rc3 or higher and use CRI v1.
 
-根据 Kubernetes 版本的不同，您可以选择不同的 sealos 版本和 cri 版本。例如，如果您要使用 Kubernetes v1.26.0 版本，您可以选择 sealos v4.1.4-rc3 及更高版本，并使用 v1 cri 版本。
+#### Kubernetes with Docker (Kubernetes version >=1.18.0)
 
-#### 支持 docker 的 Kubernetes（k8s 版本 >=1.18.0）
+| Kubernetes Version | Sealos Version       | CRI Version | Image Version                          |
+| ------------------ | -------------------- | ----------- | -------------------------------------- |
+| `<1.25`            | `>=v4.0.0`           | v1alpha2    | labring/kubernetes-docker:v1.24.0 |
+| `>=1.25`           | `>=v4.1.0`           | v1alpha2    | labring/kubernetes-docker:v1.25.0 |
+| `>=1.26`           | `>=v4.1.4-rc3`       | v1          | labring/kubernetes-docker:v1.26.0 |
+| `>=1.27`           | `>=v4.2.0-alpha3`    | v1          | labring/kubernetes-docker:v1.27.0 |
 
-| k8s 版本 | sealos 版本       | cri 版本 | 镜像版本                          |
-| -------- | ----------------- | -------- | --------------------------------- |
-| `<1.25`  | `>=v4.0.0`        | v1alpha2 | labring/kubernetes-docker:v1.24.0 |
-| `>=1.25` | `>=v4.1.0`        | v1alpha2 | labring/kubernetes-docker:v1.25.0 |
-| `>=1.26` | `>=v4.1.4-rc3`    | v1       | labring/kubernetes-docker:v1.26.0 |
-| `>=1.27` | `>=v4.2.0-alpha3` | v1       | labring/kubernetes-docker:v1.27.0 |
+These images use Docker as the container runtime interface (CRI). Docker is a widely used and feature-rich container platform that provides an easy-to-use interface and a rich ecosystem. Using Docker-based Kubernetes images allows for easy integration with existing Docker infrastructure.
 
-这些镜像使用 docker 作为容器运行时（CRI）。docker 是一种广泛使用的、功能丰富的容器平台，提供了易于使用的界面和丰富的生态系统。使用 docker 的 Kubernetes 镜像可以方便地与现有的 docker 基础设施集成。
+Similar to containerd-based Kubernetes images, you can choose different Sealos versions and CRI versions based on the Kubernetes version. For
 
-与支持 containerd 的 Kubernetes 镜像类似，您可以根据 Kubernetes 版本的不同选择不同的 sealos 版本和 cri 版本。例如，如果您要使用 Kubernetes v1.26.0 版本，您可以选择 sealos v4.1.4-rc3 及更高版本，并使用 v1 cri 版本。
+example, if you want to use Kubernetes v1.26.0, you can choose Sealos v4.1.4-rc3 or higher and use CRI v1.
 
-## 总结
+## Summary
 
-您在 Kubernetes 集群中运行容器我们提供了多种选择。您可以根据自己的需求和偏好，在不同的镜像类型和版本中进行选择。同时，不要忘记查看 [更新日志](https://github.com/labring/sealos/blob/main/CHANGELOG/CHANGELOG.md)，以了解各个版本的更新内容和修复问题。
+We provide multiple options for running containers in your Kubernetes cluster. You can choose from different image types and versions based on your needs and preferences. Also, don't forget to check the [changelog](https://github.com/labring/sealos/blob/main/CHANGELOG/CHANGELOG.md) for any updates or additional information.

@@ -2,69 +2,63 @@
 sidebar_position: 0
 ---
 
-# Sealctl 使用指南
+# Sealctl User Guide
 
-Sealos 提供 sealctl 是使用 Sealos 与 集群节点进行操作的命令行工具。它包括以下几个子命令：
+Sealos provides `sealctl`, a command-line tool for operating with Sealos and cluster nodes. It includes the following subcommands:
 
-这个工具叫做 `kubectl`。
+1. `cert`: Manages certificates for generating, viewing, and updating TLS certificates.
+2. `cri`: Manages Container Runtime Interface (CRI) configuration, such as Docker or containerd.
+3. `hostname`: Views or sets the system hostname.
+4. `hosts`: Manages the system's hosts file, which defines static hostname-to-IP address mappings.
+5. `ipvs`: Manages IP Virtual Server (IPVS) rules for load balancing and proxying.
+6. `registry`: Manages image repositories for storing container images in container repository format and repository management.
+7. `static_pod`: Manages static Pods and creates static Pod configurations.
+8. `token`: Generates and manages access tokens for authorizing access to Kubernetes clusters.
 
-1. `cert`：管理证书，用于生成、查看和更新TLS证书。
-2. `cri`：管理容器运行时接口（CRI）配置，例如Docker或containerd。
-3. `hostname`：查看或设置系统主机名。
-4. `hosts`：管理系统的hosts文件，用于定义静态主机名到IP地址映射。
-5. `ipvs`：管理IP虚拟服务器（IPVS）规则，用于负载均衡和代理。
-6. `registry`：管理镜像仓库，用于存储容器镜像仓库格式镜像以及镜像仓库管理。
-7. `static_pod`：管理静态Pod，可以创建静态Pod的配置。
-8. `token`：生成和管理访问令牌，用于授权访问Kubernetes集群。
+With these subcommands, you can conveniently manage and configure your Sealos system, enabling control over containers, image repositories, networks, and other aspects.
 
-通过这些子命令，您可以方便地管理和配置您的Sealos系统，实现对容器、镜像仓库、网络等各个方面的控制。
+# Sealos Dependent Commands
 
+1. **Add Hosts**
 
+   Adds a new hosts record on the node with the specified IP address. The parameters include the IP address, hostname, and domain name. Use the `sealctl hosts add` command.
 
+2. **Delete Hosts**
 
-# sealos 依赖命令
+   Deletes a hosts record on the node with the specified IP address. The parameters include the IP address and domain name. Use the `sealctl hosts delete` command.
 
-1. **添加Hosts**
+3. **Hostname**
 
-   在指定 IP 地址的节点上添加一个新的 hosts 记录。参数包括 IP 地址、主机名和域名。使用`sealctl hosts add `命令
+   Retrieves the hostname of the node with the specified IP address. Use the `sealctl hostname` command.
 
-2. **删除Hosts**
+4. **IPVS Load Balancing**
 
-   删除指定 IP 地址节点上的一个 hosts 记录。参数包括 IP 地址和域名。使用`sealctl hosts delete`命令
+   Configures IPVS for load balancing on the node with the specified IP address. The parameters include the node IP address, virtual IP address, and a list of master node IP addresses. Use the `sealctl ipvs` command.
 
-3. **hostname**
+5. **Clear IPVS Rules**
 
-   获取指定 IP 地址节点的主机名。 使用`sealctl hostname`命令
+   Clears the IPVS configuration on the node with the specified IP address. The parameters include the node IP address and virtual IP address. Use the `sealctl ipvs` command.
 
-4. **IPVS负载均衡**
+6. **Generate Static Pods**
 
-   在指定 IP 地址的节点上配置 IPVS，实现负载均衡。参数包括节点 IP 地址、虚拟 IP 地址和主节点 IP 地址列表。 使用`sealctl ipvs`命令
+   Deploys a static Pod (lvscare) on the node with the specified IP address. The parameters include the node IP address, virtual IP address, Pod name, image name, and a list of master node IP addresses. Use the `sealctl static-pod lvscare` command.
 
-5. **清空IPVS规则**
+7. **Manage Cluster Interact Authentication Token**
 
-   清除指定 IP 地址节点上的 IPVS 配置。参数包括节点 IP 地址和虚拟 IP 地址。 使用`sealctl ipvs`命令
+   Generates a token for the node with the specified IP address. The parameters include the node IP address, configuration file, and certificate key. Use the `sealctl token` command.
 
-6. **静态POD生成**
+8. **Get Node's CGroup Information**
 
-   在指定 IP 地址的节点上部署一个静态 Pod(lvscare)。参数包括节点 IP 地址、虚拟 IP 地址、Pod 名称、镜像名称和主节点 IP 地址列表。使用`sealctl static-pod lvscare`命令
+   Retrieves the CRI CGroup information of the node with the specified IP address. Use the `sealctl cri cgroup` command.
 
-7. **处理集群交互认证的token**
+9. **Get Node's CRI Socket Information**
 
-   为指定 IP 地址的节点生成一个 token。参数包括节点 IP 地址、配置文件和证书密钥。使用`sealctl token`命令
+   Retrieves the CRI socket information of the node with the specified IP address. Use the `sealctl cri socket` command.
 
-8. **获取节点的cgroup**
+10. **Generate Self-signed HTTPS Certificates on Node**
 
-   获取指定 IP 地址节点的cri  CGroup 信息。 使用`sealctl cri cgroup`命令
+    Generates certificates for the node with the specified IP address. The parameters include the node IP address, a list of alternate names, host IP address, hostname, service CIDR, and DNS domain. Use the `sealctl cert` command.
 
-9. **获取节点的cri-socket**
+11. **Start Registry on Node**
 
-   获取指定 IP 地址节点的 cri Socket 信息。 使用`sealctl cri socket`命令
-
-10. **在节点生成https自签名证书**
-
-    为指定 IP 地址的节点生成证书。参数包括节点 IP 地址、备用名称列表、主机 IP 地址、主机名、服务 CIDR 和 DNS 域名。 使用`sealctl cert` 命令
-
-11. **节点启动registry**
-
-​	   在指定节点启动regsitry，为进行增量镜像同步。使用`sealctl registry serve`命令
-
+    Starts the registry on the specified node for incremental image synchronization. Use the `sealctl registry serve` command.

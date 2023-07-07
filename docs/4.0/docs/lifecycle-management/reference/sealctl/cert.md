@@ -3,27 +3,26 @@ sidebar_position: 1
 ---
 
 
-# cert 证书管理
+# Certificate Management with `cert`
 
-`cert` 命令用于生成 Kubernetes 集群所需的证书文件。在 Kubernetes 集群中，证书用于确保组件之间的通信安全，例如 API server、kubelet 和 etcd 等。证书通过 TLS（Transport Layer Security）协议实现加密，以确保数据在传输过程中的保密性和完整性。
+The `cert` command is used to generate the necessary certificate files for a Kubernetes cluster. In a Kubernetes cluster, certificates are used to ensure secure communication between components such as the API server, kubelet, and etcd. Certificates provide encryption using the Transport Layer Security (TLS) protocol to ensure the confidentiality and integrity of data during transit.
 
-`sealctl cert` 命令可以根据提供的参数自动生成证书。这些参数包括节点 IP、节点名称、服务 CIDR、DNS 域以及可选的其他备用名称。通过生成并配置这些证书，您可以确保 Kubernetes 集群的安全通信。
-
+The `sealctl cert` command generates certificates automatically based on the provided parameters. These parameters include node IP, node name, service CIDR, DNS domain, and optional additional alternate names. By generating and configuring these certificates, you can ensure secure communication within your Kubernetes cluster.
 
 
 ```
-cert 命令用于生成 Kubernetes 证书。
+The `cert` command is used to generate Kubernetes certificates.
 
-参数：
-  --alt-names      备用名称，例如 sealos.io 或 10.103.97.2。可以包含多个备用名称。
-  --node-name      节点名称，例如 master0。
-  --service-cidr   服务网段，例如 10.103.97.2/24。
-  --node-ip        节点的 IP 地址，例如 10.103.97.2。
-  --dns-domain     集群 DNS 域，默认值为 cluster.local。
-  --cert-path      Kubernetes 证书文件路径，默认值为 /etc/kubernetes/pki。
-  --cert-etcd-path Kubernetes etcd 证书文件路径，默认值为 /etc/kubernetes/pki/etcd。
+Options:
+  --alt-names      Alternate names, such as sealos.io or 10.103.97.2. Can specify multiple alternate names.
+  --node-name      Node name, such as master0.
+  --service-cidr   Service CIDR, such as 10.103.97.2/24.
+  --node-ip        IP address of the node, such as 10.103.97.2.
+  --dns-domain     DNS domain for the cluster. Default value is cluster.local.
+  --cert-path      Path to Kubernetes certificate files. Default value is /etc/kubernetes/pki.
+  --cert-etcd-path Path to Kubernetes etcd certificate files. Default value is /etc/kubernetes/pki/etcd.
 
-示例：
+Examples:
   sealctl cert --alt-names sealos.io --alt-names 10.103.97.2 \
                --node-name master0 --service-cidr 10.103.97.2/24 \
                --node-ip 10.103.97.2 --dns-domain cluster.local

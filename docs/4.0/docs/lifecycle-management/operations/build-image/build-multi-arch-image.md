@@ -2,43 +2,43 @@
 sidebar_position: 0
 ---
 
-# 构建支持多架构的集群镜像
+# Building Multi-Architecture Cluster Images
 
-本文将介绍如何使用 `sealos` 工具构建支持多架构（如 amd64 和 arm64）的 集群 镜像，并将其推送到容器镜像仓库。
+This article will explain how to use the `sealos` tool to build cluster images that support multiple architectures (such as amd64 and arm64) and push them to a container image repository.
 
-## 步骤说明
+## Step-by-step Instructions
 
-### 构建镜像
+### Building the Images
 
-首先，我们分别为 amd64 和 arm64 两种架构构建镜像。使用 `sealos build` 命令，指定镜像标签（包括前缀和版本），平台（使用 `--platform` 参数），Dockerfile（使用 `-f` 参数）和上下文路径：
+Firstly, we need to build images for both amd64 and arm64 architectures. Using the `sealos build` command, specify the image tag (including the prefix and version), platform (with the `--platform` parameter), Dockerfile (with the `-f` parameter), and context path:
 
 ```shell
 $ sealos build -t $prefix/oci-kubernetes:$version-amd64 --platform linux/amd64   -f Kubefile  .
 $ sealos build -t $prefix/oci-kubernetes:$version-arm64 --platform linux/arm64   -f Kubefile  .
 ```
 
-在这里，`$prefix` 代表你的镜像仓库地址和命名空间，`$version` 是你的镜像版本。
+Here, `$prefix` represents your image repository address and namespace, and `$version` is your image version.
 
-### 登录容器镜像仓库
+### Logging into the Container Image Repository
 
-然后，我们需要登录到容器镜像仓库，以便之后能够推送镜像。使用 `sealos login` 命令，指定用户名，密码和仓库域名：
+Next, we need to log in to the container image repository so we can push the images later. Use the `sealos login` command, specify the username, password, and repository domain:
 
 ```shell
 $ sealos login --username $username --password $password $domain
 ```
 
-### 推送镜像
+### Pushing the Images
 
-接下来，我们将刚才构建的两个镜像推送到容器镜像仓库。使用 `sealos push` 命令，指定镜像标签：
+Then, we will push the two images we built to the container image repository. Using the `sealos push` command, specify the image tag:
 
 ```shell
 $ sealos push $prefix/oci-kubernetes:$version-amd64
 $ sealos push $prefix/oci-kubernetes:$version-arm64
 ```
 
-### 创建和推送镜像清单
+### Creating and Pushing the Image Manifest
 
-最后，我们需要创建一个包含这两个镜像的镜像清单，并将其推送到容器镜像仓库。这个清单可以使 Docker 或 Kubernetes 在拉取镜像时，自动选择与运行环境架构匹配的镜像：
+Finally, we need to create a manifest that includes these two images and push it to the container image repository. This manifest allows Docker or Kubernetes to automatically select an image that matches the runtime architecture when pulling the image:
 
 ```shell
 $ sealos manifest create $prefix/oci-kubernetes:$version
@@ -47,4 +47,4 @@ $ sealos manifest add $prefix/oci-kubernetes:$version docker://$prefix/oci-kuber
 $ sealos manifest push --all $prefix/oci-kubernetes:$version docker://$prefix/oci-kubernetes:$version
 ```
 
-至此，支持多架构的 集群镜像就构建完成了。在实际使用时，需要根据你的容器镜像仓库地址和命名空间，以及镜像版本，替换上述命令中的 `$prefix` 和 `$version`。
+With that, the multi-architecture cluster image has been built. In practice, you need to replace `$prefix` and `$version` in the commands above according to your container image repository address and namespace, and image version.

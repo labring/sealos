@@ -2,31 +2,31 @@
 sidebar_position: 3
 ---
 
-# 如何升级集群
+# How to Upgrade the Cluster
 
-如果你想要升级你的 Kubernetes 集群，你只需要运行以下命令：
+If you want to upgrade your Kubernetes cluster, you just need to run the following command:
 
 ```sh
-sealos run labring/kubernetes:<新版本号>
+sealos run labring/kubernetes:<new_version>
 ```
 
-确保你已经建立了集群。
+Make sure you have already set up the cluster.
 
-## 实例说明
+## Example Scenario
 
-1. 假设你已经运行过以下命令：
+1. Let's say you have previously run the following command:
 
 ```sh
 sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 --masters 192.168.64.8 --nodes 192.168.64.7
 ```
 
-2. 现在你想要升级集群到 v1.25.0，你可以这样操作：
+2. Now, if you want to upgrade the cluster to v1.25.0, you can do the following:
 
 ```sh
-sealos run labring/kubernetes:v1.25.0 
+sealos run labring/kubernetes:v1.25.0
 ```
 
-在运行到 'kubeadm upgrade v1.25.0' 的时候，你将看到：
+During the execution of 'kubeadm upgrade v1.25.0', you will see:
 
 ```txt
 [upgrade/version] You have chosen to change the cluster version to "v1.25.0"
@@ -35,14 +35,14 @@ sealos run labring/kubernetes:v1.25.0
 [upgrade] Are you sure you want to proceed? [y/N]: 
 ```
 
-输入 'y' 来继续升级。
+Type 'y' to proceed with the upgrade.
 
-如果**出现错误**，你可以再次运行命令 'sealos run labring/kubernetes:v1.25.0'。即使失败，它也能保证得到相同的结果。
+If there are any **errors**, you can rerun the command 'sealos run labring/kubernetes:v1.25.0'. Even if it fails, it will ensure the same result.
 
-## 注意事项
+## Important Notes
 
-1. **升级不能跨过次版本号**。比如从 'v1.23.0' 升级到 'v1.25.0' 是不允许的。如果你确实需要从 'v1.23.0' 升级到 'v1.25.0'，你可以分成两步来操作，比如先从 'v1.23.0' 升级到 'v1.24.0'，然后再从 'v1.24.0' 升级到 'v1.25.0'。
+1. **Upgrades cannot skip minor version numbers**. For example, upgrading from 'v1.23.0' to 'v1.25.0' is not allowed. If you do need to upgrade from 'v1.23.0' to 'v1.25.0', you can do it in two steps, such as upgrading from 'v1.23.0' to 'v1.24.0' first, and then from 'v1.24.0' to 'v1.25.0'.
 
-2. 一旦升级成功，集群挂载的旧版本镜像就会被替换。添加主节点或工作节点将会应用新版本。
+2. Once the upgrade is successful, the old version images mounted by the cluster will be replaced. Adding master or worker nodes will apply the new version.
 
-这就是升级 Kubernetes 集群的整个过程。如果你在升级过程中遇到任何问题，不要犹豫，尽快查阅相关文档或者寻求帮助。
+This is the entire process of upgrading a Kubernetes cluster. If you encounter any issues during the upgrade process, don't hesitate to refer to relevant documentation or seek assistance.

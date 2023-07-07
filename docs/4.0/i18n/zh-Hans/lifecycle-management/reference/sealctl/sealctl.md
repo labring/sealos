@@ -6,8 +6,6 @@ sidebar_position: 0
 
 Sealos 提供 sealctl 是使用 Sealos 与 集群节点进行操作的命令行工具。它包括以下几个子命令：
 
-这个工具叫做 `kubectl`。
-
 1. `cert`：管理证书，用于生成、查看和更新TLS证书。
 2. `cri`：管理容器运行时接口（CRI）配置，例如Docker或containerd。
 3. `hostname`：查看或设置系统主机名。

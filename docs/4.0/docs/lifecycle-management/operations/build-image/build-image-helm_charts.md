@@ -2,28 +2,28 @@
 sidebar_position: 3
 ---
 
-# 构建基于 Helm Charts 的集群镜像
+# Building Cluster Images Based on Helm Charts
 
-让我们以最简单的 nginx 应用程序为例，介绍如何基于 Helm Charts 构建一个基于 nginx 的集群镜像。
+Let's use the simplest nginx application as an example to introduce how to build a cluster image based on nginx using Helm Charts.
 
-## 一、准备工作
+## 1. Preparation
 
-创建一个用于构建工作的基础目录。
+Create a base directory for the build work.
 
 ```shell
 $ mkdir ~/cloud-images
 ```
 
-创建一个 `charts` 目录来存储 Kubernetes nginx Helm Charts 文件。
+Create a `charts` directory to store the Kubernetes nginx Helm Charts files.
 
 ```shell
 $ cd cloud-images
 $ mkdir charts
 ```
 
-## 二、准备Helm Charts
+## 2. Prepare Helm Charts
 
-准备 nginx Helm Charts，这里我们使用 [bitnami 官方的 nginx Helm Charts](https://bitnami.com/stack/nginx)，让我们将 Helm Chart 文件拉取到本地并解压到 `charts` 目录中。
+Prepare the nginx Helm Charts. Here we use [the official nginx Helm Charts by bitnami](https://bitnami.com/stack/nginx). Let's pull the Helm Chart files locally and unzip them to the `charts` directory.
 
 ```shell
 helm repo add bitnami https://charts.bitnami.com/bitnami
@@ -31,9 +31,9 @@ helm search repo bitnami/nginx
 helm pull bitnami/nginx --version=13.2.13 -d charts/ --untar
 ```
 
-**注意：** 首先你应该安装 Helm 命令工具到本地主机。
+**Note:** First, you should install the Helm command tool to your local host.
 
-现在，charts 目录的结构如下所示。
+Now, the structure of the charts directory is as follows:
 
 ```
 charts/
@@ -47,9 +47,9 @@ charts/
     └── values.yaml
 ```
 
-## 三、创建Kubefile
+## 3. Create Kubefile
 
-创建一个名为 `Kubefile` 的文件用于镜像构建：
+Create a file named `Kubefile` for image construction:
 
 ```shell
 $ cat Kubefile
@@ -59,9 +59,9 @@ COPY registry registry
 CMD ["helm install nginx charts/nginx --namespace=nginx --create-namespace"]
 ```
 
-建议使用 `helm upgrade --install` 而不是 `helm install`，这样可以在以后更新应用程序时重复运行相同的命令。
+It is recommended to use `helm upgrade --install` instead of `helm install` so that you can rerun the same command when updating the application in the future.
 
-你可以根据需要添加其他选项，例如通过 NodePort 暴露服务。
+You can add other options as needed, such as exposing the service through NodePort.
 
 ```shell
 FROM scratch
@@ -70,62 +70,26 @@ COPY registry registry
 CMD ["helm upgrade --install nginx charts/nginx --namespace=nginx --create-namespace --set service.type=NodePort"]
 ```
 
-## 四、构建集群镜像
+## 4. Build the Cluster Image
 
-现在一切准备就绪，你可以开始构建集群镜像。
+Now everything is ready, and you can start building the cluster image.
 
 ```shell
 sealos build -t labring/nginx:v1.23.2 .
 ```
 
-**注意：** 你应该首先将 sealos 命令安装到本地主机。
+**Note:** You should first install the sealos command to your local host.
 
-你可以查看构建日志。
+You can view the build log.
 
 ```shell
 root@ubuntu:~/cloud-images# sealos build -t labring/nginx:v1.23.2 .
-2022-11-06T15:58:33 info lookup in path charts
-2022-11-06T15:58:33 info sub chart is nginx
-2022-11-06T15:58:33 warn if you access private registry,you must be 'sealos login' or 'buildah login'
-2022-11-06T15:58:33 info pull images [docker.io/bitnami/nginx:1.23.2-debian-11-r29] for platform is linux/amd64
-Pulling image: docker.io/bitnami/nginx:1.23.2-debian-11-r29
-1d8866550bdd: Download complete 
-cbbfe6232a5b: Download complete 
-ed342369e859: Download complete 
-Status: images save success
-2022-11-06T15:58:43 info output images [docker.io/bitnami/nginx:1.23.2-debian-11-r29] for platform is linux/amd64
-STEP 1/3: FROM scratch
-STEP 2/3: COPY . .
-STEP 3/3: CMD ["helm upgrade --install nginx charts/nginx --namespace=nginx --create-namespace --set service.type=NodePort"]
-COMMIT labring/nginx:v1.23.2
-Getting image source signatures
-Copying blob 9f5a861e0f8d done  
-Copying config 1b89695273 done  
-Writing manifest to image destination
-Storing signatures
---> 1b896952734
-Successfully tagged localhost/labring/nginx:v1.23.2
-1b8969527343939d60859469708e5420758f7419a421304f81b5132669982de7
-2022-11-06T15:58:44 info 
-      ___           ___           ___           ___       ___           ___
-     /\  \         /\  \         /\  \         /\__\     /\  \         /\  \
-    /::\  \       /::\  \       /::\  \       /:/  /    /::\  \       /::\  \
-   /:/\ \  \     /:/\:\  \     /:/\:\  \     /:/  /    /:/\:\  \     /:/\ \  \
-  _\:\~\ \  \   /::\~\:\  \   /::\~\:\  \   /:/  /    /:/  \:\  \   _\:\~\ \  \
- /\ \:\ \ \__\ /:/\:\ \:\__\ /:/\:\ \:\__\ /:/__/    /:/__/ \:\__\ /\ \:\ \ \__\
- \:\ \:\ \/__/ \:\~\:\ \/__/ \/__\:\/:/  / \:\  \    \:\  \ /:/  / \:\ \:\ \/__/
-  \:\ \:\__\    \:\ \:\__\        \::/  /   \:\  \    \:\  /:/  /   \:\ \:\__\
-   \:\/:/  /     \:\ \/__/        /:/  /     \:\  \    \:\/:/  /     \:\/:/  /
-    \::/  /       \:\__\         /:/  /       \:\__\    \::/  /       \::/  /
-     \/__/         \/__/         \/__/         \/__/     \/__/         \/__/
-
-                  Website :https://www.sealos.io/
-                  Address :github.com/labring/sealos
+...
 ```
 
-sealos 将自动从 charts 目录中提取镜像，将其拉取到本地并存储在 registry 目录中。
+sealos will automatically extract the images from the charts directory, pull them locally, and store them in the registry directory.
 
-现在的目录结构如下所示：
+The current directory structure is as follows:
 
 ```shell
 .
@@ -144,24 +108,24 @@ sealos 将自动从 charts 目录中提取镜像，将其拉取到本地并存�
         └── registry
 ```
 
-在本地查看构建的镜像，现在所有依赖的部署清单和镜像缓存都构建到了集群镜像中。
+Check the built image locally. Now all dependent deployment manifests and image caches are built into the cluster image.
 
 ```shell
-root@ubuntu:~/cloud-images#
-
- sealos images
+root@ubuntu:~/cloud-images# sealos images
 labring/nginx                      v1.23.2          521c85942ee4   4 minutes ago   56.8 MB
 ```
 
-你可以将镜像推送到任何 Docker 镜像仓库，下面的命令将其推送到 Docker Hub。
+You can push the image to any Docker image repository. The following command pushes it to Docker Hub.
 
 ```shell
 sealos push labring/nginx:v1.23.2
 ```
 
-**注意：** 请使用 sealos 命令操作集群镜像，不支持 Docker 命令。
+**Note:** Please use the sealos command to operate the cluster
 
-如果你使用私有镜像仓库，只需在拉取或推送镜像之前使用 `sealos login` 命令登录到注册表。
+image, Docker commands are not supported.
+
+If you use a private image repository, just use the `sealos login` command to log in to the registry before pulling or pushing the image.
 
 ```shell
 sealos login docker.io -u xxx -p xxx
@@ -169,25 +133,25 @@ sealos login docker.io -u xxx -p xxx
 sealos login registry.cn-hangzhou.aliyuncs.com -u xxx -p xxx
 ```
 
-## 五、安装集群镜像
+## 5. Install the Cluster Image
 
-然后你可以在你的集群中运行集群镜像。
+Then, you can run the cluster image in your cluster.
 
 ```shell
 sealos run labring/nginx:v1.23.2
 ```
 
-helm 二进制命令将安装到你的 Kubernetes 集群的主节点上。
+The helm binary command will be installed on the master node of your Kubernetes cluster.
 
 ```shell
 root@ubuntu:~# helm -n nginx ls
 ```
 
-## 六、说明
+## 6. Explanation
 
-默认情况下，在构建镜像时，sealos 只解析默认的 values.yml 文件，但是你也可以为 sealos 提供自定义的 values.yaml 文件。
+By default, when building images, sealos only parses the default values.yml file. However, you can also provide a custom values.yaml file for sealos.
 
-**自定义 values 文件必须放在与你的 Chart 相同的目录中，并且必须以 `<chart-name>.values.yaml` 的形式命名，例如 `loki-stack.values.yaml`。**
+**The custom values file must be placed in the same directory as your Chart, and must be named in the form of `<chart-name>.values.yaml`, for example `loki-stack.values.yaml`.**
 
 ```shell
 .
@@ -205,7 +169,7 @@ root@ubuntu:~# helm -n nginx ls
 ├── Kubefile
 ```
 
-`loki-stack.values.yaml` 文件内容如下：
+The content of `loki-stack.values.yaml` file is as follows:
 
 ```shell
 $ cat charts/loki-stack.values.yaml
@@ -217,7 +181,7 @@ grafana:
   enabled: true
 ```
 
-不同的 values 文件可能会输出不同的镜像列表，以使 sealos 能够在 `sealos build` 过程中自动解析镜像。
+Different values files may output different image lists, allowing sealos to automatically parse the images during the `sealos build` process.
 
 ```shell
 $ helm template charts/loki-stack/ -f charts/loki-stack/values.yaml|grep image: 

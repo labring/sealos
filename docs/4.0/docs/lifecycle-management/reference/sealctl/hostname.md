@@ -2,19 +2,18 @@
 sidebar_position: 3
 ---
 
+# Get Hostname
 
-# hostname 获取主机名
-
-获取操作系统的主机名：
-
-```shell
-sealctl hostname
-```
-
-示例：
+Get the hostname of the operating system:
 
 ```shell
 sealctl hostname
 ```
 
-执行此命令将返回操作系统的主机名。无需传递任何参数。
+Example:
+
+```shell
+sealctl hostname
+```
+
+Executing this command will return the hostname of the operating system. No additional parameters need to be passed.

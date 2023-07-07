@@ -2,50 +2,50 @@
 sidebar_position: 5
 ---
 
-# exec 执行命令
+# Execute Command
 
-`sealos exec` 是 Sealos 命令行工具中的一个命令，用于在指定的集群节点上执行 Shell 命令或脚本。本指南将详细介绍其使用方法和选项。
+`sealos exec` is a command in the Sealos command-line tool, used to execute Shell commands or scripts on specified cluster nodes. This guide will detail its usage and options.
 
-## 基本用法
+## Basic Usage
 
-基本的 `sealos exec` 命令格式如下：
+The basic `sealos exec` command format is as follows:
 
 ```bash
 sealos exec "shell command or script"
 ```
 
-在上述命令中，`shell command or script` 是你要在集群节点上执行的 Shell 命令或脚本。
+In the above command, `shell command or script` is the Shell command or script you want to execute on the cluster nodes.
 
-## 选项
+## Options
 
-`sealos exec` 命令提供了以下选项：
+The `sealos exec` command provides the following options:
 
-- `-c, --cluster='default'`: 要在其上执行命令的集群的名称。默认为 `default`。
+- `-c, --cluster='default'`: The name of the cluster on which the command will be executed. The default is `default`.
 
-- `--ips=[]`: 在具有指定 IP 地址的节点上运行命令。
+- `--ips=[]`: Run commands on nodes with specified IP addresses.
 
-- `-r, --roles='':`: 在具有指定角色的节点上运行命令。目前支持 master,node,registry
+- `-r, --roles='':` Run commands on nodes with specified roles. Currently supports master,node,registry.
 
-每个选项后都可以跟随一个或多个参数。
+Each option can be followed by one or more parameters.
 
-## 示例
+## Examples
 
-例如，你可以使用以下命令在默认集群的所有节点上查看 `/etc/hosts` 文件的内容：
+For example, you can use the following command to view the contents of the `/etc/hosts` file on all nodes of the default cluster:
 
 ```bash
 sealos exec "cat /etc/hosts"
 ```
 
-如果你想在名为 `my-cluster` 的集群的 `master` 和 `node` 角色的节点上查看 `/etc/hosts` 文件的内容，可以使用以下命令：
+If you want to view the contents of the `/etc/hosts` file on nodes with `master` and `node` roles in a cluster named `my-cluster`, you can use the following command:
 
 ```bash
 sealos exec -c my-cluster -r master,node "cat /etc/hosts"
 ```
 
-如果你只想在 IP 地址为 `172.16.1.38` 的节点上查看 `/etc/hosts` 文件的内容，可以使用以下命令：
+If you only want to view the contents of the `/etc/hosts` file on a node with the IP address `172.16.1.38`, you can use the following command:
 
 ```bash
 sealos exec -c my-cluster --ips 172.16.1.38 "cat /etc/hosts"
 ```
 
-以上就是 `sealos exec` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。
+That's the usage guide for the `sealos exec` command, and we hope it has been helpful. If you encounter any problems during usage, feel free to ask us.

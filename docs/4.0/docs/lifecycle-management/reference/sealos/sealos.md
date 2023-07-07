@@ -2,15 +2,13 @@
 sidebar_position: 0
 ---
 
-# Sealos 使用指南
+# Sealos User Guide
 
-Sealos 是一个统一的云操作系统，用于管理云原生应用。它提供了一系列命令行工具来帮助用户管理 Kubernetes 集群，管理节点，远程操作，管理容器和镜像，以及其他一些功能。下面是这些命令的详细介绍：
+Sealos is a unified cloud operating system designed to manage cloud-native applications. It provides a set of command-line tools to help users manage Kubernetes clusters, nodes, perform remote operations, manage containers and images, and perform other functions. Below are detailed introductions to these commands:
 
-本章节主要介绍 Sealos 的使用指南以及集群镜像相关说明。
+This chapter provides a user guide for using Sealos, as well as information related to cluster images.
 
-- Sealos使用指南： 有关每个命令的详细信息，包括所有受支持的参数和子命令， 请参阅 [sealos](https://docs.sealos.io/docs/lifecycle-management/reference/sealos/commands) 参考文档。
-- 集群镜像:
-  - [Rootfs集群镜像](https://docs.sealos.io/docs/lifecycle-management/reference/sealos/kubernetes-cluster-image)
-  - [Application集群镜像](https://docs.sealos.io/docs/lifecycle-management/reference/sealos/app-cluster-image)
-
-
+- Sealos User Guide: For detailed information about each command, including all supported parameters and subcommands, please refer to the [sealos](https://docs.sealos.io/docs/lifecycle-management/reference/sealos/commands) reference documentation.
+- Cluster Images:
+  - [Rootfs Cluster Images](https://docs.sealos.io/docs/lifecycle-management/reference/sealos/kubernetes-cluster-image)
+  - [Application Cluster Images](https://docs.sealos.io/docs/lifecycle-management/reference/sealos/app-cluster-image)

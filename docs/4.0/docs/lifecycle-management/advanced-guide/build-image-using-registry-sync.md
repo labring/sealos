@@ -2,57 +2,57 @@
 sidebar_position: 2
 ---
 
-# 镜像构建改进指南
+# Guide to Image Building Improvement
 
-## 深入理解Sealos镜像构建
+## Deep Understanding of Sealos Image Building
 
-为了了解Sealos镜像构建的背后所做的工作，我们将首先揭示它在底层究竟进行了哪些操作。以下是一个直观的架构图：
+To understand the work behind Sealos image building, we will first reveal what operations it actually performs at the underlying level. Here is an intuitive architectural diagram:
 
 ![](images/build.png)
 
-Sealos在构建镜像过程中涵盖了以下几个核心步骤：
+Sealos covers the following core steps in the image building process:
 
-- **缓存镜像**：解析构建执行时的工作目录（在这里我们称之为"context"目录），将缓存镜像保存到registry结构并存储在./registry目录下。
-- **构建镜像**：在context目录中进行镜像构建，生成新的镜像。（请注意，构建镜像时需要将./registry目录进行复制。）
+- **Cache images**: Parse the working directory during the build execution (here we call it the "context" directory), save the cache image to the registry structure, and store it in the ./registry directory.
+- **Build images**: Build images in the context directory and generate new images. (Please note, you need to copy the ./registry directory when building images.)
 
-## 提升镜像构建效率
+## Enhancing Image Building Efficiency
 
-当前项目中，我们借用了`github.com/distribution/distribution`的源代码，在执行缓存镜像的过程中直接调用了registry的sdk并启动了registry-proxy功能。借助于镜像仓库的缓存能力，我们将镜像缓存并存入context/registry目录。
+In the current project, we have borrowed the source code of `github.com/distribution/distribution`. During the process of caching images, we directly call the registry's sdk and start the registry-proxy function. With the caching ability of the image repository, we cache the image and store it in the context/registry directory.
 
-这个过程的关键就在于调用了distribution仓库的方法进行保存镜像：
+The key to this process is to call the method of the distribution repository to save the image:
 
-- 启动 registry-proxy 功能。
-- 保存镜像摘要及索引相关数据（通过调用saveManifestAndGetDigest方法）。
-- 保存镜像文件数据（通过调用saveBlobs方法）。
+- Start the registry-proxy function.
+- Save image digest and related index data (by calling the saveManifestAndGetDigest method).
+- Save image file data (by calling the saveBlobs method).
 
-这种方法确实具有一些显著的优点：
+This method does have some significant advantages:
 
-- 轻量化：无需依赖其他组件即可保存镜像。
-- 自由控制：可以自由控制保存逻辑，无需依赖第三方组件。
+- Lightweight: Images can be saved without relying on other components.
+- Free control: You can freely control the save logic without relying on third-party components.
 
-然而，我们也注意到了一些潜在的问题：
+However, we have also noticed some potential problems:
 
-- 对新手来说，代码理解难度较高，不易清晰了解这里的逻辑。
-- 无法缓存使用token认证的方式。
-- 需要依赖一些临时存储空间，对空间有要求。
+- For beginners, the code is difficult to understand and the logic here is not easy to grasp.
+- Unable to cache using the token authentication method.
+- Need to rely on some temporary storage space, which requires space.
 
-考虑到这些问题，我们决定尝试一种新的模式：在本地启动一个轻量的registry，使用`skopeo copy`的sdk进行代码复用。这一改变直接解决了之前所有的问题。
+Considering these issues, we decided to try a new mode: start a lightweight registry locally and use the sdk of `skopeo copy` for code reuse. This change directly solves all the previous problems.
 
 ![](images/registry-build.png)
 
-**所以，新的构建方式 ✨镜像仓库同步✨ 优雅登场 🎉🎉**
+**Therefore, the new construction method ✨Image Repository Sync✨ gracefully debuts 🎉🎉**
 
-官方仓库中的[#3154](https://github.com/labring/sealos/pull/3154)这个PR已经完成了这个功能的实现。目前，Sealos支持这两种方式进行镜像构建。接下来，我会介绍如何启动新功能（如果新功能表现稳定，我们可能会废弃旧的构建方式）。
+The [#3154](https://github.com/labring/sealos/pull/3154) PR in the official repository has completed the implementation of this feature. Currently, Sealos supports these two ways of image construction. Next, I will introduce how to start the new feature (if the new feature performs stably, we may abandon the old construction method).
 
-## 如何启动新功能
+## How to Start the New Feature
 
-启动新功能非常简单，只需在你构建镜像之前添加一个环境变量即可。这个功能同时支持build和merge两个命令。
+Starting the new feature is very simple, just add an environment variable before you build the image. This feature supports both build and merge commands.
 
 ```shell
 SEALOS_REGISTRY_SYNC_EXPERIMENTAL=true sealos build -t test .
 ```
 
-以下是执行上述命令后的预期输出：
+Here is the expected output after executing the above command:
 
 ```tex
 SEALOS_REGISTRY_SYNC_EXPERIMENTAL=true sealos build -t test .
@@ -75,9 +75,11 @@ Copying blob 13ab73c881c8 done
 Copying config 4e22d16b36 done
 Writing manifest to image destination
 Storing signatures
---> 4e22d16b366
+--> 4e22d16
+
+b366
 Successfully tagged localhost/test:latest
 4e22d16b366e9fec25641522a74cbd73a7db67dc0516b8f8e00200c4d0551592
 ```
 
-希望以上内容可以帮助您更好地理解并使用Sealos的新镜像构建方式。
+I hope the above content can help you better understand and use Sealos's new image building method.

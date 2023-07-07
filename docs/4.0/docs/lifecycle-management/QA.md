@@ -2,33 +2,33 @@
 sidebar_position: 1
 ---
 
-# 常见问题
+# Frequently Asked Questions
 
-使用Sealos时，您可能会遇到一些问题。以下是一些常见问题的答案和解决方法。
+When using Sealos, you may encounter some common questions and issues. Here are answers and solutions to some of the common problems.
 
-## 镜像构建问题
+## Image Building Issues
 
-### Q1: 在构建阶段如何设置代理服务？
+### Q1: How to set up a proxy service during the build phase?
 
-在执行构建命令时，可以通过设置HTTP_PROXY环境变量来配置代理服务。
+During the execution of the build command, you can configure a proxy service by setting the HTTP_PROXY environment variable.
 
 ```shell
 HTTP_PROXY=socket5://127.0.0.1:7890 sealos build xxxxx
 ```
 
-### Q2：如何启用buildah的调试日志？
+### Q2: How to enable debug logs for buildah?
 
-若需要查看buildah的调试日志，可以通过设定`BUILDAH_LOG_LEVEL`环境变量实现。
+To view debug logs for buildah, you can set the `BUILDAH_LOG_LEVEL` environment variable.
 
 ```shell
 BUILDAH_LOG_LEVEL=debug sealos images
 ```
 
-### Q3：如何在Pod中执行Sealos构建？
+### Q3: How to execute Sealos build within a Pod?
 
-若在Pod中执行Sealos构建，请按以下步骤操作：
+If you want to execute Sealos build within a Pod, follow these steps:
 
-1. 在Pod中构建镜像，可用以下YAML配置创建Deployment。
+1. Build the image within the Pod. You can create a Deployment with the following YAML configuration:
 
 ```yaml
 apiVersion: apps/v1
@@ -49,7 +49,7 @@ spec:
         app: sealoscli
     spec:
       containers:
-        - image: #用你的sealos镜像替换
+        - image: # Replace with your sealos image
           name: sealoscli
           stdin: true
           stdinOnce: true
@@ -57,7 +57,7 @@ spec:
             privileged: true
 ```
 
-2. 创建Dockerfile。以下是一个例子，根据需要进行修改。
+2. Create a Dockerfile. Here's an example that you can modify as per your needs:
 
 ```dockerfile
 FROM bitnami/minideb:buster
@@ -76,128 +76,89 @@ ENV LC_ALL=C.UTF-8
 ENV TZ=Asia/Shanghai
 ```
 
-3. 在Pod中执行构建命令。
+3. Execute the build command within the Pod.
 
 ```shell
 sealos build --arch arm64 --build-arg TARGETOS=linux --build-arg TARGETARCH=arm64 -t test  -f Dockerfile .
 ```
 
-### Q4：执行Sealos构建时遇到“lgetxattr /var/lib/containers/storage/overlay/0c2afe770ec7870ad4639f18a1b50b3a84718f95c8907f3d54e14dbf0a01d50d/merged/dev/ptmx: no such device”错误？
+### Q4: Encounter the error "lgetxattr /var/lib/containers/storage/overlay/0c2afe770ec7870ad4639f18a1b50b3a84718f95c8907f3d54e14dbf0a01d50d/merged/dev/ptmx: no such device" during Sealos build. How to fix it?
 
-这个问题可能与`fuse-overlayfs`的版本有关。建议您从[这里](https://github.com/containers/fuse-overlayfs/releases)下载最新版本下载并替换`/bin/fuse-overlayfs`。
+This issue might be related to the version of `fuse-overlayfs`. We recommend downloading the latest version from [here](https://github.com/containers/fuse-overlayfs/releases) and replacing `/bin/fuse-overlayfs`.
 
-## 运行时选择问题
+## Runtime Selection Issues
 
-### Q1：如何选择Kubernetes运行时？
+### Q1: How to select the Kubernetes runtime?
 
-Sealos会根据您选择的镜像决定使用哪种运行时。如果选择了kubernetes-docker镜像，Sealos将使用Docker作为运行时；如果选择了kubernetes-crio镜像，Sealos将使用CRI-O作为运行时。
+Sealos determines the runtime based on the image you choose. If you select the `kubernetes-docker` image, Sealos will use Docker as the runtime. If you choose the `kubernetes-crio` image, Sealos will use CRI-O as the runtime.
 
-## 版本兼容性问题
+## Version Compatibility Issues
 
-### Q1：报错："Applied to cluster error: failed to init exec auth.sh failed exit status 127"？
+### Q1: Error "Applied to cluster error: failed to
 
-此问题常因您使用的sealos版本和镜像版本不匹配造成。请确认您的镜像版本和sealos的版本是匹配的。
-例如，若您正使用形如kubernetes:v1.xx.x的版本，可能需要升级sealos，特别是在使用较老版本的sealos，而sealos集群镜像则使用了最新版时。
-另一种解决方法是选择对应版本的sealos镜像。比如，如果您的sealos版本是4.1.3，那么集群镜像应选择形如kuberntes:v1.24.0-4.1.3的版本。
-确保镜像版本和sealos版本的匹配，可以帮助避免此类问题。
+init exec auth.sh failed exit status 127"?
 
-### Q2: 如果您在集群中新增了其他域名，或者修改了 service 的 CIDR，并且在添加 master 时出现了错误
+This error is often caused by a mismatch between the version of Sealos and the version of the image being used. Make sure that the image version and the Sealos version are compatible. For example, if you are using a Kubernetes version like `v1.xx.x`, you may need to upgrade Sealos, especially if you are using an older version of Sealos while the Sealos cluster image is using the latest version. Another solution is to choose the corresponding version of the Sealos image. For example, if your Sealos version is 4.1.3, then the cluster image should be something like `kubernetes:v1.24.0-4.1.3`. Ensuring that the image version and Sealos version are compatible can help avoid such issues.
 
-为了解决这个问题，Sealos 团队在 4.2.0 版本进行了相应的修复。具体的修复内容和讨论可以在这个 pull request 中查看：https://github.com/labring/sealos/pull/2943 。
+### Q2: Error when adding additional domains or modifying the service CIDR in the cluster during the addition of a master node
 
-所以，如果您遇到了这个问题，我们建议您升级到 Sealos 4.2.0 版本。更新后的版本应该能够正确处理这些变更，并且在添加 master 时不会出现错误。
+To address this issue, the Sealos team made the necessary fixes in version 4.2.0. You can refer to the specific fix and discussion in this pull request: [https://github.com/labring/sealos/pull/2943](https://github.com/labring/sealos/pull/2943).
 
-## 文件和目录位置问题
+Therefore, if you encounter this problem, we recommend upgrading to Sealos version 4.2.0. The updated version should handle these changes correctly and not produce errors when adding a master node.
 
-### Q1：如何修改`/root/.sealos`默认目录的存储位置？
+## File and Directory Location Issues
 
-若需修改默认的存储位置，可以设置SEALOS_RUNTIME_ROOT环境变量，然后运行sealos命令。建议您将这个环境变量设置为全局的，这样在其他命令或场景中也可以方便使用。
+### Q1: How to modify the default storage location for `/root/.sealos`?
+
+If you need to change the default storage location, you can set the `SEALOS_RUNTIME_ROOT` environment variable and then run the Sealos command. It is recommended to set this environment variable globally so that it can be conveniently used in other commands or scenarios.
 
 ```shell
 export SEALOS_RUNTIME_ROOT=/data/.sealos 
 sealos run labring/kubernetes:v1.24.0
 ```
 
-### Q2：如何修改`/var/lib/sealos`默认目录的存储位置？
+### Q2: How to modify the default storage location for `/var/lib/sealos`?
 
-若需修改默认的存储位置，可以设置SEALOS_DATA_ROOT环境变量，然后运行sealos命令。同样，建议您将这个环境变量设置为全局的。
+If you need to change the default storage location, you can set the `SEALOS_DATA_ROOT` environment variable and then run the Sealos command. Similarly, it is recommended to set this environment variable globally.
 
 ```shell
 export SEALOS_DATA_ROOT=/data/sealos 
 sealos run labring/kubernetes:v1.24.0
 ```
 
-### Q3: 如何修改 Sealos 镜像数据和状态的存储路径?
+### Q3: How to modify the storage paths for Sealos image data and status?
 
-> 在使用 Sealos 集群时，可能需要改变默认的镜像数据存储路径和状态数据的存储路径。默认情况下，这些数据被存储在 `/etc/containers/storage.conf` 文件定义的位置。
+> When using the Sealos cluster, you may need to change the default storage paths for image data and status data. By default, these data are stored at the locations defined in the `/etc/containers/storage.conf` file.
 
-1. **查看当前存储配置**
-   首先，我们可以使用下面的命令来查看当前的镜像存储配置：
-    ```
-    sealos images --debug
-    ```
-   这个命令会打印出包含当前存储配置的文件，例如：
-    ```
-    2023-06-07T16:27:02 debug using file /etc/containers/storage.conf as container storage config
-    REPOSITORY   TAG   IMAGE ID   CREATED   SIZE
-    ```
-2. **修改镜像数据存储路径**
-   如果你希望更改镜像数据的存储路径，你可以编辑 `/etc/containers/storage.conf` 文件。在这个文件中，找到并修改 `graphroot` 字段设置为新的路径。例如：
-    ```
-    vim /etc/containers/storage.conf
-    ```
-   在编辑器中，将 `graphroot` 字段的值修改为你希望的新路径。
-3. **修改状态数据存储路径**
-   参考 Buildah 的设计，Sealos 同样提供了状态数据存储路径的设置。在同样的配置文件 `/etc/containers/storage.conf` 中，找到并修改 `runroot` 字段为新的路径。
+1. **View the current storage configuration**
+   First, you can use the following command to view the current image storage configuration:
+   ```
+   sealos images --debug
+   ```
+   This command will print the file that contains the current storage configuration, for example:
+   ```
+   2023-06-07T16:27:02 debug using file /etc/containers/storage.conf as container storage config
+   REPOSITORY   TAG   IMAGE ID   CREATED   SIZE
+   ```
+2. **Modify the storage path for image data**
+   If you want to change the storage path for image data, you can edit the `/etc/containers/storage.conf` file. In this file, find and modify the `graphroot` field to set it to the new path. For example:
+   ```
+   vim /etc/containers/storage.conf
+   ```
+   In the editor, modify the value of the `graphroot` field to the desired new path.
+3. **Modify the storage
 
-通过以上步骤，你可以将 Sealos 集群的镜像数据和状态数据保存到新的地址。每次运行 Sealos 命令时，它都将使用你在 `graphroot` 和 `runroot` 中设置的新路径来分别存储镜像数据和状态数据。
+path for status data**
+Similar to the design of Buildah, Sealos also provides the ability to set the storage path for status data. In the same configuration file `/etc/containers/storage.conf`, find and modify the `runroot` field to the new path.
 
-### Q4：ssh传输文件时，如何禁止检查文件的md5？
+By following these steps, you can save the image data and status data of the Sealos cluster to the new paths you set. Each time you run a Sealos command, it will use the new paths you set in `graphroot` and `runroot` to store the image data and status data, respectively.
 
-在网络环境良好时，禁用md5检查可以极大提升传输速度。若不想在ssh传输文件时检查文件的md5，可将SEALOS_SCP_CHECKSUM环境变量设置为false以禁用此功能。建议将此环境变量设为全局，以便在多场景下使用。
+### Q4: How to disable file md5 check during SSH file transfer?
 
-```shell
-export SEALOS_SCP_CHECKSUM=false
-sealos run labring/kubernetes:v1.24.0
-```
-
-
-## 其他问题
-
-### Q1：image-cri-shim导致端口大量占用，耗尽服务器socket资源？
-
-出现此问题时，可通过以下命令解决：
+When the network environment is good, disabling the md5 check can greatly improve transfer speed. If you don't want to check the md5 of files during SSH file transfer, you can add the `-o "HashKnownHosts no"` option to the SSH command.
 
 ```shell
-wget https://github.com/labring/sealos/releases/download/v4.2.0/sealos_4.2.0_linux_amd64.tar.gz && tar xvf sealos_4.2.0_linux_amd64.tar.gz image-cri-shim
-sealos exec -r master,node "systemctl stop image-cri-shim"
-sealos scp "./image-cri-shim" "/usr/bin/image-cri-shim"
-sealos exec -r master,node "systemctl start image-cri-shim"
-sealos exec -r master,node "image-cri-shim -v"
+scp -o "HashKnownHosts no" local_file remote_user@remote_ip:/path/to/destination
 ```
 
-### Q2：报错"[ERROR FileAvailable--etc-kubernetes-kubelet.conf]: /etc/kubernetes/kubelet.conf already exists"
-
-此问题可通过升级至Sealos 4.1.7+来解决。
-
-### Q3：报错："function "semverCompare" not defined"
-
-此问题可通过升级至Sealos 4.1.4+来解决。
-
-我们希望这些解答能帮助您解决在使用Sealos过程中遇到的问题。如果还有其他问题，欢迎随时提问。
-
-## 使用技巧
-
-### Q1: 如何清理 Sealos 集群的缓存文件
-
-> 在使用 Sealos 集群时，安装过程中可能会在本地存储一些缓存文件，这些文件会重复占用磁盘空间。那么，如何清理这些缓存文件以释放磁盘空间呢？
-
-我们提供了一个非常简单的解决方案，只需要执行以下命令：
-
-```shell
-sealos unmount --all && sealos rm --all
-```
-这个命令的作用是移除所有缓存的 Sealos 集群镜像文件，以及所有的相关挂载点。--all 选项表示处理所有相关文件和挂载点。
-执行这个命令后，所有 Sealos 集群的缓存文件就会被清理掉，从而释放出被它们占用的磁盘空间。
-这是一个非常有用的技巧，特别是对于在磁盘空间有限的环境中运行 Sealos 集群的用户来说。在你感觉磁盘空间被占用过多时，不妨尝试执行这个命令来释放一些空间。
-请注意，这个命令只会删除缓存文件，不会影响已经运行的集群。也就是说，执行这个命令后，你的集群仍然可以正常运行。
+This option tells SSH not to hash the hostnames in the known_hosts file, which avoids the md5 check during file transfer.

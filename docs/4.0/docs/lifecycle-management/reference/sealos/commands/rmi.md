@@ -2,52 +2,52 @@
 sidebar_position: 6
 ---
 
-# rmi 删除本地镜像
+# Rmi: Delete Local Images
 
-`sealos rmi` 是 Sealos 命令行工具中的一个命令，用于删除本地存储的一个或多个镜像。这个命令可以帮助你清理无用或者过时的镜像，节省存储空间。本指南将详细介绍其使用方法。
+`sealos rmi` is a command in the Sealos command-line tool that is used to delete one or more images stored locally. This command can help you clean up useless or outdated images and save storage space. This guide will detail how to use it.
 
-## 基本用法
+## Basic Usage
 
-基本的 `sealos rmi` 命令格式如下：
-
-```bash
-sealos rmi imageID
-```
-
-在上述命令中，`imageID` 是你想要删除的镜像的 ID。
-
-## 示例
-
-例如，你可以使用以下命令删除 ID 为 `imageID` 的镜像：
+The basic format of the `sealos rmi` command is as follows:
 
 ```bash
 sealos rmi imageID
 ```
 
-如果你想要删除多个镜像，只需要在命令行中列出所有的镜像 ID，例如：
+In the above command, `imageID` is the ID of the image you want to delete.
+
+## Example
+
+For instance, you can use the following command to delete an image with ID `imageID`:
+
+```bash
+sealos rmi imageID
+```
+
+If you want to delete multiple images, just list all the image IDs in the command line, for example:
 
 ```bash
 sealos rmi imageID1 imageID2 imageID3
 ```
 
-## 可选参数
+## Optional Parameters
 
-- `-a`, `--all`: 该参数用于删除所有镜像。使用此选项时，命令将不接受任何镜像 ID。
+- `-a`, `--all`: This parameter is used to delete all images. When using this option, the command will not accept any image IDs.
 
 ```bash
 sealos rmi --all
 ```
 
-- `-f`, `--force`: 该参数用于强制删除镜像，以及使用该镜像的任何容器。
+- `-f`, `--force`: This parameter is used to forcefully delete an image and any containers using that image.
 
 ```bash
 sealos rmi --force imageID
 ```
 
-- `-p`, `--prune`: 该参数用于修剪悬挂的镜像（没有标签且没有被任何容器引用的镜像）。
+- `-p`, `--prune`: This parameter is used to prune dangling images (images without a tag and not referenced by any containers).
 
 ```bash
 sealos rmi --prune
 ```
 
-以上就是 `sealos rmi` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。
+The above is the usage guide for the `sealos rmi` command. We hope it is helpful to you. If you encounter any problems during use, feel free to ask us any questions.

@@ -2,64 +2,64 @@
 sidebar_position: 6
 ---
 
-# image 镜像列表
+# Image List
 
-Sealos 的 `images` 命令主要用于查看本地存储的镜像。用户可以通过它来查看本地所有的镜像，或者筛选查看特定的镜像。该命令支持多种参数，可以帮助用户更方便的查看和管理镜像。
+Sealos' `images` command is primarily used to view locally stored images. Users can use it to view all local images or to filter and view specific images. The command supports various parameters to help users view and manage images more conveniently.
 
-## 基本用法
+## Basic Usage
 
-基本的 `sealos images` 命令将显示所有非中间阶段的本地镜像，例如：
+The basic `sealos images` command will display all non-intermediate stage local images, for example:
 
 ```bash
 sealos images
 ```
 
-这将显示本地存储的所有最终阶段镜像。
+This will display all final stage images stored locally.
 
-## 示例
+## Examples
 
-以下是 `sealos images` 命令的一些常见示例：
+Here are some common examples of the `sealos images` command:
 
-1. 显示所有镜像，包括构建的中间镜像：
+1. Display all images, including intermediate images built:
 
     ```bash
     sealos images --all
     ```
 
-2. 显示特定镜像：
+2. Display a specific image:
 
     ```bash
     sealos images [imageName]
     ```
 
-3. 以指定的 Go 模板格式显示镜像：
+3. Display images in a specified Go template format:
 
     ```bash
     sealos images --format '{{.ID}} {{.Name}} {{.Size}} {{.CreatedAtRaw}}'
     ```
 
-## 参数
+## Parameters
 
-以下是 `sealos images` 命令的一些常用参数：
+Here are some common parameters for the `sealos images` command:
 
-- `-a, --all`：显示所有镜像，包括构建过程中的中间镜像。
+- `-a, --all`: Display all images, including intermediate images built.
 
-- `--digests`：显示镜像的摘要。
+- `--digests`: Display the digests of images.
 
-- `-f, --filter`：根据提供的条件过滤输出结果。
+- `-f, --filter`: Filter output based on provided conditions.
 
-- `--format`：使用 Go 模板对镜像进行美化打印。
+- `--format`: Beautify the images printout using a Go template.
 
-- `--history`：显示镜像的命名历史。
+- `--history`: Display the naming history of images.
 
-- `--json`：以 JSON 格式输出。
+- `--json`: Output in JSON format.
 
-- `--no-trunc`：不截断输出。
+- `--no-trunc`: Do not truncate the output.
 
-- `-n, --noheading`：不打印列标题。
+- `-n, --noheading`: Do not print column headings.
 
-- `-q, --quiet`：只显示镜像 ID。
+- `-q, --quiet`: Only display image IDs.
 
-通过组合使用这些参数，用户可以轻松地获取和管理本地存储的镜像。例如，使用 `--all` 参数可以查看所有镜像，包括中间镜像；使用 `--filter` 参数可以根据特定条件过滤镜像；使用 `--json` 参数可以以 JSON 格式输出镜像信息，方便进行程序化处理等。
+By combining these parameters, users can easily retrieve and manage locally stored images. For example, using the `--all` parameter displays all images, including intermediate ones; using the `--filter` parameter filters images based on specific conditions; using the `--json` parameter outputs image information in JSON format, facilitating programmatic processing, etc.
 
-以上就是 `sealos images` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。
+That's the usage guide for the `sealos images` command, and we hope it has been helpful. If you encounter any problems during usage, feel free to ask us.

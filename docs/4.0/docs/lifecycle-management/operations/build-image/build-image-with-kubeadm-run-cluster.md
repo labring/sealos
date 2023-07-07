@@ -2,13 +2,13 @@
 sidebar_position: 7
 ---
 
-# 使用构建镜像自定义 Kubernetes 集群
+# Customizing a Kubernetes Cluster by Building Custom Images
 
-本指南介绍如何使用 `kubeadm config` 构建自定义镜像来自定义 Kubernetes 集群。
+This guide introduces how to use `kubeadm config` to build custom images for customizing a Kubernetes cluster.
 
-## 构建自定义镜像
+## Building Custom Images
 
-要构建自定义镜像，请运行以下命令：
+To build a custom image, run the following commands:
 
 ```bash
 $ mkdir -p /tmp/buildimage
@@ -28,9 +28,9 @@ EOF
 $ sudo sealos build --debug -t hack:dev  /tmp/buildimage
 ```
 
-## 将应用程序配置附加到Clusterfile
+## Attaching Application Configurations to Clusterfile
 
-接下来，我们将在`Clusterfile`中附加应用程序配置。例如，如果您想更改Pod的CIDR范围，则应更改`spec.data.spec.calicoNetwork.ipPools.cidr`字段。最终的`Clusterfile`将是这样的：
+Next, we will attach application configurations in the `Clusterfile`. For example, if you want to change the CIDR range for Pods, you should change the `spec.data.spec.calicoNetwork.ipPools.cidr` field. The final `Clusterfile` would look like this:
 
 ```yaml
 apiVersion: apps.sealos.io/v1beta1
@@ -86,12 +86,12 @@ spec:
           interface: "eth.*|en.*"
 ```
 
-在这个例子中，我们已经将`calico`应用程序的配置附加到了`Clusterfile`中。此配置指定了Pod的CIDR范围和应用程序运行所需的其他选项。
+In this example, we have attached the configuration of the `calico` application to the `Clusterfile`. This configuration specifies the CIDR range for Pods and other options needed for the application to run.
 
-## 安装群集
+## Installing the Cluster
 
-最后，我们可以使用`sealos apply -f Clusterfile`来安装集群。安装集群后，`Clusterfile`将保存在`.sealos/default/Clusterfile`目录中。您可以修改`Clusterfile`以进一步自定义集群。
+Finally, we can install the cluster using `sealos apply -f Clusterfile`. After installing the cluster, `Clusterfile` will be saved in the `.sealos/default/Clusterfile` directory. You can modify the `Clusterfile` to further customize the cluster.
 
-**⚠️ 注意：**
+**⚠️ Note:**
 
-+ 您可以参考[官方文档](https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-config/)或使用`kubeadm config print init-defaults`命令打印kubeadm配置。
++ You can refer to the [official documentation](https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-config/) or use the `kubeadm config print init-defaults` command to print the kubeadm configuration.

@@ -2,83 +2,83 @@
 sidebar_position: 1
 ---
 
-# run 运行集群镜像
+# Run: Execute Cluster Images
 
-Sealos 的 `run` 命令是一个强大且灵活的工具，它支持集群初始化、应用安装、多镜像执行，单机集群等操作。下面是对于 `sealos run` 命令及其参数的详细解释和一些使用示例。
+The `run` command of Sealos is a powerful and flexible tool that supports cluster initialization, application installation, multi-image execution, single-node clusters, and more. Below is a detailed explanation and some usage examples of the `sealos run` command and its parameters.
 
-## 命令概览
+## Command Overview
 
 ```
 sealos run <image> --masters [arg] --nodes [arg] [Options]
 ```
 
-`<image>` 参数是您想要在集群中运行的 Docker 镜像名称和版本。`--masters` 和 `--nodes` 是您想要运行这个镜像的 master 节点和 node 节点的 IP 列表。
+The `<image>` parameter is the name and version of the Docker image you want to run in the cluster. `--masters` and `--nodes` are the IP lists of the master and node nodes where you want to run this image.
 
-### 选项解释
+### Option Explanation
 
-- `--cluster='default'`: 要运行操作的集群名称。
+- `--cluster='default'`: The name of the cluster where the operation is to be run.
 
-- `--cmd=[]`: 覆盖镜像中的 CMD 指令。
+- `--cmd=[]`: Overwrite the CMD instruction in the image.
 
-- `--config-file=[]`: 自定义配置文件的路径，用于替换资源。
+- `--config-file=[]`: The path to the custom configuration file, used to replace resources.
 
-- `-e, --env=[]`: 在命令执行期间设置的环境变量。
+- `-e, --env=[]`: The environment variables set during command execution.
 
-- `-f, --force=false`: 强制覆盖此集群中的应用。
+- `-f, --force=false`: Forcefully overwrite the application in this cluster.
 
-- `--masters=''`: 要运行的 master 节点。
+- `--masters=''`: The master nodes to be run.
 
-- `--nodes=''`: 要运行的 node 节点。
+- `--nodes=''`: The node nodes to be run.
 
-- `-p, --passwd=''`: 使用提供的密码进行认证。
+- `-p, --passwd=''`: Authenticate using the provided password.
 
-- `-i, --pk='/root/.ssh/id_rsa'`: 选择从其中读取公钥认证身份的私钥文件。
+- `-i, --pk='/root/.ssh/id_rsa'`: Choose the private key file from which to read the public key authentication identity.
 
-- `--pk-passwd=''`: 解密 PEM 编码的私钥的密码。
+- `--pk-passwd=''`: The password to decrypt the PEM-encoded private key.
 
-- `--port=22`: 远程主机的连接端口。
+- `--port=22`: The connection port of the remote host.
 
-- `-t, --transport='oci-archive'`: 从 tar 归档文件加载镜像传输。(可选值: oci-archive, docker-archive)
+- `-t, --transport='oci-archive'`: Load image transport from a tar archive file. (Optional values: oci-archive, docker-archive)
 
-- `-u, --user=''`: 认证的用户名。
+- `-u, --user=''`: The username for authentication.
 
-## 示例
+## Examples
 
-1. 创建集群到您的裸机服务器，指定 IP 列表：
+1. Create a cluster on your bare-metal servers, specifying the IP list:
 ```
 sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
 ```
 
-2. 多镜像运行：
+2. Run multiple images:
 ```
 sealos run labring/kubernetes:v1.24.0 labring/helm:v3.11.3  calico:v3.24.6 \
     --masters 192.168.64.2,192.168.64.22,192.168.64.20 --nodes 192.168.64.21,192.168.64.19
 ```
 
-3. 指定服务器的 InfraSSH 端口:
+3. Specify the InfraSSH port of the server:
 ```
 sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --port 24 --passwd 'xxx'
 ```
 
-4. 自定义 VIP Kubernetes 集群:
+4. Customize a VIP Kubernetes cluster:
 ```
 sealos run -e defaultVIP=10.103.97.2 labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
 ```
 
-5. 创建单节点 Kubernetes 集群:
+5. Create a single-node Kubernetes cluster:
 ```
 sealos run labring/kubernetes:v1.24.0 
 ```
 
-6. 使用自定义环境变量创建集群:
+6. Create a cluster using custom environment variables:
 ```
 sealos run -e DashBoardPort=8443 mydashboard:latest  --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
 ```
 
-这些示例展示了 `sealos run` 命令的强大和灵活性，可以根据您的需求进行定制和调整。
+These examples demonstrate the power and flexibility of the `sealos run` command, which can be customized and adjusted according to your needs.
 
-更多示例请参考 [运行集群](https://docs.sealos.io/docs/lifecycle-management/operations/run-cluster)。
+For more examples, please refer to [Run Cluster](https://docs.sealos.io/docs/lifecycle-management/operations/run-cluster).

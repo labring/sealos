@@ -94,9 +94,7 @@ spec:
   type: NodePort
   ports:
     - port: 80
-      nodePort: 
-
-30080
+      nodePort: 30080
       name: http
     - port: 443
       nodePort: 30443

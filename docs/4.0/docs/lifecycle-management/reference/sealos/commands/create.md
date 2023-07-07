@@ -2,40 +2,40 @@
 sidebar_position: 6
 ---
 
-# create 创建工作目录
+# Create Working Directory
 
-`sealos create` 是 Sealos 命令行工具中的一个命令，主要用于在不执行 CMD 的情况下创建集群工作目录，以便审查镜像。本指南将详细介绍其使用方法和选项。
+`sealos create` is a command in the Sealos command line tool, mainly used for creating the cluster working directory without executing the CMD, so as to review the image. This guide will detail its usage and options.
 
-## 基本用法
+## Basic Usage
 
-`sealos create` 命令用于创建集群工作目录，但不实际运行，主要用于调试或测试，它可以输出集群镜像的地址，你可以校验集群镜像内容是否与预期一致。
-
-```bash
-sealos create docker.io/labring/kubernetes:v1.24.0
-```
-
-在上述命令中，`clustername` 代表你要创建的集群的名称。
-
-## 选项
-
-`sealos create` 命令提供了以下选项：
-
-- `-c, --cluster='default'`: 要创建但不实际运行的集群的名称。默认为 `default`。
-
-- `--platform='linux/arm64/v8'`: 将镜像的操作系统/架构/版本设置为提供的值，而不是主机的当前操作系统和架构（例如 `linux/arm`）。
-
-- `--short=false`: 如果为真，只打印挂载路径。
-
-每个选项后都可以跟随一个参数。
-
-## 示例
-
-例如，你可以使用以下命令创建一个名为 `mycluster` 的集群，但不实际运行它：
+The `sealos create` command is used to create a cluster working directory but does not actually run, mainly used for debugging or testing. It can output the address of the cluster image, you can check whether the content of the cluster image is consistent with the expectation.
 
 ```bash
 sealos create docker.io/labring/kubernetes:v1.24.0
 ```
 
-此命令将创建一个镜像名称为 `docker.io/labring/kubernetes:v1.24.0` 的集群工作目录，并输出集群镜像的地址，但不会实际运行集群竟。
+In the above command, `clustername` represents the name of the cluster you want to create.
 
-以上就是 `sealos create` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。
+## Options
+
+The `sealos create` command provides the following options:
+
+- `-c, --cluster='default'`: The name of the cluster to be created but not actually run. The default is `default`.
+
+- `--platform='linux/arm64/v8'`: Set the operating system/architecture/version of the image to the provided value, rather than the current operating system and architecture of the host (for example, `linux/arm`).
+
+- `--short=false`: If true, only print the mount path.
+
+Each option can be followed by an argument.
+
+## Example
+
+For example, you can use the following command to create a cluster named `mycluster`, but do not actually run it:
+
+```bash
+sealos create docker.io/labring/kubernetes:v1.24.0
+```
+
+This command will create a cluster working directory with an image name of `docker.io/labring/kubernetes:v1.24.0` and output the address of the cluster image, but the cluster will not actually run.
+
+The above is the usage guide for the `sealos create` command, hope it helps. If you encounter any problems during use, feel free to ask us.

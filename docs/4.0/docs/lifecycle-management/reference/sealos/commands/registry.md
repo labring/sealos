@@ -2,233 +2,232 @@
 sidebar_position: 8
 ---
 
-# registry 镜像仓库命令
+# Registry Image Repository Commands
 
-## Sealos：sealos registry save 命令详解与使用指南
+## Sealos: Detailed Explanation and User Guide for the `sealos registry save` Command
 
-`registry save` 命令用于将远程的 Docker 镜像拉取到本地并保存在指定的目录中。这对于在离线或者内网环境中部署容器镜像特别有用。
+The `registry save` command is used to pull remote Docker images to the local and save them in a specified directory. This is particularly useful for deploying container images in offline or intranet environments.
 
-在执行 `registry save` 命令时，将自动获取 `sealos login` 认证信息进行仓库认证。
+When executing the `registry save` command, it will automatically obtain the `sealos login` authentication information for repository authentication.
 
-**使用说明**
+**Usage Guide**
 
-1. 使用context自动获取镜像
+1. Use context to automatically retrieve images
 
-   使用默认方式拉取并保存镜像。这种模式会自动解析 `charts` 目录、`manifests` 目录和 `images` 目录以获取镜像列表。
+   Pull and save images in the default manner. This mode will automatically parse the `charts` directory, `manifests` directory, and `images` directory to get the image list.
 
-   **使用示例**
+   **Usage Example**
 
  ```shell
  sealos registry save --registry-dir=/tmp/registry1 my-context
  ```
 
 
-2. 指定镜像列表方式
+2. Specified image list mode
 
-   使用参数传入镜像列表
+   Pass the image list using arguments
 
-   **使用示例**
+   **Usage Example**
 
   ```shell
   sealos registry save --registry-dir=/tmp/registry2 --images=docker.io/library/busybox:latest
   ```
 
-**选项**
+**Options**
 
-以下选项适用于 `save` 命令及其子命令：
+The following options apply to the `save` command and its subcommands:
 
-- `--max-procs`: 拉取镜像时使用的最大并行进程数。
-- `--registry-dir`: 保存镜像的本地目录。
-- `--arch`: 镜像的目标架构，例如：`amd64`、`arm64` 等。
-- `--images`: 需要拉取并保存的镜像列表，以逗号分隔。例如："my-image1:latest,my-image2:v1.0"。
+- `--max-procs`: The maximum number of parallel processes used to pull images.
+- `--registry-dir`: The local directory to save images.
+- `--arch`: The target architecture of the image, such as: `amd64`, `arm64`, etc.
+- `--images`: The image list to be pulled and saved, separated by commas. For example: "my-image1:latest,my-image2:v1.0".
 
-## Sealos：sealos registry serve 命令详解与使用指南
+## Sealos: Detailed Explanation and User Guide for the `sealos registry serve` Command
 
-在管理 Docker 镜像仓库过程中，Sealos 提供了 `sealos registry serve` 命令以方便用户进行相关操作。本文将详细介绍 `sealos registry serve` 命令的使用方法和示例。
+In the process of managing Docker image repositories, Sealos provides the `sealos registry serve` command to facilitate user operations. This article will detail the usage methods and examples of the `sealos registry serve` command.
 
-### 基本介绍
+### Basic Introduction
 
-`sealos registry serve` 命令的主要作用是启动一个 Docker 分发镜像仓库服务器，支持两种模式：`filesystem` 和 `inmem`。
+The main function of the `sealos registry serve` command is to start a Docker distribution image repository server, supporting two modes: `filesystem` and `inmem`.
 
-1. **Filesystem 模式**：在此模式下，sealctl 将运行一个针对指定目录的 Docker 分发镜像仓库服务器。该模式下，镜像数据将存储在硬盘上。
+1. **Filesystem mode**: In this mode, sealctl will run a Docker distribution image repository server for the specified directory. In this mode, the image data will be stored on the hard drive.
 
-2. **In-memory 模式**：在此模式下，sealctl 将运行一个内存中的 Docker 分发镜像仓库服务器。该模式下，镜像数据仅保存在内存中，进程退出后数据将丢失。
+2. **In-memory mode**: In this mode, sealctl will run a Docker distribution image repository server in memory. In this mode, the image data is only stored in memory, and the data will be lost after the process exits.
 
-### 命令参数
+### Command Parameters
 
-`sealos registry serve filesystem ` 命令支持以下参数：
+The `sealos registry serve filesystem ` command supports the following parameters:
 
-- `--disable-logging`: 禁用日志输出，默认为 false。
-- `--log-level`: 配置日志级别，默认为 'error'。
-- `-p, --port`: 服务器监听的端口，默认为随机未使用的端口。
+- `--disable-logging`: Disable log output, default is false.
+- `--log-level`: Configure log level, default is 'error'.
+- `-p, --port`: The port the server listens to, default is a random unused port.
 
-### 使用示例
+### Usage Examples
 
-以下是一些 `sealos registry serve` 命令的使用示例：
+Here are some usage examples of the `sealos registry serve` command:
 
-#### 在文件系统中启动镜像仓库服务器
+#### Start an image repository server in the filesystem
 
 ```bash
 sealos registry serve filesystem --port=5000
 ```
 
-以上命令将在端口5000上启动一个文件系统镜像仓库服务器。
+The above command will start a filesystem image repository server on port 5000.
 
-#### 在内存中启动镜像仓库服务器
+#### Start an image repository server in memory
 
 ```bash
 sealos registry serve inmem 
 ```
 
-以上命令将启动一个内存镜像仓库服务器。该服务器在进程退出后，存储的数据将丢失。
+The above command will start an in-memory image repository server. The stored data of this server will be lost when the process exits.
 
-通过 `sealctl registry serve` 命令，用户可以轻松地管理和操作 Docker 镜像仓库。无论是在开发环境，还是在生产环境中，它都是一个强大且易用的工具。
+Through the `sealctl registry serve` command, users can easily manage and operate Docker image repositories. Whether in the development environment or in the production environment, it is a powerful and easy-to-use tool.
 
+## Sealos: Detailed Explanation and User Guide of the `sealos registry passwd` Command
 
+In the process of managing Docker image repositories, Sealos provides the `sealos registry passwd` command to facilitate users in modifying the password for the cluster registry. It offers a convenient method to help users change the password of the registry.
 
-## Sealos：sealos registry passwd 命令详解与使用指南
+### Basic Usage
 
-在管理 Docker 镜像仓库过程中，Sealos 提供了 `sealos registry passwd` 命令以方便用户对集群registry进行密码修改。它提供了一种简便的方法，帮助用户修改 registry 的密码。
-
-### 基本用法
-
-使用 `sealos registry passwd` 命令来修改registry的密码。
+Use the `sealos registry passwd` command to modify the password of the registry.
 
 ```bash
 sealos registry passwd
 ```
 
-### 参数
+### Parameters
 
-以下是 `sealos registry passwd` 命令的参数：
+Below are the parameters of the `sealos registry passwd` command:
 
-- `-c, --cluster-name`：集群名称，默认为'default'。
+- `-c, --cluster-name`: Cluster name, the default is 'default'.
 
-- `-f, --cri-shim-file-path`：镜像 cri shim 文件路径，如果为空将不会更新镜像 cri shim 文件。默认路径为'/etc/image-cri-shim.yaml'。
+- `-f, --cri-shim-file-path`: Image cri shim file path, if null it will not update the image cri shim file. The default path is '/etc/image-cri-shim.yaml'.
 
-- `-p, --htpasswd-path`：registry 密码文件路径。默认路径为'/etc/registry/registry_htpasswd'。
+- `-p, --htpasswd-path`: Registry password file path. The default path is '/etc/registry/registry_htpasswd'.
 
-### 使用步骤
+### Usage Steps
 
-1. 执行 `sealos registry passwd` 命令，可以根据需要指定参数来进行配置。
+1. Execute the `sealos registry passwd` command, you can specify parameters according to the needs.
 
-2. 根据命令提示，输入新的密码。
+2. According to the command prompt, input the new password.
 
-3. 命令执行成功后，registry 的密码将被修改为新的密码。
+3. After the command is successfully executed, the registry's password will be changed to the new password.
 
-### 演示说明
+### Demo Explanation
 
 [![asciicast](https://asciinema.org/a/Qu05jah4ZZmjMuFR4vHEKvBsQ.svg)](https://asciinema.org/a/Qu05jah4ZZmjMuFR4vHEKvBsQ)
 
-**在使用过程中,会让用户选择registry类型**
+**In the usage process, it will let the user choose the registry type**
 
-- registry: 二进制启动，执行`systemctl restart registry`进行重启镜像仓库。
-- containerd: containerd启动，执行"nerdctl restart sealos-registry"进行重启镜像仓库。
-- docker: docker启动，执行"docker restart sealos-registry"进行重启镜像仓库。
+- registry: Binary startup, execute `systemctl restart registry` to restart the image repository.
 
-### 注意事项
+- containerd: Containerd startup, execute "nerdctl restart sealos-registry" to restart the image repository.
 
-修改 registry 密码后，所有使用该 registry 的节点和服务都需要更新配置，以使用新的密码进行身份验证。否则，它们将无法从该 registry 拉取或推送镜像。
+- docker: Docker startup, execute "docker restart sealos-registry" to restart the image repository.
 
-如果你不确定如何更新节点和服务的配置，建议在修改 registry 密码之前，先查阅相关文档或者寻求专业的技术支持。
+### Notice
 
+**After changing the registry password, modify the registry password in the Clusterfile**
+After changing the registry password, all nodes and services using this registry need to update their configurations to use the new password for authentication. Otherwise, they will not be able to pull or push images from this registry.
 
+If you are unsure about how to update the configuration of nodes and services, it is recommended to consult related documentation or seek professional technical support before changing the registry password.
 
-## Sealos：`sealos registry sync` 命令详解与使用指南
+## Sealos: Detailed Explanation and User Guide of the `sealos registry sync` Command
 
-Sealos 的 `registry sync` 命令可帮助您在两个 registry 之间同步所有镜像。这不仅可以用于镜像的迁移，还可以备份您的镜像。
+Sealos' `registry sync` command can help you synchronize all images between two registries. This can be used not only for image migration but also for backing up your images.
 
-### 命令基本用法
+### Basic Command Usage
 
-执行 `sealos registry sync` 命令来进行镜像同步：
+Execute the `sealos registry sync` command for image synchronization:
 
 ```bash
 sealos registry sync source dst
 ```
 
-这里的 `source` 表示源 registry 的地址，而 `dst` 是目标 registry 的地址。
+Here `source` represents the address of the source registry, and `dst` is the address of the target registry.
 
-例如，您想将地址为 127.0.0.1:41669 的 registry 中的所有镜像同步到地址为 sealos.hub:5000 的 registry，您应执行以下命令：
+For example, if you want to synchronize all images in the registry with the address of 127.0.0.1:41669 to the registry with the address of sealos.hub:5000, you should execute the following command:
 
 ```bash
 sealos registry sync 127.0.0.1:41669 sealos.hub:5000
 ```
 
-### 认证与权限
+### Authentication and Permissions
 
-在执行 `sealos registry sync` 命令之前，请确保您具有访问源 registry 和目标 registry 的权限。可以使用`sealos login`对registry进行认证登录。
+Before executing the `sealos registry sync` command, please ensure that you have permissions to access the source registry and the target registry. You can use `sealos login` to authenticate the registry.
 
-### 同步过程
+### Synchronization Process
 
-请注意，镜像同步可能需要一些时间，这取决于镜像的数量和大小，以及网络的速度。在同步过程中，请保持网络的连通性，并确保在同步完成之前不要中断命令的执行。
+Please note that image synchronization may take some time, depending on the number and size of images, as well as the speed of the network. During the synchronization process, please keep the network connected and ensure not to interrupt the execution of the command before synchronization is complete.
 
-重要的是，`sealos registry sync` 命令支持增量同步，已经存在于目标 registry 的镜像不会重新同步。
+Importantly, the `sealos registry sync` command supports incremental synchronization. Images that already exist in the target registry will not be re-synchronized.
 
-### 参数选项
+### Parameter Options
 
-`sealos registry sync` 命令还提供了一些参数选项，允许您更精细地控制同步过程：
+The `sealos registry sync` command also provides some parameter options, allowing you to control the synchronization process more finely:
 
-- `--override-arch ARCH`：使用指定的 `ARCH` 替代当前机器的架构来选择镜像。
+- `--override-arch ARCH`: Use the specified `ARCH` to replace the current machine architecture to select images.
 
-- `--override-os OS`：使用指定的 `OS` 替代当前操作系统来选择镜像。
+- `--override-os OS`: Use the specified `OS` to replace the current operating system to select images.
 
-- `--override-variant VARIANT`：使用指定的 `VARIANT` 替代当前的架构变种来选择镜像。
+- `--override-variant VARIANT`: Use the specified `VARIANT` to replace the current architecture variant to select images.
 
-- `-a` 或 `--all`：如果源镜像是一个列表，同步所有镜像。这对异构环境下特别有用，因为默认情况下，只会同步当前架构的镜像。
+- `-a` or `--all`: If the source image is a list, synchronize all images. This is particularly useful in heterogeneous environments because by default, only images of the current architecture will be synchronized.
 
-例如，如果您想同步所有架构的镜像，可以添加 `-a` 参数：
+For example, if you want to synchronize all architecture images, you can add the `-a` parameter:
 
 ```bash
 sealos registry sync -a 127.0.0.1:41669 sealos.hub:5000
 ```
 
-以上就是 `sealos registry sync` 命令的详细说明与使用指南。希望这些信息能帮助您更好地理解和使用这个命令。如果您在使用过程中遇到任何问题，欢迎随时提问。
+The above is a detailed explanation and usage guide for the `sealos registry sync` command. We hope this information helps you better understand and use this command. If you encounter any problems during use, feel free to ask at any time.
 
-## Sealos：`sealos registry copy` 命令详解与使用指南
 
-Sealos 的 `registry copy` 命令用于将指定镜像从一个 registry 复制到另一个 registry。这能帮助您在不同的 registry 之间进行镜像的迁移或备份。
+## Sealos: Detailed Explanation and User Guide of the `sealos registry copy` Command
 
-### 命令基本用法
+The `registry copy` command in Sealos is used to copy a specified image from one registry to another registry. This can assist you in migrating or backing up images between different registries.
 
-使用 `sealos registry copy` 命令来进行镜像的复制：
+### Basic Command Usage
+
+Use the `sealos registry copy` command for image copying:
 
 ```bash
 sealos registry copy source-image dst
 ```
 
-这里的 `source-image` 表示源镜像的全名（包括地址和镜像名），`dst` 是目标 registry 的地址。
+Here `source-image` represents the full name of the source image (including the address and image name), and `dst` is the address of the target registry.
 
-例如，要将名为 `127.0.0.1:41669/my-image:tag` 的镜像复制到地址为 `sealos.hub:5000` 的 registry，您可以执行以下命令：
+For example, to copy an image named `127.0.0.1:41669/my-image:tag` to a registry with the address `sealos.hub:5000`, you can execute the following command:
 
 ```bash
 sealos registry copy 127.0.0.1:41669/my-image:tag sealos.hub:5000
 ```
 
-### 认证与权限
+### Authentication and Permissions
 
-在执行 `sealos registry copy` 命令之前，请确保您具有访问源镜像和目标 registry 的权限。可以使用`sealos login`对registry进行认证登录。
+Before executing the `sealos registry copy` command, please ensure that you have permissions to access the source image and the target registry. You can use `sealos login` to authenticate the registry.
 
-### 复制过程
+### Copying Process
 
-请注意，镜像复制可能需要一些时间，这取决于镜像的大小，以及网络的速度。在复制过程中，请保持网络的连通性，并确保在复制完成之前不要中断命令的执行。
+Please note that image copying may take some time, depending on the size of the image and the speed of the network. During the copying process, please keep the network connected and ensure not to interrupt the execution of the command before the copying is complete.
 
-### 参数选项
+### Parameter Options
 
-`sealos registry copy` 命令提供了一些参数选项，允许您更精细地控制复制过程：
+The `sealos registry copy` command provides some parameter options, allowing you to control the copying process more finely:
 
-- `--override-arch ARCH`：使用指定的 `ARCH` 替代当前机器的架构来选择镜像。
+- `--override-arch ARCH`: Use the specified `ARCH` to replace the current machine architecture to select images.
 
-- `--override-os OS`：使用指定的 `OS` 替代当前操作系统来选择镜像。
+- `--override-os OS`: Use the specified `OS` to replace the current operating system to select images.
 
-- `--override-variant VARIANT`：使用指定的 `VARIANT` 替代当前的架构变种来选择镜像。
+- `--override-variant VARIANT`: Use the specified `VARIANT` to replace the current architecture variant to select images.
 
-- `-a` 或 `--all`：如果源镜像是一个列表，复制所有镜像。这对异构环境下特别有用，因为默认情况下，只会复制当前架构的镜像。
+- `-a` or `--all`: If the source image is a list, copy all images. This is particularly useful in heterogeneous environments because, by default, only images of the current architecture will be copied.
 
-例如，如果您想复制所有架构的镜像，可以添加 `-a` 参数：
+For example, if you want to copy all architecture images, you can add the `-a` parameter:
 
 ```bash
 sealos registry copy -a 127.0.0.1:41669/my-image:tag sealos.hub:5000
 ```
 
-
-以上就是 `sealos registry` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。
+The above is the usage guide for the `sealos registry copy` command. We hope it is helpful to you. If you encounter any problems during use, feel free to ask us any questions.

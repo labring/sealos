@@ -2,19 +2,19 @@
 sidebar_position: 3
 ---
 
-# gen 生成集群配置
+# Generate Cluster Configuration
 
-Sealos 的 `gen` 命令是用于生成 Kubernetes 集群的配置文件（Clusterfile），这个配置文件可以在之后通过 `sealos apply` 命令来应用。`gen` 命令可以帮助用户快速生成一个基本的配置文件，用户可以在此基础上根据自己的需求进行修改和调整。
+Sealos' `gen` command is used to generate a Kubernetes cluster configuration file (Clusterfile), which can then be applied using the `sealos apply` command. The `gen` command can help users quickly generate a basic configuration file, which can then be modified and adjusted according to their needs.
 
-下面是 `sealos gen` 命令的基本使用方法和一些常见的示例：
+Here are the basic usage of `sealos gen` command and some common examples:
 
-1. 生成一个默认配置的单节点集群：
-   
+1. Generate a single-node cluster with default configuration:
+
    ```bash
    sealos gen labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1
    ```
 
-2. 生成一个包含多个镜像、指定了主节点和工作节点的集群：
+2. Generate a cluster that includes multiple images and specifies the master and worker nodes:
 
    ```bash
    sealos gen labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
@@ -22,24 +22,24 @@ Sealos 的 `gen` 命令是用于生成 Kubernetes 集群的配置文件（Cluste
        --nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
    ```
 
-3. 指定 SSH 端口，对于所有服务器使用相同的 SSH 端口：
+3. Specify SSH port, for servers using the same SSH port:
 
    ```bash
    sealos gen labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
        --nodes 192.168.0.5,192.168.0.6,192.168.0.7 --port 24 --passwd 'xxx'
    ```
 
-   对于使用不同 SSH 端口的服务器：
+   For servers using different SSH ports:
 
    ```bash
    sealos gen labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3:23,192.168.0.4:24 \
        --nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --passwd 'xxx'
    ```
 
-在生成了 Clusterfile 之后，用户可以根据自己的需求来修改这个文件。添加或修改环境变量；修改集群cidr配置。完成修改后，用户就可以通过 `sealos apply` 命令来根据这个配置文件来创建或更新集群了。
+After the Clusterfile is generated, users can modify this file according to their needs. Add or modify environment variables; modify the cluster cidr configuration. Once the modifications are done, users can use the `sealos apply` command to create or update the cluster based on this configuration file.
 
-示例说明：
+Example explanations:
 
-- [自定义配置安装](https://docs.sealos.io/docs/lifecycle-management/operations/run-cluster/gen-apply-cluster)
+- [Custom Configuration Installation](https://docs.sealos.io/docs/lifecycle-management/operations/run-cluster/gen-apply-cluster)
 
-以上就是 `sealos gen` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。
+That's the usage guide for the `sealos gen` command, and we hope it has been helpful. If you encounter any problems during usage, feel free to ask us.

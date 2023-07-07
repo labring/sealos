@@ -2,60 +2,60 @@
 sidebar_position: 2
 ---
 
-# reset 重置集群
+# Reset Cluster
 
-`sealos reset` 是 Sealos 命令行工具中的一个命令，用于重置整个集群。这个命令在你想要彻底清空集群数据或者重建集群的时候特别有用。本指南将详细介绍其使用方法。
+The `sealos reset` is a command in the Sealos command-line tool for resetting the entire cluster. This command is particularly useful when you want to completely clear cluster data or rebuild the cluster. This guide will detail how to use it.
 
-## 基本用法
+## Basic Usage
 
-基本的 `sealos reset` 命令格式如下：
+The basic format of the `sealos reset` command is as follows:
 
 ```bash
 sealos reset --cluster cluster_name
 ```
 
-在上述命令中，`cluster_name` 是你想要重置的集群的名称。
+In the above command, `cluster_name` is the name of the cluster you want to reset.
 
-## 示例
+## Example
 
-例如，你可以使用以下命令重置名为 `mycluster` 的集群：
+For instance, you can use the following command to reset a cluster named `mycluster`:
 
 ```bash
 sealos reset --cluster mycluster
 ```
 
-## 可选参数
+## Optional Parameters
 
-- `--force`: 该参数用于强制重置集群，即使集群重置操作未能成功完成。
+- `--force`: This parameter is used to force the reset of the cluster, even if the cluster reset operation has not been successfully completed.
 
 ```bash
 sealos reset --cluster mycluster --force
 ```
 
-- `--masters`: 该参数用于指定要重置的 master 节点。
+- `--masters`: This parameter is used to specify the master nodes to be reset.
 
 ```bash
 sealos reset --cluster mycluster --masters master1
 ```
 
-- `--nodes`: 该参数用于指定要重置的工作节点。
+- `--nodes`: This parameter is used to specify the worker nodes to be reset.
 
 ```bash
 sealos reset --cluster mycluster --nodes node1 node2
 ```
 
-- `-p`, `--passwd`: 该参数用于提供密码进行身份验证。
+- `-p`, `--passwd`: This parameter is used to provide a password for authentication.
 
-- `-i`, `--pk`: 该参数用于指定用于公钥认证的身份（私钥）读取的文件。
+- `-i`, `--pk`: This parameter specifies the file to read the identity (private key) used for public key authentication.
 
-- `--pk-passwd`: 该参数用于解密 PEM 编码私钥的口令。
+- `--pk-passwd`: This parameter is used for the passphrase to decrypt the PEM-encoded private key.
 
-- `--port`: 该参数用于指定要连接的远程主机的端口。
+- `--port`: This parameter is used to specify the port of the remote host to connect to.
 
-- `-u`, `--user`: 该参数用于指定要作为身份验证的用户名。
+- `-u`, `--user`: This parameter is used to specify the username for authentication.
 
 ```bash
 sealos reset --cluster mycluster --user username --pk /root/.ssh/id_rsa --pk-passwd yourpassword
 ```
 
-以上就是 `sealos reset` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。
+The above is the usage guide for the `sealos reset` command. We hope it is helpful to you. If you encounter any problems during use, feel free to ask us any questions.

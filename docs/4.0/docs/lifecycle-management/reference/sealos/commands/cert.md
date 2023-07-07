@@ -2,43 +2,43 @@
 sidebar_position: 3
 ---
 
-# cert 更新集群证书
+# Updating Cluster Certificates with `sealos cert`
 
-`sealos cert` 是 Sealos 命令行工具中的一个命令，主要用于在集群中更新 API 服务器的证书。本指南将详细介绍其使用方法和选项。
+The `cert` command in Sealos is used to update the API server certificates in a cluster. This guide provides detailed instructions on how to use this command and its options.
 
-## 基本用法
+## Basic Usage
 
-要在证书中添加域名或 IP，可以使用 `--alt-names` 选项：
+To add domain names or IP addresses to the certificate, you can use the `--alt-names` option:
 
 ```bash
 sealos cert --alt-names sealos.io,10.103.97.2,127.0.0.1,localhost
 ```
 
-在上述命令中，`sealos.io,10.103.97.2,127.0.0.1,localhost` 应替换为你想要添加的域名和 IP 地址。
+In the above command, replace `sealos.io,10.103.97.2,127.0.0.1,localhost` with the domain names and IP addresses you want to add.
 
-**注意**：在执行此操作之前，你最好先备份旧的证书。
+**Note**: It is recommended to back up the old certificates before performing this operation.
 
-执行 `sealos cert` 命令后，会更新集群 API 服务器的证书，你无需手动重启 API 服务器，sealos会自动帮你重启服务。
+After executing the `sealos cert` command, the API server certificates in the cluster will be updated. You don't need to manually restart the API server as Sealos will automatically handle the restart.
 
-## 选项
+## Options
 
-`sealos cert` 命令提供了以下选项：
+The `cert` command provides the following options:
 
-- `--alt-names=''`: 在证书中添加域名或 IP，例如 `sealos.io` 或 `10.103.97.2`。
+- `--alt-names='`': Adds domain names or IP addresses to the certificate, e.g., `sealos.io` or `10.103.97.2`.
 
-- `-c, --cluster='default'`: 要执行 exec 操作的集群的名称。默认为 `default`。
+- `-c, --cluster='default'`: Specifies the name of the cluster on which to perform the exec operation. Default is `default`.
 
-每个选项后都可以跟随一个参数。
+Each option can be followed by an argument.
 
-## 校验证书
+## Certificate Verification
 
-更新证书后，你可以使用以下命令进行校验：
+After updating the certificates, you can use the following commands for verification:
 
 ```bash
 kubectl -n kube-system get cm kubeadm-config -o yaml
 openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text
 ```
 
-上述命令将获取 kube-system 命名空间中的 kubeadm-config 配置映射，并显示 apiserver.crt 证书的详细信息。
+The above commands retrieve the kubeadm-config ConfigMap in the kube-system namespace and display detailed information about the apiserver.crt certificate.
 
-以上就是 `sealos cert` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。
+That concludes the usage guide for the `sealos cert` command. We hope this helps you. If you have any questions or encounter any issues during the process, feel free to ask us.

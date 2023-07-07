@@ -2,32 +2,32 @@
 sidebar_position: 6
 ---
 
-# 使用 exec 和 scp 命令构建集群镜像
+# Building Cluster Images Using exec and scp Commands
 
-默认情况下，`sealos run xx` 只会在第一个主节点上运行命令和复制文件。当你希望在特定节点或所有节点上运行命令或复制文件时，你可以在构建集群镜像时使用 `sealos exec` 或 `sealos scp` 命令。
+By default, `sealos run xx` only runs the command and copies the file on the first master node. When you want to run the command or copy files on specific nodes or all nodes, you can use the `sealos exec` or `sealos scp` commands when building the cluster image.
 
-- sealos exec: 连接到一个或多个节点并运行任何 shell 命令；
-- sealos scp: 连接到一个或多个节点并将本地文件复制到远程节点。
+- sealos exec: Connects to one or more nodes and runs any shell command;
+- sealos scp: Connects to one or more nodes and copies local files to remote nodes.
 
-虽然你可以直接在宿主机上使用这些命令，但本文主要描述的是在使用 sealos build 构建集群镜像时如何使用这两个命令。
+Although you can directly use these commands on the host, this article mainly describes how to use these two commands when building the cluster image using sealos build.
 
-## sealos exec 示例
+## sealos exec Example
 
-以下是构建一个 openebs 集群镜像的示例。在安装 openebs maystor 之前，需要在节点上执行一些初始化操作，你可以使用 sealos exec 来实现这一点。
+Below is an example of building an openebs cluster image. Before installing openebs maystor, some initialization operations need to be performed on the node, you can use sealos exec to achieve this.
 
-首先，创建一个用于构建工作的基础目录。
+First, create a base directory for building.
 
 ```shell
 $ mkdir ~/cloud-images
 ```
 
-创建一个 `charts` 目录，用来存储 kubernetes nginx helm charts 文件。
+Create a `charts` directory to store the kubernetes nginx helm charts file.
 
 ```shell
 $ cd cloud-images
 ```
 
-创建一个名为 `Kubefile` 的文件，用于镜像构建：
+Create a file named `Kubefile` for image building:
 
 ```shell
 $ cat Kubefile
@@ -39,7 +39,7 @@ COPY mayastor.sh mayastor.sh
 CMD ["bash mayastor.sh"]
 ```
 
-创建一个名为 `mayastor.sh` 的脚本文件，sealos exec 后面的 shell 命令将在所有节点上执行（在所有节点上创建 hugepage、加载内核模块），但其他命令只会在主节点上运行。
+Create a script file named `mayastor.sh`, the shell command after sealos exec will be executed on all nodes (create hugepage, load kernel modules on all nodes), but other commands will only run on the master node.
 
 ```shell
 $ cat mayastor.sh
@@ -71,7 +71,7 @@ kubectl label node --overwrite --all openebs.io/engine=mayastor
 kubectl apply -k ./manifests/mayastor/
 ```
 
-现在，charts 目录如下：
+Now, the charts directory is as follows:
 
 ```shell
 .
@@ -81,46 +81,48 @@ kubectl apply -k ./manifests/mayastor/
 └── opt
 ```
 
-现在一切都准备好了，你可以开始构建集群镜像。
+Now everything is ready, you can start building the cluster image.
 
 ```shell
 sealos build -t labring/openebs-mayastor:v1.0.4 .
 ```
 
-当你运行集群镜像时，sealos 将在主节点上运行 mayastor.sh 脚本，但 sealos exec 的 shell 命令将在所有节点上运行，最后，sealos 将在主节点上安装 openebs maystor 存储。
+When you run the cluster image, sealos will run the mayastor.sh script on the master node, but the shell command of sealos exec will run on all nodes. Finally, sealos will install openebs maystor storage on the master node.
 
 ```
 sealos run labring/openebs-mayastor:v1.0.4
 ```
 
-## sealos scp 示例
+## sealos scp Example
 
-下面的示例将 bin 文件复制到所有节点。
+The following example copies the bin file to all nodes.
 
-创建一个名为 `Kubefile` 的文件，用于镜像构建：
+Create a file named `Kubefile` for image building:
 
 ```shell
 FROM scratch
 COPY manifests manifests
 COPY registry registry
 COPY opt opt
-CMD ["sealos scp opt/ /opt/cni/bin/","kubectl apply -f manifests/kube-flannel.yml"]
+CMD ["seal
+
+os scp opt/ /opt/cni/bin/","kubectl apply -f manifests/kube-flannel.yml"]
 ```
 
-opt 文件如下：
+The opt file is as follows:
 
 ```
 $ ls opt/
 bandwidth  bridge  dhcp  firewall  host-device  host-local  ipvlan  loopback  macvlan  portmap  ptp  sbr  static  tuning  vlan  vrf
 ```
 
-现在一切都准备好了，你可以开始构建集群镜像。
+Now everything is ready, you can start building the cluster image.
 
 ```shell
 sealos build -t labring/flannel:v0.19.0 .
 ```
 
-当你运行集群镜像时，sealos 将会将 opt bin 文件复制到所有节点，然后在主节点上安装 flannel。
+When you run the cluster image, sealos will copy the opt bin file to all nodes, then install flannel on the master node.
 
 ```
 sealos run labring/flannel:v0.19.0

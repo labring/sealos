@@ -2,28 +2,28 @@
 sidebar_position: 2
 ---
 
-# 构建基于部署清单的集群镜像
+# Building Cluster Images Based on Deployment Manifest
 
-本文档将详细介绍如何构建基于部署清单（Deployment Manifest）的集群镜像。我们将以一个简单的nginx应用为例来进行说明。
+This document will detail how to build cluster images based on Deployment Manifests. We will use a simple nginx application as an example.
 
-## 一、准备工作
+## I. Preparations
 
-1. 首先，创建一个基础目录作为构建工作区。
+1. First, create a base directory as the build workspace.
 
 ```shell
 $ mkdir ~/cloud-images
 ```
 
-2. 创建一个名为 `manifests` 的目录来存储 kubernetes nginx 部署 yaml 文件。
+2. Create a directory named `manifests` to store the kubernetes nginx deployment yaml file.
 
 ```shell
 $ cd cloud-images
 $ mkdir manifests
 ```
 
-## 二、准备清单文件
+## II. Prepare the Manifest File
 
-在这个阶段，我们将准备一个简单的nginx kubernetes yaml文件。
+At this stage, we will prepare a simple nginx kubernetes yaml file.
 
 ```shell
 $ cat manifests/deployment.yaml
@@ -48,9 +48,9 @@ spec:
         - containerPort: 80
 ```
 
-## 三、创建Kubefile
+## III. Create Kubefile
 
-在这个阶段，我们需要创建一个Kubefile文件，该文件将用于构建镜像。
+At this stage, we need to create a Kubefile that will be used to build the image.
 
 ```shell
 FROM scratch
@@ -59,38 +59,38 @@ COPY registry registry
 CMD ["kubectl apply -f manifests/deployment.yaml"]
 ```
 
-## 四、构建集群镜像
+## IV. Build the Cluster Image
 
-在准备好所有必需的文件和目录后，我们可以开始构建集群镜像。
+After preparing all the necessary files and directories, we can start building the cluster image.
 
 ```shell
 sealos build -t labring/nginx:v1.23.1 .
 ```
 
-**注意：** 在开始构建前，您需要先在本地主机上安装 sealos 命令。
+**Note:** Before starting the build, you need to install the sealos command on your local host.
 
-构建过程中，您可以查看构建日志。
+During the build, you can view the build log.
 
-## 五、验证镜像
+## V. Verify the Image
 
-在构建完毕后，可以通过下列命令查看构建的镜像：
+After the build is complete, you can view the built image with the following command:
 
 ```shell
 root@ubuntu:~/cloud-images# sealos images
 labring/nginx                      v1.23.1          521c85942ee4   4 minutes ago   56.8 MB
 ```
 
-## 六、推送镜像
+## VI. Push the Image
 
-最后，我们可以将构建好的镜像推送至任何Docker镜像仓库，以下命令将其推送至DockerHub。
+Finally, we can push the built image to any Docker image repository. The following command pushes it to DockerHub.
 
 ```shell
 sealos push labring/nginx:v1.23.1
 ```
 
-**注意：** 请使用 sealos 命令来操作集群镜像，Docker 命令不受支持。
+**Note:** Please use the sealos command to operate the cluster image, the Docker command is not supported.
 
-如果你使用的是私有镜像仓库，只需要在拉取或推送镜像前使用 `sealos login` 登录仓库即可。
+If you are using a private image repository, just use `sealos login` to log into the repository before pulling or pushing the image.
 
 ```shell
 sealos login docker.io -u xxx -p xxx
@@ -98,4 +98,4 @@ sealos login docker.io -u xxx -p xxx
 sealos login registry.cn-hangzhou.aliyuncs.com -u xxx -p xxx
 ```
 
-至此，基于部署清单的集群镜像已经构建完成。
+At this point, the cluster image based on the deployment manifest is successfully built.

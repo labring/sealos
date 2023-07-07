@@ -2,40 +2,38 @@
 sidebar_position: 11
 ---
 
-# 应用集群镜像使用指南
+# Application Cluster Image Usage Guide
 
-Sealos 提供了一个名为 [cluster-image](https://github.com/labring-actions/cluster-image) 的仓库，该仓库在 GitHub 上用于构建并发布 Kubernetes 集群的应用镜像。这些镜像可以通过提交代码到这个仓库来创建，并可以发布到 `docker.io/labring/` 作为官方的应用镜像。它支持构建 Docker 容器镜像以及应用的集群镜像。
+Sealos provides a repository called [cluster-image](https://github.com/labring-actions/cluster-image) on GitHub for building and publishing application images for Kubernetes clusters. These images can be created by submitting code to this repository and can be published to `docker.io/labring/` as official application images. It supports building Docker container images as well as cluster images for applications.
 
-## 镜像的类型
+## Types of Images
 
-仓库支持三种类型的镜像构建：
+The repository supports three types of image builds:
 
-- **APP集群镜像**：主要是构建应用镜像，使用 GitHub Action，会同时支持 amd64 和 arm64 架构。
-- **配置集群镜像**：主要是构建配置镜像，使用 GitHub Action，没有容器镜像不区分架构，一般是一些脚本相关的配置或者覆盖默认的配置镜像。
-- **Docker镜像**：主要是构建容器镜像，使用 GitHub Action，会同时支持 amd64 和 arm64 架构。
+- **Application Cluster Images**: These are primarily for building application images using GitHub Actions and support both amd64 and arm64 architectures.
+- **Configuration Cluster Images**: These are mainly for building configuration images using GitHub Actions. They are not container images and are not architecture-specific. They typically contain configuration scripts or customizations to default configurations.
+- **Docker Images**: These are mainly for building container images using GitHub Actions and support both amd64 and arm64 architectures.
 
-## 镜像构建的工作流程
+## Workflow for Image Builds
 
-你可以直接在 GitHub 仓库中创建 Issue 来触发镜像的构建。这里提供了几个示例可以参考：
+You can trigger image builds directly in the GitHub repository by creating an issue. Here are a few examples:
 
 - `/imagebuild_dockerimages helm v3.8.2 Key1=Value1,Key2=Value2`
 - `/imagebuild_configs coredns v0.0.1`
 - `/imagebuild_apps helm v3.8.2`
 
-每种类型的镜像构建命令的格式为 `/imagebuild_<类型> <应用名称> <版本> [Key=Value,...]`，其中 `<类型>` 是 `dockerimages`、`configs` 或 `apps`， `<应用名称>` 和 `<版本>` 分别代表应用的名称和版本，`[Key=Value,...]` 是可选的buildArg参数，仅用于 `dockerimages` 类型。
+The format of the image build commands for each type is `/imagebuild_<type> <app_name> <version> [Key=Value,...]`, where `<type>` can be `dockerimages`, `configs`, or `apps`, `<app_name>` and `<version>` represent the application name and version respectively, and `[Key=Value,...]` is optional buildArg parameters used only for the `dockerimages` type.
 
-## 镜像配置的存放位置
+## Location of Image Configurations
 
-你可以在 `applications/<应用名称>/<版本>/` 目录下放置你的配置文件，包括 Dockerfile、Kubefile 和 init.sh 等。init.sh 脚本通常用于下载一些依赖的二进制文件，如 helm、kubectl-minio 等。你可以选择使用 Dockerfile 或 Kubefile 来编写你的镜像构建逻辑。
+You can place your configuration files in the `applications/<app_name>/<version>/` directory, including Dockerfiles, Kubefiles, and init.sh scripts, among others. The init.sh script is typically used for downloading dependencies such as Helm and kubectl-minio. You can choose to use either a Dockerfile or Kubefile to define your image build logic.
 
-## 镜像构建规则
+## Image Build Rules
 
-对于每种类型的镜像，构建规则略有不同。通常，你需要在应用的目录下创建不同的子目录并放置不同类型的文件，然后 Sealos 会根据这些文件来构建镜像。具体的规则如下：
+The build rules vary slightly for each type of image. Generally, you need to create different subdirectories under the application directory and place different types of files in them, which Sealos will use to build the images. The specific rules are as follows:
 
-1. `charts` 目录：放置一些集群镜像需要的 Helm chart，Kubernetes 会根据扫描的 chart 获取镜像并构建
-
-出 registry 目录放到与 Kubefile 同级的目录。
-2. `manifests` 目录：直接放置一些 Kubernetes yaml 配置，Kubernetes 会扫描 manifests 目录所有的镜像并构建出 registry 目录放到与 Kubefile 同级的目录。
-3. `images/shim` 目录：主要存储一些额外的镜像列表并构建出 registry 目录放到与 Kubefile 同级的目录。
-4. 如果需要模板，在 `etc`、`charts`、`manifests` 放置一些以 `.tmpl` 结尾的文件可以被 `sealos run` 环境变量渲染后去掉 `.tmpl`，比如渲染之前是 `aa.yaml.tmpl`，渲染后为 `aa.yaml`。请注意文件名不要与现有的文件冲突。
-5. `registry` 必须放在与 Kubefile 同级的目录，否则无法拷贝到 master0 的私有仓库。制作镜像时也需要注意这一点。不要把 registry 存放到 chart 里，否则 helm 扫描可能会很慢，可能导致 OOM。 
+1. `charts` directory: Place the Helm charts required for the cluster images. Kubernetes will scan the charts and fetch the images for building, and the registry directory will be placed at the same level as the Kubefile.
+2. `manifests` directory: Place the Kubernetes yaml configurations directly. Kubernetes will scan all the images in the manifests directory and build the registry directory, which will be placed at the same level as the Kubefile.
+3. `images/shim` directory: Store additional image lists and build the registry directory, which will be placed at the same level as the Kubefile.
+4. If templates are required, place files with the `.tmpl` extension in `etc`, `charts`, or `manifests`. These files can be rendered by the `sealos run` command with environment variables and the `.tmpl` extension will be removed. For example, a file named `aa.yaml.tmpl` will be rendered as `aa.yaml`. Please ensure that the file names do not conflict with existing files.
+5. The `registry` directory must be placed at the same level as the Kubefile. Otherwise, it will not be copied to the private repository of master0. Also, ensure that the registry is not stored in a chart, as it may cause slow scanning by Helm and potentially lead to OOM (out-of-memory) issues during image builds.
