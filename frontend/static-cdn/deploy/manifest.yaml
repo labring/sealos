@@ -55,7 +55,7 @@ spec:
             capabilities:
               drop:
                 - "ALL"
-          # image: ghcr.io/labring/sealos-desktop-static-cdn:dev
+          # image: ghcr.io/labring/sealos-desktop-static-cdn:latest
           image: fanux/static-cdn:v0.0.1
           ports:
             - containerPort: 8080

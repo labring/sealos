@@ -11,8 +11,8 @@ on:
         type: boolean
         default: false
       push_image_tag:
-        description: 'Push all-in-one image tag, default is dev'
-        default: 'dev'
+        description: 'Push all-in-one image tag, default is latest'
+        default: 'latest'
         required: false
         type: string
       build_from:

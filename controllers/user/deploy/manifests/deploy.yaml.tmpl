@@ -341,7 +341,7 @@ spec:
           value: {{ .cloudDomain }}
         - name: SEALOS_CLOUD_PORT
           value: "{{ .cloudPort }}"
-        image: ghcr.io/labring/sealos-user-controller:dev
+        image: ghcr.io/labring/sealos-user-controller:latest
         imagePullPolicy: Always
         livenessProbe:
           httpGet:

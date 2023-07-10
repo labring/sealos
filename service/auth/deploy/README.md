@@ -1,7 +1,7 @@
 ### How to build image
 
 ```shell
-sealos build -t docker.io/labring/sealos-auth-service:dev -f Kubefile .
+sealos build -t docker.io/labring/sealos-auth-service:latest -f Kubefile .
 ```
 
 ### Env
@@ -23,5 +23,5 @@ sealos run
     --env callbackUrl="https://cloud.sealos.io/login/callback"
     --env ssoEndpoint="https://login.cloud.sealos.io"
     --env casdoorMysqlRootPassword="c2VhbG9zcHdk"
-    docker.io/labring/sealos-auth-service:dev
+    docker.io/labring/sealos-auth-service:latest
 ```

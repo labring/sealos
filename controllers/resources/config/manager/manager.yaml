@@ -35,7 +35,7 @@ spec:
               secretKeyRef:
                 name: mongo-secret
                 key: MONGO_URI
-        image: ghcr.io/labring/sealos-resources-controller:dev
+        image: ghcr.io/labring/sealos-resources-controller:latest
         imagePullPolicy: Always
         name: manager
         securityContext:

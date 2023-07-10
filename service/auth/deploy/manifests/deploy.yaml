@@ -274,7 +274,7 @@ spec:
         control-plane: service-manager
     spec:
       containers:
-        - image: ghcr.io/labring/sealos-auth-service:dev
+        - image: ghcr.io/labring/sealos-auth-service:latest
           imagePullPolicy: Always
           livenessProbe:
             initialDelaySeconds: 15

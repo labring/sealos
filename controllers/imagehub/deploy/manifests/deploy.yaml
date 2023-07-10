@@ -867,7 +867,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: ghcr.io/labring/sealos-imagehub-controller:dev
+        image: ghcr.io/labring/sealos-imagehub-controller:latest
         imagePullPolicy: Always
         livenessProbe:
           httpGet:

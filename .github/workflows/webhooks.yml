@@ -99,7 +99,7 @@ jobs:
       - name: Prepare
         id: prepare
         run: |
-          TAG=dev
+          TAG=latest
           echo tag_name=${TAG} >> $GITHUB_OUTPUT
 
       - # Add support for more platforms with QEMU (optional)
