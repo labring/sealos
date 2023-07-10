@@ -3,6 +3,10 @@ name: Build Cloud Cluster image
 on:
   release:
     types: [ published ]
+  workflow_run:
+    workflows: [ "Build Controllers image", "Build Frontend Image" ]
+    types:
+      - completed
   workflow_dispatch:
     inputs:
       push_image:
@@ -95,7 +99,9 @@ jobs:
           sed -i "s#latest#${BuildFromTag}#g" etc/sealos/desktop-config.yaml
           sudo bash init.sh
           sudo sealos build  -t ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }} -f Kubefile
+          sudo sealos build  -t ${{ steps.prepare.outputs.repo }}:latest -f Kubefile
           sudo sealos push ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }}
+          sudo sealos push ${{ steps.prepare.outputs.repo }}:latest
 
       # todo: build multi-arch images
 
