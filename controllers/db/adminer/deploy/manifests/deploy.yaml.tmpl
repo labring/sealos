@@ -397,7 +397,7 @@ spec:
           value: {{ .wildcardCertSecretName }}
         - name: SECRET_NAMESPACE
           value: {{ .wildcardCertSecretNamespace }}
-        image: ghcr.io/labring/sealos-db-adminer-controller:dev
+        image: ghcr.io/labring/sealos-db-adminer-controller:latest
         imagePullPolicy: Always
         livenessProbe:
           httpGet:

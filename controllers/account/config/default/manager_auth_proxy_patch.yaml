@@ -65,7 +65,7 @@ spec:
             value: "604800"
           - name: DebtDetectionCycleSeconds
             value: "300"
-        image: ghcr.io/labring/sealos-account-controller:dev
+        image: ghcr.io/labring/sealos-account-controller:latest
         imagePullPolicy: Always
         args:
         - "--health-probe-bind-address=:8081"

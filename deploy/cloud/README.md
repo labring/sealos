@@ -80,7 +80,7 @@ metadata:
   name: secret
 spec:
   path: manifests/tls-secret.yaml
-  match: docker.io/labring/sealos-cloud:dev
+  match: docker.io/labring/sealos-cloud:latest
   strategy: merge
   data: |
     data:
@@ -91,5 +91,5 @@ spec:
 ------
 ## run sealos cloud cluster image
 ```shell
-sealos run docker.io/labring/sealos-cloud:dev --env cloudDomain="cloud.example.com" --config-file tls-secret.yaml
+sealos run docker.io/labring/sealos-cloud:latest --env cloudDomain="cloud.example.com" --config-file tls-secret.yaml
 ```

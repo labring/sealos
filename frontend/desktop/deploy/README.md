@@ -1,7 +1,7 @@
 ### How to build image
 
 ```shell
-sealos build -t docker.io/labring/sealos-cloud-desktop:dev -f Kubefile .
+sealos build -t docker.io/labring/sealos-cloud-desktop:latest -f Kubefile .
 ```
 
 ### Env
@@ -30,7 +30,7 @@ metadata:
   name: secret
 spec:
   path: manifests/secret.yaml
-  match: docker.io/labring/sealos-cloud-desktop:dev
+  match: docker.io/labring/sealos-cloud-desktop:latest
   strategy: merge
   data: |
     data:
@@ -48,6 +48,6 @@ sealos run \
     --env cloudDomain="cloud.sealos.io" \
     --env wildcardCertSecretName="wildcard-cert" \
     --env passwordEnabled="true" \
-    docker.io/labring/sealos-cloud-desktop:dev \
+    docker.io/labring/sealos-cloud-desktop:latest \
     --config-file desktop-config.yaml 
 ```

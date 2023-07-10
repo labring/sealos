@@ -17,7 +17,7 @@ metadata:
   name: secret
 spec:
   path: manifests/tls-secret.yaml
-  match: ghcr.io/labring/sealos-cloud:dev
+  match: ghcr.io/labring/sealos-cloud:latest
   strategy: merge
   data: |
     data:
@@ -27,5 +27,5 @@ spec:
 
 ### run sealos cloud cluster image
 ```shell
-sealos run ghcr.io/labring/sealos-cloud:dev --config-file tls-secret.yaml --env cloudDomain="cloud.example.com"
+sealos run ghcr.io/labring/sealos-cloud:latest --config-file tls-secret.yaml --env cloudDomain="cloud.example.com"
 ```

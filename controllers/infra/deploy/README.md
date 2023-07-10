@@ -21,7 +21,7 @@ data:
 
 ### 部署方式
 ```
-sealos run docker.io/labring/sealos-account-controller:dev
+sealos run docker.io/labring/sealos-account-controller:latest
 
 ```
 

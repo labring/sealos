@@ -172,7 +172,7 @@ jobs:
       - name: Prepare
         id: prepare
         run: |
-          TAG=dev
+          TAG=latest
           echo tag_name=${GIT_COMMIT_SHORT_SHA} >> $GITHUB_OUTPUT
       - name: Renew issue and Sync Images
         uses: labring/gh-rebot@v0.0.6

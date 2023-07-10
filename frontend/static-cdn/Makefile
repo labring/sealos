@@ -1,5 +1,5 @@
 # Image URL to use all building/pushing image targets
-# IMG ?= ghcr.io/labring/sealos-desktop-static-cdn:dev
+# IMG ?= ghcr.io/labring/sealos-desktop-static-cdn:latest
 IMG ?= fanux/static-cdn:v0.0.1
 
 ##@ General
