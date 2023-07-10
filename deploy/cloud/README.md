@@ -1,11 +1,15 @@
 # Sealos cloud cluster image
 
--------
 ## prepare
 
-1. A cloud domain and dns to your k8s cluster. Suppose your domain name is `cloud.example.io`.
-2. A TLS cert that resolves `cloud.example.io` and `*.cloud.example.io`
+### DNS setup
+A cloud domain and dns to your k8s cluster. Suppose your domain name is `127.0.0.1.nip.io` by using [nip.io](https://nip.io/). 
+You need change the ip `127.0.0.1` to your real ip if you need access your cluster from outside or use other dns service.
 
+### TLS setup
+You need a TLS cert that resolves `127.0.0.1.nip.io` and `*.127.0.0.1.nip.io`.
+
+#### Using acme.sh with alidns
 Here is one way to get a TLS cert by using acme.sh with alidns.
 
 1. install [acme.sh](https://github.com/acmesh-official/acme.sh)
@@ -16,7 +20,7 @@ Here is one way to get a TLS cert by using acme.sh with alidns.
     export Ali_Key="<your ali key>"
     export Ali_Secret="<your ali secret>"
     
-    acme.sh --issue --dns dns_ali -d "cloud.example.io" -d "*.cloud.example.io"
+    acme.sh --issue --dns dns_ali -d "127.0.0.1.nip.io" -d "*.127.0.0.1.nip.io"
     ```
 
 4. base64 encode your cert and key, and save the output which will be used in the next step
@@ -27,23 +31,33 @@ Here is one way to get a TLS cert by using acme.sh with alidns.
 
 Other dns api please read: https://github.com/acmesh-official/acme.sh/wiki/dnsapi
 
-### kubernetes cluster
+#### Using self-signed cert
+We provide a self-signed cert for you to test by default if you didn't provide a cert. You can replace it with your own cert.
+
+### Kubernetes cluster
+Please read sealos doc to create a kubernetes cluster: https://sealos.io/en/docs/lifecycle-management/quick-start/installation
+
 ```shell
-sealos gen labring/kubernetes:v1.25.6 \
-  labring/helm:v3.8.2 \
-  labring/calico:v3.24.1 \
-  labring/cert-manager:v1.8.0 \
-  labring/openebs:v3.4.0 \
-  labring/kubernetes-reflector:v7.0.151 \
-   --masters 172.16.236.195 > Clusterfile
+sealos gen labring/kubernetes:v1.25.6\
+    labring/helm:v3.12.0\
+    labring/calico:v3.24.1\
+    labring/cert-manager:v1.8.0\
+    labring/openebs:v3.4.0\
+    labring/kubernetes-reflector:v7.0.151\
+    labring/zot:v1.4.3\
+    labring/kubeblocks:v0.5.3\
+    --env policy=anonymousPolicy\
+    --masters 10.140.0.16 > Clusterfile
 
 sealos apply -f Clusterfile
 ```
 
-Note: if you want to change pod cidr, please edit the Clusterfile before run `sealos apply`
+Note: if you want to change pod cidr, please edit the `Clusterfile` before run `sealos apply`
 
-### ingress-nginx
-create `ingress-nginx-config.yaml` file
+### Ingress-nginx
+We use ingress-nginx to expose our services. You can install ingress-nginx by using sealos:
+
+Create `ingress-nginx-config.yaml` file
 ```yaml
 # ingress-nginx-config.yaml
 apiVersion: apps.sealos.io/v1beta1
@@ -63,14 +77,17 @@ spec:
   strategy: merge
 ```
 
-install ingress-nginx and switch to NodePort mode
+Install ingress-nginx and switch to NodePort mode
+
 ```shell
 sealos run docker.io/labring/ingress-nginx:v1.5.1 --config-file ingress-nginx-config.yaml
 ```
 
-### save your cert file to a sealos config file
+### Save your cert file to a sealos config file
 
-#### please make sure spec.match is the same as the image you want to run and ths registry name such as ghcr.io/docker.io
+You can skip this step if you use the self-signed cert that we provide by default.
+
+Please make sure `spec.match` is the same as the image you want to run and the registry name such as ghcr.io/docker.io can
 
 ```yaml
 # tls-secret.yaml
@@ -84,12 +101,13 @@ spec:
   strategy: merge
   data: |
     data:
-      tls.crt: <your-fullchain.cer-base64>
-      tls.key: <your-${your domain}.key-base64>
+      tls.crt: <your-tls.cer-base64>
+      tls.key: <your-tls.key-base64>
 ```
 
-------
 ## run sealos cloud cluster image
 ```shell
-sealos run docker.io/labring/sealos-cloud:latest --env cloudDomain="cloud.example.com" --config-file tls-secret.yaml
+sealos run docker.io/labring/sealos-cloud:latest\
+    --env cloudDomain="127.0.0.1.nip.io"\
+    --config-file tls-secret.yaml
 ```

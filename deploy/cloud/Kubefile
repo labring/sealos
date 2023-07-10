@@ -4,6 +4,6 @@ COPY etc etc
 COPY scripts scripts
 COPY manifests manifests
 
-ENV cloudDomain="cloud.example.com"
+ENV cloudDomain="127.0.0.1.nip.io"
 
 CMD ["bash scripts/init.sh"]
