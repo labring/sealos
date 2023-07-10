@@ -22,11 +22,10 @@ Here is one way to get a TLS cert by using acme.sh with alidns.
     
     acme.sh --issue --dns dns_ali -d "127.0.0.1.nip.io" -d "*.127.0.0.1.nip.io"
     ```
-
 4. base64 encode your cert and key, and save the output which will be used in the next step
     ```shell
-        base64 -w 0 ~/.acme.sh/${<your domian path>}/fullchain.cer
-        base64 -w 0 ~/.acme.sh/${<your domian path>}/${<your domian>}.key
+    base64 -w 0 ~/.acme.sh/${<your domian path>}/fullchain.cer
+    base64 -w 0 ~/.acme.sh/${<your domian path>}/${<your domian>}.key
     ```
 
 Other dns api please read: https://github.com/acmesh-official/acme.sh/wiki/dnsapi
@@ -34,7 +33,7 @@ Other dns api please read: https://github.com/acmesh-official/acme.sh/wiki/dnsap
 #### Using self-signed cert
 We provide a self-signed cert for you to test by default if you didn't provide a cert. You can replace it with your own cert.
 
-### Kubernetes cluster
+### Kubernetes Setup
 Please read sealos doc to create a kubernetes cluster: https://sealos.io/en/docs/lifecycle-management/quick-start/installation
 
 ```shell
@@ -54,7 +53,7 @@ sealos apply -f Clusterfile
 
 Note: if you want to change pod cidr, please edit the `Clusterfile` before run `sealos apply`
 
-### Ingress-nginx
+### Ingress-nginx setup
 We use ingress-nginx to expose our services. You can install ingress-nginx by using sealos:
 
 Create `ingress-nginx-config.yaml` file
@@ -83,9 +82,10 @@ Install ingress-nginx and switch to NodePort mode
 sealos run docker.io/labring/ingress-nginx:v1.5.1 --config-file ingress-nginx-config.yaml
 ```
 
-### Save your cert file to a sealos config file
+## run sealos cloud cluster image
 
-You can skip this step if you use the self-signed cert that we provide by default.
+### Generate TLS config file
+You can skip this step if you use the self-signed cert that we provide by default. 
 
 Please make sure `spec.match` is the same as the image you want to run and the registry name such as ghcr.io/docker.io can
 
@@ -105,7 +105,6 @@ spec:
       tls.key: <your-tls.key-base64>
 ```
 
-## run sealos cloud cluster image
 ```shell
 sealos run docker.io/labring/sealos-cloud:latest\
     --env cloudDomain="127.0.0.1.nip.io"\
