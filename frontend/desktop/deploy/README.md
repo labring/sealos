@@ -45,7 +45,7 @@ spec:
 
 ```shell
 sealos run \
-    --env cloudDomain="cloud.sealos.io" \
+    --env cloudDomain="127.0.0.1.nip.io" \
     --env wildcardCertSecretName="wildcard-cert" \
     --env passwordEnabled="true" \
     docker.io/labring/sealos-cloud-desktop:dev \

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-cloudDomain="cloud.io"
+cloudDomain="127.0.0.1.nip.io"
 tlsCrtPlaceholder="<tls-crt-placeholder>"
 tlsKeyPlaceholder="<tls-key-placeholder>"
 mongodb_uri=""
