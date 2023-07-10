@@ -212,7 +212,10 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	if err := r.syncRoleAndRoleBinding(ctx, name, userNamespace); err != nil {
 		return nil, fmt.Errorf("sync role and rolebinding failed: %v", err)
 	}
-
+	err := r.initBalance(&account)
+	if err != nil {
+		return nil, fmt.Errorf("sync init balance failed: %v", err)
+	}
 	// add account balance when account is new user
 	stringAmount := os.Getenv(NEWACCOUNTAMOUNTENV)
 	if stringAmount == "" {
@@ -497,6 +500,7 @@ const (
 	Threshold3       = 1999 * BaseUnit
 	Threshold4       = 4999 * BaseUnit
 	Threshold5       = 19999 * BaseUnit
+	Ratio0     int64 = 0
 	Ratio1     int64 = 10
 	Ratio2     int64 = 15
 	Ratio3     int64 = 20
@@ -508,7 +512,7 @@ func giveGift(amount int64) int64 {
 	var ratio int64
 	switch {
 	case amount < Threshold1:
-		return 0
+		ratio = Ratio0
 	case amount < Threshold2:
 		ratio = Ratio1
 	case amount < Threshold3:
