@@ -13,7 +13,7 @@ on:
         default: false
       push_image_tag:
         description: 'Push image tag'
-        default: 'dev'
+        default: 'latest'
         required: false
         type: string
   push:
@@ -144,7 +144,6 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service
           tags: |
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
-            type=raw,value=dev,enable=true
             type=raw,value=${{ steps.prepare.outputs.tag_name }},enable=true
 
       - name: build (and publish) ${{ matrix.module }} main image
@@ -212,7 +211,7 @@ jobs:
       - name: Mutate image tag in deploy files
         working-directory: service/${{ matrix.module }}/deploy
         run: |
-          OLD_DOCKER_IMAGE_NAME=${{ steps.prepare.outputs.old_docker_repo }}:dev
+          OLD_DOCKER_IMAGE_NAME=${{ steps.prepare.outputs.old_docker_repo }}:latest
           NEW_DOCKER_IMAGE_NAME=${{ steps.prepare.outputs.new_docker_repo }}:${{ steps.prepare.outputs.tag_name }}
           sed -i "s;${OLD_DOCKER_IMAGE_NAME};${NEW_DOCKER_IMAGE_NAME};" manifests/*
 

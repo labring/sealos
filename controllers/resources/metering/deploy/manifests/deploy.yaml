@@ -23,7 +23,7 @@ spec:
         control-plane: metering-manager
     spec:
       containers:
-        - image: ghcr.io/labring/sealos-resources-metering-controller:dev
+        - image: ghcr.io/labring/sealos-resources-metering-controller:latest
           name: resource-metering
           command:
             - "/manager"

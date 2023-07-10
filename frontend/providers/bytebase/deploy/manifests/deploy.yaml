@@ -50,7 +50,7 @@ spec:
               drop:
                 - "ALL"
           # do not modify this image, it is used for CI/CD
-          image: ghcr.io/labring/sealos-bytebase-frontend:dev
+          image: ghcr.io/labring/sealos-bytebase-frontend:latest
           imagePullPolicy: Always
           volumeMounts:
             - name: bytebase-frontend-volume

@@ -50,7 +50,7 @@ spec:
               drop:
                 - "ALL"
           # do not modify this image, it is used for CI/CD
-          image: ghcr.io/labring/sealos-adminer-frontend:dev
+          image: ghcr.io/labring/sealos-adminer-frontend:latest
           imagePullPolicy: Always
           volumeMounts:
             - name: adminer-frontend-volume

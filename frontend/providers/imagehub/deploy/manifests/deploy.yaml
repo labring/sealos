@@ -52,7 +52,7 @@ spec:
               drop:
                 - "ALL"
           # do not modify this image, it is used for CI/CD
-          image: ghcr.io/labring/sealos-imagehub-frontend:dev
+          image: ghcr.io/labring/sealos-imagehub-frontend:latest
           imagePullPolicy: Always
           volumeMounts:
             - name: imagehub-frontend-volume
