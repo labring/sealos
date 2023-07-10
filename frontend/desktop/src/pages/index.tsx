@@ -16,9 +16,9 @@ interface IMoreAppsContext {
 }
 export const MoreAppsContext = createContext<IMoreAppsContext | null>(null);
 export const RechargeEnabledContext = createContext<boolean>(false);
-export default function Home({rechargeEnabled}: {rechargeEnabled: boolean}) {
+export default function Home({ rechargeEnabled }: { rechargeEnabled: boolean }) {
   const router = useRouter();
-  const isUpdate = useSessionStore(s => s.newUser)
+  const isUpdate = useSessionStore((s) => s.newUser);
   const { colorMode, toggleColorMode } = useColorMode();
   const isUserLogin = useSessionStore((s) => s.isUserLogin);
   const init = useAppStore((state) => state.init);
@@ -29,36 +29,37 @@ export default function Home({rechargeEnabled}: {rechargeEnabled: boolean}) {
   }, [colorMode, toggleColorMode]);
   const [showMoreApps, setShowMoreApps] = useState(false);
   useEffect(() => {
-
     const { query } = router;
     const is_login = isUserLogin();
     if (!isUpdate || !is_login) {
-      let param = decodeURIComponent(query?.openapp as string||"")
-      let [openApp, appQuery] = param.split('?',1)
-      if (openApp && typeof appQuery === 'string') setAutoLaunch(openApp, {raw: appQuery})
-      router.replace(destination)
+      let param = decodeURIComponent((query?.openapp as string) || '');
+      const firstQuestionMarkIndex = param.indexOf('?');
+      const openApp = param.substring(0, firstQuestionMarkIndex);
+      const appQuery = param.substring(firstQuestionMarkIndex + 1);
+      if (openApp && typeof appQuery === 'string') setAutoLaunch(openApp, { raw: appQuery });
+      router.replace(destination);
     } else {
-      init()
-        .then((state) => {
-          let appQuery = ''
-          let appkey = ''
-          if(!state.autolaunch) {
-            let param = decodeURIComponent(query?.openapp as string||"")
-            let [openapp, _appQuery] = param.split('?',2)
-            if (!openapp || typeof _appQuery !== 'string') return
-            appQuery = _appQuery
-            appkey = openapp
-          } else {
-            appQuery = state.autolaunch
-          }
-          const app = state.installedApps.find((item) => item.key === appkey);
-          if (!app) return
-          state
-            .openApp(app, { raw:appQuery })
-            .then(() => {
-              state.cancelAutoLaunch()
-            })
-        })
+      init().then((state) => {
+        let appQuery = '';
+        let appkey = '';
+        if (!state.autolaunch) {
+          let param = decodeURIComponent((query?.openapp as string) || '');
+          const firstQuestionMarkIndex = param.indexOf('?');
+          const openapp = param.substring(0, firstQuestionMarkIndex);
+          const _appQuery = param.substring(firstQuestionMarkIndex + 1);
+          if (!openapp || typeof _appQuery !== 'string') return;
+          appQuery = _appQuery;
+          appkey = openapp;
+        } else {
+          appkey = state.autolaunch;
+          appQuery = state.launchQuery.raw;
+        }
+        const app = state.installedApps.find((item) => item.key === appkey);
+        if (!app) return;
+        state.openApp(app, { raw: appQuery }).then(() => {
+          state.cancelAutoLaunch();
+        });
+      });
     }
   }, [router, isUserLogin, init, isUpdate, setAutoLaunch]);
 
@@ -69,7 +70,7 @@ export default function Home({rechargeEnabled}: {rechargeEnabled: boolean}) {
           <DesktopContent />
           <FloatButton />
           <MoreApps />
-        </ RechargeEnabledContext.Provider>
+        </RechargeEnabledContext.Provider>
       </MoreAppsContext.Provider>
     </Layout>
   );
@@ -77,16 +78,11 @@ export default function Home({rechargeEnabled}: {rechargeEnabled: boolean}) {
 
 export async function getServerSideProps({ req, res, locales }: any) {
   const local = req?.cookies?.NEXT_LOCALE || 'en';
-  
+
   return {
     props: {
-      ...(await serverSideTranslations(
-        local,
-        undefined,
-        null,
-        locales || []
-      )),
-      rechargeEnabled:  enableRecharge()
+      ...(await serverSideTranslations(local, undefined, null, locales || [])),
+      rechargeEnabled: enableRecharge()
     }
   };
 }
