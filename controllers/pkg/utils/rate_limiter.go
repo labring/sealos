@@ -23,16 +23,21 @@ import (
 )
 
 const (
-	defaultMinRetryDelay = 750 * time.Millisecond
-	defaultMaxRetryDelay = 15 * time.Minute
+	defaultMinRetryDelay = 5 * time.Millisecond
+	defaultMaxRetryDelay = 1000 * time.Second
+	defaultQPS           = float64(10.0)
+	defaultBurst         = 100
 	flagMinRetryDelay    = "min-retry-delay"
 	flagMaxRetryDelay    = "max-retry-delay"
+	flagQPS              = "default-qps"
+	flagBurst            = "default-burst"
 )
 
 // RateLimiterOptions used on reconcilers.
 type RateLimiterOptions struct {
 	MinRetryDelay time.Duration
-
+	QPS           float64
+	Burst         int
 	MaxRetryDelay time.Duration
 }
 
@@ -41,18 +46,12 @@ func (o *RateLimiterOptions) BindFlags(fs *flag.FlagSet) {
 		"The minimum amount of time for which an object being reconciled will have to wait before a retry.")
 	fs.DurationVar(&o.MaxRetryDelay, flagMaxRetryDelay, defaultMaxRetryDelay,
 		"The maximum amount of time for which an object being reconciled will have to wait before a retry.")
+	fs.Float64Var(&o.QPS, flagQPS, defaultQPS, "The maximum number of batches per second to allow.")
+	fs.IntVar(&o.Burst, flagBurst, defaultBurst, "The maximum number of batches to allow in a short period of time.")
 }
 
 func GetRateLimiter(opts RateLimiterOptions) ratelimiter.RateLimiter {
 	return workqueue.NewItemExponentialFailureRateLimiter(
 		opts.MinRetryDelay,
 		opts.MaxRetryDelay)
-}
-
-// GetDefaultRateLimiter
-// rate-limiter.RateLimiter with the default configuration.
-func GetDefaultRateLimiter() ratelimiter.RateLimiter {
-	return workqueue.NewItemExponentialFailureRateLimiter(
-		defaultMinRetryDelay,
-		defaultMaxRetryDelay)
 }
