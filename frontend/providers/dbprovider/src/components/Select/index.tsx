@@ -2,6 +2,7 @@ import React from 'react';
 import { Menu, MenuButton, MenuList, MenuItem, Button, useDisclosure, Box } from '@chakra-ui/react';
 import type { ButtonProps } from '@chakra-ui/react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
+import { useTranslation } from 'next-i18next';
 
 interface Props extends ButtonProps {
   isDisabled?: boolean;
@@ -26,6 +27,8 @@ const MySelect = ({
   icon = <ChevronDownIcon />,
   ...props
 }: Props) => {
+  const { t } = useTranslation();
+
   const menuItemStyles = {
     borderRadius: 'sm',
     py: 2,
@@ -68,7 +71,7 @@ const MySelect = ({
               })}
           {...props}
         >
-          {list?.find((item) => item.id === value)?.label || placeholder}
+          {t(list?.find((item) => item.id === value)?.label || placeholder || '')}
           <Box position={'absolute'} right={3}>
             {icon}
           </Box>
@@ -102,7 +105,7 @@ const MySelect = ({
                 onClose();
               }}
             >
-              {item.label}
+              {t(item.label)}
             </Box>
           ))}
         </MenuList>

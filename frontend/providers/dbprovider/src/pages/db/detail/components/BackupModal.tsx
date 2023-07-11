@@ -254,7 +254,7 @@ const BackupModal = ({
                 <>
                   <Box flex={1} mt={8} userSelect={'none'}>
                     <Flex alignItems={'center'}>
-                      <Box flex={'0 0 90px'}>{t('Cycle Time')}</Box>
+                      <Box flex={'0 0 110px'}>{t('CronExpression')}</Box>
                       <Tabs
                         w={'220px'}
                         list={[
@@ -298,7 +298,7 @@ const BackupModal = ({
                     )}
                     {getAutoValues('type') !== 'hour' && (
                       <Flex mt={7} alignItems={'center'}>
-                        <Box flex={'0 0 90px'}>{t('Start Hour')}</Box>
+                        <Box flex={'0 0 110px'}>{t('Start Hour')}</Box>
                         <MySelect
                           width={'120px'}
                           value={getAutoValues('hour')}
@@ -312,7 +312,7 @@ const BackupModal = ({
                       </Flex>
                     )}
                     <Flex mt={7} alignItems={'center'}>
-                      <Box flex={'0 0 90px'}>{t('Start Minute')}</Box>
+                      <Box flex={'0 0 110px'}>{t('Start Minute')}</Box>
                       <MySelect
                         width={'120px'}
                         value={getAutoValues('minute')}
@@ -325,7 +325,7 @@ const BackupModal = ({
                       />
                     </Flex>
                     <Flex mt={7} alignItems={'center'}>
-                      <Box flex={'0 0 90px'}>{t('saveTime')}</Box>
+                      <Box flex={'0 0 110px'}>{t('SaveTime')}</Box>
                       <Input
                         maxW={'100px'}
                         bg={'myWhite.300'}
@@ -348,8 +348,8 @@ const BackupModal = ({
                         boxShadow={'none !important'}
                         borderColor={'myGray.200'}
                         list={[
-                          { id: 'd', label: 'day' },
-                          { id: 'h', label: 'hour' }
+                          { id: 'd', label: 'Day' },
+                          { id: 'h', label: 'Hour' }
                         ]}
                         h={'35px'}
                         borderTopLeftRadius={0}
