@@ -20,7 +20,7 @@ import (
 	"net/http"
 
 	"github.com/go-logr/logr"
-	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
+	cloudv1 "github.com/labring/sealos/controllers/monitor/api/v1"
 	"github.com/labring/sealos/controllers/pkg/crypto"
 	corev1 "k8s.io/api/core/v1"
 )

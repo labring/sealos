@@ -6,7 +6,7 @@ domain: sealos.io
 layout:
 - go.kubebuilder.io/v4
 projectName: cloud-controller
-repo: github.com/labring/sealos/controllers/cloud
+repo: github.com/labring/sealos/controllers/monitor
 resources:
 - controller: true
   domain: sealos.io
@@ -30,7 +30,7 @@ resources:
   domain: sealos.io
   group: cloud
   kind: License
-  path: github.com/labring/sealos/controllers/cloud/api/v1
+  path: github.com/labring/sealos/controllers/monitor/api/v1
   version: v1
 - api:
     crdVersion: v1
@@ -39,6 +39,6 @@ resources:
   domain: sealos.io
   group: cloud
   kind: Launcher
-  path: github.com/labring/sealos/controllers/cloud/api/v1
+  path: github.com/labring/sealos/controllers/monitor/api/v1
   version: v1
 version: "3"

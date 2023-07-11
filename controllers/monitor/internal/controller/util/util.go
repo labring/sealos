@@ -26,9 +26,9 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
-	cloud "github.com/labring/sealos/controllers/cloud/internal/manager"
 	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
+	cloudv1 "github.com/labring/sealos/controllers/monitor/api/v1"
+	cloud "github.com/labring/sealos/controllers/monitor/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"

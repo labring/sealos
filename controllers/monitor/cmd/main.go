@@ -34,8 +34,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	cloudv1 "github.com/labring/sealos/controllers/cloud/api/v1"
-	"github.com/labring/sealos/controllers/cloud/internal/controller"
+	cloudv1 "github.com/labring/sealos/controllers/monitor/api/v1"
+	"github.com/labring/sealos/controllers/monitor/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
 

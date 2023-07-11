@@ -1,4 +1,4 @@
-module github.com/labring/sealos/controllers/cloud
+module github.com/labring/sealos/controllers/monitor
 
 go 1.19
 
@@ -72,5 +72,5 @@ require (
 
 replace (
 	github.com/labring/sealos => ../../
-	github.com/labring/sealos/controllers/cloud => ../../controllers/cloud
+	github.com/labring/sealos/controllers/monitor => ../../controllers/monitor
 )
