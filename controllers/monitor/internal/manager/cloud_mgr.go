@@ -76,6 +76,9 @@ const (
 	ExternalNetworkAccessLabel Label = "external-network-access"
 	IsDisabled                 Label = "isDisabled"
 	IsRead                     Label = "isRead"
+	IsSync                     Label = "isSync"
+	IsCollector                Label = "isCollector"
+	IsNotification             Label = "isNotification"
 	Enabled                    Label = "enabled"
 	Disabled                   Label = "disabled"
 )
