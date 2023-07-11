@@ -54,3 +54,15 @@ export interface BackupCRItemType {
     failureReason?: string;
   };
 }
+
+export type AutoBackupType = 'day' | 'hour' | 'week';
+
+export type AutoBackupFormType = {
+  start: boolean;
+  type: AutoType;
+  week: string[];
+  hour: string;
+  minute: string;
+  saveTime: number;
+  saveType: string;
+};

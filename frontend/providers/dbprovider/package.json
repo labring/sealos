@@ -11,6 +11,7 @@
     "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk"
   },
   "dependencies": {
+    "@chakra-ui/anatomy": "^2.1.1",
     "@chakra-ui/icons": "^2.0.17",
     "@chakra-ui/react": "^2.5.1",
     "@chakra-ui/system": "^2.5.5",

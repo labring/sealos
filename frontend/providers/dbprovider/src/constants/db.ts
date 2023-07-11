@@ -169,7 +169,7 @@ export const DBBackupPolicyNameMap = {
 export const defaultDBEditValue: DBEditType = {
   dbType: DBTypeEnum.postgresql,
   dbVersion: '',
-  dbName: 'dbname',
+  dbName: '',
   replicas: 1,
   cpu: CpuSlideMarkList[1].value,
   memory: MemorySlideMarkList[1].value,

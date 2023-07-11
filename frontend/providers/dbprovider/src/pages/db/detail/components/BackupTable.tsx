@@ -8,7 +8,6 @@ import React, {
 } from 'react';
 import {
   Box,
-  Button,
   Table,
   Thead,
   Tbody,
@@ -30,7 +29,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import dayjs from 'dayjs';
 import { BackupStatusEnum, backupTypeMap } from '@/constants/backup';
 import { useTranslation } from 'next-i18next';
-import { deleteBackup } from '@/api/backup';
+import { deleteBackup, getBackupPolicy } from '@/api/backup';
 import { getErrText } from '@/utils/tools';
 import { getBackupList } from '@/api/backup';
 import MyIcon from '@/components/Icon';
@@ -188,6 +187,23 @@ const BackupTable = ({ db }: { db: DBDetailType }, ref: ForwardedRef<ComponentRe
     backupProcessing
   }));
 
+  const { data, refetch: refetchPolicy } = useQuery(['initpolicy', db.dbName, db.dbType], () =>
+    db.dbName && db.dbType
+      ? getBackupPolicy({
+          dbName: db.dbName,
+          dbType: db.dbType
+        })
+      : {
+          start: false,
+          hour: '18',
+          minute: '00',
+          week: [],
+          type: 'day',
+          saveTime: 7,
+          saveType: 'day'
+        }
+  );
+
   return (
     <Box h={'100%'} position={'relative'}>
       <TableContainer overflow={'overlay'}>
@@ -226,8 +242,14 @@ const BackupTable = ({ db }: { db: DBDetailType }, ref: ForwardedRef<ComponentRe
       </TableContainer>
       <Loading loading={isInitialLoading} fixed={false} />
       <RestartConfirmDelChild />
-      {isOpenBackupModal && (
-        <BackupModal dbName={db.dbName} onSuccess={refetch} onClose={onCloseBackupModal} />
+      {isOpenBackupModal && data && (
+        <BackupModal
+          dbName={db.dbName}
+          dbType={db.dbType}
+          defaultVal={data}
+          onClose={onCloseBackupModal}
+          refetchPolicy={refetchPolicy}
+        />
       )}
       {!!restoreBackupName && (
         <RestoreModal

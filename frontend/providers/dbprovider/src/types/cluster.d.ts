@@ -79,3 +79,21 @@ export type KbPodType = {
     phase: `${PodStatusEnum}`;
   };
 };
+
+export type KubeBlockBackupPolicyType = {
+  metadata: {
+    name: string;
+    uid: string;
+  };
+  spec: {
+    retention: {
+      ttl: string;
+    };
+    schedule: {
+      datafile: {
+        cronExpression: string;
+        enable: boolean;
+      };
+    };
+  };
+};

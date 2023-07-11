@@ -5,12 +5,7 @@ import { DBTypeEnum, DBComponentNameMap, RedisHAConfig } from '@/constants/db';
 import { crLabelKey } from '@/constants/db';
 import { getUserNamespace } from './user';
 import dayjs from 'dayjs';
-import {
-  BackupTypeEnum,
-  BACKUP_TYPE_LABEL_KEY,
-  BACKUP_REMARK_LABEL_KEY,
-  BACKUP_LABEL_KEY
-} from '@/constants/backup';
+import { BACKUP_REMARK_LABEL_KEY, BACKUP_LABEL_KEY } from '@/constants/backup';
 
 export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
   const resources = {
@@ -616,14 +611,12 @@ export const json2Restart = ({ dbName, dbType }: { dbName: string; dbType: DBTyp
   return yaml.dump(template);
 };
 
-export const json2Backup = ({
+export const json2ManualBackup = ({
   name,
-  dbName,
   backupPolicyName,
   remark = ''
 }: {
   name: string;
-  dbName: string;
   backupPolicyName: string;
   remark?: string;
 }) => {
@@ -633,8 +626,6 @@ export const json2Backup = ({
     metadata: {
       finalizers: ['dataprotection.kubeblocks.io/finalizer'],
       labels: {
-        [crLabelKey]: dbName,
-        [BACKUP_TYPE_LABEL_KEY]: BackupTypeEnum.manual,
         [BACKUP_REMARK_LABEL_KEY]: remark
       },
       name
