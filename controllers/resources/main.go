@@ -23,6 +23,7 @@ import (
 
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	"github.com/labring/sealos/controllers/resources/controllers"
+	"github.com/labring/sealos/controllers/resources/launch"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -94,6 +95,11 @@ func main() {
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
+		os.Exit(1)
+	}
+
+	if err := launch.Launcher(context.Background(), mgr.GetClient()); err != nil {
+		setupLog.Error(err, "unable to launch resource moudle")
 		os.Exit(1)
 	}
 
