@@ -12,6 +12,8 @@ $ sealos gen labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24
    --nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx' > Clusterfile
 ```
 
+Notice: labring/helm should be set before labring/calico.
+
 The generated Clusterfile is as follows:
 
 <details>

@@ -14,6 +14,8 @@ Here are the basic usage of `sealos gen` command and some common examples:
    sealos gen labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1
    ```
 
+Notice: labring/helm should be set before labring/calico.
+
 2. Generate a cluster that includes multiple images and specifies the master and worker nodes:
 
    ```bash
@@ -21,6 +23,8 @@ Here are the basic usage of `sealos gen` command and some common examples:
        --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
        --nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
    ```
+
+Notice: labring/helm should be set before labring/calico.
 
 3. Specify SSH port, for servers using the same SSH port:
 

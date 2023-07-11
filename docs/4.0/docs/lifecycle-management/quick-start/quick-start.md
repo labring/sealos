@@ -38,6 +38,8 @@ $ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
 
+Notice: labring/helm should be set before labring/calico.
+
 Parameter explanation:
 
 | Parameter | Example Value   | Description                              |
