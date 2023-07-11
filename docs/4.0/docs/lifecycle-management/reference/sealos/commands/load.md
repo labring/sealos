@@ -16,12 +16,6 @@ Here are the parameters for the `sealos load` command:
 
 - `-i, --input=''`: Load image from a tar archive file.
 
-- `--platform=[linux/arm64/v8]`: When selecting an image, prioritize the specified OS/ARCH instead of the current operating system and architecture.
-
-- `-t, --transport='oci-archive'`: Load image transport from a tar archive file. Available options are oci-archive, docker-archive.
-
-- `--variant=''`: Override the `variant` of the specified image.
-
 ## Examples:
 
 - Load an image from an archive file: `sealos load -i myimage.tar`
