@@ -8,6 +8,7 @@ export let SOURCE_PRICE: resourcePriceResponse = {
   memory: 0.033792,
   storage: 0.002048
 };
+export let StorageClassName: string | undefined;
 export let INSTALL_ACCOUNT = false;
 
 let retryGetPrice = 3;
@@ -47,4 +48,8 @@ export const getDBVersion = async () => {
       }, 1000);
     }
   }
+};
+
+export const updateStorageClassName = (val?: string) => {
+  StorageClassName = val;
 };

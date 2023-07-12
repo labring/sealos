@@ -15,7 +15,7 @@ import { useLoading } from '@/hooks/useLoading';
 import { useRouter } from 'next/router';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
-import { getUserPrice, getDBVersion } from '@/store/static';
+import { getUserPrice, getDBVersion, updateStorageClassName } from '@/store/static';
 
 import 'nprogress/nprogress.css';
 import 'react-day-picker/dist/style.css';
@@ -37,7 +37,12 @@ const queryClient = new QueryClient({
   }
 });
 
-function App({ Component, pageProps, domain }: AppProps & { domain: string }) {
+function App({
+  Component,
+  pageProps,
+  domain,
+  env_storage_className
+}: AppProps & { domain: string; env_storage_className?: string }) {
   const router = useRouter();
   const { i18n } = useTranslation();
   const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
@@ -101,6 +106,7 @@ function App({ Component, pageProps, domain }: AppProps & { domain: string }) {
 
     getUserPrice();
     getDBVersion();
+    updateStorageClassName(env_storage_className);
 
     (async () => {
       try {
@@ -150,7 +156,10 @@ function App({ Component, pageProps, domain }: AppProps & { domain: string }) {
 }
 
 App.getInitialProps = async () => {
-  return { domain: process.env.SEALOS_DOMAIN || 'cloud.sealos.io' };
+  return {
+    domain: process.env.SEALOS_DOMAIN || 'cloud.sealos.io',
+    env_storage_className: process.env.STORAGE_CLASSNAME
+  };
 };
 
 export default appWithTranslation(App);
