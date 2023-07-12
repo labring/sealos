@@ -44,6 +44,7 @@ type CollectorReconciler struct {
 	logger logr.Logger
 }
 
+//+kubebuilder:rbac:groups=user.sealos.io,resources=collectors,verbs=get;list;create;update
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=collectors,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=collectors/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=collectors/finalizers,verbs=update
@@ -76,18 +77,18 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		r.logger.Error(err, "failed to get launcher...")
 		return ctrl.Result{}, err
 	}
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)}, &secret)
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UidSecretName)}, &secret)
 	if err != nil {
 		r.logger.Error(err, "failed to get secret...")
 		return ctrl.Result{}, err
 	}
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ConfigName)}, &configMap)
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UrlConfigName)}, &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to get configmap...")
 		return ctrl.Result{}, err
 	}
 
-	config, err := util.ReadConfigFromConfigMap(string(cloud.ConfigName), &configMap)
+	config, err := util.ReadConfigFromConfigMap(string(cloud.UrlConfigName), &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to read config")
 		return ctrl.Result{}, err

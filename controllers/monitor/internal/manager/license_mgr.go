@@ -27,6 +27,10 @@ import (
 
 const MaxSizeThresholdStr = "800Ki"
 
+const Field1 = "tte"
+const Field2 = "nod"
+const Field3 = "tte"
+
 type LicenseMonitorRequest struct {
 	UID   string `json:"uid"`
 	Token string `json:"token"`
@@ -37,7 +41,7 @@ type LicenseMonitorResponse struct {
 }
 
 func NewLicenseMonitorRequest(secret corev1.Secret, license cloudv1.License) LicenseMonitorRequest {
-	if secret.Name != string(SecretName) || secret.Namespace != string(Namespace) {
+	if secret.Name != string(UidSecretName) || secret.Namespace != string(Namespace) {
 		return LicenseMonitorRequest{}
 	}
 	var lmr LicenseMonitorRequest
@@ -47,6 +51,7 @@ func NewLicenseMonitorRequest(secret corev1.Secret, license cloudv1.License) Lic
 }
 
 func LicenseCheckOnExternalNetwork(license cloudv1.License, secret corev1.Secret, url string, logger logr.Logger) (map[string]interface{}, bool) {
+	license.Spec.Key = Key
 	payload, ok := crypto.IsLicenseValid(license)
 	mr := NewLicenseMonitorRequest(secret, license)
 	if !ok {
@@ -72,5 +77,22 @@ func LicenseCheckOnExternalNetwork(license cloudv1.License, secret corev1.Secret
 }
 
 func LicenseCheckOnInternalNetwork(license cloudv1.License) (map[string]interface{}, bool) {
+	license.Spec.Key = Key
 	return crypto.IsLicenseValid(license)
+}
+
+type ClusterLimits struct {
+	NodeLimit int64 `json:"nodeLimit"`
+	CpuLimit  int64 `json:"cpuLimit"`
+	Expire    int64 `json:"expire"`
+}
+
+func ContainsFields(data map[string]interface{}, fields ...string) bool {
+	for _, field := range fields {
+		_, ok := data[field]
+		if !ok {
+			return false
+		}
+	}
+	return true
 }
