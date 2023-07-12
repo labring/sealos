@@ -178,6 +178,9 @@ func (r *TransferReconciler) check(ctx context.Context, transfer *accountv1.Tran
 	}
 	from := transfer.Namespace
 	to := transfer.Spec.To
+	if getUsername(from) == getUsername(to) {
+		return fmt.Errorf("can not transfer to self")
+	}
 	fromAccount := accountv1.Account{}
 	if r.Get(ctx, client.ObjectKey{Namespace: r.AccountSystemNamespace, Name: getUsername(from)}, &fromAccount) != nil {
 		return fmt.Errorf("owner %s account not found", from)

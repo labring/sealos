@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 
+	"github.com/labring/sealos/controllers/pkg/crypto"
+
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	baseapi "github.com/labring/sealos/test/testdata/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,6 +18,7 @@ func RechargeAccount(AccountName, namespace string, amount int64) error {
 		return err
 	}
 	account.Status.Balance = amount
+	account.Status.EncryptBalance, _ = crypto.EncryptInt64(amount)
 	client := baseapi.GetDefaultDynamicClient()
 	gvr := accountv1.GroupVersion.WithResource("accounts")
 	unstructured2, err := runtime.DefaultUnstructuredConverter.ToUnstructured(account)
@@ -36,6 +39,7 @@ func DeductionAccount(AccountName, namespace string, amount int64) error {
 		return err
 	}
 	account.Status.DeductionBalance = amount
+	account.Status.EncryptDeductionBalance, _ = crypto.EncryptInt64(amount)
 	client := baseapi.GetDefaultDynamicClient()
 	gvr := accountv1.GroupVersion.WithResource("accounts")
 	unstructured2, err := runtime.DefaultUnstructuredConverter.ToUnstructured(account)
