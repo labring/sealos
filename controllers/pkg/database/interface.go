@@ -16,6 +16,7 @@ type Interface interface {
 	QueryBillingRecords(billingRecordQuery *accountv1.BillingRecordQuery, owner string) error
 	GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error)
 	GetAllPricesMap() (map[string]common.Price, error)
+	GetBillingCount(accountType accountv1.Type, startTime, endTime time.Time) (count, amount int64, err error)
 	GenerateMeteringData(startTime, endTime time.Time, prices map[string]common.Price) error
 	InsertMonitor(ctx context.Context, monitors ...*common.Monitor) error
 	Disconnect(ctx context.Context) error
