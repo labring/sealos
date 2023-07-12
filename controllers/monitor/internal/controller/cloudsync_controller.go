@@ -60,14 +60,26 @@ type CloudSyncReconciler struct {
 func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter CloudSyncReconcile", "namespace:", req.Namespace, "name", req.Name)
 	var err error
-	var config cloud.Config
-	var secret corev1.Secret
-	var sync cloud.SyncRequest
-	var resp cloud.SyncResponse
-	var configMap corev1.ConfigMap
-
+	var (
+		config    cloud.Config
+		secret    corev1.Secret
+		sync      cloud.SyncRequest
+		resp      cloud.SyncResponse
+		configMap corev1.ConfigMap
+		launcher  cloudv1.Launcher
+	)
 	r.logger.Info("Start to get resources that need sync...")
-
+	err = r.Client.Get(ctx, req.NamespacedName, &launcher)
+	if err != nil {
+		r.logger.Error(err, "failed to get launcher...")
+		return ctrl.Result{}, err
+	}
+	launcher.Labels[string(cloud.IsSync)] = cloud.TRUE
+	err = r.Client.Update(ctx, &launcher)
+	if err != nil {
+		r.logger.Error(err, "failed to get launcher...")
+		return ctrl.Result{}, err
+	}
 	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)}, &secret)
 	if err != nil {
 		r.logger.Error(err, "failed to get secret...")
@@ -136,8 +148,7 @@ func (r *CloudSyncReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return object.GetName() == string(cloud.ClientStartName) &&
 			object.GetNamespace() == string(cloud.Namespace) &&
 			object.GetLabels() != nil &&
-			object.GetLabels()[string(cloud.IsRead)] == cloud.FALSE &&
-			object.GetLabels()[string(cloud.ExternalNetworkAccessLabel)] == string(cloud.Enabled)
+			object.GetLabels()[string(cloud.IsSync)] == cloud.FALSE
 	})
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cloudv1.Launcher{}, builder.WithPredicates(Predicate)).

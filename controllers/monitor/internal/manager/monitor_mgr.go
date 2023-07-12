@@ -33,6 +33,7 @@ type Title string
 type Source string
 type TypeInfo string
 type Resource string
+type ENV string
 
 const BaseCount = 1000000
 
@@ -75,12 +76,16 @@ const (
 const (
 	ExternalNetworkAccessLabel Label = "external-network-access"
 	IsDisabled                 Label = "isDisabled"
-	IsRead                     Label = "isRead"
-	IsSync                     Label = "isSync"
 	IsCollector                Label = "isCollector"
 	IsNotification             Label = "isNotification"
+	IsSync                     Label = "isSync"
+	IsRead                     Label = "isRead"
 	Enabled                    Label = "enabled"
 	Disabled                   Label = "disabled"
+)
+
+const (
+	IsMonitor ENV = "isMonitor"
 )
 
 const (
@@ -97,6 +102,10 @@ type PolicyAction string
 type NotificationRequest struct {
 	UID       string `json:"uid"`
 	Timestamp int64  `json:"timestamp"`
+}
+
+type RegisterRequest struct {
+	UID string `json:"uid"`
 }
 
 type NotificationResponse struct {
@@ -131,6 +140,18 @@ type HTTPBody struct {
 
 type ConvertOptions interface {
 	callbackConvert(data interface{}) error
+}
+
+func SyncWithCloud(method string, url string, content interface{}) (HTTPResponse, error) {
+	httpBody, err := CommunicateWithCloud("POST", url, content)
+	if err != nil {
+		return HTTPResponse{}, fmt.Errorf(err.Error(), "failed to communicate with cloud")
+	}
+	if IsSuccessfulStatusCode(httpBody.StatusCode) {
+		text := http.StatusText(httpBody.StatusCode)
+		return HTTPResponse{}, fmt.Errorf(text, "failed to communicate with cloud")
+	}
+	return httpBody, nil
 }
 
 func CommunicateWithCloud(method string, url string, content interface{}) (HTTPResponse, error) {

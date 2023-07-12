@@ -18,12 +18,12 @@ package util
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
+	"os"
 	"sync"
-	"time"
 
 	"github.com/go-logr/logr"
 	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
@@ -50,123 +50,47 @@ func ReadConfigFromConfigMap(expectName string, configMap *corev1.ConfigMap) (cl
 	return config, nil
 }
 
-// ----------------------------------------------------------------------------------------------------------//
-
-type RegisterAndStartData struct {
-	logger       logr.Logger
-	Users        cloud.UserCategory
-	ctx          context.Context
-	client       cl.Client
-	FreeLicense  cloud.License
-	clusterScret *corev1.Secret
-	config       cloud.Config
+func Register() (string, error) {
+	return newUUID()
 }
 
-func NewRegisterAndStartData(ctx context.Context, client cl.Client, clusterScret *corev1.Secret,
-	users cloud.UserCategory, config cloud.Config, logger logr.Logger) RegisterAndStartData {
-	return RegisterAndStartData{
-		ctx:          ctx,
-		client:       client,
-		clusterScret: clusterScret,
-		config:       config,
-		logger:       logger,
-		Users:        users,
+func newUUID() (string, error) {
+	uuid := make([]byte, 16)
+	n, err := rand.Read(uuid)
+	if n != len(uuid) || err != nil {
+		return "", err
 	}
+	uuid[6] = (uuid[6] & 0x0f) | 0x40
+	uuid[8] = (uuid[8] & 0x3f) | 0x80
+	return fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:]), nil
 }
 
-// ----------------------------------------------------------------------------------------------------------//
-
-type RegisterAndStartCallBack func(data RegisterAndStartData) error
-
-func RegisterAndStart(data RegisterAndStartData) error {
-	value, ok := data.clusterScret.Labels["registered"]
-	if !ok {
-		return fmt.Errorf("RegisterAndStart: the Yaml of cloud secret if error, less registered label")
-	}
-	if value != cloud.TRUE {
-		err := data.Register()
-		if err != nil {
-			return fmt.Errorf("RegisterAndStart: %w", err)
+func StartCloudModule(ctx context.Context, client cl.Client) error {
+	isMonitor := os.Getenv(string(cloud.IsMonitor))
+	if isMonitor == cloud.TRUE {
+		var launcher cloudv1.Launcher
+		nn := types.NamespacedName{
+			Namespace: string(cloud.Namespace),
+			Name:      string(cloud.ClientStartName),
 		}
-		pack := cloud.NewNotificationPackage(cloud.RegistrationSuccessTitle, cloud.SEALOS, cloud.RegistrationSuccessContent)
-		SubmitNotificationWithUserCategory(data.ctx, data.client, data.logger, data.Users, cloud.AdmPrefix, pack)
-	}
-	err := data.StartCloudModule()
-	if err != nil {
-		return fmt.Errorf("RegisterAndStart: %w", err)
-	}
-	return nil
-}
-
-func (rd *RegisterAndStartData) Register() error {
-	url := rd.config.RegisterURL
-	// get&store the cluster info
-	httpbody, err := cloud.CommunicateWithCloud("GET", url, nil)
-	if err != nil {
-		return fmt.Errorf("Register: %w", err)
-	}
-	if !cloud.IsSuccessfulStatusCode(httpbody.StatusCode) {
-		return fmt.Errorf("Register: %s", http.StatusText(httpbody.StatusCode))
-	}
-	var clusterInfo cloud.ClusterInfo
-	err = cloud.Convert(httpbody.Body, &clusterInfo)
-	if err != nil {
-		return fmt.Errorf("Register: %w", err)
-	}
-	if rd.clusterScret.Data == nil {
-		rd.clusterScret.Data = make(map[string][]byte)
-	}
-	rd.clusterScret.Data["key"] = []byte(clusterInfo.Key)
-	rd.clusterScret.Data["uid"] = []byte(clusterInfo.UID)
-	rd.clusterScret.Labels["registered"] = cloud.TRUE
-	// send a notification to cluster adm
-
-	err = rd.client.Update(rd.ctx, rd.clusterScret)
-	if err != nil {
-		return fmt.Errorf("Register: client.Update: %w", err)
-	}
-	return nil
-}
-
-func (rd *RegisterAndStartData) StartCloudModule() error {
-	if err := rd.StartLauncher(); err != nil {
-		return fmt.Errorf("startLauncher: %w", err)
-	}
-	return nil
-}
-
-func (rd *RegisterAndStartData) StartLauncher() error {
-	var startInstance cloudv1.Launcher
-	startInstance.SetName(string(cloud.ClientStartName))
-	startInstance.SetNamespace(string(cloud.Namespace))
-	if err := rd.client.Get(rd.ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ClientStartName)}, &startInstance); err != nil {
-		if apierrors.IsNotFound(err) {
-			startInstance.Labels = make(map[string]string)
-			startInstance.Labels[string(cloud.IsRead)] = cloud.FALSE
-			startInstance.Labels[string(cloud.ExternalNetworkAccessLabel)] = string(cloud.Enabled)
-			if err := rd.client.Create(rd.ctx, &startInstance); err != nil {
-				return fmt.Errorf("startLauncher: client.Create: %w", err)
+		err := client.Get(ctx, nn, &launcher)
+		if err == nil {
+			launcher.Labels[string(cloud.IsCollector)] = cloud.FALSE
+			launcher.Labels[string(cloud.IsSync)] = cloud.FALSE
+			launcher.Labels[string(cloud.IsNotification)] = cloud.FALSE
+			return client.Update(ctx, &launcher)
+		} else if apierrors.IsNotFound(err) {
+			launcher.Labels = make(map[string]string)
+			launcher.Labels[string(cloud.IsCollector)] = cloud.FALSE
+			launcher.Labels[string(cloud.IsSync)] = cloud.FALSE
+			launcher.Labels[string(cloud.IsNotification)] = cloud.FALSE
+			err := client.Create(ctx, &launcher)
+			if err != nil {
+				return fmt.Errorf("StartCloudModule: %w", err)
 			}
-		} else {
-			return fmt.Errorf("startLauncher: client.Get: %w", err)
+			return nil
 		}
-	} else {
-		if startInstance.Labels == nil {
-			startInstance.Labels = make(map[string]string)
-		}
-		startInstance.Labels[string(cloud.IsRead)] = cloud.FALSE
-		startInstance.Labels[string(cloud.ExternalNetworkAccessLabel)] = string(cloud.Enabled)
-		if err := rd.client.Update(rd.ctx, &startInstance); err != nil {
-			return fmt.Errorf("startLauncher: client.Update: %w", err)
-		}
-	}
-	time.Sleep(time.Millisecond * 10000)
-	if startInstance.Labels == nil {
-		startInstance.Labels = make(map[string]string)
-	}
-	startInstance.Labels[string(cloud.IsRead)] = cloud.TRUE
-	if err := rd.client.Update(rd.ctx, &startInstance); err != nil {
-		return fmt.Errorf("startLauncher: client.Update: %w", err)
+		return err
 	}
 	return nil
 }
