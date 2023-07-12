@@ -87,19 +87,19 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		r.logger.Error(err, "failed to get launcher...")
 		return ctrl.Result{}, err
 	}
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)}, &clusterScret)
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UidSecretName)}, &clusterScret)
 	if err != nil {
 		r.logger.Error(err, "failed to get secret...")
 		return ctrl.Result{}, err
 	}
 
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ConfigName)}, &configMap)
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UrlConfigName)}, &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to get configmap...")
 		return ctrl.Result{}, err
 	}
 
-	config, err := util.ReadConfigFromConfigMap(string(cloud.ConfigName), &configMap)
+	config, err := util.ReadConfigFromConfigMap(string(cloud.UrlConfigName), &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to read config")
 		return ctrl.Result{}, err

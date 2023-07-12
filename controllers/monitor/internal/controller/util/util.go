@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/go-logr/logr"
 	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
@@ -133,41 +134,6 @@ func SubmitNotificationWithUser(ctx context.Context, client cl.Client, logger lo
 	}
 }
 
-func SubmitLicense(ctx context.Context, client cl.Client, cluster corev1.Secret) error {
-	var license cloudv1.License
-	err := client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.LicenseName)}, &license)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			license.SetName(string(cloud.LicenseName))
-			license.SetNamespace(string(cloud.Namespace))
-			license.Spec.Token = string(cluster.Data["token"])
-			license.Spec.Key = string(cluster.Data["key"])
-			if license.Labels == nil {
-				license.Labels = make(map[string]string)
-			}
-			license.Labels["isRead"] = cloud.FALSE
-			err := client.Create(ctx, &license)
-			if err == nil {
-				return nil
-			}
-		}
-	} else {
-		license.SetName(string(cloud.LicenseName))
-		license.SetNamespace(string(cloud.Namespace))
-		license.Spec.Token = string(cluster.Data["token"])
-		license.Spec.Key = string(cluster.Data["key"])
-		if license.Labels == nil {
-			license.Labels = make(map[string]string)
-		}
-		license.Labels["isRead"] = cloud.FALSE
-		err := client.Update(ctx, &license)
-		if err == nil {
-			return nil
-		}
-	}
-	return nil
-}
-
 func InterfaceToInt64(value interface{}) (int64, error) {
 	switch v := value.(type) {
 	case int64:
@@ -201,4 +167,193 @@ func CheckLicenseExists(configMap *corev1.ConfigMap, license string) bool {
 	}
 
 	return false
+}
+
+type Operation interface {
+	Execute() error
+}
+
+type ReadOperationList struct {
+	readOperations []Operation
+}
+
+type WriteOperationList struct {
+	writeOperations []Operation
+}
+
+type ReWriteOperationList struct {
+	reWriteOperations []Operation
+}
+
+func (list *ReWriteOperationList) AddToList(op Operation) {
+	list.reWriteOperations = append(list.reWriteOperations, op)
+}
+
+func (list *ReWriteOperationList) Execute() error {
+	retryInterval := time.Second * 5 // Retry every 5 seconds
+	timeout := time.Minute * 3       // Stop retrying after 3 minutes
+
+	startTime := time.Now()
+	for {
+		remainingOps := []Operation{}
+
+		for _, op := range list.reWriteOperations {
+			err := op.Execute()
+			if err != nil {
+				remainingOps = append(remainingOps, op)
+			}
+		}
+
+		if len(remainingOps) == 0 {
+			break
+		}
+
+		// Update the list of reWriteOperations with the remaining operations
+		list.reWriteOperations = remainingOps
+
+		// Check if the timeout has been reached
+		if time.Since(startTime) >= timeout {
+			return fmt.Errorf("timeout reached, some operations still failed")
+		}
+
+		// Wait for the retry interval before trying again
+		time.Sleep(retryInterval)
+	}
+
+	return nil
+}
+
+func (list *ReadOperationList) Execute() error {
+	for _, op := range list.readOperations {
+		err := op.Execute()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (list *WriteOperationList) Execute() error {
+	reWriteList := &ReWriteOperationList{}
+	errorOccurred := false
+
+	for _, op := range list.writeOperations {
+		if errorOccurred {
+			reWriteList.AddToList(op)
+			continue
+		}
+		err := op.Execute()
+		if err != nil {
+			errorOccurred = true
+			reWriteList.AddToList(op)
+		}
+	}
+
+	if errorOccurred {
+		err := reWriteList.Execute()
+		if err != nil {
+			return fmt.Errorf("an error occurred, some operations still failed after retries: %v", err)
+		}
+	}
+
+	return nil
+}
+
+type ReadEventBuilder struct {
+	obj      cl.Object
+	ctx      context.Context
+	client   cl.Client
+	tag      types.NamespacedName
+	callback WriteFunc
+}
+
+type WriteEventBuilder struct {
+	obj      cl.Object
+	ctx      context.Context
+	client   cl.Client
+	callback WriteFunc
+}
+
+type WriteFunc func(ctx context.Context, client cl.Client, obj cl.Object) error
+
+func (reb *ReadEventBuilder) WithClient(client cl.Client) *ReadEventBuilder {
+	reb.client = client
+	return reb
+}
+
+func (reb *ReadEventBuilder) WithContext(ctx context.Context) *ReadEventBuilder {
+	reb.ctx = ctx
+	return reb
+}
+
+func (reb *ReadEventBuilder) WithObject(obj cl.Object) *ReadEventBuilder {
+	reb.obj = obj
+	return reb
+}
+func (reb *ReadEventBuilder) WithCallback(callback WriteFunc) *ReadEventBuilder {
+	reb.callback = callback
+	return reb
+}
+
+func (reb *ReadEventBuilder) WithTag(tag types.NamespacedName) *ReadEventBuilder {
+	reb.tag = tag
+	return reb
+}
+
+func (reb *ReadEventBuilder) Read() error {
+	err := reb.client.Get(reb.ctx, reb.tag, reb.obj)
+	if err != nil && reb.callback != nil {
+		reb.obj.SetName(reb.tag.Name)
+		reb.obj.SetNamespace(reb.tag.Namespace)
+		return reb.callback(reb.ctx, reb.client, reb.obj)
+	}
+	return err
+}
+
+func (reb *ReadEventBuilder) AddToList(list *ReadOperationList) *ReadOperationList {
+	list.readOperations = append(list.readOperations, reb)
+	return list
+}
+
+func (reb *ReadEventBuilder) Execute() error {
+	if reb != nil {
+		return reb.Read()
+	}
+	return fmt.Errorf("ReadEventBuilder excute error: %s", "value can't be nil")
+}
+
+func (web *WriteEventBuilder) WithClient(client cl.Client) *WriteEventBuilder {
+	web.client = client
+	return web
+}
+
+func (web *WriteEventBuilder) WithContext(ctx context.Context) *WriteEventBuilder {
+	web.ctx = ctx
+	return web
+}
+
+func (web *WriteEventBuilder) WithObject(obj cl.Object) *WriteEventBuilder {
+	web.obj = obj
+	return web
+}
+
+func (web *WriteEventBuilder) WithCallback(callback WriteFunc) *WriteEventBuilder {
+	web.callback = callback
+	return web
+}
+
+func (web *WriteEventBuilder) Write() error {
+	return web.callback(web.ctx, web.client, web.obj)
+}
+
+func (web *WriteEventBuilder) Execute() error {
+	if web != nil {
+		return web.Write()
+	}
+	return fmt.Errorf("WriteEventBuilder excute error: %s", "value can't be nil")
+}
+
+func (reb *WriteEventBuilder) AddToList(list *ReadOperationList) *ReadOperationList {
+	list.readOperations = append(list.readOperations, reb)
+	return list
 }

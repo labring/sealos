@@ -134,6 +134,7 @@ func IsLicenseValid(license v1.License) (map[string]interface{}, bool) {
 		return nil, false
 	}
 	publicKey, err := parseRSAPublicKeyFromPEM(string(decodeKey))
+	fmt.Println(string(decodeKey))
 	if err != nil {
 		return nil, false
 	}
@@ -142,6 +143,7 @@ func IsLicenseValid(license v1.License) (map[string]interface{}, bool) {
 	}
 	parsedToken, err := jwt.Parse(license.Spec.Token, keyFunc)
 	if err != nil {
+		fmt.Println(err.Error())
 		return nil, false
 	}
 
