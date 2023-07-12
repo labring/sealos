@@ -111,7 +111,10 @@ export const adaptBackup = (backup: BackupCRItemType): BackupItemType => {
   return {
     id: backup.metadata.uid,
     name: backup.metadata.name,
-    status: backupStatusMap[backup.status.phase] || backupStatusMap.UnKnow,
+    status:
+      backup.status?.phase && backupStatusMap[backup.status.phase]
+        ? backupStatusMap[backup.status.phase]
+        : backupStatusMap.UnKnow,
     startTime: backup.metadata.creationTimestamp,
     type: autoLabel in backup.metadata.labels ? BackupTypeEnum.auto : BackupTypeEnum.manual,
     remark: backup.metadata.labels[BACKUP_REMARK_LABEL_KEY] || '-',

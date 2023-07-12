@@ -6,6 +6,7 @@ import { crLabelKey } from '@/constants/db';
 import { getUserNamespace } from './user';
 import dayjs from 'dayjs';
 import { BACKUP_REMARK_LABEL_KEY, BACKUP_LABEL_KEY } from '@/constants/backup';
+import { StorageClassName } from '@/store/static';
 
 export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
   const resources = {
@@ -30,6 +31,7 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
     },
     name: data.dbName
   };
+  const storageClassName = StorageClassName ? { storageClassName: StorageClassName } : {};
 
   const redisHA = RedisHAConfig(data.replicas > 1);
 
@@ -69,7 +71,7 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
                         storage: `${data.storage}Gi`
                       }
                     },
-                    storageClassName: 'openebs-backup'
+                    ...storageClassName
                   }
                 }
               ]
@@ -112,7 +114,7 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
                         storage: `${data.storage}Gi`
                       }
                     },
-                    storageClassName: 'openebs-backup'
+                    ...storageClassName
                   }
                 }
               ]
@@ -158,7 +160,7 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
                         storage: `${data.storage}Gi`
                       }
                     },
-                    storageClassName: 'openebs-backup'
+                    ...storageClassName
                   }
                 }
               ]
@@ -204,7 +206,7 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
                         storage: `${data.storage}Gi`
                       }
                     },
-                    storageClassName: 'openebs-backup'
+                    ...storageClassName
                   }
                 }
               ]
@@ -237,7 +239,7 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
                               storage: `${redisHA.storage}Gi`
                             }
                           },
-                          storageClassName: 'openebs-backup'
+                          ...storageClassName
                         }
                       }
                     ]
