@@ -60,10 +60,23 @@ type CollectorReconciler struct {
 func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter CollectorReconcile", "namespace:", req.Namespace, "name", req.Name)
 
-	var secret corev1.Secret
-	var configMap corev1.ConfigMap
-
-	err := r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)}, &secret)
+	var (
+		secret    corev1.Secret
+		configMap corev1.ConfigMap
+		launcher  cloudv1.Launcher
+	)
+	err := r.Client.Get(ctx, req.NamespacedName, &launcher)
+	if err != nil {
+		r.logger.Error(err, "failed to get launcher...")
+		return ctrl.Result{}, err
+	}
+	launcher.Labels[string(cloud.IsCollector)] = cloud.TRUE
+	err = r.Client.Update(ctx, &launcher)
+	if err != nil {
+		r.logger.Error(err, "failed to get launcher...")
+		return ctrl.Result{}, err
+	}
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)}, &secret)
 	if err != nil {
 		r.logger.Error(err, "failed to get secret...")
 		return ctrl.Result{}, err
@@ -142,7 +155,7 @@ func (r *CollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return object.GetName() == string(cloud.ClientStartName) &&
 			object.GetNamespace() == string(cloud.Namespace) &&
 			object.GetLabels() != nil &&
-			object.GetLabels()[string(cloud.IsRead)] == string(cloud.FALSE)
+			object.GetLabels()[string(cloud.IsCollector)] == string(cloud.FALSE)
 	})
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cloudv1.Launcher{}, builder.WithPredicates(Predicate)).

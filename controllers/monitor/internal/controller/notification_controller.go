@@ -69,11 +69,24 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, err
 	}
 	r.logger.Info("Start to get the resource for pull notification...")
-	var err error
-	var configMap corev1.ConfigMap
-	var url string
-	var clusterScret corev1.Secret
-
+	var (
+		err          error
+		configMap    corev1.ConfigMap
+		url          string
+		clusterScret corev1.Secret
+		launcher     cloudv1.Launcher
+	)
+	err = r.Client.Get(ctx, req.NamespacedName, &launcher)
+	if err != nil {
+		r.logger.Error(err, "failed to get launcher...")
+		return ctrl.Result{}, err
+	}
+	launcher.Labels[string(cloud.IsNotification)] = cloud.TRUE
+	err = r.Client.Update(ctx, &launcher)
+	if err != nil {
+		r.logger.Error(err, "failed to get launcher...")
+		return ctrl.Result{}, err
+	}
 	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.SecretName)}, &clusterScret)
 	if err != nil {
 		r.logger.Error(err, "failed to get secret...")
@@ -152,8 +165,7 @@ func (r *NotificationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return object.GetName() == string(cloud.ClientStartName) &&
 			object.GetNamespace() == string(cloud.Namespace) &&
 			object.GetLabels() != nil &&
-			object.GetLabels()[string(cloud.IsRead)] == cloud.FALSE &&
-			object.GetLabels()[string(cloud.ExternalNetworkAccessLabel)] == string(cloud.Enabled)
+			object.GetLabels()[string(cloud.IsNotification)] == string(cloud.FALSE)
 	})
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cloudv1.Launcher{}, builder.WithPredicates(Predicate)).
