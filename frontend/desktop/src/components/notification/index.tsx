@@ -11,8 +11,8 @@ import { useTranslation } from 'next-i18next';
 type NotificationItem = {
   metadata: {
     creationTimestamp: string;
-    labels?: {
-      isRead?: boolean;
+    labels: {
+      isRead: string;
     };
     name: string;
     namespace: string;
@@ -27,7 +27,7 @@ type NotificationItem = {
 };
 
 type TNotification = {
-  disclosure: UseDisclosureProps
+  disclosure: UseDisclosureProps;
   onAmount: (amount: number) => void;
 };
 
@@ -45,20 +45,23 @@ export default function Notification(props: TNotification) {
     {
       onSuccess: (data) => {
         onAmount(
-          data?.data?.items?.filter((item: NotificationItem) => !item?.metadata?.labels?.isRead)
-            ?.length || 0
+          data?.data?.items?.filter(
+            (item: NotificationItem) => !JSON.parse(item?.metadata?.labels?.isRead || 'false')
+          )?.length || 0
         );
         setNotification(data?.data?.items);
-      }
+      },
+      refetchInterval: 1 * 60 * 1000
     }
   );
+
   const [unread_notes, read_notes] = useMemo(() => {
     const unread: NotificationItem[] = [];
     const read: NotificationItem[] = [];
 
-    notification?.forEach((item: NotificationItem) =>
-      !item?.metadata?.labels?.isRead ? unread.push(item) : read.push(item)
-    );
+    notification?.forEach((item: NotificationItem) => {
+      JSON.parse(item?.metadata?.labels?.isRead || 'false') ? read.push(item) : unread.push(item);
+    });
 
     const compareByTimestamp = (a: NotificationItem, b: NotificationItem) =>
       b?.spec?.timestamp - a?.spec?.timestamp;
@@ -86,119 +89,119 @@ export default function Notification(props: TNotification) {
     readMsgMutation.mutate(names);
   };
 
-  return disclosure.isOpen ? (<>
-    <Box
-      className={styles.bg}
-      onClick={disclosure.onClose}
-      cursor={'auto'}
-    ></Box>
-    <Box className={clsx(styles.container)}>
-      <Flex
-        className={clsx(styles.title)}
-        h={'32px'}
-        alignItems={'center'}
-        justifyContent={'center'}
-        position="relative"
-      >
-        <Box
-          className={clsx(styles.back_btn)}
-          onClick={() => setActivePage('index')}
-          data-active={activePage}
+  return disclosure.isOpen ? (
+    <>
+      <Box className={styles.bg} onClick={disclosure.onClose} cursor={'auto'}></Box>
+      <Box className={clsx(styles.container)}>
+        <Flex
+          className={clsx(styles.title)}
+          h={'32px'}
+          alignItems={'center'}
+          justifyContent={'center'}
+          position="relative"
         >
-          <Iconfont iconName="icon-left" color="#239BF2" width={32} height={32} />
-        </Box>
-        <Text>{activePage === 'index' ? t('Message Center') : msgDetail?.spec?.title}</Text>
-      </Flex>
-      {activePage === 'index' ? (
-        <>
-          <Flex>
-            <Box
-              className={clsx(activeTab === 'unread' && styles.active, styles.tab)}
-              onClick={() => setActiveTab('unread')}
-            >
-              {t('Unread')} ({unread_notes?.length || 0})
-            </Box>
-            <Box
-              ml={'12px'}
-              className={clsx(activeTab === 'read' && styles.active, styles.tab)}
-              onClick={() => setActiveTab('read')}
-            >
-              {t('Have Read')}
-            </Box>
-            <Text
-              ml={'auto'}
-              color={'#434F61'}
-              className={styles.tab}
-              onClick={() => markAllAsRead()}
-            >
-              {t('Read All')}
-            </Text>
-          </Flex>
-          <Flex pt={'9px'} pb="12px" direction={'column'} h="430px" className={styles.scrollWrap}>
-            {notifications?.map((item: NotificationItem) => {
-              return (
-                <Flex
-                  mt={'8px'}
-                  direction={'column'}
-                  className={clsx(styles.message)}
-                  key={item?.metadata?.uid}
-                  onClick={() => goMsgDetail(item)}
-                >
-                  <Text className={styles.title}>{item?.spec?.title}</Text>
-                  <Text flexShrink={0} mt="4px" noOfLines={1} className={clsx(styles.desc)}>
-                    {item?.spec?.message}
-                  </Text>
+          <Box
+            className={clsx(styles.back_btn)}
+            onClick={() => setActivePage('index')}
+            data-active={activePage}
+          >
+            <Iconfont iconName="icon-left" color="#239BF2" width={32} height={32} />
+          </Box>
+          <Text>{activePage === 'index' ? t('Message Center') : msgDetail?.spec?.title}</Text>
+        </Flex>
+        {activePage === 'index' ? (
+          <>
+            <Flex>
+              <Box
+                className={clsx(activeTab === 'unread' && styles.active, styles.tab)}
+                onClick={() => setActiveTab('unread')}
+              >
+                {t('Unread')} ({unread_notes?.length || 0})
+              </Box>
+              <Box
+                ml={'12px'}
+                className={clsx(activeTab === 'read' && styles.active, styles.tab)}
+                onClick={() => setActiveTab('read')}
+              >
+                {t('Have Read')}
+              </Box>
+              <Text
+                ml={'auto'}
+                color={'#434F61'}
+                className={styles.tab}
+                onClick={() => markAllAsRead()}
+              >
+                {t('Read All')}
+              </Text>
+            </Flex>
+            <Flex pt={'9px'} pb="12px" direction={'column'} h="430px" className={styles.scrollWrap}>
+              {notifications?.map((item: NotificationItem) => {
+                return (
                   <Flex
-                    mt="4px"
-                    justifyContent={'space-between'}
-                    className={clsx(styles.desc, styles.footer)}
+                    mt={'8px'}
+                    direction={'column'}
+                    className={clsx(styles.message)}
+                    key={item?.metadata?.uid}
+                    onClick={() => goMsgDetail(item)}
                   >
-                    <Text>
-                      {t('From')}「{item?.spec?.from}」
+                    <Text className={styles.title}>{item?.spec?.title}</Text>
+                    <Text flexShrink={0} mt="4px" noOfLines={1} className={clsx(styles.desc)}>
+                      {item?.spec?.message}
                     </Text>
-                    <Text>
-                      {formatTime((item?.spec?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}
-                    </Text>
+                    <Flex
+                      mt="4px"
+                      justifyContent={'space-between'}
+                      className={clsx(styles.desc, styles.footer)}
+                    >
+                      <Text>
+                        {t('From')}「{item?.spec?.from}」
+                      </Text>
+                      <Text>
+                        {formatTime((item?.spec?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}
+                      </Text>
+                    </Flex>
                   </Flex>
-                </Flex>
-              );
-            })}
-          </Flex>
-        </>
-      ) : (
-        <Box
-          h="430px"
-          w="100%"
-          mt="16px"
-          p="16px"
-          borderRadius={'12px'}
-          backgroundColor="rgba(255, 255, 255, 0.9)"
-        >
-          <Flex
-            className={clsx(styles.desc, styles.footer)}
-            color="#717D8A"
-            fontSize="10px"
-            fontWeight="400"
+                );
+              })}
+            </Flex>
+          </>
+        ) : (
+          <Box
+            h="430px"
+            w="100%"
+            mt="16px"
+            p="16px"
+            borderRadius={'12px'}
+            backgroundColor="rgba(255, 255, 255, 0.9)"
           >
-            <Text>
-              {t('From')}「{msgDetail?.spec?.from}」
+            <Flex
+              className={clsx(styles.desc, styles.footer)}
+              color="#717D8A"
+              fontSize="10px"
+              fontWeight="400"
+            >
+              <Text>
+                {t('From')}「{msgDetail?.spec?.from}」
+              </Text>
+              <Box display={'inline-block'} ml={'auto'}>
+                {formatTime((msgDetail?.spec?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}
+              </Box>
+            </Flex>
+            <Text
+              whiteSpace="pre-wrap"
+              mt="14px"
+              fontSize="12px"
+              fontWeight={400}
+              color="#000000"
+              className="overflow-auto"
+            >
+              {msgDetail?.spec?.message}
             </Text>
-            <Box display={'inline-block'} ml={'auto'}>
-              {formatTime((msgDetail?.spec?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}
-            </Box>
-          </Flex>
-          <Text
-            whiteSpace="pre-wrap"
-            mt="14px"
-            fontSize="12px"
-            fontWeight={400}
-            color="#000000"
-            className="overflow-auto"
-          >
-            {msgDetail?.spec?.message}
-          </Text>
-        </Box>
-      )}
-    </Box>
-  </>) : <></>;
+          </Box>
+        )}
+      </Box>
+    </>
+  ) : (
+    <></>
+  );
 }
