@@ -21,9 +21,10 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"github.com/labring/sealos/controllers/pkg/database"
 	"os"
 	"time"
+
+	"github.com/labring/sealos/controllers/pkg/database"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
