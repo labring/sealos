@@ -2,7 +2,7 @@
 
 [pingvin-share](https://github.com/stonith404/pingvin-share) 是一款私人的文件分享工具
 
-中文部署视频教程：<https://www.bilibili.com/video/BV1rk4y1V7nb>
+中文部署视频教程：<https://www.bilibili.com/video/BV13V4y1b7My/>
 
 ## 首先进入 Sealos 并打开「应用管理」
 
