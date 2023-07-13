@@ -205,7 +205,7 @@ const Pods = ({
   ];
 
   return (
-    <Box h={'100%'} py={5}>
+    <Box h={'100%'} py={5} position={'relative'}>
       <Flex px={6} alignItems={'center'}>
         <MyIcon name="podList" w={'14px'} color={'myGray.500'} />
         <Box ml={3} flex={1} color={'myGray.600'}>
@@ -249,6 +249,7 @@ const Pods = ({
           </Tbody>
         </Table>
       </TableContainer>
+
       <Loading loading={loading} fixed={false} />
       {logsPodIndex !== undefined && (
         <LogsModal

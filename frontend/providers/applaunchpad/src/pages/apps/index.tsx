@@ -5,6 +5,8 @@ import { serviceSideProps } from '@/utils/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { RequestController, isElementInViewport } from '@/utils/tools';
 import AppList from './components/appList';
 import Empty from './components/empty';
 
@@ -31,15 +33,30 @@ const Home = () => {
     }
   });
 
+  const requestController = useRef(new RequestController());
+
   useQuery(
     ['intervalLoadPods', appList.length],
-    () =>
-      Promise.allSettled(
-        appList.map((app) => {
-          if (app.isPause) return null;
-          return intervalLoadPods(app.name, false);
-        })
-      ),
+    () => {
+      const doms = document.querySelectorAll(`.appItem`);
+      const viewportDomIds = Array.from(doms)
+        .filter((item) => isElementInViewport(item))
+        .map((item) => item.getAttribute('data-id'));
+
+      const viewportApps =
+        viewportDomIds.length < 3
+          ? appList
+          : appList.filter((app) => viewportDomIds.includes(app.id));
+
+      return requestController.current.runTasks({
+        tasks: viewportApps
+          .filter((app) => !app.isPause)
+          .map((app) => {
+            return () => intervalLoadPods(app.name, false);
+          }),
+        limit: 3
+      });
+    },
     {
       refetchOnMount: true,
       refetchInterval: 3000,
@@ -63,6 +80,10 @@ const Home = () => {
   useEffect(() => {
     router.prefetch('/app/detail');
     router.prefetch('/app/edit');
+
+    return () => {
+      requestController.current?.stop();
+    };
   }, [router]);
 
   return (
