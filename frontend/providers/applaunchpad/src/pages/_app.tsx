@@ -12,7 +12,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import throttle from 'lodash/throttle';
 import { useGlobalStore } from '@/store/global';
 import { useLoading } from '@/hooks/useLoading';
-import { getServiceEnv, getUserPrice, SEALOS_DOMAIN } from '@/store/static';
+import { setServiceEnv, getUserPrice } from '@/store/static';
 import { useRouter } from 'next/router';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
@@ -36,7 +36,12 @@ const queryClient = new QueryClient({
   }
 });
 
-const App = ({ Component, pageProps }: AppProps) => {
+const App = ({
+  Component,
+  pageProps,
+  SEALOS_DOMAIN,
+  INGRESS_SECRET
+}: AppProps & { SEALOS_DOMAIN: string; INGRESS_SECRET: string }) => {
   const router = useRouter();
   const { i18n } = useTranslation();
   const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
@@ -50,7 +55,10 @@ const App = ({ Component, pageProps }: AppProps) => {
   useEffect(() => {
     NProgress.start();
 
-    getServiceEnv();
+    setServiceEnv({
+      SEALOS_DOMAIN,
+      INGRESS_SECRET
+    });
     getUserPrice();
     const response = createSealosApp();
 
@@ -145,6 +153,13 @@ const App = ({ Component, pageProps }: AppProps) => {
       </QueryClientProvider>
     </>
   );
+};
+
+App.getInitialProps = async () => {
+  return {
+    SEALOS_DOMAIN: process.env.SEALOS_DOMAIN || 'cloud.sealos.io',
+    INGRESS_SECRET: process.env.INGRESS_SECRET || 'wildcard-cert'
+  };
 };
 
 export default appWithTranslation(App);

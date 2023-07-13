@@ -1,8 +1,15 @@
-import { getEnvs, getResourcePrice } from '@/api/platform';
+import { getResourcePrice } from '@/api/platform';
 import type { Response as resourcePriceResponse } from '@/pages/api/platform/resourcePrice';
+import { ServiceEnvType } from '@/types';
 
 export let SEALOS_DOMAIN = 'cloud.sealos.io';
 export let INGRESS_SECRET = 'wildcard-cert';
+
+export const setServiceEnv = (res: ServiceEnvType) => {
+  SEALOS_DOMAIN = res.SEALOS_DOMAIN;
+  INGRESS_SECRET = res.INGRESS_SECRET;
+};
+
 export let SOURCE_PRICE: resourcePriceResponse = {
   cpu: 0.067,
   memory: 0.033792,
@@ -11,17 +18,6 @@ export let SOURCE_PRICE: resourcePriceResponse = {
 export let INSTALL_ACCOUNT = false;
 
 let retryGetPrice = 3;
-
-export const getServiceEnv = async () => {
-  try {
-    const res = await getEnvs();
-    SEALOS_DOMAIN = res.SEALOS_DOMAIN;
-    INGRESS_SECRET = res.INGRESS_SECRET;
-  } catch (err) {
-    console.log(err);
-  }
-};
-
 export const getUserPrice = async () => {
   try {
     const res = await getResourcePrice();

@@ -255,3 +255,56 @@ export const patchYamlList = (oldYamlList: string[], newYamlList: string[]) => {
 
   return actions;
 };
+
+/* request number limit */
+export class RequestController {
+  results: any[] = [];
+  index = 0;
+  runNum = 0;
+
+  tasks: (() => any)[] = [];
+  limit = 3;
+
+  async executeTask(index: number): Promise<any> {
+    const task = this.tasks[index];
+
+    if (!task) return;
+    this.index++;
+    this.runNum++;
+    try {
+      const result = await task();
+      this.results[index] = result;
+    } catch (error) {
+      this.results[index] = error;
+    }
+    this.runNum--;
+    return this.executeTask(this.index);
+  }
+
+  stop() {
+    this.index = this.tasks.length + 1;
+    this.tasks = [];
+    this.runNum = this.limit;
+  }
+
+  async runTasks({ tasks, limit }: { tasks: (() => any)[]; limit: number }) {
+    this.tasks = tasks;
+    this.limit = limit;
+    this.index = 0;
+    this.runNum = 0;
+
+    const arr = new Array(limit).fill(0);
+    await Promise.allSettled(arr.map((_, i) => this.executeTask(i)));
+
+    return this.results;
+  }
+}
+
+export const isElementInViewport = (element: Element) => {
+  const rect = element.getBoundingClientRect();
+  const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+  const windowWidth = window.innerWidth || document.documentElement.clientWidth;
+  const vertInView = rect.top <= windowHeight && rect.top + rect.height >= 0;
+  const horInView = rect.left <= windowWidth && rect.left + rect.width >= 0;
+  return vertInView && horInView;
+};

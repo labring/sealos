@@ -286,10 +286,10 @@ export const MOCK_APP_DETAIL: AppDetailType = {
   createTime: '2022/1/22',
   status: appStatusMap.waiting,
   isPause: false,
-  appName: 'appname',
-  imageName: 'dafdsa/asdfad:asdfsda',
-  runCMD: 'dafda',
-  cmdParam: 'daf das',
+  appName: 'appName',
+  imageName: 'nginx',
+  runCMD: '',
+  cmdParam: '',
   replicas: 5,
   cpu: 1,
   memory: 1,
@@ -299,28 +299,23 @@ export const MOCK_APP_DETAIL: AppDetailType = {
   accessExternal: {
     use: true,
     backendProtocol: 'HTTP',
-    outDomain: 'sadfsdaf',
-    selfDomain: 'dafsd'
+    outDomain: '',
+    selfDomain: ''
   },
-  envs: [{ key: 'adsfda', value: 'sfaasd' }],
+  envs: [],
   hpa: {
-    use: true,
+    use: false,
     target: 'cpu',
     value: 50,
-    minReplicas: 3,
-    maxReplicas: 10
+    minReplicas: 1,
+    maxReplicas: 1
   },
-  configMapList: [
-    {
-      mountPath: 'string',
-      value: ''
-    }
-  ],
+  configMapList: [],
   secret: {
     use: true,
     username: 'string',
     password: 'string',
     serverAddress: 'string'
   },
-  storeList: [{ name: 'vn-data', path: '/data', value: 2 }]
+  storeList: []
 };

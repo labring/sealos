@@ -44,7 +44,10 @@ export const useAppStore = create<State>()(
       },
       setAppDetail: async (appName: string) => {
         set((state) => {
-          state.appDetail = undefined;
+          state.appDetail = {
+            ...MOCK_APP_DETAIL,
+            appName
+          };
           state.appDetailPods = [];
         });
         const res = await getAppByName(appName);
@@ -124,7 +127,7 @@ export const useAppStore = create<State>()(
               item.name === appName ? [...item.useMemory.slice(1), aveMemory] : item.useMemory
           }));
         });
-        return null;
+        return 'success';
       }
     }))
   )

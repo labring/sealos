@@ -40,7 +40,7 @@ const AppDetail = ({ appName }: { appName: string }) => {
 
   // interval get pods metrics
   useQuery(
-    ['intervalLoadPods'],
+    ['app-detail-pod'],
     () => {
       if (appDetail?.isPause) return null;
       return intervalLoadPods(appName, true);

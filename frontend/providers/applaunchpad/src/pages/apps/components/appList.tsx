@@ -259,7 +259,7 @@ const AppList = ({
   ]);
 
   return (
-    <Box backgroundColor={'#F3F4F5'} px={'34px'} minH="100vh">
+    <Box backgroundColor={'#F3F4F5'} px={'34px'} pb={5} minH={'100%'}>
       <Flex h={'88px'} alignItems={'center'}>
         <Box mr={4} p={2} backgroundColor={'#FEFEFE'} border={theme.borders.sm} borderRadius={'sm'}>
           <MyIcon name="logo" w={'24px'} h={'24px'} />
@@ -285,7 +285,7 @@ const AppList = ({
           {t('Create Application')}
         </Button>
       </Flex>
-      <MyTable columns={columns.current} data={apps} />
+      <MyTable itemClass="appItem" columns={columns.current} data={apps} />
       <PauseChild />
       {!!delAppName && (
         <DelModal appName={delAppName} onClose={() => setDelAppName('')} onSuccess={refetchApps} />

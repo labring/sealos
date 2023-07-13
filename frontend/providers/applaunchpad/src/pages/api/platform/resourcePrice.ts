@@ -86,7 +86,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 function countSourcePrice(rawData: PriceCrdType, type: ResourceType) {
   const rawPrice =
-    rawData?.status?.billingRecords.find((item) => item.resourceType === type)?.price || 1;
+    rawData?.status?.billingRecords?.find((item) => item.resourceType === type)?.price || 1;
   const sourceScale = rawPrice * (valuationMap[type] || 1);
   const unitScale = sourceScale / PRICE_SCALE;
   return unitScale;
