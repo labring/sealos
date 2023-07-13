@@ -16,6 +16,7 @@ package utils
 
 import (
 	"flag"
+	"golang.org/x/time/rate"
 	"time"
 
 	"k8s.io/client-go/util/workqueue"
@@ -51,7 +52,9 @@ func (o *RateLimiterOptions) BindFlags(fs *flag.FlagSet) {
 }
 
 func GetRateLimiter(opts RateLimiterOptions) ratelimiter.RateLimiter {
-	return workqueue.NewItemExponentialFailureRateLimiter(
-		opts.MinRetryDelay,
-		opts.MaxRetryDelay)
+	return workqueue.NewMaxOfRateLimiter(
+		workqueue.NewItemExponentialFailureRateLimiter(opts.MinRetryDelay, opts.MaxRetryDelay),
+		// 10 qps, 100 bucket size.  This is only for retry speed and its only the overall factor (not per item)
+		&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(opts.QPS), opts.Burst)},
+	)
 }
