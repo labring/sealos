@@ -3,9 +3,10 @@ import Notification from '@/components/notification';
 import useSessionStore from '@/stores/session';
 import { Box, Flex, Image, useDisclosure } from '@chakra-ui/react';
 import { i18n } from 'next-i18next';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import LangSelect from '../LangSelect';
 import Iconfont from '../iconfont';
+import styles from './index.module.scss';
 
 enum UserMenuKeys {
   LangSelect,
