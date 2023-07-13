@@ -66,6 +66,7 @@ const (
 	DEFAULTACCOUNTNAMESPACE     = "sealos-system"
 	AccountAnnotationNewAccount = "account.sealos.io/new-account"
 	NEWACCOUNTAMOUNTENV         = "NEW_ACCOUNT_AMOUNT"
+	FALSE                       = "false"
 )
 
 // AccountReconciler reconciles a Account object
@@ -223,7 +224,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		return &account, nil
 	}
 
-	if newAccountFlag := account.Annotations[AccountAnnotationNewAccount]; newAccountFlag == "false" {
+	if newAccountFlag := account.Annotations[AccountAnnotationNewAccount]; newAccountFlag == FALSE {
 		r.Logger.V(1).Info("account is not a new user ", "account", account)
 		return &account, nil
 	}
@@ -237,7 +238,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		if account.Annotations == nil {
 			account.Annotations = make(map[string]string, 0)
 		}
-		account.Annotations[AccountAnnotationNewAccount] = "false"
+		account.Annotations[AccountAnnotationNewAccount] = FALSE
 		return nil
 	}); err != nil {
 		return nil, err

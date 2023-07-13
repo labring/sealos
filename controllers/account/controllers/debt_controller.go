@@ -284,10 +284,7 @@ func (r *DebtReconciler) updateDebtAndNotify(ctx context.Context, debt *accountv
 	if err := r.updateDebtStatus(ctx, debt, newStatus); err != nil {
 		return err
 	}
-	if err := r.notify(ctx, debt, newStatus, userNamespace); err != nil {
-		return err
-	}
-	return nil
+	return r.notify(ctx, debt, newStatus, userNamespace)
 }
 
 func (r *DebtReconciler) updateDebtStatus(ctx context.Context, debt *accountv1.Debt, newStatus accountv1.DebtStatusType) error {
