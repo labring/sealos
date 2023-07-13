@@ -442,7 +442,7 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.
 	r.Logger = ctrl.Log.WithName("DebtController")
 	r.accountSystemNamespace = utils.GetEnvWithDefault(accountv1.AccountSystemNamespaceEnv, "account-system")
 	r.accountNamespace = utils.GetEnvWithDefault(ACCOUNTNAMESPACEENV, "sealos-system")
-	debtDetectionCycleSecond := utils.GetIntEnvWithDefault(DebtDetectionCycleEnv, 60)
+	debtDetectionCycleSecond := utils.GetIntEnvWithDefault(DebtDetectionCycleEnv, 30)
 	r.DebtDetectionCycle = time.Duration(debtDetectionCycleSecond) * time.Second
 	initDebtConfigs()
 
