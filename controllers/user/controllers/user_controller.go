@@ -148,10 +148,16 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ReconcilerOptio
 
 func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	r.Logger.V(1).Info("update reconcile controller user", "request", client.ObjectKeyFromObject(obj))
+	startTime := time.Now()
+
 	user, ok := obj.(*userv1.User)
 	if !ok {
 		return ctrl.Result{}, errors.New("obj convert user is error")
 	}
+
+	defer func() {
+		r.Logger.V(1).Info("finished reconcile", "user info", user.Name, "create time", user.CreationTimestamp, "reconcile cost time", time.Since(startTime))
+	}()
 
 	pipelines := []func(ctx context.Context, user *userv1.User) context.Context{
 		r.initStatus,

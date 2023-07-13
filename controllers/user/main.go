@@ -105,13 +105,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		os.Exit(1)
 	}
-	if err = (&controllers.NamespaceReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Namespace")
-		os.Exit(1)
-	}
 
 	if os.Getenv("DISABLE_WEBHOOKS") == "true" {
 		setupLog.Info("disable all webhooks")
