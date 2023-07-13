@@ -21,6 +21,9 @@ import (
 	"net"
 	"os"
 	"path"
+	"strings"
+
+	utilnet "k8s.io/utils/net"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -186,13 +189,18 @@ func NewSealosCertMetaData(certPATH, certEtcdPATH string, apiServerIPAndDomains 
 	data.DNSDomain = DNSDomain
 	data.APIServer.IPs = make(map[string]net.IP)
 	data.APIServer.DNSNames = make(map[string]string)
-	_, svcNet, err := net.ParseCIDR(SvcCIDR)
-	if err != nil {
-		return nil, err
+
+	for _, svcCidr := range strings.Split(SvcCIDR, ",") {
+		_, svcNet, err := net.ParseCIDR(svcCidr)
+		if err != nil {
+			return nil, err
+		}
+		svcFirstIP, err := utilnet.GetIndexedIP(svcNet, 1)
+		if err != nil {
+			return nil, err
+		}
+		data.APIServer.IPs[svcFirstIP.String()] = svcFirstIP
 	}
-	svcFirstIP := svcNet.IP
-	svcFirstIP[len(svcFirstIP)-1]++ //取svc第一个ip
-	data.APIServer.IPs[svcFirstIP.String()] = svcFirstIP
 
 	for _, altName := range apiServerIPAndDomains {
 		ip := net.ParseIP(altName)
@@ -233,9 +241,9 @@ func (meta *SealosCertMetaData) etcdAltAndCommonName(certList *[]Config) {
 			meta.NodeName: meta.NodeName,
 		},
 		IPs: map[string]net.IP{
-			net.IPv4(127, 0, 0, 1).String():         net.IPv4(127, 0, 0, 1),
-			net.ParseIP(meta.NodeIP).To4().String(): net.ParseIP(meta.NodeIP).To4(),
-			net.IPv6loopback.String():               net.IPv6loopback,
+			net.IPv4(127, 0, 0, 1).String():   net.IPv4(127, 0, 0, 1),
+			net.ParseIP(meta.NodeIP).String(): net.ParseIP(meta.NodeIP),
+			net.IPv6loopback.String():         net.IPv6loopback,
 		},
 	}
 	(*certList)[EtcdServerCert].CommonName = meta.NodeName
