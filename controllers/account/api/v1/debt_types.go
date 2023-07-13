@@ -26,8 +26,14 @@ const (
 	DebtStatusMedium DebtStatusType = "Medium"
 	DebtStatusLarge  DebtStatusType = "Large"
 
-	NormalPeriod              DebtStatusType = "NormalPeriod"
-	WarningPeriod             DebtStatusType = "WarningPeriod"
+	// NormalPeriod -> PreWarningPeriod -> WarningPeriod -> SuspendPeriod -> RemovedPeriod
+
+	NormalPeriod     DebtStatusType = "NormalPeriod"
+	PreWarningPeriod DebtStatusType = "PreWarningPeriod"
+	WarningPeriod    DebtStatusType = "WarningPeriod"
+	SuspendPeriod    DebtStatusType = "SuspendPeriod"
+	RemovedPeriod    DebtStatusType = "RemovedPeriod"
+
 	ApproachingDeletionPeriod DebtStatusType = "ApproachingDeletionPeriod"
 	ImminentDeletionPeriod    DebtStatusType = "ImminentDeletionPeriod"
 	FinalDeletionPeriod       DebtStatusType = "FinalDeletionPeriod"
@@ -37,12 +43,6 @@ const (
 )
 
 type DebtStatusType string
-
-var DefaultDebtConfig = map[DebtStatusType]int64{
-	//DebtStatusNormal: NormalPrice,
-
-	//DebtStatusSmall:  SmallBlockWaitSecond,
-}
 
 const DebtNamespaceAnnoStatusKey = "debt.sealos/status"
 
@@ -59,7 +59,8 @@ type DebtSpec struct {
 
 // DebtStatus defines the observed state of Debt
 type DebtStatus struct {
-	LastUpdateTimestamp int64          `json:"lastUpdateTimestamp,omitempty"`
+	LastStatusTimestamp int64          `json:"lastStatusTimestamp,omitempty"`
+	LastNoticeTimestamp int64          `json:"lastNoticeTimestamp,omitempty"`
 	AccountDebtStatus   DebtStatusType `json:"status,omitempty"`
 }
 
