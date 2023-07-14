@@ -23,7 +23,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
-	ctrl2 "github.com/labring/endpoints-operator/library/controller"
+	ctrl2 "github.com/labring/operator-sdk/controller"
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"

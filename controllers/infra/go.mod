@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.51.1
 	github.com/aws/smithy-go v1.12.0
 	github.com/google/uuid v1.3.0
-	github.com/labring/endpoints-operator/library v0.0.0-20220819031233-733d330beaea
+	github.com/labring/operator-sdk v1.0.1
 	github.com/labring/sealos v0.0.0-00010101000000-000000000000
 	github.com/labring/sealos/controllers/cluster v0.0.0-00010101000000-000000000000
 	github.com/onsi/ginkgo v1.16.5

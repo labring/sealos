@@ -21,7 +21,7 @@ import (
 	"errors"
 
 	"github.com/go-logr/logr"
-	"github.com/labring/endpoints-operator/library/controller"
+	"github.com/labring/operator-sdk/controller"
 	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
