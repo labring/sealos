@@ -81,6 +81,8 @@ func StartCloudModule(ctx context.Context, client cl.Client) error {
 			launcher.Labels[string(cloud.IsNotification)] = cloud.FALSE
 			return client.Update(ctx, &launcher)
 		} else if apierrors.IsNotFound(err) {
+			launcher.SetName(string(cloud.ClientStartName))
+			launcher.SetNamespace(string(cloud.Namespace))
 			launcher.Labels = make(map[string]string)
 			launcher.Labels[string(cloud.IsCollector)] = cloud.FALSE
 			launcher.Labels[string(cloud.IsSync)] = cloud.FALSE
@@ -145,17 +147,15 @@ func InterfaceToInt64(value interface{}) (int64, error) {
 	}
 }
 
-func GetNextLicenseKeySuffix(data map[string]string) int {
+func GetNextLicenseKeySuffix(data map[string]interface{}, prefix string) int {
 	maxSuffix := 0
-
 	for key := range data {
 		var currentSuffix int
-		_, err := fmt.Sscanf(key, "license-%d", &currentSuffix)
+		_, err := fmt.Sscanf(key, prefix+"-%d", &currentSuffix)
 		if err == nil && currentSuffix > maxSuffix {
 			maxSuffix = currentSuffix
 		}
 	}
-
 	return maxSuffix + 1
 }
 
@@ -235,21 +235,15 @@ func (list *ReadOperationList) Execute() error {
 
 func (list *WriteOperationList) Execute() error {
 	reWriteList := &ReWriteOperationList{}
-	errorOccurred := false
 
 	for _, op := range list.writeOperations {
-		if errorOccurred {
-			reWriteList.AddToList(op)
-			continue
-		}
 		err := op.Execute()
 		if err != nil {
-			errorOccurred = true
 			reWriteList.AddToList(op)
 		}
 	}
 
-	if errorOccurred {
+	if len(reWriteList.reWriteOperations) > 0 {
 		err := reWriteList.Execute()
 		if err != nil {
 			return fmt.Errorf("an error occurred, some operations still failed after retries: %v", err)
@@ -274,7 +268,7 @@ type WriteEventBuilder struct {
 	callback WriteFunc
 }
 
-type WriteFunc func(ctx context.Context, client cl.Client, obj cl.Object) error
+type WriteFunc func() error
 
 func (reb *ReadEventBuilder) WithClient(client cl.Client) *ReadEventBuilder {
 	reb.client = client
@@ -303,9 +297,7 @@ func (reb *ReadEventBuilder) WithTag(tag types.NamespacedName) *ReadEventBuilder
 func (reb *ReadEventBuilder) Read() error {
 	err := reb.client.Get(reb.ctx, reb.tag, reb.obj)
 	if err != nil && reb.callback != nil {
-		reb.obj.SetName(reb.tag.Name)
-		reb.obj.SetNamespace(reb.tag.Namespace)
-		return reb.callback(reb.ctx, reb.client, reb.obj)
+		return reb.callback()
 	}
 	return err
 }
@@ -343,7 +335,7 @@ func (web *WriteEventBuilder) WithCallback(callback WriteFunc) *WriteEventBuilde
 }
 
 func (web *WriteEventBuilder) Write() error {
-	return web.callback(web.ctx, web.client, web.obj)
+	return web.callback()
 }
 
 func (web *WriteEventBuilder) Execute() error {

@@ -19,14 +19,3 @@ kind: ConfigMap
 metadata:
   name: cloud-license-history
   namespace: cloud-system
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: cloud-secret
-  namespace: cloud-system
-  labels:
-    registered: "false"
-data:
-  "uid": "e30="
-  "key": "e30="
