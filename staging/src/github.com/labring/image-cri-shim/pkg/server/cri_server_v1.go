@@ -19,9 +19,7 @@ package server
 import (
 	"context"
 
-	"github.com/labring/image-cri-shim/pkg/types"
-
-	types2 "github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types"
 
 	"github.com/google/go-containerregistry/pkg/name"
 
@@ -32,8 +30,19 @@ import (
 
 type v1ImageService struct {
 	imageClient       api.ImageServiceClient
-	CRIConfigs        map[string]types2.AuthConfig
-	OfflineCRIConfigs map[string]types2.AuthConfig
+	CRIConfigs        map[string]types.AuthConfig
+	OfflineCRIConfigs map[string]types.AuthConfig
+}
+
+func ToV1AuthConfig(c *types.AuthConfig) *api.AuthConfig {
+	return &api.AuthConfig{
+		Username:      c.Username,
+		Password:      c.Password,
+		Auth:          c.Auth,
+		ServerAddress: c.ServerAddress,
+		IdentityToken: c.IdentityToken,
+		RegistryToken: c.RegistryToken,
+	}
 }
 
 func (s *v1ImageService) ListImages(ctx context.Context,
@@ -73,12 +82,12 @@ func (s *v1ImageService) PullImage(ctx context.Context,
 	if req.Image != nil {
 		imageName, ok, auth := replaceImage(req.Image.Image, "PullImage", s.OfflineCRIConfigs)
 		if ok {
-			req.Auth = types.ToV1AuthConfig(auth)
+			req.Auth = ToV1AuthConfig(auth)
 		} else {
 			if req.Auth == nil {
 				ref, _ := name.ParseReference(imageName)
 				if v, ok := s.CRIConfigs[ref.Context().RegistryStr()]; ok {
-					req.Auth = types.ToV1AuthConfig(&v)
+					req.Auth = ToV1AuthConfig(&v)
 				}
 			}
 		}
