@@ -20,6 +20,7 @@ import (
 	"context"
 	"flag"
 	"os"
+	"time"
 
 	utilcontroller "github.com/labring/operator-sdk/controller"
 
@@ -57,6 +58,8 @@ func main() {
 		enableLeaderElection bool
 		probeAddr            string
 		rateLimiterOptions   utilcontroller.RateLimiterOptions
+		// set the default sync period to 30 days to avoid too many syncs
+		syncPeriod = time.Hour * 24 * 30
 	)
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -79,6 +82,7 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "785548a1.sealos.io",
+		SyncPeriod:             &syncPeriod,
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly

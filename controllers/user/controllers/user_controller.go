@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"time"
 
@@ -174,7 +175,7 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 		r.Recorder.Eventf(user, v1.EventTypeWarning, "SyncStatus", "Sync status %s is error: %v", user.Name, err)
 		return ctrl.Result{}, err
 	}
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: RandTimeDurationBetween(time.Hour*24, time.Hour*24*2)}, nil
 }
 
 func (r *UserReconciler) initStatus(ctx context.Context, user *userv1.User) context.Context {
@@ -594,4 +595,15 @@ func (r *UserReconciler) updateStatus(ctx context.Context, nn types.NamespacedNa
 		original.Status = *status
 		return r.Client.Status().Update(ctx, original)
 	})
+}
+
+// RandTimeDurationBetween get a random time duration between min and max
+func RandTimeDurationBetween(min, max time.Duration) time.Duration {
+	if min >= max {
+		return min
+	}
+	minInNano := min.Nanoseconds()
+	maxInNano := max.Nanoseconds()
+	randDurationInNano := rand.Int63n(maxInNano-minInNano) + minInNano
+	return time.Duration(randDurationInNano) * time.Nanosecond
 }
