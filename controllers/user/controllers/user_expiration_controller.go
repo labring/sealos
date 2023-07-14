@@ -20,8 +20,9 @@ import (
 	"context"
 	"errors"
 
+	utilcontroller "github.com/labring/operator-sdk/controller"
+
 	"github.com/go-logr/logr"
-	"github.com/labring/endpoints-operator/library/controller"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -37,7 +38,7 @@ type UserExpirationReconciler struct {
 	config   *rest.Config
 	*runtime.Scheme
 	client.Client
-	finalizer *controller.Finalizer
+	finalizer *utilcontroller.Finalizer
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -56,7 +57,7 @@ func (r *UserExpirationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if ok, err := r.finalizer.RemoveFinalizer(ctx, user, controller.DefaultFunc); ok {
+	if ok, err := r.finalizer.RemoveFinalizer(ctx, user, utilcontroller.DefaultFunc); ok {
 		return ctrl.Result{}, err
 	}
 
@@ -80,7 +81,7 @@ func (r *UserExpirationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		r.Recorder = mgr.GetEventRecorderFor(controllerName)
 	}
 	if r.finalizer == nil {
-		r.finalizer = controller.NewFinalizer(r.Client, "sealos.io/user.expiration.finalizers")
+		r.finalizer = utilcontroller.NewFinalizer(r.Client, "sealos.io/user.expiration.finalizers")
 	}
 	r.Scheme = mgr.GetScheme()
 	r.config = mgr.GetConfig()
