@@ -4,7 +4,7 @@ export type BillingSpec =
       pageSize: number; //设置返回数据每页数据大小
       startTime: string; //数据在 [startTime-endTime]之间，包括startTime和endTime
       endTime: string;
-      type: 0 | 1 | -1; //0为扣费，1为充值；用于billing数据查找：如为-1则查找type为0和1的数据，如果给定type值则查找type为给定值的数据
+      type: 0 | 1 | -1 | 2 | 3; //0为扣费，1为充值；用于billing数据查找：如为-1则查找type为0和1的数据，如果给定type值则查找type为给定值的数据
       owner?: string; //用于billing数据中查找的owner字段值
     }
   | {

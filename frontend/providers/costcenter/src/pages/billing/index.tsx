@@ -30,7 +30,7 @@ import { getCookie } from '@/utils/cookieUtils';
 import NotFound from '@/components/notFound';
 
 function Billing() {
-  const { t, i18n, ready } = useTranslation();
+  const { t, i18n } = useTranslation();
   const cookie = getCookie('NEXT_LOCALE');
   useEffect(() => {
     i18n.changeLanguage(cookie);
@@ -71,7 +71,7 @@ function Billing() {
       }
     }
   );
-  const tableResult = data?.data.status?.item || [];
+  const tableResult = data?.data?.status?.item || [];
 
   return (
     <Flex flexDirection="column" w="100%" h="100%" bg={'white'} p="24px">

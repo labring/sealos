@@ -6,9 +6,8 @@ import '@/styles/globals.scss';
 import { ChakraProvider } from '@chakra-ui/react';
 import { persistQueryClient, removeOldestQuery } from '@tanstack/react-query-persist-client';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
-import { Hydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { AppProps } from 'next/app';
-import Fonts from '@/styles/fonts';
 import Router from 'next/router';
 import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
@@ -72,7 +71,6 @@ const App = ({ Component, pageProps }: AppProps) => {
   return (
     <QueryClientProvider client={queryClient}>
       <ChakraProvider theme={theme}>
-        <Fonts></Fonts>
         <Layout>
           <Component {...pageProps} />
         </Layout>

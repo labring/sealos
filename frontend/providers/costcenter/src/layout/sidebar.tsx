@@ -6,6 +6,8 @@ import letter_icon from '@/assert/format_letter_spacing_standard.svg';
 import letter_a_icon from '@/assert/format_letter_spacing_standard_black.svg';
 import receipt_icon from '@/assert/receipt_long.svg';
 import receipt_a_icon from '@/assert/receipt_long_black.svg';
+import invoice_icon from '@/assert/invoice.svg';
+import invoice_a_icon from '@/assert/invoice-active.svg';
 import type { StaticImageData } from 'next/image';
 import { useTranslation } from 'next-i18next';
 
@@ -42,6 +44,13 @@ export default function SideBar() {
       value: 'SideBar.ValuationStandard',
       icon: letter_icon,
       aicon: letter_a_icon
+    },
+    {
+      id: 'CreateInvoice',
+      url: '/create_invoice',
+      value: 'SideBar.CreateInvoice',
+      icon: invoice_icon,
+      aicon: invoice_a_icon
     }
   ];
   return (

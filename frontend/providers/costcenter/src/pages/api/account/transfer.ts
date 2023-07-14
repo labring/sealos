@@ -40,7 +40,8 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       to,
       amount,
       namespace,
-      name
+      name,
+      from: kubeUser.name
     });
     await ApplyYaml(kc, transferCRD);
     const body = (await watchClusterObject({

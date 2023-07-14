@@ -10,7 +10,17 @@ import {
   Button,
   Box
 } from '@chakra-ui/react';
-import { format, parse, isValid, isAfter, isBefore } from 'date-fns';
+import {
+  format,
+  parse,
+  isValid,
+  isAfter,
+  isBefore,
+  addDays,
+  subSeconds,
+  endOfDay,
+  startOfDay
+} from 'date-fns';
 import { useState, ChangeEventHandler, useMemo } from 'react';
 import { DateRange, SelectRangeEventHandler, DayPicker } from 'react-day-picker';
 
@@ -24,8 +34,8 @@ export default function SelectRange({ isDisabled }: { isDisabled: boolean | unde
   const [fromValue, setFromValue] = useState<string>(format(initState.from, 'y-MM-dd'));
   const [toValue, setToValue] = useState<string>(format(initState.to, 'y-MM-dd'));
   const onClose = () => {
-    selectedRange.from && setStartTime(selectedRange.from);
-    selectedRange.to && setEndTime(selectedRange.to);
+    selectedRange.from && setStartTime(startOfDay(selectedRange.from));
+    selectedRange.to && setEndTime(endOfDay(selectedRange.to));
   };
   const handleFromChange: ChangeEventHandler<HTMLInputElement> = (e) => {
     setFromValue(e.target.value);
@@ -87,7 +97,11 @@ export default function SelectRange({ isDisabled }: { isDisabled: boolean | unde
         variant={'unstyled'}
         flex={1}
         value={fromValue}
+        minW="90px"
         onChange={handleFromChange}
+        onBlur={() => {
+          selectedRange.from && setStartTime(startOfDay(selectedRange.from));
+        }}
       />
       <Box>-</Box>
       <Input
@@ -95,7 +109,11 @@ export default function SelectRange({ isDisabled }: { isDisabled: boolean | unde
         variant={'unstyled'}
         value={toValue}
         flex={1}
+        minW="90px"
         onChange={handleToChange}
+        onBlur={() => {
+          selectedRange.to && setEndTime(endOfDay(selectedRange.to));
+        }}
       />
       <Popover onClose={onClose}>
         <PopoverTrigger>
