@@ -89,7 +89,7 @@ const (
 )
 
 const (
-	IsMonitor ENV = "isMonitor"
+	IsMonitor ENV = "MONITOR"
 )
 
 const (
@@ -151,7 +151,7 @@ func SyncWithCloud(method string, url string, content interface{}) (HTTPResponse
 	if err != nil {
 		return HTTPResponse{}, fmt.Errorf(err.Error(), "failed to communicate with cloud")
 	}
-	if IsSuccessfulStatusCode(httpBody.StatusCode) {
+	if !IsSuccessfulStatusCode(httpBody.StatusCode) {
 		text := http.StatusText(httpBody.StatusCode)
 		return HTTPResponse{}, fmt.Errorf(text, "failed to communicate with cloud")
 	}

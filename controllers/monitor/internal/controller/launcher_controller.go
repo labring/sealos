@@ -59,7 +59,6 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	r.logger.Info("Enter LauncherReconcile", "namespace:", req.Namespace, "name", req.Name)
 	r.logger.Info("Start the cloud module...")
 	canConnectToExternalNetwork := os.Getenv(cloud.NetWorkEnv) == cloud.TRUE
-
 	var secret corev1.Secret
 	var configMap corev1.ConfigMap
 
@@ -99,6 +98,7 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			r.logger.Error(err, "failed to start cloud moudle")
 			return ctrl.Result{}, err
 		}
+		r.logger.Info("success to launch monitor")
 		return ctrl.Result{}, nil
 	} else {
 		secret.Data = make(map[string][]byte)
@@ -114,6 +114,8 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	secret.Data["uid"] = []byte(uuid)
+	secret.SetName(string(cloud.UidSecretName))
+	secret.SetNamespace(string(cloud.Namespace))
 	if err := r.Client.Create(ctx, &secret); err != nil {
 		r.logger.Error(err, "failed to create the register info to the cluster")
 		return ctrl.Result{}, err
@@ -132,6 +134,7 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		r.logger.Error(err, "failed to start cloud module")
 		return ctrl.Result{}, err
 	}
+	r.logger.Info("success to launch monitor")
 	return ctrl.Result{}, nil
 }
 

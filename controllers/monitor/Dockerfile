@@ -4,5 +4,5 @@ ARG TARGETARCH
 WORKDIR /
 USER 65532:65532
 
-COPY bin/controller-cloud-$TARGETARCH /manager
+COPY bin/controller-monitor-$TARGETARCH /manager
 ENTRYPOINT ["/manager"]

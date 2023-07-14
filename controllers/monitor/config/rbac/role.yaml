@@ -217,3 +217,12 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - collectors
+  verbs:
+  - create
+  - get
+  - list
+  - update
