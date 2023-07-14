@@ -20,6 +20,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	utilcontroller "github.com/labring/operator-sdk/controller"
+	"github.com/labring/operator-sdk/hash"
 	"strconv"
 	"time"
 
@@ -31,8 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	"github.com/labring/sealos/pkg/utils/hash"
-
 	v12 "k8s.io/api/rbac/v1"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -42,7 +42,6 @@ import (
 	kubecontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"github.com/go-logr/logr"
-	"github.com/labring/endpoints-operator/library/controller"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers/helper"
 	v1 "k8s.io/api/core/v1"
@@ -74,7 +73,7 @@ type UserReconciler struct {
 	config   *rest.Config
 	*runtime.Scheme
 	client.Client
-	finalizer *controller.Finalizer
+	finalizer *utilcontroller.Finalizer
 }
 
 type ctxKey string
@@ -116,7 +115,7 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ReconcilerOptions) error {
+func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts utilcontroller.RateLimiterOptions) error {
 	const controllerName = "user_controller"
 	if r.Client == nil {
 		r.Client = mgr.GetClient()
@@ -126,7 +125,7 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ReconcilerOptio
 		r.Recorder = mgr.GetEventRecorderFor(controllerName)
 	}
 	if r.finalizer == nil {
-		r.finalizer = controller.NewFinalizer(r.Client, "sealos.io/user.finalizers")
+		r.finalizer = utilcontroller.NewFinalizer(r.Client, "sealos.io/user.finalizers")
 	}
 	r.Scheme = mgr.GetScheme()
 	r.cache = mgr.GetCache()
@@ -140,8 +139,8 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ReconcilerOptio
 		Watches(&source.Kind{Type: &v12.Role{}}, owner).
 		Watches(&source.Kind{Type: &v12.RoleBinding{}}, owner).
 		WithOptions(kubecontroller.Options{
-			MaxConcurrentReconciles: opts.MaxConcurrentReconciles,
-			RateLimiter:             opts.RateLimiter,
+			MaxConcurrentReconciles: utilcontroller.GetConcurrent(opts),
+			RateLimiter:             utilcontroller.GetRateLimiter(opts),
 		}).
 		Complete(r)
 }
@@ -521,7 +520,7 @@ func (r *UserReconciler) syncKubeConfig(ctx context.Context, user *userv1.User) 
 			return ctx
 		}
 		user.Status.KubeConfig = string(kubeData)
-		userCondition.Message = fmt.Sprintf("renew sync kube config successfully hash %s", hash.ToString(user.Status.KubeConfig))
+		userCondition.Message = fmt.Sprintf("renew sync kube config successfully hash %s", hash.HashToString(user.Status.KubeConfig))
 	}
 	return ctx
 }

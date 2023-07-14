@@ -21,7 +21,7 @@ import (
 	"flag"
 	"os"
 
-	utilcontroller "github.com/labring/sealos/controllers/pkg/utils"
+	utilcontroller "github.com/labring/operator-sdk/controller"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -56,7 +56,6 @@ func main() {
 		metricsAddr          string
 		enableLeaderElection bool
 		probeAddr            string
-		concurrent           int
 		rateLimiterOptions   utilcontroller.RateLimiterOptions
 	)
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -64,7 +63,6 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.IntVar(&concurrent, "concurrent", 5, "The number of concurrent cluster reconciles.")
 	rateLimiterOptions.BindFlags(flag.CommandLine)
 	opts := zap.Options{
 		Development: true,
@@ -97,11 +95,7 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-	rateOpts := controllers.ReconcilerOptions{
-		MaxConcurrentReconciles: concurrent,
-		RateLimiter:             utilcontroller.GetRateLimiter(rateLimiterOptions),
-	}
-	if err = (&controllers.UserReconciler{}).SetupWithManager(mgr, rateOpts); err != nil {
+	if err = (&controllers.UserReconciler{}).SetupWithManager(mgr, rateLimiterOptions); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		os.Exit(1)
 	}
