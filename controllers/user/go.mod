@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/go-logr/logr v1.2.3
-	github.com/labring/endpoints-operator/library v0.0.0-20221201063058-fa2d5a457d1d
+	github.com/labring/operator-sdk v1.0.1
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.22.1
 	golang.org/x/sync v0.1.0
