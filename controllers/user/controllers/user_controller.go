@@ -20,15 +20,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	utilcontroller "github.com/labring/operator-sdk/controller"
-	"github.com/labring/operator-sdk/hash"
 	"strconv"
 	"time"
 
+	utilcontroller "github.com/labring/operator-sdk/controller"
+	"github.com/labring/operator-sdk/hash"
+
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
 	"github.com/labring/sealos/controllers/user/controllers/helper/kubeconfig"
-
-	"sigs.k8s.io/controller-runtime/pkg/ratelimiter"
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -59,11 +58,6 @@ import (
 )
 
 var userAnnotationOwnerKey = userv1.UserAnnotationOwnerKey
-
-type ReconcilerOptions struct {
-	MaxConcurrentReconciles int
-	RateLimiter             ratelimiter.RateLimiter
-}
 
 // UserReconciler reconciles a User object
 type UserReconciler struct {
