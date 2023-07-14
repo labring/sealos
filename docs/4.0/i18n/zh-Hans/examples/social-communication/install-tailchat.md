@@ -9,7 +9,7 @@
 ![](../images/tailchat/0.png)
 
 
-## 首先进入 Sealos 并打开「应用管理」
+## 首先在 [Sealos](https://cloud.sealos.io) 桌面环境中打开「应用管理」
 
 ![](../images/tailchat/1.png)
 

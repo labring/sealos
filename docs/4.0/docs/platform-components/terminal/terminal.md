@@ -4,7 +4,7 @@ sidebar_position: 4
 
 # Terminal
 
-Integrated within the Sealos Cloud Operating System is the Terminal, an application of profound potency. Mirroring the terminal in standalone operating systems, it facilitates users to interact directly with the operating system, executing various operations via command entry.
+Integrated within the [Sealos](https://cloud.sealos.io) Cloud Operating System is the Terminal, an application of profound potency. Mirroring the terminal in standalone operating systems, it facilitates users to interact directly with the operating system, executing various operations via command entry.
 
 ![](./images/terminal.webp)
 

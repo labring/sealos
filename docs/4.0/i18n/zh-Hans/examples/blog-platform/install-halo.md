@@ -10,11 +10,11 @@ sidebar_position: 2
 
 [Halo](https://github.com/halo-dev/halo) 是一款强大易用的开源建站工具，本文将介绍如何在 Sealos 上部署 Halo，同时在 [Sealos 上部署 PostgreSQL](../../quick-start/install-db-with-database.md) 可以帮助你轻松地管理和维护数据库，以满足不同的业务需求。
 
-## 步骤 1：准备PostgreSQL
+## 步骤 1：准备 PostgreSQL
 
-### 使用sealos数据库安装PostgreSQL
+### 使用 Sealos 数据库安装 PostgreSQL
 
-参考 [Sealos 上部署 PostgreSQL](../../quick-start/install-db-with-database.md) ，一分钟即可成功安装和使用PostgreSQL。
+参考 [Sealos 上部署 PostgreSQL](../../quick-start/install-db-with-database.md) ，一分钟即可成功安装和使用 PostgreSQL。
 
 ### 查看数据库配置：
 
@@ -30,9 +30,9 @@ sidebar_position: 2
 >
 > Connection: postgresql://postgres:rcx7f47m@dbname-postgresql.ns-sy32q9p9.svc:5432
 
-## **步骤 2: 在 Sealos 中部署 Halo应用**
+## 步骤 2: 在 Sealos 中部署 Halo应用
 
-### **打开 应用管理**
+### 打开 应用管理
 
 ![](../images/halo_img-7.png)
 
@@ -91,7 +91,7 @@ halo.security.initializer.superadminpassword=sealos
 
 ![](../images/halo_img-10.png)
 
-### **配置持久化存储卷**
+### 配置持久化存储卷
 
 挂载 `/root/.halo2` 目录来持久化 halo 数据 :
 
@@ -105,13 +105,13 @@ halo.security.initializer.superadminpassword=sealos
 
 ![](../images/halo_img-13.png)
 
-### **初始化 Halo**
+### 初始化 Halo
 
 ![](../images/halo_img-14.png)
 
 ![](../images/halo_img-15.png)
 
-### **First Halo**
+### First Halo
 
 ![](../images/halo_img-16.png)
 

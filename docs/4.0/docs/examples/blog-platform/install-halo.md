@@ -13,7 +13,7 @@ This article will introduce how to deploy Halo on Sealos, while deploying Postgr
 
 ## Step 1: Deploy PostgreSQL on Sealos
 
-### First, open Sealos and click on "More Apps" to enter the PostgreSQL deployment interface:
+### First, open [Sealos](https://cloud.sealos.io) and click on "More Apps" to enter the PostgreSQL deployment interface:
 
 ![](../images/halo_img-2.png)
 

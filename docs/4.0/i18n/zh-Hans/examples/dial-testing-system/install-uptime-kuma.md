@@ -8,7 +8,7 @@ sidebar_position: 1
 
 [Uptime Kuma](https://github.com/louislam/uptime-kuma) 是一款开源的、易于使用的服务器监控工具。它可以帮助你实时监控服务器的运行状态、响应时间以及其他关键指标，以确保你的服务器始终保持最佳状态。如果你想快速安装 Uptime Kuma，可以按照以下步骤进行操作：
 
-### 步骤 1：首先进入 Sealos 并打开「应用管理」
+### 步骤 1：首先进入 [Sealos](https://cloud.sealos.io) 桌面环境并打开「应用管理」
 
 ![](../images/uptimekuma_img-1.png)
 

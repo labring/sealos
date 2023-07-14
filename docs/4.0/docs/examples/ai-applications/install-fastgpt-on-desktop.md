@@ -10,7 +10,7 @@ FastGpt is recommended to deploy with Docker on Git, so it is also easy to deplo
 
 Sealos provides a  **database**  tool that allows for visual deployment of databases.
 
-### 1.1 Open the database tool
+### 1.1 Open the Database App in the [Sealos](https://cloud.sealos.io) desktop environment
 
 ![1. 打开 **数据库**](./images/open-dbprovider.png)
 

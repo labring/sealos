@@ -10,7 +10,7 @@ FastGpt Git 上推荐使用 docker 部署，因此在 Sealos 上也可以很方�
 
 Sealos 提供了 **数据库** 工具，可以可视化的部署数据库。
 
-### 1.1 从桌面打开 **数据库** 工具。
+### 1.1 在 [Sealos](https://cloud.sealos.io) 桌面环境中打开 **数据库** 工具。
 
 ![1. 打开 **数据库**](./images/open-dbprovider.png)
 

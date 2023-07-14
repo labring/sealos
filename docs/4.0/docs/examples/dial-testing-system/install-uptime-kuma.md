@@ -16,7 +16,7 @@ sidebar_position: 1
 
 ### Step 2: Create a New Application
 
-In the App Launchpad, click "New Application" to create a new application.
+Open the App Launchpad in the [Sealos](https://cloud.sealos.io) desktop environment, click "New Application" to create a new application.
 
 ![](../images/uptimekuma_img-2.png)
 

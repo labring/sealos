@@ -2,7 +2,7 @@
 
 [Appsmith](https://github.com/appsmithorg/appsmith) is an open-source platform to build, deploy, and maintain internal apps. You can build anything from simple CRUD apps, admin panels, dashboards to custom business apps and complicated multi-step workflows.
 
-## Step 1: open the App Launchpad application
+## Step 1: Step 1: open the App Launchpad application in the [Sealos](https://cloud.sealos.io) desktop environment
 
 ![](../images/appsmith-1.png)
 
