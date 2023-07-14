@@ -20,10 +20,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	utilcontroller "github.com/labring/operator-sdk/controller"
-	"github.com/labring/operator-sdk/hash"
 	"strconv"
 	"time"
+
+	utilcontroller "github.com/labring/operator-sdk/controller"
+	"github.com/labring/operator-sdk/hash"
 
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
 	"github.com/labring/sealos/controllers/user/controllers/helper/kubeconfig"
