@@ -12,7 +12,7 @@ Sealos 的桌面环境类似于单机操作系统 macOS 或 Windows 的桌面环
 
 ## 快速安装 Nginx
 
-首先打开**应用管理**。
+首先在 [Sealos](https://cloud.sealos.io) 桌面环境中打开**应用管理**。
 
 ![](./images/app-launchpad-zh.webp)
 

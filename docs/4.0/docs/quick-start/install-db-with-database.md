@@ -16,7 +16,7 @@ Databases are important means of data management and can be used to efficiently 
 
 # Quick Install of MySQL
 
-1. Open Database
+1. Open Database in the [Sealos](https://cloud.sealos.io) desktop environment
 
 ![](./images/database-launch.png)
 

@@ -6,7 +6,7 @@ sidebar_position: 2
 
 For those proficient in Kubernetes and container basics, terminal command-line deployment presents an optimal solution. This document showcases Nginx as an example, elucidating the application deployment process via terminal.
 
-Commence by opening the terminal application within the Sealos desktop environment.
+Commence by opening the terminal application within the [Sealos](https://cloud.sealos.io) desktop environment.
 
 ![](./images/app-launchpad-1.jpg)
 

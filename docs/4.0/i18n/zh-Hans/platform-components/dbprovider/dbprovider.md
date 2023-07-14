@@ -22,7 +22,7 @@ sidebar_position: 2
 
 只需 6 步即可完成部署和访问：
 
-1. 从 Sealos 桌面进入 **数据库** 应用。
+1. 在 [Sealos](https://cloud.sealos.io) 桌面环境中进入 **数据库** 应用。
 
 ![1. 打开 **数据库**](./imgs/db1.png)
 

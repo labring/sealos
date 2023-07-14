@@ -8,7 +8,7 @@ Created for enterprises and private domain users, highly free group management a
 
 ![](../images/tailchat/0.png)
 
-## First, enter Sealos and open "Application Management"
+## First, open "Application Management" in the [Sealos](https://cloud.sealos.io) desktop environment
 
 ![](../images/tailchat/1.png)
 

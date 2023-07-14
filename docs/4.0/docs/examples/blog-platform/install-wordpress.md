@@ -13,7 +13,7 @@ WordPress requires a MySQL database to be installed and used together. As a best
 
 ## Create MySQL instance
 
-In the **Database** application, quickly set up the required database instance and wait for the database deployment to be completed.
+Open the **Database** application in the [Sealos](https://cloud.sealos.io) desktop environment, quickly set up the required database instance and wait for the database deployment to be completed.
 
 ![](../images/wordpress_15.png)
 

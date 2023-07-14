@@ -12,7 +12,7 @@ For more information about application management, please refer to [Introduction
 
 ## Quick Install of Nginx
 
-First, open the App Launchpad.
+First, open the App Launchpad in the [Sealos](https://cloud.sealos.io) desktop environment.
 
 ![](./images/app-launchpad.jpg)
 

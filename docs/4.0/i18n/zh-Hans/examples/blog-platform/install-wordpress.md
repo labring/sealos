@@ -12,7 +12,7 @@ WordPress 需要搭配 MySQL 数据库一同安装使用。作为使用 Sealos �
 
 ## 新建 MySQL 实例
 
-在**数据库**中，快速配置需要的数据库实例，等待数据库部署完成。
+进入 [Sealos](https://cloud.sealos.io) 桌面环境，在「数据库」中，快速配置需要的数据库实例，等待数据库部署完成。
 
 ![](../images/wordpress_15.png)
 

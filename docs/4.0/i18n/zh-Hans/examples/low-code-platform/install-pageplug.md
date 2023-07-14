@@ -2,7 +2,7 @@
 
 [PagePlug](https://github.com/cloudtogo/pageplug) 是 [Appsmith](https://github.com/appsmithorg/appsmith) 的中国化项目，基于 Appsmith 做了整体性能优化及汉化，也集合了特色表单解决方案 Formily 组件、图表解决方案 Echarts 组件、低代码小程序开发等，是面向研发使用的一个开源的、声明式的、可视化的、符合开发者直觉的前端低代码框架。
 
-## 步骤 1：打开 「应用管理」 应用
+## 步骤 1：在 [Sealos](https://cloud.sealos.io) 桌面环境中打开 「应用管理」 应用
 
 ![](../images/pageplug-1.png)
 
