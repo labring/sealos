@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/docker/docker/api/types"
-	types2 "github.com/labring/image-cri-shim/pkg/types"
 
 	"github.com/google/go-containerregistry/pkg/name"
 
@@ -33,6 +32,17 @@ type v1alpha2ImageService struct {
 	imageClient       api.ImageServiceClient
 	CRIConfigs        map[string]types.AuthConfig
 	OfflineCRIConfigs map[string]types.AuthConfig
+}
+
+func ToV1Alpha2AuthConfig(c *types.AuthConfig) *api.AuthConfig {
+	return &api.AuthConfig{
+		Username:      c.Username,
+		Password:      c.Password,
+		Auth:          c.Auth,
+		ServerAddress: c.ServerAddress,
+		IdentityToken: c.IdentityToken,
+		RegistryToken: c.RegistryToken,
+	}
 }
 
 func (s *v1alpha2ImageService) ListImages(ctx context.Context,
@@ -75,12 +85,12 @@ func (s *v1alpha2ImageService) PullImage(ctx context.Context,
 	if req.Image != nil {
 		imageName, ok, auth := replaceImage(req.Image.Image, "PullImage", s.OfflineCRIConfigs)
 		if ok {
-			req.Auth = types2.ToV1Alpha2AuthConfig(auth)
+			req.Auth = ToV1Alpha2AuthConfig(auth)
 		} else {
 			if req.Auth == nil {
 				ref, _ := name.ParseReference(imageName)
 				if v, ok := s.CRIConfigs[ref.Context().RegistryStr()]; ok {
-					req.Auth = types2.ToV1Alpha2AuthConfig(&v)
+					req.Auth = ToV1Alpha2AuthConfig(&v)
 				}
 			}
 		}
