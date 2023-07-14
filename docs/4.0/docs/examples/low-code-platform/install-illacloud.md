@@ -2,7 +2,7 @@
 
 [ILLA Cloud](https://www.illacloud.com) is a low-code platform that is open-source, enabling users to create, deploy, and manage internal applications. With ILLA Cloud, you have the flexibility to build a wide range of applications, from basic CRUD apps to more complex multi-step workflows, using intuitive drag-and-drop components for building the user interface.
 
-## Step 1: open the App Launchpad application
+## Step 1: open the App Launchpad application in the [Sealos](https://cloud.sealos.io) desktop environment
 
 ![illa_home](../images/illa_home.jpg)
 

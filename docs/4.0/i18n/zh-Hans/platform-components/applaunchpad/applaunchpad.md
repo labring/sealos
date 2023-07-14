@@ -28,7 +28,7 @@ sidebar_position: 1
 
 只需 6 步即可完成部署和访问：
 
-1. 从 Sealos 桌面进入 **应用管理** 应用。
+1. 在 [Sealos](https://cloud.sealos.io) 桌面环境中打开 **应用管理** 应用。
 
 ![1. 打开 **应用管理**](./imgs/applaunchpad1.png)
 
