@@ -187,3 +187,9 @@ replace (
 	github.com/labring/sealos => ./../..
 	github.com/labring/sealos/controllers/infra => ../infra
 )
+
+replace (
+	github.com/containers/common => github.com/containers/common v0.53.1-0.20230613173441-e1ea4d9a74e5
+	github.com/containers/storage => github.com/containers/storage v1.46.1
+	github.com/imdario/mergo => github.com/imdario/mergo v0.3.13
+)

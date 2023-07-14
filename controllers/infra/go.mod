@@ -100,3 +100,5 @@ replace (
 	github.com/labring/sealos => ../../
 	github.com/labring/sealos/controllers/cluster => ../../controllers/cluster
 )
+
+replace github.com/imdario/mergo => github.com/imdario/mergo v0.3.13
