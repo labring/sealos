@@ -128,7 +128,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Launcher")
 		os.Exit(1)
 	}
-	// if err = (&cloudv1.License{}).SetupWebhookWithManager(mgr); err != nil {
+	// if err = (&corev1.Pod{}).SetupWebhookWithManager(mgr); err != nil {
 	// 	setupLog.Error(err, "unable to create webhook", "webhook", "License")
 	// 	os.Exit(1)
 	// }
