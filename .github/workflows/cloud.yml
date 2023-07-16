@@ -113,7 +113,7 @@ jobs:
         env:
           GH_TOKEN: "${{ secrets.GH_PAT }}"
           SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
+          SEALOS_ISSUE_TITLE: "【DaylyReport】 Auto build for sealos"
           SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
           SEALOS_ISSUE_LABEL: "dayly-report"
           SEALOS_ISSUE_TYPE: "day"
