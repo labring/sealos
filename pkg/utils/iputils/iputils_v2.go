@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
+	netutils "k8s.io/utils/net"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -243,14 +244,22 @@ func NextIP(ip string) net.IP {
 	return i.Add(i, big.NewInt(1)).Bytes()
 }
 
-func Contains(sub, s string) (bool, error) {
-	_, ipNet, err := net.ParseCIDR(sub)
+func Contains(subnetStr, s string) (bool, error) {
+	subnets, err := netutils.ParseCIDRs(strings.Split(subnetStr, ","))
 	if err != nil {
 		return false, err
 	}
+
 	ip := net.ParseIP(s)
 	if ip == nil {
 		return false, fmt.Errorf("%s is not a valid IP address", s)
 	}
-	return ipNet.Contains(ip), nil
+
+	for _, subnet := range subnets {
+		if subnet.Contains(ip) {
+			return true, nil
+		}
+	}
+
+	return false, err
 }
