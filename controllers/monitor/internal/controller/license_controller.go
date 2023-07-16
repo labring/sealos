@@ -18,20 +18,13 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"os"
-	"strconv"
-	"time"
 
 	"github.com/go-logr/logr"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	cloudv1 "github.com/labring/sealos/controllers/monitor/api/v1"
 	"github.com/labring/sealos/controllers/monitor/internal/controller/util"
 	cloud "github.com/labring/sealos/controllers/monitor/internal/manager"
-	"github.com/labring/sealos/controllers/pkg/crypto"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -90,10 +83,11 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		payload map[string]interface{}
 	)
 
-	canConnectToExternalNetwork = os.Getenv(string(cloud.NetWorkEnv)) == cloud.TRUE
+	//canConnectToExternalNetwork = os.Getenv(string(cloud.NetWorkEnv)) == cloud.TRUE
+	canConnectToExternalNetwork = false
 	// execute read event
 	(&util.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
-		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.LicenseName)}).
+		WithTag(types.NamespacedName{Namespace: req.Namespace, Name: string(cloud.LicenseName)}).
 		WithObject(&license).AddToList(&readOperations)
 	(&util.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
 		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UidSecretName)}).
@@ -105,37 +99,37 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.LicenseHistory)}).
 		WithObject(&licenseHistory).AddToList(&readOperations)
 	(&util.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
-		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.LimitSecretName)}).
+		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ScaleSecretName)}).
 		WithObject(&clusterLimit).WithCallback(func() error {
-		clusterLimit.SetName(string(cloud.LimitSecretName))
+		clusterLimit.SetName(string(cloud.ScaleSecretName))
 		clusterLimit.SetNamespace(string(cloud.Namespace))
 		clusterLimit.SetLabels(map[string]string{})
 		return r.Client.Create(ctx, &clusterLimit)
 	}).AddToList(&readOperations)
-	(&util.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
-		WithTag(types.NamespacedName{Namespace: req.Namespace, Name: license.Spec.UID}).
-		WithObject(&account).AddToList(&readOperations)
 	// execute read event
 	if err := readOperations.Execute(); err != nil {
 		r.logger.Error(err, "failed to read resources...")
 		return ctrl.Result{}, err
 	}
+
+	err := r.Client.Get(ctx, types.NamespacedName{Namespace: "sealos-system", Name: license.Spec.UID}, &account)
+	if err != nil {
+		r.logger.Error(err, "failed to get account")
+		return ctrl.Result{}, err
+	}
+
 	// security judgement before write
 	config, err := util.ReadConfigFromConfigMap(string(cloud.UrlConfigName), &urlConfig)
 	if err != nil {
 		r.logger.Error(err, "failed to read url config")
 		return ctrl.Result{}, err
 	}
-	if util.CheckLicenseExists(&licenseHistory, license.Spec.Token) {
+	if cloud.CheckLicenseExists(&licenseHistory, license.Spec.Token) {
 		pack := cloud.NewNotificationPackage(cloud.DuplicateLicenseTitle, cloud.SEALOS, cloud.DuplicateLicenseContent)
 		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, r.Client.Delete(ctx, &license)
 	}
 
-	if err := readOperations.Execute(); err != nil {
-		r.logger.Error(err, "failed to read account...")
-		return ctrl.Result{}, err
-	}
 	if canConnectToExternalNetwork {
 		payload, ok = cloud.LicenseCheckOnExternalNetwork(license, uidSecret, config.LicenseMonitorURL, r.logger)
 	} else {
@@ -145,107 +139,44 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.InvalidLicenseContent)
 		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
 		r.logger.Info("invalid license")
-		return ctrl.Result{}, err
+		return ctrl.Result{}, r.Client.Delete(ctx, &license)
 	}
+
 	// recharge
-	(&util.WriteEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&account).
-		WithCallback(func() error {
-			if !cloud.ContainsFields(payload, "amt") {
-				return nil
-			}
-			amount, err := util.InterfaceToInt64(payload["amt"])
-			if err != nil {
-				return errors.New("amount error type")
-			}
-			charge := amount * cloud.BaseCount
-			account.Status.Balance += charge
-			err = crypto.RechargeBalance(account.Status.EncryptBalance, amount)
-			if err != nil {
-				r.logger.Error(err, "Recharge Failed, failed to encrypt the balance", "namespace:", req.Namespace, "name:", req.Name)
-				pack := cloud.NewNotificationPackage(cloud.RechargeFailedTitle, cloud.SEALOS, cloud.RechargeFailedContent)
-				util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
-				return err
-			}
-			err = r.Client.Status().Update(ctx, &account)
-			if err != nil {
-				r.logger.Error(err, "Recharge Failed, failed to modify the status", "namespace:", req.Namespace, "name:", req.Name)
-				pack := cloud.NewNotificationPackage(cloud.RechargeFailedTitle, cloud.SEALOS, cloud.RechargeFailedContent)
-				util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
-				return err
-			}
-			return nil
-		}).AddToList(&writeOperations)
+	(&util.WriteEventBuilder{}).WithCallback(func() error {
+		err := cloud.RechargeByLicense(ctx, r.Client, r.logger, account, payload)
+		if err != nil {
+			pack := cloud.NewNotificationPackage(cloud.RechargeFailedTitle, cloud.SEALOS, cloud.RechargeFailedContent)
+			util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+			return err
+		}
+		pack := cloud.NewNotificationPackage(cloud.ValidLicenseTitle, cloud.SEALOS, cloud.ValidLicenseContent)
+		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+		return nil
+	}).AddToList(&writeOperations)
+
+	// limit the scale
+	(&util.WriteEventBuilder{}).WithCallback(func() error {
+		return cloud.AdjustScaleOfCluster(ctx, r.Client, r.logger, license, clusterLimit, payload)
+	}).AddToList(&writeOperations)
+
+	// expand the scale of cluster
+	(&util.WriteEventBuilder{}).WithCallback(func() error {
+		return cloud.ExpandScaleOfClusterTemp(ctx, r.Client, r.logger, license, clusterLimit, payload)
+	}).AddToList(&writeOperations)
+
 	// record
-	(&util.WriteEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&licenseHistory).
-		WithCallback(func() error {
-			size := int64(0)
-			for _, value := range licenseHistory.Data {
-				size += int64(len(value))
-			}
-			maxSizeThreshold := resource.MustParse(cloud.MaxSizeThresholdStr)
-			if size >= maxSizeThreshold.Value() {
-				licenseHistory.Data = make(map[string]string)
-			}
-			tmpValue := make(map[string]interface{})
-			for k, v := range licenseHistory.Data {
-				tmpValue[k] = v
-			}
-			suffix := util.GetNextLicenseKeySuffix(tmpValue, "license")
-			newLicenseKeyName := "license-" + strconv.Itoa(suffix)
-			if licenseHistory.Data == nil {
-				licenseHistory.Data = make(map[string]string)
-			}
-			licenseHistory.Data[newLicenseKeyName] = license.Spec.Token
-			err = r.Client.Update(ctx, &licenseHistory)
-			if err != nil {
-				r.needRecharge = false
-				r.Retries = 0
-				r.logger.Error(err, "failed to store license")
-				return err
-			}
-			return nil
-		}).AddToList(&writeOperations)
-	// limit
-	(&util.WriteEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&clusterLimit).
-		WithCallback(func() error {
-			if !cloud.ContainsFields(payload, cloud.Field1, cloud.Field2, cloud.Field3) {
-				return nil
-			}
-			days, err := util.InterfaceToInt64(payload[cloud.Field1])
-			if err != nil {
-				return err
-			}
-			nodes, err := util.InterfaceToInt64(payload[cloud.Field2])
-			if err != nil {
-				return err
-			}
-			cpus, err := util.InterfaceToInt64(payload[cloud.Field3])
-			if err != nil {
-				return err
-			}
-			limit := cloud.ClusterLimits{
-				NodeLimit: nodes,
-				CpuLimit:  cpus,
-				Expire:    time.Now().Add(time.Hour * 24 * time.Duration(days)).Unix(),
-			}
-			limitString, err := json.Marshal(limit)
-			if err != nil {
-				r.logger.Error(err, "failed to parse cluster limit")
-				return err
-			}
-			if clusterLimit.Data == nil {
-				clusterLimit.Data = make(map[string][]byte)
-			}
-			tmpValue := make(map[string]interface{})
-			for k, v := range clusterLimit.Data {
-				tmpValue[k] = v
-			}
-			suffix := util.GetNextLicenseKeySuffix(tmpValue, "secret")
-			newLicenseKeyName := "secret-" + strconv.Itoa(suffix)
-			clusterLimit.Data[newLicenseKeyName] = []byte(limitString)
-			return r.Client.Create(ctx, &clusterLimit)
-		})
+	(&util.WriteEventBuilder{}).WithCallback(func() error {
+		return cloud.RecordLicense(ctx, r.Client, r.logger, license, licenseHistory)
+	}).AddToList(&writeOperations)
+
+	(&util.WriteEventBuilder{}).WithCallback(func() error {
+		return r.Client.Delete(ctx, &license)
+	}).AddToList(&writeOperations)
+
 	_ = writeOperations.Execute()
+
+	r.logger.Info("license has been activated")
 	return ctrl.Result{}, nil
 }
 
@@ -256,12 +187,10 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.needRecharge = true
 	Predicate := predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
-			return e.Object.GetName() == string(cloud.LicenseName) &&
-				e.Object.GetLabels() != nil && e.Object.GetLabels()[string(cloud.IsRead)] == cloud.FALSE
+			return e.Object.GetName() == string(cloud.LicenseName)
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			return e.ObjectNew.GetName() == string(cloud.LicenseName) &&
-				e.ObjectNew.GetLabels() != nil && e.ObjectNew.GetLabels()[string(cloud.IsRead)] == cloud.FALSE
+			return e.ObjectNew.GetName() == string(cloud.LicenseName)
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			// Ignore delete events

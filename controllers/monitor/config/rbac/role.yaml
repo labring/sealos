@@ -156,6 +156,32 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cloud.sealos.io
+  resources:
+  - scalemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cloud.sealos.io
+  resources:
+  - scalemonitors/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cloud.sealos.io
+  resources:
+  - scalemonitors/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - ""
   resources:
   - configmaps
@@ -217,12 +243,3 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - user.sealos.io
-  resources:
-  - collectors
-  verbs:
-  - create
-  - get
-  - list
-  - update

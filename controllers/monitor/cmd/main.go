@@ -27,15 +27,15 @@ import (
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
-	cloudv1 "github.com/labring/sealos/controllers/monitor/api/v1"
-	"github.com/labring/sealos/controllers/monitor/internal/controller"
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	cloudv1 "github.com/labring/sealos/controllers/monitor/api/v1"
+	"github.com/labring/sealos/controllers/monitor/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -49,7 +49,6 @@ func init() {
 	utilruntime.Must(ntf.AddToScheme(scheme))
 	utilruntime.Must(cloudv1.AddToScheme(scheme))
 	utilruntime.Must(accountv1.AddToScheme(scheme))
-	utilruntime.Must(userv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -127,6 +126,17 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Launcher")
+		os.Exit(1)
+	}
+	// if err = (&cloudv1.License{}).SetupWebhookWithManager(mgr); err != nil {
+	// 	setupLog.Error(err, "unable to create webhook", "webhook", "License")
+	// 	os.Exit(1)
+	// }
+	if err = (&controller.ScaleMonitorReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ScaleMonitor")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

@@ -78,6 +78,11 @@ spec:
             secretKeyRef:
               name: cloud-env
               key: canConnectToExternalNetwork
+        - name: MONITOR
+          valueFrom:
+            secretKeyRef:
+              name: cloud-env
+              key: isMonitor
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -147,4 +152,5 @@ metadata:
   namespace: cloud-system
 type: Opaque
 data:
-  canConnectToExternalNetwork: RmFsc2U= 
+  canConnectToExternalNetwork: dHJ1ZQ==
+  isMonitor: dHJ1ZQ==

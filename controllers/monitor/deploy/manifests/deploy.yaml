@@ -15,6 +15,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    cert-manager.io/inject-ca-from: cloud-system/cloud-serving-cert
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
   name: launchers.cloud.sealos.io
@@ -71,10 +72,20 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    cert-manager.io/inject-ca-from: cloud-system/cloud-serving-cert
     controller-gen.kubebuilder.io/version: v0.8.0
-  creationTimestamp: null
   name: licenses.cloud.sealos.io
 spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: cloud-webhook-service
+          namespace: cloud-system
+          path: /convert
+      conversionReviewVersions:
+      - v1
   group: cloud.sealos.io
   names:
     kind: License
@@ -340,6 +351,32 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cloud.sealos.io
+  resources:
+  - scalemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cloud.sealos.io
+  resources:
+  - scalemonitors/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cloud.sealos.io
+  resources:
+  - scalemonitors/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - ""
   resources:
   - configmaps
@@ -401,15 +438,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - user.sealos.io
-  resources:
-  - collectors
-  verbs:
-  - create
-  - get
-  - list
-  - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -568,6 +596,26 @@ spec:
   selector:
     control-plane: controller-manager
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/created-by: cloud-controller
+    app.kubernetes.io/instance: webhook-service
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: service
+    app.kubernetes.io/part-of: cloud-controller
+  name: cloud-webhook-service
+  namespace: cloud-system
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    control-plane: controller-manager
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -611,29 +659,6 @@ spec:
                 - linux
       containers:
       - args:
-        - --secure-listen-address=0.0.0.0:8443
-        - --upstream=http://127.0.0.1:8080/
-        - --logtostderr=true
-        - --v=0
-        image: gcr.dockerproxy.com/kubebuilder/kube-rbac-proxy:v0.13.1
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 8443
-          name: https
-          protocol: TCP
-        resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
-          requests:
-            cpu: 5m
-            memory: 64Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-      - args:
         - --health-probe-bind-address=:8081
         - --metrics-bind-address=127.0.0.1:8080
         - --leader-elect
@@ -647,10 +672,10 @@ spec:
               name: cloud-env
         - name: MONITOR
           valueFrom:
-              secretKeyRef:
-                key: isMonitor
-                name: cloud-env
-        image: registry.cn-hangzhou.aliyuncs.com/fckc/cloud-controller:v3.0.8
+            secretKeyRef:
+              key: isMonitor
+              name: cloud-env
+        image: registry.cn-hangzhou.aliyuncs.com/fckc/cloud-controller:v3.1.5
         livenessProbe:
           httpGet:
             path: /healthz
@@ -658,6 +683,10 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
         readinessProbe:
           httpGet:
             path: /readyz
@@ -676,10 +705,78 @@ spec:
           capabilities:
             drop:
             - ALL
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=0
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
       securityContext:
         runAsNonRoot: true
       serviceAccountName: cloud-controller-manager
       terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/component: certificate
+    app.kubernetes.io/created-by: cloud-controller
+    app.kubernetes.io/instance: serving-cert
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: certificate
+    app.kubernetes.io/part-of: cloud-controller
+  name: cloud-serving-cert
+  namespace: cloud-system
+spec:
+  dnsNames:
+  - cloud-webhook-service.cloud-system.svc
+  - cloud-webhook-service.cloud-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: cloud-selfsigned-issuer
+  secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    app.kubernetes.io/component: certificate
+    app.kubernetes.io/created-by: cloud-controller
+    app.kubernetes.io/instance: serving-cert
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: certificate
+    app.kubernetes.io/part-of: cloud-controller
+  name: cloud-selfsigned-issuer
+  namespace: cloud-system
+spec:
+  selfSigned: {}
 ---
 apiVersion: cloud.sealos.io/v1
 kind: Launcher
@@ -691,3 +788,73 @@ metadata:
 spec:
   description: This YAML file is responsible for launching the entire cloud module.
   name: Cloud-Launcher
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: cloud-system/cloud-serving-cert
+  labels:
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/created-by: cloud-controller
+    app.kubernetes.io/instance: mutating-webhook-configuration
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mutatingwebhookconfiguration
+    app.kubernetes.io/part-of: cloud-controller
+  name: cloud-mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: cloud-webhook-service
+      namespace: cloud-system
+      path: /mutate-cloud-sealos-io-v1-license
+  failurePolicy: Fail
+  name: mlicense.kb.io
+  rules:
+  - apiGroups:
+    - cloud.sealos.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - licenses
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: cloud-system/cloud-serving-cert
+  labels:
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/created-by: cloud-controller
+    app.kubernetes.io/instance: validating-webhook-configuration
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: validatingwebhookconfiguration
+    app.kubernetes.io/part-of: cloud-controller
+  name: cloud-validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: cloud-webhook-service
+      namespace: cloud-system
+      path: /validate-cloud-sealos-io-v1-license
+  failurePolicy: Fail
+  name: vlicense.kb.io
+  rules:
+  - apiGroups:
+    - cloud.sealos.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - licenses
+  sideEffects: None
