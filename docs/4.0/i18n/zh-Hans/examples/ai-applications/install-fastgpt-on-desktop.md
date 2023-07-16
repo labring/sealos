@@ -100,20 +100,15 @@ Sealos 提供了 **应用管理** 工具，可以快速的部署单镜像服务�
 | 外网访问     | 打开「应用管理」 自动分配了域名，可以直接使用，也可以自定义域名。                                                                                                     |
 | 环境变量     | 参考 [FastGpt docker-compose.yaml](https://github.com/c121914yu/FastGPT/blob/main/docs/deploy/fastgpt/docker-compose.yml)。数据库部分变量，可以直接复制 [1.4] 里的内容。 |
 
-下面是一份去掉注释后的环境变量，可以直接复制修改使用。
+下面是一份去掉注释后的环境变量，可以直接复制修改使用。 注意
+1. PG_DB_NAME 必须为 postgres，不可改。
+2. 如果需要多 key 管理，需要安装 [oneapi](https://github.com/labring/FastGPT/blob/main/docs/deploy/one-api/sealos.md)，并填写 ONEAPI_URL 和 ONEAPI_KEY 参数。如果不需要，则需要去掉这两个参数。
 
 ```
-QA_MAX_PROCESS=20
-VECTOR_MAX_PROCESS=20
 MY_MAIL=123@qq.com
 MAILE_CODE=mailcode
-aliAccessKeyId=keyid
-aliAccessKeySecret=secret
-aliSignName=signname
-aliTemplateCode=SMS_111
 TOKEN_KEY=tokenkey
 ROOT_KEY=rootkey
-SENSITIVE_CHECK=1
 MONGODB_URI=mongodb://root:8b6zfr4b@fastgpt-mongo-mongodb.ns-hti44k5d.svc:27017
 MONGODB_NAME=fastgpt
 PG_USER=postgres
@@ -121,9 +116,9 @@ PG_PASSWORD=m8tkt57w
 PG_HOST=fastgpt-pg-postgresql.ns-hti44k5d.svc
 PG_PORT=5432
 PG_DB_NAME=postgres
+ONEAPI_URL=https://xxxx.cloud.sealos.io/v1
+ONEAPI_KEY=sk-xxxxxx
 OPENAIKEY=sk-xxx
-OPENAI_TRAINING_KEY=sk-xxx
-GPT4KEY=sk-xxx
 ```
 
 ![](./images/fast15.png)
