@@ -42,7 +42,7 @@ const FreeQuata = "LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2UUlCQURBTkJna3Foa
 
 const (
 	Namespace         Resource = "cloud-system"
-	LimitSecretName   Resource = "limit-secret"
+	ScaleSecretName   Resource = "cluster-scale"
 	LicenseHistory    Resource = "cloud-license-history"
 	LicenseName       Resource = "license"
 	UidSecretName     Resource = "cloud-secret"

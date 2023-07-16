@@ -68,6 +68,7 @@ func newUUID() (string, error) {
 
 func StartCloudModule(ctx context.Context, client cl.Client) error {
 	isMonitor := os.Getenv(string(cloud.IsMonitor))
+	//isMonitor := "true"
 	if isMonitor == cloud.TRUE {
 		var launcher cloudv1.Launcher
 		nn := types.NamespacedName{
@@ -147,27 +148,7 @@ func InterfaceToInt64(value interface{}) (int64, error) {
 	}
 }
 
-func GetNextLicenseKeySuffix(data map[string]interface{}, prefix string) int {
-	maxSuffix := 0
-	for key := range data {
-		var currentSuffix int
-		_, err := fmt.Sscanf(key, prefix+"-%d", &currentSuffix)
-		if err == nil && currentSuffix > maxSuffix {
-			maxSuffix = currentSuffix
-		}
-	}
-	return maxSuffix + 1
-}
-
-func CheckLicenseExists(configMap *corev1.ConfigMap, license string) bool {
-	for _, storedLicense := range configMap.Data {
-		if storedLicense == license {
-			return true
-		}
-	}
-
-	return false
-}
+/*****************************************/
 
 type Operation interface {
 	Execute() error

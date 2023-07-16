@@ -44,7 +44,6 @@ type CollectorReconciler struct {
 	logger logr.Logger
 }
 
-//+kubebuilder:rbac:groups=user.sealos.io,resources=collectors,verbs=get;list;create;update
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=collectors,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=collectors/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=collectors/finalizers,verbs=update
