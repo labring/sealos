@@ -222,16 +222,16 @@ jobs:
           CLUSTER_IMAGE_NAME=${{ steps.prepare.outputs.cluster_repo }}:${{ steps.prepare.outputs.tag_name }}
           sudo sealos build -t ${CLUSTER_IMAGE_NAME}-amd64 --platform linux/amd64 -f Kubefile
           sudo sealos build -t ${CLUSTER_IMAGE_NAME}-arm64 --platform linux/arm64 -f Kubefile
-
-      - name: Manifest Cluster Images
-        # if push to master, then patch images to ghcr.io
-        run: |
-          CLUSTER_IMAGE_NAME=${{ steps.prepare.outputs.cluster_repo }}:${{ steps.prepare.outputs.tag_name }}
           sudo sealos images
           bash docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME
-        env:
-          OWNER: ${{ github.repository_owner }}
-
+      - name: Build ${{ matrix.module }}-service cluster image for latest
+        working-directory: service/${{ matrix.module }}/deploy
+        run: |
+          CLUSTER_IMAGE_NAME_LATEST=${{ steps.prepare.outputs.cluster_repo }}:latest
+          sudo sealos build -t ${CLUSTER_IMAGE_NAME_LATEST}-amd64 --platform linux/amd64 -f Kubefile
+          sudo sealos build -t ${CLUSTER_IMAGE_NAME_LATEST}-arm64 --platform linux/arm64 -f Kubefile
+          sudo sealos images
+          bash docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME_LATEST
       - name: Renew issue and Sync Images
         uses: labring/gh-rebot@v0.0.6
         if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
@@ -246,3 +246,17 @@ jobs:
           SEALOS_ISSUE_TYPE: "day"
           SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
           SEALOS_COMMENT_BODY: "/imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-service:${{ steps.prepare.outputs.tag_name }}"
+      - name: Renew issue and Sync Images for latest
+        uses: labring/gh-rebot@v0.0.6
+        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
+        with:
+          version: v0.0.8-rc1
+        env:
+          GH_TOKEN: "${{ secrets.GH_PAT }}"
+          SEALOS_TYPE: "issue_renew"
+          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
+          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
+          SEALOS_ISSUE_LABEL: "dayly-report"
+          SEALOS_ISSUE_TYPE: "day"
+          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
+          SEALOS_COMMENT_BODY: "/imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-service:latest"

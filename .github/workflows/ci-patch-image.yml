@@ -169,11 +169,14 @@ jobs:
           bash docker/patch/manifest-cluster-images.sh
         env:
           OWNER: ${{ github.repository_owner }}
-      - name: Prepare
-        id: prepare
+      - name: Manifest Cluster Images for latest
         run: |
-          TAG=dev
-          echo tag_name=${GIT_COMMIT_SHORT_SHA} >> $GITHUB_OUTPUT
+          sudo sealos tag ghcr.io/${{ github.repository_owner }}/sealos-patch:"$GIT_COMMIT_SHORT_SHA"-amd64  ghcr.io/${{ github.repository_owner }}/sealos-patch:latest-amd64
+          sudo sealos tag ghcr.io/${{ github.repository_owner }}/sealos-patch:"$GIT_COMMIT_SHORT_SHA"-arm64  ghcr.io/${{ github.repository_owner }}/sealos-patch:latest-arm64
+          sudo sealos images
+          bash docker/patch/manifest-cluster-images.sh ghcr.io/${{ github.repository_owner }}/sealos-patch:latest
+        env:
+          OWNER: ${{ github.repository_owner }}
       - name: Renew issue and Sync Images
         uses: labring/gh-rebot@v0.0.6
         if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
@@ -187,4 +190,4 @@ jobs:
           SEALOS_ISSUE_LABEL: "dayly-report"
           SEALOS_ISSUE_TYPE: "day"
           SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagesync ghcr.io/${{ github.repository_owner }}/sealos-patch:${{ steps.prepare.outputs.tag_name }}"
+          SEALOS_COMMENT_BODY: "/imagesync ghcr.io/${{ github.repository_owner }}/sealos-patch:latest"
