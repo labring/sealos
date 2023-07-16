@@ -19,12 +19,13 @@ package controller
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/go-logr/logr"
+	"github.com/labring/sealos/controllers/monitor/internal/controller/util"
 	cloud "github.com/labring/sealos/controllers/monitor/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -55,10 +56,30 @@ func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	r.logger.Info("Enter ScaleMonitorReconcile", "namespace:", req.Namespace, "name", req.Name)
 
 	clusterExpectScaleInfo := corev1.Secret{}
-	if err := r.Client.Get(ctx, req.NamespacedName, &clusterExpectScaleInfo); err != nil {
-		r.logger.Error(err, "failed to get clusterExpectScaleInfo")
+	currentClusterScale := corev1.Secret{}
+	readEventOperations := util.ReadOperationList{}
+	writeEventOperations := util.WriteOperationList{}
+
+	(&util.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
+		WithTag(req.NamespacedName).AddToList(&readEventOperations)
+
+	(&util.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
+		WithTag(
+			types.NamespacedName{
+				Namespace: string(cloud.Namespace),
+				Name:      string(cloud.CurrentScaleSecretName),
+			}).
+		WithCallback(func() error {
+			currentClusterScale.SetName(string(cloud.CurrentScaleSecretName))
+			currentClusterScale.SetNamespace(string(cloud.Namespace))
+			return r.Client.Create(ctx, &currentClusterScale)
+		}).AddToList(&readEventOperations)
+	err := readEventOperations.Execute()
+	if err != nil {
+		r.logger.Error(err, "failed to get execute event")
 		return ctrl.Result{}, err
 	}
+
 	res, err := cloud.ParseScaleData(clusterExpectScaleInfo.Data)
 	if err != nil {
 		r.logger.Error(err, "failed to parse scale data")
@@ -71,7 +92,16 @@ func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		r.logger.Error(err, "failed to parse expect string")
 		return ctrl.Result{}, err
 	}
-	fmt.Println(string(expectString))
+
+	(&util.WriteEventBuilder{}).WithCallback(func() error {
+		if currentClusterScale.Data == nil {
+			currentClusterScale.Data = make(map[string][]byte)
+		}
+		currentClusterScale.Data[string(cloud.CurrentScaleSecretName)] = expectString
+		return r.Client.Update(ctx, &clusterExpectScaleInfo)
+	})
+
+	_ = writeEventOperations.Execute()
 	return ctrl.Result{}, nil
 }
 
