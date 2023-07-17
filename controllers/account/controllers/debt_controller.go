@@ -61,6 +61,7 @@ type DebtReconciler struct {
 	logr.Logger
 	accountSystemNamespace string
 	accountNamespace       string
+	mangoDBClient          database.Interface
 }
 
 var DebtStatusDuration = map[accountv1.DebtStatusType]int64{}
@@ -338,30 +339,24 @@ func generateRandomID() string {
 // todo maybe will consider adding dynamic configuration later
 var estimatedCostDays int64 = 30
 
-func (r *DebtReconciler) estimateSufficientFunds(ctx context.Context, userNamespace string, oweamount int64) (bool, error) {
+func (r *DebtReconciler) getMangoDB() (database.Interface, error) {
 	MongoDBURI := os.Getenv(database.MongoURL)
 	if MongoDBURI == "" {
-		return false, fmt.Errorf("mongo url is empty")
+		return nil, fmt.Errorf("mongo url is empty")
 	}
 	dbCtx := context.Background()
 	dbClient, err := database.NewMongoDB(dbCtx, MongoDBURI)
 	if err != nil {
-		return false, fmt.Errorf("connect mongo client failed")
+		return nil, fmt.Errorf("connect mongo client failed")
 	}
-	defer func() {
-		err := dbClient.Disconnect(ctx)
-		if err != nil {
-			r.Logger.V(5).Info("disconnect mongo client failed", "err", err)
-		}
-	}()
+	return dbClient, nil
+}
 
+func (r *DebtReconciler) estimateSufficientFunds(ctx context.Context, userNamespace string, oweamount int64) (bool, error) {
 	billingRecordQuery := buildBillingRecordQuery(userNamespace)
-
-	err = dbClient.QueryBillingRecords(billingRecordQuery, getUsername(billingRecordQuery.Namespace))
-	if err != nil {
+	if err := r.mangoDBClient.QueryBillingRecords(billingRecordQuery, getUsername(billingRecordQuery.Namespace)); err != nil {
 		return false, fmt.Errorf("query billing records failed")
 	}
-
 	if billingRecordQuery.Status.Items == nil || len(billingRecordQuery.Status.Items) == 0 {
 		return false, fmt.Errorf("accountbalance in billing records of %s is empty", userNamespace)
 	}
@@ -443,6 +438,12 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.
 	debtDetectionCycleSecond := utils.GetIntEnvWithDefault(DebtDetectionCycleEnv, 30)
 	r.DebtDetectionCycle = time.Duration(debtDetectionCycleSecond) * time.Second
 	initDebtConfigs()
+	db, err := r.getMangoDB()
+	if err != nil {
+		r.Logger.Error(err, "get mangodb client error")
+	}
+	r.mangoDBClient = db
+	// todo destory the mangoDBClient
 
 	r.Logger.Info("set config", "DebtStatusDuration", DebtStatusDuration, "DebtNoticeInterval", DebtNoticeInterval,
 		"accountSystemNamespace", r.accountSystemNamespace, "accountNamespace", r.accountNamespace)
