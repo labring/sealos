@@ -26,12 +26,15 @@ sealos save -o kubernetes.tar labring/kubernetes:v1.24.0
 
 ## Optional Parameters
 
-- `-t`, `--transport`: This parameter is used to specify the transport method for saving the image. The currently available options are `oci-archive` and `docker-archive`. The default value is `oci-archive`.
+- `--format`: This parameter is used to specify the transport format for saving the image. The currently available options are `oci-archive`, `docker-archive`, `oci-dir`, and `docker-dir`. The default value is `oci-archive`.
+- `-m`: This parameter can be used to save multiple images at the same time, but it is only applicable to the `docker-archive` format.
+
 
 For example, you can use the following command to save an image named `labring/kubernetes:latest` to an archive file named `kubernetes.tar` in the `docker-archive` method:
 
 ```bash
-sealos save -o kubernetes.tar -t docker-archive labring/kubernetes:v1.24.0
+sealos save -o kubernetes.tar --format docker-archive labring/kubernetes:v1.24.0
+sealos save -o kubernetes.tar -m --format docker-archive labring/kubernetes:v1.24.0 labring/helm:v3.5.0
 ```
 
 The above is the usage guide of the `sealos save` command, and we hope it is helpful to you. If you encounter any problems during use, feel free to ask us.

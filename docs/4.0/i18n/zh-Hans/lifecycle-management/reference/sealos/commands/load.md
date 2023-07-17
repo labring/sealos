@@ -16,12 +16,6 @@ sidebar_position: 6
 
 - `-i, --input=''`: 从 tar 存档文件中加载镜像。
 
-- `--platform=[linux/arm64/v8]`: 选择镜像时，优先使用指定的 OS/ARCH，而不是当前操作系统和架构。
-
-- `-t, --transport='oci-archive'`: 从 tar 存档文件中加载镜像传输。可用选项有 oci-archive，docker-archive。
-
-- `--variant=''`: 覆盖指定镜像的 `variant`。
-
 ## 示例:
 
 - 从一个存档文件中加载镜像：`sealos load -i myimage.tar`
