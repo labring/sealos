@@ -19,7 +19,7 @@ A Cloud Operating System designed for managing cloud-native applications
 
 <br />
 
-[![discord](https://theme.zdassets.com/theme_assets/678183/cc59daa07820943e943c2fc283b9079d7003ff76.svg)](https://discord.gg/eHyXHtSE)
+[![discord](https://theme.zdassets.com/theme_assets/678183/cc59daa07820943e943c2fc283b9079d7003ff76.svg)](https://discord.gg/qzBmGGZGk7)
 
 </div>
 
@@ -71,7 +71,7 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 ## 🏘️ Community & support
 
 + 🌐 Visit the [Sealos website](https://sealos.io/) for full documentation and useful links.
-+ 💬 Join our [Discord server](https://discord.gg/eHyXHtSE) is to chat with Sealos developers and other Sealos users. This is a good place to learn about Sealos and Kubernetes, ask questions, and share your experiences.
++ 💬 Join our [Discord server](https://discord.gg/qzBmGGZGk7) is to chat with Sealos developers and other Sealos users. This is a good place to learn about Sealos and Kubernetes, ask questions, and share your experiences.
 + 🐦 Tweet at @sealosio on [Twitter](https://twitter.com/sealosio) and follow us.
 + 🐞 Create [GitHub Issues](https://github.com/labring/sealos/issues/new/choose) for bug reports and feature requests.
 
