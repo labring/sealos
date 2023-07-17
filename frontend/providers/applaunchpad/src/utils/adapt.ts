@@ -26,7 +26,8 @@ import {
   pauseKey,
   maxReplicasKey,
   minReplicasKey,
-  PodStatusEnum
+  PodStatusEnum,
+  domainKey
 } from '@/constants/app';
 import { cpuFormatToM, memoryFormatToMi, formatPodTime, atobSecretYaml } from '@/utils/tools';
 import type { DeployKindsType, AppEditType } from '@/types/app';
@@ -164,8 +165,7 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
   }
 
   const domain = deployKindsMap?.Ingress?.spec?.rules?.[0].host;
-  const sealosDomain =
-    deployKindsMap?.Ingress?.metadata?.labels?.[`${SEALOS_DOMAIN}/app-deploy-manager-domain`];
+  const sealosDomain = deployKindsMap?.Ingress?.metadata?.labels?.[domainKey];
 
   return {
     id: appDeploy.metadata?.uid || ``,

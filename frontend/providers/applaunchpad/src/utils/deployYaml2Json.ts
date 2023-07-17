@@ -2,7 +2,7 @@ import yaml from 'js-yaml';
 import type { AppEditType } from '@/types/app';
 import { strToBase64, str2Num, pathFormat, pathToNameFormat } from '@/utils/tools';
 import { SEALOS_DOMAIN, INGRESS_SECRET } from '@/store/static';
-import { maxReplicasKey, minReplicasKey } from '@/constants/app';
+import { maxReplicasKey, minReplicasKey, appDeployKey, domainKey } from '@/constants/app';
 import dayjs from 'dayjs';
 
 export const json2Development = (data: AppEditType) => {
@@ -17,7 +17,7 @@ export const json2Development = (data: AppEditType) => {
         [maxReplicasKey]: `${data.hpa.use ? data.hpa.maxReplicas : data.replicas}`
       },
       labels: {
-        [`${SEALOS_DOMAIN}/app-deploy-manager`]: data.appName,
+        [appDeployKey]: data.appName,
         app: data.appName
       }
     },
@@ -126,7 +126,7 @@ export const json2StatefulSet = (data: AppEditType) => {
         [maxReplicasKey]: `${data.hpa.use ? data.hpa.maxReplicas : data.replicas}`
       },
       labels: {
-        [`${SEALOS_DOMAIN}/app-deploy-manager`]: data.appName,
+        [appDeployKey]: data.appName,
         app: data.appName
       }
     },
@@ -253,7 +253,7 @@ export const json2Service = (data: AppEditType) => {
     metadata: {
       name: data.appName,
       labels: {
-        [`${SEALOS_DOMAIN}/app-deploy-manager`]: data.appName
+        [appDeployKey]: data.appName
       }
     },
     spec: {
@@ -309,8 +309,8 @@ export const json2Ingress = (data: AppEditType) => {
     metadata: {
       name: data.appName,
       labels: {
-        [`${SEALOS_DOMAIN}/app-deploy-manager`]: data.appName,
-        [`${SEALOS_DOMAIN}/app-deploy-manager-domain`]: `${data.accessExternal.outDomain}`
+        [appDeployKey]: data.appName,
+        [domainKey]: `${data.accessExternal.outDomain}`
       },
       annotations: {
         'kubernetes.io/ingress.class': 'nginx',
