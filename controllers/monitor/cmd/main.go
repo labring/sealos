@@ -17,16 +17,20 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
+	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"github.com/go-logr/logr"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
+	cloud "github.com/labring/sealos/controllers/monitor/internal/manager"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -139,6 +143,27 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "ScaleMonitor")
 		os.Exit(1)
 	}
+	time.Sleep(time.Second * 3)
+	var en chan error
+	var logger logr.Logger
+	en = make(chan error)
+	logger = ctrl.Log.WithName("ReSyncForClusterScale")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	callback := func() error {
+		return cloud.ReSyncForClusterScale(ctx, mgr.GetClient())
+	}
+
+	go cloud.ReSync(en, callback)
+
+	go func() {
+		for err := range en {
+			if err != nil {
+				logger.Error(err, "failed to check for cluster scale")
+			}
+		}
+	}()
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -31,6 +32,7 @@ import (
 	"github.com/labring/sealos/controllers/pkg/crypto"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -49,6 +51,187 @@ type LicenseMonitorRequest struct {
 
 type LicenseMonitorResponse struct {
 	Key string `json:"key"`
+}
+
+type Operation interface {
+	Execute() error
+}
+
+type ReadOperationList struct {
+	readOperations []Operation
+}
+
+type WriteOperationList struct {
+	writeOperations []Operation
+}
+
+type ReWriteOperationList struct {
+	reWriteOperations []Operation
+}
+
+func (list *ReWriteOperationList) AddToList(op Operation) {
+	list.reWriteOperations = append(list.reWriteOperations, op)
+}
+
+func (list *ReWriteOperationList) Execute() error {
+	retryInterval := time.Second * 5 // Retry every 5 seconds
+	timeout := time.Minute * 3       // Stop retrying after 3 minutes
+
+	startTime := time.Now()
+	for {
+		remainingOps := []Operation{}
+
+		for _, op := range list.reWriteOperations {
+			err := op.Execute()
+			if err != nil {
+				remainingOps = append(remainingOps, op)
+			}
+		}
+
+		if len(remainingOps) == 0 {
+			break
+		}
+
+		// Update the list of reWriteOperations with the remaining operations
+		list.reWriteOperations = remainingOps
+
+		// Check if the timeout has been reached
+		if time.Since(startTime) >= timeout {
+			return fmt.Errorf("timeout reached, some operations still failed")
+		}
+
+		// Wait for the retry interval before trying again
+		time.Sleep(retryInterval)
+	}
+
+	return nil
+}
+
+func (list *ReadOperationList) Execute() error {
+	for _, op := range list.readOperations {
+		err := op.Execute()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (list *WriteOperationList) Execute() error {
+	reWriteList := &ReWriteOperationList{}
+
+	for _, op := range list.writeOperations {
+		err := op.Execute()
+		if err != nil {
+			reWriteList.AddToList(op)
+		}
+	}
+
+	if len(reWriteList.reWriteOperations) > 0 {
+		err := reWriteList.Execute()
+		if err != nil {
+			return fmt.Errorf("an error occurred, some operations still failed after retries: %v", err)
+		}
+	}
+
+	return nil
+}
+
+type ReadEventBuilder struct {
+	obj      client.Object
+	ctx      context.Context
+	client   client.Client
+	tag      types.NamespacedName
+	callback WriteFunc
+}
+
+type WriteEventBuilder struct {
+	obj      client.Object
+	ctx      context.Context
+	client   client.Client
+	callback WriteFunc
+}
+
+type WriteFunc func() error
+
+func (reb *ReadEventBuilder) WithClient(client client.Client) *ReadEventBuilder {
+	reb.client = client
+	return reb
+}
+
+func (reb *ReadEventBuilder) WithContext(ctx context.Context) *ReadEventBuilder {
+	reb.ctx = ctx
+	return reb
+}
+
+func (reb *ReadEventBuilder) WithObject(obj client.Object) *ReadEventBuilder {
+	reb.obj = obj
+	return reb
+}
+func (reb *ReadEventBuilder) WithCallback(callback WriteFunc) *ReadEventBuilder {
+	reb.callback = callback
+	return reb
+}
+
+func (reb *ReadEventBuilder) WithTag(tag types.NamespacedName) *ReadEventBuilder {
+	reb.tag = tag
+	return reb
+}
+
+func (reb *ReadEventBuilder) Read() error {
+	err := reb.client.Get(reb.ctx, reb.tag, reb.obj)
+	if err != nil && reb.callback != nil {
+		return reb.callback()
+	}
+	return err
+}
+
+func (reb *ReadEventBuilder) AddToList(list *ReadOperationList) *ReadOperationList {
+	list.readOperations = append(list.readOperations, reb)
+	return list
+}
+
+func (reb *ReadEventBuilder) Execute() error {
+	if reb != nil {
+		return reb.Read()
+	}
+	return fmt.Errorf("ReadEventBuilder excute error: %s", "value can't be nil")
+}
+
+func (web *WriteEventBuilder) WithClient(client client.Client) *WriteEventBuilder {
+	web.client = client
+	return web
+}
+
+func (web *WriteEventBuilder) WithContext(ctx context.Context) *WriteEventBuilder {
+	web.ctx = ctx
+	return web
+}
+
+func (web *WriteEventBuilder) WithObject(obj client.Object) *WriteEventBuilder {
+	web.obj = obj
+	return web
+}
+
+func (web *WriteEventBuilder) WithCallback(callback WriteFunc) *WriteEventBuilder {
+	web.callback = callback
+	return web
+}
+
+func (web *WriteEventBuilder) Write() error {
+	return web.callback()
+}
+
+func (web *WriteEventBuilder) Execute() error {
+	if web != nil {
+		return web.Write()
+	}
+	return fmt.Errorf("WriteEventBuilder excute error: %s", "value can't be nil")
+}
+
+func (reb *WriteEventBuilder) AddToList(list *ReadOperationList) *ReadOperationList {
+	list.readOperations = append(list.readOperations, reb)
+	return list
 }
 
 func NewLicenseMonitorRequest(secret corev1.Secret, license cloudv1.License) LicenseMonitorRequest {
@@ -92,22 +275,22 @@ func LicenseCheckOnInternalNetwork(license cloudv1.License) (map[string]interfac
 	return crypto.IsLicenseValid(license)
 }
 
-type ClusterExpectScale struct {
+type ClusterScale struct {
 	NodeLimit int64 `json:"nodeLimit"`
 	CpuLimit  int64 `json:"cpuLimit"`
 	Expire    int64 `json:"expire"`
 }
 
-func NewClusterExpectScale(nods, cpus, days int64) ClusterExpectScale {
-	return ClusterExpectScale{
+func NewClusterExpectScale(nods, cpus, days int64) ClusterScale {
+	return ClusterScale{
 		NodeLimit: nods,
 		CpuLimit:  cpus,
 		Expire:    time.Now().Add(time.Hour * 24 * time.Duration(days)).Unix(),
 	}
 }
 
-func ExpandClusterScale(current *ClusterExpectScale, nods, cpus, days int64) ClusterExpectScale {
-	return ClusterExpectScale{
+func ExpandClusterScale(current *ClusterScale, nods, cpus, days int64) ClusterScale {
+	return ClusterScale{
 		NodeLimit: current.NodeLimit + nods,
 		CpuLimit:  current.CpuLimit + cpus,
 		Expire:    time.Now().Add(time.Hour * 24 * time.Duration(days)).Unix(),
@@ -116,11 +299,11 @@ func ExpandClusterScale(current *ClusterExpectScale, nods, cpus, days int64) Clu
 
 /******************************************************/
 
-func ParseScaleData(secretData map[string][]byte) (map[string]ClusterExpectScale, error) {
-	result := make(map[string]ClusterExpectScale)
+func ParseScaleData(secretData map[string][]byte) (map[string]ClusterScale, error) {
+	result := make(map[string]ClusterScale)
 
 	for key, value := range secretData {
-		var scaleData ClusterExpectScale
+		var scaleData ClusterScale
 		err := json.Unmarshal(value, &scaleData)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse JSON data for key %s: %v", key, err)
@@ -131,7 +314,7 @@ func ParseScaleData(secretData map[string][]byte) (map[string]ClusterExpectScale
 	return result, nil
 }
 
-func DeleteExpireScales(data map[string]ClusterExpectScale) {
+func DeleteExpireScales(data map[string]ClusterScale) {
 	current := time.Now().Unix()
 	for key, val := range data {
 		if val.Expire < current {
@@ -140,11 +323,11 @@ func DeleteExpireScales(data map[string]ClusterExpectScale) {
 	}
 }
 
-type GetScaleByCondition func(data map[string]ClusterExpectScale) (string, ClusterExpectScale)
+type GetScaleByCondition func(data map[string]ClusterScale) (string, ClusterScale)
 
-func GetScaleOfMaxNodes(data map[string]ClusterExpectScale) (string, ClusterExpectScale) {
-	var clusterExpectScale ClusterExpectScale
-	CmpNodes := func(value *ClusterExpectScale) bool {
+func GetScaleOfMaxNodes(data map[string]ClusterScale) (string, ClusterScale) {
+	var clusterExpectScale ClusterScale
+	CmpNodes := func(value *ClusterScale) bool {
 		if value.NodeLimit > clusterExpectScale.NodeLimit {
 			clusterExpectScale = *value
 			return true
@@ -160,9 +343,9 @@ func GetScaleOfMaxNodes(data map[string]ClusterExpectScale) (string, ClusterExpe
 	return key, clusterExpectScale
 }
 
-func GetScaleOfMaxCpu(data map[string]ClusterExpectScale) (string, ClusterExpectScale) {
-	var clusterExpectScale ClusterExpectScale
-	CmpCpus := func(value *ClusterExpectScale) bool {
+func GetScaleOfMaxCpu(data map[string]ClusterScale) (string, ClusterScale) {
+	var clusterExpectScale ClusterScale
+	CmpCpus := func(value *ClusterScale) bool {
 		if value.CpuLimit > clusterExpectScale.CpuLimit {
 			clusterExpectScale = *value
 			return true
@@ -178,9 +361,9 @@ func GetScaleOfMaxCpu(data map[string]ClusterExpectScale) (string, ClusterExpect
 	return key, clusterExpectScale
 }
 
-func GetCurrentScale(data map[string]ClusterExpectScale,
+func GetCurrentScale(data map[string]ClusterScale,
 	maxNodeCondition GetScaleByCondition,
-	maxCpuCondition GetScaleByCondition) ClusterExpectScale {
+	maxCpuCondition GetScaleByCondition) ClusterScale {
 	key1, value1 := maxCpuCondition(data)
 	key2, value2 := maxNodeCondition(data)
 	if key1 == key2 {
@@ -198,7 +381,7 @@ func GetCurrentScale(data map[string]ClusterExpectScale,
 		}
 		return b
 	}
-	var currentScale ClusterExpectScale
+	var currentScale ClusterScale
 	currentScale.CpuLimit = getMaxValue(value1.CpuLimit, value2.CpuLimit)
 	currentScale.NodeLimit = getMaxValue(value1.NodeLimit, value2.NodeLimit)
 	currentScale.Expire = getMinValue(value1.Expire, value2.Expire)
@@ -339,7 +522,7 @@ func ExpandScaleOfClusterTemp(ctx context.Context, client client.Client, logger 
 	return client.Update(ctx, &css)
 }
 
-func updateSecret(ces ClusterExpectScale, css *corev1.Secret) error {
+func updateSecret(ces ClusterScale, css *corev1.Secret) error {
 	newClusterScaleString, err := json.Marshal(ces)
 	if err != nil {
 		return fmt.Errorf("failed to parse cluster limit: %w", err)
@@ -377,4 +560,142 @@ func CheckLicenseExists(configMap *corev1.ConfigMap, license string) bool {
 	}
 
 	return false
+}
+
+func ReSync(errchan chan<- error, cb func() error) {
+	for {
+		err := cb()
+		if err != nil {
+			errchan <- err
+			time.Sleep(time.Second * 5)
+			continue
+		}
+		time.Sleep(time.Minute * 1)
+	}
+}
+
+func ReSyncForClusterScale(ctx context.Context, client client.Client) error {
+	var (
+		actualClusterScale corev1.Secret
+		expectClusterScale corev1.Secret
+		clusterTotalScale  corev1.Secret
+	)
+	var readEventOperations ReadOperationList
+	cs, err := CountClusterNodesAndCPUs(ctx, client)
+	if err != nil {
+		return fmt.Errorf("CountClusterNodesAndCPUs: %w", err)
+	}
+
+	bytes, err := json.Marshal(cs)
+	fmt.Printf("the actual cluster scale: %s", string(bytes))
+	if err != nil {
+		return err
+	}
+
+	(&ReadEventBuilder{}).WithContext(ctx).WithClient(client).WithObject(&actualClusterScale).
+		WithTag(types.NamespacedName{Namespace: string(Namespace), Name: string(ActualScaleSecretName)}).
+		WithCallback(func() error {
+			actualClusterScale.Data = make(map[string][]byte)
+			actualClusterScale.SetName(string(ActualScaleSecretName))
+			actualClusterScale.SetNamespace(string(Namespace))
+			return client.Create(ctx, &actualClusterScale)
+		}).AddToList(&readEventOperations)
+	(&ReadEventBuilder{}).WithContext(ctx).WithClient(client).WithObject(&expectClusterScale).
+		WithTag(types.NamespacedName{Namespace: string(Namespace), Name: string(ClusterScaleSecretName)}).
+		AddToList(&readEventOperations)
+	(&ReadEventBuilder{}).WithContext(ctx).WithClient(client).WithObject(&clusterTotalScale).
+		WithTag(types.NamespacedName{Namespace: string(Namespace), Name: string(ExpectScaleSecretName)}).
+		AddToList(&readEventOperations)
+	err = readEventOperations.Execute()
+	if err != nil {
+		return err
+	}
+	actualClusterScale.Data[string(ActualScaleSecretKey)] = bytes
+	err = client.Update(ctx, &actualClusterScale)
+	if err != nil {
+		return fmt.Errorf("failed to update actual cluster resource: %w", err)
+	}
+	err = CheckExpectedScale(ctx, client, expectClusterScale, clusterTotalScale)
+	if err != nil {
+		return fmt.Errorf("CheckExpectedScale: %w", err)
+	}
+
+	return nil
+}
+
+// ce: current expect cluster scale
+// cs: cluster total scale
+func CheckExpectedScale(ctx context.Context, client client.Client, ce corev1.Secret, cs corev1.Secret) error {
+	var currentExpectScale ClusterScale
+	var expectScale ClusterScale
+	err := json.Unmarshal(ce.Data[string(ExpectScaleSecretKey)], &currentExpectScale)
+	if err != nil {
+		return err
+	}
+	res, err := ParseScaleData(cs.Data)
+	if err != nil {
+		return err
+	}
+	expectScale = GetCurrentScale(res, GetScaleOfMaxNodes, GetScaleOfMaxCpu)
+
+	actualExpectScale, ok := checkExpectedScale(currentExpectScale, expectScale)
+
+	bytes, err := json.Marshal(currentExpectScale)
+	fmt.Printf("currentExpectScale: %s", string(bytes))
+
+	if !ok {
+		if ce.Data == nil {
+			ce.Data = make(map[string][]byte)
+		}
+		bytes, err := json.Marshal(actualExpectScale)
+		if err != nil {
+			return err
+		}
+		fmt.Println("actual: ", string(bytes))
+		ce.Data[string(ExpectScaleSecretKey)] = bytes
+		return client.Update(ctx, &ce)
+	}
+
+	return nil
+}
+
+func checkExpectedScale(scale1 ClusterScale, scale2 ClusterScale) (ClusterScale, bool) {
+	getMinValue := func(a int64, b int64) int64 {
+		if a > b {
+			return b
+		}
+		return a
+	}
+
+	if scale1.CpuLimit == scale2.CpuLimit &&
+		scale1.NodeLimit == scale2.NodeLimit {
+		fmt.Println("checkExpectedScale: ok")
+		return ClusterScale{}, true
+	}
+
+	return ClusterScale{
+		CpuLimit:  getMinValue(scale1.CpuLimit, scale2.CpuLimit),
+		NodeLimit: getMinValue(scale1.NodeLimit, scale1.NodeLimit),
+	}, false
+}
+
+func CountClusterNodesAndCPUs(ctx context.Context, client client.Client) (ClusterScale, error) {
+	var clusterScale ClusterScale
+	totalNodesResource := NewTotalNodesResource(`\w+\.com/gpu`)
+
+	nodeList := &corev1.NodeList{}
+	err := client.List(ctx, nodeList)
+	if err != nil {
+		return clusterScale, err
+	}
+
+	var wg sync.WaitGroup
+	for _, node := range nodeList.Items {
+		wg.Add(1)
+		go totalNodesResource.GetGPUCPUMemoryResource(&node, &wg)
+	}
+	wg.Wait()
+	clusterScale.CpuLimit = totalNodesResource.TotalCPU.Value()
+	clusterScale.NodeLimit = int64(len(nodeList.Items))
+	return clusterScale, nil
 }

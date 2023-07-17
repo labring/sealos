@@ -19,3 +19,14 @@ kind: ConfigMap
 metadata:
   name: cloud-license-history
   namespace: cloud-system
+---
+apiVersion: cloud.sealos.io/v1
+kind: Launcher
+metadata:
+  labels:
+    external-network-access: disabled
+  name: cloud-start
+  namespace: cloud-system
+spec:
+  description: This YAML file is responsible for launching the entire cloud module.
+  name: Cloud-Launcher
