@@ -23,9 +23,10 @@ import (
 	"strconv"
 	"time"
 
+	"golang.org/x/exp/rand"
+
 	utilcontroller "github.com/labring/operator-sdk/controller"
 	"github.com/labring/operator-sdk/hash"
-
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
 	"github.com/labring/sealos/controllers/user/controllers/helper/kubeconfig"
 
@@ -67,7 +68,9 @@ type UserReconciler struct {
 	config   *rest.Config
 	*runtime.Scheme
 	client.Client
-	finalizer *utilcontroller.Finalizer
+	finalizer          *utilcontroller.Finalizer
+	minRequeueDuration time.Duration
+	maxRequeueDuration time.Duration
 }
 
 type ctxKey string
@@ -109,7 +112,8 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts utilcontroller.RateLimiterOptions) error {
+func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts utilcontroller.RateLimiterOptions,
+	minRequeueDuration time.Duration, maxRequeueDuration time.Duration) error {
 	const controllerName = "user_controller"
 	if r.Client == nil {
 		r.Client = mgr.GetClient()
@@ -125,6 +129,8 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts utilcontroller.
 	r.cache = mgr.GetCache()
 	r.config = mgr.GetConfig()
 	r.Logger.V(1).Info("init reconcile controller user")
+	r.minRequeueDuration = minRequeueDuration
+	r.maxRequeueDuration = maxRequeueDuration
 	owner := &handler.EnqueueRequestForOwner{OwnerType: &userv1.User{}, IsController: true}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}, builder.WithPredicates(
@@ -174,7 +180,7 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 		r.Recorder.Eventf(user, v1.EventTypeWarning, "SyncStatus", "Sync status %s is error: %v", user.Name, err)
 		return ctrl.Result{}, err
 	}
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: RandTimeDurationBetween(r.minRequeueDuration, r.maxRequeueDuration)}, nil
 }
 
 func (r *UserReconciler) initStatus(ctx context.Context, user *userv1.User) context.Context {
@@ -594,4 +600,15 @@ func (r *UserReconciler) updateStatus(ctx context.Context, nn types.NamespacedNa
 		original.Status = *status
 		return r.Client.Status().Update(ctx, original)
 	})
+}
+
+// RandTimeDurationBetween get a random time duration between min and max
+func RandTimeDurationBetween(min, max time.Duration) time.Duration {
+	if min >= max {
+		return min
+	}
+	minInNano := min.Nanoseconds()
+	maxInNano := max.Nanoseconds()
+	randDurationInNano := rand.Int63n(maxInNano-minInNano) + minInNano
+	return time.Duration(randDurationInNano) * time.Nanosecond
 }
