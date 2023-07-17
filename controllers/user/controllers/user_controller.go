@@ -20,13 +20,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"strconv"
 	"time"
 
+	"golang.org/x/exp/rand"
+
 	utilcontroller "github.com/labring/operator-sdk/controller"
 	"github.com/labring/operator-sdk/hash"
-
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
 	"github.com/labring/sealos/controllers/user/controllers/helper/kubeconfig"
 
