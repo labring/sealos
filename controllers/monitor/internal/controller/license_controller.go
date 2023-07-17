@@ -67,8 +67,8 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	var canConnectToExternalNetwork bool
 	var (
-		readOperations  util.ReadOperationList
-		writeOperations util.ReadOperationList
+		readOperations  cloud.ReadOperationList
+		writeOperations cloud.ReadOperationList
 	)
 	var (
 		license        cloudv1.License
@@ -86,22 +86,22 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	//canConnectToExternalNetwork = os.Getenv(string(cloud.NetWorkEnv)) == cloud.TRUE
 	canConnectToExternalNetwork = false
 	// execute read event
-	(&util.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
+	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
 		WithTag(types.NamespacedName{Namespace: req.Namespace, Name: string(cloud.LicenseName)}).
 		WithObject(&license).AddToList(&readOperations)
-	(&util.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
+	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
 		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UidSecretName)}).
 		WithObject(&uidSecret).AddToList(&readOperations)
-	(&util.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
+	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
 		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UrlConfigName)}).
 		WithObject(&urlConfig).AddToList(&readOperations)
-	(&util.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
+	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
 		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.LicenseHistory)}).
 		WithObject(&licenseHistory).AddToList(&readOperations)
-	(&util.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
-		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ScaleSecretName)}).
+	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
+		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ClusterScaleSecretName)}).
 		WithObject(&clusterLimit).WithCallback(func() error {
-		clusterLimit.SetName(string(cloud.ScaleSecretName))
+		clusterLimit.SetName(string(cloud.ClusterScaleSecretName))
 		clusterLimit.SetNamespace(string(cloud.Namespace))
 		clusterLimit.SetLabels(map[string]string{})
 		return r.Client.Create(ctx, &clusterLimit)
@@ -143,7 +143,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// recharge
-	(&util.WriteEventBuilder{}).WithCallback(func() error {
+	(&cloud.WriteEventBuilder{}).WithCallback(func() error {
 		err := cloud.RechargeByLicense(ctx, r.Client, r.logger, account, payload)
 		if err != nil {
 			pack := cloud.NewNotificationPackage(cloud.RechargeFailedTitle, cloud.SEALOS, cloud.RechargeFailedContent)
@@ -156,21 +156,21 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}).AddToList(&writeOperations)
 
 	// limit the scale
-	(&util.WriteEventBuilder{}).WithCallback(func() error {
+	(&cloud.WriteEventBuilder{}).WithCallback(func() error {
 		return cloud.AdjustScaleOfCluster(ctx, r.Client, r.logger, license, clusterLimit, payload)
 	}).AddToList(&writeOperations)
 
 	// expand the scale of cluster
-	(&util.WriteEventBuilder{}).WithCallback(func() error {
+	(&cloud.WriteEventBuilder{}).WithCallback(func() error {
 		return cloud.ExpandScaleOfClusterTemp(ctx, r.Client, r.logger, license, clusterLimit, payload)
 	}).AddToList(&writeOperations)
 
 	// record
-	(&util.WriteEventBuilder{}).WithCallback(func() error {
+	(&cloud.WriteEventBuilder{}).WithCallback(func() error {
 		return cloud.RecordLicense(ctx, r.Client, r.logger, license, licenseHistory)
 	}).AddToList(&writeOperations)
 
-	(&util.WriteEventBuilder{}).WithCallback(func() error {
+	(&cloud.WriteEventBuilder{}).WithCallback(func() error {
 		return r.Client.Delete(ctx, &license)
 	}).AddToList(&writeOperations)
 

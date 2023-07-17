@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 
 	"github.com/go-logr/logr"
-	"github.com/labring/sealos/controllers/monitor/internal/controller/util"
 	cloud "github.com/labring/sealos/controllers/monitor/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -57,20 +56,20 @@ func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	clusterExpectScaleInfo := corev1.Secret{}
 	currentClusterScale := corev1.Secret{}
-	readEventOperations := util.ReadOperationList{}
-	writeEventOperations := util.WriteOperationList{}
+	readEventOperations := cloud.ReadOperationList{}
+	writeEventOperations := cloud.WriteOperationList{}
 
-	(&util.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
+	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
 		WithTag(req.NamespacedName).AddToList(&readEventOperations)
 
-	(&util.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
+	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
 		WithTag(
 			types.NamespacedName{
 				Namespace: string(cloud.Namespace),
-				Name:      string(cloud.CurrentScaleSecretName),
+				Name:      string(cloud.ExpectScaleSecretName),
 			}).
 		WithCallback(func() error {
-			currentClusterScale.SetName(string(cloud.CurrentScaleSecretName))
+			currentClusterScale.SetName(string(cloud.ExpectScaleSecretName))
 			currentClusterScale.SetNamespace(string(cloud.Namespace))
 			return r.Client.Create(ctx, &currentClusterScale)
 		}).AddToList(&readEventOperations)
@@ -93,11 +92,11 @@ func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, err
 	}
 
-	(&util.WriteEventBuilder{}).WithCallback(func() error {
+	(&cloud.WriteEventBuilder{}).WithCallback(func() error {
 		if currentClusterScale.Data == nil {
 			currentClusterScale.Data = make(map[string][]byte)
 		}
-		currentClusterScale.Data[string(cloud.CurrentScaleSecretName)] = expectString
+		currentClusterScale.Data[string(cloud.ExpectScaleSecretKey)] = expectString
 		return r.Client.Update(ctx, &clusterExpectScaleInfo)
 	})
 
@@ -109,7 +108,7 @@ func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request
 func (r *ScaleMonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("ScaleMonitorReconcile")
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
-		return object.GetName() == string(cloud.ScaleSecretName) &&
+		return object.GetName() == string(cloud.ClusterScaleSecretName) &&
 			object.GetNamespace() == string(cloud.Namespace)
 	})
 	return ctrl.NewControllerManagedBy(mgr).

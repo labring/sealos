@@ -41,8 +41,11 @@ const Key = "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUV
 
 const (
 	Namespace              Resource = "cloud-system"
-	ScaleSecretName        Resource = "cluster-scale"
-	CurrentScaleSecretName Resource = "current-cluster-scale"
+	ClusterScaleSecretName Resource = "cluster-scale"
+	ExpectScaleSecretName  Resource = "expect-scale"
+	ExpectScaleSecretKey   Resource = "expect"
+	ActualScaleSecretName  Resource = "actual-scale"
+	ActualScaleSecretKey   Resource = "actual"
 	LicenseHistory         Resource = "cloud-license-history"
 	LicenseName            Resource = "license"
 	UidSecretName          Resource = "cloud-secret"
