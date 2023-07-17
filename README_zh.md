@@ -19,7 +19,7 @@
 
 <br />
 
-[![discord](https://theme.zdassets.com/theme_assets/678183/cc59daa07820943e943c2fc283b9079d7003ff76.svg)](https://discord.gg/eHyXHtSE)
+[![discord](https://theme.zdassets.com/theme_assets/678183/cc59daa07820943e943c2fc283b9079d7003ff76.svg)](https://discord.gg/qzBmGGZGk7)
 
 </div>
 
@@ -78,7 +78,7 @@ Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以
 
   ![](/docs/4.0/img/sealos-qr-code-300.png)
 
-- 💬 加入我们的 [Discord服务器](https://discord.gg/eHyXHtSE)，与 Sealos 开发者和终端用户进行交流。这是了解 Sealos 和 Kubernetes 以及提问和分享经验的理想之地。
+- 💬 加入我们的 [Discord服务器](https://discord.gg/qzBmGGZGk7)，与 Sealos 开发者和终端用户进行交流。这是了解 Sealos 和 Kubernetes 以及提问和分享经验的理想之地。
 
 - 🐦 在 [Twitter](https://twitter.com/sealosio) 上关注我们。
 
