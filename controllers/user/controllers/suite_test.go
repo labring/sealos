@@ -31,11 +31,14 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	v1 "github.com/labring/sealos/controllers/user/api/v1"
 	"k8s.io/client-go/tools/clientcmd"
+
+	v1 "github.com/labring/sealos/controllers/user/api/v1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -69,6 +72,9 @@ var _ = BeforeSuite(func() {
 	Expect(cfg).NotTo(BeNil())
 
 	err = csrv1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = userv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme

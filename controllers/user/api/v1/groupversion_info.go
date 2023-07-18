@@ -40,6 +40,7 @@ var (
 
 const (
 	UserAnnotationOwnerKey   = "user.sealos.io/creator"
+	UserLabelOwnerKey        = "user.sealos.io/groupowner"
 	UserAnnotationDisplayKey = "user.sealos.io/display-name"
 )
 
