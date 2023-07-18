@@ -119,7 +119,7 @@ const useAppStore = create<TOSState>()(
           });
         },
 
-        openApp: async (app: TApp, _query) => {
+        openApp: async (app: TApp, { query, raw, pathname = '/' } = {}) => {
           const zIndex = get().maxZIndex + 1;
           // debugger
           // 未支持多实例
@@ -143,9 +143,8 @@ const useAppStore = create<TOSState>()(
           _app.size = 'maximize';
           _app.isShow = true;
           // add query to url
-          if (_app.data?.url && _query) {
-            const { query, raw } = _query;
-            if (query) _app.data.url = formatUrl(_app.data.url, query);
+          if (_app.data?.url) {
+            if (query) _app.data.url = formatUrl(_app.data.url + pathname, query);
             else if (raw) {
               _app.data.url += `?${raw}`;
             }
