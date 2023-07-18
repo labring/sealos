@@ -53,6 +53,7 @@ type TransferReconciler struct {
 //+kubebuilder:rbac:groups=account.sealos.io,resources=transfers,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=transfers/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=account.sealos.io,resources=transfers/finalizers,verbs=update
+//+kubebuilder:rbac:groups=notification.sealos.io,resources=notifications,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -161,6 +162,7 @@ func (r *TransferReconciler) sendNotice(ctx context.Context, namespace string, u
 			Title:      "Transfer Notice",
 			Message:    fmt.Sprintf(transferNotification[_type], GetUserNamespace(getUsername(user)), convertAmount(amount)),
 			From:       "Account-System",
+			Timestamp:  now,
 			Importance: v1.Low,
 		},
 	}
