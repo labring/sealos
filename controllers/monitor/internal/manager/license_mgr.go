@@ -33,6 +33,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -229,8 +230,8 @@ func (web *WriteEventBuilder) Execute() error {
 	return fmt.Errorf("WriteEventBuilder excute error: %s", "value can't be nil")
 }
 
-func (reb *WriteEventBuilder) AddToList(list *ReadOperationList) *ReadOperationList {
-	list.readOperations = append(list.readOperations, reb)
+func (reb *WriteEventBuilder) AddToList(list *WriteOperationList) *WriteOperationList {
+	list.writeOperations = append(list.writeOperations, reb)
 	return list
 }
 
@@ -562,6 +563,33 @@ func CheckLicenseExists(configMap *corev1.ConfigMap, license string) bool {
 	return false
 }
 
+var logger logr.Logger
+
+func init() {
+	logger = ctrl.Log.WithName("ReSyncForClusterScale")
+}
+
+type MonitorScale struct {
+	client.Client
+}
+
+func (ms *MonitorScale) Start(ctx context.Context) error {
+	var en chan error
+	en = make(chan error)
+	callback := func() error {
+		return ReSyncForClusterScale(ctx, ms.Client)
+	}
+	go ReSync(en, callback)
+	go func() {
+		for err := range en {
+			if err != nil {
+				logger.Error(err, "failed to check for cluster scale")
+			}
+		}
+	}()
+	return nil
+}
+
 func ReSync(errchan chan<- error, cb func() error) {
 	for {
 		err := cb()
@@ -581,13 +609,23 @@ func ReSyncForClusterScale(ctx context.Context, client client.Client) error {
 		clusterTotalScale  corev1.Secret
 	)
 	var readEventOperations ReadOperationList
+
+	trigger := func() error {
+		if clusterTotalScale.Labels == nil {
+			clusterTotalScale.Labels = make(map[string]string)
+		}
+		clusterTotalScale.Labels["lastEventDate"] = time.Now().UTC().Format("20060102150405")
+
+		return client.Update(ctx, &clusterTotalScale)
+	}
+
 	cs, err := CountClusterNodesAndCPUs(ctx, client)
 	if err != nil {
 		return fmt.Errorf("CountClusterNodesAndCPUs: %w", err)
 	}
 
 	bytes, err := json.Marshal(cs)
-	fmt.Printf("the actual cluster scale: %s", string(bytes))
+	fmt.Printf("the actual cluster scale: %s\n", string(bytes))
 	if err != nil {
 		return err
 	}
@@ -600,22 +638,28 @@ func ReSyncForClusterScale(ctx context.Context, client client.Client) error {
 			actualClusterScale.SetNamespace(string(Namespace))
 			return client.Create(ctx, &actualClusterScale)
 		}).AddToList(&readEventOperations)
-	(&ReadEventBuilder{}).WithContext(ctx).WithClient(client).WithObject(&expectClusterScale).
+	(&ReadEventBuilder{}).WithContext(ctx).WithClient(client).WithObject(&clusterTotalScale).
 		WithTag(types.NamespacedName{Namespace: string(Namespace), Name: string(ClusterScaleSecretName)}).
 		AddToList(&readEventOperations)
-	(&ReadEventBuilder{}).WithContext(ctx).WithClient(client).WithObject(&clusterTotalScale).
+	(&ReadEventBuilder{}).WithContext(ctx).WithClient(client).WithObject(&expectClusterScale).
 		WithTag(types.NamespacedName{Namespace: string(Namespace), Name: string(ExpectScaleSecretName)}).
 		AddToList(&readEventOperations)
+
 	err = readEventOperations.Execute()
 	if err != nil {
 		return err
+	}
+
+	if actualClusterScale.Data == nil {
+		actualClusterScale.Data = make(map[string][]byte)
 	}
 	actualClusterScale.Data[string(ActualScaleSecretKey)] = bytes
 	err = client.Update(ctx, &actualClusterScale)
 	if err != nil {
 		return fmt.Errorf("failed to update actual cluster resource: %w", err)
 	}
-	err = CheckExpectedScale(ctx, client, expectClusterScale, clusterTotalScale)
+
+	err = CheckExpectedScale(ctx, client, expectClusterScale, clusterTotalScale, trigger)
 	if err != nil {
 		return fmt.Errorf("CheckExpectedScale: %w", err)
 	}
@@ -625,58 +669,42 @@ func ReSyncForClusterScale(ctx context.Context, client client.Client) error {
 
 // ce: current expect cluster scale
 // cs: cluster total scale
-func CheckExpectedScale(ctx context.Context, client client.Client, ce corev1.Secret, cs corev1.Secret) error {
+func CheckExpectedScale(ctx context.Context, client client.Client, ce corev1.Secret, cs corev1.Secret, trigger func() error) error {
 	var currentExpectScale ClusterScale
 	var expectScale ClusterScale
 	err := json.Unmarshal(ce.Data[string(ExpectScaleSecretKey)], &currentExpectScale)
 	if err != nil {
-		return err
+		logger.Info("triggered when json parse failed")
+		return trigger()
 	}
 	res, err := ParseScaleData(cs.Data)
 	if err != nil {
-		return err
+		logger.Info("triggered when parse scale data failed")
+		return trigger()
 	}
-	expectScale = GetCurrentScale(res, GetScaleOfMaxNodes, GetScaleOfMaxCpu)
-
-	actualExpectScale, ok := checkExpectedScale(currentExpectScale, expectScale)
 
 	bytes, err := json.Marshal(currentExpectScale)
-	fmt.Printf("currentExpectScale: %s", string(bytes))
+	fmt.Printf("currentExpectScale: %s\n", string(bytes))
+
+	expectScale = GetCurrentScale(res, GetScaleOfMaxNodes, GetScaleOfMaxCpu)
+
+	ok := isConsistent(currentExpectScale, expectScale)
 
 	if !ok {
-		if ce.Data == nil {
-			ce.Data = make(map[string][]byte)
-		}
-		bytes, err := json.Marshal(actualExpectScale)
-		if err != nil {
-			return err
-		}
-		fmt.Println("actual: ", string(bytes))
-		ce.Data[string(ExpectScaleSecretKey)] = bytes
-		return client.Update(ctx, &ce)
+		logger.Info("triggered when check cluster scale")
+		return trigger()
 	}
 
 	return nil
 }
 
-func checkExpectedScale(scale1 ClusterScale, scale2 ClusterScale) (ClusterScale, bool) {
-	getMinValue := func(a int64, b int64) int64 {
-		if a > b {
-			return b
-		}
-		return a
-	}
-
+func isConsistent(scale1 ClusterScale, scale2 ClusterScale) bool {
 	if scale1.CpuLimit == scale2.CpuLimit &&
 		scale1.NodeLimit == scale2.NodeLimit {
 		fmt.Println("checkExpectedScale: ok")
-		return ClusterScale{}, true
+		return true
 	}
-
-	return ClusterScale{
-		CpuLimit:  getMinValue(scale1.CpuLimit, scale2.CpuLimit),
-		NodeLimit: getMinValue(scale1.NodeLimit, scale1.NodeLimit),
-	}, false
+	return false
 }
 
 func CountClusterNodesAndCPUs(ctx context.Context, client client.Client) (ClusterScale, error) {

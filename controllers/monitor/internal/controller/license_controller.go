@@ -68,7 +68,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	var canConnectToExternalNetwork bool
 	var (
 		readOperations  cloud.ReadOperationList
-		writeOperations cloud.ReadOperationList
+		writeOperations cloud.WriteOperationList
 	)
 	var (
 		license        cloudv1.License
