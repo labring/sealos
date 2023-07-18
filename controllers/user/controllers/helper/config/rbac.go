@@ -18,6 +18,7 @@ package config
 
 import (
 	"fmt"
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"os"
 
 	rbacV1 "k8s.io/api/rbac/v1"
@@ -45,14 +46,46 @@ func GetUsersNamespace(user string) string {
 	return fmt.Sprintf("ns-%s", user)
 }
 
-func GetUserRole() []rbacV1.PolicyRule {
-	return []rbacV1.PolicyRule{
-		{
-			APIGroups: []string{"*"},
-			Resources: []string{"*"},
-			Verbs:     []string{"*"},
-		},
+func GetUserRole(roletype userv1.UserRoleType) []rbacV1.PolicyRule {
+	//TODO 权限这里不知道设置些什么
+	switch roletype {
+	case userv1.Owner:
+		return []rbacV1.PolicyRule{
+			{
+				APIGroups: []string{"*"},
+				Resources: []string{"*"},
+				Verbs:     []string{"*"},
+			},
+		}
+	case userv1.Manager:
+		return []rbacV1.PolicyRule{
+			{
+				APIGroups: []string{"*"},
+				Resources: []string{"*"},
+				Verbs:     []string{"*"},
+			},
+		}
+	case userv1.Developer:
+		return []rbacV1.PolicyRule{
+			{
+				APIGroups: []string{"*"},
+				Resources: []string{"*"},
+				Verbs:     []string{"list", "get", "watch"},
+			},
+		}
+	default:
+		return []rbacV1.PolicyRule{
+			{
+				APIGroups: []string{"*"},
+				Resources: []string{"*"},
+				Verbs:     []string{"*"},
+			},
+		}
 	}
+}
+
+func GetGroupRoleBindingName(sa string) string {
+	return fmt.Sprintf("group-%s", sa)
 }
 
 func GetNewUsersSubject(user string) []rbacV1.Subject {

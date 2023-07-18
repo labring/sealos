@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	v12 "k8s.io/api/rbac/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -58,7 +58,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-var userAnnotationOwnerKey = userv1.UserAnnotationOwnerKey
+var (
+	userAnnotationOwnerKey = userv1.UserAnnotationOwnerKey
+	userLabelOwnerKey      = userv1.UserLabelOwnerKey
+)
 
 // UserReconciler reconciles a User object
 type UserReconciler struct {
@@ -136,8 +139,8 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts utilcontroller.
 		For(&userv1.User{}, builder.WithPredicates(
 			predicate.Or(predicate.GenerationChangedPredicate{}))).
 		Watches(&source.Kind{Type: &v1.ServiceAccount{}}, owner).
-		Watches(&source.Kind{Type: &v12.Role{}}, owner).
-		Watches(&source.Kind{Type: &v12.RoleBinding{}}, owner).
+		Watches(&source.Kind{Type: &rbacv1.Role{}}, owner).
+		Watches(&source.Kind{Type: &rbacv1.RoleBinding{}}, owner).
 		WithOptions(kubecontroller.Options{
 			MaxConcurrentReconciles: utilcontroller.GetConcurrent(opts),
 			RateLimiter:             utilcontroller.GetRateLimiter(opts),
@@ -160,11 +163,11 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 
 	pipelines := []func(ctx context.Context, user *userv1.User) context.Context{
 		r.initStatus,
-		r.syncNamespace,
+		r.syncNamespace, //这个要改
 		r.syncServiceAccount,
 		r.syncServiceAccountSecrets,
 		r.syncKubeConfig,
-		r.syncRole,
+		r.syncRole, //这个要改
 		r.syncRoleBinding,
 		r.syncFinalStatus,
 	}
@@ -234,6 +237,13 @@ func (r *UserReconciler) syncNamespace(ctx context.Context, user *userv1.User) c
 		}
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, ns, func() error {
 			ns.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
+			//给ns添加label，owner字段
+			//-----------------------------------
+			if user.Spec.Owner != user.Name {
+				ns.Labels = map[string]string{userLabelOwnerKey: user.Spec.Owner}
+			}
+			//TODO 咋感觉我写出来的就很low的样子
+			//-----------------------------------
 			ns.Labels = config.SetPodSecurity(ns.Labels)
 			ns.SetOwnerReferences([]metav1.OwnerReference{})
 			return controllerutil.SetControllerReference(user, ns, r.Scheme)
@@ -266,29 +276,67 @@ func (r *UserReconciler) syncRole(ctx context.Context, user *userv1.User) contex
 			r.saveCondition(user, roleCondition.DeepCopy())
 		}
 	}()
+	//if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+	//	var change controllerutil.OperationResult
+	//	var err error
+	//	role := &rbacv1.Role{}
+	//	role.Name = user.Name
+	//	role.Namespace = config.GetUsersNamespace(user.Name)
+	//	role.Labels = map[string]string{}
+	//	if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, role, func() error {
+	//		role.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
+	//		role.Rules = config.GetUserRole("")
+	//		return controllerutil.SetControllerReference(user, role, r.Scheme)
+	//	}); err != nil {
+	//		return fmt.Errorf("unable to create namespace role by User: %w", err)
+	//	}
+	//	r.Logger.V(1).Info("create or update namespace role  by User", "OperationResult", change)
+	//	roleCondition.Message = fmt.Sprintf("sync namespace role %s/%s successfully", role.Name, role.ResourceVersion)
+	//	return nil
+	//}); err != nil {
+	//	helper.SetConditionError(roleCondition, "SyncUserError", err)
+	//	r.Recorder.Eventf(user, v1.EventTypeWarning, "syncUserRole", "Sync User namespace role %s is error: %v", user.Name, err)
+	//}
+	r.createRole(ctx, roleCondition, user, "")
+	//如果是创建group，就创建三个role
+	if user.Spec.Owner != user.Name {
+		r.createRole(ctx, roleCondition, user, userv1.Owner)
+		r.createRole(ctx, roleCondition, user, userv1.Manager)
+		r.createRole(ctx, roleCondition, user, userv1.Developer)
+	}
+
+	return ctx
+}
+
+func (r *UserReconciler) createRole(ctx context.Context, condition *userv1.Condition, user *userv1.User, roletype userv1.UserRoleType) {
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		var change controllerutil.OperationResult
 		var err error
-		role := &v12.Role{}
-		role.Name = user.Name
+		role := &rbacv1.Role{}
+		if roletype == "" {
+			role.Name = user.Name
+		} else {
+			role.Name = string(roletype)
+		}
 		role.Namespace = config.GetUsersNamespace(user.Name)
-		role.Labels = map[string]string{}
+		//role.Labels = map[string]string{} TODO 这行代码应该没必要了吧
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, role, func() error {
 			role.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
-			role.Rules = config.GetUserRole()
+			role.Labels = map[string]string{userLabelOwnerKey: user.Spec.Owner}
+			role.Rules = config.GetUserRole(roletype)
 			return controllerutil.SetControllerReference(user, role, r.Scheme)
 		}); err != nil {
-			return fmt.Errorf("unable to create namespace role by User: %w", err)
+			return fmt.Errorf("unable to create namespace role: %w", err)
 		}
-		r.Logger.V(1).Info("create or update namespace role  by User", "OperationResult", change)
-		roleCondition.Message = fmt.Sprintf("sync namespace role %s/%s successfully", role.Name, role.ResourceVersion)
+		r.Logger.V(1).Info("create or update namespace role", "OperationResult", change)
+		condition.Message = fmt.Sprintf("sync namespace role %s/%s successfully", role.Name, role.ResourceVersion)
 		return nil
 	}); err != nil {
-		helper.SetConditionError(roleCondition, "SyncUserError", err)
-		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncUserRole", "Sync User namespace role %s is error: %v", user.Name, err)
+		helper.SetConditionError(condition, "SyncUserRoleError", err)
+		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncUserRole", "Sync User %s namespace role is error: %v", user.Name, err)
 	}
-	return ctx
 }
+
 func (r *UserReconciler) syncRoleBinding(ctx context.Context, user *userv1.User) context.Context {
 	roleBindingConditionType := userv1.ConditionType("RoleBindingSyncReady")
 	rbCondition := &userv1.Condition{
@@ -308,16 +356,16 @@ func (r *UserReconciler) syncRoleBinding(ctx context.Context, user *userv1.User)
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		var change controllerutil.OperationResult
 		var err error
-		roleBinding := &v12.RoleBinding{}
+		roleBinding := &rbacv1.RoleBinding{}
 		roleBinding.Name = user.Name
 		roleBinding.Namespace = config.GetUsersNamespace(user.Name)
 		roleBinding.Labels = map[string]string{}
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, roleBinding, func() error {
 			roleBinding.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
-			roleBinding.RoleRef = v12.RoleRef{
-				APIGroup: v12.GroupName,
+			roleBinding.RoleRef = rbacv1.RoleRef{
+				APIGroup: rbacv1.GroupName,
 				Kind:     "Role",
-				Name:     user.Name,
+				Name:     user.Name, //TODO 这边说是改成string(userv1.Owner)
 			}
 			roleBinding.Subjects = config.GetNewUsersSubject(user.Name)
 			return controllerutil.SetControllerReference(user, roleBinding, r.Scheme)
