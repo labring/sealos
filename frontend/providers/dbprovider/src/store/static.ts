@@ -1,4 +1,4 @@
-import { getResourcePrice, getDBVersionMap } from '@/api/platform';
+import { getResourcePrice, getDBVersionMap, getAppEnv } from '@/api/platform';
 import type { Response as resourcePriceResponse } from '@/pages/api/platform/resourcePrice';
 import { DBTypeEnum } from '@/constants/db';
 import type { Response as DBVersionMapType } from '@/pages/api/platform/getVersion';
@@ -9,11 +9,12 @@ export let SOURCE_PRICE: resourcePriceResponse = {
   storage: 0.002048
 };
 export let StorageClassName: string | undefined;
+export let Domain: string | undefined;
 export let INSTALL_ACCOUNT = false;
 
 let retryGetPrice = 3;
 let retryVersion = 3;
-
+let retryGetEnv = 3 
 export let DBVersionMap: DBVersionMapType = {
   [DBTypeEnum.postgresql]: [{ id: 'postgresql-14.8.0', label: 'postgresql-14.8.0' }],
   [DBTypeEnum.mongodb]: [{ id: 'mongodb-5.0.14', label: 'mongodb-5.0.14' }],
@@ -35,7 +36,20 @@ export const getUserPrice = async () => {
     }
   }
 };
-
+export const getEnv = async () => {
+	try {
+		const res = await getAppEnv()
+		StorageClassName = res.env_storage_className;
+		Domain = res.domain;
+	} catch {
+		retryGetEnv--;
+		if (retryGetEnv >= 0) {
+			setTimeout(() => {
+				getEnv();
+			}, 1000);
+		}
+	}
+}
 export const getDBVersion = async () => {
   try {
     const res = await getDBVersionMap();
@@ -50,6 +64,3 @@ export const getDBVersion = async () => {
   }
 };
 
-export const updateStorageClassName = (val?: string) => {
-  StorageClassName = val;
-};

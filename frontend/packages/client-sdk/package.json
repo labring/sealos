@@ -1,0 +1,57 @@
+{
+  "name": "sealos-desktop-sdk",
+  "version": "0.1.14",
+  "description": "sealos desktop sdk",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup -c",
+    "dev": "rollup -c -w"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./master": {
+      "import": "./dist/master.esm.js",
+      "require": "./dist/master.js",
+      "types": "./dist/master.d.ts"
+    },
+    "./app": {
+      "import": "./dist/app.esm.js",
+      "require": "./dist/app.js",
+      "types": "./dist/app.d.ts"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "master": [
+        "./dist/master.d.ts"
+      ],
+      "app": [
+        "./dist/app.d.ts"
+      ],
+      "*": [
+        "./dist/index.d.ts"
+      ]
+    }
+  },
+  "keywords": [],
+  "author": "lizhenq2009@gmail.com",
+  "license": "ISC",
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^11.1.2",
+    "@types/js-cookie": "^3.0.3",
+    "@types/uuid": "^9.0.2",
+    "rollup": "2.79.1",
+    "rollup-plugin-copy": "^3.4.0",
+    "rollup-plugin-dts": "^4.2.3",
+    "tslib": "^2.6.0"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "js-cookie": "^3.0.5",
+    "uuid": "^9.0.0"
+  }
+}
