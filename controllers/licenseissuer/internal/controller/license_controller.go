@@ -22,9 +22,9 @@ import (
 
 	"github.com/go-logr/logr"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	cloudv1 "github.com/labring/sealos/controllers/monitor/api/v1"
-	"github.com/labring/sealos/controllers/monitor/internal/controller/util"
-	cloud "github.com/labring/sealos/controllers/monitor/internal/manager"
+	cloudv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
+	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
+	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -84,17 +84,17 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		payload map[string]interface{}
 	)
 
-	canConnectToExternalNetwork = os.Getenv(string(cloud.NetWorkEnv)) == cloud.TRUE
+	canConnectToExternalNetwork = os.Getenv(cloud.NetWorkEnv) == cloud.TRUE
 
 	// execute read event
 	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
 		WithTag(types.NamespacedName{Namespace: req.Namespace, Name: string(cloud.LicenseName)}).
 		WithObject(&license).AddToList(&readOperations)
 	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
-		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UidSecretName)}).
+		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UIDSecretName)}).
 		WithObject(&uidSecret).AddToList(&readOperations)
 	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
-		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UrlConfigName)}).
+		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.URLConfigName)}).
 		WithObject(&urlConfig).AddToList(&readOperations)
 	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
 		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.LicenseHistory)}).
@@ -120,7 +120,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// security judgement before write
-	config, err := util.ReadConfigFromConfigMap(string(cloud.UrlConfigName), &urlConfig)
+	config, err := util.ReadConfigFromConfigMap(string(cloud.URLConfigName), &urlConfig)
 	if err != nil {
 		r.logger.Error(err, "failed to read url config")
 		return ctrl.Result{}, err
@@ -158,12 +158,12 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// limit the scale
 	(&cloud.WriteEventBuilder{}).WithCallback(func() error {
-		return cloud.AdjustScaleOfCluster(ctx, r.Client, r.logger, license, clusterLimit, payload)
+		return cloud.AdjustScaleOfCluster(ctx, r.Client, clusterLimit, payload)
 	}).AddToList(&writeOperations)
 
 	// expand the scale of cluster
 	(&cloud.WriteEventBuilder{}).WithCallback(func() error {
-		return cloud.ExpandScaleOfClusterTemp(ctx, r.Client, r.logger, license, clusterLimit, payload)
+		return cloud.ExpandScaleOfClusterTemp(ctx, r.Client, clusterLimit, payload)
 	}).AddToList(&writeOperations)
 
 	// record

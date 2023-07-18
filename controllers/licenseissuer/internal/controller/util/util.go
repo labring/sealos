@@ -27,8 +27,8 @@ import (
 
 	"github.com/go-logr/logr"
 	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
-	cloudv1 "github.com/labring/sealos/controllers/monitor/api/v1"
-	cloud "github.com/labring/sealos/controllers/monitor/internal/manager"
+	cloudv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
+	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"

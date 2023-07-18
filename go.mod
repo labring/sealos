@@ -28,7 +28,7 @@ require (
 	github.com/labring/lvscare v0.0.0
 	github.com/labring/sealos/controllers/account v0.0.0
 	github.com/labring/sealos/controllers/imagehub v0.0.0
-	github.com/labring/sealos/controllers/monitor v0.0.0-00010101000000-000000000000
+	github.com/labring/sealos/controllers/licenseissuer v0.0.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/modood/table v0.0.0-20220527013332-8d47e76dad33
 	github.com/onsi/ginkgo v1.16.5
@@ -303,6 +303,6 @@ replace (
 	github.com/labring/sealos => ./
 	github.com/labring/sealos/controllers/account => ./controllers/account
 	github.com/labring/sealos/controllers/imagehub => ./controllers/imagehub
-	github.com/labring/sealos/controllers/monitor => ./controllers/monitor
+	github.com/labring/sealos/controllers/licenseissuer => ./controllers/licenseissuer
 	github.com/labring/sealos/controllers/user => ./controllers/user
 )

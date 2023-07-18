@@ -1,4 +1,4 @@
-module github.com/labring/sealos/controllers/monitor
+module github.com/labring/sealos/controllers/licenseissuer
 
 go 1.19
 
@@ -81,7 +81,7 @@ replace (
 	github.com/labring/sealos => ../../
 	github.com/labring/sealos/controllers/account => ../../controllers/account
 	github.com/labring/sealos/controllers/common => ../../controllers/common
-	github.com/labring/sealos/controllers/monitor => ../../controllers/monitor
+	github.com/labring/sealos/controllers/licenseissuer => ../../controllers/licenseissuer
 	github.com/labring/sealos/controllers/pkg => ../../controllers/pkg
 	github.com/labring/sealos/controllers/user => ../../controllers/user
 )

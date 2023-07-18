@@ -30,7 +30,7 @@ import (
 	"strconv"
 
 	jwt "github.com/golang-jwt/jwt/v4"
-	v1 "github.com/labring/sealos/controllers/monitor/api/v1"
+	v1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 )
 
 var encryptionKey = []byte("0123456789ABCDEF0123456789ABCDEF")

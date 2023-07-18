@@ -22,7 +22,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	cloud "github.com/labring/sealos/controllers/monitor/internal/manager"
+	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -113,7 +113,7 @@ func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		})
 	}
 
-	expectScale := cloud.GetCurrentScale(res, cloud.GetScaleOfMaxCpu, cloud.GetScaleOfMaxNodes)
+	expectScale := cloud.GetCurrentScale(res, cloud.GetScaleOfMaxCPU, cloud.GetScaleOfMaxNodes)
 
 	expectString, err := json.Marshal(expectScale)
 	if err != nil {
