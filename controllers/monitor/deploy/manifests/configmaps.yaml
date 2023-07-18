@@ -30,3 +30,13 @@ metadata:
 spec:
   description: This YAML file is responsible for launching the entire cloud module.
   name: Cloud-Launcher
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: env
+  namespace: cloud-system
+type: Opaque
+data:
+  canConnectToExternalNetwork: dHJ1ZQ==
+  isMonitor: dHJ1ZQ==

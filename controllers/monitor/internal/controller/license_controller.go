@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"os"
 
 	"github.com/go-logr/logr"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
@@ -83,8 +84,8 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		payload map[string]interface{}
 	)
 
-	//canConnectToExternalNetwork = os.Getenv(string(cloud.NetWorkEnv)) == cloud.TRUE
-	canConnectToExternalNetwork = false
+	canConnectToExternalNetwork = os.Getenv(string(cloud.NetWorkEnv)) == cloud.TRUE
+
 	// execute read event
 	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
 		WithTag(types.NamespacedName{Namespace: req.Namespace, Name: string(cloud.LicenseName)}).

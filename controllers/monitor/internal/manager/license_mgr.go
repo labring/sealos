@@ -487,7 +487,7 @@ func AdjustScaleOfCluster(ctx context.Context, client client.Client, logger logr
 		return err
 	}
 	newClusterScale := NewClusterExpectScale(nodes, cpus, days)
-	err = updateSecret(newClusterScale, &css)
+	err = updateClusterScaleSecret(newClusterScale, &css)
 	if err != nil {
 		return fmt.Errorf("failed to update secret: %w", err)
 	}
@@ -520,7 +520,7 @@ func ExpandScaleOfClusterTemp(ctx context.Context, client client.Client, logger 
 
 	newClusterScale := ExpandClusterScale(&currentClusterScale, addNodes, addCpus, days)
 
-	err = updateSecret(newClusterScale, &css)
+	err = updateClusterScaleSecret(newClusterScale, &css)
 	if err != nil {
 		logger.Error(err, "failed to update secret")
 		return fmt.Errorf("failed to update secret: %w", err)
@@ -528,7 +528,7 @@ func ExpandScaleOfClusterTemp(ctx context.Context, client client.Client, logger 
 	return client.Update(ctx, &css)
 }
 
-func updateSecret(ces ClusterScale, css *corev1.Secret) error {
+func updateClusterScaleSecret(ces ClusterScale, css *corev1.Secret) error {
 	newClusterScaleString, err := json.Marshal(ces)
 	if err != nil {
 		return fmt.Errorf("failed to parse cluster limit: %w", err)
@@ -651,7 +651,7 @@ func ReSyncForClusterScale(ctx context.Context, client client.Client) error {
 
 	err = readEventOperations.Execute()
 	if err != nil {
-		return err
+		return trigger()
 	}
 
 	if actualClusterScale.Data == nil {
@@ -663,12 +663,7 @@ func ReSyncForClusterScale(ctx context.Context, client client.Client) error {
 		return fmt.Errorf("failed to update actual cluster resource: %w", err)
 	}
 
-	err = CheckExpectedScale(ctx, client, expectClusterScale, clusterTotalScale, trigger)
-	if err != nil {
-		return fmt.Errorf("CheckExpectedScale: %w", err)
-	}
-
-	return nil
+	return CheckExpectedScale(ctx, client, expectClusterScale, clusterTotalScale, trigger)
 }
 
 // ce: current expect cluster scale

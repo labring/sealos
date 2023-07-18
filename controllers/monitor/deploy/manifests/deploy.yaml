@@ -74,18 +74,9 @@ metadata:
   annotations:
     cert-manager.io/inject-ca-from: cloud-system/cloud-serving-cert
     controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
   name: licenses.cloud.sealos.io
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: cloud-webhook-service
-          namespace: cloud-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
   group: cloud.sealos.io
   names:
     kind: License
@@ -543,38 +534,6 @@ subjects:
   namespace: cloud-system
 ---
 apiVersion: v1
-data:
-  config.json: |
-    {
-      "CollectorURL": "https://anqp0y.laf.dev/CollectorHandle",
-      "NotificationURL": "https://anqp0y.laf.dev/NotificationHandle",
-      "RegisterURL": "https://anqp0y.laf.dev/RegisterHandle",
-      "CloudSyncURL": "https://anqp0y.laf.dev/CloudSyncHandle",
-      "LicenseMonitorURL": "https://anqp0y.laf.dev/LicenseMonitor"
-    }
-kind: ConfigMap
-metadata:
-  name: cloud-config
-  namespace: cloud-system
----
-apiVersion: v1
-data: null
-kind: ConfigMap
-metadata:
-  name: cloud-license-history
-  namespace: cloud-system
----
-apiVersion: v1
-data:
-  canConnectToExternalNetwork: dHJ1ZQ==
-  isMonitor: dHJ1ZQ==
-kind: Secret
-metadata:
-  name: cloud-env
-  namespace: cloud-system
-type: Opaque
----
-apiVersion: v1
 kind: Service
 metadata:
   labels:
@@ -670,12 +629,7 @@ spec:
             secretKeyRef:
               key: canConnectToExternalNetwork
               name: cloud-env
-        - name: MONITOR
-          valueFrom:
-            secretKeyRef:
-              key: isMonitor
-              name: cloud-env
-        image: registry.cn-hangzhou.aliyuncs.com/fckc/cloud-controller:v3.1.5
+        image: ghcr.io/labring/sealos-cloud-controller:latest
         livenessProbe:
           httpGet:
             path: /healthz
@@ -696,10 +650,10 @@ spec:
         resources:
           limits:
             cpu: 500m
-            memory: 1024Mi
+            memory: 128Mi
           requests:
             cpu: 10m
-            memory: 512Mi
+            memory: 64Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -778,52 +732,6 @@ metadata:
 spec:
   selfSigned: {}
 ---
-apiVersion: cloud.sealos.io/v1
-kind: Launcher
-metadata:
-  labels:
-    external-network-access: disabled
-  name: cloud-start
-  namespace: cloud-system
-spec:
-  description: This YAML file is responsible for launching the entire cloud module.
-  name: Cloud-Launcher
----
-apiVersion: admissionregistration.k8s.io/v1
-kind: MutatingWebhookConfiguration
-metadata:
-  annotations:
-    cert-manager.io/inject-ca-from: cloud-system/cloud-serving-cert
-  labels:
-    app.kubernetes.io/component: webhook
-    app.kubernetes.io/created-by: cloud-controller
-    app.kubernetes.io/instance: mutating-webhook-configuration
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: mutatingwebhookconfiguration
-    app.kubernetes.io/part-of: cloud-controller
-  name: cloud-mutating-webhook-configuration
-webhooks:
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: cloud-webhook-service
-      namespace: cloud-system
-      path: /mutate-cloud-sealos-io-v1-license
-  failurePolicy: Fail
-  name: mlicense.kb.io
-  rules:
-  - apiGroups:
-    - cloud.sealos.io
-    apiVersions:
-    - v1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - licenses
-  sideEffects: None
----
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
@@ -845,16 +753,16 @@ webhooks:
       name: cloud-webhook-service
       namespace: cloud-system
       path: /validate-cloud-sealos-io-v1-license
-  failurePolicy: Fail
+  failurePolicy: Ignore
   name: vlicense.kb.io
   rules:
   - apiGroups:
-    - cloud.sealos.io
+    - '*'
     apiVersions:
     - v1
     operations:
     - CREATE
     - UPDATE
     resources:
-    - licenses
+    - pods
   sideEffects: None

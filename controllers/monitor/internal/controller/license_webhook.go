@@ -42,11 +42,13 @@ var scalelog = logf.Log.WithName("scale-resource")
 
 //+kubebuilder:webhook:path=/validate-cloud-sealos-io-v1-license,mutating=false,failurePolicy=ignore,sideEffects=None,groups="*",resources=pods,verbs=create;update,versions=v1,name=vlicense.kb.io,admissionReviewVersions=v1
 
-func (sw ScaleWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (sw *ScaleWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
 	scalelog.Info("enter webhook of scale webhook:", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.Operation", req.Operation)
+
 	if req.Operation == admissionV1.Delete {
 		return admission.Allowed("")
 	}
+
 	var (
 		expectSecret corev1.Secret
 		actualSceret corev1.Secret
