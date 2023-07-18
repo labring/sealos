@@ -45,6 +45,7 @@ spec:
                 type: string
             required:
             - amount
+            - from
             - to
             type: object
           status:
