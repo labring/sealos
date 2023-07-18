@@ -274,29 +274,9 @@ func (r *UserReconciler) syncRole(ctx context.Context, user *userv1.User) contex
 			r.saveCondition(user, roleCondition.DeepCopy())
 		}
 	}()
-	//if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-	//	var change controllerutil.OperationResult
-	//	var err error
-	//	role := &rbacv1.Role{}
-	//	role.Name = user.Name
-	//	role.Namespace = config.GetUsersNamespace(user.Name)
-	//	role.Labels = map[string]string{}
-	//	if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, role, func() error {
-	//		role.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
-	//		role.Rules = config.GetUserRole("")
-	//		return controllerutil.SetControllerReference(user, role, r.Scheme)
-	//	}); err != nil {
-	//		return fmt.Errorf("unable to create namespace role by User: %w", err)
-	//	}
-	//	r.Logger.V(1).Info("create or update namespace role  by User", "OperationResult", change)
-	//	roleCondition.Message = fmt.Sprintf("sync namespace role %s/%s successfully", role.Name, role.ResourceVersion)
-	//	return nil
-	//}); err != nil {
-	//	helper.SetConditionError(roleCondition, "SyncUserError", err)
-	//	r.Recorder.Eventf(user, v1.EventTypeWarning, "syncUserRole", "Sync User namespace role %s is error: %v", user.Name, err)
-	//}
+	//sync user role
 	r.createRole(ctx, roleCondition, user, "")
-	//如果是创建group，就创建三个role
+	//create a group -> create three roles
 	if user.Spec.Owner != user.Name {
 		r.createRole(ctx, roleCondition, user, userv1.Owner)
 		r.createRole(ctx, roleCondition, user, userv1.Manager)
@@ -317,7 +297,6 @@ func (r *UserReconciler) createRole(ctx context.Context, condition *userv1.Condi
 			role.Name = string(roletype)
 		}
 		role.Namespace = config.GetUsersNamespace(user.Name)
-		//role.Labels = map[string]string{} TODO 这行代码应该没必要了吧
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, role, func() error {
 			role.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
 			role.Labels = map[string]string{userLabelOwnerKey: user.Spec.Owner}
@@ -363,7 +342,7 @@ func (r *UserReconciler) syncRoleBinding(ctx context.Context, user *userv1.User)
 			roleBinding.RoleRef = rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,
 				Kind:     "Role",
-				Name:     user.Name, //TODO 这边说是改成string(userv1.Owner)
+				Name:     string(userv1.Owner),
 			}
 			roleBinding.Subjects = config.GetNewUsersSubject(user.Name)
 			return controllerutil.SetControllerReference(user, roleBinding, r.Scheme)
