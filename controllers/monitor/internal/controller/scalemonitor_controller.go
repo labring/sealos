@@ -59,20 +59,20 @@ func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	readEventOperations := cloud.ReadOperationList{}
 	writeEventOperations := cloud.WriteOperationList{}
 
-	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
+	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&clusterExpectScaleInfo).
 		WithTag(req.NamespacedName).AddToList(&readEventOperations)
 
-	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
-		WithTag(
-			types.NamespacedName{
-				Namespace: string(cloud.Namespace),
-				Name:      string(cloud.ExpectScaleSecretName),
-			}).
+	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&currentClusterScale).WithTag(
+		types.NamespacedName{
+			Namespace: string(cloud.Namespace),
+			Name:      string(cloud.ExpectScaleSecretName),
+		}).
 		WithCallback(func() error {
 			currentClusterScale.SetName(string(cloud.ExpectScaleSecretName))
 			currentClusterScale.SetNamespace(string(cloud.Namespace))
 			return r.Client.Create(ctx, &currentClusterScale)
 		}).AddToList(&readEventOperations)
+
 	err := readEventOperations.Execute()
 	if err != nil {
 		r.logger.Error(err, "failed to get execute event")
@@ -97,8 +97,8 @@ func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			currentClusterScale.Data = make(map[string][]byte)
 		}
 		currentClusterScale.Data[string(cloud.ExpectScaleSecretKey)] = expectString
-		return r.Client.Update(ctx, &clusterExpectScaleInfo)
-	})
+		return r.Client.Update(ctx, &currentClusterScale)
+	}).AddToList(&writeEventOperations)
 
 	_ = writeEventOperations.Execute()
 	return ctrl.Result{}, nil
