@@ -67,7 +67,6 @@ func newUUID() (string, error) {
 
 func StartCloudModule(ctx context.Context, client cl.Client) error {
 	isMonitor := os.Getenv(string(cloud.IsMonitor))
-	//isMonitor := "true"
 	if isMonitor == cloud.TRUE {
 		var launcher cloudv1.Launcher
 		nn := types.NamespacedName{

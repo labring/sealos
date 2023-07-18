@@ -34,6 +34,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	cloudv1 "github.com/labring/sealos/controllers/monitor/api/v1"
 	"github.com/labring/sealos/controllers/monitor/internal/controller"
@@ -129,10 +130,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Launcher")
 		os.Exit(1)
 	}
-	// if err = (&corev1.Pod{}).SetupWebhookWithManager(mgr); err != nil {
-	// 	setupLog.Error(err, "unable to create webhook", "webhook", "License")
-	// 	os.Exit(1)
-	// }
+
 	if err = (&controller.ScaleMonitorReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -144,6 +142,9 @@ func main() {
 		setupLog.Error(err, "unable to set up monitor for cluster scale")
 		os.Exit(1)
 	}
+
+	mgr.GetWebhookServer().Register("/validate-cloud-sealos-io-v1-license", &webhook.Admission{Handler: &controller.ScaleWebhook{Client: mgr.GetClient()}})
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

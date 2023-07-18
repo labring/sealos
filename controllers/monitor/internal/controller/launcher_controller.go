@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"os"
 
 	"github.com/go-logr/logr"
 	cloudv1 "github.com/labring/sealos/controllers/monitor/api/v1"
@@ -57,8 +58,7 @@ type LauncherReconciler struct {
 func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctl ctrl.Result, err error) {
 	r.logger.Info("Enter LauncherReconcile", "namespace:", req.Namespace, "name", req.Name)
 	r.logger.Info("Start the cloud module...")
-	// canConnectToExternalNetwork := os.Getenv(cloud.NetWorkEnv) == cloud.TRUE
-	canConnectToExternalNetwork := true
+	canConnectToExternalNetwork := os.Getenv(cloud.NetWorkEnv) == cloud.TRUE
 	var secret corev1.Secret
 	var configMap corev1.ConfigMap
 
