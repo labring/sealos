@@ -41,7 +41,7 @@ type UserSpec struct {
 
 	// +optional
 	//+kubebuilder:default=User.Name
-	//TODO 这边怎么改才对啊
+	//TODO 这边默认值怎么改
 	Owner string `json:"owner,omitempty"`
 }
 type UserRoleType string

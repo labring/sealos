@@ -163,11 +163,11 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 
 	pipelines := []func(ctx context.Context, user *userv1.User) context.Context{
 		r.initStatus,
-		r.syncNamespace, //这个要改
+		r.syncNamespace,
 		r.syncServiceAccount,
 		r.syncServiceAccountSecrets,
 		r.syncKubeConfig,
-		r.syncRole, //这个要改
+		r.syncRole,
 		r.syncRoleBinding,
 		r.syncFinalStatus,
 	}
@@ -237,13 +237,11 @@ func (r *UserReconciler) syncNamespace(ctx context.Context, user *userv1.User) c
 		}
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, ns, func() error {
 			ns.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
-			//给ns添加label，owner字段
-			//-----------------------------------
+			//----------Adding a label to a namespace indicates the owner----------
 			if user.Spec.Owner != user.Name {
 				ns.Labels = map[string]string{userLabelOwnerKey: user.Spec.Owner}
 			}
-			//TODO 咋感觉我写出来的就很low的样子
-			//-----------------------------------
+			//---------------------------------------------------------------------
 			ns.Labels = config.SetPodSecurity(ns.Labels)
 			ns.SetOwnerReferences([]metav1.OwnerReference{})
 			return controllerutil.SetControllerReference(user, ns, r.Scheme)

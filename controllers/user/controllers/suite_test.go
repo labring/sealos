@@ -33,8 +33,6 @@ import (
 
 	"k8s.io/client-go/tools/clientcmd"
 
-	v1 "github.com/labring/sealos/controllers/user/api/v1"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -97,7 +95,7 @@ var _ = Describe("user kubeconfig ", func() {
 
 		})
 		It("empty kubeconfig", func() {
-			usr := &v1.User{}
+			usr := &userv1.User{}
 			usr.Name = "cuisongliu"
 			cfg, event, err := syncReNewConfig(usr)
 			//Expect(err).NotTo(HaveOccurred())
@@ -107,9 +105,9 @@ var _ = Describe("user kubeconfig ", func() {
 		})
 
 		It("new expired kubeconfig", func() {
-			usr := &v1.User{}
+			usr := &userv1.User{}
 			usr.Name = "f8699ded-58d3-432b-a9ff-56568b57a38d"
-			kubeConfig := `apiVersion: v1
+			kubeConfig := `apiVersion: userv1
 clusters:
 - cluster:
     certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM2VENDQWRHZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQ0FYRFRJeU1EY3pNVEUwTkRJME1sb1lEekl4TWpJd056QTNNVFEwTWpReVdqQVZNUk13RVFZRApWUVFERXdwcmRXSmxjbTVsZEdWek1JSUJJakFOQmdrcWhraUc5dzBCQVFFRkFBT0NBUThBTUlJQkNnS0NBUUVBCnVzS3Z4U1RUNFdXUUhOM0VvZmtoT0kyV1FMMWs4UTJxUWRZMklNNTBDT3NycmVuTW5tMzhpSmJONEgwTlpmQkUKZ3lYNzEvNG81WmxmUEdWRFdjL01qNkJQQXAzcEYrdVZQdnFQc1pKNUdKa2pNbGMzdWRVNzkxcC9jRlc5dUcxSQp6U01HVVRyL0V4d2UxVVZWd3NkZTdVMVpUZGhOajdPbmJQd0F1dGJVVEVxdmtIWEFpSW11K0NLaFRnRjVRVTZwCkI0T2luRVk2dWFOMWtFbzFXSUJFODlockNmSzhCeXV5V1dNTFY1RktaZjg5Ry9XNmh3T0F3Qjc2bGlabC8zTEMKTEdLdS8xWnh3VUw4QW54TWxBRi9RVFprK0ZaSkloVVFHbWlreVRwdi8vYWNyeUhXSWxHSmRPeGl6T2tUSnUzKwppMUZPR2JIR0xCZ3lnejdyc0RYMTB3SURBUUFCbzBJd1FEQU9CZ05WSFE4QkFmOEVCQU1DQXFRd0R3WURWUjBUCkFRSC9CQVV3QXdFQi96QWRCZ05WSFE0RUZnUVVJbUZKVGtEMTc3OUhZVTRpNjlHbzlLczRXM0V3RFFZSktvWkkKaHZjTkFRRUxCUUFEZ2dFQkFHb2FkSEUvbGg5ZnpGSUhoRUhJUTNQSEdaOVQ2K0NOL040cG5hcGcyUFY4U09XNwpOTmVTTXZpWmJxQk5VaG1kelNiaG5sTGllRWZHYlBjSm9BVThvdUN6bXFidXFzK3pDN3U1RnBrb0loYUJ1RHdSCm5ucmJXR1Z3cE93K1RvcjhmL1NyTGxxZVl3SFhneGprMGpmaEcwM1FRQUxvb3lBRWFEWjVPU0dyWHo0SWlkYTQKVHJwZmJZcjFvWE54UjllcFRkdDJIRTZoUlEyNEVUVXBjRVRqa01uSWtObWdLdnJHSndMUUF4b0d4QklqSUh4NApQZEdlOHdURit5V3I5WlNDWkNNZ0NNR2xuSVJtdXEyVzRQWklFdU8xUkZ3RDNCTVAyQmlsNEVWekhaZlpuUkVRClZRTDI0M08xangvb3gwaGlUOWRXRXBpbXZoMm1md0hNbzlSS2d4dz0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
@@ -138,7 +136,7 @@ users:
 		})
 
 		It("new kubeconfig", func() {
-			user := &v1.User{}
+			user := &userv1.User{}
 			user.Name = "cuisongliu"
 			defaultExpirationDuration := int32(100000000)
 			user.Spec.CSRExpirationSeconds = defaultExpirationDuration

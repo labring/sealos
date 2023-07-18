@@ -31,10 +31,10 @@ type OperationRequestSpec struct {
 	// Foo is an example field of OperationRequest. Edit operationrequest_types.go to remove/update
 	// Foo string `json:"foo,omitempty"`
 
-	Username    string `json:"username,omitempty"`
-	NamespaceId string `json:"namespaceId,omitempty"`
-	Type        string `json:"type,omitempty"`
-	Action      string `json:"action,omitempty"`
+	Username string `json:"username,omitempty"`
+	//NamespaceID string `json:"namespaceID,omitempty"`
+	Type   string `json:"type,omitempty"`
+	Action string `json:"action,omitempty"`
 }
 type ActionType string
 

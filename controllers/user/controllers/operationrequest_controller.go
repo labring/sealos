@@ -24,7 +24,9 @@ import (
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -134,23 +136,40 @@ func (r *OperationRequestReconciler) handleRequest(ctx context.Context, obj clie
 			}
 			roleBinding.Name = config.GetGroupRoleBindingName(sa.Name)
 			//SetControllerReference将两个资源关联起来 确保两者清理时同时删除
-			//那这边感觉应该是role和rolebinding？或是 sa和rolebinding？应该是sa
 			return controllerutil.SetControllerReference(sa, roleBinding, r.Scheme)
 		}); err != nil {
 			return fmt.Errorf("unable to create namespace rolebinding by User: %w", err)
 		}
-		//把改变日志打印出来
 		r.Logger.V(1).Info("create or update namespace rolebinding by User", "OperationResult", change)
 		return nil
 	}); err != nil {
-		//自旋失败 //处理Operation request失败
 		r.Recorder.Eventf(request, v1.EventTypeWarning, "handle Operation Request", "handle rolebinding request %s is error: %v", request, err)
 	}
 	//TODO 4.将处理的OperationRequest这个CR删除
-
+	if err := r.Delete(ctx, &userv1.OperationRequest{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: request.Namespace,
+			Name:      request.Name,
+		},
+	}); err != nil {
+		r.Logger.Error(err, "failed to delete OperationRequest", "name", request.Name, "namespace", request.Namespace)
+		return ctrl.Result{}, fmt.Errorf("failed to delete OperationRequest %s/%s: %w", request.Namespace, request.Name, err)
+	}
 	//TODO 5.时序问题怎么解决
 
 	//TODO 6.转移Owner时的label字段怎么改
-
+	if request.Spec.Type == string(userv1.Owner) {
+		ns := &v1.Namespace{}
+		ns.Name = request.Namespace
+		if err := r.Get(ctx, client.ObjectKeyFromObject(ns), ns); err != nil {
+			if !apierrors.IsNotFound(err) {
+				return ctrl.Result{}, err
+			}
+		}
+		patch := []byte(fmt.Sprintf(`{"metadata":{"labels":{"%s":"%s"}}}`, userLabelOwnerKey, request.Spec.Username))
+		if err := r.Patch(ctx, ns, client.RawPatch(types.StrategicMergePatchType, patch)); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
 	return ctrl.Result{}, nil
 }
