@@ -46,6 +46,8 @@ The [#3154](https://github.com/labring/sealos/pull/3154) PR in the official repo
 
 ## How to Start the New Feature
 
+> Sealos v4.3.0 and later versions support this function by default.
+
 Starting the new feature is very simple, just add an environment variable before you build the image. This feature supports both build and merge commands.
 
 ```shell
