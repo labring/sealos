@@ -76,7 +76,7 @@ Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以
 
 - 📱 扫码加入社区微信交流群👇
 
-  ![](/docs/4.0/img/sealos-qr-code-300.png)
+  <img style="width: 250px;" src="/docs/4.0/img/sealos-qr-code.jpg">
 
 - 💬 加入我们的 [Discord服务器](https://discord.gg/qzBmGGZGk7)，与 Sealos 开发者和终端用户进行交流。这是了解 Sealos 和 Kubernetes 以及提问和分享经验的理想之地。
 
@@ -92,9 +92,9 @@ Sealos 维护了一个[公开的发展路线图](https://github.com/orgs/labring
 
 翻阅[现有的 Issue](https://github.com/labring/sealos/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc) 和 [Pull Requests](https://github.com/labring/sealos/pulls?q=is%3Apr+is%3Aopen+sort%3Aupdated-desc)，看看您是否能提供帮助。如果您想要新增需求或报告 Bug，请使用我们提供的模板[创建一个 GitHub Issue](https://github.com/labring/sealos/issues/new/choose)。
 
-📖 [查看贡献指南 →](https://chat.openai.com/c/CONTRIBUTING.md)
+📖 [查看贡献指南 →](./CONTRIBUTING.md)
 
-🔧 [查看开发指南 →](https://chat.openai.com/c/DEVELOPGUIDE.md)
+🔧 [查看开发指南 →](./DEVELOPGUIDE.md)
 
 ## 🔗 链接
 
