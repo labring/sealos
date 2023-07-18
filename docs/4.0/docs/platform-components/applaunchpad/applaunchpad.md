@@ -2,119 +2,117 @@
 sidebar_position: 1
 ---
 
-# 应用管理
+# App Launchpad
 
-**应用管理** 是 Sealos 提供的一个单镜像部署工具，可以帮助你在 5 分钟内完成镜像部署上线。
+**App Launchpad** is a single-image deployment tool offered by Sealos that can help you deploy an image online within 5 minutes.
 
-- [x] 私有镜像
-- [x] 自定义 CPU 和内存
-- [x] 多副本
+- [x] Private image
+- [x] Customizable CPU and memory
+- [x] Multiple replicas
 - [x] HPA
-- [x] 外网访问地址
-- [x] 自定义域名
-- [x] ConfigMap 配置文件
-- [x] 持久化存储
-- [x] APP 和 Pod 监控
-- [x] 日志
-- [x] events 分析
-- [x] 一键进入容器
-- [ ] 一键部署至 Sealos 桌面
-- [ ] 可编辑 Yaml
-- [ ] 支持多个外网暴露端口
+- [x] External access address
+- [x] Custom domains
+- [x] ConfigMap configuration files
+- [x] Persistent storage
+- [x] APP and Pod monitoring
+- [x] Logs
+- [x] Events analysis
+- [x] One-click entry into containers
+- [x] One-click deployment to Sealos Desktop
+- [x] Editable Yaml
+- [x] Support for multiple external exposed ports
 
-## 快速开始
+## Quick Start
 
-以部署一个简单的 Nginx 为例，体验容器部署和 **应用管理** 的便捷性。
+Let's take deploying a simple Nginx as an example, to demonstrate the convenience of container deployment and **App Launchpad**.
 
-只需 6 步即可完成部署和访问：
+Complete the deployment and access in just 6 steps:
 
-1. 从 Sealos 桌面进入 **应用管理** 应用。
+1. Enter the **App Launchpad** app from the Sealos Desktop.
 
-![1. 打开 **应用管理**](./imgs/applaunchpad1.png)
+![](./imgs/app-launchpad.jpg)
 
-2. 点击新建应用。
+2. Click to create a new application.
 
-![2. 新建应用](./imgs/applaunchpad2.png)
+![](./imgs/app-list.png)
 
-3. 打开**外网访问**开关。默认已经填写了 Nginx 镜像，无需修改。
+3. Turn on the **External Access** switch. The Nginx image is already filled in by default, no need for modification. Then Click Deploy Aplication.
 
-![3. 填写参数，打开外网访问开关。4. 点击部署](./imgs/applaunchpad3.png)
+![](./imgs/app-launchpad3.png)
 
-4. 点击部署。
+4. Enter the App details.
 
-![5. 点击详情，进入应用详情](./imgs/applaunchpad4.png)
+![](./imgs/app-launchpad4.png)
 
-5. 进入 App 详情.
+5. Click the "External Address" to access Nginx.
 
-![6. 点击外围访问连接](./imgs/applaunchpad5.png)
+![](./imgs/app-launchpad6.png)
 
-6. 点击外网访问地址，即可访问 Nginx.
+## Detailed Features
 
-![Nginx 部署结果](./imgs/applaunchpad6.png)
+### Auto Scaling
 
-## 功能详解
+You can freely switch between fixed instances or elastic scaling mode during application creation/change.
 
-### 弹性伸缩
+![img](./imgs/app-launchpad7.png) 
 
-在应用创建/变更时，均可以随意切换固定实例或弹性伸缩模式。
+![img](./imgs/app-launchpad8.png)
 
-![](./imgs/applaunchpad7.png)
-![](./imgs/applaunchpad8.png)
+- Fixed Instance: Permanently create a fixed number of Pods, unaffected by actual traffic.
+- Elastic Scaling: You can choose to dynamically adjust the number of Pods based on the percentage of CPU or Memory. Setting up elastic scaling requires a certain understanding of your own business traffic. Of course, you can also directly select 1~20 instance numbers, as the billing system will only calculate the actual running instances, inactive ones will not be charged.
 
-- 固定实例：永久创建固定数量的 Pod，不受实际流量影响。
-- 弹性伸缩：可以选择根据 CPU 或 Memory 百分比值动态调整 Pod 数量。配置弹性伸缩要求你对自身业务流量有一定了解。当然，你也可以直接选择 1~20 个实例数，因为计费系统仅会计算实际运行的实例数，未活跃的实例不会被计费。
+### Custom Domains
 
-### 自定义域名
+**App Launchpad** will provide you with an SSL-certified external access domain by default. Of course, when serving externally, you may wish for users to access your domain. At this time, you can set your own domain in **App Launchpad**. You'll need to make two adjustments:
 
-**应用管理** 默认会为你提供了一个带 SSL 证书的外网访问域名。当然，在对外服务时，你可能希望用户访问你的域名，此时你可以在 **应用管理** 上设置自己的域名。需要做 2 个调整：
+1. Fill in your own domain in the custom domain input box under the **Network Configuration** section.
+2. Follow the prompt to modify the DNS at the domain service provider, CNAME resolve to the prompted domain.
+3. Confirm the creation/update of the application.
 
-1. 在**网络配置**栏，自定义域名输入框填入自己的域名。
-2. 根据提示，到域名服务商修改 DNS，cname 解析到提示域名。
-3. 确认创建/更新应用。
+![](./imgs/app-launchpad9.png) 
 
-![](./imgs/applaunchpad9.png)
-![](./imgs/applaunchpad10.png)
+### Environment
 
-### 环境变量
+**App Launchpad** uses batch input to enter environment variables, split by line, **=** sign, and **:** sign, and invalid characters in the key will be removed.
 
-**应用管理** 采用批量输入的形式输入环境变量，按行， **=** 号和 **:** 号进行拆分，并且会把 key 中无效的字符去掉。
+![img](./imgs/app-launchpad10.png)
 
-![](./imgs/applaunchpad12.png)
-
-**可正常解析的环境变量格式：**
+**Examples of valid environment variable formats:**
 
 ```
+makefile
 host=127.0.0.1
 port:3000
 name: sealos
 - username=123
 - password:123
-# 这类注释会被忽略。因为不包含 = : 两种标记字符。
+# Comments like this will be ignored as they don't contain = : two marking characters.
 ```
 
-**不可解析的环境变量格式：**
+**Examples of invalid environment variable formats:**
 
 ```
-# 这行会被解析:因为包含了:或=
-host=127.0.0.1 # 这个注释也会被解析，因为前面已经有 = 号了
+makefile
+# This line will be parsed: because it contains : or =
+host=127.0.0.1 # This comment will also be parsed because there is an = sign in front of it
 ```
 
-### ConfigMap 配置文件
+### ConfigMap
 
-可以把 ConfigMap 文件理解为 docker 里的 volumes。将一个自定义文件挂载进容器里，从而实现修改容器配置的功能。下面是一个修改 Nginx 配置文件的例子。
+You can think of ConfigMap as volumes in Docker. Mount a custom file into the container to modify container configurations. Below is an example of modifying the Nginx configuration file.
 
-- 文件名: 对应 Nginx 容器里的文件，可以参考镜像提供者给出的说明。
-- 文件值: 文件对应的内容。如果内容过于复杂，可以在本地编辑好后，再粘贴上来。
-- 注意：ConfigMap 是挂载单个文件，而不是挂载目录。
+- File Name: Corresponds to the file in the Nginx container, refer to the instructions provided by the image provider.
+- File Value: Corresponds to the content of the file. If the content is too complex, you can edit it locally before pasting it here.
+- Note: ConfigMap mounts individual files, not directories.
 
-![](./imgs/applaunchpad13.png)
+![](./imgs/app-launchpad11.png)
 
-### 持久化存储
+### Persistent Storage
 
-任何保存在 Pod 里的内容都是临时的，务必不要将需要持久化的内容直接保存到 Pod 里！！！如果你想为 Pod 开辟一块持久化存储的空间，可以添加一个**存储卷**。
+Any content saved in the Pod is temporary, so be sure not to save content that needs to be persisted directly in the Pod!!! If you want to allocate a space for persistent storage to the Pod, you can add a **Storage Volume**.
 
-假设你需要部署一个 postgresql 数据库，你必须创建一个存储卷，将数据库里的内容持久存储。
+Suppose you need to deploy a PostgreSQL database, you must create a storage volume to persistently store the content in the database.
 
-![](./imgs/applaunchpad14.png)
+![](./imgs/app-launchpad12.png)
 
-当然，我们更推荐你使用 [数据库管理](../dbprovider/dbprovider.md) 来部署和管理数据库。
+Of course, we recommend you use [Database Management](./dbprovider/dbprovider.md) for deploying and managing databases.
