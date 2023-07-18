@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	v1 "github.com/labring/sealos/controllers/common/notification/api/v1"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -136,7 +137,39 @@ func (r *TransferReconciler) TransferOutSaver(ctx context.Context, transfer *acc
 	if err := r.Create(ctx, &from); err != nil {
 		return fmt.Errorf("create transfer accountbalance failed: %w", err)
 	}
-	return nil
+	return r.sendNotice(ctx, transfer.Namespace, transfer.Spec.To, transfer.Spec.Amount, accountv1.TransferOut)
+}
+
+const (
+	TransferInNotification  = `You have a new transfer from %s, amount: %d`
+	TransferOutNotification = `You have a new transfer to %s, amount: %d`
+)
+
+var transferNotification = map[accountv1.Type]string{
+	accountv1.TransferIn:  TransferInNotification,
+	accountv1.TransferOut: TransferOutNotification,
+}
+
+func (r *TransferReconciler) sendNotice(ctx context.Context, namespace string, user string, amount int64, _type accountv1.Type) error {
+	now := time.Now().UTC().Unix()
+	ntf := v1.Notification{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "transfer-notice-" + strconv.FormatInt(now, 10),
+			Namespace: GetUserNamespace(getUsername(namespace)),
+		},
+		Spec: v1.NotificationSpec{
+			Title:      "Transfer Notice",
+			Message:    fmt.Sprintf(transferNotification[_type], GetUserNamespace(getUsername(user)), convertAmount(amount)),
+			From:       "Account-System",
+			Importance: v1.Low,
+		},
+	}
+	return r.Create(ctx, &ntf)
+}
+
+// Convert amount 1¥：1000000
+func convertAmount(amount int64) int64 {
+	return amount / 1_000_000
 }
 
 func (r *TransferReconciler) TransferInSaver(ctx context.Context, transfer *accountv1.Transfer) error {
@@ -163,7 +196,7 @@ func (r *TransferReconciler) TransferInSaver(ctx context.Context, transfer *acco
 	if err := r.Create(ctx, &to); err != nil {
 		return fmt.Errorf("create transfer accountbalance failed: %w", err)
 	}
-	return nil
+	return r.sendNotice(ctx, transfer.Spec.To, transfer.Namespace, transfer.Spec.Amount, accountv1.TransferIn)
 }
 
 func (r *TransferReconciler) check(ctx context.Context, transfer *accountv1.Transfer) error {
