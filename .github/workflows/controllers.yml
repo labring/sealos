@@ -12,7 +12,7 @@ on:
         default: false
       push_image_tag:
         description: "Push image tag"
-        default: "dev"
+        default: "latest"
         required: false
         type: string
   push:
@@ -86,7 +86,7 @@ jobs:
           - { name: db-adminer, path: db/adminer }
           - { name: resources, path: resources }
           - { name: resources-metering, path: resources/metering }
-          - { name: monitor, path: monitor }
+          - { name: licenseissuer, path: licenseissuer }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -155,7 +155,6 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module.name }}-controller
           tags: |
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
-            type=raw,value=dev,enable=true
             type=raw,value=${{ steps.prepare.outputs.tag_name }},enable=true
 
       - name: build (and publish) ${{ matrix.module.name }} main image
@@ -191,7 +190,7 @@ jobs:
           - { name: db-adminer, path: db/adminer }
           - { name: resources, path: resources }
           - { name: resources-metering, path: resources/metering }
-          - { name: monitor, path: monitor }
+          - { name: licenseissuer, path: licenseissuer }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -211,10 +210,12 @@ jobs:
       - name: Prepare
         id: prepare
         run: |
-          bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}"
+          tag_name=$(bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}")
           echo old_docker_repo=ghcr.io/labring/sealos-${{ matrix.module.name }}-controller >> $GITHUB_OUTPUT
           echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module.name }}-controller >> $GITHUB_OUTPUT
           echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module.name }}-controller >> $GITHUB_OUTPUT
+          echo cluster_image=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module.name }}-controller:${tag_name} >> $GITHUB_OUTPUT
+          echo latest_cluster_image=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module.name }}-controller:latest >> $GITHUB_OUTPUT
 
       - name: Download sealos
         uses: actions/download-artifact@v3
@@ -229,7 +230,7 @@ jobs:
       - name: Mutate image tag in deploy files
         working-directory: controllers/${{ matrix.module.path }}/deploy
         run: |
-          OLD_DOCKER_IMAGE_NAME=${{ steps.prepare.outputs.old_docker_repo }}:dev
+          OLD_DOCKER_IMAGE_NAME=${{ steps.prepare.outputs.old_docker_repo }}:latest
           NEW_DOCKER_IMAGE_NAME=${{ steps.prepare.outputs.new_docker_repo }}:${{ steps.prepare.outputs.tag_name }}
           sudo sed -i "s;${OLD_DOCKER_IMAGE_NAME};${NEW_DOCKER_IMAGE_NAME};" manifests/*
 
@@ -241,22 +242,23 @@ jobs:
       - name: Build ${{ matrix.module.name }}-controller cluster image
         working-directory: controllers/${{ matrix.module.path }}/deploy
         run: |
-          CLUSTER_IMAGE_NAME=${{ steps.prepare.outputs.cluster_repo }}:${{ steps.prepare.outputs.tag_name }}
-          sudo sealos build -t ${CLUSTER_IMAGE_NAME}-amd64 --platform linux/amd64 -f Kubefile
+          sudo sealos build -t ${{ steps.prepare.outputs.cluster_image }}-amd64 --platform linux/amd64 -f Kubefile
+          sudo sealos build -t ${{ steps.prepare.outputs.latest_cluster_image }}-amd64 --platform linux/amd64 -f Kubefile
           # delete old registry cache
           sudo rm -rf registry
-          sudo sealos build -t ${CLUSTER_IMAGE_NAME}-arm64 --platform linux/arm64 -f Kubefile
+          sudo sealos build -t ${{ steps.prepare.outputs.cluster_image }}-arm64 --platform linux/arm64 -f Kubefile
+          sudo sealos build -t ${{ steps.prepare.outputs.latest_cluster_image }}-arm64 --platform linux/arm64 -f Kubefile
 
       - name: Manifest Cluster Images
         # if push to master, then patch images to ghcr.io
         run: |
-          CLUSTER_IMAGE_NAME=${{ steps.prepare.outputs.cluster_repo }}:${{ steps.prepare.outputs.tag_name }}
           sudo sealos images
-          bash docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME
+          bash docker/patch/manifest-cluster-images.sh ${{ steps.prepare.outputs.cluster_image }}
+          bash docker/patch/manifest-cluster-images.sh ${{ steps.prepare.outputs.latest_cluster_image }}
         env:
           OWNER: ${{ github.repository_owner }}
 
-      - name: Renew issue and Sync Images
+      - name: Renew issue and Sync Images for ${{ steps.prepare.outputs.cluster_image }}
         uses: labring/gh-rebot@v0.0.6
         if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
         with:
@@ -269,4 +271,19 @@ jobs:
           SEALOS_ISSUE_LABEL: "dayly-report"
           SEALOS_ISSUE_TYPE: "day"
           SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module.name }}-controller:${{ steps.prepare.outputs.tag_name }}"
+          SEALOS_COMMENT_BODY: "/imagesync ${{ steps.prepare.outputs.cluster_image }}"
+
+      - name: Renew issue and Sync Images for ${{ steps.prepare.outputs.latest_cluster_image }}
+        uses: labring/gh-rebot@v0.0.6
+        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
+        with:
+          version: v0.0.8-rc1
+        env:
+          GH_TOKEN: "${{ secrets.GH_PAT }}"
+          SEALOS_TYPE: "issue_renew"
+          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
+          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
+          SEALOS_ISSUE_LABEL: "dayly-report"
+          SEALOS_ISSUE_TYPE: "day"
+          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
+          SEALOS_COMMENT_BODY: "/imagesync ${{ steps.prepare.outputs.latest_cluster_image }}"

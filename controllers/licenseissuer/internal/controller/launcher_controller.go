@@ -21,9 +21,9 @@ import (
 	"os"
 
 	"github.com/go-logr/logr"
-	cloudv1 "github.com/labring/sealos/controllers/monitor/api/v1"
-	"github.com/labring/sealos/controllers/monitor/internal/controller/util"
-	cloud "github.com/labring/sealos/controllers/monitor/internal/manager"
+	cloudv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
+	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
+	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -63,13 +63,13 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	var configMap corev1.ConfigMap
 
 	r.logger.Info("Try to get the cloud secret&configmap resource...")
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UrlConfigName)}, &configMap)
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.URLConfigName)}, &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to get configmap...")
 		return ctrl.Result{}, err
 	}
 
-	config, err := util.ReadConfigFromConfigMap(string(cloud.UrlConfigName), &configMap)
+	config, err := util.ReadConfigFromConfigMap(string(cloud.URLConfigName), &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to get config...")
 		return ctrl.Result{}, err
@@ -90,7 +90,7 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UidSecretName)}, &secret)
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UIDSecretName)}, &secret)
 	if err == nil {
 		r.logger.Info("start to launch cloud moudle")
 		err := util.StartCloudModule(ctx, r.Client)
@@ -100,9 +100,8 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 		r.logger.Info("success to launch monitor")
 		return ctrl.Result{}, nil
-	} else {
-		secret.Data = make(map[string][]byte)
 	}
+	secret.Data = make(map[string][]byte)
 
 	uuid, err := util.Register()
 	if err != nil {
@@ -114,7 +113,7 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	secret.Data["uid"] = []byte(uuid)
-	secret.SetName(string(cloud.UidSecretName))
+	secret.SetName(string(cloud.UIDSecretName))
 	secret.SetNamespace(string(cloud.Namespace))
 	if err := r.Client.Create(ctx, &secret); err != nil {
 		r.logger.Error(err, "failed to create the register info to the cluster")

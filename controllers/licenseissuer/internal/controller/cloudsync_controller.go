@@ -23,9 +23,9 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	cloudv1 "github.com/labring/sealos/controllers/monitor/api/v1"
-	"github.com/labring/sealos/controllers/monitor/internal/controller/util"
-	cloud "github.com/labring/sealos/controllers/monitor/internal/manager"
+	cloudv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
+	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
+	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -80,17 +80,17 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		r.logger.Error(err, "failed to get launcher...")
 		return ctrl.Result{}, err
 	}
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UidSecretName)}, &secret)
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UIDSecretName)}, &secret)
 	if err != nil {
 		r.logger.Error(err, "failed to get secret...")
 		return ctrl.Result{}, err
 	}
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UrlConfigName)}, &configMap)
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.URLConfigName)}, &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to get configmap...")
 		return ctrl.Result{}, err
 	}
-	config, err = util.ReadConfigFromConfigMap(string(cloud.UrlConfigName), &configMap)
+	config, err = util.ReadConfigFromConfigMap(string(cloud.URLConfigName), &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to get config...")
 		return ctrl.Result{}, err

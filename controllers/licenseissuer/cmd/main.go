@@ -27,7 +27,7 @@ import (
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
-	cloud "github.com/labring/sealos/controllers/monitor/internal/manager"
+	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -36,8 +36,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	cloudv1 "github.com/labring/sealos/controllers/monitor/api/v1"
-	"github.com/labring/sealos/controllers/monitor/internal/controller"
+	cloudv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
+	"github.com/labring/sealos/controllers/licenseissuer/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
 

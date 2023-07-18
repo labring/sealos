@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	cloud "github.com/labring/sealos/controllers/monitor/internal/manager"
+	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	admissionV1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -86,7 +86,7 @@ func (sw *ScaleWebhook) Handle(ctx context.Context, req admission.Request) admis
 		return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
 	}
 
-	if except.CpuLimit < actual.CpuLimit || except.NodeLimit < actual.NodeLimit {
+	if except.CPULimit < actual.CPULimit || except.NodeLimit < actual.NodeLimit {
 		scalelog.Info("The current cluster scale exceeds the specified limit.")
 		return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
 	}

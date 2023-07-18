@@ -48,8 +48,8 @@ const (
 	ActualScaleSecretKey   Resource = "actual"
 	LicenseHistory         Resource = "cloud-license-history"
 	LicenseName            Resource = "license"
-	UidSecretName          Resource = "cloud-secret"
-	UrlConfigName          Resource = "cloud-config"
+	UIDSecretName          Resource = "cloud-secret"
+	URLConfigName          Resource = "cloud-config"
 	MonitorLaunchName      Resource = "cloud-start"
 	ClientStartName        Resource = "client-start"
 )
@@ -150,7 +150,7 @@ type ConvertOptions interface {
 }
 
 func SyncWithCloud(method string, url string, content interface{}) (HTTPResponse, error) {
-	httpBody, err := CommunicateWithCloud("POST", url, content)
+	httpBody, err := CommunicateWithCloud(method, url, content)
 	if err != nil {
 		return HTTPResponse{}, fmt.Errorf(err.Error(), "failed to communicate with cloud")
 	}

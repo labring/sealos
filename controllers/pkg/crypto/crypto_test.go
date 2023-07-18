@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	v1 "github.com/labring/sealos/controllers/monitor/api/v1"
+	v1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 )
 
 const Token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJTZWFsb3MiLCJpYXQiOjE2ODkxNDYyOTAsImFtdCI6NTAwMCwibm9kIjoxLCJ0dGUiOjMwfQ.lj1IYb_6vvWfYiLhm3DRpjAu4E3SsjWR9TA09ynB09HXx5Qa3FNXSE-kmpccjhn-lZd0miDwAEVxLDLNhFCGnrqMsSCAlwIK_ymoCSlNFntYAIMRU-uF6eu6JMc44Ol6eR2MlOdklYsfj0lxEwEG55uTIZGfMcHjJapGr4J0ONsloMYGn-eqEjLv3gXzNc5IsNWkRzDyLnK1IbuQo7pXo3yGcR7TQZn5cvOm03xU-jvCaYrl-MDhTbRnJ2XPTqgrtQxgspjApk6gvWKIfZTLY78e4QHFMiv36cdHXLvvvXO5eC8ImVenrjbNeHofP9_OsqbrVaiydc9aj3tHWbqYSQ"

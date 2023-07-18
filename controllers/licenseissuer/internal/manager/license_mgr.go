@@ -28,7 +28,7 @@ import (
 
 	"github.com/go-logr/logr"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	cloudv1 "github.com/labring/sealos/controllers/monitor/api/v1"
+	cloudv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/pkg/crypto"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -42,7 +42,7 @@ const MaxSizeThresholdStr = "800Ki"
 const Field1 = "nod"
 const Field2 = "cpu"
 const Field3 = "tte"
-const Field4 = "adn"
+const Field4 = "and"
 const Field5 = "adc"
 
 type LicenseMonitorRequest struct {
@@ -233,13 +233,13 @@ func (web *WriteEventBuilder) Execute() error {
 	return fmt.Errorf("WriteEventBuilder excute error: %s", "value can't be nil")
 }
 
-func (reb *WriteEventBuilder) AddToList(list *WriteOperationList) *WriteOperationList {
-	list.writeOperations = append(list.writeOperations, reb)
+func (web *WriteEventBuilder) AddToList(list *WriteOperationList) *WriteOperationList {
+	list.writeOperations = append(list.writeOperations, web)
 	return list
 }
 
 func NewLicenseMonitorRequest(secret corev1.Secret, license cloudv1.License) LicenseMonitorRequest {
-	if secret.Name != string(UidSecretName) || secret.Namespace != string(Namespace) {
+	if secret.Name != string(UIDSecretName) || secret.Namespace != string(Namespace) {
 		return LicenseMonitorRequest{}
 	}
 	var lmr LicenseMonitorRequest
@@ -281,14 +281,14 @@ func LicenseCheckOnInternalNetwork(license cloudv1.License) (map[string]interfac
 
 type ClusterScale struct {
 	NodeLimit int64 `json:"nodeLimit"`
-	CpuLimit  int64 `json:"cpuLimit"`
+	CPULimit  int64 `json:"cpuLimit"`
 	Expire    int64 `json:"expire"`
 }
 
 func NewClusterExpectScale(nods, cpus, days int64) ClusterScale {
 	return ClusterScale{
 		NodeLimit: nods,
-		CpuLimit:  cpus,
+		CPULimit:  cpus,
 		Expire:    time.Now().Add(time.Hour * 24 * time.Duration(days)).Unix(),
 	}
 }
@@ -296,7 +296,7 @@ func NewClusterExpectScale(nods, cpus, days int64) ClusterScale {
 func ExpandClusterScale(current *ClusterScale, nods, cpus, days int64) ClusterScale {
 	return ClusterScale{
 		NodeLimit: current.NodeLimit + nods,
-		CpuLimit:  current.CpuLimit + cpus,
+		CPULimit:  current.CPULimit + cpus,
 		Expire:    time.Now().Add(time.Hour * 24 * time.Duration(days)).Unix(),
 	}
 }
@@ -352,10 +352,10 @@ func GetScaleOfMaxNodes(data map[string]ClusterScale) (string, ClusterScale) {
 	return key, clusterExpectScale
 }
 
-func GetScaleOfMaxCpu(data map[string]ClusterScale) (string, ClusterScale) {
+func GetScaleOfMaxCPU(data map[string]ClusterScale) (string, ClusterScale) {
 	var clusterExpectScale ClusterScale
 	CmpCpus := func(value *ClusterScale) bool {
-		if value.CpuLimit > clusterExpectScale.CpuLimit {
+		if value.CPULimit > clusterExpectScale.CPULimit {
 			clusterExpectScale = *value
 			return true
 		}
@@ -372,8 +372,8 @@ func GetScaleOfMaxCpu(data map[string]ClusterScale) (string, ClusterScale) {
 
 func GetCurrentScale(data map[string]ClusterScale,
 	maxNodeCondition GetScaleByCondition,
-	maxCpuCondition GetScaleByCondition) ClusterScale {
-	key1, value1 := maxCpuCondition(data)
+	maxCPUCondition GetScaleByCondition) ClusterScale {
+	key1, value1 := maxCPUCondition(data)
 	key2, value2 := maxNodeCondition(data)
 	if key1 == key2 {
 		return value1
@@ -391,7 +391,7 @@ func GetCurrentScale(data map[string]ClusterScale,
 		return b
 	}
 	var currentScale ClusterScale
-	currentScale.CpuLimit = getMaxValue(value1.CpuLimit, value2.CpuLimit)
+	currentScale.CPULimit = getMaxValue(value1.CPULimit, value2.CPULimit)
 	currentScale.NodeLimit = getMaxValue(value1.NodeLimit, value2.NodeLimit)
 	currentScale.Expire = getMinValue(value1.Expire, value2.Expire)
 
@@ -470,7 +470,7 @@ func RecordLicense(ctx context.Context, client client.Client, logger logr.Logger
 	return nil
 }
 
-func AdjustScaleOfCluster(ctx context.Context, client client.Client, logger logr.Logger, ls cloudv1.License, css corev1.Secret, payload map[string]interface{}) error {
+func AdjustScaleOfCluster(ctx context.Context, client client.Client, css corev1.Secret, payload map[string]interface{}) error {
 	if !ContainsFields(payload, Field1, Field2, Field3) {
 		return nil
 	}
@@ -494,35 +494,31 @@ func AdjustScaleOfCluster(ctx context.Context, client client.Client, logger logr
 	return client.Update(ctx, &css)
 }
 
-func ExpandScaleOfClusterTemp(ctx context.Context, client client.Client, logger logr.Logger, ls cloudv1.License, css corev1.Secret, payload map[string]interface{}) error {
+func ExpandScaleOfClusterTemp(ctx context.Context, client client.Client, css corev1.Secret, payload map[string]interface{}) error {
 	if !ContainsFields(payload, Field3, Field4, Field5) {
 		return nil
 	}
 	addNodes, err := InterfaceToInt64(payload[Field4])
 	if err != nil {
-		logger.Error(err, "failed to convert interface to int64")
 		return err
 	}
 	addCpus, err := InterfaceToInt64(payload[Field5])
 	if err != nil {
-		logger.Error(err, "failed to convert interface to int64")
 		return err
 	}
 	days, err := InterfaceToInt64(payload[Field3])
 	if err != nil {
-		logger.Error(err, "failed to convert interface to int64")
 		return err
 	}
 
 	mapClusterScale, _ := PrepareScaleData(css.Data)
 
-	currentClusterScale := GetCurrentScale(mapClusterScale, GetScaleOfMaxNodes, GetScaleOfMaxCpu)
+	currentClusterScale := GetCurrentScale(mapClusterScale, GetScaleOfMaxNodes, GetScaleOfMaxCPU)
 
 	newClusterScale := ExpandClusterScale(&currentClusterScale, addNodes, addCpus, days)
 
 	err = updateClusterScaleSecret(newClusterScale, &css)
 	if err != nil {
-		logger.Error(err, "failed to update secret")
 		return fmt.Errorf("failed to update secret: %w", err)
 	}
 	return client.Update(ctx, &css)
@@ -542,7 +538,7 @@ func updateClusterScaleSecret(ces ClusterScale, css *corev1.Secret) error {
 	}
 	suffix := GetNextMapKeySuffix(tmpValue, "cluster-scale")
 	newKeyName := "cluster-scale-" + strconv.Itoa(suffix)
-	css.Data[newKeyName] = []byte(newClusterScaleString)
+	css.Data[newKeyName] = newClusterScaleString
 	return nil
 }
 
@@ -579,8 +575,7 @@ type MonitorScale struct {
 }
 
 func (ms *MonitorScale) Start(ctx context.Context) error {
-	var en chan error
-	en = make(chan error)
+	en := make(chan error)
 	callback := func() error {
 		return ReSyncForClusterScale(ctx, ms.Client)
 	}
@@ -663,12 +658,12 @@ func ReSyncForClusterScale(ctx context.Context, client client.Client) error {
 		return fmt.Errorf("failed to update actual cluster resource: %w", err)
 	}
 
-	return CheckExpectedScale(ctx, client, expectClusterScale, clusterTotalScale, trigger)
+	return CheckExpectedScale(expectClusterScale, clusterTotalScale, trigger)
 }
 
 // ce: current expect cluster scale
 // cs: cluster total scale
-func CheckExpectedScale(ctx context.Context, client client.Client, ce corev1.Secret, cs corev1.Secret, trigger func() error) error {
+func CheckExpectedScale(ce corev1.Secret, cs corev1.Secret, trigger func() error) error {
 	var currentExpectScale ClusterScale
 	var expectScale ClusterScale
 	err := json.Unmarshal(ce.Data[string(ExpectScaleSecretKey)], &currentExpectScale)
@@ -678,7 +673,7 @@ func CheckExpectedScale(ctx context.Context, client client.Client, ce corev1.Sec
 	}
 	res, _ := PrepareScaleData(cs.Data)
 
-	expectScale = GetCurrentScale(res, GetScaleOfMaxNodes, GetScaleOfMaxCpu)
+	expectScale = GetCurrentScale(res, GetScaleOfMaxNodes, GetScaleOfMaxCPU)
 
 	ok := isConsistent(currentExpectScale, expectScale)
 
@@ -691,7 +686,7 @@ func CheckExpectedScale(ctx context.Context, client client.Client, ce corev1.Sec
 }
 
 func isConsistent(scale1 ClusterScale, scale2 ClusterScale) bool {
-	if scale1.CpuLimit == scale2.CpuLimit &&
+	if scale1.CPULimit == scale2.CPULimit &&
 		scale1.NodeLimit == scale2.NodeLimit {
 		logger.Info("the current expect scale is consistent with the expect one")
 		return true
@@ -716,7 +711,7 @@ func CountClusterNodesAndCPUs(ctx context.Context, client client.Client) (Cluste
 		go totalNodesResource.GetGPUCPUMemoryResource(&node, &wg)
 	}
 	wg.Wait()
-	clusterScale.CpuLimit = totalNodesResource.TotalCPU.Value()
+	clusterScale.CPULimit = totalNodesResource.TotalCPU.Value()
 	clusterScale.NodeLimit = int64(len(nodeList.Items))
 	return clusterScale, nil
 }
