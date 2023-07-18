@@ -220,6 +220,9 @@ func (web *WriteEventBuilder) WithCallback(callback WriteFunc) *WriteEventBuilde
 }
 
 func (web *WriteEventBuilder) Write() error {
+	if web.callback == nil {
+		return nil
+	}
 	return web.callback()
 }
 
@@ -300,28 +303,33 @@ func ExpandClusterScale(current *ClusterScale, nods, cpus, days int64) ClusterSc
 
 /******************************************************/
 
-func ParseScaleData(secretData map[string][]byte) (map[string]ClusterScale, error) {
+func PrepareScaleData(secretData map[string][]byte) (map[string]ClusterScale, bool) {
 	result := make(map[string]ClusterScale)
-
+	isSanitized := false
 	for key, value := range secretData {
 		var scaleData ClusterScale
 		err := json.Unmarshal(value, &scaleData)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse JSON data for key %s: %v", key, err)
+			delete(secretData, key)
+			isSanitized = true
+			continue
 		}
 		result[key] = scaleData
 	}
 
-	return result, nil
+	return result, isSanitized
 }
 
-func DeleteExpireScales(data map[string]ClusterScale) {
+func DeleteExpireScales(data map[string]ClusterScale) bool {
+	isDeleted := false
 	current := time.Now().Unix()
 	for key, val := range data {
 		if val.Expire < current {
+			isDeleted = true
 			delete(data, key)
 		}
 	}
+	return isDeleted
 }
 
 type GetScaleByCondition func(data map[string]ClusterScale) (string, ClusterScale)
@@ -506,11 +514,8 @@ func ExpandScaleOfClusterTemp(ctx context.Context, client client.Client, logger 
 		return err
 	}
 
-	mapClusterScale, err := ParseScaleData(css.Data)
-	if err != nil {
-		logger.Error(err, "failed to parse scale data")
-		return err
-	}
+	mapClusterScale, _ := PrepareScaleData(css.Data)
+
 	currentClusterScale := GetCurrentScale(mapClusterScale, GetScaleOfMaxNodes, GetScaleOfMaxCpu)
 
 	newClusterScale := ExpandClusterScale(&currentClusterScale, addNodes, addCpus, days)
@@ -625,7 +630,6 @@ func ReSyncForClusterScale(ctx context.Context, client client.Client) error {
 	}
 
 	bytes, err := json.Marshal(cs)
-	fmt.Printf("the actual cluster scale: %s\n", string(bytes))
 	if err != nil {
 		return err
 	}
@@ -677,14 +681,7 @@ func CheckExpectedScale(ctx context.Context, client client.Client, ce corev1.Sec
 		logger.Info("triggered when json parse failed")
 		return trigger()
 	}
-	res, err := ParseScaleData(cs.Data)
-	if err != nil {
-		logger.Info("triggered when parse scale data failed")
-		return trigger()
-	}
-
-	bytes, err := json.Marshal(currentExpectScale)
-	fmt.Printf("currentExpectScale: %s\n", string(bytes))
+	res, _ := PrepareScaleData(cs.Data)
 
 	expectScale = GetCurrentScale(res, GetScaleOfMaxNodes, GetScaleOfMaxCpu)
 
@@ -701,9 +698,10 @@ func CheckExpectedScale(ctx context.Context, client client.Client, ce corev1.Sec
 func isConsistent(scale1 ClusterScale, scale2 ClusterScale) bool {
 	if scale1.CpuLimit == scale2.CpuLimit &&
 		scale1.NodeLimit == scale2.NodeLimit {
-		fmt.Println("checkExpectedScale: ok")
+		logger.Info("the current expect scale is consistent with the expect one")
 		return true
 	}
+	logger.Info("the current expect scale is not consistent with the expect one")
 	return false
 }
 

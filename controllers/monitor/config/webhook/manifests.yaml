@@ -1,32 +1,5 @@
 ---
 apiVersion: admissionregistration.k8s.io/v1
-kind: MutatingWebhookConfiguration
-metadata:
-  creationTimestamp: null
-  name: mutating-webhook-configuration
-webhooks:
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /mutate-cloud-sealos-io-v1-license
-  failurePolicy: Fail
-  name: mlicense.kb.io
-  rules:
-  - apiGroups:
-    - cloud.sealos.io
-    apiVersions:
-    - v1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - licenses
-  sideEffects: None
----
-apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   creationTimestamp: null
@@ -39,16 +12,16 @@ webhooks:
       name: webhook-service
       namespace: system
       path: /validate-cloud-sealos-io-v1-license
-  failurePolicy: Fail
+  failurePolicy: Ignore
   name: vlicense.kb.io
   rules:
   - apiGroups:
-    - cloud.sealos.io
+    - '*'
     apiVersions:
     - v1
     operations:
     - CREATE
     - UPDATE
     resources:
-    - licenses
+    - pods
   sideEffects: None

@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	cloud "github.com/labring/sealos/controllers/monitor/internal/manager"
@@ -79,11 +80,25 @@ func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, err
 	}
 
-	res, err := cloud.ParseScaleData(clusterExpectScaleInfo.Data)
-	if err != nil {
-		r.logger.Error(err, "failed to parse scale data")
+	res, isSanitized := cloud.PrepareScaleData(clusterExpectScaleInfo.Data)
+
+	isDeleted := cloud.DeleteExpireScales(res)
+
+	if isDeleted || isSanitized {
+		newMap := make(map[string][]byte)
+		for k, v := range res {
+			bytes, err := json.Marshal(v)
+			if err != nil {
+				fmt.Println("error:", err)
+			}
+			newMap[k] = bytes
+		}
+		clusterExpectScaleInfo.Data = newMap
+		(&cloud.WriteEventBuilder{}).WithCallback(func() error {
+			return r.Update(ctx, &clusterExpectScaleInfo)
+		})
 	}
-	cloud.DeleteExpireScales(res)
+
 	expectScale := cloud.GetCurrentScale(res, cloud.GetScaleOfMaxCpu, cloud.GetScaleOfMaxNodes)
 
 	expectString, err := json.Marshal(expectScale)
