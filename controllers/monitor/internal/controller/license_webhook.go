@@ -40,38 +40,60 @@ var scalelog = logf.Log.WithName("scale-resource")
 
 // TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
+//+kubebuilder:webhook:path=/validate-cloud-sealos-io-v1-license,mutating=false,failurePolicy=ignore,sideEffects=None,groups="*",resources=pods,verbs=create;update,versions=v1,name=vlicense.kb.io,admissionReviewVersions=v1
+
 func (sw ScaleWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
 	scalelog.Info("enter webhook of scale webhook:", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.Operation", req.Operation)
 	if req.Operation == admissionV1.Delete {
 		return admission.Allowed("")
 	}
-	var current corev1.Secret
-	var except cloud.ClusterScale
-	err := sw.Get(context.Background(),
-		types.NamespacedName{
-			Namespace: string(cloud.Namespace),
-			Name:      string(cloud.ExpectScaleSecretName),
-		},
-		&current,
+	var (
+		expectSecret corev1.Secret
+		actualSceret corev1.Secret
 	)
+	var (
+		except cloud.ClusterScale
+		actual cloud.ClusterScale
+	)
+
+	readEventOperations := cloud.ReadOperationList{}
+
+	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(sw.Client).WithObject(&expectSecret).
+		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ExpectScaleSecretName)}).
+		AddToList(&readEventOperations)
+	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(sw.Client).WithObject(&actualSceret).
+		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ActualScaleSecretName)}).
+		AddToList(&readEventOperations)
+	err := readEventOperations.Execute()
 	if err != nil {
-		return admission.Allowed("")
-	}
-	err = json.Unmarshal(current.Data[string(cloud.ExpectScaleSecretKey)], &except)
-	if err != nil {
+		scalelog.Error(err, "failed to get scale secret info")
 		return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
 	}
-	// cmp logic
-	scalelog.Info("do something for compare")
+
+	if len(expectSecret.Data[string(cloud.ExpectScaleSecretKey)]) != 0 {
+		err = json.Unmarshal(expectSecret.Data[string(cloud.ExpectScaleSecretKey)], &except)
+		if err != nil {
+			scalelog.Error(err, "failed to parse expect scale secret")
+			return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
+		}
+	}
+
+	err = json.Unmarshal(actualSceret.Data[string(cloud.ActualScaleSecretKey)], &actual)
+	if err != nil {
+		scalelog.Error(err, "failed to parse actual scale secret")
+		return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
+	}
+
+	if except.CpuLimit < actual.CpuLimit || except.NodeLimit < actual.NodeLimit {
+		scalelog.Info("The current cluster scale exceeds the specified limit.")
+		return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
+	}
 	return admission.Allowed("")
 }
-
-//+kubebuilder:webhook:path=/mutate-cloud-sealos-io-v1-license,mutating=true,failurePolicy=fail,sideEffects=None,groups=cloud.sealos.io,resources=licenses,verbs=create;update,versions=v1,name=mlicense.kb.io,admissionReviewVersions=v1
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-cloud-sealos-io-v1-license,mutating=false,failurePolicy=fail,sideEffects=None,groups=cloud.sealos.io,resources=licenses,verbs=create;update,versions=v1,name=vlicense.kb.io,admissionReviewVersions=v1
 
 //var _ webhook.Validator = &License{}
 
