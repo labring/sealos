@@ -509,7 +509,7 @@ const BaseUnit = 1_000_000
 
 func giveGift(amount int64, configMap *corev1.ConfigMap) (int64, error) {
 	if configMap.Data == nil {
-		return 0, fmt.Errorf("configMap's data is nil")
+		return amount, fmt.Errorf("configMap's data is nil")
 	}
 	stepsStr := strings.Split(configMap.Data["steps"], ",")
 	ratiosStr := strings.Split(configMap.Data["ratios"], ",")
@@ -519,16 +519,16 @@ func giveGift(amount int64, configMap *corev1.ConfigMap) (int64, error) {
 	for i, stepStr := range stepsStr {
 		step, err := strconv.ParseInt(stepStr, 10, 64)
 		if err != nil {
-			return 0, fmt.Errorf("steps format error :%s", err)
+			return amount, fmt.Errorf("steps format error :%s", err)
 		}
 		if amount >= step*BaseUnit {
 			ratio, err = strconv.ParseInt(ratiosStr[i], 10, 64)
 			if err != nil {
-				return 0, fmt.Errorf("ratios format error :%s", err)
+				return amount, fmt.Errorf("ratios format error :%s", err)
 			}
 		} else {
 			break
 		}
 	}
-	return amount * ratio / 100, nil
+	return (amount * ratio / 100) + amount, nil
 }
