@@ -17,8 +17,6 @@ package save
 import (
 	"context"
 
-	"github.com/labring/sealos/pkg/system"
-
 	"github.com/google/go-containerregistry/pkg/name"
 
 	"github.com/docker/docker/api/types"
@@ -48,11 +46,7 @@ type tmpRegistryImage struct {
 }
 
 func NewImageSaver(ctx context.Context, maxPullProcs int, auths map[string]types.AuthConfig) Registry {
-	if v, _ := system.Get(system.RegistrySyncExperimentalConfigKey); v == "true" {
-		return newTmpRegistrySaver(ctx, maxPullProcs, auths)
-	}
-
-	return newDefaultRegistrySaver(ctx, maxPullProcs, auths)
+	return newTmpRegistrySaver(ctx, maxPullProcs, auths)
 }
 
 func newDefaultRegistrySaver(ctx context.Context, maxPullProcs int, auths map[string]types.AuthConfig) Registry {
