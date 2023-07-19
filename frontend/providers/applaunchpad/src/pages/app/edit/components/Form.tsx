@@ -574,7 +574,7 @@ const Form = ({
               <Box>
                 <Flex mb={5}>
                   <Box fontWeight={'bold'} mr={4}>
-                    {t('Accessible to the Public')}
+                    {t('External Access')}
                   </Box>
                   <Switch
                     size={'lg'}

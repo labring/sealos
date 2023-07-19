@@ -49,7 +49,7 @@ const DelModal = ({
       console.error(error);
     }
     setLoading(false);
-  }, [appName, toast, onSuccess, onClose]);
+  }, [appName, toast, t, onSuccess, onClose]);
 
   return (
     <Modal isOpen onClose={onClose}>
@@ -67,7 +67,7 @@ const DelModal = ({
               <Box as={'span'} color={'myGray.900'} fontWeight={'bold'} userSelect={'all'}>
                 {appName}
               </Box>{' '}
-              {t('Confirm')}
+              {t('To Confirm')}
             </Box>
           </Box>
 

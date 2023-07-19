@@ -11,7 +11,7 @@ import {
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 
-export const useConfirm = ({ title = 'Prompt', content }: { title?: string; content: string }) => {
+export const useConfirm = ({ title = 'Warning', content }: { title?: string; content: string }) => {
   const { t } = useTranslation();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const cancelRef = useRef(null);
@@ -58,7 +58,7 @@ export const useConfirm = ({ title = 'Prompt', content }: { title?: string; cont
                     typeof confirmCb.current === 'function' && confirmCb.current();
                   }}
                 >
-                  {t('Confirm')}
+                  {t('Yes')}
                 </Button>
               </AlertDialogFooter>
             </AlertDialogContent>

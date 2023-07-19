@@ -4,7 +4,7 @@ export const editModeMap = (isEdit: boolean) => {
   if (isEdit) {
     return {
       title: 'Update Application',
-      applyBtnText: 'Update Application',
+      applyBtnText: 'Update',
       applyMessage: 'Confirm Update Application?',
       applySuccess: 'Update Successful',
       applyError: 'Update Failed'
@@ -13,7 +13,7 @@ export const editModeMap = (isEdit: boolean) => {
 
   return {
     title: 'Application Deployment',
-    applyBtnText: 'Deploy Application',
+    applyBtnText: 'Deploy',
     applyMessage: 'Confirm Deploy Application?',
     applySuccess: 'Deployment Successful',
     applyError: 'Deployment Failed'

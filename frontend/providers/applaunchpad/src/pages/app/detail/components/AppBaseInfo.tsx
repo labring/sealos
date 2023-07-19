@@ -77,7 +77,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
 
   const appTags = useMemo(
     () => [
-      ...(app.accessExternal.use ? ['Accessible to the Public'] : []),
+      ...(app.accessExternal.use ? ['External Access'] : []),
       ...(app.hpa.use ? ['Auto scaling'] : ['Fixed instance']),
       ...(app.storeList.length > 0 ? ['Stateful'] : ['Stateless'])
     ],

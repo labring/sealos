@@ -5,7 +5,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { YamlKindEnum } from '@/utils/adapt';
 import yaml from 'js-yaml';
-import type { V1StatefulSet, V1PersistentVolumeClaim } from '@kubernetes/client-node';
+import type { V1StatefulSet } from '@kubernetes/client-node';
 import { PatchUtils } from '@kubernetes/client-node';
 import type { AppPatchPropsType } from '@/types/app';
 
@@ -60,10 +60,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         delete: () => k8sApp.deleteNamespacedDeployment(appName, namespace)
       },
       [YamlKindEnum.StatefulSet]: {
-        patch: (jsonPatch: Object) =>
-          k8sApp
-            .deleteNamespacedStatefulSet(appName, namespace)
-            .then(() => k8sApp.createNamespacedStatefulSet(namespace, jsonPatch)),
+        patch: async (jsonPatch: Object) => {
+          try {
+            await k8sApp.patchNamespacedStatefulSet(
+              appName,
+              namespace,
+              jsonPatch,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
+            );
+          } catch (error) {
+            await k8sApp.deleteNamespacedStatefulSet(appName, namespace);
+            await k8sApp.createNamespacedStatefulSet(namespace, jsonPatch);
+          }
+        },
         delete: () => k8sApp.deleteNamespacedStatefulSet(appName, namespace)
       },
       [YamlKindEnum.Service]: {
@@ -82,18 +96,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         delete: () => k8sCore.deleteNamespacedService(appName, namespace)
       },
       [YamlKindEnum.ConfigMap]: {
-        patch: (jsonPatch: Object) =>
-          k8sCore.patchNamespacedConfigMap(
-            appName,
-            namespace,
-            jsonPatch,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
-          ),
+        patch: (jsonPatch: Object) => applyYamlList([yaml.dump(jsonPatch)], 'replace'),
         delete: () => k8sCore.deleteNamespacedConfigMap(appName, namespace)
       },
       [YamlKindEnum.Ingress]: {
