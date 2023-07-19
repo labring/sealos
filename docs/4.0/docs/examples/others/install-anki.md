@@ -108,7 +108,7 @@ To configure the desktop client (macOS/Windows/Linux):
 
 On Android, directly configure via "Settings -> Advanced -> Custom sync server":
 
-<img style="width: 400px;"  src="../images/2022-04-10-14-31-vrNHJU.png">
+![](../images/2022-04-10-14-31-vrNHJU.png)
 
 Also enter username and password:
 
@@ -116,7 +116,8 @@ Also enter username and password:
 
 This completes the configuration. All card decks should sync over:
 
-<table><tr> <td><img style="width: 400px;" src="../images/2022-04-10-14-32-ADfk8T.png"></td>   <td><img style="width: 400px;" src="../images/2022-04-10-14-32-1iudM0.png"></td> </tr></table>
+![](../images/2022-04-10-14-32-ADfk8T.png)
+![](../images/2022-04-10-14-32-1iudM0.png)
 
 The official app version is quite old. For the latest community version, download the Beta here:
 
@@ -126,7 +127,7 @@ The **arm64-v8a** version is recommended.
 
 After installing, the sync server can be configured under "Settings -> Sync -> Custom sync server":
 
-<img style="width: 400px;" src="../images/2023-06-26-12-39-1jsF0t.jpeg">
+![](../images/2023-06-26-12-39-1jsF0t.jpeg)
 
 Also enter the username and password:
 

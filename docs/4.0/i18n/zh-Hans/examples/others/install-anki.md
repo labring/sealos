@@ -106,7 +106,7 @@ ANKISYNCD_PASSWORD=<PASSWD>
 
 安卓端也是直接配置即可，我的 AnkiDroid 版本是 `2.15.6`。你可以通过「设置 -> 高级设置 -> 自定义同步服务器」找到配置页面。
 
-<img style="width: 400px;" src="https://jsdelivr.icloudnative.io/gh/yangchuansheng/imghosting3@main/uPic/2022-04-10-14-31-vrNHJU.png">
+![](../images/2022-04-10-14-31-vrNHJU.png)
 
 再填写用户名和密码：
 
@@ -114,10 +114,8 @@ ANKISYNCD_PASSWORD=<PASSWD>
 
 这样就算配置完成了，所有的牌组都同步过来了。
 
-<table><tr>
-<td><img style="width: 400px;" src="../images/2022-04-10-14-32-ADfk8T.png"></td>
-<td><img style="width: 400px;" src="../images/2022-04-10-14-32-1iudM0.png"></td>
-</tr></table>
+![](../images/2022-04-10-14-32-ADfk8T.png)
+![](../images/2022-04-10-14-32-1iudM0.png)
 
 官方的版本比较旧，如果你想使用更激进的社区版本，可以到这个页面下载最新的 Beta 版：
 
@@ -127,7 +125,7 @@ ANKISYNCD_PASSWORD=<PASSWD>
 
 安装完成后，可以通过「设置 -> 同步 -> 自定义同步服务器」找到配置页面：
 
-<img style="width: 400px;" src="../images/2023-06-26-12-39-1jsF0t.jpeg">
+![](../images/2023-06-26-12-39-1jsF0t.jpeg)
 
 再填写用户名和密码：
 
