@@ -46,12 +46,14 @@ sealos gen labring/kubernetes:v1.25.6\
     labring/zot:v1.4.3\
     labring/kubeblocks:v0.5.3\
     --env policy=anonymousPolicy\
-    --masters 10.140.0.16 > Clusterfile
+    --masters 10.140.0.16 \
+    --nodes 10.140.0.17, 10.140.0.18 > Clusterfile
 
 sealos apply -f Clusterfile
 ```
 
 Note: if you want to change pod cidr, please edit the `Clusterfile` before run `sealos apply`
+
 
 ### Ingress-nginx setup
 We use ingress-nginx to expose our services. You can install ingress-nginx by using sealos:
@@ -82,10 +84,16 @@ Install ingress-nginx and switch to NodePort mode
 sealos run docker.io/labring/ingress-nginx:v1.5.1 --config-file ingress-nginx-config.yaml
 ```
 
+Note: if your domain is resolved to the master ip, you may need patch ingress-nginx DaemonSet to run on master node:
+
+```shell
+kubectl -n ingress-nginx patch ds ingress-nginx-controller -p '{"spec":{"template":{"spec":{"tolerations":[{"key":"node-role.kubernetes.io/master","operator":"Exists","effect":"NoSchedule"}]}}}}'
+````
+
 ## run sealos cloud cluster image
 
 ### Generate TLS config file
-You can skip this step if you use the self-signed cert that we provide by default. 
+You can skip this step if you use the self-signed cert which we provided by default. 
 
 Please make sure `spec.match` is the same as the image you want to run and the registry name such as ghcr.io/docker.io can
 

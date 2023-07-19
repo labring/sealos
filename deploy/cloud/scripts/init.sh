@@ -92,11 +92,11 @@ function install {
   # read env
   read_env etc/sealos/cloud.env
 
-  # mock tls
-  create_tls_secret $cloudDomain
-
   # kubectl apply namespace, secret and mongodb
   kubectl apply -f manifests/namespace.yaml
+
+  # create tls secret
+  create_tls_secret $cloudDomain
 
   # gen mongodb uri
   gen_mongodb_uri
