@@ -58,7 +58,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+var userAnnotationCreatorKey = userv1.UserAnnotationCreatorKey
 var userAnnotationOwnerKey = userv1.UserAnnotationOwnerKey
+var userLabelOwnerKey = userv1.UserLabelOwnerKey
 
 // UserReconciler reconciles a User object
 type UserReconciler struct {
@@ -134,7 +136,7 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts utilcontroller.
 	owner := &handler.EnqueueRequestForOwner{OwnerType: &userv1.User{}, IsController: true}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}, builder.WithPredicates(
-			predicate.Or(predicate.GenerationChangedPredicate{}))).
+			predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}))).
 		Watches(&source.Kind{Type: &v1.ServiceAccount{}}, owner).
 		Watches(&source.Kind{Type: &v12.Role{}}, owner).
 		Watches(&source.Kind{Type: &v12.RoleBinding{}}, owner).
@@ -233,8 +235,13 @@ func (r *UserReconciler) syncNamespace(ctx context.Context, user *userv1.User) c
 			r.Logger.V(1).Info("define namespace User namespace is created", "isCreated", isCreated, "namespace", ns.Name)
 		}
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, ns, func() error {
-			ns.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
+			ns.Annotations = map[string]string{
+				userAnnotationCreatorKey: user.Name,
+				userAnnotationOwnerKey:   user.Annotations[userAnnotationOwnerKey],
+			}
 			ns.Labels = config.SetPodSecurity(ns.Labels)
+			// add label for namespace to filter
+			ns.Labels[userLabelOwnerKey] = user.Annotations[userAnnotationOwnerKey]
 			ns.SetOwnerReferences([]metav1.OwnerReference{})
 			return controllerutil.SetControllerReference(user, ns, r.Scheme)
 		}); err != nil {
@@ -274,7 +281,10 @@ func (r *UserReconciler) syncRole(ctx context.Context, user *userv1.User) contex
 		role.Namespace = config.GetUsersNamespace(user.Name)
 		role.Labels = map[string]string{}
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, role, func() error {
-			role.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
+			role.Annotations = map[string]string{
+				userAnnotationCreatorKey: user.Name,
+				userAnnotationOwnerKey:   user.Annotations[userAnnotationOwnerKey],
+			}
 			role.Rules = config.GetUserRole()
 			return controllerutil.SetControllerReference(user, role, r.Scheme)
 		}); err != nil {
@@ -313,7 +323,10 @@ func (r *UserReconciler) syncRoleBinding(ctx context.Context, user *userv1.User)
 		roleBinding.Namespace = config.GetUsersNamespace(user.Name)
 		roleBinding.Labels = map[string]string{}
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, roleBinding, func() error {
-			roleBinding.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
+			roleBinding.Annotations = map[string]string{
+				userAnnotationCreatorKey: user.Name,
+				userAnnotationOwnerKey:   user.Annotations[userAnnotationOwnerKey],
+			}
 			roleBinding.RoleRef = v12.RoleRef{
 				APIGroup: v12.GroupName,
 				Kind:     "Role",
@@ -379,7 +392,10 @@ func (r *UserReconciler) syncServiceAccount(ctx context.Context, user *userv1.Us
 		}
 		secretName := kubeconfig.SecretName(user.Name)
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, sa, func() error {
-			sa.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
+			sa.Annotations = map[string]string{
+				userAnnotationCreatorKey: user.Name,
+				userAnnotationOwnerKey:   user.Annotations[userAnnotationOwnerKey],
+			}
 			if len(sa.Secrets) == 0 {
 				sa.Secrets = []v1.ObjectReference{
 					{
