@@ -225,7 +225,7 @@ jobs:
       - name: Build ${{ matrix.module }}-service cluster image for latest
         run: |
           CLUSTER_IMAGE_NAME=${{ steps.prepare.outputs.cluster_repo }}:${{ steps.prepare.outputs.tag_name }}
-          CLUSTER_IMAGE_NAME_LATEST=${{ steps.prepare.outputs.cluster_repo }}:${{ steps.prepare.outputs.cluster_repo }}:latest
+          CLUSTER_IMAGE_NAME_LATEST=${{ steps.prepare.outputs.cluster_repo }}:latest
           sudo sealos tag ${CLUSTER_IMAGE_NAME}-amd64  ${CLUSTER_IMAGE_NAME_LATEST}-amd64
           sudo sealos tag ${CLUSTER_IMAGE_NAME}-amd64  ${CLUSTER_IMAGE_NAME_LATEST}-amd64
           sudo sealos images
