@@ -63,6 +63,8 @@ const (
 
 const (
 	SEALOS                         Source  = "Sealos Cloud"
+	NoticeClusterScaleTitle        Title   = "Notice: Current Maximum Cluster Capacity"
+	ExpireLicenseTitle             Title   = "License expired"
 	ErrorLicenseTitle              Title   = "License Activation Failed"
 	InvalidLicenseTitle            Title   = "Invalid License"
 	UnKnownErrorOfLicense          Title   = "UnKnown error about license"

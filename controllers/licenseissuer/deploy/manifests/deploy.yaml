@@ -629,7 +629,12 @@ spec:
             secretKeyRef:
               key: canConnectToExternalNetwork
               name: cloud-env
-        image: ghcr.io/labring/sealos-cloud-controller:latest
+        - name: MONITOR
+          valueFrom:
+            secretKeyRef:
+              key: isMonitor
+              name: cloud-env
+        image: registry.cn-hangzhou.aliyuncs.com/fckc/cloud-controller:v3.2.1
         livenessProbe:
           httpGet:
             path: /healthz
@@ -650,10 +655,10 @@ spec:
         resources:
           limits:
             cpu: 500m
-            memory: 128Mi
+            memory: 1024Mi
           requests:
             cpu: 10m
-            memory: 64Mi
+            memory: 512Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

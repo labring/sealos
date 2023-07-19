@@ -40,8 +40,9 @@ import (
 // CollectorReconciler reconciles a Collector object
 type CollectorReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	logger logr.Logger
+	Scheme            *runtime.Scheme
+	logger            logr.Logger
+	lastCollectedTime int64
 }
 
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=collectors,verbs=get;list;watch;create;update;patch;delete
@@ -150,7 +151,7 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 // SetupWithManager sets up the controller with the Manager.
 func (r *CollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("CollectorReconcile")
-
+	r.lastCollectedTime = time.Now().Add(time.Hour * 100).Unix()
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
 		return object.GetName() == string(cloud.ClientStartName) &&
 			object.GetNamespace() == string(cloud.Namespace) &&

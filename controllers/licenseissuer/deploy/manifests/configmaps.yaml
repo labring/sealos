@@ -34,7 +34,7 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: env
+  name: cloud-env
   namespace: cloud-system
 type: Opaque
 data:

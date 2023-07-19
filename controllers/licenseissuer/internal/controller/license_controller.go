@@ -127,7 +127,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 	if cloud.CheckLicenseExists(&licenseHistory, license.Spec.Token) {
 		pack := cloud.NewNotificationPackage(cloud.DuplicateLicenseTitle, cloud.SEALOS, cloud.DuplicateLicenseContent)
-		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+		cloud.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
 		return ctrl.Result{}, r.Client.Delete(ctx, &license)
 	}
 
@@ -138,7 +138,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 	if !ok {
 		pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.InvalidLicenseContent)
-		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+		cloud.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
 		r.logger.Info("invalid license")
 		return ctrl.Result{}, r.Client.Delete(ctx, &license)
 	}
@@ -148,11 +148,11 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		err := cloud.RechargeByLicense(ctx, r.Client, r.logger, account, payload)
 		if err != nil {
 			pack := cloud.NewNotificationPackage(cloud.RechargeFailedTitle, cloud.SEALOS, cloud.RechargeFailedContent)
-			util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+			cloud.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
 			return err
 		}
 		pack := cloud.NewNotificationPackage(cloud.ValidLicenseTitle, cloud.SEALOS, cloud.ValidLicenseContent)
-		util.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+		cloud.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
 		return nil
 	}).AddToList(&writeOperations)
 

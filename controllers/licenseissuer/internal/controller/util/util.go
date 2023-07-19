@@ -23,10 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"sync"
 
-	"github.com/go-logr/logr"
-	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
 	cloudv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	corev1 "k8s.io/api/core/v1"
@@ -95,44 +92,6 @@ func StartCloudModule(ctx context.Context, client cl.Client) error {
 		return err
 	}
 	return nil
-}
-
-func SubmitNotificationWithUserCategory(ctx context.Context, client cl.Client, logger logr.Logger, users cloud.UserCategory, prefix string, pack cloud.NotificationPackage) {
-	notification := cloud.NotificationPackageToNotification(pack)
-	var wg sync.WaitGroup
-	errchan := make(chan error)
-	for ns := range users[prefix].Iter() {
-		wg.Add(1)
-		notificationTask := cloud.NewNotificationTask(ctx, client, ns, []ntf.Notification{notification})
-		go cloud.AsyncCloudTask(&wg, errchan, &notificationTask)
-	}
-	go func() {
-		wg.Wait()
-		close(errchan)
-	}()
-	for err := range errchan {
-		if err != nil {
-			logger.Error(err, "Failed to deliver registration success.")
-		}
-	}
-}
-
-func SubmitNotificationWithUser(ctx context.Context, client cl.Client, logger logr.Logger, target string, pack cloud.NotificationPackage) {
-	notification := cloud.NotificationPackageToNotification(pack)
-	notificationTask := cloud.NewNotificationTask(ctx, client, target, []ntf.Notification{notification})
-	var wg sync.WaitGroup
-	errchan := make(chan error)
-	wg.Add(1)
-	go cloud.AsyncCloudTask(&wg, errchan, &notificationTask)
-	go func() {
-		wg.Wait()
-		close(errchan)
-	}()
-	for err := range errchan {
-		if err != nil {
-			logger.Error(err, "Failed to deliver notification success")
-		}
-	}
 }
 
 func InterfaceToInt64(value interface{}) (int64, error) {
