@@ -107,6 +107,11 @@ verify-license:
 add-license:
 	@$(MAKE) license.add
 
+##license: Add license header to all files.
+.PHONY: license
+license:
+	@$(MAKE) license.add
+
 ## gen: Generate all necessary files.
 .PHONY: gen
 gen:
