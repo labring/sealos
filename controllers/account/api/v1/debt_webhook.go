@@ -150,7 +150,7 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsNam
 		return admission.Allowed("namespace not found")
 	}
 	// Check if it is a user namespace
-	user, ok := ns.Annotations[userv1.UserAnnotationOwnerKey]
+	user, ok := ns.Annotations[userv1.UserAnnotationCreatorKey]
 	logger.V(1).Info("check user namespace", "ns.name", ns.Name, "ns", ns)
 	if !ok {
 		return admission.ValidationResponse(true, fmt.Sprintf("this namespace is not user namespace %s,or have not create", ns.Name))

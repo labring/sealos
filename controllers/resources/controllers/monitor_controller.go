@@ -272,7 +272,7 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient datab
 		if client.IgnoreNotFound(err) != nil {
 			return err
 		}
-		if _, ok := namespace.GetAnnotations()[v1.UserAnnotationOwnerKey]; ok {
+		if _, ok := namespace.GetAnnotations()[v1.UserAnnotationCreatorKey]; ok {
 			//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
 			//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
 			//if err = r.syncResourceQuota(ctx, namespace.Name); err != nil {

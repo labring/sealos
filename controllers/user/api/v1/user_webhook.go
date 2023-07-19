@@ -48,6 +48,9 @@ func (r *User) Default() {
 	if r.Annotations[UserAnnotationDisplayKey] == "" {
 		r.Annotations[UserAnnotationDisplayKey] = r.Name
 	}
+	if r.Annotations[UserAnnotationOwnerKey] == "" {
+		r.Annotations[UserAnnotationOwnerKey] = r.Name
+	}
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.

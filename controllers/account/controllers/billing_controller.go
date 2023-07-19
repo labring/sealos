@@ -98,7 +98,7 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	own := ns.Annotations[v1.UserAnnotationOwnerKey]
+	own := ns.Annotations[v1.UserAnnotationCreatorKey]
 	if own == "" {
 		r.Logger.V(1).Info("billing namespace not found owner annotation", "namespace", ns.Name)
 		return ctrl.Result{}, nil
@@ -119,7 +119,7 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	//	return ctrl.Result{}, err
 	//}
 	//for _, namespace := range nsList.Items {
-	//	if namespace.Annotations[v1.UserAnnotationOwnerKey] != own {
+	//	if namespace.Annotations[v1.UserAnnotationCreatorKey] != own {
 	//		continue
 	//	}
 	//	if err = r.syncResourceQuota(ctx, namespace.Name); err != nil {
@@ -270,7 +270,7 @@ func (r *BillingReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Namespace{}, builder.WithPredicates(predicate.Funcs{
 			CreateFunc: func(createEvent event.CreateEvent) bool {
-				_, ok := createEvent.Object.GetAnnotations()[v1.UserAnnotationOwnerKey]
+				_, ok := createEvent.Object.GetAnnotations()[v1.UserAnnotationCreatorKey]
 				return ok
 			},
 			UpdateFunc: func(updateEvent event.UpdateEvent) bool {
