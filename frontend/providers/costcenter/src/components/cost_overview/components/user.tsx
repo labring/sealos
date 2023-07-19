@@ -9,14 +9,15 @@ import styles from './user.module.scss';
 import { useTranslation } from 'next-i18next';
 import { memo, useContext, useMemo, useRef } from 'react';
 import { ApiResp } from '@/types/api';
-import { TradeEnableContext } from '@/pages/cost_overview';
 import jsyaml from 'js-yaml';
 import RechargeModal from './RechargeModal';
 import TransferModal from './TransferModal';
+import useEnvStore from '@/stores/env';
 
 export default memo(function UserCard() {
-  const { transferEnabled, rechargeEnabled } = useContext(TradeEnableContext);
   const getSession = useSessionStore((state) => state.getSession);
+  const transferEnabled = useEnvStore((state) => state.transferEnabled);
+  const rechargeEnabled = useEnvStore((state) => state.rechargeEnabled);
   const { kubeconfig } = getSession();
   const k8s_username = useMemo(() => {
     try {
@@ -38,12 +39,7 @@ export default memo(function UserCard() {
   const rechargeRef = useRef<any>();
   const transferRef = useRef<any>();
   const queryClient = new QueryClient();
-  // const { TransferModal, onOpen: transferOpen } = useTransfer({
 
-  // });
-
-  // 防止闪烁
-  const isFetchingBilling = useIsFetching({ queryKey: ['billing'], exact: false });
   let real_balance = balance_raw?.data?.balance || 0;
   if (balance_raw?.data?.deductionBalance) {
     real_balance -= balance_raw?.data.deductionBalance;

@@ -6,4 +6,5 @@ export const enableInvoice = () =>
   !!process.env['ALI_ACCESS_KEY_ID'] &&
   !!process.env['ALI_ACCESS_KEY_SECRET'] &&
   !!process.env['ALI_SIGN_NAME'] &&
-  !!process.env['ALI_TEMPLATE_CODE'];
+  !!process.env['ALI_TEMPLATE_CODE'] &&
+  !!process.env['MONGODB_URI'];

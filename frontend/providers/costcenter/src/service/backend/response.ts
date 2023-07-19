@@ -46,7 +46,7 @@ const showStatus = (status: number) => {
   return `${message}，请检查网络或联系管理员！`;
 };
 
-export const jsonRes = (res: NextApiResponse, props?: ApiResp) => {
+export const jsonRes = <T = any>(res: NextApiResponse, props?: ApiResp<T>) => {
   const { code = 200, message = '', data = null, error } = props || {};
   let msg = message;
 

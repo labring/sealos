@@ -15,6 +15,10 @@ import 'react-day-picker/dist/style.css';
 import { appWithTranslation, i18n } from 'next-i18next';
 import { useEffect } from 'react';
 import { setCookie } from '@/utils/cookieUtils';
+import request from '@/service/request';
+import { EnvData } from '@/types/env';
+import { ApiResp } from '@/types/api';
+import useEnvStore from '@/stores/env';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +46,7 @@ Router.events.on('routeChangeComplete', () => NProgress.done());
 Router.events.on('routeChangeError', () => NProgress.done());
 
 const App = ({ Component, pageProps }: AppProps) => {
+  const state = useEnvStore();
   useEffect(() => {
     const changeI18n = (data: any) => {
       setCookie('NEXT_LOCALE', data.currentLanguage, {
@@ -60,6 +65,16 @@ const App = ({ Component, pageProps }: AppProps) => {
         });
       } catch (error) {
         changeI18n('zh');
+      }
+    })();
+    (async () => {
+      try {
+        const { data } = await request<any, ApiResp<EnvData>>('/api/enabled');
+        state.setInvoiceEnabled(!!data?.invoiceEnabled);
+        state.setTransferEnabled(!!data?.transferEnabled);
+        state.setRechargeEnabled(!!data?.rechargeEnabled);
+      } catch (error) {
+        console.error('get env error');
       }
     })();
     sealosApp.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
