@@ -20,8 +20,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
+	v1 "github.com/labring/sealos/controllers/common/notification/api/v1"
 	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -94,7 +96,7 @@ func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, r.Update(ctx, &currentClusterScale)
 	}
 
-	res, isSanitized := cloud.PrepareScaleData(clusterExpectScaleInfo.Data)
+	res, isSanitized := cloud.TidyAvailableScaleData(clusterExpectScaleInfo.Data)
 
 	isDeleted := cloud.DeleteExpireScales(res)
 
@@ -114,7 +116,13 @@ func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	expectScale := cloud.GetCurrentScale(res, cloud.GetScaleOfMaxCPU, cloud.GetScaleOfMaxNodes)
+	dateString := time.Unix(expectScale.Expire, 0).Format("2006-01-02")
 
+	message := fmt.Sprintf("Current Maximum Cluster Scale Information: \nNode Count: %d\nCPU Count: %d\nMaximum Sustainable Duration at Current Scale: %s",
+		int(expectScale.NodeLimit),
+		int(expectScale.CPULimit),
+		dateString)
+	pack := cloud.NewNotificationPackageWithLevel(cloud.NoticeClusterScaleTitle, cloud.SEALOS, cloud.Message(message), v1.Medium)
 	expectString, err := json.Marshal(expectScale)
 	if err != nil {
 		r.logger.Error(err, "failed to parse expect string")
@@ -129,7 +137,15 @@ func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return r.Client.Update(ctx, &currentClusterScale)
 	}).AddToList(&writeEventOperations)
 
-	_ = writeEventOperations.Execute()
+	err = writeEventOperations.Execute()
+	if err != nil {
+		r.logger.Error(err, "failed to execute write event")
+		return ctrl.Result{}, err
+	}
+	users := cloud.UserCategory{}
+	if err = users.GetNameSpace(ctx, r.Client); err == nil {
+		cloud.SubmitNotificationWithUserCategory(ctx, r.Client, r.logger, users, cloud.UserPrefix, pack)
+	}
 	return ctrl.Result{}, nil
 }
 

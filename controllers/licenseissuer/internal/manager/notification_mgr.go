@@ -22,8 +22,10 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/go-logr/logr"
 	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -59,6 +61,7 @@ type NotificationPackage struct {
 	Title   Title
 	From    Source
 	Message Message
+	Level   ntf.Type
 }
 
 const (
@@ -90,6 +93,20 @@ func NewNotificationPackage(title Title, from Source, message Message) Notificat
 	}
 }
 
+func NewNotificationPackageWithLevel(title Title, from Source, message Message, level ntf.Type) NotificationPackage {
+	id, err := randStringBytes(idLength)
+	if err != nil || id == "" {
+		id = strings.ToLower(strconv.Itoa(int(time.Now().Unix())))
+	}
+	return NotificationPackage{
+		Name:    id,
+		Title:   title,
+		From:    from,
+		Message: message,
+		Level:   level,
+	}
+}
+
 type NotificationTask struct {
 	ctx               context.Context
 	client            cl.Client
@@ -113,6 +130,7 @@ func NotificationPackageToNotification(pack NotificationPackage) ntf.Notificatio
 	notification.Spec.From = string(pack.From)
 	notification.Spec.Message = string(pack.Message)
 	notification.Spec.Title = string(pack.Title)
+	notification.Spec.Importance = pack.Level
 	return notification
 }
 
@@ -217,4 +235,42 @@ func (uc *UserCategory) GetNameSpace(ctx context.Context, client cl.Client) erro
 		uc.Add(AdmPrefix, ns.Name)
 	}
 	return nil
+}
+
+func SubmitNotificationWithUserCategory(ctx context.Context, client cl.Client, logger logr.Logger, users UserCategory, prefix string, pack NotificationPackage) {
+	notification := NotificationPackageToNotification(pack)
+	var wg sync.WaitGroup
+	errchan := make(chan error)
+	for ns := range users[prefix].Iter() {
+		wg.Add(1)
+		notificationTask := NewNotificationTask(ctx, client, ns, []ntf.Notification{notification})
+		go AsyncCloudTask(&wg, errchan, &notificationTask)
+	}
+	go func() {
+		wg.Wait()
+		close(errchan)
+	}()
+	for err := range errchan {
+		if err != nil {
+			logger.Error(err, "Failed to deliver registration success.")
+		}
+	}
+}
+
+func SubmitNotificationWithUser(ctx context.Context, client cl.Client, logger logr.Logger, target string, pack NotificationPackage) {
+	notification := NotificationPackageToNotification(pack)
+	notificationTask := NewNotificationTask(ctx, client, target, []ntf.Notification{notification})
+	var wg sync.WaitGroup
+	errchan := make(chan error)
+	wg.Add(1)
+	go AsyncCloudTask(&wg, errchan, &notificationTask)
+	go func() {
+		wg.Wait()
+		close(errchan)
+	}()
+	for err := range errchan {
+		if err != nil {
+			logger.Error(err, "Failed to deliver notification success")
+		}
+	}
 }

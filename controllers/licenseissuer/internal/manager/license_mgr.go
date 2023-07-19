@@ -28,6 +28,7 @@ import (
 
 	"github.com/go-logr/logr"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	v1 "github.com/labring/sealos/controllers/common/notification/api/v1"
 	cloudv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/pkg/crypto"
 	corev1 "k8s.io/api/core/v1"
@@ -39,20 +40,13 @@ import (
 
 const MaxSizeThresholdStr = "800Ki"
 
-const Field1 = "nod"
-const Field2 = "cpu"
-const Field3 = "tte"
-const Field4 = "and"
-const Field5 = "adc"
-
-type LicenseMonitorRequest struct {
-	UID   string `json:"uid"`
-	Token string `json:"token"`
-}
-
-type LicenseMonitorResponse struct {
-	Key string `json:"key"`
-}
+const (
+	NodeField     = "nod"
+	CPUField      = "cpu"
+	DurationField = "tte"
+	AddNodeField  = "and"
+	AddCPUField   = "adc"
+)
 
 type Operation interface {
 	Execute() error
@@ -68,6 +62,36 @@ type WriteOperationList struct {
 
 type ReWriteOperationList struct {
 	reWriteOperations []Operation
+}
+
+func (list *ReadOperationList) Execute() error {
+	for _, op := range list.readOperations {
+		err := op.Execute()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (list *WriteOperationList) Execute() error {
+	reWriteList := &ReWriteOperationList{}
+
+	for _, op := range list.writeOperations {
+		err := op.Execute()
+		if err != nil {
+			reWriteList.AddToList(op)
+		}
+	}
+
+	if len(reWriteList.reWriteOperations) > 0 {
+		err := reWriteList.Execute()
+		if err != nil {
+			return fmt.Errorf("an error occurred, some operations still failed after retries: %v", err)
+		}
+	}
+
+	return nil
 }
 
 func (list *ReWriteOperationList) AddToList(op Operation) {
@@ -108,36 +132,6 @@ func (list *ReWriteOperationList) Execute() error {
 	return nil
 }
 
-func (list *ReadOperationList) Execute() error {
-	for _, op := range list.readOperations {
-		err := op.Execute()
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (list *WriteOperationList) Execute() error {
-	reWriteList := &ReWriteOperationList{}
-
-	for _, op := range list.writeOperations {
-		err := op.Execute()
-		if err != nil {
-			reWriteList.AddToList(op)
-		}
-	}
-
-	if len(reWriteList.reWriteOperations) > 0 {
-		err := reWriteList.Execute()
-		if err != nil {
-			return fmt.Errorf("an error occurred, some operations still failed after retries: %v", err)
-		}
-	}
-
-	return nil
-}
-
 type ReadEventBuilder struct {
 	obj      client.Object
 	ctx      context.Context
@@ -147,9 +141,6 @@ type ReadEventBuilder struct {
 }
 
 type WriteEventBuilder struct {
-	obj      client.Object
-	ctx      context.Context
-	client   client.Client
 	callback WriteFunc
 }
 
@@ -199,21 +190,6 @@ func (reb *ReadEventBuilder) Execute() error {
 	return fmt.Errorf("ReadEventBuilder excute error: %s", "value can't be nil")
 }
 
-func (web *WriteEventBuilder) WithClient(client client.Client) *WriteEventBuilder {
-	web.client = client
-	return web
-}
-
-func (web *WriteEventBuilder) WithContext(ctx context.Context) *WriteEventBuilder {
-	web.ctx = ctx
-	return web
-}
-
-func (web *WriteEventBuilder) WithObject(obj client.Object) *WriteEventBuilder {
-	web.obj = obj
-	return web
-}
-
 func (web *WriteEventBuilder) WithCallback(callback WriteFunc) *WriteEventBuilder {
 	web.callback = callback
 	return web
@@ -236,6 +212,15 @@ func (web *WriteEventBuilder) Execute() error {
 func (web *WriteEventBuilder) AddToList(list *WriteOperationList) *WriteOperationList {
 	list.writeOperations = append(list.writeOperations, web)
 	return list
+}
+
+type LicenseMonitorRequest struct {
+	UID   string `json:"uid"`
+	Token string `json:"token"`
+}
+
+type LicenseMonitorResponse struct {
+	Key string `json:"key"`
 }
 
 func NewLicenseMonitorRequest(secret corev1.Secret, license cloudv1.License) LicenseMonitorRequest {
@@ -279,6 +264,12 @@ func LicenseCheckOnInternalNetwork(license cloudv1.License) (map[string]interfac
 	return crypto.IsLicenseValid(license)
 }
 
+type ClusterScaleManager struct {
+	AvaliableScaleData map[string]ClusterScale
+	ActualScaleData    ClusterScale
+	ExpectScaleData    ClusterScale
+}
+
 type ClusterScale struct {
 	NodeLimit int64 `json:"nodeLimit"`
 	CPULimit  int64 `json:"cpuLimit"`
@@ -302,8 +293,7 @@ func ExpandClusterScale(current *ClusterScale, nods, cpus, days int64) ClusterSc
 }
 
 /******************************************************/
-
-func PrepareScaleData(secretData map[string][]byte) (map[string]ClusterScale, bool) {
+func TidyAvailableScaleData(secretData map[string][]byte) (map[string]ClusterScale, bool) {
 	result := make(map[string]ClusterScale)
 	isSanitized := false
 	for key, value := range secretData {
@@ -337,6 +327,15 @@ type GetScaleByCondition func(data map[string]ClusterScale) (string, ClusterScal
 func GetScaleOfMaxNodes(data map[string]ClusterScale) (string, ClusterScale) {
 	var clusterExpectScale ClusterScale
 	CmpNodes := func(value *ClusterScale) bool {
+		// If NodeLimit is equal, use Expire as a tie breaker
+		if value.NodeLimit == clusterExpectScale.NodeLimit {
+			if value.Expire > clusterExpectScale.Expire {
+				clusterExpectScale = *value
+				return true
+			}
+			return false
+		}
+		// Otherwise, use NodeLimit as the primary comparison
 		if value.NodeLimit > clusterExpectScale.NodeLimit {
 			clusterExpectScale = *value
 			return true
@@ -355,6 +354,13 @@ func GetScaleOfMaxNodes(data map[string]ClusterScale) (string, ClusterScale) {
 func GetScaleOfMaxCPU(data map[string]ClusterScale) (string, ClusterScale) {
 	var clusterExpectScale ClusterScale
 	CmpCpus := func(value *ClusterScale) bool {
+		if value.CPULimit == clusterExpectScale.CPULimit {
+			if value.Expire > clusterExpectScale.Expire {
+				clusterExpectScale = *value
+				return true
+			}
+			return false
+		}
 		if value.CPULimit > clusterExpectScale.CPULimit {
 			clusterExpectScale = *value
 			return true
@@ -368,6 +374,16 @@ func GetScaleOfMaxCPU(data map[string]ClusterScale) (string, ClusterScale) {
 		}
 	}
 	return key, clusterExpectScale
+}
+
+func GetCurrentScaleExpire(data map[string]ClusterScale) int64 {
+	var expire int64
+	for _, v := range data {
+		if expire < v.Expire {
+			expire = v.Expire
+		}
+	}
+	return expire
 }
 
 func GetCurrentScale(data map[string]ClusterScale,
@@ -471,18 +487,18 @@ func RecordLicense(ctx context.Context, client client.Client, logger logr.Logger
 }
 
 func AdjustScaleOfCluster(ctx context.Context, client client.Client, css corev1.Secret, payload map[string]interface{}) error {
-	if !ContainsFields(payload, Field1, Field2, Field3) {
+	if !ContainsFields(payload, NodeField, CPUField, DurationField) {
 		return nil
 	}
-	nodes, err := InterfaceToInt64(payload[Field1])
+	nodes, err := InterfaceToInt64(payload[NodeField])
 	if err != nil {
 		return err
 	}
-	cpus, err := InterfaceToInt64(payload[Field2])
+	cpus, err := InterfaceToInt64(payload[CPUField])
 	if err != nil {
 		return err
 	}
-	days, err := InterfaceToInt64(payload[Field3])
+	days, err := InterfaceToInt64(payload[DurationField])
 	if err != nil {
 		return err
 	}
@@ -495,23 +511,23 @@ func AdjustScaleOfCluster(ctx context.Context, client client.Client, css corev1.
 }
 
 func ExpandScaleOfClusterTemp(ctx context.Context, client client.Client, css corev1.Secret, payload map[string]interface{}) error {
-	if !ContainsFields(payload, Field3, Field4, Field5) {
+	if !ContainsFields(payload, DurationField, AddNodeField, AddCPUField) {
 		return nil
 	}
-	addNodes, err := InterfaceToInt64(payload[Field4])
+	addNodes, err := InterfaceToInt64(payload[AddNodeField])
 	if err != nil {
 		return err
 	}
-	addCpus, err := InterfaceToInt64(payload[Field5])
+	addCpus, err := InterfaceToInt64(payload[AddCPUField])
 	if err != nil {
 		return err
 	}
-	days, err := InterfaceToInt64(payload[Field3])
+	days, err := InterfaceToInt64(payload[DurationField])
 	if err != nil {
 		return err
 	}
 
-	mapClusterScale, _ := PrepareScaleData(css.Data)
+	mapClusterScale, _ := TidyAvailableScaleData(css.Data)
 
 	currentClusterScale := GetCurrentScale(mapClusterScale, GetScaleOfMaxNodes, GetScaleOfMaxCPU)
 
@@ -565,9 +581,12 @@ func CheckLicenseExists(configMap *corev1.ConfigMap, license string) bool {
 }
 
 var logger logr.Logger
+var resyncTime int64
+var lastSetFlagTime int64
 
 func init() {
 	logger = ctrl.Log.WithName("ReSyncForClusterScale")
+	resyncTime = int64(time.Minute)
 }
 
 type MonitorScale struct {
@@ -592,13 +611,14 @@ func (ms *MonitorScale) Start(ctx context.Context) error {
 
 func ReSync(errchan chan<- error, cb func() error) {
 	for {
+		logger.Info("start resync work for cluster scale")
 		err := cb()
 		if err != nil {
 			errchan <- err
 			time.Sleep(time.Second * 5)
 			continue
 		}
-		time.Sleep(time.Minute * 1)
+		time.Sleep(time.Duration(resyncTime))
 	}
 }
 
@@ -607,6 +627,7 @@ func ReSyncForClusterScale(ctx context.Context, client client.Client) error {
 		actualClusterScale corev1.Secret
 		expectClusterScale corev1.Secret
 		clusterTotalScale  corev1.Secret
+		currentScaleData   ClusterScale
 	)
 	var readEventOperations ReadOperationList
 
@@ -652,30 +673,63 @@ func ReSyncForClusterScale(ctx context.Context, client client.Client) error {
 	if actualClusterScale.Data == nil {
 		actualClusterScale.Data = make(map[string][]byte)
 	}
+
+	// write event
 	actualClusterScale.Data[string(ActualScaleSecretKey)] = bytes
 	err = client.Update(ctx, &actualClusterScale)
 	if err != nil {
 		return fmt.Errorf("failed to update actual cluster resource: %w", err)
 	}
 
-	return CheckExpectedScale(expectClusterScale, clusterTotalScale, trigger)
-}
-
-// ce: current expect cluster scale
-// cs: cluster total scale
-func CheckExpectedScale(ce corev1.Secret, cs corev1.Secret, trigger func() error) error {
-	var currentExpectScale ClusterScale
-	var expectScale ClusterScale
-	err := json.Unmarshal(ce.Data[string(ExpectScaleSecretKey)], &currentExpectScale)
+	err = json.Unmarshal(expectClusterScale.Data[string(ExpectScaleSecretKey)], &currentScaleData)
 	if err != nil {
 		logger.Info("triggered when json parse failed")
 		return trigger()
 	}
-	res, _ := PrepareScaleData(cs.Data)
 
-	expectScale = GetCurrentScale(res, GetScaleOfMaxNodes, GetScaleOfMaxCPU)
+	clusterScaleTotalData, _ := TidyAvailableScaleData(clusterTotalScale.Data)
 
-	ok := isConsistent(currentExpectScale, expectScale)
+	// notification for license soon expired
+	users := UserCategory{}
+	expire := GetCurrentScaleExpire(clusterScaleTotalData)
+	daysLeft := (expire - time.Now().Unix()) / (24 * 60 * 60)
+
+	// fmt.Printf("the left days is: %d\n", daysLeft)
+
+	isNeedNotification := func() bool {
+		defer func() {
+			lastSetFlagTime = time.Now().Unix()
+		}()
+		if daysLeft <= 1 {
+			return true
+		}
+		if time.Now().Add(time.Hour*24).Unix() < lastSetFlagTime {
+			return false
+		}
+		if daysLeft == 30 || daysLeft == 15 || daysLeft <= 7 {
+			return true
+		}
+		return false
+	}
+
+	if users.GetNameSpace(ctx, client) == nil && isNeedNotification() {
+		var message string
+		if daysLeft >= 0 {
+			message = fmt.Sprintf("Your license is about to expire in %d days. When it does, your cluster scale will be limited and you will not be able to create or update applications. Please apply for and activate a new license promptly.", daysLeft)
+		} else {
+			message = fmt.Sprintf("Your license has been expired. Your cluster has be limited and you will not be able to create or update applications. Please apply for and activate a new license promptly.")
+		}
+		pack := NewNotificationPackageWithLevel(ExpireLicenseTitle, SEALOS, Message(message), v1.High)
+		SubmitNotificationWithUserCategory(ctx, client, logger, users, UserPrefix, pack)
+	}
+	// check scale
+	return CheckExpectedScale(currentScaleData, clusterScaleTotalData, trigger)
+}
+
+func CheckExpectedScale(currentScaleData ClusterScale, totalData map[string]ClusterScale, trigger func() error) error {
+	expectScale := GetCurrentScale(totalData, GetScaleOfMaxNodes, GetScaleOfMaxCPU)
+
+	ok := isConsistent(currentScaleData, expectScale)
 
 	if !ok {
 		logger.Info("triggered when check cluster scale")

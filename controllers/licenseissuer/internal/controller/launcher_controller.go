@@ -61,7 +61,6 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	canConnectToExternalNetwork := os.Getenv(cloud.NetWorkEnv) == cloud.TRUE
 	var secret corev1.Secret
 	var configMap corev1.ConfigMap
-
 	r.logger.Info("Try to get the cloud secret&configmap resource...")
 	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.URLConfigName)}, &configMap)
 	if err != nil {
