@@ -16,7 +16,10 @@ limitations under the License.
 
 package controllers
 
-import "testing"
+import (
+	corev1 "k8s.io/api/core/v1"
+	"testing"
+)
 
 func Test_giveGift(t *testing.T) {
 	type args struct {
@@ -43,9 +46,15 @@ func Test_giveGift(t *testing.T) {
 		{name: "30% more than 19999", args: args{amount: 99999 * BaseUnit}, want: 29999_700_000 + 99999*BaseUnit},
 		{"0% less than 299", args{amount: 1 * BaseUnit}, 1 * BaseUnit},
 	}
+
+	configMap := &corev1.ConfigMap{}
+	configMap.Data = make(map[string]string)
+	configMap.Data["steps"] = "299,599,1999,4999,19999"
+	configMap.Data["ratios"] = "10,15,20,25,30"
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := giveGift(tt.args.amount); got != tt.want {
+			if got, _ := giveGift(tt.args.amount, configMap); got != tt.want {
 				t.Errorf("giveGift() = %v, want %v", got, tt.want)
 			}
 		})
