@@ -37,16 +37,18 @@ export default function DesktopContent(props: any) {
     ({
       appKey,
       query = {},
-      messageData = {}
+      messageData = {},
+      pathname = '/'
     }: {
       appKey: string;
       query?: Record<string, string>;
       messageData?: Record<string, any>;
+      pathname: string;
     }) => {
       const app = apps.find((item) => item.key === appKey);
       const runningApp = runningInfo.find((item) => item.key === appKey);
       if (!app) return;
-      openApp(app, { query });
+      openApp(app, { query, pathname });
       if (runningApp) {
         setToHighestLayerById(runningApp.pid);
       }

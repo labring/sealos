@@ -66,17 +66,21 @@ export type TOSState = {
   // init desktop
   init(): Promise<TOSState>;
   // open app
-  openApp(app: TApp, _query?: {
-    query?: Record<string, string>,
-    raw?: string
-  }): Promise<void>;
-// close app
-closeAppById: (pid: number) => void;
-// get current runningApp
-currentApp: () => AppInfo | undefined;
-switchAppById: (pid: number) => void;
-findAppInfoById: (pid: number) => AppInfo | undefined;
-setToHighestLayerById: (pid: number) => void;
-updateOpenedAppInfo: (app: TApp) => void;
-deleteLeastUsedAppByIndex: () => void;
+  openApp(
+    app: TApp,
+    _query?: {
+      query?: Record<string, string>;
+      raw?: string;
+      pathname?: string;
+    }
+  ): Promise<void>;
+  // close app
+  closeAppById: (pid: number) => void;
+  // get current runningApp
+  currentApp: () => AppInfo | undefined;
+  switchAppById: (pid: number) => void;
+  findAppInfoById: (pid: number) => AppInfo | undefined;
+  setToHighestLayerById: (pid: number) => void;
+  updateOpenedAppInfo: (app: TApp) => void;
+  deleteLeastUsedAppByIndex: () => void;
 };
