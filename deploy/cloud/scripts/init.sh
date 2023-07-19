@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ex
 
 cloudDomain="127.0.0.1.nip.io"
 tlsCrtPlaceholder="<tls-crt-placeholder>"
@@ -10,17 +10,15 @@ function read_env {
   source $1
 }
 
-function mock_tls {
+function create_tls_secret {
   if grep -q $tlsCrtPlaceholder manifests/tls-secret.yaml; then
     echo "mock tls secret"
+    kubectl apply -f manifests/mock-cert.yaml
+    echo "mock tls cert has been created successfully."
   else
     echo "tls secret is already set"
-    return
+    kubectl apply -f manifests/tls-secret.yaml
   fi
-
-  mkdir -p etc/tls
-  openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout etc/tls/tls.key -out etc/tls/tls.crt -subj "/CN=$1" -addext "subjectAltName=DNS:$1,DNS:*.$1" >/dev/null 2>&1
-  sed -i -e "s;$tlsCrtPlaceholder;$(base64 -w 0 etc/tls/tls.crt);" -e "s;$tlsKeyPlaceholder;$(base64 -w 0 etc/tls/tls.key);" manifests/tls-secret.yaml
 }
 
 function sealos_run_controller {
@@ -94,11 +92,11 @@ function install {
   # read env
   read_env etc/sealos/cloud.env
 
-  # mock tls
-  mock_tls $cloudDomain
-
   # kubectl apply namespace, secret and mongodb
-  kubectl apply -f manifests/namespace.yaml -f manifests/tls-secret.yaml
+  kubectl apply -f manifests/namespace.yaml
+
+  # create tls secret
+  create_tls_secret $cloudDomain
 
   # gen mongodb uri
   gen_mongodb_uri
