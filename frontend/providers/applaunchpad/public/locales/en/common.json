@@ -62,7 +62,7 @@
   "Confirm Update Application?": "Update Application?",
   "Update Successful": "Update Successful",
   "Update Failed": "Update Failed",
-  "Prompt": "Warning",
+  "Warning": "Warning",
   "jump_prompt": "Jump prompt",
   "jump_message": "This application cannot be used independently. Please click 'OK' to proceed to Sealos Desktop.",
   "pause_message": "The resources occupied by storage will continue to be charged.",
