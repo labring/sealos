@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mock-cert-sa
+  namespace: sealos-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: secret-manager
+  namespace: sealos-system
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: secret-creator-binding
+  namespace: sealos-system
+subjects:
+  - kind: ServiceAccount
+    name: mock-cert-sa
+    namespace: sealos-system
+roleRef:
+  kind: Role
+  name: secret-manager
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mock-cert
+  namespace: sealos-system
+spec:
+  template:
+    spec:
+      securityContext:
+        runAsUser: 0
+      serviceAccountName: mock-cert-sa
+      containers:
+        - name: mock-cert
+          image: bitnami/kubectl:1.25.6
+          command: [ "/bin/sh", "-c" ]
+          args:
+            - |
+              set -ex
+              
+              mkdir -p /etc/tls 
+              openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+              -keyout /etc/tls/tls.key \
+              -out /etc/tls/tls.crt \
+              -subj "/CN={{ .cloudDomain }}" \
+              -addext "subjectAltName=DNS:{{ .cloudDomain }},DNS:*.{{ .cloudDomain }}" 
+              tls_crt=$(cat /etc/tls/tls.crt | base64 | tr -d '\n')
+              tls_key=$(cat /etc/tls/tls.key | base64 | tr -d '\n')
+              tmpfile=$(mktemp)
+              cat <<EOF >$tmpfile
+              apiVersion: v1
+              data:
+                tls.crt: $tls_crt
+                tls.key: $tls_key
+              kind: Secret
+              metadata:
+                annotations:
+                  reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
+                  reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: sealos,\w+-system,\w+-frontend,ns-[\-a-z0-9]*
+                  reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
+                  reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: sealos,\w+-system,\w+-frontend,ns-[\-a-z0-9]*
+                name: wildcard-cert
+                namespace: sealos-system
+              type: kubernetes.io/tls
+              EOF
+              
+              kubectl apply -f $tmpfile --namespace=sealos-system
+      restartPolicy: Never
+  backoffLimit: 1
