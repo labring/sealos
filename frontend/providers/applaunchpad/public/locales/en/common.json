@@ -2,12 +2,8 @@
   "Applications": "Applications",
   "Create Application": "Create Application",
   "Cancel": "Cancel",
-<<<<<<< HEAD
-  "Confirm": "Confirm",
   "To Confirm": "to confirm",
-=======
   "Confirm": "Yes",
->>>>>>> bfb12a5c (i18n)
   "Name": "Name",
   "Status": "Status",
   "Creation Time": "Creation Time",
