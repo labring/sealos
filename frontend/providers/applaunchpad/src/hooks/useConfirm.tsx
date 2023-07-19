@@ -58,7 +58,7 @@ export const useConfirm = ({ title = 'Prompt', content }: { title?: string; cont
                     typeof confirmCb.current === 'function' && confirmCb.current();
                   }}
                 >
-                  {t('Confirm')}
+                  {t('Yes')}
                 </Button>
               </AlertDialogFooter>
             </AlertDialogContent>
