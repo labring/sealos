@@ -13,8 +13,8 @@ function read_env {
 function create_tls_secret {
   if grep -q $tlsCrtPlaceholder manifests/tls-secret.yaml; then
     echo "mock tls secret"
-    kubectl apply -f manifests/mock-cert-job.yaml
-    echo "mock tls job has been created successfully."
+    kubectl apply -f manifests/mock-cert.yaml
+    echo "mock tls cert has been created successfully."
   else
     echo "tls secret is already set"
     kubectl apply -f manifests/tls-secret.yaml
