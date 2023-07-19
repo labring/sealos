@@ -10,15 +10,15 @@ function read_env {
   source $1
 }
 
-function mock_tls {
+function create_tls_secret {
   if grep -q $tlsCrtPlaceholder manifests/tls-secret.yaml; then
     echo "mock tls secret"
+    kubectl apply -f manifests/mock-cert-job.yaml
+    echo "mock tls job has been created successfully."
   else
     echo "tls secret is already set"
-    return
+    kubectl apply -f manifests/tls-secret.yaml
   fi
-  kubectl apply -f manifests/mock-cert-job.yaml
-  echo "mock tls job has been created successfully."
 }
 
 function sealos_run_controller {
@@ -93,10 +93,10 @@ function install {
   read_env etc/sealos/cloud.env
 
   # mock tls
-  mock_tls $cloudDomain
+  create_tls_secret $cloudDomain
 
   # kubectl apply namespace, secret and mongodb
-  kubectl apply -f manifests/namespace.yaml -f manifests/tls-secret.yaml
+  kubectl apply -f manifests/namespace.yaml
 
   # gen mongodb uri
   gen_mongodb_uri
