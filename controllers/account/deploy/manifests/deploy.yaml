@@ -637,6 +637,18 @@ metadata:
   name: account-manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - account.sealos.io
   resources:
   - accountbalances
@@ -1260,14 +1272,6 @@ webhooks:
       path: /validate-v1-sealos-cloud
   failurePolicy: Ignore
   name: debt.sealos.io
-  namespaceSelector:
-    matchExpressions:
-      - key: metadata.name
-        operator: NotIn
-        values:
-          - account-system
-          - kube-system
-          - calico-system
   rules:
   - apiGroups:
     - '*'
