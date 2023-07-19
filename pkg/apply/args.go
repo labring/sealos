@@ -100,8 +100,15 @@ func (arg *ResetArgs) RegisterFlags(fs *pflag.FlagSet) {
 
 type ScaleArgs struct {
 	*Cluster
+	*SSH
+	fs *pflag.FlagSet
 }
 
 func (arg *ScaleArgs) RegisterFlags(fs *pflag.FlagSet, verb, action string) {
 	arg.Cluster.RegisterFlags(fs, verb, action)
+	// delete cmd does not support setting ssh, it reads from clusterfile
+	if arg.SSH != nil {
+		arg.SSH.RegisterFlags(fs)
+	}
+	arg.fs = fs
 }

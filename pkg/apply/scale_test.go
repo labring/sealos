@@ -740,6 +740,88 @@ func TestJoin(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "add masters with different password",
+			args: args{
+				cluster: &v2.Cluster{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v2.ClusterSpec{
+						Image: nil,
+						SSH: v2.SSH{
+							User:   "root",
+							Passwd: "Fanux#123",
+							Port:   22,
+						},
+						Hosts: []v2.Host{
+							{
+								IPS:   []string{"192.168.16.99:22", "192.168.16.98:22", "192.168.16.97:22"},
+								Roles: []string{v2.MASTER},
+							},
+							{
+								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
+								Roles: []string{v2.NODE},
+							},
+						},
+					},
+					Status: v2.ClusterStatus{},
+				},
+				scalingArgs: &ScaleArgs{
+					Cluster: &Cluster{
+						Masters:     "192.168.16.5:22",
+						Nodes:       "",
+						ClusterName: "",
+					},
+					SSH: &SSH{
+						User:     "root",
+						Password: "Fanux@1234",
+						Port:     22,
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "add nodes with different password",
+			args: args{
+				cluster: &v2.Cluster{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v2.ClusterSpec{
+						Image: nil,
+						SSH: v2.SSH{
+							User:   "root",
+							Passwd: "Fanux#123",
+							Port:   22,
+						},
+						Hosts: []v2.Host{
+							{
+								IPS:   []string{"192.168.16.99:22", "192.168.16.98:22", "192.168.16.97:22"},
+								Roles: []string{v2.MASTER},
+							},
+							{
+								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
+								Roles: []string{v2.NODE},
+							},
+						},
+					},
+					Status: v2.ClusterStatus{},
+				},
+				scalingArgs: &ScaleArgs{
+					Cluster: &Cluster{
+						Masters:     "",
+						Nodes:       "192.168.16.90:22",
+						ClusterName: "",
+					},
+					SSH: &SSH{
+						User:     "root",
+						Password: "Fanux@1234",
+						Port:     22,
+					},
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

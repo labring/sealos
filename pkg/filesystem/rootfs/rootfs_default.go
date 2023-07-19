@@ -35,6 +35,7 @@ import (
 )
 
 type defaultRootfs struct {
+	currentCluster *v2.Cluster
 	// clusterService image.ClusterService
 	// imgList types.ImageListOCIV1
 	// cluster types.ClusterManifestList
@@ -53,8 +54,8 @@ func (f *defaultRootfs) getClusterName(cluster *v2.Cluster) string {
 	return cluster.Name
 }
 
-func (f *defaultRootfs) getSSH(cluster *v2.Cluster) ssh.Interface {
-	return ssh.NewSSHClient(&cluster.Spec.SSH, true)
+func (f *defaultRootfs) getSSH(cluster, current *v2.Cluster) ssh.Interface {
+	return ssh.NewClusterClient(cluster, current, true)
 }
 
 func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error {
@@ -92,7 +93,8 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 		return err
 	}
 
-	sshClient := f.getSSH(cluster)
+	sshClient := f.getSSH(cluster, f.currentCluster)
+
 	notRegistryDirFilter := func(entry fs.DirEntry) bool { return !constants.IsRegistryDir(entry) }
 
 	for idx := range ipList {
@@ -147,7 +149,7 @@ func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) erro
 	for _, IP := range ipList {
 		ip := IP
 		eg.Go(func() error {
-			SSH := f.getSSH(cluster)
+			SSH := f.getSSH(cluster, f.currentCluster)
 			return SSH.CmdAsync(ip, rmRootfs, deleteHomeDirCmd)
 		})
 	}
@@ -174,11 +176,11 @@ func renderTemplatesWithEnv(mountDir string, ipList []string, p env.Interface) e
 	return nil
 }
 
-func newDefaultRootfs(mounts []v2.MountImage) (filesystem.Mounter, error) {
-	return &defaultRootfs{mounts: mounts}, nil
+func newDefaultRootfs(mounts []v2.MountImage, current *v2.Cluster) (filesystem.Mounter, error) {
+	return &defaultRootfs{mounts: mounts, currentCluster: current}, nil
 }
 
 // NewRootfsMounter :according to the Metadata file content to determine what kind of Filesystem will be load.
-func NewRootfsMounter(images []v2.MountImage) (filesystem.Mounter, error) {
-	return newDefaultRootfs(images)
+func NewRootfsMounter(images []v2.MountImage, current *v2.Cluster) (filesystem.Mounter, error) {
+	return newDefaultRootfs(images, current)
 }

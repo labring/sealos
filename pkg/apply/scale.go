@@ -20,17 +20,17 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/ssh"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/iputils"
-	strings2 "github.com/labring/sealos/pkg/utils/strings"
-
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/logger"
+	strings2 "github.com/labring/sealos/pkg/utils/strings"
 )
 
 // NewScaleApplierFromArgs will filter ip list from command parameters.
@@ -106,12 +106,13 @@ func joinNodes(cluster *v2.Cluster, scaleArgs *ScaleArgs) error {
 			IPS:   ips,
 			Roles: h.Roles,
 			Env:   h.Env,
+			SSH:   h.SSH,
 		})
 	}
 	if !hasMaster {
 		return fmt.Errorf("`master` role not found, due to Clusterfile may have been corrupted?")
 	}
-	getHostFunc := func(sliceStr string, role string, exclude []string) (*v2.Host, error) {
+	getHostFunc := func(sliceStr string, role string, exclude []string, scaleSshConfig *SSH) (*v2.Host, error) {
 		ss := strings.Split(sliceStr, ",")
 		addrs := make([]string, 0)
 		for _, s := range ss {
@@ -129,22 +130,46 @@ func joinNodes(cluster *v2.Cluster, scaleArgs *ScaleArgs) error {
 		}
 		if len(addrs) > 0 {
 			clusterSSH := cluster.GetSSH()
+
+			var override bool
+			var overrideSSH v2.SSH
+
+			if scaleSshConfig != nil {
+				overrideSSH.User = scaleSshConfig.User
+				overrideSSH.Passwd = scaleSshConfig.Password
+				overrideSSH.PkName = clusterSSH.PkName
+				overrideSSH.PkData = clusterSSH.PkData
+				overrideSSH.Pk = scaleSshConfig.Pk
+				overrideSSH.PkPasswd = scaleSshConfig.PkPassword
+				overrideSSH.Port = scaleSshConfig.Port
+
+				if clusterSSH != overrideSSH {
+					logger.Info("scale '%s' nodes '%q' with different ssh settings: %+v", role, sliceStr, scaleSshConfig)
+					clusterSSH = overrideSSH
+					override = true
+				}
+			}
+
 			sshClient := ssh.NewSSHClient(&clusterSSH, true)
 
-			return &v2.Host{
+			host := &v2.Host{
 				IPS:   addrs,
 				Roles: []string{role, GetHostArch(sshClient, addrs[0])},
-			}, nil
+			}
+			if override {
+				host.SSH = &overrideSSH
+			}
+			return host, nil
 		}
 		return nil, nil
 	}
 
-	if mastersToAdded, err := getHostFunc(masters, v2.MASTER, cluster.GetMasterIPAndPortList()); err != nil {
+	if mastersToAdded, err := getHostFunc(masters, v2.MASTER, cluster.GetMasterIPAndPortList(), scaleArgs.SSH); err != nil {
 		return err
 	} else if mastersToAdded != nil {
 		hosts = append(hosts, *mastersToAdded)
 	}
-	if nodesToAdded, err := getHostFunc(nodes, v2.NODE, cluster.GetNodeIPAndPortList()); err != nil {
+	if nodesToAdded, err := getHostFunc(nodes, v2.NODE, cluster.GetNodeIPAndPortList(), scaleArgs.SSH); err != nil {
 		return err
 	} else if nodesToAdded != nil {
 		hosts = append(hosts, *nodesToAdded)

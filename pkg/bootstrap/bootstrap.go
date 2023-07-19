@@ -45,8 +45,8 @@ type realBootstrap struct {
 	postflights  []Applier
 }
 
-func New(cluster *v2.Cluster) Interface {
-	ctx := NewContextFrom(cluster)
+func New(cluster, current *v2.Cluster) Interface {
+	ctx := NewContextFrom(cluster, current)
 	bs := &realBootstrap{
 		ctx:          ctx,
 		preflights:   make([]Applier, 0),

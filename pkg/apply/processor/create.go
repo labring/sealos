@@ -114,7 +114,7 @@ func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 func (c *CreateProcessor) MountRootfs(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline MountRootfs in CreateProcessor.")
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
-	fs, err := rootfs.NewRootfsMounter(cluster.Status.Mounts)
+	fs, err := rootfs.NewRootfsMounter(cluster.Status.Mounts, c.ClusterFile.GetCluster())
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func (c *CreateProcessor) MirrorRegistry(cluster *v2.Cluster) error {
 func (c *CreateProcessor) Bootstrap(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline Bootstrap in CreateProcessor")
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
-	bs := bootstrap.New(cluster)
+	bs := bootstrap.New(cluster, c.ClusterFile.GetCluster())
 	return bs.Apply(hosts...)
 }
 

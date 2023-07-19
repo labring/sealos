@@ -213,12 +213,15 @@ func TestParseScaleArgsFlagsCorrect(t *testing.T) {
 		{
 			[]string{
 				"--masters", "10.74.22.22:22", "--nodes", "10.74.22.44:22", "--cluster", "default",
+				"-u", "root", "-p", "passwd", "--port", "22",
 			},
 			&ScaleArgs{
 				Cluster: &Cluster{},
+				SSH:     &SSH{},
 			},
 			&ScaleArgs{
 				Cluster: &Cluster{Masters: "10.74.22.22:22", Nodes: "10.74.22.44:22", ClusterName: "default"},
+				SSH:     &SSH{User: "root", Password: "passwd", Port: 22, Pk: path.Join(constants.GetHomeDir(), ".ssh", "id_rsa")},
 			},
 		},
 	}

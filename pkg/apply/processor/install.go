@@ -233,7 +233,7 @@ func (c *InstallProcessor) MountRootfs(cluster *v2.Cluster) error {
 		return nil
 	}
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
-	fs, err := rootfs.NewRootfsMounter(c.NewMounts)
+	fs, err := rootfs.NewRootfsMounter(c.NewMounts, c.ClusterFile.GetCluster())
 	if err != nil {
 		return err
 	}
