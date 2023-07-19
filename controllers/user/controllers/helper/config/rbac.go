@@ -18,8 +18,9 @@ package config
 
 import (
 	"fmt"
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"os"
+
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 
 	rbacV1 "k8s.io/api/rbac/v1"
 )

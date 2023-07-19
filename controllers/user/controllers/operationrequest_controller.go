@@ -20,6 +20,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/go-logr/logr"
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
 	v1 "k8s.io/api/core/v1"
@@ -30,7 +32,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
