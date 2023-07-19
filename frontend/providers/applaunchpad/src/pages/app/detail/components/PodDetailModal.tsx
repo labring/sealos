@@ -29,6 +29,7 @@ import MyTooltip from '@/components/MyTooltip';
 
 import styles from '../index.module.scss';
 import { useTranslation } from 'next-i18next';
+import { SHOW_EVENT_ANALYZE } from '@/store/static';
 
 const Logs = ({
   pod = MOCK_PODS[0],
@@ -250,7 +251,7 @@ const Logs = ({
           <Flex position={'relative'} flexDirection={'column'} h={'100%'}>
             <Flex mb={4} alignItems={'center'}>
               <Box color={'myGray.600'}>Events</Box>
-              {events.length > 0 && (
+              {events.length > 0 && SHOW_EVENT_ANALYZE && (
                 <Button
                   ml={3}
                   size={'sm'}
@@ -318,14 +319,13 @@ const Logs = ({
       {/* analyses modal */}
       <Modal isOpen={isOpenAnalyses} onClose={onCloseAnalysesModel}>
         <ModalOverlay />
-        <ModalContent maxW={'50vw'}>
+        <ModalContent maxW={'50vw'} h={'70vh'}>
           <ModalHeader>Pod {t('Intelligent Analysis')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody
             className={isAnalyzing ? styles.analysesAnimation : ''}
-            h={'60vh'}
-            maxH={'60vh'}
             overflowY={'auto'}
+            h={'100%'}
             whiteSpace={'pre-wrap'}
             position={'relative'}
             pb={2}
