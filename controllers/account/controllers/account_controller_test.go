@@ -17,8 +17,9 @@ limitations under the License.
 package controllers
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	"testing"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 func Test_giveGift(t *testing.T) {
