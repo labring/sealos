@@ -163,7 +163,6 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
   if (!appDeploy) {
     throw new Error('获取APP异常');
   }
-  console.log(deployKindsMap.ConfigMap, '=====');
 
   const domain = deployKindsMap?.Ingress?.spec?.rules?.[0].host;
   const sealosDomain = deployKindsMap?.Ingress?.metadata?.labels?.[domainKey];
