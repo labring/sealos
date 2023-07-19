@@ -70,9 +70,7 @@ const EditEnvs = ({
             value={inputVal}
             resize={'both'}
             bg={'myWhite.300'}
-            placeholder={
-              '环境变量，可用冒号或等号，换行分隔。例如:\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n- env1=test'
-            }
+            placeholder={t('Env Placeholder') || ''}
             overflowX={'auto'}
             whiteSpace={inputVal === '' ? 'pre' : 'nowrap'}
             onChange={(e) => setInputVal(e.target.value)}

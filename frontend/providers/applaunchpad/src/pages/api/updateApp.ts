@@ -5,7 +5,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { YamlKindEnum } from '@/utils/adapt';
 import yaml from 'js-yaml';
-import type { V1StatefulSet, V1PersistentVolumeClaim } from '@kubernetes/client-node';
+import type { V1StatefulSet } from '@kubernetes/client-node';
 import { PatchUtils } from '@kubernetes/client-node';
 import type { AppPatchPropsType } from '@/types/app';
 

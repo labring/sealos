@@ -27,7 +27,7 @@
   "Command": "启动命令",
   "Parameters": "运行参数",
   "Not Configured": "未配置",
-  "Accessible to the Public": "可外网访问",
+  "External Access": "可外网访问",
   "Configuration File": "配置文件",
   "Storage": "存储卷",
   "Environment Variables": "环境变量",
@@ -52,8 +52,7 @@
   "Application Deployment": "应用部署",
   "Creating": "创建中",
   "Abnormality Detected": "有异常",
-  "Update Application": "变更应用",
-  "Deploy Application": "部署应用",
+  "Deploy": "部署",
   "Confirm Deploy Application?": "确认部署应用?",
   "Deployment Successful": "部署成功",
   "Deployment Failed": "部署失败",
@@ -148,5 +147,6 @@
   "Start Failed": "启动应用出现了意外",
   "Start Successful": "应用已启动",
   "Total": "总共",
-  "Waiting": "获取中"
+  "Waiting": "获取中",
+  "Env Placeholder": "环境变量，可用冒号或等号，换行分隔。例如:\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n- env1=test"
 }
