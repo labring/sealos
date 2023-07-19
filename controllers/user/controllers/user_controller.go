@@ -136,7 +136,7 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts utilcontroller.
 	owner := &handler.EnqueueRequestForOwner{OwnerType: &userv1.User{}, IsController: true}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}, builder.WithPredicates(
-			predicate.Or(predicate.GenerationChangedPredicate{}))).
+			predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}))).
 		Watches(&source.Kind{Type: &v1.ServiceAccount{}}, owner).
 		Watches(&source.Kind{Type: &v12.Role{}}, owner).
 		Watches(&source.Kind{Type: &v12.RoleBinding{}}, owner).
