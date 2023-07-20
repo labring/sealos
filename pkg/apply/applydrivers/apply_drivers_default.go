@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/labring/sealos/pkg/utils/confirm"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/version"
 
@@ -90,7 +92,13 @@ func (c *Applier) Apply() error {
 		}
 	}()
 	c.initStatus()
-	if c.ClusterDesired.CreationTimestamp.IsZero() && (c.ClusterCurrent == nil || c.ClusterCurrent.CreationTimestamp.IsZero()) {
+	if c.ClusterCurrent == nil || c.ClusterCurrent.CreationTimestamp.IsZero() {
+		if !c.ClusterDesired.CreationTimestamp.IsZero() {
+			if yes, _ := confirm.Confirm("Desired cluster CreationTimestamp is not zero, do you want to initialize it again?", "you have canceled to create cluster"); !yes {
+				clusterErr = processor.NewPreProcessError(fmt.Errorf("canceled to create cluster"))
+				return clusterErr
+			}
+		}
 		clusterErr = c.initCluster()
 		c.ClusterDesired.CreationTimestamp = metav1.Now()
 	} else {
