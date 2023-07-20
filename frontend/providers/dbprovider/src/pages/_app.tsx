@@ -15,7 +15,7 @@ import { useLoading } from '@/hooks/useLoading';
 import { useRouter } from 'next/router';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
-import { getUserPrice, getDBVersion, updateStorageClassName } from '@/store/static';
+import { getUserPrice, getDBVersion, StorageClassName, Domain, getEnv } from '@/store/static';
 
 import 'nprogress/nprogress.css';
 import 'react-day-picker/dist/style.css';
@@ -40,9 +40,9 @@ const queryClient = new QueryClient({
 function App({
   Component,
   pageProps,
-  domain,
-  env_storage_className
-}: AppProps & { domain: string; env_storage_className?: string }) {
+  // domain,
+  // env_storage_className
+}: AppProps) {
   const router = useRouter();
   const { i18n } = useTranslation();
   const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
@@ -67,7 +67,7 @@ function App({
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
           localStorage.removeItem('session');
           openConfirm(() => {
-            window.open(`https://${domain}`, '_self');
+            window.open(`https://${Domain}`, '_self');
           })();
         }
       }
@@ -75,7 +75,7 @@ function App({
     NProgress.done();
 
     return response;
-  }, [openConfirm, domain]);
+  }, [openConfirm]);
 
   // add resize event
   useEffect(() => {
@@ -106,8 +106,7 @@ function App({
 
     getUserPrice();
     getDBVersion();
-    updateStorageClassName(env_storage_className);
-
+		getEnv();
     (async () => {
       try {
         const lang = await sealosApp.getLanguage();
@@ -155,11 +154,5 @@ function App({
   );
 }
 
-App.getInitialProps = async () => {
-  return {
-    domain: process.env.SEALOS_DOMAIN || 'cloud.sealos.io',
-    env_storage_className: process.env.STORAGE_CLASSNAME
-  };
-};
 
 export default appWithTranslation(App);

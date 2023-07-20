@@ -42,7 +42,8 @@ export type ComponentRef = {
   backupProcessing: boolean;
 };
 
-const BackupTable = ({ db }: { db: DBDetailType }, ref: ForwardedRef<ComponentRef>) => {
+const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentRef>) => {
+	if(!db) return <></>
   const { t } = useTranslation();
   const { toast } = useToast();
   const { Loading, setIsLoading } = useLoading();

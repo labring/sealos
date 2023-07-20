@@ -1,13 +1,12 @@
 {
-  "name": "terminal",
+  "name": "costcenter",
   "version": "0.1.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "docker": "docker build . -t"
+    "lint": "next lint"
   },
   "dependencies": {
     "@alicloud/dysmsapi20170525": "^2.0.24",
@@ -18,13 +17,13 @@
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
     "@kubernetes/client-node": "0.18.0",
-    "@tanstack/query-sync-storage-persister": "^4.29.7",
-    "@tanstack/react-query": "^4.29.7",
-    "@tanstack/react-query-persist-client": "^4.29.7",
+    "@tanstack/query-sync-storage-persister": "^4.29.25",
+    "@tanstack/react-query": "^4.29.25",
+    "@tanstack/react-query-persist-client": "^4.29.25",
     "axios": "1.2.1",
     "clsx": "^1.2.1",
     "date-fns": "^2.30.0",
-    "echarts": "^5.4.2",
+    "echarts": "^5.4.3",
     "echarts-for-react": "^3.0.2",
     "formik": "^2.4.2",
     "framer-motion": "^10.9.1",
@@ -35,16 +34,16 @@
     "lodash": "^4.17.21",
     "mongodb": "^5.7.0",
     "next": "13.1.6",
-    "next-i18next": "^13.2.2",
+    "next-i18next": "^13.3.0",
     "nprogress": "^0.2.0",
     "qrcode.react": "^3.1.0",
     "react": "18.2.0",
     "react-activation": "^0.12.4",
-    "react-day-picker": "^8.7.1",
+    "react-day-picker": "^8.8.0",
     "react-dom": "18.2.0",
-    "react-i18next": "^12.2.2",
-    "sealos-desktop-sdk": "^0.1.14",
-    "zustand": "^4.1.5"
+    "react-i18next": "^12.3.1",
+    "sealos-desktop-sdk": "workspace:*",
+    "zustand": "^4.3.9"
   },
   "devDependencies": {
     "@types/js-cookie": "^3.0.3",
@@ -56,7 +55,6 @@
     "eslint": "8.36.0",
     "eslint-config-next": "13.2.4",
     "prettier": "^2.8.8",
-    "sass": "^1.57.1",
-    "typescript": "4.9.5"
+    "sass": "^1.63.6"
   }
 }

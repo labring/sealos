@@ -17,7 +17,7 @@ export default function Index() {
   useEffect(() => {
     const initApp = async () => {
       try {
-        const result = await sealosApp.getUserInfo();
+        const result = await sealosApp.getSession();
         setSession(result);
       } catch (error) {}
     };
