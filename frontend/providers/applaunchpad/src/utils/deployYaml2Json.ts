@@ -465,7 +465,7 @@ export const json2HPA = (data: AppEditType) => {
             name: data.hpa.target,
             target: {
               type: 'Utilization',
-              averageUtilization: str2Num(data.hpa.value)
+              averageUtilization: str2Num(data.hpa.value * 10)
             }
           }
         }

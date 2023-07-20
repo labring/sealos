@@ -122,7 +122,7 @@
   "Day": "Day",
   "AnticipatedPrice": "Anticipated Price",
   "Pods List": "Pods List",
-  "Number of Instances": "Number of Instances",
+  "Number of Instances": "Instances",
   "Restarts Num": "Restarts",
   "Mount Path Auth": "Mount Path Invalid: /^[0-9a-zA-Z_/][0-9a-zA-Z_/.-]*[0-9a-zA-Z_/]$/",
   "File Name": "File Name",

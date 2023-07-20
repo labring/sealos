@@ -211,9 +211,11 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
           target:
             (deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource
               ?.name as HpaTarget) || 'cpu',
-          value:
-            deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource?.target
-              ?.averageUtilization || 50,
+          value: deployKindsMap.HorizontalPodAutoscaler.spec.metrics?.[0]?.resource?.target
+            ?.averageUtilization
+            ? deployKindsMap.HorizontalPodAutoscaler.spec.metrics[0].resource.target
+                .averageUtilization / 10
+            : 50,
           minReplicas: deployKindsMap.HorizontalPodAutoscaler.spec.minReplicas || 3,
           maxReplicas: deployKindsMap.HorizontalPodAutoscaler.spec.maxReplicas || 10
         }
