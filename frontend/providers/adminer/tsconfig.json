@@ -1,15 +1,9 @@
 {
   "compilerOptions": {
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-		"baseUrl": ".",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
     "plugins": [
       {
@@ -17,10 +11,6 @@
       }
     ]
   },
-  "include": [
-    "next-env.d.ts",
-    "src/**/*.{ts,tsx}",
-    ".next/types/**/*.ts"
-  ],
-	"extends": "../../tsconfig.web.json",
+  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx", ".next/types/**/*.ts"],
+  "extends": "../../tsconfig.web.json"
 }

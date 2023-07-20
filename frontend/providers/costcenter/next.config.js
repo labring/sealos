@@ -8,7 +8,7 @@ const nextConfig = {
   transpilePackages: ['echarts'],
   experimental: {
     // this includes files from the monorepo base two directories up
-    outputFileTracingRoot: path.join(__dirname, '../../'),
+    outputFileTracingRoot: path.join(__dirname, '../../')
   }
 };
 

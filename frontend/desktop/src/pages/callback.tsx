@@ -1,6 +1,6 @@
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { useEffect} from 'react';
+import { useEffect } from 'react';
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import { Session } from '@/types';
@@ -20,16 +20,22 @@ const Callback: NextPage = () => {
 
     (async () => {
       try {
-        let data: { data: Session, code: number }
+        let data: { data: Session; code: number };
         switch (provider) {
           case 'github':
-            data = (await request.post<any, { data: Session, code: number }>('/api/auth/oauth/github', { code }))
+            data = await request.post<any, { data: Session; code: number }>(
+              '/api/auth/oauth/github',
+              { code }
+            );
             break;
           case 'wechat':
-            data = (await request.post<any, { data: Session, code: number }>('/api/auth/oauth/wechat', { code }))
+            data = await request.post<any, { data: Session; code: number }>(
+              '/api/auth/oauth/wechat',
+              { code }
+            );
             break;
           default:
-            throw new Error('provider error')
+            throw new Error('provider error');
             break;
         }
         if (data.code === 200) {
@@ -37,17 +43,18 @@ const Callback: NextPage = () => {
           setSessionProp('token', token);
           setSessionProp('user', user);
           setSessionProp('kubeconfig', kubeconfig);
-          updateUser()
+          updateUser();
         }
       } finally {
-        provider && setProvider()
-        router.replace('/')
+        provider && setProvider();
+        router.replace('/');
       }
-
-    })()
+    })();
   }, [router]);
-  return <Flex w={'full'} h={'full'} justify={'center'} align={'center'}>
-    <Spinner size='xl' />
-  </Flex>;
+  return (
+    <Flex w={'full'} h={'full'} justify={'center'} align={'center'}>
+      <Spinner size="xl" />
+    </Flex>
+  );
 };
 export default Callback;

@@ -20,34 +20,55 @@ echo '121.41.82.246 apiserver.cluster.local' | sudo tee -a /etc/hosts
 
 ## how to dev
 
-- dev your app
-
-```bash
-cd frontend
-make dev-[app path, such as providers/costcenter, desktop, etc.]
-```
+- It is best to use `sealos/frontend` as the workspace directory to develop applications.
+- Before dev, you should install `pnpm` first. [pnpm](https://pnpm.io/zh/)
+- The `sealos/frontend/packages/*` are local dependencies, you need run `pnpm -r --filter=./packages/* run build` in the `sealos/frontend` directory tobuild them.
+- The `sealos/frontend/providers/*` are sub applications..
+- The `sealos/frontend/desktop` is desktop app.
 
 - add packages
 
 ```bash
 cd frontend
 # add remote
-pnpm --filter=[project name or path] -r add \[package name\] 
+pnpm --filter=<path> -r add <package>
+# such as:
+# pnpm --filter=providers/costcenter -r add lodash
+# pnpm --filter=desktop -r add lodash
 # add local
-pnpm --filter=[project name or path] -r --offline add \[package name\] 
-
+pnpm --filter=<path> -r --offline add <package>
+# such as:
+# pnpm --filter=providers/costcenter -r --offline add sealos-desktop-sdk
+# pnpm --filter=desktop -r --offline add sealos-desktop-sdk
 ```
 
 ## how to build
 
 ```bash
-cd frontend
-make image-build-[app path, such as providers/costcenter, desktop, etc.]
+# sealos/frontend
+make image-build-<app> DOCKER_USERNAME=your_account
+# such as:
+# make image-build-providers/costcenter
+# make image-build-desktop
+
 # multi jobs build
-make all -j
+make -j
 ```
 
 - you can use `make all DOCKER_USERNAME=your_account` to build all apps for your account.
+
+## how to publish image
+
+```bash
+# sealos/frontend
+make image-push-<app> DOCKER_USERNAME=your_account
+# such as:
+# make image-push-providers/costcenter
+# make image-push-desktop
+
+# publish all
+make push-images DOCKER_USERNAME=your_account
+```
 
 ## new App
 

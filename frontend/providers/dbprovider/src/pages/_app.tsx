@@ -37,7 +37,6 @@ const queryClient = new QueryClient({
   }
 });
 
-
 function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const { i18n } = useTranslation();

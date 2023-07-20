@@ -8,7 +8,7 @@ import { enableRecharge } from '@/services/enable';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
-    if(!enableRecharge()){
+    if (!enableRecharge()) {
       throw new Error('Recharge is not enabled');
     }
     if (req.method !== 'POST') {

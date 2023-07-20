@@ -30,11 +30,11 @@ import { getFavorable } from '@/utils/tools';
 import { ApiResp } from '@/types/api';
 import { Pay, Payment } from '@/types';
 function useRecharge(props: {
-  onPaySuccess?: () => void,
-  onPayError?: () => void,
-  onCreatedSuccess?: () => void,
-  onCreatedError?: () => void,
-  onCancel?: () => void
+  onPaySuccess?: () => void;
+  onPayError?: () => void;
+  onCreatedSuccess?: () => void;
+  onCreatedError?: () => void;
+  onCancel?: () => void;
 }) {
   const { t } = useTranslation();
   const { isOpen, onOpen, onClose: _onClose } = useDisclosure();
@@ -43,19 +43,22 @@ function useRecharge(props: {
     const [step, setStep] = useState(1);
 
     // 整个流程跑通需要状态管理, 0 初始态， 1 创建支付单， 2 支付中, 3 支付成功
-    const [complete, setComplete] = useState<0 | 1 | 2 | 3>(0)
+    const [complete, setComplete] = useState<0 | 1 | 2 | 3>(0);
     const [paymentName, setPaymentName] = useState('');
     const [selectAmount, setSelectAmount] = useState(0);
     const [detail, setDetail] = useState(false);
 
     const toast = useToast();
     const createPaymentRes = useMutation(
-      () => request.post<any, ApiResp<Payment>>('/api/account/payment', { amount: deFormatMoney(amount) }),
+      () =>
+        request.post<any, ApiResp<Payment>>('/api/account/payment', {
+          amount: deFormatMoney(amount)
+        }),
       {
         onSuccess(data) {
           setPaymentName((data?.data?.paymentName as string).trim());
-          props.onCreatedSuccess?.()
-          setComplete(2)
+          props.onCreatedSuccess?.();
+          setComplete(2);
         },
         onError(err: any) {
           toast({
@@ -64,8 +67,8 @@ function useRecharge(props: {
             isClosable: true,
             position: 'top'
           });
-          props.onCreatedError?.()
-          setComplete(0)
+          props.onCreatedError?.();
+          setComplete(0);
         }
       }
     );
@@ -85,10 +88,10 @@ function useRecharge(props: {
           setTimeout(() => {
             if (data?.data?.status === 'SUCCESS') {
               createPaymentRes.reset();
-              setComplete(3)
-              props.onPaySuccess?.()
+              setComplete(3);
+              props.onPaySuccess?.();
               onClose();
-              setComplete(0)
+              setComplete(0);
             }
           }, 3000);
         }
@@ -97,9 +100,9 @@ function useRecharge(props: {
 
     const cancalPay = useCallback(() => {
       createPaymentRes.reset();
-      props.onCancel?.()
-      setComplete(0)
-    }, [createPaymentRes])
+      props.onCancel?.();
+      setComplete(0);
+    }, [createPaymentRes]);
 
     const { data: bonuses, isSuccess } = useQuery(
       ['bonus'],
@@ -131,13 +134,12 @@ function useRecharge(props: {
       [isSuccess, ratios, steps]
     );
     const onClose = () => {
-      cancalPay()
-      _onClose()
-    }
-
+      cancalPay();
+      _onClose();
+    };
 
     const handleConfirm = () => {
-      setComplete(1)
+      setComplete(1);
       createPaymentRes.mutate();
     };
     return (
@@ -183,12 +185,12 @@ function useRecharge(props: {
                           key={index}
                           {...(selectAmount === index
                             ? {
-                              color: '#36ADEF',
-                              border: '1.5px solid #36ADEF'
-                            }
+                                color: '#36ADEF',
+                                border: '1.5px solid #36ADEF'
+                              }
                             : {
-                              border: '1px solid #EFF0F1'
-                            })}
+                                border: '1px solid #EFF0F1'
+                              })}
                           bg={'#f4f6f8'}
                           borderRadius="4px"
                           position={'relative'}
@@ -272,16 +274,19 @@ function useRecharge(props: {
                     </Text>
                     <Text>￥{getBonus(amount)}</Text>
                   </Flex>
-                  <Flex alignSelf={'flex-start'} align={'center'} mt={'20px'}
+                  <Flex
+                    alignSelf={'flex-start'}
+                    align={'center'}
+                    mt={'20px'}
                     onClick={() => setDetail(true)}
                   >
-                    <Img src='/images/uil_info-circle.svg' w={'18px'} h='18px' mr={'5px'}></Img>
+                    <Img src="/images/uil_info-circle.svg" w={'18px'} h="18px" mr={'5px'}></Img>
                     <Link
-                      fontStyle='normal'
-                      fontWeight='400'
-                      fontSize='12px'
-                      color='#1D8CDC'
-                    // href='#'
+                      fontStyle="normal"
+                      fontWeight="400"
+                      fontSize="12px"
+                      color="#1D8CDC"
+                      // href='#'
                     >
                       {t('View Discount Rules')}
                     </Link>
@@ -428,7 +433,6 @@ function useRecharge(props: {
         </ModalContent>
       </Modal>
     );
-
 
     // return (
     //   <Modal isOpen={isOpen} onClose={onClose}>
@@ -648,4 +652,3 @@ function useRecharge(props: {
 }
 
 export default useRecharge;
-

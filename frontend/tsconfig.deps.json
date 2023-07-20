@@ -1,6 +1,6 @@
 {
-	"extends": "./tsconfig.base.json",
-	"compilerOptions": {
-		"noEmitOnError": true,
-	}
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmitOnError": true
+  }
 }

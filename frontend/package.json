@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "format": "prettier --config \"./.prettierrc.js\" --write \"./*/*/src/**/*.{ts,tsx,scss}\"",
+    "format": "prettier --config .prettierrc.js --write **/src/**/*.ts **/src/**/*.tsx **/src/**/*.scss **/tsconfig.*json **/*config.js **/*config.json",
     "preinstall": "npx only-allow pnpm"
   },
   "workspaces": [

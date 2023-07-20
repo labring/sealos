@@ -82,7 +82,7 @@ export async function ListCRD(
   const data = await kc
     .makeApiClient(k8s.CustomObjectsApi)
     .listNamespacedCustomObject(meta.group, meta.version, meta.namespace, meta.plural);
-  return data
+  return data;
 }
 
 export async function ApplyYaml(

@@ -26,11 +26,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       namespace: GetUserDefaultNameSpace(kube_user.name),
       plural: 'apps'
     };
-    const defaultResult = await ListCRD(kc, defaultMeta) as {
-      body: TAppCRList
+    const defaultResult = (await ListCRD(kc, defaultMeta)) as {
+      body: TAppCRList;
     };
-    const userResult = await ListCRD(kc, meta) as {
-      body: TAppCRList
+    const userResult = (await ListCRD(kc, meta)) as {
+      body: TAppCRList;
     };
 
     const defaultArr = defaultResult?.body?.items.map<TAppConfig>((item) => {
