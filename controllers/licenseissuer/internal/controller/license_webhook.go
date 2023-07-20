@@ -18,13 +18,10 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	admissionV1 "k8s.io/api/admission/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -45,48 +42,15 @@ var scalelog = logf.Log.WithName("scale-resource")
 func (sw *ScaleWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
 	scalelog.Info("enter webhook of scale webhook:", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.Operation", req.Operation)
 
-	if req.Operation == admissionV1.Delete {
+	if req.Kind.Kind == "Pod" && req.Operation == admissionV1.Delete {
+		return admission.Allowed("")
+	}
+	if req.Kind.Kind == "Pod" && req.Name == "terminal.sealos.io" {
 		return admission.Allowed("")
 	}
 
-	var (
-		expectSecret corev1.Secret
-		actualSceret corev1.Secret
-	)
-	var (
-		except cloud.ClusterScale
-		actual cloud.ClusterScale
-	)
-
-	readEventOperations := cloud.ReadOperationList{}
-
-	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(sw.Client).WithObject(&expectSecret).
-		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ExpectScaleSecretName)}).
-		AddToList(&readEventOperations)
-	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(sw.Client).WithObject(&actualSceret).
-		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ActualScaleSecretName)}).
-		AddToList(&readEventOperations)
-	err := readEventOperations.Execute()
-	if err != nil {
-		scalelog.Error(err, "failed to get scale secret info")
-		return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
-	}
-
-	if len(expectSecret.Data[string(cloud.ExpectScaleSecretKey)]) != 0 {
-		err = json.Unmarshal(expectSecret.Data[string(cloud.ExpectScaleSecretKey)], &except)
-		if err != nil {
-			scalelog.Error(err, "failed to parse expect scale secret")
-			return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
-		}
-	}
-
-	err = json.Unmarshal(actualSceret.Data[string(cloud.ActualScaleSecretKey)], &actual)
-	if err != nil {
-		scalelog.Error(err, "failed to parse actual scale secret")
-		return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
-	}
-
-	if except.CPULimit < actual.CPULimit || except.NodeLimit < actual.NodeLimit {
+	if cloud.ExpectScale.CPULimit < cloud.ActualScale.CPULimit ||
+		cloud.ExpectScale.NodeLimit < cloud.ActualScale.NodeLimit {
 		scalelog.Info("The current cluster scale exceeds the specified limit.")
 		return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
 	}

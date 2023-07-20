@@ -84,7 +84,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		payload map[string]interface{}
 	)
 
-	canConnectToExternalNetwork = os.Getenv(cloud.NetWorkEnv) == cloud.TRUE
+	canConnectToExternalNetwork = os.Getenv(string(cloud.NetWorkEnv)) == cloud.TRUE
 
 	// execute read event
 	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
@@ -100,13 +100,14 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.LicenseHistory)}).
 		WithObject(&licenseHistory).AddToList(&readOperations)
 	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
-		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.ClusterScaleSecretName)}).
+		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.AvailableScaleSecretName)}).
 		WithObject(&clusterLimit).WithCallback(func() error {
-		clusterLimit.SetName(string(cloud.ClusterScaleSecretName))
+		clusterLimit.SetName(string(cloud.AvailableScaleSecretName))
 		clusterLimit.SetNamespace(string(cloud.Namespace))
 		clusterLimit.SetLabels(map[string]string{})
 		return r.Client.Create(ctx, &clusterLimit)
 	}).AddToList(&readOperations)
+
 	// execute read event
 	if err := readOperations.Execute(); err != nil {
 		r.logger.Error(err, "failed to read resources...")
@@ -126,8 +127,8 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 	if cloud.CheckLicenseExists(&licenseHistory, license.Spec.Token) {
-		pack := cloud.NewNotificationPackage(cloud.DuplicateLicenseTitle, cloud.SEALOS, cloud.DuplicateLicenseContent)
-		cloud.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+		pack := cloud.NewNotificationPackage(cloud.LicenseNoticeTitle, cloud.SEALOS, cloud.DuplicateLicenseMessage)
+		cloud.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
 		return ctrl.Result{}, r.Client.Delete(ctx, &license)
 	}
 
@@ -137,8 +138,8 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		payload, ok = cloud.LicenseCheckOnInternalNetwork(license)
 	}
 	if !ok {
-		pack := cloud.NewNotificationPackage(cloud.InvalidLicenseTitle, cloud.SEALOS, cloud.InvalidLicenseContent)
-		cloud.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+		pack := cloud.NewNotificationPackage(cloud.LicenseNoticeTitle, cloud.SEALOS, cloud.InvalidLicenseMessage)
+		cloud.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
 		r.logger.Info("invalid license")
 		return ctrl.Result{}, r.Client.Delete(ctx, &license)
 	}
@@ -147,12 +148,12 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	(&cloud.WriteEventBuilder{}).WithCallback(func() error {
 		err := cloud.RechargeByLicense(ctx, r.Client, r.logger, account, payload)
 		if err != nil {
-			pack := cloud.NewNotificationPackage(cloud.RechargeFailedTitle, cloud.SEALOS, cloud.RechargeFailedContent)
-			cloud.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+			pack := cloud.NewNotificationPackage(cloud.LicenseNoticeTitle, cloud.SEALOS, cloud.RechargeFailedMessage)
+			cloud.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
 			return err
 		}
-		pack := cloud.NewNotificationPackage(cloud.ValidLicenseTitle, cloud.SEALOS, cloud.ValidLicenseContent)
-		cloud.SubmitNotificationWithUser(ctx, r.Client, r.logger, req.Namespace, pack)
+		pack := cloud.NewNotificationPackage(cloud.LicenseNoticeTitle, cloud.SEALOS, cloud.ValidLicenseMessage)
+		cloud.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
 		return nil
 	}).AddToList(&writeOperations)
 
@@ -163,7 +164,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// expand the scale of cluster
 	(&cloud.WriteEventBuilder{}).WithCallback(func() error {
-		return cloud.ExpandScaleOfClusterTemp(ctx, r.Client, clusterLimit, payload)
+		return cloud.ExpandScaleOfCluster(ctx, r.Client, clusterLimit, payload)
 	}).AddToList(&writeOperations)
 
 	// record

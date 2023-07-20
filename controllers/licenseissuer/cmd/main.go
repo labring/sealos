@@ -138,7 +138,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "ScaleMonitor")
 		os.Exit(1)
 	}
-	if err = mgr.Add(&cloud.MonitorScale{Client: mgr.GetClient()}); err != nil {
+	if err = mgr.Add(&cloud.ClusterScaleMonitor{Client: mgr.GetClient()}); err != nil {
 		setupLog.Error(err, "unable to set up monitor for cluster scale")
 		os.Exit(1)
 	}
