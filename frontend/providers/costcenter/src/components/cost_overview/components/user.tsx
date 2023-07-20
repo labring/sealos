@@ -1,20 +1,33 @@
 /* eslint-disable @next/next/no-img-element */
-import useRecharge from '@/hooks/useRecharge';
 import request from '@/service/request';
 import useSessionStore from '@/stores/session';
 import { displayMoney, formatMoney } from '@/utils/format';
 import { Box, Button, Flex, Image, Stack, Text } from '@chakra-ui/react';
-import { QueryClient, useQuery } from '@tanstack/react-query';
+import { QueryClient, useIsFetching, useQuery } from '@tanstack/react-query';
 import styles from './user.module.scss';
 
 import { useTranslation } from 'next-i18next';
-import { useContext, useMemo } from 'react';
+import { memo, useContext, useMemo, useRef } from 'react';
 import { ApiResp } from '@/types/api';
-import useTransfer from '@/hooks/useTransfer';
-import { TradeEnableContext } from '@/pages/cost_overview';
+import jsyaml from 'js-yaml';
+import RechargeModal from './RechargeModal';
+import TransferModal from './TransferModal';
+import useEnvStore from '@/stores/env';
 
-export default function UserCard() {
-  const { transferEnabled, rechargeEnabled } = useContext(TradeEnableContext);
+export default memo(function UserCard() {
+  const getSession = useSessionStore((state) => state.getSession);
+  const transferEnabled = useEnvStore((state) => state.transferEnabled);
+  const rechargeEnabled = useEnvStore((state) => state.rechargeEnabled);
+  const { kubeconfig } = getSession();
+  const k8s_username = useMemo(() => {
+    try {
+      let temp = jsyaml.load(kubeconfig);
+      // @ts-ignore
+      return temp?.users[0]?.name;
+    } catch (error) {
+      return '';
+    }
+  }, [kubeconfig]);
   const { t } = useTranslation();
   const session = useSessionStore().getSession();
   const { data: balance_raw, refetch } = useQuery({
@@ -22,26 +35,16 @@ export default function UserCard() {
     queryFn: () =>
       request<any, ApiResp<{ deductionBalance: number; balance: number }>>('/api/account/getAmount')
   });
+
+  const rechargeRef = useRef<any>();
+  const transferRef = useRef<any>();
   const queryClient = new QueryClient();
-  const { RechargeModal, onOpen } = useRecharge({
-    onPaySuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['billing'], exact: false });
-      refetch();
-    }
-  });
-  const { TransferModal, onOpen: transferOpen } = useTransfer({
-    onTransferSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['billing'], exact: false });
-      refetch();
-    }
-  });
-  const balance = useMemo(() => {
-    let real_balance = balance_raw?.data?.balance || 0;
-    if (balance_raw?.data?.deductionBalance) {
-      real_balance -= balance_raw?.data.deductionBalance;
-    }
-    return real_balance;
-  }, [balance_raw]);
+
+  let real_balance = balance_raw?.data?.balance || 0;
+  if (balance_raw?.data?.deductionBalance) {
+    real_balance -= balance_raw?.data.deductionBalance;
+  }
+  const balance = real_balance;
   return (
     <>
       <Flex
@@ -83,8 +86,9 @@ export default function UserCard() {
                 color="black"
                 onClick={(e) => {
                   e.preventDefault();
-                  transferOpen();
+                  transferRef?.current!.onOpen();
                 }}
+                // isDisabled={isFetchingBilling > 0}
               >
                 {t('Transfer')}
               </Button>
@@ -97,7 +101,7 @@ export default function UserCard() {
                 color="black"
                 onClick={(e) => {
                   e.preventDefault();
-                  onOpen();
+                  rechargeRef?.current!.onOpen();
                 }}
               >
                 {t('Charge')}
@@ -106,8 +110,27 @@ export default function UserCard() {
           </Flex>
         </Stack>
       </Flex>
-      {rechargeEnabled && <RechargeModal balance={balance} />}
-      {transferEnabled && <TransferModal balance={balance} />}
+      {
+        <RechargeModal
+          ref={rechargeRef}
+          balance={balance}
+          onPaySuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['billing'], exact: false });
+            refetch();
+          }}
+        />
+      }
+      {transferEnabled && (
+        <TransferModal
+          ref={transferRef}
+          balance={balance}
+          onTransferSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['billing'], exact: false });
+            refetch();
+          }}
+          k8s_username={k8s_username}
+        />
+      )}
     </>
   );
-}
+});

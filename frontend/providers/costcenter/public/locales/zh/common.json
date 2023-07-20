@@ -8,7 +8,8 @@
   "SideBar": {
     "CostOverview": "成本总览",
     "BillingDetails": "账单明细",
-    "ValuationStandard": "计价标准"
+    "ValuationStandard": "计价标准",
+    "CreateInvoice": "开具发票"
   },
   "Valuation": {
     "Standard": "计价标准",
@@ -52,13 +53,84 @@
   "Cancel": "取消",
   "Not Engough Balance": "余额不足，请立即充值。",
   "Insufficient Balance": "余额不足",
-  "No Data Available":"暂无数据",
-  "Predict Detail":"根据当前资源用量预测未来 30 天费用",
-  "Next month cost estimation":"下月费用预估",
+  "No Data Available": "暂无数据",
+  "Predict Detail": "根据当前资源用量预测未来 30 天费用",
+  "Next month cost estimation": "下月费用预估",
   "Recipient ID": "收款人的ID",
   "Recipient": "收款",
   "Transfer": "转账",
   "Transfer Amount must be a integer": "转账金额必须为整数",
   "Recipient ID is invalid": "收款人ID无效",
-  "Transfer Amount must be less than balance": "转账金额必须小于余额"
+  "Transfer Amount must be less than balance": "转账后的账户余额不能小于 ¥10",
+  "he payee cannot be oneself": "收款人不能是本人",
+  "Transfer Success": "转账成功",
+  "True Amount": "实际金额",
+  "Get Code": "获取验证码",
+
+  "orders": {
+    "list": "订单列表",
+    "invoiceAmount": "发票金额",
+    "invoice": "开发票",
+    "invoiceOrder": "发票订单",
+    "phoneValidation": "请输入有效的手机号码",
+    "taxNumberValidation": "请输入有效的税务登记证号",
+    "bankAccountValidation": "请输入有效的银行账号",
+    "emailValidation": "请输入有效的邮箱地址",
+		"submit success": "提交成功",
+		"code success":"验证码已发送",
+		"code error":"验证码错误",
+		"submit fail":"提交失败",
+    "details": {
+      "invoiceTitle": {
+        "name": "发票抬头",
+        "placeholder": "填写发票抬头"
+      },
+      "taxRegistrationNumber": {
+        "name": "税务登记证号",
+        "placeholder": "填写税务登记证号"
+      },
+      "bankName": {
+        "name": "开户银行名称",
+        "placeholder": "填写开户银行名称"
+      },
+      "bankAccount": {
+        "name": "银行账号",
+        "placeholder": "填写银行账号"
+      },
+      "address": {
+        "name": "地址",
+        "placeholder": "填写地址"
+      },
+      "phone": {
+        "name": "电话",
+        "placeholder": "填写电话"
+      },
+      "fax": {
+        "name": "传真",
+        "placeholder": "填写传真"
+      }
+    },
+    "contract": {
+      "person": {
+        "name": "联系人",
+        "placeholder": "填写联系人"
+      },
+      "email": {
+        "name": "邮箱",
+        "placeholder": "填写邮箱"
+      },
+      "phone": {
+        "name": "电话",
+        "placeholder": "填写电话"
+      },
+      "code": {
+        "name": "验证码",
+        "placeholder": "填写验证码"
+      }
+    },
+    "Invoice Content": "发票内容",
+    "Electronic Computer Service Fee": "电子计算机服务费",
+    "Invoice Details": "发票明细",
+    "Contact Information": "联系方式"
+  }
 }

@@ -8,10 +8,11 @@
   "SideBar": {
     "CostOverview": "Cost Overview",
     "BillingDetails": "Billing Details",
-    "ValuationStandard": "Standard"
+    "ValuationStandard": "Standard",
+    "CreateInvoice": "Create Invoice"
   },
   "Valuation": {
-    "Standard": "ValuationStandard",
+    "Standard": "Standard",
     "Name": "Name",
     "Unit": "Unit",
     "Price": "Price"
@@ -52,13 +53,84 @@
   "Cancel": "Cancel",
   "Not Enough Balance": "Insufficient balance, please recharge immediately.",
   "Insufficient Balance": "Insufficient balance",
-  "No Data Available":"No Data Available",
-  "Predict Detail":"Predict future 30-day costs based on current resource usage",
-  "Next month cost estimation":"Next month cost estimation",
+  "No Data Available": "No Data Available",
+  "Predict Detail": "Predict future 30-day costs based on current resource usage",
+  "Next month cost estimation": "Next month cost estimation",
   "Recipient ID": "Recipient ID",
   "Transfer": "Transfer",
   "Recipient": "Recipient",
+  "Transfer Success": "Transfer Success",
   "Transfer Amount must be a integer": "Transfer Amount must be a integer",
   "Recipient ID is invalid": "Recipient ID is invalid",
-  "Transfer Amount must be less than balance": "Transfer Amount must be less than balance"
+  "Transfer Amount must be less than balance": "The balance after the transfer must not be less than ¥10",
+  "he payee cannot be oneself": "The payee cannot be oneself",
+  "True Amount": "True Amount",
+	"Get Code":"verification",
+
+  "orders": {
+    "list": "Order List",
+    "invoiceAmount": "Invoice Amount",
+    "invoice": "Generate Invoice",
+    "invoiceOrder": "Invoice Order",
+		"phoneValidation": "Please enter a valid phone number",
+    "taxNumberValidation": "Please enter a valid tax registration number",
+    "bankAccountValidation": "Please enter a valid bank account number",
+    "emailValidation": "Please enter a valid email address",
+		"submit success": "Submit success",
+		"submit fail": "Submit fail",
+		"code success":"Verification code sent successfully",
+		"code error":"Verification code sent failed",
+    "details": {
+      "invoiceTitle": {
+        "name": "Invoice Title",
+        "placeholder": "Enter invoice title"
+      },
+      "taxRegistrationNumber": {
+        "name": "Tax Registration",
+        "placeholder": "Enter tax registration number"
+      },
+      "bankName": {
+        "name": "Bank Name",
+        "placeholder": "Enter bank name"
+      },
+      "bankAccount": {
+        "name": "Bank Account",
+        "placeholder": "Enter bank account"
+      },
+      "address": {
+        "name": "Address",
+        "placeholder": "Enter address"
+      },
+      "phone": {
+        "name": "Phone",
+        "placeholder": "Enter phone number"
+      },
+      "fax": {
+        "name": "Fax",
+        "placeholder": "Enter fax number"
+      }
+    },
+    "contract": {
+      "person": {
+        "name": "Contact Person",
+        "placeholder": "Enter contact person"
+      },
+      "email": {
+        "name": "Email",
+        "placeholder": "Enter email address"
+      },
+      "phone": {
+        "name": "Phone",
+        "placeholder": "Enter phone number"
+      },
+      "code": {
+        "name": "Verification Code",
+        "placeholder": "Enter verification code"
+      }
+    },
+    "Invoice Details": "Invoice Details",
+    "Invoice Content": "Invoice Content",
+    "Electronic Computer Service Fee": "Electronic Computer Service Fee",
+    "Contact Information": "Contact Information"
+  }
 }

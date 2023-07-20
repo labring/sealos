@@ -6,7 +6,7 @@ import { ValuationData } from '@/types/valuation';
 import { valuationMap } from '@/constants/payment';
 import { useEffect, useMemo } from 'react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useTranslation } from 'next-i18next';
+import { i18n, useTranslation } from 'next-i18next';
 import { ApiResp } from '@/types/api';
 import { getCookie } from '@/utils/cookieUtils';
 import { CYCLE } from '@/constants/valuation';
@@ -32,23 +32,20 @@ function Valuation() {
     request<any, ApiResp<ValuationData>>('/api/price')
   );
 
-  const data = useMemo(
-    () =>
-      _data?.data?.status.billingRecords
-        .filter((x) => valuationMap.has(x.resourceType))
-        .map<CardItem>((x) => {
-          const props = valuationMap.get(x.resourceType)!;
-          return {
-            title: x.resourceType,
-            price: [1, 24, 168, 720, 8760].map((v) => (v * x.price * (props.scale || 1)) / 1000000),
-            unit: props.unit,
-            bg: props.bg,
-            idx: props.idx
-          };
-        })
-        .sort((a, b) => a.idx - b.idx) || [],
-    [_data]
-  );
+  const data =
+    _data?.data?.status?.billingRecords
+      ?.filter((x) => valuationMap.has(x.resourceType))
+      ?.map<CardItem>((x) => {
+        const props = valuationMap.get(x.resourceType)!;
+        return {
+          title: x.resourceType,
+          price: [1, 24, 168, 720, 8760].map((v) => (v * x.price * (props.scale || 1)) / 1000000),
+          unit: props.unit,
+          bg: props.bg,
+          idx: props.idx
+        };
+      })
+      ?.sort((a, b) => a.idx - b.idx) || [];
 
   return (
     <Flex
@@ -89,7 +86,7 @@ function Valuation() {
                   ￥{item.price[0]}
                 </Heading>
                 <Text ml="4px">
-                  {item.unit}/ {t('Hour')}
+                  {item.unit} / {t('Hour')}
                 </Text>
                 <Box>
                   {CYCLE.map((_item, idx) => (
@@ -101,7 +98,7 @@ function Valuation() {
                       py={'8px'}
                     >
                       <Box>{item.price[idx + 1]}</Box>
-                      <Box>{`￥${item.unit}/${t(_item)}`}</Box>
+                      <Box>{`￥${item.unit} / ${t(_item)}`}</Box>
                     </Flex>
                   ))}
                 </Box>
@@ -125,6 +122,7 @@ function Valuation() {
 export default Valuation;
 export async function getServerSideProps(content: any) {
   const locale = content?.req?.cookies?.NEXT_LOCALE || 'zh';
+  process.env.NODE_ENV === 'development' && i18n?.reloadResources(locale, undefined);
   return {
     props: {
       ...(await serverSideTranslations(locale, undefined, null, content.locales))

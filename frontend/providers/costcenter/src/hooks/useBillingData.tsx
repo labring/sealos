@@ -5,7 +5,7 @@ import { BillingSpec, BillingData } from '@/types/billing';
 import { useQuery } from '@tanstack/react-query';
 import { addDays, differenceInDays, formatISO, subSeconds } from 'date-fns';
 
-export default function useBillingData() {
+export default function useBillingData(props?: { type: -1 | 0 | 1 | 2 | 3 }) {
   const startTime = useOverviewStore((state) => state.startTime);
   const endTime = useOverviewStore((state) => state.endTime);
   return useQuery(['billing', { startTime, endTime }], () => {
@@ -17,7 +17,7 @@ export default function useBillingData() {
       endTime: formatISO(end, { representation: 'complete' }),
       page: 1,
       pageSize: (delta + 1) * 48,
-      type: -1,
+      type: props?.type || -1,
       orderID: ''
     };
     return request<any, ApiResp<BillingData>, { spec: BillingSpec }>('/api/billing', {

@@ -6,9 +6,13 @@ import {
   GetUserDefaultNameSpace
 } from '@/service/backend/kubernetes';
 import { jsonRes } from '@/service/backend/response';
+import { enableRecharge } from '@/service/enabled';
 import type { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
+    if (!enableRecharge) {
+      throw new Error('recharge is not enabled');
+    }
     const kc = await authSession(req.headers);
 
     // get user account payment amount

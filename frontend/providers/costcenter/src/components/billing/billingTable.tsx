@@ -8,7 +8,6 @@ import { formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 export function BillingTable({ data }: { data: BillingItem[] }) {
   const { t } = useTranslation();
-
   return (
     <TableContainer w="100%" mt="0px">
       <Table variant="simple">

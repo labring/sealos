@@ -6,9 +6,8 @@ import '@/styles/globals.scss';
 import { ChakraProvider } from '@chakra-ui/react';
 import { persistQueryClient, removeOldestQuery } from '@tanstack/react-query-persist-client';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
-import { Hydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { AppProps } from 'next/app';
-import Fonts from '@/styles/fonts';
 import Router from 'next/router';
 import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
@@ -16,6 +15,10 @@ import 'react-day-picker/dist/style.css';
 import { appWithTranslation, i18n } from 'next-i18next';
 import { useEffect } from 'react';
 import { setCookie } from '@/utils/cookieUtils';
+import request from '@/service/request';
+import { EnvData } from '@/types/env';
+import { ApiResp } from '@/types/api';
+import useEnvStore from '@/stores/env';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,6 +46,7 @@ Router.events.on('routeChangeComplete', () => NProgress.done());
 Router.events.on('routeChangeError', () => NProgress.done());
 
 const App = ({ Component, pageProps }: AppProps) => {
+  const state = useEnvStore();
   useEffect(() => {
     const changeI18n = (data: any) => {
       setCookie('NEXT_LOCALE', data.currentLanguage, {
@@ -63,6 +67,16 @@ const App = ({ Component, pageProps }: AppProps) => {
         changeI18n('zh');
       }
     })();
+    (async () => {
+      try {
+        const { data } = await request<any, ApiResp<EnvData>>('/api/enabled');
+        state.setInvoiceEnabled(!!data?.invoiceEnabled);
+        state.setTransferEnabled(!!data?.transferEnabled);
+        state.setRechargeEnabled(!!data?.rechargeEnabled);
+      } catch (error) {
+        console.error('get env error');
+      }
+    })();
     sealosApp.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
     return () => {
       sealosApp.removeAppEventListen(EVENT_NAME.CHANGE_I18N);
@@ -72,7 +86,6 @@ const App = ({ Component, pageProps }: AppProps) => {
   return (
     <QueryClientProvider client={queryClient}>
       <ChakraProvider theme={theme}>
-        <Fonts></Fonts>
         <Layout>
           <Component {...pageProps} />
         </Layout>
