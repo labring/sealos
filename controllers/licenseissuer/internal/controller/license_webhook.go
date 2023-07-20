@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	admissionV1 "k8s.io/api/admission/v1"
@@ -37,15 +38,19 @@ var scalelog = logf.Log.WithName("scale-resource")
 
 // TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-//+kubebuilder:webhook:path=/validate-cloud-sealos-io-v1-license,mutating=false,failurePolicy=ignore,sideEffects=None,groups="*",resources=pods,verbs=create;update,versions=v1,name=vlicense.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-cloud-sealos-io-v1-license,mutating=false,failurePolicy=fail,sideEffects=None,groups="*",resources=pods,verbs=create;update,versions=v1,name=vlicense.kb.io,admissionReviewVersions=v1
 
-func (sw *ScaleWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (sw *ScaleWebhook) Handle(_ context.Context, req admission.Request) admission.Response {
 	scalelog.Info("enter webhook of scale webhook:", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.Operation", req.Operation)
 
 	if req.Kind.Kind == "Pod" && req.Operation == admissionV1.Delete {
 		return admission.Allowed("")
 	}
-	if req.Kind.Kind == "Pod" && req.Name == "terminal.sealos.io" {
+	if req.Kind.Kind == "Pod" && hasPrefix(req.Name, "terminal") {
+		return admission.Allowed("")
+	}
+
+	if cloud.IsCommunityEdition() {
 		return admission.Allowed("")
 	}
 
@@ -55,6 +60,10 @@ func (sw *ScaleWebhook) Handle(ctx context.Context, req admission.Request) admis
 		return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
 	}
 	return admission.Allowed("")
+}
+
+func hasPrefix(s, prefix string) bool {
+	return strings.HasPrefix(s, prefix)
 }
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type

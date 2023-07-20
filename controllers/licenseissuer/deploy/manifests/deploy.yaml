@@ -634,7 +634,7 @@ spec:
             secretKeyRef:
               key: isMonitor
               name: cloud-env
-        image: registry.cn-hangzhou.aliyuncs.com/fckc/cloud-controller:v3.2.3
+        image: ghcr.io/labring/sealos-licenseissuer-controller:latest
         livenessProbe:
           httpGet:
             path: /healthz
@@ -758,7 +758,7 @@ webhooks:
       name: cloud-webhook-service
       namespace: cloud-system
       path: /validate-cloud-sealos-io-v1-license
-  failurePolicy: Ignore
+  failurePolicy: Fail
   name: vlicense.kb.io
   rules:
   - apiGroups:

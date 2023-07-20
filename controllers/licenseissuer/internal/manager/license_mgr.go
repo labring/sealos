@@ -26,7 +26,7 @@ import (
 
 	"github.com/go-logr/logr"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	cloudv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
+	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/pkg/crypto"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -219,7 +219,7 @@ type LicenseMonitorResponse struct {
 	Key string `json:"key"`
 }
 
-func NewLicenseMonitorRequest(secret corev1.Secret, license cloudv1.License) LicenseMonitorRequest {
+func NewLicenseMonitorRequest(secret corev1.Secret, license issuerv1.License) LicenseMonitorRequest {
 	if secret.Name != string(UIDSecretName) || secret.Namespace != string(Namespace) {
 		return LicenseMonitorRequest{}
 	}
@@ -229,7 +229,7 @@ func NewLicenseMonitorRequest(secret corev1.Secret, license cloudv1.License) Lic
 	return lmr
 }
 
-func LicenseCheckOnExternalNetwork(license cloudv1.License, secret corev1.Secret, url string, logger logr.Logger) (map[string]interface{}, bool) {
+func LicenseCheckOnExternalNetwork(license issuerv1.License, secret corev1.Secret, url string, logger logr.Logger) (map[string]interface{}, bool) {
 	license.Spec.Key = Key
 	payload, ok := crypto.IsLicenseValid(license)
 	mr := NewLicenseMonitorRequest(secret, license)
@@ -255,7 +255,7 @@ func LicenseCheckOnExternalNetwork(license cloudv1.License, secret corev1.Secret
 	return payload, ok
 }
 
-func LicenseCheckOnInternalNetwork(license cloudv1.License) (map[string]interface{}, bool) {
+func LicenseCheckOnInternalNetwork(license issuerv1.License) (map[string]interface{}, bool) {
 	license.Spec.Key = Key
 	return crypto.IsLicenseValid(license)
 }
@@ -284,7 +284,7 @@ func RechargeByLicense(ctx context.Context, client client.Client, logger logr.Lo
 	return nil
 }
 
-func RecordLicense(ctx context.Context, client client.Client, logger logr.Logger, ls cloudv1.License, lsh corev1.ConfigMap) error {
+func RecordLicense(ctx context.Context, client client.Client, logger logr.Logger, ls issuerv1.License, lsh corev1.ConfigMap) error {
 	size := int64(0)
 	for _, value := range lsh.Data {
 		size += int64(len(value))

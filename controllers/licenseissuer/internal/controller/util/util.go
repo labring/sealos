@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"os"
 
-	cloudv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
+	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -65,7 +65,7 @@ func newUUID() (string, error) {
 func StartCloudModule(ctx context.Context, client cl.Client) error {
 	isMonitor := os.Getenv(string(cloud.IsMonitor))
 	if isMonitor == cloud.TRUE {
-		var launcher cloudv1.Launcher
+		var launcher issuerv1.Launcher
 		nn := types.NamespacedName{
 			Namespace: string(cloud.Namespace),
 			Name:      string(cloud.ClientStartName),

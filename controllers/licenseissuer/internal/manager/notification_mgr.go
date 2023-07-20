@@ -259,7 +259,7 @@ func SubmitNotificationWithUserCategory(ctx context.Context, client cl.Client, u
 	}()
 	for err := range errchan {
 		if err != nil {
-			noticeLogger.Error(err, "Failed to deliver registration success.")
+			noticeLogger.Error(err, "Failed to deliver notification success.")
 		}
 	}
 }

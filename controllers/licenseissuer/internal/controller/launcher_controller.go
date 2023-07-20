@@ -21,9 +21,9 @@ import (
 	"os"
 
 	"github.com/go-logr/logr"
-	cloudv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
+	issurev1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
-	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
+	issuer "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -58,23 +58,23 @@ type LauncherReconciler struct {
 func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctl ctrl.Result, err error) {
 	r.logger.Info("Enter LauncherReconcile", "namespace:", req.Namespace, "name", req.Name)
 	r.logger.Info("Start the cloud module...")
-	canConnectToExternalNetwork := os.Getenv(string(cloud.NetWorkEnv)) == cloud.TRUE
+	canConnectToExternalNetwork := os.Getenv(string(issuer.NetWorkEnv)) == issuer.TRUE
 	var secret corev1.Secret
 	var configMap corev1.ConfigMap
 	r.logger.Info("Try to get the cloud secret&configmap resource...")
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.URLConfigName)}, &configMap)
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.URLConfigName)}, &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to get configmap...")
 		return ctrl.Result{}, err
 	}
 
-	config, err := util.ReadConfigFromConfigMap(string(cloud.URLConfigName), &configMap)
+	config, err := util.ReadConfigFromConfigMap(string(issuer.URLConfigName), &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to get config...")
 		return ctrl.Result{}, err
 	}
 	if r.justSync && canConnectToExternalNetwork {
-		_, err := cloud.SyncWithCloud("POST", config.RegisterURL, cloud.RegisterRequest{UID: string(secret.Data["uid"])})
+		_, err := issuer.SyncWithCloud("POST", config.RegisterURL, issuer.RegisterRequest{UID: string(secret.Data["uid"])})
 		if err != nil {
 			r.justSync = true
 			r.logger.Error(err, "failed sync register info to cloud")
@@ -89,7 +89,7 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UIDSecretName)}, &secret)
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.UIDSecretName)}, &secret)
 	if err == nil {
 		r.logger.Info("start to launch cloud moudle")
 		err := util.StartCloudModule(ctx, r.Client)
@@ -107,20 +107,20 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		r.logger.Error(err, "failed to get register...")
 		return ctrl.Result{}, err
 	}
-	rr := cloud.RegisterRequest{
+	rr := issuer.RegisterRequest{
 		UID: uuid,
 	}
 
 	secret.Data["uid"] = []byte(uuid)
-	secret.SetName(string(cloud.UIDSecretName))
-	secret.SetNamespace(string(cloud.Namespace))
+	secret.SetName(string(issuer.UIDSecretName))
+	secret.SetNamespace(string(issuer.Namespace))
 	if err := r.Client.Create(ctx, &secret); err != nil {
 		r.logger.Error(err, "failed to create the register info to the cluster")
 		return ctrl.Result{}, err
 	}
 
 	if canConnectToExternalNetwork {
-		_, err = cloud.SyncWithCloud("POST", config.RegisterURL, rr)
+		_, err = issuer.SyncWithCloud("POST", config.RegisterURL, rr)
 		if err != nil {
 			r.justSync = true
 			r.logger.Error(err, "failed sync register info to cloud")
@@ -139,14 +139,14 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 // SetupWithManager sets up the controller with the Manager.
 func (r *LauncherReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("LauncherReconcile")
-	nameFilter := cloud.MonitorLaunchName
-	namespaceFilter := cloud.Namespace
+	nameFilter := issuer.MonitorLaunchName
+	namespaceFilter := issuer.Namespace
 	Predicates := predicate.NewPredicateFuncs(func(obj client.Object) bool {
 		return obj.GetName() == string(nameFilter) &&
 			obj.GetNamespace() == string(namespaceFilter)
 	})
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&cloudv1.Launcher{}, builder.WithPredicates(Predicates)).
+		For(&issurev1.Launcher{}, builder.WithPredicates(Predicates)).
 		Complete(r)
 }

@@ -12,7 +12,7 @@ webhooks:
       name: webhook-service
       namespace: system
       path: /validate-cloud-sealos-io-v1-license
-  failurePolicy: Ignore
+  failurePolicy: Fail
   name: vlicense.kb.io
   rules:
   - apiGroups:

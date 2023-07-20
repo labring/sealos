@@ -70,7 +70,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: ghcr.io/labring/sealos-cloud-controller:latest
+        image: ghcr.io/labring/sealos-licenseissuer-controller:latest
         name: manager
         env:
         - name: CAN_CONNECT_TO_EXTERNAL_NETWORK
@@ -78,6 +78,11 @@ spec:
             secretKeyRef:
               name: cloud-env
               key: canConnectToExternalNetwork
+        - name: MONITOR
+          valueFrom:
+            secretKeyRef:
+              key: isMonitor
+              name: cloud-env
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
