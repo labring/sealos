@@ -14,7 +14,7 @@ export let INSTALL_ACCOUNT = false;
 
 let retryGetPrice = 3;
 let retryVersion = 3;
-let retryGetEnv = 3 
+let retryGetEnv = 3;
 export let DBVersionMap: DBVersionMapType = {
   [DBTypeEnum.postgresql]: [{ id: 'postgresql-14.8.0', label: 'postgresql-14.8.0' }],
   [DBTypeEnum.mongodb]: [{ id: 'mongodb-5.0.14', label: 'mongodb-5.0.14' }],
@@ -37,19 +37,19 @@ export const getUserPrice = async () => {
   }
 };
 export const getEnv = async () => {
-	try {
-		const res = await getAppEnv()
-		StorageClassName = res.env_storage_className;
-		Domain = res.domain;
-	} catch {
-		retryGetEnv--;
-		if (retryGetEnv >= 0) {
-			setTimeout(() => {
-				getEnv();
-			}, 1000);
-		}
-	}
-}
+  try {
+    const res = await getAppEnv();
+    StorageClassName = res.env_storage_className;
+    Domain = res.domain;
+  } catch {
+    retryGetEnv--;
+    if (retryGetEnv >= 0) {
+      setTimeout(() => {
+        getEnv();
+      }, 1000);
+    }
+  }
+};
 export const getDBVersion = async () => {
   try {
     const res = await getDBVersionMap();
@@ -63,4 +63,3 @@ export const getDBVersion = async () => {
     }
   }
 };
-
