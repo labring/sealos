@@ -342,6 +342,16 @@ func ReSyncForClusterScale(ctx context.Context, client client.Client) error {
 	}
 	ActualScale = actualScaleData
 
+	if IsCommunityEdition() {
+		logger.Info("a comminity edition scale")
+		return nil
+	}
+	logstr := fmt.Sprintf("actual scale-> cpu: %d, nod: %d",
+		ActualScale.CPULimit,
+		ActualScale.NodeLimit,
+	)
+	logger.Info(logstr)
+
 	(&ReadEventBuilder{}).WithContext(ctx).WithClient(client).WithObject(&availableScaleSecret).
 		WithTag(types.NamespacedName{Namespace: string(Namespace), Name: string(AvailableScaleSecretName)}).
 		AddToList(&readEventOperations)
@@ -394,7 +404,7 @@ func ReSyncForClusterScale(ctx context.Context, client client.Client) error {
 		if daysLeft >= 0 {
 			message = fmt.Sprintf("Your license is about to expire in %d days. When it does, your cluster scale will be limited and you will not be able to create or update applications. Please apply for and activate a new license promptly.", daysLeft)
 		} else {
-			message = fmt.Sprintf("Your license has been expired. Your cluster has be limited and you will not be able to create or update applications. Please apply for and activate a new license promptly.")
+			message = "Your current cluster scale has exceeded the maximum limit. Please purchase a license promptly to expand your cluster size."
 		}
 		pack := NewNotificationPackageWithLevel(LicenseNoticeTitle, SEALOS, Message(message), v1.High)
 		SubmitNotificationWithUserCategory(ctx, client, users, UserPrefix, pack)
@@ -422,4 +432,8 @@ func CountClusterNodesAndCPUs(ctx context.Context, client client.Client) (Cluste
 	clusterScale.CPULimit = totalNodesResource.TotalCPU.Value()
 	clusterScale.NodeLimit = int64(len(nodeList.Items))
 	return clusterScale, nil
+}
+
+func IsCommunityEdition() bool {
+	return ActualScale.NodeLimit <= 4 && ActualScale.CPULimit <= 64
 }

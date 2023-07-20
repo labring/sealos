@@ -23,9 +23,9 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	cloudv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
+	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
-	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
+	issuer "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -41,7 +41,7 @@ type CloudSyncReconciler struct {
 	Scheme    *runtime.Scheme
 	logger    logr.Logger
 	needSync  bool
-	syncCache cloud.SyncResponse
+	syncCache issuer.SyncResponse
 }
 
 //+kubebuilder:rbac:groups=cloud.sealos.io,resources=cloudsyncs,verbs=get;list;watch;create;update;patch;delete
@@ -61,12 +61,12 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	r.logger.Info("Enter CloudSyncReconcile", "namespace:", req.Namespace, "name", req.Name)
 	var err error
 	var (
-		config    cloud.Config
+		config    issuer.Config
 		secret    corev1.Secret
-		sync      cloud.SyncRequest
-		resp      cloud.SyncResponse
+		sync      issuer.SyncRequest
+		resp      issuer.SyncResponse
 		configMap corev1.ConfigMap
-		launcher  cloudv1.Launcher
+		launcher  issuerv1.Launcher
 	)
 	r.logger.Info("Start to get resources that need sync...")
 	err = r.Client.Get(ctx, req.NamespacedName, &launcher)
@@ -74,23 +74,23 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		r.logger.Error(err, "failed to get launcher...")
 		return ctrl.Result{}, err
 	}
-	launcher.Labels[string(cloud.IsSync)] = cloud.TRUE
+	launcher.Labels[string(issuer.IsSync)] = issuer.TRUE
 	err = r.Client.Update(ctx, &launcher)
 	if err != nil {
 		r.logger.Error(err, "failed to get launcher...")
 		return ctrl.Result{}, err
 	}
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UIDSecretName)}, &secret)
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.UIDSecretName)}, &secret)
 	if err != nil {
 		r.logger.Error(err, "failed to get secret...")
 		return ctrl.Result{}, err
 	}
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.URLConfigName)}, &configMap)
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.URLConfigName)}, &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to get configmap...")
 		return ctrl.Result{}, err
 	}
-	config, err = util.ReadConfigFromConfigMap(string(cloud.URLConfigName), &configMap)
+	config, err = util.ReadConfigFromConfigMap(string(issuer.URLConfigName), &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to get config...")
 		return ctrl.Result{}, err
@@ -100,17 +100,17 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	sync.UID = string(secret.Data["uid"])
 	if r.needSync {
 		r.logger.Info("Start to communicate with cloud...")
-		httpBody, err := cloud.CommunicateWithCloud("POST", url, sync)
+		httpBody, err := issuer.CommunicateWithCloud("POST", url, sync)
 		if err != nil {
 			r.logger.Error(err, "failed to communicate with cloud...")
 			return ctrl.Result{}, err
 		}
-		if !cloud.IsSuccessfulStatusCode(httpBody.StatusCode) {
+		if !issuer.IsSuccessfulStatusCode(httpBody.StatusCode) {
 			err := errors.New(http.StatusText(httpBody.StatusCode))
 			r.logger.Error(err, err.Error())
 			return ctrl.Result{}, err
 		}
-		err = cloud.Convert(httpBody.Body, &resp)
+		err = issuer.Convert(httpBody.Body, &resp)
 		if err != nil {
 			r.logger.Error(err, "failed to convert to cloud.SyncResponse")
 			return ctrl.Result{}, err
@@ -120,7 +120,7 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		resp = r.syncCache
 	}
 	newConfig := resp.Config
-	if ok := cloud.IsConfigMapChanged(newConfig, &configMap); ok {
+	if ok := issuer.IsConfigMapChanged(newConfig, &configMap); ok {
 		r.logger.Info("Start to sync the resources...")
 		if err := r.Client.Update(ctx, &configMap); err != nil {
 			r.needSync = false
@@ -136,7 +136,7 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	r.needSync = true
-	r.syncCache = cloud.SyncResponse{}
+	r.syncCache = issuer.SyncResponse{}
 	return ctrl.Result{RequeueAfter: time.Second * 3600}, nil
 }
 
@@ -145,12 +145,12 @@ func (r *CloudSyncReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("CloudSyncReconcile")
 	r.needSync = true
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
-		return object.GetName() == string(cloud.ClientStartName) &&
-			object.GetNamespace() == string(cloud.Namespace) &&
+		return object.GetName() == string(issuer.ClientStartName) &&
+			object.GetNamespace() == string(issuer.Namespace) &&
 			object.GetLabels() != nil &&
-			object.GetLabels()[string(cloud.IsSync)] == cloud.FALSE
+			object.GetLabels()[string(issuer.IsSync)] == issuer.FALSE
 	})
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&cloudv1.Launcher{}, builder.WithPredicates(Predicate)).
+		For(&issuerv1.Launcher{}, builder.WithPredicates(Predicate)).
 		Complete(r)
 }

@@ -22,9 +22,9 @@ import (
 
 	"github.com/go-logr/logr"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	cloudv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
+	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
-	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
+	issuer "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -68,11 +68,11 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	var canConnectToExternalNetwork bool
 	var (
-		readOperations  cloud.ReadOperationList
-		writeOperations cloud.WriteOperationList
+		readOperations  issuer.ReadOperationList
+		writeOperations issuer.WriteOperationList
 	)
 	var (
-		license        cloudv1.License
+		license        issuerv1.License
 		clusterLimit   corev1.Secret
 		uidSecret      corev1.Secret
 		urlConfig      corev1.ConfigMap
@@ -84,26 +84,26 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		payload map[string]interface{}
 	)
 
-	canConnectToExternalNetwork = os.Getenv(string(cloud.NetWorkEnv)) == cloud.TRUE
+	canConnectToExternalNetwork = os.Getenv(string(issuer.NetWorkEnv)) == issuer.TRUE
 
 	// execute read event
-	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
-		WithTag(types.NamespacedName{Namespace: req.Namespace, Name: string(cloud.LicenseName)}).
+	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
+		WithTag(types.NamespacedName{Namespace: req.Namespace, Name: string(issuer.LicenseName)}).
 		WithObject(&license).AddToList(&readOperations)
-	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
-		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UIDSecretName)}).
+	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
+		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.UIDSecretName)}).
 		WithObject(&uidSecret).AddToList(&readOperations)
-	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
-		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.URLConfigName)}).
+	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
+		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.URLConfigName)}).
 		WithObject(&urlConfig).AddToList(&readOperations)
-	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
-		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.LicenseHistory)}).
+	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
+		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.LicenseHistory)}).
 		WithObject(&licenseHistory).AddToList(&readOperations)
-	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
-		WithTag(types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.AvailableScaleSecretName)}).
+	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
+		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.AvailableScaleSecretName)}).
 		WithObject(&clusterLimit).WithCallback(func() error {
-		clusterLimit.SetName(string(cloud.AvailableScaleSecretName))
-		clusterLimit.SetNamespace(string(cloud.Namespace))
+		clusterLimit.SetName(string(issuer.AvailableScaleSecretName))
+		clusterLimit.SetNamespace(string(issuer.Namespace))
 		clusterLimit.SetLabels(map[string]string{})
 		return r.Client.Create(ctx, &clusterLimit)
 	}).AddToList(&readOperations)
@@ -121,58 +121,58 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// security judgement before write
-	config, err := util.ReadConfigFromConfigMap(string(cloud.URLConfigName), &urlConfig)
+	config, err := util.ReadConfigFromConfigMap(string(issuer.URLConfigName), &urlConfig)
 	if err != nil {
 		r.logger.Error(err, "failed to read url config")
 		return ctrl.Result{}, err
 	}
-	if cloud.CheckLicenseExists(&licenseHistory, license.Spec.Token) {
-		pack := cloud.NewNotificationPackage(cloud.LicenseNoticeTitle, cloud.SEALOS, cloud.DuplicateLicenseMessage)
-		cloud.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
+	if issuer.CheckLicenseExists(&licenseHistory, license.Spec.Token) {
+		pack := issuer.NewNotificationPackage(issuer.LicenseNoticeTitle, issuer.SEALOS, issuer.DuplicateLicenseMessage)
+		issuer.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
 		return ctrl.Result{}, r.Client.Delete(ctx, &license)
 	}
 
 	if canConnectToExternalNetwork {
-		payload, ok = cloud.LicenseCheckOnExternalNetwork(license, uidSecret, config.LicenseMonitorURL, r.logger)
+		payload, ok = issuer.LicenseCheckOnExternalNetwork(license, uidSecret, config.LicenseMonitorURL, r.logger)
 	} else {
-		payload, ok = cloud.LicenseCheckOnInternalNetwork(license)
+		payload, ok = issuer.LicenseCheckOnInternalNetwork(license)
 	}
 	if !ok {
-		pack := cloud.NewNotificationPackage(cloud.LicenseNoticeTitle, cloud.SEALOS, cloud.InvalidLicenseMessage)
-		cloud.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
+		pack := issuer.NewNotificationPackage(issuer.LicenseNoticeTitle, issuer.SEALOS, issuer.InvalidLicenseMessage)
+		issuer.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
 		r.logger.Info("invalid license")
 		return ctrl.Result{}, r.Client.Delete(ctx, &license)
 	}
 
 	// recharge
-	(&cloud.WriteEventBuilder{}).WithCallback(func() error {
-		err := cloud.RechargeByLicense(ctx, r.Client, r.logger, account, payload)
+	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
+		err := issuer.RechargeByLicense(ctx, r.Client, r.logger, account, payload)
 		if err != nil {
-			pack := cloud.NewNotificationPackage(cloud.LicenseNoticeTitle, cloud.SEALOS, cloud.RechargeFailedMessage)
-			cloud.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
+			pack := issuer.NewNotificationPackage(issuer.LicenseNoticeTitle, issuer.SEALOS, issuer.RechargeFailedMessage)
+			issuer.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
 			return err
 		}
-		pack := cloud.NewNotificationPackage(cloud.LicenseNoticeTitle, cloud.SEALOS, cloud.ValidLicenseMessage)
-		cloud.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
+		pack := issuer.NewNotificationPackage(issuer.LicenseNoticeTitle, issuer.SEALOS, issuer.ValidLicenseMessage)
+		issuer.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
 		return nil
 	}).AddToList(&writeOperations)
 
 	// limit the scale
-	(&cloud.WriteEventBuilder{}).WithCallback(func() error {
-		return cloud.AdjustScaleOfCluster(ctx, r.Client, clusterLimit, payload)
+	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
+		return issuer.AdjustScaleOfCluster(ctx, r.Client, clusterLimit, payload)
 	}).AddToList(&writeOperations)
 
 	// expand the scale of cluster
-	(&cloud.WriteEventBuilder{}).WithCallback(func() error {
-		return cloud.ExpandScaleOfCluster(ctx, r.Client, clusterLimit, payload)
+	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
+		return issuer.ExpandScaleOfCluster(ctx, r.Client, clusterLimit, payload)
 	}).AddToList(&writeOperations)
 
 	// record
-	(&cloud.WriteEventBuilder{}).WithCallback(func() error {
-		return cloud.RecordLicense(ctx, r.Client, r.logger, license, licenseHistory)
+	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
+		return issuer.RecordLicense(ctx, r.Client, r.logger, license, licenseHistory)
 	}).AddToList(&writeOperations)
 
-	(&cloud.WriteEventBuilder{}).WithCallback(func() error {
+	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
 		return r.Client.Delete(ctx, &license)
 	}).AddToList(&writeOperations)
 
@@ -189,21 +189,21 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.needRecharge = true
 	Predicate := predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
-			return e.Object.GetName() == string(cloud.LicenseName)
+			return e.Object.GetName() == string(issuer.LicenseName)
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			return e.ObjectNew.GetName() == string(cloud.LicenseName)
+			return e.ObjectNew.GetName() == string(issuer.LicenseName)
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			// Ignore delete events
 			return false
 		},
 		GenericFunc: func(e event.GenericEvent) bool {
-			return e.Object.GetName() == string(cloud.LicenseName)
+			return e.Object.GetName() == string(issuer.LicenseName)
 		},
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&cloudv1.License{}, builder.WithPredicates(Predicate)).
+		For(&issuerv1.License{}, builder.WithPredicates(Predicate)).
 		Complete(r)
 }

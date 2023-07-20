@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloud-env
+  namespace: cloud-system
+stringData:
+  canConnectToExternalNetwork: "{{ .canConnectToExternalNetwork }}"
+  isMonitor: "{{ .MONITOR }}"

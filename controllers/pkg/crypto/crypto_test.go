@@ -23,8 +23,8 @@ func TestIsLicenseValid(t *testing.T) {
 	claims, valid := IsLicenseValid(fakeLicense)
 
 	if valid {
-		t.Logf("解码后的内容: %v\n", claims)
+		t.Logf("content after decoding: %v\n", claims)
 	} else {
-		t.Error("无法解码内容")
+		t.Error("decoded error")
 	}
 }

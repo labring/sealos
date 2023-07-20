@@ -27,7 +27,7 @@ import (
 	"github.com/go-logr/logr"
 	cloudv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
-	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
+	issuer "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -71,32 +71,32 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		r.logger.Error(err, "failed to get launcher...")
 		return ctrl.Result{}, err
 	}
-	launcher.Labels[string(cloud.IsCollector)] = cloud.TRUE
+	launcher.Labels[string(issuer.IsCollector)] = issuer.TRUE
 	err = r.Client.Update(ctx, &launcher)
 	if err != nil {
 		r.logger.Error(err, "failed to get launcher...")
 		return ctrl.Result{}, err
 	}
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.UIDSecretName)}, &secret)
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.UIDSecretName)}, &secret)
 	if err != nil {
 		r.logger.Error(err, "failed to get secret...")
 		return ctrl.Result{}, err
 	}
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(cloud.Namespace), Name: string(cloud.URLConfigName)}, &configMap)
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.URLConfigName)}, &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to get configmap...")
 		return ctrl.Result{}, err
 	}
 
-	config, err := util.ReadConfigFromConfigMap(string(cloud.URLConfigName), &configMap)
+	config, err := util.ReadConfigFromConfigMap(string(issuer.URLConfigName), &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to read config")
 		return ctrl.Result{}, err
 	}
 
 	r.logger.Info("Start to get the node info of the cluster")
-	clusterResource := cloud.NewClusterResource()
-	totalNodesResource := cloud.NewTotalNodesResource(`\w+\.com/gpu`)
+	clusterResource := issuer.NewClusterResource()
+	totalNodesResource := issuer.NewTotalNodesResource(`\w+\.com/gpu`)
 
 	nodeList := &corev1.NodeList{}
 	err = r.Client.List(ctx, nodeList)
@@ -128,18 +128,18 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	clusterResource.Memory = totalNodesResource.TotalMemory.String()
 	clusterResource.Disk = totalNodesResource.TotalPVCapacity.String()
 
-	collector := cloud.CollectorInfo{
+	collector := issuer.CollectorInfo{
 		UID:             string(secret.Data["uid"]),
-		InfoType:        cloud.ResourceOnCluster,
+		InfoType:        issuer.ResourceOnCluster,
 		ClusterResource: clusterResource,
 	}
 	r.logger.Info("Start to collector the node info of the cluster")
-	httpBody, err := cloud.CommunicateWithCloud("POST", config.CollectorURL, collector)
+	httpBody, err := issuer.CommunicateWithCloud("POST", config.CollectorURL, collector)
 	if err != nil {
 		r.logger.Error(err, "failed to communicate with cloud")
 		return ctrl.Result{}, err
 	}
-	if !cloud.IsSuccessfulStatusCode(httpBody.StatusCode) {
+	if !issuer.IsSuccessfulStatusCode(httpBody.StatusCode) {
 		err := errors.New(http.StatusText(httpBody.StatusCode))
 		r.logger.Error(err, err.Error())
 		return ctrl.Result{}, err
@@ -153,10 +153,10 @@ func (r *CollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("CollectorReconcile")
 	r.lastCollectedTime = time.Now().Add(time.Hour * 100).Unix()
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
-		return object.GetName() == string(cloud.ClientStartName) &&
-			object.GetNamespace() == string(cloud.Namespace) &&
+		return object.GetName() == string(issuer.ClientStartName) &&
+			object.GetNamespace() == string(issuer.Namespace) &&
 			object.GetLabels() != nil &&
-			object.GetLabels()[string(cloud.IsCollector)] == string(cloud.FALSE)
+			object.GetLabels()[string(issuer.IsCollector)] == string(issuer.FALSE)
 	})
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cloudv1.Launcher{}, builder.WithPredicates(Predicate)).

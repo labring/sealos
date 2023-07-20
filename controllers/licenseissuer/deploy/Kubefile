@@ -5,7 +5,7 @@ USER 65532:65532
 COPY registry registry
 COPY manifests manifests
 
-ENV canConnectToExternalNetwork="false"
-ENV MONITOR="true"
+ENV canConnectToExternalNetwork "true"
+ENV MONITOR "true"
 
 CMD ["kubectl apply -f manifests"]

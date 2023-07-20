@@ -23,7 +23,7 @@ import (
 
 	"github.com/go-logr/logr"
 	v1 "github.com/labring/sealos/controllers/common/notification/api/v1"
-	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
+	issuer "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -56,9 +56,9 @@ func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	r.logger.Info("Enter ScaleMonitorReconcile", "namespace:", req.Namespace, "name", req.Name)
 
 	availableScaleSecret := corev1.Secret{}
-	readEventOperations := cloud.ReadOperationList{}
+	readEventOperations := issuer.ReadOperationList{}
 
-	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&availableScaleSecret).
+	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&availableScaleSecret).
 		WithTag(req.NamespacedName).
 		WithCallback(func() error {
 			availableScaleSecret.Data = make(map[string][]byte)
@@ -73,19 +73,38 @@ func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, err
 	}
 
-	manager := cloud.CSMCreator(availableScaleSecret)
+	max := func(a int, b int) int {
+		if a > b {
+			return a
+		}
+		return b
+	}
 
-	dateString := time.Unix(manager.ExpectScaleData.Expire, 0).Format("2006-01-02")
+	manager := issuer.CSMCreator(availableScaleSecret)
+
+	nodeCount := max(int(manager.ExpectScaleData.NodeLimit), 4)
+	cpuCount := max(int(manager.ExpectScaleData.CPULimit), 64)
+
+	var dateString string
+
+	if nodeCount == 4 && cpuCount == 64 {
+		dateString = "Indefinitely"
+	} else {
+		dateString = time.Unix(manager.ExpectScaleData.Expire, 0).Format("2006-01-02")
+	}
 
 	message := fmt.Sprintf("Current Maximum Cluster Capacity Information: \nNode Count: %d\nCPU Count: %d\nMaximum Sustainable Duration at Current Scale: %s",
-		int(manager.ExpectScaleData.NodeLimit),
-		int(manager.ExpectScaleData.CPULimit),
+		nodeCount,
+		cpuCount,
 		dateString)
-	pack := cloud.NewNotificationPackageWithLevel(cloud.ClusterCapacityNoticeTitle, cloud.SEALOS, cloud.Message(message), v1.Medium)
-	cloud.ExpectScale = manager.ExpectScaleData
-	users := cloud.UserCategory{}
+
+	pack := issuer.NewNotificationPackageWithLevel(issuer.ClusterCapacityNoticeTitle, issuer.SEALOS, issuer.Message(message), v1.Medium)
+	issuer.ExpectScale = manager.ExpectScaleData
+	r.logger.Info(message)
+
+	users := issuer.UserCategory{}
 	if err = users.GetNameSpace(ctx, r.Client); err == nil {
-		cloud.SubmitNotificationWithUserCategory(ctx, r.Client, users, cloud.UserPrefix, pack)
+		issuer.SubmitNotificationWithUserCategory(ctx, r.Client, users, issuer.UserPrefix, pack)
 	}
 	data, err := manager.SerializeToSecretData()
 	if err != nil {
@@ -103,8 +122,8 @@ func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request
 func (r *ScaleMonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("ScaleMonitorReconcile")
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
-		return object.GetName() == string(cloud.AvailableScaleSecretName) &&
-			object.GetNamespace() == string(cloud.Namespace)
+		return object.GetName() == string(issuer.AvailableScaleSecretName) &&
+			object.GetNamespace() == string(issuer.Namespace)
 	})
 	return ctrl.NewControllerManagedBy(mgr).
 		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
