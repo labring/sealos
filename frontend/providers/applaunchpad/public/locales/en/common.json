@@ -64,7 +64,7 @@
   "Update Failed": "Update Failed",
   "Warning": "Warning",
   "jump_prompt": "Jump prompt",
-  "jump_message": "This application cannot be used independently. Please click 'OK' to proceed to Sealos Desktop.",
+  "jump_message": "This application cannot be used independently. Please click 'Yes' to proceed to Sealos Desktop.",
   "pause_message": "The resources occupied by storage will continue to be charged.",
   "Confirm to restart this application?": "Confirm to restart this application?",
   "You haven't created any application yet.": "You haven't created any application yet.",
