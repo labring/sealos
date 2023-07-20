@@ -36,7 +36,7 @@ const BackupModal = ({
   onClose: () => void;
   onSuccess?: () => void;
 }) => {
-	if(!db) return <></>
+  if (!db) return <></>;
   const router = useRouter();
   const { t } = useTranslation();
   const { toast } = useToast();

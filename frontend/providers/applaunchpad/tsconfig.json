@@ -14,7 +14,9 @@
   },
   "include": [
     "next-env.d.ts",
-    "src/**/*.{ts,tsx,d.ts}"
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.d.ts",
   ],
 	"extends": "../../tsconfig.web.json"
 }

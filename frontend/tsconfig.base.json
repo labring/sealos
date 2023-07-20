@@ -2,7 +2,6 @@
   "compilerOptions": {
     "target": "es2015",
     "module": "esnext",
-    "sourceMap": true,
     "moduleResolution": "node",
 		"isolatedModules": true,
     "allowJs": true,
@@ -10,7 +9,6 @@
 		"skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
-    "noUnusedLocals": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,

@@ -1,6 +1,6 @@
 {
 	"extends": "./tsconfig.base.json",
-  "compilerOptions": {
+  	"compilerOptions": {
 		"jsx": "preserve",
 		"incremental": true,
 		"skipLibCheck": true

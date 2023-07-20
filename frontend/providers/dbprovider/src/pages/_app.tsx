@@ -39,10 +39,10 @@ const queryClient = new QueryClient({
 
 function App({
   Component,
-  pageProps,
-  // domain,
-  // env_storage_className
-}: AppProps) {
+  pageProps
+}: // domain,
+// env_storage_className
+AppProps) {
   const router = useRouter();
   const { i18n } = useTranslation();
   const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
@@ -106,7 +106,7 @@ function App({
 
     getUserPrice();
     getDBVersion();
-		getEnv();
+    getEnv();
     (async () => {
       try {
         const lang = await sealosApp.getLanguage();
@@ -153,6 +153,5 @@ function App({
     </>
   );
 }
-
 
 export default appWithTranslation(App);
