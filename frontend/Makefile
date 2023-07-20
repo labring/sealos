@@ -28,16 +28,19 @@ buildTargets := \
 	providers/costcenter \
 	providers/dbprovider \
 	providers/applaunchpad \
-  providers/imagehub
+	providers/imagehub
 
 buildTargets-all := $(addprefix image-build-,$(buildTargets))
+pushTargets-all := $(addprefix image-push-,$(buildTargets))
 $(foreach target,$(buildTargets),$(eval .PHONY: image-build-$($(target))))
+$(foreach target,$(buildTargets),$(eval .PHONY: image-push-$($(target))))
 $(foreach target,$(buildTargets),$(eval .PHONY: dev-$($(target))))
 $(foreach target,$(buildTargets),$(eval .PHONY: build-$($(target))))
 .PHONY: all dev-desktop image-prebuild
 
 all: image-prebuild $(buildTargets-all)
 
+push-images: image-prebuild $(pushTargets-all)
 fetch-deps: pnpm-lock.yaml
 	pnpm fetch
 build-packages: fetch-deps
@@ -64,4 +67,9 @@ image-build-providers/%: image-prebuild
 	docker build -t $(imageOwner)sealos-$*:dev --build-arg path=providers/$* --build-arg name=$* . 
 image-build-%: image-prebuild
 	docker build -t $(imageOwner)sealos-$*:dev --build-arg path=$* --build-arg name=$* . 
+
+image-push-providers/%: image-build-providers/%
+	docker push $(imageOwner)sealos-$*:dev 
+image-push-%: image-build-%
+	docker push $(imageOwner)sealos-$*:dev
 # Default target to run all builds.
