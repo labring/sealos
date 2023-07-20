@@ -39,6 +39,14 @@ type UserSpec struct {
 	//+kubebuilder:default:=7200
 	CSRExpirationSeconds int32 `json:"csrExpirationSeconds,omitempty"`
 }
+type UserRoleType string
+
+const (
+	OwnerRoleType     UserRoleType = "Owner"
+	ManagerRoleType   UserRoleType = "Manager"
+	DeveloperRoleType UserRoleType = "Developer"
+)
+
 type UserPhase string
 
 // These are the valid phases of node.

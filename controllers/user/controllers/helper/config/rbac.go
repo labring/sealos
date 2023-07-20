@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	rbacV1 "k8s.io/api/rbac/v1"
 )
 
@@ -45,13 +46,40 @@ func GetUsersNamespace(user string) string {
 	return fmt.Sprintf("ns-%s", user)
 }
 
-func GetUserRole() []rbacV1.PolicyRule {
-	return []rbacV1.PolicyRule{
-		{
-			APIGroups: []string{"*"},
-			Resources: []string{"*"},
-			Verbs:     []string{"*"},
-		},
+func GetUserRole(roleType userv1.UserRoleType) []rbacV1.PolicyRule {
+	switch roleType {
+	case userv1.OwnerRoleType:
+		return []rbacV1.PolicyRule{
+			{
+				APIGroups: []string{"*"},
+				Resources: []string{"*"},
+				Verbs:     []string{"*"},
+			},
+		}
+	case userv1.ManagerRoleType:
+		return []rbacV1.PolicyRule{
+			{
+				APIGroups: []string{"*"},
+				Resources: []string{"*"},
+				Verbs:     []string{"*"},
+			},
+		}
+	case userv1.DeveloperRoleType:
+		return []rbacV1.PolicyRule{
+			{
+				APIGroups: []string{"*"},
+				Resources: []string{"*"},
+				Verbs:     []string{"list", "watch", "get"},
+			},
+		}
+	default:
+		return []rbacV1.PolicyRule{
+			{
+				APIGroups: []string{"*"},
+				Resources: []string{"*"},
+				Verbs:     []string{"*"},
+			},
+		}
 	}
 }
 
