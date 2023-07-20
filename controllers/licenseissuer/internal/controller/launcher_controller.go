@@ -58,7 +58,7 @@ type LauncherReconciler struct {
 func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctl ctrl.Result, err error) {
 	r.logger.Info("Enter LauncherReconcile", "namespace:", req.Namespace, "name", req.Name)
 	r.logger.Info("Start the cloud module...")
-	canConnectToExternalNetwork := os.Getenv(cloud.NetWorkEnv) == cloud.TRUE
+	canConnectToExternalNetwork := os.Getenv(string(cloud.NetWorkEnv)) == cloud.TRUE
 	var secret corev1.Secret
 	var configMap corev1.ConfigMap
 	r.logger.Info("Try to get the cloud secret&configmap resource...")

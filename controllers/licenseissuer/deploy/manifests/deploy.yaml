@@ -634,7 +634,7 @@ spec:
             secretKeyRef:
               key: isMonitor
               name: cloud-env
-        image: registry.cn-hangzhou.aliyuncs.com/fckc/cloud-controller:v3.2.1
+        image: registry.cn-hangzhou.aliyuncs.com/fckc/cloud-controller:v3.2.3
         livenessProbe:
           httpGet:
             path: /healthz

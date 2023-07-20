@@ -31,6 +31,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	cl "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -237,7 +238,13 @@ func (uc *UserCategory) GetNameSpace(ctx context.Context, client cl.Client) erro
 	return nil
 }
 
-func SubmitNotificationWithUserCategory(ctx context.Context, client cl.Client, logger logr.Logger, users UserCategory, prefix string, pack NotificationPackage) {
+var noticeLogger logr.Logger
+
+func init() {
+	noticeLogger = ctrl.Log.WithName("SubNotification")
+}
+
+func SubmitNotificationWithUserCategory(ctx context.Context, client cl.Client, users UserCategory, prefix string, pack NotificationPackage) {
 	notification := NotificationPackageToNotification(pack)
 	var wg sync.WaitGroup
 	errchan := make(chan error)
@@ -252,12 +259,12 @@ func SubmitNotificationWithUserCategory(ctx context.Context, client cl.Client, l
 	}()
 	for err := range errchan {
 		if err != nil {
-			logger.Error(err, "Failed to deliver registration success.")
+			noticeLogger.Error(err, "Failed to deliver registration success.")
 		}
 	}
 }
 
-func SubmitNotificationWithUser(ctx context.Context, client cl.Client, logger logr.Logger, target string, pack NotificationPackage) {
+func SubmitNotificationWithUser(ctx context.Context, client cl.Client, target string, pack NotificationPackage) {
 	notification := NotificationPackageToNotification(pack)
 	notificationTask := NewNotificationTask(ctx, client, target, []ntf.Notification{notification})
 	var wg sync.WaitGroup
@@ -270,7 +277,7 @@ func SubmitNotificationWithUser(ctx context.Context, client cl.Client, logger lo
 	}()
 	for err := range errchan {
 		if err != nil {
-			logger.Error(err, "Failed to deliver notification success")
+			noticeLogger.Error(err, "Failed to deliver notification success")
 		}
 	}
 }

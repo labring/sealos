@@ -40,18 +40,18 @@ const BaseCount = 1000000
 const Key = "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFvbFBTSzB0UjFKeDZtb25lL2ppeApSWGN6UGlxcU5SSXRmdW1mdWNyNGMxc2dqdlJha0NwcWtDU21lMTR1akJkU0x6QlZzRjkvUWl0UnFNb2NvaEN1CkJ6R25EQ29hWnZXbWVHeE96NEZSejVTeUg1QTlDa3dnbUEzYnFnMWxKSEZTMlZyVjVHVFhFWnphZTZtRmhHOVcKenJMTnpZMlptYTMzOVE1WTNJSDZ6RXIrcTRQbTZDOXBHVGpsSnVodlRvb0dSY2w0bmpZRXc2eHB6ZHZrdi9uSApmZmxsWGZVNDNyRGdQaGkwZDRjWnNuTUJlazUxQkNiRFRuSHlNVFdGT1RoTjc1VVM0bzJxRm9JSEhsM0N0RzE4ClZIZEdRSE1IR0dYcGN3bVhhck1EQndwVWFOSk9kMkhjTTB5dlZEY2xDZzRITkIwVUFWeFNweFlRV3BwNWJzN2gKbHdJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=="
 
 const (
-	Namespace              Resource = "cloud-system"
-	ClusterScaleSecretName Resource = "cluster-scale"
-	ExpectScaleSecretName  Resource = "expect-scale"
-	ExpectScaleSecretKey   Resource = "expect"
-	ActualScaleSecretName  Resource = "actual-scale"
-	ActualScaleSecretKey   Resource = "actual"
-	LicenseHistory         Resource = "cloud-license-history"
-	LicenseName            Resource = "license"
-	UIDSecretName          Resource = "cloud-secret"
-	URLConfigName          Resource = "cloud-config"
-	MonitorLaunchName      Resource = "cloud-start"
-	ClientStartName        Resource = "client-start"
+	Namespace                Resource = "cloud-system"
+	AvailableScaleSecretName Resource = "cluster-scale"
+	ExpectScaleSecretName    Resource = "expect-scale"
+	ExpectScaleSecretKey     Resource = "expect"
+	ActualScaleSecretName    Resource = "actual-scale"
+	ActualScaleSecretKey     Resource = "actual"
+	LicenseHistory           Resource = "cloud-license-history"
+	LicenseName              Resource = "license"
+	UIDSecretName            Resource = "cloud-secret"
+	URLConfigName            Resource = "cloud-config"
+	MonitorLaunchName        Resource = "cloud-start"
+	ClientStartName          Resource = "client-start"
 )
 
 const (
@@ -62,24 +62,14 @@ const (
 )
 
 const (
-	SEALOS                         Source  = "Sealos Cloud"
-	NoticeClusterScaleTitle        Title   = "Notice: Current Maximum Cluster Capacity"
-	ExpireLicenseTitle             Title   = "License expired"
-	ErrorLicenseTitle              Title   = "License Activation Failed"
-	InvalidLicenseTitle            Title   = "Invalid License"
-	UnKnownErrorOfLicense          Title   = "UnKnown error about license"
-	ValidLicenseTitle              Title   = "License Activated"
-	RechargeFailedTitle            Title   = "Recharge failed"
-	DuplicateLicenseTitle          Title   = "Duplicate License"
-	RegistrationSuccessTitle       Title   = "Registration Success"
-	InvalidLicenseContent          Message = "The provided license is invalid. Please check and try."
-	ErrorLicenseTitleContent       Message = "License delivery encountered an unexpected error. Please ensure your cluster is operating normally..."
-	UnKnownErrorOfLicenseCotentent Message = "During the license activation process, a location issue occurred, possibly due to network problems. If it affects your usage, please contact us."
-	LicenseTimeOutContent          Message = "The provided license has expired. Please check and try."
-	ValidLicenseContent            Message = "Your license has been successfully activated and is ready to use. Enjoy your experience!"
-	DuplicateLicenseContent        Message = "The provided license has already been used. Please use a different license."
-	RegistrationSuccessContent     Message = "Congratulations! You have successfully registered. Welcome aboard!"
-	RechargeFailedContent          Message = "Your license failed to recharge."
+	SEALOS                     Source  = "Sealos Cloud"
+	ClusterCapacityNoticeTitle Title   = "Notice: Cluster Capacity"
+	LicenseNoticeTitle         Title   = "Notice: License"
+	InvalidLicenseMessage      Message = "The provided license is invalid. Please check and try."
+	LicenseTimeOutMessage      Message = "The provided license has expired. Please check and try."
+	ValidLicenseMessage        Message = "Your license has been successfully activated and is ready to use. Enjoy your experience!"
+	DuplicateLicenseMessage    Message = "The provided license has already been used. Please use a different license."
+	RechargeFailedMessage      Message = "License recharge failed."
 )
 
 const (
@@ -94,11 +84,8 @@ const (
 )
 
 const (
-	IsMonitor ENV = "MONITOR"
-)
-
-const (
-	NetWorkEnv string = "CAN_CONNECT_TO_EXTERNAL_NETWORK"
+	IsMonitor  ENV = "MONITOR"
+	NetWorkEnv ENV = "CAN_CONNECT_TO_EXTERNAL_NETWORK"
 )
 
 const (

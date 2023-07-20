@@ -18,7 +18,6 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -27,7 +26,6 @@ import (
 	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -57,94 +55,46 @@ type ScaleMonitorReconciler struct {
 func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter ScaleMonitorReconcile", "namespace:", req.Namespace, "name", req.Name)
 
-	clusterExpectScaleInfo := corev1.Secret{}
-	currentClusterScale := corev1.Secret{}
+	availableScaleSecret := corev1.Secret{}
 	readEventOperations := cloud.ReadOperationList{}
-	writeEventOperations := cloud.WriteOperationList{}
 
-	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&clusterExpectScaleInfo).
+	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&availableScaleSecret).
 		WithTag(req.NamespacedName).
 		WithCallback(func() error {
-			clusterExpectScaleInfo.Data = make(map[string][]byte)
-			clusterExpectScaleInfo.SetName(req.Name)
-			clusterExpectScaleInfo.SetNamespace(req.Namespace)
-			return r.Client.Create(ctx, &clusterExpectScaleInfo)
+			availableScaleSecret.Data = make(map[string][]byte)
+			availableScaleSecret.SetName(req.Name)
+			availableScaleSecret.SetNamespace(req.Namespace)
+			return r.Client.Create(ctx, &availableScaleSecret)
 		}).
 		AddToList(&readEventOperations)
 
-	(&cloud.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&currentClusterScale).WithTag(
-		types.NamespacedName{
-			Namespace: string(cloud.Namespace),
-			Name:      string(cloud.ExpectScaleSecretName),
-		}).
-		WithCallback(func() error {
-			currentClusterScale.SetName(string(cloud.ExpectScaleSecretName))
-			currentClusterScale.SetNamespace(string(cloud.Namespace))
-			return r.Client.Create(ctx, &currentClusterScale)
-		}).AddToList(&readEventOperations)
-
 	err := readEventOperations.Execute()
-
-	// if the read ops failed, limit the cluster scale to zero
 	if err != nil {
-		r.logger.Error(err, "failed to get execute event")
-		expectString, _ := json.Marshal(cloud.ClusterScale{})
-		if currentClusterScale.Data == nil {
-			currentClusterScale.Data = make(map[string][]byte)
-		}
-		currentClusterScale.Data[string(cloud.ExpectScaleSecretKey)] = expectString
-		return ctrl.Result{}, r.Update(ctx, &currentClusterScale)
+		return ctrl.Result{}, err
 	}
 
-	res, isSanitized := cloud.TidyAvailableScaleData(clusterExpectScaleInfo.Data)
+	manager := cloud.CSMCreator(availableScaleSecret)
 
-	isDeleted := cloud.DeleteExpireScales(res)
+	dateString := time.Unix(manager.ExpectScaleData.Expire, 0).Format("2006-01-02")
 
-	if isDeleted || isSanitized {
-		newMap := make(map[string][]byte)
-		for k, v := range res {
-			bytes, err := json.Marshal(v)
-			if err != nil {
-				fmt.Println("error:", err)
-			}
-			newMap[k] = bytes
-		}
-		clusterExpectScaleInfo.Data = newMap
-		(&cloud.WriteEventBuilder{}).WithCallback(func() error {
-			return r.Update(ctx, &clusterExpectScaleInfo)
-		})
-	}
-
-	expectScale := cloud.GetCurrentScale(res, cloud.GetScaleOfMaxCPU, cloud.GetScaleOfMaxNodes)
-	dateString := time.Unix(expectScale.Expire, 0).Format("2006-01-02")
-
-	message := fmt.Sprintf("Current Maximum Cluster Scale Information: \nNode Count: %d\nCPU Count: %d\nMaximum Sustainable Duration at Current Scale: %s",
-		int(expectScale.NodeLimit),
-		int(expectScale.CPULimit),
+	message := fmt.Sprintf("Current Maximum Cluster Capacity Information: \nNode Count: %d\nCPU Count: %d\nMaximum Sustainable Duration at Current Scale: %s",
+		int(manager.ExpectScaleData.NodeLimit),
+		int(manager.ExpectScaleData.CPULimit),
 		dateString)
-	pack := cloud.NewNotificationPackageWithLevel(cloud.NoticeClusterScaleTitle, cloud.SEALOS, cloud.Message(message), v1.Medium)
-	expectString, err := json.Marshal(expectScale)
-	if err != nil {
-		r.logger.Error(err, "failed to parse expect string")
-		return ctrl.Result{}, err
-	}
-
-	(&cloud.WriteEventBuilder{}).WithCallback(func() error {
-		if currentClusterScale.Data == nil {
-			currentClusterScale.Data = make(map[string][]byte)
-		}
-		currentClusterScale.Data[string(cloud.ExpectScaleSecretKey)] = expectString
-		return r.Client.Update(ctx, &currentClusterScale)
-	}).AddToList(&writeEventOperations)
-
-	err = writeEventOperations.Execute()
-	if err != nil {
-		r.logger.Error(err, "failed to execute write event")
-		return ctrl.Result{}, err
-	}
+	pack := cloud.NewNotificationPackageWithLevel(cloud.ClusterCapacityNoticeTitle, cloud.SEALOS, cloud.Message(message), v1.Medium)
+	cloud.ExpectScale = manager.ExpectScaleData
 	users := cloud.UserCategory{}
 	if err = users.GetNameSpace(ctx, r.Client); err == nil {
-		cloud.SubmitNotificationWithUserCategory(ctx, r.Client, r.logger, users, cloud.UserPrefix, pack)
+		cloud.SubmitNotificationWithUserCategory(ctx, r.Client, users, cloud.UserPrefix, pack)
+	}
+	data, err := manager.SerializeToSecretData()
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	availableScaleSecret.Data = data
+	if err = r.Client.Update(ctx, &availableScaleSecret); err != nil {
+		r.logger.Error(err, "failed to update available scale secret")
+		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
 }
@@ -153,7 +103,7 @@ func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request
 func (r *ScaleMonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("ScaleMonitorReconcile")
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
-		return object.GetName() == string(cloud.ClusterScaleSecretName) &&
+		return object.GetName() == string(cloud.AvailableScaleSecretName) &&
 			object.GetNamespace() == string(cloud.Namespace)
 	})
 	return ctrl.NewControllerManagedBy(mgr).
