@@ -20,3 +20,19 @@ export function formatUrl(url: string, query: Record<string, string>) {
   }
   return urlObj.toString();
 }
+export const parseOpenappQuery = (openapp:string)=>{
+  let param = decodeURIComponent(openapp);
+  const firstQuestionMarkIndex = param.indexOf('?');
+  let appkey = ""
+  let appQuery = ""
+  if(firstQuestionMarkIndex === - 1) {
+    appkey = param
+  } else {
+    appkey = param.substring(0, firstQuestionMarkIndex);
+    appQuery = param.substring(firstQuestionMarkIndex + 1);
+  }
+  return {
+    appkey,
+    appQuery
+  }
+}

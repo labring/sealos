@@ -37,12 +37,8 @@ const queryClient = new QueryClient({
   }
 });
 
-function App({
-  Component,
-  pageProps
-}: // domain,
-// env_storage_className
-AppProps) {
+
+function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const { i18n } = useTranslation();
   const { setScreenWidth, loading, setLastRoute } = useGlobalStore();

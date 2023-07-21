@@ -5,6 +5,7 @@ import MoreApps from '@/components/more_apps';
 import { enableRecharge } from '@/services/enable';
 import useAppStore from '@/stores/app';
 import useSessionStore from '@/stores/session';
+import { parseOpenappQuery } from '@/utils/format';
 import { useColorMode } from '@chakra-ui/react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useRouter } from 'next/router';
@@ -32,28 +33,23 @@ export default function Home({ rechargeEnabled }: { rechargeEnabled: boolean }) 
     const { query } = router;
     const is_login = isUserLogin();
     if (!isUpdate || !is_login) {
-      let param = decodeURIComponent((query?.openapp as string) || '');
-      const firstQuestionMarkIndex = param.indexOf('?');
-      const openApp = param.substring(0, firstQuestionMarkIndex);
-      const appQuery = param.substring(firstQuestionMarkIndex + 1);
-      if (openApp && typeof appQuery === 'string') setAutoLaunch(openApp, { raw: appQuery });
+      const {appkey, appQuery} = parseOpenappQuery((query?.openapp as string) || '')
+      if (appkey && typeof appQuery === 'string') setAutoLaunch(appkey, { raw: appQuery });
       router.replace(destination);
     } else {
       init().then((state) => {
         let appQuery = '';
         let appkey = '';
         if (!state.autolaunch) {
-          let param = decodeURIComponent((query?.openapp as string) || '');
-          const firstQuestionMarkIndex = param.indexOf('?');
-          const openapp = param.substring(0, firstQuestionMarkIndex);
-          const _appQuery = param.substring(firstQuestionMarkIndex + 1);
-          if (!openapp || typeof _appQuery !== 'string') return;
-          appQuery = _appQuery;
-          appkey = openapp;
+          const result = parseOpenappQuery((query?.openapp as string) || '')
+          appQuery = result.appQuery
+          appkey = result.appkey
+          if(!!query.openapp) router.replace(router.pathname)
         } else {
           appkey = state.autolaunch;
           appQuery = state.launchQuery.raw;
         }
+        if(!appkey) return 
         const app = state.installedApps.find((item) => item.key === appkey);
         if (!app) return;
         state.openApp(app, { raw: appQuery }).then(() => {
