@@ -44,6 +44,9 @@ const (
 	AddCPUField   = "adc"
 )
 
+const retryInterval = time.Second * 5 // Retry every 5 seconds
+const timeout = time.Minute * 3       // Stop retrying after 3 minutes
+
 type Operation interface {
 	Execute() error
 }
@@ -95,9 +98,6 @@ func (list *ReWriteOperationList) AddToList(op Operation) {
 }
 
 func (list *ReWriteOperationList) Execute() error {
-	retryInterval := time.Second * 5 // Retry every 5 seconds
-	timeout := time.Minute * 3       // Stop retrying after 3 minutes
-
 	startTime := time.Now()
 	for {
 		remainingOps := []Operation{}

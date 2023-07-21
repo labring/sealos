@@ -5,7 +5,7 @@
 domain: sealos.io
 layout:
 - go.kubebuilder.io/v4
-projectName: cloud-controller
+projectName: licenseissuer-controller
 repo: github.com/labring/sealos/controllers/licenseissuer
 resources:
 - controller: true

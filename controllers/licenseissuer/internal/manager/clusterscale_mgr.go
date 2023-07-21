@@ -40,6 +40,9 @@ var logger logr.Logger
 var resyncTime int64
 var lastSetFlagTime int64
 
+const CommunityEditionMaxNode int64 = 4
+const CommunityEditionMaxCpu int64 = 64
+
 func init() {
 	logger = ctrl.Log.WithName("ReSyncForClusterScale")
 	resyncTime = int64(time.Hour)
@@ -174,22 +177,11 @@ func GetExpectScale(data map[string]ClusterScale,
 	if key1 == key2 {
 		return value1
 	}
-	getMaxValue := func(a int64, b int64) int64 {
-		if a > b {
-			return a
-		}
-		return b
-	}
-	getMinValue := func(a int64, b int64) int64 {
-		if a < b {
-			return a
-		}
-		return b
-	}
+
 	var currentScale ClusterScale
-	currentScale.CPULimit = getMaxValue(value1.CPULimit, value2.CPULimit)
-	currentScale.NodeLimit = getMaxValue(value1.NodeLimit, value2.NodeLimit)
-	currentScale.Expire = getMinValue(value1.Expire, value2.Expire)
+	currentScale.CPULimit = MaxWithInt64(value1.CPULimit, value2.CPULimit)
+	currentScale.NodeLimit = MaxWithInt64(value1.NodeLimit, value2.NodeLimit)
+	currentScale.Expire = MinWithInt64(value1.Expire, value2.Expire)
 
 	return currentScale
 }
@@ -435,5 +427,25 @@ func CountClusterNodesAndCPUs(ctx context.Context, client client.Client) (Cluste
 }
 
 func IsCommunityEdition() bool {
-	return ActualScale.NodeLimit <= 4 && ActualScale.CPULimit <= 64
+	return ActualScale.NodeLimit <= CommunityEditionMaxNode && ActualScale.CPULimit <= CommunityEditionMaxCpu
+}
+
+func MaxWithInt64(a int64, b ...int64) int64 {
+	res := a
+	for _, v := range b {
+		if v > res {
+			res = v
+		}
+	}
+	return res
+}
+
+func MinWithInt64(a int64, b ...int64) int64 {
+	res := a
+	for _, v := range b {
+		if v < res {
+			res = v
+		}
+	}
+	return res
 }
