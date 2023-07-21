@@ -19,6 +19,7 @@ package apply
 import (
 	"testing"
 
+	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -823,9 +824,13 @@ func TestJoin(t *testing.T) {
 			wantErr: false,
 		},
 	}
+
+	var addCmd = &cobra.Command{
+		Use: "add",
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := verifyAndSetNodes(nil, tt.args.cluster, tt.args.scalingArgs); (err != nil) != tt.wantErr {
+			if err := verifyAndSetNodes(addCmd, tt.args.cluster, tt.args.scalingArgs); (err != nil) != tt.wantErr {
 				t.Errorf("Join() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			t.Logf("print des cluster hosts: %v", tt.args.cluster.Spec.Hosts)
