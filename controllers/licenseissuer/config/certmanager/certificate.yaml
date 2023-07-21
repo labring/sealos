@@ -8,8 +8,8 @@ metadata:
     app.kubernetes.io/name: certificate
     app.kubernetes.io/instance: serving-cert
     app.kubernetes.io/component: certificate
-    app.kubernetes.io/created-by: cloud-controller
-    app.kubernetes.io/part-of: cloud-controller
+    app.kubernetes.io/created-by: licenseissuer-controller
+    app.kubernetes.io/part-of: licenseissuer-controller
     app.kubernetes.io/managed-by: kustomize
   name: selfsigned-issuer
   namespace: system
@@ -23,8 +23,8 @@ metadata:
     app.kubernetes.io/name: certificate
     app.kubernetes.io/instance: serving-cert
     app.kubernetes.io/component: certificate
-    app.kubernetes.io/created-by: cloud-controller
-    app.kubernetes.io/part-of: cloud-controller
+    app.kubernetes.io/created-by: licenseissuer-controller
+    app.kubernetes.io/part-of: licenseissuer-controller
     app.kubernetes.io/managed-by: kustomize
   name: serving-cert  # this name should match the one appeared in kustomizeconfig.yaml
   namespace: system

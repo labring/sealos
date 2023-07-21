@@ -140,15 +140,13 @@ func (nt *NotificationTask) Run() error {
 		data.Namespace = nt.Target
 		var tmp ntf.Notification
 		err := nt.client.Get(nt.ctx, types.NamespacedName{Namespace: data.Namespace, Name: data.Name}, &tmp)
-		if err == nil {
-			continue
-		} else if apierrors.IsNotFound(err) {
-			err := nt.client.Create(nt.ctx, &data)
-			if err == nil {
-				continue
+		if err != nil && apierrors.IsNotFound(err) {
+			if err = nt.client.Create(nt.ctx, &data); err != nil {
+				return err
 			}
-			return err
-		} else {
+			continue
+		}
+		if err != nil {
 			return err
 		}
 	}
@@ -244,6 +242,9 @@ func init() {
 	noticeLogger = ctrl.Log.WithName("SubNotification")
 }
 
+// SubmitNotificationWithUserCategory is a function that submits a notification to a group of users specified by a category.
+// It creates a new goroutine for each user in the category to concurrently send notifications.
+// It will log any errors occurred during the process.
 func SubmitNotificationWithUserCategory(ctx context.Context, client cl.Client, users UserCategory, prefix string, pack NotificationPackage) {
 	notification := NotificationPackageToNotification(pack)
 	var wg sync.WaitGroup
@@ -264,6 +265,8 @@ func SubmitNotificationWithUserCategory(ctx context.Context, client cl.Client, u
 	}
 }
 
+// SubmitNotificationWithUser is a function that submits a notification to a single user.
+// It creates a new goroutine to send the notification and logs any errors occurred during the process.
 func SubmitNotificationWithUser(ctx context.Context, client cl.Client, target string, pack NotificationPackage) {
 	notification := NotificationPackageToNotification(pack)
 	notificationTask := NewNotificationTask(ctx, client, target, []ntf.Notification{notification})

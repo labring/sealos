@@ -52,6 +52,11 @@ type ScaleMonitorReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
+
+// Reconcile is a method of ScaleMonitorReconciler that manages the state of a scale monitor. It creates or updates a secret representing
+// the scale capacity of the cluster, calculates the maximum node and CPU count, and sends a notification to users in the namespace with
+// the calculated scale data. If any operation fails, it logs the error and returns with an error status.
+
 func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter ScaleMonitorReconcile", "namespace:", req.Namespace, "name", req.Name)
 
@@ -73,17 +78,10 @@ func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, err
 	}
 
-	max := func(a int, b int) int {
-		if a > b {
-			return a
-		}
-		return b
-	}
-
 	manager := issuer.CSMCreator(availableScaleSecret)
 
-	nodeCount := max(int(manager.ExpectScaleData.NodeLimit), 4)
-	cpuCount := max(int(manager.ExpectScaleData.CPULimit), 64)
+	nodeCount := issuer.MaxWithInt64(manager.ExpectScaleData.NodeLimit, issuer.CommunityEditionMaxNode)
+	cpuCount := issuer.MaxWithInt64(manager.ExpectScaleData.CPULimit, issuer.CommunityEditionMaxCpu)
 
 	var dateString string
 

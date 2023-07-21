@@ -62,7 +62,16 @@ func newUUID() (string, error) {
 	return fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:]), nil
 }
 
+// StartCloudModule is a function that initializes a cloud module in a cloud-native environment.
+// The function checks if the current environment is set as a monitor. If it is, the function
+// locates a launcher by its namespaced name. If the launcher does not exist, the function creates
+// a new launcher with the necessary labels and attempts to create it in the client's context.
+// If the launcher already exists, the function updates the launcher's labels and attempts to
+// update it in the client's context. If there are any errors during these operations, the function
+// wraps them with a contextual message and returns them. If the environment is not set as a monitor,
+// or if the operations are successful, the function returns nil.
 func StartCloudModule(ctx context.Context, client cl.Client) error {
+	var err error
 	isMonitor := os.Getenv(string(cloud.IsMonitor))
 	if isMonitor == cloud.TRUE {
 		var launcher issuerv1.Launcher
@@ -70,28 +79,28 @@ func StartCloudModule(ctx context.Context, client cl.Client) error {
 			Namespace: string(cloud.Namespace),
 			Name:      string(cloud.ClientStartName),
 		}
-		err := client.Get(ctx, nn, &launcher)
-		if err == nil {
-			launcher.Labels[string(cloud.IsCollector)] = cloud.FALSE
-			launcher.Labels[string(cloud.IsSync)] = cloud.FALSE
-			launcher.Labels[string(cloud.IsNotification)] = cloud.FALSE
-			return client.Update(ctx, &launcher)
-		} else if apierrors.IsNotFound(err) {
-			launcher.SetName(string(cloud.ClientStartName))
-			launcher.SetNamespace(string(cloud.Namespace))
-			launcher.Labels = make(map[string]string)
-			launcher.Labels[string(cloud.IsCollector)] = cloud.FALSE
-			launcher.Labels[string(cloud.IsSync)] = cloud.FALSE
-			launcher.Labels[string(cloud.IsNotification)] = cloud.FALSE
-			err := client.Create(ctx, &launcher)
-			if err != nil {
-				return fmt.Errorf("StartCloudModule: %w", err)
+		err = client.Get(ctx, nn, &launcher)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				launcher.SetName(string(cloud.ClientStartName))
+				launcher.SetNamespace(string(cloud.Namespace))
+				launcher.Labels = make(map[string]string)
+				launcher.Labels[string(cloud.IsCollector)] = cloud.FALSE
+				launcher.Labels[string(cloud.IsSync)] = cloud.FALSE
+				launcher.Labels[string(cloud.IsNotification)] = cloud.FALSE
+				err = client.Create(ctx, &launcher)
+				if err != nil {
+					err = fmt.Errorf("StartCloudModule: %w", err)
+				}
 			}
-			return nil
+		} else {
+			launcher.Labels[string(cloud.IsCollector)] = cloud.FALSE
+			launcher.Labels[string(cloud.IsSync)] = cloud.FALSE
+			launcher.Labels[string(cloud.IsNotification)] = cloud.FALSE
+			err = client.Update(ctx, &launcher)
 		}
-		return err
 	}
-	return nil
+	return err
 }
 
 func InterfaceToInt64(value interface{}) (int64, error) {

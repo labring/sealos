@@ -6,6 +6,11 @@ COPY registry registry
 COPY manifests manifests
 
 ENV canConnectToExternalNetwork "true"
-ENV MONITOR "true"
+ENV enableMonitor "true"
+ENV CollectorURL "https://anqp0y.laf.dev/CollectorHandle",
+ENV NotificationURL "https://anqp0y.laf.dev/NotificationHandle",
+ENV RegisterURL "https://anqp0y.laf.dev/RegisterHandle",
+ENV CloudSyncURL "https://anqp0y.laf.dev/CloudSyncHandle",
+ENV LicenseMonitorURL "https://anqp0y.laf.dev/LicenseMonitor"
 
 CMD ["kubectl apply -f manifests"]
