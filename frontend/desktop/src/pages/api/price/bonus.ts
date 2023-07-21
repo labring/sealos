@@ -4,7 +4,7 @@ import {
   GetCRD,
   GetConfigMap,
   GetUserDefaultNameSpace
-} from "@/services/backend/kubernetes/user";
+} from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {

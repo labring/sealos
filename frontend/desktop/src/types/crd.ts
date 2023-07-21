@@ -1,5 +1,5 @@
-import { KubeConfig } from "@kubernetes/client-node";
-import { APPTYPE, displayType } from "./app";
+import { KubeConfig } from '@kubernetes/client-node';
+import { APPTYPE, displayType } from './app';
 
 export type CRDMeta = {
   group: string; // group
@@ -9,91 +9,90 @@ export type CRDMeta = {
 };
 
 export const userCRD = {
-  Group: "user.sealos.io",
-  Version: "v1",
-  Resource: "users",
-}
+  Group: 'user.sealos.io',
+  Version: 'v1',
+  Resource: 'users'
+};
 export type UserCR = {
-  apiVersion: "user.sealos.io/v1",
-  kind: "User",
+  apiVersion: 'user.sealos.io/v1';
+  kind: 'User';
   metadata: {
-    annotations: object,
-    creationTimestamp: string,
-    finalizers: string[],
-    generation: number,
+    annotations: object;
+    creationTimestamp: string;
+    finalizers: string[];
+    generation: number;
     labels: {
-      uid: string,
-      updateTime: string,
-    },
-    managedFields: object[
-    ],
-    name: string,
-    resourceVersion: string,
-    uid: string,
-  },
+      uid: string;
+      updateTime: string;
+    };
+    managedFields: object[];
+    name: string;
+    resourceVersion: string;
+    uid: string;
+  };
   spec: {
-    csrExpirationSeconds: 7200,
-  },
+    csrExpirationSeconds: 7200;
+  };
   status: {
     conditions: {
-      lastHeartbeatTime: string,
-      lastTransitionTime: string,
-      message: string,
-      reason: string,
-      status: string,
-      type: string,
-    }[],
-    kubeConfig: KubeConfig,
-    observedCSRExpirationSeconds: number,
-    observedGeneration: number,
-    phase: string,
-  },
-}
+      lastHeartbeatTime: string;
+      lastTransitionTime: string;
+      message: string;
+      reason: string;
+      status: string;
+      type: string;
+    }[];
+    kubeConfig: KubeConfig;
+    observedCSRExpirationSeconds: number;
+    observedGeneration: number;
+    phase: string;
+  };
+};
 export type StatusCR = {
-  kind: "Status",
-  apiVersion: "v1",
-  metadata: object,
-  status: string,
-  message: string,
-  reason: string,
+  kind: 'Status';
+  apiVersion: 'v1';
+  metadata: object;
+  status: string;
+  message: string;
+  reason: string;
   details: {
-    name: string,
-    group: "user.sealos.io",
-    kind: "users",
-  },
-  code: 404,
-}
+    name: string;
+    group: 'user.sealos.io';
+    kind: 'users';
+  };
+  code: 404;
+};
 export type TAppCR = {
-  apiVersion: 'app.sealos.io/v1',
-  kind: 'App'
+  apiVersion: 'app.sealos.io/v1';
+  kind: 'App';
   metadata: {
-    annotations: any,
-    creationTimestamp: string,
-    generation: number,
-    labels: Record<string, string>,
-    name: string,
-    namespace: 'app-system'
-    resourceVersion: string
-    uid: string,
-  },
+    annotations: any;
+    creationTimestamp: string;
+    generation: number;
+    labels: Record<string, string>;
+    name: string;
+    namespace: 'app-system';
+    resourceVersion: string;
+    uid: string;
+  };
   spec: {
-    data: Record<'url' | 'desc', string>,
-    displayType: displayType,
-    i18n: Record<'zh' | 'zh-Hans', { name: string }>,
-    icon: string,
+    data: Record<'url' | 'desc', string>;
+    displayType: displayType;
+    i18n: Record<'zh' | 'zh-Hans', { name: string }>;
+    icon: string;
     menuData?: {
       nameColor: string;
       helpDropDown: boolean;
       helpDocs: boolean | string;
-    },
-    name: string,
-    type: APPTYPE
-  }
-}
+    };
+    name: string;
+    type: APPTYPE;
+  };
+};
 
 export type TAppCRList = {
-  apiVersion: 'app.sealos.io/v1',
-  items: TAppCR[],
-  kind: 'AppList',
-  metadata: { continue: string, resourceVersion: string }
-}
+  apiVersion: 'app.sealos.io/v1';
+  items: TAppCR[];
+  kind: 'AppList';
+  metadata: { continue: string; resourceVersion: string };
+};

@@ -33,7 +33,7 @@ export default function Home({ rechargeEnabled }: { rechargeEnabled: boolean }) 
     const { query } = router;
     const is_login = isUserLogin();
     if (!isUpdate || !is_login) {
-      const {appkey, appQuery} = parseOpenappQuery((query?.openapp as string) || '')
+      const { appkey, appQuery } = parseOpenappQuery((query?.openapp as string) || '');
       if (appkey && typeof appQuery === 'string') setAutoLaunch(appkey, { raw: appQuery });
       router.replace(destination);
     } else {
@@ -41,15 +41,15 @@ export default function Home({ rechargeEnabled }: { rechargeEnabled: boolean }) 
         let appQuery = '';
         let appkey = '';
         if (!state.autolaunch) {
-          const result = parseOpenappQuery((query?.openapp as string) || '')
-          appQuery = result.appQuery
-          appkey = result.appkey
-          if(!!query.openapp) router.replace(router.pathname)
+          const result = parseOpenappQuery((query?.openapp as string) || '');
+          appQuery = result.appQuery;
+          appkey = result.appkey;
+          if (!!query.openapp) router.replace(router.pathname);
         } else {
           appkey = state.autolaunch;
           appQuery = state.launchQuery.raw;
         }
-        if(!appkey) return 
+        if (!appkey) return;
         const app = state.installedApps.find((item) => item.key === appkey);
         if (!app) return;
         state.openApp(app, { raw: appQuery }).then(() => {

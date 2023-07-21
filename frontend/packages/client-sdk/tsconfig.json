@@ -4,5 +4,5 @@
     "lib": ["es2017", "DOM"],
     "noImplicitAny": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx","dist/**/*.d.ts","dist/**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "dist/**/*.d.ts", "dist/**/*.ts"]
 }

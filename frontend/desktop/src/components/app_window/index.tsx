@@ -49,8 +49,8 @@ export default function AppWindow(props: {
               ? 0
               : x
             : x > 1.1 * appHeaderWidth
-              ? 0
-              : x,
+            ? 0
+            : x,
         y: y < upperBoundary ? upperBoundary : y > lowerBoundary ? 0 : y
       });
     } else {

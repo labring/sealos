@@ -6,5 +6,5 @@ export * from './crd';
 export * from './payment';
 
 declare global {
-    var mongodb: MongoClient | null;
+  var mongodb: MongoClient | null;
 }

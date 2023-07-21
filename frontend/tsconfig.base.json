@@ -3,19 +3,17 @@
     "target": "es2015",
     "module": "esnext",
     "moduleResolution": "node",
-		"isolatedModules": true,
+    "isolatedModules": true,
     "allowJs": true,
     "strict": true,
-		"skipLibCheck": true,
+    "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "removeComments": true,
+    "removeComments": true
   },
 
-  "exclude": [
-    "**/node_modules",
-  ]
+  "exclude": ["**/node_modules"]
 }

@@ -5,13 +5,12 @@ import { Session, sessionKey } from '@/types';
 import { Provider } from '@/types/user';
 const yaml = require('js-yaml');
 
-
 type SessionState = {
   session: Session;
   provider?: Provider;
   oauth_state: string;
   newUser?: boolean;
-  updateUser:()=>void;
+  updateUser: () => void;
   setSession: (ss: Session) => void;
   setSessionProp: (key: keyof Session, value: any) => void;
   getSession: () => Session;
@@ -32,7 +31,10 @@ const useSessionStore = create<SessionState>()(
         oauth_state: '',
         newUser: false,
         setSession: (ss: Session) => set({ session: ss }),
-        updateUser:()=>set((state)=>{state.newUser = true}),
+        updateUser: () =>
+          set((state) => {
+            state.newUser = true;
+          }),
         setSessionProp: (key: keyof Session, value: any) => {
           set((state) => {
             state.session[key] = value;
@@ -51,14 +53,14 @@ const useSessionStore = create<SessionState>()(
           return doc?.users[0]?.user?.token;
         },
         generateState: () => {
-          const state = ((new Date()).getTime()).toString();
+          const state = new Date().getTime().toString();
           set({ oauth_state: state });
           return state;
         },
         compareState: (state: string) => {
           let result = state === get().oauth_state;
           set({ oauth_state: undefined });
-          return result
+          return result;
         },
         setProvider: (provider?: Provider) => {
           set({ provider });

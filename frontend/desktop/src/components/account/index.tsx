@@ -16,7 +16,7 @@ import { RechargeEnabledContext } from '@/pages';
 
 export default function Index({ disclosure }: { disclosure: UseDisclosureProps }) {
   const router = useRouter();
-  const rechargeEnabled = useContext(RechargeEnabledContext)
+  const rechargeEnabled = useContext(RechargeEnabledContext);
   const { t } = useTranslation();
   const { delSession, getSession } = useSessionStore();
   const { user, kubeconfig } = getSession();
@@ -31,34 +31,33 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureProps }
     }
   }, [kubeconfig]);
 
-  const { data,refetch } = useQuery(['getAccount'], () => request<any, ApiResp<{ balance: number, deductionBalance: number, status: string }>>('/api/account/getAmount'));
+  const { data, refetch } = useQuery(['getAccount'], () =>
+    request<any, ApiResp<{ balance: number; deductionBalance: number; status: string }>>(
+      '/api/account/getAmount'
+    )
+  );
 
   const balance = useMemo(() => {
     let real_balance = data?.data?.balance || 0;
     if (data?.data?.deductionBalance) {
       real_balance -= data?.data.deductionBalance;
     }
-    return real_balance
-  }, [data])
-  const {RechargeModal,onOpen} = useRecharge({
+    return real_balance;
+  }, [data]);
+  const { RechargeModal, onOpen } = useRecharge({
     onPaySuccess: () => {
-      refetch()
+      refetch();
     }
-  })
+  });
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     delSession();
     router.reload();
   };
 
-  return (
-    disclosure.isOpen ? <>
-      <Box
-        position={'fixed'}
-        inset={0}
-        zIndex={'998'}
-        onClick={disclosure.onClose}
-      ></Box>
+  return disclosure.isOpen ? (
+    <>
+      <Box position={'fixed'} inset={0} zIndex={'998'} onClick={disclosure.onClose}></Box>
       <Box
         w="297px"
         bg="rgba(255, 255, 255, 0.6)"
@@ -95,17 +94,29 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureProps }
               <Iconfont iconName="icon-copy2" width={16} height={16} color="#7B838B"></Iconfont>
             </Box>
           </Flex>
-          <Stack direction={'column'}
+          <Stack
+            direction={'column'}
             width={'100%'}
-            mt="24px" bg="rgba(255, 255, 255, 0.6)"
+            mt="24px"
+            bg="rgba(255, 255, 255, 0.6)"
             borderRadius={'4px'}
           >
-            <Flex h="54px" alignItems={'center'} borderBottom={'1px solid #0000001A'} p='16px'>
-              <Text>{t('Balance')}: ￥{formatMoney(balance).toFixed(2)}</Text>
+            <Flex h="54px" alignItems={'center'} borderBottom={'1px solid #0000001A'} p="16px">
+              <Text>
+                {t('Balance')}: ￥{formatMoney(balance).toFixed(2)}
+              </Text>
 
-              {rechargeEnabled && <Box ml="auto" onClick={() =>onOpen()} color={'#219BF4'} fontWeight='500' fontSize='12px'>
-                {t('Charge')}
-              </Box>}
+              {rechargeEnabled && (
+                <Box
+                  ml="auto"
+                  onClick={() => onOpen()}
+                  color={'#219BF4'}
+                  fontWeight="500"
+                  fontSize="12px"
+                >
+                  {t('Charge')}
+                </Box>
+              )}
             </Flex>
             <Flex h="54px" alignItems={'center'}>
               <Text ml="16px">kubeconfig</Text>
@@ -126,6 +137,8 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureProps }
         </Flex>
       </Box>
       {rechargeEnabled && <RechargeModal balance={balance}></RechargeModal>}
-      </> : <></>
+    </>
+  ) : (
+    <></>
   );
 }
