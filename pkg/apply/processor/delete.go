@@ -74,7 +74,7 @@ func (d *DeleteProcessor) PreProcess(cluster *v2.Cluster) error {
 func (d *DeleteProcessor) UndoBootstrap(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline Bootstrap in DeleteProcessor")
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
-	bs := bootstrap.New(cluster, d.ClusterFile.GetCluster())
+	bs := bootstrap.New(d.ClusterFile.GetCluster())
 	return bs.Delete(hosts...)
 }
 
@@ -92,11 +92,11 @@ func (d *DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 		hosts = append(hosts, cluster.GetRegistryIPAndPort())
 	}
 	// umount don't care imageMounts
-	fs, err := rootfs.NewRootfsMounter(nil, d.ClusterFile.GetCluster())
+	fs, err := rootfs.NewRootfsMounter(nil)
 	if err != nil {
 		return err
 	}
-	return fs.UnMountRootfs(cluster, hosts)
+	return fs.UnMountRootfs(d.ClusterFile.GetCluster(), hosts)
 }
 
 func (d *DeleteProcessor) UnMountImage(cluster *v2.Cluster) error {

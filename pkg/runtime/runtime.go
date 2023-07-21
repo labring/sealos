@@ -124,11 +124,12 @@ func (k *KubeadmRuntime) DeleteMasters(mastersIPList []string) error {
 	return k.deleteMasters(mastersIPList)
 }
 
-func newKubeadmRuntime(cluster, current *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
+func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
+	sshClient, _ := ssh.NewSSHByCluster(cluster, true)
 	k := &KubeadmRuntime{
 		Mutex:         &sync.Mutex{},
 		Cluster:       cluster,
-		ClusterClient: ssh.NewClusterClient(cluster, current, true),
+		ClusterClient: sshClient,
 		Config: &Config{
 			ClusterFileKubeConfig: kubeadm,
 			APIServerDomain:       DefaultAPIServerDomain,
@@ -146,11 +147,11 @@ func newKubeadmRuntime(cluster, current *v2.Cluster, kubeadm *KubeadmConfig) (In
 
 // NewDefaultRuntime arg "clusterName" is the Cluster name
 func NewDefaultRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
-	return newKubeadmRuntime(cluster, nil, kubeadm)
+	return newKubeadmRuntime(cluster, kubeadm)
 }
 
-func NewDefaultRuntimeWithCurrentCluster(cluster, current *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
-	return newKubeadmRuntime(cluster, current, kubeadm)
+func NewDefaultRuntimeWithCurrentCluster(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
+	return newKubeadmRuntime(cluster, kubeadm)
 }
 
 func (k *KubeadmRuntime) Validate() error {

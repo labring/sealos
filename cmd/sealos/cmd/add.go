@@ -48,7 +48,7 @@ func newAddCmd() *cobra.Command {
 		Args:    cobra.NoArgs,
 		Example: exampleAdd,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			applier, err := apply.NewScaleApplierFromArgs(addArgs, "add")
+			applier, err := apply.NewScaleApplierFromArgs(cmd, addArgs)
 			if err != nil {
 				return err
 			}

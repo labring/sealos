@@ -24,14 +24,13 @@ import (
 
 type clusterClient struct {
 	cluster  *v1beta1.Cluster
-	current  *v1beta1.Cluster // used in scale down
 	isStdout bool
 	configs  map[string]*Option
 	cache    map[*Option]Interface
 	mutex    sync.RWMutex
 }
 
-func overSSHConfig(original, override *v1beta1.SSH) {
+func OverSSHConfig(original, override *v1beta1.SSH) {
 	if override != nil {
 		if override.User != "" {
 			original.User = override.User
@@ -65,30 +64,7 @@ func (cc *clusterClient) getSSHOptionForHost(host string) (*Option, error) {
 	for i := range cc.cluster.Spec.Hosts {
 		for j := range cc.cluster.Spec.Hosts[i].IPS {
 			if strings.HasSuffix(cc.cluster.Spec.Hosts[i].IPS[j], host) {
-				overSSHConfig(sshConfig, cc.cluster.Spec.Hosts[i].SSH)
-				//break
-				opt := newOptionFromSSH(sshConfig, cc.isStdout)
-				cc.mutex.Lock()
-				cc.configs[host] = opt
-				cc.mutex.Unlock()
-				return opt, nil
-			}
-		}
-	}
-
-	// in scale down, the deleting node will not in cc.clusterClient
-	if cc.current != nil {
-		for i := range cc.current.Spec.Hosts {
-			for j := range cc.current.Spec.Hosts[i].IPS {
-				if strings.HasSuffix(cc.current.Spec.Hosts[i].IPS[j], host) {
-					overSSHConfig(sshConfig, cc.current.Spec.Hosts[i].SSH)
-					//break
-					opt := newOptionFromSSH(sshConfig, cc.isStdout)
-					cc.mutex.Lock()
-					cc.configs[host] = opt
-					cc.mutex.Unlock()
-					return opt, nil
-				}
+				OverSSHConfig(sshConfig, cc.cluster.Spec.Hosts[i].SSH)
 			}
 		}
 	}
@@ -119,17 +95,6 @@ func (cc *clusterClient) getClientForHost(host string) (Interface, error) {
 		cc.mutex.Unlock()
 	}
 	return client, nil
-}
-
-func NewClusterClient(cluster, current *v1beta1.Cluster, isStdout bool) Interface {
-	cc := &clusterClient{
-		cluster:  cluster,
-		current:  current,
-		isStdout: isStdout,
-		configs:  make(map[string]*Option),
-		cache:    make(map[*Option]Interface),
-	}
-	return cc
 }
 
 func (cc *clusterClient) Copy(host, src, dst string) error {
