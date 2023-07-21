@@ -183,7 +183,7 @@ func (c *Client) Fetch(host, src, dst string) error {
 		return err
 	}
 	defer created.Close()
-	_, err = io.Copy(rfp, created)
+	_, err = io.Copy(created, rfp)
 	return err
 }
 
