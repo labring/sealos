@@ -114,7 +114,7 @@ jobs:
             
             Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
           commit-message: |
-            🤖 add release changelog using rebot.
+            🤖 add release changelog using robot.
           branch: changelog-${{steps.get-current-tag.outputs.tag }}
           base: main
           signoff: true
