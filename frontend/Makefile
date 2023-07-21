@@ -36,7 +36,7 @@ $(foreach target,$(buildTargets),$(eval .PHONY: image-build-$($(target))))
 $(foreach target,$(buildTargets),$(eval .PHONY: image-push-$($(target))))
 $(foreach target,$(buildTargets),$(eval .PHONY: dev-$($(target))))
 $(foreach target,$(buildTargets),$(eval .PHONY: build-$($(target))))
-.PHONY: all dev-desktop image-prebuild
+.PHONY: all image-prebuild push-images
 
 all: image-prebuild $(buildTargets-all)
 

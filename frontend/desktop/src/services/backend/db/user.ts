@@ -1,8 +1,9 @@
 import { connectToDatabase } from './mongodb';
 import { PROVIDERS, Provider } from '@/types/user';
-import { hashPassword } from '@/utils/crypto';
 import { customAlphabet } from 'nanoid';
 import { v4 as uuid } from 'uuid';
+import { NSType } from './namespace';
+import { GetUserDefaultNameSpace, K8sApi } from '../kubernetes/user';
 const LetterBytes = 'abcdefghijklmnopqrstuvwxyz0123456789';
 const HostnameLength = 8;
 
@@ -15,9 +16,14 @@ async function connectToUserCollection() {
   await collection.createIndex({ password_user: 1 }, { unique: true, sparse: true });
   return collection;
 }
-export interface K8s_user {
+export type K8s_user = {
   name: string;
-}
+};
+
+export type UserNamespace = {
+  id: string;
+  nstype: NSType;
+};
 type User = {
   uid: string;
   avatar_url: string;
@@ -26,6 +32,7 @@ type User = {
   wechat?: string;
   phone?: string;
   k8s_users?: K8s_user[];
+  namespaces?: UserNamespace[];
   created_time: string;
   password?: string;
   password_user?: string;
@@ -33,13 +40,8 @@ type User = {
 
 export async function queryUser({ id, provider }: { id: string; provider: Provider }) {
   const users = await connectToUserCollection();
-  let user = null;
-  if (verifyProvider(provider)) {
-    user = await users.findOne({ [provider]: id });
-    return user;
-  } else {
-    throw new Error('provider error');
-  }
+  if (!verifyProvider(provider)) return Promise.reject('provider error');
+  return await users.findOne({ [provider]: id });
 }
 export async function createUser({
   id,
@@ -61,14 +63,12 @@ export async function createUser({
     avatar_url,
     name,
     created_time: new Date().toISOString(),
-    k8s_users: [{ name: k8s_username }]
+    k8s_users: [{ name: k8s_username }],
+    namespaces: [{ id: GetUserDefaultNameSpace(k8s_username), nstype: NSType.Private }]
   };
-  if (verifyProvider(provider)) {
-    user[provider] = id;
-    await users.insertOne(user);
-  } else {
-    throw new Error('provider error');
-  }
+  if (!verifyProvider(provider)) return Promise.reject('provider error');
+  user[provider] = id;
+  await users.insertOne(user);
   return user;
 }
 export async function updateUser({
@@ -81,13 +81,8 @@ export async function updateUser({
   data: Partial<Omit<User, 'provider'>>;
 }) {
   const users = await connectToUserCollection();
-  let user = null;
-  if (verifyProvider(provider)) {
-    user = await users.updateOne({ [provider]: id }, { $set: data });
-  } else {
-    throw new Error('provider error');
-  }
-  return user;
+  if (!verifyProvider(provider)) return Promise.reject('provider error');
+  return await users.updateOne({ [provider]: id }, { $set: data });
 }
 export async function addK8sUser({
   id,
@@ -103,11 +98,8 @@ export async function addK8sUser({
   if (k8s_user === undefined) {
     k8s_user = { name: await get_k8s_username() };
   }
-  if (verifyProvider(provider)) {
-    await users.updateOne({ [provider]: id }, { $addToSet: { k8s_users: k8s_user } });
-  } else {
-    throw new Error('provider error');
-  }
+  if (!verifyProvider(provider)) return Promise.reject('provider error');
+  await users.updateOne({ [provider]: id }, { $addToSet: { k8s_users: k8s_user } });
   return k8s_user;
 }
 export async function removeK8sUser({
@@ -120,49 +112,12 @@ export async function removeK8sUser({
   k8s_username: string;
 }) {
   const users = await connectToUserCollection();
-  let result = null;
-  if (verifyProvider(provider)) {
-    result = await users.updateOne(
-      { [provider]: id },
-      { $pull: { k8s_users: { name: k8s_username } } }
-    );
-  } else {
-    throw new Error('provider error');
-  }
-  return result;
+  if (!verifyProvider(provider)) return Promise.reject('provider error');
+  return await users.updateOne(
+    { [provider]: id },
+    { $pull: { k8s_users: { name: k8s_username } } }
+  );
 }
-
-// export async function createUserByPassword({ name, password }: {
-//   name: string,
-//   password: string
-// }) {
-//   const users = await connectToUserCollection();
-//   const avatar_url = ''
-//   let uid = uuid()
-//   const k8s_username = await get_k8s_username()
-//   let user: User = {
-//     uid,
-//     avatar_url,
-//     name,
-//     password_user: name,
-//     created_time: new Date().toISOString(),
-//     k8s_users: [{ name: k8s_username }],
-//     password
-//   }
-//   await users.insertOne(user);
-//   return user
-// }
-// export async function verifyPassword({ name, password }: {
-//   name: string,
-//   password: string
-// }) {
-//   const users = await connectToUserCollection();
-//   const user = await users.findOne({ password_user: name })
-//   if (!user) {
-//     return false
-//   }
-//   return user.password === hashPassword(password)
-// }
 function verifyProvider(provider: string): provider is Provider {
   return PROVIDERS.includes(provider as Provider);
 }
@@ -180,11 +135,88 @@ async function get_k8s_username() {
 }
 export async function removeUser({ id, provider }: { id: string; provider: Provider }) {
   const users = await connectToUserCollection();
-  let user = null;
-  if (verifyProvider(provider)) {
-    user = await users.deleteOne({ [provider]: id });
-  } else {
-    throw new Error('provider error');
-  }
-  return user;
+  if (!verifyProvider(provider)) return Promise.reject('provider error');
+  return await users.deleteOne({ [provider]: id });
+}
+export async function addNamespace({
+  id,
+  provider,
+  namespace
+}: {
+  id: string;
+  provider: Provider;
+  namespace: UserNamespace;
+}) {
+  const userCollection = await connectToUserCollection();
+  if (!verifyProvider(provider)) return Promise.reject('provider error');
+  const result = await userCollection.updateOne(
+    {
+      [provider]: id
+    },
+    {
+      $push: {
+        namespaces: namespace
+      }
+    }
+  );
+  return result.acknowledged;
+}
+export async function removeNamespace({
+  id,
+  provider,
+  namespace
+}: {
+  id: string;
+  provider: Provider;
+  namespace: string;
+}) {
+  const userCollection = await connectToUserCollection();
+  if (!verifyProvider(provider)) return Promise.reject('provider error');
+  const result = await userCollection.updateOne(
+    {
+      [provider]: id
+    },
+    {
+      $pull: {
+        namespaces: {
+          id: namespace
+        }
+      }
+    }
+  );
+  return result.acknowledged;
+}
+export async function createNamespace({
+  id,
+  provider,
+  namespace
+}: {
+  id: string;
+  provider: Provider;
+  namespace: string;
+}) {
+  const userCollection = await connectToUserCollection();
+  if (!verifyProvider(provider)) return Promise.reject('provider error');
+  const result = await userCollection.updateOne(
+    {
+      [provider]: id
+    },
+    {
+      $push: {
+        namespaces: {
+          id: namespace,
+          nstype: NSType.Private
+        }
+      }
+    }
+  );
+  return result.acknowledged;
+}
+export async function getNamespaces({ id, provider }: { id: string; provider: Provider }) {
+  const userCollection = await connectToUserCollection();
+  if (!verifyProvider(provider)) return Promise.reject('provider error');
+  const result = await userCollection.findOne({
+    [provider]: id
+  });
+  return result?.namespaces || [];
 }
