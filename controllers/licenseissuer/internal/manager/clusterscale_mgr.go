@@ -41,7 +41,7 @@ var resyncTime int64
 var lastSetFlagTime int64
 
 const CommunityEditionMaxNode int64 = 4
-const CommunityEditionMaxCpu int64 = 64
+const CommunityEditionMaxCPU int64 = 64
 
 func init() {
 	logger = ctrl.Log.WithName("ReSyncForClusterScale")
@@ -427,7 +427,7 @@ func CountClusterNodesAndCPUs(ctx context.Context, client client.Client) (Cluste
 }
 
 func IsCommunityEdition() bool {
-	return ActualScale.NodeLimit <= CommunityEditionMaxNode && ActualScale.CPULimit <= CommunityEditionMaxCpu
+	return ActualScale.NodeLimit <= CommunityEditionMaxNode && ActualScale.CPULimit <= CommunityEditionMaxCPU
 }
 
 func MaxWithInt64(a int64, b ...int64) int64 {
