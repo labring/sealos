@@ -81,7 +81,7 @@ func (r *ScaleMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	manager := issuer.CSMCreator(availableScaleSecret)
 
 	nodeCount := issuer.MaxWithInt64(manager.ExpectScaleData.NodeLimit, issuer.CommunityEditionMaxNode)
-	cpuCount := issuer.MaxWithInt64(manager.ExpectScaleData.CPULimit, issuer.CommunityEditionMaxCpu)
+	cpuCount := issuer.MaxWithInt64(manager.ExpectScaleData.CPULimit, issuer.CommunityEditionMaxCPU)
 
 	var dateString string
 
