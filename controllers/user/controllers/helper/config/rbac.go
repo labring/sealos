@@ -73,13 +73,7 @@ func GetUserRole(roleType userv1.UserRoleType) []rbacV1.PolicyRule {
 			},
 		}
 	default:
-		return []rbacV1.PolicyRule{
-			{
-				APIGroups: []string{"*"},
-				Resources: []string{"*"},
-				Verbs:     []string{"*"},
-			},
-		}
+		return []rbacV1.PolicyRule{}
 	}
 }
 
