@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	v12 "k8s.io/api/rbac/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -138,8 +138,8 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts utilcontroller.
 		For(&userv1.User{}, builder.WithPredicates(
 			predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}))).
 		Watches(&source.Kind{Type: &v1.ServiceAccount{}}, owner).
-		Watches(&source.Kind{Type: &v12.Role{}}, owner).
-		Watches(&source.Kind{Type: &v12.RoleBinding{}}, owner).
+		Watches(&source.Kind{Type: &rbacv1.Role{}}, owner).
+		Watches(&source.Kind{Type: &rbacv1.RoleBinding{}}, owner).
 		WithOptions(kubecontroller.Options{
 			MaxConcurrentReconciles: utilcontroller.GetConcurrent(opts),
 			RateLimiter:             utilcontroller.GetRateLimiter(opts),
@@ -273,11 +273,20 @@ func (r *UserReconciler) syncRole(ctx context.Context, user *userv1.User) contex
 			r.saveCondition(user, roleCondition.DeepCopy())
 		}
 	}()
+	//create three roles
+	r.createRole(ctx, roleCondition, user, userv1.OwnerRoleType)
+	r.createRole(ctx, roleCondition, user, userv1.ManagerRoleType)
+	r.createRole(ctx, roleCondition, user, userv1.DeveloperRoleType)
+
+	return ctx
+}
+
+func (r *UserReconciler) createRole(ctx context.Context, condition *userv1.Condition, user *userv1.User, roleType userv1.UserRoleType) {
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		var change controllerutil.OperationResult
 		var err error
-		role := &v12.Role{}
-		role.Name = user.Name
+		role := &rbacv1.Role{}
+		role.Name = string(roleType)
 		role.Namespace = config.GetUsersNamespace(user.Name)
 		role.Labels = map[string]string{}
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, role, func() error {
@@ -285,20 +294,20 @@ func (r *UserReconciler) syncRole(ctx context.Context, user *userv1.User) contex
 				userAnnotationCreatorKey: user.Name,
 				userAnnotationOwnerKey:   user.Annotations[userAnnotationOwnerKey],
 			}
-			role.Rules = config.GetUserRole()
+			role.Rules = config.GetUserRole(roleType)
 			return controllerutil.SetControllerReference(user, role, r.Scheme)
 		}); err != nil {
 			return fmt.Errorf("unable to create namespace role by User: %w", err)
 		}
 		r.Logger.V(1).Info("create or update namespace role  by User", "OperationResult", change)
-		roleCondition.Message = fmt.Sprintf("sync namespace role %s/%s successfully", role.Name, role.ResourceVersion)
+		condition.Message = fmt.Sprintf("sync namespace role %s/%s successfully", role.Name, role.ResourceVersion)
 		return nil
 	}); err != nil {
-		helper.SetConditionError(roleCondition, "SyncUserError", err)
+		helper.SetConditionError(condition, "SyncUserError", err)
 		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncUserRole", "Sync User namespace role %s is error: %v", user.Name, err)
 	}
-	return ctx
 }
+
 func (r *UserReconciler) syncRoleBinding(ctx context.Context, user *userv1.User) context.Context {
 	roleBindingConditionType := userv1.ConditionType("RoleBindingSyncReady")
 	rbCondition := &userv1.Condition{
@@ -318,7 +327,7 @@ func (r *UserReconciler) syncRoleBinding(ctx context.Context, user *userv1.User)
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		var change controllerutil.OperationResult
 		var err error
-		roleBinding := &v12.RoleBinding{}
+		roleBinding := &rbacv1.RoleBinding{}
 		roleBinding.Name = user.Name
 		roleBinding.Namespace = config.GetUsersNamespace(user.Name)
 		roleBinding.Labels = map[string]string{}
@@ -327,10 +336,10 @@ func (r *UserReconciler) syncRoleBinding(ctx context.Context, user *userv1.User)
 				userAnnotationCreatorKey: user.Name,
 				userAnnotationOwnerKey:   user.Annotations[userAnnotationOwnerKey],
 			}
-			roleBinding.RoleRef = v12.RoleRef{
-				APIGroup: v12.GroupName,
+			roleBinding.RoleRef = rbacv1.RoleRef{
+				APIGroup: rbacv1.GroupName,
 				Kind:     "Role",
-				Name:     user.Name,
+				Name:     string(userv1.OwnerRoleType),
 			}
 			roleBinding.Subjects = config.GetNewUsersSubject(user.Name)
 			return controllerutil.SetControllerReference(user, roleBinding, r.Scheme)

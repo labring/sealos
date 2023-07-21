@@ -1,9 +1,7 @@
 resources:
 - manager.yaml
-
 generatorOptions:
   disableNameSuffixHash: true
-
 configMapGenerator:
 - files:
   - controller_manager_config.yaml
@@ -13,4 +11,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: ghcr.io/labring/sealos-user-controller
-  newTag: dev
+  newTag: latest
