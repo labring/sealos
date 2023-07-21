@@ -47,7 +47,7 @@ sealos gen labring/kubernetes:v1.25.6\
     labring/kubeblocks:v0.5.3\
     --env policy=anonymousPolicy\
     --masters 10.140.0.16 \
-    --nodes 10.140.0.17, 10.140.0.18 > Clusterfile
+    --nodes 10.140.0.17,10.140.0.18 > Clusterfile
 
 sealos apply -f Clusterfile
 ```
