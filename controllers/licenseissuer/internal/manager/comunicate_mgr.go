@@ -66,7 +66,7 @@ const (
 	ClusterCapacityNoticeTitle Title   = "Notice: Cluster Capacity"
 	LicenseNoticeTitle         Title   = "Notice: License"
 	InvalidLicenseMessage      Message = "The provided license is invalid. Please check and try."
-	LicenseTimeOutMessage      Message = "The provided license has expired. Please check and try."
+	ExpiredLicenseMessage      Message = "The provided license has expired. Please check and try."
 	ValidLicenseMessage        Message = "Your license has been successfully activated and is ready to use. Enjoy your experience!"
 	DuplicateLicenseMessage    Message = "The provided license has already been used. Please use a different license."
 	RechargeFailedMessage      Message = "License recharge failed."
