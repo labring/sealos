@@ -21,6 +21,8 @@ jobs:
           fetch-depth: 0
       - name: Automatic Cherry Pick
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           bash ./scripts/cherry-pick.sh
       - uses: peter-evans/create-pull-request@v5
