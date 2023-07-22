@@ -8,12 +8,41 @@ jobs:
     if: github.event.issue.pull_request != '' && contains(github.event.comment.body, '/cherry-pick') && github.event.comment.user.login=='sealos-ci-robot'
     runs-on: ubuntu-latest
     steps:
+      - name: Write vars
+        id: set-target
+        run: |
+          commentbody="${{github.event.comment.body}}"
+          app=`echo "$commentbody"| awk '{print $2}'`
+          echo "target=$app" >> $GITHUB_OUTPUT
       - name: Checkout the latest code
         uses: actions/checkout@v2
         with:
           token: ${{ secrets.GH_PAT }}
-          fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
+          fetch-depth: 0
+
       - name: Automatic Cherry Pick
         uses: labring-actions/sealos-cherry-pick@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+      - name: Automatic Cherry Pick
+        shell: bash
+        run: |
+          bash ./scripts/cherry-pick.sh
+      - uses: peter-evans/create-pull-request@v5
+        with:
+          title: 'docs: Automated CherryPick Update for ${{ steps.set-target.outputs.target }} '
+          body: |
+            copilot:all
+
+            Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
+          commit-message: |
+            🤖 cherry-pick to ${{ steps.set-target.outputs.target }} using robot.
+          branch: cherry-pick-${{steps.get-current-tag.outputs.tag }}
+          base: ${{ steps.set-target.outputs.target }}
+          signoff: true
+          delete-branch: true
+          token: ${{ secrets.GH_PAT }}
+          reviewers: cuisongliu
+          committer: sealos-release-robot <sealos-release-robot@sealos.io>
+          author: sealos-release-robot <sealos-release-robot@sealos.io>
