@@ -17,7 +17,7 @@ type fakeImageClient struct {
 	*cmd.SealosCmd
 }
 
-func newFakeImage(sealosCmd *cmd.SealosCmd) FakeImageInterface {
+func NewFakeImage(sealosCmd *cmd.SealosCmd) FakeImageInterface {
 	return &fakeImageClient{
 		SealosCmd: sealosCmd,
 	}
