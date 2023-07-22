@@ -65,7 +65,6 @@ fi
 
 echo "Target branch for PR #$PR_NUMBER is $TARGET_BRANCH"
 
-
 # make sure branches are up-to-date
 git fetch origin $TARGET_BRANCH
 git checkout -b $TARGET_BRANCH origin/$TARGET_BRANCH

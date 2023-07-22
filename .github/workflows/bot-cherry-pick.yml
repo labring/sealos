@@ -24,6 +24,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         run: |
+          git config --global --add safe.directory /github/workspace
+          git config --global user.email "sealos-ci-robot"
+          git config --global user.name "sealos-ci-robot@sealos.io"
           bash ./scripts/cherry-pick.sh
       - uses: peter-evans/create-pull-request@v5
         with:
@@ -40,5 +43,5 @@ jobs:
           delete-branch: true
           token: ${{ secrets.GH_PAT }}
           reviewers: cuisongliu
-          committer: sealos-release-robot <sealos-release-robot@sealos.io>
-          author: sealos-release-robot <sealos-release-robot@sealos.io>
+          committer: sealos-ci-robot <sealos-ci-robot@sealos.io>
+          author: sealos-ci-robot <sealos-ci-robot@sealos.io>
