@@ -11,9 +11,9 @@ jobs:
       - name: Write vars
         id: set-target
         run: |
-          commentbody="${{github.event.comment.body}}"
-          app=`echo "$commentbody"| awk '{print $2}'`
-          echo "target=$app" >> $GITHUB_OUTPUT
+          TARGET_BRANCH=$(jq -r ".comment.body" "$GITHUB_EVENT_PATH" | awk '{ print $2 }'  | tr -d '[:space:]')
+          echo "🤖 says: ‼️ TARGET_BRANCH is $TARGET_BRANCH"
+          echo "target=$TARGET_BRANCH" >> $GITHUB_OUTPUT
       - name: Checkout the latest code
         uses: actions/checkout@v2
         with:
@@ -37,7 +37,7 @@ jobs:
             Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
           commit-message: |
             🤖 cherry-pick to ${{ steps.set-target.outputs.target }} using robot.
-          branch: cherry-pick-${{steps.get-current-tag.outputs.tag }}
+          branch: cherry-pick-${{ steps.set-target.outputs.target }}
           base: ${{ steps.set-target.outputs.target }}
           signoff: true
           delete-branch: true
