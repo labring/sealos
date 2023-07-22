@@ -14,6 +14,6 @@ jobs:
           token: ${{ secrets.GH_PAT }}
           fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
       - name: Automatic Cherry Pick
-        uses: vendoo/gha-cherry-pick@v1
+        uses: labring-actions/sealos-cherry-pick@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
