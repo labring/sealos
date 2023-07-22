@@ -23,6 +23,8 @@ jobs:
         shell: bash
         run: |
           bash ./scripts/cherry-pick.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
       - uses: peter-evans/create-pull-request@v5
         with:
           title: 'docs: Automated CherryPick Update for ${{ steps.set-target.outputs.target }} '
