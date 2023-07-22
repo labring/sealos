@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"os"
+	"time"
 
 	"github.com/go-logr/logr"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
@@ -137,13 +138,26 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	} else {
 		payload, ok = issuer.LicenseCheckOnInternalNetwork(license)
 	}
+	// pre-check for license
 	if !ok {
 		pack := issuer.NewNotificationPackage(issuer.LicenseNoticeTitle, issuer.SEALOS, issuer.InvalidLicenseMessage)
 		issuer.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
 		r.logger.Info("invalid license")
 		return ctrl.Result{}, r.Client.Delete(ctx, &license)
 	}
-
+	creatTime, err := issuer.InterfaceToInt64(payload[issuer.CreatTimeField])
+	if err != nil {
+		r.logger.Error(err, "failed to convert license creat time")
+		pack := issuer.NewNotificationPackage(issuer.LicenseNoticeTitle, issuer.SEALOS, issuer.InvalidLicenseMessage)
+		issuer.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
+		return ctrl.Result{}, r.Client.Delete(ctx, &license)
+	}
+	if time.Unix(creatTime, 0).Add(issuer.LicenseLifetime).Before(time.Now()) {
+		pack := issuer.NewNotificationPackage(issuer.LicenseNoticeTitle, issuer.SEALOS, issuer.ExpiredLicenseMessage)
+		issuer.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
+		r.logger.Info("expired license")
+		return ctrl.Result{}, r.Client.Delete(ctx, &license)
+	}
 	// recharge
 	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
 		err := issuer.RechargeByLicense(ctx, r.Client, r.logger, account, payload)
@@ -157,7 +171,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return nil
 	}).AddToList(&writeOperations)
 
-	// limit the scale
+	// limit the scale of cluster
 	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
 		return issuer.AdjustScaleOfCluster(ctx, r.Client, clusterLimit, payload)
 	}).AddToList(&writeOperations)
@@ -167,7 +181,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return issuer.ExpandScaleOfCluster(ctx, r.Client, clusterLimit, payload)
 	}).AddToList(&writeOperations)
 
-	// record
+	// record the license
 	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
 		return issuer.RecordLicense(ctx, r.Client, r.logger, license, licenseHistory)
 	}).AddToList(&writeOperations)

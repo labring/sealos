@@ -36,12 +36,15 @@ import (
 
 const MaxSizeThresholdStr = "800Ki"
 
+const LicenseLifetime = time.Hour * 24 // 24 hours
+
 const (
-	NodeField     = "nod"
-	CPUField      = "cpu"
-	DurationField = "tte"
-	AddNodeField  = "and"
-	AddCPUField   = "adc"
+	CreatTimeField = "iat"
+	NodeField      = "nod"
+	CPUField       = "cpu"
+	DurationField  = "tte"
+	AddNodeField   = "and"
+	AddCPUField    = "adc"
 )
 
 const retryInterval = time.Second * 5 // Retry every 5 seconds
