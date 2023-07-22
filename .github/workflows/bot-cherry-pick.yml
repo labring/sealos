@@ -19,12 +19,6 @@ jobs:
         with:
           token: ${{ secrets.GH_PAT }}
           fetch-depth: 0
-
-      - name: Automatic Cherry Pick
-        uses: labring-actions/sealos-cherry-pick@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-
       - name: Automatic Cherry Pick
         shell: bash
         run: |
