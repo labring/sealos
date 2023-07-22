@@ -50,10 +50,6 @@ func (a HostChecker) Check(cluster *v2.Cluster, _ string) error {
 	return checkTimeSync(sshClient, ipList)
 }
 
-func NewHostChecker() Interface {
-	return &HostChecker{}
-}
-
 func NewIPsHostChecker(ips []string) Interface {
 	return &HostChecker{IPs: ips}
 }
