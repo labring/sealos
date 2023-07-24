@@ -19,20 +19,19 @@ import (
 	"sync"
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
-
-	"github.com/labring/sealos/pkg/utils/yaml"
-
+	"github.com/labring/sealos/pkg/ssh"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/versionutil"
-
-	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
 type KubeadmRuntime struct {
 	*sync.Mutex
-	Cluster  *v2.Cluster
-	Token    *Token
-	Registry *v2.RegistryConfig
+	Cluster       *v2.Cluster
+	ClusterClient ssh.Interface
+	Token         *Token
+	Registry      *v2.RegistryConfig
 	*KubeadmConfig
 	*Config
 	cli kubernetes.Client
@@ -126,9 +125,11 @@ func (k *KubeadmRuntime) DeleteMasters(mastersIPList []string) error {
 }
 
 func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
+	sshClient, _ := ssh.NewSSHByCluster(cluster, true)
 	k := &KubeadmRuntime{
-		Mutex:   &sync.Mutex{},
-		Cluster: cluster,
+		Mutex:         &sync.Mutex{},
+		Cluster:       cluster,
+		ClusterClient: sshClient,
 		Config: &Config{
 			ClusterFileKubeConfig: kubeadm,
 			APIServerDomain:       DefaultAPIServerDomain,
@@ -146,6 +147,10 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, 
 
 // NewDefaultRuntime arg "clusterName" is the Cluster name
 func NewDefaultRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
+	return newKubeadmRuntime(cluster, kubeadm)
+}
+
+func NewDefaultRuntimeWithCurrentCluster(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
 	return newKubeadmRuntime(cluster, kubeadm)
 }
 

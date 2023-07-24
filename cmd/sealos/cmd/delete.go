@@ -55,7 +55,7 @@ func newDeleteCmd() *cobra.Command {
 			if err := processor.ConfirmDeleteNodes(); err != nil {
 				return err
 			}
-			applier, err := apply.NewScaleApplierFromArgs(deleteArgs, "delete")
+			applier, err := apply.NewScaleApplierFromArgs(cmd, deleteArgs)
 			if err != nil {
 				return err
 			}
