@@ -30,7 +30,7 @@ type clusterClient struct {
 	mutex    sync.RWMutex
 }
 
-func overSSHConfig(original, override *v1beta1.SSH) {
+func OverSSHConfig(original, override *v1beta1.SSH) {
 	if override != nil {
 		if override.User != "" {
 			original.User = override.User
@@ -64,11 +64,11 @@ func (cc *clusterClient) getSSHOptionForHost(host string) (*Option, error) {
 	for i := range cc.cluster.Spec.Hosts {
 		for j := range cc.cluster.Spec.Hosts[i].IPS {
 			if strings.HasSuffix(cc.cluster.Spec.Hosts[i].IPS[j], host) {
-				overSSHConfig(sshConfig, cc.cluster.Spec.Hosts[i].SSH)
-				break
+				OverSSHConfig(sshConfig, cc.cluster.Spec.Hosts[i].SSH)
 			}
 		}
 	}
+
 	opt := newOptionFromSSH(sshConfig, cc.isStdout)
 	cc.mutex.Lock()
 	cc.configs[host] = opt
