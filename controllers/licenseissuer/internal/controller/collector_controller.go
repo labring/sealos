@@ -66,28 +66,41 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		configMap corev1.ConfigMap
 		launcher  cloudv1.Launcher
 	)
-	err := r.Client.Get(ctx, req.NamespacedName, &launcher)
-	if err != nil {
-		r.logger.Error(err, "failed to get launcher...")
+
+	var (
+		readOperations  issuer.ReadOperationList
+		writeOperations issuer.WriteOperationList
+	)
+
+	// read and write operations
+	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&launcher).
+		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.ClientStartName)}).
+		AddToList(&readOperations)
+	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
+		if launcher.Labels[string(issuer.CollectorLable)] == issuer.TRUE {
+			return nil
+		}
+		launcher.Labels[string(issuer.CollectorLable)] = issuer.TRUE
+		return r.Client.Update(ctx, &launcher)
+	}).AddToList(&writeOperations)
+
+	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&secret).
+		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.UIDSecretName)}).
+		AddToList(&readOperations)
+	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&configMap).
+		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.URLConfigName)}).
+		AddToList(&readOperations)
+
+	if err := readOperations.Execute(); err != nil {
+		r.logger.Error(err, "failed to read resources...")
 		return ctrl.Result{}, err
 	}
-	launcher.Labels[string(issuer.IsCollector)] = issuer.TRUE
-	err = r.Client.Update(ctx, &launcher)
-	if err != nil {
-		r.logger.Error(err, "failed to get launcher...")
-		return ctrl.Result{}, err
-	}
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.UIDSecretName)}, &secret)
-	if err != nil {
-		r.logger.Error(err, "failed to get secret...")
-		return ctrl.Result{}, err
-	}
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.URLConfigName)}, &configMap)
-	if err != nil {
-		r.logger.Error(err, "failed to get configmap...")
+	if err := writeOperations.Execute(); err != nil {
+		r.logger.Error(err, "failed to write resources...")
 		return ctrl.Result{}, err
 	}
 
+	// collect the resource info of the cluster
 	config, err := util.ReadConfigFromConfigMap(string(issuer.URLConfigName), &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to read config")
@@ -156,7 +169,7 @@ func (r *CollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return object.GetName() == string(issuer.ClientStartName) &&
 			object.GetNamespace() == string(issuer.Namespace) &&
 			object.GetLabels() != nil &&
-			object.GetLabels()[string(issuer.IsCollector)] == string(issuer.FALSE)
+			object.GetLabels()[string(issuer.CollectorLable)] == string(issuer.FALSE)
 	})
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cloudv1.Launcher{}, builder.WithPredicates(Predicate)).

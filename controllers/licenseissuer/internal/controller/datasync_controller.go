@@ -58,8 +58,15 @@ type CloudSyncReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	// Logging the start of the sync operation
 	r.logger.Info("Enter CloudSyncReconcile", "namespace:", req.Namespace, "name", req.Name)
+	// Defining error and operation lists
 	var err error
+	var (
+		readOperations  issuer.ReadOperationList
+		writeOperations issuer.WriteOperationList
+	)
+	// Defining the necessary variables
 	var (
 		config    issuer.Config
 		secret    corev1.Secret
@@ -68,36 +75,45 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		configMap corev1.ConfigMap
 		launcher  issuerv1.Launcher
 	)
-	r.logger.Info("Start to get resources that need sync...")
-	err = r.Client.Get(ctx, req.NamespacedName, &launcher)
-	if err != nil {
-		r.logger.Error(err, "failed to get launcher...")
+
+	r.logger.Info("Start to get the resource for data sync...")
+
+	// Building read operations to fetch necessary resources
+	// Here, we fetch the Launcher, Secret and ConfigMap
+	// The fetched objects are added to readOperations list
+	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&launcher).
+		WithTag(types.NamespacedName{Namespace: req.Namespace, Name: string(issuer.ClientStartName)}).
+		AddToList(&readOperations)
+	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&secret).
+		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.UIDSecretName)}).
+		AddToList(&readOperations)
+	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&configMap).
+		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.URLConfigName)}).
+		AddToList(&readOperations)
+	// Executing the read operations. If there is an error, it's logged and returned
+	if err := readOperations.Execute(); err != nil {
+		r.logger.Error(err, "failed to read resources...")
 		return ctrl.Result{}, err
 	}
-	launcher.Labels[string(issuer.IsSync)] = issuer.TRUE
-	err = r.Client.Update(ctx, &launcher)
-	if err != nil {
-		r.logger.Error(err, "failed to get launcher...")
-		return ctrl.Result{}, err
-	}
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.UIDSecretName)}, &secret)
-	if err != nil {
-		r.logger.Error(err, "failed to get secret...")
-		return ctrl.Result{}, err
-	}
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.URLConfigName)}, &configMap)
-	if err != nil {
-		r.logger.Error(err, "failed to get configmap...")
-		return ctrl.Result{}, err
-	}
+
+	// register a callback function to update the launcher
+	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
+		if launcher.Labels[string(issuer.SyncLable)] == issuer.TRUE {
+			return nil
+		}
+		launcher.Labels[string(issuer.SyncLable)] = issuer.TRUE
+		return r.Client.Update(ctx, &launcher)
+	}).AddToList(&writeOperations)
+
+	// Extracting the config from the ConfigMap
 	config, err = util.ReadConfigFromConfigMap(string(issuer.URLConfigName), &configMap)
 	if err != nil {
 		r.logger.Error(err, "failed to get config...")
 		return ctrl.Result{}, err
 	}
-
 	url := config.CloudSyncURL
 	sync.UID = string(secret.Data["uid"])
+	// Checking if we need to sync. If true, we communicate with the cloud and get the response
 	if r.needSync {
 		r.logger.Info("Start to communicate with cloud...")
 		httpBody, err := issuer.CommunicateWithCloud("POST", url, sync)
@@ -119,36 +135,46 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	} else {
 		resp = r.syncCache
 	}
-	newConfig := resp.Config
-	if ok := issuer.IsConfigMapChanged(newConfig, &configMap); ok {
-		r.logger.Info("Start to sync the resources...")
-		if err := r.Client.Update(ctx, &configMap); err != nil {
-			r.needSync = false
-			return ctrl.Result{}, err
+	// Building write operations to update the configmap and secret
+	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
+		// Checking if the new config is different from the old one.
+		// If true, we sync the resources
+		// If false, we do nothing
+		if ok := issuer.IsConfigMapChanged(resp.Config, &configMap); ok {
+			r.logger.Info("Update the configmap...")
+			return r.Client.Update(ctx, &configMap)
 		}
-	}
+		return nil
+	}).AddToList(&writeOperations)
 
-	secret.Data["key"] = []byte(resp.Key)
-	err = r.Client.Update(ctx, &secret)
-	if err != nil {
+	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
+		secret.Data["key"] = []byte(resp.Key)
+		return r.Client.Update(ctx, &secret)
+	})
+	// Executing the write operations.
+	// If there is an error, it's logged and returned
+	if err := writeOperations.Execute(); err != nil {
+		r.logger.Error(err, "failed to write resources...")
 		r.needSync = false
 		return ctrl.Result{}, err
 	}
 
 	r.needSync = true
 	r.syncCache = issuer.SyncResponse{}
+
+	r.logger.Info("Finish to sync the resources...")
 	return ctrl.Result{RequeueAfter: time.Second * 3600}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *CloudSyncReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	r.logger = ctrl.Log.WithName("CloudSyncReconcile")
+	r.logger = ctrl.Log.WithName("DataSyncReconcile")
 	r.needSync = true
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
 		return object.GetName() == string(issuer.ClientStartName) &&
 			object.GetNamespace() == string(issuer.Namespace) &&
 			object.GetLabels() != nil &&
-			object.GetLabels()[string(issuer.IsSync)] == issuer.FALSE
+			object.GetLabels()[string(issuer.SyncLable)] == issuer.FALSE
 	})
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&issuerv1.Launcher{}, builder.WithPredicates(Predicate)).
