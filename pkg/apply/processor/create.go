@@ -162,7 +162,11 @@ func (c *CreateProcessor) Join(cluster *v2.Cluster) error {
 
 func (c *CreateProcessor) RunGuest(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline RunGuest in CreateProcessor.")
-	return c.Guest.Apply(cluster, cluster.Status.Mounts)
+	err := c.Guest.Apply(cluster, cluster.Status.Mounts)
+	if err != nil {
+		return fmt.Errorf("%s: %w", RunGuestFailed, err)
+	}
+	return nil
 }
 
 func NewCreateProcessor(name string, clusterFile clusterfile.Interface) (Interface, error) {
