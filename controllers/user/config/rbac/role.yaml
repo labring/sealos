@@ -11,3 +11,29 @@ rules:
   - '*'
   verbs:
   - '*'
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - operationrequests
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - operationrequests/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - operationrequests/status
+  verbs:
+  - get
+  - patch
+  - update
