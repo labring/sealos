@@ -86,3 +86,7 @@ func GetNewUsersSubject(user string) []rbacV1.Subject {
 		},
 	}
 }
+
+func GetGroupRoleBindingName(role string, user string) string {
+	return fmt.Sprintf("rb-%s-%s", role, user)
+}
