@@ -57,10 +57,15 @@ type LauncherReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctl ctrl.Result, err error) {
 	r.logger.Info("Enter LauncherReconcile", "namespace:", req.Namespace, "name", req.Name)
-	r.logger.Info("Start the cloud module...")
+	r.logger.Info("Start the infostream module...")
+
+	// read operations for the env and configmap and secret
 	canConnectToExternalNetwork := os.Getenv(string(issuer.NetWorkEnv)) == issuer.TRUE
-	var secret corev1.Secret
-	var configMap corev1.ConfigMap
+	var (
+		secret    corev1.Secret
+		configMap corev1.ConfigMap
+	)
+
 	r.logger.Info("Try to get the cloud secret&configmap resource...")
 	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.URLConfigName)}, &configMap)
 	if err != nil {
@@ -73,6 +78,9 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		r.logger.Error(err, "failed to get config...")
 		return ctrl.Result{}, err
 	}
+
+	// Checking if we need to sync.
+	// If true, we communicate with the cloud and get the response
 	if r.justSync && canConnectToExternalNetwork {
 		_, err := issuer.SyncWithCloud("POST", config.RegisterURL, issuer.RegisterRequest{UID: string(secret.Data["uid"])})
 		if err != nil {
@@ -89,6 +97,8 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
+	// Checking if we need to restart the cloud module.
+	// If registered, we start the cloud module
 	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.UIDSecretName)}, &secret)
 	if err == nil {
 		r.logger.Info("start to launch cloud moudle")
@@ -100,8 +110,9 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		r.logger.Info("success to launch monitor")
 		return ctrl.Result{}, nil
 	}
-	secret.Data = make(map[string][]byte)
 
+	// generate the uuid and register to the cloud
+	secret.Data = make(map[string][]byte)
 	uuid, err := util.Register()
 	if err != nil {
 		r.logger.Error(err, "failed to get register...")
@@ -110,7 +121,6 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	rr := issuer.RegisterRequest{
 		UID: uuid,
 	}
-
 	secret.Data["uid"] = []byte(uuid)
 	secret.SetName(string(issuer.UIDSecretName))
 	secret.SetNamespace(string(issuer.Namespace))
@@ -118,7 +128,6 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		r.logger.Error(err, "failed to create the register info to the cluster")
 		return ctrl.Result{}, err
 	}
-
 	if canConnectToExternalNetwork {
 		_, err = issuer.SyncWithCloud("POST", config.RegisterURL, rr)
 		if err != nil {
@@ -127,7 +136,9 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return ctrl.Result{}, err
 		}
 	}
+
 	r.justSync = false
+	// start the cloud module
 	if err := util.StartCloudModule(ctx, r.Client); err != nil {
 		r.logger.Error(err, "failed to start cloud module")
 		return ctrl.Result{}, err

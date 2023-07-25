@@ -62,6 +62,7 @@ type NotificationReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
+
 func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter NotificationReconcile", "namespace:", req.Namespace, "name", req.Name)
 	if err := r.Users.GetNameSpace(ctx, r.Client); err != nil {
@@ -81,7 +82,7 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		r.logger.Error(err, "failed to get launcher...")
 		return ctrl.Result{}, err
 	}
-	launcher.Labels[string(issuer.IsNotification)] = issuer.TRUE
+	launcher.Labels[string(issuer.NotificationLable)] = issuer.TRUE
 	err = r.Client.Update(ctx, &launcher)
 	if err != nil {
 		r.logger.Error(err, "failed to get launcher...")
@@ -165,7 +166,7 @@ func (r *NotificationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return object.GetName() == string(issuer.ClientStartName) &&
 			object.GetNamespace() == string(issuer.Namespace) &&
 			object.GetLabels() != nil &&
-			object.GetLabels()[string(issuer.IsNotification)] == string(issuer.FALSE)
+			object.GetLabels()[string(issuer.NotificationLable)] == string(issuer.FALSE)
 	})
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&issuerv1.Launcher{}, builder.WithPredicates(Predicate)).

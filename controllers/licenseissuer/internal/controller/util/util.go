@@ -85,18 +85,18 @@ func StartCloudModule(ctx context.Context, client cl.Client) error {
 				launcher.SetName(string(cloud.ClientStartName))
 				launcher.SetNamespace(string(cloud.Namespace))
 				launcher.Labels = make(map[string]string)
-				launcher.Labels[string(cloud.IsCollector)] = cloud.FALSE
-				launcher.Labels[string(cloud.IsSync)] = cloud.FALSE
-				launcher.Labels[string(cloud.IsNotification)] = cloud.FALSE
+				launcher.Labels[string(cloud.CollectorLable)] = cloud.FALSE
+				launcher.Labels[string(cloud.SyncLable)] = cloud.FALSE
+				launcher.Labels[string(cloud.NotificationLable)] = cloud.FALSE
 				err = client.Create(ctx, &launcher)
 				if err != nil {
 					err = fmt.Errorf("StartCloudModule: %w", err)
 				}
 			}
 		} else {
-			launcher.Labels[string(cloud.IsCollector)] = cloud.FALSE
-			launcher.Labels[string(cloud.IsSync)] = cloud.FALSE
-			launcher.Labels[string(cloud.IsNotification)] = cloud.FALSE
+			launcher.Labels[string(cloud.CollectorLable)] = cloud.FALSE
+			launcher.Labels[string(cloud.SyncLable)] = cloud.FALSE
+			launcher.Labels[string(cloud.NotificationLable)] = cloud.FALSE
 			err = client.Update(ctx, &launcher)
 		}
 	}
