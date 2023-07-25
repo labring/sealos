@@ -66,7 +66,6 @@ type LicenseReconciler struct {
 func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter LicenseReconcile", "namespace:", req.Namespace, "name", req.Name)
 	r.logger.Info("Start to get license-related resource...")
-
 	var canConnectToExternalNetwork bool
 	var (
 		readOperations  issuer.ReadOperationList
@@ -114,13 +113,12 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		r.logger.Error(err, "failed to read resources...")
 		return ctrl.Result{}, err
 	}
-
+	// get account
 	err := r.Client.Get(ctx, types.NamespacedName{Namespace: "sealos-system", Name: license.Spec.UID}, &account)
 	if err != nil {
 		r.logger.Error(err, "failed to get account")
 		return ctrl.Result{}, err
 	}
-
 	// security judgement before write
 	config, err := util.ReadConfigFromConfigMap(string(issuer.URLConfigName), &urlConfig)
 	if err != nil {
@@ -145,6 +143,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		r.logger.Info("invalid license")
 		return ctrl.Result{}, r.Client.Delete(ctx, &license)
 	}
+	// check license creat time
 	creatTime, err := issuer.InterfaceToInt64(payload[issuer.CreatTimeField])
 	if err != nil {
 		r.logger.Error(err, "failed to convert license creat time")
@@ -173,25 +172,6 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		issuer.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
 		return nil
 	}).AddToList(&writeOperations)
-
-	// limit the scale of cluster
-	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
-		if !issuer.ContainsFields(payload, issuer.NodeField,
-			issuer.CPUField, issuer.DurationField) {
-			return nil
-		}
-		return issuer.AdjustScaleOfCluster(ctx, r.Client, clusterLimit, payload)
-	}).AddToList(&writeOperations)
-
-	// expand the scale of cluster
-	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
-		if !issuer.ContainsFields(payload, issuer.AddNodeField,
-			issuer.AddCPUField, issuer.DurationField) {
-			return nil
-		}
-		return issuer.ExpandScaleOfCluster(ctx, r.Client, clusterLimit, payload)
-	}).AddToList(&writeOperations)
-
 	// record the license
 	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
 		return issuer.RecordLicense(ctx, r.Client, r.logger, license, licenseHistory)

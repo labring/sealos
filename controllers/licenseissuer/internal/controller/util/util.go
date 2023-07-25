@@ -116,14 +116,3 @@ func updateLauncher(ctx context.Context, client cl.Client, launcher *issuerv1.La
 	}
 	return nil
 }
-
-func InterfaceToInt64(value interface{}) (int64, error) {
-	switch v := value.(type) {
-	case int64:
-		return v, nil
-	case float64:
-		return int64(v), nil
-	default:
-		return 0, errors.New("cannot convert value of type to int64")
-	}
-}

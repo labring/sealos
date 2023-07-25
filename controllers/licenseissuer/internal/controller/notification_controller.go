@@ -85,7 +85,6 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	// read the resource for pull notification
 	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&launcher).
 		WithTag(req.NamespacedName).AddToList(&readOperations)
-
 	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
 		if launcher.Labels[string(issuer.NotificationLable)] == string(issuer.TRUE) {
 			return nil

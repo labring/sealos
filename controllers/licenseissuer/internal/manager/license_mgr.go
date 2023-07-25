@@ -336,3 +336,24 @@ func GetNextMapKeySuffix(data map[string]interface{}, prefix string) int {
 	}
 	return maxSuffix + 1
 }
+
+func ContainsFields(data map[string]interface{}, fields ...string) bool {
+	for _, field := range fields {
+		_, ok := data[field]
+		if !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func InterfaceToInt64(value interface{}) (int64, error) {
+	switch v := value.(type) {
+	case int64:
+		return v, nil
+	case float64:
+		return int64(v), nil
+	default:
+		return 0, errors.New("cannot convert value of type to int64")
+	}
+}
