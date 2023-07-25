@@ -50,9 +50,9 @@ type LicenseReconciler struct {
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=notification.sealos.io,resources=notifications,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=cloud.sealos.io,resources=licenses,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=cloud.sealos.io,resources=licenses/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=cloud.sealos.io,resources=licenses/finalizers,verbs=update
+//+kubebuilder:rbac:groups=infostream.sealos.io,resources=licenses,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=infostream.sealos.io,resources=licenses/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=infostream.sealos.io,resources=licenses/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -92,7 +92,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		WithTag(types.NamespacedName{Namespace: req.Namespace, Name: string(issuer.LicenseName)}).
 		WithObject(&license).AddToList(&readOperations)
 	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
-		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.UIDSecretName)}).
+		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.ClusterInfoSecretName)}).
 		WithObject(&uidSecret).AddToList(&readOperations)
 	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
 		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.URLConfigName)}).
@@ -160,6 +160,9 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 	// recharge
 	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
+		if !issuer.ContainsFields(payload, issuer.AmountField) {
+			return nil
+		}
 		err := issuer.RechargeByLicense(ctx, r.Client, r.logger, account, payload)
 		if err != nil {
 			pack := issuer.NewNotificationPackage(issuer.LicenseNoticeTitle, issuer.SEALOS, issuer.RechargeFailedMessage)
@@ -173,11 +176,19 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// limit the scale of cluster
 	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
+		if !issuer.ContainsFields(payload, issuer.NodeField,
+			issuer.CPUField, issuer.DurationField) {
+			return nil
+		}
 		return issuer.AdjustScaleOfCluster(ctx, r.Client, clusterLimit, payload)
 	}).AddToList(&writeOperations)
 
 	// expand the scale of cluster
 	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
+		if !issuer.ContainsFields(payload, issuer.AddNodeField,
+			issuer.AddCPUField, issuer.DurationField) {
+			return nil
+		}
 		return issuer.ExpandScaleOfCluster(ctx, r.Client, clusterLimit, payload)
 	}).AddToList(&writeOperations)
 

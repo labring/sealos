@@ -40,6 +40,7 @@ const LicenseLifetime = time.Hour * 24 // 24 hours
 
 const (
 	CreatTimeField = "iat"
+	AmountField    = "amt"
 	NodeField      = "nod"
 	CPUField       = "cpu"
 	DurationField  = "tte"
@@ -223,7 +224,7 @@ type LicenseMonitorResponse struct {
 }
 
 func NewLicenseMonitorRequest(secret corev1.Secret, license issuerv1.License) LicenseMonitorRequest {
-	if secret.Name != string(UIDSecretName) || secret.Namespace != string(Namespace) {
+	if secret.Name != string(ClusterInfoSecretName) || secret.Namespace != string(Namespace) {
 		return LicenseMonitorRequest{}
 	}
 	var lmr LicenseMonitorRequest

@@ -44,9 +44,9 @@ type CloudSyncReconciler struct {
 	syncCache issuer.SyncResponse
 }
 
-//+kubebuilder:rbac:groups=cloud.sealos.io,resources=cloudsyncs,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=cloud.sealos.io,resources=cloudsyncs/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=cloud.sealos.io,resources=cloudsyncs/finalizers,verbs=update
+//+kubebuilder:rbac:groups=infostream.sealos.io,resources=cloudsyncs,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=infostream.sealos.io,resources=cloudsyncs/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=infostream.sealos.io,resources=cloudsyncs/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -85,7 +85,7 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		WithTag(types.NamespacedName{Namespace: req.Namespace, Name: string(issuer.ClientStartName)}).
 		AddToList(&readOperations)
 	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&secret).
-		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.UIDSecretName)}).
+		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.ClusterInfoSecretName)}).
 		AddToList(&readOperations)
 	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&configMap).
 		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.URLConfigName)}).
@@ -142,15 +142,15 @@ func (r *CloudSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		// If false, we do nothing
 		if ok := issuer.IsConfigMapChanged(resp.Config, &configMap); ok {
 			r.logger.Info("Update the configmap...")
-			return r.Client.Update(ctx, &configMap)
+			err := r.Client.Update(ctx, &configMap)
+			if err != nil {
+				r.logger.Error(err, "failed to update configmap...")
+			}
+			return err
 		}
 		return nil
 	}).AddToList(&writeOperations)
 
-	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
-		secret.Data["key"] = []byte(resp.Key)
-		return r.Client.Update(ctx, &secret)
-	})
 	// Executing the write operations.
 	// If there is an error, it's logged and returned
 	if err := writeOperations.Execute(); err != nil {

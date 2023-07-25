@@ -42,9 +42,9 @@ type LauncherReconciler struct {
 	//justRestart bool
 }
 
-//+kubebuilder:rbac:groups=cloud.sealos.io,resources=launchers,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=cloud.sealos.io,resources=launchers/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=cloud.sealos.io,resources=launchers/finalizers,verbs=update
+//+kubebuilder:rbac:groups=infostream.sealos.io,resources=launchers,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=infostream.sealos.io,resources=launchers/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=infostream.sealos.io,resources=launchers/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -99,7 +99,7 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	// Checking if we need to restart the cloud module.
 	// If registered, we start the cloud module
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.UIDSecretName)}, &secret)
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.ClusterInfoSecretName)}, &secret)
 	if err == nil {
 		r.logger.Info("start to launch cloud moudle")
 		err := util.StartCloudModule(ctx, r.Client)
@@ -121,8 +121,9 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	rr := issuer.RegisterRequest{
 		UID: uuid,
 	}
+
 	secret.Data["uid"] = []byte(uuid)
-	secret.SetName(string(issuer.UIDSecretName))
+	secret.SetName(string(issuer.ClusterInfoSecretName))
 	secret.SetNamespace(string(issuer.Namespace))
 	if err := r.Client.Create(ctx, &secret); err != nil {
 		r.logger.Error(err, "failed to create the register info to the cluster")
@@ -150,7 +151,7 @@ func (r *LauncherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 // SetupWithManager sets up the controller with the Manager.
 func (r *LauncherReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("LauncherReconcile")
-	nameFilter := issuer.MonitorLaunchName
+	nameFilter := issuer.InfostreamLaunchName
 	namespaceFilter := issuer.Namespace
 	Predicates := predicate.NewPredicateFuncs(func(obj client.Object) bool {
 		return obj.GetName() == string(nameFilter) &&

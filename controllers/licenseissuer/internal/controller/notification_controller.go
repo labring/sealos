@@ -49,9 +49,9 @@ type NotificationReconciler struct {
 //+kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
 //+kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=get;list;watch
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update
-//+kubebuilder:rbac:groups=cloud.sealos.io,resources=notifications,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=cloud.sealos.io,resources=notifications/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=cloud.sealos.io,resources=notifications/finalizers,verbs=update
+//+kubebuilder:rbac:groups=infostream.sealos.io,resources=notifications,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=infostream.sealos.io,resources=notifications/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=infostream.sealos.io,resources=notifications/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -77,26 +77,35 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		clusterScret corev1.Secret
 		launcher     issuerv1.Launcher
 	)
-	err = r.Client.Get(ctx, req.NamespacedName, &launcher)
-	if err != nil {
-		r.logger.Error(err, "failed to get launcher...")
-		return ctrl.Result{}, err
-	}
-	launcher.Labels[string(issuer.NotificationLable)] = issuer.TRUE
-	err = r.Client.Update(ctx, &launcher)
-	if err != nil {
-		r.logger.Error(err, "failed to get launcher...")
-		return ctrl.Result{}, err
-	}
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.UIDSecretName)}, &clusterScret)
-	if err != nil {
-		r.logger.Error(err, "failed to get secret...")
-		return ctrl.Result{}, err
-	}
+	var (
+		readOperations  issuer.ReadOperationList
+		writeOperations issuer.WriteOperationList
+	)
 
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.URLConfigName)}, &configMap)
-	if err != nil {
-		r.logger.Error(err, "failed to get configmap...")
+	// read the resource for pull notification
+	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&launcher).
+		WithTag(req.NamespacedName).AddToList(&readOperations)
+
+	(&issuer.WriteEventBuilder{}).WithCallback(func() error {
+		if launcher.Labels[string(issuer.NotificationLable)] == string(issuer.TRUE) {
+			return nil
+		}
+		launcher.Labels[string(issuer.NotificationLable)] = issuer.TRUE
+		return r.Client.Update(ctx, &launcher)
+	}).AddToList(&writeOperations)
+	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&clusterScret).
+		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.ClusterInfoSecretName)}).
+		AddToList(&readOperations)
+	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&configMap).
+		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.URLConfigName)}).
+		AddToList(&readOperations)
+
+	if err := readOperations.Execute(); err != nil {
+		r.logger.Error(err, "failed to get the resource for pull notification")
+		return ctrl.Result{}, err
+	}
+	if err := writeOperations.Execute(); err != nil {
+		r.logger.Error(err, "failed to update the launcher")
 		return ctrl.Result{}, err
 	}
 
@@ -105,6 +114,7 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		r.logger.Error(err, "failed to read config")
 		return ctrl.Result{}, err
 	}
+
 	r.logger.Info("Start to pull notification from cloud...")
 	url = config.NotificationURL
 	var requestBody = issuer.NotificationRequest{
@@ -112,6 +122,7 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		Timestamp: r.NotificationMgr.TimeLastPull,
 	}
 
+	// communicate with cloud
 	r.logger.Info("Starting to communicate with cloud")
 	httpResp, err := issuer.CommunicateWithCloud("POST", url, requestBody)
 	if err != nil {
@@ -123,6 +134,7 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, errors.New(http.StatusText(httpResp.StatusCode))
 	}
 
+	// submit the notification to the cluster
 	var notificationResp []issuer.NotificationResponse
 	var notificationCache []ntf.Notification
 	err = issuer.Convert(httpResp.Body, &notificationResp)
@@ -162,6 +174,7 @@ func (r *NotificationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("NotificationReconcile")
 	r.NotificationMgr = issuer.NewNotificationManager()
 	r.Users = issuer.UserCategory{}
+
 	Predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
 		return object.GetName() == string(issuer.ClientStartName) &&
 			object.GetNamespace() == string(issuer.Namespace) &&

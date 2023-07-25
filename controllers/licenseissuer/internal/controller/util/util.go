@@ -71,36 +71,50 @@ func newUUID() (string, error) {
 // wraps them with a contextual message and returns them. If the environment is not set as a monitor,
 // or if the operations are successful, the function returns nil.
 func StartCloudModule(ctx context.Context, client cl.Client) error {
-	var err error
 	isMonitor := os.Getenv(string(cloud.IsMonitor))
 	if isMonitor == cloud.TRUE {
-		var launcher issuerv1.Launcher
 		nn := types.NamespacedName{
 			Namespace: string(cloud.Namespace),
 			Name:      string(cloud.ClientStartName),
 		}
-		err = client.Get(ctx, nn, &launcher)
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				launcher.SetName(string(cloud.ClientStartName))
-				launcher.SetNamespace(string(cloud.Namespace))
-				launcher.Labels = make(map[string]string)
-				launcher.Labels[string(cloud.CollectorLable)] = cloud.FALSE
-				launcher.Labels[string(cloud.SyncLable)] = cloud.FALSE
-				launcher.Labels[string(cloud.NotificationLable)] = cloud.FALSE
-				err = client.Create(ctx, &launcher)
-				if err != nil {
-					err = fmt.Errorf("StartCloudModule: %w", err)
-				}
-			}
-		} else {
-			launcher.Labels[string(cloud.CollectorLable)] = cloud.FALSE
-			launcher.Labels[string(cloud.SyncLable)] = cloud.FALSE
-			launcher.Labels[string(cloud.NotificationLable)] = cloud.FALSE
-			err = client.Update(ctx, &launcher)
+
+		var launcher issuerv1.Launcher
+		err := client.Get(ctx, nn, &launcher)
+		if err != nil && apierrors.IsNotFound(err) {
+			return createLauncher(ctx, client, nn, &launcher)
 		}
+
+		if err != nil {
+			return fmt.Errorf("StartCloudModule: %w", err)
+		}
+
+		return updateLauncher(ctx, client, &launcher)
 	}
-	return err
+	return nil
+}
+
+var launchData = map[string]string{
+	string(cloud.CollectorLable):    cloud.FALSE,
+	string(cloud.SyncLable):         cloud.FALSE,
+	string(cloud.NotificationLable): cloud.FALSE,
+}
+
+func createLauncher(ctx context.Context, client cl.Client, nn types.NamespacedName, launcher *issuerv1.Launcher) error {
+	launcher.SetName(nn.Name)
+	launcher.SetNamespace(nn.Namespace)
+	launcher.Labels = launchData
+	if err := client.Create(ctx, launcher); err != nil {
+		return fmt.Errorf("StartCloudModule: %w", err)
+	}
+	return nil
+}
+
+func updateLauncher(ctx context.Context, client cl.Client, launcher *issuerv1.Launcher) error {
+	launcher.Labels = launchData
+	if err := client.Update(ctx, launcher); err != nil {
+		return fmt.Errorf("StartCloudModule: %w", err)
+	}
+	return nil
 }
 
 func InterfaceToInt64(value interface{}) (int64, error) {

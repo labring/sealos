@@ -76,13 +76,13 @@ spec:
         - name: CAN_CONNECT_TO_EXTERNAL_NETWORK
           valueFrom:
             secretKeyRef:
-              name: cloud-env
+              name: licenseissuer-env
               key: canConnectToExternalNetwork
         - name: MONITOR
           valueFrom:
             secretKeyRef:
               key: isMonitor
-              name: cloud-env
+              name: licenseissuer-env
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -105,9 +105,9 @@ spec:
         resources:
           limits:
             cpu: 500m
-            memory: 128Mi
+            memory: 1024Mi
           requests:
             cpu: 10m
-            memory: 64Mi
+            memory: 512Mi
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10

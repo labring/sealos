@@ -40,17 +40,13 @@ const BaseCount = 1000000
 const Key = "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFvbFBTSzB0UjFKeDZtb25lL2ppeApSWGN6UGlxcU5SSXRmdW1mdWNyNGMxc2dqdlJha0NwcWtDU21lMTR1akJkU0x6QlZzRjkvUWl0UnFNb2NvaEN1CkJ6R25EQ29hWnZXbWVHeE96NEZSejVTeUg1QTlDa3dnbUEzYnFnMWxKSEZTMlZyVjVHVFhFWnphZTZtRmhHOVcKenJMTnpZMlptYTMzOVE1WTNJSDZ6RXIrcTRQbTZDOXBHVGpsSnVodlRvb0dSY2w0bmpZRXc2eHB6ZHZrdi9uSApmZmxsWGZVNDNyRGdQaGkwZDRjWnNuTUJlazUxQkNiRFRuSHlNVFdGT1RoTjc1VVM0bzJxRm9JSEhsM0N0RzE4ClZIZEdRSE1IR0dYcGN3bVhhck1EQndwVWFOSk9kMkhjTTB5dlZEY2xDZzRITkIwVUFWeFNweFlRV3BwNWJzN2gKbHdJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=="
 
 const (
-	Namespace                Resource = "cloud-system"
+	Namespace                Resource = "sealos-system"
 	AvailableScaleSecretName Resource = "cluster-scale"
-	ExpectScaleSecretName    Resource = "expect-scale"
-	ExpectScaleSecretKey     Resource = "expect"
-	ActualScaleSecretName    Resource = "actual-scale"
-	ActualScaleSecretKey     Resource = "actual"
-	LicenseHistory           Resource = "cloud-license-history"
+	LicenseHistory           Resource = "license-history"
 	LicenseName              Resource = "license"
-	UIDSecretName            Resource = "cloud-secret"
-	URLConfigName            Resource = "cloud-config"
-	MonitorLaunchName        Resource = "cloud-start"
+	ClusterInfoSecretName    Resource = "cluster-info"
+	URLConfigName            Resource = "url-config"
+	InfostreamLaunchName     Resource = "launcher"
 	ClientStartName          Resource = "client-start"
 )
 
@@ -73,10 +69,9 @@ const (
 )
 
 const (
-	ExternalNetworkAccessLabel Label = "external-network-access"
-	CollectorLable             Label = "isCollector"
-	NotificationLable          Label = "isNotification"
-	SyncLable                  Label = "isSync"
+	CollectorLable    Label = "enableCollect"
+	NotificationLable Label = "enableNotifice"
+	SyncLable         Label = "enableSync"
 )
 
 const (
@@ -88,8 +83,6 @@ const (
 	TRUE  = "true"
 	FALSE = "false"
 )
-
-type PolicyAction string
 
 type NotificationRequest struct {
 	UID       string `json:"uid"`
