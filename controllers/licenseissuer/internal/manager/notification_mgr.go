@@ -42,11 +42,6 @@ const (
 	AdmPrefix  string = "adm-"
 )
 
-const (
-	ToUser Target = "user"
-	ToAdm  Target = "adm"
-)
-
 type NotificationManager struct {
 	TimeLastPull int64
 }

@@ -45,9 +45,9 @@ type CollectorReconciler struct {
 	lastCollectedTime int64
 }
 
-//+kubebuilder:rbac:groups=cloud.sealos.io,resources=collectors,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=cloud.sealos.io,resources=collectors/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=cloud.sealos.io,resources=collectors/finalizers,verbs=update
+//+kubebuilder:rbac:groups=infostream.sealos.io,resources=collectors,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=infostream.sealos.io,resources=collectors/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=infostream.sealos.io,resources=collectors/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -62,7 +62,7 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	r.logger.Info("Enter CollectorReconcile", "namespace:", req.Namespace, "name", req.Name)
 
 	var (
-		secret    corev1.Secret
+		info      corev1.Secret
 		configMap corev1.ConfigMap
 		launcher  cloudv1.Launcher
 	)
@@ -84,8 +84,8 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return r.Client.Update(ctx, &launcher)
 	}).AddToList(&writeOperations)
 
-	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&secret).
-		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.UIDSecretName)}).
+	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&info).
+		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.ClusterInfoSecretName)}).
 		AddToList(&readOperations)
 	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).WithObject(&configMap).
 		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.URLConfigName)}).
@@ -142,7 +142,7 @@ func (r *CollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	clusterResource.Disk = totalNodesResource.TotalPVCapacity.String()
 
 	collector := issuer.CollectorInfo{
-		UID:             string(secret.Data["uid"]),
+		UID:             string(info.Data["uid"]),
 		InfoType:        issuer.ResourceOnCluster,
 		ClusterResource: clusterResource,
 	}

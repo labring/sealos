@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: launchers.cloud.sealos.io
+  name: launchers.infostream.sealos.io
 spec:
-  group: cloud.sealos.io
+  group: infostream.sealos.io
   names:
     kind: Launcher
     listKind: LauncherList

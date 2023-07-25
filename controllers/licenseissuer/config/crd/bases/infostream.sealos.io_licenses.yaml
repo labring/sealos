@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: licenses.cloud.sealos.io
+  name: licenses.infostream.sealos.io
 spec:
-  group: cloud.sealos.io
+  group: infostream.sealos.io
   names:
     kind: License
     listKind: LicenseList

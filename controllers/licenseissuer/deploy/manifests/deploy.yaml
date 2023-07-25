@@ -9,18 +9,17 @@ metadata:
     app.kubernetes.io/name: namespace
     app.kubernetes.io/part-of: licenseissuer-controller
     control-plane: controller-manager
-  name: cloud-system
+  name: sealos-system
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: cloud-system/licenseissuer-serving-cert
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: launchers.cloud.sealos.io
+  name: launchers.infostream.sealos.io
 spec:
-  group: cloud.sealos.io
+  group: infostream.sealos.io
   names:
     kind: Launcher
     listKind: LauncherList
@@ -72,12 +71,11 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: cloud-system/licenseissuer-serving-cert
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: licenses.cloud.sealos.io
+  name: licenses.infostream.sealos.io
 spec:
-  group: cloud.sealos.io
+  group: infostream.sealos.io
   names:
     kind: License
     listKind: LicenseList
@@ -138,7 +136,7 @@ metadata:
     app.kubernetes.io/name: serviceaccount
     app.kubernetes.io/part-of: licenseissuer-controller
   name: licenseissuer-controller-manager
-  namespace: cloud-system
+  namespace: sealos-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -151,7 +149,7 @@ metadata:
     app.kubernetes.io/name: role
     app.kubernetes.io/part-of: licenseissuer-controller
   name: licenseissuer-leader-election-role
-  namespace: cloud-system
+  namespace: sealos-system
 rules:
 - apiGroups:
   - ""
@@ -212,162 +210,6 @@ rules:
   - patch
   - update
 - apiGroups:
-  - cloud.sealos.io
-  resources:
-  - cloudsyncs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - cloudsyncs/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - cloudsyncs/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - collectors
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - collectors/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - collectors/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - launchers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - launchers/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - launchers/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - licenses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - licenses/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - licenses/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - notifications
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - notifications/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - notifications/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - scalemonitors
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - scalemonitors/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - scalemonitors/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
   - ""
   resources:
   - configmaps
@@ -417,6 +259,136 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - cloudsyncs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - cloudsyncs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - cloudsyncs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - collectors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - collectors/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - collectors/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - launchers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - launchers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - launchers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - licenses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - licenses/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - licenses/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - notifications
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - notifications/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - notifications/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - notification.sealos.io
   resources:
@@ -483,7 +455,7 @@ metadata:
     app.kubernetes.io/name: rolebinding
     app.kubernetes.io/part-of: licenseissuer-controller
   name: licenseissuer-leader-election-rolebinding
-  namespace: cloud-system
+  namespace: sealos-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -491,7 +463,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: licenseissuer-controller-manager
-  namespace: cloud-system
+  namespace: sealos-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -511,7 +483,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: licenseissuer-controller-manager
-  namespace: cloud-system
+  namespace: sealos-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -531,7 +503,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: licenseissuer-controller-manager
-  namespace: cloud-system
+  namespace: sealos-system
 ---
 apiVersion: v1
 kind: Service
@@ -545,33 +517,13 @@ metadata:
     app.kubernetes.io/part-of: licenseissuer-controller
     control-plane: controller-manager
   name: licenseissuer-controller-manager-metrics-service
-  namespace: cloud-system
+  namespace: sealos-system
 spec:
   ports:
   - name: https
     port: 8443
     protocol: TCP
     targetPort: https
-  selector:
-    control-plane: controller-manager
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app.kubernetes.io/component: webhook
-    app.kubernetes.io/created-by: licenseissuer-controller
-    app.kubernetes.io/instance: webhook-service
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: service
-    app.kubernetes.io/part-of: licenseissuer-controller
-  name: licenseissuer-webhook-service
-  namespace: cloud-system
-spec:
-  ports:
-  - port: 443
-    protocol: TCP
-    targetPort: 9443
   selector:
     control-plane: controller-manager
 ---
@@ -587,7 +539,7 @@ metadata:
     app.kubernetes.io/part-of: licenseissuer-controller
     control-plane: controller-manager
   name: licenseissuer-controller-manager
-  namespace: cloud-system
+  namespace: sealos-system
 spec:
   replicas: 1
   selector:
@@ -618,57 +570,6 @@ spec:
                 - linux
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=127.0.0.1:8080
-        - --leader-elect
-        command:
-        - /manager
-        env:
-        - name: CAN_CONNECT_TO_EXTERNAL_NETWORK
-          valueFrom:
-            secretKeyRef:
-              key: canConnectToExternalNetwork
-              name: cloud-env
-        - name: MONITOR
-          valueFrom:
-            secretKeyRef:
-              key: isMonitor
-              name: cloud-env
-        image: ghcr.io/labring/sealos-licenseissuer-controller:latest
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8081
-          initialDelaySeconds: 15
-          periodSeconds: 20
-        name: manager
-        ports:
-        - containerPort: 9443
-          name: webhook-server
-          protocol: TCP
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8081
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
-          requests:
-            cpu: 10m
-            memory: 64Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-        volumeMounts:
-        - mountPath: /tmp/k8s-webhook-server/serving-certs
-          name: cert
-          readOnly: true
-      - args:
         - --secure-listen-address=0.0.0.0:8443
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
@@ -691,83 +592,50 @@ spec:
           capabilities:
             drop:
             - ALL
+      - args:
+        - --health-probe-bind-address=:8081
+        - --metrics-bind-address=127.0.0.1:8080
+        - --leader-elect
+        command:
+        - /manager
+        env:
+        - name: CAN_CONNECT_TO_EXTERNAL_NETWORK
+          valueFrom:
+            secretKeyRef:
+              key: canConnectToExternalNetwork
+              name: licenseissuer-env
+        - name: MONITOR
+          valueFrom:
+            secretKeyRef:
+              key: isMonitor
+              name: licenseissuer-env
+        image: ghcr.io/labring/sealos-licenseissuer-controller:latest
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1024Mi
+          requests:
+            cpu: 10m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
       securityContext:
         runAsNonRoot: true
       serviceAccountName: licenseissuer-controller-manager
       terminationGracePeriodSeconds: 10
-      volumes:
-      - name: cert
-        secret:
-          defaultMode: 420
-          secretName: webhook-server-cert
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  labels:
-    app.kubernetes.io/component: certificate
-    app.kubernetes.io/created-by: licenseissuer-controller
-    app.kubernetes.io/instance: serving-cert
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: certificate
-    app.kubernetes.io/part-of: licenseissuer-controller
-  name: licenseissuer-serving-cert
-  namespace: cloud-system
-spec:
-  dnsNames:
-  - licenseissuer-webhook-service.cloud-system.svc
-  - licenseissuer-webhook-service.cloud-system.svc.cluster.local
-  issuerRef:
-    kind: Issuer
-    name: licenseissuer-selfsigned-issuer
-  secretName: webhook-server-cert
----
-apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  labels:
-    app.kubernetes.io/component: certificate
-    app.kubernetes.io/created-by: licenseissuer-controller
-    app.kubernetes.io/instance: serving-cert
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: certificate
-    app.kubernetes.io/part-of: licenseissuer-controller
-  name: licenseissuer-selfsigned-issuer
-  namespace: cloud-system
-spec:
-  selfSigned: {}
----
-apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingWebhookConfiguration
-metadata:
-  annotations:
-    cert-manager.io/inject-ca-from: cloud-system/licenseissuer-serving-cert
-  labels:
-    app.kubernetes.io/component: webhook
-    app.kubernetes.io/created-by: licenseissuer-controller
-    app.kubernetes.io/instance: validating-webhook-configuration
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: validatingwebhookconfiguration
-    app.kubernetes.io/part-of: licenseissuer-controller
-  name: licenseissuer-validating-webhook-configuration
-webhooks:
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: licenseissuer-webhook-service
-      namespace: cloud-system
-      path: /validate-cloud-sealos-io-v1-license
-  failurePolicy: Fail
-  name: vlicense.kb.io
-  rules:
-  - apiGroups:
-    - '*'
-    apiVersions:
-    - v1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - pods
-  sideEffects: None

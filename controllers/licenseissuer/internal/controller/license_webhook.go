@@ -36,17 +36,19 @@ type ScaleWebhook struct {
 
 var scalelog = logf.Log.WithName("scale-resource")
 
-// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+const (
+	PodAllowedNamePrefix = "terminal"
+)
 
-//+kubebuilder:webhook:path=/validate-cloud-sealos-io-v1-license,mutating=false,failurePolicy=fail,sideEffects=None,groups="*",resources=pods,verbs=create;update,versions=v1,name=vlicense.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-infostream-sealos-io-v1-license,mutating=false,failurePolicy=ignore,sideEffects=None,groups="*",resources=pods,verbs=create;update,versions=v1,name=vlicense.kb.io,admissionReviewVersions=v1
 
 func (sw *ScaleWebhook) Handle(_ context.Context, req admission.Request) admission.Response {
 	scalelog.Info("enter webhook of scale webhook:", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.Operation", req.Operation)
 
-	if req.Kind.Kind == "Pod" && req.Operation == admissionV1.Delete {
+	if req.Operation == admissionV1.Delete {
 		return admission.Allowed("")
 	}
-	if req.Kind.Kind == "Pod" && hasPrefix(req.Name, "terminal") {
+	if strings.HasPrefix(req.Name, PodAllowedNamePrefix) {
 		return admission.Allowed("")
 	}
 
@@ -54,44 +56,14 @@ func (sw *ScaleWebhook) Handle(_ context.Context, req admission.Request) admissi
 		return admission.Allowed("")
 	}
 
-	if cloud.ExpectScale.CPULimit < cloud.ActualScale.CPULimit ||
-		cloud.ExpectScale.NodeLimit < cloud.ActualScale.NodeLimit {
+	if !isAllowed() {
 		scalelog.Info("The current cluster scale exceeds the specified limit.")
-		return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
+		return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied. %s", req.Namespace, req.Kind.Kind, req.Operation, "The current cluster scale exceeds the specified limit."))
 	}
 	return admission.Allowed("")
 }
 
-func hasPrefix(s, prefix string) bool {
-	return strings.HasPrefix(s, prefix)
+func isAllowed() bool {
+	return cloud.ExpectScale.CPULimit < cloud.ActualScale.CPULimit &&
+		cloud.ExpectScale.NodeLimit < cloud.ActualScale.NodeLimit
 }
-
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-
-//var _ webhook.Validator = &License{}
-
-// // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-// func (r *License) ValidateCreate() (admission.Warnings, error) {
-// 	licenselog.Info("validate create", "name", r.Name)
-
-// 	// TODO(user): fill in your validation logic upon object creation.
-// 	return nil, nil
-// }
-
-// // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-// func (r *License) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-// 	licenselog.Info("validate update", "name", r.Name)
-
-// 	// TODO(user): fill in your validation logic upon object update.
-// 	return nil, nil
-// }
-
-// // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-// func (r *License) ValidateDelete() (admission.Warnings, error) {
-// 	licenselog.Info("validate delete", "name", r.Name)
-
-// 	// TODO(user): fill in your validation logic upon object deletion.
-// 	return nil, nil
-// }

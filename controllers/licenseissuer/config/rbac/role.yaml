@@ -26,162 +26,6 @@ rules:
   - patch
   - update
 - apiGroups:
-  - cloud.sealos.io
-  resources:
-  - cloudsyncs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - cloudsyncs/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - cloudsyncs/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - collectors
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - collectors/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - collectors/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - launchers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - launchers/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - launchers/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - licenses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - licenses/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - licenses/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - notifications
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - notifications/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - notifications/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - scalemonitors
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - scalemonitors/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cloud.sealos.io
-  resources:
-  - scalemonitors/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
   - ""
   resources:
   - configmaps
@@ -231,6 +75,136 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - cloudsyncs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - cloudsyncs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - cloudsyncs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - collectors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - collectors/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - collectors/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - launchers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - launchers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - launchers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - licenses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - licenses/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - licenses/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - notifications
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - notifications/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - notifications/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - notification.sealos.io
   resources:

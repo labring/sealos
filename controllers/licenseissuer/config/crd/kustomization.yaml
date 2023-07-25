@@ -2,8 +2,8 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-- bases/cloud.sealos.io_licenses.yaml
-- bases/cloud.sealos.io_launchers.yaml
+- bases/infostream.sealos.io_licenses.yaml
+- bases/infostream.sealos.io_launchers.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:
