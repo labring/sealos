@@ -29,7 +29,7 @@ func IsRunGuestFailed(err error) bool {
 	if err == nil {
 		return false
 	}
-	return strings.Contains(err.Error(), RunGuestFailed)
+	return strings.HasPrefix(err.Error(), RunGuestFailed)
 }
 
 var ErrCancelled = errors.New("cancelled")
