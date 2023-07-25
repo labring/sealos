@@ -9,7 +9,6 @@ export const loadInitData = async () => {
     const res = await getInitData();
     SEALOS_DOMAIN = res.SEALOS_DOMAIN;
     INGRESS_SECRET = res.INGRESS_SECRET;
-    console.log(res);
   } catch (error) {}
   return {
     SEALOS_DOMAIN,
@@ -17,19 +16,16 @@ export const loadInitData = async () => {
   };
 };
 
-export let SOURCE_PRICE: resourcePriceResponse = {
-  cpu: 0.067,
-  memory: 0.033792,
-  storage: 0.002048
-};
-export let INSTALL_ACCOUNT = false;
+export let SOURCE_PRICE: resourcePriceResponse | undefined;
 
 let retryGetPrice = 3;
 export const getUserPrice = async () => {
   try {
     const res = await getResourcePrice();
+    console.log(res);
+
     SOURCE_PRICE = res;
-    INSTALL_ACCOUNT = true;
+    console.log(res);
   } catch (err) {
     retryGetPrice--;
     if (retryGetPrice >= 0) {

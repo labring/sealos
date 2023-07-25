@@ -29,13 +29,12 @@ import type { StoreType } from './StoreModal';
 import type { QueryType } from '@/types';
 import type { AppEditType } from '@/types/app';
 import { customAlphabet } from 'nanoid';
-import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/editApp';
-import { SEALOS_DOMAIN } from '@/store/static';
+import { CpuSlideMarkList, GpuAmountMarkList, MemorySlideMarkList } from '@/constants/editApp';
+import { SEALOS_DOMAIN, SOURCE_PRICE } from '@/store/static';
 import Tabs from '@/components/Tabs';
 import Tip from '@/components/Tip';
 import MySelect from '@/components/Select';
 import { useTranslation } from 'next-i18next';
-import { INSTALL_ACCOUNT } from '@/store/static';
 import PriceBox from './PriceBox';
 import dynamic from 'next/dynamic';
 
@@ -262,7 +261,7 @@ const Form = ({
               </Box>
             ))}
           </Box>
-          {INSTALL_ACCOUNT && (
+          {SOURCE_PRICE && (
             <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>
               <PriceBox
                 pods={
@@ -273,6 +272,10 @@ const Form = ({
                 cpu={getValues('cpu')}
                 memory={getValues('memory')}
                 storage={getValues('storeList').reduce((sum, item) => sum + item.value, 0)}
+                gpu={{
+                  type: getValues('gpu.type'),
+                  amount: getValues('gpu.amount')
+                }}
               />
             </Box>
           )}
@@ -400,6 +403,68 @@ const Form = ({
                   ) : null}
                 </Box>
               </Box>
+
+              {SOURCE_PRICE?.gpu && (
+                <Box mb={5}>
+                  <Flex alignItems={'center'}>
+                    <Label w={80}>{t('Gpu')}</Label>
+                    <Switch
+                      size={'lg'}
+                      colorScheme={'blackAlpha'}
+                      isChecked={getValues('gpu.use')}
+                      {...register('gpu.use')}
+                    />
+                  </Flex>
+                  {getValues('gpu.use') && (
+                    <Box mt={4} mb={10} pl={8} borderLeft={theme.borders.base}>
+                      <Flex>
+                        <MySelect
+                          placeholder={'Gpu Type'}
+                          value={getValues('gpu.type')}
+                          list={SOURCE_PRICE.gpu.map((item) => ({
+                            icon: 'nvidia',
+                            label: (
+                              <Flex>
+                                <Box>{item.type}</Box>
+                                <Box mx={3} color={'myGray.500'}>
+                                  |
+                                </Box>
+                                <Box color={'myGray.500'} pr={3}>
+                                  显存: {item.vm}G
+                                </Box>
+                              </Flex>
+                            ),
+                            value: item.type
+                          }))}
+                          onchange={(val: any) => setValue('gpu.type', val)}
+                        />
+                        <Tip
+                          ml={4}
+                          icon={<InfoOutlineIcon />}
+                          text={'RTX 400 库存不足（剩 4 张）'}
+                          size="sm"
+                        />
+                      </Flex>
+                      <Flex mt={5} pr={3} alignItems={'flex-start'}>
+                        <MySlider
+                          markList={GpuAmountMarkList}
+                          activeVal={getValues('gpu.amount')}
+                          setVal={(e) => {
+                            setValue('gpu.amount', GpuAmountMarkList[e].value);
+                          }}
+                          max={7}
+                          min={0}
+                          step={1}
+                        />
+                        <Box ml={5} transform={'translateY(10px)'} color={'myGray.500'}>
+                          ({t('zhang')})
+                        </Box>
+                      </Flex>
+                    </Box>
+                  )}
+                </Box>
+              )}
+
               <Flex mb={10} pr={3} alignItems={'flex-start'}>
                 <Label w={70}>{t('CPU')}</Label>
                 <MySlider
@@ -467,11 +532,10 @@ const Form = ({
                     <Flex alignItems={'center'}>
                       <MySelect
                         width={'130px'}
-                        placeholder="hpa对象"
                         value={getValues('hpa.target')}
                         list={[
-                          { id: 'cpu', label: 'CPU' },
-                          { id: 'memory', label: 'Memory' }
+                          { value: 'cpu', label: 'CPU' },
+                          { value: 'memory', label: 'Memory' }
                         ]}
                         onchange={(val: any) => setValue('hpa.target', val)}
                       />
@@ -604,9 +668,9 @@ const Form = ({
                           width={'120px'}
                           value={getValues('accessExternal.backendProtocol')}
                           list={[
-                            { id: 'HTTP', label: 'https' },
-                            { id: 'GRPC', label: 'grpcs' },
-                            { id: 'WS', label: 'websocket' }
+                            { value: 'HTTP', label: 'https' },
+                            { value: 'GRPC', label: 'grpcs' },
+                            { value: 'WS', label: 'websocket' }
                           ]}
                           onchange={(val: any) => setValue('accessExternal.backendProtocol', val)}
                         />

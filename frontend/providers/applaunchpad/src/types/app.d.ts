@@ -57,6 +57,11 @@ export interface AppEditType {
   replicas: number | '';
   cpu: number;
   memory: number;
+  gpu: {
+    use: boolean;
+    type: string;
+    amount: number;
+  };
   containerOutPort: number | '';
   accessExternal: {
     use: boolean;

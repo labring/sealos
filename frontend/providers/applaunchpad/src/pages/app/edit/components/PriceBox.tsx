@@ -1,28 +1,40 @@
 import React, { useMemo } from 'react';
 import { Box, Flex } from '@chakra-ui/react';
 import { SOURCE_PRICE } from '@/store/static';
-import type { Response as resourcePriceResponse } from '@/pages/api/platform/resourcePrice';
 import { useTranslation } from 'next-i18next';
-
-export const colorMap = {
-  cpu: '#33BABB',
-  memory: '#36ADEF',
-  storage: '#8172D8'
-};
 
 const PriceBox = ({
   cpu,
   memory,
   storage,
+  gpu,
   pods = [1, 1]
-}: resourcePriceResponse & { pods: [number, number] }) => {
+}: {
+  cpu: number;
+  memory: number;
+  storage: number;
+  gpu?: {
+    type: string;
+    amount: number;
+  };
+  pods: [number, number];
+}) => {
   const { t } = useTranslation();
 
   const priceList = useMemo(() => {
+    if (!SOURCE_PRICE) return [];
     const cpuP = +((SOURCE_PRICE.cpu * cpu * 24) / 1000).toFixed(2);
     const memoryP = +((SOURCE_PRICE.memory * memory * 24) / 1024).toFixed(2);
     const storageP = +(SOURCE_PRICE.storage * storage * 24).toFixed(2);
-    const totalP = +(cpuP + memoryP + storageP).toFixed(2);
+
+    const gpuP = (() => {
+      if (!gpu) return 0;
+      const item = SOURCE_PRICE?.gpu?.find((item) => item.type === gpu.type);
+      if (!item) return 0;
+      return +(item.price * gpu.amount * 24).toFixed(2);
+    })();
+
+    const totalP = +(cpuP + memoryP + storageP + gpuP).toFixed(2);
 
     const podScale = (val: number) => {
       const min = (val * pods[0]).toFixed(2);
@@ -38,9 +50,10 @@ const PriceBox = ({
       },
       { label: 'Memory', color: '#36ADEF', value: podScale(memoryP) },
       { label: 'Storage', color: '#8172D8', value: podScale(storageP) },
+      ...(SOURCE_PRICE?.gpu ? [{ label: 'Gpu', color: '#8172D8', value: podScale(gpuP) }] : []),
       { label: 'TotalPrice', color: '#485058', value: podScale(totalP) }
     ];
-  }, [cpu, memory, pods, storage]);
+  }, [cpu, gpu, memory, pods, storage]);
 
   return (
     <Box>

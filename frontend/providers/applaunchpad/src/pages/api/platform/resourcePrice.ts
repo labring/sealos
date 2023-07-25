@@ -8,6 +8,7 @@ export type Response = {
   cpu: number;
   memory: number;
   storage: number;
+  gpu?: { type: string; price: number; inventory: number; vm: number }[];
 };
 type ResourceType =
   | 'cpu'
@@ -73,9 +74,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       cpu: countSourcePrice(priceResponse, 'cpu'),
       memory: countSourcePrice(priceResponse, 'memory'),
       storage: countSourcePrice(priceResponse, 'storage')
+      // gpu: [{ type: '4090', price: 2.1, inventory: 1, vm: 24 }]
     };
 
-    jsonRes(res, {
+    jsonRes<Response>(res, {
       data
     });
   } catch (error) {
