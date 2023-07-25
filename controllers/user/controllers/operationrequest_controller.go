@@ -48,7 +48,6 @@ type OperationReqReconciler struct {
 	Scheme             *runtime.Scheme
 	cache              cache.Cache
 	config             *rest.Config
-	finalizer          *utilcontroller.Finalizer
 	minRequeueDuration time.Duration
 	maxRequeueDuration time.Duration
 }
