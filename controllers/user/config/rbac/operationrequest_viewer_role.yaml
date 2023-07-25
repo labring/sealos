@@ -1,0 +1,27 @@
+# permissions for end users to view operationrequests.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: operationrequest-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: user
+    app.kubernetes.io/part-of: user
+    app.kubernetes.io/managed-by: kustomize
+  name: operationrequest-viewer-role
+rules:
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - operationrequests
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - operationrequests/status
+  verbs:
+  - get
