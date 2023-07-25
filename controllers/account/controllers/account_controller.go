@@ -460,7 +460,7 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 	if r.AccountSystemNamespace == "" {
 		r.AccountSystemNamespace = DEFAULTACCOUNTNAMESPACE
 	}
-	if r.MongoDBURI = os.Getenv(database.MongoURL); r.MongoDBURI == "" {
+	if r.MongoDBURI = os.Getenv(database.MongoURI); r.MongoDBURI == "" {
 		return fmt.Errorf("mongo url is empty")
 	}
 	return ctrl.NewControllerManagedBy(mgr).

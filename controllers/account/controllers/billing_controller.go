@@ -53,7 +53,7 @@ const BillingAnnotationLastUpdateTime = "account.sealos.io/last-update-time"
 type BillingReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
-	mongoURL string
+	mongoURI string
 	logr.Logger
 	AccountSystemNamespace string
 }
@@ -77,7 +77,7 @@ type BillingReconciler struct {
 func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Logger.V(1).Info("Reconcile Billing: ", "req.NamespacedName", req.NamespacedName)
 	dbCtx := context.Background()
-	dbClient, err := database.NewMongoDB(dbCtx, r.mongoURL)
+	dbClient, err := database.NewMongoDB(dbCtx, r.mongoURI)
 	if err != nil {
 		r.Logger.Error(err, "connect mongo client failed")
 		return ctrl.Result{Requeue: true}, err
@@ -161,7 +161,7 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 func (r *BillingReconciler) billingWithHourTime(ctx context.Context, queryTime time.Time, nsListStr []string, ownNs string, dbClient database.Interface) error {
 	r.Logger.Info("queryTime", "queryTime", queryTime.Format(time.RFC3339), "ownNs", ownNs, "nsListStr", nsListStr)
-	billing, err := dbClient.GetMeteringOwnerTimeResult(queryTime, nsListStr, []string{"cpu", "memory", "storage"}, ownNs)
+	billing, err := dbClient.GetMeteringOwnerTimeResult(queryTime, nsListStr, nil, ownNs)
 	if err != nil {
 		return fmt.Errorf("get metering owner time result failed: %w", err)
 	}
@@ -201,7 +201,7 @@ func (r *BillingReconciler) billingWithHourTime(ctx context.Context, queryTime t
 
 func (r *BillingReconciler) initDB() error {
 	dbCtx := context.Background()
-	mongoClient, err := database.NewMongoDB(dbCtx, r.mongoURL)
+	mongoClient, err := database.NewMongoDB(dbCtx, r.mongoURI)
 	if err != nil {
 		r.Logger.Error(err, "connect mongo client failed")
 		return err
@@ -256,8 +256,8 @@ func (r *BillingReconciler) initDB() error {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *BillingReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
-	if r.mongoURL = os.Getenv(database.MongoURL); r.mongoURL == "" {
-		return fmt.Errorf("env %s is empty", database.MongoURL)
+	if r.mongoURI = os.Getenv(database.MongoURI); r.mongoURI == "" {
+		return fmt.Errorf("env %s is empty", database.MongoURI)
 	}
 	r.Logger = ctrl.Log.WithName("controller").WithName("Billing")
 	if err := r.initDB(); err != nil {

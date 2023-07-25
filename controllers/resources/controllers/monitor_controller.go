@@ -48,7 +48,7 @@ type MonitorReconciler struct {
 	logr.Logger
 	Interval          time.Duration
 	Scheme            *runtime.Scheme
-	mongoURL          string
+	mongoURI          string
 	stopCh            chan struct{}
 	wg                sync.WaitGroup
 	periodicReconcile time.Duration
@@ -81,9 +81,9 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 		Logger:            ctrl.Log.WithName("controllers").WithName("Monitor"),
 		stopCh:            make(chan struct{}),
 		periodicReconcile: 1 * time.Minute,
-		mongoURL:          os.Getenv(database.MongoURL),
+		mongoURI:          os.Getenv(database.MongoURI),
 	}
-	if r.mongoURL == "" {
+	if r.mongoURI == "" {
 		return nil, fmt.Errorf("mongo uri is empty")
 	}
 	r.initNamespaceFuncs()
@@ -187,7 +187,7 @@ func (r *MonitorReconciler) processNamespaceList(ctx context.Context, namespaceL
 	wg := sync.WaitGroup{}
 	wg.Add(len(namespaceList.Items))
 	dbCtx := context.Background()
-	dbClient, err := database.NewMongoDB(dbCtx, r.mongoURL)
+	dbClient, err := database.NewMongoDB(dbCtx, r.mongoURI)
 	if err != nil {
 		r.Logger.Error(err, "connect mongo client failed")
 		return err
@@ -241,7 +241,7 @@ func (r *MonitorReconciler) processNamespace(ctx context.Context, dbClient datab
 
 func (r *MonitorReconciler) preApply() error {
 	ctx := context.Background()
-	dbClient, err := database.NewMongoDB(ctx, r.mongoURL)
+	dbClient, err := database.NewMongoDB(ctx, r.mongoURI)
 	if err != nil {
 		return fmt.Errorf("failed to connect mongo: %v", err)
 	}
