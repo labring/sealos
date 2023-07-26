@@ -36,6 +36,19 @@ function sealos_run_controller {
 
   # run app controller
   sealos run tars/app.tar
+
+  # run resources monitoring controller
+  sealos run tars/monitoring.tar \
+  --env MONGO_URI="$mongodb_uri" --env DEFAULT_NAMESPACE="resources-system"
+
+  # run resources metering controller
+  sealos run tars/metering.tar
+
+  # run account controller
+  sealos run tars/account.tar \
+  --env MONGO_URI="$mongodb_uri" \
+  --env DEFAULT_NAMESPACE="account-system"
+
 }
 
 function gen_mongodbUri() {
@@ -95,6 +108,9 @@ function install {
 
   # kubectl apply namespace, secret and mongodb
   kubectl apply -f manifests/namespace.yaml
+
+  # apply notifications crd
+  kubectl apply -f manifests/notifications_crd.yaml
 
   # create tls secret
   create_tls_secret $cloudDomain
