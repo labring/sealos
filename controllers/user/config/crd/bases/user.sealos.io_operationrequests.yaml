@@ -18,7 +18,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Operationrequest is the Schema for the operationrequests API
+        description: Operationrequest is the Schema for the operation requests API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -41,25 +41,26 @@ spec:
                 - Update
                 - Deprive
                 type: string
-              namespace:
-                type: string
-              type:
+              role:
                 enum:
                 - Owner
                 - Manager
                 - Developer
                 type: string
-              username:
-                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                  Important: Run "make" to regenerate code after modifying this file'
+              user:
                 type: string
             type: object
           status:
             description: OperationrequestStatus defines the observed state of Operationrequest
             properties:
               phase:
-                default: Unknown
-                description: Phase is the recently observed lifecycle phase of user
+                default: Pending
+                description: Phase is the recently observed lifecycle phase of operationrequest.
+                enum:
+                - Pending
+                - Processing
+                - Completed
+                - Failed
                 type: string
             type: object
         type: object

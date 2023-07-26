@@ -54,13 +54,15 @@ func init() {
 
 func main() {
 	var (
-		metricsAddr          string
-		enableLeaderElection bool
-		probeAddr            string
-		rateLimiterOptions   utilcontroller.RateLimiterOptions
-		syncPeriod           time.Duration
-		minRequeueDuration   time.Duration
-		maxRequeueDuration   time.Duration
+		metricsAddr                string
+		enableLeaderElection       bool
+		probeAddr                  string
+		rateLimiterOptions         utilcontroller.RateLimiterOptions
+		syncPeriod                 time.Duration
+		minRequeueDuration         time.Duration
+		maxRequeueDuration         time.Duration
+		operationReqExpirationTime time.Duration
+		operationReqRetentionTime  time.Duration
 	)
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -70,6 +72,8 @@ func main() {
 	flag.DurationVar(&syncPeriod, "sync-period", time.Hour*24*30, "SyncPeriod determines the minimum frequency at which watched resources are reconciled.")
 	flag.DurationVar(&minRequeueDuration, "min-requeue-duration", time.Hour*24, "The minimum duration between requeue options of a resource.")
 	flag.DurationVar(&maxRequeueDuration, "max-requeue-duration", time.Hour*24*2, "The maximum duration between requeue options of a resource.")
+	flag.DurationVar(&operationReqExpirationTime, "operation-req-expiration-time", time.Minute*3, "Sets the expiration time duration for an operation request. By default, the duration is set to 3 minutes.")
+	flag.DurationVar(&operationReqRetentionTime, "operation-req-retention-time", time.Minute*3, "Sets the retention time duration for an operation request. By default, the duration is set to 3 minutes.")
 	rateLimiterOptions.BindFlags(flag.CommandLine)
 	opts := zap.Options{
 		Development: true,
@@ -117,7 +121,7 @@ func main() {
 		}
 	}
 
-	if err = (&controllers.OperationReqReconciler{}).SetupWithManager(mgr, rateLimiterOptions); err != nil {
+	if err = (&controllers.OperationReqReconciler{}).SetupWithManager(mgr, rateLimiterOptions, operationReqExpirationTime, operationReqRetentionTime); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Operationrequest")
 		os.Exit(1)
 	}

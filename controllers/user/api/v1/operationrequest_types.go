@@ -20,20 +20,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // OperationrequestSpec defines the desired state of Operationrequest
 type OperationrequestSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	Username  string `json:"username,omitempty"`
-	Namespace string `json:"namespace,omitempty"`
+	User string `json:"user,omitempty"`
 	// +kubebuilder:validation:Enum=Owner;Manager;Developer
-	Type string `json:"type,omitempty"`
+	Role RoleType `json:"role,omitempty"`
 	// +kubebuilder:validation:Enum=Grant;Update;Deprive
-	Action ActionType `json:"action,omitempty"` //TODO action可能要加个 update 用于更新rolebinding
+	Action ActionType `json:"action,omitempty"`
 }
+
 type ActionType string
 
 const (
@@ -42,15 +37,11 @@ const (
 	Deprive ActionType = "Deprive"
 )
 
-const ExpirationTime string = "3m"
-
 // OperationrequestStatus defines the observed state of Operationrequest
 type OperationrequestStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Phase is the recently observed lifecycle phase of user
-	//+kubebuilder:default:=Unknown
+	// Phase is the recently observed lifecycle phase of operationrequest.
+	//+kubebuilder:default:=Pending
+	//+kubebuilder:validation:Enum=Pending;Processing;Completed;Failed
 	Phase RequestPhase `json:"phase,omitempty"`
 }
 
@@ -58,15 +49,16 @@ type RequestPhase string
 
 // These are the valid phases of node.
 const (
-	RequestPending RequestPhase = "Pending"
-	RequestUnknown RequestPhase = "Unknown"
-	RequestActive  RequestPhase = "Active"
+	RequestPending    RequestPhase = "Pending"
+	RequestProcessing RequestPhase = "Processing"
+	RequestCompleted  RequestPhase = "Completed"
+	RequestFailed     RequestPhase = "Failed"
 )
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Operationrequest is the Schema for the operationrequests API
+// Operationrequest is the Schema for the operation requests API
 type Operationrequest struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
