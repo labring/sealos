@@ -20,16 +20,16 @@ import (
 	str "strings"
 	"time"
 
-	"github.com/labring/sealos/pkg/utils/yaml"
-
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/versionutil"
+	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
 const (
-	upgradeApplyCmd = "kubeadm upgrade apply %s"
+	upgradeApplyCmd = "kubeadm upgrade apply --yes %s"
 	upradeNodeCmd   = "kubeadm upgrade node"
 	//drainNodeCmd    = "kubectl drain %s --ignore-daemonsets"
 	cordonNodeCmd   = "kubectl cordon %s"
@@ -161,35 +161,45 @@ func (k *KubeadmRuntime) autoUpdateConfig(version string) error {
 	allConfig := str.Join([]string{clusterCfg, kubeletCfg}, "\n---\n")
 	defaultKubeadmConfig, err := LoadKubeadmConfigs(allConfig, false, DecodeCRDFromString)
 	if err != nil {
-		logger.Info("decode cluster kubeadm config from kube failure : %s", err)
+		logger.Error("failed to decode cluster kubeadm config: %s", err)
 		return err
 	}
+	defaultKubeadmConfig.InitConfiguration = kubeadm.InitConfiguration{
+		TypeMeta: metaV1.TypeMeta{
+			APIVersion: defaultKubeadmConfig.ClusterConfiguration.APIVersion,
+		},
+	}
+
 	kk := &KubeadmRuntime{
 		KubeadmConfig: defaultKubeadmConfig,
 	}
 	kk.setKubeVersion(version)
 	kk.setFeatureGatesConfiguration()
-	newClusterData, err := yaml.MarshalYamlConfigs(&k.ClusterConfiguration)
+	if err = kk.convertKubeadmVersion(); err != nil {
+		return err
+	}
+
+	newClusterData, err := yaml.MarshalYamlConfigs(&kk.conversion.ClusterConfiguration)
 	if err != nil {
-		logger.Info("encode cluster kubeadm config to yaml failure : %s", err)
+		logger.Error("failed to encode ClusterConfiguration: %s", err)
 		return err
 	}
 	logger.Debug("update cluster config:\n%s", string(newClusterData))
 	err = k.getKubeExpansion().UpdateKubeadmConfig(ctx, string(newClusterData))
 	if err != nil {
-		logger.Info("update kubeadmConfig with k8s-client failure : %s", err)
+		logger.Error("failed to update kubeadm-config with k8s-client: %s", err)
 		return err
 	}
 
-	newKubeletData, err := yaml.MarshalYamlConfigs(&k.KubeletConfiguration)
+	newKubeletData, err := yaml.MarshalYamlConfigs(&kk.conversion.KubeletConfiguration)
 	if err != nil {
-		logger.Info("encode kubelet kubeadm config to yaml failure : %s", err)
+		logger.Error("failed to encode KubeletConfiguration: %s", err)
 		return err
 	}
 	logger.Debug("update kubelet config:\n%s", string(newKubeletData))
 	err = k.getKubeExpansion().UpdateKubeletConfig(ctx, string(newKubeletData))
 	if err != nil {
-		logger.Info("update kubelet with k8s-client failure : %s", err)
+		logger.Error("failed to update kubelet-config with k8s-client: %s", err)
 		return err
 	}
 

@@ -17,7 +17,6 @@ limitations under the License.
 package versionutil
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -50,30 +49,4 @@ func Compare(v1, v2 string) bool {
 	}
 
 	return true
-}
-
-// assure version format right and new >=
-// The upgrade of minor version number cannot be skipped
-func UpgradeVersionLimit(older, newer string) error {
-	newer = strings.Replace(newer, "v", "", -1)
-	older = strings.Replace(older, "v", "", -1)
-	newer = strings.Split(newer, "-")[0]
-	older = strings.Split(older, "-")[0]
-	newList := strings.Split(newer, ".")
-	oldList := strings.Split(older, ".")
-
-	minorNewV, err := strconv.Atoi(newList[1])
-	if err != nil {
-		return err
-	}
-	minorOldV, err := strconv.Atoi(oldList[1])
-	if err != nil {
-		return err
-	}
-	if newList[0] > oldList[0] {
-		return fmt.Errorf("upgrade of senior version cannot be executed")
-	} else if minorNewV > minorOldV+1 {
-		return fmt.Errorf("upgrade of minor version number cannot be skipped")
-	}
-	return nil
 }
