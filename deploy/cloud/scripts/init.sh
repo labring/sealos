@@ -50,6 +50,10 @@ function sealos_run_controller {
   --env MONGO_URI="$mongodbUri" \
   --env DEFAULT_NAMESPACE="account-system"
 
+  # run licenseissuer controller
+  sealos run tars/licenseissuer.tar \
+  --env canConnectToExternalNetwork="true" \
+  --env enableMonitor="true" \
 }
 
 function gen_mongodbUri() {

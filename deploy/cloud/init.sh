@@ -11,7 +11,7 @@ sealos pull --policy=always ghcr.io/labring/sealos-cloud-resources-metering-cont
 sealos pull --policy=always ghcr.io/labring/sealos-cloud-resources-controller:latest
 sealos pull --policy=always ghcr.io/labring/sealos-cloud-account-controller:latest
 sealos pull --policy=always ghcr.io/labring/sealos-cloud-costcenter-frontend:latest
-
+sealos pull --policy=always ghcr.io/labring/sealos-cloud-licenseissuer-controller:latest
 
 sealos save -o tars/user.tar ghcr.io/labring/sealos-cloud-user-controller:latest
 sealos save -o tars/terminal.tar ghcr.io/labring/sealos-cloud-terminal-controller:latest
@@ -24,3 +24,4 @@ sealos save -o tars/metering.tar ghcr.io/labring/sealos-cloud-resources-metering
 sealos save -o tars/monitoring.tar ghcr.io/labring/sealos-cloud-resources-controller:latest
 sealos save -o tars/account.tar ghcr.io/labring/sealos-cloud-account-controller:latest
 sealos save -o tars/cost-center.tar ghcr.io/labring/sealos-cloud-costcenter-frontend:latest
+sealos save -o tars/license.tar ghcr.io/labring/sealos-cloud-licenseissuer-controller:latest
