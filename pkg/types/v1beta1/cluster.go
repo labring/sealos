@@ -79,10 +79,7 @@ type MountImage struct {
 }
 
 func (img *MountImage) KubeVersion() string {
-	if img.Type != RootfsImage {
-		return ""
-	}
-	if img.Labels == nil {
+	if img.Type != RootfsImage || img.Labels == nil {
 		return ""
 	}
 	return img.Labels[ImageKubeVersionKey]
