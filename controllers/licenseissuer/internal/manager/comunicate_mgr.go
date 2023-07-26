@@ -70,7 +70,7 @@ const (
 
 const (
 	CollectorLable    Label = "enableCollect"
-	NotificationLable Label = "enableNotifice"
+	NotificationLable Label = "enableNotify"
 	SyncLable         Label = "enableSync"
 )
 

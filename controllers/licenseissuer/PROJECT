@@ -10,17 +10,17 @@ repo: github.com/labring/sealos/controllers/licenseissuer
 resources:
 - controller: true
   domain: sealos.io
-  group: cloud
+  group: infostream
   kind: Notification
   version: v1
 - controller: true
   domain: sealos.io
-  group: cloud
+  group: infostream
   kind: Collector
   version: v1
 - controller: true
   domain: sealos.io
-  group: cloud
+  group: infostream
   kind: CloudSync
   version: v1
 - api:
@@ -28,7 +28,7 @@ resources:
     namespaced: true
   controller: true
   domain: sealos.io
-  group: cloud
+  group: infostream
   kind: License
   path: github.com/labring/sealos/controllers/licenseissuer/api/v1
   version: v1
@@ -41,13 +41,13 @@ resources:
     namespaced: true
   controller: true
   domain: sealos.io
-  group: cloud
+  group: infostream
   kind: Launcher
   path: github.com/labring/sealos/controllers/licenseissuer/api/v1
   version: v1
 - controller: true
   domain: sealos.io
-  group: cloud
+  group: infostream
   kind: ScaleMonitor
   version: v1
 version: "3"

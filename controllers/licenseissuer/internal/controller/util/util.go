@@ -25,23 +25,23 @@ import (
 	"os"
 
 	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
-	cloud "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
+	issuer "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	cl "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ReadConfigFromConfigMap(expectName string, configMap *corev1.ConfigMap) (cloud.Config, error) {
+func ReadConfigFromConfigMap(expectName string, configMap *corev1.ConfigMap) (issuer.Config, error) {
 	if configMap.Name != expectName {
 		err := errors.New("not expected configmap")
-		return cloud.Config{}, err
+		return issuer.Config{}, err
 	}
 
-	var config cloud.Config
+	var config issuer.Config
 	err := json.Unmarshal([]byte(configMap.Data["config.json"]), &config)
 	if err != nil {
-		return cloud.Config{}, err
+		return issuer.Config{}, err
 	}
 
 	return config, nil
@@ -71,11 +71,11 @@ func newUUID() (string, error) {
 // wraps them with a contextual message and returns them. If the environment is not set as a monitor,
 // or if the operations are successful, the function returns nil.
 func StartCloudModule(ctx context.Context, client cl.Client) error {
-	isMonitor := os.Getenv(string(cloud.IsMonitor))
-	if isMonitor == cloud.TRUE {
+	isMonitor := os.Getenv(string(issuer.IsMonitor))
+	if isMonitor == issuer.TRUE {
 		nn := types.NamespacedName{
-			Namespace: string(cloud.Namespace),
-			Name:      string(cloud.ClientStartName),
+			Namespace: string(issuer.Namespace),
+			Name:      string(issuer.ClientStartName),
 		}
 
 		var launcher issuerv1.Launcher
@@ -94,9 +94,9 @@ func StartCloudModule(ctx context.Context, client cl.Client) error {
 }
 
 var launchData = map[string]string{
-	string(cloud.CollectorLable):    cloud.FALSE,
-	string(cloud.SyncLable):         cloud.FALSE,
-	string(cloud.NotificationLable): cloud.FALSE,
+	string(issuer.CollectorLable):    issuer.FALSE,
+	string(issuer.SyncLable):         issuer.FALSE,
+	string(issuer.NotificationLable): issuer.FALSE,
 }
 
 func createLauncher(ctx context.Context, client cl.Client, nn types.NamespacedName, launcher *issuerv1.Launcher) error {
