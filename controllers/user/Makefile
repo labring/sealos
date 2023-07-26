@@ -1,6 +1,7 @@
 
 # Image URL to use all building/pushing image targets
 IMG ?=  ghcr.io/labring/sealos-user-controller:latest
+TARGETARCH ?= amd64
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.1
 
@@ -62,7 +63,7 @@ test: manifests generate fmt vet envtest ## Run tests.
 ##@ Build
 
 .PHONY: build
-build:## Build manager binary.
+build: manifests generate fmt vet## Build manager binary.
 	CGO_ENABLED=0 go build -o bin/manager main.go
 
 .PHONY: run
@@ -70,8 +71,10 @@ run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
 .PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
-	docker build -t ${IMG} .
+docker-build: build ## Build docker image with the manager.
+	mv bin/manager bin/controller-user-${TARGETARCH}
+	chmod +x bin/controller-user-${TARGETARCH}
+	docker build -t ${IMG} . --build-arg TARGETARCH=${TARGETARCH}
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
