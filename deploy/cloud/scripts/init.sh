@@ -41,7 +41,7 @@ function sealos_run_controller {
 function gen_mongodbUri() {
   # if mongodbUri is empty then create mongodb and gen mongodb uri
   if [ -z "$mongodbUri" ]; then
-    echo "no mongodb uri found, apply kubeblocks mongodb cr"
+    echo "no mongodb uri found, create mongodb and gen mongodb uri"
     kubectl apply -f manifests/mongodb.yaml
     # if there is no sealos-mongodb-conn-credential secret then wait for mongodb ready
     while [ -z "$(kubectl get secret -n sealos sealos-mongodb-conn-credential)" ]; do
