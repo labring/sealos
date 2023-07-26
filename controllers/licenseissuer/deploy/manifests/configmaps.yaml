@@ -27,11 +27,11 @@ apiVersion: v1
 data:
   config.json: |
     {
-      "CollectorURL": "https://license.sealos.io/CollectorHandle",
-      "NotificationURL": "https://license.sealos.io/NotificationHandle",
-      "RegisterURL": "https://license.sealos.io/RegisterHandle",
-      "CloudSyncURL": "https://license.sealos.io/CloudSyncHandle",
-      "LicenseMonitorURL": "https://license.sealos.io/LicenseMonitor"
+      "CollectorURL": "https://license.sealos.io/collector",
+      "NotificationURL": "https://license.sealos.io/notify",
+      "RegisterURL": "https://license.sealos.io/register",
+      "CloudSyncURL": "https://license.sealos.io/datasync",
+      "LicenseMonitorURL": "https://license.sealos.io/license"
     }
 kind: ConfigMap
 metadata:
