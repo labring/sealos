@@ -117,7 +117,7 @@ func main() {
 		}
 	}
 
-	if err = (&controllers.OperationReqReconciler{}).SetupWithManager(mgr, rateLimiterOptions, minRequeueDuration, maxRequeueDuration); err != nil {
+	if err = (&controllers.OperationReqReconciler{}).SetupWithManager(mgr, rateLimiterOptions); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Operationrequest")
 		os.Exit(1)
 	}

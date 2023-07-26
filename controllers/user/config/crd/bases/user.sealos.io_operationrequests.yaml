@@ -36,11 +36,18 @@ spec:
             description: OperationrequestSpec defines the desired state of Operationrequest
             properties:
               action:
+                enum:
+                - Grant
+                - Update
+                - Deprive
                 type: string
               namespace:
                 type: string
               type:
-                description: eum TODO 指定Type为三个值中的一个
+                enum:
+                - Owner
+                - Manager
+                - Developer
                 type: string
               username:
                 description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -49,6 +56,11 @@ spec:
             type: object
           status:
             description: OperationrequestStatus defines the observed state of Operationrequest
+            properties:
+              phase:
+                default: Unknown
+                description: Phase is the recently observed lifecycle phase of user
+                type: string
             type: object
         type: object
     served: true

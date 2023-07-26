@@ -29,22 +29,39 @@ type OperationrequestSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	Username  string `json:"username,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
-	//eum TODO 指定Type为三个值中的一个
-	Type   string     `json:"type,omitempty"`
-	Action ActionType `json:"action,omitempty"`
+	// +kubebuilder:validation:Enum=Owner;Manager;Developer
+	Type string `json:"type,omitempty"`
+	// +kubebuilder:validation:Enum=Grant;Update;Deprive
+	Action ActionType `json:"action,omitempty"` //TODO action可能要加个 update 用于更新rolebinding
 }
 type ActionType string
 
 const (
 	Grant   ActionType = "Grant"
+	Update  ActionType = "Update"
 	Deprive ActionType = "Deprive"
 )
+
+const ExpirationTime string = "3m"
 
 // OperationrequestStatus defines the observed state of Operationrequest
 type OperationrequestStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// Phase is the recently observed lifecycle phase of user
+	//+kubebuilder:default:=Unknown
+	Phase RequestPhase `json:"phase,omitempty"`
 }
+
+type RequestPhase string
+
+// These are the valid phases of node.
+const (
+	RequestPending RequestPhase = "Pending"
+	RequestUnknown RequestPhase = "Unknown"
+	RequestActive  RequestPhase = "Active"
+)
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

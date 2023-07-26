@@ -32,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,16 +39,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+// Time interval for loop control
+var OperationReqRequeueDuration, _ = time.ParseDuration("1m")
+
 // OperationReqReconciler reconciles a Operationrequest object
 type OperationReqReconciler struct {
 	Logger   logr.Logger
 	Recorder record.EventRecorder
 	client.Client
-	Scheme             *runtime.Scheme
-	cache              cache.Cache
-	config             *rest.Config
-	minRequeueDuration time.Duration
-	maxRequeueDuration time.Duration
+	Scheme *runtime.Scheme
+	cache  cache.Cache
+	config *rest.Config
 }
 
 //+kubebuilder:rbac:groups=user.sealos.io,resources=operationrequests,verbs=get;list;watch;create;update;patch;delete
@@ -67,19 +67,19 @@ type OperationReqReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.1/pkg/reconcile
 func (r *OperationReqReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Logger.V(1).Info("start create or delete rolebinding for operation requests")
-	operationRequests := &userv1.Operationrequest{}
-	if err := r.Get(ctx, req.NamespacedName, operationRequests); err != nil {
+	operationRequest := &userv1.Operationrequest{}
+	if err := r.Get(ctx, req.NamespacedName, operationRequest); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	return r.handleRequest(ctx, operationRequests)
-
-	//return ctrl.Result{}, nil
+	return r.reconcile(ctx, operationRequest)
+	//TODO operationRequest的状态更新
+	//TODO 时序问题怎么解决  -> 写个webhook -> 同一个ns下的request要一个个处理
+	//TODO 3min删除operationrequest的功能不知道为啥失效了
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *OperationReqReconciler) SetupWithManager(mgr ctrl.Manager, opts utilcontroller.RateLimiterOptions,
-	minRequeueDuration time.Duration, maxRequeueDuration time.Duration) error {
+func (r *OperationReqReconciler) SetupWithManager(mgr ctrl.Manager, opts utilcontroller.RateLimiterOptions) error {
 	const controllerName = "operationrequest_controller"
 	if r.Client == nil {
 		r.Client = mgr.GetClient()
@@ -95,8 +95,6 @@ func (r *OperationReqReconciler) SetupWithManager(mgr ctrl.Manager, opts utilcon
 	r.cache = mgr.GetCache()
 	r.config = mgr.GetConfig()
 	r.Logger.V(1).Info("init reconcile operationrequest controller")
-	r.minRequeueDuration = minRequeueDuration
-	r.maxRequeueDuration = maxRequeueDuration
 	//owner := &handler.EnqueueRequestForOwner{OwnerType: &userv1.Operationrequest{}, IsController: true}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.Operationrequest{}).
@@ -107,10 +105,12 @@ func (r *OperationReqReconciler) SetupWithManager(mgr ctrl.Manager, opts utilcon
 		Complete(r)
 }
 
-func (r *OperationReqReconciler) handleRequest(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+func (r *OperationReqReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	r.Logger.V(1).Info("update reconcile controller operationRequest", "request", client.ObjectKeyFromObject(obj))
 
+	// reconcile start time
 	startTime := time.Now()
+	// Convert input object to operation request
 	request, ok := obj.(*userv1.Operationrequest)
 	if !ok {
 		return ctrl.Result{}, errors.New("obj convert request is error")
@@ -120,74 +120,132 @@ func (r *OperationReqReconciler) handleRequest(ctx context.Context, obj client.O
 			"request info", request.Name, "create time", request.CreationTimestamp, "handling cost time", time.Since(startTime))
 	}()
 
-	//1.已知username，去获取对应的sa
-	sa := &v1.ServiceAccount{}
-	if err := r.Get(ctx, client.ObjectKey{Namespace: config.GetUsersNamespace(request.Spec.Username), Name: request.Spec.Username}, sa); err != nil {
-		return ctrl.Result{}, err
-	}
-	//2.根据type，将得到的sa与对应的role建立rolebinding
-	//重试
-	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		var change controllerutil.OperationResult
-		var err error
-		roleBinding := &rbacv1.RoleBinding{}
-		roleBinding.Name = config.GetGroupRoleBindingName(request.Spec.Type, sa.Name)
-		//要指定rolebinding的namespace -> 即目标group的namespace -> 即role的namespace
-		roleBinding.Namespace = request.Spec.Namespace
-		//TODO 3.根据action的add或delete添加或者删除rolebinding
-		//要忽略client.IgnoreNotFound(err)这样的error  ->  client.IgnoreNotFound(err) != nil
-		//在高并发条件下，这个资源删除了是最终符合预期的，所以要忽略这个error
-		if request.Spec.Action == userv1.Deprive {
-			if err = r.Delete(ctx, &rbacv1.RoleBinding{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      config.GetGroupRoleBindingName(request.Spec.Type, sa.Name),
-					Namespace: request.Spec.Namespace,
-				},
-			}); client.IgnoreNotFound(err) != nil {
-				return fmt.Errorf("unable to delete namespace rolebinding by Operationrequest: %w", err)
-			}
-		} else if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, roleBinding, func() error {
-			//或许和rolebinding的命名规范有关？给rolebinding加一些label和annotation
-			roleBinding.Annotations = map[string]string{userAnnotationOwnerKey: sa.Name}
-			//绑定的是这个group对应的namespace出来的三个role中的一个，与type应该是保持一致的
-			roleBinding.RoleRef = rbacv1.RoleRef{
-				APIGroup: rbacv1.GroupName,
-				Kind:     "Role",
-				Name:     request.Spec.Type,
-			}
-			//绑定到一个sa上，是username得到的sa
-			//TODO 这个方法也可以在config里建立一个方法
-			roleBinding.Subjects = []rbacv1.Subject{
-				{
-					Kind:      "ServiceAccount",
-					Name:      sa.Name,
-					Namespace: sa.Namespace,
-				},
-			}
-			//SetControllerReference将两个资源关联起来 确保两者清理时同时删除
-			//return controllerutil.SetControllerReference(sa, roleBinding, r.Scheme)
-			//上面这个会报错，因为sa和rolebinding是不同的namespace，所以不能关联起来
-			return nil
-		}); err != nil {
-			return fmt.Errorf("unable to create namespace rolebinding by Operationrequest: %w", err)
+	// delete OperationRequest first if it is expired
+	if r.isExpired(request) {
+		if _, err := r.deleteOperationRequest(ctx, request); client.IgnoreNotFound(err) != nil {
+			return ctrl.Result{}, err
 		}
-		r.Logger.V(1).Info("create or update namespace rolebinding by Operationrequest", "OperationResult", change)
-		return nil
-	}); err != nil {
-		r.Recorder.Eventf(request, v1.EventTypeWarning, "handle Operation Request", "handle rolebinding request %s is error: %v", request, err)
+	} else {
+		// Get the service account associated with the request
+		sa := &v1.ServiceAccount{}
+		if err := r.Get(ctx, client.ObjectKey{Namespace: config.GetUsersNamespace(request.Spec.Username), Name: request.Spec.Username}, sa); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		// Check if the action is "Deprive" or "Update" and delete the role binding if true
+		if request.Spec.Action == userv1.Deprive || request.Spec.Action == userv1.Update {
+			if _, err := r.deleteRoleBinding(ctx, request, sa); client.IgnoreNotFound(err) != nil {
+				return ctrl.Result{}, err
+			}
+		}
+
+		// Check if the action is "Grant" or "Update" and create the role binding if true
+		if request.Spec.Action == userv1.Grant || request.Spec.Action == userv1.Update {
+			if _, err := r.createRoleBinding(ctx, request, sa); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
+
+		// Define the pipeline of functions
+		//pipelines := []func(ctx context.Context, request *userv1.Operationrequest, sa *v1.ServiceAccount) (context.Context, error){
+		//	r.deleteRoleBinding,
+		//	r.createRoleBinding,
+		//}
+		//
+		//// Execute the pipeline of functions
+		//for _, step := range pipelines {
+		//	if _, err := step(ctx, request, sa); err != nil {
+		//		return ctrl.Result{}, err
+		//	}
+		//}
+		//if request.Status.Phase != userv1.RequestPending {
+		//	request.Status.Phase = userv1.RequestActive
+		//}
+		//err := r.updateStatus(ctx, client.ObjectKeyFromObject(obj), request.Status.DeepCopy())
+		//if err != nil {
+		//	r.Recorder.Eventf(request, v1.EventTypeWarning, "SyncStatus", "Sync status %s is error: %v", request.Name, err)
+		//	return ctrl.Result{}, err
+		//}
 	}
-	//TODO 3.等三分钟之后再删掉这个CR
-	//TODO 放到上面去
-	//TODO 4.将处理的OperationRequest这个CR删除
+	return ctrl.Result{RequeueAfter: OperationReqRequeueDuration}, nil
+}
+
+func (r *OperationReqReconciler) deleteOperationRequest(ctx context.Context, request *userv1.Operationrequest) (ctrl.Result, error) {
+	r.Logger.V(1).Info("Deleting OperationRequest", "request", request)
+
+	// Delete the OperationRequest
 	if err := r.Delete(ctx, &userv1.Operationrequest{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: request.Namespace,
 			Name:      request.Name,
 		},
 	}); client.IgnoreNotFound(err) != nil {
-		r.Logger.Error(err, "failed to delete OperationRequest", "name", request.Name, "namespace", request.Namespace)
+		r.Logger.Error(err, "Failed to delete OperationRequest", "name", request.Name, "namespace", request.Namespace)
 		return ctrl.Result{}, fmt.Errorf("failed to delete OperationRequest %s/%s: %w", request.Namespace, request.Name, err)
 	}
-	//TODO 5.时序问题怎么解决
+
+	r.Logger.Info("Deleted OperationRequest", "request", request)
 	return ctrl.Result{}, nil
+}
+
+//func (r *OperationReqReconciler) initStatus(ctx context.Context, request *userv1.Operationrequest, sa *v1.ServiceAccount) (context.Context, error) {
+//	request.Status.Phase = userv1.RequestPending
+//
+//	return ctx, nil
+//}
+
+func (r *OperationReqReconciler) deleteRoleBinding(ctx context.Context, request *userv1.Operationrequest, sa *v1.ServiceAccount) (context.Context, error) {
+	r.Logger.V(1).Info("Deleting operation request", "request", request)
+	if err := r.Delete(ctx, &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      config.GetGroupRoleBindingName(sa.Name),
+			Namespace: request.Spec.Namespace,
+		},
+	}); client.IgnoreNotFound(err) != nil {
+		return ctx, fmt.Errorf("unable to delete namespace rolebinding by Operationrequest: %w", err)
+	}
+	r.Logger.Info("Deleted role binding for OperationRequest", "request", request)
+	return ctx, nil
+}
+
+func (r *OperationReqReconciler) createRoleBinding(ctx context.Context, request *userv1.Operationrequest, sa *v1.ServiceAccount) (context.Context, error) {
+	r.Logger.V(1).Info("Creating role binding for OperationRequest", "request", request)
+	var change controllerutil.OperationResult
+	var err error
+	// Create or update the role binding
+	roleBinding := &rbacv1.RoleBinding{}
+	roleBinding.Name = config.GetGroupRoleBindingName(sa.Name)
+	// rolebinding's namespace -> group's namespace -> role's namespace
+	roleBinding.Namespace = request.Spec.Namespace
+	if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, roleBinding, func() error {
+		roleBinding.Annotations = map[string]string{userAnnotationOwnerKey: sa.Name}
+		roleBinding.RoleRef = rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "Role",
+			Name:     request.Spec.Type,
+		}
+		roleBinding.Subjects = []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      sa.Name,
+				Namespace: sa.Namespace,
+			},
+		}
+		return nil
+	}); err != nil {
+		return ctx, fmt.Errorf("unable to create or update namespace rolebinding by Operationrequest: %w", err)
+	}
+	r.Logger.V(1).Info("create or update namespace rolebinding by Operationrequest", "OperationResult", change)
+	return ctx, nil
+}
+
+func (r *OperationReqReconciler) isExpired(request *userv1.Operationrequest) bool {
+	// Expiration time = 3 min
+	d, _ := time.ParseDuration(userv1.ExpirationTime)
+	if request.CreationTimestamp.Add(d).Before(time.Now()) {
+		r.Logger.Info("request isExpired", "name", request.Name)
+		return true
+	}
+	return false
 }
