@@ -23,18 +23,18 @@ import (
 // OperationrequestSpec defines the desired state of Operationrequest
 type OperationrequestSpec struct {
 	User string `json:"user,omitempty"`
-	// +kubebuilder:validation:Enum=Owner;Manager;Developer
+	// +kubebuilder:validation:Enum=owner;manager;developer
 	Role RoleType `json:"role,omitempty"`
-	// +kubebuilder:validation:Enum=Grant;Update;Deprive
+	// +kubebuilder:validation:Enum=grant;update;deprive
 	Action ActionType `json:"action,omitempty"`
 }
 
 type ActionType string
 
 const (
-	Grant   ActionType = "Grant"
-	Update  ActionType = "Update"
-	Deprive ActionType = "Deprive"
+	Grant   ActionType = "grant"
+	Update  ActionType = "update"
+	Deprive ActionType = "deprive"
 )
 
 // OperationrequestStatus defines the observed state of Operationrequest

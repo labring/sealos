@@ -37,15 +37,15 @@ spec:
             properties:
               action:
                 enum:
-                - Grant
-                - Update
-                - Deprive
+                - grant
+                - update
+                - deprive
                 type: string
               role:
                 enum:
-                - Owner
-                - Manager
-                - Developer
+                - owner
+                - manager
+                - developer
                 type: string
               user:
                 type: string
