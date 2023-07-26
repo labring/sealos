@@ -30,7 +30,7 @@ func TestMongoDB_GetMeteringOwnerTimeResult(t *testing.T) {
 	}()
 
 	// 2023-04-30T17:00:00.000+00:00
-	queryTime := time.Date(2023, 4, 30, 17, 0, 0, 0, time.UTC)
+	queryTime := time.Date(2023, 7, 14, 04, 0, 0, 0, time.UTC)
 
 	//[]string{"ns-vd1k1dk3", "ns-cv46sqlr", "ns-wu8nptea", "ns-a2sh413v", "ns-l8ad16ee"}
 	got, err := m.GetMeteringOwnerTimeResult(queryTime, []string{"ns-vd1k1dk3"}, []string{"cpu", "memory", "storage"}, "ns-vd1k1dk3")
@@ -38,6 +38,12 @@ func TestMongoDB_GetMeteringOwnerTimeResult(t *testing.T) {
 		t.Errorf("failed to get metering owner time result: error = %v", err)
 	}
 	t.Logf("got: %v", got)
+
+	got, err = m.GetMeteringOwnerTimeResult(queryTime, []string{"ns-7wdqa36k"}, nil, "ns-7wdqa36k")
+	if err != nil {
+		t.Errorf("failed to get metering owner time result: error = %v", err)
+	}
+	t.Logf("all properties got: %v", got)
 }
 
 func TestMongoDB_QueryBillingRecords(t *testing.T) {
@@ -349,4 +355,23 @@ func TestMongoDB_GetBillingLastUpdateTime(t *testing.T) {
 		t.Fatalf(" billing last update time not exist")
 	}
 	t.Logf("lastUpdateTime: %v", lastUpdateTime)
+}
+
+func TestMongoDB_GetAllPricesMap(t *testing.T) {
+	dbCTX := context.Background()
+
+	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
+	if err != nil {
+		t.Errorf("failed to connect mongo: error = %v", err)
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+	pricesMap, err := m.GetAllPricesMap()
+	if err != nil {
+		t.Fatalf("failed to get all prices map: %v", err)
+	}
+	t.Logf("pricesMap: %v", pricesMap)
 }

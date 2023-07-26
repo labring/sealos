@@ -122,8 +122,8 @@ func CheckOpts(billingRecordQuery *accountv1.BillingRecordQuery) error {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *BillingRecordQueryReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
-	if r.MongoDBURI = os.Getenv(database.MongoURL); r.MongoDBURI == "" {
-		return fmt.Errorf("env %s is empty", database.MongoURL)
+	if r.MongoDBURI = os.Getenv(database.MongoURI); r.MongoDBURI == "" {
+		return fmt.Errorf("env %s is empty", database.MongoURI)
 	}
 	r.Logger = log.Log.WithName("billingrecordquery-controller")
 	return ctrl.NewControllerManagedBy(mgr).

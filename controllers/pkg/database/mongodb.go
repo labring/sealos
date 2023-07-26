@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/crypto"
+
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/pkg/common"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -27,10 +29,12 @@ const (
 )
 
 const (
-	MongoURL      = "MONGO_URI"
+	MongoURI      = "MONGO_URI"
 	MongoUsername = "MONGO_USERNAME"
 	MongoPassword = "MONGO_PASSWORD"
 )
+
+var cryptoKey = []byte("Af0b2Bc5e9d0C84adF0A5887cF43aB63")
 
 type MongoDB struct {
 	URL          string
@@ -101,12 +105,15 @@ func (m *MongoDB) SaveBillingsWithAccountBalance(accountBalanceSpec *accountv1.A
 }
 
 func (m *MongoDB) GetMeteringOwnerTimeResult(queryTime time.Time, queryCategories, queryProperties []string, queryOwner string) (*MeteringOwnerTimeResult, error) {
+	matchValue := bson.M{
+		"time":     queryTime,
+		"category": bson.M{"$in": queryCategories},
+	}
+	if len(queryProperties) > 0 {
+		matchValue["property"] = bson.M{"$in": queryProperties}
+	}
 	pipeline := bson.A{
-		bson.D{{Key: "$match", Value: bson.M{
-			"time":     queryTime,
-			"category": bson.M{"$in": queryCategories},
-			"property": bson.M{"$in": queryProperties},
-		}}},
+		bson.D{{Key: "$match", Value: matchValue}},
 		bson.D{{Key: "$group", Value: bson.M{
 			"_id":           bson.M{"property": "$property"},
 			"propertyTotal": bson.M{"$sum": "$amount"},
@@ -176,13 +183,25 @@ func (m *MongoDB) GetAllPricesMap() (map[string]common.Price, error) {
 	if err != nil {
 		return nil, fmt.Errorf("get all prices error: %v", err)
 	}
-	var prices []common.Price
+	var prices []struct {
+		Property string `json:"property" bson:"property"`
+		Price    string `json:"price" bson:"price"`
+		Detail   string `json:"detail" bson:"detail"`
+	}
 	if err = cursor.All(ctx, &prices); err != nil {
 		return nil, fmt.Errorf("get all prices error: %v", err)
 	}
 	var pricesMap = make(map[string]common.Price, len(prices))
 	for i := range prices {
-		pricesMap[strings.ToLower(prices[i].Property)] = prices[i]
+		price, err := crypto.DecryptInt64WithKey(prices[i].Price, cryptoKey)
+		if err != nil {
+			return nil, fmt.Errorf("decrypt price error: %v", err)
+		}
+		pricesMap[strings.ToLower(prices[i].Property)] = common.Price{
+			Price:    price,
+			Detail:   prices[i].Detail,
+			Property: prices[i].Property,
+		}
 	}
 	return pricesMap, nil
 }

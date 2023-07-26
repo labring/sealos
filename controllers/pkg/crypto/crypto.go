@@ -37,6 +37,11 @@ var encryptionKey = []byte("0123456789ABCDEF0123456789ABCDEF")
 
 // Encrypt encrypts the given plaintext using AES-GCM.
 func Encrypt(plaintext []byte) (string, error) {
+	return EncryptWithKey(plaintext, encryptionKey)
+}
+
+// EncryptWithKey encrypts the given plaintext using AES-GCM.
+func EncryptWithKey(plaintext []byte, encryptionKey []byte) (string, error) {
 	block, err := aes.NewCipher(encryptionKey)
 	if err != nil {
 		return "", err
@@ -61,8 +66,23 @@ func EncryptInt64(in int64) (*string, error) {
 	return &out, err
 }
 
+// EncryptWithKey encrypts the given plaintext using AES-GCM.
+func EncryptInt64WithKey(in int64, encryptionKey []byte) (*string, error) {
+	out, err := EncryptWithKey([]byte(strconv.FormatInt(in, 10)), encryptionKey)
+	return &out, err
+}
+
 func DecryptInt64(in string) (int64, error) {
 	out, err := Decrypt(in)
+	if err != nil {
+		return 0, fmt.Errorf("failed to decrpt balance: %w", err)
+	}
+	return strconv.ParseInt(string(out), 10, 64)
+}
+
+// DecryptInt64WithKey decrypts the given ciphertext using AES-GCM.
+func DecryptInt64WithKey(in string, encryptionKey []byte) (int64, error) {
+	out, err := DecryptWithKey(in, encryptionKey)
 	if err != nil {
 		return 0, fmt.Errorf("failed to decrpt balance: %w", err)
 	}
@@ -99,6 +119,11 @@ func DeductBalance(balance *string, amount int64) error {
 
 // Decrypt decrypts the given ciphertext using AES-GCM.
 func Decrypt(ciphertextBase64 string) ([]byte, error) {
+	return DecryptWithKey(ciphertextBase64, encryptionKey)
+}
+
+// DecryptWithKey decrypts the given ciphertext using AES-GCM.
+func DecryptWithKey(ciphertextBase64 string, encryptionKey []byte) ([]byte, error) {
 	ciphertext, err := base64.StdEncoding.DecodeString(ciphertextBase64)
 	if err != nil {
 		return nil, err
