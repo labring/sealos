@@ -180,10 +180,9 @@ func (c *InstallProcessor) UpgradeIfNeed(cluster *v2.Cluster) error {
 		if version == "" {
 			continue
 		}
-		logger.Debug("try Upgrade Cluster to %s", version)
 		err := c.Runtime.UpgradeCluster(version)
 		if err != nil {
-			logger.Info("upgrade cluster failed")
+			logger.Error("upgrade cluster failed")
 			return err
 		}
 		//upgrade success; replace the old cluster mount
