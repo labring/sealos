@@ -7,4 +7,4 @@ COPY manifests manifests
 ENV cloudDomain="127.0.0.1.nip.io"
 ENV mongodbUri=""
 
-CMD ["mongodb_uri=$(mongodbUri) bash scripts/init.sh"]
+CMD ["mongodbUri=$(mongodbUri) bash scripts/init.sh"]

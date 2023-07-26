@@ -4,7 +4,7 @@ set -ex
 cloudDomain="127.0.0.1.nip.io"
 tlsCrtPlaceholder="<tls-crt-placeholder>"
 tlsKeyPlaceholder="<tls-key-placeholder>"
-mongodb_uri=""
+mongodbUri=""
 
 function read_env {
   source $1
@@ -38,9 +38,9 @@ function sealos_run_controller {
   sealos run tars/app.tar
 }
 
-function gen_mongodb_uri() {
-  # if mongodb_uri is empty then apply kubeblocks mongodb cr and gen mongodb uri
-  if [ -z "$mongodb_uri" ]; then
+function gen_mongodbUri() {
+  # if mongodbUri is empty then create mongodb and gen mongodb uri
+  if [ -z "$mongodbUri" ]; then
     echo "no mongodb uri found, apply kubeblocks mongodb cr"
     kubectl apply -f manifests/mongodb.yaml
     # if there is no sealos-mongodb-conn-credential secret then wait for mongodb ready
@@ -49,7 +49,7 @@ function gen_mongodb_uri() {
       sleep 5
     done
     chmod +x scripts/gen-mongodb-uri.sh
-    mongodb_uri=$(scripts/gen-mongodb-uri.sh)
+    mongodbUri=$(scripts/gen-mongodb-uri.sh)
   fi
 }
 
@@ -84,7 +84,7 @@ function sealos_run_frontend {
 
 function mutate_desktop_config() {
   # mutate etc/sealos/desktop-config.yaml by using mongodb uri and two random base64 string
-  sed -i -e "s;<your-mongodb-uri-base64>;$(echo -n "$mongodb_uri" | base64 -w 0);" etc/sealos/desktop-config.yaml
+  sed -i -e "s;<your-mongodb-uri-base64>;$(echo -n "$mongodbUri" | base64 -w 0);" etc/sealos/desktop-config.yaml
   sed -i -e "s;<your-jwt-secret-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
   sed -i -e "s;<your-password-salt-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
 }
@@ -100,7 +100,7 @@ function install {
   create_tls_secret $cloudDomain
 
   # gen mongodb uri
-  gen_mongodb_uri
+  gen_mongodbUri
 
   # sealos run controllers
   sealos_run_controller
