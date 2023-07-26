@@ -86,7 +86,7 @@ jobs:
           - { name: db-adminer, path: db/adminer }
           - { name: resources, path: resources }
           - { name: resources-metering, path: resources/metering }
-          - { name: cloud, path: cloud }
+          - { name: licenseissuer, path: licenseissuer }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -190,7 +190,7 @@ jobs:
           - { name: db-adminer, path: db/adminer }
           - { name: resources, path: resources }
           - { name: resources-metering, path: resources/metering }
-          - { name: cloud, path: cloud }
+          - { name: licenseissuer, path: licenseissuer }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
