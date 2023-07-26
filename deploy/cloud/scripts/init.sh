@@ -53,7 +53,7 @@ function sealos_run_controller {
   # run licenseissuer controller
   sealos run tars/licenseissuer.tar \
   --env canConnectToExternalNetwork="true" \
-  --env enableMonitor="true" \
+  --env enableMonitor="true" 
 }
 
 function gen_mongodbUri() {
