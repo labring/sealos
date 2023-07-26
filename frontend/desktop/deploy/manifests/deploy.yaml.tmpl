@@ -89,65 +89,69 @@ spec:
             # set to true to enable sms login
             - name: SMS_ENABLED
               value: '{{ .smsEnabled }}'
-
             # password login env
             - name: PASSWORD_SALT
               valueFrom:
                 secretKeyRef:
                   name: desktop-frontend-secret
                   key: password_salt
-
             # github login env
             - name: GITHUB_CLIENT_ID
               valueFrom:
                 secretKeyRef:
                   name: desktop-frontend-secret
                   key: github_client_id
+                  optional: true
             - name: GITHUB_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: desktop-frontend-secret
                   key: github_client_secret
-
+                  optional: true
             # wechat login env
             - name: WECHAT_CLIENT_ID
               valueFrom:
                 secretKeyRef:
                   name: desktop-frontend-secret
                   key: wechat_client_id
+                  optional: true
             - name: WECHAT_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: desktop-frontend-secret
                   key: wechat_client_secret
-
+                  optional: true
             # sms login env
             - name: ALI_ENDPOINT
               valueFrom:
                 secretKeyRef:
                   name: desktop-frontend-secret
                   key: ali_sms_endpoint
+                  optional: true
             - name: ALI_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
                   name: desktop-frontend-secret
                   key: ali_access_key_id
+                  optional: true
             - name: ALI_ACCESS_KEY_SECRET
               valueFrom:
                 secretKeyRef:
                   name: desktop-frontend-secret
                   key: ali_access_key_secret
+                  optional: true
             - name: ALI_SIGN_NAME
               valueFrom:
                 secretKeyRef:
                   name: desktop-frontend-secret
                   key: ali_sms_sign_name
+                  optional: true
             - name: ALI_TEMPLATE_CODE
               valueFrom:
                 secretKeyRef:
                   name: desktop-frontend-secret
                   key: ali_sms_template_code
-
+                  optional: true
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
