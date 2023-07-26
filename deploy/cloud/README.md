@@ -119,4 +119,10 @@ sealos run docker.io/labring/sealos-cloud:latest\
     --config-file tls-secret.yaml
 ```
 
-If you already have a mongodb, you can use it by setting `--env mongodbUri=<your mongodb uri>`.
+If you already have a mongodb, you can use it by setting `--env mongodbUri=<your mongodb uri>`:
+
+```shell
+sealos run docker.io/labring/sealos-cloud:latest\
+    --env cloudDomain="127.0.0.1.nip.io"\
+    --env mongodbUri=<your mongodb uri>
+```
