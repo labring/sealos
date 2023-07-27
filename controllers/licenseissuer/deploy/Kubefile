@@ -7,10 +7,10 @@ COPY manifests manifests
 
 ENV canConnectToExternalNetwork "true"
 ENV enableMonitor "true"
-ENV CollectorURL "https://license.sealos.io/CollectorHandle",
-ENV NotificationURL "https://license.sealos.io/NotificationHandle",
-ENV RegisterURL "https://license.sealos.io/RegisterHandle",
-ENV CloudSyncURL "https://license.sealos.io/CloudSyncHandle",
-ENV LicenseMonitorURL "https://license.sealos.io/LicenseMonitor"
+ENV CollectorURL "https://license.sealos.io/collector",
+ENV NotificationURL "https://license.sealos.io/notify",
+ENV RegisterURL "https://license.sealos.io/register",
+ENV CloudSyncURL "https://license.sealos.io/datasync",
+ENV LicenseMonitorURL "https://license.sealos.io/license"
 
-CMD ["kubectl apply -f manifests"]
+CMD ["kubectl apply -f manifests/customconfig.yaml -f manifests/deploy.yaml"]
