@@ -38,7 +38,7 @@ import (
 )
 
 // OperationReqRequeueDuration is the time interval to reconcile a OperationRequest if no error occurs
-const OperationReqRequeueDuration time.Duration = 1 * time.Minute
+const OperationReqRequeueDuration time.Duration = 30 * time.Second
 
 // OperationReqReconciler reconciles a Operationrequest object
 type OperationReqReconciler struct {
@@ -92,15 +92,6 @@ func (r *OperationReqReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.Operationrequest) (ctrl.Result, error) {
 	r.Logger.V(1).Info("update reconcile controller operationRequest", "request", request)
-
-	// delete OperationRequest first if its status is isCompleted and exist for retention time
-	if r.isExpired(request) {
-		return r.deleteOperationRequest(ctx, request)
-	}
-	if r.isCompleted(request) {
-		return ctrl.Result{RequeueAfter: OperationReqRequeueDuration}, nil
-	}
-
 	// count the time cost of handling the request
 	startTime := time.Now()
 	defer func() {
@@ -108,10 +99,26 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 			"request", request, "create time", request.CreationTimestamp, "handling cost time", time.Since(startTime))
 	}()
 
+	// delete OperationRequest first if its status is isCompleted and exist for retention time
+	if r.isRetained(request) {
+		return r.deleteOperationRequest(ctx, request)
+	}
+	// delete OperationRequest if its status is isCompleted and didn't exist for retention time
+	if r.isCompleted(request) {
+		return ctrl.Result{RequeueAfter: OperationReqRequeueDuration}, nil
+	}
+	// change OperationRequest status to failed if it is expired
+	//if r.isExpired(request) {
+	//	err := r.updateOperationRequestStatus(ctx, request, userv1.RequestFailed)
+	//	if err != nil {
+	//		return ctrl.Result{}, err
+	//	}
+	//	return ctrl.Result{RequeueAfter: OperationReqRequeueDuration}, nil
+	//}
+
 	// update OperationRequest status to processing
-	request.Status.Phase = userv1.RequestProcessing
-	if err := r.Status().Update(ctx, request); err != nil {
-		r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to update OperationRequest status", "Failed to update OperationRequest status %s/%s", request.Namespace, request.Name)
+	err := r.updateOperationRequestStatus(ctx, request, userv1.RequestProcessing)
+	if err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -140,9 +147,8 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 	}
 
 	// update OperationRequest status to completed
-	request.Status.Phase = userv1.RequestCompleted
-	if err := r.Status().Update(ctx, request); err != nil {
-		r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to update OperationRequest status", "Failed to update OperationRequest status %s/%s", request.Namespace, request.Name)
+	err = r.updateOperationRequestStatus(ctx, request, userv1.RequestCompleted)
+	if err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -150,7 +156,7 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 	return ctrl.Result{RequeueAfter: OperationReqRequeueDuration}, nil
 }
 
-func (r *OperationReqReconciler) isExpired(request *userv1.Operationrequest) bool {
+func (r *OperationReqReconciler) isRetained(request *userv1.Operationrequest) bool {
 	if request.Status.Phase == userv1.RequestCompleted && request.CreationTimestamp.Add(r.retentionTime).Before(time.Now()) {
 		r.Logger.Info("operation request is isCompleted and ", "name", request.Name)
 		return true
@@ -169,8 +175,27 @@ func (r *OperationReqReconciler) deleteOperationRequest(ctx context.Context, req
 	return ctrl.Result{}, nil
 }
 
+// isCompleted returns true if the request is isCompleted
 func (r *OperationReqReconciler) isCompleted(request *userv1.Operationrequest) bool {
 	return request.Status.Phase == userv1.RequestCompleted
+}
+
+// isExpired returns true if the request is expired
+func (r *OperationReqReconciler) isExpired(request *userv1.Operationrequest) bool {
+	if request.CreationTimestamp.Add(r.expirationTime).Before(time.Now()) {
+		r.Logger.Info("operation request is expired", "name", request.Name)
+		return true
+	}
+	return false
+}
+
+func (r *OperationReqReconciler) updateOperationRequestStatus(ctx context.Context, request *userv1.Operationrequest, phase userv1.RequestPhase) error {
+	request.Status.Phase = phase
+	if err := r.Status().Update(ctx, request); err != nil {
+		r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to update OperationRequest status", "Failed to update OperationRequest status %s/%s", request.Namespace, request.Name)
+		return err
+	}
+	return nil
 }
 
 func conventRequestToRolebinding(request *userv1.Operationrequest) *rbacv1.RoleBinding {

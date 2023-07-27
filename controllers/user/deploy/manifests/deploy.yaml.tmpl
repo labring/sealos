@@ -542,6 +542,26 @@ webhooks:
     service:
       name: user-webhook-service
       namespace: user-system
+      path: /mutate-user-sealos-io-v1-operationrequest
+  failurePolicy: Fail
+  name: moperationrequest.kb.io
+  rules:
+  - apiGroups:
+    - user.sealos.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - operationrequests
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: user-webhook-service
+      namespace: user-system
       path: /mutate-user-sealos-io-v1-user
   failurePolicy: Fail
   name: muser.kb.io
@@ -564,6 +584,26 @@ metadata:
     cert-manager.io/inject-ca-from: user-system/user-serving-cert
   name: user-validating-webhook-configuration
 webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: user-webhook-service
+      namespace: user-system
+      path: /validate-user-sealos-io-v1-operationrequest
+  failurePolicy: Fail
+  name: voperationrequest.kb.io
+  rules:
+  - apiGroups:
+    - user.sealos.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - operationrequests
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:
