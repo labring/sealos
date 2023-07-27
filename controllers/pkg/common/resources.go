@@ -6,6 +6,8 @@ import (
 	"math"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/common/gpu"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -112,6 +114,12 @@ const (
 	PropertyInfraDisk   = "infra-disk"
 )
 
+const ResourceGPU corev1.ResourceName = gpu.NvidiaGpuKey
+
+func NewGpuResource(product string) corev1.ResourceName {
+	return corev1.ResourceName("gpu-" + product)
+}
+
 var (
 	bin1Mi  = resource.NewQuantity(1<<20, resource.BinarySI)
 	cpuUnit = resource.MustParse("1m")
@@ -119,6 +127,7 @@ var (
 
 var PricesUnit = map[corev1.ResourceName]*resource.Quantity{
 	corev1.ResourceCPU:     &cpuUnit, // 1 m CPU (1000 μ)
+	ResourceGPU:            &cpuUnit, // 1 m CPU (1000 μ)
 	corev1.ResourceMemory:  bin1Mi,   // 1 MiB
 	corev1.ResourceStorage: bin1Mi,   // 1 MiB
 }
