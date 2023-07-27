@@ -73,7 +73,6 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	)
 	var (
 		license        issuerv1.License
-		clusterLimit   corev1.Secret
 		uidSecret      corev1.Secret
 		urlConfig      corev1.ConfigMap
 		licenseHistory corev1.ConfigMap
@@ -99,14 +98,6 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
 		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.LicenseHistory)}).
 		WithObject(&licenseHistory).AddToList(&readOperations)
-	(&issuer.ReadEventBuilder{}).WithContext(ctx).WithClient(r.Client).
-		WithTag(types.NamespacedName{Namespace: string(issuer.Namespace), Name: string(issuer.AvailableScaleSecretName)}).
-		WithObject(&clusterLimit).WithCallback(func() error {
-		clusterLimit.SetName(string(issuer.AvailableScaleSecretName))
-		clusterLimit.SetNamespace(string(issuer.Namespace))
-		clusterLimit.SetLabels(map[string]string{})
-		return r.Client.Create(ctx, &clusterLimit)
-	}).AddToList(&readOperations)
 
 	// execute read event
 	if err := readOperations.Execute(); err != nil {
@@ -119,12 +110,13 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		r.logger.Error(err, "failed to get account")
 		return ctrl.Result{}, err
 	}
-	// security judgement before write
+
 	config, err := util.ReadConfigFromConfigMap(string(issuer.URLConfigName), &urlConfig)
 	if err != nil {
 		r.logger.Error(err, "failed to read url config")
 		return ctrl.Result{}, err
 	}
+	// security judgement before write event
 	if issuer.CheckLicenseExists(&licenseHistory, license.Spec.Token) {
 		pack := issuer.NewNotificationPackage(issuer.LicenseNoticeTitle, issuer.SEALOS, issuer.DuplicateLicenseMessage)
 		issuer.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
