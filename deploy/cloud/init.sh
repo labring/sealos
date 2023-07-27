@@ -1,12 +1,12 @@
 #!/bin/bash
 mkdir -p tars
-sealos pull ghcr.io/labring/sealos-cloud-user-controller:latest
-sealos pull ghcr.io/labring/sealos-cloud-terminal-controller:latest
-sealos pull ghcr.io/labring/sealos-cloud-app-controller:latest
-sealos pull ghcr.io/labring/sealos-cloud-desktop-frontend:latest
-sealos pull ghcr.io/labring/sealos-cloud-terminal-frontend:latest
-sealos pull ghcr.io/labring/sealos-cloud-applaunchpad-frontend:latest
-sealos pull ghcr.io/labring/sealos-cloud-dbprovider-frontend:latest
+sealos pull --policy=always ghcr.io/labring/sealos-cloud-user-controller:latest
+sealos pull --policy=always ghcr.io/labring/sealos-cloud-terminal-controller:latest
+sealos pull --policy=always ghcr.io/labring/sealos-cloud-app-controller:latest
+sealos pull --policy=always ghcr.io/labring/sealos-cloud-desktop-frontend:latest
+sealos pull --policy=always ghcr.io/labring/sealos-cloud-terminal-frontend:latest
+sealos pull --policy=always ghcr.io/labring/sealos-cloud-applaunchpad-frontend:latest
+sealos pull --policy=always ghcr.io/labring/sealos-cloud-dbprovider-frontend:latest
 sealos pull --policy=always ghcr.io/labring/sealos-cloud-resources-metering-controller:latest
 sealos pull --policy=always ghcr.io/labring/sealos-cloud-resources-controller:latest
 sealos pull --policy=always ghcr.io/labring/sealos-cloud-account-controller:latest
