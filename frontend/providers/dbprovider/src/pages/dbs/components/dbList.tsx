@@ -160,7 +160,7 @@ const DBList = ({
             variant={'base'}
             leftIcon={<MyIcon name={'detail'} transform={'translateY(-1px)'} />}
             px={3}
-            onClick={() => router.push(`/db/detail?name=${item.name}`)}
+            onClick={() => router.push(`/db/detail?name=${item.name}&dbType=${item.dbType}`)}
           >
             {t('Details')}
           </Button>
