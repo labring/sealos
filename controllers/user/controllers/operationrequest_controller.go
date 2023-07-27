@@ -91,12 +91,11 @@ func (r *OperationReqReconciler) Reconcile(ctx context.Context, req ctrl.Request
 }
 
 func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.Operationrequest) (ctrl.Result, error) {
-	r.Logger.V(1).Info("update reconcile controller operationRequest", "request", request)
+	r.Logger.V(1).Info("update reconcile controller operationRequest", getLog(request)...)
 	// count the time cost of handling the request
 	startTime := time.Now()
 	defer func() {
-		r.Logger.V(1).Info("complete request handling",
-			"request", request, "create time", request.CreationTimestamp, "handling cost time", time.Since(startTime))
+		r.Logger.V(1).Info("complete request handling", getLog(request, "create time", request.CreationTimestamp, "handling cost time", time.Since(startTime))...)
 	}()
 
 	// delete OperationRequest first if its status is isCompleted and exist for retention time
@@ -107,7 +106,7 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 	if r.isCompleted(request) {
 		return ctrl.Result{RequeueAfter: OperationReqRequeueDuration}, nil
 	}
-	// change OperationRequest status to failed if it is expired
+	// todo change OperationRequest status to failed if it is expired
 	//if r.isExpired(request) {
 	//	err := r.updateOperationRequestStatus(ctx, request, userv1.RequestFailed)
 	//	if err != nil {
@@ -124,13 +123,19 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 
 	// convert OperationRequest to RoleBinding
 	rolebinding := conventRequestToRolebinding(request)
+	r.Logger.V(1).Info("convert OperationRequest to RoleBinding",
+		"rolebinding.name", rolebinding.Name,
+		"rolebinding.namespace", rolebinding.Namespace,
+		"rolebinding.subjects", rolebinding.Subjects,
+		"rolebinding.roleRef", rolebinding.RoleRef,
+	)
 
 	// handle OperationRequest, create or delete rolebinding
 	switch request.Spec.Action {
 	case userv1.Grant:
 		r.Recorder.Eventf(request, v1.EventTypeNormal, "Grant", "Grant role %s to user %s", request.Spec.Role, request.Spec.User)
-		if err := r.Create(ctx, rolebinding); client.IgnoreNotFound(err) != nil {
-			r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to create rolebinding", "Failed to create rolebinding %s/%s", rolebinding.Namespace, rolebinding.Name)
+		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, rolebinding, func() error { return nil }); err != nil {
+			r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to create/update rolebinding", "Failed to create rolebinding %s/%s", rolebinding.Namespace, rolebinding.Name)
 			return ctrl.Result{}, err
 		}
 	case userv1.Deprive:
@@ -158,7 +163,7 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 
 func (r *OperationReqReconciler) isRetained(request *userv1.Operationrequest) bool {
 	if request.Status.Phase == userv1.RequestCompleted && request.CreationTimestamp.Add(r.retentionTime).Before(time.Now()) {
-		r.Logger.Info("operation request is isCompleted and ", "name", request.Name)
+		r.Logger.Info("operation request is isCompleted and retained", "name", request.Name)
 		return true
 	}
 	return false
@@ -168,10 +173,10 @@ func (r *OperationReqReconciler) deleteOperationRequest(ctx context.Context, req
 	r.Logger.V(1).Info("deleting OperationRequest", "request", request)
 	if err := r.Delete(ctx, request); client.IgnoreNotFound(err) != nil {
 		r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to delete OperationRequest", "Failed to delete OperationRequest %s/%s", request.Namespace, request.Name)
-		r.Logger.Error(err, "Failed to delete OperationRequest", "request", request)
+		r.Logger.Error(err, "Failed to delete OperationRequest", getLog(request)...)
 		return ctrl.Result{}, fmt.Errorf("failed to delete OperationRequest %s/%s: %w", request.Namespace, request.Name, err)
 	}
-	r.Logger.V(1).Info("delete OperationRequest success", "request", request)
+	r.Logger.V(1).Info("delete OperationRequest success", getLog(request)...)
 	return ctrl.Result{}, nil
 }
 
@@ -193,8 +198,10 @@ func (r *OperationReqReconciler) updateOperationRequestStatus(ctx context.Contex
 	request.Status.Phase = phase
 	if err := r.Status().Update(ctx, request); err != nil {
 		r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to update OperationRequest status", "Failed to update OperationRequest status %s/%s", request.Namespace, request.Name)
+		r.Logger.V(1).Info("update OperationRequest status failed", getLog(request)...)
 		return err
 	}
+	r.Logger.V(1).Info("update OperationRequest status success", getLog(request)...)
 	return nil
 }
 
@@ -220,4 +227,15 @@ func conventRequestToRolebinding(request *userv1.Operationrequest) *rbacv1.RoleB
 			APIGroup: rbacv1.GroupName,
 		},
 	}
+}
+
+func getLog(request *userv1.Operationrequest, kv ...interface{}) []interface{} {
+	return append([]interface{}{
+		"request.name", request.Name,
+		"request.namespace", request.Namespace,
+		"request.user", request.Spec.User,
+		"request.role", request.Spec.Role,
+		"request.action", request.Spec.Action,
+		"request.phase", request.Status.Phase,
+	}, kv...)
 }
