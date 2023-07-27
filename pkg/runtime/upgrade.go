@@ -17,14 +17,14 @@ package runtime
 import (
 	"context"
 	"fmt"
-	str "strings"
+	"strings"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/versionutil"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
@@ -67,7 +67,8 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 
 func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 	master0ip := k.getMaster0IP()
-	if versionutil.Compare(version, V1260) {
+	sver := semver.MustParse(version)
+	if gte(sver, V1260) {
 		if err := k.changeCRIVersion(master0ip); err != nil {
 			return err
 		}
@@ -77,7 +78,7 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 		return err
 	}
 	//default nodeName in k8s is the lower case of their hostname because of DNS protocol.
-	master0Name = str.ToLower(master0Name)
+	master0Name = strings.ToLower(master0Name)
 	kubeBinaryPath := k.getContentData().RootFSBinPath()
 	//assure the connection to api-server succeed before executing upgrade cmds
 	if err = k.pingAPIServer(); err != nil {
@@ -104,8 +105,9 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 }
 
 func (k *KubeadmRuntime) upgradeOtherNodes(ips []string, version string) error {
+	sver := semver.MustParse(version)
 	for _, ip := range ips {
-		if versionutil.Compare(version, V1260) {
+		if gte(sver, V1260) {
 			if err := k.changeCRIVersion(ip); err != nil {
 				return err
 			}
@@ -115,7 +117,7 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string, version string) error {
 			return err
 		}
 		//default nodeName in k8s is the lower case of their hostname because of DNS protocol.
-		nodename = str.ToLower(nodename)
+		nodename = strings.ToLower(nodename)
 		kubeBinaryPath := k.getContentData().RootFSBinPath()
 		//assure the connection to api-server succeed before executing upgrade cmds
 		if err = k.pingAPIServer(); err != nil {
@@ -158,7 +160,7 @@ func (k *KubeadmRuntime) autoUpdateConfig(version string) error {
 	}
 	logger.Debug("get cluster configmap data:\n%s", clusterCfg)
 	logger.Debug("get kubelet configmap data:\n%s", kubeletCfg)
-	allConfig := str.Join([]string{clusterCfg, kubeletCfg}, "\n---\n")
+	allConfig := strings.Join([]string{clusterCfg, kubeletCfg}, "\n---\n")
 	defaultKubeadmConfig, err := LoadKubeadmConfigs(allConfig, false, DecodeCRDFromString)
 	if err != nil {
 		logger.Error("failed to decode cluster kubeadm config: %s", err)
