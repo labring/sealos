@@ -22,9 +22,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Masterminds/semver/v3"
+
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/versionutil"
 )
 
 type CommandType string
@@ -69,7 +70,8 @@ func (k *KubeadmRuntime) Command(version string, name CommandType) (cmd string) 
 	}
 
 	//other version >= 1.15.x
-	if versionutil.Compare(version, V1150) {
+	sver := semver.MustParse(version)
+	if gte(sver, V1150) {
 		cmds[InitMaster] = fmt.Sprintf(InitMaser115Upper, initConfigPath)
 		cmds[JoinMaster] = fmt.Sprintf(JoinMaster115Upper, joinMasterConfigPath)
 		cmds[JoinNode] = fmt.Sprintf(JoinNode115Upper, joinNodeConfigPath)
