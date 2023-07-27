@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/common"
+
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"github.com/go-logr/logr"
@@ -142,7 +144,7 @@ func (r *BillingRecordQueryReconciler) ReconcilePriceQuery(ctx context.Context, 
 	pricesMap, err := dbClient.GetAllPricesMap()
 	if err != nil {
 		r.Logger.Error(err, "get all prices failed")
-		return ctrl.Result{Requeue: true}, err
+		pricesMap = common.DefaultPrices
 	}
 	priceQuery.Status.BillingRecords = make([]accountv1.BillingRecord, 0)
 	for property, v := range pricesMap {

@@ -36,6 +36,20 @@ function sealos_run_controller {
 
   # run app controller
   sealos run tars/app.tar
+
+  # run resources monitoring controller
+  sealos run tars/monitoring.tar \
+  --env MONGO_URI="$mongodbUri" --env DEFAULT_NAMESPACE="resources-system"
+
+  # run resources metering controller
+  sealos run tars/metering.tar \
+  --env MONGO_URI="$mongodbUri" --env DEFAULT_NAMESPACE="resources-system"
+
+  # run account controller
+  sealos run tars/account.tar \
+  --env MONGO_URI="$mongodbUri" \
+  --env DEFAULT_NAMESPACE="account-system"
+
 }
 
 function gen_mongodbUri() {
@@ -79,6 +93,13 @@ function sealos_run_frontend {
   sealos run tars/frontend-dbprovider.tar \
   --env cloudDomain=$cloudDomain \
   --env certSecretName="wildcard-cert"
+
+  echo "costcenter frontend"
+  sealos run tars/cost-center.tar \
+  --env cloudDomain=$cloudDomain \
+  --env certSecretName="wildcard-cert" \
+  --env transferEnabled="true" \
+  --env rechargeEnabled="false"
 }
 
 
@@ -95,6 +116,9 @@ function install {
 
   # kubectl apply namespace, secret and mongodb
   kubectl apply -f manifests/namespace.yaml
+
+  # apply notifications crd
+  kubectl apply -f manifests/notifications_crd.yaml
 
   # create tls secret
   create_tls_secret $cloudDomain

@@ -122,7 +122,7 @@ func executeTask() error {
 	}
 	//prices is empty, use default price
 	if len(prices) == 0 || err != nil {
-		prices = getDefaultPrices()
+		prices = common.DefaultPrices
 	}
 	now := time.Now().UTC()
 	startTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-1, 0, 0, 0, time.UTC)
@@ -135,23 +135,6 @@ func executeTask() error {
 		return fmt.Errorf("failed to create monitor time series: %v", err)
 	}
 	return nil
-}
-
-func getDefaultPrices() map[string]common.Price {
-	return map[string]common.Price{
-		"cpu": {
-			Property: "cpu",
-			Price:    67,
-		},
-		"memory": {
-			Property: "memory",
-			Price:    33,
-		},
-		"storage": {
-			Property: "storage",
-			Price:    2,
-		},
-	}
 }
 
 func CreateMonitorTimeSeries(dbClient database.Interface, collTime time.Time) error {
