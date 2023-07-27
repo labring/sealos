@@ -24,4 +24,4 @@ sealos save -o tars/metering.tar ghcr.io/labring/sealos-cloud-resources-metering
 sealos save -o tars/monitoring.tar ghcr.io/labring/sealos-cloud-resources-controller:latest
 sealos save -o tars/account.tar ghcr.io/labring/sealos-cloud-account-controller:latest
 sealos save -o tars/cost-center.tar ghcr.io/labring/sealos-cloud-costcenter-frontend:latest
-sealos save -o tars/license.tar ghcr.io/labring/sealos-cloud-licenseissuer-controller:latest
+sealos save -o tars/licenseissuer.tar ghcr.io/labring/sealos-cloud-licenseissuer-controller:latest
