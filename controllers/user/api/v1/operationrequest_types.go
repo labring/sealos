@@ -55,6 +55,10 @@ const (
 	RequestFailed     RequestPhase = "Failed"
 )
 
+//+kubebuilder:printcolumn:name="Action",type="string",JSONPath=".spec.action"
+//+kubebuilder:printcolumn:name="User",type="string",JSONPath=".spec.user"
+//+kubebuilder:printcolumn:name="Role",type="string",JSONPath=".spec.role"
+//+kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
