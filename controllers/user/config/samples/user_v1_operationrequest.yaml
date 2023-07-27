@@ -7,3 +7,13 @@ spec:
   user: aaaa0001
   role: owner
   action: grant
+---
+apiVersion: user.sealos.io/v1
+kind: Operationrequest
+metadata:
+  name: request-deprive-a-owns-b
+  namespace: ns-bbbb0001
+spec:
+  user: aaaa0001
+  role: owner
+  action: deprive
