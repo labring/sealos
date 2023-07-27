@@ -92,6 +92,13 @@ function sealos_run_frontend {
   sealos run tars/frontend-dbprovider.tar \
   --env cloudDomain=$cloudDomain \
   --env certSecretName="wildcard-cert"
+
+  echo "costcenter frontend"
+  sealos run tars/cost-center.tar \
+  --env cloudDomain=$cloudDomain \
+  --env certSecretName="wildcard-cert" \
+  --env transferEnabled="true" \
+  --env rechargeEnabled="false"
 }
 
 
