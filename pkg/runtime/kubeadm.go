@@ -21,18 +21,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
+	"github.com/Masterminds/semver/v3"
 	v1 "k8s.io/api/core/v1"
-
-	"github.com/labring/sealos/pkg/constants"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/iputils"
-	"github.com/labring/sealos/pkg/utils/logger"
-	strings2 "github.com/labring/sealos/pkg/utils/strings"
-	"github.com/labring/sealos/pkg/utils/versionutil"
-	"github.com/labring/sealos/pkg/utils/yaml"
-
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/json"
 	kubeproxyconfigv1alpha1 "k8s.io/kube-proxy/config/v1alpha1"
@@ -40,16 +31,26 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
+
+	"github.com/labring/sealos/pkg/constants"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/logger"
+	strings2 "github.com/labring/sealos/pkg/utils/strings"
+	"github.com/labring/sealos/pkg/utils/yaml"
+)
+
+var (
+	V1130 = semver.MustParse("v1.13.0")
+	V1150 = semver.MustParse("v1.15.0")
+	V1220 = semver.MustParse("v1.22.0")
+	V1250 = semver.MustParse("v1.25.0")
+	V1260 = semver.MustParse("v1.26.0")
+	V1270 = semver.MustParse("v1.27.0")
+	V1280 = semver.MustParse("v1.28.0")
 )
 
 const (
-	V1130 = "v1.13.0"
-	V1150 = "v1.15.0"
-	V1220 = "v1.22.0"
-	V1250 = "v1.25.0"
-	V1260 = "v1.26.0"
-	V1270 = "v1.27.0"
-
 	KubeadmV1beta1 = "kubeadm.k8s.io/v1beta1"
 	KubeadmV1beta2 = "kubeadm.k8s.io/v1beta2"
 	KubeadmV1beta3 = "kubeadm.k8s.io/v1beta3"
@@ -92,21 +93,26 @@ func (k *KubeadmRuntime) setAPIVersion(apiVersion string) {
 // v1.15: v1beta1 read-only, writes only v1beta2 Config. Errors if the user tries to use v1alpha1, v1alpha2 or v1alpha3
 // v1.22: v1beta2 read-only, writes only v1beta3 Config. Errors if the user tries to use v1beta1 and older
 func getterKubeadmAPIVersion(kubeVersion string) string {
+	v := semver.MustParse(kubeVersion)
 	var apiVersion string
 	switch {
-	//kubernetes gt 1.13, lt 1.15
-	case versionutil.Compare(kubeVersion, V1130) && !versionutil.Compare(kubeVersion, V1150):
+	// kubernetes gt 1.13, lt 1.15
+	case gte(v, V1130) && v.LessThan(V1150):
 		apiVersion = KubeadmV1beta1
-	//kubernetes gt 1.15, lt 1.22
-	case versionutil.Compare(kubeVersion, V1150) && !versionutil.Compare(kubeVersion, V1220):
+	// kubernetes gt 1.15, lt 1.22
+	case gte(v, V1150) && v.LessThan(V1220):
 		apiVersion = KubeadmV1beta2
-	// kubernetes gt 1.22,
-	case versionutil.Compare(kubeVersion, V1220):
+	// kubernetes gte 1.22
+	case gte(v, V1220) && v.LessThan(V1280):
 		apiVersion = KubeadmV1beta3
 	default:
-		apiVersion = KubeadmV1beta2
+		apiVersion = KubeadmV1beta3
 	}
 	return apiVersion
+}
+
+func gte(v1, v2 *semver.Version) bool {
+	return v1.Equal(v2) || v1.GreaterThan(v2)
 }
 
 func (k *KubeadmRuntime) getCGroupDriver(node string) (string, error) {
