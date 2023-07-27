@@ -36,7 +36,6 @@ import (
 	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
 	"github.com/labring/sealos/controllers/pkg/common"
 	"github.com/labring/sealos/controllers/pkg/database"
-	v1 "github.com/labring/sealos/controllers/user/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -283,9 +282,9 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient datab
 		if client.IgnoreNotFound(err) != nil {
 			return err
 		}
-		if _, ok := namespace.GetAnnotations()[v1.UserAnnotationOwnerKey]; ok {
-			r.Logger.Error(fmt.Errorf("resources quota is empty"), "", "namespace", namespace.Name)
-		}
+		//if _, ok := namespace.GetAnnotations()[v1.UserAnnotationOwnerKey]; ok {
+		//	r.Logger.Error(fmt.Errorf("resources quota is empty"), "", "namespace", namespace.Name)
+		//}
 		rs[corev1.ResourceStorage].detail = "no resource quota"
 	} else {
 		hasStorageQuota = true
