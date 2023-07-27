@@ -39,14 +39,15 @@ function sealos_run_controller {
 
   # run resources monitoring controller
   sealos run tars/monitoring.tar \
-  --env MONGO_URI="$mongodb_uri" --env DEFAULT_NAMESPACE="resources-system"
+  --env MONGO_URI="$mongodbUri" --env DEFAULT_NAMESPACE="resources-system"
 
   # run resources metering controller
-  sealos run tars/metering.tar
+  sealos run tars/metering.tar \
+  --env MONGO_URI="$mongodbUri" --env DEFAULT_NAMESPACE="resources-system"
 
   # run account controller
   sealos run tars/account.tar \
-  --env MONGO_URI="$mongodb_uri" \
+  --env MONGO_URI="$mongodbUri" \
   --env DEFAULT_NAMESPACE="account-system"
 
 }
