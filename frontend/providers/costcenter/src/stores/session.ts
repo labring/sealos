@@ -1,4 +1,4 @@
-import type { Session } from '@/types/session';
+import type { Session } from 'sealos-desktop-sdk';
 import { sessionKey } from '@/types/session';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
@@ -32,7 +32,7 @@ const useSessionStore = create<SessionState>()(
         delSession: () => {
           set({ session: undefined });
         },
-        isUserLogin: () => get().session?.user?.id !== undefined,
+        isUserLogin: () => !!get().session?.user,
         getKubeconfigToken: () => {
           if (get().session?.kubeconfig === '') {
             return '';

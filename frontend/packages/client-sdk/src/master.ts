@@ -48,9 +48,10 @@ class MasterSDK {
   private get session() {
     const sessionStr = localStorage.getItem('session');
     if (!sessionStr) return '';
-    const session = JSON.parse(sessionStr);
-
-    return session?.state?.session as Session;
+    const _session = JSON.parse(sessionStr);
+    const session = _session?.state?.session as Session;
+    session.token = ''; // 清除不必要的信息
+    return session;
   }
 
   /**

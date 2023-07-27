@@ -6,16 +6,21 @@ export type OAuthToken = {
 };
 
 export type UserInfo = {
-  readonly id: string;
+  readonly k8s_username: string;
   readonly name: string;
   readonly avatar: string;
+  readonly nsid: string;
+  readonly ns_uid: string;
+  readonly userId: string;
 };
 
 export type KubeConfig = string;
 
 export type Session = {
-  token?: OAuthToken;
+  token: string; // jwt token
+  // 提供一些简单的信息
   user: UserInfo;
+  // 帮忙导出用的
   kubeconfig: KubeConfig;
 };
 

@@ -24,7 +24,7 @@ export default function useSms({
   const { t } = useTranslation();
   const _remainTime = useRef(0);
   const router = useRouter();
-  const { updateUser, setSession } = useSessionStore();
+  const { setSession } = useSessionStore();
   const [isLoading, setIsLoading] = useState(false);
 
   const { register, handleSubmit, trigger, getValues } = useForm<{
@@ -50,7 +50,6 @@ export default function useSms({
             code: data.verifyCode
           });
           setSession(result.data!);
-          updateUser();
           router.replace('/');
         } catch (error) {
           showError(t('Invalid verification code') || 'Invalid verification code');

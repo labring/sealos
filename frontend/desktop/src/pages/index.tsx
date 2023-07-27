@@ -32,7 +32,7 @@ export default function Home({
   sealos_cloud_domain: string;
 }) {
   const router = useRouter();
-  const { isUserLogin, newUser: isUpdate, setSession } = useSessionStore();
+  const { isUserLogin, setSession } = useSessionStore();
   const { colorMode, toggleColorMode } = useColorMode();
   const init = useAppStore((state) => state.init);
   const setAutoLaunch = useAppStore((state) => state.setAutoLaunch);
@@ -51,8 +51,8 @@ export default function Home({
     const { query } = router;
     const is_login = isUserLogin();
     const whitelistApps = ['system-fastdeploy'];
-
-    if (!isUpdate || !is_login) {
+    console.log('index');
+    if (!is_login) {
       const { appkey, appQuery } = parseOpenappQuery((query?.openapp as string) || '');
       // sealos_inside=true internal call
       if (whitelistApps.includes(appkey) && appQuery.indexOf('sealos_inside=true') === -1) {
@@ -82,7 +82,7 @@ export default function Home({
         });
       });
     }
-  }, [router, isUserLogin, init, isUpdate, setAutoLaunch, sealos_cloud_domain]);
+  }, [router, init, setAutoLaunch, sealos_cloud_domain]);
 
   return (
     <Box position={'relative'} overflow={'hidden'} w="100vw" h="100vh">

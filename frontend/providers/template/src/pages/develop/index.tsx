@@ -177,7 +177,13 @@ export default function Develop() {
   return (
     <Flex flexDirection={'column'} p={'0px 34px 20px 34px '} h="100vh" maxW={'1440px'} mx="auto">
       <BreadCrumbHeader applyCb={() => formHook.handleSubmit(submitSuccess, submitError)()} />
-      <Flex border={'1px solid #DEE0E2'} borderRadius={'8px'} overflow={'hidden'} flex={1}>
+      <Flex
+        border={'1px solid #DEE0E2'}
+        borderRadius={'8px'}
+        overflowY={'hidden'}
+        overflowX={'scroll'}
+        flex={1}
+      >
         {/* left */}
         <Flex flexDirection={'column'} w="50%" borderRight={'1px solid #EFF0F1'}>
           <Flex
@@ -187,7 +193,8 @@ export default function Develop() {
             alignItems={'center'}
             backgroundColor={'#F8FAFB'}
             px="36px"
-            borderRadius={'8px 8px 0px 0px '}>
+            borderRadius={'8px 8px 0px 0px '}
+          >
             <MyIcon name="dev" color={'#24282C'} w={'24px'} h={'24px'}></MyIcon>
             <Text fontWeight={'500'} fontSize={'16px'} color={'#24282C'} ml="8px">
               {t('develop.Development')}
@@ -215,7 +222,8 @@ export default function Develop() {
             alignItems={'center'}
             backgroundColor={'#F8FAFB'}
             pl="42px"
-            borderRadius={'8px 8px 0px 0px '}>
+            borderRadius={'8px 8px 0px 0px '}
+          >
             <MyIcon name="eyeShow" color={'#24282C'} w={'24px'} h={'24px'}></MyIcon>
             <Text fontWeight={'500'} fontSize={'16px'} color={'#24282C'} ml="8px">
               {t('develop.Preview')}
