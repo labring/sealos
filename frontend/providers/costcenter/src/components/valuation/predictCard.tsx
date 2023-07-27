@@ -14,6 +14,7 @@ export default function PredictCard() {
         { name: 'CPU', cost: state.cpu },
         { name: 'Memory', cost: state.memory },
         { name: 'Storage', cost: state.storage },
+        { name: 'GPU', cost: state.gpu },
         { name: total, cost: state.cpu + state.memory + state.storage }
       ].map((item) => ({
         ...item,

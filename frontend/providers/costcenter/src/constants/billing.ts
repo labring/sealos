@@ -5,6 +5,7 @@ export const TableHeaders = [
   'CPU',
   'Memory',
   'Local Disk',
+  'GPU',
   'Total Amount'
 ];
 export const InvoiceTableHeaders = [

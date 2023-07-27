@@ -21,9 +21,7 @@ echarts.use([
 
 export default function CostChart({ data }: { data: BillingData['status']['deductionAmount'] }) {
   const { t } = useTranslation();
-  const cpu = useMemo(() => data.cpu || 0, [data]);
-  const memory = useMemo(() => data.memory || 0, [data]);
-  const storage = useMemo(() => data.storage || 0, [data]);
+  const { cpu = 0, memory = 0, storage = 0, gpu = 0 } = data;
   const radius = useBreakpointValue({
     xl: ['45%', '70%'],
     lg: ['45%', '70%'],
@@ -42,11 +40,13 @@ export default function CostChart({ data }: { data: BillingData['status']['deduc
         ['name', 'cost'],
         ['cpu', formatMoney(cpu).toFixed(2)],
         ['memory', formatMoney(memory).toFixed(2)],
-        ['storage', formatMoney(storage).toFixed(2)]
+        ['storage', formatMoney(storage).toFixed(2)],
+        ['gpu', formatMoney(gpu).toFixed(2)]
       ] as const,
     [cpu, memory, storage]
   );
-  const amount = useMemo(() => formatMoney(cpu + memory + storage), [cpu, memory, storage]);
+  console.log('gpu', gpu);
+  const amount = formatMoney(cpu + memory + storage + gpu);
   const publicOption = {
     name: 'Cost Form',
     radius: radius || ['45%', '70%'],

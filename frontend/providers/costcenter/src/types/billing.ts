@@ -16,6 +16,7 @@ export type BillingItem = {
     cpu?: number;
     memory?: number;
     storage?: number;
+    gpu?: number;
   };
   order_id: string;
   owner: string;
@@ -32,6 +33,7 @@ export type BillingData = {
       cpu: number;
       memory: number;
       storage: number;
+      gpu: number;
     };
     item: BillingItem[];
     pageLength: number;

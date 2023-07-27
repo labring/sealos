@@ -5,7 +5,7 @@ import useNotEnough from '@/hooks/useNotEnough';
 import { Box, Flex, Heading, Img } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { createContext, useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Buget } from '@/components/cost_overview/buget';
 import UserCard from '@/components/cost_overview/components/user';
 import { Cost } from '@/components/cost_overview/cost';
@@ -17,12 +17,12 @@ import { QueryClient } from '@tanstack/react-query';
 import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
 import { isSameDay, isSameHour, parseISO } from 'date-fns';
-import { enableRecharge, enableTransfer } from '@/service/enabled';
 function CostOverview() {
   const { t, i18n } = useTranslation();
   const updateCPU = useBillingStore((state) => state.updateCpu);
   const updateMemory = useBillingStore((state) => state.updateMemory);
   const updateStorage = useBillingStore((state) => state.updateStorage);
+  const updateGpu = useBillingStore((state) => state.updateGpu);
   const cookie = getCookie('NEXT_LOCALE');
   useEffect(() => {
     i18n.changeLanguage(cookie);
@@ -44,6 +44,7 @@ function CostOverview() {
     updateCPU(item?.cpu || 0);
     updateMemory(item?.memory || 0);
     updateStorage(item?.storage || 0);
+    updateGpu(item?.gpu || 0);
   }, [costBillingItems, updateCPU, updateMemory, updateStorage]);
   useEffect(() => {
     // 并发预加载

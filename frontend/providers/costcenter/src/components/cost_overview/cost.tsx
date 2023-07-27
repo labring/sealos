@@ -29,7 +29,8 @@ export const Cost = memo(function Cost() {
             data?.data?.status.deductionAmount || {
               cpu: 0,
               memory: 0,
-              storage: 0
+              storage: 0,
+              gpu: 0
             }
           }
         ></Chart>
