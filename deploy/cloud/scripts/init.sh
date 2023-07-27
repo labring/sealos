@@ -124,6 +124,14 @@ function install {
   # apply notifications crd
   kubectl apply -f manifests/notifications_crd.yaml
 
+  # apply admin user
+  kubectl apply -f manifests/admin-user.yaml
+  # ensure admin namespace and admin account created
+  sleep 5
+
+  # apply free license for admin
+  kubectl apply -f manifests/free-license.yaml
+
   # create tls secret
   create_tls_secret $cloudDomain
 

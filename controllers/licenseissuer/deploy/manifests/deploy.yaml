@@ -609,7 +609,7 @@ spec:
             secretKeyRef:
               key: isMonitor
               name: licenseissuer-env
-        image: ghcr.io/labring/sealos-licenseissuer-controller:latest
+        image: registry.cn-hangzhou.aliyuncs.com/fckc/cloud-controller:v3.3.5
         livenessProbe:
           httpGet:
             path: /healthz
