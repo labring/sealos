@@ -8,4 +8,4 @@ COPY manifests manifests
 ENV DEFAULT_NAMESPACE account-system
 ENV MONGO_URI "mongodb://mongo:27017/resources"
 
-CMD ["kubectl apply -f manifests -n $DEFAULT_NAMESPACE"]
+CMD ["( kubectl create -f manifests/mongo-secret.yaml -n $DEFAULT_NAMESPACE || true ) && kubectl apply -f manifests/deploy.yaml -n $DEFAULT_NAMESPACE"]

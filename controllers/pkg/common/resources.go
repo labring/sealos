@@ -123,6 +123,21 @@ var PricesUnit = map[corev1.ResourceName]*resource.Quantity{
 	corev1.ResourceStorage: bin1Mi,   // 1 MiB
 }
 
+var DefaultPrices = map[string]Price{
+	"cpu": {
+		Property: "cpu",
+		Price:    67,
+	},
+	"memory": {
+		Property: "memory",
+		Price:    33,
+	},
+	"storage": {
+		Property: "storage",
+		Price:    2,
+	},
+}
+
 // Core
 var infraCPUMap = map[string]int{
 	"t2.medium":     2,

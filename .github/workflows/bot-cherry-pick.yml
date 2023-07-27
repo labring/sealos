@@ -14,6 +14,17 @@ jobs:
           TARGET_BRANCH=$(jq -r ".comment.body" "$GITHUB_EVENT_PATH" | awk '{ print $2 }'  | tr -d '[:space:]')
           echo "🤖 says: ‼️ TARGET_BRANCH is $TARGET_BRANCH"
           echo "target=$TARGET_BRANCH" >> $GITHUB_OUTPUT
+          if [ -z "$PR_NUMBER" ]; then
+          	PR_NUMBER=$(jq -r ".pull_request.number" "$GITHUB_EVENT_PATH")
+          	if [[ "$PR_NUMBER" == "null" ]]; then
+          		PR_NUMBER=$(jq -r ".issue.number" "$GITHUB_EVENT_PATH")
+          	fi
+          	if [[ "$PR_NUMBER" == "null" ]]; then
+          		echo "Failed to determine PR Number."
+          		exit 1
+          	fi
+          fi
+          echo "prNumber=$PR_NUMBER" >> $GITHUB_OUTPUT
       - name: Checkout the latest code
         uses: actions/checkout@v2
         with:
@@ -37,11 +48,12 @@ jobs:
             Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
           commit-message: |
             🤖 cherry-pick to ${{ steps.set-target.outputs.target }} using robot.
-          branch: cherry-pick-${{ steps.set-target.outputs.target }}
+          branch: cherry-pick-${{ steps.set-target.outputs.target }}-${{ steps.set-target.outputs.prNumber }}
           base: ${{ steps.set-target.outputs.target }}
           signoff: true
           delete-branch: true
           token: ${{ secrets.GH_PAT }}
           reviewers: cuisongliu
+          milestone: cherry-pick
           committer: sealos-ci-robot <sealos-ci-robot@sealos.io>
           author: sealos-ci-robot <sealos-ci-robot@sealos.io>

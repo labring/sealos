@@ -19,9 +19,10 @@ package v1beta1
 import (
 	"fmt"
 
+	"github.com/Masterminds/semver/v3"
+
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/maps"
-	"github.com/labring/sealos/pkg/utils/versionutil"
 )
 
 func (c *Cluster) GetSSH() SSH {
@@ -183,11 +184,13 @@ func (c *Cluster) ReplaceRootfsImage() {
 	if v1 == "" || v2 == "" {
 		return
 	}
+	sv1 := semver.MustParse(v1)
+	sv2 := semver.MustParse(v2)
 	//if version format error, never replace
-	if versionutil.Compare(v2, v1) {
+	if sv1.LessThan(sv2) {
 		c.Status.Mounts[i1], c.Status.Mounts[i2] = c.Status.Mounts[i2], c.Status.Mounts[i1]
 		c.Status.Mounts = append(c.Status.Mounts[:i2], c.Status.Mounts[i2+1:]...)
-	} else if versionutil.Compare(v1, v2) {
+	} else if sv1.GreaterThan(sv2) {
 		c.Status.Mounts[i2], c.Status.Mounts[i1] = c.Status.Mounts[i1], c.Status.Mounts[i2]
 		c.Status.Mounts = append(c.Status.Mounts[:i1], c.Status.Mounts[i1+1:]...)
 	}
