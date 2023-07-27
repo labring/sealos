@@ -71,6 +71,7 @@ const (
 var namespaceMonitorFuncs = make(map[string]func(ctx context.Context, dbClient database.Interface, namespace *corev1.Namespace) error)
 
 //+kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;watch
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 //+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch
