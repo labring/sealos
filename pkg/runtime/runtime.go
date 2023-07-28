@@ -18,21 +18,21 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/Masterminds/semver/v3"
+
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
-
-	"github.com/labring/sealos/pkg/utils/yaml"
-
-	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/versionutil"
-
+	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
 type KubeadmRuntime struct {
 	*sync.Mutex
-	Cluster  *v2.Cluster
-	Token    *Token
-	Registry *v2.RegistryConfig
+	Cluster       *v2.Cluster
+	ClusterClient ssh.Interface
+	Token         *Token
+	Registry      *v2.RegistryConfig
 	*KubeadmConfig
 	*Config
 	cli kubernetes.Client
@@ -126,9 +126,11 @@ func (k *KubeadmRuntime) DeleteMasters(mastersIPList []string) error {
 }
 
 func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
+	sshClient, _ := ssh.NewSSHByCluster(cluster, true)
 	k := &KubeadmRuntime{
-		Mutex:   &sync.Mutex{},
-		Cluster: cluster,
+		Mutex:         &sync.Mutex{},
+		Cluster:       cluster,
+		ClusterClient: sshClient,
 		Config: &Config{
 			ClusterFileKubeConfig: kubeadm,
 			APIServerDomain:       DefaultAPIServerDomain,
@@ -149,6 +151,10 @@ func NewDefaultRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, 
 	return newKubeadmRuntime(cluster, kubeadm)
 }
 
+func NewDefaultRuntimeWithCurrentCluster(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
+	return newKubeadmRuntime(cluster, kubeadm)
+}
+
 func (k *KubeadmRuntime) Validate() error {
 	if len(k.Cluster.Spec.Hosts) == 0 {
 		return fmt.Errorf("master hosts cannot be empty")
@@ -163,19 +169,27 @@ func (k *KubeadmRuntime) Validate() error {
 }
 
 func (k *KubeadmRuntime) UpgradeCluster(version string) error {
-	curversion := k.getKubeVersionFromImage()
-	if curversion == version {
-		logger.Info("The cluster version has not changed")
-		return nil
-	} else if versionutil.Compare(version, curversion) {
-		if err := versionutil.UpgradeVersionLimit(curversion, version); err != nil {
-			return err
-		}
-		logger.Info("cluster vesion: %s will be upgraded into %s.", curversion, version)
-		return k.upgradeCluster(version)
-	} else if versionutil.Compare(curversion, version) {
-		logger.Info("new cluster version %s behind the current version %s", version, curversion)
+	currVersion := k.getKubeVersionFromImage()
+
+	v0, err := semver.NewVersion(currVersion)
+	if err != nil {
+		return err
+	}
+	v1, err := semver.NewVersion(version)
+	if err != nil {
+		return err
+	}
+	if v0.Equal(v1) {
+		logger.Info("skip upgrade because of same version")
 		return nil
 	}
-	return fmt.Errorf("verion format error")
+
+	if v0.GreaterThan(v1) {
+		return fmt.Errorf("cannot apply an older version %s than %s", version, currVersion)
+	}
+	if v0.Minor()+1 < v1.Minor() {
+		return fmt.Errorf("cannot be upgraded across more than one major releases, %s -> %s", currVersion, version)
+	}
+
+	return k.upgradeCluster(version)
 }

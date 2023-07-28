@@ -100,6 +100,10 @@ func (c *Applier) Apply() error {
 			}
 		}
 		clusterErr = c.initCluster()
+		if clusterErr != nil && processor.IsRunGuestFailed(clusterErr) {
+			appErr = errors.Unwrap(clusterErr)
+			clusterErr = nil
+		}
 		c.ClusterDesired.CreationTimestamp = metav1.Now()
 	} else {
 		clusterErr, appErr = c.reconcileCluster()

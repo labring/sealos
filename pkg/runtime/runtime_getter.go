@@ -190,7 +190,7 @@ func (k *KubeadmRuntime) getImageLabels() map[string]string {
 }
 
 func (k *KubeadmRuntime) getSSHInterface() ssh.Interface {
-	return ssh.NewSSHClient(&k.Cluster.Spec.SSH, true)
+	return k.ClusterClient
 }
 
 func (k *KubeadmRuntime) getENVInterface() env.Interface {

@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/common"
+
 	"github.com/labring/sealos/controllers/pkg/database"
 
 	"github.com/labring/sealos/pkg/utils/flags"
@@ -20,7 +22,7 @@ import (
 
 type Config struct {
 	// mongodb connect url
-	MongoConnectURL string
+	MongoConnectURI string
 	MongoUsername   string
 	MongoPassword   string
 
@@ -77,11 +79,11 @@ func ResourcesMetering() {
 
 func PreApply() error {
 	switch {
-	case config.MongoConnectURL == "":
+	case config.MongoConnectURI == "":
 		return fmt.Errorf("mongo connect url is empty")
 	}
 	dbCtx := context.Background()
-	dbClient, err := database.NewMongoDB(dbCtx, config.MongoConnectURL)
+	dbClient, err := database.NewMongoDB(dbCtx, config.MongoConnectURI)
 	if err != nil {
 		return fmt.Errorf("connect mongo client failed: %v", err)
 	}
@@ -104,7 +106,7 @@ func PreApply() error {
 func executeTask() error {
 	//opts := options.Client().ApplyURI("mongodb://192.168.64.17:27017")
 	dbCtx := context.Background()
-	dbClient, err := database.NewMongoDB(dbCtx, config.MongoConnectURL)
+	dbClient, err := database.NewMongoDB(dbCtx, config.MongoConnectURI)
 	if err != nil {
 		return fmt.Errorf("connect mongo client failed: %v", err)
 	}
@@ -116,7 +118,11 @@ func executeTask() error {
 	}()
 	prices, err := dbClient.GetAllPricesMap()
 	if err != nil {
-		return fmt.Errorf("failed to get all prices map: %v", err)
+		logger.Error("failed to get all prices map: %v", err)
+	}
+	//prices is empty, use default price
+	if len(prices) == 0 || err != nil {
+		prices = common.DefaultPrices
 	}
 	now := time.Now().UTC()
 	startTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-1, 0, 0, 0, time.UTC)
@@ -189,7 +195,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&showPath, "show-path", false, "enable show code path")
 	rootCmd.AddCommand(newStartCmd())
 	config = &Config{
-		MongoConnectURL: os.Getenv(database.MongoURL),
+		MongoConnectURI: os.Getenv(database.MongoURI),
 		MongoUsername:   os.Getenv(database.MongoUsername),
 		MongoPassword:   os.Getenv(database.MongoPassword),
 	}

@@ -43,7 +43,7 @@ export default function CostChart({ data }: { data: BillingData['status']['deduc
         ['storage', formatMoney(storage).toFixed(2)],
         ['gpu', formatMoney(gpu).toFixed(2)]
       ] as const,
-    [cpu, memory, storage]
+    [cpu, memory, storage, gpu]
   );
   console.log('gpu', gpu);
   const amount = formatMoney(cpu + memory + storage + gpu);

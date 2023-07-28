@@ -18,6 +18,7 @@ package infra
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
 
@@ -48,9 +49,9 @@ func NewFakeInfra() *FakeInfra {
 
 func (f *FakeInfra) PreSetEnv() {
 	f.ImageName = settings.GetEnvWithDefault(settings.TestImageName, settings.DefaultTestImageName)
-	f.ImageTar = settings.GetEnvWithDefault(settings.TestImageTar, settings.DefaultTestImageTar)
-	f.PatchImageName = settings.GetEnvWithDefault(settings.TestPatchImageName, settings.DefaultPatchImageName)
-	f.PatchImageTar = settings.GetEnvWithDefault(settings.TestPatchImageTar, settings.DefaultPatchImageTar)
+	f.ImageTar = os.Getenv(settings.TestImageTar)
+	f.PatchImageTar = os.Getenv(settings.TestPatchImageTar)
+	f.PatchImageName = os.Getenv(settings.TestPatchImageName)
 	f.InfraDriver = settings.GetEnvWithDefault(settings.TestInfra, settings.DefaultInfraDriver)
 	f.TestDir = settings.GetEnvWithDefault(settings.TestDir, settings.DefaultTestDir)
 	f.ClusterName = settings.GetEnvWithDefault(settings.TestClusterName, settings.DefaultTestClusterName)

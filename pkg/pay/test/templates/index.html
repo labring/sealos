@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<!--
+ Copyright © 2023 sealos.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<html>
+<head>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+        #checkout-button {
+            font-size: 24px;
+            padding: 10px 20px;
+            color: #fff;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #checkout-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<button id="checkout-button"> Checkout </button>
+
+<script>
+    var stripe = Stripe('stripe_public_key'); // your Stripe public key
+
+    document.getElementById('checkout-button').addEventListener('click', function() {
+        // Call your backend service to create a Checkout Session
+        fetch('http://localhost:8080/create-checkout-session', {
+            method: 'POST',
+        })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(session) {
+                return stripe.redirectToCheckout({ sessionId: session.sessionId });
+            })
+            .then(function(result) {
+                // If redirectToCheckout fails, you can handle the error here
+                if (result.error) {
+                    console.error(result.error.message);
+                }
+            })
+            .catch(function(error) {
+                console.error('Error:', error);
+            });
+    });
+</script>
+
+</body>
+</html>

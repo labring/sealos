@@ -21,8 +21,10 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -66,6 +68,8 @@ const (
 	DEFAULTACCOUNTNAMESPACE     = "sealos-system"
 	AccountAnnotationNewAccount = "account.sealos.io/new-account"
 	NEWACCOUNTAMOUNTENV         = "NEW_ACCOUNT_AMOUNT"
+	RECHARGEGIFT                = "recharge-gift"
+	SEALOS                      = "sealos"
 )
 
 // AccountReconciler reconciles a Account object
@@ -85,6 +89,7 @@ type AccountReconciler struct {
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances/status,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 
 func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	//It should not stop the normal process for the failure to delete the payment
@@ -151,9 +156,18 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 		}()
 		now := time.Now().UTC()
-		payAmount := *orderResp.Amount.Total * 10000
 		//1¥ = 100WechatPayAmount; 1 WechatPayAmount = 10000 SealosAmount
-		err = crypto.RechargeBalance(account.Status.EncryptBalance, giveGift(payAmount))
+		payAmount := *orderResp.Amount.Total * 10000
+		// get recharge-gift configmap
+		configMap := &corev1.ConfigMap{}
+		if err := r.Client.Get(ctx, types.NamespacedName{Name: RECHARGEGIFT, Namespace: SEALOS}, configMap); err != nil {
+			r.Logger.Error(err, "get recharge-gift ConfigMap failed")
+		}
+		gift, err := giveGift(payAmount, configMap)
+		if err != nil {
+			r.Logger.Error(err, "get gift error")
+		}
+		err = crypto.RechargeBalance(account.Status.EncryptBalance, gift)
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("recharge encrypt balance failed: %v", err)
 		}
@@ -460,7 +474,7 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 	if r.AccountSystemNamespace == "" {
 		r.AccountSystemNamespace = DEFAULTACCOUNTNAMESPACE
 	}
-	if r.MongoDBURI = os.Getenv(database.MongoURL); r.MongoDBURI == "" {
+	if r.MongoDBURI = os.Getenv(database.MongoURI); r.MongoDBURI == "" {
 		return fmt.Errorf("mongo url is empty")
 	}
 	return ctrl.NewControllerManagedBy(mgr).
@@ -493,36 +507,30 @@ func (p *NamespaceFilterPredicate) Generic(e event.GenericEvent) bool {
 	return e.Object.GetNamespace() == p.Namespace
 }
 
-const (
-	BaseUnit         = 1_000_000
-	Threshold1       = 299 * BaseUnit
-	Threshold2       = 599 * BaseUnit
-	Threshold3       = 1999 * BaseUnit
-	Threshold4       = 4999 * BaseUnit
-	Threshold5       = 19999 * BaseUnit
-	Ratio0     int64 = 0
-	Ratio1     int64 = 10
-	Ratio2     int64 = 15
-	Ratio3     int64 = 20
-	Ratio4     int64 = 25
-	Ratio5     int64 = 30
-)
+const BaseUnit = 1_000_000
 
-func giveGift(amount int64) int64 {
-	var ratio int64
-	switch {
-	case amount < Threshold1:
-		ratio = Ratio0
-	case amount < Threshold2:
-		ratio = Ratio1
-	case amount < Threshold3:
-		ratio = Ratio2
-	case amount < Threshold4:
-		ratio = Ratio3
-	case amount < Threshold5:
-		ratio = Ratio4
-	default:
-		ratio = Ratio5
+func giveGift(amount int64, configMap *corev1.ConfigMap) (int64, error) {
+	if configMap.Data == nil {
+		return amount, fmt.Errorf("configMap's data is nil")
 	}
-	return (amount * ratio / 100) + amount
+	stepsStr := strings.Split(configMap.Data["steps"], ",")
+	ratiosStr := strings.Split(configMap.Data["ratios"], ",")
+
+	var ratio int64
+
+	for i, stepStr := range stepsStr {
+		step, err := strconv.ParseInt(stepStr, 10, 64)
+		if err != nil {
+			return amount, fmt.Errorf("steps format error :%s", err)
+		}
+		if amount >= step*BaseUnit {
+			ratio, err = strconv.ParseInt(ratiosStr[i], 10, 64)
+			if err != nil {
+				return amount, fmt.Errorf("ratios format error :%s", err)
+			}
+		} else {
+			break
+		}
+	}
+	return amount*ratio/100 + amount, nil
 }

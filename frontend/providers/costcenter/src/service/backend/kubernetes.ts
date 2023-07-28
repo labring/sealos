@@ -58,7 +58,7 @@ export type CRDMeta = {
   plural: string; // type
 };
 
-export async function GetCRD(kc: k8s.KubeConfig, meta: CRDMeta, name: string) {
+export async function GetCRD<T = any>(kc: k8s.KubeConfig, meta: CRDMeta, name: string) {
   return kc.makeApiClient(k8s.CustomObjectsApi).getNamespacedCustomObject(
     meta.group,
     meta.version,

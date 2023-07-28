@@ -1,0 +1,16 @@
+FROM scratch
+
+USER 65532:65532
+
+COPY registry registry
+COPY manifests manifests
+
+ENV canConnectToExternalNetwork "true"
+ENV enableMonitor "true"
+ENV CollectorURL "https://license.sealos.io/collector",
+ENV NotificationURL "https://license.sealos.io/notify",
+ENV RegisterURL "https://license.sealos.io/register",
+ENV CloudSyncURL "https://license.sealos.io/datasync",
+ENV LicenseMonitorURL "https://license.sealos.io/license"
+
+CMD ["kubectl apply -f manifests/customconfig.yaml -f manifests/deploy.yaml"]

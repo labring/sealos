@@ -16,6 +16,20 @@ limitations under the License.
 
 package processor
 
-import "errors"
+import (
+	"errors"
+	"strings"
+)
+
+const (
+	RunGuestFailed = "RunGuestFailed"
+)
+
+func IsRunGuestFailed(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.HasPrefix(err.Error(), RunGuestFailed)
+}
 
 var ErrCancelled = errors.New("cancelled")

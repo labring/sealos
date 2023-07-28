@@ -17,19 +17,19 @@ package runtime
 import (
 	"context"
 	"fmt"
-	str "strings"
+	"strings"
 	"time"
 
-	"github.com/labring/sealos/pkg/utils/yaml"
-
+	"github.com/Masterminds/semver/v3"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/versionutil"
+	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
 const (
-	upgradeApplyCmd = "kubeadm upgrade apply %s"
+	upgradeApplyCmd = "kubeadm upgrade apply --yes %s"
 	upradeNodeCmd   = "kubeadm upgrade node"
 	//drainNodeCmd    = "kubectl drain %s --ignore-daemonsets"
 	cordonNodeCmd   = "kubectl cordon %s"
@@ -67,7 +67,8 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 
 func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 	master0ip := k.getMaster0IP()
-	if versionutil.Compare(version, V1260) {
+	sver := semver.MustParse(version)
+	if gte(sver, V1260) {
 		if err := k.changeCRIVersion(master0ip); err != nil {
 			return err
 		}
@@ -77,7 +78,7 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 		return err
 	}
 	//default nodeName in k8s is the lower case of their hostname because of DNS protocol.
-	master0Name = str.ToLower(master0Name)
+	master0Name = strings.ToLower(master0Name)
 	kubeBinaryPath := k.getContentData().RootFSBinPath()
 	//assure the connection to api-server succeed before executing upgrade cmds
 	if err = k.pingAPIServer(); err != nil {
@@ -104,8 +105,9 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 }
 
 func (k *KubeadmRuntime) upgradeOtherNodes(ips []string, version string) error {
+	sver := semver.MustParse(version)
 	for _, ip := range ips {
-		if versionutil.Compare(version, V1260) {
+		if gte(sver, V1260) {
 			if err := k.changeCRIVersion(ip); err != nil {
 				return err
 			}
@@ -115,7 +117,7 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string, version string) error {
 			return err
 		}
 		//default nodeName in k8s is the lower case of their hostname because of DNS protocol.
-		nodename = str.ToLower(nodename)
+		nodename = strings.ToLower(nodename)
 		kubeBinaryPath := k.getContentData().RootFSBinPath()
 		//assure the connection to api-server succeed before executing upgrade cmds
 		if err = k.pingAPIServer(); err != nil {
@@ -158,38 +160,48 @@ func (k *KubeadmRuntime) autoUpdateConfig(version string) error {
 	}
 	logger.Debug("get cluster configmap data:\n%s", clusterCfg)
 	logger.Debug("get kubelet configmap data:\n%s", kubeletCfg)
-	allConfig := str.Join([]string{clusterCfg, kubeletCfg}, "\n---\n")
+	allConfig := strings.Join([]string{clusterCfg, kubeletCfg}, "\n---\n")
 	defaultKubeadmConfig, err := LoadKubeadmConfigs(allConfig, false, DecodeCRDFromString)
 	if err != nil {
-		logger.Info("decode cluster kubeadm config from kube failure : %s", err)
+		logger.Error("failed to decode cluster kubeadm config: %s", err)
 		return err
 	}
+	defaultKubeadmConfig.InitConfiguration = kubeadm.InitConfiguration{
+		TypeMeta: metaV1.TypeMeta{
+			APIVersion: defaultKubeadmConfig.ClusterConfiguration.APIVersion,
+		},
+	}
+
 	kk := &KubeadmRuntime{
 		KubeadmConfig: defaultKubeadmConfig,
 	}
 	kk.setKubeVersion(version)
 	kk.setFeatureGatesConfiguration()
-	newClusterData, err := yaml.MarshalYamlConfigs(&k.ClusterConfiguration)
+	if err = kk.convertKubeadmVersion(); err != nil {
+		return err
+	}
+
+	newClusterData, err := yaml.MarshalYamlConfigs(&kk.conversion.ClusterConfiguration)
 	if err != nil {
-		logger.Info("encode cluster kubeadm config to yaml failure : %s", err)
+		logger.Error("failed to encode ClusterConfiguration: %s", err)
 		return err
 	}
 	logger.Debug("update cluster config:\n%s", string(newClusterData))
 	err = k.getKubeExpansion().UpdateKubeadmConfig(ctx, string(newClusterData))
 	if err != nil {
-		logger.Info("update kubeadmConfig with k8s-client failure : %s", err)
+		logger.Error("failed to update kubeadm-config with k8s-client: %s", err)
 		return err
 	}
 
-	newKubeletData, err := yaml.MarshalYamlConfigs(&k.KubeletConfiguration)
+	newKubeletData, err := yaml.MarshalYamlConfigs(&kk.conversion.KubeletConfiguration)
 	if err != nil {
-		logger.Info("encode kubelet kubeadm config to yaml failure : %s", err)
+		logger.Error("failed to encode KubeletConfiguration: %s", err)
 		return err
 	}
 	logger.Debug("update kubelet config:\n%s", string(newKubeletData))
 	err = k.getKubeExpansion().UpdateKubeletConfig(ctx, string(newKubeletData))
 	if err != nil {
-		logger.Info("update kubelet with k8s-client failure : %s", err)
+		logger.Error("failed to update kubelet-config with k8s-client: %s", err)
 		return err
 	}
 

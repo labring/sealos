@@ -78,7 +78,11 @@ func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, erro
 
 func (c *CreateProcessor) Check(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline Check in CreateProcessor.")
-	return NewCheckError(checker.RunCheckList([]checker.Interface{checker.NewHostChecker()}, cluster, checker.PhasePre))
+	var ips []string
+	// the order doesn't matter
+	ips = append(ips, cluster.GetMasterIPAndPortList()...)
+	ips = append(ips, cluster.GetNodeIPAndPortList()...)
+	return NewCheckError(checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips)}, cluster, checker.PhasePre))
 }
 
 func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
@@ -158,7 +162,11 @@ func (c *CreateProcessor) Join(cluster *v2.Cluster) error {
 
 func (c *CreateProcessor) RunGuest(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline RunGuest in CreateProcessor.")
-	return c.Guest.Apply(cluster, cluster.Status.Mounts)
+	err := c.Guest.Apply(cluster, cluster.Status.Mounts)
+	if err != nil {
+		return fmt.Errorf("%s: %w", RunGuestFailed, err)
+	}
+	return nil
 }
 
 func NewCreateProcessor(name string, clusterFile clusterfile.Interface) (Interface, error) {
