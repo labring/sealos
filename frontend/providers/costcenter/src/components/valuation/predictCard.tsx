@@ -1,4 +1,5 @@
 import useBillingStore from '@/stores/billing';
+import useEnvStore from '@/stores/env';
 import { displayMoney } from '@/utils/format';
 import { Flex } from '@chakra-ui/react';
 import { useMemo } from 'react';
@@ -8,23 +9,29 @@ export default function PredictCard() {
   const { t } = useTranslation();
   const total = t('total');
   const state = useBillingStore();
-  const leastCost = useMemo(
-    () =>
-      [
-        { name: 'CPU', cost: state.cpu },
-        { name: 'Memory', cost: state.memory },
-        { name: 'Storage', cost: state.storage },
+  const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
+  const leastCost = useMemo(() => {
+    const origin = [
+      { name: 'CPU', cost: state.cpu },
+      { name: 'Memory', cost: state.memory },
+      { name: 'Storage', cost: state.storage }
+    ];
+    if (!gpuEnabled) {
+      origin.push({ name: total, cost: state.cpu + state.memory + state.storage });
+    } else {
+      origin.push(
         { name: 'GPU', cost: state.gpu },
-        { name: total, cost: state.cpu + state.memory + state.storage }
-      ].map((item) => ({
-        ...item,
-        cost: displayMoney(item.cost * 30)
-      })),
-    [state.cpu, state.memory, state.storage, total]
-  );
+        { name: total, cost: state.cpu + state.memory + state.storage + state.gpu }
+      );
+    }
+    return origin.map((item) => ({
+      ...item,
+      cost: displayMoney(item.cost * 30 * 24)
+    }));
+  }, [state.cpu, state.memory, state.storage, gpuEnabled, total]);
   return (
     <Flex borderX={'0.5px solid #DEE0E2'}>
-      {leastCost.map((item, idx) => (
+      {leastCost.map((item) => (
         <Flex
           key={item.name}
           flex={1}

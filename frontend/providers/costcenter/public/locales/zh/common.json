@@ -35,7 +35,7 @@
   "Type": "类型",
   "CPU": "CPU",
   "Memory": "内存",
-  "Local Disk": "本地硬盘",
+  "Storage": "本地硬盘",
   "Total Amount": "总金额",
   "Payment Result": "支付结果",
   "Payment Successful": "支付成功",
@@ -66,7 +66,6 @@
   "Transfer Success": "转账成功",
   "True Amount": "实际金额",
   "Get Code": "获取验证码",
-
   "orders": {
     "list": "订单列表",
     "invoiceAmount": "发票金额",
@@ -76,10 +75,10 @@
     "taxNumberValidation": "请输入有效的税务登记证号",
     "bankAccountValidation": "请输入有效的银行账号",
     "emailValidation": "请输入有效的邮箱地址",
-		"submit success": "提交成功",
-		"code success":"验证码已发送",
-		"code error":"验证码错误",
-		"submit fail":"提交失败",
+    "submit success": "提交成功",
+    "code success": "验证码已发送",
+    "code error": "验证码错误",
+    "submit fail": "提交失败",
     "details": {
       "invoiceTitle": {
         "name": "发票抬头",
@@ -120,8 +119,8 @@
         "placeholder": "填写邮箱"
       },
       "phone": {
-        "name": "电话",
-        "placeholder": "填写电话"
+        "name": "手机号码",
+        "placeholder": "填写手机号码"
       },
       "code": {
         "name": "验证码",

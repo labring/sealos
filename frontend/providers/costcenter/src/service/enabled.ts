@@ -8,3 +8,4 @@ export const enableInvoice = () =>
   !!process.env['ALI_SIGN_NAME'] &&
   !!process.env['ALI_TEMPLATE_CODE'] &&
   !!process.env['MONGODB_URI'];
+export const enabelGpu = () => !!process.env['GPU_ENABLED'];

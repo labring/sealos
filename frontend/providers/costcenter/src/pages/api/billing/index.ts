@@ -6,14 +6,38 @@ import { ApplyYaml } from '@/service/backend/kubernetes';
 import * as yaml from 'js-yaml';
 import crypto from 'crypto';
 import type { BillingData, BillingItem, BillingSpec, Costs, RawCosts } from '@/types/billing';
+const convertGpu = (_deduction?: RawCosts) =>
+  _deduction
+    ? Object.entries(_deduction).reduce<Costs>(
+        (pre, cur) => {
+          if (cur[0] === 'cpu') pre.cpu = cur[1];
+          else if (cur[0] === 'memory') pre.memory = cur[1];
+          else if (cur[0] === 'memory') pre.storage = cur[1];
+          else if (cur[0].startsWith('gpu-')) {
+            typeof pre.gpu === 'number' && (pre.gpu += cur[1]);
+          }
+          return pre;
+        },
+        {
+          cpu: 0,
+          memory: 0,
+          storage: 0,
+          gpu: 0
+        }
+      )
+    : {
+        cpu: 0,
+        memory: 0,
+        storage: 0,
+        gpu: 0
+      };
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
     const kc = await authSession(req.headers);
-
     // get user account payment amount
     const user = kc.getCurrentUser();
     if (user === null) {
-      return jsonRes(resp, { code: 401, message: 'user null' });
+      return jsonRes(resp, { code: 403, message: 'user null' });
     }
     const namespace = 'ns-' + user.name;
     // const body = req.body;
@@ -38,54 +62,31 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       namespace,
       plural: 'billingrecordqueries'
     };
-    await ApplyYaml(kc, yaml.dump(crdSchema));
-    await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000));
-    const { body } = (await GetCRD(kc, meta, name)) as { body: BillingData };
-    if (!('item' in (body as BillingData).status)) {
-      (body as BillingData).status.item = [];
-    }
-    const convertGpu = (_deduction?: RawCosts) =>
-      _deduction
-        ? Object.entries(_deduction).reduce<Costs>(
-            (pre, cur) => {
-              if (cur[0] === 'cpu') pre.cpu = cur[1];
-              else if (cur[0] === 'memory') pre.memory = cur[1];
-              else if (cur[0] === 'memory') pre.storage = cur[1];
-              else if (cur[0].startsWith('gpu-')) pre.gpu += cur[1];
-              return pre;
-            },
-            {
-              cpu: 0,
-              memory: 0,
-              storage: 0,
-              gpu: 0
-            }
-          )
-        : {
-            cpu: 0,
-            memory: 0,
-            storage: 0,
-            gpu: 0
-          };
-
-    const item =
-      body.status.item.map<BillingItem>((v) => ({
-        ...v,
-        costs: convertGpu(v.costs)
-      })) || [];
-    const deductionAmount = convertGpu(body?.status?.deductionAmount);
-    console.log(deductionAmount, item, body);
-    return jsonRes<BillingData>(resp, {
-      code: 200,
-      data: {
-        ...body,
-        status: {
-          ...body.status,
-          deductionAmount,
-          item
+    try {
+      await ApplyYaml(kc, yaml.dump(crdSchema));
+      await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000));
+    } finally {
+      const crd = (await GetCRD(kc, meta, name)) as { body: BillingData<RawCosts> };
+      const body = crd?.body;
+      if (!body || !body.status) throw new Error('get billing error');
+      const item =
+        body.status?.item?.map<BillingItem>((v) => ({
+          ...v,
+          costs: convertGpu(v?.costs)
+        })) || [];
+      const deductionAmount = convertGpu(crd?.body?.status?.deductionAmount);
+      return jsonRes<BillingData>(resp, {
+        code: 200,
+        data: {
+          ...body,
+          status: {
+            ...body.status,
+            deductionAmount,
+            item
+          }
         }
-      }
-    });
+      });
+    }
   } catch (error) {
     console.log(error);
     jsonRes(resp, { code: 500, message: 'get billing error' });

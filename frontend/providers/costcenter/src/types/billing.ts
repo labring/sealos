@@ -11,7 +11,12 @@ export type BillingSpec =
       orderID: string; //如果给定orderId，则查找该id的值，该值为唯一值，因此当orderId给定时忽略其他查找限定值
     };
 export type RawCosts = Record<'cpu' | 'memory' | 'storage' | `gpu-${string}`, number>;
-export type Costs = Record<'cpu' | 'memory' | 'storage' | `gpu`, number>;
+export type Costs = {
+  cpu: number;
+  memory: number;
+  storage: number;
+  gpu?: number;
+};
 export type BillingItem<T = Costs> = {
   amount: number;
   costs: T;

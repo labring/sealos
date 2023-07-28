@@ -27,17 +27,11 @@ type OverviewState = {
   selectedWeek: number;
   balance: number;
   source: any[][];
-  cpu: number;
-  storage: number;
-  memory: number;
   startTime: Date;
   endTime: Date;
   preItems: BillingItem[];
   items: BillingItem[];
   reCharge: boolean;
-  setMonth: (month: number) => void;
-  setYear: (year: number) => void;
-  setWeek: (week: number) => void;
   setStartTime: (time: Date) => void;
   setEndTime: (time: Date) => void;
   setSource: (source: any[][]) => void;
@@ -54,18 +48,12 @@ const useOverviewStore = create<OverviewState>()(
       selectedWeek: NOW_WEEK,
       reCharge: false,
       balance: 0,
-      cpu: -1,
-      storage: -1,
-      memory: -1,
       startTime: START_TIME,
       endTime: END_TIME,
       preItems: [],
       items: [],
       source: INITAL_SOURCE as any,
       setRecharge: (reCharge) => set({ reCharge }),
-      setWeek: (week) => set({ selectedWeek: week }),
-      setMonth: (month) => set({ selectedMonth: month }),
-      setYear: (year) => set({ selectedYear: year }),
       setSource: (source) => set({ source: source }),
       setStartTime: (time) => set({ startTime: time }),
       setEndTime: (time) => set({ endTime: time }),
@@ -89,23 +77,15 @@ const useOverviewStore = create<OverviewState>()(
           method: 'POST',
           data: { spec }
         });
-
         set((state) => {
           state.source = INITAL_SOURCE as any;
           state.items = [];
           state.preItems = [];
-          state.cpu = 0;
-          state.storage = 0;
-          state.memory = 0;
         });
         if (data.status.pageLength === 0) {
           return;
         }
         set((state) => {
-          const deductionAmount = data.status.deductionAmount;
-          state.cpu = deductionAmount.cpu;
-          state.storage = deductionAmount.storage;
-          state.memory = deductionAmount.memory;
           state.items = data.status.item;
           // 扣费source
           state.source.push(
@@ -131,7 +111,6 @@ const useOverviewStore = create<OverviewState>()(
                   }
                 }
                 pre.push(cur);
-
                 return pre;
               }, [])
               .map((x) => [

@@ -186,13 +186,13 @@ function InvoicdForm({
       {
         name: t('orders.details.address.name'),
         placeholder: t('orders.details.address.placeholder'),
-        isRequired: false,
+        isRequired: true,
         value: ''
       },
       {
         name: t('orders.details.phone.name'),
         placeholder: t('orders.details.phone.placeholder'),
-        isRequired: false,
+        isRequired: true,
         value: ''
       },
       {
@@ -210,14 +210,14 @@ function InvoicdForm({
         value: ''
       },
       {
-        name: t('orders.contract.email.name'),
-        placeholder: t('orders.contract.email.placeholder'),
+        name: t('orders.contract.phone.name'),
+        placeholder: t('orders.contract.phone.placeholder'),
         isRequired: true,
         value: ''
       },
       {
-        name: t('orders.contract.phone.name'),
-        placeholder: t('orders.contract.phone.placeholder'),
+        name: t('orders.contract.email.name'),
+        placeholder: t('orders.contract.email.placeholder'),
         isRequired: true,
         value: ''
       },
@@ -336,6 +336,7 @@ function InvoicdForm({
           }
         }
       );
+
       totast({
         title: t('orders.submit success'),
         status: 'success',

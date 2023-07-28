@@ -1,4 +1,4 @@
-import { InvoiceTableHeaders, TableHeaders } from '@/constants/billing';
+import { InvoiceTableHeaders } from '@/constants/billing';
 import { Checkbox, Flex, Table, TableContainer, Tbody, Td, Th, Thead, Tr } from '@chakra-ui/react';
 import { format } from 'date-fns';
 import { useTranslation } from 'next-i18next';

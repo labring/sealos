@@ -9,7 +9,7 @@ import useBillingData from '@/hooks/useBillingData';
 
 export function Buget() {
   const { t } = useTranslation();
-  const { data, isInitialLoading } = useBillingData();
+  const { data } = useBillingData();
   const [_out, _in] = useMemo(
     () =>
       (data?.data?.status.item || []).reduce<[number, number]>(

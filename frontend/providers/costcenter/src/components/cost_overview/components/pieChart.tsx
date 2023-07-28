@@ -9,6 +9,7 @@ import { useMemo } from 'react';
 import { useBreakpointValue } from '@chakra-ui/react';
 import { BillingData } from '@/types/billing';
 import { useTranslation } from 'next-i18next';
+import useEnvStore from '@/stores/env';
 
 echarts.use([
   TooltipComponent,
@@ -22,6 +23,7 @@ echarts.use([
 export default function CostChart({ data }: { data: BillingData['status']['deductionAmount'] }) {
   const { t } = useTranslation();
   const { cpu = 0, memory = 0, storage = 0, gpu = 0 } = data;
+  const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
   const radius = useBreakpointValue({
     xl: ['45%', '70%'],
     lg: ['45%', '70%'],
@@ -35,17 +37,15 @@ export default function CostChart({ data }: { data: BillingData['status']['deduc
     sm: '5/4'
   });
   const source = useMemo(
-    () =>
-      [
-        ['name', 'cost'],
-        ['cpu', formatMoney(cpu).toFixed(2)],
-        ['memory', formatMoney(memory).toFixed(2)],
-        ['storage', formatMoney(storage).toFixed(2)],
-        ['gpu', formatMoney(gpu).toFixed(2)]
-      ] as const,
-    [cpu, memory, storage, gpu]
+    () => [
+      ['name', 'cost'],
+      ['cpu', formatMoney(cpu).toFixed(2)],
+      ['memory', formatMoney(memory).toFixed(2)],
+      ['storage', formatMoney(storage).toFixed(2)],
+      ...(gpuEnabled ? [['gpu', formatMoney(gpu).toFixed(2)]] : [])
+    ],
+    [cpu, memory, storage, gpu, gpuEnabled]
   );
-  console.log('gpu', gpu);
   const amount = formatMoney(cpu + memory + storage + gpu);
   const publicOption = {
     name: 'Cost Form',

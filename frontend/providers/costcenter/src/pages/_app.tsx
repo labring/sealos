@@ -73,6 +73,7 @@ const App = ({ Component, pageProps }: AppProps) => {
         state.setInvoiceEnabled(!!data?.invoiceEnabled);
         state.setTransferEnabled(!!data?.transferEnabled);
         state.setRechargeEnabled(!!data?.rechargeEnabled);
+        state.setGpuEnabled(!!data?.gpuEnabled);
       } catch (error) {
         console.error('get env error');
       }

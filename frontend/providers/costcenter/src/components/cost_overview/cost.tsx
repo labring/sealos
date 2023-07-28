@@ -11,28 +11,12 @@ export const Cost = memo(function Cost() {
   const { t } = useTranslation();
   const { data, isInitialLoading } = useBillingData();
   const _deduction = data?.data?.status.deductionAmount;
-  const deductionAmount = _deduction
-    ? Object.entries(_deduction).reduce(
-        (pre, cur) => {
-          if (cur[0] === 'cpu') pre.cpu = cur[1];
-          else if (cur[0] === 'memory') pre.memory = cur[1];
-          else if (cur[0] === 'memory') pre.storage = cur[1];
-          else if (cur[0].startsWith('gpu-')) pre.gpu += cur[1];
-          return pre;
-        },
-        {
-          cpu: 0,
-          memory: 0,
-          storage: 0,
-          gpu: 0
-        }
-      )
-    : {
-        cpu: 0,
-        memory: 0,
-        storage: 0,
-        gpu: 0
-      };
+  const deductionAmount = {
+    cpu: _deduction?.cpu || 0,
+    memory: _deduction?.memory || 0,
+    storage: _deduction?.storage || 0,
+    gpu: _deduction?.gpu || 0
+  };
   return (
     <Flex direction={'column'} flex={1}>
       <Flex alignItems={'center'} justify={'space-between'}>

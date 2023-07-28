@@ -14,6 +14,7 @@ import { CYCLE } from '@/constants/valuation';
 import OuterLink from '@/components/outerLink';
 import NotFound from '@/components/notFound';
 import PredictCard from '@/components/valuation/predictCard';
+import useEnvStore from '@/stores/env';
 type CardItem = {
   title: string;
   price: number[];
@@ -43,7 +44,7 @@ function ValuationCard(props: any) {
 function Valuation() {
   const { t, i18n } = useTranslation();
   const cookie = getCookie('NEXT_LOCALE');
-
+  const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
   useEffect(() => {
     i18n.changeLanguage(cookie);
   }, [cookie, i18n]);
@@ -66,17 +67,19 @@ function Valuation() {
       })
       ?.sort((a, b) => a.idx - b.idx) || [];
   const gpuProps = valuationMap.get('gpu')!;
-  const gpuData =
-    _data?.data?.billingRecords
-      ?.filter((x) => x.resourceType.startsWith('gpu-'))
-      ?.map((x) => {
-        const name = x.resourceType.replace('gpu-', '').replace('_', ' ');
-        const price = (x.price * (gpuProps.scale || 1)) / 1000000;
-        return {
-          name,
-          price
-        };
-      }) || [];
+  const gpuData = gpuEnabled
+    ? _data?.data?.billingRecords
+        ?.filter((x) => x.resourceType.startsWith('gpu-'))
+        ?.map((x) => {
+          const name = x.resourceType.replace('gpu-', '').replace('_', ' ');
+          const price = (x.price * (gpuProps.scale || 1)) / 1000000;
+          return {
+            name,
+            price
+          };
+        })
+        ?.sort((a, b) => (a.name > b.name ? 1 : -1)) || []
+    : [];
   return (
     <Flex
       w="100%"
@@ -84,7 +87,7 @@ function Valuation() {
       bg={'white'}
       flexDirection="column"
       alignItems="center"
-      // p={'24px'}
+      p={'24px'}
       overflowY={'auto'}
     >
       <Flex alignSelf={'flex-start'} mb="80px" align={'center'}>
@@ -128,7 +131,7 @@ function Valuation() {
                   </Box>
                 </ValuationCard>
               ))}
-              {gpuData.length > 0 && (
+              {gpuEnabled && gpuData.length > 0 && (
                 <ValuationCard>
                   <Flex align={'center'}>
                     <Box borderRadius="2px" bg={gpuProps.bg} w={'16px'} h={'16px'} mr={'8px'}></Box>
