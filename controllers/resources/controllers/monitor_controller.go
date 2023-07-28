@@ -99,6 +99,7 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get node gpu model: %v", err)
 	}
+	r.Logger.Info("get gpu model", "gpu model", r.NvidiaGpu)
 	r.startPeriodicReconcile()
 	return r, nil
 }
@@ -292,9 +293,9 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient datab
 	}
 	for _, pod := range podList.Items {
 		// TODO pending status need skip?
-		if pod.Status.Phase != corev1.PodRunning /*&& pod.Status.Phase != corev1.PodPending*/ {
-			continue
-		}
+		//if pod.Status.Phase != corev1.PodRunning /*&& pod.Status.Phase != corev1.PodPending*/ {
+		//	continue
+		//}
 		for _, container := range pod.Spec.Containers {
 			if cpuRequest, ok := container.Resources.Limits[corev1.ResourceCPU]; ok {
 				rs[corev1.ResourceCPU].Add(cpuRequest)
@@ -322,6 +323,10 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient datab
 						continue
 					}
 				}
+				if _, ok := rs[common.NewGpuResource(gpuModel.GpuInfo.GpuProduct)]; !ok {
+					rs[common.NewGpuResource(gpuModel.GpuInfo.GpuProduct)] = initGpuResources()
+				}
+				logger.Info("gpu request", "pod", pod.Name, "namespace", pod.Namespace, "gpu req", gpuRequest.String(), "node", pod.Spec.NodeName, "gpu model", gpuModel.GpuInfo.GpuProduct)
 				rs[common.NewGpuResource(gpuModel.GpuInfo.GpuProduct)].Add(gpuRequest)
 			}
 		}
@@ -368,11 +373,15 @@ func getResourceValue(resourceName corev1.ResourceName, res map[corev1.ResourceN
 
 func initResources() (rs map[corev1.ResourceName]*quantity) {
 	rs = make(map[corev1.ResourceName]*quantity)
-	rs[common.ResourceGPU] = &quantity{Quantity: resource.NewQuantity(0, resource.DecimalSI), detail: ""}
+	rs[common.ResourceGPU] = initGpuResources()
 	rs[corev1.ResourceCPU] = &quantity{Quantity: resource.NewQuantity(0, resource.DecimalSI), detail: ""}
 	rs[corev1.ResourceMemory] = &quantity{Quantity: resource.NewQuantity(0, resource.BinarySI), detail: ""}
 	rs[corev1.ResourceStorage] = &quantity{Quantity: resource.NewQuantity(0, resource.BinarySI), detail: ""}
 	return
+}
+
+func initGpuResources() *quantity {
+	return &quantity{Quantity: resource.NewQuantity(0, resource.DecimalSI), detail: ""}
 }
 
 func (r *MonitorReconciler) infraResourceUsage(ctx context.Context, dbClient database.Interface, namespace *corev1.Namespace) error {
