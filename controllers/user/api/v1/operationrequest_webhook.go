@@ -19,6 +19,7 @@ package v1
 import (
 	"context"
 	"errors"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,7 +46,7 @@ type ReqMutator struct {
 	client.Client
 }
 
-func (r ReqMutator) Default(ctx context.Context, obj runtime.Object) error {
+func (r ReqMutator) Default(_ context.Context, obj runtime.Object) error {
 	req, ok := obj.(*Operationrequest)
 	if !ok {
 		return errors.New("obj convert Operationrequest is error")
@@ -70,6 +71,8 @@ func (r ReqValidator) ValidateCreate(ctx context.Context, obj runtime.Object) er
 		return errors.New("obj convert Operationrequest is error")
 	}
 
+	// todo check request, _ := admission.RequestFromContext(ctx), request.UserInfo.Username if legal
+
 	// list all requests in the same namespace with a same owner
 	var reqList OperationrequestList
 	err := r.List(ctx, &reqList, client.InNamespace(req.Namespace), client.MatchingLabels{UserLabelOwnerKey: req.Spec.User})
@@ -87,7 +90,8 @@ func (r ReqValidator) ValidateCreate(ctx context.Context, obj runtime.Object) er
 	return nil
 }
 
-func (r ReqValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+func (r ReqValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) error {
+	// todo check request, _ := admission.RequestFromContext(ctx), request.UserInfo.Username if legal
 	oldReq, ok := oldObj.(*Operationrequest)
 	if !ok {
 		return errors.New("obj convert Operationrequest error")
@@ -102,6 +106,6 @@ func (r ReqValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime
 	return nil
 }
 
-func (r ReqValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+func (r ReqValidator) ValidateDelete(_ context.Context, _ runtime.Object) error {
 	return nil
 }

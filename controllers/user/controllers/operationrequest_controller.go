@@ -100,20 +100,22 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 
 	// delete OperationRequest first if its status is isCompleted and exist for retention time
 	if r.isRetained(request) {
-		return r.deleteOperationRequest(ctx, request)
+		if err := r.deleteOperationRequest(ctx, request); err != nil {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
 	}
-	// delete OperationRequest if its status is isCompleted and didn't exist for retention time
+	// return early if its status is isCompleted and didn't exist for retention time
 	if r.isCompleted(request) {
 		return ctrl.Result{RequeueAfter: OperationReqRequeueDuration}, nil
 	}
-	// todo change OperationRequest status to failed if it is expired
-	//if r.isExpired(request) {
-	//	err := r.updateOperationRequestStatus(ctx, request, userv1.RequestFailed)
-	//	if err != nil {
-	//		return ctrl.Result{}, err
-	//	}
-	//	return ctrl.Result{RequeueAfter: OperationReqRequeueDuration}, nil
-	//}
+	// change OperationRequest status to failed if it is expired
+	if r.isExpired(request) {
+		if err := r.updateOperationRequestStatus(ctx, request, userv1.RequestFailed); err != nil {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	}
 
 	// update OperationRequest status to processing
 	err := r.updateOperationRequestStatus(ctx, request, userv1.RequestProcessing)
@@ -161,23 +163,13 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 	return ctrl.Result{RequeueAfter: OperationReqRequeueDuration}, nil
 }
 
+// isRetained returns true if the request is isCompleted and exist for retention time
 func (r *OperationReqReconciler) isRetained(request *userv1.Operationrequest) bool {
 	if request.Status.Phase == userv1.RequestCompleted && request.CreationTimestamp.Add(r.retentionTime).Before(time.Now()) {
 		r.Logger.Info("operation request is isCompleted and retained", "name", request.Name)
 		return true
 	}
 	return false
-}
-
-func (r *OperationReqReconciler) deleteOperationRequest(ctx context.Context, request *userv1.Operationrequest) (ctrl.Result, error) {
-	r.Logger.V(1).Info("deleting OperationRequest", "request", request)
-	if err := r.Delete(ctx, request); client.IgnoreNotFound(err) != nil {
-		r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to delete OperationRequest", "Failed to delete OperationRequest %s/%s", request.Namespace, request.Name)
-		r.Logger.Error(err, "Failed to delete OperationRequest", getLog(request)...)
-		return ctrl.Result{}, fmt.Errorf("failed to delete OperationRequest %s/%s: %w", request.Namespace, request.Name, err)
-	}
-	r.Logger.V(1).Info("delete OperationRequest success", getLog(request)...)
-	return ctrl.Result{}, nil
 }
 
 // isCompleted returns true if the request is isCompleted
@@ -187,11 +179,22 @@ func (r *OperationReqReconciler) isCompleted(request *userv1.Operationrequest) b
 
 // isExpired returns true if the request is expired
 func (r *OperationReqReconciler) isExpired(request *userv1.Operationrequest) bool {
-	if request.CreationTimestamp.Add(r.expirationTime).Before(time.Now()) {
+	if request.Status.Phase != userv1.RequestCompleted && request.CreationTimestamp.Add(r.expirationTime).Before(time.Now()) {
 		r.Logger.Info("operation request is expired", "name", request.Name)
 		return true
 	}
 	return false
+}
+
+func (r *OperationReqReconciler) deleteOperationRequest(ctx context.Context, request *userv1.Operationrequest) error {
+	r.Logger.V(1).Info("deleting OperationRequest", "request", request)
+	if err := r.Delete(ctx, request); client.IgnoreNotFound(err) != nil {
+		r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to delete OperationRequest", "Failed to delete OperationRequest %s/%s", request.Namespace, request.Name)
+		r.Logger.Error(err, "Failed to delete OperationRequest", getLog(request)...)
+		return fmt.Errorf("failed to delete OperationRequest %s/%s: %w", request.Namespace, request.Name, err)
+	}
+	r.Logger.V(1).Info("delete OperationRequest success", getLog(request)...)
+	return nil
 }
 
 func (r *OperationReqReconciler) updateOperationRequestStatus(ctx context.Context, request *userv1.Operationrequest, phase userv1.RequestPhase) error {
@@ -212,6 +215,9 @@ func conventRequestToRolebinding(request *userv1.Operationrequest) *rbacv1.RoleB
 			Namespace: request.Namespace,
 			Annotations: map[string]string{
 				userAnnotationOwnerKey: request.Spec.User,
+			},
+			Labels: map[string]string{
+				userLabelOwnerKey: request.Spec.User,
 			},
 		},
 		Subjects: []rbacv1.Subject{
