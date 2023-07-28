@@ -72,7 +72,7 @@ const (
 	SEALOS                      = "sealos"
 )
 
-// AccountReconciler reconciles a Account object
+// AccountReconciler reconciles an Account object
 type AccountReconciler struct {
 	client.Client
 	Scheme                 *runtime.Scheme
@@ -127,7 +127,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if payment.Status.TradeNO == "" {
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Millisecond * 300}, nil
 	}
-	if payment.Status.Status == pay.StatusSuccess {
+	if payment.Status.Status == string(pay.PaymentSuccess) {
 		return ctrl.Result{}, nil
 	}
 
@@ -136,13 +136,20 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, fmt.Errorf("get account failed: %v", err)
 	}
 
-	orderResp, err := pay.QueryOrder(payment.Status.TradeNO)
+	// get payment handler
+	payHandler, err := pay.NewPayHandler(payment.Spec.PaymentMethod)
+	if err != nil {
+		r.Logger.Error(err, "get payment handler failed: %s", err)
+		return ctrl.Result{}, err
+	}
+	// get payment details(status, amount)
+	status, orderAmount, err := payHandler.GetPaymentDetails(payment.Status.TradeNO)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("query order failed: %v", err)
 	}
-	r.Logger.V(1).Info("query order status", "orderResp", orderResp)
-	switch *orderResp.TradeState {
-	case pay.StatusSuccess:
+	r.Logger.V(1).Info("query order details", "orderStatus", status, "orderAmount", orderAmount)
+	switch status {
+	case pay.PaymentSuccess:
 		dbCtx := context.Background()
 		dbClient, err := database.NewMongoDB(dbCtx, r.MongoDBURI)
 		if err != nil {
@@ -157,7 +164,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}()
 		now := time.Now().UTC()
 		//1¥ = 100WechatPayAmount; 1 WechatPayAmount = 10000 SealosAmount
-		payAmount := *orderResp.Amount.Total * 10000
+		payAmount := orderAmount * 10000
 		// get recharge-gift configmap
 		configMap := &corev1.ConfigMap{}
 		if err := r.Client.Get(ctx, types.NamespacedName{Name: RECHARGEGIFT, Namespace: SEALOS}, configMap); err != nil {
@@ -174,7 +181,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if err := r.updateAccountStatus(ctx, account); err != nil {
 			return ctrl.Result{}, fmt.Errorf("update account failed: %v", err)
 		}
-		payment.Status.Status = pay.StatusSuccess
+		payment.Status.Status = string(pay.PaymentSuccess)
 		if err := r.Status().Update(ctx, payment); err != nil {
 			return ctrl.Result{}, fmt.Errorf("update payment failed: %v", err)
 		}
@@ -196,15 +203,15 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			r.Logger.Error(err, "save billings failed", "id", id, "payment", payment)
 			return ctrl.Result{}, nil
 		}
-	case pay.StatusProcessing, pay.StatusNotPay:
+	case pay.PaymentProcessing, pay.PaymentNotPaid:
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, nil
-	case pay.StatusFail:
+	case pay.PaymentFailed, pay.PaymentExpired:
 		if err := r.Delete(ctx, payment); err != nil {
 			return ctrl.Result{}, fmt.Errorf("delete payment failed: %v", err)
 		}
 		return ctrl.Result{}, nil
 	default:
-		return ctrl.Result{}, fmt.Errorf("unknown orderResp: %v", orderResp)
+		return ctrl.Result{}, fmt.Errorf("unknown status: %v", err)
 	}
 
 	return ctrl.Result{}, nil
@@ -355,8 +362,21 @@ func (r *AccountReconciler) DeletePayment(ctx context.Context) error {
 		return err
 	}
 	for _, payment := range payments.Items {
+		//get payment handler
+		payHandler, err := pay.NewPayHandler(payment.Spec.PaymentMethod)
+		if err != nil {
+			r.Logger.Error(err, "get payment handler failed: %s", err)
+			return err
+		}
+		//expire session if it is necessary
+		err = payHandler.ExpireSession(payment.Status.TradeNO)
+		if err != nil {
+			r.Logger.Error(err, "cancel payment failed: %s", err)
+			return err
+		}
+		//delete payment if it is exist for more than 5 minutes
 		if time.Since(payment.CreationTimestamp.Time) > time.Minute*5 {
-			err = r.Delete(ctx, &payment)
+			err := r.Delete(ctx, &payment)
 			if err != nil {
 				return err
 			}
