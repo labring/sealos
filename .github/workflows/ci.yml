@@ -24,6 +24,7 @@ on:
       - "service/**"
       - "webhooks/**"
       - "frontend/**"
+      - "deploy/cloud/manifests/free-license.yaml"
   pull_request:
     branches: [ "*" ]
     paths-ignore:

@@ -56,6 +56,22 @@ function sealos_run_controller {
   --env enableMonitor="true" 
 }
 
+function sealos_authorize {
+  echo "start to authorize sealos"
+
+  echo "create admin-user"
+  # create admin-user
+  kubectl apply -f manifests/admin-user.yaml
+  
+  # wait for admin-user ready
+  echo "waiting for admin-user generated"
+  sleep 3
+
+  # issue license for admin-user
+  echo "license issue for admin-user"
+  kubectl apply -f manifests/free-license.yaml
+}
+
 function gen_mongodbUri() {
   # if mongodbUri is empty then create mongodb and gen mongodb uri
   if [ -z "$mongodbUri" ]; then
@@ -124,14 +140,6 @@ function install {
   # apply notifications crd
   kubectl apply -f manifests/notifications_crd.yaml
 
-  # apply admin user
-  kubectl apply -f manifests/admin-user.yaml
-  # ensure admin namespace and admin account created
-  sleep 5
-
-  # apply free license for admin
-  kubectl apply -f manifests/free-license.yaml
-
   # create tls secret
   create_tls_secret $cloudDomain
 
@@ -140,6 +148,9 @@ function install {
 
   # sealos run controllers
   sealos_run_controller
+
+  # sealos authorize
+  sealos_authorize
 
   # sealos run frontends
   sealos_run_frontend
