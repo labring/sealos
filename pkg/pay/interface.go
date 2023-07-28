@@ -62,11 +62,11 @@ func (w WechatPayment) GetPaymentDetails(sessionID string) (PaymentStatus, int64
 	}
 }
 
-func (w WechatPayment) ExpireSession(payment string) error {
+func (w WechatPayment) ExpireSession(_ string) error {
 	return nil
 }
 
-func (s StripePayment) CreatePayment(amount int64, user string) (string, string, error) {
+func (s StripePayment) CreatePayment(amount int64, _ string) (string, string, error) {
 	session, err := CreateCheckoutSession(amount, CNY, SuccessURL, CancelURL)
 	if err != nil {
 		return "", "", err
