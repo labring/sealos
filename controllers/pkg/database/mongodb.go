@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"strings"
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/crypto"
@@ -197,7 +196,7 @@ func (m *MongoDB) GetAllPricesMap() (map[string]common.Price, error) {
 		if err != nil {
 			return nil, fmt.Errorf("decrypt price error: %v", err)
 		}
-		pricesMap[strings.ToLower(prices[i].Property)] = common.Price{
+		pricesMap[prices[i].Property] = common.Price{
 			Price:    price,
 			Detail:   prices[i].Detail,
 			Property: prices[i].Property,
