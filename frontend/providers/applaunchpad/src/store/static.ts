@@ -22,8 +22,6 @@ let retryGetPrice = 3;
 export const getUserPrice = async () => {
   try {
     const res = await getResourcePrice();
-    console.log(res);
-
     SOURCE_PRICE = res;
     console.log(res);
   } catch (err) {

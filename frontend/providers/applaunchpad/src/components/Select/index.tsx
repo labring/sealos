@@ -47,10 +47,7 @@ const MySelect = (
     }
   });
 
-  const activeMenu = useMemo(
-    () => list.find((item) => item.value === value) || list[0],
-    [list, value]
-  );
+  const activeMenu = useMemo(() => list.find((item) => item.value === value), [list, value]);
 
   return (
     <Menu autoSelect={false} isOpen={isOpen} onOpen={onOpen} onClose={onClose}>
@@ -80,8 +77,16 @@ const MySelect = (
             : {})}
           {...props}
         >
-          {!!activeMenu.icon && <MyIcon mr={2} name={activeMenu.icon} w={'18px'} />}
-          <Box>{activeMenu.label || placeholder}</Box>
+          {activeMenu ? (
+            <>
+              {!!activeMenu.icon && <MyIcon mr={2} name={activeMenu.icon} w={'18px'} />}
+              <Box>{activeMenu.label}</Box>
+            </>
+          ) : (
+            <>
+              <Box>{placeholder}</Box>
+            </>
+          )}
 
           <Box flex={1} />
           <ChevronDownIcon />

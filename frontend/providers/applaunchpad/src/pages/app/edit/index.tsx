@@ -241,6 +241,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               already={already}
               defaultStorePathList={defaultStorePathList}
               pxVal={pxVal}
+              refresh={forceUpdate}
             />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />

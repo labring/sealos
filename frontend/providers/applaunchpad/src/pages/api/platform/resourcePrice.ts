@@ -4,6 +4,17 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { authSession } from '@/services/backend/auth';
 
+const MOCK = {
+  cpu: 10,
+  memory: 10,
+  storage: 10,
+  gpu: [
+    { type: 'Navida 4090', price: 30, vm: 3, inventory: 0 },
+    { type: 'Navida 4060', price: 20, vm: 4, inventory: 4 },
+    { type: 'Navida 4050', price: 10, vm: 8, inventory: 8 }
+  ]
+};
+
 export type Response = {
   cpu: number;
   memory: number;
@@ -81,7 +92,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data
     });
   } catch (error) {
-    console.log(error);
+    jsonRes<Response>(res, {
+      data: MOCK
+    });
     jsonRes(res, { code: 500, message: 'get price error' });
   }
 }

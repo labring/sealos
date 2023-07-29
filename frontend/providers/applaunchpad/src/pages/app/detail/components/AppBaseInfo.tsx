@@ -38,6 +38,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
         label: string;
         value?: string;
         copy?: string;
+        render?: React.ReactNode;
       }[];
     }[]
   >(
@@ -55,7 +56,31 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           {
             label: 'Limit Memory',
             value: printMemory(app.memory)
-          }
+          },
+          ...(app.gpu?.use
+            ? [
+                {
+                  label: 'Gpu',
+                  render: (
+                    <Flex whiteSpace={'nowrap'}>
+                      <MyIcon name={'nvidia'} w={'16px'} mr={2} />
+                      {app.gpu && (
+                        <>
+                          <Box>{app.gpu.type}</Box>
+                          <Box mx={1} color={'myGray.400'}>
+                            /
+                          </Box>
+                        </>
+                      )}
+                      <Box>
+                        {app.gpu?.amount}
+                        {t('Card')}
+                      </Box>
+                    </Flex>
+                  )
+                }
+              ]
+            : [])
         ]
       },
       {
@@ -144,7 +169,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                       cursor={!!item.copy ? 'pointer' : 'default'}
                       onClick={() => item.value && !!item.copy && copyData(item.copy)}
                     >
-                      {item.value}
+                      {item.render ? item.render : item.value}
                     </Box>
                   </Tooltip>
                 </Box>

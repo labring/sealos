@@ -137,5 +137,6 @@
   "Can not change storage path": "Can not change storage path",
   "Perday": "Perday",
   "Submit Error": "Submit Error",
-  "Env Placeholder": "Can be colon or equal sign, delimited by newline. For example :\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n-env1 =test"
+  "Env Placeholder": "Can be colon or equal sign, delimited by newline. For example :\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n-env1 =test",
+  "GPU Amount": "GPU"
 }

@@ -53,7 +53,8 @@ export const defaultEditVal: AppEditType = {
   storeList: [],
   gpu: {
     use: false,
-    type: '4090',
+    manufacturers: 'nvidia',
+    type: '',
     amount: 1
   }
 };

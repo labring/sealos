@@ -51,12 +51,14 @@ const Form = ({
   formHook,
   already,
   defaultStorePathList,
-  pxVal
+  pxVal,
+  refresh
 }: {
   formHook: UseFormReturn<AppEditType, any>;
   already: boolean;
   defaultStorePathList: string[];
   pxVal: number;
+  refresh: boolean;
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
@@ -93,44 +95,55 @@ const Form = ({
     name: 'storeList'
   });
 
-  const navList = [
-    {
-      id: 'baseInfo',
-      label: 'Basic Config',
-      icon: 'formInfo',
-      isSetting:
-        getValues('appName') &&
-        getValues('imageName') &&
-        (getValues('secret.use')
-          ? getValues('secret.username') &&
-            getValues('secret.password') &&
-            getValues('secret.serverAddress')
-          : true)
-    },
-    {
-      id: 'deployMode',
-      label: 'Deployment Mode',
-      icon: 'deployMode',
-      isSetting: getValues('hpa.use') ? !!getValues('hpa.value') : !!getValues('replicas')
-    },
-    {
-      id: 'network',
-      label: 'Network Configuration',
-      icon: 'network',
-      isSetting: !!getValues('containerOutPort')
-    },
-    {
-      id: 'settings',
-      label: 'Advanced Configuration',
-      icon: 'settings',
-      isSetting:
-        getValues('runCMD') ||
-        getValues('cmdParam') ||
-        getValues('envs').length > 0 ||
-        getValues('configMapList').length > 0 ||
-        getValues('storeList').length > 0
-    }
-  ];
+  const navList = useMemo(
+    () => [
+      {
+        id: 'baseInfo',
+        label: 'Basic Config',
+        icon: 'formInfo',
+        isSetting:
+          getValues('appName') &&
+          getValues('imageName') &&
+          (getValues('secret.use')
+            ? getValues('secret.username') &&
+              getValues('secret.password') &&
+              getValues('secret.serverAddress')
+            : true)
+      },
+      {
+        id: 'deployMode',
+        label: 'Deployment Mode',
+        icon: 'deployMode',
+        isSetting: getValues('hpa.use') ? !!getValues('hpa.value') : !!getValues('replicas')
+      },
+      {
+        id: 'network',
+        label: 'Network Configuration',
+        icon: 'network',
+        isSetting: !!getValues('containerOutPort')
+      },
+      {
+        id: 'settings',
+        label: 'Advanced Configuration',
+        icon: 'settings',
+        isSetting:
+          getValues('runCMD') ||
+          getValues('cmdParam') ||
+          getValues('envs').length > 0 ||
+          getValues('configMapList').length > 0 ||
+          getValues('storeList').length > 0
+      }
+    ],
+    [refresh]
+  );
+
+  const selectedGpu = useMemo(() => {
+    if (!getValues('gpu.use')) return;
+    const gpu = SOURCE_PRICE?.gpu?.find((item) => item.type === getValues('gpu.type'));
+    if (!gpu) return;
+
+    return gpu;
+  }, [refresh]);
 
   const [activeNav, setActiveNav] = useState(navList[0].id);
   const [configEdit, setConfigEdit] = useState<ConfigMapType>();
@@ -272,10 +285,14 @@ const Form = ({
                 cpu={getValues('cpu')}
                 memory={getValues('memory')}
                 storage={getValues('storeList').reduce((sum, item) => sum + item.value, 0)}
-                gpu={{
-                  type: getValues('gpu.type'),
-                  amount: getValues('gpu.amount')
-                }}
+                gpu={
+                  getValues('gpu.use')
+                    ? {
+                        type: getValues('gpu.type'),
+                        amount: getValues('gpu.amount')
+                      }
+                    : undefined
+                }
               />
             </Box>
           )}
@@ -412,14 +429,18 @@ const Form = ({
                       size={'lg'}
                       colorScheme={'blackAlpha'}
                       isChecked={getValues('gpu.use')}
-                      {...register('gpu.use')}
+                      {...register('gpu.use', {
+                        onChange() {
+                          setValue('gpu.type', SOURCE_PRICE?.gpu?.[0]?.type || '');
+                        }
+                      })}
                     />
                   </Flex>
-                  {getValues('gpu.use') && (
+                  {!!selectedGpu && (
                     <Box mt={4} mb={10} pl={8} borderLeft={theme.borders.base}>
                       <Flex>
                         <MySelect
-                          placeholder={'Gpu Type'}
+                          placeholder={t('Select gpu type') || ''}
                           value={getValues('gpu.type')}
                           list={SOURCE_PRICE.gpu.map((item) => ({
                             icon: 'nvidia',
@@ -438,28 +459,36 @@ const Form = ({
                           }))}
                           onchange={(val: any) => setValue('gpu.type', val)}
                         />
-                        <Tip
-                          ml={4}
-                          icon={<InfoOutlineIcon />}
-                          text={'RTX 400 库存不足（剩 4 张）'}
-                          size="sm"
-                        />
+                        {selectedGpu && selectedGpu.inventory < 8 && (
+                          <Tip
+                            ml={4}
+                            icon={<InfoOutlineIcon />}
+                            text={
+                              selectedGpu.inventory === 0
+                                ? `${selectedGpu.type} 库存不足，请更换型号`
+                                : `${selectedGpu.type} 库存不足（剩 ${selectedGpu.inventory} 张）`
+                            }
+                            size="sm"
+                          />
+                        )}
                       </Flex>
-                      <Flex mt={5} pr={3} alignItems={'flex-start'}>
-                        <MySlider
-                          markList={GpuAmountMarkList}
-                          activeVal={getValues('gpu.amount')}
-                          setVal={(e) => {
-                            setValue('gpu.amount', GpuAmountMarkList[e].value);
-                          }}
-                          max={7}
-                          min={0}
-                          step={1}
-                        />
-                        <Box ml={5} transform={'translateY(10px)'} color={'myGray.500'}>
-                          ({t('zhang')})
-                        </Box>
-                      </Flex>
+                      {selectedGpu.inventory > 0 && (
+                        <Flex mt={5} pr={3} alignItems={'flex-start'}>
+                          <MySlider
+                            markList={GpuAmountMarkList}
+                            activeVal={getValues('gpu.amount')}
+                            setVal={(e) => {
+                              setValue('gpu.amount', GpuAmountMarkList[e].value);
+                            }}
+                            max={GpuAmountMarkList.length - 1}
+                            min={0}
+                            step={1}
+                          />
+                          <Box ml={5} transform={'translateY(10px)'} color={'myGray.500'}>
+                            ({t('GPU Amount')})
+                          </Box>
+                        </Flex>
+                      )}
                     </Box>
                   )}
                 </Box>
