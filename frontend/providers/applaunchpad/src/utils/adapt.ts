@@ -27,7 +27,9 @@ import {
   maxReplicasKey,
   minReplicasKey,
   PodStatusEnum,
-  domainKey
+  domainKey,
+  gpuNodeSelectorKey,
+  gpuResourceKey
 } from '@/constants/app';
 import { cpuFormatToM, memoryFormatToMi, formatPodTime, atobSecretYaml } from '@/utils/tools';
 import type { DeployKindsType, AppEditType } from '@/types/app';
@@ -45,6 +47,9 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
         0
       )
     : 0;
+
+  const gpuNodeSelector = app?.spec?.template?.spec?.nodeSelector;
+
   return {
     id: app.metadata?.uid || ``,
     name: app.metadata?.name || 'app name',
@@ -55,6 +60,13 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
     memory: memoryFormatToMi(
       app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory || '0'
     ),
+    gpu: {
+      type: gpuNodeSelector?.[gpuNodeSelectorKey] || '',
+      amount: Number(
+        app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.[gpuResourceKey] || 0
+      ),
+      manufacturers: 'nvidia'
+    },
     usedCpu: new Array(30).fill(0),
     useMemory: new Array(30).fill(0),
     activeReplicas: app.status?.readyReplicas || 0,
@@ -166,6 +178,7 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
 
   const domain = deployKindsMap?.Ingress?.spec?.rules?.[0].host;
   const sealosDomain = deployKindsMap?.Ingress?.metadata?.labels?.[domainKey];
+  const gpuNodeSelector = appDeploy?.spec?.template?.spec?.nodeSelector;
 
   return {
     id: appDeploy.metadata?.uid || ``,
@@ -186,6 +199,14 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
     memory: memoryFormatToMi(
       appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory || '0'
     ),
+    gpu: {
+      use: !!gpuNodeSelector?.[gpuNodeSelectorKey],
+      type: gpuNodeSelector?.[gpuNodeSelectorKey] || '',
+      amount: Number(
+        appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.[gpuResourceKey] || 0
+      ),
+      manufacturers: 'nvidia'
+    },
     usedCpu: new Array(30).fill(0),
     usedMemory: new Array(30).fill(0),
     containerOutPort:
@@ -255,7 +276,8 @@ export const adaptEditAppData = (app: AppDetailType): AppEditType => {
     'hpa',
     'configMapList',
     'secret',
-    'storeList'
+    'storeList',
+    'gpu'
   ];
   const res: Record<string, any> = {};
 

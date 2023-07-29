@@ -21,12 +21,12 @@ import { useToast } from '@/hooks/useToast';
 import { useQuery } from '@tanstack/react-query';
 import { useAppStore } from '@/store/app';
 import { useLoading } from '@/hooks/useLoading';
+import { useGlobalStore } from '@/store/global';
 import Header from './components/Header';
 import Form from './components/Form';
 import Yaml from './components/Yaml';
 import dynamic from 'next/dynamic';
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
-import { useGlobalStore } from '@/store/global';
 import { serviceSideProps } from '@/utils/i18n';
 import { patchYamlList } from '@/utils/tools';
 import { useTranslation } from 'next-i18next';
@@ -87,6 +87,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const router = useRouter();
   const [forceUpdate, setForceUpdate] = useState(false);
   const { setAppDetail } = useAppStore();
+  const { screenWidth, getUserSourcePrice, userSourcePrice } = useGlobalStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -95,8 +96,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const { openConfirm, ConfirmChild } = useConfirm({
     content: applyMessage
   });
-  // compute container width
-  const { screenWidth } = useGlobalStore();
   const pxVal = useMemo(() => {
     const val = Math.floor((screenWidth - 1050) / 2);
     if (val < 20) {
@@ -215,6 +214,11 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       }
     }
   );
+
+  useQuery(['init-gpu'], getUserSourcePrice, {
+    enabled: !!userSourcePrice?.gpu,
+    refetchInterval: 5000
+  });
 
   return (
     <>

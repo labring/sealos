@@ -75,3 +75,5 @@ export const maxReplicasKey = 'deploy.cloud.sealos.io/maxReplicas';
 export const minReplicasKey = 'deploy.cloud.sealos.io/minReplicas';
 export const appDeployKey = 'cloud.sealos.io/app-deploy-manager';
 export const domainKey = `cloud.sealos.io/app-deploy-manager-domain`;
+export const gpuNodeSelectorKey = 'nvidia.com/gpu.product';
+export const gpuResourceKey = 'nvidia.com/gpu';

@@ -428,7 +428,7 @@ const Form = ({
               {userSourcePrice?.gpu && (
                 <Box mb={5}>
                   <Flex alignItems={'center'}>
-                    <Label w={80}>{t('Gpu')}</Label>
+                    <Label w={80}>GPU</Label>
                     <Switch
                       size={'lg'}
                       colorScheme={'blackAlpha'}
@@ -496,7 +496,7 @@ const Form = ({
                             step={1}
                           />
                           <Box ml={5} transform={'translateY(10px)'} color={'myGray.500'}>
-                            ({t('GPU Amount')})
+                            ({t('Card')})
                           </Box>
                         </Flex>
                       )}
