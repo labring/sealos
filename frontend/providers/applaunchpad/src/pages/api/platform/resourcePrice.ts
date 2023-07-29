@@ -3,17 +3,7 @@ import * as yaml from 'js-yaml';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { authSession } from '@/services/backend/auth';
-
-const MOCK = {
-  cpu: 10,
-  memory: 10,
-  storage: 10,
-  gpu: [
-    { type: 'Navida 4090', price: 30, vm: 3, inventory: 0 },
-    { type: 'Navida 4060', price: 20, vm: 4, inventory: 4 },
-    { type: 'Navida 4050', price: 10, vm: 8, inventory: 8 }
-  ]
-};
+import { CoreV1Api, CustomObjectsApi } from '@kubernetes/client-node';
 
 export type Response = {
   cpu: number;
@@ -41,18 +31,26 @@ type PriceCrdType = {
     }[];
   };
 };
+type GpuNodeType = {
+  'gpu.count': number;
+  'gpu.memory': number;
+  'gpu.product': string;
+};
 const PRICE_SCALE = 1000000;
 
 export const valuationMap: Record<string, number> = {
   cpu: 1000,
   memory: 1024,
-  storage: 1024
+  storage: 1024,
+  gpu: 1000
 };
+
+const gpuCrName = 'gpu-info';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     // source price
-    const { applyYamlList, k8sCustomObjects, namespace } = await getK8s({
+    const { applyYamlList, k8sCustomObjects, k8sCore, namespace } = await getK8s({
       kubeconfig: await authSession(req.headers)
     });
 
@@ -65,7 +63,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       spec: {}
     };
-
     const crdYaml = yaml.dump(crdJson);
 
     try {
@@ -73,30 +70,72 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000));
     } catch (error) {}
 
-    const { body: priceResponse } = (await k8sCustomObjects.getNamespacedCustomObject(
-      'account.sealos.io',
-      'v1',
-      namespace,
-      'pricequeries',
-      crdJson.metadata.name
-    )) as { body: PriceCrdType };
+    const [priceResponse, gpuNodes] = await Promise.all([
+      getPriceCr({
+        name: crdJson.metadata.name,
+        namespace,
+        k8sCustomObjects
+      }),
+      getGpuNode({ k8sCore })
+    ]);
 
     const data = {
       cpu: countSourcePrice(priceResponse, 'cpu'),
       memory: countSourcePrice(priceResponse, 'memory'),
-      storage: countSourcePrice(priceResponse, 'storage')
-      // gpu: [{ type: '4090', price: 2.1, inventory: 1, vm: 24 }]
+      storage: countSourcePrice(priceResponse, 'storage'),
+      gpu: countGpuSource(priceResponse, gpuNodes)
     };
 
     jsonRes<Response>(res, {
       data
     });
   } catch (error) {
-    jsonRes<Response>(res, {
-      data: MOCK
-    });
+    console.log(error);
+
     jsonRes(res, { code: 500, message: 'get price error' });
   }
+}
+
+async function getPriceCr({
+  name,
+  namespace,
+  k8sCustomObjects
+}: {
+  name: string;
+  namespace: string;
+  k8sCustomObjects: CustomObjectsApi;
+}) {
+  const { body: priceResponse } = (await k8sCustomObjects.getNamespacedCustomObject(
+    'account.sealos.io',
+    'v1',
+    namespace,
+    'pricequeries',
+    name
+  )) as { body: PriceCrdType };
+
+  return priceResponse;
+}
+
+async function getGpuNode({ k8sCore }: { k8sCore: CoreV1Api }) {
+  const { body } = await k8sCore.readNamespacedConfigMap(gpuCrName, 'sealos');
+  const gpuMap = body?.data?.gpu;
+  if (!gpuMap) return [];
+
+  const parseGpuMap = JSON.parse(gpuMap) as Record<
+    string,
+    {
+      'gpu.count': string;
+      'gpu.memory': string;
+      'gpu.product': string;
+    }
+  >;
+  const gpuValues = Object.values(parseGpuMap).filter((item) => item['gpu.product']);
+
+  return gpuValues.map((item) => ({
+    ['gpu.count']: +item['gpu.count'],
+    ['gpu.memory']: +item['gpu.memory'],
+    ['gpu.product']: item['gpu.product']
+  })) as GpuNodeType[];
 }
 
 function countSourcePrice(rawData: PriceCrdType, type: ResourceType) {
@@ -105,4 +144,22 @@ function countSourcePrice(rawData: PriceCrdType, type: ResourceType) {
   const sourceScale = rawPrice * (valuationMap[type] || 1);
   const unitScale = sourceScale / PRICE_SCALE;
   return unitScale;
+}
+function countGpuSource(rawData: PriceCrdType, gpunodes: GpuNodeType[]) {
+  const gpuList: Response['gpu'] = [];
+
+  rawData?.status?.billingRecords?.forEach((item) => {
+    if (!item.resourceType.startsWith('gpu')) return;
+    const gpuType = item.resourceType.replace('gpu-', '');
+    const gpuNode = gpunodes.find((item) => item['gpu.product'] === gpuType);
+    if (!gpuNode) return;
+    gpuList.push({
+      type: gpuNode['gpu.product'],
+      price: (item.price * valuationMap.gpu) / PRICE_SCALE,
+      inventory: +gpuNode['gpu.count'],
+      vm: +gpuNode['gpu.memory'] / 1024
+    });
+  });
+
+  return gpuList.length === 0 ? undefined : gpuList;
 }

@@ -3,8 +3,7 @@ import { useRouter } from 'next/router';
 import { Flex, Box } from '@chakra-ui/react';
 import type { YamlItemType } from '@/types';
 import {
-  json2Development,
-  json2StatefulSet,
+  json2DeployCr,
   json2Service,
   json2Ingress,
   json2ConfigMap,
@@ -37,14 +36,19 @@ const formData2Yamls = (data: AppEditType) => [
     filename: 'service.yaml',
     value: json2Service(data)
   },
-  data.storeList.length > 0
+  data.gpu?.use
+    ? {
+        filename: 'pod.yaml',
+        value: json2DeployCr(data, 'pod')
+      }
+    : data.storeList.length > 0
     ? {
         filename: 'statefulSet.yaml',
-        value: json2StatefulSet(data)
+        value: json2DeployCr(data, 'statefulset')
       }
     : {
         filename: 'deployment.yaml',
-        value: json2Development(data)
+        value: json2DeployCr(data, 'deployment')
       },
   ...(data.configMapList.length > 0
     ? [
@@ -189,7 +193,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           },
           {
             filename: 'deployment.yaml',
-            value: json2Development(defaultEditVal)
+            value: json2DeployCr(defaultEditVal, 'deployment')
           }
         ]);
         return null;

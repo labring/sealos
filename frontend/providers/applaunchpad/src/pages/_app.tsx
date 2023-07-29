@@ -12,7 +12,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import throttle from 'lodash/throttle';
 import { useGlobalStore } from '@/store/global';
 import { useLoading } from '@/hooks/useLoading';
-import { loadInitData, getUserPrice } from '@/store/static';
+import { loadInitData } from '@/store/static';
 import { useRouter } from 'next/router';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
@@ -39,7 +39,7 @@ const queryClient = new QueryClient({
 const App = ({ Component, pageProps }: AppProps) => {
   const router = useRouter();
   const { i18n } = useTranslation();
-  const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
+  const { setScreenWidth, loading, setLastRoute, getUserSourcePrice } = useGlobalStore();
   const { Loading } = useLoading();
   const [refresh, setRefresh] = useState(false);
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -50,7 +50,7 @@ const App = ({ Component, pageProps }: AppProps) => {
   useEffect(() => {
     NProgress.start();
 
-    getUserPrice();
+    getUserSourcePrice();
 
     const response = createSealosApp();
 

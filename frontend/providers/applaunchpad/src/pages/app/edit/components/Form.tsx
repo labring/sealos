@@ -30,11 +30,12 @@ import type { QueryType } from '@/types';
 import type { AppEditType } from '@/types/app';
 import { customAlphabet } from 'nanoid';
 import { CpuSlideMarkList, GpuAmountMarkList, MemorySlideMarkList } from '@/constants/editApp';
-import { SEALOS_DOMAIN, SOURCE_PRICE } from '@/store/static';
+import { SEALOS_DOMAIN } from '@/store/static';
+import { useTranslation } from 'next-i18next';
+import { useGlobalStore } from '@/store/global';
 import Tabs from '@/components/Tabs';
 import Tip from '@/components/Tip';
 import MySelect from '@/components/Select';
-import { useTranslation } from 'next-i18next';
 import PriceBox from './PriceBox';
 import dynamic from 'next/dynamic';
 
@@ -62,6 +63,7 @@ const Form = ({
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
+  const { userSourcePrice } = useGlobalStore();
   const router = useRouter();
   const { name } = router.query as QueryType;
   const theme = useTheme();
@@ -139,11 +141,11 @@ const Form = ({
 
   const selectedGpu = useMemo(() => {
     if (!getValues('gpu.use')) return;
-    const gpu = SOURCE_PRICE?.gpu?.find((item) => item.type === getValues('gpu.type'));
+    const gpu = userSourcePrice?.gpu?.find((item) => item.type === getValues('gpu.type'));
     if (!gpu) return;
 
     return gpu;
-  }, [refresh]);
+  }, [getValues, userSourcePrice?.gpu, refresh]);
 
   const [activeNav, setActiveNav] = useState(navList[0].id);
   const [configEdit, setConfigEdit] = useState<ConfigMapType>();
@@ -274,7 +276,7 @@ const Form = ({
               </Box>
             ))}
           </Box>
-          {SOURCE_PRICE && (
+          {userSourcePrice && (
             <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>
               <PriceBox
                 pods={
@@ -421,7 +423,7 @@ const Form = ({
                 </Box>
               </Box>
 
-              {SOURCE_PRICE?.gpu && (
+              {userSourcePrice?.gpu && (
                 <Box mb={5}>
                   <Flex alignItems={'center'}>
                     <Label w={80}>{t('Gpu')}</Label>
@@ -431,7 +433,7 @@ const Form = ({
                       isChecked={getValues('gpu.use')}
                       {...register('gpu.use', {
                         onChange() {
-                          setValue('gpu.type', SOURCE_PRICE?.gpu?.[0]?.type || '');
+                          setValue('gpu.type', userSourcePrice?.gpu?.[0]?.type || '');
                         }
                       })}
                     />
@@ -442,7 +444,7 @@ const Form = ({
                         <MySelect
                           placeholder={t('Select gpu type') || ''}
                           value={getValues('gpu.type')}
-                          list={SOURCE_PRICE.gpu.map((item) => ({
+                          list={userSourcePrice.gpu.map((item) => ({
                             icon: 'nvidia',
                             label: (
                               <Flex>

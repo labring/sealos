@@ -9,13 +9,13 @@ import { useTheme } from '@chakra-ui/react';
 import { useGlobalStore } from '@/store/global';
 import { useToast } from '@/hooks/useToast';
 import { restartAppByName, pauseAppByName, startAppByName } from '@/api/app';
-import dynamic from 'next/dynamic';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useTranslation } from 'next-i18next';
 
+import dynamic from 'next/dynamic';
+
 import MyMenu from '@/components/Menu';
 import MyTable from '@/components/Table';
-import { SOURCE_PRICE } from '@/store/static';
 const DelModal = dynamic(() => import('@/pages/app/detail/components/DelModal'));
 
 const AppList = ({
@@ -26,7 +26,7 @@ const AppList = ({
   refetchApps: () => void;
 }) => {
   const { t } = useTranslation();
-  const { setLoading } = useGlobalStore();
+  const { setLoading, userSourcePrice } = useGlobalStore();
   const { toast } = useToast();
   const theme = useTheme();
   const router = useRouter();
@@ -151,7 +151,7 @@ const AppList = ({
           </Box>
         )
       },
-      ...(SOURCE_PRICE?.gpu
+      ...(userSourcePrice?.gpu
         ? [
             {
               title: 'Gpu',
@@ -167,8 +167,8 @@ const AppList = ({
                       </Box>
                     </>
                   )}
-                  <Box>
-                    {item.gpu?.amount}
+                  <Box color={item.gpu?.amount ? 'myGray.600' : 'myGray.400'}>
+                    {item.gpu?.amount || 0}
                     {t('Card')}
                   </Box>
                 </Flex>
@@ -286,7 +286,7 @@ const AppList = ({
         )
       }
     ],
-    [SOURCE_PRICE]
+    [handlePauseApp, handleRestartApp, handleStartApp, onOpenPause, router, t, userSourcePrice?.gpu]
   );
 
   return (
