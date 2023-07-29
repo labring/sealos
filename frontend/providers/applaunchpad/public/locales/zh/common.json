@@ -81,7 +81,6 @@
   "Limit Memory": "Limit Memory",
   "CPU target value": "cpu目标值",
   "Memory target value": "内存目标值",
-  "Reboot Success": "重启成功",
   "success": "成功",
   "target_value": "目标值",
   "Edit Env Variable": "编辑环境变量",
@@ -153,5 +152,14 @@
   "Env Placeholder": "环境变量，可用冒号或等号，换行分隔。例如:\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n- env1=test",
   "Update Application": "更新应用",
   "GPU Amount": "张",
-  "Card": "张"
+  "Card": "张",
+  "Not allowed to change app name": "不允许修改应用名",
+  "Starts with a letter and can contain only lowercase letters, digits, and hyphens (-)": "字母开头，仅能包含小写字母、数字和 -",
+  "The application name can contain only lowercase letters, digits, and hyphens (-) and must start with a letter": "应用名只能包含小写字母、数字和 -,并且字母开头",
+  "The user name cannot be empty": "用户名不能为空",
+  "The password cannot be empty": "密码不能为空",
+  "The image cannot be empty": "私有镜像, 地址不能为空",
+  "Gpu empty inventory Tip": "{{gputype}} 库存不足，请更换型号",
+  "Gpu insufficient  inventory Tip": "{{gputype}} 库存紧缺，剩余 {{card}} 张",
+  "vm": "显存"
 }

@@ -5,7 +5,7 @@ import { SEALOS_DOMAIN, INGRESS_SECRET } from '@/store/static';
 import { maxReplicasKey, minReplicasKey, appDeployKey, domainKey } from '@/constants/app';
 import dayjs from 'dayjs';
 
-export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset' | 'pod') => {
+export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
   const metadata = {
     name: data.appName,
     annotations: {
@@ -115,6 +115,15 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     }
   }));
 
+  // gpu node selector
+  const gpuMap = data.gpu?.use
+    ? {
+        restartPolicy: 'OnFailure',
+        runtimeClassName: 'nvidia',
+        nodeSelector: data.gpu.type
+      }
+    : {};
+
   const template = {
     deployment: {
       apiVersion: 'apps/v1',
@@ -132,6 +141,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
                 volumeMounts: [...configMapVolumeMounts]
               }
             ],
+            ...gpuMap,
             volumes: [...configMapVolumes]
           }
         }
@@ -162,40 +172,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
                 ]
               }
             ],
-            volumes: [...configMapVolumes]
-          }
-        },
-        volumeClaimTemplates: storageTemplates
-      }
-    },
-    pod: {
-      apiVersion: 'v1',
-      kind: 'Pod',
-      metadata,
-      spec: {
-        ...commonSpec,
-        minReadySeconds: 10,
-        serviceName: data.appName,
-        restartPolicy: 'OnFailure',
-        runtimeClassName: 'nvidia',
-        template: {
-          metadata: templateMetadata,
-          spec: {
-            imagePullSecrets,
-            terminationGracePeriodSeconds: 10,
-            containers: [
-              {
-                ...commonContainer,
-                volumeMounts: [
-                  ...configMapVolumeMounts,
-                  ...data.storeList.map((item) => ({
-                    name: item.name,
-                    mountPath: item.path
-                  }))
-                ]
-              }
-            ],
-            nodeSelector: data.gpu?.type,
+            ...gpuMap,
             volumes: [...configMapVolumes]
           }
         },

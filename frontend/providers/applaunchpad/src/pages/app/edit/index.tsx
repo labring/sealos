@@ -36,12 +36,7 @@ const formData2Yamls = (data: AppEditType) => [
     filename: 'service.yaml',
     value: json2Service(data)
   },
-  data.gpu?.use
-    ? {
-        filename: 'pod.yaml',
-        value: json2DeployCr(data, 'pod')
-      }
-    : data.storeList.length > 0
+  data.storeList.length > 0
     ? {
         filename: 'statefulSet.yaml',
         value: json2DeployCr(data, 'statefulset')

@@ -319,14 +319,20 @@ const Form = ({
                   <Label w={80}>{t('App Name')}</Label>
                   <Input
                     disabled={isEdit}
-                    title={isEdit ? '不允许修改应用名称' : ''}
+                    title={isEdit ? t('Not allowed to change app name') || '' : ''}
                     autoFocus={true}
-                    placeholder={'字母开头，仅能包含小写字母、数字和 -'}
+                    placeholder={
+                      t(
+                        'Starts with a letter and can contain only lowercase letters, digits, and hyphens (-)'
+                      ) || ''
+                    }
                     {...register('appName', {
-                      required: '应用名称不能为空',
+                      required: t('Not allowed to change app name') || '',
                       pattern: {
                         value: /^[a-z][a-z0-9]+([-.][a-z0-9]+)*$/g,
-                        message: '应用名只能包含小写字母、数字和 -,并且字母开头。'
+                        message: t(
+                          'The application name can contain only lowercase letters, digits, and hyphens (-) and must start with a letter'
+                        )
                       }
                     })}
                   />
@@ -368,10 +374,6 @@ const Form = ({
                         placeholder={`${t('Image Name')}`}
                         {...register('imageName', {
                           required: 'Image name cannot be empty.',
-                          // pattern: {
-                          //   value: /^.+\/.+:.+$/g,
-                          //   message: '镜像名需满足 url/name:version 的格式'
-                          // },
                           setValueAs(e) {
                             return e.replace(/\s*/g, '');
                           }
@@ -388,7 +390,7 @@ const Form = ({
                             backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
                             placeholder={`${t('Username for the image registry')}`}
                             {...register('secret.username', {
-                              required: '私有镜像, 用户名不能为空'
+                              required: t('The user name cannot be empty') || ''
                             })}
                           />
                         </Flex>
@@ -401,7 +403,7 @@ const Form = ({
                             placeholder={`${t('Password for the image registry')}`}
                             backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
                             {...register('secret.password', {
-                              required: '私有镜像, 密码不能为空'
+                              required: t('The password cannot be empty') || ''
                             })}
                           />
                         </Flex>
@@ -413,7 +415,7 @@ const Form = ({
                             backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
                             placeholder={`${t('Image address')}`}
                             {...register('secret.serverAddress', {
-                              required: '私有镜像, 地址不能为空'
+                              required: t('The image cannot be empty') || ''
                             })}
                           />
                         </Flex>
@@ -433,7 +435,11 @@ const Form = ({
                       isChecked={getValues('gpu.use')}
                       {...register('gpu.use', {
                         onChange() {
-                          setValue('gpu.type', userSourcePrice?.gpu?.[0]?.type || '');
+                          const gpu = userSourcePrice?.gpu?.find((item) => item.inventory > 0);
+                          if (gpu) {
+                            setValue('gpu.type', gpu.type || '');
+                            setValue('gpu.amount', 1);
+                          }
                         }
                       })}
                     />
@@ -453,7 +459,7 @@ const Form = ({
                                   |
                                 </Box>
                                 <Box color={'myGray.500'} pr={3}>
-                                  显存: {item.vm}G
+                                  {t('vm')}: {item.vm}G
                                 </Box>
                               </Flex>
                             ),
@@ -467,8 +473,11 @@ const Form = ({
                             icon={<InfoOutlineIcon />}
                             text={
                               selectedGpu.inventory === 0
-                                ? `${selectedGpu.type} 库存不足，请更换型号`
-                                : `${selectedGpu.type} 库存不足（剩 ${selectedGpu.inventory} 张）`
+                                ? t('Gpu empty inventory Tip', { gputype: selectedGpu.type })
+                                : t('Gpu insufficient  inventory Tip', {
+                                    gputype: selectedGpu.type,
+                                    card: selectedGpu.inventory
+                                  })
                             }
                             size="sm"
                           />

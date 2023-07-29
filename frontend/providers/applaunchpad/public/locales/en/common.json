@@ -138,5 +138,7 @@
   "Perday": "Perday",
   "Submit Error": "Submit Error",
   "Env Placeholder": "Can be colon or equal sign, delimited by newline. For example :\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n-env1 =test",
-  "GPU Amount": "GPU"
+  "GPU Amount": "GPU",
+  "Gpu empty inventory Tip": "{{gputype}} is out of stock, please change the model",
+  "Gpu insufficient  inventory Tip": "{{gputype}} stock shortage,remaining {{card}} card"
 }

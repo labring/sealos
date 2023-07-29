@@ -55,7 +55,7 @@ export const defaultEditVal: AppEditType = {
     use: false,
     manufacturers: 'nvidia',
     type: '',
-    amount: 1
+    amount: 0
   }
 };
 

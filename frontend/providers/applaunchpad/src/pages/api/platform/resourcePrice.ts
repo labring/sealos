@@ -131,11 +131,22 @@ async function getGpuNode({ k8sCore }: { k8sCore: CoreV1Api }) {
   >;
   const gpuValues = Object.values(parseGpuMap).filter((item) => item['gpu.product']);
 
-  return gpuValues.map((item) => ({
-    ['gpu.count']: +item['gpu.count'],
-    ['gpu.memory']: +item['gpu.memory'],
-    ['gpu.product']: item['gpu.product']
-  })) as GpuNodeType[];
+  const gpuList: GpuNodeType[] = [];
+
+  gpuValues.forEach((item) => {
+    const index = gpuList.findIndex((gpu) => gpu['gpu.product'] === item['gpu.product']);
+    if (index > -1) {
+      gpuList[index]['gpu.count'] += Number(item['gpu.count']);
+    } else {
+      gpuList.push({
+        ['gpu.count']: +item['gpu.count'],
+        ['gpu.memory']: +item['gpu.memory'],
+        ['gpu.product']: item['gpu.product']
+      });
+    }
+  });
+
+  return gpuList;
 }
 
 function countSourcePrice(rawData: PriceCrdType, type: ResourceType) {

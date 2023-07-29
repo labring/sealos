@@ -42,7 +42,7 @@ const AppList = ({
         setLoading(true);
         await restartAppByName(appName);
         toast({
-          title: `${t('Reboot Success')}`,
+          title: `${t('Restart Success')}`,
           status: 'success'
         });
       } catch (error: any) {
