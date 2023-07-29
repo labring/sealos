@@ -15,13 +15,13 @@ import {
   NumberInputField,
   NumberInputStepper,
   NumberIncrementStepper,
-  NumberDecrementStepper,
-  Tooltip
+  NumberDecrementStepper
 } from '@chakra-ui/react';
 import { useForm } from 'react-hook-form';
 import MyFormControl from '@/components/FormControl';
 import { useTranslation } from 'next-i18next';
 import { pathToNameFormat } from '@/utils/tools';
+import MyTooltip from '@/components/MyTooltip';
 
 export type StoreType = {
   id?: string;
@@ -80,7 +80,7 @@ const StoreModal = ({
           <ModalBody>
             <FormControl mb={5} isInvalid={!!errors.value}>
               <Box mb={1}>{t('capacity')} </Box>
-              <Tooltip label={`${t('Storage Range')}: ${minVal}~20 Gi`}>
+              <MyTooltip label={`${t('Storage Range')}: ${minVal}~20 Gi`}>
                 <NumberInput max={20} min={minVal} step={1} position={'relative'}>
                   <Box
                     position={'absolute'}
@@ -111,7 +111,7 @@ const StoreModal = ({
                     <NumberDecrementStepper />
                   </NumberInputStepper>
                 </NumberInput>
-              </Tooltip>
+              </MyTooltip>
             </FormControl>
             <MyFormControl showError errorText={errors.path?.message} pb={2}>
               <Box mb={1}>{t('mount path')}</Box>

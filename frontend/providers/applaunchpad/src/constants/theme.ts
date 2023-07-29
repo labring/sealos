@@ -149,16 +149,6 @@ const Switch = switchMultiStyle({
   })
 });
 
-const Tooltip = defineStyleConfig({
-  baseStyle: {
-    p: 2,
-    backgroundColor: 'white',
-    color: 'blackAlpha.800',
-    borderRadius: 'lg',
-    boxShadow: '1px 1px 7px rgba(0,0,0,0.2)'
-  }
-});
-
 export const theme = extendTheme({
   styles: {
     global: {
@@ -262,7 +252,6 @@ export const theme = extendTheme({
   components: {
     Button,
     Input,
-    Tooltip,
     Select,
     Switch,
     Textarea

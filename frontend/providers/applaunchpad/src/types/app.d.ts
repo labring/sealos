@@ -77,6 +77,7 @@ export interface AppEditType {
   envs: {
     key: string;
     value: string;
+    valueFrom?: any;
   }[];
   hpa: {
     use: boolean;

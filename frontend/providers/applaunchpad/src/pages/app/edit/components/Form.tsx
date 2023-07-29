@@ -19,11 +19,7 @@ import {
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import { useFieldArray, UseFormReturn } from 'react-hook-form';
 import { useRouter } from 'next/router';
-import RangeInput from '@/components/RangeInput';
-import MySlider from '@/components/Slider';
-import MyRangeSlider from '@/components/RangeSlider';
-import MyIcon from '@/components/Icon';
-import EditEnvs from './EditEnvs';
+
 import type { ConfigMapType } from './ConfigmapModal';
 import type { StoreType } from './StoreModal';
 import type { QueryType } from '@/types';
@@ -33,20 +29,26 @@ import { CpuSlideMarkList, GpuAmountMarkList, MemorySlideMarkList } from '@/cons
 import { SEALOS_DOMAIN } from '@/store/static';
 import { useTranslation } from 'next-i18next';
 import { useGlobalStore } from '@/store/global';
+
 import Tabs from '@/components/Tabs';
 import Tip from '@/components/Tip';
 import MySelect from '@/components/Select';
 import PriceBox from './PriceBox';
 import dynamic from 'next/dynamic';
+import RangeInput from '@/components/RangeInput';
+import MySlider from '@/components/Slider';
+import MyRangeSlider from '@/components/RangeSlider';
+import MyIcon from '@/components/Icon';
+import MyTooltip from '@/components/MyTooltip';
 
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
 const StoreModal = dynamic(() => import('./StoreModal'));
+const EditEnvs = dynamic(() => import('./EditEnvs'));
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 import styles from './index.module.scss';
 import { obj2Query } from '@/api/tools';
 import { throttle } from 'lodash';
-import { Tooltip } from '@chakra-ui/react';
 
 const Form = ({
   formHook,
@@ -813,21 +815,28 @@ const Form = ({
                     <Box className={styles.formSecondTitle}>{t('Environment Variables')}</Box>
                     <table className={styles.table}>
                       <tbody>
-                        {envs.map((env) => (
-                          <tr key={env.id}>
-                            <th>{env.key}</th>
-                            <Tooltip label={env.value}>
-                              <th
-                                className={styles.textEllipsis}
-                                style={{
-                                  userSelect: 'auto'
-                                }}
-                              >
-                                {env.value}
-                              </th>
-                            </Tooltip>
-                          </tr>
-                        ))}
+                        {envs.map((env) => {
+                          const valText = env.value
+                            ? env.value
+                            : env.valueFrom
+                            ? JSON.stringify({ valueFrom: env.valueFrom })
+                            : '';
+                          return (
+                            <tr key={env.id}>
+                              <th>{env.key}</th>
+                              <MyTooltip label={valText}>
+                                <th
+                                  className={styles.textEllipsis}
+                                  style={{
+                                    userSelect: 'auto'
+                                  }}
+                                >
+                                  {valText}
+                                </th>
+                              </MyTooltip>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                     <Button
@@ -965,11 +974,7 @@ const Form = ({
         </Box>
       </Grid>
       {isEditEnvs && (
-        <EditEnvs
-          defaultVal={envs.map((item) => `${item.key}=${item.value}`).join('\n')}
-          onClose={onCloseEditEnvs}
-          successCb={(e) => replaceEnvs(e)}
-        />
+        <EditEnvs defaultEnv={envs} onClose={onCloseEditEnvs} successCb={(e) => replaceEnvs(e)} />
       )}
       {configEdit && (
         <ConfigmapModal

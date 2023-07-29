@@ -11,18 +11,32 @@ import {
   Textarea
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
+import { AppEditType } from '@/types/app';
 
 const EditEnvs = ({
-  defaultVal,
+  defaultEnv,
   successCb,
   onClose
 }: {
-  defaultVal: string;
+  defaultEnv: AppEditType['envs'];
   successCb: (e: { key: string; value: string }[]) => void;
   onClose: () => void;
 }) => {
   const { t } = useTranslation();
-  const [inputVal, setInputVal] = useState(defaultVal);
+  const [inputVal, setInputVal] = useState(
+    defaultEnv
+      .map(
+        (item) =>
+          `${item.key}=${
+            item.value
+              ? item.value
+              : item.valueFrom
+              ? JSON.stringify({ valueFrom: item.valueFrom })
+              : ''
+          }`
+      )
+      .join('\n')
+  );
 
   const onSubmit = useCallback(() => {
     const lines = inputVal.split('\n').filter((item) => item);
@@ -48,9 +62,17 @@ const EditEnvs = ({
         const key = item[0].replace(/^['"]|['"]$/g, '').trim();
         const value = item[1].replace(/^['"]|['"]$/g, '').trim();
 
+        const valueFrom = (() => {
+          try {
+            const jsonParse = JSON.parse(value);
+            return jsonParse?.valueFrom;
+          } catch (error) {}
+        })();
+
         return {
           key,
-          value
+          value: valueFrom ? '' : value,
+          valueFrom
         };
       });
     successCb(result);

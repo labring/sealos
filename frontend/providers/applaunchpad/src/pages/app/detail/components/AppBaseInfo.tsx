@@ -3,7 +3,6 @@ import {
   Box,
   Flex,
   useTheme,
-  Tooltip,
   Tag,
   Accordion,
   AccordionButton,
@@ -20,6 +19,7 @@ import dynamic from 'next/dynamic';
 const ConfigMapDetailModal = dynamic(() => import('./ConfigMapDetailModal'));
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { useTranslation } from 'next-i18next';
+import MyTooltip from '@/components/MyTooltip';
 
 const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
@@ -163,7 +163,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                   overflow={'hidden'}
                   whiteSpace={'nowrap'}
                 >
-                  <Tooltip label={item.value}>
+                  <MyTooltip label={item.value}>
                     <Box
                       as="span"
                       cursor={!!item.copy ? 'pointer' : 'default'}
@@ -171,7 +171,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                     >
                       {item.render ? item.render : item.value}
                     </Box>
-                  </Tooltip>
+                  </MyTooltip>
                 </Box>
               </Flex>
             ))}
@@ -209,7 +209,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                 onClick={() => copyData(item.value)}
                 cursor={'pointer'}
               >
-                <Tooltip label={item.value}>{t(item.value)}</Tooltip>
+                <MyTooltip label={item.value}>{t(item.value)}</MyTooltip>
               </Box>
             </Flex>
           ))}
@@ -230,23 +230,30 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               <AccordionPanel pt={0} pb={app.envs.length === 0 ? 0 : 3}>
                 <table className={styles.table}>
                   <tbody>
-                    {app.envs.map((env) => (
-                      <tr key={env.key}>
-                        <th>{env.key}</th>
-                        <Tooltip label={env.value}>
-                          <th
-                            className={styles.textEllipsis}
-                            style={{
-                              userSelect: 'auto',
-                              cursor: 'pointer'
-                            }}
-                            onClick={() => copyData(env.value)}
-                          >
-                            {env.value}
-                          </th>
-                        </Tooltip>
-                      </tr>
-                    ))}
+                    {app.envs.map((env) => {
+                      const valText = env.value
+                        ? env.value
+                        : env.valueFrom
+                        ? JSON.stringify({ valueFrom: env.valueFrom })
+                        : '';
+                      return (
+                        <tr key={env.key}>
+                          <th>{env.key}</th>
+                          <MyTooltip label={valText}>
+                            <th
+                              className={styles.textEllipsis}
+                              style={{
+                                userSelect: 'auto',
+                                cursor: 'pointer'
+                              }}
+                              onClick={() => copyData(valText)}
+                            >
+                              {valText}
+                            </th>
+                          </MyTooltip>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </AccordionPanel>

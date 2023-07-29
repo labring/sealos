@@ -212,10 +212,13 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
     containerOutPort:
       appDeploy.spec?.template?.spec?.containers?.[0]?.ports?.[0]?.containerPort || 0,
     envs:
-      appDeploy.spec?.template?.spec?.containers?.[0]?.env?.map((env) => ({
-        key: env.name,
-        value: env.value || ''
-      })) || [],
+      appDeploy.spec?.template?.spec?.containers?.[0]?.env?.map((env) => {
+        return {
+          key: env.name,
+          value: env.value || '',
+          valueFrom: env.valueFrom
+        };
+      }) || [],
     accessExternal: deployKindsMap.Ingress
       ? {
           use: true,

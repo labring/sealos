@@ -67,7 +67,8 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       data.envs.length > 0
         ? data.envs.map((env) => ({
             name: env.key,
-            value: env.value
+            value: env.value,
+            valueFrom: env.valueFrom
           }))
         : [],
     resources: {

@@ -14,10 +14,10 @@ import {
   useDisclosure,
   MenuButton
 } from '@chakra-ui/react';
+import { ChevronDownIcon } from '@chakra-ui/icons';
 import type { PodDetailType, PodEvent } from '@/types/app';
 import PodLineChart from '@/components/PodLineChart';
 import { MOCK_PODS } from '@/mock/apps';
-import { Tooltip } from '@chakra-ui/react';
 import { getPodEvents } from '@/api/app';
 import { useQuery } from '@tanstack/react-query';
 import { useLoading } from '@/hooks/useLoading';
@@ -25,7 +25,7 @@ import MyIcon from '@/components/Icon';
 import { streamFetch } from '@/services/streamFetch';
 import { useToast } from '@/hooks/useToast';
 import MyMenu from '@/components/Menu';
-import { ChevronDownIcon } from '@chakra-ui/icons';
+import MyTooltip from '@/components/MyTooltip';
 
 import styles from '../index.module.scss';
 import { useTranslation } from 'next-i18next';
@@ -79,7 +79,7 @@ const Logs = ({
   );
   const RenderTag = useCallback(({ children }: { children: string }) => {
     return (
-      <Tooltip label={children}>
+      <MyTooltip label={children}>
         <Box
           py={1}
           px={4}
@@ -94,7 +94,7 @@ const Logs = ({
         >
           {children}
         </Box>
-      </Tooltip>
+      </MyTooltip>
     );
   }, []);
 
