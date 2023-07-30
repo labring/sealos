@@ -446,7 +446,7 @@ const Form = ({
                       })}
                     />
                   </Flex>
-                  {!!selectedGpu && (
+                  {getValues('gpu.use') && (
                     <Box mt={4} mb={10} pl={8} borderLeft={theme.borders.base}>
                       <Flex>
                         <MySelect
@@ -485,23 +485,21 @@ const Form = ({
                           />
                         )}
                       </Flex>
-                      {selectedGpu.inventory > 0 && (
-                        <Flex mt={5} pr={3} alignItems={'flex-start'}>
-                          <MySlider
-                            markList={GpuAmountMarkList}
-                            activeVal={getValues('gpu.amount')}
-                            setVal={(e) => {
-                              setValue('gpu.amount', GpuAmountMarkList[e].value);
-                            }}
-                            max={GpuAmountMarkList.length - 1}
-                            min={0}
-                            step={1}
-                          />
-                          <Box ml={5} transform={'translateY(10px)'} color={'myGray.500'}>
-                            ({t('Card')})
-                          </Box>
-                        </Flex>
-                      )}
+                      <Flex mt={5} pr={3} alignItems={'flex-start'}>
+                        <MySlider
+                          markList={GpuAmountMarkList}
+                          activeVal={getValues('gpu.amount')}
+                          setVal={(e) => {
+                            setValue('gpu.amount', GpuAmountMarkList[e].value);
+                          }}
+                          max={GpuAmountMarkList.length - 1}
+                          min={0}
+                          step={1}
+                        />
+                        <Box ml={5} transform={'translateY(10px)'} color={'myGray.500'}>
+                          ({t('Card')})
+                        </Box>
+                      </Flex>
                     </Box>
                   )}
                 </Box>

@@ -159,7 +159,7 @@ const AppList = ({
               render: (item: AppListItemType) => (
                 <Flex whiteSpace={'nowrap'}>
                   <MyIcon name={'nvidia'} w={'16px'} mr={2} />
-                  {item.gpu && (
+                  {item.gpu && item.gpu.amount > 0 && (
                     <>
                       <Box>{item.gpu.type}</Box>
                       <Box mx={1} color={'myGray.400'}>

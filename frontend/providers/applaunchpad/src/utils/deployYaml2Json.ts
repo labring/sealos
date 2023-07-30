@@ -134,7 +134,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     ? {
         [gpuNodeSelectorKey]: data.gpu.type
       }
-    : undefined;
+    : '';
 
   const template = {
     deployment: {

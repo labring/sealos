@@ -126,37 +126,61 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     setForceUpdate(!forceUpdate);
   });
 
-  const submitSuccess = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const yamls = yamlList.map((item) => item.value);
+  const { refetch: refetchPrice } = useQuery(['init-price'], getUserSourcePrice, {
+    enabled: !!userSourcePrice?.gpu,
+    refetchInterval: 5000
+  });
 
-      if (appName) {
-        const patch = patchYamlList(
-          appOldYamls.current.map((item) => item.value),
-          yamls
-        );
+  const submitSuccess = useCallback(
+    async (data: AppEditType) => {
+      setIsLoading(true);
+      try {
+        const yamls = yamlList.map((item) => item.value);
+        console.log(data);
 
-        await putApp({
-          patch,
-          appName,
-          stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value
+        if (appName) {
+          const patch = patchYamlList(
+            appOldYamls.current.map((item) => item.value),
+            yamls
+          );
+
+          await putApp({
+            patch,
+            appName,
+            stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value
+          });
+        } else {
+          await postDeployApp(yamls);
+        }
+
+        router.replace(`/app/detail?name=${formHook.getValues('appName')}`);
+        toast({
+          title: t(applySuccess),
+          status: 'success'
         });
-      } else {
-        await postDeployApp(yamls);
-      }
 
-      router.replace(`/app/detail?name=${formHook.getValues('appName')}`);
-      toast({
-        title: t(applySuccess),
-        status: 'success'
-      });
-    } catch (error) {
-      console.error(error);
-      setErrorMessage(JSON.stringify(error));
-    }
-    setIsLoading(false);
-  }, [setIsLoading, yamlList, appName, router, formHook, toast, t, applySuccess]);
+        if (userSourcePrice?.gpu) {
+          refetchPrice();
+        }
+      } catch (error) {
+        console.error(error);
+        setErrorMessage(JSON.stringify(error));
+      }
+      setIsLoading(false);
+    },
+    [
+      setIsLoading,
+      yamlList,
+      appName,
+      router,
+      formHook,
+      toast,
+      t,
+      applySuccess,
+      userSourcePrice?.gpu,
+      refetchPrice
+    ]
+  );
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
@@ -193,6 +217,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         return null;
       }
       setIsLoading(true);
+      refetchPrice();
       return setAppDetail(appName);
     },
     {
@@ -215,11 +240,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     }
   );
 
-  useQuery(['init-gpu'], getUserSourcePrice, {
-    enabled: !!userSourcePrice?.gpu,
-    refetchInterval: 5000
-  });
-
   return (
     <>
       <Flex
@@ -234,7 +254,9 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           title={title}
           yamlList={yamlList}
           applyBtnText={applyBtnText}
-          applyCb={() => formHook.handleSubmit(openConfirm(submitSuccess), submitError)()}
+          applyCb={() =>
+            formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)()
+          }
         />
 
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>

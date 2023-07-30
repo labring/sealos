@@ -12,7 +12,7 @@ type State = {
   lastRoute: string;
   setLastRoute: (val: string) => void;
   userSourcePrice: resourcePriceResponse | undefined;
-  getUserSourcePrice: () => Promise<void>;
+  getUserSourcePrice: () => Promise<null>;
 };
 
 let retryGetPrice = 3;
@@ -54,6 +54,7 @@ export const useGlobalStore = create<State>()(
             }, 1000);
           }
         }
+        return null;
       }
     }))
   )

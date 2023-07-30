@@ -178,7 +178,10 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
 
   const domain = deployKindsMap?.Ingress?.spec?.rules?.[0].host;
   const sealosDomain = deployKindsMap?.Ingress?.metadata?.labels?.[domainKey];
-  const gpuNodeSelector = appDeploy?.spec?.template?.spec?.nodeSelector;
+  const useGpu = !!Number(
+    appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.[gpuResourceKey]
+  );
+  const gpuNodeSelector = useGpu ? appDeploy?.spec?.template?.spec?.nodeSelector : null;
 
   return {
     id: appDeploy.metadata?.uid || ``,
@@ -200,7 +203,7 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
       appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory || '0'
     ),
     gpu: {
-      use: !!gpuNodeSelector?.[gpuNodeSelectorKey],
+      use: useGpu,
       type: gpuNodeSelector?.[gpuNodeSelectorKey] || '',
       amount: Number(
         appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.[gpuResourceKey] || 0
