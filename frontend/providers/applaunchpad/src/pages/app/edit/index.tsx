@@ -136,7 +136,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       setIsLoading(true);
       try {
         const yamls = yamlList.map((item) => item.value);
-        console.log(data);
 
         if (appName) {
           const patch = patchYamlList(
