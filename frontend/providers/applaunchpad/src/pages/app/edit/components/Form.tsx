@@ -819,7 +819,7 @@ const Form = ({
                           const valText = env.value
                             ? env.value
                             : env.valueFrom
-                            ? JSON.stringify({ valueFrom: env.valueFrom })
+                            ? 'value from | ***'
                             : '';
                           return (
                             <tr key={env.id}>

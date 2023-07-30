@@ -14,7 +14,7 @@ import { useTranslation } from 'next-i18next';
 import { AppEditType } from '@/types/app';
 
 const EditEnvs = ({
-  defaultEnv,
+  defaultEnv = [],
   successCb,
   onClose
 }: {
@@ -25,16 +25,8 @@ const EditEnvs = ({
   const { t } = useTranslation();
   const [inputVal, setInputVal] = useState(
     defaultEnv
-      .map(
-        (item) =>
-          `${item.key}=${
-            item.value
-              ? item.value
-              : item.valueFrom
-              ? JSON.stringify({ valueFrom: item.valueFrom })
-              : ''
-          }`
-      )
+      .filter((item) => !item.valueFrom)
+      .map((item) => `${item.key}=${item.value}`)
       .join('\n')
   );
 
@@ -62,20 +54,20 @@ const EditEnvs = ({
         const key = item[0].replace(/^['"]|['"]$/g, '').trim();
         const value = item[1].replace(/^['"]|['"]$/g, '').trim();
 
-        const valueFrom = (() => {
-          try {
-            const jsonParse = JSON.parse(value);
-            return jsonParse?.valueFrom;
-          } catch (error) {}
-        })();
+        // const valueFrom = (() => {
+        //   try {
+        //     const jsonParse = JSON.parse(value);
+        //     return jsonParse?.valueFrom;
+        //   } catch (error) {}
+        // })();
 
         return {
           key,
-          value: valueFrom ? '' : value,
-          valueFrom
+          value
+          // valueFrom
         };
       });
-    successCb(result);
+    successCb([...defaultEnv.filter((item) => item.valueFrom), ...result]);
     onClose();
   }, [inputVal, onClose, successCb]);
 
