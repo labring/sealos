@@ -22,4 +22,5 @@ use (
 	./controllers/common
 	./test/e2e
 	./controllers/licenseissuer
+	./controllers/node
 )
