@@ -1,3 +1,4 @@
+# nosemgrep: generic.secrets.security.detected-jwt-token.detected-jwt-token
 apiVersion: infostream.sealos.io/v1
 kind: License
 metadata:

@@ -148,12 +148,12 @@ function install {
 
   # sealos run controllers
   sealos_run_controller
+  
+  # sealos run frontends
+  sealos_run_frontend
 
   # sealos authorize
   sealos_authorize
-
-  # sealos run frontends
-  sealos_run_frontend
 }
 
 install

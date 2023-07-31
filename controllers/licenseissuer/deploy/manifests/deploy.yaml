@@ -583,7 +583,7 @@ spec:
         resources:
           limits:
             cpu: 500m
-            memory: 128Mi
+            memory: 64Mi
           requests:
             cpu: 5m
             memory: 64Mi
@@ -609,7 +609,7 @@ spec:
             secretKeyRef:
               key: isMonitor
               name: licenseissuer-env
-        image: registry.cn-hangzhou.aliyuncs.com/fckc/cloud-controller:v3.3.5
+        image: ghcr.io/labring/sealos-licenseissuer-controller:latest
         livenessProbe:
           httpGet:
             path: /healthz
@@ -629,7 +629,7 @@ spec:
             memory: 1024Mi
           requests:
             cpu: 10m
-            memory: 512Mi
+            memory: 128Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
