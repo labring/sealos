@@ -24,6 +24,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/common"
+
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -269,29 +271,26 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	}
 	r.Logger.Info("account created,will charge new account some money", "account", account, "stringAmount", stringAmount)
 
-	if err := r.syncResourceQuota(ctx, userNamespace); err != nil {
+	if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
 		return nil, fmt.Errorf("sync resource quota failed: %v", err)
 	}
 	return &account, nil
 }
 
-func (r *AccountReconciler) syncResourceQuota(ctx context.Context, nsName string) error {
-	quota := &corev1.ResourceQuota{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      ResourceQuotaPrefix + nsName,
-			Namespace: nsName,
-		},
-	}
-
-	return retry.Retry(10, 1*time.Second, func() error {
-		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
-			quota.Spec.Hard = DefaultResourceQuota()
-			return nil
-		}); err != nil {
-			return fmt.Errorf("sync resource quota failed: %v", err)
+func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, nsName string) error {
+	objs := []client.Object{client.Object(common.GetDefaultLimitRange(nsName, nsName)), client.Object(common.GetDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName))}
+	for i := range objs {
+		err := retry.Retry(10, 1*time.Second, func() error {
+			_, err := controllerutil.CreateOrUpdate(ctx, r.Client, objs[i], func() error {
+				return nil
+			})
+			return err
+		})
+		if err != nil {
+			return fmt.Errorf("sync resource %T failed: %v， obj type: ", objs[i], err)
 		}
-		return nil
-	})
+	}
+	return nil
 }
 
 func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, namespace string) error {
