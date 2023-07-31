@@ -87,6 +87,8 @@ type AccountReconciler struct {
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=limitranges,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=user.sealos.io,resources=users,verbs=get;list;watch
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances/status,verbs=get;list;watch;create;update;patch;delete
