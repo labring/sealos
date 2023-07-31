@@ -49,6 +49,8 @@ const (
 	GPUProduct                           = "gpu.product"
 	GPUCount                             = "gpu.count"
 	GPUMemory                            = "gpu.memory"
+	NodeIndexKey                         = "node"
+	PodIndexKey                          = "pod"
 )
 
 //+kubebuilder:rbac:groups=node.k8s.io,resources=gpus,verbs=get;list;watch;create;update;patch;delete
@@ -61,14 +63,13 @@ const (
 
 func (r *GpuReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
 	nodeList := &corev1.NodeList{}
-	if err := r.Client.List(ctx, nodeList); err != nil {
+	if err := r.List(ctx, nodeList, client.MatchingFields{NodeIndexKey: GPU}); err != nil {
 		r.Logger.Error(err, "failed to get node list")
 		return ctrl.Result{}, err
 	}
 
-	// todo index pods on GPU node
 	podList := &corev1.PodList{}
-	if err := r.Client.List(ctx, podList); err != nil {
+	if err := r.List(ctx, podList, client.MatchingFields{PodIndexKey: GPU}); err != nil {
 		r.Logger.Error(err, "failed to get pod list")
 		return ctrl.Result{}, err
 	}
@@ -154,7 +155,7 @@ func (r *GpuReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Res
 	} else if err == nil {
 		if configmap.Data[GPU] != nodeMapStr {
 			configmap.Data[GPU] = nodeMapStr
-			if err := r.Update(ctx, configmap); err != nil {
+			if err := r.Update(ctx, configmap); err != nil && !errors.IsConflict(err) {
 				r.Logger.Error(err, "failed to update gpu-info configmap")
 				return ctrl.Result{}, err
 			}
@@ -171,6 +172,31 @@ func (r *GpuReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Res
 func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger = ctrl.Log.WithName("gpu-controller")
 	r.Logger.V(1).Info("starting gpu controller")
+
+	// build index for node which have GPU
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Node{}, NodeIndexKey, func(rawObj client.Object) []string {
+		node := rawObj.(*corev1.Node)
+		if _, ok := node.Labels[NvidiaGPUProduct]; !ok {
+			return nil
+		}
+		return []string{GPU}
+	}); err != nil {
+		return err
+	}
+	// build index for pod which use GPU
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, PodIndexKey, func(rawObj client.Object) []string {
+		pod := rawObj.(*corev1.Pod)
+		if _, ok := pod.Spec.NodeSelector[NvidiaGPUProduct]; !ok {
+			return nil
+		}
+		if pod.Status.Phase != corev1.PodRunning {
+			return nil
+		}
+		return []string{GPU}
+	}); err != nil {
+		return err
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Pod{}).
 		WithEventFilter(
