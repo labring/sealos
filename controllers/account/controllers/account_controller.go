@@ -66,12 +66,13 @@ import (
 )
 
 const (
-	ACCOUNTNAMESPACEENV         = "ACCOUNT_NAMESPACE"
-	DEFAULTACCOUNTNAMESPACE     = "sealos-system"
-	AccountAnnotationNewAccount = "account.sealos.io/new-account"
-	NEWACCOUNTAMOUNTENV         = "NEW_ACCOUNT_AMOUNT"
-	RECHARGEGIFT                = "recharge-gift"
-	SEALOS                      = "sealos"
+	ACCOUNTNAMESPACEENV          = "ACCOUNT_NAMESPACE"
+	DEFAULTACCOUNTNAMESPACE      = "sealos-system"
+	AccountAnnotationNewAccount  = "account.sealos.io/new-account"
+	AccountAnnotationIgnoreQuota = "account.sealos.io/ignore-quota"
+	NEWACCOUNTAMOUNTENV          = "NEW_ACCOUNT_AMOUNT"
+	RECHARGEGIFT                 = "recharge-gift"
+	SEALOS                       = "sealos"
 )
 
 // AccountReconciler reconciles a Account object
@@ -232,6 +233,11 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	if err != nil {
 		return nil, fmt.Errorf("sync init balance failed: %v", err)
 	}
+	if account.GetAnnotations()[AccountAnnotationIgnoreQuota] != "true" {
+		if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
+			return nil, fmt.Errorf("sync resource resourceQuota and limitRange failed: %v", err)
+		}
+	}
 	// add account balance when account is new user
 	stringAmount := os.Getenv(NEWACCOUNTAMOUNTENV)
 	if stringAmount == "" {
@@ -239,7 +245,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		return &account, nil
 	}
 
-	if newAccountFlag := account.Annotations[AccountAnnotationNewAccount]; newAccountFlag == "false" {
+	if account.Annotations[AccountAnnotationNewAccount] == "false" {
 		r.Logger.V(1).Info("account is not a new user ", "account", account)
 		return &account, nil
 	}
@@ -271,9 +277,6 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	}
 	r.Logger.Info("account created,will charge new account some money", "account", account, "stringAmount", stringAmount)
 
-	if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
-		return nil, fmt.Errorf("sync resource quota failed: %v", err)
-	}
 	return &account, nil
 }
 
@@ -287,7 +290,7 @@ func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, 
 			return err
 		})
 		if err != nil {
-			return fmt.Errorf("sync resource %T failed: %v， obj type: ", objs[i], err)
+			return fmt.Errorf("sync resource %T failed: %v", objs[i], err)
 		}
 	}
 	return nil
