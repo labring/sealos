@@ -57,19 +57,26 @@ function sealos_run_controller {
 }
 
 function sealos_authorize {
-  echo "start to authorize sealos"
+    echo "start to authorize sealos"
+    echo "create admin-user"
+    # create admin-user
+    kubectl apply -f manifests/admin-user.yaml
+    # wait for admin-user ready
+    echo "waiting for admin-user generated"
+    while true; do
+        if kubectl get namespace ns-admin >/dev/null 2>&1 && kubectl get accounts.account.sealos.io admin -n sealos-system >/dev/null 2>&1; then
+            break
+        else
+            echo "waiting for preset admin-user to be created..."
+            sleep 3
+        fi
+    done
+    # issue license for admin-user
+    echo "license issue for admin-user"
 
-  echo "create admin-user"
-  # create admin-user
-  kubectl apply -f manifests/admin-user.yaml
-  
-  # wait for admin-user ready
-  echo "waiting for admin-user generated"
-  sleep 3
-
-  # issue license for admin-user
-  echo "license issue for admin-user"
-  kubectl apply -f manifests/free-license.yaml
+    # issue license for admin-user
+    echo "license issue for admin-user"
+    kubectl apply -f manifests/free-license.yaml
 }
 
 function gen_mongodbUri() {
