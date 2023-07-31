@@ -222,6 +222,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 			Namespace: accountNamespace,
 		},
 	}
+	account.Annotations = make(map[string]string)
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &account, func() error {
 		return nil
 	}); err != nil {
@@ -258,9 +259,6 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		return nil, fmt.Errorf("convert %s to int failed: %v", stringAmount, err)
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &account, func() error {
-		if account.Annotations == nil {
-			account.Annotations = make(map[string]string, 0)
-		}
 		account.Annotations[AccountAnnotationNewAccount] = "false"
 		return nil
 	}); err != nil {
