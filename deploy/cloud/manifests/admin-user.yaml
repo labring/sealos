@@ -1,0 +1,6 @@
+apiVersion: user.sealos.io/v1
+kind: User
+metadata:
+  name: admin
+spec:
+  csrExpirationSeconds: 7200

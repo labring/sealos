@@ -1,0 +1,8 @@
+apiVersion: infostream.sealos.io/v1
+kind: License
+metadata:
+  name: license
+spec:
+  uid: admin
+  # nosemgrep: generic.secrets.security.detected-jwt-token.detected-jwt-token
+  token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJTZWFsb3MiLCJpYXQiOjE2OTA0NDU5NjIsImFtdCI6MjAwMH0.ZzZfPRbNiNvRBLMn5FGJeKitRPHmUHZ1qvnGdJUIbIH1L5mQ4yECzvvsa5S8-OTqF6HXmrw9QmFcQOjoz5GpqjqrqXdH2H-JDXFGNNAib2J9UmLFmtV1BVm3zReucfK-bOY5NiWOr5wplEVwkoUKNPHLY5Mw142y9J62vELE-XW-hb3xcmWjLTPVRYgMqk0KEi7Z7cQ_rS0QgJh1Rqb2WS6AKz2ILE5J8XUhhhUva0nCEyLzE-I8oZtV6kugQy8YjWI-SjfneFOLI8-Pg40vry6DZZ-_J_9QmjkUlZx0YNMRiRA5yg2yWeMEzVnam9L310TJgu6Od-bEUijsfOcZyw"
