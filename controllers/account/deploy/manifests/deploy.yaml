@@ -1168,6 +1168,7 @@ spec:
         envFrom:
         - secretRef:
             name: payment-secret
+            optional: true
         image: ghcr.io/labring/sealos-account-controller:latest
         imagePullPolicy: Always
         livenessProbe:
