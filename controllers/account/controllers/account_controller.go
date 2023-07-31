@@ -222,8 +222,10 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 			Namespace: accountNamespace,
 		},
 	}
-	account.Annotations = make(map[string]string)
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &account, func() error {
+		if account.Annotations == nil {
+			account.Annotations = make(map[string]string)
+		}
 		return nil
 	}); err != nil {
 		return nil, err
@@ -249,7 +251,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	}
 
 	if account.Annotations[AccountAnnotationNewAccount] == "false" {
-		r.Logger.V(1).Info("account is not a new user ", "account", account)
+		//r.Logger.V(1).Info("account is not a new user ", "account", account)
 		return &account, nil
 	}
 
@@ -259,6 +261,9 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		return nil, fmt.Errorf("convert %s to int failed: %v", stringAmount, err)
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &account, func() error {
+		if account.Annotations == nil {
+			account.Annotations = make(map[string]string)
+		}
 		account.Annotations[AccountAnnotationNewAccount] = "false"
 		return nil
 	}); err != nil {
