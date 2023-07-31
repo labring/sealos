@@ -1203,7 +1203,7 @@ spec:
         resources:
           limits:
             cpu: 1000m
-            memory: 256Mi
+            memory: 1024Mi
           requests:
             cpu: 100m
             memory: 64Mi
@@ -1229,7 +1229,7 @@ spec:
         resources:
           limits:
             cpu: 500m
-            memory: 128Mi
+            memory: 512Mi
           requests:
             cpu: 5m
             memory: 64Mi
