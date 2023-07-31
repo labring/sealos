@@ -24,11 +24,16 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+
+	"github.com/labring/sealos/controllers/pkg/common"
+
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 
 	"github.com/labring/sealos/controllers/pkg/crypto"
 
@@ -53,23 +58,21 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/labring/sealos/pkg/pay"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	"github.com/labring/sealos/pkg/pay"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	ACCOUNTNAMESPACEENV         = "ACCOUNT_NAMESPACE"
-	DEFAULTACCOUNTNAMESPACE     = "sealos-system"
-	AccountAnnotationNewAccount = "account.sealos.io/new-account"
-	NEWACCOUNTAMOUNTENV         = "NEW_ACCOUNT_AMOUNT"
-	RECHARGEGIFT                = "recharge-gift"
-	SEALOS                      = "sealos"
+	ACCOUNTNAMESPACEENV          = "ACCOUNT_NAMESPACE"
+	DEFAULTACCOUNTNAMESPACE      = "sealos-system"
+	AccountAnnotationNewAccount  = "account.sealos.io/new-account"
+	AccountAnnotationIgnoreQuota = "account.sealos.io/ignore-quota"
+	NEWACCOUNTAMOUNTENV          = "NEW_ACCOUNT_AMOUNT"
+	RECHARGEGIFT                 = "recharge-gift"
+	SEALOS                       = "sealos"
 )
 
 // AccountReconciler reconciles a Account object
@@ -84,6 +87,8 @@ type AccountReconciler struct {
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=limitranges,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=user.sealos.io,resources=users,verbs=get;list;watch
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances/status,verbs=get;list;watch;create;update;patch;delete
@@ -217,6 +222,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 			Namespace: accountNamespace,
 		},
 	}
+	account.Annotations = make(map[string]string)
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &account, func() error {
 		return nil
 	}); err != nil {
@@ -230,6 +236,11 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	if err != nil {
 		return nil, fmt.Errorf("sync init balance failed: %v", err)
 	}
+	if account.GetAnnotations()[AccountAnnotationIgnoreQuota] != "true" {
+		if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
+			return nil, fmt.Errorf("sync resource resourceQuota and limitRange failed: %v", err)
+		}
+	}
 	// add account balance when account is new user
 	stringAmount := os.Getenv(NEWACCOUNTAMOUNTENV)
 	if stringAmount == "" {
@@ -237,7 +248,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		return &account, nil
 	}
 
-	if newAccountFlag := account.Annotations[AccountAnnotationNewAccount]; newAccountFlag == "false" {
+	if account.Annotations[AccountAnnotationNewAccount] == "false" {
 		r.Logger.V(1).Info("account is not a new user ", "account", account)
 		return &account, nil
 	}
@@ -248,9 +259,6 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		return nil, fmt.Errorf("convert %s to int failed: %v", stringAmount, err)
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &account, func() error {
-		if account.Annotations == nil {
-			account.Annotations = make(map[string]string, 0)
-		}
 		account.Annotations[AccountAnnotationNewAccount] = "false"
 		return nil
 	}); err != nil {
@@ -269,29 +277,23 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	}
 	r.Logger.Info("account created,will charge new account some money", "account", account, "stringAmount", stringAmount)
 
-	if err := r.syncResourceQuota(ctx, userNamespace); err != nil {
-		return nil, fmt.Errorf("sync resource quota failed: %v", err)
-	}
 	return &account, nil
 }
 
-func (r *AccountReconciler) syncResourceQuota(ctx context.Context, nsName string) error {
-	quota := &corev1.ResourceQuota{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      ResourceQuotaPrefix + nsName,
-			Namespace: nsName,
-		},
-	}
-
-	return retry.Retry(10, 1*time.Second, func() error {
-		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
-			quota.Spec.Hard = DefaultResourceQuota()
-			return nil
-		}); err != nil {
-			return fmt.Errorf("sync resource quota failed: %v", err)
+func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, nsName string) error {
+	objs := []client.Object{client.Object(common.GetDefaultLimitRange(nsName, nsName)), client.Object(common.GetDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName))}
+	for i := range objs {
+		err := retry.Retry(10, 1*time.Second, func() error {
+			_, err := controllerutil.CreateOrUpdate(ctx, r.Client, objs[i], func() error {
+				return nil
+			})
+			return err
+		})
+		if err != nil {
+			return fmt.Errorf("sync resource %T failed: %v", objs[i], err)
 		}
-		return nil
-	})
+	}
+	return nil
 }
 
 func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, namespace string) error {
@@ -478,10 +480,9 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		return fmt.Errorf("mongo url is empty")
 	}
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&accountv1.Account{}).
+		For(&userV1.User{}, builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}))).
 		Watches(&source.Kind{Type: &accountv1.Payment{}}, &handler.EnqueueRequestForObject{}).
 		Watches(&source.Kind{Type: &accountv1.AccountBalance{}}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(&NamespaceFilterPredicate{Namespace: r.AccountSystemNamespace})).
-		Watches(&source.Kind{Type: &userV1.User{}}, &handler.EnqueueRequestForObject{}).
 		WithOptions(rateOpts).
 		Complete(r)
 }

@@ -6,6 +6,8 @@ import (
 	"math"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/labring/sealos/controllers/pkg/common/gpu"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -165,6 +167,57 @@ var infraMemoryMap = map[string]int{
 	"ecs.c7.large":  4,
 	"ecs.g7.large":  8,
 	"ecs.g7.xlarge": 16,
+}
+
+func GetDefaultResourceQuota(ns, name string) *corev1.ResourceQuota {
+	return &corev1.ResourceQuota{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: corev1.ResourceQuotaSpec{
+			Hard: DefaultResourceQuotaHard(),
+		},
+	}
+}
+
+func GetDefaultLimitRange(ns, name string) *corev1.LimitRange {
+	return &corev1.LimitRange{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: corev1.LimitRangeSpec{
+			Limits: DefaultLimitRangeLimits(),
+		},
+	}
+}
+
+func DefaultResourceQuotaHard() corev1.ResourceList {
+	return corev1.ResourceList{
+		//corev1.ResourceRequestsCPU:    resource.MustParse("100"),
+		corev1.ResourceLimitsCPU: resource.MustParse("16"),
+		//corev1.ResourceRequestsMemory: resource.MustParse("100"),
+		corev1.ResourceLimitsMemory: resource.MustParse("64Gi"),
+		//For all PVCs, the total demand for storage resources cannot exceed this value
+		corev1.ResourceRequestsStorage: resource.MustParse("100Gi"),
+		//"limit.storage": resource.MustParse("100Gi"),
+		//Local ephemeral storage
+		corev1.ResourceLimitsEphemeralStorage: resource.MustParse("100Gi"),
+		//corev1.ResourceRequestsEphemeralStorage: resource.MustParse("100Gi"),
+	}
+}
+
+func DefaultLimitRangeLimits() []corev1.LimitRangeItem {
+	return []corev1.LimitRangeItem{
+		{
+			Type: corev1.LimitTypeContainer,
+			Default: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("50m"),
+				corev1.ResourceMemory: resource.MustParse("64Mi"),
+			},
+		},
+	}
 }
 
 // MiB
