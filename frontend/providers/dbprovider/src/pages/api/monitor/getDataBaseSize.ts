@@ -67,7 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             break;
         }
         const data = dataObject.values.map((item) =>
-          convertBytes(Number(item[1]), 'mb').toFixed(2)
+          convertBytes(Number(item[1]), 'gb').toFixed(2)
         );
 
         return { name, data };

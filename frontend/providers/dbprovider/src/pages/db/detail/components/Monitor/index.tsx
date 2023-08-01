@@ -75,7 +75,7 @@ const Monitor = ({ db, dbName, dbType }: { dbName: string; dbType: string; db?: 
               dbName={dbName}
               dbType={dbType}
               db={db}
-              unit="MiB"
+              unit="GiB"
             />
           )}
         </Box>
