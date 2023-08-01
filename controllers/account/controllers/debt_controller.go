@@ -284,17 +284,6 @@ func SetDebtStatus(debt *accountv1.Debt, status accountv1.DebtStatusType) bool {
 	return true
 }
 
-// 旧版本转换
-func oldStatusConversion(debt *accountv1.Debt) bool {
-	switch debt.Status.AccountDebtStatus {
-	case accountv1.DebtStatusNormal:
-		debt.Status.AccountDebtStatus = accountv1.NormalPeriod
-	default:
-		debt.Status.AccountDebtStatus = accountv1.ImminentDeletionPeriod
-	}
-	return true
-}
-
 func newStatusConversion(debt *accountv1.Debt) bool {
 	switch debt.Status.AccountDebtStatus {
 	case accountv1.PreWarningPeriod:
