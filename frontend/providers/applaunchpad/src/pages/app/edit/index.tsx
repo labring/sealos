@@ -30,6 +30,7 @@ const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 import { serviceSideProps } from '@/utils/i18n';
 import { patchYamlList } from '@/utils/tools';
 import { useTranslation } from 'next-i18next';
+import { noGpuSliderKey } from '@/constants/app';
 
 const formData2Yamls = (data: AppEditType) => [
   {
@@ -87,13 +88,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const router = useRouter();
   const [forceUpdate, setForceUpdate] = useState(false);
   const { setAppDetail } = useAppStore();
-  const {
-    screenWidth,
-    getUserSourcePrice,
-    userSourcePrice,
-    CpuSlideMarkList,
-    MemorySlideMarkList
-  } = useGlobalStore();
+  const { screenWidth, getUserSourcePrice, userSourcePrice, formSliderListConfig } =
+    useGlobalStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -238,8 +234,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       if (!appName) {
         const defaultApp = {
           ...defaultEditVal,
-          cpu: CpuSlideMarkList[0].value,
-          memory: MemorySlideMarkList[0].value
+          cpu: formSliderListConfig[noGpuSliderKey].cpu[0],
+          memory: formSliderListConfig[noGpuSliderKey].memory[0]
         };
         setAlready(true);
         setYamlList([

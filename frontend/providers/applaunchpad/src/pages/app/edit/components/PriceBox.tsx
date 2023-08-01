@@ -51,7 +51,7 @@ const PriceBox = ({
       },
       { label: 'Memory', color: '#36ADEF', value: podScale(memoryP) },
       { label: 'Storage', color: '#8172D8', value: podScale(storageP) },
-      ...(userSourcePrice?.gpu ? [{ label: 'Gpu', color: '#8172D8', value: podScale(gpuP) }] : []),
+      ...(userSourcePrice?.gpu ? [{ label: 'GPU', color: '#8172D8', value: podScale(gpuP) }] : []),
       { label: 'TotalPrice', color: '#485058', value: podScale(totalP) }
     ];
   }, [cpu, gpu, memory, pods, storage]);
@@ -63,9 +63,16 @@ const PriceBox = ({
       </Box>
       {priceList.map((item) => (
         <Flex key={item.label} alignItems={'center'} mt={3}>
-          <Box bg={item.color} w={'8px'} h={'8px'} borderRadius={'10px'} mr={2}></Box>
-          <Box flex={'0 0 65px'}>{t(item.label)}:</Box>
-          <Box>{item.value}</Box>
+          <Box
+            flexShrink={0}
+            bg={item.color}
+            w={'8px'}
+            h={'8px'}
+            borderRadius={'10px'}
+            mr={2}
+          ></Box>
+          <Box flex={'0 0 60px'}>{t(item.label)}:</Box>
+          <Box whiteSpace={'nowrap'}>{item.value}</Box>
         </Flex>
       ))}
       <Box></Box>

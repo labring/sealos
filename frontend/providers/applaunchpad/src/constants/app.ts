@@ -70,6 +70,7 @@ export const podStatusMap = {
   }
 };
 
+export const noGpuSliderKey = 'NoGpu';
 export const pauseKey = 'deploy.cloud.sealos.io/pause';
 export const maxReplicasKey = 'deploy.cloud.sealos.io/maxReplicas';
 export const minReplicasKey = 'deploy.cloud.sealos.io/minReplicas';

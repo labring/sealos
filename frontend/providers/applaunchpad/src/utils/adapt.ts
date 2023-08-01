@@ -31,7 +31,13 @@ import {
   gpuNodeSelectorKey,
   gpuResourceKey
 } from '@/constants/app';
-import { cpuFormatToM, memoryFormatToMi, formatPodTime, atobSecretYaml } from '@/utils/tools';
+import {
+  cpuFormatToM,
+  memoryFormatToMi,
+  formatPodTime,
+  atobSecretYaml,
+  printMemory
+} from '@/utils/tools';
 import type { DeployKindsType, AppEditType } from '@/types/app';
 import { defaultEditVal } from '@/constants/editApp';
 import { customAlphabet } from 'nanoid';
@@ -375,4 +381,21 @@ export const adaptYamlToEdit = (yamlList: string[]) => {
   }
 
   return res;
+};
+
+export const sliderNumber2MarkList = ({
+  val,
+  type,
+  gpuAmount = 1
+}: {
+  val: number[];
+  type: 'cpu' | 'memory';
+  gpuAmount?: number;
+}) => {
+  const newVal = val.map((item) => item * gpuAmount);
+
+  return newVal.map((item) => ({
+    label: type === 'memory' ? (item >= 1024 ? `${item / 1024} G` : `${item} M`) : `${item / 1000}`,
+    value: item
+  }));
 };

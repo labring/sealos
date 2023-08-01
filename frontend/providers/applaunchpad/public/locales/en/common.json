@@ -93,7 +93,7 @@
   "YAML File": "YAML",
   "filename": "Filename",
   "file value": "File Value",
-  "local storage": "Local Storage",
+  "Local Storage": "Storage",
   "multiple instances do not share data": "volume does not support shared access by multiple instances",
   "capacity": "capacity",
   "mount path": "mount path",

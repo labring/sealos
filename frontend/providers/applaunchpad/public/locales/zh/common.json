@@ -94,7 +94,7 @@
   "YAML File": "YAML 文件",
   "filename": "文件名",
   "file value": "文件值",
-  "local storage": "本地存储",
+  "Local Storage": "本地存储",
   "multiple instances do not share data": "存储卷不支持多个实例共享",
   "capacity": "容量",
   "mount path": "挂载路径",
@@ -169,5 +169,6 @@
   "Number of instances: 1 to 20": "实例数范围：1~20",
   "The number of instances cannot be empty": "实例数不能为空",
   "The minimum number of instances is 1": "实例数最小为1",
-  "The maximum number of instances is 20": "实例数最大为20"
+  "The maximum number of instances is 20": "实例数最大为20",
+  "Amount": "数量"
 }

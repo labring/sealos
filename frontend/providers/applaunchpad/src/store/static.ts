@@ -12,8 +12,7 @@ export const loadInitData = async () => {
     return {
       SEALOS_DOMAIN,
       INGRESS_SECRET,
-      CPU_MARK_LIST: res.CPU_MARK_LIST,
-      MEMORY_MARK_LIST: res.MEMORY_MARK_LIST
+      FORM_SLIDER_LIST_CONFIG: res.FORM_SLIDER_LIST_CONFIG
     };
   } catch (error) {}
   return {

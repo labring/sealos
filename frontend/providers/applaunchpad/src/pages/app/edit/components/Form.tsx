@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Box,
   Button,
@@ -49,6 +49,8 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 import styles from './index.module.scss';
 import { obj2Query } from '@/api/tools';
 import { throttle } from 'lodash';
+import { noGpuSliderKey } from '@/constants/app';
+import { sliderNumber2MarkList } from '@/utils/adapt';
 
 const Form = ({
   formHook,
@@ -67,7 +69,7 @@ const Form = ({
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
-  const { userSourcePrice, CpuSlideMarkList, MemorySlideMarkList } = useGlobalStore();
+  const { userSourcePrice, formSliderListConfig } = useGlobalStore();
   const router = useRouter();
   const { name } = router.query as QueryType;
   const theme = useTheme();
@@ -247,6 +249,24 @@ const Form = ({
       inventory: countGpuInventory(selected.type)
     };
   }, [userSourcePrice?.gpu, countGpuInventory, getValues, refresh]);
+  const countSliderList = useCallback(() => {
+    const gpuType = getValues('gpu.type');
+    const key = gpuType && formSliderListConfig[gpuType] ? gpuType : noGpuSliderKey;
+
+    return {
+      cpu: sliderNumber2MarkList({
+        val: formSliderListConfig[key].cpu,
+        type: 'cpu',
+        gpuAmount: getValues('gpu.amount')
+      }),
+      memory: sliderNumber2MarkList({
+        val: formSliderListConfig[key].memory,
+        type: 'memory',
+        gpuAmount: getValues('gpu.amount')
+      })
+    };
+  }, [formSliderListConfig, getValues]);
+  const SliderList = useMemo(() => countSliderList(), [countSliderList, refresh]);
 
   return (
     <>
@@ -528,7 +548,7 @@ const Form = ({
                         <Label mb={1} fontSize={'sm'}>
                           {t('Replicas')}
                         </Label>
-                        <Box w={'410px'}>
+                        <Box w={'410px'} ml={'7px'}>
                           <MyRangeSlider
                             min={1}
                             max={20}
@@ -625,7 +645,12 @@ const Form = ({
                                 {...(hasInventory
                                   ? {
                                       cursor: 'pointer',
-                                      onClick: () => setValue('gpu.amount', item.value)
+                                      onClick: () => {
+                                        setValue('gpu.amount', item.value);
+                                        const sliderList = countSliderList();
+                                        setValue('cpu', sliderList.cpu[1].value);
+                                        setValue('memory', sliderList.memory[1].value);
+                                      }
                                     }
                                   : {
                                       cursor: 'default',
@@ -647,14 +672,14 @@ const Form = ({
               )}
 
               <Flex mb={10} pr={3} alignItems={'flex-start'}>
-                <Label w={70}>{t('CPU')}</Label>
+                <Label w={87}>{t('CPU')}</Label>
                 <MySlider
-                  markList={CpuSlideMarkList}
+                  markList={SliderList.cpu}
                   activeVal={getValues('cpu')}
                   setVal={(e) => {
-                    setValue('cpu', CpuSlideMarkList[e].value);
+                    setValue('cpu', SliderList.cpu[e].value);
                   }}
-                  max={CpuSlideMarkList.length - 1}
+                  max={SliderList.cpu.length - 1}
                   min={0}
                   step={1}
                 />
@@ -663,14 +688,14 @@ const Form = ({
                 </Box>
               </Flex>
               <Flex mb={8} pr={3} alignItems={'center'}>
-                <Label w={70}>{t('Memory')}</Label>
+                <Label w={87}>{t('Memory')}</Label>
                 <MySlider
-                  markList={MemorySlideMarkList}
+                  markList={SliderList.memory}
                   activeVal={getValues('memory')}
                   setVal={(e) => {
-                    setValue('memory', MemorySlideMarkList[e].value);
+                    setValue('memory', SliderList.memory[e].value);
                   }}
-                  max={MemorySlideMarkList.length - 1}
+                  max={SliderList.memory.length - 1}
                   min={0}
                   step={1}
                 />
@@ -941,7 +966,7 @@ const Form = ({
                   <Box>
                     <Flex alignItems={'center'} mb={'10px'}>
                       <Box className={styles.formSecondTitle} m={0}>
-                        {t('local storage')}
+                        {t('Local Storage')}
                       </Box>
 
                       <Button

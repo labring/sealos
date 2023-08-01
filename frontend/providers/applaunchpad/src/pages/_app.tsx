@@ -56,8 +56,8 @@ const App = ({ Component, pageProps }: AppProps) => {
     const response = createSealosApp();
 
     (async () => {
-      const { SEALOS_DOMAIN, CPU_MARK_LIST, MEMORY_MARK_LIST } = await (() => loadInitData())();
-      initFormSliderList({ CPU_MARK_LIST, MEMORY_MARK_LIST });
+      const { SEALOS_DOMAIN, FORM_SLIDER_LIST_CONFIG } = await (() => loadInitData())();
+      initFormSliderList(FORM_SLIDER_LIST_CONFIG);
 
       try {
         const res = await sealosApp.getSession();
@@ -112,7 +112,7 @@ const App = ({ Component, pageProps }: AppProps) => {
         });
       } catch (error) {
         changeI18n({
-          currentLanguage: 'zh'
+          currentLanguage: 'en'
         });
       }
     })();

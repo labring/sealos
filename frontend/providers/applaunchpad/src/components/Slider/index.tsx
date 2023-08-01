@@ -40,6 +40,7 @@ const MySlider = ({
           mt={3}
           fontSize={'sm'}
           transform={'translateX(-50%)'}
+          whiteSpace={'nowrap'}
           {...(activeVal === item.value
             ? { color: 'myGray.900', fontWeight: 'bold' }
             : { color: 'myGray.500' })}
