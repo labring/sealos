@@ -254,7 +254,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		}
 	//兼容老版本
 	default:
-		update = oldStatusConversion(debt)
+		update = newStatusConversion(debt)
 	}
 
 	if update {
@@ -291,6 +291,18 @@ func oldStatusConversion(debt *accountv1.Debt) bool {
 		debt.Status.AccountDebtStatus = accountv1.NormalPeriod
 	default:
 		debt.Status.AccountDebtStatus = accountv1.ImminentDeletionPeriod
+	}
+	return true
+}
+
+func newStatusConversion(debt *accountv1.Debt) bool {
+	switch debt.Status.AccountDebtStatus {
+	case accountv1.PreWarningPeriod:
+		debt.Status.AccountDebtStatus = accountv1.NormalPeriod
+	case accountv1.SuspendPeriod:
+		debt.Status.AccountDebtStatus = accountv1.ImminentDeletionPeriod
+	case accountv1.RemovedPeriod:
+		debt.Status.AccountDebtStatus = accountv1.FinalDeletionPeriod
 	}
 	return true
 }
