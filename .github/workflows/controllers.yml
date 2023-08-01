@@ -87,6 +87,7 @@ jobs:
           - { name: resources, path: resources }
           - { name: resources-metering, path: resources/metering }
           - { name: licenseissuer, path: licenseissuer }
+          - { name: node, path: node }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -191,6 +192,7 @@ jobs:
           - { name: resources, path: resources }
           - { name: resources-metering, path: resources/metering }
           - { name: licenseissuer, path: licenseissuer }
+          - { name: node, path: node }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
