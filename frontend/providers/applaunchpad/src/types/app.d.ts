@@ -64,9 +64,7 @@ export interface AppEditType {
   replicas: number | '';
   cpu: number;
   memory: number;
-  gpu?: GpuType & {
-    use: boolean;
-  };
+  gpu?: GpuType;
   containerOutPort: number | '';
   accessExternal: {
     use: boolean;

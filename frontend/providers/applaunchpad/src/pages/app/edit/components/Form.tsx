@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Box,
   Button,
@@ -54,12 +54,14 @@ const Form = ({
   formHook,
   already,
   defaultStorePathList,
+  countGpuInventory,
   pxVal,
   refresh
 }: {
   formHook: UseFormReturn<AppEditType, any>;
   already: boolean;
   defaultStorePathList: string[];
+  countGpuInventory: (type?: string) => number;
   pxVal: number;
   refresh: boolean;
 }) => {
@@ -115,12 +117,6 @@ const Form = ({
             : true)
       },
       {
-        id: 'deployMode',
-        label: 'Deployment Mode',
-        icon: 'deployMode',
-        isSetting: getValues('hpa.use') ? !!getValues('hpa.value') : !!getValues('replicas')
-      },
-      {
         id: 'network',
         label: 'Network Configuration',
         icon: 'network',
@@ -140,14 +136,6 @@ const Form = ({
     ],
     [refresh]
   );
-
-  const selectedGpu = useMemo(() => {
-    if (!getValues('gpu.use')) return;
-    const gpu = userSourcePrice?.gpu?.find((item) => item.type === getValues('gpu.type'));
-    if (!gpu) return;
-
-    return gpu;
-  }, [getValues, userSourcePrice?.gpu, refresh]);
 
   const [activeNav, setActiveNav] = useState(navList[0].id);
   const [configEdit, setConfigEdit] = useState<ConfigMapType>();
@@ -216,6 +204,49 @@ const Form = ({
     alignItems: 'center',
     backgroundColor: 'myWhite.600'
   };
+
+  const gpuSelectList = useMemo(
+    () =>
+      userSourcePrice?.gpu
+        ? [
+            {
+              label: t('No GPU'),
+              value: ''
+            },
+            ...userSourcePrice.gpu.map((item) => ({
+              icon: 'nvidia',
+              label: (
+                <Flex>
+                  <Box color={'myGray.900'}>{item.type}</Box>
+                  <Box mx={3} color={'myGray.500'}>
+                    |
+                  </Box>
+                  <Box color={'myGray.500'}>
+                    {t('vm')} : {item.vm}G
+                  </Box>
+                  <Box mx={3} color={'myGray.500'}>
+                    |
+                  </Box>
+                  <Flex pr={3}>
+                    <Box color={'myGray.500'}>{t('Inventory')}&ensp;:&ensp;</Box>
+                    <Box color={'#FB7C3C'}>{countGpuInventory(item.type)}</Box>
+                  </Flex>
+                </Flex>
+              ),
+              value: item.type
+            }))
+          ]
+        : [],
+    [countGpuInventory, t, userSourcePrice?.gpu, refresh]
+  );
+  const selectedGpu = useMemo(() => {
+    const selected = userSourcePrice?.gpu?.find((item) => item.type === getValues('gpu.type'));
+    if (!selected) return;
+    return {
+      ...selected,
+      inventory: countGpuInventory(selected.type)
+    };
+  }, [userSourcePrice?.gpu, countGpuInventory, getValues, refresh]);
 
   return (
     <>
@@ -290,7 +321,7 @@ const Form = ({
                 memory={getValues('memory')}
                 storage={getValues('storeList').reduce((sum, item) => sum + item.value, 0)}
                 gpu={
-                  getValues('gpu.use')
+                  !!getValues('gpu.type')
                     ? {
                         type: getValues('gpu.type'),
                         amount: getValues('gpu.amount')
@@ -366,64 +397,180 @@ const Form = ({
                     }}
                   />
                 </Flex>
-                <Box mt={4} pl={8} borderLeft={theme.borders.base}>
-                  <FormControl isInvalid={!!errors.imageName} w={'500px'}>
-                    <Flex alignItems={'center'}>
-                      <Label w={110}>{t('Image Name')}</Label>
-                      <Input
-                        value={getValues('imageName')}
-                        backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
-                        placeholder={`${t('Image Name')}`}
-                        {...register('imageName', {
-                          required: 'Image name cannot be empty.',
-                          setValueAs(e) {
-                            return e.replace(/\s*/g, '');
-                          }
-                        })}
-                      />
-                    </Flex>
+                <Box mt={4} pl={'80px'}>
+                  <FormControl isInvalid={!!errors.imageName} w={'420px'}>
+                    <Box mb={1} fontSize={'sm'}>
+                      {t('Image Name')}
+                    </Box>
+                    <Input
+                      value={getValues('imageName')}
+                      backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
+                      placeholder={`${t('Image Name')}`}
+                      {...register('imageName', {
+                        required: 'Image name cannot be empty.',
+                        setValueAs(e) {
+                          return e.replace(/\s*/g, '');
+                        }
+                      })}
+                    />
                   </FormControl>
                   {getValues('secret.use') ? (
                     <>
-                      <FormControl mt={5} isInvalid={!!errors.secret?.username} w={'500px'}>
-                        <Flex alignItems={'center'}>
-                          <Label w={110}>{t('Username')}</Label>
-                          <Input
-                            backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
-                            placeholder={`${t('Username for the image registry')}`}
-                            {...register('secret.username', {
-                              required: t('The user name cannot be empty') || ''
-                            })}
-                          />
-                        </Flex>
+                      <FormControl mt={4} isInvalid={!!errors.secret?.username} w={'420px'}>
+                        <Box mb={1} fontSize={'sm'}>
+                          {t('Username')}
+                        </Box>
+                        <Input
+                          backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
+                          placeholder={`${t('Username for the image registry')}`}
+                          {...register('secret.username', {
+                            required: t('The user name cannot be empty') || ''
+                          })}
+                        />
                       </FormControl>
-                      <FormControl mt={5} isInvalid={!!errors.secret?.password} w={'500px'}>
-                        <Flex alignItems={'center'}>
-                          <Label w={110}>{t('Password')}</Label>
-                          <Input
-                            type={'password'}
-                            placeholder={`${t('Password for the image registry')}`}
-                            backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
-                            {...register('secret.password', {
-                              required: t('The password cannot be empty') || ''
-                            })}
-                          />
-                        </Flex>
+                      <FormControl mt={4} isInvalid={!!errors.secret?.password} w={'420px'}>
+                        <Box mb={1} fontSize={'sm'}>
+                          {t('Password')}
+                        </Box>
+                        <Input
+                          type={'password'}
+                          placeholder={`${t('Password for the image registry')}`}
+                          backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
+                          {...register('secret.password', {
+                            required: t('The password cannot be empty') || ''
+                          })}
+                        />
                       </FormControl>
-                      <FormControl mt={5} isInvalid={!!errors.secret?.serverAddress} w={'500px'}>
-                        <Flex alignItems={'center'}>
-                          <Label w={110}>{t('Image address')}</Label>
-                          <Input
-                            backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
-                            placeholder={`${t('Image address')}`}
-                            {...register('secret.serverAddress', {
-                              required: t('The image cannot be empty') || ''
-                            })}
-                          />
-                        </Flex>
+                      <FormControl mt={4} isInvalid={!!errors.secret?.serverAddress} w={'420px'}>
+                        <Box mb={1} fontSize={'sm'}>
+                          {t('Image Address')}
+                        </Box>
+                        <Input
+                          backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
+                          placeholder={`${t('Image Address')}`}
+                          {...register('secret.serverAddress', {
+                            required: t('The image cannot be empty') || ''
+                          })}
+                        />
                       </FormControl>
                     </>
                   ) : null}
+                </Box>
+              </Box>
+              <Box mb={7}>
+                <Flex alignItems={'center'}>
+                  <Label w={80}>{t('Deployment Mode')}</Label>
+                  <Tabs
+                    w={'195px'}
+                    size={'sm'}
+                    list={[
+                      {
+                        label: 'Fixed instance',
+                        id: `static`
+                      },
+                      {
+                        label: 'Auto scaling',
+                        id: `hpa`
+                      }
+                    ]}
+                    activeId={getValues('hpa.use') ? 'hpa' : 'static'}
+                    onChange={(val) => {
+                      if (val === 'static') {
+                        setValue('hpa.use', false);
+                      } else {
+                        setValue('hpa.use', true);
+                      }
+                    }}
+                  />
+                </Flex>
+                <Box mt={4} pl={'80px'}>
+                  {getValues('hpa.use') ? (
+                    <>
+                      <Flex alignItems={'center'}>
+                        <MySelect
+                          width={'130px'}
+                          value={getValues('hpa.target')}
+                          list={[
+                            { value: 'cpu', label: t('CPU') },
+                            { value: 'memory', label: t('Memory') }
+                          ]}
+                          onchange={(val: any) => setValue('hpa.target', val)}
+                        />
+
+                        <Input
+                          type={'number'}
+                          backgroundColor={getValues('hpa.value') ? 'myWhite.500' : 'myWhite.400'}
+                          mx={2}
+                          w={'80px'}
+                          {...register('hpa.value', {
+                            required: t('The Cpu target is empty') || '',
+                            valueAsNumber: true,
+                            min: {
+                              value: 1,
+                              message: t('The cpu target value must be positive')
+                            },
+                            max: {
+                              value: 100,
+                              message: t('The target cpu value must be less than 100')
+                            }
+                          })}
+                        />
+                        <Box>%</Box>
+                        <Tip
+                          ml={4}
+                          icon={<InfoOutlineIcon />}
+                          text="CPU target is the CPU utilization rate of any container"
+                          size="sm"
+                        />
+                      </Flex>
+
+                      <Box mt={5} pb={5} pr={3}>
+                        <Label mb={1} fontSize={'sm'}>
+                          {t('Replicas')}
+                        </Label>
+                        <Box w={'410px'}>
+                          <MyRangeSlider
+                            min={1}
+                            max={20}
+                            step={1}
+                            value={[getValues('hpa.minReplicas'), getValues('hpa.maxReplicas')]}
+                            setVal={(e) => {
+                              setValue('hpa.minReplicas', e[0]);
+                              setValue('hpa.maxReplicas', e[1]);
+                            }}
+                          />
+                        </Box>
+                      </Box>
+                    </>
+                  ) : (
+                    <Flex alignItems={'center'}>
+                      <Label mr={4}>{t('Replicas')}</Label>
+                      <RangeInput
+                        value={getValues('replicas')}
+                        min={1}
+                        max={20}
+                        hoverText={
+                          t('Number of instances: 1 to 20') || 'Number of instances: 1 to 20'
+                        }
+                        setVal={(val) => {
+                          register('replicas', {
+                            required:
+                              t('The number of instances cannot be empty') ||
+                              'The number of instances cannot be empty',
+                            min: {
+                              value: 1,
+                              message: t('The minimum number of instances is 1')
+                            },
+                            max: {
+                              value: 20,
+                              message: t('The maximum number of instances is 20')
+                            }
+                          });
+                          setValue('replicas', val || '');
+                        }}
+                      />
+                    </Flex>
+                  )}
                 </Box>
               </Box>
 
@@ -431,73 +578,66 @@ const Form = ({
                 <Box mb={5}>
                   <Flex alignItems={'center'}>
                     <Label w={80}>GPU</Label>
-                    <Switch
-                      size={'lg'}
-                      colorScheme={'blackAlpha'}
-                      isChecked={getValues('gpu.use')}
-                      {...register('gpu.use', {
-                        onChange() {
-                          const gpu = userSourcePrice?.gpu?.find((item) => item.inventory > 0);
-                          if (gpu) {
-                            setValue('gpu.type', gpu.type || '');
-                            setValue('gpu.amount', 1);
-                          }
+                    <MySelect
+                      w={'300px'}
+                      placeholder={t('No GPU') || ''}
+                      value={getValues('gpu.type')}
+                      list={gpuSelectList}
+                      onchange={(type: any) => {
+                        const selected = userSourcePrice?.gpu?.find((item) => item.type === type);
+                        const inventory = countGpuInventory(type);
+                        if (type === '' || (selected && inventory > 0)) {
+                          setValue('gpu.type', type);
                         }
-                      })}
+                      }}
                     />
                   </Flex>
-                  {getValues('gpu.use') && (
-                    <Box mt={4} mb={10} pl={8} borderLeft={theme.borders.base}>
-                      <Flex>
-                        <MySelect
-                          placeholder={t('Select gpu type') || ''}
-                          value={getValues('gpu.type')}
-                          list={userSourcePrice.gpu.map((item) => ({
-                            icon: 'nvidia',
-                            label: (
-                              <Flex>
-                                <Box>{item.type}</Box>
-                                <Box mx={3} color={'myGray.500'}>
-                                  |
-                                </Box>
-                                <Box color={'myGray.500'} pr={3}>
-                                  {t('vm')}: {item.vm}G
-                                </Box>
-                              </Flex>
-                            ),
-                            value: item.type
-                          }))}
-                          onchange={(val: any) => setValue('gpu.type', val)}
-                        />
-                        {selectedGpu && selectedGpu.inventory < 8 && (
-                          <Tip
-                            ml={4}
-                            icon={<InfoOutlineIcon />}
-                            text={
-                              selectedGpu.inventory === 0
-                                ? t('Gpu empty inventory Tip', { gputype: selectedGpu.type })
-                                : t('Gpu insufficient  inventory Tip', {
-                                    gputype: selectedGpu.type,
-                                    card: selectedGpu.inventory
-                                  })
-                            }
-                            size="sm"
-                          />
-                        )}
-                      </Flex>
-                      <Flex mt={5} pr={3} alignItems={'flex-start'}>
-                        <MySlider
-                          markList={GpuAmountMarkList}
-                          activeVal={getValues('gpu.amount')}
-                          setVal={(e) => {
-                            setValue('gpu.amount', GpuAmountMarkList[e].value);
-                          }}
-                          max={GpuAmountMarkList.length - 1}
-                          min={0}
-                          step={1}
-                        />
-                        <Box ml={5} transform={'translateY(10px)'} color={'myGray.500'}>
-                          ({t('Card')})
+                  {!!getValues('gpu.type') && (
+                    <Box mt={4} pl={'80px'}>
+                      <Box mb={1}>{t('Amount')}</Box>
+                      <Flex alignItems={'center'}>
+                        {GpuAmountMarkList.map((item) => {
+                          const inventory = selectedGpu?.inventory || 0;
+                          const hasInventory = item.value <= inventory;
+
+                          return (
+                            <MyTooltip
+                              key={item.value}
+                              label={hasInventory ? '' : t('Under Stock')}
+                            >
+                              <Box
+                                mr={2}
+                                w={'32px'}
+                                h={'32px'}
+                                lineHeight={'32px'}
+                                textAlign={'center'}
+                                borderRadius={'md'}
+                                border={'1px solid'}
+                                {...(getValues('gpu.amount') === item.value
+                                  ? {
+                                      borderColor: 'myBlue.600',
+                                      boxShadow: '0px 0px 4px #A8DBFF'
+                                    }
+                                  : {
+                                      borderColor: 'myGray.200'
+                                    })}
+                                {...(hasInventory
+                                  ? {
+                                      cursor: 'pointer',
+                                      onClick: () => setValue('gpu.amount', item.value)
+                                    }
+                                  : {
+                                      cursor: 'default',
+                                      bg: 'myGray.100'
+                                    })}
+                              >
+                                {item.label}
+                              </Box>
+                            </MyTooltip>
+                          );
+                        })}
+                        <Box ml={3} color={'MyGray.500'}>
+                          / {t('Card')}
                         </Box>
                       </Flex>
                     </Box>
@@ -534,119 +674,6 @@ const Form = ({
                   step={1}
                 />
               </Flex>
-            </Box>
-          </Box>
-
-          {/* deploy mode */}
-          <Box id={'deployMode'} {...boxStyles}>
-            <Box {...headerStyles}>
-              <MyIcon name={'deployMode'} mr={5} w={'20px'} color={'myGray.500'} />
-              {t('Deployment Mode')}
-            </Box>
-            <Box px={'42px'} py={'24px'}>
-              <Tabs
-                w={'195px'}
-                size={'sm'}
-                list={[
-                  {
-                    label: 'Fixed instance',
-                    id: `static`
-                  },
-                  {
-                    label: 'Auto scaling',
-                    id: `hpa`
-                  }
-                ]}
-                activeId={getValues('hpa.use') ? 'hpa' : 'static'}
-                onChange={(val) => {
-                  if (val === 'static') {
-                    setValue('hpa.use', false);
-                  } else {
-                    setValue('hpa.use', true);
-                  }
-                }}
-              />
-              <Box mt={6} pl={10} borderLeft={'2px solid'} borderLeftColor={'myGray.100'}>
-                {getValues('hpa.use') ? (
-                  <>
-                    <Flex alignItems={'center'}>
-                      <MySelect
-                        width={'130px'}
-                        value={getValues('hpa.target')}
-                        list={[
-                          { value: 'cpu', label: 'CPU' },
-                          { value: 'memory', label: 'Memory' }
-                        ]}
-                        onchange={(val: any) => setValue('hpa.target', val)}
-                      />
-
-                      <Input
-                        type={'number'}
-                        backgroundColor={getValues('hpa.value') ? 'myWhite.500' : 'myWhite.400'}
-                        mx={2}
-                        w={'80px'}
-                        {...register('hpa.value', {
-                          required: 'cpu目标值为空',
-                          valueAsNumber: true,
-                          min: {
-                            value: 1,
-                            message: 'cpu目标值需为正数'
-                          },
-                          max: {
-                            value: 100,
-                            message: 'cpu目标值需在100内'
-                          }
-                        })}
-                      />
-                      <Box>%</Box>
-                      <Tip
-                        ml={4}
-                        icon={<InfoOutlineIcon />}
-                        text="CPU target is the CPU utilization rate of any container"
-                        size="sm"
-                      />
-                    </Flex>
-
-                    <Flex mt={5} pb={5} pr={3} alignItems={'center'}>
-                      <Label w={100}>{t('Replicas')}</Label>
-                      <MyRangeSlider
-                        min={1}
-                        max={20}
-                        step={1}
-                        value={[getValues('hpa.minReplicas'), getValues('hpa.maxReplicas')]}
-                        setVal={(e) => {
-                          setValue('hpa.minReplicas', e[0]);
-                          setValue('hpa.maxReplicas', e[1]);
-                        }}
-                      />
-                    </Flex>
-                  </>
-                ) : (
-                  <Flex alignItems={'center'}>
-                    <Label mr={4}>{t('Replicas')}</Label>
-                    <RangeInput
-                      value={getValues('replicas')}
-                      min={1}
-                      max={20}
-                      hoverText="实例数范围：1~20"
-                      setVal={(val) => {
-                        register('replicas', {
-                          required: '实例数不能为空',
-                          min: {
-                            value: 1,
-                            message: '实例数最小为1'
-                          },
-                          max: {
-                            value: 20,
-                            message: '实例数最大为20'
-                          }
-                        });
-                        setValue('replicas', val || '');
-                      }}
-                    />
-                  </Flex>
-                )}
-              </Box>
             </Box>
           </Box>
 
@@ -759,7 +786,7 @@ const Form = ({
             <Accordion
               id={'settings'}
               allowToggle
-              defaultIndex={navList[3].isSetting ? 0 : undefined}
+              defaultIndex={navList[2].isSetting ? 0 : undefined}
             >
               <AccordionItem {...boxStyles}>
                 <AccordionButton
@@ -810,96 +837,102 @@ const Form = ({
                   <Divider my={'24px'} bg={'myGray.100'} />
 
                   <Box w={'100%'}>
-                    <Box className={styles.formSecondTitle}>{t('Environment Variables')}</Box>
-                    <table className={styles.table}>
-                      <tbody>
-                        {envs.map((env) => {
-                          const valText = env.value
-                            ? env.value
-                            : env.valueFrom
-                            ? 'value from | ***'
-                            : '';
-                          return (
-                            <tr key={env.id}>
-                              <th>{env.key}</th>
-                              <MyTooltip label={valText}>
-                                <th
-                                  className={styles.textEllipsis}
-                                  style={{
-                                    userSelect: 'auto'
-                                  }}
-                                >
-                                  {valText}
-                                </th>
-                              </MyTooltip>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                    <Button
-                      mt={4}
-                      w={'100%'}
-                      variant={'base'}
-                      leftIcon={<MyIcon name="edit" />}
-                      onClick={onOpenEditEnvs}
-                    >
-                      {t('Edit Environment Variables')}
-                    </Button>
+                    <Flex alignItems={'center'}>
+                      <Box className={styles.formSecondTitle}>{t('Environment Variables')}</Box>
+                      <Button
+                        w={'100%'}
+                        variant={'base'}
+                        leftIcon={<MyIcon name="edit" />}
+                        onClick={onOpenEditEnvs}
+                      >
+                        {t('Edit Environment Variables')}
+                      </Button>
+                    </Flex>
+                    <Box pl={'100px'} mt={3}>
+                      <table className={styles.table}>
+                        <tbody>
+                          {envs.map((env) => {
+                            const valText = env.value
+                              ? env.value
+                              : env.valueFrom
+                              ? 'value from | ***'
+                              : '';
+                            return (
+                              <tr key={env.id}>
+                                <th>{env.key}</th>
+                                <MyTooltip label={valText}>
+                                  <th
+                                    className={styles.textEllipsis}
+                                    style={{
+                                      userSelect: 'auto'
+                                    }}
+                                  >
+                                    {valText}
+                                  </th>
+                                </MyTooltip>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </Box>
                   </Box>
 
                   <Divider my={'24px'} bg={'myGray.100'} />
 
                   <Box>
-                    <Box className={styles.formSecondTitle}>{t('Configuration File')}</Box>
-                    {configMaps.map((item, index) => (
-                      <Flex key={item.id} _notLast={{ mb: 5 }} alignItems={'center'}>
-                        <Flex
-                          alignItems={'center'}
-                          px={4}
-                          py={1}
-                          border={theme.borders.base}
-                          flex={'0 0 320px'}
-                          w={0}
-                          borderRadius={'sm'}
-                          cursor={'pointer'}
-                          onClick={() => setConfigEdit(item)}
-                          bg={'myWhite.300'}
-                        >
-                          <MyIcon name={'configMap'} />
-                          <Box ml={4} flex={'1 0 0'} w={0}>
-                            <Box color={'myGray.900'} fontWeight={'bold'}>
-                              {item.mountPath}
+                    <Flex alignItems={'center'}>
+                      <Box className={styles.formSecondTitle}>{t('Configuration File')}</Box>
+                      <Button
+                        onClick={() => setConfigEdit({ mountPath: '', value: '' })}
+                        variant={'base'}
+                        leftIcon={<MyIcon name="plus" w={'10px'} />}
+                        w={'320px'}
+                      >
+                        {t('Add')}
+                        {t('Configuration File')}
+                      </Button>
+                    </Flex>
+                    <Box mt={4} pl={'100px'}>
+                      {configMaps.map((item, index) => (
+                        <Flex key={item.id} _notLast={{ mb: 5 }} alignItems={'center'}>
+                          <Flex
+                            alignItems={'center'}
+                            px={4}
+                            py={1}
+                            border={theme.borders.base}
+                            flex={'0 0 320px'}
+                            w={0}
+                            borderRadius={'sm'}
+                            cursor={'pointer'}
+                            onClick={() => setConfigEdit(item)}
+                            bg={'myWhite.300'}
+                          >
+                            <MyIcon name={'configMap'} />
+                            <Box ml={4} flex={'1 0 0'} w={0}>
+                              <Box color={'myGray.900'} fontWeight={'bold'}>
+                                {item.mountPath}
+                              </Box>
+                              <Box
+                                className={styles.textEllipsis}
+                                color={'myGray.500'}
+                                fontSize={'sm'}
+                              >
+                                {item.value}
+                              </Box>
                             </Box>
-                            <Box
-                              className={styles.textEllipsis}
-                              color={'myGray.500'}
-                              fontSize={'sm'}
-                            >
-                              {item.value}
-                            </Box>
+                          </Flex>
+                          <Box
+                            className={styles.deleteIcon}
+                            ml={3}
+                            cursor={'pointer'}
+                            onClick={() => removeConfigMaps(index)}
+                          >
+                            <MyIcon name="delete" w={'16px'} h={'16px'} />
                           </Box>
                         </Flex>
-                        <Box
-                          className={styles.deleteIcon}
-                          ml={3}
-                          cursor={'pointer'}
-                          onClick={() => removeConfigMaps(index)}
-                        >
-                          <MyIcon name="delete" w={'16px'} h={'16px'} />
-                        </Box>
-                      </Flex>
-                    ))}
-
-                    <Button
-                      mt={3}
-                      onClick={() => setConfigEdit({ mountPath: '', value: '' })}
-                      variant={'base'}
-                      leftIcon={<MyIcon name="plus" />}
-                      w={'320px'}
-                    >
-                      {t('Add')} {t('Configuration File')}
-                    </Button>
+                      ))}
+                    </Box>
                   </Box>
 
                   <Divider my={'24px'} bg={'myGray.100'} />
@@ -909,6 +942,15 @@ const Form = ({
                       <Box className={styles.formSecondTitle} m={0}>
                         {t('local storage')}
                       </Box>
+
+                      <Button
+                        onClick={() => setStoreEdit({ name: '', path: '', value: 1 })}
+                        variant={'base'}
+                        leftIcon={<MyIcon name="plus" w={'10px'} />}
+                        w={'320px'}
+                      >
+                        {t('Add volume')}
+                      </Button>
                       <Tip
                         ml={4}
                         icon={<InfoOutlineIcon />}
@@ -916,54 +958,46 @@ const Form = ({
                         text="multiple instances do not share data"
                       />
                     </Flex>
-                    {storeList.map((item, index) => (
-                      <Flex key={item.id} _notLast={{ mb: 5 }} alignItems={'center'}>
-                        <Flex
-                          alignItems={'center'}
-                          px={4}
-                          py={1}
-                          border={theme.borders.base}
-                          flex={'0 0 320px'}
-                          w={0}
-                          borderRadius={'sm'}
-                          cursor={'pointer'}
-                          bg={'myWhite.300'}
-                          onClick={() => setStoreEdit(item)}
-                        >
-                          <MyIcon name={'store'} />
-                          <Box ml={4} flex={'1 0 0'} w={0}>
-                            <Box color={'myGray.900'} fontWeight={'bold'}>
-                              {item.path}
+                    <Box mt={4} pl={'100px'}>
+                      {storeList.map((item, index) => (
+                        <Flex key={item.id} _notLast={{ mb: 5 }} alignItems={'center'}>
+                          <Flex
+                            alignItems={'center'}
+                            px={4}
+                            py={1}
+                            border={theme.borders.base}
+                            flex={'0 0 320px'}
+                            w={0}
+                            borderRadius={'sm'}
+                            cursor={'pointer'}
+                            bg={'myWhite.300'}
+                            onClick={() => setStoreEdit(item)}
+                          >
+                            <MyIcon name={'store'} />
+                            <Box ml={4} flex={'1 0 0'} w={0}>
+                              <Box color={'myGray.900'} fontWeight={'bold'}>
+                                {item.path}
+                              </Box>
+                              <Box
+                                className={styles.textEllipsis}
+                                color={'myGray.500'}
+                                fontSize={'sm'}
+                              >
+                                {item.value} Gi
+                              </Box>
                             </Box>
-                            <Box
-                              className={styles.textEllipsis}
-                              color={'myGray.500'}
-                              fontSize={'sm'}
-                            >
-                              {item.value} Gi
-                            </Box>
+                          </Flex>
+                          <Box
+                            className={styles.deleteIcon}
+                            ml={3}
+                            cursor={'pointer'}
+                            onClick={() => removeStoreList(index)}
+                          >
+                            <MyIcon name="delete" w={'16px'} h={'16px'} />
                           </Box>
                         </Flex>
-                        <Box
-                          className={styles.deleteIcon}
-                          ml={3}
-                          cursor={'pointer'}
-                          onClick={() => removeStoreList(index)}
-                        >
-                          <MyIcon name="delete" w={'16px'} h={'16px'} />
-                        </Box>
-                      </Flex>
-                    ))}
-
-                    <Button
-                      mt={3}
-                      onClick={() => setStoreEdit({ name: '', path: '', value: 1 })}
-                      variant={'base'}
-                      leftIcon={<MyIcon name="plus" />}
-                      w={'320px'}
-                    >
-                      {t('Add volume')}
-                    </Button>
+                      ))}
+                    </Box>
                   </Box>
                 </AccordionPanel>
               </AccordionItem>

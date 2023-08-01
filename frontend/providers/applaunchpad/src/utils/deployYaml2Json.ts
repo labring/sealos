@@ -39,13 +39,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
         maxUnavailable: 1,
         maxSurge: 0
       }
-    },
-    ...(data.gpu?.use
-      ? {
-          restartPolicy: 'OnFailure',
-          runtimeClassName: 'nvidia'
-        }
-      : {})
+    }
   };
   const templateMetadata = {
     labels: {
@@ -75,12 +69,12 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       requests: {
         cpu: `${str2Num(Math.floor(data.cpu * 0.1))}m`,
         memory: `${str2Num(Math.floor(data.memory * 0.1))}Mi`,
-        ...(data.gpu?.use ? { [gpuResourceKey]: data.gpu.amount } : {})
+        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
       },
       limits: {
         cpu: `${str2Num(data.cpu)}m`,
         memory: `${str2Num(data.memory)}Mi`,
-        ...(data.gpu?.use ? { [gpuResourceKey]: data.gpu.amount } : {})
+        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
       }
     },
     command: data.runCMD ? [data.runCMD] : [],
@@ -130,11 +124,15 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
   }));
 
   // gpu node selector
-  const gpuNodeSelector = data.gpu?.use
+  const gpuMap = !!data.gpu?.type
     ? {
-        [gpuNodeSelectorKey]: data.gpu.type
+        restartPolicy: 'Always',
+        runtimeClassName: 'nvidia',
+        nodeSelector: {
+          [gpuNodeSelectorKey]: data.gpu.type
+        }
       }
-    : undefined;
+    : {};
 
   const template = {
     deployment: {
@@ -153,7 +151,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
                 volumeMounts: [...configMapVolumeMounts]
               }
             ],
-            nodeSelector: gpuNodeSelector,
+            ...gpuMap,
             volumes: [...configMapVolumes]
           }
         }
@@ -184,7 +182,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
                 ]
               }
             ],
-            nodeSelector: gpuNodeSelector,
+            ...gpuMap,
             volumes: [...configMapVolumes]
           }
         },

@@ -16,7 +16,7 @@ interface Props extends ButtonProps {
   value?: string;
   placeholder?: string;
   list: {
-    icon?: IconType;
+    icon?: string;
     label: string | React.ReactNode;
     value: string;
   }[];
@@ -79,7 +79,7 @@ const MySelect = (
         >
           {activeMenu ? (
             <>
-              {!!activeMenu.icon && <MyIcon mr={2} name={activeMenu.icon} w={'18px'} />}
+              {!!activeMenu.icon && <MyIcon mr={2} name={activeMenu.icon as IconType} w={'18px'} />}
               <Box>{activeMenu.label}</Box>
             </>
           ) : (
@@ -125,7 +125,7 @@ const MySelect = (
                 }
               }}
             >
-              {!!item.icon && <MyIcon mr={2} name={item.icon} w={'18px'} />}
+              {!!item.icon && <MyIcon mr={2} name={item.icon as IconType} w={'18px'} />}
               <Box>{item.label}</Box>
             </MenuItem>
           ))}

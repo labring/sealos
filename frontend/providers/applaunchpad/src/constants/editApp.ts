@@ -52,10 +52,9 @@ export const defaultEditVal: AppEditType = {
   },
   storeList: [],
   gpu: {
-    use: false,
     manufacturers: 'nvidia',
     type: '',
-    amount: 0
+    amount: 1
   }
 };
 

@@ -114,7 +114,7 @@
   "Password": "Password",
   "Password for the image registry": "Password for the image registry",
   "Username for the image registry": "Username for the image registry",
-  "Image address": "Image address",
+  "Image Address": "Image Address",
   "https": "https",
   "grpcs": "grpcs",
   "websocket": "websocket",
@@ -138,6 +138,5 @@
   "Perday": "Perday",
   "Submit Error": "Submit Error",
   "Env Placeholder": "Can be colon or equal sign, delimited by newline. For example :\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n-env1 =test",
-  "Gpu empty inventory Tip": "{{gputype}} is out of stock, please change the model",
-  "Gpu insufficient  inventory Tip": "{{gputype}} stock shortage,remaining {{card}} card"
+  "Gpu under inventory Tip": "{{gputype}} is out of stock, please change the model or amount"
 }

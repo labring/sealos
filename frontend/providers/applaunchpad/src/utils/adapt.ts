@@ -203,7 +203,6 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
       appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory || '0'
     ),
     gpu: {
-      use: useGpu,
       type: gpuNodeSelector?.[gpuNodeSelectorKey] || '',
       amount: Number(
         appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.[gpuResourceKey] || 0

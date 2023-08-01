@@ -93,6 +93,11 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const [errorMessage, setErrorMessage] = useState('');
   const [already, setAlready] = useState(false);
   const [defaultStorePathList, setDefaultStorePathList] = useState<string[]>([]); // default store will no be edit
+  const [defaultGpuSource, setDefaultGpuSource] = useState<AppEditType['gpu']>({
+    type: '',
+    amount: 0,
+    manufacturers: ''
+  });
   const { openConfirm, ConfirmChild } = useConfirm({
     content: applyMessage
   });
@@ -131,8 +136,30 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     refetchInterval: 5000
   });
 
+  const countGpuInventory = useCallback(
+    (type?: string) => {
+      const inventory = userSourcePrice?.gpu?.find((item) => item.type === type)?.inventory || 0;
+      const defaultInventory = type === defaultGpuSource?.type ? defaultGpuSource?.amount || 0 : 0;
+      return inventory + defaultInventory;
+    },
+    [defaultGpuSource?.amount, defaultGpuSource?.type, userSourcePrice?.gpu]
+  );
+
   const submitSuccess = useCallback(
     async (data: AppEditType) => {
+      // gpu inventory check
+      if (data.gpu?.type) {
+        const inventory = countGpuInventory(data.gpu?.type);
+        if (data.gpu?.amount > inventory) {
+          return toast({
+            status: 'warning',
+            title: t('Gpu under inventory Tip', {
+              gputype: data.gpu.type
+            })
+          });
+        }
+      }
+
       setIsLoading(true);
       try {
         const yamls = yamlList.map((item) => item.value);
@@ -169,11 +196,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     },
     [
       setIsLoading,
+      countGpuInventory,
+      toast,
       yamlList,
       appName,
       router,
       formHook,
-      toast,
       t,
       applySuccess,
       userSourcePrice?.gpu,
@@ -224,6 +252,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         if (!res) return;
         appOldYamls.current = formData2Yamls(res);
         setDefaultStorePathList(res.storeList.map((item) => item.path));
+        setDefaultGpuSource(res.gpu);
         formHook.reset(adaptEditAppData(res));
         setAlready(true);
       },
@@ -264,6 +293,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               formHook={formHook}
               already={already}
               defaultStorePathList={defaultStorePathList}
+              countGpuInventory={countGpuInventory}
               pxVal={pxVal}
               refresh={forceUpdate}
             />

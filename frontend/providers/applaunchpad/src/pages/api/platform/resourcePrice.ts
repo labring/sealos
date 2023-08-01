@@ -121,7 +121,6 @@ async function getGpuNode({ k8sCore }: { k8sCore: CoreV1Api }) {
     const { body } = await k8sCore.readNamespacedConfigMap(gpuCrName, 'sealos');
     const gpuMap = body?.data?.gpu;
     if (!gpuMap) return [];
-
     const parseGpuMap = JSON.parse(gpuMap) as Record<
       string,
       {
@@ -160,13 +159,13 @@ function countSourcePrice(rawData: PriceCrdType, type: ResourceType) {
   const unitScale = sourceScale / PRICE_SCALE;
   return unitScale;
 }
-function countGpuSource(rawData: PriceCrdType, gpunodes: GpuNodeType[]) {
+function countGpuSource(rawData: PriceCrdType, gpuNodes: GpuNodeType[]) {
   const gpuList: Response['gpu'] = [];
 
   rawData?.status?.billingRecords?.forEach((item) => {
     if (!item.resourceType.startsWith('gpu')) return;
     const gpuType = item.resourceType.replace('gpu-', '');
-    const gpuNode = gpunodes.find((item) => item['gpu.product'] === gpuType);
+    const gpuNode = gpuNodes.find((item) => item['gpu.product'] === gpuType);
     if (!gpuNode) return;
     gpuList.push({
       type: gpuNode['gpu.product'],

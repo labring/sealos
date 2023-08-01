@@ -5,7 +5,7 @@ const MyTooltip = ({ children, ...props }: TooltipProps) => {
   return (
     <Tooltip
       bg={'white'}
-      arrowShadowColor={' rgba(0,0,0,0.1)'}
+      arrowShadowColor={' rgba(0,0,0,0.05)'}
       hasArrow
       arrowSize={12}
       offset={[-15, 15]}

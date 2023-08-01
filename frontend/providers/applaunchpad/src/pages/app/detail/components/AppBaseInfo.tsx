@@ -57,7 +57,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             label: 'Limit Memory',
             value: printMemory(app.memory)
           },
-          ...(app.gpu?.use
+          ...(!!app.gpu?.type
             ? [
                 {
                   label: 'Gpu',
