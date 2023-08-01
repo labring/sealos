@@ -32,8 +32,15 @@ export default function Home({ rechargeEnabled }: { rechargeEnabled: boolean }) 
   useEffect(() => {
     const { query } = router;
     const is_login = isUserLogin();
+    const whitelistApps = ['system-fastdeploy'];
+
     if (!isUpdate || !is_login) {
       const { appkey, appQuery } = parseOpenappQuery((query?.openapp as string) || '');
+      // sealos_inside=true internal call
+      if (whitelistApps.includes(appkey) && appQuery.indexOf('sealos_inside=true') === -1) {
+        window.open(`https://fastdeploy.cloud.sealos.io/`, '_self');
+        return;
+      }
       if (appkey && typeof appQuery === 'string') setAutoLaunch(appkey, { raw: appQuery });
       router.replace(destination);
     } else {

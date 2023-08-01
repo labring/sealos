@@ -18,7 +18,7 @@ export default function MoreButton() {
       alignItems={'center'}
       w="110px"
       h="42px"
-      background={'rgba(21, 37, 57, 0.6)'}
+      background={'rgba(28, 32, 35, 0.60)'}
       boxShadow={'0px 1.16667px 2.33333px rgba(0, 0, 0, 0.2)'}
       position={'absolute'}
       bottom={'80px'}
