@@ -39,7 +39,8 @@ const queryClient = new QueryClient({
 const App = ({ Component, pageProps }: AppProps) => {
   const router = useRouter();
   const { i18n } = useTranslation();
-  const { setScreenWidth, loading, setLastRoute, getUserSourcePrice } = useGlobalStore();
+  const { setScreenWidth, loading, setLastRoute, getUserSourcePrice, initFormSliderList } =
+    useGlobalStore();
   const { Loading } = useLoading();
   const [refresh, setRefresh] = useState(false);
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -55,7 +56,8 @@ const App = ({ Component, pageProps }: AppProps) => {
     const response = createSealosApp();
 
     (async () => {
-      const { SEALOS_DOMAIN } = await (() => loadInitData())();
+      const { SEALOS_DOMAIN, CPU_MARK_LIST, MEMORY_MARK_LIST } = await (() => loadInitData())();
+      initFormSliderList({ CPU_MARK_LIST, MEMORY_MARK_LIST });
 
       try {
         const res = await sealosApp.getSession();
@@ -75,7 +77,7 @@ const App = ({ Component, pageProps }: AppProps) => {
     NProgress.done();
 
     return response;
-  }, []);
+  }, [getUserSourcePrice, openConfirm]);
 
   // add resize event
   useEffect(() => {

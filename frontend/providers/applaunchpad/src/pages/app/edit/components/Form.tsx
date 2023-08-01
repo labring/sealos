@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -25,7 +25,7 @@ import type { StoreType } from './StoreModal';
 import type { QueryType } from '@/types';
 import type { AppEditType } from '@/types/app';
 import { customAlphabet } from 'nanoid';
-import { CpuSlideMarkList, GpuAmountMarkList, MemorySlideMarkList } from '@/constants/editApp';
+import { GpuAmountMarkList } from '@/constants/editApp';
 import { SEALOS_DOMAIN } from '@/store/static';
 import { useTranslation } from 'next-i18next';
 import { useGlobalStore } from '@/store/global';
@@ -67,7 +67,7 @@ const Form = ({
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
-  const { userSourcePrice } = useGlobalStore();
+  const { userSourcePrice, CpuSlideMarkList, MemorySlideMarkList } = useGlobalStore();
   const router = useRouter();
   const { name } = router.query as QueryType;
   const theme = useTheme();
@@ -613,6 +613,7 @@ const Form = ({
                                 textAlign={'center'}
                                 borderRadius={'md'}
                                 border={'1px solid'}
+                                bg={'myWhite.500'}
                                 {...(getValues('gpu.amount') === item.value
                                   ? {
                                       borderColor: 'myBlue.600',
@@ -628,7 +629,7 @@ const Form = ({
                                     }
                                   : {
                                       cursor: 'default',
-                                      bg: 'myGray.100'
+                                      opacity: 0.5
                                     })}
                               >
                                 {item.label}
@@ -653,7 +654,7 @@ const Form = ({
                   setVal={(e) => {
                     setValue('cpu', CpuSlideMarkList[e].value);
                   }}
-                  max={7}
+                  max={CpuSlideMarkList.length - 1}
                   min={0}
                   step={1}
                 />
@@ -669,7 +670,7 @@ const Form = ({
                   setVal={(e) => {
                     setValue('memory', MemorySlideMarkList[e].value);
                   }}
-                  max={8}
+                  max={MemorySlideMarkList.length - 1}
                   min={0}
                   step={1}
                 />

@@ -87,7 +87,13 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const router = useRouter();
   const [forceUpdate, setForceUpdate] = useState(false);
   const { setAppDetail } = useAppStore();
-  const { screenWidth, getUserSourcePrice, userSourcePrice } = useGlobalStore();
+  const {
+    screenWidth,
+    getUserSourcePrice,
+    userSourcePrice,
+    CpuSlideMarkList,
+    MemorySlideMarkList
+  } = useGlobalStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -230,15 +236,20 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     ['init'],
     () => {
       if (!appName) {
+        const defaultApp = {
+          ...defaultEditVal,
+          cpu: CpuSlideMarkList[0].value,
+          memory: MemorySlideMarkList[0].value
+        };
         setAlready(true);
         setYamlList([
           {
             filename: 'service.yaml',
-            value: json2Service(defaultEditVal)
+            value: json2Service(defaultApp)
           },
           {
             filename: 'deployment.yaml',
-            value: json2DeployCr(defaultEditVal, 'deployment')
+            value: json2DeployCr(defaultApp, 'deployment')
           }
         ]);
         return null;
