@@ -69,7 +69,7 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
     gpu: {
       type: gpuNodeSelector?.[gpuNodeSelectorKey] || '',
       amount: Number(
-        app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.[gpuResourceKey] || 0
+        app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.[gpuResourceKey] || 1
       ),
       manufacturers: 'nvidia'
     },
@@ -193,7 +193,7 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
     id: appDeploy.metadata?.uid || ``,
     appName: appDeploy.metadata?.name || 'app Name',
     createTime: dayjs(appDeploy.metadata?.creationTimestamp).format('YYYY-MM-DD HH:mm'),
-    status: appStatusMap.running,
+    status: appStatusMap.waiting,
     isPause: !!appDeploy?.metadata?.annotations?.[pauseKey],
     imageName:
       appDeploy?.metadata?.annotations?.originImageName ||
@@ -211,7 +211,7 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
     gpu: {
       type: gpuNodeSelector?.[gpuNodeSelectorKey] || '',
       amount: Number(
-        appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.[gpuResourceKey] || 0
+        appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.[gpuResourceKey] || 1
       ),
       manufacturers: 'nvidia'
     },

@@ -77,8 +77,14 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
         ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
       }
     },
-    command: data.runCMD ? [data.runCMD] : [],
-    args: data.cmdParam.split(' ').filter((item) => item),
+    command: (() => {
+      try {
+        return [JSON.stringify(JSON.parse(data.runCMD))];
+      } catch (error) {
+        return data.runCMD.split(' ').filter((item) => item);
+      }
+    })(),
+    args: data.cmdParam ? [data.cmdParam] : [],
     ports: [
       {
         containerPort: str2Num(data.containerOutPort)

@@ -846,7 +846,7 @@ const Form = ({
                     <Input
                       w={'350px'}
                       bg={getValues('runCMD') ? 'myWhite.500' : 'myWhite.400'}
-                      placeholder={`${t('Such as')} sleep 10 && /bin/bash -c`}
+                      placeholder={`${t('Such as')} /bin/bash -c`}
                       {...register('runCMD')}
                     />
                   </FormControl>
@@ -855,7 +855,7 @@ const Form = ({
                     <Input
                       w={'350px'}
                       bg={getValues('cmdParam') ? 'myWhite.500' : 'myWhite.400'}
-                      placeholder={`${t('Separated by spaces')} Hostname Port`}
+                      placeholder={`${t('Such as')} sleep 10 && /entrypoint.sh db createdb`}
                       {...register('cmdParam')}
                     />
                   </FormControl>

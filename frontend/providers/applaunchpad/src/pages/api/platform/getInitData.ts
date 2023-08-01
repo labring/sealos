@@ -20,10 +20,14 @@ export const defaultVal = {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!global.FormSliderListConfig) {
-      const res = JSON.parse(readFileSync(`data/config.json`, 'utf-8'));
+      const res = JSON.parse(readFileSync(`data/form_slider_config.json`, 'utf-8'));
+      console.log(res);
+
       global.FormSliderListConfig = res;
     }
   } catch (error) {
+    console.log(error);
+
     global.FormSliderListConfig = defaultVal;
   }
 

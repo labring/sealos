@@ -37,7 +37,7 @@ const formData2Yamls = (data: AppEditType) => [
     filename: 'service.yaml',
     value: json2Service(data)
   },
-  data.storeList.length > 0
+  !!data.storeList?.length
     ? {
         filename: 'statefulSet.yaml',
         value: json2DeployCr(data, 'statefulset')
