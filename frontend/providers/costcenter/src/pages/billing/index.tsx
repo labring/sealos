@@ -12,7 +12,7 @@ import {
   PopoverTrigger,
   Text
 } from '@chakra-ui/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { formatISO } from 'date-fns';
 import receipt_icon from '@/assert/receipt_long_black.svg';
 import arrow_icon from '@/assert/Vector.svg';
@@ -39,13 +39,14 @@ function Billing() {
   const endTime = useOverviewStore((state) => state.endTime);
   const [selectType, setType] = useState<-1 | 0 | 1 | 2 | 3>(-1);
   const [searchValue, setSearch] = useState('');
+  const [orderID, setOrderID] = useState('');
   const [totalPage, setTotalPage] = useState(1);
   const [currentPage, setcurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const queryClient = useQueryClient();
 
   const { data, isLoading, isSuccess } = useQuery(
-    ['billing', { currentPage, startTime, endTime }],
+    ['billing', { currentPage, startTime, endTime, orderID }],
     () => {
       let spec = {} as BillingSpec;
       spec = {
@@ -56,7 +57,7 @@ function Billing() {
         // startTime,
         endTime: formatISO(endTime, { representation: 'complete' }),
         // endTime,
-        orderID: searchValue.trim()
+        orderID
       };
       return request<any, { data: BillingData }, { spec: BillingSpec }>('/api/billing', {
         method: 'POST',
@@ -180,7 +181,7 @@ function Billing() {
             }}
             onClick={(e) => {
               e.preventDefault();
-              queryClient.invalidateQueries(['billing']);
+              setOrderID(searchValue);
             }}
           >
             {t('Search')}
@@ -196,7 +197,7 @@ function Billing() {
               )}
             ></BillingTable>
           </Box>
-          <Flex w="370px" h="32px" ml="auto" align={'center'} mt={'20px'}>
+          <Flex minW="370px" h="32px" ml="auto" align={'center'} mt={'20px'}>
             <Text>{t('Total')}:</Text>
             <Flex w="40px">{totalPage * pageSize}</Flex>
             <Flex gap={'8px'}>

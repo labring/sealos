@@ -57,7 +57,7 @@ export default memo(function UserCard() {
         px="16px"
         shrink={[1, 1, 1, 0]}
       >
-        <Stack zIndex="2" flex={'1'}>
+        <Stack zIndex="2" flex={'1'} gap="0">
           <Flex alignItems={'center'}>
             <Text>{session?.user?.name}</Text>
 
