@@ -29,12 +29,6 @@ const ChartTemplate = ({
     }
   );
 
-  // const LegendLists = useMemo(() => {
-  //   if (!ChartData?.result) return [];
-  //   return ChartData?.result?.yData?.map((item: { name: string }) => item?.name);
-  // }, [ChartData]);
-  // console.log(LegendLists);
-
   return (
     <Box
       w={'100%'}
@@ -45,7 +39,7 @@ const ChartTemplate = ({
       border={'1px solid #EAEBF0'}
       backgroundColor={'#FBFBFC'}
     >
-      {ChartData?.result ? (
+      {ChartData?.result?.xData?.length > 0 ? (
         <Flex flexDirection={'column'} h="100%">
           <Box fontSize={'12px'} fontWeight={500} color={'#24282C'} mb="16px">
             {t(chartTitle)}
