@@ -389,6 +389,10 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 
 	pipelineAll := bson.A{
 		matchStage,
+		bson.D{primitive.E{Key: "$group", Value: bson.D{
+			primitive.E{Key: "_id", Value: nil},
+			primitive.E{Key: "result", Value: bson.D{primitive.E{Key: "$sum", Value: 1}}},
+		}}},
 	}
 
 	pipelineCountAndAmount := bson.A{
@@ -454,8 +458,16 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	if err != nil {
 		return fmt.Errorf("failed to execute aggregate all query: %w", err)
 	}
-	totalCount = cursorAll.RemainingBatchLength()
-	cursorAll.Close(ctx)
+	defer cursorAll.Close(ctx)
+	for cursorAll.Next(ctx) {
+		var result struct {
+			Result int64 `bson:"result"`
+		}
+		if err := cursorAll.Decode(&result); err != nil {
+			return fmt.Errorf("failed to decode query count record: %w", err)
+		}
+		totalCount = int(result.Result)
+	}
 
 	// 消费总金额Costs Executing the second pipeline for getting the total count, recharge and deduction amount
 	cursorCountAndAmount, err := billingColl.Aggregate(ctx, pipelineCountAndAmount)
