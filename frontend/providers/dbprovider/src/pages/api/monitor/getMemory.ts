@@ -17,7 +17,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const endTime = Date.now(); // 当前时间的时间戳
     const startTime = endTime - 60 * 60 * 1000; // 前向推进1个小时的时间戳
 
-    const _query = `container_memory_usage_bytes{$,pod=~"${dbName}-${dbType}-\\\\d+",name=""}`;
+    const _query = `container_memory_usage_bytes{$,pod=~"${dbName}-${
+      dbType === 'apecloud-mysql' ? 'mysql' : dbType
+    }-\\\\d+",name=""}`;
 
     const params = {
       query: _query,
