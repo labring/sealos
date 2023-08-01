@@ -13,4 +13,4 @@ ENV RegisterURL "https://license.sealos.io/register"
 ENV CloudSyncURL "https://license.sealos.io/datasync"
 ENV LicenseMonitorURL "https://license.sealos.io/license"
 
-CMD ["(chmod +x /manifests/setup.sh) && (bash /manifests/setup.sh)"]
+CMD ["(chmod +x manifests/setup.sh) && (bash manifests/setup.sh)"]
