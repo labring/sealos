@@ -119,6 +119,7 @@ export function GET<T = any>(
     ...config
   });
 }
+
 export function POST<T = any>(
   url: string,
   data?: { [key: string]: any },
@@ -126,6 +127,7 @@ export function POST<T = any>(
 ): Promise<T> {
   return request.post(url, data, config);
 }
+
 export function DELETE<T = any>(
   url: string,
   data?: { [key: string]: any },

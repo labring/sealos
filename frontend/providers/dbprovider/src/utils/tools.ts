@@ -244,3 +244,43 @@ export const convertCronTime = (cronTime: string, offset: 8 | -8) => {
 
   return `${minute} ${hour} ${dayOfMonth} ${month} ${daysOfWeek.join(',')}`;
 };
+
+// convertBytes 1024
+export const convertBytes = (bytes: number, unit: 'kb' | 'mb' | 'gb' | 'tb') => {
+  switch (unit.toLowerCase()) {
+    case 'kb':
+      return bytes / 1024;
+    case 'mb':
+      return bytes / Math.pow(1024, 2);
+    case 'gb':
+      return bytes / Math.pow(1024, 3);
+    case 'tb':
+      return bytes / Math.pow(1024, 4);
+    default:
+      return bytes;
+  }
+};
+
+// formatTime second to day, hour or minute
+export const formatTimeToDay = (seconds: number): { time: string; unit: string } => {
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(seconds / 3600);
+  const days = Math.floor(seconds / (3600 * 24));
+
+  if (days > 0) {
+    return {
+      unit: 'Day',
+      time: (seconds / (3600 * 24)).toFixed(1)
+    };
+  } else if (hours > 0) {
+    return {
+      unit: 'Hour',
+      time: (seconds / 3600).toFixed(1)
+    };
+  } else {
+    return {
+      unit: 'Start Minute',
+      time: (seconds / 60).toFixed(1)
+    };
+  }
+};
