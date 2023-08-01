@@ -25,7 +25,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       plural: 'accounts'
     };
 
-    const accountDesc = await GetCRD(kc, account_meta, user.name);
+    const accountDesc = (await GetCRD(kc, account_meta, user.name)) as {
+      body: {
+        status: object;
+      };
+    };
     if (accountDesc !== null && accountDesc.body !== null && accountDesc.body.status !== null) {
       const accountStatus = accountDesc.body.status as accountStatus;
       return jsonRes(res, { data: accountStatus });

@@ -6,14 +6,16 @@ import { Flex, Img, Table, TableContainer, Tbody, Td, Text, Th, Thead, Tr } from
 import { format, parseISO } from 'date-fns';
 import { formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
+import useEnvStore from '@/stores/env';
 export function BillingTable({ data }: { data: BillingItem[] }) {
   const { t } = useTranslation();
+  const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
   return (
     <TableContainer w="100%" mt="0px">
       <Table variant="simple">
         <Thead>
           <Tr>
-            {TableHeaders?.map((item) => (
+            {[...TableHeaders, ...(gpuEnabled ? ['Gpu'] : []), 'Total Amount'].map((item) => (
               <Th
                 key={item}
                 bg={'#F1F4F6'}
@@ -81,6 +83,9 @@ export function BillingTable({ data }: { data: BillingItem[] }) {
                   <Td>{!item.type ? '￥' + formatMoney(item.costs?.cpu || 0) : '-'}</Td>
                   <Td>{!item.type ? '￥' + formatMoney(item.costs?.memory || 0) : '-'}</Td>
                   <Td>{!item.type ? '￥' + formatMoney(item.costs?.storage || 0) : '-'}</Td>
+                  {gpuEnabled && (
+                    <Td>{!item.type ? '￥' + formatMoney(item.costs?.gpu || 0) : '-'}</Td>
+                  )}
                   <Td>{'￥' + formatMoney(item.amount)}</Td>
                 </Tr>
               );

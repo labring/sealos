@@ -10,6 +10,13 @@ const Chart = dynamic(() => import('./components/pieChart'), {
 export const Cost = memo(function Cost() {
   const { t } = useTranslation();
   const { data, isInitialLoading } = useBillingData();
+  const _deduction = data?.data?.status.deductionAmount;
+  const deductionAmount = {
+    cpu: _deduction?.cpu || 0,
+    memory: _deduction?.memory || 0,
+    storage: _deduction?.storage || 0,
+    gpu: _deduction?.gpu || 0
+  };
   return (
     <Flex direction={'column'} flex={1}>
       <Flex alignItems={'center'} justify={'space-between'}>
@@ -17,22 +24,12 @@ export const Cost = memo(function Cost() {
           {t('Cost Distribution')}
         </Text>
       </Flex>
-      {isInitialLoading ||
-      !data?.data?.status?.deductionAmount ||
-      data.data.status.deductionAmount.cpu == 0 ? (
+      {isInitialLoading || !_deduction ? (
         <Flex justify={'center'} align={'center'} flex={1}>
           <Notfound></Notfound>
         </Flex>
       ) : (
-        <Chart
-          data={
-            data?.data?.status.deductionAmount || {
-              cpu: 0,
-              memory: 0,
-              storage: 0
-            }
-          }
-        ></Chart>
+        <Chart data={deductionAmount}></Chart>
       )}
     </Flex>
   );

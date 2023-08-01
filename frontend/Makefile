@@ -14,7 +14,7 @@ else
 endif
 
 ifneq ($(strip $(DOCKER_USERNAME)),)
-  imageOwner := $(DOCKER_USERNAME)
+  imageOwner := $(DOCKER_USERNAME)/
 else
   imageOwner :=
 endif

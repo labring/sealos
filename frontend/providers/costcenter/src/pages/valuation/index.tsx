@@ -1,18 +1,20 @@
-import { Box, Flex, Heading, Text, Img } from '@chakra-ui/react';
+import { Box, Flex, Heading, Text, Img, Stack } from '@chakra-ui/react';
 import letter_icon from '@/assert/format_letter_spacing_standard_black.svg';
 import { useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
-import { ValuationData } from '@/types/valuation';
+import { ValuationBillingRecord } from '@/types/valuation';
 import { valuationMap } from '@/constants/payment';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { i18n, useTranslation } from 'next-i18next';
 import { ApiResp } from '@/types/api';
+import nvidaIcon from '@/assert/bi_nvidia.svg';
 import { getCookie } from '@/utils/cookieUtils';
 import { CYCLE } from '@/constants/valuation';
 import OuterLink from '@/components/outerLink';
 import NotFound from '@/components/notFound';
 import PredictCard from '@/components/valuation/predictCard';
+import useEnvStore from '@/stores/env';
 type CardItem = {
   title: string;
   price: number[];
@@ -21,20 +23,38 @@ type CardItem = {
   idx: number;
 };
 
+function ValuationCard(props: any) {
+  return (
+    <Stack
+      align={'center'}
+      pt="27px"
+      pb="21px"
+      boxSizing="border-box"
+      width="240px"
+      height="339px"
+      background="#F1F4F6"
+      borderWidth={'1px'}
+      borderColor="#DEE0E2"
+      borderRadius="4px"
+    >
+      {props.children}
+    </Stack>
+  );
+}
 function Valuation() {
   const { t, i18n } = useTranslation();
   const cookie = getCookie('NEXT_LOCALE');
-
+  const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
   useEffect(() => {
     i18n.changeLanguage(cookie);
   }, [cookie, i18n]);
   const { data: _data } = useQuery(['valuation'], () =>
-    request<any, ApiResp<ValuationData>>('/api/price')
+    request<any, ApiResp<{ billingRecords: ValuationBillingRecord[] }>>('/api/price')
   );
 
   const data =
-    _data?.data?.status?.billingRecords
-      ?.filter((x) => valuationMap.has(x.resourceType))
+    _data?.data?.billingRecords
+      ?.filter((x) => !x.resourceType.startsWith('gpu-'))
       ?.map<CardItem>((x) => {
         const props = valuationMap.get(x.resourceType)!;
         return {
@@ -46,7 +66,20 @@ function Valuation() {
         };
       })
       ?.sort((a, b) => a.idx - b.idx) || [];
-
+  const gpuProps = valuationMap.get('gpu')!;
+  const gpuData = gpuEnabled
+    ? _data?.data?.billingRecords
+        ?.filter((x) => x.resourceType.startsWith('gpu-'))
+        ?.map((x) => {
+          const name = x.resourceType.replace('gpu-', '').replace('_', ' ');
+          const price = (x.price * (gpuProps.scale || 1)) / 1000000;
+          return {
+            name,
+            price
+          };
+        })
+        ?.sort((a, b) => (a.name > b.name ? 1 : -1)) || []
+    : [];
   return (
     <Flex
       w="100%"
@@ -64,46 +97,72 @@ function Valuation() {
       <Flex direction={'column'}>
         <Flex gap={'52px'} flexWrap={'wrap'} justify={'center'} mt={'24px'}>
           {data ? (
-            data?.map((item) => (
-              <Flex
-                key={item.title}
-                direction={'column'}
-                justify="space-evenly"
-                align={'center'}
-                boxSizing="border-box"
-                width="240px"
-                height="339px"
-                background="#F1F4F6"
-                borderWidth={'1px'}
-                borderColor="#EFF0F1"
-                borderRadius="4px"
-              >
-                <Flex align={'center'}>
-                  <Box borderRadius="2px" bg={item.bg} w={'16px'} h={'16px'} mr={'8px'}></Box>
-                  <Text fontSize={'16px'}>{item.title}</Text>
-                </Flex>
-                <Heading w="127px" display={'flex'} justifyContent="center" alignContent={'center'}>
-                  ￥{item.price[0]}
-                </Heading>
-                <Text ml="4px">
-                  {item.unit} / {t('Hour')}
-                </Text>
-                <Box>
-                  {CYCLE.map((_item, idx) => (
-                    <Flex
-                      key={idx}
-                      justify="space-between"
-                      w="192px"
-                      borderTop={'dashed 1px #DEE0E2'}
-                      py={'8px'}
-                    >
-                      <Box>{item.price[idx + 1]}</Box>
-                      <Box>{`￥${item.unit} / ${t(_item)}`}</Box>
-                    </Flex>
-                  ))}
-                </Box>
-              </Flex>
-            ))
+            <>
+              {data?.map((item) => (
+                <ValuationCard key={item.title}>
+                  <Flex align={'center'}>
+                    <Box borderRadius="2px" bg={item.bg} w={'16px'} h={'16px'} mr={'8px'}></Box>
+                    <Text fontSize={'16px'}>{item.title}</Text>
+                  </Flex>
+                  <Heading
+                    w="127px"
+                    display={'flex'}
+                    justifyContent="center"
+                    alignContent={'center'}
+                  >
+                    ￥{item.price[0]}
+                  </Heading>
+                  <Text ml="4px">
+                    {item.unit} / {t('Hour')}
+                  </Text>
+                  <Box pt={'17px'}>
+                    {CYCLE.map((_item, idx) => (
+                      <Flex
+                        key={idx}
+                        justify="space-between"
+                        w="192px"
+                        borderTop={'dashed 1px #DEE0E2'}
+                        py={'8px'}
+                      >
+                        <Box>{item.price[idx + 1]}</Box>
+                        <Box>{`￥${item.unit} / ${t(_item)}`}</Box>
+                      </Flex>
+                    ))}
+                  </Box>
+                </ValuationCard>
+              ))}
+              {gpuEnabled && gpuData.length > 0 && (
+                <ValuationCard>
+                  <Flex align={'center'}>
+                    <Box borderRadius="2px" bg={gpuProps.bg} w={'16px'} h={'16px'} mr={'8px'}></Box>
+                    <Text fontSize={'16px'}>GPU</Text>
+                  </Flex>
+                  <Stack w="100%" mt="24px" overflow={'auto'}>
+                    {gpuData.map((item) => (
+                      <Flex
+                        key={item.name}
+                        align={'center'}
+                        h="45px"
+                        w="100%"
+                        borderTop={'dashed 1px #DEE0E2'}
+                        justify={'space-between'}
+                        pt="12px"
+                        px="24px"
+                      >
+                        <Box>{`￥${item.price}`}</Box>
+                        <Stack align={'flex-end'} gap="0" fontSize={'10px'} fontWeight={'500'}>
+                          <Flex>
+                            <Img src={nvidaIcon.src} w="14px" h="14px" mr="6px" />
+                            <Text minW={'max-content'}>{item.name}</Text>
+                          </Flex>
+                          <Text>{`${gpuProps.unit} / ${t('Hour')}`}</Text>
+                        </Stack>
+                      </Flex>
+                    ))}
+                  </Stack>
+                </ValuationCard>
+              )}
+            </>
           ) : (
             <NotFound></NotFound>
           )}

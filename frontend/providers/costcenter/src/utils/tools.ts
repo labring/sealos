@@ -29,7 +29,7 @@ export const isValidCNTaxNumber = (taxNumber: string) => {
   return [15, 17, 18].includes(taxNumber.length);
 };
 export const isValidBANKAccount = (bankAccount: string) => {
-  const regExp = /^[0-9]{12,19}$/;
+  const regExp = /^[0-9]{12,22}$/;
   return regExp.test(bankAccount);
 };
 export const isValidEmail = (email: string) => {
