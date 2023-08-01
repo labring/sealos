@@ -132,7 +132,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if payment.Status.TradeNO == "" {
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Millisecond * 300}, nil
 	}
-	if payment.Status.Status == string(pay.PaymentSuccess) {
+	if payment.Status.Status == pay.PaymentSuccess {
 		return ctrl.Result{}, nil
 	}
 

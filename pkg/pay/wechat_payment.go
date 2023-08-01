@@ -30,6 +30,9 @@ import (
 	"github.com/wechatpay-apiv3/wechatpay-go/utils"
 )
 
+type WechatPayment struct {
+}
+
 // ENV keys
 const (
 	WechatPrivateKey           = "WechatPrivateKey"

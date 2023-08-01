@@ -14,23 +14,16 @@
 
 package pay
 
-import (
-	"fmt"
+const (
+	PaymentSuccess    = "success"
+	PaymentNotPaid    = "not_paid"
+	PaymentProcessing = "processing"
+	PaymentExpired    = "expired"
+	PaymentFailed     = "failed"
+	PaymentUnknown    = "unknown"
 )
 
-type Interface interface {
-	CreatePayment(amount int64, user string) (string, string, error)
-	GetPaymentDetails(sessionID string) (string, int64, error)
-	ExpireSession(payment string) error
-}
-
-func NewPayHandler(paymentMethod string) (Interface, error) {
-	switch paymentMethod {
-	case "stripe":
-		return &StripePayment{}, nil
-	case "wechat":
-		return &WechatPayment{}, nil
-	default:
-		return nil, fmt.Errorf("unsupported payment method: %s", paymentMethod)
-	}
-}
+const (
+	DefaultSuccessURL string = "https://cloud.sealos.io"
+	DefaultCancelURL  string = "https://cloud.sealos.io"
+)
