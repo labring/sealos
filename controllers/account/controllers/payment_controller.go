@@ -80,7 +80,7 @@ func (r *PaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// get payment handler
 	payHandler, err := pay.NewPayHandler(p.Spec.PaymentMethod)
 	if err != nil {
-		r.Logger.Error(err, "get payment Interface failed: %s", err)
+		r.Logger.Error(err, "get payment Interface failed")
 		return ctrl.Result{}, err
 	}
 	// get tradeNO and codeURL

@@ -144,7 +144,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// get payment handler
 	payHandler, err := pay.NewPayHandler(payment.Spec.PaymentMethod)
 	if err != nil {
-		r.Logger.Error(err, "get payment handler failed: %s", err)
+		r.Logger.Error(err, "get payment handler failed")
 		return ctrl.Result{}, err
 	}
 	// get payment details(status, amount)
@@ -372,13 +372,13 @@ func (r *AccountReconciler) DeletePayment(ctx context.Context) error {
 		//get payment handler
 		payHandler, err := pay.NewPayHandler(payment.Spec.PaymentMethod)
 		if err != nil {
-			r.Logger.Error(err, "get payment handler failed: %s", err)
+			r.Logger.Error(err, "get payment handler failed")
 			return err
 		}
 		//expire session if it is necessary
 		err = payHandler.ExpireSession(payment.Status.TradeNO)
 		if err != nil {
-			r.Logger.Error(err, "cancel payment failed: %s", err)
+			r.Logger.Error(err, "cancel payment failed")
 			return err
 		}
 		//delete payment if it is exist for more than 5 minutes
