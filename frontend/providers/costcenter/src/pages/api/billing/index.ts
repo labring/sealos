@@ -68,6 +68,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     } finally {
       const crd = (await GetCRD(kc, meta, name)) as { body: BillingData<RawCosts> };
       const body = crd?.body;
+      console.log(body);
       if (!body || !body.status) throw new Error('get billing error');
       const item =
         body.status?.item?.map<BillingItem>((v) => ({

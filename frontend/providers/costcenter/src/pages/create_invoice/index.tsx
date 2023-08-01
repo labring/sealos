@@ -32,6 +32,7 @@ function Invoice() {
   const endTime = useOverviewStore((state) => state.endTime);
   const selectBillings = useRef<ReqGenInvoice['billings']>([]);
   const [searchValue, setSearch] = useState('');
+  const [orderID, setOrderID] = useState('');
   const [totalPage, setTotalPage] = useState(1);
   const [currentPage, setcurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -43,7 +44,7 @@ function Invoice() {
     return request<any, { data: { billings: string[] } }>('/api/invoice/billings');
   });
   const { data, isLoading, isSuccess } = useQuery(
-    ['billing', { currentPage, startTime, endTime }],
+    ['billing', { currentPage, startTime, endTime, orderID }],
     async () => {
       let spec = {} as BillingSpec;
       spec = {
@@ -54,7 +55,7 @@ function Invoice() {
         // startTime,
         endTime: formatISO(endOfDay(endTime), { representation: 'complete' }),
         // endTime,
-        orderID: searchValue.trim()
+        orderID
       };
       const result = await request<any, { data: BillingData }, { spec: BillingSpec }>(
         '/api/billing',
@@ -148,7 +149,7 @@ function Invoice() {
                 }}
                 onClick={(e) => {
                   e.preventDefault();
-                  queryClient.invalidateQueries(['billing']);
+                  setOrderID(searchValue.trim());
                 }}
               >
                 {t('Search')}

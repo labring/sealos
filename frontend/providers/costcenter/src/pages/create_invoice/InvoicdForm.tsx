@@ -1,9 +1,196 @@
-import { ApiResp, ReqGenInvoice } from '@/types'; import { isValidBANKAccount, isValidCNTaxNumber, isValidEmail, isValidPhoneNumber } from '@/utils/tools'; import { Flex, Img, Heading, Stack, FormControl, FormLabel, Input, Button, Text, Box, InputGroup, InputRightAddon, Link, useToast, useDisclosure, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay } from '@chakra-ui/react'; import { Formik, FieldArray, Form, Field } from 'formik'; import request from '@/service/request'; import { useRef, useState, useEffect } from 'react'; import { useTranslation } from 'react-i18next'; import artical_icon from '@/assert/article.svg'; import arrow_right from '@/assert/material-symbols_expand-more-rounded.svg'; import arrow_left_icon from '@/assert/toleft.svg'; import arrow_icon from '@/assert/Vector.svg'; import email_icon from '@/assert/mdi_email-receive-outline.svg'; import listIcon from '@/assert/list.svg'; import { InvoiceTable } from '@/components/invoice/invoiceTable'; const BillingModal = ({ billings, t, invoiceAmount, invoiceCount }: { billings: ReturnType<typeof useRef<ReqGenInvoice['billings']>>; t: (key: string) => string; invoiceAmount: number; invoiceCount: number; }) => { const [pageSize, setPageSize] = useState(10); const totalPage = Math.floor((billings?.current?.length || 0) / pageSize) + 1; const [currentPage, setcurrentPage] = useState(1); return (<> <ModalContent w={'910px'} maxW="910px" h={'auto'} maxH="620px"> <ModalHeader display={'flex'}> {t('orders.invoiceOrder')}({invoiceCount}) <Text color="rgba(29, 140, 220, 1)">￥ {invoiceAmount}</Text> </ModalHeader> <ModalCloseButton /> <ModalBody> <Box overflow={'auto'} fontFamily="PingFang SC" fontSize="14px" fontWeight="500" lineHeight="20px" > <Flex mb={'16px'} align="center"> <Flex align={'center'}> <Img src={listIcon.src} w={'20px'} h={'20px'} mr={'6px'} /> <Text>{t('orders.list')}</Text> </Flex> </Flex> <InvoiceTable selectbillings={billings.current || []} data={(billings.current || []).filter((item, index) => index <= pageSize * currentPage - 1 && index >= pageSize * (currentPage - 1))} ></InvoiceTable> </Box> <Flex w="370px" h="32px" align={'center'} mt={'20px'} mx="auto"> <Text>{t('Total')}:</Text> <Flex w="40px">{billings?.current?.length || 0}</Flex> <Flex gap={'8px'}> <Button variant={'switchPage'} isDisabled={currentPage === 1} onClick={(e) => { e.preventDefault(); setcurrentPage(1); }} > <Img w="6px" h="6px" src={arrow_left_icon.src}></Img> </Button> <Button variant={'switchPage'} isDisabled={currentPage === 1} onClick={(e) => { e.preventDefault(); setcurrentPage(currentPage - 1); }} > <Img src={arrow_icon.src} transform={'rotate(-90deg)'}></Img> </Button> <Text>{currentPage}</Text>/<Text>{totalPage}</Text> <Button variant={'switchPage'} isDisabled={currentPage === totalPage} bg={currentPage !== totalPage ? '#EDEFF1' : '#F1F4F6'} onClick={(e) => { e.preventDefault(); setcurrentPage(currentPage + 1); }} > <Img src={arrow_icon.src} transform={'rotate(90deg)'}></Img> </Button> <Button variant={'switchPage'} isDisabled={currentPage === totalPage} bg={currentPage !== totalPage ? '#EDEFF1' : '#F1F4F6'} mr={'10px'} onClick={(e) => { e.preventDefault(); setcurrentPage(totalPage); }} > <Img w="6px" h="6px" src={arrow_left_icon.src} transform={'rotate(180deg)'}></Img> </Button> </Flex> <Text>{pageSize}</Text> <Text>/{t('Page')}</Text> </Flex> </ModalBody> </ModalContent> </>); }; function InvoicdForm({ invoiceAmount, invoiceCount, billings, backcb, onSuccess }: { backcb: () => void; onSuccess: () => void; invoiceAmount: number; invoiceCount: number; billings: ReturnType<typeof useRef<ReqGenInvoice['billings']>>; }) {
-  const totast = useToast(); const { t, i18n } = useTranslation(); const initVal = {
+import { ApiResp, ReqGenInvoice } from '@/types';
+import {
+  isValidBANKAccount,
+  isValidCNTaxNumber,
+  isValidEmail,
+  isValidPhoneNumber
+} from '@/utils/tools';
+import {
+  Flex,
+  Img,
+  Heading,
+  Stack,
+  FormControl,
+  FormLabel,
+  Input,
+  Button,
+  Text,
+  Box,
+  InputGroup,
+  InputRightAddon,
+  Link,
+  useToast,
+  useDisclosure,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay
+} from '@chakra-ui/react';
+import { Formik, FieldArray, Form, Field } from 'formik';
+import request from '@/service/request';
+import { useRef, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import artical_icon from '@/assert/article.svg';
+import arrow_right from '@/assert/material-symbols_expand-more-rounded.svg';
+import arrow_left_icon from '@/assert/toleft.svg';
+import arrow_icon from '@/assert/Vector.svg';
+import email_icon from '@/assert/mdi_email-receive-outline.svg';
+import listIcon from '@/assert/list.svg';
+import { InvoiceTable } from '@/components/invoice/invoiceTable';
+const BillingModal = ({
+  billings,
+  t,
+  invoiceAmount,
+  invoiceCount
+}: {
+  billings: ReturnType<typeof useRef<ReqGenInvoice['billings']>>;
+  t: (key: string) => string;
+  invoiceAmount: number;
+  invoiceCount: number;
+}) => {
+  const [pageSize, setPageSize] = useState(10);
+  const totalPage = Math.floor((billings?.current?.length || 0) / pageSize) + 1;
+  const [currentPage, setcurrentPage] = useState(1);
+  return (
+    <>
+      {' '}
+      <ModalContent w={'910px'} maxW="910px" h={'auto'} maxH="620px">
+        {' '}
+        <ModalHeader display={'flex'}>
+          {' '}
+          {t('orders.invoiceOrder')}({invoiceCount}){' '}
+          <Text color="rgba(29, 140, 220, 1)">￥ {invoiceAmount}</Text>{' '}
+        </ModalHeader>{' '}
+        <ModalCloseButton />{' '}
+        <ModalBody>
+          {' '}
+          <Box
+            overflow={'auto'}
+            fontFamily="PingFang SC"
+            fontSize="14px"
+            fontWeight="500"
+            lineHeight="20px"
+          >
+            {' '}
+            <Flex mb={'16px'} align="center">
+              {' '}
+              <Flex align={'center'}>
+                {' '}
+                <Img src={listIcon.src} w={'20px'} h={'20px'} mr={'6px'} />{' '}
+                <Text>{t('orders.list')}</Text>{' '}
+              </Flex>{' '}
+            </Flex>{' '}
+            <InvoiceTable
+              selectbillings={billings.current || []}
+              data={(billings.current || []).filter(
+                (item, index) =>
+                  index <= pageSize * currentPage - 1 && index >= pageSize * (currentPage - 1)
+              )}
+            ></InvoiceTable>{' '}
+          </Box>{' '}
+          <Flex w="370px" h="32px" align={'center'} mt={'20px'} mx="auto">
+            {' '}
+            <Text>{t('Total')}:</Text> <Flex w="40px">{billings?.current?.length || 0}</Flex>{' '}
+            <Flex gap={'8px'}>
+              {' '}
+              <Button
+                variant={'switchPage'}
+                isDisabled={currentPage === 1}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setcurrentPage(1);
+                }}
+              >
+                {' '}
+                <Img w="6px" h="6px" src={arrow_left_icon.src}></Img>{' '}
+              </Button>{' '}
+              <Button
+                variant={'switchPage'}
+                isDisabled={currentPage === 1}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setcurrentPage(currentPage - 1);
+                }}
+              >
+                {' '}
+                <Img src={arrow_icon.src} transform={'rotate(-90deg)'}></Img>{' '}
+              </Button>{' '}
+              <Text>{currentPage}</Text>/<Text>{totalPage}</Text>{' '}
+              <Button
+                variant={'switchPage'}
+                isDisabled={currentPage === totalPage}
+                bg={currentPage !== totalPage ? '#EDEFF1' : '#F1F4F6'}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setcurrentPage(currentPage + 1);
+                }}
+              >
+                {' '}
+                <Img src={arrow_icon.src} transform={'rotate(90deg)'}></Img>{' '}
+              </Button>{' '}
+              <Button
+                variant={'switchPage'}
+                isDisabled={currentPage === totalPage}
+                bg={currentPage !== totalPage ? '#EDEFF1' : '#F1F4F6'}
+                mr={'10px'}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setcurrentPage(totalPage);
+                }}
+              >
+                {' '}
+                <Img
+                  w="6px"
+                  h="6px"
+                  src={arrow_left_icon.src}
+                  transform={'rotate(180deg)'}
+                ></Img>{' '}
+              </Button>{' '}
+            </Flex>{' '}
+            <Text>{pageSize}</Text> <Text>/{t('Page')}</Text>{' '}
+          </Flex>{' '}
+        </ModalBody>{' '}
+      </ModalContent>{' '}
+    </>
+  );
+};
+function InvoicdForm({
+  invoiceAmount,
+  invoiceCount,
+  billings,
+  backcb,
+  onSuccess
+}: {
+  backcb: () => void;
+  onSuccess: () => void;
+  invoiceAmount: number;
+  invoiceCount: number;
+  billings: ReturnType<typeof useRef<ReqGenInvoice['billings']>>;
+}) {
+  const totast = useToast();
+  const { t, i18n } = useTranslation();
+  const initVal = {
     details: [
-      { name: t('orders.details.invoiceTitle.name'), placeholder: t('orders.details.invoiceTitle.placeholder'), isRequired: true, value: '' },
-      { name: t('orders.details.taxRegistrationNumber.name'), placeholder: t('orders.details.taxRegistrationNumber.placeholder'), isRequired: true, value: '' },
-      { name: t('orders.details.bankName.name'), placeholder: t('orders.details.bankName.placeholder'), isRequired: true, value: '' },
+      {
+        name: t('orders.details.invoiceTitle.name'),
+        placeholder: t('orders.details.invoiceTitle.placeholder'),
+        isRequired: true,
+        value: ''
+      },
+      {
+        name: t('orders.details.taxRegistrationNumber.name'),
+        placeholder: t('orders.details.taxRegistrationNumber.placeholder'),
+        isRequired: true,
+        value: ''
+      },
+      {
+        name: t('orders.details.bankName.name'),
+        placeholder: t('orders.details.bankName.placeholder'),
+        isRequired: true,
+        value: ''
+      },
       {
         name: t('orders.details.bankAccount.name'),
         placeholder: t('orders.details.bankAccount.placeholder'),
@@ -109,9 +296,7 @@ import { ApiResp, ReqGenInvoice } from '@/types'; import { isValidBANKAccount, i
     values,
     actions
   ) => {
-    if (!billings.current 
-      || billings.current.length === 0
-    ) {
+    if (!billings.current || billings.current.length === 0) {
       actions.setSubmitting(false);
       return;
     }
