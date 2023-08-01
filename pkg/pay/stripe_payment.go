@@ -16,12 +16,16 @@ package pay
 
 import (
 	"os"
+	"time"
 
 	"github.com/stripe/stripe-go/v74"
 	"github.com/stripe/stripe-go/v74/checkout/session"
 )
 
 const StripeAPIKEY = "STRIPE_API_KEY"
+
+type StripePayment struct {
+}
 
 func init() {
 	stripe.Key = os.Getenv(StripeAPIKEY)
@@ -33,11 +37,15 @@ const (
 	CNY = "cny"
 )
 
+const sessionExpirationTime = 30 * time.Minute
+
 func CreateCheckoutSession(amount int64, currency, successURL, cancelURL string) (*stripe.CheckoutSession, error) {
+	expireAt := time.Now().UTC().Add(sessionExpirationTime).Unix()
 	params := &stripe.CheckoutSessionParams{
 		PaymentMethodTypes: stripe.StringSlice([]string{
 			"card",
 		}),
+		ExpiresAt: &expireAt,
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			{
 				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{

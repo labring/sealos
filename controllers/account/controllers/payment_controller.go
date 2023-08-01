@@ -21,14 +21,13 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/pkg/pay"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
-
-	"github.com/labring/sealos/pkg/pay"
 
 	"github.com/mdp/qrterminal"
 
@@ -77,11 +76,17 @@ func (r *PaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{Requeue: true}, err
 		}
 	}
-	tradeNO := pay.GetRandomString(32)
-	// change to prices 1000000 = 1¥ and in wechatPay 100 = 1¥，so need to Amount/10000
-	codeURL, err := pay.WechatPay(p.Spec.Amount/10000, p.Spec.UserID, tradeNO, "", "")
+
+	// get payment handler
+	payHandler, err := pay.NewPayHandler(p.Spec.PaymentMethod)
 	if err != nil {
-		r.Logger.Error(err, "get codeURL failed")
+		r.Logger.Error(err, "get payment Interface failed: %s", err)
+		return ctrl.Result{}, err
+	}
+	// get tradeNO and codeURL
+	tradeNO, codeURL, err := payHandler.CreatePayment(p.Spec.Amount, p.Spec.UserID)
+	if err != nil {
+		r.Logger.Error(err, "get tradeNO and codeURL failed")
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, err
 	}
 	p.Status.CodeURL = codeURL
