@@ -145,7 +145,7 @@ func newOptionFromSSH(ssh *v2.SSH, isStdout bool) *Option {
 	if len(ssh.PkData) > 0 {
 		opts = append(opts, WithRawPrivateKeyDataAndPhrase(ssh.PkData, ssh.PkPasswd))
 	}
-	if ssh.User != defaultUsername {
+	if ssh.User != "" && ssh.User != defaultUsername {
 		opts = append(opts, WithSudoEnable(true))
 	}
 

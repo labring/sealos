@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"strings"
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/crypto"
@@ -197,7 +196,7 @@ func (m *MongoDB) GetAllPricesMap() (map[string]common.Price, error) {
 		if err != nil {
 			return nil, fmt.Errorf("decrypt price error: %v", err)
 		}
-		pricesMap[strings.ToLower(prices[i].Property)] = common.Price{
+		pricesMap[prices[i].Property] = common.Price{
 			Price:    price,
 			Detail:   prices[i].Detail,
 			Property: prices[i].Property,
@@ -390,6 +389,10 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 
 	pipelineAll := bson.A{
 		matchStage,
+		bson.D{primitive.E{Key: "$group", Value: bson.D{
+			primitive.E{Key: "_id", Value: nil},
+			primitive.E{Key: "result", Value: bson.D{primitive.E{Key: "$sum", Value: 1}}},
+		}}},
 	}
 
 	pipelineCountAndAmount := bson.A{
@@ -455,8 +458,16 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	if err != nil {
 		return fmt.Errorf("failed to execute aggregate all query: %w", err)
 	}
-	totalCount = cursorAll.RemainingBatchLength()
-	cursorAll.Close(ctx)
+	defer cursorAll.Close(ctx)
+	for cursorAll.Next(ctx) {
+		var result struct {
+			Result int64 `bson:"result"`
+		}
+		if err := cursorAll.Decode(&result); err != nil {
+			return fmt.Errorf("failed to decode query count record: %w", err)
+		}
+		totalCount = int(result.Result)
+	}
 
 	// 消费总金额Costs Executing the second pipeline for getting the total count, recharge and deduction amount
 	cursorCountAndAmount, err := billingColl.Aggregate(ctx, pipelineCountAndAmount)

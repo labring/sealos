@@ -1,0 +1,13 @@
+domain: sealos.io
+layout:
+- go.kubebuilder.io/v4-alpha
+projectName: node
+repo: github.com/labring/sealos/controllers/node
+resources:
+- controller: true
+  domain: k8s.io
+  group: node
+  kind: Gpu
+  path: k8s.io/api/node/v1
+  version: v1
+version: "3"

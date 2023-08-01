@@ -35,6 +35,7 @@ spec:
         envFrom:
           - secretRef:
               name: payment-secret
+              optional: true
         securityContext:
           runAsNonRoot: true
           allowPrivilegeEscalation: false

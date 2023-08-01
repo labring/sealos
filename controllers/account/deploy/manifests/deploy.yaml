@@ -878,6 +878,18 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - limitranges
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - namespaces
   verbs:
   - create
@@ -1120,7 +1132,7 @@ metadata:
   name: account-controller-manager
   namespace: account-system
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       control-plane: controller-manager
@@ -1168,6 +1180,7 @@ spec:
         envFrom:
         - secretRef:
             name: payment-secret
+            optional: true
         image: ghcr.io/labring/sealos-account-controller:latest
         imagePullPolicy: Always
         livenessProbe:
@@ -1190,10 +1203,10 @@ spec:
         resources:
           limits:
             cpu: 1000m
-            memory: 1000Mi
+            memory: 1024Mi
           requests:
             cpu: 100m
-            memory: 640Mi
+            memory: 64Mi
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true
