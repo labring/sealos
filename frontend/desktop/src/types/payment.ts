@@ -44,7 +44,8 @@ export const generatePaymentCrd = (form: PaymentForm) => {
     },
     spec: {
       userID: form.userId,
-      amount: form.amount
+      amount: form.amount,
+      paymentMethod: 'wechat'
     }
   };
 
