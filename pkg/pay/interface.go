@@ -14,10 +14,6 @@
 
 package pay
 
-import (
-	"fmt"
-)
-
 type Interface interface {
 	CreatePayment(amount int64, user string) (string, string, error)
 	GetPaymentDetails(sessionID string) (string, int64, error)
@@ -31,6 +27,8 @@ func NewPayHandler(paymentMethod string) (Interface, error) {
 	case "wechat":
 		return &WechatPayment{}, nil
 	default:
-		return nil, fmt.Errorf("unsupported payment method: %s", paymentMethod)
+		//return nil, fmt.Errorf("unsupported payment method: %s", paymentMethod)
+		//TODO Now set it as the default wechat, and modify it a few days later
+		return &WechatPayment{}, nil
 	}
 }
