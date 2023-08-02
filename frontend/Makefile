@@ -54,12 +54,12 @@ dev-%: build-packages
 
 # prebuild-image-for -j
 image-prebuild: pnpm-lock.yaml
-	docker build --target deps . -t $(imageOwner)sealos-deps:dev
+	docker build --platform=linux/amd64 --target deps . -t $(imageOwner)sealos-deps:dev
 
 image-build-providers/%: image-prebuild
-	docker build -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=providers/$* --build-arg name=$* . 
+	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=providers/$* --build-arg name=$* . 
 image-build-%: image-prebuild
-	docker build -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=$* --build-arg name=$* . 
+	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=$* --build-arg name=$* . 
 
 image-push-providers/%: image-build-providers/%
 	docker push $(imageOwner)sealos-$*:$(imageTag) 

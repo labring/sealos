@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "scripts": {
     "format": "prettier --config .prettierrc.js --write **/src/**/*.ts **/src/**/*.tsx **/src/**/*.scss **/tsconfig.*json **/*config.js **/*config.json",
-    "preinstall": "npx only-allow pnpm"
+    "preinstall": "npx only-allow pnpm",
+    "dev-desktop": " pnpm -r --filter ./desktop run dev",
+    "dev-db": " pnpm -r --filter ./providers/dbprovider  run dev",
+    "dev-app": " pnpm -r --filter ./providers/applaunchpad  run dev"
   },
   "workspaces": [
     "./packages/*",
