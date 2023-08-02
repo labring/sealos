@@ -46,28 +46,29 @@ pnpm --filter=<path> -r --offline add <package>
 
 ```bash
 # sealos/frontend
-make image-build-<app> DOCKER_USERNAME=your_account
+make image-build-<app> DOCKER_USERNAME=<your_account> IMAGE_TAG=<tag>
 # such as:
 # make image-build-providers/costcenter
 # make image-build-desktop
-
+# make image-build-desktop IMAGE_TAG=test DOCKER_USERNAME=sealos
 # multi jobs build
 make -j
 ```
 
-- you can use `make all DOCKER_USERNAME=your_account` to build all apps for your account.
+- you can use `make all DOCKER_USERNAME=<your_account>` to build all apps for your account.
+- you can user `make all IMAGE_TAG=<tag>` to build all apps and customize tag (default:dev)
 
 ## how to publish image
 
 ```bash
 # sealos/frontend
-make image-push-<app> DOCKER_USERNAME=your_account
+make image-push-<app> DOCKER_USERNAME=<your_account> IMAGE_TAG=<tag>
 # such as:
 # make image-push-providers/costcenter
 # make image-push-desktop
 
 # publish all
-make push-images DOCKER_USERNAME=your_account
+make push-images DOCKER_USERNAME=<your_account> IMAGE_TAG=<tag>
 ```
 
 ## new App
