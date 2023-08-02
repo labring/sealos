@@ -48,6 +48,7 @@ type PaymentSpec struct {
 	// Amount is the amount of recharge
 	Amount int64 `json:"amount,omitempty"`
 	// e.g. wechat, alipay, creditcard, etc.
+	//+kubebuilder:default:=wechat
 	PaymentMethod string `json:"paymentMethod,omitempty"`
 }
 
