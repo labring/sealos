@@ -32,6 +32,10 @@ const (
 	ImminentDeletionPeriod    DebtStatusType = "ImminentDeletionPeriod"
 	FinalDeletionPeriod       DebtStatusType = "FinalDeletionPeriod"
 
+	PreWarningPeriod DebtStatusType = "PreWarningPeriod"
+	SuspendPeriod    DebtStatusType = "SuspendPeriod"
+	RemovedPeriod    DebtStatusType = "RemovedPeriod"
+
 	DebtPrefix = "debt-"
 	DaySecond  = 24 * 60 * 60
 )
