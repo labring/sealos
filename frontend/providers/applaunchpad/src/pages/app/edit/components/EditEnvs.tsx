@@ -86,7 +86,7 @@ const EditEnvs = ({
             bg={'myWhite.300'}
             placeholder={t('Env Placeholder') || ''}
             overflowX={'auto'}
-            whiteSpace={inputVal === '' ? 'pre' : 'nowrap'}
+            whiteSpace={inputVal === '' ? 'pre-wrap' : 'nowrap'}
             onChange={(e) => setInputVal(e.target.value)}
           />
         </ModalBody>
