@@ -258,7 +258,7 @@ const Logs = ({
                   leftIcon={<MyIcon name={'analyze'} />}
                   onClick={onclickAnalyses}
                 >
-                  {t('智能分析')}
+                  {t('Intelligent Analysis')}
                 </Button>
               )}
             </Flex>
@@ -319,17 +319,18 @@ const Logs = ({
       <Modal isOpen={isOpenAnalyses} onClose={onCloseAnalysesModel}>
         <ModalOverlay />
         <ModalContent maxW={'50vw'}>
-          <ModalHeader>Pod {t('问题分析')}</ModalHeader>
+          <ModalHeader>Pod {t('Intelligent Analysis')}</ModalHeader>
           <ModalCloseButton />
-          <ModalBody position={'relative'}>
-            <Box
-              className={isAnalyzing ? styles.analysesAnimation : ''}
-              h={'60vh'}
-              overflowY={'auto'}
-              whiteSpace={'pre-wrap'}
-            >
-              {eventAnalysesText}
-            </Box>
+          <ModalBody
+            className={isAnalyzing ? styles.analysesAnimation : ''}
+            h={'60vh'}
+            maxH={'60vh'}
+            overflowY={'auto'}
+            whiteSpace={'pre-wrap'}
+            position={'relative'}
+            pb={2}
+          >
+            {eventAnalysesText}
           </ModalBody>
         </ModalContent>
       </Modal>
