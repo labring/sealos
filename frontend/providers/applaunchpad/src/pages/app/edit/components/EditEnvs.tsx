@@ -75,7 +75,7 @@ const EditEnvs = ({
     <Modal isOpen onClose={onClose}>
       <ModalOverlay />
       <ModalContent maxH={'90vh'} maxW={'90vw'} minW={'600px'} w={'auto'}>
-        <ModalHeader>{t('Edit Env Variable')}</ModalHeader>
+        <ModalHeader>{t('Edit Environment Variables')}</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <Textarea

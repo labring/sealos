@@ -8,23 +8,25 @@ import {
   AccordionButton,
   AccordionItem,
   AccordionPanel,
-  AccordionIcon,
-  Button
+  AccordionIcon
 } from '@chakra-ui/react';
 import type { AppDetailType } from '@/types/app';
 import { useCopyData, printMemory } from '@/utils/tools';
-import MyIcon from '@/components/Icon';
+import { useGlobalStore } from '@/store/global';
 import styles from '../index.module.scss';
 import dynamic from 'next/dynamic';
 const ConfigMapDetailModal = dynamic(() => import('./ConfigMapDetailModal'));
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { useTranslation } from 'next-i18next';
 import MyTooltip from '@/components/MyTooltip';
+import GPUItem from '@/components/GPUItem';
+import MyIcon from '@/components/Icon';
 
 const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const { copyData } = useCopyData();
+  const { userSourcePrice } = useGlobalStore();
   const [detailConfigMap, setDetailConfigMap] = useState<{
     mountPath: string;
     value: string;
@@ -57,27 +59,11 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             label: 'Limit Memory',
             value: printMemory(app.memory)
           },
-          ...(!!app.gpu?.type
+          ...(userSourcePrice?.gpu
             ? [
                 {
-                  label: 'Gpu',
-                  render: (
-                    <Flex whiteSpace={'nowrap'}>
-                      <MyIcon name={'nvidia'} w={'16px'} mr={2} />
-                      {app.gpu && (
-                        <>
-                          <Box>{app.gpu.type}</Box>
-                          <Box mx={1} color={'myGray.400'}>
-                            /
-                          </Box>
-                        </>
-                      )}
-                      <Box>
-                        {app.gpu?.amount}
-                        {t('Card')}
-                      </Box>
-                    </Flex>
-                  )
+                  label: 'GPU',
+                  render: <GPUItem gpu={app.gpu} />
                 }
               ]
             : [])

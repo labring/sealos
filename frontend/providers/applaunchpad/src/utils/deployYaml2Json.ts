@@ -79,7 +79,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     },
     command: (() => {
       try {
-        return [JSON.stringify(JSON.parse(data.runCMD))];
+        return JSON.stringify(JSON.parse(data.runCMD));
       } catch (error) {
         return data.runCMD.split(' ').filter((item) => item);
       }

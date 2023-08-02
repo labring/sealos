@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import { Box, Button, Flex, MenuButton } from '@chakra-ui/react';
 import { AppListItemType } from '@/types/app';
@@ -16,6 +16,7 @@ import dynamic from 'next/dynamic';
 
 import MyMenu from '@/components/Menu';
 import MyTable from '@/components/Table';
+import GPUItem from '@/components/GPUItem';
 const DelModal = dynamic(() => import('@/pages/app/detail/components/DelModal'));
 
 const AppList = ({
@@ -154,25 +155,9 @@ const AppList = ({
       ...(userSourcePrice?.gpu
         ? [
             {
-              title: 'Gpu',
+              title: 'GPU',
               key: 'gpu',
-              render: (item: AppListItemType) => (
-                <Flex whiteSpace={'nowrap'}>
-                  <MyIcon name={'nvidia'} w={'16px'} mr={2} />
-                  {item.gpu && item.gpu.amount > 0 && (
-                    <>
-                      <Box>{item.gpu.type}</Box>
-                      <Box mx={1} color={'myGray.400'}>
-                        /
-                      </Box>
-                    </>
-                  )}
-                  <Box color={item.gpu?.amount ? 'myGray.600' : 'myGray.400'}>
-                    {item.gpu?.amount || 0}
-                    {t('Card')}
-                  </Box>
-                </Flex>
-              )
+              render: (item: AppListItemType) => <GPUItem gpu={item.gpu} />
             }
           ]
         : []),
