@@ -55,7 +55,6 @@ export default function Index(props: ServiceEnv) {
   if (isLoading) {
     return (
       <Flex w="100%" h="100%" color="white" bg="#2b2b2b" overflow={'hidden'} position={'relative'}>
-        <Box w="200px" backgroundColor={'#2C3035'}></Box>
         <Box w="100%" backgroundColor={'#2b2b2b'} position={'relative'}>
           <Box position={'absolute'} top="50%" left={'50%'} transform={'translate(-50%, -50%)'}>
             <Spinner
