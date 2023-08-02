@@ -25,7 +25,7 @@ const EditEnvs = ({
   const { t } = useTranslation();
   const [inputVal, setInputVal] = useState(
     defaultEnv
-      .filter((item) => !item.valueFrom)
+      .filter((item) => !item.valueFrom) // Only env that is not valuefrom can be edited
       .map((item) => `${item.key}=${item.value}`)
       .join('\n')
   );
@@ -54,22 +54,16 @@ const EditEnvs = ({
         const key = item[0].replace(/^['"]|['"]$/g, '').trim();
         const value = item[1].replace(/^['"]|['"]$/g, '').trim();
 
-        // const valueFrom = (() => {
-        //   try {
-        //     const jsonParse = JSON.parse(value);
-        //     return jsonParse?.valueFrom;
-        //   } catch (error) {}
-        // })();
-
         return {
           key,
           value
-          // valueFrom
         };
       });
+
+    // concat valueFrom env
     successCb([...defaultEnv.filter((item) => item.valueFrom), ...result]);
     onClose();
-  }, [inputVal, onClose, successCb]);
+  }, [defaultEnv, inputVal, onClose, successCb]);
 
   return (
     <Modal isOpen onClose={onClose}>

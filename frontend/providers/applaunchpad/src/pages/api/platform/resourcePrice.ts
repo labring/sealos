@@ -54,6 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       kubeconfig: await authSession(req.headers)
     });
 
+    // apply price cr and get account price
     const crdJson = {
       apiVersion: `account.sealos.io/v1`,
       kind: 'PriceQuery',
@@ -116,6 +117,7 @@ async function getPriceCr({
   return priceResponse;
 }
 
+/* get gpu nodes by configmap. */
 async function getGpuNode({ k8sCore }: { k8sCore: CoreV1Api }) {
   try {
     const { body } = await k8sCore.readNamespacedConfigMap(gpuCrName, 'sealos');
@@ -133,6 +135,7 @@ async function getGpuNode({ k8sCore }: { k8sCore: CoreV1Api }) {
 
     const gpuList: GpuNodeType[] = [];
 
+    // merge same type gpu
     gpuValues.forEach((item) => {
       const index = gpuList.findIndex((gpu) => gpu['gpu.product'] === item['gpu.product']);
       if (index > -1) {
@@ -162,6 +165,7 @@ function countSourcePrice(rawData: PriceCrdType, type: ResourceType) {
 function countGpuSource(rawData: PriceCrdType, gpuNodes: GpuNodeType[]) {
   const gpuList: Response['gpu'] = [];
 
+  // count gpu price by gpuNode and accountPriceConfig
   rawData?.status?.billingRecords?.forEach((item) => {
     if (!item.resourceType.startsWith('gpu')) return;
     const gpuType = item.resourceType.replace('gpu-', '');

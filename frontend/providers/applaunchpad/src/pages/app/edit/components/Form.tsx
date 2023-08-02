@@ -173,6 +173,7 @@ const Form = ({
     // eslint-disable-next-line
   }, []);
 
+  // common form label
   const Label = ({
     children,
     w = labelWidth,
@@ -209,6 +210,7 @@ const Form = ({
     backgroundColor: 'myWhite.600'
   };
 
+  // add NoGPU select item
   const gpuSelectList = useMemo(
     () =>
       userSourcePrice?.gpu
@@ -251,6 +253,7 @@ const Form = ({
       inventory: countGpuInventory(selected.type)
     };
   }, [userSourcePrice?.gpu, countGpuInventory, getValues, refresh]);
+  // cpu, memory have different sliderValue
   const countSliderList = useCallback(() => {
     const gpuType = getValues('gpu.type');
     const key = gpuType && formSliderListConfig[gpuType] ? gpuType : noGpuSliderKey;
@@ -369,6 +372,7 @@ const Form = ({
               {t('Basic Config')}
             </Box>
             <Box px={'42px'} py={'24px'}>
+              {/* app name */}
               <FormControl mb={7} isInvalid={!!errors.appName} w={'500px'}>
                 <Flex alignItems={'center'}>
                   <Label>{t('App Name')}</Label>
@@ -393,6 +397,7 @@ const Form = ({
                   />
                 </Flex>
               </FormControl>
+              {/* image */}
               <Box mb={7}>
                 <Flex alignItems={'center'}>
                   <Label>{t('Image')}</Label>
@@ -479,6 +484,7 @@ const Form = ({
                   ) : null}
                 </Box>
               </Box>
+              {/* replicas */}
               <Box mb={7}>
                 <Flex alignItems={'center'}>
                   <Label>{t('Deployment Mode')}</Label>
@@ -673,6 +679,7 @@ const Form = ({
                 </Box>
               )}
 
+              {/* cpu && memory */}
               <Flex mb={10} pr={3} alignItems={'flex-start'}>
                 <Label mr={'7px'}>{t('CPU')}</Label>
                 <MySlider
@@ -839,6 +846,7 @@ const Form = ({
                 </AccordionButton>
 
                 <AccordionPanel px={'42px'} py={'24px'}>
+                  {/* command && param */}
                   <FormControl mb={7}>
                     <Flex alignItems={'center'}>
                       <Label>{t('Run command')}</Label>
@@ -864,6 +872,7 @@ const Form = ({
 
                   <Divider my={'30px'} bg={'myGray.100'} />
 
+                  {/* env */}
                   <Box w={'100%'} maxW={'600px'}>
                     <Flex alignItems={'center'}>
                       <Label className={styles.formSecondTitle}>{t('Environment Variables')}</Label>

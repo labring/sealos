@@ -54,7 +54,7 @@ const PriceBox = ({
       ...(userSourcePrice?.gpu ? [{ label: 'GPU', color: '#8172D8', value: podScale(gpuP) }] : []),
       { label: 'TotalPrice', color: '#485058', value: podScale(totalP) }
     ];
-  }, [cpu, gpu, memory, pods, storage]);
+  }, [cpu, gpu, memory, pods, storage, userSourcePrice]);
 
   return (
     <Box>

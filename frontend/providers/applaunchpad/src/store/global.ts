@@ -51,6 +51,7 @@ export const useGlobalStore = create<State>()(
           });
           console.log(res);
         } catch (err) {
+          // retry fetch
           retryGetPrice--;
           if (retryGetPrice >= 0) {
             setTimeout(() => {

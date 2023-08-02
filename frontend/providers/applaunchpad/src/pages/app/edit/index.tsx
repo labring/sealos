@@ -138,6 +138,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     refetchInterval: 5000
   });
 
+  // add already deployment gpu amount if they exists
   const countGpuInventory = useCallback(
     (type?: string) => {
       const inventory = userSourcePrice?.gpu?.find((item) => item.type === type)?.inventory || 0;
