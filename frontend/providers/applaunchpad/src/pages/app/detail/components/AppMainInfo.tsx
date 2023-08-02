@@ -89,7 +89,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             backgroundColor={'myWhite.400'}
             borderRadius={'sm'}
           >
-            <Box mr={3}>{t('Intranet Address')}</Box>
+            <Box mr={3}>{t('Private Address')}</Box>
             <Box flex={'1 0 0'} w={0} color={'myGray.600'}>
               {inlineNetwork}
             </Box>
@@ -115,7 +115,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             backgroundColor={'myWhite.400'}
             borderRadius={'sm'}
           >
-            <Box mr={3}>{t('External Address')}</Box>
+            <Box mr={3}>{t('Public Address')}</Box>
             {outlineNetwork ? (
               <>
                 <Link

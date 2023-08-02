@@ -11,18 +11,24 @@ import {
   Textarea
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
+import { AppEditType } from '@/types/app';
 
 const EditEnvs = ({
-  defaultVal,
+  defaultEnv = [],
   successCb,
   onClose
 }: {
-  defaultVal: string;
+  defaultEnv: AppEditType['envs'];
   successCb: (e: { key: string; value: string }[]) => void;
   onClose: () => void;
 }) => {
   const { t } = useTranslation();
-  const [inputVal, setInputVal] = useState(defaultVal);
+  const [inputVal, setInputVal] = useState(
+    defaultEnv
+      .filter((item) => !item.valueFrom) // Only env that is not valuefrom can be edited
+      .map((item) => `${item.key}=${item.value}`)
+      .join('\n')
+  );
 
   const onSubmit = useCallback(() => {
     const lines = inputVal.split('\n').filter((item) => item);
@@ -53,15 +59,17 @@ const EditEnvs = ({
           value
         };
       });
-    successCb(result);
+
+    // concat valueFrom env
+    successCb([...defaultEnv.filter((item) => item.valueFrom), ...result]);
     onClose();
-  }, [inputVal, onClose, successCb]);
+  }, [defaultEnv, inputVal, onClose, successCb]);
 
   return (
     <Modal isOpen onClose={onClose}>
       <ModalOverlay />
       <ModalContent maxH={'90vh'} maxW={'90vw'} minW={'600px'} w={'auto'}>
-        <ModalHeader>{t('Edit Env Variable')}</ModalHeader>
+        <ModalHeader>{t('Edit Environment Variables')}</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <Textarea
@@ -72,7 +80,7 @@ const EditEnvs = ({
             bg={'myWhite.300'}
             placeholder={t('Env Placeholder') || ''}
             overflowX={'auto'}
-            whiteSpace={inputVal === '' ? 'pre' : 'nowrap'}
+            whiteSpace={inputVal === '' ? 'pre-wrap' : 'nowrap'}
             onChange={(e) => setInputVal(e.target.value)}
           />
         </ModalBody>

@@ -1,28 +1,41 @@
 import React, { useMemo } from 'react';
 import { Box, Flex } from '@chakra-ui/react';
-import { SOURCE_PRICE } from '@/store/static';
-import type { Response as resourcePriceResponse } from '@/pages/api/platform/resourcePrice';
+import { useGlobalStore } from '@/store/global';
 import { useTranslation } from 'next-i18next';
-
-export const colorMap = {
-  cpu: '#33BABB',
-  memory: '#36ADEF',
-  storage: '#8172D8'
-};
 
 const PriceBox = ({
   cpu,
   memory,
   storage,
+  gpu,
   pods = [1, 1]
-}: resourcePriceResponse & { pods: [number, number] }) => {
+}: {
+  cpu: number;
+  memory: number;
+  storage: number;
+  gpu?: {
+    type: string;
+    amount: number;
+  };
+  pods: [number, number];
+}) => {
   const { t } = useTranslation();
+  const { userSourcePrice } = useGlobalStore();
 
   const priceList = useMemo(() => {
-    const cpuP = +((SOURCE_PRICE.cpu * cpu * 24) / 1000).toFixed(2);
-    const memoryP = +((SOURCE_PRICE.memory * memory * 24) / 1024).toFixed(2);
-    const storageP = +(SOURCE_PRICE.storage * storage * 24).toFixed(2);
-    const totalP = +(cpuP + memoryP + storageP).toFixed(2);
+    if (!userSourcePrice) return [];
+    const cpuP = +((userSourcePrice.cpu * cpu * 24) / 1000).toFixed(2);
+    const memoryP = +((userSourcePrice.memory * memory * 24) / 1024).toFixed(2);
+    const storageP = +(userSourcePrice.storage * storage * 24).toFixed(2);
+
+    const gpuP = (() => {
+      if (!gpu) return 0;
+      const item = userSourcePrice?.gpu?.find((item) => item.type === gpu.type);
+      if (!item) return 0;
+      return +(item.price * gpu.amount * 24).toFixed(2);
+    })();
+
+    const totalP = +(cpuP + memoryP + storageP + gpuP).toFixed(2);
 
     const podScale = (val: number) => {
       const min = (val * pods[0]).toFixed(2);
@@ -38,9 +51,10 @@ const PriceBox = ({
       },
       { label: 'Memory', color: '#36ADEF', value: podScale(memoryP) },
       { label: 'Storage', color: '#8172D8', value: podScale(storageP) },
+      ...(userSourcePrice?.gpu ? [{ label: 'GPU', color: '#8172D8', value: podScale(gpuP) }] : []),
       { label: 'TotalPrice', color: '#485058', value: podScale(totalP) }
     ];
-  }, [cpu, memory, pods, storage]);
+  }, [cpu, gpu, memory, pods, storage, userSourcePrice]);
 
   return (
     <Box>
@@ -49,9 +63,16 @@ const PriceBox = ({
       </Box>
       {priceList.map((item) => (
         <Flex key={item.label} alignItems={'center'} mt={3}>
-          <Box bg={item.color} w={'8px'} h={'8px'} borderRadius={'10px'} mr={2}></Box>
-          <Box flex={'0 0 65px'}>{t(item.label)}:</Box>
-          <Box>{item.value}</Box>
+          <Box
+            flexShrink={0}
+            bg={item.color}
+            w={'8px'}
+            h={'8px'}
+            borderRadius={'10px'}
+            mr={2}
+          ></Box>
+          <Box flex={'0 0 60px'}>{t(item.label)}:</Box>
+          <Box whiteSpace={'nowrap'}>{item.value}</Box>
         </Flex>
       ))}
       <Box></Box>

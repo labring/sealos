@@ -10,8 +10,7 @@ import {
   Td,
   TableContainer,
   Flex,
-  MenuButton,
-  Tooltip
+  MenuButton
 } from '@chakra-ui/react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { restartPodByName } from '@/api/app';
@@ -26,6 +25,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import MyMenu from '@/components/Menu';
 import { useTranslation } from 'next-i18next';
 import { QuestionOutlineIcon } from '@chakra-ui/icons';
+import MyTooltip from '@/components/MyTooltip';
 
 const LogsModal = dynamic(() => import('./LogsModal'));
 const DetailModel = dynamic(() => import('./PodDetailModal'));
@@ -89,7 +89,7 @@ const Pods = ({
         <Box color={item.status.color}>
           {item.status.label}
           {!!item.status.reason && (
-            <Tooltip
+            <MyTooltip
               label={`Reason: ${item.status.reason}${
                 item.status.message ? `\nMessage: ${item.status.message}` : ''
               }`}
@@ -98,7 +98,7 @@ const Pods = ({
               maxW={'400px'}
             >
               <QuestionOutlineIcon ml={1} />
-            </Tooltip>
+            </MyTooltip>
           )}
         </Box>
       )

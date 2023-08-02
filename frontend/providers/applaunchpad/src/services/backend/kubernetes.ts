@@ -76,8 +76,8 @@ export async function CreateYaml(
     /* delete success specs */
     for (const spec of created) {
       try {
+        await client.delete(spec);
         console.log('delete:', spec.kind);
-        client.delete(spec);
       } catch (error) {
         error;
       }
@@ -174,6 +174,7 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
   const getDeployApp = async (appName: string) => {
     let app: V1Deployment | V1StatefulSet | null = null;
     const k8sApp = kc.makeApiClient(k8s.AppsV1Api);
+    const k8sCore = kc.makeApiClient(k8s.CoreV1Api);
 
     try {
       app = (await k8sApp.readNamespacedDeployment(appName, namespace)).body;
@@ -186,6 +187,7 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
     } catch (error: any) {
       error;
     }
+
     if (!app) {
       return Promise.reject('can not find app');
     }
