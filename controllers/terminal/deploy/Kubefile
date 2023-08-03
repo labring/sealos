@@ -7,6 +7,7 @@ COPY manifests manifests
 
 ENV userNamespace="user-system"
 ENV cloudDomain="127.0.0.1.nip.io"
+ENV port=""
 ENV wildcardCertSecretName="wildcard-cert"
 ENV wildcardCertSecretNamespace="sealos-system"
 
