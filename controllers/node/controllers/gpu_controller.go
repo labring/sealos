@@ -28,9 +28,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 type GpuReconciler struct {
@@ -41,8 +44,8 @@ type GpuReconciler struct {
 
 const (
 	GPU                                  = "gpu"
-	GPUInfo                              = "gpu-info"
-	GPUInfoNameSpace                     = "sealos"
+	GPUInfo                              = "node-gpu-info"
+	GPUInfoNameSpace                     = "node-system"
 	NvidiaGPUProduct                     = "nvidia.com/gpu.product"
 	NvidiaGPUMemory                      = "nvidia.com/gpu.memory"
 	NvidiaGPU        corev1.ResourceName = "nvidia.com/gpu"
@@ -153,6 +156,9 @@ func (r *GpuReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Res
 			return ctrl.Result{}, err
 		}
 	} else if err == nil {
+		if configmap.Data == nil {
+			configmap.Data = map[string]string{}
+		}
 		if configmap.Data[GPU] != nodeMapStr {
 			configmap.Data[GPU] = nodeMapStr
 			if err := r.Update(ctx, configmap); err != nil && !errors.IsConflict(err) {
@@ -164,6 +170,7 @@ func (r *GpuReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Res
 		r.Logger.Error(err, "failed to get gpu-info configmap")
 		return ctrl.Result{}, err
 	}
+
 	r.Logger.V(1).Info("gpu-info configmap status", "gpu", configmap.Data[GPU])
 	return ctrl.Result{}, nil
 }
@@ -198,27 +205,41 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Pod{}).
-		WithEventFilter(
-			predicate.Funcs{
-				CreateFunc: func(event event.CreateEvent) bool {
-					_, ok := event.Object.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
-					return ok
-				},
-				UpdateFunc: func(event event.UpdateEvent) bool {
-					_, ok := event.ObjectNew.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
-					if !ok {
-						return false
-					}
-					phaseOld := event.ObjectOld.(*corev1.Pod).Status.Phase
-					phaseNew := event.ObjectNew.(*corev1.Pod).Status.Phase
-					return phaseOld != phaseNew
-				},
-				DeleteFunc: func(event event.DeleteEvent) bool {
-					_, ok := event.Object.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
-					return ok
-				},
+		For(&corev1.Pod{}, builder.WithPredicates(predicate.Funcs{
+			CreateFunc: func(event event.CreateEvent) bool {
+				_, ok := event.Object.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
+				return ok
 			},
-		).
+			UpdateFunc: func(event event.UpdateEvent) bool {
+				_, ok := event.ObjectNew.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
+				if !ok {
+					return false
+				}
+				phaseOld := event.ObjectOld.(*corev1.Pod).Status.Phase
+				phaseNew := event.ObjectNew.(*corev1.Pod).Status.Phase
+				return phaseOld != phaseNew
+			},
+			DeleteFunc: func(event event.DeleteEvent) bool {
+				_, ok := event.Object.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
+				return ok
+			},
+		})).
+		// Because node-controller will create a node-gpu-info configmap when deploying with deploy.yaml,
+		// so watching the creation event of configmap can trigger a reconcile to initialize node-gpu-info configmap.
+		Watches(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(predicate.Funcs{
+			CreateFunc: func(event event.CreateEvent) bool {
+				cm := event.Object.(*corev1.ConfigMap)
+				if cm.Name == GPUInfo && cm.Namespace == GPUInfoNameSpace {
+					return true
+				}
+				return false
+			},
+			UpdateFunc: func(event event.UpdateEvent) bool {
+				return false
+			},
+			DeleteFunc: func(event event.DeleteEvent) bool {
+				return false
+			},
+		})).
 		Complete(r)
 }
