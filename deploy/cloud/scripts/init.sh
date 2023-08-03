@@ -5,6 +5,7 @@ cloudDomain="127.0.0.1.nip.io"
 tlsCrtPlaceholder="<tls-crt-placeholder>"
 tlsKeyPlaceholder="<tls-key-placeholder>"
 mongodbUri=""
+saltKey=""
 
 function read_env {
   source $1
@@ -79,6 +80,10 @@ function sealos_authorize {
     kubectl apply -f manifests/free-license.yaml
 }
 
+function gen_saltKey() {
+    saltKey=$(tr -dc 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0)
+}
+
 function gen_mongodbUri() {
   # if mongodbUri is empty then create mongodb and gen mongodb uri
   if [ -z "$mongodbUri" ]; then
@@ -134,8 +139,10 @@ function mutate_desktop_config() {
   # mutate etc/sealos/desktop-config.yaml by using mongodb uri and two random base64 string
   sed -i -e "s;<your-mongodb-uri-base64>;$(echo -n "$mongodbUri" | base64 -w 0);" etc/sealos/desktop-config.yaml
   sed -i -e "s;<your-jwt-secret-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
-  sed -i -e "s;<your-password-salt-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
+  sed -i -e "s;<your-password-salt-base64>;$saltKey;" etc/sealos/desktop-config.yaml
 }
+
+
 
 function install {
   # read env
@@ -152,6 +159,9 @@ function install {
 
   # gen mongodb uri
   gen_mongodbUri
+
+  # gen saltKey
+  gen_saltKey
 
   # sealos run controllers
   sealos_run_controller
