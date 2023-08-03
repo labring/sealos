@@ -12,7 +12,7 @@ const convertGpu = (_deduction?: RawCosts) =>
         (pre, cur) => {
           if (cur[0] === 'cpu') pre.cpu = cur[1];
           else if (cur[0] === 'memory') pre.memory = cur[1];
-          else if (cur[0] === 'memory') pre.storage = cur[1];
+          else if (cur[0] === 'storage') pre.storage = cur[1];
           else if (cur[0].startsWith('gpu-')) {
             typeof pre.gpu === 'number' && (pre.gpu += cur[1]);
           }
