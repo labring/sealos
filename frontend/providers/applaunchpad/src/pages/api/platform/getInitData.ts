@@ -22,10 +22,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!global.FormSliderListConfig) {
       const filename =
         process.env.NODE_ENV === 'development'
-          ? 'form_slider_config.json.local'
-          : 'form_slider_config.json';
+          ? 'data/form_slider_config.json.local'
+          : '/app/data/form_slider_config.json';
 
-      const res = JSON.parse(readFileSync(`data/${filename}`, 'utf-8'));
+      const res = JSON.parse(readFileSync(filename, 'utf-8'));
       console.log(res);
 
       global.FormSliderListConfig = res;
