@@ -7,6 +7,7 @@ import { noGpuSliderKey } from '@/constants/app';
 export type Response = {
   SEALOS_DOMAIN: string;
   INGRESS_SECRET: string;
+  SHOW_EVENT_ANALYZE: boolean;
   FORM_SLIDER_LIST_CONFIG: FormSliderListType;
 };
 
@@ -40,6 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     data: {
       SEALOS_DOMAIN: process.env.SEALOS_DOMAIN || 'cloud.sealos.io',
       INGRESS_SECRET: process.env.INGRESS_SECRET || 'wildcard-cert',
+      SHOW_EVENT_ANALYZE: !!process.env.FASTGPT_KEY,
       FORM_SLIDER_LIST_CONFIG: global.FormSliderListConfig
     }
   });
