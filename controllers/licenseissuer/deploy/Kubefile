@@ -7,8 +7,6 @@ COPY manifests manifests
 
 ENV canConnectToExternalNetwork "true"
 ENV enableMonitor "true"
-ENV MongoURI ""
-ENV PasswordSalt ""
 ENV CollectorURL "https://license.sealos.io/collector"
 ENV NotificationURL "https://license.sealos.io/notify"
 ENV RegisterURL "https://license.sealos.io/register"
