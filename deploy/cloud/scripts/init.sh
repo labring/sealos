@@ -55,8 +55,6 @@ function sealos_run_controller {
   sealos run tars/licenseissuer.tar \
   --env canConnectToExternalNetwork="true" \
   --env enableMonitor="true" \
-  --env MongoURI="$mongodbUri" \
-  --env PasswordSalt="$saltKey"
 }
 
 function sealos_authorize {
