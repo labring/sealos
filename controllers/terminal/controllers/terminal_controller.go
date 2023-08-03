@@ -212,7 +212,7 @@ func (r *TerminalReconciler) syncApisixIngress(ctx context.Context, terminal *te
 		return err
 	}
 
-	domain := Protocol + host + ":" + r.terminalPort
+	domain := Protocol + host + r.getPort()
 	if terminal.Status.Domain != domain {
 		terminal.Status.Domain = domain
 		return r.Status().Update(ctx, terminal)
@@ -239,7 +239,7 @@ func (r *TerminalReconciler) syncNginxIngress(ctx context.Context, terminal *ter
 		return err
 	}
 
-	domain := Protocol + host + ":" + r.terminalPort
+	domain := Protocol + host + r.getPort()
 	if terminal.Status.Domain != domain {
 		terminal.Status.Domain = domain
 		return r.Status().Update(ctx, terminal)
@@ -471,6 +471,13 @@ func getSecretNamespace() string {
 		return DefaultSecretNamespace
 	}
 	return secretNamespace
+}
+
+func (r *TerminalReconciler) getPort() string {
+	if r.terminalPort == "" {
+		return ""
+	}
+	return ":" + r.terminalPort
 }
 
 // SetupWithManager sets up the controller with the Manager.
