@@ -20,6 +20,8 @@ import { EnvData } from '@/types/env';
 import { ApiResp } from '@/types/api';
 import useEnvStore from '@/stores/env';
 
+// Make sure to call `loadStripe` outside of a component’s render to avoid
+// recreating the `Stripe` object on every render.
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -74,6 +76,7 @@ const App = ({ Component, pageProps }: AppProps) => {
         state.setTransferEnabled(!!data?.transferEnabled);
         state.setRechargeEnabled(!!data?.rechargeEnabled);
         state.setGpuEnabled(!!data?.gpuEnabled);
+        state.setStripe(data?.stripePub || '');
       } catch (error) {
         console.error('get env error');
       }

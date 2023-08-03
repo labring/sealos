@@ -1,4 +1,4 @@
-import { generatePaymentCrd, generateTransferCrd, PaymentForm } from '@/constants/payment';
+import { generatePaymentCrd, generateTransferCrd } from '@/constants/payment';
 import { authSession } from '@/service/backend/auth';
 import {
   ApplyYaml,

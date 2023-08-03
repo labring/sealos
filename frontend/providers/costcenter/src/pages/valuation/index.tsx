@@ -15,6 +15,7 @@ import OuterLink from '@/components/outerLink';
 import NotFound from '@/components/notFound';
 import PredictCard from '@/components/valuation/predictCard';
 import useEnvStore from '@/stores/env';
+import shellcoin from '@/assert/shell_coin.svg';
 type CardItem = {
   title: string;
   price: number[];
@@ -110,7 +111,8 @@ function Valuation() {
                     justifyContent="center"
                     alignContent={'center'}
                   >
-                    ￥{item.price[0]}
+                    <Img src={shellcoin.src} h="28px" w="28px" my="auto" mr="4px" />
+                    <Text>{item.price[0]}</Text>
                   </Heading>
                   <Text ml="4px">
                     {item.unit} / {t('Hour')}
@@ -125,7 +127,10 @@ function Valuation() {
                         py={'8px'}
                       >
                         <Box>{item.price[idx + 1]}</Box>
-                        <Box>{`￥${item.unit} / ${t(_item)}`}</Box>
+                        <Flex align={'center'}>
+                          <Img src={shellcoin.src} h="16px" w="16px" mr={'4px'} />
+                          <Text>{`${item.unit} / ${t(_item)}`}</Text>
+                        </Flex>
                       </Flex>
                     ))}
                   </Box>
@@ -149,13 +154,19 @@ function Valuation() {
                         pt="12px"
                         px="24px"
                       >
-                        <Box>{`￥${item.price}`}</Box>
+                        <Flex>
+                          <Img src={shellcoin.src} h="16px" w="16px" />
+                          <Text>{`${item.price}`}</Text>
+                        </Flex>
                         <Stack align={'flex-end'} gap="0" fontSize={'10px'} fontWeight={'500'}>
                           <Flex>
                             <Img src={nvidaIcon.src} w="14px" h="14px" mr="6px" />
                             <Text minW={'max-content'}>{item.name}</Text>
                           </Flex>
-                          <Text>{`${gpuProps.unit} / ${t('Hour')}`}</Text>
+                          <Flex>
+                            <Img src={shellcoin.src} h="16px" w="16px" />
+                            <Text>{`${gpuProps.unit} / ${t('Hour')}`}</Text>
+                          </Flex>
                         </Stack>
                       </Flex>
                     ))}

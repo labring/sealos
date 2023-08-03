@@ -156,7 +156,7 @@ export default function Trend({ data }: { data: BillingItem[] }) {
         totalCostP.style.fontWeight = '500';
         totalCostP.style.fontSize = '14px';
         totalCostP.style.lineHeight = '150%';
-        totalCostP.textContent = `${t('Total Cost')} : ¥${totalCost}`;
+        totalCostP.textContent = `${t('Total Cost')} : ${totalCost}`;
         // 创建空 div 元素
         const emptyDiv = document.createElement('div');
         // 添加子元素到外层 div 元素中

@@ -5,6 +5,7 @@ import lineUp from '@/assert/lineUp.svg';
 import { Flex, Img, Table, TableContainer, Tbody, Td, Text, Th, Thead, Tr } from '@chakra-ui/react';
 import { format, parseISO } from 'date-fns';
 import { formatMoney } from '@/utils/format';
+import shellCoin from '@/assert/shell_coin.svg';
 import { useTranslation } from 'next-i18next';
 import useEnvStore from '@/stores/env';
 export function BillingTable({ data }: { data: BillingItem[] }) {
@@ -80,13 +81,56 @@ export function BillingTable({ data }: { data: BillingItem[] }) {
                     </Flex>
                   </Td>
 
-                  <Td>{!item.type ? '￥' + formatMoney(item.costs?.cpu || 0) : '-'}</Td>
-                  <Td>{!item.type ? '￥' + formatMoney(item.costs?.memory || 0) : '-'}</Td>
-                  <Td>{!item.type ? '￥' + formatMoney(item.costs?.storage || 0) : '-'}</Td>
+                  <Td>
+                    {!item.type ? (
+                      <Flex>
+                        <Img src={shellCoin.src} mr="4px" />
+                        <span>{formatMoney(item.costs?.cpu || 0)}</span>
+                      </Flex>
+                    ) : (
+                      '-'
+                    )}
+                  </Td>
+                  <Td>
+                    {!item.type ? (
+                      <Flex>
+                        <Img src={shellCoin.src} mr="4px" />
+                        <span>{formatMoney(item.costs?.memory || 0)}</span>{' '}
+                      </Flex>
+                    ) : (
+                      '-'
+                    )}
+                  </Td>
+                  <Td>
+                    {!item.type ? (
+                      <Flex>
+                        <Img src={shellCoin.src} mr="4px" />
+                        <span>{formatMoney(item.costs?.storage || 0)}</span>{' '}
+                      </Flex>
+                    ) : (
+                      '-'
+                    )}
+                  </Td>
                   {gpuEnabled && (
-                    <Td>{!item.type ? '￥' + formatMoney(item.costs?.gpu || 0) : '-'}</Td>
+                    <Td>
+                      {!item.type ? (
+                        <Flex>
+                          <Img src={shellCoin.src} mr="4px" />
+                          <span>{formatMoney(item.costs?.gpu || 0)}</span>{' '}
+                        </Flex>
+                      ) : (
+                        '-'
+                      )}
+                    </Td>
                   )}
-                  <Td>{'￥' + formatMoney(item.amount)}</Td>
+                  <Td>
+                    {
+                      <Flex>
+                        <Img src={shellCoin.src} mr="4px" />
+                        <span>{formatMoney(item.amount)}</span>
+                      </Flex>
+                    }
+                  </Td>
                 </Tr>
               );
             })}

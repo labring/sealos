@@ -3,4 +3,5 @@ export type EnvData = {
   transferEnabled: boolean;
   invoiceEnabled: boolean;
   gpuEnabled: boolean;
+  stripePub: string;
 };

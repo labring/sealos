@@ -6,7 +6,7 @@ import { useMemo } from 'react';
 import { formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import useBillingData from '@/hooks/useBillingData';
-
+import shellcoin from '@/assert/shell_coin.svg';
 export function Buget() {
   const { t } = useTranslation();
   const { data } = useBillingData();
@@ -26,8 +26,8 @@ export function Buget() {
     [data]
   );
   const list = [
-    { title: 'Deduction', src: down_icon.src, value: '￥' + formatMoney(_out) },
-    { title: 'Charge', src: up_icon.src, value: '￥' + formatMoney(_in) }
+    { title: 'Deduction', src: down_icon.src, value: formatMoney(_out) },
+    { title: 'Charge', src: up_icon.src, value: formatMoney(_in) }
   ];
   return (
     <Flex direction={'column'} mb={'34px'}>
@@ -51,9 +51,12 @@ export function Buget() {
               <Text fontSize={'12px'} mt={'6px'}>
                 {t(v.title)}
               </Text>
-              <Text fontWeight="500" fontSize="16px" mt={'8px'}>
-                {v.value}
-              </Text>
+              <Flex mt="8px">
+                <Img src={shellcoin.src} mr="4px" />
+                <Text fontWeight="500" fontSize="16px">
+                  {v.value}
+                </Text>
+              </Flex>
             </CardBody>
           </Card>
         ))}
