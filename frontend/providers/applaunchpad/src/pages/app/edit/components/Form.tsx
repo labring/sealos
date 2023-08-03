@@ -572,7 +572,9 @@ const Form = ({
                     </>
                   ) : (
                     <Flex alignItems={'center'}>
-                      <Label w={100}>{t('Replicas')}</Label>
+                      <Label w={'auto'} mr={3}>
+                        {t('Replicas')}
+                      </Label>
                       <RangeInput
                         value={getValues('replicas')}
                         min={1}
@@ -607,7 +609,8 @@ const Form = ({
                   <Flex alignItems={'center'}>
                     <Label>GPU</Label>
                     <MySelect
-                      w={'300px'}
+                      minW={'300px'}
+                      w={'auto'}
                       placeholder={t('No GPU') || ''}
                       value={getValues('gpu.type')}
                       list={gpuSelectList}
