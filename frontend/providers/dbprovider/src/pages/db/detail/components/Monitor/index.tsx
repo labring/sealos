@@ -51,27 +51,39 @@ const Monitor = ({ db, dbName, dbType }: { dbName: string; dbType: string; db?: 
       {activeId === MonitorType.resources && (
         <Box mt={'16px'} overflowY={'scroll'} flex={1}>
           <ChartTemplate
-            apiUrl="/api/monitor/getCPU"
+            apiUrl="/api/monitor/getMonitorData"
             chartTitle={'CPU'}
             dbName={dbName}
             dbType={dbType}
             db={db}
             unit="%"
             isShowLegend={false}
+            queryKey={'cpu'}
           />
           <ChartTemplate
-            apiUrl="/api/monitor/getMemory"
+            apiUrl="/api/monitor/getMonitorData"
             chartTitle={'Memory'}
             dbName={dbName}
             dbType={dbType}
             db={db}
-            unit="MiB"
+            unit="%"
             isShowLegend={false}
+            queryKey={'memory'}
+          />
+          <ChartTemplate
+            apiUrl="/api/monitor/getMonitorData"
+            chartTitle={'DataBase Size'}
+            dbName={dbName}
+            dbType={dbType}
+            db={db}
+            unit="GiB"
+            isShowLegend={false}
+            queryKey={'disk'}
           />
           {(dbType === DBTypeEnum.mongodb || dbType === DBTypeEnum.postgresql) && (
             <ChartTemplate
               apiUrl="/api/monitor/getDataBaseSize"
-              chartTitle={'DataBase Size'}
+              chartTitle={'Database Usage'}
               dbName={dbName}
               dbType={dbType}
               db={db}

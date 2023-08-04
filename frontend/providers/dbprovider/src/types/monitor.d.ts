@@ -23,6 +23,7 @@ export interface MonitorDBResult {
         db: string;
         type?: string;
         cmd?: string;
+        persistentvolumeclaim?: string;
       };
       value: [number, string];
       values: [[number, string]];
@@ -37,7 +38,19 @@ export type MonitorQueryKey = {
   Redis_CommandLatency: string;
   Redis_KeyEvictions: string;
   Redis_HitsRatio: string;
+  Disk_Used: string;
+  Disk_Capacity: string;
+  cpu: string;
+  memory: string;
+  disk: string;
 };
+
+export type AdapterData = Partial<{
+  [key in keyof MonitorQueryKey]: (data: MonitorDBResult) => {
+    xData: number[];
+    yData: { name: string; data: number[] }[];
+  };
+}>;
 
 export type ChartTemplateProps = {
   dbName: string;

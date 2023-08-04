@@ -117,5 +117,6 @@
   "Key evictions": "Key evictions",
   "Hits Ratio": "Hits Ratio",
   "Running Time": "Running Time",
-  "InnoDB Buffer Pool": "InnoDB Buffer Pool"
+  "InnoDB Buffer Pool": "InnoDB Buffer Pool",
+  "Database Usage": "Database Usage"
 }
