@@ -45,7 +45,8 @@ export const valuationMap: Record<string, number> = {
   gpu: 1000
 };
 
-const gpuCrName = 'gpu-info';
+const gpuCrName = 'node-gpu-info';
+const gpuCrNS = 'node-system'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -120,7 +121,7 @@ async function getPriceCr({
 /* get gpu nodes by configmap. */
 async function getGpuNode({ k8sCore }: { k8sCore: CoreV1Api }) {
   try {
-    const { body } = await k8sCore.readNamespacedConfigMap(gpuCrName, 'sealos');
+    const { body } = await k8sCore.readNamespacedConfigMap(gpuCrName, gpuCrNS);
     const gpuMap = body?.data?.gpu;
     if (!gpuMap) return [];
     const parseGpuMap = JSON.parse(gpuMap) as Record<
