@@ -375,16 +375,18 @@ func (r *AccountReconciler) DeletePayment(ctx context.Context) error {
 			r.Logger.Error(err, "get payment handler failed")
 			return err
 		}
-		//expire session if it is necessary
-		err = payHandler.ExpireSession(payment.Status.TradeNO)
-		if err != nil {
-			r.Logger.Error(err, "cancel payment failed")
-			return err
-		}
 		//delete payment if it is exist for more than 5 minutes
 		if time.Since(payment.CreationTimestamp.Time) > time.Minute*5 {
-			err := r.Delete(ctx, &payment)
-			if err != nil {
+			status, amount, err := payHandler.GetPaymentDetails(payment.Status.TradeNO)
+			if status == pay.StatusSuccess {
+				r.Logger.Info("payment success, post delete payment cr", "payment", payment, "amount", amount)
+			}
+			// expire session
+			if err = payHandler.ExpireSession(payment.Status.TradeNO); err != nil {
+				r.Logger.Error(err, "cancel payment failed")
+				return err
+			}
+			if err := r.Delete(ctx, &payment); err != nil {
 				return err
 			}
 		}

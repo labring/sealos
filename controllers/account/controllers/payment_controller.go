@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/labring/sealos/pkg/pay"
@@ -28,8 +27,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
-
-	"github.com/mdp/qrterminal"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -97,7 +94,7 @@ func (r *PaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	qrterminal.Generate(codeURL, qrterminal.L, os.Stdout)
+	//qrterminal.Generate(codeURL, qrterminal.L, os.Stdout)
 	return ctrl.Result{}, nil
 }
 

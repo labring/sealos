@@ -24,6 +24,6 @@ const (
 )
 
 const (
-	DefaultSuccessURL string = "https://cloud.sealos.io"
-	DefaultCancelURL  string = "https://cloud.sealos.io"
+	DefaultPort   string = "443"
+	DefaultDomain string = "cloud.sealos.io"
 )
