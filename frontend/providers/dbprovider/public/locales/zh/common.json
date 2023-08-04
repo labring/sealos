@@ -165,5 +165,6 @@
   "Hits Ratio": "命中率",
   "Running Time": "运行时长",
   "InnoDB Buffer Pool": "InnoDB 缓冲池",
-  "Database Usage": "数据库用量"
+  "Database Usage": "数据库用量",
+  "Disk": "磁盘空间"
 }
