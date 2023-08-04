@@ -77,7 +77,7 @@ const App = ({ Component, pageProps }: AppProps) => {
     NProgress.done();
 
     return response;
-  }, [getUserSourcePrice, openConfirm]);
+  }, [getUserSourcePrice, initFormSliderList, openConfirm]);
 
   // add resize event
   useEffect(() => {

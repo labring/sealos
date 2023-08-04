@@ -45,6 +45,7 @@ spec:
         - env:
             - name: SEALOS_DOMAIN
               value: {{ .cloudDomain }}
+            - name: DOMAIN_PORT
             - name: INGRESS_SECRET
               value: {{ .ingressSecret }}
             - name: FASTGPT_KEY

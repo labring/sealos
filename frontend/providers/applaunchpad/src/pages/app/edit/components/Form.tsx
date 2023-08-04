@@ -26,7 +26,7 @@ import type { QueryType } from '@/types';
 import type { AppEditType } from '@/types/app';
 import { customAlphabet } from 'nanoid';
 import { GpuAmountMarkList } from '@/constants/editApp';
-import { SEALOS_DOMAIN } from '@/store/static';
+import { DOMAIN_PORT, SEALOS_DOMAIN } from '@/store/static';
 import { useTranslation } from 'next-i18next';
 import { useGlobalStore } from '@/store/global';
 
@@ -785,6 +785,7 @@ const Form = ({
                           </Label>
                           <Box userSelect={'all'} h={'34px'} lineHeight={'34px'}>
                             {getValues('accessExternal.outDomain')}.{SEALOS_DOMAIN}
+                            {DOMAIN_PORT}
                           </Box>
                         </Box>
                       </Flex>

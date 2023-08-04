@@ -5,7 +5,7 @@ import PodLineChart from '@/components/PodLineChart';
 import { printMemory, useCopyData } from '@/utils/tools';
 import dayjs from 'dayjs';
 import { getUserNamespace } from '@/utils/user';
-import { SEALOS_DOMAIN } from '@/store/static';
+import { SEALOS_DOMAIN, DOMAIN_PORT } from '@/store/static';
 import MyIcon from '@/components/Icon';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { useTranslation } from 'next-i18next';
@@ -21,7 +21,8 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
     () =>
       app.accessExternal.use
         ? `https://${
-            app.accessExternal.selfDomain || `${app.accessExternal.outDomain}.${SEALOS_DOMAIN}`
+            app.accessExternal.selfDomain ||
+            `${app.accessExternal.outDomain}.${SEALOS_DOMAIN}${DOMAIN_PORT}`
           }`
         : '',
     [app]
