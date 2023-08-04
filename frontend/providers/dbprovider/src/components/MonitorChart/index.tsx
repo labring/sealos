@@ -11,15 +11,25 @@ type MonitorChart = {
     yData: {
       name: string;
       type: string;
-      data: string[];
+      data: number[];
+      lineStyleType?: string;
     }[];
   };
   type?: 'blue' | 'deepBlue' | 'green' | 'purple';
   title: string;
   yAxisLabelFormatter?: (value: number) => string;
+  yDataFormatter?: (values: number[]) => number[];
+  unit?: string;
 };
 
-const MonitorChart = ({ type, data, title, yAxisLabelFormatter }: MonitorChart) => {
+const MonitorChart = ({
+  type,
+  data,
+  title,
+  yAxisLabelFormatter,
+  yDataFormatter,
+  unit
+}: MonitorChart) => {
   const { screenWidth } = useGlobalStore();
   const chartDom = useRef<HTMLDivElement>(null);
   const myChart = useRef<echarts.ECharts>();
@@ -28,6 +38,19 @@ const MonitorChart = ({ type, data, title, yAxisLabelFormatter }: MonitorChart) 
     () => ({
       tooltip: {
         trigger: 'axis',
+        formatter: (params: any) => {
+          let axisValue = params[0]?.axisValue;
+          const content = params
+            .map(
+              (item: any) =>
+                `${item?.marker} ${item?.seriesName}&nbsp; &nbsp;<span style="font-weight: 500">${
+                  item?.value
+                }${unit ? unit : ''}</span>  <br/>`
+            )
+            .join('');
+          const str = axisValue + '<br/>' + content;
+          return str;
+        },
         // @ts-ignore
         position: (point, params, dom, rect, size) => {
           let xPos = point[0];
@@ -89,7 +112,8 @@ const MonitorChart = ({ type, data, title, yAxisLabelFormatter }: MonitorChart) 
           },
           lineStyle: {
             width: '1',
-            color: LineStyleMap[index % LineStyleMap.length].lineColor
+            color: LineStyleMap[index % LineStyleMap.length].lineColor,
+            type: item?.lineStyleType || 'solid'
           },
           itemStyle: {
             width: 1.5,
