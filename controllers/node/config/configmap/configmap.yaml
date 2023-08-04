@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: gpu-info
+  name: node-gpu-info
   namespace: node-system
 data:
   gpu: ""
