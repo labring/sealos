@@ -48,11 +48,11 @@ spec:
     spec:
       containers:
       - name: sealos-admin-preset
-        image: registry.cn-hangzhou.aliyuncs.com/fckc/job:v0.0.5
+        image: registry.cn-hangzhou.aliyuncs.com/fckc/job:v1.0.0
         env:
         - name: MONGO_URI
           value: {{ .MongoURI }}
         - name: PASSWORD_SALT
           value: {{ .PasswordSalt }}
       restartPolicy: Never
-  backoffLimit: 1
+  backoffLimit: 10
