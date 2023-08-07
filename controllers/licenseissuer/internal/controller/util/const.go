@@ -20,6 +20,7 @@ const (
 	SealosNamespace = "sealos-system"
 	ClusterInfo     = "cluster-info"
 	URLConfig       = "url-config"
+	// add more resource name here
 )
 
 const (
@@ -51,3 +52,5 @@ const (
 	defaultDB         = "test"
 	defaultCollection = "user"
 )
+
+const NoticeFrom = "Sealos Cloud"

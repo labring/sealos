@@ -91,14 +91,14 @@ func (o *OperatorOptions) initOptions() {
 	o.RunnableOptions.initOptions()
 
 	o.RunnableOptions.Policy[Init] = "Once"
-	// if o.EnvOptions.MonitorConfiguration == "true" {
-	// 	o.RunnableOptions.Policy[Collector] = "Periodic"
-	// 	o.RunnableOptions.Period[Collector] = 8 * time.Hour
-	// 	o.RunnableOptions.Policy[DataSync] = "Periodic"
-	// 	o.RunnableOptions.Period[DataSync] = 1 * time.Hour
-	// 	o.RunnableOptions.Policy[Notifice] = "Periodic"
-	// 	o.RunnableOptions.Period[Notifice] = 3 * time.Hour
-	// }
+	if o.EnvOptions.MonitorConfiguration == "true" {
+		// 	o.RunnableOptions.Policy[Collector] = "Periodic"
+		// 	o.RunnableOptions.Period[Collector] = 8 * time.Hour
+		// 	o.RunnableOptions.Policy[DataSync] = "Periodic"
+		// 	o.RunnableOptions.Period[DataSync] = 1 * time.Hour
+		o.RunnableOptions.Policy[Notice] = "Periodic"
+		o.RunnableOptions.Period[Notice] = 3 * time.Hour
+	}
 	return
 }
 
@@ -138,7 +138,7 @@ const (
 	Collector task = "Collector"
 	DataSync  task = "DataSync"
 	Init      task = "Init"
-	Notifice  task = "Notifice"
+	Notice    task = "Notice"
 )
 
 func (ro *RunnableOptions) initOptions() {

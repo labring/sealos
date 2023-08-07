@@ -142,26 +142,15 @@ func (t initTask) checkRegister(instance *TaskInstance) (bool, error) {
 
 // registerToCloud is used to send info to the cloud.
 func (t initTask) registerToCloud(ClusterInfo corev1.Secret, instance *TaskInstance) error {
-	urlConfigMap := &corev1.ConfigMap{}
-	id := types.NamespacedName{
-		Name:      URLConfig,
-		Namespace: SealosNamespace,
-	}
-	// get url-config from k8s
-	err := instance.Get(instance.ctx, id, urlConfigMap)
+	urlMap, err := GetURL(instance.ctx, instance.Client)
 	if err != nil {
-		return fmt.Errorf("failed to get url-config: %w", err)
-	}
-	// get url-map from url-config
-	urlMap, err := GetConfigFromConfigMap(URLConfig, urlConfigMap)
-	if err != nil {
-		return fmt.Errorf("failed to get url-map: %w", err)
+		return fmt.Errorf("failed to get url: %w", err)
 	}
 	rr := RegisterRequest{
 		UID: string(ClusterInfo.Data["uuid"]),
 	}
 	// send info to cloud
-	err = Write(urlMap[RegisterURL], rr)
+	err = Push(urlMap[RegisterURL], rr)
 	if err != nil {
 		return fmt.Errorf("failed to write to cloud: %w", err)
 	}

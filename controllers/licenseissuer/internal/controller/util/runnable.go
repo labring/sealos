@@ -27,6 +27,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
+// This file provided a framework which can be used to build a runnable task.
+// With this framework, developers can easily build a runnable task and add it to the manager.
 func BuildForRunnable(ctx context.Context, client client.Client, options Options) []manager.Runnable {
 	pool := NewTaskBuilder(ctx, client, options)
 	tasks := pool.tasks
@@ -133,7 +135,10 @@ func (ti *TaskInstance) Start(ctx context.Context) error {
 func (ti *TaskInstance) Run() error {
 	switch ti.name {
 	case Init:
-		return initTask{options: GetOptions()}.initWork(ti)
+		_ = initTask{options: GetOptions()}.initWork(ti)
+		return nil
+	case Notice:
+		return (&notice{lastTime: time.Now().Unix()}).noticeWork(ti)
 	default:
 		return fmt.Errorf("the task is not supported")
 	}

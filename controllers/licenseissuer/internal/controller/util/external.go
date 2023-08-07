@@ -37,7 +37,9 @@ type HTTPResponse struct {
 	Body        []byte
 }
 
-func Write(url string, content interface{}) error {
+// The Push method is used to handle one-way interaction, that is,
+// there is no need to obtain information from the cloud, only need to send information to the cloud.
+func Push(url string, content interface{}) error {
 	body, err := CommunicateWithCloud("POST", url, content)
 	if err != nil {
 		return fmt.Errorf("CommunicateWithCloud: %w", err)
@@ -46,6 +48,20 @@ func Write(url string, content interface{}) error {
 		return fmt.Errorf("Error status: %s", http.StatusText(body.StatusCode))
 	}
 	return nil
+}
+
+// The Pull method is used to handle two-way interaction,
+// that is, there is a need to obtain information from the cloud,
+// and then send information to the cloud.
+func Pull(url string, content interface{}) (HTTPResponse, error) {
+	body, err := CommunicateWithCloud("POST", url, content)
+	if err != nil {
+		return HTTPResponse{}, fmt.Errorf("CommunicateWithCloud: %w", err)
+	}
+	if !IsSuccessfulStatusCode(body.StatusCode) {
+		return HTTPResponse{}, fmt.Errorf("Error status: %s", http.StatusText(body.StatusCode))
+	}
+	return body, nil
 }
 
 func CommunicateWithCloud(method string, url string, content interface{}) (HTTPResponse, error) {

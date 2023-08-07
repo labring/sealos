@@ -98,13 +98,6 @@ func main() {
 	// get options for this Operator
 	options := util.GetOptions()
 
-	// if err = (&controller.NotificationReconciler{
-	// 	Client: mgr.GetClient(),
-	// 	Scheme: mgr.GetScheme(),
-	// }).SetupWithManager(mgr); err != nil {
-	// 	setupLog.Error(err, "unable to create controller", "controller", "Notification")
-	// 	os.Exit(1)
-	// }
 	// if err = (&controller.CollectorReconciler{
 	// 	Client: mgr.GetClient(),
 	// 	Scheme: mgr.GetScheme(),
