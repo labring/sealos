@@ -131,5 +131,7 @@
     "Electronic Computer Service Fee": "电子计算机服务费",
     "Invoice Details": "发票明细",
     "Contact Information": "联系方式"
-  }
+  },
+  "pay with wechat": "微信支付",
+  "pay with stripe": "Stripe 支付"
 }

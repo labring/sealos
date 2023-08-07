@@ -154,7 +154,7 @@ export default function CostChart({ data }: { data: BillingData['status']['deduc
           position: 'center',
           show: true,
           formatter: function (params: any) {
-            return '￥' + amount.toFixed(2) + `\n${t('Expenditure')}`;
+            return amount.toFixed(2) + `\n${t('Expenditure')}`;
           },
           fontSize: 16,
           textStyle: {

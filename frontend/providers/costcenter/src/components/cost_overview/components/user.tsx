@@ -2,18 +2,18 @@
 import request from '@/service/request';
 import useSessionStore from '@/stores/session';
 import { displayMoney, formatMoney } from '@/utils/format';
-import { Box, Button, Flex, Image, Stack, Text } from '@chakra-ui/react';
-import { QueryClient, useIsFetching, useQuery } from '@tanstack/react-query';
+import { Box, Button, Flex, Image, Img, Stack, Text } from '@chakra-ui/react';
+import { QueryClient, useQuery } from '@tanstack/react-query';
 import styles from './user.module.scss';
 
 import { useTranslation } from 'next-i18next';
-import { memo, useContext, useMemo, useRef } from 'react';
+import { memo, useMemo, useRef } from 'react';
 import { ApiResp } from '@/types/api';
 import jsyaml from 'js-yaml';
 import RechargeModal from './RechargeModal';
 import TransferModal from './TransferModal';
 import useEnvStore from '@/stores/env';
-
+import shellCoin from '@/assert/shell_coin.svg';
 export default memo(function UserCard() {
   const getSession = useSessionStore((state) => state.getSession);
   const transferEnabled = useEnvStore((state) => state.transferEnabled);
@@ -45,6 +45,7 @@ export default memo(function UserCard() {
     real_balance -= balance_raw?.data.deductionBalance;
   }
   const balance = real_balance;
+  const stripePromise = useEnvStore((s) => s.stripePromise);
   return (
     <>
       <Flex
@@ -74,9 +75,10 @@ export default memo(function UserCard() {
           <Box fontSize="12px" fontWeight="400" alignSelf={'center'} mt="6px !important">
             {t('Balance')}
           </Box>
-          <Box fontSize="24px" fontWeight="500" alignSelf={'center'} mt="3px !important">
-            ¥ {displayMoney(formatMoney(balance))}
-          </Box>
+          <Flex fontSize="24px" fontWeight="500" alignSelf={'center'} mt="3px !important">
+            <Img src={shellCoin.src} w="16px" h="16px" mixBlendMode={'exclusion'} />
+            <Text>{displayMoney(formatMoney(balance))}</Text>
+          </Flex>
           <Flex alignItems="center" alignSelf={'center'} gap="10px" mt={'20px !important'}>
             {transferEnabled && (
               <Button
@@ -114,6 +116,8 @@ export default memo(function UserCard() {
         <RechargeModal
           ref={rechargeRef}
           balance={balance}
+          stripePromise={stripePromise}
+          request={request}
           onPaySuccess={() => {
             queryClient.invalidateQueries({ queryKey: ['billing'], exact: false });
             refetch();

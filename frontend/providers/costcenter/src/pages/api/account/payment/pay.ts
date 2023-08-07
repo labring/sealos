@@ -35,7 +35,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         status: object;
       };
     };
-
+    console.log(paymentDesc);
     if (paymentDesc?.body?.status) {
       const paymentStatusResp = paymentDesc.body.status as paymentStatus;
       return jsonRes(resp, { data: paymentStatusResp });

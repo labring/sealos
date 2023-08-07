@@ -6,6 +6,7 @@ export type PaymentForm = {
   namespace: string;
   userId: string;
   amount: string;
+  paymentMethod: 'wechat' | 'stripe';
 };
 
 export const paymentMeta: CRDMeta = {
@@ -31,7 +32,7 @@ export const generatePaymentCrd = (form: PaymentForm) => {
     spec: {
       userID: form.userId,
       amount: form.amount,
-      paymentMethod: 'wechat'
+      paymentMethod: form.paymentMethod
     }
   };
 
