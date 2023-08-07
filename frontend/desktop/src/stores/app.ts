@@ -129,8 +129,8 @@ const useAppStore = create<TOSState>()(
             get().setToHighestLayerById(alreadyApp.pid);
             return;
           }
-          // Up to 8 apps
-          if (get().runningInfo.length >= 8) {
+          // Up to 7 apps &&  one home app
+          if (get().runningInfo.length >= 7) {
             get().deleteLeastUsedAppByIndex();
           }
           if (app.type === APPTYPE.LINK) {
@@ -158,14 +158,13 @@ const useAppStore = create<TOSState>()(
         },
         // maximize app
         switchAppById: (pid: number) => {
-          // const zIndex = get().maxZIndex + 1;
           set((state) => {
             let _app = state.runningInfo.find((item) => item.pid === pid);
             if (!_app) return;
             _app.isShow = true;
             _app.size = _app.cacheSize;
-            state.setToHighestLayerById(pid);
           });
+          get().setToHighestLayerById(pid);
         },
         // get switch floor function
         setToHighestLayerById: (pid: number) => {

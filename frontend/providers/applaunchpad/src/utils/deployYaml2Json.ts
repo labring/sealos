@@ -2,248 +2,202 @@ import yaml from 'js-yaml';
 import type { AppEditType } from '@/types/app';
 import { strToBase64, str2Num, pathFormat, pathToNameFormat } from '@/utils/tools';
 import { SEALOS_DOMAIN, INGRESS_SECRET } from '@/store/static';
-import { maxReplicasKey, minReplicasKey, appDeployKey, domainKey } from '@/constants/app';
+import {
+  maxReplicasKey,
+  minReplicasKey,
+  appDeployKey,
+  domainKey,
+  gpuNodeSelectorKey,
+  gpuResourceKey
+} from '@/constants/app';
 import dayjs from 'dayjs';
 
-export const json2Development = (data: AppEditType) => {
-  const template = {
-    apiVersion: 'apps/v1',
-    kind: 'Deployment',
-    metadata: {
-      name: data.appName,
-      annotations: {
-        originImageName: data.imageName,
-        [minReplicasKey]: `${data.hpa.use ? data.hpa.minReplicas : data.replicas}`,
-        [maxReplicasKey]: `${data.hpa.use ? data.hpa.maxReplicas : data.replicas}`
-      },
-      labels: {
-        [appDeployKey]: data.appName,
+export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
+  const metadata = {
+    name: data.appName,
+    annotations: {
+      originImageName: data.imageName,
+      [minReplicasKey]: `${data.hpa.use ? data.hpa.minReplicas : data.replicas}`,
+      [maxReplicasKey]: `${data.hpa.use ? data.hpa.maxReplicas : data.replicas}`
+    },
+    labels: {
+      [appDeployKey]: data.appName,
+      app: data.appName
+    }
+  };
+  const commonSpec = {
+    replicas: str2Num(data.hpa.use ? data.hpa.minReplicas : data.replicas),
+    revisionHistoryLimit: 1,
+    selector: {
+      matchLabels: {
         app: data.appName
       }
     },
+    strategy: {
+      type: 'RollingUpdate',
+      rollingUpdate: {
+        maxUnavailable: 1,
+        maxSurge: 0
+      }
+    }
+  };
+  const templateMetadata = {
+    labels: {
+      app: data.appName,
+      restartTime: `${dayjs().format('YYYYMMDDHHmmss')}`
+    }
+  };
+  const imagePullSecrets = data.secret.use
+    ? [
+        {
+          name: data.appName
+        }
+      ]
+    : undefined;
+  const commonContainer = {
+    name: data.appName,
+    image: `${data.secret.use ? `${data.secret.serverAddress}/` : ''}${data.imageName}`,
+    env:
+      data.envs.length > 0
+        ? data.envs.map((env) => ({
+            name: env.key,
+            value: env.valueFrom ? undefined : env.value,
+            valueFrom: env.valueFrom
+          }))
+        : [],
+    resources: {
+      requests: {
+        cpu: `${str2Num(Math.floor(data.cpu * 0.1))}m`,
+        memory: `${str2Num(Math.floor(data.memory * 0.1))}Mi`,
+        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
+      },
+      limits: {
+        cpu: `${str2Num(data.cpu)}m`,
+        memory: `${str2Num(data.memory)}Mi`,
+        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
+      }
+    },
+    command: (() => {
+      try {
+        return JSON.stringify(JSON.parse(data.runCMD));
+      } catch (error) {
+        return data.runCMD.split(' ').filter((item) => item);
+      }
+    })(),
+    args: data.cmdParam ? [data.cmdParam] : [],
+    ports: [
+      {
+        containerPort: str2Num(data.containerOutPort)
+      }
+    ],
+    imagePullPolicy: 'Always'
+  };
+  const configMapVolumeMounts = data.configMapList.map((item) => ({
+    name: pathToNameFormat(item.mountPath),
+    mountPath: item.mountPath,
+    subPath: pathFormat(item.mountPath)
+  }));
+  const configMapVolumes = data.configMapList.map((item) => ({
+    name: pathToNameFormat(item.mountPath), // name === [development.***.volumeMounts[*].name]
+    configMap: {
+      name: data.appName, // name === configMap.yaml.meta.name
+      items: [
+        {
+          key: pathToNameFormat(item.mountPath),
+          path: pathFormat(item.mountPath) // path ===[development.***.volumeMounts[*].subPath]
+        }
+      ]
+    }
+  }));
+
+  // pvc settings
+  const storageTemplates = data.storeList.map((store) => ({
+    metadata: {
+      annotations: {
+        path: store.path,
+        value: `${store.value}`
+      },
+      name: store.name
+    },
     spec: {
-      replicas: str2Num(data.hpa.use ? data.hpa.minReplicas : data.replicas),
-      revisionHistoryLimit: 1,
-      selector: {
-        matchLabels: {
-          app: data.appName
+      accessModes: ['ReadWriteOnce'],
+      resources: {
+        requests: {
+          storage: `${store.value}Gi`
         }
-      },
-      strategy: {
-        type: 'RollingUpdate',
-        rollingUpdate: {
-          maxUnavailable: 1,
-          maxSurge: 0
+      }
+    }
+  }));
+
+  // gpu node selector
+  const gpuMap = !!data.gpu?.type
+    ? {
+        restartPolicy: 'Always',
+        runtimeClassName: 'nvidia',
+        nodeSelector: {
+          [gpuNodeSelectorKey]: data.gpu.type
         }
-      },
-      template: {
-        metadata: {
-          labels: {
-            app: data.appName,
-            restartTime: `${dayjs().format('YYYYMMDDHHmmss')}`
+      }
+    : {};
+
+  const template = {
+    deployment: {
+      apiVersion: 'apps/v1',
+      kind: 'Deployment',
+      metadata,
+      spec: {
+        ...commonSpec,
+        template: {
+          metadata: templateMetadata,
+          spec: {
+            imagePullSecrets,
+            containers: [
+              {
+                ...commonContainer,
+                volumeMounts: [...configMapVolumeMounts]
+              }
+            ],
+            ...gpuMap,
+            volumes: [...configMapVolumes]
           }
-        },
-        spec: {
-          imagePullSecrets: data.secret.use
-            ? [
-                // 私有仓库秘钥
-                {
-                  name: data.appName
-                }
-              ]
-            : undefined,
-          containers: [
-            {
-              name: data.appName,
-              image: `${data.secret.use ? `${data.secret.serverAddress}/` : ''}${data.imageName}`,
-              env:
-                data.envs.length > 0
-                  ? data.envs.map((env) => ({
-                      name: env.key,
-                      value: env.value
-                    }))
-                  : [],
-              resources: {
-                requests: {
-                  cpu: `${str2Num(Math.floor(data.cpu * 0.1))}m`,
-                  // cpu: '5m',
-                  memory: `${str2Num(Math.floor(data.memory * 0.1))}Mi`
-                },
-                limits: {
-                  cpu: `${str2Num(data.cpu)}m`,
-                  // cpu: '30m',
-                  memory: `${str2Num(data.memory)}Mi`
-                }
-              },
-              command: data.runCMD ? [data.runCMD] : [],
-              args: data.cmdParam.split(' ').filter((item) => item),
-              ports: [
-                {
-                  containerPort: str2Num(data.containerOutPort)
-                }
-              ],
-              imagePullPolicy: 'Always',
-              volumeMounts: [
-                ...data.configMapList.map((item) => ({
-                  name: pathToNameFormat(item.mountPath),
-                  mountPath: item.mountPath,
-                  subPath: pathFormat(item.mountPath)
-                }))
-              ]
-            }
-          ],
-          volumes: [
-            ...data.configMapList.map((item) => ({
-              name: pathToNameFormat(item.mountPath), // name === [development.***.volumeMounts[*].name]
-              configMap: {
-                name: data.appName, // name === configMap.yaml.meta.name
-                items: [
-                  {
-                    key: pathToNameFormat(item.mountPath),
-                    path: pathFormat(item.mountPath) // path ===[development.***.volumeMounts[*].subPath]
-                  }
+        }
+      }
+    },
+    statefulset: {
+      apiVersion: 'apps/v1',
+      kind: 'StatefulSet',
+      metadata,
+      spec: {
+        ...commonSpec,
+        minReadySeconds: 10,
+        serviceName: data.appName,
+        template: {
+          metadata: templateMetadata,
+          spec: {
+            imagePullSecrets,
+            terminationGracePeriodSeconds: 10,
+            containers: [
+              {
+                ...commonContainer,
+                volumeMounts: [
+                  ...configMapVolumeMounts,
+                  ...data.storeList.map((item) => ({
+                    name: item.name,
+                    mountPath: item.path
+                  }))
                 ]
               }
-            }))
-          ]
-        }
+            ],
+            ...gpuMap,
+            volumes: [...configMapVolumes]
+          }
+        },
+        volumeClaimTemplates: storageTemplates
       }
     }
   };
 
-  return yaml.dump(template);
-};
-
-export const json2StatefulSet = (data: AppEditType) => {
-  const template = {
-    apiVersion: 'apps/v1',
-    kind: 'StatefulSet',
-    metadata: {
-      name: data.appName,
-      annotations: {
-        originImageName: data.imageName,
-        [minReplicasKey]: `${data.hpa.use ? data.hpa.minReplicas : data.replicas}`,
-        [maxReplicasKey]: `${data.hpa.use ? data.hpa.maxReplicas : data.replicas}`
-      },
-      labels: {
-        [appDeployKey]: data.appName,
-        app: data.appName
-      }
-    },
-    spec: {
-      replicas: str2Num(data.replicas),
-      revisionHistoryLimit: 1,
-      minReadySeconds: 10,
-      serviceName: data.appName,
-      selector: {
-        matchLabels: {
-          app: data.appName
-        }
-      },
-      strategy: {
-        type: 'RollingUpdate',
-        rollingUpdate: {
-          maxUnavailable: 1,
-          maxSurge: 0
-        }
-      },
-      template: {
-        metadata: {
-          labels: {
-            app: data.appName
-          }
-        },
-        spec: {
-          terminationGracePeriodSeconds: 10,
-          imagePullSecrets: data.secret.use
-            ? [
-                // 私有仓库秘钥
-                {
-                  name: data.appName
-                }
-              ]
-            : undefined,
-          containers: [
-            {
-              name: data.appName,
-              image: `${data.secret.use ? `${data.secret.serverAddress}/` : ''}${data.imageName}`,
-              env:
-                data.envs.length > 0
-                  ? data.envs.map((env) => ({
-                      name: env.key,
-                      value: env.value
-                    }))
-                  : [],
-              resources: {
-                requests: {
-                  cpu: `${str2Num(Math.floor(data.cpu * 0.1))}m`,
-                  // cpu: '5m',
-                  memory: `${str2Num(Math.floor(data.memory * 0.1))}Mi`
-                },
-                limits: {
-                  cpu: `${str2Num(data.cpu)}m`,
-                  // cpu: '30m',
-                  memory: `${str2Num(data.memory)}Mi`
-                }
-              },
-              command: data.runCMD ? [data.runCMD] : [],
-              args: data.cmdParam.split(' ').filter((item) => item),
-              ports: [
-                {
-                  containerPort: str2Num(data.containerOutPort)
-                }
-              ],
-              imagePullPolicy: 'Always',
-              volumeMounts: [
-                ...data.configMapList.map((item) => ({
-                  name: pathToNameFormat(item.mountPath),
-                  mountPath: item.mountPath,
-                  subPath: pathFormat(item.mountPath)
-                })),
-                ...data.storeList.map((item) => ({
-                  name: item.name,
-                  mountPath: item.path
-                }))
-              ]
-            }
-          ],
-          volumes: [
-            ...data.configMapList.map((item) => ({
-              name: pathToNameFormat(item.mountPath), // name === [development.***.volumeMounts[*].name]
-              configMap: {
-                name: data.appName, // name === configMap.yaml.meta.name
-                items: [
-                  {
-                    key: pathToNameFormat(item.mountPath),
-                    path: pathFormat(item.mountPath) // path ===[development.***.volumeMounts[*].subPath]
-                  }
-                ]
-              }
-            }))
-          ]
-        }
-      },
-      volumeClaimTemplates: data.storeList.map((store) => ({
-        metadata: {
-          annotations: {
-            path: store.path,
-            value: `${store.value}`
-          },
-          name: store.name
-        },
-        spec: {
-          accessModes: ['ReadWriteOnce'],
-          resources: {
-            requests: {
-              storage: `${store.value}Gi`
-            }
-          }
-        }
-      }))
-    }
-  };
-
-  return yaml.dump(template);
+  return yaml.dump(template[type]);
 };
 
 export const json2Service = (data: AppEditType) => {

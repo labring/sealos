@@ -41,8 +41,8 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: rgba(21, 37, 57, 0.6);
-  box-shadow: 0px 1.16667px 2.33333px rgba(0, 0, 0, 0.2);
+  background: rgba(28, 32, 35, 0.9);
+  box-shadow: 0px 0px 0px 1px rgba(0, 0, 0, 0.1);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -78,6 +78,9 @@
     height: 32px;
     background: rgba(255, 255, 255, 0.9);
     box-shadow: 0px 0px 2.33333px rgba(0, 0, 0, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 }
 
@@ -95,7 +98,7 @@
   transform: scale(0.1);
   overflow: hidden;
   backdrop-filter: blur(150px);
-  background: rgba(21, 37, 57, 0.75);
+  background: rgba(28, 32, 35, 0.9);
   box-shadow: 0px 0px 0px 1px rgba(0, 0, 0, 0.1);
 
   &[data-open='true'] {

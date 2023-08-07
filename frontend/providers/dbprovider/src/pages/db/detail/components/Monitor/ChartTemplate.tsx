@@ -21,6 +21,7 @@ const ChartTemplate = ({
   isShowLegend = true
 }: ChartTemplateProps) => {
   const { t } = useTranslation();
+
   const { data: ChartData } = useQuery(
     ['getChartData', apiUrl, queryKey],
     () => GET(apiUrl, { dbName: dbName, dbType: dbType, queryKey: queryKey }),
@@ -50,6 +51,7 @@ const ChartTemplate = ({
               data={ChartData.result}
               title={chartTitle}
               yAxisLabelFormatter={yAxisLabelFormatter}
+              unit={unit}
             />
 
             {isShowLegend && (

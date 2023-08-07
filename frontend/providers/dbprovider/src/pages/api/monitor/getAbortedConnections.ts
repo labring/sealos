@@ -83,6 +83,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const result = await handleAxiosStream(
       {
+        url: '/query',
         params: params
       },
       kubeconfig

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { HStack, Tooltip, Input, useNumberInput, IconButton } from '@chakra-ui/react';
+import { HStack, Input, useNumberInput, IconButton } from '@chakra-ui/react';
 import { AddIcon, MinusIcon } from '@chakra-ui/icons';
+import MyTooltip from '../MyTooltip';
 
 const RangeInput = ({
   w = 200,
@@ -42,7 +43,7 @@ const RangeInput = ({
   };
 
   return (
-    <Tooltip label={hoverText} closeOnClick={false}>
+    <MyTooltip label={hoverText} closeOnClick={false}>
       <HStack
         w={`${w}px`}
         position={'relative'}
@@ -77,7 +78,7 @@ const RangeInput = ({
           {...IconStyle}
         />
       </HStack>
-    </Tooltip>
+    </MyTooltip>
   );
 };
 

@@ -1,10 +1,12 @@
 import useAppStore, { AppInfo } from '@/stores/app';
-import { Box, Flex, useDisclosure, Image } from '@chakra-ui/react';
+import { Box, Flex, useDisclosure, Image, Img } from '@chakra-ui/react';
 import clsx from 'clsx';
 import { MouseEvent, useMemo, useState } from 'react';
 import Draggable, { DraggableEventHandler } from 'react-draggable';
 import Iconfont from '../iconfont';
 import styles from './index.module.scss';
+import homeIcon from 'public/icons/home.svg';
+import { APPTYPE } from '@/types';
 
 enum Suction {
   None,
@@ -18,7 +20,8 @@ export default function Index(props: any) {
     runningInfo,
     setToHighestLayerById,
     currentAppPid,
-    switchAppById
+    switchAppById,
+    updateOpenedAppInfo
   } = useAppStore();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [dragging, setDragging] = useState(false);
@@ -27,6 +30,28 @@ export default function Index(props: any) {
   const [endPosition, setEndPosition] = useState({ x: 0, y: 0 });
   const [suction, setSuction] = useState(Suction.None);
   const [lockSuction, setLockSuction] = useState(true);
+  // Hover Ball Menu
+  const AppMenuLists: AppInfo[] = [
+    {
+      name: 'home',
+      icon: '/icons/home.svg',
+      zIndex: 99999,
+      isShow: true,
+      pid: -9,
+      size: 'maxmin',
+      cacheSize: 'maxmin',
+      style: {},
+      mouseDowning: false,
+      key: `system-sealos-home`,
+      type: APPTYPE.IFRAME,
+      data: {
+        url: '',
+        desc: ''
+      },
+      displayType: 'hidden'
+    },
+    ...runningInfo
+  ];
 
   const [degree, contentSkewDegree, contentRotateDegree] = useMemo(() => {
     const len = apps?.length < 6 ? 6 : apps?.length > 8 ? 8 : apps?.length;
@@ -100,6 +125,30 @@ export default function Index(props: any) {
     }
   };
 
+  // Handle icon click event
+  const handleNavItem = (e: MouseEvent<HTMLDivElement>, item: AppInfo) => {
+    if (item.key === 'system-sealos-home') {
+      const isNotMinimized = runningInfo.some((item) => item.size !== 'minimize');
+      runningInfo.forEach((item) => {
+        updateOpenedAppInfo({
+          ...item,
+          size: isNotMinimized ? 'minimize' : item.cacheSize
+        });
+      });
+      return;
+    }
+
+    if (item.pid === currentAppPid && item.size !== 'minimize') {
+      updateOpenedAppInfo({
+        ...item,
+        size: 'minimize',
+        cacheSize: item.size
+      });
+    } else {
+      switchAppById(item.pid);
+    }
+  };
+
   return (
     <>
       <Draggable
@@ -151,7 +200,7 @@ export default function Index(props: any) {
             userSelect={'none'}
             style={{ display: suction === Suction.None ? 'block' : 'none' }}
           >
-            {runningInfo?.map((item: AppInfo, index: number) => {
+            {AppMenuLists?.map((item: AppInfo, index: number) => {
               return (
                 <Box
                   cursor={'pointer'}
@@ -163,11 +212,8 @@ export default function Index(props: any) {
                       ? `rotate(${degree * (index + 1)}deg) skew(${90 - degree}deg)`
                       : `rotate(75deg) skew(60deg)`
                   }
-                  _hover={{ bg: 'rgba(21, 37, 57, 0.8)' }}
-                  onClick={(e) => {
-                    switchAppById(item.pid);
-                    setToHighestLayerById(item.pid);
-                  }}
+                  _hover={{ bg: 'rgba(88,90,93,0.5)' }}
+                  onClick={(e) => handleNavItem(e, item)}
                 >
                   <Flex
                     justifyContent={'center'}

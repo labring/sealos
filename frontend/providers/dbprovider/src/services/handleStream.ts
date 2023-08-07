@@ -6,7 +6,7 @@ import { authSession } from './backend/auth';
 export const handleAxiosStream = async (props: AxiosRequestConfig, kubeconfig: string) => {
   try {
     const response = await axios({
-      baseURL: process.env.MONITOR_URL || 'http://monitor-system.cloud.sealos.run/query',
+      baseURL: process.env.MONITOR_URL || 'http://monitor-system.cloud.sealos.run',
       responseType: 'stream',
       method: 'GET',
       headers: {
@@ -14,6 +14,7 @@ export const handleAxiosStream = async (props: AxiosRequestConfig, kubeconfig: s
       },
       ...props
     });
+
     const dataStream = response.data;
 
     if (!(dataStream instanceof stream.Readable)) {

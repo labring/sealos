@@ -443,6 +443,8 @@ spec:
           value: {{ .userNamespace }}
         - name: DOMAIN
           value: {{ .cloudDomain }}
+        - name: PORT
+          value: {{ .port }}
         - name: SECRET_NAME
           value: {{ .wildcardCertSecretName }}
         - name: SECRET_NAMESPACE

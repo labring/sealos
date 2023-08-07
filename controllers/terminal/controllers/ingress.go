@@ -33,7 +33,7 @@ const (
 )
 
 func (r *TerminalReconciler) createNginxIngress(terminal *terminalv1.Terminal, host string) *networkingv1.Ingress {
-	cors := fmt.Sprintf("https://%s,https://*.%s", r.terminalDomain, r.terminalDomain)
+	cors := fmt.Sprintf("https://%s,https://*.%s", r.terminalDomain+r.getPort(), r.terminalDomain+r.getPort())
 
 	objectMeta := metav1.ObjectMeta{
 		Name:      terminal.Name,

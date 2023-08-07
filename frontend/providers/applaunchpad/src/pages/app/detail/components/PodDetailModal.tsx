@@ -14,10 +14,10 @@ import {
   useDisclosure,
   MenuButton
 } from '@chakra-ui/react';
+import { ChevronDownIcon } from '@chakra-ui/icons';
 import type { PodDetailType, PodEvent } from '@/types/app';
 import PodLineChart from '@/components/PodLineChart';
 import { MOCK_PODS } from '@/mock/apps';
-import { Tooltip } from '@chakra-ui/react';
 import { getPodEvents } from '@/api/app';
 import { useQuery } from '@tanstack/react-query';
 import { useLoading } from '@/hooks/useLoading';
@@ -25,10 +25,11 @@ import MyIcon from '@/components/Icon';
 import { streamFetch } from '@/services/streamFetch';
 import { useToast } from '@/hooks/useToast';
 import MyMenu from '@/components/Menu';
-import { ChevronDownIcon } from '@chakra-ui/icons';
+import MyTooltip from '@/components/MyTooltip';
 
 import styles from '../index.module.scss';
 import { useTranslation } from 'next-i18next';
+import { SHOW_EVENT_ANALYZE } from '@/store/static';
 
 const Logs = ({
   pod = MOCK_PODS[0],
@@ -79,7 +80,7 @@ const Logs = ({
   );
   const RenderTag = useCallback(({ children }: { children: string }) => {
     return (
-      <Tooltip label={children}>
+      <MyTooltip label={children}>
         <Box
           py={1}
           px={4}
@@ -94,7 +95,7 @@ const Logs = ({
         >
           {children}
         </Box>
-      </Tooltip>
+      </MyTooltip>
     );
   }, []);
 
@@ -250,7 +251,7 @@ const Logs = ({
           <Flex position={'relative'} flexDirection={'column'} h={'100%'}>
             <Flex mb={4} alignItems={'center'}>
               <Box color={'myGray.600'}>Events</Box>
-              {events.length > 0 && (
+              {events.length > 0 && SHOW_EVENT_ANALYZE && (
                 <Button
                   ml={3}
                   size={'sm'}
@@ -258,7 +259,7 @@ const Logs = ({
                   leftIcon={<MyIcon name={'analyze'} />}
                   onClick={onclickAnalyses}
                 >
-                  {t('智能分析')}
+                  {t('Intelligent Analysis')}
                 </Button>
               )}
             </Flex>
@@ -318,18 +319,18 @@ const Logs = ({
       {/* analyses modal */}
       <Modal isOpen={isOpenAnalyses} onClose={onCloseAnalysesModel}>
         <ModalOverlay />
-        <ModalContent maxW={'50vw'}>
-          <ModalHeader>Pod {t('问题分析')}</ModalHeader>
+        <ModalContent maxW={'50vw'} h={'70vh'}>
+          <ModalHeader>Pod {t('Intelligent Analysis')}</ModalHeader>
           <ModalCloseButton />
-          <ModalBody position={'relative'}>
-            <Box
-              className={isAnalyzing ? styles.analysesAnimation : ''}
-              h={'60vh'}
-              overflowY={'auto'}
-              whiteSpace={'pre-wrap'}
-            >
-              {eventAnalysesText}
-            </Box>
+          <ModalBody
+            className={isAnalyzing ? styles.analysesAnimation : ''}
+            overflowY={'auto'}
+            h={'100%'}
+            whiteSpace={'pre-wrap'}
+            position={'relative'}
+            pb={2}
+          >
+            {eventAnalysesText}
           </ModalBody>
         </ModalContent>
       </Modal>
