@@ -7,4 +7,4 @@ COPY manifests manifests
 
 ENV DEFAULT_NAMESPACE node-system
 
-CMD ["kubectl apply -f manifests/deploy.yaml -n $DEFAULT_NAMESPACE --env=DEFAULT_NAMESPACE=node-system"]
+CMD ["kubectl apply -f manifests/deploy.yaml -n $DEFAULT_NAMESPACE"]
