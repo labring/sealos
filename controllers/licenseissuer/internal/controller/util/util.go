@@ -32,6 +32,20 @@ import (
 	cl "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func GetConfigFromConfigMap(expectName string,
+	configMap *corev1.ConfigMap) (map[string]string, error) {
+	if configMap.Name != expectName {
+		err := errors.New("not expected configmap")
+		return nil, err
+	}
+	var res map[string]string
+	err := json.Unmarshal([]byte(configMap.Data["config.json"]), &res)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
 func ReadConfigFromConfigMap(expectName string, configMap *corev1.ConfigMap) (issuer.Config, error) {
 	if configMap.Name != expectName {
 		err := errors.New("not expected configmap")
