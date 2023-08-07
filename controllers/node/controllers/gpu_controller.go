@@ -166,27 +166,27 @@ func (r *GpuReconciler) applyGPUInfoCM(ctx context.Context, nodeList *corev1.Nod
 			r.Logger.Error(err, "failed to create gpu-info configmap")
 			return ctrl.Result{}, err
 		}
-	} else if err == nil {
-		if configmap.Data == nil {
-			configmap.Data = map[string]string{}
-		}
-		if configmap.Data[GPU] != nodeMapStr {
-			configmap.Data[GPU] = nodeMapStr
-			if err := r.Update(ctx, configmap); err != nil && !errors.IsConflict(err) {
-				r.Logger.Error(err, "failed to update gpu-info configmap")
-				return ctrl.Result{}, err
-			}
-		}
-	} else {
+	} else if err != nil {
 		r.Logger.Error(err, "failed to get gpu-info configmap")
 		return ctrl.Result{}, err
+	}
+
+	if configmap.Data == nil {
+		configmap.Data = map[string]string{}
+	}
+	if configmap.Data[GPU] != nodeMapStr {
+		configmap.Data[GPU] = nodeMapStr
+		if err := r.Update(ctx, configmap); err != nil && !errors.IsConflict(err) {
+			r.Logger.Error(err, "failed to update gpu-info configmap")
+			return ctrl.Result{}, err
+		}
 	}
 
 	r.Logger.V(1).Info("gpu-info configmap status", "gpu", configmap.Data[GPU])
 	return ctrl.Result{}, nil
 }
 
-func (r *GpuReconciler) initGPUInfoCM(clientSet *kubernetes.Clientset) error {
+func (r *GpuReconciler) initGPUInfoCM(ctx context.Context, clientSet *kubernetes.Clientset) error {
 	// filter for nodes that have GPU
 	req1, _ := labels.NewRequirement(NvidiaGPUProduct, selection.Exists, []string{})
 	req2, _ := labels.NewRequirement(NvidiaGPUMemory, selection.Exists, []string{})
@@ -195,7 +195,7 @@ func (r *GpuReconciler) initGPUInfoCM(clientSet *kubernetes.Clientset) error {
 		LabelSelector: selector.String(),
 	}
 
-	nodeList, err := clientSet.CoreV1().Nodes().List(context.TODO(), listOpts)
+	nodeList, err := clientSet.CoreV1().Nodes().List(ctx, listOpts)
 	if err != nil {
 		return err
 	}
@@ -211,7 +211,7 @@ func (r *GpuReconciler) initGPUInfoCM(clientSet *kubernetes.Clientset) error {
 		podList.Items = append(podList.Items, list.Items...)
 	}
 
-	_, err = r.applyGPUInfoCM(context.TODO(), nodeList, podList, clientSet)
+	_, err = r.applyGPUInfoCM(ctx, nodeList, podList, clientSet)
 	return err
 }
 
@@ -229,7 +229,7 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	// init node-gpu-info configmap
 	r.Logger.V(1).Info("initializing node-gpu-info configmap")
-	if err := r.initGPUInfoCM(clientSet); err != nil {
+	if err := r.initGPUInfoCM(context.Background(), clientSet); err != nil {
 		return err
 	}
 
