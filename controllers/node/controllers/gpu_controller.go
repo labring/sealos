@@ -25,15 +25,17 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 type GpuReconciler struct {
@@ -76,7 +78,10 @@ func (r *GpuReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Res
 		r.Logger.Error(err, "failed to get pod list")
 		return ctrl.Result{}, err
 	}
+	return r.applyGPUInfoCM(ctx, nodeList, podList, nil)
+}
 
+func (r *GpuReconciler) applyGPUInfoCM(ctx context.Context, nodeList *corev1.NodeList, podList *corev1.PodList, clientSet *kubernetes.Clientset) (ctrl.Result, error) {
 	/*
 		"nodeMap": {
 			"sealos-poc-gpu-master-0":{},
@@ -140,7 +145,13 @@ func (r *GpuReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Res
 
 	// create or update gpu-info configmap
 	configmap := &corev1.ConfigMap{}
-	err = r.Get(ctx, types.NamespacedName{Name: GPUInfo, Namespace: GPUInfoNameSpace}, configmap)
+
+	if clientSet != nil {
+		configmap, err = clientSet.CoreV1().ConfigMaps(GPUInfoNameSpace).Get(ctx, GPUInfo, metaV1.GetOptions{})
+	} else {
+		err = r.Get(ctx, types.NamespacedName{Name: GPUInfo, Namespace: GPUInfoNameSpace}, configmap)
+	}
+
 	if errors.IsNotFound(err) {
 		configmap = &corev1.ConfigMap{
 			ObjectMeta: metaV1.ObjectMeta{
@@ -175,10 +186,52 @@ func (r *GpuReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Res
 	return ctrl.Result{}, nil
 }
 
+func (r *GpuReconciler) initGPUInfoCM(clientSet *kubernetes.Clientset) error {
+	// filter for nodes that have GPU
+	req1, _ := labels.NewRequirement(NvidiaGPUProduct, selection.Exists, []string{})
+	req2, _ := labels.NewRequirement(NvidiaGPUMemory, selection.Exists, []string{})
+	selector := labels.NewSelector().Add(*req1, *req2)
+	listOpts := metaV1.ListOptions{
+		LabelSelector: selector.String(),
+	}
+
+	nodeList, err := clientSet.CoreV1().Nodes().List(context.TODO(), listOpts)
+	if err != nil {
+		return err
+	}
+
+	podList := &corev1.PodList{}
+	for _, item := range nodeList.Items {
+		list, err := clientSet.CoreV1().Pods("").List(context.TODO(), metaV1.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector("spec.nodeName", item.Name).String(),
+		})
+		if err != nil {
+			return err
+		}
+		podList.Items = append(podList.Items, list.Items...)
+	}
+
+	_, err = r.applyGPUInfoCM(context.TODO(), nodeList, podList, clientSet)
+	return err
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger = ctrl.Log.WithName("gpu-controller")
 	r.Logger.V(1).Info("starting gpu controller")
+
+	// use clientSet to get resources from the API Server, not from Informer's cache
+	clientSet, err := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		r.Logger.Error(err, "failed to init")
+		return nil
+	}
+
+	// init node-gpu-info configmap
+	r.Logger.V(1).Info("initializing node-gpu-info configmap")
+	if err := r.initGPUInfoCM(clientSet); err != nil {
+		return err
+	}
 
 	// build index for node which have GPU
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Node{}, NodeIndexKey, func(rawObj client.Object) []string {
@@ -222,23 +275,6 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			DeleteFunc: func(event event.DeleteEvent) bool {
 				_, ok := event.Object.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
 				return ok
-			},
-		})).
-		// Because node-controller will create a node-gpu-info configmap when deploying with deploy.yaml,
-		// so watching the creation event of configmap can trigger a reconcile to initialize node-gpu-info configmap.
-		Watches(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(predicate.Funcs{
-			CreateFunc: func(event event.CreateEvent) bool {
-				cm := event.Object.(*corev1.ConfigMap)
-				if cm.Name == GPUInfo && cm.Namespace == GPUInfoNameSpace {
-					return true
-				}
-				return false
-			},
-			UpdateFunc: func(event event.UpdateEvent) bool {
-				return false
-			},
-			DeleteFunc: func(event event.DeleteEvent) bool {
-				return false
 			},
 		})).
 		Complete(r)
