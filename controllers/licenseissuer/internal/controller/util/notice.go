@@ -19,6 +19,8 @@ package util
 import (
 	"context"
 	"fmt"
+	"sync"
+	"time"
 
 	notificationv1 "github.com/labring/sealos/controllers/common/notification/api/v1"
 	ntf "github.com/labring/sealos/controllers/pkg/notification"
@@ -27,6 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// the notice task is used to get the notification from the cloud.
+// And then send the notification to the cluster.
 type notice struct {
 	lastTime int64
 }
@@ -168,3 +172,108 @@ func (n *notice) getEvents(instance *TaskInstance, body []byte) ([]ntf.Event, er
 
 	return events, nil
 }
+
+// the noticeCleaner task is used to clean the notification in the cluster periodically.
+type noticeCleaner struct {
+	lastTime int64
+}
+
+func (nc *noticeCleaner) cleanWork(instance *TaskInstance) error {
+	// catch all notification in the cluster
+	notifications := &notificationv1.NotificationList{}
+
+	err := instance.List(instance.ctx, notifications)
+	if err != nil {
+		instance.logger.Error(err, "failed to list notification")
+		return err
+	}
+	// Get the notification that needs to be deleted
+	expiredNotifications, err := nc.getNotificationsExpired(instance)
+	if err != nil {
+		instance.logger.Error(err, "failed to get expired notification")
+		return err
+	}
+	// delete the notification
+	pool := ntf.NewPool(maxBatchSize)
+	pool.Run(maxChannelSize)
+	for _, notification := range expiredNotifications {
+		newCopy := notification
+		pool.Add(func() {
+			err := instance.Delete(instance.ctx, &newCopy)
+			if err != nil {
+				instance.logger.Error(err, "failed to delete notification")
+			}
+		})
+	}
+	pool.Wait()
+	return nil
+}
+
+func (nc *noticeCleaner) getNotificationsExpired(instance *TaskInstance) ([]notificationv1.Notification, error) {
+	notifications := &notificationv1.NotificationList{}
+	err := instance.List(instance.ctx, notifications)
+	if err != nil {
+		instance.logger.Error(err, "failed to list notification")
+		return nil, err
+	}
+	var expiredNotifications []notificationv1.Notification
+
+	for _, notification := range notifications.Items {
+		timeStamp := notification.Spec.Timestamp
+		switch notification.Spec.Importance {
+		case notificationv1.High:
+			if time.Unix(timeStamp, 0).Add(time.Hour * 24 * 15).Before(time.Now()) {
+				expiredNotifications = append(expiredNotifications, notification)
+			}
+		case notificationv1.Medium:
+			if time.Unix(timeStamp, 0).Add(time.Hour * 24 * 7).Before(time.Now()) {
+				expiredNotifications = append(expiredNotifications, notification)
+			}
+		case notificationv1.Low:
+			if time.Unix(timeStamp, 0).Add(time.Hour * 24 * 3).Before(time.Now()) {
+				expiredNotifications = append(expiredNotifications, notification)
+			}
+		default:
+			if time.Unix(timeStamp, 0).Add(time.Hour * 24 * 3).Before(time.Now()) {
+				expiredNotifications = append(expiredNotifications, notification)
+			}
+		}
+	}
+	return expiredNotifications, nil
+}
+
+const maxBatchSize = 100
+const maxChannelSize = 500
+
+// The Pool proviveds a pool of goroutines that can be used to perform work.
+type Pool struct {
+	work chan func()
+	wg   sync.WaitGroup
+}
+
+// func NewPool(size int) *Pool {
+// 	return &Pool{
+// 		work: make(chan func(), size),
+// 	}
+// }
+
+// func (p *Pool) Run(workerCount int) {
+// 	p.wg.Add(workerCount)
+// 	for i := 0; i < workerCount; i++ {
+// 		go func() {
+// 			for work := range p.work {
+// 				work()
+// 			}
+// 			p.wg.Done()
+// 		}()
+// 	}
+// }
+
+// func (p *Pool) Add(work func()) {
+// 	p.work <- work
+// }
+
+// func (p *Pool) Wait() {
+// 	close(p.work)
+// 	p.wg.Wait()
+// }

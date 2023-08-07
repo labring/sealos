@@ -192,13 +192,13 @@ func (t initTask) presetRootUser(instance *TaskInstance) error {
 	// check if the user already exists
 	err = preCheck(instance.ctx, client, collection)
 	if err != nil {
-		instance.logger.Error(err, "root user already exists")
+		instance.logger.Info("root user already exists")
 		return err
 	}
 	// insert root user
 	insertResult, err := collection.InsertOne(context.Background(), user)
 	if err != nil {
-		instance.logger.Error(err, "failed to insert root user")
+		instance.logger.Info("insert root user failed")
 		return err
 	}
 	instance.logger.Info("insert root user successfully", "insertedID", insertResult.InsertedID)

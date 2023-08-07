@@ -27,8 +27,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const maxBatchSize = 400
-const timeInternal = 3
+const maxBatchSize = 100
+const maxChannelSize = 500
 
 // the best practice of notification api is the following:
 //  1. use a notification builder to build a notification event queue,such as:
@@ -48,7 +48,7 @@ const timeInternal = 3
 //
 // 3. use a notification manager to send the notification event queue to the receiver, such as:
 //    manager := NotificationManager{}
-//    manager.Load(receiver, Queue.Events)
+//    manager.Load(receiver, events)
 //    manager.Run()
 
 // Features of the notification api:
@@ -67,25 +67,18 @@ type NotificationManager struct {
 // Run of the NotificationManager runs the notification manager.
 // It writes the notifications in batches
 func (nm *NotificationManager) Run() {
-	var wg sync.WaitGroup
-	len := len(nm.NotificationQueue)
-	st := 0
-	for st < len {
-		end := st + maxBatchSize
-		for i := st; i < end && i < len; i++ {
-			wg.Add(1)
-			go func(pos int) {
-				defer wg.Done()
-				err := write(nm.Ctx, nm.Client, &nm.NotificationQueue[pos])
-				if err != nil {
-					logger.Error(err, "Failed to Do Notification Write Opt")
-				}
-			}(i)
-		}
-		st = end
-		time.Sleep(time.Second * timeInternal)
+	pool := NewPool(maxBatchSize)
+	pool.Run(maxChannelSize)
+	for _, notification := range nm.NotificationQueue {
+		notification := notification
+		pool.Add(func() {
+			err := write(nm.Ctx, nm.Client, &notification)
+			if err != nil {
+				logger.Error(err, "Failed to Do Notification Write Opt")
+			}
+		})
 	}
-	wg.Wait()
+	pool.Wait()
 }
 
 func (nm *NotificationManager) Load(receivers Receiver, events []Event) error {
@@ -130,5 +123,40 @@ func newNotification(receiver string, event Event) v1.Notification {
 			From:       event.From,
 			Title:      event.Title,
 		},
+	}
+}
+
+type Pool struct {
+	wg   sync.WaitGroup
+	work chan func()
+}
+
+func NewPool(size int) *Pool {
+	p := &Pool{
+		work: make(chan func()),
+	}
+	return p
+}
+
+func (p *Pool) Add(f func()) {
+	p.work <- func() {
+		f()
+	}
+}
+
+func (p *Pool) Wait() {
+	close(p.work)
+	p.wg.Wait()
+}
+
+func (p *Pool) Run(size int) {
+	p.wg.Add(size)
+	for i := 0; i < size; i++ {
+		go func() {
+			for f := range p.work {
+				f()
+			}
+		}()
+		p.wg.Done()
 	}
 }

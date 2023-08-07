@@ -98,6 +98,9 @@ func (o *OperatorOptions) initOptions() {
 		// 	o.RunnableOptions.Period[DataSync] = 1 * time.Hour
 		o.RunnableOptions.Policy[Notice] = "Periodic"
 		o.RunnableOptions.Period[Notice] = 3 * time.Hour
+		o.RunnableOptions.Policy[NoticeCleanup] = "Periodic"
+		o.RunnableOptions.Period[NoticeCleanup] = 24 * time.Hour
+		// Add more tasks Policy and Period here
 	}
 	return
 }
@@ -135,10 +138,12 @@ type RunnableOptions struct {
 }
 
 const (
-	Collector task = "Collector"
-	DataSync  task = "DataSync"
-	Init      task = "Init"
-	Notice    task = "Notice"
+	Collector     task = "Collector"
+	DataSync      task = "DataSync"
+	Init          task = "Init"
+	Notice        task = "Notice"
+	NoticeCleanup task = "NoticeCleanup"
+	// Add more tasks here
 )
 
 func (ro *RunnableOptions) initOptions() {

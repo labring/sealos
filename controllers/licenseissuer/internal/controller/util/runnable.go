@@ -138,7 +138,9 @@ func (ti *TaskInstance) Run() error {
 		_ = initTask{options: GetOptions()}.initWork(ti)
 		return nil
 	case Notice:
-		return (&notice{lastTime: time.Now().Unix()}).noticeWork(ti)
+		return (&notice{lastTime: time.Now().Add(-7 * time.Hour).Unix()}).noticeWork(ti)
+	case NoticeCleanup:
+		return (&noticeCleaner{lastTime: time.Now().Unix()}).cleanWork(ti)
 	default:
 		return fmt.Errorf("the task is not supported")
 	}
