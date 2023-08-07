@@ -46,7 +46,7 @@ export const valuationMap: Record<string, number> = {
 };
 
 const gpuCrName = 'node-gpu-info';
-const gpuCrNS = 'node-system'
+const gpuCrNS = 'node-system';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
