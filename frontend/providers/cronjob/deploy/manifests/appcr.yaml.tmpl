@@ -1,0 +1,16 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: dbprovider
+  namespace: app-system
+spec:
+  data:
+    desc: Database
+    url: "https://dbprovider.{{ .cloudDomain }}"
+  icon: "https://dbprovider.{{ .cloudDomain }}/logo.svg"
+  menuData:
+    helpDropDown: false
+    nameColor: text-black
+  name: Database
+  type: iframe
+  displayType: normal
