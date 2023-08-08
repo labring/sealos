@@ -44,6 +44,7 @@ jobs:
       matrix:
         module:
           [
+            providers/template,
             providers/adminer,
             providers/applaunchpad,
             providers/bytebase,
@@ -127,6 +128,7 @@ jobs:
       matrix:
         module:
           [
+            providers/template,
             providers/adminer,
             providers/applaunchpad,
             providers/bytebase,
