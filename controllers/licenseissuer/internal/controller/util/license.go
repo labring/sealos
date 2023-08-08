@@ -63,6 +63,10 @@ func LicenseCheckOnExternalNetwork(ctx context.Context, client client.Client, li
 	if !ok {
 		var resp LicenseMonitorResponse
 		httpBody, err := Pull(urlMap[LicenseMonitorURL], res)
+		if err != nil {
+			logger.Error(err, "failed to pull license monitor request")
+			return nil, false
+		}
 		err = Convert(httpBody.Body, &resp)
 		if err != nil {
 			logger.Error(err, "failed to convert")

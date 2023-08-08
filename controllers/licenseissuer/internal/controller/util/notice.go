@@ -19,7 +19,6 @@ package util
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	notificationv1 "github.com/labring/sealos/controllers/common/notification/api/v1"
@@ -70,6 +69,10 @@ func (n *notice) noticeWork(instance *TaskInstance) error {
 	}
 	// get uid and url-map
 	uid, urlMap, err := GetUIDURL(instance.ctx, instance.Client)
+	if err != nil {
+		instance.logger.Error(err, "failed to get uid and url")
+		return err
+	}
 
 	request := (&NotificationRequest{}).setTimestamp(n.lastTime).setUID(uid)
 
@@ -241,10 +244,10 @@ const maxBatchSize = 100
 const maxChannelSize = 500
 
 // The Pool proviveds a pool of goroutines that can be used to perform work.
-type Pool struct {
-	work chan func()
-	wg   sync.WaitGroup
-}
+// type Pool struct {
+// 	work chan func()
+// 	wg   sync.WaitGroup
+// }
 
 // func NewPool(size int) *Pool {
 // 	return &Pool{

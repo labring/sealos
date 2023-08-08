@@ -190,10 +190,10 @@ func (t initTask) presetRootUser(instance *TaskInstance) error {
 
 	collection := client.Database(defaultDB).Collection(defaultCollection)
 	// check if the user already exists
-	err = preCheck(instance.ctx, client, collection)
-	if err != nil {
+	isExists := preCheck(instance.ctx, collection)
+	if isExists {
 		instance.logger.Info("root user already exists")
-		return err
+		return nil
 	}
 	// insert root user
 	insertResult, err := collection.InsertOne(context.Background(), user)
@@ -234,14 +234,11 @@ func (t initTask) initMongoDB(instance *TaskInstance) (*mongo.Client, error) {
 }
 
 // makesure the user does not exist
-func preCheck(ctx context.Context, client *mongo.Client, collection *mongo.Collection) error {
-	filter := bson.M{"name": defaultuser}
+func preCheck(ctx context.Context, collection *mongo.Collection) bool {
+	filter := bson.M{"password_user": defaultuser}
 	var existingUser User
 	err := collection.FindOne(ctx, filter).Decode(&existingUser)
-	if err != nil {
-		return nil
-	}
-	return fmt.Errorf("user %s already exists", defaultuser)
+	return err == nil
 }
 
 // the following code is consistent with the front-end login logic

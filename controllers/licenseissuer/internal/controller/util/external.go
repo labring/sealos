@@ -42,10 +42,10 @@ type HTTPResponse struct {
 func Push(url string, content interface{}) error {
 	body, err := CommunicateWithCloud("POST", url, content)
 	if err != nil {
-		return fmt.Errorf("CommunicateWithCloud: %w", err)
+		return fmt.Errorf("communicateWithCloud: %w", err)
 	}
 	if !IsSuccessfulStatusCode(body.StatusCode) {
-		return fmt.Errorf("Error status: %s", http.StatusText(body.StatusCode))
+		return fmt.Errorf("error status: %s", http.StatusText(body.StatusCode))
 	}
 	return nil
 }
@@ -56,10 +56,10 @@ func Push(url string, content interface{}) error {
 func Pull(url string, content interface{}) (HTTPResponse, error) {
 	body, err := CommunicateWithCloud("POST", url, content)
 	if err != nil {
-		return HTTPResponse{}, fmt.Errorf("CommunicateWithCloud: %w", err)
+		return HTTPResponse{}, fmt.Errorf("communicateWithCloud: %w", err)
 	}
 	if !IsSuccessfulStatusCode(body.StatusCode) {
-		return HTTPResponse{}, fmt.Errorf("Error status: %s", http.StatusText(body.StatusCode))
+		return HTTPResponse{}, fmt.Errorf("error status: %s", http.StatusText(body.StatusCode))
 	}
 	return body, nil
 }

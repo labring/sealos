@@ -83,3 +83,8 @@ const (
 	AddNodeField   = "and"
 	AddCPUField    = "adc"
 )
+
+const (
+	PeriodicPolicy = "Periodic"
+	OncePolicy     = "Once"
+)

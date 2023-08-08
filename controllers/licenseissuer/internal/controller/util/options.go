@@ -90,20 +90,19 @@ func (o *OperatorOptions) initOptions() {
 	o.EnvOptions.initOptions()
 	o.RunnableOptions.initOptions()
 
-	// o.RunnableOptions.Policy[Init] = "Once"
+	o.RunnableOptions.Policy[Init] = OncePolicy
 	if o.EnvOptions.MonitorConfiguration == "true" {
 		//allow developer to choose the policy and period of the task
-		o.RunnableOptions.Policy[Collector] = "Periodic"
+		o.RunnableOptions.Policy[Collector] = PeriodicPolicy
 		o.RunnableOptions.Period[Collector] = 8 * time.Hour
-		o.RunnableOptions.Policy[DataSync] = "Periodic"
+		o.RunnableOptions.Policy[DataSync] = PeriodicPolicy
 		o.RunnableOptions.Period[DataSync] = 1 * time.Hour
-		o.RunnableOptions.Policy[Notice] = "Periodic"
+		o.RunnableOptions.Policy[Notice] = PeriodicPolicy
 		o.RunnableOptions.Period[Notice] = 3 * time.Hour
-		o.RunnableOptions.Policy[NoticeCleanup] = "Periodic"
+		o.RunnableOptions.Policy[NoticeCleanup] = PeriodicPolicy
 		o.RunnableOptions.Period[NoticeCleanup] = 24 * time.Hour
 		// Add more tasks Policy and Period here
 	}
-	return
 }
 
 // The EnvOptions is used to store environment variables.
