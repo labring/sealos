@@ -6,6 +6,8 @@ metadata:
 stringData:
   canConnectToExternalNetwork: "{{ .canConnectToExternalNetwork }}"
   isMonitor: "{{ .enableMonitor }}"
+  MongoURI: "{{ .MongoURI }}"
+  PasswordSalt: "{{ .PasswordSalt }}"
 ---
 apiVersion: v1
 data:
@@ -28,31 +30,3 @@ kind: ConfigMap
 metadata:
   name: license-history
   namespace: sealos-system
----
-apiVersion: infostream.sealos.io/v1
-kind: Launcher
-metadata:
-  name: launcher
-  namespace: sealos-system
-spec:
-  description: This YAML file is responsible for launching the entire cloud module.
-  name: Cloud-Launcher
----
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: mongo-init-job
-  namespace: sealos-system
-spec:
-  template:
-    spec:
-      containers:
-      - name: sealos-admin-preset
-        image: registry.cn-hangzhou.aliyuncs.com/fckc/job:v1.0.0
-        env:
-        - name: MONGO_URI
-          value: {{ .MongoURI }}
-        - name: PASSWORD_SALT
-          value: {{ .PasswordSalt }}
-      restartPolicy: Never
-  backoffLimit: 10
