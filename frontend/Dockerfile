@@ -52,8 +52,6 @@ COPY ./packages ./packages
 RUN pnpm -r --offline --filter=./packages/* install \
 && pnpm -r --filter=./packages/* run build 
 
-
-
 # Rebuild the source code only when needed
 FROM node:current-alpine AS builder
 
@@ -78,15 +76,20 @@ COPY . .
 ARG name
 ARG path
 
-RUN \
-  [ -f $path/pnpm-lock.yaml ] && (pnpm --offline --filter=$name install && pnpm --filter=$name run build) || \
-  (echo "Lockfile not found." && exit 1) 
+RUN pnpm --offline --filter=$name install && pnpm --filter=$name run build
 
 # Production image, copy all the files and run next
 FROM runner
 
 ARG name
 ARG path
+
+# Install Git and OpenSSH client if $name is equal to template
+USER root
+RUN if [ "$name" = "template" ]; then \
+    apk add --no-cache git openssh-client; \
+fi
+
 # You only need to copy next.config.js if you are NOT using the default configuration
 # COPY --from=builder /app/desktop/next.config.js ./
 COPY --from=builder /app/$path/public ./$path/public

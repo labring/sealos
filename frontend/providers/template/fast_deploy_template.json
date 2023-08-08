@@ -1,0 +1,822 @@
+[
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "appsmith"
+    },
+    "spec": {
+      "title": "Appsmith",
+      "url": "https://www.appsmith.com/",
+      "github": "https://github.com/appsmithorg/appsmith",
+      "author": "sealos",
+      "description": "Appsmith is an open-source platform to build, deploy, and maintain internal apps. You can build anything from simple CRUD apps, admin panels, dashboards to custom business apps and complicated multi-step workflows.",
+      "readme": "https://raw.githubusercontent.com/appsmithorg/appsmith/release/README.md",
+      "icon": "https://avatars.githubusercontent.com/u/67620218?s=96&v=4",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "appsmith-${{ random(8) }}"
+        }
+      },
+      "inputs": null
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "chatbot-ui"
+    },
+    "spec": {
+      "title": "chatbot-ui",
+      "url": "https://www.chatbotui.com/",
+      "github": "https://github.com/mckaywrigley/chatbot-ui",
+      "author": "sealos",
+      "description": "Chatbot UI is an open source chat UI for AI models.",
+      "readme": "https://raw.githubusercontent.com/mckaywrigley/chatbot-ui/main/README.md",
+      "icon": "https://avatars.githubusercontent.com/u/29221284?s=96&v=4",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "chatbot-ui-${{ random(8) }}"
+        }
+      },
+      "inputs": {
+        "OPENAI_API_KEY": {
+          "description": "The default API key used for authentication with OpenAI",
+          "type": "string",
+          "default": "",
+          "required": false
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "chatgpt-midjourney"
+    },
+    "spec": {
+      "title": "chatgpt-midjourney",
+      "url": "https://github.com/Licoy/ChatGPT-Midjourney",
+      "github": "https://github.com/Licoy/ChatGPT-Midjourney",
+      "author": "sealos",
+      "description": "One-click free deployment of your private ChatGPT+Midjourney web application",
+      "readme": "https://raw.githubusercontent.com/Licoy/ChatGPT-Midjourney/master/README.md",
+      "icon": "https://avatars.githubusercontent.com/u/20410697?s=96&v=4",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "chatgpt-midjourney-${{ random(8) }}"
+        }
+      },
+      "inputs": {
+        "OPENAI_API_KEY": {
+          "description": "OPENAI_API_KEY",
+          "type": "string",
+          "default": "",
+          "required": true
+        },
+        "CODE": {
+          "description": "Access passsword, separated by comma.",
+          "type": "string",
+          "default": "",
+          "required": false
+        },
+        "PROXY_URL": {
+          "description": "proxy.",
+          "type": "string",
+          "default": "",
+          "required": false
+        },
+        "BASE_URL": {
+          "description": "Override openai api request base url.",
+          "type": "string",
+          "default": "https://api.openai.com",
+          "required": false
+        },
+        "OPENAI_ORG_ID": {
+          "description": "Specify OpenAI organization ID.",
+          "type": "string",
+          "default": "",
+          "required": false
+        },
+        "HIDE_USER_API_KEY": {
+          "description": "Specify OpenAI organization ID.",
+          "type": "string",
+          "default": "",
+          "required": false
+        },
+        "DISABLE_GPT4": {
+          "description": "If you do not want users to use GPT-4, set this value to 1.",
+          "type": "string",
+          "default": "",
+          "required": false
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "chatgpt-next-web"
+    },
+    "spec": {
+      "title": "chatgpt-next-web",
+      "url": "https://github.com/Yidadaa/ChatGPT-Next-Web",
+      "github": "https://github.com/Yidadaa/ChatGPT-Next-Web",
+      "author": "sealos",
+      "description": "A well-designed cross-platform ChatGPT UI (Web / PWA / Linux / Win / MacOS). 一键拥有你自己的跨平台 ChatGPT 应用。 ",
+      "readme": "https://raw.githubusercontent.com/Yidadaa/ChatGPT-Next-Web/main/README.md",
+      "icon": "https://github.com/Yidadaa/ChatGPT-Next-Web/raw/main/docs/images/icon.svg",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "chatgpt-next-web-${{ random(8) }}"
+        }
+      },
+      "inputs": {
+        "OPENAI_API_KEY": {
+          "description": "OPENAI_API_KEY",
+          "type": "string",
+          "default": "",
+          "required": true
+        },
+        "CODE": {
+          "description": "Access passsword, separated by comma.",
+          "type": "string",
+          "default": "",
+          "required": false
+        },
+        "BASE_URL": {
+          "description": "Override openai api request base url.",
+          "type": "string",
+          "default": "https://api.openai.com",
+          "required": false
+        },
+        "OPENAI_ORG_ID": {
+          "description": "Specify OpenAI organization ID.",
+          "type": "string",
+          "default": "",
+          "required": false
+        },
+        "HIDE_USER_API_KEY": {
+          "description": "",
+          "type": "string",
+          "default": "",
+          "required": false
+        },
+        "DISABLE_GPT4": {
+          "description": "If you do not want users to use GPT-4, set this value to 1.",
+          "type": "string",
+          "default": "",
+          "required": false
+        },
+        "HIDE_BALANCE_QUERY": {
+          "description": "If you do not want users to query balance, set this value to 1.",
+          "type": "string",
+          "default": "",
+          "required": false
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "chatgpt-web"
+    },
+    "spec": {
+      "title": "chatgpt-web",
+      "url": "https://github.com/Chanzhaoyu/chatgpt-web",
+      "github": "https://github.com/Chanzhaoyu/chatgpt-web",
+      "author": "sealos",
+      "description": "A demonstration webpage for ChatGPT built with Express and Vue3.",
+      "readme": "https://raw.githubusercontent.com/Chanzhaoyu/chatgpt-web/main/README.md",
+      "icon": "https://avatars.githubusercontent.com/u/24789441?s=96&v=4",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "chatgpt-web-${{ random(8) }}"
+        }
+      },
+      "inputs": {
+        "OPENAI_API_KEY": {
+          "description": "Choose either OPENAI_API_KEY or OPENAI_ACCESS_TOKEN.",
+          "type": "string",
+          "default": "",
+          "required": false
+        },
+        "OPENAI_ACCESS_TOKEN": {
+          "description": "Choose either OPENAI_API_KEY or OPENAI_ACCESS_TOKEN.",
+          "type": "string",
+          "default": "",
+          "required": false
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "docker-stacks"
+    },
+    "spec": {
+      "title": "JupyterDockerStacks",
+      "url": "https://jupyter-docker-stacks.readthedocs.io/en/latest/",
+      "github": "https://github.com/jupyter/docker-stacks",
+      "author": "sealos",
+      "description": "Jupyter Docker Stacks are a set of ready-to-run Docker images containing Jupyter applications and interactive computing tools.",
+      "readme": "https://raw.githubusercontent.com/jupyter/docker-stacks/main/README.md",
+      "icon": "https://avatars.githubusercontent.com/u/7388996?s=96&v=4",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "appsmith-${{ random(8) }}"
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "fastgpt"
+    },
+    "spec": {
+      "title": "FastGpt",
+      "url": "https://fastgpt.run/",
+      "github": "https://github.com/labring/FastGPT",
+      "author": "sealos",
+      "description": "Fast GPT allows you to use your own openai API KEY to quickly call the openai interface, currently integrating Gpt35, Gpt4 and embedding. You can build your own knowledge base.",
+      "readme": "https://raw.githubusercontent.com/labring/FastGPT/main/README.md",
+      "icon": "https://avatars.githubusercontent.com/u/50446880?s=96&v=4",
+      "template_type": "inline",
+      "defaults": {
+        "app_name": {
+          "type": "string",
+          "value": "fastgpt-${{ random(8) }}"
+        },
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        }
+      },
+      "inputs": {
+        "root_password": {
+          "description": "root用户密码，用户名为: root",
+          "type": "string",
+          "default": "",
+          "required": true
+        },
+        "base_url": {
+          "description": "api 基础地址，官方 key 不需要改",
+          "type": "string",
+          "default": "https://api.openai.com/v1",
+          "required": true
+        },
+        "api_key": {
+          "description": "openai api key",
+          "type": "string",
+          "default": "",
+          "required": true
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "gpt-academic"
+    },
+    "spec": {
+      "title": "gpt-academic",
+      "url": "https://huggingface.co/spaces/qingxu98/gpt-academic",
+      "github": "https://github.com/binary-husky/gpt_academic",
+      "author": "sealos",
+      "description": "Provide a graphical interactive interface for ChatGPT/GLM, especially optimized for the experience of reading, polishing, and writing academic papers, with a modular design.",
+      "readme": "https://raw.githubusercontent.com/binary-husky/gpt_academic/master/README.md",
+      "icon": "https://avatars.githubusercontent.com/u/96192199?s=96&v=4",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "gpt-academic-${{ random(8) }}"
+        }
+      },
+      "inputs": {
+        "API_KEY": {
+          "description": "ChatGPT API KEY",
+          "type": "string",
+          "default": "",
+          "required": false
+        },
+        "USE_PROXY": {
+          "description": "Whether to use a proxy",
+          "type": "string",
+          "default": "False",
+          "required": false
+        },
+        "proxies": {
+          "description": "proxies address",
+          "type": "string",
+          "default": "{ \"http\": \"socks5h://localhost:10880\", \"https\":\"socks5h://localhost:10880\", }",
+          "required": false
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "halo"
+    },
+    "spec": {
+      "title": "Halo",
+      "url": "https://halo.run/",
+      "github": "https://github.com/halo-dev/halo",
+      "author": "sealos",
+      "description": "Powerful and easy-to-use open source website building tool",
+      "readme": "https://raw.githubusercontent.com/halo-dev/halo/main/README.md",
+      "icon": "https://avatars.githubusercontent.com/u/48195280?s=96&v=4",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "halo-${{ random(8) }}"
+        }
+      },
+      "inputs": {
+        "admin_username": {
+          "description": "Halo Super Admin Username",
+          "type": "string",
+          "default": "admin",
+          "required": false
+        },
+        "admin_password": {
+          "description": "Halo Super Admin Password",
+          "type": "string",
+          "default": "admin",
+          "required": false
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "illa-builder"
+    },
+    "spec": {
+      "title": "illaBuilder",
+      "url": "https://www.illacloud.com/zh-CN",
+      "github": "https://github.com/illacloud/illa-builder",
+      "author": "sealos",
+      "description": "ILLA is a robust open source low-code platform for developers to build internal tools. By using ILLAs library of Components and Actions, developers can save massive amounts of time on building tools.",
+      "readme": "https://raw.githubusercontent.com/illacloud/illa-builder/main/README.md",
+      "icon": "https://avatars.githubusercontent.com/u/93245159?s=96&v=4",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "illabuilder-${{ random(8) }}"
+        }
+      },
+      "inputs": null
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "llama2-chinese"
+    },
+    "spec": {
+      "title": "llama2-chinese",
+      "url": "https://github.com/LinkSoul-AI/Chinese-Llama-2-7b",
+      "github": "https://github.com/luanshaotong/text-generation-webui-docker.git",
+      "author": "sealos",
+      "description": "Fully open-source and commercially usable Chinese version of the Llama2 model, along with bilingual Chinese-English SFT dataset. Input format strictly adheres to the llama-2-chat format, ensuring compatibility and adaptation with all optimizations designed for the original llama-2-chat model.",
+      "readme": "https://raw.githubusercontent.com/luanshaotong/text-generation-webui-docker/main/README.md",
+      "icon": "https://raw.githubusercontent.com/LinkSoul-AI/Chinese-Llama-2-7b/main/.github/preview.jpg",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "llama-chinese-cpu-${{ random(8) }}"
+        }
+      },
+      "inputs": null
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "midjourney-ui"
+    },
+    "spec": {
+      "title": "midjourney-ui",
+      "url": "https://github.com/topics/midjourney-ui",
+      "github": "https://github.com/erictik/midjourney-ui",
+      "author": "sealos",
+      "description": "Midjourney UI is an open source txt2img UI for AI draw.",
+      "readme": "https://raw.githubusercontent.com/erictik/midjourney-ui/main/README.md",
+      "icon": "https://avatars.githubusercontent.com/u/108114582?s=96&v=4",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "midjourney-ui-${{ random(8) }}"
+        }
+      },
+      "inputs": {
+        "SALAI_TOKEN": {
+          "description": "SALAI_TOKEN",
+          "type": "string",
+          "default": "",
+          "required": false
+        },
+        "SERVER_ID": {
+          "description": "SERVER_ID",
+          "type": "string",
+          "default": "",
+          "required": false
+        },
+        "CHANNEL_ID": {
+          "description": "CHANNEL_ID",
+          "type": "string",
+          "default": "",
+          "required": false
+        },
+        "HUGGINGFACE_TOKEN": {
+          "description": "HUGGINGFACE_TOKEN",
+          "type": "string",
+          "default": "",
+          "required": false
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "nsfw"
+    },
+    "spec": {
+      "title": "nsfw",
+      "url": "https://github.com/labring/nsfw",
+      "github": "https://github.com/labring/nsfw",
+      "author": "sealos",
+      "description": "NSFW is a project for image pornography recognition",
+      "readme": "https://raw.githubusercontent.com/labring/nsfw/master/README.md",
+      "icon": "https://avatars.githubusercontent.com/u/102226726?s=96&v=4",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "nsfw-${{ random(8) }}"
+        }
+      },
+      "inputs": {
+        "API_SECRET_KEY": {
+          "description": "API_SECRET_KEY",
+          "type": "string",
+          "default": "",
+          "required": false
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "one-api"
+    },
+    "spec": {
+      "title": "one-api",
+      "url": "https://openai.justsong.cn/",
+      "github": "https://github.com/songquanpeng/one-api",
+      "author": "sealos",
+      "description": "OpenAI key management & redistribution system, using a single API for all LLMs, and features an English UI.",
+      "readme": "https://raw.githubusercontent.com/songquanpeng/one-api/main/README.md",
+      "icon": "https://avatars.githubusercontent.com/u/39998050?s=96&v=4",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "one-api-${{ random(8) }}"
+        },
+        "session_secret": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        }
+      },
+      "inputs": null
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "openai-proxy"
+    },
+    "spec": {
+      "title": "Openai-proxy",
+      "url": "https://github.com/UNICKCHENG/openai-proxy",
+      "github": "https://openai-proxy.apifox.cn/",
+      "author": "sealos",
+      "description": "openai-proxy is a solution provided for Chinese users to address the issue of being unable to make requests to the OpenAI API.",
+      "readme": "https://raw.githubusercontent.com/UNICKCHENG/openai-proxy/main/readme.md",
+      "icon": "https://avatars.githubusercontent.com/u/32270702?s=96&v=4",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "openai-proxy-${{ random(8) }}"
+        }
+      },
+      "inputs": null
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "pageplug"
+    },
+    "spec": {
+      "title": "PagePlug",
+      "url": "https://lowcode.methodot.com/",
+      "github": "https://github.com/cloudtogo/pageplug",
+      "author": "sealos",
+      "description": "PagePlug is a Chinese project of Appsmith. It is an open source, declarative, visual frontend low-code framework that can be used to build web applications and WeChat mini programs.",
+      "readme": "https://raw.githubusercontent.com/cloudtogo/pageplug/open-v1.8/README.md",
+      "icon": "https://avatars.githubusercontent.com/u/23050952?s=96&v=4",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "pageplug-${{ random(8) }}"
+        }
+      },
+      "inputs": null
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "plausible"
+    },
+    "spec": {
+      "title": "plausible",
+      "url": "https://github.com/plausible/analytics",
+      "github": "https://github.com/plausible/analytics",
+      "author": "sealos",
+      "description": "Simple, open-source, lightweight (< 1 KB) and privacy-friendly web analytics alternative to Google Analytics.",
+      "readme": "https://raw.githubusercontent.com/plausible/analytics/master/README.md",
+      "icon": "https://raw.githubusercontent.com/plausible/docs/master/static/img/plausible-analytics-icon-top.png",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "plausible-${{ random(8) }}"
+        }
+      },
+      "inputs": {
+        "CLICKHOUSE_USER": {
+          "description": "clickhouse user name",
+          "type": "string",
+          "default": "",
+          "required": true
+        },
+        "CLICKHOUSE_PASSWORD": {
+          "description": "clickhouse password",
+          "type": "string",
+          "default": "",
+          "required": true
+        },
+        "DISABLE_REGISTRATION": {
+          "description": "true or false",
+          "type": "string",
+          "default": "",
+          "required": false
+        },
+        "SECRET_KEY_BASE": {
+          "description": "You can generate it using the following command: openssl rand -base64 64 | tr -d '\n' ; echo",
+          "type": "string",
+          "default": "FhNHzoWJyoQgT21RsFQG+KUzJ/o5YbKsszc6CMOArA0OXxjZ763oCGiItOPlKJAfIQO0uov8xt8p5k+MqtmtOQ==",
+          "required": true
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "tailchat"
+    },
+    "spec": {
+      "title": "Tailchat",
+      "url": "https://tailchat.msgbyte.com/",
+      "github": "https://github.com/msgbyte/tailchat",
+      "author": "sealos",
+      "description": "The next-generation noIM Application in your own workspace",
+      "readme": "https://raw.githubusercontent.com/msgbyte/tailchat/master/README.md",
+      "icon": "https://avatars.githubusercontent.com/u/86033898?s=96&v=4",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "minio_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "redis_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "tailchat-${{ random(8) }}"
+        }
+      },
+      "inputs": null
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "umami"
+    },
+    "spec": {
+      "title": "Umami",
+      "url": "https://umami.is/",
+      "github": "https://github.com/umami-software/umami",
+      "author": "sealos",
+      "description": "Umami is an open source, privacy-focused alternative to Google Analytics.",
+      "readme": "https://raw.githubusercontent.com/umami-software/umami/master/README.md",
+      "icon": "https://avatars.githubusercontent.com/u/105618662?s=96&v=4",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "umami-${{ random(8) }}"
+        }
+      },
+      "inputs": {
+        "APP_SECRET": {
+          "description": "replace me with a random string",
+          "type": "string",
+          "default": "admin",
+          "required": true
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "uptime-kuma"
+    },
+    "spec": {
+      "title": "UptimeKuma",
+      "url": "https://uptime.kuma.pet/",
+      "github": "https://github.com/louislam/uptime-kuma",
+      "author": "sealos",
+      "description": "Uptime Kuma is an easy-to-use self-hosted monitoring tool.",
+      "readme": "https://raw.githubusercontent.com/louislam/uptime-kuma/master/README.md",
+      "icon": "https://avatars.githubusercontent.com/u/1336778?s=96&v=4",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "uptimekuma-${{ random(8) }}"
+        }
+      },
+      "inputs": null
+    }
+  },
+  {
+    "apiVersion": "template.app.sealos.io/v1beta1",
+    "kind": "Template",
+    "metadata": {
+      "name": "wordpress"
+    },
+    "spec": {
+      "title": "WordPress",
+      "url": "https://wordpress.org",
+      "github": "https://github.com/WordPress/WordPress",
+      "author": "sealos",
+      "description": "WordPress is a powerful, user-friendly and open source content management system (CMS) that can be used to publish websites, news, blogs and other content on the Internet.",
+      "readme": "https://raw.githubusercontent.com/WordPress/WordPress/master/readme.html",
+      "icon": "https://avatars.githubusercontent.com/u/276006?s=96&v=4",
+      "template_type": "inline",
+      "defaults": {
+        "app_host": {
+          "type": "string",
+          "value": "${{ random(8) }}"
+        },
+        "app_name": {
+          "type": "string",
+          "value": "wordpress-${{ random(8) }}"
+        }
+      },
+      "inputs": null
+    }
+  }
+]
