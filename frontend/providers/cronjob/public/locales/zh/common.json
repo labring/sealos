@@ -169,6 +169,27 @@
   "Disk": "磁盘空间",
   "job": {
     "list": "任务列表",
-    "create": "新建任务"
+    "create": "新建任务",
+    "Deploy Job": "部署CronJob",
+    "Update CronJob": "更新CronJob",
+    "Confirm Update CronJob?": "确定更新CronJob ?",
+    "Confirm Deploy CronJob?": "确定部署CronJob ?"
+  },
+  "base": {
+    "Delete": "删除",
+    "Cancel": "取消",
+    "Confirm": "确认",
+    "Name": "名字",
+    "Type": "类型",
+    "Status": "状态",
+    "Pause": "暂停",
+    "Restart": "重启",
+    "Update": "变更",
+    "Creation Time": "创建时间",
+    "Continue": "继续",
+    "Backup": "备份",
+    "Success": "成功",
+    "Have Error": "出现异常",
+    "Logs": "日志"
   }
 }

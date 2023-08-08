@@ -10,13 +10,13 @@ import { useGlobalStore } from '@/store/global';
 import { useTranslation } from 'next-i18next';
 
 const Header = ({
-  dbName,
+  name,
   title,
   yamlList,
   applyCb,
   applyBtnText
 }: {
-  dbName: string;
+  name: string;
   title: string;
   yamlList: YamlItemType[];
   applyCb: () => void;
@@ -35,9 +35,9 @@ const Header = ({
     downLoadBold(
       res,
       'application/zip',
-      dbName ? `${dbName}.zip` : `yaml${dayjs().format('YYYYMMDDHHmmss')}.zip`
+      name ? `${name}.zip` : `yaml${dayjs().format('YYYYMMDDHHmmss')}.zip`
     );
-  }, [dbName, yamlList]);
+  }, [name, yamlList]);
 
   return (
     <Flex w={'100%'} px={10} h={'86px'} alignItems={'center'}>

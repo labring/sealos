@@ -33,7 +33,7 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
           activeId={'yaml'}
           onChange={() =>
             router.replace(
-              `/db/edit?${obj2Query({
+              `/job/edit?${obj2Query({
                 name,
                 type: 'form'
               })}`
@@ -75,6 +75,7 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
           ))}
         </Box>
       </Box>
+
       {!!yamlList[selectedIndex] && (
         <Flex
           className={styles.codeBox}

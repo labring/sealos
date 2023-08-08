@@ -40,7 +40,7 @@ const queryClient = new QueryClient({
 function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const { i18n } = useTranslation();
-  const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
+  const { setScreenWidth, loading, setLastRoute, lastRoute } = useGlobalStore();
   const { Loading } = useLoading();
   const [refresh, setRefresh] = useState(false);
 
@@ -88,48 +88,46 @@ function App({ Component, pageProps }: AppProps) {
   //   };
   // }, [setScreenWidth]);
 
-  // // init
-  // useEffect(() => {
-  //   const changeI18n = async (data: any) => {
-  //     const lastLang = getLangStore();
-  //     const newLang = data.currentLanguage;
-  //     if (lastLang !== newLang) {
-  //       i18n.changeLanguage(newLang);
-  //       setLangStore(newLang);
-  //       setRefresh((state) => !state);
-  //     }
-  //   };
+  // init
+  useEffect(() => {
+    const changeI18n = async (data: any) => {
+      const lastLang = getLangStore();
+      const newLang = data.currentLanguage;
+      if (lastLang !== newLang) {
+        i18n.changeLanguage(newLang);
+        setLangStore(newLang);
+        setRefresh((state) => !state);
+      }
+    };
 
-  //   getUserPrice();
-  //   getDBVersion();
-  //   getEnv();
-  //   (async () => {
-  //     try {
-  //       const lang = await sealosApp.getLanguage();
-  //       changeI18n({
-  //         currentLanguage: lang.lng
-  //       });
-  //     } catch (error) {
-  //       changeI18n({
-  //         currentLanguage: 'zh'
-  //       });
-  //     }
-  //   })();
+    getEnv();
+    (async () => {
+      try {
+        const lang = await sealosApp.getLanguage();
+        changeI18n({
+          currentLanguage: lang.lng
+        });
+      } catch (error) {
+        changeI18n({
+          currentLanguage: 'zh'
+        });
+      }
+    })();
 
-  //   return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
-  // }, []);
+    return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
+  }, []);
 
-  // // record route
-  // useEffect(() => {
-  //   return () => {
-  //     setLastRoute(router.asPath);
-  //   };
-  // }, [router.pathname]);
+  // record route
+  useEffect(() => {
+    return () => {
+      setLastRoute(router.asPath);
+    };
+  }, [router.pathname]);
 
-  // useEffect(() => {
-  //   const lang = getLangStore() || 'en';
-  //   i18n?.changeLanguage?.(lang);
-  // }, [refresh, router.asPath]);
+  useEffect(() => {
+    const lang = getLangStore() || 'en';
+    i18n?.changeLanguage?.(lang);
+  }, [refresh, router.asPath]);
 
   return (
     <>

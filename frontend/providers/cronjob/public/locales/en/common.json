@@ -122,6 +122,27 @@
   "Disk": "Disk",
   "job": {
     "list": "Cron Job List",
-    "create": "Create Job"
+    "create": "Create Job",
+    "Deploy Job": "Deploy Job",
+    "Update CronJob": "Update CronJob",
+    "Confirm Update CronJob?": "Confirm Update CronJob?",
+    "Confirm Deploy CronJob?": "Confirm Deploy CronJob?"
+  },
+  "base": {
+    "Delete": "Delete",
+    "Cancel": "Cancel",
+    "Confirm": "Confirm",
+    "Name": "Name",
+    "Type": "Type",
+    "Status": "Status",
+    "Pause": "Pause",
+    "Restart": "Restart",
+    "Update": "Update",
+    "Creation Time": "Creation Time",
+    "Continue": "Continue",
+    "Backup": "Backup",
+    "Success": "Success",
+    "Have Error": "Failed",
+    "Logs": "Logs"
   }
 }

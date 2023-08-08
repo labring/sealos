@@ -2,32 +2,32 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { Flex, Box } from '@chakra-ui/react';
 import type { YamlItemType } from '@/types';
-import { json2CreateCluster, json2Account, limitRangeYaml } from '@/utils/json2Yaml';
+
 import { useForm } from 'react-hook-form';
 import { editModeMap } from '@/constants/editApp';
-import { defaultDBEditValue } from '@/constants/db';
+
 import debounce from 'lodash/debounce';
 import { applyYamlList } from '@/api/db';
 import { useConfirm } from '@/hooks/useConfirm';
-import type { DBEditType } from '@/types/db';
 import { useToast } from '@/hooks/useToast';
 import { useQuery } from '@tanstack/react-query';
-
 import { useLoading } from '@/hooks/useLoading';
 import dynamic from 'next/dynamic';
 import { useGlobalStore } from '@/store/global';
 import { serviceSideProps } from '@/utils/i18n';
 import { useTranslation } from 'next-i18next';
-import { adaptDBForm } from '@/utils/adapt';
+
 import { DBVersionMap } from '@/store/static';
 import Header from './components/Header';
 import Form from './components/Form';
 import Yaml from './components/Yaml';
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
+import { CronJobEditType } from '@/types/job';
+import { DefaultJobEditValue } from '@/constants/job';
+import { json2CronJob } from '@/utils/json2Yaml';
 
-const defaultEdit = {
-  ...defaultDBEditValue,
-  dbVersion: DBVersionMap.postgresql[0]?.id
+const defaultEdit: CronJobEditType = {
+  ...DefaultJobEditValue
 };
 
 const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yaml' }) => {
@@ -36,14 +36,14 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [forceUpdate, setForceUpdate] = useState(false);
-  const [minStorage, setMinStorage] = useState(1);
   const { toast } = useToast();
   const { Loading, setIsLoading } = useLoading();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!dbName);
+  const isEdit = useMemo(() => !!dbName, [dbName]);
+
   const { openConfirm, ConfirmChild } = useConfirm({
     content: t(applyMessage)
   });
-  const isEdit = useMemo(() => !!dbName, [dbName]);
 
   // compute container width
   const { screenWidth } = useGlobalStore();
@@ -56,27 +56,19 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   }, [screenWidth]);
 
   // form
-  const formHook = useForm<DBEditType>({
+  const formHook = useForm<CronJobEditType>({
     defaultValues: defaultEdit
   });
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const formOnchangeDebounce = useCallback(
-    debounce((data: DBEditType) => {
+    debounce((data: CronJobEditType) => {
       try {
         setYamlList([
           {
             filename: 'cluster.yaml',
-            value: json2CreateCluster(data)
-          },
-          ...(isEdit
-            ? []
-            : [
-                {
-                  filename: 'account.yaml',
-                  value: json2Account(data)
-                }
-              ])
+            value: json2CronJob(data)
+          }
         ]);
       } catch (error) {
         console.log(error);
@@ -87,14 +79,14 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
   // watch form change, compute new yaml
   formHook.watch((data) => {
-    data && formOnchangeDebounce(data as DBEditType);
+    data && formOnchangeDebounce(data as CronJobEditType);
     setForceUpdate(!forceUpdate);
   });
 
   const submitSuccess = useCallback(async () => {
     setIsLoading(true);
     try {
-      !isEdit && (await applyYamlList([limitRangeYaml], 'create'));
+      // !isEdit && (await applyYamlList([limitRangeYaml], 'create'));
     } catch (err) {}
     try {
       const data = yamlList.map((item) => item.value);
@@ -105,7 +97,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         title: t(applySuccess),
         status: 'success'
       });
-      router.replace(`/db/detail?name=${formHook.getValues('dbName')}`);
+      router.replace(`/db/detail?name=${formHook.getValues('JobName')}`);
     } catch (error) {
       console.error(error);
       setErrorMessage(JSON.stringify(error));
@@ -178,7 +170,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         bg={'#F3F4F5'}
       >
         <Header
-          dbName={formHook.getValues('dbName')}
+          name={formHook.getValues('JobName')}
           title={title}
           yamlList={yamlList}
           applyBtnText={applyBtnText}
@@ -187,7 +179,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
           {tabType === 'form' ? (
-            <Form formHook={formHook} minStorage={minStorage} pxVal={pxVal} />
+            <Form formHook={formHook} />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />
           )}

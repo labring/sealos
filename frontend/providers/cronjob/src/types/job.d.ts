@@ -42,3 +42,32 @@ export type CronJobListItemType = {
   lastScheduleTime: string;
   lastSuccessfulTime: string;
 };
+
+export type CronJobEditType = {
+  jobType: string;
+  JobName: string;
+  schedule: string;
+  imageName: string;
+  runCMD: string;
+  cmdParam: string;
+  secret: {
+    use: boolean;
+    username: string;
+    password: string;
+    serverAddress: string;
+  };
+  envs: {
+    key: string;
+    value: string;
+    valueFrom?: any;
+  }[];
+} & CronJobScheduleType;
+
+export type CreateScheduleType = 'day' | 'hour' | 'week';
+
+export type CronJobScheduleType = {
+  scheduleType: CreateScheduleType;
+  week: string[];
+  hour: string;
+  minute: string;
+};

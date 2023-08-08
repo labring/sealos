@@ -19,7 +19,7 @@ import { CronJobListItemType } from '@/types/job';
 
 const DelModal = dynamic(() => import('@/pages/job/detail/components/DelModal'));
 
-const DBList = ({
+const JobList = ({
   list = [],
   refetchApps
 }: {
@@ -203,7 +203,6 @@ const DBList = ({
           ( {list.length} )
         </Box>
         <Box flex={1}></Box>
-
         <Button
           flex={'0 0 155px'}
           h={'40px'}
@@ -224,4 +223,4 @@ const DBList = ({
   );
 };
 
-export default DBList;
+export default JobList;

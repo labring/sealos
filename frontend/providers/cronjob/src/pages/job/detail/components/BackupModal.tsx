@@ -93,6 +93,7 @@ const BackupModal = ({
         };
       }))()
   );
+
   const weekSelectList = useRef([
     { label: 'Monday', id: '1' },
     { label: 'Tuesday', id: '2' },

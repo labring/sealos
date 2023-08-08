@@ -1,56 +1,28 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import {
-  Box,
-  Flex,
-  Grid,
-  FormControl,
-  Input,
-  useTheme,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-  NumberIncrementStepper,
-  NumberDecrementStepper,
-  Tooltip,
-  Switch
-} from '@chakra-ui/react';
-import { UseFormReturn } from 'react-hook-form';
-import { useRouter } from 'next/router';
-import RangeInput from '@/components/RangeInput';
-import MySlider from '@/components/Slider';
-import MyIcon from '@/components/Icon';
-import type { QueryType } from '@/types';
-import type { DBEditType } from '@/types/db';
-import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/editApp';
-import Tabs from '@/components/Tabs';
-import MySelect from '@/components/Select';
-import { DBTypeEnum, DBTypeList, RedisHAConfig } from '@/constants/db';
-import { DBVersionMap } from '@/store/static';
-import { useTranslation } from 'next-i18next';
-import PriceBox from './PriceBox';
-import { INSTALL_ACCOUNT } from '@/store/static';
-import Tip from '@/components/Tip';
-
 import { obj2Query } from '@/api/tools';
+import MyIcon from '@/components/Icon';
+import MySelect from '@/components/Select';
+import Tabs from '@/components/Tabs';
+import { JobTypeList, SelectTimeList, WeekSelectList } from '@/constants/job';
+import type { QueryType } from '@/types';
+import { CreateScheduleType, CronJobEditType } from '@/types/job';
+import { TimeIcon } from '@chakra-ui/icons';
+import { Box, Checkbox, Flex, FormControl, Input, useTheme } from '@chakra-ui/react';
 import { throttle } from 'lodash';
-import { InfoOutlineIcon } from '@chakra-ui/icons';
+import { useTranslation } from 'next-i18next';
+import { useRouter } from 'next/router';
+import { useEffect, useMemo, useState } from 'react';
+import { UseFormReturn } from 'react-hook-form';
 
-const Form = ({
-  formHook,
-  pxVal,
-  minStorage
-}: {
-  formHook: UseFormReturn<DBEditType, any>;
-  pxVal: number;
-  minStorage: number;
-}) => {
+const labelWidth = 80;
+
+const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
-
   const router = useRouter();
   const { name } = router.query as QueryType;
   const theme = useTheme();
   const isEdit = useMemo(() => !!name, [name]);
+
   const {
     register,
     setValue,
@@ -114,284 +86,274 @@ const Form = ({
     </Box>
   );
 
-  const boxStyles = {
-    border: theme.borders.base,
-    borderRadius: 'sm',
-    mb: 4,
-    bg: 'white'
-  };
-  const headerStyles = {
-    py: 4,
-    pl: '46px',
-    fontSize: '2xl',
-    color: 'myGray.900',
-    fontWeight: 'bold',
-    display: 'flex',
-    alignItems: 'center',
-    backgroundColor: 'myWhite.600'
-  };
-
   return (
-    <>
-      <Grid
-        height={'100%'}
-        templateColumns={'220px 1fr'}
-        gridGap={5}
-        alignItems={'start'}
-        pl={`${pxVal}px`}
-      >
-        <Box>
-          <Tabs
-            list={[
-              { id: 'form', label: 'Config Form' },
-              { id: 'yaml', label: 'YAML File' }
-            ]}
-            activeId={'form'}
-            onChange={() =>
-              router.replace(
-                `/db/edit?${obj2Query({
-                  name,
-                  type: 'yaml'
-                })}`
-              )
-            }
-          />
-          <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'}>
-            {navList.map((item) => (
-              <Box key={item.id} onClick={() => router.replace(`#${item.id}`)}>
-                <Flex
-                  px={5}
-                  py={3}
-                  cursor={'pointer'}
-                  borderLeft={'2px solid'}
-                  alignItems={'center'}
-                  h={'48px'}
-                  _hover={{
-                    backgroundColor: 'myWhite.400'
-                  }}
-                  {...{
-                    fontWeight: 'bold',
-                    borderColor: 'myGray.900'
-                  }}
-                  // {...(activeNav === item.id
-                  //   ? {
-                  //       fontWeight: 'bold',
-                  //       borderColor: 'myGray.900',
-                  //       backgroundColor: 'myWhite.600 !important'
-                  //     }
-                  //   : {
-                  //       color: 'myGray.500',
-                  //       borderColor: 'myGray.200',
-                  //       backgroundColor: 'transparent'
-                  //     })}
-                >
-                  <MyIcon
-                    name={item.icon as any}
-                    w={'20px'}
-                    h={'20px'}
-                    color={activeNav === item.id ? 'myGray.500' : 'myGray.400'}
-                  />
-                  <Box ml={4}>{t(item.label)}</Box>
-                </Flex>
-              </Box>
-            ))}
-          </Box>
-
-          {INSTALL_ACCOUNT && (
-            <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>
-              <PriceBox
-                components={[
-                  {
-                    cpu: getValues('cpu'),
-                    memory: getValues('memory'),
-                    storage: getValues('storage'),
-                    replicas: [getValues('replicas') || 1, getValues('replicas') || 1]
-                  },
-                  ...(getValues('dbType') === DBTypeEnum.redis
-                    ? (() => {
-                        const config = RedisHAConfig(getValues('replicas') > 1);
-                        return [
-                          {
-                            ...config,
-                            replicas: [config.replicas, config.replicas]
-                          }
-                        ];
-                      })()
-                    : [])
-                ]}
-              />
+    <Flex w="100%" h="100%" justifyContent={'center'} minW={'1024px'} px="32px">
+      <Box w="220px">
+        <Tabs
+          list={[
+            { id: 'form', label: 'Config Form' },
+            { id: 'yaml', label: 'YAML File' }
+          ]}
+          activeId={'form'}
+          onChange={() =>
+            router.replace(
+              `/job/edit?${obj2Query({
+                name,
+                type: 'yaml'
+              })}`
+            )
+          }
+        />
+        <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'}>
+          {navList.map((item) => (
+            <Box key={item.id} onClick={() => router.replace(`#${item.id}`)}>
+              <Flex
+                px={5}
+                py={3}
+                cursor={'pointer'}
+                borderLeft={'2px solid'}
+                alignItems={'center'}
+                h={'48px'}
+                _hover={{
+                  backgroundColor: 'myWhite.400'
+                }}
+                {...{
+                  fontWeight: 'bold',
+                  borderColor: 'myGray.900'
+                }}
+              >
+                <MyIcon
+                  name={item.icon as any}
+                  w={'20px'}
+                  h={'20px'}
+                  color={activeNav === item.id ? 'myGray.500' : 'myGray.400'}
+                />
+                <Box ml={4}>{t(item.label)}</Box>
+              </Flex>
             </Box>
-          )}
+          ))}
         </Box>
-        <Box
-          id={'form-container'}
-          pr={`${pxVal}px`}
-          height={'100%'}
-          position={'relative'}
-          overflowY={'scroll'}
-        >
-          {/* base info */}
-          <Box id={'baseInfo'} {...boxStyles}>
-            <Box {...headerStyles}>
-              <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'myGray.500'} />
-              {t('Basic')}
-            </Box>
-            <Box px={'42px'} py={'24px'}>
-              <Flex alignItems={'center'} mb={7}>
-                <Label w={80}>{t('Type')}</Label>
-                <MySelect
-                  isDisabled={isEdit}
-                  width={'130px'}
-                  placeholder={`${t('DataBase')} ${t('Type')}`}
-                  value={getValues('dbType')}
-                  list={DBTypeList}
-                  onchange={(val: any) => {
-                    setValue('dbType', val);
-                    setValue('dbVersion', DBVersionMap[getValues('dbType')][0].id);
+      </Box>
+      <Box
+        w={'782px'}
+        ml="16px"
+        id={'form-container'}
+        height={'100%'}
+        position={'relative'}
+        overflowY={'scroll'}
+      >
+        <Box id={'baseInfo'} border="1px solid #DEE0E2" borderRadius="sm" mb="4" bg="white">
+          <Box
+            py="4"
+            pl="46px"
+            fontSize="2xl"
+            color="myGray.900"
+            fontWeight="bold"
+            display="flex"
+            alignItems="center"
+            backgroundColor="myWhite.600"
+          >
+            <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'myGray.500'} />
+            {t('Basic')}
+          </Box>
+          <Box px={'42px'} py={'24px'}>
+            <Flex alignItems={'center'} mb={7}>
+              <Label w={80}>{t('Type')}</Label>
+              <MySelect
+                isDisabled={isEdit}
+                width={'130px'}
+                placeholder={`${t('Type')}`}
+                value={'test'}
+                list={JobTypeList}
+                onchange={(val: any) => {
+                  setValue('jobType', val);
+                }}
+              />
+            </Flex>
+            {/* image */}
+            <Box mb={7}>
+              <Flex alignItems={'center'}>
+                <Label w={80}>{t('Image')}</Label>
+                <Tabs
+                  w={'126px'}
+                  size={'sm'}
+                  list={[
+                    {
+                      label: 'public',
+                      id: `public`
+                    },
+                    {
+                      label: 'private',
+                      id: `private`
+                    }
+                  ]}
+                  activeId={getValues('secret.use') ? 'private' : 'public'}
+                  onChange={(val) => {
+                    if (val === 'public') {
+                      setValue('secret.use', false);
+                    } else {
+                      setValue('secret.use', true);
+                    }
                   }}
                 />
               </Flex>
-              <Flex alignItems={'center'} mb={7}>
-                <Label w={80}>{t('Version')}</Label>
-                <MySelect
-                  width={'200px'}
-                  placeholder={`${t('DataBase')} ${t('Version')}`}
-                  value={getValues('dbVersion')}
-                  list={DBVersionMap[getValues('dbType')]}
-                  onchange={(val: any) => setValue('dbVersion', val)}
-                />
-              </Flex>
-              <FormControl mb={7} isInvalid={!!errors.dbName} w={'500px'}>
-                <Flex alignItems={'center'}>
-                  <Label w={80}>{t('Name')}</Label>
+              <Box mt={4} pl={`${labelWidth}px`}>
+                <FormControl isInvalid={!!errors.imageName} w={'420px'}>
+                  <Box mb={1} fontSize={'sm'}>
+                    {t('Image Name')}
+                  </Box>
                   <Input
-                    disabled={isEdit}
-                    title={isEdit ? t('Cannot Change Name') || '' : ''}
-                    autoFocus={true}
-                    placeholder={t('DataBase Name Regex') || ''}
-                    {...register('dbName', {
-                      required: t('DataBase Name Empty') || '',
-                      pattern: {
-                        value: /^[a-z][a-z0-9]+([-.][a-z0-9]+)*$/g,
-                        message: t('DataBase Name Regex Error')
+                    value={getValues('imageName')}
+                    backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
+                    placeholder={`${t('Image Name')}`}
+                    {...register('imageName', {
+                      required: 'Image name cannot be empty.',
+                      setValueAs(e) {
+                        return e.replace(/\s*/g, '');
                       }
                     })}
                   />
-                </Flex>
-              </FormControl>
-              <Flex mb={10} pr={3} alignItems={'flex-start'}>
-                <Label w={85}>CPU</Label>
-                <MySlider
-                  markList={CpuSlideMarkList}
-                  activeVal={getValues('cpu')}
-                  setVal={(e) => {
-                    setValue('cpu', CpuSlideMarkList[e].value);
-                  }}
-                  max={CpuSlideMarkList.length - 1}
-                  min={0}
-                  step={1}
-                />
-                <Box ml={5} transform={'translateY(10px)'} color={'myGray.500'}>
-                  (Core)
-                </Box>
-              </Flex>
-              <Flex mb={'50px'} pr={3} alignItems={'center'}>
-                <Label w={85}>{t('Memory')}</Label>
-                <MySlider
-                  markList={MemorySlideMarkList}
-                  activeVal={getValues('memory')}
-                  setVal={(e) => {
-                    setValue('memory', MemorySlideMarkList[e].value);
-                  }}
-                  max={MemorySlideMarkList.length - 1}
-                  min={0}
-                  step={1}
-                />
-              </Flex>
-              <Flex mb={8} alignItems={'center'}>
-                <Label w={80}>{t('Replicas')}</Label>
-                <RangeInput
-                  w={180}
-                  value={getValues('replicas')}
-                  min={1}
-                  max={20}
-                  setVal={(val) => {
-                    register('replicas', {
-                      required: t('Replicas Cannot Empty') || '',
-                      min: {
-                        value: 1,
-                        message: `${t('Min Replicas')}1`
-                      },
-                      max: {
-                        value: 20,
-                        message: `${t('Max Replicas')}20`
-                      }
-                    });
-                    setValue('replicas', val || 1);
-                  }}
-                />
-                {getValues('dbType') === DBTypeEnum.redis && getValues('replicas') > 1 && (
-                  <Tip
-                    ml={4}
-                    icon={<InfoOutlineIcon />}
-                    text="The multi-replica Redis includes High Availability (HA) nodes. Please note, the anticipated price already encompasses the cost for the HA nodes."
-                    size="sm"
-                  />
-                )}
-              </Flex>
-
-              <FormControl isInvalid={!!errors.storage} w={'500px'}>
-                <Flex alignItems={'center'}>
-                  <Label w={80}>{t('Storage')}</Label>
-                  <Tooltip label={`${t('Storage Range')}${minStorage}~200 Gi`}>
-                    <NumberInput
-                      w={'180px'}
-                      max={200}
-                      min={minStorage}
-                      step={1}
-                      position={'relative'}
-                      value={getValues('storage')}
-                      onChange={(e) => e && setValue('storage', +e)}
-                    >
-                      <NumberInputField
-                        {...register('storage', {
-                          required: t('Storage Cannot Empty') || 'Storage Cannot Empty',
-                          min: {
-                            value: minStorage,
-                            message: `${t('Storage Min')}${minStorage} Gi`
-                          },
-                          max: {
-                            value: 200,
-                            message: `${t('Storage Max')}200 Gi`
-                          },
-                          valueAsNumber: true
-                        })}
-                        min={minStorage}
-                        max={200}
-                      />
-                      <NumberInputStepper>
-                        <NumberIncrementStepper />
-                        <NumberDecrementStepper />
-                      </NumberInputStepper>
-                      <Box
-                        zIndex={1}
-                        position={'absolute'}
-                        right={10}
-                        top={'50%'}
-                        transform={'translateY(-50%)'}
-                        color={'blackAlpha.600'}
-                      >
-                        Gi
+                </FormControl>
+                {getValues('secret.use') ? (
+                  <>
+                    <FormControl mt={4} isInvalid={!!errors.secret?.username} w={'420px'}>
+                      <Box mb={1} fontSize={'sm'}>
+                        {t('Username')}
                       </Box>
-                    </NumberInput>
-                  </Tooltip>
-                </Flex>
-              </FormControl>
+                      <Input
+                        autoComplete="off"
+                        backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
+                        placeholder={`${t('Username for the image registry')}`}
+                        {...register('secret.username', {
+                          required: t('The user name cannot be empty') || ''
+                        })}
+                      />
+                    </FormControl>
+                    <FormControl mt={4} isInvalid={!!errors.secret?.password} w={'420px'}>
+                      <Box mb={1} fontSize={'sm'}>
+                        {t('Password')}
+                      </Box>
+                      <Input
+                        autoComplete="off"
+                        type={'password'}
+                        placeholder={`${t('Password for the image registry')}`}
+                        backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
+                        {...register('secret.password', {
+                          required: t('The password cannot be empty') || ''
+                        })}
+                      />
+                    </FormControl>
+                    <FormControl mt={4} isInvalid={!!errors.secret?.serverAddress} w={'420px'}>
+                      <Box mb={1} fontSize={'sm'}>
+                        {t('Image Address')}
+                      </Box>
+                      <Input
+                        backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
+                        placeholder={`${t('Image Address')}`}
+                        {...register('secret.serverAddress', {
+                          required: t('The image cannot be empty') || ''
+                        })}
+                      />
+                    </FormControl>
+                  </>
+                ) : null}
+              </Box>
             </Box>
+            {/* command && param */}
+            <FormControl mb={7}>
+              <Flex alignItems={'center'}>
+                <Label w={80}>{t('Run command')}</Label>
+                <Input
+                  w={'350px'}
+                  bg={getValues('runCMD') ? 'myWhite.500' : 'myWhite.400'}
+                  placeholder={`${t('Such as')} /bin/bash -c`}
+                  {...register('runCMD')}
+                />
+              </Flex>
+            </FormControl>
+            <FormControl mb={7}>
+              <Flex alignItems={'center'}>
+                <Label w={80}>{t('Command parameters')}</Label>
+                <Input
+                  w={'350px'}
+                  bg={getValues('cmdParam') ? 'myWhite.500' : 'myWhite.400'}
+                  placeholder={`${t('Such as')} sleep 10 && /entrypoint.sh db createdb`}
+                  {...register('cmdParam')}
+                />
+              </Flex>
+            </FormControl>
+            {/* cron */}
+            <Flex alignItems={'center'} mb={7}>
+              <Label w={80}>{t('Time')}</Label>
+              <Tabs
+                w={'220px'}
+                list={[
+                  { id: 'hour', label: 'Hour' },
+                  { id: 'day', label: 'Day' },
+                  { id: 'week', label: 'Week' }
+                ]}
+                activeId={getValues('scheduleType')}
+                size={'sm'}
+                borderColor={'myGray.200'}
+                onChange={(e) => {
+                  setValue('scheduleType', e as CreateScheduleType);
+                }}
+              />
+            </Flex>
+            {getValues('scheduleType') === 'week' && (
+              <Flex alignItems={'center'} mb={7}>
+                {WeekSelectList.map((item) => (
+                  <Box key={item.id} _notLast={{ mr: 4 }}>
+                    <Checkbox
+                      defaultChecked={getValues('week').includes(item.id)}
+                      onChange={(e) => {
+                        const val = e.target.checked;
+                        const checkedList = [...getValues('week')];
+                        const index = checkedList.findIndex((week) => week === item.id);
+                        if (val && index === -1) {
+                          setValue('week', checkedList.concat(item.id));
+                        } else if (!val && index > -1) {
+                          checkedList.splice(index, 1);
+                          setValue('week', checkedList);
+                        }
+                      }}
+                    >
+                      {t(item.label)}
+                    </Checkbox>
+                  </Box>
+                ))}
+              </Flex>
+            )}
+            {getValues('scheduleType') !== 'hour' && (
+              <Flex alignItems={'center'} mb={7}>
+                <Label w={80}>{t('Start Hour')}</Label>
+                <MySelect
+                  width={'120px'}
+                  value={getValues('hour')}
+                  list={SelectTimeList.slice(0, 24)}
+                  icon={<TimeIcon color={'myGray.400'} />}
+                  onchange={(val: any) => {
+                    setValue('hour', val);
+                  }}
+                />
+              </Flex>
+            )}
+            <Flex alignItems={'center'}>
+              <Label w={80}>{t('Start Minute')}</Label>
+              <MySelect
+                width={'120px'}
+                value={getValues('minute')}
+                list={SelectTimeList}
+                icon={<TimeIcon color={'myGray.400'} />}
+                onchange={(val: any) => {
+                  setValue('minute', val);
+                }}
+              />
+            </Flex>
           </Box>
         </Box>
-      </Grid>
-    </>
+      </Box>
+    </Flex>
   );
 };
 
