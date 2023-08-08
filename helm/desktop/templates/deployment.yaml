@@ -85,7 +85,7 @@ spec:
           {{- end }}
           env:
             - name: CALLBACK_URL
-              value: {{ if .Values.desktop.callbackUrl }}{{ .Values.desktop.callbackUrl }}{{ else }}{{ if .Values.global.tls }}https{{ else }}http{{ end }}://{{ .Values.global.cloud.domain }}/callback{{ end }}
+              value: {{ include "desktop.callbackUrl" .}}
             - name: MONGODB_URI
               valueFrom:
                 secretKeyRef:

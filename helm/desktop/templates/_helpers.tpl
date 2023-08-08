@@ -32,3 +32,36 @@ Ref: https://cert-manager.io/docs/usage/ingress/#supported-annotations
     {{- true -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Returns the domain to be used by the desktop.
+*/}}
+{{- define "desktop.domain" -}}
+{{- if .Values.desktop.domain -}}
+    {{- .Values.desktop.domain -}}
+{{- else -}}
+    {{- .Values.global.cloud.domain -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Returns the full URL for the desktop, including the HTTP/HTTPS prefix and port if specified.
+*/}}
+{{- define "desktop.fullUrl" -}}
+{{- if .Values.global.ingress.tls -}}
+https://{{ include "desktop.domain" . }}{{ if .Values.global.cloud.port }}:{{ .Values.global.cloud.port }}{{ end }}
+{{- else -}}
+http://{{ include "desktop.domain" . }}{{ if .Values.global.cloud.port }}:{{ .Values.global.cloud.port }}{{ end }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Returns the callback URL to be used by the desktop.
+*/}}
+{{- define "desktop.callbackUrl" -}}
+{{- if .Values.desktop.callbackUrl -}}
+{{- .Values.desktop.callbackUrl -}}
+{{- else -}}
+{{ if .Values.global.ingress.tls }}https{{ else }}http{{ end }}://{{ include "desktop.domain" . }}{{ if .Values.global.cloud.port }}:{{ .Values.global.cloud.port }}{{ end }}/callback
+{{- end -}}
+{{- end -}}

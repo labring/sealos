@@ -3,7 +3,3 @@ CHART VERSION: {{ .Chart.Version  }}
 APP VERSION: {{ .Chart.AppVersion  }}
 
 ** Please be patient while the chart is being deployed **
-
-%%Instructions to access the application depending on the serviceType and other considerations%%
-
-{{- include "common.warnings.rollingTag" .Values.desktop.image }}

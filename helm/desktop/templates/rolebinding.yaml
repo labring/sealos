@@ -1,7 +1,8 @@
-kind: ClusterRoleBinding
+kind: RoleBinding
 apiVersion: {{ include "common.capabilities.rbac.apiVersion" . }}
 metadata:
   name: {{ template "common.names.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
   labels: {{- include "common.labels.standard" . | nindent 4 }}
     app.kubernetes.io/component: sealos-desktop
     {{- if .Values.commonLabels }}
@@ -12,7 +13,7 @@ metadata:
   {{- end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
+  kind: Role
   name: {{ template "common.names.fullname" . }}
 subjects:
   - kind: ServiceAccount
