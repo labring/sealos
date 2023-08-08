@@ -16,12 +16,23 @@ package pay
 
 import (
 	"fmt"
+	"os"
+
+	"github.com/labring/sealos/controllers/pkg/utils"
 
 	"github.com/stripe/stripe-go/v74"
 )
 
+var DefaultSuccessURL = fmt.Sprintf("https://%s", utils.GetEnvWithDefault("DOMAIN", DefaultDomain))
+
+func init() {
+	if port := os.Getenv("PORT"); port != "" {
+		DefaultSuccessURL = fmt.Sprintf("%s:%s", DefaultSuccessURL, port)
+	}
+}
+
 func (s StripePayment) CreatePayment(amount int64, _ string) (string, string, error) {
-	session, err := CreateCheckoutSession(amount, CNY, DefaultSuccessURL, DefaultCancelURL)
+	session, err := CreateCheckoutSession(amount, CNY, DefaultSuccessURL, DefaultSuccessURL)
 	if err != nil {
 		return "", "", err
 	}
@@ -46,6 +57,10 @@ func (s StripePayment) GetPaymentDetails(sessionID string) (string, int64, error
 }
 
 func (s StripePayment) ExpireSession(sessionID string) error {
+	status, _, _ := s.GetPaymentDetails(sessionID)
+	if status == PaymentSuccess || status == PaymentExpired {
+		return nil
+	}
 	_, err := ExpireSession(sessionID)
 	if err != nil {
 		return err

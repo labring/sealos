@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (req.method !== 'POST') {
       return jsonRes(resp, { code: 405 });
     }
-    const { amount, paymentMethod } = req.body;
+    const { amount } = req.body;
     const kc = await authSession(req.headers);
 
     if (!kc || amount <= 0) {
@@ -37,12 +37,12 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       paymentName,
       userId: kubeUser.name,
       amount,
-      paymentMethod
+      paymentMethod: 'stripe'
     };
 
     const paymentCrd = generatePaymentCrd(form);
     const res = await ApplyYaml(kc, paymentCrd);
-
+    console.log(res);
     return jsonRes(resp, {
       data: {
         paymentName: paymentName,

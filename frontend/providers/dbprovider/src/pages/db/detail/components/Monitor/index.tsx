@@ -72,11 +72,11 @@ const Monitor = ({ db, dbName, dbType }: { dbName: string; dbType: string; db?: 
           />
           <ChartTemplate
             apiUrl="/api/monitor/getMonitorData"
-            chartTitle={'DataBase Size'}
+            chartTitle={'Disk'}
             dbName={dbName}
             dbType={dbType}
             db={db}
-            unit="GiB"
+            unit="%"
             isShowLegend={false}
             queryKey={'disk'}
           />

@@ -10,7 +10,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         rechargeEnabled: enableRecharge(),
         transferEnabled: enableTransfer(),
         invoiceEnabled: enableInvoice(),
-        gpuEnabled: enabelGpu()
+        gpuEnabled: enabelGpu(),
+        stripePub: process.env['STRIPE_PUB'] || ''
       },
       code: 200
     });

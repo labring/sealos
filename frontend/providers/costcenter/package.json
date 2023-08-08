@@ -17,6 +17,7 @@
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
     "@kubernetes/client-node": "0.18.0",
+    "@stripe/stripe-js": "^1.54.2",
     "@tanstack/query-sync-storage-persister": "^4.29.25",
     "@tanstack/react-query": "^4.29.25",
     "@tanstack/react-query-persist-client": "^4.29.25",

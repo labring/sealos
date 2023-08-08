@@ -12,15 +12,12 @@ const AdapterChartData = {
     const temp = data?.data?.result;
     let XTimePoint: number[] = [];
     const desiredResult = temp.map((dataObject, index) => {
-      let lineStyleType = dataObject.metric?.type === 'used' ? 'solid' : 'dashed';
       const name = dataObject.metric?.persistentvolumeclaim;
       if (index === 0) {
         XTimePoint = dataObject.values.map((timePoint) => timePoint[0]);
       }
-      const data = dataObject.values.map((item) =>
-        convertBytes(parseFloat(item[1]), 'gb').toFixed(2)
-      );
-      return { name, data, lineStyleType: lineStyleType };
+      const data = dataObject.values.map((item) => parseFloat(item[1]));
+      return { name, data };
     });
     return {
       xData: XTimePoint,

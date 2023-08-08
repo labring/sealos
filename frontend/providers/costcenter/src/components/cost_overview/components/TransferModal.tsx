@@ -1,4 +1,5 @@
 import request from '@/service/request';
+import shellcoin from '@/assert/shell_coin.svg';
 import {
   Button,
   Flex,
@@ -215,7 +216,7 @@ const TransferModal = forwardRef(
               onChange={(str, v) => (str.trim() ? setAmount(v) : setAmount(0))}
               isDisabled={mutation.isLoading}
             >
-              <Text mr={'4px'}>¥</Text>
+              <Img mr={'4px'} src={shellcoin.src} w="16px" h="16px" />
               <NumberInputField />
               <NumberInputStepper>
                 <NumberIncrementStepper>
@@ -230,8 +231,9 @@ const TransferModal = forwardRef(
               <Text fontSize="12px" mr={'12px'}>
                 {t('Balance')}
               </Text>
+              <Img mr={'4px'} src={shellcoin.src} w="16px" h="16px" />
               <Text color="rgba(33, 155, 244, 1)" fontSize={'16px'}>
-                ¥ {formatMoney(balance).toFixed(2)}
+                {formatMoney(balance).toFixed(2)}
               </Text>
               <Button
                 size="primary"
