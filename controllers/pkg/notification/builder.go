@@ -77,10 +77,7 @@ type Receiver struct {
 	AdminNamespaces []string
 }
 
-func (rv *Receiver) SetReceiver(receiver string, kind ...Kind) error {
-	if len(kind) > 1 {
-		return fmt.Errorf("kind parameter cannot exceed 1")
-	}
+func (rv *Receiver) SetReceiver(receiver string, kind ...Kind) *Receiver {
 	if len(kind) == 0 {
 		rv.UserNamespaces = append(rv.UserNamespaces, receiver)
 	}

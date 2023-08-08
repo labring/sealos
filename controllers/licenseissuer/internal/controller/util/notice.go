@@ -95,12 +95,7 @@ func (n *notice) noticeWork(instance *TaskInstance) error {
 		return err
 	}
 
-	err = manager.Load(receiver, events)
-	if err != nil {
-		instance.logger.Error(err, "failed to load notification")
-		return err
-	}
-	manager.Run()
+	manager.Load(&receiver, events).Run()
 	return nil
 }
 

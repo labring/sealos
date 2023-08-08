@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"errors"
 
-	issuer "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -36,21 +35,6 @@ func GetConfigFromConfigMap(expectName string,
 		return nil, err
 	}
 	return res, nil
-}
-
-func ReadConfigFromConfigMap(expectName string, configMap *corev1.ConfigMap) (issuer.Config, error) {
-	if configMap.Name != expectName {
-		err := errors.New("not expected configmap")
-		return issuer.Config{}, err
-	}
-
-	var config issuer.Config
-	err := json.Unmarshal([]byte(configMap.Data["config.json"]), &config)
-	if err != nil {
-		return issuer.Config{}, err
-	}
-
-	return config, nil
 }
 
 func IsConfigMapChanged(expect map[string]string, cm *corev1.ConfigMap) bool {

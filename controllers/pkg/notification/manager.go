@@ -81,7 +81,7 @@ func (nm *NotificationManager) Run() {
 	pool.Wait()
 }
 
-func (nm *NotificationManager) Load(receivers Receiver, events []Event) error {
+func (nm *NotificationManager) Load(receivers *Receiver, events []Event) *NotificationManager {
 	for _, event := range events {
 		switch event.Kind {
 		case General:
@@ -92,7 +92,7 @@ func (nm *NotificationManager) Load(receivers Receiver, events []Event) error {
 				event, nm.NotificationQueue)
 		}
 	}
-	return nil
+	return nm
 }
 
 func loadNotification(receivers []string, event Event, queue []v1.Notification) []v1.Notification {
