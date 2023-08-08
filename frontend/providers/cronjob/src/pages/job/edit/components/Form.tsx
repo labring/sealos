@@ -156,8 +156,34 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
             <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'myGray.500'} />
             {t('Basic')}
           </Box>
+          {/* form */}
           <Box px={'42px'} py={'24px'}>
-            <Flex alignItems={'center'} mb={7}>
+            {/* app name */}
+            <FormControl mb={7} isInvalid={!!errors.jobName} w={'500px'}>
+              <Flex alignItems={'center'}>
+                <Label w={80}>{t('App Name')}</Label>
+                <Input
+                  disabled={isEdit}
+                  title={isEdit ? t('Not allowed to change app name') || '' : ''}
+                  autoFocus={true}
+                  placeholder={
+                    t(
+                      'Starts with a letter and can contain only lowercase letters, digits, and hyphens (-)'
+                    ) || ''
+                  }
+                  {...register('jobName', {
+                    required: t('Not allowed to change app name') || '',
+                    pattern: {
+                      value: /^[a-z][a-z0-9]+([-.][a-z0-9]+)*$/g,
+                      message: t(
+                        'The application name can contain only lowercase letters, digits, and hyphens (-) and must start with a letter'
+                      )
+                    }
+                  })}
+                />
+              </Flex>
+            </FormControl>
+            {/* <Flex alignItems={'center'} mb={7}>
               <Label w={80}>{t('Type')}</Label>
               <MySelect
                 isDisabled={isEdit}
@@ -169,7 +195,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                   setValue('jobType', val);
                 }}
               />
-            </Flex>
+            </Flex> */}
             {/* image */}
             <Box mb={7}>
               <Flex alignItems={'center'}>

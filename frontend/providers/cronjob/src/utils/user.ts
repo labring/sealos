@@ -1,4 +1,5 @@
 import yaml from 'js-yaml';
+
 export const getUserKubeConfig = () => {
   let kubeConfig: string =
     process.env.NODE_ENV === 'development' ? process.env.NEXT_PUBLIC_MOCK_USER || '' : '';

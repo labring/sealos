@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import { useToast } from '@/hooks/useToast';
 import { useTranslation } from 'next-i18next';
 import { format, set, startOfDay, getDay, addHours } from 'date-fns';
+import { CronJobScheduleType } from '@/types/job';
 
 /**
  * copy text data
@@ -283,4 +284,18 @@ export const formatTimeToDay = (seconds: number): { time: string; unit: string }
       time: (seconds / 60).toFixed(1)
     };
   }
+};
+
+// parse Cron
+export const time2Cron = (data: CronJobScheduleType) => {
+  if (data.scheduleType === 'week') {
+    if (data.week.length === 0) {
+      throw new Error('Week is empty');
+    }
+    return `${data.minute} ${data.hour} * * ${data.week.join(',')}`;
+  }
+  if (data.scheduleType === 'day') {
+    return `${data.minute} ${data.hour} * * *`;
+  }
+  return `${data.minute} * * * *`;
 };

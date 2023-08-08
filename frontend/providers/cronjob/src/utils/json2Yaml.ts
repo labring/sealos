@@ -1,38 +1,57 @@
-import yaml from 'js-yaml';
-import type { DBEditType, DBType } from '@/types/db';
-import { str2Num } from '@/utils/tools';
-import { DBTypeEnum, DBComponentNameMap, RedisHAConfig } from '@/constants/db';
-import { crLabelKey } from '@/constants/db';
-import { getUserNamespace } from './user';
-import dayjs from 'dayjs';
-import { BACKUP_REMARK_LABEL_KEY, BACKUP_LABEL_KEY } from '@/constants/backup';
-import { StorageClassName } from '@/store/static';
 import { CronJobEditType } from '@/types/job';
+import { time2Cron } from '@/utils/tools';
+import yaml from 'js-yaml';
 
 export const json2CronJob = (data: CronJobEditType) => {
-  const { JobName, schedule, imageName } = data;
+  const _schedule = time2Cron(data);
+
+  const metadata = {
+    name: data.jobName,
+    annotations: {
+      originImageName: data.imageName
+    }
+  };
+
+  const imagePullSecrets = data.secret.use
+    ? [
+        {
+          name: data.jobName
+        }
+      ]
+    : undefined;
+
+  const commonContainer = {
+    name: data.jobName,
+    image: `${data.secret.use ? `${data.secret.serverAddress}/` : ''}${data.imageName}`,
+    env:
+      data.envs.length > 0
+        ? data.envs.map((env) => ({
+            name: env.key,
+            value: env.valueFrom ? undefined : env.value,
+            valueFrom: env.valueFrom
+          }))
+        : [],
+
+    args: data.cmdParam ? [data.cmdParam] : [],
+    imagePullPolicy: 'Always'
+  };
 
   const template = {
     apiVersion: 'batch/v1',
     kind: 'CronJob',
-    metadata: {
-      name: JobName
-    },
+    metadata: metadata,
     spec: {
-      schedule: schedule,
+      schedule: _schedule,
       jobTemplate: {
         spec: {
           template: {
             spec: {
+              imagePullSecrets,
               containers: [
                 {
-                  name: 'hello',
-                  image: imageName,
-                  imagePullPolicy: 'IfNotPresent',
-                  command: ['/bin/sh', '-c', 'date; echo Hello from the Kubernetes cluster']
+                  ...commonContainer
                 }
-              ],
-              restartPolicy: 'OnFailure'
+              ]
             }
           }
         }

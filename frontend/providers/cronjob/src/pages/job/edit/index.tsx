@@ -30,7 +30,14 @@ const defaultEdit: CronJobEditType = {
   ...DefaultJobEditValue
 };
 
-const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yaml' }) => {
+const formData2Yamls = (data: CronJobEditType) => [
+  {
+    filename: 'cronjob.yaml',
+    value: json2CronJob(data)
+  }
+];
+
+const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'yaml' }) => {
   const { t } = useTranslation();
   const router = useRouter();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
@@ -38,8 +45,8 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const [forceUpdate, setForceUpdate] = useState(false);
   const { toast } = useToast();
   const { Loading, setIsLoading } = useLoading();
-  const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!dbName);
-  const isEdit = useMemo(() => !!dbName, [dbName]);
+  const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!jobName);
+  const isEdit = useMemo(() => !!jobName, [jobName]);
 
   const { openConfirm, ConfirmChild } = useConfirm({
     content: t(applyMessage)
@@ -64,12 +71,8 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const formOnchangeDebounce = useCallback(
     debounce((data: CronJobEditType) => {
       try {
-        setYamlList([
-          {
-            filename: 'cluster.yaml',
-            value: json2CronJob(data)
-          }
-        ]);
+        console.log(data, 'data---');
+        setYamlList(formData2Yamls(data));
       } catch (error) {
         console.log(error);
       }
@@ -97,7 +100,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         title: t(applySuccess),
         status: 'success'
       });
-      router.replace(`/db/detail?name=${formHook.getValues('JobName')}`);
+      router.replace(`/db/detail?name=${formHook.getValues('jobName')}`);
     } catch (error) {
       console.error(error);
       setErrorMessage(JSON.stringify(error));
@@ -123,42 +126,33 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     });
   }, [formHook.formState.errors, t, toast]);
 
-  // useQuery(
-  //   ['init'],
-  //   () => {
-  //     if (!dbName) {
-  //       setYamlList([
-  //         {
-  //           filename: 'cluster.yaml',
-  //           value: json2CreateCluster(defaultEdit)
-  //         },
-  //         {
-  //           filename: 'account.yaml',
-  //           value: json2Account(defaultEdit)
-  //         }
-  //       ]);
-  //       return null;
-  //     }
-  //     setIsLoading(true);
-  //     return loadDBDetail(dbName);
-  //   },
-  //   {
-  //     onSuccess(res) {
-  //       if (!res) return;
-  //       formHook.reset(adaptDBForm(res));
-  //       setMinStorage(res.storage);
-  //     },
-  //     onError(err) {
-  //       toast({
-  //         title: String(err),
-  //         status: 'error'
-  //       });
-  //     },
-  //     onSettled() {
-  //       setIsLoading(false);
-  //     }
-  //   }
-  // );
+  useQuery(
+    ['init'],
+    () => {
+      if (!jobName) {
+        setYamlList([
+          {
+            filename: 'cronjob.yaml',
+            value: json2CronJob(defaultEdit)
+          }
+        ]);
+        return null;
+      }
+      setIsLoading(true);
+    },
+    {
+      onSuccess(res) {},
+      onError(err) {
+        toast({
+          title: String(err),
+          status: 'error'
+        });
+      },
+      onSettled() {
+        setIsLoading(false);
+      }
+    }
+  );
 
   return (
     <>
@@ -170,7 +164,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         bg={'#F3F4F5'}
       >
         <Header
-          name={formHook.getValues('JobName')}
+          name={formHook.getValues('jobName')}
           title={title}
           yamlList={yamlList}
           applyBtnText={applyBtnText}
@@ -197,10 +191,10 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 export default EditApp;
 
 export async function getServerSideProps(context: any) {
-  const dbName = context?.query?.name || '';
+  const jobName = context?.query?.name || '';
   const tabType = context?.query?.type || 'form';
 
   return {
-    props: { ...(await serviceSideProps(context)), dbName, tabType }
+    props: { ...(await serviceSideProps(context)), jobName, tabType }
   };
 }

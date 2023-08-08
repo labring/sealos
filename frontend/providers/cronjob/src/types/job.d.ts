@@ -45,7 +45,7 @@ export type CronJobListItemType = {
 
 export type CronJobEditType = {
   jobType: string;
-  JobName: string;
+  jobName: string;
   schedule: string;
   imageName: string;
   runCMD: string;

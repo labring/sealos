@@ -16,6 +16,7 @@ import { DBStatusEnum, DBComponentNameMap } from '@/constants/db';
 import { printMemory } from '@/utils/tools';
 import { useTranslation } from 'next-i18next';
 import { CronJobListItemType } from '@/types/job';
+import { CronJobStatusEnum } from '@/constants/job';
 
 const DelModal = dynamic(() => import('@/pages/job/detail/components/DelModal'));
 
@@ -174,6 +175,42 @@ const JobList = ({
               </MenuButton>
             }
             menuList={[
+              ...(item.status === CronJobStatusEnum.Stopped
+                ? [
+                    {
+                      child: (
+                        <>
+                          <MyIcon name={'continue'} w={'14px'} />
+                          <Box ml={2}>{t('Continue')}</Box>
+                        </>
+                      ),
+                      onClick: () => handleStartApp(item)
+                    }
+                  ]
+                : [
+                    {
+                      child: (
+                        <>
+                          <MyIcon name={'change'} w={'14px'} />
+                          <Box ml={2}>{t('Update')}</Box>
+                        </>
+                      ),
+                      onClick: () => router.push(`/db/edit?name=${item.name}`)
+                    }
+                  ]),
+              ...(item.status === CronJobStatusEnum.Running
+                ? [
+                    {
+                      child: (
+                        <>
+                          <MyIcon name={'pause'} w={'14px'} />
+                          <Box ml={2}>{t('Pause')}</Box>
+                        </>
+                      ),
+                      onClick: onOpenPause(() => handlePauseApp(item))
+                    }
+                  ]
+                : []),
               {
                 child: (
                   <>

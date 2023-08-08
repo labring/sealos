@@ -45,6 +45,23 @@ export const DefaultJobEditValue: CronJobEditType = {
   envs: [],
   scheduleType: 'hour',
   week: [],
-  hour: '',
-  minute: ''
+  hour: '*',
+  minute: '*'
 };
+
+export enum CronJobStatusEnum {
+  Suspend = 'Suspend',
+  Running = 'Running',
+  Creating = 'Creating',
+  Starting = 'Starting',
+  Stopping = 'Stopping',
+  Stopped = 'Stopped',
+  Updating = 'Updating',
+  SpecUpdating = 'SpecUpdating',
+  Rebooting = 'Rebooting',
+  Upgrade = 'Upgrade',
+  VerticalScaling = 'VerticalScaling',
+  VolumeExpanding = 'VolumeExpanding',
+  Failed = 'Failed',
+  UnKnow = 'UnKnow'
+}
