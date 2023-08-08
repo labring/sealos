@@ -1151,6 +1151,10 @@ spec:
         command:
         - /manager
         env:
+        - name: DOMAIN
+          value: {{ .cloudDomain }}
+        - name: PORT
+          value: {{ .port }}
         - name: ACCOUNT_NAMESPACE
           value: sealos-system
         - name: NAMESPACE_NAME

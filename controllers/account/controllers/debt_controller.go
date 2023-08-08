@@ -292,6 +292,8 @@ func newStatusConversion(debt *accountv1.Debt) bool {
 		debt.Status.AccountDebtStatus = accountv1.ImminentDeletionPeriod
 	case accountv1.RemovedPeriod:
 		debt.Status.AccountDebtStatus = accountv1.FinalDeletionPeriod
+	default:
+		debt.Status.AccountDebtStatus = accountv1.NormalPeriod
 	}
 	return true
 }
