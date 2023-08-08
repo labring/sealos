@@ -39,11 +39,6 @@ func BuildForRunnable(ctx context.Context, client client.Client, options Options
 	return runnables
 }
 
-type Runner struct {
-	ctx     context.Context
-	options Options
-}
-
 // TaskInstance implements the Task interface.
 type Task interface {
 	Run() error
@@ -72,6 +67,8 @@ func Periodic(ctx context.Context, period time.Duration, t Task) error {
 			err := t.Run()
 			if err != nil {
 				(t.Log()).Error(err, "failed to run task")
+				time.Sleep(time.Minute * 5)
+				continue
 			}
 			time.Sleep(period)
 		}
@@ -143,6 +140,7 @@ func (ti *TaskInstance) Run() error {
 		return (&noticeCleaner{lastTime: time.Now().Unix()}).cleanWork(ti)
 	default:
 		return fmt.Errorf("the task is not supported")
+		// allow developers to add their own runnable task
 	}
 }
 

@@ -117,8 +117,8 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 	// security judgement before write event
 	if issuer.CheckLicenseExists(&licenseHistory, license.Spec.Token) {
-		pack := issuer.NewNotificationPackage(issuer.LicenseNoticeTitle, issuer.SEALOS, issuer.DuplicateLicenseMessage)
-		issuer.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
+		// pack := issuer.NewNotificationPackage(issuer.LicenseNoticeTitle, issuer.SEALOS, issuer.DuplicateLicenseMessage)
+		// issuer.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
 		return ctrl.Result{}, r.Client.Delete(ctx, &license)
 	}
 
@@ -130,8 +130,8 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// pre-check for license
 	if !ok {
-		pack := issuer.NewNotificationPackage(issuer.LicenseNoticeTitle, issuer.SEALOS, issuer.InvalidLicenseMessage)
-		issuer.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
+		// pack := issuer.NewNotificationPackage(issuer.LicenseNoticeTitle, issuer.SEALOS, issuer.InvalidLicenseMessage)
+		// issuer.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
 		r.logger.Info("invalid license")
 		return ctrl.Result{}, r.Client.Delete(ctx, &license)
 	}
@@ -143,12 +143,12 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 		err := issuer.RechargeByLicense(ctx, r.Client, r.logger, account, payload)
 		if err != nil {
-			pack := issuer.NewNotificationPackage(issuer.LicenseNoticeTitle, issuer.SEALOS, issuer.RechargeFailedMessage)
-			issuer.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
+			// pack := issuer.NewNotificationPackage(issuer.LicenseNoticeTitle, issuer.SEALOS, issuer.RechargeFailedMessage)
+			// issuer.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
 			return err
 		}
-		pack := issuer.NewNotificationPackage(issuer.LicenseNoticeTitle, issuer.SEALOS, issuer.ValidLicenseMessage)
-		issuer.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
+		// pack := issuer.NewNotificationPackage(issuer.LicenseNoticeTitle, issuer.SEALOS, issuer.ValidLicenseMessage)
+		// issuer.SubmitNotificationWithUser(ctx, r.Client, req.Namespace, pack)
 		return nil
 	}).AddToList(&writeOperations)
 	// record the license
