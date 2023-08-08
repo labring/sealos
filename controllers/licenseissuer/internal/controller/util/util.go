@@ -19,7 +19,6 @@ package util
 import (
 	"encoding/json"
 	"errors"
-	"reflect"
 
 	issuer "github.com/labring/sealos/controllers/licenseissuer/internal/manager"
 	corev1 "k8s.io/api/core/v1"
@@ -60,17 +59,9 @@ func IsConfigMapChanged(expect map[string]string, cm *corev1.ConfigMap) bool {
 	if err := json.Unmarshal([]byte(cm.Data["config.json"]), &configMapJSON); err != nil {
 		return false
 	}
-	newConfigMapValue := reflect.ValueOf(expect)
-	newConfigMapType := newConfigMapValue.Type()
-
-	for i := 0; i < newConfigMapValue.NumField(); i++ {
-		fieldName := newConfigMapType.Field(i).Name
-		fieldValue := newConfigMapValue.Field(i).String()
-
-		cmKey := fieldName
-
-		if cmValue, ok := cm.Data[cmKey]; !ok || cmValue != fieldValue {
-			configMapJSON[fieldName] = fieldValue
+	for key, value := range expect {
+		if cmValue, ok := cm.Data[key]; !ok || cmValue != value {
+			configMapJSON[key] = value
 			changed = true
 		}
 	}
@@ -81,6 +72,5 @@ func IsConfigMapChanged(expect map[string]string, cm *corev1.ConfigMap) bool {
 		}
 		cm.Data["config.json"] = string(updatedJSON)
 	}
-
 	return changed
 }

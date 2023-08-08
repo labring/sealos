@@ -133,7 +133,7 @@ type Pool struct {
 
 func NewPool(size int) *Pool {
 	p := &Pool{
-		work: make(chan func()),
+		work: make(chan func(), size),
 	}
 	return p
 }
@@ -156,7 +156,7 @@ func (p *Pool) Run(size int) {
 			for f := range p.work {
 				f()
 			}
+			p.wg.Done()
 		}()
-		p.wg.Done()
 	}
 }

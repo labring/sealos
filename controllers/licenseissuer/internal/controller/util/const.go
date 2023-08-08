@@ -54,3 +54,5 @@ const (
 )
 
 const NoticeFrom = "Sealos Cloud"
+
+const BaseCount = 1000000

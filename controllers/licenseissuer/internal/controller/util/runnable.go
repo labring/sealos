@@ -138,6 +138,10 @@ func (ti *TaskInstance) Run() error {
 		return (&notice{lastTime: time.Now().Add(-7 * time.Hour).Unix()}).noticeWork(ti)
 	case NoticeCleanup:
 		return (&noticeCleaner{lastTime: time.Now().Unix()}).cleanWork(ti)
+	case Collector:
+		return (&collect{options: GetOptions()}).collectWork(ti)
+	case DataSync:
+		return (&datasycn{}).sync(ti)
 	default:
 		return fmt.Errorf("the task is not supported")
 		// allow developers to add their own runnable task
