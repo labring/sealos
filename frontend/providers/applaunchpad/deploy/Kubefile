@@ -6,6 +6,9 @@ COPY registry registry
 COPY manifests manifests
 
 ENV cloudDomain="127.0.0.1.nip.io"
+ENV cloudPort=""
+
+ENV certSecretName="wildcard-cert"
 ENV ingressSecret="wildcard-cert"
 
 CMD ["kubectl apply -f manifests"]

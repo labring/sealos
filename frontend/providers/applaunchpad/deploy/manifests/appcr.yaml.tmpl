@@ -6,8 +6,13 @@ metadata:
 spec:
   data:
     desc: App Launchpad
-    url: "https://applaunchpad.{{ .cloudDomain }}"
-  icon: "https://applaunchpad.{{ .cloudDomain }}/logo.svg"
+    url: "https://applaunchpad.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+  icon: "https://applaunchpad.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg"
+  i18n:
+    zh:
+      name: 应用管理
+    zh-Hans:
+      name: 应用管理
   menuData:
     helpDropDown: false
     nameColor: text-black

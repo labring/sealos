@@ -6,8 +6,13 @@ metadata:
 spec:
   data:
     desc: sealos CLoud costcenter
-    url: "https://costcenter.{{ .cloudDomain }}"
-  icon: "/images/cost_center.svg"
+    url: "https://costcenter.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+  icon: "https://costcenter.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.png"
+  i18n:
+    zh:
+      name: 费用中心
+    zh-Hans:
+      name: 费用中心
   menuData:
     helpDocs: https://www.sealos.io/docs/cloud/apps/costcenter/
     helpDropDown: false

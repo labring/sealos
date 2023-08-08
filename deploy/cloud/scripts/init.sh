@@ -7,10 +7,6 @@ tlsKeyPlaceholder="<tls-key-placeholder>"
 mongodbUri=""
 saltKey=""
 
-function read_env {
-  source $1
-}
-
 function create_tls_secret {
   if grep -q $tlsCrtPlaceholder manifests/tls-secret.yaml; then
     echo "mock tls secret"
@@ -74,14 +70,16 @@ function sealos_authorize {
     done
     # issue license for admin-user
     echo "license issue for admin-user"
-
-    # issue license for admin-user
-    echo "license issue for admin-user"
     kubectl apply -f manifests/free-license.yaml
 }
 
 function gen_saltKey() {
-    saltKey=$(tr -dc 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0)
+    password_salt=$(kubectl get secret desktop-frontend-secret -n sealos -o jsonpath="{.data.password_salt}" 2>/dev/null)
+    if [[ -z "$password_salt" ]]; then
+        saltKey=$(tr -dc 'a-z0-9' </dev/urandom | head -c64 | base64)
+    else
+        saltKey=$password_salt
+    fi
 }
 
 function gen_mongodbUri() {
@@ -126,8 +124,8 @@ function sealos_run_frontend {
   --env cloudDomain=$cloudDomain \
   --env certSecretName="wildcard-cert"
 
-  echo "costcenter frontend"
-  sealos run tars/cost-center.tar \
+  echo "run costcenter frontend"
+  sealos run tars/frontend-costcenter.tar \
   --env cloudDomain=$cloudDomain \
   --env certSecretName="wildcard-cert" \
   --env transferEnabled="true" \
@@ -136,18 +134,20 @@ function sealos_run_frontend {
 
 
 function mutate_desktop_config() {
-  # mutate etc/sealos/desktop-config.yaml by using mongodb uri and two random base64 string
-  sed -i -e "s;<your-mongodb-uri-base64>;$(echo -n "$mongodbUri" | base64 -w 0);" etc/sealos/desktop-config.yaml
-  sed -i -e "s;<your-jwt-secret-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
-  sed -i -e "s;<your-password-salt-base64>;$saltKey;" etc/sealos/desktop-config.yaml
+  secret_exists=$(kubectl get secret desktop-frontend-secret -n sealos --ignore-not-found=true)
+  if [[ -n "$secret_exists" ]]; then
+    echo "desktop-frontend-secret already exists, skip mutate desktop secret"
+  else
+    # mutate etc/sealos/desktop-config.yaml by using mongodb uri and two random base64 string
+    sed -i -e "s;<your-mongodb-uri-base64>;$(echo -n "$mongodbUri" | base64 -w 0);" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-jwt-secret-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-password-salt-base64>;$saltKey;" etc/sealos/desktop-config.yaml
+  fi
 }
 
 
 
 function install {
-  # read env
-  read_env etc/sealos/cloud.env
-
   # kubectl apply namespace, secret and mongodb
   kubectl apply -f manifests/namespace.yaml
 
@@ -160,7 +160,7 @@ function install {
   # gen mongodb uri
   gen_mongodbUri
 
-  # gen saltKey
+  # gen saltKey if not set or not found in secret
   gen_saltKey
 
   # sealos run controllers
