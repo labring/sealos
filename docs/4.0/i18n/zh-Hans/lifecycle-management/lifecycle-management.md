@@ -33,8 +33,8 @@ Sealos 具有自由伸缩集群、备份恢复、释放集群等功能，即使�
 使用 Sealos 运行一个 Kubernetes 集群非常简单，只需以下步骤：
 
 ```bash
-$ curl -sfL  https://raw.githubusercontent.com/labring/sealos/v4.2.0/scripts/install.sh \
-    | sh -s v4.2.0 labring/sealos
+$ curl -sfL  https://raw.githubusercontent.com/labring/sealos/v4.3.0/scripts/install.sh \
+    | sh -s v4.3.0 labring/sealos
 # 创建一个集群
 $ sealos run labring/kubernetes:v1.25.0-4.2.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
