@@ -23,16 +23,21 @@ import (
 	"github.com/stripe/stripe-go/v74"
 )
 
-var DefaultSuccessURL = fmt.Sprintf("https://%s", utils.GetEnvWithDefault("DOMAIN", DefaultDomain))
+var DefaultURL = fmt.Sprintf("https://%s", utils.GetEnvWithDefault("DOMAIN", DefaultDomain))
+
+const (
+	stripeSuccessPostfix = "STRIPE_SUCCESS_POSTFIX"
+	stripeCancelPostfix  = "STRIPE_CANCEL_POSTFIX"
+)
 
 func init() {
 	if port := os.Getenv("PORT"); port != "" {
-		DefaultSuccessURL = fmt.Sprintf("%s:%s", DefaultSuccessURL, port)
+		DefaultURL = fmt.Sprintf("%s:%s", DefaultURL, port)
 	}
 }
 
 func (s StripePayment) CreatePayment(amount int64, _ string) (string, string, error) {
-	session, err := CreateCheckoutSession(amount, CNY, DefaultSuccessURL, DefaultSuccessURL)
+	session, err := CreateCheckoutSession(amount, CNY, DefaultURL+os.Getenv(stripeSuccessPostfix), DefaultURL+os.Getenv(stripeCancelPostfix))
 	if err != nil {
 		return "", "", err
 	}
