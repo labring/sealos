@@ -51,6 +51,9 @@ func init() {
 func LicenseCheckOnExternalNetwork(ctx context.Context, client client.Client, license issuerv1.License) (map[string]interface{}, bool) {
 	license.Spec.Key = Key
 	payload, ok := crypto.IsLicenseValid(license)
+	if ok {
+		return payload, ok
+	}
 	uid, urlMap, err := GetUIDURL(ctx, client)
 	res := LicenseMonitorRequest{
 		UID:   uid,

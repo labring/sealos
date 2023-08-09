@@ -619,7 +619,7 @@ spec:
             secretKeyRef:
               key: PasswordSalt
               name: licenseissuer-env
-        image: ghcr.io/labring/sealos-licenseissuer-controller:latest
+        image: registry.cn-hangzhou.aliyuncs.com/fckc/cloud-controller:latest
         livenessProbe:
           httpGet:
             path: /healthz

@@ -89,11 +89,21 @@ func (t initTask) initWork(instance *TaskInstance) error {
 // 2. check if the cluster has been registered
 // 3. register to cloud (if the monitor is enabled)
 // 4. store cluster-info to k8s
+const maxRetry = 5
+
 func (t initTask) register(instance *TaskInstance) error {
+	var err error
 	// step 1
-	err := t.presetRootUser(instance)
+	for cnt := 0; cnt < maxRetry; cnt++ {
+		err = t.presetRootUser(instance)
+		if err != nil {
+			instance.logger.Error(err, "failed to preset root user")
+			time.Sleep(time.Minute)
+			continue
+		}
+		break
+	}
 	if err != nil {
-		instance.logger.Error(err, "failed to preset root user")
 		return err
 	}
 	ClusterInfo := createClusterInfo()

@@ -59,6 +59,7 @@ func Once(_ context.Context, _ time.Duration, t Task) error {
 
 // Periodic func is used to run a task periodically.
 func Periodic(ctx context.Context, period time.Duration, t Task) error {
+	waitForInit()
 	for {
 		select {
 		case <-ctx.Done():
@@ -150,4 +151,8 @@ func (ti *TaskInstance) Run() error {
 
 func (ti *TaskInstance) Log() *logr.Logger {
 	return &ti.logger
+}
+
+func waitForInit() {
+	time.Sleep(time.Minute)
 }

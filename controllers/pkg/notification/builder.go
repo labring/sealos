@@ -77,9 +77,17 @@ type Receiver struct {
 	AdminNamespaces []string
 }
 
+func NewReceiver(ctx context.Context, client client.Client) *Receiver {
+	return &Receiver{
+		Context: ctx,
+		Client:  client,
+	}
+}
+
 func (rv *Receiver) SetReceiver(receiver string, kind ...Kind) *Receiver {
 	if len(kind) == 0 {
 		rv.UserNamespaces = append(rv.UserNamespaces, receiver)
+		return rv
 	}
 	switch kind[0] {
 	case General:
@@ -87,7 +95,7 @@ func (rv *Receiver) SetReceiver(receiver string, kind ...Kind) *Receiver {
 	case Admin:
 		rv.AdminNamespaces = append(rv.AdminNamespaces, receiver)
 	}
-	return nil
+	return rv
 }
 
 // Cache of the NamespaceCache caches the namespaces in the cluster
@@ -134,6 +142,7 @@ func (nb *Builder) AddToEventQueue(neq *NoticeEventQueue) {
 		From:    nb.From,
 		Message: nb.Message,
 		Level:   nb.Level,
+		Kind:    nb.Kind,
 	})
 }
 

@@ -41,10 +41,8 @@ import (
 // LicenseReconciler reconciles a License object
 type LicenseReconciler struct {
 	client.Client
-	Scheme       *runtime.Scheme
-	needRecharge bool
-	logger       logr.Logger
-	Retries      int
+	Scheme *runtime.Scheme
+	logger logr.Logger
 
 	account   accountv1.Account
 	license   issuerv1.License
@@ -75,11 +73,11 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// for notification
 	nq := &ntf.NoticeEventQueue{}
-	nm := &ntf.NotificationManager{}
+	nm := ntf.NewNotificationManager(ctx, r.Client)
 	nb := (&ntf.Builder{}).WithLevel(notificationv1.High).
 		WithTitle(util.LicenseNoticeTitle).WithFrom(util.Sealos).
 		WithType(ntf.General)
-	receiver := (&ntf.Receiver{}).SetReceiver(req.Namespace)
+	receiver := ntf.NewReceiver(ctx, r.Client).SetReceiver(req.Namespace)
 
 	reader := &util.Reader{}
 	// get license
@@ -108,8 +106,6 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 // SetupWithManager sets up the controller with the Manager.
 func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("LicenseReconcile")
-	r.Retries = 0
-	r.needRecharge = true
 	Predicate := predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
 			return e.Object.GetName() == string(util.LicenseName)
@@ -157,6 +153,13 @@ func (r *LicenseReconciler) Authorize(ctx context.Context) (string, error) {
 	message, payload, ok := r.CheckLicense(ctx)
 	if !ok {
 		return message, errors.New("invalid license")
+	}
+	// get account
+	id := types.NamespacedName{Namespace: util.SealosNamespace, Name: r.license.Spec.UID}
+	err := r.Client.Get(ctx, id, &r.account)
+	if err != nil {
+		r.logger.Error(err, "failed to get account")
+		return util.RechargeFailedMessage, err
 	}
 	// recharge
 	if util.ContainsFields(payload, util.AmountField) {
