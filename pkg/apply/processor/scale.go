@@ -162,11 +162,11 @@ func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-	// cluster status might be overwrite by inappropriate usage, add mounts if loss.
-	if err = MountClusterImages(c.Buildah, cluster, true); err != nil {
-		return err
-	}
 	if c.IsScaleUp {
+		// cluster status might be overwrite by inappropriate usage, add mounts if loss.
+		if err = MountClusterImages(c.Buildah, cluster, true); err != nil {
+			return err
+		}
 		if cluster.GetRootfsImage().KubeVersion() == "" {
 			return fmt.Errorf("rootfs image not found kube version")
 		}
