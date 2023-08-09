@@ -25,7 +25,7 @@ VERSION=`curl -s https://api.github.com/repos/labring/sealos/releases/latest | g
 
 ```bash
 curl -sfL https://raw.githubusercontent.com/labring/sealos/${VERSION}/scripts/install.sh |
-  sh - ${VERSION} labring/sealos
+  sh -s ${VERSION} labring/sealos
 
 ```
 
