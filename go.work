@@ -15,6 +15,7 @@ use (
 	./controllers/resources
 	./service/auth
 	./service/hub
+	./service/pay
 	./service/payment
 	./staging/src/github.com/labring/image-cri-shim
 	./staging/src/github.com/labring/lvscare

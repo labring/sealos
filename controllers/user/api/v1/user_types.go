@@ -30,7 +30,7 @@ import (
 type UserSpec struct {
 	// expirationSeconds is the requested duration of validity of the issued
 	// certificate. The certificate signer may issue a certificate with a different
-	// validity duration so a client must check the delta between the notBefore and
+	// validity duration so a client must check the delta between the notBefore
 	// and notAfter fields in the issued certificate to determine the actual duration.
 	//
 	// The minimum valid value for expirationSeconds is 600, i.e. 10 minutes.
