@@ -191,8 +191,8 @@ func MountClusterImages(bdah buildah.Interface, cluster *v2.Cluster, skipApp boo
 				hasRootfsType = true
 			}
 		}
-		if imageType != "" && imageType != string(v2.RootfsImage) && imageType != string(v2.PatchImage) && skipApp {
-			// then it's an application type image
+		if ((imageType != "" && imageType != string(v2.RootfsImage) && imageType != string(v2.PatchImage)) ||
+			imageType == string(v2.AppImage) || imageType == "") && skipApp {
 			continue
 		}
 
