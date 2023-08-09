@@ -121,8 +121,7 @@ func (r *ClusterArgs) runArgs(imageList []string, args *RunArgs) error {
 	nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
 	r.hosts = []v2.Host{}
 
-	clusterSSH := r.cluster.GetSSH()
-	sshClient := ssh.NewSSHClient(&clusterSSH, true)
+	sshClient := ssh.NewSSHByCluster(r.cluster, true)
 	if len(masters) > 0 {
 		host, port := iputils.GetHostIPAndPortOrDefault(masters[0], defaultPort)
 		master0addr := net.JoinHostPort(host, port)

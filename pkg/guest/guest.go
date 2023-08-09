@@ -63,7 +63,7 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
 			_ = fileutil.CleanFiles(kubeConfig)
 		}()
 	}
-	sshInterface := ssh.NewSSHClient(&cluster.Spec.SSH, true)
+	sshInterface := ssh.NewSSHByCluster(cluster, true)
 	for _, cmd := range guestCMD {
 		logger.Debug("exec guest command: %s", cmd)
 		if err := sshInterface.CmdAsync(cluster.GetMaster0IPAndPort(), envInterface.WrapperShell(cluster.GetMaster0IP(), cmd)); err != nil {
