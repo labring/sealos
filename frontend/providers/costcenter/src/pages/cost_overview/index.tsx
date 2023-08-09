@@ -2,7 +2,7 @@ import bar_icon from '@/assert/bar_chart_4_bars_black.svg';
 import { BillingTable } from '@/components/billing/billingTable';
 import SelectRange from '@/components/billing/selectDateRange';
 import useNotEnough from '@/hooks/useNotEnough';
-import { Box, Flex, Heading, Img } from '@chakra-ui/react';
+import { Box, Flex, Heading, Img, useToast } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useMemo } from 'react';
@@ -17,6 +17,7 @@ import { QueryClient } from '@tanstack/react-query';
 import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
 import { isSameDay, isSameHour, parseISO } from 'date-fns';
+import { useRouter } from 'next/router';
 function CostOverview() {
   const { t, i18n } = useTranslation();
   const updateCPU = useBillingStore((state) => state.updateCpu);
@@ -35,6 +36,29 @@ function CostOverview() {
     () => data?.data?.status.item.filter((v) => v.type === 0) || [],
     [data]
   );
+  const totast = useToast();
+  const router = useRouter();
+  const { stripeState } = router.query;
+  useEffect(() => {
+    if (stripeState === 'success') {
+      totast({
+        status: 'success',
+        duration: 3000,
+        title: 'pay with Stripe successfully',
+        isClosable: true,
+        position: 'top'
+      });
+    } else if (stripeState === 'error') {
+      totast({
+        status: 'error',
+        duration: 3000,
+        title: 'cancel to pay with Stripe',
+        isClosable: true,
+        position: 'top'
+      });
+    }
+    !!stripeState && router.replace(router.pathname);
+  }, [stripeState]);
   useEffect(() => {
     if (costBillingItems.length === 0) return;
     const time = parseISO(costBillingItems[0].time);
