@@ -74,7 +74,7 @@ function sealos_authorize {
 }
 
 function gen_saltKey() {
-    password_salt=$(kubectl get secret desktop-frontend-secret -n sealos -o jsonpath="{.data.password_salt}" 2>/dev/null)
+    password_salt=$(kubectl get secret desktop-frontend-secret -n sealos -o jsonpath="{.data.password_salt}" 2>/dev/null || true)
     if [[ -z "$password_salt" ]]; then
         saltKey=$(tr -dc 'a-z0-9' </dev/urandom | head -c64 | base64)
     else
