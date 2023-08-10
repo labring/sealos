@@ -29,5 +29,5 @@ func (u Pay) GetWechatURL(request *restful.Request, response *restful.Response) 
 	if err != nil {
 		log.Print("write code url failed : ", err)
 	}
-
+	return
 }

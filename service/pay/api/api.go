@@ -33,16 +33,14 @@ func (u Pay) getURL(request *restful.Request, response *restful.Response) {
 	paymentRequest := &PaymentRequest{}
 	err := request.ReadEntity(paymentRequest)
 	if err != nil {
-		response.WriteHeaderAndEntity(http.StatusBadRequest, nil)
+		_ = response.WriteErrorString(http.StatusBadRequest, fmt.Sprintf("read request failed: %v", err))
 		return
 	}
 	appID := paymentRequest.AppID
-	// TODO process the appID logic
-	fmt.Sprintf(appID)
+	// TODO process the logic of appID
 
 	sign := paymentRequest.Sign
-	// TODO process the sign logic
-	fmt.Sprintf(sign)
+	// TODO process the logic of sign
 
 	paymethod := request.QueryParameter("paymethod")
 	switch paymethod {
