@@ -134,7 +134,7 @@ function sealos_authorize {
 function sealos_run_frontend {
   echo "run desktop frontend"
   configFileFlag=""
-  if [[ -n "$desktop_secret_exists" ]]; then
+  if [[ "$desktop_secret_exists" ]]; then
   configFileFlag="--config-file etc/sealos/desktop-config.yaml"
   fi
   sealos run tars/frontend-desktop.tar \
