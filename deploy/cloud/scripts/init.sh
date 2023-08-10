@@ -4,7 +4,6 @@ set -ex
 cloudDomain="127.0.0.1.nip.io"
 tlsCrtPlaceholder="<tls-crt-placeholder>"
 tlsKeyPlaceholder="<tls-key-placeholder>"
-desktop_secret_exists=""
 mongodbUri=""
 saltKey=""
 
@@ -53,8 +52,7 @@ function gen_saltKey() {
 }
 
 function mutate_desktop_config() {
-  desktop_secret_exists=$(kubectl get secret desktop-frontend-secret -n sealos --ignore-not-found=true)
-  if [[ -n "$desktop_secret_exists" ]]; then
+  if kubectl get secret desktop-frontend-secret -n sealos --ignore-not-found > /dev/null 2>&1; then
     echo "desktop-frontend-secret already exists, skip mutate desktop secret"
   else
     # mutate etc/sealos/desktop-config.yaml by using mongodb uri and two random base64 string
@@ -134,8 +132,10 @@ function sealos_authorize {
 function sealos_run_frontend {
   echo "run desktop frontend"
   configFileFlag=""
-  if [[ "$desktop_secret_exists" ]]; then
-  configFileFlag="--config-file etc/sealos/desktop-config.yaml"
+  if kubectl get secret desktop-frontend-secret -n sealos --ignore-not-found > /dev/null 2>&1; then
+    configFileFlag=""
+  else
+    configFileFlag="--config-file etc/sealos/desktop-config.yaml"
   fi
   sealos run tars/frontend-desktop.tar \
     --env cloudDomain=$cloudDomain \
