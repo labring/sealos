@@ -7,6 +7,62 @@ tlsKeyPlaceholder="<tls-key-placeholder>"
 mongodbUri=""
 saltKey=""
 
+function prepare {
+  # kubectl apply namespace, secret and mongodb
+  kubectl apply -f manifests/namespace.yaml
+
+  # apply notifications crd
+  kubectl apply -f manifests/notifications_crd.yaml
+
+  # gen mongodb uri
+  gen_mongodbUri
+
+  # gen saltKey if not set or not found in secret
+  gen_saltKey
+
+  # mutate desktop config
+  mutate_desktop_config
+
+  # create tls secret
+  create_tls_secret
+}
+
+function gen_mongodbUri() {
+  # if mongodbUri is empty then create mongodb and gen mongodb uri
+  if [ -z "$mongodbUri" ]; then
+    echo "no mongodb uri found, create mongodb and gen mongodb uri"
+    kubectl apply -f manifests/mongodb.yaml
+    # if there is no sealos-mongodb-conn-credential secret then wait for mongodb ready
+    while [ -z "$(kubectl get secret -n sealos sealos-mongodb-conn-credential)" ]; do
+      echo "waiting for mongodb secret generated"
+      sleep 5
+    done
+    chmod +x scripts/gen-mongodb-uri.sh
+    mongodbUri=$(scripts/gen-mongodb-uri.sh)
+  fi
+}
+
+function gen_saltKey() {
+    password_salt=$(kubectl get secret desktop-frontend-secret -n sealos -o jsonpath="{.data.password_salt}" 2>/dev/null || true)
+    if [[ -z "$password_salt" ]]; then
+        saltKey=$(tr -dc 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0)
+    else
+        saltKey=$password_salt
+    fi
+}
+
+function mutate_desktop_config() {
+  secret_exists=$(kubectl get secret desktop-frontend-secret -n sealos --ignore-not-found=true)
+  if [[ -n "$secret_exists" ]]; then
+    echo "desktop-frontend-secret already exists, skip mutate desktop secret"
+  else
+    # mutate etc/sealos/desktop-config.yaml by using mongodb uri and two random base64 string
+    sed -i -e "s;<your-mongodb-uri-base64>;$(echo -n "$mongodbUri" | base64 -w 0);" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-jwt-secret-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-password-salt-base64>;$saltKey;" etc/sealos/desktop-config.yaml
+  fi
+}
+
 function create_tls_secret {
   if grep -q $tlsCrtPlaceholder manifests/tls-secret.yaml; then
     echo "mock tls secret"
@@ -50,7 +106,7 @@ function sealos_run_controller {
   # run licenseissuer controller
   sealos run tars/licenseissuer.tar \
   --env canConnectToExternalNetwork="true" \
-  --env enableMonitor="true" 
+  --env enableMonitor="true"
 }
 
 function sealos_authorize {
@@ -73,35 +129,8 @@ function sealos_authorize {
     kubectl apply -f manifests/free-license.yaml
 }
 
-function gen_saltKey() {
-    password_salt=$(kubectl get secret desktop-frontend-secret -n sealos -o jsonpath="{.data.password_salt}" 2>/dev/null || true)
-    if [[ -z "$password_salt" ]]; then
-        saltKey=$(tr -dc 'a-z0-9' </dev/urandom | head -c64 | base64)
-    else
-        saltKey=$password_salt
-    fi
-}
-
-function gen_mongodbUri() {
-  # if mongodbUri is empty then create mongodb and gen mongodb uri
-  if [ -z "$mongodbUri" ]; then
-    echo "no mongodb uri found, create mongodb and gen mongodb uri"
-    kubectl apply -f manifests/mongodb.yaml
-    # if there is no sealos-mongodb-conn-credential secret then wait for mongodb ready
-    while [ -z "$(kubectl get secret -n sealos sealos-mongodb-conn-credential)" ]; do
-      echo "waiting for mongodb secret generated"
-      sleep 5
-    done
-    chmod +x scripts/gen-mongodb-uri.sh
-    mongodbUri=$(scripts/gen-mongodb-uri.sh)
-  fi
-}
 
 function sealos_run_frontend {
-  # mutate desktop config before running desktop
-  echo "mutate desktop config"
-  mutate_desktop_config
-
   echo "run desktop frontend"
   sealos run tars/frontend-desktop.tar \
     --env cloudDomain=$cloudDomain \
@@ -124,7 +153,7 @@ function sealos_run_frontend {
   --env cloudDomain=$cloudDomain \
   --env certSecretName="wildcard-cert"
 
-  echo "run costcenter frontend"
+  echo "run cost center frontend"
   sealos run tars/frontend-costcenter.tar \
   --env cloudDomain=$cloudDomain \
   --env certSecretName="wildcard-cert" \
@@ -132,36 +161,9 @@ function sealos_run_frontend {
   --env rechargeEnabled="false"
 }
 
-
-function mutate_desktop_config() {
-  secret_exists=$(kubectl get secret desktop-frontend-secret -n sealos --ignore-not-found=true)
-  if [[ -n "$secret_exists" ]]; then
-    echo "desktop-frontend-secret already exists, skip mutate desktop secret"
-  else
-    # mutate etc/sealos/desktop-config.yaml by using mongodb uri and two random base64 string
-    sed -i -e "s;<your-mongodb-uri-base64>;$(echo -n "$mongodbUri" | base64 -w 0);" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-jwt-secret-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-password-salt-base64>;$saltKey;" etc/sealos/desktop-config.yaml
-  fi
-}
-
-
-
 function install {
-  # kubectl apply namespace, secret and mongodb
-  kubectl apply -f manifests/namespace.yaml
-
-  # apply notifications crd
-  kubectl apply -f manifests/notifications_crd.yaml
-
-  # create tls secret
-  create_tls_secret $cloudDomain
-
-  # gen mongodb uri
-  gen_mongodbUri
-
-  # gen saltKey if not set or not found in secret
-  gen_saltKey
+  # gen mongodb uri and others
+  prepare
 
   # sealos run controllers
   sealos_run_controller
