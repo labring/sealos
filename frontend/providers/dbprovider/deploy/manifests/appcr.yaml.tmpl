@@ -6,8 +6,8 @@ metadata:
 spec:
   data:
     desc: Database
-    url: "https://dbprovider.{{ .cloudDomain }}"
-  icon: "https://dbprovider.{{ .cloudDomain }}/logo.svg"
+    url: "https://dbprovider.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+  icon: "https://dbprovider.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg"
   menuData:
     helpDropDown: false
     nameColor: text-black
