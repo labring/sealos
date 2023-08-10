@@ -152,7 +152,7 @@ func ConfirmDeleteNodes() error {
 func MirrorRegistry(cluster *v2.Cluster, mounts []v2.MountImage) error {
 	registries := cluster.GetRegistryIPAndPortList()
 	logger.Debug("registry nodes is: %+v", registries)
-	sshClient := ssh.NewSSHClient(&cluster.Spec.SSH, true)
+	sshClient := ssh.NewSSHByCluster(cluster, true)
 	syncer := registry.New(constants.NewData(cluster.GetName()), sshClient, mounts)
 	return syncer.Sync(context.Background(), registries...)
 }
@@ -191,7 +191,7 @@ func MountClusterImages(bdah buildah.Interface, cluster *v2.Cluster, skipApp boo
 				hasRootfsType = true
 			}
 		}
-		if imageType != "" && imageType != string(v2.RootfsImage) && imageType != string(v2.PatchImage) && skipApp {
+		if (imageType == "" || imageType == string(v2.AppImage)) && skipApp {
 			// then it's an application type image
 			continue
 		}

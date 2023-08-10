@@ -16,12 +16,37 @@ package pay
 
 import (
 	"fmt"
+	"os"
+	"strings"
+
+	"github.com/labring/sealos/controllers/pkg/utils"
 
 	"github.com/stripe/stripe-go/v74"
 )
 
+var DefaultURL = fmt.Sprintf("https://%s", utils.GetEnvWithDefault("DOMAIN", DefaultDomain))
+
+const (
+	stripeSuccessPostfix = "STRIPE_SUCCESS_POSTFIX"
+	stripeCancelPostfix  = "STRIPE_CANCEL_POSTFIX"
+	stripeCurrency       = "STRIPE_CURRENCY"
+)
+
+var Currency string
+
+func init() {
+	if port := os.Getenv("PORT"); port != "" {
+		DefaultURL = fmt.Sprintf("%s:%s", DefaultURL, port)
+	}
+	currency := strings.ToLower(strings.TrimSpace(os.Getenv(stripeCurrency)))
+	if currency != USD {
+		currency = CNY
+	}
+	Currency = currency
+}
+
 func (s StripePayment) CreatePayment(amount int64, _ string) (string, string, error) {
-	session, err := CreateCheckoutSession(amount, CNY, DefaultSuccessURL, DefaultCancelURL)
+	session, err := CreateCheckoutSession(amount, Currency, DefaultURL+os.Getenv(stripeSuccessPostfix), DefaultURL+os.Getenv(stripeCancelPostfix))
 	if err != nil {
 		return "", "", err
 	}
@@ -46,6 +71,10 @@ func (s StripePayment) GetPaymentDetails(sessionID string) (string, int64, error
 }
 
 func (s StripePayment) ExpireSession(sessionID string) error {
+	status, _, _ := s.GetPaymentDetails(sessionID)
+	if status == PaymentSuccess || status == PaymentExpired {
+		return nil
+	}
 	_, err := ExpireSession(sessionID)
 	if err != nil {
 		return err
