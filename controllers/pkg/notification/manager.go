@@ -18,7 +18,6 @@ package notification
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -77,11 +76,14 @@ func NewNotificationManager(ctx context.Context, client client.Client,
 	}
 }
 
-func NewNotificationManager(ctx context.Context, client client.Client) *NotificationManager {
+func NewNotificationManager(ctx context.Context, client client.Client,
+	logger logr.Logger, batchSize, channelSize int) *NotificationManager {
 	return &NotificationManager{
-		Ctx:               ctx,
-		Client:            client,
-		NotificationQueue: []v1.Notification{},
+		ctx:         ctx,
+		client:      client,
+		logger:      logger,
+		batchSize:   batchSize,
+		channelSize: channelSize,
 	}
 }
 
@@ -136,40 +138,5 @@ func newNotification(receiver string, event Event) v1.Notification {
 			From:       event.From,
 			Title:      event.Title,
 		},
-	}
-}
-
-type Pool struct {
-	wg   sync.WaitGroup
-	work chan func()
-}
-
-func NewPool(size int) *Pool {
-	p := &Pool{
-		work: make(chan func(), size),
-	}
-	return p
-}
-
-func (p *Pool) Add(f func()) {
-	p.work <- func() {
-		f()
-	}
-}
-
-func (p *Pool) Wait() {
-	close(p.work)
-	p.wg.Wait()
-}
-
-func (p *Pool) Run(size int) {
-	p.wg.Add(size)
-	for i := 0; i < size; i++ {
-		go func() {
-			for f := range p.work {
-				f()
-			}
-			p.wg.Done()
-		}()
 	}
 }
