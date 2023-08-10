@@ -126,7 +126,7 @@ func (k *KubeadmRuntime) DeleteMasters(mastersIPList []string) error {
 }
 
 func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
-	sshClient, _ := ssh.NewSSHByCluster(cluster, true)
+	sshClient := ssh.NewSSHByCluster(cluster, true)
 	k := &KubeadmRuntime{
 		Mutex:         &sync.Mutex{},
 		Cluster:       cluster,
