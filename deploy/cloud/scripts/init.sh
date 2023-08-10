@@ -2,9 +2,11 @@
 set -ex
 
 cloudDomain="127.0.0.1.nip.io"
+cloudPort=""
+mongodbUri=""
+
 tlsCrtPlaceholder="<tls-crt-placeholder>"
 tlsKeyPlaceholder="<tls-key-placeholder>"
-mongodbUri=""
 saltKey=""
 
 function prepare {
@@ -79,12 +81,13 @@ function create_tls_secret {
 function sealos_run_controller {
   # run user controller
   sealos run tars/user.tar \
-  --env cloudDomain=$cloudDomain \
-  --env cloudPort="6443"
+  --env cloudDomain="$cloudDomain" \
+  --env apiserverPort="6443"
 
   # run terminal controller
   sealos run tars/terminal.tar \
-  --env cloudDomain=$cloudDomain \
+  --env cloudDomain="$cloudDomain" \
+  --env cloudPort="$cloudPort" \
   --env userNamespace="user-system" \
   --env wildcardCertSecretName="wildcard-cert" \
   --env wildcardCertSecretNamespace="sealos-system"
@@ -111,6 +114,47 @@ function sealos_run_controller {
   --env enableMonitor="true"
 }
 
+function sealos_run_frontend {
+  echo "run desktop frontend"
+  configFileFlag=""
+  if kubectl get secret desktop-frontend-secret -n sealos --ignore-not-found > /dev/null 2>&1; then
+    configFileFlag=""
+  else
+    configFileFlag="--config-file etc/sealos/desktop-config.yaml"
+  fi
+  sealos run tars/frontend-desktop.tar \
+    --env cloudDomain=$cloudDomain \
+    --env cloudPort=$cloudPort \
+    --env certSecretName="wildcard-cert" \
+    --env passwordEnabled="true" $configFileFlag
+
+  echo "run applaunchpad frontend"
+  sealos run tars/frontend-applaunchpad.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort=$cloudPort \
+  --env certSecretName="wildcard-cert"
+
+  echo "run terminal frontend"
+  sealos run tars/frontend-terminal.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort=$cloudPort \
+  --env certSecretName="wildcard-cert"
+
+  echo "run dbprovider frontend"
+  sealos run tars/frontend-dbprovider.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort=$cloudPort \
+  --env certSecretName="wildcard-cert"
+
+  echo "run cost center frontend"
+  sealos run tars/frontend-costcenter.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort=$cloudPort \
+  --env certSecretName="wildcard-cert" \
+  --env transferEnabled="true" \
+  --env rechargeEnabled="false"
+}
+
 function sealos_authorize {
     echo "start to authorize sealos"
     echo "create admin-user"
@@ -131,43 +175,6 @@ function sealos_authorize {
     kubectl apply -f manifests/free-license.yaml
 }
 
-
-function sealos_run_frontend {
-  echo "run desktop frontend"
-  configFileFlag=""
-  if kubectl get secret desktop-frontend-secret -n sealos --ignore-not-found > /dev/null 2>&1; then
-    configFileFlag=""
-  else
-    configFileFlag="--config-file etc/sealos/desktop-config.yaml"
-  fi
-  sealos run tars/frontend-desktop.tar \
-    --env cloudDomain=$cloudDomain \
-    --env certSecretName="wildcard-cert" \
-    --env passwordEnabled="true" \
-    $configFileFlag
-
-  echo "run applaunchpad frontend"
-  sealos run tars/frontend-applaunchpad.tar \
-  --env cloudDomain=$cloudDomain \
-  --env certSecretName="wildcard-cert"
-
-  echo "run terminal frontend"
-  sealos run tars/frontend-terminal.tar \
-  --env cloudDomain=$cloudDomain \
-  --env certSecretName="wildcard-cert"
-
-  echo "run dbprovider frontend"
-  sealos run tars/frontend-dbprovider.tar \
-  --env cloudDomain=$cloudDomain \
-  --env certSecretName="wildcard-cert"
-
-  echo "run cost center frontend"
-  sealos run tars/frontend-costcenter.tar \
-  --env cloudDomain=$cloudDomain \
-  --env certSecretName="wildcard-cert" \
-  --env transferEnabled="true" \
-  --env rechargeEnabled="false"
-}
 
 function install {
   # gen mongodb uri and others
