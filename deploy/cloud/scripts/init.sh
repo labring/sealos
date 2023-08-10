@@ -8,6 +8,9 @@ mongodbUri=""
 saltKey=""
 
 function prepare {
+  # source .env
+  source etc/sealos/.env
+
   # kubectl apply namespace, secret and mongodb
   kubectl apply -f manifests/namespace.yaml
 
