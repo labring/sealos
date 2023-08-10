@@ -77,8 +77,8 @@ func NewNotificationManager(ctx context.Context, client client.Client,
 }
 
 func NewNotificationManager(ctx context.Context, client client.Client,
-	logger logr.Logger, batchSize, channelSize int) *NotificationManager {
-	return &NotificationManager{
+	logger logr.Logger, batchSize, channelSize int) *Manager {
+	return &Manager{
 		ctx:         ctx,
 		client:      client,
 		logger:      logger,
