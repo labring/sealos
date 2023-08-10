@@ -23,7 +23,7 @@ data:
 kind: ConfigMap
 metadata:
   name: url-config
-  namespace: sealos-system
+  namespace: "{{ .Namespace }}"
 ---
 apiVersion: v1
 data: null
