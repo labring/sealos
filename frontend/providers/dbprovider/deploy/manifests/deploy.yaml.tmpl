@@ -41,7 +41,7 @@ spec:
             - name: SEALOS_DOMAIN
               value: {{ .cloudDomain }}
             - name: SEALOS_PORT
-              value: {{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
+              value: "{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

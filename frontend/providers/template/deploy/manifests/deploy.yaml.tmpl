@@ -53,7 +53,7 @@ spec:
             - name: SEALOS_CLOUD_DOMAIN
               value: {{ .cloudDomain }}
             - name: SEALOS_CLOUD_PORT
-              value: {{ .cloudPort }}
+              value: "{{ .cloudPort }}"
             - name: SEALOS_CERT_SECRET_NAME
               value: {{ .certSecretName }}
             - name: TEMPLATE_REPO_URL
