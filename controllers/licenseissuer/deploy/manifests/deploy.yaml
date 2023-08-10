@@ -224,32 +224,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - namespaces
-  verbs:
-  - create
-  - get
-  - list
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumes
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - secrets
   verbs:
   - create
@@ -259,84 +233,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - cloudsyncs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - cloudsyncs/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - cloudsyncs/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - collectors
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - collectors/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - collectors/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - launchers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - launchers/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - launchers/status
-  verbs:
-  - get
-  - patch
-  - update
 - apiGroups:
   - infostream.sealos.io
   resources:
@@ -359,32 +255,6 @@ rules:
   - infostream.sealos.io
   resources:
   - licenses/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - notifications
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - notifications/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - notifications/status
   verbs:
   - get
   - patch
@@ -583,7 +453,7 @@ spec:
         resources:
           limits:
             cpu: 500m
-            memory: 64Mi
+            memory: 128Mi
           requests:
             cpu: 5m
             memory: 64Mi
@@ -619,7 +489,12 @@ spec:
             secretKeyRef:
               key: PasswordSalt
               name: licenseissuer-env
-        image: registry.cn-hangzhou.aliyuncs.com/fckc/cloud-controller:latest
+        - name: NAMESPACE
+          valueFrom:
+            secretKeyRef:
+              key: Namespace
+              name: licenseissuer-env
+        image: ghcr.io/labring/sealos-licenseissuer-controller:latest
         livenessProbe:
           httpGet:
             path: /healthz
@@ -639,7 +514,7 @@ spec:
             memory: 1024Mi
           requests:
             cpu: 10m
-            memory: 64Mi
+            memory: 512Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

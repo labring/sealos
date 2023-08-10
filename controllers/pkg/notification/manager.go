@@ -18,10 +18,11 @@ package notification
 
 import (
 	"context"
-	"sync"
 	"time"
 
+	"github.com/go-logr/logr"
 	v1 "github.com/labring/sealos/controllers/common/notification/api/v1"
+	"github.com/labring/sealos/pkg/utils/logger"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,28 +60,34 @@ const maxChannelSize = 500
 // 5. allow users to focus solely on important tasks.
 
 type NotificationManager struct {
-	Ctx               context.Context
-	Client            client.Client
-	NotificationQueue []v1.Notification
+	ctx         context.Context
+	client      client.Client
+	logger      logr.Logger
+	batchSize   int
+	channelSize int
+	queue       []v1.Notification
 }
 
-func NewNotificationManager(ctx context.Context, client client.Client) *NotificationManager {
+func NewNotificationManager(ctx context.Context, client client.Client,
+	logger logr.Logger, batchSize, channelSize int) *NotificationManager {
 	return &NotificationManager{
-		Ctx:               ctx,
-		Client:            client,
-		NotificationQueue: []v1.Notification{},
+		ctx:         ctx,
+		client:      client,
+		logger:      logger,
+		batchSize:   batchSize,
+		channelSize: channelSize,
 	}
 }
 
 // Run of the NotificationManager runs the notification manager.
 // It writes the notifications in batches
 func (nm *NotificationManager) Run() {
-	pool := NewPool(maxBatchSize)
-	pool.Run(maxChannelSize)
-	for _, notification := range nm.NotificationQueue {
+	pool := NewPool(nm.batchSize)
+	pool.Run(nm.channelSize)
+	for _, notification := range nm.queue {
 		notification := notification
 		pool.Add(func() {
-			err := write(nm.Ctx, nm.Client, &notification)
+			err := write(nm.ctx, nm.client, &notification)
 			if err != nil {
 				logger.Error(err, "Failed to Do Notification Write Opt")
 			}
@@ -91,23 +98,15 @@ func (nm *NotificationManager) Run() {
 
 func (nm *NotificationManager) Load(receivers *Receiver, events []Event) *NotificationManager {
 	for _, event := range events {
-		switch event.Kind {
-		case General:
-			nm.NotificationQueue = loadNotification(receivers.UserNamespaces,
-				event, nm.NotificationQueue)
-		case Admin:
-			nm.NotificationQueue = loadNotification(receivers.AdminNamespaces,
-				event, nm.NotificationQueue)
-		}
+		nm.loadNotification(receivers.receivers, event)
 	}
 	return nm
 }
 
-func loadNotification(receivers []string, event Event, queue []v1.Notification) []v1.Notification {
+func (nm *NotificationManager) loadNotification(receivers []string, event Event) {
 	for _, receiver := range receivers {
-		queue = append(queue, newNotification(receiver, event))
+		nm.queue = append(nm.queue, newNotification(receiver, event))
 	}
-	return queue
 }
 
 func write(ctx context.Context, client client.Client, obj client.Object, opts ...client.CreateOption) error {
@@ -131,40 +130,5 @@ func newNotification(receiver string, event Event) v1.Notification {
 			From:       event.From,
 			Title:      event.Title,
 		},
-	}
-}
-
-type Pool struct {
-	wg   sync.WaitGroup
-	work chan func()
-}
-
-func NewPool(size int) *Pool {
-	p := &Pool{
-		work: make(chan func(), size),
-	}
-	return p
-}
-
-func (p *Pool) Add(f func()) {
-	p.work <- func() {
-		f()
-	}
-}
-
-func (p *Pool) Wait() {
-	close(p.work)
-	p.wg.Wait()
-}
-
-func (p *Pool) Run(size int) {
-	p.wg.Add(size)
-	for i := 0; i < size; i++ {
-		go func() {
-			for f := range p.work {
-				f()
-			}
-			p.wg.Done()
-		}()
 	}
 }

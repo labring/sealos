@@ -64,7 +64,7 @@ func (d *datasycn) sync(instance *TaskInstance) error {
 	}
 	// update configmap
 	err = d.updateConfigMap(instance, syncResponse, types.NamespacedName{
-		Namespace: SealosNamespace,
+		Namespace: GetOptions().GetEnvOptions().Namespace,
 		Name:      URLConfig,
 	})
 

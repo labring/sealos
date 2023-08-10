@@ -73,17 +73,17 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// for notification
 	nq := &ntf.NoticeEventQueue{}
-	nm := ntf.NewNotificationManager(ctx, r.Client)
+	nm := ntf.NewNotificationManager(ctx, r.Client, r.logger, 1, 1)
 	nb := (&ntf.Builder{}).WithLevel(notificationv1.High).
 		WithTitle(util.LicenseNoticeTitle).WithFrom(util.Sealos).
 		WithType(ntf.General)
-	receiver := ntf.NewReceiver(ctx, r.Client).SetReceiver(req.Namespace)
+	receiver := ntf.NewReceiver(ctx, r.Client).AddReceiver(req.Namespace)
 
 	reader := &util.Reader{}
 	// get license
-
+	namespace := util.GetOptions().GetEnvOptions().Namespace
 	reader.Add(&r.license, types.NamespacedName{Namespace: req.Namespace, Name: util.LicenseName})
-	reader.Add(&r.configMap, types.NamespacedName{Namespace: util.SealosNamespace, Name: util.LicenseHistory})
+	reader.Add(&r.configMap, types.NamespacedName{Namespace: namespace, Name: util.LicenseHistory})
 
 	if err := reader.Read(ctx, r.Client); err != nil {
 		r.logger.Error(err, "failed to read resources...")
@@ -155,7 +155,10 @@ func (r *LicenseReconciler) Authorize(ctx context.Context) (string, error) {
 		return message, errors.New("invalid license")
 	}
 	// get account
-	id := types.NamespacedName{Namespace: util.SealosNamespace, Name: r.license.Spec.UID}
+	id := types.NamespacedName{
+		Namespace: util.GetOptions().GetEnvOptions().Namespace,
+		Name:      r.license.Spec.UID,
+	}
 	err := r.Client.Get(ctx, id, &r.account)
 	if err != nil {
 		r.logger.Error(err, "failed to get account")

@@ -117,6 +117,9 @@ type EnvOptions struct {
 
 	// The SaltKey is used to encrypt the password for pre-registered users.
 	SaltKey string
+
+	// Namespace
+	Namespace string
 }
 
 func (eo *EnvOptions) initOptions() {
@@ -124,6 +127,7 @@ func (eo *EnvOptions) initOptions() {
 	eo.MonitorConfiguration = os.Getenv("MONITOR")
 	eo.MongoURI = os.Getenv("MONGO_URI")
 	eo.SaltKey = os.Getenv("PASSWORD_SALT")
+	eo.Namespace = os.Getenv("NAMESPACE")
 }
 
 type RunnableOptions struct {

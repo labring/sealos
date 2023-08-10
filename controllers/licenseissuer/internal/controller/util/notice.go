@@ -19,6 +19,7 @@ package util
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	notificationv1 "github.com/labring/sealos/controllers/common/notification/api/v1"
@@ -59,14 +60,9 @@ func (nr *NotificationRequest) setTimestamp(timestamp int64) *NotificationReques
 
 func (n *notice) noticeWork(instance *TaskInstance) error {
 	// init
-	receiver := ntf.Receiver{
-		Context: instance.ctx,
-		Client:  instance.Client,
-	}
-	manager := ntf.NotificationManager{
-		Ctx:    instance.ctx,
-		Client: instance.Client,
-	}
+	receiver := ntf.NewReceiver(instance.ctx, instance.Client)
+	manager := ntf.NewNotificationManager(instance.ctx, instance.Client,
+		instance.logger, maxBatchSize, maxChannelSize)
 	// get uid and url-map
 	uid, urlMap, err := GetUIDURL(instance.ctx, instance.Client)
 	if err != nil {
@@ -91,14 +87,14 @@ func (n *notice) noticeWork(instance *TaskInstance) error {
 	}
 
 	// get receivers
-	err = receiver.Cache(&corev1.NamespaceList{})
+	receiver.AddReceivers(n.getUserNamespace(instance, filter))
 
 	if err != nil {
 		instance.logger.Error(err, "failed to cache namespace")
 		return err
 	}
 
-	manager.Load(&receiver, events).Run()
+	manager.Load(receiver, events).Run()
 	return nil
 }
 
@@ -118,7 +114,7 @@ func GetURL(ctx context.Context, client client.Client) (map[string]string, error
 	urlConfigMap := &corev1.ConfigMap{}
 	id := types.NamespacedName{
 		Name:      URLConfig,
-		Namespace: SealosNamespace,
+		Namespace: GetOptions().GetEnvOptions().Namespace,
 	}
 	// get url-config from k8s
 	err := client.Get(ctx, id, urlConfigMap)
@@ -137,7 +133,7 @@ func GetUID(ctx context.Context, client client.Client) (string, error) {
 	info := &corev1.Secret{}
 	err := client.Get(ctx, types.NamespacedName{
 		Name:      ClusterInfo,
-		Namespace: SealosNamespace,
+		Namespace: GetOptions().GetEnvOptions().Namespace,
 	}, info)
 	if err != nil {
 		return "", fmt.Errorf("failed to get cluster-info: %w", err)
@@ -243,35 +239,24 @@ func (nc *noticeCleaner) getNotificationsExpired(instance *TaskInstance) ([]noti
 const maxBatchSize = 100
 const maxChannelSize = 500
 
-// The Pool proviveds a pool of goroutines that can be used to perform work.
-// type Pool struct {
-// 	work chan func()
-// 	wg   sync.WaitGroup
-// }
+type FilterFunc func(string) bool
 
-// func NewPool(size int) *Pool {
-// 	return &Pool{
-// 		work: make(chan func(), size),
-// 	}
-// }
+func (n *notice) getUserNamespace(instance *TaskInstance, opt FilterFunc) []string {
+	namespaceList := &corev1.NamespaceList{}
+	err := instance.List(instance.ctx, namespaceList)
+	if err != nil {
+		instance.logger.Error(err, "failed to list namespace")
+		return nil
+	}
+	var namespaces []string
+	for _, namespace := range namespaceList.Items {
+		if opt(namespace.Name) {
+			namespaces = append(namespaces, namespace.Name)
+		}
+	}
+	return nil
+}
 
-// func (p *Pool) Run(workerCount int) {
-// 	p.wg.Add(workerCount)
-// 	for i := 0; i < workerCount; i++ {
-// 		go func() {
-// 			for work := range p.work {
-// 				work()
-// 			}
-// 			p.wg.Done()
-// 		}()
-// 	}
-// }
-
-// func (p *Pool) Add(work func()) {
-// 	p.work <- work
-// }
-
-// func (p *Pool) Wait() {
-// 	close(p.work)
-// 	p.wg.Wait()
-// }
+func filter(ns string) bool {
+	return strings.HasPrefix(ns, ntf.GeneralPrefix)
+}

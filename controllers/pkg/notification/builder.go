@@ -21,16 +21,12 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
-	"fmt"
 	"io"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/go-logr/logr"
 	v1 "github.com/labring/sealos/controllers/common/notification/api/v1"
-	corev1 "k8s.io/api/core/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -45,25 +41,6 @@ const (
 	GeneralPrefix = "ns-" // general notification prefix
 )
 
-// Filter is a function that takes an object
-// and returns true if the object should be included in the result.
-type Filter func(obj client.Object) bool
-
-var filters map[string]Filter
-
-var logger logr.Logger
-
-func init() {
-	logger = ctrl.Log.WithName("Notice")
-	filters = make(map[string]Filter)
-	filters[string(General)] = func(obj client.Object) bool {
-		return strings.HasPrefix(obj.GetName(), GeneralPrefix)
-	}
-	filters[string(Admin)] = func(obj client.Object) bool {
-		return false
-	}
-}
-
 const (
 	idLength    = 12
 	letterBytes = "abcdefghijklmnopqrstuvwxyz0123456789"
@@ -73,8 +50,7 @@ const (
 type Receiver struct {
 	context.Context
 	client.Client
-	UserNamespaces  []string
-	AdminNamespaces []string
+	receivers []string
 }
 
 func NewReceiver(ctx context.Context, client client.Client) *Receiver {
@@ -84,49 +60,16 @@ func NewReceiver(ctx context.Context, client client.Client) *Receiver {
 	}
 }
 
-func (rv *Receiver) SetReceiver(receiver string, kind ...Kind) *Receiver {
-	if len(kind) == 0 {
-		rv.UserNamespaces = append(rv.UserNamespaces, receiver)
-		return rv
-	}
-	switch kind[0] {
-	case General:
-		rv.UserNamespaces = append(rv.UserNamespaces, receiver)
-	case Admin:
-		rv.AdminNamespaces = append(rv.AdminNamespaces, receiver)
-	}
+func (rv *Receiver) AddReceiver(receiver string) *Receiver {
+	rv.receivers = append(rv.receivers, receiver)
 	return rv
 }
 
 // Cache of the NamespaceCache caches the namespaces in the cluster
 // categorized by  filters.
-func (rv *Receiver) Cache(obj client.ObjectList) error {
-	err := rv.Client.List(rv.Context, obj)
-	if err != nil {
-		logger.Error(err, "Failed to list namespaces")
-		return err
-	}
-	namespaces, ok := obj.(*corev1.NamespaceList)
-	if !ok {
-		logger.Error(err, "Failed to cast to NamespaceList")
-		return fmt.Errorf("failed to cast to NamespaceList: %w", err)
-	}
-	for _, ns := range namespaces.Items {
-		if filters[string(General)](&ns) {
-			rv.UserNamespaces = append(rv.UserNamespaces, ns.GetName())
-		}
-		if filters[string(Admin)](&ns) {
-			rv.AdminNamespaces = append(rv.AdminNamespaces, ns.GetName())
-		}
-	}
-	return nil
-}
-
-// ReCache of the NamespaceCache caches the namespaces in the cluster
-func (rv *Receiver) ReCache(obj client.ObjectList) error {
-	rv.UserNamespaces = []string{}
-	rv.AdminNamespaces = []string{}
-	return rv.Cache(obj)
+func (rv *Receiver) AddReceivers(receivers []string) *Receiver {
+	rv.receivers = append(rv.receivers, receivers...)
+	return rv
 }
 
 // NotificationPackage is the struct that contains the notification information.

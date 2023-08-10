@@ -142,7 +142,7 @@ func (t initTask) checkRegister(instance *TaskInstance) (bool, error) {
 	info := &corev1.Secret{}
 	err := instance.Get(instance.ctx, types.NamespacedName{
 		Name:      ClusterInfo,
-		Namespace: SealosNamespace,
+		Namespace: GetOptions().GetEnvOptions().Namespace,
 	}, info)
 	if err != nil && apierrors.IsNotFound(err) {
 		return false, nil
@@ -171,7 +171,7 @@ func createClusterInfo() *corev1.Secret {
 	uuid := uuid.New().String()
 	secret := &corev1.Secret{}
 	secret.Name = ClusterInfo
-	secret.Namespace = SealosNamespace
+	secret.Namespace = GetOptions().GetEnvOptions().Namespace
 	secret.Data = map[string][]byte{
 		"uuid": []byte(uuid),
 	}

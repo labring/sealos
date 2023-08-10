@@ -17,11 +17,11 @@ limitations under the License.
 package util
 
 const (
-	SealosNamespace = "sealos-system"
-	ClusterInfo     = "cluster-info"
-	URLConfig       = "url-config"
-	LicenseHistory  = "license-history"
-	LicenseName     = "license"
+	// SealosNamespace = "sealos-system"
+	ClusterInfo    = "cluster-info"
+	URLConfig      = "url-config"
+	LicenseHistory = "license-history"
+	LicenseName    = "license"
 	// add more resource name here
 )
 
