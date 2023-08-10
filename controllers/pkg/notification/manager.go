@@ -28,9 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const maxBatchSize = 100
-const maxChannelSize = 500
-
 // the best practice of notification api is the following:
 //  1. use a notification builder to build a notification event queue,such as:
 //     Queue := NotificationQueue{}
@@ -59,7 +56,7 @@ const maxChannelSize = 500
 // 4. decoupling of message generation and delivery, along with error tolerance mechanisms
 // 5. allow users to focus solely on important tasks.
 
-type NotificationManager struct {
+type Manager struct {
 	ctx         context.Context
 	client      client.Client
 	logger      logr.Logger
@@ -69,8 +66,8 @@ type NotificationManager struct {
 }
 
 func NewNotificationManager(ctx context.Context, client client.Client,
-	logger logr.Logger, batchSize, channelSize int) *NotificationManager {
-	return &NotificationManager{
+	logger logr.Logger, batchSize, channelSize int) *Manager {
+	return &Manager{
 		ctx:         ctx,
 		client:      client,
 		logger:      logger,
@@ -81,7 +78,7 @@ func NewNotificationManager(ctx context.Context, client client.Client,
 
 // Run of the NotificationManager runs the notification manager.
 // It writes the notifications in batches
-func (nm *NotificationManager) Run() {
+func (nm *Manager) Run() {
 	pool := NewPool(nm.batchSize)
 	pool.Run(nm.channelSize)
 	for _, notification := range nm.queue {
@@ -96,14 +93,14 @@ func (nm *NotificationManager) Run() {
 	pool.Wait()
 }
 
-func (nm *NotificationManager) Load(receivers *Receiver, events []Event) *NotificationManager {
+func (nm *Manager) Load(receivers *Receiver, events []Event) *Manager {
 	for _, event := range events {
 		nm.loadNotification(receivers.receivers, event)
 	}
 	return nm
 }
 
-func (nm *NotificationManager) loadNotification(receivers []string, event Event) {
+func (nm *Manager) loadNotification(receivers []string, event Event) {
 	for _, receiver := range receivers {
 		nm.queue = append(nm.queue, newNotification(receiver, event))
 	}

@@ -151,9 +151,7 @@ Return values:
 
 The function also generates a unique ID for each NotificationEvent. If the generation of the ID fails, it uses the current Unix timestamp as the ID.
 */
-func NewNotificationEvent(title string, message string,
-	kind Kind, from string, level v1.Type) Event {
-
+func NewNotificationEvent(title string, message string, kind Kind, from string, level v1.Type) Event {
 	id, err := randStringBytes(idLength)
 	if err != nil || id == "" {
 		id = strings.ToLower(strconv.Itoa(int(time.Now().Unix())))
@@ -170,7 +168,7 @@ func NewNotificationEvent(title string, message string,
 }
 
 func RandStrings(n int) string {
-	str, err := randStringBytes(idLength)
+	str, err := randStringBytes(n)
 	if err != nil || str == "" {
 		str = encodeTime()
 	}

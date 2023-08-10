@@ -254,7 +254,7 @@ func (n *notice) getUserNamespace(instance *TaskInstance, opt FilterFunc) []stri
 			namespaces = append(namespaces, namespace.Name)
 		}
 	}
-	return nil
+	return namespaces
 }
 
 func filter(ns string) bool {

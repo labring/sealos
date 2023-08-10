@@ -21,6 +21,6 @@ import (
 	"testing"
 )
 
-func TestEncodeTime(t *testing.T) {
+func TestEncodeTime(_ *testing.T) {
 	fmt.Println(encodeTime())
 }
