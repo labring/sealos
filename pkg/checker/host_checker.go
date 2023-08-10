@@ -40,10 +40,7 @@ func (a HostChecker) Check(cluster *v2.Cluster, _ string) error {
 	if len(a.IPs) != 0 {
 		ipList = a.IPs
 	}
-	sshClient, err := ssh.NewSSHByCluster(cluster, false)
-	if err != nil {
-		return fmt.Errorf("checker: failed to create ssh client, %v", err)
-	}
+	sshClient := ssh.NewSSHByCluster(cluster, false)
 	if err := checkHostnameUnique(sshClient, ipList); err != nil {
 		return err
 	}
