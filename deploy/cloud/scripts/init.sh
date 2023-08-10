@@ -106,6 +106,8 @@ function sealos_run_controller {
   # run account controller
   sealos run tars/account.tar \
   --env MONGO_URI="$mongodbUri" \
+  --env cloudDomain="$cloudDomain" \
+  --env cloudPort="$cloudPort" \
   --env DEFAULT_NAMESPACE="account-system"
 
   # run licenseissuer controller
