@@ -3,6 +3,7 @@ USER 65532:65532
 
 COPY registry registry
 COPY manifests manifests
+COPY scripts scripts
 
 ENV cloudDomain="127.0.0.1.nip.io"
 ENV cloudPort=""

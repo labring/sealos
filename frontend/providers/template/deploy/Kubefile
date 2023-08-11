@@ -2,6 +2,7 @@ FROM scratch
 
 USER 65532:65532
 
+COPY registry registry
 COPY manifests manifests
 
 ENV cloudDomain="127.0.0.1.nip.io"
