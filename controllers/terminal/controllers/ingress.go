@@ -43,7 +43,7 @@ func (r *TerminalReconciler) createNginxIngress(terminal *terminalv1.Terminal, h
 			"nginx.ingress.kubernetes.io/rewrite-target":         "/",
 			"nginx.ingress.kubernetes.io/proxy-send-timeout":     "86400",
 			"nginx.ingress.kubernetes.io/proxy-read-timeout":     "86400",
-			"nginx.ingress.kubernetes.io/proxy-body-size":        "256m",
+			"nginx.ingress.kubernetes.io/proxy-body-size":        "32m",
 			"nginx.ingress.kubernetes.io/proxy-buffer-size":      "64k",
 			"nginx.ingress.kubernetes.io/enable-cors":            "true",
 			"nginx.ingress.kubernetes.io/cors-allow-origin":      cors,
