@@ -6,10 +6,12 @@ import { useMemo } from 'react';
 import { formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import useBillingData from '@/hooks/useBillingData';
-import shellcoin from '@/assert/shell_coin.svg';
+import CurrencySymbol from '../CurrencySymbol';
+import useEnvStore from '@/stores/env';
 export function Buget() {
   const { t } = useTranslation();
   const { data } = useBillingData();
+  const currency = useEnvStore((s) => s.currency);
   const [_out, _in] = useMemo(
     () =>
       (data?.data?.status.item || []).reduce<[number, number]>(
@@ -52,8 +54,8 @@ export function Buget() {
                 {t(v.title)}
               </Text>
               <Flex mt="8px">
-                <Img src={shellcoin.src} mr="4px" />
-                <Text fontWeight="500" fontSize="16px">
+                <CurrencySymbol w="16px" type={currency} />
+                <Text fontWeight="500" fontSize="16px" ml="4px">
                   {v.value}
                 </Text>
               </Flex>

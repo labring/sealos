@@ -1,4 +1,3 @@
-// import { MockBillingData } from '@/mock/billing';
 import { InvoiceTable } from '@/components/invoice/invoiceTable';
 import { Box, Button, Flex, Heading, Img, Input, Text } from '@chakra-ui/react';
 import { useEffect, useRef, useState } from 'react';

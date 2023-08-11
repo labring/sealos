@@ -13,7 +13,7 @@ import jsyaml from 'js-yaml';
 import RechargeModal from './RechargeModal';
 import TransferModal from './TransferModal';
 import useEnvStore from '@/stores/env';
-import shellCoin from '@/assert/shell_coin.svg';
+import CurrencySymbol from '@/components/CurrencySymbol';
 export default memo(function UserCard() {
   const getSession = useSessionStore((state) => state.getSession);
   const transferEnabled = useEnvStore((state) => state.transferEnabled);
@@ -44,6 +44,7 @@ export default memo(function UserCard() {
   if (balance_raw?.data?.deductionBalance) {
     real_balance -= balance_raw?.data.deductionBalance;
   }
+  const currency = useEnvStore((s) => s.currency);
   const balance = real_balance;
   const stripePromise = useEnvStore((s) => s.stripePromise);
   return (
@@ -51,7 +52,6 @@ export default memo(function UserCard() {
       <Flex
         className={styles.userCard}
         boxShadow={'0 4px #BCBFC3,0 8px #DFE2E6'}
-        // aspectRatio={'2/1'}
         pt="13px"
         pb={'19px'}
         mb={'34px'}
@@ -76,8 +76,8 @@ export default memo(function UserCard() {
             {t('Balance')}
           </Box>
           <Flex fontSize="24px" fontWeight="500" alignSelf={'center'} mt="3px !important">
-            <Img src={shellCoin.src} w="16px" h="16px" mixBlendMode={'exclusion'} />
-            <Text>{displayMoney(formatMoney(balance))}</Text>
+            <CurrencySymbol color={'white'} w="20px" type={currency} />
+            <Text ml="6px">{displayMoney(formatMoney(balance))}</Text>
           </Flex>
           <Flex alignItems="center" alignSelf={'center'} gap="10px" mt={'20px !important'}>
             {transferEnabled && (

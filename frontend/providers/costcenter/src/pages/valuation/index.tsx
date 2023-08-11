@@ -15,7 +15,7 @@ import OuterLink from '@/components/outerLink';
 import NotFound from '@/components/notFound';
 import PredictCard from '@/components/valuation/predictCard';
 import useEnvStore from '@/stores/env';
-import shellcoin from '@/assert/shell_coin.svg';
+import CurrencySymbol from '@/components/CurrencySymbol';
 type CardItem = {
   title: string;
   price: number[];
@@ -46,6 +46,7 @@ function Valuation() {
   const { t, i18n } = useTranslation();
   const cookie = getCookie('NEXT_LOCALE');
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
+  const currency = useEnvStore((s) => s.currency);
   useEffect(() => {
     i18n.changeLanguage(cookie);
   }, [cookie, i18n]);
@@ -111,12 +112,14 @@ function Valuation() {
                     justifyContent="center"
                     alignContent={'center'}
                   >
-                    <Img src={shellcoin.src} h="28px" w="28px" my="auto" mr="4px" />
                     <Text>{item.price[0]}</Text>
                   </Heading>
-                  <Text ml="4px">
-                    {item.unit} / {t('Hour')}
-                  </Text>
+                  <Flex align={'center'}>
+                    <CurrencySymbol w="16px" type={currency} />
+                    <Text ml="4px">
+                      {item.unit} / {t('Hour')}
+                    </Text>
+                  </Flex>
                   <Box pt={'17px'}>
                     {CYCLE.map((_item, idx) => (
                       <Flex
@@ -128,8 +131,8 @@ function Valuation() {
                       >
                         <Box>{item.price[idx + 1]}</Box>
                         <Flex align={'center'}>
-                          <Img src={shellcoin.src} h="16px" w="16px" mr={'4px'} />
-                          <Text>{`${item.unit} / ${t(_item)}`}</Text>
+                          <CurrencySymbol w="16px" h="16px" type={currency} />
+                          <Text ml="4px">{`${item.unit} / ${t(_item)}`}</Text>
                         </Flex>
                       </Flex>
                     ))}
@@ -154,17 +157,14 @@ function Valuation() {
                         pt="12px"
                         px="24px"
                       >
-                        <Flex>
-                          <Img src={shellcoin.src} h="16px" w="16px" />
-                          <Text>{`${item.price}`}</Text>
-                        </Flex>
+                        <Text>{`${item.price}`}</Text>
                         <Stack align={'flex-end'} gap="0" fontSize={'10px'} fontWeight={'500'}>
                           <Flex>
                             <Img src={nvidaIcon.src} w="14px" h="14px" mr="6px" />
                             <Text minW={'max-content'}>{item.name}</Text>
                           </Flex>
                           <Flex>
-                            <Img src={shellcoin.src} h="16px" w="16px" />
+                            <CurrencySymbol type={currency} />
                             <Text>{`${gpuProps.unit} / ${t('Hour')}`}</Text>
                           </Flex>
                         </Stack>
