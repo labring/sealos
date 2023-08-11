@@ -6,11 +6,14 @@ import { enableRecharge } from '@/services/enable';
 import request from '@/services/request';
 import useAppStore from '@/stores/app';
 import useSessionStore from '@/stores/session';
+import { ApiResp } from '@/types';
+import { SystemConfigType } from '@/types/system';
 import { parseOpenappQuery } from '@/utils/format';
 import { useColorMode } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useRouter } from 'next/router';
+import Script from 'next/script';
 import { createContext, useEffect, useState } from 'react';
 const destination = '/signin';
 interface IMoreAppsContext {
@@ -34,6 +37,10 @@ export default function Home({
   const init = useAppStore((state) => state.init);
   const setAutoLaunch = useAppStore((state) => state.setAutoLaunch);
   const cancelAutoLaunch = useAppStore((state) => state.cancelAutoLaunch);
+
+  const { data: systemConfig, refetch } = useQuery(['getSystemConfig'], () =>
+    request<any, ApiResp<SystemConfigType>>('/api/system/getSystemConfig')
+  );
 
   useEffect(() => {
     colorMode === 'dark' ? toggleColorMode() : null;
@@ -79,6 +86,9 @@ export default function Home({
 
   return (
     <Layout>
+      {systemConfig?.data?.scripts?.map((item, i) => {
+        return <Script key={i} {...item} />;
+      })}
       <MoreAppsContext.Provider value={{ showMoreApps, setShowMoreApps }}>
         <RechargeEnabledContext.Provider value={rechargeEnabled}>
           <DesktopContent />

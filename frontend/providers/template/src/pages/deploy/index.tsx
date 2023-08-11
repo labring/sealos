@@ -8,11 +8,10 @@ import { GET } from '@/services/request';
 import { useCachedStore } from '@/store/cached';
 import { useGlobalStore } from '@/store/global';
 import type { QueryType, YamlItemType } from '@/types';
-import { TemplateSource, TemplateType, YamlType } from '@/types/app';
+import { TemplateSource, TemplateType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
 import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
 import { processEnvValue } from '@/utils/tools';
-import { getUserKubeConfig } from '@/utils/user';
 import { Box, Breadcrumb, BreadcrumbItem, BreadcrumbLink, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import JSYAML from 'js-yaml';
@@ -108,9 +107,9 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   }, 200);
 
   const getCachedValue = () => {
-    if (!cached) return {};
+    if (!cached) return null;
     const cachedValue = JSON.parse(cached);
-    return cachedValue?.cachedKey === templateName ? cachedValue : {};
+    return cachedValue?.cachedKey === templateName ? cachedValue : null;
   };
 
   // form
@@ -209,11 +208,13 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     try {
       const yamlString = res.yamlList?.map((item) => JSYAML.dump(item)).join('---\n');
       const output = mapValues(res?.source.defaults, (value) => value.value);
+
       const generateStr = parseTemplateString(yamlString, /\$\{\{\s*(.*?)\s*\}\}/g, {
         ...res?.source,
         defaults: output,
-        inputs: getFormDefaultValues(res)
+        inputs: getCachedValue() ? JSON.parse(cached) : getFormDefaultValues(res)
       });
+
       setCorrectYaml(generateStr);
       setYamlList(generateYamlList(generateStr, detailName));
     } catch (err) {
@@ -222,13 +223,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   };
 
   useEffect(() => {
-    const cached = getCachedValue();
-    formOnchangeDebounce(cached);
-  }, [templateSource]);
-
-  useEffect(() => {
     setInsideCloud(!(window.top === window));
-    // get template data
+
     (async () => {
       try {
         await getTemplateData();
