@@ -57,7 +57,7 @@ func (k *KubeadmRuntime) Init() error {
 	return k.pipeline("init", pipeline)
 }
 
-func (k *KubeadmRuntime) GetKubeadmConfig() ([]byte, error) {
+func (k *KubeadmRuntime) GetConfig() ([]byte, error) {
 	k.KubeadmConfig = k.ClusterFileKubeConfig
 	if err := k.ConvertInitConfigConversion(); err != nil {
 		return nil, err
@@ -80,49 +80,45 @@ func (k *KubeadmRuntime) GetKubeadmConfig() ([]byte, error) {
 type Interface interface {
 	Init() error
 	Reset() error
-	JoinNodes(newNodesIPList []string) error
-	DeleteNodes(nodeIPList []string) error
-	JoinMasters(newMastersIPList []string) error
-	DeleteMasters(mastersIPList []string) error
+	ScaleNodes(newNodesIPList []string, deleteNodesIPList []string) error
+	ScaleMasters(newMastersIPList []string, deleteMastersIPList []string) error
 	SyncNodeIPVS(mastersIPList, nodeIPList []string) error
+	Upgrade(version string) error
+	GetConfig() ([]byte, error)
+
 	UpdateCert(certs []string) error
-	UpgradeCluster(version string) error
-	GetKubeadmConfig() ([]byte, error)
 }
 
 func (k *KubeadmRuntime) Reset() error {
 	logger.Info("start to delete Cluster: master %s, node %s", k.getMasterIPList(), k.getNodeIPList())
 	return k.reset()
 }
-
-func (k *KubeadmRuntime) JoinNodes(newNodesIPList []string) error {
-	if len(newNodesIPList) != 0 {
+func (k *KubeadmRuntime) ScaleNodes(newNodesIPList []string, deleteNodesIPList []string) error {
+	if newNodesIPList != nil && len(newNodesIPList) != 0 {
 		logger.Info("%s will be added as worker", newNodesIPList)
+		if err := k.joinNodes(newNodesIPList); err != nil {
+			return err
+		}
+		return k.copyNodeKubeConfig(newNodesIPList)
 	}
-	if err := k.joinNodes(newNodesIPList); err != nil {
-		return err
+	if deleteNodesIPList != nil && len(deleteNodesIPList) != 0 {
+		logger.Info("worker %s will be deleted", deleteNodesIPList)
+		return k.deleteNodes(deleteNodesIPList)
 	}
-	return k.copyNodeKubeConfig(newNodesIPList)
+	logger.Warn("no nodes will be scaled")
+	return nil
 }
-func (k *KubeadmRuntime) DeleteNodes(nodesIPList []string) error {
-	if len(nodesIPList) != 0 {
-		logger.Info("worker %s will be deleted", nodesIPList)
-	}
-	return k.deleteNodes(nodesIPList)
-}
-
-func (k *KubeadmRuntime) JoinMasters(newMastersIPList []string) error {
-	if len(newMastersIPList) != 0 {
+func (k *KubeadmRuntime) ScaleMasters(newMastersIPList []string, deleteMastersIPList []string) error {
+	if newMastersIPList != nil && len(newMastersIPList) != 0 {
 		logger.Info("%s will be added as master", newMastersIPList)
+		return k.joinMasters(newMastersIPList)
 	}
-	return k.joinMasters(newMastersIPList)
-}
-
-func (k *KubeadmRuntime) DeleteMasters(mastersIPList []string) error {
-	if len(mastersIPList) != 0 {
-		logger.Info("master %s will be deleted", mastersIPList)
+	if deleteMastersIPList != nil && len(deleteMastersIPList) != 0 {
+		logger.Info("master %s will be deleted", deleteMastersIPList)
+		return k.deleteMasters(deleteMastersIPList)
 	}
-	return k.deleteMasters(mastersIPList)
+	logger.Warn("no masters will be scaled")
+	return nil
 }
 
 func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
@@ -168,7 +164,7 @@ func (k *KubeadmRuntime) Validate() error {
 	return nil
 }
 
-func (k *KubeadmRuntime) UpgradeCluster(version string) error {
+func (k *KubeadmRuntime) Upgrade(version string) error {
 	currVersion := k.getKubeVersionFromImage()
 
 	v0, err := semver.NewVersion(currVersion)

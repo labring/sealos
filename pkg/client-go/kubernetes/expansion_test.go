@@ -46,7 +46,7 @@ func TestGetKubeadmConfig(t *testing.T) {
 			ke := NewKubeExpansion(tt.args.client)
 			got, err := ke.FetchKubeadmConfig(context.Background())
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetKubeadmConfig() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			t.Logf("%+v", got)

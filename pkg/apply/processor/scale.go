@@ -116,11 +116,11 @@ func (c *ScaleProcessor) RunGuest(cluster *v2.Cluster) error {
 
 func (c *ScaleProcessor) Delete(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline Delete in ScaleProcessor.")
-	err := c.Runtime.DeleteMasters(c.MastersToDelete)
+	err := c.Runtime.ScaleMasters(nil, c.MastersToDelete)
 	if err != nil {
 		return err
 	}
-	if err = c.Runtime.DeleteNodes(c.NodesToDelete); err != nil {
+	if err = c.Runtime.ScaleNodes(nil, c.NodesToDelete); err != nil {
 		return err
 	}
 	if len(c.MastersToDelete) > 0 {
@@ -131,11 +131,11 @@ func (c *ScaleProcessor) Delete(cluster *v2.Cluster) error {
 
 func (c *ScaleProcessor) Join(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline Join in ScaleProcessor.")
-	err := c.Runtime.JoinMasters(c.MastersToJoin)
+	err := c.Runtime.ScaleMasters(c.MastersToJoin, nil)
 	if err != nil {
 		return err
 	}
-	err = c.Runtime.JoinNodes(c.NodesToJoin)
+	err = c.Runtime.ScaleNodes(c.NodesToJoin, nil)
 	if err != nil {
 		return err
 	}
