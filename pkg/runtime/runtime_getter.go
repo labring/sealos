@@ -23,7 +23,8 @@ import (
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 
-	strings2 "github.com/labring/sealos/pkg/utils/strings"
+	"github.com/labring/sealos/pkg/utils/maps"
+	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 
 	"golang.org/x/sync/errgroup"
 
@@ -101,8 +102,10 @@ func (k *KubeadmRuntime) getVIPFromImage() string {
 	if vip == "" {
 		vip = DefaultVIP
 	} else {
-		envs := k.getEnvInterface().WrapEnv(k.getMaster0IP())
-		vip = strings2.RenderTextFromEnv(vip, envs)
+		// Assuming that the first MountImage must be the rootfs
+		envsInRootFsImage := k.Cluster.Status.Mounts[0].Env
+		envs := maps.MergeMap(envsInRootFsImage, k.getEnvInterface().WrapEnv(k.getMaster0IP()))
+		vip = stringsutil.RenderTextFromEnv(vip, envs)
 	}
 	logger.Debug("get vip is %s", vip)
 	return vip
