@@ -1,0 +1,20 @@
+
+.link-btn {
+    display: block;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #FFFFFF;
+    background: linear-gradient(95.86deg, rgba(255, 255, 255, 0) 0.87%, rgba(255, 255, 255, 0.3) 20.88%, rgba(255, 255, 255, 0) 38.5%, rgba(255, 255, 255, 0.28) 53.53%, rgba(255, 255, 255, 0) 96.78%), linear-gradient(185.89deg, #16ABFF 3.28%, #B5B4FF 94%);
+    box-shadow: 0px 0px 32px rgba(84, 91, 255, 0.6);
+    border-radius: 40px;
+    transform: translate3d(0);
+    cursor: pointer;
+
+    &:hover {
+        text-decoration: none;
+        color: #fff;
+        transform: scale(0.97);
+        filter: brightness(95%);
+    }
+}
