@@ -22,6 +22,7 @@ import (
 	"time"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	account "github.com/labring/sealos/controllers/common/account"
 	"github.com/labring/sealos/controllers/pkg/database"
 	ntf "github.com/labring/sealos/controllers/pkg/notification"
 	corev1 "k8s.io/api/core/v1"
@@ -165,7 +166,7 @@ func (c *collect) getUsageYesterday(instance *TaskInstance) error {
 		instance.logger.Error(err, "failed to get billing amount")
 		return err
 	}
-	dailyClusterUsage.TotalUsageFee = float64(amount) / float64(BaseCount)
+	dailyClusterUsage.TotalUsageFee = float64(amount) / float64(account.CurrencyUnit)
 	// get billing amount for yesterday hourly usage fee
 	hourlyUsage := make([]float64, 24)
 	for cnt := 0; cnt < 24; cnt++ {
@@ -176,7 +177,7 @@ func (c *collect) getUsageYesterday(instance *TaskInstance) error {
 			instance.logger.Error(err, "failed to get billing amount")
 			return err
 		}
-		hourlyUsage[cnt] = float64(amount) / float64(BaseCount)
+		hourlyUsage[cnt] = float64(amount) / float64(account.CurrencyUnit)
 	}
 	dailyClusterUsage.HourlyUsage = hourlyUsage
 	c.DailyClusterUsage = dailyClusterUsage
