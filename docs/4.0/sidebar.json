@@ -200,8 +200,6 @@
           }
         ]
       },
-      "lifecycle-management/DEVELOPGUIDE",
-      "lifecycle-management/CONTRIBUTING",
       "lifecycle-management/QA"
     ]
   },
