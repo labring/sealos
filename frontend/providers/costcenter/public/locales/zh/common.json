@@ -35,7 +35,7 @@
   "Type": "类型",
   "CPU": "CPU",
   "Memory": "内存",
-  "Storage": "本地硬盘",
+  "Storage": "存储卷",
   "Total Amount": "总金额",
   "Payment Result": "支付结果",
   "Payment Successful": "支付成功",
