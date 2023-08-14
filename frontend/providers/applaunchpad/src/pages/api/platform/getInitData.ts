@@ -2,14 +2,15 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import type { FormSliderListType } from '@/types';
 import { readFileSync } from 'fs';
-import { noGpuSliderKey } from '@/constants/app';
-
+import { Coin, noGpuSliderKey } from '@/constants/app';
+ 
 export type Response = {
   SEALOS_DOMAIN: string;
   DOMAIN_PORT: string;
   INGRESS_SECRET: string;
   SHOW_EVENT_ANALYZE: boolean;
   FORM_SLIDER_LIST_CONFIG: FormSliderListType;
+  CURRENCY: Coin
 };
 
 export const defaultVal = {
@@ -37,14 +38,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     global.FormSliderListConfig = defaultVal;
   }
-
   jsonRes<Response>(res, {
     data: {
       SEALOS_DOMAIN: process.env.SEALOS_DOMAIN || 'cloud.sealos.io',
       DOMAIN_PORT: process.env.DOMAIN_PORT || '',
       INGRESS_SECRET: process.env.INGRESS_SECRET || 'wildcard-cert',
       SHOW_EVENT_ANALYZE: !!process.env.FASTGPT_KEY,
-      FORM_SLIDER_LIST_CONFIG: global.FormSliderListConfig
+      FORM_SLIDER_LIST_CONFIG: global.FormSliderListConfig,
+      CURRENCY: (process.env['CURRENCY'] || Coin.shellCoin) as Coin
     }
   });
 }
