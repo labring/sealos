@@ -1,9 +1,8 @@
-/* eslint-disable @next/next/no-img-element */
 import request from '@/service/request';
 import useSessionStore from '@/stores/session';
 import { displayMoney, formatMoney } from '@/utils/format';
 import { Box, Button, Flex, Image, Img, Stack, Text } from '@chakra-ui/react';
-import { QueryClient, useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import styles from './user.module.scss';
 
 import { useTranslation } from 'next-i18next';
@@ -30,7 +29,7 @@ export default memo(function UserCard() {
   }, [kubeconfig]);
   const { t } = useTranslation();
   const session = useSessionStore().getSession();
-  const { data: balance_raw, refetch } = useQuery({
+  const { data: balance_raw } = useQuery({
     queryKey: ['getAccount'],
     queryFn: () =>
       request<any, ApiResp<{ deductionBalance: number; balance: number }>>('/api/account/getAmount')
@@ -38,7 +37,7 @@ export default memo(function UserCard() {
 
   const rechargeRef = useRef<any>();
   const transferRef = useRef<any>();
-  const queryClient = new QueryClient();
+  const queryClient = useQueryClient();
 
   let real_balance = balance_raw?.data?.balance || 0;
   if (balance_raw?.data?.deductionBalance) {
@@ -118,9 +117,10 @@ export default memo(function UserCard() {
           balance={balance}
           stripePromise={stripePromise}
           request={request}
-          onPaySuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ['billing'], exact: false });
-            refetch();
+          onPaySuccess={async () => {
+            await new Promise((s) => setTimeout(s, 4000));
+            await queryClient.invalidateQueries({ queryKey: ['billing'], exact: false });
+            await queryClient.invalidateQueries({ queryKey: ['getAmount'] });
           }}
         />
       }
@@ -128,9 +128,10 @@ export default memo(function UserCard() {
         <TransferModal
           ref={transferRef}
           balance={balance}
-          onTransferSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ['billing'], exact: false });
-            refetch();
+          onTransferSuccess={async () => {
+            await new Promise((s) => setTimeout(s, 4000));
+            await queryClient.invalidateQueries({ queryKey: ['billing'], exact: false });
+            await queryClient.invalidateQueries({ queryKey: ['getAmount'] });
           }}
           k8s_username={k8s_username}
         />

@@ -1,6 +1,6 @@
 import { Box, Flex, Heading, Text, Img, Stack } from '@chakra-ui/react';
 import letter_icon from '@/assert/format_letter_spacing_standard_black.svg';
-import { useQuery } from '@tanstack/react-query';
+import { QueryClient, dehydrate, useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
 import { ValuationBillingRecord } from '@/types/valuation';
 import { valuationMap } from '@/constants/payment';
@@ -42,6 +42,10 @@ function ValuationCard(props: any) {
     </Stack>
   );
 }
+const getValuation = () =>
+  request<any, ApiResp<{ billingRecords: ValuationBillingRecord[] }>>('/api/price');
+// export async function getServerSideProps(){
+// }
 function Valuation() {
   const { t, i18n } = useTranslation();
   const cookie = getCookie('NEXT_LOCALE');
@@ -50,9 +54,7 @@ function Valuation() {
   useEffect(() => {
     i18n.changeLanguage(cookie);
   }, [cookie, i18n]);
-  const { data: _data } = useQuery(['valuation'], () =>
-    request<any, ApiResp<{ billingRecords: ValuationBillingRecord[] }>>('/api/price')
-  );
+  const { data: _data } = useQuery(['valuation'], getValuation);
 
   const data =
     _data?.data?.billingRecords
@@ -193,9 +195,14 @@ export default Valuation;
 export async function getServerSideProps(content: any) {
   const locale = content?.req?.cookies?.NEXT_LOCALE || 'zh';
   process.env.NODE_ENV === 'development' && i18n?.reloadResources(locale, undefined);
+
+  const queryClient = new QueryClient();
+  await queryClient.prefetchQuery(['valuation'], getValuation);
   return {
     props: {
-      ...(await serverSideTranslations(locale, undefined, null, content.locales))
+      ...(await serverSideTranslations(locale, undefined, null, content.locales)),
+
+      dehydratedState: dehydrate(queryClient)
     }
   };
 }

@@ -43,7 +43,6 @@ function Billing() {
   const [totalPage, setTotalPage] = useState(1);
   const [currentPage, setcurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const queryClient = useQueryClient();
 
   const { data, isLoading, isSuccess } = useQuery(
     ['billing', { currentPage, startTime, endTime, orderID }],

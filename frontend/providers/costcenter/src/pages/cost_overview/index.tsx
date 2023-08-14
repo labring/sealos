@@ -13,8 +13,7 @@ import { Trend } from '@/components/cost_overview/trend';
 import { getCookie } from '@/utils/cookieUtils';
 import useBillingData from '@/hooks/useBillingData';
 import NotFound from '@/components/notFound';
-import { QueryClient } from '@tanstack/react-query';
-import request from '@/service/request';
+import { useQuery } from '@tanstack/react-query';
 import useBillingStore from '@/stores/billing';
 import { isSameDay, isSameHour, parseISO } from 'date-fns';
 import { useRouter } from 'next/router';
@@ -31,11 +30,8 @@ function CostOverview() {
   const { NotEnoughModal } = useNotEnough();
 
   const { data, isInitialLoading } = useBillingData();
-  const billingItems = useMemo(() => data?.data?.status.item.filter((v, i) => i < 3) || [], [data]);
-  const costBillingItems = useMemo(
-    () => data?.data?.status.item.filter((v) => v.type === 0) || [],
-    [data]
-  );
+  const billingItems = data?.data?.status.item.filter((v, i) => i < 3) || [];
+  const costBillingItems = data?.data?.status.item.filter((v) => v.type === 0) || [];
   const totast = useToast();
   const router = useRouter();
   const { stripeState } = router.query;
@@ -70,10 +66,6 @@ function CostOverview() {
     updateStorage(item?.storage || 0);
     updateGpu(item?.gpu || 0);
   }, [costBillingItems, updateCPU, updateMemory, updateStorage]);
-  useEffect(() => {
-    // 并发预加载
-    new QueryClient().prefetchQuery(['valuation'], () => request('/api/price'));
-  }, []);
   return (
     <>
       <Flex h={'100%'}>

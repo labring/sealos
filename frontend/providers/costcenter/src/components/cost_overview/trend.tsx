@@ -5,6 +5,7 @@ import chart7 from '@/assert/Chart7.svg';
 import { memo } from 'react';
 import Notfound from '@/components/notFound';
 import useBillingData from '@/hooks/useBillingData';
+import { useQuery } from '@tanstack/react-query';
 const LineChart = dynamic(() => import('./components/lineChart'), { ssr: false });
 
 export const Trend = memo(function Trend() {
