@@ -95,7 +95,7 @@ func RechargeByLicense(ctx context.Context, client client.Client, account accoun
 	if err != nil {
 		return errors.New("amount error type")
 	}
-	charge := amount * count.BaseCount
+	charge := amount * count.CurrencyUnit
 	account.Status.Balance += charge
 	err = crypto.RechargeBalance(account.Status.EncryptBalance, charge)
 	if err != nil {

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package count
+package account
 
-// BaseCount is the base count for account
-const BaseCount = 1000000
+// CurrencyUnit is the unit of currency for accounting.
+const CurrencyUnit = 1000000
