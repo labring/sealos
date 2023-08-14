@@ -4,7 +4,7 @@
 const config = {
   title: "sealos",
   tagline: "Kubernetes-kernel-based cloud os! Let's sealos run kubernetes",
-  url: "https://docs.sealos.io",
+  url: "https://docs.sealos.io/",
   baseUrl: "/",
   onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "warn",

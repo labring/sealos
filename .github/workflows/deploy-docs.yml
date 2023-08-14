@@ -75,7 +75,7 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: https://zjy365.github.io
+      url: https://zjy365.sealos.io
     needs: build
     runs-on: ubuntu-latest
     name: Deploy
