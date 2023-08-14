@@ -1,0 +1,53 @@
+.home-user-by {
+  user-select: none;
+
+  .comet-icon {
+    display: flex;
+    justify-content: center;
+    margin-top: 140px;
+  }
+  .user-by-title {
+    text-align: center;
+    margin-top: 28px;
+    margin-bottom: 0;
+    color: #fff;
+    font-size: 48px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 140%;
+  }
+
+  .scroll-brand {
+    margin-top: 64px;
+    overflow-x: hidden;
+
+    .img-content {
+      display: flex;
+      flex-wrap: nowrap;
+      width: max-content;
+
+      img {
+        height: 200px;
+        animation: scrollImg 40s linear infinite;
+      }
+    }
+
+    @keyframes scrollImg {
+      0% {
+        transform: translateX(0);
+      }
+      100% {
+        transform: translateX(-100%);
+      }
+    }
+  }
+
+  .contact-btn .link-btn {
+    margin: 60px auto;
+    width: 270px;
+    height: 57px;
+    line-height: 57px;
+  }
+}
+
+@import './index.phone.scss';

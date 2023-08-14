@@ -1,0 +1,134 @@
+@media screen and (max-width: 996px) {
+  .introduce {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 0;
+
+    .comet-icon {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 24px;
+      width: 36px;
+      height: 12px;
+    }
+
+    h1 {
+      margin-top: 12px;
+      margin-bottom: 0;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 600;
+      line-height: 140%;
+    }
+
+    .features {
+      height: auto;
+      width: 100%;
+      display: flex;
+      color: #fff;
+      padding-left: 10px;
+      margin-top: 10px;
+      margin-bottom: 0;
+
+      .route {
+        flex-shrink: 1;
+        position: relative;
+        width: 12px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        .icon1 {
+          z-index: 1;
+          position: absolute;
+          top: 0;
+        }
+        .icon2 {
+          z-index: 1;
+          top: 158px;
+          position: absolute;
+        }
+        .icon3 {
+          z-index: 1;
+          top: 300px;
+          position: absolute;
+        }
+        .icon4 {
+          z-index: 1;
+          top: 404px;
+          position: absolute;
+        }
+        .line1 {
+          position: absolute;
+          top: 40px;
+          width: 4px;
+          height: 160px;
+          background: #274561;
+        }
+        .line2 {
+          position: absolute;
+          top: 204px;
+          width: 4px;
+          height: 140px;
+          background: #274561;
+        }
+        .line3 {
+          position: absolute;
+          top: 340px;
+          width: 4px;
+          height: 76px;
+          background: #274561;
+        }
+      }
+
+      .right {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        text-align: left;
+        margin-top: 0;
+        padding-left: 12px;
+      }
+
+      .tag {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background-color: #202a36;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 8px 16px;
+        width: fit-content;
+      }
+      .tag1 {
+        @extend .tag;
+        margin-top: 20px;
+        color: #7bbcf9;
+      }
+      .tag2 {
+        @extend .tag;
+        margin-top: 74px;
+        width: fit-content;
+        color: #8fe3de;
+      }
+      .tag3 {
+        @extend .tag;
+        margin-top: 44px;
+        color: #aa9fec;
+      }
+
+      .aid-text {
+        width: 340px;
+        font-size: 10px;
+        font-weight: 600;
+        margin-top: 12px;
+      }
+    }
+  }
+}

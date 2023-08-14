@@ -1,0 +1,142 @@
+.community {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+  padding: 0 40px;
+
+  .comet-icon {
+    display: flex;
+    justify-content: center;
+    margin-top: 140px;
+  }
+  .community-title {
+    margin-top: 28px;
+    color: #fff;
+    font-size: 48px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 140%;
+  }
+
+  .community-box-wrap {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .community-box {
+    width: 100%;
+    position: relative;
+    margin-top: 72px;
+    max-width: 1280px;
+    height: 342px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(
+      --30,
+      linear-gradient(90deg, #182941 0%, #0d3037 42.19%, #352644 97.92%)
+    );
+    .community-left {
+      width: 50%;
+      height: 100%;
+      padding-top: 60px;
+      padding-left: 64px;
+      text-align: left;
+      .join {
+        color: #fff;
+        font-size: 36px;
+        font-style: normal;
+        font-weight: 600;
+        line-height: 140%;
+      }
+      .text {
+        width: 410px;
+        margin-top: 32px;
+        color: #fff;
+        font-size: 16px;
+        font-style: normal;
+        font-weight: 600;
+        line-height: 140%;
+      }
+      .link {
+        margin-top: 30px;
+        width: 190px;
+        height: 42px;
+        display: flex;
+        justify-content: space-between;
+        .cell {
+          position: relative;
+        }
+
+        .cell::before {
+          content: '';
+          position: absolute;
+          bottom: 4px;
+          width: 0;
+          height: 0;
+          border: 8px solid transparent;
+          color: #0a1621;
+          border-bottom-color: inherit;
+        }
+        .cell::after {
+          content: attr(aria-controls);
+          position: absolute;
+          top: 18px;
+          left: 0;
+          background: #0a1621;
+          border-radius: 4px;
+          color: white;
+          font-size: 14px;
+          font-weight: 600;
+          padding: 6px 12px;
+          white-space: nowrap;
+          border-radius: 4x;
+        }
+        .cell::before,
+        .cell::after {
+          visibility: hidden;
+          opacity: 0;
+          transform: translate3d(0, 0, 0);
+          transition: all 0.3s ease 0.05s;
+        }
+
+        .cell:hover::before,
+        .cell:hover::after {
+          visibility: visible;
+          opacity: 1;
+          transform: translateX(0px) translateY(100%);
+        }
+      }
+
+      .community-logo {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 42px;
+        height: 42px;
+        background-color: #0a1621;
+        border-radius: 50%;
+      }
+    }
+
+    .community-right {
+      position: absolute;
+      top: 0;
+      right: 16px;
+    }
+  }
+}
+
+// // 1280px
+// @media screen and (max-width: 1280px) {
+//   .community {
+//     .community-box-wrap {
+//       padding: 0 48px;
+//     }
+//   }
+// }
+
+@import './index.phone.scss';
