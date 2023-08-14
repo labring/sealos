@@ -31,6 +31,7 @@ import (
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/maps"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
@@ -39,6 +40,7 @@ type CreateProcessor struct {
 	Buildah     buildah.Interface
 	Runtime     runtime.Interface
 	Guest       guest.Interface
+	ExtraEnvs   map[string]string // parsing from CLI arguments
 }
 
 func (c *CreateProcessor) Execute(cluster *v2.Cluster) error {
@@ -93,6 +95,10 @@ func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 func (c *CreateProcessor) preProcess(cluster *v2.Cluster) error {
 	if err := MountClusterImages(c.Buildah, cluster, false); err != nil {
 		return err
+	}
+	// extra env must been set at the very first
+	for i := range cluster.Status.Mounts {
+		cluster.Status.Mounts[i].Env = maps.MergeMap(cluster.Status.Mounts[i].Env, c.ExtraEnvs)
 	}
 	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
 	if err != nil {

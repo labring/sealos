@@ -63,7 +63,7 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
 		}()
 	}
 
-	envWrapper := env.NewEnvProcessor(cluster, cluster.Status.Mounts)
+	envWrapper := env.NewEnvProcessor(cluster)
 	execer := ssh.NewSSHByCluster(cluster, true)
 
 	for i, m := range mounts {

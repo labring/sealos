@@ -49,7 +49,7 @@ type processor struct {
 	cache map[string]map[string]string
 }
 
-func NewEnvProcessor(cluster *v1beta1.Cluster, mounts []v1beta1.MountImage) Interface {
+func NewEnvProcessor(cluster *v1beta1.Cluster) Interface {
 	return &processor{
 		Cluster: cluster,
 		cache:   make(map[string]map[string]string),

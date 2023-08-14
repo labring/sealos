@@ -80,11 +80,11 @@ type MountImage struct {
 	Entrypoint []string          `json:"entrypoint,omitempty"`
 }
 
-func (img *MountImage) KubeVersion() string {
-	if img.Type != RootfsImage || img.Labels == nil {
+func (m *MountImage) KubeVersion() string {
+	if m.Type != RootfsImage || m.Labels == nil {
 		return ""
 	}
-	return img.Labels[ImageKubeVersionKey]
+	return m.Labels[ImageKubeVersionKey]
 }
 
 func (m *MountImage) IsApplication() bool {

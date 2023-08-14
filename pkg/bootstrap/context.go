@@ -60,7 +60,7 @@ func (ctx realContext) GetRemoter() remote.Interface {
 
 func NewContextFrom(cluster *v2.Cluster) Context {
 	execer := ssh.NewSSHByCluster(cluster, true)
-	envProcessor := env.NewEnvProcessor(cluster, cluster.Status.Mounts)
+	envProcessor := env.NewEnvProcessor(cluster)
 	remoter := remote.New(cluster.GetName(), execer)
 	return &realContext{
 		cluster: cluster,

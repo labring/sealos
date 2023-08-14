@@ -58,7 +58,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 	target := constants.NewData(f.getClusterName(cluster)).RootFSPath()
 	ctx := context.Background()
 	eg, _ := errgroup.WithContext(ctx)
-	envProcessor := env.NewEnvProcessor(cluster, f.mounts)
+	envProcessor := env.NewEnvProcessor(cluster)
 	for _, mount := range f.mounts {
 		src := mount
 		eg.Go(func() error {

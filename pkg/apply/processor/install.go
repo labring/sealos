@@ -31,6 +31,7 @@ import (
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/maps"
 	"github.com/labring/sealos/pkg/utils/rand"
 )
 
@@ -43,6 +44,7 @@ type InstallProcessor struct {
 	Guest            guest.Interface
 	NewMounts        []v2.MountImage
 	NewImages        []string
+	ExtraEnvs        map[string]string // parsing from CLI arguments
 	imagesToOverride []string
 }
 
@@ -162,6 +164,8 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		if err = OCIToImageMount(c.Buildah, mount); err != nil {
 			return err
 		}
+		mount.Env = maps.MergeMap(mount.Env, c.ExtraEnvs)
+
 		cluster.SetMountImage(mount)
 		c.NewMounts = append(c.NewMounts, *mount)
 	}
