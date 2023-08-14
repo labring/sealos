@@ -57,14 +57,10 @@ function gen_saltKey() {
 }
 
 function mutate_desktop_config() {
-  if kubectl get secret desktop-frontend-secret -n sealos --ignore-not-found > /dev/null 2>&1; then
-    echo "desktop-frontend-secret already exists, skip mutate desktop secret"
-  else
     # mutate etc/sealos/desktop-config.yaml by using mongodb uri and two random base64 string
     sed -i -e "s;<your-mongodb-uri-base64>;$(echo -n "$mongodbUri" | base64 -w 0);" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-jwt-secret-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-password-salt-base64>;$saltKey;" etc/sealos/desktop-config.yaml
-  fi
 }
 
 function create_tls_secret {
@@ -118,17 +114,12 @@ function sealos_run_controller {
 
 function sealos_run_frontend {
   echo "run desktop frontend"
-  configFileFlag=""
-  if kubectl get secret desktop-frontend-secret -n sealos --ignore-not-found > /dev/null 2>&1; then
-    configFileFlag=""
-  else
-    configFileFlag="--config-file etc/sealos/desktop-config.yaml"
-  fi
   sealos run tars/frontend-desktop.tar \
     --env cloudDomain=$cloudDomain \
     --env cloudPort=$cloudPort \
     --env certSecretName="wildcard-cert" \
-    --env passwordEnabled="true" $configFileFlag
+    --env passwordEnabled="true" \
+    --config-file etc/sealos/desktop-config.yaml
 
   echo "run applaunchpad frontend"
   sealos run tars/frontend-applaunchpad.tar \
