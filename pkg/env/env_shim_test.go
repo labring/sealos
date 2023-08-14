@@ -146,7 +146,7 @@ func Test_shim_RenderAll(t *testing.T) {
 			p := &processor{
 				Cluster: tt.fields.Cluster,
 			}
-			if err := p.RenderAll(tt.args.host, tt.args.dir, nil); (err != nil) != tt.wantErr {
+			if err := p.RenderAll(tt.args.host, tt.args.dir, map[string]string{}); (err != nil) != tt.wantErr {
 				t.Errorf("RenderAll() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

@@ -125,19 +125,16 @@ func (p *processor) getHostEnvInCache(hostIP string) map[string]string {
 
 // Merge the host ENV and global env, the host env will overwrite cluster.Spec.Env
 func (p *processor) getHostEnv(hostIP string) map[string]string {
+	// TODO: what if hostIP not found?
 	var hostEnv []string
-	var found bool
 	for _, host := range p.Spec.Hosts {
 		for _, ip := range host.IPS {
 			if ip == hostIP {
 				hostEnv = host.Env
-				found = true
 			}
 		}
 	}
-	if !found {
-		return nil
-	}
+
 	hostEnvMap := maps.ListToMap(hostEnv)
 	specEnvMap := maps.ListToMap(p.Spec.Env)
 
