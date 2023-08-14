@@ -65,7 +65,7 @@ func NewContextFrom(cluster *v2.Cluster) Context {
 	return &realContext{
 		cluster: cluster,
 		execer:  execer,
-		bash:    constants.NewBash(cluster.GetName(), cluster.GetImageLabels(), envProcessor.WrapperShell),
+		bash:    constants.NewBash(cluster.GetName(), cluster.GetImageLabels(), envProcessor.WrapShell),
 		data:    constants.NewData(cluster.GetName()),
 		remoter: remoter,
 	}

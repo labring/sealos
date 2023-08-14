@@ -18,6 +18,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
+
+	"github.com/labring/sealos/pkg/version"
 )
 
 // +kubebuilder:object:root=true
@@ -83,6 +85,30 @@ func (img *MountImage) KubeVersion() string {
 		return ""
 	}
 	return img.Labels[ImageKubeVersionKey]
+}
+
+func (m *MountImage) IsApplication() bool {
+	return m.Type == "" || m.Type == AppImage
+}
+
+func (m *MountImage) IsRootFs() bool {
+	return m.Type == RootfsImage
+}
+
+func (m *MountImage) IsPatch() bool {
+	return m.Type == PatchImage
+}
+
+func MergeEnvWithBuiltinKeys(src map[string]string, m MountImage) map[string]string {
+	out := make(map[string]string, len(src))
+	for k, v := range src {
+		out[k] = v
+	}
+	if m.IsRootFs() {
+		out[ImageKubeVersionEnvSysKey] = m.Labels[ImageKubeVersionKey]
+		out[ImageSealosVersionEnvSysKey] = version.Get().GitVersion
+	}
+	return out
 }
 
 type ClusterPhase string

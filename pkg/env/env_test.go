@@ -71,7 +71,7 @@ func Test_processor_WrapperShell(t *testing.T) {
 			p := &processor{
 				Cluster: tt.fields.Cluster,
 			}
-			got := p.WrapperShell(tt.args.host, tt.args.shell)
+			got := p.WrapShell(tt.args.host, tt.args.shell)
 			for _, want := range tt.want {
 				if !strings.Contains(got, want) {
 					t.Errorf("WrapperShell() = %v, want %v", got, want)
@@ -111,7 +111,7 @@ func Test_processor_RenderAll(t *testing.T) {
 			p := &processor{
 				Cluster: tt.fields.Cluster,
 			}
-			if err := p.RenderAll(tt.args.host, tt.args.dir); (err != nil) != tt.wantErr {
+			if err := p.RenderAll(tt.args.host, tt.args.dir, nil); (err != nil) != tt.wantErr {
 				t.Errorf("RenderAll() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

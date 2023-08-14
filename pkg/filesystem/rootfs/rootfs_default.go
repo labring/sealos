@@ -68,7 +68,8 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 			}
 			// TODO: if we are planing to support rendering templates for each host,
 			// then move this rendering process before ssh.CopyDir and do it one by one.
-			err := renderTemplatesWithEnv(src.MountPoint, ipList, envProcessor)
+			envs := v2.MergeEnvWithBuiltinKeys(src.Env, src)
+			err := renderTemplatesWithEnv(src.MountPoint, ipList, envProcessor, envs)
 			if err != nil {
 				return fmt.Errorf("failed to render env: %w", err)
 			}
@@ -152,7 +153,7 @@ func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) erro
 	return eg.Wait()
 }
 
-func renderTemplatesWithEnv(mountDir string, ipList []string, p env.Interface) error {
+func renderTemplatesWithEnv(mountDir string, ipList []string, p env.Interface, envs map[string]string) error {
 	var (
 		renderEtc       = path.Join(mountDir, constants.EtcDirName)
 		renderScripts   = path.Join(mountDir, constants.ScriptsDirName)
@@ -163,7 +164,7 @@ func renderTemplatesWithEnv(mountDir string, ipList []string, p env.Interface) e
 	for _, dir := range []string{renderEtc, renderScripts, renderManifests} {
 		logger.Debug("render env dir: %s", dir)
 		if file.IsExist(dir) {
-			err := p.RenderAll(ipList[0], dir)
+			err := p.RenderAll(ipList[0], dir, envs)
 			if err != nil {
 				return err
 			}

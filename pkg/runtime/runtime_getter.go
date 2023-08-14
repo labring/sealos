@@ -101,7 +101,7 @@ func (k *KubeadmRuntime) getVIPFromImage() string {
 	if vip == "" {
 		vip = DefaultVIP
 	} else {
-		envs := k.getENVInterface().WrapperEnv(k.getMaster0IP())
+		envs := k.getEnvInterface().WrapEnv(k.getMaster0IP())
 		vip = strings2.RenderTextFromEnv(vip, envs)
 	}
 	logger.Debug("get vip is %s", vip)
@@ -193,7 +193,7 @@ func (k *KubeadmRuntime) getSSHInterface() ssh.Interface {
 	return k.ClusterClient
 }
 
-func (k *KubeadmRuntime) getENVInterface() env.Interface {
+func (k *KubeadmRuntime) getEnvInterface() env.Interface {
 	return env.NewEnvProcessor(k.Cluster, k.Cluster.Status.Mounts)
 }
 

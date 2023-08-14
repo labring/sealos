@@ -87,7 +87,7 @@ func newRunCmd() *cobra.Command {
 	runArgs.RegisterFlags(runCmd.Flags())
 	runCmd.Flags().BoolVar(new(bool), "single", false, "run cluster in single mode")
 	if err := runCmd.Flags().MarkDeprecated("single", "it defaults to running cluster in single mode when there are no master and node"); err != nil {
-		logger.Error(err)
+		logger.Fatal(err)
 	}
 	runCmd.Flags().BoolVarP(&processor.ForceOverride, "force", "f", false, "force override app in this cluster")
 	runCmd.Flags().StringVarP(&transport, "transport", "t", buildah.OCIArchive,
