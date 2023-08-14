@@ -4,7 +4,7 @@
 const config = {
   title: "sealos",
   tagline: "Kubernetes-kernel-based cloud os! Let's sealos run kubernetes",
-  url: "https://docs.sealos.io",
+  url: "https://docs.sealos.io/",
   baseUrl: "/",
   onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "warn",
@@ -21,7 +21,7 @@ const config = {
   i18n: {
     defaultLocale: "en",
     locales: ["en", "zh-Hans"],
-    path: "../4.0/i18n"
+    // path: "../4.0/i18n"
   },
 
   presets: [
@@ -42,6 +42,7 @@ const config = {
           editCurrentVersion: false,
         },
         blog: {
+          path: "../4.0/blog",
           showReadingTime: true,
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
