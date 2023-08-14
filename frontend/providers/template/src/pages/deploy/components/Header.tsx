@@ -50,7 +50,8 @@ const Header = ({
       h={'80px'}
       mt={'32px'}
       alignItems={'center'}
-      backgroundColor={'rgba(255, 255, 255, 0.90)'}>
+      backgroundColor={'rgba(255, 255, 255, 0.90)'}
+    >
       <Flex
         flexShrink={0}
         alignItems={'center'}
@@ -59,7 +60,8 @@ const Header = ({
         h={'80px'}
         borderRadius={'8px'}
         backgroundColor={'#fff'}
-        border={' 1px solid #DEE0E2'}>
+        border={' 1px solid #DEE0E2'}
+      >
         <Image src={templateDetail?.spec?.icon} alt="" width={'60px'} height={'60px'} />
       </Flex>
       <Flex ml={'24px'} w="520px" flexDirection={'column'}>
@@ -81,7 +83,8 @@ const Header = ({
           mt={'8px'}
           fontSize={'12px'}
           color={'5A646E'}
-          fontWeight={400}>
+          fontWeight={400}
+        >
           {templateDetail?.spec?.description}
         </Text>
       </Flex>
@@ -95,7 +98,8 @@ const Header = ({
         bg={'myWhite.600'}
         borderColor={'myGray.200'}
         variant={'base'}
-        onClick={handleExportYaml}>
+        onClick={handleExportYaml}
+      >
         {t('Export')} Yaml
       </Button>
       <Button px={4} minW={'140px'} h={'40px'} variant={'primary'} onClick={applyCb}>

@@ -25,7 +25,8 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
           overflow={'hidden'}
           border={theme.borders.base}
           borderRadius={'md'}
-          position={'relative'}>
+          position={'relative'}
+        >
           <Flex px={8} py={4} bg={'myWhite.400'}>
             <Box flex={1} fontSize={'xl'} color={'myGray.900'} fontWeight={'bold'}>
               {yamlList[selectedIndex].filename}
@@ -34,7 +35,8 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
               cursor={'pointer'}
               color={'myGray.600'}
               _hover={{ color: '#219BF4' }}
-              onClick={() => copyData(yamlList[selectedIndex].value)}>
+              onClick={() => copyData(yamlList[selectedIndex].value)}
+            >
               <MyIcon name="copy" w={'16px'} />
             </Box>
           </Flex>

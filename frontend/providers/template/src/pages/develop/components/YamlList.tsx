@@ -21,7 +21,8 @@ const YamlList = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
       alignItems={'start'}
       zIndex={1}
       position={'relative'}
-      overflow={'hidden'}>
+      overflow={'hidden'}
+    >
       <Box flexShrink={0} mt={3} borderRadius={'sm'} overflow={'hidden'} bg={'white'}>
         {yamlList.map((file, index) => (
           <Box
@@ -46,7 +47,8 @@ const YamlList = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
                   borderColor: 'myGray.200',
                   backgroundColor: 'transparent'
                 })}
-            onClick={() => setSelectedIndex(index)}>
+            onClick={() => setSelectedIndex(index)}
+          >
             {file.filename}
           </Box>
         ))}
@@ -57,7 +59,8 @@ const YamlList = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
           h="100%"
           className={styles.codeBox}
           flexDirection={'column'}
-          position={'relative'}>
+          position={'relative'}
+        >
           {/* <Flex px={8} py={4} bg={'myWhite.400'}>
             <Box flex={1} fontSize={'xl'} color={'myGray.900'} fontWeight={'bold'}>
               {yamlList[selectedIndex].filename}
