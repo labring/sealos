@@ -26,7 +26,8 @@ const Header = () => {
         minW={'140px'}
         bg={'myWhite.600'}
         borderColor={'myGray.200'}
-        variant={'base'}>
+        variant={'base'}
+      >
         {t('Export')} Yaml
       </Button>
       <Button px={4} minW={'140px'} h={'40px'} variant={'primary'}>

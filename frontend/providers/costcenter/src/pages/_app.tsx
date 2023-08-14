@@ -72,11 +72,15 @@ const App = ({ Component, pageProps }: AppProps) => {
     (async () => {
       try {
         const { data } = await request<any, ApiResp<EnvData>>('/api/enabled');
-        state.setInvoiceEnabled(!!data?.invoiceEnabled);
-        state.setTransferEnabled(!!data?.transferEnabled);
-        state.setRechargeEnabled(!!data?.rechargeEnabled);
-        state.setGpuEnabled(!!data?.gpuEnabled);
-        state.setStripe(data?.stripePub || '');
+        state.setEnv('invoiceEnabled', !!data?.invoiceEnabled);
+        state.setEnv('transferEnabled', !!data?.transferEnabled);
+        state.setEnv('rechargeEnabled', !!data?.rechargeEnabled);
+        state.setEnv('currency', data?.currency || 'shellCoin');
+        state.setEnv('gpuEnabled', !!data?.gpuEnabled);
+        const stripeE = !!data?.stripeEnabled;
+        state.setEnv('stripeEnabled', stripeE);
+        stripeE && state.setStripe(data?.stripePub || '');
+        state.setEnv('wechatEnabled', !!data?.wechatEnabled);
       } catch (error) {
         console.error('get env error');
       }

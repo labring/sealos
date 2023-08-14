@@ -66,6 +66,8 @@
   "he payee cannot be oneself": "The payee cannot be oneself",
   "True Amount": "True Amount",
   "Get Code": "verification",
+  "Stripe Success": "pay with Stripe successfully",
+  "Stripe Cancel": "cancel to pay with Stripe",
   "orders": {
     "list": "Order List",
     "invoiceAmount": "Invoice Amount",

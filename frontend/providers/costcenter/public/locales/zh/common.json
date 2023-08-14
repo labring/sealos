@@ -66,6 +66,8 @@
   "Transfer Success": "转账成功",
   "True Amount": "实际金额",
   "Get Code": "获取验证码",
+  "Stripe Success": "Stripe 支付完成",
+  "Stripe Cancel": "Stripe 支付取消",
   "orders": {
     "list": "订单列表",
     "invoiceAmount": "发票金额",

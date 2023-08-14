@@ -124,7 +124,8 @@ const Develop = () => {
         borderRadius={'8px'}
         overflowY={'hidden'}
         overflowX={'scroll'}
-        flex={1}>
+        flex={1}
+      >
         {/* left */}
         <Flex flexDirection={'column'} flex={'0 1 500px'} borderRight={'1px solid #EFF0F1'}>
           <Flex
@@ -134,7 +135,8 @@ const Develop = () => {
             alignItems={'center'}
             backgroundColor={'#F8FAFB'}
             px="36px"
-            borderRadius={'8px 8px 0px 0px '}>
+            borderRadius={'8px 8px 0px 0px '}
+          >
             <MyIcon name="dev" color={'#24282C'} w={'24px'} h={'24px'}></MyIcon>
             <Text fontWeight={'500'} fontSize={'16px'} color={'#24282C'} ml="8px">
               {t('develop.Development')}
@@ -162,7 +164,8 @@ const Develop = () => {
             alignItems={'center'}
             backgroundColor={'#F8FAFB'}
             pl="42px"
-            borderRadius={'8px 8px 0px 0px '}>
+            borderRadius={'8px 8px 0px 0px '}
+          >
             <MyIcon name="eyeShow" color={'#24282C'} w={'24px'} h={'24px'}></MyIcon>
             <Text fontWeight={'500'} fontSize={'16px'} color={'#24282C'} ml="8px">
               {t('develop.Preview')}
