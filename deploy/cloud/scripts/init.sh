@@ -109,7 +109,51 @@ function sealos_run_controller {
   # run licenseissuer controller
   sealos run tars/licenseissuer.tar \
   --env canConnectToExternalNetwork="true" \
-  --env enableMonitor="true"
+  --env enableMonitor="true" \
+  --env MongoURI="$mongodbUri" \
+  --env PasswordSalt="$saltKey"
+}
+
+function sealos_authorize {
+    echo "start to authorize sealos"
+    echo "create admin-user"
+    # create admin-user
+    kubectl apply -f manifests/admin-user.yaml
+    # wait for admin-user ready
+    echo "waiting for admin-user generated"
+    while true; do
+        if kubectl get namespace ns-admin >/dev/null 2>&1 && kubectl get accounts.account.sealos.io admin -n sealos-system >/dev/null 2>&1; then
+            break
+        else
+            echo "waiting for preset admin-user to be created..."
+            sleep 3
+        fi
+    done
+    # issue license for admin-user
+    echo "license issue for admin-user"
+
+    # issue license for admin-user
+    echo "license issue for admin-user"
+    kubectl apply -f manifests/free-license.yaml
+}
+
+function gen_saltKey() {
+    saltKey=$(tr -dc 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0)
+}
+
+function gen_mongodbUri() {
+  # if mongodbUri is empty then create mongodb and gen mongodb uri
+  if [ -z "$mongodbUri" ]; then
+    echo "no mongodb uri found, create mongodb and gen mongodb uri"
+    kubectl apply -f manifests/mongodb.yaml
+    # if there is no sealos-mongodb-conn-credential secret then wait for mongodb ready
+    while [ -z "$(kubectl get secret -n sealos sealos-mongodb-conn-credential)" ]; do
+      echo "waiting for mongodb secret generated"
+      sleep 5
+    done
+    chmod +x scripts/gen-mongodb-uri.sh
+    mongodbUri=$(scripts/gen-mongodb-uri.sh)
+  fi
 }
 
 function sealos_run_frontend {

@@ -71,6 +71,7 @@ git checkout -b $TARGET_BRANCH origin/$TARGET_BRANCH
 
 git cherry-pick $MERGE_COMMIT &> /tmp/error.log || (
 		gh pr comment $PR_NUMBER --body "🤖 says: Error cherry-picking.<br/><br/>$(cat /tmp/error.log)"
+		gh issue create --title "Error cherry-picking PR #$PR_NUMBER" --body "Error cherry-picking PR #$PR_NUMBER into $TARGET_BRANCH:<br/><br/>$(cat /tmp/error.log)" --assignee "cuisongliu" --label "cherry-pick"
 		exit 1
 )
 

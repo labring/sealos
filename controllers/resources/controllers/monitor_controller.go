@@ -293,9 +293,9 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient datab
 	}
 	for _, pod := range podList.Items {
 		// TODO pending status need skip?
-		//if pod.Status.Phase != corev1.PodRunning /*&& pod.Status.Phase != corev1.PodPending*/ {
-		//	continue
-		//}
+		if pod.Status.Phase != corev1.PodRunning /*&& pod.Status.Phase != corev1.PodPending*/ {
+			continue
+		}
 		for _, container := range pod.Spec.Containers {
 			if cpuRequest, ok := container.Resources.Limits[corev1.ResourceCPU]; ok {
 				rs[corev1.ResourceCPU].Add(cpuRequest)
