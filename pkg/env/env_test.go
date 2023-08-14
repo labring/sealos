@@ -70,6 +70,7 @@ func Test_processor_WrapperShell(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &processor{
 				Cluster: tt.fields.Cluster,
+				cache:   make(map[string]map[string]string),
 			}
 			got := p.WrapShell(tt.args.host, tt.args.shell)
 			for _, want := range tt.want {
@@ -110,6 +111,7 @@ func Test_processor_RenderAll(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &processor{
 				Cluster: tt.fields.Cluster,
+				cache:   make(map[string]map[string]string),
 			}
 			if err := p.RenderAll(tt.args.host, tt.args.dir, nil); (err != nil) != tt.wantErr {
 				t.Errorf("RenderAll() error = %v, wantErr %v", err, tt.wantErr)
