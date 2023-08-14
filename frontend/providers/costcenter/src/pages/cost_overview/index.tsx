@@ -44,7 +44,7 @@ function CostOverview() {
       totast({
         status: 'success',
         duration: 3000,
-        title: 'pay with Stripe successfully',
+        title: t('Stripe Success'),
         isClosable: true,
         position: 'top'
       });
@@ -52,7 +52,7 @@ function CostOverview() {
       totast({
         status: 'error',
         duration: 3000,
-        title: 'cancel to pay with Stripe',
+        title: t('Stripe Cancel'),
         isClosable: true,
         position: 'top'
       });
