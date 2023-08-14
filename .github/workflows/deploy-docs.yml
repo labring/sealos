@@ -58,9 +58,9 @@ jobs:
           node-version: "18"
           cache: ${{ steps.detect-package-manager.outputs.manager }}
           cache-dependency-path: ${{ env.BUILD_PATH }}/yarn.lock
-      - name: Setup Pages
-        id: pages
-        uses: actions/configure-pages@v3
+      # - name: Setup Pages
+      #   id: pages
+      #   uses: actions/configure-pages@v3
       - name: Install dependencies
         run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
         working-directory: ${{ env.BUILD_PATH }}
@@ -75,7 +75,7 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: https://zjy365.github.io
     needs: build
     runs-on: ubuntu-latest
     name: Deploy
