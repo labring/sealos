@@ -24,7 +24,7 @@ all: build
 
 .PHONY: build
 build: ## Build manager binary.
-	CGO_ENABLED=0 GOOS=linux go build -o bin/manager main.go
+	CGO_ENABLED=0 GOOS=linux go build $(shell [ -n "${LDFLAGS}" ] && echo "-ldflags '${LDFLAGS}'") -o bin/manager main.go
 
 .PHONY: run
 run: ## Run a controller from your host.
