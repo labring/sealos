@@ -43,7 +43,7 @@ const config = {
           editCurrentVersion: false,
         },
         blog: {
-          path: "../4.0/blog",
+          path: "../blog",
           showReadingTime: true,
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
