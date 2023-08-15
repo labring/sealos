@@ -20,6 +20,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/fork/golang/expansion"
@@ -33,8 +35,16 @@ import (
 	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 )
 
+type Phase string
+
+const (
+	CreatePhase  Phase = "Create"
+	InstallPhase Phase = "Install"
+	ScalePhase   Phase = "Scale"
+)
+
 type Interface interface {
-	Apply(cluster *v2.Cluster, mounts []v2.MountImage) error
+	Apply(cluster *v2.Cluster, mounts []v2.MountImage, phase Phase) error
 	Delete(cluster *v2.Cluster) error
 }
 
@@ -45,7 +55,7 @@ func NewGuestManager() (Interface, error) {
 	return &Default{}, nil
 }
 
-func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
+func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, phase Phase) error {
 	kubeConfig := filepath.Join(constants.GetHomeDir(), ".kube", "config")
 	if !fileutil.IsExist(kubeConfig) {
 		adminFile := constants.NewData(cluster.Name).AdminFile()
@@ -84,6 +94,10 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
 				return err
 			}
 		case m.IsApplication():
+			if phase != InstallPhase {
+				logger.Debug("skip application image %s in phase %s", m.Name, phase)
+				continue
+			}
 			envs := envWrapper.Getenv(cluster.GetMaster0IP())
 			cmds := formalizeImageCommands(cluster, i, m, envs)
 			if err := execer.CmdAsync(cluster.GetMaster0IPAndPort(),

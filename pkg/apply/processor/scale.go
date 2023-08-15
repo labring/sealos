@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/labring/sealos/pkg/guest"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/bootstrap"
@@ -44,6 +46,7 @@ type ScaleProcessor struct {
 	NodesToJoin     []string
 	NodesToDelete   []string
 	IsScaleUp       bool
+	Guest           guest.Interface
 }
 
 func (c *ScaleProcessor) Execute(cluster *v2.Cluster) error {
@@ -73,6 +76,7 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 			c.Bootstrap,
 			//s.GetPhasePluginFunc(plugin.PhasePreJoin),
 			c.Join,
+			c.RunGuest,
 			//s.GetPhasePluginFunc(plugin.PhasePostJoin),
 		)
 		return todoList, nil
@@ -87,6 +91,15 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 		c.UnMountRootfs,
 	)
 	return todoList, nil
+}
+
+func (c *ScaleProcessor) RunGuest(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline RunGuest in ScaleProcessor.")
+	err := c.Guest.Apply(cluster, cluster.Status.Mounts, guest.ScalePhase)
+	if err != nil {
+		return fmt.Errorf("%s: %w", RunGuestFailed, err)
+	}
+	return nil
 }
 
 func (c *ScaleProcessor) Delete(cluster *v2.Cluster) error {
@@ -275,6 +288,11 @@ func NewScaleProcessor(clusterFile clusterfile.Interface, name string, images v2
 	if err != nil {
 		return nil, err
 	}
+	gs, err := guest.NewGuestManager()
+	if err != nil {
+		return nil, err
+	}
+
 	return &ScaleProcessor{
 		MastersToDelete: masterToDelete,
 		MastersToJoin:   masterToJoin,
@@ -284,5 +302,6 @@ func NewScaleProcessor(clusterFile clusterfile.Interface, name string, images v2
 		Buildah:         bder,
 		pullImages:      images,
 		IsScaleUp:       len(masterToJoin) > 0 || len(nodeToJoin) > 0,
+		Guest:           gs,
 	}, nil
 }

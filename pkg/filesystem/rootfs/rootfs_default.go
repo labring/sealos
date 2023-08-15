@@ -94,25 +94,43 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 
 	notRegistryDirFilter := func(entry fs.DirEntry) bool { return !constants.IsRegistryDir(entry) }
 
+	rootfsMounts := make([]v2.MountImage, 0)
+	patchMounts := make([]v2.MountImage, 0)
+	for _, mount := range f.mounts {
+		if mount.Type == v2.RootfsImage {
+			rootfsMounts = append(rootfsMounts, *mount.DeepCopy())
+		}
+		if mount.Type == v2.PatchImage {
+			patchMounts = append(patchMounts, *mount.DeepCopy())
+		}
+	}
 	for idx := range ipList {
 		ip := ipList[idx]
 		eg.Go(func() error {
 			egg, _ := errgroup.WithContext(ctx)
-			for idj := range f.mounts {
-				mount := f.mounts[idj]
+			for idj := range rootfsMounts {
+				mount := rootfsMounts[idj]
 				egg.Go(func() error {
-					switch mount.Type {
-					case v2.RootfsImage, v2.PatchImage:
-						logger.Debug("send mount image, ip: %s, image name: %s, image type: %s", ip, mount.ImageName, mount.Type)
-						err := ssh.CopyDir(sshClient, ip, mount.MountPoint, target, notRegistryDirFilter)
-						if err != nil {
-							return fmt.Errorf("failed to copy %s %s: %v", mount.Type, mount.Name, err)
-						}
+					logger.Debug("send mount image, ip: %s, image name: %s, image type: %s", ip, mount.ImageName, mount.Type)
+					err := ssh.CopyDir(sshClient, ip, mount.MountPoint, target, notRegistryDirFilter)
+					if err != nil {
+						return fmt.Errorf("failed to copy %s %s: %v", mount.Type, mount.Name, err)
 					}
 					return nil
 				})
 			}
-			return egg.Wait()
+			if err := egg.Wait(); err != nil {
+				return err
+			}
+			for pdj := range patchMounts {
+				pMount := patchMounts[pdj]
+				logger.Debug("send mount image, ip: %s, image name: %s, image type: %s", ip, pMount.ImageName, pMount.Type)
+				err := ssh.CopyDir(sshClient, ip, pMount.MountPoint, target, notRegistryDirFilter)
+				if err != nil {
+					return fmt.Errorf("failed to copy %s %s: %v", pMount.Type, pMount.Name, err)
+				}
+			}
+			return nil
 		})
 	}
 	if err := eg.Wait(); err != nil {
