@@ -1,4 +1,5 @@
 // @ts-check
+const generateAlgoliKey = () => "ce5b8e1e4d0d35ff587caf75ac404df4"
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -63,7 +64,7 @@ const config = {
       appId: "SLTSB7B9Y0",
 
       //  公开 API 密钥：提交它没有危险
-      apiKey: "ce5b8e1e4d0d35ff587caf75ac404df4",
+      apiKey: generateAlgoliKey(),
 
       indexName: "sealosdocs",
 
