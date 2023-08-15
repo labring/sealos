@@ -13,7 +13,6 @@ import { Trend } from '@/components/cost_overview/trend';
 import { getCookie } from '@/utils/cookieUtils';
 import useBillingData from '@/hooks/useBillingData';
 import NotFound from '@/components/notFound';
-import { useQuery } from '@tanstack/react-query';
 import useBillingStore from '@/stores/billing';
 import { isSameDay, isSameHour, parseISO } from 'date-fns';
 import { useRouter } from 'next/router';
@@ -28,7 +27,6 @@ function CostOverview() {
     i18n.changeLanguage(cookie);
   }, [cookie, i18n]);
   const { NotEnoughModal } = useNotEnough();
-
   const { data, isInitialLoading } = useBillingData();
   const billingItems = data?.data?.status.item.filter((v, i) => i < 3) || [];
   const costBillingItems = data?.data?.status.item.filter((v) => v.type === 0) || [];

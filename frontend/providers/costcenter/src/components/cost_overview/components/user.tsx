@@ -6,13 +6,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import styles from './user.module.scss';
 
 import { useTranslation } from 'next-i18next';
-import { memo, useMemo, useRef } from 'react';
+import { memo, useEffect, useMemo, useRef } from 'react';
 import { ApiResp } from '@/types/api';
 import jsyaml from 'js-yaml';
 import RechargeModal from './RechargeModal';
 import TransferModal from './TransferModal';
 import useEnvStore from '@/stores/env';
 import CurrencySymbol from '@/components/CurrencySymbol';
+import { useRouter } from 'next/router';
 export default memo(function UserCard() {
   const getSession = useSessionStore((state) => state.getSession);
   const transferEnabled = useEnvStore((state) => state.transferEnabled);
@@ -34,11 +35,17 @@ export default memo(function UserCard() {
     queryFn: () =>
       request<any, ApiResp<{ deductionBalance: number; balance: number }>>('/api/account/getAmount')
   });
-
   const rechargeRef = useRef<any>();
   const transferRef = useRef<any>();
   const queryClient = useQueryClient();
-
+  const router = useRouter();
+  const { openRecharge } = router.query;
+  useEffect(() => {
+    if (openRecharge === 'true' && rechargeRef.current) {
+      rechargeRef.current!.open();
+      router.replace(router.pathname);
+    }
+  }, [openRecharge, rechargeRef.current]);
   let real_balance = balance_raw?.data?.balance || 0;
   if (balance_raw?.data?.deductionBalance) {
     real_balance -= balance_raw?.data.deductionBalance;
@@ -89,7 +96,6 @@ export default memo(function UserCard() {
                   e.preventDefault();
                   transferRef?.current!.onOpen();
                 }}
-                // isDisabled={isFetchingBilling > 0}
               >
                 {t('Transfer')}
               </Button>
