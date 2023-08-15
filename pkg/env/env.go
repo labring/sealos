@@ -41,7 +41,7 @@ type Interface interface {
 	WrapShell(host, shell string) string
 	// RenderAll :render env to all the files in dir
 	RenderAll(host, dir string, envs map[string]string) error
-	WrapEnv(host string) map[string]string
+	Getenv(host string) map[string]string
 }
 
 type processor struct {
@@ -56,7 +56,7 @@ func NewEnvProcessor(cluster *v1beta1.Cluster) Interface {
 	}
 }
 
-func (p *processor) WrapEnv(host string) map[string]string {
+func (p *processor) Getenv(host string) map[string]string {
 	env := make(map[string]string)
 	envs := p.getHostEnvInCache(host)
 	for k, v := range envs {

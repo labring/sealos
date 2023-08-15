@@ -21,13 +21,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/labring/sealos/pkg/client-go/kubernetes"
-
-	"github.com/labring/sealos/pkg/utils/maps"
-	stringsutil "github.com/labring/sealos/pkg/utils/strings"
-
 	"golang.org/x/sync/errgroup"
 
+	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
 	"github.com/labring/sealos/pkg/remote"
@@ -35,6 +31,8 @@ import (
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/maps"
+	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 )
 
 func (k *KubeadmRuntime) getKubeVersion() string {
@@ -102,9 +100,8 @@ func (k *KubeadmRuntime) getVIPFromImage() string {
 	if vip == "" {
 		vip = DefaultVIP
 	} else {
-		// Assuming that the first MountImage must be the rootfs
-		envsInRootFsImage := k.Cluster.Status.Mounts[0].Env
-		envs := maps.MergeMap(envsInRootFsImage, k.getEnvInterface().WrapEnv(k.getMaster0IP()))
+		envsInRootFsImage := k.Cluster.GetRootfsImage().Env
+		envs := maps.MergeMap(envsInRootFsImage, k.getEnvInterface().Getenv(k.getMaster0IP()))
 		vip = stringsutil.RenderTextFromEnv(vip, envs)
 	}
 	logger.Debug("get vip is %s", vip)

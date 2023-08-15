@@ -74,7 +74,7 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
 			eg, ctx := errgroup.WithContext(context.Background())
 			for j := range nodes {
 				node := nodes[j]
-				envs := envWrapper.WrapEnv(node)
+				envs := envWrapper.Getenv(node)
 				cmds := formalizeImageCommands(cluster, i, m, envs)
 				eg.Go(func() error {
 					return execer.CmdAsyncWithContext(ctx, node, stringsutil.RenderShellFromEnv(strings.Join(cmds, "; "), envs))
@@ -84,7 +84,7 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
 				return err
 			}
 		case m.IsApplication():
-			envs := envWrapper.WrapEnv(cluster.GetMaster0IP())
+			envs := envWrapper.Getenv(cluster.GetMaster0IP())
 			cmds := formalizeImageCommands(cluster, i, m, envs)
 			if err := execer.CmdAsync(cluster.GetMaster0IPAndPort(),
 				stringsutil.RenderShellFromEnv(strings.Join(cmds, "; "), envs),
