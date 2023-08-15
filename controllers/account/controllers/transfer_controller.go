@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/crypto"
+
 	"github.com/go-logr/logr"
 	v1 "github.com/labring/sealos/controllers/common/notification/api/v1"
 	gonanoid "github.com/matoous/go-nanoid/v2"
@@ -220,7 +222,9 @@ func (r *TransferReconciler) check(ctx context.Context, transfer *accountv1.Tran
 	if r.Get(ctx, client.ObjectKey{Namespace: r.AccountSystemNamespace, Name: getUsername(from)}, &fromAccount) != nil {
 		return fmt.Errorf("owner %s account not found", from)
 	}
-	if fromAccount.Status.Balance < fromAccount.Status.DeductionBalance+transfer.Spec.Amount+MinBalance {
+	balance, _ := crypto.DecryptInt64(*fromAccount.Status.EncryptBalance)
+	deductionBalance, _ := crypto.DecryptInt64(*fromAccount.Status.EncryptDeductionBalance)
+	if balance < deductionBalance+transfer.Spec.Amount+MinBalance {
 		return fmt.Errorf("balance not enough")
 	}
 	if r.Get(ctx, client.ObjectKey{Namespace: r.AccountSystemNamespace, Name: getUsername(to)}, &accountv1.Account{}) != nil {
