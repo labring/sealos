@@ -33,7 +33,9 @@ const (
 	MongoPassword = "MONGO_PASSWORD"
 )
 
-var cryptoKey = []byte("Af0b2Bc5e9d0C84adF0A5887cF43aB63")
+const defaultCryptoKey = "Af0b2Bc5e9d0C84adF0A5887cF43aB63"
+
+var cryptoKey = defaultCryptoKey
 
 type MongoDB struct {
 	URL          string
@@ -192,7 +194,7 @@ func (m *MongoDB) GetAllPricesMap() (map[string]common.Price, error) {
 	}
 	var pricesMap = make(map[string]common.Price, len(prices))
 	for i := range prices {
-		price, err := crypto.DecryptInt64WithKey(prices[i].Price, cryptoKey)
+		price, err := crypto.DecryptInt64WithKey(prices[i].Price, []byte(cryptoKey))
 		if err != nil {
 			return nil, fmt.Errorf("decrypt price error: %v", err)
 		}
