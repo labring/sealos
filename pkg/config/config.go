@@ -157,8 +157,7 @@ func getMergeConfigData(path string, data []byte) ([]byte, error) {
 			return nil, fmt.Errorf("failed to unmarshal config: %v", err)
 		}
 		if err := mergo.Merge(&configMap, &mergeConfigMap,
-			mergo.WithOverwriteWithEmptyValue, mergo.WithOverrideEmptySlice,
-			mergo.WithAppendSlice, mergo.WithTypeCheck, mergo.WithSliceDeepCopy,
+			mergo.WithOverwriteWithEmptyValue, mergo.WithTypeCheck,
 		); err != nil {
 			return nil, fmt.Errorf("merge: %v", err)
 		}
