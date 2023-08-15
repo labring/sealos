@@ -17,12 +17,15 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
 )
 
 func main() {
+	fmt.Println("hello world")
+
 	if err := run("/preset"); err != nil {
 		log.Fatalf("Failed to run /preset: %v", err)
 	}

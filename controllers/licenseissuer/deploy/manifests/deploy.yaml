@@ -224,6 +224,30 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - namespaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - secrets
   verbs:
   - create
@@ -478,21 +502,6 @@ spec:
           valueFrom:
             secretKeyRef:
               key: isMonitor
-              name: licenseissuer-env
-        - name: MONGO_URI
-          valueFrom: 
-            secretKeyRef:
-              key: MongoURI
-              name: licenseissuer-env
-        - name: PASSWORD_SALT
-          valueFrom:
-            secretKeyRef:
-              key: PasswordSalt
-              name: licenseissuer-env
-        - name: NAMESPACE
-          valueFrom:
-            secretKeyRef:
-              key: Namespace
               name: licenseissuer-env
         # image: ghcr.io/labring/sealos-licenseissuer-controller:latest
         image: ghcr.io/yxxchange/sealos-licenseissuer-controller:latest
