@@ -5,4 +5,7 @@ WORKDIR /
 USER 65532:65532
 
 COPY bin/controller-licenseissuer-$TARGETARCH /manager
-ENTRYPOINT ["/manager"]
+COPY bin/preset /preset
+COPY bin/launcher /launcher
+
+ENTRYPOINT ["/launcher"]

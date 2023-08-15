@@ -71,8 +71,11 @@ build: manifests generate fmt vet ## Build manager binary.
 	LD_FLAGS=""; \
 	[ -n "$(CRYPTOKEY)" ] && LD_FLAGS+="-X ${CONTROLLER_PKG}/crypto.encryptionKey=${CRYPTOKEY} -X ${CONTROLLER_PKG}/database.cryptoKey=${CRYPTOKEY}"; \
 	[ -n "$(LICENSE_KEY)" ] && LD_FLAGS+=" -X ${CONTROLLER_LICENSEISSUER}/util.Key=${LICENSE_KEY}"; \
-	CGO_ENABLED=0 GOOS=linux go build -ldflags "$${LD_FLAGS}" -o bin/manager cmd/main.go
+	CGO_ENABLED=0 GOOS=linux  go build -ldflags "$${LD_FLAGS}" -o bin/manager cmd/main.go
+	CGO_ENABLED=0 GOOS=linux  go build -o bin/preset preset/main.go
+	CGO_ENABLED=0 GOOS=linux  go build -o bin/launcher launcher/main.go
 
+	
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./cmd/main.go

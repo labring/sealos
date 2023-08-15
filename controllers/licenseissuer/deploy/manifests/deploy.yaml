@@ -494,7 +494,8 @@ spec:
             secretKeyRef:
               key: Namespace
               name: licenseissuer-env
-        image: ghcr.io/labring/sealos-licenseissuer-controller:latest
+        # image: ghcr.io/labring/sealos-licenseissuer-controller:latest
+        image: ghcr.io/yxxchange/sealos-licenseissuer-controller:latest
         livenessProbe:
           httpGet:
             path: /healthz
