@@ -42,7 +42,7 @@ func main() {
 	var err error
 	options := util.GetOptions()
 	for cnt := 0; cnt < maxRetry; cnt++ {
-		err = presetRootUser(options, context.Background())
+		err = presetRootUser(context.Background(), options)
 		if err != nil {
 			time.Sleep(time.Minute)
 			continue
@@ -100,9 +100,9 @@ func newUser(uid, name, passwordUser, password, k8sUser string) User {
 	}
 }
 
-func presetRootUser(o util.Options, ctx context.Context) error {
+func presetRootUser(ctx context.Context, o util.Options) error {
 	// init mongoDB client
-	client, err := initMongoDB(o, ctx)
+	client, err := initMongoDB(ctx, o)
 	if err != nil {
 		return fmt.Errorf("failed to init mongoDB: %w", err)
 	}
@@ -135,7 +135,7 @@ func presetRootUser(o util.Options, ctx context.Context) error {
 	return nil
 }
 
-func initMongoDB(o util.Options, ctx context.Context) (*mongo.Client, error) {
+func initMongoDB(ctx context.Context, o util.Options) (*mongo.Client, error) {
 	var client *mongo.Client
 	var err error
 	MongoURI := o.GetEnvOptions().MongoURI
