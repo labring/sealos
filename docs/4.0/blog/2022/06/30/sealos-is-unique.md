@@ -16,7 +16,7 @@ tags: [kubernetes,sealos]
 - sealos 内嵌一个私有镜像仓库来存放集群中所有需要用到的 docker 镜像，helm 并没有.
 
 Best Practise: 最佳实践是配合 helm 与 sealos 使用，用 helm 编排 用 sealos 打包整个集群, 和应用所有的依赖.
-Example: [Building an ingress cluster images](https://github.com/labring/sealos/blob/main/docs/4.0/build-example-ingress-helm.md)
+Example: [Building an ingress cluster images](https://github.com/labring/sealos/blob/main/docs/4.0/docs/lifecycle-management/quick-start/build-ingress-cluster-image.md)
 
 ## sealos 与 kubeadm
 

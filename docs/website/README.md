@@ -4,7 +4,7 @@ Sealos website is built using [Docusaurus 2](https://docusaurus.io/), a modern s
 
 ## Notes for contribution
 
-Please do not change anything under `docs` and `i18n/zh-Hans/docusaurus-plugin-content-docs/current` as they are automatically synchronized from [sealos/docs/4.0](https://github.com/labring/sealos/tree/main/docs/4.0). However, if you want to update the [home page](https://github.com/fanux/sealos-site/tree/main/src/pages/index.js) or custom pages like the [company page](https://github.com/fanux/sealos-site/tree/main/src/pages/company.md), feel free to contribute to this repo directly.
+Please do not change anything under `docs` and `i18n/zh-Hans/docusaurus-plugin-content-docs/current` as they are automatically synchronized from [sealos/docs/4.0](https://github.com/labring/sealos/tree/main/docs/4.0). However, if you want to update the [home page](https://github.com/fanux/sealos-site/tree/main/src/pages/index.tsx) or custom pages like the [company page](https://github.com/fanux/sealos-site/tree/main/src/pages/company.md), feel free to contribute to this repo directly.
 
 For more details, see [docs contributing guide](https://github.com/labring/sealos/blob/main/CONTRIBUTING.md#docs-contribution).
 

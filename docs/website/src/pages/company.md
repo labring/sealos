@@ -22,8 +22,8 @@
 
 我们非常希望热爱学习，有想法，有毅力的你加入我们团队。
 
-邮箱：fanux@sealos.io
-微信：fangnux
+邮箱:fanux@sealos.io
+微信:fangnux
 
 要求：
 
