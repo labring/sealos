@@ -39,6 +39,7 @@ function Invoice() {
   const [invoiceAmount, setInvoiceAmount] = useState(0);
   const [processState, setProcessState] = useState(0);
   const [invoiceCount, setInvoiceCount] = useState(0);
+  const [totalItem, setTotalItem] = useState(0);
   const { data: filterData } = useQuery(['billing', 'invoice'], () => {
     return request<any, { data: { billings: string[] } }>('/api/invoice/billings');
   });
@@ -78,10 +79,22 @@ function Invoice() {
     },
     {
       onSuccess(data) {
-        setTotalPage(data.pageLength);
+        const totalPage = data.pageLength;
+        if (totalPage === 0) {
+          // 搜索时
+          setTotalPage(1);
+          setTotalItem(1);
+          return;
+        }
+        setTotalPage(totalPage);
+        if (totalPage === currentPage) {
+          setTotalItem(data.tableResult.length + (totalPage - 1) * pageSize);
+        } else {
+          setTotalItem(totalPage * pageSize);
+        }
       },
+      staleTime: 1000,
       cacheTime: 0,
-      staleTime: 0,
       enabled: filterData !== undefined
     }
   );
@@ -215,9 +228,7 @@ function Invoice() {
               </Box>
               <Flex w="370px" h="32px" align={'center'} mt={'20px'} mx="auto">
                 <Text>{t('Total')}:</Text>
-                <Flex w="40px">
-                  {totalPage * pageSize - (filterData?.data?.billings || []).length}
-                </Flex>
+                <Flex w="40px">{totalItem - (filterData?.data?.billings || []).length}</Flex>
                 <Flex gap={'8px'}>
                   <Button
                     variant={'switchPage'}

@@ -44,8 +44,6 @@ function ValuationCard(props: any) {
 }
 const getValuation = () =>
   request<any, ApiResp<{ billingRecords: ValuationBillingRecord[] }>>('/api/price');
-// export async function getServerSideProps(){
-// }
 function Valuation() {
   const { t, i18n } = useTranslation();
   const cookie = getCookie('NEXT_LOCALE');
@@ -108,17 +106,12 @@ function Valuation() {
                     <Box borderRadius="2px" bg={item.bg} w={'16px'} h={'16px'} mr={'8px'}></Box>
                     <Text fontSize={'16px'}>{item.title}</Text>
                   </Flex>
-                  <Heading
-                    w="127px"
-                    display={'flex'}
-                    justifyContent="center"
-                    alignContent={'center'}
-                  >
-                    <Text>{item.price[0]}</Text>
+                  <Heading display={'flex'} justifyContent="center" alignContent={'center'}>
+                    <CurrencySymbol w="16px" type={currency} />
+                    <Text ml="10px">{item.price[0]}</Text>
                   </Heading>
                   <Flex align={'center'}>
-                    <CurrencySymbol w="16px" type={currency} />
-                    <Text ml="4px">
+                    <Text>
                       {item.unit} / {t('Hour')}
                     </Text>
                   </Flex>
@@ -133,8 +126,7 @@ function Valuation() {
                       >
                         <Box>{item.price[idx + 1]}</Box>
                         <Flex align={'center'}>
-                          <CurrencySymbol w="16px" h="16px" type={currency} />
-                          <Text ml="4px">{`${item.unit} / ${t(_item)}`}</Text>
+                          <Text>{`${item.unit} / ${t(_item)}`}</Text>
                         </Flex>
                       </Flex>
                     ))}

@@ -256,7 +256,6 @@ const RechargeModal = forwardRef(
         cacheTime: 0,
         staleTime: 0,
         onSuccess(data) {
-          console.log('pay???', data);
           setTimeout(() => {
             if (data?.data?.status === 'SUCCESS') {
               createPaymentRes.reset();

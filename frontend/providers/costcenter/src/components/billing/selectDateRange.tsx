@@ -10,7 +10,7 @@ import {
   Button,
   Box
 } from '@chakra-ui/react';
-import { format, parse, isValid, isAfter, isBefore, endOfDay, startOfDay } from 'date-fns';
+import { format, parse, isValid, isAfter, isBefore, endOfDay, startOfDay, addDays } from 'date-fns';
 import { useState, ChangeEventHandler } from 'react';
 import { DateRange, SelectRangeEventHandler, DayPicker } from 'react-day-picker';
 
@@ -23,6 +23,7 @@ export default function SelectRange({ isDisabled }: { isDisabled: boolean | unde
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(initState);
   const [fromValue, setFromValue] = useState<string>(format(initState.from, 'y-MM-dd'));
   const [toValue, setToValue] = useState<string>(format(initState.to, 'y-MM-dd'));
+  const [inputState, setInputState] = useState<0 | 1>(0);
   const onClose = () => {
     selectedRange?.from && setStartTime(startOfDay(selectedRange.from));
     selectedRange?.to && setEndTime(endOfDay(selectedRange.to));
@@ -43,7 +44,6 @@ export default function SelectRange({ isDisabled }: { isDisabled: boolean | unde
     } else {
       setSelectedRange({ from: date, to: date });
     }
-    console.log(selectedRange);
   };
 
   const handleToChange: ChangeEventHandler<HTMLInputElement> = (e) => {
@@ -66,16 +66,32 @@ export default function SelectRange({ isDisabled }: { isDisabled: boolean | unde
 
   const handleRangeSelect: SelectRangeEventHandler = (range: DateRange | undefined) => {
     if (range) {
-      setSelectedRange(range);
-      if (range?.from) {
-        setFromValue(format(range.from, 'y-MM-dd'));
+      let { from, to } = range;
+      if (inputState === 0) {
+        // 输入from
+        if (from === selectedRange?.from) {
+          // 组件动了to
+          from = to;
+        } else {
+          to = from;
+        }
+        setInputState(1);
+      } else {
+        setInputState(0);
+      }
+      setSelectedRange({
+        from,
+        to
+      });
+      if (from) {
+        setFromValue(format(from, 'y-MM-dd'));
       } else {
         setFromValue('');
       }
-      if (range?.to) {
-        setToValue(format(range.to, 'y-MM-dd'));
+      if (to) {
+        setToValue(format(to, 'y-MM-dd'));
       } else {
-        setToValue(range.from ? format(range.from, 'y-MM-dd') : '');
+        setToValue(from ? format(from, 'y-MM-dd') : '');
       }
     } else {
       // 选了第一个日期，组件默认的行为是取消选择
@@ -85,6 +101,66 @@ export default function SelectRange({ isDisabled }: { isDisabled: boolean | unde
           ...selectedRange,
           to: selectedRange.from
         });
+        setInputState(1);
+      }
+    }
+  };
+  const handleRangeSelectFrom: SelectRangeEventHandler = (range: DateRange | undefined) => {
+    if (range) {
+      let { from, to } = range;
+      if (selectedRange?.to) {
+        if (from) {
+          if (!to) {
+            // 证明直接重合
+            to = from;
+          } else if (from === selectedRange?.from) {
+            // 组件动了to
+            from = to;
+            to = selectedRange.to;
+          }
+          if (isBefore(from, selectedRange.to)) {
+            setSelectedRange({
+              ...selectedRange,
+              from
+            });
+            setFromValue(format(from, 'y-MM-dd'));
+          }
+        }
+      }
+    }
+  };
+  const handleRangeSelectTo: SelectRangeEventHandler = (range: DateRange | undefined) => {
+    console.log(range, selectedRange);
+    if (range) {
+      let { from, to } = range;
+      if (selectedRange?.from) {
+        if (to) {
+          if (!from) {
+            // 证明直接重合
+            from = to;
+          } else if (to === selectedRange?.to) {
+            // 组件动了from
+            to = from;
+            from = selectedRange.from;
+          }
+          if (isAfter(to, selectedRange.from)) {
+            setSelectedRange({
+              ...selectedRange,
+              to
+            });
+            setToValue(format(to, 'y-MM-dd'));
+          }
+        }
+      }
+    } else {
+      // 选了第一个日期，组件默认的行为是取消选择
+      if (fromValue && selectedRange?.from) {
+        setToValue(fromValue);
+        setSelectedRange({
+          ...selectedRange,
+          to: selectedRange.from
+        });
+        setInputState(1);
       }
     }
   };
@@ -101,32 +177,78 @@ export default function SelectRange({ isDisabled }: { isDisabled: boolean | unde
       border={'1px solid #DEE0E2'}
       borderRadius="2px"
     >
-      <Input
-        isDisabled={!!isDisabled}
-        variant={'unstyled'}
-        flex={1}
-        value={fromValue}
-        minW="90px"
-        onChange={handleFromChange}
-        onBlur={() => {
-          selectedRange?.from && setStartTime(startOfDay(selectedRange.from));
-          console.log(selectedRange?.from);
-        }}
-      />
-      <Box>-</Box>
-      <Input
-        isDisabled={!!isDisabled}
-        variant={'unstyled'}
-        value={toValue}
-        flex={1}
-        minW="90px"
-        onChange={handleToChange}
-        onBlur={() => {
-          selectedRange?.to && setEndTime(endOfDay(selectedRange.to));
-          console.log(selectedRange?.to);
-        }}
-      />
       <Popover onClose={onClose}>
+        <PopoverTrigger>
+          <Button display={'flex'} variant={'unstyled'} isDisabled={isDisabled}>
+            <Input
+              isDisabled={!!isDisabled}
+              variant={'unstyled'}
+              flex={1}
+              value={fromValue}
+              minW="90px"
+              onChange={handleFromChange}
+              onBlur={() => {
+                selectedRange?.from && setStartTime(startOfDay(selectedRange.from));
+                console.log(selectedRange?.from);
+              }}
+            />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent zIndex={99}>
+          <DayPicker
+            mode="range"
+            selected={selectedRange}
+            onSelect={handleRangeSelectFrom}
+            defaultMonth={startTime}
+            styles={{
+              day: {
+                borderRadius: 'unset',
+                transition: 'all 0.2s ease-in-out'
+              }
+            }}
+          />
+        </PopoverContent>
+      </Popover>
+      <Box>-</Box>
+
+      <Popover onClose={onClose}>
+        <PopoverTrigger>
+          <Button display={'flex'} variant={'unstyled'} isDisabled={isDisabled}>
+            <Input
+              isDisabled={!!isDisabled}
+              variant={'unstyled'}
+              value={toValue}
+              flex={1}
+              minW="90px"
+              onChange={handleToChange}
+              onBlur={() => {
+                selectedRange?.to && setEndTime(endOfDay(selectedRange.to));
+                console.log(selectedRange?.to);
+              }}
+            />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent zIndex={99}>
+          <DayPicker
+            mode="range"
+            selected={selectedRange}
+            onSelect={handleRangeSelectTo}
+            defaultMonth={endTime}
+            styles={{
+              day: {
+                borderRadius: 'unset',
+                transition: 'all 0.2s ease-in-out'
+              }
+            }}
+          />
+        </PopoverContent>
+      </Popover>
+      <Popover
+        onClose={() => {
+          setInputState(0);
+          onClose();
+        }}
+      >
         <PopoverTrigger>
           <Button display={'flex'} variant={'unstyled'} isDisabled={isDisabled}>
             <Img src={clander_icon.src}></Img>
