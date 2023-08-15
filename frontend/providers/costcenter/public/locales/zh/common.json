@@ -61,7 +61,7 @@
   "Transfer": "转账",
   "Transfer Amount must be a integer": "转账金额必须为整数",
   "Recipient ID is invalid": "收款人ID无效",
-  "Transfer Amount must be less than balance": "转账后的账户余额不能小于 ¥10",
+  "Transfer Amount must be less than balance": "转账后的账户余额不能小于 10",
   "he payee cannot be oneself": "收款人不能是本人",
   "Transfer Success": "转账成功",
   "True Amount": "实际金额",
@@ -135,5 +135,6 @@
     "Contact Information": "联系方式"
   },
   "pay with wechat": "微信支付",
-  "pay with stripe": "Stripe 支付"
+  "pay with stripe": "Stripe 支付",
+  "Pay Minimum Tips": "使用Stripe支付时，购买额度不低于10"
 }

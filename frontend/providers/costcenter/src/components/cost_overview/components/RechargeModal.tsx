@@ -34,6 +34,7 @@ import { Stripe } from '@stripe/stripe-js';
 import type { AxiosInstance } from 'axios';
 import useEnvStore from '@/stores/env';
 import Currencysymbol from '@/components/CurrencySymbol';
+import { useCustomToast } from '@/hooks/useCustomToast';
 const StripeForm = (props: {
   tradeNO?: string;
   complete: number;
@@ -43,7 +44,6 @@ const StripeForm = (props: {
   const sessionId = props.tradeNO;
   const complete = props.complete;
   useEffect(() => {
-    // console.log('new')
     if (stripePromise && sessionId)
       (async () => {
         try {
@@ -216,7 +216,6 @@ const RechargeModal = forwardRef(
     const [detail, setDetail] = useState(false);
     const [paymentName, setPaymentName] = useState('');
     const [selectAmount, setSelectAmount] = useState(0);
-    const toast = useToast();
     const createPaymentRes = useMutation(
       () =>
         request.post<any, ApiResp<Payment>>('/api/account/payment', {
@@ -270,7 +269,6 @@ const RechargeModal = forwardRef(
     );
     const cancalPay = useCallback(() => {
       createPaymentRes.reset();
-      console.log('reset?', createPaymentRes);
       props.onCancel?.();
       setComplete(0);
     }, [createPaymentRes]);
@@ -322,8 +320,17 @@ const RechargeModal = forwardRef(
       createPaymentRes.mutate();
     };
 
+    const { toast } = useCustomToast();
     const handleStripeConfirm = () => {
       setPayType('stripe');
+      if (amount < 10) {
+        toast({
+          status: 'error',
+          title: t('Pay Minimum Tips')
+        });
+        // 校检，stripe有最低费用的要求
+        return;
+      }
       setComplete(1);
       createPaymentRes.mutate();
     };

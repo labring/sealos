@@ -5,7 +5,7 @@ import useNotEnough from '@/hooks/useNotEnough';
 import { Box, Flex, Heading, Img, useToast } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useEffect, useMemo } from 'react';
+import { MutableRefObject, Ref, createContext, useEffect, useRef } from 'react';
 import { Buget } from '@/components/cost_overview/buget';
 import UserCard from '@/components/cost_overview/components/user';
 import { Cost } from '@/components/cost_overview/cost';
@@ -13,10 +13,14 @@ import { Trend } from '@/components/cost_overview/trend';
 import { getCookie } from '@/utils/cookieUtils';
 import useBillingData from '@/hooks/useBillingData';
 import NotFound from '@/components/notFound';
-import { useQuery } from '@tanstack/react-query';
 import useBillingStore from '@/stores/billing';
 import { isSameDay, isSameHour, parseISO } from 'date-fns';
 import { useRouter } from 'next/router';
+import useOverviewStore from '@/stores/overview';
+
+export const RechargeContext = createContext<{ rechargeRef: MutableRefObject<any> | null }>({
+  rechargeRef: null
+});
 function CostOverview() {
   const { t, i18n } = useTranslation();
   const updateCPU = useBillingStore((state) => state.updateCpu);
@@ -27,15 +31,10 @@ function CostOverview() {
   useEffect(() => {
     i18n.changeLanguage(cookie);
   }, [cookie, i18n]);
-  const { NotEnoughModal } = useNotEnough();
-
-  const { data, isInitialLoading } = useBillingData();
-  const billingItems = data?.data?.status.item.filter((v, i) => i < 3) || [];
-  const costBillingItems = data?.data?.status.item.filter((v) => v.type === 0) || [];
-  const totast = useToast();
+  const setRecharge = useOverviewStore((s) => s.setRecharge);
   const router = useRouter();
-  const { stripeState } = router.query;
   useEffect(() => {
+    const { stripeState } = router.query;
     if (stripeState === 'success') {
       totast({
         status: 'success',
@@ -54,7 +53,19 @@ function CostOverview() {
       });
     }
     !!stripeState && router.replace(router.pathname);
-  }, [stripeState]);
+  }, []);
+  useEffect(() => {
+    const { openRecharge } = router.query;
+    if (openRecharge === 'true') {
+      router.replace(router.pathname);
+      setRecharge(1);
+    }
+  }, []);
+  const { NotEnoughModal } = useNotEnough();
+  const { data, isInitialLoading } = useBillingData();
+  const billingItems = data?.data?.status.item.filter((v, i) => i < 3) || [];
+  const costBillingItems = data?.data?.status.item.filter((v) => v.type === 0) || [];
+  const totast = useToast();
   useEffect(() => {
     if (costBillingItems.length === 0) return;
     const time = parseISO(costBillingItems[0].time);
@@ -66,8 +77,9 @@ function CostOverview() {
     updateStorage(item?.storage || 0);
     updateGpu(item?.gpu || 0);
   }, [costBillingItems, updateCPU, updateMemory, updateStorage]);
+  const rechargeRef = useRef<any>();
   return (
-    <>
+    <RechargeContext.Provider value={{ rechargeRef }}>
       <Flex h={'100%'}>
         <Flex
           bg="white"
@@ -132,7 +144,7 @@ function CostOverview() {
         </Flex>
       </Flex>
       <NotEnoughModal></NotEnoughModal>
-    </>
+    </RechargeContext.Provider>
   );
 }
 
