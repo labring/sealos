@@ -76,17 +76,6 @@ func NewNotificationManager(ctx context.Context, client client.Client,
 	}
 }
 
-func NewNotificationManager(ctx context.Context, client client.Client,
-	logger logr.Logger, batchSize, channelSize int) *Manager {
-	return &Manager{
-		ctx:         ctx,
-		client:      client,
-		logger:      logger,
-		batchSize:   batchSize,
-		channelSize: channelSize,
-	}
-}
-
 // Run of the NotificationManager runs the notification manager.
 // It writes the notifications in batches
 func (nm *Manager) Run() {
