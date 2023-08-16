@@ -25,7 +25,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 )
 
-var _ = Describe("E2E_sealos_runtime_version_122_test", func() {
+var _ = Describe("E2E_sealos_runtime_version_docker_124_test", func() {
 	var (
 		fakeClient *operators.FakeClient
 		err        error
@@ -33,8 +33,8 @@ var _ = Describe("E2E_sealos_runtime_version_122_test", func() {
 	fakeClient = operators.NewFakeClient("")
 
 	Context("sealos run for many version", func() {
-		It("sealos apply single by containerd v1.22.0", func() {
-			images := []string{"labring/kubernetes:v1.22.0"}
+		It("sealos apply single by docker v1.24.0", func() {
+			images := []string{"labring/kubernetes-docker:v1.24.0"}
 			defer func() {
 				err = fakeClient.Cluster.Reset()
 				utils.CheckErr(err, fmt.Sprintf("failed to reset cluster run: %v", err))
