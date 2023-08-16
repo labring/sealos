@@ -303,6 +303,7 @@ replace (
 	github.com/labring/lvscare => ./staging/src/github.com/labring/lvscare
 	github.com/labring/sealos => ./
 	github.com/labring/sealos/controllers/account => ./controllers/account
+	github.com/labring/sealos/controllers/admission => ./controllers/admission
 	github.com/labring/sealos/controllers/common => ./controllers/common
 	github.com/labring/sealos/controllers/imagehub => ./controllers/imagehub
 	github.com/labring/sealos/controllers/licenseissuer => ./controllers/licenseissuer

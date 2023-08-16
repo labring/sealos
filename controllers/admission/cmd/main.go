@@ -20,8 +20,9 @@ import (
 	"flag"
 	"os"
 
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
+	v1 "github.com/labring/sealos/controllers/admission/api/v1"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -67,7 +68,7 @@ func main() {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "a63686c3.my.domain",
+		LeaderElectionID:       "849b6b0b.sealos.io",
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
@@ -82,6 +83,24 @@ func main() {
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
+		os.Exit(1)
+	}
+
+	err = builder.WebhookManagedBy(mgr).
+		WithValidator(&v1.IngressValidator{}).
+		WithDefaulter(&v1.IngressMutator{}).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create ingress webhook")
+		os.Exit(1)
+	}
+
+	err = builder.WebhookManagedBy(mgr).
+		WithValidator(&v1.NamespaceValidator{}).
+		WithDefaulter(&v1.NamespaceMutator{}).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create namespace webhook")
 		os.Exit(1)
 	}
 
