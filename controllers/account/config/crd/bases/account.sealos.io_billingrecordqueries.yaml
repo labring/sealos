@@ -100,16 +100,19 @@ spec:
                   type: object
                 type: array
               pageLength:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                  of cluster Important: Run "make" to regenerate code after modifying
-                  this file'
                 type: integer
               rechargeAmount:
                 format: int64
                 type: integer
+              totalCount:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
+                type: integer
             required:
             - pageLength
             - rechargeAmount
+            - totalCount
             type: object
         type: object
     served: true
