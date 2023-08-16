@@ -516,8 +516,8 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	}
 
 	totalPages := (totalCount + billingRecordQuery.Spec.PageSize - 1) / billingRecordQuery.Spec.PageSize
-	billingRecordQuery.Status.Items, billingRecordQuery.Status.PageLength,
-		billingRecordQuery.Status.RechargeAmount, billingRecordQuery.Status.DeductionAmount = billingRecords, totalPages, totalRechargeAmount, totalDeductionAmount
+	billingRecordQuery.Status.Items, billingRecordQuery.Status.PageLength, billingRecordQuery.Status.TotalCount,
+		billingRecordQuery.Status.RechargeAmount, billingRecordQuery.Status.DeductionAmount = billingRecords, totalPages, totalCount, totalRechargeAmount, totalDeductionAmount
 	return nil
 }
 
