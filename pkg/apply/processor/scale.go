@@ -95,7 +95,8 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 
 func (c *ScaleProcessor) RunGuest(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline RunGuest in ScaleProcessor.")
-	err := c.Guest.Apply(cluster, cluster.Status.Mounts, guest.ScalePhase)
+	hosts := append(c.MastersToJoin, c.NodesToJoin...)
+	err := c.Guest.Apply(cluster, cluster.Status.Mounts, hosts)
 	if err != nil {
 		return fmt.Errorf("%s: %w", RunGuestFailed, err)
 	}

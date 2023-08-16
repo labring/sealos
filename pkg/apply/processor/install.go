@@ -252,7 +252,7 @@ func (c *InstallProcessor) RunGuest(cluster *v2.Cluster) error {
 	if len(c.NewMounts) == 0 {
 		return nil
 	}
-	return c.Guest.Apply(cluster, c.NewMounts, guest.InstallPhase)
+	return c.Guest.Apply(cluster, c.NewMounts, cluster.GetAllIPS())
 }
 
 func NewInstallProcessor(clusterFile clusterfile.Interface, images []string) (Interface, error) {

@@ -168,7 +168,7 @@ func (c *CreateProcessor) Join(cluster *v2.Cluster) error {
 
 func (c *CreateProcessor) RunGuest(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline RunGuest in CreateProcessor.")
-	err := c.Guest.Apply(cluster, cluster.Status.Mounts, guest.CreatePhase)
+	err := c.Guest.Apply(cluster, cluster.Status.Mounts, cluster.GetAllIPS())
 	if err != nil {
 		return fmt.Errorf("%s: %w", RunGuestFailed, err)
 	}

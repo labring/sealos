@@ -94,40 +94,24 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 
 	notRegistryDirFilter := func(entry fs.DirEntry) bool { return !constants.IsRegistryDir(entry) }
 
-	rootfsMounts := make([]v2.MountImage, 0)
-	patchMounts := make([]v2.MountImage, 0)
-	for _, mount := range f.mounts {
-		if mount.Type == v2.RootfsImage {
-			rootfsMounts = append(rootfsMounts, *mount.DeepCopy())
+	copyFn := func(m v2.MountImage, targetHost, targetDir string) error {
+		logger.Debug("send mount image, target: %s, image: %s, type: %s", targetHost, m.ImageName, m.Type)
+		if err := ssh.CopyDir(sshClient, targetHost, m.MountPoint, targetDir, notRegistryDirFilter); err != nil {
+			logger.Error("error occur while sending mount image %s: %v", m.Name, err)
+			return err
 		}
-		if mount.Type == v2.PatchImage {
-			patchMounts = append(patchMounts, *mount.DeepCopy())
-		}
+		return nil
 	}
+
 	for idx := range ipList {
 		ip := ipList[idx]
 		eg.Go(func() error {
-			egg, _ := errgroup.WithContext(ctx)
-			for idj := range rootfsMounts {
-				mount := rootfsMounts[idj]
-				egg.Go(func() error {
-					logger.Debug("send mount image, ip: %s, image name: %s, image type: %s", ip, mount.ImageName, mount.Type)
-					err := ssh.CopyDir(sshClient, ip, mount.MountPoint, target, notRegistryDirFilter)
-					if err != nil {
-						return fmt.Errorf("failed to copy %s %s: %v", mount.Type, mount.Name, err)
+			for i := range f.mounts {
+				if f.mounts[i].IsRootFs() || f.mounts[i].IsPatch() {
+					// contents in rootfs/patch type images cannot be replicated asynchronously
+					if err := copyFn(f.mounts[i], ip, target); err != nil {
+						return err
 					}
-					return nil
-				})
-			}
-			if err := egg.Wait(); err != nil {
-				return err
-			}
-			for pdj := range patchMounts {
-				pMount := patchMounts[pdj]
-				logger.Debug("send mount image, ip: %s, image name: %s, image type: %s", ip, pMount.ImageName, pMount.Type)
-				err := ssh.CopyDir(sshClient, ip, pMount.MountPoint, target, notRegistryDirFilter)
-				if err != nil {
-					return fmt.Errorf("failed to copy %s %s: %v", pMount.Type, pMount.Name, err)
 				}
 			}
 			return nil
@@ -137,22 +121,18 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 		return err
 	}
 
-	endEg, _ := errgroup.WithContext(ctx)
+	eg, _ = errgroup.WithContext(ctx)
 	master0 := cluster.GetMaster0IPAndPort()
 	for idx := range f.mounts {
 		mountInfo := f.mounts[idx]
-		endEg.Go(func() error {
-			if mountInfo.Type == v2.AppImage {
-				logger.Debug("send app mount images, ip: %s, image name: %s, image type: %s", master0, mountInfo.ImageName, mountInfo.Type)
-				err := ssh.CopyDir(sshClient, master0, mountInfo.MountPoint, constants.GetAppWorkDir(cluster.Name, mountInfo.Name), notRegistryDirFilter)
-				if err != nil {
-					return fmt.Errorf("failed to copy %s %s: %v", mountInfo.Type, mountInfo.Name, err)
-				}
+		eg.Go(func() error {
+			if mountInfo.IsApplication() {
+				return copyFn(mountInfo, master0, constants.GetAppWorkDir(cluster.Name, mountInfo.Name))
 			}
 			return nil
 		})
 	}
-	return endEg.Wait()
+	return eg.Wait()
 }
 
 func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) error {

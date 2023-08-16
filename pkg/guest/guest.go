@@ -20,8 +20,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/fork/golang/expansion"
@@ -35,27 +33,18 @@ import (
 	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 )
 
-type Phase string
-
-const (
-	CreatePhase  Phase = "Create"
-	InstallPhase Phase = "Install"
-	ScalePhase   Phase = "Scale"
-)
-
 type Interface interface {
-	Apply(cluster *v2.Cluster, mounts []v2.MountImage, phase Phase) error
+	Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts []string) error
 	Delete(cluster *v2.Cluster) error
 }
 
-type Default struct {
-}
+type Default struct{}
 
 func NewGuestManager() (Interface, error) {
 	return &Default{}, nil
 }
 
-func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, phase Phase) error {
+func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts []string) error {
 	kubeConfig := filepath.Join(constants.GetHomeDir(), ".kube", "config")
 	if !fileutil.IsExist(kubeConfig) {
 		adminFile := constants.NewData(cluster.Name).AdminFile()
@@ -79,25 +68,22 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, phase Phase
 	for i, m := range mounts {
 		switch {
 		case m.IsRootFs(), m.IsPatch():
-			// execute on all nodes
-			nodes := cluster.GetAllIPS()
 			eg, ctx := errgroup.WithContext(context.Background())
-			for j := range nodes {
-				node := nodes[j]
+			for j := range targetHosts {
+				node := targetHosts[j]
 				envs := envWrapper.Getenv(node)
 				cmds := formalizeImageCommands(cluster, i, m, envs)
 				eg.Go(func() error {
-					return execer.CmdAsyncWithContext(ctx, node, stringsutil.RenderShellFromEnv(strings.Join(cmds, "; "), envs))
+					return execer.CmdAsyncWithContext(ctx, node,
+						stringsutil.RenderShellFromEnv(strings.Join(cmds, "; "), envs),
+					)
 				})
 			}
 			if err := eg.Wait(); err != nil {
 				return err
 			}
 		case m.IsApplication():
-			if phase != InstallPhase {
-				logger.Debug("skip application image %s in phase %s", m.Name, phase)
-				continue
-			}
+			// on run on the first master
 			envs := envWrapper.Getenv(cluster.GetMaster0IP())
 			cmds := formalizeImageCommands(cluster, i, m, envs)
 			if err := execer.CmdAsync(cluster.GetMaster0IPAndPort(),
