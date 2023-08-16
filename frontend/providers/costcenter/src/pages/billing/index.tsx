@@ -72,13 +72,10 @@ function Billing() {
           // 搜索时
           setTotalPage(1);
           setTotalItem(1);
-          return;
-        }
-        setTotalPage(totalPage);
-        if (totalPage === currentPage) {
-          setTotalItem(data.data.status.item.length + (totalPage - 1) * pageSize);
+          setcurrentPage(1);
         } else {
-          setTotalItem(totalPage * pageSize);
+          setTotalItem(data.data.status.totalCount);
+          setTotalPage(totalPage);
         }
       },
       staleTime: 1000

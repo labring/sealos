@@ -39,7 +39,6 @@ function Invoice() {
   const [invoiceAmount, setInvoiceAmount] = useState(0);
   const [processState, setProcessState] = useState(0);
   const [invoiceCount, setInvoiceCount] = useState(0);
-  const [totalItem, setTotalItem] = useState(0);
   const { data: filterData } = useQuery(['billing', 'invoice'], () => {
     return request<any, { data: { billings: string[] } }>('/api/invoice/billings');
   });
@@ -66,15 +65,18 @@ function Invoice() {
           }
         }
       );
+
+      const tableResult = result.data.status.item
+        .filter((billing) => billing.type === 1)
+        .map<ReqGenInvoice['billings'][0]>((billing) => ({
+          createdTime: parseISO(billing.time).getTime(),
+          order_id: billing.order_id,
+          amount: formatMoney(billing.amount)
+        }));
       return {
-        tableResult: result.data.status.item
-          .filter((billing) => billing.type === 1)
-          .map<ReqGenInvoice['billings'][0]>((billing) => ({
-            createdTime: parseISO(billing.time).getTime(),
-            order_id: billing.order_id,
-            amount: formatMoney(billing.amount)
-          })),
-        pageLength: result.data.status.pageLength
+        tableResult,
+        pageLength: result.data.status.pageLength,
+        totalCount: result.data.status.totalCount || tableResult.length
       };
     },
     {
@@ -83,15 +85,9 @@ function Invoice() {
         if (totalPage === 0) {
           // 搜索时
           setTotalPage(1);
-          setTotalItem(1);
           return;
         }
         setTotalPage(totalPage);
-        if (totalPage === currentPage) {
-          setTotalItem(data.tableResult.length + (totalPage - 1) * pageSize);
-        } else {
-          setTotalItem(totalPage * pageSize);
-        }
       },
       staleTime: 1000,
       cacheTime: 0,
@@ -228,7 +224,7 @@ function Invoice() {
               </Box>
               <Flex w="370px" h="32px" align={'center'} mt={'20px'} mx="auto">
                 <Text>{t('Total')}:</Text>
-                <Flex w="40px">{totalItem - (filterData?.data?.billings || []).length}</Flex>
+                <Flex w="40px">{data.totalCount - (filterData?.data?.billings || []).length}</Flex>
                 <Flex gap={'8px'}>
                   <Button
                     variant={'switchPage'}
