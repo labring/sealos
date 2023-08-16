@@ -18,6 +18,7 @@ package e2e
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/onsi/gomega"
 
@@ -30,10 +31,29 @@ func checkVersionImageList(fakeClient *operators.FakeClient) error {
 	displayImages, err := fakeClient.CRI.ImageList()
 	utils.CheckErr(err, fmt.Sprintf("failed to list images: %v", err))
 	gomega.Expect(displayImages).NotTo(gomega.BeNil())
+	errors := make([]string, 0)
 	for _, image := range displayImages.Images {
-		for _, tags := range image.RepoTags {
-			logger.Info("crictl image is: %v", tags)
+		for _, tag := range image.RepoTags {
+			if strings.HasPrefix(tag, "sealos.hub:5000") {
+				logger.Info("crictl image is: %v", tag)
+				continue
+			}
+			registries := []string{
+				"k8s.gcr.io",
+				"registry.k8s.io",
+			}
+			for _, registry := range registries {
+				if strings.HasPrefix(tag, registry) {
+					logger.Warn("crictl image is not in registry: %v", tag)
+					errors = append(errors, tag)
+					continue
+				}
+			}
+			logger.Warn("crictl image is not in registry not k8s image: %v", tag)
 		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("crictl image is not in registry: %v", errors)
 	}
 	return nil
 }
