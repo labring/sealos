@@ -19,6 +19,8 @@ package operators
 import (
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/util/json"
+
 	"github.com/labring/sealos/test/e2e/testhelper/cmd"
 )
 
@@ -42,17 +44,25 @@ func (f *fakeCRIClient) Pull(name string) error {
 	}
 	return f.SealosCmd.CRIImagePull(name)
 }
-func (f *fakeCRIClient) ImageList() error {
+func (f *fakeCRIClient) ImageList() (*ImageStruct, error) {
 	if f.SealosCmd.CriBinPath == "" {
 		if err := f.SealosCmd.SetCriBinPath(); err != nil {
-			return err
+			return nil, err
 		}
 	}
-	_, err := f.SealosCmd.CRIImageList(true)
-	return err
+	data, err := f.SealosCmd.CRIImageList(false)
+	if err != nil {
+		return nil, err
+	}
+	var image ImageStruct
+	err = json.Unmarshal(data, &image)
+	if err != nil {
+		return nil, err
+	}
+	return &image, nil
 }
 func (f *fakeCRIClient) HasImage(name string) error {
-	data, err := f.SealosCmd.CRIImageList(false)
+	data, err := f.ImageList()
 	if err != nil {
 		return err
 	}

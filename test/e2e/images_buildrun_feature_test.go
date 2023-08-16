@@ -67,7 +67,7 @@ var _ = Describe("E2E_sealos_images_buildrun_feature_test", func() {
 			utils.CheckErr(err, fmt.Sprintf("failed to run images %v: %v", images, err))
 			err = fakeClient.CRI.Pull("docker.io/altinity/clickhouse-operator:0.18.4")
 			utils.CheckErr(err, fmt.Sprintf("failed to pull image docker.io/altinity/clickhouse-operator:0.18.4: %v", err))
-			err = fakeClient.CRI.ImageList()
+			_, err = fakeClient.CRI.ImageList()
 			utils.CheckErr(err, fmt.Sprintf("failed to list images: %v", err))
 			err = fakeClient.CRI.HasImage("sealos.hub:5000/altinity/clickhouse-operator:0.18.4")
 			utils.CheckErr(err, fmt.Sprintf("failed to validate image sealos.hub:5000/altinity/clickhouse-operator:0.18.4: %v", err))
