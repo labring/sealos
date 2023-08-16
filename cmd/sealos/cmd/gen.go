@@ -56,7 +56,7 @@ func newGenCmd() *cobra.Command {
 		Long:    `generate a Clusterfile of the kubernetes cluster, which can be applied by 'sealos apply' command`,
 		Example: exampleGen,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			data, err := apply.NewClusterFromGenArgs(args, genArgs)
+			data, err := apply.NewClusterFromGenArgs(cmd, genArgs, args)
 			if err != nil {
 				return err
 			}

@@ -70,7 +70,7 @@ func newRunCmd() *cobra.Command {
 				return err
 			}
 
-			applier, err := apply.NewApplierFromArgs(images, runArgs)
+			applier, err := apply.NewApplierFromArgs(cmd, runArgs, images)
 			if err != nil {
 				return err
 			}

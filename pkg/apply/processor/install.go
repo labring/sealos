@@ -255,7 +255,7 @@ func (c *InstallProcessor) RunGuest(cluster *v2.Cluster) error {
 	return c.Guest.Apply(cluster, c.NewMounts, cluster.GetAllIPS())
 }
 
-func NewInstallProcessor(clusterFile clusterfile.Interface, images []string) (Interface, error) {
+func NewInstallProcessor(ctx context.Context, clusterFile clusterfile.Interface, images []string) (Interface, error) {
 	bder, err := buildah.New(clusterFile.GetCluster().Name)
 	if err != nil {
 		return nil, err
@@ -271,5 +271,6 @@ func NewInstallProcessor(clusterFile clusterfile.Interface, images []string) (In
 		Buildah:     bder,
 		Guest:       gs,
 		NewImages:   images,
+		ExtraEnvs:   GetEnvs(ctx),
 	}, nil
 }

@@ -175,7 +175,7 @@ func (c *CreateProcessor) RunGuest(cluster *v2.Cluster) error {
 	return nil
 }
 
-func NewCreateProcessor(name string, clusterFile clusterfile.Interface) (Interface, error) {
+func NewCreateProcessor(ctx context.Context, name string, clusterFile clusterfile.Interface) (Interface, error) {
 	bder, err := buildah.New(name)
 	if err != nil {
 		return nil, err
@@ -189,5 +189,6 @@ func NewCreateProcessor(name string, clusterFile clusterfile.Interface) (Interfa
 		ClusterFile: clusterFile,
 		Buildah:     bder,
 		Guest:       gs,
+		ExtraEnvs:   GetEnvs(ctx),
 	}, nil
 }
