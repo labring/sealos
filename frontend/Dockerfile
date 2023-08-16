@@ -13,8 +13,6 @@
 # limitations under the License.
 
 FROM node:current-alpine AS runner
-ARG name
-ARG path
 WORKDIR /app
 
 ENV NODE_ENV production
@@ -23,11 +21,21 @@ ENV NEXT_TELEMETRY_DISABLED 1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
+ARG mirror
+RUN if [ "$mirror" = "tsinghua"]; then \
+    echo "MIRROR: $mirror"; \
+    sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories; \
+  else \
+    sed -i 's/https/http/' /etc/apk/repositories; \
+  fi
 
-RUN sed -i 's/https/http/' /etc/apk/repositories
 RUN apk add curl \
   && apk add ca-certificates \
   && update-ca-certificates
+
+ARG name
+ARG path
+
 # Install Git and OpenSSH client if $name is equal to template
 RUN if [ "$name" = "template" ]; then \
     apk add --no-cache git openssh-client; \
