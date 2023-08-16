@@ -42,7 +42,7 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - ingresses
+    - namespaces
   sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1

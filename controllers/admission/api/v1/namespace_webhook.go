@@ -28,7 +28,8 @@ import (
 // log is for logging in this package.
 var nlog = logf.Log.WithName("namespace-resource")
 
-//+kubebuilder:webhook:path=/mutate-core-v1-namespace,mutating=true,failurePolicy=ignore,sideEffects=None,groups=core,resources=ingresses,verbs=create;update,versions=v1,name=vnamespace.kb.io,admissionReviewVersions=v1
+//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:webhook:path=/mutate-core-v1-namespace,mutating=true,failurePolicy=ignore,sideEffects=None,groups=core,resources=namespaces,verbs=create;update,versions=v1,name=vnamespace.kb.io,admissionReviewVersions=v1
 
 //+kubebuilder:object:generate=false
 
