@@ -62,7 +62,7 @@ kind: ClusterConfiguration
 networking:
   serviceSubnet: "100.55.0.0/16"
 `
-			dFile := config.Dockerfile{
+			dFile := config.RootfsDockerfile{
 				KubeadmYaml: kubeadm,
 				BaseImage:   "labring/kubernetes:v1.25.0",
 			}
