@@ -80,7 +80,13 @@ type collect struct {
 	DailyClusterUsage DailyClusterUsage
 	CollectorInfo     CollectorInfo
 
-	options Options
+	options OptionsReadOnly
+}
+
+func NewCollect(o OptionsReadOnly) *collect {
+	return &collect{
+		options: o,
+	}
 }
 
 func (c *collect) collectWork(instance *TaskInstance) error {

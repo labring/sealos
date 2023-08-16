@@ -37,6 +37,18 @@ type HTTPResponse struct {
 	Body        []byte
 }
 
+// The Get method is used to handle "GET" request.
+func Get(url string) (HTTPResponse, error) {
+	body, err := CommunicateWithCloud("GET", url, nil)
+	if err != nil {
+		return HTTPResponse{}, fmt.Errorf("communicateWithCloud: %w", err)
+	}
+	if !IsSuccessfulStatusCode(body.StatusCode) {
+		return HTTPResponse{}, fmt.Errorf("error status: %s", http.StatusText(body.StatusCode))
+	}
+	return body, nil
+}
+
 // The Push method is used to handle one-way interaction, that is,
 // there is no need to obtain information from the cloud, only need to send information to the cloud.
 func Push(url string, content interface{}) error {

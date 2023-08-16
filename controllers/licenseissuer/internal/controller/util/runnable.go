@@ -43,6 +43,7 @@ func BuildForRunnable(ctx context.Context, client client.Client, options Options
 type Task interface {
 	Run() error
 	Log() *logr.Logger
+	Probe() bool
 }
 
 // allow the user to define their own runnable task
@@ -54,12 +55,11 @@ func Once(_ context.Context, _ time.Duration, t Task) error {
 	if err != nil {
 		(t.Log()).Error(err, "failed to run task")
 	}
-	return err
+	return nil
 }
 
 // Periodic func is used to run a task periodically.
 func Periodic(ctx context.Context, period time.Duration, t Task) error {
-	waitForInit()
 	for {
 		select {
 		case <-ctx.Done():
@@ -68,6 +68,28 @@ func Periodic(ctx context.Context, period time.Duration, t Task) error {
 			err := t.Run()
 			if err != nil {
 				(t.Log()).Error(err, "failed to run task")
+				time.Sleep(time.Minute * 5)
+				continue
+			}
+			time.Sleep(period)
+		}
+	}
+}
+
+func PeriodicWithProbe(ctx context.Context, period time.Duration, t Task) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+			if !t.Probe() {
+				(t.Log()).Info("the probe is not ready, try again after some time")
+				time.Sleep(time.Minute * 10)
+				continue
+			}
+			err := t.Run()
+			if err != nil {
+				(t.Log()).Error(err, "failed to run task, try again after 5 minutes")
 				time.Sleep(time.Minute * 5)
 				continue
 			}
@@ -101,6 +123,7 @@ func (tb *TaskPool) init() *TaskPool {
 			policy: tb.options.GetRunnableOptions().Policy[o],
 			period: tb.options.GetRunnableOptions().Period[o],
 			Client: tb.Client,
+			probe:  ProbeFor(o),
 		})
 	}
 	return tb
@@ -114,6 +137,7 @@ type TaskInstance struct {
 	ctx    context.Context
 	policy string
 	period time.Duration
+	probe  Probe
 }
 
 var _ manager.Runnable = &TaskInstance{}
@@ -125,6 +149,8 @@ func (ti *TaskInstance) Start(ctx context.Context) error {
 		return Once(ctx, ti.period, ti)
 	case "Periodic":
 		return Periodic(ctx, ti.period, ti)
+	case "PeriodicWithProbe":
+		return PeriodicWithProbe(ctx, ti.period, ti)
 	default:
 		return fmt.Errorf("the policy is not supported")
 	}
@@ -133,16 +159,17 @@ func (ti *TaskInstance) Start(ctx context.Context) error {
 func (ti *TaskInstance) Run() error {
 	switch ti.name {
 	case Init:
-		_ = initTask{options: GetOptions()}.initWork(ti)
-		return nil
+		return NewInitTask(GetOptionsReadOnly()).initWork(ti)
 	case Notice:
-		return (&notice{lastTime: time.Now().Add(-7 * time.Hour).Unix()}).noticeWork(ti)
+		return NewNotice().noticeWork(ti)
 	case NoticeCleanup:
-		return (&noticeCleaner{lastTime: time.Now().Unix()}).cleanWork(ti)
+		return NewNoticeCleaner().cleanWork(ti)
 	case Collector:
-		return (&collect{options: GetOptions()}).collectWork(ti)
+		return NewCollect(GetOptionsReadOnly()).collectWork(ti)
 	case DataSync:
-		return (&datasycn{}).sync(ti)
+		return NewDataSync().sync(ti)
+	case NetWorkConfig:
+		return NewNetworkConfig().probe(ti)
 	default:
 		return fmt.Errorf("the task is not supported")
 		// allow developers to add their own runnable task
@@ -153,6 +180,9 @@ func (ti *TaskInstance) Log() *logr.Logger {
 	return &ti.logger
 }
 
-func waitForInit() {
-	time.Sleep(time.Minute)
+func (ti *TaskInstance) Probe() bool {
+	if ti.probe == nil {
+		return false
+	}
+	return ti.probe.Probe()
 }

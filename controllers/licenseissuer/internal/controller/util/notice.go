@@ -66,7 +66,7 @@ func (n *notice) noticeWork(instance *TaskInstance) error {
 	// get uid and url-map
 	uid, urlMap, err := GetUIDURL(instance.ctx, instance.Client)
 	if err != nil {
-		instance.logger.Error(err, "failed to get uid and url")
+		instance.logger.Info("failed to get uid and url-map", "err", err)
 		return err
 	}
 
@@ -75,24 +75,19 @@ func (n *notice) noticeWork(instance *TaskInstance) error {
 	// pull from the cloud
 	response, err := Pull(urlMap[NotificationURL], request)
 	if err != nil {
-		instance.logger.Error(err, "failed to pull from cloud")
+		instance.logger.Info("failed to pull from cloud", "err", err)
 		return err
 	}
 
 	// get notice-events from response
 	events, err := n.getEvents(instance, response.Body)
 	if err != nil {
-		instance.logger.Error(err, "failed to get events")
+		instance.logger.Info("failed to get events", "err", err)
 		return err
 	}
 
 	// get receivers
 	receiver.AddReceivers(n.getUserNamespace(instance, filter))
-
-	if err != nil {
-		instance.logger.Error(err, "failed to cache namespace")
-		return err
-	}
 
 	manager.Load(receiver, events).Run()
 	return nil
@@ -142,12 +137,16 @@ func GetUID(ctx context.Context, client client.Client) (string, error) {
 	return uid, nil
 }
 
+func NewNotice() *notice {
+	return &notice{lastTime: time.Now().Add(-7 * time.Hour).Unix()}
+}
+
 func (n *notice) getEvents(instance *TaskInstance, body []byte) ([]ntf.Event, error) {
 	var resps []NotificationResponse
 	var events []ntf.Event
 	err := Convert(body, &resps)
 	if err != nil {
-		instance.logger.Error(err, "failed to convert response")
+		instance.logger.Info("failed to convert body", "err", err)
 		return nil, err
 	}
 	for _, resp := range resps {
@@ -172,19 +171,23 @@ type noticeCleaner struct {
 	lastTime int64
 }
 
+func NewNoticeCleaner() *noticeCleaner {
+	return &noticeCleaner{lastTime: time.Now().Unix()}
+}
+
 func (nc *noticeCleaner) cleanWork(instance *TaskInstance) error {
 	// catch all notification in the cluster
 	notifications := &notificationv1.NotificationList{}
 
 	err := instance.List(instance.ctx, notifications)
 	if err != nil {
-		instance.logger.Error(err, "failed to list notification")
+		instance.logger.Info("failed to list notification", "err", err)
 		return err
 	}
 	// Get the notification that needs to be deleted
 	expiredNotifications, err := nc.getNotificationsExpired(instance)
 	if err != nil {
-		instance.logger.Error(err, "failed to get expired notification")
+		instance.logger.Info("failed to get expired notification", "err", err)
 		return err
 	}
 	// delete the notification
@@ -195,7 +198,7 @@ func (nc *noticeCleaner) cleanWork(instance *TaskInstance) error {
 		pool.Add(func() {
 			err := instance.Delete(instance.ctx, &newCopy)
 			if err != nil {
-				instance.logger.Error(err, "failed to delete notification")
+				instance.logger.Info("failed to delete notification", "err", err)
 			}
 		})
 	}
@@ -207,7 +210,7 @@ func (nc *noticeCleaner) getNotificationsExpired(instance *TaskInstance) ([]noti
 	notifications := &notificationv1.NotificationList{}
 	err := instance.List(instance.ctx, notifications)
 	if err != nil {
-		instance.logger.Error(err, "failed to list notification")
+		instance.logger.Info("failed to list notification", "err", err)
 		return nil, err
 	}
 	var expiredNotifications []notificationv1.Notification
@@ -245,7 +248,7 @@ func (n *notice) getUserNamespace(instance *TaskInstance, opt FilterFunc) []stri
 	namespaceList := &corev1.NamespaceList{}
 	err := instance.List(instance.ctx, namespaceList)
 	if err != nil {
-		instance.logger.Error(err, "failed to list namespace")
+		instance.logger.Info("failed to list namespace", "err", err)
 		return nil
 	}
 	var namespaces []string
