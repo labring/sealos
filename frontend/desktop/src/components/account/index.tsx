@@ -98,7 +98,7 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureReturn 
           >
             <Flex h="54px" alignItems={'center'} borderBottom={'1px solid #0000001A'} p="16px">
               <Text>
-                {t('Balance')}: ￥{formatMoney(balance).toFixed(2)}
+                {t('Balance')}: {formatMoney(balance).toFixed(2)}
               </Text>
 
               {rechargeEnabled && (
@@ -112,7 +112,7 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureReturn 
                         openRecharge: 'true'
                       }
                     });
-                    disclosure;
+                    disclosure.onClose();
                   }}
                   color={'#219BF4'}
                   fontWeight="500"

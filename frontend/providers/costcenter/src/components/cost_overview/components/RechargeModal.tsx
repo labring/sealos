@@ -256,7 +256,7 @@ const RechargeModal = forwardRef(
         staleTime: 0,
         onSuccess(data) {
           setTimeout(() => {
-            if (data?.data?.status === 'SUCCESS') {
+            if ((data?.data?.status || '').toUpperCase() === 'SUCCESS') {
               createPaymentRes.reset();
               setComplete(3);
               props.onPaySuccess?.();
