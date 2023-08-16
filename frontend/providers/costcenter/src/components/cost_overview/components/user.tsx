@@ -45,7 +45,6 @@ export default memo(function UserCard() {
   const router = useRouter();
   const { openRecharge } = router.query;
   useEffect(() => {
-    console.log(rechargeSource);
     // 加锁
     // let timeout = -1 as any
     if (rechargeRef?.current && rechargeSource > 0) {

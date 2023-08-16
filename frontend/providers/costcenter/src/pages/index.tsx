@@ -6,7 +6,7 @@ export default function Index() {
     pathname: 'cost_overview'
   };
   if (Object.keys(router.query).length > 0) config.query = router.query;
-  console.log(config);
   router.replace(config, config);
+
   return <div></div>;
 }
