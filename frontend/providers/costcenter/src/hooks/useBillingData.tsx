@@ -2,8 +2,8 @@ import request from '@/service/request';
 import useOverviewStore from '@/stores/overview';
 import { ApiResp } from '@/types/api';
 import { BillingSpec, BillingData } from '@/types/billing';
-import { UseQueryOptions, useQuery } from '@tanstack/react-query';
-import { addDays, differenceInDays, formatISO, subSeconds } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
+import { differenceInDays, formatISO } from 'date-fns';
 
 export default function useBillingData(props?: { type: -1 | 0 | 1 | 2 | 3 }) {
   const startTime = useOverviewStore((state) => state.startTime);

@@ -13,7 +13,6 @@ import RechargeModal from './RechargeModal';
 import TransferModal from './TransferModal';
 import useEnvStore from '@/stores/env';
 import CurrencySymbol from '@/components/CurrencySymbol';
-import { useRouter } from 'next/router';
 import useOverviewStore from '@/stores/overview';
 import { RechargeContext } from '@/pages/cost_overview';
 export default memo(function UserCard() {
@@ -42,8 +41,6 @@ export default memo(function UserCard() {
   const rechargeRef = useContext(RechargeContext).rechargeRef;
   const transferRef = useRef<any>();
   const queryClient = useQueryClient();
-  const router = useRouter();
-  const { openRecharge } = router.query;
   useEffect(() => {
     // 加锁
     // let timeout = -1 as any
@@ -130,9 +127,9 @@ export default memo(function UserCard() {
           stripePromise={stripePromise}
           request={request}
           onPaySuccess={async () => {
-            await new Promise((s) => setTimeout(s, 4000));
-            await queryClient.invalidateQueries({ queryKey: ['billing'], exact: false });
-            await queryClient.invalidateQueries({ queryKey: ['getAmount'] });
+            await new Promise((s) => setTimeout(s, 2000));
+            await queryClient.invalidateQueries({ queryKey: ['billing'] });
+            await queryClient.invalidateQueries({ queryKey: ['getAccount'] });
           }}
         />
       }
@@ -141,9 +138,9 @@ export default memo(function UserCard() {
           ref={transferRef}
           balance={balance}
           onTransferSuccess={async () => {
-            await new Promise((s) => setTimeout(s, 4000));
-            await queryClient.invalidateQueries({ queryKey: ['billing'], exact: false });
-            await queryClient.invalidateQueries({ queryKey: ['getAmount'] });
+            await new Promise((s) => setTimeout(s, 2000));
+            await queryClient.invalidateQueries({ queryKey: ['billing'] });
+            await queryClient.invalidateQueries({ queryKey: ['getAccount'] });
           }}
           k8s_username={k8s_username}
         />
