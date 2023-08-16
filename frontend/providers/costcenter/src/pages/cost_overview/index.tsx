@@ -5,7 +5,7 @@ import useNotEnough from '@/hooks/useNotEnough';
 import { Box, Flex, Heading, Img, useToast } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { MutableRefObject, Ref, createContext, useEffect, useRef } from 'react';
+import { MutableRefObject, createContext, useEffect, useRef } from 'react';
 import { Buget } from '@/components/cost_overview/buget';
 import UserCard from '@/components/cost_overview/components/user';
 import { Cost } from '@/components/cost_overview/cost';
@@ -63,7 +63,7 @@ function CostOverview() {
   }, []);
   const { NotEnoughModal } = useNotEnough();
   const { data, isInitialLoading } = useBillingData();
-  const billingItems = data?.data?.status.item.filter((v, i) => i < 3) || [];
+  const billingItems = data?.data?.status.item.filter((_v, i) => i < 3) || [];
   const costBillingItems = data?.data?.status.item.filter((v) => v.type === 0) || [];
   const totast = useToast();
   useEffect(() => {

@@ -34,6 +34,7 @@ export type BillingData<T = Costs> = {
     deductionAmount: T;
     item: BillingItem[];
     pageLength: number;
+    totalCount: number;
     rechargeAmount: number;
   };
 };

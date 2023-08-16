@@ -41,11 +41,13 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     }
     const namespace = 'ns-' + user.name;
     // const body = req.body;
-    let spec: BillingSpec = req.body.spec;
+    const { spec } = req.body;
     if (!spec) {
       return jsonRes(resp, { code: 400, error: '参数错误' });
     }
-    const hash = crypto.createHash('sha256').update(JSON.stringify(spec));
+    // 用react query 管理缓存
+    let origin = JSON.stringify(spec) + new Date().getTime();
+    const hash = crypto.createHash('sha256').update(origin);
     const name = hash.digest('hex');
     const crdSchema = {
       apiVersion: `account.sealos.io/v1`,
