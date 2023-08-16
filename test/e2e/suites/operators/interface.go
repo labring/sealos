@@ -16,23 +16,6 @@ limitations under the License.
 
 package operators
 
-type DisplayImage struct {
-	ID           string   `json:"id"`
-	Names        []string `json:"names"`
-	Digest       string   `json:"digest"`
-	Createdat    string   `json:"createdat"`
-	Size         string   `json:"size"`
-	Created      int      `json:"created"`
-	Createdatraw string   `json:"createdatraw"`
-	Readonly     bool     `json:"readonly"`
-}
-type BuildOptions struct {
-	Compress     bool
-	MaxPullProcs int
-	Pull         string
-	SaveImage    bool
-}
-
 type FakeImageInterface interface {
 	ListImages(display bool) ([]DisplayImage, error)
 	PullImage(images ...string) error
@@ -51,7 +34,7 @@ type FakeImageInterface interface {
 
 type FakeCRIInterface interface {
 	Pull(name string) error
-	ImageList() error
+	ImageList() (*ImageStruct, error)
 	HasImage(name string) error
 }
 

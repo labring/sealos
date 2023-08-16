@@ -14,9 +14,32 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cmd
+package operators
+
+type DisplayImage struct {
+	ID           string   `json:"id"`
+	Names        []string `json:"names"`
+	Digest       string   `json:"digest"`
+	Createdat    string   `json:"createdat"`
+	Size         string   `json:"size"`
+	Created      int      `json:"created"`
+	Createdatraw string   `json:"createdatraw"`
+	Readonly     bool     `json:"readonly"`
+}
+type BuildOptions struct {
+	Compress     bool
+	MaxPullProcs int
+	Pull         string
+	SaveImage    bool
+}
 
 type PodStruct struct {
+	//var pod PodStruct
+	//err = json.Unmarshal(data, &pod)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//return &pod, nil
 	Items []struct {
 		ID       string `json:"id"`
 		Metadata struct {
@@ -34,6 +57,12 @@ type PodStruct struct {
 }
 
 type ImageStruct struct {
+	//	var image ImageStruct
+	//	err = json.Unmarshal(data, &image)
+	//	if err != nil {
+	//	return nil, err
+	//}
+	//	return &image, nil
 	Images []struct {
 		ID          string      `json:"id"`
 		RepoTags    []string    `json:"repoTags"`
@@ -47,6 +76,12 @@ type ImageStruct struct {
 }
 
 type ProcessStruct struct {
+	//var process ProcessStruct
+	//	err = json.Unmarshal(data, &process)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	return &process, nil
 	Containers []struct {
 		ID           string `json:"id"`
 		PodSandboxID string `json:"podSandboxId"`

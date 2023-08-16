@@ -17,8 +17,6 @@ package cmd
 import (
 	"os"
 
-	"k8s.io/apimachinery/pkg/util/json"
-
 	"github.com/labring/sealos/test/e2e/testhelper/settings"
 
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
@@ -73,9 +71,9 @@ type ImageService interface {
 }
 
 type CRICycle interface {
-	CRIImageList(display bool) (*ImageStruct, error)
-	CRIProcessList(display bool) (*ProcessStruct, error)
-	CRIPodList(display bool) (*PodStruct, error)
+	CRIImageList(display bool) ([]byte, error)
+	CRIProcessList(display bool) ([]byte, error)
+	CRIPodList(display bool) ([]byte, error)
 	CRIImagePull(name string) error
 }
 
@@ -192,37 +190,19 @@ func (s *SealosCmd) ImageRemove(images ...string) error {
 func (s *SealosCmd) ImageInspect(image string) error {
 	return s.Executor.AsyncExec(s.BinPath, "inspect", image)
 }
-func (s *SealosCmd) CRIImageList(display bool) (*ImageStruct, error) {
+func (s *SealosCmd) CRIImageList(display bool) ([]byte, error) {
 	if display {
 		return nil, s.Executor.AsyncExec(s.CriBinPath, "images")
 	}
-	data, err := s.Executor.Exec(s.CriBinPath, "images", "-o", "json")
-	if err != nil {
-		return nil, err
-	}
-	var image ImageStruct
-	err = json.Unmarshal(data, &image)
-	if err != nil {
-		return nil, err
-	}
-	return &image, nil
+	return s.Executor.Exec(s.CriBinPath, "images", "-o", "json")
 }
-func (s *SealosCmd) CRIProcessList(display bool) (*ProcessStruct, error) {
+func (s *SealosCmd) CRIProcessList(display bool) ([]byte, error) {
 	if display {
 		return nil, s.Executor.AsyncExec(s.CriBinPath, "ps", "-a")
 	}
-	data, err := s.Executor.Exec(s.CriBinPath, "ps", "-a", "-o", "json")
-	if err != nil {
-		return nil, err
-	}
-	var process ProcessStruct
-	err = json.Unmarshal(data, &process)
-	if err != nil {
-		return nil, err
-	}
-	return &process, nil
+	return s.Executor.Exec(s.CriBinPath, "ps", "-a", "-o", "json")
 }
-func (s *SealosCmd) CRIPodList(display bool) (*PodStruct, error) {
+func (s *SealosCmd) CRIPodList(display bool) ([]byte, error) {
 	if display {
 		return nil, s.Executor.AsyncExec(s.CriBinPath, "pods")
 	}
@@ -230,12 +210,7 @@ func (s *SealosCmd) CRIPodList(display bool) (*PodStruct, error) {
 	if err != nil {
 		return nil, err
 	}
-	var pod PodStruct
-	err = json.Unmarshal(data, &pod)
-	if err != nil {
-		return nil, err
-	}
-	return &pod, nil
+	return data, nil
 }
 func (s *SealosCmd) CRIImagePull(name string) error {
 	return s.Executor.AsyncExec(s.CriBinPath, "pull", name)
