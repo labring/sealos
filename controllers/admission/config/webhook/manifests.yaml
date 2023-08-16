@@ -30,7 +30,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-core-v1-namespace
+      path: /mutate-v1-namespace
   failurePolicy: Ignore
   name: vnamespace.kb.io
   rules:
@@ -76,7 +76,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-core-v1-namespace
+      path: /validate-v1-namespace
   failurePolicy: Ignore
   name: vnamespace.kb.io
   rules:
