@@ -58,8 +58,6 @@ spec:
               value: {{ .certSecretName }}
             - name: TEMPLATE_REPO_URL
               value: {{ .templateRepoUrl }}
-            - name: TEMPLATE_REPO_PATH
-              value: {{ .templateRepoPath }}
           image: ghcr.io/labring/sealos-template-frontend:latest
           imagePullPolicy: Always
           volumeMounts:
