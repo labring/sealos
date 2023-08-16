@@ -54,13 +54,12 @@ func (v *IngressValidator) ValidateCreate(ctx context.Context, obj runtime.Objec
 	if !ok {
 		return errors.New("obj convert Ingress is error")
 	}
+
 	ilog.Info("validating create", "name", i.Name)
-	ilog.Info("enter checkOption func", "name", i.Name)
-	return v.checkOption(ctx, i)
+	return v.validate(ctx, i)
 }
 
 func (v *IngressValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-
 	ni, ok := newObj.(*netv1.Ingress)
 	if !ok {
 		return errors.New("obj convert Ingress is error")
@@ -69,9 +68,9 @@ func (v *IngressValidator) ValidateUpdate(ctx context.Context, oldObj, newObj ru
 	if !ok {
 		return errors.New("obj convert Ingress is error")
 	}
+
 	ilog.Info("validating update", "name", oi.Name)
-	ilog.Info("enter checkOption func", "name", ni.Name)
-	return v.checkOption(ctx, ni)
+	return v.validate(ctx, ni)
 }
 
 func (v *IngressValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
@@ -79,11 +78,11 @@ func (v *IngressValidator) ValidateDelete(ctx context.Context, obj runtime.Objec
 	if !ok {
 		return errors.New("obj convert Ingress is error")
 	}
+
 	ilog.Info("validating delete", "name", i.Name)
-	ilog.Info("enter checkOption func", "name", i.Name)
-	return v.checkOption(ctx, i)
+	return v.validate(ctx, i)
 }
 
-func (v *IngressValidator) checkOption(ctx context.Context, i *netv1.Ingress) error {
+func (v *IngressValidator) validate(ctx context.Context, i *netv1.Ingress) error {
 	return nil
 }

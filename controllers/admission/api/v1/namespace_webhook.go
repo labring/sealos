@@ -23,13 +23,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
 var nlog = logf.Log.WithName("namespace-resource")
 
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:webhook:path=/mutate-core-v1-namespace,mutating=true,failurePolicy=ignore,sideEffects=None,groups=core,resources=namespaces,verbs=create;update,versions=v1,name=vnamespace.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate-v1-namespace,mutating=true,failurePolicy=ignore,sideEffects=None,groups=core,resources=namespaces,verbs=create;update,versions=v1,name=vnamespace.kb.io,admissionReviewVersions=v1
 
 //+kubebuilder:object:generate=false
 
@@ -37,7 +38,16 @@ type NamespaceMutator struct {
 	client.Client
 }
 
-func (m *NamespaceMutator) Default(ctx context.Context, obj runtime.Object) error {
+func (m *NamespaceMutator) Default(_ context.Context, obj runtime.Object) error {
+	i, ok := obj.(*corev1.Namespace)
+	if !ok {
+		return errors.New("obj convert to Namespace error")
+	}
+	nlog.Info("mutating create/update", "name", i.Name)
+	i.ObjectMeta = initAnnotationAndLabels(i.ObjectMeta)
+
+	// add sealos.io/namespace annotation
+	i.Annotations["sealos.io/namespace"] = i.Name
 	return nil
 }
 
@@ -47,42 +57,44 @@ type NamespaceValidator struct {
 	client.Client
 }
 
-//+kubebuilder:webhook:path=/validate-core-v1-namespace,mutating=false,failurePolicy=ignore,sideEffects=None,groups=core,resources=namespaces,verbs=create;update,versions=v1,name=vnamespace.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-v1-namespace,mutating=false,failurePolicy=ignore,sideEffects=None,groups=core,resources=namespaces,verbs=create;update,versions=v1,name=vnamespace.kb.io,admissionReviewVersions=v1
 
 func (v *NamespaceValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
 	i, ok := obj.(*corev1.Namespace)
 	if !ok {
-		return errors.New("obj convert Namespace is error")
+		return errors.New("obj convert to Namespace error")
 	}
 	nlog.Info("validating create", "name", i.Name)
-	nlog.Info("enter checkOption func", "name", i.Name)
-	return v.checkOption(ctx, i)
+	return v.validate(ctx, i)
 }
 
 func (v *NamespaceValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
 	ni, ok := newObj.(*corev1.Namespace)
 	if !ok {
-		return errors.New("obj convert Namespace is error")
+		return errors.New("obj convert to Namespace error")
 	}
 	oi, ok := oldObj.(*corev1.Namespace)
 	if !ok {
-		return errors.New("obj convert Namespace is error")
+		return errors.New("obj convert to Namespace error")
 	}
 	nlog.Info("validating update", "name", oi.Name)
-	nlog.Info("enter checkOption func", "name", ni.Name)
-	return v.checkOption(ctx, ni)
+	return v.validate(ctx, ni)
 }
 
 func (v *NamespaceValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
 	i, ok := obj.(*corev1.Namespace)
 	if !ok {
-		return errors.New("obj convert Namespace is error")
+		return errors.New("obj convert to Namespace error")
 	}
 	nlog.Info("validating delete", "name", i.Name)
-	nlog.Info("enter checkOption func", "name", i.Name)
-	return v.checkOption(ctx, i)
+	return v.validate(ctx, i)
 }
 
-func (v *NamespaceValidator) checkOption(ctx interface{}, i *corev1.Namespace) error {
+func (v *NamespaceValidator) validate(ctx context.Context, i *corev1.Namespace) error {
+	request, _ := admission.RequestFromContext(ctx)
+	nlog.Info("validating", "name", i.Name, "user", request.UserInfo.Username, "userGroups", request.UserInfo.Groups)
+	if isUserServiceAccount(request.UserInfo.Username) {
+		return errors.New("user can not create/update/delete namespace")
+	}
 	return nil
 }
