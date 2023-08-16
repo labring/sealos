@@ -84,7 +84,7 @@ jobs:
       - name: Download patch image tar
         uses: actions/download-artifact@v3
         with:
-          name: patch-image-${{ matrix.arch }}.tar
+          name: patch-image-amd64.tar
           path: /tmp/sealos/images/
       - name: Download e2e test
         uses: actions/download-artifact@v3
