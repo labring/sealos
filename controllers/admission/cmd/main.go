@@ -18,6 +18,8 @@ package main
 
 import (
 	"flag"
+	corev1 "k8s.io/api/core/v1"
+	netv1 "k8s.io/api/networking/v1"
 	"os"
 
 	v1 "github.com/labring/sealos/controllers/admission/api/v1"
@@ -87,6 +89,7 @@ func main() {
 	}
 
 	err = builder.WebhookManagedBy(mgr).
+		For(&netv1.Ingress{}).
 		WithValidator(&v1.IngressValidator{}).
 		WithDefaulter(&v1.IngressMutator{}).
 		Complete()
@@ -96,6 +99,7 @@ func main() {
 	}
 
 	err = builder.WebhookManagedBy(mgr).
+		For(&corev1.Namespace{}).
 		WithValidator(&v1.NamespaceValidator{}).
 		WithDefaulter(&v1.NamespaceMutator{}).
 		Complete()
