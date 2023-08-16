@@ -281,7 +281,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	if err != nil {
 		return nil, fmt.Errorf("sync init balance failed: %v", err)
 	}
-	err = crypto.RechargeBalance(account.Status.EncryptBalance, int64(amount))
+	err = crypto.RechargeBalance(account.Status.EncryptBalance, amount)
 	if err != nil {
 		return nil, fmt.Errorf("recharge balance failed: %v", err)
 	}
