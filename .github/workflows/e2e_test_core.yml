@@ -53,6 +53,7 @@ jobs:
             E2E_sealos_runtime_version_125_test,
             E2E_sealos_runtime_version_126_test,
             E2E_sealos_runtime_version_127_test,
+            E2E_sealos_runtime_version_128_test,
             E2E_sealos_runtime_version_docker_119_test,
             E2E_sealos_runtime_version_docker_120_test,
             E2E_sealos_runtime_version_docker_121_test,
@@ -61,7 +62,8 @@ jobs:
             E2E_sealos_runtime_version_docker_124_test,
             E2E_sealos_runtime_version_docker_125_test,
             E2E_sealos_runtime_version_docker_126_test,
-            E2E_sealos_runtime_version_docker_127_test
+            E2E_sealos_runtime_version_docker_127_test,
+            E2E_sealos_runtime_version_docker_128_test
           ]
     runs-on: ubuntu-latest
     steps:
