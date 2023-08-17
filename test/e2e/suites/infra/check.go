@@ -34,7 +34,7 @@ type FakeInfra struct {
 	InfraDriver    string
 	TestDir        string
 	/*
-		if baseImageName ond baseImageTar both not set, use default ImageName (hub.sealos.cn/labring/kubernetes:v1.25.6) .
+		if baseImageName ond baseImageTar both not set, use default ImageName (registry.cn-hongkong.aliyuncs.com/labring/kubernetes:v1.25.6) .
 		if ImageTar is set, will use tar to load image; else if baseImageName is set, will pull image with baseImageName.
 		if patchImageTar is set, will use tar to load patch image; else if patchImageName is set, will pull image with patchImageName.
 		if patchImageTar and patchImageName are both set, will use patchImageTar to load image.
