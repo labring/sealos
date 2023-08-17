@@ -61,6 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       },
       [YamlKindEnum.StatefulSet]: {
         patch: async (jsonPatch: Object) => {
+          // patch -> replace -> delete and create
           try {
             await k8sApp.patchNamespacedStatefulSet(
               appName,
@@ -74,8 +75,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
             );
           } catch (error) {
-            await k8sApp.deleteNamespacedStatefulSet(appName, namespace);
-            await k8sApp.createNamespacedStatefulSet(namespace, jsonPatch);
+            try {
+              await k8sApp.replaceNamespacedStatefulSet(appName, namespace, jsonPatch);
+            } catch (error) {
+              await k8sApp.deleteNamespacedStatefulSet(appName, namespace);
+              await k8sApp.createNamespacedStatefulSet(namespace, jsonPatch);
+            }
           }
         },
         delete: () => k8sApp.deleteNamespacedStatefulSet(appName, namespace)
@@ -96,7 +101,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         delete: () => k8sCore.deleteNamespacedService(appName, namespace)
       },
       [YamlKindEnum.ConfigMap]: {
-        patch: (jsonPatch: Object) => applyYamlList([yaml.dump(jsonPatch)], 'replace'),
+        patch: (jsonPatch: any) =>
+          k8sCore.replaceNamespacedConfigMap(jsonPatch?.metadata?.name, namespace, jsonPatch),
         delete: () => k8sCore.deleteNamespacedConfigMap(appName, namespace)
       },
       [YamlKindEnum.Ingress]: {

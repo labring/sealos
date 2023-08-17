@@ -15,7 +15,7 @@ import { defaultEditVal, editModeMap } from '@/constants/editApp';
 import debounce from 'lodash/debounce';
 import { postDeployApp, putApp } from '@/api/app';
 import { useConfirm } from '@/hooks/useConfirm';
-import type { AppEditType } from '@/types/app';
+import type { AppEditType, DeployKindsType } from '@/types/app';
 import { adaptEditAppData } from '@/utils/adapt';
 import { useToast } from '@/hooks/useToast';
 import { useQuery } from '@tanstack/react-query';
@@ -82,7 +82,9 @@ const formData2Yamls = (data: AppEditType) => [
 
 const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) => {
   const { t } = useTranslation();
-  const appOldYamls = useRef<YamlItemType[]>([]);
+  const formOldYamls = useRef<YamlItemType[]>([]);
+  const crOldYamls = useRef<DeployKindsType[]>([]);
+
   const { toast } = useToast();
   const { Loading, setIsLoading } = useLoading();
   const router = useRouter();
@@ -168,11 +170,13 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         const yamls = yamlList.map((item) => item.value);
 
         if (appName) {
-          const patch = patchYamlList(
-            appOldYamls.current.map((item) => item.value),
-            yamls
-          );
-
+          const patch = patchYamlList({
+            formOldYamlList: formOldYamls.current.map((item) => item.value),
+            crYamlList: crOldYamls.current,
+            newYamlList: yamls
+          });
+          // console.log(patch, '-=-=-');
+          // return setIsLoading(false);
           await putApp({
             patch,
             appName,
@@ -258,7 +262,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     {
       onSuccess(res) {
         if (!res) return;
-        appOldYamls.current = formData2Yamls(res);
+        formOldYamls.current = formData2Yamls(res);
+        crOldYamls.current = res.crYamlList;
         setDefaultStorePathList(res.storeList.map((item) => item.path));
         setDefaultGpuSource(res.gpu);
         formHook.reset(adaptEditAppData(res));

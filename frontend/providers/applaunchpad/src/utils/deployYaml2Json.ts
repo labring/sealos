@@ -78,13 +78,14 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       }
     },
     command: (() => {
+      if (!data.runCMD) return undefined;
       try {
         return JSON.stringify(JSON.parse(data.runCMD));
       } catch (error) {
         return data.runCMD.split(' ').filter((item) => item);
       }
     })(),
-    args: data.cmdParam ? [data.cmdParam] : [],
+    args: data.cmdParam ? [data.cmdParam] : undefined,
     ports: [
       {
         containerPort: str2Num(data.containerOutPort)

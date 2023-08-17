@@ -49,7 +49,7 @@ export const useGlobalStore = create<State>()(
           set((state) => {
             state.userSourcePrice = res;
           });
-          console.log(res);
+          // console.log(res);
         } catch (err) {
           // retry fetch
           retryGetPrice--;

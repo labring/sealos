@@ -97,6 +97,9 @@ textarea::placeholder {
 #__next {
   height: 100%;
 }
+html {
+  overflow: hidden;
+}
 
 ::-webkit-scrollbar,
 ::-webkit-scrollbar {

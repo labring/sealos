@@ -190,6 +190,7 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
   const gpuNodeSelector = useGpu ? appDeploy?.spec?.template?.spec?.nodeSelector : null;
 
   return {
+    crYamlList: configs,
     id: appDeploy.metadata?.uid || ``,
     appName: appDeploy.metadata?.name || 'app Name',
     createTime: dayjs(appDeploy.metadata?.creationTimestamp).format('YYYY-MM-DD HH:mm'),
