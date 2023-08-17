@@ -1,0 +1,14 @@
+FROM scratch
+
+USER 65532:65532
+
+COPY registry registry
+COPY manifests manifests
+
+ENV cloudDomain="cloud.sealos.io"
+ENV ingressWebhookEnabled="true"
+ENV ingressWebhookFailurePolicy="Fail"
+ENV namespaceWebhookEnabled="true"
+ENV namespaceWebhookFailurePolicy="Fail"
+
+CMD ["kubectl apply -f manifests/deploy.yaml"]
