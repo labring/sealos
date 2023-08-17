@@ -298,7 +298,7 @@ func (m *MongoDB) GenerateMeteringData(startTime, endTime time.Time, prices map[
 			}
 			_category, _property := category, property
 			eg.Go(func() error {
-				_, err := m.getMeteringCollection().InsertOne(context.Background(), metering)
+				err := m.InsertMeteringData(context.Background(), metering)
 				if err != nil {
 					//TODO if insert failed, should todo?
 					logger.Error(err, "insert metering data failed", "category", _category, "property", _property)
@@ -308,6 +308,11 @@ func (m *MongoDB) GenerateMeteringData(startTime, endTime time.Time, prices map[
 		}
 	}
 	return eg.Wait()
+}
+
+func (m *MongoDB) InsertMeteringData(ctx context.Context, metering *common.Metering) error {
+	_, err := m.getMeteringCollection().InsertOne(ctx, metering)
+	return err
 }
 
 func (m *MongoDB) GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error) {

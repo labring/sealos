@@ -22,11 +22,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/utils"
-
 	"github.com/labring/sealos/controllers/pkg/common"
-
 	"github.com/labring/sealos/controllers/pkg/database"
+	"github.com/labring/sealos/controllers/pkg/utils"
 
 	"github.com/labring/sealos/pkg/utils/flags"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -41,6 +39,7 @@ type Config struct {
 	MongoPassword      string
 	RetentionDay       int64
 	PermanentRetention bool
+	PrometheusURL      string
 	// interval of metering resources
 	Interval time.Duration
 }
@@ -240,5 +239,6 @@ func init() {
 		MongoPassword:      os.Getenv(database.MongoPassword),
 		RetentionDay:       utils.GetInt64EnvWithDefault(database.RetentionDay, database.DefaultRetentionDay),
 		PermanentRetention: os.Getenv(database.PermanentRetention) == "true",
+		PrometheusURL:      os.Getenv("PROM_URL"),
 	}
 }

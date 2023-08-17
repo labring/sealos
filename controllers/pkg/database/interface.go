@@ -33,6 +33,7 @@ type Interface interface {
 	GetBillingCount(accountType accountv1.Type, startTime, endTime time.Time) (count, amount int64, err error)
 	GenerateMeteringData(startTime, endTime time.Time, prices map[string]common.Price) error
 	InsertMonitor(ctx context.Context, monitors ...*common.Monitor) error
+	InsertMeteringData(ctx context.Context, metering *common.Metering) error
 	DropMonitorCollectionsOlderThan(days int) error
 	Disconnect(ctx context.Context) error
 	Creator
