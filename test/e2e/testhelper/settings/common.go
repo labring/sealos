@@ -39,14 +39,14 @@ const (
 const GzSuffix = ".gz"
 
 const (
-	DefaultTestImageName  = "hub.sealos.cn/labring/kubernetes:v1.25.0"
+	DefaultTestImageName  = "registry.cn-hongkong.aliyuncs.com/labring/kubernetes:v1.25.0"
 	DefaultTestImageTar   = "/tmp/kubernetes-v1.25.0.tar.gz"
-	DefaultPatchImageName = "hub.sealos.cn/labring/kubernetes:v1.25.0-patch"
+	DefaultPatchImageName = "registry.cn-hongkong.aliyuncs.com/labring/kubernetes:v1.25.0-patch"
 	DefaultPatchImageTar  = "/tmp/kubernetes-v1.25.0-patch.tar.gz"
-	HelmImageName         = "hub.sealos.cn/labring/helm:v3.8.2"
-	CalicoImageName       = "hub.sealos.cn/labring/calico:v3.25.0"
-	DefaultImageRepo      = "hub.sealos.cn/labring"
-	DockerIoRepo          = "docker.io"
+	HelmImageName         = "registry.cn-hongkong.aliyuncs.com/labring/helm:v3.8.2"
+	CalicoImageName       = "registry.cn-hongkong.aliyuncs.com/labring/calico:v3.25.0"
+	DefaultImageRepo      = "registry.cn-hongkong.aliyuncs.com/labring"
+	DockerIoRepo          = "registry.cn-hongkong.aliyuncs.com"
 	DefaultInfraDriver    = AliyunInfraDriver
 	AliyunInfraDriver     = "aliyun"
 	AWSInfraDriver        = "aws"
