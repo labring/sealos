@@ -65,7 +65,7 @@ func NewScaleApplierFromArgs(cmd *cobra.Command, scaleArgs *ScaleArgs) (applydri
 		return nil, err
 	}
 
-	return applydrivers.NewDefaultScaleApplier(curr, cluster)
+	return applydrivers.NewDefaultScaleApplier(cmd.Context(), curr, cluster)
 }
 
 func getSSHFromCommand(cmd *cobra.Command) *v2.SSH {

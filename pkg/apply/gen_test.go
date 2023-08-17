@@ -48,7 +48,6 @@ func TestNewClusterFromGenArgs(t *testing.T) {
 					CustomEnv:         nil,
 					CustomCMD:         nil,
 					CustomConfigFiles: nil,
-					fs:                nil,
 				},
 			},
 			wantErr: false,
@@ -67,7 +66,6 @@ func TestNewClusterFromGenArgs(t *testing.T) {
 					CustomEnv:         nil,
 					CustomCMD:         nil,
 					CustomConfigFiles: nil,
-					fs:                nil,
 				},
 			},
 			wantErr: false,
@@ -79,7 +77,9 @@ func TestNewClusterFromGenArgs(t *testing.T) {
 			Short: "test",
 		})
 		t.Run(tt.name, func(t *testing.T) {
-			got, _ := NewClusterFromGenArgs(tt.args.imageName, tt.args.args)
+			got, _ := NewClusterFromGenArgs(&cobra.Command{
+				Use: "mock",
+			}, tt.args.args, tt.args.imageName)
 			t.Logf("%s", string(got))
 		})
 	}

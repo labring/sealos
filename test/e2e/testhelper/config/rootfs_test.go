@@ -61,7 +61,7 @@ func TestDockerfile_Write(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := &Dockerfile{
+			d := &RootfsDockerfile{
 				Images:            tt.fields.Images,
 				KubeadmYaml:       tt.fields.KubeadmYaml,
 				BaseImage:         tt.fields.BaseImage,

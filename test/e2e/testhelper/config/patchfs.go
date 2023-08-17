@@ -22,6 +22,8 @@ import (
 	"os"
 	"path"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/labring/sealos/test/e2e/testhelper/template"
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
 
@@ -31,30 +33,30 @@ import (
 const (
 	//	ImageDockerfile = `FROM scratch
 	//COPY . .`
-	TemplateDockerfile = `FROM {{ .BaseImage }}
+	PatchfsTemplateDockerfile = `FROM scratch
 MAINTAINER labring
+LABEL sealos.io.type="patch"
 {{- if .Copys }}
 {{- range .Copys }}
 COPY {{.}}
 {{- end }}
+{{- end }}
+{{- if .Cmds }}
+CMD [{{- range $index, $cmd := .Cmds }}{{if $index}}, {{end}}"{{ $cmd }}"{{- end }}]
 {{- end }}`
 )
 
-type Dockerfile struct {
+type PatchDockerfile struct {
 	Images            []string
-	KubeadmYaml       string
-	BaseImage         string
 	dockerfileContent string
 	Copys             []string
+	Cmds              []string
 }
 
-func (d *Dockerfile) Write() (string, error) {
+func (d *PatchDockerfile) Write() (string, error) {
 	tmpdir, err := utils.MkTmpdir("")
 	if err != nil {
 		return "", errors.WithMessage(err, "create tmpdir failed")
-	}
-	if d.BaseImage == "" {
-		d.BaseImage = "scratch"
 	}
 	if len(d.Images) != 0 {
 		if err := os.MkdirAll(path.Join(tmpdir, "images", "shim"), 0755); err != nil {
@@ -68,14 +70,7 @@ func (d *Dockerfile) Write() (string, error) {
 		d.Copys = append(d.Copys, "registry registry")
 	}
 
-	if d.KubeadmYaml != "" {
-		if err := os.WriteFile(tmpdir+"/kubeadm.yml", []byte(d.KubeadmYaml), 0644); err != nil {
-			return "", errors.WithMessage(err, "write kubeadm.yml failed")
-		}
-		d.Copys = append(d.Copys, "kubeadm.yml etc/")
-	}
-
-	t, _, err := template.TryParse(TemplateDockerfile)
+	t, _, err := template.TryParse(PatchfsTemplateDockerfile)
 	if err != nil {
 		return "", err
 	}
@@ -87,8 +82,9 @@ func (d *Dockerfile) Write() (string, error) {
 	if d.dockerfileContent == "" {
 		return "", errors.New("dockerfile content is not set")
 	}
+	logger.Info("dockerfile content: %s", d.dockerfileContent)
 	if err := os.WriteFile(tmpdir+"/Dockerfile", []byte(d.dockerfileContent), 0644); err != nil {
-		return "", errors.WithMessage(err, "write Dockerfile failed")
+		return "", errors.WithMessage(err, "write RootfsDockerfile failed")
 	}
 	return tmpdir, nil
 }

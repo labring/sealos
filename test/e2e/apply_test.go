@@ -78,7 +78,7 @@ networking:
   serviceSubnet: "100.55.0.0/16"
   podSubnet: "10.160.0.0/12"
 `
-			dFile := config.Dockerfile{
+			dFile := config.RootfsDockerfile{
 				KubeadmYaml: kubeadm,
 				BaseImage:   "labring/kubernetes:v1.25.0",
 			}
