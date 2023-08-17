@@ -107,6 +107,9 @@ func (v *IngressValidator) validate(ctx context.Context, i *netv1.Ingress) error
 			ilog.Error(err, "can not verify ingress host "+rule.Host+", lookup cname error")
 			return err
 		}
+		// remove last dot
+		cname = strings.TrimSuffix(cname, ".")
+
 		// if cname is not end with domain, return error
 		if !strings.HasSuffix(cname, v.Domain) {
 			ilog.Info("deny ingress host "+rule.Host+", cname is not end with "+v.Domain, "ingress namespace", i.Namespace, "ingress name", i.Name, "cname", cname)
