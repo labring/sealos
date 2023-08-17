@@ -9,6 +9,7 @@ metadata:
     app.kubernetes.io/name: namespace
     app.kubernetes.io/part-of: admission
     control-plane: controller-manager
+    sealos.io/component: admission-controller-manager
   name: sealos-system
 ---
 apiVersion: v1
@@ -21,6 +22,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: serviceaccount
     app.kubernetes.io/part-of: admission
+    sealos.io/component: admission-controller-manager
   name: admission-controller-manager
   namespace: sealos-system
 ---
@@ -34,6 +36,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: role
     app.kubernetes.io/part-of: admission
+    sealos.io/component: admission-controller-manager
   name: admission-leader-election-role
   namespace: sealos-system
 rules:
@@ -72,6 +75,8 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  labels:
+    sealos.io/component: admission-controller-manager
   name: admission-manager-role
 rules:
 - apiGroups:
@@ -109,6 +114,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: clusterrole
     app.kubernetes.io/part-of: admission
+    sealos.io/component: admission-controller-manager
   name: admission-metrics-reader
 rules:
 - nonResourceURLs:
@@ -126,6 +132,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: clusterrole
     app.kubernetes.io/part-of: admission
+    sealos.io/component: admission-controller-manager
   name: admission-proxy-role
 rules:
 - apiGroups:
@@ -151,6 +158,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: rolebinding
     app.kubernetes.io/part-of: admission
+    sealos.io/component: admission-controller-manager
   name: admission-leader-election-rolebinding
   namespace: sealos-system
 roleRef:
@@ -172,6 +180,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: clusterrolebinding
     app.kubernetes.io/part-of: admission
+    sealos.io/component: admission-controller-manager
   name: admission-manager-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -192,6 +201,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: clusterrolebinding
     app.kubernetes.io/part-of: admission
+    sealos.io/component: admission-controller-manager
   name: admission-proxy-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -213,6 +223,7 @@ metadata:
     app.kubernetes.io/name: service
     app.kubernetes.io/part-of: admission
     control-plane: controller-manager
+    sealos.io/component: admission-controller-manager
   name: admission-controller-manager-metrics-service
   namespace: sealos-system
 spec:
@@ -223,6 +234,7 @@ spec:
     targetPort: https
   selector:
     control-plane: controller-manager
+    sealos.io/component: admission-controller-manager
 ---
 apiVersion: v1
 kind: Service
@@ -234,6 +246,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: service
     app.kubernetes.io/part-of: admission
+    sealos.io/component: admission-controller-manager
   name: admission-webhook-service
   namespace: sealos-system
 spec:
@@ -243,6 +256,7 @@ spec:
     targetPort: 9443
   selector:
     control-plane: controller-manager
+    sealos.io/component: admission-controller-manager
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -255,6 +269,7 @@ metadata:
     app.kubernetes.io/name: deployment
     app.kubernetes.io/part-of: admission
     control-plane: controller-manager
+    sealos.io/component: admission-controller-manager
   name: admission-controller-manager
   namespace: sealos-system
 spec:
@@ -262,12 +277,14 @@ spec:
   selector:
     matchLabels:
       control-plane: controller-manager
+      sealos.io/component: admission-controller-manager
   template:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
       labels:
         control-plane: controller-manager
+        sealos.io/component: admission-controller-manager
     spec:
       containers:
       - args:
@@ -356,6 +373,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: certificate
     app.kubernetes.io/part-of: admission
+    sealos.io/component: admission-controller-manager
   name: admission-serving-cert
   namespace: sealos-system
 spec:
@@ -377,6 +395,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: certificate
     app.kubernetes.io/part-of: admission
+    sealos.io/component: admission-controller-manager
   name: admission-selfsigned-issuer
   namespace: sealos-system
 spec:
@@ -394,6 +413,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: mutatingwebhookconfiguration
     app.kubernetes.io/part-of: admission
+    sealos.io/component: admission-controller-manager
   name: admission-mutating-webhook-configuration
 webhooks:
 {{ if .ingressWebhookEnabled }}
@@ -453,6 +473,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: validatingwebhookconfiguration
     app.kubernetes.io/part-of: admission
+    sealos.io/component: admission-controller-manager
   name: admission-validating-webhook-configuration
 webhooks:
 {{ if .ingressWebhookEnabled }}

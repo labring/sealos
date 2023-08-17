@@ -9,10 +9,10 @@ namespace: sealos-system
 namePrefix: admission-
 
 # Labels to add to all resources and selectors.
-#labels:
-#- includeSelectors: true
-#  pairs:
-#    someName: someValue
+labels:
+- includeSelectors: true
+  pairs:
+    sealos.io/component: admission-controller-manager
 
 resources:
 #- ../crd
