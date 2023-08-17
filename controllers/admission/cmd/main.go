@@ -18,9 +18,10 @@ package main
 
 import (
 	"flag"
+	"os"
+
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
-	"os"
 
 	v1 "github.com/labring/sealos/controllers/admission/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
