@@ -344,7 +344,7 @@ spec:
       - name: cert
         secret:
           defaultMode: 420
-          secretName: webhook-server-cert
+          secretName: admission-webhook-server-cert
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -365,7 +365,7 @@ spec:
   issuerRef:
     kind: Issuer
     name: admission-selfsigned-issuer
-  secretName: webhook-server-cert
+  secretName: admission-webhook-server-cert
 ---
 apiVersion: cert-manager.io/v1
 kind: Issuer
