@@ -93,11 +93,11 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 	return todoList, nil
 }
 
-func (c *ScaleProcessor) skipAppMounts(cluster *v2.Cluster) []v2.MountImage {
+func (c *ScaleProcessor) skipAppMounts(allMount []v2.MountImage) []v2.MountImage {
 	mounts := make([]v2.MountImage, 0)
-	for _, m := range cluster.Status.Mounts {
-		mount := m.DeepCopy()
+	for _, m := range allMount {
 		if !m.IsApplication() {
+			mount := m.DeepCopy()
 			mounts = append(mounts, *mount)
 		}
 	}
@@ -107,7 +107,7 @@ func (c *ScaleProcessor) skipAppMounts(cluster *v2.Cluster) []v2.MountImage {
 func (c *ScaleProcessor) RunGuest(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline RunGuest in ScaleProcessor.")
 	hosts := append(c.MastersToJoin, c.NodesToJoin...)
-	err := c.Guest.Apply(cluster, c.skipAppMounts(cluster), hosts)
+	err := c.Guest.Apply(cluster, c.skipAppMounts(cluster.Status.Mounts), hosts)
 	if err != nil {
 		return fmt.Errorf("%s: %w", RunGuestFailed, err)
 	}
