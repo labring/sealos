@@ -19,15 +19,16 @@ package apply
 import (
 	"fmt"
 
-	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/runtime"
 	"github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/iputils"
 )
 
-func NewClusterFromGenArgs(imageNames []string, args *RunArgs) ([]byte, error) {
+func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []string) ([]byte, error) {
 	cluster := initCluster(args.ClusterName)
 	c := &ClusterArgs{
 		clusterName: args.ClusterName,
@@ -39,7 +40,7 @@ func NewClusterFromGenArgs(imageNames []string, args *RunArgs) ([]byte, error) {
 		args.Cluster.Masters = localIpv4
 	}
 
-	if err := c.runArgs(imageNames, args); err != nil {
+	if err := c.runArgs(cmd, args, imageNames); err != nil {
 		return nil, err
 	}
 

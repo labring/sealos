@@ -32,7 +32,7 @@ func newApplyCmd() *cobra.Command {
 		Example: `sealos apply -f Clusterfile`,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			applier, err := apply.NewApplierFromFile(clusterFile, applyArgs)
+			applier, err := apply.NewApplierFromFile(cmd, clusterFile, applyArgs)
 			if err != nil {
 				return err
 			}
