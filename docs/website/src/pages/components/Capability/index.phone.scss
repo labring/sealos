@@ -1,0 +1,112 @@
+@media screen and (max-width: 996px) {
+  .capability {
+    padding: 0 16px;
+    .comet-icon {
+      margin-top: 24px;
+      width: 36px;
+      height: 12px;
+    }
+
+    h1 {
+      font-size: 20px;
+    }
+
+    .app-management {
+      width: 100%;
+      margin-top: 28px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background-color: #202a36;
+      overflow: hidden;
+      display: flex;
+      justify-content: space-between;
+      flex-direction: column;
+      padding: 16px 16px 0 16px;
+      position: relative;
+
+      .app-management-img {
+        height: 100%;
+        border-radius: 8px;
+      }
+
+      .app-management-text {
+        margin: 0;
+        .logo {
+          width: 32px;
+          height: 32px;
+          border-radius: 4px;
+        }
+
+        h3 {
+          font-size: 16px;
+          margin: 0;
+          margin-top: 8px;
+        }
+
+        h4 {
+          width: 100%;
+          font-size: 12px;
+          margin: 0;
+          margin-top: 8px;
+          height: auto;
+        }
+
+        a {
+          font-size: 12px;
+          margin: 0;
+          margin-top: 8px;
+        }
+      }
+    }
+
+    .logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+    }
+
+    .application {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background-color: #202a36;
+      text-align: left;
+      height: 100%;
+      border-radius: 8px;
+      position: relative;
+      margin-top: 12px;
+      padding: 16px 16px 16px 16px;
+
+      .application-title {
+        color: #fff;
+        font-size: 16px;
+        margin-top: 8px;
+        font-weight: 500;
+      }
+
+      .database-img {
+        width: 114px;
+        height: 80px;
+        position: absolute;
+        top: 0;
+        right: 20px;
+      }
+
+      .application-text {
+        text-align: left;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 12px;
+        font-weight: 500;
+        margin-top: 8px;
+      }
+
+      a {
+        margin: 0;
+        margin-top: 12px;
+        font-size: 12px;
+      }
+    }
+  }
+}

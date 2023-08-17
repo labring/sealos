@@ -1,0 +1,159 @@
+.capability {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+  padding: 0 40px;
+
+  .comet-icon {
+    display: flex;
+    justify-content: center;
+    margin-top: 140px;
+  }
+
+  h1 {
+    margin-top: 28px;
+    margin-bottom: 0;
+    color: #fff;
+    font-size: 48px;
+    font-weight: 600;
+    line-height: 140%;
+  }
+
+  h3 {
+    margin-top: 32px;
+    color: #fff;
+    font-size: 36px;
+    font-weight: 500;
+  }
+
+  h4 {
+    margin-top: 16px;
+    text-align: left;
+    width: 340px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 0.4px;
+  }
+
+  .logo {
+    width: 72px;
+    height: 72px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: #c1c1c1;
+    box-shadow: 0px 1.1666667461395264px 2.3333334922790527px 0px
+      rgba(0, 0, 0, 0.2);
+  }
+
+  a {
+    width: fit-content;
+    position: relative;
+    margin-top: 24px;
+    color: #69bcf8;
+    font-size: 20px;
+    font-weight: 500;
+    text-decoration: none;
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background-color: #69bcf8;
+      transition: 0.2s;
+    }
+
+    &:hover::after {
+      width: 100%;
+    }
+  }
+
+  .app-management {
+    max-width: 1280px;
+    width: 100%;
+    margin-top: 70px;
+    height: 412px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: #202a36;
+    overflow: hidden;
+    display: flex;
+    justify-content: space-between;
+
+    .app-management-text {
+      margin-left: 50px;
+      margin-top: 50px;
+      text-align: left;
+      
+      h4{
+        height: 112px;
+      }
+    }
+
+    .app-management-img {
+      height: 100%;
+      border-radius: 12px;
+    }
+  }
+
+  .applications {
+    max-width: 1280px;
+    margin-top: 38px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 400px;
+    width: 100%;
+    gap: 20px;
+    .application {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background-color: #202a36;
+      text-align: left;
+      padding-left: 52px;
+      padding-top: 52px;
+      height: 100%;
+      border-radius: 12px;
+      position: relative;
+
+      .application-title {
+        color: #fff;
+        font-size: 32px;
+        font-weight: 500;
+        margin-top: 24px;
+      }
+
+      .database-img {
+        position: absolute;
+        top: 0;
+        right: 40px;
+      }
+
+      .application-text {
+        height: 112px;
+        margin-top: 10px;
+        text-align: left;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 20px;
+        font-weight: 500;
+      }
+
+      a {
+        margin: 0;
+        margin-top: 12px;
+      }
+    }
+  }
+}
+
+@import './index.phone.scss';

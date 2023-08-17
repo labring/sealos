@@ -4,9 +4,9 @@ import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { theme } from '@/styles/chakraTheme';
 import '@/styles/globals.scss';
 import { ChakraProvider } from '@chakra-ui/react';
-import { persistQueryClient, removeOldestQuery } from '@tanstack/react-query-persist-client';
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+// import { persistQueryClient, removeOldestQuery } from '@tanstack/react-query-persist-client';
+// import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import { Hydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { AppProps } from 'next/app';
 import Router from 'next/router';
 import NProgress from 'nprogress';
@@ -31,17 +31,17 @@ const queryClient = new QueryClient({
     }
   }
 });
-if (typeof window !== 'undefined') {
-  const syncStoragePersister = createSyncStoragePersister({
-    storage: window.localStorage,
-    retry: removeOldestQuery
-  });
+// if (typeof window !== 'undefined') {
+//   const syncStoragePersister = createSyncStoragePersister({
+//     storage: window.localStorage,
+//     retry: removeOldestQuery
+//   });
 
-  persistQueryClient({
-    persister: syncStoragePersister,
-    queryClient: queryClient
-  });
-}
+//   persistQueryClient({
+//     persister: syncStoragePersister,
+//     queryClient: queryClient
+//   });
+// }
 
 Router.events.on('routeChangeStart', () => NProgress.start());
 Router.events.on('routeChangeComplete', () => NProgress.done());
@@ -93,11 +93,13 @@ const App = ({ Component, pageProps }: AppProps) => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ChakraProvider theme={theme}>
-        <Layout>
-          <Component {...pageProps} />
-        </Layout>
-      </ChakraProvider>
+      <Hydrate state={pageProps.dehydratedState}>
+        <ChakraProvider theme={theme}>
+          <Layout>
+            <Component {...pageProps} />
+          </Layout>
+        </ChakraProvider>
+      </Hydrate>
     </QueryClientProvider>
   );
 };

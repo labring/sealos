@@ -17,12 +17,9 @@ export default function useNotEnough() {
     defaultIsOpen: true
   });
   const { balance } = useOverviewStore((state) => state);
-  const _openRecharge = useOverviewStore((state) => state.setRecharge);
   const { t } = useTranslation();
-  const openRecharge = () => _openRecharge(true);
   function handleConfirm(): void {
     onClose();
-    openRecharge();
   }
   const NotEnoughModal = () => {
     return (

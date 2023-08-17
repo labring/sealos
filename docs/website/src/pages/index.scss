@@ -1,0 +1,57 @@
+.home {
+  overflow-x: hidden;
+  // background-color: '#FCFCFF' !important;
+  background: linear-gradient(180deg, #05101d 0%, #02070d 100%) !important;
+
+  * {
+    font-family: PingFang SC;
+    font-style: normal;
+  }
+
+  /* 修改默认组件样式 */
+  button {
+    border: none;
+    outline: none;
+  }
+
+  .title {
+    background-image: linear-gradient(
+        101.7deg,
+        rgba(255, 255, 255, 0.2) 0%,
+        rgba(255, 255, 255, 0.2) 50.73%,
+        rgba(255, 255, 255, 0.28) 68.61%,
+        rgba(255, 255, 255, 0) 100%
+      ),
+      linear-gradient(0deg, #16abff 0%, #b5b4ff 63%);
+    color: transparent;
+    background-clip: text;
+    text-align: center;
+    user-select: none;
+    height: 148px;
+    line-height: 148px;
+    margin: 0;
+  }
+}
+
+// Important, hide header and footer
+#sealos-layout-wrap-home-page {
+  .navbar.navbar--fixed-top {
+    position: absolute;
+    visibility: hidden;
+    top: 0;
+    left: 0;
+  }
+}
+
+.footer {
+  display: none;
+}
+
+@media screen and (max-width: 996px) {
+  .home {
+    .title {
+      height: 100px;
+      line-height: 100px;
+    }
+  }
+}

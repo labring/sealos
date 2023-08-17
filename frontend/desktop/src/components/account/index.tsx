@@ -2,19 +2,19 @@ import { useCopyData } from '@/hooks/useCopyData';
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import download from '@/utils/downloadFIle';
-import { Box, Flex, Image, Stack, Text, UseDisclosureProps } from '@chakra-ui/react';
-import { QueryClient, useQuery } from '@tanstack/react-query';
+import { Box, Flex, Image, Stack, Text, UseDisclosureReturn } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
 import JsYaml from 'js-yaml';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useContext, useMemo } from 'react';
 import Iconfont from '../iconfont';
 import { ApiResp } from '@/types';
-import useRecharge from '@/hooks/useRecharge';
 import { formatMoney } from '@/utils/format';
 import { RechargeEnabledContext } from '@/pages';
+import useAppStore from '@/stores/app';
 
-export default function Index({ disclosure }: { disclosure: UseDisclosureProps }) {
+export default function Index({ disclosure }: { disclosure: UseDisclosureReturn }) {
   const router = useRouter();
   const rechargeEnabled = useContext(RechargeEnabledContext);
   const { t } = useTranslation();
@@ -36,7 +36,8 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureProps }
       '/api/account/getAmount'
     )
   );
-
+  const openApp = useAppStore((s) => s.openApp);
+  const installApp = useAppStore((s) => s.installedApps);
   const balance = useMemo(() => {
     let real_balance = data?.data?.balance || 0;
     if (data?.data?.deductionBalance) {
@@ -44,17 +45,11 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureProps }
     }
     return real_balance;
   }, [data]);
-  const { RechargeModal, onOpen } = useRecharge({
-    onPaySuccess: () => {
-      refetch();
-    }
-  });
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     delSession();
     router.reload();
   };
-
   return disclosure.isOpen ? (
     <>
       <Box position={'fixed'} inset={0} zIndex={'998'} onClick={disclosure.onClose}></Box>
@@ -103,13 +98,22 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureProps }
           >
             <Flex h="54px" alignItems={'center'} borderBottom={'1px solid #0000001A'} p="16px">
               <Text>
-                {t('Balance')}: ￥{formatMoney(balance).toFixed(2)}
+                {t('Balance')}: {formatMoney(balance).toFixed(2)}
               </Text>
 
               {rechargeEnabled && (
                 <Box
                   ml="auto"
-                  onClick={() => onOpen()}
+                  onClick={() => {
+                    const costcenter = installApp.find((t) => t.key === 'system-costcenter');
+                    if (!costcenter) return;
+                    openApp(costcenter, {
+                      query: {
+                        openRecharge: 'true'
+                      }
+                    });
+                    disclosure.onClose();
+                  }}
                   color={'#219BF4'}
                   fontWeight="500"
                   fontSize="12px"
@@ -136,7 +140,6 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureProps }
           </Stack>
         </Flex>
       </Box>
-      {rechargeEnabled && <RechargeModal balance={balance}></RechargeModal>}
     </>
   ) : (
     <></>

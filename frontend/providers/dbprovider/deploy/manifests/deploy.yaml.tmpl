@@ -42,6 +42,8 @@ spec:
               value: {{ .cloudDomain }}
             - name: SEALOS_PORT
               value: "{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+            - name: MONITOR_URL
+              value: {{ .monitorUrl }}
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

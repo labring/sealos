@@ -1,0 +1,82 @@
+@media screen and (max-width: 996px) {
+  .home-header {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+
+    nav {
+      padding: 28px 16px;
+      // display: none;
+      .left {
+        svg {
+          margin: 0;
+        }
+      }
+    }
+
+    main {
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      padding: 0 16px;
+      z-index: 9;
+      h1 {
+        margin-top: 30px;
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      h2 {
+        font-weight: 600;
+        font-size: 30px;
+        @media screen and (max-width: 385px) {
+          font-size: 24px;
+        }
+      }
+
+      h3 {
+        font-weight: 600;
+        font-size: 14px;
+        margin: 0;
+        margin-top: 10px;
+      }
+
+      .start-now-button-wrap {
+        position: absolute;
+        width: 150px;
+        height: 42px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.2);
+        filter: blur(4px);
+      }
+
+      .start-now-button {
+        cursor: pointer;
+        margin-top: 27px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #000;
+        font-weight: 600;
+        font-size: 1rem;
+        width: 142px;
+        height: 36px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        text-decoration: none;
+      }
+
+      video {
+        width: 100%;
+        margin-top: 35px;
+      }
+    }
+  }
+}

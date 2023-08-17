@@ -1,0 +1,59 @@
+@media screen and (max-width: 996px) {
+  .home-user-by {
+    user-select: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    margin-top: 24px;
+
+    .comet-icon {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 36px;
+      height: 12px;
+      margin: 0;
+    }
+    .user-by-title {
+      text-align: center;
+      margin-top: 12px;
+      margin-bottom: 0;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .scroll-brand {
+      margin-top: 34px;
+      overflow-x: hidden;
+
+      .img-content {
+        display: flex;
+        flex-wrap: nowrap;
+        width: max-content;
+
+        img {
+          height: 80px;
+          animation: scrollImg 40s linear infinite;
+        }
+      }
+
+      @keyframes scrollImg {
+        0% {
+          transform: translateX(0);
+        }
+        100% {
+          transform: translateX(-100%);
+        }
+      }
+    }
+
+    .contact-btn .link-btn {
+      margin: 60px auto;
+      width: 270px;
+      height: 57px;
+      line-height: 57px;
+    }
+  }
+}

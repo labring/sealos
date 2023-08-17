@@ -73,6 +73,7 @@ const (
 	NEWACCOUNTAMOUNTENV          = "NEW_ACCOUNT_AMOUNT"
 	RECHARGEGIFT                 = "recharge-gift"
 	SEALOS                       = "sealos"
+	DefaultInitialBalance        = 5_000_000
 )
 
 // AccountReconciler reconciles an Account object
@@ -262,10 +263,10 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		return &account, nil
 	}
 
-	// should set bonus amount that will give some money to new account
-	amount, err := strconv.Atoi(stringAmount)
+	amount, err := crypto.DecryptInt64(stringAmount)
 	if err != nil {
-		return nil, fmt.Errorf("convert %s to int failed: %v", stringAmount, err)
+		r.Logger.Error(err, "decrypt amount failed", "amount", stringAmount)
+		amount = DefaultInitialBalance
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &account, func() error {
 		if account.Annotations == nil {
@@ -280,7 +281,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	if err != nil {
 		return nil, fmt.Errorf("sync init balance failed: %v", err)
 	}
-	err = crypto.RechargeBalance(account.Status.EncryptBalance, int64(amount))
+	err = crypto.RechargeBalance(account.Status.EncryptBalance, amount)
 	if err != nil {
 		return nil, fmt.Errorf("recharge balance failed: %v", err)
 	}

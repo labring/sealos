@@ -68,7 +68,6 @@ const TransferModal = forwardRef(
           mutation.reset();
           setTo('');
           setAmount(0);
-          props.onTransferSuccess?.();
           if (data.data?.status.progress === TransferState.TransferStateFailed)
             toast({
               status: 'error',
@@ -84,6 +83,7 @@ const TransferModal = forwardRef(
               duration: 2000,
               position: 'top'
             });
+            props.onTransferSuccess?.();
             _onClose();
           }
         },

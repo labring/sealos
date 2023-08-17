@@ -1,6 +1,6 @@
 import { Box, Flex, Heading, Text, Img, Stack } from '@chakra-ui/react';
 import letter_icon from '@/assert/format_letter_spacing_standard_black.svg';
-import { useQuery } from '@tanstack/react-query';
+import { QueryClient, dehydrate, useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
 import { ValuationBillingRecord } from '@/types/valuation';
 import { valuationMap } from '@/constants/payment';
@@ -42,6 +42,8 @@ function ValuationCard(props: any) {
     </Stack>
   );
 }
+const getValuation = () =>
+  request<any, ApiResp<{ billingRecords: ValuationBillingRecord[] }>>('/api/price');
 function Valuation() {
   const { t, i18n } = useTranslation();
   const cookie = getCookie('NEXT_LOCALE');
@@ -50,9 +52,7 @@ function Valuation() {
   useEffect(() => {
     i18n.changeLanguage(cookie);
   }, [cookie, i18n]);
-  const { data: _data } = useQuery(['valuation'], () =>
-    request<any, ApiResp<{ billingRecords: ValuationBillingRecord[] }>>('/api/price')
-  );
+  const { data: _data } = useQuery(['valuation'], getValuation);
 
   const data =
     _data?.data?.billingRecords
@@ -106,17 +106,12 @@ function Valuation() {
                     <Box borderRadius="2px" bg={item.bg} w={'16px'} h={'16px'} mr={'8px'}></Box>
                     <Text fontSize={'16px'}>{item.title}</Text>
                   </Flex>
-                  <Heading
-                    w="127px"
-                    display={'flex'}
-                    justifyContent="center"
-                    alignContent={'center'}
-                  >
-                    <Text>{item.price[0]}</Text>
+                  <Heading display={'flex'} justifyContent="center" alignContent={'center'}>
+                    <CurrencySymbol w="16px" type={currency} />
+                    <Text ml="10px">{item.price[0]}</Text>
                   </Heading>
                   <Flex align={'center'}>
-                    <CurrencySymbol w="16px" type={currency} />
-                    <Text ml="4px">
+                    <Text>
                       {item.unit} / {t('Hour')}
                     </Text>
                   </Flex>
@@ -131,8 +126,7 @@ function Valuation() {
                       >
                         <Box>{item.price[idx + 1]}</Box>
                         <Flex align={'center'}>
-                          <CurrencySymbol w="16px" h="16px" type={currency} />
-                          <Text ml="4px">{`${item.unit} / ${t(_item)}`}</Text>
+                          <Text>{`${item.unit} / ${t(_item)}`}</Text>
                         </Flex>
                       </Flex>
                     ))}
@@ -193,9 +187,14 @@ export default Valuation;
 export async function getServerSideProps(content: any) {
   const locale = content?.req?.cookies?.NEXT_LOCALE || 'zh';
   process.env.NODE_ENV === 'development' && i18n?.reloadResources(locale, undefined);
+
+  const queryClient = new QueryClient();
+  await queryClient.prefetchQuery(['valuation'], getValuation);
   return {
     props: {
-      ...(await serverSideTranslations(locale, undefined, null, content.locales))
+      ...(await serverSideTranslations(locale, undefined, null, content.locales)),
+
+      dehydratedState: dehydrate(queryClient)
     }
   };
 }

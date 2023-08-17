@@ -1,8 +1,8 @@
-import { Box, Flex, Text, UseDisclosureProps, Img } from '@chakra-ui/react';
+import { Box, Flex, Text, Img, UseDisclosureReturn } from '@chakra-ui/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import Iconfont from '@/components/iconfont';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import request from '@/services/request';
 import { formatTime } from '@/utils/tools';
 import styles from './index.module.scss';
@@ -28,7 +28,7 @@ type NotificationItem = {
 };
 
 type TNotification = {
-  disclosure: UseDisclosureProps;
+  disclosure: UseDisclosureReturn;
   onAmount: (amount: number) => void;
 };
 
@@ -40,21 +40,17 @@ export default function Notification(props: TNotification) {
   const [msgDetail, setMsgDetail] = useState<NotificationItem>();
   const [notification, setNotification] = useState([]);
 
-  const { data, isSuccess, refetch } = useQuery(
-    ['getAwsAll'],
-    () => request('/api/notification/list'),
-    {
-      onSuccess: (data) => {
-        onAmount(
-          data?.data?.items?.filter(
-            (item: NotificationItem) => !JSON.parse(item?.metadata?.labels?.isRead || 'false')
-          )?.length || 0
-        );
-        setNotification(data?.data?.items);
-      },
-      refetchInterval: 1 * 60 * 1000
-    }
-  );
+  const { refetch } = useQuery(['getAwsAll'], () => request('/api/notification/list'), {
+    onSuccess: (data) => {
+      onAmount(
+        data?.data?.items?.filter(
+          (item: NotificationItem) => !JSON.parse(item?.metadata?.labels?.isRead || 'false')
+        )?.length || 0
+      );
+      setNotification(data?.data?.items);
+    },
+    refetchInterval: 1 * 60 * 1000
+  });
 
   const [unread_notes, read_notes] = useMemo(() => {
     const unread: NotificationItem[] = [];
