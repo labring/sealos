@@ -12,7 +12,7 @@ webhooks:
       namespace: system
       path: /mutate-networking-k8s-io-v1-ingress
   failurePolicy: Ignore
-  name: vingress.kb.io
+  name: mingress.kb.io
   rules:
   - apiGroups:
     - networking.k8s.io
@@ -32,7 +32,7 @@ webhooks:
       namespace: system
       path: /mutate--v1-namespace
   failurePolicy: Ignore
-  name: vnamespace.kb.io
+  name: mnamespace.kb.io
   rules:
   - apiGroups:
     - ""
@@ -67,6 +67,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - ingresses
   sideEffects: None
@@ -87,6 +88,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - namespaces
   sideEffects: None

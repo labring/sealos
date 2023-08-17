@@ -71,6 +71,9 @@ spec:
         args:
         - --leader-elect
         image: controller:latest
+        env:
+        - name: DOMAIN
+          value: "{{ .cloudDomain }}"
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

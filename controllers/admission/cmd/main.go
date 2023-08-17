@@ -90,8 +90,8 @@ func main() {
 
 	err = builder.WebhookManagedBy(mgr).
 		For(&netv1.Ingress{}).
-		WithValidator(&v1.IngressValidator{}).
-		WithDefaulter(&v1.IngressMutator{}).
+		WithValidator(&v1.IngressValidator{Client: mgr.GetClient(), Domain: os.Getenv("DOMAIN")}).
+		WithDefaulter(&v1.IngressMutator{Client: mgr.GetClient()}).
 		Complete()
 	if err != nil {
 		setupLog.Error(err, "unable to create ingress webhook")
@@ -100,8 +100,8 @@ func main() {
 
 	err = builder.WebhookManagedBy(mgr).
 		For(&corev1.Namespace{}).
-		WithValidator(&v1.NamespaceValidator{}).
-		WithDefaulter(&v1.NamespaceMutator{}).
+		WithValidator(&v1.NamespaceValidator{Client: mgr.GetClient()}).
+		WithDefaulter(&v1.NamespaceMutator{Client: mgr.GetClient()}).
 		Complete()
 	if err != nil {
 		setupLog.Error(err, "unable to create namespace webhook")

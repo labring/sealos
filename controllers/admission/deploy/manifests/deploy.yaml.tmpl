@@ -276,6 +276,9 @@ spec:
         - --leader-elect
         command:
         - /manager
+        env:
+        - name: DOMAIN
+          value: '{{ .cloudDomain }}'
         image: ghcr.io/labring/sealos-admission-controller:latest
         livenessProbe:
           httpGet:
@@ -393,6 +396,7 @@ metadata:
     app.kubernetes.io/part-of: admission
   name: admission-mutating-webhook-configuration
 webhooks:
+{{ if .ingressWebhookEnabled }}
 - admissionReviewVersions:
   - v1
   clientConfig:
@@ -400,8 +404,8 @@ webhooks:
       name: admission-webhook-service
       namespace: sealos-system
       path: /mutate-networking-k8s-io-v1-ingress
-  failurePolicy: Ignore
-  name: vingress.kb.io
+  failurePolicy: {{ .ingressWebhookFailurePolicy }}
+  name: mingress.kb.io
   rules:
   - apiGroups:
     - networking.k8s.io
@@ -413,6 +417,8 @@ webhooks:
     resources:
     - ingresses
   sideEffects: None
+{{ end }}
+{{ if .namespaceWebhookEnabled }}
 - admissionReviewVersions:
   - v1
   clientConfig:
@@ -420,8 +426,8 @@ webhooks:
       name: admission-webhook-service
       namespace: sealos-system
       path: /mutate--v1-namespace
-  failurePolicy: Ignore
-  name: vnamespace.kb.io
+  failurePolicy: {{ .namespaceWebhookFailurePolicy }}
+  name: mnamespace.kb.io
   rules:
   - apiGroups:
     - ""
@@ -433,6 +439,7 @@ webhooks:
     resources:
     - namespaces
   sideEffects: None
+{{ end }}
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -448,6 +455,7 @@ metadata:
     app.kubernetes.io/part-of: admission
   name: admission-validating-webhook-configuration
 webhooks:
+{{ if .ingressWebhookEnabled }}
 - admissionReviewVersions:
   - v1
   clientConfig:
@@ -455,7 +463,7 @@ webhooks:
       name: admission-webhook-service
       namespace: sealos-system
       path: /validate-networking-k8s-io-v1-ingress
-  failurePolicy: Ignore
+  failurePolicy: {{ .ingressWebhookFailurePolicy }}
   name: vingress.kb.io
   rules:
   - apiGroups:
@@ -465,9 +473,12 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - ingresses
   sideEffects: None
+{{ end }}
+{{ if .namespaceWebhookEnabled }}
 - admissionReviewVersions:
   - v1
   clientConfig:
@@ -475,7 +486,7 @@ webhooks:
       name: admission-webhook-service
       namespace: sealos-system
       path: /validate--v1-namespace
-  failurePolicy: Ignore
+  failurePolicy: {{ .namespaceWebhookFailurePolicy }}
   name: vnamespace.kb.io
   rules:
   - apiGroups:
@@ -485,6 +496,8 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - namespaces
   sideEffects: None
+{{ end }}
