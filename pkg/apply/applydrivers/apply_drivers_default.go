@@ -15,11 +15,10 @@
 package applydrivers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
-
-	"github.com/labring/sealos/pkg/utils/confirm"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/version"
@@ -29,12 +28,13 @@ import (
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
-func NewDefaultApplier(cluster *v2.Cluster, cf clusterfile.Interface, images []string) (Interface, error) {
+func NewDefaultApplier(ctx context.Context, cluster *v2.Cluster, cf clusterfile.Interface, images []string) (Interface, error) {
 	if cluster.Name == "" {
 		return nil, fmt.Errorf("cluster name cannot be empty")
 	}
@@ -47,6 +47,7 @@ func NewDefaultApplier(cluster *v2.Cluster, cf clusterfile.Interface, images []s
 	}
 
 	return &Applier{
+		Context:        ctx,
 		ClusterDesired: cluster,
 		ClusterFile:    cf,
 		ClusterCurrent: cf.GetCluster(),
@@ -54,12 +55,13 @@ func NewDefaultApplier(cluster *v2.Cluster, cf clusterfile.Interface, images []s
 	}, nil
 }
 
-func NewDefaultScaleApplier(current, cluster *v2.Cluster) (Interface, error) {
+func NewDefaultScaleApplier(ctx context.Context, current, cluster *v2.Cluster) (Interface, error) {
 	if cluster.Name == "" {
 		cluster.Name = current.Name
 	}
 	cFile := clusterfile.NewClusterFile(constants.Clusterfile(cluster.Name))
 	return &Applier{
+		Context:        ctx,
 		ClusterDesired: cluster,
 		ClusterFile:    cFile,
 		ClusterCurrent: current,
@@ -67,6 +69,7 @@ func NewDefaultScaleApplier(current, cluster *v2.Cluster) (Interface, error) {
 }
 
 type Applier struct {
+	context.Context
 	ClusterDesired     *v2.Cluster
 	ClusterCurrent     *v2.Cluster
 	ClusterFile        clusterfile.Interface
@@ -185,7 +188,7 @@ func (c *Applier) reconcileCluster() (clusterErr error, appErr error) {
 
 func (c *Applier) initCluster() error {
 	logger.Info("Start to create a new cluster: master %s, worker %s, registry %s", c.ClusterDesired.GetMasterIPList(), c.ClusterDesired.GetNodeIPList(), c.ClusterDesired.GetRegistryIP())
-	createProcessor, err := processor.NewCreateProcessor(c.ClusterDesired.Name, c.ClusterFile)
+	createProcessor, err := processor.NewCreateProcessor(c.Context, c.ClusterDesired.Name, c.ClusterFile)
 	if err != nil {
 		return err
 	}
@@ -205,7 +208,7 @@ func (c *Applier) installApp(images []string) error {
 	if err != nil {
 		return err
 	}
-	installProcessor, err := processor.NewInstallProcessor(c.ClusterFile, images)
+	installProcessor, err := processor.NewInstallProcessor(c.Context, c.ClusterFile, images)
 	if err != nil {
 		return err
 	}

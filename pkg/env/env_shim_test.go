@@ -145,9 +145,9 @@ func Test_shim_RenderAll(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &processor{
 				Cluster: tt.fields.Cluster,
-				mounts:  tt.fields.Cluster.Status.Mounts,
+				cache:   make(map[string]map[string]string),
 			}
-			if err := p.RenderAll(tt.args.host, tt.args.dir); (err != nil) != tt.wantErr {
+			if err := p.RenderAll(tt.args.host, tt.args.dir, map[string]string{}); (err != nil) != tt.wantErr {
 				t.Errorf("RenderAll() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

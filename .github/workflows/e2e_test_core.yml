@@ -44,6 +44,7 @@ jobs:
             E2E_sealos_apply_docker_test,
             E2E_sealos_apply_other_test,
             E2E_sealos_filesystem_test,
+            E2E_sealos_run_patchimage_test,
             E2E_sealos_runtime_version_119_test,
             E2E_sealos_runtime_version_120_test,
             E2E_sealos_runtime_version_121_test,
