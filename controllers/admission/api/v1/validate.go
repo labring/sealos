@@ -5,12 +5,7 @@ import (
 	"strings"
 )
 
-const userNamespacePrefix = "ns-"
 const userServiceAccountPrefix = "system:serviceaccount:ns-"
-
-func isUserNamespace(ns string) bool {
-	return strings.HasPrefix(ns, userNamespacePrefix)
-}
 
 func isUserServiceAccount(sa string) bool {
 	return strings.HasPrefix(sa, userServiceAccountPrefix)

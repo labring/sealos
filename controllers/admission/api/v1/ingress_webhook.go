@@ -40,7 +40,7 @@ type IngressMutator struct {
 	client.Client
 }
 
-func (m *IngressMutator) Default(ctx context.Context, obj runtime.Object) error {
+func (m *IngressMutator) Default(_ context.Context, _ runtime.Object) error {
 	return nil
 }
 
