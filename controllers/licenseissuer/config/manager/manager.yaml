@@ -67,7 +67,7 @@ spec:
         #   type: RuntimeDefault
       containers:
       - command:
-        - /manager
+        - /launcher
         args:
         - --leader-elect
         image: ghcr.io/labring/sealos-licenseissuer-controller:latest

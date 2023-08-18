@@ -73,7 +73,6 @@ type LicenseReconciler struct {
 func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter LicenseReconcile", "namespace:", req.Namespace, "name", req.Name)
 	r.logger.Info("Start to get license-related resource...")
-	r.logger.Info(util.Key)
 	// for notification
 	nq := &ntf.NoticeEventQueue{}
 	nm := ntf.NewNotificationManager(ctx, r.Client, r.logger, 1, 1)
