@@ -1,26 +1,19 @@
-// Copyright © 2023 sealos.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package main
 
 import (
 	"context"
 	"fmt"
+	"math"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"k8s.io/apimachinery/pkg/api/resource"
+
+	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+
+	"github.com/labring/sealos/controllers/pkg/prometheus"
 
 	"github.com/labring/sealos/controllers/pkg/common"
 	"github.com/labring/sealos/controllers/pkg/database"
@@ -169,11 +162,68 @@ func executeTask() error {
 	if err := dbClient.GenerateMeteringData(startTime, endTime, prices); err != nil {
 		return fmt.Errorf("failed to generate metering data: %v", err)
 	}
+	// network traffic
+	netPrice, exist := prices[common.NetWork]
+	if config.PrometheusURL != "" && exist {
+		if err = handleNetworkTraffic(dbClient, config, netPrice, startTime, endTime); err != nil {
+			logger.Error("failed to handle network traffic: %v", err)
+		}
+	}
+
 	// create tomorrow monitor time series
 	if err := CreateMonitorTimeSeries(dbClient, now.Add(24*time.Hour)); err != nil {
 		logger.Debug("failed to create monitor time series: %v", err)
 	}
 	return nil
+}
+
+func handleNetworkTraffic(dbClient database.Interface, config *Config, netPrice common.Price, startTime, endTime time.Time) error {
+	prom, err := prometheus.NewPrometheus(config.PrometheusURL)
+	if err != nil {
+		return fmt.Errorf("failed to new prometheus client: %v", err)
+	}
+
+	rangeQuery := v1.Range{
+		Start: startTime,
+		End:   endTime,
+		Step:  time.Hour,
+	}
+
+	metering, err := queryNetworkTraffic(prom, rangeQuery)
+	if err != nil {
+		return fmt.Errorf("failed to query all network traffic: %v", err)
+	}
+
+	return calculateAndInsertData(dbClient, metering, netPrice)
+}
+
+func queryNetworkTraffic(prom prometheus.Interface, rangeQuery v1.Range) ([]*common.Metering, error) {
+	return prom.QueryAllNSTraffics(rangeQuery)
+}
+
+func calculateAndInsertData(dbClient database.Interface, metering []*common.Metering, netPrice common.Price) error {
+	for _, meter := range metering {
+		//meter.Value = calculateValue(meter.Value)
+		//meter.Amount = meter.Value * netPrice.Price
+		meter.Amount = calculateAmount(netPrice, meter.Value)
+		if meter.Amount == 0 {
+			continue
+		}
+		if err := dbClient.InsertMeteringData(context.Background(), meter); err != nil {
+			return fmt.Errorf("failed to insert metering data: %v", err)
+		}
+	}
+	return nil
+}
+
+func calculateAmount(netPrice common.Price, value int64) int64 {
+	return int64(math.Ceil(float64(netPrice.Price) / float64(1024*1024) * float64(value)))
+}
+
+func calculateValue(value int64) int64 {
+	return int64(math.Ceil(
+		float64(resource.NewQuantity(value, resource.BinarySI).MilliValue()) /
+			float64(common.PricesUnit[common.NetWork].MilliValue())))
 }
 
 func CreateMonitorTimeSeries(dbClient database.Interface, collTime time.Time) error {

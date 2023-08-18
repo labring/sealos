@@ -44,6 +44,14 @@ const (
 	AmountField   = "amount"
 )
 
+const (
+	NetWork = "network"
+	CPU     = "cpu"
+	Memory  = "memory"
+	Storage = "storage"
+	Disk    = "disk"
+)
+
 /*
 Unified base unit:
 
@@ -165,6 +173,7 @@ var PricesUnit = map[corev1.ResourceName]*resource.Quantity{
 	ResourceGPU:            &cpuUnit, // 1 m CPU (1000 μ)
 	corev1.ResourceMemory:  bin1Mi,   // 1 MiB
 	corev1.ResourceStorage: bin1Mi,   // 1 MiB
+	NetWork:                bin1Mi,   // 1 MiB
 }
 
 var DefaultPrices = map[string]Price{
