@@ -9,8 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/resource"
-
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 
 	"github.com/labring/sealos/controllers/pkg/prometheus"
@@ -203,8 +201,8 @@ func queryNetworkTraffic(prom prometheus.Interface, rangeQuery v1.Range) ([]*com
 
 func calculateAndInsertData(dbClient database.Interface, metering []*common.Metering, netPrice common.Price) error {
 	for _, meter := range metering {
-		//meter.Value = calculateValue(meter.Value)
-		//meter.Amount = meter.Value * netPrice.Price
+		/*		meter.Value = calculateValue(meter.Value)
+				meter.Amount = meter.Value * netPrice.Price*/
 		meter.Amount = calculateAmount(netPrice, meter.Value)
 		if meter.Amount == 0 {
 			continue
@@ -220,11 +218,11 @@ func calculateAmount(netPrice common.Price, value int64) int64 {
 	return int64(math.Ceil(float64(netPrice.Price) / float64(1024*1024) * float64(value)))
 }
 
-func calculateValue(value int64) int64 {
-	return int64(math.Ceil(
-		float64(resource.NewQuantity(value, resource.BinarySI).MilliValue()) /
-			float64(common.PricesUnit[common.NetWork].MilliValue())))
-}
+//func calculateValue(value int64) int64 {
+//	return int64(math.Ceil(
+//		float64(resource.NewQuantity(value, resource.BinarySI).MilliValue()) /
+//			float64(common.PricesUnit[common.NetWork].MilliValue())))
+//}
 
 func CreateMonitorTimeSeries(dbClient database.Interface, collTime time.Time) error {
 	return dbClient.CreateMonitorTimeSeriesIfNotExist(collTime)
