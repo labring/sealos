@@ -175,8 +175,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             crYamlList: crOldYamls.current,
             newYamlList: yamls
           });
-          // console.log(patch, '-=-=-');
-          // return setIsLoading(false);
+
           await putApp({
             patch,
             appName,
