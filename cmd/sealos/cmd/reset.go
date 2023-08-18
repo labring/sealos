@@ -47,7 +47,7 @@ func newResetCmd() *cobra.Command {
 				}
 				return err
 			}
-			applier, err := apply.NewApplierFromResetArgs(resetArgs)
+			applier, err := apply.NewApplierFromResetArgs(cmd, resetArgs)
 			if err != nil {
 				return err
 			}

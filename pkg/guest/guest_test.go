@@ -127,9 +127,10 @@ func TestDefault_getGuestCmd(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := &Default{}
-			if got := d.getGuestCmd(tt.args.envs, tt.args.cluster, tt.args.mounts); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getGuestCmd() = %v, want %v", got, tt.want)
+			for i := range tt.args.mounts {
+				if got := formalizeImageCommands(tt.args.cluster, i, tt.args.mounts[i], tt.args.envs); !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("getGuestCmd() = %v, want %v", got, tt.want)
+				}
 			}
 		})
 	}
