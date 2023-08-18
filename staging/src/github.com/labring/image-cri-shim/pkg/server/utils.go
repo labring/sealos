@@ -17,7 +17,7 @@ limitations under the License.
 package server
 
 import (
-	"github.com/labring/sealos/pkg/registry/crane"
+	"github.com/labring/sreg/pkg/registry/crane"
 
 	"github.com/docker/docker/api/types"
 

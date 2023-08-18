@@ -16,9 +16,8 @@ limitations under the License.
 package cmd
 
 import (
+	"github.com/labring/sreg/pkg/registry/commands"
 	"github.com/spf13/cobra"
-
-	"github.com/labring/sealos/pkg/registry/commands"
 )
 
 func newRegistryCmd() *cobra.Command {

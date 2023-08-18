@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/labring/sealos/pkg/registry/crane"
+	"github.com/labring/sreg/pkg/registry/crane"
 
 	"github.com/labring/sealos/pkg/registry/helpers"
 
