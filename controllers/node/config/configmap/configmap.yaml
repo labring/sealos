@@ -6,3 +6,4 @@ metadata:
   namespace: node-system
 data:
   gpu: ""
+  alias: '{"NVIDIA-GeForce-RTX-4090":"RTX-4090"}'
