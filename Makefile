@@ -112,6 +112,10 @@ add-license:
 license:
 	@$(MAKE) license.add
 
+.PHONY: license.controller
+license.controller:
+	@$(MAKE) license.controller.add
+
 ## gen: Generate all necessary files.
 .PHONY: gen
 gen:
