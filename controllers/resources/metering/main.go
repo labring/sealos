@@ -192,14 +192,14 @@ func handleNetworkTraffic(dbClient database.Interface, config *Config, netPrice 
 		return fmt.Errorf("failed to query all network traffic: %v", err)
 	}
 
-	return calculateAndInsertData(dbClient, metering, netPrice)
+	return calculateAndInsertData(dbClient, metering, netPrice, endTime)
 }
 
 func queryNetworkTraffic(prom prometheus.Interface, rangeQuery v1.Range) ([]*common.Metering, error) {
 	return prom.QueryAllNSTraffics(rangeQuery)
 }
 
-func calculateAndInsertData(dbClient database.Interface, metering []*common.Metering, netPrice common.Price) error {
+func calculateAndInsertData(dbClient database.Interface, metering []*common.Metering, netPrice common.Price, endTime time.Time) error {
 	for _, meter := range metering {
 		/*		meter.Value = calculateValue(meter.Value)
 				meter.Amount = meter.Value * netPrice.Price*/
@@ -207,6 +207,7 @@ func calculateAndInsertData(dbClient database.Interface, metering []*common.Mete
 		if meter.Amount == 0 {
 			continue
 		}
+		meter.Time = endTime
 		if err := dbClient.InsertMeteringData(context.Background(), meter); err != nil {
 			return fmt.Errorf("failed to insert metering data: %v", err)
 		}
