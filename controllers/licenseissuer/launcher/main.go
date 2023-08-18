@@ -23,15 +23,16 @@ import (
 )
 
 func main() {
-	if err := run("./preset"); err != nil {
+	if err := run("/preset"); err != nil {
 		fmt.Println("Failed to run /preset: %w", err)
 	}
 
-	if err := run("./manager"); err != nil {
+	if err := run("/manager"); err != nil {
 		fmt.Println("Failed to run /manager: %w", err)
 	}
 }
 
+// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 func run(path string) error {
 	cmd := exec.Command(path)
 	cmd.Stdout = os.Stdout
