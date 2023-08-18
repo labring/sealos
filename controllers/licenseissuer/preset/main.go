@@ -30,19 +30,17 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	mongoOptions "go.mongodb.org/mongo-driver/mongo/options"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 const maxRetry = 5
 const MaxRetryForConnectDB = 10
-
-var logger = ctrl.Log.WithName("PresetWork")
 
 func main() {
 	var err error
 	options := util.GetOptions()
 	for cnt := 0; cnt < maxRetry; cnt++ {
 		err = presetRootUser(context.Background(), options)
+		fmt.Println("failed to preset root user, retrying...")
 		if err != nil {
 			time.Sleep(time.Minute)
 			continue
@@ -50,10 +48,10 @@ func main() {
 		break
 	}
 	if err != nil {
-		logger.Error(err, "failed to preset root user")
+		fmt.Println("failed to preset root user %w", err)
 		os.Exit(1)
 	}
-	logger.Info("preset root user successfully")
+	fmt.Println("preset root user successfully")
 }
 
 const (
@@ -109,7 +107,7 @@ func presetRootUser(ctx context.Context, o util.Options) error {
 	defer func() {
 		err := client.Disconnect(ctx)
 		if err != nil {
-			logger.Error(err, "failed to disconnect mongoDB")
+			fmt.Println("failed to disconnect mongoDB %w", err)
 		}
 	}()
 
@@ -122,16 +120,16 @@ func presetRootUser(ctx context.Context, o util.Options) error {
 	// check if the user already exists
 	isExists := preCheck(ctx, collection)
 	if isExists {
-		logger.Info("root user already exists")
+		fmt.Println("root user already exists")
 		return nil
 	}
 	// insert root user
 	insertResult, err := collection.InsertOne(context.Background(), user)
 	if err != nil {
-		logger.Info("insert root user failed")
+		fmt.Println("failed to insert root user %w", err)
 		return err
 	}
-	logger.Info("insert root user successfully", "insertedID", insertResult.InsertedID)
+	fmt.Println("insert root user successfully", insertResult.InsertedID)
 	return nil
 }
 
@@ -143,17 +141,17 @@ func initMongoDB(ctx context.Context, o util.Options) (*mongo.Client, error) {
 	for i := 0; i < MaxRetryForConnectDB; i++ {
 		client, err = mongo.Connect(ctx, clientOptions)
 		if err != nil {
-			logger.Error(err, "failed to connect to mongo")
+			fmt.Println("failed to connect to mongo", err)
 			time.Sleep(5 * time.Second)
 			continue
 		}
 		err = client.Ping(ctx, nil)
 		if err != nil {
-			logger.Error(err, "failed to ping to mongo")
+			fmt.Println("failed to ping mongo", err)
 			time.Sleep(5 * time.Second)
 			continue
 		}
-		logger.Info("connect to mongo successfully")
+		fmt.Println("connect to mongo successfully")
 		break
 	}
 	if err != nil {

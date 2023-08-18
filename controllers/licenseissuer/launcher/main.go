@@ -18,20 +18,17 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 )
 
 func main() {
-	fmt.Println("hello world")
-
-	if err := run("/preset"); err != nil {
-		log.Fatalf("Failed to run /preset: %v", err)
+	if err := run("./preset"); err != nil {
+		fmt.Println("Failed to run /preset: %w", err)
 	}
 
-	if err := run("/manager"); err != nil {
-		log.Fatalf("Failed to run /manager: %v", err)
+	if err := run("./manager"); err != nil {
+		fmt.Println("Failed to run /manager: %w", err)
 	}
 }
 
