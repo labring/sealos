@@ -32,8 +32,8 @@ func main() {
 	}
 }
 
-// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 func run(path string) error {
+	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 	cmd := exec.Command(path)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
