@@ -5,6 +5,8 @@ import fs from 'fs';
 import JSYAML from 'js-yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
+import util from 'util';
+const execAsync = util.promisify(exec);
 
 const readFileList = (targetPath: string, fileList: unknown[] = [], handlePath: string) => {
   // fix ci
@@ -37,13 +39,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const jsonPath = path.resolve(originalPath, 'fast_deploy_template.json');
 
     if (!fs.existsSync(targetPath)) {
-      exec(`git clone ${repoHttpUrl} ${targetPath}`, (error, stdout, stderr) => {
-        console.log(error, stdout);
-      });
+      await execAsync(`git clone ${repoHttpUrl} ${targetPath}`);
     } else {
-      exec(`cd ${targetPath} && git pull`, (error, stdout, stderr) => {
-        console.log(error, stdout);
-      });
+      await execAsync(`cd ${targetPath} && git pull`);
     }
 
     if (!fs.existsSync(targetPath)) {

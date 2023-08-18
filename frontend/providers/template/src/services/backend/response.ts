@@ -26,7 +26,7 @@ export const jsonRes = (
     } else if (error?.code && error.code in ERROR_TEXT) {
       msg = ERROR_TEXT[error.code];
     }
-    console.log('jsonRes error: ', error);
+    console.error('jsonRes error------------\n ', error);
   }
 
   res.json({
