@@ -12,6 +12,7 @@ sealos pull --policy=always ghcr.io/labring/sealos-cloud-resources-controller:la
 sealos pull --policy=always ghcr.io/labring/sealos-cloud-account-controller:latest
 sealos pull --policy=always ghcr.io/labring/sealos-cloud-costcenter-frontend:latest
 sealos pull --policy=always ghcr.io/labring/sealos-cloud-licenseissuer-controller:latest
+sealos pull --policy=always ghcr.io/labring/sealos-cloud-template-frontend:latest
 
 sealos save -o tars/user.tar ghcr.io/labring/sealos-cloud-user-controller:latest
 sealos save -o tars/terminal.tar ghcr.io/labring/sealos-cloud-terminal-controller:latest
@@ -26,3 +27,4 @@ sealos save -o tars/frontend-terminal.tar  ghcr.io/labring/sealos-cloud-terminal
 sealos save -o tars/frontend-dbprovider.tar ghcr.io/labring/sealos-cloud-dbprovider-frontend:latest
 sealos save -o tars/frontend-costcenter.tar ghcr.io/labring/sealos-cloud-costcenter-frontend:latest
 sealos save -o tars/frontend-applaunchpad.tar ghcr.io/labring/sealos-cloud-applaunchpad-frontend:latest
+sealos save -o tars/frontend-template.tar ghcr.io/labring/sealos-cloud-template-frontend:latest
