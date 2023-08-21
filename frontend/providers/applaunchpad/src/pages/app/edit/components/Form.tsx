@@ -29,6 +29,7 @@ import { GpuAmountMarkList } from '@/constants/editApp';
 import { DOMAIN_PORT, SEALOS_DOMAIN } from '@/store/static';
 import { useTranslation } from 'next-i18next';
 import { useGlobalStore } from '@/store/global';
+import { useUserStore } from '@/store/user';
 
 import Tabs from '@/components/Tabs';
 import Tip from '@/components/Tip';
@@ -40,6 +41,7 @@ import MySlider from '@/components/Slider';
 import MyRangeSlider from '@/components/RangeSlider';
 import MyIcon from '@/components/Icon';
 import MyTooltip from '@/components/MyTooltip';
+import QuotaBox from './QuotaBox';
 
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
 const StoreModal = dynamic(() => import('./StoreModal'));
@@ -71,7 +73,8 @@ const Form = ({
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
-  const { userSourcePrice, formSliderListConfig } = useGlobalStore();
+  const { formSliderListConfig } = useGlobalStore();
+  const { userSourcePrice } = useUserStore();
   const router = useRouter();
   const { name } = router.query as QueryType;
   const theme = useTheme();
@@ -311,17 +314,9 @@ const Form = ({
                   _hover={{
                     backgroundColor: 'myWhite.400'
                   }}
-                  {...(activeNav === item.id
-                    ? {
-                        fontWeight: 'bold',
-                        borderColor: 'myGray.900',
-                        backgroundColor: 'myWhite.600 !important'
-                      }
-                    : {
-                        color: 'myGray.500',
-                        borderColor: 'myGray.200',
-                        backgroundColor: 'transparent'
-                      })}
+                  color="myGray.500"
+                  borderColor="myGray.200"
+                  backgroundColor="transparent"
                 >
                   <MyIcon
                     name={item.icon as any}
@@ -334,8 +329,11 @@ const Form = ({
               </Box>
             ))}
           </Box>
+          <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'}>
+            <QuotaBox />
+          </Box>
           {userSourcePrice && (
-            <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>
+            <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'}>
               <PriceBox
                 pods={
                   getValues('hpa.use')
@@ -380,6 +378,7 @@ const Form = ({
                     disabled={isEdit}
                     title={isEdit ? t('Not allowed to change app name') || '' : ''}
                     autoFocus={true}
+                    maxLength={30}
                     placeholder={
                       t(
                         'Starts with a letter and can contain only lowercase letters, digits, and hyphens (-)'
@@ -387,6 +386,7 @@ const Form = ({
                     }
                     {...register('appName', {
                       required: t('Not allowed to change app name') || '',
+                      maxLength: 30,
                       pattern: {
                         value: /^[a-z][a-z0-9]+([-.][a-z0-9]+)*$/g,
                         message: t(

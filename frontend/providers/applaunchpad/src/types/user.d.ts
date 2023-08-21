@@ -22,3 +22,16 @@ export type Session = {
 const sessionKey = 'session';
 
 export { sessionKey };
+
+export type userPriceType = {
+  cpu: number;
+  memory: number;
+  storage: number;
+  gpu?: { type: string; price: number; inventory: number; vm: number }[];
+};
+
+export type UserQuoteItemType = {
+  type: 'cpu' | 'memory' | 'storage' | 'gpu';
+  used: number;
+  limit: number;
+};

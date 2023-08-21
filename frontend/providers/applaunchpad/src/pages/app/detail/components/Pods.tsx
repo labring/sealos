@@ -138,12 +138,12 @@ const Pods = ({
         <Flex>
           <Button
             mr={3}
-            leftIcon={<MyIcon name="detail" />}
+            leftIcon={<MyIcon name="log" />}
             variant={'base'}
             px={3}
-            onClick={() => setDetailPodIndex(i)}
+            onClick={() => setLogsPodIndex(i)}
           >
-            {t('Details')}
+            {t('Log')}
           </Button>
           <MyMenu
             width={100}
@@ -182,11 +182,11 @@ const Pods = ({
               {
                 child: (
                   <>
-                    <MyIcon name={'log'} w={'14px'} />
-                    <Box ml={2}>{t('Log')}</Box>
+                    <MyIcon name={'detail'} w={'14px'} />
+                    <Box ml={2}>{t('Details')}</Box>
                   </>
                 ),
-                onClick: () => setLogsPodIndex(i)
+                onClick: () => setDetailPodIndex(i)
               },
               {
                 child: (

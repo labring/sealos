@@ -1,4 +1,8 @@
 {
+  "cpu": "CPU",
+  "memory": "Memory",
+  "storage": "Storage",
+  "gpu": "GPU",
   "Applications": "Applications",
   "Create Application": "Create Application",
   "Cancel": "Cancel",
@@ -138,5 +142,11 @@
   "Perday": "Perday",
   "Submit Error": "Submit Error",
   "Env Placeholder": "Can be colon or equal sign, delimited by newline. For example :\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n-env1 =test",
-  "Gpu under inventory Tip": "{{gputype}} is out of stock, please change the model or amount"
+  "Gpu under inventory Tip": "{{gputype}} is out of stock, please change the model or amount",
+  "app": {
+    "Resource Quota": "Quota"
+  },
+  "user": {
+    "Insufficient account balance": "Insufficient account balance"
+  }
 }

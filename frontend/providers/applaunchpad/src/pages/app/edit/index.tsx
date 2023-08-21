@@ -26,11 +26,13 @@ import Header from './components/Header';
 import Form from './components/Form';
 import Yaml from './components/Yaml';
 import dynamic from 'next/dynamic';
-const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 import { serviceSideProps } from '@/utils/i18n';
 import { patchYamlList } from '@/utils/tools';
 import { useTranslation } from 'next-i18next';
 import { noGpuSliderKey } from '@/constants/app';
+import { useUserStore } from '@/store/user';
+
+const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
 const formData2Yamls = (data: AppEditType) => [
   {
@@ -84,14 +86,15 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const { t } = useTranslation();
   const formOldYamls = useRef<YamlItemType[]>([]);
   const crOldYamls = useRef<DeployKindsType[]>([]);
+  const oldAppEditData = useRef<AppEditType>();
 
   const { toast } = useToast();
   const { Loading, setIsLoading } = useLoading();
   const router = useRouter();
   const [forceUpdate, setForceUpdate] = useState(false);
   const { setAppDetail } = useAppStore();
-  const { screenWidth, getUserSourcePrice, userSourcePrice, formSliderListConfig } =
-    useGlobalStore();
+  const { screenWidth, formSliderListConfig } = useGlobalStore();
+  const { userSourcePrice, loadUserSourcePrice, checkQuotaAllow, balance } = useUserStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -135,7 +138,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     setForceUpdate(!forceUpdate);
   });
 
-  const { refetch: refetchPrice } = useQuery(['init-price'], getUserSourcePrice, {
+  const { refetch: refetchPrice } = useQuery(['init-price'], loadUserSourcePrice, {
     enabled: !!userSourcePrice?.gpu,
     refetchInterval: 5000
   });
@@ -150,70 +153,53 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     [defaultGpuSource?.amount, defaultGpuSource?.type, userSourcePrice?.gpu]
   );
 
-  const submitSuccess = useCallback(
-    async (data: AppEditType) => {
-      // gpu inventory check
-      if (data.gpu?.type) {
-        const inventory = countGpuInventory(data.gpu?.type);
-        if (data.gpu?.amount > inventory) {
-          return toast({
-            status: 'warning',
-            title: t('Gpu under inventory Tip', {
-              gputype: data.gpu.type
-            })
-          });
-        }
-      }
+  const submitSuccess = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const yamls = yamlList.map((item) => item.value);
 
-      setIsLoading(true);
-      try {
-        const yamls = yamlList.map((item) => item.value);
-
-        if (appName) {
-          const patch = patchYamlList({
-            formOldYamlList: formOldYamls.current.map((item) => item.value),
-            crYamlList: crOldYamls.current,
-            newYamlList: yamls
-          });
-
-          await putApp({
-            patch,
-            appName,
-            stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value
-          });
-        } else {
-          await postDeployApp(yamls);
-        }
-
-        router.replace(`/app/detail?name=${formHook.getValues('appName')}`);
-        toast({
-          title: t(applySuccess),
-          status: 'success'
+      if (appName) {
+        const patch = patchYamlList({
+          formOldYamlList: formOldYamls.current.map((item) => item.value),
+          crYamlList: crOldYamls.current,
+          newYamlList: yamls
         });
 
-        if (userSourcePrice?.gpu) {
-          refetchPrice();
-        }
-      } catch (error) {
-        console.error(error);
-        setErrorMessage(JSON.stringify(error));
+        await putApp({
+          patch,
+          appName,
+          stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value
+        });
+      } else {
+        await postDeployApp(yamls);
       }
-      setIsLoading(false);
-    },
-    [
-      setIsLoading,
-      countGpuInventory,
-      toast,
-      yamlList,
-      appName,
-      router,
-      formHook,
-      t,
-      applySuccess,
-      userSourcePrice?.gpu,
-      refetchPrice
-    ]
-  );
+
+      router.replace(`/app/detail?name=${formHook.getValues('appName')}`);
+      toast({
+        title: t(applySuccess),
+        status: 'success'
+      });
+
+      if (userSourcePrice?.gpu) {
+        refetchPrice();
+      }
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(JSON.stringify(error));
+    }
+    setIsLoading(false);
+  }, [
+    setIsLoading,
+    toast,
+    yamlList,
+    appName,
+    router,
+    formHook,
+    t,
+    applySuccess,
+    userSourcePrice?.gpu,
+    refetchPrice
+  ]);
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
@@ -261,8 +247,10 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     {
       onSuccess(res) {
         if (!res) return;
+        oldAppEditData.current = res;
         formOldYamls.current = formData2Yamls(res);
         crOldYamls.current = res.crYamlList;
+
         setDefaultStorePathList(res.storeList.map((item) => item.path));
         setDefaultGpuSource(res.gpu);
         formHook.reset(adaptEditAppData(res));
@@ -276,6 +264,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       },
       onSettled() {
         setIsLoading(false);
+        refetchPrice();
       }
     }
   );
@@ -295,7 +284,39 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           yamlList={yamlList}
           applyBtnText={applyBtnText}
           applyCb={() =>
-            formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)()
+            formHook.handleSubmit((data) => {
+              // balance check
+              if (balance <= 0) {
+                return toast({
+                  status: 'warning',
+                  title: t('user.Insufficient account balance')
+                });
+              }
+
+              // gpu inventory check
+              if (data.gpu?.type) {
+                const inventory = countGpuInventory(data.gpu?.type);
+                if (data.gpu?.amount > inventory) {
+                  return toast({
+                    status: 'warning',
+                    title: t('Gpu under inventory Tip', {
+                      gputype: data.gpu.type
+                    })
+                  });
+                }
+              }
+              // quote check
+              const quoteCheckRes = checkQuotaAllow(data, oldAppEditData.current);
+              if (quoteCheckRes) {
+                return toast({
+                  status: 'warning',
+                  title: t(quoteCheckRes),
+                  duration: 5000,
+                  isClosable: true
+                });
+              }
+              openConfirm(submitSuccess)();
+            }, submitError)()
           }
         />
 
