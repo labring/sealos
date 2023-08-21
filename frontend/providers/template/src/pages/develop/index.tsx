@@ -1,42 +1,42 @@
-import { Flex, Box, Button, Text, Textarea } from '@chakra-ui/react';
-import { useTranslation } from 'next-i18next';
 import MyIcon from '@/components/Icon';
-import { useRouter } from 'next/router';
-import { ChangeEvent, useMemo, useState } from 'react';
-import { serviceSideProps } from '@/utils/i18n';
-import Form from './components/Form';
-import { useQuery } from '@tanstack/react-query';
-import { GET } from '@/services/request';
-import JsYaml from 'js-yaml';
+import { editModeMap } from '@/constants/editApp';
+import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
-import { debounce, mapValues } from 'lodash';
-import { YamlSourceType, TemplateType, YamlType } from '@/types/app';
+import { GET } from '@/services/request';
+import { YamlItemType } from '@/types';
+import { TemplateType, YamlSourceType } from '@/types/app';
+import { serviceSideProps } from '@/utils/i18n';
 import {
   developGenerateYamlList,
   getTemplateDataSource,
   parseTemplateString
 } from '@/utils/json-yaml';
-import YamlList from './components/YamlList';
-import { useForm } from 'react-hook-form';
 import { getTemplateDefaultValues } from '@/utils/template';
-import { YamlItemType } from '@/types';
-import Header from './components/Header';
-import BreadCrumbHeader from './components/BreadCrumbHeader';
-import CodeMirror from '@uiw/react-codemirror';
+import { Box, Flex, Text } from '@chakra-ui/react';
 import { StreamLanguage } from '@codemirror/language';
 import { yaml } from '@codemirror/legacy-modes/mode/yaml';
-import { useGlobalStore } from '@/store/global';
+import { useQuery } from '@tanstack/react-query';
+import CodeMirror from '@uiw/react-codemirror';
+import JsYaml from 'js-yaml';
+import { debounce, has, isObject, mapValues } from 'lodash';
+import { useTranslation } from 'next-i18next';
+import { useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import ErrorModal from '../deploy/components/ErrorModal';
+import BreadCrumbHeader from './components/BreadCrumbHeader';
+import Form from './components/Form';
+import YamlList from './components/YamlList';
+import { postDeployApp } from '@/api/app';
 
-const Develop = () => {
+export default function Develop() {
   const { t } = useTranslation();
-  const router = useRouter();
   const [yamlValue, setYamlValue] = useState('');
   const { toast } = useToast();
   const [yamlSource, setYamlSource] = useState<YamlSourceType>();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
-  const { screenWidth } = useGlobalStore();
-  const isLargeScreen = useMemo(() => screenWidth > 1024, [screenWidth]);
-  const [showSlider, setShowSlider] = useState(false);
+  const { Loading, setIsLoading } = useLoading();
+  const [errorMessage, setErrorMessage] = useState('');
+  const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(false);
 
   const detailName = useMemo(
     () => yamlSource?.source?.defaults?.app_name?.value || '',
@@ -116,16 +116,61 @@ const Develop = () => {
     }
   }, 1000);
 
+  const submitSuccess = async () => {
+    setIsLoading(true);
+    try {
+      const result: string[] = await postDeployApp(
+        yamlList.map((item) => item.value),
+        'dryrun'
+      );
+      toast({
+        title: t(applySuccess),
+        status: 'success',
+        description: result?.toString()
+      });
+    } catch (error) {
+      console.log(error, 'sadasdas');
+
+      setErrorMessage(JSON.stringify(error));
+    }
+    setIsLoading(false);
+  };
+
+  const submitError = () => {
+    formHook.getValues();
+    function deepSearch(obj: any): string {
+      if (has(obj, 'message')) {
+        return obj.message;
+      }
+      for (let key in obj) {
+        if (isObject(obj[key])) {
+          let message = deepSearch(obj[key]);
+          if (message) {
+            return message;
+          }
+        }
+      }
+      return t('Submit Error');
+    }
+
+    toast({
+      title: deepSearch(formHook.formState.errors),
+      status: 'error',
+      position: 'top',
+      duration: 3000,
+      isClosable: true
+    });
+  };
+
   return (
     <Flex flexDirection={'column'} p={'0px 34px 20px 34px '} h="100vh" maxW={'1440px'} mx="auto">
-      <BreadCrumbHeader />
+      <BreadCrumbHeader applyCb={() => formHook.handleSubmit(submitSuccess, submitError)()} />
       <Flex
         border={'1px solid #DEE0E2'}
         borderRadius={'8px'}
         overflowY={'hidden'}
         overflowX={'scroll'}
-        flex={1}
-      >
+        flex={1}>
         {/* left */}
         <Flex flexDirection={'column'} flex={'0 1 500px'} borderRight={'1px solid #EFF0F1'}>
           <Flex
@@ -135,8 +180,7 @@ const Develop = () => {
             alignItems={'center'}
             backgroundColor={'#F8FAFB'}
             px="36px"
-            borderRadius={'8px 8px 0px 0px '}
-          >
+            borderRadius={'8px 8px 0px 0px '}>
             <MyIcon name="dev" color={'#24282C'} w={'24px'} h={'24px'}></MyIcon>
             <Text fontWeight={'500'} fontSize={'16px'} color={'#24282C'} ml="8px">
               {t('develop.Development')}
@@ -164,8 +208,7 @@ const Develop = () => {
             alignItems={'center'}
             backgroundColor={'#F8FAFB'}
             pl="42px"
-            borderRadius={'8px 8px 0px 0px '}
-          >
+            borderRadius={'8px 8px 0px 0px '}>
             <MyIcon name="eyeShow" color={'#24282C'} w={'24px'} h={'24px'}></MyIcon>
             <Text fontWeight={'500'} fontSize={'16px'} color={'#24282C'} ml="8px">
               {t('develop.Preview')}
@@ -187,9 +230,13 @@ const Develop = () => {
           </Flex>
         </Flex>
       </Flex>
+      <Loading />
+      {!!errorMessage && (
+        <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
+      )}
     </Flex>
   );
-};
+}
 
 export async function getServerSideProps(content: any) {
   return {
@@ -198,5 +245,3 @@ export async function getServerSideProps(content: any) {
     }
   };
 }
-
-export default Develop;

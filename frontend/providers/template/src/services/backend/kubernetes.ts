@@ -53,7 +53,8 @@ export type CRDMeta = {
 
 export async function CreateYaml(
   kc: k8s.KubeConfig,
-  specs: k8s.KubernetesObject[]
+  specs: k8s.KubernetesObject[],
+  dryRun?: 'All'
 ): Promise<k8s.KubernetesObject[]> {
   const client = k8s.KubernetesObjectApi.makeApiClient(kc);
   const validSpecs = specs.filter((s) => s && s.kind && s.metadata);
@@ -68,7 +69,7 @@ export async function CreateYaml(
         JSON.stringify(spec);
 
       console.log('create yaml: ', spec.kind);
-      const response = await client.create(spec);
+      const response = await client.create(spec, undefined, dryRun ? dryRun : undefined);
       created.push(response.body);
     }
   } catch (error: any) {
@@ -151,7 +152,7 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
 
   const namespace = GetUserDefaultNameSpace(kube_user.name);
 
-  const applyYamlList = async (yamlList: string[], type: 'create' | 'replace') => {
+  const applyYamlList = async (yamlList: string[], type: 'create' | 'replace' | 'dryrun') => {
     // insert namespace
     const formatYaml: k8s.KubernetesObject[] = yamlList
       .map((item) => yaml.loadAll(item))
@@ -167,6 +168,8 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
       return CreateYaml(kc, formatYaml);
     } else if (type === 'replace') {
       return replaceYaml(kc, formatYaml);
+    } else if (type === 'dryrun') {
+      return CreateYaml(kc, formatYaml, 'All');
     }
     return CreateYaml(kc, formatYaml);
   };

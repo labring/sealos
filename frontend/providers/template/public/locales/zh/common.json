@@ -160,6 +160,7 @@
     "Preview": "预览",
     "Configure Form": "配置表单",
     "YAML File": "YAML 文件",
-    "Template Development": "模板开发"
+    "Template Development": "模板开发",
+    "Dryrun Deploy": "试运行部署"
   }
 }
