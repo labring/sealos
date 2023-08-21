@@ -67,21 +67,37 @@ spec:
         #   type: RuntimeDefault
       containers:
       - command:
-        - /manager
+        - /launcher
         args:
         - --leader-elect
         image: ghcr.io/labring/sealos-licenseissuer-controller:latest
+        imagePullPolicy: Always
         name: manager
         env:
         - name: CAN_CONNECT_TO_EXTERNAL_NETWORK
           valueFrom:
             secretKeyRef:
-              name: licenseissuer-env
               key: canConnectToExternalNetwork
+              name: licenseissuer-env
         - name: MONITOR
           valueFrom:
             secretKeyRef:
               key: isMonitor
+              name: licenseissuer-env
+        - name: MONGO_URI
+          valueFrom: 
+            secretKeyRef:
+              key: MongoURI
+              name: licenseissuer-env
+        - name: PASSWORD_SALT
+          valueFrom:
+            secretKeyRef:
+              key: PasswordSalt
+              name: licenseissuer-env
+        - name: NAMESPACE
+          valueFrom:
+            secretKeyRef:
+              key: Namespace
               name: licenseissuer-env
         securityContext:
           allowPrivilegeEscalation: false

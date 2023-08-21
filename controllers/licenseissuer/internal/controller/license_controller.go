@@ -49,6 +49,9 @@ type LicenseReconciler struct {
 	configMap corev1.ConfigMap
 }
 
+//+kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch
 //+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
@@ -70,7 +73,6 @@ type LicenseReconciler struct {
 func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter LicenseReconcile", "namespace:", req.Namespace, "name", req.Name)
 	r.logger.Info("Start to get license-related resource...")
-
 	// for notification
 	nq := &ntf.NoticeEventQueue{}
 	nm := ntf.NewNotificationManager(ctx, r.Client, r.logger, 1, 1)

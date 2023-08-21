@@ -224,6 +224,30 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - secrets
   verbs:
   - create
@@ -467,7 +491,7 @@ spec:
         - --metrics-bind-address=127.0.0.1:8080
         - --leader-elect
         command:
-        - /manager
+        - /launcher
         env:
         - name: CAN_CONNECT_TO_EXTERNAL_NETWORK
           valueFrom:
@@ -480,7 +504,7 @@ spec:
               key: isMonitor
               name: licenseissuer-env
         - name: MONGO_URI
-          valueFrom: 
+          valueFrom:
             secretKeyRef:
               key: MongoURI
               name: licenseissuer-env
@@ -495,6 +519,7 @@ spec:
               key: Namespace
               name: licenseissuer-env
         image: ghcr.io/labring/sealos-licenseissuer-controller:latest
+        imagePullPolicy: Always
         livenessProbe:
           httpGet:
             path: /healthz

@@ -17,18 +17,9 @@ limitations under the License.
 package util
 
 import (
-	"context"
-	"crypto/sha256"
-	"encoding/base64"
-	"encoding/hex"
 	"fmt"
-	"os"
-	"time"
 
 	"github.com/google/uuid"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	mongoOptions "go.mongodb.org/mongo-driver/mongo/options"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -38,36 +29,6 @@ const MaxRetryForConnectDB = 5
 
 type RegisterRequest struct {
 	UID string `json:"uid"`
-}
-
-type K8sUser struct {
-	Name string `bson:"name" json:"name"`
-}
-
-// the following code is the struct of user stored in mongoDB.
-type User struct {
-	UID          string    `bson:"uid" json:"uid"`
-	Name         string    `bson:"name" json:"name"`
-	PasswordUser string    `bson:"password_user" json:"password_user"`
-	Password     string    `bson:"password" json:"password"`
-	CreatedTime  string    `bson:"created_time" json:"created_time"`
-	K8sUsers     []K8sUser `bson:"k8s_users" json:"k8s_users"`
-}
-
-func newUser(uid, name, passwordUser, password, k8sUser string) User {
-	return User{
-		UID:          uid,
-		Name:         name,
-		PasswordUser: passwordUser,
-		Password:     password,
-		// to iso string
-		CreatedTime: time.Now().Format(time.RFC3339),
-		K8sUsers: []K8sUser{
-			{
-				Name: k8sUser,
-			},
-		},
-	}
 }
 
 // The following code is used to implement the instance of sub-task which is used to
@@ -85,29 +46,13 @@ func (t initTask) initWork(instance *TaskInstance) error {
 	return nil
 }
 
-// 1. preset root user
-// 2. check if the cluster has been registered
-// 3. register to cloud (if the monitor is enabled)
-// 4. store cluster-info to k8s
-const maxRetry = 5
+// 1. check if the cluster has been registered
+// 2. register to cloud (if the monitor is enabled)
+// 3. store cluster-info to k8s
 
 func (t initTask) register(instance *TaskInstance) error {
-	var err error
-	// step 1
-	for cnt := 0; cnt < maxRetry; cnt++ {
-		err = t.presetRootUser(instance)
-		if err != nil {
-			instance.logger.Error(err, "failed to preset root user")
-			time.Sleep(time.Minute)
-			continue
-		}
-		break
-	}
-	if err != nil {
-		return err
-	}
 	ClusterInfo := createClusterInfo()
-	// step 2
+	// step 1
 	// check if the cluster has been registered
 	registered, err := t.checkRegister(instance)
 	if err != nil {
@@ -119,7 +64,7 @@ func (t initTask) register(instance *TaskInstance) error {
 		return nil
 	}
 
-	// step 3
+	// step 2
 	// if the monitor is enabled, info will be sent to the cloud.
 	if t.options.GetEnvOptions().MonitorConfiguration == "true" {
 		err := t.registerToCloud(*ClusterInfo, instance)
@@ -128,7 +73,7 @@ func (t initTask) register(instance *TaskInstance) error {
 			return err
 		}
 	}
-	// step 4
+	// step 3
 	// only after register to cloud, the store-behavior will be executed.
 	err = instance.Create(instance.ctx, ClusterInfo)
 	if err != nil {
@@ -176,98 +121,4 @@ func createClusterInfo() *corev1.Secret {
 		"uuid": []byte(uuid),
 	}
 	return secret
-}
-
-// presetRootUser is used to preset root user for mongoDB.
-
-func (t initTask) presetRootUser(instance *TaskInstance) error {
-	// init mongoDB client
-	client, err := t.initMongoDB(instance)
-	if err != nil {
-		return fmt.Errorf("failed to init mongoDB: %w", err)
-	}
-	defer func() {
-		err := client.Disconnect(instance.ctx)
-		if err != nil {
-			instance.logger.Error(err, "failed to disconnect mongoDB")
-		}
-	}()
-
-	// preset root user
-	uuid := uuid.New().String()
-	passwd := hashPassword(defaultPassword, t.options.GetEnvOptions().SaltKey)
-	user := newUser(uuid, defaultuser, defaultuser, passwd, defaultK8sUser)
-
-	collection := client.Database(defaultDB).Collection(defaultCollection)
-	// check if the user already exists
-	isExists := preCheck(instance.ctx, collection)
-	if isExists {
-		instance.logger.Info("root user already exists")
-		return nil
-	}
-	// insert root user
-	insertResult, err := collection.InsertOne(context.Background(), user)
-	if err != nil {
-		instance.logger.Info("insert root user failed")
-		return err
-	}
-	instance.logger.Info("insert root user successfully", "insertedID", insertResult.InsertedID)
-	return nil
-}
-
-// init mongoDB client to preset root user.
-func (t initTask) initMongoDB(instance *TaskInstance) (*mongo.Client, error) {
-	var client *mongo.Client
-	var err error
-	MongoURI := t.options.GetEnvOptions().MongoURI
-	clientOptions := mongoOptions.Client().ApplyURI(MongoURI)
-	for i := 0; i < MaxRetryForConnectDB; i++ {
-		client, err = mongo.Connect(instance.ctx, clientOptions)
-		if err != nil {
-			instance.logger.Error(err, "failed to connect to mongo")
-			time.Sleep(5 * time.Second)
-			continue
-		}
-		err = client.Ping(instance.ctx, nil)
-		if err != nil {
-			instance.logger.Error(err, "failed to ping to mongo")
-			time.Sleep(5 * time.Second)
-			continue
-		}
-		instance.logger.Info("connect to mongo successfully")
-		break
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to mongo: %w", err)
-	}
-	return client, nil
-}
-
-// makesure the user does not exist
-func preCheck(ctx context.Context, collection *mongo.Collection) bool {
-	filter := bson.M{"password_user": defaultuser}
-	var existingUser User
-	err := collection.FindOne(ctx, filter).Decode(&existingUser)
-	return err == nil
-}
-
-// the following code is consistent with the front-end login logic
-func hashPassword(password string, key string) string {
-	hash := sha256.New()
-	validSalt, err := decodeBase64(key)
-	if err != nil {
-		fmt.Println("Error decoding salt:", err.Error())
-		os.Exit(1)
-	}
-	hash.Write([]byte(password + string(validSalt)))
-	return hex.EncodeToString(hash.Sum(nil))
-}
-
-func decodeBase64(s string) ([]byte, error) {
-	data, err := base64.StdEncoding.DecodeString(s)
-	if err != nil {
-		fmt.Println("Error decoding string:", err.Error())
-		return nil, err
-	}
-	return data, nil
 }

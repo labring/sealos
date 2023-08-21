@@ -5,7 +5,8 @@ IMG ?= ghcr.io/labring/sealos-licenseissuer-controller:latest
 ENVTEST_K8S_VERSION = 1.26.1
 
 include	.env
-export 
+export
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -60,11 +61,20 @@ vet: ## Run go vet against code.
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
 
+
 ##@ Build
 
-.PHONY: build
-build:
-	CGO_ENABLED=0 GOOS=linux go build $(shell [ -n "${CRYPTOKEY}"  ] && echo "-ldflags '-X github.com/labring/sealos/controllers/pkg/crypto.encryptionKey=${CRYPTOKEY} -X github.com/labring/sealos/controllers/pkg/database.cryptoKey=${CRYPTOKEY}'") -o bin/manager cmd/main.go
+.PHONY: build 
+CONTROLLER_PKG=github.com/labring/sealos/controllers/pkg
+CONTROLLER_LICENSEISSUER=github.com/labring/sealos/controllers/licenseissuer/internal/controller
+build: manifests generate fmt vet ## Build manager binary.
+	LD_FLAGS=""; \
+	[ -n "$(CRYPTOKEY)" ] && LD_FLAGS+="-X ${CONTROLLER_PKG}/crypto.encryptionKey=${CRYPTOKEY} -X ${CONTROLLER_PKG}/database.cryptoKey=${CRYPTOKEY}"; \
+	[ -n "$(LICENSE_KEY)" ] && LD_FLAGS+=" -X ${CONTROLLER_LICENSEISSUER}/util.Key=${LICENSE_KEY}"; \
+	CGO_ENABLED=0 GOOS=linux  go build -ldflags "$${LD_FLAGS}" -o bin/manager cmd/main.go && \
+	CGO_ENABLED=0 GOOS=linux  go build -o bin/preset-${GOARCH} preset/main.go && chmod +x bin/preset-${GOARCH} && \
+	CGO_ENABLED=0 GOOS=linux  go build -o bin/launcher-${GOARCH} launcher/main.go && chmod +x bin/launcher-${GOARCH}
+
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
