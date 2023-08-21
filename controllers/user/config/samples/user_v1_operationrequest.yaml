@@ -1,0 +1,19 @@
+apiVersion: user.sealos.io/v1
+kind: Operationrequest
+metadata:
+  name: request-grant-a-owns-b
+  namespace: ns-bbbb0001
+spec:
+  user: aaaa0001
+  role: Owner
+  action: Grant
+---
+apiVersion: user.sealos.io/v1
+kind: Operationrequest
+metadata:
+  name: request-deprive-a-owns-b
+  namespace: ns-bbbb0001
+spec:
+  user: aaaa0001
+  role: Owner
+  action: Deprive

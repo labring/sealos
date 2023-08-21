@@ -281,7 +281,7 @@ func (r *UserReconciler) syncRole(ctx context.Context, user *userv1.User) contex
 	return ctx
 }
 
-func (r *UserReconciler) createRole(ctx context.Context, condition *userv1.Condition, user *userv1.User, roleType userv1.UserRoleType) {
+func (r *UserReconciler) createRole(ctx context.Context, condition *userv1.Condition, user *userv1.User, roleType userv1.RoleType) {
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		var change controllerutil.OperationResult
 		var err error
@@ -341,7 +341,7 @@ func (r *UserReconciler) syncRoleBinding(ctx context.Context, user *userv1.User)
 				Kind:     "Role",
 				Name:     string(userv1.OwnerRoleType),
 			}
-			roleBinding.Subjects = config.GetNewUsersSubject(user.Name)
+			roleBinding.Subjects = config.GetUsersSubject(user.Name)
 			return controllerutil.SetControllerReference(user, roleBinding, r.Scheme)
 		}); err != nil {
 			return fmt.Errorf("unable to create namespace role binding by User: %w", err)

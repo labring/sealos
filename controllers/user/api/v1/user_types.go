@@ -23,15 +23,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // UserSpec defines the desired state of User
 type UserSpec struct {
 	// expirationSeconds is the requested duration of validity of the issued
 	// certificate. The certificate signer may issue a certificate with a different
 	// validity duration so a client must check the delta between the notBefore and
-	// and notAfter fields in the issued certificate to determine the actual duration.
+	// notAfter fields in the issued certificate to determine the actual duration.
 	//
 	// The minimum valid value for expirationSeconds is 600, i.e. 10 minutes.
 	//
@@ -39,12 +36,12 @@ type UserSpec struct {
 	//+kubebuilder:default:=7200
 	CSRExpirationSeconds int32 `json:"csrExpirationSeconds,omitempty"`
 }
-type UserRoleType string
+type RoleType string
 
 const (
-	OwnerRoleType     UserRoleType = "Owner"
-	ManagerRoleType   UserRoleType = "Manager"
-	DeveloperRoleType UserRoleType = "Developer"
+	OwnerRoleType     RoleType = "Owner"
+	ManagerRoleType   RoleType = "Manager"
+	DeveloperRoleType RoleType = "Developer"
 )
 
 type UserPhase string
