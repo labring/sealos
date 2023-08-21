@@ -39,9 +39,9 @@ type UserSpec struct {
 type RoleType string
 
 const (
-	OwnerRoleType     RoleType = "owner"
-	ManagerRoleType   RoleType = "manager"
-	DeveloperRoleType RoleType = "developer"
+	OwnerRoleType     RoleType = "Owner"
+	ManagerRoleType   RoleType = "Manager"
+	DeveloperRoleType RoleType = "Developer"
 )
 
 type UserPhase string
