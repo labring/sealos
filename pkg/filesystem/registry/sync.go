@@ -30,9 +30,11 @@ import (
 	"github.com/containers/image/v5/types"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/labring/sreg/pkg/registry/handler"
+	"github.com/labring/sreg/pkg/registry/sync"
+
 	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/registry/handler"
-	"github.com/labring/sealos/pkg/registry/sync"
+	"github.com/labring/sealos/pkg/filesystem"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/file"
@@ -45,8 +47,7 @@ const (
 	defaultTemporaryPort = "5050"
 )
 
-// TODO: fallback to ssh mode when HTTP is not available
-type syncMode struct {
+type impl struct {
 	pathResolver PathResolver
 	ssh          ssh.Interface
 	mounts       []v2.MountImage
@@ -61,14 +62,11 @@ func shouldSkip(mounts []v2.MountImage) bool {
 	return true
 }
 
-func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
+func (s *impl) Sync(ctx context.Context, hosts ...string) error {
 	if shouldSkip(s.mounts) {
 		return nil
 	}
-	sys := &types.SystemContext{
-		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
-	}
-	logger.Info("using sync mode syncing images to hosts %v", hosts)
+	logger.Info("trying default http mode to sync images to hosts %v", hosts)
 	// run `sealctl registry serve` to start a temporary registry
 	for i := range hosts {
 		cmdCtx, cancel := context.WithCancel(ctx)
@@ -100,8 +98,12 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 			return nil
 		})
 	}
+	var syncFn func(context.Context, string) error
 	if err := eg.Wait(); err != nil {
-		return err
+		logger.Warn("cannot connect to remote temporary registry: %v, fallback using ssh mode instead", err)
+		syncFn = syncViaSSH(s, hosts)
+	} else {
+		syncFn = syncViaHTTP(endpoints)
 	}
 
 	outerEg, ctx := errgroup.WithContext(ctx)
@@ -111,46 +113,7 @@ func (s *syncMode) Sync(ctx context.Context, hosts ...string) error {
 			continue
 		}
 		outerEg.Go(func() error {
-			config, err := handler.NewConfig(registryDir, 0)
-			if err != nil {
-				return err
-			}
-			config.Log.AccessLog.Disabled = true
-			errCh := handler.Run(ctx, config)
-
-			eg, inner := errgroup.WithContext(ctx)
-			for j := range endpoints {
-				dst := endpoints[j]
-				eg.Go(func() error {
-					src := sync.ParseRegistryAddress(localhost, config.HTTP.Addr)
-					probeCtx, cancel := context.WithTimeout(inner, time.Second*3)
-					defer cancel()
-					if err = httputils.WaitUntilEndpointAlive(probeCtx, "http://"+src); err != nil {
-						return err
-					}
-					opts := &sync.Options{
-						SystemContext: sys,
-						Source:        src,
-						Target:        dst,
-						SelectionOptions: []copy.ImageListSelection{
-							copy.CopyAllImages, copy.CopySystemImage,
-						},
-						OmitError: true,
-					}
-
-					if err = sync.ToRegistry(inner, opts); err == nil {
-						return nil
-					}
-					if !strings.Contains(err.Error(), "manifest unknown") {
-						return err
-					}
-					return nil
-				})
-			}
-			go func() {
-				errCh <- eg.Wait()
-			}()
-			return <-errCh
+			return syncFn(ctx, registryDir)
 		})
 	}
 	return outerEg.Wait()
@@ -176,4 +139,75 @@ func loginRegistry(ctx context.Context, sys *types.SystemContext, username, pass
 		Password: password,
 		Stdout:   io.Discard,
 	}, []string{registry})
+}
+
+func syncViaSSH(s *impl, targets []string) func(context.Context, string) error {
+	return func(ctx context.Context, localDir string) error {
+		eg, _ := errgroup.WithContext(ctx)
+		for i := range targets {
+			target := targets[i]
+			eg.Go(func() error {
+				return ssh.CopyDir(s.ssh, target, localDir, s.pathResolver.RootFSPath(), constants.IsRegistryDir)
+			})
+		}
+		return eg.Wait()
+	}
+}
+
+func syncViaHTTP(targets []string) func(context.Context, string) error {
+	sys := &types.SystemContext{
+		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
+	}
+	return func(ctx context.Context, localDir string) error {
+		config, err := handler.NewConfig(localDir, 0)
+		if err != nil {
+			return err
+		}
+		config.Log.AccessLog.Disabled = true
+		errCh := handler.Run(ctx, config)
+
+		eg, inner := errgroup.WithContext(ctx)
+		for i := range targets {
+			target := targets[i]
+			eg.Go(func() error {
+				src := sync.ParseRegistryAddress(localhost, config.HTTP.Addr)
+				probeCtx, cancel := context.WithTimeout(inner, time.Second*3)
+				defer cancel()
+				if err = httputils.WaitUntilEndpointAlive(probeCtx, "http://"+src); err != nil {
+					return err
+				}
+				opts := &sync.Options{
+					SystemContext: sys,
+					Source:        src,
+					Target:        target,
+					SelectionOptions: []copy.ImageListSelection{
+						copy.CopyAllImages, copy.CopySystemImage,
+					},
+					OmitError: true,
+				}
+
+				if err = sync.ToRegistry(inner, opts); err == nil {
+					return nil
+				}
+				if !strings.Contains(err.Error(), "manifest unknown") {
+					return err
+				}
+				return nil
+			})
+		}
+		go func() {
+			errCh <- eg.Wait()
+		}()
+		return <-errCh
+	}
+}
+
+type PathResolver interface {
+	RootFSSealctlPath() string
+	RootFSRegistryPath() string
+	RootFSPath() string
+}
+
+func New(pathResolver PathResolver, ssh ssh.Interface, mounts []v2.MountImage) filesystem.RegistrySyncer {
+	return &impl{pathResolver, ssh, mounts}
 }

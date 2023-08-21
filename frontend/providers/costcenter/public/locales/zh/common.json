@@ -35,7 +35,7 @@
   "Type": "类型",
   "CPU": "CPU",
   "Memory": "内存",
-  "Local Disk": "本地硬盘",
+  "Storage": "存储卷",
   "Total Amount": "总金额",
   "Payment Result": "支付结果",
   "Payment Successful": "支付成功",
@@ -61,12 +61,13 @@
   "Transfer": "转账",
   "Transfer Amount must be a integer": "转账金额必须为整数",
   "Recipient ID is invalid": "收款人ID无效",
-  "Transfer Amount must be less than balance": "转账后的账户余额不能小于 ¥10",
+  "Transfer Amount must be less than balance": "转账后的账户余额不能小于 10",
   "he payee cannot be oneself": "收款人不能是本人",
   "Transfer Success": "转账成功",
   "True Amount": "实际金额",
   "Get Code": "获取验证码",
-
+  "Stripe Success": "Stripe 支付完成",
+  "Stripe Cancel": "Stripe 支付取消",
   "orders": {
     "list": "订单列表",
     "invoiceAmount": "发票金额",
@@ -76,10 +77,10 @@
     "taxNumberValidation": "请输入有效的税务登记证号",
     "bankAccountValidation": "请输入有效的银行账号",
     "emailValidation": "请输入有效的邮箱地址",
-		"submit success": "提交成功",
-		"code success":"验证码已发送",
-		"code error":"验证码错误",
-		"submit fail":"提交失败",
+    "submit success": "提交成功",
+    "code success": "验证码已发送",
+    "code error": "验证码错误",
+    "submit fail": "提交失败",
     "details": {
       "invoiceTitle": {
         "name": "发票抬头",
@@ -120,8 +121,8 @@
         "placeholder": "填写邮箱"
       },
       "phone": {
-        "name": "电话",
-        "placeholder": "填写电话"
+        "name": "手机号码",
+        "placeholder": "填写手机号码"
       },
       "code": {
         "name": "验证码",
@@ -132,5 +133,8 @@
     "Electronic Computer Service Fee": "电子计算机服务费",
     "Invoice Details": "发票明细",
     "Contact Information": "联系方式"
-  }
+  },
+  "pay with wechat": "微信支付",
+  "pay with stripe": "Stripe 支付",
+  "Pay Minimum Tips": "使用Stripe支付时，购买额度不低于10"
 }

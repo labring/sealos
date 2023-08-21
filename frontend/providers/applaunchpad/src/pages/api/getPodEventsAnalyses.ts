@@ -2,23 +2,16 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { PassThrough } from 'stream';
-import axios from 'axios';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
-  const stream = new PassThrough();
-  stream.on('error', () => {
-    console.log('error: ', 'stream error');
-    stream.destroy();
+  res.on('error', (err) => {
+    console.log('error: ', err);
+    res.end();
   });
   res.on('close', () => {
-    stream.destroy();
-  });
-  res.on('error', () => {
     console.log('error: ', 'request error');
-    stream.destroy();
+    res.end();
   });
-  let step = 0;
 
   try {
     const events = req.body;
@@ -31,64 +24,130 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
-    const response = await axios.post(
-      'https://fastgpt.run/api/openapi/chat/chat',
-      {
-        modelId: '6455c433f437e55c638e630c',
-        isStream: true,
-        prompts: [
-          {
-            obj: 'Human',
-            value: JSON.stringify(events)
-          }
-        ]
-      },
-      {
-        headers: {
-          apikey: process.env.FASTGPT_KEY
-        },
-        responseType: 'stream',
-        timeout: 30000
-      }
-    );
-
-    // stream response
     res.setHeader('Content-Type', 'text/event-stream;charset-utf-8');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('X-Accel-Buffering', 'no');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
-    stream.pipe(res);
-    step = 1;
 
-    const decoder = new TextDecoder();
-    try {
-      for await (const chunk of response.data as any) {
-        const text = decoder.decode(chunk);
-        if (stream.destroyed) {
-          break;
-        }
-        stream.push(text.replace(/\n/g, '<br/>'));
-      }
-    } catch (error) {
-      console.log('pipe error', error);
-    }
+    await streamFetch(res, events);
 
-    // close stream
-    !stream.destroyed && stream.push(null);
-    stream.destroy();
+    res.end();
   } catch (err: any) {
-    console.log(err);
-    if (step === 1) {
-      if (!stream.destroy) {
-        stream.push(typeof err === 'string' ? err : err?.message || 'Pod analyses error');
-        stream.push(null);
-        stream.destroy();
-      }
-      return;
-    }
-    res.json({
-      code: 500,
-      message: typeof err === 'string' ? err : err?.message || 'Pod analyses error'
-    });
+    res.end(err);
   }
+}
+
+export class SSEParseData {
+  storeReadData = '';
+  storeEventName = '';
+
+  parse(item: { event: string; data: string }) {
+    if (item.data === '[DONE]') return { eventName: item.event, data: item.data };
+
+    if (item.event) {
+      this.storeEventName = item.event;
+    }
+
+    try {
+      const formatData = this.storeReadData + item.data;
+      const parseData = JSON.parse(formatData);
+      const eventName = this.storeEventName;
+
+      this.storeReadData = '';
+      this.storeEventName = '';
+
+      return {
+        eventName,
+        data: parseData
+      };
+    } catch (error) {
+      if (typeof item.data === 'string') {
+        this.storeReadData += item.data;
+      } else {
+        this.storeReadData = '';
+      }
+    }
+    return {};
+  }
+}
+function parseStreamChunk(value: BufferSource) {
+  const decoder = new TextDecoder();
+
+  const chunk = decoder.decode(value);
+  const chunkLines = chunk.split('\n\n').filter((item) => item);
+  const chunkResponse = chunkLines.map((item) => {
+    const splitEvent = item.split('\n');
+    if (splitEvent.length === 2) {
+      return {
+        event: splitEvent[0].replace('event: ', ''),
+        data: splitEvent[1].replace('data: ', '')
+      };
+    }
+    return {
+      event: '',
+      data: splitEvent[0].replace('data: ', '')
+    };
+  });
+
+  return chunkResponse;
+}
+function streamFetch(res: NextApiResponse<ApiResp>, events: any) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const response = await fetch('https://fastgpt.run/api/openapi/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.FASTGPT_KEY}`
+        },
+        body: JSON.stringify({
+          stream: true,
+          messages: [
+            {
+              role: 'user',
+              content: JSON.stringify(events)
+            }
+          ]
+        })
+      });
+
+      if (!response?.body) {
+        throw new Error('Request Error');
+      }
+
+      const reader = response.body?.getReader();
+
+      const parseData = new SSEParseData();
+
+      const read = async () => {
+        try {
+          const { done, value } = await reader.read();
+          if (done) {
+            return resolve('');
+          }
+
+          const chunkResponse = parseStreamChunk(value);
+
+          chunkResponse.forEach((item) => {
+            const { eventName, data } = parseData.parse(item);
+
+            if (!eventName || !data) return;
+
+            if (eventName === 'answer' && data !== '[DONE]') {
+              const answer: string = data?.choices?.[0].delta.content || '';
+              res.write(answer);
+            }
+          });
+          read();
+        } catch (err: any) {
+          reject('Analyses error');
+        }
+      };
+      read();
+    } catch (err: any) {
+      console.log(err, 'fetch error');
+
+      reject('Analyses error');
+    }
+  });
 }

@@ -25,6 +25,12 @@ export type DeployKindsType =
 
 export type EditType = 'form' | 'yaml';
 
+export type GpuType = {
+  manufacturers: string;
+  type: string;
+  amount: number;
+};
+
 export interface AppStatusMapType {
   label: string;
   value: `${AppStatusEnum}`;
@@ -41,6 +47,7 @@ export interface AppListItemType {
   createTime: string;
   cpu: number;
   memory: number;
+  gpu?: GpuType;
   usedCpu: number[];
   useMemory: number[];
   activeReplicas: number;
@@ -57,6 +64,7 @@ export interface AppEditType {
   replicas: number | '';
   cpu: number;
   memory: number;
+  gpu?: GpuType;
   containerOutPort: number | '';
   accessExternal: {
     use: boolean;
@@ -67,6 +75,7 @@ export interface AppEditType {
   envs: {
     key: string;
     value: string;
+    valueFrom?: any;
   }[];
   hpa: {
     use: boolean;

@@ -29,11 +29,16 @@ import (
 )
 
 const (
-	AuthType = "basicAuth"
+	AuthType                 = "basicAuth"
+	safeConfigurationSnippet = `
+set $flag 0;
+if ($http_upgrade = 'websocket') {set $flag "${flag}1";}
+if ($http_sec_fetch_site !~ 'same-.*') {set $flag "${flag}2";}
+if ($flag = '02'){ return 403; }`
 )
 
 func (r *TerminalReconciler) createNginxIngress(terminal *terminalv1.Terminal, host string) *networkingv1.Ingress {
-	cors := fmt.Sprintf("https://%s,https://*.%s", r.terminalDomain, r.terminalDomain)
+	cors := fmt.Sprintf("https://%s,https://*.%s", r.terminalDomain+r.getPort(), r.terminalDomain+r.getPort())
 
 	objectMeta := metav1.ObjectMeta{
 		Name:      terminal.Name,
@@ -43,10 +48,13 @@ func (r *TerminalReconciler) createNginxIngress(terminal *terminalv1.Terminal, h
 			"nginx.ingress.kubernetes.io/rewrite-target":         "/",
 			"nginx.ingress.kubernetes.io/proxy-send-timeout":     "86400",
 			"nginx.ingress.kubernetes.io/proxy-read-timeout":     "86400",
+			"nginx.ingress.kubernetes.io/proxy-body-size":        "32m",
+			"nginx.ingress.kubernetes.io/proxy-buffer-size":      "64k",
 			"nginx.ingress.kubernetes.io/enable-cors":            "true",
 			"nginx.ingress.kubernetes.io/cors-allow-origin":      cors,
 			"nginx.ingress.kubernetes.io/cors-allow-methods":     "PUT, GET, POST, PATCH, OPTIONS",
 			"nginx.ingress.kubernetes.io/cors-allow-credentials": "false",
+			"nginx.ingress.kubernetes.io/configuration-snippet":  safeConfigurationSnippet,
 		},
 	}
 

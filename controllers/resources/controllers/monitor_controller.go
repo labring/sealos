@@ -25,6 +25,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/common/gpu"
+
 	"golang.org/x/sync/semaphore"
 
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -34,7 +36,6 @@ import (
 	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
 	"github.com/labring/sealos/controllers/pkg/common"
 	"github.com/labring/sealos/controllers/pkg/database"
-	v1 "github.com/labring/sealos/controllers/user/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -52,6 +53,7 @@ type MonitorReconciler struct {
 	stopCh            chan struct{}
 	wg                sync.WaitGroup
 	periodicReconcile time.Duration
+	NvidiaGpu         map[string]gpu.NvidiaGPU
 }
 
 type quantity struct {
@@ -67,6 +69,8 @@ const (
 
 var namespaceMonitorFuncs = make(map[string]func(ctx context.Context, dbClient database.Interface, namespace *corev1.Namespace) error)
 
+//+kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;watch
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 //+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch
@@ -87,9 +91,15 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 		return nil, fmt.Errorf("mongo uri is empty")
 	}
 	r.initNamespaceFuncs()
-	if err := r.preApply(); err != nil {
+	err := r.preApply()
+	if err != nil {
 		return nil, err
 	}
+	r.NvidiaGpu, err = gpu.GetNodeGpuModel(mgr.GetClient())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get node gpu model: %v", err)
+	}
+	r.Logger.Info("get gpu model", "gpu model", r.NvidiaGpu)
 	r.startPeriodicReconcile()
 	return r, nil
 }
@@ -268,20 +278,17 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient datab
 		return err
 	}
 	rs := initResources()
+	hasStorageQuota := false
 	if err := r.Get(ctx, client.ObjectKey{Name: meteringv1.ResourceQuotaPrefix + namespace.Name, Namespace: namespace.Name}, &quota); err != nil {
 		if client.IgnoreNotFound(err) != nil {
 			return err
 		}
-		if _, ok := namespace.GetAnnotations()[v1.UserAnnotationCreatorKey]; ok {
-			//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
-			//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
-			//if err = r.syncResourceQuota(ctx, namespace.Name); err != nil {
-			//	r.Logger.Error(err, "sync resource quota failed", "namespace", namespace.Name)
-			//}
-			r.Logger.Error(fmt.Errorf("resources quota is empty"), "", "namespace", namespace.Name)
-		}
+		//if _, ok := namespace.GetAnnotations()[v1.UserAnnotationOwnerKey]; ok {
+		//	r.Logger.Error(fmt.Errorf("resources quota is empty"), "", "namespace", namespace.Name)
+		//}
 		rs[corev1.ResourceStorage].detail = "no resource quota"
 	} else {
+		hasStorageQuota = true
 		rs[corev1.ResourceStorage].Add(*quota.Status.Used.Name("requests.storage", resource.BinarySI))
 	}
 	for _, pod := range podList.Items {
@@ -300,54 +307,81 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient datab
 			} else {
 				rs[corev1.ResourceMemory].Add(container.Resources.Requests[corev1.ResourceMemory])
 			}
+			// gpu only use limit
+			if gpuRequest, ok := container.Resources.Limits[gpu.NvidiaGpuKey]; ok {
+				gpuModel, ok := r.NvidiaGpu[pod.Spec.NodeName]
+				if !ok {
+					var err error
+					r.NvidiaGpu, err = gpu.GetNodeGpuModel(r.Client)
+					if err != nil {
+						logger.Error(err, "get node gpu model failed")
+						continue
+					}
+					gpuModel, ok = r.NvidiaGpu[pod.Spec.NodeName]
+					if !ok {
+						logger.Error(fmt.Errorf("node %s not found gpu model", pod.Spec.NodeName), "")
+						continue
+					}
+				}
+				if _, ok := rs[common.NewGpuResource(gpuModel.GpuInfo.GpuProduct)]; !ok {
+					rs[common.NewGpuResource(gpuModel.GpuInfo.GpuProduct)] = initGpuResources()
+				}
+				logger.Info("gpu request", "pod", pod.Name, "namespace", pod.Namespace, "gpu req", gpuRequest.String(), "node", pod.Spec.NodeName, "gpu model", gpuModel.GpuInfo.GpuProduct)
+				rs[common.NewGpuResource(gpuModel.GpuInfo.GpuProduct)].Add(gpuRequest)
+			}
 		}
 	}
-	cpuValue, memoryValue, storageValue := getResourceValue(corev1.ResourceCPU, rs), getResourceValue(corev1.ResourceMemory, rs), getResourceValue(corev1.ResourceStorage, rs)
+	if !hasStorageQuota {
+		pvcList := corev1.PersistentVolumeClaimList{}
+		if err := r.List(context.Background(), &pvcList, &client.ListOptions{Namespace: namespace.Name}); err != nil {
+			return err
+		}
+		for _, pvc := range pvcList.Items {
+			if pvc.Status.Phase != corev1.ClaimBound {
+				continue
+			}
+			rs[corev1.ResourceStorage].Add(pvc.Spec.Resources.Requests[corev1.ResourceStorage])
+		}
+	}
 	var monitors []*common.Monitor
-	if cpuValue > 0 {
-		monitors = append(monitors, &common.Monitor{
-			Category: namespace.Name,
-			Property: corev1.ResourceCPU.String(),
-			Value:    cpuValue,
-			Time:     timeStamp,
-			Detail:   rs[corev1.ResourceCPU].String(),
-		})
-	}
-	if memoryValue > 0 {
-		monitors = append(monitors, &common.Monitor{
-			Category: namespace.Name,
-			Property: corev1.ResourceMemory.String(),
-			Value:    memoryValue,
-			Time:     timeStamp,
-			Detail:   rs[corev1.ResourceMemory].String(),
-		})
-	}
-	if storageValue > 0 {
-		monitors = append(monitors, &common.Monitor{
-			Category: namespace.Name,
-			Property: corev1.ResourceStorage.String(),
-			Value:    storageValue,
-			Time:     timeStamp,
-			Detail:   rs[corev1.ResourceStorage].String(),
-		})
+	for resour, value := range rs {
+		v := getResourceValue(resour, rs)
+		if v > 0 {
+			monitors = append(monitors, &common.Monitor{
+				Category: namespace.Name,
+				Property: resour.String(),
+				Value:    v,
+				Time:     timeStamp,
+				Detail:   value.detail,
+			})
+		}
 	}
 	return dbClient.InsertMonitor(ctx, monitors...)
 }
 
 func getResourceValue(resourceName corev1.ResourceName, res map[corev1.ResourceName]*quantity) int64 {
 	quantity := res[resourceName]
+	priceUnit := common.PricesUnit[resourceName]
+	if strings.Contains(resourceName.String(), "gpu") {
+		priceUnit = common.PricesUnit[common.ResourceGPU]
+	}
 	if quantity != nil && quantity.MilliValue() != 0 {
-		return int64(math.Ceil(float64(quantity.MilliValue()) / float64(common.PricesUnit[resourceName].MilliValue())))
+		return int64(math.Ceil(float64(quantity.MilliValue()) / float64(priceUnit.MilliValue())))
 	}
 	return 0
 }
 
 func initResources() (rs map[corev1.ResourceName]*quantity) {
 	rs = make(map[corev1.ResourceName]*quantity)
+	rs[common.ResourceGPU] = initGpuResources()
 	rs[corev1.ResourceCPU] = &quantity{Quantity: resource.NewQuantity(0, resource.DecimalSI), detail: ""}
 	rs[corev1.ResourceMemory] = &quantity{Quantity: resource.NewQuantity(0, resource.BinarySI), detail: ""}
 	rs[corev1.ResourceStorage] = &quantity{Quantity: resource.NewQuantity(0, resource.BinarySI), detail: ""}
 	return
+}
+
+func initGpuResources() *quantity {
+	return &quantity{Quantity: resource.NewQuantity(0, resource.DecimalSI), detail: ""}
 }
 
 func (r *MonitorReconciler) infraResourceUsage(ctx context.Context, dbClient database.Interface, namespace *corev1.Namespace) error {

@@ -100,6 +100,10 @@ verify_downloader() {
 
 get_release_version() {
     VERSION=$1
+    # If the incoming version number is latest, get the latest version number from github
+    if [ "$VERSION" = "latest" ]; then
+        VERSION=$(curl -s https://api.github.com/repos/${OWN_REPO}/releases/latest | grep tag_name | cut -d '"' -f 4)
+    fi
     info "Using ${VERSION} as release"
     OWN_REPO=$2
     if [ -z "$OWN_REPO" ]; then

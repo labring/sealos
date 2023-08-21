@@ -60,7 +60,9 @@ endif
 
 # Linux command settings
 CODE_DIRS := $(ROOT_DIR)/pkg $(ROOT_DIR)/cmd $(ROOT_DIR)/test $(ROOT_DIR)/staging
+CONTROLLERS_DIR := $(ROOT_DIR)/controllers
 FIND := find $(CODE_DIRS)
+FIND_CONTROLLERS := find $(CONTROLLERS_DIR)
 
 # verbose settings
 ifndef V

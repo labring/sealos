@@ -13,6 +13,13 @@ metadata:
 data:
   config.yaml: |-
     addr: :3000
+  form_slider_config.json: |-
+    {
+      "NoGpu": {
+        "cpu": [100, 200, 500, 1000, 2000, 3000, 4000, 8000],
+        "memory": [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+      }
+    }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -38,6 +45,8 @@ spec:
         - env:
             - name: SEALOS_DOMAIN
               value: {{ .cloudDomain }}
+            - name: DOMAIN_PORT
+              value: "{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
             - name: INGRESS_SECRET
               value: {{ .ingressSecret }}
             - name: FASTGPT_KEY
@@ -63,6 +72,9 @@ spec:
             - name: applaunchpad-frontend-volume
               mountPath: /config.yaml
               subPath: config.yaml
+            - mountPath: /app/data/form_slider_config.json
+              name: applaunchpad-frontend-volume
+              subPath: form_slider_config.json
       volumes:
         - name: applaunchpad-frontend-volume
           configMap:

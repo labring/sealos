@@ -1,0 +1,82 @@
+name: Deploy Sealos Docs Site
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "docs/**"
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+env:
+  BUILD_PATH: "./docs/website"
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Copy Files and Directories
+        run: |
+          mkdir -p ${{ env.BUILD_PATH }}/i18n/zh-Hans/docusaurus-plugin-content-docs/
+          cp -r docs/4.0/i18n/zh-Hans/ ${{ env.BUILD_PATH }}/i18n/zh-Hans/docusaurus-plugin-content-docs/current/
+          cp docs/4.0/i18n/zh-Hans/current.json  ${{ env.BUILD_PATH }}/i18n/zh-Hans/docusaurus-plugin-content-docs/current.json
+          cp docs/4.0/code.json  ${{ env.BUILD_PATH }}/i18n/zh-Hans/code.json
+
+      - name: Detect package manager
+        id: detect-package-manager
+        run: |
+          if [ -f "${{ env.BUILD_PATH }}/yarn.lock" ]; then
+            echo "manager=yarn" >> $GITHUB_OUTPUT
+            echo "command=install" >> $GITHUB_OUTPUT
+            echo "runner=yarn" >> $GITHUB_OUTPUT
+            exit 0
+          elif [ -f "${{ env.BUILD_PATH }}/package.json" ]; then
+            echo "manager=npm" >> $GITHUB_OUTPUT
+            echo "command=ci" >> $GITHUB_OUTPUT
+            echo "runner=npx --no-install" >> $GITHUB_OUTPUT
+            exit 0
+          else
+            echo "Unable to determine package manager"
+            exit 1
+          fi
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: ${{ steps.detect-package-manager.outputs.manager }}
+          cache-dependency-path: ${{ env.BUILD_PATH }}/yarn.lock
+      - name: Install dependencies
+        run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
+        working-directory: ${{ env.BUILD_PATH }}
+      - name: Build with Docusaurus
+        run: ${{ steps.detect-package-manager.outputs.runner }} run build 
+        working-directory: ${{ env.BUILD_PATH }}
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: ${{ env.BUILD_PATH }}/build
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
+    runs-on: ubuntu-latest
+    name: Deploy
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2

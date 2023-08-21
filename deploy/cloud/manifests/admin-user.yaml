@@ -1,0 +1,9 @@
+apiVersion: user.sealos.io/v1
+kind: User
+metadata:
+  name: admin
+  labels:
+    uid: "e03cf80b-3d7b-4b69-8b3c-c2e42f11ee4f"
+    updateTime: "20230101T000000Z"
+spec:
+  csrExpirationSeconds: 7200

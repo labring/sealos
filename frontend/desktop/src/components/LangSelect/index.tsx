@@ -1,6 +1,6 @@
 import { setCookie } from '@/utils/cookieUtils';
-import { Box, Button, Stack, UseDisclosureProps } from '@chakra-ui/react';
-import { I18n, useTranslation } from 'next-i18next';
+import { Box, Button, Stack, UseDisclosureReturn } from '@chakra-ui/react';
+import { I18n } from 'next-i18next';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { masterApp } from 'sealos-desktop-sdk/master';
 
@@ -8,7 +8,7 @@ const LANG_LIST = [
   { value: 'en', label: 'English' },
   { value: 'zh', label: '中文' }
 ];
-function LangSelect({ disclosure, i18n }: { disclosure: UseDisclosureProps; i18n: I18n | null }) {
+function LangSelect({ disclosure, i18n }: { disclosure: UseDisclosureReturn; i18n: I18n | null }) {
   // const { i18n, ready } = useTranslation();
 
   return disclosure.isOpen ? (

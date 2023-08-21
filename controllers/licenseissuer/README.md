@@ -1,5 +1,14 @@
 # licenseissuer-controller
-// TODO(user): Add simple overview of use/purpose
+
+LicenseIssuer is a Operator that authorizes the use of a license for a given user.
+
+In this module, there are three binaries in total, which are launcher, preset, and manager. 
+
+Launcher is a starter responsible for launching preset and manager. 
+
+Preset is an idempotent binary program responsible for registering the root user in the database, and the root user has a certain amount of free quota. 
+
+Manager is used to create license resources and activate the license injected into the cluster.
 
 ## Description
 // TODO(user): An in-depth paragraph about your project and overview of use

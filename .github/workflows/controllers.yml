@@ -34,6 +34,8 @@ env:
   # Common versions
   GO_VERSION: "1.20"
   DEFAULT_OWNER: "labring"
+  CRYPTOKEY: ${{ secrets.CONTROLLER_BUILD_CRYPTOKEY }}
+  LICENSE_KEY: ${{ secrets.LICENSE_KEY }}
 jobs:
   resolve-modules:
     runs-on: ubuntu-20.04
@@ -87,6 +89,8 @@ jobs:
           - { name: resources, path: resources }
           - { name: resources-metering, path: resources/metering }
           - { name: licenseissuer, path: licenseissuer }
+          - { name: node, path: node }
+          - { name: admission, path: admission }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -191,6 +195,8 @@ jobs:
           - { name: resources, path: resources }
           - { name: resources-metering, path: resources/metering }
           - { name: licenseissuer, path: licenseissuer }
+          - { name: node, path: node }
+          - { name: admission, path: admission }
     steps:
       - name: Checkout
         uses: actions/checkout@v3

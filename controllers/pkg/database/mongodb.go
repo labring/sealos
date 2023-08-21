@@ -1,10 +1,23 @@
+// Copyright © 2023 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package database
 
 import (
 	"context"
 	"fmt"
 	"math"
-	"strings"
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/crypto"
@@ -34,7 +47,9 @@ const (
 	MongoPassword = "MONGO_PASSWORD"
 )
 
-var cryptoKey = []byte("Af0b2Bc5e9d0C84adF0A5887cF43aB63")
+const defaultCryptoKey = "Af0b2Bc5e9d0C84adF0A5887cF43aB63"
+
+var cryptoKey = defaultCryptoKey
 
 type MongoDB struct {
 	URL          string
@@ -193,11 +208,11 @@ func (m *MongoDB) GetAllPricesMap() (map[string]common.Price, error) {
 	}
 	var pricesMap = make(map[string]common.Price, len(prices))
 	for i := range prices {
-		price, err := crypto.DecryptInt64WithKey(prices[i].Price, cryptoKey)
+		price, err := crypto.DecryptInt64WithKey(prices[i].Price, []byte(cryptoKey))
 		if err != nil {
 			return nil, fmt.Errorf("decrypt price error: %v", err)
 		}
-		pricesMap[strings.ToLower(prices[i].Property)] = common.Price{
+		pricesMap[prices[i].Property] = common.Price{
 			Price:    price,
 			Detail:   prices[i].Detail,
 			Property: prices[i].Property,
@@ -346,6 +361,8 @@ func (m *MongoDB) queryBillingRecordsByOrderID(billingRecordQuery *accountv1.Bil
 	}
 
 	billingRecordQuery.Status.Items = billingRecords
+	billingRecordQuery.Status.PageLength = 1
+	billingRecordQuery.Status.TotalCount = len(billingRecords)
 	return nil
 }
 
@@ -390,6 +407,10 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 
 	pipelineAll := bson.A{
 		matchStage,
+		bson.D{primitive.E{Key: "$group", Value: bson.D{
+			primitive.E{Key: "_id", Value: nil},
+			primitive.E{Key: "result", Value: bson.D{primitive.E{Key: "$sum", Value: 1}}},
+		}}},
 	}
 
 	pipelineCountAndAmount := bson.A{
@@ -455,8 +476,16 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	if err != nil {
 		return fmt.Errorf("failed to execute aggregate all query: %w", err)
 	}
-	totalCount = cursorAll.RemainingBatchLength()
-	cursorAll.Close(ctx)
+	defer cursorAll.Close(ctx)
+	for cursorAll.Next(ctx) {
+		var result struct {
+			Result int64 `bson:"result"`
+		}
+		if err := cursorAll.Decode(&result); err != nil {
+			return fmt.Errorf("failed to decode query count record: %w", err)
+		}
+		totalCount = int(result.Result)
+	}
 
 	// 消费总金额Costs Executing the second pipeline for getting the total count, recharge and deduction amount
 	cursorCountAndAmount, err := billingColl.Aggregate(ctx, pipelineCountAndAmount)
@@ -503,8 +532,12 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	}
 
 	totalPages := (totalCount + billingRecordQuery.Spec.PageSize - 1) / billingRecordQuery.Spec.PageSize
-	billingRecordQuery.Status.Items, billingRecordQuery.Status.PageLength,
-		billingRecordQuery.Status.RechargeAmount, billingRecordQuery.Status.DeductionAmount = billingRecords, totalPages, totalRechargeAmount, totalDeductionAmount
+	if totalCount == 0 {
+		totalPages = 1
+		totalCount = len(billingRecords)
+	}
+	billingRecordQuery.Status.Items, billingRecordQuery.Status.PageLength, billingRecordQuery.Status.TotalCount,
+		billingRecordQuery.Status.RechargeAmount, billingRecordQuery.Status.DeductionAmount = billingRecords, totalPages, totalCount, totalRechargeAmount, totalDeductionAmount
 	return nil
 }
 

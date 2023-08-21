@@ -145,7 +145,7 @@ func newOptionFromSSH(ssh *v2.SSH, isStdout bool) *Option {
 	if len(ssh.PkData) > 0 {
 		opts = append(opts, WithRawPrivateKeyDataAndPhrase(ssh.PkData, ssh.PkPasswd))
 	}
-	if ssh.User != defaultUsername {
+	if ssh.User != "" && ssh.User != defaultUsername {
 		opts = append(opts, WithSudoEnable(true))
 	}
 
@@ -168,15 +168,14 @@ func NewSSHClient(ssh *v2.SSH, isStdout bool) Interface {
 	return client
 }
 
-func NewSSHByCluster(cluster *v2.Cluster, isStdout bool) (Interface, error) {
+func NewSSHByCluster(cluster *v2.Cluster, isStdout bool) Interface {
 	cc := &clusterClient{
 		cluster:  cluster,
 		isStdout: isStdout,
 		configs:  make(map[string]*Option),
 		cache:    make(map[*Option]Interface),
 	}
-
-	return cc, nil
+	return cc
 }
 
 func WaitSSHReady(client Interface, _ int, hosts ...string) error {

@@ -24,11 +24,16 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+
+	"github.com/labring/sealos/controllers/pkg/common"
+
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 
 	"github.com/labring/sealos/controllers/pkg/crypto"
 
@@ -53,26 +58,25 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/labring/sealos/pkg/pay"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	"github.com/labring/sealos/pkg/pay"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	ACCOUNTNAMESPACEENV         = "ACCOUNT_NAMESPACE"
-	DEFAULTACCOUNTNAMESPACE     = "sealos-system"
-	AccountAnnotationNewAccount = "account.sealos.io/new-account"
-	NEWACCOUNTAMOUNTENV         = "NEW_ACCOUNT_AMOUNT"
-	RECHARGEGIFT                = "recharge-gift"
-	SEALOS                      = "sealos"
+	ACCOUNTNAMESPACEENV          = "ACCOUNT_NAMESPACE"
+	DEFAULTACCOUNTNAMESPACE      = "sealos-system"
+	AccountAnnotationNewAccount  = "account.sealos.io/new-account"
+	AccountAnnotationIgnoreQuota = "account.sealos.io/ignore-quota"
+	NEWACCOUNTAMOUNTENV          = "NEW_ACCOUNT_AMOUNT"
+	RECHARGEGIFT                 = "recharge-gift"
+	SEALOS                       = "sealos"
+	DefaultInitialBalance        = 5_000_000
 )
 
-// AccountReconciler reconciles a Account object
+// AccountReconciler reconciles an Account object
 type AccountReconciler struct {
 	client.Client
 	Scheme                 *runtime.Scheme
@@ -84,6 +88,8 @@ type AccountReconciler struct {
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=limitranges,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=user.sealos.io,resources=users,verbs=get;list;watch
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances/status,verbs=get;list;watch;create;update;patch;delete
@@ -127,7 +133,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if payment.Status.TradeNO == "" {
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Millisecond * 300}, nil
 	}
-	if payment.Status.Status == pay.StatusSuccess {
+	if payment.Status.Status == pay.PaymentSuccess {
 		return ctrl.Result{}, nil
 	}
 
@@ -136,13 +142,20 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, fmt.Errorf("get account failed: %v", err)
 	}
 
-	orderResp, err := pay.QueryOrder(payment.Status.TradeNO)
+	// get payment handler
+	payHandler, err := pay.NewPayHandler(payment.Spec.PaymentMethod)
+	if err != nil {
+		r.Logger.Error(err, "get payment handler failed")
+		return ctrl.Result{}, err
+	}
+	// get payment details(status, amount)
+	status, orderAmount, err := payHandler.GetPaymentDetails(payment.Status.TradeNO)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("query order failed: %v", err)
 	}
-	r.Logger.V(1).Info("query order status", "orderResp", orderResp)
-	switch *orderResp.TradeState {
-	case pay.StatusSuccess:
+	r.Logger.V(1).Info("query order details", "orderStatus", status, "orderAmount", orderAmount)
+	switch status {
+	case pay.PaymentSuccess:
 		dbCtx := context.Background()
 		dbClient, err := database.NewMongoDB(dbCtx, r.MongoDBURI)
 		if err != nil {
@@ -157,7 +170,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}()
 		now := time.Now().UTC()
 		//1¥ = 100WechatPayAmount; 1 WechatPayAmount = 10000 SealosAmount
-		payAmount := *orderResp.Amount.Total * 10000
+		payAmount := orderAmount * 10000
 		// get recharge-gift configmap
 		configMap := &corev1.ConfigMap{}
 		if err := r.Client.Get(ctx, types.NamespacedName{Name: RECHARGEGIFT, Namespace: SEALOS}, configMap); err != nil {
@@ -174,7 +187,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if err := r.updateAccountStatus(ctx, account); err != nil {
 			return ctrl.Result{}, fmt.Errorf("update account failed: %v", err)
 		}
-		payment.Status.Status = pay.StatusSuccess
+		payment.Status.Status = string(pay.PaymentSuccess)
 		if err := r.Status().Update(ctx, payment); err != nil {
 			return ctrl.Result{}, fmt.Errorf("update payment failed: %v", err)
 		}
@@ -196,15 +209,15 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			r.Logger.Error(err, "save billings failed", "id", id, "payment", payment)
 			return ctrl.Result{}, nil
 		}
-	case pay.StatusProcessing, pay.StatusNotPay:
+	case pay.PaymentProcessing, pay.PaymentNotPaid:
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, nil
-	case pay.StatusFail:
+	case pay.PaymentFailed, pay.PaymentExpired:
 		if err := r.Delete(ctx, payment); err != nil {
 			return ctrl.Result{}, fmt.Errorf("delete payment failed: %v", err)
 		}
 		return ctrl.Result{}, nil
 	default:
-		return ctrl.Result{}, fmt.Errorf("unknown orderResp: %v", orderResp)
+		return ctrl.Result{}, fmt.Errorf("unknown status: %v", err)
 	}
 
 	return ctrl.Result{}, nil
@@ -218,6 +231,9 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &account, func() error {
+		if account.Annotations == nil {
+			account.Annotations = make(map[string]string)
+		}
 		return nil
 	}); err != nil {
 		return nil, err
@@ -230,6 +246,11 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	if err != nil {
 		return nil, fmt.Errorf("sync init balance failed: %v", err)
 	}
+	if account.GetAnnotations()[AccountAnnotationIgnoreQuota] != "true" {
+		if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
+			return nil, fmt.Errorf("sync resource resourceQuota and limitRange failed: %v", err)
+		}
+	}
 	// add account balance when account is new user
 	stringAmount := os.Getenv(NEWACCOUNTAMOUNTENV)
 	if stringAmount == "" {
@@ -237,19 +258,19 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		return &account, nil
 	}
 
-	if newAccountFlag := account.Annotations[AccountAnnotationNewAccount]; newAccountFlag == "false" {
-		r.Logger.V(1).Info("account is not a new user ", "account", account)
+	if account.Annotations[AccountAnnotationNewAccount] == "false" {
+		//r.Logger.V(1).Info("account is not a new user ", "account", account)
 		return &account, nil
 	}
 
-	// should set bonus amount that will give some money to new account
-	amount, err := strconv.Atoi(stringAmount)
+	amount, err := crypto.DecryptInt64(stringAmount)
 	if err != nil {
-		return nil, fmt.Errorf("convert %s to int failed: %v", stringAmount, err)
+		r.Logger.Error(err, "decrypt amount failed", "amount", stringAmount)
+		amount = DefaultInitialBalance
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &account, func() error {
 		if account.Annotations == nil {
-			account.Annotations = make(map[string]string, 0)
+			account.Annotations = make(map[string]string)
 		}
 		account.Annotations[AccountAnnotationNewAccount] = "false"
 		return nil
@@ -260,7 +281,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	if err != nil {
 		return nil, fmt.Errorf("sync init balance failed: %v", err)
 	}
-	err = crypto.RechargeBalance(account.Status.EncryptBalance, int64(amount))
+	err = crypto.RechargeBalance(account.Status.EncryptBalance, amount)
 	if err != nil {
 		return nil, fmt.Errorf("recharge balance failed: %v", err)
 	}
@@ -269,29 +290,23 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	}
 	r.Logger.Info("account created,will charge new account some money", "account", account, "stringAmount", stringAmount)
 
-	if err := r.syncResourceQuota(ctx, userNamespace); err != nil {
-		return nil, fmt.Errorf("sync resource quota failed: %v", err)
-	}
 	return &account, nil
 }
 
-func (r *AccountReconciler) syncResourceQuota(ctx context.Context, nsName string) error {
-	quota := &corev1.ResourceQuota{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      ResourceQuotaPrefix + nsName,
-			Namespace: nsName,
-		},
-	}
-
-	return retry.Retry(10, 1*time.Second, func() error {
-		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
-			quota.Spec.Hard = DefaultResourceQuota()
-			return nil
-		}); err != nil {
-			return fmt.Errorf("sync resource quota failed: %v", err)
+func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, nsName string) error {
+	objs := []client.Object{client.Object(common.GetDefaultLimitRange(nsName, nsName)), client.Object(common.GetDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName))}
+	for i := range objs {
+		err := retry.Retry(10, 1*time.Second, func() error {
+			_, err := controllerutil.CreateOrUpdate(ctx, r.Client, objs[i], func() error {
+				return nil
+			})
+			return err
+		})
+		if err != nil {
+			return fmt.Errorf("sync resource %T failed: %v", objs[i], err)
 		}
-		return nil
-	})
+	}
+	return nil
 }
 
 func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, namespace string) error {
@@ -355,9 +370,28 @@ func (r *AccountReconciler) DeletePayment(ctx context.Context) error {
 		return err
 	}
 	for _, payment := range payments.Items {
+		//get payment handler
+		payHandler, err := pay.NewPayHandler(payment.Spec.PaymentMethod)
+		if err != nil {
+			r.Logger.Error(err, "get payment handler failed")
+			return err
+		}
+		//delete payment if it is exist for more than 5 minutes
 		if time.Since(payment.CreationTimestamp.Time) > time.Minute*5 {
-			err = r.Delete(ctx, &payment)
-			if err != nil {
+			if payment.Status.TradeNO != "" {
+				status, amount, err := payHandler.GetPaymentDetails(payment.Status.TradeNO)
+				if err != nil {
+					r.Logger.Error(err, "get payment details failed")
+				}
+				if status == pay.StatusSuccess {
+					r.Logger.Info("payment success, post delete payment cr", "payment", payment, "amount", amount)
+				}
+				// expire session
+				if err = payHandler.ExpireSession(payment.Status.TradeNO); err != nil {
+					r.Logger.Error(err, "cancel payment failed")
+				}
+			}
+			if err := r.Delete(ctx, &payment); err != nil {
 				return err
 			}
 		}
@@ -478,10 +512,9 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		return fmt.Errorf("mongo url is empty")
 	}
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&accountv1.Account{}).
+		For(&userV1.User{}, builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}))).
 		Watches(&source.Kind{Type: &accountv1.Payment{}}, &handler.EnqueueRequestForObject{}).
 		Watches(&source.Kind{Type: &accountv1.AccountBalance{}}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(&NamespaceFilterPredicate{Namespace: r.AccountSystemNamespace})).
-		Watches(&source.Kind{Type: &userV1.User{}}, &handler.EnqueueRequestForObject{}).
 		WithOptions(rateOpts).
 		Complete(r)
 }

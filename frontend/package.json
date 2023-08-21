@@ -4,7 +4,13 @@
   "version": "0.1.0",
   "scripts": {
     "format": "prettier --config .prettierrc.js --write **/src/**/*.ts **/src/**/*.tsx **/src/**/*.scss **/tsconfig.*json **/*config.js **/*config.json",
-    "preinstall": "npx only-allow pnpm"
+    "preinstall": "npx only-allow pnpm",
+    "dev-desktop": "pnpm -r --filter ./desktop run dev",
+    "dev-app": "pnpm -r --filter ./providers/applaunchpad  run dev",
+    "dev-db": "pnpm -r --filter ./providers/dbprovider  run dev",
+    "dev-cost": "pnpm -r --filter ./providers/costcenter  run dev",
+    "dev-terminal": "pnpm -r --filter ./providers/terminal  run dev",
+    "dev-template": "pnpm -r --filter ./providers/template  run dev"
   },
   "workspaces": [
     "./packages/*",
@@ -12,7 +18,8 @@
     "./desktop"
   ],
   "devDependencies": {
-    "prettier": "^2.8.8"
+    "prettier": "^2.8.8",
+    "react-i18next": "^12.3.1"
   },
   "dependencies": {
     "typescript": "^5.1.6"

@@ -1,0 +1,1314 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: account-system
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: accountbalances.account.sealos.io
+spec:
+  group: account.sealos.io
+  names:
+    kind: AccountBalance
+    listKind: AccountBalanceList
+    plural: accountbalances
+    singular: accountbalance
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.amount
+      name: Amount
+      type: integer
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: AccountBalance is the Schema for the accountbalances API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AccountBalanceSpec defines the desired state of AccountBalance
+            properties:
+              amount:
+                description: TODO will delete field in future Timestamp int64 `json:"timestamp,omitempty"`
+                format: int64
+                type: integer
+              costs:
+                additionalProperties:
+                  format: int64
+                  type: integer
+                type: object
+              details:
+                type: string
+              order_id:
+                type: string
+              owner:
+                type: string
+              time:
+                format: date-time
+                type: string
+              type:
+                type: integer
+            required:
+            - order_id
+            - owner
+            - time
+            - type
+            type: object
+          status:
+            description: AccountBalanceStatus defines the observed state of AccountBalance
+            properties:
+              billingStatus:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: accounts.account.sealos.io
+spec:
+  group: account.sealos.io
+  names:
+    kind: Account
+    listKind: AccountList
+    plural: accounts
+    singular: account
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Account is the Schema for the accounts API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AccountSpec defines the desired state of Account
+            type: object
+          status:
+            description: AccountStatus defines the observed state of Account
+            properties:
+              balance:
+                description: Recharge amount
+                format: int64
+                type: integer
+              chargeList:
+                description: delete in the future
+                items:
+                  properties:
+                    accountBalanceName:
+                      type: string
+                    balance:
+                      format: int64
+                      type: integer
+                    deductionAmount:
+                      description: deduction info will Record in the Charge
+                      format: int64
+                      type: integer
+                    describe:
+                      type: string
+                    status:
+                      type: string
+                    time:
+                      format: date-time
+                      type: string
+                    tradeNO:
+                      type: string
+                  type: object
+                type: array
+              deductionBalance:
+                description: Deduction amount
+                format: int64
+                type: integer
+              encryptBalance:
+                description: EncryptBalance is to encrypt balance
+                type: string
+              encryptDeductionBalance:
+                description: EncryptDeductionBalance is to encrypt DeductionBalance
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: billingrecordqueries.account.sealos.io
+spec:
+  group: account.sealos.io
+  names:
+    kind: BillingRecordQuery
+    listKind: BillingRecordQueryList
+    plural: billingrecordqueries
+    singular: billingrecordquery
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: BillingRecordQuery is the Schema for the billingrecordqueries
+          API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: BillingRecordQuerySpec defines the desired state of BillingRecordQuery
+            properties:
+              endTime:
+                format: date-time
+                type: string
+              orderID:
+                type: string
+              page:
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "make" to regenerate code after modifying this file'
+                type: integer
+              pageSize:
+                type: integer
+              startTime:
+                format: date-time
+                type: string
+              type:
+                type: integer
+            required:
+            - endTime
+            - page
+            - pageSize
+            - startTime
+            - type
+            type: object
+          status:
+            description: BillingRecordQueryStatus defines the observed state of BillingRecordQuery
+            properties:
+              deductionAmount:
+                additionalProperties:
+                  format: int64
+                  type: integer
+                type: object
+              item:
+                items:
+                  description: AccountBalanceSpec defines the desired state of AccountBalance
+                  properties:
+                    amount:
+                      description: TODO will delete field in future Timestamp int64
+                        `json:"timestamp,omitempty"`
+                      format: int64
+                      type: integer
+                    costs:
+                      additionalProperties:
+                        format: int64
+                        type: integer
+                      type: object
+                    details:
+                      type: string
+                    order_id:
+                      type: string
+                    owner:
+                      type: string
+                    time:
+                      format: date-time
+                      type: string
+                    type:
+                      type: integer
+                  required:
+                  - order_id
+                  - owner
+                  - time
+                  - type
+                  type: object
+                type: array
+              pageLength:
+                type: integer
+              rechargeAmount:
+                format: int64
+                type: integer
+              totalCount:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
+                type: integer
+            required:
+            - pageLength
+            - rechargeAmount
+            - totalCount
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: account-system/account-serving-cert
+    controller-gen.kubebuilder.io/version: v0.8.0
+  name: debts.account.sealos.io
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: account-webhook-service
+          namespace: account-system
+          path: /convert
+      conversionReviewVersions:
+      - v1
+  group: account.sealos.io
+  names:
+    kind: Debt
+    listKind: DebtList
+    plural: debts
+    singular: debt
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.status
+      name: status
+      type: string
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: Debt is the Schema for the debts API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DebtSpec defines the desired state of Debt
+            properties:
+              userName:
+                type: string
+            type: object
+          status:
+            description: DebtStatus defines the observed state of Debt
+            properties:
+              lastUpdateTimestamp:
+                format: int64
+                type: integer
+              status:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: payments.account.sealos.io
+spec:
+  group: account.sealos.io
+  names:
+    kind: Payment
+    listKind: PaymentList
+    plural: payments
+    singular: payment
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Payment is the Schema for the payments API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: PaymentSpec defines the desired state of Payment
+            properties:
+              amount:
+                description: Amount is the amount of recharge
+                format: int64
+                type: integer
+              paymentMethod:
+                default: wechat
+                description: e.g. wechat, alipay, creditcard, etc.
+                type: string
+              userID:
+                description: UserID is the user id who want to recharge
+                type: string
+            type: object
+          status:
+            description: PaymentStatus defines the observed state of Payment
+            properties:
+              codeURL:
+                description: CodeURL is the codeURL of wechatpay
+                type: string
+              status:
+                description: Status is the status of wechatpay, charging, closed,
+                  timeout
+                type: string
+              tradeNO:
+                description: TradeNO is the tradeNO of wechatpay
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: pricequeries.account.sealos.io
+spec:
+  group: account.sealos.io
+  names:
+    kind: PriceQuery
+    listKind: PriceQueryList
+    plural: pricequeries
+    singular: pricequery
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: PriceQuery is the Schema for the pricequeries API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: PriceQuerySpec defines the desired state of PriceQuery
+            type: object
+          status:
+            description: PriceQueryStatus defines the observed state of PriceQuery
+            properties:
+              billingRecords:
+                items:
+                  properties:
+                    discountType:
+                      type: string
+                    price:
+                      format: int64
+                      type: integer
+                    resourceType:
+                      type: string
+                  required:
+                  - price
+                  - resourceType
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: transfers.account.sealos.io
+spec:
+  group: account.sealos.io
+  names:
+    kind: Transfer
+    listKind: TransferList
+    plural: transfers
+    singular: transfer
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Transfer is the Schema for the transfers API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: TransferSpec defines the desired state of Transfer
+            properties:
+              amount:
+                format: int64
+                minimum: 1000000
+                type: integer
+              from:
+                type: string
+              to:
+                type: string
+            required:
+            - amount
+            - to
+            type: object
+          status:
+            description: TransferStatus defines the observed state of Transfer
+            properties:
+              progress:
+                type: integer
+              reason:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: account-controller-manager
+  namespace: account-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: account-leader-election-role
+  namespace: account-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: account-manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - accountbalances
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - accountbalances/status
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - accounts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - accounts/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - accounts/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - billingrecordqueries
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - billingrecordqueries/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - billingrecordqueries/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - debts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - debts/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - debts/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - payments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - payments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - payments/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - pricequeries
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - pricequeries/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - pricequeries/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - transfers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - transfers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - transfers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - limitranges
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - namespaces/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - pods/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - resourcequotas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.common.sealos.io
+  resources:
+  - extensionresourceprices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - notification.sealos.io
+  resources:
+  - notifications
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - users
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: account-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: account-proxy-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: account-leader-election-rolebinding
+  namespace: account-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: account-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: account-controller-manager
+  namespace: account-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: account-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: account-manager-role
+subjects:
+- kind: ServiceAccount
+  name: account-controller-manager
+  namespace: account-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: account-proxy-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: account-proxy-role
+subjects:
+- kind: ServiceAccount
+  name: account-controller-manager
+  namespace: account-system
+---
+apiVersion: v1
+data:
+  controller_manager_config.yaml: |
+    apiVersion: controller-runtime.sigs.k8s.io/v1alpha1
+    kind: ControllerManagerConfig
+    health:
+      healthProbeBindAddress: :8081
+    metrics:
+      bindAddress: 127.0.0.1:8080
+    webhook:
+      port: 9443
+    leaderElection:
+      leaderElect: true
+      resourceName: a63686c3.sealos.io
+kind: ConfigMap
+metadata:
+  name: account-manager-config
+  namespace: account-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: account-controller-manager-metrics-service
+  namespace: account-system
+spec:
+  ports:
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: https
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: account-webhook-service
+  namespace: account-system
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: account-controller-manager
+  namespace: account-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - args:
+        - --health-probe-bind-address=:8081
+        - --metrics-bind-address=127.0.0.1:8080
+        - --leader-elect
+        command:
+        - /manager
+        env:
+        - name: DOMAIN
+          value: {{ .cloudDomain }}
+        - name: PORT
+          value: "{{ .cloudPort }}"
+        - name: ACCOUNT_NAMESPACE
+          value: sealos-system
+        - name: NAMESPACE_NAME
+          value: user-system
+        - name: NEW_ACCOUNT_AMOUNT
+          value: "ri79LzQiQrs6CVa1ctE308+AseBXbOua0RIMCXAH5hc3irs="
+        - name: WHITELIST
+          value: notifications.Notification.notification.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1
+        - name: ACCOUNT_SYSTEM_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              key: MONGO_URI
+              name: mongo-secret
+        - name: ApproachingDeletionPeriod
+          value: "345600"
+        - name: ImminentDeletionPeriod
+          value: "259200"
+        - name: FinalDeletionPeriod
+          value: "604800"
+        - name: DebtDetectionCycleSeconds
+          value: "30"
+        envFrom:
+        - secretRef:
+            name: payment-secret
+            optional: true
+        image: ghcr.io/labring/sealos-account-controller:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 1024Mi
+          requests:
+            cpu: 100m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=0
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.11.0
+        imagePullPolicy: IfNotPresent
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: account-controller-manager
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: account-serving-cert
+  namespace: account-system
+spec:
+  dnsNames:
+  - account-webhook-service.account-system.svc
+  - account-webhook-service.account-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: account-selfsigned-issuer
+  secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: account-selfsigned-issuer
+  namespace: account-system
+spec:
+  selfSigned: {}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: account-system/account-serving-cert
+  name: account-mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: account-webhook-service
+      namespace: account-system
+      path: /validate-v1-sealos-cloud
+  failurePolicy: Ignore
+  name: debt.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: metadata.name
+        operator: NotIn
+        values:
+          - account-system
+          - kube-system
+          - calico-system
+  rules:
+  - apiGroups:
+    - '*'
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - '*'
+  sideEffects: None

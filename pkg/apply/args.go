@@ -60,7 +60,6 @@ type RunArgs struct {
 	CustomEnv         []string
 	CustomCMD         []string
 	CustomConfigFiles []string
-	fs                *pflag.FlagSet
 }
 
 func (arg *RunArgs) RegisterFlags(fs *pflag.FlagSet) {
@@ -69,7 +68,6 @@ func (arg *RunArgs) RegisterFlags(fs *pflag.FlagSet) {
 	fs.StringSliceVarP(&arg.CustomEnv, "env", "e", []string{}, "environment variables to set during command execution")
 	fs.StringSliceVar(&arg.CustomCMD, "cmd", []string{}, "override CMD directive in images")
 	fs.StringSliceVar(&arg.CustomConfigFiles, "config-file", []string{}, "path of custom config files, to use to replace the resource")
-	arg.fs = fs
 }
 
 type Args struct {
@@ -89,13 +87,11 @@ func (arg *Args) RegisterFlags(fs *pflag.FlagSet) {
 type ResetArgs struct {
 	*Cluster
 	*SSH
-	fs *pflag.FlagSet
 }
 
 func (arg *ResetArgs) RegisterFlags(fs *pflag.FlagSet) {
 	arg.Cluster.RegisterFlags(fs, "be reset", "reset")
 	arg.SSH.RegisterFlags(fs)
-	arg.fs = fs
 }
 
 type ScaleArgs struct {

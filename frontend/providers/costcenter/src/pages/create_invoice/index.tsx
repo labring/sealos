@@ -1,4 +1,3 @@
-// import { MockBillingData } from '@/mock/billing';
 import { InvoiceTable } from '@/components/invoice/invoiceTable';
 import { Box, Button, Flex, Heading, Img, Input, Text } from '@chakra-ui/react';
 import { useEffect, useRef, useState } from 'react';
@@ -32,6 +31,7 @@ function Invoice() {
   const endTime = useOverviewStore((state) => state.endTime);
   const selectBillings = useRef<ReqGenInvoice['billings']>([]);
   const [searchValue, setSearch] = useState('');
+  const [orderID, setOrderID] = useState('');
   const [totalPage, setTotalPage] = useState(1);
   const [currentPage, setcurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -43,7 +43,7 @@ function Invoice() {
     return request<any, { data: { billings: string[] } }>('/api/invoice/billings');
   });
   const { data, isLoading, isSuccess } = useQuery(
-    ['billing', { currentPage, startTime, endTime }],
+    ['billing', { currentPage, startTime, endTime, orderID }],
     async () => {
       let spec = {} as BillingSpec;
       spec = {
@@ -54,7 +54,7 @@ function Invoice() {
         // startTime,
         endTime: formatISO(endOfDay(endTime), { representation: 'complete' }),
         // endTime,
-        orderID: searchValue.trim()
+        orderID
       };
       const result = await request<any, { data: BillingData }, { spec: BillingSpec }>(
         '/api/billing',
@@ -65,23 +65,32 @@ function Invoice() {
           }
         }
       );
+
+      const tableResult = result.data.status.item
+        .filter((billing) => billing.type === 1)
+        .map<ReqGenInvoice['billings'][0]>((billing) => ({
+          createdTime: parseISO(billing.time).getTime(),
+          order_id: billing.order_id,
+          amount: formatMoney(billing.amount)
+        }));
       return {
-        tableResult: result.data.status.item
-          .filter((billing) => billing.type === 1)
-          .map<ReqGenInvoice['billings'][0]>((billing) => ({
-            createdTime: parseISO(billing.time).getTime(),
-            order_id: billing.order_id,
-            amount: formatMoney(billing.amount)
-          })),
-        pageLength: result.data.status.pageLength
+        tableResult,
+        pageLength: result.data.status.pageLength,
+        totalCount: result.data.status.totalCount || tableResult.length
       };
     },
     {
       onSuccess(data) {
-        setTotalPage(data.pageLength);
+        const totalPage = data.pageLength;
+        if (totalPage === 0) {
+          // 搜索时
+          setTotalPage(1);
+          return;
+        }
+        setTotalPage(totalPage);
       },
+      staleTime: 1000,
       cacheTime: 0,
-      staleTime: 0,
       enabled: filterData !== undefined
     }
   );
@@ -148,7 +157,7 @@ function Invoice() {
                 }}
                 onClick={(e) => {
                   e.preventDefault();
-                  queryClient.invalidateQueries(['billing']);
+                  setOrderID(searchValue.trim());
                 }}
               >
                 {t('Search')}
@@ -215,9 +224,7 @@ function Invoice() {
               </Box>
               <Flex w="370px" h="32px" align={'center'} mt={'20px'} mx="auto">
                 <Text>{t('Total')}:</Text>
-                <Flex w="40px">
-                  {totalPage * pageSize - (filterData?.data?.billings || []).length}
-                </Flex>
+                <Flex w="40px">{data.totalCount - (filterData?.data?.billings || []).length}</Flex>
                 <Flex gap={'8px'}>
                   <Button
                     variant={'switchPage'}

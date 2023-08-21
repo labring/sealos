@@ -1,4 +1,5 @@
 import request from '@/service/request';
+import Currencysymbol from '@/components/CurrencySymbol';
 import {
   Button,
   Flex,
@@ -14,7 +15,6 @@ import {
   NumberInput,
   NumberInputField,
   NumberInputStepper,
-  Spinner,
   Text,
   useDisclosure,
   useToast
@@ -26,6 +26,7 @@ import { deFormatMoney, formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import { ApiResp } from '@/types/api';
 import { TransferState, transferStatus } from '@/types/Transfer';
+import useEnvStore from '@/stores/env';
 
 const TransferModal = forwardRef(
   (
@@ -50,6 +51,7 @@ const TransferModal = forwardRef(
       }),
       []
     );
+    const currency = useEnvStore((s) => s.currency);
     const { t } = useTranslation();
     const { isOpen, onOpen, onClose: _onClose } = useDisclosure();
     const [to, setTo] = useState('');
@@ -66,7 +68,6 @@ const TransferModal = forwardRef(
           mutation.reset();
           setTo('');
           setAmount(0);
-          props.onTransferSuccess?.();
           if (data.data?.status.progress === TransferState.TransferStateFailed)
             toast({
               status: 'error',
@@ -82,6 +83,7 @@ const TransferModal = forwardRef(
               duration: 2000,
               position: 'top'
             });
+            props.onTransferSuccess?.();
             _onClose();
           }
         },
@@ -215,8 +217,8 @@ const TransferModal = forwardRef(
               onChange={(str, v) => (str.trim() ? setAmount(v) : setAmount(0))}
               isDisabled={mutation.isLoading}
             >
-              <Text mr={'4px'}>¥</Text>
-              <NumberInputField />
+              <Currencysymbol w="16px" type={currency} />
+              <NumberInputField ml="4px" />
               <NumberInputStepper>
                 <NumberIncrementStepper>
                   <Img src={vector.src}></Img>
@@ -230,8 +232,9 @@ const TransferModal = forwardRef(
               <Text fontSize="12px" mr={'12px'}>
                 {t('Balance')}
               </Text>
-              <Text color="rgba(33, 155, 244, 1)" fontSize={'16px'}>
-                ¥ {formatMoney(balance).toFixed(2)}
+              <Currencysymbol w="16px" type={currency} color="rgba(33, 155, 244, 1)" />
+              <Text color="rgba(33, 155, 244, 1)" fontSize={'16px'} ml="4px">
+                {formatMoney(balance).toFixed(2)}
               </Text>
               <Button
                 size="primary"

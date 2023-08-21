@@ -7,11 +7,26 @@ import TabItem from '@theme/TabItem';
 
 # Installing Sealos
 
+You can get the list of versions by running:
+
+```bash
+curl --silent "https://api.github.com/repos/labring/sealos/releases" | jq -r '.[].tag_name'
+```
+
+Note: While choosing the version, it's recommended to use a stable version. The versions like `v4.3.0-rcx`, `v4.3.0-alpha1` are pre-releases, use them with caution.
+
+Set the 'VERSION' environment variable to the latest VERSION number, or replace 'version' with the Sealos version you want to install:
+
+```shell
+VERSION=`curl -s https://api.github.com/repos/labring/sealos/releases/latest | grep -oE '"tag_name": "[^"]+"' | head -n1 | cut -d'"' -f4`
+```
+
 ## Binary Auto Download
 
 ```bash
-$ curl -sfL  https://raw.githubusercontent.com/labring/sealos/v4.2.0/scripts/install.sh \
-    | sh -s v4.2.0 labring/sealos
+curl -sfL https://raw.githubusercontent.com/labring/sealos/${VERSION}/scripts/install.sh |
+  sh -s ${VERSION} labring/sealos
+
 ```
 
 ## Binary Manual Download
@@ -20,16 +35,16 @@ $ curl -sfL  https://raw.githubusercontent.com/labring/sealos/v4.2.0/scripts/ins
   <TabItem value="amd64" label="amd64" default>
 
 ```bash
-$ wget https://github.com/labring/sealos/releases/download/v4.2.0/sealos_4.2.0_linux_amd64.tar.gz \
-   && tar zxvf sealos_4.2.0_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
+$ wget https://github.com/labring/sealos/releases/download/${VERSION}/sealos_${VERSION#v}_linux_amd64.tar.gz \
+   && tar zxvf sealos_${VERSION#v}_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
 ```
 
   </TabItem>
   <TabItem value="arm64" label="arm64">
 
 ```bash
-$ wget https://github.com/labring/sealos/releases/download/v4.2.0/sealos_4.2.0_linux_arm64.tar.gz \
-   && tar zxvf sealos_4.2.0_linux_arm64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
+$ wget https://github.com/labring/sealos/releases/download/${VERSION}/sealos_${VERSION#v}_linux_arm64.tar.gz \
+   && tar zxvf sealos_${VERSION#v}_linux_arm64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
 ```
 
   </TabItem>

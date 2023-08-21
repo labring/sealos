@@ -10,31 +10,31 @@ export type BillingSpec =
   | {
       orderID: string; //如果给定orderId，则查找该id的值，该值为唯一值，因此当orderId给定时忽略其他查找限定值
     };
-export type BillingItem = {
+export type RawCosts = Record<'cpu' | 'memory' | 'storage' | `gpu-${string}`, number>;
+export type Costs = {
+  cpu: number;
+  memory: number;
+  storage: number;
+  gpu?: number;
+};
+export type BillingItem<T = Costs> = {
   amount: number;
-  costs?: {
-    cpu?: number;
-    memory?: number;
-    storage?: number;
-  };
+  costs: T;
   order_id: string;
   owner: string;
   time: string;
   type: 0 | -1 | 1 | 2 | 3;
 };
-export type BillingData = {
+export type BillingData<T = Costs> = {
   apiVersion: 'account.sealos.io/v1';
   kind: 'BillingRecordQuery';
   metadata: any;
   spec: BillingSpec;
   status: {
-    deductionAmount: {
-      cpu: number;
-      memory: number;
-      storage: number;
-    };
+    deductionAmount: T;
     item: BillingItem[];
     pageLength: number;
+    totalCount: number;
     rechargeAmount: number;
   };
 };

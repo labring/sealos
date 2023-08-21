@@ -422,7 +422,7 @@ metadata:
   name: user-controller-manager
   namespace: user-system
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       control-plane: controller-manager
@@ -448,8 +448,8 @@ spec:
               fieldPath: metadata.namespace
         - name: SEALOS_CLOUD_HOST
           value: {{ .cloudDomain }}
-        - name: SEALOS_CLOUD_PORT
-          value: "{{ .cloudPort }}"
+        - name: APISERVER_PORT
+          value: "{{ .apiserverPort }}"
         image: ghcr.io/labring/sealos-user-controller:latest
         imagePullPolicy: Always
         livenessProbe:

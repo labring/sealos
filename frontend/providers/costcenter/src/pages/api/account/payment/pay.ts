@@ -30,8 +30,12 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     };
 
     const paymentM = { ...paymentMeta, namespace: GetUserDefaultNameSpace(kube_user.name) };
-    const paymentDesc = await GetCRD(kc, paymentM, id);
-
+    const paymentDesc = (await GetCRD(kc, paymentM, id)) as {
+      body: {
+        status: object;
+      };
+    };
+    console.log(paymentDesc);
     if (paymentDesc?.body?.status) {
       const paymentStatusResp = paymentDesc.body.status as paymentStatus;
       return jsonRes(resp, { data: paymentStatusResp });

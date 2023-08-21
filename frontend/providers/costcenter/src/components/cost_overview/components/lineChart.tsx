@@ -16,6 +16,8 @@ import { BillingItem } from '@/types/billing';
 import { parseISO, format, isSameDay, startOfDay } from 'date-fns';
 import { formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
+import useBillingStore from '@/stores/billing';
+import useOverviewStore from '@/stores/overview';
 
 echarts.use([
   GridComponent,
@@ -30,9 +32,10 @@ echarts.use([
 
 export default function Trend({ data }: { data: BillingItem[] }) {
   const { t } = useTranslation();
-  const source = [
-    ...INITAL_SOURCE,
-    ...(data
+  const startTime = useOverviewStore((s) => s.startTime);
+  const endTime = useOverviewStore((s) => s.endTime);
+  const sourceValue =
+    data
       .filter((v) => v.type === 0)
       .map<[Date, number, number, number, number]>((item) => [
         parseISO(item.time),
@@ -57,14 +60,16 @@ export default function Trend({ data }: { data: BillingItem[] }) {
       }, [])
       .map((x) => {
         return [x[0], formatMoney(x[1]), formatMoney(x[2]), formatMoney(x[3]), formatMoney(x[4])];
-      })
-      .reverse() || [])
-  ];
+      }) || [];
+  const source = [...INITAL_SOURCE, ...sourceValue.reverse()];
+
   const option = {
     xAxis: {
       type: 'time',
       minInterval: 24 * 60 * 60 * 1000, // 最小刻度为一天
       // maxInterval: 30 * 24 * 60 * 60 * 1000, // 最大刻度为一周
+      min: startTime,
+      max: endTime,
       symbolOffset: [10, 10],
       label: {
         show: true
@@ -156,7 +161,7 @@ export default function Trend({ data }: { data: BillingItem[] }) {
         totalCostP.style.fontWeight = '500';
         totalCostP.style.fontSize = '14px';
         totalCostP.style.lineHeight = '150%';
-        totalCostP.textContent = `${t('Total Cost')} : ¥${totalCost}`;
+        totalCostP.textContent = `${t('Total Cost')} : ${totalCost}`;
         // 创建空 div 元素
         const emptyDiv = document.createElement('div');
         // 添加子元素到外层 div 元素中

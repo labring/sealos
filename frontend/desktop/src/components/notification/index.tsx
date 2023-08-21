@@ -1,12 +1,13 @@
-import { Box, Flex, Text, UseDisclosureProps } from '@chakra-ui/react';
+import { Box, Flex, Text, Img, UseDisclosureReturn } from '@chakra-ui/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import Iconfont from '@/components/iconfont';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import request from '@/services/request';
 import { formatTime } from '@/utils/tools';
 import styles from './index.module.scss';
 import { useTranslation } from 'next-i18next';
+import warnIcon from 'public/icons/clear-outlined.svg';
 
 type NotificationItem = {
   metadata: {
@@ -27,7 +28,7 @@ type NotificationItem = {
 };
 
 type TNotification = {
-  disclosure: UseDisclosureProps;
+  disclosure: UseDisclosureReturn;
   onAmount: (amount: number) => void;
 };
 
@@ -39,21 +40,17 @@ export default function Notification(props: TNotification) {
   const [msgDetail, setMsgDetail] = useState<NotificationItem>();
   const [notification, setNotification] = useState([]);
 
-  const { data, isSuccess, refetch } = useQuery(
-    ['getAwsAll'],
-    () => request('/api/notification/list'),
-    {
-      onSuccess: (data) => {
-        onAmount(
-          data?.data?.items?.filter(
-            (item: NotificationItem) => !JSON.parse(item?.metadata?.labels?.isRead || 'false')
-          )?.length || 0
-        );
-        setNotification(data?.data?.items);
-      },
-      refetchInterval: 1 * 60 * 1000
-    }
-  );
+  const { refetch } = useQuery(['getAwsAll'], () => request('/api/notification/list'), {
+    onSuccess: (data) => {
+      onAmount(
+        data?.data?.items?.filter(
+          (item: NotificationItem) => !JSON.parse(item?.metadata?.labels?.isRead || 'false')
+        )?.length || 0
+      );
+      setNotification(data?.data?.items);
+    },
+    refetchInterval: 1 * 60 * 1000
+  });
 
   const [unread_notes, read_notes] = useMemo(() => {
     const unread: NotificationItem[] = [];
@@ -111,7 +108,7 @@ export default function Notification(props: TNotification) {
         </Flex>
         {activePage === 'index' ? (
           <>
-            <Flex>
+            <Flex alignItems={'center'}>
               <Box
                 className={clsx(activeTab === 'unread' && styles.active, styles.tab)}
                 onClick={() => setActiveTab('unread')}
@@ -125,14 +122,12 @@ export default function Notification(props: TNotification) {
               >
                 {t('Have Read')}
               </Box>
-              <Text
-                ml={'auto'}
-                color={'#434F61'}
-                className={styles.tab}
-                onClick={() => markAllAsRead()}
-              >
-                {t('Read All')}
-              </Text>
+              <Flex ml={'auto'} onClick={() => markAllAsRead()}>
+                <Img src={warnIcon.src}></Img>
+                <Text ml="4px" color={'#434F61'} className={styles.tab}>
+                  {t('Read All')}
+                </Text>
+              </Flex>
             </Flex>
             <Flex pt={'9px'} pb="12px" direction={'column'} h="430px" className={styles.scrollWrap}>
               {notifications?.map((item: NotificationItem) => {

@@ -1,11 +1,12 @@
 import * as yaml from 'js-yaml';
 import { CRDMeta } from '@/types/crd';
-import { endOfDay, getMonth, getTime, getYear } from 'date-fns';
+import { endOfDay, getMonth, getYear } from 'date-fns';
 export type PaymentForm = {
   paymentName: string;
   namespace: string;
   userId: string;
   amount: string;
+  paymentMethod: 'wechat' | 'stripe';
 };
 
 export const paymentMeta: CRDMeta = {
@@ -31,7 +32,7 @@ export const generatePaymentCrd = (form: PaymentForm) => {
     spec: {
       userID: form.userId,
       amount: form.amount,
-      paymentMethod: 'wechat'
+      paymentMethod: form.paymentMethod
     }
   };
 
@@ -89,5 +90,6 @@ export const END_TIME = endOfDay(new Date());
 export const valuationMap = new Map([
   ['cpu', { unit: 'Core', scale: 1000, bg: '#33BABB', idx: 0 }],
   ['memory', { unit: 'GiB', scale: 1024, bg: '#36ADEF', idx: 1 }],
-  ['storage', { unit: 'GiB', scale: 1024, bg: '#8172D8', idx: 2 }]
+  ['storage', { unit: 'GiB', scale: 1024, bg: '#8172D8', idx: 2 }],
+  ['gpu', { unit: 'GPU', scale: 1000, bg: '#89CD11', idx: 3 }]
 ]);

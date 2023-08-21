@@ -52,7 +52,8 @@ const (
 
 const (
 	DefaultDomain          = "cloud.sealos.io"
-	DefaultSecretName      = "wildcard-cloud-sealos-io-cert"
+	DefaultPort            = ""
+	DefaultSecretName      = "wildcard-cert"
 	DefaultSecretNamespace = "sealos-system"
 )
 
@@ -71,6 +72,7 @@ type TerminalReconciler struct {
 	recorder        record.EventRecorder
 	Config          *rest.Config
 	terminalDomain  string
+	terminalPort    string
 	secretName      string
 	secretNamespace string
 }
@@ -210,7 +212,7 @@ func (r *TerminalReconciler) syncApisixIngress(ctx context.Context, terminal *te
 		return err
 	}
 
-	domain := Protocol + host
+	domain := Protocol + host + r.getPort()
 	if terminal.Status.Domain != domain {
 		terminal.Status.Domain = domain
 		return r.Status().Update(ctx, terminal)
@@ -237,7 +239,7 @@ func (r *TerminalReconciler) syncNginxIngress(ctx context.Context, terminal *ter
 		return err
 	}
 
-	domain := Protocol + host
+	domain := Protocol + host + r.getPort()
 	if terminal.Status.Domain != domain {
 		terminal.Status.Domain = domain
 		return r.Status().Update(ctx, terminal)
@@ -447,6 +449,14 @@ func getDomain() string {
 	return domain
 }
 
+func getPort() string {
+	port := os.Getenv("PORT")
+	if port == "" {
+		return DefaultPort
+	}
+	return port
+}
+
 func getSecretName() string {
 	secretName := os.Getenv("SECRET_NAME")
 	if secretName == "" {
@@ -463,10 +473,18 @@ func getSecretNamespace() string {
 	return secretNamespace
 }
 
+func (r *TerminalReconciler) getPort() string {
+	if r.terminalPort == "" {
+		return ""
+	}
+	return ":" + r.terminalPort
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *TerminalReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.recorder = mgr.GetEventRecorderFor("sealos-terminal-controller")
 	r.terminalDomain = getDomain()
+	r.terminalPort = getPort()
 	r.secretName = getSecretName()
 	r.secretNamespace = getSecretNamespace()
 	r.Config = mgr.GetConfig()

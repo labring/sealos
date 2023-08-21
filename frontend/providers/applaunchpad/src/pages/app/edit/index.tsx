@@ -3,8 +3,7 @@ import { useRouter } from 'next/router';
 import { Flex, Box } from '@chakra-ui/react';
 import type { YamlItemType } from '@/types';
 import {
-  json2Development,
-  json2StatefulSet,
+  json2DeployCr,
   json2Service,
   json2Ingress,
   json2ConfigMap,
@@ -22,29 +21,30 @@ import { useToast } from '@/hooks/useToast';
 import { useQuery } from '@tanstack/react-query';
 import { useAppStore } from '@/store/app';
 import { useLoading } from '@/hooks/useLoading';
+import { useGlobalStore } from '@/store/global';
 import Header from './components/Header';
 import Form from './components/Form';
 import Yaml from './components/Yaml';
 import dynamic from 'next/dynamic';
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
-import { useGlobalStore } from '@/store/global';
 import { serviceSideProps } from '@/utils/i18n';
 import { patchYamlList } from '@/utils/tools';
 import { useTranslation } from 'next-i18next';
+import { noGpuSliderKey } from '@/constants/app';
 
 const formData2Yamls = (data: AppEditType) => [
   {
     filename: 'service.yaml',
     value: json2Service(data)
   },
-  data.storeList.length > 0
+  !!data.storeList?.length
     ? {
         filename: 'statefulSet.yaml',
-        value: json2StatefulSet(data)
+        value: json2DeployCr(data, 'statefulset')
       }
     : {
         filename: 'deployment.yaml',
-        value: json2Development(data)
+        value: json2DeployCr(data, 'deployment')
       },
   ...(data.configMapList.length > 0
     ? [
@@ -88,16 +88,21 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const router = useRouter();
   const [forceUpdate, setForceUpdate] = useState(false);
   const { setAppDetail } = useAppStore();
+  const { screenWidth, getUserSourcePrice, userSourcePrice, formSliderListConfig } =
+    useGlobalStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [already, setAlready] = useState(false);
   const [defaultStorePathList, setDefaultStorePathList] = useState<string[]>([]); // default store will no be edit
+  const [defaultGpuSource, setDefaultGpuSource] = useState<AppEditType['gpu']>({
+    type: '',
+    amount: 0,
+    manufacturers: ''
+  });
   const { openConfirm, ConfirmChild } = useConfirm({
     content: applyMessage
   });
-  // compute container width
-  const { screenWidth } = useGlobalStore();
   const pxVal = useMemo(() => {
     const val = Math.floor((screenWidth - 1050) / 2);
     if (val < 20) {
@@ -128,37 +133,84 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     setForceUpdate(!forceUpdate);
   });
 
-  const submitSuccess = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const yamls = yamlList.map((item) => item.value);
+  const { refetch: refetchPrice } = useQuery(['init-price'], getUserSourcePrice, {
+    enabled: !!userSourcePrice?.gpu,
+    refetchInterval: 5000
+  });
 
-      if (appName) {
-        const patch = patchYamlList(
-          appOldYamls.current.map((item) => item.value),
-          yamls
-        );
+  // add already deployment gpu amount if they exists
+  const countGpuInventory = useCallback(
+    (type?: string) => {
+      const inventory = userSourcePrice?.gpu?.find((item) => item.type === type)?.inventory || 0;
+      const defaultInventory = type === defaultGpuSource?.type ? defaultGpuSource?.amount || 0 : 0;
+      return inventory + defaultInventory;
+    },
+    [defaultGpuSource?.amount, defaultGpuSource?.type, userSourcePrice?.gpu]
+  );
 
-        await putApp({
-          patch,
-          appName,
-          stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value
-        });
-      } else {
-        await postDeployApp(yamls);
+  const submitSuccess = useCallback(
+    async (data: AppEditType) => {
+      // gpu inventory check
+      if (data.gpu?.type) {
+        const inventory = countGpuInventory(data.gpu?.type);
+        if (data.gpu?.amount > inventory) {
+          return toast({
+            status: 'warning',
+            title: t('Gpu under inventory Tip', {
+              gputype: data.gpu.type
+            })
+          });
+        }
       }
 
-      router.replace(`/app/detail?name=${formHook.getValues('appName')}`);
-      toast({
-        title: t(applySuccess),
-        status: 'success'
-      });
-    } catch (error) {
-      console.error(error);
-      setErrorMessage(JSON.stringify(error));
-    }
-    setIsLoading(false);
-  }, [setIsLoading, yamlList, appName, router, formHook, toast, t, applySuccess]);
+      setIsLoading(true);
+      try {
+        const yamls = yamlList.map((item) => item.value);
+
+        if (appName) {
+          const patch = patchYamlList(
+            appOldYamls.current.map((item) => item.value),
+            yamls
+          );
+
+          await putApp({
+            patch,
+            appName,
+            stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value
+          });
+        } else {
+          await postDeployApp(yamls);
+        }
+
+        router.replace(`/app/detail?name=${formHook.getValues('appName')}`);
+        toast({
+          title: t(applySuccess),
+          status: 'success'
+        });
+
+        if (userSourcePrice?.gpu) {
+          refetchPrice();
+        }
+      } catch (error) {
+        console.error(error);
+        setErrorMessage(JSON.stringify(error));
+      }
+      setIsLoading(false);
+    },
+    [
+      setIsLoading,
+      countGpuInventory,
+      toast,
+      yamlList,
+      appName,
+      router,
+      formHook,
+      t,
+      applySuccess,
+      userSourcePrice?.gpu,
+      refetchPrice
+    ]
+  );
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
@@ -181,20 +233,26 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     ['init'],
     () => {
       if (!appName) {
+        const defaultApp = {
+          ...defaultEditVal,
+          cpu: formSliderListConfig[noGpuSliderKey].cpu[0],
+          memory: formSliderListConfig[noGpuSliderKey].memory[0]
+        };
         setAlready(true);
         setYamlList([
           {
             filename: 'service.yaml',
-            value: json2Service(defaultEditVal)
+            value: json2Service(defaultApp)
           },
           {
             filename: 'deployment.yaml',
-            value: json2Development(defaultEditVal)
+            value: json2DeployCr(defaultApp, 'deployment')
           }
         ]);
         return null;
       }
       setIsLoading(true);
+      refetchPrice();
       return setAppDetail(appName);
     },
     {
@@ -202,6 +260,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         if (!res) return;
         appOldYamls.current = formData2Yamls(res);
         setDefaultStorePathList(res.storeList.map((item) => item.path));
+        setDefaultGpuSource(res.gpu);
         formHook.reset(adaptEditAppData(res));
         setAlready(true);
       },
@@ -231,7 +290,9 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           title={title}
           yamlList={yamlList}
           applyBtnText={applyBtnText}
-          applyCb={() => formHook.handleSubmit(openConfirm(submitSuccess), submitError)()}
+          applyCb={() =>
+            formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)()
+          }
         />
 
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
@@ -240,7 +301,9 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               formHook={formHook}
               already={already}
               defaultStorePathList={defaultStorePathList}
+              countGpuInventory={countGpuInventory}
               pxVal={pxVal}
+              refresh={forceUpdate}
             />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />

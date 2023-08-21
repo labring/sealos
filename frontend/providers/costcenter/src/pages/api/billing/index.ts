@@ -5,23 +5,49 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApplyYaml } from '@/service/backend/kubernetes';
 import * as yaml from 'js-yaml';
 import crypto from 'crypto';
-import type { BillingData, BillingSpec } from '@/types/billing';
+import type { BillingData, BillingItem, BillingSpec, Costs, RawCosts } from '@/types/billing';
+const convertGpu = (_deduction?: RawCosts) =>
+  _deduction
+    ? Object.entries(_deduction).reduce<Costs>(
+        (pre, cur) => {
+          if (cur[0] === 'cpu') pre.cpu = cur[1];
+          else if (cur[0] === 'memory') pre.memory = cur[1];
+          else if (cur[0] === 'storage') pre.storage = cur[1];
+          else if (cur[0].startsWith('gpu-')) {
+            typeof pre.gpu === 'number' && (pre.gpu += cur[1]);
+          }
+          return pre;
+        },
+        {
+          cpu: 0,
+          memory: 0,
+          storage: 0,
+          gpu: 0
+        }
+      )
+    : {
+        cpu: 0,
+        memory: 0,
+        storage: 0,
+        gpu: 0
+      };
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
     const kc = await authSession(req.headers);
-
     // get user account payment amount
     const user = kc.getCurrentUser();
     if (user === null) {
-      return jsonRes(resp, { code: 401, message: 'user null' });
+      return jsonRes(resp, { code: 403, message: 'user null' });
     }
     const namespace = 'ns-' + user.name;
-    const body = req.body;
-    let spec: BillingSpec = body.spec;
+    // const body = req.body;
+    const { spec } = req.body;
     if (!spec) {
       return jsonRes(resp, { code: 400, error: '参数错误' });
     }
-    const hash = crypto.createHash('sha256').update(JSON.stringify(spec));
+    // 用react query 管理缓存
+    let origin = JSON.stringify(spec) + new Date().getTime();
+    const hash = crypto.createHash('sha256').update(origin);
     const name = hash.digest('hex');
     const crdSchema = {
       apiVersion: `account.sealos.io/v1`,
@@ -42,21 +68,25 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       await ApplyYaml(kc, yaml.dump(crdSchema));
       await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000));
     } finally {
-      const { body } = await GetCRD(kc, meta, name);
-
-      if (!('item' in (body as BillingData).status)) {
-        (body as BillingData).status.item = [];
-      }
-      if (!('deductionAmount' in (body as BillingData).status)) {
-        (body as BillingData).status.deductionAmount = {
-          cpu: 0,
-          memory: 0,
-          storage: 0
-        };
-      }
-      return jsonRes(resp, {
+      const crd = (await GetCRD(kc, meta, name)) as { body: BillingData<RawCosts> };
+      const body = crd?.body;
+      if (!body || !body.status) throw new Error('get billing error');
+      const item =
+        body.status?.item?.map<BillingItem>((v) => ({
+          ...v,
+          costs: convertGpu(v?.costs)
+        })) || [];
+      const deductionAmount = convertGpu(crd?.body?.status?.deductionAmount);
+      return jsonRes<BillingData>(resp, {
         code: 200,
-        data: body
+        data: {
+          ...body,
+          status: {
+            ...body.status,
+            deductionAmount,
+            item
+          }
+        }
       });
     }
   } catch (error) {

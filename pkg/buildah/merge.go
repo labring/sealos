@@ -22,6 +22,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/labring/sealos/pkg/image"
+
 	"github.com/containers/buildah/pkg/parse"
 
 	"github.com/containers/buildah"
@@ -29,8 +31,6 @@ import (
 	"github.com/containers/buildah/util"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
-
-	"github.com/labring/sealos/pkg/buildimage"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/rand"
@@ -153,7 +153,7 @@ func mergeImagesWithScratchContainer(newImageName string, images []string, sette
 		}
 	}
 
-	dockerfile, err := buildimage.MergeDockerfileFromImages(imageObjList)
+	dockerfile, err := image.MergeDockerfileFromImages(imageObjList)
 	if err != nil {
 		return nil, err
 	}

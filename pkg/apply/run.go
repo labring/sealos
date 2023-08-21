@@ -15,17 +15,23 @@
 package apply
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net"
 	"strconv"
 
+	"github.com/spf13/cobra"
+
 	"github.com/labring/sealos/pkg/apply/applydrivers"
+	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/maps"
 	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 )
 
@@ -35,7 +41,7 @@ type ClusterArgs struct {
 	clusterName string
 }
 
-func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interface, error) {
+func NewApplierFromArgs(cmd *cobra.Command, args *RunArgs, imageName []string) (applydrivers.Interface, error) {
 	clusterPath := constants.Clusterfile(args.ClusterName)
 	cf := clusterfile.NewClusterFile(clusterPath,
 		clusterfile.WithCustomConfigFiles(args.CustomConfigFiles),
@@ -61,23 +67,38 @@ func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interfa
 		clusterName: cluster.Name,
 		cluster:     cluster,
 	}
-	if err = c.runArgs(imageName, args); err != nil {
+	if err = c.runArgs(cmd, args, imageName); err != nil {
 		return nil, err
 	}
-	return applydrivers.NewDefaultApplier(c.cluster, cf, imageName)
+
+	ctx := withCommonContext(cmd.Context(), cmd)
+
+	return applydrivers.NewDefaultApplier(ctx, c.cluster, cf, imageName)
 }
 
-func (r *ClusterArgs) runArgs(imageList []string, args *RunArgs) error {
-	if args.Cluster.ClusterName == "" {
-		return fmt.Errorf("cluster name can not be empty")
+func withCommonContext(ctx context.Context, cmd *cobra.Command) context.Context {
+	if flagChanged(cmd, "cmd") {
+		v, _ := cmd.Flags().GetStringSlice("cmd")
+		ctx = processor.WithCommands(ctx, v)
 	}
-	//the first run check
+	if flagChanged(cmd, "env") {
+		v, _ := cmd.Flags().GetStringSlice("env")
+		ctx = processor.WithEnvs(ctx, maps.ListToMap(v))
+	}
+	return ctx
+}
+
+func (r *ClusterArgs) runArgs(cmd *cobra.Command, args *RunArgs, imageList []string) error {
+	if args.Cluster.ClusterName == "" {
+		return errors.New("cluster name can not be empty")
+	}
+	// the first run check
 	if r.cluster.CreationTimestamp.IsZero() {
 		if len(imageList) == 0 {
-			return fmt.Errorf("image can not be empty")
+			return errors.New("image can not be empty")
 		}
 		if len(args.Cluster.Masters) == 0 {
-			return fmt.Errorf("master ip(s) must specified")
+			return errors.New("master ip(s) must specified")
 		}
 	} else {
 		if r.cluster.Status.Phase != v2.ClusterSuccess {
@@ -88,30 +109,10 @@ func (r *ClusterArgs) runArgs(imageList []string, args *RunArgs) error {
 	if err := PreProcessIPList(args.Cluster); err != nil {
 		return err
 	}
-	if args.fs != nil {
-		if args.fs.Changed("env") || len(r.cluster.Spec.Env) == 0 {
-			r.cluster.Spec.Env = make([]string, len(args.CustomEnv))
-			copy(r.cluster.Spec.Env, args.CustomEnv)
-		}
-		if args.fs.Changed("cmd") || len(r.cluster.Spec.Command) == 0 {
-			r.cluster.Spec.Command = make([]string, len(args.CustomCMD))
-			copy(r.cluster.Spec.Command, args.CustomCMD)
-		}
-		if args.fs.Changed("user") || r.cluster.Spec.SSH.User == "" {
-			r.cluster.Spec.SSH.User = args.SSH.User
-		}
-		if args.fs.Changed("pk") || r.cluster.Spec.SSH.Pk == "" {
-			r.cluster.Spec.SSH.Pk = args.SSH.Pk
-		}
-		if args.fs.Changed("pk-passwd") || r.cluster.Spec.SSH.PkPasswd == "" {
-			r.cluster.Spec.SSH.PkPasswd = args.SSH.PkPassword
-		}
-		if args.fs.Changed("port") || r.cluster.Spec.SSH.Port == 0 {
-			r.cluster.Spec.SSH.Port = args.SSH.Port
-		}
-		if args.fs.Changed("passwd") || r.cluster.Spec.SSH.Passwd == "" {
-			r.cluster.Spec.SSH.Passwd = args.SSH.Password
-		}
+
+	override := getSSHFromCommand(cmd)
+	if override != nil {
+		r.cluster.Spec.SSH = *override
 	}
 
 	r.cluster.SetNewImages(imageList)
@@ -121,8 +122,7 @@ func (r *ClusterArgs) runArgs(imageList []string, args *RunArgs) error {
 	nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
 	r.hosts = []v2.Host{}
 
-	clusterSSH := r.cluster.GetSSH()
-	sshClient := ssh.NewSSHClient(&clusterSSH, true)
+	sshClient := ssh.NewSSHByCluster(r.cluster, true)
 	if len(masters) > 0 {
 		host, port := iputils.GetHostIPAndPortOrDefault(masters[0], defaultPort)
 		master0addr := net.JoinHostPort(host, port)

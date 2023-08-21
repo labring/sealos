@@ -12,7 +12,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import throttle from 'lodash/throttle';
 import { useGlobalStore } from '@/store/global';
 import { useLoading } from '@/hooks/useLoading';
-import { loadInitData, getUserPrice } from '@/store/static';
+import { loadInitData } from '@/store/static';
 import { useRouter } from 'next/router';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
@@ -39,7 +39,8 @@ const queryClient = new QueryClient({
 const App = ({ Component, pageProps }: AppProps) => {
   const router = useRouter();
   const { i18n } = useTranslation();
-  const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
+  const { setScreenWidth, loading, setLastRoute, getUserSourcePrice, initFormSliderList } =
+    useGlobalStore();
   const { Loading } = useLoading();
   const [refresh, setRefresh] = useState(false);
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -50,12 +51,13 @@ const App = ({ Component, pageProps }: AppProps) => {
   useEffect(() => {
     NProgress.start();
 
-    getUserPrice();
+    getUserSourcePrice();
 
     const response = createSealosApp();
 
     (async () => {
-      const { SEALOS_DOMAIN } = await (() => loadInitData())();
+      const { SEALOS_DOMAIN, FORM_SLIDER_LIST_CONFIG } = await (() => loadInitData())();
+      initFormSliderList(FORM_SLIDER_LIST_CONFIG);
 
       try {
         const res = await sealosApp.getSession();
@@ -75,7 +77,7 @@ const App = ({ Component, pageProps }: AppProps) => {
     NProgress.done();
 
     return response;
-  }, []);
+  }, [getUserSourcePrice, initFormSliderList, openConfirm]);
 
   // add resize event
   useEffect(() => {
@@ -97,7 +99,7 @@ const App = ({ Component, pageProps }: AppProps) => {
       const lastLang = getLangStore();
       const newLang = data.currentLanguage;
       if (lastLang !== newLang) {
-        i18n.changeLanguage(newLang);
+        i18n?.changeLanguage?.(newLang);
         setLangStore(newLang);
         setRefresh((state) => !state);
       }
@@ -110,7 +112,7 @@ const App = ({ Component, pageProps }: AppProps) => {
         });
       } catch (error) {
         changeI18n({
-          currentLanguage: 'en'
+          currentLanguage: 'zh'
         });
       }
     })();

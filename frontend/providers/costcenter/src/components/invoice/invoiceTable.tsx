@@ -1,8 +1,10 @@
-import { InvoiceTableHeaders, TableHeaders } from '@/constants/billing';
+import { InvoiceTableHeaders } from '@/constants/billing';
 import { Checkbox, Flex, Table, TableContainer, Tbody, Td, Th, Thead, Tr } from '@chakra-ui/react';
 import { format } from 'date-fns';
 import { useTranslation } from 'next-i18next';
 import { ReqGenInvoice } from '@/types';
+import CurrencySymbol from '../CurrencySymbol';
+import useEnvStore from '@/stores/env';
 
 export function InvoiceTable({
   data,
@@ -15,6 +17,7 @@ export function InvoiceTable({
 }) {
   const { t } = useTranslation();
   const needSelect = !!onSelect;
+  const currency = useEnvStore((s) => s.currency);
   return (
     <TableContainer w="100%" mt="0px" border={'1px solid #DEE0E2'} borderRadius="2px">
       <Table variant="simple">
@@ -32,7 +35,10 @@ export function InvoiceTable({
                   background: '#F1F4F6'
                 }}
               >
-                {t(item)}
+                <Flex display={'flex'}>
+                  {t(item)}
+                  {item !== 'Order Number' && <CurrencySymbol type={currency} />}
+                </Flex>
               </Th>
             ))}
           </Tr>
@@ -57,7 +63,7 @@ export function InvoiceTable({
                 </Flex>
               </Td>
               <Td>{format(item.createdTime, 'MM-dd HH:mm')}</Td>
-              <Td color={'#219BF4'}>{'￥' + item.amount}</Td>
+              <Td color={'#219BF4'}>{item.amount}</Td>
             </Tr>
           ))}
         </Tbody>

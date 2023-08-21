@@ -13,17 +13,29 @@ import Pods from './components/Pods';
 import BackupTable, { type ComponentRef } from './components/BackupTable';
 import { useTranslation } from 'next-i18next';
 import { DBTypeEnum } from '@/constants/db';
+import Monitor from './components/Monitor';
+import dayjs from 'dayjs';
 
 enum TabEnum {
   pod = 'pod',
-  backup = 'backup'
+  backup = 'backup',
+  monitor = 'monitor'
 }
 
-const AppDetail = ({ dbName, listType }: { dbName: string; listType: `${TabEnum}` }) => {
+const AppDetail = ({
+  dbName,
+  listType,
+  dbType
+}: {
+  dbName: string;
+  dbType: string;
+  listType: `${TabEnum}`;
+}) => {
   const BackupTableRef = useRef<ComponentRef>(null);
   const router = useRouter();
   const { t } = useTranslation();
   const listNav = useRef([
+    { label: 'Monitor List', value: TabEnum.monitor },
     { label: 'Replicas List', value: TabEnum.pod },
     { label: 'Backup List', value: TabEnum.backup }
   ]);
@@ -57,7 +69,7 @@ const AppDetail = ({ dbName, listType }: { dbName: string; listType: `${TabEnum}
           flex={'0 0 400px'}
           mr={4}
           overflowY={'auto'}
-          zIndex={1}
+          zIndex={9}
           transition={'0.4s'}
           bg={'white'}
           border={theme.borders.sm}
@@ -101,15 +113,17 @@ const AppDetail = ({ dbName, listType }: { dbName: string; listType: `${TabEnum}
                       color: 'myGray.500',
                       borderBottomColor: 'transparent',
                       onClick: () =>
-                        router.replace(`/db/detail?name=${dbName}&listType=${item.value}`)
+                        router.replace(
+                          `/db/detail?name=${dbName}&dbType=${dbType}&listType=${item.value}`
+                        )
                     })}
               >
                 {t(item.label)}
               </Box>
             ))}
             <Box flex={1}></Box>
-            {listType === 'pod' && <Box color={'myGray.500'}>{dbPods.length} Items</Box>}
-            {listType === 'backup' && !BackupTableRef.current?.backupProcessing && (
+            {listType === TabEnum.pod && <Box color={'myGray.500'}>{dbPods.length} Items</Box>}
+            {listType === TabEnum.backup && !BackupTableRef.current?.backupProcessing && (
               <Flex alignItems={'center'}>
                 <Button
                   ml={3}
@@ -130,8 +144,11 @@ const AppDetail = ({ dbName, listType }: { dbName: string; listType: `${TabEnum}
             )}
           </Flex>
           <Box flex={'1 0 0'} h={0}>
-            {listType === 'pod' && <Pods dbName={dbName} dbType={dbDetail.dbType} />}
-            {listType === 'backup' && <BackupTable ref={BackupTableRef} db={dbDetail} />}
+            {listType === TabEnum.pod && <Pods dbName={dbName} dbType={dbDetail.dbType} />}
+            {listType === TabEnum.backup && <BackupTable ref={BackupTableRef} db={dbDetail} />}
+            {listType === TabEnum.monitor && (
+              <Monitor dbName={dbName} dbType={dbType} db={dbDetail} />
+            )}
           </Box>
         </Flex>
       </Flex>
@@ -154,9 +171,10 @@ export default AppDetail;
 
 export async function getServerSideProps(context: any) {
   const dbName = context.query?.name || '';
+  const dbType = context.query?.dbType || '';
   const listType = context.query?.listType || TabEnum.pod;
 
   return {
-    props: { ...(await serviceSideProps(context)), dbName, listType }
+    props: { ...(await serviceSideProps(context)), dbName, listType, dbType }
   };
 }

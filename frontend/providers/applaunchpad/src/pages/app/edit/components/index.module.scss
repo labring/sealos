@@ -22,7 +22,8 @@
   color: #333333;
   font-size: 16px;
   font-weight: bold;
-  margin-bottom: 10px;
+  flex-shrink: 0;
+  width: 100px;
 }
 .textEllipsis {
   text-overflow: ellipsis;
@@ -34,9 +35,10 @@
   overflow: hidden;
   table-layout: fixed;
   width: 100%;
+  background: #f4f6f8;
 
   th {
-    border: 1px solid #eff0f1;
+    border: 1px solid #dee0e2;
     text-align: left;
     padding: 8px;
     user-select: all;
@@ -44,6 +46,6 @@
   }
 
   tr:nth-child(even) {
-    background-color: #eff0f1;
+    background-color: #fbfbfc;
   }
 }

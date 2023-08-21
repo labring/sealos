@@ -4,10 +4,10 @@ import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
 export const crLabelKey = 'sealos-db-provider-cr';
 
 export enum DBTypeEnum {
-  'postgresql' = 'postgresql',
-  'mongodb' = 'mongodb',
-  'mysql' = 'apecloud-mysql',
-  'redis' = 'redis'
+  postgresql = 'postgresql',
+  mongodb = 'mongodb',
+  mysql = 'apecloud-mysql',
+  redis = 'redis'
 }
 
 export enum DBStatusEnum {

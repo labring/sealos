@@ -27,9 +27,17 @@ import {
   maxReplicasKey,
   minReplicasKey,
   PodStatusEnum,
-  domainKey
+  domainKey,
+  gpuNodeSelectorKey,
+  gpuResourceKey
 } from '@/constants/app';
-import { cpuFormatToM, memoryFormatToMi, formatPodTime, atobSecretYaml } from '@/utils/tools';
+import {
+  cpuFormatToM,
+  memoryFormatToMi,
+  formatPodTime,
+  atobSecretYaml,
+  printMemory
+} from '@/utils/tools';
 import type { DeployKindsType, AppEditType } from '@/types/app';
 import { defaultEditVal } from '@/constants/editApp';
 import { customAlphabet } from 'nanoid';
@@ -45,6 +53,9 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
         0
       )
     : 0;
+
+  const gpuNodeSelector = app?.spec?.template?.spec?.nodeSelector;
+
   return {
     id: app.metadata?.uid || ``,
     name: app.metadata?.name || 'app name',
@@ -55,6 +66,13 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
     memory: memoryFormatToMi(
       app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory || '0'
     ),
+    gpu: {
+      type: gpuNodeSelector?.[gpuNodeSelectorKey] || '',
+      amount: Number(
+        app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.[gpuResourceKey] || 1
+      ),
+      manufacturers: 'nvidia'
+    },
     usedCpu: new Array(30).fill(0),
     useMemory: new Array(30).fill(0),
     activeReplicas: app.status?.readyReplicas || 0,
@@ -166,12 +184,16 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
 
   const domain = deployKindsMap?.Ingress?.spec?.rules?.[0].host;
   const sealosDomain = deployKindsMap?.Ingress?.metadata?.labels?.[domainKey];
+  const useGpu = !!Number(
+    appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.[gpuResourceKey]
+  );
+  const gpuNodeSelector = useGpu ? appDeploy?.spec?.template?.spec?.nodeSelector : null;
 
   return {
     id: appDeploy.metadata?.uid || ``,
     appName: appDeploy.metadata?.name || 'app Name',
     createTime: dayjs(appDeploy.metadata?.creationTimestamp).format('YYYY-MM-DD HH:mm'),
-    status: appStatusMap.running,
+    status: appStatusMap.waiting,
     isPause: !!appDeploy?.metadata?.annotations?.[pauseKey],
     imageName:
       appDeploy?.metadata?.annotations?.originImageName ||
@@ -186,15 +208,25 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
     memory: memoryFormatToMi(
       appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory || '0'
     ),
+    gpu: {
+      type: gpuNodeSelector?.[gpuNodeSelectorKey] || '',
+      amount: Number(
+        appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.[gpuResourceKey] || 1
+      ),
+      manufacturers: 'nvidia'
+    },
     usedCpu: new Array(30).fill(0),
     usedMemory: new Array(30).fill(0),
     containerOutPort:
       appDeploy.spec?.template?.spec?.containers?.[0]?.ports?.[0]?.containerPort || 0,
     envs:
-      appDeploy.spec?.template?.spec?.containers?.[0]?.env?.map((env) => ({
-        key: env.name,
-        value: env.value || ''
-      })) || [],
+      appDeploy.spec?.template?.spec?.containers?.[0]?.env?.map((env) => {
+        return {
+          key: env.name,
+          value: env.value || '',
+          valueFrom: env.valueFrom
+        };
+      }) || [],
     accessExternal: deployKindsMap.Ingress
       ? {
           use: true,
@@ -255,7 +287,8 @@ export const adaptEditAppData = (app: AppDetailType): AppEditType => {
     'hpa',
     'configMapList',
     'secret',
-    'storeList'
+    'storeList',
+    'gpu'
   ];
   const res: Record<string, any> = {};
 
@@ -348,4 +381,21 @@ export const adaptYamlToEdit = (yamlList: string[]) => {
   }
 
   return res;
+};
+
+export const sliderNumber2MarkList = ({
+  val,
+  type,
+  gpuAmount = 1
+}: {
+  val: number[];
+  type: 'cpu' | 'memory';
+  gpuAmount?: number;
+}) => {
+  const newVal = val.map((item) => item * gpuAmount);
+
+  return newVal.map((item) => ({
+    label: type === 'memory' ? (item >= 1024 ? `${item / 1024} G` : `${item} M`) : `${item / 1000}`,
+    value: item
+  }));
 };

@@ -12,7 +12,7 @@ import {
   PopoverTrigger,
   Text
 } from '@chakra-ui/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { formatISO } from 'date-fns';
 import receipt_icon from '@/assert/receipt_long_black.svg';
 import arrow_icon from '@/assert/Vector.svg';
@@ -39,24 +39,24 @@ function Billing() {
   const endTime = useOverviewStore((state) => state.endTime);
   const [selectType, setType] = useState<-1 | 0 | 1 | 2 | 3>(-1);
   const [searchValue, setSearch] = useState('');
+  const [orderID, setOrderID] = useState('');
   const [totalPage, setTotalPage] = useState(1);
   const [currentPage, setcurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const queryClient = useQueryClient();
-
-  const { data, isLoading, isSuccess } = useQuery(
-    ['billing', { currentPage, startTime, endTime }],
+  const [totalItem, setTotalItem] = useState(10);
+  const { data, isFetching, isSuccess } = useQuery(
+    ['billing', { currentPage, startTime, endTime, orderID, selectType }],
     () => {
       let spec = {} as BillingSpec;
       spec = {
         page: currentPage,
         pageSize: pageSize,
-        type: -1,
+        type: selectType,
         startTime: formatISO(startTime, { representation: 'complete' }),
         // startTime,
         endTime: formatISO(endTime, { representation: 'complete' }),
         // endTime,
-        orderID: searchValue.trim()
+        orderID
       };
       return request<any, { data: BillingData }, { spec: BillingSpec }>('/api/billing', {
         method: 'POST',
@@ -67,8 +67,18 @@ function Billing() {
     },
     {
       onSuccess(data) {
-        setTotalPage(data.data.status.pageLength);
-      }
+        const totalPage = data.data.status.pageLength;
+        if (totalPage === 0) {
+          // 搜索时
+          setTotalPage(1);
+          setTotalItem(1);
+          setcurrentPage(1);
+        } else {
+          setTotalItem(data.data.status.totalCount);
+          setTotalPage(totalPage);
+        }
+      },
+      staleTime: 1000
     }
   );
   const tableResult = data?.data?.status?.item || [];
@@ -84,7 +94,7 @@ function Billing() {
           <Text fontSize={'12px'} mr={'12px'} width={['60px', '60px', 'auto', 'auto']}>
             {t('Transaction Time')}
           </Text>
-          <SelectRange isDisabled={isLoading}></SelectRange>
+          <SelectRange isDisabled={isFetching}></SelectRange>
         </Flex>
         <Flex align={'center'} mb={'24px'}>
           <Text fontSize={'12px'} mr={'12px'} width={['60px', '60px', 'auto', 'auto']}>
@@ -105,6 +115,7 @@ function Billing() {
                   background: '#F8FAFB',
                   border: `1px solid #36ADEF`
                 }}
+                isDisabled={isFetching}
                 _hover={{
                   background: '#F8FAFB',
                   border: `1px solid #36ADEF`
@@ -131,8 +142,10 @@ function Billing() {
                   fontWeight="400"
                   lineHeight="18px"
                   p={'0'}
+                  isDisabled={isFetching}
                   bg={v.value === selectType ? '#F4F6F8' : '#FDFDFE'}
                   onClick={() => {
+                    setcurrentPage(1);
                     setType(v.value);
                   }}
                 >
@@ -155,7 +168,7 @@ function Billing() {
           >
             <Img src={magnifyingGlass_icon.src} w={'14px'} mr={'8px'}></Img>
             <Input
-              isDisabled={isLoading}
+              isDisabled={isFetching}
               variant={'unstyled'}
               placeholder={t('Order Number') as string}
               value={searchValue}
@@ -163,7 +176,7 @@ function Billing() {
             ></Input>
           </Flex>
           <Button
-            isDisabled={isLoading}
+            isDisabled={isFetching}
             variant={'unstyled'}
             display="flex"
             justifyContent={'center'}
@@ -180,7 +193,7 @@ function Billing() {
             }}
             onClick={(e) => {
               e.preventDefault();
-              queryClient.invalidateQueries(['billing']);
+              setOrderID(searchValue);
             }}
           >
             {t('Search')}
@@ -196,9 +209,9 @@ function Billing() {
               )}
             ></BillingTable>
           </Box>
-          <Flex w="370px" h="32px" ml="auto" align={'center'} mt={'20px'}>
+          <Flex minW="370px" h="32px" ml="auto" align={'center'} mt={'20px'}>
             <Text>{t('Total')}:</Text>
-            <Flex w="40px">{totalPage * pageSize}</Flex>
+            <Flex w="40px">{totalItem}</Flex>
             <Flex gap={'8px'}>
               <Button
                 variant={'switchPage'}

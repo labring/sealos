@@ -1,21 +1,33 @@
-import { formatMoney } from '@/utils/format';
+import { loadStripe } from '@stripe/stripe-js';
 import { create } from 'zustand';
-import { immer } from 'zustand/middleware/immer';
 type EnvState = {
   rechargeEnabled: boolean;
   transferEnabled: boolean;
   invoiceEnabled: boolean;
-  setRechargeEnabled: (enabled: boolean) => void;
-  setTransferEnabled: (enabled: boolean) => void;
-  setInvoiceEnabled: (enabled: boolean) => void;
+  gpuEnabled: boolean;
+  wechatEnabled: boolean;
+  stripeEnabled: boolean;
+  openRecharge: boolean;
+  currency: 'shellCoin' | 'cny' | 'usd';
+  stripePromise: ReturnType<typeof loadStripe>;
+  setStripe: (pub: string) => void;
+  setEnv: <T extends Exclude<keyof EnvState, 'setEnv' | 'setStripe' | 'stripePromise'>>(
+    key: T,
+    value: EnvState[T]
+  ) => void;
 };
 const useEnvStore = create<EnvState>((set, get) => ({
   rechargeEnabled: false,
   transferEnabled: false,
   invoiceEnabled: false,
-  setRechargeEnabled: (enabled: boolean) => set({ rechargeEnabled: enabled }),
-  setTransferEnabled: (enabled: boolean) => set({ transferEnabled: enabled }),
-  setInvoiceEnabled: (enabled: boolean) => set({ invoiceEnabled: enabled })
+  wechatEnabled: false,
+  stripeEnabled: false,
+  gpuEnabled: false,
+  openRecharge: false,
+  currency: 'shellCoin',
+  stripePromise: Promise.resolve(null),
+  setStripe: (pub: string) => set({ stripePromise: loadStripe(pub) }),
+  setEnv: (k, v) => set({ [k]: v })
 }));
 
 export default useEnvStore;

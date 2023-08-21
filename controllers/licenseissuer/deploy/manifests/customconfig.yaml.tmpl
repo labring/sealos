@@ -6,18 +6,28 @@ metadata:
 stringData:
   canConnectToExternalNetwork: "{{ .canConnectToExternalNetwork }}"
   isMonitor: "{{ .enableMonitor }}"
+  MongoURI: "{{ .MongoURI }}"
+  PasswordSalt: "{{ .PasswordSalt }}"
+  Namespace: "{{ .Namespace }}"
 ---
 apiVersion: v1
 data:
   config.json: |
     {
-      "CollectorURL": {{ .CollectorURL }},
-      "NotificationURL": {{ .NotificationURL }},
-      "RegisterURL": {{ .RegisterURL }},
-      "CloudSyncURL": {{ .CloudSyncURL }},
-      "LicenseMonitorURL": {{ .LicenseMonitorURL }}
+      "CollectorURL": "{{ .CollectorURL }}",
+      "NotificationURL": "{{ .NotificationURL }}",
+      "RegisterURL": "{{ .RegisterURL }}",
+      "CloudSyncURL": "{{ .CloudSyncURL }}",
+      "LicenseMonitorURL": "{{ .LicenseMonitorURL }}"
     }
 kind: ConfigMap
 metadata:
   name: url-config
+  namespace: "{{ .Namespace }}"
+---
+apiVersion: v1
+data: null
+kind: ConfigMap
+metadata:
+  name: license-history
   namespace: sealos-system

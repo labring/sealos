@@ -291,8 +291,8 @@ export const MOCK_APP_DETAIL: AppDetailType = {
   runCMD: '',
   cmdParam: '',
   replicas: 5,
-  cpu: 1,
-  memory: 1,
+  cpu: 0,
+  memory: 0,
   usedCpu: new Array(30).fill(0),
   usedMemory: new Array(30).fill(0),
   containerOutPort: 8000,
@@ -312,10 +312,10 @@ export const MOCK_APP_DETAIL: AppDetailType = {
   },
   configMapList: [],
   secret: {
-    use: true,
-    username: 'string',
-    password: 'string',
-    serverAddress: 'string'
+    use: false,
+    username: '',
+    password: '',
+    serverAddress: ''
   },
   storeList: []
 };

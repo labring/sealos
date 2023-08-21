@@ -1,4 +1,11 @@
-import { enableInvoice, enableRecharge, enableTransfer } from '@/service/enabled';
+import {
+  enableGpu,
+  enableInvoice,
+  enableRecharge,
+  enableStripe,
+  enableTransfer,
+  enableWechat
+} from '@/service/enabled';
 import { jsonRes } from '@/service/backend/response';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { EnvData } from '@/types/env';
@@ -9,7 +16,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: {
         rechargeEnabled: enableRecharge(),
         transferEnabled: enableTransfer(),
-        invoiceEnabled: enableInvoice()
+        invoiceEnabled: enableInvoice(),
+        gpuEnabled: enableGpu(),
+        stripePub: process.env['STRIPE_PUB'] || '',
+        stripeEnabled: enableStripe(),
+        wechatEnabled: enableWechat(),
+        currency: (process.env['CURRENCY'] as EnvData['currency']) || 'shellCoin'
       },
       code: 200
     });

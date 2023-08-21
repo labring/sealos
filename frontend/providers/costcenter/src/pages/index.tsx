@@ -1,12 +1,12 @@
 import { useRouter } from 'next/router';
-import { useEffect } from 'react';
 
 export default function Index() {
   const router = useRouter();
-
-  useEffect(() => {
-    router.push('/cost_overview');
-  }, [router]);
+  const config: Parameters<typeof router.push>[0] = {
+    pathname: 'cost_overview'
+  };
+  if (Object.keys(router.query).length > 0) config.query = router.query;
+  router.replace(config, config);
 
   return <div></div>;
 }

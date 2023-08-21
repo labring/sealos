@@ -4,9 +4,9 @@ import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { theme } from '@/styles/chakraTheme';
 import '@/styles/globals.scss';
 import { ChakraProvider } from '@chakra-ui/react';
-import { persistQueryClient, removeOldestQuery } from '@tanstack/react-query-persist-client';
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+// import { persistQueryClient, removeOldestQuery } from '@tanstack/react-query-persist-client';
+// import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import { Hydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { AppProps } from 'next/app';
 import Router from 'next/router';
 import NProgress from 'nprogress';
@@ -20,6 +20,8 @@ import { EnvData } from '@/types/env';
 import { ApiResp } from '@/types/api';
 import useEnvStore from '@/stores/env';
 
+// Make sure to call `loadStripe` outside of a component’s render to avoid
+// recreating the `Stripe` object on every render.
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -29,17 +31,17 @@ const queryClient = new QueryClient({
     }
   }
 });
-if (typeof window !== 'undefined') {
-  const syncStoragePersister = createSyncStoragePersister({
-    storage: window.localStorage,
-    retry: removeOldestQuery
-  });
+// if (typeof window !== 'undefined') {
+//   const syncStoragePersister = createSyncStoragePersister({
+//     storage: window.localStorage,
+//     retry: removeOldestQuery
+//   });
 
-  persistQueryClient({
-    persister: syncStoragePersister,
-    queryClient: queryClient
-  });
-}
+//   persistQueryClient({
+//     persister: syncStoragePersister,
+//     queryClient: queryClient
+//   });
+// }
 
 Router.events.on('routeChangeStart', () => NProgress.start());
 Router.events.on('routeChangeComplete', () => NProgress.done());
@@ -70,9 +72,15 @@ const App = ({ Component, pageProps }: AppProps) => {
     (async () => {
       try {
         const { data } = await request<any, ApiResp<EnvData>>('/api/enabled');
-        state.setInvoiceEnabled(!!data?.invoiceEnabled);
-        state.setTransferEnabled(!!data?.transferEnabled);
-        state.setRechargeEnabled(!!data?.rechargeEnabled);
+        state.setEnv('invoiceEnabled', !!data?.invoiceEnabled);
+        state.setEnv('transferEnabled', !!data?.transferEnabled);
+        state.setEnv('rechargeEnabled', !!data?.rechargeEnabled);
+        state.setEnv('currency', data?.currency || 'shellCoin');
+        state.setEnv('gpuEnabled', !!data?.gpuEnabled);
+        const stripeE = !!data?.stripeEnabled;
+        state.setEnv('stripeEnabled', stripeE);
+        stripeE && state.setStripe(data?.stripePub || '');
+        state.setEnv('wechatEnabled', !!data?.wechatEnabled);
       } catch (error) {
         console.error('get env error');
       }
@@ -85,11 +93,13 @@ const App = ({ Component, pageProps }: AppProps) => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ChakraProvider theme={theme}>
-        <Layout>
-          <Component {...pageProps} />
-        </Layout>
-      </ChakraProvider>
+      <Hydrate state={pageProps.dehydratedState}>
+        <ChakraProvider theme={theme}>
+          <Layout>
+            <Component {...pageProps} />
+          </Layout>
+        </ChakraProvider>
+      </Hydrate>
     </QueryClientProvider>
   );
 };

@@ -95,6 +95,8 @@ jobs:
         working-directory: deploy/cloud
         run: |
           [ -z "${{ inputs.build_from }}" ] && BuildFromTag="latest" || BuildFromTag="${{ inputs.build_from }}"; echo "BuildFromTag=${BuildFromTag}" 
+          sed -i "s#labring#${{ github.repository_owner }}#g" init.sh
+          sed -i "s#labring#${{ github.repository_owner }}#g" etc/sealos/desktop-config.yaml
           sed -i "s#latest#${BuildFromTag}#g" init.sh
           sed -i "s#latest#${BuildFromTag}#g" etc/sealos/desktop-config.yaml
           sudo bash init.sh

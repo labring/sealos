@@ -20,6 +20,8 @@ import (
 	"github.com/labring/sealos/pkg/remote"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/maps"
+	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 )
 
 type Context interface {
@@ -59,13 +61,22 @@ func (ctx realContext) GetRemoter() remote.Interface {
 }
 
 func NewContextFrom(cluster *v2.Cluster) Context {
-	execer, _ := ssh.NewSSHByCluster(cluster, true)
-	envProcessor := env.NewEnvProcessor(cluster, cluster.Status.Mounts)
+	execer := ssh.NewSSHByCluster(cluster, true)
+	envProcessor := env.NewEnvProcessor(cluster)
 	remoter := remote.New(cluster.GetName(), execer)
+
+	rootfsImage := cluster.GetRootfsImage()
+	rootfsEnvs := v2.MergeEnvWithBuiltinKeys(rootfsImage.Env, *rootfsImage)
+
+	// bootstrap process depends on the envs in the rootfs image
+	shellWrapper := func(host, shell string) string {
+		envs := maps.MergeMap(rootfsEnvs, envProcessor.Getenv(host))
+		return stringsutil.RenderShellFromEnv(shell, envs)
+	}
 	return &realContext{
 		cluster: cluster,
 		execer:  execer,
-		bash:    constants.NewBash(cluster.GetName(), cluster.GetImageLabels(), envProcessor.WrapperShell),
+		bash:    constants.NewBash(cluster.GetName(), cluster.GetImageLabels(), shellWrapper),
 		data:    constants.NewData(cluster.GetName()),
 		remoter: remoter,
 	}

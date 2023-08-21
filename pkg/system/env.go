@@ -88,11 +88,6 @@ var configOptions = []ConfigOption{
 		DefaultValue: "true",
 	},
 	{
-		Key:          RegistrySyncExperimentalConfigKey,
-		Description:  "enable registry sync experimental feature, using containers/image module to save and sync images",
-		DefaultValue: "false",
-	},
-	{
 		Key:         ContainerStorageConfEnvKey,
 		Description: "path of container storage config file, setting this env will override the default location",
 		OSEnv:       ContainerStorageConfEnvKey,
@@ -100,14 +95,13 @@ var configOptions = []ConfigOption{
 }
 
 const (
-	PromptConfigKey                   = "PROMPT"
-	RuntimeRootConfigKey              = "RUNTIME_ROOT"
-	DataRootConfigKey                 = "DATA_ROOT"
-	BuildahFormatConfigKey            = "BUILDAH_FORMAT"
-	BuildahLogLevelConfigKey          = "BUILDAH_LOG_LEVEL"
-	ContainerStorageConfEnvKey        = "CONTAINERS_STORAGE_CONF"
-	ScpChecksumConfigKey              = "SCP_CHECKSUM"
-	RegistrySyncExperimentalConfigKey = "REGISTRY_SYNC_EXPERIMENTAL"
+	PromptConfigKey            = "PROMPT"
+	RuntimeRootConfigKey       = "RUNTIME_ROOT"
+	DataRootConfigKey          = "DATA_ROOT"
+	BuildahFormatConfigKey     = "BUILDAH_FORMAT"
+	BuildahLogLevelConfigKey   = "BUILDAH_LOG_LEVEL"
+	ContainerStorageConfEnvKey = "CONTAINERS_STORAGE_CONF"
+	ScpChecksumConfigKey       = "SCP_CHECKSUM"
 )
 
 func (*envSystemConfig) getValueOrDefault(key string) (*ConfigOption, error) {

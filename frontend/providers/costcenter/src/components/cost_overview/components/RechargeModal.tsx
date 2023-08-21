@@ -1,4 +1,3 @@
-import request from '@/service/request';
 import {
   Box,
   Button,
@@ -20,16 +19,7 @@ import {
 } from '@chakra-ui/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
-import {
-  forwardRef,
-  memo,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState
-} from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import wechat_icon from '@/assert/ic_baseline-wechat.svg';
 import vector from '@/assert/Vector.svg';
 import { deFormatMoney, formatMoney } from '@/utils/format';
@@ -38,7 +28,153 @@ import { getFavorable } from '@/utils/favorable';
 import { ApiResp } from '@/types/api';
 import { Pay, Payment } from '@/types/payment';
 import OuterLink from '@/components/outerLink';
+import stripe_icon from '@/assert/bi_stripe.svg';
+import { Spinner } from '@chakra-ui/react';
+import { Stripe } from '@stripe/stripe-js';
+import type { AxiosInstance } from 'axios';
+import useEnvStore from '@/stores/env';
+import Currencysymbol from '@/components/CurrencySymbol';
+import { useCustomToast } from '@/hooks/useCustomToast';
+const StripeForm = (props: {
+  tradeNO?: string;
+  complete: number;
+  stripePromise: Promise<Stripe | null>;
+}) => {
+  const stripePromise = props.stripePromise;
+  const sessionId = props.tradeNO;
+  const complete = props.complete;
+  useEffect(() => {
+    if (stripePromise && sessionId)
+      (async () => {
+        try {
+          const res1 = await stripePromise;
+          if (!res1) return;
+          if (complete !== 2) return;
+          await res1.redirectToCheckout({
+            sessionId
+          });
+        } catch (e) {
+          console.error(e);
+        }
+      })();
+  }, [sessionId, stripePromise, complete]);
+  return (
+    <Flex w={'100%'} flex={1} align={'center'} justify={'center'}>
+      <Spinner size={'xl'} />
+    </Flex>
+  );
+};
 
+function WechatPayment(props: { complete: number; codeURL?: string; tradeNO?: string }) {
+  const { t } = useTranslation();
+  return (
+    <Flex
+      flexDirection="column"
+      px="37px"
+      justify={'center'}
+      align={'center'}
+      mt={'135px'}
+      display={'flex'}
+      justifyContent={'center'}
+      alignItems={'center'}
+      position={'relative'}
+    >
+      <Flex
+        width={'267px'}
+        height={'295px'}
+        direction={'column'}
+        align="center"
+        justify={'space-between'}
+      >
+        <Text color="#7B838B" mb="8px" textAlign="center">
+          {t('Scan with WeChat')}
+        </Text>
+        {props.complete === 2 && !!props.codeURL ? (
+          <QRCodeSVG
+            size={185}
+            value={props.codeURL}
+            style={{ margin: '0 auto' }}
+            imageSettings={{
+              // 二维码中间的logo图片
+              src: wechat_icon.src,
+              height: 40,
+              width: 40,
+              excavate: true // 中间图片所在的位置是否镂空
+            }}
+          />
+        ) : (
+          <Box>waiting...</Box>
+        )}
+        <Box mt="8px">
+          <Text color="#717D8A" fontSize="12px" fontWeight="normal">
+            {t('Order Number')}： {props.tradeNO || ''}
+          </Text>
+          <Text color="#717D8A" fontSize="12px">
+            {t('Payment Result')}:{props.complete === 3 ? t('Payment Successful') : t('In Payment')}
+          </Text>
+        </Box>
+      </Flex>
+    </Flex>
+  );
+}
+const BonusBox = (props: {
+  onClick: () => void;
+  selected: boolean;
+  bouns: number;
+  amount: number;
+}) => {
+  const { t } = useTranslation();
+  const currency = useEnvStore((s) => s.currency);
+  return (
+    <Flex
+      width="140px"
+      height="92px"
+      justify={'center'}
+      align={'center'}
+      {...(props.selected
+        ? {
+            color: '#36ADEF',
+            border: '1.5px solid #36ADEF'
+          }
+        : {
+            border: '1px solid #EFF0F1'
+          })}
+      bg={'#f4f6f8'}
+      borderRadius="4px"
+      position={'relative'}
+      flexGrow="0"
+      cursor={'pointer'}
+      onClick={(e) => {
+        e.preventDefault();
+        props.onClick();
+      }}
+    >
+      <Text
+        position={'absolute'}
+        display={'inline-block'}
+        minW={'max-content'}
+        left="78px"
+        top="4px"
+        px={'10px'}
+        color={'#A558C9'}
+        background="#EDDEF4"
+        borderRadius="10px 10px 10px 0px"
+        zIndex={'99'}
+        fontStyle="normal"
+        fontWeight="500"
+        fontSize="12px"
+      >
+        {t('Bonus')} {props.bouns}
+      </Text>
+      <Flex align={'center'}>
+        <Currencysymbol w="24px" type={currency} />
+        <Text ml="4px" fontStyle="normal" fontWeight="500" fontSize="24px">
+          {props.amount}
+        </Text>
+      </Flex>
+    </Flex>
+  );
+};
 const RechargeModal = forwardRef(
   (
     props: {
@@ -48,12 +184,15 @@ const RechargeModal = forwardRef(
       onCreatedError?: () => void;
       onCancel?: () => void;
       balance: number;
+      stripePromise: Promise<Stripe | null>;
+      request: AxiosInstance;
     },
     ref
   ) => {
     const balance = props.balance || 0;
     const { t } = useTranslation();
     const { isOpen, onOpen, onClose: _onClose } = useDisclosure();
+    const request = props.request;
     useImperativeHandle(
       ref,
       () => ({
@@ -71,16 +210,17 @@ const RechargeModal = forwardRef(
 
     // 整个流程跑通需要状态管理, 0 初始态， 1 创建支付单， 2 支付中, 3 支付成功
     const [complete, setComplete] = useState<0 | 1 | 2 | 3>(0);
+    // 0 是微信，1 是stripe
+    const [payType, setPayType] = useState<'wechat' | 'stripe'>('wechat');
     // 计费详情
     const [detail, setDetail] = useState(false);
     const [paymentName, setPaymentName] = useState('');
     const [selectAmount, setSelectAmount] = useState(0);
-
-    const toast = useToast();
     const createPaymentRes = useMutation(
       () =>
         request.post<any, ApiResp<Payment>>('/api/account/payment', {
-          amount: deFormatMoney(amount)
+          amount: deFormatMoney(amount),
+          paymentMethod: payType
         }),
       {
         onSuccess(data) {
@@ -101,8 +241,8 @@ const RechargeModal = forwardRef(
       }
     );
 
-    const { data } = useQuery(
-      ['query-charge-res'],
+    const { data, isPreviousData } = useQuery(
+      ['query-charge-res', { id: paymentName }],
       () =>
         request<any, ApiResp<Pay>>('/api/account/payment/pay', {
           params: {
@@ -116,7 +256,7 @@ const RechargeModal = forwardRef(
         staleTime: 0,
         onSuccess(data) {
           setTimeout(() => {
-            if (data?.data?.status === 'SUCCESS') {
+            if ((data?.data?.status || '').toUpperCase() === 'SUCCESS') {
               createPaymentRes.reset();
               setComplete(3);
               props.onPaySuccess?.();
@@ -127,7 +267,6 @@ const RechargeModal = forwardRef(
         }
       }
     );
-
     const cancalPay = useCallback(() => {
       createPaymentRes.reset();
       props.onCancel?.();
@@ -168,21 +307,38 @@ const RechargeModal = forwardRef(
       },
       [isSuccess, ratios, steps]
     );
-
+    const { stripeEnabled, wechatEnabled } = useEnvStore();
     useEffect(() => {
       if (steps && steps.length > 0) {
         setAmount(steps[0]);
       }
     }, [steps]);
 
-    const handleConfirm = () => {
+    const handleWechatConfirm = () => {
+      setPayType('wechat');
       setComplete(1);
       createPaymentRes.mutate();
     };
+
+    const { toast } = useCustomToast();
+    const handleStripeConfirm = () => {
+      setPayType('stripe');
+      if (amount < 10) {
+        toast({
+          status: 'error',
+          title: t('Pay Minimum Tips')
+        });
+        // 校检，stripe有最低费用的要求
+        return;
+      }
+      setComplete(1);
+      createPaymentRes.mutate();
+    };
+    const currency = useEnvStore((s) => s.currency);
     return (
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
-        <ModalContent maxW="500px" height={'565px'}>
+        <ModalContent maxW="500px" minH={'495'} display={'flex'} flexDir={'column'}>
           {!detail ? (
             complete === 0 ? (
               <>
@@ -194,6 +350,7 @@ const RechargeModal = forwardRef(
                   pointerEvents={complete === 0 ? 'auto' : 'none'}
                   pt="4px"
                   mt={'0'}
+                  pb="28px"
                   w="500px"
                   px={'24px'}
                   flexDirection="column"
@@ -201,11 +358,12 @@ const RechargeModal = forwardRef(
                   alignItems="center"
                 >
                   <Flex align={'center'} alignSelf={'flex-start'} mb={'20px'}>
-                    <Text color="#7B838B" fontWeight={'normal'} mr={'24px'}>
+                    <Text color="#7B838B" fontWeight={'normal'} mr={'20px'}>
                       {t('Balance')}
                     </Text>
-                    <Text mt="4px" color="#24282C" fontSize="24px" fontWeight={'medium'}>
-                      ¥ {formatMoney(balance).toFixed(2)}
+                    <Currencysymbol w="24px" type={currency} />
+                    <Text ml="4px" color="#24282C" fontSize="24px" fontWeight={'medium'}>
+                      {formatMoney(balance).toFixed(2)}
                     </Text>
                   </Flex>
                   <Flex direction={'column'} mb={'20px'}>
@@ -214,51 +372,16 @@ const RechargeModal = forwardRef(
                     </Text>
                     <Flex wrap={'wrap'} gap={'16px'}>
                       {steps.map((amount, index) => (
-                        <Flex
-                          width="140px"
-                          height="92px"
-                          justify={'center'}
-                          align={'center'}
+                        <BonusBox
                           key={index}
-                          {...(selectAmount === index
-                            ? {
-                                color: '#36ADEF',
-                                border: '1.5px solid #36ADEF'
-                              }
-                            : {
-                                border: '1px solid #EFF0F1'
-                              })}
-                          bg={'#f4f6f8'}
-                          borderRadius="4px"
-                          position={'relative'}
-                          flexGrow="0"
-                          cursor={'pointer'}
+                          amount={amount}
+                          bouns={getBonus(amount)}
                           onClick={() => {
                             setSelectAmount(index);
                             setAmount(amount);
                           }}
-                        >
-                          <Text
-                            position={'absolute'}
-                            display={'inline-block'}
-                            minW={'max-content'}
-                            left="78px"
-                            top="4px"
-                            px={'10px'}
-                            color={'#A558C9'}
-                            background="#EDDEF4"
-                            borderRadius="10px 10px 10px 0px"
-                            zIndex={'99'}
-                            fontStyle="normal"
-                            fontWeight="500"
-                            fontSize="12px"
-                          >
-                            {t('Bonus')}￥{getBonus(amount)}
-                          </Text>
-                          <Text fontStyle="normal" fontWeight="500" fontSize="24px">
-                            ￥{amount}
-                          </Text>
-                        </Flex>
+                          selected={selectAmount === index}
+                        />
                       ))}
                     </Flex>
                   </Flex>
@@ -285,7 +408,7 @@ const RechargeModal = forwardRef(
                       variant={'unstyled'}
                       onChange={(str, v) => (str.trim() ? setAmount(v) : setAmount(0))}
                     >
-                      <Text mr={'4px'}>¥</Text>
+                      <Currencysymbol w="16px" type={currency} />
                       <NumberInputField />
                       <NumberInputStepper>
                         <NumberIncrementStepper>
@@ -306,10 +429,10 @@ const RechargeModal = forwardRef(
                       fontStyle="normal"
                       fontWeight="500"
                       fontSize="12px"
+                      mr="4px"
                     >
-                      {t('Bonus')}
+                      {t('Bonus')} {getBonus(amount)}
                     </Text>
-                    <Text>￥{getBonus(amount)}</Text>
                   </Flex>
                   <Flex
                     alignSelf={'flex-start'}
@@ -319,16 +442,40 @@ const RechargeModal = forwardRef(
                   >
                     <OuterLink text={t('View Discount Rules')}></OuterLink>
                   </Flex>
-                  <Button
-                    size="primary"
-                    variant="primary"
-                    mt="20px"
-                    w="full"
-                    h="48px"
-                    onClick={() => handleConfirm()}
-                  >
-                    {t('Confirm')}
-                  </Button>
+                  <Flex gap={'16px'} width={'full'}>
+                    {stripeEnabled && (
+                      <Button
+                        size="primary"
+                        variant="primary"
+                        mt="20px"
+                        w="full"
+                        h="auto"
+                        py="14px"
+                        px="34px"
+                        onClick={() => {
+                          handleStripeConfirm();
+                        }}
+                      >
+                        <Img src={stripe_icon.src} mr="2px" w="24px" h="24px" />
+                        <Text>{t('pay with stripe')}</Text>
+                      </Button>
+                    )}
+                    {wechatEnabled && (
+                      <Button
+                        size="primary"
+                        variant="primary"
+                        mt="20px"
+                        w="full"
+                        h="auto"
+                        py="14px"
+                        px="34px"
+                        onClick={() => handleWechatConfirm()}
+                      >
+                        <Img src={wechat_icon.src} mr="2px" w="24px" h="24px" />
+                        <Text>{t('pay with wechat')}</Text>
+                      </Button>
+                    )}
+                  </Flex>
                 </Flex>
               </>
             ) : (
@@ -357,55 +504,19 @@ const RechargeModal = forwardRef(
                   <Text>{t('Recharge Amount')}</Text>
                 </ModalHeader>
                 <ModalCloseButton top={'24px'} right={'24px'} />
-                <Flex
-                  flexDirection="column"
-                  px="37px"
-                  justify={'center'}
-                  align={'center'}
-                  mt={'135px'}
-                  display={'flex'}
-                  justifyContent={'center'}
-                  alignItems={'center'}
-                  position={'relative'}
-                >
-                  <Flex
-                    width={'267px'}
-                    height={'295px'}
-                    direction={'column'}
-                    align="center"
-                    justify={'space-between'}
-                  >
-                    <Text color="#7B838B" mb="8px" textAlign="center">
-                      {t('Scan with WeChat')}
-                    </Text>
-                    {complete === 2 && !!data?.data?.codeURL ? (
-                      <QRCodeSVG
-                        size={185}
-                        value={data?.data?.codeURL}
-                        style={{ margin: '0 auto' }}
-                        imageSettings={{
-                          // 二维码中间的logo图片
-                          src: wechat_icon.src,
-                          height: 40,
-                          width: 40,
-                          excavate: true // 中间图片所在的位置是否镂空
-                        }}
-                      />
-                    ) : (
-                      <Box>waiting...</Box>
-                    )}
-                    <Box mt="8px">
-                      <Text color="#717D8A" fontSize="12px" fontWeight="normal">
-                        {t('Order Number')}： {data?.data?.tradeNO}
-                      </Text>
-
-                      <Text color="#717D8A" fontSize="12px">
-                        {t('Payment Result')}:
-                        {complete === 3 ? t('Payment Successful') : t('In Payment')}
-                      </Text>
-                    </Box>
-                  </Flex>
-                </Flex>
+                {payType === 'wechat' ? (
+                  <WechatPayment
+                    complete={complete}
+                    codeURL={!isPreviousData ? data?.data?.codeURL : undefined}
+                    tradeNO={!isPreviousData ? data?.data?.tradeNO : undefined}
+                  />
+                ) : (
+                  <StripeForm
+                    tradeNO={!isPreviousData ? data?.data?.tradeNO : undefined}
+                    complete={complete}
+                    stripePromise={props.stripePromise}
+                  />
+                )}
               </>
             )
           ) : (

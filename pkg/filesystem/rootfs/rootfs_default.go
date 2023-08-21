@@ -51,15 +51,14 @@ func (f *defaultRootfs) getClusterName(cluster *v2.Cluster) string {
 }
 
 func (f *defaultRootfs) getSSH(cluster *v2.Cluster) ssh.Interface {
-	sshClient, _ := ssh.NewSSHByCluster(cluster, true)
-	return sshClient
+	return ssh.NewSSHByCluster(cluster, true)
 }
 
 func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error {
 	target := constants.NewData(f.getClusterName(cluster)).RootFSPath()
 	ctx := context.Background()
 	eg, _ := errgroup.WithContext(ctx)
-	envProcessor := env.NewEnvProcessor(cluster, f.mounts)
+	envProcessor := env.NewEnvProcessor(cluster)
 	for _, mount := range f.mounts {
 		src := mount
 		eg.Go(func() error {
@@ -69,7 +68,8 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 			}
 			// TODO: if we are planing to support rendering templates for each host,
 			// then move this rendering process before ssh.CopyDir and do it one by one.
-			err := renderTemplatesWithEnv(src.MountPoint, ipList, envProcessor)
+			envs := v2.MergeEnvWithBuiltinKeys(src.Env, src)
+			err := renderTemplatesWithEnv(src.MountPoint, ipList, envProcessor, envs)
 			if err != nil {
 				return fmt.Errorf("failed to render env: %w", err)
 			}
@@ -94,47 +94,45 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 
 	notRegistryDirFilter := func(entry fs.DirEntry) bool { return !constants.IsRegistryDir(entry) }
 
+	copyFn := func(m v2.MountImage, targetHost, targetDir string) error {
+		logger.Debug("send mount image, target: %s, image: %s, type: %s", targetHost, m.ImageName, m.Type)
+		if err := ssh.CopyDir(sshClient, targetHost, m.MountPoint, targetDir, notRegistryDirFilter); err != nil {
+			logger.Error("error occur while sending mount image %s: %v", m.Name, err)
+			return err
+		}
+		return nil
+	}
+
 	for idx := range ipList {
 		ip := ipList[idx]
 		eg.Go(func() error {
-			egg, _ := errgroup.WithContext(ctx)
-			for idj := range f.mounts {
-				mount := f.mounts[idj]
-				egg.Go(func() error {
-					switch mount.Type {
-					case v2.RootfsImage, v2.PatchImage:
-						logger.Debug("send mount image, ip: %s, image name: %s, image type: %s", ip, mount.ImageName, mount.Type)
-						err := ssh.CopyDir(sshClient, ip, mount.MountPoint, target, notRegistryDirFilter)
-						if err != nil {
-							return fmt.Errorf("failed to copy %s %s: %v", mount.Type, mount.Name, err)
-						}
+			for i := range f.mounts {
+				if f.mounts[i].IsRootFs() || f.mounts[i].IsPatch() {
+					// contents in rootfs/patch type images cannot be replicated asynchronously
+					if err := copyFn(f.mounts[i], ip, target); err != nil {
+						return err
 					}
-					return nil
-				})
+				}
 			}
-			return egg.Wait()
+			return nil
 		})
 	}
 	if err := eg.Wait(); err != nil {
 		return err
 	}
 
-	endEg, _ := errgroup.WithContext(ctx)
+	eg, _ = errgroup.WithContext(ctx)
 	master0 := cluster.GetMaster0IPAndPort()
 	for idx := range f.mounts {
 		mountInfo := f.mounts[idx]
-		endEg.Go(func() error {
-			if mountInfo.Type == v2.AppImage {
-				logger.Debug("send app mount images, ip: %s, image name: %s, image type: %s", master0, mountInfo.ImageName, mountInfo.Type)
-				err := ssh.CopyDir(sshClient, master0, mountInfo.MountPoint, constants.GetAppWorkDir(cluster.Name, mountInfo.Name), notRegistryDirFilter)
-				if err != nil {
-					return fmt.Errorf("failed to copy %s %s: %v", mountInfo.Type, mountInfo.Name, err)
-				}
+		eg.Go(func() error {
+			if mountInfo.IsApplication() {
+				return copyFn(mountInfo, master0, constants.GetAppWorkDir(cluster.Name, mountInfo.Name))
 			}
 			return nil
 		})
 	}
-	return endEg.Wait()
+	return eg.Wait()
 }
 
 func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) error {
@@ -153,7 +151,7 @@ func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) erro
 	return eg.Wait()
 }
 
-func renderTemplatesWithEnv(mountDir string, ipList []string, p env.Interface) error {
+func renderTemplatesWithEnv(mountDir string, ipList []string, p env.Interface, envs map[string]string) error {
 	var (
 		renderEtc       = path.Join(mountDir, constants.EtcDirName)
 		renderScripts   = path.Join(mountDir, constants.ScriptsDirName)
@@ -164,7 +162,7 @@ func renderTemplatesWithEnv(mountDir string, ipList []string, p env.Interface) e
 	for _, dir := range []string{renderEtc, renderScripts, renderManifests} {
 		logger.Debug("render env dir: %s", dir)
 		if file.IsExist(dir) {
-			err := p.RenderAll(ipList[0], dir)
+			err := p.RenderAll(ipList[0], dir, envs)
 			if err != nil {
 				return err
 			}

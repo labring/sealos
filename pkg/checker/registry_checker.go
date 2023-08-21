@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/labring/sealos/pkg/registry/crane"
+	"github.com/labring/sreg/pkg/registry/crane"
 
 	"github.com/labring/sealos/pkg/registry/helpers"
 
@@ -87,11 +87,7 @@ func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
 		}
 	}
 
-	sshCtx, err := ssh.NewSSHByCluster(cluster, false)
-	if err != nil {
-		status.Error = fmt.Errorf("get ssh interface error: %w", err).Error()
-		return nil
-	}
+	sshCtx := ssh.NewSSHByCluster(cluster, false)
 	root := constants.NewData(cluster.Name).RootFSPath()
 	regInfo := helpers.GetRegistryInfo(sshCtx, root, cluster.GetRegistryIPAndPort())
 	status.Auth = fmt.Sprintf("%s:%s", regInfo.Username, regInfo.Password)
@@ -100,7 +96,7 @@ func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
 		Username: regInfo.Username,
 		Password: regInfo.Password,
 	}
-	_, err = crane.NewRegistry(status.RegistryDomain, cfg)
+	_, err := crane.NewRegistry(status.RegistryDomain, cfg)
 	if err != nil {
 		status.Error = fmt.Errorf("get registry interface error: %w", err).Error()
 		return nil

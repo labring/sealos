@@ -52,18 +52,20 @@ const BillingModal = ({
 }) => {
   const [pageSize, setPageSize] = useState(10);
   const totalPage = Math.floor((billings?.current?.length || 0) / pageSize) + 1;
-
   const [currentPage, setcurrentPage] = useState(1);
-
   return (
     <>
+      {' '}
       <ModalContent w={'910px'} maxW="910px" h={'auto'} maxH="620px">
+        {' '}
         <ModalHeader display={'flex'}>
-          {t('orders.invoiceOrder')}({invoiceCount})
-          <Text color="rgba(29, 140, 220, 1)">￥ {invoiceAmount}</Text>
-        </ModalHeader>
-        <ModalCloseButton />
+          {' '}
+          {t('orders.invoiceOrder')}({invoiceCount}){' '}
+          <Text color="rgba(29, 140, 220, 1)">￥ {invoiceAmount}</Text>{' '}
+        </ModalHeader>{' '}
+        <ModalCloseButton />{' '}
         <ModalBody>
+          {' '}
           <Box
             overflow={'auto'}
             fontFamily="PingFang SC"
@@ -71,24 +73,28 @@ const BillingModal = ({
             fontWeight="500"
             lineHeight="20px"
           >
+            {' '}
             <Flex mb={'16px'} align="center">
+              {' '}
               <Flex align={'center'}>
-                <Img src={listIcon.src} w={'20px'} h={'20px'} mr={'6px'} />
-                <Text>{t('orders.list')}</Text>
-              </Flex>
-            </Flex>
+                {' '}
+                <Img src={listIcon.src} w={'20px'} h={'20px'} mr={'6px'} />{' '}
+                <Text>{t('orders.list')}</Text>{' '}
+              </Flex>{' '}
+            </Flex>{' '}
             <InvoiceTable
               selectbillings={billings.current || []}
               data={(billings.current || []).filter(
                 (item, index) =>
                   index <= pageSize * currentPage - 1 && index >= pageSize * (currentPage - 1)
               )}
-            ></InvoiceTable>
-          </Box>
+            ></InvoiceTable>{' '}
+          </Box>{' '}
           <Flex w="370px" h="32px" align={'center'} mt={'20px'} mx="auto">
-            <Text>{t('Total')}:</Text>
-            <Flex w="40px">{billings?.current?.length || 0}</Flex>
+            {' '}
+            <Text>{t('Total')}:</Text> <Flex w="40px">{billings?.current?.length || 0}</Flex>{' '}
             <Flex gap={'8px'}>
+              {' '}
               <Button
                 variant={'switchPage'}
                 isDisabled={currentPage === 1}
@@ -97,8 +103,9 @@ const BillingModal = ({
                   setcurrentPage(1);
                 }}
               >
-                <Img w="6px" h="6px" src={arrow_left_icon.src}></Img>
-              </Button>
+                {' '}
+                <Img w="6px" h="6px" src={arrow_left_icon.src}></Img>{' '}
+              </Button>{' '}
               <Button
                 variant={'switchPage'}
                 isDisabled={currentPage === 1}
@@ -107,9 +114,10 @@ const BillingModal = ({
                   setcurrentPage(currentPage - 1);
                 }}
               >
-                <Img src={arrow_icon.src} transform={'rotate(-90deg)'}></Img>
-              </Button>
-              <Text>{currentPage}</Text>/<Text>{totalPage}</Text>
+                {' '}
+                <Img src={arrow_icon.src} transform={'rotate(-90deg)'}></Img>{' '}
+              </Button>{' '}
+              <Text>{currentPage}</Text>/<Text>{totalPage}</Text>{' '}
               <Button
                 variant={'switchPage'}
                 isDisabled={currentPage === totalPage}
@@ -119,8 +127,9 @@ const BillingModal = ({
                   setcurrentPage(currentPage + 1);
                 }}
               >
-                <Img src={arrow_icon.src} transform={'rotate(90deg)'}></Img>
-              </Button>
+                {' '}
+                <Img src={arrow_icon.src} transform={'rotate(90deg)'}></Img>{' '}
+              </Button>{' '}
               <Button
                 variant={'switchPage'}
                 isDisabled={currentPage === totalPage}
@@ -131,14 +140,19 @@ const BillingModal = ({
                   setcurrentPage(totalPage);
                 }}
               >
-                <Img w="6px" h="6px" src={arrow_left_icon.src} transform={'rotate(180deg)'}></Img>
-              </Button>
-            </Flex>
-            <Text>{pageSize}</Text>
-            <Text>/{t('Page')}</Text>
-          </Flex>
-        </ModalBody>
-      </ModalContent>
+                {' '}
+                <Img
+                  w="6px"
+                  h="6px"
+                  src={arrow_left_icon.src}
+                  transform={'rotate(180deg)'}
+                ></Img>{' '}
+              </Button>{' '}
+            </Flex>{' '}
+            <Text>{pageSize}</Text> <Text>/{t('Page')}</Text>{' '}
+          </Flex>{' '}
+        </ModalBody>{' '}
+      </ModalContent>{' '}
     </>
   );
 };
@@ -186,13 +200,13 @@ function InvoicdForm({
       {
         name: t('orders.details.address.name'),
         placeholder: t('orders.details.address.placeholder'),
-        isRequired: false,
+        isRequired: true,
         value: ''
       },
       {
         name: t('orders.details.phone.name'),
         placeholder: t('orders.details.phone.placeholder'),
-        isRequired: false,
+        isRequired: true,
         value: ''
       },
       {
@@ -210,14 +224,14 @@ function InvoicdForm({
         value: ''
       },
       {
-        name: t('orders.contract.email.name'),
-        placeholder: t('orders.contract.email.placeholder'),
+        name: t('orders.contract.phone.name'),
+        placeholder: t('orders.contract.phone.placeholder'),
         isRequired: true,
         value: ''
       },
       {
-        name: t('orders.contract.phone.name'),
-        placeholder: t('orders.contract.phone.placeholder'),
+        name: t('orders.contract.email.name'),
+        placeholder: t('orders.contract.email.placeholder'),
         isRequired: true,
         value: ''
       },
@@ -282,9 +296,17 @@ function InvoicdForm({
     values,
     actions
   ) => {
-    if (!validPhone(values.contract[2].value)) return;
     if (!billings.current || billings.current.length === 0) {
       actions.setSubmitting(false);
+      return;
+    }
+    if (!isValidPhoneNumber(values.contract[1].value)) {
+      totast({
+        title: t('orders.phoneValidation'),
+        status: 'error',
+        position: 'top',
+        duration: 2000
+      });
       return;
     }
     if (!isValidCNTaxNumber(values.details[1].value)) {
@@ -296,7 +318,7 @@ function InvoicdForm({
       });
       return;
     }
-    if (!isValidEmail(values.contract[1].value)) {
+    if (!isValidEmail(values.contract[2].value)) {
       totast({
         title: t('orders.emailValidation'),
         status: 'error',
@@ -330,12 +352,13 @@ function InvoicdForm({
           },
           contract: {
             person: values.contract[0].value,
-            email: values.contract[1].value,
-            phone: values.contract[2].value,
+            email: values.contract[2].value,
+            phone: values.contract[1].value,
             code: values.contract[3].value
           }
         }
       );
+
       totast({
         title: t('orders.submit success'),
         status: 'success',
@@ -518,7 +541,7 @@ function InvoicdForm({
                               minW={'max-content'}
                             >
                               <FormLabel>{item.name}</FormLabel>
-                              {index === 2 ? (
+                              {index === 1 ? (
                                 <InputGroup
                                   variant={'unstyled'}
                                   width={'280px'}

@@ -1,24 +1,18 @@
-ifeq ($(OS),Windows_NT)
-  SHELL := powershell.exe
-  DOCKER_USERNAME := $(DOCKER_USERNAME)
-else
-  UNAME_S := $(shell uname -s)
-  ifeq ($(UNAME_S),Linux)
-    SHELL := /bin/bash
-    CURRENT_USER := $(shell echo $$USER)
-  endif
-  ifeq ($(UNAME_S),Darwin)
-    SHELL = /usr/bin/env bash
-    CURRENT_USER := $(shell id -un)
-  endif
-endif
+DOCKER_USERNAME := $(DOCKER_USERNAME)
+IMAGE_TAG := $(IMAGE_TAG)
+MIRROR := $(MIRROR)
 
 ifneq ($(strip $(DOCKER_USERNAME)),)
-  imageOwner := $(DOCKER_USERNAME)
+  imageOwner := $(DOCKER_USERNAME)/
 else
   imageOwner :=
 endif
 
+ifneq ($(strip $(IMAGE_TAG)),)
+  imageTag := $(IMAGE_TAG)
+else
+  imageTag := dev
+endif
 # build image
 buildTargets := \
 	desktop \
@@ -28,7 +22,8 @@ buildTargets := \
 	providers/costcenter \
 	providers/dbprovider \
 	providers/applaunchpad \
-	providers/imagehub
+	providers/imagehub \
+	providers/template
 
 buildTargets-all := $(addprefix image-build-,$(buildTargets))
 pushTargets-all := $(addprefix image-push-,$(buildTargets))
@@ -61,15 +56,15 @@ dev-%: build-packages
 
 # prebuild-image-for -j
 image-prebuild: pnpm-lock.yaml
-	docker build --target deps . -t $(imageOwner)sealos-deps:dev
+	docker build --platform=linux/amd64 --target deps . -t $(imageOwner)sealos-deps:dev
 
 image-build-providers/%: image-prebuild
-	docker build -t $(imageOwner)sealos-$*:dev --build-arg path=providers/$* --build-arg name=$* . 
+	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=providers/$* --build-arg name=$* --build-arg mirror=$(MIRROR) . 
 image-build-%: image-prebuild
-	docker build -t $(imageOwner)sealos-$*:dev --build-arg path=$* --build-arg name=$* . 
+	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=$* --build-arg name=$* --build-arg mirror=$(MIRROR) . 
 
 image-push-providers/%: image-build-providers/%
-	docker push $(imageOwner)sealos-$*:dev 
+	docker push $(imageOwner)sealos-$*:$(imageTag) 
 image-push-%: image-build-%
-	docker push $(imageOwner)sealos-$*:dev
+	docker push $(imageOwner)sealos-$*:$(imageTag)
 # Default target to run all builds.

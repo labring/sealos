@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 
@@ -36,6 +37,7 @@ import (
 
 	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller"
+	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -93,27 +95,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.NotificationReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Notification")
-		os.Exit(1)
-	}
-	if err = (&controller.CollectorReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Collector")
-		os.Exit(1)
-	}
-	if err = (&controller.CloudSyncReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "CloudSync")
-		os.Exit(1)
-	}
+	// get options for this Operator
+	options := util.GetOptions()
+
 	if err = (&controller.LicenseReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -121,12 +105,22 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "License")
 		os.Exit(1)
 	}
-	if err = (&controller.LauncherReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Launcher")
-		os.Exit(1)
+
+	// if err = (&controller.LauncherReconciler{
+	// 	Client: mgr.GetClient(),
+	// 	Scheme: mgr.GetScheme(),
+	// }).SetupWithManager(mgr); err != nil {
+	// 	setupLog.Error(err, "unable to create controller", "controller", "Launcher")
+	// 	os.Exit(1)
+	// }
+
+	// start the runnable tasks
+	tasks := util.BuildForRunnable(context.Background(), mgr.GetClient(), options)
+	for _, task := range tasks {
+		if err = mgr.Add(task); err != nil {
+			setupLog.Error(err, "unable to set up task pool")
+			os.Exit(1)
+		}
 	}
 
 	// if err = (&controller.ScaleMonitorReconciler{
