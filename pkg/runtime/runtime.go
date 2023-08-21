@@ -96,7 +96,9 @@ func (k *KubeadmRuntime) Reset() error {
 func (k *KubeadmRuntime) ScaleUp(newMasterIPList []string, newNodeIPList []string) error {
 	if newMasterIPList != nil && len(newMasterIPList) != 0 {
 		logger.Info("%s will be added as master", newMasterIPList)
-		return k.joinMasters(newMasterIPList)
+		if err := k.joinMasters(newMasterIPList); err != nil {
+			return err
+		}
 	}
 	if newNodeIPList != nil && len(newNodeIPList) != 0 {
 		logger.Info("%s will be added as worker", newNodeIPList)
@@ -105,20 +107,20 @@ func (k *KubeadmRuntime) ScaleUp(newMasterIPList []string, newNodeIPList []strin
 		}
 		return k.copyNodeKubeConfig(newNodeIPList)
 	}
-	logger.Warn("no nodes will be scaled up")
 	return nil
 }
 
 func (k *KubeadmRuntime) ScaleDown(deleteMastersIPList []string, deleteNodesIPList []string) error {
 	if deleteMastersIPList != nil && len(deleteMastersIPList) != 0 {
 		logger.Info("master %s will be deleted", deleteMastersIPList)
-		return k.deleteMasters(deleteMastersIPList)
+		if err := k.deleteMasters(deleteMastersIPList); err != nil {
+			return err
+		}
 	}
 	if deleteNodesIPList != nil && len(deleteNodesIPList) != 0 {
 		logger.Info("worker %s will be deleted", deleteNodesIPList)
 		return k.deleteNodes(deleteNodesIPList)
 	}
-	logger.Warn("no nodes will be scaled down")
 	return nil
 }
 
