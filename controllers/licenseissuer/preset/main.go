@@ -27,6 +27,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	mongoOptions "go.mongodb.org/mongo-driver/mongo/options"
@@ -40,7 +41,7 @@ func main() {
 	options := util.GetOptions()
 	for cnt := 0; cnt < maxRetry; cnt++ {
 		err = presetRootUser(context.Background(), options)
-		fmt.Println("failed to preset root user, retrying...")
+		logger.Error(err, "Failed to preset root user")
 		if err != nil {
 			time.Sleep(time.Minute)
 			continue
@@ -48,15 +49,15 @@ func main() {
 		break
 	}
 	if err != nil {
-		fmt.Println("failed to preset root user %w", err)
+		logger.Error(err, "Failed to preset root user")
 		os.Exit(1)
 	}
-	fmt.Println("preset root user successfully")
+	logger.Error(err, "Failed to preset root user")
 }
 
 const (
 	// pre-defined user name and password
-	defaultuser     = "root"
+	defaultUser     = "root"
 	defaultPassword = "sealos2023"
 
 	// kubernetes default user cr is admin
@@ -107,29 +108,29 @@ func presetRootUser(ctx context.Context, o util.Options) error {
 	defer func() {
 		err := client.Disconnect(ctx)
 		if err != nil {
-			fmt.Println("failed to disconnect mongoDB %w", err)
+			logger.Error(err, "failed to disconnect mongoDB")
 		}
 	}()
 
 	// preset root user
 	uuid := uuid.New().String()
 	passwd := hashPassword(defaultPassword, o.GetEnvOptions().SaltKey)
-	user := newUser(uuid, defaultuser, defaultuser, passwd, defaultK8sUser)
+	user := newUser(uuid, defaultUser, defaultUser, passwd, defaultK8sUser)
 
 	collection := client.Database(defaultDB).Collection(defaultCollection)
 	// check if the user already exists
 	isExists := preCheck(ctx, collection)
 	if isExists {
-		fmt.Println("root user already exists")
+		logger.Info("root user already exists")
 		return nil
 	}
 	// insert root user
 	insertResult, err := collection.InsertOne(context.Background(), user)
 	if err != nil {
-		fmt.Println("failed to insert root user %w", err)
+		logger.Error(err, "failed to insert root user")
 		return err
 	}
-	fmt.Println("insert root user successfully", insertResult.InsertedID)
+	logger.Info("insert root user successfully", "insertResult", insertResult)
 	return nil
 }
 
@@ -141,17 +142,17 @@ func initMongoDB(ctx context.Context, o util.Options) (*mongo.Client, error) {
 	for i := 0; i < MaxRetryForConnectDB; i++ {
 		client, err = mongo.Connect(ctx, clientOptions)
 		if err != nil {
-			fmt.Println("failed to connect to mongo", err)
+			logger.Error(err, "failed to connect to mongo")
 			time.Sleep(5 * time.Second)
 			continue
 		}
 		err = client.Ping(ctx, nil)
 		if err != nil {
-			fmt.Println("failed to ping mongo", err)
+			logger.Error(err, "failed to ping mongo")
 			time.Sleep(5 * time.Second)
 			continue
 		}
-		fmt.Println("connect to mongo successfully")
+		logger.Info("connect to mongo successfully")
 		break
 	}
 	if err != nil {
@@ -162,7 +163,7 @@ func initMongoDB(ctx context.Context, o util.Options) (*mongo.Client, error) {
 
 // makesure the user does not exist
 func preCheck(ctx context.Context, collection *mongo.Collection) bool {
-	filter := bson.M{"password_user": defaultuser}
+	filter := bson.M{"password_user": defaultUser}
 	var existingUser User
 	err := collection.FindOne(ctx, filter).Decode(&existingUser)
 	return err == nil
@@ -173,7 +174,7 @@ func hashPassword(password string, key string) string {
 	hash := sha256.New()
 	validSalt, err := decodeBase64(key)
 	if err != nil {
-		fmt.Println("Error decoding salt:", err.Error())
+		logger.Error(err, "Failed to decode salt")
 		os.Exit(1)
 	}
 	hash.Write([]byte(password + string(validSalt)))
@@ -183,7 +184,7 @@ func hashPassword(password string, key string) string {
 func decodeBase64(s string) ([]byte, error) {
 	data, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
-		fmt.Println("Error decoding string:", err.Error())
+		logger.Error(err, "Failed to decode base64")
 		return nil, err
 	}
 	return data, nil

@@ -17,18 +17,19 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func main() {
 	if err := run("/preset"); err != nil {
-		fmt.Println("Failed to run /preset: %w", err)
+		logger.Error(err, "Failed to run /preset")
 	}
 
 	if err := run("/manager"); err != nil {
-		fmt.Println("Failed to run /manager: %w", err)
+		logger.Error(err, "Failed to run /manager")
 	}
 }
 
