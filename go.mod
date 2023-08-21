@@ -12,20 +12,21 @@ require (
 	github.com/containers/ocicrypt v1.1.7
 	github.com/containers/storage v1.46.2-0.20230530174214-1dc289a244ce
 	github.com/davecgh/go-spew v1.1.1
-	github.com/distribution/distribution/v3 v3.0.0-20221208165359-362910506bc2
-	github.com/docker/cli v23.0.5+incompatible
+	github.com/distribution/distribution/v3 v3.0.0-20221208165359-362910506bc2 // indirect
+	github.com/docker/cli v23.0.5+incompatible // indirect
 	github.com/docker/docker v24.0.2+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/emicklei/go-restful/v3 v3.10.1
 	github.com/emirpasic/gods v1.18.1
-	github.com/google/go-containerregistry v0.15.2
+	github.com/google/go-containerregistry v0.15.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/imdario/mergo v0.3.16
 	github.com/labring/image-cri-shim v0.0.0
 	github.com/labring/lvscare v0.0.0
 	github.com/labring/sealos/controllers/account v0.0.0
 	github.com/labring/sealos/controllers/imagehub v0.0.0
+	github.com/labring/sreg v0.1.1
 	github.com/manifoldco/promptui v0.9.0
 	github.com/modood/table v0.0.0-20220527013332-8d47e76dad33
 	github.com/onsi/ginkgo v1.16.5
@@ -39,7 +40,6 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.8.4
 	github.com/wechatpay-apiv3/wechatpay-go v0.2.14
 	go.mongodb.org/mongo-driver v1.11.3
 	go.uber.org/zap v1.24.0
@@ -67,11 +67,15 @@ require (
 require k8s.io/cri-api v0.27.1 // indirect
 
 require (
+	github.com/Masterminds/semver/v3 v3.2.1
+	github.com/pkg/errors v0.9.1
+)
+
+require (
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230106234847-43070de90fa1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/Microsoft/hcsshim v0.10.0-rc.8 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
@@ -180,7 +184,6 @@ require (
 	github.com/openshift/imagebuilder v1.2.4-0.20230309135844-a3c3f8358ca3 // indirect
 	github.com/ostreedev/ostree-go v0.0.0-20210805093236-719684c64e4f // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/proglottis/gpgme v0.1.3 // indirect
 	github.com/prometheus/client_golang v1.15.1 // indirect

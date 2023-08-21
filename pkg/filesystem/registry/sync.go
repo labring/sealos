@@ -30,10 +30,11 @@ import (
 	"github.com/containers/image/v5/types"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/labring/sreg/pkg/registry/handler"
+	"github.com/labring/sreg/pkg/registry/sync"
+
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/filesystem"
-	"github.com/labring/sealos/pkg/registry/handler"
-	"github.com/labring/sealos/pkg/registry/sync"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/file"
