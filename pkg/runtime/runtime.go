@@ -80,8 +80,8 @@ func (k *KubeadmRuntime) GetConfig() ([]byte, error) {
 type Interface interface {
 	Init() error
 	Reset() error
-	ScaleNodes(newNodesIPList []string, deleteNodesIPList []string) error
-	ScaleMasters(newMastersIPList []string, deleteMastersIPList []string) error
+	ScaleUp(newMasterIPList []string, newNodeIPList []string) error
+	ScaleDown(deleteMastersIPList []string, deleteNodesIPList []string) error
 	SyncNodeIPVS(mastersIPList, nodeIPList []string) error
 	Upgrade(version string) error
 	GetConfig() ([]byte, error)
@@ -93,31 +93,32 @@ func (k *KubeadmRuntime) Reset() error {
 	logger.Info("start to delete Cluster: master %s, node %s", k.getMasterIPList(), k.getNodeIPList())
 	return k.reset()
 }
-func (k *KubeadmRuntime) ScaleNodes(newNodesIPList []string, deleteNodesIPList []string) error {
-	if newNodesIPList != nil && len(newNodesIPList) != 0 {
-		logger.Info("%s will be added as worker", newNodesIPList)
-		if err := k.joinNodes(newNodesIPList); err != nil {
+func (k *KubeadmRuntime) ScaleUp(newMasterIPList []string, newNodeIPList []string) error {
+	if newMasterIPList != nil && len(newMasterIPList) != 0 {
+		logger.Info("%s will be added as master", newMasterIPList)
+		return k.joinMasters(newMasterIPList)
+	}
+	if newNodeIPList != nil && len(newNodeIPList) != 0 {
+		logger.Info("%s will be added as worker", newNodeIPList)
+		if err := k.joinNodes(newNodeIPList); err != nil {
 			return err
 		}
-		return k.copyNodeKubeConfig(newNodesIPList)
+		return k.copyNodeKubeConfig(newNodeIPList)
+	}
+	logger.Warn("no nodes will be scaled up")
+	return nil
+}
+
+func (k *KubeadmRuntime) ScaleDown(deleteMastersIPList []string, deleteNodesIPList []string) error {
+	if deleteMastersIPList != nil && len(deleteMastersIPList) != 0 {
+		logger.Info("master %s will be deleted", deleteMastersIPList)
+		return k.deleteMasters(deleteMastersIPList)
 	}
 	if deleteNodesIPList != nil && len(deleteNodesIPList) != 0 {
 		logger.Info("worker %s will be deleted", deleteNodesIPList)
 		return k.deleteNodes(deleteNodesIPList)
 	}
-	logger.Warn("no nodes will be scaled")
-	return nil
-}
-func (k *KubeadmRuntime) ScaleMasters(newMastersIPList []string, deleteMastersIPList []string) error {
-	if newMastersIPList != nil && len(newMastersIPList) != 0 {
-		logger.Info("%s will be added as master", newMastersIPList)
-		return k.joinMasters(newMastersIPList)
-	}
-	if deleteMastersIPList != nil && len(deleteMastersIPList) != 0 {
-		logger.Info("master %s will be deleted", deleteMastersIPList)
-		return k.deleteMasters(deleteMastersIPList)
-	}
-	logger.Warn("no masters will be scaled")
+	logger.Warn("no nodes will be scaled down")
 	return nil
 }
 
