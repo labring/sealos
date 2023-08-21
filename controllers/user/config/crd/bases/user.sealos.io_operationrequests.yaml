@@ -50,15 +50,15 @@ spec:
             properties:
               action:
                 enum:
-                - grant
-                - update
-                - deprive
+                - Grant
+                - Update
+                - Deprive
                 type: string
               role:
                 enum:
-                - owner
-                - manager
-                - developer
+                - Owner
+                - Manager
+                - Developer
                 type: string
               user:
                 type: string

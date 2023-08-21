@@ -5,8 +5,8 @@ metadata:
   namespace: ns-bbbb0001
 spec:
   user: aaaa0001
-  role: owner
-  action: grant
+  role: Owner
+  action: Grant
 ---
 apiVersion: user.sealos.io/v1
 kind: Operationrequest
@@ -15,5 +15,5 @@ metadata:
   namespace: ns-bbbb0001
 spec:
   user: aaaa0001
-  role: owner
-  action: deprive
+  role: Owner
+  action: Deprive
