@@ -47,7 +47,7 @@ export default function PredictCard() {
           </Flex>
           <Flex justify={'center'} align={'center'} h={'68px'}>
             <CurrencySymbol w="14px" type={currency} />
-            <Text ml="4px">{item.cost}</Text>
+            <Text>{item.cost}</Text>
           </Flex>
         </Flex>
       ))}

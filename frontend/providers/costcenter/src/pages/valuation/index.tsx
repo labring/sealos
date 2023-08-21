@@ -57,15 +57,18 @@ function Valuation() {
   const data =
     _data?.data?.billingRecords
       ?.filter((x) => !x.resourceType.startsWith('gpu-'))
-      ?.map<CardItem>((x) => {
-        const props = valuationMap.get(x.resourceType)!;
-        return {
-          title: x.resourceType,
-          price: [1, 24, 168, 720, 8760].map((v) => (v * x.price * (props.scale || 1)) / 1000000),
-          unit: props.unit,
-          bg: props.bg,
-          idx: props.idx
-        };
+      ?.flatMap<CardItem>((x) => {
+        const props = valuationMap.get(x.resourceType);
+        if (!props) return [];
+        return [
+          {
+            title: x.resourceType,
+            price: [1, 24, 168, 720, 8760].map((v) => (v * x.price * (props.scale || 1)) / 1000000),
+            unit: props.unit,
+            bg: props.bg,
+            idx: props.idx
+          }
+        ];
       })
       ?.sort((a, b) => a.idx - b.idx) || [];
   const gpuProps = valuationMap.get('gpu')!;
@@ -117,15 +120,10 @@ function Valuation() {
                   </Flex>
                   <Box pt={'17px'}>
                     {CYCLE.map((_item, idx) => (
-                      <Flex
-                        key={idx}
-                        justify="space-between"
-                        w="192px"
-                        borderTop={'dashed 1px #DEE0E2'}
-                        py={'8px'}
-                      >
-                        <Box>{item.price[idx + 1]}</Box>
-                        <Flex align={'center'}>
+                      <Flex key={idx} w="192px" borderTop={'dashed 1px #DEE0E2'} py={'8px'}>
+                        <CurrencySymbol type={currency} />
+                        <Box ml="2px">{item.price[idx + 1]}</Box>
+                        <Flex align={'center'} ml="auto">
                           <Text>{`${item.unit} / ${t(_item)}`}</Text>
                         </Flex>
                       </Flex>
@@ -147,18 +145,23 @@ function Valuation() {
                         h="45px"
                         w="100%"
                         borderTop={'dashed 1px #DEE0E2'}
-                        justify={'space-between'}
                         pt="12px"
                         px="24px"
                       >
-                        <Text>{`${item.price}`}</Text>
-                        <Stack align={'flex-end'} gap="0" fontSize={'10px'} fontWeight={'500'}>
+                        <CurrencySymbol type={currency} />
+                        <Text ml="2px">{`${item.price}`}</Text>
+                        <Stack
+                          align={'flex-end'}
+                          gap="0"
+                          fontSize={'10px'}
+                          fontWeight={'500'}
+                          ml="auto"
+                        >
                           <Flex>
                             <Img src={nvidaIcon.src} w="14px" h="14px" mr="6px" />
                             <Text minW={'max-content'}>{item.name}</Text>
                           </Flex>
                           <Flex>
-                            <CurrencySymbol type={currency} />
                             <Text>{`${gpuProps.unit} / ${t('Hour')}`}</Text>
                           </Flex>
                         </Stack>
