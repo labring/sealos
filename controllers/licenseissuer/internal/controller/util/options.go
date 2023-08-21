@@ -31,6 +31,7 @@ type Options interface {
 	GetDefaultPeriod() time.Duration
 	GetEnvOptions() EnvOptions
 	GetRunnableOptions() RunnableOptions
+	GetDBOptions() DBOptions
 }
 
 // a singleton instance of Options
@@ -50,6 +51,8 @@ func GetOptions() Options {
 type OperatorOptions struct {
 	// The EnvOptions is used to store environment variables.
 	EnvOptions EnvOptions
+	// The DBOptions is used to store options for the database.
+	DBOptions DBOptions
 	// The RunnableOptions is used to store options for the Runnable instance
 	RunnableOptions RunnableOptions
 }
@@ -80,6 +83,10 @@ func (o *OperatorOptions) GetRunnableOptions() RunnableOptions {
 	return o.RunnableOptions
 }
 
+func (o *OperatorOptions) GetDBOptions() DBOptions {
+	return o.DBOptions
+}
+
 func NewOptions() *OperatorOptions {
 	o := &OperatorOptions{}
 	o.initOptions()
@@ -89,6 +96,7 @@ func NewOptions() *OperatorOptions {
 func (o *OperatorOptions) initOptions() {
 	o.EnvOptions.initOptions()
 	o.RunnableOptions.initOptions()
+	o.DBOptions.initOptions()
 
 	o.RunnableOptions.Policy[Init] = OncePolicy
 	if o.EnvOptions.MonitorConfiguration == "true" {
@@ -154,4 +162,28 @@ func (ro *RunnableOptions) initOptions() {
 	ro.Policy = make(map[task]string)
 	ro.Period = make(map[task]time.Duration)
 	ro.DefaultPeriod = 1 * time.Hour
+}
+
+type DBOptions struct {
+	// The MongoOptions is used to store options for the MongoDB database.
+	MongoOptions MongoOptions
+}
+
+func (do *DBOptions) initOptions() {
+	do.MongoOptions.initOptions()
+}
+
+type MongoOptions struct {
+	// The MongoURI is used to connect to the MongoDB database.
+	MongoURI string
+	// The UserDB is the db reference of the MongoDB database.
+	UserDB string
+	// The UserCol is the collection of the UserDB to store user information.
+	UserCol string
+}
+
+func (mo *MongoOptions) initOptions() {
+	mo.MongoURI = os.Getenv("MONGO_URI")
+	mo.UserDB = os.Getenv("MONGO_USER_DB")
+	mo.UserCol = os.Getenv("MONGO_USER_COL")
 }

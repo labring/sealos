@@ -513,6 +513,16 @@ spec:
             secretKeyRef:
               key: PasswordSalt
               name: licenseissuer-env
+        - name: MONGO_USER_DB
+          valueFrom:
+            secretKeyRef:
+              key: MongoUserDB
+              name: licenseissuer-env
+        - name: MONGO_USER_COL
+          valueFrom:
+            secretKeyRef:
+              key: MongoUserCollection
+              name: licenseissuer-env
         - name: NAMESPACE
           valueFrom:
             secretKeyRef:

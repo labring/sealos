@@ -33,24 +33,15 @@ import (
 	mongoOptions "go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const maxRetry = 5
 const MaxRetryForConnectDB = 10
 
 func main() {
 	var err error
 	options := util.GetOptions()
-	for cnt := 0; cnt < maxRetry; cnt++ {
-		err = presetRootUser(context.Background(), options)
-		logger.Error(err, "Failed to preset root user")
-		if err != nil {
-			time.Sleep(time.Minute)
-			continue
-		}
-		break
-	}
+	err = presetRootUser(context.Background(), options)
 	if err != nil {
 		logger.Error(err, "Failed to preset root user")
-		os.Exit(1)
+		return
 	}
 	logger.Error(err, "Failed to preset root user")
 }
@@ -63,10 +54,6 @@ const (
 	// kubernetes default user cr is admin
 	// it is corresponding to the root account
 	defaultK8sUser = "admin"
-
-	// the default db and collection of mongodb to store user information
-	defaultDB         = "test"
-	defaultCollection = "user"
 )
 
 type K8sUser struct {
@@ -116,8 +103,10 @@ func presetRootUser(ctx context.Context, o util.Options) error {
 	uuid := uuid.New().String()
 	passwd := hashPassword(defaultPassword, o.GetEnvOptions().SaltKey)
 	user := newUser(uuid, defaultUser, defaultUser, passwd, defaultK8sUser)
+	userDB := o.GetDBOptions().MongoOptions.UserDB
+	userCol := o.GetDBOptions().MongoOptions.UserCol
+	collection := client.Database(userDB).Collection(userCol)
 
-	collection := client.Database(defaultDB).Collection(defaultCollection)
 	// check if the user already exists
 	isExists := preCheck(ctx, collection)
 	if isExists {
