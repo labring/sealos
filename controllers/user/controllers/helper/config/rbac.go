@@ -29,15 +29,11 @@ func GetDefaultNamespace() string {
 }
 
 func GetUsersSubject(user string) []rbacv1.Subject {
-	defaultNamespace := GetDefaultNamespace()
-	if defaultNamespace == "" {
-		defaultNamespace = "default"
-	}
 	return []rbacv1.Subject{
 		{
 			Kind:      "ServiceAccount",
 			Name:      user,
-			Namespace: defaultNamespace,
+			Namespace: GetUsersNamespace(user),
 		},
 	}
 }
