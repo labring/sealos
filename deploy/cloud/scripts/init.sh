@@ -148,6 +148,12 @@ function sealos_run_frontend {
   --env certSecretName="wildcard-cert" \
   --env transferEnabled="true" \
   --env rechargeEnabled="false"
+
+  echo "run template frontend"
+  sealos run tars/frontend-template.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort=$cloudPort \
+  --env certSecretName="wildcard-cert"
 }
 
 function sealos_authorize {
