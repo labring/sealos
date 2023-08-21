@@ -92,4 +92,5 @@ export const valuationMap = new Map([
   ['memory', { unit: 'GiB', scale: 1024, bg: '#36ADEF', idx: 1 }],
   ['storage', { unit: 'GiB', scale: 1024, bg: '#8172D8', idx: 2 }],
   ['gpu', { unit: 'GPU', scale: 1000, bg: '#89CD11', idx: 3 }]
+  // ['network', { unit: 'M', scale: 1, bg: '#89CD11', idx: 4 }]
 ]);
