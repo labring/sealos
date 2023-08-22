@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/labring/sealos/pkg/template"
 	"github.com/labring/sealos/pkg/types/v1beta1"
@@ -47,6 +48,7 @@ type Interface interface {
 type processor struct {
 	*v1beta1.Cluster
 	cache map[string]map[string]string
+	mu    sync.Mutex
 }
 
 func NewEnvProcessor(cluster *v1beta1.Cluster) Interface {
@@ -118,6 +120,8 @@ func (p *processor) getHostEnvInCache(hostIP string) map[string]string {
 	if v, ok := p.cache[hostIP]; ok {
 		return v
 	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	v := p.getHostEnv(hostIP)
 	p.cache[hostIP] = v
 	return v
