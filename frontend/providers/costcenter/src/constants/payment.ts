@@ -89,8 +89,8 @@ export const START_TIME = new Date(2023, 0, 1);
 export const END_TIME = endOfDay(new Date());
 export const valuationMap = new Map([
   ['cpu', { unit: 'Core', scale: 1000, bg: '#33BABB', idx: 0 }],
-  ['memory', { unit: 'GiB', scale: 1024, bg: '#36ADEF', idx: 1 }],
-  ['storage', { unit: 'GiB', scale: 1024, bg: '#8172D8', idx: 2 }],
+  ['memory', { unit: 'GB', scale: 1024, bg: '#36ADEF', idx: 1 }],
+  ['storage', { unit: 'GB', scale: 1024, bg: '#8172D8', idx: 2 }],
   ['gpu', { unit: 'GPU', scale: 1000, bg: '#89CD11', idx: 3 }]
   // ['network', { unit: 'M', scale: 1, bg: '#89CD11', idx: 4 }]
 ]);
