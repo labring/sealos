@@ -16,5 +16,11 @@ limitations under the License.
 
 package account
 
+import "math"
+
 // CurrencyUnit is the unit of currency for accounting.
 const CurrencyUnit = 1000000
+
+func GetCurrencyBalance(balance int64) float64 {
+	return math.Ceil(float64(balance) / CurrencyUnit)
+}
