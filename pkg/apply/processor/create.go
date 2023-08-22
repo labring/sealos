@@ -151,11 +151,7 @@ func (c *CreateProcessor) Init(_ *v2.Cluster) error {
 
 func (c *CreateProcessor) Join(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline Join in CreateProcessor.")
-	err := c.Runtime.JoinMasters(cluster.GetMasterIPAndPortList()[1:])
-	if err != nil {
-		return err
-	}
-	err = c.Runtime.JoinNodes(cluster.GetNodeIPAndPortList())
+	err := c.Runtime.ScaleUp(cluster.GetMasterIPAndPortList()[1:], cluster.GetNodeIPAndPortList())
 	if err != nil {
 		return err
 	}
