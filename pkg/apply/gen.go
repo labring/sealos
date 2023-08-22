@@ -56,7 +56,7 @@ func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []strin
 	if err != nil {
 		return nil, err
 	}
-	return rtInterface.GetKubeadmConfig()
+	return rtInterface.GetConfig()
 }
 
 func genImageInfo(imageName string) (*v1beta1.MountImage, error) {

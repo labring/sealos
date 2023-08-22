@@ -184,7 +184,7 @@ func (c *InstallProcessor) UpgradeIfNeed(cluster *v2.Cluster) error {
 		if version == "" {
 			continue
 		}
-		err := c.Runtime.UpgradeCluster(version)
+		err := c.Runtime.Upgrade(version)
 		if err != nil {
 			logger.Error("upgrade cluster failed")
 			return err
