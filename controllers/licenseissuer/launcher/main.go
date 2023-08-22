@@ -19,18 +19,13 @@ package main
 import (
 	"os"
 	"os/exec"
+	"sync"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func main() {
-	if err := run("/preset"); err != nil {
-		logger.Error(err, "Failed to run /preset")
-	}
-
-	if err := run("/manager"); err != nil {
-		logger.Error(err, "Failed to run /manager")
-	}
+	launch("/preset", "/manager")
 }
 
 func run(path string) error {
@@ -39,4 +34,18 @@ func run(path string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+func launch(path ...string) {
+	var wg sync.WaitGroup
+	for _, p := range path {
+		wg.Add(1)
+		go func(p string) {
+			defer wg.Done()
+			if err := run(p); err != nil {
+				logger.Error(err, "Failed to run "+p)
+			}
+		}(p)
+	}
+	wg.Wait()
 }
