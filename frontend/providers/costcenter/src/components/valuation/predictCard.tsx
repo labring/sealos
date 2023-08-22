@@ -31,7 +31,7 @@ export default function PredictCard() {
     }));
   }, [state.cpu, state.memory, state.storage, gpuEnabled, total]);
   return (
-    <Flex borderX={'0.5px solid #DEE0E2'}>
+    <Flex border={'1px solid #DEE0E2'} borderRadius={'4px'} overflow={'hidden'}>
       {leastCost.map((item) => (
         <Flex
           key={item.name}

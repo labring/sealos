@@ -136,5 +136,9 @@
   },
   "pay with wechat": "微信支付",
   "pay with stripe": "Stripe 支付",
-  "Pay Minimum Tips": "使用Stripe支付时，购买额度不低于10"
+  "Pay Minimum Tips": "使用Stripe支付时，购买额度不低于10",
+  "Source Quota": "资源配额",
+  "Total Quota": "总计",
+  "used Quota": "已用",
+  "Remaining Quota": "剩余"
 }
