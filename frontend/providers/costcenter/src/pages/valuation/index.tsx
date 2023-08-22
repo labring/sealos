@@ -1,14 +1,4 @@
-import {
-  Box,
-  Flex,
-  Heading,
-  Text,
-  Img,
-  Stack,
-  PopoverArrow,
-  position,
-  Tooltip
-} from '@chakra-ui/react';
+import { Box, Flex, Heading, Text, Img, Stack } from '@chakra-ui/react';
 import letter_icon from '@/assert/format_letter_spacing_standard_black.svg';
 import { QueryClient, dehydrate, useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
