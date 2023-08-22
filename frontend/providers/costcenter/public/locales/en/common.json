@@ -136,5 +136,9 @@
   },
   "pay with stripe": "Pay With Stripe",
   "pay with wechat": "Pay With Wechat",
-  "Pay Minimum Tips": "The amount need to be more than 10 when paying with Stripe"
+  "Pay Minimum Tips": "The amount need to be more than 10 when paying with Stripe",
+  "Source Quota": "Source Quota",
+  "Total Quota": "total",
+  "Used Quota": "used",
+  "Remaining Quota": "remaining"
 }

@@ -1,4 +1,14 @@
-import { Box, Flex, Heading, Text, Img, Stack } from '@chakra-ui/react';
+import {
+  Box,
+  Flex,
+  Heading,
+  Text,
+  Img,
+  Stack,
+  PopoverArrow,
+  position,
+  Tooltip
+} from '@chakra-ui/react';
 import letter_icon from '@/assert/format_letter_spacing_standard_black.svg';
 import { QueryClient, dehydrate, useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
@@ -16,6 +26,7 @@ import NotFound from '@/components/notFound';
 import PredictCard from '@/components/valuation/predictCard';
 import useEnvStore from '@/stores/env';
 import CurrencySymbol from '@/components/CurrencySymbol';
+import Quota from '@/components/valuation/quota';
 type CardItem = {
   title: string;
   price: number[];
@@ -180,7 +191,11 @@ function Valuation() {
             <Text mr={'17px '}>{t('Next month cost estimation')}</Text>
             <OuterLink text={t('Predict Detail')} href={'#'}></OuterLink>
           </Flex>
-          <PredictCard></PredictCard>
+          <PredictCard />
+        </Flex>
+        <Flex mt={'36px'} direction={'column'}>
+          <Text mb="20px">{t('Source Quota')}</Text>
+          <Quota />
         </Flex>
       </Flex>
     </Flex>
