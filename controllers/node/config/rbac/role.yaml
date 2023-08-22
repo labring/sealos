@@ -79,3 +79,14 @@ rules:
   - get
   - patch
   - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: gpu-info-cm-reader
+  namespace: node-system
+rules:
+  - apiGroups: [ "" ] # "" indicates the core API group
+    resources: [ "configmaps" ]
+    resourceNames: [ "gpu-info" ]
+    verbs: [ "get", "watch", "list" ]
