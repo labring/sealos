@@ -58,11 +58,11 @@ func newCertCmd() *cobra.Command {
 			if err = cf.Process(); err != nil {
 				return err
 			}
-			r, err := kubernetes.NewDefaultRuntime(cluster, cf.GetKubeadmConfig())
+			rt, err := kubernetes.New(cluster, cf.GetKubeadmConfig())
 			if err != nil {
 				return fmt.Errorf("get default runtime failed, %v", err)
 			}
-			return r.UpdateCert(strings.Split(altNames, ","))
+			return rt.UpdateCert(strings.Split(altNames, ","))
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if strings.TrimSpace(altNames) == "" {

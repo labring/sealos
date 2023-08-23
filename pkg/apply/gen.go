@@ -53,11 +53,11 @@ func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []strin
 		return nil, fmt.Errorf("input first image %s is not kubernetes image", imageNames)
 	}
 	cluster.Status.Mounts = append(cluster.Status.Mounts, *img)
-	rtInterface, err := kubernetes.NewDefaultRuntime(cluster, types.NewKubeadmConfig())
+	rt, err := kubernetes.New(cluster, types.NewKubeadmConfig())
 	if err != nil {
 		return nil, err
 	}
-	return rtInterface.GetConfig()
+	return rt.GetConfig()
 }
 
 func genImageInfo(imageName string) (*v1beta1.MountImage, error) {

@@ -204,9 +204,9 @@ func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 	}
 	var rt runtime.Interface
 	if c.IsScaleUp {
-		rt, err = kubernetes.NewDefaultRuntimeWithCurrentCluster(cluster, c.ClusterFile.GetKubeadmConfig())
+		rt, err = kubernetes.New(cluster, c.ClusterFile.GetKubeadmConfig())
 	} else {
-		rt, err = kubernetes.NewDefaultRuntimeWithCurrentCluster(c.ClusterFile.GetCluster(), c.ClusterFile.GetKubeadmConfig())
+		rt, err = kubernetes.New(c.ClusterFile.GetCluster(), c.ClusterFile.GetKubeadmConfig())
 	}
 	if err != nil {
 		return fmt.Errorf("failed to init runtime: %v", err)

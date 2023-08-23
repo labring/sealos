@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package runtime
+package utils
 
 import (
 	"crypto/sha256"
@@ -26,13 +26,13 @@ import (
 	"strings"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/cert"
 	v1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/bootstraptoken/v1"
 
+	"github.com/labring/sealos/pkg/runtime/types"
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -40,17 +40,10 @@ import (
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
-type Token struct {
-	JoinToken                string       `json:"joinToken,omitempty"`
-	DiscoveryTokenCaCertHash []string     `json:"discoveryTokenCaCertHash,omitempty"`
-	CertificateKey           string       `json:"certificateKey,omitempty"`
-	Expires                  *metav1.Time `json:"expires,omitempty"`
-}
-
 const defaultAdminConf = "/etc/kubernetes/admin.conf"
 
-func GenerateToken(config, certificateKey string) (*Token, error) {
-	token := &Token{}
+func GenerateToken(config, certificateKey string) (*types.Token, error) {
+	token := &types.Token{}
 	if _, ok := exec.CheckCmdIsExist("kubeadm"); ok && file.IsExist(defaultAdminConf) {
 		key, _ := rand.CreateCertificateKey()
 		if certificateKey != "" {

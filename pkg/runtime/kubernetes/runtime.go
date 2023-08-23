@@ -23,7 +23,6 @@ import (
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/remote"
-	"github.com/labring/sealos/pkg/runtime"
 	"github.com/labring/sealos/pkg/runtime/types"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -120,7 +119,7 @@ func (k *KubeadmRuntime) ScaleDown(deleteMastersIPList []string, deleteNodesIPLi
 	return nil
 }
 
-func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (runtime.Interface, error) {
+func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*KubeadmRuntime, error) {
 	sshClient := ssh.NewSSHByCluster(cluster, true)
 	k := &KubeadmRuntime{
 		Cluster: cluster,
@@ -142,12 +141,7 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (runti
 	return k, nil
 }
 
-// NewDefaultRuntime arg "clusterName" is the Cluster name
-func NewDefaultRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (runtime.Interface, error) {
-	return newKubeadmRuntime(cluster, kubeadm)
-}
-
-func NewDefaultRuntimeWithCurrentCluster(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (runtime.Interface, error) {
+func New(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*KubeadmRuntime, error) {
 	return newKubeadmRuntime(cluster, kubeadm)
 }
 

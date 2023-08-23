@@ -79,11 +79,11 @@ func (d *DeleteProcessor) UndoBootstrap(cluster *v2.Cluster) error {
 }
 
 func (d *DeleteProcessor) Reset(cluster *v2.Cluster) error {
-	runTime, err := kubernetes.NewDefaultRuntime(cluster, d.ClusterFile.GetKubeadmConfig())
+	rt, err := kubernetes.New(cluster, d.ClusterFile.GetKubeadmConfig())
 	if err != nil {
 		return fmt.Errorf("failed to delete runtime, %v", err)
 	}
-	return runTime.Reset()
+	return rt.Reset()
 }
 
 func (d *DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
