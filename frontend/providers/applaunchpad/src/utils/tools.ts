@@ -380,3 +380,9 @@ export const isElementInViewport = (element: Element) => {
   const horInView = rect.left <= windowWidth && rect.left + rect.width >= 0;
   return vertInView && horInView;
 };
+
+export const getErrText = (err: any, def = '') => {
+  const msg: string = typeof err === 'string' ? err : err?.message || def || '';
+  msg && console.log('error =>', msg);
+  return msg;
+};

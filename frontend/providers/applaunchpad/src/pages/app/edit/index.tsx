@@ -27,7 +27,7 @@ import Form from './components/Form';
 import Yaml from './components/Yaml';
 import dynamic from 'next/dynamic';
 import { serviceSideProps } from '@/utils/i18n';
-import { patchYamlList } from '@/utils/tools';
+import { getErrText, patchYamlList } from '@/utils/tools';
 import { useTranslation } from 'next-i18next';
 import { noGpuSliderKey } from '@/constants/app';
 import { useUserStore } from '@/store/user';
@@ -185,7 +185,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       }
     } catch (error) {
       console.error(error);
-      setErrorMessage(JSON.stringify(error));
+      const msg = getErrText(error);
+      setErrorMessage(msg || JSON.stringify(error));
     }
     setIsLoading(false);
   }, [

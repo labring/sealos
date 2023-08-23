@@ -11,12 +11,14 @@ import { useToast } from '@/hooks/useToast';
 import { restartAppByName, pauseAppByName, startAppByName } from '@/api/app';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useTranslation } from 'next-i18next';
+import { useUserStore } from '@/store/user';
 
 import dynamic from 'next/dynamic';
 
 import MyMenu from '@/components/Menu';
 import MyTable from '@/components/Table';
 import GPUItem from '@/components/GPUItem';
+import { getErrText } from '@/utils/tools';
 const DelModal = dynamic(() => import('@/pages/app/detail/components/DelModal'));
 
 const AppList = ({
@@ -27,7 +29,8 @@ const AppList = ({
   refetchApps: () => void;
 }) => {
   const { t } = useTranslation();
-  const { setLoading, userSourcePrice } = useGlobalStore();
+  const { setLoading } = useGlobalStore();
+  const { userSourcePrice } = useUserStore();
   const { toast } = useToast();
   const theme = useTheme();
   const router = useRouter();
@@ -48,7 +51,7 @@ const AppList = ({
         });
       } catch (error: any) {
         toast({
-          title: typeof error === 'string' ? error : error.message || t('Restart Failed'),
+          title: t(getErrText(error), 'Restart Failed'),
           status: 'error'
         });
         console.error(error, '==');
@@ -69,7 +72,7 @@ const AppList = ({
         });
       } catch (error: any) {
         toast({
-          title: typeof error === 'string' ? error : error.message || t('Application failed'),
+          title: t(getErrText(error), 'Pause Failed'),
           status: 'error'
         });
         console.error(error);
@@ -91,7 +94,7 @@ const AppList = ({
         });
       } catch (error: any) {
         toast({
-          title: typeof error === 'string' ? error : error.message || t('Start Failed'),
+          title: t(getErrText(error), 'Start Failed'),
           status: 'error'
         });
         console.error(error);

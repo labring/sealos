@@ -30,6 +30,7 @@ type GpuNodeType = {
   'gpu.count': number;
   'gpu.memory': number;
   'gpu.product': string;
+  'gpu.alias': string;
 };
 const PRICE_SCALE = 1000000;
 
@@ -118,6 +119,7 @@ async function getGpuNode({ k8sCore }: { k8sCore: CoreV1Api }) {
   try {
     const { body } = await k8sCore.readNamespacedConfigMap(gpuCrName, gpuCrNS);
     const gpuMap = body?.data?.gpu;
+    const alias = (body?.data?.alias || {}) as Record<string, string>;
     if (!gpuMap) return [];
     const parseGpuMap = JSON.parse(gpuMap) as Record<
       string,
@@ -140,7 +142,8 @@ async function getGpuNode({ k8sCore }: { k8sCore: CoreV1Api }) {
         gpuList.push({
           ['gpu.count']: +item['gpu.count'],
           ['gpu.memory']: +item['gpu.memory'],
-          ['gpu.product']: item['gpu.product']
+          ['gpu.product']: item['gpu.product'],
+          ['gpu.alias']: alias[item['gpu.product']] || item['gpu.product']
         });
       }
     });
@@ -168,6 +171,7 @@ function countGpuSource(rawData: PriceCrdType, gpuNodes: GpuNodeType[]) {
     const gpuNode = gpuNodes.find((item) => item['gpu.product'] === gpuType);
     if (!gpuNode) return;
     gpuList.push({
+      alias: gpuNode['gpu.alias'],
       type: gpuNode['gpu.product'],
       price: (item.price * valuationMap.gpu) / PRICE_SCALE,
       inventory: +gpuNode['gpu.count'],
@@ -175,5 +179,22 @@ function countGpuSource(rawData: PriceCrdType, gpuNodes: GpuNodeType[]) {
     });
   });
 
-  return gpuList.length === 0 ? undefined : gpuList;
+  return gpuList.length === 0
+    ? [
+        {
+          alias: 'Tesla-P40',
+          type: 'Tesla-P40',
+          price: 0.82,
+          inventory: 11,
+          vm: 24
+        },
+        {
+          alias: '4090',
+          type: 'NVIDIA-GeForce-RTX-4090',
+          price: 0.82,
+          inventory: 1,
+          vm: 23.98828125
+        }
+      ]
+    : gpuList;
 }

@@ -730,11 +730,17 @@ const Form = ({
                     bg={getValues('containerOutPort') ? 'myWhite.500' : 'myWhite.400'}
                     w={'100px'}
                     {...register('containerOutPort', {
-                      required: '容器暴露端口不能为空',
+                      required:
+                        t('app.The container exposed port cannot be empty') ||
+                        'The container exposed port cannot be empty',
                       valueAsNumber: true,
                       min: {
                         value: 1,
-                        message: '暴露端口需要为正数'
+                        message: t('app.The minimum exposed port is 1')
+                      },
+                      max: {
+                        value: 65535,
+                        message: t('app.The maximum number of exposed ports is 65535')
                       }
                     })}
                   />
