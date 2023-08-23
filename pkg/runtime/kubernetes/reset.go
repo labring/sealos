@@ -67,7 +67,7 @@ func (k *KubeadmRuntime) resetMasters(nodes []string) {
 
 func (k *KubeadmRuntime) resetNode(node string, cleanHook func()) error {
 	logger.Info("start to reset node: %s", node)
-	resetCmd := fmt.Sprintf(remoteCleanMasterOrNode, vlogToStr(k.vlog), k.getEtcdDataDir())
+	resetCmd := fmt.Sprintf(remoteCleanMasterOrNode, vlogToStr(k.klogLevel), k.getEtcdDataDir())
 	removeKubeConfigErr := k.sshCmdAsync(node, removeKubeConfig)
 	resetCmdErr := k.sshCmdAsync(node, resetCmd)
 	ipvscleanErr := k.execIPVSClean(node)

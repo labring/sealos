@@ -89,9 +89,9 @@ func (k *KubeadmRuntime) Command(version string, cmdType CommandType) (cmd strin
 	}
 
 	if cmdType == InitMaster || cmdType == JoinMaster {
-		return fmt.Sprintf("%s%s%s", cmd, vlogToStr(k.vlog), " --ignore-preflight-errors=SystemVerification")
+		return fmt.Sprintf("%s%s%s", cmd, vlogToStr(k.klogLevel), " --ignore-preflight-errors=SystemVerification")
 	}
-	return fmt.Sprintf("%s%s", cmd, vlogToStr(k.vlog))
+	return fmt.Sprintf("%s%s", cmd, vlogToStr(k.klogLevel))
 }
 
 func (k *KubeadmRuntime) initMasterKubeadmConfigFile() string {

@@ -44,11 +44,7 @@ type KubeadmConfig struct {
 }
 
 type ConvertedKubeadmConfig struct {
-	InitConfiguration      interface{}
-	ClusterConfiguration   interface{}
-	JoinConfiguration      interface{}
-	KubeProxyConfiguration interface{}
-	KubeletConfiguration   interface{}
+	InitConfiguration, ClusterConfiguration, JoinConfiguration, KubeProxyConfiguration, KubeletConfiguration interface{}
 }
 
 func NewKubeadmConfig() *KubeadmConfig {
@@ -96,12 +92,8 @@ func (k *KubeadmConfig) FetchDefaultKubeadmConfig() string {
 // Merge Using github.com/imdario/mergo to merge KubeadmConfig to the CloudImage default kubeadm Config, overwrite some field.
 // if defaultKubeadmConfig file not exist, use default raw kubeadm Config to merge k.KubeConfigSpec empty value
 func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
-	var (
-		defaultKubeadmConfig *KubeadmConfig
-		err                  error
-	)
 	if kubeadmYamlPath == "" {
-		defaultKubeadmConfig, err = LoadKubeadmConfigs(k.FetchDefaultKubeadmConfig(), false, decode.CRDFromString)
+		defaultKubeadmConfig, err := LoadKubeadmConfigs(k.FetchDefaultKubeadmConfig(), false, decode.CRDFromString)
 		if err != nil {
 			return err
 		}
@@ -111,11 +103,11 @@ func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 		return nil
 	}
 	logger.Debug("trying to merge kubeadm configs from file %s", kubeadmYamlPath)
-	defaultKubeadmConfig, err = LoadKubeadmConfigs(kubeadmYamlPath, false, decode.CRDFromFile)
+	kc, err := LoadKubeadmConfigs(kubeadmYamlPath, false, decode.CRDFromFile)
 	if err != nil {
 		return fmt.Errorf("failed to load kubeadm config from %s: %v", kubeadmYamlPath, err)
 	}
-	err = mergo.Merge(k, defaultKubeadmConfig, defaultMergeOpts...)
+	err = mergo.Merge(k, kc, defaultMergeOpts...)
 	if err != nil {
 		return fmt.Errorf("failed to merge kubeadm config from %s: %v", kubeadmYamlPath, err)
 	}

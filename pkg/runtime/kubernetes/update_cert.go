@@ -39,12 +39,12 @@ const (
 )
 
 func (k *KubeadmRuntime) UpdateCert(certs []string) error {
-	//set sans to kubeadm config object
-	if err := k.ConvertInitConfigConversion(setCGroupDriverAndSocket, setCertificateKey); err != nil {
+	// set sans to kubeadm config object
+	if err := k.CompleteKubeadmConfig(setCGroupDriverAndSocket, setCertificateKey); err != nil {
 		return err
 	}
 	setCertSANS := func() error {
-		if err := k.fetchKubeadmConfig(); err != nil {
+		if err := k.mergeWithBuiltinKubeadmConfig(); err != nil {
 			return err
 		}
 		if len(certs) != 0 {
@@ -146,7 +146,7 @@ func (k *KubeadmRuntime) initCert() error {
 
 func (k *KubeadmRuntime) showKubeadmCert() error {
 	certCheck := "kubeadm certs check-expiration"
-	return k.sshCmdAsync(k.getMaster0IPAndPort(), fmt.Sprintf("%s%s", certCheck, vlogToStr(k.vlog)))
+	return k.sshCmdAsync(k.getMaster0IPAndPort(), fmt.Sprintf("%s%s", certCheck, vlogToStr(k.klogLevel)))
 }
 
 func (k *KubeadmRuntime) deleteAPIServer() error {

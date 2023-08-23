@@ -36,7 +36,7 @@ import (
 )
 
 func (k *KubeadmRuntime) getKubeVersion() string {
-	return k.ClusterConfiguration.KubernetesVersion
+	return k.KubeadmConfig.ClusterConfiguration.KubernetesVersion
 }
 
 // old implementation doesn't consider multiple rootfs images; here get the first rootfs image

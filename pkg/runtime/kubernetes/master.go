@@ -107,7 +107,7 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	if err = k.sendJoinCPConfig(masters); err != nil {
 		return err
 	}
-	if err = k.fetchKubeadmConfig(); err != nil {
+	if err = k.mergeWithBuiltinKubeadmConfig(); err != nil {
 		return err
 	}
 	cmd := k.Command(k.getKubeVersion(), JoinMaster)

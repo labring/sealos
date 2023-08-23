@@ -24,3 +24,9 @@ type Token struct {
 	CertificateKey           string       `json:"certificateKey,omitempty"`
 	Expires                  *metav1.Time `json:"expires,omitempty"`
 }
+
+//nolint:all
+type Config struct {
+	*KubeadmConfig
+	APIServerDomain string
+}

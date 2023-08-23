@@ -15,6 +15,7 @@
 package kubernetes
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -31,25 +32,18 @@ import (
 )
 
 type KubeadmRuntime struct {
-	Cluster  *v2.Cluster
-	Token    *types.Token
-	Registry *v2.RegistryConfig
-	*types.KubeadmConfig
-	*Config
+	config  *types.Config // from argument
+	Cluster *v2.Cluster
 
+	Token         *types.Token
+	KubeadmConfig *types.KubeadmConfig // a deep copy from config.KubeadmConfig or a new one
+
+	klogLevel     int
 	cli           kubernetes.Client
 	clusterClient ssh.Interface
 	pathResolver  constants.Data
 	remoteUtil    remote.Interface
 	mu            sync.Mutex
-}
-
-//nolint:all
-type Config struct {
-	// Clusterfile: the absolute path, we need to read kubeadm Config from Clusterfile
-	ClusterFileKubeConfig *types.KubeadmConfig
-	APIServerDomain       string
-	vlog                  int
 }
 
 func (k *KubeadmRuntime) Init() error {
@@ -64,17 +58,23 @@ func (k *KubeadmRuntime) Init() error {
 }
 
 func (k *KubeadmRuntime) GetConfig() ([]byte, error) {
-	k.KubeadmConfig = k.ClusterFileKubeConfig
-	if err := k.ConvertInitConfigConversion(); err != nil {
+	if k.config.KubeadmConfig == nil {
+		return nil, errors.New("please provide a nonnull config")
+	}
+	in := *k.config.KubeadmConfig
+	k.KubeadmConfig = &in
+
+	if err := k.CompleteKubeadmConfig(); err != nil {
 		return nil, err
 	}
 	k.Cluster.Status = v2.ClusterStatus{}
+	conversion := k.KubeadmConfig.GetConvertedKubeadmConfig()
 	objects := []interface{}{k.Cluster,
-		k.InitConfiguration,
-		k.ClusterConfiguration,
-		k.JoinConfiguration,
-		k.KubeProxyConfiguration,
-		k.KubeletConfiguration,
+		conversion.InitConfiguration,
+		conversion.ClusterConfiguration,
+		conversion.JoinConfiguration,
+		conversion.KubeProxyConfiguration,
+		conversion.KubeletConfiguration,
 	}
 	data, err := yaml.MarshalYamlConfigs(objects...)
 	if err != nil {
@@ -123,9 +123,9 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*Kube
 	sshClient := ssh.NewSSHByCluster(cluster, true)
 	k := &KubeadmRuntime{
 		Cluster: cluster,
-		Config: &Config{
-			ClusterFileKubeConfig: kubeadm,
-			APIServerDomain:       types.DefaultAPIServerDomain,
+		config: &types.Config{
+			KubeadmConfig:   kubeadm,
+			APIServerDomain: types.DefaultAPIServerDomain,
 		},
 		KubeadmConfig: types.NewKubeadmConfig(),
 		clusterClient: sshClient,
@@ -136,7 +136,7 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*Kube
 		return nil, err
 	}
 	if logger.IsDebugMode() {
-		k.vlog = 6
+		k.klogLevel = 6
 	}
 	return k, nil
 }
