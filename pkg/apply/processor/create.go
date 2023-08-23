@@ -29,6 +29,7 @@ import (
 	"github.com/labring/sealos/pkg/filesystem/rootfs"
 	"github.com/labring/sealos/pkg/guest"
 	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime/kubernetes"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
@@ -100,7 +101,7 @@ func (c *CreateProcessor) preProcess(cluster *v2.Cluster) error {
 	for i := range cluster.Status.Mounts {
 		cluster.Status.Mounts[i].Env = maps.MergeMap(cluster.Status.Mounts[i].Env, c.ExtraEnvs)
 	}
-	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
+	runTime, err := kubernetes.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
 	if err != nil {
 		return fmt.Errorf("failed to init runtime, %v", err)
 	}

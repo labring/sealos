@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runtime
+package kubernetes
 
 import (
 	"context"
@@ -70,7 +70,11 @@ func (k *KubeadmRuntime) UpdateCert(certs []string) error {
 
 func (k *KubeadmRuntime) saveNewKubeadmConfig() error {
 	logger.Info("start to save new kubeadm config...")
-	data, err := k.getKubeExpansion().FetchKubeadmConfig(context.Background())
+	exp, err := k.getKubeExpansion()
+	if err != nil {
+		return err
+	}
+	data, err := exp.FetchKubeadmConfig(context.Background())
 	if err != nil {
 		return err
 	}

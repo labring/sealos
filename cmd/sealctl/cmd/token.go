@@ -37,7 +37,7 @@ func newTokenCmd() *cobra.Command {
 			if len(args) > 1 {
 				certificateKey = args[1]
 			}
-			t, err := runtime.Generator(config, certificateKey)
+			t, err := runtime.GenerateToken(config, certificateKey)
 			if err != nil {
 				logger.Error("exec token error: " + err.Error())
 				os.Exit(1)

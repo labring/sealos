@@ -25,7 +25,7 @@ import (
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/filesystem/rootfs"
-	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime/kubernetes"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -79,7 +79,7 @@ func (d *DeleteProcessor) UndoBootstrap(cluster *v2.Cluster) error {
 }
 
 func (d *DeleteProcessor) Reset(cluster *v2.Cluster) error {
-	runTime, err := runtime.NewDefaultRuntime(cluster, d.ClusterFile.GetKubeadmConfig())
+	runTime, err := kubernetes.NewDefaultRuntime(cluster, d.ClusterFile.GetKubeadmConfig())
 	if err != nil {
 		return fmt.Errorf("failed to delete runtime, %v", err)
 	}

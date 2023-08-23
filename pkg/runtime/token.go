@@ -17,7 +17,6 @@ limitations under the License.
 package runtime
 
 import (
-	"crypto/rand"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/hex"
@@ -26,8 +25,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -38,6 +35,8 @@ import (
 
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/rand"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
@@ -50,10 +49,10 @@ type Token struct {
 
 const defaultAdminConf = "/etc/kubernetes/admin.conf"
 
-func Generator(config, certificateKey string) (*Token, error) {
+func GenerateToken(config, certificateKey string) (*Token, error) {
 	token := &Token{}
 	if _, ok := exec.CheckCmdIsExist("kubeadm"); ok && file.IsExist(defaultAdminConf) {
-		key, _ := CreateCertificateKey()
+		key, _ := rand.CreateCertificateKey()
 		if certificateKey != "" {
 			key = certificateKey
 		}
@@ -167,28 +166,6 @@ func discoveryTokenCaCertHash(adminPath string) ([]string, error) {
 		publicKeyPins = append(publicKeyPins, Hash(caCert))
 	}
 	return publicKeyPins, nil
-}
-
-// CreateRandBytes returns a cryptographically secure slice of random bytes with a given size
-func CreateRandBytes(size uint32) ([]byte, error) {
-	bytes := make([]byte, size)
-	if _, err := rand.Read(bytes); err != nil {
-		return nil, err
-	}
-	return bytes, nil
-}
-
-const (
-	CertificateKeySize = 32
-)
-
-// CreateCertificateKey returns a cryptographically secure random key
-func CreateCertificateKey() (string, error) {
-	randBytes, err := CreateRandBytes(CertificateKeySize)
-	if err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(randBytes), nil
 }
 
 // GetClusterFromKubeConfig returns the default Infra of the specified KubeConfig

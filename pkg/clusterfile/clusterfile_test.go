@@ -21,7 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 
-	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime/types"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
@@ -121,7 +121,7 @@ func Test_NewClusterFile(t *testing.T) {
 
 func Test_NoClusterFileWithSingleSchedule(t *testing.T) {
 	type args struct {
-		kubeadmConfig *runtime.KubeadmConfig
+		kubeadmConfig *types.KubeadmConfig
 	}
 	tests := []struct {
 		name    string
@@ -131,7 +131,7 @@ func Test_NoClusterFileWithSingleSchedule(t *testing.T) {
 		{
 			name: "run single with cluster file not exists",
 			args: args{
-				kubeadmConfig: &runtime.KubeadmConfig{
+				kubeadmConfig: &types.KubeadmConfig{
 					InitConfiguration: kubeadm.InitConfiguration{
 						SkipPhases: []string{
 							"mark-control-plane",
@@ -167,7 +167,7 @@ func Test_NewClusterFileWithSingleSchedule(t *testing.T) {
 	type args struct {
 		cluster            *v2.Cluster
 		config             v2.Config
-		kubeadmConfig      *runtime.KubeadmConfig
+		kubeadmConfig      *types.KubeadmConfig
 		customEnv          []string
 		sets               []string
 		values             []string
@@ -223,7 +223,7 @@ func Test_NewClusterFileWithSingleSchedule(t *testing.T) {
 						Data: "test\n",
 					},
 				},
-				kubeadmConfig: &runtime.KubeadmConfig{
+				kubeadmConfig: &types.KubeadmConfig{
 					InitConfiguration: kubeadm.InitConfiguration{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: "kubeadm.k8s.io/v1beta3",

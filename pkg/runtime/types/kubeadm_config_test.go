@@ -14,13 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package runtime
+package types
 
 import (
 	"testing"
 
-	_default "github.com/labring/sealos/pkg/runtime/defaults"
-
+	"github.com/labring/sealos/pkg/runtime/decode"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
@@ -48,15 +47,13 @@ func TestKubeadmRuntime_setFeatureGatesConfiguration(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defaultKubeadmConfig, err := LoadKubeadmConfigs(_default.DefaultKubeadmConfig, false, DecodeCRDFromString)
+			k, err := LoadKubeadmConfigs(defaultKubeadmConfig, false, decode.DecodeCRDFromString)
 			if err != nil {
 				t.Fatalf("error loading default kubeadm config: %v", err)
 			}
-			k := &KubeadmRuntime{
-				KubeadmConfig: defaultKubeadmConfig,
-			}
-			k.setKubeVersion(tt.version)
-			k.setFeatureGatesConfiguration()
+
+			k.SetKubeVersion(tt.version)
+			k.FinalizeFeatureGatesConfiguration()
 			data, err := yaml.MarshalYamlConfigs(
 				&k.InitConfiguration,
 				&k.ClusterConfiguration,
@@ -159,15 +156,13 @@ etcd:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defaultKubeadmConfig, err := LoadKubeadmConfigs(testyaml, false, DecodeCRDFromString)
+			k, err := LoadKubeadmConfigs(testyaml, false, decode.DecodeCRDFromString)
 			if err != nil {
 				t.Fatalf("error loading default kubeadm config: %v", err)
 			}
-			k := &KubeadmRuntime{
-				KubeadmConfig: defaultKubeadmConfig,
-			}
-			k.setKubeVersion(tt.version)
-			k.setFeatureGatesConfiguration()
+
+			k.SetKubeVersion(tt.version)
+			k.FinalizeFeatureGatesConfiguration()
 			data, err := yaml.MarshalYamlConfigs(
 				&k.ClusterConfiguration,
 			)

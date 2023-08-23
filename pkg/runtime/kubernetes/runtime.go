@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runtime
+package kubernetes
 
 import (
 	"fmt"
@@ -21,6 +21,10 @@ import (
 	"github.com/Masterminds/semver/v3"
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/remote"
+	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime/types"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -28,20 +32,23 @@ import (
 )
 
 type KubeadmRuntime struct {
-	*sync.Mutex
-	Cluster       *v2.Cluster
-	ClusterClient ssh.Interface
-	Token         *Token
-	Registry      *v2.RegistryConfig
-	*KubeadmConfig
+	Cluster  *v2.Cluster
+	Token    *types.Token
+	Registry *v2.RegistryConfig
+	*types.KubeadmConfig
 	*Config
-	cli kubernetes.Client
+
+	cli           kubernetes.Client
+	clusterClient ssh.Interface
+	pathResolver  constants.Data
+	remoteUtil    remote.Interface
+	mu            sync.Mutex
 }
 
 //nolint:all
 type Config struct {
 	// Clusterfile: the absolute path, we need to read kubeadm Config from Clusterfile
-	ClusterFileKubeConfig *KubeadmConfig
+	ClusterFileKubeConfig *types.KubeadmConfig
 	APIServerDomain       string
 	vlog                  int
 }
@@ -77,22 +84,11 @@ func (k *KubeadmRuntime) GetConfig() ([]byte, error) {
 	return data, nil
 }
 
-type Interface interface {
-	Init() error
-	Reset() error
-	ScaleUp(newMasterIPList []string, newNodeIPList []string) error
-	ScaleDown(deleteMastersIPList []string, deleteNodesIPList []string) error
-	SyncNodeIPVS(mastersIPList, nodeIPList []string) error
-	Upgrade(version string) error
-	GetConfig() ([]byte, error)
-
-	UpdateCert(certs []string) error
-}
-
 func (k *KubeadmRuntime) Reset() error {
 	logger.Info("start to delete Cluster: master %s, node %s", k.getMasterIPList(), k.getNodeIPList())
 	return k.reset()
 }
+
 func (k *KubeadmRuntime) ScaleUp(newMasterIPList []string, newNodeIPList []string) error {
 	if len(newMasterIPList) != 0 {
 		logger.Info("%s will be added as master", newMasterIPList)
@@ -124,17 +120,18 @@ func (k *KubeadmRuntime) ScaleDown(deleteMastersIPList []string, deleteNodesIPLi
 	return nil
 }
 
-func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
+func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (runtime.Interface, error) {
 	sshClient := ssh.NewSSHByCluster(cluster, true)
 	k := &KubeadmRuntime{
-		Mutex:         &sync.Mutex{},
-		Cluster:       cluster,
-		ClusterClient: sshClient,
+		Cluster: cluster,
 		Config: &Config{
 			ClusterFileKubeConfig: kubeadm,
-			APIServerDomain:       DefaultAPIServerDomain,
+			APIServerDomain:       types.DefaultAPIServerDomain,
 		},
-		KubeadmConfig: &KubeadmConfig{},
+		KubeadmConfig: types.NewKubeadmConfig(),
+		clusterClient: sshClient,
+		pathResolver:  constants.NewData(cluster.GetName()),
+		remoteUtil:    remote.New(cluster.GetName(), sshClient),
 	}
 	if err := k.Validate(); err != nil {
 		return nil, err
@@ -146,11 +143,11 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, 
 }
 
 // NewDefaultRuntime arg "clusterName" is the Cluster name
-func NewDefaultRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
+func NewDefaultRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (runtime.Interface, error) {
 	return newKubeadmRuntime(cluster, kubeadm)
 }
 
-func NewDefaultRuntimeWithCurrentCluster(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
+func NewDefaultRuntimeWithCurrentCluster(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (runtime.Interface, error) {
 	return newKubeadmRuntime(cluster, kubeadm)
 }
 

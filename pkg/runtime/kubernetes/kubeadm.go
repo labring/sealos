@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runtime
+package kubernetes
 
 import (
 	"context"
@@ -24,19 +24,16 @@ import (
 	"github.com/Masterminds/semver/v3"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/json"
-	kubeproxyconfigv1alpha1 "k8s.io/kube-proxy/config/v1alpha1"
-	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
-	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2"
-	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
 
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/runtime/types"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
-	strings2 "github.com/labring/sealos/pkg/utils/strings"
+	"github.com/labring/sealos/pkg/utils/rand"
+	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
@@ -51,14 +48,7 @@ var (
 )
 
 const (
-	KubeadmV1beta1 = "kubeadm.k8s.io/v1beta1"
-	KubeadmV1beta2 = "kubeadm.k8s.io/v1beta2"
-	KubeadmV1beta3 = "kubeadm.k8s.io/v1beta3"
-
-	DefaultAPIServerDomain = "apiserver.cluster.local"
-	DefaultDNSDomain       = "cluster.local"
-	DefaultVIP             = "10.103.97.2"
-	DefaultAPIServerPort   = 6443
+	DefaultVIP = "10.103.97.2"
 )
 
 // k.getKubeVersion can't be empty
@@ -69,18 +59,12 @@ func (k *KubeadmRuntime) setKubeadmAPIVersion() {
 	k.setKubeVersion(kubeVersion)
 }
 
-func (k *KubeadmRuntime) getKubeadmAPIVersion() string {
-	return k.InitConfiguration.APIVersion
-}
-
 func (k *KubeadmRuntime) setKubeVersion(version string) {
-	k.ClusterConfiguration.KubernetesVersion = version
+	k.KubeadmConfig.SetKubeVersion(version)
 }
 
 func (k *KubeadmRuntime) setAPIVersion(apiVersion string) {
-	k.InitConfiguration.APIVersion = apiVersion
-	k.ClusterConfiguration.APIVersion = apiVersion
-	k.JoinConfiguration.APIVersion = apiVersion
+	k.KubeadmConfig.SetAPIVersion(apiVersion)
 }
 
 // GetterKubeadmAPIVersion is covert version to kubeadmAPIServerVersion
@@ -98,15 +82,15 @@ func getterKubeadmAPIVersion(kubeVersion string) string {
 	switch {
 	// kubernetes gt 1.13, lt 1.15
 	case gte(v, V1130) && v.LessThan(V1150):
-		apiVersion = KubeadmV1beta1
+		apiVersion = types.KubeadmV1beta1
 	// kubernetes gt 1.15, lt 1.22
 	case gte(v, V1150) && v.LessThan(V1220):
-		apiVersion = KubeadmV1beta2
+		apiVersion = types.KubeadmV1beta2
 	// kubernetes gte 1.22
 	case gte(v, V1220) && v.LessThan(V1280):
-		apiVersion = KubeadmV1beta3
+		apiVersion = types.KubeadmV1beta3
 	default:
-		apiVersion = KubeadmV1beta3
+		apiVersion = types.KubeadmV1beta3
 	}
 	return apiVersion
 }
@@ -126,7 +110,6 @@ func (k *KubeadmRuntime) getCGroupDriver(node string) (string, error) {
 
 // MergeKubeadmConfig Unsafe, dangerous use of goroutines.
 func (k *KubeadmRuntime) MergeKubeadmConfig() error {
-	k.ImageKubeVersion = k.getKubeVersionFromImage()
 	for _, fn := range []string{
 		"",                          // generate default kubeadm configs
 		k.getDefaultKubeadmConfig(), // merging from predefined path of file if file exists
@@ -164,17 +147,13 @@ func (k *KubeadmRuntime) getDefaultKubeadmConfig() string {
 	return filepath.Join(k.getContentData().RootFSEtcPath(), constants.DefaultRootfsKubeadmFileName)
 }
 
-func (k *KubeadmRuntime) getClusterName() string {
-	return k.Cluster.Name
-}
-
 func (k *KubeadmRuntime) getVip() string {
 	return k.getVIPFromImage()
 }
 
 func (k *KubeadmRuntime) getAPIServerPort() int32 {
 	if k.InitConfiguration.LocalAPIEndpoint.BindPort == 0 {
-		return DefaultAPIServerPort
+		return types.DefaultAPIServerPort
 	}
 	return k.InitConfiguration.LocalAPIEndpoint.BindPort
 }
@@ -182,9 +161,11 @@ func (k *KubeadmRuntime) getAPIServerPort() int32 {
 func (k *KubeadmRuntime) getVipAndPort() string {
 	return fmt.Sprintf("%s:%d", k.getVip(), k.getAPIServerPort())
 }
+
 func (k *KubeadmRuntime) getAPIServerDomain() string {
 	return k.Config.APIServerDomain
 }
+
 func (k *KubeadmRuntime) getClusterAPIServer() string {
 	return fmt.Sprintf("https://%s:%d", k.getAPIServerDomain(), k.getAPIServerPort())
 }
@@ -206,13 +187,17 @@ func (k *KubeadmRuntime) initCertSANS() {
 func (k *KubeadmRuntime) setCertSANS(certs []string) {
 	var certSans []string
 	certSans = append(certSans, certs...)
-	certSans = strings2.RemoveDuplicate(certSans)
+	certSans = stringsutil.RemoveDuplicate(certSans)
 	k.ClusterConfiguration.APIServer.CertSANs = certSans
 }
 
 func (k *KubeadmRuntime) fetchKubeadmConfig() error {
 	logger.Info("fetch certSANs from kubeadm configmap")
-	data, err := k.getKubeExpansion().FetchKubeadmConfig(context.Background())
+	exp, err := k.getKubeExpansion()
+	if err != nil {
+		return err
+	}
+	data, err := exp.FetchKubeadmConfig(context.Background())
 	if err != nil {
 		return err
 	}
@@ -264,7 +249,7 @@ func (k *KubeadmRuntime) getServiceCIDR() string {
 
 func (k *KubeadmRuntime) getDNSDomain() string {
 	if k.ClusterConfiguration.Networking.DNSDomain == "" {
-		k.ClusterConfiguration.Networking.DNSDomain = DefaultDNSDomain
+		k.ClusterConfiguration.Networking.DNSDomain = types.DefaultDNSDomain
 	}
 	return k.ClusterConfiguration.Networking.DNSDomain
 }
@@ -281,7 +266,7 @@ func (k *KubeadmRuntime) writeTokenFile() error {
 	if err = fileutil.WriteFile(tokenFile, []byte(data)); err != nil {
 		return err
 	}
-	var t Token
+	var t types.Token
 	err = json.Unmarshal([]byte(data), &t)
 	if err != nil {
 		return err
@@ -304,7 +289,7 @@ func (k *KubeadmRuntime) setKubernetesToken() error {
 			if err != nil {
 				return err
 			}
-			var t Token
+			var t types.Token
 			err = json.Unmarshal(data, &t)
 			if err != nil {
 				return err
@@ -416,7 +401,7 @@ func (k *KubeadmRuntime) setInitTaints() {
 
 func (k *KubeadmRuntime) setExcludeCIDRs() {
 	k.IPVS.ExcludeCIDRs = append(k.KubeProxyConfiguration.IPVS.ExcludeCIDRs, fmt.Sprintf("%s/32", k.getVip()))
-	k.IPVS.ExcludeCIDRs = strings2.RemoveDuplicate(k.IPVS.ExcludeCIDRs)
+	k.IPVS.ExcludeCIDRs = stringsutil.RemoveDuplicate(k.IPVS.ExcludeCIDRs)
 }
 
 func (k *KubeadmRuntime) getEtcdDataDir() string {
@@ -453,7 +438,7 @@ var setCertificateKey = func(krt *KubeadmRuntime) error {
 	certificateKeyFile := path.Join(krt.getContentData().EtcPath(), constants.DefaultCertificateKeyFileName)
 	var key string
 	if !fileutil.IsExist(certificateKeyFile) {
-		key, _ = CreateCertificateKey()
+		key, _ = rand.CreateCertificateKey()
 		err := fileutil.WriteFile(certificateKeyFile, []byte(key))
 		if err != nil {
 			return err
@@ -473,10 +458,11 @@ func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
 	if err := k.ConvertInitConfigConversion(setCGroupDriverAndSocket, setCertificateKey); err != nil {
 		return nil, err
 	}
-	return yaml.MarshalYamlConfigs(&k.conversion.InitConfiguration,
-		&k.conversion.ClusterConfiguration,
-		&k.conversion.KubeletConfiguration,
-		&k.conversion.KubeProxyConfiguration)
+	conversion := k.KubeadmConfig.GetConvertedKubeadmConfig()
+	return yaml.MarshalYamlConfigs(&conversion.InitConfiguration,
+		&conversion.ClusterConfiguration,
+		&conversion.KubeletConfiguration,
+		&conversion.KubeProxyConfiguration)
 }
 
 func (k *KubeadmRuntime) ConvertInitConfigConversion(fns ...func(*KubeadmRuntime) error) error {
@@ -499,100 +485,14 @@ func (k *KubeadmRuntime) ConvertInitConfigConversion(fns ...func(*KubeadmRuntime
 	// after all merging done, set default fields
 	k.finalizeInitConfig()
 
-	if err := k.convertKubeadmVersion(); err != nil {
+	if err := k.KubeadmConfig.ConvertKubeadmVersion(); err != nil {
 		return fmt.Errorf("convert kubeadm version failed: %w", err)
 	}
 	return nil
 }
 
 func (k *KubeadmRuntime) finalizeInitConfig() {
-	for _, obj := range []k8sruntime.Object{
-		&k.ClusterConfiguration,
-		&k.InitConfiguration,
-		&k.JoinConfiguration,
-		&k.KubeProxyConfiguration,
-		&k.KubeletConfiguration,
-	} {
-		scheme.Default(obj)
-	}
-}
-
-func (k *KubeadmRuntime) convertKubeadmVersion() error {
-	var err error
-	kubeadmVersion := k.getKubeadmAPIVersion()
-	switch kubeadmVersion {
-	case KubeadmV1beta2:
-		var v1beta2InitConfiguration v1beta2.InitConfiguration
-		var v1beta2ClusterConfiguration v1beta2.ClusterConfiguration
-		var v1beta2JoinConfiguration v1beta2.JoinConfiguration
-		if err = v1beta2.Convert_kubeadm_InitConfiguration_To_v1beta2_InitConfiguration(&k.InitConfiguration, &v1beta2InitConfiguration, nil); err != nil {
-			return err
-		}
-		if err = v1beta2.Convert_kubeadm_ClusterConfiguration_To_v1beta2_ClusterConfiguration(&k.ClusterConfiguration, &v1beta2ClusterConfiguration, nil); err != nil {
-			return err
-		}
-		if err = v1beta2.Convert_kubeadm_JoinConfiguration_To_v1beta2_JoinConfiguration(&k.JoinConfiguration, &v1beta2JoinConfiguration, nil); err != nil {
-			return err
-		}
-
-		v1beta2InitConfiguration.APIVersion = v1beta2.SchemeGroupVersion.String()
-		v1beta2ClusterConfiguration.APIVersion = v1beta2.SchemeGroupVersion.String()
-		v1beta2JoinConfiguration.APIVersion = v1beta2.SchemeGroupVersion.String()
-		v1beta2InitConfiguration.Kind = "InitConfiguration"
-		v1beta2ClusterConfiguration.Kind = "ClusterConfiguration"
-		v1beta2JoinConfiguration.Kind = "JoinConfiguration"
-		k.conversion.InitConfiguration = v1beta2InitConfiguration
-		k.conversion.ClusterConfiguration = v1beta2ClusterConfiguration
-		k.conversion.JoinConfiguration = v1beta2JoinConfiguration
-
-	case KubeadmV1beta3:
-		var v1beta3InitConfiguration v1beta3.InitConfiguration
-		var v1beta3ClusterConfiguration v1beta3.ClusterConfiguration
-		var v1beta3JoinConfiguration v1beta3.JoinConfiguration
-		if err = v1beta3.Convert_kubeadm_InitConfiguration_To_v1beta3_InitConfiguration(&k.InitConfiguration, &v1beta3InitConfiguration, nil); err != nil {
-			return err
-		}
-		if err = v1beta3.Convert_kubeadm_ClusterConfiguration_To_v1beta3_ClusterConfiguration(&k.ClusterConfiguration, &v1beta3ClusterConfiguration, nil); err != nil {
-			return err
-		}
-		if err = v1beta3.Convert_kubeadm_JoinConfiguration_To_v1beta3_JoinConfiguration(&k.JoinConfiguration, &v1beta3JoinConfiguration, nil); err != nil {
-			return err
-		}
-		v1beta3InitConfiguration.APIVersion = v1beta3.SchemeGroupVersion.String()
-		v1beta3ClusterConfiguration.APIVersion = v1beta3.SchemeGroupVersion.String()
-		v1beta3JoinConfiguration.APIVersion = v1beta3.SchemeGroupVersion.String()
-		v1beta3InitConfiguration.Kind = "InitConfiguration"
-		v1beta3ClusterConfiguration.Kind = "ClusterConfiguration"
-		v1beta3JoinConfiguration.Kind = "JoinConfiguration"
-		k.conversion.InitConfiguration = v1beta3InitConfiguration
-		k.conversion.ClusterConfiguration = v1beta3ClusterConfiguration
-		k.conversion.JoinConfiguration = v1beta3JoinConfiguration
-	default:
-		k.conversion.JoinConfiguration = k.JoinConfiguration
-		k.conversion.InitConfiguration = k.InitConfiguration
-		k.conversion.ClusterConfiguration = k.ClusterConfiguration
-	}
-
-	{
-		var v1beta1Kubelet kubeletconfigv1beta1.KubeletConfiguration
-		var v1alpha1KubeProxy kubeproxyconfigv1alpha1.KubeProxyConfiguration
-		//if err = v1alpha1.Convert_config_KubeProxyConfiguration_To_v1alpha1_KubeProxyConfiguration(&k.KubeProxyConfiguration, &v1alpha1KubeProxy, nil); err != nil {
-		//	return err
-		//}
-		v1beta1Kubelet = k.KubeletConfiguration
-		//if err = v1beta1.Convert_config_KubeletConfiguration_To_v1beta1_KubeletConfiguration(&k.KubeletConfiguration, &v1beta1Kubelet, nil); err != nil {
-		//	return err
-		//}
-		v1alpha1KubeProxy = k.KubeProxyConfiguration
-		v1beta1Kubelet.APIVersion = kubeletconfigv1beta1.SchemeGroupVersion.String()
-		v1alpha1KubeProxy.APIVersion = kubeproxyconfigv1alpha1.SchemeGroupVersion.String()
-		v1beta1Kubelet.Kind = "KubeletConfiguration"
-		v1alpha1KubeProxy.Kind = "KubeProxyConfiguration"
-		k.conversion.KubeProxyConfiguration = v1alpha1KubeProxy
-		k.conversion.KubeletConfiguration = v1beta1Kubelet
-	}
-
-	return nil
+	k.KubeadmConfig.FinalizeInitConfig()
 }
 
 func (k *KubeadmRuntime) generateJoinNodeConfigs(node string) ([]byte, error) {
@@ -604,12 +504,13 @@ func (k *KubeadmRuntime) generateJoinNodeConfigs(node string) ([]byte, error) {
 	}
 	k.cleanJoinLocalAPIEndPoint()
 	k.setAPIServerEndpoint(k.getVipAndPort())
-	if err := k.convertKubeadmVersion(); err != nil {
+	if err := k.KubeadmConfig.ConvertKubeadmVersion(); err != nil {
 		return nil, fmt.Errorf("convert kubeadm version failed: %w", err)
 	}
+	conversion := k.KubeadmConfig.GetConvertedKubeadmConfig()
 	return yaml.MarshalYamlConfigs(
-		&k.conversion.KubeletConfiguration,
-		&k.conversion.JoinConfiguration)
+		&conversion.KubeletConfiguration,
+		&conversion.JoinConfiguration)
 }
 
 func (k *KubeadmRuntime) generateJoinMasterConfigs(masterIP string) ([]byte, error) {
@@ -621,10 +522,11 @@ func (k *KubeadmRuntime) generateJoinMasterConfigs(masterIP string) ([]byte, err
 	}
 	k.setJoinAdvertiseAddress(iputils.GetHostIP(masterIP))
 	k.setAPIServerEndpoint(fmt.Sprintf("%s:%d", k.getMaster0IP(), k.getAPIServerPort()))
-	if err := k.convertKubeadmVersion(); err != nil {
+	if err := k.KubeadmConfig.ConvertKubeadmVersion(); err != nil {
 		return nil, fmt.Errorf("convert kubeadm version failed: %w", err)
 	}
-	return yaml.MarshalYamlConfigs(k.conversion.JoinConfiguration, k.conversion.KubeletConfiguration)
+	conversion := k.KubeadmConfig.GetConvertedKubeadmConfig()
+	return yaml.MarshalYamlConfigs(&conversion.JoinConfiguration, &conversion.KubeletConfiguration)
 }
 
 func (k *KubeadmRuntime) setCGroupDriverAndSocket(node string) error {

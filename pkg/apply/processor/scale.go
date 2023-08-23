@@ -18,8 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/labring/sealos/pkg/guest"
-
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/bootstrap"
@@ -29,7 +27,9 @@ import (
 	"github.com/labring/sealos/pkg/config"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/filesystem/rootfs"
+	"github.com/labring/sealos/pkg/guest"
 	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime/kubernetes"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -204,9 +204,9 @@ func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 	}
 	var rt runtime.Interface
 	if c.IsScaleUp {
-		rt, err = runtime.NewDefaultRuntimeWithCurrentCluster(cluster, c.ClusterFile.GetKubeadmConfig())
+		rt, err = kubernetes.NewDefaultRuntimeWithCurrentCluster(cluster, c.ClusterFile.GetKubeadmConfig())
 	} else {
-		rt, err = runtime.NewDefaultRuntimeWithCurrentCluster(c.ClusterFile.GetCluster(), c.ClusterFile.GetKubeadmConfig())
+		rt, err = kubernetes.NewDefaultRuntimeWithCurrentCluster(c.ClusterFile.GetCluster(), c.ClusterFile.GetKubeadmConfig())
 	}
 	if err != nil {
 		return fmt.Errorf("failed to init runtime: %v", err)

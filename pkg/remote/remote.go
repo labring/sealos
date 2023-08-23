@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"text/template"
 
+	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/iputils"
 
 	"github.com/labring/sealos/pkg/ssh"
@@ -49,22 +50,33 @@ const (
 )
 
 type remote struct {
-	clusterName  string
-	sshInterface ssh.Interface
+	clusterName  string // TODO: remove it?
+	pathResolver constants.Data
+	execer       ssh.Interface
+}
+
+func (s *remote) executeRemoteUtilSubcommand(ip, cmd string) error {
+	cmd = fmt.Sprintf(s.pathResolver.RootFSSealctlPath(), cmd)
+	return s.execer.CmdAsync(ip, cmd)
+}
+
+func (s *remote) outputRemoteUtilSubcommand(ip, cmd string) (string, error) {
+	cmd = fmt.Sprintf(s.pathResolver.RootFSSealctlPath(), cmd)
+	return s.execer.CmdToString(ip, cmd, "")
 }
 
 func (s *remote) HostsAdd(ip, host, domain string) error {
-	out := fmt.Sprintf(addHostsCommandFmt, host, domain)
-	return bashCTLSync(s.clusterName, s.sshInterface, ip, out)
+	cmd := fmt.Sprintf(addHostsCommandFmt, host, domain)
+	return s.executeRemoteUtilSubcommand(ip, cmd)
 }
 
 func (s *remote) HostsDelete(ip, domain string) error {
-	out := fmt.Sprintf(deleteHostsCommandFmt, domain)
-	return bashCTLSync(s.clusterName, s.sshInterface, ip, out)
+	cmd := fmt.Sprintf(deleteHostsCommandFmt, domain)
+	return s.executeRemoteUtilSubcommand(ip, cmd)
 }
 
 func (s *remote) Hostname(ip string) (string, error) {
-	return bashToString(s.clusterName, s.sshInterface, ip, hostnameCommandFmt)
+	return s.outputRemoteUtilSubcommand(ip, hostnameCommandFmt)
 }
 
 func (s *remote) IPVS(ip, vip string, masters []string) error {
@@ -79,7 +91,7 @@ func (s *remote) IPVS(ip, vip string, masters []string) error {
 	if err != nil {
 		return err
 	}
-	return bashCTLSync(s.clusterName, s.sshInterface, ip, out)
+	return s.executeRemoteUtilSubcommand(ip, out)
 }
 func (s *remote) IPVSClean(ip, vip string) error {
 	var ipvsCommandTemplate = template.Must(template.New("ipvs").Parse(`` +
@@ -94,7 +106,7 @@ func (s *remote) IPVSClean(ip, vip string) error {
 	if err != nil {
 		return err
 	}
-	return bashCTLSync(s.clusterName, s.sshInterface, ip, out)
+	return s.executeRemoteUtilSubcommand(ip, out)
 }
 
 func (s *remote) StaticPod(ip, vip, name, image string, masters []string) error {
@@ -112,17 +124,19 @@ func (s *remote) StaticPod(ip, vip, name, image string, masters []string) error 
 		return err
 	}
 
-	return bashCTLSync(s.clusterName, s.sshInterface, ip, out)
+	return s.executeRemoteUtilSubcommand(ip, out)
 }
 
 func (s *remote) Token(ip, config, certificateKey string) (string, error) {
-	return bashToString(s.clusterName, s.sshInterface, ip, fmt.Sprintf(tokenCommandFmt, config, certificateKey))
+	return s.outputRemoteUtilSubcommand(ip, fmt.Sprintf(tokenCommandFmt, config, certificateKey))
 }
+
 func (s *remote) CGroup(ip string) (string, error) {
-	return bashToString(s.clusterName, s.sshInterface, ip, cGroupCommandFmt)
+	return s.outputRemoteUtilSubcommand(ip, cGroupCommandFmt)
 }
+
 func (s *remote) Socket(ip string) (string, error) {
-	return bashToString(s.clusterName, s.sshInterface, ip, socketCommandFmt)
+	return s.outputRemoteUtilSubcommand(ip, socketCommandFmt)
 }
 
 func (s *remote) Cert(ip string, altNames []string, nodeIP, nodeName, serviceCIRD, DNSDomain string) error {
@@ -143,12 +157,13 @@ func (s *remote) Cert(ip string, altNames []string, nodeIP, nodeName, serviceCIR
 	if err != nil {
 		return err
 	}
-	return bashCTLSync(s.clusterName, s.sshInterface, ip, out)
+	return s.executeRemoteUtilSubcommand(ip, out)
 }
 
 func New(clusterName string, sshInterface ssh.Interface) Interface {
 	return &remote{
 		clusterName:  clusterName,
-		sshInterface: sshInterface,
+		execer:       sshInterface,
+		pathResolver: constants.NewData(clusterName),
 	}
 }

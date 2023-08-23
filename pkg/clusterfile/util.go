@@ -19,15 +19,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/labring/sealos/pkg/constants"
-	yaml2 "github.com/labring/sealos/pkg/utils/yaml"
-
-	"github.com/labring/sealos/pkg/runtime"
-
 	k8sV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/runtime/decode"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	yaml2 "github.com/labring/sealos/pkg/utils/yaml"
 )
 
 var ErrClusterNotExist = fmt.Errorf("no cluster exist")
@@ -80,7 +78,7 @@ func GetClusterFromDataCompatV1(data []byte) (*v2.Cluster, error) {
 	if metaType.Kind != constants.Cluster {
 		return nil, fmt.Errorf("not found type cluster from: \n%s", data)
 	}
-	c, err := runtime.DecodeCRDFromString(string(data), constants.Cluster)
+	c, err := decode.DecodeCRDFromString(string(data), constants.Cluster)
 	if err != nil {
 		return nil, err
 	} else if c == nil {
