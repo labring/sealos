@@ -24,6 +24,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils"
+	"k8s.io/apimachinery/pkg/api/resource"
+
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -250,6 +253,10 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
 			return nil, fmt.Errorf("sync resource resourceQuota and limitRange failed: %v", err)
 		}
+		//TODO delete after gpu quota already in resource-quota
+		if err := r.adaptGpuQuota(ctx, userNamespace); err != nil {
+			r.Logger.Error(err, "adapt gpu quota failed")
+		}
 	}
 	// add account balance when account is new user
 	stringAmount := os.Getenv(NEWACCOUNTAMOUNTENV)
@@ -307,6 +314,22 @@ func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, 
 		}
 	}
 	return nil
+}
+
+func (r *AccountReconciler) adaptGpuQuota(ctx context.Context, nsName string) error {
+	quota := common.GetDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName)
+	return retry.Retry(10, 1*time.Second, func() error {
+		_, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
+			if _, ok := quota.Spec.Hard[common.ResourceRequestGpu]; !ok {
+				quota.Spec.Hard[common.ResourceRequestGpu] = resource.MustParse(utils.GetEnvWithDefault(common.QuotaLimitsGPU, common.DefaultQuotaLimitsGPU))
+			}
+			if _, ok := quota.Spec.Hard[common.ResourceLimitGpu]; !ok {
+				quota.Spec.Hard[common.ResourceLimitGpu] = resource.MustParse(utils.GetEnvWithDefault(common.QuotaLimitsGPU, common.DefaultQuotaLimitsGPU))
+			}
+			return nil
+		})
+		return err
+	})
 }
 
 func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, namespace string) error {
