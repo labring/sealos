@@ -69,14 +69,14 @@ function Billing() {
       onSuccess(data) {
         const totalPage = data.data.status.pageLength;
         if (totalPage === 0) {
-          // 搜索时
+          // 搜索时的bug
           setTotalPage(1);
           setTotalItem(1);
-          setcurrentPage(1);
         } else {
           setTotalItem(data.data.status.totalCount);
           setTotalPage(totalPage);
         }
+        if (totalPage < currentPage) setcurrentPage(1);
       },
       staleTime: 1000
     }
