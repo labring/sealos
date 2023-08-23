@@ -22,6 +22,10 @@ import (
 	"os"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+
+	"github.com/labring/sealos/controllers/pkg/common/gpu"
+
 	"github.com/labring/sealos/controllers/pkg/common"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -52,6 +56,8 @@ type BillingRecordQueryReconciler struct {
 //+kubebuilder:rbac:groups=account.sealos.io,resources=pricequeries,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=pricequeries/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=account.sealos.io,resources=pricequeries/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=configmaps/status,verbs=get
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -147,7 +153,16 @@ func (r *BillingRecordQueryReconciler) ReconcilePriceQuery(ctx context.Context, 
 		pricesMap = common.DefaultPrices
 	}
 	priceQuery.Status.BillingRecords = make([]accountv1.BillingRecord, 0)
+	alias, err := gpu.GetGPUAlias(r.Client)
+	if errors.IsNotFound(err) {
+		r.Logger.Error(err, "get gpu alias failed")
+	}
 	for property, v := range pricesMap {
+		if common.IsGpuResource(property) && alias != nil {
+			if propertyAlias := alias[common.GetGpuResourceProduct(property)]; propertyAlias != "" {
+				property = string(common.NewGpuResource(propertyAlias))
+			}
+		}
 		priceQuery.Status.BillingRecords = append(priceQuery.Status.BillingRecords, accountv1.BillingRecord{
 			ResourceType: property,
 			Price:        v.Price,

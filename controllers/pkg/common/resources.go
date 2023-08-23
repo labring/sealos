@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/utils"
@@ -132,6 +133,9 @@ const (
 	PropertyInfraDisk   = "infra-disk"
 )
 
+// GpuResourcePrefix GPUResource = gpu- + gpu.Product ; ex. gpu-tesla-v100
+const GpuResourcePrefix = "gpu-"
+
 const ResourceGPU corev1.ResourceName = gpu.NvidiaGpuKey
 
 const (
@@ -140,7 +144,15 @@ const (
 )
 
 func NewGpuResource(product string) corev1.ResourceName {
-	return corev1.ResourceName("gpu-" + product)
+	return corev1.ResourceName(GpuResourcePrefix + product)
+}
+
+func IsGpuResource(resource string) bool {
+	return strings.HasPrefix(resource, GpuResourcePrefix)
+}
+
+func GetGpuResourceProduct(resource string) string {
+	return strings.TrimPrefix(resource, GpuResourcePrefix)
 }
 
 var (
