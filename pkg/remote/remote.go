@@ -56,12 +56,12 @@ type remote struct {
 }
 
 func (s *remote) executeRemoteUtilSubcommand(ip, cmd string) error {
-	cmd = fmt.Sprintf(s.pathResolver.RootFSSealctlPath(), cmd)
+	cmd = fmt.Sprintf("%s %s", s.pathResolver.RootFSSealctlPath(), cmd)
 	return s.execer.CmdAsync(ip, cmd)
 }
 
 func (s *remote) outputRemoteUtilSubcommand(ip, cmd string) (string, error) {
-	cmd = fmt.Sprintf(s.pathResolver.RootFSSealctlPath(), cmd)
+	cmd = fmt.Sprintf("%s %s", s.pathResolver.RootFSSealctlPath(), cmd)
 	return s.execer.CmdToString(ip, cmd, "")
 }
 

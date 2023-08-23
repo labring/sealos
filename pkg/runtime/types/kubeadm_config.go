@@ -101,7 +101,7 @@ func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 		err                  error
 	)
 	if kubeadmYamlPath == "" {
-		defaultKubeadmConfig, err = LoadKubeadmConfigs(k.FetchDefaultKubeadmConfig(), false, decode.DecodeCRDFromString)
+		defaultKubeadmConfig, err = LoadKubeadmConfigs(k.FetchDefaultKubeadmConfig(), false, decode.CRDFromString)
 		if err != nil {
 			return err
 		}
@@ -111,7 +111,7 @@ func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 		return nil
 	}
 	logger.Debug("trying to merge kubeadm configs from file %s", kubeadmYamlPath)
-	defaultKubeadmConfig, err = LoadKubeadmConfigs(kubeadmYamlPath, false, decode.DecodeCRDFromFile)
+	defaultKubeadmConfig, err = LoadKubeadmConfigs(kubeadmYamlPath, false, decode.CRDFromFile)
 	if err != nil {
 		return fmt.Errorf("failed to load kubeadm config from %s: %v", kubeadmYamlPath, err)
 	}

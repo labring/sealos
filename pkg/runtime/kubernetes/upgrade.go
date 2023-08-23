@@ -167,7 +167,7 @@ func (k *KubeadmRuntime) autoUpdateConfig(version string) error {
 	logger.Debug("get cluster configmap data:\n%s", clusterCfg)
 	logger.Debug("get kubelet configmap data:\n%s", kubeletCfg)
 	allConfig := strings.Join([]string{clusterCfg, kubeletCfg}, "\n---\n")
-	defaultKubeadmConfig, err := types.LoadKubeadmConfigs(allConfig, false, decode.DecodeCRDFromString)
+	defaultKubeadmConfig, err := types.LoadKubeadmConfigs(allConfig, false, decode.CRDFromString)
 	if err != nil {
 		logger.Error("failed to decode cluster kubeadm config: %s", err)
 		return err

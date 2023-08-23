@@ -78,7 +78,7 @@ func GetClusterFromDataCompatV1(data []byte) (*v2.Cluster, error) {
 	if metaType.Kind != constants.Cluster {
 		return nil, fmt.Errorf("not found type cluster from: \n%s", data)
 	}
-	c, err := decode.DecodeCRDFromString(string(data), constants.Cluster)
+	c, err := decode.CRDFromString(string(data), constants.Cluster)
 	if err != nil {
 		return nil, err
 	} else if c == nil {

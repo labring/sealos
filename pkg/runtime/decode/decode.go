@@ -67,16 +67,16 @@ func overrideKubeletDefaults(obj interface{}) {
 	obj.(*kubelet.KubeletConfiguration).ResolverConfig = nil
 }
 
-func DecodeCRDFromFile(filePath string, kind string) (interface{}, error) {
+func CRDFromFile(filePath string, kind string) (interface{}, error) {
 	file, err := os.Open(filepath.Clean(filePath))
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
-	return DecodeCRDFromReader(file, kind)
+	return CRDFromReader(file, kind)
 }
 
-func DecodeCRDFromReader(r io.Reader, kind string) (interface{}, error) {
+func CRDFromReader(r io.Reader, kind string) (interface{}, error) {
 	d := yaml.NewYAMLOrJSONDecoder(r, 4096)
 
 	for {
@@ -105,8 +105,8 @@ func DecodeCRDFromReader(r io.Reader, kind string) (interface{}, error) {
 	return nil, nil
 }
 
-func DecodeCRDFromString(config string, kind string) (interface{}, error) {
-	return DecodeCRDFromReader(strings.NewReader(config), kind)
+func CRDFromString(config string, kind string) (interface{}, error) {
+	return CRDFromReader(strings.NewReader(config), kind)
 }
 
 func TypeConversion(raw []byte, kind string) (interface{}, error) {

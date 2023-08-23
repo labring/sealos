@@ -47,7 +47,7 @@ func TestKubeadmRuntime_setFeatureGatesConfiguration(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			k, err := LoadKubeadmConfigs(defaultKubeadmConfig, false, decode.DecodeCRDFromString)
+			k, err := LoadKubeadmConfigs(defaultKubeadmConfig, false, decode.CRDFromString)
 			if err != nil {
 				t.Fatalf("error loading default kubeadm config: %v", err)
 			}
@@ -156,7 +156,7 @@ etcd:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			k, err := LoadKubeadmConfigs(testyaml, false, decode.DecodeCRDFromString)
+			k, err := LoadKubeadmConfigs(testyaml, false, decode.CRDFromString)
 			if err != nil {
 				t.Fatalf("error loading default kubeadm config: %v", err)
 			}
