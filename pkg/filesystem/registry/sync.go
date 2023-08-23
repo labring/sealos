@@ -75,7 +75,10 @@ func (s *impl) Sync(ctx context.Context, hosts ...string) error {
 		go func(ctx context.Context, host string) {
 			logger.Debug("running temporary registry on host %s", host)
 			if err := s.ssh.CmdAsyncWithContext(ctx, host, getRegistryServeCommand(s.pathResolver, defaultTemporaryPort)); err != nil {
-				logger.Error(err)
+				// ignore expected signal killed error when context cancel
+				if !strings.Contains(err.Error(), "signal: killed") {
+					logger.Error(err)
+				}
 			}
 		}(cmdCtx, hosts[i])
 	}
