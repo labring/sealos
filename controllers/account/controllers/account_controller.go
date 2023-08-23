@@ -253,6 +253,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
 			return nil, fmt.Errorf("sync resource resourceQuota and limitRange failed: %v", err)
 		}
+		//TODO delete after gpu quota already in resource-quota
 		if err := r.adaptGpuQuota(ctx, userNamespace); err != nil {
 			r.Logger.Error(err, "adapt gpu quota failed")
 		}
@@ -324,9 +325,6 @@ func (r *AccountReconciler) adaptGpuQuota(ctx context.Context, nsName string) er
 			}
 			if _, ok := quota.Spec.Hard[common.ResourceLimitGpu]; !ok {
 				quota.Spec.Hard[common.ResourceLimitGpu] = resource.MustParse(utils.GetEnvWithDefault(common.QuotaLimitsGPU, common.DefaultQuotaLimitsGPU))
-			}
-			if _, ok := quota.Spec.Hard[common.ResourceGPU]; !ok {
-				delete(quota.Spec.Hard, common.ResourceGPU)
 			}
 			return nil
 		})
