@@ -179,22 +179,5 @@ function countGpuSource(rawData: PriceCrdType, gpuNodes: GpuNodeType[]) {
     });
   });
 
-  return gpuList.length === 0
-    ? [
-        {
-          alias: 'Tesla-P40',
-          type: 'Tesla-P40',
-          price: 0.82,
-          inventory: 11,
-          vm: 24
-        },
-        {
-          alias: '4090',
-          type: 'NVIDIA-GeForce-RTX-4090',
-          price: 0.82,
-          inventory: 1,
-          vm: 23.98828125
-        }
-      ]
-    : gpuList;
+  return gpuList.length === 0 ? undefined : gpuList;
 }

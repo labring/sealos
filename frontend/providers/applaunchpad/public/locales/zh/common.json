@@ -1,7 +1,7 @@
 {
   "cpu": "CPU",
   "memory": "内存",
-  "storage": "存储券",
+  "storage": "存储卷",
   "gpu": "GPU",
   "Applications": "应用列表",
   "Create Application": "新建应用",

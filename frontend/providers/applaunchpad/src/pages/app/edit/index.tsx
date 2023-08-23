@@ -265,7 +265,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       },
       onSettled() {
         setIsLoading(false);
-        refetchPrice();
       }
     }
   );

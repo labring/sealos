@@ -226,12 +226,12 @@ const Form = ({
               icon: 'nvidia',
               label: (
                 <Flex>
-                  <Box color={'myGray.900'}>{item.type}</Box>
+                  <Box color={'myGray.900'}>{item.alias}</Box>
                   <Box mx={3} color={'myGray.500'}>
                     |
                   </Box>
                   <Box color={'myGray.500'}>
-                    {t('vm')} : {item.vm}G
+                    {t('vm')} : {Math.round(item.vm)}G
                   </Box>
                   <Box mx={3} color={'myGray.500'}>
                     |
