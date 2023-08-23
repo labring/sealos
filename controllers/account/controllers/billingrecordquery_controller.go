@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/labring/sealos/controllers/pkg/common/gpu"
 
 	"github.com/labring/sealos/controllers/pkg/common"
@@ -152,7 +154,7 @@ func (r *BillingRecordQueryReconciler) ReconcilePriceQuery(ctx context.Context, 
 	}
 	priceQuery.Status.BillingRecords = make([]accountv1.BillingRecord, 0)
 	alias, err := gpu.GetGPUAlias(r.Client)
-	if err != nil {
+	if errors.IsNotFound(err) {
 		r.Logger.Error(err, "get gpu alias failed")
 	}
 	for property, v := range pricesMap {
