@@ -108,16 +108,18 @@ func (r *GpuReconciler) applyGPUInfoCM(ctx context.Context, nodeList *corev1.Nod
 	}
 	// get the number of GPU used by pods that are using GPU
 	for _, pod := range podList.Items {
+		phase := pod.Status.Phase
+		if phase == corev1.PodSucceeded {
+			continue
+		}
+
 		nodeName = pod.Spec.NodeName
 		_, ok1 := nodeMap[nodeName]
 		gpuProduct, ok2 := pod.Spec.NodeSelector[NvidiaGPUProduct]
 		if !ok1 || !ok2 {
 			continue
 		}
-		phase := pod.Status.Phase
-		if phase != corev1.PodRunning {
-			continue
-		}
+
 		containers := pod.Spec.Containers
 		for _, container := range containers {
 			gpuCount, ok := container.Resources.Limits[NvidiaGPU]
