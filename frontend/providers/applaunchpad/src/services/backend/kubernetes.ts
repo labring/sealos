@@ -159,8 +159,8 @@ export async function getUserQuota(
     },
     {
       type: 'gpu',
-      limit: Number(status?.hard?.['limits.nvidia.com/gpu'] || 0),
-      used: Number(status?.used?.['limits.nvidia.com/gpu'] || 0)
+      limit: Number(status?.hard?.['requests.nvidia.com/gpu'] || 0),
+      used: Number(status?.used?.['requests.nvidia.com/gpu'] || 0)
     }
   ];
 }

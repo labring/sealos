@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Flex, Box } from '@chakra-ui/react';
 import type { YamlItemType } from '@/types';
@@ -12,7 +12,6 @@ import {
 } from '@/utils/deployYaml2Json';
 import { useForm } from 'react-hook-form';
 import { defaultEditVal, editModeMap } from '@/constants/editApp';
-import debounce from 'lodash/debounce';
 import { postDeployApp, putApp } from '@/api/app';
 import { useConfirm } from '@/hooks/useConfirm';
 import type { AppEditType, DeployKindsType } from '@/types/app';
@@ -120,21 +119,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const formHook = useForm<AppEditType>({
     defaultValues: defaultEditVal
   });
+  const realTimeForm = useRef(defaultEditVal);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const formOnchangeDebounce = useCallback(
-    debounce((data: AppEditType) => {
-      try {
-        setYamlList(formData2Yamls(data));
-      } catch (error) {
-        console.log(error);
-      }
-    }, 200),
-    []
-  );
   // watch form change, compute new yaml
   formHook.watch((data) => {
-    data && formOnchangeDebounce(data as AppEditType);
+    if (!data) return;
+    realTimeForm.current = data as AppEditType;
     setForceUpdate(!forceUpdate);
   });
 
@@ -153,54 +143,56 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     [defaultGpuSource?.amount, defaultGpuSource?.type, userSourcePrice?.gpu]
   );
 
-  const submitSuccess = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const yamls = yamlList.map((item) => item.value);
+  const submitSuccess = useCallback(
+    async (yamlList: YamlItemType[]) => {
+      setIsLoading(true);
+      try {
+        const yamls = yamlList.map((item) => item.value);
 
-      if (appName) {
-        const patch = patchYamlList({
-          formOldYamlList: formOldYamls.current.map((item) => item.value),
-          crYamlList: crOldYamls.current,
-          newYamlList: yamls
+        if (appName) {
+          const patch = patchYamlList({
+            formOldYamlList: formOldYamls.current.map((item) => item.value),
+            crYamlList: crOldYamls.current,
+            newYamlList: yamls
+          });
+
+          await putApp({
+            patch,
+            appName,
+            stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value
+          });
+        } else {
+          await postDeployApp(yamls);
+        }
+
+        router.replace(`/app/detail?name=${formHook.getValues('appName')}`);
+        toast({
+          title: t(applySuccess),
+          status: 'success'
         });
 
-        await putApp({
-          patch,
-          appName,
-          stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value
-        });
-      } else {
-        await postDeployApp(yamls);
+        if (userSourcePrice?.gpu) {
+          refetchPrice();
+        }
+      } catch (error) {
+        console.error(error);
+        const msg = getErrText(error);
+        setErrorMessage(msg || JSON.stringify(error));
       }
-
-      router.replace(`/app/detail?name=${formHook.getValues('appName')}`);
-      toast({
-        title: t(applySuccess),
-        status: 'success'
-      });
-
-      if (userSourcePrice?.gpu) {
-        refetchPrice();
-      }
-    } catch (error) {
-      console.error(error);
-      const msg = getErrText(error);
-      setErrorMessage(msg || JSON.stringify(error));
-    }
-    setIsLoading(false);
-  }, [
-    setIsLoading,
-    toast,
-    yamlList,
-    appName,
-    router,
-    formHook,
-    t,
-    applySuccess,
-    userSourcePrice?.gpu,
-    refetchPrice
-  ]);
+      setIsLoading(false);
+    },
+    [
+      setIsLoading,
+      toast,
+      appName,
+      router,
+      formHook,
+      t,
+      applySuccess,
+      userSourcePrice?.gpu,
+      refetchPrice
+    ]
+  );
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
@@ -269,6 +261,14 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     }
   );
 
+  useEffect(() => {
+    if (tabType === 'yaml' && router.query.name) {
+      try {
+        setYamlList(formData2Yamls(realTimeForm.current));
+      } catch (error) {}
+    }
+  }, [router.query.name, tabType]);
+
   return (
     <>
       <Flex
@@ -285,6 +285,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           applyBtnText={applyBtnText}
           applyCb={() =>
             formHook.handleSubmit((data) => {
+              const parseYamls = formData2Yamls(data);
+              setYamlList(parseYamls);
               // balance check
               if (balance <= 0) {
                 return toast({
@@ -315,7 +317,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                   isClosable: true
                 });
               }
-              openConfirm(submitSuccess)();
+              openConfirm(() => submitSuccess(parseYamls))();
             }, submitError)()
           }
         />

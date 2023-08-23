@@ -20,7 +20,7 @@ const sourceMap = {
   },
   gpu: {
     color: '#89CD11',
-    unit: 'G'
+    unit: 'Card'
   }
 };
 

@@ -145,6 +145,9 @@
   "Gpu under inventory Tip": "{{gputype}} is out of stock, please change the model or amount",
   "app": {
     "Resource Quota": "Quota",
+    "The applied CPU exceeds the quota": "The applied CPU exceeds the quota",
+    "The applied memory exceeds the quota": "The applied memory exceeds the quota",
+    "The applied GPU exceeds the quota": "The applied GPU exceeds the quota",
     "The applied storage exceeds the quota": "The applied storage exceeds the quota",
     "The container exposed port cannot be empty": "The container exposed port cannot be empty",
     "The minimum exposed port is 1": "The minimum exposed port is 1",
@@ -152,5 +155,9 @@
   },
   "user": {
     "Insufficient account balance": "Insufficient account balance"
+  },
+  "common": {
+    "Used": "Used",
+    "Surplus": "Surplus"
   }
 }

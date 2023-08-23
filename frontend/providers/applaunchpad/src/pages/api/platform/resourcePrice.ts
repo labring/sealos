@@ -119,8 +119,9 @@ async function getGpuNode({ k8sCore }: { k8sCore: CoreV1Api }) {
   try {
     const { body } = await k8sCore.readNamespacedConfigMap(gpuCrName, gpuCrNS);
     const gpuMap = body?.data?.gpu;
-    const alias = (body?.data?.alias || {}) as Record<string, string>;
-    if (!gpuMap) return [];
+    if (!gpuMap || !body?.data?.alias) return [];
+    const alias = (JSON.parse(body?.data?.alias) || {}) as Record<string, string>;
+
     const parseGpuMap = JSON.parse(gpuMap) as Record<
       string,
       {
@@ -129,6 +130,7 @@ async function getGpuNode({ k8sCore }: { k8sCore: CoreV1Api }) {
         'gpu.product': string;
       }
     >;
+
     const gpuValues = Object.values(parseGpuMap).filter((item) => item['gpu.product']);
 
     const gpuList: GpuNodeType[] = [];
