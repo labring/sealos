@@ -79,7 +79,6 @@ spec:
     - metadata:
         name: storage
       spec:
-        # storageClassName: longhorn #裂了，那我的k8s环境还要再部署一遍longhorn环境喽……   后面自己已经部署好了longhorn环境了
         accessModes:
           - ReadWriteOnce
         resources:
