@@ -134,6 +134,11 @@ const (
 
 const ResourceGPU corev1.ResourceName = gpu.NvidiaGpuKey
 
+const (
+	ResourceRequestGpu corev1.ResourceName = "requests." + gpu.NvidiaGpuKey
+	ResourceLimitGpu   corev1.ResourceName = "limits." + gpu.NvidiaGpuKey
+)
+
 func NewGpuResource(product string) corev1.ResourceName {
 	return corev1.ResourceName("gpu-" + product)
 }
@@ -225,7 +230,8 @@ const (
 
 func DefaultResourceQuotaHard() corev1.ResourceList {
 	return corev1.ResourceList{
-		ResourceGPU:                           resource.MustParse(utils.GetEnvWithDefault(QuotaLimitsGPU, DefaultQuotaLimitsGPU)),
+		ResourceRequestGpu:                    resource.MustParse(utils.GetEnvWithDefault(QuotaLimitsGPU, DefaultQuotaLimitsGPU)),
+		ResourceLimitGpu:                      resource.MustParse(utils.GetEnvWithDefault(QuotaLimitsGPU, DefaultQuotaLimitsGPU)),
 		corev1.ResourceLimitsCPU:              resource.MustParse(utils.GetEnvWithDefault(QuotaLimitsCPU, DefaultQuotaLimitsCPU)),
 		corev1.ResourceLimitsMemory:           resource.MustParse(utils.GetEnvWithDefault(QuotaLimitsMemory, DefaultQuotaLimitsMemory)),
 		corev1.ResourceRequestsStorage:        resource.MustParse(utils.GetEnvWithDefault(QuotaLimitsStorage, DefaultQuotaLimitsStorage)),

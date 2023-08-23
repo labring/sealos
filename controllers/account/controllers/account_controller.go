@@ -319,8 +319,14 @@ func (r *AccountReconciler) adaptGpuQuota(ctx context.Context, nsName string) er
 	quota := common.GetDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName)
 	return retry.Retry(10, 1*time.Second, func() error {
 		_, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
+			if _, ok := quota.Spec.Hard[common.ResourceRequestGpu]; !ok {
+				quota.Spec.Hard[common.ResourceRequestGpu] = resource.MustParse(utils.GetEnvWithDefault(common.QuotaLimitsGPU, common.DefaultQuotaLimitsGPU))
+			}
+			if _, ok := quota.Spec.Hard[common.ResourceLimitGpu]; !ok {
+				quota.Spec.Hard[common.ResourceLimitGpu] = resource.MustParse(utils.GetEnvWithDefault(common.QuotaLimitsGPU, common.DefaultQuotaLimitsGPU))
+			}
 			if _, ok := quota.Spec.Hard[common.ResourceGPU]; !ok {
-				quota.Spec.Hard[common.ResourceGPU] = resource.MustParse(utils.GetEnvWithDefault(common.QuotaLimitsGPU, common.DefaultQuotaLimitsGPU))
+				delete(quota.Spec.Hard, common.ResourceGPU)
 			}
 			return nil
 		})
