@@ -19,6 +19,8 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 	"strconv"
 
 	"github.com/go-logr/logr"
@@ -277,6 +279,26 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			DeleteFunc: func(event event.DeleteEvent) bool {
 				_, ok := event.Object.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
 				return ok
+			},
+		})).
+		Watches(&source.Kind{Type: &corev1.Node{}}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(predicate.Funcs{
+			CreateFunc: func(event event.CreateEvent) bool {
+				_, ok1 := event.Object.(*corev1.Node).Labels[NvidiaGPUMemory]
+				_, ok2 := event.Object.(*corev1.Node).Labels[NvidiaGPUProduct]
+				_, ok3 := event.Object.(*corev1.Node).Status.Allocatable[NvidiaGPU]
+				return ok1 && ok2 && ok3
+			},
+			UpdateFunc: func(event event.UpdateEvent) bool {
+				oldVal, oldOk := event.ObjectOld.(*corev1.Node).Status.Allocatable[NvidiaGPU]
+				newVal, newOk := event.ObjectNew.(*corev1.Node).Status.Allocatable[NvidiaGPU]
+
+				return oldOk && newOk && oldVal != newVal
+			},
+			DeleteFunc: func(event event.DeleteEvent) bool {
+				_, ok1 := event.Object.(*corev1.Node).Labels[NvidiaGPUMemory]
+				_, ok2 := event.Object.(*corev1.Node).Labels[NvidiaGPUProduct]
+				_, ok3 := event.Object.(*corev1.Node).Status.Allocatable[NvidiaGPU]
+				return ok1 && ok2 && ok3
 			},
 		})).
 		Complete(r)
