@@ -253,7 +253,7 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		if _, ok := pod.Spec.NodeSelector[NvidiaGPUProduct]; !ok {
 			return nil
 		}
-		if pod.Status.Phase != corev1.PodRunning {
+		if pod.Status.Phase == corev1.PodSucceeded {
 			return nil
 		}
 		return []string{GPU}
