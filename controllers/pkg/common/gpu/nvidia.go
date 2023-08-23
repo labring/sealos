@@ -17,6 +17,8 @@ package gpu
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/util/json"
+
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -131,4 +133,33 @@ func GetNodeGpuModel(c client.Client) (map[string]NvidiaGPU, error) {
 		gpuModels[node.Name] = gpu
 	}
 	return gpuModels, nil
+}
+
+const (
+	Alias                      = "alias"
+	NodeInfoConfigmapNamespace = "node-system"
+	NodeInfoConfigmapName      = "node-gpu-info"
+)
+
+func GetGPUAlias(c client.Client) (map[string]string, error) {
+	/*
+		kubectl get cm -n node-system node-gpu-info -oyaml
+		apiVersion: v1
+		data:
+		  alias: '{"NVIDIA-GeForce-RTX-4090":"GeForce-RTX-4090"}'
+	*/
+	cm := &corev1.ConfigMap{}
+	if err := c.Get(context.Background(), client.ObjectKey{
+		Namespace: NodeInfoConfigmapNamespace,
+		Name:      NodeInfoConfigmapName,
+	}, cm); err != nil {
+		return nil, err
+	}
+	alias := make(map[string]string)
+	if aliasData := cm.Data[Alias]; aliasData != "" {
+		if err := json.Unmarshal([]byte(cm.Data[Alias]), &alias); err != nil {
+			return nil, err
+		}
+	}
+	return alias, nil
 }
