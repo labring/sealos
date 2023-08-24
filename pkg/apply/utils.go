@@ -141,9 +141,7 @@ func GetNewImages(currentCluster, desiredCluster *v2.Cluster) []string {
 }
 
 func CheckAndInitialize(cluster *v2.Cluster) {
-	if cluster.Spec.SSH.Port == 0 {
-		cluster.Spec.SSH.Port = v2.DefaultSSHPort
-	}
+	cluster.Spec.SSH.Port = defaultSSHPort(cluster.Spec.SSH.Port)
 
 	if cluster.Spec.SSH.Pk == "" {
 		cluster.Spec.SSH.Pk = filepath.Join(constants.GetHomeDir(), ".ssh", "id_rsa")
