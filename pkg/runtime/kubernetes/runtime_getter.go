@@ -203,7 +203,7 @@ func (k *KubeadmRuntime) getRemoteInterface() remote.Interface {
 	return k.remoteUtil
 }
 
-func (k *KubeadmRuntime) getContentData() constants.Data {
+func (k *KubeadmRuntime) getContentData() constants.PathResolver {
 	return k.pathResolver
 }
 

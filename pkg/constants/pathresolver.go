@@ -82,7 +82,7 @@ func IsRegistryDir(entry fs.DirEntry) bool {
 	return entry.IsDir() && entry.Name() == RegistryDirName
 }
 
-type Data interface {
+type PathResolver interface {
 	Homedir() string
 	RootFSPath() string
 	RootFSEtcPath() string
@@ -102,71 +102,71 @@ type Data interface {
 	RootFSSealctlPath() string
 }
 
-type data struct {
+type defaultPathResolver struct {
 	clusterName string
 }
 
-func (d *data) RootFSSealctlPath() string {
+func (d *defaultPathResolver) RootFSSealctlPath() string {
 	return filepath.Join(d.RootFSPath(), "opt", "sealctl")
 }
 
-func (d *data) RootFSScriptsPath() string {
+func (d *defaultPathResolver) RootFSScriptsPath() string {
 	return filepath.Join(d.RootFSPath(), ScriptsDirName)
 }
-func (d *data) RootFSEtcPath() string {
+func (d *defaultPathResolver) RootFSEtcPath() string {
 	return filepath.Join(d.RootFSPath(), EtcDirName)
 }
 
-func (d *data) RootFSRegistryPath() string {
+func (d *defaultPathResolver) RootFSRegistryPath() string {
 	return filepath.Join(d.RootFSPath(), RegistryDirName)
 }
 
-func (d *data) RootFSCharsPath() string {
+func (d *defaultPathResolver) RootFSCharsPath() string {
 	return filepath.Join(d.RootFSPath(), ChartsDirName)
 }
 
-func (d *data) RootFSManifestsPath() string {
+func (d *defaultPathResolver) RootFSManifestsPath() string {
 	return filepath.Join(d.RootFSPath(), ManifestsDirName)
 }
 
-func (d *data) RootFSBinPath() string {
+func (d *defaultPathResolver) RootFSBinPath() string {
 	return filepath.Join(d.RootFSPath(), BinDirName)
 }
 
-func (d *data) EtcPath() string {
+func (d *defaultPathResolver) EtcPath() string {
 	return filepath.Join(ClusterDir(d.clusterName), EtcDirName)
 }
 
-func (d *data) AdminFile() string {
+func (d *defaultPathResolver) AdminFile() string {
 	return filepath.Join(d.EtcPath(), "admin.conf")
 }
 
-func (d *data) PkiPath() string {
+func (d *defaultPathResolver) PkiPath() string {
 	return filepath.Join(ClusterDir(d.clusterName), PkiDirName)
 }
 
-func (d *data) PkiEtcdPath() string {
+func (d *defaultPathResolver) PkiEtcdPath() string {
 	return filepath.Join(d.PkiPath(), PkiEtcdDirName)
 }
 
-func (d *data) TmpPath() string {
+func (d *defaultPathResolver) TmpPath() string {
 	return filepath.Join(ClusterDir(d.clusterName), "tmp")
 }
 
-func (d *data) RootFSPath() string {
+func (d *defaultPathResolver) RootFSPath() string {
 	return filepath.Join(d.Homedir(), DataDirName)
 }
 
-func (d *data) RootFSStaticsPath() string {
+func (d *defaultPathResolver) RootFSStaticsPath() string {
 	return filepath.Join(d.RootFSPath(), StaticsDirName)
 }
 
-func (d *data) Homedir() string {
+func (d *defaultPathResolver) Homedir() string {
 	return filepath.Join(DefaultClusterRootFsDir, "data", d.clusterName)
 }
 
-func NewData(clusterName string) Data {
-	return &data{
+func NewPathResolver(clusterName string) PathResolver {
+	return &defaultPathResolver{
 		clusterName: clusterName,
 	}
 }

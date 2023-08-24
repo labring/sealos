@@ -40,7 +40,7 @@ type Bash interface {
 }
 
 type bash struct {
-	data          Data
+	pathResolver  PathResolver
 	renderContext map[string]string
 	wrap          func(string, string) string
 }
@@ -53,7 +53,7 @@ func (b *bash) getFromRenderContextOrDefault(key string) string {
 }
 
 func (b *bash) WrapBash(host, shell string) string {
-	return fmt.Sprintf(DefaultBashFmt, b.data.RootFSScriptsPath(), b.wrap(host, shell))
+	return fmt.Sprintf(DefaultBashFmt, b.pathResolver.RootFSScriptsPath(), b.wrap(host, shell))
 }
 
 func (b *bash) CheckBash(host string) string {
@@ -77,5 +77,5 @@ func (b *bash) CleanRegistryBash(host string) string {
 }
 
 func NewBash(clusterName string, renderContext map[string]string, shellWrapper func(string, string) string) Bash {
-	return &bash{data: NewData(clusterName), renderContext: renderContext, wrap: shellWrapper}
+	return &bash{pathResolver: NewPathResolver(clusterName), renderContext: renderContext, wrap: shellWrapper}
 }

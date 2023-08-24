@@ -55,7 +55,7 @@ func (f *defaultRootfs) getSSH(cluster *v2.Cluster) ssh.Interface {
 }
 
 func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error {
-	target := constants.NewData(f.getClusterName(cluster)).RootFSPath()
+	target := constants.NewPathResolver(f.getClusterName(cluster)).RootFSPath()
 	ctx := context.Background()
 	eg, _ := errgroup.WithContext(ctx)
 	envProcessor := env.NewEnvProcessor(cluster)
@@ -136,7 +136,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 }
 
 func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) error {
-	clusterRootfsDir := constants.NewData(f.getClusterName(cluster)).Homedir()
+	clusterRootfsDir := constants.NewPathResolver(f.getClusterName(cluster)).Homedir()
 	rmRootfs := fmt.Sprintf("rm -rf %s", clusterRootfsDir)
 	deleteHomeDirCmd := fmt.Sprintf("rm -rf %s", constants.ClusterDir(cluster.Name))
 	eg, _ := errgroup.WithContext(context.Background())

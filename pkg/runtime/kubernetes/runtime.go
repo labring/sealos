@@ -41,7 +41,7 @@ type KubeadmRuntime struct {
 	klogLevel     int
 	cli           kubernetes.Client
 	clusterClient ssh.Interface
-	pathResolver  constants.Data
+	pathResolver  constants.PathResolver
 	remoteUtil    remote.Interface
 	mu            sync.Mutex
 }
@@ -129,7 +129,7 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*Kube
 		},
 		KubeadmConfig: types.NewKubeadmConfig(),
 		clusterClient: sshClient,
-		pathResolver:  constants.NewData(cluster.GetName()),
+		pathResolver:  constants.NewPathResolver(cluster.GetName()),
 		remoteUtil:    remote.New(cluster.GetName(), sshClient),
 	}
 	if err := k.Validate(); err != nil {

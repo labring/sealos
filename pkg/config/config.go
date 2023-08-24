@@ -78,7 +78,7 @@ func NewConfiguration(name, rootPath string, configs []v1beta1.Config) Interface
 
 func NewDefaultConfiguration(clusterName string) Interface {
 	return &Dumper{
-		RootPath: constants.NewData(clusterName).RootFSPath(),
+		RootPath: constants.NewPathResolver(clusterName).RootFSPath(),
 	}
 }
 

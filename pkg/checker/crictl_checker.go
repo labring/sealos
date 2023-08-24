@@ -105,7 +105,7 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 		}
 	}
 	sshCtx := ssh.NewSSHByCluster(cluster, false)
-	root := constants.NewData(cluster.Name).RootFSPath()
+	root := constants.NewPathResolver(cluster.Name).RootFSPath()
 	regInfo := helpers.GetRegistryInfo(sshCtx, root, cluster.GetRegistryIPAndPort())
 
 	regStatus, err := n.getRegistryStatus(crictlPath, pauseImage, fmt.Sprintf("%s:%s", regInfo.Domain, regInfo.Port))

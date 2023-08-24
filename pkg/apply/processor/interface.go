@@ -41,7 +41,7 @@ type Interface interface {
 }
 
 func SyncNewVersionConfig(clusterName string) {
-	d := constants.NewData(clusterName)
+	d := constants.NewPathResolver(clusterName)
 	if !file.IsExist(d.PkiPath()) {
 		src, target := path.Join(d.Homedir(), constants.PkiDirName), d.PkiPath()
 		logger.Info("sync new version copy pki config: %s %s", src, target)
@@ -153,7 +153,7 @@ func MirrorRegistry(cluster *v2.Cluster, mounts []v2.MountImage) error {
 	registries := cluster.GetRegistryIPAndPortList()
 	logger.Debug("registry nodes is: %+v", registries)
 	sshClient := ssh.NewSSHByCluster(cluster, true)
-	syncer := registry.New(constants.NewData(cluster.GetName()), sshClient, mounts)
+	syncer := registry.New(constants.NewPathResolver(cluster.GetName()), sshClient, mounts)
 	return syncer.Sync(context.Background(), registries...)
 }
 
