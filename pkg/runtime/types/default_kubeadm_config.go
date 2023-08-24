@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package defaults
+package types
 
 const (
-	DefaultKubeadmConfig = `apiVersion: kubeadm.k8s.io/v1beta2
+	defaultKubeadmConfig = `apiVersion: kubeadm.k8s.io/v1beta2
 kind: InitConfiguration
 localAPIEndpoint:
   # advertiseAddress: 192.168.2.110

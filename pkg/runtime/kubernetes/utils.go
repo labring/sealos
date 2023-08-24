@@ -14,22 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package runtime
+package kubernetes
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/labring/sealos/pkg/utils/maps"
-
-	versionutil "k8s.io/apimachinery/pkg/util/version"
-
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
-	_default "github.com/labring/sealos/pkg/runtime/defaults"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -58,11 +54,6 @@ func (k *KubeadmRuntime) SendJoinMasterKubeConfigs(masters []string, files ...st
 		logger.Info("set kubernetes v1.19.1 v1.19.2 kube Config")
 	}
 	return nil
-}
-
-func (k *KubeadmConfig) FetchDefaultKubeadmConfig() string {
-	logger.Debug("using default kubeadm config")
-	return _default.DefaultKubeadmConfig
 }
 
 func (k *KubeadmRuntime) ReplaceKubeConfigV1991V1992(masters []string) bool {
@@ -112,12 +103,17 @@ func (k *KubeadmRuntime) sendFileToHosts(Hosts []string, src, dst string) error 
 func (k *KubeadmRuntime) RemoveNodeFromK8sClient(ip string) error {
 	logger.Info("start to remove node from k8s %s", ip)
 	ctx := context.Background()
-	hostname, err := k.getKubeExpansion().FetchHostNameFromInternalIP(ctx, ip)
+	client, err := k.getKubeInterface()
+	if err != nil {
+		return err
+	}
+	exp := kubernetes.NewKubeExpansion(client.Kubernetes())
+	hostname, err := exp.FetchHostNameFromInternalIP(ctx, ip)
 	if err != nil {
 		return fmt.Errorf("kubernetes client get hostname %s failed %v,skip delete node", ip, err)
 	}
 	deletePropagation := v1.DeletePropagationBackground
-	err = k.getKubeInterface().Kubernetes().CoreV1().Nodes().Delete(ctx, hostname, v1.DeleteOptions{PropagationPolicy: &deletePropagation})
+	err = client.Kubernetes().CoreV1().Nodes().Delete(ctx, hostname, v1.DeleteOptions{PropagationPolicy: &deletePropagation})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return fmt.Errorf("not find target delete node ip: %s", ip)
@@ -127,36 +123,6 @@ func (k *KubeadmRuntime) RemoveNodeFromK8sClient(ip string) error {
 	return nil
 }
 
-var featureGatesUpdate = map[string][]string{
-	"CSIStorageCapacity":  {"LessThan", "v1.21.0"},
-	"TTLAfterFinished":    {"AtLeast", "v1.24.0"},
-	"EphemeralContainers": {"AtLeast", "v1.26.0"},
-}
-
-func deleteFeatureMap[T string | bool](currentFeature map[string]T, versionStr string) map[string]T {
-	for k, v := range featureGatesUpdate {
-		if v[0] == "LessThan" &&
-			versionutil.MustParseSemantic(versionStr).LessThan(versionutil.MustParseSemantic(v[1])) {
-			delete(currentFeature, k)
-		}
-		if v[0] == "AtLeast" &&
-			versionutil.MustParseSemantic(versionStr).AtLeast(versionutil.MustParseSemantic(v[1])) {
-			delete(currentFeature, k)
-		}
-	}
-	return currentFeature
-}
-
-func UpdateFeatureGatesConfiguration(featureGates any, version string) any {
-	switch x := featureGates.(type) {
-	case string:
-		currentFeature := maps.StringToMap(x, ",")
-		currentFeature = deleteFeatureMap(currentFeature, version)
-		return maps.MapToStringBySpilt(currentFeature, ",")
-	case map[string]bool:
-		newFeature := x
-		newFeature = deleteFeatureMap(newFeature, version)
-		return newFeature
-	}
-	return nil
+func (k *KubeadmRuntime) setFeatureGatesConfiguration() {
+	k.KubeadmConfig.FinalizeFeatureGatesConfiguration()
 }

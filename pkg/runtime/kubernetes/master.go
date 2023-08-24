@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runtime
+package kubernetes
 
 import (
 	"context"
@@ -53,8 +53,8 @@ func (k *KubeadmRuntime) sendJoinCPConfig(joinMaster []string) error {
 	for _, master := range joinMaster {
 		master := master
 		eg.Go(func() error {
-			k.Lock()
-			defer k.Unlock()
+			k.mu.Lock()
+			defer k.mu.Unlock()
 			return k.ConfigJoinMasterKubeadmToMaster(master)
 		})
 	}
@@ -65,7 +65,7 @@ func (k *KubeadmRuntime) ConfigJoinMasterKubeadmToMaster(master string) error {
 	logger.Info("start to copy kubeadm join config to master: %s", master)
 	data, err := k.generateJoinMasterConfigs(master)
 	if err != nil {
-		return fmt.Errorf("generator config join master kubeadm config error: %s", err.Error())
+		return fmt.Errorf("failed to generate join master kubeadm config: %s", err.Error())
 	}
 	joinConfigPath := path.Join(k.getContentData().TmpPath(), constants.DefaultJoinMasterKubeadmFileName)
 	outConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultJoinMasterKubeadmFileName)
@@ -84,7 +84,7 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	if len(masters) == 0 {
 		return nil
 	}
-	logger.Info("start to init filesystem join masters...")
+	logger.Info("start to send manifests to masters...")
 	var err error
 	if err = ssh.WaitSSHReady(k.getSSHInterface(), 6, masters...); err != nil {
 		return fmt.Errorf("join masters wait for ssh ready time out: %w", err)
@@ -107,7 +107,7 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	if err = k.sendJoinCPConfig(masters); err != nil {
 		return err
 	}
-	if err = k.fetchKubeadmConfig(); err != nil {
+	if err = k.mergeWithBuiltinKubeadmConfig(); err != nil {
 		return err
 	}
 	cmd := k.Command(k.getKubeVersion(), JoinMaster)
@@ -116,10 +116,10 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	}
 	for _, master := range masters {
 		logger.Info("start to join %s as master", master)
-		logger.Info("start to generator cert %s as master", master)
+		logger.Debug("start to generate cert for master %s", master)
 		err = k.execCert(master)
 		if err != nil {
-			return fmt.Errorf("generator master %s cert failed %v", master, err)
+			return fmt.Errorf("failed to create cert for master %s: %v", master, err)
 		}
 
 		err = k.execHostsAppend(master, k.getMaster0IP(), k.getAPIServerDomain())

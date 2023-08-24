@@ -14,10 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package runtime
+package utils
 
 import (
-	"crypto/rand"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/hex"
@@ -27,33 +26,26 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/cert"
 	v1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/bootstraptoken/v1"
 
+	"github.com/labring/sealos/pkg/runtime/types"
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/rand"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
-type Token struct {
-	JoinToken                string       `json:"joinToken,omitempty"`
-	DiscoveryTokenCaCertHash []string     `json:"discoveryTokenCaCertHash,omitempty"`
-	CertificateKey           string       `json:"certificateKey,omitempty"`
-	Expires                  *metav1.Time `json:"expires,omitempty"`
-}
-
 const defaultAdminConf = "/etc/kubernetes/admin.conf"
 
-func Generator(config, certificateKey string) (*Token, error) {
-	token := &Token{}
+func GenerateToken(config, certificateKey string) (*types.Token, error) {
+	token := &types.Token{}
 	if _, ok := exec.CheckCmdIsExist("kubeadm"); ok && file.IsExist(defaultAdminConf) {
-		key, _ := CreateCertificateKey()
+		key, _ := rand.CreateCertificateKey()
 		if certificateKey != "" {
 			key = certificateKey
 		}
@@ -167,28 +159,6 @@ func discoveryTokenCaCertHash(adminPath string) ([]string, error) {
 		publicKeyPins = append(publicKeyPins, Hash(caCert))
 	}
 	return publicKeyPins, nil
-}
-
-// CreateRandBytes returns a cryptographically secure slice of random bytes with a given size
-func CreateRandBytes(size uint32) ([]byte, error) {
-	bytes := make([]byte, size)
-	if _, err := rand.Read(bytes); err != nil {
-		return nil, err
-	}
-	return bytes, nil
-}
-
-const (
-	CertificateKeySize = 32
-)
-
-// CreateCertificateKey returns a cryptographically secure random key
-func CreateCertificateKey() (string, error) {
-	randBytes, err := CreateRandBytes(CertificateKeySize)
-	if err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(randBytes), nil
 }
 
 // GetClusterFromKubeConfig returns the default Infra of the specified KubeConfig
