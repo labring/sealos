@@ -41,7 +41,6 @@ type OptionsReadOnly interface {
 }
 
 type OptionsReadWrite interface {
-	OptionsReadOnly
 	SetNetworkConfig(flag bool)
 }
 
@@ -140,13 +139,12 @@ func (o *OperatorOptions) initOptions() {
 	o.RunnableOptions.Policy[Notice] = PeriodicWithProbePolicy
 	o.RunnableOptions.Period[Notice] = 3 * time.Hour
 
-	o.RunnableOptions.Policy[NoticeCleanup] = PeriodicWithProbePolicy
+	o.RunnableOptions.Policy[NoticeCleanup] = PeriodicPolicy
 	o.RunnableOptions.Period[NoticeCleanup] = 24 * time.Hour
 
-	//o.RunnableOptions.Policy[Probe] = PeriodicWithProbePolicy
-	//o.RunnableOptions.Period[Probe] = 30 * time.Minute
+	o.RunnableOptions.Policy[NetWorkConfig] = PeriodicPolicy
+	o.RunnableOptions.Period[NetWorkConfig] = 30 * time.Second
 	// Add more tasks Policy and Period here
-
 }
 
 // The EnvOptions is used to store environment variables.

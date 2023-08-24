@@ -47,6 +47,7 @@ func NewInitTask(o OptionsReadOnly) *initTask {
 }
 
 func (t *initTask) initWork(instance *TaskInstance) error {
+	// register function is idempotent
 	err := t.register(instance)
 	if err != nil {
 		instance.logger.Info("failed to register", "err", err)

@@ -137,7 +137,7 @@ type TaskInstance struct {
 	ctx    context.Context
 	policy string
 	period time.Duration
-	probe  Probe
+	probe  []Probe
 }
 
 var _ manager.Runnable = &TaskInstance{}
@@ -181,8 +181,13 @@ func (ti *TaskInstance) Log() *logr.Logger {
 }
 
 func (ti *TaskInstance) Probe() bool {
-	if ti.probe == nil {
+	if len(ti.probe) == 0 {
 		return false
 	}
-	return ti.probe.Probe()
+	for _, p := range ti.probe {
+		if !p.Probe() {
+			return false
+		}
+	}
+	return true
 }

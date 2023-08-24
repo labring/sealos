@@ -24,12 +24,10 @@ type Probe interface {
 }
 
 // ProbeFor return the Probe interface for the given task type
-func ProbeFor(taskType task) Probe {
+func ProbeFor(taskType task) []Probe {
 	switch taskType {
 	case Collector, DataSync, Notice:
-		return ProbeForInit()
-	case NetWorkConfig:
-		return ProbeForNetWork()
+		return []Probe{ProbeForInit(), ProbeForNetWork()}
 	default:
 		return nil
 	}
