@@ -145,9 +145,9 @@ function Valuation() {
                     <Text fontSize={'16px'}>GPU</Text>
                   </Flex>
                   <Flex display={'flex'} justifyContent="center" alignContent={'center'}>
-                    <Text fontSize="28px" fontStyle="normal" fontWeight={'600'}>{` GPU / ${t(
-                      'Hour'
-                    )}`}</Text>
+                    <Text fontSize="28px" fontStyle="normal" fontWeight={'600'}>{` ${t(
+                      'GPU Unit'
+                    )} / ${t('Hour')}`}</Text>
                   </Flex>
                   <Stack w="100%" mt="24px" overflow={'auto'}>
                     {gpuData.map((item) => (
