@@ -12,7 +12,8 @@ webhooks:
       name: webhook-service
       namespace: system
       path: /validate-v1-sealos-cloud
-  failurePolicy: Ignore
+  timeoutSeconds: 30
+  failurePolicy: Fail
   name: debt.sealos.io
   rules:
   - apiGroups:
