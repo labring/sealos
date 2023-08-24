@@ -126,7 +126,9 @@
     "Deploy Job": "Deploy Job",
     "Update CronJob": "Update CronJob",
     "Confirm Update CronJob?": "Confirm Update CronJob?",
-    "Confirm Deploy CronJob?": "Confirm Deploy CronJob?"
+    "Confirm Deploy CronJob?": "Confirm Deploy CronJob?",
+    "You have no tasks yet": "You have no tasks yet",
+    "Name": "Job Name"
   },
   "base": {
     "Delete": "Delete",
@@ -144,5 +146,21 @@
     "Success": "Success",
     "Have Error": "Failed",
     "Logs": "Logs"
+  },
+  "Form": {
+    "Image": "Image",
+    "Image Name": "Image Name",
+    "Private": "Private",
+    "Public": "Public",
+    "Image Name (Private)": "Image Name (Private)",
+    "Username": "Username",
+    "Password": "Password",
+    "Password for the image registry": "Password for the image registry",
+    "Username for the image registry": "Username for the image registry",
+    "Image address": "Image address",
+    "Command": "Command",
+    "Parameters": "Parameters",
+    "Time": "Time",
+    "Image Address": "Image Address"
   }
 }

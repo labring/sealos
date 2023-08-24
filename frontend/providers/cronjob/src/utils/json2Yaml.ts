@@ -51,7 +51,8 @@ export const json2CronJob = (data: CronJobEditType) => {
                 {
                   ...commonContainer
                 }
-              ]
+              ],
+              restartPolicy: 'OnFailure'
             }
           }
         }

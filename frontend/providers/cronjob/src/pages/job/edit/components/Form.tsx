@@ -2,7 +2,7 @@ import { obj2Query } from '@/api/tools';
 import MyIcon from '@/components/Icon';
 import MySelect from '@/components/Select';
 import Tabs from '@/components/Tabs';
-import { JobTypeList, SelectTimeList, WeekSelectList } from '@/constants/job';
+import { SelectTimeList, WeekSelectList } from '@/constants/job';
 import type { QueryType } from '@/types';
 import { CreateScheduleType, CronJobEditType } from '@/types/job';
 import { TimeIcon } from '@chakra-ui/icons';
@@ -20,7 +20,6 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
   const { t } = useTranslation();
   const router = useRouter();
   const { name } = router.query as QueryType;
-  const theme = useTheme();
   const isEdit = useMemo(() => !!name, [name]);
 
   const {
@@ -161,7 +160,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
             {/* app name */}
             <FormControl mb={7} isInvalid={!!errors.jobName} w={'500px'}>
               <Flex alignItems={'center'}>
-                <Label w={80}>{t('App Name')}</Label>
+                <Label w={80}>{t('job.Name')}</Label>
                 <Input
                   disabled={isEdit}
                   title={isEdit ? t('Not allowed to change app name') || '' : ''}
@@ -199,7 +198,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
             {/* image */}
             <Box mb={7}>
               <Flex alignItems={'center'}>
-                <Label w={80}>{t('Image')}</Label>
+                <Label w={80}>{t('Form.Image')}</Label>
                 <Tabs
                   w={'126px'}
                   size={'sm'}
@@ -226,7 +225,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
               <Box mt={4} pl={`${labelWidth}px`}>
                 <FormControl isInvalid={!!errors.imageName} w={'420px'}>
                   <Box mb={1} fontSize={'sm'}>
-                    {t('Image Name')}
+                    {t('Form.Image Name')}
                   </Box>
                   <Input
                     value={getValues('imageName')}
@@ -244,7 +243,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                   <>
                     <FormControl mt={4} isInvalid={!!errors.secret?.username} w={'420px'}>
                       <Box mb={1} fontSize={'sm'}>
-                        {t('Username')}
+                        {t('Form.Username')}
                       </Box>
                       <Input
                         autoComplete="off"
@@ -257,7 +256,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                     </FormControl>
                     <FormControl mt={4} isInvalid={!!errors.secret?.password} w={'420px'}>
                       <Box mb={1} fontSize={'sm'}>
-                        {t('Password')}
+                        {t('Form.Password')}
                       </Box>
                       <Input
                         autoComplete="off"
@@ -271,7 +270,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                     </FormControl>
                     <FormControl mt={4} isInvalid={!!errors.secret?.serverAddress} w={'420px'}>
                       <Box mb={1} fontSize={'sm'}>
-                        {t('Image Address')}
+                        {t('Form.Image Address')}
                       </Box>
                       <Input
                         backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
@@ -288,7 +287,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
             {/* command && param */}
             <FormControl mb={7}>
               <Flex alignItems={'center'}>
-                <Label w={80}>{t('Run command')}</Label>
+                <Label w={80}>{t('Form.Command')}</Label>
                 <Input
                   w={'350px'}
                   bg={getValues('runCMD') ? 'myWhite.500' : 'myWhite.400'}
@@ -299,7 +298,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
             </FormControl>
             <FormControl mb={7}>
               <Flex alignItems={'center'}>
-                <Label w={80}>{t('Command parameters')}</Label>
+                <Label w={80}>{t('Form.Parameters')}</Label>
                 <Input
                   w={'350px'}
                   bg={getValues('cmdParam') ? 'myWhite.500' : 'myWhite.400'}
@@ -310,7 +309,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
             </FormControl>
             {/* cron */}
             <Flex alignItems={'center'} mb={7}>
-              <Label w={80}>{t('Time')}</Label>
+              <Label w={80}>{t('Form.Time')}</Label>
               <Tabs
                 w={'220px'}
                 list={[

@@ -1,22 +1,16 @@
-import React, { useCallback, useState } from 'react';
-import { useRouter } from 'next/router';
-import { Box, Button, Flex, MenuButton } from '@chakra-ui/react';
-
-import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
-import { useTheme } from '@chakra-ui/react';
-import { useGlobalStore } from '@/store/global';
-import { useToast } from '@/hooks/useToast';
-import { restartDB, pauseDBByName, startDBByName } from '@/api/db';
-import MyTable from '@/components/Table';
-import dynamic from 'next/dynamic';
 import MyMenu from '@/components/Menu';
-import { useConfirm } from '@/hooks/useConfirm';
-import { DBStatusEnum, DBComponentNameMap } from '@/constants/db';
-import { printMemory } from '@/utils/tools';
-import { useTranslation } from 'next-i18next';
-import { CronJobListItemType } from '@/types/job';
+import MyTable from '@/components/Table';
 import { CronJobStatusEnum } from '@/constants/job';
+import { useConfirm } from '@/hooks/useConfirm';
+import { useToast } from '@/hooks/useToast';
+import { useGlobalStore } from '@/store/global';
+import { CronJobListItemType } from '@/types/job';
+import { Box, Button, Flex, MenuButton, useTheme } from '@chakra-ui/react';
+import { useTranslation } from 'next-i18next';
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/router';
+import { useCallback, useState } from 'react';
 
 const DelModal = dynamic(() => import('@/pages/job/detail/components/DelModal'));
 

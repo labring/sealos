@@ -1,30 +1,27 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/router';
-import { Flex, Box } from '@chakra-ui/react';
-import type { YamlItemType } from '@/types';
-
-import { useForm } from 'react-hook-form';
-import { editModeMap } from '@/constants/editApp';
-
-import debounce from 'lodash/debounce';
 import { applyYamlList } from '@/api/db';
-import { useConfirm } from '@/hooks/useConfirm';
-import { useToast } from '@/hooks/useToast';
-import { useQuery } from '@tanstack/react-query';
-import { useLoading } from '@/hooks/useLoading';
-import dynamic from 'next/dynamic';
-import { useGlobalStore } from '@/store/global';
-import { serviceSideProps } from '@/utils/i18n';
-import { useTranslation } from 'next-i18next';
-
-import { DBVersionMap } from '@/store/static';
-import Header from './components/Header';
-import Form from './components/Form';
-import Yaml from './components/Yaml';
-const ErrorModal = dynamic(() => import('./components/ErrorModal'));
-import { CronJobEditType } from '@/types/job';
+import { editModeMap } from '@/constants/editApp';
 import { DefaultJobEditValue } from '@/constants/job';
+import { useConfirm } from '@/hooks/useConfirm';
+import { useLoading } from '@/hooks/useLoading';
+import { useToast } from '@/hooks/useToast';
+import { useGlobalStore } from '@/store/global';
+import type { YamlItemType } from '@/types';
+import { CronJobEditType } from '@/types/job';
+import { serviceSideProps } from '@/utils/i18n';
 import { json2CronJob } from '@/utils/json2Yaml';
+import { Box, Flex } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
+import debounce from 'lodash/debounce';
+import { useTranslation } from 'next-i18next';
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/router';
+import { useCallback, useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import Form from './components/Form';
+import Header from './components/Header';
+import Yaml from './components/Yaml';
+
+const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
 const defaultEdit: CronJobEditType = {
   ...DefaultJobEditValue
@@ -89,24 +86,18 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
   const submitSuccess = useCallback(async () => {
     setIsLoading(true);
     try {
-      // !isEdit && (await applyYamlList([limitRangeYaml], 'create'));
-    } catch (err) {}
-    try {
       const data = yamlList.map((item) => item.value);
-
       await applyYamlList(data, isEdit ? 'replace' : 'create');
-
       toast({
         title: t(applySuccess),
         status: 'success'
       });
-      router.replace(`/db/detail?name=${formHook.getValues('jobName')}`);
+      // router.replace(`/db/detail?name=${formHook.getValues('jobName')}`);
     } catch (error) {
-      console.error(error);
       setErrorMessage(JSON.stringify(error));
     }
     setIsLoading(false);
-  }, [applySuccess, formHook, isEdit, router, setIsLoading, t, toast, yamlList]);
+  }, [applySuccess, isEdit, setIsLoading, t, toast, yamlList]);
 
   const submitError = useCallback(() => {
     // deep search message

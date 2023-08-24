@@ -173,7 +173,9 @@
     "Deploy Job": "部署CronJob",
     "Update CronJob": "更新CronJob",
     "Confirm Update CronJob?": "确定更新CronJob ?",
-    "Confirm Deploy CronJob?": "确定部署CronJob ?"
+    "Confirm Deploy CronJob?": "确定部署CronJob ?",
+    "You have no tasks yet": "您还没有任务",
+    "Name": "任务名称"
   },
   "base": {
     "Delete": "删除",
@@ -191,5 +193,21 @@
     "Success": "成功",
     "Have Error": "出现异常",
     "Logs": "日志"
+  },
+  "Form": {
+    "Image": "镜像源",
+    "Image Name": "镜像名",
+    "Private": "私有",
+    "Public": "公开",
+    "Image Name (Private)": "镜像名（私有）",
+    "Username": "用户名",
+    "Password": "密码",
+    "Password for the image registry": "镜像仓库的密码",
+    "Username for the image registry": "镜像仓库的用户名",
+    "Image address": "镜像仓库地址",
+    "Command": "运行命令",
+    "Parameters": "命令参数",
+    "Time": "时间",
+    "Image Address": "镜像仓库地址"
   }
 }

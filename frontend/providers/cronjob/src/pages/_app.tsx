@@ -1,25 +1,23 @@
-import { useEffect, useState } from 'react';
-import Head from 'next/head';
-import type { AppProps } from 'next/app';
-import { ChakraProvider } from '@chakra-ui/react';
 import { theme } from '@/constants/theme';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import Router from 'next/router';
-import NProgress from 'nprogress'; //nprogress module
-import { sealosApp, createSealosApp } from 'sealos-desktop-sdk/app';
-import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { useConfirm } from '@/hooks/useConfirm';
-import throttle from 'lodash/throttle';
-import { useGlobalStore } from '@/store/global';
 import { useLoading } from '@/hooks/useLoading';
-import { useRouter } from 'next/router';
-import { appWithTranslation, useTranslation } from 'next-i18next';
+import { useGlobalStore } from '@/store/global';
+import { getEnv } from '@/store/static';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
-import { getUserPrice, getDBVersion, StorageClassName, Domain, getEnv } from '@/store/static';
+import { ChakraProvider } from '@chakra-ui/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { appWithTranslation, useTranslation } from 'next-i18next';
+import type { AppProps } from 'next/app';
+import Head from 'next/head';
+import Router, { useRouter } from 'next/router';
+import NProgress from 'nprogress'; //nprogress module
+import { useEffect, useState } from 'react';
+import { EVENT_NAME } from 'sealos-desktop-sdk';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 
+import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
 import 'react-day-picker/dist/style.css';
-import '@/styles/reset.scss';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());

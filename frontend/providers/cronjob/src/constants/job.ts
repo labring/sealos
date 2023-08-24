@@ -31,7 +31,7 @@ export const WeekSelectList = [
 
 export const DefaultJobEditValue: CronJobEditType = {
   jobType: '',
-  JobName: '',
+  jobName: '',
   schedule: '* * * * *',
   imageName: '',
   runCMD: '',
@@ -42,7 +42,12 @@ export const DefaultJobEditValue: CronJobEditType = {
     password: '',
     serverAddress: 'docker.io'
   },
-  envs: [],
+  envs: [
+    {
+      key: 'TZ',
+      value: 'Asia/Shanghai'
+    }
+  ],
   scheduleType: 'hour',
   week: [],
   hour: '*',

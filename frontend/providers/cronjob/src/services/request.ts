@@ -1,12 +1,12 @@
+import { getUserKubeConfig } from '@/utils/user';
 import axios, {
-  InternalAxiosRequestConfig,
   AxiosHeaders,
+  AxiosRequestConfig,
   AxiosResponse,
-  AxiosRequestConfig
+  InternalAxiosRequestConfig
 } from 'axios';
 import type { ApiResp } from './kubernet';
 import { isApiResp } from './kubernet';
-import { getUserKubeConfig } from '@/utils/user';
 
 const showStatus = (status: number) => {
   let message = '';
