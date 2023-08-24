@@ -35,11 +35,13 @@ func (ps *PromServer) Request(resChan chan<- *api.QueryResult, errChan chan<- er
 	body, err := request.PrometheusPre(pr)
 	if err != nil {
 		errChan <- err
+		resChan <- nil
 		return
 	}
 	var result *api.QueryResult
 	if err := json.Unmarshal(body, &result); err != nil {
 		errChan <- err
+		resChan <- nil
 		return
 	}
 	errChan <- err
@@ -50,11 +52,13 @@ func (ps *PromServer) DBReq(resChan chan<- *api.QueryResult, errChan chan<- erro
 	body, err := request.PrometheusNew(pr)
 	if err != nil {
 		errChan <- err
+		resChan <- nil
 		return
 	}
 	var result *api.QueryResult
 	if err := json.Unmarshal(body, &result); err != nil {
 		errChan <- err
+		resChan <- nil
 		return
 	}
 	errChan <- err
