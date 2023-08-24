@@ -18,7 +18,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime/types"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
@@ -34,7 +34,7 @@ type ClusterFile struct {
 	setDefaults        bool
 	Cluster            *v2.Cluster
 	Configs            []v2.Config
-	KubeConfig         *runtime.KubeadmConfig
+	KubeConfig         *types.KubeadmConfig
 	//Plugins    []v1.Plugin
 	once sync.Once
 }
@@ -43,7 +43,7 @@ type Interface interface {
 	PreProcessor
 	GetCluster() *v2.Cluster
 	GetConfigs() []v2.Config
-	GetKubeadmConfig() *runtime.KubeadmConfig
+	GetKubeadmConfig() *types.KubeadmConfig
 }
 
 func (c *ClusterFile) GetCluster() *v2.Cluster {
@@ -54,7 +54,7 @@ func (c *ClusterFile) GetConfigs() []v2.Config {
 	return c.Configs
 }
 
-func (c *ClusterFile) GetKubeadmConfig() *runtime.KubeadmConfig {
+func (c *ClusterFile) GetKubeadmConfig() *types.KubeadmConfig {
 	return c.KubeConfig
 }
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runtime
+package kubernetes
 
 import (
 	"context"
@@ -37,7 +37,7 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 	if err = k.setKubernetesToken(); err != nil {
 		return err
 	}
-	if err = k.fetchKubeadmConfig(); err != nil {
+	if err = k.mergeWithBuiltinKubeadmConfig(); err != nil {
 		return err
 	}
 	eg, _ := errgroup.WithContext(context.Background())
@@ -45,12 +45,12 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 		node := node
 		eg.Go(func() error {
 			logger.Info("start to join %s as worker", node)
-			k.Lock()
+			k.mu.Lock()
 			err = k.ConfigJoinNodeKubeadmToNode(node)
 			if err != nil {
 				return fmt.Errorf("failed to copy join node kubeadm config %s %v", node, err)
 			}
-			k.Unlock()
+			k.mu.Unlock()
 			err = k.execHostsAppend(node, k.getVip(), k.getAPIServerDomain())
 			if err != nil {
 				return fmt.Errorf("add apiserver domain hosts failed %v", err)
@@ -72,11 +72,6 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 			if err = k.sshCmdAsync(node, cmd); err != nil {
 				return fmt.Errorf("failed to join node %s %v", node, err)
 			}
-			//logger.Info("sync ipvs yaml in node: %s", node)
-			//err = k.execIPVSPod(node, masters)
-			//if err != nil {
-			//	return fmt.Errorf("generator ipvs static pod failed %v", err)
-			//}
 			logger.Info("succeeded in joining %s as worker", node)
 			return nil
 		})
@@ -88,7 +83,7 @@ func (k *KubeadmRuntime) ConfigJoinNodeKubeadmToNode(node string) error {
 	logger.Info("start to copy kubeadm join config to node: %s", node)
 	data, err := k.generateJoinNodeConfigs(node)
 	if err != nil {
-		return fmt.Errorf("generator config join kubeadm config error: %s", err.Error())
+		return fmt.Errorf("failed to generate join kubeadm config: %v", err)
 	}
 	joinConfigPath := path.Join(k.getContentData().TmpPath(), constants.DefaultJoinNodeKubeadmFileName)
 	outConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultJoinNodeKubeadmFileName)
@@ -102,6 +97,7 @@ func (k *KubeadmRuntime) ConfigJoinNodeKubeadmToNode(node string) error {
 	}
 	return nil
 }
+
 func (k *KubeadmRuntime) deleteNodes(nodes []string) error {
 	if len(nodes) == 0 {
 		return nil

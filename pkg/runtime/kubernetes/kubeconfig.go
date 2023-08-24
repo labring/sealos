@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package runtime
+package kubernetes
 
 import "path"
 
-const RemoteCopyKubeConfig = `rm -rf $HOME/.kube/config && mkdir -p  $HOME/.kube && cp /etc/kubernetes/admin.conf $HOME/.kube/config`
+const copyKubeAdminConfigCommand = `rm -rf $HOME/.kube/config && mkdir -p $HOME/.kube && cp /etc/kubernetes/admin.conf $HOME/.kube/config`
 
 func (k *KubeadmRuntime) copyNodeKubeConfig(hosts []string) error {
 	srcKubeFile := k.getContentData().AdminFile()
@@ -27,5 +27,5 @@ func (k *KubeadmRuntime) copyNodeKubeConfig(hosts []string) error {
 }
 
 func (k *KubeadmRuntime) copyMasterKubeConfig(host string) error {
-	return k.sshCmdAsync(host, RemoteCopyKubeConfig)
+	return k.sshCmdAsync(host, copyKubeAdminConfigCommand)
 }

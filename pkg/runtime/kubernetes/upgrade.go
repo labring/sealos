@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runtime
+package kubernetes
 
 import (
 	"context"
@@ -24,6 +24,8 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 
+	"github.com/labring/sealos/pkg/runtime/decode"
+	"github.com/labring/sealos/pkg/runtime/types"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
@@ -149,19 +151,23 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string, version string) error {
 }
 
 func (k *KubeadmRuntime) autoUpdateConfig(version string) error {
-	ctx := context.Background()
-	clusterCfg, err := k.getKubeExpansion().FetchKubeadmConfig(ctx)
+	exp, err := k.getKubeExpansion()
 	if err != nil {
 		return err
 	}
-	kubeletCfg, err := k.getKubeExpansion().FetchKubeletConfig(ctx)
+	ctx := context.Background()
+	clusterCfg, err := exp.FetchKubeadmConfig(ctx)
+	if err != nil {
+		return err
+	}
+	kubeletCfg, err := exp.FetchKubeletConfig(ctx)
 	if err != nil {
 		return err
 	}
 	logger.Debug("get cluster configmap data:\n%s", clusterCfg)
 	logger.Debug("get kubelet configmap data:\n%s", kubeletCfg)
 	allConfig := strings.Join([]string{clusterCfg, kubeletCfg}, "\n---\n")
-	defaultKubeadmConfig, err := LoadKubeadmConfigs(allConfig, false, DecodeCRDFromString)
+	defaultKubeadmConfig, err := types.LoadKubeadmConfigs(allConfig, false, decode.CRDFromString)
 	if err != nil {
 		logger.Error("failed to decode cluster kubeadm config: %s", err)
 		return err
@@ -177,29 +183,30 @@ func (k *KubeadmRuntime) autoUpdateConfig(version string) error {
 	}
 	kk.setKubeVersion(version)
 	kk.setFeatureGatesConfiguration()
-	if err = kk.convertKubeadmVersion(); err != nil {
+	if err = kk.KubeadmConfig.ConvertKubeadmVersion(); err != nil {
 		return err
 	}
 
-	newClusterData, err := yaml.MarshalYamlConfigs(&kk.conversion.ClusterConfiguration)
+	conversion := kk.KubeadmConfig.GetConvertedKubeadmConfig()
+	newClusterData, err := yaml.MarshalYamlConfigs(&conversion.ClusterConfiguration)
 	if err != nil {
 		logger.Error("failed to encode ClusterConfiguration: %s", err)
 		return err
 	}
 	logger.Debug("update cluster config:\n%s", string(newClusterData))
-	err = k.getKubeExpansion().UpdateKubeadmConfig(ctx, string(newClusterData))
+	err = exp.UpdateKubeadmConfig(ctx, string(newClusterData))
 	if err != nil {
 		logger.Error("failed to update kubeadm-config with k8s-client: %s", err)
 		return err
 	}
 
-	newKubeletData, err := yaml.MarshalYamlConfigs(&kk.conversion.KubeletConfiguration)
+	newKubeletData, err := yaml.MarshalYamlConfigs(&conversion.KubeletConfiguration)
 	if err != nil {
 		logger.Error("failed to encode KubeletConfiguration: %s", err)
 		return err
 	}
 	logger.Debug("update kubelet config:\n%s", string(newKubeletData))
-	err = k.getKubeExpansion().UpdateKubeletConfig(ctx, string(newKubeletData))
+	err = exp.UpdateKubeletConfig(ctx, string(newKubeletData))
 	if err != nil {
 		logger.Error("failed to update kubelet-config with k8s-client: %s", err)
 		return err
@@ -210,8 +217,12 @@ func (k *KubeadmRuntime) autoUpdateConfig(version string) error {
 
 func (k *KubeadmRuntime) pingAPIServer() error {
 	timeout := time.Now().Add(1 * time.Minute)
+	client, err := k.getKubeInterface()
+	if err != nil {
+		return err
+	}
 	for {
-		_, err := k.getKubeInterface().Kubernetes().CoreV1().Nodes().List(context.TODO(), metaV1.ListOptions{})
+		_, err := client.Kubernetes().CoreV1().Nodes().List(context.TODO(), metaV1.ListOptions{})
 		if err == nil {
 			break
 		}

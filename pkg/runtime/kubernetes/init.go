@@ -12,44 +12,52 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runtime
+package kubernetes
 
 import (
 	"fmt"
 	"path"
 
+	"github.com/labring/sealos/pkg/cert"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
-
-	"github.com/labring/sealos/pkg/cert"
 )
 
 func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {
-	logger.Info("start to copy kubeadm config to master0")
 	data, err := k.generateInitConfigs()
 	if err != nil {
-		return fmt.Errorf("generator config init kubeadm config error: %s", err.Error())
+		return fmt.Errorf("generate init config error: %v", err)
 	}
 	initConfigPath := path.Join(k.getContentData().TmpPath(), constants.DefaultInitKubeadmFileName)
 	outConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultInitKubeadmFileName)
 	err = file.WriteFile(initConfigPath, data)
 	if err != nil {
-		return fmt.Errorf("write Config init kubeadm config error: %s", err.Error())
+		return fmt.Errorf("failed to write tmp init kubeadm config: %v", err)
 	}
+
+	logger.Info("Copying kubeadm config to master0")
 	err = k.sshCopy(k.getMaster0IPAndPort(), initConfigPath, outConfigPath)
 	if err != nil {
-		return fmt.Errorf("copy Config init kubeadm Config error: %s", err.Error())
+		return fmt.Errorf("failed to copy init kubeadm config: %v", err)
 	}
 	return nil
 }
 
 func (k *KubeadmRuntime) GenerateCert() error {
-	logger.Info("start to generator cert and copy to masters...")
+	logger.Info("start to generate and copy certs to masters...")
 	hostName, err := k.execHostname(k.getMaster0IPAndPort())
 	if err != nil {
 		return fmt.Errorf("get hostname failed %v", err)
 	}
+
+	logger.Debug("GenerateCert param:", k.getContentData().PkiPath(),
+		k.getContentData().PkiEtcdPath(),
+		k.getCertSANS(),
+		k.getMaster0IP(),
+		hostName,
+		k.getServiceCIDR(),
+		k.getDNSDomain())
 	err = cert.GenerateCert(
 		k.getContentData().PkiPath(),
 		k.getContentData().PkiEtcdPath(),
@@ -59,16 +67,8 @@ func (k *KubeadmRuntime) GenerateCert() error {
 		k.getServiceCIDR(),
 		k.getDNSDomain(),
 	)
-	logger.Debug("cert.GenerateCert getServiceCIDR ", k.getServiceCIDR())
-	logger.Debug("cert.GenerateCert param:", k.getContentData().PkiPath(),
-		k.getContentData().PkiEtcdPath(),
-		k.getCertSANS(),
-		k.getMaster0IP(),
-		hostName,
-		k.getServiceCIDR(),
-		k.getDNSDomain())
 	if err != nil {
-		return fmt.Errorf("generate certs failed %v", err)
+		return fmt.Errorf("generate certs failed: %v", err)
 	}
 	return k.sendNewCertAndKey([]string{k.getMaster0IPAndPort()})
 }
@@ -91,7 +91,7 @@ func (k *KubeadmRuntime) CreateKubeConfig() error {
 	err = cert.CreateJoinControlPlaneKubeConfigFiles(k.getContentData().EtcPath(),
 		certConfig, hostName, k.getClusterAPIServer(), "kubernetes")
 	if err != nil {
-		return fmt.Errorf("generator kubeconfig failed %s", err)
+		return fmt.Errorf("failed to generate kubeconfig: %v", err)
 	}
 	return nil
 }
