@@ -68,6 +68,7 @@
   "Get Code": "verification",
   "Stripe Success": "pay with Stripe successfully",
   "Stripe Cancel": "cancel to pay with Stripe",
+  "GPU Unit": "Card",
   "orders": {
     "list": "Order List",
     "invoiceAmount": "Invoice Amount",

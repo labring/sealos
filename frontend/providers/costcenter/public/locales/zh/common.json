@@ -68,6 +68,7 @@
   "Get Code": "获取验证码",
   "Stripe Success": "Stripe 支付完成",
   "Stripe Cancel": "Stripe 支付取消",
+  "GPU Unit": "卡",
   "orders": {
     "list": "订单列表",
     "invoiceAmount": "发票金额",
