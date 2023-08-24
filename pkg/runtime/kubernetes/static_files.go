@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runtime
+package kubernetes
 
 import (
 	"context"
@@ -25,8 +25,8 @@ import (
 )
 
 const (
-	AuditPolicyYml      = "audit-policy.yml"
-	RemoteCmdCopyStatic = "mkdir -p %s && cp -f %s %s"
+	AuditPolicyYml       = "audit-policy.yml"
+	copyFileToDirCommand = "mkdir -p %s && cp -f %s %s"
 )
 
 // StaticFile :static file should not be template, will never be changed while initialization.
@@ -51,14 +51,14 @@ func (k *KubeadmRuntime) CopyStaticFiles(nodes []string) error {
 	logger.Info("start to copy static files to masters")
 	for _, file := range MasterStaticFiles {
 		staticFilePath := filepath.Join(k.getContentData().RootFSStaticsPath(), file.Name)
-		cmdLinkStatic := fmt.Sprintf(RemoteCmdCopyStatic, file.DestinationDir, staticFilePath, filepath.Join(file.DestinationDir, file.Name))
+		cmdLinkStatic := fmt.Sprintf(copyFileToDirCommand, file.DestinationDir, staticFilePath, filepath.Join(file.DestinationDir, file.Name))
 		eg, _ := errgroup.WithContext(context.Background())
 		for _, host := range nodes {
 			host := host
 			eg.Go(func() error {
 				err := k.sshCmdAsync(host, cmdLinkStatic)
 				if err != nil {
-					return fmt.Errorf("[%s] link static file failed, error:%s", host, err.Error())
+					return fmt.Errorf("failed to copy static file to %s: %s", host, err.Error())
 				}
 				return nil
 			})

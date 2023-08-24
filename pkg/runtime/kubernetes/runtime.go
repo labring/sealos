@@ -12,15 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runtime
+package kubernetes
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/Masterminds/semver/v3"
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/remote"
+	"github.com/labring/sealos/pkg/runtime/types"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -28,22 +32,18 @@ import (
 )
 
 type KubeadmRuntime struct {
-	*sync.Mutex
-	Cluster       *v2.Cluster
-	ClusterClient ssh.Interface
-	Token         *Token
-	Registry      *v2.RegistryConfig
-	*KubeadmConfig
-	*Config
-	cli kubernetes.Client
-}
+	config  *types.Config // from argument
+	Cluster *v2.Cluster
 
-//nolint:all
-type Config struct {
-	// Clusterfile: the absolute path, we need to read kubeadm Config from Clusterfile
-	ClusterFileKubeConfig *KubeadmConfig
-	APIServerDomain       string
-	vlog                  int
+	Token         *types.Token
+	KubeadmConfig *types.KubeadmConfig // a deep copy from config.KubeadmConfig or a new one
+
+	klogLevel     int
+	cli           kubernetes.Client
+	clusterClient ssh.Interface
+	pathResolver  constants.Data
+	remoteUtil    remote.Interface
+	mu            sync.Mutex
 }
 
 func (k *KubeadmRuntime) Init() error {
@@ -58,17 +58,23 @@ func (k *KubeadmRuntime) Init() error {
 }
 
 func (k *KubeadmRuntime) GetConfig() ([]byte, error) {
-	k.KubeadmConfig = k.ClusterFileKubeConfig
-	if err := k.ConvertInitConfigConversion(); err != nil {
+	if k.config.KubeadmConfig == nil {
+		return nil, errors.New("please provide a nonnull config")
+	}
+	in := *k.config.KubeadmConfig
+	k.KubeadmConfig = &in
+
+	if err := k.CompleteKubeadmConfig(); err != nil {
 		return nil, err
 	}
 	k.Cluster.Status = v2.ClusterStatus{}
+	conversion := k.KubeadmConfig.GetConvertedKubeadmConfig()
 	objects := []interface{}{k.Cluster,
-		k.InitConfiguration,
-		k.ClusterConfiguration,
-		k.JoinConfiguration,
-		k.KubeProxyConfiguration,
-		k.KubeletConfiguration,
+		conversion.InitConfiguration,
+		conversion.ClusterConfiguration,
+		conversion.JoinConfiguration,
+		conversion.KubeProxyConfiguration,
+		conversion.KubeletConfiguration,
 	}
 	data, err := yaml.MarshalYamlConfigs(objects...)
 	if err != nil {
@@ -77,22 +83,11 @@ func (k *KubeadmRuntime) GetConfig() ([]byte, error) {
 	return data, nil
 }
 
-type Interface interface {
-	Init() error
-	Reset() error
-	ScaleUp(newMasterIPList []string, newNodeIPList []string) error
-	ScaleDown(deleteMastersIPList []string, deleteNodesIPList []string) error
-	SyncNodeIPVS(mastersIPList, nodeIPList []string) error
-	Upgrade(version string) error
-	GetConfig() ([]byte, error)
-
-	UpdateCert(certs []string) error
-}
-
 func (k *KubeadmRuntime) Reset() error {
 	logger.Info("start to delete Cluster: master %s, node %s", k.getMasterIPList(), k.getNodeIPList())
 	return k.reset()
 }
+
 func (k *KubeadmRuntime) ScaleUp(newMasterIPList []string, newNodeIPList []string) error {
 	if len(newMasterIPList) != 0 {
 		logger.Info("%s will be added as master", newMasterIPList)
@@ -124,33 +119,29 @@ func (k *KubeadmRuntime) ScaleDown(deleteMastersIPList []string, deleteNodesIPLi
 	return nil
 }
 
-func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
+func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*KubeadmRuntime, error) {
 	sshClient := ssh.NewSSHByCluster(cluster, true)
 	k := &KubeadmRuntime{
-		Mutex:         &sync.Mutex{},
-		Cluster:       cluster,
-		ClusterClient: sshClient,
-		Config: &Config{
-			ClusterFileKubeConfig: kubeadm,
-			APIServerDomain:       DefaultAPIServerDomain,
+		Cluster: cluster,
+		config: &types.Config{
+			KubeadmConfig:   kubeadm,
+			APIServerDomain: types.DefaultAPIServerDomain,
 		},
-		KubeadmConfig: &KubeadmConfig{},
+		KubeadmConfig: types.NewKubeadmConfig(),
+		clusterClient: sshClient,
+		pathResolver:  constants.NewData(cluster.GetName()),
+		remoteUtil:    remote.New(cluster.GetName(), sshClient),
 	}
 	if err := k.Validate(); err != nil {
 		return nil, err
 	}
 	if logger.IsDebugMode() {
-		k.vlog = 6
+		k.klogLevel = 6
 	}
 	return k, nil
 }
 
-// NewDefaultRuntime arg "clusterName" is the Cluster name
-func NewDefaultRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
-	return newKubeadmRuntime(cluster, kubeadm)
-}
-
-func NewDefaultRuntimeWithCurrentCluster(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
+func New(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*KubeadmRuntime, error) {
 	return newKubeadmRuntime(cluster, kubeadm)
 }
 

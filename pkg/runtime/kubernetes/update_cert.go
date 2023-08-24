@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runtime
+package kubernetes
 
 import (
 	"context"
@@ -39,12 +39,12 @@ const (
 )
 
 func (k *KubeadmRuntime) UpdateCert(certs []string) error {
-	//set sans to kubeadm config object
-	if err := k.ConvertInitConfigConversion(setCGroupDriverAndSocket, setCertificateKey); err != nil {
+	// set sans to kubeadm config object
+	if err := k.CompleteKubeadmConfig(setCGroupDriverAndSocket, setCertificateKey); err != nil {
 		return err
 	}
 	setCertSANS := func() error {
-		if err := k.fetchKubeadmConfig(); err != nil {
+		if err := k.mergeWithBuiltinKubeadmConfig(); err != nil {
 			return err
 		}
 		if len(certs) != 0 {
@@ -70,7 +70,11 @@ func (k *KubeadmRuntime) UpdateCert(certs []string) error {
 
 func (k *KubeadmRuntime) saveNewKubeadmConfig() error {
 	logger.Info("start to save new kubeadm config...")
-	data, err := k.getKubeExpansion().FetchKubeadmConfig(context.Background())
+	exp, err := k.getKubeExpansion()
+	if err != nil {
+		return err
+	}
+	data, err := exp.FetchKubeadmConfig(context.Background())
 	if err != nil {
 		return err
 	}
@@ -142,7 +146,7 @@ func (k *KubeadmRuntime) initCert() error {
 
 func (k *KubeadmRuntime) showKubeadmCert() error {
 	certCheck := "kubeadm certs check-expiration"
-	return k.sshCmdAsync(k.getMaster0IPAndPort(), fmt.Sprintf("%s%s", certCheck, vlogToStr(k.vlog)))
+	return k.sshCmdAsync(k.getMaster0IPAndPort(), fmt.Sprintf("%s%s", certCheck, vlogToStr(k.klogLevel)))
 }
 
 func (k *KubeadmRuntime) deleteAPIServer() error {

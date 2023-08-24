@@ -25,7 +25,7 @@ import (
 	"github.com/labring/sealos/fork/golang/expansion"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
-	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime/types"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
@@ -53,7 +53,7 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts
 			return fmt.Errorf("read admin.conf error in guest: %w", err)
 		}
 		master0IP := cluster.GetMaster0IP()
-		outData := strings.ReplaceAll(string(data), runtime.DefaultAPIServerDomain, master0IP)
+		outData := strings.ReplaceAll(string(data), types.DefaultAPIServerDomain, master0IP)
 		if err = fileutil.WriteFile(kubeConfig, []byte(outData)); err != nil {
 			return err
 		}

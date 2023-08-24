@@ -23,13 +23,13 @@ import (
 	"helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/getter"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime/decode"
+	"github.com/labring/sealos/pkg/runtime/types"
 	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 var ErrClusterFileNotExists = errors.New("the cluster file is not exist")
@@ -159,7 +159,7 @@ func (c *ClusterFile) DecodeConfigs(data []byte) error {
 }
 
 func (c *ClusterFile) DecodeKubeadmConfig(data []byte) error {
-	kubeadmConfig, err := runtime.LoadKubeadmConfigs(string(data), c.setDefaults, runtime.DecodeCRDFromString)
+	kubeadmConfig, err := types.LoadKubeadmConfigs(string(data), c.setDefaults, decode.CRDFromString)
 	if err != nil {
 		return err
 	}

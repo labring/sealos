@@ -24,7 +24,7 @@ import (
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime/kubernetes"
 )
 
 var altNames string
@@ -58,11 +58,11 @@ func newCertCmd() *cobra.Command {
 			if err = cf.Process(); err != nil {
 				return err
 			}
-			r, err := runtime.NewDefaultRuntime(cluster, cf.GetKubeadmConfig())
+			rt, err := kubernetes.New(cluster, cf.GetKubeadmConfig())
 			if err != nil {
 				return fmt.Errorf("get default runtime failed, %v", err)
 			}
-			return r.UpdateCert(strings.Split(altNames, ","))
+			return rt.UpdateCert(strings.Split(altNames, ","))
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if strings.TrimSpace(altNames) == "" {
