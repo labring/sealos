@@ -19,13 +19,13 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"golang.org/x/sync/errgroup"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (
-	AuditPolicyYml       = "audit-policy.yml"
+	auditPolicyYml       = "audit-policy.yml"
 	copyFileToDirCommand = "mkdir -p %s && cp -f %s %s"
 )
 
@@ -39,7 +39,7 @@ type StaticFile struct {
 var MasterStaticFiles = []*StaticFile{
 	{
 		DestinationDir: "/etc/kubernetes",
-		Name:           AuditPolicyYml,
+		Name:           auditPolicyYml,
 	},
 }
 

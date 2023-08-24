@@ -25,7 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
-	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
@@ -89,13 +88,13 @@ func (k *KubeadmRuntime) saveNewKubeadmConfig() error {
 	if err != nil {
 		return err
 	}
-	certPath := path.Join(k.getContentData().EtcPath(), constants.DefaultUpdateKubeadmFileName)
+	certPath := path.Join(k.getContentData().EtcPath(), defaultUpdateKubeadmFileName)
 	return yaml.MarshalYamlToFile(certPath, obj)
 }
 
 func (k *KubeadmRuntime) uploadConfigFromKubeadm() error {
 	logger.Info("start to upload kubeadm config for inCluster ...")
-	outConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultUpdateKubeadmFileName)
+	outConfigPath := path.Join(k.getContentData().EtcPath(), defaultUpdateKubeadmFileName)
 	data, err := file.ReadAll(outConfigPath)
 	if err != nil {
 		return err

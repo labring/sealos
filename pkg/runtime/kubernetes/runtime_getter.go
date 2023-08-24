@@ -19,6 +19,7 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"path"
 	"strings"
 
 	"golang.org/x/sync/errgroup"
@@ -225,4 +226,8 @@ func (k *KubeadmRuntime) getKubeExpansion() (kubernetes.Expansion, error) {
 		return nil, err
 	}
 	return kubernetes.NewKubeExpansion(ki.Kubernetes()), nil
+}
+
+func (k *KubeadmRuntime) initMasterKubeadmConfigFile() string {
+	return path.Join(k.getContentData().EtcPath(), defaultInitKubeadmFileName)
 }

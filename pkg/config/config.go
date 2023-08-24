@@ -20,11 +20,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/labring/sealos/pkg/clusterfile"
-
 	"github.com/imdario/mergo"
 	"sigs.k8s.io/yaml"
 
+	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/file"

@@ -27,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 
-	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime/types"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
@@ -144,7 +143,7 @@ func (k *KubeadmRuntime) validateVIP(ip string) error {
 }
 
 func (k *KubeadmRuntime) getDefaultKubeadmConfig() string {
-	return filepath.Join(k.getContentData().RootFSEtcPath(), constants.DefaultRootfsKubeadmFileName)
+	return filepath.Join(k.getContentData().RootFSEtcPath(), defaultRootfsKubeadmFileName)
 }
 
 func (k *KubeadmRuntime) getVip() string {
@@ -258,7 +257,7 @@ func (k *KubeadmRuntime) writeTokenFile() error {
 	if err := setCertificateKey(k); err != nil {
 		return err
 	}
-	tokenFile := path.Join(k.getContentData().EtcPath(), constants.DefaultKubeadmTokenFileName)
+	tokenFile := path.Join(k.getContentData().EtcPath(), defaultKubeadmTokenFileName)
 	data, err := k.execToken(k.getMaster0IPAndPort(), k.getInitCertificateKey())
 	if err != nil {
 		return err
@@ -278,7 +277,7 @@ func (k *KubeadmRuntime) writeTokenFile() error {
 func (k *KubeadmRuntime) setKubernetesToken() error {
 	if k.Token == nil {
 		logger.Info("start to get kubernetes token...")
-		tokenFile := path.Join(k.getContentData().EtcPath(), constants.DefaultKubeadmTokenFileName)
+		tokenFile := path.Join(k.getContentData().EtcPath(), defaultKubeadmTokenFileName)
 		if !fileutil.IsExist(tokenFile) {
 			err := k.writeTokenFile()
 			if err != nil {
@@ -436,7 +435,7 @@ var setCGroupDriverAndSocket = func(krt *KubeadmRuntime) error {
 }
 
 var setCertificateKey = func(krt *KubeadmRuntime) error {
-	certificateKeyFile := path.Join(krt.getContentData().EtcPath(), constants.DefaultCertificateKeyFileName)
+	certificateKeyFile := path.Join(krt.getContentData().EtcPath(), defaultCertificateKeyFileName)
 	var key string
 	if !fileutil.IsExist(certificateKeyFile) {
 		key, _ = rand.CreateCertificateKey()

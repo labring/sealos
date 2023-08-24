@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -67,8 +66,8 @@ func (k *KubeadmRuntime) ConfigJoinMasterKubeadmToMaster(master string) error {
 	if err != nil {
 		return fmt.Errorf("failed to generate join master kubeadm config: %s", err.Error())
 	}
-	joinConfigPath := path.Join(k.getContentData().TmpPath(), constants.DefaultJoinMasterKubeadmFileName)
-	outConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultJoinMasterKubeadmFileName)
+	joinConfigPath := path.Join(k.getContentData().TmpPath(), defaultJoinMasterKubeadmFileName)
+	outConfigPath := path.Join(k.getContentData().EtcPath(), defaultJoinMasterKubeadmFileName)
 	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {
 		return fmt.Errorf("write config join master kubeadm config error: %s", err.Error())

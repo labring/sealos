@@ -33,27 +33,36 @@ var (
 )
 
 const (
-	DefaultInitKubeadmFileName       = "kubeadm-init.yaml"
-	DefaultJoinMasterKubeadmFileName = "kubeadm-join-master.yaml"
-	DefaultJoinNodeKubeadmFileName   = "kubeadm-join-node.yaml"
-	DefaultKubeadmTokenFileName      = "kubeadm-token.json"
-	DefaultCertificateKeyFileName    = "kubeadm-certificate-key.txt"
-	DefaultUpdateKubeadmFileName     = "kubeadm-update.yaml"
-	DefaultRootfsKubeadmFileName     = "kubeadm.yml"
-	DefaultRootfsConfigFileName      = "config.yml"
-	DataDirName                      = "rootfs"
-	EtcDirName                       = "etc"
-	ChartsDirName                    = "charts"
-	ManifestsDirName                 = "manifests"
-	BinDirName                       = "bin"
-	RegistryDirName                  = "registry"
-	ImagesDirName                    = "images"
-	ImageShimDirName                 = "shim"
-	PkiDirName                       = "pki"
-	PkiEtcdDirName                   = "etcd"
-	ScriptsDirName                   = "scripts"
-	StaticsDirName                   = "statics"
+	DefaultRootfsConfigFileName = "config.yml"
+	DataDirName                 = "rootfs"
+	EtcDirName                  = "etc"
+	ChartsDirName               = "charts"
+	ManifestsDirName            = "manifests"
+	BinDirName                  = "bin"
+	RegistryDirName             = "registry"
+	ImagesDirName               = "images"
+	ImageShimDirName            = "shim"
+	PkiDirName                  = "pki"
+	PkiEtcdDirName              = "etcd"
+	ScriptsDirName              = "scripts"
+	StaticsDirName              = "statics"
 )
+
+func GetHomeDir() string {
+	return homedir.Get()
+}
+
+func WorkDir() string {
+	return DefaultRuntimeRootDir
+}
+
+func ClusterDir(clusterName string) string {
+	return filepath.Join(WorkDir(), clusterName)
+}
+
+func Clusterfile(clusterName string) string {
+	return filepath.Join(WorkDir(), clusterName, DefaultClusterFileName)
+}
 
 func GetRuntimeRootDir(name string) string {
 	if v, ok := os.LookupEnv(strings.ToUpper(name) + "_RUNTIME_ROOT"); ok {

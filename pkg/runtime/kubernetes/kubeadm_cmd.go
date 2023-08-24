@@ -23,8 +23,6 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
-
-	"github.com/labring/sealos/pkg/constants"
 )
 
 type CommandType int
@@ -53,9 +51,9 @@ const (
 
 func (k *KubeadmRuntime) Command(version string, cmdType CommandType) (cmd string) {
 	initConfigPath := k.initMasterKubeadmConfigFile()
-	joinMasterConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultJoinMasterKubeadmFileName)
-	joinNodeConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultJoinNodeKubeadmFileName)
-	updateClusterConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultUpdateKubeadmFileName)
+	joinMasterConfigPath := path.Join(k.getContentData().EtcPath(), defaultJoinMasterKubeadmFileName)
+	joinNodeConfigPath := path.Join(k.getContentData().EtcPath(), defaultJoinNodeKubeadmFileName)
+	updateClusterConfigPath := path.Join(k.getContentData().EtcPath(), defaultUpdateKubeadmFileName)
 
 	var discoveryTokens []string
 	for _, data := range k.getTokenCaCertHash() {
@@ -92,8 +90,4 @@ func (k *KubeadmRuntime) Command(version string, cmdType CommandType) (cmd strin
 		return fmt.Sprintf("%s%s%s", cmd, vlogToStr(k.klogLevel), " --ignore-preflight-errors=SystemVerification")
 	}
 	return fmt.Sprintf("%s%s", cmd, vlogToStr(k.klogLevel))
-}
-
-func (k *KubeadmRuntime) initMasterKubeadmConfigFile() string {
-	return path.Join(k.getContentData().EtcPath(), constants.DefaultInitKubeadmFileName)
 }

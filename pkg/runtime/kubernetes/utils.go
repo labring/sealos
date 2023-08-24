@@ -19,13 +19,13 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"path"
 
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
-	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -76,14 +76,14 @@ func (k *KubeadmRuntime) ReplaceKubeConfigV1991V1992(masters []string) bool {
 }
 
 func (k *KubeadmRuntime) sendKubeConfigFile(hosts []string, kubeFile string) error {
-	absKubeFile := fmt.Sprintf("%s/%s", constants.KubernetesEtc, kubeFile)
-	sealosKubeFile := fmt.Sprintf("%s/%s", k.getContentData().EtcPath(), kubeFile)
+	absKubeFile := path.Join(kubernetesEtc, kubeFile)
+	sealosKubeFile := path.Join(k.getContentData().EtcPath(), kubeFile)
 	return k.sendFileToHosts(hosts, sealosKubeFile, absKubeFile)
 }
 
 func (k *KubeadmRuntime) sendNewCertAndKey(hosts []string) error {
 	logger.Info("start to copy etc pki files to masters")
-	return k.sendFileToHosts(hosts, k.getContentData().PkiPath(), constants.KubernetesEtcPKI)
+	return k.sendFileToHosts(hosts, k.getContentData().PkiPath(), kubernetesEtcPKI)
 }
 
 func (k *KubeadmRuntime) sendFileToHosts(Hosts []string, src, dst string) error {

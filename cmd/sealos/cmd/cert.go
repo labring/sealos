@@ -53,11 +53,13 @@ func newCertCmd() *cobra.Command {
 			clusterPath := constants.Clusterfile(cluster.Name)
 
 			cf := clusterfile.NewClusterFile(clusterPath,
-				clusterfile.WithCustomKubeadmFiles([]string{path.Join(constants.NewPathResolver(cluster.Name).EtcPath(), constants.DefaultInitKubeadmFileName)}),
+				clusterfile.WithCustomKubeadmFiles([]string{
+					path.Join(constants.NewPathResolver(cluster.Name).EtcPath(), "kubeadm-init.yaml")}),
 			)
 			if err = cf.Process(); err != nil {
 				return err
 			}
+			// TODO: using different runtime
 			rt, err := kubernetes.New(cluster, cf.GetKubeadmConfig())
 			if err != nil {
 				return fmt.Errorf("get default runtime failed, %v", err)
