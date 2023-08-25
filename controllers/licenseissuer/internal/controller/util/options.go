@@ -143,7 +143,7 @@ func (o *OperatorOptions) initOptions() {
 	o.RunnableOptions.Period[NoticeCleanup] = 24 * time.Hour
 
 	o.RunnableOptions.Policy[NetWorkConfig] = PeriodicPolicy
-	o.RunnableOptions.Period[NetWorkConfig] = 30 * time.Second
+	o.RunnableOptions.Period[NetWorkConfig] = 30 * time.Minute
 	// Add more tasks Policy and Period here
 }
 
