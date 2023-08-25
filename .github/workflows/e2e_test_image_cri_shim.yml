@@ -59,6 +59,7 @@ jobs:
         shell: bash
         working-directory: /tmp/
         run: |
+          sudo whereis command
           sudo apt-get update
           sudo apt-get install -y command-not-found
           sudo chmod a+x /tmp/e2e.test
