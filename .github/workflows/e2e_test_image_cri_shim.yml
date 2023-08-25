@@ -60,6 +60,6 @@ jobs:
         working-directory: /tmp/
         run: |
           sudo apt-get update
-          sudo apt-get install -y command-package-name
+          sudo apt-get install -y command-not-found
           sudo chmod a+x /tmp/e2e.test
           sudo /tmp/e2e.test --ginkgo.v --ginkgo.focus="E2E_image-cri-shim_run_test"
