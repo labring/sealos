@@ -1,12 +1,12 @@
-import { obj2Query } from '@/api/tools';
 import MyIcon from '@/components/Icon';
 import MySelect from '@/components/Select';
 import Tabs from '@/components/Tabs';
 import { SelectTimeList, WeekSelectList } from '@/constants/job';
 import type { QueryType } from '@/types';
 import { CreateScheduleType, CronJobEditType } from '@/types/job';
+import { obj2Query } from '@/utils/tools';
 import { TimeIcon } from '@chakra-ui/icons';
-import { Box, Checkbox, Flex, FormControl, Input, useTheme } from '@chakra-ui/react';
+import { Box, Checkbox, Flex, FormControl, Input } from '@chakra-ui/react';
 import { throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
@@ -86,7 +86,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
   );
 
   return (
-    <Flex w="100%" h="100%" justifyContent={'center'} minW={'1024px'} px="32px">
+    <Flex w="100%" h="100%" justifyContent={'center'} px="32px">
       <Box w="220px">
         <Tabs
           list={[
@@ -326,7 +326,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
               />
             </Flex>
             {getValues('scheduleType') === 'week' && (
-              <Flex alignItems={'center'} mb={7}>
+              <Flex alignItems={'center'} mb={7} pl="80px">
                 {WeekSelectList.map((item) => (
                   <Box key={item.id} _notLast={{ mr: 4 }}>
                     <Checkbox
@@ -350,8 +350,10 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
               </Flex>
             )}
             {getValues('scheduleType') !== 'hour' && (
-              <Flex alignItems={'center'} mb={7}>
-                <Label w={80}>{t('Start Hour')}</Label>
+              <Box alignItems={'center'} mb={7} pl="80px">
+                <Label mb="4px" w={80}>
+                  {t('Start Hour')}
+                </Label>
                 <MySelect
                   width={'120px'}
                   value={getValues('hour')}
@@ -361,10 +363,12 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                     setValue('hour', val);
                   }}
                 />
-              </Flex>
+              </Box>
             )}
-            <Flex alignItems={'center'}>
-              <Label w={80}>{t('Start Minute')}</Label>
+            <Box alignItems={'center'} pl="80px">
+              <Label mv="4px" w={80}>
+                {t('Start Minute')}
+              </Label>
               <MySelect
                 width={'120px'}
                 value={getValues('minute')}
@@ -374,7 +378,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                   setValue('minute', val);
                 }}
               />
-            </Flex>
+            </Box>
           </Box>
         </Box>
       </Box>

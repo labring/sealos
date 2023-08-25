@@ -1,18 +1,15 @@
+import { getJobByName, getMyJobList } from '@/api/job';
+import { DefaultJobEditValue } from '@/constants/job';
+import { CronJobEditType, CronJobListItemType } from '@/types/job';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { DBDetailType, DBListItemType, PodDetailType } from '@/types/db';
-import { getMyJobList } from '@/api/job';
-import { defaultDBDetail } from '@/constants/db';
-import { CronJobListItemType } from '@/types/job';
 
 type State = {
   jobList: CronJobListItemType[];
   setJobList: () => Promise<CronJobListItemType[]>;
-  // dbDetail: DBDetailType;
-  // loadDBDetail: (name: string, init?: boolean) => Promise<DBDetailType>;
-  // dbPods: PodDetailType[];
-  // intervalLoadPods: (dbName: string) => Promise<null>;
+  JobDetail: CronJobEditType;
+  loadJobDetail: (name: string, init?: boolean) => Promise<CronJobEditType>;
 };
 
 export const useJobStore = create<State>()(
@@ -25,6 +22,18 @@ export const useJobStore = create<State>()(
           state.jobList = res;
         });
         return res;
+      },
+      JobDetail: { ...DefaultJobEditValue },
+      async loadJobDetail(name: string) {
+        try {
+          const res = await getJobByName(name);
+          set((state) => {
+            state.JobDetail = res;
+          });
+          return res;
+        } catch (error) {
+          return Promise.reject(error);
+        }
       }
     }))
   )

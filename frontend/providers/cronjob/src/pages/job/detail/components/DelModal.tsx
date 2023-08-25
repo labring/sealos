@@ -11,7 +11,7 @@ import {
   Box,
   Button
 } from '@chakra-ui/react';
-import { delDBByName } from '@/api/db';
+import { delJobByName } from '@/api/job';
 import { useToast } from '@/hooks/useToast';
 import { useTranslation } from 'next-i18next';
 
@@ -32,7 +32,7 @@ const DelModal = ({
   const handleDelApp = useCallback(async () => {
     try {
       setLoading(true);
-      await delDBByName(dbName);
+      await delJobByName(dbName);
       toast({
         title: t('Delete successful'),
         status: 'success'

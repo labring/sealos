@@ -1,28 +1,5 @@
-export type CronJobResultType = {
-  metadata: {
-    annotations: { [key: string, string] };
-    creationTimestamp: string;
-    generation: string;
-    managedFields: unknown[];
-    name: string;
-    namespace: string;
-    resourceVersion: string;
-    uid: string;
-  };
-  spec: {
-    concurrencyPolicy: string;
-    failedJobsHistoryLimit: number;
-    jobTemplate: unknown;
-    schedule: string;
-    successfulJobsHistoryLimit: number;
-    suspend: boolean;
-  };
-  status: {
-    active: CronJobActiveHistoryType[];
-    lastScheduleTime: string;
-    lastSuccessfulTime: string;
-  };
-};
+import { V1PodTemplateSpec } from '@kubernetes/client-node';
+import { V1CronJob } from '@kubernetes/client-node';
 
 export type CronJobActiveHistoryType = {
   apiVersion: string;

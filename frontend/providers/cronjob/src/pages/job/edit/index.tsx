@@ -20,6 +20,7 @@ import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
+import { useJobStore } from '@/store/job';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
@@ -42,6 +43,7 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
   const [forceUpdate, setForceUpdate] = useState(false);
   const { toast } = useToast();
   const { Loading, setIsLoading } = useLoading();
+  const { loadJobDetail } = useJobStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!jobName);
   const isEdit = useMemo(() => !!jobName, [jobName]);
 
@@ -92,7 +94,6 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
         title: t(applySuccess),
         status: 'success'
       });
-      // router.replace(`/db/detail?name=${formHook.getValues('jobName')}`);
     } catch (error) {
       setErrorMessage(JSON.stringify(error));
     }
@@ -130,12 +131,12 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
         return null;
       }
       setIsLoading(true);
-      return loadDBDetail(dbName);
+      return loadJobDetail(jobName);
     },
     {
       onSuccess(res) {
         if (!res) return;
-        formHook.reset(adaptDBForm(res));
+        formHook.reset(res);
       },
       onError(err) {
         toast({
@@ -152,10 +153,10 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
   return (
     <>
       <Flex
+        minW={'1024px'}
         flexDirection={'column'}
         alignItems={'center'}
         h={'100%'}
-        minWidth={'1024px'}
         bg={'#F3F4F5'}
       >
         <Header

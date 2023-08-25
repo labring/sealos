@@ -233,9 +233,8 @@ export const theme = extendTheme({
         color: 'myGray.900',
         fontSize: 'md',
         height: '100%',
-        overflowY: 'auto',
-        fontWeight: 400,
-        minWidth: '700px'
+        overflowY: 'hidden',
+        fontWeight: 400
       }
     }
   },

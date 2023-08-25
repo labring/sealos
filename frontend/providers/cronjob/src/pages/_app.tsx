@@ -1,23 +1,22 @@
+import { getPlatformEnv } from '@/api/platform';
 import { theme } from '@/constants/theme';
 import { useConfirm } from '@/hooks/useConfirm';
-import { useLoading } from '@/hooks/useLoading';
 import { useGlobalStore } from '@/store/global';
-import { getEnv } from '@/store/static';
+import '@/styles/reset.scss';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import { ChakraProvider } from '@chakra-ui/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { throttle } from 'lodash';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import Router, { useRouter } from 'next/router';
 import NProgress from 'nprogress'; //nprogress module
-import { useEffect, useState } from 'react';
-import { EVENT_NAME } from 'sealos-desktop-sdk';
-import { sealosApp } from 'sealos-desktop-sdk/app';
-
-import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
+import { useEffect, useState } from 'react';
 import 'react-day-picker/dist/style.css';
+import { EVENT_NAME } from 'sealos-desktop-sdk';
+import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -39,7 +38,6 @@ function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const { i18n } = useTranslation();
   const { setScreenWidth, loading, setLastRoute, lastRoute } = useGlobalStore();
-  const { Loading } = useLoading();
   const [refresh, setRefresh] = useState(false);
 
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -47,44 +45,45 @@ function App({ Component, pageProps }: AppProps) {
     content: '该应用不允许单独使用，点击确认前往 Sealos Desktop 使用。'
   });
 
-  // useEffect(() => {
-  //   NProgress.start();
-  //   const response = createSealosApp();
+  useEffect(() => {
+    NProgress.start();
+    const response = createSealosApp();
 
-  //   (async () => {
-  //     try {
-  //       const res = await sealosApp.getSession();
-  //       localStorage.setItem('session', JSON.stringify(res));
-  //       console.log('app init success');
-  //     } catch (err) {
-  //       console.log('App is not running in desktop');
-  //       if (!process.env.NEXT_PUBLIC_MOCK_USER) {
-  //         localStorage.removeItem('session');
-  //         openConfirm(() => {
-  //           window.open(`https://${Domain}`, '_self');
-  //         })();
-  //       }
-  //     }
-  //   })();
-  //   NProgress.done();
+    (async () => {
+      try {
+        const res = await sealosApp.getSession();
+        localStorage.setItem('session', JSON.stringify(res));
+        console.log('app init success');
+      } catch (err) {
+        console.log('App is not running in desktop');
+        const envs = await getPlatformEnv();
+        if (!process.env.NEXT_PUBLIC_MOCK_USER) {
+          localStorage.removeItem('session');
+          openConfirm(() => {
+            window.open(`https://${envs.domain}`, '_self');
+          })();
+        }
+      }
+    })();
+    NProgress.done();
 
-  //   return response;
-  // }, [openConfirm]);
+    return response;
+  }, [openConfirm]);
 
-  // // add resize event
-  // useEffect(() => {
-  //   const resize = throttle((e: Event) => {
-  //     const documentWidth = document.documentElement.clientWidth || document.body.clientWidth;
-  //     setScreenWidth(documentWidth);
-  //   }, 200);
-  //   window.addEventListener('resize', resize);
-  //   const documentWidth = document.documentElement.clientWidth || document.body.clientWidth;
-  //   setScreenWidth(documentWidth);
+  // add resize event
+  useEffect(() => {
+    const resize = throttle((e: Event) => {
+      const documentWidth = document.documentElement.clientWidth || document.body.clientWidth;
+      setScreenWidth(documentWidth);
+    }, 200);
+    window.addEventListener('resize', resize);
+    const documentWidth = document.documentElement.clientWidth || document.body.clientWidth;
+    setScreenWidth(documentWidth);
 
-  //   return () => {
-  //     window.removeEventListener('resize', resize);
-  //   };
-  // }, [setScreenWidth]);
+    return () => {
+      window.removeEventListener('resize', resize);
+    };
+  }, [setScreenWidth]);
 
   // init
   useEffect(() => {
@@ -98,7 +97,6 @@ function App({ Component, pageProps }: AppProps) {
       }
     };
 
-    getEnv();
     (async () => {
       try {
         const lang = await sealosApp.getLanguage();
@@ -139,7 +137,6 @@ function App({ Component, pageProps }: AppProps) {
         <ChakraProvider theme={theme}>
           <Component {...pageProps} />
           <ConfirmChild />
-          <Loading loading={loading} />
         </ChakraProvider>
       </QueryClientProvider>
     </>

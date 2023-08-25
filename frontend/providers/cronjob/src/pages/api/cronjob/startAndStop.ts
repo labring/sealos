@@ -11,10 +11,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       kubeconfig: await authSession(req)
     });
 
-    console.log(jobName, type);
     const options = { headers: { 'Content-type': k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH } };
 
-    // crd patch
     const patch = [{ op: 'replace', path: '/spec/suspend', value: type === 'Stop' ? true : false }];
 
     const response: any = await k8sBatch.patchNamespacedCronJob(

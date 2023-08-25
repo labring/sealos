@@ -11,7 +11,7 @@ function Home() {
   const { Loading } = useLoading();
   const [initialized, setInitialized] = useState(false);
 
-  const { refetch } = useQuery(['initDbData'], setJobList, {
+  const { refetch } = useQuery(['initJobData'], setJobList, {
     refetchInterval: 3000,
     onSettled() {
       setInitialized(true);

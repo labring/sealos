@@ -1,8 +1,4 @@
-import { GET, POST, DELETE } from '@/services/request';
-import type { Response as resourcePriceResponse } from '@/pages/api/platform/resourcePrice';
-import type { Response as DBVersionMapType } from '@/pages/api/platform/getVersion';
-import { Response as EnvResponse } from '@/pages/api/getEnv';
+import { GET } from '@/services/request';
+import { Response as EnvResponse } from '@/pages/api/platform/getEnv';
 
-export const getResourcePrice = () => GET<resourcePriceResponse>('/api/platform/resourcePrice');
-export const getAppEnv = () => GET<EnvResponse>('/api/getEnv');
-export const getDBVersionMap = () => GET<DBVersionMapType>('/api/platform/getVersion');
+export const getPlatformEnv = () => GET<EnvResponse>('/api/platform/getEnv');

@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
-import { Box, Grid, useTheme, Flex } from '@chakra-ui/react';
-import YamlCode from '@/components/YamlCode/index';
-import styles from './index.module.scss';
-import { useCopyData } from '@/utils/tools';
-import type { YamlItemType, QueryType } from '@/types';
-import Tabs from '@/components/Tabs';
-import { obj2Query } from '@/api/tools';
-import { useRouter } from 'next/router';
 import MyIcon from '@/components/Icon';
+import Tabs from '@/components/Tabs';
+import YamlCode from '@/components/YamlCode/index';
+import type { QueryType, YamlItemType } from '@/types';
+import { obj2Query, useCopyData } from '@/utils/tools';
+import { Box, Flex, useTheme } from '@chakra-ui/react';
+import { useRouter } from 'next/router';
+import { useState } from 'react';
+import styles from './index.module.scss';
 
 const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: number }) => {
   const theme = useTheme();
@@ -17,14 +16,8 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   return (
-    <Grid
-      h={'100%'}
-      templateColumns={'220px 1fr'}
-      gridGap={5}
-      alignItems={'start'}
-      px={`${pxVal}px`}
-    >
-      <Box>
+    <Flex w="100%" h="100%" justifyContent={'center'} px="32px">
+      <Box w="220px">
         <Tabs
           list={[
             { id: 'form', label: 'Config Form' },
@@ -78,6 +71,8 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
 
       {!!yamlList[selectedIndex] && (
         <Flex
+          w="786px"
+          ml="16px"
           className={styles.codeBox}
           flexDirection={'column'}
           h={'100%'}
@@ -104,7 +99,7 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
           </Box>
         </Flex>
       )}
-    </Grid>
+    </Flex>
   );
 };
 

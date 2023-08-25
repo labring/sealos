@@ -167,6 +167,9 @@
   "InnoDB Buffer Pool": "InnoDB 缓冲池",
   "Database Usage": "数据库用量",
   "Disk": "磁盘空间",
+  "Schedule": "表达式",
+  "Last Schedule Time": "最后调度时间",
+  "Last Successful Time": "上一次成功时间",
   "job": {
     "list": "任务列表",
     "create": "新建任务",

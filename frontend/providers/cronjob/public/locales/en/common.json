@@ -120,6 +120,9 @@
   "InnoDB Buffer Pool": "InnoDB Buffer Pool",
   "Database Usage": "Database Usage",
   "Disk": "Disk",
+  "Schedule": "Schedule",
+  "Last Schedule Time": "Last Schedule Time",
+  "Last Successful Time": "Last Successful Time",
   "job": {
     "list": "Cron Job List",
     "create": "Create Job",

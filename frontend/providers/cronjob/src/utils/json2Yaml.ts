@@ -31,9 +31,23 @@ export const json2CronJob = (data: CronJobEditType) => {
             valueFrom: env.valueFrom
           }))
         : [],
-
-    args: data.cmdParam ? [data.cmdParam] : [],
-    imagePullPolicy: 'Always'
+    command: (() => {
+      if (!data.runCMD) return undefined;
+      try {
+        return JSON.parse(data.runCMD);
+      } catch (error) {
+        return data.runCMD.split(' ').filter((item) => item);
+      }
+    })(),
+    args: (() => {
+      if (!data.cmdParam) return undefined;
+      try {
+        return JSON.parse(data.cmdParam) as string[];
+      } catch (error) {
+        return [data.cmdParam];
+      }
+    })(),
+    imagePullPolicy: 'IfNotPresent'
   };
 
   const template = {
