@@ -94,13 +94,14 @@ func (k *KubeadmRuntime) saveNewKubeadmConfig() error {
 
 func (k *KubeadmRuntime) uploadConfigFromKubeadm() error {
 	logger.Info("start to upload kubeadm config for inCluster ...")
-	outConfigPath := path.Join(k.getContentData().EtcPath(), defaultUpdateKubeadmFileName)
-	data, err := file.ReadAll(outConfigPath)
+	in := path.Join(k.getContentData().EtcPath(), defaultUpdateKubeadmFileName)
+	out := path.Join(k.getContentData().ConfigPath(), defaultUpdateKubeadmFileName)
+	data, err := file.ReadAll(in)
 	if err != nil {
 		return err
 	}
 	logger.Debug("current update yaml data is %s", string(data))
-	err = k.sshCopy(k.getMaster0IPAndPort(), outConfigPath, outConfigPath)
+	err = k.sshCopy(k.getMaster0IPAndPort(), in, out)
 	if err != nil {
 		return fmt.Errorf("copy config update kubeadm yaml error: %s", err.Error())
 	}

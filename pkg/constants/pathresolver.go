@@ -92,20 +92,22 @@ func IsRegistryDir(entry fs.DirEntry) bool {
 }
 
 type PathResolver interface {
+	// data dir
 	Homedir() string
 	RootFSPath() string
 	RootFSEtcPath() string
 	RootFSStaticsPath() string
 	RootFSScriptsPath() string
 	RootFSRegistryPath() string
+	ConfigPath() string // for storing temporary configs in remote
 
+	// for persistent sealos runtime configs
 	PkiPath() string
 	PkiEtcdPath() string
 	AdminFile() string
 	EtcPath() string
 	TmpPath() string
 
-	RootFSCharsPath() string
 	RootFSManifestsPath() string
 	RootFSBinPath() string
 	RootFSSealctlPath() string
@@ -122,6 +124,7 @@ func (d *defaultPathResolver) RootFSSealctlPath() string {
 func (d *defaultPathResolver) RootFSScriptsPath() string {
 	return filepath.Join(d.RootFSPath(), ScriptsDirName)
 }
+
 func (d *defaultPathResolver) RootFSEtcPath() string {
 	return filepath.Join(d.RootFSPath(), EtcDirName)
 }
@@ -142,10 +145,16 @@ func (d *defaultPathResolver) RootFSBinPath() string {
 	return filepath.Join(d.RootFSPath(), BinDirName)
 }
 
+func (d *defaultPathResolver) ConfigPath() string {
+	return filepath.Join(d.Homedir(), EtcDirName)
+}
+
+// only for local
 func (d *defaultPathResolver) EtcPath() string {
 	return filepath.Join(ClusterDir(d.clusterName), EtcDirName)
 }
 
+// $HOME/.$APP_NAME/$CLUSTER_NAME/etc/admin.conf
 func (d *defaultPathResolver) AdminFile() string {
 	return filepath.Join(d.EtcPath(), "admin.conf")
 }

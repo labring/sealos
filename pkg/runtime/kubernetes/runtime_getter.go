@@ -147,12 +147,11 @@ func (k *KubeadmRuntime) execIPVSPod(ip string, masters []string) error {
 }
 
 func (k *KubeadmRuntime) execToken(ip, certificateKey string) (string, error) {
-	return k.getRemoteInterface().Token(ip, k.initMasterKubeadmConfigFile(), certificateKey)
+	return k.getRemoteInterface().Token(ip, k.getInitMasterKubeadmConfigFilePath(), certificateKey)
 }
 
 func (k *KubeadmRuntime) execHostname(ip string) (string, error) {
 	hostname, err := k.getRemoteInterface().Hostname(ip)
-	// tips: if hostname is upper,kubelet init master0 is not allowed to modify node
 	return strings.ToLower(hostname), err
 }
 
@@ -228,6 +227,6 @@ func (k *KubeadmRuntime) getKubeExpansion() (kubernetes.Expansion, error) {
 	return kubernetes.NewKubeExpansion(ki.Kubernetes()), nil
 }
 
-func (k *KubeadmRuntime) initMasterKubeadmConfigFile() string {
-	return path.Join(k.getContentData().EtcPath(), defaultInitKubeadmFileName)
+func (k *KubeadmRuntime) getInitMasterKubeadmConfigFilePath() string {
+	return path.Join(k.getContentData().ConfigPath(), defaultInitKubeadmFileName)
 }

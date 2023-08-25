@@ -40,6 +40,7 @@ type Interface interface {
 	Execute(cluster *v2.Cluster) error
 }
 
+// compatible with older sealos versions
 func SyncNewVersionConfig(clusterName string) {
 	d := constants.NewPathResolver(clusterName)
 	if !file.IsExist(d.PkiPath()) {

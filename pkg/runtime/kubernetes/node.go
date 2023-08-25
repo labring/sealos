@@ -86,7 +86,7 @@ func (k *KubeadmRuntime) copyKubeadmConfigToNode(node string) error {
 		return fmt.Errorf("failed to generate join kubeadm config: %v", err)
 	}
 	joinConfigPath := path.Join(k.getContentData().TmpPath(), defaultJoinNodeKubeadmFileName)
-	outConfigPath := path.Join(k.getContentData().EtcPath(), defaultJoinNodeKubeadmFileName)
+	outConfigPath := path.Join(k.getContentData().ConfigPath(), defaultJoinNodeKubeadmFileName)
 	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {
 		return fmt.Errorf("write config join kubeadm config error: %s", err.Error())

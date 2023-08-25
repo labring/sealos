@@ -75,10 +75,10 @@ func (k *KubeadmRuntime) ReplaceKubeConfigV1991V1992(masters []string) bool {
 	return false
 }
 
-func (k *KubeadmRuntime) sendKubeConfigFile(hosts []string, kubeFile string) error {
-	absKubeFile := path.Join(kubernetesEtc, kubeFile)
-	sealosKubeFile := path.Join(k.getContentData().EtcPath(), kubeFile)
-	return k.sendFileToHosts(hosts, sealosKubeFile, absKubeFile)
+func (k *KubeadmRuntime) sendKubeConfigFile(hosts []string, filename string) error {
+	dst := path.Join(kubernetesEtc, filename)
+	src := path.Join(k.getContentData().EtcPath(), filename)
+	return k.sendFileToHosts(hosts, src, dst)
 }
 
 func (k *KubeadmRuntime) sendNewCertAndKey(hosts []string) error {
