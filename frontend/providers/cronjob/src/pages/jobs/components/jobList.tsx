@@ -1,3 +1,4 @@
+import { updateCronJobStatus } from '@/api/job';
 import MyIcon from '@/components/Icon';
 import MyMenu from '@/components/Menu';
 import MyTable from '@/components/Table';
@@ -32,61 +33,18 @@ const JobList = ({
     content: t('Pause Hint')
   });
 
-  const handleRestartApp = useCallback(
-    async (db: CronJobListItemType) => {
-      try {
-        setLoading(true);
-        await restartDB({ dbName: db.name, dbType: db.dbType });
-        toast({
-          title: t('Restart Success'),
-          status: 'success'
-        });
-      } catch (error: any) {
-        toast({
-          title: typeof error === 'string' ? error : error.message || t('Restart Success'),
-          status: 'error'
-        });
-        console.error(error, '==');
-      }
-      setLoading(false);
-    },
-    [setLoading, t, toast]
-  );
-
   const handlePauseApp = useCallback(
-    async (db: CronJobListItemType) => {
+    async (job: CronJobListItemType, type: 'Stop' | 'Start') => {
       try {
         setLoading(true);
-        await pauseDBByName({ dbName: db.name, dbType: db.dbType });
+        await updateCronJobStatus({ jobName: job.name, type: type });
         toast({
-          title: t('Pause Success'),
+          title: type === 'Stop' ? t('Pause Success') : t('Start Success'),
           status: 'success'
         });
       } catch (error: any) {
         toast({
           title: typeof error === 'string' ? error : error.message || t('Pause Error'),
-          status: 'error'
-        });
-        console.error(error);
-      }
-      setLoading(false);
-      refetchApps();
-    },
-    [refetchApps, setLoading, t, toast]
-  );
-
-  const handleStartApp = useCallback(
-    async (db: CronJobListItemType) => {
-      try {
-        setLoading(true);
-        await startDBByName({ dbName: db.name, dbType: db.dbType });
-        toast({
-          title: t('Start Success'),
-          status: 'success'
-        });
-      } catch (error: any) {
-        toast({
-          title: typeof error === 'string' ? error : error.message || t('Start Error'),
           status: 'error'
         });
         console.error(error);
@@ -144,7 +102,7 @@ const JobList = ({
       key: 'control',
       render: (item: CronJobListItemType) => (
         <Flex>
-          <Button
+          {/* <Button
             mr={5}
             variant={'base'}
             leftIcon={<MyIcon name={'detail'} transform={'translateY(-1px)'} />}
@@ -152,7 +110,7 @@ const JobList = ({
             onClick={() => {}}
           >
             {t('Details')}
-          </Button>
+          </Button> */}
           <MyMenu
             width={100}
             Button={
@@ -169,7 +127,7 @@ const JobList = ({
               </MenuButton>
             }
             menuList={[
-              ...(item.status === CronJobStatusEnum.Stopped
+              ...(item.status === CronJobStatusEnum.Suspend
                 ? [
                     {
                       child: (
@@ -178,7 +136,7 @@ const JobList = ({
                           <Box ml={2}>{t('Continue')}</Box>
                         </>
                       ),
-                      onClick: () => handleStartApp(item)
+                      onClick: () => handlePauseApp(item, 'Start')
                     }
                   ]
                 : [
@@ -189,7 +147,7 @@ const JobList = ({
                           <Box ml={2}>{t('Update')}</Box>
                         </>
                       ),
-                      onClick: () => router.push(`/db/edit?name=${item.name}`)
+                      onClick: () => router.push(`/job/edit?name=${item.name}`)
                     }
                   ]),
               ...(item.status === CronJobStatusEnum.Running
@@ -201,7 +159,7 @@ const JobList = ({
                           <Box ml={2}>{t('Pause')}</Box>
                         </>
                       ),
-                      onClick: onOpenPause(() => handlePauseApp(item))
+                      onClick: onOpenPause(() => handlePauseApp(item, 'Stop'))
                     }
                   ]
                 : []),

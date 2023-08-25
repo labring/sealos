@@ -1,4 +1,4 @@
-import { applyYamlList } from '@/api/db';
+import { applyYamlList } from '@/api/job';
 import { editModeMap } from '@/constants/editApp';
 import { DefaultJobEditValue } from '@/constants/job';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -130,9 +130,13 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
         return null;
       }
       setIsLoading(true);
+      return loadDBDetail(dbName);
     },
     {
-      onSuccess(res) {},
+      onSuccess(res) {
+        if (!res) return;
+        formHook.reset(adaptDBForm(res));
+      },
       onError(err) {
         toast({
           title: String(err),

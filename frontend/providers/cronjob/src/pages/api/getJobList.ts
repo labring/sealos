@@ -9,7 +9,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const { namespace, k8sBatch } = await getK8s({
       kubeconfig: await authSession(req)
     });
-
     const response: any = await k8sBatch.listNamespacedCronJob(namespace);
 
     jsonRes(res, { data: response?.body?.items });

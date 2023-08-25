@@ -25,7 +25,7 @@
   "Update": "Update",
   "Copy Success": "Copy Success",
   "Copy Failed": "Copy Failed",
-  "Pause Hint": "Note: you cannot change the database while paused, and the storage will still be charged, please confirm!",
+  "Pause Hint": "Note that tasks cannot be executed while in the paused state",
   "Restart Error": "Restart Error",
   "Restart Success": "Restart Success",
   "Pause Success": "Pause Success",

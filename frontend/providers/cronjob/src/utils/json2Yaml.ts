@@ -42,6 +42,8 @@ export const json2CronJob = (data: CronJobEditType) => {
     metadata: metadata,
     spec: {
       schedule: _schedule,
+      successfulJobsHistoryLimit: 3,
+      failedJobsHistoryLimit: 3,
       jobTemplate: {
         spec: {
           template: {
