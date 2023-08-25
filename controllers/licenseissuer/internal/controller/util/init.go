@@ -33,19 +33,19 @@ type RegisterRequest struct {
 
 // The following code is used to implement the instance of sub-task which is used to
 // initialize the cluster uuid and preset root user for mongoDB
-type initTask struct {
+type InitTask struct {
 	options OptionsReadOnly
 	probe   InitProbe
 }
 
-func NewInitTask(o OptionsReadOnly) *initTask {
-	return &initTask{
+func NewInitTask(o OptionsReadOnly) *InitTask {
+	return &InitTask{
 		options: o,
 		probe:   GetInitProbe(),
 	}
 }
 
-func (t *initTask) initWork(instance *TaskInstance) error {
+func (t *InitTask) initWork(instance *TaskInstance) error {
 	// register function is idempotent
 	err := t.register(instance)
 	if err != nil {
@@ -59,7 +59,7 @@ func (t *initTask) initWork(instance *TaskInstance) error {
 // 1. check if the cluster has been registered
 // 2. store cluster-info to k8s
 
-func (t *initTask) register(instance *TaskInstance) error {
+func (t *InitTask) register(instance *TaskInstance) error {
 	ClusterInfo := createClusterInfo()
 	// step 1
 	// check if the cluster has been registered
@@ -83,7 +83,7 @@ func (t *initTask) register(instance *TaskInstance) error {
 }
 
 // check if the cluster has been registered.
-func (t *initTask) checkRegister(instance *TaskInstance) (bool, error) {
+func (t *InitTask) checkRegister(instance *TaskInstance) (bool, error) {
 	info := &corev1.Secret{}
 	err := instance.Get(instance.ctx, types.NamespacedName{
 		Name:      ClusterInfo,

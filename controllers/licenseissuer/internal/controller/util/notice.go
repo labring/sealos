@@ -29,9 +29,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// the notice task is used to get the notification from the cloud.
+// the NoticeWork task is used to get the notification from the cloud.
 // And then send the notification to the cluster.
-type notice struct {
+type NoticeWork struct {
 	lastTime int64
 }
 
@@ -58,7 +58,7 @@ func (nr *NotificationRequest) setTimestamp(timestamp int64) *NotificationReques
 	return nr
 }
 
-func (n *notice) noticeWork(instance *TaskInstance) error {
+func (n *NoticeWork) noticeWork(instance *TaskInstance) error {
 	// init
 	receiver := ntf.NewReceiver(instance.ctx, instance.Client)
 	manager := ntf.NewNotificationManager(instance.ctx, instance.Client,
@@ -137,11 +137,11 @@ func GetUID(ctx context.Context, client client.Client) (string, error) {
 	return uid, nil
 }
 
-func NewNotice() *notice {
-	return &notice{lastTime: time.Now().Add(-7 * time.Hour).Unix()}
+func NewNotice() *NoticeWork {
+	return &NoticeWork{lastTime: time.Now().Add(-7 * time.Hour).Unix()}
 }
 
-func (n *notice) getEvents(instance *TaskInstance, body []byte) ([]ntf.Event, error) {
+func (n *NoticeWork) getEvents(instance *TaskInstance, body []byte) ([]ntf.Event, error) {
 	var resps []NotificationResponse
 	var events []ntf.Event
 	err := Convert(body, &resps)
@@ -166,16 +166,16 @@ func (n *notice) getEvents(instance *TaskInstance, body []byte) ([]ntf.Event, er
 	return events, nil
 }
 
-// the noticeCleaner task is used to clean the notification in the cluster periodically.
-type noticeCleaner struct {
+// the NoticeCleaner task is used to clean the notification in the cluster periodically.
+type NoticeCleaner struct {
 	lastTime int64
 }
 
-func NewNoticeCleaner() *noticeCleaner {
-	return &noticeCleaner{lastTime: time.Now().Unix()}
+func NewNoticeCleaner() *NoticeCleaner {
+	return &NoticeCleaner{lastTime: time.Now().Unix()}
 }
 
-func (nc *noticeCleaner) cleanWork(instance *TaskInstance) error {
+func (nc *NoticeCleaner) cleanWork(instance *TaskInstance) error {
 	// catch all notification in the cluster
 	notifications := &notificationv1.NotificationList{}
 
@@ -206,7 +206,7 @@ func (nc *noticeCleaner) cleanWork(instance *TaskInstance) error {
 	return nil
 }
 
-func (nc *noticeCleaner) getNotificationsExpired(instance *TaskInstance) ([]notificationv1.Notification, error) {
+func (nc *NoticeCleaner) getNotificationsExpired(instance *TaskInstance) ([]notificationv1.Notification, error) {
 	notifications := &notificationv1.NotificationList{}
 	err := instance.List(instance.ctx, notifications)
 	if err != nil {
@@ -244,7 +244,7 @@ const maxChannelSize = 500
 
 type FilterFunc func(string) bool
 
-func (n *notice) getUserNamespace(instance *TaskInstance, opt FilterFunc) []string {
+func (n *NoticeWork) getUserNamespace(instance *TaskInstance, opt FilterFunc) []string {
 	namespaceList := &corev1.NamespaceList{}
 	err := instance.List(instance.ctx, namespaceList)
 	if err != nil {

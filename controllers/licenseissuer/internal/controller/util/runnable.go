@@ -59,7 +59,7 @@ func Once(_ context.Context, _ time.Duration, t Task) error {
 }
 
 // OnceWithProbe func is used to run a task only once.
-func OnceWithProbe(ctx context.Context, preiod time.Duration, t Task) error {
+func OnceWithProbe(ctx context.Context, period time.Duration, t Task) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -67,13 +67,13 @@ func OnceWithProbe(ctx context.Context, preiod time.Duration, t Task) error {
 		default:
 			if !t.Probe() {
 				(t.Log()).Info("the probe is not ready, try again after some time")
-				time.Sleep(preiod)
+				time.Sleep(period)
 				continue
 			}
 			err := t.Run()
 			if err != nil {
 				(t.Log()).Error(err, "failed to run task")
-				time.Sleep(preiod)
+				time.Sleep(period)
 				continue
 			}
 		}

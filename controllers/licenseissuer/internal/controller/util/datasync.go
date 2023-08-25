@@ -21,11 +21,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-type datasycn struct {
+type DataSycn struct {
 }
 
-func NewDataSync() *datasycn {
-	return &datasycn{}
+func NewDataSync() *DataSycn {
+	return &DataSycn{}
 }
 
 type SyncRequest struct {
@@ -45,7 +45,7 @@ type Config struct {
 	// Add other fields here to support future expansion needs.
 }
 
-func (d *datasycn) sync(instance *TaskInstance) error {
+func (d *DataSycn) sync(instance *TaskInstance) error {
 	uid, urlMap, err := GetUIDURL(instance.ctx, instance.Client)
 	if err != nil {
 		instance.logger.Info("failed to get uid and url map")
@@ -80,7 +80,7 @@ func (d *datasycn) sync(instance *TaskInstance) error {
 	return nil
 }
 
-func (d *datasycn) updateConfigMap(instance *TaskInstance, new map[string]string, id types.NamespacedName) error {
+func (d *DataSycn) updateConfigMap(instance *TaskInstance, new map[string]string, id types.NamespacedName) error {
 	configMap := &corev1.ConfigMap{}
 	err := instance.Client.Get(instance.ctx, id, configMap)
 	if err != nil {

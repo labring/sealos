@@ -48,18 +48,18 @@ type networkProbe struct {
 	options OptionsReadWrite
 }
 
-type networkConfig struct {
+type NetworkConfig struct {
 	url string
 	np  NetworkProbe
 }
 
-func NewNetworkConfig() *networkConfig {
-	return &networkConfig{
+func NewNetworkConfig() *NetworkConfig {
+	return &NetworkConfig{
 		np: GetNetworkProbe(),
 	}
 }
 
-func (n *networkConfig) probe(instance *TaskInstance) error {
+func (n *NetworkConfig) probe(instance *TaskInstance) error {
 	urlMap, err := GetURL(instance.ctx, instance.Client)
 	if err != nil {
 		instance.logger.Info("get url error", "error", err)
@@ -109,7 +109,7 @@ type RegisterProbe interface {
 	SetFlag(flag bool)
 }
 
-type register struct {
+type RegisterWork struct {
 	probe RegisterProbe
 }
 
@@ -130,24 +130,24 @@ func GetRegisterProbe() RegisterProbe {
 	return &registerProbeInstance
 }
 
-func NewRegister() *register {
-	return &register{
+func NewRegister() *RegisterWork {
+	return &RegisterWork{
 		probe: GetRegisterProbe(),
 	}
 }
 
-func (r *register) register(instance *TaskInstance) error {
+func (r *RegisterWork) register(instance *TaskInstance) error {
 	return r.registerToCloud(instance)
 }
 
-func (r *register) registerToCloud(instance *TaskInstance) error {
+func (r *RegisterWork) registerToCloud(instance *TaskInstance) error {
 	uid, urlMap, err := GetUIDURL(instance.ctx, instance.Client)
 	if err != nil {
 		instance.logger.Info("get uid and url error", "error", err)
 		return err
 	}
 	rr := RegisterRequest{
-		UID: string(uid),
+		UID: uid,
 	}
 	// send info to cloud
 	err = Push(urlMap[RegisterURL], rr)

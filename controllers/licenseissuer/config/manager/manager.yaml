@@ -74,16 +74,6 @@ spec:
         imagePullPolicy: Always
         name: manager
         env:
-        - name: CAN_CONNECT_TO_EXTERNAL_NETWORK
-          valueFrom:
-            secretKeyRef:
-              key: canConnectToExternalNetwork
-              name: licenseissuer-env
-        - name: MONITOR
-          valueFrom:
-            secretKeyRef:
-              key: isMonitor
-              name: licenseissuer-env
         - name: MONGO_URI
           valueFrom: 
             secretKeyRef:
