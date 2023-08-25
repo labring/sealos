@@ -58,6 +58,30 @@ func Once(_ context.Context, _ time.Duration, t Task) error {
 	return nil
 }
 
+// OnceWithProbe func is used to run a task only once.
+func OnceWithProbe(ctx context.Context, preiod time.Duration, t Task) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+			if !t.Probe() {
+				(t.Log()).Info("the probe is not ready, try again after some time")
+				time.Sleep(preiod)
+				continue
+			}
+			err := t.Run()
+			if err != nil {
+				(t.Log()).Error(err, "failed to run task")
+				time.Sleep(preiod)
+				continue
+			}
+		}
+		break
+	}
+	return nil
+}
+
 // Periodic func is used to run a task periodically.
 func Periodic(ctx context.Context, period time.Duration, t Task) error {
 	for {
@@ -147,6 +171,8 @@ func (ti *TaskInstance) Start(ctx context.Context) error {
 	switch ti.policy {
 	case "Once":
 		return Once(ctx, ti.period, ti)
+	case "OnceWithProbe":
+		return OnceWithProbe(ctx, ti.period, ti)
 	case "Periodic":
 		return Periodic(ctx, ti.period, ti)
 	case "PeriodicWithProbe":
@@ -170,6 +196,8 @@ func (ti *TaskInstance) Run() error {
 		return NewDataSync().sync(ti)
 	case NetWorkConfig:
 		return NewNetworkConfig().probe(ti)
+	case Register:
+		return NewRegister().register(ti)
 	default:
 		return fmt.Errorf("the task is not supported")
 		// allow developers to add their own runnable task

@@ -128,8 +128,10 @@ func (o *OperatorOptions) initOptions() {
 	o.DBOptions.initOptions()
 	o.NetWorkOptions.initOptions()
 
+	// allow developer to choose the policy and period of the task
 	o.RunnableOptions.Policy[Init] = OncePolicy
-	//allow developer to choose the policy and period of the task
+	o.RunnableOptions.Period[Init] = 0
+
 	o.RunnableOptions.Policy[Collector] = PeriodicWithProbePolicy
 	o.RunnableOptions.Period[Collector] = 8 * time.Hour
 
@@ -144,6 +146,9 @@ func (o *OperatorOptions) initOptions() {
 
 	o.RunnableOptions.Policy[NetWorkConfig] = PeriodicPolicy
 	o.RunnableOptions.Period[NetWorkConfig] = 30 * time.Minute
+
+	o.RunnableOptions.Policy[Register] = OnceWithProbePolicy
+	o.RunnableOptions.Period[Register] = 5 * time.Minute
 	// Add more tasks Policy and Period here
 }
 

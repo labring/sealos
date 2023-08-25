@@ -17,7 +17,6 @@ limitations under the License.
 package util
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/google/uuid"
@@ -58,8 +57,7 @@ func (t *initTask) initWork(instance *TaskInstance) error {
 }
 
 // 1. check if the cluster has been registered
-// 2. register to cloud (if the monitor is enabled)
-// 3. store cluster-info to k8s
+// 2. store cluster-info to k8s
 
 func (t *initTask) register(instance *TaskInstance) error {
 	ClusterInfo := createClusterInfo()
@@ -76,15 +74,6 @@ func (t *initTask) register(instance *TaskInstance) error {
 	}
 
 	// step 2
-	// if the monitor is enabled, info will be sent to the cloud.
-	if t.options.GetNetWorkOptions().EnableExternalNetWork {
-		err := t.registerToCloud(*ClusterInfo, instance)
-		if err != nil {
-			instance.logger.Info("failed to register to cloud", "err", err)
-			return err
-		}
-	}
-	// step 3
 	// only after register to cloud, the store-behavior will be executed.
 	err = instance.Create(instance.ctx, ClusterInfo)
 	if err != nil {
@@ -104,23 +93,6 @@ func (t *initTask) checkRegister(instance *TaskInstance) (bool, error) {
 		return false, nil
 	}
 	return true, err
-}
-
-// registerToCloud is used to send info to the cloud.
-func (t *initTask) registerToCloud(ClusterInfo corev1.Secret, instance *TaskInstance) error {
-	urlMap, err := GetURL(instance.ctx, instance.Client)
-	if err != nil {
-		return fmt.Errorf("failed to get url: %w", err)
-	}
-	rr := RegisterRequest{
-		UID: string(ClusterInfo.Data["uuid"]),
-	}
-	// send info to cloud
-	err = Push(urlMap[RegisterURL], rr)
-	if err != nil {
-		return fmt.Errorf("failed to write to cloud: %w", err)
-	}
-	return nil
 }
 
 func createClusterInfo() *corev1.Secret {

@@ -16,7 +16,9 @@ limitations under the License.
 
 package util
 
-import "sync"
+import (
+	"sync"
+)
 
 // Probe is an interface for a probe check
 type Probe interface {
@@ -27,7 +29,9 @@ type Probe interface {
 func ProbeFor(taskType task) []Probe {
 	switch taskType {
 	case Collector, DataSync, Notice:
-		return []Probe{ProbeForInit(), ProbeForNetWork()}
+		return []Probe{ProbeForInit(), ProbeForNetWork(), ProbeForRegister()}
+	case Register:
+		return []Probe{ProbeForInit()}
 	default:
 		return nil
 	}
@@ -98,4 +102,71 @@ func GetNetworkProbe() NetworkProbe {
 
 func ProbeForNetWork() Probe {
 	return GetNetworkProbe()
+}
+
+type RegisterProbe interface {
+	Probe
+	SetFlag(flag bool)
+}
+
+type register struct {
+	probe RegisterProbe
+}
+
+type registerProbe struct {
+	flag bool
+}
+
+var onceForRegisterProbe sync.Once
+var registerProbeInstance registerProbe
+
+var _ RegisterProbe = &registerProbe{}
+var _ Probe = &registerProbe{}
+
+func GetRegisterProbe() RegisterProbe {
+	onceForRegisterProbe.Do(func() {
+		registerProbeInstance = registerProbe{}
+	})
+	return &registerProbeInstance
+}
+
+func NewRegister() *register {
+	return &register{
+		probe: GetRegisterProbe(),
+	}
+}
+
+func (r *register) register(instance *TaskInstance) error {
+	return r.registerToCloud(instance)
+}
+
+func (r *register) registerToCloud(instance *TaskInstance) error {
+	uid, urlMap, err := GetUIDURL(instance.ctx, instance.Client)
+	if err != nil {
+		instance.logger.Info("get uid and url error", "error", err)
+		return err
+	}
+	rr := RegisterRequest{
+		UID: string(uid),
+	}
+	// send info to cloud
+	err = Push(urlMap[RegisterURL], rr)
+	if err != nil {
+		instance.logger.Info("write to cloud error", "error", err)
+		return err
+	}
+	r.probe.SetFlag(true)
+	return nil
+}
+
+func (r *registerProbe) SetFlag(flag bool) {
+	r.flag = flag
+}
+
+func ProbeForRegister() Probe {
+	return GetRegisterProbe()
+}
+
+func (r *registerProbe) Probe() bool {
+	return r.flag
 }
