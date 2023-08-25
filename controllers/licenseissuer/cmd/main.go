@@ -68,7 +68,6 @@ func main() {
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
-
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -97,14 +96,28 @@ func main() {
 
 	// get options for this Operator
 	options := util.GetOptions()
+	mongoURI := options.GetEnvOptions().MongoURI
+	dbCol, err := util.NewLicenseDB(mongoURI)
+	if err != nil {
+		setupLog.Error(err, "unable to create database")
+		os.Exit(1)
+	}
+	defer func() {
+		_ = dbCol.Disconnect()
+	}()
 
 	if err = (&controller.LicenseReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		DBCol:  dbCol,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "License")
 		os.Exit(1)
 	}
+
+	// server := util.NewLicenseServer("0.0.0.0", options.GetEnvOptions().ServerPort, util.NewLicenseClient(dbCol))
+	// server.Run()
+	// defer server.Stop()
 
 	// if err = (&controller.LauncherReconciler{
 	// 	Client: mgr.GetClient(),
