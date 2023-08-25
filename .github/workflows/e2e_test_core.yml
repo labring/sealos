@@ -98,8 +98,10 @@ jobs:
 
       - name: Verify E2e test
         run: |
-          sudo whereis command
-          sudo apt-get update
-          sudo apt-get install -y command-not-found
+          sudo apt-get remove docker docker-engine docker.io containerd runc
+          sudo apt-get purge docker-ce docker-ce-cli containerd.io # docker-compose-plugin
+          sudo apt-get remove -y moby-engine moby-cli moby-buildx moby-compose
+          sudo rm -rf /var/run/docker.sock
+          sudo rm -rf /run/containerd/containerd.sock
           sudo chmod a+x /tmp/e2e.test
           sudo /tmp/e2e.test --ginkgo.v --ginkgo.focus="${{ matrix.unit }}"
