@@ -17,7 +17,6 @@ package cmd
 import (
 	"fmt"
 	"path"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -27,9 +26,9 @@ import (
 	"github.com/labring/sealos/pkg/runtime/kubernetes"
 )
 
-var altNames string
-
 func newCertCmd() *cobra.Command {
+	var altNames []string
+
 	cmd := &cobra.Command{
 		Use:   "cert",
 		Short: "update Kubernetes API server's cert",
@@ -64,16 +63,12 @@ func newCertCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("get default runtime failed, %v", err)
 			}
-			return rt.UpdateCert(strings.Split(altNames, ","))
-		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if strings.TrimSpace(altNames) == "" {
-				return fmt.Errorf("this command alt-names param can't empty")
-			}
-			return nil
+			return rt.UpdateCertSANs(altNames)
 		},
 	}
 	cmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied exec action")
-	cmd.Flags().StringVar(&altNames, "alt-names", "", "add domain or ip in certs, sealos.io or 10.103.97.2")
+	cmd.Flags().StringSliceVar(&altNames, "alt-names", []string{}, "add extra Subject Alternative Names for certs, domain or ip, eg. sealos.io or 10.103.97.2")
+	_ = cmd.MarkFlagRequired("alt-names")
+
 	return cmd
 }

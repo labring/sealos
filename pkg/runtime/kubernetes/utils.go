@@ -34,10 +34,10 @@ const (
 	KUBESCHEDULERCONFIGFILE  = "/etc/kubernetes/scheduler.conf"
 )
 
-func (k *KubeadmRuntime) pipeline(name string, pipeline []func() error) error {
-	for _, f := range pipeline {
-		if err := f(); err != nil {
-			return fmt.Errorf("failed to %s %v", name, err)
+func (k *KubeadmRuntime) runPipelines(phase string, pipelines ...func() error) error {
+	for i := range pipelines {
+		if err := pipelines[i](); err != nil {
+			return fmt.Errorf("failed to %s: %v", phase, err)
 		}
 	}
 	return nil
@@ -124,5 +124,5 @@ func (k *KubeadmRuntime) RemoveNodeFromK8sClient(ip string) error {
 }
 
 func (k *KubeadmRuntime) setFeatureGatesConfiguration() {
-	k.KubeadmConfig.FinalizeFeatureGatesConfiguration()
+	k.kubeadmConfig.FinalizeFeatureGatesConfiguration()
 }

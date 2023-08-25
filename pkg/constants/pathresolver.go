@@ -34,7 +34,7 @@ var (
 
 const (
 	DefaultRootfsConfigFileName = "config.yml"
-	DataDirName                 = "rootfs"
+	rootFsDirName               = "rootfs"
 	EtcDirName                  = "etc"
 	ChartsDirName               = "charts"
 	ManifestsDirName            = "manifests"
@@ -163,13 +163,14 @@ func (d *defaultPathResolver) TmpPath() string {
 }
 
 func (d *defaultPathResolver) RootFSPath() string {
-	return filepath.Join(d.Homedir(), DataDirName)
+	return filepath.Join(d.Homedir(), rootFsDirName)
 }
 
 func (d *defaultPathResolver) RootFSStaticsPath() string {
 	return filepath.Join(d.RootFSPath(), StaticsDirName)
 }
 
+// data dir
 func (d *defaultPathResolver) Homedir() string {
 	return filepath.Join(DefaultClusterRootFsDir, "data", d.clusterName)
 }
