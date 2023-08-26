@@ -64,7 +64,7 @@ jobs:
             E2E_sealos_runtime_version_docker_126_test,
             E2E_sealos_runtime_version_docker_127_test
           ]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Download image-cri-shim
         uses: actions/download-artifact@v3
@@ -98,5 +98,10 @@ jobs:
 
       - name: Verify E2e test
         run: |
+          sudo apt-get remove docker docker-engine docker.io containerd runc
+          sudo apt-get purge docker-ce docker-ce-cli containerd.io # docker-compose-plugin
+          sudo apt-get remove -y moby-engine moby-cli moby-buildx moby-compose
+          sudo rm -rf /var/run/docker.sock
+          sudo rm -rf /run/containerd/containerd.sock
           sudo chmod a+x /tmp/e2e.test
           sudo /tmp/e2e.test --ginkgo.v --ginkgo.focus="${{ matrix.unit }}"
