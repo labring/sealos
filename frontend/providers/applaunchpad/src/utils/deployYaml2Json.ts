@@ -90,7 +90,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
         containerPort: str2Num(data.containerOutPort)
       }
     ],
-    imagePullPolicy: 'Always'
+    imagePullPolicy: 'IfNotPresent'
   };
   const configMapVolumeMounts = data.configMapList.map((item) => ({
     name: pathToNameFormat(item.mountPath),
