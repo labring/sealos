@@ -264,8 +264,7 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Pod{}, builder.WithPredicates(predicate.Funcs{
 			CreateFunc: func(event event.CreateEvent) bool {
-				_, ok := event.Object.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
-				return ok
+				return useGPU(event.Object)
 			},
 			UpdateFunc: func(event event.UpdateEvent) bool {
 				_, ok := event.ObjectNew.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
@@ -277,16 +276,12 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return phaseOld != phaseNew
 			},
 			DeleteFunc: func(event event.DeleteEvent) bool {
-				_, ok := event.Object.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
-				return ok
+				return useGPU(event.Object)
 			},
 		})).
 		Watches(&source.Kind{Type: &corev1.Node{}}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(predicate.Funcs{
 			CreateFunc: func(event event.CreateEvent) bool {
-				_, ok1 := event.Object.(*corev1.Node).Labels[NvidiaGPUMemory]
-				_, ok2 := event.Object.(*corev1.Node).Labels[NvidiaGPUProduct]
-				_, ok3 := event.Object.(*corev1.Node).Status.Allocatable[NvidiaGPU]
-				return ok1 && ok2 && ok3
+				return hasGPU(event.Object)
 			},
 			UpdateFunc: func(event event.UpdateEvent) bool {
 				oldVal, oldOk := event.ObjectOld.(*corev1.Node).Status.Allocatable[NvidiaGPU]
@@ -295,11 +290,21 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return oldOk && newOk && oldVal != newVal
 			},
 			DeleteFunc: func(event event.DeleteEvent) bool {
-				_, ok1 := event.Object.(*corev1.Node).Labels[NvidiaGPUMemory]
-				_, ok2 := event.Object.(*corev1.Node).Labels[NvidiaGPUProduct]
-				_, ok3 := event.Object.(*corev1.Node).Status.Allocatable[NvidiaGPU]
-				return ok1 && ok2 && ok3
+				return hasGPU(event.Object)
 			},
 		})).
 		Complete(r)
+}
+
+func useGPU(obj client.Object) bool {
+	_, ok := obj.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
+	return ok
+
+}
+
+func hasGPU(obj client.Object) bool {
+	_, ok1 := obj.(*corev1.Node).Labels[NvidiaGPUMemory]
+	_, ok2 := obj.(*corev1.Node).Labels[NvidiaGPUProduct]
+	_, ok3 := obj.(*corev1.Node).Status.Allocatable[NvidiaGPU]
+	return ok1 && ok2 && ok3
 }
