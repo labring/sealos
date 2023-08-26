@@ -299,7 +299,6 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func useGPU(obj client.Object) bool {
 	_, ok := obj.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
 	return ok
-
 }
 
 func hasGPU(obj client.Object) bool {
