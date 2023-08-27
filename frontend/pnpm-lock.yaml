@@ -592,6 +592,157 @@ importers:
         specifier: ^1.63.6
         version: 1.63.6
 
+  providers/cronjob:
+    dependencies:
+      '@chakra-ui/anatomy':
+        specifier: ^2.2.0
+        version: 2.2.0
+      '@chakra-ui/icons':
+        specifier: ^2.1.0
+        version: 2.1.0(@chakra-ui/system@2.6.0)(react@18.2.0)
+      '@chakra-ui/react':
+        specifier: ^2.8.0
+        version: 2.8.0(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(@types/react@18.0.27)(framer-motion@9.1.7)(react-dom@18.2.0)(react@18.2.0)
+      '@chakra-ui/system':
+        specifier: ^2.6.0
+        version: 2.6.0(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(react@18.2.0)
+      '@emotion/react':
+        specifier: ^11.11.1
+        version: 11.11.1(@types/react@18.0.27)(react@18.2.0)
+      '@emotion/styled':
+        specifier: ^11.11.0
+        version: 11.11.0(@emotion/react@11.11.1)(@types/react@18.0.27)(react@18.2.0)
+      '@kubernetes/client-node':
+        specifier: ^0.18.1
+        version: 0.18.1
+      '@next/font':
+        specifier: 13.1.6
+        version: 13.1.6
+      '@tanstack/react-query':
+        specifier: ^4.29.25
+        version: 4.29.25(react-dom@18.2.0)(react@18.2.0)
+      ansi_up:
+        specifier: ^5.2.1
+        version: 5.2.1
+      axios:
+        specifier: ^1.4.0
+        version: 1.4.0
+      date-fns:
+        specifier: ^2.30.0
+        version: 2.30.0
+      dayjs:
+        specifier: ^1.11.9
+        version: 1.11.9
+      echarts:
+        specifier: ^5.4.3
+        version: 5.4.3
+      framer-motion:
+        specifier: ^9.1.7
+        version: 9.1.7(react-dom@18.2.0)(react@18.2.0)
+      i18next:
+        specifier: ^22.5.1
+        version: 22.5.1
+      immer:
+        specifier: ^9.0.21
+        version: 9.0.21
+      js-cookie:
+        specifier: ^3.0.5
+        version: 3.0.5
+      js-yaml:
+        specifier: ^4.1.0
+        version: 4.1.0
+      jszip:
+        specifier: ^3.10.1
+        version: 3.10.1
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
+      nanoid:
+        specifier: ^4.0.2
+        version: 4.0.2
+      next:
+        specifier: 13.1.6
+        version: 13.1.6(@babel/core@7.22.9)(react-dom@18.2.0)(react@18.2.0)(sass@1.63.6)
+      next-i18next:
+        specifier: ^13.3.0
+        version: 13.3.0(i18next@22.5.1)(next@13.1.6)(react-i18next@12.3.1)(react@18.2.0)
+      nprogress:
+        specifier: ^0.2.0
+        version: 0.2.0
+      prettier:
+        specifier: ^2.8.8
+        version: 2.8.8
+      react:
+        specifier: 18.2.0
+        version: 18.2.0
+      react-day-picker:
+        specifier: ^8.8.0
+        version: 8.8.0(date-fns@2.30.0)(react@18.2.0)
+      react-dom:
+        specifier: 18.2.0
+        version: 18.2.0(react@18.2.0)
+      react-hook-form:
+        specifier: ^7.45.2
+        version: 7.45.2(react@18.2.0)
+      react-i18next:
+        specifier: ^12.3.1
+        version: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+      react-markdown:
+        specifier: ^8.0.7
+        version: 8.0.7(@types/react@18.0.27)(react@18.2.0)
+      react-syntax-highlighter:
+        specifier: ^15.5.0
+        version: 15.5.0(react@18.2.0)
+      sass:
+        specifier: ^1.63.6
+        version: 1.63.6
+      sealos-desktop-sdk:
+        specifier: workspace:*
+        version: link:../../packages/client-sdk
+      zustand:
+        specifier: ^4.3.9
+        version: 4.3.9(immer@9.0.21)(react@18.2.0)
+    devDependencies:
+      '@svgr/webpack':
+        specifier: ^6.5.1
+        version: 6.5.1
+      '@types/js-cookie':
+        specifier: ^3.0.3
+        version: 3.0.3
+      '@types/js-yaml':
+        specifier: ^4.0.5
+        version: 4.0.5
+      '@types/lodash':
+        specifier: ^4.14.195
+        version: 4.14.195
+      '@types/node':
+        specifier: 18.13.0
+        version: 18.13.0
+      '@types/nprogress':
+        specifier: ^0.2.0
+        version: 0.2.0
+      '@types/react':
+        specifier: 18.0.27
+        version: 18.0.27
+      '@types/react-dom':
+        specifier: 18.0.10
+        version: 18.0.10
+      '@types/react-syntax-highlighter':
+        specifier: ^15.5.7
+        version: 15.5.7
+      eslint:
+        specifier: 8.33.0
+        version: 8.33.0
+      eslint-config-next:
+        specifier: 13.1.6
+        version: 13.1.6(eslint@8.33.0)(typescript@5.1.6)
+      svg-inline-loader:
+        specifier: ^0.8.2
+        version: 0.8.2
+      webpack-bundle-analyzer:
+        specifier: ^4.9.0
+        version: 4.9.0
+
   providers/dbprovider:
     dependencies:
       '@chakra-ui/anatomy':
@@ -2582,7 +2733,7 @@ packages:
       '@emotion/react': '>=10.0.35'
       react: '>=18'
     dependencies:
-      '@emotion/react': 11.11.1(@types/react@18.0.27)(react@18.2.0)
+      '@emotion/react': 11.11.1(@types/react@18.0.37)(react@18.2.0)
       react: 18.2.0
     dev: false
 
@@ -3047,8 +3198,8 @@ packages:
       '@chakra-ui/react-env': 3.1.0(react@18.2.0)
       '@chakra-ui/system': 2.6.0(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(react@18.2.0)
       '@chakra-ui/utils': 2.0.15
-      '@emotion/react': 11.11.1(@types/react@18.0.27)(react@18.2.0)
-      '@emotion/styled': 11.11.0(@emotion/react@11.11.1)(@types/react@18.0.27)(react@18.2.0)
+      '@emotion/react': 11.11.1(@types/react@18.0.37)(react@18.2.0)
+      '@emotion/styled': 11.11.0(@emotion/react@11.11.1)(@types/react@18.0.37)(react@18.2.0)
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
     dev: false
@@ -3622,8 +3773,8 @@ packages:
       '@chakra-ui/styled-system': 2.9.1
       '@chakra-ui/theme-utils': 2.0.19
       '@chakra-ui/utils': 2.0.15
-      '@emotion/react': 11.11.1(@types/react@18.0.27)(react@18.2.0)
-      '@emotion/styled': 11.11.0(@emotion/react@11.11.1)(@types/react@18.0.27)(react@18.2.0)
+      '@emotion/react': 11.11.1(@types/react@18.0.37)(react@18.2.0)
+      '@emotion/styled': 11.11.0(@emotion/react@11.11.1)(@types/react@18.0.37)(react@18.2.0)
       react: 18.2.0
       react-fast-compare: 3.2.1
     dev: false
@@ -5796,6 +5947,7 @@ packages:
       typescript: 4.9.5
     transitivePeerDependencies:
       - supports-color
+    dev: true
 
   /@typescript-eslint/parser@5.62.0(eslint@8.33.0)(typescript@5.1.6):
     resolution: {integrity: sha512-VlJEV0fOQ7BExOsHYAGrgbEiZoi8D+Bl2+f6V2RrXerRSylnp+ZBHmPvaIa8cz0Ajx7WO7Z5RqfgYg7ED1nRhA==}
@@ -5905,6 +6057,7 @@ packages:
       typescript: 4.9.5
     transitivePeerDependencies:
       - supports-color
+    dev: true
 
   /@typescript-eslint/typescript-estree@5.62.0(typescript@5.1.6):
     resolution: {integrity: sha512-CmcQ6uY7b9y694lKdRB8FEel7JbU/40iSAPomu++SjLMntB+2Leay2LO6i8VnJk58MtE9/nQSFIH6jpyRWyYzA==}
@@ -7471,7 +7624,7 @@ packages:
       eslint-import-resolver-webpack:
         optional: true
     dependencies:
-      '@typescript-eslint/parser': 5.62.0(eslint@8.33.0)(typescript@4.9.5)
+      '@typescript-eslint/parser': 5.62.0(eslint@8.33.0)(typescript@5.1.6)
       debug: 3.2.7
       eslint: 8.33.0
       eslint-import-resolver-node: 0.3.7
@@ -7578,7 +7731,7 @@ packages:
       '@typescript-eslint/parser':
         optional: true
     dependencies:
-      '@typescript-eslint/parser': 5.62.0(eslint@8.33.0)(typescript@4.9.5)
+      '@typescript-eslint/parser': 5.62.0(eslint@8.33.0)(typescript@5.1.6)
       array-includes: 3.1.6
       array.prototype.flat: 1.3.1
       array.prototype.flatmap: 1.3.1
@@ -12173,6 +12326,7 @@ packages:
     dependencies:
       tslib: 1.14.1
       typescript: 4.9.5
+    dev: true
 
   /tsutils@3.21.0(typescript@5.1.6):
     resolution: {integrity: sha512-mHKK3iUXL+3UF6xL5k0PEhKRUBKPBCv/+RkEOpjRWxxx27KKRBmmA60A9pgOUvMi8GKhRMPEmjBRPzs2W7O1OA==}
