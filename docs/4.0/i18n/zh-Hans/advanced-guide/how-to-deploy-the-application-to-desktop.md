@@ -21,7 +21,7 @@ spec:
   data:
     url: https://hub.sealos.io/
     desc:
-  icon: https://cloud.sealos.io/images/icons/app_store.png
+  icon: https://cloud.sealos.io/logo.svg
   menuData:
     nameColor: text-black
     helpDropDown:

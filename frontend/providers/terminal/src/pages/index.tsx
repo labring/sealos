@@ -50,10 +50,9 @@ export default function Index(props: ServiceEnv) {
       }
     },
     onError(err: any) {
-      if ((err?.data?.code === 500, err?.data?.data)) {
+      if (err?.data?.code === 500 && err?.data?.data) {
         const reason = err?.data?.data?.body?.reason;
-        if (reason.startsWith('40001')) {
-          setIsLoading(false);
+        if (reason && reason?.startsWith('40001')) {
           toast({
             position: 'top',
             description: 'Insufficient balance',
@@ -61,6 +60,7 @@ export default function Index(props: ServiceEnv) {
             duration: 8000,
             isClosable: true
           });
+          setIsLoading(false);
           setUrl('/error');
         }
       }
