@@ -51,9 +51,9 @@ const (
 
 func (k *KubeadmRuntime) Command(version string, cmdType CommandType) (cmd string) {
 	initConfigPath := k.getInitMasterKubeadmConfigFilePath()
-	joinMasterConfigPath := path.Join(k.getContentData().ConfigPath(), defaultJoinMasterKubeadmFileName)
-	joinNodeConfigPath := path.Join(k.getContentData().ConfigPath(), defaultJoinNodeKubeadmFileName)
-	updateClusterConfigPath := path.Join(k.getContentData().ConfigPath(), defaultUpdateKubeadmFileName)
+	joinMasterConfigPath := path.Join(k.getContentData().ConfigsPath(), defaultJoinMasterKubeadmFileName)
+	joinNodeConfigPath := path.Join(k.getContentData().ConfigsPath(), defaultJoinNodeKubeadmFileName)
+	updateClusterConfigPath := path.Join(k.getContentData().ConfigsPath(), defaultUpdateKubeadmFileName)
 
 	var discoveryTokens []string
 	for _, data := range k.getTokenCaCertHash() {

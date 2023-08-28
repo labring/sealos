@@ -58,7 +58,7 @@ func newCertCmd() *cobra.Command {
 			var kubeadmInitFilepath string
 
 			for _, f := range []string{
-				path.Join(pathResolver.ConfigPath(), "kubeadm-init.yaml"),
+				path.Join(pathResolver.ConfigsPath(), "kubeadm-init.yaml"),
 				path.Join(pathResolver.EtcPath(), "kubeadm-init.yaml"),
 			} {
 				if fileutils.IsExist(f) {

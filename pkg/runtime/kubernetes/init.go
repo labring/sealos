@@ -29,7 +29,7 @@ func (k *KubeadmRuntime) InitKubeadmConfigToMaster0() error {
 		return fmt.Errorf("generate init config error: %v", err)
 	}
 	initConfigPath := path.Join(k.getContentData().TmpPath(), defaultInitKubeadmFileName)
-	outConfigPath := path.Join(k.getContentData().ConfigPath(), defaultInitKubeadmFileName)
+	outConfigPath := path.Join(k.getContentData().ConfigsPath(), defaultInitKubeadmFileName)
 	err = file.WriteFile(initConfigPath, data)
 	if err != nil {
 		return fmt.Errorf("failed to write tmp init kubeadm config: %v", err)

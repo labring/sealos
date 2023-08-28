@@ -57,11 +57,11 @@ func WorkDir() string {
 }
 
 func ClusterDir(clusterName string) string {
-	return filepath.Join(WorkDir(), clusterName)
+	return filepath.Join(DefaultRuntimeRootDir, clusterName)
 }
 
 func Clusterfile(clusterName string) string {
-	return filepath.Join(WorkDir(), clusterName, DefaultClusterFileName)
+	return filepath.Join(DefaultRuntimeRootDir, clusterName, DefaultClusterFileName)
 }
 
 func GetRuntimeRootDir(name string) string {
@@ -92,25 +92,25 @@ func IsRegistryDir(entry fs.DirEntry) bool {
 }
 
 type PathResolver interface {
-	// data dir
-	Homedir() string
+	// remote data dir
+	Root() string
 	RootFSPath() string
 	RootFSEtcPath() string
 	RootFSStaticsPath() string
 	RootFSScriptsPath() string
 	RootFSRegistryPath() string
-	ConfigPath() string // for storing temporary configs in remote
+	RootFSManifestsPath() string
+	RootFSBinPath() string
+	RootFSSealctlPath() string
+	ConfigsPath() string // for storing temporary configs in remote
 
-	// for persistent sealos runtime configs
+	// for persistent runtime configs in local
+	RunRoot() string
 	PkiPath() string
 	PkiEtcdPath() string
 	AdminFile() string
 	EtcPath() string
 	TmpPath() string
-
-	RootFSManifestsPath() string
-	RootFSBinPath() string
-	RootFSSealctlPath() string
 }
 
 type defaultPathResolver struct {
@@ -145,13 +145,26 @@ func (d *defaultPathResolver) RootFSBinPath() string {
 	return filepath.Join(d.RootFSPath(), BinDirName)
 }
 
-func (d *defaultPathResolver) ConfigPath() string {
-	return filepath.Join(d.Homedir(), EtcDirName)
+func (d *defaultPathResolver) ConfigsPath() string {
+	return filepath.Join(d.Root(), EtcDirName)
+}
+
+func (d *defaultPathResolver) RootFSPath() string {
+	return filepath.Join(d.Root(), rootFsDirName)
+}
+
+func (d *defaultPathResolver) RootFSStaticsPath() string {
+	return filepath.Join(d.RootFSPath(), StaticsDirName)
+}
+
+// data dir
+func (d *defaultPathResolver) Root() string {
+	return filepath.Join(DefaultClusterRootFsDir, "data", d.clusterName)
 }
 
 // only for local
 func (d *defaultPathResolver) EtcPath() string {
-	return filepath.Join(ClusterDir(d.clusterName), EtcDirName)
+	return filepath.Join(d.RunRoot(), EtcDirName)
 }
 
 // $HOME/.$APP_NAME/$CLUSTER_NAME/etc/admin.conf
@@ -160,7 +173,7 @@ func (d *defaultPathResolver) AdminFile() string {
 }
 
 func (d *defaultPathResolver) PkiPath() string {
-	return filepath.Join(ClusterDir(d.clusterName), PkiDirName)
+	return filepath.Join(d.RunRoot(), PkiDirName)
 }
 
 func (d *defaultPathResolver) PkiEtcdPath() string {
@@ -168,20 +181,11 @@ func (d *defaultPathResolver) PkiEtcdPath() string {
 }
 
 func (d *defaultPathResolver) TmpPath() string {
-	return filepath.Join(ClusterDir(d.clusterName), "tmp")
+	return filepath.Join(d.RunRoot(), "tmp")
 }
 
-func (d *defaultPathResolver) RootFSPath() string {
-	return filepath.Join(d.Homedir(), rootFsDirName)
-}
-
-func (d *defaultPathResolver) RootFSStaticsPath() string {
-	return filepath.Join(d.RootFSPath(), StaticsDirName)
-}
-
-// data dir
-func (d *defaultPathResolver) Homedir() string {
-	return filepath.Join(DefaultClusterRootFsDir, "data", d.clusterName)
+func (d *defaultPathResolver) RunRoot() string {
+	return filepath.Join(DefaultRuntimeRootDir, d.clusterName)
 }
 
 func NewPathResolver(clusterName string) PathResolver {

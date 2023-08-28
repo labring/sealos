@@ -95,7 +95,7 @@ func (k *KubeadmRuntime) saveNewKubeadmConfig() error {
 func (k *KubeadmRuntime) uploadConfigFromKubeadm() error {
 	logger.Info("start to upload kubeadm config for inCluster ...")
 	in := path.Join(k.getContentData().EtcPath(), defaultUpdateKubeadmFileName)
-	out := path.Join(k.getContentData().ConfigPath(), defaultUpdateKubeadmFileName)
+	out := path.Join(k.getContentData().ConfigsPath(), defaultUpdateKubeadmFileName)
 	data, err := file.ReadAll(in)
 	if err != nil {
 		return err

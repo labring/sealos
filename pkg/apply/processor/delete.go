@@ -112,7 +112,7 @@ func (d *DeleteProcessor) UnMountImage(cluster *v2.Cluster) error {
 
 func (d *DeleteProcessor) CleanFS(cluster *v2.Cluster) error {
 	workDir := constants.ClusterDir(cluster.Name)
-	dataDir := constants.NewPathResolver(cluster.Name).Homedir()
+	dataDir := constants.NewPathResolver(cluster.Name).Root()
 	return fileutil.CleanFiles(workDir, dataDir)
 }
 

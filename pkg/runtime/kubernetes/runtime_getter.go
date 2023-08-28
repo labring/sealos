@@ -228,5 +228,5 @@ func (k *KubeadmRuntime) getKubeExpansion() (kubernetes.Expansion, error) {
 }
 
 func (k *KubeadmRuntime) getInitMasterKubeadmConfigFilePath() string {
-	return path.Join(k.getContentData().ConfigPath(), defaultInitKubeadmFileName)
+	return path.Join(k.getContentData().ConfigsPath(), defaultInitKubeadmFileName)
 }
