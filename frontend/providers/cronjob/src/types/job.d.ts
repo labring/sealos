@@ -1,5 +1,6 @@
 import { V1PodTemplateSpec } from '@kubernetes/client-node';
 import { V1CronJob } from '@kubernetes/client-node';
+import { CronJobStatusEnum } from '@/constants/job';
 
 export type CronJobActiveHistoryType = {
   apiVersion: string;
@@ -10,10 +11,18 @@ export type CronJobActiveHistoryType = {
   uid: string;
 };
 
+export interface CronJobStatusMapType {
+  label: string;
+  value: CronJobStatusEnum;
+  color: string;
+  backgroundColor: string;
+  dotColor: string;
+}
+
 export type CronJobListItemType = {
   id: string;
   name: string;
-  status: string;
+  status: CronJobStatusMapType;
   schedule: string;
   createTime: string;
   lastScheduleTime: string;

@@ -2,14 +2,14 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    app: dbprovider-frontend
-  name: dbprovider-frontend
+    app: cronjob-frontend
+  name: cronjob-frontend
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: dbprovider-frontend-config
-  namespace: dbprovider-frontend
+  name: cronjob-frontend-config
+  namespace: cronjob-frontend
 data:
   config.yaml: |-
     addr: :3000
@@ -17,13 +17,13 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dbprovider-frontend
-  namespace: dbprovider-frontend
+  name: cronjob-frontend
+  namespace: cronjob-frontend
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: dbprovider-frontend
+      app: cronjob-frontend
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -32,11 +32,11 @@ spec:
   template:
     metadata:
       labels:
-        app: dbprovider-frontend
+        app: cronjob-frontend
     spec:
       serviceAccountName: cluster-version-reader
       containers:
-        - name: dbprovider-frontend
+        - name: cronjob-frontend
           env:
             - name: SEALOS_DOMAIN
               value: {{ .cloudDomain }}
@@ -55,24 +55,24 @@ spec:
               cpu: 10m
               memory: 128Mi
           # do not modify this image, it is used for CI/CD
-          image: ghcr.io/labring/sealos-dbprovider-frontend:latest
+          image: ghcr.io/labring/sealos-cronjob-frontend:latest
           imagePullPolicy: Always
           volumeMounts:
-            - name: dbprovider-frontend-volume
+            - name: cronjob-frontend-volume
               mountPath: /config.yaml
               subPath: config.yaml
       volumes:
-        - name: dbprovider-frontend-volume
+        - name: cronjob-frontend-volume
           configMap:
-            name: dbprovider-frontend-config
+            name: cronjob-frontend-config
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: dbprovider-frontend
-  name: dbprovider-frontend
-  namespace: dbprovider-frontend
+    app: cronjob-frontend
+  name: cronjob-frontend
+  namespace: cronjob-frontend
 spec:
   ports:
     - name: http
@@ -80,4 +80,4 @@ spec:
       protocol: TCP
       targetPort: 3000
   selector:
-    app: dbprovider-frontend
+    app: cronjob-frontend
