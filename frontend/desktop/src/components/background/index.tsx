@@ -1,6 +1,6 @@
 import { Img } from '@chakra-ui/react';
 
-export const Background = () => {
+export default function Background() {
   return (
     <Img
       src="/images/background.png"
@@ -13,4 +13,4 @@ export const Background = () => {
       left={0}
     />
   );
-};
+}

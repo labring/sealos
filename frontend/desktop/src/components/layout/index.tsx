@@ -1,4 +1,4 @@
-import { Background } from '@/components/background';
+import Background from '@/components/background';
 import Head from 'next/head';
 import styles from './index.module.scss';
 
