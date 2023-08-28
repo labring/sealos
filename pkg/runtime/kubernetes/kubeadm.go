@@ -468,7 +468,10 @@ func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
 	if err := k.CompleteKubeadmConfig(setCGroupDriverAndSocket, setCertificateKey); err != nil {
 		return nil, err
 	}
-	conversion := k.kubeadmConfig.GetConvertedKubeadmConfig()
+	conversion, err := k.kubeadmConfig.ToConvertedKubeadmConfig()
+	if err != nil {
+		return nil, err
+	}
 	return yaml.MarshalYamlConfigs(&conversion.InitConfiguration,
 		&conversion.ClusterConfiguration,
 		&conversion.KubeletConfiguration,
@@ -493,16 +496,9 @@ func (k *KubeadmRuntime) CompleteKubeadmConfig(fns ...func(*KubeadmRuntime) erro
 	k.initCertSANS()
 	k.setInitTaints()
 	// after all merging done, set default fields
-	k.finalizeInitConfig()
+	k.kubeadmConfig.SetDefaults()
 
-	if err := k.kubeadmConfig.ConvertKubeadmVersion(); err != nil {
-		return fmt.Errorf("convert kubeadm version failed: %w", err)
-	}
 	return nil
-}
-
-func (k *KubeadmRuntime) finalizeInitConfig() {
-	k.kubeadmConfig.FinalizeInitConfig()
 }
 
 func (k *KubeadmRuntime) generateJoinNodeConfigs(node string) ([]byte, error) {
@@ -514,10 +510,11 @@ func (k *KubeadmRuntime) generateJoinNodeConfigs(node string) ([]byte, error) {
 	}
 	k.cleanJoinLocalAPIEndPoint()
 	k.setAPIServerEndpoint(k.getVipAndPort())
-	if err := k.kubeadmConfig.ConvertKubeadmVersion(); err != nil {
-		return nil, fmt.Errorf("convert kubeadm version failed: %w", err)
+
+	conversion, err := k.kubeadmConfig.ToConvertedKubeadmConfig()
+	if err != nil {
+		return nil, err
 	}
-	conversion := k.kubeadmConfig.GetConvertedKubeadmConfig()
 	return yaml.MarshalYamlConfigs(
 		&conversion.KubeletConfiguration,
 		&conversion.JoinConfiguration)
@@ -532,10 +529,11 @@ func (k *KubeadmRuntime) generateJoinMasterConfigs(masterIP string) ([]byte, err
 	}
 	k.setJoinAdvertiseAddress(iputils.GetHostIP(masterIP))
 	k.setAPIServerEndpoint(fmt.Sprintf("%s:%d", k.getMaster0IP(), k.getAPIServerPort()))
-	if err := k.kubeadmConfig.ConvertKubeadmVersion(); err != nil {
-		return nil, fmt.Errorf("convert kubeadm version failed: %w", err)
+
+	conversion, err := k.kubeadmConfig.ToConvertedKubeadmConfig()
+	if err != nil {
+		return nil, err
 	}
-	conversion := k.kubeadmConfig.GetConvertedKubeadmConfig()
 	return yaml.MarshalYamlConfigs(&conversion.JoinConfiguration, &conversion.KubeletConfiguration)
 }
 

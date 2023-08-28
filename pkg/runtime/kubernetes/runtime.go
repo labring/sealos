@@ -66,7 +66,11 @@ func (k *KubeadmRuntime) GetRawConfig() ([]byte, error) {
 		return nil, err
 	}
 	k.cluster.Status = v2.ClusterStatus{}
-	conversion := k.kubeadmConfig.GetConvertedKubeadmConfig()
+
+	conversion, err := k.kubeadmConfig.ToConvertedKubeadmConfig()
+	if err != nil {
+		return nil, err
+	}
 	objects := []interface{}{k.cluster,
 		conversion.InitConfiguration,
 		conversion.ClusterConfiguration,
