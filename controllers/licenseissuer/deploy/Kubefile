@@ -17,6 +17,7 @@ ENV NotificationURL "https://license.sealos.io/notify"
 ENV RegisterURL "https://license.sealos.io/register"
 ENV CloudSyncURL "https://license.sealos.io/datasync"
 ENV LicenseMonitorURL "https://license.sealos.io/license"
+ENV NetworkProbeURL "https://license.sealos.io/probe"
 
 
 

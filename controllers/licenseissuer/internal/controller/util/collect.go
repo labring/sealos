@@ -69,7 +69,7 @@ type ClusterResource struct {
 	Disk   string `json:"disk"`
 }
 
-type collect struct {
+type Collect struct {
 	url string
 	// resource collect time of last
 	lastTimeForResource int64
@@ -80,10 +80,16 @@ type collect struct {
 	DailyClusterUsage DailyClusterUsage
 	CollectorInfo     CollectorInfo
 
-	options Options
+	options OptionsReadOnly
 }
 
-func (c *collect) collectWork(instance *TaskInstance) error {
+func NewCollect(o OptionsReadOnly) *Collect {
+	return &Collect{
+		options: o,
+	}
+}
+
+func (c *Collect) collectWork(instance *TaskInstance) error {
 	uid, urlMap, err := GetUIDURL(instance.ctx, instance.Client)
 	if err != nil {
 		instance.logger.Error(err, "failed to get uid and url")
@@ -106,7 +112,7 @@ func (c *collect) collectWork(instance *TaskInstance) error {
 	return nil
 }
 
-func (c *collect) collectResource(instance *TaskInstance) error {
+func (c *Collect) collectResource(instance *TaskInstance) error {
 	tnr := TotalNodesResource{}
 	err := c.getNodeResource(instance, &tnr)
 	if err != nil {
@@ -126,7 +132,7 @@ func (c *collect) collectResource(instance *TaskInstance) error {
 	return nil
 }
 
-func (c *collect) collectUsage(instance *TaskInstance) error {
+func (c *Collect) collectUsage(instance *TaskInstance) error {
 	err := c.getUsageYesterday(instance)
 	if err != nil {
 		instance.logger.Info("failed to get usage yesterday")
@@ -150,7 +156,7 @@ func (tnr *TotalNodesResource) getCPUMemoryResource(node *corev1.Node) {
 	tnr.TotalCPU.Add(nodeCPU)
 }
 
-func (c *collect) getUsageYesterday(instance *TaskInstance) error {
+func (c *Collect) getUsageYesterday(instance *TaskInstance) error {
 	MongoURI := c.options.GetEnvOptions().MongoURI
 	dailyClusterUsage := DailyClusterUsage{}
 	db, err := database.NewMongoDB(instance.ctx, MongoURI)
@@ -191,7 +197,7 @@ func GetYesterdayAndTodayMidnight() (time.Time, time.Time) {
 	return midnightYesterday, midnightToday
 }
 
-func (c *collect) doResourceCollect(instance *TaskInstance) error {
+func (c *Collect) doResourceCollect(instance *TaskInstance) error {
 	err := c.collectResource(instance)
 	if err != nil {
 		return err
@@ -206,7 +212,7 @@ func (c *collect) doResourceCollect(instance *TaskInstance) error {
 	return nil
 }
 
-func (c *collect) doUsageCollect(instance *TaskInstance) error {
+func (c *Collect) doUsageCollect(instance *TaskInstance) error {
 	err := c.collectUsage(instance)
 	if err != nil {
 		return err
@@ -221,7 +227,7 @@ func (c *collect) doUsageCollect(instance *TaskInstance) error {
 	return nil
 }
 
-func (c *collect) getPVResource(instance *TaskInstance, tnr *TotalNodesResource) error {
+func (c *Collect) getPVResource(instance *TaskInstance, tnr *TotalNodesResource) error {
 	pvList := &corev1.PersistentVolumeList{}
 	err := instance.List(instance.ctx, pvList)
 	if err != nil {
@@ -235,7 +241,7 @@ func (c *collect) getPVResource(instance *TaskInstance, tnr *TotalNodesResource)
 	return nil
 }
 
-func (c *collect) getNodeResource(instance *TaskInstance, tnr *TotalNodesResource) error {
+func (c *Collect) getNodeResource(instance *TaskInstance, tnr *TotalNodesResource) error {
 	nodeList := &corev1.NodeList{}
 	err := instance.List(instance.ctx, nodeList)
 	if err != nil {

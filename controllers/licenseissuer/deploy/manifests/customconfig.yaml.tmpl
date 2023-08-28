@@ -4,8 +4,6 @@ metadata:
   name: licenseissuer-env
   namespace: sealos-system
 stringData:
-  canConnectToExternalNetwork: "{{ .canConnectToExternalNetwork }}"
-  isMonitor: "{{ .enableMonitor }}"
   MongoURI: "{{ .MongoURI }}"
   PasswordSalt: "{{ .PasswordSalt }}"
   MongoUserDB: "{{ .MongoUserDB }}"
@@ -20,7 +18,8 @@ data:
       "NotificationURL": "{{ .NotificationURL }}",
       "RegisterURL": "{{ .RegisterURL }}",
       "CloudSyncURL": "{{ .CloudSyncURL }}",
-      "LicenseMonitorURL": "{{ .LicenseMonitorURL }}"
+      "LicenseMonitorURL": "{{ .LicenseMonitorURL }}",
+      "NetworkProbeURL": "{{ .NetworkProbeURL }}",
     }
 kind: ConfigMap
 metadata:

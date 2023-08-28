@@ -137,7 +137,7 @@ func (r *LicenseReconciler) CheckLicense(ctx context.Context) (string, map[strin
 		return util.DuplicateLicenseMessage, nil, false
 	}
 	// Check if the license is valid
-	if options.GetEnvOptions().NetworkConfiguration == "true" {
+	if options.GetNetWorkOptions().EnableExternalNetWork {
 		payload, ok := util.LicenseCheckOnExternalNetwork(ctx, r.Client, r.license)
 		if !ok {
 			return util.InvalidLicenseMessage, nil, false
