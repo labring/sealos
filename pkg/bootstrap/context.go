@@ -27,17 +27,17 @@ import (
 type Context interface {
 	GetBash() constants.Bash
 	GetCluster() *v2.Cluster
-	GetData() constants.Data
+	GetPathResolver() constants.PathResolver
 	GetExecer() ssh.Interface
 	GetRemoter() remote.Interface
 }
 
 type realContext struct {
-	bash    constants.Bash
-	cluster *v2.Cluster
-	data    constants.Data
-	execer  ssh.Interface
-	remoter remote.Interface
+	bash         constants.Bash
+	cluster      *v2.Cluster
+	pathResolver constants.PathResolver
+	execer       ssh.Interface
+	remoter      remote.Interface
 }
 
 func (ctx realContext) GetBash() constants.Bash {
@@ -48,8 +48,8 @@ func (ctx realContext) GetCluster() *v2.Cluster {
 	return ctx.cluster
 }
 
-func (ctx realContext) GetData() constants.Data {
-	return ctx.data
+func (ctx realContext) GetPathResolver() constants.PathResolver {
+	return ctx.pathResolver
 }
 
 func (ctx realContext) GetExecer() ssh.Interface {
@@ -74,10 +74,10 @@ func NewContextFrom(cluster *v2.Cluster) Context {
 		return stringsutil.RenderShellFromEnv(shell, envs)
 	}
 	return &realContext{
-		cluster: cluster,
-		execer:  execer,
-		bash:    constants.NewBash(cluster.GetName(), cluster.GetImageLabels(), shellWrapper),
-		data:    constants.NewData(cluster.GetName()),
-		remoter: remoter,
+		cluster:      cluster,
+		execer:       execer,
+		bash:         constants.NewBash(cluster.GetName(), cluster.GetImageLabels(), shellWrapper),
+		pathResolver: constants.NewPathResolver(cluster.GetName()),
+		remoter:      remoter,
 	}
 }

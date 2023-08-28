@@ -19,13 +19,13 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"path"
 
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
-	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -34,10 +34,10 @@ const (
 	KUBESCHEDULERCONFIGFILE  = "/etc/kubernetes/scheduler.conf"
 )
 
-func (k *KubeadmRuntime) pipeline(name string, pipeline []func() error) error {
-	for _, f := range pipeline {
-		if err := f(); err != nil {
-			return fmt.Errorf("failed to %s %v", name, err)
+func (k *KubeadmRuntime) runPipelines(phase string, pipelines ...func() error) error {
+	for i := range pipelines {
+		if err := pipelines[i](); err != nil {
+			return fmt.Errorf("failed to %s: %v", phase, err)
 		}
 	}
 	return nil
@@ -75,15 +75,15 @@ func (k *KubeadmRuntime) ReplaceKubeConfigV1991V1992(masters []string) bool {
 	return false
 }
 
-func (k *KubeadmRuntime) sendKubeConfigFile(hosts []string, kubeFile string) error {
-	absKubeFile := fmt.Sprintf("%s/%s", constants.KubernetesEtc, kubeFile)
-	sealosKubeFile := fmt.Sprintf("%s/%s", k.getContentData().EtcPath(), kubeFile)
-	return k.sendFileToHosts(hosts, sealosKubeFile, absKubeFile)
+func (k *KubeadmRuntime) sendKubeConfigFile(hosts []string, filename string) error {
+	dst := path.Join(kubernetesEtc, filename)
+	src := path.Join(k.getContentData().EtcPath(), filename)
+	return k.sendFileToHosts(hosts, src, dst)
 }
 
 func (k *KubeadmRuntime) sendNewCertAndKey(hosts []string) error {
 	logger.Info("start to copy etc pki files to masters")
-	return k.sendFileToHosts(hosts, k.getContentData().PkiPath(), constants.KubernetesEtcPKI)
+	return k.sendFileToHosts(hosts, k.getContentData().PkiPath(), kubernetesEtcPKI)
 }
 
 func (k *KubeadmRuntime) sendFileToHosts(Hosts []string, src, dst string) error {
@@ -124,5 +124,5 @@ func (k *KubeadmRuntime) RemoveNodeFromK8sClient(ip string) error {
 }
 
 func (k *KubeadmRuntime) setFeatureGatesConfiguration() {
-	k.KubeadmConfig.FinalizeFeatureGatesConfiguration()
+	k.kubeadmConfig.FinalizeFeatureGatesConfiguration()
 }

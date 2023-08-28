@@ -15,9 +15,9 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"path"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -25,11 +25,12 @@ import (
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime/kubernetes"
+	fileutils "github.com/labring/sealos/pkg/utils/file"
 )
 
-var altNames string
-
 func newCertCmd() *cobra.Command {
+	var altNames []string
+
 	cmd := &cobra.Command{
 		Use:   "cert",
 		Short: "update Kubernetes API server's cert",
@@ -52,26 +53,40 @@ func newCertCmd() *cobra.Command {
 			processor.SyncNewVersionConfig(cluster.Name)
 			clusterPath := constants.Clusterfile(cluster.Name)
 
+			pathResolver := constants.NewPathResolver(cluster.Name)
+
+			var kubeadmInitFilepath string
+
+			for _, f := range []string{
+				path.Join(pathResolver.ConfigsPath(), "kubeadm-init.yaml"),
+				path.Join(pathResolver.EtcPath(), "kubeadm-init.yaml"),
+			} {
+				if fileutils.IsExist(f) {
+					kubeadmInitFilepath = f
+					break
+				}
+			}
+			if kubeadmInitFilepath == "" {
+				return errors.New("cannot locate the default kubeadm-init.yaml file")
+			}
+
 			cf := clusterfile.NewClusterFile(clusterPath,
-				clusterfile.WithCustomKubeadmFiles([]string{path.Join(constants.NewData(cluster.Name).EtcPath(), constants.DefaultInitKubeadmFileName)}),
+				clusterfile.WithCustomKubeadmFiles([]string{kubeadmInitFilepath}),
 			)
 			if err = cf.Process(); err != nil {
 				return err
 			}
+			// TODO: using different runtime
 			rt, err := kubernetes.New(cluster, cf.GetKubeadmConfig())
 			if err != nil {
 				return fmt.Errorf("get default runtime failed, %v", err)
 			}
-			return rt.UpdateCert(strings.Split(altNames, ","))
-		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if strings.TrimSpace(altNames) == "" {
-				return fmt.Errorf("this command alt-names param can't empty")
-			}
-			return nil
+			return rt.UpdateCertSANs(altNames)
 		},
 	}
 	cmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied exec action")
-	cmd.Flags().StringVar(&altNames, "alt-names", "", "add domain or ip in certs, sealos.io or 10.103.97.2")
+	cmd.Flags().StringSliceVar(&altNames, "alt-names", []string{}, "add extra Subject Alternative Names for certs, domain or ip, eg. sealos.io or 10.103.97.2")
+	_ = cmd.MarkFlagRequired("alt-names")
+
 	return cmd
 }

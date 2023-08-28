@@ -46,7 +46,7 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 		eg.Go(func() error {
 			logger.Info("start to join %s as worker", node)
 			k.mu.Lock()
-			err = k.ConfigJoinNodeKubeadmToNode(node)
+			err = k.copyKubeadmConfigToNode(node)
 			if err != nil {
 				return fmt.Errorf("failed to copy join node kubeadm config %s %v", node, err)
 			}
@@ -65,11 +65,11 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 				return fmt.Errorf("run ipvs once failed %v", err)
 			}
 			logger.Info("start join node: %s", node)
-			cmd := k.Command(k.getKubeVersion(), JoinNode)
-			if cmd == "" {
+			joinCmd := k.Command(k.getKubeVersion(), JoinNode)
+			if joinCmd == "" {
 				return fmt.Errorf("get join node command failed, kubernetes version is %s", k.getKubeVersion())
 			}
-			if err = k.sshCmdAsync(node, cmd); err != nil {
+			if err = k.sshCmdAsync(node, joinCmd); err != nil {
 				return fmt.Errorf("failed to join node %s %v", node, err)
 			}
 			logger.Info("succeeded in joining %s as worker", node)
@@ -79,14 +79,14 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 	return eg.Wait()
 }
 
-func (k *KubeadmRuntime) ConfigJoinNodeKubeadmToNode(node string) error {
+func (k *KubeadmRuntime) copyKubeadmConfigToNode(node string) error {
 	logger.Info("start to copy kubeadm join config to node: %s", node)
 	data, err := k.generateJoinNodeConfigs(node)
 	if err != nil {
 		return fmt.Errorf("failed to generate join kubeadm config: %v", err)
 	}
-	joinConfigPath := path.Join(k.getContentData().TmpPath(), constants.DefaultJoinNodeKubeadmFileName)
-	outConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultJoinNodeKubeadmFileName)
+	joinConfigPath := path.Join(k.getContentData().TmpPath(), defaultJoinNodeKubeadmFileName)
+	outConfigPath := path.Join(k.getContentData().ConfigsPath(), defaultJoinNodeKubeadmFileName)
 	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {
 		return fmt.Errorf("write config join kubeadm config error: %s", err.Error())

@@ -48,7 +48,7 @@ func (n *PodChecker) Check(cluster *v2.Cluster, phase string) error {
 		return nil
 	}
 	// checker if all the node is ready
-	data := constants.NewData(cluster.Name)
+	data := constants.NewPathResolver(cluster.Name)
 	c, err := kubernetes.NewKubernetesClient(data.AdminFile(), "")
 	if err != nil {
 		return err
