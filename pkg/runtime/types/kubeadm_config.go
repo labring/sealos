@@ -39,8 +39,6 @@ type KubeadmConfig struct {
 	kubeadm.JoinConfiguration
 	kubeproxyconfigv1alpha1.KubeProxyConfiguration
 	kubeletconfigv1beta1.KubeletConfiguration
-
-	conversion *ConvertedKubeadmConfig
 }
 
 type ConvertedKubeadmConfig struct {
@@ -114,28 +112,23 @@ func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 	return nil
 }
 
-func (k *KubeadmConfig) GetConvertedKubeadmConfig() *ConvertedKubeadmConfig {
-	return k.conversion
-}
-
-func (k *KubeadmConfig) ConvertKubeadmVersion() error {
-	if k.conversion == nil {
-		k.conversion = &ConvertedKubeadmConfig{}
-	}
+func (k *KubeadmConfig) ToConvertedKubeadmConfig() (*ConvertedKubeadmConfig, error) {
+	conversion := &ConvertedKubeadmConfig{}
 	var err error
+
 	switch k.InitConfiguration.APIVersion {
 	case KubeadmV1beta2:
 		var v1beta2InitConfiguration v1beta2.InitConfiguration
 		var v1beta2ClusterConfiguration v1beta2.ClusterConfiguration
 		var v1beta2JoinConfiguration v1beta2.JoinConfiguration
 		if err = v1beta2.Convert_kubeadm_InitConfiguration_To_v1beta2_InitConfiguration(&k.InitConfiguration, &v1beta2InitConfiguration, nil); err != nil {
-			return err
+			return nil, err
 		}
 		if err = v1beta2.Convert_kubeadm_ClusterConfiguration_To_v1beta2_ClusterConfiguration(&k.ClusterConfiguration, &v1beta2ClusterConfiguration, nil); err != nil {
-			return err
+			return nil, err
 		}
 		if err = v1beta2.Convert_kubeadm_JoinConfiguration_To_v1beta2_JoinConfiguration(&k.JoinConfiguration, &v1beta2JoinConfiguration, nil); err != nil {
-			return err
+			return nil, err
 		}
 
 		v1beta2InitConfiguration.APIVersion = v1beta2.SchemeGroupVersion.String()
@@ -144,22 +137,22 @@ func (k *KubeadmConfig) ConvertKubeadmVersion() error {
 		v1beta2InitConfiguration.Kind = "InitConfiguration"
 		v1beta2ClusterConfiguration.Kind = "ClusterConfiguration"
 		v1beta2JoinConfiguration.Kind = "JoinConfiguration"
-		k.conversion.InitConfiguration = v1beta2InitConfiguration
-		k.conversion.ClusterConfiguration = v1beta2ClusterConfiguration
-		k.conversion.JoinConfiguration = v1beta2JoinConfiguration
+		conversion.InitConfiguration = v1beta2InitConfiguration
+		conversion.ClusterConfiguration = v1beta2ClusterConfiguration
+		conversion.JoinConfiguration = v1beta2JoinConfiguration
 
 	case KubeadmV1beta3:
 		var v1beta3InitConfiguration v1beta3.InitConfiguration
 		var v1beta3ClusterConfiguration v1beta3.ClusterConfiguration
 		var v1beta3JoinConfiguration v1beta3.JoinConfiguration
 		if err = v1beta3.Convert_kubeadm_InitConfiguration_To_v1beta3_InitConfiguration(&k.InitConfiguration, &v1beta3InitConfiguration, nil); err != nil {
-			return err
+			return nil, err
 		}
 		if err = v1beta3.Convert_kubeadm_ClusterConfiguration_To_v1beta3_ClusterConfiguration(&k.ClusterConfiguration, &v1beta3ClusterConfiguration, nil); err != nil {
-			return err
+			return nil, err
 		}
 		if err = v1beta3.Convert_kubeadm_JoinConfiguration_To_v1beta3_JoinConfiguration(&k.JoinConfiguration, &v1beta3JoinConfiguration, nil); err != nil {
-			return err
+			return nil, err
 		}
 		v1beta3InitConfiguration.APIVersion = v1beta3.SchemeGroupVersion.String()
 		v1beta3ClusterConfiguration.APIVersion = v1beta3.SchemeGroupVersion.String()
@@ -167,13 +160,13 @@ func (k *KubeadmConfig) ConvertKubeadmVersion() error {
 		v1beta3InitConfiguration.Kind = "InitConfiguration"
 		v1beta3ClusterConfiguration.Kind = "ClusterConfiguration"
 		v1beta3JoinConfiguration.Kind = "JoinConfiguration"
-		k.conversion.InitConfiguration = v1beta3InitConfiguration
-		k.conversion.ClusterConfiguration = v1beta3ClusterConfiguration
-		k.conversion.JoinConfiguration = v1beta3JoinConfiguration
+		conversion.InitConfiguration = v1beta3InitConfiguration
+		conversion.ClusterConfiguration = v1beta3ClusterConfiguration
+		conversion.JoinConfiguration = v1beta3JoinConfiguration
 	default:
-		k.conversion.JoinConfiguration = k.JoinConfiguration
-		k.conversion.InitConfiguration = k.InitConfiguration
-		k.conversion.ClusterConfiguration = k.ClusterConfiguration
+		conversion.JoinConfiguration = k.JoinConfiguration
+		conversion.InitConfiguration = k.InitConfiguration
+		conversion.ClusterConfiguration = k.ClusterConfiguration
 	}
 
 	{
@@ -183,14 +176,14 @@ func (k *KubeadmConfig) ConvertKubeadmVersion() error {
 		v1alpha1KubeProxy.APIVersion = kubeproxyconfigv1alpha1.SchemeGroupVersion.String()
 		v1beta1Kubelet.Kind = "KubeletConfiguration"
 		v1alpha1KubeProxy.Kind = "KubeProxyConfiguration"
-		k.conversion.KubeProxyConfiguration = v1alpha1KubeProxy
-		k.conversion.KubeletConfiguration = v1beta1Kubelet
+		conversion.KubeProxyConfiguration = v1alpha1KubeProxy
+		conversion.KubeletConfiguration = v1beta1Kubelet
 	}
 
-	return nil
+	return conversion, nil
 }
 
-func (k *KubeadmConfig) FinalizeInitConfig() {
+func (k *KubeadmConfig) SetDefaults() {
 	for _, obj := range []k8sruntime.Object{
 		&k.ClusterConfiguration,
 		&k.InitConfiguration,

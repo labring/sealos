@@ -119,7 +119,7 @@ func onBootOnDie() {
 
 	var rootDirs = []string{
 		constants.LogPath(),
-		constants.Workdir(),
+		constants.WorkDir(),
 	}
 	errExit(file.MkDirs(rootDirs...))
 }

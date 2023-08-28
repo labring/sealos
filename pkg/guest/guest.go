@@ -47,7 +47,7 @@ func NewGuestManager() (Interface, error) {
 func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts []string) error {
 	kubeConfig := filepath.Join(constants.GetHomeDir(), ".kube", "config")
 	if !fileutil.IsExist(kubeConfig) {
-		adminFile := constants.NewData(cluster.Name).AdminFile()
+		adminFile := constants.NewPathResolver(cluster.Name).AdminFile()
 		data, err := fileutil.ReadAll(adminFile)
 		if err != nil {
 			return fmt.Errorf("read admin.conf error in guest: %w", err)

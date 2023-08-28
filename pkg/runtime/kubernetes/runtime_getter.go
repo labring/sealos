@@ -19,6 +19,7 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"path"
 	"strings"
 
 	"golang.org/x/sync/errgroup"
@@ -36,12 +37,12 @@ import (
 )
 
 func (k *KubeadmRuntime) getKubeVersion() string {
-	return k.KubeadmConfig.ClusterConfiguration.KubernetesVersion
+	return k.kubeadmConfig.ClusterConfiguration.KubernetesVersion
 }
 
 // old implementation doesn't consider multiple rootfs images; here get the first rootfs image
 func (k *KubeadmRuntime) getKubeVersionFromImage() string {
-	img := k.Cluster.GetRootfsImage()
+	img := k.cluster.GetRootfsImage()
 	if img == nil || img.Labels == nil {
 		return ""
 	}
@@ -49,11 +50,11 @@ func (k *KubeadmRuntime) getKubeVersionFromImage() string {
 }
 
 func (k *KubeadmRuntime) getMaster0IP() string {
-	return iputils.GetHostIP(k.Cluster.GetMaster0IP())
+	return iputils.GetHostIP(k.cluster.GetMaster0IP())
 }
 
 func (k *KubeadmRuntime) getMasterIPList() []string {
-	return k.Cluster.GetMasterIPList()
+	return k.cluster.GetMasterIPList()
 }
 
 func (k *KubeadmRuntime) getMasterIPListAndHTTPSPort() []string {
@@ -65,19 +66,19 @@ func (k *KubeadmRuntime) getMasterIPListAndHTTPSPort() []string {
 }
 
 func (k *KubeadmRuntime) getNodeIPList() []string {
-	return k.Cluster.GetNodeIPList()
+	return k.cluster.GetNodeIPList()
 }
 
 func (k *KubeadmRuntime) getMasterIPAndPortList() []string {
-	return k.Cluster.GetMasterIPAndPortList()
+	return k.cluster.GetMasterIPAndPortList()
 }
 
 func (k *KubeadmRuntime) getNodeIPAndPortList() []string {
-	return k.Cluster.GetNodeIPAndPortList()
+	return k.cluster.GetNodeIPAndPortList()
 }
 
 func (k *KubeadmRuntime) getMaster0IPAndPort() string {
-	return k.Cluster.GetMaster0IPAndPort()
+	return k.cluster.GetMaster0IPAndPort()
 }
 
 func (k *KubeadmRuntime) getMaster0IPAPIServer() string {
@@ -100,7 +101,7 @@ func (k *KubeadmRuntime) getVIPFromImage() string {
 	if vip == "" {
 		vip = DefaultVIP
 	} else {
-		envsInRootFsImage := k.Cluster.GetRootfsImage().Env
+		envsInRootFsImage := k.cluster.GetRootfsImage().Env
 		envs := maps.MergeMap(envsInRootFsImage, k.getEnvInterface().Getenv(k.getMaster0IP()))
 		vip = stringsutil.RenderTextFromEnv(vip, envs)
 	}
@@ -146,12 +147,11 @@ func (k *KubeadmRuntime) execIPVSPod(ip string, masters []string) error {
 }
 
 func (k *KubeadmRuntime) execToken(ip, certificateKey string) (string, error) {
-	return k.getRemoteInterface().Token(ip, k.initMasterKubeadmConfigFile(), certificateKey)
+	return k.getRemoteInterface().Token(ip, k.getInitMasterKubeadmConfigFilePath(), certificateKey)
 }
 
 func (k *KubeadmRuntime) execHostname(ip string) (string, error) {
 	hostname, err := k.getRemoteInterface().Hostname(ip)
-	// tips: if hostname is upper,kubelet init master0 is not allowed to modify node
 	return strings.ToLower(hostname), err
 }
 
@@ -164,7 +164,7 @@ func (k *KubeadmRuntime) execCert(ip string) error {
 	if err != nil {
 		return err
 	}
-	return k.getRemoteInterface().Cert(ip, k.getCertSANS(), iputils.GetHostIP(ip), hostname, k.getServiceCIDR(), k.getDNSDomain())
+	return k.getRemoteInterface().Cert(ip, k.getCertSANs(), iputils.GetHostIP(ip), hostname, k.getServiceCIDR(), k.getDNSDomain())
 }
 
 func (k *KubeadmRuntime) execHostsDelete(ip, domain string) error {
@@ -188,7 +188,7 @@ func (k *KubeadmRuntime) sshCopy(host, srcFilePath, dstFilePath string) error {
 }
 
 func (k *KubeadmRuntime) getImageLabels() map[string]string {
-	return k.Cluster.GetImageLabels()
+	return k.cluster.GetImageLabels()
 }
 
 func (k *KubeadmRuntime) getSSHInterface() ssh.Interface {
@@ -196,14 +196,14 @@ func (k *KubeadmRuntime) getSSHInterface() ssh.Interface {
 }
 
 func (k *KubeadmRuntime) getEnvInterface() env.Interface {
-	return env.NewEnvProcessor(k.Cluster)
+	return env.NewEnvProcessor(k.cluster)
 }
 
 func (k *KubeadmRuntime) getRemoteInterface() remote.Interface {
 	return k.remoteUtil
 }
 
-func (k *KubeadmRuntime) getContentData() constants.Data {
+func (k *KubeadmRuntime) getContentData() constants.PathResolver {
 	return k.pathResolver
 }
 
@@ -225,4 +225,8 @@ func (k *KubeadmRuntime) getKubeExpansion() (kubernetes.Expansion, error) {
 		return nil, err
 	}
 	return kubernetes.NewKubeExpansion(ki.Kubernetes()), nil
+}
+
+func (k *KubeadmRuntime) getInitMasterKubeadmConfigFilePath() string {
+	return path.Join(k.getContentData().ConfigsPath(), defaultInitKubeadmFileName)
 }

@@ -20,10 +20,10 @@ import "path"
 
 const copyKubeAdminConfigCommand = `rm -rf $HOME/.kube/config && mkdir -p $HOME/.kube && cp /etc/kubernetes/admin.conf $HOME/.kube/config`
 
-func (k *KubeadmRuntime) copyNodeKubeConfig(hosts []string) error {
-	srcKubeFile := k.getContentData().AdminFile()
-	desKubeFile := path.Join(".kube", "config")
-	return k.sendFileToHosts(hosts, srcKubeFile, desKubeFile)
+func (k *KubeadmRuntime) copyKubeConfigFileToNodes(hosts []string) error {
+	src := k.getContentData().AdminFile()
+	dst := path.Join(".kube", "config")
+	return k.sendFileToHosts(hosts, src, dst)
 }
 
 func (k *KubeadmRuntime) copyMasterKubeConfig(host string) error {

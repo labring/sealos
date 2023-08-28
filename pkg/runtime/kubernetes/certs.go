@@ -25,7 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
-	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
@@ -38,8 +37,8 @@ const (
 	KubeletConf    = "kubelet.conf"
 )
 
-func (k *KubeadmRuntime) UpdateCert(certs []string) error {
-	// set sans to kubeadm config object
+func (k *KubeadmRuntime) UpdateCertSANs(certSans []string) error {
+	// set extra cert SANs for kubeadm configmap object
 	if err := k.CompleteKubeadmConfig(setCGroupDriverAndSocket, setCertificateKey); err != nil {
 		return err
 	}
@@ -47,8 +46,8 @@ func (k *KubeadmRuntime) UpdateCert(certs []string) error {
 		if err := k.mergeWithBuiltinKubeadmConfig(); err != nil {
 			return err
 		}
-		if len(certs) != 0 {
-			k.setCertSANS(append(k.getCertSANS(), certs...))
+		if len(certSans) != 0 {
+			k.setCertSANs(append(k.getCertSANs(), certSans...))
 		}
 		return nil
 	}
@@ -85,23 +84,24 @@ func (k *KubeadmRuntime) saveNewKubeadmConfig() error {
 	}
 	logger.Debug("current cluster config data: %+v", obj)
 	//set certs to obj interface
-	err = unstructured.SetNestedStringSlice(obj, k.getCertSANS(), "apiServer", "certSANs")
+	err = unstructured.SetNestedStringSlice(obj, k.getCertSANs(), "apiServer", "certSANs")
 	if err != nil {
 		return err
 	}
-	certPath := path.Join(k.getContentData().EtcPath(), constants.DefaultUpdateKubeadmFileName)
+	certPath := path.Join(k.getContentData().EtcPath(), defaultUpdateKubeadmFileName)
 	return yaml.MarshalYamlToFile(certPath, obj)
 }
 
 func (k *KubeadmRuntime) uploadConfigFromKubeadm() error {
 	logger.Info("start to upload kubeadm config for inCluster ...")
-	outConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultUpdateKubeadmFileName)
-	data, err := file.ReadAll(outConfigPath)
+	in := path.Join(k.getContentData().EtcPath(), defaultUpdateKubeadmFileName)
+	out := path.Join(k.getContentData().ConfigsPath(), defaultUpdateKubeadmFileName)
+	data, err := file.ReadAll(in)
 	if err != nil {
 		return err
 	}
 	logger.Debug("current update yaml data is %s", string(data))
-	err = k.sshCopy(k.getMaster0IPAndPort(), outConfigPath, outConfigPath)
+	err = k.sshCopy(k.getMaster0IPAndPort(), in, out)
 	if err != nil {
 		return fmt.Errorf("copy config update kubeadm yaml error: %s", err.Error())
 	}
@@ -115,7 +115,7 @@ func (k *KubeadmRuntime) uploadConfigFromKubeadm() error {
 	return nil
 }
 
-func (k *KubeadmRuntime) UpdateCertByInit() error {
+func (k *KubeadmRuntime) InitCertsAndKubeConfigs() error {
 	logger.Info("start to generate cert and kubeConfig...")
 	for _, ipAndPort := range k.getMasterIPAndPortList() {
 		if err := k.sshCmdAsync(ipAndPort, "rm -rf /etc/kubernetes/admin.conf"); err != nil {
@@ -125,23 +125,14 @@ func (k *KubeadmRuntime) UpdateCertByInit() error {
 	if err := k.initCert(); err != nil {
 		return err
 	}
-	if err := k.CreateKubeConfig(); err != nil {
+	if err := k.CreateKubeConfigFiles(); err != nil {
 		return fmt.Errorf("failed to generate kubernetes conf: %w", err)
 	}
 	return k.SendJoinMasterKubeConfigs(k.getMasterIPAndPortList()[:1], AdminConf, ControllerConf, SchedulerConf, KubeletConf)
 }
 
 func (k *KubeadmRuntime) initCert() error {
-	pipeline := []func() error{
-		k.GenerateCert,
-		k.SendNewCertAndKeyToMasters,
-	}
-	for _, f := range pipeline {
-		if err := f(); err != nil {
-			return fmt.Errorf("failed to generate cert %v", err)
-		}
-	}
-	return nil
+	return k.runPipelines("init cert", k.GenerateCert, k.SendNewCertAndKeyToMasters)
 }
 
 func (k *KubeadmRuntime) showKubeadmCert() error {

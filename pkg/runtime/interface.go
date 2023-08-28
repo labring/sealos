@@ -15,12 +15,20 @@
 package runtime
 
 type Interface interface {
+	Ruler
 	Init() error
 	Reset() error
 	ScaleUp(newMasterIPList []string, newNodeIPList []string) error
 	ScaleDown(deleteMastersIPList []string, deleteNodesIPList []string) error
-	SyncNodeIPVS(mastersIPList, nodeIPList []string) error
 	Upgrade(version string) error
-	GetConfig() ([]byte, error)
-	UpdateCert(certs []string) error
+	GetRawConfig() ([]byte, error)
+}
+
+type Ruler interface {
+	SyncNodeIPVS(masters, nodes []string) error
+}
+
+type CertManager interface {
+	Renew() error
+	UpdateCertSANs(certSANs []string) error
 }

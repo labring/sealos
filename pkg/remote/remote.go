@@ -51,7 +51,7 @@ const (
 
 type remote struct {
 	clusterName  string // TODO: remove it?
-	pathResolver constants.Data
+	pathResolver constants.PathResolver
 	execer       ssh.Interface
 }
 
@@ -164,6 +164,6 @@ func New(clusterName string, sshInterface ssh.Interface) Interface {
 	return &remote{
 		clusterName:  clusterName,
 		execer:       sshInterface,
-		pathResolver: constants.NewData(clusterName),
+		pathResolver: constants.NewPathResolver(clusterName),
 	}
 }
