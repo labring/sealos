@@ -110,7 +110,7 @@ spec:
             limits:
               cpu: 30m
               memory: 300Mi
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           volumeMounts:
             - name: desktop-app-demo-volume
               mountPath: /config.yaml
