@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"path"
 
@@ -24,6 +25,7 @@ import (
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime/kubernetes"
+	fileutils "github.com/labring/sealos/pkg/utils/file"
 )
 
 func newCertCmd() *cobra.Command {
@@ -51,9 +53,25 @@ func newCertCmd() *cobra.Command {
 			processor.SyncNewVersionConfig(cluster.Name)
 			clusterPath := constants.Clusterfile(cluster.Name)
 
+			pathResolver := constants.NewPathResolver(cluster.Name)
+
+			var kubeadmInitFilepath string
+
+			for _, f := range []string{
+				path.Join(pathResolver.ConfigPath(), "kubeadm-init.yaml"),
+				path.Join(pathResolver.EtcPath(), "kubeadm-init.yaml"),
+			} {
+				if fileutils.IsExist(f) {
+					kubeadmInitFilepath = f
+					break
+				}
+			}
+			if kubeadmInitFilepath == "" {
+				return errors.New("cannot locate the default kubeadm-init.yaml file")
+			}
+
 			cf := clusterfile.NewClusterFile(clusterPath,
-				clusterfile.WithCustomKubeadmFiles([]string{
-					path.Join(constants.NewPathResolver(cluster.Name).EtcPath(), "kubeadm-init.yaml")}),
+				clusterfile.WithCustomKubeadmFiles([]string{kubeadmInitFilepath}),
 			)
 			if err = cf.Process(); err != nil {
 				return err
