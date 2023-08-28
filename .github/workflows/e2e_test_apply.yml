@@ -45,7 +45,7 @@ jobs:
         id: apply_test
         shell: bash
         env:
-          SEALOS_E2E_TEST_IMAGE_NAME: registry.cn-hongkong.aliyuncs.com/labring/kubernetes:v1.25.6
+          SEALOS_E2E_TEST_IMAGE_NAME: registry.cn-shanghai.aliyuncs.com/labring/kubernetes:v1.25.6
           SEALOS_E2E_TEST_PATCH_IMAGE_TAR: /tmp/sealos/images/patch-${{ matrix.arch }}.tar.gz
           SEALOS_E2E_TEST_PATCH_IMAGE_NAME: ghcr.io/labring/sealos-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}
           SEALOS_E2E_TEST_SEALOS_BIN_PATH: /tmp/sealos/bin/sealos
