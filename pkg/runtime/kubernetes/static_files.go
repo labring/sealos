@@ -19,13 +19,13 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"golang.org/x/sync/errgroup"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (
-	AuditPolicyYml       = "audit-policy.yml"
+	auditPolicyYml       = "audit-policy.yml"
 	copyFileToDirCommand = "mkdir -p %s && cp -f %s %s"
 )
 
@@ -39,15 +39,15 @@ type StaticFile struct {
 var MasterStaticFiles = []*StaticFile{
 	{
 		DestinationDir: "/etc/kubernetes",
-		Name:           AuditPolicyYml,
+		Name:           auditPolicyYml,
 	},
 }
 
 func (k *KubeadmRuntime) CopyStaticFilesToMasters() error {
-	return k.CopyStaticFiles(k.getMasterIPAndPortList())
+	return k.copyStaticFiles(k.getMasterIPAndPortList())
 }
 
-func (k *KubeadmRuntime) CopyStaticFiles(nodes []string) error {
+func (k *KubeadmRuntime) copyStaticFiles(nodes []string) error {
 	logger.Info("start to copy static files to masters")
 	for _, file := range MasterStaticFiles {
 		staticFilePath := filepath.Join(k.getContentData().RootFSStaticsPath(), file.Name)

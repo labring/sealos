@@ -31,7 +31,7 @@ import (
 var ErrClusterNotExist = fmt.Errorf("no cluster exist")
 
 func GetDefaultClusterName() (string, error) {
-	files, err := os.ReadDir(constants.Workdir())
+	files, err := os.ReadDir(constants.WorkDir())
 	if err != nil {
 		return "", err
 	}

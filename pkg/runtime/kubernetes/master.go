@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -30,8 +29,8 @@ import (
 
 func (k *KubeadmRuntime) InitMaster0() error {
 	logger.Info("start to init master0...")
-
-	err := k.execHostsAppend(k.getMaster0IPAndPort(), k.getMaster0IP(), k.getAPIServerDomain())
+	master0 := k.getMaster0IPAndPort()
+	err := k.execHostsAppend(master0, k.getMaster0IP(), k.getAPIServerDomain())
 	if err != nil {
 		return fmt.Errorf("add apiserver domain hosts failed %v", err)
 	}
@@ -40,11 +39,11 @@ func (k *KubeadmRuntime) InitMaster0() error {
 	if cmdInit == "" {
 		return fmt.Errorf("get init master command failed, kubernetes version is %s", k.getKubeVersion())
 	}
-	err = k.sshCmdAsync(k.getMaster0IPAndPort(), cmdInit)
+	err = k.sshCmdAsync(master0, cmdInit)
 	if err != nil {
 		return fmt.Errorf("init master0 failed, error: %s. Please clean and reinstall", err.Error())
 	}
-	return k.copyMasterKubeConfig(k.getMaster0IPAndPort())
+	return k.copyMasterKubeConfig(master0)
 }
 
 // sendJoinCPConfig send join CP masters configuration
@@ -67,8 +66,8 @@ func (k *KubeadmRuntime) ConfigJoinMasterKubeadmToMaster(master string) error {
 	if err != nil {
 		return fmt.Errorf("failed to generate join master kubeadm config: %s", err.Error())
 	}
-	joinConfigPath := path.Join(k.getContentData().TmpPath(), constants.DefaultJoinMasterKubeadmFileName)
-	outConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultJoinMasterKubeadmFileName)
+	joinConfigPath := path.Join(k.getContentData().TmpPath(), defaultJoinMasterKubeadmFileName)
+	outConfigPath := path.Join(k.getContentData().ConfigsPath(), defaultJoinMasterKubeadmFileName)
 	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {
 		return fmt.Errorf("write config join master kubeadm config error: %s", err.Error())
@@ -90,7 +89,7 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 		return fmt.Errorf("join masters wait for ssh ready time out: %w", err)
 	}
 
-	if err = k.CopyStaticFiles(masters); err != nil {
+	if err = k.copyStaticFiles(masters); err != nil {
 		return err
 	}
 
@@ -107,11 +106,12 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	if err = k.sendJoinCPConfig(masters); err != nil {
 		return err
 	}
+	// does it necessary?
 	if err = k.mergeWithBuiltinKubeadmConfig(); err != nil {
 		return err
 	}
-	cmd := k.Command(k.getKubeVersion(), JoinMaster)
-	if cmd == "" {
+	joinCmd := k.Command(k.getKubeVersion(), JoinMaster)
+	if joinCmd == "" {
 		return fmt.Errorf("get join master command failed, kubernetes version is %s", k.getKubeVersion())
 	}
 	for _, master := range masters {
@@ -127,7 +127,7 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 			return fmt.Errorf("add master0 apiserver domain hosts to %s failed %v", master, err)
 		}
 
-		err = k.sshCmdAsync(master, cmd)
+		err = k.sshCmdAsync(master, joinCmd)
 		if err != nil {
 			return fmt.Errorf("exec kubeadm join in %s failed %v", master, err)
 		}
@@ -175,6 +175,7 @@ func (k *KubeadmRuntime) deleteMaster(master string) error {
 		//remove master
 		masterIPs := strings.SliceRemoveStr(k.getMasterIPList(), master)
 		if len(masterIPs) > 0 {
+			// TODO: do we need draining first?
 			if err := k.RemoveNodeFromK8sClient(master); err != nil {
 				logger.Warn(fmt.Errorf("delete master %s failed %v", master, err))
 			}

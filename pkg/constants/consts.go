@@ -14,8 +14,8 @@
 
 package constants
 
-import (
-	"github.com/containers/storage/pkg/homedir"
+const (
+	DefaultClusterFileName = "Clusterfile"
 )
 
 const (
@@ -35,10 +35,6 @@ const (
 	Config  = "Config"
 	Cluster = "Cluster"
 )
-
-func GetHomeDir() string {
-	return homedir.Get()
-}
 
 var AppName = "sealos"
 

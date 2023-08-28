@@ -48,7 +48,7 @@ const (
 )
 
 type impl struct {
-	pathResolver PathResolver
+	pathResolver constants.PathResolver
 	ssh          ssh.Interface
 	mounts       []v2.MountImage
 }
@@ -129,7 +129,7 @@ func trimPortStr(s string) string {
 	return s
 }
 
-func getRegistryServeCommand(pathResolver PathResolver, port string) string {
+func getRegistryServeCommand(pathResolver constants.PathResolver, port string) string {
 	return fmt.Sprintf("%s registry serve filesystem -p %s --disable-logging=true %s",
 		pathResolver.RootFSSealctlPath(), port, pathResolver.RootFSRegistryPath(),
 	)
@@ -205,12 +205,6 @@ func syncViaHTTP(targets []string) func(context.Context, string) error {
 	}
 }
 
-type PathResolver interface {
-	RootFSSealctlPath() string
-	RootFSRegistryPath() string
-	RootFSPath() string
-}
-
-func New(pathResolver PathResolver, ssh ssh.Interface, mounts []v2.MountImage) filesystem.RegistrySyncer {
+func New(pathResolver constants.PathResolver, ssh ssh.Interface, mounts []v2.MountImage) filesystem.RegistrySyncer {
 	return &impl{pathResolver, ssh, mounts}
 }

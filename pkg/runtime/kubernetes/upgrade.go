@@ -179,15 +179,15 @@ func (k *KubeadmRuntime) autoUpdateConfig(version string) error {
 	}
 
 	kk := &KubeadmRuntime{
-		KubeadmConfig: defaultKubeadmConfig,
+		kubeadmConfig: defaultKubeadmConfig,
 	}
 	kk.setKubeVersion(version)
 	kk.setFeatureGatesConfiguration()
-	if err = kk.KubeadmConfig.ConvertKubeadmVersion(); err != nil {
+
+	conversion, err := kk.kubeadmConfig.ToConvertedKubeadmConfig()
+	if err != nil {
 		return err
 	}
-
-	conversion := kk.KubeadmConfig.GetConvertedKubeadmConfig()
 	newClusterData, err := yaml.MarshalYamlConfigs(&conversion.ClusterConfiguration)
 	if err != nil {
 		logger.Error("failed to encode ClusterConfiguration: %s", err)

@@ -19,18 +19,17 @@ import (
 	"path"
 
 	"github.com/labring/sealos/pkg/cert"
-	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {
+func (k *KubeadmRuntime) InitKubeadmConfigToMaster0() error {
 	data, err := k.generateInitConfigs()
 	if err != nil {
 		return fmt.Errorf("generate init config error: %v", err)
 	}
-	initConfigPath := path.Join(k.getContentData().TmpPath(), constants.DefaultInitKubeadmFileName)
-	outConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultInitKubeadmFileName)
+	initConfigPath := path.Join(k.getContentData().TmpPath(), defaultInitKubeadmFileName)
+	outConfigPath := path.Join(k.getContentData().ConfigsPath(), defaultInitKubeadmFileName)
 	err = file.WriteFile(initConfigPath, data)
 	if err != nil {
 		return fmt.Errorf("failed to write tmp init kubeadm config: %v", err)
@@ -53,31 +52,27 @@ func (k *KubeadmRuntime) GenerateCert() error {
 
 	logger.Debug("GenerateCert param:", k.getContentData().PkiPath(),
 		k.getContentData().PkiEtcdPath(),
-		k.getCertSANS(),
+		k.getCertSANs(),
 		k.getMaster0IP(),
 		hostName,
 		k.getServiceCIDR(),
 		k.getDNSDomain())
-	err = cert.GenerateCert(
+	return cert.GenerateCert(
 		k.getContentData().PkiPath(),
 		k.getContentData().PkiEtcdPath(),
-		k.getCertSANS(),
+		k.getCertSANs(),
 		k.getMaster0IP(),
 		hostName,
 		k.getServiceCIDR(),
 		k.getDNSDomain(),
 	)
-	if err != nil {
-		return fmt.Errorf("generate certs failed: %v", err)
-	}
-	return k.sendNewCertAndKey([]string{k.getMaster0IPAndPort()})
 }
 
 func (k *KubeadmRuntime) SendNewCertAndKeyToMasters() error {
 	return k.sendNewCertAndKey(k.getMasterIPAndPortList())
 }
 
-func (k *KubeadmRuntime) CreateKubeConfig() error {
+func (k *KubeadmRuntime) CreateKubeConfigFiles() error {
 	logger.Info("start to create kubeconfig...")
 	hostName, err := k.execHostname(k.getMaster0IPAndPort())
 	if err != nil {

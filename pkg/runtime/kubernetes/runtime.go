@@ -33,43 +33,45 @@ import (
 
 type KubeadmRuntime struct {
 	config  *types.Config // from argument
-	Cluster *v2.Cluster
+	cluster *v2.Cluster
 
-	Token         *types.Token
-	KubeadmConfig *types.KubeadmConfig // a deep copy from config.KubeadmConfig or a new one
+	token         *types.Token
+	kubeadmConfig *types.KubeadmConfig // a deep copy from config.KubeadmConfig or a new one
 
 	klogLevel     int
 	cli           kubernetes.Client
 	clusterClient ssh.Interface
-	pathResolver  constants.Data
+	pathResolver  constants.PathResolver
 	remoteUtil    remote.Interface
 	mu            sync.Mutex
 }
 
 func (k *KubeadmRuntime) Init() error {
-	pipeline := []func() error{
-		k.ConfigInitKubeadmToMaster0,
-		k.UpdateCertByInit,
+	return k.runPipelines("init masters",
+		k.InitKubeadmConfigToMaster0,
+		k.InitCertsAndKubeConfigs,
 		k.CopyStaticFilesToMasters,
 		k.InitMaster0,
-	}
-
-	return k.pipeline("init", pipeline)
+	)
 }
 
-func (k *KubeadmRuntime) GetConfig() ([]byte, error) {
+func (k *KubeadmRuntime) GetRawConfig() ([]byte, error) {
 	if k.config.KubeadmConfig == nil {
 		return nil, errors.New("please provide a nonnull config")
 	}
 	in := *k.config.KubeadmConfig
-	k.KubeadmConfig = &in
+	k.kubeadmConfig = &in
 
 	if err := k.CompleteKubeadmConfig(); err != nil {
 		return nil, err
 	}
-	k.Cluster.Status = v2.ClusterStatus{}
-	conversion := k.KubeadmConfig.GetConvertedKubeadmConfig()
-	objects := []interface{}{k.Cluster,
+	k.cluster.Status = v2.ClusterStatus{}
+
+	conversion, err := k.kubeadmConfig.ToConvertedKubeadmConfig()
+	if err != nil {
+		return nil, err
+	}
+	objects := []interface{}{k.cluster,
 		conversion.InitConfiguration,
 		conversion.ClusterConfiguration,
 		conversion.JoinConfiguration,
@@ -100,7 +102,7 @@ func (k *KubeadmRuntime) ScaleUp(newMasterIPList []string, newNodeIPList []strin
 		if err := k.joinNodes(newNodeIPList); err != nil {
 			return err
 		}
-		return k.copyNodeKubeConfig(newNodeIPList)
+		return k.copyKubeConfigFileToNodes(newNodeIPList)
 	}
 	return nil
 }
@@ -122,14 +124,14 @@ func (k *KubeadmRuntime) ScaleDown(deleteMastersIPList []string, deleteNodesIPLi
 func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*KubeadmRuntime, error) {
 	sshClient := ssh.NewSSHByCluster(cluster, true)
 	k := &KubeadmRuntime{
-		Cluster: cluster,
+		cluster: cluster,
 		config: &types.Config{
 			KubeadmConfig:   kubeadm,
 			APIServerDomain: types.DefaultAPIServerDomain,
 		},
-		KubeadmConfig: types.NewKubeadmConfig(),
+		kubeadmConfig: types.NewKubeadmConfig(),
 		clusterClient: sshClient,
-		pathResolver:  constants.NewData(cluster.GetName()),
+		pathResolver:  constants.NewPathResolver(cluster.GetName()),
 		remoteUtil:    remote.New(cluster.GetName(), sshClient),
 	}
 	if err := k.Validate(); err != nil {
@@ -146,13 +148,13 @@ func New(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*KubeadmRuntime, er
 }
 
 func (k *KubeadmRuntime) Validate() error {
-	if len(k.Cluster.Spec.Hosts) == 0 {
+	if len(k.cluster.Spec.Hosts) == 0 {
 		return fmt.Errorf("master hosts cannot be empty")
 	}
 	if k.getMaster0IP() == "" {
 		return fmt.Errorf("master hosts ip cannot be empty")
 	}
-	if k.getKubeVersionFromImage() == "" && k.Cluster.DeletionTimestamp.IsZero() {
+	if k.getKubeVersionFromImage() == "" && k.cluster.DeletionTimestamp.IsZero() {
 		return fmt.Errorf("cluster image kubernetes version cannot be empty")
 	}
 	return nil
