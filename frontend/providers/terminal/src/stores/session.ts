@@ -1,9 +1,9 @@
 import type { Session } from '@/interfaces/session';
 import { sessionKey } from '@/interfaces/session';
-import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
-import { immer } from 'zustand/middleware/immer';
 import * as yaml from 'js-yaml';
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
 
 type SessionState = {
   session: Session;
@@ -29,7 +29,7 @@ const useSessionStore = create<SessionState>()(
       delSession: () => {
         set({ session: undefined });
       },
-      isUserLogin: () => get().session?.user?.id !== undefined,
+      isUserLogin: () => !!get().session?.user,
       getKubeconfigToken: () => {
         if (get().session?.kubeconfig === '') {
           return '';

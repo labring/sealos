@@ -72,24 +72,6 @@ spec:
 apiVersion: app.sealos.io/v1
 kind: App
 metadata:
-  name: sealos-imagehub
-  namespace: app-system
-spec:
-  data:
-    desc: Image Hub
-    url: https://hub.sealos.io/
-  icon: /images/icons/app_store.png
-  menuData:
-    helpDocs: https://www.sealos.io/docs/cloud/apps/appstore/
-    helpDropDown: false
-    nameColor: text-black
-  name: Image Hub
-  type: iframe
-  displayType: normal
----
-apiVersion: app.sealos.io/v1
-kind: App
-metadata:
   name: terminal
   namespace: app-system
 spec:
