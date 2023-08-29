@@ -1,5 +1,5 @@
+import { Box } from '@chakra-ui/react';
 import Head from 'next/head';
-import styles from './index.module.scss';
 
 export default function Layout(props: any) {
   return (
@@ -8,7 +8,17 @@ export default function Layout(props: any) {
         <title>sealos Cloud</title>
         <meta name="description" content="sealos cloud dashboard" />
       </Head>
-      <div className={styles.desktopContainer}>{props.children}</div>
+      <Box
+        position={'relative'}
+        width={'100vw'}
+        height={'100vh'}
+        overflow={'hidden'}
+        backgroundImage={'url(/images/background.svg)'}
+        backgroundRepeat={'no-repeat'}
+        backgroundSize={'cover'}
+      >
+        {props.children}
+      </Box>
     </>
   );
 }
