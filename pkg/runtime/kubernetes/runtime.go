@@ -38,12 +38,12 @@ type KubeadmRuntime struct {
 	token         *types.Token
 	kubeadmConfig *types.KubeadmConfig // a deep copy from config.KubeadmConfig or a new one
 
-	klogLevel     int
-	cli           kubernetes.Client
-	clusterClient ssh.Interface
-	pathResolver  constants.PathResolver
-	remoteUtil    remote.Interface
-	mu            sync.Mutex
+	klogLevel    int
+	cli          kubernetes.Client
+	sshClient    ssh.Interface
+	pathResolver constants.PathResolver
+	remoteUtil   remote.Interface
+	mu           sync.Mutex
 }
 
 func (k *KubeadmRuntime) Init() error {
@@ -122,7 +122,7 @@ func (k *KubeadmRuntime) ScaleDown(deleteMastersIPList []string, deleteNodesIPLi
 }
 
 func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*KubeadmRuntime, error) {
-	sshClient := ssh.NewSSHByCluster(cluster, true)
+	sshClient := ssh.NewCacheClientFromCluster(cluster, true)
 	k := &KubeadmRuntime{
 		cluster: cluster,
 		config: &types.Config{
@@ -130,7 +130,7 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*Kube
 			APIServerDomain: types.DefaultAPIServerDomain,
 		},
 		kubeadmConfig: types.NewKubeadmConfig(),
-		clusterClient: sshClient,
+		sshClient:     sshClient,
 		pathResolver:  constants.NewPathResolver(cluster.GetName()),
 		remoteUtil:    remote.New(cluster.GetName(), sshClient),
 	}

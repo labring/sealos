@@ -312,7 +312,7 @@ func getSSHclient(infra *infrav1.Infra) ssh.Interface {
 		User:   defaultUser,
 		PkData: infra.Spec.SSH.PkData,
 	}
-	c := ssh.NewSSHClient(s, true)
+	c := ssh.MustNewClient(s, true)
 
 	return c
 }

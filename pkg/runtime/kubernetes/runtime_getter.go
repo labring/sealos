@@ -27,8 +27,6 @@ import (
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
-	"github.com/labring/sealos/pkg/remote"
-	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -86,35 +84,37 @@ func (k *KubeadmRuntime) getMaster0IPAPIServer() string {
 	return fmt.Sprintf("https://%s:%d", master0, k.getAPIServerPort())
 }
 
-func (k *KubeadmRuntime) getLvscareImage() (string, error) {
-	labels := k.getImageLabels()
-	image := labels[v1beta1.ImageKubeLvscareImageKey]
-	if image == "" {
-		image = constants.DefaultLvsCareImage
+func (k *KubeadmRuntime) getLvscareImage() string {
+	img := k.cluster.GetRootfsImage()
+	if img != nil {
+		return getLabelValueOrDefault(img.Labels, v1beta1.ImageKubeLvscareImageKey, constants.DefaultLvsCareImage)
 	}
-	return image, nil
+	return constants.DefaultLvsCareImage
+}
+
+func getLabelValueOrDefault(m map[string]string, name string, defaultVal string) string {
+	if v, ok := m[name]; ok && v != "" {
+		return v
+	}
+	return defaultVal
 }
 
 func (k *KubeadmRuntime) getVIPFromImage() string {
-	labels := k.getImageLabels()
-	vip := labels[v1beta1.ImageVIPKey]
-	if vip == "" {
-		vip = DefaultVIP
-	} else {
-		envsInRootFsImage := k.cluster.GetRootfsImage().Env
-		envs := maps.MergeMap(envsInRootFsImage, k.getEnvInterface().Getenv(k.getMaster0IP()))
-		vip = stringsutil.RenderTextFromEnv(vip, envs)
+	img := k.cluster.GetRootfsImage()
+	if img != nil {
+		vip := getLabelValueOrDefault(img.Labels, v1beta1.ImageVIPKey, defaultVIP)
+		envs := maps.MergeMap(img.Env, k.getEnvInterface().Getenv(k.getMaster0IP()))
+		return stringsutil.RenderTextFromEnv(vip, envs)
 	}
-	logger.Debug("get vip is %s", vip)
-	return vip
+	return defaultVIP
 }
 
 func (k *KubeadmRuntime) execIPVS(ip string, masters []string) error {
-	return k.getRemoteInterface().IPVS(ip, k.getVipAndPort(), masters)
+	return k.remoteUtil.IPVS(ip, k.getVipAndPort(), masters)
 }
 
 func (k *KubeadmRuntime) execIPVSClean(ip string) error {
-	return k.getRemoteInterface().IPVSClean(ip, k.getVipAndPort())
+	return k.remoteUtil.IPVSClean(ip, k.getVipAndPort())
 }
 
 func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs, nodesIPs []string) error {
@@ -139,24 +139,21 @@ func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs, nodesIPs []string) error {
 }
 
 func (k *KubeadmRuntime) execIPVSPod(ip string, masters []string) error {
-	image, err := k.getLvscareImage()
-	if err != nil {
-		return err
-	}
-	return k.getRemoteInterface().StaticPod(ip, k.getVipAndPort(), constants.LvsCareStaticPodName, image, masters)
+	image := k.getLvscareImage()
+	return k.remoteUtil.StaticPod(ip, k.getVipAndPort(), constants.LvsCareStaticPodName, image, masters)
 }
 
 func (k *KubeadmRuntime) execToken(ip, certificateKey string) (string, error) {
-	return k.getRemoteInterface().Token(ip, k.getInitMasterKubeadmConfigFilePath(), certificateKey)
+	return k.remoteUtil.Token(ip, k.getInitMasterKubeadmConfigFilePath(), certificateKey)
 }
 
 func (k *KubeadmRuntime) execHostname(ip string) (string, error) {
-	hostname, err := k.getRemoteInterface().Hostname(ip)
+	hostname, err := k.remoteUtil.Hostname(ip)
 	return strings.ToLower(hostname), err
 }
 
 func (k *KubeadmRuntime) execHostsAppend(ip, host, domain string) error {
-	return k.getRemoteInterface().HostsAdd(ip, iputils.GetHostIP(host), domain)
+	return k.remoteUtil.HostsAdd(ip, iputils.GetHostIP(host), domain)
 }
 
 func (k *KubeadmRuntime) execCert(ip string) error {
@@ -164,19 +161,19 @@ func (k *KubeadmRuntime) execCert(ip string) error {
 	if err != nil {
 		return err
 	}
-	return k.getRemoteInterface().Cert(ip, k.getCertSANs(), iputils.GetHostIP(ip), hostname, k.getServiceCIDR(), k.getDNSDomain())
+	return k.remoteUtil.Cert(ip, k.getCertSANs(), iputils.GetHostIP(ip), hostname, k.getServiceCIDR(), k.getDNSDomain())
 }
 
 func (k *KubeadmRuntime) execHostsDelete(ip, domain string) error {
-	return k.getRemoteInterface().HostsDelete(ip, domain)
+	return k.remoteUtil.HostsDelete(ip, domain)
 }
 
 func (k *KubeadmRuntime) sshCmdAsync(host string, cmd ...string) error {
-	return k.getSSHInterface().CmdAsync(host, cmd...)
+	return k.sshClient.CmdAsync(host, cmd...)
 }
 
 func (k *KubeadmRuntime) sshCmdToString(host string, cmd string) (string, error) {
-	return k.getSSHInterface().CmdToString(host, cmd, "")
+	return k.sshClient.CmdToString(host, cmd, "")
 }
 
 func (k *KubeadmRuntime) sshCopy(host, srcFilePath, dstFilePath string) error {
@@ -184,34 +181,18 @@ func (k *KubeadmRuntime) sshCopy(host, srcFilePath, dstFilePath string) error {
 		logger.Info("src and dst is same path , skip copy %s", srcFilePath)
 		return nil
 	}
-	return k.getSSHInterface().Copy(host, srcFilePath, dstFilePath)
-}
-
-func (k *KubeadmRuntime) getImageLabels() map[string]string {
-	return k.cluster.GetImageLabels()
-}
-
-func (k *KubeadmRuntime) getSSHInterface() ssh.Interface {
-	return k.clusterClient
+	return k.sshClient.Copy(host, srcFilePath, dstFilePath)
 }
 
 func (k *KubeadmRuntime) getEnvInterface() env.Interface {
 	return env.NewEnvProcessor(k.cluster)
 }
 
-func (k *KubeadmRuntime) getRemoteInterface() remote.Interface {
-	return k.remoteUtil
-}
-
-func (k *KubeadmRuntime) getContentData() constants.PathResolver {
-	return k.pathResolver
-}
-
 func (k *KubeadmRuntime) getKubeInterface() (kubernetes.Client, error) {
 	if k.cli != nil {
 		return k.cli, nil
 	}
-	cli, err := kubernetes.NewKubernetesClient(k.getContentData().AdminFile(), k.getMaster0IPAPIServer())
+	cli, err := kubernetes.NewKubernetesClient(k.pathResolver.AdminFile(), k.getMaster0IPAPIServer())
 	if err != nil {
 		return nil, err
 	}
@@ -228,5 +209,5 @@ func (k *KubeadmRuntime) getKubeExpansion() (kubernetes.Expansion, error) {
 }
 
 func (k *KubeadmRuntime) getInitMasterKubeadmConfigFilePath() string {
-	return path.Join(k.getContentData().ConfigsPath(), defaultInitKubeadmFileName)
+	return path.Join(k.pathResolver.ConfigsPath(), defaultInitKubeadmFileName)
 }

@@ -75,13 +75,13 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 			return err
 		}
 	}
-	master0Name, err := k.getRemoteInterface().Hostname(master0ip)
+	master0Name, err := k.remoteUtil.Hostname(master0ip)
 	if err != nil {
 		return err
 	}
 	//default nodeName in k8s is the lower case of their hostname because of DNS protocol.
 	master0Name = strings.ToLower(master0Name)
-	kubeBinaryPath := k.getContentData().RootFSBinPath()
+	kubeBinaryPath := k.pathResolver.RootFSBinPath()
 	//assure the connection to api-server succeed before executing upgrade cmds
 	if err = k.pingAPIServer(); err != nil {
 		return err
@@ -114,13 +114,13 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string, version string) error {
 				return err
 			}
 		}
-		nodename, err := k.getRemoteInterface().Hostname(ip)
+		nodename, err := k.remoteUtil.Hostname(ip)
 		if err != nil {
 			return err
 		}
 		//default nodeName in k8s is the lower case of their hostname because of DNS protocol.
 		nodename = strings.ToLower(nodename)
-		kubeBinaryPath := k.getContentData().RootFSBinPath()
+		kubeBinaryPath := k.pathResolver.RootFSBinPath()
 		//assure the connection to api-server succeed before executing upgrade cmds
 		if err = k.pingAPIServer(); err != nil {
 			return err
