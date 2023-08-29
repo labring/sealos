@@ -219,6 +219,13 @@ type SSH struct {
 	Port     uint16 `json:"port,omitempty"`
 }
 
+func (s *SSH) DefaultPort() uint16 {
+	if s.Port != 0 {
+		return s.Port
+	}
+	return 22
+}
+
 type Host struct {
 	IPS   []string `json:"ips,omitempty"`
 	Roles []string `json:"roles,omitempty"`

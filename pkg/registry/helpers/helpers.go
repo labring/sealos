@@ -43,16 +43,14 @@ func GetRegistryInfo(sshInterface ssh.Interface, rootfs, defaultRegistry string)
 	etcPath := path.Join(rootfs, constants.EtcDirName, RegistryCustomConfig)
 	out, err := sshInterface.Cmd(defaultRegistry, fmt.Sprintf("cat %s", etcPath))
 	if err != nil {
-		logger.Warn("load registry config error: %+v", err)
-		logger.Info("use default registry config")
+		logger.Warn("load registry config error: %+v, using default registry config", err)
 		return DefaultConfig
 	}
 	logger.Debug("registry config data info: %s", string(out))
 	readConfig := &v1beta1.RegistryConfig{}
 	err = yaml.Unmarshal(out, &readConfig)
 	if err != nil {
-		logger.Warn("read registry config path error: %+v", err)
-		logger.Info("use default registry config")
+		logger.Warn("read registry config path error: %+v, using default registry config", err)
 		return DefaultConfig
 	}
 	if readConfig.IP == "" {
