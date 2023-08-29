@@ -35,7 +35,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 type GpuReconciler struct {
@@ -108,16 +110,18 @@ func (r *GpuReconciler) applyGPUInfoCM(ctx context.Context, nodeList *corev1.Nod
 	}
 	// get the number of GPU used by pods that are using GPU
 	for _, pod := range podList.Items {
+		phase := pod.Status.Phase
+		if phase == corev1.PodSucceeded {
+			continue
+		}
+
 		nodeName = pod.Spec.NodeName
 		_, ok1 := nodeMap[nodeName]
 		gpuProduct, ok2 := pod.Spec.NodeSelector[NvidiaGPUProduct]
 		if !ok1 || !ok2 {
 			continue
 		}
-		phase := pod.Status.Phase
-		if phase != corev1.PodRunning {
-			continue
-		}
+
 		containers := pod.Spec.Containers
 		for _, container := range containers {
 			gpuCount, ok := container.Resources.Limits[NvidiaGPU]
@@ -249,7 +253,7 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		if _, ok := pod.Spec.NodeSelector[NvidiaGPUProduct]; !ok {
 			return nil
 		}
-		if pod.Status.Phase != corev1.PodRunning {
+		if pod.Status.Phase == corev1.PodSucceeded {
 			return nil
 		}
 		return []string{GPU}
@@ -260,8 +264,7 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Pod{}, builder.WithPredicates(predicate.Funcs{
 			CreateFunc: func(event event.CreateEvent) bool {
-				_, ok := event.Object.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
-				return ok
+				return useGPU(event.Object)
 			},
 			UpdateFunc: func(event event.UpdateEvent) bool {
 				_, ok := event.ObjectNew.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
@@ -273,9 +276,34 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return phaseOld != phaseNew
 			},
 			DeleteFunc: func(event event.DeleteEvent) bool {
-				_, ok := event.Object.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
-				return ok
+				return useGPU(event.Object)
+			},
+		})).
+		Watches(&source.Kind{Type: &corev1.Node{}}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(predicate.Funcs{
+			CreateFunc: func(event event.CreateEvent) bool {
+				return hasGPU(event.Object)
+			},
+			UpdateFunc: func(event event.UpdateEvent) bool {
+				oldVal, oldOk := event.ObjectOld.(*corev1.Node).Status.Allocatable[NvidiaGPU]
+				newVal, newOk := event.ObjectNew.(*corev1.Node).Status.Allocatable[NvidiaGPU]
+
+				return oldOk && newOk && oldVal != newVal
+			},
+			DeleteFunc: func(event event.DeleteEvent) bool {
+				return hasGPU(event.Object)
 			},
 		})).
 		Complete(r)
+}
+
+func useGPU(obj client.Object) bool {
+	_, ok := obj.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
+	return ok
+}
+
+func hasGPU(obj client.Object) bool {
+	_, ok1 := obj.(*corev1.Node).Labels[NvidiaGPUMemory]
+	_, ok2 := obj.(*corev1.Node).Labels[NvidiaGPUProduct]
+	_, ok3 := obj.(*corev1.Node).Status.Allocatable[NvidiaGPU]
+	return ok1 && ok2 && ok3
 }
