@@ -15,6 +15,7 @@
 package apply
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -32,6 +33,7 @@ func NewApplierFromResetArgs(cmd *cobra.Command, args *ResetArgs) (applydrivers.
 	clusterPath := constants.Clusterfile(args.ClusterName)
 	cf := clusterfile.NewClusterFile(clusterPath)
 	err := cf.Process()
+	// incase we want to reset force
 	if err != nil && err != clusterfile.ErrClusterFileNotExists {
 		return nil, err
 	}
@@ -58,7 +60,7 @@ func (r *ClusterArgs) resetArgs(cmd *cobra.Command, args *ResetArgs) error {
 	}
 	override := getSSHFromCommand(cmd)
 	if override != nil {
-		r.cluster.Spec.SSH = *override
+		ssh.OverSSHConfig(&r.cluster.Spec.SSH, override)
 	}
 
 	if len(args.Cluster.Masters) > 0 {
@@ -72,6 +74,10 @@ func (r *ClusterArgs) resetArgs(cmd *cobra.Command, args *ResetArgs) error {
 			r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, nodes[0])})
 		}
 		r.cluster.Spec.Hosts = r.hosts
+	}
+
+	if r.cluster.ObjectMeta.CreationTimestamp.IsZero() && len(r.cluster.Spec.Hosts) == 0 {
+		return errors.New("must specified '--masters' or '--nodes' when clusterfile is not exists")
 	}
 	logger.Debug("cluster info: %v", r.cluster)
 	return nil
