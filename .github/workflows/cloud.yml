@@ -101,8 +101,8 @@ jobs:
           sed -i "s#latest#${BuildFromTag}#g" etc/sealos/desktop-config.yaml
           
           sudo bash init.sh amd64 
-          sudo sealos build -t ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }}-amd64 -f Kubefile
-          sudo sealos build -t ${{ steps.prepare.outputs.repo }}:latest-amd64 -f Kubefile
+          sudo sealos build -t ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }}-amd64 --platform linux/amd64 -f Kubefile
+          sudo sealos build -t ${{ steps.prepare.outputs.repo }}:latest-amd64 --platform linux/amd64 -f Kubefile
           
           
           # delete old registry cache
@@ -110,8 +110,8 @@ jobs:
           sudo rm -rf tars
           
           sudo bash init.sh arm64 
-          sudo sealos build -t ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }}-arm64 -f Kubefile
-          sudo sealos build -t ${{ steps.prepare.outputs.repo }}:latest-arm64 -f Kubefile
+          sudo sealos build -t ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }}-arm64 --platform linux/arm64 -f Kubefile
+          sudo sealos build -t ${{ steps.prepare.outputs.repo }}:latest-arm64 --platform linux/arm64 -f Kubefile
           
       - name: Manifest Cluster Images
         # if push to master, then patch images to ghcr.io
