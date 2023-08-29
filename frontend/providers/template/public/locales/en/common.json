@@ -154,6 +154,7 @@
     "Preview": "Preview",
     "Configure Form": "Configure Form",
     "YAML File": "YAML File",
-    "Template Development": "Template Development"
+    "Template Development": "Template Development",
+    "Dryrun Deploy": "Dryrun Deploy"
   }
 }

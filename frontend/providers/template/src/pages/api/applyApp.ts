@@ -5,7 +5,11 @@ import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
-  const { yamlList }: { yamlList: string[] } = req.body;
+  const { yamlList, type = 'create' } = req.body as {
+    yamlList: string[];
+    type: 'create' | 'replace' | 'dryrun';
+  };
+
   if (!yamlList || yamlList.length < 2) {
     jsonRes(res, {
       code: 500,
@@ -18,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
-    const applyRes = await applyYamlList(yamlList, 'create');
+    const applyRes = await applyYamlList(yamlList, type);
 
     jsonRes(res, { data: applyRes.map((item) => item.kind) });
   } catch (err: any) {

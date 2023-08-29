@@ -143,7 +143,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         return JSYAML.dump(_item);
       });
 
-      const result = await postDeployApp(yamls);
+      const result = await postDeployApp(yamls, 'create');
 
       toast({
         title: t(applySuccess),
@@ -246,8 +246,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           justifyContent={'start'}
           alignItems={'center'}
           backgroundColor={'rgba(255, 255, 255)'}
-          backdropBlur={'100px'}
-        >
+          backdropBlur={'100px'}>
           <Box cursor={'pointer'} onClick={() => router.push('/')}>
             <MyIcon ml={'46px'} name="arrowLeft" color={'#24282C'} w={'16px'} h={'16px'}></MyIcon>
           </Box>
@@ -256,8 +255,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             fontWeight={500}
             fontSize={16}
             textDecoration={'none'}
-            color={'#7B838B'}
-          >
+            color={'#7B838B'}>
             <BreadcrumbItem textDecoration={'none'}>
               <BreadcrumbLink _hover={{ color: '#219BF4', textDecoration: 'none' }} href="/">
                 {t('Template List')}
@@ -276,8 +274,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           flexDirection={'column'}
           width={'100%'}
           flexGrow={1}
-          backgroundColor={'rgba(255, 255, 255, 0.90)'}
-        >
+          backgroundColor={'rgba(255, 255, 255, 0.90)'}>
           <Header
             templateDetail={templateDetail}
             appName={''}

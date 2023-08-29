@@ -1,18 +1,9 @@
 import MyIcon from '@/components/Icon';
-import {
-  Flex,
-  Button,
-  Text,
-  Box,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  Breadcrumb
-} from '@chakra-ui/react';
-import { t } from 'i18next';
-import { useRouter } from 'next/router';
+import { Box, Breadcrumb, BreadcrumbItem, BreadcrumbLink, Button, Flex } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
+import { useRouter } from 'next/router';
 
-const BreadCrumbHeader = () => {
+const BreadCrumbHeader = ({ applyCb }: { applyCb: () => void }) => {
   const router = useRouter();
   const { t } = useTranslation();
 
@@ -23,8 +14,7 @@ const BreadCrumbHeader = () => {
       justifyContent={'start'}
       alignItems={'center'}
       backgroundColor={'rgba(255, 255, 255)'}
-      backdropBlur={'100px'}
-    >
+      backdropBlur={'100px'}>
       <Box cursor={'pointer'} onClick={() => router.push('/')}>
         <MyIcon name="arrowLeft" color={'#24282C'} w={'16px'} h={'16px'}></MyIcon>
       </Box>
@@ -33,8 +23,7 @@ const BreadCrumbHeader = () => {
         fontWeight={500}
         fontSize={16}
         textDecoration={'none'}
-        color={'#7B838B'}
-      >
+        color={'#7B838B'}>
         <BreadcrumbItem textDecoration={'none'}>
           <BreadcrumbLink _hover={{ color: '#219BF4', textDecoration: 'none' }} href="/">
             {t('Template List')}
@@ -46,6 +35,9 @@ const BreadCrumbHeader = () => {
           </BreadcrumbLink>
         </BreadcrumbItem>
       </Breadcrumb>
+      <Button ml="auto" px={4} minW={'120px'} h={'34px'} variant={'primary'} onClick={applyCb}>
+        {t('develop.Dryrun Deploy')}
+      </Button>
     </Flex>
   );
 };
