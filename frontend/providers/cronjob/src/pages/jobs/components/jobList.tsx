@@ -1,8 +1,9 @@
 import { updateCronJobStatus } from '@/api/job';
 import MyIcon from '@/components/Icon';
 import MyMenu from '@/components/Menu';
+import StatusTag from '@/components/StatusTag';
 import MyTable from '@/components/Table';
-import { CronJobStatusEnum } from '@/constants/job';
+import { StatusEnum } from '@/constants/job';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
@@ -74,8 +75,8 @@ const JobList = ({
     },
     {
       title: 'Status',
-      dataIndex: 'status',
-      key: 'status'
+      key: 'status',
+      render: (item: CronJobListItemType) => <StatusTag status={item.status} />
     },
     {
       title: 'Schedule',
@@ -118,7 +119,7 @@ const JobList = ({
               </MenuButton>
             }
             menuList={[
-              ...(item.status === CronJobStatusEnum.Suspend
+              ...(item.status.value === StatusEnum.Stopped
                 ? [
                     {
                       child: (
@@ -141,7 +142,7 @@ const JobList = ({
                       onClick: () => router.push(`/job/edit?name=${item.name}`)
                     }
                   ]),
-              ...(item.status === CronJobStatusEnum.Running
+              ...(item.status.value === StatusEnum.Running
                 ? [
                     {
                       child: (

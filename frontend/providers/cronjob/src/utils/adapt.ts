@@ -1,14 +1,19 @@
 import { CronJobEditType, CronJobListItemType } from '@/types/job';
 import { V1CronJob } from '@kubernetes/client-node';
 import dayjs from 'dayjs';
+import { cron2Time } from '@/utils/tools';
+import { CronJobStatusMap, StatusEnum } from '@/constants/job';
 
 export const adaptJobList = (job: V1CronJob): CronJobListItemType => {
-  // compute store amount
+  const status_str = job.spec?.suspend ? StatusEnum.Stopped : StatusEnum.Running;
+
   return {
     id: job.metadata?.uid || '',
     name: job.metadata?.name || 'job name',
     createTime: dayjs(job.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
-    status: job.spec?.suspend ? 'Suspend' : 'Running',
+    status: CronJobStatusMap[status_str]
+      ? CronJobStatusMap[status_str]
+      : CronJobStatusMap['UnKnow'],
     schedule: job.spec?.schedule || 'schedule',
     lastScheduleTime: dayjs(job?.status?.lastScheduleTime).format('YYYY/MM/DD HH:mm'),
     lastSuccessfulTime: dayjs(job?.status?.lastSuccessfulTime).format('YYYY/MM/DD HH:mm')
@@ -16,6 +21,8 @@ export const adaptJobList = (job: V1CronJob): CronJobListItemType => {
 };
 
 export const adaptJobDetail = (job: V1CronJob): CronJobEditType => {
+  const cronObj = cron2Time(job.spec?.schedule || '');
+
   return {
     jobType: '',
     jobName: job.metadata?.name || '',
@@ -40,9 +47,9 @@ export const adaptJobDetail = (job: V1CronJob): CronJobEditType => {
           valueFrom: env.valueFrom
         };
       }) || [],
-    scheduleType: 'hour',
-    week: [],
-    hour: '*',
-    minute: '*'
+    scheduleType: cronObj.scheduleType,
+    week: cronObj.week,
+    hour: cronObj.hour,
+    minute: cronObj.minute
   };
 };

@@ -300,6 +300,26 @@ export const time2Cron = (data: CronJobScheduleType) => {
   return `${data.minute} * * * *`;
 };
 
+export const cron2Time = (str: string): CronJobScheduleType => {
+  const parts = str.split(' '); // 分割字符串，得到每个部分
+
+  if (parts.length < 5) {
+    throw new Error('Invalid Cron expression');
+  }
+
+  const minute = parts[0];
+  const hour = parts[1];
+  const scheduleType = parts[2] === '*' ? 'hour' : parts[4] === '*' ? 'day' : 'week';
+  const week = scheduleType === 'week' ? parts[4].split(',') : [];
+
+  return {
+    scheduleType,
+    week,
+    hour,
+    minute
+  };
+};
+
 export const obj2Query = (obj: Record<string, string | number>) => {
   let str = '';
   Object.entries(obj).forEach(([key, val]) => {

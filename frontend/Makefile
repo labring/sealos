@@ -23,7 +23,8 @@ buildTargets := \
 	providers/dbprovider \
 	providers/applaunchpad \
 	providers/imagehub \
-	providers/template
+	providers/template \
+	providers/cronjob
 
 buildTargets-all := $(addprefix image-build-,$(buildTargets))
 pushTargets-all := $(addprefix image-push-,$(buildTargets))
