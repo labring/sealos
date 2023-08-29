@@ -1,3 +1,5 @@
+import { WstLogger } from 'sealos-desktop-sdk/service';
+
 export type QueryType = {
   name: string;
 };
@@ -17,4 +19,5 @@ export type FormSliderListType = Record<
 
 declare global {
   var FormSliderListConfig: FormSliderListType;
+  var logger: WstLogger;
 }
