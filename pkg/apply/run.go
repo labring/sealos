@@ -117,7 +117,7 @@ func (r *ClusterArgs) runArgs(cmd *cobra.Command, args *RunArgs, imageList []str
 
 	r.cluster.SetNewImages(imageList)
 
-	defaultPort := strconv.Itoa(int(defaultSSHPort(r.cluster.Spec.SSH.Port)))
+	defaultPort := defaultSSHPort(r.cluster.Spec.SSH.Port)
 	masters := stringsutil.SplitRemoveEmpty(args.Cluster.Masters, ",")
 	nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
 	r.hosts = []v2.Host{}
@@ -139,7 +139,7 @@ func (r *ClusterArgs) runArgs(cmd *cobra.Command, args *RunArgs, imageList []str
 }
 
 func (r *ClusterArgs) setHostWithIpsPort(ips []string, roles []string) {
-	defaultPort := strconv.Itoa(int(defaultSSHPort(r.cluster.Spec.SSH.Port)))
+	defaultPort := defaultSSHPort(r.cluster.Spec.SSH.Port)
 	hostMap := map[string]*v2.Host{}
 	for i := range ips {
 		ip, port := iputils.GetHostIPAndPortOrDefault(ips[i], defaultPort)
@@ -165,9 +165,9 @@ func (r *ClusterArgs) setHostWithIpsPort(ips []string, roles []string) {
 	}
 }
 
-func defaultSSHPort(port uint16) uint16 {
+func defaultSSHPort(port uint16) string {
 	if port == 0 {
 		port = v2.DefaultSSHPort
 	}
-	return port
+	return strconv.Itoa(int(port))
 }
