@@ -118,6 +118,7 @@ func (c *Client) Cmd(host, cmd string) ([]byte, error) {
 		d, err := exec.RunBashCmd(cmd)
 		return []byte(d), err
 	}
+	logger.Debug("start to exec `%s` on %s", cmd, host)
 	client, session, err := c.Connect(host)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ssh session for %s: %v", host, err)
