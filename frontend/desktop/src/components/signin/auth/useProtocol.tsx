@@ -42,8 +42,9 @@ const useProtocol = ({
             color: 'rgba(94, 189, 242, 1)',
             borderBottom: '1px solid rgba(94, 189, 242, 1)'
           }}
+          px="4px"
         >
-          &nbsp;{t('Service Agreement')}&nbsp;
+          {t('Service Agreement')}
         </Link>
         {t('and')}
         <Link
@@ -52,8 +53,9 @@ const useProtocol = ({
             color: 'rgba(94, 189, 242, 1)',
             borderBottom: '1px solid rgba(94, 189, 242, 1)'
           }}
+          px="4px"
         >
-          &nbsp;{t('Privacy Policy')}&nbsp;
+          {t('Privacy Policy')}
         </Link>
       </Text>
     </Flex>
