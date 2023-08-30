@@ -44,7 +44,8 @@
     "sass": "^1.63.6",
     "sealos-desktop-sdk": "workspace:*",
     "uuid": "^9.0.0",
-    "zustand": "^4.3.9"
+    "zustand": "^4.3.9",
+    "react-hook-form": "^7.45.2"
   },
   "devDependencies": {
     "@types/js-cookie": "^3.0.3",

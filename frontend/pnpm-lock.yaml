@@ -114,6 +114,9 @@ importers:
       react-draggable:
         specifier: ^4.4.5
         version: 4.4.5(react-dom@18.2.0)(react@18.2.0)
+      react-hook-form:
+        specifier: ^7.45.2
+        version: 7.45.2(react@18.2.0)
       react-i18next:
         specifier: ^12.3.1
         version: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
