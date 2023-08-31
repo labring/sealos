@@ -47,7 +47,7 @@ const Footer = ({ isPc }: { isPc: boolean }) => {
         <img
           draggable="false"
           className="footer-img"
-          src={require('@site/static/illustrations/footer3.png').default}
+          src={require('@site/static/illustrations/footer-mobile.png').default}
           alt="gooter"
         />
         <div className="footer-context">
