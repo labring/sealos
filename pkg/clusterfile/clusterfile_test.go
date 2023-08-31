@@ -21,7 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 
-	"github.com/labring/sealos/pkg/runtime/types"
+	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
@@ -156,7 +156,7 @@ func Test_NoClusterFileWithSingleSchedule(t *testing.T) {
 			if cf.GetConfigs() != nil {
 				t.Error("configs is not nil")
 			}
-			if !reflect.DeepEqual(cf.GetKubeadmConfig(), tt.args.kubeadmConfig) {
+			if !reflect.DeepEqual(cf.GetRuntimeConfig(), tt.args.kubeadmConfig) {
 				t.Error("kubeadmConfig not equal")
 			}
 		})
@@ -269,7 +269,7 @@ func Test_NewClusterFileWithSingleSchedule(t *testing.T) {
 			if !reflect.DeepEqual(cf.GetConfigs()[0], tt.args.config) {
 				t.Error("config not equal")
 			}
-			if !reflect.DeepEqual(cf.GetKubeadmConfig(), tt.args.kubeadmConfig) {
+			if !reflect.DeepEqual(cf.GetRuntimeConfig(), tt.args.kubeadmConfig) {
 				t.Error("kubeadmConfig not equal")
 			}
 		})

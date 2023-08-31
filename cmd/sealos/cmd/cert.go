@@ -77,7 +77,7 @@ func newCertCmd() *cobra.Command {
 				return err
 			}
 			// TODO: using different runtime
-			rt, err := kubernetes.New(cluster, cf.GetKubeadmConfig())
+			rt, err := kubernetes.New(cluster, cf.GetRuntimeConfig())
 			if err != nil {
 				return fmt.Errorf("get default runtime failed, %v", err)
 			}

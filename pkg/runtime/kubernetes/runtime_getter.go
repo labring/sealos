@@ -177,10 +177,6 @@ func (k *KubeadmRuntime) sshCmdToString(host string, cmd string) (string, error)
 }
 
 func (k *KubeadmRuntime) sshCopy(host, srcFilePath, dstFilePath string) error {
-	if srcFilePath == dstFilePath {
-		logger.Info("src and dst is same path , skip copy %s", srcFilePath)
-		return nil
-	}
 	return k.sshClient.Copy(host, srcFilePath, dstFilePath)
 }
 

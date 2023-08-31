@@ -170,7 +170,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		cluster.SetMountImage(mount)
 		c.NewMounts = append(c.NewMounts, *mount)
 	}
-	rt, err := kubernetes.New(cluster, c.ClusterFile.GetKubeadmConfig())
+	rt, err := kubernetes.New(cluster, c.ClusterFile.GetRuntimeConfig())
 	if err != nil {
 		return fmt.Errorf("failed to init runtime, %v", err)
 	}

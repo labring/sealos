@@ -101,7 +101,7 @@ func (c *CreateProcessor) preProcess(cluster *v2.Cluster) error {
 	for i := range cluster.Status.Mounts {
 		cluster.Status.Mounts[i].Env = maps.MergeMap(cluster.Status.Mounts[i].Env, c.ExtraEnvs)
 	}
-	rt, err := kubernetes.New(cluster, c.ClusterFile.GetKubeadmConfig())
+	rt, err := kubernetes.New(cluster, c.ClusterFile.GetRuntimeConfig())
 	if err != nil {
 		return fmt.Errorf("failed to init runtime, %v", err)
 	}

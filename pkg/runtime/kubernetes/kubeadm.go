@@ -28,7 +28,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 
-	"github.com/labring/sealos/pkg/runtime/types"
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -163,7 +164,7 @@ func (k *KubeadmRuntime) getVip() string {
 
 func (k *KubeadmRuntime) getAPIServerPort() int32 {
 	if k.kubeadmConfig.InitConfiguration.LocalAPIEndpoint.BindPort == 0 {
-		k.kubeadmConfig.InitConfiguration.LocalAPIEndpoint.BindPort = types.DefaultAPIServerPort
+		k.kubeadmConfig.InitConfiguration.LocalAPIEndpoint.BindPort = constants.DefaultAPIServerPort
 	}
 	return k.kubeadmConfig.InitConfiguration.LocalAPIEndpoint.BindPort
 }
@@ -259,7 +260,7 @@ func (k *KubeadmRuntime) getServiceCIDR() string {
 
 func (k *KubeadmRuntime) getDNSDomain() string {
 	if k.kubeadmConfig.ClusterConfiguration.Networking.DNSDomain == "" {
-		k.kubeadmConfig.ClusterConfiguration.Networking.DNSDomain = types.DefaultDNSDomain
+		k.kubeadmConfig.ClusterConfiguration.Networking.DNSDomain = constants.DefaultDNSDomain
 	}
 	return k.kubeadmConfig.ClusterConfiguration.Networking.DNSDomain
 }

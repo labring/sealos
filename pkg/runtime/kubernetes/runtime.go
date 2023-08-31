@@ -24,7 +24,7 @@ import (
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/remote"
-	"github.com/labring/sealos/pkg/runtime/types"
+	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -127,7 +127,7 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*Kube
 		cluster: cluster,
 		config: &types.Config{
 			KubeadmConfig:   kubeadm,
-			APIServerDomain: types.DefaultAPIServerDomain,
+			APIServerDomain: constants.DefaultAPIServerDomain,
 		},
 		kubeadmConfig: types.NewKubeadmConfig(),
 		sshClient:     sshClient,
@@ -143,7 +143,8 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*Kube
 	return k, nil
 }
 
-func New(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*KubeadmRuntime, error) {
+func New(cluster *v2.Cluster, config any) (*KubeadmRuntime, error) {
+	kubeadm := config.(*types.KubeadmConfig)
 	return newKubeadmRuntime(cluster, kubeadm)
 }
 
