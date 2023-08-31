@@ -12,25 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runtime
+package k3s
 
-type Interface interface {
-	Ruler
-	Init() error
-	Reset() error
-	ScaleUp(newMasterIPList []string, newNodeIPList []string) error
-	ScaleDown(deleteMastersIPList []string, deleteNodesIPList []string) error
-	Upgrade(version string) error
-	GetRawConfig() ([]byte, error)
+import (
+	"context"
+	"fmt"
+
+	"golang.org/x/sync/errgroup"
+)
+
+func (k *K3s) resetNodes(nodes []string) error {
+	eg, _ := errgroup.WithContext(context.Background())
+	for i := range nodes {
+		node := nodes[i]
+		eg.Go(func() error {
+			if err := k.deleteNode(node); err != nil {
+				return err
+			}
+			return k.resetNode(node)
+		})
+	}
+	return eg.Wait()
 }
 
-type Ruler interface {
-	SyncNodeIPVS(masters, nodes []string) error
+func (k *K3s) resetNode(host string) error {
+	return k.sshClient.CmdAsync(host, fmt.Sprintf("%s/k3s-uninstall.sh", defaultBinDir))
 }
 
-type CertManager interface {
-	Renew() error
-	UpdateCertSANs(certSANs []string) error
+// TODO: remove from API
+func (k *K3s) deleteNode(_ string) error {
+	return nil
 }
-
-type Config any

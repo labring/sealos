@@ -71,7 +71,7 @@ func newCertCmd() *cobra.Command {
 			}
 
 			cf := clusterfile.NewClusterFile(clusterPath,
-				clusterfile.WithCustomKubeadmFiles([]string{kubeadmInitFilepath}),
+				clusterfile.WithCustomRuntimeConfigFiles([]string{kubeadmInitFilepath}),
 			)
 			if err = cf.Process(); err != nil {
 				return err

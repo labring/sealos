@@ -268,3 +268,11 @@ func (c *Cluster) GetRolesByIP(ip string) []string {
 	}
 	return routes
 }
+
+func (c *Cluster) GetDistribution() string {
+	root := c.GetRootfsImage()
+	if root != nil {
+		return root.Labels["distribution"]
+	}
+	return ""
+}

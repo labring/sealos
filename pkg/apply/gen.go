@@ -23,8 +23,7 @@ import (
 
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/buildah"
-	"github.com/labring/sealos/pkg/runtime/kubernetes"
-	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
+	"github.com/labring/sealos/pkg/runtime/factory"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/iputils"
 )
@@ -53,7 +52,13 @@ func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []strin
 		return nil, fmt.Errorf("input first image %s is not kubernetes image", imageNames)
 	}
 	cluster.Status.Mounts = append(cluster.Status.Mounts, *img)
-	rt, err := kubernetes.New(cluster, types.NewKubeadmConfig())
+
+	distribution, _ := cmd.Flags().GetString("distribution")
+	cfg, err := factory.NewRuntimeConfig(distribution)
+	if err != nil {
+		return nil, err
+	}
+	rt, err := factory.New(distribution, cluster, cfg)
 	if err != nil {
 		return nil, err
 	}

@@ -65,13 +65,14 @@ func (k *KubeadmRuntime) GetRawConfig() ([]byte, error) {
 	if err := k.CompleteKubeadmConfig(); err != nil {
 		return nil, err
 	}
-	k.cluster.Status = v2.ClusterStatus{}
+	cluster := k.cluster.DeepCopy()
+	cluster.Status = v2.ClusterStatus{}
 
 	conversion, err := k.kubeadmConfig.ToConvertedKubeadmConfig()
 	if err != nil {
 		return nil, err
 	}
-	objects := []interface{}{k.cluster,
+	objects := []interface{}{cluster,
 		conversion.InitConfiguration,
 		conversion.ClusterConfiguration,
 		conversion.JoinConfiguration,
@@ -144,7 +145,10 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*Kube
 }
 
 func New(cluster *v2.Cluster, config any) (*KubeadmRuntime, error) {
-	kubeadm := config.(*types.KubeadmConfig)
+	var kubeadm *types.KubeadmConfig
+	if v, ok := config.(*types.KubeadmConfig); ok {
+		kubeadm = v
+	}
 	return newKubeadmRuntime(cluster, kubeadm)
 }
 

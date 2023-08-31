@@ -25,6 +25,7 @@ import (
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime/decode"
+	"github.com/labring/sealos/pkg/runtime/k3s"
 	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -96,8 +97,8 @@ func (c *ClusterFile) loadClusterFile() ([]byte, error) {
 		out.Write(configData)
 	}
 
-	for i := range c.customKubeadmFiles {
-		configData, err := fileutil.ReadAll(c.customKubeadmFiles[i])
+	for i := range c.customRuntimeConfigFiles {
+		configData, err := fileutil.ReadAll(c.customRuntimeConfigFiles[i])
 		if err != nil {
 			return nil, err
 		}
@@ -137,7 +138,7 @@ func (c *ClusterFile) DecodeCluster(data []byte) error {
 	if cluster == nil {
 		return ErrTypeNotFound
 	}
-	c.Cluster = cluster
+	c.cluster = cluster
 	return nil
 }
 
@@ -150,19 +151,27 @@ func (c *ClusterFile) DecodeConfigs(data []byte) error {
 		return ErrTypeNotFound
 	}
 	cfgs := configs.([]v2.Config)
-	c.Configs = cfgs
+	c.configs = cfgs
 	return nil
 }
 
 func (c *ClusterFile) DecodeRuntimeConfig(data []byte) error {
-	// TODO: decode from k3s struct
-	config, err := types.LoadKubeadmConfigs(string(data), c.setDefaults, decode.CRDFromString)
+	// TODO: handling more types of runtime configuration
+	cfg, err := k3s.ParseConfig(data)
 	if err != nil {
 		return err
 	}
-	if config == nil {
-		return ErrTypeNotFound
+	if cfg != nil {
+		c.runtimeConfig = cfg
+	} else {
+		kubeadmConfig, err := types.LoadKubeadmConfigs(string(data), c.setDefaults, decode.CRDFromString)
+		if err != nil {
+			return err
+		}
+		if kubeadmConfig == nil {
+			return ErrTypeNotFound
+		}
+		c.runtimeConfig = kubeadmConfig
 	}
-	c.KubeConfig = config
 	return nil
 }
