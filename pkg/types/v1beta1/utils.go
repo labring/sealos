@@ -272,7 +272,7 @@ func (c *Cluster) GetRolesByIP(ip string) []string {
 func (c *Cluster) GetDistribution() string {
 	root := c.GetRootfsImage()
 	if root != nil {
-		return root.Labels["distribution"]
+		return root.Labels["sealos.io.distribution"]
 	}
 	return ""
 }
