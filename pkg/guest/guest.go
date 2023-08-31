@@ -17,7 +17,6 @@ package guest
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"golang.org/x/sync/errgroup"
@@ -25,10 +24,8 @@ import (
 	"github.com/labring/sealos/fork/golang/expansion"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
-	"github.com/labring/sealos/pkg/runtime"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/maps"
 	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 )
@@ -45,23 +42,6 @@ func NewGuestManager() (Interface, error) {
 }
 
 func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts []string) error {
-	kubeConfig := filepath.Join(constants.GetHomeDir(), ".kube", "config")
-	if !fileutil.IsExist(kubeConfig) {
-		adminFile := constants.NewData(cluster.Name).AdminFile()
-		data, err := fileutil.ReadAll(adminFile)
-		if err != nil {
-			return fmt.Errorf("read admin.conf error in guest: %w", err)
-		}
-		master0IP := cluster.GetMaster0IP()
-		outData := strings.ReplaceAll(string(data), runtime.DefaultAPIServerDomain, master0IP)
-		if err = fileutil.WriteFile(kubeConfig, []byte(outData)); err != nil {
-			return err
-		}
-		defer func() {
-			_ = fileutil.CleanFiles(kubeConfig)
-		}()
-	}
-
 	envWrapper := env.NewEnvProcessor(cluster)
 	execer := ssh.NewSSHByCluster(cluster, true)
 
