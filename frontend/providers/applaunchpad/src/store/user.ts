@@ -1,14 +1,14 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { UserQuoteItemType } from '@/types/user';
+import { UserQuotaItemType } from '@/types/user';
 import { getUserQuota, getResourcePrice } from '@/api/platform';
 import type { userPriceType } from '@/types/user';
 import { AppEditType } from '@/types/app';
 
 type State = {
   balance: number;
-  userQuota: UserQuoteItemType[];
+  userQuota: UserQuotaItemType[];
   loadUserQuota: () => Promise<null>;
   userSourcePrice: userPriceType | undefined;
   loadUserSourcePrice: () => Promise<null>;

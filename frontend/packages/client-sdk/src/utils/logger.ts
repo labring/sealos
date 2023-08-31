@@ -4,12 +4,16 @@ export function formatTime(date: Date) {
   return dayjs(date).format('YYYY-MM-DD HH:mm:ss');
 }
 
+function sanitizeMsg(msg: string) {
+  return msg.replace(/%[sdj%]/g, '');
+}
+
 export function infoLog(msg: string, obj: Record<string, any> = {}) {
-  console.log(`[INFO] ${formatTime(new Date())} ${msg}`, obj);
+  console.log(`[INFO] ${formatTime(new Date())} ${sanitizeMsg(msg)}`, obj);
 }
 
 export function errLog(msg: string, error: any) {
-  console.log(`[ERROR] ${formatTime(new Date())} ${msg}`, {
+  console.log(`[ERROR] ${formatTime(new Date())}`, {
     message: msg,
     stack: error?.stack,
     ...(error?.config && {
@@ -32,5 +36,5 @@ export function errLog(msg: string, error: any) {
 }
 
 export function warnLog(msg: string, obj: Record<string, any> = {}) {
-  console.log(`[WARN] ${formatTime(new Date())} ${msg}`, obj);
+  console.log(`[WARN] ${formatTime(new Date())} ${sanitizeMsg(msg)}`, obj);
 }

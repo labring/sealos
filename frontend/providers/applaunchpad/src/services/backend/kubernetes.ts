@@ -1,7 +1,7 @@
 import * as k8s from '@kubernetes/client-node';
 import * as yaml from 'js-yaml';
 import type { V1Deployment, V1StatefulSet } from '@kubernetes/client-node';
-import { UserQuoteItemType } from '@/types/user';
+import { UserQuotaItemType } from '@/types/user';
 import { memoryFormatToMi, cpuFormatToM } from '@/utils/tools';
 
 export function CheckIsInCluster(): [boolean, string] {
@@ -134,7 +134,7 @@ export async function replaceYaml(
 export async function getUserQuota(
   kc: k8s.KubeConfig,
   namespace: string
-): Promise<UserQuoteItemType[]> {
+): Promise<UserQuotaItemType[]> {
   const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
   const {
