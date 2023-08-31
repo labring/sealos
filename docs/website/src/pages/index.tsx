@@ -18,7 +18,7 @@ const Home = () => {
   const isPc = useMemo(() => screenWidth > PC_MIN_WIDTH, [screenWidth])
 
   const HomeRender = (
-      <div id="sealos-layout-wrap-home-page">
+    <div id="sealos-layout-wrap-home-page">
       <Helmet>
         <script async src="https://www.googletagmanager.com/gtag/js?id=AW-786053845" />
         <script async >
@@ -30,6 +30,7 @@ const Home = () => {
             gtag('event', 'conversion', {'send_to': 'AW-786053845/LpbTCJ-8-coYENX16PYC'});
           `}
         </script>
+        <script async src="https://umami.cloud.sealos.io/oishii" data-website-id="a1c29ace-b288-431a-a2eb-8617d1d5b5ed"></script>
       </Helmet>
       <Layout>
         <div className="home">
