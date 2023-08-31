@@ -82,7 +82,28 @@ ENV TZ=Asia/Shanghai
 sealos build --arch arm64 --build-arg TARGETOS=linux --build-arg TARGETARCH=arm64 -t test  -f Dockerfile .
 ```
 
-### Q4: Encounter the error "lgetxattr /var/lib/containers/storage/overlay/0c2afe770ec7870ad4639f18a1b50b3a84718f95c8907f3d54e14dbf0a01d50d/merged/dev/ptmx: no such device" during Sealos build. How to fix it?
+### Q4: How to Build Cluster Images Using Other Build Tools?
+
+If you want to use other container tools like Docker or Podman to build cluster images, you can utilize [sreg](https://github.com/labring/sreg) to cache the images.
+
+Follow these steps:
+
+1. Install sreg:
+   ```shell
+   wget https://github.com/labring/sreg/releases/download/v0.1.1/sreg_0.1.1_linux_amd64.tar.gz
+   tar -xzf sreg_0.1.1_linux_amd64.tar.gz sreg
+   mv sreg /usr/bin/
+   ```
+2. Cache the images:
+   ```shell
+   sreg save --registry-dir=registry .
+   ```
+3. Build the cluster image:
+   ```shell
+   docker build -t xxxx -f Sealfile .
+   ```
+
+### Q5: Encounter the error "lgetxattr /var/lib/containers/storage/overlay/0c2afe770ec7870ad4639f18a1b50b3a84718f95c8907f3d54e14dbf0a01d50d/merged/dev/ptmx: no such device" during Sealos build. How to fix it?
 
 This issue might be related to the version of `fuse-overlayfs`. We recommend downloading the latest version from [here](https://github.com/containers/fuse-overlayfs/releases) and replacing `/bin/fuse-overlayfs`.
 

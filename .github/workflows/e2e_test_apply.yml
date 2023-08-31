@@ -45,7 +45,7 @@ jobs:
         id: apply_test
         shell: bash
         env:
-          SEALOS_E2E_TEST_IMAGE_NAME: hub.sealos.cn/labring/kubernetes:v1.25.6
+          SEALOS_E2E_TEST_IMAGE_NAME: registry.cn-shanghai.aliyuncs.com/labring/kubernetes:v1.25.6
           SEALOS_E2E_TEST_PATCH_IMAGE_TAR: /tmp/sealos/images/patch-${{ matrix.arch }}.tar.gz
           SEALOS_E2E_TEST_PATCH_IMAGE_NAME: ghcr.io/labring/sealos-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}
           SEALOS_E2E_TEST_SEALOS_BIN_PATH: /tmp/sealos/bin/sealos
@@ -59,7 +59,7 @@ jobs:
           chmod a+x /tmp/e2e.test
           gzip /tmp/sealos/images/patch-${{ matrix.arch }}.tar
           /tmp/e2e.test --ginkgo.v --ginkgo.focus="E2E_sealos_apply_infra_test"
-          echo 'test_result=success' >> "$GITHUB_OUTPUT"
+          echo 'test_${{ matrix.arch }}_result=success' >> "$GITHUB_OUTPUT"
   issue_commit:
     needs: [ e2e_apply_test ]
     runs-on: ubuntu-latest
@@ -70,11 +70,12 @@ jobs:
       - name: Add comment to PR with test status
         uses: peter-evans/create-or-update-comment@v1
         env:
-          TEST_RESULT: ${{ needs.e2e_apply_test.outputs.test_result == 'success' && 'Success 🎉🎉!' || '‼️ Failure' }}
+          ARM_TEST_RESULT: ${{ needs.e2e_apply_test.outputs.test_arm64_result == 'success' && 'Success 🎉🎉!' || '‼️ Failure' }}
+          AMD_TEST_RESULT: ${{ needs.e2e_apply_test.outputs.test_amd64_result == 'success' && 'Success 🎉🎉!' || '‼️ Failure' }}
         with:
           issue-number: ${{ github.event.number }}
           comment-author: 'github-actions[bot]'
           repository: ${{ github.repository }}
           body: |
-            🤖 says: E2E Apply Test Result: ${{ env.TEST_RESULT }} <br/>See: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            🤖 says: E2E ARM64 Apply Test Result: ${{ env.ARM_TEST_RESULT }} , E2E AMD64 Apply Test Result: ${{ env.AMD_TEST_RESULT }}<br/>See: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           token: "${{ secrets.GH_PAT }}"

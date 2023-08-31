@@ -44,6 +44,8 @@ jobs:
       matrix:
         module:
           [
+            providers/cronjob,
+            providers/template,
             providers/adminer,
             providers/applaunchpad,
             providers/bytebase,
@@ -108,6 +110,7 @@ jobs:
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
+          platforms: linux/amd64,linux/arm64
           build-args: |
             name=${{ env.MODULE_NAME }}
             path=${{ matrix.module }}
@@ -127,6 +130,7 @@ jobs:
       matrix:
         module:
           [
+            providers/template,
             providers/adminer,
             providers/applaunchpad,
             providers/bytebase,

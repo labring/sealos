@@ -27,10 +27,12 @@ import (
 	"github.com/labring/sealos/pkg/config"
 	"github.com/labring/sealos/pkg/filesystem/rootfs"
 	"github.com/labring/sealos/pkg/guest"
-	runtime "github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime/kubernetes"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/maps"
 	"github.com/labring/sealos/pkg/utils/rand"
 )
 
@@ -43,6 +45,7 @@ type InstallProcessor struct {
 	Guest            guest.Interface
 	NewMounts        []v2.MountImage
 	NewImages        []string
+	ExtraEnvs        map[string]string // parsing from CLI arguments
 	imagesToOverride []string
 }
 
@@ -162,14 +165,16 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		if err = OCIToImageMount(c.Buildah, mount); err != nil {
 			return err
 		}
+		mount.Env = maps.MergeMap(mount.Env, c.ExtraEnvs)
+
 		cluster.SetMountImage(mount)
 		c.NewMounts = append(c.NewMounts, *mount)
 	}
-	runtime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
+	rt, err := kubernetes.New(cluster, c.ClusterFile.GetKubeadmConfig())
 	if err != nil {
 		return fmt.Errorf("failed to init runtime, %v", err)
 	}
-	c.Runtime = runtime
+	c.Runtime = rt
 	return nil
 }
 
@@ -180,7 +185,7 @@ func (c *InstallProcessor) UpgradeIfNeed(cluster *v2.Cluster) error {
 		if version == "" {
 			continue
 		}
-		err := c.Runtime.UpgradeCluster(version)
+		err := c.Runtime.Upgrade(version)
 		if err != nil {
 			logger.Error("upgrade cluster failed")
 			return err
@@ -248,10 +253,10 @@ func (c *InstallProcessor) RunGuest(cluster *v2.Cluster) error {
 	if len(c.NewMounts) == 0 {
 		return nil
 	}
-	return c.Guest.Apply(cluster, c.NewMounts)
+	return c.Guest.Apply(cluster, c.NewMounts, cluster.GetAllIPS())
 }
 
-func NewInstallProcessor(clusterFile clusterfile.Interface, images []string) (Interface, error) {
+func NewInstallProcessor(ctx context.Context, clusterFile clusterfile.Interface, images []string) (Interface, error) {
 	bder, err := buildah.New(clusterFile.GetCluster().Name)
 	if err != nil {
 		return nil, err
@@ -267,5 +272,6 @@ func NewInstallProcessor(clusterFile clusterfile.Interface, images []string) (In
 		Buildah:     bder,
 		Guest:       gs,
 		NewImages:   images,
+		ExtraEnvs:   GetEnvs(ctx),
 	}, nil
 }

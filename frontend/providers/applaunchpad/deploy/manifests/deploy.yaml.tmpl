@@ -46,6 +46,7 @@ spec:
             - name: SEALOS_DOMAIN
               value: {{ .cloudDomain }}
             - name: DOMAIN_PORT
+              value: "{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
             - name: INGRESS_SECRET
               value: {{ .ingressSecret }}
             - name: FASTGPT_KEY

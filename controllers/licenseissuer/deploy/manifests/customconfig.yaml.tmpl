@@ -4,8 +4,11 @@ metadata:
   name: licenseissuer-env
   namespace: sealos-system
 stringData:
-  canConnectToExternalNetwork: "{{ .canConnectToExternalNetwork }}"
-  isMonitor: "{{ .enableMonitor }}"
+  MongoURI: "{{ .MongoURI }}"
+  PasswordSalt: "{{ .PasswordSalt }}"
+  MongoUserDB: "{{ .MongoUserDB }}"
+  MongoUserCollection: "{{ .MongoUserCollection }}"
+  Namespace: "{{ .Namespace }}"
 ---
 apiVersion: v1
 data:
@@ -15,12 +18,13 @@ data:
       "NotificationURL": "{{ .NotificationURL }}",
       "RegisterURL": "{{ .RegisterURL }}",
       "CloudSyncURL": "{{ .CloudSyncURL }}",
-      "LicenseMonitorURL": "{{ .LicenseMonitorURL }}"
+      "LicenseMonitorURL": "{{ .LicenseMonitorURL }}",
+      "NetworkProbeURL": "{{ .NetworkProbeURL }}",
     }
 kind: ConfigMap
 metadata:
   name: url-config
-  namespace: sealos-system
+  namespace: "{{ .Namespace }}"
 ---
 apiVersion: v1
 data: null
@@ -28,12 +32,3 @@ kind: ConfigMap
 metadata:
   name: license-history
   namespace: sealos-system
----
-apiVersion: infostream.sealos.io/v1
-kind: Launcher
-metadata:
-  name: launcher
-  namespace: sealos-system
-spec:
-  description: This YAML file is responsible for launching the entire cloud module.
-  name: Cloud-Launcher

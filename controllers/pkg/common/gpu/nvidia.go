@@ -1,7 +1,23 @@
+// Copyright © 2023 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package gpu
 
 import (
 	"context"
+
+	"k8s.io/apimachinery/pkg/util/json"
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -117,4 +133,33 @@ func GetNodeGpuModel(c client.Client) (map[string]NvidiaGPU, error) {
 		gpuModels[node.Name] = gpu
 	}
 	return gpuModels, nil
+}
+
+const (
+	Alias                      = "alias"
+	NodeInfoConfigmapNamespace = "node-system"
+	NodeInfoConfigmapName      = "node-gpu-info"
+)
+
+func GetGPUAlias(c client.Client) (map[string]string, error) {
+	/*
+		kubectl get cm -n node-system node-gpu-info -oyaml
+		apiVersion: v1
+		data:
+		  alias: '{"NVIDIA-GeForce-RTX-4090":"GeForce-RTX-4090"}'
+	*/
+	cm := &corev1.ConfigMap{}
+	if err := c.Get(context.Background(), client.ObjectKey{
+		Namespace: NodeInfoConfigmapNamespace,
+		Name:      NodeInfoConfigmapName,
+	}, cm); err != nil {
+		return nil, err
+	}
+	alias := make(map[string]string)
+	if aliasData := cm.Data[Alias]; aliasData != "" {
+		if err := json.Unmarshal([]byte(cm.Data[Alias]), &alias); err != nil {
+			return nil, err
+		}
+	}
+	return alias, nil
 }

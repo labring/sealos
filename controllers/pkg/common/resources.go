@@ -1,10 +1,27 @@
+// Copyright © 2023 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package common
 
 import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 	"time"
+
+	"github.com/labring/sealos/controllers/pkg/utils"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -116,10 +133,26 @@ const (
 	PropertyInfraDisk   = "infra-disk"
 )
 
+// GpuResourcePrefix GPUResource = gpu- + gpu.Product ; ex. gpu-tesla-v100
+const GpuResourcePrefix = "gpu-"
+
 const ResourceGPU corev1.ResourceName = gpu.NvidiaGpuKey
 
+const (
+	ResourceRequestGpu corev1.ResourceName = "requests." + gpu.NvidiaGpuKey
+	ResourceLimitGpu   corev1.ResourceName = "limits." + gpu.NvidiaGpuKey
+)
+
 func NewGpuResource(product string) corev1.ResourceName {
-	return corev1.ResourceName("gpu-" + product)
+	return corev1.ResourceName(GpuResourcePrefix + product)
+}
+
+func IsGpuResource(resource string) bool {
+	return strings.HasPrefix(resource, GpuResourcePrefix)
+}
+
+func GetGpuResourceProduct(resource string) string {
+	return strings.TrimPrefix(resource, GpuResourcePrefix)
 }
 
 var (
@@ -193,18 +226,28 @@ func GetDefaultLimitRange(ns, name string) *corev1.LimitRange {
 	}
 }
 
+const (
+	QuotaLimitsCPU     = "QUOTA_Limits_CPU"
+	QuotaLimitsMemory  = "QUOTA_Limits_MEMORY"
+	QuotaLimitsStorage = "QUOTA_Limits_Storage"
+	QuotaLimitsGPU     = "QUOTA_Limits_GPU"
+)
+
+const (
+	DefaultQuotaLimitsCPU     = "16"
+	DefaultQuotaLimitsMemory  = "64Gi"
+	DefaultQuotaLimitsStorage = "100Gi"
+	DefaultQuotaLimitsGPU     = "8"
+)
+
 func DefaultResourceQuotaHard() corev1.ResourceList {
 	return corev1.ResourceList{
-		//corev1.ResourceRequestsCPU:    resource.MustParse("100"),
-		corev1.ResourceLimitsCPU: resource.MustParse("16"),
-		//corev1.ResourceRequestsMemory: resource.MustParse("100"),
-		corev1.ResourceLimitsMemory: resource.MustParse("64Gi"),
-		//For all PVCs, the total demand for storage resources cannot exceed this value
-		corev1.ResourceRequestsStorage: resource.MustParse("100Gi"),
-		//"limit.storage": resource.MustParse("100Gi"),
-		//Local ephemeral storage
-		corev1.ResourceLimitsEphemeralStorage: resource.MustParse("100Gi"),
-		//corev1.ResourceRequestsEphemeralStorage: resource.MustParse("100Gi"),
+		ResourceRequestGpu:                    resource.MustParse(utils.GetEnvWithDefault(QuotaLimitsGPU, DefaultQuotaLimitsGPU)),
+		ResourceLimitGpu:                      resource.MustParse(utils.GetEnvWithDefault(QuotaLimitsGPU, DefaultQuotaLimitsGPU)),
+		corev1.ResourceLimitsCPU:              resource.MustParse(utils.GetEnvWithDefault(QuotaLimitsCPU, DefaultQuotaLimitsCPU)),
+		corev1.ResourceLimitsMemory:           resource.MustParse(utils.GetEnvWithDefault(QuotaLimitsMemory, DefaultQuotaLimitsMemory)),
+		corev1.ResourceRequestsStorage:        resource.MustParse(utils.GetEnvWithDefault(QuotaLimitsStorage, DefaultQuotaLimitsStorage)),
+		corev1.ResourceLimitsEphemeralStorage: resource.MustParse(utils.GetEnvWithDefault(QuotaLimitsStorage, DefaultQuotaLimitsStorage)),
 	}
 }
 

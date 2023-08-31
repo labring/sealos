@@ -69,7 +69,13 @@ export default function DesktopContent(props: any) {
   }, [openDesktopApp]);
 
   return (
-    <div id="desktop" className={styles.desktop}>
+    <Box
+      id="desktop"
+      className={styles.desktop}
+      backgroundImage={'url(/images/background.svg)'}
+      backgroundRepeat={'no-repeat'}
+      backgroundSize={'cover'}
+    >
       <Flex w="100%" h="100%" alignItems={'center'} flexDirection={'column'}>
         <Box mt="12vh" minW={'508px'}>
           <TimeComponent />
@@ -137,6 +143,6 @@ export default function DesktopContent(props: any) {
           </AppWindow>
         );
       })}
-    </div>
+    </Box>
   );
 }

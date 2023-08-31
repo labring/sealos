@@ -39,6 +39,7 @@ type BillingRecordQuerySpec struct {
 type BillingRecordQueryStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	TotalCount      int                  `json:"totalCount"`
 	PageLength      int                  `json:"pageLength"`
 	RechargeAmount  int64                `json:"rechargeAmount"`
 	DeductionAmount Costs                `json:"deductionAmount,omitempty"`

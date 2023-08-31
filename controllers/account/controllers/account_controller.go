@@ -24,6 +24,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils"
+	"k8s.io/apimachinery/pkg/api/resource"
+
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -73,6 +76,7 @@ const (
 	NEWACCOUNTAMOUNTENV          = "NEW_ACCOUNT_AMOUNT"
 	RECHARGEGIFT                 = "recharge-gift"
 	SEALOS                       = "sealos"
+	DefaultInitialBalance        = 5_000_000
 )
 
 // AccountReconciler reconciles an Account object
@@ -249,6 +253,10 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
 			return nil, fmt.Errorf("sync resource resourceQuota and limitRange failed: %v", err)
 		}
+		//TODO delete after gpu quota already in resource-quota
+		if err := r.adaptGpuQuota(ctx, userNamespace); err != nil {
+			r.Logger.Error(err, "adapt gpu quota failed")
+		}
 	}
 	// add account balance when account is new user
 	stringAmount := os.Getenv(NEWACCOUNTAMOUNTENV)
@@ -262,10 +270,10 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		return &account, nil
 	}
 
-	// should set bonus amount that will give some money to new account
-	amount, err := strconv.Atoi(stringAmount)
+	amount, err := crypto.DecryptInt64(stringAmount)
 	if err != nil {
-		return nil, fmt.Errorf("convert %s to int failed: %v", stringAmount, err)
+		r.Logger.Error(err, "decrypt amount failed", "amount", stringAmount)
+		amount = DefaultInitialBalance
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &account, func() error {
 		if account.Annotations == nil {
@@ -280,7 +288,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	if err != nil {
 		return nil, fmt.Errorf("sync init balance failed: %v", err)
 	}
-	err = crypto.RechargeBalance(account.Status.EncryptBalance, int64(amount))
+	err = crypto.RechargeBalance(account.Status.EncryptBalance, amount)
 	if err != nil {
 		return nil, fmt.Errorf("recharge balance failed: %v", err)
 	}
@@ -306,6 +314,22 @@ func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, 
 		}
 	}
 	return nil
+}
+
+func (r *AccountReconciler) adaptGpuQuota(ctx context.Context, nsName string) error {
+	quota := common.GetDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName)
+	return retry.Retry(10, 1*time.Second, func() error {
+		_, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
+			if _, ok := quota.Spec.Hard[common.ResourceRequestGpu]; !ok {
+				quota.Spec.Hard[common.ResourceRequestGpu] = resource.MustParse(utils.GetEnvWithDefault(common.QuotaLimitsGPU, common.DefaultQuotaLimitsGPU))
+			}
+			if _, ok := quota.Spec.Hard[common.ResourceLimitGpu]; !ok {
+				quota.Spec.Hard[common.ResourceLimitGpu] = resource.MustParse(utils.GetEnvWithDefault(common.QuotaLimitsGPU, common.DefaultQuotaLimitsGPU))
+			}
+			return nil
+		})
+		return err
+	})
 }
 
 func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, namespace string) error {

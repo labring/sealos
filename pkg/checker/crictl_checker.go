@@ -104,13 +104,8 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 			pauseImage = mountImg.Env["sandboxImage"]
 		}
 	}
-	sshCtx, err := ssh.NewSSHByCluster(cluster, false)
-	if err != nil {
-		status.Error = fmt.Errorf("get ssh interface error: %w", err).Error()
-		return nil
-	}
-
-	root := constants.NewData(cluster.Name).RootFSPath()
+	sshCtx := ssh.NewSSHByCluster(cluster, false)
+	root := constants.NewPathResolver(cluster.Name).RootFSPath()
 	regInfo := helpers.GetRegistryInfo(sshCtx, root, cluster.GetRegistryIPAndPort())
 
 	regStatus, err := n.getRegistryStatus(crictlPath, pauseImage, fmt.Sprintf("%s:%s", regInfo.Domain, regInfo.Port))

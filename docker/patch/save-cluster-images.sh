@@ -22,7 +22,7 @@ mkdir -p images/shim
 echo "${IMAGE}" > images/shim/lvscareImage
 sed -i "s#__lvscare__#${IMAGE}#g" Dockerfile
 
-sudo sealos build -t "${PATCH}" --platform linux/"${ARCH}" -f Dockerfile .
+sudo sealos build -t "${PATCH}" --label=sealos.io.type=patch --label=image="${IMAGE}" --platform linux/"${ARCH}" -f Dockerfile .
 
 # save patch image
 cd - && sudo sealos save -o patch-"${ARCH}".tar "${PATCH}"

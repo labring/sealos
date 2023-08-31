@@ -20,5 +20,10 @@ license.verify: tools.verify.addlicense
 	@$(TOOLS_DIR)/addlicense -check -ignore **/test/** -f $(TEMPLATE) $(CODE_DIRS)
 
 .PHONY: license.add
-license.add: tools.verify.addlicense
+license.add: tools.verify.addlicense license.controller.add
 	@$(TOOLS_DIR)/addlicense -y $(shell date +"%Y") -c "sealos." -f $(TEMPLATE) $(CODE_DIRS)
+
+.PHONY: license.controller.add
+license.controller.add: tools.verify.addlicense
+	@echo "===========> Formating controllers codes"
+	@$(FIND_CONTROLLERS) -type f -name '*.go' | xargs $(TOOLS_DIR)/addlicense -v -y $(shell date +"%Y") -c "sealos." -f $(TEMPLATE)

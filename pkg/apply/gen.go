@@ -19,15 +19,17 @@ package apply
 import (
 	"fmt"
 
-	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/buildah"
-	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime/kubernetes"
+	"github.com/labring/sealos/pkg/runtime/types"
 	"github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/iputils"
 )
 
-func NewClusterFromGenArgs(imageNames []string, args *RunArgs) ([]byte, error) {
+func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []string) ([]byte, error) {
 	cluster := initCluster(args.ClusterName)
 	c := &ClusterArgs{
 		clusterName: args.ClusterName,
@@ -39,7 +41,7 @@ func NewClusterFromGenArgs(imageNames []string, args *RunArgs) ([]byte, error) {
 		args.Cluster.Masters = localIpv4
 	}
 
-	if err := c.runArgs(imageNames, args); err != nil {
+	if err := c.runArgs(cmd, args, imageNames); err != nil {
 		return nil, err
 	}
 
@@ -51,11 +53,11 @@ func NewClusterFromGenArgs(imageNames []string, args *RunArgs) ([]byte, error) {
 		return nil, fmt.Errorf("input first image %s is not kubernetes image", imageNames)
 	}
 	cluster.Status.Mounts = append(cluster.Status.Mounts, *img)
-	rtInterface, err := runtime.NewDefaultRuntime(cluster, &runtime.KubeadmConfig{})
+	rt, err := kubernetes.New(cluster, types.NewKubeadmConfig())
 	if err != nil {
 		return nil, err
 	}
-	return rtInterface.GetKubeadmConfig()
+	return rt.GetRawConfig()
 }
 
 func genImageInfo(imageName string) (*v1beta1.MountImage, error) {

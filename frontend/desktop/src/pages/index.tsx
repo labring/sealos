@@ -1,17 +1,21 @@
 import DesktopContent from '@/components/desktop_content';
 import FloatButton from '@/components/floating_button';
-import Layout from '@/components/layout';
 import MoreApps from '@/components/more_apps';
 import { enableRecharge } from '@/services/enable';
 import request from '@/services/request';
 import useAppStore from '@/stores/app';
 import useSessionStore from '@/stores/session';
+import { ApiResp } from '@/types';
+import { SystemConfigType } from '@/types/system';
 import { parseOpenappQuery } from '@/utils/format';
-import { useColorMode } from '@chakra-ui/react';
+import { Box, useColorMode } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import Head from 'next/head';
 import { useRouter } from 'next/router';
+import Script from 'next/script';
 import { createContext, useEffect, useState } from 'react';
+
 const destination = '/signin';
 interface IMoreAppsContext {
   showMoreApps: boolean;
@@ -28,12 +32,15 @@ export default function Home({
   sealos_cloud_domain: string;
 }) {
   const router = useRouter();
-  const isUpdate = useSessionStore((s) => s.newUser);
+  const { isUserLogin, newUser: isUpdate, setSession } = useSessionStore();
   const { colorMode, toggleColorMode } = useColorMode();
-  const isUserLogin = useSessionStore((s) => s.isUserLogin);
   const init = useAppStore((state) => state.init);
   const setAutoLaunch = useAppStore((state) => state.setAutoLaunch);
   const cancelAutoLaunch = useAppStore((state) => state.cancelAutoLaunch);
+
+  const { data: systemConfig, refetch } = useQuery(['getSystemConfig'], () =>
+    request<any, ApiResp<SystemConfigType>>('/api/system/getSystemConfig')
+  );
 
   useEffect(() => {
     colorMode === 'dark' ? toggleColorMode() : null;
@@ -75,10 +82,17 @@ export default function Home({
         });
       });
     }
-  }, [router, isUserLogin, init, isUpdate, setAutoLaunch]);
+  }, [router, isUserLogin, init, isUpdate, setAutoLaunch, sealos_cloud_domain]);
 
   return (
-    <Layout>
+    <Box position={'relative'} overflow={'hidden'} w="100vw" h="100vh">
+      <Head>
+        <title>sealos Cloud</title>
+        <meta name="description" content="sealos cloud dashboard" />
+      </Head>
+      {systemConfig?.data?.scripts?.map((item, i) => {
+        return <Script key={i} {...item} />;
+      })}
       <MoreAppsContext.Provider value={{ showMoreApps, setShowMoreApps }}>
         <RechargeEnabledContext.Provider value={rechargeEnabled}>
           <DesktopContent />
@@ -86,7 +100,7 @@ export default function Home({
           <MoreApps />
         </RechargeEnabledContext.Provider>
       </MoreAppsContext.Provider>
-    </Layout>
+    </Box>
   );
 }
 

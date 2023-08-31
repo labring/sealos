@@ -35,7 +35,7 @@ var _ = Describe("E2E_sealos_images_buildrun_test", func() {
 		It("images build image running cluster", func() {
 
 			By("write dockerfile")
-			dFile := config.Dockerfile{
+			dFile := config.RootfsDockerfile{
 				Images:    []string{"docker.io/altinity/clickhouse-operator:0.18.4", "docker.io/altinity/metrics-exporter:0.18.4"},
 				BaseImage: "labring/kubernetes:v1.25.0",
 				Copys:     []string{"sealctl opt/"},
@@ -62,7 +62,7 @@ var _ = Describe("E2E_sealos_images_buildrun_test", func() {
 			utils.CheckErr(err, fmt.Sprintf("failed to run images %v: %v", images, err))
 			err = fakeClient.CRI.Pull("docker.io/altinity/clickhouse-operator:0.18.4")
 			utils.CheckErr(err, fmt.Sprintf("failed to pull image docker.io/altinity/clickhouse-operator:0.18.4: %v", err))
-			err = fakeClient.CRI.ImageList()
+			_, err = fakeClient.CRI.ImageList()
 			utils.CheckErr(err, fmt.Sprintf("failed to list images: %v", err))
 			err = fakeClient.CRI.HasImage("sealos.hub:5000/altinity/clickhouse-operator:0.18.4")
 			utils.CheckErr(err, fmt.Sprintf("failed to validate image sealos.hub:5000/altinity/clickhouse-operator:0.18.4: %v", err))

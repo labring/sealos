@@ -20,8 +20,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/labring/sealos/pkg/registry/crane"
-	"github.com/labring/sealos/pkg/registry/save"
+	"github.com/labring/sreg/pkg/registry/crane"
+	"github.com/labring/sreg/pkg/registry/save"
 
 	"github.com/containerd/containerd/platforms"
 	"github.com/containers/buildah/pkg/parse"
@@ -30,7 +30,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/labring/sealos/pkg/buildimage"
+	"github.com/labring/sreg/pkg/buildimage"
+
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 )

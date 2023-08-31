@@ -27,6 +27,23 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  name: node-gpu-info-cm-reader
+  namespace: node-system
+rules:
+  - apiGroups:
+      - ""
+    resourceNames:
+      - node-gpu-info
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - watch
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
   labels:
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: node
@@ -195,6 +212,20 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
+  name: node-gpu-info-cm-reader-rolebinding
+  namespace: node-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: node-gpu-info-cm-reader
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: system:serviceaccounts
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
   labels:
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: node
@@ -251,6 +282,14 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: node-controller-manager
+  namespace: node-system
+---
+apiVersion: v1
+data:
+  gpu: ""
+kind: ConfigMap
+metadata:
+  name: node-gpu-info
   namespace: node-system
 ---
 apiVersion: v1

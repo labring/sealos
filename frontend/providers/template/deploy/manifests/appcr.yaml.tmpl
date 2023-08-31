@@ -1,0 +1,19 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: template
+  namespace: app-system
+spec:
+  data:
+    url: https://template.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
+  displayType: normal
+  i18n:
+    zh:
+      name: 模板市场
+    zh-Hans:
+      name: 模板市场
+  icon: https://template.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg
+  menuData:
+    nameColor: text-black
+  name: Templates
+  type: iframe

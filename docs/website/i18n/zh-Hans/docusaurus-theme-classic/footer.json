@@ -1,0 +1,54 @@
+{
+  "link.title.Community": {
+    "message": "社区",
+    "description": "The title of the footer links column with title=Community in the footer"
+  },
+  "link.title.More": {
+    "message": "更多",
+    "description": "The title of the footer links column with title=More in the footer"
+  },
+  "link.item.label.Stack Overflow": {
+    "message": "Stack Overflow",
+    "description": "The label of footer link with label=Stack Overflow linking to https://stackoverflow.com/questions/tagged/sealos"
+  },
+  "link.item.label.GitHub": {
+    "message": "GitHub",
+    "description": "The label of footer link with label=GitHub linking to https://github.com/labring/sealos"
+  },
+  "copyright": {
+    "message": "Copyright © 2023 sealos. 使用 Docusaurus 搭建。",
+    "description": "The footer copyright"
+  },
+  "link.title.Labring": {
+    "message": "Labring",
+    "description": "The title of the footer links column with title=Labring in the footer"
+  },
+  "link.item.label.Company": {
+    "message": "Company",
+    "description": "The label of footer link with label=Company linking to /company"
+  },
+  "link.item.label.Laf FaaS": {
+    "message": "开箱即用的云函数",
+    "description": "The label of footer link with label=Laf FaaS linking to https://github.com/labring/laf"
+  },
+  "link.item.label.Contributing": {
+    "message": "参与贡献",
+    "description": "The label of footer link with label=Contributing linking to https://github.com/labring/sealos/blob/main/CONTRIBUTING.md"
+  },
+  "link.item.label.CloudImages": {
+    "message": "集群镜像",
+    "description": "The label of footer link with label=CloudImages linking to https://hub.docker.com/u/labring"
+  },
+  "link.item.label.CloudNativeLab": {
+    "message": "云原生实验室",
+    "description": "The label of footer link with label=CloudNativeLab linking to https://icloudnative.io"
+  },
+  "link.item.label.Discord": {
+    "message": "Discord",
+    "description": "The label of footer link with label=Discord linking to https://discord.gg/7bPNZfsjJu"
+  },
+  "link.item.label.Blog": {
+    "message": "博客",
+    "description": "The label of footer link with label=Blog linking to /blog"
+  }
+}

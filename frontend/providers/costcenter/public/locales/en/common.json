@@ -62,10 +62,13 @@
   "Transfer Success": "Transfer Success",
   "Transfer Amount must be a integer": "Transfer Amount must be a integer",
   "Recipient ID is invalid": "Recipient ID is invalid",
-  "Transfer Amount must be less than balance": "The balance after the transfer must not be less than ¥10",
+  "Transfer Amount must be less than balance": "The balance after the transfer must not be less than 10",
   "he payee cannot be oneself": "The payee cannot be oneself",
   "True Amount": "True Amount",
   "Get Code": "verification",
+  "Stripe Success": "pay with Stripe successfully",
+  "Stripe Cancel": "cancel to pay with Stripe",
+  "GPU Unit": "Card",
   "orders": {
     "list": "Order List",
     "invoiceAmount": "Invoice Amount",
@@ -133,5 +136,10 @@
     "Contact Information": "Contact Information"
   },
   "pay with stripe": "Pay With Stripe",
-  "pay with wechat": "Pay With Wechat"
+  "pay with wechat": "Pay With Wechat",
+  "Pay Minimum Tips": "The amount need to be more than 10 when paying with Stripe",
+  "Source Quota": "Source Quota",
+  "Total Quota": "total",
+  "Used Quota": "used",
+  "Remaining Quota": "remaining"
 }

@@ -15,8 +15,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const result = await queryUser({ id: user, provider: 'password_user' });
     if (!result || !result.password || result.password === hashPassword('')) {
       return jsonRes<TUserExist>(res, {
-        message: 'not found',
-        code: 404,
+        message: 'user not found',
+        code: 201,
         data: {
           user,
           exist: false

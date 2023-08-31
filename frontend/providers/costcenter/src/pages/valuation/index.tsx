@@ -1,6 +1,6 @@
 import { Box, Flex, Heading, Text, Img, Stack } from '@chakra-ui/react';
 import letter_icon from '@/assert/format_letter_spacing_standard_black.svg';
-import { useQuery } from '@tanstack/react-query';
+import { QueryClient, dehydrate, useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
 import { ValuationBillingRecord } from '@/types/valuation';
 import { valuationMap } from '@/constants/payment';
@@ -15,7 +15,8 @@ import OuterLink from '@/components/outerLink';
 import NotFound from '@/components/notFound';
 import PredictCard from '@/components/valuation/predictCard';
 import useEnvStore from '@/stores/env';
-import shellcoin from '@/assert/shell_coin.svg';
+import CurrencySymbol from '@/components/CurrencySymbol';
+import Quota from '@/components/valuation/quota';
 type CardItem = {
   title: string;
   price: number[];
@@ -30,6 +31,7 @@ function ValuationCard(props: any) {
       align={'center'}
       pt="27px"
       pb="21px"
+      px="24px"
       boxSizing="border-box"
       width="240px"
       height="339px"
@@ -42,29 +44,33 @@ function ValuationCard(props: any) {
     </Stack>
   );
 }
+const getValuation = () =>
+  request<any, ApiResp<{ billingRecords: ValuationBillingRecord[] }>>('/api/price');
 function Valuation() {
   const { t, i18n } = useTranslation();
   const cookie = getCookie('NEXT_LOCALE');
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
+  const currency = useEnvStore((s) => s.currency);
   useEffect(() => {
     i18n.changeLanguage(cookie);
   }, [cookie, i18n]);
-  const { data: _data } = useQuery(['valuation'], () =>
-    request<any, ApiResp<{ billingRecords: ValuationBillingRecord[] }>>('/api/price')
-  );
+  const { data: _data } = useQuery(['valuation'], getValuation);
 
   const data =
     _data?.data?.billingRecords
       ?.filter((x) => !x.resourceType.startsWith('gpu-'))
-      ?.map<CardItem>((x) => {
-        const props = valuationMap.get(x.resourceType)!;
-        return {
-          title: x.resourceType,
-          price: [1, 24, 168, 720, 8760].map((v) => (v * x.price * (props.scale || 1)) / 1000000),
-          unit: props.unit,
-          bg: props.bg,
-          idx: props.idx
-        };
+      ?.flatMap<CardItem>((x) => {
+        const props = valuationMap.get(x.resourceType);
+        if (!props) return [];
+        return [
+          {
+            title: x.resourceType,
+            price: [1, 24, 168, 720, 8760].map((v) => (v * x.price * (props.scale || 1)) / 1000000),
+            unit: props.unit,
+            bg: props.bg,
+            idx: props.idx
+          }
+        ];
       })
       ?.sort((a, b) => a.idx - b.idx) || [];
   const gpuProps = valuationMap.get('gpu')!;
@@ -106,29 +112,25 @@ function Valuation() {
                     <Text fontSize={'16px'}>{item.title}</Text>
                   </Flex>
                   <Heading
-                    w="127px"
                     display={'flex'}
                     justifyContent="center"
                     alignContent={'center'}
+                    fontWeight={'600'}
                   >
-                    <Img src={shellcoin.src} h="28px" w="28px" my="auto" mr="4px" />
-                    <Text>{item.price[0]}</Text>
+                    <CurrencySymbol w="16px" type={currency} />
+                    <Text ml="10px">{item.price[0]}</Text>
                   </Heading>
-                  <Text ml="4px">
-                    {item.unit} / {t('Hour')}
-                  </Text>
-                  <Box pt={'17px'}>
+                  <Flex align={'center'}>
+                    <Text>
+                      {item.unit} / {t('Hour')}
+                    </Text>
+                  </Flex>
+                  <Box pt={'17px'} w="100%">
                     {CYCLE.map((_item, idx) => (
-                      <Flex
-                        key={idx}
-                        justify="space-between"
-                        w="192px"
-                        borderTop={'dashed 1px #DEE0E2'}
-                        py={'8px'}
-                      >
-                        <Box>{item.price[idx + 1]}</Box>
-                        <Flex align={'center'}>
-                          <Img src={shellcoin.src} h="16px" w="16px" mr={'4px'} />
+                      <Flex key={idx} w="100%" borderTop={'dashed 1px #DEE0E2'} py={'8px'}>
+                        <CurrencySymbol type={currency} />
+                        <Box ml="2px">{item.price[idx + 1]}</Box>
+                        <Flex align={'center'} ml="auto">
                           <Text>{`${item.unit} / ${t(_item)}`}</Text>
                         </Flex>
                       </Flex>
@@ -142,33 +144,23 @@ function Valuation() {
                     <Box borderRadius="2px" bg={gpuProps.bg} w={'16px'} h={'16px'} mr={'8px'}></Box>
                     <Text fontSize={'16px'}>GPU</Text>
                   </Flex>
+                  <Flex display={'flex'} justifyContent="center" alignContent={'center'}>
+                    <Text fontSize="28px" fontStyle="normal" fontWeight={'600'}>{` ${t(
+                      'GPU Unit'
+                    )} / ${t('Hour')}`}</Text>
+                  </Flex>
                   <Stack w="100%" mt="24px" overflow={'auto'}>
                     {gpuData.map((item) => (
-                      <Flex
-                        key={item.name}
-                        align={'center'}
-                        h="45px"
-                        w="100%"
-                        borderTop={'dashed 1px #DEE0E2'}
-                        justify={'space-between'}
-                        pt="12px"
-                        px="24px"
-                      >
-                        <Flex>
-                          <Img src={shellcoin.src} h="16px" w="16px" />
-                          <Text>{`${item.price}`}</Text>
+                      <Box key={item.name} w="100%" borderTop={'dashed 1px #DEE0E2'} pt="12px">
+                        <Flex align={'center'}>
+                          <Img src={nvidaIcon.src} w="14px" h="14px" mr="6px" />
+                          <Text minW={'max-content'}>{item.name}</Text>
                         </Flex>
-                        <Stack align={'flex-end'} gap="0" fontSize={'10px'} fontWeight={'500'}>
-                          <Flex>
-                            <Img src={nvidaIcon.src} w="14px" h="14px" mr="6px" />
-                            <Text minW={'max-content'}>{item.name}</Text>
-                          </Flex>
-                          <Flex>
-                            <Img src={shellcoin.src} h="16px" w="16px" />
-                            <Text>{`${gpuProps.unit} / ${t('Hour')}`}</Text>
-                          </Flex>
-                        </Stack>
-                      </Flex>
+                        <Flex mt={'4px'}>
+                          <CurrencySymbol type={currency} />
+                          <Text ml="2px">{`${item.price}`}</Text>
+                        </Flex>
+                      </Box>
                     ))}
                   </Stack>
                 </ValuationCard>
@@ -183,7 +175,11 @@ function Valuation() {
             <Text mr={'17px '}>{t('Next month cost estimation')}</Text>
             <OuterLink text={t('Predict Detail')} href={'#'}></OuterLink>
           </Flex>
-          <PredictCard></PredictCard>
+          <PredictCard />
+        </Flex>
+        <Flex mt={'36px'} direction={'column'}>
+          <Text mb="20px">{t('Source Quota')}</Text>
+          <Quota />
         </Flex>
       </Flex>
     </Flex>
@@ -193,9 +189,14 @@ export default Valuation;
 export async function getServerSideProps(content: any) {
   const locale = content?.req?.cookies?.NEXT_LOCALE || 'zh';
   process.env.NODE_ENV === 'development' && i18n?.reloadResources(locale, undefined);
+
+  const queryClient = new QueryClient();
+  await queryClient.prefetchQuery(['valuation'], getValuation);
   return {
     props: {
-      ...(await serverSideTranslations(locale, undefined, null, content.locales))
+      ...(await serverSideTranslations(locale, undefined, null, content.locales)),
+
+      dehydratedState: dehydrate(queryClient)
     }
   };
 }

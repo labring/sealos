@@ -21,23 +21,19 @@ import (
 	"os"
 
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
-	rbacV1 "k8s.io/api/rbac/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 )
 
 func GetDefaultNamespace() string {
 	return os.Getenv("NAMESPACE_NAME")
 }
 
-func GetUsersSubject(user string) []rbacV1.Subject {
-	defaultNamespace := GetDefaultNamespace()
-	if defaultNamespace == "" {
-		defaultNamespace = "default"
-	}
-	return []rbacV1.Subject{
+func GetUsersSubject(user string) []rbacv1.Subject {
+	return []rbacv1.Subject{
 		{
 			Kind:      "ServiceAccount",
 			Name:      user,
-			Namespace: defaultNamespace,
+			Namespace: GetUsersNamespace(user),
 		},
 	}
 }
@@ -46,10 +42,14 @@ func GetUsersNamespace(user string) string {
 	return fmt.Sprintf("ns-%s", user)
 }
 
-func GetUserRole(roleType userv1.UserRoleType) []rbacV1.PolicyRule {
+func GetGroupRoleBindingName(user string) string {
+	return fmt.Sprintf("rb-%s", user)
+}
+
+func GetUserRole(roleType userv1.RoleType) []rbacv1.PolicyRule {
 	switch roleType {
 	case userv1.OwnerRoleType:
-		return []rbacV1.PolicyRule{
+		return []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{"*"},
 				Resources: []string{"*"},
@@ -57,7 +57,7 @@ func GetUserRole(roleType userv1.UserRoleType) []rbacV1.PolicyRule {
 			},
 		}
 	case userv1.ManagerRoleType:
-		return []rbacV1.PolicyRule{
+		return []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{"*"},
 				Resources: []string{"*"},
@@ -65,7 +65,7 @@ func GetUserRole(roleType userv1.UserRoleType) []rbacV1.PolicyRule {
 			},
 		}
 	case userv1.DeveloperRoleType:
-		return []rbacV1.PolicyRule{
+		return []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{"*"},
 				Resources: []string{"*"},
@@ -73,16 +73,6 @@ func GetUserRole(roleType userv1.UserRoleType) []rbacV1.PolicyRule {
 			},
 		}
 	default:
-		return []rbacV1.PolicyRule{}
-	}
-}
-
-func GetNewUsersSubject(user string) []rbacV1.Subject {
-	return []rbacV1.Subject{
-		{
-			Kind:      "ServiceAccount",
-			Name:      user,
-			Namespace: GetUsersNamespace(user),
-		},
+		return []rbacv1.PolicyRule{}
 	}
 }

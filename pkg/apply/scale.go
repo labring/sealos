@@ -17,7 +17,6 @@ package apply
 import (
 	"fmt"
 	"net"
-	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -65,7 +64,7 @@ func NewScaleApplierFromArgs(cmd *cobra.Command, scaleArgs *ScaleArgs) (applydri
 		return nil, err
 	}
 
-	return applydrivers.NewDefaultScaleApplier(curr, cluster)
+	return applydrivers.NewDefaultScaleApplier(cmd.Context(), curr, cluster)
 }
 
 func getSSHFromCommand(cmd *cobra.Command) *v2.SSH {
@@ -126,7 +125,7 @@ func verifyAndSetNodes(cmd *cobra.Command, cluster *v2.Cluster, scaleArgs *Scale
 		}
 	}
 
-	defaultPort := strconv.Itoa(int(cluster.Spec.SSH.Port))
+	defaultPort := defaultSSHPort(cluster.Spec.SSH.Port)
 
 	var hosts []v2.Host
 	var hasMaster bool
@@ -226,7 +225,7 @@ func deleteNodes(cluster *v2.Cluster, scaleArgs *ScaleArgs) error {
 		return fmt.Errorf("master0 machine cannot be deleted")
 	}
 
-	defaultPort := strconv.Itoa(int(cluster.Spec.SSH.Port))
+	defaultPort := defaultSSHPort(cluster.Spec.SSH.Port)
 
 	hostsSet := sets.NewString()
 

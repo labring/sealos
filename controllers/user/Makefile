@@ -1,8 +1,10 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?=  ghcr.io/labring/sealos-user-controller:latest
+IMG ?= ghcr.io/labring/sealos-user-controller:latest
+TARGETARCH ?= amd64
+
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.24.1
+ENVTEST_K8S_VERSION = 1.25.6
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -62,16 +64,18 @@ test: manifests generate fmt vet envtest ## Run tests.
 ##@ Build
 
 .PHONY: build
-build:## Build manager binary.
-	CGO_ENABLED=0 go build -o bin/manager main.go
+build:  ## Build manager binary.
+	CGO_ENABLED=0 GOOS=linux  go build -o bin/manager main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
 .PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
-	docker build -t ${IMG} .
+docker-build: test build ## Build docker image with the manager.
+	mv bin/manager bin/controller-user-${TARGETARCH}
+	chmod +x bin/controller-user-${TARGETARCH}
+	docker build -t ${IMG} . --build-arg TARGETARCH=${TARGETARCH}
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
@@ -94,20 +98,17 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build -e SERVICE_NAME=webhook-service -e SERVICE_NAMESPACE=system | kubectl apply -f -
+	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
-.PHONY: deploy
+.PHONY: pre-deploy
 pre-deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default  > deploy/manifests/deploy.yaml
 
+
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
-
-deploy-crd: manifests
-	kubectl apply -f config/crd/bases
-
 
 ##@ Build Dependencies
 
@@ -129,7 +130,7 @@ KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/k
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
 $(KUSTOMIZE): $(LOCALBIN)
-	GOBIN=$(LOCALBIN) go install sigs.k8s.io/kustomize/kustomize/v4@latest
+	curl -s $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN)
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.

@@ -132,12 +132,12 @@ func (r *RegistryPasswdResults) Validate() (*v1beta1.Cluster, error) {
 
 func (r *RegistryPasswdResults) Apply(cluster *v1beta1.Cluster) error {
 	if r.execer == nil {
-		r.execer = ssh.NewSSHClient(&cluster.Spec.SSH, true)
+		r.execer = ssh.NewSSHByCluster(cluster, true)
 	}
 	if r.upgrade == nil {
 		r.upgrade = NewUpgrade(cluster.Name, r.execer)
 	}
-	root := constants.NewData(cluster.Name).RootFSPath()
+	root := constants.NewPathResolver(cluster.Name).RootFSPath()
 	registry := helpers.GetRegistryInfo(r.execer, root, cluster.GetRegistryIPAndPort())
 	shim := helpers.GetImageCRIShimInfo(r.execer, r.ImageCRIShimFilePath, cluster.GetMaster0IPAndPort())
 	if registry == nil || shim == nil {

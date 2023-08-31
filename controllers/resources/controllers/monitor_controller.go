@@ -293,10 +293,20 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient datab
 	}
 	for _, pod := range podList.Items {
 		// TODO pending status need skip?
-		//if pod.Status.Phase != corev1.PodRunning /*&& pod.Status.Phase != corev1.PodPending*/ {
-		//	continue
-		//}
+		if pod.Status.Phase == corev1.PodSucceeded || pod.Spec.NodeName == "" {
+			continue
+		}
 		for _, container := range pod.Spec.Containers {
+			// gpu only use limit and not ignore pod pending status
+			if gpuRequest, ok := container.Resources.Limits[gpu.NvidiaGpuKey]; ok {
+				err := r.getGPUResourceUsage(pod, gpuRequest, rs)
+				if err != nil {
+					r.Logger.Error(err, "get gpu resource usage failed", "pod", pod.Name)
+				}
+			}
+			if pod.Status.Phase != corev1.PodRunning {
+				continue
+			}
 			if cpuRequest, ok := container.Resources.Limits[corev1.ResourceCPU]; ok {
 				rs[corev1.ResourceCPU].Add(cpuRequest)
 			} else {
@@ -306,28 +316,6 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient datab
 				rs[corev1.ResourceMemory].Add(memoryRequest)
 			} else {
 				rs[corev1.ResourceMemory].Add(container.Resources.Requests[corev1.ResourceMemory])
-			}
-			// gpu only use limit
-			if gpuRequest, ok := container.Resources.Limits[gpu.NvidiaGpuKey]; ok {
-				gpuModel, ok := r.NvidiaGpu[pod.Spec.NodeName]
-				if !ok {
-					var err error
-					r.NvidiaGpu, err = gpu.GetNodeGpuModel(r.Client)
-					if err != nil {
-						logger.Error(err, "get node gpu model failed")
-						continue
-					}
-					gpuModel, ok = r.NvidiaGpu[pod.Spec.NodeName]
-					if !ok {
-						logger.Error(fmt.Errorf("node %s not found gpu model", pod.Spec.NodeName), "")
-						continue
-					}
-				}
-				if _, ok := rs[common.NewGpuResource(gpuModel.GpuInfo.GpuProduct)]; !ok {
-					rs[common.NewGpuResource(gpuModel.GpuInfo.GpuProduct)] = initGpuResources()
-				}
-				logger.Info("gpu request", "pod", pod.Name, "namespace", pod.Namespace, "gpu req", gpuRequest.String(), "node", pod.Spec.NodeName, "gpu model", gpuModel.GpuInfo.GpuProduct)
-				rs[common.NewGpuResource(gpuModel.GpuInfo.GpuProduct)].Add(gpuRequest)
 			}
 		}
 	}
@@ -357,6 +345,25 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient datab
 		}
 	}
 	return dbClient.InsertMonitor(ctx, monitors...)
+}
+
+func (r *MonitorReconciler) getGPUResourceUsage(pod corev1.Pod, gpuReq resource.Quantity, rs map[corev1.ResourceName]*quantity) (err error) {
+	nodeName := pod.Spec.NodeName
+	gpuModel, exist := r.NvidiaGpu[nodeName]
+	if !exist {
+		if r.NvidiaGpu, err = gpu.GetNodeGpuModel(r.Client); err != nil {
+			return fmt.Errorf("get node gpu model failed: %w", err)
+		}
+		if gpuModel, exist = r.NvidiaGpu[nodeName]; !exist {
+			return fmt.Errorf("node %s not found gpu model", nodeName)
+		}
+	}
+	if _, ok := rs[common.NewGpuResource(gpuModel.GpuInfo.GpuProduct)]; !ok {
+		rs[common.NewGpuResource(gpuModel.GpuInfo.GpuProduct)] = initGpuResources()
+	}
+	logger.Info("gpu request", "pod", pod.Name, "namespace", pod.Namespace, "gpu req", gpuReq.String(), "node", nodeName, "gpu model", gpuModel.GpuInfo.GpuProduct)
+	rs[common.NewGpuResource(gpuModel.GpuInfo.GpuProduct)].Add(gpuReq)
+	return nil
 }
 
 func getResourceValue(resourceName corev1.ResourceName, res map[corev1.ResourceName]*quantity) int64 {

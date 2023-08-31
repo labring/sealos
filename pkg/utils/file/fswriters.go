@@ -15,6 +15,7 @@
 package file
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 )
@@ -25,13 +26,9 @@ type atomicFileWriter struct {
 	perm os.FileMode
 }
 
-func (a *atomicFileWriter) close() (err error) {
+func (a *atomicFileWriter) Close() (err error) {
 	if err = a.f.Sync(); err != nil {
-		err := a.f.Close()
-		if err != nil {
-			return err
-		}
-		return err
+		return a.f.Close()
 	}
 	if err := a.f.Close(); err != nil {
 		return err
@@ -42,7 +39,11 @@ func (a *atomicFileWriter) close() (err error) {
 	return os.Rename(a.f.Name(), a.path)
 }
 
-func newAtomicFileWriter(path string, perm os.FileMode) (*atomicFileWriter, error) {
+func (a *atomicFileWriter) Write(data []byte) (int, error) {
+	return a.f.Write(data)
+}
+
+func newAtomicFileWriter(path string, perm os.FileMode) (io.WriteCloser, error) {
 	tmpFile, err := MkTmpFile(filepath.Dir(path))
 	if err != nil {
 		return nil, err
@@ -56,13 +57,10 @@ func AtomicWriteFile(filepath string, data []byte, perm os.FileMode) (err error)
 		return err
 	}
 	defer func() {
-		if err != nil {
-			CleanFile(afw.f)
-		}
+		err = afw.Close()
 	}()
-	if _, err = afw.f.Write(data); err != nil {
+	if _, err = afw.Write(data); err != nil {
 		return
 	}
-	err = afw.close()
 	return
 }

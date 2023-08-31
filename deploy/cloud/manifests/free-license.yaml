@@ -2,6 +2,7 @@ apiVersion: infostream.sealos.io/v1
 kind: License
 metadata:
   name: license
+  namespace: ns-admin
 spec:
   uid: admin
   # nosemgrep: generic.secrets.security.detected-jwt-token.detected-jwt-token

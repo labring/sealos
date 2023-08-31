@@ -23,7 +23,8 @@ import (
 
 	"github.com/labring/image-cri-shim/pkg/types"
 
-	"github.com/labring/sealos/pkg/buildimage"
+	"github.com/labring/sreg/pkg/buildimage"
+
 	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"

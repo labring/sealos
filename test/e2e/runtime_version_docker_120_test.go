@@ -41,6 +41,8 @@ var _ = Describe("E2E_sealos_runtime_version_docker_120_test", func() {
 			}()
 			err = fakeClient.Cluster.Run(images...)
 			utils.CheckErr(err, fmt.Sprintf("failed to run images %v: %v", images, err))
+			err = checkVersionImageList(fakeClient)
+			utils.CheckErr(err, fmt.Sprintf("failed to check version image list: %v", err))
 		})
 	})
 

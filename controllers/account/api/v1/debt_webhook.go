@@ -22,6 +22,10 @@ import (
 	"os"
 	"strings"
 
+	account2 "github.com/labring/sealos/controllers/common/account"
+
+	"github.com/labring/sealos/controllers/pkg/common"
+
 	admissionV1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -164,7 +168,7 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsNam
 
 	for _, account := range accountList.Items {
 		if account.Status.Balance < account.Status.DeductionBalance {
-			return admission.ValidationResponse(false, fmt.Sprintf("account balance less than 0,now account is %.2f¥", float64(account.Status.Balance-account.Status.DeductionBalance)/1000000))
+			return admission.ValidationResponse(false, fmt.Sprintf(common.MessageFormat, common.CodeInsufficientBalance, fmt.Sprintf("account balance less than 0,now account is %.2f¥", GetAccountDebtBalance(account))))
 		}
 	}
 	return admission.Allowed("pass user " + user)
@@ -172,6 +176,10 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsNam
 
 func getDefaultQuotaName(namespace string) string {
 	return fmt.Sprintf("quota-%s", namespace)
+}
+
+func GetAccountDebtBalance(account Account) float64 {
+	return account2.GetCurrencyBalance(account.Status.Balance - account.Status.DeductionBalance)
 }
 
 const debtLimit0QuotaName = "debt-limit0"

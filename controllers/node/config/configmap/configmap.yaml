@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gpu-info
+  namespace: node-system
+data:
+  gpu: ""
+  alias: '{"NVIDIA-GeForce-RTX-4090":"GeForce-RTX-4090"}'

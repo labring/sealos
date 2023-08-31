@@ -33,13 +33,10 @@ func newStaticPodCmd() *cobra.Command {
 	var staticPodCmd = &cobra.Command{
 		Use:   "static-pod",
 		Short: "generator static pod",
-		//Run: func(cmd *cobra.Command, args []string) {
-		//
-		//},
 	}
 	// check route for host
 	staticPodCmd.AddCommand(newLvscareCmd())
-	staticPodCmd.PersistentFlags().StringVar(&staticPodPath, "path", constants.KubernetesEtcStaticPod, "default kubernetes static pod path")
+	staticPodCmd.PersistentFlags().StringVar(&staticPodPath, "path", "/etc/kubernetes/manifests", "default kubernetes static pod path")
 	return staticPodCmd
 }
 

@@ -2,10 +2,10 @@ import bar_icon from '@/assert/bar_chart_4_bars_black.svg';
 import { BillingTable } from '@/components/billing/billingTable';
 import SelectRange from '@/components/billing/selectDateRange';
 import useNotEnough from '@/hooks/useNotEnough';
-import { Box, Flex, Heading, Img } from '@chakra-ui/react';
+import { Box, Flex, Heading, Img, useToast } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useEffect, useMemo } from 'react';
+import { MutableRefObject, createContext, useEffect, useRef } from 'react';
 import { Buget } from '@/components/cost_overview/buget';
 import UserCard from '@/components/cost_overview/components/user';
 import { Cost } from '@/components/cost_overview/cost';
@@ -13,10 +13,14 @@ import { Trend } from '@/components/cost_overview/trend';
 import { getCookie } from '@/utils/cookieUtils';
 import useBillingData from '@/hooks/useBillingData';
 import NotFound from '@/components/notFound';
-import { QueryClient } from '@tanstack/react-query';
-import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
 import { isSameDay, isSameHour, parseISO } from 'date-fns';
+import { useRouter } from 'next/router';
+import useOverviewStore from '@/stores/overview';
+
+export const RechargeContext = createContext<{ rechargeRef: MutableRefObject<any> | null }>({
+  rechargeRef: null
+});
 function CostOverview() {
   const { t, i18n } = useTranslation();
   const updateCPU = useBillingStore((state) => state.updateCpu);
@@ -27,14 +31,41 @@ function CostOverview() {
   useEffect(() => {
     i18n.changeLanguage(cookie);
   }, [cookie, i18n]);
+  const setRecharge = useOverviewStore((s) => s.setRecharge);
+  const router = useRouter();
+  useEffect(() => {
+    const { stripeState } = router.query;
+    if (stripeState === 'success') {
+      totast({
+        status: 'success',
+        duration: 3000,
+        title: t('Stripe Success'),
+        isClosable: true,
+        position: 'top'
+      });
+    } else if (stripeState === 'error') {
+      totast({
+        status: 'error',
+        duration: 3000,
+        title: t('Stripe Cancel'),
+        isClosable: true,
+        position: 'top'
+      });
+    }
+    !!stripeState && router.replace(router.pathname);
+  }, []);
+  useEffect(() => {
+    const { openRecharge } = router.query;
+    if (openRecharge === 'true') {
+      router.replace(router.pathname);
+      setRecharge(1);
+    }
+  }, []);
   const { NotEnoughModal } = useNotEnough();
-
   const { data, isInitialLoading } = useBillingData();
-  const billingItems = useMemo(() => data?.data?.status.item.filter((v, i) => i < 3) || [], [data]);
-  const costBillingItems = useMemo(
-    () => data?.data?.status.item.filter((v) => v.type === 0) || [],
-    [data]
-  );
+  const billingItems = data?.data?.status.item.filter((_v, i) => i < 3) || [];
+  const costBillingItems = data?.data?.status.item.filter((v) => v.type === 0) || [];
+  const totast = useToast();
   useEffect(() => {
     if (costBillingItems.length === 0) return;
     const time = parseISO(costBillingItems[0].time);
@@ -46,12 +77,9 @@ function CostOverview() {
     updateStorage(item?.storage || 0);
     updateGpu(item?.gpu || 0);
   }, [costBillingItems, updateCPU, updateMemory, updateStorage]);
-  useEffect(() => {
-    // 并发预加载
-    new QueryClient().prefetchQuery(['valuation'], () => request('/api/price'));
-  }, []);
+  const rechargeRef = useRef<any>();
   return (
-    <>
+    <RechargeContext.Provider value={{ rechargeRef }}>
       <Flex h={'100%'}>
         <Flex
           bg="white"
@@ -116,7 +144,7 @@ function CostOverview() {
         </Flex>
       </Flex>
       <NotEnoughModal></NotEnoughModal>
-    </>
+    </RechargeContext.Provider>
   );
 }
 

@@ -48,7 +48,7 @@ with at least svc(s) below:
 ### Base applications requirements
 
 1. At least one storage Provider, here we use aliyun OSS and CDN. Or, you can use openebs.
-    * `AliOSS`: read [this](https://github.com/docker/docker.github.io/tree/master/registry/storage-drivers/oss.md)
+    * `AliOSS`: read [this](https://github.com/docker/docs/blob/main/content/registry/storage-drivers/oss.md)
     * `openebs` : `sealos run labring/openebs:v1.9.0`
 
 2. One Domain name with admin access
