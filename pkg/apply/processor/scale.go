@@ -29,7 +29,7 @@ import (
 	"github.com/labring/sealos/pkg/filesystem/rootfs"
 	"github.com/labring/sealos/pkg/guest"
 	"github.com/labring/sealos/pkg/runtime"
-	"github.com/labring/sealos/pkg/runtime/kubernetes"
+	"github.com/labring/sealos/pkg/runtime/factory"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -202,11 +202,13 @@ func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 	if err = SyncClusterStatus(cluster, c.Buildah, false); err != nil {
 		return err
 	}
+	distribution := cluster.GetDistribution()
+
 	var rt runtime.Interface
 	if c.IsScaleUp {
-		rt, err = kubernetes.New(cluster, c.ClusterFile.GetKubeadmConfig())
+		rt, err = factory.New(distribution, cluster, c.ClusterFile.GetRuntimeConfig())
 	} else {
-		rt, err = kubernetes.New(c.ClusterFile.GetCluster(), c.ClusterFile.GetKubeadmConfig())
+		rt, err = factory.New(distribution, c.ClusterFile.GetCluster(), c.ClusterFile.GetRuntimeConfig())
 	}
 	if err != nil {
 		return fmt.Errorf("failed to init runtime: %v", err)

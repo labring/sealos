@@ -28,8 +28,8 @@ func (k *KubeadmRuntime) InitKubeadmConfigToMaster0() error {
 	if err != nil {
 		return fmt.Errorf("generate init config error: %v", err)
 	}
-	initConfigPath := path.Join(k.getContentData().TmpPath(), defaultInitKubeadmFileName)
-	outConfigPath := path.Join(k.getContentData().ConfigsPath(), defaultInitKubeadmFileName)
+	initConfigPath := path.Join(k.pathResolver.TmpPath(), defaultInitKubeadmFileName)
+	outConfigPath := path.Join(k.pathResolver.ConfigsPath(), defaultInitKubeadmFileName)
 	err = file.WriteFile(initConfigPath, data)
 	if err != nil {
 		return fmt.Errorf("failed to write tmp init kubeadm config: %v", err)
@@ -50,16 +50,16 @@ func (k *KubeadmRuntime) GenerateCert() error {
 		return fmt.Errorf("get hostname failed %v", err)
 	}
 
-	logger.Debug("GenerateCert param:", k.getContentData().PkiPath(),
-		k.getContentData().PkiEtcdPath(),
+	logger.Debug("GenerateCert param:", k.pathResolver.PkiPath(),
+		k.pathResolver.PkiEtcdPath(),
 		k.getCertSANs(),
 		k.getMaster0IP(),
 		hostName,
 		k.getServiceCIDR(),
 		k.getDNSDomain())
 	return cert.GenerateCert(
-		k.getContentData().PkiPath(),
-		k.getContentData().PkiEtcdPath(),
+		k.pathResolver.PkiPath(),
+		k.pathResolver.PkiEtcdPath(),
 		k.getCertSANs(),
 		k.getMaster0IP(),
 		hostName,
@@ -79,11 +79,11 @@ func (k *KubeadmRuntime) CreateKubeConfigFiles() error {
 		return fmt.Errorf("get hostname failed %v", err)
 	}
 	certConfig := cert.Config{
-		Path:     k.getContentData().PkiPath(),
+		Path:     k.pathResolver.PkiPath(),
 		BaseName: "ca",
 	}
 
-	err = cert.CreateJoinControlPlaneKubeConfigFiles(k.getContentData().EtcPath(),
+	err = cert.CreateJoinControlPlaneKubeConfigFiles(k.pathResolver.EtcPath(),
 		certConfig, hostName, k.getClusterAPIServer(), "kubernetes")
 	if err != nil {
 		return fmt.Errorf("failed to generate kubeconfig: %v", err)

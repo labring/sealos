@@ -171,7 +171,7 @@ func verifyAndSetNodes(cmd *cobra.Command, cluster *v2.Cluster, scaleArgs *Scale
 			global := cluster.Spec.SSH.DeepCopy()
 			ssh.OverSSHConfig(global, override)
 
-			sshClient := ssh.NewSSHClient(global, true)
+			sshClient := ssh.MustNewClient(global, true)
 
 			host := &v2.Host{
 				IPS:   addrs,

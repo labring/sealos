@@ -43,7 +43,7 @@ func NewGuestManager() (Interface, error) {
 
 func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts []string) error {
 	envWrapper := env.NewEnvProcessor(cluster)
-	execer := ssh.NewSSHByCluster(cluster, true)
+	execer := ssh.NewCacheClientFromCluster(cluster, true)
 
 	for i, m := range mounts {
 		switch {
