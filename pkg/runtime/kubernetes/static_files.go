@@ -50,7 +50,7 @@ func (k *KubeadmRuntime) CopyStaticFilesToMasters() error {
 func (k *KubeadmRuntime) copyStaticFiles(nodes []string) error {
 	logger.Info("start to copy static files to masters")
 	for _, file := range MasterStaticFiles {
-		staticFilePath := filepath.Join(k.getContentData().RootFSStaticsPath(), file.Name)
+		staticFilePath := filepath.Join(k.pathResolver.RootFSStaticsPath(), file.Name)
 		cmdLinkStatic := fmt.Sprintf(copyFileToDirCommand, file.DestinationDir, staticFilePath, filepath.Join(file.DestinationDir, file.Name))
 		eg, _ := errgroup.WithContext(context.Background())
 		for _, host := range nodes {

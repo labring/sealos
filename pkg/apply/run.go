@@ -122,7 +122,7 @@ func (r *ClusterArgs) runArgs(cmd *cobra.Command, args *RunArgs, imageList []str
 	nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
 	r.hosts = []v2.Host{}
 
-	sshClient := ssh.NewSSHByCluster(r.cluster, true)
+	sshClient := ssh.NewCacheClientFromCluster(r.cluster, true)
 	if len(masters) > 0 {
 		host, port := iputils.GetHostIPAndPortOrDefault(masters[0], defaultPort)
 		master0addr := net.JoinHostPort(host, port)

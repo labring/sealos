@@ -51,7 +51,7 @@ func (f *defaultRootfs) getClusterName(cluster *v2.Cluster) string {
 }
 
 func (f *defaultRootfs) getSSH(cluster *v2.Cluster) ssh.Interface {
-	return ssh.NewSSHByCluster(cluster, true)
+	return ssh.NewCacheClientFromCluster(cluster, true)
 }
 
 func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error {

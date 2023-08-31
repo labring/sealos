@@ -104,7 +104,7 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 			pauseImage = mountImg.Env["sandboxImage"]
 		}
 	}
-	sshCtx := ssh.NewSSHByCluster(cluster, false)
+	sshCtx := ssh.NewCacheClientFromCluster(cluster, false)
 	root := constants.NewPathResolver(cluster.Name).RootFSPath()
 	regInfo := helpers.GetRegistryInfo(sshCtx, root, cluster.GetRegistryIPAndPort())
 

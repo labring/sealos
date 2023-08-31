@@ -28,7 +28,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 
-	"github.com/labring/sealos/pkg/runtime/types"
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -48,7 +49,7 @@ var (
 )
 
 const (
-	DefaultVIP = "10.103.97.2"
+	defaultVIP = "10.103.97.2"
 )
 
 // k.getKubeVersion can't be empty
@@ -100,7 +101,7 @@ func gte(v1, v2 *semver.Version) bool {
 }
 
 func (k *KubeadmRuntime) getCGroupDriver(node string) (string, error) {
-	driver, err := k.getRemoteInterface().CGroup(node)
+	driver, err := k.remoteUtil.CGroup(node)
 	if err != nil {
 		return "", err
 	}
@@ -154,7 +155,7 @@ func (k *KubeadmRuntime) validateVIP(ip string) error {
 }
 
 func (k *KubeadmRuntime) getDefaultKubeadmConfig() string {
-	return filepath.Join(k.getContentData().RootFSEtcPath(), defaultRootfsKubeadmFileName)
+	return filepath.Join(k.pathResolver.RootFSEtcPath(), defaultRootfsKubeadmFileName)
 }
 
 func (k *KubeadmRuntime) getVip() string {
@@ -163,7 +164,7 @@ func (k *KubeadmRuntime) getVip() string {
 
 func (k *KubeadmRuntime) getAPIServerPort() int32 {
 	if k.kubeadmConfig.InitConfiguration.LocalAPIEndpoint.BindPort == 0 {
-		k.kubeadmConfig.InitConfiguration.LocalAPIEndpoint.BindPort = types.DefaultAPIServerPort
+		k.kubeadmConfig.InitConfiguration.LocalAPIEndpoint.BindPort = constants.DefaultAPIServerPort
 	}
 	return k.kubeadmConfig.InitConfiguration.LocalAPIEndpoint.BindPort
 }
@@ -259,7 +260,7 @@ func (k *KubeadmRuntime) getServiceCIDR() string {
 
 func (k *KubeadmRuntime) getDNSDomain() string {
 	if k.kubeadmConfig.ClusterConfiguration.Networking.DNSDomain == "" {
-		k.kubeadmConfig.ClusterConfiguration.Networking.DNSDomain = types.DefaultDNSDomain
+		k.kubeadmConfig.ClusterConfiguration.Networking.DNSDomain = constants.DefaultDNSDomain
 	}
 	return k.kubeadmConfig.ClusterConfiguration.Networking.DNSDomain
 }
@@ -287,7 +288,7 @@ func (k *KubeadmRuntime) writeTokenFile(file string) error {
 func (k *KubeadmRuntime) setKubernetesToken() error {
 	if k.token == nil {
 		logger.Info("start to get kubernetes token...")
-		tokenFile := path.Join(k.getContentData().EtcPath(), defaultKubeadmTokenFileName)
+		tokenFile := path.Join(k.pathResolver.EtcPath(), defaultKubeadmTokenFileName)
 		if !fileutil.IsExist(tokenFile) {
 			err := k.writeTokenFile(tokenFile)
 			if err != nil {
@@ -426,7 +427,7 @@ func (k *KubeadmRuntime) getEtcdDataDir() string {
 }
 
 func (k *KubeadmRuntime) getCRISocket(node string) (string, error) {
-	criSocket, err := k.getRemoteInterface().Socket(node)
+	criSocket, err := k.remoteUtil.Socket(node)
 	if err != nil {
 		return "", err
 	}
@@ -445,7 +446,7 @@ var setCGroupDriverAndSocket = func(krt *KubeadmRuntime) error {
 }
 
 var setCertificateKey = func(krt *KubeadmRuntime) error {
-	certificateKeyFile := path.Join(krt.getContentData().EtcPath(), defaultCertificateKeyFileName)
+	certificateKeyFile := path.Join(krt.pathResolver.EtcPath(), defaultCertificateKeyFileName)
 	var key string
 	if !fileutil.IsExist(certificateKeyFile) {
 		key, _ = rand.CreateCertificateKey()
