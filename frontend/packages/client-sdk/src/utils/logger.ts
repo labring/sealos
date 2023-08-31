@@ -9,27 +9,7 @@ export function infoLog(msg: string, obj: Record<string, any> = {}) {
 }
 
 export function errLog(msg: string, error: any) {
-  console.log(`[ERROR] ${formatTime(new Date())}`);
-  console.log({
-    message: msg,
-    stack: error?.stack,
-    ...(error?.config && {
-      config: {
-        headers: error.config.headers,
-        url: error.config.url,
-        data: error.config.data
-      }
-    }),
-    ...(error?.body && {
-      body: error?.body
-    }),
-    ...(error?.response && {
-      response: {
-        status: error.response.status,
-        statusText: error.response.statusText
-      }
-    })
-  });
+  console.log(`[ERROR] ${formatTime(new Date())} ${msg}`, error);
 }
 
 export function warnLog(msg: string, obj: Record<string, any> = {}) {
