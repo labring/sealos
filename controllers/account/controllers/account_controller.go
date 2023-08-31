@@ -253,9 +253,9 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
 			return nil, fmt.Errorf("sync resource resourceQuota and limitRange failed: %v", err)
 		}
-		//TODO delete after gpu quota already in resource-quota
-		if err := r.adaptGpuQuota(ctx, userNamespace); err != nil {
-			r.Logger.Error(err, "adapt gpu quota failed")
+		//TODO delete after nodeport count quota already in resource-quota
+		if err := r.adaptNodePortCountQuota(ctx, userNamespace); err != nil {
+			r.Logger.Error(err, "adapt nodeport count quota failed")
 		}
 	}
 	// add account balance when account is new user
@@ -316,15 +316,12 @@ func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, 
 	return nil
 }
 
-func (r *AccountReconciler) adaptGpuQuota(ctx context.Context, nsName string) error {
+func (r *AccountReconciler) adaptNodePortCountQuota(ctx context.Context, nsName string) error {
 	quota := common.GetDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName)
 	return retry.Retry(10, 1*time.Second, func() error {
 		_, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
-			if _, ok := quota.Spec.Hard[common.ResourceRequestGpu]; !ok {
-				quota.Spec.Hard[common.ResourceRequestGpu] = resource.MustParse(utils.GetEnvWithDefault(common.QuotaLimitsGPU, common.DefaultQuotaLimitsGPU))
-			}
-			if _, ok := quota.Spec.Hard[common.ResourceLimitGpu]; !ok {
-				quota.Spec.Hard[common.ResourceLimitGpu] = resource.MustParse(utils.GetEnvWithDefault(common.QuotaLimitsGPU, common.DefaultQuotaLimitsGPU))
+			if _, ok := quota.Spec.Hard[corev1.ResourceServicesNodePorts]; !ok {
+				quota.Spec.Hard[corev1.ResourceServicesNodePorts] = resource.MustParse(utils.GetEnvWithDefault(common.QuotaLimitsNodePorts, common.DefaultQuotaLimitsNodePorts))
 			}
 			return nil
 		})
