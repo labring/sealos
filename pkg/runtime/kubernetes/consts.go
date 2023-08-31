@@ -14,6 +14,8 @@
 
 package kubernetes
 
+const Distribution = "kubernetes"
+
 const (
 	defaultInitKubeadmFileName       = "kubeadm-init.yaml"
 	defaultJoinMasterKubeadmFileName = "kubeadm-join-master.yaml"

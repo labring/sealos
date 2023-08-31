@@ -25,7 +25,8 @@ import (
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime/decode"
-	"github.com/labring/sealos/pkg/runtime/types"
+	"github.com/labring/sealos/pkg/runtime/k3s"
+	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
@@ -36,10 +37,6 @@ var ErrClusterFileNotExists = errors.New("the cluster file is not exist")
 
 type PreProcessor interface {
 	Process() error
-}
-
-func NewPreProcessor(path string) PreProcessor {
-	return &ClusterFile{path: path}
 }
 
 func (c *ClusterFile) Process() (err error) {
@@ -100,8 +97,8 @@ func (c *ClusterFile) loadClusterFile() ([]byte, error) {
 		out.Write(configData)
 	}
 
-	for i := range c.customKubeadmFiles {
-		configData, err := fileutil.ReadAll(c.customKubeadmFiles[i])
+	for i := range c.customRuntimeConfigFiles {
+		configData, err := fileutil.ReadAll(c.customRuntimeConfigFiles[i])
 		if err != nil {
 			return nil, err
 		}
@@ -124,7 +121,7 @@ func (c *ClusterFile) loadRenderValues() (map[string]interface{}, error) {
 
 func (c *ClusterFile) decode(data []byte) error {
 	for _, fn := range []func([]byte) error{
-		c.DecodeCluster, c.DecodeConfigs, c.DecodeKubeadmConfig,
+		c.DecodeCluster, c.DecodeConfigs, c.DecodeRuntimeConfig,
 	} {
 		if err := fn(data); err != nil && err != ErrTypeNotFound {
 			return err
@@ -141,7 +138,7 @@ func (c *ClusterFile) DecodeCluster(data []byte) error {
 	if cluster == nil {
 		return ErrTypeNotFound
 	}
-	c.Cluster = cluster
+	c.cluster = cluster
 	return nil
 }
 
@@ -154,18 +151,27 @@ func (c *ClusterFile) DecodeConfigs(data []byte) error {
 		return ErrTypeNotFound
 	}
 	cfgs := configs.([]v2.Config)
-	c.Configs = cfgs
+	c.configs = cfgs
 	return nil
 }
 
-func (c *ClusterFile) DecodeKubeadmConfig(data []byte) error {
-	kubeadmConfig, err := types.LoadKubeadmConfigs(string(data), c.setDefaults, decode.CRDFromString)
+func (c *ClusterFile) DecodeRuntimeConfig(data []byte) error {
+	// TODO: handling more types of runtime configuration
+	cfg, err := k3s.ParseConfig(data)
 	if err != nil {
 		return err
 	}
-	if kubeadmConfig == nil {
-		return ErrTypeNotFound
+	if cfg != nil {
+		c.runtimeConfig = cfg
+	} else {
+		kubeadmConfig, err := types.LoadKubeadmConfigs(string(data), c.setDefaults, decode.CRDFromString)
+		if err != nil {
+			return err
+		}
+		if kubeadmConfig == nil {
+			return ErrTypeNotFound
+		}
+		c.runtimeConfig = kubeadmConfig
 	}
-	c.KubeConfig = kubeadmConfig
 	return nil
 }

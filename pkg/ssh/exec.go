@@ -54,7 +54,7 @@ func NewExecCmdFromIPs(cluster *v2.Cluster, ips []string) (Exec, error) {
 }
 
 func (e *Exec) RunCmd(cmd string) error {
-	sshClient := NewSSHByCluster(e.cluster, true)
+	sshClient := NewCacheClientFromCluster(e.cluster, true)
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, ipAddr := range e.ipList {
 		ip := ipAddr
@@ -69,7 +69,7 @@ func (e *Exec) RunCmd(cmd string) error {
 }
 
 func (e *Exec) RunCopy(srcFilePath, dstFilePath string) error {
-	sshClient := NewSSHByCluster(e.cluster, true)
+	sshClient := NewCacheClientFromCluster(e.cluster, true)
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, ipAddr := range e.ipList {
 		ip := ipAddr

@@ -30,6 +30,12 @@ const (
 	DefaultHostsPath        = "/etc/hosts"
 )
 
+const (
+	DefaultAPIServerDomain = "apiserver.cluster.local"
+	DefaultDNSDomain       = "cluster.local"
+	DefaultAPIServerPort   = 6443
+)
+
 // CRD kind
 const (
 	Config  = "Config"
