@@ -127,7 +127,7 @@ func executeTask() error {
 	defer func() {
 		err := dbClient.Disconnect(dbCtx)
 		if err != nil {
-			logger.Error("disconnect mongo client failed: %v", err)
+			logger.Warn("disconnect mongo client failed: %v", err)
 		}
 	}()
 	prices, err := dbClient.GetAllPricesMap()
@@ -146,7 +146,7 @@ func executeTask() error {
 	}
 	// create tomorrow monitor time series
 	if err := CreateMonitorTimeSeries(dbClient, now.Add(24*time.Hour)); err != nil {
-		return fmt.Errorf("failed to create monitor time series: %v", err)
+		logger.Debug("failed to create monitor time series: %v", err)
 	}
 	return nil
 }
