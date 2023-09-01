@@ -19,6 +19,8 @@ package v1beta1
 import (
 	"fmt"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/Masterminds/semver/v3"
 
 	"github.com/labring/sealos/pkg/utils/iputils"
@@ -262,7 +264,7 @@ func (c *Cluster) HasAppImage() bool {
 func (c *Cluster) GetRolesByIP(ip string) []string {
 	var routes []string
 	for _, host := range c.Spec.Hosts {
-		if In(ip, host.IPS) {
+		if slices.Contains(host.IPS, ip) {
 			return host.Roles
 		}
 	}
@@ -272,7 +274,7 @@ func (c *Cluster) GetRolesByIP(ip string) []string {
 func (c *Cluster) GetDistribution() string {
 	root := c.GetRootfsImage()
 	if root != nil {
-		return root.Labels["sealos.io.distribution"]
+		return maps.GetFromKeys(root.Labels, ImageDistributionKeys...)
 	}
 	return ""
 }
