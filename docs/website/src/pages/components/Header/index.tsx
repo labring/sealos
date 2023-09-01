@@ -1,6 +1,6 @@
 import Link from '@docusaurus/Link'
 import Translate from '@docusaurus/Translate'
-import GithubIcon from '@site/static/icons/github-light.svg'
+import GithubIcon from '@site/static/icons/github.svg'
 import MeunIcon from '@site/static/icons/meun.svg'
 import LogoIcon from '@site/static/icons/sealos.svg'
 import React, { useEffect, useState } from 'react'
