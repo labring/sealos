@@ -97,44 +97,17 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	own := ns.Annotations[v1.UserAnnotationCreatorKey]
-	if own == "" {
-		r.Logger.V(1).Info("billing namespace not found owner annotation", "namespace", ns.Name)
-		return ctrl.Result{}, nil
-	} else if own != getUsername(ns.Name) {
-		r.Logger.V(1).Info("billing namespace owner annotation not equal to namespace name", "namespace", ns.Name)
-		return ctrl.Result{}, nil
+	own := ns.Labels[v1.UserLabelOwnerKey]
+	nsList := &corev1.NamespaceList{}
+	// use label selector to get all namespace： UserLabelOwnerKey=own
+	if err = r.List(ctx, nsList, client.MatchingLabels{v1.UserLabelOwnerKey: own}); err != nil {
+		r.Logger.Error(err, "Failed to list namespace")
+		return ctrl.Result{}, err
 	}
-
-	nsListStr := make([]string, 0)
-	// list all annotation equals to "user.sealos.io/creator"
-	// TODO 后续使用索引annotation List
-	//nsList := &corev1.NamespaceList{}
-	//if err := r.List(ctx, nsList); err != nil {
-	//	return ctrl.Result{}, err
-	//}
-	//if err != nil {
-	//	r.Error(err, "Failed to list namespace")
-	//	return ctrl.Result{}, err
-	//}
-	//for _, namespace := range nsList.Items {
-	//	if namespace.Annotations[v1.UserAnnotationCreatorKey] != own {
-	//		continue
-	//	}
-	//	if err = r.syncResourceQuota(ctx, namespace.Name); err != nil {
-	//		r.Error(err, "Failed to syncResourceQuota")
-	//		return ctrl.Result{}, err
-	//	}
-	//	// sync limitrange
-	//	nsListStr = append(nsListStr, namespace.Name)
-	//
-	//}
-	nsListStr = append(nsListStr, ns.Name)
-	//if err = r.syncResourceQuota(ctx, ns.Name); err != nil {
-	//	r.Error(err, "Failed to syncResourceQuota")
-	//	return ctrl.Result{}, err
-	//}
-	//r.Logger.Info("syncResourceQuota success", "nsListStr", nsListStr)
+	nsListStr := make([]string, len(nsList.Items))
+	for i := range nsList.Items {
+		nsListStr[i] = nsList.Items[i].Name
+	}
 	now := time.Now()
 	currentHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.UTC)
 	queryTime := currentHourTime.Add(-1 * time.Hour)
@@ -214,45 +187,6 @@ func (r *BillingReconciler) initDB() error {
 	return mongoClient.CreateBillingIfNotExist()
 }
 
-//func (r *BillingReconciler) syncQueryRoleAndRoleBinding(ctx context.Context, name, namespace string) error {
-//	role := rbacV1.Role{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      "userQueryRole-" + name,
-//			Namespace: namespace,
-//		},
-//	}
-//	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &role, func() error {
-//		role.Rules = []rbacV1.PolicyRule{
-//			{
-//				APIGroups: []string{"account.sealos.io"},
-//				Resources: []string{"billingrecordqueries"},
-//				Verbs:     []string{"create", "get", "watch", "list"},
-//			},
-//		}
-//		return nil
-//	}); err != nil {
-//		return fmt.Errorf("create role failed: %v,username: %v,namespace: %v", err, name, namespace)
-//	}
-//	roleBinding := rbacV1.RoleBinding{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      "userAccountRoleBinding-" + name,
-//			Namespace: namespace,
-//		},
-//	}
-//	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &roleBinding, func() error {
-//		roleBinding.RoleRef = rbacV1.RoleRef{
-//			APIGroup: "rbac.authorization.k8s.io",
-//			Kind:     "Role",
-//			Name:     role.Name,
-//		}
-//		roleBinding.Subjects = helper.GetUsersSubject(name)
-//		return nil
-//	}); err != nil {
-//		return fmt.Errorf("create roleBinding failed: %v,rolename: %v,username: %v,ns: %v", err, role.Name, name, namespace)
-//	}
-//	return nil
-//}
-
 // SetupWithManager sets up the controller with the Manager.
 func (r *BillingReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	if r.mongoURI = os.Getenv(database.MongoURI); r.mongoURI == "" {
@@ -269,8 +203,8 @@ func (r *BillingReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Namespace{}, builder.WithPredicates(predicate.Funcs{
 			CreateFunc: func(createEvent event.CreateEvent) bool {
-				_, ok := createEvent.Object.GetAnnotations()[v1.UserAnnotationCreatorKey]
-				return ok
+				own, ok := createEvent.Object.GetLabels()[v1.UserLabelOwnerKey]
+				return ok && getUsername(createEvent.Object.GetNamespace()) == own
 			},
 			UpdateFunc: func(updateEvent event.UpdateEvent) bool {
 				return false

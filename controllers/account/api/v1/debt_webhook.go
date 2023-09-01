@@ -22,6 +22,8 @@ import (
 	"os"
 	"strings"
 
+	userV1 "github.com/labring/sealos/controllers/user/api/v1"
+
 	account2 "github.com/labring/sealos/controllers/common/account"
 
 	"github.com/labring/sealos/controllers/pkg/common"
@@ -30,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -84,6 +85,9 @@ func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admissi
 			logger.V(1).Info("pass for kube-system")
 			return admission.ValidationResponse(true, "")
 		case fmt.Sprintf("%s:%s", saPrefix, req.Namespace):
+			if !isUserNamespace(req.Namespace) || isWhiteList(req) {
+				return admission.ValidationResponse(true, "")
+			}
 			logger.V(1).Info("check for user", "user", req.UserInfo.Username, "ns: ", req.Namespace, "name", req.Name, "Operation", req.Operation)
 			// Check if the request is for resourcequota resource
 			if req.Kind.Kind == "ResourceQuota" {
@@ -98,9 +102,6 @@ func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admissi
 			}
 			if req.Kind.Kind == "Payment" && req.Operation == admissionV1.Update {
 				return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
-			}
-			if isWhiteList(req) {
-				return admission.ValidationResponse(true, "")
 			}
 			return checkOption(ctx, logger, d.Client, req.Namespace)
 		default:
@@ -139,6 +140,10 @@ func isWhiteList(req admission.Request) bool {
 	return false
 }
 
+func isUserNamespace(namespace string) bool {
+	return strings.HasPrefix(namespace, "ns-")
+}
+
 func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsName string) admission.Response {
 	//nsList := &corev1.NamespaceList{}
 	//if err := c.List(ctx, nsList, client.MatchingFields{"name": nsName}); err != nil {
@@ -154,12 +159,11 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsNam
 		return admission.Allowed("namespace not found")
 	}
 	// Check if it is a user namespace
-	user, ok := ns.Annotations[userv1.UserAnnotationCreatorKey]
-	logger.V(1).Info("check user namespace", "ns.name", ns.Name, "ns", ns)
+	user, ok := ns.Labels[userV1.UserLabelOwnerKey]
 	if !ok {
 		return admission.ValidationResponse(true, fmt.Sprintf("this namespace is not user namespace %s,or have not create", ns.Name))
 	}
-
+	logger.V(1).Info("check user namespace", "ns", ns.Name, "user", user)
 	accountList := AccountList{}
 	if err := c.List(ctx, &accountList, client.MatchingFields{"name": user}); err != nil {
 		logger.Error(err, "get account error", "user", user)
@@ -171,7 +175,7 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsNam
 			return admission.ValidationResponse(false, fmt.Sprintf(common.MessageFormat, common.CodeInsufficientBalance, fmt.Sprintf("account balance less than 0,now account is %.2f¥", GetAccountDebtBalance(account))))
 		}
 	}
-	return admission.Allowed("pass user " + user)
+	return admission.Allowed(fmt.Sprintf("pass user %s , namespace %s", user, ns.Name))
 }
 
 func getDefaultQuotaName(namespace string) string {
