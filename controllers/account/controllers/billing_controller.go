@@ -98,15 +98,10 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	own := ns.Labels[v1.UserLabelOwnerKey]
-	nsList := &corev1.NamespaceList{}
-	// use label selector to get all namespace： UserLabelOwnerKey=own
-	if err = r.List(ctx, nsList, client.MatchingLabels{v1.UserLabelOwnerKey: own}); err != nil {
-		r.Logger.Error(err, "Failed to list namespace")
-		return ctrl.Result{}, err
-	}
-	nsListStr := make([]string, len(nsList.Items))
-	for i := range nsList.Items {
-		nsListStr[i] = nsList.Items[i].Name
+	nsList, err := getOwnNsList(r.Client, own)
+	if err != nil {
+		r.Logger.Error(err, "get own namespace list failed")
+		return ctrl.Result{Requeue: true}, err
 	}
 	now := time.Now()
 	currentHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.UTC)
@@ -123,12 +118,24 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// 计算上次billing到当前的时间之间的整点，左开右闭
 	for t := queryTime.Truncate(time.Hour).Add(time.Hour); t.Before(currentHourTime) || t.Equal(currentHourTime); t = t.Add(time.Hour) {
-		if err = r.billingWithHourTime(ctx, t.UTC(), nsListStr, ns.Name, dbClient); err != nil {
+		if err = r.billingWithHourTime(ctx, t.UTC(), nsList, ns.Name, dbClient); err != nil {
 			r.Logger.Error(err, "billing with hour time failed", "time", t.Format(time.RFC3339))
 			return ctrl.Result{}, err
 		}
 	}
 	return ctrl.Result{Requeue: true, RequeueAfter: time.Until(currentHourTime.Add(1*time.Hour + 10*time.Minute))}, nil
+}
+
+func getOwnNsList(clt client.Client, user string) ([]string, error) {
+	nsList := &corev1.NamespaceList{}
+	if err := clt.List(context.Background(), nsList, client.MatchingLabels{v1.UserLabelOwnerKey: user}); err != nil {
+		return nil, fmt.Errorf("list namespace failed: %w", err)
+	}
+	nsListStr := make([]string, len(nsList.Items))
+	for i := range nsList.Items {
+		nsListStr[i] = nsList.Items[i].Name
+	}
+	return nsListStr, nil
 }
 
 func (r *BillingReconciler) billingWithHourTime(ctx context.Context, queryTime time.Time, nsListStr []string, ownNs string, dbClient database.Interface) error {

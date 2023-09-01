@@ -113,9 +113,16 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	// now should get debt and account
 	//r.Logger.Info("debt info", "debt", debt)
 
-	if err := r.reconcileDebtStatus(ctx, debt, account); err != nil {
-		r.Logger.Error(err, "reconcile debt status error")
-		return ctrl.Result{}, err
+	nsList, err := getOwnNsList(r.Client, getUsername(account.Name))
+	if err != nil {
+		r.Logger.Error(err, "get own ns list error")
+		return ctrl.Result{}, fmt.Errorf("get own ns list error: %v", err)
+	}
+	for i := range nsList {
+		if err := r.reconcileDebtStatus(ctx, debt, account, nsList[i]); err != nil {
+			r.Logger.Error(err, "reconcile debt status error")
+			return ctrl.Result{}, err
+		}
 	}
 	//Debt Detection Cycle
 	return ctrl.Result{Requeue: true, RequeueAfter: r.DebtDetectionCycle}, nil
@@ -131,12 +138,12 @@ NormalPeriod -> WarningPeriod -> ApproachingDeletionPeriod -> ImmediateDeletePer
 
 欠费后到完全删除的总周期=WarningPeriodSeconds+ApproachingDeletionPeriodSeconds+ImmediateDeletePeriodSeconds+FinalDeletePeriodSeconds
 */
-func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv1.Debt, account *accountv1.Account) error {
+func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv1.Debt, account *accountv1.Account, userNamespace string) error {
 	oweamount := account.Status.Balance - account.Status.DeductionBalance
 	//更新间隔秒钟数
 	updateIntervalSeconds := time.Now().UTC().Unix() - debt.Status.LastUpdateTimestamp
 	lastStatus := debt.Status
-	userNamespace := GetUserNamespace(account.Name)
+	//userNamespace := GetUserNamespace(account.Name)
 	update := false
 
 	// 判断上次状态到当前的状态
