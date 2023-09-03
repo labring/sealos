@@ -251,7 +251,8 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	}
 	if account.GetAnnotations()[AccountAnnotationIgnoreQuota] != "true" {
 		if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
-			return nil, fmt.Errorf("sync resource resourceQuota and limitRange failed: %v", err)
+			//return nil, fmt.Errorf("sync resource resourceQuota and limitRange failed: %v", err)
+			r.Logger.Error(err, "sync resource resourceQuota and limitRange failed")
 		}
 		//TODO delete after nodeport count quota already in resource-quota
 		if err := r.adaptNodePortCountQuota(ctx, userNamespace); err != nil {
