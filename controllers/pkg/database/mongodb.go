@@ -124,7 +124,7 @@ func (m *MongoDB) SaveBillingsWithAccountBalance(accountBalanceSpec *accountv1.A
 	return err
 }
 
-func (m *MongoDB) GetMeteringOwnerTimeResult(queryTime time.Time, queryCategories, queryProperties []string, queryOwner string) (*MeteringOwnerTimeResult, error) {
+func (m *MongoDB) GetMeteringOwnerTimeResult(queryTime time.Time, queryCategories, queryProperties []string) (*MeteringOwnerTimeResult, error) {
 	matchValue := bson.M{
 		"time":     queryTime,
 		"category": bson.M{"$in": queryCategories},
@@ -149,7 +149,7 @@ func (m *MongoDB) GetMeteringOwnerTimeResult(queryTime time.Time, queryCategorie
 			"costs":       bson.M{"$push": bson.M{"k": "$property", "v": "$propertyTotal"}},
 		}}},
 		bson.D{{Key: "$addFields", Value: bson.M{
-			"owner":  queryOwner,
+			//"owner":  queryOwner,
 			"time":   queryTime,
 			"amount": "$amountTotal",
 			"costs":  bson.M{"$arrayToObject": "$costs"},

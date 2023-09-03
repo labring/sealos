@@ -103,8 +103,9 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		r.Logger.Error(err, "get own namespace list failed")
 		return ctrl.Result{Requeue: true}, err
 	}
+	r.Logger.V(1).Info("own namespace list", "own", own, "nsList", nsList)
 	now := time.Now()
-	currentHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.UTC)
+	currentHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
 	queryTime := currentHourTime.Add(-1 * time.Hour)
 	if exist, lastUpdateTime, _ := dbClient.GetBillingLastUpdateTime(own, v12.Consumption); exist {
 		if lastUpdateTime.Equal(currentHourTime) || lastUpdateTime.After(currentHourTime) {
@@ -140,7 +141,7 @@ func getOwnNsList(clt client.Client, user string) ([]string, error) {
 
 func (r *BillingReconciler) billingWithHourTime(ctx context.Context, queryTime time.Time, nsListStr []string, ownNs string, dbClient database.Interface) error {
 	r.Logger.Info("queryTime", "queryTime", queryTime.Format(time.RFC3339), "ownNs", ownNs, "nsListStr", nsListStr)
-	billing, err := dbClient.GetMeteringOwnerTimeResult(queryTime, nsListStr, nil, ownNs)
+	billing, err := dbClient.GetMeteringOwnerTimeResult(queryTime, nsListStr, nil)
 	if err != nil {
 		return fmt.Errorf("get metering owner time result failed: %w", err)
 	}
@@ -211,7 +212,7 @@ func (r *BillingReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		For(&corev1.Namespace{}, builder.WithPredicates(predicate.Funcs{
 			CreateFunc: func(createEvent event.CreateEvent) bool {
 				own, ok := createEvent.Object.GetLabels()[v1.UserLabelOwnerKey]
-				return ok && getUsername(createEvent.Object.GetNamespace()) == own
+				return ok && getUsername(createEvent.Object.GetName()) == own
 			},
 			UpdateFunc: func(updateEvent event.UpdateEvent) bool {
 				return false

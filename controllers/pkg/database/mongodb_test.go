@@ -43,17 +43,10 @@ func TestMongoDB_GetMeteringOwnerTimeResult(t *testing.T) {
 		}
 	}()
 
-	// 2023-04-30T17:00:00.000+00:00
-	queryTime := time.Date(2023, 7, 14, 04, 0, 0, 0, time.UTC)
+	now := time.Now()
+	queryTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC().Add(-time.Hour)
 
-	//[]string{"ns-vd1k1dk3", "ns-cv46sqlr", "ns-wu8nptea", "ns-a2sh413v", "ns-l8ad16ee"}
-	got, err := m.GetMeteringOwnerTimeResult(queryTime, []string{"ns-vd1k1dk3"}, []string{"cpu", "memory", "storage"}, "ns-vd1k1dk3")
-	if err != nil {
-		t.Errorf("failed to get metering owner time result: error = %v", err)
-	}
-	t.Logf("got: %v", got)
-
-	got, err = m.GetMeteringOwnerTimeResult(queryTime, []string{"ns-7wdqa36k"}, nil, "ns-7wdqa36k")
+	got, err := m.GetMeteringOwnerTimeResult(queryTime, []string{"ns-0nfm8mkr"}, nil)
 	if err != nil {
 		t.Errorf("failed to get metering owner time result: error = %v", err)
 	}
