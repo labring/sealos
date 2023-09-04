@@ -34,7 +34,7 @@ var ilog = logf.Log.WithName("ingress-validating-webhook")
 
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 
-//+kubebuilder:webhook:path=/mutate-networking-k8s-io-v1-ingress,mutating=true,failurePolicy=ignore,sideEffects=None,groups=networking.k8s.io,resources=ingresses,verbs=create;update,versions=v1,name=mingress.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate-networking-k8s-io-v1-ingress,mutating=true,failurePolicy=ignore,sideEffects=None,groups=networking.k8s.io,resources=ingresses,verbs=create;update,versions=v1,name=mingress.sealos.io,admissionReviewVersions=v1
 //+kubebuilder:object:generate=false
 
 type IngressMutator struct {
@@ -52,7 +52,7 @@ type IngressValidator struct {
 	Domain string
 }
 
-//+kubebuilder:webhook:path=/validate-networking-k8s-io-v1-ingress,mutating=false,failurePolicy=ignore,sideEffects=None,groups=networking.k8s.io,resources=ingresses,verbs=create;update;delete,versions=v1,name=vingress.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-networking-k8s-io-v1-ingress,mutating=false,failurePolicy=ignore,sideEffects=None,groups=networking.k8s.io,resources=ingresses,verbs=create;update;delete,versions=v1,name=vingress.sealos.io,admissionReviewVersions=v1
 
 func (v *IngressValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
 	i, ok := obj.(*netv1.Ingress)
