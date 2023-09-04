@@ -168,13 +168,10 @@ importers:
     dependencies:
       '@kubernetes/client-node':
         specifier: ^0.18.1
-        version: registry.npmmirror.com/@kubernetes/client-node@0.18.1(bufferutil@4.0.7)(utf-8-validate@6.0.3)
+        version: registry.npmmirror.com/@kubernetes/client-node@0.18.1
       axios:
         specifier: ^1.4.0
         version: 1.4.0
-      bufferutil:
-        specifier: ^4.0.7
-        version: registry.npmmirror.com/bufferutil@4.0.7
       dayjs:
         specifier: ^1.11.9
         version: registry.npmmirror.com/dayjs@1.11.9
@@ -184,9 +181,6 @@ importers:
       js-yaml:
         specifier: ^4.1.0
         version: registry.npmmirror.com/js-yaml@4.1.0
-      utf-8-validate:
-        specifier: ^6.0.3
-        version: registry.npmmirror.com/utf-8-validate@6.0.3
       uuid:
         specifier: ^9.0.0
         version: 9.0.0
@@ -12456,9 +12450,8 @@ packages:
       '@jridgewell/sourcemap-codec': registry.npmmirror.com/@jridgewell/sourcemap-codec@1.4.14
     dev: false
 
-  registry.npmmirror.com/@kubernetes/client-node@0.18.1(bufferutil@4.0.7)(utf-8-validate@6.0.3):
+  registry.npmmirror.com/@kubernetes/client-node@0.18.1:
     resolution: {integrity: sha512-F3JiK9iZnbh81O/da1tD0h8fQMi/MDttWc/JydyUVnjPEom55wVfnpl4zQ/sWD4uKB8FlxYRPiLwV2ZXB+xPKw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@kubernetes/client-node/-/client-node-0.18.1.tgz}
-    id: registry.npmmirror.com/@kubernetes/client-node/0.18.1
     name: '@kubernetes/client-node'
     version: 0.18.1
     dependencies:
@@ -12477,7 +12470,7 @@ packages:
       tmp-promise: registry.npmmirror.com/tmp-promise@3.0.3
       tslib: registry.npmmirror.com/tslib@2.6.0
       underscore: registry.npmmirror.com/underscore@1.13.6
-      ws: registry.npmmirror.com/ws@8.13.0(bufferutil@4.0.7)(utf-8-validate@6.0.3)
+      ws: registry.npmmirror.com/ws@8.13.0
     optionalDependencies:
       openid-client: registry.npmmirror.com/openid-client@5.4.3
     transitivePeerDependencies:
@@ -13541,16 +13534,6 @@ packages:
     version: 1.1.2
     dev: false
 
-  registry.npmmirror.com/bufferutil@4.0.7:
-    resolution: {integrity: sha512-kukuqc39WOHtdxtw4UScxF/WVnMFVSQVKhtx3AjZJzhd0RGZZldcrfSEbVsWWe6KNH253574cq5F+wpv0G9pJw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/bufferutil/-/bufferutil-4.0.7.tgz}
-    name: bufferutil
-    version: 4.0.7
-    engines: {node: '>=6.14.2'}
-    requiresBuild: true
-    dependencies:
-      node-gyp-build: registry.npmmirror.com/node-gyp-build@4.6.1
-    dev: false
-
   registry.npmmirror.com/byline@5.0.0:
     resolution: {integrity: sha512-s6webAy+R4SR8XVuJWt2V2rGvhnrhxN+9S15GNuTK3wKPOXFF6RNc+8ug2XhH+2s4f+uudG4kUVYmYOQWL2g0Q==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/byline/-/byline-5.0.0.tgz}
     name: byline
@@ -13988,7 +13971,7 @@ packages:
     peerDependencies:
       ws: '*'
     dependencies:
-      ws: registry.npmmirror.com/ws@8.13.0(bufferutil@4.0.7)(utf-8-validate@6.0.3)
+      ws: registry.npmmirror.com/ws@8.13.0
     dev: false
 
   registry.npmmirror.com/isstream@0.1.2:
@@ -14222,13 +14205,6 @@ packages:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/neo-async/-/neo-async-2.6.2.tgz}
     name: neo-async
     version: 2.6.2
-    dev: false
-
-  registry.npmmirror.com/node-gyp-build@4.6.1:
-    resolution: {integrity: sha512-24vnklJmyRS8ViBNI8KbtK/r/DmXQMRiOMXTNz2nrTnAYUwjmEEbnnpB/+kt+yWRv73bPsSPRFddrcIbAxSiMQ==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/node-gyp-build/-/node-gyp-build-4.6.1.tgz}
-    name: node-gyp-build
-    version: 4.6.1
-    hasBin: true
     dev: false
 
   registry.npmmirror.com/node-releases@2.0.13:
@@ -14727,16 +14703,6 @@ packages:
       punycode: registry.npmmirror.com/punycode@2.3.0
     dev: false
 
-  registry.npmmirror.com/utf-8-validate@6.0.3:
-    resolution: {integrity: sha512-uIuGf9TWQ/y+0Lp+KGZCMuJWc3N9BHA+l/UmHd/oUHwJJDeysyTRxNQVkbzsIWfGFbRe3OcgML/i0mvVRPOyDA==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/utf-8-validate/-/utf-8-validate-6.0.3.tgz}
-    name: utf-8-validate
-    version: 6.0.3
-    engines: {node: '>=6.14.2'}
-    requiresBuild: true
-    dependencies:
-      node-gyp-build: registry.npmmirror.com/node-gyp-build@4.6.1
-    dev: false
-
   registry.npmmirror.com/util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/util-deprecate/-/util-deprecate-1.0.2.tgz}
     name: util-deprecate
@@ -14831,9 +14797,8 @@ packages:
     name: wrappy
     version: 1.0.2
 
-  registry.npmmirror.com/ws@8.13.0(bufferutil@4.0.7)(utf-8-validate@6.0.3):
+  registry.npmmirror.com/ws@8.13.0:
     resolution: {integrity: sha512-x9vcZYTrFPC7aSIbj7sRCYo7L/Xb8Iy+pW0ng0wt2vCJv7M9HOMy0UoN3rr+IFC7hb7vXoqS+P9ktyLLLhO+LA==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/ws/-/ws-8.13.0.tgz}
-    id: registry.npmmirror.com/ws/8.13.0
     name: ws
     version: 8.13.0
     engines: {node: '>=10.0.0'}
@@ -14845,9 +14810,6 @@ packages:
         optional: true
       utf-8-validate:
         optional: true
-    dependencies:
-      bufferutil: registry.npmmirror.com/bufferutil@4.0.7
-      utf-8-validate: registry.npmmirror.com/utf-8-validate@6.0.3
     dev: false
 
   registry.npmmirror.com/yallist@3.1.1:
