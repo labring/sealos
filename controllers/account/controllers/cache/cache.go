@@ -43,9 +43,9 @@ func SetupCache(mgr ctrl.Manager) error {
 		field        string
 		extractValue client.IndexerFunc
 	}{
-		{ns, "metadata.name", nsNameFunc},
-		{ns, "metadata.labels." + v1.UserLabelOwnerKey, nsOwnerFunc},
-		{account, "metadata.name", accountNameFunc}} {
+		{ns, accountv1.Name, nsNameFunc},
+		{ns, accountv1.Owner, nsOwnerFunc},
+		{account, accountv1.Name, accountNameFunc}} {
 		if err := mgr.GetFieldIndexer().IndexField(context.TODO(), idx.obj, idx.field, idx.extractValue); err != nil {
 			return err
 		}

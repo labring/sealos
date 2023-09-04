@@ -165,7 +165,7 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsNam
 	}
 	logger.V(1).Info("check user namespace", "ns", ns.Name, "user", user)
 	accountList := AccountList{}
-	if err := c.List(ctx, &accountList, client.MatchingFields{"name": user}); err != nil {
+	if err := c.List(ctx, &accountList, client.MatchingFields{Name: user}); err != nil {
 		logger.Error(err, "get account error", "user", user)
 		return admission.ValidationResponse(true, err.Error())
 	}

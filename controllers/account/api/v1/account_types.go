@@ -27,6 +27,11 @@ const (
 	AccountSystemNamespaceEnv = "ACCOUNT_SYSTEM_NAMESPACE"
 )
 
+const (
+	Name  = "name"
+	Owner = "owner"
+)
+
 /*
    paymentService          AccountController    wechatpay
          |                     |                    |
