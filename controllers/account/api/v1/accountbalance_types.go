@@ -46,16 +46,18 @@ type Costs map[string]int64
 
 // AccountBalanceSpec defines the desired state of AccountBalance
 type AccountBalanceSpec struct {
-	OrderID string      `json:"order_id" bson:"order_id"`
-	Owner   string      `json:"owner" bson:"owner"`
-	Time    metav1.Time `json:"time" bson:"time"`
-	Type    Type        `json:"type" bson:"type"`
-	Costs   Costs       `json:"costs,omitempty" bson:"costs,omitempty"`
-	// TODO will delete field in future
-	//Timestamp int64 `json:"timestamp,omitempty"`
-	Amount  int64  `json:"amount,omitempty" bson:"amount"`
-	Details string `json:"details,omitempty" bson:"details,omitempty"`
-	//ResourceInfoList meteringcommonv1.ResourceInfoList `json:"resourceInfoList,omitempty"`
+	Time                     metav1.Time `json:"time" bson:"time"`
+	AccountBalanceSpecInline `json:",inline" bson:",inline"`
+}
+
+type AccountBalanceSpecInline struct {
+	OrderID   string `json:"order_id" bson:"order_id"`
+	Owner     string `json:"owner" bson:"owner"`
+	Namespace string `json:"namespace,omitempty" bson:"namespace,omitempty"`
+	Type      Type   `json:"type" bson:"type"`
+	Costs     Costs  `json:"costs,omitempty" bson:"costs,omitempty"`
+	Amount    int64  `json:"amount,omitempty" bson:"amount"`
+	Details   string `json:"details,omitempty" bson:"details,omitempty"`
 }
 
 // AccountBalanceStatus defines the observed state of AccountBalance

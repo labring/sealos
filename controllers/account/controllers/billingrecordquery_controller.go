@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/labring/sealos/controllers/pkg/common/gpu"
@@ -45,9 +47,10 @@ import (
 // BillingRecordQueryReconciler reconciles a BillingRecordQuery object
 type BillingRecordQueryReconciler struct {
 	client.Client
-	Scheme     *runtime.Scheme
-	Logger     logr.Logger
-	MongoDBURI string
+	Scheme                 *runtime.Scheme
+	Logger                 logr.Logger
+	MongoDBURI             string
+	AccountSystemNamespace string
 }
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=billingrecordqueries,verbs=get;list;watch;create;update;patch;delete
@@ -109,6 +112,13 @@ func (r *BillingRecordQueryReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, err
 	}
 
+	if err = r.Get(ctx, client.ObjectKey{Name: getUsername(billingRecordQuery.Namespace), Namespace: r.AccountSystemNamespace}, &accountv1.Account{}); err != nil {
+		if errors.IsNotFound(err) {
+			billingRecordQuery.Status.Status = "Please use the master account to query"
+			return ctrl.Result{}, r.Status().Update(ctx, billingRecordQuery)
+		}
+		return ctrl.Result{}, err
+	}
 	err = dbClient.QueryBillingRecords(billingRecordQuery, getUsername(billingRecordQuery.Namespace))
 	if err != nil {
 		r.Logger.Error(err, "query billing records failed")
@@ -134,6 +144,7 @@ func (r *BillingRecordQueryReconciler) SetupWithManager(mgr ctrl.Manager, rateOp
 		return fmt.Errorf("env %s is empty", database.MongoURI)
 	}
 	r.Logger = log.Log.WithName("billingrecordquery-controller")
+	r.AccountSystemNamespace = utils.GetEnvWithDefault(ACCOUNTNAMESPACEENV, DEFAULTACCOUNTNAMESPACE)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&accountv1.BillingRecordQuery{}).
 		Watches(&source.Kind{Type: &accountv1.PriceQuery{}}, &handler.EnqueueRequestForObject{}).

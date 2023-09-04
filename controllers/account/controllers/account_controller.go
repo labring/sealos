@@ -108,7 +108,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 	user := &userV1.User{}
 	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, user); err == nil {
-		_, err = r.syncAccount(ctx, user.Name, r.AccountSystemNamespace, "ns-"+user.Name)
+		_, err = r.syncAccount(ctx, GetUserOwner(user), r.AccountSystemNamespace, "ns-"+user.Name)
 		return ctrl.Result{}, err
 	} else if client.IgnoreNotFound(err) != nil {
 		return ctrl.Result{}, err
@@ -201,12 +201,14 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{}, nil
 		}
 		err = dbClient.SaveBillingsWithAccountBalance(&accountv1.AccountBalanceSpec{
-			OrderID: id,
-			Amount:  payment.Spec.Amount,
-			Owner:   getUsername(payment.Namespace),
-			Time:    metav1.Time{Time: now},
-			Type:    accountv1.Recharge,
-			Details: payment.ToJSON(),
+			Time: metav1.Time{Time: now},
+			AccountBalanceSpecInline: accountv1.AccountBalanceSpecInline{
+				OrderID: id,
+				Amount:  payment.Spec.Amount,
+				Owner:   getUsername(payment.Namespace),
+				Type:    accountv1.Recharge,
+				Details: payment.ToJSON(),
+			},
 		})
 		if err != nil {
 			r.Logger.Error(err, "save billings failed", "id", id, "payment", payment)
@@ -224,6 +226,14 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func GetUserOwner(user *userV1.User) string {
+	own := user.Annotations[userV1.UserLabelOwnerKey]
+	if own == "" {
+		return user.Name
+	}
+	return own
 }
 
 func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamespace string, userNamespace string) (*accountv1.Account, error) {
@@ -521,14 +531,8 @@ func (r *AccountReconciler) initBalance(account *accountv1.Account) (err error) 
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
-	const controllerName = "account_controller"
-	r.Logger = ctrl.Log.WithName(controllerName)
-	r.Logger.V(1).Info("init reconcile controller account")
-
-	r.AccountSystemNamespace = os.Getenv(ACCOUNTNAMESPACEENV)
-	if r.AccountSystemNamespace == "" {
-		r.AccountSystemNamespace = DEFAULTACCOUNTNAMESPACE
-	}
+	r.Logger = ctrl.Log.WithName("account_controller")
+	r.AccountSystemNamespace = utils.GetEnvWithDefault(ACCOUNTNAMESPACEENV, DEFAULTACCOUNTNAMESPACE)
 	if r.MongoDBURI = os.Getenv(database.MongoURI); r.MongoDBURI == "" {
 		return fmt.Errorf("mongo url is empty")
 	}

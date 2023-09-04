@@ -29,6 +29,7 @@ type BillingRecordQuerySpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	Page      int         `json:"page"`
 	PageSize  int         `json:"pageSize"`
+	Namespace string      `json:"namespace,omitempty"`
 	StartTime metav1.Time `json:"startTime"`
 	EndTime   metav1.Time `json:"endTime"`
 	OrderID   string      `json:"orderID,omitempty"`
@@ -44,6 +45,7 @@ type BillingRecordQueryStatus struct {
 	RechargeAmount  int64                `json:"rechargeAmount"`
 	DeductionAmount Costs                `json:"deductionAmount,omitempty"`
 	Items           []AccountBalanceSpec `json:"item,omitempty"`
+	Status          string               `json:"status"`
 }
 
 //+kubebuilder:object:root=true

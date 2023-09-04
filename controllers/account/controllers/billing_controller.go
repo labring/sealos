@@ -119,9 +119,11 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// 计算上次billing到当前的时间之间的整点，左开右闭
 	for t := queryTime.Truncate(time.Hour).Add(time.Hour); t.Before(currentHourTime) || t.Equal(currentHourTime); t = t.Add(time.Hour) {
-		if err = r.billingWithHourTime(ctx, t.UTC(), nsList, ns.Name, dbClient); err != nil {
-			r.Logger.Error(err, "billing with hour time failed", "time", t.Format(time.RFC3339))
-			return ctrl.Result{}, err
+		for i := range nsList {
+			if err = r.billingWithHourTime(ctx, t.UTC(), nsList[i], ns.Name, dbClient); err != nil {
+				r.Logger.Error(err, "billing with hour time failed", "time", t.Format(time.RFC3339))
+				return ctrl.Result{}, err
+			}
 		}
 	}
 	return ctrl.Result{Requeue: true, RequeueAfter: time.Until(currentHourTime.Add(1*time.Hour + 10*time.Minute))}, nil
@@ -139,9 +141,9 @@ func getOwnNsList(clt client.Client, user string) ([]string, error) {
 	return nsListStr, nil
 }
 
-func (r *BillingReconciler) billingWithHourTime(ctx context.Context, queryTime time.Time, nsListStr []string, ownNs string, dbClient database.Interface) error {
-	r.Logger.Info("queryTime", "queryTime", queryTime.Format(time.RFC3339), "ownNs", ownNs, "nsListStr", nsListStr)
-	billing, err := dbClient.GetMeteringOwnerTimeResult(queryTime, nsListStr, nil)
+func (r *BillingReconciler) billingWithHourTime(ctx context.Context, queryTime time.Time, ns string, ownNs string, dbClient database.Interface) error {
+	r.Logger.Info("queryTime", "queryTime", queryTime.Format(time.RFC3339), "ownNs", ownNs, "namespace", ns)
+	billing, err := dbClient.GetMeteringOwnerTimeResult(queryTime, []string{ns}, nil)
 	if err != nil {
 		return fmt.Errorf("get metering owner time result failed: %w", err)
 	}
@@ -158,12 +160,15 @@ func (r *BillingReconciler) billingWithHourTime(ctx context.Context, queryTime t
 					Namespace: r.AccountSystemNamespace,
 				},
 				Spec: v12.AccountBalanceSpec{
-					OrderID: id,
-					Amount:  billing.Amount,
-					Costs:   billing.Costs,
-					Owner:   getUsername(ownNs),
-					Time:    metav1.Time{Time: queryTime},
-					Type:    v12.Consumption,
+					Time: metav1.Time{Time: queryTime},
+					AccountBalanceSpecInline: v12.AccountBalanceSpecInline{
+						Namespace: ns,
+						OrderID:   id,
+						Amount:    billing.Amount,
+						Costs:     billing.Costs,
+						Owner:     getUsername(ownNs),
+						Type:      v12.Consumption,
+					},
 				},
 			}
 			// ignore already exists error
