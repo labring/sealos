@@ -62,11 +62,9 @@
   "dependencies": {
     "@kubernetes/client-node": "^0.18.1",
     "axios": "^1.4.0",
-    "bufferutil": "^4.0.7",
     "dayjs": "^1.11.9",
     "js-cookie": "^3.0.5",
     "js-yaml": "^4.1.0",
-    "utf-8-validate": "^6.0.3",
     "uuid": "^9.0.0"
   }
 }
