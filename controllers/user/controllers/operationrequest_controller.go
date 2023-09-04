@@ -148,7 +148,14 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 		}
 	case userv1.Update:
 		r.Recorder.Eventf(request, v1.EventTypeNormal, "Update", "Update role %s to user %s", request.Spec.Role, request.Spec.User)
-		// todo update rolebinding, delete old rolebinding and create new rolebinding
+		if err := r.Delete(ctx, rolebinding); client.IgnoreNotFound(err) != nil {
+			r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to delete rolebinding", "Failed to delete rolebinding %s/%s", rolebinding.Namespace, rolebinding.Name)
+			return ctrl.Result{}, err
+		}
+		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, rolebinding, func() error { return nil }); err != nil {
+			r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to create/update rolebinding", "Failed to create rolebinding %s/%s", rolebinding.Namespace, rolebinding.Name)
+			return ctrl.Result{}, err
+		}
 	default:
 		return ctrl.Result{}, fmt.Errorf("invalid action %s", request.Spec.Action)
 	}
