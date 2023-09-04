@@ -115,7 +115,7 @@ authorization:
     cacheAuthorizedTTL: 5m0s
     cacheUnauthorizedTTL: 30s
 cgroupsPerQOS: true
-clusterDomain: cluster.local
+#clusterDomain: cluster.local
 configMapAndSecretChangeDetectionStrategy: Watch
 containerLogMaxFiles: 5
 containerLogMaxSize: 10Mi
