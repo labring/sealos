@@ -173,7 +173,7 @@ func (k *KubeadmRuntime) deleteMasters(masters []string) error {
 func (k *KubeadmRuntime) deleteMaster(master string) error {
 	return k.resetNode(master, func() {
 		//remove master
-		masterIPs := strings.SliceRemoveStr(k.getMasterIPList(), master)
+		masterIPs := strings.RemoveFromSlice(k.getMasterIPList(), master)
 		if len(masterIPs) > 0 {
 			// TODO: do we need draining first?
 			if err := k.removeNode(master); err != nil {

@@ -69,7 +69,7 @@ func (p *processor) Getenv(host string) map[string]string {
 
 func (p *processor) WrapShell(host, shell string) string {
 	envs := p.getHostEnvInCache(host)
-	return stringsutil.RenderShellFromEnv(shell, envs)
+	return stringsutil.RenderShellWithEnv(shell, envs)
 }
 
 func (p *processor) RenderAll(host, dir string, envs map[string]string) error {
@@ -104,7 +104,7 @@ func (p *processor) RenderAll(host, dir string, envs map[string]string) error {
 				return fmt.Errorf("failed to create template: %s %v", path, err)
 			}
 			if host != "" {
-				data := maps.MergeMap(envs, p.getHostEnvInCache(host))
+				data := maps.Merge(envs, p.getHostEnvInCache(host))
 				if err := t.Execute(writer, data); err != nil {
 					return fmt.Errorf("failed to render env template: %s %v", path, err)
 				}
@@ -139,8 +139,8 @@ func (p *processor) getHostEnv(hostIP string) map[string]string {
 		}
 	}
 
-	hostEnvMap := maps.ListToMap(hostEnv)
-	specEnvMap := maps.ListToMap(p.Spec.Env)
+	hostEnvMap := maps.FromSlice(hostEnv)
+	specEnvMap := maps.FromSlice(p.Spec.Env)
 
 	excludeSysEnv := func(m map[string]string) map[string]string {
 		m, exclude := ExcludeKeysWithPrefix(m, "SEALOS_SYS")
@@ -150,7 +150,7 @@ func (p *processor) getHostEnv(hostIP string) map[string]string {
 		return m
 	}
 
-	envs := maps.MergeMap(excludeSysEnv(specEnvMap), excludeSysEnv(hostEnvMap))
+	envs := maps.Merge(excludeSysEnv(specEnvMap), excludeSysEnv(hostEnvMap))
 	return envs
 }
 

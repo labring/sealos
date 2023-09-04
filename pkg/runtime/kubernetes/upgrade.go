@@ -188,7 +188,7 @@ func (k *KubeadmRuntime) autoUpdateConfig(version string) error {
 	if err != nil {
 		return err
 	}
-	newClusterData, err := yaml.MarshalYamlConfigs(&conversion.ClusterConfiguration)
+	newClusterData, err := yaml.MarshalConfigs(&conversion.ClusterConfiguration)
 	if err != nil {
 		logger.Error("failed to encode ClusterConfiguration: %s", err)
 		return err
@@ -200,7 +200,7 @@ func (k *KubeadmRuntime) autoUpdateConfig(version string) error {
 		return err
 	}
 
-	newKubeletData, err := yaml.MarshalYamlConfigs(&conversion.KubeletConfiguration)
+	newKubeletData, err := yaml.MarshalConfigs(&conversion.KubeletConfiguration)
 	if err != nil {
 		logger.Error("failed to encode KubeletConfiguration: %s", err)
 		return err

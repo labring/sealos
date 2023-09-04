@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/exp/slices"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
@@ -29,7 +30,6 @@ import (
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
-	strings2 "github.com/labring/sealos/pkg/utils/strings"
 )
 
 // NewScaleApplierFromArgs will filter ip list from command parameters.
@@ -134,7 +134,7 @@ func verifyAndSetNodes(cmd *cobra.Command, cluster *v2.Cluster, scaleArgs *Scale
 	// add already joined masters and nodes
 	for i := range cluster.Spec.Hosts {
 		h := cluster.Spec.Hosts[i]
-		if strings2.InList(v2.MASTER, h.Roles) {
+		if slices.Contains(h.Roles, v2.MASTER) {
 			hasMaster = true
 		}
 		ips := iputils.GetHostIPAndPortSlice(h.IPS, defaultPort)
@@ -163,7 +163,7 @@ func verifyAndSetNodes(cmd *cobra.Command, cluster *v2.Cluster, scaleArgs *Scale
 			if alreadyIn.Has(addr) {
 				return nil, fmt.Errorf("host %s already joined", addr)
 			}
-			if !strings2.InList(addr, exclude) {
+			if !slices.Contains(exclude, addr) {
 				addrs = append(addrs, addr)
 			}
 		}
@@ -220,9 +220,10 @@ func deleteNodes(cluster *v2.Cluster, scaleArgs *ScaleArgs) error {
 	}
 
 	//master0 machine cannot be deleted
-	if strings2.InList(cluster.GetMaster0IPAndPort(), strings.Split(masters, ",")) ||
-		strings2.InList(cluster.GetMaster0IP(), strings.Split(masters, ",")) {
-		return fmt.Errorf("master0 machine cannot be deleted")
+	if set := strings.Split(masters, ","); len(set) > 0 {
+		if slices.Contains(set, cluster.GetMaster0IPAndPort()) || slices.Contains(set, cluster.GetMaster0IP()) {
+			return fmt.Errorf("master0 machine cannot be deleted")
+		}
 	}
 
 	defaultPort := defaultSSHPort(cluster.Spec.SSH.Port)
@@ -251,14 +252,14 @@ func deleteNodes(cluster *v2.Cluster, scaleArgs *ScaleArgs) error {
 
 	if masters != "" && IsIPList(masters) {
 		for i := range cluster.Spec.Hosts {
-			if strings2.InList(v2.MASTER, cluster.Spec.Hosts[i].Roles) {
+			if slices.Contains(cluster.Spec.Hosts[i].Roles, v2.MASTER) {
 				cluster.Spec.Hosts[i].IPS = returnFilteredIPList(cluster.Spec.Hosts[i].IPS, strings.Split(masters, ","), defaultPort)
 			}
 		}
 	}
 	if nodes != "" && IsIPList(nodes) {
 		for i := range cluster.Spec.Hosts {
-			if strings2.InList(v2.NODE, cluster.Spec.Hosts[i].Roles) {
+			if slices.Contains(cluster.Spec.Hosts[i].Roles, v2.NODE) {
 				cluster.Spec.Hosts[i].IPS = returnFilteredIPList(cluster.Spec.Hosts[i].IPS, strings.Split(nodes, ","), defaultPort)
 			}
 		}
@@ -276,7 +277,7 @@ func deleteNodes(cluster *v2.Cluster, scaleArgs *ScaleArgs) error {
 func returnFilteredIPList(clusterIPList []string, toBeDeletedIPList []string, defaultPort string) (res []string) {
 	toBeDeletedIPList = fillIPAndPort(toBeDeletedIPList, defaultPort)
 	for _, ip := range clusterIPList {
-		if !strings2.In(ip, toBeDeletedIPList) {
+		if !slices.Contains(toBeDeletedIPList, ip) {
 			res = append(res, net.JoinHostPort(iputils.GetHostIPAndPortOrDefault(ip, defaultPort)))
 		}
 	}

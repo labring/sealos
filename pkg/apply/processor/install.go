@@ -165,7 +165,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		if err = OCIToImageMount(c.Buildah, mount); err != nil {
 			return err
 		}
-		mount.Env = maps.MergeMap(mount.Env, c.ExtraEnvs)
+		mount.Env = maps.Merge(mount.Env, c.ExtraEnvs)
 
 		cluster.SetMountImage(mount)
 		c.NewMounts = append(c.NewMounts, *mount)

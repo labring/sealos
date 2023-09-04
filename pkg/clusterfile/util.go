@@ -62,7 +62,7 @@ func GetClusterFromName(clusterName string) (cluster *v2.Cluster, err error) {
 }
 func GetClusterFromFile(filepath string) (cluster *v2.Cluster, err error) {
 	cluster = &v2.Cluster{}
-	if err = yaml2.UnmarshalYamlFromFile(filepath, cluster); err != nil {
+	if err = yaml2.UnmarshalFile(filepath, cluster); err != nil {
 		return nil, fmt.Errorf("failed to get cluster from %s, %v", filepath, err)
 	}
 	return cluster, nil
