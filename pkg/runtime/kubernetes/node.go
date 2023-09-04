@@ -29,7 +29,7 @@ import (
 
 func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 	var err error
-	if err = ssh.WaitSSHReady(k.getSSHInterface(), 6, newNodesIPList...); err != nil {
+	if err = ssh.WaitReady(k.sshClient, 6, newNodesIPList...); err != nil {
 		return fmt.Errorf("join nodes wait for ssh ready time out: %w", err)
 	}
 
@@ -85,8 +85,8 @@ func (k *KubeadmRuntime) copyKubeadmConfigToNode(node string) error {
 	if err != nil {
 		return fmt.Errorf("failed to generate join kubeadm config: %v", err)
 	}
-	joinConfigPath := path.Join(k.getContentData().TmpPath(), defaultJoinNodeKubeadmFileName)
-	outConfigPath := path.Join(k.getContentData().ConfigsPath(), defaultJoinNodeKubeadmFileName)
+	joinConfigPath := path.Join(k.pathResolver.TmpPath(), defaultJoinNodeKubeadmFileName)
+	outConfigPath := path.Join(k.pathResolver.ConfigsPath(), defaultJoinNodeKubeadmFileName)
 	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {
 		return fmt.Errorf("write config join kubeadm config error: %s", err.Error())
@@ -121,7 +121,7 @@ func (k *KubeadmRuntime) deleteNode(node string) error {
 	return k.resetNode(node, func() {
 		//remove node
 		if len(k.getMasterIPList()) > 0 {
-			if err := k.RemoveNodeFromK8sClient(node); err != nil {
+			if err := k.removeNode(node); err != nil {
 				logger.Warn(fmt.Errorf("delete node %s failed %v", node, err))
 			}
 		}

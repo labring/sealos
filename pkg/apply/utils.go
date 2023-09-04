@@ -148,7 +148,7 @@ func CheckAndInitialize(cluster *v2.Cluster) {
 
 	if len(cluster.Spec.Hosts) == 0 {
 		clusterSSH := cluster.GetSSH()
-		sshClient := ssh.NewSSHClient(&clusterSSH, true)
+		sshClient := ssh.MustNewClient(&clusterSSH, true)
 
 		localIpv4 := iputils.GetLocalIpv4()
 		defaultPort := defaultSSHPort(cluster.Spec.SSH.Port)

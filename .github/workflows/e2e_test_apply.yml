@@ -23,7 +23,8 @@ jobs:
       matrix:
         arch: [ arm64, amd64 ]
     outputs:
-      test_result: ${{ steps.apply_test.outputs.test_result }}
+      test_arm64_result: ${{ steps.apply_test.outputs.test_arm64_result }}
+      test_amd64_result: ${{ steps.apply_test.outputs.test_amd64_result }}
     steps:
       - name: Download sealos binary
         uses: actions/download-artifact@v3

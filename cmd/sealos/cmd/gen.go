@@ -49,6 +49,7 @@ func newGenCmd() *cobra.Command {
 		Cluster: &apply.Cluster{},
 		SSH:     &apply.SSH{},
 	}
+
 	var out string
 	var genCmd = &cobra.Command{
 		Use:     "gen",
@@ -78,6 +79,7 @@ func newGenCmd() *cobra.Command {
 	setRequireBuildahAnnotation(genCmd)
 	genArgs.RegisterFlags(genCmd.Flags())
 	genCmd.Flags().StringVarP(&out, "output", "o", "", "print output to named file")
+	genCmd.Flags().String("distribution", "kubernetes", "kubernetes distribution")
 	return genCmd
 }
 

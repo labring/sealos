@@ -12,14 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package types
+package k3s
 
-const (
-	KubeadmV1beta1 = "kubeadm.k8s.io/v1beta1"
-	KubeadmV1beta2 = "kubeadm.k8s.io/v1beta2"
-	KubeadmV1beta3 = "kubeadm.k8s.io/v1beta3"
+import (
+	"context"
+	"fmt"
 
-	DefaultAPIServerDomain = "apiserver.cluster.local"
-	DefaultDNSDomain       = "cluster.local"
-	DefaultAPIServerPort   = 6443
+	"golang.org/x/sync/errgroup"
 )
+
+func (k *K3s) resetNodes(nodes []string) error {
+	eg, _ := errgroup.WithContext(context.Background())
+	for i := range nodes {
+		node := nodes[i]
+		eg.Go(func() error {
+			if err := k.deleteNode(node); err != nil {
+				return err
+			}
+			return k.resetNode(node)
+		})
+	}
+	return eg.Wait()
+}
+
+func (k *K3s) resetNode(host string) error {
+	return k.sshClient.CmdAsync(host, fmt.Sprintf("%s/k3s-uninstall.sh", defaultBinDir))
+}
+
+// TODO: remove from API
+func (k *K3s) deleteNode(_ string) error {
+	return nil
+}

@@ -87,7 +87,7 @@ func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
 		}
 	}
 
-	sshCtx := ssh.NewSSHByCluster(cluster, false)
+	sshCtx := ssh.NewCacheClientFromCluster(cluster, false)
 	root := constants.NewPathResolver(cluster.Name).RootFSPath()
 	regInfo := helpers.GetRegistryInfo(sshCtx, root, cluster.GetRegistryIPAndPort())
 	status.Auth = fmt.Sprintf("%s:%s", regInfo.Username, regInfo.Password)

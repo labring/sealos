@@ -32,3 +32,5 @@ type CertManager interface {
 	Renew() error
 	UpdateCertSANs(certSANs []string) error
 }
+
+type Config any

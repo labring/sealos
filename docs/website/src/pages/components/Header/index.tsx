@@ -1,6 +1,6 @@
 import Link from '@docusaurus/Link'
 import Translate from '@docusaurus/Translate'
-import GithubIcon from '@site/static/icons/github-light.svg'
+import GithubIcon from '@site/static/icons/github.svg'
 import MeunIcon from '@site/static/icons/meun.svg'
 import LogoIcon from '@site/static/icons/sealos.svg'
 import React, { useEffect, useState } from 'react'
@@ -8,6 +8,7 @@ import VideoPlayer from '../VideoPlayer'
 import './index.scss'
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext'
 import useIsBrowser from '@docusaurus/useIsBrowser'
+import HeaderSvg from '@site/static/illustrations/bg-header.svg';
 
 const navbar = [
   {
@@ -77,12 +78,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
   if (!isPc) {
     return (
       <div id="Start" className="home-header">
-        <img
-          draggable="false"
-          className="header-img"
-          src={require('@site/static/illustrations/bg-header.png').default}
-          alt="community"
-        />
+        <HeaderSvg className="header-img" />
         <nav>
           <div className="left">
             <MeunIcon
@@ -148,13 +144,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
 
   return (
     <div id="Start" className="home-header">
-      <img
-        draggable="false"
-        unselectable="on"
-        className="header-img"
-        src={require('@site/static/illustrations/bg-header.png').default}
-        alt="community"
-      />
+      <HeaderSvg className="header-img" />
       <nav>
         <div className="left">
           <LogoIcon width={'42px'} height={'42px'} />

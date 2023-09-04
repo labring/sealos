@@ -68,7 +68,7 @@ func (r *ClusterArgs) resetArgs(cmd *cobra.Command, args *ResetArgs) error {
 		nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
 		r.hosts = []v2.Host{}
 
-		sshClient := ssh.NewSSHByCluster(r.cluster, true)
+		sshClient := ssh.NewCacheClientFromCluster(r.cluster, true)
 		r.setHostWithIpsPort(masters, []string{v2.MASTER, GetHostArch(sshClient, masters[0])})
 		if len(nodes) > 0 {
 			r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, nodes[0])})
