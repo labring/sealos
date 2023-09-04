@@ -99,7 +99,7 @@ func (c *CreateProcessor) preProcess(cluster *v2.Cluster) error {
 	}
 	// extra env must been set at the very first
 	for i := range cluster.Status.Mounts {
-		cluster.Status.Mounts[i].Env = maps.MergeMap(cluster.Status.Mounts[i].Env, c.ExtraEnvs)
+		cluster.Status.Mounts[i].Env = maps.Merge(cluster.Status.Mounts[i].Env, c.ExtraEnvs)
 	}
 	distribution := cluster.GetDistribution()
 	rt, err := factory.New(distribution, cluster, c.ClusterFile.GetRuntimeConfig())
@@ -161,7 +161,7 @@ func (c *CreateProcessor) Join(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-	return yaml.MarshalYamlToFile(constants.Clusterfile(cluster.Name), cluster)
+	return yaml.MarshalFile(constants.Clusterfile(cluster.Name), cluster)
 }
 
 func (c *CreateProcessor) RunGuest(cluster *v2.Cluster) error {

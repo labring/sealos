@@ -473,7 +473,7 @@ func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return yaml.MarshalYamlConfigs(&conversion.InitConfiguration,
+	return yaml.MarshalConfigs(&conversion.InitConfiguration,
 		&conversion.ClusterConfiguration,
 		&conversion.KubeletConfiguration,
 		&conversion.KubeProxyConfiguration)
@@ -516,7 +516,7 @@ func (k *KubeadmRuntime) generateJoinNodeConfigs(node string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return yaml.MarshalYamlConfigs(
+	return yaml.MarshalConfigs(
 		&conversion.KubeletConfiguration,
 		&conversion.JoinConfiguration)
 }
@@ -535,7 +535,7 @@ func (k *KubeadmRuntime) generateJoinMasterConfigs(masterIP string) ([]byte, err
 	if err != nil {
 		return nil, err
 	}
-	return yaml.MarshalYamlConfigs(&conversion.JoinConfiguration, &conversion.KubeletConfiguration)
+	return yaml.MarshalConfigs(&conversion.JoinConfiguration, &conversion.KubeletConfiguration)
 }
 
 func (k *KubeadmRuntime) setCGroupDriverAndSocket(node string) error {

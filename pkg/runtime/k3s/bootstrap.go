@@ -151,7 +151,7 @@ func (k *K3s) getRawInitConfig(callbacks ...callback) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return yaml.MarshalYamlConfigs(cfg)
+	return yaml.MarshalConfigs(cfg)
 }
 
 func (k *K3s) generateAndSendInitConfig() error {

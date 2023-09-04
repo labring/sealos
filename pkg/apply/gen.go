@@ -48,7 +48,7 @@ func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []strin
 	if err != nil {
 		return nil, err
 	}
-	if img.Type != v1beta1.RootfsImage {
+	if !img.IsRootFs() {
 		return nil, fmt.Errorf("input first image %s is not kubernetes image", imageNames)
 	}
 	cluster.Status.Mounts = append(cluster.Status.Mounts, *img)

@@ -195,7 +195,7 @@ func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 				obj = append(obj, configs[i])
 			}
 		}
-		if err = yaml.MarshalYamlToFile(clusterPath, obj...); err != nil {
+		if err = yaml.MarshalFile(clusterPath, obj...); err != nil {
 			return err
 		}
 	}
