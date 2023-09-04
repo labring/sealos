@@ -134,7 +134,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 			return err
 		}
 		if oci.OCIv1.Config.Labels != nil {
-			imageTypes.Insert(oci.OCIv1.Config.Labels[v2.ImageTypeKey])
+			imageTypes.Insert(maps.GetFromKeys(oci.OCIv1.Config.Labels, v2.ImageTypeKeys...))
 		} else {
 			imageTypes.Insert(string(v2.AppImage))
 		}
@@ -170,6 +170,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		cluster.SetMountImage(mount)
 		c.NewMounts = append(c.NewMounts, *mount)
 	}
+
 	distribution := cluster.GetDistribution()
 	rt, err := factory.New(distribution, cluster, c.ClusterFile.GetRuntimeConfig())
 	if err != nil {

@@ -58,8 +58,11 @@ func MergeDockerfileFromImages(imageObjList []map[string]v1.Image) (string, erro
 		for name, val := range oci {
 			imageNames = append(imageNames, name)
 			labels = maps.MergeMap(labels, val.Config.Labels)
-			if val.Config.Labels != nil && val.Config.Labels[v1beta1.ImageTypeKey] == string(v1beta1.RootfsImage) {
-				isRootfs = true
+
+			if val.Config.Labels != nil {
+				if key := maps.GetFromKeys(val.Config.Labels, v1beta1.ImageTypeKeys...); key == string(v1beta1.RootfsImage) {
+					isRootfs = true
+				}
 			}
 			envs = maps.MergeMap(envs, maps.ListToMap(val.Config.Env))
 			cmds = append(cmds, val.Config.Cmd...)
@@ -68,7 +71,7 @@ func MergeDockerfileFromImages(imageObjList []map[string]v1.Image) (string, erro
 	}
 	delete(envs, "PATH")
 	if isRootfs {
-		labels[v1beta1.ImageTypeKey] = string(v1beta1.RootfsImage)
+		maps.SetKeys(labels, v1beta1.ImageTypeKeys, string(v1beta1.RootfsImage))
 	}
 	for i, label := range labels {
 		labels[i] = "\"" + escapeDollarSign(label, false) + "\""
