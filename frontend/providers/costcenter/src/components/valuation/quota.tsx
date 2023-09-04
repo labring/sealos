@@ -1,5 +1,5 @@
 import { valuationMap } from '@/constants/payment';
-import { UserQuoteItemType } from '@/pages/api/getQuota';
+import { UserQuotaItemType } from '@/pages/api/getQuota';
 import request from '@/service/request';
 import useEnvStore from '@/stores/env';
 import { ApiResp } from '@/types';
@@ -11,7 +11,7 @@ import MyTooltip from '../MyTooltip';
 export default function Quota() {
   const { t } = useTranslation();
   const { data } = useQuery(['quota'], () =>
-    request<any, ApiResp<{ quota: UserQuoteItemType[] }>>('/api/getQuota')
+    request<any, ApiResp<{ quota: UserQuotaItemType[] }>>('/api/getQuota')
   );
   const quota = (data?.data?.quota || []).flatMap((_quota) => {
     const x = valuationMap.get(_quota.type);

@@ -2,7 +2,7 @@ import * as k8s from '@kubernetes/client-node';
 import * as yaml from 'js-yaml';
 import type { V1Deployment, V1StatefulSet } from '@kubernetes/client-node';
 import { memoryFormatToMi, cpuFormatToM } from './tools';
-import type { UserQuoteItemType } from '../types';
+import type { UserQuotaItemType } from '../types';
 import { IncomingHttpHeaders } from 'http';
 import { errLog, infoLog } from './logger';
 
@@ -161,7 +161,7 @@ async function applyYamlList({
   return CreateYaml(kc, formatYaml);
 }
 
-async function getUserQuota(kc: k8s.KubeConfig, namespace: string): Promise<UserQuoteItemType[]> {
+async function getUserQuota(kc: k8s.KubeConfig, namespace: string): Promise<UserQuotaItemType[]> {
   const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
   const {

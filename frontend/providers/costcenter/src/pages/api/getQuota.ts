@@ -22,7 +22,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     jsonRes(resp, { code: 500, message: 'get price error' });
   }
 }
-export type UserQuoteItemType = {
+export type UserQuotaItemType = {
   type: 'cpu' | 'memory' | 'storage' | 'gpu';
   used: number;
   limit: number;
@@ -78,7 +78,7 @@ export const memoryFormatToMi = (memory: string) => {
 export async function getUserQuota(
   kc: k8s.KubeConfig,
   namespace: string
-): Promise<UserQuoteItemType[]> {
+): Promise<UserQuotaItemType[]> {
   const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
   const data = await k8sApi.readNamespacedResourceQuota(`quota-${namespace}`, namespace);
