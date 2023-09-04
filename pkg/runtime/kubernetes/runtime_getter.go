@@ -103,8 +103,8 @@ func (k *KubeadmRuntime) getVIPFromImage() string {
 	img := k.cluster.GetRootfsImage()
 	if img != nil {
 		vip := getLabelValueOrDefault(img.Labels, v1beta1.ImageVIPKey, defaultVIP)
-		envs := maps.MergeMap(img.Env, k.getEnvInterface().Getenv(k.getMaster0IP()))
-		return stringsutil.RenderTextFromEnv(vip, envs)
+		envs := maps.Merge(img.Env, k.getEnvInterface().Getenv(k.getMaster0IP()))
+		return stringsutil.RenderTextWithEnv(vip, envs)
 	}
 	return defaultVIP
 }

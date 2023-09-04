@@ -95,7 +95,7 @@ func (d *DeleteProcessor) Reset(cluster *v2.Cluster) error {
 
 func (d *DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
-	if strings.NotInIPList(cluster.GetRegistryIPAndPort(), hosts) {
+	if strings.NotInIPList(hosts, cluster.GetRegistryIPAndPort()) {
 		hosts = append(hosts, cluster.GetRegistryIPAndPort())
 	}
 	// umount don't care imageMounts

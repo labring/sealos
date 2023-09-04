@@ -64,8 +64,8 @@ func (r *ClusterArgs) resetArgs(cmd *cobra.Command, args *ResetArgs) error {
 	}
 
 	if len(args.Cluster.Masters) > 0 {
-		masters := stringsutil.SplitRemoveEmpty(args.Cluster.Masters, ",")
-		nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
+		masters := stringsutil.FilterNonEmptyFromString(args.Cluster.Masters, ",")
+		nodes := stringsutil.FilterNonEmptyFromString(args.Cluster.Nodes, ",")
 		r.hosts = []v2.Host{}
 
 		sshClient := ssh.NewCacheClientFromCluster(r.cluster, true)

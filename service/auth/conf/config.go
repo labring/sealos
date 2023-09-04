@@ -28,5 +28,5 @@ type Config struct {
 }
 
 func InitConfig(configPath string) error {
-	return yaml.UnmarshalYamlFromFile(configPath, &GlobalConfig)
+	return yaml.UnmarshalFile(configPath, &GlobalConfig)
 }

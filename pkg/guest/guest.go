@@ -55,7 +55,7 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts
 				cmds := formalizeImageCommands(cluster, i, m, envs)
 				eg.Go(func() error {
 					return execer.CmdAsyncWithContext(ctx, node,
-						stringsutil.RenderShellFromEnv(strings.Join(cmds, "; "), envs),
+						stringsutil.RenderShellWithEnv(strings.Join(cmds, "; "), envs),
 					)
 				})
 			}
@@ -67,7 +67,7 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts
 			envs := envWrapper.Getenv(cluster.GetMaster0IP())
 			cmds := formalizeImageCommands(cluster, i, m, envs)
 			if err := execer.CmdAsync(cluster.GetMaster0IPAndPort(),
-				stringsutil.RenderShellFromEnv(strings.Join(cmds, "; "), envs),
+				stringsutil.RenderShellWithEnv(strings.Join(cmds, "; "), envs),
 			); err != nil {
 				return err
 			}
@@ -90,7 +90,7 @@ func formalizeWorkingCommand(clusterName string, imageName string, t v2.ImageTyp
 }
 
 func formalizeImageCommands(cluster *v2.Cluster, index int, m v2.MountImage, extraEnvs map[string]string) []string {
-	envs := maps.MergeMap(m.Env, extraEnvs)
+	envs := maps.Merge(m.Env, extraEnvs)
 	envs = v2.MergeEnvWithBuiltinKeys(envs, m)
 	mapping := expansion.MappingFuncFor(envs)
 

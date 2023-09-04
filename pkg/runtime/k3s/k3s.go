@@ -85,7 +85,7 @@ func (k *K3s) GetRawConfig() ([]byte, error) {
 	}
 	cluster := k.cluster.DeepCopy()
 	cluster.Status = v2.ClusterStatus{}
-	return yaml.MarshalYamlConfigs(cluster, cfg)
+	return yaml.MarshalConfigs(cluster, cfg)
 }
 
 func (k *K3s) SyncNodeIPVS(_, _ []string) error {

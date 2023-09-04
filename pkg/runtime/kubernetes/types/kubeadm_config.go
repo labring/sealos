@@ -248,9 +248,9 @@ func deleteFeatureMap[T string | bool](currentFeature map[string]T, versionStr s
 func updateFeatureGatesConfiguration(featureGates any, version string) any {
 	switch x := featureGates.(type) {
 	case string:
-		currentFeature := maps.StringToMap(x, ",")
+		currentFeature := maps.FromString(x, ",")
 		currentFeature = deleteFeatureMap(currentFeature, version)
-		return maps.MapToStringBySpilt(currentFeature, ",")
+		return maps.ToString(currentFeature, ",")
 	case map[string]bool:
 		newFeature := x
 		newFeature = deleteFeatureMap(newFeature, version)
