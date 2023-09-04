@@ -15,7 +15,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"path"
 
@@ -24,8 +23,10 @@ import (
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/runtime/kubernetes"
+	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime/factory"
 	fileutils "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func newCertCmd() *cobra.Command {
@@ -46,42 +47,46 @@ func newCertCmd() *cobra.Command {
     3. kubectl get pod, to check if it works or not
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cluster, err := clusterfile.GetClusterFromName(clusterName)
-			if err != nil {
-				return fmt.Errorf("get default cluster failed, %v", err)
-			}
-			processor.SyncNewVersionConfig(cluster.Name)
-			clusterPath := constants.Clusterfile(cluster.Name)
+			processor.SyncNewVersionConfig(clusterName)
 
-			pathResolver := constants.NewPathResolver(cluster.Name)
+			clusterPath := constants.Clusterfile(clusterName)
+			pathResolver := constants.NewPathResolver(clusterName)
 
-			var kubeadmInitFilepath string
+			var runtimeConfigPath string
 
 			for _, f := range []string{
 				path.Join(pathResolver.ConfigsPath(), "kubeadm-init.yaml"),
 				path.Join(pathResolver.EtcPath(), "kubeadm-init.yaml"),
+				path.Join(pathResolver.TmpPath(), "k3s-init.yaml"),
 			} {
 				if fileutils.IsExist(f) {
-					kubeadmInitFilepath = f
+					runtimeConfigPath = f
 					break
 				}
 			}
-			if kubeadmInitFilepath == "" {
-				return errors.New("cannot locate the default kubeadm-init.yaml file")
+			if runtimeConfigPath == "" {
+				logger.Warn("cannot locate the default runtime config file")
 			}
-
-			cf := clusterfile.NewClusterFile(clusterPath,
-				clusterfile.WithCustomRuntimeConfigFiles([]string{kubeadmInitFilepath}),
-			)
-			if err = cf.Process(); err != nil {
+			var opts []clusterfile.OptionFunc
+			if runtimeConfigPath != "" {
+				opts = append(opts, clusterfile.WithCustomRuntimeConfigFiles([]string{runtimeConfigPath}))
+			}
+			cf := clusterfile.NewClusterFile(clusterPath, opts...)
+			if err := cf.Process(); err != nil {
 				return err
 			}
-			// TODO: using different runtime
-			rt, err := kubernetes.New(cluster, cf.GetRuntimeConfig())
-			if err != nil {
-				return fmt.Errorf("get default runtime failed, %v", err)
+			var distribution string
+			if cluster := cf.GetCluster(); cluster != nil {
+				distribution = cluster.GetDistribution()
 			}
-			return rt.UpdateCertSANs(altNames)
+			rt, err := factory.New(distribution, cf.GetCluster(), cf.GetRuntimeConfig())
+			if err != nil {
+				return fmt.Errorf("create runtime failed: %v", err)
+			}
+			if cm, ok := rt.(runtime.CertManager); ok {
+				return cm.UpdateCertSANs(altNames)
+			}
+			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied exec action")
