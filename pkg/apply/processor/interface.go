@@ -130,8 +130,9 @@ func OCIToImageMount(inspector imageInspector, mount *v2.MountImage) error {
 	mount.Cmd = newCMDs
 	mount.Labels = oci.OCIv1.Config.Labels
 	imageType := v2.AppImage
-	if mount.Labels[v2.ImageTypeKey] != "" {
-		imageType = v2.ImageType(mount.Labels[v2.ImageTypeKey])
+	typeKey := maps.GetFromKeys(mount.Labels, v2.ImageTypeKeys...)
+	if typeKey != "" {
+		imageType = v2.ImageType(typeKey)
 	}
 	mount.Type = imageType
 	return nil
@@ -182,8 +183,8 @@ func MountClusterImages(bdah buildah.Interface, cluster *v2.Cluster, skipApp boo
 		}
 		var imageType string
 		if info.OCIv1.Config.Labels != nil {
-			imageType = info.OCIv1.Config.Labels[v2.ImageTypeKey]
-			imageVersion := info.OCIv1.Config.Labels[v2.ImageTypeVersionKey]
+			imageType = maps.GetFromKeys(info.OCIv1.Config.Labels, v2.ImageTypeKeys...)
+			imageVersion := maps.GetFromKeys(info.OCIv1.Config.Labels, v2.ImageVersionKeys...)
 			if imageType == string(v2.RootfsImage) {
 				if !stringsutil.InList(imageVersion, v2.ImageVersionList) {
 					return fmt.Errorf("can't apply rootfs type images and version %s not %+v",

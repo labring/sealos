@@ -79,3 +79,19 @@ func DeepMerge(dst, src *map[string]interface{}) {
 		(*dst)[srcK] = dV
 	}
 }
+
+func GetFromKeys(m map[string]string, keys ...string) string {
+	for _, k := range keys {
+		if v, ok := m[k]; ok && v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+func SetKeys(m map[string]string, keys []string, value string) map[string]string {
+	for _, v := range keys {
+		m[v] = value
+	}
+	return m
+}
