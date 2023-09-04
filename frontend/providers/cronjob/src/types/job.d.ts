@@ -27,11 +27,13 @@ export type CronJobListItemType = {
   createTime: string;
   lastScheduleTime: string;
   lastSuccessfulTime: string;
+  nextExecutionTime: string;
 };
 
 export type CronJobEditType = {
-  jobType: string;
+  jobType: 'url' | 'image' | 'launchpad';
   jobName: string;
+  // cron schedule
   schedule: string;
   imageName: string;
   runCMD: string;
@@ -47,7 +49,26 @@ export type CronJobEditType = {
     value: string;
     valueFrom?: any;
   }[];
-} & CronJobScheduleType;
+  // cron type
+  url: string;
+  // launchpad
+  enableNumberCopies: boolean;
+  enableResources: boolean;
+  replicas: number;
+  cpu: number;
+  memory: number;
+  launchpadName: string;
+  launchpadId: string;
+  serviceAccountName: string;
+} & CronJobDetailType;
+
+export type CronJobDetailType = {
+  status: CronJobStatusMapType;
+  isPause: boolean;
+  creatTime: string;
+  _schedule: string;
+  nextExecutionTime: string;
+};
 
 export type CreateScheduleType = 'day' | 'hour' | 'week';
 
@@ -57,3 +78,13 @@ export type CronJobScheduleType = {
   hour: string;
   minute: string;
 };
+
+export interface JobEvent {
+  id: string;
+  reason: string;
+  message: string;
+  count: number;
+  type: string | 'Normal' | 'Warning';
+  firstTime: string;
+  lastTime: string;
+}

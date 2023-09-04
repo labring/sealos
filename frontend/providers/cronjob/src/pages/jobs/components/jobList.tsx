@@ -8,7 +8,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
 import { CronJobListItemType } from '@/types/job';
-import { Box, Button, Flex, MenuButton, useTheme } from '@chakra-ui/react';
+import { Box, Button, Flex, MenuButton, useTheme, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
@@ -67,7 +67,7 @@ const JobList = ({
       key: 'name',
       render: (item: CronJobListItemType) => {
         return (
-          <Box pl={4} color={'myGray.900'} fontSize={'md'}>
+          <Box pl={4} color={'myGray.900'} fontWeight={500} fontSize={'md'}>
             {item.name}
           </Box>
         );
@@ -84,25 +84,39 @@ const JobList = ({
       key: 'schedule'
     },
     {
-      title: 'Creation Time',
-      dataIndex: 'createTime',
-      key: 'createTime'
+      title: 'Next Execution Time',
+      dataIndex: 'nextExecutionTime',
+      key: 'nextExecutionTime'
     },
     {
-      title: 'Last Schedule Time',
-      dataIndex: 'lastScheduleTime',
-      key: 'lastScheduleTime'
+      title: 'Last Schedule',
+      key: 'lastScheduleTime',
+      render: (item: CronJobListItemType) => (
+        <Flex flexDirection={'column'} minW={'220px'}>
+          <Box>
+            {t('Last Schedule Time')} {item.lastScheduleTime}
+          </Box>
+          <Box>
+            {t('Last Successful Time')} {item.lastSuccessfulTime}
+          </Box>
+        </Flex>
+      )
     },
-    {
-      title: 'Last Successful Time',
-      dataIndex: 'lastSuccessfulTime',
-      key: 'lastSuccessfulTime'
-    },
+
     {
       title: 'Operation',
       key: 'control',
       render: (item: CronJobListItemType) => (
         <Flex>
+          <Button
+            mr={5}
+            variant={'base'}
+            leftIcon={<MyIcon name={'detail'} transform={'translateY(-1px)'} />}
+            px={3}
+            onClick={() => router.push(`/job/detail?name=${item.name}`)}
+          >
+            {t('Details')}
+          </Button>
           <MyMenu
             width={100}
             Button={
@@ -177,7 +191,7 @@ const JobList = ({
         <Box mr={4} p={2} backgroundColor={'#FEFEFE'} border={theme.borders.sm} borderRadius={'sm'}>
           <MyIcon name="logo" w={'24px'} h={'24px'} />
         </Box>
-        <Box fontSize={'2xl'} color={'black'}>
+        <Box fontSize={'18px'} fontWeight={500} color={'black'}>
           {t('job.list')}
         </Box>
         <Box ml={3} color={'gray.500'}>
@@ -198,7 +212,7 @@ const JobList = ({
       <MyTable columns={columns} data={list} />
       <PauseChild />
       {!!delAppName && (
-        <DelModal dbName={delAppName} onClose={() => setDelAppName('')} onSuccess={refetchApps} />
+        <DelModal jobName={delAppName} onClose={() => setDelAppName('')} onSuccess={refetchApps} />
       )}
     </Box>
   );

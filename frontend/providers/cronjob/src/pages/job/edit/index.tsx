@@ -5,6 +5,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
+import { useJobStore } from '@/store/job';
 import type { YamlItemType } from '@/types';
 import { CronJobEditType } from '@/types/job';
 import { serviceSideProps } from '@/utils/i18n';
@@ -20,7 +21,6 @@ import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
-import { useJobStore } from '@/store/job';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
@@ -75,7 +75,7 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
       } catch (error) {
         console.log(error);
       }
-    }, 200),
+    }, 500),
     []
   );
 
@@ -94,6 +94,7 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
         title: t(applySuccess),
         status: 'success'
       });
+      router.push('/jobs');
     } catch (error) {
       setErrorMessage(JSON.stringify(error));
     }
@@ -119,7 +120,7 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
   }, [formHook.formState.errors, t, toast]);
 
   useQuery(
-    ['init'],
+    ['initJobDetail'],
     () => {
       if (!jobName) {
         setYamlList([

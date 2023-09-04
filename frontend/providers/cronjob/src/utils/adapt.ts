@@ -1,11 +1,29 @@
-import { CronJobEditType, CronJobListItemType } from '@/types/job';
-import { V1CronJob } from '@kubernetes/client-node';
-import dayjs from 'dayjs';
-import { cron2Time } from '@/utils/tools';
 import { CronJobStatusMap, StatusEnum } from '@/constants/job';
+import { AppListItemType } from '@/types/app';
+import { CronJobEditType, CronJobListItemType, JobEvent } from '@/types/job';
+import { cpuFormatToM, cron2Time, formatPodTime, memoryFormatToMi } from '@/utils/tools';
+import {
+  CoreV1EventList,
+  V1CronJob,
+  V1Deployment,
+  V1Job,
+  V1ServiceAccount
+} from '@kubernetes/client-node';
+import dayjs from 'dayjs';
+import cronstrue from 'cronstrue';
+import 'cronstrue/locales/zh_CN';
+import 'cronstrue/locales/en';
+import cronParser from 'cron-parser';
+import { getLangStore } from './cookieUtils';
 
-export const adaptJobList = (job: V1CronJob): CronJobListItemType => {
+export const adaptCronJobList = (job: V1CronJob): CronJobListItemType => {
+  const LANG_KEY = getLangStore() === 'en' ? 'en' : 'zh_CN';
   const status_str = job.spec?.suspend ? StatusEnum.Stopped : StatusEnum.Running;
+  let _schedule = cronstrue.toString(job.spec?.schedule || '* * * * *', { locale: LANG_KEY });
+  let nextTime = cronParser
+    .parseExpression(job.spec?.schedule || '* * * * *')
+    .next()
+    .toString();
 
   return {
     id: job.metadata?.uid || '',
@@ -14,17 +32,33 @@ export const adaptJobList = (job: V1CronJob): CronJobListItemType => {
     status: CronJobStatusMap[status_str]
       ? CronJobStatusMap[status_str]
       : CronJobStatusMap['UnKnow'],
-    schedule: job.spec?.schedule || 'schedule',
+    schedule: _schedule,
     lastScheduleTime: dayjs(job?.status?.lastScheduleTime).format('YYYY/MM/DD HH:mm'),
-    lastSuccessfulTime: dayjs(job?.status?.lastSuccessfulTime).format('YYYY/MM/DD HH:mm')
+    lastSuccessfulTime: dayjs(job?.status?.lastSuccessfulTime).format('YYYY/MM/DD HH:mm'),
+    nextExecutionTime: dayjs(nextTime).format('YYYY/MM/DD HH:mm')
   };
 };
 
-export const adaptJobDetail = (job: V1CronJob): CronJobEditType => {
-  const cronObj = cron2Time(job.spec?.schedule || '');
+export const adaptCronJobDetail = async (job: V1CronJob): Promise<CronJobEditType> => {
+  const LANG_KEY = getLangStore() === 'en' ? 'en' : 'zh_CN';
+  let _schedule = cronstrue.toString(job.spec?.schedule || '* * * * *', { locale: LANG_KEY });
+  let nextTime = cronParser
+    .parseExpression(job.spec?.schedule || '* * * * *')
+    .next()
+    .toString();
+  const status_str = job.spec?.suspend ? StatusEnum.Stopped : StatusEnum.Running;
+  const { cpu, enableNumberCopies, enableResources, launchpadId, launchpadName, memory, replicas } =
+    job.metadata?.annotations || {};
+
+  const getUrl = (): string => {
+    const commands = job.spec?.jobTemplate?.spec?.template?.spec?.containers?.[0]?.args!;
+    const curlCommand = commands.find((command) => /^curl\s+(\S+)/.test(command));
+    const curlAddress = curlCommand ? curlCommand.split(/\s+/)[1] : '';
+    return curlAddress;
+  };
 
   return {
-    jobType: '',
+    jobType: job.metadata?.labels?.['cronjob-type'] as 'url' | 'image' | 'launchpad',
     jobName: job.metadata?.name || '',
     schedule: job.spec?.schedule || '',
     imageName:
@@ -47,9 +81,99 @@ export const adaptJobDetail = (job: V1CronJob): CronJobEditType => {
           valueFrom: env.valueFrom
         };
       }) || [],
-    scheduleType: cronObj.scheduleType,
-    week: cronObj.week,
-    hour: cronObj.hour,
-    minute: cronObj.minute
+    // cronjob type url
+    url: getUrl(),
+    // launchpad
+    enableNumberCopies: Boolean(enableNumberCopies),
+    enableResources: Boolean(enableResources),
+    replicas: Number(replicas) || 1,
+    cpu: cpuFormatToM(cpu || '0'),
+    memory: memoryFormatToMi(memory || '0'),
+    launchpadName: launchpadName || '',
+    launchpadId: launchpadId || '',
+    serviceAccountName: 'userns',
+    // detail page
+    status: CronJobStatusMap[status_str]
+      ? CronJobStatusMap[status_str]
+      : CronJobStatusMap['UnKnow'],
+    isPause: !!job.spec?.suspend,
+    creatTime: dayjs(job.metadata?.creationTimestamp).format('YYYY-MM-DD HH:mm'),
+    _schedule: _schedule,
+    nextExecutionTime: dayjs(nextTime).format('YYYY/MM/DD HH:mm')
   };
+};
+
+export const sliderNumber2MarkList = ({
+  val,
+  type,
+  gpuAmount = 1
+}: {
+  val: number[];
+  type: 'cpu' | 'memory';
+  gpuAmount?: number;
+}) => {
+  const newVal = val.map((item) => item * gpuAmount);
+
+  return newVal.map((item) => ({
+    label: type === 'memory' ? (item >= 1024 ? `${item / 1024} G` : `${item} M`) : `${item / 1000}`,
+    value: item
+  }));
+};
+
+export const adaptAppListItem = (app: V1Deployment): AppListItemType => {
+  return {
+    id: app.metadata?.uid || ``,
+    name: app.metadata?.name || 'app name',
+    label: app.metadata?.name || 'app name',
+    createTime: dayjs(app.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
+    cpu: cpuFormatToM(app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu || '0'),
+    memory: memoryFormatToMi(
+      app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory || '0'
+    ),
+    replicas: app.spec?.replicas || 1
+  };
+};
+
+export const adaptServiceAccountList = (
+  serviceAccount: V1ServiceAccount
+): { id: string; name: string; namespace: string } => {
+  return {
+    id: serviceAccount.metadata?.uid || '',
+    name: serviceAccount.metadata?.name || '',
+    namespace: serviceAccount.metadata?.namespace || ''
+  };
+};
+
+export const adaptJobItemList = (jobs: V1Job[]) => {
+  const total = jobs.length;
+  let successAmount = 0;
+  const history = jobs.map((item) => {
+    if (!!item.status?.succeeded) successAmount++;
+    return {
+      status: !!item.status?.succeeded,
+      startTime: dayjs(item.status?.startTime).format('YYYY-MM-DD HH:mm'),
+      completionTime: dayjs(item.status?.completionTime).format('YYYY-MM-DD HH:mm'),
+      uid: item.metadata?.uid,
+      name: item.metadata?.name,
+      events: [] as JobEvent[]
+    };
+  });
+
+  return {
+    total,
+    successAmount,
+    history
+  };
+};
+
+export const adaptEvents = (events: CoreV1EventList): JobEvent[] => {
+  return events.items.map((item) => ({
+    id: item.metadata.uid || `${Date.now()}`,
+    reason: item.reason || '',
+    message: item.message || '',
+    count: item.count || 0,
+    type: item.type || 'Warning',
+    firstTime: formatPodTime(item.firstTimestamp || item.metadata?.creationTimestamp),
+    lastTime: formatPodTime(item.lastTimestamp || item?.eventTime)
+  }));
 };

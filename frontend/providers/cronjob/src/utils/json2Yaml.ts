@@ -1,14 +1,17 @@
 import { CronJobEditType } from '@/types/job';
-import { time2Cron } from '@/utils/tools';
+import { str2Num } from '@/utils/tools';
 import yaml from 'js-yaml';
+import { getUserNamespace } from './user';
 
 export const json2CronJob = (data: CronJobEditType) => {
-  const _schedule = time2Cron(data);
+  const serviceAccount = getUserNamespace({ serviceAccount: true });
 
   const metadata = {
     name: data.jobName,
-    annotations: {
-      originImageName: data.imageName
+    annotations: {},
+    labels: {
+      'cronjob-type': data.jobType,
+      'cronjob-launchpad-name': data.launchpadName
     }
   };
 
@@ -19,6 +22,51 @@ export const json2CronJob = (data: CronJobEditType) => {
         }
       ]
     : undefined;
+
+  // handle cron type
+  if (data.jobType === 'url') {
+    data.imageName = 'curlimages/curl';
+    data.cmdParam = `["/bin/sh", "-c", "curl ${data.url}"]`;
+  }
+
+  if (data.jobType === 'launchpad') {
+    data.imageName = 'bitnami/kubectl:latest';
+    data.runCMD = `["/bin/sh", "-c"]`;
+    const resources = {
+      requests: {
+        cpu: `${str2Num(Math.floor(data.cpu * 0.1))}m`,
+        memory: `${str2Num(Math.floor(data.memory * 0.1))}Mi`
+      },
+      limits: {
+        cpu: `${str2Num(data.cpu)}m`,
+        memory: `${str2Num(data.memory)}Mi`
+      }
+    };
+    const getArgs = () => {
+      let command = '';
+      if (data.enableNumberCopies) {
+        command += `kubectl scale deployment/${data.launchpadName} --replicas=${data.replicas}`;
+      }
+      if (data.enableResources) {
+        if (command) {
+          command += ' && ';
+        }
+        command += `kubectl set resources deployment/${data.launchpadName} --limits=cpu=${resources.limits.cpu},memory=${resources.limits.memory} --requests=cpu=${resources.requests.cpu},memory=${resources.requests.memory}`;
+      }
+      return command || '';
+    };
+
+    data.cmdParam = getArgs();
+    metadata.annotations = {
+      enableNumberCopies: `${data.enableNumberCopies}`,
+      enableResources: `${data.enableResources}`,
+      cpu: `${str2Num(data.cpu)}m`,
+      memory: `${str2Num(data.memory)}Mi`,
+      launchpadName: data.launchpadName,
+      launchpadId: data.launchpadId,
+      replicas: `${data.replicas}`
+    };
+  }
 
   const commonContainer = {
     name: data.jobName,
@@ -34,7 +82,7 @@ export const json2CronJob = (data: CronJobEditType) => {
     command: (() => {
       if (!data.runCMD) return undefined;
       try {
-        return JSON.parse(data.runCMD);
+        return JSON.parse(data.runCMD) as string[];
       } catch (error) {
         return data.runCMD.split(' ').filter((item) => item);
       }
@@ -55,13 +103,15 @@ export const json2CronJob = (data: CronJobEditType) => {
     kind: 'CronJob',
     metadata: metadata,
     spec: {
-      schedule: _schedule,
+      schedule: data.schedule,
       successfulJobsHistoryLimit: 3,
       failedJobsHistoryLimit: 3,
       jobTemplate: {
+        activeDeadlineSeconds: 600,
         spec: {
           template: {
             spec: {
+              serviceAccountName: serviceAccount,
               imagePullSecrets,
               containers: [
                 {

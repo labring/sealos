@@ -15,11 +15,12 @@ export const getUserKubeConfig = () => {
   return kubeConfig;
 };
 
-export const getUserNamespace = () => {
+export const getUserNamespace = (options: { serviceAccount?: boolean } = {}) => {
+  const { serviceAccount = false } = options;
   const kubeConfig = getUserKubeConfig();
   const json: any = yaml.load(kubeConfig);
   try {
-    return `ns-${json.users[0].name}`;
+    return serviceAccount ? `${json.users[0].name}` : `ns-${json.users[0].name}`;
   } catch (err) {
     return 'ns-';
   }
