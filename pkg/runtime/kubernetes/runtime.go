@@ -79,7 +79,7 @@ func (k *KubeadmRuntime) GetRawConfig() ([]byte, error) {
 		conversion.KubeProxyConfiguration,
 		conversion.KubeletConfiguration,
 	}
-	data, err := yaml.MarshalYamlConfigs(objects...)
+	data, err := yaml.MarshalConfigs(objects...)
 	if err != nil {
 		return nil, err
 	}

@@ -17,31 +17,13 @@ limitations under the License.
 package v1beta1
 
 import (
-	"fmt"
-
-	"golang.org/x/exp/slices"
-
 	"github.com/Masterminds/semver/v3"
+	"golang.org/x/exp/slices"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/maps"
 )
-
-func (c *Cluster) GetSSH() SSH {
-	return c.Spec.SSH
-}
-
-func (c *Cluster) SetSSH(ssh SSH) {
-	c.Spec.SSH = ssh
-}
-
-func (c *Cluster) GetHosts() []Host {
-	return c.Spec.Hosts
-}
-
-func (c *Cluster) SetHosts(hosts []Host) {
-	c.Spec.Hosts = hosts
-}
 
 func (c *Cluster) GetMasterIPList() []string {
 	return iputils.GetHostIPs(c.GetMasterIPAndPortList())
@@ -128,7 +110,7 @@ func (c *Cluster) GetRootfsImage() *MountImage {
 	var image *MountImage
 	if c.Status.Mounts != nil {
 		for _, img := range c.Status.Mounts {
-			if img.Type == RootfsImage {
+			if img.IsRootFs() {
 				image = &img
 				break
 			}
@@ -137,35 +119,30 @@ func (c *Cluster) GetRootfsImage() *MountImage {
 	return image
 }
 
-func (c *Cluster) FindImage(targetImage string) *MountImage {
-	var image *MountImage
+func (c *Cluster) FindImage(name string) *MountImage {
 	if c.Status.Mounts != nil {
 		for _, img := range c.Status.Mounts {
-			if img.ImageName == targetImage {
-				image = &img
-				break
+			if img.ImageName == name {
+				return &img
 			}
 		}
 	}
-	return image
+	return nil
 }
 
-func (c *Cluster) SetMountImage(targetMount *MountImage) {
-	tgMount := targetMount.DeepCopy()
+func (c *Cluster) SetMountImage(mount *MountImage) {
+	if mount == nil {
+		return
+	}
+
 	if c.Status.Mounts != nil {
-		if tgMount != nil {
-			hasMount := false
-			for i, img := range c.Status.Mounts {
-				if img.Name == tgMount.Name && img.Type == tgMount.Type {
-					c.Status.Mounts[i] = *tgMount
-					hasMount = true
-					break
-				}
-			}
-			if !hasMount {
-				c.Status.Mounts = append(c.Status.Mounts, *tgMount)
+		for i, img := range c.Status.Mounts {
+			if img.Name == mount.Name && img.Type == mount.Type {
+				c.Status.Mounts[i] = *mount.DeepCopy()
+				return
 			}
 		}
+		c.Status.Mounts = append(c.Status.Mounts, *mount)
 	}
 }
 
@@ -174,7 +151,7 @@ func (c *Cluster) ReplaceRootfsImage() {
 	var v1, v2 string
 	for i := range c.Status.Mounts {
 		img := c.Status.Mounts[i]
-		if img.Type == RootfsImage {
+		if img.IsRootFs() {
 			if v1 == "" {
 				v1, i1 = img.Labels[ImageKubeVersionKey], i
 			} else {
@@ -199,66 +176,20 @@ func (c *Cluster) ReplaceRootfsImage() {
 }
 
 func (c *Cluster) SetNewImages(images []string) {
-	imageSets := map[string]struct{}{}
-	for _, img := range c.Spec.Image {
-		imageSets[img] = struct{}{}
-	}
+	set := sets.NewString(c.Spec.Image...)
 	for _, img := range images {
-		if _, ok := imageSets[img]; !ok {
+		if !set.Has(img) {
 			c.Spec.Image = append(c.Spec.Image, img)
 		}
 	}
 }
-func (c *Cluster) GetImageLabels() map[string]string {
+
+func (c *Cluster) GetAllLabels() map[string]string {
 	var imageLabelMap map[string]string
 	for _, img := range c.Status.Mounts {
-		imageLabelMap = maps.MergeMap(imageLabelMap, img.Labels)
+		imageLabelMap = maps.Merge(imageLabelMap, img.Labels)
 	}
 	return imageLabelMap
-}
-
-func (c *Cluster) GetImageEnvs() map[string]string {
-	var imageEnvMap map[string]string
-	for _, img := range c.Status.Mounts {
-		imageEnvMap = maps.MergeMap(imageEnvMap, img.Env)
-	}
-	return imageEnvMap
-}
-
-func (c *Cluster) GetAppImage(defaultImageName, defaultMount string) *MountImage {
-	var image *MountImage
-	if c.Status.Mounts != nil {
-		for _, img := range c.Status.Mounts {
-			if img.Type == AppImage && img.ImageName == defaultImageName {
-				image = &img
-				break
-			}
-		}
-	}
-	if image == nil {
-		for i, img := range c.Spec.Image {
-			if img == defaultImageName {
-				image = &MountImage{
-					Name:       fmt.Sprintf("%s-%d", c.Name, i),
-					Type:       AppImage,
-					ImageName:  defaultImageName,
-					MountPoint: defaultMount,
-				}
-			}
-		}
-	}
-	return image
-}
-
-func (c *Cluster) HasAppImage() bool {
-	if c.Status.Mounts != nil {
-		for _, img := range c.Status.Mounts {
-			if img.Type == AppImage {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 func (c *Cluster) GetRolesByIP(ip string) []string {
@@ -277,4 +208,34 @@ func (c *Cluster) GetDistribution() string {
 		return maps.GetFromKeys(root.Labels, ImageDistributionKeys...)
 	}
 	return ""
+}
+
+// UpdateCondition updates condition in cluster conditions using giving condition
+// adds condition if not existed
+func UpdateCondition(conditions []ClusterCondition, condition ClusterCondition) []ClusterCondition {
+	if conditions == nil {
+		conditions = make([]ClusterCondition, 0)
+	}
+	hasCondition := false
+	for i, cond := range conditions {
+		if cond.Type == condition.Type {
+			hasCondition = true
+			if cond.Reason != condition.Reason || cond.Status != condition.Status || cond.Message != condition.Message {
+				conditions[i] = condition
+			}
+		}
+	}
+	if !hasCondition {
+		conditions = append(conditions, condition)
+	}
+	return conditions
+}
+
+// UpdateCommandCondition updates condition in cluster conditions using giving condition, append only
+func UpdateCommandCondition(cmdConditions []CommandCondition, cmdCondition CommandCondition) []CommandCondition {
+	if cmdConditions == nil {
+		cmdConditions = make([]CommandCondition, 0)
+	}
+	cmdConditions = append(cmdConditions, cmdCondition)
+	return cmdConditions
 }

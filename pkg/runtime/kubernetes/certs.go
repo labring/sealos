@@ -89,7 +89,7 @@ func (k *KubeadmRuntime) saveNewKubeadmConfig() error {
 		return err
 	}
 	certPath := path.Join(k.pathResolver.EtcPath(), defaultUpdateKubeadmFileName)
-	return yaml.MarshalYamlToFile(certPath, obj)
+	return yaml.MarshalFile(certPath, obj)
 }
 
 func (k *KubeadmRuntime) uploadConfigFromKubeadm() error {

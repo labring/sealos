@@ -100,8 +100,11 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 
 	pauseImage := ""
 	for _, mountImg := range cluster.Status.Mounts {
-		if mountImg.Type == v2.RootfsImage || mountImg.Type == v2.PatchImage {
-			pauseImage = mountImg.Env["sandboxImage"]
+		if mountImg.IsRootFs() || mountImg.IsPatch() {
+			if v, ok := mountImg.Env["sandboxImage"]; ok {
+				pauseImage = v
+				break
+			}
 		}
 	}
 	sshCtx := ssh.NewCacheClientFromCluster(cluster, false)

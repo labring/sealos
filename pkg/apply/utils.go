@@ -66,7 +66,7 @@ func PreProcessIPList(joinArgs *Cluster) error {
 }
 
 func removeIPListDuplicatesAndEmpty(ipList []string) []string {
-	return stringsutil.RemoveDuplicate(stringsutil.RemoveStrSlice(ipList, []string{""}))
+	return stringsutil.RemoveDuplicate(stringsutil.RemoveSubSlice(ipList, []string{""}))
 }
 
 func IsIPList(args string) bool {
@@ -116,7 +116,7 @@ func GetHostArch(sshClient ssh.Interface, ip string) string {
 }
 
 func GetImagesDiff(current, desired []string) []string {
-	return stringsutil.RemoveDuplicate(stringsutil.RemoveStrSlice(desired, current))
+	return stringsutil.RemoveDuplicate(stringsutil.RemoveSubSlice(desired, current))
 }
 
 func CompareImageSpecHash(currentImages []string, desiredImages []string) bool {
@@ -147,8 +147,7 @@ func CheckAndInitialize(cluster *v2.Cluster) {
 	}
 
 	if len(cluster.Spec.Hosts) == 0 {
-		clusterSSH := cluster.GetSSH()
-		sshClient := ssh.MustNewClient(&clusterSSH, true)
+		sshClient := ssh.MustNewClient(cluster.Spec.SSH.DeepCopy(), true)
 
 		localIpv4 := iputils.GetLocalIpv4()
 		defaultPort := defaultSSHPort(cluster.Spec.SSH.Port)

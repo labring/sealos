@@ -25,7 +25,7 @@ import (
 
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
-	strings2 "github.com/labring/sealos/pkg/utils/strings"
+	stringsutils "github.com/labring/sealos/pkg/utils/strings"
 
 	"github.com/emirpasic/gods/maps/linkedhashmap"
 )
@@ -83,7 +83,7 @@ func (h *HostFile) ParseHostFile(path string) (*linkedhashmap.Map, error) {
 		if rErr == io.EOF {
 			break
 		}
-		if len(str) == 0 || str == "\r\n" || strings2.IsEmptyLine(str) {
+		if len(str) == 0 || str == "\r\n" || stringsutils.IsEmptyLine(str) {
 			continue
 		}
 
@@ -97,7 +97,7 @@ func (h *HostFile) ParseHostFile(path string) (*linkedhashmap.Map, error) {
 		//if !iputils.CheckDomain(curDomain) {
 		//	return lm, errors.New(" file contain error domain" + curDomain)
 		//}
-		curIP := strings2.TrimSpaceWS(tmpHostnameArr[0])
+		curIP := stringsutils.TrimSpaceWS(tmpHostnameArr[0])
 
 		checkIP := net.ParseIP(curIP)
 		if checkIP == nil {

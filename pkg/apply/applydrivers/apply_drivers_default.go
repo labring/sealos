@@ -89,7 +89,7 @@ func (c *Applier) Apply() error {
 			return
 		}
 		logger.Debug("save objects into local: %s, objects: %v", clusterPath, c.getWriteBackObjects())
-		saveErr := yaml.MarshalYamlToFile(clusterPath, c.getWriteBackObjects()...)
+		saveErr := yaml.MarshalFile(clusterPath, c.getWriteBackObjects()...)
 		if saveErr != nil {
 			logger.Error("failed to serialize into file: %s error, %s", clusterPath, saveErr)
 		}
@@ -247,7 +247,7 @@ func (c *Applier) Delete() error {
 		cfPath := constants.Clusterfile(c.ClusterDesired.Name)
 		target := fmt.Sprintf("%s.%d", cfPath, t.Unix())
 		logger.Debug("write reset cluster file to local: %s", target)
-		if err := yaml.MarshalYamlToFile(cfPath, c.getWriteBackObjects()...); err != nil {
+		if err := yaml.MarshalFile(cfPath, c.getWriteBackObjects()...); err != nil {
 			logger.Error("failed to store cluster file: %v", err)
 		}
 		_ = os.Rename(cfPath, target)

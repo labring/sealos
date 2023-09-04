@@ -54,7 +54,7 @@ func TestKubeadmRuntime_setFeatureGatesConfiguration(t *testing.T) {
 
 			k.SetKubeVersion(tt.version)
 			k.FinalizeFeatureGatesConfiguration()
-			data, err := yaml.MarshalYamlConfigs(
+			data, err := yaml.MarshalConfigs(
 				&k.InitConfiguration,
 				&k.ClusterConfiguration,
 				&k.KubeletConfiguration,
@@ -163,7 +163,7 @@ etcd:
 
 			k.SetKubeVersion(tt.version)
 			k.FinalizeFeatureGatesConfiguration()
-			data, err := yaml.MarshalYamlConfigs(
+			data, err := yaml.MarshalConfigs(
 				&k.ClusterConfiguration,
 			)
 			if err != nil {

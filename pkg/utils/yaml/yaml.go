@@ -21,14 +21,12 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"path/filepath"
-	"strings"
-
-	fileutil "github.com/labring/sealos/pkg/utils/file"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/yaml"
+
+	fileutil "github.com/labring/sealos/pkg/utils/file"
 )
 
 func Unmarshal(path string) (map[string]interface{}, error) {
@@ -69,7 +67,7 @@ func ToJSON(bs []byte) (jsons []string) {
 	return
 }
 
-func ToYalms(bs string) (yamls []string) {
+func ToYAMLs(bs string) (yamls []string) {
 	buf := bytes.NewBuffer([]byte(bs))
 	reader := utilyaml.NewYAMLReader(bufio.NewReader(buf))
 	for {
@@ -89,15 +87,15 @@ func ToYalms(bs string) (yamls []string) {
 	return
 }
 
-func MarshalYamlToFile(file string, obj ...interface{}) error {
-	data, err := MarshalYamlConfigs(obj...)
+func MarshalFile(file string, obj ...interface{}) error {
+	data, err := MarshalConfigs(obj...)
 	if err != nil {
 		return err
 	}
 	return fileutil.WriteFile(file, data)
 }
 
-func UnmarshalYamlFromFile(file string, obj interface{}) error {
+func UnmarshalFile(file string, obj interface{}) error {
 	metadata, err := fileutil.ReadAll(file)
 	if err != nil {
 		return err
@@ -109,7 +107,7 @@ func UnmarshalYamlFromFile(file string, obj interface{}) error {
 	return nil
 }
 
-func MarshalYamlConfigs(configs ...interface{}) ([]byte, error) {
+func MarshalConfigs(configs ...interface{}) ([]byte, error) {
 	var cfgs [][]byte
 	for _, cfg := range configs {
 		data, err := yaml.Marshal(cfg)
@@ -119,11 +117,6 @@ func MarshalYamlConfigs(configs ...interface{}) ([]byte, error) {
 		cfgs = append(cfgs, data)
 	}
 	return bytes.Join(cfgs, []byte("\n---\n")), nil
-}
-
-func Matcher(path string) bool {
-	ext := strings.ToLower(filepath.Ext(path))
-	return ext == ".yaml" || ext == ".yml"
 }
 
 func ShowStructYaml(s interface{}) {
