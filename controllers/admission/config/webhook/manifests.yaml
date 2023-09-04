@@ -32,7 +32,7 @@ webhooks:
       namespace: system
       path: /mutate--v1-namespace
   failurePolicy: Ignore
-  name: mnamespace.kb.io
+  name: mnamespace.sealos.io
   rules:
   - apiGroups:
     - ""
@@ -79,7 +79,7 @@ webhooks:
       namespace: system
       path: /validate--v1-namespace
   failurePolicy: Ignore
-  name: vnamespace.kb.io
+  name: vnamespace.sealos.io
   rules:
   - apiGroups:
     - ""
