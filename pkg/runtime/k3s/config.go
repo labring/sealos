@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"bytes"
 	"io"
+	"os"
 	"path/filepath"
 
 	"github.com/imdario/mergo"
@@ -26,6 +27,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/labring/sealos/pkg/constants"
+	fileutils "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -63,16 +65,38 @@ func defaultingAgentConfig(c *Config) {
 
 type callback func(*Config)
 
+func merge(dst, src *Config) error {
+	if src == nil || dst == nil {
+		return nil
+	}
+	return mergo.Merge(dst, src, defaultMergeOpts...)
+}
+
 func setClusterInit(c *Config) {
 	c.ClusterInit = true
 }
 
+// TODO: merge only affects the generated configuration of server mode
 func (k *K3s) merge(c *Config) {
-	if k.config == nil {
-		return
+	if err := merge(c, k.config); err != nil {
+		logger.Error("failed to merge provide config: %v", err)
 	}
-	if err := mergo.Merge(c, k.config, defaultMergeOpts...); err != nil {
-		logger.Error("failed to merge config: %v", err)
+	if err := func() error {
+		defaultCfg := filepath.Join(k.pathResolver.RootFSEtcPath(), defaultRootFsK3sFileName)
+		if !fileutils.IsExist(defaultCfg) {
+			return nil
+		}
+		data, err := os.ReadFile(defaultCfg)
+		if err != nil {
+			return err
+		}
+		parseCfg, err := ParseConfig(data)
+		if err != nil {
+			return err
+		}
+		return merge(c, parseCfg)
+	}(); err != nil {
+		logger.Error("failed to merge in place config file: %v", err)
 	}
 }
 
