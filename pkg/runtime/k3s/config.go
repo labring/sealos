@@ -15,9 +15,13 @@
 package k3s
 
 import (
+	"bufio"
+	"bytes"
+	"io"
 	"path/filepath"
 
 	"github.com/imdario/mergo"
+	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/yaml"
 
 	"github.com/labring/sealos/pkg/constants"
@@ -28,30 +32,34 @@ var defaultMergeOpts = []func(*mergo.Config){
 	mergo.WithAppendSlice,
 }
 
-var defaultConfig = &Config{
-	BindAddress:           "0.0.0.0",
-	HTTPSPort:             6443,
-	ClusterCIDR:           []string{"10.42.0.0/16"},
-	ServiceCIDR:           []string{"10.43.0.0/16"},
-	ClusterDNS:            []string{"10.43.0.10"},
-	ServiceNodePortRange:  "30000-32767",
-	ClusterDomain:         constants.DefaultDNSDomain,
-	DataDir:               "/var/lib/rancher/k3s",
-	DisableCCM:            true,
-	DisableHelmController: true,
-	DisableNPC:            true,
-	EgressSelectorMode:    "agent",
-	FlannelBackend:        "vxlan",
-	KubeConfigMode:        "0644",
-	PreferBundledBin:      true,
-	Disable:               []string{"servicelb", "traefik", "local-storage", "metrics-server"},
-	AgentConfig: &AgentConfig{
-		ExtraKubeletArgs:   []string{},
-		ExtraKubeProxyArgs: []string{},
-		PauseImage:         "docker.io/rancher/pause:3.1",
-		PrivateRegistry:    "/etc/rancher/k3s/registries.yaml",
-		Labels:             []string{"provisioner=k3s"},
-	},
+func defaultingServerConfig(c *Config) {
+	c.BindAddress = "0.0.0.0"
+	c.HTTPSPort = 6443
+	c.ClusterCIDR = []string{"10.42.0.0/16"}
+	c.ServiceCIDR = []string{"10.43.0.0/16"}
+	c.ClusterDNS = []string{"10.43.0.10"}
+	c.ServiceNodePortRange = "30000-32767"
+	c.ClusterDomain = constants.DefaultDNSDomain
+	c.DisableCCM = true
+	c.DisableHelmController = true
+	c.DisableNPC = true
+	c.EgressSelectorMode = "agent"
+	c.FlannelBackend = "vxlan"
+	c.KubeConfigMode = "0644"
+	c.PreferBundledBin = true
+	c.Disable = []string{"servicelb", "traefik", "local-storage", "metrics-server"}
+	defaultingAgentConfig(c)
+}
+
+func defaultingAgentConfig(c *Config) {
+	if c.AgentConfig == nil {
+		c.AgentConfig = &AgentConfig{}
+	}
+	c.AgentConfig.ExtraKubeProxyArgs = []string{}
+	c.AgentConfig.ExtraKubeletArgs = []string{}
+	c.AgentConfig.PauseImage = "docker.io/rancher/pause:3.1"
+	c.AgentConfig.PrivateRegistry = "/etc/rancher/k3s/registries.yaml"
+	c.AgentConfig.Labels = []string{"provisioner=k3s"}
 }
 
 type callback func(*Config)
@@ -67,14 +75,14 @@ func setClusterInit(c *Config) {
 	c.ClusterInit = true
 }
 
-func (k *K3s) overrideConfig(cfg *Config) {
-	cfg.TokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "token")
-	cfg.AgentTokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "agent-token")
-	cfg.TLSSan = append(cfg.TLSSan, constants.DefaultAPIServerDomain)
+func (k *K3s) overrideConfig(c *Config) {
+	c.TokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "token")
+	c.AgentTokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "agent-token")
+	c.TLSSan = append(c.TLSSan, constants.DefaultAPIServerDomain)
 }
 
 func (k *K3s) getInitConfig(callbacks ...callback) (*Config, error) {
-	cfg := *defaultConfig
+	cfg := Config{}
 	if err := merge(&cfg, k.config); err != nil {
 		return nil, err
 	}
@@ -84,8 +92,39 @@ func (k *K3s) getInitConfig(callbacks ...callback) (*Config, error) {
 	return &cfg, nil
 }
 
+//lint:ignore U1000 Ignore unused function temporarily for debugging
+func (c *Config) getContainerRuntimeEndpoint() string {
+	if c.AgentConfig.Docker {
+		return "unix:///run/k3s/cri-dockerd/cri-dockerd.sock"
+	} else if len(c.AgentConfig.ContainerRuntimeEndpoint) == 0 {
+		return "unix:///run/k3s/containerd/containerd.sock"
+	}
+	return c.AgentConfig.ContainerRuntimeEndpoint
+}
+
 // ParseConfig return nil if data structure is not matched
 func ParseConfig(data []byte) (*Config, error) {
+	d := yamlutil.NewYAMLReader(bufio.NewReader(bytes.NewReader(data)))
+	for {
+		b, err := d.Read()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, err
+		}
+		cfg, err := parseConfig(b)
+		if err != nil {
+			return nil, err
+		}
+		if cfg != nil {
+			return cfg, nil
+		}
+	}
+	return nil, nil
+}
+
+func parseConfig(data []byte) (*Config, error) {
 	var c Config
 	if err := yaml.Unmarshal(data, &c); err != nil {
 		return nil, err
