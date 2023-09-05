@@ -17,7 +17,6 @@ package guest
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"golang.org/x/sync/errgroup"
@@ -25,10 +24,8 @@ import (
 	"github.com/labring/sealos/fork/golang/expansion"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
-	"github.com/labring/sealos/pkg/runtime/types"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/maps"
 	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 )
@@ -45,25 +42,8 @@ func NewGuestManager() (Interface, error) {
 }
 
 func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts []string) error {
-	kubeConfig := filepath.Join(constants.GetHomeDir(), ".kube", "config")
-	if !fileutil.IsExist(kubeConfig) {
-		adminFile := constants.NewPathResolver(cluster.Name).AdminFile()
-		data, err := fileutil.ReadAll(adminFile)
-		if err != nil {
-			return fmt.Errorf("read admin.conf error in guest: %w", err)
-		}
-		master0IP := cluster.GetMaster0IP()
-		outData := strings.ReplaceAll(string(data), types.DefaultAPIServerDomain, master0IP)
-		if err = fileutil.WriteFile(kubeConfig, []byte(outData)); err != nil {
-			return err
-		}
-		defer func() {
-			_ = fileutil.CleanFiles(kubeConfig)
-		}()
-	}
-
 	envWrapper := env.NewEnvProcessor(cluster)
-	execer := ssh.NewSSHByCluster(cluster, true)
+	execer := ssh.NewCacheClientFromCluster(cluster, true)
 
 	for i, m := range mounts {
 		switch {
@@ -75,7 +55,7 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts
 				cmds := formalizeImageCommands(cluster, i, m, envs)
 				eg.Go(func() error {
 					return execer.CmdAsyncWithContext(ctx, node,
-						stringsutil.RenderShellFromEnv(strings.Join(cmds, "; "), envs),
+						stringsutil.RenderShellWithEnv(strings.Join(cmds, "; "), envs),
 					)
 				})
 			}
@@ -87,7 +67,7 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts
 			envs := envWrapper.Getenv(cluster.GetMaster0IP())
 			cmds := formalizeImageCommands(cluster, i, m, envs)
 			if err := execer.CmdAsync(cluster.GetMaster0IPAndPort(),
-				stringsutil.RenderShellFromEnv(strings.Join(cmds, "; "), envs),
+				stringsutil.RenderShellWithEnv(strings.Join(cmds, "; "), envs),
 			); err != nil {
 				return err
 			}
@@ -110,7 +90,7 @@ func formalizeWorkingCommand(clusterName string, imageName string, t v2.ImageTyp
 }
 
 func formalizeImageCommands(cluster *v2.Cluster, index int, m v2.MountImage, extraEnvs map[string]string) []string {
-	envs := maps.MergeMap(m.Env, extraEnvs)
+	envs := maps.Merge(m.Env, extraEnvs)
 	envs = v2.MergeEnvWithBuiltinKeys(envs, m)
 	mapping := expansion.MappingFuncFor(envs)
 

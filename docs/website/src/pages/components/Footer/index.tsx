@@ -2,7 +2,7 @@ import Link from '@docusaurus/Link'
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext'
 import DeveloperIcon from '@site/static/icons/developer.svg'
 import DiscordIcon from '@site/static/icons/discord.svg'
-import GithubIcon from '@site/static/icons/github-light.svg'
+import GithubIcon from '@site/static/icons/github.svg'
 import LogoIcon from '@site/static/icons/logo.svg'
 import React, { useMemo } from 'react'
 import './index.scss'
@@ -47,7 +47,7 @@ const Footer = ({ isPc }: { isPc: boolean }) => {
         <img
           draggable="false"
           className="footer-img"
-          src={require('@site/static/illustrations/footer3.png').default}
+          src={require('@site/static/illustrations/footer-mobile.png').default}
           alt="gooter"
         />
         <div className="footer-context">

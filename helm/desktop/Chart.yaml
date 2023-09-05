@@ -1,0 +1,31 @@
+apiVersion: v2
+
+appVersion: v4.3.0
+
+annotations:
+  category: Infrastructure
+  licenses: Apache-2.0
+
+description: -|
+  sealos desktop
+
+dependencies:
+  - name: common
+    repository: oci://registry-1.docker.io/bitnamicharts
+    tags:
+      - bitnami-common
+    version: 2.x.x
+
+home: https://sealos.io
+
+icon: https://cloud.sealos.io/logo.svg
+
+keywords:
+  - sealos cloud desktop
+
+maintainers:
+  - name: labring
+    url: https://github.com/labring
+
+name: sealos-desktop
+version: 0.1.0

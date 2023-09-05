@@ -77,13 +77,13 @@ func (k *KubeadmRuntime) ReplaceKubeConfigV1991V1992(masters []string) bool {
 
 func (k *KubeadmRuntime) sendKubeConfigFile(hosts []string, filename string) error {
 	dst := path.Join(kubernetesEtc, filename)
-	src := path.Join(k.getContentData().EtcPath(), filename)
+	src := path.Join(k.pathResolver.EtcPath(), filename)
 	return k.sendFileToHosts(hosts, src, dst)
 }
 
 func (k *KubeadmRuntime) sendNewCertAndKey(hosts []string) error {
 	logger.Info("start to copy etc pki files to masters")
-	return k.sendFileToHosts(hosts, k.getContentData().PkiPath(), kubernetesEtcPKI)
+	return k.sendFileToHosts(hosts, k.pathResolver.PkiPath(), kubernetesEtcPKI)
 }
 
 func (k *KubeadmRuntime) sendFileToHosts(Hosts []string, src, dst string) error {
@@ -100,25 +100,22 @@ func (k *KubeadmRuntime) sendFileToHosts(Hosts []string, src, dst string) error 
 	return eg.Wait()
 }
 
-func (k *KubeadmRuntime) RemoveNodeFromK8sClient(ip string) error {
+func (k *KubeadmRuntime) removeNode(ip string) error {
 	logger.Info("start to remove node from k8s %s", ip)
-	ctx := context.Background()
 	client, err := k.getKubeInterface()
 	if err != nil {
 		return err
 	}
+	ctx := context.Background()
 	exp := kubernetes.NewKubeExpansion(client.Kubernetes())
 	hostname, err := exp.FetchHostNameFromInternalIP(ctx, ip)
 	if err != nil {
-		return fmt.Errorf("kubernetes client get hostname %s failed %v,skip delete node", ip, err)
+		return fmt.Errorf("cannot get node with ip address %s: %v", ip, err)
 	}
 	deletePropagation := v1.DeletePropagationBackground
 	err = client.Kubernetes().CoreV1().Nodes().Delete(ctx, hostname, v1.DeleteOptions{PropagationPolicy: &deletePropagation})
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return fmt.Errorf("not find target delete node ip: %s", ip)
-		}
-		return fmt.Errorf("kubernetes client delete node %s failed %v,skip delete node", ip, err)
+	if err != nil && !errors.IsNotFound(err) {
+		return err
 	}
 	return nil
 }

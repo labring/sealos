@@ -39,6 +39,12 @@
 
 @media screen and (max-width: 996px) {
   .video-box {
+    height: 400px;
+  }
+}
+
+@media screen and (max-width: 380px) {
+  .video-box {
     height: 200px;
   }
 }

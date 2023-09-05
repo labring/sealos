@@ -88,14 +88,14 @@ func (k *KubeadmRuntime) saveNewKubeadmConfig() error {
 	if err != nil {
 		return err
 	}
-	certPath := path.Join(k.getContentData().EtcPath(), defaultUpdateKubeadmFileName)
-	return yaml.MarshalYamlToFile(certPath, obj)
+	certPath := path.Join(k.pathResolver.EtcPath(), defaultUpdateKubeadmFileName)
+	return yaml.MarshalFile(certPath, obj)
 }
 
 func (k *KubeadmRuntime) uploadConfigFromKubeadm() error {
 	logger.Info("start to upload kubeadm config for inCluster ...")
-	in := path.Join(k.getContentData().EtcPath(), defaultUpdateKubeadmFileName)
-	out := path.Join(k.getContentData().ConfigsPath(), defaultUpdateKubeadmFileName)
+	in := path.Join(k.pathResolver.EtcPath(), defaultUpdateKubeadmFileName)
+	out := path.Join(k.pathResolver.ConfigsPath(), defaultUpdateKubeadmFileName)
 	data, err := file.ReadAll(in)
 	if err != nil {
 		return err

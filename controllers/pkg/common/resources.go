@@ -227,17 +227,19 @@ func GetDefaultLimitRange(ns, name string) *corev1.LimitRange {
 }
 
 const (
-	QuotaLimitsCPU     = "QUOTA_Limits_CPU"
-	QuotaLimitsMemory  = "QUOTA_Limits_MEMORY"
-	QuotaLimitsStorage = "QUOTA_Limits_Storage"
-	QuotaLimitsGPU     = "QUOTA_Limits_GPU"
+	QuotaLimitsCPU       = "QUOTA_LIMITS_CPU"
+	QuotaLimitsMemory    = "QUOTA_LIMITS_MEMORY"
+	QuotaLimitsStorage   = "QUOTA_LIMITS_STORAGE"
+	QuotaLimitsGPU       = "QUOTA_LIMITS_GPU"
+	QuotaLimitsNodePorts = "QUOTA_LIMITS_NODE_PORTS"
 )
 
 const (
-	DefaultQuotaLimitsCPU     = "16"
-	DefaultQuotaLimitsMemory  = "64Gi"
-	DefaultQuotaLimitsStorage = "100Gi"
-	DefaultQuotaLimitsGPU     = "8"
+	DefaultQuotaLimitsCPU       = "16"
+	DefaultQuotaLimitsMemory    = "64Gi"
+	DefaultQuotaLimitsStorage   = "100Gi"
+	DefaultQuotaLimitsGPU       = "8"
+	DefaultQuotaLimitsNodePorts = "3"
 )
 
 func DefaultResourceQuotaHard() corev1.ResourceList {
@@ -248,6 +250,8 @@ func DefaultResourceQuotaHard() corev1.ResourceList {
 		corev1.ResourceLimitsMemory:           resource.MustParse(utils.GetEnvWithDefault(QuotaLimitsMemory, DefaultQuotaLimitsMemory)),
 		corev1.ResourceRequestsStorage:        resource.MustParse(utils.GetEnvWithDefault(QuotaLimitsStorage, DefaultQuotaLimitsStorage)),
 		corev1.ResourceLimitsEphemeralStorage: resource.MustParse(utils.GetEnvWithDefault(QuotaLimitsStorage, DefaultQuotaLimitsStorage)),
+		corev1.ResourceServicesNodePorts:      resource.MustParse(DefaultQuotaLimitsNodePorts),
+		//TODO storage.diskio.read, storage.diskio.write
 	}
 }
 

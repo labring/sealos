@@ -24,7 +24,7 @@ import (
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/remote"
-	"github.com/labring/sealos/pkg/runtime/types"
+	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -38,12 +38,12 @@ type KubeadmRuntime struct {
 	token         *types.Token
 	kubeadmConfig *types.KubeadmConfig // a deep copy from config.KubeadmConfig or a new one
 
-	klogLevel     int
-	cli           kubernetes.Client
-	clusterClient ssh.Interface
-	pathResolver  constants.PathResolver
-	remoteUtil    remote.Interface
-	mu            sync.Mutex
+	klogLevel    int
+	cli          kubernetes.Client
+	sshClient    ssh.Interface
+	pathResolver constants.PathResolver
+	remoteUtil   remote.Interface
+	mu           sync.Mutex
 }
 
 func (k *KubeadmRuntime) Init() error {
@@ -65,20 +65,21 @@ func (k *KubeadmRuntime) GetRawConfig() ([]byte, error) {
 	if err := k.CompleteKubeadmConfig(); err != nil {
 		return nil, err
 	}
-	k.cluster.Status = v2.ClusterStatus{}
+	cluster := k.cluster.DeepCopy()
+	cluster.Status = v2.ClusterStatus{}
 
 	conversion, err := k.kubeadmConfig.ToConvertedKubeadmConfig()
 	if err != nil {
 		return nil, err
 	}
-	objects := []interface{}{k.cluster,
+	objects := []interface{}{cluster,
 		conversion.InitConfiguration,
 		conversion.ClusterConfiguration,
 		conversion.JoinConfiguration,
 		conversion.KubeProxyConfiguration,
 		conversion.KubeletConfiguration,
 	}
-	data, err := yaml.MarshalYamlConfigs(objects...)
+	data, err := yaml.MarshalConfigs(objects...)
 	if err != nil {
 		return nil, err
 	}
@@ -122,15 +123,15 @@ func (k *KubeadmRuntime) ScaleDown(deleteMastersIPList []string, deleteNodesIPLi
 }
 
 func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*KubeadmRuntime, error) {
-	sshClient := ssh.NewSSHByCluster(cluster, true)
+	sshClient := ssh.NewCacheClientFromCluster(cluster, true)
 	k := &KubeadmRuntime{
 		cluster: cluster,
 		config: &types.Config{
 			KubeadmConfig:   kubeadm,
-			APIServerDomain: types.DefaultAPIServerDomain,
+			APIServerDomain: constants.DefaultAPIServerDomain,
 		},
 		kubeadmConfig: types.NewKubeadmConfig(),
-		clusterClient: sshClient,
+		sshClient:     sshClient,
 		pathResolver:  constants.NewPathResolver(cluster.GetName()),
 		remoteUtil:    remote.New(cluster.GetName(), sshClient),
 	}
@@ -143,7 +144,11 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*Kube
 	return k, nil
 }
 
-func New(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*KubeadmRuntime, error) {
+func New(cluster *v2.Cluster, config any) (*KubeadmRuntime, error) {
+	var kubeadm *types.KubeadmConfig
+	if v, ok := config.(*types.KubeadmConfig); ok {
+		kubeadm = v
+	}
 	return newKubeadmRuntime(cluster, kubeadm)
 }
 

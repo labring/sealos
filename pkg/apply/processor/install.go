@@ -28,7 +28,7 @@ import (
 	"github.com/labring/sealos/pkg/filesystem/rootfs"
 	"github.com/labring/sealos/pkg/guest"
 	"github.com/labring/sealos/pkg/runtime"
-	"github.com/labring/sealos/pkg/runtime/kubernetes"
+	"github.com/labring/sealos/pkg/runtime/factory"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -134,7 +134,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 			return err
 		}
 		if oci.OCIv1.Config.Labels != nil {
-			imageTypes.Insert(oci.OCIv1.Config.Labels[v2.ImageTypeKey])
+			imageTypes.Insert(maps.GetFromKeys(oci.OCIv1.Config.Labels, v2.ImageTypeKeys...))
 		} else {
 			imageTypes.Insert(string(v2.AppImage))
 		}
@@ -165,12 +165,13 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		if err = OCIToImageMount(c.Buildah, mount); err != nil {
 			return err
 		}
-		mount.Env = maps.MergeMap(mount.Env, c.ExtraEnvs)
+		mount.Env = maps.Merge(mount.Env, c.ExtraEnvs)
 
 		cluster.SetMountImage(mount)
 		c.NewMounts = append(c.NewMounts, *mount)
 	}
-	rt, err := kubernetes.New(cluster, c.ClusterFile.GetKubeadmConfig())
+
+	rt, err := factory.New(cluster, c.ClusterFile.GetRuntimeConfig())
 	if err != nil {
 		return fmt.Errorf("failed to init runtime, %v", err)
 	}

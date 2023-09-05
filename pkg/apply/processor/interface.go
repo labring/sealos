@@ -21,6 +21,7 @@ import (
 	"path"
 
 	"github.com/containers/storage"
+	"golang.org/x/exp/slices"
 
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/constants"
@@ -32,7 +33,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
 	"github.com/labring/sealos/pkg/utils/rand"
-	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 )
 
 type Interface interface {
@@ -76,7 +76,7 @@ func SyncClusterStatus(cluster *v2.Cluster, bdah buildah.Interface, reset bool) 
 				return err
 			}
 
-			if reset || stringsutil.InList(ctr.ImageName, cluster.Spec.Image) {
+			if reset || slices.Contains(cluster.Spec.Image, ctr.ImageName) {
 				cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
 			}
 		}
@@ -106,7 +106,7 @@ func OCIToImageMount(inspector imageInspector, mount *v2.MountImage) error {
 		return err
 	}
 
-	mount.Env = maps.ListToMap(oci.OCIv1.Config.Env)
+	mount.Env = maps.FromSlice(oci.OCIv1.Config.Env)
 	delete(mount.Env, "PATH")
 	// mount.Entrypoint
 	var entrypoint []string
@@ -130,8 +130,9 @@ func OCIToImageMount(inspector imageInspector, mount *v2.MountImage) error {
 	mount.Cmd = newCMDs
 	mount.Labels = oci.OCIv1.Config.Labels
 	imageType := v2.AppImage
-	if mount.Labels[v2.ImageTypeKey] != "" {
-		imageType = v2.ImageType(mount.Labels[v2.ImageTypeKey])
+	typeKey := maps.GetFromKeys(mount.Labels, v2.ImageTypeKeys...)
+	if typeKey != "" {
+		imageType = v2.ImageType(typeKey)
 	}
 	mount.Type = imageType
 	return nil
@@ -153,7 +154,7 @@ func ConfirmDeleteNodes() error {
 func MirrorRegistry(cluster *v2.Cluster, mounts []v2.MountImage) error {
 	registries := cluster.GetRegistryIPAndPortList()
 	logger.Debug("registry nodes is: %+v", registries)
-	sshClient := ssh.NewSSHByCluster(cluster, true)
+	sshClient := ssh.NewCacheClientFromCluster(cluster, true)
 	syncer := registry.New(constants.NewPathResolver(cluster.GetName()), sshClient, mounts)
 	return syncer.Sync(context.Background(), registries...)
 }
@@ -182,10 +183,10 @@ func MountClusterImages(bdah buildah.Interface, cluster *v2.Cluster, skipApp boo
 		}
 		var imageType string
 		if info.OCIv1.Config.Labels != nil {
-			imageType = info.OCIv1.Config.Labels[v2.ImageTypeKey]
-			imageVersion := info.OCIv1.Config.Labels[v2.ImageTypeVersionKey]
+			imageType = maps.GetFromKeys(info.OCIv1.Config.Labels, v2.ImageTypeKeys...)
+			imageVersion := maps.GetFromKeys(info.OCIv1.Config.Labels, v2.ImageVersionKeys...)
 			if imageType == string(v2.RootfsImage) {
-				if !stringsutil.InList(imageVersion, v2.ImageVersionList) {
+				if !slices.Contains(v2.ImageVersionList, imageVersion) {
 					return fmt.Errorf("can't apply rootfs type images and version %s not %+v",
 						imageVersion, v2.ImageVersionList)
 				}

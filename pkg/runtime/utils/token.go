@@ -32,7 +32,7 @@ import (
 	"k8s.io/client-go/util/cert"
 	v1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/bootstraptoken/v1"
 
-	"github.com/labring/sealos/pkg/runtime/types"
+	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"

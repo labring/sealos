@@ -22,6 +22,7 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/exp/slices"
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/apply/processor"
@@ -83,7 +84,7 @@ func withCommonContext(ctx context.Context, cmd *cobra.Command) context.Context 
 	}
 	if flagChanged(cmd, "env") {
 		v, _ := cmd.Flags().GetStringSlice("env")
-		ctx = processor.WithEnvs(ctx, maps.ListToMap(v))
+		ctx = processor.WithEnvs(ctx, maps.FromSlice(v))
 	}
 	return ctx
 }
@@ -117,12 +118,12 @@ func (r *ClusterArgs) runArgs(cmd *cobra.Command, args *RunArgs, imageList []str
 
 	r.cluster.SetNewImages(imageList)
 
-	defaultPort := strconv.Itoa(int(defaultSSHPort(r.cluster.Spec.SSH.Port)))
-	masters := stringsutil.SplitRemoveEmpty(args.Cluster.Masters, ",")
-	nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
+	defaultPort := defaultSSHPort(r.cluster.Spec.SSH.Port)
+	masters := stringsutil.FilterNonEmptyFromString(args.Cluster.Masters, ",")
+	nodes := stringsutil.FilterNonEmptyFromString(args.Cluster.Nodes, ",")
 	r.hosts = []v2.Host{}
 
-	sshClient := ssh.NewSSHByCluster(r.cluster, true)
+	sshClient := ssh.NewCacheClientFromCluster(r.cluster, true)
 	if len(masters) > 0 {
 		host, port := iputils.GetHostIPAndPortOrDefault(masters[0], defaultPort)
 		master0addr := net.JoinHostPort(host, port)
@@ -134,18 +135,18 @@ func (r *ClusterArgs) runArgs(cmd *cobra.Command, args *RunArgs, imageList []str
 		r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, node0addr)})
 	}
 	r.cluster.Spec.Hosts = append(r.cluster.Spec.Hosts, r.hosts...)
-	logger.Debug("cluster info: %v", r.cluster)
+
 	return nil
 }
 
 func (r *ClusterArgs) setHostWithIpsPort(ips []string, roles []string) {
-	defaultPort := strconv.Itoa(int(defaultSSHPort(r.cluster.Spec.SSH.Port)))
+	defaultPort := defaultSSHPort(r.cluster.Spec.SSH.Port)
 	hostMap := map[string]*v2.Host{}
 	for i := range ips {
 		ip, port := iputils.GetHostIPAndPortOrDefault(ips[i], defaultPort)
 		logger.Debug("defaultPort: %s", defaultPort)
 		socket := fmt.Sprintf("%s:%s", ip, port)
-		if stringsutil.In(socket, r.cluster.GetAllIPS()) {
+		if slices.Contains(r.cluster.GetAllIPS(), socket) {
 			continue
 		}
 		if _, ok := hostMap[port]; !ok {
@@ -157,7 +158,7 @@ func (r *ClusterArgs) setHostWithIpsPort(ips []string, roles []string) {
 	_, master0Port := iputils.GetHostIPAndPortOrDefault(ips[0], defaultPort)
 	for port, host := range hostMap {
 		host.IPS = removeIPListDuplicatesAndEmpty(host.IPS)
-		if port == master0Port && stringsutil.InList(v2.MASTER, roles) {
+		if port == master0Port && slices.Contains(roles, v2.MASTER) {
 			r.hosts = append([]v2.Host{*host}, r.hosts...)
 			continue
 		}
@@ -165,9 +166,9 @@ func (r *ClusterArgs) setHostWithIpsPort(ips []string, roles []string) {
 	}
 }
 
-func defaultSSHPort(port uint16) uint16 {
+func defaultSSHPort(port uint16) string {
 	if port == 0 {
 		port = v2.DefaultSSHPort
 	}
-	return port
+	return strconv.Itoa(int(port))
 }

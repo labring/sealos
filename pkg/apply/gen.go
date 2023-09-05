@@ -23,8 +23,7 @@ import (
 
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/buildah"
-	"github.com/labring/sealos/pkg/runtime/kubernetes"
-	"github.com/labring/sealos/pkg/runtime/types"
+	"github.com/labring/sealos/pkg/runtime/factory"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/iputils"
 )
@@ -49,11 +48,16 @@ func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []strin
 	if err != nil {
 		return nil, err
 	}
-	if img.Type != v1beta1.RootfsImage {
-		return nil, fmt.Errorf("input first image %s is not kubernetes image", imageNames)
+	if !img.IsRootFs() {
+		return nil, fmt.Errorf("the first image %s is not a rootfs type image", imageNames[0])
 	}
 	cluster.Status.Mounts = append(cluster.Status.Mounts, *img)
-	rt, err := kubernetes.New(cluster, types.NewKubeadmConfig())
+
+	cfg, err := factory.NewRuntimeConfig(cluster.GetDistribution())
+	if err != nil {
+		return nil, err
+	}
+	rt, err := factory.New(cluster, cfg)
 	if err != nil {
 		return nil, err
 	}

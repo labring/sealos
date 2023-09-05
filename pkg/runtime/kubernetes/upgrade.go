@@ -25,7 +25,7 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 
 	"github.com/labring/sealos/pkg/runtime/decode"
-	"github.com/labring/sealos/pkg/runtime/types"
+	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
@@ -75,13 +75,13 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 			return err
 		}
 	}
-	master0Name, err := k.getRemoteInterface().Hostname(master0ip)
+	master0Name, err := k.remoteUtil.Hostname(master0ip)
 	if err != nil {
 		return err
 	}
 	//default nodeName in k8s is the lower case of their hostname because of DNS protocol.
 	master0Name = strings.ToLower(master0Name)
-	kubeBinaryPath := k.getContentData().RootFSBinPath()
+	kubeBinaryPath := k.pathResolver.RootFSBinPath()
 	//assure the connection to api-server succeed before executing upgrade cmds
 	if err = k.pingAPIServer(); err != nil {
 		return err
@@ -114,13 +114,13 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string, version string) error {
 				return err
 			}
 		}
-		nodename, err := k.getRemoteInterface().Hostname(ip)
+		nodename, err := k.remoteUtil.Hostname(ip)
 		if err != nil {
 			return err
 		}
 		//default nodeName in k8s is the lower case of their hostname because of DNS protocol.
 		nodename = strings.ToLower(nodename)
-		kubeBinaryPath := k.getContentData().RootFSBinPath()
+		kubeBinaryPath := k.pathResolver.RootFSBinPath()
 		//assure the connection to api-server succeed before executing upgrade cmds
 		if err = k.pingAPIServer(); err != nil {
 			return err
@@ -188,7 +188,7 @@ func (k *KubeadmRuntime) autoUpdateConfig(version string) error {
 	if err != nil {
 		return err
 	}
-	newClusterData, err := yaml.MarshalYamlConfigs(&conversion.ClusterConfiguration)
+	newClusterData, err := yaml.MarshalConfigs(&conversion.ClusterConfiguration)
 	if err != nil {
 		logger.Error("failed to encode ClusterConfiguration: %s", err)
 		return err
@@ -200,7 +200,7 @@ func (k *KubeadmRuntime) autoUpdateConfig(version string) error {
 		return err
 	}
 
-	newKubeletData, err := yaml.MarshalYamlConfigs(&conversion.KubeletConfiguration)
+	newKubeletData, err := yaml.MarshalConfigs(&conversion.KubeletConfiguration)
 	if err != nil {
 		logger.Error("failed to encode KubeletConfiguration: %s", err)
 		return err

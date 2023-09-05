@@ -61,7 +61,7 @@ func (ctx realContext) GetRemoter() remote.Interface {
 }
 
 func NewContextFrom(cluster *v2.Cluster) Context {
-	execer := ssh.NewSSHByCluster(cluster, true)
+	execer := ssh.NewCacheClientFromCluster(cluster, true)
 	envProcessor := env.NewEnvProcessor(cluster)
 	remoter := remote.New(cluster.GetName(), execer)
 
@@ -70,13 +70,13 @@ func NewContextFrom(cluster *v2.Cluster) Context {
 
 	// bootstrap process depends on the envs in the rootfs image
 	shellWrapper := func(host, shell string) string {
-		envs := maps.MergeMap(rootfsEnvs, envProcessor.Getenv(host))
-		return stringsutil.RenderShellFromEnv(shell, envs)
+		envs := maps.Merge(rootfsEnvs, envProcessor.Getenv(host))
+		return stringsutil.RenderShellWithEnv(shell, envs)
 	}
 	return &realContext{
 		cluster:      cluster,
 		execer:       execer,
-		bash:         constants.NewBash(cluster.GetName(), cluster.GetImageLabels(), shellWrapper),
+		bash:         constants.NewBash(cluster.GetName(), cluster.GetAllLabels(), shellWrapper),
 		pathResolver: constants.NewPathResolver(cluster.GetName()),
 		remoter:      remoter,
 	}

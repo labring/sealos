@@ -66,8 +66,8 @@ func (k *KubeadmRuntime) ConfigJoinMasterKubeadmToMaster(master string) error {
 	if err != nil {
 		return fmt.Errorf("failed to generate join master kubeadm config: %s", err.Error())
 	}
-	joinConfigPath := path.Join(k.getContentData().TmpPath(), defaultJoinMasterKubeadmFileName)
-	outConfigPath := path.Join(k.getContentData().ConfigsPath(), defaultJoinMasterKubeadmFileName)
+	joinConfigPath := path.Join(k.pathResolver.TmpPath(), defaultJoinMasterKubeadmFileName)
+	outConfigPath := path.Join(k.pathResolver.ConfigsPath(), defaultJoinMasterKubeadmFileName)
 	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {
 		return fmt.Errorf("write config join master kubeadm config error: %s", err.Error())
@@ -85,7 +85,7 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	}
 	logger.Info("start to send manifests to masters...")
 	var err error
-	if err = ssh.WaitSSHReady(k.getSSHInterface(), 6, masters...); err != nil {
+	if err = ssh.WaitReady(k.sshClient, 6, masters...); err != nil {
 		return fmt.Errorf("join masters wait for ssh ready time out: %w", err)
 	}
 
@@ -173,10 +173,10 @@ func (k *KubeadmRuntime) deleteMasters(masters []string) error {
 func (k *KubeadmRuntime) deleteMaster(master string) error {
 	return k.resetNode(master, func() {
 		//remove master
-		masterIPs := strings.SliceRemoveStr(k.getMasterIPList(), master)
+		masterIPs := strings.RemoveFromSlice(k.getMasterIPList(), master)
 		if len(masterIPs) > 0 {
 			// TODO: do we need draining first?
-			if err := k.RemoveNodeFromK8sClient(master); err != nil {
+			if err := k.removeNode(master); err != nil {
 				logger.Warn(fmt.Errorf("delete master %s failed %v", master, err))
 			}
 		}
