@@ -135,7 +135,7 @@ func (r *ClusterArgs) runArgs(cmd *cobra.Command, args *RunArgs, imageList []str
 		r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, node0addr)})
 	}
 	r.cluster.Spec.Hosts = append(r.cluster.Spec.Hosts, r.hosts...)
-	logger.Debug("cluster info: %v", r.cluster)
+
 	return nil
 }
 
