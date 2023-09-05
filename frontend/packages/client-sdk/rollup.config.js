@@ -66,6 +66,28 @@ export default [
     },
     plugins: [dts()]
   }),
+  // service
+  bundleFile({
+    input: 'src/service.ts',
+    output: [
+      {
+        file: `dist/service.esm.js`,
+        format: 'es'
+      },
+      {
+        file: `dist/service.js`,
+        format: 'cjs'
+      }
+    ]
+  }),
+  bundleType({
+    input: 'src/service.ts',
+    output: {
+      file: `dist/service.d.ts`,
+      format: 'es'
+    },
+    plugins: [dts()]
+  }),
   // index
   bundleFile({
     input: 'src/index.ts',

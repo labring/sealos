@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Flex, Box } from '@chakra-ui/react';
 import type { YamlItemType } from '@/types';
@@ -12,10 +12,9 @@ import {
 } from '@/utils/deployYaml2Json';
 import { useForm } from 'react-hook-form';
 import { defaultEditVal, editModeMap } from '@/constants/editApp';
-import debounce from 'lodash/debounce';
 import { postDeployApp, putApp } from '@/api/app';
 import { useConfirm } from '@/hooks/useConfirm';
-import type { AppEditType } from '@/types/app';
+import type { AppEditType, DeployKindsType } from '@/types/app';
 import { adaptEditAppData } from '@/utils/adapt';
 import { useToast } from '@/hooks/useToast';
 import { useQuery } from '@tanstack/react-query';
@@ -26,11 +25,13 @@ import Header from './components/Header';
 import Form from './components/Form';
 import Yaml from './components/Yaml';
 import dynamic from 'next/dynamic';
-const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 import { serviceSideProps } from '@/utils/i18n';
-import { patchYamlList } from '@/utils/tools';
+import { getErrText, patchYamlList } from '@/utils/tools';
 import { useTranslation } from 'next-i18next';
 import { noGpuSliderKey } from '@/constants/app';
+import { useUserStore } from '@/store/user';
+
+const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
 const formData2Yamls = (data: AppEditType) => [
   {
@@ -82,14 +83,17 @@ const formData2Yamls = (data: AppEditType) => [
 
 const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) => {
   const { t } = useTranslation();
-  const appOldYamls = useRef<YamlItemType[]>([]);
+  const formOldYamls = useRef<YamlItemType[]>([]);
+  const crOldYamls = useRef<DeployKindsType[]>([]);
+  const oldAppEditData = useRef<AppEditType>();
+
   const { toast } = useToast();
   const { Loading, setIsLoading } = useLoading();
   const router = useRouter();
   const [forceUpdate, setForceUpdate] = useState(false);
   const { setAppDetail } = useAppStore();
-  const { screenWidth, getUserSourcePrice, userSourcePrice, formSliderListConfig } =
-    useGlobalStore();
+  const { screenWidth, formSliderListConfig } = useGlobalStore();
+  const { userSourcePrice, loadUserSourcePrice, checkQuotaAllow, balance } = useUserStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -115,25 +119,16 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const formHook = useForm<AppEditType>({
     defaultValues: defaultEditVal
   });
+  const realTimeForm = useRef(defaultEditVal);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const formOnchangeDebounce = useCallback(
-    debounce((data: AppEditType) => {
-      try {
-        setYamlList(formData2Yamls(data));
-      } catch (error) {
-        console.log(error);
-      }
-    }, 200),
-    []
-  );
   // watch form change, compute new yaml
   formHook.watch((data) => {
-    data && formOnchangeDebounce(data as AppEditType);
+    if (!data) return;
+    realTimeForm.current = data as AppEditType;
     setForceUpdate(!forceUpdate);
   });
 
-  const { refetch: refetchPrice } = useQuery(['init-price'], getUserSourcePrice, {
+  const { refetch: refetchPrice } = useQuery(['init-price'], loadUserSourcePrice, {
     enabled: !!userSourcePrice?.gpu,
     refetchInterval: 5000
   });
@@ -149,29 +144,17 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   );
 
   const submitSuccess = useCallback(
-    async (data: AppEditType) => {
-      // gpu inventory check
-      if (data.gpu?.type) {
-        const inventory = countGpuInventory(data.gpu?.type);
-        if (data.gpu?.amount > inventory) {
-          return toast({
-            status: 'warning',
-            title: t('Gpu under inventory Tip', {
-              gputype: data.gpu.type
-            })
-          });
-        }
-      }
-
+    async (yamlList: YamlItemType[]) => {
       setIsLoading(true);
       try {
         const yamls = yamlList.map((item) => item.value);
 
         if (appName) {
-          const patch = patchYamlList(
-            appOldYamls.current.map((item) => item.value),
-            yamls
-          );
+          const patch = patchYamlList({
+            formOldYamlList: formOldYamls.current.map((item) => item.value),
+            crYamlList: crOldYamls.current,
+            newYamlList: yamls
+          });
 
           await putApp({
             patch,
@@ -193,15 +176,14 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         }
       } catch (error) {
         console.error(error);
-        setErrorMessage(JSON.stringify(error));
+        const msg = getErrText(error);
+        setErrorMessage(msg || JSON.stringify(error));
       }
       setIsLoading(false);
     },
     [
       setIsLoading,
-      countGpuInventory,
       toast,
-      yamlList,
       appName,
       router,
       formHook,
@@ -258,7 +240,10 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     {
       onSuccess(res) {
         if (!res) return;
-        appOldYamls.current = formData2Yamls(res);
+        oldAppEditData.current = res;
+        formOldYamls.current = formData2Yamls(res);
+        crOldYamls.current = res.crYamlList;
+
         setDefaultStorePathList(res.storeList.map((item) => item.path));
         setDefaultGpuSource(res.gpu);
         formHook.reset(adaptEditAppData(res));
@@ -276,6 +261,14 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     }
   );
 
+  useEffect(() => {
+    if (tabType === 'yaml' && router.query.name) {
+      try {
+        setYamlList(formData2Yamls(realTimeForm.current));
+      } catch (error) {}
+    }
+  }, [router.query.name, tabType]);
+
   return (
     <>
       <Flex
@@ -291,7 +284,41 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           yamlList={yamlList}
           applyBtnText={applyBtnText}
           applyCb={() =>
-            formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)()
+            formHook.handleSubmit((data) => {
+              const parseYamls = formData2Yamls(data);
+              setYamlList(parseYamls);
+              // balance check
+              if (balance <= 0) {
+                return toast({
+                  status: 'warning',
+                  title: t('user.Insufficient account balance')
+                });
+              }
+
+              // gpu inventory check
+              if (data.gpu?.type) {
+                const inventory = countGpuInventory(data.gpu?.type);
+                if (data.gpu?.amount > inventory) {
+                  return toast({
+                    status: 'warning',
+                    title: t('Gpu under inventory Tip', {
+                      gputype: data.gpu.type
+                    })
+                  });
+                }
+              }
+              // quote check
+              const quoteCheckRes = checkQuotaAllow(data, oldAppEditData.current);
+              if (quoteCheckRes) {
+                return toast({
+                  status: 'warning',
+                  title: t(quoteCheckRes),
+                  duration: 5000,
+                  isClosable: true
+                });
+              }
+              openConfirm(() => submitSuccess(parseYamls))();
+            }, submitError)()
           }
         />
 

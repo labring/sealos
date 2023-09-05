@@ -18,3 +18,9 @@ export type Session = {
   user: UserInfo;
   kubeconfig: KubeConfig;
 };
+
+export type UserQuotaItemType = {
+  type: 'cpu' | 'memory' | 'storage' | 'gpu';
+  used: number;
+  limit: number;
+};

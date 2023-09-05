@@ -4,13 +4,8 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { authSession } from '@/services/backend/auth';
 import { CoreV1Api, CustomObjectsApi } from '@kubernetes/client-node';
+import type { userPriceType } from '@/types/user';
 
-export type Response = {
-  cpu: number;
-  memory: number;
-  storage: number;
-  gpu?: { type: string; price: number; inventory: number; vm: number }[];
-};
 type ResourceType =
   | 'cpu'
   | 'infra-cpu'
@@ -35,6 +30,7 @@ type GpuNodeType = {
   'gpu.count': number;
   'gpu.memory': number;
   'gpu.product': string;
+  'gpu.alias': string;
 };
 const PRICE_SCALE = 1000000;
 
@@ -88,7 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       gpu: countGpuSource(priceResponse, gpuNodes)
     };
 
-    jsonRes<Response>(res, {
+    jsonRes<userPriceType>(res, {
       data
     });
   } catch (error) {
@@ -123,7 +119,9 @@ async function getGpuNode({ k8sCore }: { k8sCore: CoreV1Api }) {
   try {
     const { body } = await k8sCore.readNamespacedConfigMap(gpuCrName, gpuCrNS);
     const gpuMap = body?.data?.gpu;
-    if (!gpuMap) return [];
+    if (!gpuMap || !body?.data?.alias) return [];
+    const alias = (JSON.parse(body?.data?.alias) || {}) as Record<string, string>;
+
     const parseGpuMap = JSON.parse(gpuMap) as Record<
       string,
       {
@@ -132,6 +130,7 @@ async function getGpuNode({ k8sCore }: { k8sCore: CoreV1Api }) {
         'gpu.product': string;
       }
     >;
+
     const gpuValues = Object.values(parseGpuMap).filter((item) => item['gpu.product']);
 
     const gpuList: GpuNodeType[] = [];
@@ -145,7 +144,8 @@ async function getGpuNode({ k8sCore }: { k8sCore: CoreV1Api }) {
         gpuList.push({
           ['gpu.count']: +item['gpu.count'],
           ['gpu.memory']: +item['gpu.memory'],
-          ['gpu.product']: item['gpu.product']
+          ['gpu.product']: item['gpu.product'],
+          ['gpu.alias']: alias[item['gpu.product']] || item['gpu.product']
         });
       }
     });
@@ -164,7 +164,7 @@ function countSourcePrice(rawData: PriceCrdType, type: ResourceType) {
   return unitScale;
 }
 function countGpuSource(rawData: PriceCrdType, gpuNodes: GpuNodeType[]) {
-  const gpuList: Response['gpu'] = [];
+  const gpuList: userPriceType['gpu'] = [];
 
   // count gpu price by gpuNode and accountPriceConfig
   rawData?.status?.billingRecords?.forEach((item) => {
@@ -173,6 +173,7 @@ function countGpuSource(rawData: PriceCrdType, gpuNodes: GpuNodeType[]) {
     const gpuNode = gpuNodes.find((item) => item['gpu.product'] === gpuType);
     if (!gpuNode) return;
     gpuList.push({
+      alias: gpuNode['gpu.alias'],
       type: gpuNode['gpu.product'],
       price: (item.price * valuationMap.gpu) / PRICE_SCALE,
       inventory: +gpuNode['gpu.count'],
