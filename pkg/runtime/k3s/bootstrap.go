@@ -55,11 +55,20 @@ func (k *K3s) joinMasters(masters []string) error {
 
 func (k *K3s) writeJoinConfigWithCallbacks(runMode string, callbacks ...callback) (string, error) {
 	master0 := k.cluster.GetMaster0IP()
-	defaultCallbacks := []callback{
+
+	var defaultCallbacks []callback
+	switch runMode {
+	case serverMode:
+		defaultCallbacks = []callback{defaultingServerConfig}
+	case agentMode:
+		defaultCallbacks = []callback{defaultingAgentConfig}
+	}
+
+	defaultCallbacks = append(defaultCallbacks,
 		k.overrideConfig,
 		func(c *Config) { c.ServerURL = fmt.Sprintf("https://%s:%d", master0, c.HTTPSPort) },
 		// TODO: set --image-service-endpoint flag in c.ExtraKubeletArgs options
-	}
+	)
 	raw, err := k.getRawInitConfig(
 		append(defaultCallbacks, callbacks...)...,
 	)
@@ -160,7 +169,7 @@ func (k *K3s) getRawInitConfig(callbacks ...callback) ([]byte, error) {
 func (k *K3s) generateAndSendInitConfig() error {
 	src := filepath.Join(k.pathResolver.TmpPath(), defaultInitFilename)
 	if !file.IsExist(src) {
-		raw, err := k.getRawInitConfig(k.overrideConfig, setClusterInit)
+		raw, err := k.getRawInitConfig(defaultingServerConfig, k.overrideConfig, setClusterInit)
 		if err != nil {
 			return err
 		}
