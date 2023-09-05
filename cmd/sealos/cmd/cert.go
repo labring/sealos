@@ -75,11 +75,8 @@ func newCertCmd() *cobra.Command {
 			if err := cf.Process(); err != nil {
 				return err
 			}
-			var distribution string
-			if cluster := cf.GetCluster(); cluster != nil {
-				distribution = cluster.GetDistribution()
-			}
-			rt, err := factory.New(distribution, cf.GetCluster(), cf.GetRuntimeConfig())
+
+			rt, err := factory.New(cf.GetCluster(), cf.GetRuntimeConfig())
 			if err != nil {
 				return fmt.Errorf("create runtime failed: %v", err)
 			}

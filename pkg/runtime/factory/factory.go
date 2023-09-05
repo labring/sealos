@@ -15,6 +15,7 @@
 package factory
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/labring/sealos/pkg/runtime"
@@ -24,7 +25,11 @@ import (
 	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 
-func New(distribution string, cluster *v1beta1.Cluster, cfg runtime.Config) (runtime.Interface, error) {
+func New(cluster *v1beta1.Cluster, cfg runtime.Config) (runtime.Interface, error) {
+	if cluster == nil {
+		return nil, errors.New("cluster cannot be null")
+	}
+	distribution := cluster.GetDistribution()
 	switch distribution {
 	case kubernetes.Distribution, "kubeadm", "":
 		return kubernetes.New(cluster, cfg)
