@@ -56,6 +56,7 @@ func newGenCmd() *cobra.Command {
 		Short:   "generate a Clusterfile with all default settings",
 		Long:    `generate a Clusterfile of the kubernetes cluster, which can be applied by 'sealos apply' command`,
 		Example: exampleGen,
+		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			data, err := apply.NewClusterFromGenArgs(cmd, genArgs, args)
 			if err != nil {
@@ -79,7 +80,7 @@ func newGenCmd() *cobra.Command {
 	setRequireBuildahAnnotation(genCmd)
 	genArgs.RegisterFlags(genCmd.Flags())
 	genCmd.Flags().StringVarP(&out, "output", "o", "", "print output to named file")
-	genCmd.Flags().String("distribution", "kubernetes", "kubernetes distribution")
+
 	return genCmd
 }
 

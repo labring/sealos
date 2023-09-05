@@ -85,8 +85,7 @@ func (d *DeleteProcessor) UndoBootstrap(cluster *v2.Cluster) error {
 }
 
 func (d *DeleteProcessor) Reset(cluster *v2.Cluster) error {
-	distribution := cluster.GetDistribution()
-	rt, err := factory.New(distribution, cluster, d.ClusterFile.GetRuntimeConfig())
+	rt, err := factory.New(cluster, d.ClusterFile.GetRuntimeConfig())
 	if err != nil {
 		return fmt.Errorf("failed to delete runtime, %v", err)
 	}

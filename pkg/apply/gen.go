@@ -49,16 +49,15 @@ func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []strin
 		return nil, err
 	}
 	if !img.IsRootFs() {
-		return nil, fmt.Errorf("input first image %s is not kubernetes image", imageNames)
+		return nil, fmt.Errorf("the first image %s is not a rootfs type image", imageNames[0])
 	}
 	cluster.Status.Mounts = append(cluster.Status.Mounts, *img)
 
-	distribution, _ := cmd.Flags().GetString("distribution")
-	cfg, err := factory.NewRuntimeConfig(distribution)
+	cfg, err := factory.NewRuntimeConfig(cluster.GetDistribution())
 	if err != nil {
 		return nil, err
 	}
-	rt, err := factory.New(distribution, cluster, cfg)
+	rt, err := factory.New(cluster, cfg)
 	if err != nil {
 		return nil, err
 	}

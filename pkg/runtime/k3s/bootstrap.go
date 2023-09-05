@@ -79,7 +79,10 @@ func (k *K3s) writeJoinConfigWithCallbacks(runMode string, callbacks ...callback
 
 func (k *K3s) joinMaster(master string) error {
 	return k.runPipelines(fmt.Sprintf("join master %s", master),
-		func() error { return k.generateAndSendTokenFiles(master, "token") },
+		func() error {
+			// the rest masters are also running in agent mode, so agent-token file is needed.
+			return k.generateAndSendTokenFiles(master, "token", "agent-token")
+		},
 		func() error {
 			return k.sshClient.Copy(master, filepath.Join(k.pathResolver.TmpPath(), defaultJoinMastersFilename), defaultConfigPath)
 		},
