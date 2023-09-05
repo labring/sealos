@@ -14,7 +14,9 @@
 
 package k3s
 
-import "time"
+import (
+	"time"
+)
 
 // from github.com/k3s-io/k3s/pkg/cli/cmds/server.go
 type Config struct {
@@ -129,4 +131,8 @@ type AgentConfig struct {
 	Taints                   []string `json:"node-taint,omitempty"`
 	ImageCredProvBinDir      string   `json:"image-credential-provider-bin-dir,omitempty"`
 	ImageCredProvConfig      string   `json:"image-credential-provider-config,omitempty"`
+}
+
+func (c *Config) GetComponents() []any {
+	return []any{c}
 }
