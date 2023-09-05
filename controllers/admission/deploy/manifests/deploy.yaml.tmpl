@@ -425,7 +425,7 @@ webhooks:
       namespace: sealos-system
       path: /mutate-networking-k8s-io-v1-ingress
   failurePolicy: {{ .ingressWebhookFailurePolicy }}
-  name: mingress.kb.io
+  name: mingress.sealos.io
   rules:
   - apiGroups:
     - networking.k8s.io
@@ -447,7 +447,7 @@ webhooks:
       namespace: sealos-system
       path: /mutate--v1-namespace
   failurePolicy: {{ .namespaceWebhookFailurePolicy }}
-  name: mnamespace.kb.io
+  name: mnamespace.sealos.io
   rules:
   - apiGroups:
     - ""
@@ -485,7 +485,7 @@ webhooks:
       namespace: sealos-system
       path: /validate-networking-k8s-io-v1-ingress
   failurePolicy: {{ .ingressWebhookFailurePolicy }}
-  name: vingress.kb.io
+  name: vingress.sealos.io
   rules:
   - apiGroups:
     - networking.k8s.io
@@ -508,7 +508,7 @@ webhooks:
       namespace: sealos-system
       path: /validate--v1-namespace
   failurePolicy: {{ .namespaceWebhookFailurePolicy }}
-  name: vnamespace.kb.io
+  name: vnamespace.sealos.io
   rules:
   - apiGroups:
     - ""
