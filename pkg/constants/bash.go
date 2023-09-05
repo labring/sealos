@@ -24,6 +24,8 @@ const (
 	CdAndExecCmd        = "cd %s && %s"
 	renderInit          = "init"
 	renderClean         = "clean"
+	renderInitCRI       = "init-cri"
+	renderCleanCRI      = "clean-cri"
 	renderInitRegistry  = "init-registry"
 	renderCleanRegistry = "clean-registry"
 	renderCheck         = "check"
@@ -36,6 +38,8 @@ type Bash interface {
 	InitRegistryBash(host string) string
 	CleanRegistryBash(host string) string
 	CheckBash(host string) string
+	InitCRIBash(host string) string
+	CleanCRIBash(host string) string
 	WrapBash(host string, shell string) string
 }
 
@@ -52,7 +56,17 @@ func (b *bash) getFromRenderContextOrDefault(key string) string {
 	return fmt.Sprintf("bash %s.sh", key)
 }
 
+func (b *bash) getFromRenderContext(key string) string {
+	if val, ok := b.renderContext[key]; ok {
+		return fmt.Sprintf("bash %s", val)
+	}
+	return ""
+}
+
 func (b *bash) WrapBash(host, shell string) string {
+	if shell == "" {
+		return ""
+	}
 	return fmt.Sprintf(DefaultBashFmt, b.pathResolver.RootFSScriptsPath(), b.wrap(host, shell))
 }
 
@@ -74,6 +88,13 @@ func (b *bash) InitRegistryBash(host string) string {
 
 func (b *bash) CleanRegistryBash(host string) string {
 	return b.WrapBash(host, b.getFromRenderContextOrDefault(renderCleanRegistry))
+}
+
+func (b *bash) InitCRIBash(host string) string {
+	return b.WrapBash(host, b.getFromRenderContext(renderInitCRI))
+}
+func (b *bash) CleanCRIBash(host string) string {
+	return b.WrapBash(host, b.getFromRenderContext(renderCleanCRI))
 }
 
 func NewBash(clusterName string, renderContext map[string]string, shellWrapper func(string, string) string) Bash {
