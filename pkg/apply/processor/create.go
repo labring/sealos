@@ -101,8 +101,8 @@ func (c *CreateProcessor) preProcess(cluster *v2.Cluster) error {
 	for i := range cluster.Status.Mounts {
 		cluster.Status.Mounts[i].Env = maps.Merge(cluster.Status.Mounts[i].Env, c.ExtraEnvs)
 	}
-	distribution := cluster.GetDistribution()
-	rt, err := factory.New(distribution, cluster, c.ClusterFile.GetRuntimeConfig())
+
+	rt, err := factory.New(cluster, c.ClusterFile.GetRuntimeConfig())
 	if err != nil {
 		return fmt.Errorf("failed to init runtime, %v", err)
 	}
