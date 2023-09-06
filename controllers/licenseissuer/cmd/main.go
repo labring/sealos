@@ -107,9 +107,10 @@ func main() {
 	}()
 
 	if err = (&controller.LicenseReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		DBCol:  dbCol,
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		DBCol:    dbCol,
+		Recorder: util.GetHashMap(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "License")
 		os.Exit(1)
