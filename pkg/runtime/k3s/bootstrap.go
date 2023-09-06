@@ -56,16 +56,19 @@ func (k *K3s) joinMasters(masters []string) error {
 func (k *K3s) writeJoinConfigWithCallbacks(runMode string, callbacks ...callback) (string, error) {
 	master0 := k.cluster.GetMaster0IP()
 
-	var defaultCallbacks []callback
+	defaultCallbacks := []callback{defaultingConfig, k.merge}
 	switch runMode {
 	case serverMode:
-		defaultCallbacks = []callback{defaultingServerConfig, k.merge, k.overrideServerConfig}
+		defaultCallbacks = append(defaultCallbacks, k.overrideServerConfig)
 	case agentMode:
-		defaultCallbacks = []callback{defaultingAgentConfig, k.overrideAgentConfig}
+		defaultCallbacks = append(defaultCallbacks, k.overrideAgentConfig)
 	}
 
 	defaultCallbacks = append(defaultCallbacks,
-		func(c *Config) { c.ServerURL = fmt.Sprintf("https://%s:%d", master0, c.HTTPSPort) },
+		func(c *Config) *Config {
+			c.ServerURL = fmt.Sprintf("https://%s:%d", master0, c.HTTPSPort)
+			return c
+		},
 		// TODO: set --image-service-endpoint flag in c.ExtraKubeletArgs options
 	)
 	raw, err := k.getRawInitConfig(
@@ -100,9 +103,7 @@ func (k *K3s) joinMaster(master string) error {
 }
 
 func (k *K3s) joinNodes(nodes []string) error {
-	if _, err := k.writeJoinConfigWithCallbacks(agentMode, func(c *Config) {
-		c.TokenFile = ""
-	}); err != nil {
+	if _, err := k.writeJoinConfigWithCallbacks(agentMode, removeServerFlagsInAgentConfig); err != nil {
 		return err
 	}
 	for i := range nodes {
@@ -168,8 +169,9 @@ func (k *K3s) getRawInitConfig(callbacks ...callback) ([]byte, error) {
 func (k *K3s) generateAndSendInitConfig() error {
 	src := filepath.Join(k.pathResolver.TmpPath(), defaultInitFilename)
 	if !file.IsExist(src) {
-		raw, err := k.getRawInitConfig(defaultingServerConfig, k.merge, k.overrideServerConfig,
-			func(c *Config) { c.ClusterInit = true },
+		raw, err := k.getRawInitConfig(defaultingConfig, k.merge,
+			k.overrideServerConfig,
+			setClusterInit,
 		)
 		if err != nil {
 			return err

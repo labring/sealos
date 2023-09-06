@@ -79,7 +79,7 @@ func (k *K3s) Upgrade(version string) error {
 }
 
 func (k *K3s) GetRawConfig() ([]byte, error) {
-	cfg, err := k.getInitConfig(defaultingServerConfig, k.overrideServerConfig, setClusterInit)
+	cfg, err := k.getInitConfig(defaultingConfig, k.overrideServerConfig, setClusterInit)
 	if err != nil {
 		return nil, err
 	}
