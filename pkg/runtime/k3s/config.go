@@ -18,27 +18,28 @@ import (
 	"bufio"
 	"bytes"
 	"io"
+	"os"
 	"path/filepath"
 
 	"github.com/imdario/mergo"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
+	netutils "k8s.io/utils/net"
 	"sigs.k8s.io/yaml"
 
 	"github.com/labring/sealos/pkg/constants"
+	fileutils "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 var defaultMergeOpts = []func(*mergo.Config){
 	mergo.WithOverride,
-	mergo.WithAppendSlice,
 }
 
-func defaultingServerConfig(c *Config) {
+func defaultingConfig(c *Config) *Config {
 	c.BindAddress = "0.0.0.0"
 	c.HTTPSPort = 6443
 	c.ClusterCIDR = []string{"10.42.0.0/16"}
 	c.ServiceCIDR = []string{"10.43.0.0/16"}
-	c.ClusterDNS = []string{"10.43.0.10"}
-	c.ServiceNodePortRange = "30000-32767"
 	c.ClusterDomain = constants.DefaultDNSDomain
 	c.DisableCCM = true
 	c.DisableHelmController = true
@@ -46,50 +47,96 @@ func defaultingServerConfig(c *Config) {
 	c.EgressSelectorMode = "agent"
 	c.FlannelBackend = "vxlan"
 	c.KubeConfigMode = "0644"
-	c.PreferBundledBin = true
 	c.Disable = []string{"servicelb", "traefik", "local-storage", "metrics-server"}
 	defaultingAgentConfig(c)
+	return c
 }
 
-func defaultingAgentConfig(c *Config) {
+func defaultingAgentConfig(c *Config) *Config {
 	if c.AgentConfig == nil {
 		c.AgentConfig = &AgentConfig{}
 	}
+	c.AgentConfig.PreferBundledBin = true
 	c.AgentConfig.ExtraKubeProxyArgs = []string{}
 	c.AgentConfig.ExtraKubeletArgs = []string{}
 	c.AgentConfig.PauseImage = "docker.io/rancher/pause:3.1"
 	c.AgentConfig.PrivateRegistry = "/etc/rancher/k3s/registries.yaml"
-	c.AgentConfig.Labels = []string{"provisioner=k3s"}
+	c.AgentConfig.Labels = []string{"sealos.io/distribution=k3s"}
+	return c
 }
 
-type callback func(*Config)
+// avoid unknown flags
+func removeServerFlagsInAgentConfig(c *Config) *Config {
+	agentConfig := *c.AgentConfig
+	return &Config{AgentConfig: &agentConfig}
+}
+
+type callback func(*Config) *Config
 
 func merge(dst, src *Config) error {
-	if src == nil {
+	if src == nil || dst == nil {
 		return nil
 	}
 	return mergo.Merge(dst, src, defaultMergeOpts...)
 }
 
-func setClusterInit(c *Config) {
+func setClusterInit(c *Config) *Config {
 	c.ClusterInit = true
+	return c
 }
 
-func (k *K3s) overrideConfig(c *Config) {
-	c.TokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "token")
+func (k *K3s) merge(c *Config) *Config {
+	if err := func() error {
+		defaultCfg := filepath.Join(k.pathResolver.RootFSEtcPath(), defaultRootFsK3sFileName)
+		if !fileutils.IsExist(defaultCfg) {
+			return nil
+		}
+		data, err := os.ReadFile(defaultCfg)
+		if err != nil {
+			return err
+		}
+		parseCfg, err := ParseConfig(data)
+		if err != nil {
+			return err
+		}
+		return merge(c, parseCfg)
+	}(); err != nil {
+		logger.Error("failed to merge in place config file: %v", err)
+	}
+	if err := merge(c, k.config); err != nil {
+		logger.Error("failed to merge provide config: %v", err)
+	}
+	return c
+}
+
+func (k *K3s) overrideServerConfig(c *Config) *Config {
+	c.AgentConfig.TokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "token")
 	c.AgentTokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "agent-token")
 	c.TLSSan = append(c.TLSSan, constants.DefaultAPIServerDomain)
+
+	if len(c.ClusterDNS) == 0 && len(c.ServiceCIDR) > 0 {
+		svcSubnetCIDR, err := netutils.ParseCIDRs(c.ServiceCIDR)
+		if err == nil {
+			clusterDNS, err := netutils.GetIndexedIP(svcSubnetCIDR[0], 10)
+			if err == nil {
+				c.ClusterDNS = []string{clusterDNS.String()}
+			}
+		}
+	}
+	return c
+}
+
+func (k *K3s) overrideAgentConfig(c *Config) *Config {
+	c.AgentConfig.TokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "agent-token")
+	return c
 }
 
 func (k *K3s) getInitConfig(callbacks ...callback) (*Config, error) {
-	cfg := Config{}
-	if err := merge(&cfg, k.config); err != nil {
-		return nil, err
-	}
+	cfg := &Config{}
 	for i := range callbacks {
-		callbacks[i](&cfg)
+		cfg = callbacks[i](cfg)
 	}
-	return &cfg, nil
+	return cfg, nil
 }
 
 //lint:ignore U1000 Ignore unused function temporarily for debugging

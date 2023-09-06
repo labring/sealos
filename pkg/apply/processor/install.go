@@ -34,6 +34,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
 	"github.com/labring/sealos/pkg/utils/rand"
+	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 )
 
 var ForceOverride bool
@@ -151,7 +152,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		} else {
 			ctrName = rand.Generator(8)
 		}
-		cluster.Spec.Image = merge(cluster.Spec.Image, img)
+		cluster.Spec.Image = stringsutil.Merge(cluster.Spec.Image, img)
 		bderInfo, err := c.Buildah.Create(ctrName, img)
 		if err != nil {
 			return err
@@ -195,17 +196,6 @@ func (c *InstallProcessor) UpgradeIfNeed(cluster *v2.Cluster) error {
 		cluster.ReplaceRootfsImage()
 	}
 	return nil
-}
-
-func merge(ss []string, s string) []string {
-	var ret []string
-	for i := range ss {
-		if ss[i] != s {
-			ret = append(ret, ss[i])
-		}
-	}
-	ret = append(ret, s)
-	return ret
 }
 
 func (c *InstallProcessor) PostProcess(*v2.Cluster) error {

@@ -123,6 +123,11 @@ func (c *Applier) Apply() error {
 
 func (c *Applier) getWriteBackObjects() []interface{} {
 	obj := []interface{}{c.ClusterDesired}
+	if runtimeConfig := c.ClusterFile.GetRuntimeConfig(); runtimeConfig != nil {
+		if components := runtimeConfig.GetComponents(); len(components) > 0 {
+			obj = append(obj, components...)
+		}
+	}
 	if configs := c.ClusterFile.GetConfigs(); len(configs) > 0 {
 		for i := range configs {
 			obj = append(obj, configs[i])

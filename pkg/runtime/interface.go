@@ -33,4 +33,6 @@ type CertManager interface {
 	UpdateCertSANs(certSANs []string) error
 }
 
-type Config any
+type Config interface {
+	GetComponents() []any
+}

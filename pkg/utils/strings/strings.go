@@ -97,6 +97,17 @@ func RemoveFromSlice(ss []string, s string) (result []string) {
 	return
 }
 
+func Merge(ss []string, s string) []string {
+	var ret []string
+	for i := range ss {
+		if ss[i] != s {
+			ret = append(ret, ss[i])
+		}
+	}
+	ret = append(ret, s)
+	return ret
+}
+
 func FormatSize(size int64) (Size string) {
 	if size < 1024 {
 		Size = fmt.Sprintf("%.2fB", float64(size)/float64(1))
