@@ -49,6 +49,12 @@ func NewKubeadmConfig() *KubeadmConfig {
 	return &KubeadmConfig{}
 }
 
+func (k *KubeadmConfig) GetComponents() []any {
+	return []any{
+		k.InitConfiguration, k.ClusterConfiguration, k.JoinConfiguration, k.KubeProxyConfiguration, k.KubeletConfiguration,
+	}
+}
+
 var defaultMergeOpts = []func(*mergo.Config){
 	mergo.WithOverride,
 	mergo.WithAppendSlice,

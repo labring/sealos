@@ -19,6 +19,7 @@ const Distribution = "k3s"
 const (
 	defaultBinDir              = "/usr/local/bin"
 	defaultConfigPath          = "/etc/rancher/k3s/config.yaml"
+	defaultRootFsK3sFileName   = "k3s.yaml"
 	defaultInitFilename        = "k3s-init.yaml"
 	defaultJoinMastersFilename = "k3s-join-master.yaml"
 	defaultJoinNodesFilename   = "k3s-join-master.yaml"
