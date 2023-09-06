@@ -19,6 +19,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -36,6 +37,10 @@ func GetUsersSubject(user string) []rbacv1.Subject {
 			Namespace: GetUsersNamespace(user),
 		},
 	}
+}
+
+func GetUserNameByNamespace(namespace string) string {
+	return strings.TrimPrefix(namespace, "ns-")
 }
 
 func GetUsersNamespace(user string) string {

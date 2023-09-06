@@ -140,6 +140,20 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 			r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to create/update rolebinding", "Failed to create rolebinding %s/%s", rolebinding.Namespace, rolebinding.Name)
 			return ctrl.Result{}, err
 		}
+		if request.Spec.Role == userv1.OwnerRoleType {
+			// update user annotation
+			user := &userv1.User{}
+			if err := r.Get(ctx, client.ObjectKey{Name: config.GetUserNameByNamespace(request.Namespace)}, user); err != nil {
+				r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to get user", "Failed to get user %s", request.Spec.User)
+				return ctrl.Result{}, err
+			}
+
+			user.Annotations[userv1.UserAnnotationOwnerKey] = request.Spec.User
+			if err := r.Update(ctx, user); err != nil {
+				r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to update user", "Failed to update user %s", request.Spec.User)
+				return ctrl.Result{}, err
+			}
+		}
 	case userv1.Deprive:
 		r.Recorder.Eventf(request, v1.EventTypeNormal, "Deprive", "Deprive role %s from user %s", request.Spec.Role, request.Spec.User)
 		if err := r.Delete(ctx, rolebinding); client.IgnoreNotFound(err) != nil {
@@ -155,6 +169,20 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, rolebinding, func() error { return nil }); err != nil {
 			r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to create/update rolebinding", "Failed to create rolebinding %s/%s", rolebinding.Namespace, rolebinding.Name)
 			return ctrl.Result{}, err
+		}
+		if request.Spec.Role == userv1.OwnerRoleType {
+			// update user annotation
+			user := &userv1.User{}
+			if err := r.Get(ctx, client.ObjectKey{Name: config.GetUserNameByNamespace(request.Namespace)}, user); err != nil {
+				r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to get user", "Failed to get user %s", request.Spec.User)
+				return ctrl.Result{}, err
+			}
+
+			user.Annotations[userv1.UserAnnotationOwnerKey] = request.Spec.User
+			if err := r.Update(ctx, user); err != nil {
+				r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to update user", "Failed to update user %s", request.Spec.User)
+				return ctrl.Result{}, err
+			}
 		}
 	default:
 		return ctrl.Result{}, fmt.Errorf("invalid action %s", request.Spec.Action)
