@@ -17,6 +17,8 @@ package ipvs
 import (
 	"fmt"
 
+	"github.com/labring/sealos/pkg/types/v1beta1"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,7 +37,7 @@ func LvsStaticPodYaml(vip string, masters []string, image, name string) (string,
 		return "", fmt.Errorf("vip and mster not allow empty")
 	}
 	if image == "" {
-		image = constants.DefaultLvsCareImage
+		image = v1beta1.DefaultLvsCareImage
 	}
 	args := []string{"care", "--vs", vip, "--health-path", "/healthz", "--health-schem", "https"}
 	for _, m := range masters {
@@ -51,14 +53,14 @@ func LvsStaticPodYaml(vip string, masters []string, image, name string) (string,
 		ImagePullPolicy: v1.PullIfNotPresent,
 		SecurityContext: &v1.SecurityContext{Privileged: &flag},
 	})
-	yaml, err := podToYaml(pod)
+	yaml, err := PodToYaml(pod)
 	if err != nil {
 		return "", err
 	}
 	return string(yaml), nil
 }
 
-func podToYaml(pod v1.Pod) ([]byte, error) {
+func PodToYaml(pod v1.Pod) ([]byte, error) {
 	codecs := scheme.Codecs
 	gv := v1.SchemeGroupVersion
 	const mediaType = runtime.ContentTypeYAML

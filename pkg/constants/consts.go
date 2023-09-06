@@ -26,7 +26,6 @@ const (
 	DefaultRegistryPassword = "passw0rd"
 	DefaultRegistryData     = "/var/lib/registry"
 	DefaultLvscareDomain    = "lvscare.node.ip"
-	DefaultLvsCareImage     = "sealos.hub:5000/sealos/lvscare:latest"
 	DefaultHostsPath        = "/etc/hosts"
 )
 
