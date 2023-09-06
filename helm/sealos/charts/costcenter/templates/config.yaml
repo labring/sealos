@@ -1,0 +1,11 @@
+{{- if .Values.configmap }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "costcenter.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "costcenter.labels" . | nindent 4 }}
+data:
+  {{ .Values.configmap | toYaml | indent 2 }}
+  {{- end }}

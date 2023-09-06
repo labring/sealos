@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "costcenter.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "costcenter.labels" . | nindent 4 }}
+
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "costcenter.labels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "costcenter.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: costcenter-frontend
+          env:
+            - name: TRANSFER_ENABLED
+              value: '{{ .Values.transferEnabled }}'
+            - name: RECHARGE_ENABLED
+              value: '{{ .Values.rechargeEnabled }}'
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: costcenter-frontend-volume
+              mountPath: /config.yaml
+              subPath: config.yaml
+      volumes:
+        - name: costcenter-frontend-volume
+          configMap:
+            name: {{ template "costcenter.fullname" . }}
