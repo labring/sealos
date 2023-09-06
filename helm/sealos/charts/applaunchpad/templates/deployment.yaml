@@ -1,0 +1,136 @@
+{{ $secretname := include "common.names.fullname" . }}
+apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: {{ template "common.names.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: sealos-applaunchpad
+    {{- if .Values.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.applaunchpad.autoscaling.enabled }}
+  replicas: {{ .Values.applaunchpad.replicaCount }}
+  {{- end }}
+  {{- if .Values.applaunchpad.updateStrategy }}
+  strategy: {{- toYaml .Values.applaunchpad.updateStrategy | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+      app.kubernetes.io/component: sealos-applaunchpad
+  template:
+    metadata:
+      {{- if .Values.applaunchpad.podAnnotations }}
+      annotations: {{- include "common.tplvalues.render" (dict "value" .Values.applaunchpad.podAnnotations "context" $) | nindent 8 }}
+      {{- end }}
+      labels: {{- include "common.labels.standard" . | nindent 8 }}
+        app.kubernetes.io/component: sealos-applaunchpad
+        {{- if .Values.applaunchpad.podLabels }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.applaunchpad.podLabels "context" $) | nindent 8 }}
+        {{- end }}
+        {{- if .Values.commonLabels }}
+        {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ template "applaunchpad.serviceAccountName" . }}
+      {{- include "applaunchpad.imagePullSecrets" . | nindent 6 }}
+      {{- if .Values.applaunchpad.hostAliases }}
+      hostAliases: {{- include "common.tplvalues.render" (dict "value" .Values.applaunchpad.hostAliases "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.applaunchpad.affinity }}
+      affinity: {{- include "common.tplvalues.render" ( dict "value" .Values.applaunchpad.affinity "context" $) | nindent 8 }}
+      {{- else }}
+      affinity:
+        podAffinity: {{- include "common.affinities.pods" (dict "type" .Values.applaunchpad.podAffinityPreset "component" "sealos-applaunchpad" "context" $) | nindent 10 }}
+        podAntiAffinity: {{- include "common.affinities.pods" (dict "type" .Values.applaunchpad.podAntiAffinityPreset "component" "sealos-applaunchpad" "context" $) | nindent 10 }}
+        nodeAffinity: {{- include "common.affinities.nodes" (dict "type" .Values.applaunchpad.nodeAffinityPreset.type "key" .Values.applaunchpad.nodeAffinityPreset.key "values" .Values.applaunchpad.nodeAffinityPreset.values) | nindent 10 }}
+      {{- end }}
+      {{- if .Values.applaunchpad.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" ( dict "value" .Values.applaunchpad.nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.applaunchpad.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.applaunchpad.tolerations "context" .) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.applaunchpad.priorityClassName }}
+      priorityClassName: {{ .Values.applaunchpad.priorityClassName | quote }}
+      {{- end }}
+      {{- if .Values.applaunchpad.schedulerName }}
+      schedulerName: {{ .Values.applaunchpad.schedulerName | quote }}
+      {{- end }}
+      {{- if .Values.applaunchpad.topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .Values.applaunchpad.topologySpreadConstraints "context" .) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.applaunchpad.podSecurityContext.enabled }}
+      securityContext: {{- omit .Values.applaunchpad.podSecurityContext "enabled" | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if .Values.applaunchpad.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.applaunchpad.terminationGracePeriodSeconds }}
+      {{- end }}
+      containers:
+        - name: applaunchpad
+          image: {{ template "applaunchpad.image" . }}
+          imagePullPolicy: {{ .Values.applaunchpad.image.pullPolicy }}
+          {{- if .Values.applaunchpad.containerSecurityContext.enabled }}
+          securityContext: {{- omit .Values.applaunchpad.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          {{- if .Values.applaunchpad.command }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.applaunchpad.command "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.applaunchpad.args }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.applaunchpad.args "context" $) | nindent 12 }}
+          {{- end }}
+          env:
+            - name: SEALOS_DOMAIN
+              value: {{ .Values.global.cloud.domain }}
+            - name: DOMAIN_PORT
+              value: {{ .Values.global.cloud.port }}
+            - name: INGRESS_SECRET
+              value: {{ .Values.global.wildcardCert.name }}
+          envFrom:
+            {{- if .Values.applaunchpad.extraEnvVarsCM }}
+            - configMapRef:
+                name: {{ include "common.tplvalues.render" (dict "value" .Values.applaunchpad.extraEnvVarsCM "context" $) }}
+            {{- end }}
+            {{- if .Values.applaunchpad.extraEnvVarsSecret }}
+            - secretRef:
+                name: {{ include "common.tplvalues.render" (dict "value" .Values.applaunchpad.extraEnvVarsSecret "context" $) }}
+            {{- end }}
+          {{- if .Values.applaunchpad.resources }}
+          resources: {{- toYaml .Values.applaunchpad.resources | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.applaunchpad.containerPorts.http }}
+          {{- if .Values.applaunchpad.customLivenessProbe }}
+          livenessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.applaunchpad.customLivenessProbe "context" $) | nindent 12 }}
+          {{- else if .Values.applaunchpad.livenessProbe.enabled }}
+          livenessProbe: {{- include "common.tplvalues.render" (dict "value" (omit .Values.applaunchpad.livenessProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.applaunchpad.customReadinessProbe }}
+          readinessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.applaunchpad.customReadinessProbe "context" $) | nindent 12 }}
+          {{- else if .Values.applaunchpad.readinessProbe.enabled }}
+          readinessProbe: {{- include "common.tplvalues.render" (dict "value" (omit .Values.applaunchpad.readinessProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.applaunchpad.customStartupProbe }}
+          startupProbe: {{- include "common.tplvalues.render" (dict "value" .Values.applaunchpad.customStartupProbe "context" $) | nindent 12 }}
+          {{- else if .Values.applaunchpad.startupProbe.enabled }}
+          startupProbe: {{- include "common.tplvalues.render" (dict "value" (omit .Values.applaunchpad.startupProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.applaunchpad.lifecycleHooks }}
+          lifecycle: {{- include "common.tplvalues.render" (dict "value" .Values.applaunchpad.lifecycleHooks "context" $) | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: {{ template "common.names.fullname" . }}-cm-volume
+              mountPath: /config.yaml
+              subPath: config.yaml
+        {{- if .Values.applaunchpad.sidecars }}
+        {{- include "common.tplvalues.render" ( dict "value" .Values.applaunchpad.sidecars "context" $) | nindent 8 }}
+        {{- end }}
+      volumes:
+        - name: {{ template "common.names.fullname" . }}-cm-volume
+          configMap:
+            name: {{ template "common.names.fullname" . }}

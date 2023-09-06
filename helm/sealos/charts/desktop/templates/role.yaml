@@ -19,6 +19,12 @@ rules:
   - apiGroups: ["user.sealos.io"]
     resources: ["users/status"]
     verbs: ["*"]
+  - apiGroups: ["user.sealos.io"]
+    resources: ["operationrequests"]
+    verbs: ["*"]
+  - apiGroups: [ "user.sealos.io" ]
+    resources: [ "operationrequests/status" ]
+    verbs: [ "*" ]
   {{- if .Values.rbac.rules }}
   {{- include "common.tplvalues.render" ( dict "value" .Values.rbac.rules "context" $ ) | nindent 2 }}
   {{- end }}
