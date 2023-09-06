@@ -47,7 +47,7 @@ const YamlList = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
                   backgroundColor: 'transparent'
                 })}
             onClick={() => setSelectedIndex(index)}>
-            {file.filename.replace(/-.*/, '.yaml')}
+            {file.filename.replace(/-.*/, '')}
           </Box>
         ))}
       </Box>

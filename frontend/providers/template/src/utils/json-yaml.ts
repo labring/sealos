@@ -95,7 +95,7 @@ export const developGenerateYamlList = (value: string, labelName: string): YamlI
   try {
     return JSYAML.loadAll(value).map((item: any) => {
       return {
-        filename: `${item?.kind}-${nanoid(6)}.yaml`,
+        filename: `${item?.kind}-${item?.metadata?.name ? item.metadata.name : nanoid(6)}.yaml`,
         value: JSYAML.dump(processEnvValue(item, labelName))
       };
     });
