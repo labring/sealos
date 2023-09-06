@@ -82,7 +82,6 @@ func (r *OperationReqReconciler) SetupWithManager(mgr ctrl.Manager, opts util.Ra
 // +kubebuilder:rbac:groups=user.sealos.io,resources=operationrequests/finalizers,verbs=update
 
 func (r *OperationReqReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	r.Logger.V(1).Info("start create or delete rolebinding for operation requests")
 	operationRequest := &userv1.Operationrequest{}
 	if err := r.Get(ctx, req.NamespacedName, operationRequest); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -91,7 +90,7 @@ func (r *OperationReqReconciler) Reconcile(ctx context.Context, req ctrl.Request
 }
 
 func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.Operationrequest) (ctrl.Result, error) {
-	r.Logger.V(1).Info("update reconcile controller operationRequest", getLog(request)...)
+	r.Logger.V(1).Info("start reconcile controller operationRequest", getLog(request)...)
 	// count the time cost of handling the request
 	startTime := time.Now()
 	defer func() {
@@ -100,7 +99,7 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 
 	// delete OperationRequest first if its status is isCompleted and exist for retention time
 	if r.isRetained(request) {
-		if err := r.deleteOperationRequest(ctx, request); err != nil {
+		if err := r.deleteRequest(ctx, request); err != nil {
 			return ctrl.Result{}, err
 		}
 		return ctrl.Result{}, nil
@@ -111,14 +110,14 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 	}
 	// change OperationRequest status to failed if it is expired
 	if r.isExpired(request) {
-		if err := r.updateOperationRequestStatus(ctx, request, userv1.RequestFailed); err != nil {
+		if err := r.updateRequestStatus(ctx, request, userv1.RequestFailed); err != nil {
 			return ctrl.Result{}, err
 		}
 		return ctrl.Result{}, nil
 	}
 
 	// update OperationRequest status to processing
-	err := r.updateOperationRequestStatus(ctx, request, userv1.RequestProcessing)
+	err := r.updateRequestStatus(ctx, request, userv1.RequestProcessing)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -161,7 +160,7 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 	}
 
 	// update OperationRequest status to completed
-	err = r.updateOperationRequestStatus(ctx, request, userv1.RequestCompleted)
+	err = r.updateRequestStatus(ctx, request, userv1.RequestCompleted)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -193,7 +192,7 @@ func (r *OperationReqReconciler) isExpired(request *userv1.Operationrequest) boo
 	return false
 }
 
-func (r *OperationReqReconciler) deleteOperationRequest(ctx context.Context, request *userv1.Operationrequest) error {
+func (r *OperationReqReconciler) deleteRequest(ctx context.Context, request *userv1.Operationrequest) error {
 	r.Logger.V(1).Info("deleting OperationRequest", "request", request)
 	if err := r.Delete(ctx, request); client.IgnoreNotFound(err) != nil {
 		r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to delete OperationRequest", "Failed to delete OperationRequest %s/%s", request.Namespace, request.Name)
@@ -204,7 +203,7 @@ func (r *OperationReqReconciler) deleteOperationRequest(ctx context.Context, req
 	return nil
 }
 
-func (r *OperationReqReconciler) updateOperationRequestStatus(ctx context.Context, request *userv1.Operationrequest, phase userv1.RequestPhase) error {
+func (r *OperationReqReconciler) updateRequestStatus(ctx context.Context, request *userv1.Operationrequest, phase userv1.RequestPhase) error {
 	request.Status.Phase = phase
 	if err := r.Status().Update(ctx, request); err != nil {
 		r.Recorder.Eventf(request, v1.EventTypeWarning, "Failed to update OperationRequest status", "Failed to update OperationRequest status %s/%s", request.Namespace, request.Name)
