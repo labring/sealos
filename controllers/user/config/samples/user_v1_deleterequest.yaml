@@ -1,0 +1,6 @@
+apiVersion: user.sealos.io/v1
+kind: DeleteRequest
+metadata:
+  name: deleterequest-sample
+spec:
+  user: xxxxxxxx

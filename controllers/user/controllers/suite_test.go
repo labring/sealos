@@ -35,6 +35,7 @@ import (
 
 	v1 "github.com/labring/sealos/controllers/user/api/v1"
 
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	//+kubebuilder:scaffold:imports
@@ -73,6 +74,9 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	err = v1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = userv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
