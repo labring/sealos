@@ -99,6 +99,7 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 
 	// delete OperationRequest first if its status is isCompleted and exist for retention time
 	if r.isRetained(request) {
+		r.Logger.V(1).Info("delete request", getLog(request)...)
 		if err := r.deleteRequest(ctx, request); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -106,10 +107,12 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 	}
 	// return early if its status is isCompleted and didn't exist for retention time
 	if r.isCompleted(request) {
+		r.Logger.V(1).Info("request is completed and requeue", getLog(request)...)
 		return ctrl.Result{RequeueAfter: OperationReqRequeueDuration}, nil
 	}
 	// change OperationRequest status to failed if it is expired
 	if r.isExpired(request) {
+		r.Logger.V(1).Info("request is expired, update status to failed", getLog(request)...)
 		if err := r.updateRequestStatus(ctx, request, userv1.RequestFailed); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -172,7 +175,6 @@ func (r *OperationReqReconciler) reconcile(ctx context.Context, request *userv1.
 // isRetained returns true if the request is isCompleted and exist for retention time
 func (r *OperationReqReconciler) isRetained(request *userv1.Operationrequest) bool {
 	if request.Status.Phase == userv1.RequestCompleted && request.CreationTimestamp.Add(r.retentionTime).Before(time.Now()) {
-		r.Logger.Info("operation request is isCompleted and retained", "name", request.Name)
 		return true
 	}
 	return false
@@ -186,7 +188,6 @@ func (r *OperationReqReconciler) isCompleted(request *userv1.Operationrequest) b
 // isExpired returns true if the request is expired
 func (r *OperationReqReconciler) isExpired(request *userv1.Operationrequest) bool {
 	if request.Status.Phase != userv1.RequestCompleted && request.CreationTimestamp.Add(r.expirationTime).Before(time.Now()) {
-		r.Logger.Info("operation request is expired", "name", request.Name)
 		return true
 	}
 	return false

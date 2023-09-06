@@ -18,15 +18,19 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"time"
+
 	"github.com/go-logr/logr"
+
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 // DeleteRequestReconciler reconciles a DeleteRequest object
@@ -66,6 +70,7 @@ func (r *DeleteRequestReconciler) reconcile(ctx context.Context, request *userv1
 
 	// delete OperationRequest first if its status is isCompleted and exist for retention time
 	if r.isRetained(request) {
+		r.Logger.Info("delete request", "name", request.Name)
 		if err := r.deleteRequest(ctx, request); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -73,10 +78,12 @@ func (r *DeleteRequestReconciler) reconcile(ctx context.Context, request *userv1
 	}
 	// return early if its status is isCompleted and didn't exist for retention time
 	if r.isCompleted(request) {
+		r.Logger.Info("request is completed and requeue", "name", request.Name)
 		return ctrl.Result{RequeueAfter: DeleteRequestRequeueDuration}, nil
 	}
 	// change OperationRequest status to failed if it is expired
 	if r.isExpired(request) {
+		r.Logger.Info("request is expired, update status to failed", "name", request.Name)
 		if err := r.updateRequestStatus(ctx, request, userv1.RequestFailed); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -134,7 +141,6 @@ func (r *DeleteRequestReconciler) reconcile(ctx context.Context, request *userv1
 // isRetained returns true if the request is isCompleted and exist for retention time
 func (r *DeleteRequestReconciler) isRetained(request *userv1.DeleteRequest) bool {
 	if request.Status.Phase == userv1.RequestCompleted && request.CreationTimestamp.Add(r.retentionTime).Before(time.Now()) {
-		r.Logger.Info("delete request is isCompleted and retained", "name", request.Name)
 		return true
 	}
 	return false
@@ -148,7 +154,6 @@ func (r *DeleteRequestReconciler) isCompleted(request *userv1.DeleteRequest) boo
 // isExpired returns true if the request is expired
 func (r *DeleteRequestReconciler) isExpired(request *userv1.DeleteRequest) bool {
 	if request.Status.Phase != userv1.RequestCompleted && request.CreationTimestamp.Add(r.expirationTime).Before(time.Now()) {
-		r.Logger.Info("delete request is expired", "name", request.Name)
 		return true
 	}
 	return false
@@ -166,16 +171,32 @@ func (r *DeleteRequestReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	r.Scheme = mgr.GetScheme()
 	r.Logger.V(1).Info("init reconcile deleterequest controller")
+	r.expirationTime = time.Minute * 10
+	r.retentionTime = time.Minute * 30
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.DeleteRequest{}).
 		Complete(r)
 }
 
 func (r *DeleteRequestReconciler) deleteRequest(ctx context.Context, request *userv1.DeleteRequest) error {
+	r.Logger.V(1).Info("deleting OperationRequest", "request", request)
+	if err := r.Delete(ctx, request); client.IgnoreNotFound(err) != nil {
+		r.Recorder.Eventf(request, corev1.EventTypeWarning, "Failed to delete OperationRequest", "Failed to delete OperationRequest %s/%s", request.Namespace, request.Name)
+		r.Logger.Error(err, "Failed to delete OperationRequest", "request", request)
+		return fmt.Errorf("failed to delete OperationRequest %s: %w", request.Name, err)
+	}
+	r.Logger.V(1).Info("delete OperationRequest success")
 	return nil
 }
 
-func (r *DeleteRequestReconciler) updateRequestStatus(ctx context.Context, request *userv1.DeleteRequest, failed userv1.RequestPhase) error {
+func (r *DeleteRequestReconciler) updateRequestStatus(ctx context.Context, request *userv1.DeleteRequest, phase userv1.RequestPhase) error {
+	request.Status.Phase = phase
+	if err := r.Status().Update(ctx, request); err != nil {
+		r.Recorder.Eventf(request, corev1.EventTypeWarning, "Failed to update OperationRequest status", "Failed to update OperationRequest status %s/%s", request.Namespace, request.Name)
+		r.Logger.V(1).Info("update OperationRequest status failed", "request", request)
+		return err
+	}
+	r.Logger.V(1).Info("update OperationRequest status success", "request", request)
 	return nil
 }
 
