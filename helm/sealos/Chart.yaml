@@ -7,25 +7,18 @@ annotations:
   licenses: Apache-2.0
 
 description: -|
-  sealos desktop
-
-dependencies:
-  - name: common
-    repository: oci://registry-1.docker.io/bitnamicharts
-    tags:
-      - bitnami-common
-    version: 2.x.x
+  sealos cloud helm chart
 
 home: https://sealos.io
 
 icon: https://cloud.sealos.io/logo.svg
 
 keywords:
-  - sealos cloud desktop
+  - sealos
 
 maintainers:
   - name: labring
     url: https://github.com/labring
 
-name: sealos-desktop
+name: sealos
 version: 0.1.0

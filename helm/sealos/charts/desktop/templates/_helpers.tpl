@@ -65,3 +65,16 @@ Returns the callback URL to be used by the desktop.
 {{ if .Values.global.ingress.tls }}https{{ else }}http{{ end }}://{{ include "desktop.domain" . }}{{ if .Values.global.cloud.port }}:{{ .Values.global.cloud.port }}{{ end }}/callback
 {{- end -}}
 {{- end -}}
+
+{{/*
+Returns the mongodbURI to be used by the desktop.
+*/}}
+{{- define "desktop.mongodbURI" -}}
+{{- if .Values.desktop.mongodbURI -}}
+{{- .Values.desktop.mongodbURI -}}
+{{- else -}}
+{{- if .Values.global.cloud.mongodbURI -}}
+{{- .Values.global.cloud.mongodbURI -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
