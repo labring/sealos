@@ -5,7 +5,7 @@
 replicaCount: 1
 
 cloudDomain: "cloud.sealos.io"
-cloudPort: "80"
+cloudPort: ""
 transferEnabled: "true"
 rechargeEnabled: "true"
 image:

@@ -6,8 +6,8 @@ metadata:
 spec:
   data:
     desc: sealos CLoud costcenter
-    url: "https://costcenter.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
-  icon: "https://costcenter.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.png"
+    url: "https://costcenter.{{ .Values.cloudDomain }}{{ if .Values.cloudPort }}:{{ .Values.cloudPort }}{{ end }}"
+  icon: "https://costcenter.{{ .Values.cloudDomain }}{{ if .Values.cloudPort }}:{{ .Values.cloudPort }}{{ end }}/logo.png"
   i18n:
     zh:
       name: 费用中心
