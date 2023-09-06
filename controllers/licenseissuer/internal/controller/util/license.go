@@ -19,17 +19,18 @@ package util
 import (
 	"context"
 	"errors"
-	"fmt"
-	"strconv"
+	"time"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/go-logr/logr"
 	count "github.com/labring/sealos/controllers/common/account"
 	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/pkg/crypto"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
+	"github.com/labring/sealos/controllers/pkg/database"
+	mongoOptions "go.mongodb.org/mongo-driver/mongo/options"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -111,52 +112,22 @@ func RechargeByLicense(ctx context.Context, client client.Client, account accoun
 	return nil
 }
 
-func RecordLicense(ctx context.Context, client client.Client, ls issuerv1.License, lsh corev1.ConfigMap) error {
-	size := int64(0)
-	for _, value := range lsh.Data {
-		size += int64(len(value))
-	}
-	maxSizeThreshold := resource.MustParse(MaxSizeThresholdStr)
-	if size >= maxSizeThreshold.Value() {
-		lsh.Data = make(map[string]string)
-	}
-	tmpValue := make(map[string]interface{})
-	for k, v := range lsh.Data {
-		tmpValue[k] = v
-	}
-	suffix := GetNextMapKeySuffix(tmpValue, "license")
-	newLicenseKeyName := "license-" + strconv.Itoa(suffix)
-	if lsh.Data == nil {
-		lsh.Data = make(map[string]string)
-	}
-	lsh.Data[newLicenseKeyName] = ls.Spec.Token
-	err := client.Update(ctx, &lsh)
+func RecordLicense(dbCol LicenseDB, license License) error {
+	err := dbCol.Record(license)
 	if err != nil {
-		logger.Error(err, "failed to store license")
+		logger.Error(err, "failed to record license")
 		return err
 	}
 	return nil
 }
 
-func CheckLicenseExists(configMap *corev1.ConfigMap, token string) bool {
-	for _, storedLicense := range configMap.Data {
-		if storedLicense == token {
-			return true
-		}
+func CheckLicenseExists(dbCol LicenseDB, uid string, token string) (bool, error) {
+	ok, err := dbCol.IsExisted(uid, token)
+	if err != nil {
+		logger.Info("failed to check license exists")
+		return false, err
 	}
-	return false
-}
-
-func GetNextMapKeySuffix(data map[string]interface{}, prefix string) int {
-	maxSuffix := 0
-	for key := range data {
-		var currentSuffix int
-		_, err := fmt.Sscanf(key, prefix+"-%d", &currentSuffix)
-		if err == nil && currentSuffix > maxSuffix {
-			maxSuffix = currentSuffix
-		}
-	}
-	return maxSuffix + 1
+	return ok, nil
 }
 
 func ContainsFields(data map[string]interface{}, fields ...string) bool {
@@ -178,4 +149,120 @@ func InterfaceToInt64(value interface{}) (int64, error) {
 	default:
 		return 0, errors.New("cannot convert value of type to int64")
 	}
+}
+
+//--------------------- license Data --------------------- //
+
+type LicenseDB interface {
+	Record(license License) error
+	QueryByUID(ns string, st int64, ed int64) ([]LicenseResult, error)
+
+	IsExisted(uid string, token string) (bool, error)
+	Disconnect() error
+}
+
+const DefaultColForLicense = "license"
+
+type licenseDB struct {
+	URI     string
+	Client  *mongo.Client
+	DBName  string
+	COLName string
+}
+
+type License struct {
+	UID        string                 `bson:"uid"`
+	Token      string                 `bson:"token"`
+	CreateTime string                 `bson:"createTime"`
+	Payload    map[string]interface{} `bson:"payload"`
+}
+
+type LicenseResult struct {
+	License License `bson:"license"`
+}
+
+func NewLicense(uid string, token string, payload map[string]interface{}) License {
+	return License{
+		UID:        uid,
+		Token:      token,
+		CreateTime: time.Now().Format("2006-01-02 15:04:05"),
+		Payload:    payload,
+	}
+}
+
+var _ LicenseDB = &licenseDB{}
+
+func (db *licenseDB) IsExisted(uid string, token string) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	filter := bson.M{"uid": uid, "license": bson.M{"$elemMatch": bson.M{"token": token}}}
+	res := db.Client.Database(db.DBName).Collection(db.COLName).FindOne(ctx, filter)
+	if res.Err() != nil {
+		if res.Err().Error() == mongo.ErrNoDocuments.Error() {
+			// not found
+			return false, nil
+		}
+		return false, res.Err()
+	}
+	// found
+	return true, nil
+}
+
+func (db *licenseDB) QueryByUID(uid string, st int64, ed int64) ([]LicenseResult, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	pipeline := []bson.M{
+		{"$match": bson.M{"uid": uid}},
+		{"$unwind": "$license"},
+		{"$project": bson.M{"license": 1}},
+		{"$project": bson.M{"_id": 0}},
+		{"$match": bson.M{"license.token": bson.M{"$ne": ""}}},
+		{"$sort": bson.M{"license.createTime": -1}},
+		{"$skip": st},
+		{"$limit": ed - st + 1},
+	}
+
+	cursor, err := db.Client.Database(db.DBName).Collection(db.COLName).Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	var res []LicenseResult
+	err = cursor.All(ctx, &res)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (db *licenseDB) Record(license License) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	filter := bson.M{"uid": license.UID}
+	update := bson.M{"$push": bson.M{"license": license}}
+	updateOptions := mongoOptions.Update().SetUpsert(true)
+	_, err := db.Client.Database(db.DBName).Collection(db.COLName).UpdateOne(ctx, filter, update, updateOptions)
+	return err
+}
+
+func (db *licenseDB) Disconnect() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	return db.Client.Disconnect(ctx)
+}
+
+func NewLicenseDB(uri string) (LicenseDB, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	clientOptions := mongoOptions.Client().ApplyURI(uri)
+	client, err := mongo.Connect(ctx, clientOptions)
+	if err != nil {
+		return &licenseDB{}, err
+	}
+	return &licenseDB{
+		URI:     uri,
+		Client:  client,
+		DBName:  database.DefaultDBName,
+		COLName: DefaultColForLicense,
+	}, nil
 }

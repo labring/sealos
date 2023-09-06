@@ -41,8 +41,10 @@ import (
 // LicenseReconciler reconciles a License object
 type LicenseReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	logger logr.Logger
+	Scheme  *runtime.Scheme
+	logger  logr.Logger
+	DBCol   util.LicenseDB
+	payload map[string]interface{}
 
 	account   accountv1.Account
 	license   issuerv1.License
@@ -100,7 +102,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, r.Delete(ctx, &r.license)
 	}
 
-	_ = r.RecordLicense(ctx)
+	_ = r.RecordLicense(r.payload)
 
 	return ctrl.Result{}, r.Delete(ctx, &r.license)
 }
@@ -108,6 +110,8 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 // SetupWithManager sets up the controller with the Manager.
 func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("LicenseReconcile")
+
+	// set up predicate
 	Predicate := predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
 			return e.Object.GetName() == string(util.LicenseName)
@@ -132,7 +136,12 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *LicenseReconciler) CheckLicense(ctx context.Context) (string, map[string]interface{}, bool) {
 	options := util.GetOptions()
 	// Check if the license is already used
-	ok := util.CheckLicenseExists(&r.configMap, r.license.Spec.Token)
+	ok, err := util.CheckLicenseExists(r.DBCol, r.license.Spec.UID, r.license.Spec.Token)
+	if err != nil {
+		r.logger.Error(err, "failed to check license exists")
+		return util.DuplicateLicenseMessage, nil, false
+	}
+
 	if ok {
 		return util.DuplicateLicenseMessage, nil, false
 	}
@@ -156,6 +165,7 @@ func (r *LicenseReconciler) Authorize(ctx context.Context) (string, error) {
 	if !ok {
 		return message, errors.New("invalid license")
 	}
+	r.payload = payload
 	// get account
 	id := types.NamespacedName{
 		Namespace: util.GetOptions().GetEnvOptions().Namespace,
@@ -176,6 +186,6 @@ func (r *LicenseReconciler) Authorize(ctx context.Context) (string, error) {
 	return util.ValidLicenseMessage, nil
 }
 
-func (r *LicenseReconciler) RecordLicense(ctx context.Context) error {
-	return util.RecordLicense(ctx, r.Client, r.license, r.configMap)
+func (r *LicenseReconciler) RecordLicense(payload map[string]interface{}) error {
+	return util.RecordLicense(r.DBCol, util.NewLicense(r.license.Spec.UID, r.license.Spec.Token, payload))
 }

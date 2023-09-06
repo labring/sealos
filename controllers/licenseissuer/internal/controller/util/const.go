@@ -46,8 +46,6 @@ const NoticeFrom = "Sealos Cloud"
 
 var Key = "asdhjkwqdaskdjhqjwdakxausdasdajs"
 
-const MaxSizeThresholdStr = "800Ki"
-
 const (
 	Sealos                     string = "Sealos Cloud"
 	ClusterCapacityNoticeTitle string = "Attention: Cluster Capacity Alert"
