@@ -34,6 +34,8 @@ type DeleteRequestStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
+//+kubebuilder:printcolumn:name="User",type="string",JSONPath=".spec.user"
+//+kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
 
 // DeleteRequest is the Schema for the deleterequests API
 type DeleteRequest struct {
