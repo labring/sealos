@@ -14,15 +14,15 @@
 
 package k3s
 
-import "time"
+import (
+	"time"
+)
 
 // from github.com/k3s-io/k3s/pkg/cli/cmds/server.go
 type Config struct {
 	ClusterCIDR          []string `json:"cluster-cidr,omitempty"`
 	AgentToken           string   `json:"agent-token,omitempty"`
 	AgentTokenFile       string   `json:"agent-token-file,omitempty"`
-	Token                string   `json:"token,omitempty"`
-	TokenFile            string   `json:"token-file,omitempty"`
 	ClusterSecret        string   `json:"-"`
 	ServiceCIDR          []string `json:"service-cidr,omitempty"`
 	ServiceNodePortRange string   `json:"service-node-port-range,omitempty"`
@@ -35,9 +35,7 @@ type Config struct {
 	// The port which kube-apiserver runs on
 	APIServerPort            int           `json:"-"`
 	APIServerBindAddress     string        `json:"-"`
-	DataDir                  string        `json:"data-dir,omitempty"`
 	DisableAgent             bool          `json:"disable-agent,omitempty"`
-	PreferBundledBin         bool          `json:"prefer-bundled-bin,omitempty"`
 	KubeConfigOutput         string        `json:"write-kubeconfig,omitempty"`
 	KubeConfigMode           string        `json:"write-kubeconfig-mode,omitempty"`
 	HelmJobImage             string        `json:"helm-job-image,omitempty"`
@@ -49,7 +47,6 @@ type Config struct {
 	ExtraSchedulerArgs       []string      `json:"kube-scheduler-arg,omitempty"`
 	ExtraControllerArgs      []string      `json:"kube-controller-manager-arg,omitempty"`
 	ExtraCloudControllerArgs []string      `json:"kube-cloud-controller-manager-arg,omitempty"`
-	Rootless                 bool          `json:"rootless,omitempty"`
 	DatastoreEndpoint        string        `json:"datastore-endpoint,omitempty"`
 	DatastoreCAFile          string        `json:"datastore-cafile,omitempty"`
 	DatastoreCertFile        string        `json:"datastore-certfile,omitempty"`
@@ -57,7 +54,6 @@ type Config struct {
 	AdvertiseIP              string        `json:"advertise-address,omitempty"`
 	AdvertisePort            int           `json:"advertise-port,omitempty"`
 	DisableScheduler         bool          `json:"disable-scheduler,omitempty"`
-	ServerURL                string        `json:"server,omitempty"`
 	MultiClusterCIDR         bool          `json:"multi-cluster-cidr,omitempty"`
 	FlannelBackend           string        `json:"flannel-backend,omitempty"`
 	FlannelIPv6Masq          bool          `json:"flannel-ipv6-masq,omitempty"`
@@ -103,6 +99,16 @@ type Config struct {
 }
 
 type AgentConfig struct {
+	Debug                    bool     `json:"debug,omitempty"`
+	VLevel                   int      `json:"v,omitempty"`
+	VModule                  string   `json:"vmodule,omitempty"`
+	LogFile                  string   `json:"log,omitempty"`
+	AlsoLogToStderr          bool     `json:"alsologtostderr,omitempty"`
+	Token                    string   `json:"token,omitempty"`
+	TokenFile                string   `json:"token-file,omitempty"`
+	ServerURL                string   `json:"server,omitempty"`
+	DataDir                  string   `json:"data-dir,omitempty"`
+	LBServerPort             int      `json:"lb-server-port,omitempty"`
 	ResolvConf               string   `json:"resolv-conf,omitempty"`
 	NodeIP                   []string `json:"node-ip,omitempty"`
 	NodeExternalIP           []string `json:"node-external-ip,omitempty"`
@@ -116,7 +122,6 @@ type AgentConfig struct {
 	FlannelCniConfFile       string   `json:"flannel-cni-conf,omitempty"`
 	VPNAuth                  string   `json:"vpn-auth,omitempty"`
 	VPNAuthFile              string   `json:"vpn-auth-file,omitempty"`
-	Debug                    bool     `json:"debug,omitempty"`
 	RootlessAlreadyUnshared  bool     `json:"-"`
 	WithNodeID               bool     `json:"with-node-id,omitempty"`
 	EnableSELinux            bool     `json:"selinux,omitempty"`
@@ -129,4 +134,10 @@ type AgentConfig struct {
 	Taints                   []string `json:"node-taint,omitempty"`
 	ImageCredProvBinDir      string   `json:"image-credential-provider-bin-dir,omitempty"`
 	ImageCredProvConfig      string   `json:"image-credential-provider-config,omitempty"`
+	Rootless                 bool     `json:"rootless,omitempty"`
+	PreferBundledBin         bool     `json:"prefer-bundled-bin,omitempty"`
+}
+
+func (c *Config) GetComponents() []any {
+	return []any{c}
 }
