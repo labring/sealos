@@ -198,6 +198,8 @@ func (ti *TaskInstance) Run() error {
 		return NewNetworkConfig().probe(ti)
 	case Register:
 		return NewRegister().register(ti)
+	case MemoryCleanup:
+		return NewMemoryCleaner().cleanWork(ti)
 	default:
 		return fmt.Errorf("the task is not supported")
 		// allow developers to add their own runnable task

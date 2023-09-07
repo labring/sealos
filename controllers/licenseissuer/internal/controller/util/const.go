@@ -82,5 +82,6 @@ const (
 	Notice        task = "Notice"
 	NoticeCleanup task = "NoticeCleanup"
 	NetWorkConfig task = "NetWorkConfig"
+	MemoryCleanup task = "MemoryCleanup"
 	// Add more tasks here
 )

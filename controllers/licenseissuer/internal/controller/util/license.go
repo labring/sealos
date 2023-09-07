@@ -19,6 +19,7 @@ package util
 import (
 	"context"
 	"errors"
+	"reflect"
 	"time"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
@@ -127,6 +128,7 @@ func CheckLicenseExists(dbCol LicenseDB, uid string, token string) (bool, error)
 		logger.Info("failed to check license exists")
 		return false, err
 	}
+
 	return ok, nil
 }
 
@@ -265,4 +267,78 @@ func NewLicenseDB(uri string) (LicenseDB, error) {
 		DBName:  database.DefaultDBName,
 		COLName: DefaultColForLicense,
 	}, nil
+}
+
+type Map[T any] interface {
+	Find(T) bool
+	Add(T)
+	Remove()
+}
+
+type HashMap[T comparable] struct {
+	m map[T]int64
+}
+
+func NewHashMap[T comparable]() Map[T] {
+	return &HashMap[T]{
+		m: make(map[T]int64),
+	}
+}
+
+func (hs *HashMap[T]) Find(item T) bool {
+	_, ok := hs.m[item]
+	return ok
+}
+
+func (hs *HashMap[T]) Add(item T) {
+	hs.m[item] = time.Now().Unix()
+}
+
+func (hs *HashMap[T]) Remove() {
+	// lifetime of item is 24 hours
+	for k, v := range hs.m {
+		if v+24*60*60*3 < time.Now().Unix() {
+			delete(hs.m, k)
+		}
+	}
+}
+
+var singleton Map[string]
+
+func GetHashMap() Map[string] {
+	if singleton == nil {
+		singleton = NewHashMap[string]()
+	}
+	return singleton
+}
+
+type Memory[T any] interface {
+	Remove()
+}
+
+type MemoryClean struct {
+	MM1 Memory[string]
+}
+
+func NewMemoryCleaner() *MemoryClean {
+	return &MemoryClean{
+		MM1: GetHashMap(),
+	}
+}
+
+func (mc *MemoryClean) cleanWork(_ *TaskInstance) error {
+	// range field
+	v := reflect.ValueOf(mc)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	for i := 0; i < v.NumField(); i++ {
+		value := v.Field(i)
+		method := value.MethodByName("Remove")
+		if method.IsValid() {
+			method.Call(nil)
+		}
+	}
+	return nil
 }
