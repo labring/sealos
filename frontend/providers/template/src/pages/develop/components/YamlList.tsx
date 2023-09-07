@@ -21,8 +21,7 @@ const YamlList = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
       alignItems={'start'}
       zIndex={1}
       position={'relative'}
-      overflow={'hidden'}
-    >
+      overflow={'scroll'}>
       <Box flexShrink={0} mt={3} borderRadius={'sm'} overflow={'hidden'} bg={'white'}>
         {yamlList.map((file, index) => (
           <Box
@@ -47,9 +46,8 @@ const YamlList = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
                   borderColor: 'myGray.200',
                   backgroundColor: 'transparent'
                 })}
-            onClick={() => setSelectedIndex(index)}
-          >
-            {file.filename}
+            onClick={() => setSelectedIndex(index)}>
+            {file.filename.replace(/-.*/, '')}
           </Box>
         ))}
       </Box>
@@ -59,20 +57,7 @@ const YamlList = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
           h="100%"
           className={styles.codeBox}
           flexDirection={'column'}
-          position={'relative'}
-        >
-          {/* <Flex px={8} py={4} bg={'myWhite.400'}>
-            <Box flex={1} fontSize={'xl'} color={'myGray.900'} fontWeight={'bold'}>
-              {yamlList[selectedIndex].filename}
-            </Box>
-            <Box
-              cursor={'pointer'}
-              color={'myGray.600'}
-              _hover={{ color: '#219BF4' }}
-              onClick={() => copyData(yamlList[selectedIndex].value)}>
-              <MyIcon name="copy" w={'16px'} />
-            </Box>
-          </Flex> */}
+          position={'relative'}>
           <Box flex={1} h={0} bg={'#ffffff'} p={4}>
             <YamlCode className={styles.code} content={yamlList[selectedIndex].value} />
           </Box>

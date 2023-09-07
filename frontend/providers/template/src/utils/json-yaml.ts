@@ -14,7 +14,7 @@ export const generateYamlList = (value: string, labelName: string): YamlItemType
 
     return [
       {
-        filename: 'Deploy',
+        filename: 'Deploy.yaml',
         value: _value.join('\n---\n')
       }
     ];
@@ -95,7 +95,7 @@ export const developGenerateYamlList = (value: string, labelName: string): YamlI
   try {
     return JSYAML.loadAll(value).map((item: any) => {
       return {
-        filename: item?.kind,
+        filename: `${item?.kind}-${item?.metadata?.name ? item.metadata.name : nanoid(6)}.yaml`,
         value: JSYAML.dump(processEnvValue(item, labelName))
       };
     });
