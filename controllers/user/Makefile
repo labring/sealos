@@ -65,14 +65,14 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: build
 build:  ## Build manager binary.
-	CGO_ENABLED=0 GOOS=linux  go build -o bin/manager main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -o bin/manager main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
 .PHONY: docker-build
-docker-build: test build ## Build docker image with the manager.
+docker-build: build ## Build docker image with the manager.
 	mv bin/manager bin/controller-user-${TARGETARCH}
 	chmod +x bin/controller-user-${TARGETARCH}
 	docker build -t ${IMG} . --build-arg TARGETARCH=${TARGETARCH}
