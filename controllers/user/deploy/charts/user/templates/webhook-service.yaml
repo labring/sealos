@@ -10,4 +10,4 @@ spec:
     control-plane: controller-manager
   {{- include "user.selectorLabels" . | nindent 4 }}
   ports:
-	{{- .Values.webhookService.ports | toYaml | nindent 2 -}}
+    {{- .Values.webhookService.ports | toYaml | nindent 2 -}}
