@@ -78,7 +78,7 @@ func (k *KubeadmRuntime) saveNewKubeadmConfig() error {
 		return err
 	}
 	//unmarshal data from configmap
-	obj, err := yaml.UnmarshalData([]byte(data))
+	obj, err := yaml.UnmarshalToMap([]byte(data))
 	if err != nil {
 		return err
 	}
