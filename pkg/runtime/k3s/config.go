@@ -15,23 +15,19 @@
 package k3s
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/labring/sealos/pkg/utils/iputils"
-
 	"github.com/imdario/mergo"
-	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	netutils "k8s.io/utils/net"
-	"sigs.k8s.io/yaml"
 
 	"github.com/labring/sealos/pkg/constants"
 	fileutils "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
 var defaultMergeOpts = []func(*mergo.Config){
@@ -170,41 +166,20 @@ func (c *Config) getContainerRuntimeEndpoint() string {
 
 // ParseConfig return nil if data structure is not matched
 func ParseConfig(data []byte) (*Config, error) {
-	d := yamlutil.NewYAMLReader(bufio.NewReader(bytes.NewReader(data)))
-	for {
-		b, err := d.Read()
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return nil, err
-		}
-		cfg, err := parseConfig(b)
-		if err != nil {
-			return nil, err
-		}
-		if cfg != nil {
-			return cfg, nil
-		}
-	}
-	return nil, nil
-}
-
-func parseConfig(data []byte) (*Config, error) {
-	var c Config
-	if err := yaml.Unmarshal(data, &c); err != nil {
+	var cfg Config
+	if err := yaml.Unmarshal(bytes.NewBuffer(data), &cfg); err != nil {
 		return nil, err
 	}
-	out, err := yaml.Marshal(&c)
+	out, err := yaml.Marshal(&cfg)
 	if err != nil {
 		return nil, err
 	}
-	var m map[string]interface{}
-	if err := yaml.Unmarshal(out, &m); err != nil {
+	isNil, err := yaml.IsNil(out)
+	if err != nil {
 		return nil, err
 	}
-	if len(m) == 0 {
+	if isNil {
 		return nil, nil
 	}
-	return &c, nil
+	return &cfg, nil
 }
