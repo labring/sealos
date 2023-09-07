@@ -17,9 +17,12 @@ package k3s
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/labring/sealos/pkg/utils/iputils"
 
 	"github.com/imdario/mergo"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
@@ -39,7 +42,7 @@ func defaultingConfig(c *Config) *Config {
 	c.BindAddress = "0.0.0.0"
 	c.HTTPSPort = 6443
 	c.ClusterCIDR = []string{"10.42.0.0/16"}
-	c.ServiceCIDR = []string{"10.43.0.0/16"}
+	c.ServiceCIDR = []string{"10.96.0.0/16"}
 	c.ClusterDomain = constants.DefaultDNSDomain
 	c.DisableCCM = true
 	c.DisableHelmController = true
@@ -62,6 +65,14 @@ func defaultingAgentConfig(c *Config) *Config {
 	c.AgentConfig.PauseImage = "docker.io/rancher/pause:3.1"
 	c.AgentConfig.PrivateRegistry = "/etc/rancher/k3s/registries.yaml"
 	c.AgentConfig.Labels = []string{"sealos.io/distribution=k3s"}
+
+	return c
+}
+
+func (k *K3s) sealosCfg(c *Config) *Config {
+	vip := k.cluster.GetVIP()
+	c.ExtraKubeProxyArgs = append(c.ExtraKubeProxyArgs, fmt.Sprintf("%s=%s", "ipvs-exclude-cidrs", fmt.Sprintf("%s/32", vip)))
+	c.AgentConfig.ExtraKubeletArgs = append(c.AgentConfig.ExtraKubeletArgs, fmt.Sprintf("%s=%s", "ipvs-exclude-cidrs", fmt.Sprintf("%s/32", vip)))
 	return c
 }
 
@@ -112,7 +123,15 @@ func (k *K3s) merge(c *Config) *Config {
 func (k *K3s) overrideServerConfig(c *Config) *Config {
 	c.AgentConfig.TokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "token")
 	c.AgentTokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "agent-token")
-	c.TLSSan = append(c.TLSSan, constants.DefaultAPIServerDomain)
+	vip := k.cluster.GetVIP()
+	masterIPs := iputils.GetHostIPs(k.cluster.GetMasterIPList())
+	var certSans []string
+	certSans = append(certSans, "127.0.0.1")
+	certSans = append(certSans, constants.DefaultAPIServerDomain)
+	certSans = append(certSans, vip)
+	certSans = append(certSans, masterIPs...)
+	certSans = append(certSans, c.TLSSan...)
+	c.TLSSan = certSans
 
 	if len(c.ClusterDNS) == 0 && len(c.ServiceCIDR) > 0 {
 		svcSubnetCIDR, err := netutils.ParseCIDRs(c.ServiceCIDR)

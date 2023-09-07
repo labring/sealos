@@ -36,7 +36,8 @@ import (
 
 const (
 	// SealosShimSock is the CRI socket the shim listens on.
-	SealosShimSock = "/var/run/image-cri-shim.sock"
+	SealosShimSock            = "/var/run/image-cri-shim.sock"
+	DefaultImageCRIShimConfig = "/etc/image-cri-shim.yaml"
 )
 
 type Registry struct {

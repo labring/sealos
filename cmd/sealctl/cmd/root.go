@@ -63,9 +63,15 @@ func init() {
 		{
 			Message: "Network Management Commands:",
 			Commands: []*cobra.Command{
-				newHostsNameCmd(),
 				newHostsCmd(),
 				newIPVSCmd(),
+			},
+		},
+		{
+			Message: "Machine Management Commands:",
+			Commands: []*cobra.Command{
+				newHostsNameCmd(),
+				newInitSystemCmd(),
 			},
 		},
 		{

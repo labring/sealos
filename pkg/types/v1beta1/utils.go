@@ -21,6 +21,8 @@ import (
 	"golang.org/x/exp/slices"
 	"k8s.io/apimachinery/pkg/util/sets"
 
+	stringsutil "github.com/labring/sealos/pkg/utils/strings"
+
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/maps"
 )
@@ -202,6 +204,29 @@ func (c *Cluster) GetDistribution() string {
 		return maps.GetFromKeys(root.Labels, ImageDistributionKeys...)
 	}
 	return ""
+}
+
+const (
+	defaultVIP          = "10.103.97.2"
+	DefaultLvsCareImage = "sealos.hub:5000/sealos/lvscare:latest"
+)
+
+func (c *Cluster) GetVIP() string {
+	root := c.GetRootfsImage()
+	if root != nil {
+		vip := maps.GetFromKeys(root.Labels, ImageVIPKey)
+		return stringsutil.RenderTextWithEnv(vip, root.Env)
+	}
+	return defaultVIP
+}
+
+func (c *Cluster) GetLvscareImage() string {
+	root := c.GetRootfsImage()
+	if root != nil {
+		vip := maps.GetFromKeys(root.Labels, ImageKubeLvscareImageKey)
+		return stringsutil.RenderTextWithEnv(vip, root.Env)
+	}
+	return DefaultLvsCareImage
 }
 
 // UpdateCondition updates condition in cluster conditions using giving condition
