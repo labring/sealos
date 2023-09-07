@@ -5,6 +5,7 @@ import usePassword from '@/components/signin/auth/usePassword';
 import useProtocol from '@/components/signin/auth/useProtocol';
 import useSms from '@/components/signin/auth/useSms';
 import request from '@/services/request';
+import useSessionStore from '@/stores/session';
 import { ApiResp, LoginType, SystemEnv } from '@/types';
 import {
   Box,
@@ -21,6 +22,7 @@ import { useQuery } from '@tanstack/react-query';
 import { debounce } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import Head from 'next/head';
+import { Router, useRouter } from 'next/router';
 import sealosTitle from 'public/images/sealos-title.png';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -59,7 +61,13 @@ export default function SigninComponent() {
     isLoading: passwordLoading
   } = usePassword({ showError });
   const isLoading = useMemo(() => passwordLoading || smsLoading, [passwordLoading, smsLoading]);
-
+  const isSignIn = useSessionStore((s) => s.isUserLogin);
+  const router = useRouter();
+  useEffect(() => {
+    if (isSignIn()) {
+      router.replace('/');
+    }
+  }, []);
   const { AuthList } = useAuthList({
     needGithub,
     needWechat,

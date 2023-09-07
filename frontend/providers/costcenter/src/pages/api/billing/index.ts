@@ -39,9 +39,9 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (user === null) {
       return jsonRes(resp, { code: 403, message: 'user null' });
     }
-    const namespace = 'ns-' + user.name;
-    // const body = req.body;
-    const { spec } = req.body;
+    const namespace = kc.getContexts()[0].namespace || 'ns-' + user.name;
+    const body = req.body;
+    let spec: BillingSpec = body.spec;
     if (!spec) {
       return jsonRes(resp, { code: 400, error: '参数错误' });
     }

@@ -63,14 +63,7 @@ export default function Index() {
     }
   ];
   return (
-    <Flex
-      alignItems={'center'}
-      position={'absolute'}
-      top={'42px'}
-      right={'42px'}
-      cursor={'pointer'}
-      gap={'16px'}
-    >
+    <Flex alignItems={'center'} position={'absolute'} top={'42px'} right={'42px'} gap={'16px'}>
       {buttonList.map((item, index) => (
         <Flex
           w="36px"
@@ -83,7 +76,9 @@ export default function Index() {
           position={'relative'}
           boxShadow={'0px 1.2px 2.3px rgba(0, 0, 0, 0.2)'}
         >
-          <Box onClick={item.click}>{item.button}</Box>
+          <Box onClick={item.click} cursor={'pointer'}>
+            {item.button}
+          </Box>
           {item.content}
           {item.key === UserMenuKeys.Notification && notificationAmount > 0 && (
             <Box

@@ -1,21 +1,18 @@
 import { authSession } from '@/services/backend/auth';
-import { CRDMeta, GetUserDefaultNameSpace, UpdateCRD } from '@/services/backend/kubernetes/user';
+import { CRDMeta, UpdateCRD } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { name } = req.body;
-    const kc = await authSession(req.headers);
-    const kube_user = kc.getCurrentUser();
-    if (kube_user === null) {
-      return res.status(400);
-    }
+    const payload = await authSession(req.headers);
+    if (!payload) return jsonRes(res, { code: 401, message: 'error' });
 
     const meta: CRDMeta = {
       group: 'notification.sealos.io',
       version: 'v1',
-      namespace: GetUserDefaultNameSpace(kube_user.name),
+      namespace: payload.user.nsid,
       plural: 'notifications'
     };
 
@@ -33,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     let result = [];
     for (const n of name) {
-      let temp = await UpdateCRD(kc, meta, n, patch);
+      let temp = await UpdateCRD(payload.kc, meta, n, patch);
       result.push(temp?.body);
     }
     jsonRes(res, { data: result });
