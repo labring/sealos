@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "user.fullname" . }}-controller-manager-metrics-service
+  labels:
+    control-plane: controller-manager
+  {{- include "user.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.metricsService.type }}
+  selector:
+    control-plane: controller-manager
+  {{- include "user.selectorLabels" . | nindent 4 }}
+  ports:
+	{{- .Values.metricsService.ports | toYaml | nindent 2 -}}
