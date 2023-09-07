@@ -107,24 +107,18 @@ func (c *Cluster) GetAllIPS() []string {
 }
 
 func (c *Cluster) GetRootfsImage() *MountImage {
-	var image *MountImage
-	if c.Status.Mounts != nil {
-		for _, img := range c.Status.Mounts {
-			if img.IsRootFs() {
-				image = &img
-				break
-			}
+	for _, img := range c.Status.Mounts {
+		if img.IsRootFs() {
+			return &img
 		}
 	}
-	return image
+	return nil
 }
 
 func (c *Cluster) FindImage(name string) *MountImage {
-	if c.Status.Mounts != nil {
-		for _, img := range c.Status.Mounts {
-			if img.ImageName == name {
-				return &img
-			}
+	for _, img := range c.Status.Mounts {
+		if img.ImageName == name {
+			return &img
 		}
 	}
 	return nil
