@@ -51,8 +51,7 @@ func (n *CRIShimChecker) Check(_ *v2.Cluster, phase string) error {
 		}
 	}()
 
-	criShimConfig := "/etc/image-cri-shim.yaml"
-	if shimCfg, err := types.Unmarshal(criShimConfig); err != nil {
+	if shimCfg, err := types.Unmarshal(types.DefaultImageCRIShimConfig); err != nil {
 		status.Error = fmt.Errorf("read image-cri-shim config error: %w", err).Error()
 	} else {
 		status.Config = map[string]string{}

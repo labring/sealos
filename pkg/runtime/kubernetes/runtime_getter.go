@@ -26,12 +26,9 @@ import (
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/env"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/maps"
-	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 )
 
 func (k *KubeadmRuntime) getKubeVersion() string {
@@ -84,31 +81,6 @@ func (k *KubeadmRuntime) getMaster0IPAPIServer() string {
 	return fmt.Sprintf("https://%s:%d", master0, k.getAPIServerPort())
 }
 
-func (k *KubeadmRuntime) getLvscareImage() string {
-	img := k.cluster.GetRootfsImage()
-	if img != nil {
-		return getLabelValueOrDefault(img.Labels, v1beta1.ImageKubeLvscareImageKey, constants.DefaultLvsCareImage)
-	}
-	return constants.DefaultLvsCareImage
-}
-
-func getLabelValueOrDefault(m map[string]string, name string, defaultVal string) string {
-	if v, ok := m[name]; ok && v != "" {
-		return v
-	}
-	return defaultVal
-}
-
-func (k *KubeadmRuntime) getVIPFromImage() string {
-	img := k.cluster.GetRootfsImage()
-	if img != nil {
-		vip := getLabelValueOrDefault(img.Labels, v1beta1.ImageVIPKey, defaultVIP)
-		envs := maps.Merge(img.Env, k.getEnvInterface().Getenv(k.getMaster0IP()))
-		return stringsutil.RenderTextWithEnv(vip, envs)
-	}
-	return defaultVIP
-}
-
 func (k *KubeadmRuntime) execIPVS(ip string, masters []string) error {
 	return k.remoteUtil.IPVS(ip, k.getVipAndPort(), masters)
 }
@@ -139,7 +111,7 @@ func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs, nodesIPs []string) error {
 }
 
 func (k *KubeadmRuntime) execIPVSPod(ip string, masters []string) error {
-	image := k.getLvscareImage()
+	image := k.cluster.GetLvscareImage()
 	return k.remoteUtil.StaticPod(ip, k.getVipAndPort(), constants.LvsCareStaticPodName, image, masters)
 }
 
@@ -178,10 +150,6 @@ func (k *KubeadmRuntime) sshCmdToString(host string, cmd string) (string, error)
 
 func (k *KubeadmRuntime) sshCopy(host, srcFilePath, dstFilePath string) error {
 	return k.sshClient.Copy(host, srcFilePath, dstFilePath)
-}
-
-func (k *KubeadmRuntime) getEnvInterface() env.Interface {
-	return env.NewEnvProcessor(k.cluster)
 }
 
 func (k *KubeadmRuntime) getKubeInterface() (kubernetes.Client, error) {

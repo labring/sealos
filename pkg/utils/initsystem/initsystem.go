@@ -16,26 +16,41 @@ limitations under the License.
 
 package initsystem
 
-// InitSystem is the interface that describe behaviors of an init system
+import (
+	"fmt"
+	"os/exec"
+	"strings"
+
+	"k8s.io/kubernetes/cmd/kubeadm/app/util/initsystem"
+)
+
 type InitSystem interface {
-	// return a string describing how to enable a service
-	EnableCommand(service string) string
+	// ServiceEnable tries to enable a specific service
+	ServiceEnable(service string) error
+	initsystem.InitSystem
+}
 
-	// ServiceStart tries to start a specific service
-	ServiceStart(service string) error
+type initSystem struct {
+	initsystem.InitSystem
+}
 
-	// ServiceStop tries to stop a specific service
-	ServiceStop(service string) error
+func (s *initSystem) ServiceEnable(service string) error {
+	cmd := s.InitSystem.EnableCommand(service)
+	parts := strings.Split(cmd, " ")
+	if parts[0] == "systemctl" {
+		if err := exec.Command("systemctl", "daemon-reload").Run(); err != nil {
+			return fmt.Errorf("failed to reload init system: %v", err)
+		}
+	}
+	args := parts[1:]
+	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
+	return exec.Command(parts[0], args...).Run()
+}
 
-	// ServiceRestart tries to reload the environment and restart the specific service
-	ServiceRestart(service string) error
-
-	// ServiceExists ensures the service is defined for this init system.
-	ServiceExists(service string) bool
-
-	// ServiceIsEnabled ensures the service is enabled to start on each boot.
-	ServiceIsEnabled(service string) bool
-
-	// ServiceIsActive ensures the service is running, or attempting to run. (crash looping in the case of kubelet)
-	ServiceIsActive(service string) bool
+func GetInitSystem() (InitSystem, error) {
+	is, err := initsystem.GetInitSystem()
+	if err != nil {
+		return nil, err
+	}
+	return &initSystem{is}, nil
 }
