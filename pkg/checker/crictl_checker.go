@@ -74,7 +74,7 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 	if cfg, err := fileutil.ReadAll(criShimConfig); err != nil {
 		status.Error = fmt.Errorf("read crictl config error: %w", err).Error()
 	} else {
-		cfgMap, _ := yaml.UnmarshalData(cfg)
+		cfgMap, _ := yaml.UnmarshalToMap(cfg)
 		status.Config = map[string]string{}
 		status.Config["ShimSocket"], _, _ = unstructured.NestedString(cfgMap, "image-endpoint")
 		status.Config["CRISocket"], _, _ = unstructured.NestedString(cfgMap, "runtime-endpoint")

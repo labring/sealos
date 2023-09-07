@@ -157,10 +157,7 @@ func (c *ClusterFile) DecodeConfigs(data []byte) error {
 
 func (c *ClusterFile) DecodeRuntimeConfig(data []byte) error {
 	// TODO: handling more types of runtime configuration
-	cfg, err := k3s.ParseConfig(data)
-	if err != nil {
-		return err
-	}
+	cfg, _ := k3s.ParseConfig(data)
 	if cfg != nil {
 		c.runtimeConfig = cfg
 	} else {
