@@ -48,10 +48,6 @@ var (
 	V1280 = semver.MustParse("v1.28.0")
 )
 
-const (
-	defaultVIP = "10.103.97.2"
-)
-
 // k.getKubeVersion can't be empty
 func (k *KubeadmRuntime) setKubeadmAPIVersion() {
 	kubeVersion := k.getKubeVersionFromImage()
@@ -159,7 +155,7 @@ func (k *KubeadmRuntime) getDefaultKubeadmConfig() string {
 }
 
 func (k *KubeadmRuntime) getVip() string {
-	return k.getVIPFromImage()
+	return k.cluster.GetVIP()
 }
 
 func (k *KubeadmRuntime) getAPIServerPort() int32 {

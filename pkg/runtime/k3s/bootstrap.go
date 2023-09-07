@@ -15,14 +15,11 @@
 package k3s
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
 	"path/filepath"
-	"strings"
 
-	"github.com/labring/sealos/pkg/ssh"
-	"github.com/labring/sealos/pkg/template"
+	"github.com/labring/sealos/pkg/constants"
+
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/rand"
@@ -35,8 +32,6 @@ func (k *K3s) initMaster0() error {
 		k.generateAndSendCerts,
 		func() error { return k.generateAndSendTokenFiles(master0, "token", "agent-token") },
 		k.generateAndSendInitConfig,
-		func() error { return k.generateAndEnableService(master0, serverMode) },
-		func() error { return k.createSymlinks(master0, defaultBinDir, Distribution, defaultSymlinks...) },
 	)
 }
 
@@ -54,9 +49,9 @@ func (k *K3s) joinMasters(masters []string) error {
 }
 
 func (k *K3s) writeJoinConfigWithCallbacks(runMode string, callbacks ...callback) (string, error) {
-	master0 := k.cluster.GetMaster0IP()
+	//master0 := k.cluster.GetMaster0IP()
 
-	defaultCallbacks := []callback{defaultingConfig, k.merge}
+	defaultCallbacks := []callback{defaultingConfig, k.merge, k.sealosCfg}
 	switch runMode {
 	case serverMode:
 		defaultCallbacks = append(defaultCallbacks, k.overrideServerConfig)
@@ -66,7 +61,7 @@ func (k *K3s) writeJoinConfigWithCallbacks(runMode string, callbacks ...callback
 
 	defaultCallbacks = append(defaultCallbacks,
 		func(c *Config) *Config {
-			c.ServerURL = fmt.Sprintf("https://%s:%d", master0, c.HTTPSPort)
+			c.ServerURL = fmt.Sprintf("https://%s:%d", constants.DefaultAPIServerDomain, c.HTTPSPort)
 			return c
 		},
 		// TODO: set --image-service-endpoint flag in c.ExtraKubeletArgs options
@@ -84,7 +79,7 @@ func (k *K3s) writeJoinConfigWithCallbacks(runMode string, callbacks ...callback
 	case agentMode:
 		filename = defaultJoinNodesFilename
 	}
-	path := filepath.Join(k.pathResolver.TmpPath(), filename)
+	path := filepath.Join(k.pathResolver.EtcPath(), filename)
 	return path, file.WriteFile(path, raw)
 }
 
@@ -95,10 +90,8 @@ func (k *K3s) joinMaster(master string) error {
 			return k.generateAndSendTokenFiles(master, "token", "agent-token")
 		},
 		func() error {
-			return k.sshClient.Copy(master, filepath.Join(k.pathResolver.TmpPath(), defaultJoinMastersFilename), defaultConfigPath)
+			return k.sshClient.Copy(master, filepath.Join(k.pathResolver.EtcPath(), defaultJoinMastersFilename), defaultConfigPath)
 		},
-		func() error { return k.generateAndEnableService(master, serverMode) },
-		func() error { return k.createSymlinks(master, defaultBinDir, Distribution, defaultSymlinks...) },
 	)
 }
 
@@ -118,10 +111,8 @@ func (k *K3s) joinNode(node string) error {
 	return k.runPipelines(fmt.Sprintf("join node %s", node),
 		func() error { return k.generateAndSendTokenFiles(node, "agent-token") },
 		func() error {
-			return k.sshClient.Copy(node, filepath.Join(k.pathResolver.TmpPath(), defaultJoinNodesFilename), defaultConfigPath)
+			return k.sshClient.Copy(node, filepath.Join(k.pathResolver.EtcPath(), defaultJoinNodesFilename), defaultConfigPath)
 		},
-		func() error { return k.generateAndEnableService(node, agentMode) },
-		func() error { return k.createSymlinks(node, defaultBinDir, Distribution, defaultSymlinks...) },
 	)
 }
 
@@ -167,7 +158,7 @@ func (k *K3s) getRawInitConfig(callbacks ...callback) ([]byte, error) {
 }
 
 func (k *K3s) generateAndSendInitConfig() error {
-	src := filepath.Join(k.pathResolver.TmpPath(), defaultInitFilename)
+	src := filepath.Join(k.pathResolver.EtcPath(), defaultInitFilename)
 	if !file.IsExist(src) {
 		raw, err := k.getRawInitConfig(defaultingConfig, k.merge,
 			k.overrideServerConfig,
@@ -181,91 +172,4 @@ func (k *K3s) generateAndSendInitConfig() error {
 		}
 	}
 	return k.sshClient.Copy(k.cluster.GetMaster0IPAndPort(), src, defaultConfigPath)
-}
-
-func (k *K3s) generateAndEnableService(host string, runMode string) error {
-	logger.Debug("generate and enable service for %s running in %s mode", host, runMode)
-	sysType := verifySystem(k.sshClient, host)
-
-	data := map[string]string{
-		"binDir":  defaultBinDir,
-		"envFile": fmt.Sprintf("/etc/rancher/%s/%s.env", Distribution, runMode),
-		"exec":    fmt.Sprintf("%s --config=%s", runMode, defaultConfigPath),
-	}
-	serviceContent, err := getServiceContent(sysType, data)
-	if err != nil {
-		return err
-	}
-	src := filepath.Join(k.pathResolver.TmpPath(), host)
-	if err = file.WriteFile(src, serviceContent); err != nil {
-		return err
-	}
-	dst, err := getServiceFilePath(sysType, Distribution)
-	if err != nil {
-		return err
-	}
-	if err = k.sshClient.Copy(host, src, dst); err != nil {
-		return err
-	}
-	commands := getEnableAndStartServiceCommands(sysType, Distribution)
-	return k.sshClient.CmdAsync(host, commands...)
-}
-
-func (k *K3s) createSymlinks(host string, binDir string, command string, symlinks ...string) error {
-	script := fmt.Sprintf(`for cmd in %s; do ln -sf %s/%s %s/$cmd; done`, strings.Join(symlinks, " "), binDir, command, binDir)
-	return k.sshClient.CmdAsync(host, script)
-}
-
-func getEnableAndStartServiceCommands(sysType serviceType, svcName string) []string {
-	switch sysType {
-	case openRC:
-		return []string{
-			fmt.Sprintf("rc-update add %s default > /dev/null", svcName),
-			fmt.Sprintf("/etc/init.d/%s restart", svcName),
-		}
-	case systemd:
-		return []string{
-			"systemctl daemon-reload > /dev/null",
-			fmt.Sprintf("systemctl enable %s.service > /dev/null", svcName),
-			fmt.Sprintf("systemctl restart %s.service > /dev/null", svcName),
-		}
-	}
-	return []string{}
-}
-
-func verifySystem(sshClient ssh.Interface, target string) serviceType {
-	if _, err := sshClient.Cmd(target, "test -x /sbin/openrc-run"); err == nil {
-		return openRC
-	}
-	return systemd
-}
-
-func getServiceContent(sysType serviceType, data any) ([]byte, error) {
-	var tpl string
-	switch sysType {
-	case openRC:
-		tpl = openRCTpl
-	case systemd:
-		tpl = systemdTpl
-	}
-
-	t, err := template.Parse(tpl)
-	if err != nil {
-		return nil, err
-	}
-	var out bytes.Buffer
-	if err := t.Execute(&out, data); err != nil {
-		return nil, err
-	}
-	return out.Bytes(), nil
-}
-
-func getServiceFilePath(svcType serviceType, svcName string) (string, error) {
-	switch svcType {
-	case openRC:
-		return fmt.Sprintf("/etc/init.d/%s", svcName), nil
-	case systemd:
-		return fmt.Sprintf("/etc/systemd/system/%s.service", svcName), nil
-	}
-	return "", errors.New("unknown service type")
 }
