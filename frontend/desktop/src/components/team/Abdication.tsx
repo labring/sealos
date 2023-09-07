@@ -20,7 +20,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { UserRole } from '@/types/team';
 import { TeamUserDto } from '@/types/user';
 import { useState } from 'react';
-import ExchangeIcon from '../ExchangeIcon';
+import ExchangeIcon from '../icons/ExchangeIcon';
 import { abdicateRequest } from '@/api/namespace';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';

@@ -37,9 +37,7 @@ const NsMenu = () => {
   const { ns_uid } = session.user;
   const router = useRouter();
   const mutation = useMutation({
-    mutationFn(t_ns_uid: string) {
-      return switchRequest(t_ns_uid);
-    },
+    mutationFn: switchRequest,
     onSuccess(data) {
       if (data.code === 200 && !!data.data) {
         setSession(data.data);
