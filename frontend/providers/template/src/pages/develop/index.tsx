@@ -235,7 +235,8 @@ export default function Develop() {
               pt="26px"
               pr={{ sm: '20px', md: '60px' }}
               borderBottom={'1px solid #EFF0F1'}
-              flexDirection={'column'}>
+              flexDirection={'column'}
+            >
               <Text fontWeight={'500'} fontSize={'18px'} color={'#24282C'}>
                 {t('develop.Configure Form')}
               </Text>
@@ -251,7 +252,8 @@ export default function Develop() {
                   minW={'100px'}
                   h={'34px'}
                   variant={'link'}
-                  onClick={handleExportYaml}>
+                  onClick={handleExportYaml}
+                >
                   {t('Export')} Yaml
                 </Button>
               </Flex>

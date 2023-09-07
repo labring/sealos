@@ -29,3 +29,15 @@ export type UserQuotaItemType = {
   used: number;
   limit: number;
 };
+
+export type UserInfoV1 = {
+  readonly id: string;
+  readonly name: string;
+  readonly avatar: string;
+};
+
+export type SessionV1 = {
+  token?: OAuthToken;
+  user: UserInfoV1;
+  kubeconfig: KubeConfig;
+};
