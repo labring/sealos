@@ -34,8 +34,9 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       namespace: kube_namespace || GetUserDefaultNameSpace(kube_user.name)
     };
     const paymentDesc = await GetCRD(kc, paymentM, id);
-
+    //@ts-ignore
     if (paymentDesc?.body?.status) {
+      // @ts-ignore
       const paymentStatusResp = paymentDesc.body.status as paymentStatus;
       return jsonRes(resp, { data: paymentStatusResp });
     } else {
