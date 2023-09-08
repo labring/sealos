@@ -27,7 +27,7 @@
 ### Init sealos cluster
 ```bash
 wget https://github.com/labring/sealos/releases/download/v4.1.3/sealos_4.1.3_linux_amd64.tar.gz && tar -zxvf sealos_4.1.3_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
-sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 --masters xxx.xxx.xxx.xxx --nodes xxx.xxx.xxx.xxx --port 4238 -i ~/.ssh/id_ed25519
+sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 labring/metrics-server:v0.6.4 --masters xxx.xxx.xxx.xxx --nodes xxx.xxx.xxx.xxx --port 4238 -i ~/.ssh/id_ed25519
 ```
 
 ### Install base packages
