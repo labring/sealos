@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -31,124 +32,54 @@ var (
 func newInitSystemCmd() *cobra.Command {
 	var initsystemCmd = &cobra.Command{
 		Use:   "initsystem",
-		Short: "init system",
+		Short: "init system management",
 	}
-	initsystemCmd.AddCommand(newInitSystemEnableCmd())
-	initsystemCmd.AddCommand(newInitSystemStartCmd())
-	initsystemCmd.AddCommand(newInitSystemStopCmd())
-	initsystemCmd.AddCommand(newInitSystemRestartCmd())
-	initsystemCmd.AddCommand(newInitSystemIsExistsCmd())
-	initsystemCmd.AddCommand(newInitSystemIsEnabledCmd())
-	initsystemCmd.AddCommand(newInitSystemIsActiveCmd())
+	initsystemCmd.AddCommand(createInitSystemSubCommand("enable", func(s string) error {
+		return initsystemInterface.ServiceEnable(s)
+	}))
+	initsystemCmd.AddCommand(createInitSystemSubCommand("start", func(s string) error {
+		return initsystemInterface.ServiceStart(s)
+	}))
+	initsystemCmd.AddCommand(createInitSystemSubCommand("stop", func(s string) error {
+		return initsystemInterface.ServiceStop(s)
+	}))
+	initsystemCmd.AddCommand(createInitSystemSubCommand("restart", func(s string) error {
+		return initsystemInterface.ServiceRestart(s)
+	}))
+	initsystemCmd.AddCommand(createInitSystemSubCommand("is-exists", func(s string) error {
+		fmt.Println(initsystemInterface.ServiceExists(s))
+		return nil
+	}))
+	initsystemCmd.AddCommand(createInitSystemSubCommand("is-enabled", func(s string) error {
+		fmt.Println(initsystemInterface.ServiceIsEnabled(s))
+		return nil
+	}))
+	initsystemCmd.AddCommand(createInitSystemSubCommand("is-active", func(s string) error {
+		fmt.Println(initsystemInterface.ServiceIsActive(s))
+		return nil
+	}))
+
 	return initsystemCmd
 }
 
-func newInitSystemStartCmd() *cobra.Command {
-	var initsystemCmd = &cobra.Command{
-		Use:   "start",
-		Short: "start initsystem service",
+func createInitSystemSubCommand(verb string, runE func(string) error) *cobra.Command {
+	var short string
+	if strings.HasPrefix(verb, "is-") {
+		short = fmt.Sprintf("check if the initsystem service is %s", strings.TrimPrefix(verb, "is-"))
+	} else {
+		short = fmt.Sprintf("%s the initsystem service", verb)
+	}
+	return &cobra.Command{
+		Use:   verb,
+		Short: short,
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return initsystemInterface.ServiceStart(args[0])
+			return runE(args[0])
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return initsystemInit()
 		},
 	}
-	return initsystemCmd
-}
-
-func newInitSystemEnableCmd() *cobra.Command {
-	var initsystemCmd = &cobra.Command{
-		Use:   "enable",
-		Short: "enable initsystem service",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return initsystemInterface.ServiceEnable(args[0])
-		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return initsystemInit()
-		},
-	}
-	return initsystemCmd
-}
-
-func newInitSystemStopCmd() *cobra.Command {
-	var initsystemCmd = &cobra.Command{
-		Use:   "stop",
-		Short: "stop initsystem service",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return initsystemInterface.ServiceStop(args[0])
-		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return initsystemInit()
-		},
-	}
-	return initsystemCmd
-}
-
-func newInitSystemRestartCmd() *cobra.Command {
-	var initsystemCmd = &cobra.Command{
-		Use:   "restart",
-		Short: "restart initsystem service",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return initsystemInterface.ServiceRestart(args[0])
-		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return initsystemInit()
-		},
-	}
-	return initsystemCmd
-}
-
-func newInitSystemIsExistsCmd() *cobra.Command {
-	var initsystemCmd = &cobra.Command{
-		Use:   "is-exists",
-		Short: "is exists initsystem service",
-		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			out := initsystemInterface.ServiceExists(args[0])
-			fmt.Println(out)
-		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return initsystemInit()
-		},
-	}
-	return initsystemCmd
-}
-
-func newInitSystemIsEnabledCmd() *cobra.Command {
-	var initsystemCmd = &cobra.Command{
-		Use:   "is-enabled",
-		Short: "is enabled initsystem service",
-		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			out := initsystemInterface.ServiceIsEnabled(args[0])
-			fmt.Println(out)
-		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return initsystemInit()
-		},
-	}
-	return initsystemCmd
-}
-
-func newInitSystemIsActiveCmd() *cobra.Command {
-	var initsystemCmd = &cobra.Command{
-		Use:   "is-active",
-		Short: "is active initsystem service",
-		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			out := initsystemInterface.ServiceIsActive(args[0])
-			fmt.Println(out)
-		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return initsystemInit()
-		},
-	}
-	return initsystemCmd
 }
 
 func initsystemInit() error {
