@@ -1,9 +1,24 @@
+// Copyright © 2023 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package database
 
 import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/crypto"
@@ -27,22 +42,28 @@ const (
 	DefaultPricesConn   = "prices"
 )
 
+const DefaultRetentionDay = 30
+
 const (
-	MongoURI      = "MONGO_URI"
-	MongoUsername = "MONGO_USERNAME"
-	MongoPassword = "MONGO_PASSWORD"
+	MongoURI           = "MONGO_URI"
+	MongoUsername      = "MONGO_USERNAME"
+	MongoPassword      = "MONGO_PASSWORD"
+	RetentionDay       = "RETENTION_DAY"
+	PermanentRetention = "PERMANENT_RETENTION"
 )
 
-var cryptoKey = []byte("Af0b2Bc5e9d0C84adF0A5887cF43aB63")
+const defaultCryptoKey = "Af0b2Bc5e9d0C84adF0A5887cF43aB63"
+
+var cryptoKey = defaultCryptoKey
 
 type MongoDB struct {
-	URL          string
-	Client       *mongo.Client
-	DBName       string
-	MonitorConn  string
-	MeteringConn string
-	BillingConn  string
-	PricesConn   string
+	URL               string
+	Client            *mongo.Client
+	DBName            string
+	MonitorConnPrefix string
+	MeteringConn      string
+	BillingConn       string
+	PricesConn        string
 }
 
 type AccountBalanceSpecBSON struct {
@@ -192,7 +213,7 @@ func (m *MongoDB) GetAllPricesMap() (map[string]common.Price, error) {
 	}
 	var pricesMap = make(map[string]common.Price, len(prices))
 	for i := range prices {
-		price, err := crypto.DecryptInt64WithKey(prices[i].Price, cryptoKey)
+		price, err := crypto.DecryptInt64WithKey(prices[i].Price, []byte(cryptoKey))
 		if err != nil {
 			return nil, fmt.Errorf("decrypt price error: %v", err)
 		}
@@ -345,6 +366,8 @@ func (m *MongoDB) queryBillingRecordsByOrderID(billingRecordQuery *accountv1.Bil
 	}
 
 	billingRecordQuery.Status.Items = billingRecords
+	billingRecordQuery.Status.PageLength = 1
+	billingRecordQuery.Status.TotalCount = len(billingRecords)
 	return nil
 }
 
@@ -514,8 +537,12 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	}
 
 	totalPages := (totalCount + billingRecordQuery.Spec.PageSize - 1) / billingRecordQuery.Spec.PageSize
-	billingRecordQuery.Status.Items, billingRecordQuery.Status.PageLength,
-		billingRecordQuery.Status.RechargeAmount, billingRecordQuery.Status.DeductionAmount = billingRecords, totalPages, totalRechargeAmount, totalDeductionAmount
+	if totalCount == 0 {
+		totalPages = 1
+		totalCount = len(billingRecords)
+	}
+	billingRecordQuery.Status.Items, billingRecordQuery.Status.PageLength, billingRecordQuery.Status.TotalCount,
+		billingRecordQuery.Status.RechargeAmount, billingRecordQuery.Status.DeductionAmount = billingRecords, totalPages, totalCount, totalRechargeAmount, totalDeductionAmount
 	return nil
 }
 
@@ -563,7 +590,7 @@ func (m *MongoDB) getMonitorCollection(collTime time.Time) *mongo.Collection {
 
 func (m *MongoDB) getMonitorCollectionName(collTime time.Time) string {
 	// 按天计算尾缀，如202012月1号 尾缀为20201201
-	return fmt.Sprintf("%s_%s", m.MonitorConn, collTime.Format("20060102"))
+	return fmt.Sprintf("%s_%s", m.MonitorConnPrefix, collTime.Format("20060102"))
 }
 
 func (m *MongoDB) getPricesCollection() *mongo.Collection {
@@ -630,6 +657,28 @@ func (m *MongoDB) CreateTimeSeriesIfNotExist(dbName, collectionName string) erro
 	return m.Client.Database(dbName).RunCommand(context.TODO(), cmd).Err()
 }
 
+func (m *MongoDB) DropMonitorCollectionsOlderThan(days int) error {
+	db := m.Client.Database(m.DBName)
+	// Get the current time minus the number of days
+	cutoffDate := time.Now().UTC().AddDate(0, 0, -days)
+	cutoffName := m.getMonitorCollectionName(cutoffDate)
+
+	collections, err := db.ListCollectionNames(context.Background(), bson.M{})
+	if err != nil {
+		return err
+	}
+	for i := range collections {
+		// Check if the collection name starts with the prefix and is older than the cutoff date
+		if strings.HasPrefix(collections[i], m.MonitorConnPrefix) && collections[i] < cutoffName {
+			if err := db.Collection(collections[i]).Drop(context.TODO()); err != nil {
+				return err
+			}
+			logger.Info("dropped collection: ", collections[i])
+		}
+	}
+	return nil
+}
+
 func (m *MongoDB) collectionExist(dbName, collectionName string) (bool, error) {
 	// Check if the collection already exists
 	collections, err := m.Client.Database(dbName).ListCollectionNames(context.Background(), bson.M{"name": collectionName})
@@ -643,12 +692,12 @@ func NewMongoDB(ctx context.Context, URL string) (Interface, error) {
 	}
 	err = client.Ping(ctx, nil)
 	return &MongoDB{
-		Client:       client,
-		URL:          URL,
-		DBName:       DefaultDBName,
-		MeteringConn: DefaultMeteringConn,
-		MonitorConn:  DefaultMonitorConn,
-		BillingConn:  DefaultBillingConn,
-		PricesConn:   DefaultPricesConn,
+		Client:            client,
+		URL:               URL,
+		DBName:            DefaultDBName,
+		MeteringConn:      DefaultMeteringConn,
+		MonitorConnPrefix: DefaultMonitorConn,
+		BillingConn:       DefaultBillingConn,
+		PricesConn:        DefaultPricesConn,
 	}, err
 }

@@ -1,13 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
-import { authSession } from '@/services/backend/auth';
-import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { YamlKindEnum } from '@/utils/adapt';
 import yaml from 'js-yaml';
 import type { V1StatefulSet } from '@kubernetes/client-node';
 import { PatchUtils } from '@kubernetes/client-node';
 import type { AppPatchPropsType } from '@/types/app';
+import { initK8s } from 'sealos-desktop-sdk/service';
+import { errLog, infoLog, warnLog } from 'sealos-desktop-sdk';
 
 export type Props = {
   patch: AppPatchPropsType;
@@ -33,9 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       k8sAutoscaling,
       k8sCustomObjects,
       namespace
-    } = await getK8s({
-      kubeconfig: await authSession(req.headers)
-    });
+    } = await initK8s({ req });
 
     const crMap: Record<
       `${YamlKindEnum}`,
@@ -61,6 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       },
       [YamlKindEnum.StatefulSet]: {
         patch: async (jsonPatch: Object) => {
+          // patch -> replace -> delete and create
           try {
             await k8sApp.patchNamespacedStatefulSet(
               appName,
@@ -74,8 +73,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
             );
           } catch (error) {
-            await k8sApp.deleteNamespacedStatefulSet(appName, namespace);
-            await k8sApp.createNamespacedStatefulSet(namespace, jsonPatch);
+            try {
+              await k8sApp.replaceNamespacedStatefulSet(appName, namespace, jsonPatch);
+            } catch (error) {
+              warnLog('delete statefulSet', { yaml: yaml.dump(jsonPatch) });
+              await k8sApp.deleteNamespacedStatefulSet(appName, namespace);
+              await k8sApp.createNamespacedStatefulSet(namespace, jsonPatch);
+            }
           }
         },
         delete: () => k8sApp.deleteNamespacedStatefulSet(appName, namespace)
@@ -96,7 +100,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         delete: () => k8sCore.deleteNamespacedService(appName, namespace)
       },
       [YamlKindEnum.ConfigMap]: {
-        patch: (jsonPatch: Object) => applyYamlList([yaml.dump(jsonPatch)], 'replace'),
+        patch: (jsonPatch: any) =>
+          k8sCore.replaceNamespacedConfigMap(jsonPatch?.metadata?.name, namespace, jsonPatch),
         delete: () => k8sCore.deleteNamespacedConfigMap(appName, namespace)
       },
       [YamlKindEnum.Ingress]: {
@@ -217,7 +222,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
         // check whether delete
         if (!volume) {
-          console.log(`delete pvc: ${pvc.metadata?.name}`);
+          infoLog(`delete pvc: ${pvc.metadata?.name}`);
           return k8sCore.deleteNamespacedPersistentVolumeClaim(pvc.metadata?.name || '', namespace);
         }
         // check storage change
@@ -240,7 +245,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               value: `${volume.metadata?.annotations?.value}`
             }
           ];
-          console.log(`replace ${pvcName} storage: ${volume.metadata?.annotations?.value}Gi`);
+          infoLog(`replace ${pvcName} storage: ${volume.metadata?.annotations?.value}Gi`);
           return k8sCore
             .patchNamespacedPersistentVolumeClaim(
               pvcName,
@@ -256,7 +261,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               }
             )
             .catch((err) => {
-              console.log(`replace pvc error:`);
+              errLog(`replace pvc error: ${pvcName}`, err);
               return Promise.reject(err?.body);
             });
         }
@@ -281,7 +286,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         if (!cr || item.type !== 'patch' || !item.value?.metadata) {
           return;
         }
-        console.log('patch cr', item.kind);
+        infoLog('patch cr', { kind: item.kind });
         return cr.patch(item.value);
       })
     );
@@ -293,7 +298,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         if (!cr || item.type !== 'delete') {
           return;
         }
-        console.log('delete cr', item.kind);
+        infoLog('delete cr', { kind: item.kind });
         return cr.delete();
       })
     );

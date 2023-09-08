@@ -1,3 +1,17 @@
+// Copyright © 2023 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
@@ -7,6 +21,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/labring/sealos/controllers/pkg/utils"
 
 	"github.com/labring/sealos/controllers/pkg/common"
 
@@ -18,14 +34,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//var once *sync.Once
-
 type Config struct {
 	// mongodb connect url
-	MongoConnectURI string
-	MongoUsername   string
-	MongoPassword   string
-
+	MongoConnectURI    string
+	MongoUsername      string
+	MongoPassword      string
+	RetentionDay       int64
+	PermanentRetention bool
 	// interval of metering resources
 	Interval time.Duration
 }
@@ -72,9 +87,34 @@ func ResourcesMetering() {
 			}
 		}
 	}()
+	if !config.PermanentRetention {
+		ticker := time.NewTicker(24 * time.Hour)
+		go func() {
+			for range ticker.C {
+				if err := DropMonitorCollectionOlder(); err != nil {
+					logger.Error("Failed to drop monitor collection older than %d days: %v", config.RetentionDay, err)
+				}
+			}
+		}()
+	}
 
 	<-ctx.Done()
 	logger.Info("program exit")
+}
+
+func DropMonitorCollectionOlder() error {
+	dbCtx := context.Background()
+	dbClient, err := database.NewMongoDB(dbCtx, config.MongoConnectURI)
+	if err != nil {
+		return fmt.Errorf("connect mongo client failed: %v", err)
+	}
+	defer func() {
+		err := dbClient.Disconnect(dbCtx)
+		if err != nil {
+			logger.Error("disconnect mongo client failed: %v", err)
+		}
+	}()
+	return dbClient.DropMonitorCollectionsOlderThan(int(config.RetentionDay))
 }
 
 func PreApply() error {
@@ -113,7 +153,7 @@ func executeTask() error {
 	defer func() {
 		err := dbClient.Disconnect(dbCtx)
 		if err != nil {
-			logger.Error("disconnect mongo client failed: %v", err)
+			logger.Warn("disconnect mongo client failed: %v", err)
 		}
 	}()
 	prices, err := dbClient.GetAllPricesMap()
@@ -132,7 +172,7 @@ func executeTask() error {
 	}
 	// create tomorrow monitor time series
 	if err := CreateMonitorTimeSeries(dbClient, now.Add(24*time.Hour)); err != nil {
-		return fmt.Errorf("failed to create monitor time series: %v", err)
+		logger.Debug("failed to create monitor time series: %v", err)
 	}
 	return nil
 }
@@ -195,8 +235,10 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&showPath, "show-path", false, "enable show code path")
 	rootCmd.AddCommand(newStartCmd())
 	config = &Config{
-		MongoConnectURI: os.Getenv(database.MongoURI),
-		MongoUsername:   os.Getenv(database.MongoUsername),
-		MongoPassword:   os.Getenv(database.MongoPassword),
+		MongoConnectURI:    os.Getenv(database.MongoURI),
+		MongoUsername:      os.Getenv(database.MongoUsername),
+		MongoPassword:      os.Getenv(database.MongoPassword),
+		RetentionDay:       utils.GetInt64EnvWithDefault(database.RetentionDay, database.DefaultRetentionDay),
+		PermanentRetention: os.Getenv(database.PermanentRetention) == "true",
 	}
 }

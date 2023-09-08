@@ -18,6 +18,8 @@ package apply
 
 import (
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
 func TestNewApplierFromResetArgs(t *testing.T) {
@@ -70,7 +72,9 @@ func TestNewApplierFromResetArgs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := NewApplierFromResetArgs(tt.args.args)
+			_, err := NewApplierFromResetArgs(&cobra.Command{
+				Use: "mock",
+			}, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewApplierFromResetArgs() error = %v, wantErr %v", err, tt.wantErr)
 				return

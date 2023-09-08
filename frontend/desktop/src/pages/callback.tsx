@@ -11,7 +11,6 @@ const Callback: NextPage = () => {
   const setProvider = useSessionStore((s) => s.setProvider);
   const provider = useSessionStore((s) => s.provider);
   const compareState = useSessionStore((s) => s.compareState);
-  const updateUser = useSessionStore((s) => s.updateUser);
   useEffect(() => {
     if (!router.isReady) return;
     const { code, state } = router.query;
@@ -36,14 +35,12 @@ const Callback: NextPage = () => {
             break;
           default:
             throw new Error('provider error');
-            break;
         }
         if (data.code === 200) {
           const { token, user, kubeconfig } = data.data;
           setSessionProp('token', token);
           setSessionProp('user', user);
           setSessionProp('kubeconfig', kubeconfig);
-          updateUser();
         }
       } finally {
         provider && setProvider();

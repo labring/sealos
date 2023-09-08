@@ -12,7 +12,7 @@ import {
 } from '@chakra-ui/react';
 import type { AppDetailType } from '@/types/app';
 import { useCopyData, printMemory } from '@/utils/tools';
-import { useGlobalStore } from '@/store/global';
+import { useUserStore } from '@/store/user';
 import styles from '../index.module.scss';
 import dynamic from 'next/dynamic';
 const ConfigMapDetailModal = dynamic(() => import('./ConfigMapDetailModal'));
@@ -26,7 +26,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const { copyData } = useCopyData();
-  const { userSourcePrice } = useGlobalStore();
+  const { userSourcePrice } = useUserStore();
   const [detailConfigMap, setDetailConfigMap] = useState<{
     mountPath: string;
     value: string;
@@ -184,19 +184,21 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               <Box flex={'0 0 80px'} w={0} color={'blackAlpha.800'}>
                 {t(item.label)}
               </Box>
-              <Box
-                flex={1}
-                w={'0'}
-                textAlign={'right'}
-                color={'myGray.600'}
-                textOverflow={'ellipsis'}
-                overflow={'hidden'}
-                whiteSpace={'nowrap'}
-                onClick={() => copyData(item.value)}
-                cursor={'pointer'}
-              >
-                <MyTooltip label={item.value}>{t(item.value)}</MyTooltip>
-              </Box>
+              <MyTooltip label={item.value}>
+                <Box
+                  flex={'1 0 0'}
+                  w={'0'}
+                  textAlign={'right'}
+                  color={'myGray.600'}
+                  textOverflow={'ellipsis'}
+                  overflow={'hidden'}
+                  whiteSpace={'nowrap'}
+                  onClick={() => copyData(item.value)}
+                  cursor={'pointer'}
+                >
+                  {t(item.value)}
+                </Box>
+              </MyTooltip>
             </Flex>
           ))}
           {/* env */}

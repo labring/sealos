@@ -280,16 +280,19 @@ spec:
                   type: object
                 type: array
               pageLength:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                  of cluster Important: Run "make" to regenerate code after modifying
-                  this file'
                 type: integer
               rechargeAmount:
                 format: int64
                 type: integer
+              totalCount:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
+                type: integer
             required:
             - pageLength
             - rechargeAmount
+            - totalCount
             type: object
         type: object
     served: true
@@ -418,6 +421,7 @@ spec:
                 format: int64
                 type: integer
               paymentMethod:
+                default: wechat
                 description: e.g. wechat, alipay, creditcard, etc.
                 type: string
               userID:
@@ -647,6 +651,12 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps/status
+  verbs:
+  - get
 - apiGroups:
   - account.sealos.io
   resources:
@@ -1154,13 +1164,13 @@ spec:
         - name: DOMAIN
           value: {{ .cloudDomain }}
         - name: PORT
-          value: {{ .port }}
+          value: "{{ .cloudPort }}"
         - name: ACCOUNT_NAMESPACE
           value: sealos-system
         - name: NAMESPACE_NAME
           value: user-system
         - name: NEW_ACCOUNT_AMOUNT
-          value: "5000000"
+          value: "ri79LzQiQrs6CVa1ctE308+AseBXbOua0RIMCXAH5hc3irs="
         - name: WHITELIST
           value: notifications.Notification.notification.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1
         - name: ACCOUNT_SYSTEM_NAMESPACE
@@ -1286,6 +1296,7 @@ webhooks:
       name: account-webhook-service
       namespace: account-system
       path: /validate-v1-sealos-cloud
+  timeoutSeconds: 10
   failurePolicy: Ignore
   name: debt.sealos.io
   namespaceSelector:
@@ -1307,4 +1318,13 @@ webhooks:
     - DELETE
     resources:
     - '*'
+  - apiGroups:
+    - account.sealos.io
+    apiVersions:
+    - v1
+    operations:
+    - UPDATE
+    resources:
+    - payments/status
+    scope: '*'
   sideEffects: None

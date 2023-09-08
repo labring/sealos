@@ -5,12 +5,13 @@ import lineUp from '@/assert/lineUp.svg';
 import { Flex, Img, Table, TableContainer, Tbody, Td, Text, Th, Thead, Tr } from '@chakra-ui/react';
 import { format, parseISO } from 'date-fns';
 import { formatMoney } from '@/utils/format';
-import shellCoin from '@/assert/shell_coin.svg';
 import { useTranslation } from 'next-i18next';
 import useEnvStore from '@/stores/env';
+import CurrencySymbol from '../CurrencySymbol';
 export function BillingTable({ data }: { data: BillingItem[] }) {
   const { t } = useTranslation();
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
+  const currency = useEnvStore((s) => s.currency);
   return (
     <TableContainer w="100%" mt="0px">
       <Table variant="simple">
@@ -28,7 +29,12 @@ export function BillingTable({ data }: { data: BillingItem[] }) {
                   background: '#F1F4F6'
                 }}
               >
-                {t(item)}
+                <Flex display={'flex'} alignItems={'center'}>
+                  <Text mr="4px">{t(item)}</Text>
+                  {['CPU', 'Gpu', 'Memory', 'Storage', 'Total Amount'].includes(item) && (
+                    <CurrencySymbol type={currency} />
+                  )}
+                </Flex>
               </Th>
             ))}
           </Tr>
@@ -80,57 +86,13 @@ export function BillingTable({ data }: { data: BillingItem[] }) {
                       </Flex>
                     </Flex>
                   </Td>
-
-                  <Td>
-                    {!item.type ? (
-                      <Flex>
-                        <Img src={shellCoin.src} mr="4px" />
-                        <span>{formatMoney(item.costs?.cpu || 0)}</span>
-                      </Flex>
-                    ) : (
-                      '-'
-                    )}
-                  </Td>
-                  <Td>
-                    {!item.type ? (
-                      <Flex>
-                        <Img src={shellCoin.src} mr="4px" />
-                        <span>{formatMoney(item.costs?.memory || 0)}</span>{' '}
-                      </Flex>
-                    ) : (
-                      '-'
-                    )}
-                  </Td>
-                  <Td>
-                    {!item.type ? (
-                      <Flex>
-                        <Img src={shellCoin.src} mr="4px" />
-                        <span>{formatMoney(item.costs?.storage || 0)}</span>{' '}
-                      </Flex>
-                    ) : (
-                      '-'
-                    )}
-                  </Td>
+                  <Td>{!item.type ? <span>{formatMoney(item.costs?.cpu || 0)}</span> : '-'}</Td>
+                  <Td>{!item.type ? <span>{formatMoney(item.costs?.memory || 0)}</span> : '-'}</Td>
+                  <Td>{!item.type ? <span>{formatMoney(item.costs?.storage || 0)}</span> : '-'}</Td>
                   {gpuEnabled && (
-                    <Td>
-                      {!item.type ? (
-                        <Flex>
-                          <Img src={shellCoin.src} mr="4px" />
-                          <span>{formatMoney(item.costs?.gpu || 0)}</span>{' '}
-                        </Flex>
-                      ) : (
-                        '-'
-                      )}
-                    </Td>
+                    <Td>{!item.type ? <span>{formatMoney(item.costs?.gpu || 0)}</span> : '-'}</Td>
                   )}
-                  <Td>
-                    {
-                      <Flex>
-                        <Img src={shellCoin.src} mr="4px" />
-                        <span>{formatMoney(item.amount)}</span>
-                      </Flex>
-                    }
-                  </Td>
+                  <Td>{<span>{formatMoney(item.amount)}</span>}</Td>
                 </Tr>
               );
             })}

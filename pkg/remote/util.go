@@ -19,12 +19,7 @@ package remote
 // nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
 	"bytes"
-	"fmt"
 	"text/template"
-
-	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/ssh"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func renderTemplate(tmpl *template.Template, data map[string]interface{}) (string, error) {
@@ -34,19 +29,4 @@ func renderTemplate(tmpl *template.Template, data map[string]interface{}) (strin
 		return "", err
 	}
 	return out.String(), nil
-}
-
-func bashToString(clusterName string, sshInterface ssh.Interface, host, cmd string) (string, error) {
-	data := constants.NewData(clusterName)
-	cmd = fmt.Sprintf("%s %s", data.RootFSSealctlPath(), cmd)
-	str, err := sshInterface.CmdToString(host, cmd, "")
-	if err != nil {
-		logger.Debug("failed to exec remote %s shell: %s output: %s error: %+v", host, cmd, data, err)
-	}
-	return str, err
-}
-func bashCTLSync(clusterName string, sshInterface ssh.Interface, host, cmd string) error {
-	data := constants.NewData(clusterName)
-	cmd = fmt.Sprintf("%s  %s", data.RootFSSealctlPath(), cmd)
-	return sshInterface.CmdAsync(host, cmd)
 }

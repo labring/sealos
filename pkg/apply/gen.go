@@ -19,15 +19,16 @@ package apply
 import (
 	"fmt"
 
-	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/buildah"
-	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime/factory"
 	"github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/iputils"
 )
 
-func NewClusterFromGenArgs(imageNames []string, args *RunArgs) ([]byte, error) {
+func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []string) ([]byte, error) {
 	cluster := initCluster(args.ClusterName)
 	c := &ClusterArgs{
 		clusterName: args.ClusterName,
@@ -39,7 +40,7 @@ func NewClusterFromGenArgs(imageNames []string, args *RunArgs) ([]byte, error) {
 		args.Cluster.Masters = localIpv4
 	}
 
-	if err := c.runArgs(imageNames, args); err != nil {
+	if err := c.runArgs(cmd, args, imageNames); err != nil {
 		return nil, err
 	}
 
@@ -47,15 +48,20 @@ func NewClusterFromGenArgs(imageNames []string, args *RunArgs) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if img.Type != v1beta1.RootfsImage {
-		return nil, fmt.Errorf("input first image %s is not kubernetes image", imageNames)
+	if !img.IsRootFs() {
+		return nil, fmt.Errorf("the first image %s is not a rootfs type image", imageNames[0])
 	}
 	cluster.Status.Mounts = append(cluster.Status.Mounts, *img)
-	rtInterface, err := runtime.NewDefaultRuntime(cluster, &runtime.KubeadmConfig{})
+
+	cfg, err := factory.NewRuntimeConfig(cluster.GetDistribution())
 	if err != nil {
 		return nil, err
 	}
-	return rtInterface.GetKubeadmConfig()
+	rt, err := factory.New(cluster, cfg)
+	if err != nil {
+		return nil, err
+	}
+	return rt.GetRawConfig()
 }
 
 func genImageInfo(imageName string) (*v1beta1.MountImage, error) {

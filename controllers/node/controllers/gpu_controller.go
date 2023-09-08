@@ -25,12 +25,19 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 type GpuReconciler struct {
@@ -41,8 +48,8 @@ type GpuReconciler struct {
 
 const (
 	GPU                                  = "gpu"
-	GPUInfo                              = "gpu-info"
-	GPUInfoNameSpace                     = "sealos"
+	GPUInfo                              = "node-gpu-info"
+	GPUInfoNameSpace                     = "node-system"
 	NvidiaGPUProduct                     = "nvidia.com/gpu.product"
 	NvidiaGPUMemory                      = "nvidia.com/gpu.memory"
 	NvidiaGPU        corev1.ResourceName = "nvidia.com/gpu"
@@ -73,7 +80,10 @@ func (r *GpuReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Res
 		r.Logger.Error(err, "failed to get pod list")
 		return ctrl.Result{}, err
 	}
+	return r.applyGPUInfoCM(ctx, nodeList, podList, nil)
+}
 
+func (r *GpuReconciler) applyGPUInfoCM(ctx context.Context, nodeList *corev1.NodeList, podList *corev1.PodList, clientSet *kubernetes.Clientset) (ctrl.Result, error) {
 	/*
 		"nodeMap": {
 			"sealos-poc-gpu-master-0":{},
@@ -100,16 +110,18 @@ func (r *GpuReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Res
 	}
 	// get the number of GPU used by pods that are using GPU
 	for _, pod := range podList.Items {
+		phase := pod.Status.Phase
+		if phase == corev1.PodSucceeded {
+			continue
+		}
+
 		nodeName = pod.Spec.NodeName
 		_, ok1 := nodeMap[nodeName]
 		gpuProduct, ok2 := pod.Spec.NodeSelector[NvidiaGPUProduct]
 		if !ok1 || !ok2 {
 			continue
 		}
-		phase := pod.Status.Phase
-		if phase != corev1.PodRunning {
-			continue
-		}
+
 		containers := pod.Spec.Containers
 		for _, container := range containers {
 			gpuCount, ok := container.Resources.Limits[NvidiaGPU]
@@ -137,7 +149,13 @@ func (r *GpuReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Res
 
 	// create or update gpu-info configmap
 	configmap := &corev1.ConfigMap{}
-	err = r.Get(ctx, types.NamespacedName{Name: GPUInfo, Namespace: GPUInfoNameSpace}, configmap)
+
+	if clientSet != nil {
+		configmap, err = clientSet.CoreV1().ConfigMaps(GPUInfoNameSpace).Get(ctx, GPUInfo, metaV1.GetOptions{})
+	} else {
+		err = r.Get(ctx, types.NamespacedName{Name: GPUInfo, Namespace: GPUInfoNameSpace}, configmap)
+	}
+
 	if errors.IsNotFound(err) {
 		configmap = &corev1.ConfigMap{
 			ObjectMeta: metaV1.ObjectMeta{
@@ -152,26 +170,72 @@ func (r *GpuReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Res
 			r.Logger.Error(err, "failed to create gpu-info configmap")
 			return ctrl.Result{}, err
 		}
-	} else if err == nil {
-		if configmap.Data[GPU] != nodeMapStr {
-			configmap.Data[GPU] = nodeMapStr
-			if err := r.Update(ctx, configmap); err != nil && !errors.IsConflict(err) {
-				r.Logger.Error(err, "failed to update gpu-info configmap")
-				return ctrl.Result{}, err
-			}
-		}
-	} else {
+	} else if err != nil {
 		r.Logger.Error(err, "failed to get gpu-info configmap")
 		return ctrl.Result{}, err
 	}
+
+	if configmap.Data == nil {
+		configmap.Data = map[string]string{}
+	}
+	if configmap.Data[GPU] != nodeMapStr {
+		configmap.Data[GPU] = nodeMapStr
+		if err := r.Update(ctx, configmap); err != nil && !errors.IsConflict(err) {
+			r.Logger.Error(err, "failed to update gpu-info configmap")
+			return ctrl.Result{}, err
+		}
+	}
+
 	r.Logger.V(1).Info("gpu-info configmap status", "gpu", configmap.Data[GPU])
 	return ctrl.Result{}, nil
+}
+
+func (r *GpuReconciler) initGPUInfoCM(ctx context.Context, clientSet *kubernetes.Clientset) error {
+	// filter for nodes that have GPU
+	req1, _ := labels.NewRequirement(NvidiaGPUProduct, selection.Exists, []string{})
+	req2, _ := labels.NewRequirement(NvidiaGPUMemory, selection.Exists, []string{})
+	selector := labels.NewSelector().Add(*req1, *req2)
+	listOpts := metaV1.ListOptions{
+		LabelSelector: selector.String(),
+	}
+
+	nodeList, err := clientSet.CoreV1().Nodes().List(ctx, listOpts)
+	if err != nil {
+		return err
+	}
+
+	podList := &corev1.PodList{}
+	for _, item := range nodeList.Items {
+		list, err := clientSet.CoreV1().Pods("").List(context.TODO(), metaV1.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector("spec.nodeName", item.Name).String(),
+		})
+		if err != nil {
+			return err
+		}
+		podList.Items = append(podList.Items, list.Items...)
+	}
+
+	_, err = r.applyGPUInfoCM(ctx, nodeList, podList, clientSet)
+	return err
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger = ctrl.Log.WithName("gpu-controller")
 	r.Logger.V(1).Info("starting gpu controller")
+
+	// use clientSet to get resources from the API Server, not from Informer's cache
+	clientSet, err := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		r.Logger.Error(err, "failed to init")
+		return nil
+	}
+
+	// init node-gpu-info configmap
+	r.Logger.V(1).Info("initializing node-gpu-info configmap")
+	if err := r.initGPUInfoCM(context.Background(), clientSet); err != nil {
+		return err
+	}
 
 	// build index for node which have GPU
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Node{}, NodeIndexKey, func(rawObj client.Object) []string {
@@ -189,7 +253,7 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		if _, ok := pod.Spec.NodeSelector[NvidiaGPUProduct]; !ok {
 			return nil
 		}
-		if pod.Status.Phase != corev1.PodRunning {
+		if pod.Status.Phase == corev1.PodSucceeded {
 			return nil
 		}
 		return []string{GPU}
@@ -198,27 +262,48 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Pod{}).
-		WithEventFilter(
-			predicate.Funcs{
-				CreateFunc: func(event event.CreateEvent) bool {
-					_, ok := event.Object.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
-					return ok
-				},
-				UpdateFunc: func(event event.UpdateEvent) bool {
-					_, ok := event.ObjectNew.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
-					if !ok {
-						return false
-					}
-					phaseOld := event.ObjectOld.(*corev1.Pod).Status.Phase
-					phaseNew := event.ObjectNew.(*corev1.Pod).Status.Phase
-					return phaseOld != phaseNew
-				},
-				DeleteFunc: func(event event.DeleteEvent) bool {
-					_, ok := event.Object.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
-					return ok
-				},
+		For(&corev1.Pod{}, builder.WithPredicates(predicate.Funcs{
+			CreateFunc: func(event event.CreateEvent) bool {
+				return useGPU(event.Object)
 			},
-		).
+			UpdateFunc: func(event event.UpdateEvent) bool {
+				_, ok := event.ObjectNew.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
+				if !ok {
+					return false
+				}
+				phaseOld := event.ObjectOld.(*corev1.Pod).Status.Phase
+				phaseNew := event.ObjectNew.(*corev1.Pod).Status.Phase
+				return phaseOld != phaseNew
+			},
+			DeleteFunc: func(event event.DeleteEvent) bool {
+				return useGPU(event.Object)
+			},
+		})).
+		Watches(&source.Kind{Type: &corev1.Node{}}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(predicate.Funcs{
+			CreateFunc: func(event event.CreateEvent) bool {
+				return hasGPU(event.Object)
+			},
+			UpdateFunc: func(event event.UpdateEvent) bool {
+				oldVal, oldOk := event.ObjectOld.(*corev1.Node).Status.Allocatable[NvidiaGPU]
+				newVal, newOk := event.ObjectNew.(*corev1.Node).Status.Allocatable[NvidiaGPU]
+
+				return oldOk && newOk && oldVal != newVal
+			},
+			DeleteFunc: func(event event.DeleteEvent) bool {
+				return hasGPU(event.Object)
+			},
+		})).
 		Complete(r)
+}
+
+func useGPU(obj client.Object) bool {
+	_, ok := obj.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
+	return ok
+}
+
+func hasGPU(obj client.Object) bool {
+	_, ok1 := obj.(*corev1.Node).Labels[NvidiaGPUMemory]
+	_, ok2 := obj.(*corev1.Node).Labels[NvidiaGPUProduct]
+	_, ok3 := obj.(*corev1.Node).Status.Allocatable[NvidiaGPU]
+	return ok1 && ok2 && ok3
 }

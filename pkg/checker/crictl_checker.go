@@ -74,7 +74,7 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 	if cfg, err := fileutil.ReadAll(criShimConfig); err != nil {
 		status.Error = fmt.Errorf("read crictl config error: %w", err).Error()
 	} else {
-		cfgMap, _ := yaml.UnmarshalData(cfg)
+		cfgMap, _ := yaml.UnmarshalToMap(cfg)
 		status.Config = map[string]string{}
 		status.Config["ShimSocket"], _, _ = unstructured.NestedString(cfgMap, "image-endpoint")
 		status.Config["CRISocket"], _, _ = unstructured.NestedString(cfgMap, "runtime-endpoint")
@@ -100,17 +100,15 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 
 	pauseImage := ""
 	for _, mountImg := range cluster.Status.Mounts {
-		if mountImg.Type == v2.RootfsImage || mountImg.Type == v2.PatchImage {
-			pauseImage = mountImg.Env["sandboxImage"]
+		if mountImg.IsRootFs() || mountImg.IsPatch() {
+			if v, ok := mountImg.Env["sandboxImage"]; ok {
+				pauseImage = v
+				break
+			}
 		}
 	}
-	sshCtx, err := ssh.NewSSHByCluster(cluster, false)
-	if err != nil {
-		status.Error = fmt.Errorf("get ssh interface error: %w", err).Error()
-		return nil
-	}
-
-	root := constants.NewData(cluster.Name).RootFSPath()
+	sshCtx := ssh.NewCacheClientFromCluster(cluster, false)
+	root := constants.NewPathResolver(cluster.Name).RootFSPath()
 	regInfo := helpers.GetRegistryInfo(sshCtx, root, cluster.GetRegistryIPAndPort())
 
 	regStatus, err := n.getRegistryStatus(crictlPath, pauseImage, fmt.Sprintf("%s:%s", regInfo.Domain, regInfo.Port))

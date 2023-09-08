@@ -2,40 +2,114 @@ import { useCopyData } from '@/hooks/useCopyData';
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import download from '@/utils/downloadFIle';
-import { Box, Flex, Image, Stack, Text, UseDisclosureProps } from '@chakra-ui/react';
-import { QueryClient, useQuery } from '@tanstack/react-query';
-import JsYaml from 'js-yaml';
+import {
+  Box,
+  Flex,
+  Image,
+  Stack,
+  Text,
+  type UseDisclosureReturn,
+  PopoverTrigger,
+  Popover,
+  PopoverContent,
+  PopoverBody,
+  PopoverHeader
+} from '@chakra-ui/react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useContext, useMemo } from 'react';
 import Iconfont from '../iconfont';
-import { ApiResp } from '@/types';
-import useRecharge from '@/hooks/useRecharge';
+import useAppStore from '@/stores/app';
+
+import { ApiResp, Session } from '@/types';
 import { formatMoney } from '@/utils/format';
 import { RechargeEnabledContext } from '@/pages';
+import TeamCenter from '@/components/team/TeamCenter';
+import NsList from '@/components/team/NsList';
+import CreateTeam from '../team/CreateTeam';
+import { NamespaceDto } from '@/types/team';
+import { switchRequest } from '@/api/namespace';
 
-export default function Index({ disclosure }: { disclosure: UseDisclosureProps }) {
+const NsMenu = () => {
+  const session = useSessionStore((s) => s.session);
+  const setSession = useSessionStore((s) => s.setSession);
+  const { ns_uid } = session.user;
+  const router = useRouter();
+  const mutation = useMutation({
+    mutationFn: switchRequest,
+    onSuccess(data) {
+      if (data.code === 200 && !!data.data) {
+        setSession(data.data);
+        router.reload();
+        console.log(data.data);
+      }
+    }
+  });
+  const switchTeam = async ({ uid }: NamespaceDto) => {
+    if (ns_uid !== uid) mutation.mutate(uid);
+  };
+  return (
+    <Popover placement="left">
+      <PopoverTrigger>
+        {
+          // !todo  颜色可以改变
+          <Box pl="12px" cursor={'pointer'}>
+            <Image
+              pr="4px"
+              borderRight={'1px'}
+              borderColor={'#BDC1C5'}
+              color={'#fff'}
+              mr="10px"
+              src="/images/allVector.svg"
+              w="16px"
+              h="16px"
+            />
+          </Box>
+        }
+      </PopoverTrigger>
+      <PopoverContent
+        shadow={'0px 1.1666667461395264px 2.3333334922790527px 0px rgba(0, 0, 0, 0.2) !important'}
+        borderRadius={'8px'}
+        p="6px"
+        w="200px"
+        bgColor={'rgba(255, 255, 255, 0.80)'}
+        backdropFilter="blur(150px)"
+      >
+        <PopoverHeader p="0">
+          <Flex w="100%" align={'center'}>
+            <Text fontSize="14px" py="8px">
+              Team
+            </Text>
+            <TeamCenter />
+            <CreateTeam />
+          </Flex>
+        </PopoverHeader>
+        <PopoverBody px="0" pb="0" pt="4px">
+          <NsList selected_ns_uid={ns_uid} click={switchTeam} />
+        </PopoverBody>
+      </PopoverContent>
+    </Popover>
+  );
+};
+export default function Index({ disclosure }: { disclosure: UseDisclosureReturn }) {
   const router = useRouter();
   const rechargeEnabled = useContext(RechargeEnabledContext);
   const { t } = useTranslation();
   const { delSession, getSession } = useSessionStore();
   const { user, kubeconfig } = getSession();
   const { copyData } = useCopyData();
-  const userKubeConfigId = useMemo(() => {
-    try {
-      let temp = JsYaml.load(kubeconfig);
-      // @ts-ignore
-      return 'ns-' + temp?.users[0]?.name;
-    } catch (error) {
-      return '';
-    }
-  }, [kubeconfig]);
 
-  const { data, refetch } = useQuery(['getAccount'], () =>
-    request<any, ApiResp<{ balance: number; deductionBalance: number; status: string }>>(
-      '/api/account/getAmount'
-    )
-  );
+  const openApp = useAppStore((s) => s.openApp);
+  const installApp = useAppStore((s) => s.installedApps);
+  const { ns_uid, nsid, userId, k8s_username } = user;
+  const { data } = useQuery({
+    queryKey: ['getAccount', { ns_uid, userId, k8s_username }],
+    queryFn: () =>
+      request<any, ApiResp<{ balance: number; deductionBalance: number; status: string }>>(
+        '/api/account/getAmount'
+      )
+  });
 
   const balance = useMemo(() => {
     let real_balance = data?.data?.balance || 0;
@@ -44,17 +118,11 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureProps }
     }
     return real_balance;
   }, [data]);
-  const { RechargeModal, onOpen } = useRecharge({
-    onPaySuccess: () => {
-      refetch();
-    }
-  });
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     delSession();
-    router.reload();
+    router.replace('/signin');
   };
-
   return disclosure.isOpen ? (
     <>
       <Box position={'fixed'} inset={0} zIndex={'998'} onClick={disclosure.onClose}></Box>
@@ -88,28 +156,49 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureProps }
           <Text color={'#24282C'} fontSize={'20px'} fontWeight={600}>
             {user?.name}
           </Text>
-          <Flex alignItems={'center'} mt="4px" color={'#7B838B'}>
-            <Text>ID: {userKubeConfigId}</Text>
-            <Box ml="4px" onClick={() => copyData(userKubeConfigId)}>
-              <Iconfont iconName="icon-copy2" width={16} height={16} color="#7B838B"></Iconfont>
+          <Flex
+            alignItems={'center'}
+            mt="8px"
+            bg={'rgba(255, 255, 255, 0.50)'}
+            py="6px"
+            color="#5A646E"
+            borderRadius={'50px'}
+            border="1.5px solid rgba(0,0,0,0)"
+            _hover={{
+              borderColor: '#36ADEF'
+            }}
+          >
+            <NsMenu />
+            <Text fontSize={'12px'}>{nsid}</Text>
+            <Box mr="12px" onClick={() => copyData(nsid)} ml="8px" cursor={'pointer'}>
+              <Iconfont iconName="icon-copy2" width={14} height={14} color="#7B838B"></Iconfont>
             </Box>
           </Flex>
           <Stack
             direction={'column'}
             width={'100%'}
-            mt="24px"
+            mt="12px"
             bg="rgba(255, 255, 255, 0.6)"
-            borderRadius={'4px'}
+            borderRadius={'8px'}
+            gap={'0px'}
           >
-            <Flex h="54px" alignItems={'center'} borderBottom={'1px solid #0000001A'} p="16px">
+            <Flex alignItems={'center'} borderBottom={'1px solid #0000001A'} p="16px">
               <Text>
-                {t('Balance')}: ￥{formatMoney(balance).toFixed(2)}
+                {t('Balance')}: {formatMoney(balance).toFixed(2)}
               </Text>
-
               {rechargeEnabled && (
                 <Box
                   ml="auto"
-                  onClick={() => onOpen()}
+                  onClick={() => {
+                    const costcenter = installApp.find((t) => t.key === 'system-costcenter');
+                    if (!costcenter) return;
+                    openApp(costcenter, {
+                      query: {
+                        openRecharge: 'true'
+                      }
+                    });
+                    disclosure.onClose();
+                  }}
                   color={'#219BF4'}
                   fontWeight="500"
                   fontSize="12px"
@@ -118,25 +207,25 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureProps }
                 </Box>
               )}
             </Flex>
-            <Flex h="54px" alignItems={'center'}>
-              <Text ml="16px">kubeconfig</Text>
-
-              <Box ml="auto" onClick={() => download('kubeconfig.yaml', kubeconfig)}>
-                <Iconfont
-                  iconName="icon-download"
-                  width={16}
-                  height={16}
-                  color="#219BF4"
-                ></Iconfont>
-              </Box>
-              <Box ml="8px" mr="20px" onClick={() => copyData(kubeconfig)}>
-                <Iconfont iconName="icon-copy2" width={16} height={16} color="#219BF4"></Iconfont>
-              </Box>
-            </Flex>
+            {
+              <Flex alignItems={'center'} py="16px">
+                <Text ml="16px">kubeconfig</Text>
+                <Box ml="auto" onClick={() => download('kubeconfig.yaml', kubeconfig)}>
+                  <Iconfont
+                    iconName="icon-download"
+                    width={16}
+                    height={16}
+                    color="#219BF4"
+                  ></Iconfont>
+                </Box>
+                <Box ml="8px" mr="20px" onClick={() => copyData(kubeconfig)} cursor={'pointer'}>
+                  <Iconfont iconName="icon-copy2" width={16} height={16} color="#219BF4"></Iconfont>
+                </Box>
+              </Flex>
+            }
           </Stack>
         </Flex>
       </Box>
-      {rechargeEnabled && <RechargeModal balance={balance}></RechargeModal>}
     </>
   ) : (
     <></>

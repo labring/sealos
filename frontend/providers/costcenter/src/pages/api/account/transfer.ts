@@ -34,7 +34,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       return jsonRes(resp, { code: 401, message: 'user not found' });
     }
 
-    const namespace = GetUserDefaultNameSpace(kubeUser.name);
+    const namespace = kc.getContexts()[0].namespace || GetUserDefaultNameSpace(kubeUser.name);
     const name = to + '-' + getTime(new Date());
     const transferCRD = generateTransferCrd({
       to,

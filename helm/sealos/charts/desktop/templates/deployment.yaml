@@ -1,0 +1,211 @@
+{{ $secretname := include "common.names.fullname" . }}
+apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: {{ template "common.names.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: sealos-desktop
+    {{- if .Values.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.desktop.autoscaling.enabled }}
+  replicas: {{ .Values.desktop.replicaCount }}
+  {{- end }}
+  {{- if .Values.desktop.updateStrategy }}
+  strategy: {{- toYaml .Values.desktop.updateStrategy | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+      app.kubernetes.io/component: sealos-desktop
+  template:
+    metadata:
+      {{- if .Values.desktop.podAnnotations }}
+      annotations: {{- include "common.tplvalues.render" (dict "value" .Values.desktop.podAnnotations "context" $) | nindent 8 }}
+      {{- end }}
+      labels: {{- include "common.labels.standard" . | nindent 8 }}
+        app.kubernetes.io/component: sealos-desktop
+        {{- if .Values.desktop.podLabels }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.desktop.podLabels "context" $) | nindent 8 }}
+        {{- end }}
+        {{- if .Values.commonLabels }}
+        {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ template "desktop.serviceAccountName" . }}
+      {{- include "desktop.imagePullSecrets" . | nindent 6 }}
+      {{- if .Values.desktop.hostAliases }}
+      hostAliases: {{- include "common.tplvalues.render" (dict "value" .Values.desktop.hostAliases "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.desktop.affinity }}
+      affinity: {{- include "common.tplvalues.render" ( dict "value" .Values.desktop.affinity "context" $) | nindent 8 }}
+      {{- else }}
+      affinity:
+        podAffinity: {{- include "common.affinities.pods" (dict "type" .Values.desktop.podAffinityPreset "component" "sealos-desktop" "context" $) | nindent 10 }}
+        podAntiAffinity: {{- include "common.affinities.pods" (dict "type" .Values.desktop.podAntiAffinityPreset "component" "sealos-desktop" "context" $) | nindent 10 }}
+        nodeAffinity: {{- include "common.affinities.nodes" (dict "type" .Values.desktop.nodeAffinityPreset.type "key" .Values.desktop.nodeAffinityPreset.key "values" .Values.desktop.nodeAffinityPreset.values) | nindent 10 }}
+      {{- end }}
+      {{- if .Values.desktop.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" ( dict "value" .Values.desktop.nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.desktop.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.desktop.tolerations "context" .) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.desktop.priorityClassName }}
+      priorityClassName: {{ .Values.desktop.priorityClassName | quote }}
+      {{- end }}
+      {{- if .Values.desktop.schedulerName }}
+      schedulerName: {{ .Values.desktop.schedulerName | quote }}
+      {{- end }}
+      {{- if .Values.desktop.topologySpreadConstraints }}
+      topologySpreadConstraints: {{- include "common.tplvalues.render" (dict "value" .Values.desktop.topologySpreadConstraints "context" .) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.desktop.podSecurityContext.enabled }}
+      securityContext: {{- omit .Values.desktop.podSecurityContext "enabled" | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if .Values.desktop.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.desktop.terminationGracePeriodSeconds }}
+      {{- end }}
+      containers:
+        - name: desktop
+          image: {{ template "desktop.image" . }}
+          imagePullPolicy: {{ .Values.desktop.image.pullPolicy }}
+          {{- if .Values.desktop.containerSecurityContext.enabled }}
+          securityContext: {{- omit .Values.desktop.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          {{- if .Values.desktop.command }}
+          command: {{- include "common.tplvalues.render" (dict "value" .Values.desktop.command "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.desktop.args }}
+          args: {{- include "common.tplvalues.render" (dict "value" .Values.desktop.args "context" $) | nindent 12 }}
+          {{- end }}
+          env:
+            - name: CALLBACK_URL
+              value: {{ include "desktop.callbackUrl" .}}
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretname }}
+                  key: mongodb_uri
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretname }}
+                  key: jwt_secret
+            - name: PASSWORD_ENABLED
+              value: {{ .Values.desktop.passwordEnabled | quote }}
+            - name: GITHUB_ENABLED
+              value: {{ .Values.desktop.githubEnabled | quote }}
+            - name: WECHAT_ENABLED
+              value: {{ .Values.desktop.wechatEnabled | quote }}
+            - name: SMS_ENABLED
+              value: {{ .Values.desktop.smsEnabled | quote }}
+            - name: PASSWORD_SALT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretname }}
+                  key: password_salt
+            - name: GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretname }}
+                  key: github_client_id
+                  optional: true
+            - name: GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretname }}
+                  key: github_client_secret
+                  optional: true
+            # wechat login env
+            - name: WECHAT_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretname }}
+                  key: wechat_client_id
+                  optional: true
+            - name: WECHAT_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretname }}
+                  key: wechat_client_secret
+                  optional: true
+            # sms login env
+            - name: ALI_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretname }}
+                  key: ali_sms_endpoint
+                  optional: true
+            - name: ALI_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretname }}
+                  key: ali_access_key_id
+                  optional: true
+            - name: ALI_ACCESS_KEY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretname }}
+                  key: ali_access_key_secret
+                  optional: true
+            - name: ALI_SIGN_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretname }}
+                  key: ali_sms_sign_name
+                  optional: true
+            - name: ALI_TEMPLATE_CODE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretname }}
+                  key: ali_sms_template_code
+                  optional: true
+          envFrom:
+            {{- if .Values.desktop.extraEnvVarsCM }}
+            - configMapRef:
+                name: {{ include "common.tplvalues.render" (dict "value" .Values.desktop.extraEnvVarsCM "context" $) }}
+            {{- end }}
+            {{- if .Values.desktop.extraEnvVarsSecret }}
+            - secretRef:
+                name: {{ include "common.tplvalues.render" (dict "value" .Values.desktop.extraEnvVarsSecret "context" $) }}
+            {{- end }}
+          {{- if .Values.desktop.resources }}
+          resources: {{- toYaml .Values.desktop.resources | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.desktop.containerPorts.http }}
+          {{- if .Values.desktop.customLivenessProbe }}
+          livenessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.desktop.customLivenessProbe "context" $) | nindent 12 }}
+          {{- else if .Values.desktop.livenessProbe.enabled }}
+          livenessProbe: {{- include "common.tplvalues.render" (dict "value" (omit .Values.desktop.livenessProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.desktop.customReadinessProbe }}
+          readinessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.desktop.customReadinessProbe "context" $) | nindent 12 }}
+          {{- else if .Values.desktop.readinessProbe.enabled }}
+          readinessProbe: {{- include "common.tplvalues.render" (dict "value" (omit .Values.desktop.readinessProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.desktop.customStartupProbe }}
+          startupProbe: {{- include "common.tplvalues.render" (dict "value" .Values.desktop.customStartupProbe "context" $) | nindent 12 }}
+          {{- else if .Values.desktop.startupProbe.enabled }}
+          startupProbe: {{- include "common.tplvalues.render" (dict "value" (omit .Values.desktop.startupProbe "enabled") "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.desktop.lifecycleHooks }}
+          lifecycle: {{- include "common.tplvalues.render" (dict "value" .Values.desktop.lifecycleHooks "context" $) | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: {{ template "common.names.fullname" . }}-cm-volume
+              mountPath: /config.yaml
+              subPath: config.yaml
+        {{- if .Values.desktop.sidecars }}
+        {{- include "common.tplvalues.render" ( dict "value" .Values.desktop.sidecars "context" $) | nindent 8 }}
+        {{- end }}
+      volumes:
+        - name: {{ template "common.names.fullname" . }}-cm-volume
+          configMap:
+            name: {{ template "common.names.fullname" . }}

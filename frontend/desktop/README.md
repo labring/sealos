@@ -155,6 +155,11 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 3. src/layout/index.tsx
 4. src/components/desktop_content.tsx
 
+### 测试环境
+
+1. 需要设置环境变量`NODE_ENV=test` 或者 `$env:NODE_ENV="test"`
+2. 先启动`pnpm dev`, 再启动`pnpm test:w`
+
 ### 其它
 
 1. 获取登录凭证: 由于 login 页面不是在 desktop 项目里，所以需要从线上 sealos 获取登录凭证到本地开发: <https://cloud.sealos.io/> 。复制 storage 里的 session 到 localhost 环境实现 mock 登录。
@@ -197,6 +202,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
     GITHUB_ENABLED=true
     PASSWORD_ENABLED=true
     SMS_ENABLED=true
+    RECHAGRE_ENABLED=true
     ```
 
 - 每个登陆要配置的变量

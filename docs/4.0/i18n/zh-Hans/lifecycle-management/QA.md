@@ -82,7 +82,28 @@ ENV TZ=Asia/Shanghai
 sealos build --arch arm64 --build-arg TARGETOS=linux --build-arg TARGETARCH=arm64 -t test  -f Dockerfile .
 ```
 
-### Q4：执行Sealos构建时遇到“lgetxattr /var/lib/containers/storage/overlay/0c2afe770ec7870ad4639f18a1b50b3a84718f95c8907f3d54e14dbf0a01d50d/merged/dev/ptmx: no such device”错误？
+### Q4：如何使用其他构建工具构建集群镜像？
+
+如果您想使用 Docker 或 Podman 等其他容器工具来构建集群镜像，您可以借助 [sreg](https://github.com/labring/sreg) 来缓存镜像。
+
+以下是操作步骤：
+
+1. 安装 sreg：
+   ```shell
+   wget https://github.com/labring/sreg/releases/download/v0.1.1/sreg_0.1.1_linux_amd64.tar.gz
+   tar -xzf sreg_0.1.1_linux_amd64.tar.gz sreg
+   mv sreg /usr/bin/
+   ```
+2. 缓存镜像：
+   ```shell
+   sreg save --registry-dir=registry .
+   ```
+3. 构建集群镜像：
+   ```shell
+   docker build -t xxxx -f Sealfile .
+   ```
+
+### Q5：执行Sealos构建时遇到“lgetxattr /var/lib/containers/storage/overlay/0c2afe770ec7870ad4639f18a1b50b3a84718f95c8907f3d54e14dbf0a01d50d/merged/dev/ptmx: no such device”错误？
 
 这个问题可能与`fuse-overlayfs`的版本有关。建议您从[这里](https://github.com/containers/fuse-overlayfs/releases)下载最新版本下载并替换`/bin/fuse-overlayfs`。
 

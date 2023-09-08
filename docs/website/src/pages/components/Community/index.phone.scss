@@ -1,0 +1,87 @@
+@media screen and (max-width: 996px) {
+  .community {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+    margin-top: 24px;
+    padding: 0 16px;
+
+    .comet-icon {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 36px;
+      height: 12px;
+      margin: 0;
+    }
+
+    .community-title {
+      margin-top: 12px;
+      color: #fff;
+      font-size: 20px;
+      font-style: normal;
+      font-weight: 600;
+      line-height: 140%;
+    }
+
+    .community-box {
+      margin: 0;
+      width: 100%;
+      position: relative;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(
+        --30,
+        linear-gradient(90deg, #182941 0%, #0d3037 42.19%, #352644 97.92%)
+      );
+      display: flex;
+      align-items: center;
+      flex-direction: column;
+      margin-top: 20px;
+      height: auto;
+
+      .join {
+        color: #fff;
+        font-size: 16px;
+        font-weight: 600;
+        margin-top: 16px;
+      }
+      .text {
+        width: 100%;
+        margin-top: 8px;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 600;
+        text-align: center;
+      }
+      .link {
+        margin-top: 8px;
+        width: 96px;
+        height: 24px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .community-logo {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 24px;
+        height: 24px;
+        background-color: #0a1621;
+        border-radius: 50%;
+        svg {
+          width: 16px;
+          height: 16px;
+        }
+      }
+
+      .community-phone-logo {
+        margin-top: 12px;
+        margin-bottom: 16px;
+      }
+    }
+  }
+}

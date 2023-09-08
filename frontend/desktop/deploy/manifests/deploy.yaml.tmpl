@@ -37,6 +37,10 @@ metadata:
 data:
   config.yaml: |-
     addr: :3000
+  config.json: |-
+    {
+      "scripts": []
+    }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -63,7 +67,7 @@ spec:
           env:
             # callback url is used for oauth2 login, required
             - name: CALLBACK_URL
-              value: https://{{ .cloudDomain }}/callback
+              value: https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/callback
             # mongodb uri, required
             - name: MONGODB_URI
               valueFrom:
@@ -165,6 +169,9 @@ spec:
             - name: desktop-frontend-volume
               mountPath: /config.yaml
               subPath: config.yaml
+            - mountPath: /app/data/config.json
+              name: desktop-frontend-volume
+              subPath: config.json
           resources:
             limits:
               cpu: 1000m

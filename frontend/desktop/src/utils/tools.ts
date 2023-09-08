@@ -1,3 +1,4 @@
+import { UserRole } from '@/types/team';
 import dayjs from 'dayjs';
 
 export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
@@ -64,3 +65,21 @@ export const retrySerially = <T>(fn: () => Promise<T>, times: number) =>
     };
     attempt();
   });
+// 自己的权限能管理什么权限
+export const vaildManage =
+  (ownRole: UserRole, userId: string) => (targetRole: UserRole, tUserId: string) => {
+    if (targetRole === UserRole.Owner)
+      return [UserRole.Owner].includes(ownRole); // 不论目标是不是自己，都必须要最高权限
+    else if (targetRole === UserRole.Manager)
+      return [UserRole.Owner, ...(tUserId === userId ? [UserRole.Manager] : [])].includes(ownRole);
+    //对自己操作定义的role可以是平级
+    else if (targetRole === UserRole.Developer)
+      return [
+        UserRole.Owner,
+        UserRole.Manager,
+        ...(tUserId === userId ? [UserRole.Developer] : [])
+      ].includes(ownRole);
+    else return false;
+  };
+export const isUserRole = (role: any): role is UserRole =>
+  [UserRole.Developer, UserRole.Manager, UserRole.Owner].includes(role);

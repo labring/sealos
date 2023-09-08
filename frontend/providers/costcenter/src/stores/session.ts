@@ -1,4 +1,4 @@
-import type { Session } from '@/types/session';
+import type { Session, SessionV1 } from 'sealos-desktop-sdk';
 import { sessionKey } from '@/types/session';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
@@ -6,11 +6,11 @@ import { immer } from 'zustand/middleware/immer';
 import * as yaml from 'js-yaml';
 
 type SessionState = {
-  session: Session;
+  session: SessionV1;
   locale: string;
-  setSession: (ss: Session) => void;
-  setSessionProp: (key: keyof Session, value: any) => void;
-  getSession: () => Session;
+  setSession: (ss: SessionV1) => void;
+  setSessionProp: (key: keyof SessionV1, value: any) => void;
+  getSession: () => SessionV1;
   delSession: () => void;
   isUserLogin: () => boolean;
   getKubeconfigToken: () => string;
@@ -20,10 +20,10 @@ const useSessionStore = create<SessionState>()(
   devtools(
     persist(
       immer((set, get) => ({
-        session: {} as Session,
+        session: {} as SessionV1,
         locale: 'en',
-        setSession: (ss: Session) => set({ session: ss }),
-        setSessionProp: (key: keyof Session, value: any) => {
+        setSession: (ss: SessionV1) => set({ session: ss }),
+        setSessionProp: (key: keyof SessionV1, value: any) => {
           set((state) => {
             state.session[key] = value;
           });
@@ -32,7 +32,7 @@ const useSessionStore = create<SessionState>()(
         delSession: () => {
           set({ session: undefined });
         },
-        isUserLogin: () => get().session?.user?.id !== undefined,
+        isUserLogin: () => !!get().session?.user,
         getKubeconfigToken: () => {
           if (get().session?.kubeconfig === '') {
             return '';

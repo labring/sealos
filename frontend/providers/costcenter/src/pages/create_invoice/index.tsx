@@ -1,4 +1,3 @@
-// import { MockBillingData } from '@/mock/billing';
 import { InvoiceTable } from '@/components/invoice/invoiceTable';
 import { Box, Button, Flex, Heading, Img, Input, Text } from '@chakra-ui/react';
 import { useEffect, useRef, useState } from 'react';
@@ -66,23 +65,32 @@ function Invoice() {
           }
         }
       );
+
+      const tableResult = result.data.status.item
+        .filter((billing) => billing.type === 1)
+        .map<ReqGenInvoice['billings'][0]>((billing) => ({
+          createdTime: parseISO(billing.time).getTime(),
+          order_id: billing.order_id,
+          amount: formatMoney(billing.amount)
+        }));
       return {
-        tableResult: result.data.status.item
-          .filter((billing) => billing.type === 1)
-          .map<ReqGenInvoice['billings'][0]>((billing) => ({
-            createdTime: parseISO(billing.time).getTime(),
-            order_id: billing.order_id,
-            amount: formatMoney(billing.amount)
-          })),
-        pageLength: result.data.status.pageLength
+        tableResult,
+        pageLength: result.data.status.pageLength,
+        totalCount: result.data.status.totalCount || tableResult.length
       };
     },
     {
       onSuccess(data) {
-        setTotalPage(data.pageLength);
+        const totalPage = data.pageLength;
+        if (totalPage === 0) {
+          // 搜索时
+          setTotalPage(1);
+          return;
+        }
+        setTotalPage(totalPage);
       },
+      staleTime: 1000,
       cacheTime: 0,
-      staleTime: 0,
       enabled: filterData !== undefined
     }
   );
@@ -216,9 +224,7 @@ function Invoice() {
               </Box>
               <Flex w="370px" h="32px" align={'center'} mt={'20px'} mx="auto">
                 <Text>{t('Total')}:</Text>
-                <Flex w="40px">
-                  {totalPage * pageSize - (filterData?.data?.billings || []).length}
-                </Flex>
+                <Flex w="40px">{data.totalCount - (filterData?.data?.billings || []).length}</Flex>
                 <Flex gap={'8px'}>
                   <Button
                     variant={'switchPage'}

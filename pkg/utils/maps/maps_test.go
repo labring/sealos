@@ -110,7 +110,7 @@ func TestMergeMap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			data := MergeMap(tt.args.dst, tt.args.src)
+			data := Merge(tt.args.dst, tt.args.src)
 			if !reflect.DeepEqual(data, tt.want) {
 				t.Errorf("MergeMap() = %v, want %v", data, tt.want)
 			}
@@ -119,6 +119,6 @@ func TestMergeMap(t *testing.T) {
 }
 
 func TestStringToMap(_ *testing.T) {
-	data := StringToMap("address=reg.real-ai.cn,auth=xxx", ",")
+	data := FromString("address=reg.real-ai.cn,auth=xxx", ",")
 	fmt.Println(data["address"])
 }

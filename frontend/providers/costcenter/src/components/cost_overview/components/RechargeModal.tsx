@@ -1,4 +1,3 @@
-import shellcoin from '@/assert/shell_coin.svg';
 import {
   Box,
   Button,
@@ -33,6 +32,9 @@ import stripe_icon from '@/assert/bi_stripe.svg';
 import { Spinner } from '@chakra-ui/react';
 import { Stripe } from '@stripe/stripe-js';
 import type { AxiosInstance } from 'axios';
+import useEnvStore from '@/stores/env';
+import Currencysymbol from '@/components/CurrencySymbol';
+import { useCustomToast } from '@/hooks/useCustomToast';
 const StripeForm = (props: {
   tradeNO?: string;
   complete: number;
@@ -42,7 +44,6 @@ const StripeForm = (props: {
   const sessionId = props.tradeNO;
   const complete = props.complete;
   useEffect(() => {
-    // console.log('new')
     if (stripePromise && sessionId)
       (async () => {
         try {
@@ -123,6 +124,7 @@ const BonusBox = (props: {
   amount: number;
 }) => {
   const { t } = useTranslation();
+  const currency = useEnvStore((s) => s.currency);
   return (
     <Flex
       width="140px"
@@ -165,8 +167,8 @@ const BonusBox = (props: {
         {t('Bonus')} {props.bouns}
       </Text>
       <Flex align={'center'}>
-        <Img src={shellcoin.src} w="24px" h="24px" mr="4px" />
-        <Text fontStyle="normal" fontWeight="500" fontSize="24px">
+        <Currencysymbol w="24px" type={currency} />
+        <Text ml="4px" fontStyle="normal" fontWeight="500" fontSize="24px">
           {props.amount}
         </Text>
       </Flex>
@@ -214,7 +216,6 @@ const RechargeModal = forwardRef(
     const [detail, setDetail] = useState(false);
     const [paymentName, setPaymentName] = useState('');
     const [selectAmount, setSelectAmount] = useState(0);
-    const toast = useToast();
     const createPaymentRes = useMutation(
       () =>
         request.post<any, ApiResp<Payment>>('/api/account/payment', {
@@ -254,9 +255,8 @@ const RechargeModal = forwardRef(
         cacheTime: 0,
         staleTime: 0,
         onSuccess(data) {
-          console.log('pay???', data);
           setTimeout(() => {
-            if (data?.data?.status === 'SUCCESS') {
+            if ((data?.data?.status || '').toUpperCase() === 'SUCCESS') {
               createPaymentRes.reset();
               setComplete(3);
               props.onPaySuccess?.();
@@ -269,7 +269,6 @@ const RechargeModal = forwardRef(
     );
     const cancalPay = useCallback(() => {
       createPaymentRes.reset();
-      console.log('reset?', createPaymentRes);
       props.onCancel?.();
       setComplete(0);
     }, [createPaymentRes]);
@@ -308,7 +307,7 @@ const RechargeModal = forwardRef(
       },
       [isSuccess, ratios, steps]
     );
-
+    const { stripeEnabled, wechatEnabled } = useEnvStore();
     useEffect(() => {
       if (steps && steps.length > 0) {
         setAmount(steps[0]);
@@ -321,11 +320,21 @@ const RechargeModal = forwardRef(
       createPaymentRes.mutate();
     };
 
+    const { toast } = useCustomToast();
     const handleStripeConfirm = () => {
-      setComplete(1);
       setPayType('stripe');
+      if (amount < 10) {
+        toast({
+          status: 'error',
+          title: t('Pay Minimum Tips')
+        });
+        // 校检，stripe有最低费用的要求
+        return;
+      }
+      setComplete(1);
       createPaymentRes.mutate();
     };
+    const currency = useEnvStore((s) => s.currency);
     return (
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
@@ -352,8 +361,8 @@ const RechargeModal = forwardRef(
                     <Text color="#7B838B" fontWeight={'normal'} mr={'20px'}>
                       {t('Balance')}
                     </Text>
-                    <Img src={shellcoin.src} w="24px" h="24px" mr="4px" />
-                    <Text color="#24282C" fontSize="24px" fontWeight={'medium'}>
+                    <Currencysymbol w="24px" type={currency} />
+                    <Text ml="4px" color="#24282C" fontSize="24px" fontWeight={'medium'}>
                       {formatMoney(balance).toFixed(2)}
                     </Text>
                   </Flex>
@@ -399,7 +408,7 @@ const RechargeModal = forwardRef(
                       variant={'unstyled'}
                       onChange={(str, v) => (str.trim() ? setAmount(v) : setAmount(0))}
                     >
-                      <Img src={shellcoin.src} w="16px" h="16px" mr="4px" />
+                      <Currencysymbol w="16px" type={currency} />
                       <NumberInputField />
                       <NumberInputStepper>
                         <NumberIncrementStepper>
@@ -434,34 +443,38 @@ const RechargeModal = forwardRef(
                     <OuterLink text={t('View Discount Rules')}></OuterLink>
                   </Flex>
                   <Flex gap={'16px'} width={'full'}>
-                    <Button
-                      size="primary"
-                      variant="primary"
-                      mt="20px"
-                      w="full"
-                      h="auto"
-                      py="14px"
-                      px="34px"
-                      onClick={() => {
-                        handleStripeConfirm();
-                      }}
-                    >
-                      <Img src={stripe_icon.src} mr="2px" w="24px" h="24px" />
-                      <Text>{t('pay with stripe')}</Text>
-                    </Button>
-                    <Button
-                      size="primary"
-                      variant="primary"
-                      mt="20px"
-                      w="full"
-                      h="auto"
-                      py="14px"
-                      px="34px"
-                      onClick={() => handleWechatConfirm()}
-                    >
-                      <Img src={wechat_icon.src} mr="2px" w="24px" h="24px" />
-                      <Text>{t('pay with wechat')}</Text>
-                    </Button>
+                    {stripeEnabled && (
+                      <Button
+                        size="primary"
+                        variant="primary"
+                        mt="20px"
+                        w="full"
+                        h="auto"
+                        py="14px"
+                        px="34px"
+                        onClick={() => {
+                          handleStripeConfirm();
+                        }}
+                      >
+                        <Img src={stripe_icon.src} mr="2px" w="24px" h="24px" />
+                        <Text>{t('pay with stripe')}</Text>
+                      </Button>
+                    )}
+                    {wechatEnabled && (
+                      <Button
+                        size="primary"
+                        variant="primary"
+                        mt="20px"
+                        w="full"
+                        h="auto"
+                        py="14px"
+                        px="34px"
+                        onClick={() => handleWechatConfirm()}
+                      >
+                        <Img src={wechat_icon.src} mr="2px" w="24px" h="24px" />
+                        <Text>{t('pay with wechat')}</Text>
+                      </Button>
+                    )}
                   </Flex>
                 </Flex>
               </>

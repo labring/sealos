@@ -190,6 +190,7 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
   const gpuNodeSelector = useGpu ? appDeploy?.spec?.template?.spec?.nodeSelector : null;
 
   return {
+    crYamlList: configs,
     id: appDeploy.metadata?.uid || ``,
     appName: appDeploy.metadata?.name || 'app Name',
     createTime: dayjs(appDeploy.metadata?.creationTimestamp).format('YYYY-MM-DD HH:mm'),
@@ -200,7 +201,10 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
       appDeploy.spec?.template?.spec?.containers?.[0]?.image ||
       '',
     runCMD: appDeploy.spec?.template?.spec?.containers?.[0]?.command?.join(' ') || '',
-    cmdParam: appDeploy.spec?.template?.spec?.containers?.[0]?.args?.join(' ') || '',
+    cmdParam:
+      (appDeploy.spec?.template?.spec?.containers?.[0]?.args?.length === 1
+        ? appDeploy.spec?.template?.spec?.containers?.[0]?.args.join(' ')
+        : JSON.stringify(appDeploy.spec?.template?.spec?.containers?.[0]?.args)) || '',
     replicas: appDeploy.spec?.replicas || 0,
     cpu: cpuFormatToM(
       appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu || '0'

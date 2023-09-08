@@ -1,11 +1,8 @@
-name: Github Rebot for Sealos
+name: Github Robot for Sealos
 on:
   issue_comment:
     types:
       - created
-env:
-  GH_TOKEN: "${{ secrets.GH_PAT }}"
-  GH_REBOT_VERSION: "v0.0.5"
 jobs:
   comment:
     if: startswith(github.event.comment.body, '/')
@@ -13,10 +10,10 @@ jobs:
     steps:
       - name: Checkout the latest code
         uses: actions/checkout@v3
-      - name: Gh Rebot for Sealos
-        uses: labring/gh-rebot@v0.0.6
+      - name: Gh Robot for Sealos
+        uses: labring/robot@v2.0.0
         with:
-          version: v0.0.7-rc1
+          version: v2.0.0
         env:
           SEALOS_TYPE: "/comment"
           GH_TOKEN: "${{ secrets.GH_PAT }}"

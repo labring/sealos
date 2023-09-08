@@ -50,7 +50,7 @@ export default class AppStateManager {
   }
   // open app
   openApp(key: string) {
-    const appRunningState = new AppRunningState(key);
+    const appRunningState = new AppRunningState(key as `user-${string}` | `system-${string}`);
     appRunningState.state = 'running';
     this.openedApps.push(appRunningState);
     return appRunningState;

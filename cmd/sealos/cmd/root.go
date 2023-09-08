@@ -19,14 +19,15 @@ import (
 	"io"
 	"os"
 
+	sreglog "github.com/labring/sreg/pkg/utils/logger"
+	"github.com/spf13/cobra"
+	"k8s.io/kubectl/pkg/util/templates"
+
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/system"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
-
-	"github.com/spf13/cobra"
-	"k8s.io/kubectl/pkg/util/templates"
 )
 
 var (
@@ -107,7 +108,6 @@ func setRequireBuildahAnnotation(cmd *cobra.Command) {
 }
 
 func onBootOnDie() {
-	logger.CfgConsoleAndFileLogger(debug, constants.LogPath(), "sealos", false)
 	val, err := system.Get(system.DataRootConfigKey)
 	errExit(err)
 	constants.DefaultClusterRootFsDir = val
@@ -117,14 +117,17 @@ func onBootOnDie() {
 
 	var rootDirs = []string{
 		constants.LogPath(),
-		constants.Workdir(),
+		constants.WorkDir(),
 	}
 	errExit(file.MkDirs(rootDirs...))
+
+	logger.CfgConsoleAndFileLogger(debug, constants.LogPath(), "sealos", false)
+	sreglog.CfgConsoleAndFileLogger(debug, constants.LogPath(), "sealos", false)
 }
 
 func errExit(err error) {
 	if err != nil {
-		logger.Error(err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }

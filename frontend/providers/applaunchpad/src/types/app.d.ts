@@ -109,6 +109,8 @@ export interface AppDetailType extends AppEditType {
   imageName: string;
   usedCpu: number[];
   usedMemory: number[];
+  crYamlList: DeployKindsType[];
+
   // pods: PodDetailType[];
 }
 

@@ -1,7 +1,7 @@
 import Terminal from '@/components/terminal';
 import request from '@/service/request';
 import useSessionStore from '@/stores/session';
-import { Box, Flex, Spinner } from '@chakra-ui/react';
+import { Box, Flex, Spinner, useToast } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
@@ -15,6 +15,7 @@ export default function Index(props: ServiceEnv) {
   const { setSession, isUserLogin } = useSessionStore();
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const toast = useToast();
 
   useEffect(() => {
     return createSealosApp();
@@ -46,6 +47,22 @@ export default function Index(props: ServiceEnv) {
             }
           })
           .catch((err) => {});
+      }
+    },
+    onError(err: any) {
+      if (err?.data?.code === 500 && err?.data?.data) {
+        const reason = err?.data?.data?.body?.reason;
+        if (reason && reason?.startsWith('40001')) {
+          toast({
+            position: 'top',
+            description: 'Insufficient balance',
+            status: 'error',
+            duration: 8000,
+            isClosable: true
+          });
+          setIsLoading(false);
+          setUrl('/error');
+        }
       }
     },
     refetchInterval: url === '' ? 500 : false,

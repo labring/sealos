@@ -3,6 +3,7 @@ go 1.20
 use (
 	.
 	./controllers/account
+	./controllers/admission
 	./controllers/app
 	./controllers/cluster
 	./controllers/db/adminer

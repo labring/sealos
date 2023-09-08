@@ -17,7 +17,6 @@ package cmd
 import (
 	"fmt"
 	"path"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -25,11 +24,14 @@ import (
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime/factory"
+	fileutils "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-var altNames string
-
 func newCertCmd() *cobra.Command {
+	var altNames []string
+
 	cmd := &cobra.Command{
 		Use:   "cert",
 		Short: "update Kubernetes API server's cert",
@@ -45,33 +47,48 @@ func newCertCmd() *cobra.Command {
     3. kubectl get pod, to check if it works or not
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cluster, err := clusterfile.GetClusterFromName(clusterName)
-			if err != nil {
-				return fmt.Errorf("get default cluster failed, %v", err)
-			}
-			processor.SyncNewVersionConfig(cluster.Name)
-			clusterPath := constants.Clusterfile(cluster.Name)
+			processor.SyncNewVersionConfig(clusterName)
 
-			cf := clusterfile.NewClusterFile(clusterPath,
-				clusterfile.WithCustomKubeadmFiles([]string{path.Join(constants.NewData(cluster.Name).EtcPath(), constants.DefaultInitKubeadmFileName)}),
-			)
-			if err = cf.Process(); err != nil {
+			clusterPath := constants.Clusterfile(clusterName)
+			pathResolver := constants.NewPathResolver(clusterName)
+
+			var runtimeConfigPath string
+
+			for _, f := range []string{
+				path.Join(pathResolver.ConfigsPath(), "kubeadm-init.yaml"),
+				path.Join(pathResolver.EtcPath(), "kubeadm-init.yaml"),
+				path.Join(pathResolver.ConfigsPath(), "k3s-init.yaml"),
+			} {
+				if fileutils.IsExist(f) {
+					runtimeConfigPath = f
+					break
+				}
+			}
+			if runtimeConfigPath == "" {
+				logger.Warn("cannot locate the default runtime config file")
+			}
+			var opts []clusterfile.OptionFunc
+			if runtimeConfigPath != "" {
+				opts = append(opts, clusterfile.WithCustomRuntimeConfigFiles([]string{runtimeConfigPath}))
+			}
+			cf := clusterfile.NewClusterFile(clusterPath, opts...)
+			if err := cf.Process(); err != nil {
 				return err
 			}
-			r, err := runtime.NewDefaultRuntime(cluster, cf.GetKubeadmConfig())
+
+			rt, err := factory.New(cf.GetCluster(), cf.GetRuntimeConfig())
 			if err != nil {
-				return fmt.Errorf("get default runtime failed, %v", err)
+				return fmt.Errorf("create runtime failed: %v", err)
 			}
-			return r.UpdateCert(strings.Split(altNames, ","))
-		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if strings.TrimSpace(altNames) == "" {
-				return fmt.Errorf("this command alt-names param can't empty")
+			if cm, ok := rt.(runtime.CertManager); ok {
+				return cm.UpdateCertSANs(altNames)
 			}
 			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied exec action")
-	cmd.Flags().StringVar(&altNames, "alt-names", "", "add domain or ip in certs, sealos.io or 10.103.97.2")
+	cmd.Flags().StringSliceVar(&altNames, "alt-names", []string{}, "add extra Subject Alternative Names for certs, domain or ip, eg. sealos.io or 10.103.97.2")
+	_ = cmd.MarkFlagRequired("alt-names")
+
 	return cmd
 }
