@@ -35,7 +35,7 @@ const defaultCryptoKey = "ABf0beBc5gd0C54adF0b1547cF43aCB83"
 
 var cryptoKey = defaultCryptoKey
 
-type ClusterBilling struct {
+type ClusterScaleBilling struct {
 	tnr TotalNodesResource
 }
 
@@ -51,13 +51,13 @@ type Prices struct {
 	Detail   string `json:"detail" bson:"detail"`
 }
 
-func NewClusterBillingWork() *ClusterBilling {
-	return &ClusterBilling{
+func NewClusterScaleBillingWork() *ClusterScaleBilling {
+	return &ClusterScaleBilling{
 		tnr: TotalNodesResource{},
 	}
 }
 
-func (c *ClusterBilling) billingWork(ti *TaskInstance) error {
+func (c *ClusterScaleBilling) billingWork(ti *TaskInstance) error {
 	var err error
 	// get the cluster resource
 	err = c.GetClusterResource(ti.ctx, ti.Client)
@@ -88,7 +88,7 @@ func (c *ClusterBilling) billingWork(ti *TaskInstance) error {
 	uid, _ := GetUID(ti.ctx, ti.Client)
 
 	// save the billing info
-	mongoDB := NewMongoDB("cluster", "billing")
+	mongoDB := NewMongoDB("cluster", "scale_billing")
 	doc := bson.M{
 		"clusterID":  uid,
 		"createTime": time.Now().Format("2006-01-02"),
@@ -97,7 +97,7 @@ func (c *ClusterBilling) billingWork(ti *TaskInstance) error {
 	return mongoDB.UpsertDoc(doc, bson.M{"createTime": doc["createTime"]})
 }
 
-func (c *ClusterBilling) GetPrices() map[string]common.Price {
+func (c *ClusterScaleBilling) GetPrices() map[string]common.Price {
 	var priceMap map[string]common.Price
 	mongoDB := NewMongoDB("cluster", "prices")
 	doc, err := mongoDB.FindDocs(bson.M{})
@@ -126,7 +126,7 @@ func (c *ClusterBilling) GetPrices() map[string]common.Price {
 	return priceMap
 }
 
-func (c *ClusterBilling) GetClusterResource(ctx context.Context, client client.Client) error {
+func (c *ClusterScaleBilling) GetClusterResource(ctx context.Context, client client.Client) error {
 	err := GetNodeResource(ctx, client, &c.tnr)
 	if err != nil {
 		return err
