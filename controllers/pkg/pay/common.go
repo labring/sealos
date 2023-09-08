@@ -15,11 +15,11 @@
 package pay
 
 const (
-	PaymentSuccess    = "success"
-	PaymentNotPaid    = "not_paid"
+	PaymentNotPaid    = "notpaid"
 	PaymentProcessing = "processing"
-	PaymentExpired    = "expired"
 	PaymentFailed     = "failed"
+	PaymentExpired    = "expired"
+	PaymentSuccess    = "success"
 	PaymentUnknown    = "unknown"
 )
 
