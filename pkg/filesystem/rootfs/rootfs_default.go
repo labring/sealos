@@ -69,6 +69,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 			// TODO: if we are planing to support rendering templates for each host,
 			// then move this rendering process before ssh.CopyDir and do it one by one.
 			envs := v2.MergeEnvWithBuiltinKeys(src.Env, src)
+			envs[v2.ImageK3sModeEnvSysKey] = "server"
 			err := renderTemplatesWithEnv(src.MountPoint, ipList, envProcessor, envs)
 			if err != nil {
 				return fmt.Errorf("failed to render env: %w", err)

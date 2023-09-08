@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -51,14 +50,6 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 				return fmt.Errorf("failed to copy join node kubeadm config %s %v", node, err)
 			}
 			k.mu.Unlock()
-			err = k.execHostsAppend(node, k.getVip(), k.getAPIServerDomain())
-			if err != nil {
-				return fmt.Errorf("add apiserver domain hosts failed %v", err)
-			}
-			err = k.execHostsAppend(node, node, constants.DefaultLvscareDomain)
-			if err != nil {
-				return fmt.Errorf("add lvscare domain hosts failed %v", err)
-			}
 			logger.Info("run ipvs once module: %s", node)
 			err = k.execIPVS(node, masters)
 			if err != nil {
