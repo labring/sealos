@@ -28,6 +28,7 @@ import (
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
+	"github.com/labring/sealos/controllers/pkg/database"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -35,6 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	infostreamv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
@@ -51,6 +53,7 @@ func init() {
 	utilruntime.Must(ntf.AddToScheme(scheme))
 	utilruntime.Must(issuerv1.AddToScheme(scheme))
 	utilruntime.Must(accountv1.AddToScheme(scheme))
+	utilruntime.Must(infostreamv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -97,19 +100,25 @@ func main() {
 	// get options for this Operator
 	options := util.GetOptions()
 	mongoURI := options.GetEnvOptions().MongoURI
-	dbCol, err := util.NewLicenseDB(mongoURI)
+	licenseDB, err := util.NewLicenseDB(mongoURI, database.DefaultDBName, "license")
+	if err != nil {
+		setupLog.Error(err, "unable to create database")
+		os.Exit(1)
+	}
+	clusterLicenseDB, err := util.NewLicenseDB(mongoURI, database.DefaultDBName, "cluster_license")
 	if err != nil {
 		setupLog.Error(err, "unable to create database")
 		os.Exit(1)
 	}
 	defer func() {
-		_ = dbCol.Disconnect()
+		_ = licenseDB.Disconnect()
+		_ = clusterLicenseDB.Disconnect()
 	}()
 
 	if err = (&controller.LicenseReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
-		DBCol:    dbCol,
+		DBCol:    licenseDB,
 		Recorder: util.GetHashMap(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "License")
@@ -151,6 +160,14 @@ func main() {
 
 	//mgr.GetWebhookServer().Register("/validate-cloud-sealos-io-v1-license", &webhook.Admission{Handler: &controller.ScaleWebhook{Client: mgr.GetClient()}})
 
+	if err = (&controller.ClusterLicenseReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		DBCol:  clusterLicenseDB,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ClusterLicense")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

@@ -1,0 +1,12 @@
+apiVersion: infostream.sealos.io/v1
+kind: ClusterScaleBilling
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterscalebilling
+    app.kubernetes.io/instance: clusterscalebilling-sample
+    app.kubernetes.io/part-of: licenseissuer-controller
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: licenseissuer-controller
+  name: clusterscalebilling-sample
+spec:
+  # TODO(user): Add fields here

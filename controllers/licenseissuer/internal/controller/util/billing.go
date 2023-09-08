@@ -33,7 +33,7 @@ import (
 
 const defaultCryptoKey = "ABf0beBc5gd0C54adF0b1547cF43aCB83"
 
-var cryptoKey = defaultCryptoKey
+var CryptoKey = defaultCryptoKey
 
 type ClusterScaleBilling struct {
 	tnr TotalNodesResource
@@ -113,7 +113,7 @@ func (c *ClusterScaleBilling) GetPrices() map[string]common.Price {
 			return common.DefaultPrices
 		}
 		var priceInt64 int64
-		priceInt64, err := crypto.DecryptInt64WithKey(price.Price, []byte(cryptoKey))
+		priceInt64, err := crypto.DecryptInt64WithKey(price.Price, []byte(CryptoKey))
 		if err != nil {
 			priceInt64 = common.DefaultPrices[price.Property].Price
 		}

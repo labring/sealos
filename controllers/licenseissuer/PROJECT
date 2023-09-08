@@ -50,4 +50,21 @@ resources:
   group: infostream
   kind: ScaleMonitor
   version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: infostream
+  kind: ClusterLicense
+  path: github.com/labring/sealos/controllers/licenseissuer/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: sealos.io
+  group: infostream
+  kind: ClusterScaleBilling
+  path: github.com/labring/sealos/controllers/licenseissuer/api/v1
+  version: v1
 version: "3"

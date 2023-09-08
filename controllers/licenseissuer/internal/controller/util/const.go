@@ -86,3 +86,7 @@ const (
 	ClusterBillingWork task = "ClusterBillingWork"
 	// Add more tasks here
 )
+
+const (
+	ScaleBilling = "cluster-scale-billing"
+)

@@ -30,7 +30,6 @@ import (
 	count "github.com/labring/sealos/controllers/common/account"
 	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/pkg/crypto"
-	"github.com/labring/sealos/controllers/pkg/database"
 	mongoOptions "go.mongodb.org/mongo-driver/mongo/options"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -122,8 +121,8 @@ func RecordLicense(dbCol LicenseDB, license License) error {
 	return nil
 }
 
-func CheckLicenseExists(dbCol LicenseDB, uid string, token string) (bool, error) {
-	ok, err := dbCol.IsExisted(uid, token)
+func CheckLicenseExists(dbCol LicenseDB, token string) (bool, error) {
+	ok, err := dbCol.IsExisted(token)
 	if err != nil {
 		logger.Info("failed to check license exists")
 		return false, err
@@ -156,10 +155,10 @@ func InterfaceToInt64(value interface{}) (int64, error) {
 //--------------------- license Data --------------------- //
 
 type LicenseDB interface {
-	Record(license License) error
+	Record(interface{}) error
 	QueryByUID(ns string, st int64, ed int64) ([]LicenseResult, error)
 
-	IsExisted(uid string, token string) (bool, error)
+	IsExisted(token string) (bool, error)
 	Disconnect() error
 }
 
@@ -179,6 +178,12 @@ type License struct {
 	Payload    map[string]interface{} `bson:"payload"`
 }
 
+type ClusterLicense struct {
+	Token     string                 `bson:"token"`
+	CreatTime string                 `bson:"createTime"`
+	Payload   map[string]interface{} `bson:"payload"`
+}
+
 type LicenseResult struct {
 	License License `bson:"license"`
 }
@@ -194,10 +199,10 @@ func NewLicense(uid string, token string, payload map[string]interface{}) Licens
 
 var _ LicenseDB = &licenseDB{}
 
-func (db *licenseDB) IsExisted(uid string, token string) (bool, error) {
+func (db *licenseDB) IsExisted(token string) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	filter := bson.M{"uid": uid, "license": bson.M{"$elemMatch": bson.M{"token": token}}}
+	filter := bson.M{"token": token}
 	res := db.Client.Database(db.DBName).Collection(db.COLName).FindOne(ctx, filter)
 	if res.Err() != nil {
 		if res.Err().Error() == mongo.ErrNoDocuments.Error() {
@@ -237,13 +242,10 @@ func (db *licenseDB) QueryByUID(uid string, st int64, ed int64) ([]LicenseResult
 	return res, nil
 }
 
-func (db *licenseDB) Record(license License) error {
+func (db *licenseDB) Record(license interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	filter := bson.M{"uid": license.UID}
-	update := bson.M{"$push": bson.M{"license": license}}
-	updateOptions := mongoOptions.Update().SetUpsert(true)
-	_, err := db.Client.Database(db.DBName).Collection(db.COLName).UpdateOne(ctx, filter, update, updateOptions)
+	_, err := db.Client.Database(db.DBName).Collection(db.COLName).InsertOne(ctx, license)
 	return err
 }
 
@@ -253,7 +255,7 @@ func (db *licenseDB) Disconnect() error {
 	return db.Client.Disconnect(ctx)
 }
 
-func NewLicenseDB(uri string) (LicenseDB, error) {
+func NewLicenseDB(uri string, dbName string, colName string) (LicenseDB, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	clientOptions := mongoOptions.Client().ApplyURI(uri)
@@ -264,8 +266,8 @@ func NewLicenseDB(uri string) (LicenseDB, error) {
 	return &licenseDB{
 		URI:     uri,
 		Client:  client,
-		DBName:  database.DefaultDBName,
-		COLName: DefaultColForLicense,
+		DBName:  dbName,
+		COLName: colName,
 	}, nil
 }
 

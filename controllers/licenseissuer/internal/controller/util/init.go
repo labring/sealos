@@ -20,6 +20,8 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
+	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
+	"github.com/labring/sealos/controllers/pkg/crypto"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -95,6 +97,25 @@ func (t *InitTask) checkRegister(instance *TaskInstance) (bool, error) {
 	return true, err
 }
 
+func (t *InitTask) initResource(instance *TaskInstance) error {
+	csb := createClusterScaleBilling()
+	// step 1
+	ok, err := checkClusterScaleBilling(instance)
+	if err != nil {
+		instance.logger.Info("failed to check if the cluster has been registered")
+		return err
+	}
+	if ok {
+		instance.logger.Info("cluster-scale-billing has been created")
+		return nil
+	}
+	err = instance.Create(instance.ctx, csb)
+	if err != nil {
+		instance.logger.Info("failed to store cluster info", "err", err)
+	}
+	return err
+}
+
 func createClusterInfo() *corev1.Secret {
 	uuid := uuid.New().String()
 	secret := &corev1.Secret{}
@@ -104,6 +125,35 @@ func createClusterInfo() *corev1.Secret {
 		"uuid": []byte(uuid),
 	}
 	return secret
+}
+
+func checkClusterScaleBilling(instance *TaskInstance) (bool, error) {
+	csb := &issuerv1.ClusterScaleBilling{}
+	err := instance.Get(instance.ctx, types.NamespacedName{
+		Name:      ScaleBilling,
+		Namespace: GetOptions().GetEnvOptions().Namespace,
+	}, csb)
+
+	if err != nil && apierrors.IsNotFound(err) {
+		return false, nil
+	}
+	return true, err
+}
+
+func createClusterScaleBilling() *issuerv1.ClusterScaleBilling {
+	csb := &issuerv1.ClusterScaleBilling{}
+	csb.Name = ScaleBilling
+	csb.Namespace = GetOptions().GetEnvOptions().Namespace
+	eq, err := crypto.EncryptInt64WithKey(0, []byte(CryptoKey))
+	if err != nil {
+		csb.Status = issuerv1.ClusterScaleBillingStatus{
+			Quota:        0,
+			Used:         0,
+			EncryptQuota: *eq,
+			EncryptUsed:  *eq,
+		}
+	}
+	return csb
 }
 
 var onceForInit sync.Once

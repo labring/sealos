@@ -157,7 +157,7 @@ func (r *LicenseReconciler) CheckLicenseExists() (bool, error) {
 	if ok {
 		return true, nil
 	}
-	ok, err := util.CheckLicenseExists(r.DBCol, r.license.Spec.UID, r.license.Spec.Token)
+	ok, err := util.CheckLicenseExists(r.DBCol, r.license.Spec.Token)
 	if err != nil {
 		r.logger.Error(err, "failed to check license exists")
 		return false, err
