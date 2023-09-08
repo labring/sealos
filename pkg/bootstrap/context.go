@@ -17,7 +17,6 @@ package bootstrap
 import (
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
-	"github.com/labring/sealos/pkg/remote"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/maps"
@@ -29,7 +28,7 @@ type Context interface {
 	GetCluster() *v2.Cluster
 	GetPathResolver() constants.PathResolver
 	GetExecer() ssh.Interface
-	GetRemoter() remote.Interface
+	GetRemoter() *ssh.Remote
 }
 
 type realContext struct {
@@ -37,7 +36,7 @@ type realContext struct {
 	cluster      *v2.Cluster
 	pathResolver constants.PathResolver
 	execer       ssh.Interface
-	remoter      remote.Interface
+	remoter      *ssh.Remote
 }
 
 func (ctx realContext) GetBash() constants.Bash {
@@ -56,14 +55,14 @@ func (ctx realContext) GetExecer() ssh.Interface {
 	return ctx.execer
 }
 
-func (ctx realContext) GetRemoter() remote.Interface {
+func (ctx realContext) GetRemoter() *ssh.Remote {
 	return ctx.remoter
 }
 
 func NewContextFrom(cluster *v2.Cluster) Context {
 	execer := ssh.NewCacheClientFromCluster(cluster, true)
 	envProcessor := env.NewEnvProcessor(cluster)
-	remoter := remote.New(cluster.GetName(), execer)
+	remoter := ssh.NewRemoteFromSSH(cluster.GetName(), execer)
 
 	rootfsImage := cluster.GetRootfsImage()
 	rootfsEnvs := v2.MergeEnvWithBuiltinKeys(rootfsImage.Env, *rootfsImage)
