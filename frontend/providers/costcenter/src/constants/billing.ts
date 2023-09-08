@@ -4,7 +4,8 @@ export const TableHeaders = [
   'Type',
   'CPU',
   'Memory',
-  'Storage'
+  'Storage',
+  'Network'
   // 'GPU',
   // 'Total Amount'
 ] as const;

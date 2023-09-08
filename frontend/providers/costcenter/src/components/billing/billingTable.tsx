@@ -31,9 +31,9 @@ export function BillingTable({ data }: { data: BillingItem[] }) {
               >
                 <Flex display={'flex'} alignItems={'center'}>
                   <Text mr="4px">{t(item)}</Text>
-                  {['CPU', 'Gpu', 'Memory', 'Storage', 'Total Amount'].includes(item) && (
-                    <CurrencySymbol type={currency} />
-                  )}
+                  {['CPU', 'Gpu', 'Memory', 'Storage', 'Network', 'Total Amount'].includes(
+                    item
+                  ) && <CurrencySymbol type={currency} />}
                 </Flex>
               </Th>
             ))}
@@ -89,6 +89,7 @@ export function BillingTable({ data }: { data: BillingItem[] }) {
                   <Td>{!item.type ? <span>{formatMoney(item.costs?.cpu || 0)}</span> : '-'}</Td>
                   <Td>{!item.type ? <span>{formatMoney(item.costs?.memory || 0)}</span> : '-'}</Td>
                   <Td>{!item.type ? <span>{formatMoney(item.costs?.storage || 0)}</span> : '-'}</Td>
+                  <Td>{!item.type ? <span>{formatMoney(item.costs?.network || 0)}</span> : '-'}</Td>
                   {gpuEnabled && (
                     <Td>{!item.type ? <span>{formatMoney(item.costs?.gpu || 0)}</span> : '-'}</Td>
                   )}

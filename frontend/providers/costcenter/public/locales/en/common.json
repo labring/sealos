@@ -34,6 +34,7 @@
   "Type": "Type",
   "CPU": "CPU",
   "Memory": "Memory",
+  "Network": "Network",
   "Storage": "Storage",
   "Total Amount": "Total Amount",
   "Transfer Amount": "Transfer Amount",

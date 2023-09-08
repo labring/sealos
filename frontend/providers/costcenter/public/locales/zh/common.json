@@ -36,6 +36,7 @@
   "CPU": "CPU",
   "Memory": "内存",
   "Storage": "存储卷",
+  "Network": "网络",
   "Total Amount": "总金额",
   "Payment Result": "支付结果",
   "Payment Successful": "支付成功",
