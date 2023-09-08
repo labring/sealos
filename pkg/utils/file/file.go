@@ -21,6 +21,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // DiffWithCallback diff with callback function.
@@ -127,4 +129,38 @@ func Cmp(src, dest string, chunkSize int) (same bool, err error) {
 			return false, err2
 		}
 	}
+}
+
+func FindFilesMatchExtension(base string, exts ...string) ([]string, error) {
+	absPath, err := filepath.Abs(base)
+	if err != nil {
+		return nil, err
+	}
+	stat, err := os.Stat(absPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	if stat.Mode().IsRegular() {
+		return []string{absPath}, nil
+	} else if stat.IsDir() {
+		var ret []string
+		extensions := sets.NewString(exts...)
+		err = filepath.WalkDir(absPath, func(path string, de fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if de.IsDir() {
+				return nil
+			}
+			if ext := filepath.Ext(path); extensions.Has(ext) {
+				ret = append(ret, path)
+			}
+			return nil
+		})
+		return ret, err
+	}
+	return nil, nil
 }

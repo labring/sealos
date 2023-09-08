@@ -49,7 +49,7 @@ func unmarshalStrict(r io.Reader, obj interface{}) (err error) {
 			break
 		}
 		if rerr != nil {
-			return err
+			return rerr
 		}
 		if len(bytes.TrimSpace(buf)) == 0 {
 			continue
