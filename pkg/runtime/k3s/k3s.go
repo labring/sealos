@@ -67,17 +67,33 @@ func (k *K3s) Reset() error {
 }
 
 func (k *K3s) ScaleUp(masters []string, nodes []string) error {
-	if err := k.joinMasters(masters); err != nil {
-		return err
+	if len(masters) != 0 {
+		logger.Info("%s will be added as master", masters)
+		if err := k.joinMasters(masters); err != nil {
+			return err
+		}
 	}
-	return k.joinNodes(nodes)
+	if len(nodes) != 0 {
+		logger.Info("%s will be added as worker", nodes)
+		if err := k.joinNodes(nodes); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (k *K3s) ScaleDown(masters []string, nodes []string) error {
-	if err := k.resetNodes(nodes); err != nil {
-		return err
+	if len(masters) != 0 {
+		logger.Info("master %s will be deleted", masters)
+		if err := k.resetNodes(masters); err != nil {
+			return err
+		}
 	}
-	return k.resetNodes(masters)
+	if len(nodes) != 0 {
+		logger.Info("worker %s will be deleted", nodes)
+		return k.resetNodes(nodes)
+	}
+	return nil
 }
 
 func (k *K3s) Upgrade(version string) error {
@@ -86,7 +102,8 @@ func (k *K3s) Upgrade(version string) error {
 }
 
 func (k *K3s) GetRawConfig() ([]byte, error) {
-	cfg, err := k.getInitConfig(defaultingConfig, k.overrideServerConfig, setClusterInit)
+	defaultCallbacks := []callback{defaultingConfig, k.sealosCfg, k.overrideCertSans, k.overrideServerConfig, setClusterInit}
+	cfg, err := k.getInitConfig(defaultCallbacks...)
 	if err != nil {
 		return nil, err
 	}

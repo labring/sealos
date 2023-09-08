@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
+	"golang.org/x/exp/slices"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -70,10 +70,6 @@ func (k *KubeadmRuntime) resetNode(node string, cleanHook func()) error {
 	resetCmd := fmt.Sprintf(remoteCleanMasterOrNode, vlogToStr(k.klogLevel), k.getEtcdDataDir())
 	removeKubeConfigErr := k.sshCmdAsync(node, removeKubeConfig)
 	resetCmdErr := k.sshCmdAsync(node, resetCmd)
-	ipvscleanErr := k.execIPVSClean(node)
-	hostsDeleteAPIServerErr := k.execHostsDelete(node, k.getAPIServerDomain())
-	hostsDeleteLvscareErr := k.execHostsDelete(node, constants.DefaultLvscareDomain)
-
 	if cleanHook != nil {
 		cleanHook()
 	}
@@ -84,15 +80,11 @@ func (k *KubeadmRuntime) resetNode(node string, cleanHook func()) error {
 	if removeKubeConfigErr != nil {
 		logger.Error("failed to clean node, exec command %s failed, %v", removeKubeConfig, removeKubeConfigErr)
 	}
-	if ipvscleanErr != nil {
-		logger.Error("failed to clean node route and ipvs failed, %v", ipvscleanErr)
+	if slices.Contains(k.cluster.GetNodeIPList(), node) {
+		ipvscleanErr := k.execIPVSClean(node)
+		if ipvscleanErr != nil {
+			logger.Error("failed to clean node route and ipvs failed, %v", ipvscleanErr)
+		}
 	}
-	if hostsDeleteAPIServerErr != nil {
-		logger.Error("delete apiserver hosts failed %v", hostsDeleteAPIServerErr)
-	}
-	if hostsDeleteLvscareErr != nil {
-		return fmt.Errorf("add lvscare domain hosts failed %v", hostsDeleteLvscareErr)
-	}
-
 	return nil
 }

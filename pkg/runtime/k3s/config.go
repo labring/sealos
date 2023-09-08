@@ -20,6 +20,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/emirpasic/gods/sets/linkedhashset"
+
 	"github.com/imdario/mergo"
 	netutils "k8s.io/utils/net"
 
@@ -56,19 +58,13 @@ func defaultingAgentConfig(c *Config) *Config {
 		c.AgentConfig = &AgentConfig{}
 	}
 	c.AgentConfig.PreferBundledBin = true
+	c.AgentConfig.DataDir = defaultDataDir
 	c.AgentConfig.ExtraKubeProxyArgs = []string{}
 	c.AgentConfig.ExtraKubeletArgs = []string{}
 	c.AgentConfig.PauseImage = "docker.io/rancher/pause:3.1"
-	c.AgentConfig.PrivateRegistry = "/etc/rancher/k3s/registries.yaml"
+	c.AgentConfig.PrivateRegistry = defaultRegistryConfigPath
 	c.AgentConfig.Labels = []string{"sealos.io/distribution=k3s"}
 
-	return c
-}
-
-func (k *K3s) sealosCfg(c *Config) *Config {
-	vip := k.cluster.GetVIP()
-	c.ExtraKubeProxyArgs = append(c.ExtraKubeProxyArgs, fmt.Sprintf("%s=%s", "ipvs-exclude-cidrs", fmt.Sprintf("%s/32", vip)))
-	c.AgentConfig.ExtraKubeletArgs = append(c.AgentConfig.ExtraKubeletArgs, fmt.Sprintf("%s=%s", "ipvs-exclude-cidrs", fmt.Sprintf("%s/32", vip)))
 	return c
 }
 
@@ -116,18 +112,40 @@ func (k *K3s) merge(c *Config) *Config {
 	return c
 }
 
-func (k *K3s) overrideServerConfig(c *Config) *Config {
-	c.AgentConfig.TokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "token")
-	c.AgentTokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "agent-token")
-	vip := k.cluster.GetVIP()
+func (k *K3s) overrideCertSans(c *Config) *Config {
 	masterIPs := iputils.GetHostIPs(k.cluster.GetMasterIPList())
 	var certSans []string
 	certSans = append(certSans, "127.0.0.1")
 	certSans = append(certSans, constants.DefaultAPIServerDomain)
-	certSans = append(certSans, vip)
+	certSans = append(certSans, k.cluster.GetVIP())
 	certSans = append(certSans, masterIPs...)
 	certSans = append(certSans, c.TLSSan...)
+	certSans = append(certSans, c.ServiceCIDR...)
+	certSans = append(certSans, c.ClusterDomain)
 	c.TLSSan = certSans
+	return c
+}
+
+func (k *K3s) sealosCfg(c *Config) *Config {
+	vip := k.cluster.GetVIP()
+	kubeProxy := linkedhashset.New()
+	for _, v := range c.AgentConfig.ExtraKubeProxyArgs {
+		kubeProxy.Add(v)
+	}
+	kubeProxy.Add(fmt.Sprintf("%s=%s", "ipvs-exclude-cidrs", fmt.Sprintf("%s/32", vip)))
+	kubeProxy.Add(fmt.Sprintf("%s=%s", "proxy-mode", "ipvs"))
+
+	var allArgs []string
+	for _, v := range kubeProxy.Values() {
+		allArgs = append(allArgs, v.(string))
+	}
+	c.AgentConfig.ExtraKubeProxyArgs = allArgs
+	return c
+}
+
+func (k *K3s) overrideServerConfig(c *Config) *Config {
+	c.AgentConfig.TokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "token")
+	c.AgentTokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "agent-token")
 
 	if len(c.ClusterDNS) == 0 && len(c.ServiceCIDR) > 0 {
 		svcSubnetCIDR, err := netutils.ParseCIDRs(c.ServiceCIDR)

@@ -17,12 +17,14 @@ package k3s
 const Distribution = "k3s"
 
 const (
-	defaultBinDir              = "/usr/local/bin"
 	defaultConfigPath          = "/etc/rancher/k3s/config.yaml"
+	defaultRegistryConfigPath  = "/etc/rancher/k3s/registries.yaml"
+	defaultDataDir             = "/var/lib/rancher/k3s"
 	defaultRootFsK3sFileName   = "k3s.yml"
 	defaultInitFilename        = "k3s-init.yaml"
 	defaultJoinMastersFilename = "k3s-join-master.yaml"
-	defaultJoinNodesFilename   = "k3s-join-master.yaml"
+	defaultJoinNodesFilename   = "k3s-join-node.yaml"
+	defaultPodManifestPath     = "pod-manifests"
 )
 
 const (

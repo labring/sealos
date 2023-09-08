@@ -49,9 +49,7 @@ func (k *K3s) joinMasters(masters []string) error {
 }
 
 func (k *K3s) writeJoinConfigWithCallbacks(runMode string, callbacks ...callback) (string, error) {
-	//master0 := k.cluster.GetMaster0IP()
-
-	defaultCallbacks := []callback{defaultingConfig, k.merge, k.sealosCfg}
+	defaultCallbacks := []callback{defaultingConfig, k.merge, k.sealosCfg, k.overrideCertSans}
 	switch runMode {
 	case serverMode:
 		defaultCallbacks = append(defaultCallbacks, k.overrideServerConfig)
@@ -64,7 +62,6 @@ func (k *K3s) writeJoinConfigWithCallbacks(runMode string, callbacks ...callback
 			c.ServerURL = fmt.Sprintf("https://%s:%d", constants.DefaultAPIServerDomain, c.HTTPSPort)
 			return c
 		},
-		// TODO: set --image-service-endpoint flag in c.ExtraKubeletArgs options
 	)
 	raw, err := k.getRawInitConfig(
 		append(defaultCallbacks, callbacks...)...,
@@ -159,11 +156,9 @@ func (k *K3s) getRawInitConfig(callbacks ...callback) ([]byte, error) {
 
 func (k *K3s) generateAndSendInitConfig() error {
 	src := filepath.Join(k.pathResolver.EtcPath(), defaultInitFilename)
+	defaultCallbacks := []callback{defaultingConfig, k.merge, k.sealosCfg, k.overrideCertSans, k.overrideServerConfig, setClusterInit}
 	if !file.IsExist(src) {
-		raw, err := k.getRawInitConfig(defaultingConfig, k.merge,
-			k.overrideServerConfig,
-			setClusterInit,
-		)
+		raw, err := k.getRawInitConfig(defaultCallbacks...)
 		if err != nil {
 			return err
 		}
