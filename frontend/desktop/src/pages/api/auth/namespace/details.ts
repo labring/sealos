@@ -1,10 +1,8 @@
 import { authSession } from '@/services/backend/auth';
-import { queryNS, queryNSByUid } from '@/services/backend/db/namespace';
 import { queryUsersByNamespace } from '@/services/backend/db/userToNamespace';
 import { jsonRes } from '@/services/backend/response';
-import { checkInNS } from '@/services/backend/team';
 import { NamespaceDto } from '@/types/team';
-import { TeamUserDto, UserDto } from '@/types/user';
+import { TeamUserDto } from '@/types/user';
 import { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -12,16 +10,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!payload) return jsonRes(res, { code: 401, message: 'token verify error' });
     const { ns_uid } = req.body;
     if (!ns_uid) return jsonRes(res, { code: 400, message: 'nsid is required' });
-    if (
-      !checkInNS({
-        userId: payload.user.uid,
-        k8s_username: payload.user.k8s_username,
-        namespaceId: payload.user.nsid
-      })
-    )
-      return jsonRes(res, { code: 403, message: 'not in namespace' });
-    const rawNamespace = await queryNSByUid({ uid: ns_uid });
-    if (!rawNamespace) return jsonRes(res, { code: 404, message: 'namespace not founded' });
+    const utnWithUser = await queryUsersByNamespace({ namespaceId: ns_uid });
+
+    if (utnWithUser.length <= 0)
+      return jsonRes(res, { code: 404, message: 'namespace not founded!' });
+    const rawNamespace = utnWithUser[0].namespace;
     const namespace: NamespaceDto = {
       uid: rawNamespace.uid,
       id: rawNamespace.id,
@@ -29,7 +22,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       teamName: rawNamespace.teamName,
       nstype: rawNamespace.nstype
     };
-    const utnWithUser = await queryUsersByNamespace({ namespaceId: ns_uid });
     const users = utnWithUser.map<TeamUserDto>((x) => ({
       uid: x.userId,
       k8s_username: x.k8s_username,

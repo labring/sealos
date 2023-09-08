@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:w": "jest --watch --runInBand",
+    "test:e2e": "jest --testPathPattern=/e2e/ --runInBand",
     "test:ci": "jest --runInBand"
   },
   "dependencies": {

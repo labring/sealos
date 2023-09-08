@@ -1,5 +1,5 @@
 import { authSession } from '@/services/backend/auth';
-import { queryUsersByNamespace } from '@/services/backend/db/userToNamespace';
+import { changeOwnerBinding, queryUsersByNamespace } from '@/services/backend/db/userToNamespace';
 import { jsonRes } from '@/services/backend/response';
 import { modifyBinding, modifyTeamRole, unbindingRole } from '@/services/backend/team';
 import { InvitedStatus, NSType, UserRole } from '@/types/team';
@@ -33,22 +33,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
     if (!targetUtn || targetUtn.status !== InvitedStatus.Accepted)
       return jsonRes(res, { code: 404, message: 'the targetUser is not in namespace' });
-    // 升级为 owner
-    const bindResult = await modifyBinding({
-      k8s_username: targetUsername,
-      namespaceId: ns_uid,
-      role: UserRole.Owner,
-      userId: targetUserId
-    });
-    if (!bindResult) throw new Error('fail to binding role');
-    // 降级为 developer
-    const unbindResult = await modifyBinding({
-      k8s_username: payload.user.k8s_username,
-      role: UserRole.Developer,
-      userId: payload.user.uid,
-      namespaceId: ns_uid
-    });
-    if (!unbindResult) throw new Error('fail to unbinding role');
 
     await modifyTeamRole({
       action: 'Change',
@@ -57,6 +41,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       userId: targetUserId,
       role: UserRole.Owner,
       namespace: ownUtn.namespace
+    });
+    // 升级为 owner
+    // const bindResult = await modifyBinding({
+    // 	k8s_username: targetUsername,
+    // 	namespaceId: ns_uid,
+    // 	role: UserRole.Owner,
+    // 	userId: targetUserId
+    // });
+    // if (!bindResult) throw new Error('fail to binding role');
+    // // 降级为 developer
+    // const unbindResult = await modifyBinding({
+    // 	k8s_username: payload.user.k8s_username,
+    // 	role: UserRole.Developer,
+    // 	userId: payload.user.uid,
+    // 	namespaceId: ns_uid
+    // });
+    // if (!unbindResult) throw new Error('fail to unbinding role');
+    await changeOwnerBinding({
+      userId: payload.user.uid,
+      k8s_username: payload.user.k8s_username,
+      namespaceId: ns_uid,
+      tUserId: targetUserId,
+      tK8sUsername: targetUsername
     });
     jsonRes(res, {
       code: 200,

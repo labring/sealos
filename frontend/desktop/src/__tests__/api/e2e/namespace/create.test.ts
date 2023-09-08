@@ -1,9 +1,9 @@
 import { Session } from 'sealos-desktop-sdk/*';
 import * as k8s from '@kubernetes/client-node';
 import { _passwordLoginRequest } from '@/api/auth';
-import { _setAuth, cleanDb, cleanK8s } from '../tools';
+import { _setAuth, cleanDb, cleanK8s } from '@/__tests__/api/tools';
 import { _createRequest } from '@/api/namespace';
-import request from '../request';
+import request from '@/__tests__/api/request';
 import { Db, MongoClient } from 'mongodb';
 describe('Login create', () => {
   let session: Session;

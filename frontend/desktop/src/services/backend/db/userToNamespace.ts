@@ -1,6 +1,7 @@
 import { InvitedStatus, Namespace, UserRole } from '@/types/team';
 import { connectToDatabase } from './mongodb';
 import { User } from '@/types/user';
+import { ClientSession } from 'mongodb';
 export async function connectToUTN() {
   const client = await connectToDatabase();
   const collection = client.db().collection<TUserToNamespace>('userToNs');
@@ -14,7 +15,6 @@ type TUserToNamespace = {
   joinTime?: Date;
   role: UserRole;
   createTime: Date;
-  deleteTime?: Date;
   updateTime?: Date;
   // 发起操作的人
   managerId?: string;
@@ -58,11 +58,13 @@ export async function updateUTN({
   userId,
   k8s_username,
   namespaceId,
+  session,
   ...data
 }: {
   userId: string;
   k8s_username: string;
   namespaceId: string;
+  session?: ClientSession;
   status?: InvitedStatus;
   role?: UserRole;
   joinTime?: Date;
@@ -79,6 +81,9 @@ export async function updateUTN({
         ...data,
         updateTime: new Date()
       }
+    },
+    {
+      session
     }
   );
   return result.value;
@@ -219,3 +224,52 @@ export async function deleteUTN(filterData: {
   const result = await collection.findOneAndDelete(filterData);
   return result.value;
 }
+
+export const changeOwnerBinding = async ({
+  userId,
+  k8s_username,
+  namespaceId,
+  tUserId,
+  tK8sUsername
+}: {
+  userId: string;
+  k8s_username: string;
+  namespaceId: string;
+  tUserId: string;
+  tK8sUsername: string;
+}) => {
+  const client = await connectToDatabase();
+  const session = client.startSession({});
+  let results: [TUserToNamespace, TUserToNamespace] | null = null;
+  try {
+    await session.withTransaction(
+      async (session) => {
+        const res1 = await updateUTN({
+          userId,
+          k8s_username,
+          namespaceId,
+          role: UserRole.Developer,
+          session
+        });
+        if (res1 === null) throw Error();
+        const res2 = await updateUTN({
+          userId: tUserId,
+          k8s_username: tK8sUsername,
+          namespaceId,
+          role: UserRole.Owner,
+          session
+        });
+        if (res2 === null) throw Error();
+        results = [res1, res2];
+      },
+      {
+        readPreference: 'primary',
+        readConcern: { level: 'local' },
+        writeConcern: { w: 'majority' }
+      }
+    );
+  } finally {
+    await session.endSession();
+    return results;
+  }
+};

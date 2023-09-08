@@ -6,7 +6,7 @@ $itmes = kubectl get user -o json | ConvertFrom-Json | Select-Object { $_.items 
 foreach ($item in $items) {
 	$name = $item.metadata.name
 	if ($name -ne "admin") {
-		kubectl delete user $name
+		kubectl.exe delete user $name
 	}
 }
 $items = kubectl get ns -o json | 
@@ -16,5 +16,5 @@ Where-Object { $_.metadata.name -match "ns-*" -and $_.metadata.name -ne "ns-admi
 
 foreach ($item in $items) {
 	$name = $item.metadata.name
-	kubectl delete ns $name
+	kubectl.exe delete ns $name
 }

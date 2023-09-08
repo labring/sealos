@@ -23,4 +23,4 @@ class CustomSequencer extends TestSequencer {
   }
 }
 
-module.exports = TestSequencer;
+module.exports = CustomSequencer;
