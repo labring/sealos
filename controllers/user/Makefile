@@ -57,7 +57,7 @@ $(HELMIFY): $(LOCALBIN)
 	test -s $(LOCALBIN)/helmify || GOBIN=$(LOCALBIN) go install github.com/arttor/helmify/cmd/helmify@latest
 
 helm: manifests helmify
-	$(KUSTOMIZE) build config/default | $(HELMIFY) -crd-dir deploy/charts/user
+	$(KUSTOMIZE) build config/default | $(HELMIFY) -crd-dir charts/user
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.

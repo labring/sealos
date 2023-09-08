@@ -1,0 +1,40 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "licenseissuer.fullname" . }}-proxy-role
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: licenseissuer-controller
+    app.kubernetes.io/part-of: licenseissuer-controller
+  {{- include "licenseissuer.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "licenseissuer.fullname" . }}-proxy-rolebinding
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: licenseissuer-controller
+    app.kubernetes.io/part-of: licenseissuer-controller
+  {{- include "licenseissuer.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: '{{ include "licenseissuer.fullname" . }}-proxy-role'
+subjects:
+- kind: ServiceAccount
+  name: '{{ include "licenseissuer.fullname" . }}-controller-manager'
+  namespace: '{{ .Release.Namespace }}'

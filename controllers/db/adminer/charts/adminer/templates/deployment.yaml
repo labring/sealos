@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "adminer.fullname" . }}-adminer-controller-manager
+  labels:
+    control-plane: controller-manager
+  {{- include "adminer.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.adminerControllerManager.replicas }}
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+    {{- include "adminer.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+      {{- include "adminer.selectorLabels" . | nindent 8 }}
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+    spec:
+      containers:
+      - args: {{- toYaml .Values.adminerControllerManager.kubeRbacProxy.args | nindent
+          8 }}
+        env:
+        - name: KUBERNETES_CLUSTER_DOMAIN
+          value: {{ quote .Values.kubernetesClusterDomain }}
+        image: {{ .Values.adminerControllerManager.kubeRbacProxy.image.repository }}:{{
+          .Values.adminerControllerManager.kubeRbacProxy.image.tag | default .Chart.AppVersion
+          }}
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        resources: {{- toYaml .Values.adminerControllerManager.kubeRbacProxy.resources
+          | nindent 10 }}
+        securityContext: {{- toYaml .Values.adminerControllerManager.kubeRbacProxy.containerSecurityContext
+          | nindent 10 }}
+      - args: {{- toYaml .Values.adminerControllerManager.manager.args | nindent 8 }}
+        command:
+        - /manager
+        env:
+        - name: DOMAIN
+          value: {{ quote .Values.adminerControllerManager.manager.env.domain }}
+        - name: TLS_ENABLED
+          value: {{ quote .Values.adminerControllerManager.manager.env.tlsEnabled }}
+        - name: IMAGE
+          value: {{ quote .Values.adminerControllerManager.manager.env.image }}
+        - name: SECRET_NAME
+          value: {{ quote .Values.adminerControllerManager.manager.env.secretName }}
+        - name: SECRET_NAMESPACE
+          value: {{ quote .Values.adminerControllerManager.manager.env.secretNamespace
+            }}
+        - name: KUBERNETES_CLUSTER_DOMAIN
+          value: {{ quote .Values.kubernetesClusterDomain }}
+        image: {{ .Values.adminerControllerManager.manager.image.repository }}:{{ .Values.adminerControllerManager.manager.image.tag
+          | default .Chart.AppVersion }}
+        imagePullPolicy: {{ .Values.adminerControllerManager.manager.imagePullPolicy }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources: {{- toYaml .Values.adminerControllerManager.manager.resources | nindent
+          10 }}
+        securityContext: {{- toYaml .Values.adminerControllerManager.manager.containerSecurityContext
+          | nindent 10 }}
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: {{ include "adminer.fullname" . }}-adminer-controller-manager
+      terminationGracePeriodSeconds: 10

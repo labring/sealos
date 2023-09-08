@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "admission.fullname" . }}-serving-cert
+  labels:
+  {{- include "admission.labels" . | nindent 4 }}
+spec:
+  dnsNames:
+  - '{{ include "admission.fullname" . }}-webhook-service.{{ .Release.Namespace }}.svc'
+  - '{{ include "admission.fullname" . }}-webhook-service.{{ .Release.Namespace }}.svc.{{
+    .Values.kubernetesClusterDomain }}'
+  issuerRef:
+    kind: Issuer
+    name: '{{ include "admission.fullname" . }}-selfsigned-issuer'
+  secretName: admission-webhook-server-cert

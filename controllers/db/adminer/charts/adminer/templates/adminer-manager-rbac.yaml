@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "adminer.fullname" . }}-adminer-manager-rolebinding
+  labels:
+  {{- include "adminer.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: '{{ include "adminer.fullname" . }}-manager-role'
+subjects:
+- kind: ServiceAccount
+  name: '{{ include "adminer.fullname" . }}-adminer-controller-manager'
+  namespace: '{{ .Release.Namespace }}'

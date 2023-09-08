@@ -1,0 +1,42 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "admission.fullname" . }}-proxy-role
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: admission
+    app.kubernetes.io/part-of: admission
+    sealos.io/component: admission-controller-manager
+  {{- include "admission.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "admission.fullname" . }}-proxy-rolebinding
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: admission
+    app.kubernetes.io/part-of: admission
+    sealos.io/component: admission-controller-manager
+  {{- include "admission.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: '{{ include "admission.fullname" . }}-proxy-role'
+subjects:
+- kind: ServiceAccount
+  name: '{{ include "admission.fullname" . }}-controller-manager'
+  namespace: '{{ .Release.Namespace }}'

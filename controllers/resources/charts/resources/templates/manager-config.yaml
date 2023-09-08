@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "resources.fullname" . }}-manager-config
+  labels:
+  {{- include "resources.labels" . | nindent 4 }}
+data:
+  controller_manager_config.yaml: {{ .Values.managerConfig.controllerManagerConfigYaml
+    | toYaml | indent 1 }}
