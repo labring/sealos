@@ -7,33 +7,34 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/pkg/pay"
-	"github.com/labring/sealos/service/pay/conf"
+	"github.com/labring/sealos/service/pay/handler"
 	"github.com/labring/sealos/service/pay/helper"
 	"github.com/stripe/stripe-go/v74"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetStripeSession(c *gin.Context, request *conf.Request) {
+func GetStripeSession(c *gin.Context, request *helper.Request, client *mongo.Client) {
 	amountStr := request.Amount
 	amount, err := strconv.ParseInt(amountStr, 10, 64)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("error amount : %d, %v", amount, err)})
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("error amount : %d, %v", amount, err)})
 		return
 	}
 
 	// check the database paymethod and report an error if there is no corresponding payment method
-	if _, err := helper.CheckPayMethodExistOrNot(request.Currency, request.PayMethod); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("paymethod is not exist: %v", err)})
+	if _, err := handler.CheckPayMethodExistOrNot(client, request.Currency, request.PayMethod); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("paymethod is not exist: %v", err)})
 		return
 	}
 	// check the app collection to see if the cluster is allowed to use this payment method
-	if err := helper.CheckAppAllowOrNot(request.AppID, conf.Stripe); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("error pay method or currency in this app : %v", err)})
+	if err := handler.CheckAppAllowOrNot(client, request.AppID, helper.Stripe); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("error pay method or currency in this app : %v", err)})
 		return
 	}
 
 	session, err := pay.CreateCheckoutSession(amount, pay.CNY, pay.DefaultSuccessURL, pay.DefaultSuccessURL)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("error session : %v", err)})
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("error session : %v", err)})
 		return
 	}
 
@@ -49,13 +50,13 @@ func GetStripeSession(c *gin.Context, request *conf.Request) {
 	// and if either fails, they are rolled back
 
 	// insert payment details into database
-	orderID, err := helper.InsertDetails(user, conf.Stripe, amountStr, currency, appID, stripeDetails)
+	orderID, err := handler.InsertDetails(client, user, helper.Stripe, amountStr, currency, appID, stripeDetails)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("insert stripe payment details failed: %s, %v", session.ID, err)})
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("insert stripe payment details failed: %s, %v", session.ID, err)})
 		return
 	}
 
-	c.AbortWithStatusJSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"message":   "get stripe sessionID success",
 		"sessionID": session.ID,
 		"amount":    amountStr,
@@ -66,21 +67,21 @@ func GetStripeSession(c *gin.Context, request *conf.Request) {
 	return
 }
 
-func GetStripePaymentStatus(c *gin.Context, request *conf.Request) {
+func GetStripePaymentStatus(c *gin.Context, request *helper.Request, client *mongo.Client) {
 	// Firstly, check whether the order exists in the order Details, if not, directly return
-	if err := helper.CheckOrderExistOrNot(request); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("order does not exist: %v", err)})
+	if err := handler.CheckOrderExistOrNot(client, request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("order does not exist: %v", err)})
 		return
 	}
 	// check the payment status in the database first
-	status, err := helper.GetPaymentStatus(request.OrderID)
+	status, err := handler.GetPaymentStatus(client, request.OrderID)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("get payment status failed from db: %s, %v", status, err)})
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("get payment status failed from db: %s, %v", status, err)})
 		return
 	}
 	// If the payment has been successful, return directly
 	if status == pay.PaymentSuccess {
-		c.AbortWithStatusJSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"message": "payment has been successfully completed",
 			"status":  status,
 			"orderID": request.OrderID,
@@ -90,31 +91,31 @@ func GetStripePaymentStatus(c *gin.Context, request *conf.Request) {
 	// If it is not successful, then go to the payment provider server query
 	session, err := pay.GetSession(request.SessionID)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("get stripe session failed: %v, %v", session, err)})
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("get stripe session failed: %v, %v", session, err)})
 		return
 	}
 
 	switch session.Status {
 	case stripe.CheckoutSessionStatusComplete:
 		// change the status of the database to pay.Payment Success
-		paymentStatus, err := helper.UpdatePaymentStatus(request.OrderID, pay.PaymentSuccess)
+		paymentStatus, err := handler.UpdatePaymentStatus(client, request.OrderID, pay.PaymentSuccess)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			c.JSON(http.StatusBadRequest, gin.H{
 				"error": fmt.Sprintf("update payment status failed when wechat order status is success: %s, %v", paymentStatus, err),
 			})
 			return
 		}
-		c.AbortWithStatusJSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"message": "payment has been successfully completed, database has been updated",
 			"status":  pay.PaymentSuccess,
 			"orderID": request.OrderID,
 		})
 		return
 	case stripe.CheckoutSessionStatusExpired:
-		helper.UpdateDBIfDiff(c, request.OrderID, status, pay.PaymentExpired)
+		handler.UpdateDBIfDiff(c, request.OrderID, client, status, pay.PaymentExpired)
 	case stripe.CheckoutSessionStatusOpen:
-		helper.UpdateDBIfDiff(c, request.OrderID, status, pay.PaymentNotPaid)
+		handler.UpdateDBIfDiff(c, request.OrderID, client, status, pay.PaymentNotPaid)
 	default:
-		helper.UpdateDBIfDiff(c, request.OrderID, status, pay.PaymentUnknown)
+		handler.UpdateDBIfDiff(c, request.OrderID, client, status, pay.PaymentUnknown)
 	}
 }

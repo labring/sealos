@@ -1,11 +1,10 @@
-package helper
+package handler
 
 import (
 	"context"
 	"fmt"
-	"os"
 
-	"github.com/labring/sealos/service/pay/conf"
+	"github.com/labring/sealos/service/pay/helper"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -17,8 +16,8 @@ type App struct {
 	Methods    []string `bson:"methods"`
 }
 
-func InsertApp(appID int64, sign, appName string, methods []string) (*mongo.InsertManyResult, error) {
-	coll := InitDB(os.Getenv(conf.DBURI), conf.Database, conf.AppColl)
+func InsertApp(client *mongo.Client, appID int64, sign, appName string, methods []string) (*mongo.InsertManyResult, error) {
+	coll := helper.InitDBAndColl(client, helper.Database, helper.AppColl)
 	docs := []interface{}{
 		App{
 			AppID:      appID,
@@ -38,8 +37,8 @@ func InsertApp(appID int64, sign, appName string, methods []string) (*mongo.Inse
 }
 
 // CheckAppAllowOrNot checks if the appID is allowed to use the payMethod
-func CheckAppAllowOrNot(appID int64, payMethod string) error {
-	coll := InitDB(os.Getenv(conf.DBURI), conf.Database, conf.AppColl)
+func CheckAppAllowOrNot(client *mongo.Client, appID int64, payMethod string) error {
+	coll := helper.InitDBAndColl(client, helper.Database, helper.AppColl)
 	filter := bson.D{{"appID", appID}}
 	var result bson.M
 	if err := coll.FindOne(context.Background(), filter).Decode(&result); err != nil {
@@ -56,8 +55,8 @@ func CheckAppAllowOrNot(appID int64, payMethod string) error {
 	return fmt.Errorf("this payment method is not allowed in this app")
 }
 
-func CheckAppNameExistOrNot(appName string) error {
-	coll := InitDB(os.Getenv(conf.DBURI), conf.Database, conf.AppColl)
+func CheckAppNameExistOrNot(client *mongo.Client, appName string) error {
+	coll := helper.InitDBAndColl(client, helper.Database, helper.AppColl)
 	filter := bson.D{{"payAppName", appName}}
 
 	var result bson.M

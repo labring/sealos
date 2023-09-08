@@ -1,4 +1,4 @@
-package conf
+package helper
 
 type Request struct {
 	AppID         int64    `json:"appID"`
@@ -18,7 +18,8 @@ type Request struct {
 
 // DB
 const (
-	DBURI              = "dburi"
+	DBURI = "dburi"
+	//TODO the database needs a new name
 	Database           = "xy"
 	AppColl            = "app"
 	PayMethodColl      = "paymethod"
@@ -50,4 +51,10 @@ const (
 	GetSession      = "/session"
 	GetPayStatus    = "/status"
 	GetBill         = "/bill"
+	TestAppID       = 66683568733697785
+	TestSign        = "597d7f10a27219"
+	TestUser        = "cx"
+	TestOrderID     = "VS4gw76Ej-wIzGa1p2"
+	TestSessionID   = "cs_test_a1GdmdhVBHivyUqtLdl9ILv1fXneuPIY5XdtlTpljHYInH1fPhGCN8KmWt"
+	TestTradeNO     = "db27af04c65bd27bb3c3708addbafc01"
 )

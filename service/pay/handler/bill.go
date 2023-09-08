@@ -1,11 +1,11 @@
-package helper
+package handler
 
 import (
 	"context"
-	"os"
 
-	"github.com/labring/sealos/service/pay/conf"
+	"github.com/labring/sealos/service/pay/helper"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type BillDetail struct {
@@ -17,8 +17,8 @@ type BillDetail struct {
 	Status    string `bson:"status"`
 }
 
-func GetBillDetails(request *conf.Request) ([]BillDetail, error) {
-	coll := InitDB(os.Getenv(conf.DBURI), conf.Database, conf.PaymentDetailsColl)
+func GetBillDetails(request *helper.Request, client *mongo.Client) ([]BillDetail, error) {
+	coll := helper.InitDBAndColl(client, helper.Database, helper.PaymentDetailsColl)
 	filter := bson.D{
 		{"user", request.User},
 		{"appID", request.AppID},
@@ -33,12 +33,9 @@ func GetBillDetails(request *conf.Request) ([]BillDetail, error) {
 	// init result array
 	var billDetails []BillDetail
 
-	for cursor.Next(context.Background()) {
-		var result BillDetail
-		if err := cursor.Decode(&result); err != nil {
-			return nil, err
-		}
-		billDetails = append(billDetails, result)
+	if err := cursor.All(context.Background(), &billDetails); err != nil {
+		return nil, err
 	}
+
 	return billDetails, nil
 }
