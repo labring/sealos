@@ -200,6 +200,8 @@ func (ti *TaskInstance) Run() error {
 		return NewRegister().register(ti)
 	case MemoryCleanup:
 		return NewMemoryCleaner().cleanWork(ti)
+	case ClusterBillingWork:
+		return NewClusterBillingWork().billingWork(ti)
 	default:
 		return fmt.Errorf("the task is not supported")
 		// allow developers to add their own runnable task

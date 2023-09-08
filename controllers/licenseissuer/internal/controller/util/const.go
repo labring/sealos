@@ -75,13 +75,14 @@ const (
 )
 
 const (
-	Collector     task = "Collector"
-	DataSync      task = "DataSync"
-	Init          task = "Init"
-	Register      task = "Register"
-	Notice        task = "Notice"
-	NoticeCleanup task = "NoticeCleanup"
-	NetWorkConfig task = "NetWorkConfig"
-	MemoryCleanup task = "MemoryCleanup"
+	Collector          task = "Collector"
+	DataSync           task = "DataSync"
+	Init               task = "Init"
+	Register           task = "Register"
+	Notice             task = "Notice"
+	NoticeCleanup      task = "NoticeCleanup"
+	NetWorkConfig      task = "NetWorkConfig"
+	MemoryCleanup      task = "MemoryCleanup"
+	ClusterBillingWork task = "ClusterBillingWork"
 	// Add more tasks here
 )

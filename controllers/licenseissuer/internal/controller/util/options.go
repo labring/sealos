@@ -151,7 +151,11 @@ func (o *OperatorOptions) initOptions() {
 	o.RunnableOptions.Period[Register] = 5 * time.Minute
 
 	o.RunnableOptions.Policy[MemoryCleanup] = PeriodicPolicy
-	o.RunnableOptions.Period[MemoryCleanup] = 5 * time.Minute
+	o.RunnableOptions.Period[MemoryCleanup] = 30 * time.Minute
+
+	o.RunnableOptions.Policy[ClusterBillingWork] = PeriodicWithProbePolicy
+	o.RunnableOptions.Period[ClusterBillingWork] = 8 * time.Hour
+
 	// Add more tasks Policy and Period here
 }
 

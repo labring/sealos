@@ -30,7 +30,7 @@ func ProbeFor(taskType task) []Probe {
 	switch taskType {
 	case Collector, DataSync, Notice:
 		return []Probe{ProbeForInit(), ProbeForNetWork(), ProbeForRegister()}
-	case Register:
+	case Register, ClusterBillingWork:
 		return []Probe{ProbeForInit()}
 	default:
 		return nil
