@@ -3,10 +3,10 @@
   overflow: hidden;
   table-layout: fixed;
   width: 100%;
-  background: #f4f6f8;
+  background-color: #fbfbfc;
 
   th {
-    border: 1px solid #dee0e2;
+    border: 1px solid transparent;
     text-align: left;
     padding: 8px;
     user-select: all;
@@ -15,7 +15,7 @@
   }
 
   tr:nth-child(even) {
-    background-color: #fbfbfc;
+    background: #f4f6f8;
   }
 }
 

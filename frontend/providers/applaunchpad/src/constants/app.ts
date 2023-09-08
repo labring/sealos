@@ -73,7 +73,7 @@ export const podStatusMap = {
 export const ProtocolList = [
   { value: 'HTTP', label: 'https://' },
   { value: 'GRPC', label: 'grpcs://' },
-  { value: 'WS', label: 'ws://' }
+  { value: 'WS', label: 'wss://' }
 ];
 
 export const noGpuSliderKey = 'NoGpu';

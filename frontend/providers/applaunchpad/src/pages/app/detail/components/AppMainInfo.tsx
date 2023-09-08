@@ -85,10 +85,10 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           <table className={'table-cross'}>
             <thead>
               <tr>
-                <Box as={'th'} bg={'myWhite.200'}>
+                <Box as={'th'} bg={'myWhite.600'}>
                   {t('Private Address')}
                 </Box>
-                <Box as={'th'} bg={'myWhite.200'}>
+                <Box as={'th'} bg={'myWhite.600'}>
                   {t('Public Address')}
                 </Box>
               </tr>
