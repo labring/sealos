@@ -1,0 +1,26 @@
+.table-cross {
+  border-radius: 2px;
+  overflow: hidden;
+  table-layout: fixed;
+  width: 100%;
+  background: #f4f6f8;
+
+  th {
+    border: 1px solid #dee0e2;
+    text-align: left;
+    padding: 8px;
+    user-select: all;
+    font-weight: normal;
+    color: #5a646e;
+  }
+
+  tr:nth-child(even) {
+    background-color: #fbfbfc;
+  }
+}
+
+.textEllipsis {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}

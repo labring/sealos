@@ -55,7 +55,7 @@ const formData2Yamls = (data: AppEditType) => [
         }
       ]
     : []),
-  ...(data.accessExternal.use
+  ...(data.networks.find((item) => item.openPublicDomain)
     ? [
         {
           filename: 'ingress.yaml',
@@ -155,6 +155,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             crYamlList: crOldYamls.current,
             newYamlList: yamls
           });
+          console.log(patch);
 
           await putApp({
             patch,
@@ -262,7 +263,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   );
 
   useEffect(() => {
-    if (tabType === 'yaml' && router.query.name) {
+    if (tabType === 'yaml') {
       try {
         setYamlList(formData2Yamls(realTimeForm.current));
       } catch (error) {}
@@ -317,6 +318,14 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                   isClosable: true
                 });
               }
+              // check network port
+              if (!checkNetworkPorts(data.networks)) {
+                return toast({
+                  status: 'warning',
+                  title: t('Network port conflict')
+                });
+              }
+
               openConfirm(() => submitSuccess(parseYamls))();
             }, submitError)()
           }
@@ -360,3 +369,12 @@ export async function getServerSideProps(content: any) {
 }
 
 export default EditApp;
+
+function checkNetworkPorts(networks: AppEditType['networks']) {
+  const ports = networks.map((item) => item.port);
+  const portSet = new Set(ports);
+  if (portSet.size !== ports.length) {
+    return false;
+  }
+  return true;
+}

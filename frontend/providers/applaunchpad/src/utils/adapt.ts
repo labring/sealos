@@ -27,7 +27,7 @@ import {
   maxReplicasKey,
   minReplicasKey,
   PodStatusEnum,
-  domainKey,
+  publicDomainKey,
   gpuNodeSelectorKey,
   gpuResourceKey
 } from '@/constants/app';
@@ -165,10 +165,10 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
     [YamlKindEnum.Deployment]?: V1Deployment;
     [YamlKindEnum.Service]?: V1Service;
     [YamlKindEnum.ConfigMap]?: V1ConfigMap;
-    [YamlKindEnum.Ingress]?: V1Ingress;
     [YamlKindEnum.HorizontalPodAutoscaler]?: V2HorizontalPodAutoscaler;
     [YamlKindEnum.Secret]?: V1Secret;
   } = {};
+
   configs.forEach((item) => {
     if (item.kind) {
       // @ts-ignore
@@ -182,8 +182,6 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
     throw new Error('获取APP异常');
   }
 
-  const domain = deployKindsMap?.Ingress?.spec?.rules?.[0].host;
-  const sealosDomain = deployKindsMap?.Ingress?.metadata?.labels?.[domainKey];
   const useGpu = !!Number(
     appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.[gpuResourceKey]
   );
@@ -221,8 +219,6 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
     },
     usedCpu: new Array(30).fill(0),
     usedMemory: new Array(30).fill(0),
-    containerOutPort:
-      appDeploy.spec?.template?.spec?.containers?.[0]?.ports?.[0]?.containerPort || 0,
     envs:
       appDeploy.spec?.template?.spec?.containers?.[0]?.env?.map((env) => {
         return {
@@ -231,16 +227,35 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
           valueFrom: env.valueFrom
         };
       }) || [],
-    accessExternal: deployKindsMap.Ingress
-      ? {
-          use: true,
-          backendProtocol: deployKindsMap.Ingress.metadata?.annotations?.[
-            'nginx.ingress.kubernetes.io/backend-protocol'
-          ] as AppEditType['accessExternal']['backendProtocol'],
-          outDomain: sealosDomain ? sealosDomain : nanoid(),
-          selfDomain: SEALOS_DOMAIN && domain?.endsWith(SEALOS_DOMAIN) ? '' : domain || ''
-        }
-      : defaultEditVal.accessExternal,
+    networks:
+      deployKindsMap.Service?.spec?.ports?.map((item) => {
+        const ingress = configs.find(
+          (config: any) =>
+            config.kind === YamlKindEnum.Ingress &&
+            config?.spec?.rules?.[0]?.http?.paths?.[0]?.backend?.service?.port?.number === item.port
+        ) as V1Ingress;
+        const domain = ingress?.spec?.rules?.[0].host || '';
+
+        return {
+          networkName: ingress?.metadata?.name || '',
+          portName: item.name || '',
+          port: item.port,
+          protocol:
+            (ingress?.metadata?.annotations?.[
+              'nginx.ingress.kubernetes.io/backend-protocol'
+            ] as AppEditType['networks'][0]['protocol']) || 'HTTP',
+          openPublicDomain: !!ingress,
+          ...(domain.endsWith(SEALOS_DOMAIN)
+            ? {
+                publicDomain: domain.split('.')[0],
+                customDomain: ''
+              }
+            : {
+                publicDomain: ingress?.metadata?.labels?.[publicDomainKey] || '',
+                customDomain: domain
+              })
+        };
+      }) || [],
     hpa: deployKindsMap.HorizontalPodAutoscaler?.spec
       ? {
           use: true,
@@ -285,8 +300,7 @@ export const adaptEditAppData = (app: AppDetailType): AppEditType => {
     'replicas',
     'cpu',
     'memory',
-    'containerOutPort',
-    'accessExternal',
+    'networks',
     'envs',
     'hpa',
     'configMapList',

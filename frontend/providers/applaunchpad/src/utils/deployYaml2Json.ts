@@ -6,7 +6,7 @@ import {
   maxReplicasKey,
   minReplicasKey,
   appDeployKey,
-  domainKey,
+  publicDomainKey,
   gpuNodeSelectorKey,
   gpuResourceKey
 } from '@/constants/app';
@@ -93,11 +93,10 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
         return [data.cmdParam];
       }
     })(),
-    ports: [
-      {
-        containerPort: str2Num(data.containerOutPort)
-      }
-    ],
+    ports: data.networks.map((item, i) => ({
+      containerPort: item.port,
+      name: item.portName
+    })),
     imagePullPolicy: 'Always'
   };
   const configMapVolumeMounts = data.configMapList.map((item) => ({
@@ -219,11 +218,10 @@ export const json2Service = (data: AppEditType) => {
       }
     },
     spec: {
-      ports: [
-        {
-          port: str2Num(data.containerOutPort)
-        }
-      ],
+      ports: data.networks.map((item, i) => ({
+        port: str2Num(item.port),
+        name: item.portName
+      })),
       selector: {
         app: data.appName
       }
@@ -233,11 +231,6 @@ export const json2Service = (data: AppEditType) => {
 };
 
 export const json2Ingress = (data: AppEditType) => {
-  const host = data.accessExternal.selfDomain
-    ? data.accessExternal.selfDomain
-    : `${data.accessExternal.outDomain}.${SEALOS_DOMAIN}`;
-  const secretName = data.accessExternal.selfDomain ? data.appName : INGRESS_SECRET;
-
   // different protocol annotations
   const map = {
     HTTP: {
@@ -265,97 +258,115 @@ export const json2Ingress = (data: AppEditType) => {
     }
   };
 
-  const ingress = {
-    apiVersion: 'networking.k8s.io/v1',
-    kind: 'Ingress',
-    metadata: {
-      name: data.appName,
-      labels: {
-        [appDeployKey]: data.appName,
-        [domainKey]: `${data.accessExternal.outDomain}`
-      },
-      annotations: {
-        'kubernetes.io/ingress.class': 'nginx',
-        'nginx.ingress.kubernetes.io/proxy-body-size': '32m',
-        'nginx.ingress.kubernetes.io/server-snippet': `gzip on;gzip_min_length 1024;gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;`,
-        ...map[data.accessExternal.backendProtocol]
-      }
-    },
-    spec: {
-      rules: [
-        {
-          host: host,
-          http: {
-            paths: [
-              {
-                pathType: 'Prefix',
-                path: '/()(.*)',
-                backend: {
-                  service: {
-                    name: data.appName,
-                    port: {
-                      number: data.containerOutPort
+  const result = data.networks
+    .filter((item) => item.openPublicDomain)
+    .map((network, i) => {
+      const host = network.customDomain
+        ? network.customDomain
+        : `${network.publicDomain}.${SEALOS_DOMAIN}`;
+      const secretName = network.customDomain ? data.appName : INGRESS_SECRET;
+
+      const ingress = {
+        apiVersion: 'networking.k8s.io/v1',
+        kind: 'Ingress',
+        metadata: {
+          name: network.networkName,
+          labels: {
+            [appDeployKey]: data.appName,
+            [publicDomainKey]: network.publicDomain
+          },
+          annotations: {
+            'kubernetes.io/ingress.class': 'nginx',
+            'nginx.ingress.kubernetes.io/proxy-body-size': '32m',
+            'nginx.ingress.kubernetes.io/server-snippet': `gzip on;gzip_min_length 1024;gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;`,
+            ...map[network.protocol]
+          }
+        },
+        spec: {
+          rules: [
+            {
+              host,
+              http: {
+                paths: [
+                  {
+                    pathType: 'Prefix',
+                    path: '/()(.*)',
+                    backend: {
+                      service: {
+                        name: data.appName,
+                        port: {
+                          number: network.port
+                        }
+                      }
                     }
+                  }
+                ]
+              }
+            }
+          ],
+          tls: [
+            {
+              hosts: [host],
+              secretName
+            }
+          ]
+        }
+      };
+      const issuer = {
+        apiVersion: 'cert-manager.io/v1',
+        kind: 'Issuer',
+        metadata: {
+          name: network.networkName,
+          labels: {
+            [appDeployKey]: data.appName
+          }
+        },
+        spec: {
+          acme: {
+            server: 'https://acme-v02.api.letsencrypt.org/directory',
+            email: 'admin@sealos.io',
+            privateKeySecretRef: {
+              name: 'letsencrypt-prod'
+            },
+            solvers: [
+              {
+                http01: {
+                  ingress: {
+                    class: 'nginx'
                   }
                 }
               }
             ]
           }
         }
-      ],
-      tls: [
-        {
-          hosts: [host],
-          secretName
-        }
-      ]
-    }
-  };
-  const issuer = {
-    apiVersion: 'cert-manager.io/v1',
-    kind: 'Issuer',
-    metadata: {
-      name: data.appName
-    },
-    spec: {
-      acme: {
-        server: 'https://acme-v02.api.letsencrypt.org/directory',
-        email: 'admin@sealos.io',
-        privateKeySecretRef: {
-          name: 'letsencrypt-prod'
-        },
-        solvers: [
-          {
-            http01: {
-              ingress: {
-                class: 'nginx'
-              }
-            }
+      };
+      const certificate = {
+        apiVersion: 'cert-manager.io/v1',
+        kind: 'Certificate',
+        metadata: {
+          name: network.networkName,
+          labels: {
+            [appDeployKey]: data.appName
           }
-        ]
+        },
+        spec: {
+          secretName,
+          dnsNames: [network.customDomain],
+          issuerRef: {
+            name: network.networkName,
+            kind: 'Issuer'
+          }
+        }
+      };
+
+      let resYaml = yaml.dump(ingress);
+      if (network.customDomain) {
+        resYaml += `\n---\n${yaml.dump(issuer)}\n---\n${yaml.dump(certificate)}`;
       }
-    }
-  };
-  const certificate = {
-    apiVersion: 'cert-manager.io/v1',
-    kind: 'Certificate',
-    metadata: {
-      name: data.appName
-    },
-    spec: {
-      secretName,
-      dnsNames: [data.accessExternal.selfDomain],
-      issuerRef: {
-        name: data.appName,
-        kind: 'Issuer'
-      }
-    }
-  };
-  let resYaml = yaml.dump(ingress);
-  if (data.accessExternal.selfDomain) {
-    resYaml += `\n---\n${yaml.dump(issuer)}\n---\n${yaml.dump(certificate)}`;
-  }
-  return resYaml;
+      return resYaml;
+    });
+
+  return result.join('\n---\n');
 };
 
 export const json2ConfigMap = (data: AppEditType) => {
