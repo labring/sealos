@@ -13,38 +13,43 @@ const Callback: NextPage = () => {
   const compareState = useSessionStore((s) => s.compareState);
   useEffect(() => {
     if (!router.isReady) return;
-    const { code, state } = router.query;
-    if (!compareState(state as string)) return;
-    if (!code || !provider) return;
+    if (!provider) return;
 
     (async () => {
       try {
         let data: { data: Session; code: number };
-        switch (provider) {
-          case 'github':
-            data = await request.post<any, { data: Session; code: number }>(
-              '/api/auth/oauth/github',
-              { code }
-            );
-            break;
-          case 'wechat':
-            data = await request.post<any, { data: Session; code: number }>(
-              '/api/auth/oauth/wechat',
-              { code }
-            );
-            break;
-          default:
-            throw new Error('provider error');
+        let code = '';
+        let state = '';
+        if (['github', 'wechat', 'google'].includes(provider)) {
+          code = router.query.code as string;
+          state = router.query.state as string;
+          // } else if ('google') {
+          //   const locationMap = new Map<string, string>(window.location.hash.substring(1).split('&').map(kv => kv.split('=', 2) as [string, string]))
+          //   console.log(locationMap)
+          //   code = locationMap.get('access_token') ?? ''
+          //   state = locationMap.get('state') ?? ''
+        } else {
+          throw new Error('provider error');
         }
+        if (!code || !state) throw new Error();
+        if (!compareState(state as string)) throw new Error();
+        data = await request.post<any, { data: Session; code: number }>(
+          '/api/auth/oauth/' + provider,
+          { code }
+        );
+        setProvider();
         if (data.code === 200) {
           const { token, user, kubeconfig } = data.data;
           setSessionProp('token', token);
           setSessionProp('user', user);
           setSessionProp('kubeconfig', kubeconfig);
+
+          router.replace('/');
+        } else {
+          throw new Error();
         }
-      } finally {
-        provider && setProvider();
-        router.replace('/');
+      } catch (error) {
+        router.replace('/signin');
       }
     })();
   }, [router]);

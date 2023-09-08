@@ -22,7 +22,7 @@ import { useQuery } from '@tanstack/react-query';
 import { debounce } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import Head from 'next/head';
-import { Router, useRouter } from 'next/router';
+import { useRouter } from 'next/router';
 import sealosTitle from 'public/images/sealos-title.png';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -32,15 +32,17 @@ export default function SigninComponent() {
   );
 
   const {
-    wechat_client_id = '',
-    github_client_id = '',
-    callback_url = '',
+    // wechat_client_id = '',
+    // github_client_id = '',
+    // callback_url = '',
+    // google_client_id = '',
     service_protocol = '',
     private_protocol = '',
     needPassword = false,
-    needSms = false,
-    needGithub = false,
-    needWechat = false
+    needSms = false
+    // needGithub = false,
+    // needWechat = false,
+    // needGoogle = false
   } = platformEnv?.data || {};
 
   const needTabs = needPassword && needSms;
@@ -55,7 +57,6 @@ export default function SigninComponent() {
   const { SmsModal, login: smsSubmit, isLoading: smsLoading } = useSms({ showError });
   const {
     PasswordComponent,
-    userExist,
     pageState,
     login: passwordSubmit,
     isLoading: passwordLoading
@@ -68,13 +69,7 @@ export default function SigninComponent() {
       router.replace('/');
     }
   }, []);
-  const { AuthList } = useAuthList({
-    needGithub,
-    needWechat,
-    wechat_client_id,
-    github_client_id,
-    callback_url
-  });
+  const { AuthList } = useAuthList();
 
   const loginConfig = useMemo(() => {
     return {

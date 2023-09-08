@@ -2,11 +2,11 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { Session, sessionKey } from '@/types';
-import { Provider } from '@/types/user';
+import { OauthProvider, Provider } from '@/types/user';
 
 type SessionState = {
   session: Session;
-  provider?: Provider;
+  provider?: OauthProvider;
   oauth_state: string;
   setSession: (ss: Session) => void;
   setSessionProp: <T extends keyof Session>(key: T, value: Session[T]) => void;
@@ -16,7 +16,7 @@ type SessionState = {
   // getKubeconfigToken: () => string;
   generateState: () => string;
   compareState: (state: string) => boolean;
-  setProvider: (provider?: 'github' | 'wechat' | 'phone') => void;
+  setProvider: (provider?: OauthProvider) => void;
 };
 
 const useSessionStore = create<SessionState>()(
@@ -46,7 +46,7 @@ const useSessionStore = create<SessionState>()(
         set({ oauth_state: undefined });
         return result;
       },
-      setProvider: (provider?: Provider) => {
+      setProvider: (provider?: OauthProvider) => {
         set({ provider });
       }
     })),

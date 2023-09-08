@@ -10,6 +10,7 @@ export type ScriptConfig = {
 export type LoginProps = {
   wechat_client_id: string;
   github_client_id: string;
+  google_client_id: string;
   callback_url: string;
   service_protocol: string;
   private_protocol: string;
@@ -17,6 +18,7 @@ export type LoginProps = {
   needSms: boolean;
   needGithub: boolean;
   needWechat: boolean;
+  needGoogle: boolean;
 };
 
 export type SystemEnv = {
