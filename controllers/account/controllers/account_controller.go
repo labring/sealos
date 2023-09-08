@@ -148,6 +148,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 	// get payment details(status, amount)
+	// TODO 这个方法用到stripe上就有问题！可能把stripe的返回的TradeNO也设为sessionID就可以解决
 	status, orderAmount, err := payHandler.GetPaymentDetails(payment.Status.TradeNO)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("query order failed: %v", err)
