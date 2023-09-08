@@ -33,6 +33,8 @@ import (
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/maps"
+	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 )
 
 type defaultRootfs struct {
@@ -113,8 +115,15 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 					}
 				}
 			}
+			// only care about envs from rootfs
+			rootfs := cluster.GetRootfsImage()
+			rootfsEnvs := v2.MergeEnvWithBuiltinKeys(rootfs.Env, *rootfs)
+
+			envs := envProcessor.Getenv(ip)
+			envs = maps.Merge(rootfsEnvs, envs)
 			renderCommand := getRenderCommand(pathResolver.RootFSSealctlPath(), target)
-			return sshClient.CmdAsync(ip, envProcessor.WrapShell(ip, renderCommand))
+
+			return sshClient.CmdAsync(ip, stringsutil.RenderShellWithEnv(renderCommand, envs))
 		})
 	}
 	if err := eg.Wait(); err != nil {
