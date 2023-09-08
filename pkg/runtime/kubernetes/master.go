@@ -30,16 +30,11 @@ import (
 func (k *KubeadmRuntime) InitMaster0() error {
 	logger.Info("start to init master0...")
 	master0 := k.getMaster0IPAndPort()
-	err := k.execHostsAppend(master0, k.getMaster0IP(), k.getAPIServerDomain())
-	if err != nil {
-		return fmt.Errorf("add apiserver domain hosts failed %v", err)
-	}
-
 	cmdInit := k.Command(k.getKubeVersion(), InitMaster)
 	if cmdInit == "" {
 		return fmt.Errorf("get init master command failed, kubernetes version is %s", k.getKubeVersion())
 	}
-	err = k.sshCmdAsync(master0, cmdInit)
+	err := k.sshCmdAsync(master0, cmdInit)
 	if err != nil {
 		return fmt.Errorf("init master0 failed, error: %s. Please clean and reinstall", err.Error())
 	}
@@ -120,11 +115,6 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 		err = k.execCert(master)
 		if err != nil {
 			return fmt.Errorf("failed to create cert for master %s: %v", master, err)
-		}
-
-		err = k.execHostsAppend(master, k.getMaster0IP(), k.getAPIServerDomain())
-		if err != nil {
-			return fmt.Errorf("add master0 apiserver domain hosts to %s failed %v", master, err)
 		}
 
 		err = k.sshCmdAsync(master, joinCmd)

@@ -136,10 +136,6 @@ func (k *KubeadmRuntime) execCert(ip string) error {
 	return k.remoteUtil.Cert(ip, k.getCertSANs(), iputils.GetHostIP(ip), hostname, k.getServiceCIDR(), k.getDNSDomain())
 }
 
-func (k *KubeadmRuntime) execHostsDelete(ip, domain string) error {
-	return k.remoteUtil.HostsDelete(ip, domain)
-}
-
 func (k *KubeadmRuntime) sshCmdAsync(host string, cmd ...string) error {
 	return k.sshClient.CmdAsync(host, cmd...)
 }
