@@ -26,5 +26,5 @@ func GetSession(c *gin.Context, client *mongo.Client) {
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("paymethod is illegal: %v", request.PayMethod)})
 	}
-	//TODO 目前微信和stripe的货币貌似都是CNY（Currency不管填什么，都是RMB），之后如果有其他货币的话，这里需要改一下
+	// TODO At present, the Currency of wechat and stripe seems to be CNY, and then if there are other currencies, here needs to be changed
 }

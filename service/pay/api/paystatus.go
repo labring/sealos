@@ -25,5 +25,5 @@ func GetPayStatus(c *gin.Context, client *mongo.Client) {
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("paymethod is illegal: %v", request.PayMethod)})
 	}
-	//TODO 这一块别的状态除了notpaid还没有测过，之后得测一下
+	// TODO The other status of this area except notpaid has not been tested, and it will be tested later
 }
