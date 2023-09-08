@@ -39,10 +39,6 @@ func TryParse(text string) (*template.Template, bool, error) {
 	return tmp, !isFailed, err
 }
 
-func ParseFiles(filenames ...string) (*template.Template, error) {
-	return defaultTpl.ParseFiles(filenames...)
-}
-
 func Must(t *template.Template, err error) *template.Template {
 	return template.Must(t, err)
 }
