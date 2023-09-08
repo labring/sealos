@@ -82,3 +82,9 @@ Refer to other apps to add some configuration.
 5. frontend/providers/app/deploy/manifests/deploy.yaml
 6. frontend/providers/app/deploy/manifests/ingress.yaml.tmpl
 7. makefile
+
+## multiple namespaces
+
+In order to support multiple namespaces, the method of obtaining 'namespace' in the
+backend should be replaced with the method of obtaining it from 'kubeconfig' instead
+of adding 'ns-' to 'user' for generation purpose.

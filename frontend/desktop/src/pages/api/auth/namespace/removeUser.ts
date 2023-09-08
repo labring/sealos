@@ -56,13 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     } else if (InvitedStatus.Accepted === utn.status) {
       // 删除权限
-      unbinding_result = await unbindingRole({
-        k8s_username: tK8s_username,
-        userId: tUserId,
-        ns_uid: namespace.uid
-      });
-      if (!unbinding_result)
-        return jsonRes(res, { code: 500, message: 'fail to remove team memeber role' });
+
       await modifyTeamRole({
         k8s_username: tK8s_username,
         role,
@@ -71,7 +65,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         userId: tUserId,
         pre_role: utn.role
       });
+      unbinding_result = await unbindingRole({
+        k8s_username: tK8s_username,
+        userId: tUserId,
+        ns_uid: namespace.uid
+      });
     }
+    if (!unbinding_result) throw new Error('fail to remove team memeber role');
     jsonRes(res, {
       code: 200,
       message: 'Successfully',

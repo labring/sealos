@@ -27,13 +27,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const utn = await queryUTN({ userId: uid, k8s_username, namespaceId: ns_uid });
     if (!utn) return jsonRes(res, { code: 404, message: "you're not invited" });
     if (action === reciveAction.Accepte) {
-      const result = await acceptInvite({
-        k8s_username,
-        ns_uid,
-        userId: uid
-      });
-      if (!result) throw new Error('failed to change Status');
-      // 接受以后再调用这个modifyTeamRole
       await modifyTeamRole({
         k8s_username,
         role: utn.role,
@@ -41,6 +34,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         namespace,
         action: 'Grant'
       });
+      const result = await acceptInvite({
+        k8s_username,
+        ns_uid,
+        userId: uid
+      });
+      if (!result) throw new Error('failed to change Status');
     } else if (action === reciveAction.Reject) {
       const unbindingResult = await unbindingRole({ k8s_username, ns_uid, userId: uid });
       if (!unbindingResult) throw new Error('fail to unbinding');

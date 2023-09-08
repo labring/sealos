@@ -9,10 +9,11 @@ import {
   deleteRequestCrd
 } from '@/types/team';
 import { KubeConfig } from '@kubernetes/client-node';
-import { createUTN, deleteUTN, queryUTN, updateUTN } from './db/userToNamespace';
+import { connectToUTN, createUTN, deleteUTN, queryUTN, updateUTN } from './db/userToNamespace';
 import { K8sApiDefault } from './kubernetes/admin';
 import { ApplyYaml } from './kubernetes/user';
 import { vaildManage } from '@/utils/tools';
+import { connectToDatabase } from './db/mongodb';
 
 const _applyRoleRequest =
   (kc: KubeConfig, nsid: string) =>
@@ -190,6 +191,7 @@ export const modifyBinding = async ({
   });
   return utn;
 };
+
 // 拒绝邀请 === 解绑
 export const unbindingRole = async ({
   userId,
@@ -228,31 +230,6 @@ export const acceptInvite = async ({
   return result;
 };
 
-export async function checkIsOwner({
-  namespaceId,
-  k8s_username,
-  userId
-}: {
-  userId: string;
-  namespaceId: string;
-  k8s_username: string;
-}) {
-  const item = await queryUTN({ userId, k8s_username, namespaceId });
-  return !!item && item.role === UserRole.Owner;
-}
-
-export async function checkInNS({
-  userId,
-  k8s_username,
-  namespaceId
-}: {
-  userId: string;
-  k8s_username: string;
-  namespaceId: string;
-}) {
-  const item = await queryUTN({ userId, k8s_username, namespaceId });
-  return !!item;
-}
 // 检查用户是否有权限管理namespace, role 为被管理的角色
 export async function checkCanManage({
   userId,

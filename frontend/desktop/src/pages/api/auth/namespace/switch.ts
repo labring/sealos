@@ -3,7 +3,7 @@ import { queryUsersByNamespace } from '@/services/backend/db/userToNamespace';
 import { switchNamespace } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import * as jsYaml from 'js-yaml';
-import { Session } from '@/types';
+import { Session } from 'sealos-desktop-sdk';
 import { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {

@@ -42,11 +42,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 权限一致，不用管
     if (tUtn.role === tRole) return jsonRes(res, { code: 200, message: 'Successfully' });
 
-    const updateResult = await modifyBinding({
-      ...tUtn,
-      role: tRole
-    });
-    if (!updateResult) throw new Error('modify utn error');
     await modifyTeamRole({
       k8s_username: tK8s_username,
       role: tRole,
@@ -57,7 +52,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       userId: tUserId,
       pre_role: tUtn.role
     });
-
+    const updateResult = await modifyBinding({
+      ...tUtn,
+      role: tRole
+    });
+    if (!updateResult) throw new Error('modify utn error');
     jsonRes(res, {
       code: 200,
       message: 'Successfully'

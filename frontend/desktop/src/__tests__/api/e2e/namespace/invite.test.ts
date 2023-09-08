@@ -17,7 +17,7 @@ import { Session } from 'sealos-desktop-sdk/*';
 import * as k8s from '@kubernetes/client-node';
 import { Db, MongoClient } from 'mongodb';
 import request from '@/__tests__/api/request';
-import { _setAuth, cleanDb, cleanK8s } from '../tools';
+import { _setAuth, cleanDb, cleanK8s } from '@/__tests__/api/tools';
 import { INVITE_LIMIT } from '@/types';
 const createRequest = _createRequest(request);
 const inviteMemberRequest = _inviteMemberRequest(request);
