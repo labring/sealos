@@ -89,7 +89,7 @@ const AppDetail = ({ appName }: { appName: string }) => {
         >
           {appDetail ? <AppBaseInfo app={appDetail} /> : <Loading loading={true} fixed={false} />}
         </Box>
-        <Flex flexDirection={'column'} h={'100%'} flex={'1 0 0'} w={0}>
+        <Flex flexDirection={'column'} minH={'100%'} flex={'1 0 0'} w={0} overflow={'overlay'}>
           <Box mb={4} bg={'white'} border={theme.borders.sm} borderRadius={'md'} minH={'257px'}>
             {appDetail ? <AppMainInfo app={appDetail} /> : <Loading loading={true} fixed={false} />}
           </Box>
@@ -97,9 +97,9 @@ const AppDetail = ({ appName }: { appName: string }) => {
             bg={'white'}
             border={theme.borders.sm}
             borderRadius={'md'}
-            flex={'1 0 0'}
             h={0}
-            overflow={'overlay'}
+            flex={1}
+            minH={'300px'}
           >
             <Pods pods={appDetailPods} appName={appName} loading={!podsLoaded} />
           </Box>

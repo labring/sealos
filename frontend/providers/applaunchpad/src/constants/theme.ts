@@ -16,6 +16,11 @@ const Button = defineStyleConfig({
   baseStyle: {
     _active: {
       transform: 'scale(0.98)'
+    },
+    _disabled: {
+      _hover: {
+        bg: 'myGray.900 !important'
+      }
     }
   },
   sizes: {
