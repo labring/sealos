@@ -7,7 +7,8 @@ COPY manifests manifests
 
 ENV certSecretName="wildcard-cert"
 ENV cloudDomain="127.0.0.1.nip.io"
-ENV ttydImage="docker.io/labring/docker-terminal:1.20.4-6"
+ENV cloudPort=""
+ENV ttydImage="docker.io/labring4docker/terminal:1.20.4-6"
 
 
 CMD ["kubectl apply -f manifests"]

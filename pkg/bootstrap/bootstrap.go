@@ -166,7 +166,7 @@ func (initializer *defaultInitializer) Undo(ctx Context, host string) error {
 
 func init() {
 	defaultPreflights = append(defaultPreflights, &defaultChecker{})
-	defaultInitializers = append(defaultInitializers, &registryHostApplier{}, &registryApplier{}, &defaultInitializer{})
+	defaultInitializers = append(defaultInitializers, &registryHostApplier{}, &registryApplier{}, &defaultCRIInitializer{}, &defaultInitializer{})
 }
 
 func RegisterApplier(phase Phase, appliers ...Applier) error {

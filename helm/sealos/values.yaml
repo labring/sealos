@@ -1,0 +1,15 @@
+global:
+  cloud:
+    domain: cloud.local
+    port: ""
+    mongodbURI: ""
+  ingress:
+    enabled: true
+    tls: true
+    selfSigned: true
+  wildcardCert:
+    name: "wildcard-tls"
+    enabled: true
+
+commonLabels: { }
+commonAnnotations: { }

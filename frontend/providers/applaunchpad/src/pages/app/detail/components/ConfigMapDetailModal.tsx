@@ -22,7 +22,7 @@ const ConfigMapDetailModal = ({
   return (
     <Modal isOpen onClose={onClose}>
       <ModalOverlay />
-      <ModalContent top={'10vh'} backgroundColor={'#F5F5F5'}>
+      <ModalContent top={'10vh'} minW={'600px'} backgroundColor={'#F5F5F5'}>
         <ModalHeader>{mountPath}</ModalHeader>
         <ModalCloseButton />
         <ModalBody maxH={'60vh'} overflowY={'auto'} whiteSpace={'pre'}>

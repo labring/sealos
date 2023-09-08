@@ -10,16 +10,13 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (!enableRecharge()) {
       throw new Error('Recharge is not enabled');
     }
-    const kc = await authSession(req.headers);
+    const payload = await authSession(req.headers);
+    if (!payload) return jsonRes(resp, { code: 401, message: 'token verify error' });
+    const kc = payload.kc;
     const { id } = req.query;
 
     if (typeof id !== 'string' || id === '') {
-      return jsonRes(resp, { code: 404, message: 'Id cannot be empty' });
-    }
-
-    const kube_user = kc.getCurrentUser();
-    if (kube_user === null) {
-      return jsonRes(resp, { code: 404, message: 'user not found' });
+      return jsonRes(resp, { code: 400, message: 'Id cannot be empty' });
     }
 
     // get payment crd
@@ -28,8 +25,8 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       codeURL: string;
       status: string;
     };
-
-    const paymentM = { ...paymentMeta, namespace: GetUserDefaultNameSpace(kube_user.name) };
+    const k8s_username = payload.user.k8s_username;
+    const paymentM = { ...paymentMeta, namespace: GetUserDefaultNameSpace(k8s_username) };
     const paymentDesc = await GetCRD(kc, paymentM, id);
 
     if (paymentDesc?.body?.status) {

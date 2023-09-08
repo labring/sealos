@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: template-frontend
+  name: template-frontend
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: template-frontend-config
+  namespace: template-frontend
+data:
+  config.yaml: |-
+    addr: :3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: template-frontend
+  namespace: template-frontend
+spec:
+  selector:
+    matchLabels:
+      app: template-frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    metadata:
+      labels:
+        app: template-frontend
+    spec:
+      containers:
+        - name: template-frontend
+          resources:
+            limits:
+              cpu: 100m
+              memory: 1000Mi
+            requests:
+              cpu: 10m
+              memory: 128Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+          env:
+            - name: SEALOS_CLOUD_DOMAIN
+              value: {{ .cloudDomain }}
+            - name: SEALOS_CLOUD_PORT
+              value: "{{ .cloudPort }}"
+            - name: SEALOS_CERT_SECRET_NAME
+              value: {{ .certSecretName }}
+            - name: TEMPLATE_REPO_URL
+              value: {{ .templateRepoUrl }}
+          image: ghcr.io/labring/sealos-template-frontend:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: template-frontend-volume
+              mountPath: /config.yaml
+              subPath: config.yaml
+      volumes:
+        - name: template-frontend-volume
+          configMap:
+            name: template-frontend-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: template-frontend
+  name: template-frontend
+  namespace: template-frontend
+spec:
+  ports:
+    - name: http
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
+  selector:
+    app: template-frontend

@@ -10,13 +10,9 @@ type accountStatus = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const kc = await authSession(req.headers);
-
+    const payload = await authSession(req.headers);
+    if (!payload) return jsonRes(res, { code: 401, message: 'token is vaild' });
     // get user account payment amount
-    const user = kc.getCurrentUser();
-    if (user === null) {
-      return jsonRes(res, { code: 401, message: 'user null' });
-    }
 
     const account_meta: CRDMeta = {
       group: 'account.sealos.io',
@@ -24,8 +20,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       namespace: 'sealos-system',
       plural: 'accounts'
     };
-
-    const accountDesc = await GetCRD(kc, account_meta, user.name);
+    const k8s_username = payload.user.k8s_username;
+    const accountDesc = await GetCRD(payload.kc, account_meta, k8s_username);
     if (accountDesc !== null && accountDesc.body !== null && accountDesc.body.status !== null) {
       const accountStatus = accountDesc.body.status as accountStatus;
       return jsonRes(res, { data: accountStatus });

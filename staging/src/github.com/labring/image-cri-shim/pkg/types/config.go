@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	registry2 "github.com/labring/sealos/pkg/registry/crane"
+	registry2 "github.com/labring/sreg/pkg/registry/crane"
 
 	types2 "github.com/docker/docker/api/types"
 
@@ -36,7 +36,8 @@ import (
 
 const (
 	// SealosShimSock is the CRI socket the shim listens on.
-	SealosShimSock = "/var/run/image-cri-shim.sock"
+	SealosShimSock            = "/var/run/image-cri-shim.sock"
+	DefaultImageCRIShimConfig = "/etc/image-cri-shim.yaml"
 )
 
 type Registry struct {

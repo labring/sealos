@@ -43,7 +43,7 @@ var _ = Describe("E2E_sealos_filesystem_test", func() {
 	Context("sealos filesystem suit", func() {
 		BeforeEach(func() {
 			By("build rootfs")
-			dFile := config.Dockerfile{
+			dFile := config.RootfsDockerfile{
 				BaseImage: "labring/kubernetes:v1.25.0",
 				Copys:     []string{"sealctl opt/"},
 			}

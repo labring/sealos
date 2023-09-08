@@ -11,6 +11,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /mutate-user-sealos-io-v1-operationrequest
+  failurePolicy: Fail
+  name: moperationrequest.kb.io
+  rules:
+  - apiGroups:
+    - user.sealos.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - operationrequests
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /mutate-user-sealos-io-v1-user
   failurePolicy: Fail
   name: muser.kb.io
@@ -32,6 +52,26 @@ metadata:
   creationTimestamp: null
   name: validating-webhook-configuration
 webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-user-sealos-io-v1-operationrequest
+  failurePolicy: Fail
+  name: voperationrequest.kb.io
+  rules:
+  - apiGroups:
+    - user.sealos.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - operationrequests
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:

@@ -1,0 +1,18 @@
+{
+  "item.label.Docs": {
+    "message": "文档",
+    "description": "Navbar item with label Docs"
+  },
+  "item.label.Contact": {
+    "message": "商务合作",
+    "description": "Navbar item with label Contact"
+  },
+  "logo.alt": {
+    "message": "sealos",
+    "description": "The alt text of navbar logo"
+  },
+  "item.label.Start Now": {
+    "message": "在线使用",
+    "description": "Navbar item with label Start Now"
+  }
+}

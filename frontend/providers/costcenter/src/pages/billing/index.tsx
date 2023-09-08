@@ -43,16 +43,15 @@ function Billing() {
   const [totalPage, setTotalPage] = useState(1);
   const [currentPage, setcurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const queryClient = useQueryClient();
-
-  const { data, isLoading, isSuccess } = useQuery(
-    ['billing', { currentPage, startTime, endTime, orderID }],
+  const [totalItem, setTotalItem] = useState(10);
+  const { data, isFetching, isSuccess } = useQuery(
+    ['billing', { currentPage, startTime, endTime, orderID, selectType }],
     () => {
       let spec = {} as BillingSpec;
       spec = {
         page: currentPage,
         pageSize: pageSize,
-        type: -1,
+        type: selectType,
         startTime: formatISO(startTime, { representation: 'complete' }),
         // startTime,
         endTime: formatISO(endTime, { representation: 'complete' }),
@@ -68,8 +67,18 @@ function Billing() {
     },
     {
       onSuccess(data) {
-        setTotalPage(data.data.status.pageLength);
-      }
+        const totalPage = data.data.status.pageLength;
+        if (totalPage === 0) {
+          // 搜索时的bug
+          setTotalPage(1);
+          setTotalItem(1);
+        } else {
+          setTotalItem(data.data.status.totalCount);
+          setTotalPage(totalPage);
+        }
+        if (totalPage < currentPage) setcurrentPage(1);
+      },
+      staleTime: 1000
     }
   );
   const tableResult = data?.data?.status?.item || [];
@@ -85,7 +94,7 @@ function Billing() {
           <Text fontSize={'12px'} mr={'12px'} width={['60px', '60px', 'auto', 'auto']}>
             {t('Transaction Time')}
           </Text>
-          <SelectRange isDisabled={isLoading}></SelectRange>
+          <SelectRange isDisabled={isFetching}></SelectRange>
         </Flex>
         <Flex align={'center'} mb={'24px'}>
           <Text fontSize={'12px'} mr={'12px'} width={['60px', '60px', 'auto', 'auto']}>
@@ -106,6 +115,7 @@ function Billing() {
                   background: '#F8FAFB',
                   border: `1px solid #36ADEF`
                 }}
+                isDisabled={isFetching}
                 _hover={{
                   background: '#F8FAFB',
                   border: `1px solid #36ADEF`
@@ -132,8 +142,10 @@ function Billing() {
                   fontWeight="400"
                   lineHeight="18px"
                   p={'0'}
+                  isDisabled={isFetching}
                   bg={v.value === selectType ? '#F4F6F8' : '#FDFDFE'}
                   onClick={() => {
+                    setcurrentPage(1);
                     setType(v.value);
                   }}
                 >
@@ -156,7 +168,7 @@ function Billing() {
           >
             <Img src={magnifyingGlass_icon.src} w={'14px'} mr={'8px'}></Img>
             <Input
-              isDisabled={isLoading}
+              isDisabled={isFetching}
               variant={'unstyled'}
               placeholder={t('Order Number') as string}
               value={searchValue}
@@ -164,7 +176,7 @@ function Billing() {
             ></Input>
           </Flex>
           <Button
-            isDisabled={isLoading}
+            isDisabled={isFetching}
             variant={'unstyled'}
             display="flex"
             justifyContent={'center'}
@@ -199,7 +211,7 @@ function Billing() {
           </Box>
           <Flex minW="370px" h="32px" ml="auto" align={'center'} mt={'20px'}>
             <Text>{t('Total')}:</Text>
-            <Flex w="40px">{totalPage * pageSize}</Flex>
+            <Flex w="40px">{totalItem}</Flex>
             <Flex gap={'8px'}>
               <Button
                 variant={'switchPage'}

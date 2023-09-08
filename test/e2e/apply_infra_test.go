@@ -132,7 +132,7 @@ var _ = Describe("E2E_sealos_apply_infra_test", func() {
 
 			testApplier = &apply.Applier{EIp: eip, InfraDriver: infraDriver,
 				RemoteCmd: cmd2.Interface(&cmd2.RemoteCmd{Host: eip[0],
-					Interface: ssh.NewSSHClient(sshInterface, true)}),
+					Interface: ssh.MustNewClient(sshInterface, true)}),
 				LocalCmd: &cmd2.LocalCmd{}, Infra: infraCheck, SSH: sshInterface}
 			testApplier.Init()
 		})

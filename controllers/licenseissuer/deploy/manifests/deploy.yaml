@@ -226,10 +226,8 @@ rules:
   resources:
   - namespaces
   verbs:
-  - create
   - get
   - list
-  - update
   - watch
 - apiGroups:
   - ""
@@ -262,84 +260,6 @@ rules:
 - apiGroups:
   - infostream.sealos.io
   resources:
-  - cloudsyncs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - cloudsyncs/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - cloudsyncs/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - collectors
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - collectors/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - collectors/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - launchers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - launchers/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - launchers/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - infostream.sealos.io
-  resources:
   - licenses
   verbs:
   - create
@@ -359,32 +279,6 @@ rules:
   - infostream.sealos.io
   resources:
   - licenses/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - notifications
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - notifications/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - infostream.sealos.io
-  resources:
-  - notifications/status
   verbs:
   - get
   - patch
@@ -583,7 +477,7 @@ spec:
         resources:
           limits:
             cpu: 500m
-            memory: 64Mi
+            memory: 128Mi
           requests:
             cpu: 5m
             memory: 64Mi
@@ -597,19 +491,35 @@ spec:
         - --metrics-bind-address=127.0.0.1:8080
         - --leader-elect
         command:
-        - /manager
+        - /launcher
         env:
-        - name: CAN_CONNECT_TO_EXTERNAL_NETWORK
+        - name: MONGO_URI
           valueFrom:
             secretKeyRef:
-              key: canConnectToExternalNetwork
+              key: MongoURI
               name: licenseissuer-env
-        - name: MONITOR
+        - name: PASSWORD_SALT
           valueFrom:
             secretKeyRef:
-              key: isMonitor
+              key: PasswordSalt
+              name: licenseissuer-env
+        - name: MONGO_USER_DB
+          valueFrom:
+            secretKeyRef:
+              key: MongoUserDB
+              name: licenseissuer-env
+        - name: MONGO_USER_COL
+          valueFrom:
+            secretKeyRef:
+              key: MongoUserCollection
+              name: licenseissuer-env
+        - name: NAMESPACE
+          valueFrom:
+            secretKeyRef:
+              key: Namespace
               name: licenseissuer-env
         image: ghcr.io/labring/sealos-licenseissuer-controller:latest
+        imagePullPolicy: Always
         livenessProbe:
           httpGet:
             path: /healthz
@@ -629,7 +539,7 @@ spec:
             memory: 1024Mi
           requests:
             cpu: 10m
-            memory: 64Mi
+            memory: 512Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

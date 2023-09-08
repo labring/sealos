@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 
@@ -36,6 +37,7 @@ import (
 
 	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller"
+	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -66,7 +68,6 @@ func main() {
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
-
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -93,40 +94,47 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.NotificationReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Notification")
+	// get options for this Operator
+	options := util.GetOptions()
+	mongoURI := options.GetEnvOptions().MongoURI
+	dbCol, err := util.NewLicenseDB(mongoURI)
+	if err != nil {
+		setupLog.Error(err, "unable to create database")
 		os.Exit(1)
 	}
-	if err = (&controller.CollectorReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Collector")
-		os.Exit(1)
-	}
-	if err = (&controller.CloudSyncReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "CloudSync")
-		os.Exit(1)
-	}
+	defer func() {
+		_ = dbCol.Disconnect()
+	}()
+
 	if err = (&controller.LicenseReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		DBCol:    dbCol,
+		Recorder: util.GetHashMap(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "License")
 		os.Exit(1)
 	}
-	if err = (&controller.LauncherReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Launcher")
-		os.Exit(1)
+
+	// server := util.NewLicenseServer("0.0.0.0", options.GetEnvOptions().ServerPort, util.NewLicenseClient(dbCol))
+	// server.Run()
+	// defer server.Stop()
+
+	// if err = (&controller.LauncherReconciler{
+	// 	Client: mgr.GetClient(),
+	// 	Scheme: mgr.GetScheme(),
+	// }).SetupWithManager(mgr); err != nil {
+	// 	setupLog.Error(err, "unable to create controller", "controller", "Launcher")
+	// 	os.Exit(1)
+	// }
+
+	// start the runnable tasks
+	tasks := util.BuildForRunnable(context.Background(), mgr.GetClient(), options)
+	for _, task := range tasks {
+		if err = mgr.Add(task); err != nil {
+			setupLog.Error(err, "unable to set up task pool")
+			os.Exit(1)
+		}
 	}
 
 	// if err = (&controller.ScaleMonitorReconciler{

@@ -33,11 +33,13 @@ import (
 	v1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 )
 
-var encryptionKey = []byte("0123456789ABCDEF0123456789ABCDEF")
+const defaultEncryptionKey = "0123456789ABCDEF0123456789ABCDEF"
+
+var encryptionKey = defaultEncryptionKey
 
 // Encrypt encrypts the given plaintext using AES-GCM.
 func Encrypt(plaintext []byte) (string, error) {
-	return EncryptWithKey(plaintext, encryptionKey)
+	return EncryptWithKey(plaintext, []byte(encryptionKey))
 }
 
 // EncryptWithKey encrypts the given plaintext using AES-GCM.
@@ -119,7 +121,7 @@ func DeductBalance(balance *string, amount int64) error {
 
 // Decrypt decrypts the given ciphertext using AES-GCM.
 func Decrypt(ciphertextBase64 string) ([]byte, error) {
-	return DecryptWithKey(ciphertextBase64, encryptionKey)
+	return DecryptWithKey(ciphertextBase64, []byte(encryptionKey))
 }
 
 // DecryptWithKey decrypts the given ciphertext using AES-GCM.

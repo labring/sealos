@@ -14,7 +14,7 @@ interface Props {
 const MyMenu = ({ width, Button, menuList }: Props) => {
   const menuItemStyles = {
     borderRadius: 'sm',
-    py: 2,
+    py: 3,
     display: 'flex',
     alignItems: 'center',
     _hover: {

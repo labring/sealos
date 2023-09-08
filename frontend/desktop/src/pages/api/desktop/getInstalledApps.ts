@@ -1,42 +1,30 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { authSession } from '@/services/backend/auth';
-import { GetUserDefaultNameSpace, ListCRD } from '@/services/backend/kubernetes/user';
+import { ListCRD } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
-import { TApp, TAppCR, TAppCRList, TAppConfig } from '@/types';
+import { CRDMeta, TAppCRList, TAppConfig } from '@/types';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const kc = await authSession(req.headers);
-
-    const kube_user = kc.getCurrentUser();
-    if (kube_user === null) {
-      return jsonRes(res, { code: 403, message: 'user is null' });
-    }
-
-    const defaultMeta = {
+    const payload = await authSession(req.headers);
+    if (!payload) return jsonRes(res, { code: 401, message: 'token is vaild' });
+    const kc = payload.kc;
+    const nsid = payload.user.nsid;
+    console.log('payload???', payload);
+    const getMeta = (namespace = 'app-system') => ({
       group: 'app.sealos.io',
       version: 'v1',
-      namespace: 'app-system',
+      namespace,
       plural: 'apps'
-    };
+    });
+    const getRawAppList = async (meta: CRDMeta) =>
+      ((await ListCRD(kc, meta)).body as TAppCRList).items || [];
 
-    const meta = {
-      group: 'app.sealos.io',
-      version: 'v1',
-      namespace: GetUserDefaultNameSpace(kube_user.name),
-      plural: 'apps'
-    };
-    const defaultResult = (await ListCRD(kc, defaultMeta)) as {
-      body: TAppCRList;
-    };
-    const userResult = (await ListCRD(kc, meta)) as {
-      body: TAppCRList;
-    };
-
-    const defaultArr = defaultResult?.body?.items.map<TAppConfig>((item) => {
+    const defaultArr = (await getRawAppList(getMeta())).map<TAppConfig>((item) => {
       return { key: `system-${item.metadata.name}`, ...item.spec };
     });
-    const userArr = userResult?.body?.items.map<TAppConfig>((item) => {
+
+    const userArr = (await getRawAppList(getMeta(nsid))).map<TAppConfig>((item) => {
       return { key: `user-${item.metadata.name}`, ...item.spec, displayType: 'normal' };
     });
 

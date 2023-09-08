@@ -1,3 +1,17 @@
+// Copyright © 2023 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package database
 
 import (
@@ -226,12 +240,12 @@ func TestMongoDB_getBillingCollection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &MongoDB{
-				URL:          tt.fields.URL,
-				Client:       tt.fields.Client,
-				DBName:       tt.fields.DBName,
-				MonitorConn:  tt.fields.MonitorConn,
-				MeteringConn: tt.fields.MeteringConn,
-				BillingConn:  tt.fields.BillingConn,
+				URL:               tt.fields.URL,
+				Client:            tt.fields.Client,
+				DBName:            tt.fields.DBName,
+				MonitorConnPrefix: tt.fields.MonitorConn,
+				MeteringConn:      tt.fields.MeteringConn,
+				BillingConn:       tt.fields.BillingConn,
 			}
 			if got := m.getBillingCollection(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getBillingCollection() = %v, want %v", got, tt.want)
@@ -259,12 +273,12 @@ func TestMongoDB_getMeteringCollection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &MongoDB{
-				URL:          tt.fields.URL,
-				Client:       tt.fields.Client,
-				DBName:       tt.fields.DBName,
-				MonitorConn:  tt.fields.MonitorConn,
-				MeteringConn: tt.fields.MeteringConn,
-				BillingConn:  tt.fields.BillingConn,
+				URL:               tt.fields.URL,
+				Client:            tt.fields.Client,
+				DBName:            tt.fields.DBName,
+				MonitorConnPrefix: tt.fields.MonitorConn,
+				MeteringConn:      tt.fields.MeteringConn,
+				BillingConn:       tt.fields.BillingConn,
 			}
 			if got := m.getMeteringCollection(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getMeteringCollection() = %v, want %v", got, tt.want)
@@ -293,12 +307,12 @@ func TestMongoDB_getMonitorCollection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &MongoDB{
-				URL:          tt.fields.URL,
-				Client:       tt.fields.Client,
-				DBName:       tt.fields.DBName,
-				MonitorConn:  tt.fields.MonitorConn,
-				MeteringConn: tt.fields.MeteringConn,
-				BillingConn:  tt.fields.BillingConn,
+				URL:               tt.fields.URL,
+				Client:            tt.fields.Client,
+				DBName:            tt.fields.DBName,
+				MonitorConnPrefix: tt.fields.MonitorConn,
+				MeteringConn:      tt.fields.MeteringConn,
+				BillingConn:       tt.fields.BillingConn,
 			}
 			if got := m.getMonitorCollection(tt.collTime); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getMonitorCollection() = %v, want %v", got, tt.want)
@@ -374,4 +388,21 @@ func TestMongoDB_GetAllPricesMap(t *testing.T) {
 		t.Fatalf("failed to get all prices map: %v", err)
 	}
 	t.Logf("pricesMap: %v", pricesMap)
+}
+
+func TestMongoDB_DropMonitorCollectionsOlderThan(t *testing.T) {
+	dbCTX := context.Background()
+	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
+	if err != nil {
+		t.Errorf("failed to connect mongo: error = %v", err)
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+	// 0711
+	if err = m.DropMonitorCollectionsOlderThan(30); err != nil {
+		t.Fatalf("failed to drop monitor collections older than 30 days: %v", err)
+	}
 }

@@ -17,6 +17,7 @@ limitations under the License.
 package checkers
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -132,11 +133,23 @@ func (f *FakeClientGroup) Verify() error {
 	return nil
 }
 
+func (f *fakeClient) getFilePath(filename string) (string, error) {
+	for _, f := range []string{
+		fmt.Sprintf("/var/lib/sealos/data/%s/etc/%s", f.clusterName, filename),
+		fmt.Sprintf("/root/.sealos/%s/etc/%s", f.clusterName, filename),
+	} {
+		if utils.IsFileExist(f) {
+			return f, nil
+		}
+	}
+	return "", errors.New("both init file does't exists")
+}
+
 func (f *fakeClient) loadInitConfig() error {
 	logger.Info("verify default cluster info")
-	initFile := fmt.Sprintf("/root/.sealos/%s/etc/kubeadm-init.yaml", f.clusterName)
-	if !utils.IsFileExist(initFile) {
-		return fmt.Errorf("file %s not exist", initFile)
+	initFile, err := f.getFilePath("kubeadm-init.yaml")
+	if err != nil {
+		return err
 	}
 	data, err := os.ReadFile(filepath.Clean(initFile))
 	if err != nil {
@@ -164,10 +177,12 @@ func (f *fakeClient) loadInitConfig() error {
 	}
 	return utils.UnmarshalYamlFile(clusterConfig, &f.Cluster)
 }
+
 func (f *fakeClient) loadUpdateConfig() error {
 	logger.Info("verify default cluster info")
-	initFile := fmt.Sprintf("/root/.sealos/%s/etc/kubeadm-update.yaml", f.clusterName)
-	if !utils.IsFileExist(initFile) {
+	initFile, err := f.getFilePath("kubeadm-update.yaml")
+	if err != nil {
+		logger.Error(err)
 		f.UpdateConfiguration = nil
 		return nil
 	}

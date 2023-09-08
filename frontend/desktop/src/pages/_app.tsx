@@ -11,9 +11,9 @@ import 'nprogress/nprogress.css';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,
-      retry: false,
-      cacheTime: 0
+      // refetchOnWindowFocus: false,
+      retry: false
+      // cacheTime: 0
     }
   }
 });

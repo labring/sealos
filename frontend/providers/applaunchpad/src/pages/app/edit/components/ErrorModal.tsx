@@ -29,7 +29,7 @@ const ErrorModal = ({
             {title}
           </Box>
         </ModalHeader>
-        <ModalCloseButton color={'myRed.600'} fontSize={'16px'} transform={'translateY(10px)'} />
+        <ModalCloseButton fontSize={'16px'} transform={'translateY(10px)'} />
         <ModalBody maxH={'50vh'} overflow={'auto'} whiteSpace={'pre-wrap'}>
           {content}
         </ModalBody>

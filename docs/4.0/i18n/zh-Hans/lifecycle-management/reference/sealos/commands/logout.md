@@ -8,11 +8,11 @@ sidebar_position: 6
 
 ## 用法：
 
-`sealos login [flags] [options] registryName` 
+`sealos logout [flags] [options] registryName` 
 
 ## 参数：
 
-以下是 `sealos login` 命令的参数：
+以下是 `sealos logout` 命令的参数：
 
 - `--authfile=''`: 身份验证文件的路径。可以使用环境变量 REGISTRY_AUTH_FILE 来覆盖。
 

@@ -21,7 +21,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/json"
 
-	"github.com/labring/sealos/pkg/runtime"
+	runtimeutils "github.com/labring/sealos/pkg/runtime/utils"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -37,7 +37,7 @@ func newTokenCmd() *cobra.Command {
 			if len(args) > 1 {
 				certificateKey = args[1]
 			}
-			t, err := runtime.Generator(config, certificateKey)
+			t, err := runtimeutils.GenerateToken(config, certificateKey)
 			if err != nil {
 				logger.Error("exec token error: " + err.Error())
 				os.Exit(1)

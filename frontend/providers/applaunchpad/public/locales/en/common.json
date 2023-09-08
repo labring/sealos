@@ -1,4 +1,8 @@
 {
+  "cpu": "CPU",
+  "memory": "Memory",
+  "storage": "Storage",
+  "gpu": "GPU",
   "Applications": "Applications",
   "Create Application": "Create Application",
   "Cancel": "Cancel",
@@ -138,5 +142,22 @@
   "Perday": "Perday",
   "Submit Error": "Submit Error",
   "Env Placeholder": "Can be colon or equal sign, delimited by newline. For example :\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n-env1 =test",
-  "Gpu under inventory Tip": "{{gputype}} is out of stock, please change the model or amount"
+  "Gpu under inventory Tip": "{{gputype}} is out of stock, please change the model or amount",
+  "app": {
+    "Resource Quota": "Quota",
+    "The applied CPU exceeds the quota": "The applied CPU exceeds the quota",
+    "The applied memory exceeds the quota": "The applied memory exceeds the quota",
+    "The applied GPU exceeds the quota": "The applied GPU exceeds the quota",
+    "The applied storage exceeds the quota": "The applied storage exceeds the quota",
+    "The container exposed port cannot be empty": "The container exposed port cannot be empty",
+    "The minimum exposed port is 1": "The minimum exposed port is 1",
+    "The maximum number of exposed ports is 65535": "The maximum number of exposed ports is 65535"
+  },
+  "user": {
+    "Insufficient account balance": "Insufficient account balance"
+  },
+  "common": {
+    "Used": "Used",
+    "Surplus": "Surplus"
+  }
 }

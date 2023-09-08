@@ -27,6 +27,7 @@ import (
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/version"
+	versionutils "github.com/labring/sealos/pkg/version/utils"
 )
 
 var shortPrint bool
@@ -75,8 +76,8 @@ func PrintInfo() error {
 		}
 		return nil
 	}
-	OutputInfo.KubernetesVersion = version.GetKubernetesVersion(cluster)
-	OutputInfo.CriRuntimeVersion = version.GetCriRuntimeVersion()
+	OutputInfo.KubernetesVersion = versionutils.GetKubernetesVersion(cluster)
+	OutputInfo.CriRuntimeVersion = versionutils.GetCriRuntimeVersion()
 
 	err = PrintToStd(OutputInfo)
 	if err != nil {

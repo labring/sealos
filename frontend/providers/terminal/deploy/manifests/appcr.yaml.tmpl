@@ -6,8 +6,13 @@ metadata:
 spec:
   data:
     desc: sealos CLoud Terminal
-    url: "https://terminal.{{ .cloudDomain }}"
-  icon: "https://terminal.{{ .cloudDomain }}/logo.svg"
+    url: "https://terminal.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+  icon: "https://terminal.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg"
+  i18n:
+    zh:
+      name: 终端
+    zh-Hans:
+      name: 终端
   menuData:
     helpDocs: https://www.sealos.io/docs/cloud/apps/terminal/
     helpDropDown: false

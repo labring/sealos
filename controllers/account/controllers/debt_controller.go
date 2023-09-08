@@ -382,7 +382,7 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.
 	r.accountSystemNamespace = utils.GetEnvWithDefault(accountv1.AccountSystemNamespaceEnv, "account-system")
 	r.accountNamespace = utils.GetEnvWithDefault(ACCOUNTNAMESPACEENV, "sealos-system")
 	setDefaultDebtPeriodWaitSecond()
-	debtDetectionCycleSecond := utils.GetIntEnvWithDefault(DebtDetectionCycleEnv, 60)
+	debtDetectionCycleSecond := utils.GetInt64EnvWithDefault(DebtDetectionCycleEnv, 60)
 	r.DebtDetectionCycle = time.Duration(debtDetectionCycleSecond) * time.Second
 
 	/*
@@ -410,10 +410,10 @@ func setDefaultDebtPeriodWaitSecond() {
 		ImminentDeletionPeriod:    IminentDeletionPeriodWaitSecond,
 		FinalDeletionPeriod:       FinalDeletionPeriodWaitSecond,
 	*/
-	DebtConfig[accountv1.WarningPeriod] = utils.GetIntEnvWithDefault(string(accountv1.WarningPeriod), 0*accountv1.DaySecond)
-	DebtConfig[accountv1.ApproachingDeletionPeriod] = utils.GetIntEnvWithDefault(string(accountv1.ApproachingDeletionPeriod), 4*accountv1.DaySecond)
-	DebtConfig[accountv1.ImminentDeletionPeriod] = utils.GetIntEnvWithDefault(string(accountv1.ImminentDeletionPeriod), 3*accountv1.DaySecond)
-	DebtConfig[accountv1.FinalDeletionPeriod] = utils.GetIntEnvWithDefault(string(accountv1.FinalDeletionPeriod), 7*accountv1.DaySecond)
+	DebtConfig[accountv1.WarningPeriod] = utils.GetInt64EnvWithDefault(string(accountv1.WarningPeriod), 0*accountv1.DaySecond)
+	DebtConfig[accountv1.ApproachingDeletionPeriod] = utils.GetInt64EnvWithDefault(string(accountv1.ApproachingDeletionPeriod), 4*accountv1.DaySecond)
+	DebtConfig[accountv1.ImminentDeletionPeriod] = utils.GetInt64EnvWithDefault(string(accountv1.ImminentDeletionPeriod), 3*accountv1.DaySecond)
+	DebtConfig[accountv1.FinalDeletionPeriod] = utils.GetInt64EnvWithDefault(string(accountv1.FinalDeletionPeriod), 7*accountv1.DaySecond)
 }
 
 type OnlyCreatePredicate struct {

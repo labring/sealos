@@ -15,11 +15,10 @@
 package applydrivers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
-
-	"github.com/labring/sealos/pkg/utils/confirm"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/version"
@@ -29,12 +28,13 @@ import (
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
-func NewDefaultApplier(cluster *v2.Cluster, cf clusterfile.Interface, images []string) (Interface, error) {
+func NewDefaultApplier(ctx context.Context, cluster *v2.Cluster, cf clusterfile.Interface, images []string) (Interface, error) {
 	if cluster.Name == "" {
 		return nil, fmt.Errorf("cluster name cannot be empty")
 	}
@@ -47,6 +47,7 @@ func NewDefaultApplier(cluster *v2.Cluster, cf clusterfile.Interface, images []s
 	}
 
 	return &Applier{
+		Context:        ctx,
 		ClusterDesired: cluster,
 		ClusterFile:    cf,
 		ClusterCurrent: cf.GetCluster(),
@@ -54,12 +55,13 @@ func NewDefaultApplier(cluster *v2.Cluster, cf clusterfile.Interface, images []s
 	}, nil
 }
 
-func NewDefaultScaleApplier(current, cluster *v2.Cluster) (Interface, error) {
+func NewDefaultScaleApplier(ctx context.Context, current, cluster *v2.Cluster) (Interface, error) {
 	if cluster.Name == "" {
 		cluster.Name = current.Name
 	}
 	cFile := clusterfile.NewClusterFile(constants.Clusterfile(cluster.Name))
 	return &Applier{
+		Context:        ctx,
 		ClusterDesired: cluster,
 		ClusterFile:    cFile,
 		ClusterCurrent: current,
@@ -67,6 +69,7 @@ func NewDefaultScaleApplier(current, cluster *v2.Cluster) (Interface, error) {
 }
 
 type Applier struct {
+	context.Context
 	ClusterDesired     *v2.Cluster
 	ClusterCurrent     *v2.Cluster
 	ClusterFile        clusterfile.Interface
@@ -86,7 +89,7 @@ func (c *Applier) Apply() error {
 			return
 		}
 		logger.Debug("save objects into local: %s, objects: %v", clusterPath, c.getWriteBackObjects())
-		saveErr := yaml.MarshalYamlToFile(clusterPath, c.getWriteBackObjects()...)
+		saveErr := yaml.MarshalFile(clusterPath, c.getWriteBackObjects()...)
 		if saveErr != nil {
 			logger.Error("failed to serialize into file: %s error, %s", clusterPath, saveErr)
 		}
@@ -120,6 +123,11 @@ func (c *Applier) Apply() error {
 
 func (c *Applier) getWriteBackObjects() []interface{} {
 	obj := []interface{}{c.ClusterDesired}
+	if runtimeConfig := c.ClusterFile.GetRuntimeConfig(); runtimeConfig != nil {
+		if components := runtimeConfig.GetComponents(); len(components) > 0 {
+			obj = append(obj, components...)
+		}
+	}
 	if configs := c.ClusterFile.GetConfigs(); len(configs) > 0 {
 		for i := range configs {
 			obj = append(obj, configs[i])
@@ -185,7 +193,7 @@ func (c *Applier) reconcileCluster() (clusterErr error, appErr error) {
 
 func (c *Applier) initCluster() error {
 	logger.Info("Start to create a new cluster: master %s, worker %s, registry %s", c.ClusterDesired.GetMasterIPList(), c.ClusterDesired.GetNodeIPList(), c.ClusterDesired.GetRegistryIP())
-	createProcessor, err := processor.NewCreateProcessor(c.ClusterDesired.Name, c.ClusterFile)
+	createProcessor, err := processor.NewCreateProcessor(c.Context, c.ClusterDesired.Name, c.ClusterFile)
 	if err != nil {
 		return err
 	}
@@ -205,7 +213,7 @@ func (c *Applier) installApp(images []string) error {
 	if err != nil {
 		return err
 	}
-	installProcessor, err := processor.NewInstallProcessor(c.ClusterFile, images)
+	installProcessor, err := processor.NewInstallProcessor(c.Context, c.ClusterFile, images)
 	if err != nil {
 		return err
 	}
@@ -244,7 +252,7 @@ func (c *Applier) Delete() error {
 		cfPath := constants.Clusterfile(c.ClusterDesired.Name)
 		target := fmt.Sprintf("%s.%d", cfPath, t.Unix())
 		logger.Debug("write reset cluster file to local: %s", target)
-		if err := yaml.MarshalYamlToFile(cfPath, c.getWriteBackObjects()...); err != nil {
+		if err := yaml.MarshalFile(cfPath, c.getWriteBackObjects()...); err != nil {
 			logger.Error("failed to store cluster file: %v", err)
 		}
 		_ = os.Rename(cfPath, target)

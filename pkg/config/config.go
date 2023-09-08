@@ -20,11 +20,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/labring/sealos/pkg/clusterfile"
-
 	"github.com/imdario/mergo"
 	"sigs.k8s.io/yaml"
 
+	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/file"
@@ -78,7 +77,7 @@ func NewConfiguration(name, rootPath string, configs []v1beta1.Config) Interface
 
 func NewDefaultConfiguration(clusterName string) Interface {
 	return &Dumper{
-		RootPath: constants.NewData(clusterName).RootFSPath(),
+		RootPath: constants.NewPathResolver(clusterName).RootFSPath(),
 	}
 }
 
@@ -157,8 +156,7 @@ func getMergeConfigData(path string, data []byte) ([]byte, error) {
 			return nil, fmt.Errorf("failed to unmarshal config: %v", err)
 		}
 		if err := mergo.Merge(&configMap, &mergeConfigMap,
-			mergo.WithOverwriteWithEmptyValue, mergo.WithOverrideEmptySlice,
-			mergo.WithAppendSlice, mergo.WithTypeCheck, mergo.WithSliceDeepCopy,
+			mergo.WithOverwriteWithEmptyValue, mergo.WithTypeCheck,
 		); err != nil {
 			return nil, fmt.Errorf("merge: %v", err)
 		}

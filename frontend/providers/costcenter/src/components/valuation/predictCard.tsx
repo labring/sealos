@@ -1,14 +1,15 @@
 import useBillingStore from '@/stores/billing';
 import useEnvStore from '@/stores/env';
 import { displayMoney } from '@/utils/format';
-import { Flex, Img } from '@chakra-ui/react';
+import { Flex, Img, Text } from '@chakra-ui/react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import shellcoin from '@/assert/shell_coin.svg';
+import CurrencySymbol from '../CurrencySymbol';
 export default function PredictCard() {
   const { t } = useTranslation();
   const total = t('total');
   const state = useBillingStore();
+  const currency = useEnvStore((s) => s.currency);
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
   const leastCost = useMemo(() => {
     const origin = [
@@ -30,7 +31,7 @@ export default function PredictCard() {
     }));
   }, [state.cpu, state.memory, state.storage, gpuEnabled, total]);
   return (
-    <Flex borderX={'0.5px solid #DEE0E2'}>
+    <Flex border={'1px solid #DEE0E2'} borderRadius={'4px'} overflow={'hidden'}>
       {leastCost.map((item) => (
         <Flex
           key={item.name}
@@ -45,8 +46,8 @@ export default function PredictCard() {
             {item.name}
           </Flex>
           <Flex justify={'center'} align={'center'} h={'68px'}>
-            <Img src={shellcoin.src} h="16px" w="16px" mr="4px" />
-            {item.cost}
+            <CurrencySymbol w="14px" type={currency} />
+            <Text>{item.cost}</Text>
           </Flex>
         </Flex>
       ))}

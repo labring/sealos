@@ -18,6 +18,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - configmaps/status
+  verbs:
+  - get
+- apiGroups:
   - account.sealos.io
   resources:
   - accountbalances

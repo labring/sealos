@@ -15,9 +15,13 @@
 package v1beta1
 
 import (
+	"path"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
+
+	"github.com/labring/sealos/pkg/version"
 )
 
 // +kubebuilder:object:root=true
@@ -48,16 +52,15 @@ type RegistryConfig struct {
 type ImageType string
 
 const (
-	AppImage                    ImageType = "application"
-	RootfsImage                 ImageType = "rootfs"
-	PatchImage                  ImageType = "patch"
-	ImageKubeVersionKey                   = "version"
-	ImageVIPKey                           = "vip"
-	ImageKubeLvscareImageKey              = "image"
-	ImageTypeKey                          = "sealos.io.type"
-	ImageTypeVersionKey                   = "sealos.io.version"
-	ImageKubeVersionEnvSysKey             = "SEALOS_SYS_KUBE_VERSION"
-	ImageSealosVersionEnvSysKey           = "SEALOS_SYS_SEALOS_VERSION"
+	AppImage                 ImageType = "application"
+	RootfsImage              ImageType = "rootfs"
+	PatchImage               ImageType = "patch"
+	ImageKubeVersionKey                = "version"
+	ImageVIPKey                        = "vip"
+	ImageKubeLvscareImageKey           = "image"
+
+	ImageKubeVersionEnvSysKey   = "SEALOS_SYS_KUBE_VERSION"
+	ImageSealosVersionEnvSysKey = "SEALOS_SYS_SEALOS_VERSION"
 )
 
 const (
@@ -66,6 +69,19 @@ const (
 )
 
 var ImageVersionList = []string{ImageTypeVersionKeyV1Beta1, ImageTypeVersionKeyV1Beta2}
+
+var (
+	imageTypeKey           = "sealos.io.type"
+	imageVersionKey        = "sealos.io.version"
+	imageDistributionKey   = "sealos.io.distribution"
+	imageTypeKeyV2         = path.Join(GroupName, "type")
+	imageVersionKeyV2      = path.Join(GroupName, "version")
+	imageDistributionKeyV2 = path.Join(GroupName, "distribution")
+)
+
+var ImageTypeKeys = []string{imageTypeKey, imageTypeKeyV2}
+var ImageVersionKeys = []string{imageVersionKey, imageVersionKeyV2}
+var ImageDistributionKeys = []string{imageDistributionKey, imageDistributionKeyV2}
 
 type MountImage struct {
 	Name       string            `json:"name"`
@@ -78,11 +94,35 @@ type MountImage struct {
 	Entrypoint []string          `json:"entrypoint,omitempty"`
 }
 
-func (img *MountImage) KubeVersion() string {
-	if img.Type != RootfsImage || img.Labels == nil {
+func (m *MountImage) KubeVersion() string {
+	if m.Type != RootfsImage || m.Labels == nil {
 		return ""
 	}
-	return img.Labels[ImageKubeVersionKey]
+	return m.Labels[ImageKubeVersionKey]
+}
+
+func (m *MountImage) IsApplication() bool {
+	return m.Type == "" || m.Type == AppImage
+}
+
+func (m *MountImage) IsRootFs() bool {
+	return m.Type == RootfsImage
+}
+
+func (m *MountImage) IsPatch() bool {
+	return m.Type == PatchImage
+}
+
+func MergeEnvWithBuiltinKeys(src map[string]string, m MountImage) map[string]string {
+	out := make(map[string]string, len(src))
+	for k, v := range src {
+		out[k] = v
+	}
+	if m.IsRootFs() {
+		out[ImageKubeVersionEnvSysKey] = m.Labels[ImageKubeVersionKey]
+		out[ImageSealosVersionEnvSysKey] = version.Get().GitVersion
+	}
+	return out
 }
 
 type ClusterPhase string
@@ -191,6 +231,13 @@ type SSH struct {
 	Pk       string `json:"pk,omitempty"`
 	PkPasswd string `json:"pkPasswd,omitempty"`
 	Port     uint16 `json:"port,omitempty"`
+}
+
+func (s *SSH) DefaultPort() uint16 {
+	if s.Port != 0 {
+		return s.Port
+	}
+	return 22
 }
 
 type Host struct {

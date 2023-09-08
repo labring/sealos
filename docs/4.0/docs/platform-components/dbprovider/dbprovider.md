@@ -2,47 +2,48 @@
 sidebar_position: 2
 ---
 
-# 数据库
+# Database
 
-**数据库** 是一个应用的核心组成，Sealos 提供了一个数据库集群部署管理工具，可以帮助你快速部署数据库集群。目前支持 MySQL, PostgreSQL 和 MongoDB。目前 **数据库** 属于测试版本。
+The **Database** is a quintessential component of an application. Sealos provides a database cluster deployment management tool, aiding in the swift deployment of database clusters. At present, it supports MySQL, PostgreSQL, and MongoDB. The **Database** is currently in its experimental phase.
 
-- [x] 集群 CRUD
-- [x] 一键直连数据库
-- [ ] 手动备份
-- [ ] 自动备份
-- [ ] 弹性伸缩
-- [ ] 创建只读集群
-- [ ] 可视化配置用户组和数据库组
-- [ ] 可视化数据库管理
-- [ ] 支持更多数据库和版本
+- [x] Cluster CRUD
+- [x] One-click direct connection to the database
+- [ ] Manual backup
+- [ ] Automatic backup
+- [ ] Elastic scaling
+- [ ] Creation of read-only clusters
+- [ ] Visual configuration of user groups and database groups
+- [ ] Visual database management
+- [ ] Support for additional databases and versions
 
-## 快速开始
+## Getting Started
 
-以部署一个 PostgreSQL 数据库为例，体验 **数据库** 的便捷性。
+To illustrate the convenience of the **Database**, let's deploy a PostgreSQL database.
 
-只需 6 步即可完成部署和访问：
+It only takes six steps to complete the deployment and access:
 
-1. 从 Sealos 桌面进入 **数据库** 应用。
+1. Enter the **Database** application from the Sealos desktop.
 
-![1. 打开 **数据库**](./imgs/db1.png)
+![1. Open the **database**](./imgs/db1.jpeg)
 
-2. 点击新建集群。
+2. Click on the creation of a new cluster.
 
-![2. 新建集群](./imgs/db2.png)
+![2. Create a new cluster](./imgs/db2.png)
 
-3. 选择对应的数据库和参数。
+3. Select the corresponding database and parameters.
 
-![3. 选择对应的数据库和参数](./imgs/db3.png)
+![3. Select the corresponding database and parameters](./imgs/db3.png)
 
-4. 点击部署。
-5. 进入 DB 查看详情。
+4. Click on deployment.
 
-![4. 进入 DB 详情](./imgs/db4.png)
+5. Enter DB to view details.
 
-6. 获取数据库访问参数。
+![4. Enter DB details](./imgs/db4.png)
 
-![5. 获取数据库访问参数](./imgs/db5.png)
+6. Obtain the database access parameters.
 
-7. 体验一键连接数据库。
+![5. Obtain the database access parameters](./imgs/db5.png)
 
-![pg 数据库连接](./imgs/db6.png)
+7. Experience the one-click database connection.
+
+![pg Database connection](./imgs/db6.png)
