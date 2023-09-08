@@ -4,32 +4,30 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/pay/conf"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-func Init(c *gin.Context) (*conf.Request, error) {
-	payRequest := &conf.Request{}
+func Init(c *gin.Context, client *mongo.Client) (*Request, error) {
+	payRequest := &Request{}
 	err := c.ShouldBindJSON(payRequest)
 	if err != nil {
 		return nil, fmt.Errorf("bind json error : %v", err)
 	}
 	// Identity authentication
-	if err = Authenticate(payRequest); err != nil {
+	if err = Authenticate(payRequest, client); err != nil {
 		return nil, fmt.Errorf("authenticate error : %v", err)
 	}
 	return payRequest, nil
 }
 
-func Authenticate(r *conf.Request) error {
-	coll := InitDB(os.Getenv(conf.DBURI), conf.Database, conf.AppColl)
+func Authenticate(r *Request, client *mongo.Client) error {
+	coll := InitDBAndColl(client, Database, AppColl)
 	appID := r.AppID
 	sign := r.Sign
 
@@ -53,13 +51,17 @@ func Authenticate(r *conf.Request) error {
 	return nil
 }
 
-func InitDB(URI string, datebase string, collection string) *mongo.Collection {
+func InitMongoClient(URI string) *mongo.Client {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(URI))
 	if err = client.Ping(context.TODO(), readpref.Primary()); err != nil {
 		log.Fatal(err)
 	}
+	return client
+}
+
+func InitDBAndColl(client *mongo.Client, datebase string, collection string) *mongo.Collection {
 	coll := client.Database(datebase).Collection(collection)
 	return coll
 }

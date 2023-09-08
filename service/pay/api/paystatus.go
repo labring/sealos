@@ -7,21 +7,23 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/pay/helper"
 	"github.com/labring/sealos/service/pay/method"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetPayStatus(c *gin.Context) {
-	request, err := helper.Init(c)
+func GetPayStatus(c *gin.Context, client *mongo.Client) {
+	request, err := helper.Init(c, client)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("init failed before get payment status: %v, %v", request, err)})
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("init failed before get payment status: %v, %v", request, err)})
 		return
 	}
+
 	switch request.PayMethod {
 	case "wechat":
-		method.GetWechatPaymentStatus(c, request)
+		method.GetWechatPaymentStatus(c, request, client)
 	case "stripe":
-		method.GetStripePaymentStatus(c, request)
+		method.GetStripePaymentStatus(c, request, client)
 	default:
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("paymethod is illegal: %v", request.PayMethod)})
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("paymethod is illegal: %v", request.PayMethod)})
 	}
 	//TODO 这一块别的状态除了notpaid还没有测过，之后得测一下
 }

@@ -1,17 +1,16 @@
-package helper
+package handler
 
 import (
 	"context"
 	"fmt"
-	"os"
 
-	"github.com/labring/sealos/service/pay/conf"
+	"github.com/labring/sealos/service/pay/helper"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetExchangeRate(payMethod, currency string) (float64, error) {
-	coll := InitDB(os.Getenv(conf.DBURI), conf.Database, conf.PayMethodColl)
+func GetExchangeRate(client *mongo.Client, payMethod, currency string) (float64, error) {
+	coll := helper.InitDBAndColl(client, helper.Database, helper.PayMethodColl)
 	filter := bson.D{
 		{"payMethod", payMethod},
 		{"currency", currency},
@@ -30,14 +29,14 @@ func GetExchangeRate(payMethod, currency string) (float64, error) {
 	return exchangeRate, nil
 }
 
-func InsertPayMethod(request *conf.Request) (*mongo.InsertManyResult, error) {
+func InsertPayMethod(request *helper.Request, client *mongo.Client) (*mongo.InsertManyResult, error) {
 	payMethod := request.PayMethod
 	currency := request.Currency
 	amountOptions := request.AmountOptions
 	exchangerate := request.ExchangeRate
 	taxRate := request.TaxRate
 
-	coll := InitDB(os.Getenv(conf.DBURI), conf.Database, conf.PayMethodColl)
+	coll := helper.InitDBAndColl(client, helper.Database, helper.PayMethodColl)
 
 	docs := []interface{}{
 		PMDetail{
@@ -51,14 +50,13 @@ func InsertPayMethod(request *conf.Request) (*mongo.InsertManyResult, error) {
 
 	result, err := coll.InsertMany(context.TODO(), docs)
 	if err != nil {
-		//fmt.Println("insert the data of paymethod failed:", err)
 		return nil, fmt.Errorf("insert the data of paymethod failed: %v", err)
 	}
 	return result, nil
 }
 
-func CheckPayMethodExistOrNot(currency, payMethod string) (bool, error) {
-	coll := InitDB(os.Getenv(conf.DBURI), conf.Database, conf.PayMethodColl)
+func CheckPayMethodExistOrNot(client *mongo.Client, currency, payMethod string) (bool, error) {
+	coll := helper.InitDBAndColl(client, helper.Database, helper.PayMethodColl)
 	filter := bson.D{
 		{"payMethod", payMethod},
 		{"currency", currency},

@@ -1,19 +1,18 @@
-package helper
+package handler
 
 import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/pay/conf"
+	"github.com/labring/sealos/service/pay/helper"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetPaymentStatus(orderID string) (string, error) {
-	coll := InitDB(os.Getenv(conf.DBURI), conf.Database, conf.PaymentDetailsColl)
+func GetPaymentStatus(client *mongo.Client, orderID string) (string, error) {
+	coll := helper.InitDBAndColl(client, helper.Database, helper.PaymentDetailsColl)
 	filter := bson.D{{"orderID", orderID}}
 	var paymentResult bson.M
 	if err := coll.FindOne(context.TODO(), filter).Decode(&paymentResult); err != nil {
@@ -22,15 +21,14 @@ func GetPaymentStatus(orderID string) (string, error) {
 	}
 	status, ok := paymentResult["status"].(string)
 	if !ok {
-		// 类型断言失败，处理错误
 		fmt.Println("status type assertion failed")
 		return "", fmt.Errorf("status type assertion failed")
 	}
 	return status, nil
 }
 
-func UpdatePaymentStatus(orderID string, status string) (string, error) {
-	coll := InitDB(os.Getenv(conf.DBURI), conf.Database, conf.PaymentDetailsColl)
+func UpdatePaymentStatus(client *mongo.Client, orderID string, status string) (string, error) {
+	coll := helper.InitDBAndColl(client, helper.Database, helper.PaymentDetailsColl)
 	filter := bson.D{{"orderID", orderID}}
 	update := bson.D{
 		{"$set", bson.D{
@@ -42,39 +40,40 @@ func UpdatePaymentStatus(orderID string, status string) (string, error) {
 		fmt.Println("update payment status failed:", err)
 		return "", fmt.Errorf("update payment status failed: %v", err)
 	}
-	//这里的paymentResult是更新前的数据
+	// The payment Result here is the data before the update
 	return paymentResult["status"].(string), nil
 }
 
-func UpdateDBIfDiff(c *gin.Context, orderID, status, aimStatus string) {
-	// 如果数据库订单状态也为aimStatus，直接返回
+func UpdateDBIfDiff(c *gin.Context, orderID string, client *mongo.Client, status, aimStatus string) {
+	// If the database order Status is also aimed-Status, return directly
 	if status == aimStatus {
-		c.AbortWithStatusJSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"message": "payment status is: " + aimStatus + ",please try again later",
 			"status":  status,
 			"orderID": orderID,
 		})
 		return
 	}
-	paymentStatus, err := UpdatePaymentStatus(orderID, aimStatus)
+	paymentStatus, err := UpdatePaymentStatus(client, orderID, aimStatus)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": fmt.Sprintf("update payment status failed when wechat order status is %s: %s, %v", aimStatus, paymentStatus, err),
 		})
 		return
 	}
-	c.AbortWithStatusJSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"message": "payment is " + aimStatus + ", database has been updated",
 		"status":  aimStatus,
 		"orderID": orderID,
 	})
+	return
 }
 
-func CheckOrderExistOrNot(request *conf.Request) error {
+func CheckOrderExistOrNot(client *mongo.Client, request *helper.Request) error {
 	orderID := request.OrderID
 	payMethod := request.PayMethod
 	appID := request.AppID
-	coll := InitDB(os.Getenv(conf.DBURI), conf.Database, conf.OrderDetailsColl)
+	coll := helper.InitDBAndColl(client, helper.Database, helper.OrderDetailsColl)
 	filter := bson.D{
 		{"orderID", orderID},
 		{"payMethod", payMethod},
