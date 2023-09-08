@@ -35,4 +35,4 @@ func CreatePayMethod(c *gin.Context, client *mongo.Client) {
 	return
 }
 
-// TODO 更改某个支付方式的 金额 或 汇率 或 税率
+// TODO Change the amount or exchange rate or tax rate for a payment method
