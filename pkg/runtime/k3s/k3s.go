@@ -17,10 +17,8 @@ package k3s
 import (
 	"fmt"
 
-	"github.com/labring/sealos/pkg/env"
-	"github.com/labring/sealos/pkg/remote"
-
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/env"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -33,7 +31,7 @@ type K3s struct {
 
 	envInterface env.Interface
 	pathResolver constants.PathResolver
-	remoteUtil   remote.Interface
+	remoteUtil   *ssh.Remote
 	sshClient    ssh.Interface
 }
 
@@ -44,7 +42,7 @@ func New(cluster *v2.Cluster, config any) (*K3s, error) {
 		pathResolver: constants.NewPathResolver(cluster.GetName()),
 		sshClient:    sshClient,
 		envInterface: env.NewEnvProcessor(cluster),
-		remoteUtil:   remote.New(cluster.GetName(), sshClient),
+		remoteUtil:   ssh.NewRemoteFromSSH(cluster.GetName(), sshClient),
 	}
 	if v, ok := config.(*Config); ok {
 		k.config = v

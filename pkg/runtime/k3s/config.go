@@ -37,6 +37,7 @@ var defaultMergeOpts = []func(*mergo.Config){
 }
 
 func defaultingConfig(c *Config) *Config {
+	//TODO update kube config
 	c.BindAddress = "0.0.0.0"
 	c.HTTPSPort = 6443
 	c.ClusterCIDR = []string{"10.42.0.0/16"}

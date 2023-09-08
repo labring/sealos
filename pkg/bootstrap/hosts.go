@@ -37,7 +37,7 @@ func (*apiServerHostApplier) Undo(ctx Context, host string) error {
 }
 
 func (a *apiServerHostApplier) Apply(ctx Context, host string) error {
-	if slices.Contains(ctx.GetCluster().GetMasterIPList(), host) {
+	if slices.Contains(ctx.GetCluster().GetMasterIPAndPortList(), host) {
 		if err := ctx.GetRemoter().HostsAdd(host, ctx.GetCluster().GetMaster0IP(), constants.DefaultAPIServerDomain); err != nil {
 			return fmt.Errorf("failed to add hosts: %v", err)
 		}
@@ -55,7 +55,7 @@ type lvscareHostApplier struct {
 
 func (*lvscareHostApplier) String() string { return "lvscare_host_applier" }
 func (*lvscareHostApplier) Filter(ctx Context, host string) bool {
-	return slices.Contains(ctx.GetCluster().GetNodeIPList(), host)
+	return slices.Contains(ctx.GetCluster().GetNodeIPAndPortList(), host)
 }
 
 func (*lvscareHostApplier) Undo(ctx Context, host string) error {

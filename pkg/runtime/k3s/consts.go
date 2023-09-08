@@ -17,8 +17,9 @@ package k3s
 const Distribution = "k3s"
 
 const (
-	defaultConfigPath          = "/etc/rancher/k3s/config.yaml"
+	defaultK3sConfigPath       = "/etc/rancher/k3s/config.yaml"
 	defaultRegistryConfigPath  = "/etc/rancher/k3s/registries.yaml"
+	defaultKubeConfigPath      = "/etc/rancher/k3s/k3s.yaml"
 	defaultDataDir             = "/var/lib/rancher/k3s"
 	defaultRootFsK3sFileName   = "k3s.yml"
 	defaultInitFilename        = "k3s-init.yaml"
