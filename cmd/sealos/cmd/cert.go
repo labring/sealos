@@ -81,6 +81,7 @@ func newCertCmd() *cobra.Command {
 				return fmt.Errorf("create runtime failed: %v", err)
 			}
 			if cm, ok := rt.(runtime.CertManager); ok {
+				logger.Info("using %s cert update implement", cf.GetCluster().GetDistribution())
 				return cm.UpdateCertSANs(altNames)
 			}
 			return nil

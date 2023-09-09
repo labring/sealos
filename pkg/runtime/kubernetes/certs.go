@@ -37,6 +37,10 @@ const (
 	KubeletConf    = "kubelet.conf"
 )
 
+func (k *KubeadmRuntime) Renew() error {
+	return errors.New("not implement")
+}
+
 func (k *KubeadmRuntime) UpdateCertSANs(certSans []string) error {
 	// set extra cert SANs for kubeadm configmap object
 	if err := k.CompleteKubeadmConfig(setCGroupDriverAndSocket, setCertificateKey); err != nil {

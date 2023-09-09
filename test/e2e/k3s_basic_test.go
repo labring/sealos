@@ -20,7 +20,10 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"strings"
 	"time"
+
+	"github.com/google/go-containerregistry/pkg/name"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -69,8 +72,6 @@ var _ = Describe("E2E_sealos_k3s_basic_test", func() {
 			By("run k3s for normal")
 			err = fakeClient.Cluster.Run("k3s:buildin")
 			utils.CheckErr(err)
-			err = fakeClient.CmdInterface.AsyncExec("kubectl", "get", "nodes", "--kubeconfig", "/etc/rancher/k3s/k3s.yaml")
-			utils.CheckErr(err)
 			fn := func() []byte {
 				data, err := fakeClient.CmdInterface.Exec("kubectl", "get", "pods", "-A", "--kubeconfig", "/etc/rancher/k3s/k3s.yaml", "-o", "yaml")
 				utils.CheckErr(err)
@@ -81,31 +82,37 @@ var _ = Describe("E2E_sealos_k3s_basic_test", func() {
 				pods := fn()
 				podList := &v1.PodList{}
 				_ = yaml.Unmarshal(pods, podList)
-				if podList != nil {
-					running := 0
-					for _, pod := range podList.Items {
-						logger.Info("k3s pods is: %s: %s", pod.Name, pod.Status.Phase)
-						if pod.Status.Phase == v1.PodRunning {
-							running++
-						}
+				running := 0
+				for _, pod := range podList.Items {
+					logger.Info("k3s pods is: %s: %s", pod.Name, pod.Status.Phase)
+					if pod.Status.Phase == v1.PodRunning {
+						running++
 					}
-					if running == len(podList.Items) && running != 0 {
-						break
-					}
+				}
+				if running == len(podList.Items) && running != 0 {
+					break
 				}
 				time.Sleep(2 * time.Second)
 				logger.Info("k3s pods is empty,retry %d", count+1)
 				count++
-				if count == 10 {
-					utils.CheckErr(errors.New("k3s pods is empty"))
+				if count == 20 {
+					utils.CheckErr(errors.New("k3s pods is empty, for timeout"))
 				}
 			}
+			err = fakeClient.CmdInterface.AsyncExec("kubectl", "get", "nodes", "--kubeconfig", "/etc/rancher/k3s/k3s.yaml")
+			utils.CheckErr(err)
 			displayImages, err := fakeClient.CRI.ImageList()
 			utils.CheckErr(err)
 			if displayImages != nil {
 				for _, image := range displayImages.Images {
 					for _, tag := range image.RepoTags {
-						logger.Info("crictl image is: %s", tag)
+						logger.Info("image tag is %s", tag)
+						ref, err := name.ParseReference(tag)
+						utils.CheckErr(err)
+						logger.Info("image registry is %s", ref.Context().RegistryStr())
+						if ref.Context().RegistryStr() != "sealos.hub:5000" {
+							utils.CheckErr(fmt.Errorf("crictl image is not sealos.hub, %+v", strings.TrimSpace(tag)))
+						}
 					}
 				}
 			}

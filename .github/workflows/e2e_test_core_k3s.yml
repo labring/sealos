@@ -3,7 +3,7 @@ name: E2E Sealos Core Test for K3s
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: [ "**" ]
     paths:
       - ".github/workflows/e2e_test_core_k3s.yml"
       - "cmd/**"
