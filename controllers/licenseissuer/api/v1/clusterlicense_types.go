@@ -26,7 +26,7 @@ import (
 // ClusterLicenseSpec defines the desired state of ClusterLicense
 type ClusterLicenseSpec struct {
 	Token string `json:"token"`
-	Key   string `json:"key",omitempty`
+	Key   string `json:"key,omitempty"`
 }
 
 // ClusterLicenseStatus defines the observed state of ClusterLicense

@@ -202,8 +202,6 @@ func (r *ClusterLicenseReconciler) Recharge(ctx context.Context) error {
 		return errors.New("amount error type")
 	}
 
-	Quota := r.csb.Status.Quota
-	NewQuota := Quota + amtADD
 	EncryptQuota := r.csb.Status.EncryptQuota
 	decryptQuota, err := crypto.DecryptInt64WithKey(EncryptQuota, []byte(util.CryptoKey))
 	if err != nil {
@@ -215,7 +213,7 @@ func (r *ClusterLicenseReconciler) Recharge(ctx context.Context) error {
 	}
 	r.csb.Status.EncryptQuota = *NewEncryptQuota
 	// Update the quota
-	r.csb.Status.Quota = NewQuota
+	r.csb.Status.Quota = decryptQuota + amtADD
 	err = r.Client.Status().Update(ctx, r.csb)
 	if err != nil {
 		return err

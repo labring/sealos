@@ -94,7 +94,16 @@ func (c *ClusterScaleBilling) billingWork(ti *TaskInstance) error {
 		"createTime": time.Now().Format("2006-01-02"),
 		"totalFee":   fee,
 	}
-	return mongoDB.UpsertDoc(doc, bson.M{"createTime": doc["createTime"]})
+
+	// IF record error, will record later
+	err = mongoDB.InstertIfNotExisted(doc, bson.M{"createTime": doc["createTime"]})
+	if err != nil {
+		ti.logger.Info("failed to save the billing info", "err", err)
+		return err
+	}
+	// IF record success, will update the usage
+	// else will update the usage later
+	return AccumulateUsage(ti.ctx, ti.Client, fee)
 }
 
 func (c *ClusterScaleBilling) GetPrices() map[string]common.Price {
@@ -143,7 +152,8 @@ type MongoDocsHandler interface {
 	IsExisted(condition bson.M) bool
 	FindDoc(condition bson.M) (bson.M, error)
 	FindDocs(condition bson.M) ([]bson.M, error)
-	UpsertDoc(doc bson.M, filter bson.M) error
+	UpsertDoc(doc bson.M, filter bson.M) (*mongo.UpdateResult, error)
+	InstertIfNotExisted(doc bson.M, filter bson.M) error
 }
 
 type MongoDB struct {
@@ -152,7 +162,7 @@ type MongoDB struct {
 	COLName string
 }
 
-func (m *MongoDB) UpsertDoc(doc bson.M, filter bson.M) error {
+func (m *MongoDB) UpsertDoc(doc bson.M, filter bson.M) (*mongo.UpdateResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	update := bson.M{
@@ -160,9 +170,23 @@ func (m *MongoDB) UpsertDoc(doc bson.M, filter bson.M) error {
 	}
 	updateOptions := mongoOptions.Update().SetUpsert(true)
 
-	_, err := m.DB.client.Database(m.DBName).Collection(m.COLName).
+	res, err := m.DB.client.Database(m.DBName).Collection(m.COLName).
 		UpdateOne(ctx, filter, update, updateOptions)
-	return err
+	return res, err
+}
+
+func (m *MongoDB) InstertIfNotExisted(doc bson.M, filter bson.M) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	count, err := m.DB.client.Database(m.DBName).Collection(m.COLName).CountDocuments(ctx, filter)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		_, err := m.DB.client.Database(m.DBName).Collection(m.COLName).InsertOne(ctx, doc)
+		return err
+	}
+	return nil
 }
 
 func (m *MongoDB) FindDocs(condition bson.M) ([]bson.M, error) {
