@@ -13,6 +13,7 @@ jobs:
       arch: amd64,arm64
       e2e: true
       image: true
+      target_pull: true
   e2e_apply_test:
     needs: [ call_ci_workflow ]
     runs-on: ubuntu-latest
@@ -31,7 +32,15 @@ jobs:
         with:
           name: sealos-${{ matrix.arch }}
           path: /tmp/sealos/bin/
-
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos-amd64
+          path: /tmp/verify/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/verify/sealos
+          sudo /tmp/verify/sealos version
       - name: Download patch image tar
         uses: actions/download-artifact@v3
         with:
