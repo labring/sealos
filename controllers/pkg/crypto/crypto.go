@@ -30,12 +30,11 @@ import (
 	"strconv"
 
 	jwt "github.com/golang-jwt/jwt/v4"
-	v1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 )
 
 const defaultEncryptionKey = "0123456789ABCDEF0123456789ABCDEF"
 
-var encryptionKey = defaultEncryptionKey
+var encryptionKey = "Bg1c3Dd5e9e0F84bdF0A5887cF43aB63"
 
 // Encrypt encrypts the given plaintext using AES-GCM.
 func Encrypt(plaintext []byte) (string, error) {
@@ -155,8 +154,8 @@ func DecryptWithKey(ciphertextBase64 string, encryptionKey []byte) ([]byte, erro
 	return plaintext, nil
 }
 
-func IsLicenseValid(license v1.License) (map[string]interface{}, bool) {
-	decodeKey, err := base64.StdEncoding.DecodeString(license.Spec.Key)
+func IsLicenseValid(token string, key string) (map[string]interface{}, bool) {
+	decodeKey, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
 		return nil, false
 	}
@@ -168,7 +167,7 @@ func IsLicenseValid(license v1.License) (map[string]interface{}, bool) {
 	keyFunc := func(token *jwt.Token) (interface{}, error) {
 		return publicKey, nil
 	}
-	parsedToken, err := jwt.Parse(license.Spec.Token, keyFunc)
+	parsedToken, err := jwt.Parse(token, keyFunc)
 	if err != nil {
 		return nil, false
 	}

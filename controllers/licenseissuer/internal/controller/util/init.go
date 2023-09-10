@@ -21,7 +21,6 @@ import (
 
 	"github.com/google/uuid"
 	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
-	"github.com/labring/sealos/controllers/pkg/crypto"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -48,8 +47,13 @@ func NewInitTask(o OptionsReadOnly) *InitTask {
 }
 
 func (t *InitTask) initWork(instance *TaskInstance) error {
+	err := initClusterScaleBilling(instance)
+	if err != nil {
+		instance.logger.Info("failed to init cluster scale billing", "err", err)
+		return err
+	}
 	// register function is idempotent
-	err := t.register(instance)
+	err = t.register(instance)
 	if err != nil {
 		instance.logger.Info("failed to register", "err", err)
 		return err
@@ -97,8 +101,18 @@ func (t *InitTask) checkRegister(instance *TaskInstance) (bool, error) {
 	return true, err
 }
 
-func (t *InitTask) initResource(instance *TaskInstance) error {
-	csb := createClusterScaleBilling()
+func createClusterInfo() *corev1.Secret {
+	uuid := uuid.New().String()
+	secret := &corev1.Secret{}
+	secret.Name = ClusterInfo
+	secret.Namespace = GetOptions().GetEnvOptions().Namespace
+	secret.Data = map[string][]byte{
+		"uuid": []byte(uuid),
+	}
+	return secret
+}
+
+func initClusterScaleBilling(instance *TaskInstance) error {
 	// step 1
 	ok, err := checkClusterScaleBilling(instance)
 	if err != nil {
@@ -109,22 +123,12 @@ func (t *InitTask) initResource(instance *TaskInstance) error {
 		instance.logger.Info("cluster-scale-billing has been created")
 		return nil
 	}
+	csb := createClusterScaleBilling()
 	err = instance.Create(instance.ctx, csb)
 	if err != nil {
 		instance.logger.Info("failed to store cluster info", "err", err)
 	}
 	return err
-}
-
-func createClusterInfo() *corev1.Secret {
-	uuid := uuid.New().String()
-	secret := &corev1.Secret{}
-	secret.Name = ClusterInfo
-	secret.Namespace = GetOptions().GetEnvOptions().Namespace
-	secret.Data = map[string][]byte{
-		"uuid": []byte(uuid),
-	}
-	return secret
 }
 
 func checkClusterScaleBilling(instance *TaskInstance) (bool, error) {
@@ -144,15 +148,6 @@ func createClusterScaleBilling() *issuerv1.ClusterScaleBilling {
 	csb := &issuerv1.ClusterScaleBilling{}
 	csb.Name = ScaleBilling
 	csb.Namespace = GetOptions().GetEnvOptions().Namespace
-	eq, err := crypto.EncryptInt64WithKey(0, []byte(CryptoKey))
-	if err != nil {
-		csb.Status = issuerv1.ClusterScaleBillingStatus{
-			Quota:        0,
-			Used:         0,
-			EncryptQuota: *eq,
-			EncryptUsed:  *eq,
-		}
-	}
 	return csb
 }
 

@@ -99,13 +99,9 @@ func main() {
 
 	// get options for this Operator
 	options := util.GetOptions()
-	mongoURI := options.GetEnvOptions().MongoURI
-	licenseDB, err := util.NewLicenseDB(mongoURI, database.DefaultDBName, "license")
-	if err != nil {
-		setupLog.Error(err, "unable to create database")
-		os.Exit(1)
-	}
-	clusterLicenseDB, err := util.NewLicenseDB(mongoURI, database.DefaultDBName, "cluster_license")
+	// mongoURI := options.GetEnvOptions().MongoURI
+	licenseDB := util.NewMongoDB(database.DefaultDBName, "license")
+	clusterLicenseDB := util.NewMongoDB(database.DefaultDBName, "clusterlicense")
 	if err != nil {
 		setupLog.Error(err, "unable to create database")
 		os.Exit(1)
@@ -116,10 +112,9 @@ func main() {
 	}()
 
 	if err = (&controller.LicenseReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		DBCol:    licenseDB,
-		Recorder: util.GetHashMap(),
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		DBCol:  licenseDB,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "License")
 		os.Exit(1)

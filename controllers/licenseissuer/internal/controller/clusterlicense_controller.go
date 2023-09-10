@@ -19,7 +19,6 @@ package controller
 import (
 	"context"
 	"errors"
-	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -43,7 +42,7 @@ type ClusterLicenseReconciler struct {
 	Scheme   *runtime.Scheme
 	logger   logr.Logger
 	Recorder util.Map[string]
-	DBCol    util.LicenseDB
+	DBCol    util.MongoHandler
 	payload  map[string]interface{}
 
 	csb *infostreamv1.ClusterScaleBilling
@@ -133,55 +132,11 @@ func (r *ClusterLicenseReconciler) Read(ctx context.Context, req ctrl.Request) e
 	return nil
 }
 
-func (r *ClusterLicenseReconciler) CheckLicenseExists() (bool, error) {
-	ok := r.Recorder.Find(r.cl.Spec.Token)
-	if ok {
-		return true, nil
-	}
-	ok, err := util.CheckLicenseExists(r.DBCol, r.cl.Spec.Token)
-	if err != nil {
-		r.logger.Error(err, "failed to check license exists")
-		return false, err
-	}
-	return ok, nil
-}
-
-func (r *ClusterLicenseReconciler) CheckLicense(ctx context.Context) (string, map[string]interface{}, bool) {
-	options := util.GetOptions()
-	// Check if the license is already used
-	ok, err := r.CheckLicenseExists()
-	if err != nil {
-		r.logger.Error(err, "failed to check license exists")
-		return util.DuplicateLicenseMessage, nil, false
-	}
-
-	if ok {
-		return util.DuplicateLicenseMessage, nil, false
-	}
-
-	license := &infostreamv1.License{
-		Spec: infostreamv1.LicenseSpec{
-			Token: r.cl.Spec.Token,
-			Key:   util.Key,
-		},
-	}
-	// Check if the license is valid
-	if options.GetNetWorkOptions().EnableExternalNetWork {
-		payload, ok := util.LicenseCheckOnExternalNetwork(ctx, r.Client, *license)
-		if !ok {
-			return util.InvalidLicenseMessage, nil, false
-		}
-		return "", payload, true
-	}
-	payload, ok := util.LicenseCheckOnInternalNetwork(*license)
-	if !ok {
-		return util.InvalidLicenseMessage, nil, false
-	}
-	return "", payload, true
-}
-
 func (r *ClusterLicenseReconciler) Authorize(ctx context.Context) (string, error) {
-	message, payload, ok := r.CheckLicense(ctx)
+	meta := util.LicenseMeta{
+		Token: r.cl.Spec.Token,
+	}
+	message, payload, ok := util.CheckLicense(ctx, r.Client, meta, r.DBCol)
 	if !ok {
 		return message, errors.New("invalid license")
 	}
@@ -197,7 +152,7 @@ func (r *ClusterLicenseReconciler) Authorize(ctx context.Context) (string, error
 }
 
 func (r *ClusterLicenseReconciler) Recharge(ctx context.Context) error {
-	amtADD, ok := r.payload[util.AmountField].(int64)
+	amtADD, ok := r.payload[util.AmountField].(float64)
 	if !ok {
 		return errors.New("amount error type")
 	}
@@ -207,13 +162,13 @@ func (r *ClusterLicenseReconciler) Recharge(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	NewEncryptQuota, err := crypto.EncryptInt64WithKey(decryptQuota+amtADD, []byte(util.CryptoKey))
+	NewEncryptQuota, err := crypto.EncryptInt64WithKey(decryptQuota+int64(amtADD), []byte(util.CryptoKey))
 	if err != nil {
 		return err
 	}
 	r.csb.Status.EncryptQuota = *NewEncryptQuota
 	// Update the quota
-	r.csb.Status.Quota = decryptQuota + amtADD
+	r.csb.Status.Quota = decryptQuota + int64(amtADD)
 	err = r.Client.Status().Update(ctx, r.csb)
 	if err != nil {
 		return err
@@ -222,15 +177,13 @@ func (r *ClusterLicenseReconciler) Recharge(ctx context.Context) error {
 }
 
 func (r *ClusterLicenseReconciler) RecordLicense(payload map[string]interface{}) error {
+	util.GetHashMap().Add(r.cl.Spec.Token)
 	cl := util.ClusterLicense{
-		Token:     r.cl.Spec.Token,
-		CreatTime: time.Now().Format("2006-01-02 15:04:05"),
-		Payload:   r.payload,
+		Meta: util.LicenseMeta{
+			Token:      r.cl.Spec.Token,
+			CreateTime: r.cl.CreationTimestamp.Format("2006-01-02"),
+		},
+		Payload: payload,
 	}
-	err := r.DBCol.Record(cl)
-	if err != nil {
-		r.logger.Error(err, "failed to record license")
-		return err
-	}
-	return nil
+	return util.RecordLicense(r.DBCol, cl)
 }

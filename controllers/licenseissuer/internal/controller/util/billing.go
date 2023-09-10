@@ -24,14 +24,12 @@ import (
 	"github.com/labring/sealos/controllers/pkg/common"
 	"github.com/labring/sealos/controllers/pkg/crypto"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	mongoOptions "go.mongodb.org/mongo-driver/mongo/options"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // used to bill the cluster usage by the cluster scale
 
-const defaultCryptoKey = "ABf0beBc5gd0C54adF0b1547cF43aCB83"
+const defaultCryptoKey = "0123456789ABCDEF0123456789ABCDEF"
 
 var CryptoKey = defaultCryptoKey
 
@@ -96,7 +94,7 @@ func (c *ClusterScaleBilling) billingWork(ti *TaskInstance) error {
 	}
 
 	// IF record error, will record later
-	err = mongoDB.InstertIfNotExisted(doc, bson.M{"createTime": doc["createTime"]})
+	err = mongoDB.InsertIfNotExisted(doc, bson.M{"createTime": doc["createTime"]})
 	if err != nil {
 		ti.logger.Info("failed to save the billing info", "err", err)
 		return err
@@ -145,129 +143,4 @@ func (c *ClusterScaleBilling) GetClusterResource(ctx context.Context, client cli
 		return err
 	}
 	return nil
-}
-
-// mongo db handler
-type MongoDocsHandler interface {
-	IsExisted(condition bson.M) bool
-	FindDoc(condition bson.M) (bson.M, error)
-	FindDocs(condition bson.M) ([]bson.M, error)
-	UpsertDoc(doc bson.M, filter bson.M) (*mongo.UpdateResult, error)
-	InstertIfNotExisted(doc bson.M, filter bson.M) error
-}
-
-type MongoDB struct {
-	DB      *mongoDB
-	DBName  string
-	COLName string
-}
-
-func (m *MongoDB) UpsertDoc(doc bson.M, filter bson.M) (*mongo.UpdateResult, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	update := bson.M{
-		"$set": doc,
-	}
-	updateOptions := mongoOptions.Update().SetUpsert(true)
-
-	res, err := m.DB.client.Database(m.DBName).Collection(m.COLName).
-		UpdateOne(ctx, filter, update, updateOptions)
-	return res, err
-}
-
-func (m *MongoDB) InstertIfNotExisted(doc bson.M, filter bson.M) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	count, err := m.DB.client.Database(m.DBName).Collection(m.COLName).CountDocuments(ctx, filter)
-	if err != nil {
-		return err
-	}
-	if count == 0 {
-		_, err := m.DB.client.Database(m.DBName).Collection(m.COLName).InsertOne(ctx, doc)
-		return err
-	}
-	return nil
-}
-
-func (m *MongoDB) FindDocs(condition bson.M) ([]bson.M, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	var docs []bson.M
-	cursor, err := m.DB.client.Database(m.DBName).Collection(m.COLName).
-		Find(ctx, condition)
-	if err != nil {
-		return nil, err
-	}
-	err = cursor.All(ctx, &docs)
-	return docs, err
-}
-
-func (m *MongoDB) FindDoc(condition bson.M) (bson.M, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	var doc bson.M
-	err := m.DB.client.Database(m.DBName).Collection(m.COLName).
-		FindOne(ctx, condition).Decode(&doc)
-	return doc, err
-}
-
-func (m *MongoDB) IsExisted(condition bson.M) bool {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	single := m.DB.client.Database(m.DBName).Collection(m.COLName).
-		FindOne(ctx, condition)
-	if single.Err() == mongo.ErrNoDocuments {
-		return false
-	}
-	return true
-}
-
-// the following code is used to init the single mongo client
-type mongoDB struct {
-	ctx     context.Context
-	client  *mongo.Client
-	options *mongoOptions.ClientOptions
-	uri     string
-}
-
-var db *mongoDB = &mongoDB{}
-
-func init() {
-	db.ctx = context.Background()
-	db.uri = GetOptions().GetEnvOptions().MongoURI
-	db.options = mongoOptions.Client().ApplyURI(db.uri)
-	var err error
-	db.client, err = mongo.Connect(db.ctx, db.options)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func InitDB(ctx context.Context) error {
-	var err error
-	db.client, err = mongo.Connect(ctx, db.options)
-	return err
-}
-
-func Disconnect(ctx context.Context) error {
-	if db.client == nil {
-		return nil
-	}
-	return db.client.Disconnect(ctx)
-}
-
-func (m *MongoDB) WithDBName(dbName string) *MongoDB {
-	m.DBName = dbName
-	return m
-}
-
-func (m *MongoDB) WithCOLName(colName string) *MongoDB {
-	m.COLName = colName
-	return m
-}
-
-func NewMongoDB(dbName string, colName string) MongoDocsHandler {
-	return (&MongoDB{
-		DB: db,
-	}).WithDBName(dbName).WithCOLName(colName)
 }
