@@ -2,16 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-- [CHANGELOG-5.0.0-alpha1.md](./CHANGELOG-5.0.0-alpha1.md)
-- [CHANGELOG-4.3.3.md](./CHANGELOG-4.3.3.md)
-- [CHANGELOG-4.3.2.md](./CHANGELOG-4.3.2.md)
-- [CHANGELOG-4.3.1.md](./CHANGELOG-4.3.1.md)
-- [CHANGELOG-4.3.1-rc2.md](./CHANGELOG-4.3.1-rc2.md)
-- [CHANGELOG-4.3.1-rc1.md](./CHANGELOG-4.3.1-rc1.md)
-- [CHANGELOG-4.3.0.md](./CHANGELOG-4.3.0.md)
-- [CHANGELOG-4.3.0-rc1.md](./CHANGELOG-4.3.0-rc1.md)
-- [CHANGELOG-4.2.3.md](./CHANGELOG-4.2.3.md)
-- [CHANGELOG-4.2.2.md](./CHANGELOG-4.2.2.md)
+- [CHANGELOG-4.4.0-alpha1.md](./CHANGELOG-4.4.0-alpha1.md)
 - [CHANGELOG-4.2.1-rc6.md](./CHANGELOG-4.2.1-rc6.md)
 - [CHANGELOG-4.2.1-rc5.md](./CHANGELOG-4.2.1-rc5.md)
 - [CHANGELOG-4.2.1-rc4.md](./CHANGELOG-4.2.1-rc4.md)
