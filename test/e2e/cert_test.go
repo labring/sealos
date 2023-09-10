@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/labring/sealos/test/e2e/testhelper/cmd"
+
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
 
 	"github.com/labring/sealos/test/e2e/suites/operators"
@@ -36,6 +38,7 @@ var _ = Describe("E2E_sealos_cert_test", func() {
 		err                error
 	)
 	fakeClient = operators.NewFakeClient("")
+	cmd.SetDebug()
 	BeforeEach(func() {
 		images := []string{"labring/kubernetes:v1.25.0", "labring/helm:v3.8.2", "labring/calico:v3.24.1"}
 		err = fakeClient.Cluster.Run(images...)
