@@ -189,13 +189,12 @@ func (c *Cluster) GetAllLabels() map[string]string {
 }
 
 func (c *Cluster) GetRolesByIP(ip string) []string {
-	var routes []string
 	for _, host := range c.Spec.Hosts {
 		if slices.Contains(host.IPS, ip) {
 			return host.Roles
 		}
 	}
-	return routes
+	return nil
 }
 
 func (c *Cluster) GetDistribution() string {
