@@ -29,7 +29,7 @@ const useAuthList = () => {
     window.location.href = url;
   };
 
-  const authList: { icon: Icon; cb: MouseEventHandler; need: boolean }[] = [
+  const authList: { icon: typeof Icon; cb: MouseEventHandler; need: boolean }[] = [
     {
       // src: '/images/github.svg',
       icon: GithubIcon,
