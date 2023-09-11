@@ -18,6 +18,7 @@ package rootfs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"path/filepath"
@@ -70,7 +71,6 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 			// TODO: if we are planing to support rendering templates for each host,
 			// then move this rendering process before ssh.CopyDir and do it one by one.
 			envs := v2.MergeEnvWithBuiltinKeys(src.Env, src)
-			envs[v2.ImageK3sModeEnvSysKey] = "server"
 			err := renderTemplatesWithEnv(src.MountPoint, ipList, envProcessor, envs)
 			if err != nil {
 				return fmt.Errorf("failed to render env: %w", err)
@@ -105,6 +105,14 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 		return nil
 	}
 
+	// only care about envs from rootfs
+	rootfs := cluster.GetRootfsImage()
+	// would never happened
+	if rootfs == nil {
+		return errors.New("cannot mount a cluster without rootfs, this is an unexpected bug")
+	}
+	rootfsEnvs := v2.MergeEnvWithBuiltinKeys(rootfs.Env, *rootfs)
+
 	for idx := range ipList {
 		ip := ipList[idx]
 		eg.Go(func() error {
@@ -116,12 +124,10 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 					}
 				}
 			}
-			// only care about envs from rootfs
-			rootfs := cluster.GetRootfsImage()
-			rootfsEnvs := v2.MergeEnvWithBuiltinKeys(rootfs.Env, *rootfs)
 
 			envs := envProcessor.Getenv(ip)
 			envs = maps.Merge(rootfsEnvs, envs)
+			envs[v2.ImageRunModeEnvSysKey] = strings.Join(cluster.GetRolesByIP(ip), ",")
 			renderCommand := getRenderCommand(pathResolver.RootFSSealctlPath(), target)
 
 			return sshClient.CmdAsync(ip, stringsutil.RenderShellWithEnv(renderCommand, envs))
