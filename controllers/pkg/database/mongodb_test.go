@@ -406,3 +406,27 @@ func TestMongoDB_DropMonitorCollectionsOlderThan(t *testing.T) {
 		t.Fatalf("failed to drop monitor collections older than 30 days: %v", err)
 	}
 }
+
+func TestMongoDB_GetBillingHistoryNamespaceList(t *testing.T) {
+	dbCTX := context.Background()
+	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
+	if err != nil {
+		t.Errorf("failed to connect mongo: error = %v", err)
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+	queryTime := time.Now().UTC()
+	billRecord := &accountv1.NamespaceBillingHistorySpec{
+		StartTime: metav1.Time{Time: queryTime.Add(-time.Hour * 24 * 30)},
+		EndTime:   metav1.Time{Time: queryTime},
+		Type:      -1,
+	}
+	namespaceList, err := m.GetBillingHistoryNamespaceList(billRecord, "")
+	if err != nil {
+		t.Fatalf("failed to get billing history namespace list: %v", err)
+	}
+	t.Logf("namespaceList: %v", namespaceList)
+}

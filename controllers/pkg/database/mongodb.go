@@ -102,6 +102,44 @@ func (m *MongoDB) GetBillingLastUpdateTime(owner string, _type accountv1.Type) (
 	return false, time.Time{}, fmt.Errorf("failed to convert time field to primitive.DateTime: %v", result["time"])
 }
 
+func (m *MongoDB) GetBillingHistoryNamespaceList(nsHistorySpec *accountv1.NamespaceBillingHistorySpec, owner string) ([]string, error) {
+	filter := bson.M{
+		"owner": owner,
+	}
+	if nsHistorySpec.StartTime != nsHistorySpec.EndTime {
+		filter["time"] = bson.M{
+			"$gte": nsHistorySpec.StartTime.Time.UTC(),
+			"$lte": nsHistorySpec.EndTime.Time.UTC(),
+		}
+	}
+	if nsHistorySpec.Type != -1 {
+		filter["type"] = nsHistorySpec.Type
+	}
+
+	pipeline := mongo.Pipeline{
+		{{"$match", filter}},
+		{{"$group", bson.D{{"_id", nil}, {"namespaces", bson.D{{"$addToSet", "$namespace"}}}}}},
+	}
+
+	cur, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(context.Background())
+
+	if !cur.Next(context.Background()) {
+		return []string{}, nil
+	}
+
+	var result struct {
+		Namespaces []string `bson:"namespaces"`
+	}
+	if err := cur.Decode(&result); err != nil {
+		return nil, err
+	}
+	return result.Namespaces, nil
+}
+
 func (m *MongoDB) SaveBillingsWithAccountBalance(accountBalanceSpec *accountv1.AccountBalanceSpec) error {
 	// Time    metav1.Time `json:"time" bson:"time"`
 	// time字段如果为time.Time类型无法转换为json crd，所以使用metav1.Time，但是使用metav1.Time无法插入到mongo中，所以需要转换为time.Time
