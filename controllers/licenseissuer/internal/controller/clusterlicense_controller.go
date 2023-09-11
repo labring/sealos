@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/go-logr/logr"
+	count "github.com/labring/sealos/controllers/common/account"
 	notificationv1 "github.com/labring/sealos/controllers/common/notification/api/v1"
 	infostreamv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
@@ -162,13 +163,14 @@ func (r *ClusterLicenseReconciler) Recharge(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	NewEncryptQuota, err := crypto.EncryptInt64WithKey(decryptQuota+int64(amtADD), []byte(util.CryptoKey))
+	newQuata := decryptQuota + int64(amtADD)*count.CurrencyUnit
+	NewEncryptQuota, err := crypto.EncryptInt64WithKey(newQuata, []byte(util.CryptoKey))
 	if err != nil {
 		return err
 	}
 	r.csb.Status.EncryptQuota = *NewEncryptQuota
 	// Update the quota
-	r.csb.Status.Quota = decryptQuota + int64(amtADD)
+	r.csb.Status.Quota = newQuata
 	err = r.Client.Status().Update(ctx, r.csb)
 	if err != nil {
 		return err

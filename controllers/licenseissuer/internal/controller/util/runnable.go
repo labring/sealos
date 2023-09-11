@@ -67,7 +67,7 @@ func OnceWithProbe(ctx context.Context, period time.Duration, t Task) error {
 		default:
 			if !t.Probe() {
 				(t.Log()).Info("the probe is not ready, try again after some time")
-				time.Sleep(period)
+				time.Sleep(time.Second * 10)
 				continue
 			}
 			err := t.Run()
@@ -108,7 +108,7 @@ func PeriodicWithProbe(ctx context.Context, period time.Duration, t Task) error 
 		default:
 			if !t.Probe() {
 				(t.Log()).Info("the probe is not ready, try again after some time")
-				time.Sleep(time.Minute * 10)
+				time.Sleep(time.Second * 10)
 				continue
 			}
 			err := t.Run()

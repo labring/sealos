@@ -62,6 +62,7 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
+  controller: true
   domain: sealos.io
   group: infostream
   kind: ClusterScaleBilling
