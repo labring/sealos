@@ -157,6 +157,9 @@ func WriteFile(fileName string, content []byte) error {
 
 // RecursionCopy equals to `cp -r`
 func RecursionCopy(src, dst string) error {
+	if src == dst {
+		return nil
+	}
 	if IsDir(src) {
 		return CopyDirV3(src, dst)
 	}
