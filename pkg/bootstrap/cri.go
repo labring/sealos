@@ -18,13 +18,9 @@ package bootstrap
 
 import "github.com/labring/sealos/pkg/utils/logger"
 
-type defaultCRIInitializer struct{}
+type defaultCRIInitializer struct{ common }
 
 func (*defaultCRIInitializer) String() string { return "cri_initializer" }
-
-func (initializer *defaultCRIInitializer) Filter(_ Context, _ string) bool {
-	return true
-}
 
 func (initializer *defaultCRIInitializer) Apply(ctx Context, host string) error {
 	initCRI := ctx.GetBash().InitCRIBash(host)
