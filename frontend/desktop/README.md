@@ -211,6 +211,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
     ```bash
     WECHAT_CLIENT_ID=
     WECHAT_CLIENT_SECRET=
+    WECHAT_ENABLED="true"
     ```  
 
   - github
@@ -218,12 +219,14 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
     ```bash
     GITHUB_CLIENT_ID=
     GITHUB_CLIENT_SECRET=
+    GITHUB_ENABLED="true"
     ```
 
   - password
 
     ```bash
     PASSWORD_SALT=
+    PASSWROD_ENABLED="true"
     ```
 
   - sms
@@ -233,4 +236,11 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
     ALI_ACCESS_KEY_SECRET=
     ALI_SIGN_NAME=
     ALI_TEMPLATE_CODE=
+    SMS_ENABLED="true"
     ```
+  - google
+  ```bash
+  GOOGLE_ENABLED="true"
+  GOOGLE_CLIENT_ID=
+  GOOGLE_CLIENT_SECRET=
+  ```

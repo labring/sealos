@@ -32,17 +32,10 @@ export default function SigninComponent() {
   );
 
   const {
-    // wechat_client_id = '',
-    // github_client_id = '',
-    // callback_url = '',
-    // google_client_id = '',
     service_protocol = '',
     private_protocol = '',
     needPassword = false,
     needSms = false
-    // needGithub = false,
-    // needWechat = false,
-    // needGoogle = false
   } = platformEnv?.data || {};
 
   const needTabs = needPassword && needSms;

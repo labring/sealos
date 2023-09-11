@@ -1,8 +1,11 @@
+import GithubIcon from '@/components/icons/GithubIcon';
+import GoogleIcon from '@/components/icons/GoogleIcon';
+import WechatIcon from '@/components/icons/WechatIcon';
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import { ApiResp, SystemEnv } from '@/types';
 import { OauthProvider } from '@/types/user';
-import { Button, Flex, Image } from '@chakra-ui/react';
+import { Button, Flex, Icon, Image } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { MouseEventHandler } from 'react';
 
@@ -26,9 +29,10 @@ const useAuthList = () => {
     window.location.href = url;
   };
 
-  const authList: { src: string; cb: MouseEventHandler; need: boolean }[] = [
+  const authList: { icon: Icon; cb: MouseEventHandler; need: boolean }[] = [
     {
-      src: '/images/github.svg',
+      // src: '/images/github.svg',
+      icon: GithubIcon,
       cb: (e) => {
         e.preventDefault();
         const state = generateState();
@@ -40,7 +44,7 @@ const useAuthList = () => {
       need: needGithub
     },
     {
-      src: '/images/wechat.svg',
+      icon: WechatIcon,
       cb: (e) => {
         e.preventDefault();
         const state = generateState();
@@ -52,7 +56,7 @@ const useAuthList = () => {
       need: needWechat
     },
     {
-      src: '/images/wechat.svg',
+      icon: GoogleIcon,
       cb: (e) => {
         e.preventDefault();
         const state = generateState();
@@ -73,8 +77,17 @@ const useAuthList = () => {
         {authList
           .filter((item) => item.need)
           .map((item, index) => (
-            <Button key={index} onClick={item.cb} borderRadius={'full'} variant={'unstyled'}>
-              <Image src={item.src} borderRadius={'full'} alt={item.src}></Image>
+            <Button
+              key={index}
+              onClick={item.cb}
+              borderRadius={'full'}
+              variant={'unstyled'}
+              size={'xs'}
+              w="32px"
+              h="32px"
+              bgColor={'rgba(255, 255, 255, 0.65)'}
+            >
+              <item.icon w="20px" h="20px" />
             </Button>
           ))}
       </Flex>
