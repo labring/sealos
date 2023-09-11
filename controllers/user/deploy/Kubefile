@@ -8,4 +8,4 @@ COPY manifests manifests
 ENV cloudDomain="127.0.0.1.nip.io"
 ENV apiserverPort="6443"
 
-CMD ["kubectl apply -f manifests/deploy.yaml","kubectl delete -f manifests/rbac.yaml --ignore-not-found=true","kubectl delete crd usergroups.user.sealos.io --ignore-not-found=true","kubectl delete crd usergroupbindings.user.sealos.io --ignore-not-found=true"]
+CMD ["kubectl apply -f manifests/deploy.yaml","kubectl apple -f manifests/rbac.yaml"]

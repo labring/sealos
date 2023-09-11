@@ -1,16 +1,3 @@
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: user-controller-manager-clusterrolebinding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-  - kind: ServiceAccount
-    name: user-controller-manager
-    namespace: user-system
----
 # permissions for end users to edit users.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
