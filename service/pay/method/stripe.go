@@ -3,15 +3,19 @@ package method
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/controllers/pkg/utils"
 	"github.com/labring/sealos/pkg/pay"
 	"github.com/labring/sealos/service/pay/handler"
 	"github.com/labring/sealos/service/pay/helper"
 	"github.com/stripe/stripe-go/v74"
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+var DefaultURL = fmt.Sprintf("https://%s", utils.GetEnvWithDefault("DOMAIN", helper.DefaultDomain))
 
 func GetStripeSession(c *gin.Context, request *helper.Request, client *mongo.Client) {
 	amountStr := request.Amount
@@ -32,7 +36,7 @@ func GetStripeSession(c *gin.Context, request *helper.Request, client *mongo.Cli
 		return
 	}
 
-	session, err := pay.CreateCheckoutSession(amount, pay.CNY, pay.DefaultSuccessURL, pay.DefaultSuccessURL)
+	session, err := pay.CreateCheckoutSession(amount, pay.CNY, DefaultURL+os.Getenv(helper.StripeSuccessPostfix), DefaultURL+os.Getenv(helper.StripeCancelPostfix))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("error session : %v", err)})
 		return

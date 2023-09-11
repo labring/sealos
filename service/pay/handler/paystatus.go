@@ -66,7 +66,6 @@ func UpdateDBIfDiff(c *gin.Context, orderID string, client *mongo.Client, status
 		"status":  aimStatus,
 		"orderID": orderID,
 	})
-	return
 }
 
 func CheckOrderExistOrNot(client *mongo.Client, request *helper.Request) error {

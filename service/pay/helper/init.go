@@ -43,10 +43,9 @@ func Authenticate(r *Request, client *mongo.Client) error {
 		if err == mongo.ErrNoDocuments {
 			// no matching document found, error returned
 			return fmt.Errorf("no matching app found: %v", err)
-		} else {
-			// for other errors, print the error message and handle it
-			return fmt.Errorf("unknown error: %v", err)
 		}
+		// for other errors, print the error message and handle it
+		return fmt.Errorf("unknown error: %v", err)
 	}
 	return nil
 }
@@ -55,6 +54,9 @@ func InitMongoClient(URI string) *mongo.Client {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(URI))
+	if err != nil {
+		log.Fatal(err)
+	}
 	if err = client.Ping(context.TODO(), readpref.Primary()); err != nil {
 		log.Fatal(err)
 	}
