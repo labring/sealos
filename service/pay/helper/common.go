@@ -6,20 +6,20 @@ type Request struct {
 	PayMethod     string   `json:"payMethod"`
 	Amount        string   `json:"amount"`
 	User          string   `json:"user"`
-	PayAppName    string   `json:"payAppName，omitempty"`
-	Currency      string   `json:"currency，omitempty"`
-	AmountOptions []string `json:"amountOptions，omitempty"`
-	ExchangeRate  float64  `json:"exchangeRate，omitempty"`
-	TaxRate       float64  `json:"taxRate，omitempty"`
-	TradeNO       string   `json:"tradeNO，omitempty"`
-	SessionID     string   `json:"sessionID，omitempty"`
-	OrderID       string   `json:"orderID，omitempty"`
+	PayAppName    string   `json:"payAppName,omitempty"`
+	Currency      string   `json:"currency,omitempty"`
+	AmountOptions []string `json:"amountOptions,omitempty"`
+	ExchangeRate  float64  `json:"exchangeRate,omitempty"`
+	TaxRate       float64  `json:"taxRate,omitempty"`
+	TradeNO       string   `json:"tradeNO,omitempty"`
+	SessionID     string   `json:"sessionID,omitempty"`
+	OrderID       string   `json:"orderID,omitempty"`
 }
 
 // DB
 const (
 	DBURI = "dburi"
-	//TODO the database needs a new name
+	// TODO the database needs a new name
 	Database           = "xy"
 	AppColl            = "app"
 	PayMethodColl      = "paymethod"
@@ -38,6 +38,17 @@ const (
 const (
 	Cert = "/path/to/certificates/tls.crt"
 	Key  = "/path/to/certificates/tls.key"
+)
+
+// stripe
+const (
+	DefaultPort   string = "443"
+	DefaultDomain string = "cloud.sealos.io"
+)
+const (
+	StripeSuccessPostfix = "STRIPE_SUCCESS_POSTFIX"
+	StripeCancelPostfix  = "STRIPE_CANCEL_POSTFIX"
+	StripeCurrency       = "STRIPE_CURRENCY"
 )
 
 // Test
