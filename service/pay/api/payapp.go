@@ -1,7 +1,7 @@
 package api
 
 import (
-	"crypto/md5"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"net/http"
@@ -29,11 +29,11 @@ func CreatePayApp(c *gin.Context, client *mongo.Client) {
 
 	// generate sign
 	data := []byte(appName + time.Now().Format("20060102150405"))
-	hash := md5.Sum(data)
+	hash := sha256.Sum256(data)
 	sign := hex.EncodeToString(hash[:7])
 	// generate appID
 	data = []byte(sign + time.Now().Format("20060102150405"))
-	hash = md5.Sum(data)
+	hash = sha256.Sum256(data)
 	var appID int64
 	_, err = fmt.Sscanf(hex.EncodeToString(hash[:7]), "%16x", &appID)
 	if err != nil {
