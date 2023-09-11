@@ -7,7 +7,7 @@ COPY manifests manifests
 
 ENV cloudDomain="cloud.example.com"
 ENV tlsEnabled="1"
-ENV image="docker.io/labring/docker-adminer:v4.8.1"
+ENV image="docker.io/labring4docker/adminer:v4.8.1"
 ENV wildcardCertSecretName="wildcard-cert"
 ENV wildcardCertSecretNamespace="sealos-system"
 
