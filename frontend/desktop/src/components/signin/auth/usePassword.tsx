@@ -21,7 +21,7 @@ export default function usePassword({
   // 对于注册的用户，需要先验证密码 0 默认页面;1为验证密码页面
   const [pageState, setPageState] = useState(0);
 
-  const { updateUser, setSession } = useSessionStore();
+  const setSession = useSessionStore((s) => s.setSession);
 
   const { register, handleSubmit, watch, trigger, getValues } = useForm<{
     username: string;
@@ -49,13 +49,13 @@ export default function usePassword({
                 user: data.username
               }
             );
+
             if (result?.code === 200) {
               const result = await request.post<any, ApiResp<Session>>('/api/auth/password', {
                 user: data.username,
                 password: data.password
               });
               setSession(result.data!);
-              updateUser();
               router.replace('/');
               return;
             }
@@ -71,12 +71,12 @@ export default function usePassword({
                     password: data.password
                   });
                   setSession(result.data!);
-                  updateUser();
                   router.replace('/');
                 }
               }
             }
           } catch (error: any) {
+            console.log(error);
             showError(t('Invalid username or password'));
           } finally {
             setIsLoading(false);

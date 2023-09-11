@@ -15,23 +15,21 @@
 package k3s
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/emirpasic/gods/sets/linkedhashset"
 
 	"github.com/imdario/mergo"
-	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	netutils "k8s.io/utils/net"
-	"sigs.k8s.io/yaml"
 
 	"github.com/labring/sealos/pkg/constants"
 	fileutils "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
 var defaultMergeOpts = []func(*mergo.Config){
@@ -39,6 +37,7 @@ var defaultMergeOpts = []func(*mergo.Config){
 }
 
 func defaultingConfig(c *Config) *Config {
+	//TODO update kube config
 	c.BindAddress = "0.0.0.0"
 	c.HTTPSPort = 6443
 	c.ClusterCIDR = []string{"10.42.0.0/16"}
@@ -60,19 +59,13 @@ func defaultingAgentConfig(c *Config) *Config {
 		c.AgentConfig = &AgentConfig{}
 	}
 	c.AgentConfig.PreferBundledBin = true
+	c.AgentConfig.DataDir = defaultDataDir
 	c.AgentConfig.ExtraKubeProxyArgs = []string{}
 	c.AgentConfig.ExtraKubeletArgs = []string{}
 	c.AgentConfig.PauseImage = "docker.io/rancher/pause:3.1"
-	c.AgentConfig.PrivateRegistry = "/etc/rancher/k3s/registries.yaml"
+	c.AgentConfig.PrivateRegistry = defaultRegistryConfigPath
 	c.AgentConfig.Labels = []string{"sealos.io/distribution=k3s"}
 
-	return c
-}
-
-func (k *K3s) sealosCfg(c *Config) *Config {
-	vip := k.cluster.GetVIP()
-	c.ExtraKubeProxyArgs = append(c.ExtraKubeProxyArgs, fmt.Sprintf("%s=%s", "ipvs-exclude-cidrs", fmt.Sprintf("%s/32", vip)))
-	c.AgentConfig.ExtraKubeletArgs = append(c.AgentConfig.ExtraKubeletArgs, fmt.Sprintf("%s=%s", "ipvs-exclude-cidrs", fmt.Sprintf("%s/32", vip)))
 	return c
 }
 
@@ -120,18 +113,40 @@ func (k *K3s) merge(c *Config) *Config {
 	return c
 }
 
-func (k *K3s) overrideServerConfig(c *Config) *Config {
-	c.AgentConfig.TokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "token")
-	c.AgentTokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "agent-token")
-	vip := k.cluster.GetVIP()
+func (k *K3s) overrideCertSans(c *Config) *Config {
 	masterIPs := iputils.GetHostIPs(k.cluster.GetMasterIPList())
 	var certSans []string
 	certSans = append(certSans, "127.0.0.1")
 	certSans = append(certSans, constants.DefaultAPIServerDomain)
-	certSans = append(certSans, vip)
+	certSans = append(certSans, k.cluster.GetVIP())
 	certSans = append(certSans, masterIPs...)
 	certSans = append(certSans, c.TLSSan...)
+	certSans = append(certSans, c.ServiceCIDR...)
+	certSans = append(certSans, c.ClusterDomain)
 	c.TLSSan = certSans
+	return c
+}
+
+func (k *K3s) sealosCfg(c *Config) *Config {
+	vip := k.cluster.GetVIP()
+	kubeProxy := linkedhashset.New()
+	for _, v := range c.AgentConfig.ExtraKubeProxyArgs {
+		kubeProxy.Add(v)
+	}
+	kubeProxy.Add(fmt.Sprintf("%s=%s", "ipvs-exclude-cidrs", fmt.Sprintf("%s/32", vip)))
+	kubeProxy.Add(fmt.Sprintf("%s=%s", "proxy-mode", "ipvs"))
+
+	var allArgs []string
+	for _, v := range kubeProxy.Values() {
+		allArgs = append(allArgs, v.(string))
+	}
+	c.AgentConfig.ExtraKubeProxyArgs = allArgs
+	return c
+}
+
+func (k *K3s) overrideServerConfig(c *Config) *Config {
+	c.AgentConfig.TokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "token")
+	c.AgentTokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "agent-token")
 
 	if len(c.ClusterDNS) == 0 && len(c.ServiceCIDR) > 0 {
 		svcSubnetCIDR, err := netutils.ParseCIDRs(c.ServiceCIDR)
@@ -170,41 +185,20 @@ func (c *Config) getContainerRuntimeEndpoint() string {
 
 // ParseConfig return nil if data structure is not matched
 func ParseConfig(data []byte) (*Config, error) {
-	d := yamlutil.NewYAMLReader(bufio.NewReader(bytes.NewReader(data)))
-	for {
-		b, err := d.Read()
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return nil, err
-		}
-		cfg, err := parseConfig(b)
-		if err != nil {
-			return nil, err
-		}
-		if cfg != nil {
-			return cfg, nil
-		}
-	}
-	return nil, nil
-}
-
-func parseConfig(data []byte) (*Config, error) {
-	var c Config
-	if err := yaml.Unmarshal(data, &c); err != nil {
+	var cfg Config
+	if err := yaml.Unmarshal(bytes.NewBuffer(data), &cfg); err != nil {
 		return nil, err
 	}
-	out, err := yaml.Marshal(&c)
+	out, err := yaml.Marshal(&cfg)
 	if err != nil {
 		return nil, err
 	}
-	var m map[string]interface{}
-	if err := yaml.Unmarshal(out, &m); err != nil {
+	isNil, err := yaml.IsNil(out)
+	if err != nil {
 		return nil, err
 	}
-	if len(m) == 0 {
+	if isNil {
 		return nil, nil
 	}
-	return &c, nil
+	return &cfg, nil
 }

@@ -11,7 +11,7 @@ import { useTranslation } from 'next-i18next';
 export default function Index() {
   const { t, i18n } = useTranslation();
   const moreAppsContent = useContext(MoreAppsContext);
-  const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
+  const { installedApps: apps, openApp } = useAppStore();
   const itemsPerPage = 30; // Number of apps per page
   const [currentPage, setCurrentPage] = useState(1);
   const startIndex = (currentPage - 1) * itemsPerPage;

@@ -18,6 +18,10 @@ import (
 	"context"
 	"fmt"
 
+	"golang.org/x/exp/slices"
+
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"golang.org/x/sync/errgroup"
 )
 
@@ -36,7 +40,15 @@ func (k *K3s) resetNodes(nodes []string) error {
 }
 
 func (k *K3s) resetNode(host string) error {
-	return k.sshClient.CmdAsync(host, fmt.Sprintf("%s/k3s-uninstall.sh", defaultBinDir))
+	logger.Info("start to reset node: %s", host)
+	if slices.Contains(k.cluster.GetNodeIPList(), host) {
+		vipAndPort := fmt.Sprintf("%s:%d", k.cluster.GetVIP(), k.config.APIServerPort)
+		ipvscleanErr := k.remoteUtil.IPVSClean(host, vipAndPort)
+		if ipvscleanErr != nil {
+			logger.Error("failed to clean node route and ipvs failed, %v", ipvscleanErr)
+		}
+	}
+	return nil
 }
 
 // TODO: remove from API

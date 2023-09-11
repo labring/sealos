@@ -19,6 +19,10 @@ on:
         required: false
         type: boolean
         default: true
+      target_pull:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   resolve-modules-arch:
@@ -27,7 +31,14 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout
+        if: ${{ (inputs.target_pull == false) }}
         uses: actions/checkout@v3
+      - name: Checkout by Pull Request Target
+        uses: actions/checkout@v3
+        if: ${{ (inputs.target_pull == true) }}
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: Resolve Modules
         id: set-matrix
         run: bash ./scripts/resolve-patch-modules.sh ${{ inputs.arch }} "true"
@@ -37,7 +48,14 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout
+        if: ${{ (inputs.target_pull == false) }}
         uses: actions/checkout@v3
+      - name: Checkout by Pull Request Target
+        uses: actions/checkout@v3
+        if: ${{ (inputs.target_pull == true) }}
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: Resolve Modules
         id: set-matrix
         run: bash ./scripts/resolve-patch-modules.sh ${{ inputs.arch }}
@@ -48,10 +66,16 @@ jobs:
       matrix: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
     steps:
       - name: Checkout
+        if: ${{ (inputs.target_pull == false) }}
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
+      - name: Checkout by Pull Request Target
+        uses: actions/checkout@v3
+        if: ${{ (inputs.target_pull == true) }}
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: Setup Golang with cache
         uses: magnetikonline/action-golang-cache@v3
         with:
@@ -78,10 +102,16 @@ jobs:
     if: ${{ (inputs.e2e == true) }}
     steps:
       - name: Checkout
+        if: ${{ (inputs.target_pull == false) }}
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
+      - name: Checkout by Pull Request Target
+        uses: actions/checkout@v3
+        if: ${{ (inputs.target_pull == true) }}
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: Setup Golang with cache
         uses: magnetikonline/action-golang-cache@v3
         with:
@@ -110,8 +140,14 @@ jobs:
       matrix: ${{ fromJson(needs.resolve-modules-arch.outputs.matrix) }}
     steps:
       - name: Checkout
+        if: ${{ (inputs.target_pull == false) }}
         uses: actions/checkout@v3
-
+      - name: Checkout by Pull Request Target
+        uses: actions/checkout@v3
+        if: ${{ (inputs.target_pull == true) }}
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: Expose git commit data
         uses: rlespinasse/git-commit-data-action@v1
 

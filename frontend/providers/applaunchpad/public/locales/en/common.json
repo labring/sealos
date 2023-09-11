@@ -106,7 +106,7 @@
   "Protocol": "Protocol",
   "Export Domain": "  Domain",
   "Custom Domain": "Custom Domain",
-  "Please CNAME your custom domain to": "Please CNAME your custom domain to",
+  "CNAME Tips": "Please go to your domain name service provider, add the domain name 'CNAME' resolution to {{domain}}, after the resolution takes effect, you can bind your own domain name.",
   "Option": "Option",
   "Run command": "Command",
   "Command parameters": "Parameters",

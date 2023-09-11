@@ -61,6 +61,7 @@ const (
 
 	ImageKubeVersionEnvSysKey   = "SEALOS_SYS_KUBE_VERSION"
 	ImageSealosVersionEnvSysKey = "SEALOS_SYS_SEALOS_VERSION"
+	ImageRunModeEnvSysKey       = "SEALOS_SYS_RUN_MODE"
 )
 
 const (

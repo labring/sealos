@@ -1,4 +1,6 @@
 import type { AppEditType } from '@/types/app';
+import { customAlphabet } from 'nanoid';
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 export const editModeMap = (isEdit: boolean) => {
   if (isEdit) {
@@ -28,13 +30,17 @@ export const defaultEditVal: AppEditType = {
   replicas: 1,
   cpu: 100,
   memory: 64,
-  containerOutPort: 80,
-  accessExternal: {
-    use: false,
-    backendProtocol: 'HTTP',
-    outDomain: '',
-    selfDomain: ''
-  },
+  networks: [
+    {
+      networkName: '',
+      portName: nanoid(),
+      port: 80,
+      protocol: 'HTTP',
+      openPublicDomain: false,
+      publicDomain: '',
+      customDomain: ''
+    }
+  ],
   envs: [],
   hpa: {
     use: false,

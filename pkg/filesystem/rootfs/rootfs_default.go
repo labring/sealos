@@ -18,9 +18,11 @@ package rootfs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
-	"path"
+	"path/filepath"
+	"strings"
 
 	"golang.org/x/sync/errgroup"
 
@@ -32,6 +34,8 @@ import (
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/maps"
+	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 )
 
 type defaultRootfs struct {
@@ -46,19 +50,17 @@ func (f *defaultRootfs) UnMountRootfs(cluster *v2.Cluster, hosts []string) error
 	return f.unmountRootfs(cluster, hosts)
 }
 
-func (f *defaultRootfs) getClusterName(cluster *v2.Cluster) string {
-	return cluster.Name
-}
-
 func (f *defaultRootfs) getSSH(cluster *v2.Cluster) ssh.Interface {
 	return ssh.NewCacheClientFromCluster(cluster, true)
 }
 
 func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error {
-	target := constants.NewPathResolver(f.getClusterName(cluster)).RootFSPath()
+	pathResolver := constants.NewPathResolver(cluster.Name)
+	target := pathResolver.RootFSPath()
 	ctx := context.Background()
 	eg, _ := errgroup.WithContext(ctx)
 	envProcessor := env.NewEnvProcessor(cluster)
+	// TODO: remove this when rendering on client side is GA
 	for _, mount := range f.mounts {
 		src := mount
 		eg.Go(func() error {
@@ -103,6 +105,14 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 		return nil
 	}
 
+	// only care about envs from rootfs
+	rootfs := cluster.GetRootfsImage()
+	// would never happened
+	if rootfs == nil {
+		return errors.New("cannot mount a cluster without rootfs, this is an unexpected bug")
+	}
+	rootfsEnvs := v2.MergeEnvWithBuiltinKeys(rootfs.Env, *rootfs)
+
 	for idx := range ipList {
 		ip := ipList[idx]
 		eg.Go(func() error {
@@ -114,7 +124,13 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 					}
 				}
 			}
-			return nil
+
+			envs := envProcessor.Getenv(ip)
+			envs = maps.Merge(rootfsEnvs, envs)
+			envs[v2.ImageRunModeEnvSysKey] = strings.Join(cluster.GetRolesByIP(ip), ",")
+			renderCommand := getRenderCommand(pathResolver.RootFSSealctlPath(), target)
+
+			return sshClient.CmdAsync(ip, stringsutil.RenderShellWithEnv(renderCommand, envs))
 		})
 	}
 	if err := eg.Wait(); err != nil {
@@ -127,7 +143,12 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 		mountInfo := f.mounts[idx]
 		eg.Go(func() error {
 			if mountInfo.IsApplication() {
-				return copyFn(mountInfo, master0, constants.GetAppWorkDir(cluster.Name, mountInfo.Name))
+				targetDir := constants.GetAppWorkDir(cluster.Name, mountInfo.Name)
+				if err := copyFn(mountInfo, master0, targetDir); err != nil {
+					return err
+				}
+				renderCommand := getRenderCommand(pathResolver.RootFSSealctlPath(), targetDir)
+				return sshClient.CmdAsync(master0, envProcessor.WrapShell(master0, renderCommand))
 			}
 			return nil
 		})
@@ -135,8 +156,19 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 	return eg.Wait()
 }
 
+func getRenderCommand(binary string, target string) string {
+	// skip if sealctl doesn't has subcommand render
+	return fmt.Sprintf("%s render --debug=%v %s 2>/dev/null || true", binary,
+		logger.IsDebugMode(),
+		strings.Join([]string{
+			filepath.Join(target, constants.EtcDirName),
+			filepath.Join(target, constants.ScriptsDirName),
+			filepath.Join(target, constants.ManifestsDirName),
+		}, " "))
+}
+
 func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) error {
-	clusterRootfsDir := constants.NewPathResolver(f.getClusterName(cluster)).Root()
+	clusterRootfsDir := constants.NewPathResolver(cluster.Name).Root()
 	rmRootfs := fmt.Sprintf("rm -rf %s", clusterRootfsDir)
 	deleteHomeDirCmd := fmt.Sprintf("rm -rf %s", constants.ClusterDir(cluster.Name))
 	eg, _ := errgroup.WithContext(context.Background())
@@ -153,9 +185,9 @@ func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) erro
 
 func renderTemplatesWithEnv(mountDir string, ipList []string, p env.Interface, envs map[string]string) error {
 	var (
-		renderEtc       = path.Join(mountDir, constants.EtcDirName)
-		renderScripts   = path.Join(mountDir, constants.ScriptsDirName)
-		renderManifests = path.Join(mountDir, constants.ManifestsDirName)
+		renderEtc       = filepath.Join(mountDir, constants.EtcDirName)
+		renderScripts   = filepath.Join(mountDir, constants.ScriptsDirName)
+		renderManifests = filepath.Join(mountDir, constants.ManifestsDirName)
 	)
 
 	// currently only render once

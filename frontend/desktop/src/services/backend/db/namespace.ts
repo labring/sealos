@@ -1,138 +1,81 @@
+import { NSType, Namespace } from '@/types/team';
 import { connectToDatabase } from './mongodb';
+import { v4 as uuid } from 'uuid';
+import { WithId } from 'mongodb';
 async function connectToNSCollection() {
   const client = await connectToDatabase();
   const collection = client.db().collection<Namespace>('namespace');
-  await collection.createIndex({ id: 1 }, { unique: true });
+  await collection.createIndex({ uid: 1 }, { unique: true });
   return collection;
 }
-export enum UserRole {
-  Default,
-  Owner,
-  Manager,
-  Developer
-}
-// 可能是私人的ns, 也可能是团队的ns
-export enum NSType {
-  Team,
-  Private
-}
-export type NSUser = {
-  username: string;
-  role: UserRole;
-};
-export type Namespace = {
-  // ns 的名字
-  id: string;
-  // 展示到前端的名字
-  teamName?: string;
-  // 容纳的所有用户
-  users: NSUser[];
-  nstype: NSType;
-};
 
-export async function getUsers({ namespace: id }: { namespace: string }) {
+// export type Namespace = {
+//   // uuid v4
+//   uid: string;
+//   // ns 的名字 ns-xxx
+//   id: string;
+//   createTime: Date;
+//   // 展示到前端的名字
+//   teamName: string;
+//   readonly nstype: NSType;
+// };
+
+export async function queryNS({ id }: { id: string }) {
   const collection = await connectToNSCollection();
-  let result = await collection.findOne({ id });
-  const users = result?.users || [];
-  return users;
+  const ns = await collection.findOne({ id });
+  return ns;
 }
-export async function addUser({ namespace, user }: { namespace: string; user: NSUser }) {
+export async function queryNSes(uids: string[]) {
   const collection = await connectToNSCollection();
-  const result = await collection.updateOne(
-    {
-      id: namespace
-    },
-    {
-      $push: {
-        users: user
-      }
-    }
-  );
-  return result.acknowledged;
+  const ns = await collection
+    .find({
+      uid: uids
+    })
+    .toArray();
+  return ns;
 }
-export async function modifyRole({ namespace, user }: { namespace: string; user: NSUser }) {
+export async function queryNSByUid({ uid }: { uid: string }) {
   const collection = await connectToNSCollection();
-  const result = await collection.findOneAndUpdate(
-    {
-      id: namespace,
-      'users.username': user.username
-    },
-    {
-      $set: {
-        'users.$.role': user.role
-      }
-    }
-  );
-  return result.acknowledged;
+  const ns = await collection.findOne({ uid });
+  return ns;
 }
-export async function removeUser({ namespace, username }: { namespace: string; username: string }) {
-  const collection = await connectToNSCollection();
-  collection.findOneAndUpdate(
-    {
-      id: namespace
-    },
-    {
-      $pull: {
-        users: {
-          username
-        }
-      }
-    }
-  );
-}
-export async function createNamespace({
+export async function createNS({
   namespace: id,
-  username,
-  nstype
-}: {
+  // k8s_username,
+  nstype,
+  // userId,
+  teamName,
+  uid = uuid()
+}: // status = UserNsStatus.Accepted
+{
+  // userId: string;
   namespace: string;
-  username: string;
+  // k8s_username: string;
   nstype: NSType;
-}) {
+  teamName: string;
+  uid?: string;
+  // status?: UserNsStatus
+}): Promise<null | WithId<Namespace>> {
   const collection = await connectToNSCollection();
-  const user = { username, role: UserRole.Default };
+  const createTime = new Date();
   const ns: Namespace = {
+    teamName,
     id,
-    users: [],
+    uid,
+    createTime,
     nstype
   };
-  if (nstype === NSType.Team) {
-    user.role = UserRole.Owner;
-  } else if (nstype === NSType.Private) {
-    user.role = UserRole.Owner;
-  } else {
-    return false;
-  }
-  ns.users.push(user);
   const result = await collection.insertOne(ns);
-  return result.acknowledged;
+  if (!result.acknowledged) return null;
+  return {
+    _id: result.insertedId,
+    ...ns
+  };
 }
-export async function removeNamespace({ namespace: id }: { namespace: string }) {
-  const collection = await connectToNSCollection();
-  const result = await collection.deleteOne({
-    id
-  });
-  return result.acknowledged;
-}
-
-export async function checkIsOwner({
-  namespace: id,
-  username
-}: {
-  namespace: string;
-  username: string;
-}) {
-  const collection = await connectToNSCollection();
-  const result = await collection.findOne({
-    id,
-    users: {
-      $in: [
-        {
-          username,
-          role: UserRole.Owner
-        }
-      ]
-    }
-  });
-  return !!result;
-}
+// export async function removeNS({ uid }: { uid: string }) {
+//   const collection = await connectToNSCollection();
+//   const result = await collection.deleteOne({
+//     uid
+//   });
+//   return result.acknowledged;
+// }

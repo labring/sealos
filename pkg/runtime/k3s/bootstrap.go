@@ -15,8 +15,12 @@
 package k3s
 
 import (
+	"context"
 	"fmt"
+	"path"
 	"path/filepath"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/constants"
 
@@ -32,6 +36,9 @@ func (k *K3s) initMaster0() error {
 		k.generateAndSendCerts,
 		func() error { return k.generateAndSendTokenFiles(master0, "token", "agent-token") },
 		k.generateAndSendInitConfig,
+		func() error { return k.enableK3sService(master0) },
+		k.pullKubeConfigFromMaster0,
+		func() error { return k.copyKubeConfigFileToAllNodes([]string{k.cluster.GetMaster0IPAndPort()}) },
 	)
 }
 
@@ -49,9 +56,7 @@ func (k *K3s) joinMasters(masters []string) error {
 }
 
 func (k *K3s) writeJoinConfigWithCallbacks(runMode string, callbacks ...callback) (string, error) {
-	//master0 := k.cluster.GetMaster0IP()
-
-	defaultCallbacks := []callback{defaultingConfig, k.merge, k.sealosCfg}
+	defaultCallbacks := []callback{defaultingConfig, k.merge, k.sealosCfg, k.overrideCertSans}
 	switch runMode {
 	case serverMode:
 		defaultCallbacks = append(defaultCallbacks, k.overrideServerConfig)
@@ -64,7 +69,6 @@ func (k *K3s) writeJoinConfigWithCallbacks(runMode string, callbacks ...callback
 			c.ServerURL = fmt.Sprintf("https://%s:%d", constants.DefaultAPIServerDomain, c.HTTPSPort)
 			return c
 		},
-		// TODO: set --image-service-endpoint flag in c.ExtraKubeletArgs options
 	)
 	raw, err := k.getRawInitConfig(
 		append(defaultCallbacks, callbacks...)...,
@@ -90,8 +94,10 @@ func (k *K3s) joinMaster(master string) error {
 			return k.generateAndSendTokenFiles(master, "token", "agent-token")
 		},
 		func() error {
-			return k.sshClient.Copy(master, filepath.Join(k.pathResolver.EtcPath(), defaultJoinMastersFilename), defaultConfigPath)
+			return k.sshClient.Copy(master, filepath.Join(k.pathResolver.EtcPath(), defaultJoinMastersFilename), defaultK3sConfigPath)
 		},
+		func() error { return k.enableK3sService(master) },
+		func() error { return k.copyKubeConfigFileToAllNodes([]string{master}) },
 	)
 }
 
@@ -111,8 +117,10 @@ func (k *K3s) joinNode(node string) error {
 	return k.runPipelines(fmt.Sprintf("join node %s", node),
 		func() error { return k.generateAndSendTokenFiles(node, "agent-token") },
 		func() error {
-			return k.sshClient.Copy(node, filepath.Join(k.pathResolver.EtcPath(), defaultJoinNodesFilename), defaultConfigPath)
+			return k.sshClient.Copy(node, filepath.Join(k.pathResolver.EtcPath(), defaultJoinNodesFilename), defaultK3sConfigPath)
 		},
+		func() error { return k.enableK3sService(node) },
+		func() error { return k.copyKubeConfigFileToAllNodes([]string{node}) },
 	)
 }
 
@@ -159,11 +167,9 @@ func (k *K3s) getRawInitConfig(callbacks ...callback) ([]byte, error) {
 
 func (k *K3s) generateAndSendInitConfig() error {
 	src := filepath.Join(k.pathResolver.EtcPath(), defaultInitFilename)
+	defaultCallbacks := []callback{defaultingConfig, k.merge, k.sealosCfg, k.overrideCertSans, k.overrideServerConfig, setClusterInit}
 	if !file.IsExist(src) {
-		raw, err := k.getRawInitConfig(defaultingConfig, k.merge,
-			k.overrideServerConfig,
-			setClusterInit,
-		)
+		raw, err := k.getRawInitConfig(defaultCallbacks...)
 		if err != nil {
 			return err
 		}
@@ -171,5 +177,38 @@ func (k *K3s) generateAndSendInitConfig() error {
 			return err
 		}
 	}
-	return k.sshClient.Copy(k.cluster.GetMaster0IPAndPort(), src, defaultConfigPath)
+	return k.sshClient.Copy(k.cluster.GetMaster0IPAndPort(), src, defaultK3sConfigPath)
+}
+
+func (k *K3s) enableK3sService(host string) error {
+	logger.Info("enable k3s service on %s", host)
+	if err := k.remoteUtil.InitSystem(host).ServiceEnable("k3s"); err != nil {
+		return err
+	}
+	return k.remoteUtil.InitSystem(host).ServiceStart("k3s")
+}
+
+func (k *K3s) pullKubeConfigFromMaster0() error {
+	dest := k.pathResolver.AdminFile()
+	return k.sshClient.Fetch(k.cluster.GetMaster0IPAndPort(), defaultKubeConfigPath, dest)
+}
+
+func (k *K3s) copyKubeConfigFileToAllNodes(hosts []string) error {
+	src := k.pathResolver.AdminFile()
+	dst := path.Join(".kube", "config")
+	return k.sendFileToHosts(hosts, src, dst)
+}
+
+func (k *K3s) sendFileToHosts(Hosts []string, src, dst string) error {
+	eg, _ := errgroup.WithContext(context.Background())
+	for _, node := range Hosts {
+		node := node
+		eg.Go(func() error {
+			if err := k.sshClient.Copy(node, src, dst); err != nil {
+				return fmt.Errorf("send file failed %v", err)
+			}
+			return nil
+		})
+	}
+	return eg.Wait()
 }

@@ -23,7 +23,6 @@ import (
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/remote"
 	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -42,7 +41,7 @@ type KubeadmRuntime struct {
 	cli          kubernetes.Client
 	sshClient    ssh.Interface
 	pathResolver constants.PathResolver
-	remoteUtil   remote.Interface
+	remoteUtil   *ssh.Remote
 	mu           sync.Mutex
 }
 
@@ -133,7 +132,7 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*Kube
 		kubeadmConfig: types.NewKubeadmConfig(),
 		sshClient:     sshClient,
 		pathResolver:  constants.NewPathResolver(cluster.GetName()),
-		remoteUtil:    remote.New(cluster.GetName(), sshClient),
+		remoteUtil:    ssh.NewRemoteFromSSH(cluster.GetName(), sshClient),
 	}
 	if err := k.Validate(); err != nil {
 		return nil, err

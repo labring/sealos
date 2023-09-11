@@ -1,3 +1,5 @@
+import { InvitedStatus, UserRole } from './team';
+
 export type TgithubToken = {
   access_token: string;
   expires_in: number;
@@ -66,3 +68,31 @@ export const PROVIDERS = ['github', 'wechat', 'phone', 'uid', 'password_user'] a
 export type Provider = (typeof PROVIDERS)[number];
 
 export type TUserExist = { user: string; exist: boolean };
+
+export type K8s_user = {
+  name: string;
+};
+export type User = {
+  uid: string;
+  avatar_url: string;
+  name: string;
+  github?: string;
+  wechat?: string;
+  phone?: string;
+  k8s_users?: K8s_user[];
+  created_time: string;
+  password?: string;
+  password_user?: string;
+};
+export type UserDto = {
+  uid: string;
+  avatarUrl: string;
+  name: string;
+  k8s_username: string;
+  createdTime: string;
+};
+export type TeamUserDto = UserDto & {
+  joinTime?: Date;
+  role: UserRole;
+  status: InvitedStatus;
+};

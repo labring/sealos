@@ -3,6 +3,7 @@ import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
+import { appDeployKey } from '@/constants/app';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -21,7 +22,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       k8sCore.deleteNamespacedService(name, namespace), // delete service
       k8sCore.deleteNamespacedConfigMap(name, namespace), // delete configMap
       k8sCore.deleteNamespacedSecret(name, namespace), // delete secret
-      k8sNetworkingApp.deleteNamespacedIngress(name, namespace), // delete Ingress
+      k8sNetworkingApp.deleteCollectionNamespacedIngress(
+        namespace,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        `${appDeployKey}=${name}`
+      ), // delete Ingress
       k8sCustomObjects.deleteNamespacedCustomObject(
         // delete Issuer
         'cert-manager.io',

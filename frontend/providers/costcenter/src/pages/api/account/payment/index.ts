@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
 
     // do payment
     const paymentName = crypto.randomUUID();
-    const namespace = GetUserDefaultNameSpace(kubeUser.name);
+    const namespace = kc.getContexts()[0].namespace || GetUserDefaultNameSpace(kubeUser.name);
     const form: PaymentForm = {
       namespace,
       paymentName,

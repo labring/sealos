@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:e2e": "jest --testPathPattern=/e2e/ --runInBand",
+    "test:ci": "jest --runInBand"
   },
   "dependencies": {
     "@alicloud/dysmsapi20170525": "^2.0.24",
@@ -40,14 +42,17 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-draggable": "^4.4.5",
+    "react-hook-form": "^7.45.2",
     "react-i18next": "^12.3.1",
     "sass": "^1.63.6",
     "sealos-desktop-sdk": "workspace:*",
     "uuid": "^9.0.0",
-    "zustand": "^4.3.9",
-    "react-hook-form": "^7.45.2"
+    "zustand": "^4.3.9"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.1.2",
+    "@testing-library/react": "^14.0.0",
+    "@types/jest": "^29.5.4",
     "@types/js-cookie": "^3.0.3",
     "@types/js-yaml": "^4.0.5",
     "@types/jsonwebtoken": "^9.0.2",
@@ -57,6 +62,8 @@
     "@types/react": "18.0.37",
     "@types/react-dom": "18.0.11",
     "@types/uuid": "^9.0.2",
+    "jest": "^29.6.4",
+    "jest-environment-jsdom": "^29.6.4",
     "prettier": "^2.8.8"
   }
 }

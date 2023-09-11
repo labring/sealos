@@ -237,12 +237,15 @@ export const patchYamlList = ({
   const actions: AppPatchPropsType = [];
 
   // find delete
-  oldFormJsonList.forEach((oldYaml) => {
-    const item = newFormJsonList.find((item) => item.kind === oldYaml.kind);
-    if (!item) {
+  oldFormJsonList.forEach((oldYamlJson) => {
+    const item = newFormJsonList.find(
+      (item) => item.kind === oldYamlJson.kind && item.metadata?.name === oldYamlJson.metadata?.name
+    );
+    if (!item && oldYamlJson.metadata?.name) {
       actions.push({
         type: 'delete',
-        kind: oldYaml.kind as `${YamlKindEnum}`
+        kind: oldYamlJson.kind as `${YamlKindEnum}`,
+        name: oldYamlJson.metadata?.name
       });
     }
   });
@@ -310,6 +313,30 @@ export const patchYamlList = ({
           return newYamlJson;
         }
       })();
+
+      // adapt deployment,statefulset,service ports
+      if (
+        actionsJson.kind === YamlKindEnum.Deployment ||
+        actionsJson.kind === YamlKindEnum.StatefulSet
+      ) {
+        // @ts-ignore
+        const ports = actionsJson?.spec.template.spec.containers[0].ports || [];
+        if (ports.length > 1 && !ports[0]?.name) {
+          // @ts-ignore
+          actionsJson.spec.template.spec.containers[0].ports[0].name = 'adaptport';
+        }
+      }
+      if (actionsJson.kind === YamlKindEnum.Service) {
+        // @ts-ignore
+        const ports = actionsJson?.spec.ports || [];
+        console.log(ports);
+
+        // @ts-ignore
+        if (ports.length > 1 && !ports[0]?.name) {
+          // @ts-ignore
+          actionsJson.spec.ports[0].name = 'adaptport';
+        }
+      }
 
       actions.push({
         type: 'patch',

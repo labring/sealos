@@ -1,7 +1,7 @@
 import useSessionStore from '@/stores/session';
-import { Box, Flex, Link, Spinner, Text } from '@chakra-ui/react';
+import { Box, Flex, Link, Text } from '@chakra-ui/react';
 import clsx from 'clsx';
-import { use, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import styles from './index.module.scss';
 import SideBar from './sidebar';

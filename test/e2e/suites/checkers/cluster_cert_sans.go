@@ -19,6 +19,8 @@ package checkers
 import (
 	"fmt"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -28,7 +30,7 @@ var _ FakeInterface = &fakeCertSansClient{}
 
 type fakeCertSansClient struct {
 	*fakeClient
-	data string
+	data []string
 }
 
 func (f *fakeCertSansClient) Verify() error {
@@ -45,9 +47,14 @@ func (f *fakeCertSansClient) Verify() error {
 	if !sets.NewString(f.ClusterConfiguration.APIServer.CertSANs...).Has(localIP) {
 		return fmt.Errorf("cert SANs not match %s", localIP)
 	}
-	if f.data != "" {
-		if !sets.NewString(f.ClusterConfiguration.APIServer.CertSANs...).Has(f.data) {
-			return fmt.Errorf("cert SANs not match %s", f.data)
+	if len(f.data) != 0 {
+		logger.Info("cert SANs %+v", f.data)
+		for _, v := range f.data {
+			if v != "" {
+				if !sets.NewString(f.ClusterConfiguration.APIServer.CertSANs...).Has(v) {
+					return fmt.Errorf("cert SANs %+v not match %s", f.ClusterConfiguration.APIServer.CertSANs, v)
+				}
+			}
 		}
 	}
 	return nil
