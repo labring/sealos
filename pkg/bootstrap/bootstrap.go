@@ -127,14 +127,10 @@ func runParallel(hosts []string, fn func(string) error) error {
 	return eg.Wait()
 }
 
-type defaultChecker struct {
-}
+type defaultChecker struct{ common }
 
 func (c *defaultChecker) String() string {
 	return "default_checker"
-}
-func (c *defaultChecker) Filter(_ Context, _ string) bool {
-	return true
 }
 
 func (c *defaultChecker) Apply(ctx Context, host string) error {
@@ -142,17 +138,9 @@ func (c *defaultChecker) Apply(ctx Context, host string) error {
 	return ctx.GetExecer().CmdAsync(host, cmds...)
 }
 
-func (c *defaultChecker) Undo(_ Context, _ string) error {
-	return nil
-}
-
-type defaultInitializer struct{}
+type defaultInitializer struct{ common }
 
 func (*defaultInitializer) String() string { return "initializer" }
-
-func (initializer *defaultInitializer) Filter(_ Context, _ string) bool {
-	return true
-}
 
 func (initializer *defaultInitializer) Apply(ctx Context, host string) error {
 	cmds := []string{ctx.GetBash().InitBash(host)}

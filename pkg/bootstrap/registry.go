@@ -57,13 +57,9 @@ func (*registryApplier) Undo(ctx Context, host string) error {
 	return ctx.GetExecer().CmdAsync(host, ctx.GetBash().CleanRegistryBash(host))
 }
 
-type registryHostApplier struct {
-}
+type registryHostApplier struct{ common }
 
 func (*registryHostApplier) String() string { return "registry_host_applier" }
-func (*registryHostApplier) Filter(_ Context, _ string) bool {
-	return true
-}
 
 func (*registryHostApplier) Undo(ctx Context, host string) error {
 	rc := helpers.GetRegistryInfo(ctx.GetExecer(), ctx.GetPathResolver().RootFSPath(), ctx.GetCluster().GetRegistryIPAndPort())

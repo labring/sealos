@@ -22,15 +22,12 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/utils/iputils"
 )
 
-type apiServerHostApplier struct {
-}
+type apiServerHostApplier struct{ common }
 
 func (*apiServerHostApplier) String() string { return "apiserver_host_applier" }
-func (*apiServerHostApplier) Filter(_ Context, _ string) bool {
-	return true
-}
 
 func (*apiServerHostApplier) Undo(ctx Context, host string) error {
 	return ctx.GetRemoter().HostsDelete(host, constants.DefaultAPIServerDomain)
@@ -50,10 +47,10 @@ func (a *apiServerHostApplier) Apply(ctx Context, host string) error {
 	return nil
 }
 
-type lvscareHostApplier struct {
-}
+type lvscareHostApplier struct{}
 
 func (*lvscareHostApplier) String() string { return "lvscare_host_applier" }
+
 func (*lvscareHostApplier) Filter(ctx Context, host string) bool {
 	return slices.Contains(ctx.GetCluster().GetNodeIPAndPortList(), host)
 }
@@ -63,9 +60,8 @@ func (*lvscareHostApplier) Undo(ctx Context, host string) error {
 }
 
 func (a *lvscareHostApplier) Apply(ctx Context, host string) error {
-	if err := ctx.GetRemoter().HostsAdd(host, host, constants.DefaultLvscareDomain); err != nil {
+	if err := ctx.GetRemoter().HostsAdd(host, iputils.GetHostIP(host), constants.DefaultLvscareDomain); err != nil {
 		return fmt.Errorf("failed to add hosts: %v", err)
 	}
-
 	return nil
 }
