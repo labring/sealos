@@ -188,7 +188,7 @@ spec:
             capabilities:
               drop:
                 - "ALL"
-          image: labring/docker-casbin:main
+          image: labring4docker/casbin:main
           ports:
             - containerPort: 8080
               name: nginx
