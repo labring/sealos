@@ -186,7 +186,7 @@ const JobList = ({
   ];
 
   return (
-    <Box bg={'#F3F4F5'} px={'34px'} minH="100vh" minW={'700px'}>
+    <Box bg={'#F3F4F5'} px={'34px'} minH="100vh">
       <Flex h={'88px'} alignItems={'center'}>
         <Box mr={4} p={2} backgroundColor={'#FEFEFE'} border={theme.borders.sm} borderRadius={'sm'}>
           <MyIcon name="logo" w={'24px'} h={'24px'} />
