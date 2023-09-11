@@ -6,12 +6,12 @@ metadata:
   generation: 1
   labels:
     clusterdefinition.kubeblocks.io/name: mongodb
-    clusterversion.kubeblocks.io/name: mongodb-5.0.14
+    clusterversion.kubeblocks.io/name: {{ .mongodbVersion }}
   name: sealos-mongodb
   namespace: sealos
 spec:
   clusterDefinitionRef: mongodb
-  clusterVersionRef: mongodb-5.0.14
+  clusterVersionRef: {{ .mongodbVersion }}
   componentSpecs:
     - componentDefRef: mongodb
       monitor: true
