@@ -197,7 +197,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 - 登录功能的开关, 部署时要用`true`配置想要使用的登录方式。
 
-    ```bash
+    ```
     WECHAT_ENABLED=true
     GITHUB_ENABLED=true
     PASSWORD_ENABLED=true
@@ -208,29 +208,39 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - 每个登陆要配置的变量
   - wechat
 
-    ```bash
+    ```
     WECHAT_CLIENT_ID=
     WECHAT_CLIENT_SECRET=
+    WECHAT_ENABLED="true"
     ```  
 
   - github
 
-    ```bash
+    ```
     GITHUB_CLIENT_ID=
     GITHUB_CLIENT_SECRET=
+    GITHUB_ENABLED="true"
     ```
 
   - password
 
-    ```bash
+    ```
     PASSWORD_SALT=
+    PASSWROD_ENABLED="true"
     ```
 
   - sms
 
-    ```bash
+    ```
     ALI_ACCESS_KEY_ID=
     ALI_ACCESS_KEY_SECRET=
     ALI_SIGN_NAME=
     ALI_TEMPLATE_CODE=
+    SMS_ENABLED="true"
     ```
+  - google
+  ```
+  GOOGLE_ENABLED="true"
+  GOOGLE_CLIENT_ID=
+  GOOGLE_CLIENT_SECRET=
+  ```

@@ -10,7 +10,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!payload) return jsonRes(res, { code: 401, message: 'token is vaild' });
     const kc = payload.kc;
     const nsid = payload.user.nsid;
-    console.log('payload???', payload);
     const getMeta = (namespace = 'app-system') => ({
       group: 'app.sealos.io',
       version: 'v1',
