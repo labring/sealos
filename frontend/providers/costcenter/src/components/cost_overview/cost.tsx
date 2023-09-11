@@ -15,6 +15,7 @@ export const Cost = memo(function Cost() {
     cpu: _deduction?.cpu || 0,
     memory: _deduction?.memory || 0,
     storage: _deduction?.storage || 0,
+    network: _deduction?.network || 0,
     gpu: _deduction?.gpu || 0
   };
   return (

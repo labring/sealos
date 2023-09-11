@@ -15,7 +15,8 @@ export default function PredictCard() {
     const origin = [
       { name: 'CPU', cost: state.cpu },
       { name: 'Memory', cost: state.memory },
-      { name: 'Storage', cost: state.storage }
+      { name: 'Storage', cost: state.storage },
+      { name: 'Network', cost: state.network }
     ];
     if (!gpuEnabled) {
       origin.push({ name: total, cost: state.cpu + state.memory + state.storage });

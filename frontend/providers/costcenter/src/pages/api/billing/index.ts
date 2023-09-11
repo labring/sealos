@@ -13,6 +13,7 @@ const convertGpu = (_deduction?: RawCosts) =>
           if (cur[0] === 'cpu') pre.cpu = cur[1];
           else if (cur[0] === 'memory') pre.memory = cur[1];
           else if (cur[0] === 'storage') pre.storage = cur[1];
+          else if (cur[0] === 'network') pre.network = cur[1];
           else if (cur[0].startsWith('gpu-')) {
             typeof pre.gpu === 'number' && (pre.gpu += cur[1]);
           }
@@ -22,13 +23,15 @@ const convertGpu = (_deduction?: RawCosts) =>
           cpu: 0,
           memory: 0,
           storage: 0,
-          gpu: 0
+          gpu: 0,
+          network: 0
         }
       )
     : {
         cpu: 0,
         memory: 0,
         storage: 0,
+        network: 0,
         gpu: 0
       };
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
