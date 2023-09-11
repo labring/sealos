@@ -20,6 +20,12 @@ type Applier interface {
 	Undo(Context, string) error
 }
 
+type common struct{}
+
+func (c *common) Filter(Context, string) bool { return true }
+func (c *common) Apply(Context, string) error { return nil }
+func (c *common) Undo(Context, string) error  { return nil }
+
 var (
 	defaultPreflights   []Applier
 	defaultInitializers []Applier
