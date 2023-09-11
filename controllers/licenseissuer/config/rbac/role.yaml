@@ -102,6 +102,32 @@ rules:
 - apiGroups:
   - infostream.sealos.io
   resources:
+  - clusterscalebillings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - clusterscalebillings/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - clusterscalebillings/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
   - licenses
   verbs:
   - create

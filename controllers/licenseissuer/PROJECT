@@ -68,4 +68,7 @@ resources:
   kind: ClusterScaleBilling
   path: github.com/labring/sealos/controllers/licenseissuer/api/v1
   version: v1
+  webhooks:
+    validation: true
+    webhookVersion: v1
 version: "3"

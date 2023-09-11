@@ -13,7 +13,7 @@ patchesStrategicMerge:
 # patches here are for enabling the conversion webhook for each CRD
 #- patches/webhook_in_licenses.yaml
 #- patches/webhook_in_launchers.yaml
-#- path: patches/webhook_in_clusterlicenses.yaml
+- patches/webhook_in_clusterlicenses.yaml
 #- path: patches/webhook_in_clusterscalebillings.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
@@ -21,7 +21,7 @@ patchesStrategicMerge:
 # patches here are for enabling the CA injection for each CRD
 #- patches/cainjection_in_licenses.yaml
 #- patches/cainjection_in_launchers.yaml
-#- path: patches/cainjection_in_clusterlicenses.yaml
+- patches/cainjection_in_clusterlicenses.yaml
 #- path: patches/cainjection_in_clusterscalebillings.yaml
 #+kubebuilder:scaffold:crdkustomizecainjectionpatch
 
