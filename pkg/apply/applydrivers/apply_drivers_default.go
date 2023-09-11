@@ -27,6 +27,7 @@ import (
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/iputils"
@@ -79,20 +80,14 @@ type Applier struct {
 }
 
 func (c *Applier) Apply() error {
-	clusterPath := constants.Clusterfile(c.ClusterDesired.Name)
 	// clusterErr and appErr should not appear in the same time
 	var clusterErr, appErr error
-	// save cluster to file after apply
 	defer func() {
 		switch clusterErr.(type) {
 		case *processor.CheckError, *processor.PreProcessError:
 			return
 		}
-		logger.Debug("save objects into local: %s, objects: %v", clusterPath, c.getWriteBackObjects())
-		saveErr := yaml.MarshalFile(clusterPath, c.getWriteBackObjects()...)
-		if saveErr != nil {
-			logger.Error("failed to serialize into file: %s error, %s", clusterPath, saveErr)
-		}
+		c.applyAfter()
 	}()
 	c.initStatus()
 	if c.ClusterCurrent == nil || c.ClusterCurrent.CreationTimestamp.IsZero() {
@@ -272,4 +267,31 @@ func (c *Applier) deleteCluster() error {
 
 	logger.Info("succeeded in deleting current cluster")
 	return nil
+}
+
+func (c *Applier) syncWorkdir() {
+	workDir := constants.ClusterDir(c.ClusterDesired.Name)
+	sshCmd, err := ssh.NewExecCmdFromRoles(c.ClusterDesired, v2.MASTER)
+	if err != nil {
+		logger.Error("failed to sync workdir: %v", err)
+	}
+	err = sshCmd.RunCopy(workDir, workDir)
+	if err != nil {
+		logger.Error("failed to sync workdir: %s error, %v", workDir, err)
+	}
+}
+
+// save cluster to file after apply
+func (c *Applier) saveClusterFile() {
+	clusterPath := constants.Clusterfile(c.ClusterDesired.Name)
+	logger.Debug("save objects into local: %s, objects: %v", clusterPath, c.getWriteBackObjects())
+	saveErr := yaml.MarshalFile(clusterPath, c.getWriteBackObjects()...)
+	if saveErr != nil {
+		logger.Error("failed to serialize into file: %s error, %s", clusterPath, saveErr)
+	}
+}
+
+func (c *Applier) applyAfter() {
+	c.saveClusterFile()
+	c.syncWorkdir()
 }
