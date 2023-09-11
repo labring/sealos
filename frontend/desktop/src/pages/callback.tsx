@@ -13,27 +13,14 @@ const Callback: NextPage = () => {
   const compareState = useSessionStore((s) => s.compareState);
   useEffect(() => {
     if (!router.isReady) return;
-    if (!provider) return;
-
     (async () => {
       try {
-        let data: { data: Session; code: number };
-        let code = '';
-        let state = '';
-        if (['github', 'wechat', 'google'].includes(provider)) {
-          code = router.query.code as string;
-          state = router.query.state as string;
-          // } else if ('google') {
-          //   const locationMap = new Map<string, string>(window.location.hash.substring(1).split('&').map(kv => kv.split('=', 2) as [string, string]))
-          //   console.log(locationMap)
-          //   code = locationMap.get('access_token') ?? ''
-          //   state = locationMap.get('state') ?? ''
-        } else {
+        if (!provider || !['github', 'wechat', 'google'].includes(provider))
           throw new Error('provider error');
-        }
-        if (!code || !state) throw new Error();
+        const { code, state } = router.query;
+        if (!code || !state) throw new Error('failed to get code and state');
         if (!compareState(state as string)) throw new Error();
-        data = await request.post<any, { data: Session; code: number }>(
+        const data = await request.post<any, { data: Session; code: number }>(
           '/api/auth/oauth/' + provider,
           { code }
         );

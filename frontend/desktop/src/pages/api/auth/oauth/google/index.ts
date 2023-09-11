@@ -43,7 +43,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       iat: number;
       exp: number;
     };
-    console.log(__data, userInfo);
     const name = userInfo.name;
     const id = userInfo.sub;
     const avatar_url = (await getBase64FromRemote(userInfo.picture)) as string;
