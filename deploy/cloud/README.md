@@ -43,10 +43,8 @@ sealos gen labring/kubernetes:v1.25.6\
     labring/cert-manager:v1.8.0\
     labring/openebs:v3.4.0\
     labring/kubernetes-reflector:v7.0.151\
+    labring/kubeblocks:v0.6.2\
     labring/metrics-server:v0.6.4\
-    labring/zot:v1.4.3\
-    labring/kubeblocks:v0.5.3\
-    --env policy=anonymousPolicy\
     --masters 10.140.0.16 \
     --nodes 10.140.0.17,10.140.0.18 > Clusterfile
 
