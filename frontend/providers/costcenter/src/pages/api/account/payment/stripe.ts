@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     const k8s_username = kc.getUsers()[0].name;
     // do payment
     const paymentName = crypto.randomUUID();
-    const namespace = kc.getContexts()[0].namespace || GetUserDefaultNameSpace(k8s_username);
+    const namespace = GetUserDefaultNameSpace(k8s_username);
     const form: PaymentForm = {
       namespace,
       paymentName,

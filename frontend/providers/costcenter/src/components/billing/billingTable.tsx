@@ -17,26 +17,28 @@ export function BillingTable({ data }: { data: BillingItem[] }) {
       <Table variant="simple">
         <Thead>
           <Tr>
-            {[...TableHeaders, ...(gpuEnabled ? ['Gpu'] : []), 'Total Amount'].map((item) => (
-              <Th
-                key={item}
-                bg={'#F1F4F6'}
-                _before={{
-                  content: `""`,
-                  display: 'block',
-                  borderTopLeftRadius: '10px',
-                  borderTopRightRadius: '10px',
-                  background: '#F1F4F6'
-                }}
-              >
-                <Flex display={'flex'} alignItems={'center'}>
-                  <Text mr="4px">{t(item)}</Text>
-                  {['CPU', 'Gpu', 'Memory', 'Storage', 'Network', 'Total Amount'].includes(
-                    item
-                  ) && <CurrencySymbol type={currency} />}
-                </Flex>
-              </Th>
-            ))}
+            {[...TableHeaders, ...(gpuEnabled ? ['Gpu'] : []), 'Total Amount', 'Namespace'].map(
+              (item) => (
+                <Th
+                  key={item}
+                  bg={'#F1F4F6'}
+                  _before={{
+                    content: `""`,
+                    display: 'block',
+                    borderTopLeftRadius: '10px',
+                    borderTopRightRadius: '10px',
+                    background: '#F1F4F6'
+                  }}
+                >
+                  <Flex display={'flex'} alignItems={'center'}>
+                    <Text mr="4px">{t(item)}</Text>
+                    {['CPU', 'Gpu', 'Memory', 'Storage', 'Network', 'Total Amount'].includes(item) && (
+                      <CurrencySymbol type={currency} />
+                    )}
+                  </Flex>
+                </Th>
+              )
+            )}
           </Tr>
         </Thead>
         <Tbody>
@@ -58,13 +60,13 @@ export function BillingTable({ data }: { data: BillingItem[] }) {
                         minW={'max-content'}
                         {...([1, 2].includes(item.type)
                           ? {
-                              bg: '#E6F6F6',
-                              color: '#00A9A6'
-                            }
+                            bg: '#E6F6F6',
+                            color: '#00A9A6'
+                          }
                           : {
-                              bg: '#EBF7FD',
-                              color: '#0884DD'
-                            })}
+                            bg: '#EBF7FD',
+                            color: '#0884DD'
+                          })}
                         borderRadius="24px"
                         align={'center'}
                         justify={'space-evenly'}
@@ -78,10 +80,10 @@ export function BillingTable({ data }: { data: BillingItem[] }) {
                           {item.type === 0
                             ? t('Deduction')
                             : item.type === 1
-                            ? t('Charge')
-                            : item.type === 2
-                            ? t('Recipient')
-                            : t('Transfer')}
+                              ? t('Charge')
+                              : item.type === 2
+                                ? t('Recipient')
+                                : t('Transfer')}
                         </Text>
                       </Flex>
                     </Flex>
@@ -94,6 +96,7 @@ export function BillingTable({ data }: { data: BillingItem[] }) {
                     <Td>{!item.type ? <span>{formatMoney(item.costs?.gpu || 0)}</span> : '-'}</Td>
                   )}
                   <Td>{<span>{formatMoney(item.amount)}</span>}</Td>
+                  <Td>{<span>{item.namespace}</span>}</Td>
                 </Tr>
               );
             })}
