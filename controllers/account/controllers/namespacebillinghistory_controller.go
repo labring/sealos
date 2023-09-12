@@ -80,7 +80,8 @@ func (r *NamespaceBillingHistoryReconciler) Reconcile(ctx context.Context, req c
 		}
 		if err = r.reconcile(ctx, req, dbClient, nsHistory); err != nil {
 			r.Logger.Error(err, "reconcile failed")
-			return ctrl.Result{Requeue: true}, err
+			nsHistory.Status.Status = accountv1.Failed
+			return ctrl.Result{}, r.Status().Update(ctx, nsHistory)
 		}
 		return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 	}
@@ -93,9 +94,9 @@ func (r *NamespaceBillingHistoryReconciler) reconcile(ctx context.Context, req c
 	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: getUsername(req.Namespace)}, user); err != nil {
 		return fmt.Errorf("get user failed: %w", err)
 	}
-	owner, ok := user.GetLabels()[userv1.UserLabelOwnerKey]
+	owner, ok := user.GetAnnotations()[userv1.UserAnnotationOwnerKey]
 	if !ok {
-		return fmt.Errorf("user %s has no label %s", user.Name, userv1.UserLabelOwnerKey)
+		return fmt.Errorf("user %s has no annotations %s", user.Name, userv1.UserLabelOwnerKey)
 	}
 	nsList, err := dbClient.GetBillingHistoryNamespaceList(&nsHistory.Spec, owner)
 	if err != nil {
@@ -103,9 +104,6 @@ func (r *NamespaceBillingHistoryReconciler) reconcile(ctx context.Context, req c
 	}
 	nsHistory.Status.NamespaceList = nsList
 	nsHistory.Status.Status = accountv1.Completed
-	if err = r.Status().Update(ctx, nsHistory); err != nil {
-		return fmt.Errorf("update billing history status failed: %w", err)
-	}
 	return nil
 }
 
