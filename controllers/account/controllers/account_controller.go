@@ -203,11 +203,12 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		err = dbClient.SaveBillingsWithAccountBalance(&accountv1.AccountBalanceSpec{
 			Time: metav1.Time{Time: now},
 			AccountBalanceSpecInline: accountv1.AccountBalanceSpecInline{
-				OrderID: id,
-				Amount:  payment.Spec.Amount,
-				Owner:   getUsername(payment.Namespace),
-				Type:    accountv1.Recharge,
-				Details: payment.ToJSON(),
+				OrderID:   id,
+				Amount:    payment.Spec.Amount,
+				Namespace: payment.Namespace,
+				Owner:     getUsername(payment.Namespace),
+				Type:      accountv1.Recharge,
+				Details:   payment.ToJSON(),
 			},
 		})
 		if err != nil {

@@ -40,7 +40,6 @@ spec:
             description: AccountBalanceSpec defines the desired state of AccountBalance
             properties:
               amount:
-                description: TODO will delete field in future Timestamp int64 `json:"timestamp,omitempty"`
                 format: int64
                 type: integer
               costs:
@@ -49,6 +48,8 @@ spec:
                   type: integer
                 type: object
               details:
+                type: string
+              namespace:
                 type: string
               order_id:
                 type: string

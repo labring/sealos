@@ -156,7 +156,7 @@ func (r *BillingReconciler) billingWithHourTime(ctx context.Context, queryTime t
 			// create accountbalance
 			accountBalance := v12.AccountBalance{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      getUsername(ownNs) + "-" + queryTime.Format("20060102150405"),
+					Name:      getUsername(ownNs) + ns + "-" + queryTime.Format("20060102150405"),
 					Namespace: r.AccountSystemNamespace,
 				},
 				Spec: v12.AccountBalanceSpec{
