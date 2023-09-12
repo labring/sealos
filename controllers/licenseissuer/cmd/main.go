@@ -176,6 +176,12 @@ func main() {
 	mgr.GetWebhookServer().Register("/validate-infostream-sealos-io-v1-clusterscalebilling", &webhook.Admission{Handler: pv})
 	//+kubebuilder:scaffold:builder
 
+	// simulate the webhook server
+	// lb := util.NewLicenseWebhook()
+	// go func() {
+	// 	lb.Run()
+	// }()
+
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)

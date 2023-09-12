@@ -19,7 +19,6 @@ package util
 import (
 	"context"
 	"errors"
-	"fmt"
 	"reflect"
 	"time"
 
@@ -147,7 +146,6 @@ func CheckLicenseExists(meta LicenseMeta, db MongoHandler) bool {
 	// memory check
 	ok := GetHashMap().Find(meta.Token)
 	if ok {
-		fmt.Println("memory check")
 		return true
 	}
 	// database check

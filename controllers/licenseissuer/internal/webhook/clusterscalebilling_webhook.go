@@ -19,9 +19,7 @@ package webhook
 import (
 	"context"
 
-	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -43,9 +41,12 @@ func NewPodValidator(c client.Client) admission.Handler {
 
 // podValidator admits a pod if a specific annotation exists.
 func (v *podValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	log.Info("clusterscalebilling", "name", req.Name, "namespace", req.Namespace, "UserInfo", req.UserInfo)
-
-	return admission.Allowed("")
+	cs := util.GetClusterStatus()
+	log.Info("policy:", cs.BillingPolicy, "quota:", cs.CSBS.Quota, "used:", cs.CSBS.Used)
+	if util.GetValidator().Validate() {
+		return admission.Allowed("license is valid, no need to validate")
+	}
+	return admission.Denied("license is invalid, please update license")
 }
 
 // podValidator implements admission.DecoderInjector.
@@ -55,33 +56,4 @@ func (v *podValidator) Handle(ctx context.Context, req admission.Request) admiss
 func (v *podValidator) InjectDecoder(d *admission.Decoder) error {
 	v.decoder = d
 	return nil
-}
-
-type ClusterValidator struct {
-	ClusterPolicy string                      `json:"clusterPolicy"`
-	CSBM          ClusterScaleBillingMetering `json:"csbm"`
-}
-
-type ClusterScaleBillingMetering struct {
-	Used  int64 `json:"used"`
-	Quata int64 `json:"quata"`
-}
-
-func (cv *ClusterValidator) Metering(ctx context.Context, client client.Client) {
-	switch cv.ClusterPolicy {
-	case "cluster-scale-billing":
-		client.Get(ctx)
-	}
-}
-
-func (cv *ClusterValidator) meteringForClusterScaleBilling(ctx context.Context, client client.Client) {
-	csb := &issuerv1.ClusterScaleBilling{}
-	if err := client.Get(ctx, types.NamespacedName{Name: util.ScaleBilling, Namespace: "default"}, csb); err != nil {
-
-	}
-
-}
-
-func init() {
-
 }

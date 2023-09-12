@@ -156,6 +156,8 @@ func (o *OperatorOptions) initOptions() {
 	o.RunnableOptions.Policy[ClusterBillingWork] = PeriodicWithProbePolicy
 	o.RunnableOptions.Period[ClusterBillingWork] = 8 * time.Hour
 
+	o.RunnableOptions.Policy[ClusterBillingMonitor] = PeriodicPolicy
+	o.RunnableOptions.Period[ClusterBillingMonitor] = 8 * time.Second
 	// Add more tasks Policy and Period here
 }
 
@@ -170,12 +172,16 @@ type EnvOptions struct {
 
 	// Namespace
 	Namespace string
+
+	// License Policy
+	BillingPolicy string
 }
 
 func (eo *EnvOptions) initOptions() {
 	eo.MongoURI = os.Getenv("MONGO_URI")
 	eo.SaltKey = os.Getenv("PASSWORD_SALT")
 	eo.Namespace = os.Getenv("NAMESPACE")
+	eo.BillingPolicy = os.Getenv("BILLING_POLICY")
 }
 
 type RunnableOptions struct {

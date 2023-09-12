@@ -75,18 +75,25 @@ const (
 )
 
 const (
-	Collector          task = "Collector"
-	DataSync           task = "DataSync"
-	Init               task = "Init"
-	Register           task = "Register"
-	Notice             task = "Notice"
-	NoticeCleanup      task = "NoticeCleanup"
-	NetWorkConfig      task = "NetWorkConfig"
-	MemoryCleanup      task = "MemoryCleanup"
-	ClusterBillingWork task = "ClusterBillingWork"
+	Collector             task = "Collector"
+	DataSync              task = "DataSync"
+	Init                  task = "Init"
+	Register              task = "Register"
+	Notice                task = "Notice"
+	NoticeCleanup         task = "NoticeCleanup"
+	NetWorkConfig         task = "NetWorkConfig"
+	MemoryCleanup         task = "MemoryCleanup"
+	ClusterBillingWork    task = "ClusterBillingWork"
+	ClusterBillingMonitor task = "ClusterMonitor"
 	// Add more tasks here
 )
 
 const (
 	ScaleBilling = "cluster-scale-billing"
+)
+
+const (
+	BillingByScale   = "scale"
+	BillingByUsage   = "usage"
+	BillingByAccount = "account"
 )

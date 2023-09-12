@@ -171,6 +171,8 @@ func (r *ClusterLicenseReconciler) Recharge(ctx context.Context) error {
 	r.csb.Status.EncryptQuota = *NewEncryptQuota
 	// Update the quota
 	r.csb.Status.Quota = newQuata
+	// Trigger the cluster scale quota
+	util.GetTrigger().TriggerForClusterScaleQuato(newQuata)
 	err = r.Client.Status().Update(ctx, r.csb)
 	if err != nil {
 		return err

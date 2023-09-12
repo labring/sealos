@@ -73,10 +73,10 @@ func (c *ClusterScaleBilling) billingWork(ti *TaskInstance) error {
 			fee += int64(nums) * v.Price
 		case "cpu":
 			fee += c.tnr.TotalCPU.Value() * v.Price
-		// case "gpu":
-		// 	fee += c.tnr.TotalGPU.Value() * v.Price
-		case "memory":
-			fee += c.tnr.TotalMemory.Value() * v.Price
+			// case "gpu":
+			// 	fee += c.tnr.TotalGPU.Value() * v.Price
+			// case "memory":
+			// 	fee += c.tnr.TotalMemory.Value() * v.Price
 		}
 	}
 
