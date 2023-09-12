@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	removeKubeConfig        = "rm -rf .kube"
+	removeKubeConfig        = "rm -rf $HOME/.kube"
 	remoteCleanMasterOrNode = `if which kubeadm;then kubeadm reset -f %s;fi && \
 rm -rf /etc/kubernetes/ && \
 rm -rf /etc/cni && rm -rf /opt/cni && \
@@ -68,7 +68,7 @@ func (k *KubeadmRuntime) resetMasters(nodes []string) {
 func (k *KubeadmRuntime) resetNode(node string, cleanHook func()) error {
 	logger.Info("start to reset node: %s", node)
 	resetCmd := fmt.Sprintf(remoteCleanMasterOrNode, vlogToStr(k.klogLevel), k.getEtcdDataDir())
-	removeKubeConfigErr := k.sshCmdAsync(node, removeKubeConfig)
+
 	resetCmdErr := k.sshCmdAsync(node, resetCmd)
 	if cleanHook != nil {
 		cleanHook()
@@ -77,6 +77,7 @@ func (k *KubeadmRuntime) resetNode(node string, cleanHook func()) error {
 	if resetCmdErr != nil {
 		logger.Error("failed to clean node, exec command %s failed, %v", resetCmd, resetCmdErr)
 	}
+	removeKubeConfigErr := k.sshCmdAsync(node, removeKubeConfig)
 	if removeKubeConfigErr != nil {
 		logger.Error("failed to clean node, exec command %s failed, %v", removeKubeConfig, removeKubeConfigErr)
 	}
