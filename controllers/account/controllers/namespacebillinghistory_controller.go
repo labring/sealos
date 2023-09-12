@@ -81,9 +81,8 @@ func (r *NamespaceBillingHistoryReconciler) Reconcile(ctx context.Context, req c
 		if err = r.reconcile(ctx, req, dbClient, nsHistory); err != nil {
 			r.Logger.Error(err, "reconcile failed")
 			nsHistory.Status.Status = accountv1.Failed
-			return ctrl.Result{}, r.Status().Update(ctx, nsHistory)
 		}
-		return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
+		return ctrl.Result{}, r.Status().Update(ctx, nsHistory)
 	}
 
 	return ctrl.Result{}, client.IgnoreNotFound(err)
