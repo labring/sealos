@@ -1,4 +1,4 @@
-import { getJobList, getJobListAndEvents } from '@/api/job';
+import { getJobListEventsAndLogs } from '@/api/job';
 import MyTooltip from '@/components/MyTooltip';
 import { CronJobTypeList } from '@/constants/job';
 import { useJobStore } from '@/store/job';
@@ -13,8 +13,14 @@ export default function AppBaseInfo({ appName }: { appName: string }) {
   const { JobDetail, loadJobDetail } = useJobStore();
   const { copyData } = useCopyData();
 
-  const { data, isLoading } = useQuery(['getJobListAndEvents', appName], () =>
-    getJobListAndEvents(appName)
+  const { data, isLoading } = useQuery(
+    ['getJobListEventsAndLogs', appName],
+    () => getJobListEventsAndLogs(appName),
+    {
+      onError(err) {
+        console.log(err);
+      }
+    }
   );
 
   const [totalAmount, successAmount, failAmount] = useMemo(() => {

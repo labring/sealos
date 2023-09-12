@@ -236,5 +236,6 @@
   "pause_message": "确定暂停cronjob吗",
   "Basic Information": "基础信息",
   "Succeeded": "成功数",
-  "Failures": "失败数"
+  "Failures": "失败数",
+  "Log": "日志"
 }

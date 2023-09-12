@@ -51,7 +51,8 @@ export const adaptCronJobDetail = async (job: V1CronJob): Promise<CronJobEditTyp
     job.metadata?.annotations || {};
 
   const getUrl = (): string => {
-    const commands = job.spec?.jobTemplate?.spec?.template?.spec?.containers?.[0]?.args!;
+    const commands = job.spec?.jobTemplate?.spec?.template?.spec?.containers?.[0]?.args;
+    if (!commands) return '';
     const curlCommand = commands.find((command) => /^curl\s+(\S+)/.test(command));
     const curlAddress = curlCommand ? curlCommand.split(/\s+/)[1] : '';
     return curlAddress;
@@ -155,7 +156,9 @@ export const adaptJobItemList = (jobs: V1Job[]) => {
       completionTime: dayjs(item.status?.completionTime).format('YYYY-MM-DD HH:mm'),
       uid: item.metadata?.uid,
       name: item.metadata?.name,
-      events: [] as JobEvent[]
+      events: [] as JobEvent[],
+      logs: '',
+      podName: ''
     };
   });
 

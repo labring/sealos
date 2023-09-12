@@ -71,7 +71,8 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
     debounce((data: CronJobEditType) => {
       try {
         console.log(data, 'data---');
-        setYamlList(formData2Yamls(data));
+        const yamlList = formData2Yamls(data);
+        setYamlList(yamlList);
       } catch (error) {
         console.log(error);
       }
@@ -104,7 +105,7 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
-      if (!obj) return t('Submit Error');
+      if (!obj || typeof obj !== 'object') return t('Submit Error');
       if (!!obj.message) {
         return obj.message;
       }

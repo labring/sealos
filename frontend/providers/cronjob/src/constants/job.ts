@@ -143,7 +143,7 @@ export const CronJobStatusMap = {
 export const DefaultJobEditValue: CronJobEditType = {
   jobType: 'launchpad',
   jobName: '',
-  schedule: '',
+  schedule: '* * * * *',
   imageName: '',
   runCMD: '',
   cmdParam: '',

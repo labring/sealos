@@ -1,21 +1,34 @@
-import { getJobListAndEvents } from '@/api/job';
+import { getJobListEventsAndLogs } from '@/api/job';
 import MyIcon from '@/components/Icon';
 import { useCopyData } from '@/utils/tools';
 import { Box, Flex, Icon, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
+import { useMemo, useState } from 'react';
 
 export default function AppBaseInfo({ appName }: { appName: string }) {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
-  const { data, isLoading } = useQuery(['getJobListAndEvents', appName], () =>
-    getJobListAndEvents(appName)
+  const [active, setActive] = useState(0);
+  const { data, isLoading } = useQuery(
+    ['getJobListEventsAndLogs', appName],
+    () => getJobListEventsAndLogs(appName),
+    {
+      onError(err) {
+        console.log(err);
+      }
+    }
   );
-  console.log(data);
+  const ActivePod = useMemo(() => data?.history[active], [active, data]);
 
   return (
-    <Flex flexDirection={'column'} p="36px 64px 0 64px" h="0" flex={1} position={'relative'}>
-      <Flex alignItems={'center'} justifyContent={'space-between'} mb="16px">
+    <Flex flexDirection={'column'} h="0" flex={1} position={'relative'}>
+      <Flex
+        alignItems={'center'}
+        p={'18px 32px'}
+        justifyContent={'space-between'}
+        borderBottom={'1px solid #EFF0F1'}
+      >
         <Flex alignItems={'center'}>
           <Icon width="16px" height="16px" viewBox="0 0 16 16">
             <path
@@ -27,46 +40,66 @@ export default function AppBaseInfo({ appName }: { appName: string }) {
         </Flex>
         <Text>{data?.total}</Text>
       </Flex>
-      <Box py="20px" borderTop={'1px solid #EFF0F1'} flex={1} overflowY={'auto'}>
-        {data?.history?.map((jobItem, i) => (
-          <Box
-            key={jobItem.uid}
-            pl={6}
-            pb={6}
-            ml={4}
-            borderLeft={`2px solid ${i === data.history.length - 1 ? 'transparent' : '#DCE7F1'}`}
-            position={'relative'}
-            _before={{
-              content: '""',
-              position: 'absolute',
-              left: '-6.5px',
-              w: '8px',
-              h: '8px',
-              borderRadius: '8px',
-              backgroundColor: '#fff',
-              border: '2px solid',
-              borderColor: jobItem.status ? '#33BABB' : '#FF8492'
-            }}
-          >
-            <Flex lineHeight={1} mb={2} alignItems={'center'}>
-              <Box fontWeight={'bold'}>
-                {jobItem.status ? t('base.Success') : t('Pause Error')},
+      <Flex flex={1} overflow={'hidden'}>
+        <Box flex={'0 0 300px'} overflowY={'auto'} borderRight={'1px solid #EFF0F1'} pt="14px">
+          {data?.history?.map((jobItem, i) => (
+            <Box
+              cursor={'pointer'}
+              px="20px"
+              backgroundColor={i === active ? '#EBF7FD' : ''}
+              key={jobItem.uid}
+              onClick={() => setActive(i)}
+            >
+              <Box
+                py="10px"
+                pl="20px"
+                position={'relative'}
+                _after={{
+                  content: '""',
+                  position: 'absolute',
+                  top: '24px',
+                  left: '-1.5px',
+                  w: '2px',
+                  h: '100%',
+                  backgroundColor: `${i === data.history.length - 1 ? 'transparent' : '#DCE7F1'}`
+                }}
+                _before={{
+                  content: '""',
+                  position: 'absolute',
+                  top: '14px',
+                  left: '-6.5px',
+                  w: '8px',
+                  h: '8px',
+                  borderRadius: '8px',
+                  backgroundColor: '#fff',
+                  border: '2px solid',
+                  zIndex: 2,
+                  borderColor: jobItem.status ? '#33BABB' : '#FF8492'
+                }}
+              >
+                <Flex mb={2} alignItems={'center'} fontWeight={'bold'}>
+                  {jobItem.status ? t('base.Success') : t('Pause Error')}, {t('Executed')}
+                  {jobItem.startTime}
+                </Flex>
+                <Box color={'blackAlpha.700'}>
+                  {jobItem?.events?.map((event) => {
+                    return (
+                      <Box key={event.id}>
+                        {event.reason},{event.message}
+                      </Box>
+                    );
+                  })}
+                </Box>
               </Box>
-              <Box ml={2} fontWeight={'bold'}>
-                {t('Executed')} {jobItem.startTime}
-              </Box>
-            </Flex>
-            <Box color={'blackAlpha.700'}>
-              {jobItem?.events?.map((event) => {
-                return (
-                  <Box key={event.id}>
-                    {event.reason},{event.message}
-                  </Box>
-                );
-              })}
             </Box>
-          </Box>
-        ))}
+          ))}
+        </Box>
+        <Box overflowY={'auto'} py="24px" px="28px">
+          <Text>
+            {t('Log')} (pod: {ActivePod?.podName})
+          </Text>
+          <Text mt="12px">{ActivePod?.logs}</Text>
+        </Box>
         {data?.history?.length === 0 && !isLoading && (
           <Flex alignItems={'center'} justifyContent={'center'} flexDirection={'column'} h={'100%'}>
             <MyIcon name="noEvents" w={'48px'} h={'48px'} color={'transparent'} />
@@ -75,7 +108,7 @@ export default function AppBaseInfo({ appName }: { appName: string }) {
             </Box>
           </Flex>
         )}
-      </Box>
+      </Flex>
     </Flex>
   );
 }

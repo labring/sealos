@@ -189,5 +189,6 @@
   "pause_message": "Are you sure to pause the cronjob?",
   "Basic Information": "Basic Information",
   "Succeeded": "Succeeded",
-  "Failures": "Failures"
+  "Failures": "Failures",
+  "Log": "Log"
 }

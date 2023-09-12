@@ -1,10 +1,10 @@
 import { CronJobEditType } from '@/types/job';
 import { str2Num } from '@/utils/tools';
 import yaml from 'js-yaml';
-import { getUserNamespace } from './user';
+import { getUserServiceAccount } from './user';
 
 export const json2CronJob = (data: CronJobEditType) => {
-  const serviceAccount = getUserNamespace({ serviceAccount: true });
+  const serviceAccount = getUserServiceAccount();
 
   const metadata = {
     name: data.jobName,
@@ -44,9 +44,9 @@ export const json2CronJob = (data: CronJobEditType) => {
     };
     const getArgs = () => {
       let command = '';
-      if (data.enableNumberCopies) {
-        command += `kubectl scale deployment/${data.launchpadName} --replicas=${data.replicas}`;
-      }
+      // if (data.enableNumberCopies) {
+      //   command += `kubectl scale deployment/${data.launchpadName} --replicas=${data.replicas}`;
+      // }
       if (data.enableResources) {
         if (command) {
           command += ' && ';

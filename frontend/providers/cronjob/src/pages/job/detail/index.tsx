@@ -6,11 +6,9 @@ import { serviceSideProps } from '@/utils/i18n';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import Header from './components/Header';
 import AppBaseInfo from './components/AppBaseInfo';
-import { GET } from '@/services/request';
-import { getJobList } from '@/api/job';
 import AppMainInfo from './components/AppMainInfo';
+import Header from './components/Header';
 
 export default function DetailPage({ appName }: { appName: string }) {
   const { screenWidth } = useGlobalStore();
@@ -48,10 +46,11 @@ export default function DetailPage({ appName }: { appName: string }) {
           maxW={'500px'}
           mr={4}
           overflow={'overlay'}
-          zIndex={1}
+          zIndex={9}
           transition={'0.4s'}
           bg={'white'}
           borderRadius={'md'}
+          border={'1px solid #DEE0E2'}
           {...(isLargeScreen
             ? {}
             : {
@@ -63,7 +62,13 @@ export default function DetailPage({ appName }: { appName: string }) {
         >
           {JobDetail ? <AppBaseInfo appName={appName} /> : <Loading loading={true} fixed={false} />}
         </Box>
-        <Flex flexDirection={'column'} h={'100%'} flex={'1 1 740px'} bg={'white'}>
+        <Flex
+          border={'1px solid #DEE0E2'}
+          flexDirection={'column'}
+          h={'100%'}
+          flex={'1 1 740px'}
+          bg={'white'}
+        >
           {JobDetail ? <AppMainInfo appName={appName} /> : <Loading loading={true} fixed={false} />}
         </Flex>
       </Flex>

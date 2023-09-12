@@ -49,7 +49,7 @@ export default function Cron({ formHook }: { formHook: UseFormReturn<CronJobEdit
   }, [getValues('schedule')]);
 
   return (
-    <Flex alignItems={'start'} mb="8px">
+    <Flex alignItems={'start'} mb="32px">
       <Label mt="6px" w={80}>
         {t('Form.Cron Expression')}
       </Label>

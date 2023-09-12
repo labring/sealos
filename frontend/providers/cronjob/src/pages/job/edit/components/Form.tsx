@@ -1,4 +1,4 @@
-import { getMyApps, getMyServiceAccount } from '@/api/app';
+import { getMyApps } from '@/api/app';
 import MyIcon from '@/components/Icon';
 import MySelect from '@/components/Select';
 import MySlider from '@/components/Slider';
@@ -8,26 +8,13 @@ import type { QueryType } from '@/types';
 import { CronJobEditType } from '@/types/job';
 import { sliderNumber2MarkList } from '@/utils/adapt';
 import { obj2Query } from '@/utils/tools';
-import {
-  Box,
-  Flex,
-  FormControl,
-  Icon,
-  Input,
-  NumberDecrementStepper,
-  NumberIncrementStepper,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-  Switch,
-  Text
-} from '@chakra-ui/react';
+import { Box, Flex, FormControl, Icon, Input, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
-import { UseFormReturn } from 'react-hook-form';
+import { Controller, UseFormReturn } from 'react-hook-form';
 import Cron from './Cron';
 import Label from './Label';
 
@@ -40,10 +27,10 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
   const { data: launchpadApps, refetch } = useQuery(['getLaunchpadApps'], getMyApps);
   const {
     register,
+    control,
     setValue,
     getValues,
-    formState: { errors },
-    watch
+    formState: { errors }
   } = formHook;
 
   const navList = [
@@ -171,7 +158,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
           {/* form */}
           <Box px={'42px'} py={'24px'}>
             {/* app name */}
-            <FormControl mb={7} isInvalid={!!errors.jobName} w={'500px'}>
+            <FormControl mb={'32px'} isInvalid={!!errors.jobName} w={'500px'}>
               <Flex alignItems={'center'}>
                 <Label w={80}>{t('job.Name')}</Label>
                 <Input
@@ -205,6 +192,11 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                 list={CronJobTypeList}
                 onchange={(val: any) => {
                   setValue('jobType', val);
+                  if (getValues('jobType') === 'image') {
+                    setValue('imageName', '');
+                    setValue('cmdParam', '');
+                    setValue('runCMD', '');
+                  }
                 }}
               />
             </Flex>
@@ -352,21 +344,31 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                 <Box pl="80px" mb={'18px'}>
                   <Label w={80}>{t('Form.App Name')}</Label>
                   <Flex alignItems={'center'}>
-                    <MySelect
-                      isDisabled={isEdit}
-                      width={'300px'}
-                      value={getValues('launchpadId')}
-                      list={launchpadApps!}
-                      onchange={(val: any) => {
-                        const launchpad = launchpadApps?.find((item) => item.id === val);
-                        if (!launchpad) return;
-                        setValue('launchpadId', val);
-                        setValue('launchpadName', launchpad.name);
-                        setValue('replicas', launchpad.replicas);
-                        setValue('cpu', launchpad.cpu);
-                        setValue('memory', launchpad.memory);
+                    <Controller
+                      control={control}
+                      name="launchpadId"
+                      rules={{
+                        required: true
                       }}
+                      render={({ field: { onChange, onBlur, value } }) => (
+                        <MySelect
+                          isDisabled={isEdit}
+                          width={'300px'}
+                          value={getValues('launchpadId')}
+                          list={launchpadApps!}
+                          onchange={(val: any) => {
+                            const launchpad = launchpadApps?.find((item) => item.id === val);
+                            if (!launchpad) return;
+                            setValue('launchpadId', val);
+                            setValue('launchpadName', launchpad.name);
+                            setValue('replicas', launchpad.replicas);
+                            setValue('cpu', launchpad.cpu);
+                            setValue('memory', launchpad.memory);
+                          }}
+                        />
+                      )}
                     />
+
                     {!isEdit && (
                       <Flex
                         ml="12px"

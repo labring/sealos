@@ -6,23 +6,12 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { podName } = req.query as {
-      podName: string;
-    };
-    if (!podName) {
-      throw new Error('podName is empty');
-    }
     const { k8sCore, namespace } = await getK8s({
       kubeconfig: await authSession(req)
     });
 
-    const response = await k8sCore.readNamespacedPodLog(
-      podName,
+    const response = await k8sCore.listNamespacedPod(
       namespace,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
       undefined,
       undefined,
       undefined,
