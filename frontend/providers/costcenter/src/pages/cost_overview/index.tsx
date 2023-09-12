@@ -1,5 +1,4 @@
 import bar_icon from '@/assert/bar_chart_4_bars_black.svg';
-import { BillingTable } from '@/components/billing/billingTable';
 import SelectRange from '@/components/billing/selectDateRange';
 import useNotEnough from '@/hooks/useNotEnough';
 import { Box, Flex, Heading, Img, useToast } from '@chakra-ui/react';
@@ -17,6 +16,7 @@ import useBillingStore from '@/stores/billing';
 import { isSameDay, isSameHour, parseISO } from 'date-fns';
 import { useRouter } from 'next/router';
 import useOverviewStore from '@/stores/overview';
+import { CommonBillingTable } from '@/components/billing/billingTable';
 
 export const RechargeContext = createContext<{ rechargeRef: MutableRefObject<any> | null }>({
   rechargeRef: null
@@ -118,7 +118,7 @@ function CostOverview() {
                 {t('Recent Transactions')}
               </Heading>
               <Box overflowX={'auto'}>
-                <BillingTable data={billingItems}></BillingTable>
+                <CommonBillingTable data={billingItems} />
                 {(isInitialLoading || billingItems.length === 0) && (
                   <Flex h="160px" justify={'center'} align={'center'}>
                     <NotFound></NotFound>

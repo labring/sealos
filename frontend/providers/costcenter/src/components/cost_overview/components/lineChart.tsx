@@ -59,10 +59,10 @@ export default function Trend({ data }: { data: BillingItem[] }) {
         return pre;
       }, [])
       .map((x) => {
-        return [x[0], formatMoney(x[1]), formatMoney(x[2]), formatMoney(x[3]), formatMoney(x[4])];
+        return x.map((v, i) => (i !== 0 ? formatMoney(v as number) : v));
       }) || [];
   const source = [...INITAL_SOURCE, ...sourceValue.reverse()];
-
+  console.log(source);
   const option = {
     xAxis: {
       type: 'time',
@@ -134,7 +134,7 @@ export default function Trend({ data }: { data: BillingItem[] }) {
 
         const { data, value } = params[0];
         const date = format(data[0], 'yyyy-MM-dd');
-        const totalCost = value[4];
+        const totalCost = value[5];
         // 创建外层 div 元素
         const resDom = document.createElement('div');
         resDom.style.background = '#FFFFFF';

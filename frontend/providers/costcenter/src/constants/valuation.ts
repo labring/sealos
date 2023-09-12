@@ -1,1 +1,1 @@
-export const CYCLE = ['Day', 'Week', 'Month', 'Year'];
+export const CYCLE = ['Hour', 'Day', 'Week', 'Month', 'Year'] as const;
