@@ -36,7 +36,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	infostreamv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
@@ -53,7 +52,6 @@ func init() {
 	utilruntime.Must(ntf.AddToScheme(scheme))
 	utilruntime.Must(issuerv1.AddToScheme(scheme))
 	utilruntime.Must(accountv1.AddToScheme(scheme))
-	utilruntime.Must(infostreamv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -99,13 +97,8 @@ func main() {
 
 	// get options for this Operator
 	options := util.GetOptions()
-	// mongoURI := options.GetEnvOptions().MongoURI
 	licenseDB := util.NewMongoDB(database.DefaultDBName, "license")
 	clusterLicenseDB := util.NewMongoDB(database.DefaultDBName, "clusterlicense")
-	if err != nil {
-		setupLog.Error(err, "unable to create database")
-		os.Exit(1)
-	}
 	defer func() {
 		_ = licenseDB.Disconnect()
 		_ = clusterLicenseDB.Disconnect()

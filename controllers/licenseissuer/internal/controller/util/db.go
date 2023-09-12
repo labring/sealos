@@ -31,7 +31,7 @@ type MongoHandler interface {
 	FindDoc(condition interface{}) (bson.M, error)
 	FindDocs(condition interface{}) ([]bson.M, error)
 	UpsertDoc(doc interface{}, filter interface{}) (*mongo.UpdateResult, error)
-	InsertIfNotExisted(doc interface{}, filter interface{}) error
+	InsertIfNotExisted(doc interface{}, filter interface{}) (bool, error)
 	InsertDoc(doc interface{}) error
 	Disconnect() error
 }
@@ -55,18 +55,18 @@ func (m *MongoDB) UpsertDoc(doc interface{}, filter interface{}) (*mongo.UpdateR
 	return res, err
 }
 
-func (m *MongoDB) InsertIfNotExisted(doc interface{}, filter interface{}) error {
+func (m *MongoDB) InsertIfNotExisted(doc interface{}, filter interface{}) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	count, err := m.DB.client.Database(m.DBName).Collection(m.COLName).CountDocuments(ctx, filter)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if count == 0 {
 		_, err := m.DB.client.Database(m.DBName).Collection(m.COLName).InsertOne(ctx, doc)
-		return err
+		return true, err
 	}
-	return nil
+	return false, nil
 }
 
 func (m *MongoDB) InsertDoc(doc interface{}) error {
@@ -103,10 +103,7 @@ func (m *MongoDB) IsExisted(condition interface{}) bool {
 	defer cancel()
 	single := m.DB.client.Database(m.DBName).Collection(m.COLName).
 		FindOne(ctx, condition)
-	if single.Err() == mongo.ErrNoDocuments {
-		return false
-	}
-	return true
+	return single.Err() != mongo.ErrNoDocuments
 }
 
 func (m *MongoDB) Disconnect() error {
@@ -126,7 +123,7 @@ type mongoDB struct {
 	uri     string
 }
 
-var db *mongoDB = &mongoDB{}
+var db = &mongoDB{}
 
 func init() {
 	db.ctx = context.Background()

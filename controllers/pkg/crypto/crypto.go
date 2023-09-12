@@ -34,7 +34,7 @@ import (
 
 const defaultEncryptionKey = "0123456789ABCDEF0123456789ABCDEF"
 
-var encryptionKey = "Bg1c3Dd5e9e0F84bdF0A5887cF43aB63"
+var encryptionKey = defaultEncryptionKey
 
 // Encrypt encrypts the given plaintext using AES-GCM.
 func Encrypt(plaintext []byte) (string, error) {

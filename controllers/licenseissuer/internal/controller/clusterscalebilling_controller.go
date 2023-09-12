@@ -69,9 +69,7 @@ func (r *ClusterScaleBillingReconciler) Reconcile(ctx context.Context, req ctrl.
 		}
 	}
 
-	r.Client.Status().Update(ctx, csb)
-
-	return ctrl.Result{}, nil
+	return ctrl.Result{}, r.Client.Status().Update(ctx, csb)
 }
 
 // SetupWithManager sets up the controller with the Manager.

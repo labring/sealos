@@ -40,7 +40,7 @@ func NewPodValidator(c client.Client) admission.Handler {
 }
 
 // podValidator admits a pod if a specific annotation exists.
-func (v *podValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (v *podValidator) Handle(_ context.Context, _ admission.Request) admission.Response {
 	cs := util.GetClusterStatus()
 	log.Info("BillingPolicy", "policy:", cs.BillingPolicy)
 	if util.GetValidator().Validate() {

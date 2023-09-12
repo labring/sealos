@@ -36,6 +36,7 @@ env:
   DEFAULT_OWNER: "labring"
   CRYPTOKEY: ${{ secrets.CONTROLLER_BUILD_CRYPTOKEY }}
   LICENSE_KEY: ${{ secrets.LICENSE_KEY }}
+  LICENSE_CRYPTOKEY: ${{ secrets.LICENSE_CRYPTOKEY }}
 jobs:
   resolve-modules:
     runs-on: ubuntu-20.04

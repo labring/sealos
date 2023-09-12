@@ -157,7 +157,7 @@ func (o *OperatorOptions) initOptions() {
 	o.RunnableOptions.Period[ClusterBillingWork] = 8 * time.Hour
 
 	o.RunnableOptions.Policy[ClusterBillingMonitor] = PeriodicPolicy
-	o.RunnableOptions.Period[ClusterBillingMonitor] = 8 * time.Second
+	o.RunnableOptions.Period[ClusterBillingMonitor] = 24 * time.Hour
 	// Add more tasks Policy and Period here
 }
 

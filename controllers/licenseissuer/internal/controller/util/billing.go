@@ -37,12 +37,6 @@ type ClusterScaleBilling struct {
 	tnr TotalNodesResource
 }
 
-type billing struct {
-	ClusterID  string `json:"clusterID" bson:"clusterID"`
-	CreateTime string `json:"createTime" bson:"createTime"`
-	TotalFee   int64  `json:"totalFee" bson:"totalFee"`
-}
-
 type Prices struct {
 	Property string `json:"property" bson:"property"`
 	Price    string `json:"price" bson:"price"`
@@ -94,18 +88,21 @@ func (c *ClusterScaleBilling) billingWork(ti *TaskInstance) error {
 	}
 
 	// IF record error, will record later
-	err = mongoDB.InsertIfNotExisted(doc, bson.M{"createTime": doc["createTime"]})
+	ok, err := mongoDB.InsertIfNotExisted(doc, bson.M{"createTime": doc["createTime"]})
 	if err != nil {
 		ti.logger.Info("failed to save the billing info", "err", err)
 		return err
 	}
-	// IF record success, will update the usage
-	// else will update the usage later
-	return AccumulateUsage(ti.ctx, ti.Client, fee)
+	if ok {
+		// insert success
+		return AccumulateUsage(ti.ctx, ti.Client, fee)
+	}
+	// doc existed
+	return nil
 }
 
 func (c *ClusterScaleBilling) GetPrices() map[string]common.Price {
-	var priceMap map[string]common.Price
+	priceMap := make(map[string]common.Price)
 	mongoDB := NewMongoDB("cluster", "prices")
 	doc, err := mongoDB.FindDocs(bson.M{})
 	if err != nil || doc == nil {
@@ -120,6 +117,7 @@ func (c *ClusterScaleBilling) GetPrices() map[string]common.Price {
 			return common.DefaultPrices
 		}
 		var priceInt64 int64
+		// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
 		priceInt64, err := crypto.DecryptInt64WithKey(price.Price, []byte(CryptoKey))
 		if err != nil {
 			priceInt64 = common.DefaultPrices[price.Property].Price

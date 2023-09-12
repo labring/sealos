@@ -20,7 +20,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/apache/apisix-ingress-controller/pkg/log"
 	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/pkg/crypto"
 	"k8s.io/apimachinery/pkg/types"
@@ -101,7 +100,6 @@ func (cv *ClusterStatus) meteringForClusterScaleBilling(ctx context.Context, cli
 	}
 	if err := client.Get(ctx, id, csb); err != nil {
 		cv.CSBS.Quota = 0
-		log.Infof("Failed to get cluster scale billing: %v", err)
 		return err
 	}
 	quota, err := crypto.DecryptInt64WithKey(csb.Status.EncryptQuota, []byte(CryptoKey))
@@ -131,10 +129,7 @@ func (cv *ClusterStatus) Validate() bool {
 }
 
 func (cv *ClusterStatus) validateForClusterScaleBilling() bool {
-	if cv.CSBS.Used > cv.CSBS.Quota {
-		return false
-	}
-	return true
+	return cv.CSBS.Used <= cv.CSBS.Quota
 }
 
 func (cv *ClusterStatus) TriggerForClusterScaleQuato(quota int64) {
