@@ -16,6 +16,7 @@ package care
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io"
@@ -23,6 +24,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -40,6 +42,7 @@ type httpProber struct {
 	Body               string
 	ValidStatusCodes   []int
 	InsecureSkipVerify bool
+	timeout            time.Duration
 
 	client      *http.Client
 	validStatus sets.Int
@@ -53,6 +56,7 @@ func (p *httpProber) RegisterFlags(fs *pflag.FlagSet) {
 	fs.StringToStringVar(&p.Headers, "health-req-headers", map[string]string{}, "http request headers")
 	fs.IntSliceVar(&p.ValidStatusCodes, "health-status", []int{}, "valid status codes")
 	fs.BoolVar(&p.InsecureSkipVerify, "health-insecure-skip-verify", true, "skip verify insecure request")
+	fs.DurationVar(&p.timeout, "health-timeout", 10*time.Second, "http probe timeout")
 }
 
 func (p *httpProber) ValidateAndSetDefaults() error {
@@ -88,7 +92,9 @@ func (p *httpProber) Probe(host, port string) error {
 	if len(p.Body) > 0 {
 		body = bytes.NewBufferString(p.Body)
 	}
-	req, err := http.NewRequest(p.Method, uri.String(), body)
+	ctx, cancel := context.WithTimeout(context.Background(), p.timeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, p.Method, uri.String(), body)
 	if err != nil {
 		return err
 	}
