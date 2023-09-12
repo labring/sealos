@@ -17,13 +17,11 @@ package k3s
 import (
 	"context"
 	"fmt"
-	"path"
 	"path/filepath"
 
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/constants"
-
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/rand"
@@ -38,7 +36,7 @@ func (k *K3s) initMaster0() error {
 		k.generateAndSendInitConfig,
 		func() error { return k.enableK3sService(master0) },
 		k.pullKubeConfigFromMaster0,
-		func() error { return k.copyKubeConfigFileToAllNodes([]string{k.cluster.GetMaster0IPAndPort()}) },
+		func() error { return k.copyKubeConfigFileToNodes(k.cluster.GetMaster0IPAndPort()) },
 	)
 }
 
@@ -97,7 +95,7 @@ func (k *K3s) joinMaster(master string) error {
 			return k.sshClient.Copy(master, filepath.Join(k.pathResolver.EtcPath(), defaultJoinMastersFilename), defaultK3sConfigPath)
 		},
 		func() error { return k.enableK3sService(master) },
-		func() error { return k.copyKubeConfigFileToAllNodes([]string{master}) },
+		func() error { return k.copyKubeConfigFileToNodes(master) },
 	)
 }
 
@@ -120,7 +118,7 @@ func (k *K3s) joinNode(node string) error {
 			return k.sshClient.Copy(node, filepath.Join(k.pathResolver.EtcPath(), defaultJoinNodesFilename), defaultK3sConfigPath)
 		},
 		func() error { return k.enableK3sService(node) },
-		func() error { return k.copyKubeConfigFileToAllNodes([]string{node}) },
+		func() error { return k.copyKubeConfigFileToNodes(node) },
 	)
 }
 
@@ -193,21 +191,18 @@ func (k *K3s) pullKubeConfigFromMaster0() error {
 	return k.sshClient.Fetch(k.cluster.GetMaster0IPAndPort(), defaultKubeConfigPath, dest)
 }
 
-func (k *K3s) copyKubeConfigFileToAllNodes(hosts []string) error {
+func (k *K3s) copyKubeConfigFileToNodes(hosts ...string) error {
 	src := k.pathResolver.AdminFile()
-	dst := path.Join(".kube", "config")
-	return k.sendFileToHosts(hosts, src, dst)
-}
-
-func (k *K3s) sendFileToHosts(Hosts []string, src, dst string) error {
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, node := range Hosts {
+	for _, node := range hosts {
 		node := node
 		eg.Go(func() error {
-			if err := k.sshClient.Copy(node, src, dst); err != nil {
-				return fmt.Errorf("send file failed %v", err)
+			home, err := k.sshClient.CmdToString(node, "echo $HOME", "")
+			if err != nil {
+				return err
 			}
-			return nil
+			dst := filepath.Join(home, ".kube", "config")
+			return k.sshClient.Copy(node, src, dst)
 		})
 	}
 	return eg.Wait()

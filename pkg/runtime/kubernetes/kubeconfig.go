@@ -16,14 +16,30 @@ limitations under the License.
 
 package kubernetes
 
-import "path"
+import (
+	"context"
+	"path/filepath"
+
+	"golang.org/x/sync/errgroup"
+)
 
 const copyKubeAdminConfigCommand = `rm -rf $HOME/.kube/config && mkdir -p $HOME/.kube && cp /etc/kubernetes/admin.conf $HOME/.kube/config`
 
-func (k *KubeadmRuntime) copyKubeConfigFileToNodes(hosts []string) error {
+func (k *KubeadmRuntime) copyKubeConfigFileToNodes(hosts ...string) error {
 	src := k.pathResolver.AdminFile()
-	dst := path.Join(".kube", "config")
-	return k.sendFileToHosts(hosts, src, dst)
+	eg, _ := errgroup.WithContext(context.Background())
+	for _, node := range hosts {
+		node := node
+		eg.Go(func() error {
+			home, err := k.sshClient.CmdToString(node, "echo $HOME", "")
+			if err != nil {
+				return err
+			}
+			dst := filepath.Join(home, ".kube", "config")
+			return k.sshClient.Copy(node, src, dst)
+		})
+	}
+	return eg.Wait()
 }
 
 func (k *KubeadmRuntime) copyMasterKubeConfig(host string) error {
