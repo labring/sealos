@@ -27,5 +27,4 @@ func GetAppDetails(c *gin.Context, client *mongo.Client) {
 		"message":    "get app details success",
 		"payDetails": payDetails,
 	})
-	return
 }

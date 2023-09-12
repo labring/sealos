@@ -12,8 +12,8 @@ import (
 func GetExchangeRate(client *mongo.Client, payMethod, currency string) (float64, error) {
 	coll := helper.InitDBAndColl(client, helper.Database, helper.PayMethodColl)
 	filter := bson.D{
-		{"payMethod", payMethod},
-		{"currency", currency},
+		{Key: "payMethod", Value: payMethod},
+		{Key: "currency", Value: currency},
 	}
 
 	var result bson.M
@@ -58,8 +58,8 @@ func InsertPayMethod(request *helper.Request, client *mongo.Client) (*mongo.Inse
 func CheckPayMethodExistOrNot(client *mongo.Client, currency, payMethod string) (bool, error) {
 	coll := helper.InitDBAndColl(client, helper.Database, helper.PayMethodColl)
 	filter := bson.D{
-		{"payMethod", payMethod},
-		{"currency", currency},
+		{Key: "payMethod", Value: payMethod},
+		{Key: "currency", Value: currency},
 	}
 
 	var result bson.M

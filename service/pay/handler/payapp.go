@@ -39,7 +39,7 @@ func InsertApp(client *mongo.Client, appID int64, sign, appName string, methods 
 // CheckAppAllowOrNot checks if the appID is allowed to use the payMethod
 func CheckAppAllowOrNot(client *mongo.Client, appID int64, payMethod string) error {
 	coll := helper.InitDBAndColl(client, helper.Database, helper.AppColl)
-	filter := bson.D{{"appID", appID}}
+	filter := bson.D{{Key: "appID", Value: appID}}
 	var result bson.M
 	if err := coll.FindOne(context.Background(), filter).Decode(&result); err != nil {
 		fmt.Println("no allowed appID could be found:", err)
@@ -57,7 +57,7 @@ func CheckAppAllowOrNot(client *mongo.Client, appID int64, payMethod string) err
 
 func CheckAppNameExistOrNot(client *mongo.Client, appName string) error {
 	coll := helper.InitDBAndColl(client, helper.Database, helper.AppColl)
-	filter := bson.D{{"payAppName", appName}}
+	filter := bson.D{{Key: "payAppName", Value: appName}}
 
 	var result bson.M
 	err := coll.FindOne(context.Background(), filter).Decode(&result)

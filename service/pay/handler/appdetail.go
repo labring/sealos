@@ -19,7 +19,7 @@ type PMDetail struct {
 
 func GetAppDetails(request *helper.Request, client *mongo.Client) ([]PMDetail, error) {
 	appID := request.AppID
-	filter := bson.D{{"appID", appID}}
+	filter := bson.D{{Key: "appID", Value: appID}}
 	appColl := helper.InitDBAndColl(client, helper.Database, helper.AppColl)
 
 	var appResult bson.M
@@ -33,7 +33,7 @@ func GetAppDetails(request *helper.Request, client *mongo.Client) ([]PMDetail, e
 	var payDetails []PMDetail
 	for _, method := range methods {
 		pmColl := helper.InitDBAndColl(client, helper.Database, helper.PayMethodColl)
-		filter := bson.D{{"payMethod", method}}
+		filter := bson.D{{Key: "payMethod", Value: method}}
 
 		// query operation
 		cursor, err := pmColl.Find(context.TODO(), filter)

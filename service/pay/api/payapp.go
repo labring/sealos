@@ -56,5 +56,4 @@ func CreatePayApp(c *gin.Context, client *mongo.Client) {
 		"sign":       sign,
 		"result":     result,
 	})
-	return
 }
