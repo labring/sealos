@@ -56,7 +56,6 @@ type NamespaceBillingHistoryReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
 func (r *NamespaceBillingHistoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-
 	dbCtx := context.Background()
 	dbClient, err := database.NewMongoDB(dbCtx, r.MongoDBURI)
 	if err != nil {
@@ -73,7 +72,7 @@ func (r *NamespaceBillingHistoryReconciler) Reconcile(ctx context.Context, req c
 	nsHistory := &accountv1.NamespaceBillingHistory{}
 	err = r.Get(ctx, req.NamespacedName, nsHistory)
 	if err == nil {
-		if time.Now().Sub(nsHistory.CreationTimestamp.Time) > 4*time.Minute {
+		if time.Since(nsHistory.CreationTimestamp.Time) > 4*time.Minute {
 			if err = r.Delete(ctx, nsHistory); err != nil {
 				r.Logger.Error(err, "delete nsHistory failed")
 				return ctrl.Result{Requeue: true}, err
@@ -82,9 +81,8 @@ func (r *NamespaceBillingHistoryReconciler) Reconcile(ctx context.Context, req c
 		if err = r.reconcile(ctx, req, dbClient, nsHistory); err != nil {
 			r.Logger.Error(err, "reconcile failed")
 			return ctrl.Result{Requeue: true}, err
-		} else {
-			return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 		}
+		return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 	}
 
 	return ctrl.Result{}, client.IgnoreNotFound(err)
