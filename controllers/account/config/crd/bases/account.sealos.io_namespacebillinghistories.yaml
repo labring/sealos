@@ -46,8 +46,6 @@ spec:
               type:
                 type: integer
             required:
-            - endTime
-            - startTime
             - type
             type: object
           status:

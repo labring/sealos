@@ -25,8 +25,8 @@ import (
 
 // NamespaceBillingHistorySpec defines the desired state of NamespaceBillingHistory
 type NamespaceBillingHistorySpec struct {
-	StartTime metav1.Time `json:"startTime"`
-	EndTime   metav1.Time `json:"endTime"`
+	StartTime metav1.Time `json:"startTime,omitempty"`
+	EndTime   metav1.Time `json:"endTime,omitempty"`
 	Type      Type        `json:"type"`
 }
 
