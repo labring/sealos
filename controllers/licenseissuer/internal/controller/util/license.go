@@ -149,7 +149,7 @@ func CheckLicenseExists(meta LicenseMeta, db MongoHandler) bool {
 		return true
 	}
 	// database check
-	filter := bson.M{"meta": bson.M{"token": meta.Token}}
+	filter := bson.M{"meta": bson.M{"$elementMatch": bson.M{"token": meta.Token}}}
 	ok = db.IsExisted(filter)
 
 	// etcd check

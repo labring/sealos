@@ -99,6 +99,11 @@ spec:
             secretKeyRef:
               key: Namespace
               name: licenseissuer-env
+        - name: BILLING_POLICY
+          valueFrom:
+            secretKeyRef:
+              key: BillingPolicy
+              name: licenseissuer-env
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

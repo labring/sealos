@@ -5,10 +5,10 @@ USER 65532:65532
 COPY registry registry
 COPY manifests manifests
 
-ENV canConnectToExternalNetwork "true"
-ENV enableMonitor "true"
+
 ENV MongoURI ""
 ENV PasswordSalt ""
+ENV BillingPolicy "account"
 ENV MongoUserDB "test"
 ENV MongoUserCollection "user"
 ENV Namespace "sealos-system"
@@ -18,6 +18,7 @@ ENV RegisterURL "https://license.sealos.io/register"
 ENV CloudSyncURL "https://license.sealos.io/datasync"
 ENV LicenseMonitorURL "https://license.sealos.io/license"
 ENV NetworkProbeURL "https://license.sealos.io/probe"
+
 
 
 

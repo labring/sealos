@@ -35,13 +35,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	infostreamv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
-	wb "github.com/labring/sealos/controllers/licenseissuer/internal/webhook"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -172,8 +170,8 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "ClusterScaleBilling")
 		os.Exit(1)
 	}
-	pv := wb.NewPodValidator(mgr.GetClient())
-	mgr.GetWebhookServer().Register("/validate-infostream-sealos-io-v1-clusterscalebilling", &webhook.Admission{Handler: pv})
+	// pv := wb.NewPodValidator(mgr.GetClient())
+	/// mgr.GetWebhookServer().Register("/validate-infostream-sealos-io-v1-clusterscalebilling", &webhook.Admission{Handler: pv})
 	//+kubebuilder:scaffold:builder
 
 	// simulate the webhook server

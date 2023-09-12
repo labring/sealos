@@ -42,7 +42,7 @@ func NewPodValidator(c client.Client) admission.Handler {
 // podValidator admits a pod if a specific annotation exists.
 func (v *podValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
 	cs := util.GetClusterStatus()
-	log.Info("policy:", cs.BillingPolicy, "quota:", cs.CSBS.Quota, "used:", cs.CSBS.Used)
+	log.Info("BillingPolicy", "policy:", cs.BillingPolicy)
 	if util.GetValidator().Validate() {
 		return admission.Allowed("license is valid, no need to validate")
 	}

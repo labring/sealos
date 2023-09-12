@@ -27,12 +27,12 @@ import (
 
 // mongo db handler
 type MongoHandler interface {
-	IsExisted(condition bson.M) bool
-	FindDoc(condition bson.M) (bson.M, error)
-	FindDocs(condition bson.M) ([]bson.M, error)
-	UpsertDoc(doc bson.M, filter bson.M) (*mongo.UpdateResult, error)
-	InsertIfNotExisted(doc bson.M, filter bson.M) error
-	InsertDoc(doc bson.M) error
+	IsExisted(condition interface{}) bool
+	FindDoc(condition interface{}) (bson.M, error)
+	FindDocs(condition interface{}) ([]bson.M, error)
+	UpsertDoc(doc interface{}, filter interface{}) (*mongo.UpdateResult, error)
+	InsertIfNotExisted(doc interface{}, filter interface{}) error
+	InsertDoc(doc interface{}) error
 	Disconnect() error
 }
 
@@ -42,7 +42,7 @@ type MongoDB struct {
 	COLName string
 }
 
-func (m *MongoDB) UpsertDoc(doc bson.M, filter bson.M) (*mongo.UpdateResult, error) {
+func (m *MongoDB) UpsertDoc(doc interface{}, filter interface{}) (*mongo.UpdateResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	update := bson.M{
@@ -55,7 +55,7 @@ func (m *MongoDB) UpsertDoc(doc bson.M, filter bson.M) (*mongo.UpdateResult, err
 	return res, err
 }
 
-func (m *MongoDB) InsertIfNotExisted(doc bson.M, filter bson.M) error {
+func (m *MongoDB) InsertIfNotExisted(doc interface{}, filter interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	count, err := m.DB.client.Database(m.DBName).Collection(m.COLName).CountDocuments(ctx, filter)
@@ -69,14 +69,14 @@ func (m *MongoDB) InsertIfNotExisted(doc bson.M, filter bson.M) error {
 	return nil
 }
 
-func (m *MongoDB) InsertDoc(doc bson.M) error {
+func (m *MongoDB) InsertDoc(doc interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	_, err := m.DB.client.Database(m.DBName).Collection(m.COLName).InsertOne(ctx, doc)
 	return err
 }
 
-func (m *MongoDB) FindDocs(condition bson.M) ([]bson.M, error) {
+func (m *MongoDB) FindDocs(condition interface{}) ([]bson.M, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	var docs []bson.M
@@ -89,7 +89,7 @@ func (m *MongoDB) FindDocs(condition bson.M) ([]bson.M, error) {
 	return docs, err
 }
 
-func (m *MongoDB) FindDoc(condition bson.M) (bson.M, error) {
+func (m *MongoDB) FindDoc(condition interface{}) (bson.M, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	var doc bson.M
@@ -98,7 +98,7 @@ func (m *MongoDB) FindDoc(condition bson.M) (bson.M, error) {
 	return doc, err
 }
 
-func (m *MongoDB) IsExisted(condition bson.M) bool {
+func (m *MongoDB) IsExisted(condition interface{}) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	single := m.DB.client.Database(m.DBName).Collection(m.COLName).
