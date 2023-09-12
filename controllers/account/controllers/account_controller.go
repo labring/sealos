@@ -229,14 +229,6 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return ctrl.Result{}, nil
 }
 
-func GetUserOwner(user *userV1.User) string {
-	own := user.Annotations[userV1.UserLabelOwnerKey]
-	if own == "" {
-		return user.Name
-	}
-	return own
-}
-
 func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamespace string, userNamespace string) (*accountv1.Account, error) {
 	account := accountv1.Account{
 		ObjectMeta: metav1.ObjectMeta{
@@ -538,11 +530,23 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		return fmt.Errorf("mongo url is empty")
 	}
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&userV1.User{}, builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}))).
+		For(&userV1.User{}, builder.WithPredicates(predicate.And(OnlyCreatePredicate{}, predicate.Funcs{
+			CreateFunc: func(createEvent event.CreateEvent) bool {
+				return createEvent.Object.GetAnnotations()[userV1.UserAnnotationOwnerKey] == createEvent.Object.GetName()
+			},
+		}))).
 		Watches(&source.Kind{Type: &accountv1.Payment{}}, &handler.EnqueueRequestForObject{}).
 		Watches(&source.Kind{Type: &accountv1.AccountBalance{}}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(&NamespaceFilterPredicate{Namespace: r.AccountSystemNamespace})).
 		WithOptions(rateOpts).
 		Complete(r)
+}
+
+func GetUserOwner(user *userV1.User) string {
+	own := user.Annotations[userV1.UserAnnotationOwnerKey]
+	if own == "" {
+		return user.Name
+	}
+	return own
 }
 
 type NamespaceFilterPredicate struct {
