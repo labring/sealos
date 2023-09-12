@@ -20,8 +20,8 @@ type BillDetail struct {
 func GetBillDetails(request *helper.Request, client *mongo.Client) ([]BillDetail, error) {
 	coll := helper.InitDBAndColl(client, helper.Database, helper.PaymentDetailsColl)
 	filter := bson.D{
-		{"user", request.User},
-		{"appID", request.AppID},
+		{Key: "user", Value: request.User},
+		{Key: "appID", Value: request.AppID},
 	}
 
 	cursor, err := coll.Find(context.Background(), filter)

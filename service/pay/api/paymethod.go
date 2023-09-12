@@ -17,8 +17,8 @@ func CreatePayMethod(c *gin.Context, client *mongo.Client) {
 		return
 	}
 
-	if ok, err := handler.CheckPayMethodExistOrNot(client, request.Currency, request.PayMethod); ok == true && err == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("paymethod is exist")})
+	if ok, err := handler.CheckPayMethodExistOrNot(client, request.Currency, request.PayMethod); ok && err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "paymethod is exist"})
 		return
 	}
 
@@ -32,7 +32,6 @@ func CreatePayMethod(c *gin.Context, client *mongo.Client) {
 		"message": "create pay method success",
 		"result":  result,
 	})
-	return
 }
 
 // TODO Change the amount or exchange rate or tax rate for a payment method

@@ -66,7 +66,6 @@ func GetWechatURL(c *gin.Context, request *helper.Request, client *mongo.Client)
 		"user":     user,
 		"orderID":  orderID,
 	})
-	return
 }
 
 func GetWechatPaymentStatus(c *gin.Context, request *helper.Request, client *mongo.Client) {

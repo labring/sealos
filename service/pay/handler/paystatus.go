@@ -13,7 +13,7 @@ import (
 
 func GetPaymentStatus(client *mongo.Client, orderID string) (string, error) {
 	coll := helper.InitDBAndColl(client, helper.Database, helper.PaymentDetailsColl)
-	filter := bson.D{{"orderID", orderID}}
+	filter := bson.D{{Key: "orderID", Value: orderID}}
 	var paymentResult bson.M
 	if err := coll.FindOne(context.TODO(), filter).Decode(&paymentResult); err != nil {
 		fmt.Println("read data of the collection paymentDetails failed:", err)
@@ -29,10 +29,10 @@ func GetPaymentStatus(client *mongo.Client, orderID string) (string, error) {
 
 func UpdatePaymentStatus(client *mongo.Client, orderID string, status string) (string, error) {
 	coll := helper.InitDBAndColl(client, helper.Database, helper.PaymentDetailsColl)
-	filter := bson.D{{"orderID", orderID}}
+	filter := bson.D{{Key: "orderID", Value: orderID}}
 	update := bson.D{
-		{"$set", bson.D{
-			{"status", status},
+		{Key: "$set", Value: bson.D{
+			{Key: "status", Value: status},
 		}},
 	}
 	var paymentResult bson.M
@@ -74,9 +74,9 @@ func CheckOrderExistOrNot(client *mongo.Client, request *helper.Request) error {
 	appID := request.AppID
 	coll := helper.InitDBAndColl(client, helper.Database, helper.OrderDetailsColl)
 	filter := bson.D{
-		{"orderID", orderID},
-		{"payMethod", payMethod},
-		{"appID", appID},
+		{Key: "orderID", Value: orderID},
+		{Key: "payMethod", Value: payMethod},
+		{Key: "appID", Value: appID},
 	}
 	// Execute the MongoDB query
 	var result OrderDetails

@@ -68,7 +68,6 @@ func GetStripeSession(c *gin.Context, request *helper.Request, client *mongo.Cli
 		"user":      user,
 		"orderID":   orderID,
 	})
-	return
 }
 
 func GetStripePaymentStatus(c *gin.Context, request *helper.Request, client *mongo.Client) {

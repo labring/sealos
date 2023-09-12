@@ -27,5 +27,4 @@ func GetBill(c *gin.Context, client *mongo.Client) {
 		"message":     "get the bill details of user(" + request.User + ") success",
 		"billDetails": billDetails,
 	})
-	return
 }

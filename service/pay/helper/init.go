@@ -33,8 +33,8 @@ func Authenticate(r *Request, client *mongo.Client) error {
 
 	// create filter
 	filter := bson.D{
-		{"appID", appID},
-		{"sign", sign},
+		{Key: "appID", Value: appID},
+		{Key: "sign", Value: sign},
 	}
 
 	var result bson.M
