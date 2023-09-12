@@ -23,10 +23,11 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
+	"sigs.k8s.io/yaml"
+
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"go.mongodb.org/mongo-driver/mongo"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 )
 
 func TestMongoDB_GetMeteringOwnerTimeResult(t *testing.T) {
@@ -43,17 +44,10 @@ func TestMongoDB_GetMeteringOwnerTimeResult(t *testing.T) {
 		}
 	}()
 
-	// 2023-04-30T17:00:00.000+00:00
-	queryTime := time.Date(2023, 7, 14, 04, 0, 0, 0, time.UTC)
+	now := time.Now()
+	queryTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC().Add(-time.Hour)
 
-	//[]string{"ns-vd1k1dk3", "ns-cv46sqlr", "ns-wu8nptea", "ns-a2sh413v", "ns-l8ad16ee"}
-	got, err := m.GetMeteringOwnerTimeResult(queryTime, []string{"ns-vd1k1dk3"}, []string{"cpu", "memory", "storage"}, "ns-vd1k1dk3")
-	if err != nil {
-		t.Errorf("failed to get metering owner time result: error = %v", err)
-	}
-	t.Logf("got: %v", got)
-
-	got, err = m.GetMeteringOwnerTimeResult(queryTime, []string{"ns-7wdqa36k"}, nil, "ns-7wdqa36k")
+	got, err := m.GetMeteringOwnerTimeResult(queryTime, []string{"ns-0nfm8mkr"}, nil)
 	if err != nil {
 		t.Errorf("failed to get metering owner time result: error = %v", err)
 	}
@@ -73,14 +67,13 @@ func TestMongoDB_QueryBillingRecords(t *testing.T) {
 		}
 	}()
 
-	// 2023-05-09T05:00:00.000+00:00
-	queryTime := time.Date(2023, 5, 9, 5, 0, 0, 0, time.UTC)
-
+	testTime := time.Date(2021, 1, 1, 0, 0, 0, 0, time.Local)
+	startTime, endTime := metav1.Time{Time: testTime}, metav1.Time{Time: testTime.Add(3 * humanize.Day)}
 	// page 1 pageSize 1 type -1
 	query1 := &accountv1.BillingRecordQuery{
 		Spec: accountv1.BillingRecordQuerySpec{
-			StartTime: metav1.Time{Time: queryTime},
-			EndTime:   metav1.Time{Time: queryTime.Add(3 * humanize.Day)},
+			StartTime: startTime,
+			EndTime:   endTime,
 			Page:      1,
 			PageSize:  1,
 			//OrderID:   "random_order_id_1",
@@ -91,8 +84,8 @@ func TestMongoDB_QueryBillingRecords(t *testing.T) {
 	// page 1 pageSize 5 type 1
 	query2 := &accountv1.BillingRecordQuery{
 		Spec: accountv1.BillingRecordQuerySpec{
-			StartTime: metav1.Time{Time: queryTime},
-			EndTime:   metav1.Time{Time: queryTime.Add(3 * humanize.Day)},
+			StartTime: startTime,
+			EndTime:   endTime,
 			Page:      1,
 			PageSize:  5,
 			//OrderID:   "random_order_id_1",
@@ -103,8 +96,8 @@ func TestMongoDB_QueryBillingRecords(t *testing.T) {
 	// page 1 pageSize 5 type 0
 	query3 := &accountv1.BillingRecordQuery{
 		Spec: accountv1.BillingRecordQuerySpec{
-			StartTime: metav1.Time{Time: queryTime},
-			EndTime:   metav1.Time{Time: queryTime.Add(3 * humanize.Day)},
+			StartTime: startTime,
+			EndTime:   endTime,
 			Page:      1,
 			PageSize:  5,
 			//OrderID:   "random_order_id_1",
@@ -120,12 +113,22 @@ func TestMongoDB_QueryBillingRecords(t *testing.T) {
 		},
 	}
 
-	billingRecordQueryList := []*accountv1.BillingRecordQuery{
-		query1, query2, query3, query4,
+	query5 := &accountv1.BillingRecordQuery{
+		Spec: accountv1.BillingRecordQuerySpec{
+			StartTime: startTime,
+			EndTime:   endTime,
+			Page:      2,
+			PageSize:  5,
+			Namespace: "ns-vd1k1dk3",
+			Type:      1,
+		},
 	}
 
+	billingRecordQueryList := []*accountv1.BillingRecordQuery{
+		query1, query2, query3, query4, query5,
+	}
 	for _, billingRecordQuery := range billingRecordQueryList {
-		err = m.QueryBillingRecords(billingRecordQuery, "ns-vd1k1dk3")
+		err = m.QueryBillingRecords(billingRecordQuery, "vd1k1dk3")
 		if err != nil {
 			t.Errorf("failed to query billing records: error = %v", err)
 		}
@@ -133,9 +136,11 @@ func TestMongoDB_QueryBillingRecords(t *testing.T) {
 		if err != nil {
 			t.Errorf("failed to marshal billingRecordQuery: error = %v", err)
 		}
-		t.Logf("billingRecordQuery: %s", string(data))
+		t.Logf("billingRecordQuery: %s\n", string(data))
 	}
 }
+
+var testTime = time.Date(2023, 5, 9, 5, 0, 0, 0, time.UTC)
 
 func TestMongoDB_SaveBillingsWithAccountBalance(t *testing.T) {
 	type fields struct {
@@ -153,27 +158,33 @@ func TestMongoDB_SaveBillingsWithAccountBalance(t *testing.T) {
 	// Generate a large number of AccountBalanceSpec data
 	numRecords := 10
 	accountBalanceSpecs := make([]*accountv1.AccountBalanceSpec, numRecords+10)
+
 	for i := 0; i < numRecords; i++ {
 		accountBalanceSpecs[i] = &accountv1.AccountBalanceSpec{
-			OrderID: fmt.Sprintf("random_order_id_%d", i+1),
-			Owner:   "ns-vd1k1dk3",
-			Time:    metav1.Time{Time: time.Date(2023, 5, 9, 5, 0, 0, 0, time.UTC)},
-			Type:    0,
-			Costs: map[string]int64{
-				"cpu":     int64(1000 + i),
-				"memory":  int64(2000 + i),
-				"storage": int64(3000 + i),
+			Time: metav1.Time{Time: testTime},
+			AccountBalanceSpecInline: accountv1.AccountBalanceSpecInline{
+				OrderID:   fmt.Sprintf("random_order_id_%d", i+1),
+				Namespace: "ns-vd1k1dk3",
+				Owner:     "vd1k1dk3",
+				Type:      0,
+				Costs: map[string]int64{
+					"cpu":     int64(1000 + i),
+					"memory":  int64(2000 + i),
+					"storage": int64(3000 + i),
+				},
+				Amount: int64(6000 + 3*i),
 			},
-			Amount: int64(6000 + 3*i),
 		}
 	}
 	for i := 10; i < numRecords+10; i++ {
 		accountBalanceSpecs[i] = &accountv1.AccountBalanceSpec{
-			OrderID: fmt.Sprintf("random_order_id_recharge%d", i+1),
-			Owner:   "ns-vd1k1dk3",
-			Time:    metav1.Time{Time: time.Date(2023, 5, 9, 5, 0, 0, 0, time.UTC)},
-			Type:    1,
-			Amount:  int64(1000 + i),
+			Time: metav1.Time{Time: testTime},
+			AccountBalanceSpecInline: accountv1.AccountBalanceSpecInline{
+				OrderID: fmt.Sprintf("random_order_id_recharge%d", i+1),
+				Owner:   "vd1k1dk3",
+				Type:    1,
+				Amount:  int64(1000 + i),
+			},
 		}
 	}
 

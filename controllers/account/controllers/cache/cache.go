@@ -17,6 +17,8 @@ package cache
 import (
 	"context"
 
+	v1 "github.com/labring/sealos/controllers/user/api/v1"
+
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -28,14 +30,25 @@ func SetupCache(mgr ctrl.Manager) error {
 	accountNameFunc := func(obj client.Object) []string {
 		return []string{obj.(*accountv1.Account).Name}
 	}
-
 	ns := &corev1.Namespace{}
 	nsNameFunc := func(obj client.Object) []string {
 		return []string{obj.(*corev1.Namespace).Name}
 	}
-
-	if err := mgr.GetFieldIndexer().IndexField(context.TODO(), ns, "name", nsNameFunc); err != nil {
-		return err
+	nsOwnerFunc := func(obj client.Object) []string {
+		return []string{obj.(*corev1.Namespace).Labels[v1.UserLabelOwnerKey]}
 	}
-	return mgr.GetFieldIndexer().IndexField(context.TODO(), account, "name", accountNameFunc)
+
+	for _, idx := range []struct {
+		obj          client.Object
+		field        string
+		extractValue client.IndexerFunc
+	}{
+		{ns, accountv1.Name, nsNameFunc},
+		{ns, accountv1.Owner, nsOwnerFunc},
+		{account, accountv1.Name, accountNameFunc}} {
+		if err := mgr.GetFieldIndexer().IndexField(context.TODO(), idx.obj, idx.field, idx.extractValue); err != nil {
+			return err
+		}
+	}
+	return nil
 }

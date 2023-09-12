@@ -24,7 +24,7 @@ import (
 
 type Interface interface {
 	//InitDB() error
-	GetMeteringOwnerTimeResult(queryTime time.Time, queryCategories, queryProperties []string, queryOwner string) (*MeteringOwnerTimeResult, error)
+	GetMeteringOwnerTimeResult(queryTime time.Time, queryCategories, queryProperties []string) (*MeteringOwnerTimeResult, error)
 	GetBillingLastUpdateTime(owner string, _type accountv1.Type) (bool, time.Time, error)
 	SaveBillingsWithAccountBalance(accountBalanceSpec *accountv1.AccountBalanceSpec) error
 	QueryBillingRecords(billingRecordQuery *accountv1.BillingRecordQuery, owner string) error
@@ -46,7 +46,7 @@ type Creator interface {
 }
 
 type MeteringOwnerTimeResult struct {
-	Owner  string           `bson:"owner"`
+	//Owner  string           `bson:"owner"`
 	Time   time.Time        `bson:"time"`
 	Amount int64            `bson:"amount"`
 	Costs  map[string]int64 `bson:"costs"`
