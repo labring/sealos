@@ -57,8 +57,7 @@ function Billing() {
   const { data, isFetching, isSuccess } = useQuery(
     ['billing', { currentPage, startTime, endTime, orderID, selectType, namespaceIdx }],
     () => {
-      let spec = {} as BillingSpec;
-      spec = {
+      const spec = {
         page: currentPage,
         pageSize: pageSize,
         type: selectType,
