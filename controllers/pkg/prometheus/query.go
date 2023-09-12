@@ -38,14 +38,15 @@ const (
 )
 
 var QueryTmplMap = map[QueryTmplType]string{
-	TrafficsNS:  `sealos_nm_trafficstat_ipv4_ingress_bytes_total{targetNamespace="{{.Namespace}}"}`,
-	TrafficsAll: `sealos_nm_trafficstat_ipv4_ingress_bytes_total`,
+	TrafficsNS:  `increase(sealos_nm_trafficstat_ipv4_ingress_bytes_total{targetNamespace="{{.Namespace}}"}[{{.IncreaseDuration}}])`,
+	TrafficsAll: `increase(sealos_nm_trafficstat_ipv4_ingress_bytes_total[{{.IncreaseDuration}}])`,
 }
 
 type QueryParams struct {
-	Tmpl      QueryTmplType
-	Range     *v1.Range
-	Namespace string
+	Tmpl             QueryTmplType
+	Range            *v1.Range
+	Namespace        string
+	IncreaseDuration string
 }
 
 type QueryExecutor interface {
@@ -63,12 +64,12 @@ func (q QueryParams) GetTmpl() string {
 func (exe *queryExecutor) Execute(params QueryParams) (model.Value, error) {
 	t, err := template.New("query").Parse(params.GetTmpl())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse query template: %w", err)
 	}
 
 	var queryStr bytes.Buffer
 	if err := t.Execute(&queryStr, params); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to execute query template: %w", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -83,7 +84,7 @@ func (exe *queryExecutor) Execute(params QueryParams) (model.Value, error) {
 		result, warnings, err = exe.client.Query(ctx, queryStr.String(), time.Now())
 	}
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to execute client query: query=%s, err=%w", queryStr.String(), err)
 	}
 	if len(warnings) > 0 {
 		fmt.Println(warnings)

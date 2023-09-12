@@ -16,10 +16,9 @@ package prometheus
 
 import (
 	"github.com/labring/sealos/controllers/pkg/common"
-	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 )
 
 type Interface interface {
-	QueryNSTraffics(namespace string, timeRange v1.Range) (*common.Metering, error)
-	QueryAllNSTraffics(timeRange v1.Range) ([]*common.Metering, error)
+	QueryNSTraffics(namespace string, queryParams QueryParams) (*common.Metering, error)
+	QueryAllNSTraffics(queryParams QueryParams) ([]*common.Metering, error)
 }

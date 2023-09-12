@@ -36,11 +36,13 @@ func Test_prometheus_QueryNSTraffics(t *testing.T) {
 	//     --data-urlencode 'start=2023-08-16T03:48:42.781Z' \
 	//     --data-urlencode 'end=2023-08-16T05:48:42.781Z' \
 	//     --data-urlencode 'step=1h'
-	metering, err := p.QueryNSTraffics("profiling", v1.Range{
-		//time.Time类型
-		Start: time.Date(2023, 8, 16, 5, 48, 42, 781000000, time.UTC),
-		End:   time.Date(2023, 8, 16, 6, 48, 42, 781000000, time.UTC),
-		Step:  time.Hour,
+	metering, err := p.QueryNSTraffics("profiling", QueryParams{
+		Range: &v1.Range{
+			//time.Time类型
+			Start: time.Date(2023, 8, 16, 5, 48, 42, 781000000, time.UTC),
+			End:   time.Date(2023, 8, 16, 6, 48, 42, 781000000, time.UTC),
+			Step:  time.Hour,
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -53,18 +55,22 @@ func Test_prometheus_QueryAllNSTraffics(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	metering, err := p.QueryAllNSTraffics(v1.Range{
-		//time.Time类型
-		Start: time.Now().Add(-time.Hour).UTC(),
-		End:   time.Now().UTC(),
-		Step:  time.Hour,
+	now := time.Now().UTC()
+	queryTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.UTC)
+	metering, err := p.QueryAllNSTraffics(QueryParams{
+		Range: &v1.Range{
+			//time.Time类型
+			Start: queryTime.Add(-18 * time.Hour).UTC(),
+			End:   queryTime,
+			Step:  time.Hour,
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for i := range metering {
 		meter := metering[i]
-		fmt.Printf("%s network traffic %d amount: %d \n\n", meter.Category, calculateValue(meter.Value), calculateAmount(common.Price{
+		fmt.Printf("%s network traffic > time %s, value: %d, amount: %d \n\n", meter.Category, meter.Time.Format("2006-01-02 15:04:05"), calculateValue(meter.Value), calculateAmount(common.Price{
 			Price: 586,
 		}, meter.Value))
 	}

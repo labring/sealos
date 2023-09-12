@@ -181,13 +181,14 @@ func handleNetworkTraffic(dbClient database.Interface, config *Config, netPrice 
 		return fmt.Errorf("failed to new prometheus client: %v", err)
 	}
 
-	rangeQuery := v1.Range{
-		Start: startTime,
-		End:   endTime,
-		Step:  time.Hour,
+	queryParams := prometheus.QueryParams{
+		Range: &v1.Range{
+			Start: startTime,
+			End:   endTime,
+			Step:  time.Hour,
+		},
 	}
-
-	metering, err := queryNetworkTraffic(prom, rangeQuery)
+	metering, err := queryNetworkTraffic(prom, queryParams)
 	if err != nil {
 		return fmt.Errorf("failed to query all network traffic: %v", err)
 	}
@@ -195,8 +196,8 @@ func handleNetworkTraffic(dbClient database.Interface, config *Config, netPrice 
 	return calculateAndInsertData(dbClient, metering, netPrice, endTime)
 }
 
-func queryNetworkTraffic(prom prometheus.Interface, rangeQuery v1.Range) ([]*common.Metering, error) {
-	return prom.QueryAllNSTraffics(rangeQuery)
+func queryNetworkTraffic(prom prometheus.Interface, queryParams prometheus.QueryParams) ([]*common.Metering, error) {
+	return prom.QueryAllNSTraffics(queryParams)
 }
 
 func calculateAndInsertData(dbClient database.Interface, metering []*common.Metering, netPrice common.Price, endTime time.Time) error {

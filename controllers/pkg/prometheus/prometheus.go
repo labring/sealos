@@ -17,8 +17,6 @@ package prometheus
 import (
 	"fmt"
 
-	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
-
 	"github.com/labring/sealos/controllers/pkg/common"
 	"github.com/prometheus/common/model"
 )
@@ -27,8 +25,8 @@ type prometheus struct {
 	executor QueryExecutor
 }
 
-func (p *prometheus) QueryNSTraffics(namespace string, timeRange v1.Range) (*common.Metering, error) {
-	matrixData, err := p.queryTraffics(namespace, timeRange)
+func (p *prometheus) QueryNSTraffics(namespace string, queryParams QueryParams) (*common.Metering, error) {
+	matrixData, err := p.queryTraffics(namespace, queryParams)
 	if err != nil {
 		return nil, err
 	}
@@ -53,16 +51,22 @@ func (p *prometheus) QueryNSTraffics(namespace string, timeRange v1.Range) (*com
 	}, nil
 }
 
-func (p *prometheus) queryTraffics(namespace string, timeRange v1.Range) (model.Matrix, error) {
-	param := QueryParams{
-		Tmpl:  TrafficsAll,
-		Range: &timeRange,
-	}
+func (p *prometheus) queryTraffics(namespace string, queryParams QueryParams) (model.Matrix, error) {
+	//param := QueryParams{
+	//	Tmpl:             TrafficsAll,
+	//	Range:            &timeRange,
+	//	IncreaseDuration: "1h",
+	//}
 	if namespace != "" {
-		param.Tmpl = TrafficsNS
-		param.Namespace = namespace
+		queryParams.Tmpl = TrafficsNS
+		queryParams.Namespace = namespace
+	} else {
+		queryParams.Tmpl = TrafficsAll
 	}
-	result, err := p.executor.Execute(param)
+	if queryParams.IncreaseDuration == "" {
+		queryParams.IncreaseDuration = "1h"
+	}
+	result, err := p.executor.Execute(queryParams)
 	if err != nil {
 		return nil, err
 	}
@@ -79,10 +83,10 @@ func (p *prometheus) queryTraffics(namespace string, timeRange v1.Range) (model.
 	return matrixData, nil
 }
 
-func (p *prometheus) QueryAllNSTraffics(timeRange v1.Range) ([]*common.Metering, error) {
-	matrixData, err := p.queryTraffics("", timeRange)
+func (p *prometheus) QueryAllNSTraffics(queryParams QueryParams) ([]*common.Metering, error) {
+	matrixData, err := p.queryTraffics("", queryParams)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query all ns traffics failed: %v", err)
 	}
 	var metering []*common.Metering
 	for _, v := range matrixData {
@@ -93,12 +97,15 @@ func (p *prometheus) QueryAllNSTraffics(timeRange v1.Range) ([]*common.Metering,
 		if v.Values == nil || len(v.Values) == 0 {
 			continue
 		}
-		metering = append(metering, &common.Metering{
-			Value:    int64(v.Values[0].Value),
-			Category: ns,
-			Property: common.NetWork,
-			Detail:   "network traffic",
-		})
+		for i := range v.Values {
+			metering = append(metering, &common.Metering{
+				Value:    int64(v.Values[i].Value),
+				Category: ns,
+				Time:     v.Values[i].Timestamp.Time(),
+				Property: common.NetWork,
+				Detail:   "network traffic",
+			})
+		}
 	}
 	return metering, nil
 }
