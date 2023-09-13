@@ -69,7 +69,7 @@ var (
 
 		// "hits_ratio": "(rate(mysql_global_status_table_open_cache_hits{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[5m]))/((rate(mysql_global_status_table_open_cache_hits{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[5m]))+(rate(mysql_global_status_table_open_cache_misses{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[5m])))"
 
-		"aborted_conenctions": "sum(rate(mysql_global_status_aborted_connects{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])) by (namespace,app_kubernetes_io_instance,pod)",
+		"aborted_connections": "sum(rate(mysql_global_status_aborted_connects{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])) by (namespace,app_kubernetes_io_instance,pod)",
 		"table_locks":         "sum(rate(mysql_global_status_table_locks_immediate{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])) by (namespace,app_kubernetes_io_instance,pod)",
 	}
 	Pgsql = map[string]string{

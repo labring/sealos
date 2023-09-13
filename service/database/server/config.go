@@ -8,10 +8,10 @@ import (
 )
 
 type Config struct {
-	Server ServerConfig `yaml:"server"`
+	Server ServeConfig `yaml:"server"`
 }
 
-type ServerConfig struct {
+type ServeConfig struct {
 	ListenAddress string `yaml:"addr"`
 }
 
