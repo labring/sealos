@@ -32,6 +32,8 @@ spec:
     spec:
       containers:
         - name: vminsert
+          securityContext:                 
+            allowPrivilegeEscalation: false
           image: "victoriametrics/vminsert:v1.77.0-cluster"
           imagePullPolicy: "IfNotPresent"
           args:
