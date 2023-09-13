@@ -30,11 +30,13 @@ export type UserQuotaItemType = {
   limit: number;
 };
 
-export type UserInfoV1 = {
-  readonly id: string;
-  readonly name: string;
-  readonly avatar: string;
-};
+export type UserInfoV1 = Readonly<{
+  id: string;
+  name: string;
+  avatar: string;
+  k8sUsername: string;
+  nsid: string;
+}>;
 
 export type SessionV1 = {
   token?: OAuthToken;

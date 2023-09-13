@@ -18,7 +18,7 @@ export const getUserNamespace = () => {
   const kubeConfig = getUserKubeConfig();
   const json: any = yaml.load(kubeConfig);
   try {
-    return `ns-${json.users[0].name}`;
+    return json?.contexts[0]?.context?.namespace || `ns-${json.users[0].name}`;
   } catch (err) {
     return 'nx-';
   }
