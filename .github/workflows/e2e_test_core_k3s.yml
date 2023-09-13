@@ -1,0 +1,77 @@
+name: E2E Sealos Core Test for K3s
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "**" ]
+    paths:
+      - ".github/workflows/e2e_test_core_k3s.yml"
+      - "cmd/**"
+      - "pkg/**"
+      - "test/**"
+  pull_request:
+    branches: [ "*" ]
+    paths:
+      - ".github/workflows/e2e_test_core_k3s.yml"
+      - "cmd/**"
+      - "pkg/**"
+      - "test/**"
+
+
+jobs:
+  call_ci_workflow:
+    uses: ./.github/workflows/import-patch-image.yml
+    with:
+      arch: amd64
+      e2e: true
+      image: false
+  e2e-core-test:
+    needs: [ call_ci_workflow ]
+    strategy:
+      fail-fast: false
+      matrix:
+        unit:
+          [
+            E2E_sealos_k3s_basic_test,
+          ]
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Download image-cri-shim
+        uses: actions/download-artifact@v3
+        with:
+          name: image-cri-shim-amd64
+          path: /tmp/
+      - name: Download sealctl
+        uses: actions/download-artifact@v3
+        with:
+          name: sealctl-amd64
+          path: /tmp/
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos-amd64
+          path: /tmp/
+      - name: Download e2e test
+        uses: actions/download-artifact@v3
+        with:
+          name: e2e.test
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/{sealos,image-cri-shim,sealctl}
+          sudo mv /tmp/sealos /usr/bin/
+          sudo sealos version
+      - name: Remove containerd && docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          type: prune
+
+      - name: Verify E2e test
+        run: |
+          sudo apt-get remove docker docker-engine docker.io containerd runc
+          sudo apt-get purge docker-ce docker-ce-cli containerd.io # docker-compose-plugin
+          sudo apt-get remove -y moby-engine moby-cli moby-buildx moby-compose
+          sudo rm -rf /var/run/docker.sock
+          sudo rm -rf /run/containerd/containerd.sock
+          sudo chmod a+x /tmp/e2e.test
+          sudo /tmp/e2e.test --ginkgo.v --ginkgo.focus="${{ matrix.unit }}"

@@ -11,43 +11,32 @@ const Callback: NextPage = () => {
   const setProvider = useSessionStore((s) => s.setProvider);
   const provider = useSessionStore((s) => s.provider);
   const compareState = useSessionStore((s) => s.compareState);
-  const updateUser = useSessionStore((s) => s.updateUser);
   useEffect(() => {
     if (!router.isReady) return;
-    const { code, state } = router.query;
-    if (!compareState(state as string)) return;
-    if (!code || !provider) return;
-
     (async () => {
       try {
-        let data: { data: Session; code: number };
-        switch (provider) {
-          case 'github':
-            data = await request.post<any, { data: Session; code: number }>(
-              '/api/auth/oauth/github',
-              { code }
-            );
-            break;
-          case 'wechat':
-            data = await request.post<any, { data: Session; code: number }>(
-              '/api/auth/oauth/wechat',
-              { code }
-            );
-            break;
-          default:
-            throw new Error('provider error');
-            break;
-        }
+        if (!provider || !['github', 'wechat', 'google'].includes(provider))
+          throw new Error('provider error');
+        const { code, state } = router.query;
+        if (!code || !state) throw new Error('failed to get code and state');
+        if (!compareState(state as string)) throw new Error();
+        const data = await request.post<any, { data: Session; code: number }>(
+          '/api/auth/oauth/' + provider,
+          { code }
+        );
+        setProvider();
         if (data.code === 200) {
           const { token, user, kubeconfig } = data.data;
           setSessionProp('token', token);
           setSessionProp('user', user);
           setSessionProp('kubeconfig', kubeconfig);
-          updateUser();
+
+          router.replace('/');
+        } else {
+          throw new Error();
         }
-      } finally {
-        provider && setProvider();
-        router.replace('/');
+      } catch (error) {
+        router.replace('/signin');
       }
     })();
   }, [router]);

@@ -10,7 +10,8 @@
     "dev-db": "pnpm -r --filter ./providers/dbprovider  run dev",
     "dev-cost": "pnpm -r --filter ./providers/costcenter  run dev",
     "dev-terminal": "pnpm -r --filter ./providers/terminal  run dev",
-    "dev-template": "pnpm -r --filter ./providers/template  run dev"
+    "dev-template": "pnpm -r --filter ./providers/template  run dev",
+    "dev-cronjob": "pnpm -r --filter ./providers/cronjob  run dev"
   },
   "workspaces": [
     "./packages/*",

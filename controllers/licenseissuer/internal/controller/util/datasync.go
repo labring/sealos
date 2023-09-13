@@ -21,7 +21,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-type datasycn struct {
+type DataSycn struct {
+}
+
+func NewDataSync() *DataSycn {
+	return &DataSycn{}
 }
 
 type SyncRequest struct {
@@ -41,10 +45,10 @@ type Config struct {
 	// Add other fields here to support future expansion needs.
 }
 
-func (d *datasycn) sync(instance *TaskInstance) error {
+func (d *DataSycn) sync(instance *TaskInstance) error {
 	uid, urlMap, err := GetUIDURL(instance.ctx, instance.Client)
 	if err != nil {
-		instance.logger.Error(err, "failed to get uid and url")
+		instance.logger.Info("failed to get uid and url map")
 		return err
 	}
 	// pull sync data from cloud
@@ -53,13 +57,13 @@ func (d *datasycn) sync(instance *TaskInstance) error {
 	}
 	body, err := Pull(urlMap[CloudSyncURL], syncRequest)
 	if err != nil {
-		instance.logger.Error(err, "failed to pull sync request")
+		instance.logger.Info("failed to pull sync data from cloud")
 		return err
 	}
 	var syncResponse map[string]string
 	err = Convert(body.Body, &syncResponse)
 	if err != nil {
-		instance.logger.Error(err, "failed to convert sync response")
+		instance.logger.Info("failed to convert sync response")
 		return err
 	}
 	// update configmap
@@ -69,24 +73,24 @@ func (d *datasycn) sync(instance *TaskInstance) error {
 	})
 
 	if err != nil {
-		instance.logger.Error(err, "failed to update configmap")
+		instance.logger.Info("failed to update configmap")
 		return err
 	}
 
 	return nil
 }
 
-func (d *datasycn) updateConfigMap(instance *TaskInstance, new map[string]string, id types.NamespacedName) error {
+func (d *DataSycn) updateConfigMap(instance *TaskInstance, new map[string]string, id types.NamespacedName) error {
 	configMap := &corev1.ConfigMap{}
 	err := instance.Client.Get(instance.ctx, id, configMap)
 	if err != nil {
-		instance.logger.Error(err, "failed to get configmap")
+		instance.logger.Info("failed to get configmap")
 		return err
 	}
 	if IsConfigMapChanged(new, configMap) {
 		err = instance.Client.Update(instance.ctx, configMap)
 		if err != nil {
-			instance.logger.Error(err, "failed to update configmap")
+			instance.logger.Info("failed to update configmap")
 			return err
 		}
 	}

@@ -25,7 +25,7 @@ import (
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/filesystem/rootfs"
-	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime/factory"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -74,21 +74,27 @@ func (d *DeleteProcessor) PreProcess(cluster *v2.Cluster) error {
 func (d *DeleteProcessor) UndoBootstrap(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline Bootstrap in DeleteProcessor")
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
-	bs := bootstrap.New(d.ClusterFile.GetCluster())
+	var cls *v2.Cluster
+	if v := d.ClusterFile.GetCluster(); v != nil {
+		cls = v
+	} else {
+		cls = cluster
+	}
+	bs := bootstrap.New(cls)
 	return bs.Delete(hosts...)
 }
 
 func (d *DeleteProcessor) Reset(cluster *v2.Cluster) error {
-	runTime, err := runtime.NewDefaultRuntime(cluster, d.ClusterFile.GetKubeadmConfig())
+	rt, err := factory.New(cluster, d.ClusterFile.GetRuntimeConfig())
 	if err != nil {
 		return fmt.Errorf("failed to delete runtime, %v", err)
 	}
-	return runTime.Reset()
+	return rt.Reset()
 }
 
 func (d *DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
-	if strings.NotInIPList(cluster.GetRegistryIPAndPort(), hosts) {
+	if strings.NotInIPList(hosts, cluster.GetRegistryIPAndPort()) {
 		hosts = append(hosts, cluster.GetRegistryIPAndPort())
 	}
 	// umount don't care imageMounts
@@ -96,7 +102,14 @@ func (d *DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-	return fs.UnMountRootfs(d.ClusterFile.GetCluster(), hosts)
+	var cls *v2.Cluster
+	if v := d.ClusterFile.GetCluster(); v != nil {
+		cls = v
+	} else {
+		cls = cluster
+	}
+
+	return fs.UnMountRootfs(cls, hosts)
 }
 
 func (d *DeleteProcessor) UnMountImage(cluster *v2.Cluster) error {
@@ -112,7 +125,7 @@ func (d *DeleteProcessor) UnMountImage(cluster *v2.Cluster) error {
 
 func (d *DeleteProcessor) CleanFS(cluster *v2.Cluster) error {
 	workDir := constants.ClusterDir(cluster.Name)
-	dataDir := constants.NewData(cluster.Name).Homedir()
+	dataDir := constants.NewPathResolver(cluster.Name).Root()
 	return fileutil.CleanFiles(workDir, dataDir)
 }
 

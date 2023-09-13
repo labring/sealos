@@ -3,10 +3,9 @@ import Notification from '@/components/notification';
 import useSessionStore from '@/stores/session';
 import { Box, Flex, Image, useDisclosure } from '@chakra-ui/react';
 import { i18n } from 'next-i18next';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import LangSelect from '../LangSelect';
 import Iconfont from '../iconfont';
-import styles from './index.module.scss';
 
 enum UserMenuKeys {
   LangSelect,
@@ -29,16 +28,7 @@ export default function Index() {
   }[] = [
     {
       key: UserMenuKeys.LangSelect,
-      button: (
-        <Image
-          width={'20px'}
-          height={'20px'}
-          borderRadius="full"
-          src="/images/language.svg"
-          fallbackSrc="/images/sealos.svg"
-          alt="user avator"
-        />
-      ),
+      button: <Box>{i18n?.language === 'en' ? 'en' : '中'}</Box>,
       click: () => switchLangDisclosure.onOpen(),
       content: <LangSelect disclosure={switchLangDisclosure} i18n={i18n} key={'langselect'} />
     },
@@ -73,14 +63,7 @@ export default function Index() {
     }
   ];
   return (
-    <Flex
-      alignItems={'center'}
-      position={'absolute'}
-      top={'42px'}
-      right={'42px'}
-      cursor={'pointer'}
-      gap={'16px'}
-    >
+    <Flex alignItems={'center'} position={'absolute'} top={'42px'} right={'42px'} gap={'16px'}>
       {buttonList.map((item, index) => (
         <Flex
           w="36px"
@@ -93,7 +76,9 @@ export default function Index() {
           position={'relative'}
           boxShadow={'0px 1.2px 2.3px rgba(0, 0, 0, 0.2)'}
         >
-          <Box onClick={item.click}>{item.button}</Box>
+          <Box onClick={item.click} cursor={'pointer'}>
+            {item.button}
+          </Box>
           {item.content}
           {item.key === UserMenuKeys.Notification && notificationAmount > 0 && (
             <Box

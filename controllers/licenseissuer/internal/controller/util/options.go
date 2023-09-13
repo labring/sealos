@@ -26,12 +26,22 @@ type task string
 
 // A interface for options to implement read-only access.
 type Options interface {
+	OptionsReadOnly
+	OptionsReadWrite
+}
+
+type OptionsReadOnly interface {
 	GetPolicy(name task) string
 	GetPeriod(name task) time.Duration
 	GetDefaultPeriod() time.Duration
 	GetEnvOptions() EnvOptions
+	GetNetWorkOptions() NetWorkOptions
 	GetRunnableOptions() RunnableOptions
 	GetDBOptions() DBOptions
+}
+
+type OptionsReadWrite interface {
+	SetNetworkConfig(flag bool)
 }
 
 // a singleton instance of Options
@@ -46,6 +56,16 @@ func GetOptions() Options {
 	return options
 }
 
+// GetOptionsReadOnly returns the singleton instance of OptionsReadOnly.
+func GetOptionsReadOnly() OptionsReadOnly {
+	return GetOptions()
+}
+
+// GetOptionsReadWrite returns the singleton instance of OptionsReadWrite.
+func GetOptionsReadWrite() OptionsReadWrite {
+	return GetOptions()
+}
+
 // The OperatorOptions struct is used to make configuration options available to
 // licenseissuer operators.
 type OperatorOptions struct {
@@ -55,6 +75,12 @@ type OperatorOptions struct {
 	DBOptions DBOptions
 	// The RunnableOptions is used to store options for the Runnable instance
 	RunnableOptions RunnableOptions
+	// The NetWorkOptions is used to store options for the NetWork instance
+	NetWorkOptions NetWorkOptions
+}
+
+func (o *OperatorOptions) SetNetworkConfig(flag bool) {
+	o.NetWorkOptions.EnableExternalNetWork = flag
 }
 
 func (o *OperatorOptions) GetPolicy(tkname task) string {
@@ -86,6 +112,9 @@ func (o *OperatorOptions) GetRunnableOptions() RunnableOptions {
 func (o *OperatorOptions) GetDBOptions() DBOptions {
 	return o.DBOptions
 }
+func (o *OperatorOptions) GetNetWorkOptions() NetWorkOptions {
+	return o.NetWorkOptions
+}
 
 func NewOptions() *OperatorOptions {
 	o := &OperatorOptions{}
@@ -97,29 +126,38 @@ func (o *OperatorOptions) initOptions() {
 	o.EnvOptions.initOptions()
 	o.RunnableOptions.initOptions()
 	o.DBOptions.initOptions()
+	o.NetWorkOptions.initOptions()
 
+	// allow developer to choose the policy and period of the task
 	o.RunnableOptions.Policy[Init] = OncePolicy
-	if o.EnvOptions.MonitorConfiguration == "true" {
-		//allow developer to choose the policy and period of the task
-		o.RunnableOptions.Policy[Collector] = PeriodicPolicy
-		o.RunnableOptions.Period[Collector] = 8 * time.Hour
-		o.RunnableOptions.Policy[DataSync] = PeriodicPolicy
-		o.RunnableOptions.Period[DataSync] = 1 * time.Hour
-		o.RunnableOptions.Policy[Notice] = PeriodicPolicy
-		o.RunnableOptions.Period[Notice] = 3 * time.Hour
-		o.RunnableOptions.Policy[NoticeCleanup] = PeriodicPolicy
-		o.RunnableOptions.Period[NoticeCleanup] = 24 * time.Hour
-		// Add more tasks Policy and Period here
-	}
+	o.RunnableOptions.Period[Init] = 0
+
+	o.RunnableOptions.Policy[Collector] = PeriodicWithProbePolicy
+	o.RunnableOptions.Period[Collector] = 8 * time.Hour
+
+	o.RunnableOptions.Policy[DataSync] = PeriodicWithProbePolicy
+	o.RunnableOptions.Period[DataSync] = 1 * time.Hour
+
+	o.RunnableOptions.Policy[Notice] = PeriodicWithProbePolicy
+	o.RunnableOptions.Period[Notice] = 3 * time.Hour
+
+	o.RunnableOptions.Policy[NoticeCleanup] = PeriodicPolicy
+	o.RunnableOptions.Period[NoticeCleanup] = 24 * time.Hour
+
+	o.RunnableOptions.Policy[NetWorkConfig] = PeriodicPolicy
+	o.RunnableOptions.Period[NetWorkConfig] = 30 * time.Minute
+
+	o.RunnableOptions.Policy[Register] = OnceWithProbePolicy
+	o.RunnableOptions.Period[Register] = 5 * time.Minute
+
+	o.RunnableOptions.Policy[MemoryCleanup] = PeriodicPolicy
+	o.RunnableOptions.Period[MemoryCleanup] = 5 * time.Minute
+	// Add more tasks Policy and Period here
 }
 
 // The EnvOptions is used to store environment variables.
 type EnvOptions struct {
-	// NetworkConfiguration is used to distinguish between
-	// external and internal networks.
-	NetworkConfiguration string
 
-	MonitorConfiguration string
 	// The MongoURI is used to connect to the MongoDB database.
 	MongoURI string
 
@@ -131,8 +169,6 @@ type EnvOptions struct {
 }
 
 func (eo *EnvOptions) initOptions() {
-	eo.NetworkConfiguration = os.Getenv("CAN_CONNECT_TO_EXTERNAL_NETWORK")
-	eo.MonitorConfiguration = os.Getenv("MONITOR")
 	eo.MongoURI = os.Getenv("MONGO_URI")
 	eo.SaltKey = os.Getenv("PASSWORD_SALT")
 	eo.Namespace = os.Getenv("NAMESPACE")
@@ -149,14 +185,15 @@ type RunnableOptions struct {
 	DefaultPeriod time.Duration
 }
 
-const (
-	Collector     task = "Collector"
-	DataSync      task = "DataSync"
-	Init          task = "Init"
-	Notice        task = "Notice"
-	NoticeCleanup task = "NoticeCleanup"
-	// Add more tasks here
-)
+type NetWorkOptions struct {
+	// EnableExternalNetWork is used to distinguish between
+	// external and internal networks.
+	EnableExternalNetWork bool
+}
+
+func (no *NetWorkOptions) initOptions() {
+	no.EnableExternalNetWork = false
+}
 
 func (ro *RunnableOptions) initOptions() {
 	ro.Policy = make(map[task]string)

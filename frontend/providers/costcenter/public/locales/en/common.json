@@ -17,6 +17,7 @@
     "Unit": "Unit",
     "Price": "Price"
   },
+  "All Namespace": "All Team ID",
   "Bonus": "Bonus",
   "Select Amount": "Select Amount",
   "Recent Transactions": "Recent Transactions",
@@ -34,6 +35,7 @@
   "Type": "Type",
   "CPU": "CPU",
   "Memory": "Memory",
+  "Network": "Network",
   "Storage": "Storage",
   "Total Amount": "Total Amount",
   "Transfer Amount": "Transfer Amount",
@@ -68,6 +70,7 @@
   "Get Code": "verification",
   "Stripe Success": "pay with Stripe successfully",
   "Stripe Cancel": "cancel to pay with Stripe",
+  "GPU Unit": "Card",
   "orders": {
     "list": "Order List",
     "invoiceAmount": "Invoice Amount",

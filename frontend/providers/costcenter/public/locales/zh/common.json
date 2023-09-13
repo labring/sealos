@@ -17,6 +17,7 @@
     "Unit": "单位",
     "Price": "价格"
   },
+  "All Namespace": "所有 Team ID",
   "Bonus": "赠",
   "Recent Transactions": "最近交易",
   "Cost Trend": "成本趋势",
@@ -36,6 +37,7 @@
   "CPU": "CPU",
   "Memory": "内存",
   "Storage": "存储卷",
+  "Network": "网络",
   "Total Amount": "总金额",
   "Payment Result": "支付结果",
   "Payment Successful": "支付成功",
@@ -68,6 +70,7 @@
   "Get Code": "获取验证码",
   "Stripe Success": "Stripe 支付完成",
   "Stripe Cancel": "Stripe 支付取消",
+  "GPU Unit": "卡",
   "orders": {
     "list": "订单列表",
     "invoiceAmount": "发票金额",

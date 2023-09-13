@@ -40,7 +40,7 @@ func (a HostChecker) Check(cluster *v2.Cluster, _ string) error {
 	if len(a.IPs) != 0 {
 		ipList = a.IPs
 	}
-	sshClient := ssh.NewSSHByCluster(cluster, false)
+	sshClient := ssh.NewCacheClientFromCluster(cluster, false)
 	if err := checkHostnameUnique(sshClient, ipList); err != nil {
 		return err
 	}

@@ -33,8 +33,8 @@ func GetKubernetesVersion(cluster *v2.Cluster) *version.KubernetesVersion {
 	if cluster == nil {
 		cmd = "kubectl version -o yaml"
 	} else {
-		data := constants.NewData(cluster.Name)
-		cmd = fmt.Sprintf("kubectl version --kubeconfig %s -o yaml", data.AdminFile())
+		cmd = fmt.Sprintf("kubectl version --kubeconfig %s -o yaml",
+			constants.NewPathResolver(cluster.Name).AdminFile())
 	}
 	serverVersion, err := exec.RunBashCmd(cmd)
 	if err != nil || serverVersion == "" {

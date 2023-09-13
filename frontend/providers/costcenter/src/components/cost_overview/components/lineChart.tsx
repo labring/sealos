@@ -16,7 +16,6 @@ import { BillingItem } from '@/types/billing';
 import { parseISO, format, isSameDay, startOfDay } from 'date-fns';
 import { formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
-import useBillingStore from '@/stores/billing';
 import useOverviewStore from '@/stores/overview';
 
 echarts.use([
@@ -37,15 +36,16 @@ export default function Trend({ data }: { data: BillingItem[] }) {
   const sourceValue =
     data
       .filter((v) => v.type === 0)
-      .map<[Date, number, number, number, number]>((item) => [
+      .map<[Date, number, number, number, number, number]>((item) => [
         parseISO(item.time),
         item.costs?.cpu || 0,
         item.costs?.memory || 0,
         item.costs?.storage || 0,
+        item.costs?.network || 0,
         item.amount
       ])
       // 归并为当天的开始
-      .reduce<[Date, number, number, number, number][]>((pre, cur) => {
+      .reduce<[Date, number, number, number, number, number][]>((pre, cur) => {
         if (pre.length !== 0) {
           const precost = pre[pre.length - 1];
           if (isSameDay(precost[0], cur[0])) {

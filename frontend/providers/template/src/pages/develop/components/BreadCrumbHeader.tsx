@@ -1,18 +1,9 @@
 import MyIcon from '@/components/Icon';
-import {
-  Flex,
-  Button,
-  Text,
-  Box,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  Breadcrumb
-} from '@chakra-ui/react';
-import { t } from 'i18next';
-import { useRouter } from 'next/router';
+import { Box, Breadcrumb, BreadcrumbItem, BreadcrumbLink, Button, Flex } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
+import { useRouter } from 'next/router';
 
-const BreadCrumbHeader = () => {
+const BreadCrumbHeader = ({ applyCb }: { applyCb: () => void }) => {
   const router = useRouter();
   const { t } = useTranslation();
 
@@ -46,6 +37,9 @@ const BreadCrumbHeader = () => {
           </BreadcrumbLink>
         </BreadcrumbItem>
       </Breadcrumb>
+      <Button ml="auto" px={4} minW={'120px'} h={'34px'} variant={'primary'} onClick={applyCb}>
+        {t('develop.Dryrun Deploy')}
+      </Button>
     </Flex>
   );
 };

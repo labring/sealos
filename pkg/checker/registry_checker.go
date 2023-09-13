@@ -75,7 +75,7 @@ func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
 	if cfg, err := fileutil.ReadAll(registryConfig); err != nil {
 		status.Error = fmt.Errorf("read registry config error: %w", err).Error()
 	} else {
-		cfgMap, _ := yaml.UnmarshalData(cfg)
+		cfgMap, _ := yaml.UnmarshalToMap(cfg)
 		status.Port, _, _ = unstructured.NestedString(cfgMap, "http", "addr")
 		status.Storage, _, _ = unstructured.NestedString(cfgMap, "storage", "filesystem", "rootdirectory")
 		status.Delete, _, _ = unstructured.NestedBool(cfgMap, "storage", "delete", "enabled")
@@ -87,8 +87,8 @@ func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
 		}
 	}
 
-	sshCtx := ssh.NewSSHByCluster(cluster, false)
-	root := constants.NewData(cluster.Name).RootFSPath()
+	sshCtx := ssh.NewCacheClientFromCluster(cluster, false)
+	root := constants.NewPathResolver(cluster.Name).RootFSPath()
 	regInfo := helpers.GetRegistryInfo(sshCtx, root, cluster.GetRegistryIPAndPort())
 	status.Auth = fmt.Sprintf("%s:%s", regInfo.Username, regInfo.Password)
 	status.RegistryDomain = fmt.Sprintf("%s:%s", regInfo.Domain, regInfo.Port)

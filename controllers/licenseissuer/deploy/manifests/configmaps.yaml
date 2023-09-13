@@ -22,7 +22,8 @@ data:
       "NotificationURL": "https://license.sealos.io/notify",
       "RegisterURL": "https://license.sealos.io/register",
       "CloudSyncURL": "https://license.sealos.io/datasync",
-      "LicenseMonitorURL": "https://license.sealos.io/license"
+      "LicenseMonitorURL": "https://license.sealos.io/license",
+      "NetworkProbeURL": "https://license.sealos.io/probe"
     }
 kind: ConfigMap
 metadata:

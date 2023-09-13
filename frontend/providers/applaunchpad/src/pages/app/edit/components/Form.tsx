@@ -14,21 +14,24 @@ import {
   AccordionPanel,
   AccordionIcon,
   useTheme,
-  useDisclosure
+  useDisclosure,
+  IconButton
 } from '@chakra-ui/react';
-import { InfoOutlineIcon } from '@chakra-ui/icons';
+import { AddIcon, InfoOutlineIcon, MinusIcon } from '@chakra-ui/icons';
 import { useFieldArray, UseFormReturn } from 'react-hook-form';
 import { useRouter } from 'next/router';
 
+import type { CustomAccessModalParams } from './CustomAccessModal';
 import type { ConfigMapType } from './ConfigmapModal';
 import type { StoreType } from './StoreModal';
 import type { QueryType } from '@/types';
 import type { AppEditType } from '@/types/app';
 import { customAlphabet } from 'nanoid';
 import { GpuAmountMarkList } from '@/constants/editApp';
-import { DOMAIN_PORT, SEALOS_DOMAIN } from '@/store/static';
+import { SEALOS_DOMAIN } from '@/store/static';
 import { useTranslation } from 'next-i18next';
 import { useGlobalStore } from '@/store/global';
+import { useUserStore } from '@/store/user';
 
 import Tabs from '@/components/Tabs';
 import Tip from '@/components/Tip';
@@ -40,7 +43,9 @@ import MySlider from '@/components/Slider';
 import MyRangeSlider from '@/components/RangeSlider';
 import MyIcon from '@/components/Icon';
 import MyTooltip from '@/components/MyTooltip';
+import QuotaBox from './QuotaBox';
 
+const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
 const StoreModal = dynamic(() => import('./StoreModal'));
 const EditEnvs = dynamic(() => import('./EditEnvs'));
@@ -49,7 +54,7 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 import styles from './index.module.scss';
 import { obj2Query } from '@/api/tools';
 import { throttle } from 'lodash';
-import { noGpuSliderKey } from '@/constants/app';
+import { ProtocolList, noGpuSliderKey } from '@/constants/app';
 import { sliderNumber2MarkList } from '@/utils/adapt';
 
 const labelWidth = 120;
@@ -71,7 +76,8 @@ const Form = ({
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
-  const { userSourcePrice, formSliderListConfig } = useGlobalStore();
+  const { formSliderListConfig } = useGlobalStore();
+  const { userSourcePrice } = useUserStore();
   const router = useRouter();
   const { name } = router.query as QueryType;
   const theme = useTheme();
@@ -84,6 +90,15 @@ const Form = ({
     formState: { errors }
   } = formHook;
 
+  const {
+    fields: networks,
+    append: appendNetworks,
+    remove: removeNetworks,
+    update: updateNetworks
+  } = useFieldArray({
+    control,
+    name: 'networks'
+  });
   const { fields: envs, replace: replaceEnvs } = useFieldArray({
     control,
     name: 'envs'
@@ -124,7 +139,7 @@ const Form = ({
         id: 'network',
         label: 'Network Configuration',
         icon: 'network',
-        isSetting: !!getValues('containerOutPort')
+        isSetting: getValues('networks').length > 0
       },
       {
         id: 'settings',
@@ -138,10 +153,11 @@ const Form = ({
           getValues('storeList').length > 0
       }
     ],
-    [refresh]
+    [getValues, refresh]
   );
 
   const [activeNav, setActiveNav] = useState(navList[0].id);
+  const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>();
   const [configEdit, setConfigEdit] = useState<ConfigMapType>();
   const [storeEdit, setStoreEdit] = useState<StoreType>();
   const { isOpen: isEditEnvs, onOpen: onOpenEditEnvs, onClose: onCloseEditEnvs } = useDisclosure();
@@ -223,12 +239,12 @@ const Form = ({
               icon: 'nvidia',
               label: (
                 <Flex>
-                  <Box color={'myGray.900'}>{item.type}</Box>
+                  <Box color={'myGray.900'}>{item.alias}</Box>
                   <Box mx={3} color={'myGray.500'}>
                     |
                   </Box>
                   <Box color={'myGray.500'}>
-                    {t('vm')} : {item.vm}G
+                    {t('vm')} : {Math.round(item.vm)}G
                   </Box>
                   <Box mx={3} color={'myGray.500'}>
                     |
@@ -311,17 +327,9 @@ const Form = ({
                   _hover={{
                     backgroundColor: 'myWhite.400'
                   }}
-                  {...(activeNav === item.id
-                    ? {
-                        fontWeight: 'bold',
-                        borderColor: 'myGray.900',
-                        backgroundColor: 'myWhite.600 !important'
-                      }
-                    : {
-                        color: 'myGray.500',
-                        borderColor: 'myGray.200',
-                        backgroundColor: 'transparent'
-                      })}
+                  color="myGray.500"
+                  borderColor="myGray.200"
+                  backgroundColor="transparent"
                 >
                   <MyIcon
                     name={item.icon as any}
@@ -334,8 +342,11 @@ const Form = ({
               </Box>
             ))}
           </Box>
+          <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'}>
+            <QuotaBox />
+          </Box>
           {userSourcePrice && (
-            <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>
+            <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'}>
               <PriceBox
                 pods={
                   getValues('hpa.use')
@@ -380,6 +391,7 @@ const Form = ({
                     disabled={isEdit}
                     title={isEdit ? t('Not allowed to change app name') || '' : ''}
                     autoFocus={true}
+                    maxLength={30}
                     placeholder={
                       t(
                         'Starts with a letter and can contain only lowercase letters, digits, and hyphens (-)'
@@ -387,6 +399,7 @@ const Form = ({
                     }
                     {...register('appName', {
                       required: t('Not allowed to change app name') || '',
+                      maxLength: 30,
                       pattern: {
                         value: /^[a-z][a-z0-9]+([-.][a-z0-9]+)*$/g,
                         message: t(
@@ -721,99 +734,147 @@ const Form = ({
               <MyIcon name={'network'} mr={5} w={'20px'} color={'myGray.500'} />
               {t('Network Configuration')}
             </Box>
-            <Box px={'42px'} py={'24px'}>
-              <FormControl mb={7}>
-                <Flex alignItems={'center'}>
-                  <Label>{t('Container Port')}</Label>
-                  <Input
-                    type={'number'}
-                    bg={getValues('containerOutPort') ? 'myWhite.500' : 'myWhite.400'}
-                    w={'100px'}
-                    {...register('containerOutPort', {
-                      required: '容器暴露端口不能为空',
-                      valueAsNumber: true,
-                      min: {
-                        value: 1,
-                        message: '暴露端口需要为正数'
-                      }
-                    })}
-                  />
-                </Flex>
-              </FormControl>
-              <Box>
-                <Flex mb={5}>
-                  <Label>{t('Open Public Access')}</Label>
-                  <Switch
-                    size={'lg'}
-                    colorScheme={'blackAlpha'}
-                    isChecked={getValues('accessExternal.use')}
-                    {...register('accessExternal.use', {
-                      onChange: () => {
-                        // first open, add init data
-                        if (!getValues('accessExternal.outDomain')) {
-                          setValue('accessExternal', {
-                            use: true,
-                            backendProtocol: 'HTTP',
-                            outDomain: nanoid(),
-                            selfDomain: ''
-                          });
+            <Box px={'42px'} py={'24px'} userSelect={'none'}>
+              {networks.map((network, i) => (
+                <Flex
+                  alignItems={'flex-start'}
+                  key={network.id}
+                  _notLast={{ pb: 6, borderBottom: theme.borders.base }}
+                  _notFirst={{ pt: 6 }}
+                >
+                  <Box>
+                    <Box mb={1} h={'20px'} fontSize={'sm'}>
+                      {t('Container Port')}
+                    </Box>
+                    <Input
+                      h={'35px'}
+                      type={'number'}
+                      w={'100px'}
+                      bg={'myWhite.400'}
+                      {...register(`networks.${i}.port`, {
+                        required:
+                          t('app.The container exposed port cannot be empty') ||
+                          'The container exposed port cannot be empty',
+                        valueAsNumber: true,
+                        min: {
+                          value: 1,
+                          message: t('app.The minimum exposed port is 1')
+                        },
+                        max: {
+                          value: 65535,
+                          message: t('app.The maximum number of exposed ports is 65535')
                         }
-                      }
-                    })}
-                  />
-                </Flex>
-                {getValues('accessExternal.use') && (
-                  <Box pl={'120px'}>
-                    <FormControl mt={5}>
-                      <Flex>
-                        <Box mr={'32px'}>
-                          <Box mb={1}>{t('Protocol')}</Box>
-                          <MySelect
-                            width={'120px'}
-                            value={getValues('accessExternal.backendProtocol')}
-                            list={[
-                              { value: 'HTTP', label: 'https' },
-                              { value: 'GRPC', label: 'grpcs' },
-                              { value: 'WS', label: 'websocket' }
-                            ]}
-                            onchange={(val: any) => setValue('accessExternal.backendProtocol', val)}
-                          />
-                        </Box>
-                        <Box color={'myGray.500'}>
-                          <Label mb={1} color={'myGray.500'}>
-                            {t('Export Domain')}
-                          </Label>
-                          <Box userSelect={'all'} h={'34px'} lineHeight={'34px'}>
-                            {getValues('accessExternal.outDomain')}.{SEALOS_DOMAIN}
-                            {DOMAIN_PORT}
-                          </Box>
-                        </Box>
-                      </Flex>
-                    </FormControl>
-                    <FormControl mt={5}>
-                      <Label mb={1}>{t('Custom Domain')}</Label>
-                      <Input
-                        w={'350px'}
-                        bg={getValues('accessExternal.selfDomain') ? 'myWhite.500' : 'myWhite.400'}
-                        placeholder="Custom Domain"
-                        {...register('accessExternal.selfDomain')}
-                      />
-                    </FormControl>
-                    {!!getValues('accessExternal.selfDomain') && (
-                      <Flex>
-                        <Tip
-                          mt={3}
-                          size={'sm'}
-                          icon={<InfoOutlineIcon />}
-                          text={`${t('Please CNAME your custom domain to')} ${getValues(
-                            'accessExternal.outDomain'
-                          )}.${SEALOS_DOMAIN}`}
-                        />
-                      </Flex>
+                      })}
+                    />
+                    {i === networks.length - 1 && networks.length < 5 && (
+                      <Box mt={3}>
+                        <Button
+                          w={'100px'}
+                          variant={'base'}
+                          leftIcon={<MyIcon name="plus" w={'10px'} />}
+                          onClick={() =>
+                            appendNetworks({
+                              networkName: '',
+                              portName: nanoid(),
+                              port: 80,
+                              protocol: 'HTTP',
+                              openPublicDomain: false,
+                              publicDomain: '',
+                              customDomain: ''
+                            })
+                          }
+                        >
+                          {t('Add Port')}
+                        </Button>
+                      </Box>
                     )}
                   </Box>
-                )}
-              </Box>
+                  <Box mx={7}>
+                    <Box mb={1} h={'20px'} fontSize={'sm'}>
+                      {t('Open Public Access')}
+                    </Box>
+                    <Flex alignItems={'center'} h={'35px'}>
+                      <Switch
+                        size={'lg'}
+                        colorScheme={'blackAlpha'}
+                        isChecked={!!network.openPublicDomain}
+                        onChange={(e) => {
+                          updateNetworks(i, {
+                            ...getValues('networks')[i],
+                            networkName: network.networkName || `network-${nanoid()}`,
+                            protocol: network.protocol || 'HTTP',
+                            openPublicDomain: e.target.checked,
+                            publicDomain: network.publicDomain || nanoid()
+                          });
+                        }}
+                      />
+                    </Flex>
+                  </Box>
+                  {network.openPublicDomain && (
+                    <>
+                      <Box flex={'1 0 0'}>
+                        <Box mb={1} h={'20px'}></Box>
+                        <Flex alignItems={'center'} h={'35px'}>
+                          <MySelect
+                            width={'100px'}
+                            h={'35px'}
+                            borderTopRightRadius={0}
+                            borderBottomRightRadius={0}
+                            value={network.protocol}
+                            border={theme.borders.base}
+                            list={ProtocolList}
+                            onchange={(val: any) => {
+                              updateNetworks(i, {
+                                ...getValues('networks')[i],
+                                protocol: val
+                              });
+                            }}
+                          />
+                          <Flex
+                            flex={'1 0 0'}
+                            alignItems={'center'}
+                            h={'35px'}
+                            bg={'myWhite.500'}
+                            px={4}
+                            border={theme.borders.base}
+                            borderLeft={0}
+                          >
+                            <Box flex={1} userSelect={'all'} className="textEllipsis">
+                              {network.customDomain
+                                ? network.customDomain
+                                : `${network.publicDomain}.${SEALOS_DOMAIN}`}
+                            </Box>
+                            <Box
+                              fontSize={'sm'}
+                              color={'myBlue.600'}
+                              cursor={'pointer'}
+                              onClick={() =>
+                                setCustomAccessModalData({
+                                  publicDomain: network.publicDomain,
+                                  customDomain: network.customDomain
+                                })
+                              }
+                            >
+                              {t('Custom Domain')}
+                            </Box>
+                          </Flex>
+                        </Flex>
+                      </Box>
+                    </>
+                  )}
+                  {networks.length > 1 && (
+                    <Box ml={3}>
+                      <Box mb={1} h={'20px'}></Box>
+                      <IconButton
+                        icon={<MinusIcon />}
+                        aria-label={''}
+                        bg={'myWhite.500'}
+                        onClick={() => removeNetworks(i)}
+                      />
+                    </Box>
+                  )}
+                </Flex>
+              ))}
             </Box>
           </Box>
           {/* settings */}
@@ -850,6 +911,14 @@ const Form = ({
                 </AccordionButton>
 
                 <AccordionPanel px={'42px'} py={'24px'}>
+                  <Flex mb={4}>
+                    <Label className={styles.formSecondTitle}>{t('Command')}</Label>
+                    <Tip
+                      icon={<InfoOutlineIcon />}
+                      size="sm"
+                      text="If no, the default command is used"
+                    />
+                  </Flex>
                   {/* command && param */}
                   <FormControl mb={7}>
                     <Flex alignItems={'center'}>
@@ -890,7 +959,7 @@ const Form = ({
                       </Button>
                     </Flex>
                     <Box pl={`${labelWidth}px`} mt={3}>
-                      <table className={styles.table}>
+                      <table className={'table-cross'}>
                         <tbody>
                           {envs.map((env) => {
                             const valText = env.value
@@ -1046,6 +1115,24 @@ const Form = ({
           )}
         </Box>
       </Grid>
+      {!!customAccessModalData && (
+        <CustomAccessModal
+          {...customAccessModalData}
+          onClose={() => setCustomAccessModalData(undefined)}
+          onSuccess={(e) => {
+            const i = networks.findIndex(
+              (item) => item.publicDomain === customAccessModalData.publicDomain
+            );
+            if (i === -1) return;
+            updateNetworks(i, {
+              ...networks[i],
+              customDomain: e
+            });
+
+            setCustomAccessModalData(undefined);
+          }}
+        />
+      )}
       {isEditEnvs && (
         <EditEnvs defaultEnv={envs} onClose={onCloseEditEnvs} successCb={(e) => replaceEnvs(e)} />
       )}

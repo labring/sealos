@@ -15,9 +15,6 @@ const nextConfig = withPWA({
   reactStrictMode: false,
   swcMinify: isProduction,
   output: 'standalone',
-  typescript: {
-    ignoreBuildErrors: true
-  },
   experimental: {
     outputFileTracingRoot: path.join(__dirname, '../')
   }

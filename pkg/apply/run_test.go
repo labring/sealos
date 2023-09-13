@@ -167,7 +167,7 @@ func TestNewApplierFromArgs(t *testing.T) {
 					},
 					Spec: v2.ClusterSpec{
 						Hosts: []v2.Host{
-							{IPS: []string{iputils.LocalIP(addr) + ":0"}, Roles: []string{v2.MASTER, GetHostArch(ssh.NewSSHClient(&v2.SSH{}, true), iputils.LocalIP(addr)+":0")}},
+							{IPS: []string{iputils.LocalIP(addr) + ":22"}, Roles: []string{v2.MASTER, GetHostArch(ssh.MustNewClient(&v2.SSH{}, true), iputils.LocalIP(addr)+":22")}},
 						},
 						Image: []string{"labring/kubernetes:v1.24.0"},
 						SSH:   v2.SSH{},

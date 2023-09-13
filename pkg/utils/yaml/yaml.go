@@ -21,32 +21,54 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"path/filepath"
+	"os"
+	"reflect"
 	"strings"
-
-	fileutil "github.com/labring/sealos/pkg/utils/file"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/yaml"
+
+	fileutil "github.com/labring/sealos/pkg/utils/file"
 )
 
-func Unmarshal(path string) (map[string]interface{}, error) {
-	metadata, err := fileutil.ReadAll(path)
-	if err != nil {
-		return nil, err
+const nonStructPointerErrorFmt = "must be a struct pointer, got %T"
+
+func unmarshalStrict(r io.Reader, obj interface{}) (err error) {
+	if obj != nil && reflect.ValueOf(obj).Kind() != reflect.Pointer {
+		return fmt.Errorf(nonStructPointerErrorFmt, obj)
 	}
-	var data map[string]interface{}
-	err = yaml.Unmarshal(metadata, &data)
-	if err != nil {
-		return nil, err
+	if v := reflect.ValueOf(obj).Elem(); v.Kind() != reflect.Struct {
+		return fmt.Errorf(nonStructPointerErrorFmt, obj)
 	}
-	return data, nil
+
+	rd := utilyaml.NewYAMLReader(bufio.NewReader(r))
+	for {
+		buf, rerr := rd.Read()
+		if rerr == io.EOF {
+			break
+		}
+		if rerr != nil {
+			return rerr
+		}
+		if len(bytes.TrimSpace(buf)) == 0 {
+			continue
+		}
+		if err = yaml.UnmarshalStrict(buf, obj); err == nil {
+			return nil
+		}
+	}
+	if err != nil {
+		if strings.Contains(err.Error(), "json: unknown field") {
+			err = fmt.Errorf("document do not have corresponding struct %T", obj)
+		}
+	}
+	return
 }
 
-func UnmarshalData(metadata []byte) (map[string]interface{}, error) {
+func UnmarshalToMap(buf []byte) (map[string]interface{}, error) {
 	var data map[string]interface{}
-	err := yaml.Unmarshal(metadata, &data)
+	err := yaml.Unmarshal(buf, &data)
 	if err != nil {
 		return nil, err
 	}
@@ -69,47 +91,42 @@ func ToJSON(bs []byte) (jsons []string) {
 	return
 }
 
-func ToYalms(bs string) (yamls []string) {
-	buf := bytes.NewBuffer([]byte(bs))
-	reader := utilyaml.NewYAMLReader(bufio.NewReader(buf))
-	for {
-		patch, err := reader.Read()
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			break
-		}
-		patch = bytes.TrimSpace(patch)
-		if len(patch) == 0 {
-			continue
-		}
-		yamls = append(yamls, string(patch))
-	}
-	return
+func Marshal(obj interface{}) ([]byte, error) {
+	return yaml.Marshal(obj)
 }
 
-func MarshalYamlToFile(file string, obj ...interface{}) error {
-	data, err := MarshalYamlConfigs(obj...)
+func MarshalFile(file string, obj ...interface{}) error {
+	data, err := MarshalConfigs(obj...)
 	if err != nil {
 		return err
 	}
 	return fileutil.WriteFile(file, data)
 }
 
-func UnmarshalYamlFromFile(file string, obj interface{}) error {
-	metadata, err := fileutil.ReadAll(file)
-	if err != nil {
-		return err
-	}
-	err = yaml.Unmarshal(metadata, obj)
-	if err != nil {
-		return err
-	}
-	return nil
+func Unmarshal(r io.Reader, obj interface{}) error {
+	return unmarshalStrict(r, obj)
 }
 
-func MarshalYamlConfigs(configs ...interface{}) ([]byte, error) {
+func IsNil(b []byte) (bool, error) {
+	m, err := UnmarshalToMap(b)
+	if err != nil {
+		return false, err
+	}
+	return len(m) == 0, nil
+}
+
+// UnmarshalFile if there is no content in the file or it contains only spaces,
+// result will be nil, then the given object is not initialized at this time.
+func UnmarshalFile(file string, obj interface{}) error {
+	r, err := os.Open(file)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+	return unmarshalStrict(r, obj)
+}
+
+func MarshalConfigs(configs ...interface{}) ([]byte, error) {
 	var cfgs [][]byte
 	for _, cfg := range configs {
 		data, err := yaml.Marshal(cfg)
@@ -119,11 +136,6 @@ func MarshalYamlConfigs(configs ...interface{}) ([]byte, error) {
 		cfgs = append(cfgs, data)
 	}
 	return bytes.Join(cfgs, []byte("\n---\n")), nil
-}
-
-func Matcher(path string) bool {
-	ext := strings.ToLower(filepath.Ext(path))
-	return ext == ".yaml" || ext == ".yml"
 }
 
 func ShowStructYaml(s interface{}) {

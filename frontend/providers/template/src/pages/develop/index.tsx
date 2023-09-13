@@ -1,42 +1,45 @@
-import { Flex, Box, Button, Text, Textarea } from '@chakra-ui/react';
-import { useTranslation } from 'next-i18next';
 import MyIcon from '@/components/Icon';
-import { useRouter } from 'next/router';
-import { ChangeEvent, useMemo, useState } from 'react';
-import { serviceSideProps } from '@/utils/i18n';
-import Form from './components/Form';
-import { useQuery } from '@tanstack/react-query';
-import { GET } from '@/services/request';
-import JsYaml from 'js-yaml';
+import { editModeMap } from '@/constants/editApp';
+import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
-import { debounce, mapValues } from 'lodash';
-import { YamlSourceType, TemplateType, YamlType } from '@/types/app';
+import { GET } from '@/services/request';
+import { YamlItemType } from '@/types';
+import { TemplateType, YamlSourceType } from '@/types/app';
+import { serviceSideProps } from '@/utils/i18n';
 import {
   developGenerateYamlList,
   getTemplateDataSource,
   parseTemplateString
 } from '@/utils/json-yaml';
-import YamlList from './components/YamlList';
-import { useForm } from 'react-hook-form';
 import { getTemplateDefaultValues } from '@/utils/template';
-import { YamlItemType } from '@/types';
-import Header from './components/Header';
-import BreadCrumbHeader from './components/BreadCrumbHeader';
-import CodeMirror from '@uiw/react-codemirror';
+import { Box, Button, Flex, Text } from '@chakra-ui/react';
 import { StreamLanguage } from '@codemirror/language';
 import { yaml } from '@codemirror/legacy-modes/mode/yaml';
-import { useGlobalStore } from '@/store/global';
+import { useQuery } from '@tanstack/react-query';
+import CodeMirror from '@uiw/react-codemirror';
+import JsYaml from 'js-yaml';
+import { debounce, has, isObject, mapValues } from 'lodash';
+import { useTranslation } from 'next-i18next';
+import { useCallback, useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import ErrorModal from '../deploy/components/ErrorModal';
+import BreadCrumbHeader from './components/BreadCrumbHeader';
+import Form from './components/Form';
+import YamlList from './components/YamlList';
+import { postDeployApp } from '@/api/app';
+import JSZip from 'jszip';
+import { downLoadBold } from '@/utils/tools';
+import dayjs from 'dayjs';
 
-const Develop = () => {
+export default function Develop() {
   const { t } = useTranslation();
-  const router = useRouter();
   const [yamlValue, setYamlValue] = useState('');
   const { toast } = useToast();
   const [yamlSource, setYamlSource] = useState<YamlSourceType>();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
-  const { screenWidth } = useGlobalStore();
-  const isLargeScreen = useMemo(() => screenWidth > 1024, [screenWidth]);
-  const [showSlider, setShowSlider] = useState(false);
+  const { Loading, setIsLoading } = useLoading();
+  const [errorMessage, setErrorMessage] = useState('');
+  const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(false);
 
   const detailName = useMemo(
     () => yamlSource?.source?.defaults?.app_name?.value || '',
@@ -116,9 +119,64 @@ const Develop = () => {
     }
   }, 1000);
 
+  const submitSuccess = async () => {
+    setIsLoading(true);
+    try {
+      const result: string[] = await postDeployApp(
+        yamlList.map((item) => item.value),
+        'dryrun'
+      );
+      toast({
+        title: t(applySuccess),
+        status: 'success',
+        description: result?.toString()
+      });
+    } catch (error) {
+      console.log(error, 'sadasdas');
+
+      setErrorMessage(JSON.stringify(error));
+    }
+    setIsLoading(false);
+  };
+
+  const submitError = () => {
+    formHook.getValues();
+    function deepSearch(obj: any): string {
+      if (has(obj, 'message')) {
+        return obj.message;
+      }
+      for (let key in obj) {
+        if (isObject(obj[key])) {
+          let message = deepSearch(obj[key]);
+          if (message) {
+            return message;
+          }
+        }
+      }
+      return t('Submit Error');
+    }
+
+    toast({
+      title: deepSearch(formHook.formState.errors),
+      status: 'error',
+      position: 'top',
+      duration: 3000,
+      isClosable: true
+    });
+  };
+
+  const handleExportYaml = useCallback(async () => {
+    const zip = new JSZip();
+    yamlList.forEach((item) => {
+      zip.file(item.filename, item.value);
+    });
+    const res = await zip.generateAsync({ type: 'blob' });
+    downLoadBold(res, 'application/zip', `yaml${dayjs().format('YYYYMMDDHHmmss')}.zip`);
+  }, [yamlList]);
+
   return (
     <Flex flexDirection={'column'} p={'0px 34px 20px 34px '} h="100vh" maxW={'1440px'} mx="auto">
-      <BreadCrumbHeader />
+      <BreadCrumbHeader applyCb={() => formHook.handleSubmit(submitSuccess, submitError)()} />
       <Flex
         border={'1px solid #DEE0E2'}
         borderRadius={'8px'}
@@ -127,7 +185,7 @@ const Develop = () => {
         flex={1}
       >
         {/* left */}
-        <Flex flexDirection={'column'} flex={'0 1 500px'} borderRight={'1px solid #EFF0F1'}>
+        <Flex flexDirection={'column'} w="50%" borderRight={'1px solid #EFF0F1'}>
           <Flex
             flexShrink={0}
             borderBottom={'1px solid #EFF0F1'}
@@ -148,7 +206,7 @@ const Develop = () => {
           <Box h="100%" w="100%" position={'relative'} overflow={'auto'}>
             <CodeMirror
               extensions={[StreamLanguage.define(yaml)]}
-              width="500px"
+              width="100%"
               height="100%"
               minHeight="1200px"
               onChange={debounce(onYamlChange, 1000)}
@@ -156,7 +214,7 @@ const Develop = () => {
           </Box>
         </Flex>
         {/* right */}
-        <Flex flex={2} flexDirection={'column'}>
+        <Flex w="50%" flexDirection={'column'} position={'relative'}>
           <Flex
             flexShrink={0}
             borderBottom={'1px solid #EFF0F1'}
@@ -171,25 +229,46 @@ const Develop = () => {
               {t('develop.Preview')}
             </Text>
           </Flex>
-          <Flex flexDirection={'column'} h="0" flex={1} overflowY={'scroll'}>
-            <Flex pl="42px" pt="26px" borderBottom={'1px solid #EFF0F1'} flexDirection={'column'}>
+          <Flex flexDirection={'column'} flex={1} overflow={'scroll'}>
+            <Flex
+              pl="42px"
+              pt="26px"
+              pr={{ sm: '20px', md: '60px' }}
+              borderBottom={'1px solid #EFF0F1'}
+              flexDirection={'column'}
+            >
               <Text fontWeight={'500'} fontSize={'18px'} color={'#24282C'}>
                 {t('develop.Configure Form')}
               </Text>
               <Form formSource={yamlSource!} formHook={formHook} />
             </Flex>
             <Flex flex={1} pl="42px" pt="26px" flexDirection={'column'} position={'relative'}>
-              <Text fontWeight={'500'} fontSize={'18px'} color={'#24282C'}>
-                {t('develop.YAML File')}
-              </Text>
+              <Flex alignItems={'center'} justifyContent={'space-between'}>
+                <Text fontWeight={'500'} fontSize={'18px'} color={'#24282C'} cursor={'default'}>
+                  {t('develop.YAML File')}
+                </Text>
+                <Button
+                  ml="auto"
+                  minW={'100px'}
+                  h={'34px'}
+                  variant={'link'}
+                  onClick={handleExportYaml}
+                >
+                  {t('Export')} Yaml
+                </Button>
+              </Flex>
               <YamlList yamlList={yamlList} />
             </Flex>
           </Flex>
         </Flex>
       </Flex>
+      <Loading />
+      {!!errorMessage && (
+        <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
+      )}
     </Flex>
   );
-};
+}
 
 export async function getServerSideProps(content: any) {
   return {
@@ -198,5 +277,3 @@ export async function getServerSideProps(content: any) {
     }
   };
 }
-
-export default Develop;

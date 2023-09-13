@@ -22,7 +22,7 @@ echarts.use([
 
 export default function CostChart({ data }: { data: BillingData['status']['deductionAmount'] }) {
   const { t } = useTranslation();
-  const { cpu = 0, memory = 0, storage = 0, gpu = 0 } = data;
+  const { cpu = 0, memory = 0, storage = 0, gpu = 0, network = 0 } = data;
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
   const radius = useBreakpointValue({
     xl: ['45%', '70%'],
@@ -42,6 +42,7 @@ export default function CostChart({ data }: { data: BillingData['status']['deduc
       ['cpu', formatMoney(cpu).toFixed(2)],
       ['memory', formatMoney(memory).toFixed(2)],
       ['storage', formatMoney(storage).toFixed(2)],
+      ['network', formatMoney(network).toFixed(2)],
       ...(gpuEnabled ? [['gpu', formatMoney(gpu).toFixed(2)]] : [])
     ],
     [cpu, memory, storage, gpu, gpuEnabled]

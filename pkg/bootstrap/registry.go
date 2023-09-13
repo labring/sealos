@@ -17,11 +17,10 @@ package bootstrap
 import (
 	"fmt"
 
-	"github.com/labring/sealos/pkg/registry/helpers"
-
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/registry/helpers"
 	"github.com/labring/sealos/pkg/registry/password"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -41,8 +40,8 @@ func (a *registryApplier) Apply(ctx Context, host string) error {
 	if a.upgrade == nil {
 		a.upgrade = password.NewUpgrade(ctx.GetCluster().GetName(), ctx.GetExecer())
 	}
-	rc := helpers.GetRegistryInfo(ctx.GetExecer(), ctx.GetData().RootFSPath(), ctx.GetCluster().GetRegistryIPAndPort())
-	lnCmd := fmt.Sprintf(constants.DefaultLnFmt, ctx.GetData().RootFSRegistryPath(), rc.Data)
+	rc := helpers.GetRegistryInfo(ctx.GetExecer(), ctx.GetPathResolver().RootFSPath(), ctx.GetCluster().GetRegistryIPAndPort())
+	lnCmd := fmt.Sprintf(constants.DefaultLnFmt, ctx.GetPathResolver().RootFSRegistryPath(), rc.Data)
 	logger.Debug("make soft link: %s", lnCmd)
 	if err := ctx.GetExecer().CmdAsync(host, lnCmd); err != nil {
 		return fmt.Errorf("failed to make link: %v", err)
@@ -58,21 +57,17 @@ func (*registryApplier) Undo(ctx Context, host string) error {
 	return ctx.GetExecer().CmdAsync(host, ctx.GetBash().CleanRegistryBash(host))
 }
 
-type registryHostApplier struct {
-}
+type registryHostApplier struct{ common }
 
 func (*registryHostApplier) String() string { return "registry_host_applier" }
-func (*registryHostApplier) Filter(_ Context, _ string) bool {
-	return true
-}
 
 func (*registryHostApplier) Undo(ctx Context, host string) error {
-	rc := helpers.GetRegistryInfo(ctx.GetExecer(), ctx.GetData().RootFSPath(), ctx.GetCluster().GetRegistryIPAndPort())
+	rc := helpers.GetRegistryInfo(ctx.GetExecer(), ctx.GetPathResolver().RootFSPath(), ctx.GetCluster().GetRegistryIPAndPort())
 	return ctx.GetRemoter().HostsDelete(host, rc.Domain)
 }
 
 func (a *registryHostApplier) Apply(ctx Context, host string) error {
-	rc := helpers.GetRegistryInfo(ctx.GetExecer(), ctx.GetData().RootFSPath(), ctx.GetCluster().GetRegistryIPAndPort())
+	rc := helpers.GetRegistryInfo(ctx.GetExecer(), ctx.GetPathResolver().RootFSPath(), ctx.GetCluster().GetRegistryIPAndPort())
 
 	if err := ctx.GetRemoter().HostsAdd(host, iputils.GetHostIP(rc.IP), rc.Domain); err != nil {
 		return fmt.Errorf("failed to add hosts: %v", err)

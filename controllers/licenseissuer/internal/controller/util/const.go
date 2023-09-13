@@ -38,14 +38,13 @@ const (
 	RegisterURL       = "RegisterURL"
 	CloudSyncURL      = "CloudSyncURL"
 	LicenseMonitorURL = "LicenseMonitorURL"
+	NetworkProbeURL   = "NetworkProbeURL"
 	// Add more url here
 )
 
 const NoticeFrom = "Sealos Cloud"
 
 var Key = "asdhjkwqdaskdjhqjwdakxausdasdajs"
-
-const MaxSizeThresholdStr = "800Ki"
 
 const (
 	Sealos                     string = "Sealos Cloud"
@@ -69,6 +68,20 @@ const (
 )
 
 const (
-	PeriodicPolicy = "Periodic"
-	OncePolicy     = "Once"
+	PeriodicPolicy          = "Periodic"
+	PeriodicWithProbePolicy = "PeriodicWithProbe"
+	OncePolicy              = "Once"
+	OnceWithProbePolicy     = "OnceWithProbe"
+)
+
+const (
+	Collector     task = "Collector"
+	DataSync      task = "DataSync"
+	Init          task = "Init"
+	Register      task = "Register"
+	Notice        task = "Notice"
+	NoticeCleanup task = "NoticeCleanup"
+	NetWorkConfig task = "NetWorkConfig"
+	MemoryCleanup task = "MemoryCleanup"
+	// Add more tasks here
 )

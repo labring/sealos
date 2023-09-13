@@ -13,6 +13,7 @@ jobs:
       arch: amd64,arm64
       e2e: true
       image: true
+      target_pull: true
   e2e_apply_test:
     needs: [ call_ci_workflow ]
     runs-on: ubuntu-latest
@@ -23,14 +24,23 @@ jobs:
       matrix:
         arch: [ arm64, amd64 ]
     outputs:
-      test_result: ${{ steps.apply_test.outputs.test_result }}
+      test_arm64_result: ${{ steps.apply_test.outputs.test_arm64_result }}
+      test_amd64_result: ${{ steps.apply_test.outputs.test_amd64_result }}
     steps:
       - name: Download sealos binary
         uses: actions/download-artifact@v3
         with:
           name: sealos-${{ matrix.arch }}
           path: /tmp/sealos/bin/
-
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos-amd64
+          path: /tmp/verify/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/verify/sealos
+          sudo /tmp/verify/sealos version
       - name: Download patch image tar
         uses: actions/download-artifact@v3
         with:
@@ -45,7 +55,7 @@ jobs:
         id: apply_test
         shell: bash
         env:
-          SEALOS_E2E_TEST_IMAGE_NAME: registry.cn-hongkong.aliyuncs.com/labring/kubernetes:v1.25.6
+          SEALOS_E2E_TEST_IMAGE_NAME: registry.cn-shanghai.aliyuncs.com/labring/kubernetes:v1.25.6
           SEALOS_E2E_TEST_PATCH_IMAGE_TAR: /tmp/sealos/images/patch-${{ matrix.arch }}.tar.gz
           SEALOS_E2E_TEST_PATCH_IMAGE_NAME: ghcr.io/labring/sealos-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}
           SEALOS_E2E_TEST_SEALOS_BIN_PATH: /tmp/sealos/bin/sealos

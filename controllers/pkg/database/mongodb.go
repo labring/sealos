@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/crypto"
@@ -41,10 +42,14 @@ const (
 	DefaultPricesConn   = "prices"
 )
 
+const DefaultRetentionDay = 30
+
 const (
-	MongoURI      = "MONGO_URI"
-	MongoUsername = "MONGO_USERNAME"
-	MongoPassword = "MONGO_PASSWORD"
+	MongoURI           = "MONGO_URI"
+	MongoUsername      = "MONGO_USERNAME"
+	MongoPassword      = "MONGO_PASSWORD"
+	RetentionDay       = "RETENTION_DAY"
+	PermanentRetention = "PERMANENT_RETENTION"
 )
 
 const defaultCryptoKey = "Af0b2Bc5e9d0C84adF0A5887cF43aB63"
@@ -52,22 +57,20 @@ const defaultCryptoKey = "Af0b2Bc5e9d0C84adF0A5887cF43aB63"
 var cryptoKey = defaultCryptoKey
 
 type MongoDB struct {
-	URL          string
-	Client       *mongo.Client
-	DBName       string
-	MonitorConn  string
-	MeteringConn string
-	BillingConn  string
-	PricesConn   string
+	URL               string
+	Client            *mongo.Client
+	DBName            string
+	MonitorConnPrefix string
+	MeteringConn      string
+	BillingConn       string
+	PricesConn        string
 }
 
 type AccountBalanceSpecBSON struct {
-	OrderID string          `json:"order_id" bson:"order_id"`
-	Owner   string          `json:"owner" bson:"owner"`
-	Time    time.Time       `json:"time" bson:"time"`
-	Type    accountv1.Type  `json:"type" bson:"type"`
-	Costs   accountv1.Costs `json:"costs,omitempty" bson:"costs,omitempty"`
-	Amount  int64           `json:"amount,omitempty" bson:"amount"`
+	// Time    metav1.Time `json:"time" bson:"time"`
+	// time字段如果为time.Time类型无法转换为json crd，所以使用metav1.Time，但是使用metav1.Time无法插入到mongo中，所以需要转换为time.Time
+	Time                               time.Time `json:"time" bson:"time"`
+	accountv1.AccountBalanceSpecInline `json:",inline" bson:",inline"`
 }
 
 func (m *MongoDB) Disconnect(ctx context.Context) error {
@@ -98,28 +101,15 @@ func (m *MongoDB) GetBillingLastUpdateTime(owner string, _type accountv1.Type) (
 }
 
 func (m *MongoDB) SaveBillingsWithAccountBalance(accountBalanceSpec *accountv1.AccountBalanceSpec) error {
-	// Time    metav1.Time `json:"time" bson:"time"`
-	// time字段如果为time.Time类型无法转换为json crd，所以使用metav1.Time，但是使用metav1.Time无法插入到mongo中，所以需要转换为time.Time
-
-	accountBalanceTime := accountBalanceSpec.Time.Time
-
-	// Create BSON document
-	accountBalanceDoc := bson.M{
-		"order_id": accountBalanceSpec.OrderID,
-		"owner":    accountBalanceSpec.Owner,
-		"time":     accountBalanceTime.UTC(),
-		"type":     accountBalanceSpec.Type,
-		"costs":    accountBalanceSpec.Costs,
-		"amount":   accountBalanceSpec.Amount,
-	}
-	if accountBalanceSpec.Details != "" {
-		accountBalanceDoc["details"] = accountBalanceSpec.Details
+	accountBalanceDoc := AccountBalanceSpecBSON{
+		Time:                     accountBalanceSpec.Time.Time.UTC(),
+		AccountBalanceSpecInline: accountBalanceSpec.AccountBalanceSpecInline,
 	}
 	_, err := m.getBillingCollection().InsertOne(context.Background(), accountBalanceDoc)
 	return err
 }
 
-func (m *MongoDB) GetMeteringOwnerTimeResult(queryTime time.Time, queryCategories, queryProperties []string, queryOwner string) (*MeteringOwnerTimeResult, error) {
+func (m *MongoDB) GetMeteringOwnerTimeResult(queryTime time.Time, queryCategories, queryProperties []string) (*MeteringOwnerTimeResult, error) {
 	matchValue := bson.M{
 		"time":     queryTime,
 		"category": bson.M{"$in": queryCategories},
@@ -144,7 +134,7 @@ func (m *MongoDB) GetMeteringOwnerTimeResult(queryTime time.Time, queryCategorie
 			"costs":       bson.M{"$push": bson.M{"k": "$property", "v": "$propertyTotal"}},
 		}}},
 		bson.D{{Key: "$addFields", Value: bson.M{
-			"owner":  queryOwner,
+			//"owner":  queryOwner,
 			"time":   queryTime,
 			"amount": "$amountTotal",
 			"costs":  bson.M{"$arrayToObject": "$costs"},
@@ -350,12 +340,8 @@ func (m *MongoDB) queryBillingRecordsByOrderID(billingRecordQuery *accountv1.Bil
 			return fmt.Errorf("failed to decode billing record: %w", err)
 		}
 		billingRecord := accountv1.AccountBalanceSpec{
-			OrderID: bsonRecord.OrderID,
-			Owner:   bsonRecord.Owner,
-			Time:    metav1.NewTime(bsonRecord.Time),
-			Type:    bsonRecord.Type,
-			Costs:   bsonRecord.Costs,
-			Amount:  bsonRecord.Amount,
+			Time:                     metav1.NewTime(bsonRecord.Time),
+			AccountBalanceSpecInline: bsonRecord.AccountBalanceSpecInline,
 		}
 		billingRecords = append(billingRecords, billingRecord)
 	}
@@ -376,25 +362,20 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 
 	billingColl := m.getBillingCollection()
 	timeMatchValue := bson.D{primitive.E{Key: "$gte", Value: billingRecordQuery.Spec.StartTime.Time}, primitive.E{Key: "$lte", Value: billingRecordQuery.Spec.EndTime.Time}}
+	matchValue := bson.D{
+		primitive.E{Key: "time", Value: timeMatchValue},
+		primitive.E{Key: "owner", Value: owner},
+	}
+	if billingRecordQuery.Spec.Type != -1 {
+		matchValue = append(matchValue, primitive.E{Key: "type", Value: billingRecordQuery.Spec.Type})
+	}
+	if billingRecordQuery.Spec.Namespace != "" {
+		matchValue = append(matchValue, primitive.E{Key: "namespace", Value: billingRecordQuery.Spec.Namespace})
+	}
 	matchStage := bson.D{
 		primitive.E{
-			Key: "$match", Value: bson.D{
-				primitive.E{Key: "time", Value: timeMatchValue},
-				primitive.E{Key: "owner", Value: owner},
-			},
+			Key: "$match", Value: matchValue,
 		},
-	}
-
-	if billingRecordQuery.Spec.Type != -1 {
-		matchStage = bson.D{
-			primitive.E{
-				Key: "$match", Value: bson.D{
-					primitive.E{Key: "time", Value: timeMatchValue},
-					primitive.E{Key: "owner", Value: owner},
-					primitive.E{Key: "type", Value: billingRecordQuery.Spec.Type},
-				},
-			},
-		}
 	}
 
 	// Pipeline for getting the paginated data
@@ -459,12 +440,8 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 			return fmt.Errorf("failed to decode billing record: %w", err)
 		}
 		billingRecord := accountv1.AccountBalanceSpec{
-			OrderID: bsonRecord.OrderID,
-			Owner:   bsonRecord.Owner,
-			Time:    metav1.NewTime(bsonRecord.Time),
-			Type:    bsonRecord.Type,
-			Costs:   bsonRecord.Costs,
-			Amount:  bsonRecord.Amount,
+			Time:                     metav1.NewTime(bsonRecord.Time),
+			AccountBalanceSpecInline: bsonRecord.AccountBalanceSpecInline,
 		}
 		billingRecords = append(billingRecords, billingRecord)
 	}
@@ -585,7 +562,7 @@ func (m *MongoDB) getMonitorCollection(collTime time.Time) *mongo.Collection {
 
 func (m *MongoDB) getMonitorCollectionName(collTime time.Time) string {
 	// 按天计算尾缀，如202012月1号 尾缀为20201201
-	return fmt.Sprintf("%s_%s", m.MonitorConn, collTime.Format("20060102"))
+	return fmt.Sprintf("%s_%s", m.MonitorConnPrefix, collTime.Format("20060102"))
 }
 
 func (m *MongoDB) getPricesCollection() *mongo.Collection {
@@ -652,6 +629,28 @@ func (m *MongoDB) CreateTimeSeriesIfNotExist(dbName, collectionName string) erro
 	return m.Client.Database(dbName).RunCommand(context.TODO(), cmd).Err()
 }
 
+func (m *MongoDB) DropMonitorCollectionsOlderThan(days int) error {
+	db := m.Client.Database(m.DBName)
+	// Get the current time minus the number of days
+	cutoffDate := time.Now().UTC().AddDate(0, 0, -days)
+	cutoffName := m.getMonitorCollectionName(cutoffDate)
+
+	collections, err := db.ListCollectionNames(context.Background(), bson.M{})
+	if err != nil {
+		return err
+	}
+	for i := range collections {
+		// Check if the collection name starts with the prefix and is older than the cutoff date
+		if strings.HasPrefix(collections[i], m.MonitorConnPrefix) && collections[i] < cutoffName {
+			if err := db.Collection(collections[i]).Drop(context.TODO()); err != nil {
+				return err
+			}
+			logger.Info("dropped collection: ", collections[i])
+		}
+	}
+	return nil
+}
+
 func (m *MongoDB) collectionExist(dbName, collectionName string) (bool, error) {
 	// Check if the collection already exists
 	collections, err := m.Client.Database(dbName).ListCollectionNames(context.Background(), bson.M{"name": collectionName})
@@ -665,12 +664,12 @@ func NewMongoDB(ctx context.Context, URL string) (Interface, error) {
 	}
 	err = client.Ping(ctx, nil)
 	return &MongoDB{
-		Client:       client,
-		URL:          URL,
-		DBName:       DefaultDBName,
-		MeteringConn: DefaultMeteringConn,
-		MonitorConn:  DefaultMonitorConn,
-		BillingConn:  DefaultBillingConn,
-		PricesConn:   DefaultPricesConn,
+		Client:            client,
+		URL:               URL,
+		DBName:            DefaultDBName,
+		MeteringConn:      DefaultMeteringConn,
+		MonitorConnPrefix: DefaultMonitorConn,
+		BillingConn:       DefaultBillingConn,
+		PricesConn:        DefaultPricesConn,
 	}, err
 }

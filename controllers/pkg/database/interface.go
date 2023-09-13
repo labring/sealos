@@ -24,7 +24,7 @@ import (
 
 type Interface interface {
 	//InitDB() error
-	GetMeteringOwnerTimeResult(queryTime time.Time, queryCategories, queryProperties []string, queryOwner string) (*MeteringOwnerTimeResult, error)
+	GetMeteringOwnerTimeResult(queryTime time.Time, queryCategories, queryProperties []string) (*MeteringOwnerTimeResult, error)
 	GetBillingLastUpdateTime(owner string, _type accountv1.Type) (bool, time.Time, error)
 	SaveBillingsWithAccountBalance(accountBalanceSpec *accountv1.AccountBalanceSpec) error
 	QueryBillingRecords(billingRecordQuery *accountv1.BillingRecordQuery, owner string) error
@@ -33,6 +33,7 @@ type Interface interface {
 	GetBillingCount(accountType accountv1.Type, startTime, endTime time.Time) (count, amount int64, err error)
 	GenerateMeteringData(startTime, endTime time.Time, prices map[string]common.Price) error
 	InsertMonitor(ctx context.Context, monitors ...*common.Monitor) error
+	DropMonitorCollectionsOlderThan(days int) error
 	Disconnect(ctx context.Context) error
 	Creator
 }
@@ -45,7 +46,7 @@ type Creator interface {
 }
 
 type MeteringOwnerTimeResult struct {
-	Owner  string           `bson:"owner"`
+	//Owner  string           `bson:"owner"`
 	Time   time.Time        `bson:"time"`
 	Amount int64            `bson:"amount"`
 	Costs  map[string]int64 `bson:"costs"`

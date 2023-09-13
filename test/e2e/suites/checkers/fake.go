@@ -17,9 +17,12 @@ limitations under the License.
 package checkers
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+
+	v1 "k8s.io/api/core/v1"
 
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
 
@@ -53,9 +56,6 @@ type fakeClient struct {
 		JoinConfiguration    kubeadm.JoinConfiguration
 		KubeletConfiguration kubelet.KubeletConfiguration
 	}
-	UpdateConfiguration *struct {
-		ClusterConfiguration kubeadm.ClusterConfiguration
-	}
 
 	clusterName string
 	cmd         cmd.Interface
@@ -85,9 +85,6 @@ func NewFakeGroupClient(name string, opt *FakeOpts) (*FakeClientGroup, error) {
 	if err := client.loadInitConfig(); err != nil {
 		return nil, err
 	}
-	if err := client.loadUpdateConfig(); err != nil {
-		return nil, err
-	}
 	if opt == nil {
 		opt = &FakeOpts{}
 	}
@@ -113,12 +110,11 @@ func NewFakeGroupClient(name string, opt *FakeOpts) (*FakeClientGroup, error) {
 		&fakeCgroupClient{fakeClient: client, data: opt.Cgroup},
 		&fakePodCIDRClient{fakeClient: client, data: opt.PodCIDR},
 		&fakeServiceCIDRClient{fakeClient: client, data: opt.ServiceCIDR},
-		&fakeCertSansClient{fakeClient: client, data: opt.CertSan},
+		&fakeCertSansClient{fakeClient: client, data: []string{opt.CertSan, opt.CertDomain}},
 		&fakeSingleTaintsClient{fakeClient: client},
 		&fakeTaintsClient{fakeClient: client, data: opt.Taints},
 		&fakeImageClient{fakeClient: client, data: opt.Images},
 		&fakeEtcdClient{fakeClient: client, etcd: opt.Etcd},
-		&fakeCertSansUpdateClient{fakeClient: client, data: opt.CertDomain},
 	}}, nil
 }
 
@@ -132,60 +128,84 @@ func (f *FakeClientGroup) Verify() error {
 	return nil
 }
 
+func (f *fakeClient) getFilePath(filename string) (string, error) {
+	for _, f := range []string{
+		fmt.Sprintf("/var/lib/sealos/data/%s/etc/%s", f.clusterName, filename),
+		fmt.Sprintf("/root/.sealos/%s/etc/%s", f.clusterName, filename),
+	} {
+		if utils.IsFileExist(f) {
+			return f, nil
+		}
+	}
+	return "", errors.New("both init file does't exists")
+}
+
 func (f *fakeClient) loadInitConfig() error {
 	logger.Info("verify default cluster info")
-	initFile := fmt.Sprintf("/root/.sealos/%s/etc/kubeadm-init.yaml", f.clusterName)
-	if !utils.IsFileExist(initFile) {
-		return fmt.Errorf("file %s not exist", initFile)
+	initFile, err := f.getFilePath("kubeadm-init.yaml")
+	if err != nil {
+		return err
 	}
 	data, err := os.ReadFile(filepath.Clean(initFile))
 	if err != nil {
 		return err
 	}
 	yamls := utils.ToYalms(string(data))
+	clusterConfigFn := func() ([]byte, error) {
+		cfg, err := f.cmd.Exec("kubectl", "get", "cm", "-n", "kube-system", "kubeadm-config", "-o", "yaml")
+		if err != nil {
+			return nil, err
+		}
+		cm := &v1.ConfigMap{}
+		_ = yaml.Unmarshal(cfg, cm)
+		return []byte(cm.Data["ClusterConfiguration"]), nil
+	}
+	kubeproxyConfigFn := func() ([]byte, error) {
+		cfg, err := f.cmd.Exec("kubectl", "get", "cm", "-n", "kube-system", "kube-proxy", "-o", "yaml")
+		if err != nil {
+			return nil, err
+		}
+		cm := &v1.ConfigMap{}
+		_ = yaml.Unmarshal(cfg, cm)
+		return []byte(cm.Data["config.conf"]), nil
+	}
+	kubeletConfigFn := func() ([]byte, error) {
+		cfg, err := f.cmd.Exec("kubectl", "get", "cm", "-n", "kube-system", "kubelet-config", "-o", "yaml")
+		if err != nil {
+			return nil, err
+		}
+		cm := &v1.ConfigMap{}
+		_ = yaml.Unmarshal(cfg, cm)
+		return []byte(cm.Data["kubelet"]), nil
+	}
+
 	for _, yamlString := range yamls {
 		obj, _ := utils.UnmarshalData([]byte(yamlString))
 		kind, _, _ := unstructured.NestedString(obj, "kind")
 		switch kind {
 		case "InitConfiguration":
 			_ = yaml.Unmarshal([]byte(yamlString), &f.InitConfiguration)
-		case "ClusterConfiguration":
-			_ = yaml.Unmarshal([]byte(yamlString), &f.ClusterConfiguration)
-		case "KubeProxyConfiguration":
-			_ = yaml.Unmarshal([]byte(yamlString), &f.KubeProxyConfiguration)
-		case "KubeletConfiguration":
-			_ = yaml.Unmarshal([]byte(yamlString), &f.KubeletConfiguration)
 		}
 	}
+	kubeadmCfg, err := clusterConfigFn()
+	if err != nil {
+		return err
+	}
+	_ = yaml.Unmarshal(kubeadmCfg, &f.ClusterConfiguration)
+	kubeProxyCfg, err := kubeproxyConfigFn()
+	if err != nil {
+		return err
+	}
+	_ = yaml.Unmarshal(kubeProxyCfg, &f.KubeProxyConfiguration)
+	kubeletCfg, err := kubeletConfigFn()
+	if err != nil {
+		return err
+	}
+	_ = yaml.Unmarshal(kubeletCfg, &f.KubeletConfiguration)
 
 	clusterConfig := fmt.Sprintf("/root/.sealos/%s/Clusterfile", f.clusterName)
 	if !utils.IsFileExist(clusterConfig) {
 		return fmt.Errorf("file %s not exist", clusterConfig)
 	}
 	return utils.UnmarshalYamlFile(clusterConfig, &f.Cluster)
-}
-func (f *fakeClient) loadUpdateConfig() error {
-	logger.Info("verify default cluster info")
-	initFile := fmt.Sprintf("/root/.sealos/%s/etc/kubeadm-update.yaml", f.clusterName)
-	if !utils.IsFileExist(initFile) {
-		f.UpdateConfiguration = nil
-		return nil
-	}
-	f.UpdateConfiguration = &struct {
-		ClusterConfiguration kubeadm.ClusterConfiguration
-	}{}
-	data, err := os.ReadFile(filepath.Clean(initFile))
-	if err != nil {
-		return err
-	}
-	yamls := utils.ToYalms(string(data))
-	for _, yamlString := range yamls {
-		obj, _ := utils.UnmarshalData([]byte(yamlString))
-		kind, _, _ := unstructured.NestedString(obj, "kind")
-		switch kind {
-		case "ClusterConfiguration":
-			_ = yaml.Unmarshal([]byte(yamlString), &f.UpdateConfiguration.ClusterConfiguration)
-		}
-	}
-	return nil
 }

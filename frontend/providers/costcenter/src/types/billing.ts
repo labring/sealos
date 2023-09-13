@@ -6,15 +6,17 @@ export type BillingSpec =
       endTime: string;
       type: 0 | 1 | -1 | 2 | 3; //0为扣费，1为充值；用于billing数据查找：如为-1则查找type为0和1的数据，如果给定type值则查找type为给定值的数据
       owner?: string; //用于billing数据中查找的owner字段值
+      namespace?: string;
     }
   | {
       orderID: string; //如果给定orderId，则查找该id的值，该值为唯一值，因此当orderId给定时忽略其他查找限定值
     };
-export type RawCosts = Record<'cpu' | 'memory' | 'storage' | `gpu-${string}`, number>;
+export type RawCosts = Record<'network' | 'cpu' | 'memory' | 'storage' | `gpu-${string}`, number>;
 export type Costs = {
   cpu: number;
   memory: number;
   storage: number;
+  network: number;
   gpu?: number;
 };
 export type BillingItem<T = Costs> = {
@@ -23,6 +25,7 @@ export type BillingItem<T = Costs> = {
   order_id: string;
   owner: string;
   time: string;
+  namespace: string;
   type: 0 | -1 | 1 | 2 | 3;
 };
 export type BillingData<T = Costs> = {

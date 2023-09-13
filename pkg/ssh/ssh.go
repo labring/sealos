@@ -160,7 +160,7 @@ func newFromSSH(ssh *v2.SSH, isStdout bool) (Interface, error) {
 	return New(newOptionFromSSH(ssh, isStdout))
 }
 
-func NewSSHClient(ssh *v2.SSH, isStdout bool) Interface {
+func MustNewClient(ssh *v2.SSH, isStdout bool) Interface {
 	client, err := newFromSSH(ssh, isStdout)
 	if err != nil {
 		logger.Fatal("failed to create ssh client: %v", err)
@@ -168,7 +168,7 @@ func NewSSHClient(ssh *v2.SSH, isStdout bool) Interface {
 	return client
 }
 
-func NewSSHByCluster(cluster *v2.Cluster, isStdout bool) Interface {
+func NewCacheClientFromCluster(cluster *v2.Cluster, isStdout bool) Interface {
 	cc := &clusterClient{
 		cluster:  cluster,
 		isStdout: isStdout,
@@ -178,7 +178,7 @@ func NewSSHByCluster(cluster *v2.Cluster, isStdout bool) Interface {
 	return cc
 }
 
-func WaitSSHReady(client Interface, _ int, hosts ...string) error {
+func WaitReady(client Interface, _ int, hosts ...string) error {
 	eg, _ := errgroup.WithContext(context.Background())
 	for i := range hosts {
 		host := hosts[i]

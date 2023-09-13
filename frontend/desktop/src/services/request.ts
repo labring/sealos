@@ -14,8 +14,8 @@ request.interceptors.request.use(
     let _headers: AxiosHeaders = config.headers || {};
 
     const session = useSessionStore.getState().session;
-    if (config.url && config.url?.startsWith('/api/')) {
-      _headers['Authorization'] = encodeURIComponent(session?.kubeconfig || '');
+    if (session?.token && config.url && config.url?.startsWith('/api/')) {
+      _headers['Authorization'] = encodeURIComponent(session.token);
     }
 
     if (!config.headers || config.headers['Content-Type'] === '') {
@@ -36,14 +36,18 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   (response: AxiosResponse) => {
     const { status, data } = response;
-
+    if (data.code === 401) {
+      console.log('鉴权失败');
+      useSessionStore.getState().delSession();
+      return window.location.replace('/signin');
+    }
     if (status < 200 || status >= 300) {
       return Promise.reject(new Error(data?.code + ':' + data?.message));
     }
 
     const apiResp = data as ApiResp;
     if (apiResp?.code && (apiResp.code < 200 || apiResp.code >= 300)) {
-      return Promise.reject(apiResp.code + ':' + apiResp.message);
+      return Promise.reject({ code: apiResp.code, message: apiResp.message });
     }
 
     return data;

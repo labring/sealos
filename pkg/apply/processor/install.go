@@ -27,12 +27,14 @@ import (
 	"github.com/labring/sealos/pkg/config"
 	"github.com/labring/sealos/pkg/filesystem/rootfs"
 	"github.com/labring/sealos/pkg/guest"
-	runtime "github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime/factory"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
 	"github.com/labring/sealos/pkg/utils/rand"
+	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 )
 
 var ForceOverride bool
@@ -133,7 +135,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 			return err
 		}
 		if oci.OCIv1.Config.Labels != nil {
-			imageTypes.Insert(oci.OCIv1.Config.Labels[v2.ImageTypeKey])
+			imageTypes.Insert(maps.GetFromKeys(oci.OCIv1.Config.Labels, v2.ImageTypeKeys...))
 		} else {
 			imageTypes.Insert(string(v2.AppImage))
 		}
@@ -150,7 +152,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		} else {
 			ctrName = rand.Generator(8)
 		}
-		cluster.Spec.Image = merge(cluster.Spec.Image, img)
+		cluster.Spec.Image = stringsutil.Merge(cluster.Spec.Image, img)
 		bderInfo, err := c.Buildah.Create(ctrName, img)
 		if err != nil {
 			return err
@@ -164,16 +166,17 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		if err = OCIToImageMount(c.Buildah, mount); err != nil {
 			return err
 		}
-		mount.Env = maps.MergeMap(mount.Env, c.ExtraEnvs)
+		mount.Env = maps.Merge(mount.Env, c.ExtraEnvs)
 
 		cluster.SetMountImage(mount)
 		c.NewMounts = append(c.NewMounts, *mount)
 	}
-	runtime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
+
+	rt, err := factory.New(cluster, c.ClusterFile.GetRuntimeConfig())
 	if err != nil {
 		return fmt.Errorf("failed to init runtime, %v", err)
 	}
-	c.Runtime = runtime
+	c.Runtime = rt
 	return nil
 }
 
@@ -193,17 +196,6 @@ func (c *InstallProcessor) UpgradeIfNeed(cluster *v2.Cluster) error {
 		cluster.ReplaceRootfsImage()
 	}
 	return nil
-}
-
-func merge(ss []string, s string) []string {
-	var ret []string
-	for i := range ss {
-		if ss[i] != s {
-			ret = append(ret, ss[i])
-		}
-	}
-	ret = append(ret, s)
-	return ret
 }
 
 func (c *InstallProcessor) PostProcess(*v2.Cluster) error {

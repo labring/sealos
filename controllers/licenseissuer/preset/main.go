@@ -43,7 +43,7 @@ func main() {
 		logger.Error(err, "Failed to preset root user")
 		return
 	}
-	logger.Error(err, "Failed to preset root user")
+	logger.Info("Preset root user successfully")
 }
 
 const (

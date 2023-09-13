@@ -16,6 +16,7 @@ import { loadInitData } from '@/store/static';
 import { useRouter } from 'next/router';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
+import { useUserStore } from '@/store/user';
 
 import 'nprogress/nprogress.css';
 import '@/styles/reset.scss';
@@ -39,8 +40,8 @@ const queryClient = new QueryClient({
 const App = ({ Component, pageProps }: AppProps) => {
   const router = useRouter();
   const { i18n } = useTranslation();
-  const { setScreenWidth, loading, setLastRoute, getUserSourcePrice, initFormSliderList } =
-    useGlobalStore();
+  const { setScreenWidth, loading, setLastRoute, initFormSliderList } = useGlobalStore();
+  const { loadUserSourcePrice } = useUserStore();
   const { Loading } = useLoading();
   const [refresh, setRefresh] = useState(false);
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -51,13 +52,12 @@ const App = ({ Component, pageProps }: AppProps) => {
   useEffect(() => {
     NProgress.start();
 
-    getUserSourcePrice();
-
     const response = createSealosApp();
 
     (async () => {
       const { SEALOS_DOMAIN, FORM_SLIDER_LIST_CONFIG } = await (() => loadInitData())();
       initFormSliderList(FORM_SLIDER_LIST_CONFIG);
+      loadUserSourcePrice();
 
       try {
         const res = await sealosApp.getSession();
@@ -77,7 +77,7 @@ const App = ({ Component, pageProps }: AppProps) => {
     NProgress.done();
 
     return response;
-  }, [getUserSourcePrice, initFormSliderList, openConfirm]);
+  }, []);
 
   // add resize event
   useEffect(() => {

@@ -97,46 +97,15 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	own := ns.Annotations[v1.UserAnnotationCreatorKey]
-	if own == "" {
-		r.Logger.V(1).Info("billing namespace not found owner annotation", "namespace", ns.Name)
-		return ctrl.Result{}, nil
-	} else if own != getUsername(ns.Name) {
-		r.Logger.V(1).Info("billing namespace owner annotation not equal to namespace name", "namespace", ns.Name)
-		return ctrl.Result{}, nil
+	own := ns.Labels[v1.UserLabelOwnerKey]
+	nsList, err := getOwnNsList(r.Client, own)
+	if err != nil {
+		r.Logger.Error(err, "get own namespace list failed")
+		return ctrl.Result{Requeue: true}, err
 	}
-
-	nsListStr := make([]string, 0)
-	// list all annotation equals to "user.sealos.io/creator"
-	// TODO 后续使用索引annotation List
-	//nsList := &corev1.NamespaceList{}
-	//if err := r.List(ctx, nsList); err != nil {
-	//	return ctrl.Result{}, err
-	//}
-	//if err != nil {
-	//	r.Error(err, "Failed to list namespace")
-	//	return ctrl.Result{}, err
-	//}
-	//for _, namespace := range nsList.Items {
-	//	if namespace.Annotations[v1.UserAnnotationCreatorKey] != own {
-	//		continue
-	//	}
-	//	if err = r.syncResourceQuota(ctx, namespace.Name); err != nil {
-	//		r.Error(err, "Failed to syncResourceQuota")
-	//		return ctrl.Result{}, err
-	//	}
-	//	// sync limitrange
-	//	nsListStr = append(nsListStr, namespace.Name)
-	//
-	//}
-	nsListStr = append(nsListStr, ns.Name)
-	//if err = r.syncResourceQuota(ctx, ns.Name); err != nil {
-	//	r.Error(err, "Failed to syncResourceQuota")
-	//	return ctrl.Result{}, err
-	//}
-	//r.Logger.Info("syncResourceQuota success", "nsListStr", nsListStr)
+	r.Logger.V(1).Info("own namespace list", "own", own, "nsList", nsList)
 	now := time.Now()
-	currentHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.UTC)
+	currentHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
 	queryTime := currentHourTime.Add(-1 * time.Hour)
 	if exist, lastUpdateTime, _ := dbClient.GetBillingLastUpdateTime(own, v12.Consumption); exist {
 		if lastUpdateTime.Equal(currentHourTime) || lastUpdateTime.After(currentHourTime) {
@@ -150,17 +119,31 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// 计算上次billing到当前的时间之间的整点，左开右闭
 	for t := queryTime.Truncate(time.Hour).Add(time.Hour); t.Before(currentHourTime) || t.Equal(currentHourTime); t = t.Add(time.Hour) {
-		if err = r.billingWithHourTime(ctx, t.UTC(), nsListStr, ns.Name, dbClient); err != nil {
-			r.Logger.Error(err, "billing with hour time failed", "time", t.Format(time.RFC3339))
-			return ctrl.Result{}, err
+		for i := range nsList {
+			if err = r.billingWithHourTime(ctx, t.UTC(), nsList[i], ns.Name, dbClient); err != nil {
+				r.Logger.Error(err, "billing with hour time failed", "time", t.Format(time.RFC3339))
+				return ctrl.Result{}, err
+			}
 		}
 	}
 	return ctrl.Result{Requeue: true, RequeueAfter: time.Until(currentHourTime.Add(1*time.Hour + 10*time.Minute))}, nil
 }
 
-func (r *BillingReconciler) billingWithHourTime(ctx context.Context, queryTime time.Time, nsListStr []string, ownNs string, dbClient database.Interface) error {
-	r.Logger.Info("queryTime", "queryTime", queryTime.Format(time.RFC3339), "ownNs", ownNs, "nsListStr", nsListStr)
-	billing, err := dbClient.GetMeteringOwnerTimeResult(queryTime, nsListStr, nil, ownNs)
+func getOwnNsList(clt client.Client, user string) ([]string, error) {
+	nsList := &corev1.NamespaceList{}
+	if err := clt.List(context.Background(), nsList, client.MatchingLabels{v1.UserLabelOwnerKey: user}); err != nil {
+		return nil, fmt.Errorf("list namespace failed: %w", err)
+	}
+	nsListStr := make([]string, len(nsList.Items))
+	for i := range nsList.Items {
+		nsListStr[i] = nsList.Items[i].Name
+	}
+	return nsListStr, nil
+}
+
+func (r *BillingReconciler) billingWithHourTime(ctx context.Context, queryTime time.Time, ns string, ownNs string, dbClient database.Interface) error {
+	r.Logger.Info("queryTime", "queryTime", queryTime.Format(time.RFC3339), "ownNs", ownNs, "namespace", ns)
+	billing, err := dbClient.GetMeteringOwnerTimeResult(queryTime, []string{ns}, nil)
 	if err != nil {
 		return fmt.Errorf("get metering owner time result failed: %w", err)
 	}
@@ -173,16 +156,19 @@ func (r *BillingReconciler) billingWithHourTime(ctx context.Context, queryTime t
 			// create accountbalance
 			accountBalance := v12.AccountBalance{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      getUsername(ownNs) + "-" + queryTime.Format("20060102150405"),
+					Name:      getUsername(ownNs) + ns + "-" + queryTime.Format("20060102150405"),
 					Namespace: r.AccountSystemNamespace,
 				},
 				Spec: v12.AccountBalanceSpec{
-					OrderID: id,
-					Amount:  billing.Amount,
-					Costs:   billing.Costs,
-					Owner:   getUsername(ownNs),
-					Time:    metav1.Time{Time: queryTime},
-					Type:    v12.Consumption,
+					Time: metav1.Time{Time: queryTime},
+					AccountBalanceSpecInline: v12.AccountBalanceSpecInline{
+						Namespace: ns,
+						OrderID:   id,
+						Amount:    billing.Amount,
+						Costs:     billing.Costs,
+						Owner:     getUsername(ownNs),
+						Type:      v12.Consumption,
+					},
 				},
 			}
 			// ignore already exists error
@@ -214,45 +200,6 @@ func (r *BillingReconciler) initDB() error {
 	return mongoClient.CreateBillingIfNotExist()
 }
 
-//func (r *BillingReconciler) syncQueryRoleAndRoleBinding(ctx context.Context, name, namespace string) error {
-//	role := rbacV1.Role{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      "userQueryRole-" + name,
-//			Namespace: namespace,
-//		},
-//	}
-//	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &role, func() error {
-//		role.Rules = []rbacV1.PolicyRule{
-//			{
-//				APIGroups: []string{"account.sealos.io"},
-//				Resources: []string{"billingrecordqueries"},
-//				Verbs:     []string{"create", "get", "watch", "list"},
-//			},
-//		}
-//		return nil
-//	}); err != nil {
-//		return fmt.Errorf("create role failed: %v,username: %v,namespace: %v", err, name, namespace)
-//	}
-//	roleBinding := rbacV1.RoleBinding{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      "userAccountRoleBinding-" + name,
-//			Namespace: namespace,
-//		},
-//	}
-//	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &roleBinding, func() error {
-//		roleBinding.RoleRef = rbacV1.RoleRef{
-//			APIGroup: "rbac.authorization.k8s.io",
-//			Kind:     "Role",
-//			Name:     role.Name,
-//		}
-//		roleBinding.Subjects = helper.GetUsersSubject(name)
-//		return nil
-//	}); err != nil {
-//		return fmt.Errorf("create roleBinding failed: %v,rolename: %v,username: %v,ns: %v", err, role.Name, name, namespace)
-//	}
-//	return nil
-//}
-
 // SetupWithManager sets up the controller with the Manager.
 func (r *BillingReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	if r.mongoURI = os.Getenv(database.MongoURI); r.mongoURI == "" {
@@ -269,8 +216,8 @@ func (r *BillingReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Namespace{}, builder.WithPredicates(predicate.Funcs{
 			CreateFunc: func(createEvent event.CreateEvent) bool {
-				_, ok := createEvent.Object.GetAnnotations()[v1.UserAnnotationCreatorKey]
-				return ok
+				own, ok := createEvent.Object.GetLabels()[v1.UserLabelOwnerKey]
+				return ok && getUsername(createEvent.Object.GetName()) == own
 			},
 			UpdateFunc: func(updateEvent event.UpdateEvent) bool {
 				return false

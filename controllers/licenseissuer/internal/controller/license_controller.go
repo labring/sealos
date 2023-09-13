@@ -41,8 +41,11 @@ import (
 // LicenseReconciler reconciles a License object
 type LicenseReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	logger logr.Logger
+	Scheme   *runtime.Scheme
+	logger   logr.Logger
+	DBCol    util.LicenseDB
+	payload  map[string]interface{}
+	Recorder util.Map[string]
 
 	account   accountv1.Account
 	license   issuerv1.License
@@ -84,7 +87,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	reader := &util.Reader{}
 	// get license
 	namespace := util.GetOptions().GetEnvOptions().Namespace
-	reader.Add(&r.license, types.NamespacedName{Namespace: req.Namespace, Name: util.LicenseName})
+	reader.Add(&r.license, req.NamespacedName)
 	reader.Add(&r.configMap, types.NamespacedName{Namespace: namespace, Name: util.LicenseHistory})
 
 	if err := reader.Read(ctx, r.Client); err != nil {
@@ -100,7 +103,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, r.Delete(ctx, &r.license)
 	}
 
-	_ = r.RecordLicense(ctx)
+	_ = r.RecordLicense(r.payload)
 
 	return ctrl.Result{}, r.Delete(ctx, &r.license)
 }
@@ -108,19 +111,12 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 // SetupWithManager sets up the controller with the Manager.
 func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.logger = ctrl.Log.WithName("LicenseReconcile")
+
+	// set up predicate
 	Predicate := predicate.Funcs{
-		CreateFunc: func(e event.CreateEvent) bool {
-			return e.Object.GetName() == string(util.LicenseName)
-		},
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			return e.ObjectNew.GetName() == string(util.LicenseName)
-		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			// Ignore delete events
 			return false
-		},
-		GenericFunc: func(e event.GenericEvent) bool {
-			return e.Object.GetName() == string(util.LicenseName)
 		},
 	}
 
@@ -132,12 +128,17 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *LicenseReconciler) CheckLicense(ctx context.Context) (string, map[string]interface{}, bool) {
 	options := util.GetOptions()
 	// Check if the license is already used
-	ok := util.CheckLicenseExists(&r.configMap, r.license.Spec.Token)
+	ok, err := r.CheckLicenseExists()
+	if err != nil {
+		r.logger.Error(err, "failed to check license exists")
+		return util.DuplicateLicenseMessage, nil, false
+	}
+
 	if ok {
 		return util.DuplicateLicenseMessage, nil, false
 	}
 	// Check if the license is valid
-	if options.GetEnvOptions().NetworkConfiguration == "true" {
+	if options.GetNetWorkOptions().EnableExternalNetWork {
 		payload, ok := util.LicenseCheckOnExternalNetwork(ctx, r.Client, r.license)
 		if !ok {
 			return util.InvalidLicenseMessage, nil, false
@@ -151,11 +152,25 @@ func (r *LicenseReconciler) CheckLicense(ctx context.Context) (string, map[strin
 	return "", payload, true
 }
 
+func (r *LicenseReconciler) CheckLicenseExists() (bool, error) {
+	ok := r.Recorder.Find(r.license.Spec.Token)
+	if ok {
+		return true, nil
+	}
+	ok, err := util.CheckLicenseExists(r.DBCol, r.license.Spec.UID, r.license.Spec.Token)
+	if err != nil {
+		r.logger.Error(err, "failed to check license exists")
+		return false, err
+	}
+	return ok, nil
+}
+
 func (r *LicenseReconciler) Authorize(ctx context.Context) (string, error) {
 	message, payload, ok := r.CheckLicense(ctx)
 	if !ok {
 		return message, errors.New("invalid license")
 	}
+	r.payload = payload
 	// get account
 	id := types.NamespacedName{
 		Namespace: util.GetOptions().GetEnvOptions().Namespace,
@@ -176,6 +191,7 @@ func (r *LicenseReconciler) Authorize(ctx context.Context) (string, error) {
 	return util.ValidLicenseMessage, nil
 }
 
-func (r *LicenseReconciler) RecordLicense(ctx context.Context) error {
-	return util.RecordLicense(ctx, r.Client, r.license, r.configMap)
+func (r *LicenseReconciler) RecordLicense(payload map[string]interface{}) error {
+	r.Recorder.Add(r.license.Spec.Token)
+	return util.RecordLicense(r.DBCol, util.NewLicense(r.license.Spec.UID, r.license.Spec.Token, payload))
 }

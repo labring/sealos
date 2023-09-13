@@ -7,6 +7,7 @@ import { DeployKindsType } from '@/types/app';
 import type { AppPatchPropsType } from '@/types/app';
 import { YamlKindEnum } from './adapt';
 import { useTranslation } from 'next-i18next';
+import * as jsonpatch from 'fast-json-patch';
 
 /**
  * copy text data
@@ -219,36 +220,134 @@ export function downLoadBold(content: BlobPart, type: string, fileName: string) 
 /**
  * patch yamlList and get action
  */
-export const patchYamlList = (oldYamlList: string[], newYamlList: string[]) => {
-  const oldJsonYaml = oldYamlList.map((item) => yaml.loadAll(item)).flat() as DeployKindsType[];
-  const newJsonYaml = newYamlList.map((item) => yaml.loadAll(item)).flat() as DeployKindsType[];
+export const patchYamlList = ({
+  formOldYamlList,
+  newYamlList,
+  crYamlList
+}: {
+  formOldYamlList: string[];
+  newYamlList: string[];
+  crYamlList: DeployKindsType[];
+}) => {
+  const oldFormJsonList = formOldYamlList
+    .map((item) => yaml.loadAll(item))
+    .flat() as DeployKindsType[];
+  const newFormJsonList = newYamlList.map((item) => yaml.loadAll(item)).flat() as DeployKindsType[];
 
   const actions: AppPatchPropsType = [];
 
   // find delete
-  oldJsonYaml.forEach((oldYaml) => {
-    const item = newJsonYaml.find((item) => item.kind === oldYaml.kind);
-    if (!item) {
+  oldFormJsonList.forEach((oldYamlJson) => {
+    const item = newFormJsonList.find(
+      (item) => item.kind === oldYamlJson.kind && item.metadata?.name === oldYamlJson.metadata?.name
+    );
+    if (!item && oldYamlJson.metadata?.name) {
       actions.push({
         type: 'delete',
-        kind: oldYaml.kind as `${YamlKindEnum}`
+        kind: oldYamlJson.kind as `${YamlKindEnum}`,
+        name: oldYamlJson.metadata?.name
       });
     }
   });
   // find create and patch
-  newJsonYaml.forEach((newYaml) => {
-    const patchYaml = oldJsonYaml.find((item) => item.kind === newYaml.kind);
-    if (patchYaml) {
+  newFormJsonList.forEach((newYamlJson) => {
+    const oldFormJson = oldFormJsonList.find(
+      (item) =>
+        item.kind === newYamlJson.kind && item?.metadata?.name === newYamlJson?.metadata?.name
+    );
+
+    if (oldFormJson) {
+      const patchRes = jsonpatch.compare(oldFormJson, newYamlJson);
+
+      if (patchRes.length === 0) return;
+
+      /* Generate a new json using the formPatchResult and the crJson */
+      const actionsJson = (() => {
+        try {
+          /* find cr json */
+          let crOldYamlJson = crYamlList.find(
+            (item) =>
+              item.kind === oldFormJson?.kind &&
+              item?.metadata?.name === oldFormJson?.metadata?.name
+          );
+
+          if (!crOldYamlJson) return newYamlJson;
+          crOldYamlJson = JSON.parse(JSON.stringify(crOldYamlJson));
+
+          if (!crOldYamlJson) return newYamlJson;
+
+          /* Fill in volumn */
+          if (
+            oldFormJson.kind === YamlKindEnum.Deployment ||
+            oldFormJson.kind === YamlKindEnum.StatefulSet
+          ) {
+            // @ts-ignore
+            crOldYamlJson.spec.template.spec.volumes = oldFormJson.spec.template.spec.volumes;
+            // @ts-ignore
+            crOldYamlJson.spec.template.spec.containers[0].volumeMounts =
+              // @ts-ignore
+              oldFormJson.spec.template.spec.containers[0].volumeMounts;
+            // @ts-ignore
+            crOldYamlJson.spec.volumeClaimTemplates = oldFormJson.spec.volumeClaimTemplates;
+          }
+
+          /* generate new json */
+          const patchResYamlJson = jsonpatch.applyPatch(crOldYamlJson, patchRes, true).newDocument;
+
+          // delete invalid field
+          // @ts-ignore
+          delete patchResYamlJson.status;
+          patchResYamlJson.metadata = {
+            name: patchResYamlJson.metadata?.name,
+            namespace: patchResYamlJson.metadata?.namespace,
+            labels: patchResYamlJson.metadata?.labels,
+            annotations: patchResYamlJson.metadata?.annotations,
+            ownerReferences: patchResYamlJson.metadata?.ownerReferences,
+            finalizers: patchResYamlJson.metadata?.finalizers
+          };
+
+          return patchResYamlJson;
+        } catch (error) {
+          console.log(error);
+
+          return newYamlJson;
+        }
+      })();
+
+      // adapt deployment,statefulset,service ports
+      if (
+        actionsJson.kind === YamlKindEnum.Deployment ||
+        actionsJson.kind === YamlKindEnum.StatefulSet
+      ) {
+        // @ts-ignore
+        const ports = actionsJson?.spec.template.spec.containers[0].ports || [];
+        if (ports.length > 1 && !ports[0]?.name) {
+          // @ts-ignore
+          actionsJson.spec.template.spec.containers[0].ports[0].name = 'adaptport';
+        }
+      }
+      if (actionsJson.kind === YamlKindEnum.Service) {
+        // @ts-ignore
+        const ports = actionsJson?.spec.ports || [];
+        console.log(ports);
+
+        // @ts-ignore
+        if (ports.length > 1 && !ports[0]?.name) {
+          // @ts-ignore
+          actionsJson.spec.ports[0].name = 'adaptport';
+        }
+      }
+
       actions.push({
         type: 'patch',
-        kind: newYaml.kind as `${YamlKindEnum}`,
-        value: newYaml
+        kind: newYamlJson.kind as `${YamlKindEnum}`,
+        value: actionsJson as any
       });
     } else {
       actions.push({
         type: 'create',
-        kind: newYaml.kind as `${YamlKindEnum}`,
-        value: yaml.dump(newYaml)
+        kind: newYamlJson.kind as `${YamlKindEnum}`,
+        value: yaml.dump(newYamlJson)
       });
     }
   });
@@ -307,4 +406,10 @@ export const isElementInViewport = (element: Element) => {
   const vertInView = rect.top <= windowHeight && rect.top + rect.height >= 0;
   const horInView = rect.left <= windowWidth && rect.left + rect.width >= 0;
   return vertInView && horInView;
+};
+
+export const getErrText = (err: any, def = '') => {
+  const msg: string = typeof err === 'string' ? err : err?.message || def || '';
+  msg && console.log('error =>', msg);
+  return msg;
 };

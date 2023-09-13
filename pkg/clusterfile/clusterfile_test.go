@@ -22,6 +22,7 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 
 	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
@@ -121,7 +122,7 @@ func Test_NewClusterFile(t *testing.T) {
 
 func Test_NoClusterFileWithSingleSchedule(t *testing.T) {
 	type args struct {
-		kubeadmConfig *runtime.KubeadmConfig
+		runtimeConfig runtime.Config
 	}
 	tests := []struct {
 		name    string
@@ -131,7 +132,7 @@ func Test_NoClusterFileWithSingleSchedule(t *testing.T) {
 		{
 			name: "run single with cluster file not exists",
 			args: args{
-				kubeadmConfig: &runtime.KubeadmConfig{
+				runtimeConfig: &types.KubeadmConfig{
 					InitConfiguration: kubeadm.InitConfiguration{
 						SkipPhases: []string{
 							"mark-control-plane",
@@ -156,7 +157,7 @@ func Test_NoClusterFileWithSingleSchedule(t *testing.T) {
 			if cf.GetConfigs() != nil {
 				t.Error("configs is not nil")
 			}
-			if !reflect.DeepEqual(cf.GetKubeadmConfig(), tt.args.kubeadmConfig) {
+			if !reflect.DeepEqual(cf.GetRuntimeConfig(), tt.args.runtimeConfig) {
 				t.Error("kubeadmConfig not equal")
 			}
 		})
@@ -167,7 +168,7 @@ func Test_NewClusterFileWithSingleSchedule(t *testing.T) {
 	type args struct {
 		cluster            *v2.Cluster
 		config             v2.Config
-		kubeadmConfig      *runtime.KubeadmConfig
+		runtimeConfig      runtime.Config
 		customEnv          []string
 		sets               []string
 		values             []string
@@ -223,7 +224,7 @@ func Test_NewClusterFileWithSingleSchedule(t *testing.T) {
 						Data: "test\n",
 					},
 				},
-				kubeadmConfig: &runtime.KubeadmConfig{
+				runtimeConfig: &types.KubeadmConfig{
 					InitConfiguration: kubeadm.InitConfiguration{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: "kubeadm.k8s.io/v1beta3",
@@ -255,7 +256,7 @@ func Test_NewClusterFileWithSingleSchedule(t *testing.T) {
 				WithCustomSets(tt.args.sets),
 				WithCustomValues(tt.args.values),
 				WithCustomConfigFiles(tt.args.customConfigs),
-				WithCustomKubeadmFiles(tt.args.customKubeadmFiles),
+				WithCustomRuntimeConfigFiles(tt.args.customKubeadmFiles),
 			)
 			err := cf.Process()
 			if (err != nil) != tt.wantErr {
@@ -269,7 +270,7 @@ func Test_NewClusterFileWithSingleSchedule(t *testing.T) {
 			if !reflect.DeepEqual(cf.GetConfigs()[0], tt.args.config) {
 				t.Error("config not equal")
 			}
-			if !reflect.DeepEqual(cf.GetKubeadmConfig(), tt.args.kubeadmConfig) {
+			if !reflect.DeepEqual(cf.GetRuntimeConfig(), tt.args.runtimeConfig) {
 				t.Error("kubeadmConfig not equal")
 			}
 		})

@@ -31,6 +31,7 @@ function ValuationCard(props: any) {
       align={'center'}
       pt="27px"
       pb="21px"
+      px="24px"
       boxSizing="border-box"
       width="240px"
       height="339px"
@@ -110,7 +111,12 @@ function Valuation() {
                     <Box borderRadius="2px" bg={item.bg} w={'16px'} h={'16px'} mr={'8px'}></Box>
                     <Text fontSize={'16px'}>{item.title}</Text>
                   </Flex>
-                  <Heading display={'flex'} justifyContent="center" alignContent={'center'}>
+                  <Heading
+                    display={'flex'}
+                    justifyContent="center"
+                    alignContent={'center'}
+                    fontWeight={'600'}
+                  >
                     <CurrencySymbol w="16px" type={currency} />
                     <Text ml="10px">{item.price[0]}</Text>
                   </Heading>
@@ -119,9 +125,9 @@ function Valuation() {
                       {item.unit} / {t('Hour')}
                     </Text>
                   </Flex>
-                  <Box pt={'17px'}>
+                  <Box pt={'17px'} w="100%">
                     {CYCLE.map((_item, idx) => (
-                      <Flex key={idx} w="192px" borderTop={'dashed 1px #DEE0E2'} py={'8px'}>
+                      <Flex key={idx} w="100%" borderTop={'dashed 1px #DEE0E2'} py={'8px'}>
                         <CurrencySymbol type={currency} />
                         <Box ml="2px">{item.price[idx + 1]}</Box>
                         <Flex align={'center'} ml="auto">
@@ -138,35 +144,23 @@ function Valuation() {
                     <Box borderRadius="2px" bg={gpuProps.bg} w={'16px'} h={'16px'} mr={'8px'}></Box>
                     <Text fontSize={'16px'}>GPU</Text>
                   </Flex>
+                  <Flex display={'flex'} justifyContent="center" alignContent={'center'}>
+                    <Text fontSize="28px" fontStyle="normal" fontWeight={'600'}>{` ${t(
+                      'GPU Unit'
+                    )} / ${t('Hour')}`}</Text>
+                  </Flex>
                   <Stack w="100%" mt="24px" overflow={'auto'}>
                     {gpuData.map((item) => (
-                      <Flex
-                        key={item.name}
-                        align={'center'}
-                        h="45px"
-                        w="100%"
-                        borderTop={'dashed 1px #DEE0E2'}
-                        pt="12px"
-                        px="24px"
-                      >
-                        <CurrencySymbol type={currency} />
-                        <Text ml="2px">{`${item.price}`}</Text>
-                        <Stack
-                          align={'flex-end'}
-                          gap="0"
-                          fontSize={'10px'}
-                          fontWeight={'500'}
-                          ml="auto"
-                        >
-                          <Flex>
-                            <Img src={nvidaIcon.src} w="14px" h="14px" mr="6px" />
-                            <Text minW={'max-content'}>{item.name}</Text>
-                          </Flex>
-                          <Flex>
-                            <Text>{`${gpuProps.unit} / ${t('Hour')}`}</Text>
-                          </Flex>
-                        </Stack>
-                      </Flex>
+                      <Box key={item.name} w="100%" borderTop={'dashed 1px #DEE0E2'} pt="12px">
+                        <Flex align={'center'}>
+                          <Img src={nvidaIcon.src} w="14px" h="14px" mr="6px" />
+                          <Text minW={'max-content'}>{item.name}</Text>
+                        </Flex>
+                        <Flex mt={'4px'}>
+                          <CurrencySymbol type={currency} />
+                          <Text ml="2px">{`${item.price}`}</Text>
+                        </Flex>
+                      </Box>
                     ))}
                   </Stack>
                 </ValuationCard>

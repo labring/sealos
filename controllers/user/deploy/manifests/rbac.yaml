@@ -1,82 +1,56 @@
----
-## 新建管理员,只允许创建管理员
+# permissions for end users to edit users.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: sealos-user-create-role
+  name: user-editor-role
 rules:
   - apiGroups:
       - user.sealos.io
     resources:
-      - 'usergroupbindings'
+      - users
     verbs:
       - create
       - delete
-      - deletecollection
-      - patch
-      - update
----
-## 新增、删除用户，管理员只允许移入移除用户
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: sealos-user-manager-role
-rules:
-  - apiGroups:
-      - user.sealos.io
-    resources:
-      - 'usergroupbindings'
-    verbs:
-      - create
-      - delete
-      - deletecollection
-      - patch
-      - update
-  - apiGroups:
-      - user.sealos.io
-    resources:
-      - 'users'
-    verbs:
-      - list
       - get
+      - list
+      - patch
+      - update
       - watch
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - users/status
+    verbs:
+      - get
 ---
-##普通用户创建namespace,usergroup
+# permissions for end users to edit operationrequests.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: sealos-user-user-role
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: operationrequest-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: user
+    app.kubernetes.io/part-of: user
+    app.kubernetes.io/managed-by: kustomize
+  name: operationrequest-editor-role
 rules:
   - apiGroups:
       - user.sealos.io
     resources:
-      - 'usergroupbindings'
+      - operationrequests
     verbs:
       - create
       - delete
-      - deletecollection
+      - get
+      - list
       - patch
       - update
+      - watch
   - apiGroups:
       - user.sealos.io
     resources:
-      - 'usergroups'
+      - operationrequests/status
     verbs:
-      - create
-      - delete
-      - deletecollection
-      - patch
-      - update
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: user-controller-manager-clusterrolebinding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-  - kind: ServiceAccount
-    name: user-controller-manager
-    namespace: user-system
+      - get

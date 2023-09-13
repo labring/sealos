@@ -113,7 +113,12 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	// now should get debt and account
 	//r.Logger.Info("debt info", "debt", debt)
 
-	if err := r.reconcileDebtStatus(ctx, debt, account); err != nil {
+	nsList, err := getOwnNsList(r.Client, getUsername(account.Name))
+	if err != nil {
+		r.Logger.Error(err, "get own ns list error")
+		return ctrl.Result{}, fmt.Errorf("get own ns list error: %v", err)
+	}
+	if err := r.reconcileDebtStatus(ctx, debt, account, nsList); err != nil {
 		r.Logger.Error(err, "reconcile debt status error")
 		return ctrl.Result{}, err
 	}
@@ -131,12 +136,12 @@ NormalPeriod -> WarningPeriod -> ApproachingDeletionPeriod -> ImmediateDeletePer
 
 欠费后到完全删除的总周期=WarningPeriodSeconds+ApproachingDeletionPeriodSeconds+ImmediateDeletePeriodSeconds+FinalDeletePeriodSeconds
 */
-func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv1.Debt, account *accountv1.Account) error {
+func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv1.Debt, account *accountv1.Account, userNamespaceList []string) error {
 	oweamount := account.Status.Balance - account.Status.DeductionBalance
 	//更新间隔秒钟数
 	updateIntervalSeconds := time.Now().UTC().Unix() - debt.Status.LastUpdateTimestamp
 	lastStatus := debt.Status
-	userNamespace := GetUserNamespace(account.Name)
+	//userNamespace := GetUserNamespace(account.Name)
 	update := false
 
 	// 判断上次状态到当前的状态
@@ -152,7 +157,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			return nil
 		}
 		update = SetDebtStatus(debt, accountv1.WarningPeriod)
-		if err := r.sendWarningNotice(ctx, userNamespace); err != nil {
+		if err := r.sendWarningNotice(ctx, userNamespaceList); err != nil {
 			r.Logger.Error(err, "send warning notice error")
 		}
 	case accountv1.WarningPeriod:
@@ -175,7 +180,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			return nil
 		}
 		update = SetDebtStatus(debt, accountv1.ApproachingDeletionPeriod)
-		if err := r.sendApproachingDeletionNotice(ctx, userNamespace); err != nil {
+		if err := r.sendApproachingDeletionNotice(ctx, userNamespaceList); err != nil {
 			r.Logger.Error(err, "sendApproachingDeletionNotice error")
 		}
 
@@ -198,10 +203,10 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			return nil
 		}
 		update = SetDebtStatus(debt, accountv1.ImminentDeletionPeriod)
-		if err := r.sendImminentDeletionNotice(ctx, userNamespace); err != nil {
+		if err := r.sendImminentDeletionNotice(ctx, userNamespaceList); err != nil {
 			r.Logger.Error(err, "sendImminentDeletionNotice error")
 		}
-		if err := r.SuspendUserResource(ctx, userNamespace); err != nil {
+		if err := r.SuspendUserResource(ctx, userNamespaceList); err != nil {
 			return err
 		}
 	case accountv1.ImminentDeletionPeriod:
@@ -216,7 +221,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		if oweamount >= 0 {
 			update = SetDebtStatus(debt, accountv1.NormalPeriod)
 			// 恢复用户资源
-			if err := r.ResumeUserResource(ctx, userNamespace); err != nil {
+			if err := r.ResumeUserResource(ctx, userNamespaceList); err != nil {
 				return err
 			}
 			//TODO 撤销最终删除消息通知
@@ -228,10 +233,10 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		}
 		// TODO 暂时只暂停资源，后续会添加真正删除全部资源逻辑, 或直接删除namespace
 		update = SetDebtStatus(debt, accountv1.FinalDeletionPeriod)
-		if err := r.sendFinalDeletionNotice(ctx, userNamespace); err != nil {
+		if err := r.sendFinalDeletionNotice(ctx, userNamespaceList); err != nil {
 			r.Error(err, "sendFinalDeletionNotice error")
 		}
-		if err := r.SuspendUserResource(ctx, userNamespace); err != nil {
+		if err := r.SuspendUserResource(ctx, userNamespaceList); err != nil {
 			return err
 		}
 	case accountv1.FinalDeletionPeriod:
@@ -244,12 +249,12 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			update = SetDebtStatus(debt, accountv1.NormalPeriod)
 
 			// TODO 暂时非真正完全删除，仍可恢复用户资源，后续会添加真正删除全部资源逻辑，不在执行恢复逻辑
-			if err := r.ResumeUserResource(ctx, userNamespace); err != nil {
+			if err := r.ResumeUserResource(ctx, userNamespaceList); err != nil {
 				return err
 			}
 			break
 		}
-		if err := r.SuspendUserResource(ctx, userNamespace); err != nil {
+		if err := r.SuspendUserResource(ctx, userNamespaceList); err != nil {
 			return err
 		}
 	//兼容老版本
@@ -320,60 +325,68 @@ var NoticeTemplate = map[int]string{
 	FinalDeletionNotice:       "The system has completely deleted all your resources, please recharge in time to avoid affecting your normal use.",
 }
 
-func (r *DebtReconciler) sendNotice(ctx context.Context, namespace string, noticeType int) error {
+func (r *DebtReconciler) sendNotice(ctx context.Context, noticeType int, namespaces []string) error {
 	now := time.Now().UTC().Unix()
 	ntf := v1.Notification{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "debt-notice" + strconv.Itoa(noticeType),
-			Namespace: namespace,
+			Name: "debt-notice" + strconv.Itoa(noticeType),
 		},
 		Spec: v1.NotificationSpec{
 			Title:      "Debt Notice",
 			Message:    NoticeTemplate[noticeType],
 			From:       "Debt-System",
 			Importance: v1.High,
+			Timestamp:  now,
 		},
 	}
-	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, &ntf, func() error {
-		ntf.Spec.Timestamp = now
-		return nil
-	})
-	return err
-}
-
-func (r *DebtReconciler) sendWarningNotice(ctx context.Context, namespace string) error {
-	return r.sendNotice(ctx, namespace, WarningNotice)
-}
-
-func (r *DebtReconciler) sendApproachingDeletionNotice(ctx context.Context, namespace string) error {
-	return r.sendNotice(ctx, namespace, ApproachingDeletionNotice)
-}
-
-func (r *DebtReconciler) sendImminentDeletionNotice(ctx context.Context, namespace string) error {
-	return r.sendNotice(ctx, namespace, ImminentDeletionNotice)
-}
-
-func (r *DebtReconciler) sendFinalDeletionNotice(ctx context.Context, namespace string) error {
-	return r.sendNotice(ctx, namespace, FinalDeletionNotice)
-}
-
-func (r *DebtReconciler) SuspendUserResource(ctx context.Context, namespace string) error {
-	return r.updateNamespaceStatus(ctx, namespace, accountv1.SuspendDebtNamespaceAnnoStatus)
-}
-
-func (r *DebtReconciler) ResumeUserResource(ctx context.Context, namespace string) error {
-	return r.updateNamespaceStatus(ctx, namespace, accountv1.ResumeDebtNamespaceAnnoStatus)
-}
-
-func (r *DebtReconciler) updateNamespaceStatus(ctx context.Context, namespace, status string) error {
-	ns := &corev1.Namespace{}
-	err := r.Get(ctx, types.NamespacedName{Name: namespace, Namespace: r.accountSystemNamespace}, ns)
-	if err != nil {
-		return err
+	for i := range namespaces {
+		ntf.Namespace = namespaces[i]
+		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &ntf, func() error {
+			return nil
+		}); err != nil {
+			return err
+		}
 	}
-	// 交给namespace controller处理
-	ns.Annotations[accountv1.DebtNamespaceAnnoStatusKey] = status
-	return r.Client.Update(ctx, ns)
+	return nil
+}
+
+func (r *DebtReconciler) sendWarningNotice(ctx context.Context, namespaces []string) error {
+	return r.sendNotice(ctx, WarningNotice, namespaces)
+}
+
+func (r *DebtReconciler) sendApproachingDeletionNotice(ctx context.Context, namespaces []string) error {
+	return r.sendNotice(ctx, ApproachingDeletionNotice, namespaces)
+}
+
+func (r *DebtReconciler) sendImminentDeletionNotice(ctx context.Context, namespaces []string) error {
+	return r.sendNotice(ctx, ImminentDeletionNotice, namespaces)
+}
+
+func (r *DebtReconciler) sendFinalDeletionNotice(ctx context.Context, namespaces []string) error {
+	return r.sendNotice(ctx, FinalDeletionNotice, namespaces)
+}
+
+func (r *DebtReconciler) SuspendUserResource(ctx context.Context, namespaces []string) error {
+	return r.updateNamespaceStatus(ctx, accountv1.SuspendDebtNamespaceAnnoStatus, namespaces)
+}
+
+func (r *DebtReconciler) ResumeUserResource(ctx context.Context, namespaces []string) error {
+	return r.updateNamespaceStatus(ctx, accountv1.ResumeDebtNamespaceAnnoStatus, namespaces)
+}
+
+func (r *DebtReconciler) updateNamespaceStatus(ctx context.Context, status string, namespaces []string) error {
+	for i := range namespaces {
+		ns := &corev1.Namespace{}
+		if err := r.Get(ctx, types.NamespacedName{Name: namespaces[i], Namespace: r.accountSystemNamespace}, ns); err != nil {
+			return err
+		}
+		// 交给namespace controller处理
+		ns.Annotations[accountv1.DebtNamespaceAnnoStatusKey] = status
+		if err := r.Client.Update(ctx, ns); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -382,7 +395,7 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.
 	r.accountSystemNamespace = utils.GetEnvWithDefault(accountv1.AccountSystemNamespaceEnv, "account-system")
 	r.accountNamespace = utils.GetEnvWithDefault(ACCOUNTNAMESPACEENV, "sealos-system")
 	setDefaultDebtPeriodWaitSecond()
-	debtDetectionCycleSecond := utils.GetIntEnvWithDefault(DebtDetectionCycleEnv, 60)
+	debtDetectionCycleSecond := utils.GetInt64EnvWithDefault(DebtDetectionCycleEnv, 60)
 	r.DebtDetectionCycle = time.Duration(debtDetectionCycleSecond) * time.Second
 
 	/*
@@ -410,10 +423,10 @@ func setDefaultDebtPeriodWaitSecond() {
 		ImminentDeletionPeriod:    IminentDeletionPeriodWaitSecond,
 		FinalDeletionPeriod:       FinalDeletionPeriodWaitSecond,
 	*/
-	DebtConfig[accountv1.WarningPeriod] = utils.GetIntEnvWithDefault(string(accountv1.WarningPeriod), 0*accountv1.DaySecond)
-	DebtConfig[accountv1.ApproachingDeletionPeriod] = utils.GetIntEnvWithDefault(string(accountv1.ApproachingDeletionPeriod), 4*accountv1.DaySecond)
-	DebtConfig[accountv1.ImminentDeletionPeriod] = utils.GetIntEnvWithDefault(string(accountv1.ImminentDeletionPeriod), 3*accountv1.DaySecond)
-	DebtConfig[accountv1.FinalDeletionPeriod] = utils.GetIntEnvWithDefault(string(accountv1.FinalDeletionPeriod), 7*accountv1.DaySecond)
+	DebtConfig[accountv1.WarningPeriod] = utils.GetInt64EnvWithDefault(string(accountv1.WarningPeriod), 0*accountv1.DaySecond)
+	DebtConfig[accountv1.ApproachingDeletionPeriod] = utils.GetInt64EnvWithDefault(string(accountv1.ApproachingDeletionPeriod), 4*accountv1.DaySecond)
+	DebtConfig[accountv1.ImminentDeletionPeriod] = utils.GetInt64EnvWithDefault(string(accountv1.ImminentDeletionPeriod), 3*accountv1.DaySecond)
+	DebtConfig[accountv1.FinalDeletionPeriod] = utils.GetInt64EnvWithDefault(string(accountv1.FinalDeletionPeriod), 7*accountv1.DaySecond)
 }
 
 type OnlyCreatePredicate struct {

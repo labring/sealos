@@ -28,6 +28,7 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useTranslation } from 'next-i18next';
 import { getCookie } from '@/utils/cookieUtils';
 import NotFound from '@/components/notFound';
+import { ApiResp } from '@/types';
 
 function Billing() {
   const { t, i18n } = useTranslation();
@@ -43,12 +44,20 @@ function Billing() {
   const [totalPage, setTotalPage] = useState(1);
   const [currentPage, setcurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [namespaceIdx, setNamespaceIdx] = useState(0);
   const [totalItem, setTotalItem] = useState(10);
+  const { data: nsListData } = useQuery({
+    queryFn() {
+      return request<any, ApiResp<{ nsList: string[] }>>('/api/billing/getNamespaceList');
+    },
+    queryKey: ['nsList']
+  });
+
+  const namespaceList: string[] = [t('All Namespace'), ...(nsListData?.data?.nsList || [])];
   const { data, isFetching, isSuccess } = useQuery(
-    ['billing', { currentPage, startTime, endTime, orderID, selectType }],
+    ['billing', { currentPage, startTime, endTime, orderID, selectType, namespaceIdx }],
     () => {
-      let spec = {} as BillingSpec;
-      spec = {
+      const spec = {
         page: currentPage,
         pageSize: pageSize,
         type: selectType,
@@ -56,6 +65,7 @@ function Billing() {
         // startTime,
         endTime: formatISO(endTime, { representation: 'complete' }),
         // endTime,
+        namespace: namespaceIdx > 0 ? namespaceList[namespaceIdx] : '',
         orderID
       };
       return request<any, { data: BillingData }, { spec: BillingSpec }>('/api/billing', {
@@ -69,14 +79,14 @@ function Billing() {
       onSuccess(data) {
         const totalPage = data.data.status.pageLength;
         if (totalPage === 0) {
-          // 搜索时
+          // 搜索时的bug
           setTotalPage(1);
           setTotalItem(1);
-          setcurrentPage(1);
         } else {
           setTotalItem(data.data.status.totalCount);
           setTotalPage(totalPage);
         }
+        if (totalPage < currentPage) setcurrentPage(1);
       },
       staleTime: 1000
     }
@@ -88,6 +98,69 @@ function Billing() {
       <Flex mr="24px" align={'center'}>
         <Img src={receipt_icon.src} w={'24px'} h={'24px'} mr={'18px'} dropShadow={'#24282C'}></Img>
         <Heading size="lg">{t('SideBar.BillingDetails')}</Heading>
+        <Flex align={'center'} ml="28px">
+          <Popover>
+            <PopoverTrigger>
+              <Button
+                w="110px"
+                h="32px"
+                fontStyle="normal"
+                fontWeight="400"
+                fontSize="12px"
+                lineHeight="140%"
+                border={'1px solid #DEE0E2'}
+                bg={'#F6F8F9'}
+                _expanded={{
+                  background: '#F8FAFB',
+                  border: `1px solid #36ADEF`
+                }}
+                isDisabled={isFetching}
+                _hover={{
+                  background: '#F8FAFB',
+                  border: `1px solid #36ADEF`
+                }}
+                borderRadius={'2px'}
+              >
+                {namespaceList[namespaceIdx]}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              p={'6px'}
+              boxSizing="border-box"
+              w={'110px'}
+              shadow={'0px 0px 1px 0px #798D9F40, 0px 2px 4px 0px #A1A7B340'}
+              border={'none'}
+            >
+              {namespaceList.map((v, idx) => (
+                <Button
+                  key={v}
+                  {...(idx === namespaceIdx
+                    ? {
+                        color: '#0884DD',
+                        bg: '#F4F6F8'
+                      }
+                    : {
+                        color: '#5A646E',
+                        bg: '#FDFDFE'
+                      })}
+                  h="30px"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight="400"
+                  lineHeight="18px"
+                  p={'0'}
+                  isDisabled={isFetching}
+                  onClick={() => {
+                    setcurrentPage(1);
+                    setNamespaceIdx(idx);
+                  }}
+                >
+                  {v}
+                </Button>
+              ))}
+            </PopoverContent>
+          </Popover>
+        </Flex>{' '}
       </Flex>
       <Flex mt="24px" alignItems={'center'} flexWrap={'wrap'}>
         <Flex align={'center'} mb={'24px'}>

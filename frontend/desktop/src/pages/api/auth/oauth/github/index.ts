@@ -26,18 +26,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
     const userUrl = `https://api.github.com/user`;
-    const {
-      login: name,
-      id,
-      avatar_url
-    } = (await (
+    const result = (await (
       await fetch(userUrl, {
         headers: {
           Authorization: `Bearer ${access_token}`
         }
       })
     ).json()) as TgithubUser;
-    const data = await getOauthRes({ provider: 'github', id: '' + id, name, avatar_url });
+    const name = result.login;
+    const id = '' + result.id;
+    const avatar_url = result.avatar_url;
+
+    const data = await getOauthRes({ provider: 'github', id, name, avatar_url });
     return jsonRes<Session>(res, {
       data,
       code: 200,

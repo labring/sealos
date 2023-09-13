@@ -15,6 +15,8 @@
 package v1beta1
 
 import (
+	"path"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
@@ -50,16 +52,16 @@ type RegistryConfig struct {
 type ImageType string
 
 const (
-	AppImage                    ImageType = "application"
-	RootfsImage                 ImageType = "rootfs"
-	PatchImage                  ImageType = "patch"
-	ImageKubeVersionKey                   = "version"
-	ImageVIPKey                           = "vip"
-	ImageKubeLvscareImageKey              = "image"
-	ImageTypeKey                          = "sealos.io.type"
-	ImageTypeVersionKey                   = "sealos.io.version"
-	ImageKubeVersionEnvSysKey             = "SEALOS_SYS_KUBE_VERSION"
-	ImageSealosVersionEnvSysKey           = "SEALOS_SYS_SEALOS_VERSION"
+	AppImage                 ImageType = "application"
+	RootfsImage              ImageType = "rootfs"
+	PatchImage               ImageType = "patch"
+	ImageKubeVersionKey                = "version"
+	ImageVIPKey                        = "vip"
+	ImageKubeLvscareImageKey           = "image"
+
+	ImageKubeVersionEnvSysKey   = "SEALOS_SYS_KUBE_VERSION"
+	ImageSealosVersionEnvSysKey = "SEALOS_SYS_SEALOS_VERSION"
+	ImageRunModeEnvSysKey       = "SEALOS_SYS_RUN_MODE"
 )
 
 const (
@@ -68,6 +70,19 @@ const (
 )
 
 var ImageVersionList = []string{ImageTypeVersionKeyV1Beta1, ImageTypeVersionKeyV1Beta2}
+
+var (
+	imageTypeKey           = "sealos.io.type"
+	imageVersionKey        = "sealos.io.version"
+	imageDistributionKey   = "sealos.io.distribution"
+	imageTypeKeyV2         = path.Join(GroupName, "type")
+	imageVersionKeyV2      = path.Join(GroupName, "version")
+	imageDistributionKeyV2 = path.Join(GroupName, "distribution")
+)
+
+var ImageTypeKeys = []string{imageTypeKey, imageTypeKeyV2}
+var ImageVersionKeys = []string{imageVersionKey, imageVersionKeyV2}
+var ImageDistributionKeys = []string{imageDistributionKey, imageDistributionKeyV2}
 
 type MountImage struct {
 	Name       string            `json:"name"`
@@ -217,6 +232,13 @@ type SSH struct {
 	Pk       string `json:"pk,omitempty"`
 	PkPasswd string `json:"pkPasswd,omitempty"`
 	Port     uint16 `json:"port,omitempty"`
+}
+
+func (s *SSH) DefaultPort() uint16 {
+	if s.Port != 0 {
+		return s.Port
+	}
+	return 22
 }
 
 type Host struct {

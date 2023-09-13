@@ -26,6 +26,7 @@ function CostOverview() {
   const updateCPU = useBillingStore((state) => state.updateCpu);
   const updateMemory = useBillingStore((state) => state.updateMemory);
   const updateStorage = useBillingStore((state) => state.updateStorage);
+  const updateNetwork = useBillingStore((state) => state.updateNetwork);
   const updateGpu = useBillingStore((state) => state.updateGpu);
   const cookie = getCookie('NEXT_LOCALE');
   useEffect(() => {
@@ -75,6 +76,7 @@ function CostOverview() {
     updateCPU(item?.cpu || 0);
     updateMemory(item?.memory || 0);
     updateStorage(item?.storage || 0);
+    updateNetwork(item?.network || 0);
     updateGpu(item?.gpu || 0);
   }, [costBillingItems, updateCPU, updateMemory, updateStorage]);
   const rechargeRef = useRef<any>();

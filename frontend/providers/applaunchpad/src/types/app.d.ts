@@ -65,13 +65,15 @@ export interface AppEditType {
   cpu: number;
   memory: number;
   gpu?: GpuType;
-  containerOutPort: number | '';
-  accessExternal: {
-    use: boolean;
-    backendProtocol: 'HTTP' | 'GRPC' | 'WS';
-    outDomain: string;
-    selfDomain: string;
-  };
+  networks: {
+    networkName: string;
+    portName: string;
+    port: number;
+    protocol: 'HTTP' | 'GRPC' | 'WS';
+    openPublicDomain: boolean;
+    publicDomain: string;
+    customDomain: string;
+  }[];
   envs: {
     key: string;
     value: string;
@@ -109,6 +111,8 @@ export interface AppDetailType extends AppEditType {
   imageName: string;
   usedCpu: number[];
   usedMemory: number[];
+  crYamlList: DeployKindsType[];
+
   // pods: PodDetailType[];
 }
 
@@ -150,7 +154,7 @@ export interface PodEvent {
 }
 
 export type AppPatchPropsType = (
-  | { type: 'delete'; kind: `${YamlKindEnum}` }
+  | { type: 'delete'; kind: `${YamlKindEnum}`; name: string }
   | { type: 'patch'; kind: `${YamlKindEnum}`; value: Record<string, any> }
   | { type: 'create'; kind: `${YamlKindEnum}`; value: string }
 )[];

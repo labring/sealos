@@ -22,6 +22,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils"
+
+	"k8s.io/apimachinery/pkg/api/errors"
+
+	"github.com/labring/sealos/controllers/pkg/common/gpu"
+
 	"github.com/labring/sealos/controllers/pkg/common"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -41,9 +47,10 @@ import (
 // BillingRecordQueryReconciler reconciles a BillingRecordQuery object
 type BillingRecordQueryReconciler struct {
 	client.Client
-	Scheme     *runtime.Scheme
-	Logger     logr.Logger
-	MongoDBURI string
+	Scheme                 *runtime.Scheme
+	Logger                 logr.Logger
+	MongoDBURI             string
+	AccountSystemNamespace string
 }
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=billingrecordqueries,verbs=get;list;watch;create;update;patch;delete
@@ -52,6 +59,8 @@ type BillingRecordQueryReconciler struct {
 //+kubebuilder:rbac:groups=account.sealos.io,resources=pricequeries,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=pricequeries/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=account.sealos.io,resources=pricequeries/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=configmaps/status,verbs=get
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -103,6 +112,13 @@ func (r *BillingRecordQueryReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, err
 	}
 
+	if err = r.Get(ctx, client.ObjectKey{Name: getUsername(billingRecordQuery.Namespace), Namespace: r.AccountSystemNamespace}, &accountv1.Account{}); err != nil {
+		if errors.IsNotFound(err) {
+			billingRecordQuery.Status.Status = "Please use the master account to query"
+			return ctrl.Result{}, r.Status().Update(ctx, billingRecordQuery)
+		}
+		return ctrl.Result{}, err
+	}
 	err = dbClient.QueryBillingRecords(billingRecordQuery, getUsername(billingRecordQuery.Namespace))
 	if err != nil {
 		r.Logger.Error(err, "query billing records failed")
@@ -128,6 +144,7 @@ func (r *BillingRecordQueryReconciler) SetupWithManager(mgr ctrl.Manager, rateOp
 		return fmt.Errorf("env %s is empty", database.MongoURI)
 	}
 	r.Logger = log.Log.WithName("billingrecordquery-controller")
+	r.AccountSystemNamespace = utils.GetEnvWithDefault(ACCOUNTNAMESPACEENV, DEFAULTACCOUNTNAMESPACE)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&accountv1.BillingRecordQuery{}).
 		Watches(&source.Kind{Type: &accountv1.PriceQuery{}}, &handler.EnqueueRequestForObject{}).
@@ -147,7 +164,16 @@ func (r *BillingRecordQueryReconciler) ReconcilePriceQuery(ctx context.Context, 
 		pricesMap = common.DefaultPrices
 	}
 	priceQuery.Status.BillingRecords = make([]accountv1.BillingRecord, 0)
+	alias, err := gpu.GetGPUAlias(r.Client)
+	if errors.IsNotFound(err) {
+		r.Logger.Error(err, "get gpu alias failed")
+	}
 	for property, v := range pricesMap {
+		if common.IsGpuResource(property) && alias != nil {
+			if propertyAlias := alias[common.GetGpuResourceProduct(property)]; propertyAlias != "" {
+				property = string(common.NewGpuResource(propertyAlias))
+			}
+		}
 		priceQuery.Status.BillingRecords = append(priceQuery.Status.BillingRecords, accountv1.BillingRecord{
 			ResourceType: property,
 			Price:        v.Price,

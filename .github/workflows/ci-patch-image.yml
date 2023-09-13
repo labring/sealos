@@ -96,6 +96,15 @@ jobs:
           -t ${DOCKER_REPO}:${{ env.GIT_COMMIT_SHORT_SHA }} \
           -f Dockerfile.main \
           .
+          docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --label "org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/sealos" \
+          --label "org.opencontainers.image.description=sealos  container image" \
+          --label "org.opencontainers.image.licenses=MIT" \
+          --push \
+          -t ${DOCKER_REPO}:latest \
+          -f Dockerfile.main \
+          .
 
   build-on-cluster-image:
     if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
@@ -122,7 +131,7 @@ jobs:
           SEALOS_ISSUE_LABEL: "dayly-report"
           SEALOS_ISSUE_TYPE: "day"
           SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagebuild_apps sealos ${{ env.GIT_COMMIT_SHORT_SHA }}"
+          SEALOS_COMMENT_BODY: "/imagebuild_apps sealos latest"
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
   build-on-cluster-patch-image:

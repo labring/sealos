@@ -210,6 +210,7 @@ func CopyDirV3(srcPath, destPath string, filters ...func(filePath string) bool) 
 
 // Copy copies file from source to target path.
 func Copy(src, dest string) error {
+	_ = os.Remove(dest)
 	// Gather file information to set back later.
 	si, err := os.Lstat(src)
 	if err != nil {

@@ -48,7 +48,7 @@ const (
 )
 
 type impl struct {
-	pathResolver PathResolver
+	pathResolver constants.PathResolver
 	ssh          ssh.Interface
 	mounts       []v2.MountImage
 }
@@ -75,7 +75,10 @@ func (s *impl) Sync(ctx context.Context, hosts ...string) error {
 		go func(ctx context.Context, host string) {
 			logger.Debug("running temporary registry on host %s", host)
 			if err := s.ssh.CmdAsyncWithContext(ctx, host, getRegistryServeCommand(s.pathResolver, defaultTemporaryPort)); err != nil {
-				logger.Error(err)
+				// ignore expected signal killed error when context cancel
+				if !strings.Contains(err.Error(), "signal: killed") {
+					logger.Error(err)
+				}
 			}
 		}(cmdCtx, hosts[i])
 	}
@@ -126,7 +129,7 @@ func trimPortStr(s string) string {
 	return s
 }
 
-func getRegistryServeCommand(pathResolver PathResolver, port string) string {
+func getRegistryServeCommand(pathResolver constants.PathResolver, port string) string {
 	return fmt.Sprintf("%s registry serve filesystem -p %s --disable-logging=true %s",
 		pathResolver.RootFSSealctlPath(), port, pathResolver.RootFSRegistryPath(),
 	)
@@ -195,19 +198,15 @@ func syncViaHTTP(targets []string) func(context.Context, string) error {
 				return nil
 			})
 		}
+		err = eg.Wait()
 		go func() {
-			errCh <- eg.Wait()
+			// for notifying shutdown http Server
+			errCh <- err
 		}()
-		return <-errCh
+		return err
 	}
 }
 
-type PathResolver interface {
-	RootFSSealctlPath() string
-	RootFSRegistryPath() string
-	RootFSPath() string
-}
-
-func New(pathResolver PathResolver, ssh ssh.Interface, mounts []v2.MountImage) filesystem.RegistrySyncer {
+func New(pathResolver constants.PathResolver, ssh ssh.Interface, mounts []v2.MountImage) filesystem.RegistrySyncer {
 	return &impl{pathResolver, ssh, mounts}
 }

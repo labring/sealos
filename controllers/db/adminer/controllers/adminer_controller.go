@@ -53,7 +53,7 @@ const (
 	DefaultDomain          = "cloud.sealos.io"
 	DefaultSecretName      = "wildcard-cloud-sealos-io-cert"
 	DefaultSecretNamespace = "sealos-system"
-	DefaultImage           = "docker.io/labring/docker-adminer:v4.8.1"
+	DefaultImage           = "docker.io/labring4docker/adminer:v4.8.1"
 )
 
 var (

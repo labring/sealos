@@ -126,12 +126,14 @@ func (r *TransferReconciler) TransferOutSaver(ctx context.Context, transfer *acc
 		Namespace: r.AccountSystemNamespace,
 	}
 	balanceSpec := accountv1.AccountBalanceSpec{
-		OrderID: id,
-		Amount:  transfer.Spec.Amount,
-		Owner:   getUsername(transfer.Namespace),
-		Time:    metav1.Time{Time: time.Now().UTC()},
-		Type:    accountv1.TransferOut,
-		Details: transfer.ToJSON(),
+		Time: metav1.Time{Time: time.Now().UTC()},
+		AccountBalanceSpecInline: accountv1.AccountBalanceSpecInline{
+			OrderID: id,
+			Amount:  transfer.Spec.Amount,
+			Owner:   getUsername(transfer.Namespace),
+			Type:    accountv1.TransferOut,
+			Details: transfer.ToJSON(),
+		},
 	}
 	from := accountv1.AccountBalance{
 		ObjectMeta: objMeta,
@@ -186,12 +188,14 @@ func (r *TransferReconciler) TransferInSaver(ctx context.Context, transfer *acco
 		Namespace: r.AccountSystemNamespace,
 	}
 	balanceSpec := accountv1.AccountBalanceSpec{
-		OrderID: id,
-		Amount:  transfer.Spec.Amount,
-		Owner:   getUsername(transfer.Spec.To),
-		Time:    metav1.Time{Time: time.Now().UTC()},
-		Type:    accountv1.TransferIn,
-		Details: transfer.ToJSON(),
+		Time: metav1.Time{Time: time.Now().UTC()},
+		AccountBalanceSpecInline: accountv1.AccountBalanceSpecInline{
+			OrderID: id,
+			Amount:  transfer.Spec.Amount,
+			Owner:   getUsername(transfer.Spec.To),
+			Type:    accountv1.TransferIn,
+			Details: transfer.ToJSON(),
+		},
 	}
 	to := accountv1.AccountBalance{
 		ObjectMeta: objMeta,

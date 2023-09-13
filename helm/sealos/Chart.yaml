@@ -1,0 +1,24 @@
+apiVersion: v2
+
+appVersion: v4.3.0
+
+annotations:
+  category: Infrastructure
+  licenses: Apache-2.0
+
+description: -|
+  sealos cloud helm chart
+
+home: https://sealos.io
+
+icon: https://cloud.sealos.io/logo.svg
+
+keywords:
+  - sealos
+
+maintainers:
+  - name: labring
+    url: https://github.com/labring
+
+name: sealos
+version: 0.1.0

@@ -143,7 +143,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         return JSYAML.dump(_item);
       });
 
-      const result = await postDeployApp(yamls);
+      const result = await postDeployApp(yamls, 'create');
 
       toast({
         title: t(applySuccess),

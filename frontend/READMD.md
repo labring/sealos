@@ -22,7 +22,7 @@ echo '121.41.82.246 apiserver.cluster.local' | sudo tee -a /etc/hosts
 
 - It is best to use `sealos/frontend` as the workspace directory to develop applications.
 - Before dev, you should install `pnpm` first. [pnpm](https://pnpm.io/zh/)
-- The `sealos/frontend/packages/*` are local dependencies, you need run `pnpm -r --filter=./packages/* run build` in the `sealos/frontend` directory tobuild them.
+- The `sealos/frontend/packages/*` are local dependencies, you need run `pnpm -r --filter ./packages/* run build` in the `sealos/frontend` directory tobuild them.
 - The `sealos/frontend/providers/*` are sub applications..
 - The `sealos/frontend/desktop` is desktop app.
 
@@ -82,3 +82,9 @@ Refer to other apps to add some configuration.
 5. frontend/providers/app/deploy/manifests/deploy.yaml
 6. frontend/providers/app/deploy/manifests/ingress.yaml.tmpl
 7. makefile
+
+## multiple namespaces
+
+In order to support multiple namespaces, the method of obtaining 'namespace' in the
+backend should be replaced with the method of obtaining it from 'kubeconfig' instead
+of adding 'ns-' to 'user' for generation purpose.

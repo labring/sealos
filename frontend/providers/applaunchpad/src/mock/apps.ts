@@ -1,5 +1,8 @@
 import { AppListItemType, AppDetailType, PodDetailType } from '@/types/app';
 import { appStatusMap, podStatusMap } from '@/constants/app';
+import { customAlphabet } from 'nanoid';
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
+
 export const MOCK_APPS: AppListItemType[] = [
   {
     id: 'string',
@@ -282,6 +285,7 @@ export const MOCK_PODS: PodDetailType[] = [
 ];
 
 export const MOCK_APP_DETAIL: AppDetailType = {
+  crYamlList: [],
   id: '4bd50c41-149e-4da5-89d5-0308b9dd75c6',
   createTime: '2022/1/22',
   status: appStatusMap.waiting,
@@ -295,13 +299,17 @@ export const MOCK_APP_DETAIL: AppDetailType = {
   memory: 0,
   usedCpu: new Array(30).fill(0),
   usedMemory: new Array(30).fill(0),
-  containerOutPort: 8000,
-  accessExternal: {
-    use: true,
-    backendProtocol: 'HTTP',
-    outDomain: '',
-    selfDomain: ''
-  },
+  networks: [
+    {
+      networkName: '',
+      portName: nanoid(),
+      port: 80,
+      protocol: 'HTTP',
+      openPublicDomain: false,
+      publicDomain: '',
+      customDomain: ''
+    }
+  ],
   envs: [],
   hpa: {
     use: false,

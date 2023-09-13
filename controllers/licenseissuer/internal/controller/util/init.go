@@ -17,7 +17,7 @@ limitations under the License.
 package util
 
 import (
-	"fmt"
+	"sync"
 
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
@@ -33,30 +33,39 @@ type RegisterRequest struct {
 
 // The following code is used to implement the instance of sub-task which is used to
 // initialize the cluster uuid and preset root user for mongoDB
-type initTask struct {
-	options Options
+type InitTask struct {
+	options OptionsReadOnly
+	probe   InitProbe
 }
 
-func (t initTask) initWork(instance *TaskInstance) error {
+func NewInitTask(o OptionsReadOnly) *InitTask {
+	return &InitTask{
+		options: o,
+		probe:   GetInitProbe(),
+	}
+}
+
+func (t *InitTask) initWork(instance *TaskInstance) error {
+	// register function is idempotent
 	err := t.register(instance)
 	if err != nil {
-		instance.logger.Error(err, "failed to register")
+		instance.logger.Info("failed to register", "err", err)
 		return err
 	}
+	t.probe.Completed()
 	return nil
 }
 
 // 1. check if the cluster has been registered
-// 2. register to cloud (if the monitor is enabled)
-// 3. store cluster-info to k8s
+// 2. store cluster-info to k8s
 
-func (t initTask) register(instance *TaskInstance) error {
+func (t *InitTask) register(instance *TaskInstance) error {
 	ClusterInfo := createClusterInfo()
 	// step 1
 	// check if the cluster has been registered
 	registered, err := t.checkRegister(instance)
 	if err != nil {
-		instance.logger.Error(err, "failed to check register")
+		instance.logger.Info("failed to check if the cluster has been registered")
 		return err
 	}
 	if registered {
@@ -65,25 +74,16 @@ func (t initTask) register(instance *TaskInstance) error {
 	}
 
 	// step 2
-	// if the monitor is enabled, info will be sent to the cloud.
-	if t.options.GetEnvOptions().MonitorConfiguration == "true" {
-		err := t.registerToCloud(*ClusterInfo, instance)
-		if err != nil {
-			instance.logger.Error(err, "failed to register to cloud")
-			return err
-		}
-	}
-	// step 3
 	// only after register to cloud, the store-behavior will be executed.
 	err = instance.Create(instance.ctx, ClusterInfo)
 	if err != nil {
-		instance.logger.Error(err, "failed to create cluster-info")
+		instance.logger.Info("failed to store cluster info", "err", err)
 	}
 	return err
 }
 
 // check if the cluster has been registered.
-func (t initTask) checkRegister(instance *TaskInstance) (bool, error) {
+func (t *InitTask) checkRegister(instance *TaskInstance) (bool, error) {
 	info := &corev1.Secret{}
 	err := instance.Get(instance.ctx, types.NamespacedName{
 		Name:      ClusterInfo,
@@ -95,23 +95,6 @@ func (t initTask) checkRegister(instance *TaskInstance) (bool, error) {
 	return true, err
 }
 
-// registerToCloud is used to send info to the cloud.
-func (t initTask) registerToCloud(ClusterInfo corev1.Secret, instance *TaskInstance) error {
-	urlMap, err := GetURL(instance.ctx, instance.Client)
-	if err != nil {
-		return fmt.Errorf("failed to get url: %w", err)
-	}
-	rr := RegisterRequest{
-		UID: string(ClusterInfo.Data["uuid"]),
-	}
-	// send info to cloud
-	err = Push(urlMap[RegisterURL], rr)
-	if err != nil {
-		return fmt.Errorf("failed to write to cloud: %w", err)
-	}
-	return nil
-}
-
 func createClusterInfo() *corev1.Secret {
 	uuid := uuid.New().String()
 	secret := &corev1.Secret{}
@@ -121,4 +104,37 @@ func createClusterInfo() *corev1.Secret {
 		"uuid": []byte(uuid),
 	}
 	return secret
+}
+
+var onceForInit sync.Once
+var flag Flag
+var _ InitProbe = &Flag{}
+var _ Probe = &Flag{}
+
+type InitProbe interface {
+	Probe
+	Completed()
+}
+
+type Flag struct {
+	flag bool
+}
+
+func (f *Flag) Completed() {
+	f.flag = true
+}
+
+func (f *Flag) Probe() bool {
+	return f.flag
+}
+
+func GetInitProbe() InitProbe {
+	onceForInit.Do(func() {
+		flag.flag = false
+	})
+	return &flag
+}
+
+func ProbeForInit() Probe {
+	return GetInitProbe()
 }

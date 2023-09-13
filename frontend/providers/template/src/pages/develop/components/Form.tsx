@@ -51,7 +51,6 @@ const Form = ({
                     maxW={'500px'}
                     ml={'20px'}
                     defaultValue={item?.default}
-                    autoFocus={true}
                     placeholder={item?.description}
                     {...register(item?.key, {
                       required: item?.required

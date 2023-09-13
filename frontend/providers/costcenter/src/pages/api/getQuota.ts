@@ -1,4 +1,5 @@
 import { authSession } from '@/service/backend/auth';
+import { GetUserDefaultNameSpace } from '@/service/backend/kubernetes';
 import { jsonRes } from '@/service/backend/response';
 import * as k8s from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -11,7 +12,8 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (user === null) {
       return jsonRes(resp, { code: 403, message: 'user null' });
     }
-    const namespace = 'ns-' + user.name;
+    // namespace要可切换
+    const namespace = GetUserDefaultNameSpace(user.name);
     const quota = await getUserQuota(kc, namespace);
     return jsonRes(resp, {
       code: 200,
@@ -19,10 +21,10 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     });
   } catch (error) {
     console.log(error);
-    jsonRes(resp, { code: 500, message: 'get price error' });
+    jsonRes(resp, { code: 500, message: 'get quota error' });
   }
 }
-export type UserQuoteItemType = {
+export type UserQuotaItemType = {
   type: 'cpu' | 'memory' | 'storage' | 'gpu';
   used: number;
   limit: number;
@@ -78,7 +80,7 @@ export const memoryFormatToMi = (memory: string) => {
 export async function getUserQuota(
   kc: k8s.KubeConfig,
   namespace: string
-): Promise<UserQuoteItemType[]> {
+): Promise<UserQuotaItemType[]> {
   const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
   const data = await k8sApi.readNamespacedResourceQuota(`quota-${namespace}`, namespace);
