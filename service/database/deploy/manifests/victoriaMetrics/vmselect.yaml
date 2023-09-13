@@ -32,6 +32,8 @@ spec:
     spec:
       containers:
         - name: vmselect
+          securityContext:                 
+            allowPrivilegeEscalation: false
           image: "victoriametrics/vmselect:v1.77.0-cluster"
           imagePullPolicy: "IfNotPresent"
           args:
