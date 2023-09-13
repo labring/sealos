@@ -2,15 +2,16 @@ package auth
 
 import (
 	"context"
+	"log"
+	"net"
+	"os"
+
 	"github.com/labring/sealos/service/database/api"
 	authorizationapi "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"log"
-	"net"
-	"os"
 )
 
 func Authenticate(namespace, password string) error {

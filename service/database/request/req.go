@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"io"
 	"log"
-
-	"github.com/labring/sealos/service/database/api"
-
-	// "net"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/labring/sealos/service/database/api"
 )
 
 func Request(addr string, params *bytes.Buffer) ([]byte, error) {
