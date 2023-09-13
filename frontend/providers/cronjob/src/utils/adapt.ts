@@ -148,19 +148,25 @@ export const adaptServiceAccountList = (
 export const adaptJobItemList = (jobs: V1Job[]) => {
   const total = jobs.length;
   let successAmount = 0;
-  const history = jobs.map((item) => {
-    if (!!item.status?.succeeded) successAmount++;
-    return {
-      status: !!item.status?.succeeded,
-      startTime: dayjs(item.status?.startTime).format('YYYY-MM-DD HH:mm'),
-      completionTime: dayjs(item.status?.completionTime).format('YYYY-MM-DD HH:mm'),
-      uid: item.metadata?.uid,
-      name: item.metadata?.name,
-      events: [] as JobEvent[],
-      logs: '',
-      podName: ''
-    };
-  });
+  const history = jobs
+    .map((item) => {
+      if (!!item.status?.succeeded) successAmount++;
+      const startTimeTimestamp = dayjs(item.status?.startTime).unix();
+      return {
+        status: !!item.status?.succeeded,
+        startTime: dayjs(item.status?.startTime).format('YYYY-MM-DD HH:mm'),
+        completionTime: dayjs(item.status?.completionTime).format('YYYY-MM-DD HH:mm'),
+        uid: item.metadata?.uid,
+        name: item.metadata?.name,
+        events: [] as JobEvent[],
+        logs: '',
+        podName: '',
+        startTimeTimestamp: startTimeTimestamp
+      };
+    })
+    .sort((a, b) => {
+      return b.startTimeTimestamp - a.startTimeTimestamp;
+    });
 
   return {
     total,

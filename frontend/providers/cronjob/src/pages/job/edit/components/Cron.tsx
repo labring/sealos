@@ -93,7 +93,7 @@ export default function Cron({ formHook }: { formHook: UseFormReturn<CronJobEdit
           </Link>
         </Flex>
       </Flex>
-      <Box alignItems={'self-start'} maxW={'200px'} ml="12px" overflowWrap="break-word">
+      <Box alignItems={'self-start'} ml="12px" overflowWrap="break-word">
         {cronMessage && `"${cronMessage}"`}
       </Box>
     </Flex>

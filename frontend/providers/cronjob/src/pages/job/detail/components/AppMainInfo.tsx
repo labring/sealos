@@ -94,18 +94,31 @@ export default function AppBaseInfo({ appName }: { appName: string }) {
             </Box>
           ))}
         </Box>
-        <Box overflowY={'auto'} py="24px" px="28px">
-          <Text>
-            {t('Log')} (pod: {ActivePod?.podName})
-          </Text>
-          <Text mt="12px">{ActivePod?.logs}</Text>
-        </Box>
-        {data?.history?.length === 0 && !isLoading && (
-          <Flex alignItems={'center'} justifyContent={'center'} flexDirection={'column'} h={'100%'}>
+        {ActivePod?.podName && !isLoading ? (
+          <Flex
+            flexDirection={'column'}
+            flex={1}
+            w="0"
+            overflowY={'scroll'}
+            overflowX="hidden"
+            py="24px"
+            px="28px"
+          >
+            <Text>
+              {t('Log')} (pod: {ActivePod?.podName})
+            </Text>
+            <Text mt="12px">{ActivePod?.logs}</Text>
+          </Flex>
+        ) : (
+          <Flex
+            flex={1}
+            w="0"
+            alignItems={'center'}
+            justifyContent={'center'}
+            flexDirection={'column'}
+            h={'100%'}
+          >
             <MyIcon name="noEvents" w={'48px'} h={'48px'} color={'transparent'} />
-            <Box mt={4} color={'myGray.600'}>
-              No Events
-            </Box>
           </Flex>
         )}
       </Flex>
