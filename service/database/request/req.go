@@ -3,7 +3,7 @@ package request
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 
 	"github.com/labring/sealos/service/database/api"
@@ -28,7 +28,7 @@ func Request(addr string, params *bytes.Buffer) ([]byte, error) {
 		return nil, fmt.Errorf("prometheus server: %s", resp.Status)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -62,13 +62,11 @@ func PrometheusPre(query *api.PromRequest) ([]byte, error) {
 
 	if len(formData.Get("start")) == 0 {
 		return Request(prometheusHost+"/api/v1/query", bf)
-	} else {
-		return Request(prometheusHost+"/api/v1/query_range", bf)
 	}
+	return Request(prometheusHost+"/api/v1/query_range", bf)
 }
 
 func GetQuery(query *api.PromRequest) (string, error) {
-
 	var result string
 	switch query.Type {
 	case "apecloud-mysql":
@@ -114,9 +112,8 @@ func PrometheusNew(query *api.PromRequest) ([]byte, error) {
 
 	if len(formData.Get("start")) == 0 {
 		return Request(prometheusHost+"/api/v1/query", bf)
-	} else {
-		return Request(prometheusHost+"/api/v1/query_range", bf)
 	}
+	return Request(prometheusHost+"/api/v1/query_range", bf)
 }
 
 func GetPromServerFromEnv() string {

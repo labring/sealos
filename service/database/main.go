@@ -13,8 +13,8 @@ import (
 
 type RestartableServer struct {
 	configFile string
-	server     *server.PromServer
-	hs         *http.Server
+	// server     *server.PromServer
+	// hs         *http.Server
 }
 
 func (rs *RestartableServer) Serve(c *server.Config) {

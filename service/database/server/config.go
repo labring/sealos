@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"gopkg.in/yaml.v2"
 )
@@ -16,7 +16,7 @@ type ServerConfig struct {
 }
 
 func InitConfig(configPath string) (*Config, error) {
-	configData, err := ioutil.ReadFile(configPath)
+	configData, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not read %s: %s", configPath, err)
 	}

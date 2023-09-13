@@ -1,4 +1,4 @@
-IMG ?= ghcr.io/labring/sealos-cloud-database-monitor:latest
+IMG ?= ghcr.io/labring/sealos-database-service:latest
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -47,7 +47,7 @@ build: clean ## Build service-hub binary.
 
 .PHONY: docker-build
 docker-build: build
-	mv bin/manager bin/sealos-cloud-database-monitor-${TARGETARCH}
+	mv bin/manager bin/sealos-database-${TARGETARCH}
 	docker build -t $(IMG) .
 
 .PHONY: docker-push
