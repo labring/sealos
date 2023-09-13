@@ -42,6 +42,8 @@ spec:
     spec:
       containers:
         - name: vmstorage
+          securityContext:                 
+            allowPrivilegeEscalation: false
           image: "victoriametrics/vmstorage:v1.77.0-cluster"
           imagePullPolicy: "IfNotPresent"
           args:
