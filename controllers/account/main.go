@@ -46,8 +46,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -188,6 +189,13 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Transfer")
+		os.Exit(1)
+	}
+	if err = (&controllers.NamespaceBillingHistoryReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "NamespaceBillingHistory")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

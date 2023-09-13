@@ -26,6 +26,7 @@ type Interface interface {
 	//InitDB() error
 	GetMeteringOwnerTimeResult(queryTime time.Time, queryCategories, queryProperties []string) (*MeteringOwnerTimeResult, error)
 	GetBillingLastUpdateTime(owner string, _type accountv1.Type) (bool, time.Time, error)
+	GetBillingHistoryNamespaceList(ns *accountv1.NamespaceBillingHistorySpec, owner string) ([]string, error)
 	SaveBillingsWithAccountBalance(accountBalanceSpec *accountv1.AccountBalanceSpec) error
 	QueryBillingRecords(billingRecordQuery *accountv1.BillingRecordQuery, owner string) error
 	GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error)
