@@ -47,7 +47,7 @@ build: clean ## Build service-hub binary.
 
 .PHONY: docker-build
 docker-build: build
-	mv bin/manager bin/sealos-database-${TARGETARCH}
+	mv bin/manager bin/service-database-${TARGETARCH}
 	docker build -t $(IMG) .
 
 .PHONY: docker-push

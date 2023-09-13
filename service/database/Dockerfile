@@ -2,7 +2,7 @@
 FROM gcr.io/distroless/static:nonroot
 # FROM gengweifeng/gcr-io-distroless-static-nonroot
 ARG TARGETARCH
-COPY bin/sealos-database-$TARGETARCH /manager
+COPY bin/service-database-$TARGETARCH /manager
 EXPOSE 9090
 USER 65532:65532
 
