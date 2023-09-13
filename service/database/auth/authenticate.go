@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 	"log"
-	"github.com/labring/sealos/controllers/restserver/api"
+	"github.com/labring/sealos/service/database/api"
 	"net"
 	"os"
 

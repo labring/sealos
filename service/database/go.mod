@@ -1,4 +1,4 @@
-module github.com/labring/sealos/controllers/restserver
+module github.com/labring/sealos/service/database
 
 go 1.20
 

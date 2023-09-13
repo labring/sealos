@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/labring/sealos/controllers/restserver/api"
+	"github.com/labring/sealos/service/database/api"
 
 	// "net"
 	"net/http"

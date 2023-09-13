@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/labring/sealos/controllers/restserver/server"
+	"github.com/labring/sealos/service/database/server"
 )
 
 type RestartableServer struct {
@@ -35,7 +35,7 @@ func (rs *RestartableServer) Serve(c *server.Config) {
 		fmt.Println(err)
 		return
 	}
-	fmt.Printf(":: Serve on %s\n", c.Server.ListenAddress)
+	fmt.Printf("Serve on %s\n", c.Server.ListenAddress)
 
 	if err := hs.Serve(listener); err != nil {
 		fmt.Println(err)

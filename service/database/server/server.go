@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/labring/sealos/controllers/restserver/api"
-	"github.com/labring/sealos/controllers/restserver/auth"
-	"github.com/labring/sealos/controllers/restserver/request"
+	"github.com/labring/sealos/service/database/api"
+	"github.com/labring/sealos/service/database/auth"
+	"github.com/labring/sealos/service/database/request"
 )
 
 type PromServer struct {
