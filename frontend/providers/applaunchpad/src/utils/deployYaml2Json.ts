@@ -418,7 +418,7 @@ export const json2Secret = (data: AppEditType) => {
 };
 export const json2HPA = (data: AppEditType) => {
   const template = {
-    apiVersion: 'autoscaling/v2beta2',
+    apiVersion: 'autoscaling/v2',
     kind: 'HorizontalPodAutoscaler',
     metadata: {
       name: data.appName
