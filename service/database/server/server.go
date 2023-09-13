@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"text/template"
 
 	"github.com/labring/sealos/service/database/api"
 	"github.com/labring/sealos/service/database/auth"
@@ -210,9 +211,16 @@ func (ps *PromServer) doReqPre(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	rw.Header().Set("Content-Type", "application/json")
-	n, err := rw.Write(result)
+
+	tmpl := template.New("responseTemplate").Delims("{{", "}}")
+	tmpl, err = tmpl.Parse(`{{.}}`)
 	if err != nil {
-		log.Printf("Reulst failed(%d): %s\n", n, err)
+		log.Printf("template failed: %s\n", err)
+		http.Error(rw, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	if err = tmpl.Execute(rw, string(result)); err != nil {
+		log.Printf("Reulst failed: %s\n", err)
 		http.Error(rw, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
