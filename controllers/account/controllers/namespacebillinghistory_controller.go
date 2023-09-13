@@ -72,17 +72,18 @@ func (r *NamespaceBillingHistoryReconciler) Reconcile(ctx context.Context, req c
 	nsHistory := &accountv1.NamespaceBillingHistory{}
 	err = r.Get(ctx, req.NamespacedName, nsHistory)
 	if err == nil {
-		if time.Since(nsHistory.CreationTimestamp.Time) > 4*time.Minute {
-			if err = r.Delete(ctx, nsHistory); err != nil {
-				r.Logger.Error(err, "delete nsHistory failed")
-				return ctrl.Result{Requeue: true}, err
-			}
+		// delete after 3 minutes
+		if time.Since(nsHistory.CreationTimestamp.Time) > 3*time.Minute {
+			return ctrl.Result{}, r.Delete(ctx, nsHistory)
 		}
 		if err = r.reconcile(ctx, req, dbClient, nsHistory); err != nil {
 			r.Logger.Error(err, "reconcile failed")
 			nsHistory.Status.Status = accountv1.Failed
 		}
-		return ctrl.Result{}, r.Status().Update(ctx, nsHistory)
+		if err = r.Status().Update(ctx, nsHistory); err == nil {
+			// return after 4 minutes
+			return ctrl.Result{RequeueAfter: 4 * time.Minute}, nil
+		}
 	}
 
 	return ctrl.Result{}, client.IgnoreNotFound(err)
