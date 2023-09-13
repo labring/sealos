@@ -46,7 +46,7 @@ spec:
       serviceAccountName: vmagent
       containers:
         - name: agent
-           securityContext:                 
+          securityContext:                 
             allowPrivilegeEscalation: false
           image: "victoriametrics/vmagent:v1.77.0"
           imagePullPolicy: IfNotPresent
