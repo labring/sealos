@@ -36,7 +36,7 @@ spec:
         - /manager
         env:
         - name: PROMETHEUS_SERVICE_HOST
-          value: <Prometheus_Address>
+          value: http://kb-addon-prometheus-server.
         image: ghcr.io/labring/sealos-cloud-database-monitor:latest
         imagePullPolicy: Always
         name: database-monitor
