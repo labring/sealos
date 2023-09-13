@@ -1,4 +1,5 @@
-FROM scratch
+# FROM scratch
+FROM gcr.io/distroless/static:nonroot
 # FROM gengweifeng/gcr-io-distroless-static-nonroot
 ARG TARGETARCH
 COPY bin/sealos-database-$TARGETARCH /manager
