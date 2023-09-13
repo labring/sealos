@@ -55,8 +55,10 @@ class MasterSDK {
     return {
       user: {
         id: session.user.userId,
+        k8sUsername: session.user.k8s_username,
         name: session.user.name,
-        avatar: session.user.avatar
+        avatar: session.user.avatar,
+        nsid: session.user.nsid
       },
       kubeconfig: session.kubeconfig
     };
