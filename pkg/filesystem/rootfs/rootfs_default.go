@@ -116,15 +116,19 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 	for idx := range ipList {
 		ip := ipList[idx]
 		eg.Go(func() error {
+			var renderingRequired bool
 			for i := range f.mounts {
 				if f.mounts[i].IsRootFs() || f.mounts[i].IsPatch() {
+					renderingRequired = true
 					// contents in rootfs/patch type images cannot be replicated asynchronously
 					if err := copyFn(f.mounts[i], ip, target); err != nil {
 						return err
 					}
 				}
 			}
-
+			if !renderingRequired {
+				return nil
+			}
 			envs := envProcessor.Getenv(ip)
 			envs = maps.Merge(rootfsEnvs, envs)
 			envs[v2.ImageRunModeEnvSysKey] = strings.Join(cluster.GetRolesByIP(ip), ",")
@@ -158,7 +162,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 
 func getRenderCommand(binary string, target string) string {
 	// skip if sealctl doesn't has subcommand render
-	return fmt.Sprintf("%s render --debug=%v %s 2>/dev/null || true", binary,
+	return fmt.Sprintf("%s render --debug=%v --clear %s 2>/dev/null || true", binary,
 		logger.IsDebugMode(),
 		strings.Join([]string{
 			filepath.Join(target, constants.EtcDirName),

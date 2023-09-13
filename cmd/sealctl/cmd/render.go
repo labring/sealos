@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/getter"
 
@@ -28,21 +29,29 @@ import (
 	"github.com/labring/sealos/pkg/utils/maps"
 )
 
+type renderOptions struct {
+	values []string
+	sets   []string
+	clear  bool
+}
+
+func (o *renderOptions) RegisterFlags(fs *pflag.FlagSet) {
+	fs.StringSliceVarP(&o.values, "values", "f", []string{}, "values files for context")
+	fs.StringSliceVar(&o.sets, "set", []string{}, "k/v sets for context")
+	fs.BoolVarP(&o.clear, "clear", "c", false, "clean up template files after rendering")
+}
+
 func newRenderCommand() *cobra.Command {
-	var (
-		valueFiles []string
-		sets       []string
-	)
+	opts := &renderOptions{}
 	cmd := &cobra.Command{
 		Use:   "render",
 		Short: "render template files with values and envs",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runRender(valueFiles, sets, args)
+			return runRender(opts, args)
 		},
 	}
-	cmd.Flags().StringSliceVarP(&valueFiles, "values", "f", []string{}, "values files for context")
-	cmd.Flags().StringSliceVar(&sets, "set", []string{}, "k/v sets for context")
+	opts.RegisterFlags(cmd.Flags())
 	return cmd
 }
 
@@ -69,8 +78,8 @@ func findTemplateFiles(paths ...string) ([]string, error) {
 	return ret, nil
 }
 
-func runRender(valueFiles, sets []string, args []string) error {
-	mergedValues, err := loadValues(valueFiles, sets)
+func runRender(opts *renderOptions, args []string) error {
+	mergedValues, err := loadValues(opts.values, opts.sets)
 	if err != nil {
 		return err
 	}
@@ -112,6 +121,9 @@ func runRender(valueFiles, sets []string, args []string) error {
 				return err
 			}
 			logger.Info("render %s from %s completed", trimed, fp)
+			if opts.clear {
+				return os.Remove(fp)
+			}
 			return nil
 		}(filepaths[i]); err != nil {
 			return err
