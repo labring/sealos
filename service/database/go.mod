@@ -1,4 +1,3 @@
-// module github.com/labring/sealos/service/database
 module github.com/labring/sealos/service/database
 
 go 1.20
