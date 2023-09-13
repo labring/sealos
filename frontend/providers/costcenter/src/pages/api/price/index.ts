@@ -31,7 +31,6 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       namespace,
       plural: 'pricequeries'
     };
-    console.log('price');
     try {
       await ApplyYaml(kc, yaml.dump(crdSchema));
       await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000));

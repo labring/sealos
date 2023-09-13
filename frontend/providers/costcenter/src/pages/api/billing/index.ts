@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (user === null) {
       return jsonRes(resp, { code: 403, message: 'user null' });
     }
-    const namespace = kc.getContexts()[0].namespace || 'ns-' + user.name;
+    const namespace = 'ns-' + user.name;
     const body = req.body;
     let spec: BillingSpec = body.spec;
     if (!spec) {
