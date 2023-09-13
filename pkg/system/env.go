@@ -85,7 +85,7 @@ var configOptions = []ConfigOption{
 	{
 		Key:          ScpChecksumConfigKey,
 		Description:  "whether to check the md5sum value is consistent during the copy process.",
-		DefaultValue: "true",
+		DefaultValue: "false",
 	},
 	{
 		Key:         ContainerStorageConfEnvKey,
