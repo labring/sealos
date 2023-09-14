@@ -26,6 +26,7 @@ import (
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
@@ -172,10 +173,13 @@ func verifyAndSetNodes(cmd *cobra.Command, cluster *v2.Cluster, scaleArgs *Scale
 			ssh.OverSSHConfig(global, override)
 
 			sshClient := ssh.MustNewClient(global, true)
-
+			execer, err := exec.New(sshClient)
+			if err != nil {
+				return nil, err
+			}
 			host := &v2.Host{
 				IPS:   addrs,
-				Roles: []string{role, GetHostArch(sshClient, addrs[0])},
+				Roles: []string{role, GetHostArch(execer, addrs[0])},
 			}
 			if override != nil {
 				host.SSH = override

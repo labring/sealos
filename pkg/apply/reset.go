@@ -23,6 +23,7 @@ import (
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -69,9 +70,13 @@ func (r *ClusterArgs) resetArgs(cmd *cobra.Command, args *ResetArgs) error {
 		r.hosts = []v2.Host{}
 
 		sshClient := ssh.NewCacheClientFromCluster(r.cluster, true)
-		r.setHostWithIpsPort(masters, []string{v2.MASTER, GetHostArch(sshClient, masters[0])})
+		execer, err := exec.New(sshClient)
+		if err != nil {
+			return err
+		}
+		r.setHostWithIpsPort(masters, []string{v2.MASTER, GetHostArch(execer, masters[0])})
 		if len(nodes) > 0 {
-			r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, nodes[0])})
+			r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(execer, nodes[0])})
 		}
 		r.cluster.Spec.Hosts = r.hosts
 	}

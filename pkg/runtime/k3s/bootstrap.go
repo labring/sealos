@@ -92,7 +92,7 @@ func (k *K3s) joinMaster(master string) error {
 			return k.generateAndSendTokenFiles(master, "token", "agent-token")
 		},
 		func() error {
-			return k.sshClient.Copy(master, filepath.Join(k.pathResolver.EtcPath(), defaultJoinMastersFilename), defaultK3sConfigPath)
+			return k.execer.Copy(master, filepath.Join(k.pathResolver.EtcPath(), defaultJoinMastersFilename), defaultK3sConfigPath)
 		},
 		func() error { return k.enableK3sService(master) },
 		func() error { return k.copyKubeConfigFileToNodes(master) },
@@ -115,7 +115,7 @@ func (k *K3s) joinNode(node string) error {
 	return k.runPipelines(fmt.Sprintf("join node %s", node),
 		func() error { return k.generateAndSendTokenFiles(node, "agent-token") },
 		func() error {
-			return k.sshClient.Copy(node, filepath.Join(k.pathResolver.EtcPath(), defaultJoinNodesFilename), defaultK3sConfigPath)
+			return k.execer.Copy(node, filepath.Join(k.pathResolver.EtcPath(), defaultJoinNodesFilename), defaultK3sConfigPath)
 		},
 		func() error { return k.enableK3sService(node) },
 		func() error { return k.copyKubeConfigFileToNodes(node) },
@@ -148,7 +148,7 @@ func (k *K3s) generateAndSendTokenFiles(host string, filenames ...string) error 
 			return fmt.Errorf("generate token: %v", err)
 		}
 		dst := filepath.Join(k.pathResolver.ConfigsPath(), filename)
-		if err = k.sshClient.Copy(host, src, dst); err != nil {
+		if err = k.execer.Copy(host, src, dst); err != nil {
 			return fmt.Errorf("copy token file: %v", err)
 		}
 	}
@@ -175,7 +175,7 @@ func (k *K3s) generateAndSendInitConfig() error {
 			return err
 		}
 	}
-	return k.sshClient.Copy(k.cluster.GetMaster0IPAndPort(), src, defaultK3sConfigPath)
+	return k.execer.Copy(k.cluster.GetMaster0IPAndPort(), src, defaultK3sConfigPath)
 }
 
 func (k *K3s) enableK3sService(host string) error {
@@ -188,7 +188,7 @@ func (k *K3s) enableK3sService(host string) error {
 
 func (k *K3s) pullKubeConfigFromMaster0() error {
 	dest := k.pathResolver.AdminFile()
-	return k.sshClient.Fetch(k.cluster.GetMaster0IPAndPort(), defaultKubeConfigPath, dest)
+	return k.execer.Fetch(k.cluster.GetMaster0IPAndPort(), defaultKubeConfigPath, dest)
 }
 
 func (k *K3s) copyKubeConfigFileToNodes(hosts ...string) error {
@@ -197,12 +197,12 @@ func (k *K3s) copyKubeConfigFileToNodes(hosts ...string) error {
 	for _, node := range hosts {
 		node := node
 		eg.Go(func() error {
-			home, err := k.sshClient.CmdToString(node, "echo $HOME", "")
+			home, err := k.execer.CmdToString(node, "echo $HOME", "")
 			if err != nil {
 				return err
 			}
 			dst := filepath.Join(home, ".kube", "config")
-			return k.sshClient.Copy(node, src, dst)
+			return k.execer.Copy(node, src, dst)
 		})
 	}
 	return eg.Wait()

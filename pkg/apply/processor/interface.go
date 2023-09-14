@@ -25,6 +25,7 @@ import (
 
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/filesystem/registry"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -155,7 +156,11 @@ func MirrorRegistry(cluster *v2.Cluster, mounts []v2.MountImage) error {
 	registries := cluster.GetRegistryIPAndPortList()
 	logger.Debug("registry nodes is: %+v", registries)
 	sshClient := ssh.NewCacheClientFromCluster(cluster, true)
-	syncer := registry.New(constants.NewPathResolver(cluster.GetName()), sshClient, mounts)
+	execer, err := exec.New(sshClient)
+	if err != nil {
+		return err
+	}
+	syncer := registry.New(constants.NewPathResolver(cluster.GetName()), execer, mounts)
 	return syncer.Sync(context.Background(), registries...)
 }
 

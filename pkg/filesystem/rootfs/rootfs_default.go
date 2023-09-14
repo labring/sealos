@@ -28,10 +28,11 @@ import (
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
+	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/filesystem"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/exec"
+	executils "github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
@@ -48,10 +49,6 @@ func (f *defaultRootfs) MountRootfs(cluster *v2.Cluster, hosts []string) error {
 
 func (f *defaultRootfs) UnMountRootfs(cluster *v2.Cluster, hosts []string) error {
 	return f.unmountRootfs(cluster, hosts)
-}
-
-func (f *defaultRootfs) getSSH(cluster *v2.Cluster) ssh.Interface {
-	return ssh.NewCacheClientFromCluster(cluster, true)
 }
 
 func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error {
@@ -80,7 +77,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 				return fmt.Errorf("failed to stat files: %w", err)
 			}
 			if len(dirs) != 0 {
-				_, err = exec.RunBashCmd(fmt.Sprintf(constants.DefaultChmodBash, src.MountPoint))
+				_, err = executils.RunBashCmd(fmt.Sprintf(constants.DefaultChmodBash, src.MountPoint))
 				if err != nil {
 					return fmt.Errorf("run chmod to rootfs failed: %w", err)
 				}
@@ -92,13 +89,17 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 		return err
 	}
 
-	sshClient := f.getSSH(cluster)
+	sshClient := ssh.NewCacheClientFromCluster(cluster, true)
+	execer, err := exec.New(sshClient)
+	if err != nil {
+		return err
+	}
 
 	notRegistryDirFilter := func(entry fs.DirEntry) bool { return !constants.IsRegistryDir(entry) }
 
 	copyFn := func(m v2.MountImage, targetHost, targetDir string) error {
 		logger.Debug("send mount image, target: %s, image: %s, type: %s", targetHost, m.ImageName, m.Type)
-		if err := ssh.CopyDir(sshClient, targetHost, m.MountPoint, targetDir, notRegistryDirFilter); err != nil {
+		if err := ssh.CopyDir(execer, targetHost, m.MountPoint, targetDir, notRegistryDirFilter); err != nil {
 			logger.Error("error occur while sending mount image %s: %v", m.Name, err)
 			return err
 		}
@@ -134,7 +135,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 			envs[v2.ImageRunModeEnvSysKey] = strings.Join(cluster.GetRolesByIP(ip), ",")
 			renderCommand := getRenderCommand(pathResolver.RootFSSealctlPath(), target)
 
-			return sshClient.CmdAsync(ip, stringsutil.RenderShellWithEnv(renderCommand, envs))
+			return execer.CmdAsync(ip, stringsutil.RenderShellWithEnv(renderCommand, envs))
 		})
 	}
 	if err := eg.Wait(); err != nil {
@@ -152,7 +153,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 					return err
 				}
 				renderCommand := getRenderCommand(pathResolver.RootFSSealctlPath(), targetDir)
-				return sshClient.CmdAsync(master0, envProcessor.WrapShell(master0, renderCommand))
+				return execer.CmdAsync(master0, envProcessor.WrapShell(master0, renderCommand))
 			}
 			return nil
 		})
@@ -176,12 +177,16 @@ func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) erro
 	rmRootfs := fmt.Sprintf("rm -rf %s", clusterRootfsDir)
 	deleteHomeDirCmd := fmt.Sprintf("rm -rf %s", constants.ClusterDir(cluster.Name))
 	eg, _ := errgroup.WithContext(context.Background())
-	sshClient := f.getSSH(cluster)
+	sshClient := ssh.NewCacheClientFromCluster(cluster, true)
+	execer, err := exec.New(sshClient)
+	if err != nil {
+		return err
+	}
 
 	for _, IP := range ipList {
 		ip := IP
 		eg.Go(func() error {
-			return sshClient.CmdAsync(ip, rmRootfs, deleteHomeDirCmd)
+			return execer.CmdAsync(ip, rmRootfs, deleteHomeDirCmd)
 		})
 	}
 	return eg.Wait()

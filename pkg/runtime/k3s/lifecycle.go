@@ -42,7 +42,7 @@ func (k *K3s) resetNodes(nodes []string) error {
 func (k *K3s) resetNode(host string) error {
 	logger.Info("start to reset node: %s", host)
 	removeKubeConfig := "rm -rf $HOME/.kube"
-	removeKubeConfigErr := k.sshClient.CmdAsync(host, removeKubeConfig)
+	removeKubeConfigErr := k.execer.CmdAsync(host, removeKubeConfig)
 	if removeKubeConfigErr != nil {
 		logger.Error("failed to clean node, exec command %s failed, %v", removeKubeConfig, removeKubeConfigErr)
 	}

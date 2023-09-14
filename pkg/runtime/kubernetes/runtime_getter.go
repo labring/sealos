@@ -137,15 +137,15 @@ func (k *KubeadmRuntime) execCert(ip string) error {
 }
 
 func (k *KubeadmRuntime) sshCmdAsync(host string, cmd ...string) error {
-	return k.sshClient.CmdAsync(host, cmd...)
+	return k.execer.CmdAsync(host, cmd...)
 }
 
 func (k *KubeadmRuntime) sshCmdToString(host string, cmd string) (string, error) {
-	return k.sshClient.CmdToString(host, cmd, "")
+	return k.execer.CmdToString(host, cmd, "")
 }
 
 func (k *KubeadmRuntime) sshCopy(host, srcFilePath, dstFilePath string) error {
-	return k.sshClient.Copy(host, srcFilePath, dstFilePath)
+	return k.execer.Copy(host, srcFilePath, dstFilePath)
 }
 
 func (k *KubeadmRuntime) getKubeInterface() (kubernetes.Client, error) {

@@ -27,6 +27,7 @@ import (
 
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/registry/helpers"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/types/v1beta1"
@@ -42,7 +43,7 @@ type RegistryPasswdResults struct {
 	RegistryType         string
 	RegistryUsername     string
 	RegistryPasswd       string
-	execer               ssh.Interface
+	execer               exec.Interface
 	upgrade              Upgrade
 }
 
@@ -132,7 +133,12 @@ func (r *RegistryPasswdResults) Validate() (*v1beta1.Cluster, error) {
 
 func (r *RegistryPasswdResults) Apply(cluster *v1beta1.Cluster) error {
 	if r.execer == nil {
-		r.execer = ssh.NewCacheClientFromCluster(cluster, true)
+		sshClient := ssh.NewCacheClientFromCluster(cluster, true)
+		execer, err := exec.New(sshClient)
+		if err != nil {
+			return err
+		}
+		r.execer = execer
 	}
 	if r.upgrade == nil {
 		r.upgrade = NewUpgrade(cluster.Name, r.execer)
