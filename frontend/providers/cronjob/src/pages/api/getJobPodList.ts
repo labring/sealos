@@ -6,6 +6,10 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
+    const { jobNames } = req.body as {
+      jobNames: string[];
+    };
+    const labelSelector = jobNames.join(',');
     const { k8sCore, namespace } = await getK8s({
       kubeconfig: await authSession(req)
     });
@@ -15,7 +19,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       undefined,
       undefined,
       undefined,
-      undefined
+      undefined,
+      `job-name in (${labelSelector})`
     );
 
     return jsonRes(res, {

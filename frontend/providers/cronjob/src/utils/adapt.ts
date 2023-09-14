@@ -1,12 +1,13 @@
 import { CronJobStatusMap, StatusEnum } from '@/constants/job';
 import { AppListItemType } from '@/types/app';
-import { CronJobEditType, CronJobListItemType, JobEvent } from '@/types/job';
+import { CronJobEditType, CronJobListItemType, JobEvent, JobList } from '@/types/job';
 import { cpuFormatToM, cron2Time, formatPodTime, memoryFormatToMi } from '@/utils/tools';
 import {
   CoreV1EventList,
   V1CronJob,
   V1Deployment,
   V1Job,
+  V1Pod,
   V1ServiceAccount
 } from '@kubernetes/client-node';
 import dayjs from 'dayjs';
@@ -15,6 +16,7 @@ import 'cronstrue/locales/zh_CN';
 import 'cronstrue/locales/en';
 import cronParser from 'cron-parser';
 import { getLangStore } from './cookieUtils';
+import { getJobEvents, getJobPodList } from '@/api/job';
 
 export const adaptCronJobList = (job: V1CronJob): CronJobListItemType => {
   const LANG_KEY = getLangStore() === 'en' ? 'en' : 'zh_CN';
@@ -145,7 +147,7 @@ export const adaptServiceAccountList = (
   };
 };
 
-export const adaptJobItemList = (jobs: V1Job[]) => {
+export const adaptJobItemList = (jobs: V1Job[]): JobList => {
   const total = jobs.length;
   let successAmount = 0;
   const history = jobs
@@ -185,4 +187,38 @@ export const adaptEvents = (events: CoreV1EventList): JobEvent[] => {
     firstTime: formatPodTime(item.firstTimestamp || item.metadata?.creationTimestamp),
     lastTime: formatPodTime(item.lastTimestamp || item?.eventTime)
   }));
+};
+
+export const adaptJobDetail = async (jobs: JobList): Promise<JobList> => {
+  const jobNames = jobs.history.map((item) => item.name);
+  try {
+    const podJobMap = new Map<string, V1Pod>();
+    const podList = await getJobPodList(jobNames as string[]);
+    podList.items.forEach((pod) => {
+      const labels = pod.metadata?.labels || {};
+      const podJobName = labels['job-name'];
+      if (podJobName) {
+        podJobMap.set(podJobName, pod);
+      }
+    });
+
+    await Promise.all(
+      jobs.history.map(async (job) => {
+        if (!job?.name) return;
+        const events = await getJobEvents(job.name);
+        job.events = events;
+        const jobPod = podJobMap.get(job.name);
+        if (!jobPod?.metadata?.name) return;
+        job.podName = jobPod?.metadata?.name;
+      })
+    );
+
+    return {
+      total: jobs.total || 0,
+      successAmount: jobs.successAmount || 0,
+      history: jobs.history || []
+    };
+  } catch (error) {
+    throw error;
+  }
 };

@@ -1,6 +1,12 @@
 import { DELETE, GET, POST } from '@/services/request';
-import { adaptCronJobDetail, adaptCronJobList, adaptEvents, adaptJobItemList } from '@/utils/adapt';
-import { V1Pod, V1PodList } from '@kubernetes/client-node';
+import {
+  adaptCronJobDetail,
+  adaptCronJobList,
+  adaptEvents,
+  adaptJobDetail,
+  adaptJobItemList
+} from '@/utils/adapt';
+import { V1PodList } from '@kubernetes/client-node';
 
 export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | 'update') =>
   POST('/api/applyYamlList', { yamlList, type });
@@ -26,59 +32,10 @@ export const getJobList = (name: string) =>
 
 export const getJobEvents = (name: string) => GET(`/api/job/event?name=${name}`).then(adaptEvents);
 
-export const getJobListAndEvents = (name: string) =>
-  getJobList(name).then(async (res) => {
-    const promises = res.history.map(async (item) => {
-      const events = await getJobEvents(item.name!);
-      item.events = events;
-      return item;
-    });
-    const jobsWithEvents = await Promise.all(promises);
-    return {
-      total: res.total,
-      successAmount: res.successAmount,
-      history: jobsWithEvents
-    };
-  });
-
 export const getPodLogs = (podName: string) => GET<string>(`/api/getPodLogs?podName=${podName}`);
 
-export const getPodList = () => GET<V1PodList>(`/api/getPodList`);
+export const getJobPodList = (jobNames: string[]) =>
+  POST<V1PodList>(`/api/getJobPodList`, { jobNames });
 
-export const getJobListEventsAndLogs = async (cronJobName: string) => {
-  const jobs = await getJobList(cronJobName);
-  const podList = await getPodList();
-
-  const podJobMap = new Map<string, V1Pod>();
-  podList.items.forEach((pod) => {
-    const labels = pod.metadata?.labels || {};
-    const podJobName = labels['job-name'];
-    if (podJobName) {
-      podJobMap.set(podJobName, pod);
-    }
-  });
-
-  for (let i = 0; i < jobs.history.length; i++) {
-    const job = jobs.history[i];
-    if (!job?.name) continue;
-    const events = await getJobEvents(job.name);
-    job.events = events;
-
-    const jobPod = podJobMap.get(job.name);
-    if (!jobPod?.metadata?.name) continue;
-    job.podName = jobPod?.metadata?.name;
-    // getPodLogs(jobPod?.metadata?.name)
-    //   .then((podLog) => {
-    //     job.logs = podLog;
-    //   })
-    //   .catch((err) => {
-    //     job.logs = err;
-    //   });
-  }
-
-  return {
-    total: jobs.total || 0,
-    successAmount: jobs.successAmount || 0,
-    history: jobs.history || []
-  };
-};
+export const getJobListEventsAndLogs = (cronJobName: string) =>
+  getJobList(cronJobName).then(adaptJobDetail);

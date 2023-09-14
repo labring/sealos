@@ -88,3 +88,19 @@ export interface JobEvent {
   firstTime: string;
   lastTime: string;
 }
+
+export type JobList = {
+  total: number;
+  successAmount: number;
+  history: {
+    status: boolean;
+    startTime: string;
+    completionTime: string;
+    uid: string | undefined;
+    name: string | undefined;
+    events: JobEvent[];
+    logs: string;
+    podName: string;
+    startTimeTimestamp: number;
+  }[];
+};
