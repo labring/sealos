@@ -107,14 +107,6 @@ func (c *Client) sftpConnect(host string) (sshClient *ssh.Client, sftpClient *sf
 
 // Copy is copy file or dir to remotePath, add md5 validate
 func (c *Client) Copy(host, localPath, remotePath string) error {
-	if c.isLocalAction(host) {
-		if !filepath.IsAbs(localPath) || !filepath.IsAbs(remotePath) {
-			logger.Warn(`either the local path or the remote path is not an absolute path, `+
-				`copy might not work as expected.`, localPath, remotePath)
-		}
-		logger.Debug("local %s copy files src %s to dst %s", host, localPath, remotePath)
-		return file.RecursionCopy(localPath, remotePath)
-	}
 	logger.Debug("remote copy files src %s to dst %s", localPath, remotePath)
 	_, sftpClient, err := c.sftpConnect(host)
 	if err != nil {
@@ -155,10 +147,6 @@ func (c *Client) Copy(host, localPath, remotePath string) error {
 }
 
 func (c *Client) Fetch(host, src, dst string) error {
-	if c.isLocalAction(host) {
-		return file.RecursionCopy(src, dst)
-	}
-
 	logger.Debug("fetch remote file %s to %s", src, dst)
 	_, sftpClient, err := c.sftpConnect(host)
 	if err != nil {
