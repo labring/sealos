@@ -23,7 +23,9 @@ const Table = ({ columns, data }: Props) => {
           py={3}
           bg={'white'}
           key={item.key}
-          color={'myGray.500'}
+          fontSize={'12px'}
+          fontWeight={500}
+          color={'#485058'}
           whiteSpace={'nowrap'}
           _first={{
             borderLeftRadius: 'md',
@@ -45,7 +47,7 @@ const Table = ({ columns, data }: Props) => {
             px={3}
             py={4}
             fontSize={'sm'}
-            color={'myGray.600'}
+            color={'#363C42'}
             borderBottom={'1px solid'}
             borderBottomColor={index1 !== data.length - 1 ? 'myGray.100' : 'transparent'}
             borderTopLeftRadius={index1 === 0 && index2 === 0 ? 'md' : ''}

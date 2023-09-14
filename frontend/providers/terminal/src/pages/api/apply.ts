@@ -51,6 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const result = await ApplyYaml(kc, terminal_yaml);
     jsonRes(res, { code: 201, data: result, message: '' });
   } catch (error) {
+    console.log(error, '--------');
     jsonRes(res, { code: 500, error });
   }
 }

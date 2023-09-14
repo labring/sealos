@@ -11,16 +11,16 @@ import {
   Box,
   Button
 } from '@chakra-ui/react';
-import { delJobByName } from '@/api/job';
+import { delCronJobByName } from '@/api/job';
 import { useToast } from '@/hooks/useToast';
 import { useTranslation } from 'next-i18next';
 
 const DelModal = ({
-  dbName,
+  jobName,
   onClose,
   onSuccess
 }: {
-  dbName: string;
+  jobName: string;
   onClose: () => void;
   onSuccess: () => void;
 }) => {
@@ -32,7 +32,7 @@ const DelModal = ({
   const handleDelApp = useCallback(async () => {
     try {
       setLoading(true);
-      await delJobByName(dbName);
+      await delCronJobByName(jobName);
       toast({
         title: t('Delete successful'),
         status: 'success'
@@ -47,7 +47,7 @@ const DelModal = ({
       console.error(error);
     }
     setLoading(false);
-  }, [dbName, toast, t, onSuccess, onClose]);
+  }, [jobName, toast, t, onSuccess, onClose]);
 
   return (
     <Modal isOpen onClose={onClose}>
@@ -61,14 +61,14 @@ const DelModal = ({
             <Box my={3}>
               {t('Please Enter')}{' '}
               <Box as={'span'} color={'myGray.900'} fontWeight={'bold'} userSelect={'all'}>
-                {dbName}
+                {jobName}
               </Box>{' '}
               {t('Confirm')}
             </Box>
           </Box>
 
           <Input
-            placeholder={`${t('Please Enter')}：${dbName}`}
+            placeholder={`${t('Please Enter')}：${jobName}`}
             value={inputValue}
             bg={'myWhite.300'}
             onChange={(e) => setInputValue(e.target.value)}
@@ -82,7 +82,7 @@ const DelModal = ({
             colorScheme="red"
             ml={3}
             variant={'solid'}
-            isDisabled={inputValue !== dbName}
+            isDisabled={inputValue !== jobName}
             isLoading={loading}
             onClick={handleDelApp}
           >

@@ -6,12 +6,17 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
+    const { cronJobName } = req.query as { cronJobName: string };
     const { namespace, k8sBatch } = await getK8s({
       kubeconfig: await authSession(req)
     });
-    const response: any = await k8sBatch.listNamespacedCronJob(namespace);
 
-    jsonRes(res, { data: response?.body?.items });
+    const response = await k8sBatch.listNamespacedJob(namespace);
+    const jobs = response.body.items.filter(
+      (job) => job.metadata?.name && job.metadata.name.startsWith(`${cronJobName}-`)
+    );
+
+    jsonRes(res, { data: jobs });
   } catch (err: any) {
     jsonRes(res, {
       code: 500,

@@ -80,7 +80,7 @@
   "Connection Info": "连接信息",
   "Direct Connection": "一键连接",
   "Delete Warning": "删除警告",
-  "Delete Hint": "如果确认要删除这个数据库吗？如果执行此操作，将删除该数据库的所有数据。",
+  "Delete Hint": "确认要删除这个CronJob吗？如果执行此操作，将删除相关Job。",
   "Please Enter": "请输入",
   "Confirm Delete": "确认删除",
   "Confirm Restart Pod": "请确认重启 Pod？",
@@ -167,9 +167,11 @@
   "InnoDB Buffer Pool": "InnoDB 缓冲池",
   "Database Usage": "数据库用量",
   "Disk": "磁盘空间",
-  "Schedule": "表达式",
-  "Last Schedule Time": "最后调度时间",
-  "Last Successful Time": "上一次成功时间",
+  "Schedule": "执行周期",
+  "Last Schedule": "上次执行",
+  "Last Schedule Time": "执行时间:",
+  "Last Successful Time": "成功时间:",
+  "Next Execution Time": "下次执行时间",
   "job": {
     "list": "任务列表",
     "create": "新建任务",
@@ -195,7 +197,8 @@
     "Backup": "备份",
     "Success": "成功",
     "Have Error": "出现异常",
-    "Logs": "日志"
+    "Logs": "日志",
+    "Error": "失败"
   },
   "Form": {
     "Image": "镜像源",
@@ -211,6 +214,28 @@
     "Command": "运行命令",
     "Parameters": "命令参数",
     "Time": "时间",
-    "Image Address": "镜像仓库地址"
-  }
+    "Image Address": "镜像仓库地址",
+    "URL": "URL",
+    "Cron Expression": "Cron 表达式",
+    "Example": "例:  */1 * * * * 表示每分钟执行任务",
+    "Visit Url": "访问url",
+    "Execution Image": "执行镜像",
+    "Expansion and Contraction Launchpad": "扩缩容 Launchpad",
+    "App Name": "App 名称",
+    "Replicas": "副本数",
+    "JobNamePlaceholder": "以字母开头，只能包含小写字母、数字和连字符 (-)"
+  },
+  "every five minutes": "每五分钟",
+  "per hour": "每小时",
+  "8 am every day": "每天上午8点",
+  "examples": "更多示例",
+  "Not allowed to change app name": "不允许更改应用程序名称",
+  "The user name cannot be empty": "用户名不能为空",
+  "Executed": "执行于",
+  "Historical Mission": "历史任务",
+  "pause_message": "确定暂停cronjob吗",
+  "Basic Information": "基础信息",
+  "Succeeded": "成功数",
+  "Failures": "失败数",
+  "Log": "日志"
 }

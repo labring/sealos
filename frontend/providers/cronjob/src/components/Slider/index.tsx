@@ -32,19 +32,19 @@ const MySlider = ({
   }, [activeVal, markList]);
 
   return (
-    <Slider max={max} min={min} step={step} size={'lg'} value={value} onChange={setVal}>
+    <Slider w="500px" max={max} min={min} step={step} size={'lg'} value={value} onChange={setVal}>
       {markList.map((item, i) => (
         <SliderMark
           key={item.value}
           value={i}
           mt={3}
           fontSize={'sm'}
-          transform={'translateX(-50%)'}
+          transform={'translateX(-20%)'}
           {...(activeVal === item.value
             ? { color: 'myGray.900', fontWeight: 'bold' }
             : { color: 'myGray.500' })}
         >
-          <Box px={3} cursor={'pointer'}>
+          <Box minW={'40px'} cursor={'pointer'}>
             {item.label}
           </Box>
         </SliderMark>
