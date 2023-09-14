@@ -130,6 +130,7 @@ jobs:
       matrix:
         module:
           [
+            providers/cronjob,
             providers/template,
             providers/adminer,
             providers/applaunchpad,
