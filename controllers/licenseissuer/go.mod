@@ -5,9 +5,6 @@ go 1.19
 require (
 	github.com/go-logr/logr v1.2.4
 	github.com/google/uuid v1.3.0
-	github.com/labring/sealos v0.0.0
-	github.com/labring/sealos/controllers/account v0.0.0
-	github.com/labring/sealos/controllers/common v0.0.0
 	github.com/onsi/ginkgo/v2 v2.9.7
 	github.com/onsi/gomega v1.27.8
 	go.mongodb.org/mongo-driver v1.11.3
@@ -89,10 +86,5 @@ require (
 )
 
 replace (
-	github.com/labring/sealos => ../../
-	github.com/labring/sealos/controllers/account => ../../controllers/account
-	github.com/labring/sealos/controllers/common => ../../controllers/common
-	github.com/labring/sealos/controllers/licenseissuer => ../../controllers/licenseissuer
-	github.com/labring/sealos/controllers/pkg => ../../controllers/pkg
-	github.com/labring/sealos/controllers/user => ../../controllers/user
+	github.com/labring/sealos/controllers => ../
 )

@@ -7,7 +7,6 @@ require (
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7
 	github.com/labring/sealos v0.0.0
-	github.com/labring/sealos/controllers/imagehub v0.0.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/apimachinery v0.25.6
 	k8s.io/client-go v0.25.6
@@ -104,9 +103,3 @@ replace (
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.25.6
 )
 
-replace (
-	github.com/labring/image-cri-shim => ../../staging/src/github.com/labring/image-cri-shim
-	github.com/labring/lvscare => ../../staging/src/github.com/labring/lvscare
-	github.com/labring/sealos => ../../
-	github.com/labring/sealos/controllers/imagehub => ../../controllers/imagehub
-)

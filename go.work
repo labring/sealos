@@ -1,7 +1,10 @@
 go 1.20
 
 use (
-	.
+	./cli
+	./cli/staging/src/github.com/labring/image-cri-shim
+	./cli/staging/src/github.com/labring/lvscare
+	./cli/test/e2e
 	./controllers/account
 	./controllers/admission
 	./controllers/app
@@ -13,14 +16,10 @@ use (
 	./controllers/infra
 	./controllers/licenseissuer
 	./controllers/metering
-	./controllers/terminal
 	./controllers/node
-	./controllers/user
 	./controllers/resources
+	./controllers/terminal
+	./controllers/user
 	./service/hub
 	./service/payment
-	./staging/src/github.com/labring/image-cri-shim
-	./staging/src/github.com/labring/lvscare
-	./webhooks/whitelist
-	./test/e2e
 )

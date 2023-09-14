@@ -91,7 +91,7 @@ require (
 )
 
 replace (
-	github.com/labring/sealos => ../../
+	github.com/labring/sealos => ../../cli
 	github.com/labring/sealos/controllers/common => ../../controllers/common
 	github.com/labring/sealos/controllers/metering => ../../controllers/metering
 	github.com/labring/sealos/controllers/user => ../../controllers/user
