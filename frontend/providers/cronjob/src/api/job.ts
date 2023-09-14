@@ -67,13 +67,13 @@ export const getJobListEventsAndLogs = async (cronJobName: string) => {
     const jobPod = podJobMap.get(job.name);
     if (!jobPod?.metadata?.name) continue;
     job.podName = jobPod?.metadata?.name;
-    getPodLogs(jobPod?.metadata?.name)
-      .then((podLog) => {
-        job.logs = podLog;
-      })
-      .catch((err) => {
-        job.logs = err;
-      });
+    // getPodLogs(jobPod?.metadata?.name)
+    //   .then((podLog) => {
+    //     job.logs = podLog;
+    //   })
+    //   .catch((err) => {
+    //     job.logs = err;
+    //   });
   }
 
   return {

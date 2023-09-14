@@ -1,6 +1,5 @@
-import { getJobListEventsAndLogs } from '@/api/job';
+import { getJobListEventsAndLogs, getPodLogs } from '@/api/job';
 import MyIcon from '@/components/Icon';
-import { useCopyData } from '@/utils/tools';
 import { Box, Flex, Icon, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -8,7 +7,6 @@ import { useMemo, useState } from 'react';
 
 export default function AppBaseInfo({ appName }: { appName: string }) {
   const { t } = useTranslation();
-  const { copyData } = useCopyData();
   const [active, setActive] = useState(0);
   const { data, isLoading } = useQuery(
     ['getJobListEventsAndLogs', appName],
@@ -20,6 +18,23 @@ export default function AppBaseInfo({ appName }: { appName: string }) {
     }
   );
   const ActivePod = useMemo(() => data?.history[active], [active, data]);
+  useQuery(
+    ['getPodLogs', ActivePod?.podName],
+    () => ActivePod?.podName && getPodLogs(ActivePod.podName),
+    {
+      enabled: !!ActivePod?.podName,
+      onSuccess(data) {
+        if (ActivePod) {
+          ActivePod['logs'] = data || '';
+        }
+      },
+      onError(err) {
+        if (ActivePod) {
+          ActivePod['logs'] = typeof err === 'string' ? err : '';
+        }
+      }
+    }
+  );
 
   return (
     <Flex flexDirection={'column'} h="0" flex={1} position={'relative'}>
