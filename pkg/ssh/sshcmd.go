@@ -46,7 +46,7 @@ func (c *Client) wrapCommands(cmds ...string) string {
 	if !c.Option.sudo || c.Option.user == defaultUsername {
 		return strings.Join(cmds, "; ")
 	}
-	return fmt.Sprintf("sudo -E /bin/bash -c '%s'", strings.Join(cmds, "; "))
+	return fmt.Sprintf("sudo -E /bin/bash <<EOF\n%s\nEOF", strings.Join(cmds, "; "))
 }
 
 func (c *Client) CmdAsyncWithContext(ctx context.Context, host string, cmds ...string) error {
