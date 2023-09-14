@@ -6,7 +6,7 @@ import Iconfont from '../iconfont';
 import { ApiResp } from '@/types';
 import InviteMember from './InviteMember';
 import { NSType, NamespaceDto, UserRole } from '@/types/team';
-import useSessionStore from '@/stores/session';
+// import useSessionStore from '@/stores/session';
 const NsList = ({
   click,
   // selected,
@@ -19,16 +19,17 @@ const NsList = ({
   nullNs?: (privateNamespace: NamespaceDto) => void;
   // selected: (ns: NamespaceDto) => boolean;
 } & Parameters<typeof Box>[0]) => {
-  const session = useSessionStore((s) => s.session);
-  const { userId, k8s_username, ns_uid } = session.user;
+  // const session = useSessionStore((s) => s.session);
+  // const { userId, k8s_username, ns_uid } = session.user;
+  const queryClient = useQueryClient();
   const { data } = useQuery({
     queryKey: [
       'teamList',
-      'teamGroup',
-      {
-        userId,
-        k8s_username
-      }
+      'teamGroup'
+      // {
+      //   userId,
+      //   k8s_username
+      // }
     ],
     queryFn: () =>
       request<any, ApiResp<{ namespaces: (NamespaceDto & { role: UserRole })[] }>>(
@@ -37,7 +38,7 @@ const NsList = ({
   });
   const { copyData } = useCopyData();
   const namespaces = data?.data?.namespaces || [];
-  const namespace = namespaces.find((x) => x.uid === ns_uid);
+  const namespace = namespaces.find((x) => x.uid === selected_ns_uid);
   const privateNamespace = namespaces.find((x) => x.nstype === NSType.Private);
   if (!namespace && namespaces.length > 0 && privateNamespace) {
     // 被删了
@@ -72,6 +73,8 @@ const NsList = ({
               cursor={'pointer'}
               onClick={(e) => {
                 e.preventDefault();
+                queryClient.invalidateQueries({ queryKey: ['teamList'] });
+
                 click && click(ns);
               }}
               width={'full'}

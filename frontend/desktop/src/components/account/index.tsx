@@ -86,7 +86,7 @@ const NsMenu = () => {
           </Flex>
         </PopoverHeader>
         <PopoverBody px="0" pb="0" pt="4px">
-          <NsList selected_ns_uid={ns_uid} click={switchTeam} />
+          <NsList selected_ns_uid={ns_uid} click={switchTeam} nullNs={switchTeam} />
         </PopoverBody>
       </PopoverContent>
     </Popover>
