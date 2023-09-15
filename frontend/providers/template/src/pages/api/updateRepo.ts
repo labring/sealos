@@ -38,10 +38,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const targetPath = path.resolve(originalPath, 'FastDeployTemplates');
     const jsonPath = path.resolve(originalPath, 'fast_deploy_template.json');
 
-    if (!fs.existsSync(targetPath)) {
-      await execAsync(`git clone --depth 1 ${repoHttpUrl} ${targetPath}`);
-    } else {
-      await execAsync(`cd ${targetPath} && git pull`);
+    try {
+      if (!fs.existsSync(targetPath)) {
+        await execAsync(`git clone --depth 1 ${repoHttpUrl} ${targetPath}`);
+      } else {
+        await execAsync(`cd ${targetPath} && git pull`);
+      }
+    } catch (error) {
+      console.error(error);
     }
 
     if (!fs.existsSync(targetPath)) {

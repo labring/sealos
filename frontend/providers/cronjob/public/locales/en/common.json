@@ -126,9 +126,9 @@
   "Last Successful Time": "Successful Time:",
   "Next Execution Time": "Next Execution Time",
   "job": {
-    "list": "Cron Job List",
-    "create": "Create Job",
-    "Deploy Job": "Deploy Job",
+    "list": "CronJob List",
+    "create": "Add CronJob",
+    "Deploy Job": "Deploy CronJob",
     "Update CronJob": "Update CronJob",
     "Confirm Update CronJob?": "Confirm Update CronJob?",
     "Confirm Deploy CronJob?": "Confirm Deploy CronJob?",
