@@ -25,10 +25,7 @@ func NewPromServer(c *Config) (*PromServer, error) {
 }
 
 func (ps *PromServer) Authenticate(pr *api.PromRequest) error {
-	if err := auth.Authenticate(pr.NS, pr.Pwd); err != nil {
-		return err
-	}
-	return nil
+	return auth.Authenticate(pr.NS, pr.Pwd)
 }
 
 func (ps *PromServer) Request(pr *api.PromRequest) (*api.QueryResult, error) {
