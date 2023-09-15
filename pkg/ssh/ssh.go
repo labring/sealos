@@ -16,8 +16,6 @@ package ssh
 
 import (
 	"context"
-	"net"
-	"sync"
 
 	"github.com/spf13/pflag"
 	"golang.org/x/crypto/ssh"
@@ -25,7 +23,6 @@ import (
 
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutils "github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -51,22 +48,6 @@ type Interface interface {
 	// CmdToString exec command on remote host, and return spilt standard output by separator and standard error
 	CmdToString(host, cmd, spilt string) (string, error)
 	Ping(host string) error
-}
-
-var (
-	getAddressesOnce sync.Once
-	localAddresses   *[]net.Addr
-)
-
-func getLocalAddresses() *[]net.Addr {
-	getAddressesOnce.Do(func() {
-		var err error
-		localAddresses, err = iputils.ListLocalHostAddrs()
-		if err != nil {
-			logger.Warn("failed to list local addresses: %v", err)
-		}
-	})
-	return localAddresses
 }
 
 type Client struct {

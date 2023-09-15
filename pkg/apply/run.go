@@ -28,6 +28,7 @@ import (
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/iputils"
@@ -124,15 +125,19 @@ func (r *ClusterArgs) runArgs(cmd *cobra.Command, args *RunArgs, imageList []str
 	r.hosts = []v2.Host{}
 
 	sshClient := ssh.NewCacheClientFromCluster(r.cluster, true)
+	execer, err := exec.New(sshClient)
+	if err != nil {
+		return err
+	}
 	if len(masters) > 0 {
 		host, port := iputils.GetHostIPAndPortOrDefault(masters[0], defaultPort)
 		master0addr := net.JoinHostPort(host, port)
-		r.setHostWithIpsPort(masters, []string{v2.MASTER, GetHostArch(sshClient, master0addr)})
+		r.setHostWithIpsPort(masters, []string{v2.MASTER, GetHostArch(execer, master0addr)})
 	}
 	if len(nodes) > 0 {
 		host, port := iputils.GetHostIPAndPortOrDefault(nodes[0], defaultPort)
 		node0addr := net.JoinHostPort(host, port)
-		r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, node0addr)})
+		r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(execer, node0addr)})
 	}
 	r.cluster.Spec.Hosts = append(r.cluster.Spec.Hosts, r.hosts...)
 

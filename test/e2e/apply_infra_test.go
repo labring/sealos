@@ -74,7 +74,7 @@ var _ = Describe("E2E_sealos_apply_infra_test", func() {
 		}
 		logger.Info("init apply test")
 		infraCheck := infra2.NewFakeInfra()
-		sshInterface := new(v1beta1.SSH)
+		sshConfig := new(v1beta1.SSH)
 		BeforeEach(func() {
 			/*
 			   aliyun need set ALIYUN_REGION_ID, ALIYUN_ACCESS_KEY_ID, ALIYUN_ACCESS_KEY_SECRET ALIYUN_REGION_ID environment
@@ -108,7 +108,7 @@ var _ = Describe("E2E_sealos_apply_infra_test", func() {
 			infra.Spec.SSH.User = settings.RootUser
 			infra.Spec.SSH.Port = settings.DefaultSSHPort
 			// init Remote SSH
-			sshInterface = &v1beta1.SSH{
+			sshConfig = &v1beta1.SSH{
 				User:   settings.RootUser,
 				PkData: infra.Spec.SSH.PkData,
 				Pk:     filepath.Join(infraCheck.TestDir, "apply_id_rsa"),
@@ -118,8 +118,8 @@ var _ = Describe("E2E_sealos_apply_infra_test", func() {
 
 			testApplier = &apply.Applier{EIp: eip, InfraDriver: infraDriver,
 				RemoteCmd: cmd2.Interface(&cmd2.RemoteCmd{Host: eip[0],
-					Interface: ssh.MustNewClient(sshInterface, true)}),
-				LocalCmd: &cmd2.LocalCmd{}, Infra: infraCheck, SSH: sshInterface}
+					Interface: ssh.MustNewClient(sshConfig, true)}),
+				LocalCmd: &cmd2.LocalCmd{}, Infra: infraCheck, SSH: sshConfig}
 			testApplier.Init()
 		})
 		AfterEach(func() {
@@ -140,9 +140,9 @@ var _ = Describe("E2E_sealos_apply_infra_test", func() {
 				Nodes:   privateIps[1:2],
 				Force:   true,
 				SSH: &v1beta1.SSH{
-					User: sshInterface.User,
-					Port: sshInterface.Port,
-					Pk:   sshInterface.Pk,
+					User: sshConfig.User,
+					Port: sshConfig.Port,
+					Pk:   sshConfig.Pk,
 				},
 			}
 			By("test run ", func() {
@@ -212,9 +212,9 @@ var _ = Describe("E2E_sealos_apply_infra_test", func() {
 					Cluster: infraCheck.ClusterName,
 					Force:   true,
 					SSH: &v1beta1.SSH{
-						User: sshInterface.User,
-						Port: sshInterface.Port,
-						Pk:   sshInterface.Pk,
+						User: sshConfig.User,
+						Port: sshConfig.Port,
+						Pk:   sshConfig.Pk,
 					},
 				}
 				logger.Info("resetOpts: %#+v", resetOpts.Args())

@@ -17,16 +17,18 @@ limitations under the License.
 package cmd
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/clusterfile"
+	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/ssh"
-	"github.com/labring/sealos/pkg/types/v1beta1"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
-var roles string
 var clusterName string
-var ips []string
 
 var exampleExec = `
 exec to default cluster: default
@@ -40,37 +42,56 @@ set ips to exec cmd:
 `
 
 func newExecCmd() *cobra.Command {
-	var cluster *v1beta1.Cluster
+	var (
+		roles   []string
+		ips     []string
+		cluster *v2.Cluster
+	)
 	var execCmd = &cobra.Command{
 		Use:     "exec",
 		Short:   "Execute shell command or script on specified nodes",
 		Example: exampleExec,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(ips) > 0 {
-				execIPCmd, err := ssh.NewExecCmdFromIPs(cluster, ips)
-				if err != nil {
-					return err
-				}
-				return execIPCmd.RunCmd(args[0])
-			}
-			execRoleCmd, err := ssh.NewExecCmdFromRoles(cluster, roles)
-			if err != nil {
-				return err
-			}
-			return execRoleCmd.RunCmd(args[0])
+			targets := getTargets(cluster, ips, roles)
+			return runCommand(cluster, targets, args)
 		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			cls, err := clusterfile.GetClusterFromName(clusterName)
-			if err != nil {
-				return err
-			}
-			cluster = cls
-			return nil
+		PreRunE: func(cmd *cobra.Command, args []string) (err error) {
+			cluster, err = clusterfile.GetClusterFromName(clusterName)
+			return
 		},
 	}
-	execCmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied exec action")
-	execCmd.Flags().StringVarP(&roles, "roles", "r", "", "run command on nodes with role")
+	execCmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to run commands")
+	execCmd.Flags().StringSliceVarP(&roles, "roles", "r", []string{}, "run command on nodes with role")
 	execCmd.Flags().StringSliceVar(&ips, "ips", []string{}, "run command on nodes with ip address")
 	return execCmd
+}
+
+func getTargets(cluster *v2.Cluster, ips []string, roles []string) []string {
+	if len(ips) > 0 {
+		return ips
+	}
+	if len(roles) == 0 {
+		return cluster.GetAllIPS()
+	}
+	var targets []string
+	for i := range roles {
+		targets = append(targets, cluster.GetIPSByRole(roles[i])...)
+	}
+	return targets
+}
+
+func runCommand(cluster *v2.Cluster, targets []string, args []string) error {
+	execer, err := exec.New(ssh.NewCacheClientFromCluster(cluster, true))
+	if err != nil {
+		return err
+	}
+	eg, _ := errgroup.WithContext(context.Background())
+	for _, ipAddr := range targets {
+		ip := ipAddr
+		eg.Go(func() error {
+			return execer.CmdAsync(ip, args...)
+		})
+	}
+	return eg.Wait()
 }

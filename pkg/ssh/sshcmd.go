@@ -26,15 +26,10 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func (c *Client) Ping(host string) error {
-	if c.isLocalAction(host) {
-		logger.Debug("host %s is local, ping is always true", host)
-		return nil
-	}
 	client, _, err := c.Connect(host)
 	if err != nil {
 		return fmt.Errorf("failed to connect %s: %v", host, err)
@@ -51,10 +46,6 @@ func (c *Client) wrapCommands(cmds ...string) string {
 
 func (c *Client) CmdAsyncWithContext(ctx context.Context, host string, cmds ...string) error {
 	cmd := c.wrapCommands(cmds...)
-	if c.isLocalAction(host) {
-		logger.Debug("start to run command `%s` via exec", cmd)
-		return exec.CmdWithContext(ctx, "bash", "-c", cmd)
-	}
 	logger.Debug("start to exec `%s` on %s", cmd, host)
 	client, session, err := c.Connect(host)
 	if err != nil {
@@ -113,11 +104,6 @@ func (c *Client) CmdAsync(host string, cmds ...string) error {
 
 func (c *Client) Cmd(host, cmd string) ([]byte, error) {
 	cmd = c.wrapCommands(cmd)
-	if c.isLocalAction(host) {
-		logger.Debug("host %s is local, command via exec", host)
-		d, err := exec.RunBashCmd(cmd)
-		return []byte(d), err
-	}
 	logger.Debug("start to exec `%s` on %s", cmd, host)
 	client, session, err := c.Connect(host)
 	if err != nil {
