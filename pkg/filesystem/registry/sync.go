@@ -34,6 +34,7 @@ import (
 	"github.com/labring/sreg/pkg/registry/sync"
 
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/filesystem"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -49,7 +50,7 @@ const (
 
 type impl struct {
 	pathResolver constants.PathResolver
-	ssh          ssh.Interface
+	execer       exec.Interface
 	mounts       []v2.MountImage
 }
 
@@ -74,7 +75,7 @@ func (s *impl) Sync(ctx context.Context, hosts ...string) error {
 		defer cancel()
 		go func(ctx context.Context, host string) {
 			logger.Debug("running temporary registry on host %s", host)
-			if err := s.ssh.CmdAsyncWithContext(ctx, host, getRegistryServeCommand(s.pathResolver, defaultTemporaryPort)); err != nil {
+			if err := s.execer.CmdAsyncWithContext(ctx, host, getRegistryServeCommand(s.pathResolver, defaultTemporaryPort)); err != nil {
 				// ignore expected signal killed error when context cancel
 				if !strings.Contains(err.Error(), "signal: killed") {
 					logger.Error(err)
@@ -150,7 +151,7 @@ func syncViaSSH(s *impl, targets []string) func(context.Context, string) error {
 		for i := range targets {
 			target := targets[i]
 			eg.Go(func() error {
-				return ssh.CopyDir(s.ssh, target, localDir, s.pathResolver.RootFSPath(), constants.IsRegistryDir)
+				return ssh.CopyDir(s.execer, target, localDir, s.pathResolver.RootFSPath(), constants.IsRegistryDir)
 			})
 		}
 		return eg.Wait()
@@ -207,6 +208,6 @@ func syncViaHTTP(targets []string) func(context.Context, string) error {
 	}
 }
 
-func New(pathResolver constants.PathResolver, ssh ssh.Interface, mounts []v2.MountImage) filesystem.RegistrySyncer {
-	return &impl{pathResolver, ssh, mounts}
+func New(pathResolver constants.PathResolver, execer exec.Interface, mounts []v2.MountImage) filesystem.RegistrySyncer {
+	return &impl{pathResolver, execer, mounts}
 }

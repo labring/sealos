@@ -24,6 +24,7 @@ import (
 	"github.com/labring/sealos/fork/golang/expansion"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
+	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/maps"
@@ -43,7 +44,11 @@ func NewGuestManager() (Interface, error) {
 
 func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts []string) error {
 	envWrapper := env.NewEnvProcessor(cluster)
-	execer := ssh.NewCacheClientFromCluster(cluster, true)
+	sshClient := ssh.NewCacheClientFromCluster(cluster, true)
+	execer, err := exec.New(sshClient)
+	if err != nil {
+		return err
+	}
 
 	for i, m := range mounts {
 		switch {

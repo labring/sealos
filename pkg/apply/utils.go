@@ -22,18 +22,16 @@ import (
 	"path/filepath"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	"github.com/labring/sealos/pkg/constants"
-
-	"github.com/labring/sealos/pkg/utils/hash"
-
+	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/ssh"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/hash"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	stringsutil "github.com/labring/sealos/pkg/utils/strings"
-
-	"k8s.io/apimachinery/pkg/util/sets"
-
-	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 func initCluster(clusterName string) *v2.Cluster {
@@ -89,9 +87,9 @@ func validateIPList(s string) error {
 	return nil
 }
 
-func getHostArch(sshClient ssh.Interface) func(string) v2.Arch {
+func getHostArch(execer exec.Interface) func(string) v2.Arch {
 	return func(ip string) v2.Arch {
-		out, err := sshClient.Cmd(ip, "arch")
+		out, err := execer.Cmd(ip, "arch")
 		if err != nil {
 			logger.Warn("failed to get host arch: %v, defaults to amd64", err)
 			return v2.AMD64
@@ -111,8 +109,8 @@ func getHostArch(sshClient ssh.Interface) func(string) v2.Arch {
 // GetHostArch returns the host architecture of the given ip using SSH.
 // Note that hosts of the same type(master/node) must have the same architecture,
 // so we only need to check the first host of the given type.
-func GetHostArch(sshClient ssh.Interface, ip string) string {
-	return string(getHostArch(sshClient)(ip))
+func GetHostArch(execer exec.Interface, ip string) string {
+	return string(getHostArch(execer)(ip))
 }
 
 func GetImagesDiff(current, desired []string) []string {
@@ -139,7 +137,7 @@ func GetNewImages(currentCluster, desiredCluster *v2.Cluster) []string {
 	return nil
 }
 
-func CheckAndInitialize(cluster *v2.Cluster) {
+func CheckAndInitialize(cluster *v2.Cluster) error {
 	cluster.Spec.SSH.Port = cluster.Spec.SSH.DefaultPort()
 
 	if cluster.Spec.SSH.Pk == "" {
@@ -148,14 +146,18 @@ func CheckAndInitialize(cluster *v2.Cluster) {
 
 	if len(cluster.Spec.Hosts) == 0 {
 		sshClient := ssh.MustNewClient(cluster.Spec.SSH.DeepCopy(), true)
-
+		execer, err := exec.New(sshClient)
+		if err != nil {
+			return err
+		}
 		localIpv4 := iputils.GetLocalIpv4()
 		defaultPort := defaultSSHPort(cluster.Spec.SSH.Port)
 		addr := net.JoinHostPort(localIpv4, defaultPort)
 
 		cluster.Spec.Hosts = append(cluster.Spec.Hosts, v2.Host{
 			IPS:   []string{addr},
-			Roles: []string{v2.MASTER, GetHostArch(sshClient, addr)},
+			Roles: []string{v2.MASTER, GetHostArch(execer, addr)},
 		})
 	}
+	return nil
 }

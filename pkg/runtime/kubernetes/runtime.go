@@ -23,6 +23,7 @@ import (
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -39,7 +40,7 @@ type KubeadmRuntime struct {
 
 	klogLevel    int
 	cli          kubernetes.Client
-	sshClient    ssh.Interface
+	execer       ssh.Interface
 	pathResolver constants.PathResolver
 	remoteUtil   *ssh.Remote
 	mu           sync.Mutex
@@ -123,6 +124,10 @@ func (k *KubeadmRuntime) ScaleDown(deleteMastersIPList []string, deleteNodesIPLi
 
 func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*KubeadmRuntime, error) {
 	sshClient := ssh.NewCacheClientFromCluster(cluster, true)
+	execer, err := exec.New(sshClient)
+	if err != nil {
+		return nil, err
+	}
 	k := &KubeadmRuntime{
 		cluster: cluster,
 		config: &types.Config{
@@ -130,9 +135,9 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *types.KubeadmConfig) (*Kube
 			APIServerDomain: constants.DefaultAPIServerDomain,
 		},
 		kubeadmConfig: types.NewKubeadmConfig(),
-		sshClient:     sshClient,
+		execer:        execer,
 		pathResolver:  constants.NewPathResolver(cluster.GetName()),
-		remoteUtil:    ssh.NewRemoteFromSSH(cluster.GetName(), sshClient),
+		remoteUtil:    ssh.NewRemoteFromSSH(cluster.GetName(), execer),
 	}
 	if err := k.Validate(); err != nil {
 		return nil, err

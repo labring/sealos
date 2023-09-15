@@ -50,7 +50,9 @@ func NewApplierFromFile(cmd *cobra.Command, path string, args *Args) (applydrive
 		return nil, fmt.Errorf("cluster name cannot be empty, make sure %s file is correct", path)
 	}
 
-	CheckAndInitialize(cluster)
+	if err := CheckAndInitialize(cluster); err != nil {
+		return nil, err
+	}
 
 	localpath := constants.Clusterfile(cluster.Name)
 	cf := clusterfile.NewClusterFile(localpath)

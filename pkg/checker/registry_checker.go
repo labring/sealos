@@ -23,6 +23,7 @@ import (
 
 	"github.com/labring/sreg/pkg/registry/crane"
 
+	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/registry/helpers"
 
 	"github.com/docker/docker/api/types"
@@ -88,15 +89,19 @@ func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
 	}
 
 	sshCtx := ssh.NewCacheClientFromCluster(cluster, false)
+	execer, err := exec.New(sshCtx)
+	if err != nil {
+		return err
+	}
 	root := constants.NewPathResolver(cluster.Name).RootFSPath()
-	regInfo := helpers.GetRegistryInfo(sshCtx, root, cluster.GetRegistryIPAndPort())
+	regInfo := helpers.GetRegistryInfo(execer, root, cluster.GetRegistryIPAndPort())
 	status.Auth = fmt.Sprintf("%s:%s", regInfo.Username, regInfo.Password)
 	status.RegistryDomain = fmt.Sprintf("%s:%s", regInfo.Domain, regInfo.Port)
 	cfg := types.AuthConfig{
 		Username: regInfo.Username,
 		Password: regInfo.Password,
 	}
-	_, err := crane.NewRegistry(status.RegistryDomain, cfg)
+	_, err = crane.NewRegistry(status.RegistryDomain, cfg)
 	if err != nil {
 		status.Error = fmt.Errorf("get registry interface error: %w", err).Error()
 		return nil

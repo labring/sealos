@@ -23,7 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 
 	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/ssh"
+	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -31,7 +31,7 @@ import (
 
 const RegistryCustomConfig = "registry.yml"
 
-func GetRegistryInfo(sshInterface ssh.Interface, rootfs, defaultRegistry string) *v1beta1.RegistryConfig {
+func GetRegistryInfo(execer exec.Interface, rootfs, defaultRegistry string) *v1beta1.RegistryConfig {
 	var DefaultConfig = &v1beta1.RegistryConfig{
 		IP:       iputils.GetHostIP(defaultRegistry),
 		Domain:   constants.DefaultRegistryDomain,
@@ -41,7 +41,7 @@ func GetRegistryInfo(sshInterface ssh.Interface, rootfs, defaultRegistry string)
 		Data:     constants.DefaultRegistryData,
 	}
 	etcPath := path.Join(rootfs, constants.EtcDirName, RegistryCustomConfig)
-	out, err := sshInterface.Cmd(defaultRegistry, fmt.Sprintf("cat %s", etcPath))
+	out, err := execer.Cmd(defaultRegistry, fmt.Sprintf("cat %s", etcPath))
 	if err != nil {
 		logger.Warn("load registry config error: %+v, using default registry config", err)
 		return DefaultConfig
@@ -66,8 +66,8 @@ func GetRegistryInfo(sshInterface ssh.Interface, rootfs, defaultRegistry string)
 	return readConfig
 }
 
-func GetImageCRIShimInfo(sshInterface ssh.Interface, config, defaultIP string) *types.Config {
-	out, _ := sshInterface.Cmd(defaultIP, fmt.Sprintf("cat %s", config))
+func GetImageCRIShimInfo(execer exec.Interface, config, defaultIP string) *types.Config {
+	out, _ := execer.Cmd(defaultIP, fmt.Sprintf("cat %s", config))
 	logger.Debug("image shim data info: %s", string(out))
 	readConfig := &types.Config{}
 	err := yaml.Unmarshal(out, &readConfig)

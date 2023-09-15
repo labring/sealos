@@ -23,12 +23,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/labring/sealos/pkg/registry/helpers"
-
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/utils/exec"
+	executils "k8s.io/utils/exec"
 
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/exec"
+	"github.com/labring/sealos/pkg/registry/helpers"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -79,7 +79,7 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 		status.Config["ShimSocket"], _, _ = unstructured.NestedString(cfgMap, "image-endpoint")
 		status.Config["CRISocket"], _, _ = unstructured.NestedString(cfgMap, "runtime-endpoint")
 	}
-	execer := exec.New()
+	execer := executils.New()
 	crictlPath, err := execer.LookPath("crictl")
 	if err != nil {
 		status.Error = fmt.Errorf("error looking for path of crictl: %w", err).Error()
@@ -108,6 +108,10 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 		}
 	}
 	sshCtx := ssh.NewCacheClientFromCluster(cluster, false)
+	sshCtx, err = exec.New(sshCtx)
+	if err != nil {
+		return err
+	}
 	root := constants.NewPathResolver(cluster.Name).RootFSPath()
 	regInfo := helpers.GetRegistryInfo(sshCtx, root, cluster.GetRegistryIPAndPort())
 
