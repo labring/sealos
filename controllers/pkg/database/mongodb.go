@@ -115,8 +115,8 @@ func (m *MongoDB) GetBillingHistoryNamespaceList(nsHistorySpec *accountv1.Namesp
 	}
 
 	pipeline := mongo.Pipeline{
-		{{"$match", filter}},
-		{{"$group", bson.D{{"_id", nil}, {"namespaces", bson.D{{"$addToSet", "$namespace"}}}}}},
+		{{Key: "$match", Value: filter}},
+		{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "namespaces", Value: bson.D{{Key: "$addToSet", Value: "$namespace"}}}}}},
 	}
 
 	cur, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
