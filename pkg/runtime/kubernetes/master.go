@@ -80,7 +80,7 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	}
 	logger.Info("start to send manifests to masters...")
 	var err error
-	if err = ssh.WaitReady(k.sshClient, 6, masters...); err != nil {
+	if err = ssh.WaitReady(k.execer, 6, masters...); err != nil {
 		return fmt.Errorf("join masters wait for ssh ready time out: %w", err)
 	}
 

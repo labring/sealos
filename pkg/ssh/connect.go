@@ -25,7 +25,6 @@ import (
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 
-	"github.com/labring/sealos/pkg/unshare"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -110,10 +109,6 @@ func (c *Client) newClientAndSession(host string) (*ssh.Client, *ssh.Session, er
 	}
 	session, err := newSession(sshClient)
 	return sshClient, session, err
-}
-
-func (c *Client) isLocalAction(host string) bool {
-	return !unshare.IsRootless() && getLocalAddresses() != nil && iputils.IsLocalIP(host, getLocalAddresses())
 }
 
 func parsePrivateKey(pemBytes []byte, password []byte) (ssh.Signer, error) {

@@ -19,6 +19,7 @@ import (
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
+	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -32,17 +33,21 @@ type K3s struct {
 	envInterface env.Interface
 	pathResolver constants.PathResolver
 	remoteUtil   *ssh.Remote
-	sshClient    ssh.Interface
+	execer       exec.Interface
 }
 
 func New(cluster *v2.Cluster, config any) (*K3s, error) {
 	sshClient := ssh.NewCacheClientFromCluster(cluster, true)
+	execer, err := exec.New(sshClient)
+	if err != nil {
+		return nil, err
+	}
 	k := &K3s{
 		cluster:      cluster,
 		pathResolver: constants.NewPathResolver(cluster.GetName()),
-		sshClient:    sshClient,
+		execer:       execer,
 		envInterface: env.NewEnvProcessor(cluster),
-		remoteUtil:   ssh.NewRemoteFromSSH(cluster.GetName(), sshClient),
+		remoteUtil:   ssh.NewRemoteFromSSH(cluster.GetName(), execer),
 	}
 	if v, ok := config.(*Config); ok {
 		k.config = v

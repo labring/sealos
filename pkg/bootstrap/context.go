@@ -17,6 +17,7 @@ package bootstrap
 import (
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
+	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/maps"
@@ -27,7 +28,7 @@ type Context interface {
 	GetBash() constants.Bash
 	GetCluster() *v2.Cluster
 	GetPathResolver() constants.PathResolver
-	GetExecer() ssh.Interface
+	GetExecer() exec.Interface
 	GetRemoter() *ssh.Remote
 }
 
@@ -35,7 +36,7 @@ type realContext struct {
 	bash         constants.Bash
 	cluster      *v2.Cluster
 	pathResolver constants.PathResolver
-	execer       ssh.Interface
+	execer       exec.Interface
 	remoter      *ssh.Remote
 }
 
@@ -51,7 +52,7 @@ func (ctx realContext) GetPathResolver() constants.PathResolver {
 	return ctx.pathResolver
 }
 
-func (ctx realContext) GetExecer() ssh.Interface {
+func (ctx realContext) GetExecer() exec.Interface {
 	return ctx.execer
 }
 
@@ -61,6 +62,8 @@ func (ctx realContext) GetRemoter() *ssh.Remote {
 
 func NewContextFrom(cluster *v2.Cluster) Context {
 	execer := ssh.NewCacheClientFromCluster(cluster, true)
+	// if we can get this far, ignore error is ok
+	execer, _ = exec.New(execer)
 	envProcessor := env.NewEnvProcessor(cluster)
 	remoter := ssh.NewRemoteFromSSH(cluster.GetName(), execer)
 

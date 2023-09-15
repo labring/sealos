@@ -28,7 +28,7 @@ import (
 
 func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 	var err error
-	if err = ssh.WaitReady(k.sshClient, 6, newNodesIPList...); err != nil {
+	if err = ssh.WaitReady(k.execer, 6, newNodesIPList...); err != nil {
 		return fmt.Errorf("join nodes wait for ssh ready time out: %w", err)
 	}
 

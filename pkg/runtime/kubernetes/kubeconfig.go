@@ -31,12 +31,12 @@ func (k *KubeadmRuntime) copyKubeConfigFileToNodes(hosts ...string) error {
 	for _, node := range hosts {
 		node := node
 		eg.Go(func() error {
-			home, err := k.sshClient.CmdToString(node, "echo $HOME", "")
+			home, err := k.execer.CmdToString(node, "echo $HOME", "")
 			if err != nil {
 				return err
 			}
 			dst := filepath.Join(home, ".kube", "config")
-			return k.sshClient.Copy(node, src, dst)
+			return k.execer.Copy(node, src, dst)
 		})
 	}
 	return eg.Wait()

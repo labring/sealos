@@ -17,17 +17,17 @@ limitations under the License.
 package cmd
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/clusterfile"
+	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
-
-// Shared with exec.go
-// var roles string
-// var clusterName string
-// var ips []string
 
 const exampleScp = `
 copy file to default cluster: default
@@ -41,37 +41,46 @@ set ips to copy file:
 `
 
 func newScpCmd() *cobra.Command {
-	var cluster *v1beta1.Cluster
+	var (
+		roles   []string
+		ips     []string
+		cluster *v1beta1.Cluster
+	)
 	var scpCmd = &cobra.Command{
 		Use:     "scp",
 		Short:   "Copy file to remote on specified nodes",
 		Example: exampleScp,
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(ips) > 0 {
-				sshCmd, err := ssh.NewExecCmdFromIPs(cluster, ips)
-				if err != nil {
-					return err
-				}
-				return sshCmd.RunCopy(args[0], args[1])
-			}
-			sshCmd, err := ssh.NewExecCmdFromRoles(cluster, roles)
-			if err != nil {
-				return err
-			}
-			return sshCmd.RunCopy(args[0], args[1])
+			targets := getTargets(cluster, ips, roles)
+			return runCopy(cluster, targets, args)
 		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			cls, err := clusterfile.GetClusterFromName(clusterName)
-			if err != nil {
-				return err
-			}
-			cluster = cls
-			return nil
+		PreRunE: func(cmd *cobra.Command, args []string) (err error) {
+			cluster, err = clusterfile.GetClusterFromName(clusterName)
+			return
 		},
 	}
-	scpCmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied scp action")
-	scpCmd.Flags().StringVarP(&roles, "roles", "r", "", "copy file to nodes with role")
+	scpCmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to run scp action")
+	scpCmd.Flags().StringSliceVarP(&roles, "roles", "r", []string{}, "copy file to nodes with role")
 	scpCmd.Flags().StringSliceVar(&ips, "ips", []string{}, "copy file to nodes with ip address")
 	return scpCmd
+}
+
+func runCopy(cluster *v1beta1.Cluster, targets []string, args []string) error {
+	execer, err := exec.New(ssh.NewCacheClientFromCluster(cluster, true))
+	if err != nil {
+		return err
+	}
+	eg, _ := errgroup.WithContext(context.Background())
+	for _, ipAddr := range targets {
+		ip := ipAddr
+		eg.Go(func() error {
+			return execer.Copy(ip, args[0], args[1])
+		})
+	}
+	if err = eg.Wait(); err != nil {
+		return err
+	}
+	logger.Info("transfers files success")
+	return nil
 }

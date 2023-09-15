@@ -20,12 +20,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/labring/sealos/pkg/utils/confirm"
-
+	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/ssh"
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/confirm"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type HostChecker struct {
@@ -41,17 +40,21 @@ func (a HostChecker) Check(cluster *v2.Cluster, _ string) error {
 		ipList = a.IPs
 	}
 	sshClient := ssh.NewCacheClientFromCluster(cluster, false)
-	if err := checkHostnameUnique(sshClient, ipList); err != nil {
+	execer, err := exec.New(sshClient)
+	if err != nil {
 		return err
 	}
-	return checkTimeSync(sshClient, ipList)
+	if err := checkHostnameUnique(execer, ipList); err != nil {
+		return err
+	}
+	return checkTimeSync(execer, ipList)
 }
 
 func NewIPsHostChecker(ips []string) Interface {
 	return &HostChecker{IPs: ips}
 }
 
-func checkHostnameUnique(s ssh.Interface, ipList []string) error {
+func checkHostnameUnique(s exec.Interface, ipList []string) error {
 	logger.Info("checker:hostname %v", ipList)
 	hostnameList := map[string]bool{}
 	for _, ip := range ipList {
@@ -69,7 +72,7 @@ func checkHostnameUnique(s ssh.Interface, ipList []string) error {
 }
 
 // Check whether the node time is synchronized
-func checkTimeSync(s ssh.Interface, ipList []string) error {
+func checkTimeSync(s exec.Interface, ipList []string) error {
 	logger.Info("checker:timeSync %v", ipList)
 	for _, ip := range ipList {
 		timestamp, err := s.CmdToString(ip, "date +%s", "")
