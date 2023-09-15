@@ -21,11 +21,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/crypto"
-
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	"github.com/labring/sealos/controllers/pkg/common"
-	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/controllers/pkg/crypto"
+	"github.com/labring/sealos/controllers/pkg/resources"
+	"github.com/labring/sealos/controllers/pkg/utils/logger"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -207,7 +207,7 @@ func (m *MongoDB) GetMeteringOwnerTimeResult(queryTime time.Time, queryCategorie
 
 // InsertMonitor insert monitor data to mongodb collection monitor + time (eg: monitor_20200101)
 // The monitor data is saved daily 2020-12-01 00:00:00 - 2020-12-01 23:59:59 => monitor_20201201
-func (m *MongoDB) InsertMonitor(ctx context.Context, monitors ...*common.Monitor) error {
+func (m *MongoDB) InsertMonitor(ctx context.Context, monitors ...*resources.Monitor) error {
 	if len(monitors) == 0 {
 		return nil
 	}
@@ -219,7 +219,7 @@ func (m *MongoDB) InsertMonitor(ctx context.Context, monitors ...*common.Monitor
 	return err
 }
 
-func (m *MongoDB) GetAllPricesMap() (map[string]common.Price, error) {
+func (m *MongoDB) GetAllPricesMap() (map[string]resources.Price, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	cursor, err := m.getPricesCollection().Find(ctx, bson.M{})
@@ -234,13 +234,13 @@ func (m *MongoDB) GetAllPricesMap() (map[string]common.Price, error) {
 	if err = cursor.All(ctx, &prices); err != nil {
 		return nil, fmt.Errorf("get all prices error: %v", err)
 	}
-	var pricesMap = make(map[string]common.Price, len(prices))
+	var pricesMap = make(map[string]resources.Price, len(prices))
 	for i := range prices {
 		price, err := crypto.DecryptInt64WithKey(prices[i].Price, []byte(cryptoKey))
 		if err != nil {
 			return nil, fmt.Errorf("decrypt price error: %v", err)
 		}
-		pricesMap[prices[i].Property] = common.Price{
+		pricesMap[prices[i].Property] = resources.Price{
 			Price:    price,
 			Detail:   prices[i].Detail,
 			Property: prices[i].Property,
@@ -251,7 +251,7 @@ func (m *MongoDB) GetAllPricesMap() (map[string]common.Price, error) {
 
 // 2020-12-01 23:00:00 - 2020-12-02 00:00:00
 // 2020-12-02 00:00:00 - 2020-12-02 01:00:00
-func (m *MongoDB) GenerateMeteringData(startTime, endTime time.Time, prices map[string]common.Price) error {
+func (m *MongoDB) GenerateMeteringData(startTime, endTime time.Time, prices map[string]resources.Price) error {
 	filter := bson.M{
 		"time": bson.M{
 			"$gte": startTime,
@@ -269,7 +269,7 @@ func (m *MongoDB) GenerateMeteringData(startTime, endTime time.Time, prices map[
 	updateTimeMap := make(map[string]map[string]*time.Time)
 
 	for cursor.Next(context.Background()) {
-		var monitor common.Monitor
+		var monitor resources.Monitor
 		if err := cursor.Decode(&monitor); err != nil {
 			return fmt.Errorf("decode monitor error: %v", err)
 		}
@@ -311,7 +311,7 @@ func (m *MongoDB) GenerateMeteringData(startTime, endTime time.Time, prices map[
 				count = 60
 			}
 			unitValue := math.Ceil(float64(totalValue) / float64(count))
-			metering := &common.Metering{
+			metering := &resources.Metering{
 				Category: category,
 				Property: property,
 				Time:     endTime,

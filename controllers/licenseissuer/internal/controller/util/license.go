@@ -18,7 +18,9 @@ package util
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
+	"github.com/golang-jwt/jwt/v4"
 	"reflect"
 	"time"
 
@@ -27,8 +29,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/go-logr/logr"
-	count "github.com/labring/sealos/controllers/common/account"
 	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
+	count "github.com/labring/sealos/controllers/pkg/account"
 	"github.com/labring/sealos/controllers/pkg/crypto"
 	"github.com/labring/sealos/controllers/pkg/database"
 	mongoOptions "go.mongodb.org/mongo-driver/mongo/options"
@@ -53,7 +55,7 @@ func init() {
 
 func LicenseCheckOnExternalNetwork(ctx context.Context, client client.Client, license issuerv1.License) (map[string]interface{}, bool) {
 	license.Spec.Key = Key
-	payload, ok := crypto.IsLicenseValid(license)
+	payload, ok := IsLicenseValid(license)
 	if ok {
 		return payload, ok
 	}
@@ -79,14 +81,39 @@ func LicenseCheckOnExternalNetwork(ctx context.Context, client client.Client, li
 			return nil, false
 		}
 		license.Spec.Key = resp.Key
-		return crypto.IsLicenseValid(license)
+		return IsLicenseValid(license)
 	}
 	return payload, ok
 }
 
 func LicenseCheckOnInternalNetwork(license issuerv1.License) (map[string]interface{}, bool) {
 	license.Spec.Key = Key
-	return crypto.IsLicenseValid(license)
+	return IsLicenseValid(license)
+}
+
+func IsLicenseValid(license issuerv1.License) (map[string]interface{}, bool) {
+	decodeKey, err := base64.StdEncoding.DecodeString(license.Spec.Key)
+	if err != nil {
+		return nil, false
+	}
+	publicKey, err := crypto.ParseRSAPublicKeyFromPEM(string(decodeKey))
+	//fmt.Println(string(decodeKey))
+	if err != nil {
+		return nil, false
+	}
+	keyFunc := func(token *jwt.Token) (interface{}, error) {
+		return publicKey, nil
+	}
+	parsedToken, err := jwt.Parse(license.Spec.Token, keyFunc)
+	if err != nil {
+		return nil, false
+	}
+
+	claims, ok := parsedToken.Claims.(jwt.MapClaims)
+	if ok && parsedToken.Valid {
+		return claims, ok
+	}
+	return nil, false
 }
 
 func RechargeByLicense(ctx context.Context, client client.Client, account accountv1.Account, payload map[string]interface{}) error {

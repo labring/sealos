@@ -21,34 +21,23 @@ import (
 	"os"
 	"time"
 
-	utilcontroller "github.com/labring/sealos/controllers/pkg/utils"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-
-	v1 "github.com/labring/sealos/controllers/common/notification/api/v1"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
-	"github.com/labring/sealos/controllers/account/controllers/cache"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
-
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/account/controllers"
-
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"github.com/labring/sealos/controllers/account/controllers/cache"
+	notificationv1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
+	rate "github.com/labring/sealos/controllers/pkg/utils/rate"
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
-
-	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -62,8 +51,7 @@ func init() {
 
 	utilruntime.Must(accountv1.AddToScheme(scheme))
 	utilruntime.Must(userv1.AddToScheme(scheme))
-	utilruntime.Must(meteringcommonv1.AddToScheme(scheme))
-	utilruntime.Must(v1.AddToScheme(scheme))
+	utilruntime.Must(notificationv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -73,7 +61,7 @@ func main() {
 		enableLeaderElection bool
 		probeAddr            string
 		concurrent           int
-		rateLimiterOptions   utilcontroller.RateLimiterOptions
+		rateLimiterOptions   rate.LimiterOptions
 		leaseDuration        time.Duration
 		renewDeadline        time.Duration
 		retryPeriod          time.Duration
@@ -121,7 +109,7 @@ func main() {
 	}
 	rateOpts := controller.Options{
 		MaxConcurrentReconciles: concurrent,
-		RateLimiter:             utilcontroller.GetRateLimiter(rateLimiterOptions),
+		RateLimiter:             rate.GetRateLimiter(rateLimiterOptions),
 	}
 	if err = (&controllers.AccountReconciler{
 		Client: mgr.GetClient(),

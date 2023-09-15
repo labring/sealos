@@ -24,48 +24,34 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/utils"
-	"k8s.io/apimachinery/pkg/api/resource"
-
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	"sigs.k8s.io/controller-runtime/pkg/builder"
-
-	"github.com/labring/sealos/controllers/pkg/common"
-
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	"github.com/labring/sealos/controllers/pkg/crypto"
-
-	retry2 "k8s.io/client-go/util/retry"
-
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-
-	"github.com/labring/sealos/pkg/utils/retry"
-
-	corev1 "k8s.io/api/core/v1"
-
-	"github.com/labring/sealos/controllers/pkg/database"
+	"github.com/go-logr/logr"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 
-	userV1 "github.com/labring/sealos/controllers/user/api/v1"
-
-	"github.com/go-logr/logr"
-
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	rbacV1 "k8s.io/api/rbac/v1"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	"github.com/labring/sealos/pkg/pay"
+	"github.com/labring/sealos/controllers/pkg/crypto"
+	"github.com/labring/sealos/controllers/pkg/database"
+	"github.com/labring/sealos/controllers/pkg/pay"
+	"github.com/labring/sealos/controllers/pkg/resources"
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+	"github.com/labring/sealos/controllers/pkg/utils/retry"
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+
+	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	cretry "k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -106,7 +92,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if err := r.DeletePayment(ctx); err != nil {
 		r.Logger.Error(err, "delete payment failed")
 	}
-	user := &userV1.User{}
+	user := &userv1.User{}
 	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, user); err == nil {
 		_, err = r.syncAccount(ctx, GetUserOwner(user), r.AccountSystemNamespace, "ns-"+user.Name)
 		return ctrl.Result{}, err
@@ -116,7 +102,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	accountBalance := accountv1.AccountBalance{}
 	if err := r.Get(ctx, req.NamespacedName, &accountBalance); err == nil {
-		err = retry2.RetryOnConflict(retry2.DefaultBackoff, func() error {
+		err = cretry.RetryOnConflict(cretry.DefaultBackoff, func() error {
 			return r.updateDeductionBalance(ctx, &accountBalance)
 		})
 		if err != nil {
@@ -305,7 +291,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 }
 
 func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, nsName string) error {
-	objs := []client.Object{client.Object(common.GetDefaultLimitRange(nsName, nsName)), client.Object(common.GetDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName))}
+	objs := []client.Object{client.Object(resources.GetDefaultLimitRange(nsName, nsName)), client.Object(resources.GetDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName))}
 	for i := range objs {
 		err := retry.Retry(10, 1*time.Second, func() error {
 			_, err := controllerutil.CreateOrUpdate(ctx, r.Client, objs[i], func() error {
@@ -321,11 +307,11 @@ func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, 
 }
 
 func (r *AccountReconciler) adaptNodePortCountQuota(ctx context.Context, nsName string) error {
-	quota := common.GetDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName)
+	quota := resources.GetDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName)
 	return retry.Retry(10, 1*time.Second, func() error {
 		_, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
 			if _, ok := quota.Spec.Hard[corev1.ResourceServicesNodePorts]; !ok {
-				quota.Spec.Hard[corev1.ResourceServicesNodePorts] = resource.MustParse(utils.GetEnvWithDefault(common.QuotaLimitsNodePorts, common.DefaultQuotaLimitsNodePorts))
+				quota.Spec.Hard[corev1.ResourceServicesNodePorts] = resource.MustParse(env.GetEnvWithDefault(resources.QuotaLimitsNodePorts, resources.DefaultQuotaLimitsNodePorts))
 			}
 			return nil
 		})
@@ -334,15 +320,15 @@ func (r *AccountReconciler) adaptNodePortCountQuota(ctx context.Context, nsName 
 }
 
 func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, namespace string) error {
-	role := rbacV1.Role{
+	role := rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "userAccountRole-" + name,
 			Namespace: r.AccountSystemNamespace,
 		},
 	}
-	err := retry2.RetryOnConflict(retry2.DefaultRetry, func() error {
+	err := cretry.RetryOnConflict(cretry.DefaultRetry, func() error {
 		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &role, func() error {
-			role.Rules = []rbacV1.PolicyRule{
+			role.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups:     []string{"account.sealos.io"},
 					Resources:     []string{"accounts"},
@@ -359,19 +345,19 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 	if err != nil {
 		return err
 	}
-	roleBinding := rbacV1.RoleBinding{
+	roleBinding := rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "userAccountRoleBinding-" + name,
 			Namespace: r.AccountSystemNamespace,
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &roleBinding, func() error {
-		roleBinding.RoleRef = rbacV1.RoleRef{
+		roleBinding.RoleRef = rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
 			Name:     role.Name,
 		}
-		roleBinding.Subjects = []rbacV1.Subject{
+		roleBinding.Subjects = []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
 				Name:      name,
@@ -525,14 +511,14 @@ func (r *AccountReconciler) initBalance(account *accountv1.Account) (err error) 
 // SetupWithManager sets up the controller with the Manager.
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	r.Logger = ctrl.Log.WithName("account_controller")
-	r.AccountSystemNamespace = utils.GetEnvWithDefault(ACCOUNTNAMESPACEENV, DEFAULTACCOUNTNAMESPACE)
+	r.AccountSystemNamespace = env.GetEnvWithDefault(ACCOUNTNAMESPACEENV, DEFAULTACCOUNTNAMESPACE)
 	if r.MongoDBURI = os.Getenv(database.MongoURI); r.MongoDBURI == "" {
 		return fmt.Errorf("mongo url is empty")
 	}
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&userV1.User{}, builder.WithPredicates(predicate.And(OnlyCreatePredicate{}, predicate.Funcs{
+		For(&userv1.User{}, builder.WithPredicates(predicate.And(OnlyCreatePredicate{}, predicate.Funcs{
 			CreateFunc: func(createEvent event.CreateEvent) bool {
-				return createEvent.Object.GetAnnotations()[userV1.UserAnnotationOwnerKey] == createEvent.Object.GetName()
+				return createEvent.Object.GetAnnotations()[userv1.UserAnnotationOwnerKey] == createEvent.Object.GetName()
 			},
 		}))).
 		Watches(&source.Kind{Type: &accountv1.Payment{}}, &handler.EnqueueRequestForObject{}).
@@ -541,8 +527,8 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		Complete(r)
 }
 
-func GetUserOwner(user *userV1.User) string {
-	own := user.Annotations[userV1.UserAnnotationOwnerKey]
+func GetUserOwner(user *userv1.User) string {
+	own := user.Annotations[userv1.UserAnnotationOwnerKey]
 	if own == "" {
 		return user.Name
 	}

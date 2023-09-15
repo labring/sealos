@@ -19,11 +19,11 @@ package util
 import (
 	"context"
 	"fmt"
+	"github.com/labring/sealos/controllers/pkg/notification/utils"
 	"strings"
 	"time"
 
-	notificationv1 "github.com/labring/sealos/controllers/common/notification/api/v1"
-	ntf "github.com/labring/sealos/controllers/pkg/notification"
+	notificationv1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -60,8 +60,8 @@ func (nr *NotificationRequest) setTimestamp(timestamp int64) *NotificationReques
 
 func (n *NoticeWork) noticeWork(instance *TaskInstance) error {
 	// init
-	receiver := ntf.NewReceiver(instance.ctx, instance.Client)
-	manager := ntf.NewNotificationManager(instance.ctx, instance.Client,
+	receiver := utils.NewReceiver(instance.ctx, instance.Client)
+	manager := utils.NewNotificationManager(instance.ctx, instance.Client,
 		instance.logger, maxBatchSize, maxChannelSize)
 	// get uid and url-map
 	uid, urlMap, err := GetUIDURL(instance.ctx, instance.Client)
@@ -141,9 +141,9 @@ func NewNotice() *NoticeWork {
 	return &NoticeWork{lastTime: time.Now().Add(-7 * time.Hour).Unix()}
 }
 
-func (n *NoticeWork) getEvents(instance *TaskInstance, body []byte) ([]ntf.Event, error) {
+func (n *NoticeWork) getEvents(instance *TaskInstance, body []byte) ([]utils.Event, error) {
 	var resps []NotificationResponse
-	var events []ntf.Event
+	var events []utils.Event
 	err := Convert(body, &resps)
 	if err != nil {
 		instance.logger.Info("failed to convert body", "err", err)
@@ -151,10 +151,10 @@ func (n *NoticeWork) getEvents(instance *TaskInstance, body []byte) ([]ntf.Event
 	}
 	for _, resp := range resps {
 		// get notification from response
-		events = append(events, ntf.NewNotificationEvent(
+		events = append(events, utils.NewNotificationEvent(
 			resp.Title,
 			resp.Message,
-			ntf.General,
+			utils.General,
 			NoticeFrom,
 			notificationv1.Low,
 		))
@@ -191,7 +191,7 @@ func (nc *NoticeCleaner) cleanWork(instance *TaskInstance) error {
 		return err
 	}
 	// delete the notification
-	pool := ntf.NewPool(maxBatchSize)
+	pool := utils.NewPool(maxBatchSize)
 	pool.Run(maxChannelSize)
 	for _, notification := range expiredNotifications {
 		newCopy := notification
@@ -261,5 +261,5 @@ func (n *NoticeWork) getUserNamespace(instance *TaskInstance, opt FilterFunc) []
 }
 
 func filter(ns string) bool {
-	return strings.HasPrefix(ns, ntf.GeneralPrefix)
+	return strings.HasPrefix(ns, utils.GeneralPrefix)
 }

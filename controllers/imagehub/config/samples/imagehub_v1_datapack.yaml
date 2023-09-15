@@ -1,9 +1,0 @@
-apiVersion: imagehub.sealos.io/v1
-kind: DataPack
-metadata:
-  name: datapack-detail-sample
-  namespace: sealos-imagehub
-spec:
-  type: detail
-  names:
-    - lingdie/cert-manager:v1.8.0

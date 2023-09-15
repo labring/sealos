@@ -20,10 +20,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/labring/sealos/controllers/pkg/code"
 	"net"
 	"strings"
-
-	"github.com/labring/sealos/controllers/pkg/common"
 
 	netv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -117,7 +116,7 @@ func (v *IngressValidator) validate(ctx context.Context, i *netv1.Ingress) error
 		// if cname is not end with domain, return error
 		if !strings.HasSuffix(cname, v.Domain) {
 			ilog.Info("deny ingress host "+rule.Host+", cname is not end with "+v.Domain, "ingress namespace", i.Namespace, "ingress name", i.Name, "cname", cname)
-			return fmt.Errorf(common.MessageFormat, common.CodeAdmissionForIngressFailedCnameCheck, "can not verify ingress host "+rule.Host+", cname is not end with "+v.Domain)
+			return fmt.Errorf(code.MessageFormat, code.CodeAdmissionForIngressFailedCnameCheck, "can not verify ingress host "+rule.Host+", cname is not end with "+v.Domain)
 		}
 	}
 	return nil
