@@ -42,11 +42,19 @@ func (c *Client) Ping(host string) error {
 	return client.Close()
 }
 
+// Note:If you want to declare env and use it in a command,
+// you should add a "\", for example: 'export VAR=test; echo \$VAR.'
+// ${var} gives the value from the outer shell (main script), \${var} gives the value from the inner shell (in ssh)
 func (c *Client) wrapCommands(cmds ...string) string {
+	joined := strings.Join(cmds, "; ")
+	// in case escaped strings provided, so remove escaper first
+	removeEscaper := strings.NewReplacer(`\'`, `'`, `\"`, `"`)
+	joinEscaper := strings.NewReplacer(`'`, `\'`, `"`, `\"`)
+	replaced := joinEscaper.Replace(removeEscaper.Replace(joined))
 	if !c.Option.sudo || c.Option.user == defaultUsername {
-		return strings.Join(cmds, "; ")
+		return replaced
 	}
-	return fmt.Sprintf("sudo -E /bin/bash <<EOF\n%s\nEOF", strings.Join(cmds, "; "))
+	return fmt.Sprintf(`sudo -E /bin/bash -c "%s"`, replaced)
 }
 
 func (c *Client) CmdAsyncWithContext(ctx context.Context, host string, cmds ...string) error {
