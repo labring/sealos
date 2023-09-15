@@ -24,46 +24,35 @@ func NewPromServer(c *Config) (*PromServer, error) {
 	return ps, nil
 }
 
-func (ps *PromServer) Authenticate(errChan chan<- error, pr *api.PromRequest) {
+func (ps *PromServer) Authenticate(pr *api.PromRequest) error {
 	if err := auth.Authenticate(pr.NS, pr.Pwd); err != nil {
-		errChan <- err
-		return
+		return err
 	}
-	errChan <- nil
+	return nil
 }
 
-func (ps *PromServer) Request(resChan chan<- *api.QueryResult, errChan chan<- error, pr *api.PromRequest) {
+func (ps *PromServer) Request(pr *api.PromRequest) (*api.QueryResult, error) {
 	body, err := request.PrometheusPre(pr)
 	if err != nil {
-		errChan <- err
-		resChan <- nil
-		return
+		return nil, err
 	}
 	var result *api.QueryResult
 	if err := json.Unmarshal(body, &result); err != nil {
-		errChan <- err
-		resChan <- nil
-		return
+		return nil, err
 	}
-	errChan <- err
-	resChan <- result
+	return result, err
 }
 
-func (ps *PromServer) DBReq(resChan chan<- *api.QueryResult, errChan chan<- error, pr *api.PromRequest) {
+func (ps *PromServer) DBReq(pr *api.PromRequest) (*api.QueryResult, error) {
 	body, err := request.PrometheusNew(pr)
 	if err != nil {
-		errChan <- err
-		resChan <- nil
-		return
+		return nil, err
 	}
 	var result *api.QueryResult
 	if err := json.Unmarshal(body, &result); err != nil {
-		errChan <- err
-		resChan <- nil
-		return
+		return nil, err
 	}
-	errChan <- err
-	resChan <- result
+	return result, nil
 }
 
 func (ps *PromServer) ParseRequest(req *http.Request) (*api.PromRequest, error) {
@@ -134,25 +123,16 @@ func (ps *PromServer) doReqNew(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	resChan := make(chan *api.QueryResult)
-	errChan1 := make(chan error)
-	errChan2 := make(chan error)
-
-	go ps.Authenticate(errChan1, pr)
-	go ps.DBReq(resChan, errChan2, pr)
-
-	err1 := <-errChan1
-	err2 := <-errChan2
-	res := <-resChan
-
-	if err1 != nil {
-		http.Error(rw, fmt.Sprintf("Authentication failed (%s)", err1), http.StatusInternalServerError)
-		log.Printf("Authentication failed (%s)\n", err1)
+	if err := ps.Authenticate(pr); err != nil {
+		http.Error(rw, fmt.Sprintf("Authentication failed (%s)", err), http.StatusInternalServerError)
+		log.Printf("Authentication failed (%s)\n", err)
 		return
 	}
-	if err2 != nil {
-		http.Error(rw, fmt.Sprintf("Query failed (%s)", err2), http.StatusInternalServerError)
-		log.Printf("Query failed (%s)\n", err2)
+
+	res, err := ps.DBReq(pr)
+	if err != nil {
+		http.Error(rw, fmt.Sprintf("Query failed (%s)", err), http.StatusInternalServerError)
+		log.Printf("Query failed (%s)\n", err)
 		return
 	}
 
@@ -187,26 +167,16 @@ func (ps *PromServer) doReqPre(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	resChan := make(chan *api.QueryResult)
-	errChan1 := make(chan error)
-	errChan2 := make(chan error)
-
-	go ps.Authenticate(errChan1, pr)
-	go ps.Request(resChan, errChan2, pr)
-
-	err1 := <-errChan1
-	err2 := <-errChan2
-	res := <-resChan
-
-	if err1 != nil {
-		http.Error(rw, fmt.Sprintf("Authentication failed (%s)", err1), http.StatusInternalServerError)
-		log.Printf("Authentication failed (%s)\n", err1)
+	if err := ps.Authenticate(pr); err != nil {
+		http.Error(rw, fmt.Sprintf("Authentication failed (%s)", err), http.StatusInternalServerError)
+		log.Printf("Authentication failed (%s)\n", err)
 		log.Printf("Kubeconfig (%s)\n", pr.Pwd)
-		return
 	}
-	if err2 != nil {
-		http.Error(rw, fmt.Sprintf("Query failed (%s)", err2), http.StatusInternalServerError)
-		log.Printf("Query failed (%s)\n", err2)
+
+	res, err := ps.Request(pr)
+	if err != nil {
+		http.Error(rw, fmt.Sprintf("Query failed (%s)", err), http.StatusInternalServerError)
+		log.Printf("Query failed (%s)\n", err)
 		return
 	}
 

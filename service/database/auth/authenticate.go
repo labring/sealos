@@ -9,18 +9,19 @@ import (
 	"github.com/labring/sealos/service/database/api"
 	authorizationapi "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func Authenticate(namespace, password string) error {
-	if namespace == "" {
+func Authenticate(ns, kc string) error {
+	if ns == "" {
 		return api.ErrNilNs
 	}
-	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(password))
+	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kc))
 	if err != nil {
-		log.Printf("kubeconfig failed (%s)\n", password)
+		log.Printf("kubeconfig failed (%s)\n", kc)
 		return err
 	}
 
@@ -48,7 +49,7 @@ func Authenticate(namespace, password string) error {
 		return err
 	}
 
-	if err := CheckResourceAccess(client, namespace, "get", "pods"); err != nil {
+	if err := CheckResourceAccess(client, ns, "get", "pods"); err != nil {
 		// fmt.Println(err.Error())
 		return err
 	}
@@ -65,6 +66,7 @@ func GetKubernetesHostFromEnv() string {
 }
 
 func CheckResourceAccess(client *kubernetes.Clientset, namespace, verb, resource string) error {
+	// same to kubectl auth can-i
 	review := &authorizationapi.SelfSubjectAccessReview{
 		Spec: authorizationapi.SelfSubjectAccessReviewSpec{
 			ResourceAttributes: &authorizationapi.ResourceAttributes{
