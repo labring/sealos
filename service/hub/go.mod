@@ -108,5 +108,5 @@ replace (
 	github.com/labring/image-cri-shim => ../../staging/src/github.com/labring/image-cri-shim
 	github.com/labring/lvscare => ../../staging/src/github.com/labring/lvscare
 	github.com/labring/sealos => ../../
-	github.com/labring/sealos/controllers/imagehub => ../../controllers/imagehub
+	github.com/labring/sealos/controllers/imagehub => ./../../staging/src/github.com/labring/controllers/imagehub
 )

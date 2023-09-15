@@ -20,13 +20,14 @@ import (
 	"context"
 	"errors"
 
+	"github.com/labring/sealos/controllers/pkg/notification/utils"
+
 	"github.com/go-logr/logr"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 
-	notificationv1 "github.com/labring/sealos/controllers/common/notification/api/v1"
 	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
-	ntf "github.com/labring/sealos/controllers/pkg/notification"
+	notificationv1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -77,12 +78,12 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	r.logger.Info("Enter LicenseReconcile", "namespace:", req.Namespace, "name", req.Name)
 	r.logger.Info("Start to get license-related resource...")
 	// for notification
-	nq := &ntf.NoticeEventQueue{}
-	nm := ntf.NewNotificationManager(ctx, r.Client, r.logger, 1, 1)
-	nb := (&ntf.Builder{}).WithLevel(notificationv1.High).
+	nq := &utils.NoticeEventQueue{}
+	nm := utils.NewNotificationManager(ctx, r.Client, r.logger, 1, 1)
+	nb := (&utils.Builder{}).WithLevel(notificationv1.High).
 		WithTitle(util.LicenseNoticeTitle).WithFrom(util.Sealos).
-		WithType(ntf.General)
-	receiver := ntf.NewReceiver(ctx, r.Client).AddReceiver(req.Namespace)
+		WithType(utils.General)
+	receiver := utils.NewReceiver(ctx, r.Client).AddReceiver(req.Namespace)
 
 	reader := &util.Reader{}
 	// get license

@@ -22,29 +22,22 @@ import (
 	"strconv"
 	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	v1 "github.com/labring/sealos/controllers/common/notification/api/v1"
-
-	"sigs.k8s.io/controller-runtime/pkg/event"
-
-	"github.com/labring/sealos/controllers/pkg/utils"
-
-	corev1 "k8s.io/api/core/v1"
-
-	"k8s.io/apimachinery/pkg/types"
-
 	"github.com/go-logr/logr"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	v1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
+	"github.com/labring/sealos/controllers/pkg/utils/env"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 const DebtDetectionCycleEnv = "DebtDetectionCycleSeconds"
@@ -392,10 +385,10 @@ func (r *DebtReconciler) updateNamespaceStatus(ctx context.Context, status strin
 // SetupWithManager sets up the controller with the Manager.
 func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	r.Logger = ctrl.Log.WithName("DebtController")
-	r.accountSystemNamespace = utils.GetEnvWithDefault(accountv1.AccountSystemNamespaceEnv, "account-system")
-	r.accountNamespace = utils.GetEnvWithDefault(ACCOUNTNAMESPACEENV, "sealos-system")
+	r.accountSystemNamespace = env.GetEnvWithDefault(accountv1.AccountSystemNamespaceEnv, "account-system")
+	r.accountNamespace = env.GetEnvWithDefault(ACCOUNTNAMESPACEENV, "sealos-system")
 	setDefaultDebtPeriodWaitSecond()
-	debtDetectionCycleSecond := utils.GetInt64EnvWithDefault(DebtDetectionCycleEnv, 60)
+	debtDetectionCycleSecond := env.GetInt64EnvWithDefault(DebtDetectionCycleEnv, 60)
 	r.DebtDetectionCycle = time.Duration(debtDetectionCycleSecond) * time.Second
 
 	/*
@@ -423,10 +416,10 @@ func setDefaultDebtPeriodWaitSecond() {
 		ImminentDeletionPeriod:    IminentDeletionPeriodWaitSecond,
 		FinalDeletionPeriod:       FinalDeletionPeriodWaitSecond,
 	*/
-	DebtConfig[accountv1.WarningPeriod] = utils.GetInt64EnvWithDefault(string(accountv1.WarningPeriod), 0*accountv1.DaySecond)
-	DebtConfig[accountv1.ApproachingDeletionPeriod] = utils.GetInt64EnvWithDefault(string(accountv1.ApproachingDeletionPeriod), 4*accountv1.DaySecond)
-	DebtConfig[accountv1.ImminentDeletionPeriod] = utils.GetInt64EnvWithDefault(string(accountv1.ImminentDeletionPeriod), 3*accountv1.DaySecond)
-	DebtConfig[accountv1.FinalDeletionPeriod] = utils.GetInt64EnvWithDefault(string(accountv1.FinalDeletionPeriod), 7*accountv1.DaySecond)
+	DebtConfig[accountv1.WarningPeriod] = env.GetInt64EnvWithDefault(string(accountv1.WarningPeriod), 0*accountv1.DaySecond)
+	DebtConfig[accountv1.ApproachingDeletionPeriod] = env.GetInt64EnvWithDefault(string(accountv1.ApproachingDeletionPeriod), 4*accountv1.DaySecond)
+	DebtConfig[accountv1.ImminentDeletionPeriod] = env.GetInt64EnvWithDefault(string(accountv1.ImminentDeletionPeriod), 3*accountv1.DaySecond)
+	DebtConfig[accountv1.FinalDeletionPeriod] = env.GetInt64EnvWithDefault(string(accountv1.FinalDeletionPeriod), 7*accountv1.DaySecond)
 }
 
 type OnlyCreatePredicate struct {

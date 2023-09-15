@@ -20,15 +20,12 @@ require (
 	github.com/emirpasic/gods v1.18.1
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-logr/logr v1.2.4
-	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/imdario/mergo v0.3.16
 	github.com/labring/image-cri-shim v0.0.0
 	github.com/labring/lvscare v0.0.0
 	github.com/labring/sealos/controllers/account v0.0.0
-	github.com/labring/sealos/controllers/common v0.0.0
-	github.com/labring/sealos/controllers/imagehub v0.0.0
-	github.com/labring/sealos/controllers/licenseissuer v0.0.0
+	github.com/labring/sealos/controllers/imagehub v0.0.0-20230915081145-61a2cff7ccf9
 	github.com/labring/sreg v0.1.1
 	github.com/manifoldco/promptui v0.9.0
 	github.com/modood/table v0.0.0-20220527013332-8d47e76dad33
@@ -46,7 +43,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stripe/stripe-go/v74 v74.26.0
 	github.com/wechatpay-apiv3/wechatpay-go v0.2.14
-	go.mongodb.org/mongo-driver v1.11.3
+	go.mongodb.org/mongo-driver v1.11.4
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.10.0
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
@@ -58,9 +55,9 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gopkg.in/yaml.v2 v2.4.0
 	helm.sh/helm/v3 v3.11.2
-	k8s.io/api v0.26.3
-	k8s.io/apimachinery v0.26.3
-	k8s.io/client-go v0.26.2
+	k8s.io/api v0.27.4
+	k8s.io/apimachinery v0.27.4
+	k8s.io/client-go v0.27.4
 	k8s.io/kube-proxy v0.25.6
 	k8s.io/kubectl v0.26.0
 	k8s.io/kubelet v0.25.6
@@ -119,8 +116,8 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/analysis v0.21.4 // indirect
 	github.com/go-openapi/errors v0.20.3 // indirect
-	github.com/go-openapi/jsonpointer v0.19.5 // indirect
-	github.com/go-openapi/jsonreference v0.20.0 // indirect
+	github.com/go-openapi/jsonpointer v0.19.6 // indirect
+	github.com/go-openapi/jsonreference v0.20.1 // indirect
 	github.com/go-openapi/loads v0.21.2 // indirect
 	github.com/go-openapi/runtime v0.26.0 // indirect
 	github.com/go-openapi/spec v0.20.9 // indirect
@@ -207,6 +204,7 @@ require (
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
+	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/russross/blackfriday v1.6.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/seccomp/libseccomp-golang v0.10.0 // indirect
@@ -251,7 +249,7 @@ require (
 	golang.org/x/oauth2 v0.8.0 // indirect
 	golang.org/x/text v0.10.0 // indirect
 	golang.org/x/tools v0.9.3 // indirect
-	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
+	gomodules.xyz/jsonpatch/v2 v2.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
@@ -260,14 +258,14 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/apiextensions-apiserver v0.26.1 // indirect
+	k8s.io/apiextensions-apiserver v0.27.2 // indirect
 	k8s.io/apiserver v0.26.2 // indirect
 	k8s.io/cli-runtime v0.26.0 // indirect
 	k8s.io/cluster-bootstrap v0.25.6 // indirect
-	k8s.io/component-base v0.26.2 // indirect
+	k8s.io/component-base v0.27.2 // indirect
 	k8s.io/component-helpers v0.25.6 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect
+	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect
 	oras.land/oras-go v1.2.3 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kustomize/api v0.12.1 // indirect
@@ -303,9 +301,6 @@ replace (
 	github.com/labring/lvscare => ./staging/src/github.com/labring/lvscare
 	github.com/labring/sealos => ./
 	github.com/labring/sealos/controllers/account => ./controllers/account
-	github.com/labring/sealos/controllers/admission => ./controllers/admission
-	github.com/labring/sealos/controllers/common => ./controllers/common
-	github.com/labring/sealos/controllers/imagehub => ./controllers/imagehub
-	github.com/labring/sealos/controllers/licenseissuer => ./controllers/licenseissuer
+	github.com/labring/sealos/controllers/imagehub => ./staging/src/github.com/labring/controllers/imagehub
 	github.com/labring/sealos/controllers/user => ./controllers/user
 )

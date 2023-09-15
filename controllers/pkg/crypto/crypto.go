@@ -28,9 +28,6 @@ import (
 	"fmt"
 	"io"
 	"strconv"
-
-	jwt "github.com/golang-jwt/jwt/v4"
-	v1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 )
 
 const defaultEncryptionKey = "0123456789ABCDEF0123456789ABCDEF"
@@ -155,32 +152,7 @@ func DecryptWithKey(ciphertextBase64 string, encryptionKey []byte) ([]byte, erro
 	return plaintext, nil
 }
 
-func IsLicenseValid(license v1.License) (map[string]interface{}, bool) {
-	decodeKey, err := base64.StdEncoding.DecodeString(license.Spec.Key)
-	if err != nil {
-		return nil, false
-	}
-	publicKey, err := parseRSAPublicKeyFromPEM(string(decodeKey))
-	//fmt.Println(string(decodeKey))
-	if err != nil {
-		return nil, false
-	}
-	keyFunc := func(token *jwt.Token) (interface{}, error) {
-		return publicKey, nil
-	}
-	parsedToken, err := jwt.Parse(license.Spec.Token, keyFunc)
-	if err != nil {
-		return nil, false
-	}
-
-	claims, ok := parsedToken.Claims.(jwt.MapClaims)
-	if ok && parsedToken.Valid {
-		return claims, ok
-	}
-	return nil, false
-}
-
-func parseRSAPublicKeyFromPEM(keyPEM string) (*rsa.PublicKey, error) {
+func ParseRSAPublicKeyFromPEM(keyPEM string) (*rsa.PublicKey, error) {
 	block, _ := pem.Decode([]byte(keyPEM))
 	if block == nil {
 		return nil, errors.New("failed to parse PEM block containing the public key")

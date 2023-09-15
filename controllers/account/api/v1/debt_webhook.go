@@ -22,11 +22,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/labring/sealos/controllers/pkg/code"
+
 	userV1 "github.com/labring/sealos/controllers/user/api/v1"
 
-	account2 "github.com/labring/sealos/controllers/common/account"
-
-	"github.com/labring/sealos/controllers/pkg/common"
+	account2 "github.com/labring/sealos/controllers/pkg/account"
 
 	admissionV1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -172,7 +172,7 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsNam
 
 	for _, account := range accountList.Items {
 		if account.Status.Balance < account.Status.DeductionBalance {
-			return admission.ValidationResponse(false, fmt.Sprintf(common.MessageFormat, common.CodeInsufficientBalance, fmt.Sprintf("account balance less than 0,now account is %.2f¥. Please recharge the user %s.", GetAccountDebtBalance(account), user)))
+			return admission.ValidationResponse(false, fmt.Sprintf(code.MessageFormat, code.CodeInsufficientBalance, fmt.Sprintf("account balance less than 0,now account is %.2f¥. Please recharge the user %s.", GetAccountDebtBalance(account), user)))
 		}
 	}
 	return admission.Allowed(fmt.Sprintf("pass user %s , namespace %s", user, ns.Name))

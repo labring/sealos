@@ -22,26 +22,22 @@ import (
 	"os"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/utils"
+	"github.com/go-logr/logr"
+
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	"github.com/labring/sealos/controllers/pkg/database"
+	"github.com/labring/sealos/controllers/pkg/gpu"
+	"github.com/labring/sealos/controllers/pkg/resources"
+	"github.com/labring/sealos/controllers/pkg/utils/env"
 
 	"k8s.io/apimachinery/pkg/api/errors"
-
-	"github.com/labring/sealos/controllers/pkg/common/gpu"
-
-	"github.com/labring/sealos/controllers/pkg/common"
-
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-
-	"github.com/go-logr/logr"
-	"github.com/labring/sealos/controllers/pkg/database"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 )
 
 // BillingRecordQueryReconciler reconciles a BillingRecordQuery object
@@ -144,7 +140,7 @@ func (r *BillingRecordQueryReconciler) SetupWithManager(mgr ctrl.Manager, rateOp
 		return fmt.Errorf("env %s is empty", database.MongoURI)
 	}
 	r.Logger = log.Log.WithName("billingrecordquery-controller")
-	r.AccountSystemNamespace = utils.GetEnvWithDefault(ACCOUNTNAMESPACEENV, DEFAULTACCOUNTNAMESPACE)
+	r.AccountSystemNamespace = env.GetEnvWithDefault(ACCOUNTNAMESPACEENV, DEFAULTACCOUNTNAMESPACE)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&accountv1.BillingRecordQuery{}).
 		Watches(&source.Kind{Type: &accountv1.PriceQuery{}}, &handler.EnqueueRequestForObject{}).
@@ -161,7 +157,7 @@ func (r *BillingRecordQueryReconciler) ReconcilePriceQuery(ctx context.Context, 
 	pricesMap, err := dbClient.GetAllPricesMap()
 	if err != nil {
 		r.Logger.Error(err, "get all prices failed")
-		pricesMap = common.DefaultPrices
+		pricesMap = resources.DefaultPrices
 	}
 	priceQuery.Status.BillingRecords = make([]accountv1.BillingRecord, 0)
 	alias, err := gpu.GetGPUAlias(r.Client)
@@ -169,9 +165,9 @@ func (r *BillingRecordQueryReconciler) ReconcilePriceQuery(ctx context.Context, 
 		r.Logger.Error(err, "get gpu alias failed")
 	}
 	for property, v := range pricesMap {
-		if common.IsGpuResource(property) && alias != nil {
-			if propertyAlias := alias[common.GetGpuResourceProduct(property)]; propertyAlias != "" {
-				property = string(common.NewGpuResource(propertyAlias))
+		if resources.IsGpuResource(property) && alias != nil {
+			if propertyAlias := alias[resources.GetGpuResourceProduct(property)]; propertyAlias != "" {
+				property = string(resources.NewGpuResource(propertyAlias))
 			}
 		}
 		priceQuery.Status.BillingRecords = append(priceQuery.Status.BillingRecords, accountv1.BillingRecord{

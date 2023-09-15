@@ -26,7 +26,7 @@ import (
 	"github.com/labring/sealos/controllers/pkg/crypto"
 
 	"github.com/go-logr/logr"
-	v1 "github.com/labring/sealos/controllers/common/notification/api/v1"
+	v1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/builder"

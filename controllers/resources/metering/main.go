@@ -22,16 +22,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/utils"
-
-	"github.com/labring/sealos/controllers/pkg/common"
+	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/controllers/pkg/database"
-
-	"github.com/labring/sealos/pkg/utils/flags"
-	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/retry"
-	"github.com/spf13/cobra"
+	"github.com/labring/sealos/controllers/pkg/resources"
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+	"github.com/labring/sealos/controllers/pkg/utils/flags"
+	"github.com/labring/sealos/controllers/pkg/utils/logger"
+	"github.com/labring/sealos/controllers/pkg/utils/retry"
 )
 
 type Config struct {
@@ -162,7 +160,7 @@ func executeTask() error {
 	}
 	//prices is empty, use default price
 	if len(prices) == 0 || err != nil {
-		prices = common.DefaultPrices
+		prices = resources.DefaultPrices
 	}
 	now := time.Now().UTC()
 	startTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-1, 0, 0, 0, time.UTC)
@@ -238,7 +236,7 @@ func init() {
 		MongoConnectURI:    os.Getenv(database.MongoURI),
 		MongoUsername:      os.Getenv(database.MongoUsername),
 		MongoPassword:      os.Getenv(database.MongoPassword),
-		RetentionDay:       utils.GetInt64EnvWithDefault(database.RetentionDay, database.DefaultRetentionDay),
+		RetentionDay:       env.GetInt64EnvWithDefault(database.RetentionDay, database.DefaultRetentionDay),
 		PermanentRetention: os.Getenv(database.PermanentRetention) == "true",
 	}
 }

@@ -78,10 +78,6 @@ jobs:
         module:
           - { name: user, path: user }
           - { name: terminal, path: terminal }
-          - { name: metering, path: metering }
-          - { name: infra, path: infra }
-          - { name: cluster, path: cluster }
-          - { name: imagehub, path: imagehub }
           - { name: account, path: account }
           - { name: app, path: app }
           - { name: db-bytebase, path: db/bytebase }
@@ -184,10 +180,6 @@ jobs:
         module:
           - { name: user, path: user }
           - { name: terminal, path: terminal }
-          - { name: metering, path: metering }
-          - { name: infra, path: infra }
-          - { name: cluster, path: cluster }
-          - { name: imagehub, path: imagehub }
           - { name: account, path: account }
           - { name: app, path: app }
           - { name: db-bytebase, path: db/bytebase }

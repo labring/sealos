@@ -21,7 +21,7 @@ import (
 	"os/exec"
 	"sync"
 
-	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/controllers/pkg/utils/logger"
 )
 
 func main() {

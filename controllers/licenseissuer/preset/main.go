@@ -27,7 +27,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
-	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/controllers/pkg/utils/logger"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	mongoOptions "go.mongodb.org/mongo-driver/mongo/options"

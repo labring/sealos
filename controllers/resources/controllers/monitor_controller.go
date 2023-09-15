@@ -25,17 +25,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/common/gpu"
-
+	"github.com/go-logr/logr"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
-	"github.com/go-logr/logr"
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
-	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
-	"github.com/labring/sealos/controllers/pkg/common"
 	"github.com/labring/sealos/controllers/pkg/database"
+	"github.com/labring/sealos/controllers/pkg/gpu"
+	"github.com/labring/sealos/controllers/pkg/resources"
+	"github.com/labring/sealos/controllers/pkg/utils/logger"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -279,7 +277,7 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient datab
 	}
 	rs := initResources()
 	hasStorageQuota := false
-	if err := r.Get(ctx, client.ObjectKey{Name: meteringv1.ResourceQuotaPrefix + namespace.Name, Namespace: namespace.Name}, &quota); err != nil {
+	if err := r.Get(ctx, client.ObjectKey{Name: "quota-" + namespace.Name, Namespace: namespace.Name}, &quota); err != nil {
 		if client.IgnoreNotFound(err) != nil {
 			return err
 		}
@@ -331,11 +329,11 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient datab
 			rs[corev1.ResourceStorage].Add(pvc.Spec.Resources.Requests[corev1.ResourceStorage])
 		}
 	}
-	var monitors []*common.Monitor
+	var monitors []*resources.Monitor
 	for resour, value := range rs {
 		v := getResourceValue(resour, rs)
 		if v > 0 {
-			monitors = append(monitors, &common.Monitor{
+			monitors = append(monitors, &resources.Monitor{
 				Category: namespace.Name,
 				Property: resour.String(),
 				Value:    v,
@@ -358,19 +356,19 @@ func (r *MonitorReconciler) getGPUResourceUsage(pod corev1.Pod, gpuReq resource.
 			return fmt.Errorf("node %s not found gpu model", nodeName)
 		}
 	}
-	if _, ok := rs[common.NewGpuResource(gpuModel.GpuInfo.GpuProduct)]; !ok {
-		rs[common.NewGpuResource(gpuModel.GpuInfo.GpuProduct)] = initGpuResources()
+	if _, ok := rs[resources.NewGpuResource(gpuModel.GpuInfo.GpuProduct)]; !ok {
+		rs[resources.NewGpuResource(gpuModel.GpuInfo.GpuProduct)] = initGpuResources()
 	}
 	logger.Info("gpu request", "pod", pod.Name, "namespace", pod.Namespace, "gpu req", gpuReq.String(), "node", nodeName, "gpu model", gpuModel.GpuInfo.GpuProduct)
-	rs[common.NewGpuResource(gpuModel.GpuInfo.GpuProduct)].Add(gpuReq)
+	rs[resources.NewGpuResource(gpuModel.GpuInfo.GpuProduct)].Add(gpuReq)
 	return nil
 }
 
 func getResourceValue(resourceName corev1.ResourceName, res map[corev1.ResourceName]*quantity) int64 {
 	quantity := res[resourceName]
-	priceUnit := common.PricesUnit[resourceName]
+	priceUnit := resources.PricesUnit[resourceName]
 	if strings.Contains(resourceName.String(), "gpu") {
-		priceUnit = common.PricesUnit[common.ResourceGPU]
+		priceUnit = resources.PricesUnit[resources.ResourceGPU]
 	}
 	if quantity != nil && quantity.MilliValue() != 0 {
 		return int64(math.Ceil(float64(quantity.MilliValue()) / float64(priceUnit.MilliValue())))
@@ -380,7 +378,7 @@ func getResourceValue(resourceName corev1.ResourceName, res map[corev1.ResourceN
 
 func initResources() (rs map[corev1.ResourceName]*quantity) {
 	rs = make(map[corev1.ResourceName]*quantity)
-	rs[common.ResourceGPU] = initGpuResources()
+	rs[resources.ResourceGPU] = initGpuResources()
 	rs[corev1.ResourceCPU] = &quantity{Quantity: resource.NewQuantity(0, resource.DecimalSI), detail: ""}
 	rs[corev1.ResourceMemory] = &quantity{Quantity: resource.NewQuantity(0, resource.BinarySI), detail: ""}
 	rs[corev1.ResourceStorage] = &quantity{Quantity: resource.NewQuantity(0, resource.BinarySI), detail: ""}
@@ -411,10 +409,10 @@ func (r *MonitorReconciler) infraResourceUsage(ctx context.Context, dbClient dat
 			cnt := host.Count
 			flavor := host.Flavor
 			//unified infra unit: getInfraCPUQuantity/getInfraMemoryQuantity/getInfraDiskQuantity
-			infraResources[corev1.ResourceCPU].Add(*common.GetInfraCPUQuantity(flavor, cnt))
-			infraResources[corev1.ResourceMemory].Add(*common.GetInfraMemoryQuantity(flavor, cnt))
+			infraResources[corev1.ResourceCPU].Add(*resources.GetInfraCPUQuantity(flavor, cnt))
+			infraResources[corev1.ResourceMemory].Add(*resources.GetInfraMemoryQuantity(flavor, cnt))
 			for _, disk := range host.Disks {
-				infraResources[corev1.ResourceStorage].Add(*common.GetInfraDiskQuantity(disk.Capacity))
+				infraResources[corev1.ResourceStorage].Add(*resources.GetInfraDiskQuantity(disk.Capacity))
 			}
 		}
 		r.Logger.Info("infra resources", "namespace", infra.Namespace, "cpu quantity", infraResources[corev1.ResourceCPU], "memory quantity", infraResources[corev1.ResourceMemory], "volume quantity", infraResources[corev1.ResourceStorage])
@@ -422,29 +420,29 @@ func (r *MonitorReconciler) infraResourceUsage(ctx context.Context, dbClient dat
 	cpuUsage, memUsage, storUsage := getResourceValue(corev1.ResourceCPU, infraResources),
 		getResourceValue(corev1.ResourceMemory, infraResources),
 		getResourceValue(corev1.ResourceStorage, infraResources)
-	var monitors []*common.Monitor
+	var monitors []*resources.Monitor
 	if cpuUsage != 0 {
-		monitors = append(monitors, &common.Monitor{
+		monitors = append(monitors, &resources.Monitor{
 			Category: namespace.Name,
-			Property: common.PropertyInfraCPU,
+			Property: resources.PropertyInfraCPU,
 			Value:    cpuUsage,
 			Time:     timeStamp,
 			//Detail:   "",
 		})
 	}
 	if memUsage != 0 {
-		monitors = append(monitors, &common.Monitor{
+		monitors = append(monitors, &resources.Monitor{
 			Category: namespace.Name,
-			Property: common.PropertyInfraMemory,
+			Property: resources.PropertyInfraMemory,
 			Value:    memUsage,
 			Time:     timeStamp,
 			//Detail:   "",
 		})
 	}
 	if storUsage != 0 {
-		monitors = append(monitors, &common.Monitor{
+		monitors = append(monitors, &resources.Monitor{
 			Category: namespace.Name,
-			Property: common.PropertyInfraDisk,
+			Property: resources.PropertyInfraDisk,
 			Value:    storUsage,
 			Time:     timeStamp,
 			//Detail:   "",

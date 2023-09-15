@@ -21,10 +21,11 @@ import (
 	"sync"
 	"time"
 
+	ntf "github.com/labring/sealos/controllers/pkg/notification/utils"
+
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	account "github.com/labring/sealos/controllers/common/account"
+	account "github.com/labring/sealos/controllers/pkg/account"
 	"github.com/labring/sealos/controllers/pkg/database"
-	ntf "github.com/labring/sealos/controllers/pkg/notification"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )

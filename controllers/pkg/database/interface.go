@@ -19,7 +19,7 @@ import (
 	"time"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	"github.com/labring/sealos/controllers/pkg/common"
+	"github.com/labring/sealos/controllers/pkg/resources"
 )
 
 type Interface interface {
@@ -30,10 +30,10 @@ type Interface interface {
 	SaveBillingsWithAccountBalance(accountBalanceSpec *accountv1.AccountBalanceSpec) error
 	QueryBillingRecords(billingRecordQuery *accountv1.BillingRecordQuery, owner string) error
 	GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error)
-	GetAllPricesMap() (map[string]common.Price, error)
+	GetAllPricesMap() (map[string]resources.Price, error)
 	GetBillingCount(accountType accountv1.Type, startTime, endTime time.Time) (count, amount int64, err error)
-	GenerateMeteringData(startTime, endTime time.Time, prices map[string]common.Price) error
-	InsertMonitor(ctx context.Context, monitors ...*common.Monitor) error
+	GenerateMeteringData(startTime, endTime time.Time, prices map[string]resources.Price) error
+	InsertMonitor(ctx context.Context, monitors ...*resources.Monitor) error
 	DropMonitorCollectionsOlderThan(days int) error
 	Disconnect(ctx context.Context) error
 	Creator
