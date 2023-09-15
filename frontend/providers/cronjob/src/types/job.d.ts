@@ -104,3 +104,14 @@ export type JobList = {
     startTimeTimestamp: number;
   }[];
 };
+
+export type CronJobAnnotations = {
+  timeZone: string;
+  enableNumberCopies: string;
+  enableResources: string;
+  cpu: string;
+  memory: string;
+  launchpadName: string;
+  launchpadId: string;
+  replicas: string;
+};

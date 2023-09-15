@@ -1,6 +1,12 @@
 import { CronJobStatusMap, StatusEnum } from '@/constants/job';
 import { AppListItemType } from '@/types/app';
-import { CronJobEditType, CronJobListItemType, JobEvent, JobList } from '@/types/job';
+import {
+  CronJobAnnotations,
+  CronJobEditType,
+  CronJobListItemType,
+  JobEvent,
+  JobList
+} from '@/types/job';
 import { cpuFormatToM, cron2Time, formatPodTime, memoryFormatToMi } from '@/utils/tools';
 import {
   CoreV1EventList,
@@ -50,7 +56,7 @@ export const adaptCronJobDetail = async (job: V1CronJob): Promise<CronJobEditTyp
     .toString();
   const status_str = job.spec?.suspend ? StatusEnum.Stopped : StatusEnum.Running;
   const { cpu, enableNumberCopies, enableResources, launchpadId, launchpadName, memory, replicas } =
-    job.metadata?.annotations || {};
+    job.metadata?.annotations as CronJobAnnotations;
 
   const getUrl = (): string => {
     const commands = job.spec?.jobTemplate?.spec?.template?.spec?.containers?.[0]?.args;

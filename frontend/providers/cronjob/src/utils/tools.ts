@@ -330,3 +330,8 @@ export const obj2Query = (obj: Record<string, string | number>) => {
 
   return str.slice(0, str.length - 1);
 };
+
+export const getUserTimeZone = () => {
+  const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return userTimeZone;
+};
