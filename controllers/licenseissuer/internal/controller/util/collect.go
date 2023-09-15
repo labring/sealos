@@ -17,10 +17,11 @@ limitations under the License.
 package util
 
 import (
-	ntf "github.com/labring/sealos/controllers/pkg/notification/utils"
 	"strconv"
 	"sync"
 	"time"
+
+	ntf "github.com/labring/sealos/controllers/pkg/notification/utils"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	account "github.com/labring/sealos/controllers/pkg/account"

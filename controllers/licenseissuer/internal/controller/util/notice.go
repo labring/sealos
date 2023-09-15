@@ -19,9 +19,10 @@ package util
 import (
 	"context"
 	"fmt"
-	"github.com/labring/sealos/controllers/pkg/notification/utils"
 	"strings"
 	"time"
+
+	"github.com/labring/sealos/controllers/pkg/notification/utils"
 
 	notificationv1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	corev1 "k8s.io/api/core/v1"

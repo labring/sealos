@@ -21,8 +21,9 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/labring/sealos/controllers/pkg/notification/api/v1"
+	v1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"

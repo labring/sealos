@@ -20,9 +20,10 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"github.com/golang-jwt/jwt/v4"
 	"reflect"
 	"time"
+
+	"github.com/golang-jwt/jwt/v4"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"go.mongodb.org/mongo-driver/bson"

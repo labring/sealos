@@ -16,10 +16,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/labring/sealos/controllers/pkg/pay"
 	"os"
 	"path"
 	"runtime"
+
+	"github.com/labring/sealos/controllers/pkg/pay"
 
 	"github.com/gin-gonic/gin"
 )
