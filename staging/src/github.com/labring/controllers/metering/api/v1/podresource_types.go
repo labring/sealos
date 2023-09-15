@@ -17,9 +17,10 @@ limitations under the License.
 package v1
 
 import (
-	meteringcommonv1 "github.com/labring/sealos/controllers/pkg/metering/api/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	meteringcommonv1 "github.com/labring/sealos/controllers/pkg/metering/api/v1"
 )
 
 // PodResourceSpec defines the desired state of PodResource
