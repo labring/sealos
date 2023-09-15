@@ -128,6 +128,32 @@ rules:
 - apiGroups:
   - account.sealos.io
   resources:
+  - namespacebillinghistories
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - namespacebillinghistories/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - namespacebillinghistories/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
   - payments
   verbs:
   - create

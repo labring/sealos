@@ -1,8 +1,9 @@
 import { CronJobEditType } from '@/types/job';
 
-export const JobTypeList = [
-  { id: 'test', label: 'test' },
-  { id: 'test2', label: 'test2' }
+export const CronJobTypeList = [
+  { id: 'url', label: 'Form.Visit Url' },
+  { id: 'launchpad', label: 'Form.Expansion and Contraction Launchpad' },
+  { id: 'image', label: 'Form.Execution Image' }
 ];
 
 export const SelectTimeList = <
@@ -28,31 +29,6 @@ export const WeekSelectList = [
   { label: 'Saturday', id: '6' },
   { label: 'Sunday', id: '0' }
 ];
-
-export const DefaultJobEditValue: CronJobEditType = {
-  jobType: '',
-  jobName: '',
-  schedule: '* * * * *',
-  imageName: '',
-  runCMD: '',
-  cmdParam: '',
-  secret: {
-    use: false,
-    username: '',
-    password: '',
-    serverAddress: 'docker.io'
-  },
-  envs: [
-    {
-      key: 'TZ',
-      value: 'Asia/Shanghai'
-    }
-  ],
-  scheduleType: 'hour',
-  week: [],
-  hour: '*',
-  minute: '*'
-};
 
 export enum StatusEnum {
   Running = 'Running',
@@ -162,4 +138,34 @@ export const CronJobStatusMap = {
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
   }
+};
+
+export const DefaultJobEditValue: CronJobEditType = {
+  jobType: 'launchpad',
+  jobName: '',
+  schedule: '* * * * *',
+  imageName: '',
+  runCMD: '',
+  cmdParam: '',
+  secret: {
+    use: false,
+    username: '',
+    password: '',
+    serverAddress: 'docker.io'
+  },
+  envs: [],
+  url: '',
+  enableNumberCopies: true,
+  enableResources: true,
+  replicas: 1,
+  cpu: 0,
+  memory: 0,
+  launchpadName: '',
+  launchpadId: '',
+  serviceAccountName: '',
+  status: CronJobStatusMap['Running'],
+  isPause: false,
+  creatTime: '',
+  _schedule: '',
+  nextExecutionTime: ''
 };

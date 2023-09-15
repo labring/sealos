@@ -1,9 +1,0 @@
-addr: :8080
-ssoType: "casdoor"
-callbackUrl: "{{ .callbackUrlEnv }}"
-oauthProviders:
-  - type: "Github"
-    clientId: "{{ .clientIDEnv }}"
-    clientSecret: "{{ .clientSecretEnv }}"
-kubeconfig: "{{ .kubeconfigEnv }}"
-ssoEndpoint: "{{ .ssoEndpointEnv }}"

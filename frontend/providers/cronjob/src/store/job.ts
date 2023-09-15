@@ -1,4 +1,4 @@
-import { getJobByName, getMyJobList } from '@/api/job';
+import { getCronJobByName, getCronJobList } from '@/api/job';
 import { DefaultJobEditValue } from '@/constants/job';
 import { CronJobEditType, CronJobListItemType } from '@/types/job';
 import { create } from 'zustand';
@@ -17,7 +17,7 @@ export const useJobStore = create<State>()(
     immer((set, get) => ({
       jobList: [],
       setJobList: async () => {
-        const res = await getMyJobList();
+        const res = await getCronJobList();
         set((state) => {
           state.jobList = res;
         });
@@ -26,7 +26,7 @@ export const useJobStore = create<State>()(
       JobDetail: { ...DefaultJobEditValue },
       async loadJobDetail(name: string) {
         try {
-          const res = await getJobByName(name);
+          const res = await getCronJobByName(name);
           set((state) => {
             state.JobDetail = res;
           });

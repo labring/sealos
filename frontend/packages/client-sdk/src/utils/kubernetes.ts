@@ -266,7 +266,7 @@ export async function initK8s({ req }: { req: { headers: IncomingHttpHeaders } }
     return Promise.reject('User is null');
   }
 
-  const namespace = `ns-${kube_user.name}`;
+  const namespace = kc.contexts[0].namespace || `ns-${kube_user.name}`;
 
   return Promise.resolve({
     kc,

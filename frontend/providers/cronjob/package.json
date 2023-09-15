@@ -22,6 +22,8 @@
     "@tanstack/react-query": "^4.29.25",
     "ansi_up": "^5.2.1",
     "axios": "^1.4.0",
+    "cron-parser": "^4.9.0",
+    "cronstrue": "^2.32.0",
     "date-fns": "^2.30.0",
     "dayjs": "^1.11.9",
     "echarts": "^5.4.3",

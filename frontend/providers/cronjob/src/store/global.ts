@@ -26,7 +26,7 @@ export const useGlobalStore = create<State>()(
           state.loading = val;
         });
       },
-      lastRoute: '/',
+      lastRoute: '/jobs',
       setLastRoute(val) {
         set((state) => {
           state.lastRoute = val;
