@@ -120,7 +120,7 @@ func (p *httpProber) Probe(host, port string) error {
 		}
 		return fmt.Errorf("invalid status code %d", resp.StatusCode)
 	}
-	if resp.StatusCode/100 >= 4 {
+	if resp.StatusCode/100 >= 4 && resp.StatusCode != 401 {
 		return fmt.Errorf("unexpected status code %d", resp.StatusCode)
 	}
 	return nil
