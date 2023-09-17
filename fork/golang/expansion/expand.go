@@ -2,17 +2,20 @@ package expansion
 
 import (
 	"bytes"
+	"unicode"
 )
 
 const (
-	operator        = '$'
-	referenceOpener = '('
-	referenceCloser = ')'
+	operator             = '$'
+	referenceCurlyOpener = '{'
+	referenceCurlyCloser = '}'
+	referenceParenOpener = '('
+	referenceParenCloser = ')'
 )
 
 // syntaxWrap returns the input string wrapped by the expansion syntax.
 func syntaxWrap(input string) string {
-	return string(operator) + string(referenceOpener) + input + string(referenceCloser)
+	return string(operator) + string(referenceParenOpener) + input + string(referenceParenCloser)
 }
 
 // MappingFuncFor returns a mapping function for use with Expand that
@@ -83,20 +86,41 @@ func tryReadVariableName(input string) (string, bool, int) {
 	case operator:
 		// Escaped operator; return it.
 		return input[0:1], false, 1
-	case referenceOpener:
+	case referenceParenOpener:
 		// Scan to expression closer
 		for i := 1; i < len(input); i++ {
-			if input[i] == referenceCloser {
+			if input[i] == referenceParenCloser {
 				return input[1:i], true, i + 1
 			}
 		}
 
 		// Incomplete reference; return it.
-		return string(operator) + string(referenceOpener), false, 1
+		return string(operator) + string(referenceParenOpener), false, 1
+	case referenceCurlyOpener:
+		// Scan to expression closer
+		for i := 1; i < len(input); i++ {
+			if input[i] == referenceCurlyCloser {
+				return input[1:i], true, i + 1
+			}
+		}
+
+		// Incomplete reference; return it.
+		return string(operator) + string(referenceParenOpener), false, 1
 	default:
 		// Not the beginning of an expression, ie, an operator
 		// that doesn't begin an expression.  Return the operator
 		// and the first rune in the string.
-		return (string(operator) + string(input[0])), false, 1
+		var variableName string
+		var i int
+		for i = 0; i < len(input); i++ {
+			if !unicode.IsLetter(rune(input[i])) && !unicode.IsDigit(rune(input[i])) && input[i] != '_' {
+				break
+			}
+			variableName += string(input[i])
+		}
+		if len(variableName) > 0 {
+			return variableName, true, i
+		}
+		return string(operator) + string(input[0]), false, 1
 	}
 }
