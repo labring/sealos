@@ -1,4 +1,4 @@
-apiVersion: app.sealos.io/v1beta1
+apiVersion: app.sealos.io/v1
 kind: Template
 metadata:
   labels:
