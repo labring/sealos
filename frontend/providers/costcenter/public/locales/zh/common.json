@@ -56,8 +56,8 @@
   "Not Engough Balance": "余额不足，请立即充值。",
   "Insufficient Balance": "余额不足",
   "No Data Available": "暂无数据",
-  "Predict Detail": "根据当前资源用量预测未来 30 天费用",
-  "Next month cost estimation": "下月费用预估",
+  "Predict Detail": "未来 30 天",
+  "Next month cost estimation": "成本预测",
   "Recipient ID": "收款人的ID",
   "Recipient": "收款",
   "Transfer": "转账",
@@ -71,6 +71,11 @@
   "Stripe Success": "Stripe 支付完成",
   "Stripe Cancel": "Stripe 支付取消",
   "GPU Unit": "卡",
+  "Name": "名称",
+  "Price": "价格",
+  "Unit": "单位",
+  "Gpu valuation": "GPU 计价",
+  "common valuation": "计价表",
   "orders": {
     "list": "订单列表",
     "invoiceAmount": "发票金额",
@@ -143,5 +148,6 @@
   "Source Quota": "资源配额",
   "Total Quota": "总计",
   "used Quota": "已用",
-  "Remaining Quota": "剩余"
+  "Remaining Quota": "剩余",
+  "Receipts And Disbursements": "收支"
 }

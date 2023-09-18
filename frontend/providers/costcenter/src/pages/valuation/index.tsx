@@ -1,55 +1,135 @@
-import { Box, Flex, Heading, Text, Img, Stack } from '@chakra-ui/react';
+import {
+  Box,
+  Flex,
+  Heading,
+  Text,
+  Img,
+  Stack,
+  Table,
+  TableContainer,
+  Thead,
+  Tr,
+  Th,
+  Tbody,
+  Td,
+  Popover,
+  PopoverTrigger,
+  Button,
+  PopoverContent,
+  ButtonProps,
+  Icon
+} from '@chakra-ui/react';
 import letter_icon from '@/assert/format_letter_spacing_standard_black.svg';
 import { QueryClient, dehydrate, useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
 import { ValuationBillingRecord } from '@/types/valuation';
 import { valuationMap } from '@/constants/payment';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { i18n, useTranslation } from 'next-i18next';
 import { ApiResp } from '@/types/api';
 import nvidaIcon from '@/assert/bi_nvidia.svg';
 import { getCookie } from '@/utils/cookieUtils';
 import { CYCLE } from '@/constants/valuation';
-import OuterLink from '@/components/outerLink';
-import NotFound from '@/components/notFound';
 import PredictCard from '@/components/valuation/predictCard';
 import useEnvStore from '@/stores/env';
 import CurrencySymbol from '@/components/CurrencySymbol';
 import Quota from '@/components/valuation/quota';
+import ListIcon from '@/components/icons/ListIcon';
+import CpuIcon from '@/components/icons/CpuIcon';
+import { MemoryIcon } from '@/components/icons/MemoryIcon';
+import { NetworkIcon } from '@/components/icons/NetworkIcon';
+import { StorageIcon } from '@/components/icons/StorageIcon';
 type CardItem = {
   title: string;
   price: number[];
   unit: string;
   bg: string;
   idx: number;
+  icon: typeof Icon;
 };
 
-function ValuationCard(props: any) {
-  return (
-    <Stack
-      align={'center'}
-      pt="27px"
-      pb="21px"
-      px="24px"
-      boxSizing="border-box"
-      width="240px"
-      height="339px"
-      background="#F1F4F6"
-      borderWidth={'1px'}
-      borderColor="#DEE0E2"
-      borderRadius="4px"
-    >
-      {props.children}
-    </Stack>
-  );
-}
 const getValuation = () =>
   request<any, ApiResp<{ billingRecords: ValuationBillingRecord[] }>>('/api/price');
+
+function CycleMenu({
+  cycleIdx,
+  setCycleIdx,
+  ...props
+}: {
+  cycleIdx: number;
+  setCycleIdx: (x: number) => void;
+} & ButtonProps) {
+  const { t } = useTranslation();
+  return (
+    <Flex align={'center'} ml="28px">
+      <Popover>
+        <PopoverTrigger>
+          <Button
+            w="110px"
+            h="32px"
+            fontStyle="normal"
+            fontWeight="400"
+            fontSize="12px"
+            lineHeight="140%"
+            border={'1px solid #DEE0E2'}
+            bg={'#F6F8F9'}
+            _expanded={{
+              background: '#F8FAFB',
+              border: `1px solid #36ADEF`
+            }}
+            _hover={{
+              background: '#F8FAFB',
+              border: `1px solid #36ADEF`
+            }}
+            borderRadius={'2px'}
+            {...props}
+          >
+            {t(CYCLE[cycleIdx])}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          p={'6px'}
+          boxSizing="border-box"
+          w={'110px'}
+          shadow={'0px 0px 1px 0px #798D9F40, 0px 2px 4px 0px #A1A7B340'}
+          border={'none'}
+        >
+          {CYCLE.map((v, idx) => (
+            <Button
+              key={v}
+              {...(idx === cycleIdx
+                ? {
+                    color: '#0884DD',
+                    bg: '#F4F6F8'
+                  }
+                : {
+                    color: '#5A646E',
+                    bg: '#FDFDFE'
+                  })}
+              h="30px"
+              fontFamily="PingFang SC"
+              fontSize="12px"
+              fontWeight="400"
+              lineHeight="18px"
+              p={'0'}
+              onClick={() => {
+                setCycleIdx(idx);
+              }}
+            >
+              {t(v)}
+            </Button>
+          ))}
+        </PopoverContent>
+      </Popover>
+    </Flex>
+  );
+}
 function Valuation() {
   const { t, i18n } = useTranslation();
   const cookie = getCookie('NEXT_LOCALE');
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
+  const [cycleIdx, setCycleIdx] = useState(0);
   const currency = useEnvStore((s) => s.currency);
   useEffect(() => {
     i18n.changeLanguage(cookie);
@@ -62,13 +142,20 @@ function Valuation() {
       ?.flatMap<CardItem>((x) => {
         const props = valuationMap.get(x.resourceType);
         if (!props) return [];
+        let icon;
+        if (x.resourceType === 'cpu') icon = CpuIcon;
+        else if (x.resourceType === 'memory') icon = MemoryIcon;
+        else if (x.resourceType === 'network') icon = NetworkIcon;
+        else if (x.resourceType === 'storage') icon = StorageIcon;
+        else return [];
         return [
           {
             title: x.resourceType,
             price: [1, 24, 168, 720, 8760].map((v) => (v * x.price * (props.scale || 1)) / 1000000),
             unit: props.unit,
             bg: props.bg,
-            idx: props.idx
+            idx: props.idx,
+            icon
           }
         ];
       })
@@ -88,100 +175,162 @@ function Valuation() {
         ?.sort((a, b) => (a.name > b.name ? 1 : -1)) || []
     : [];
   return (
-    <Flex
-      w="100%"
-      h="100%"
-      bg={'white'}
-      flexDirection="column"
-      alignItems="center"
-      p={'24px'}
-      overflowY={'auto'}
-    >
-      <Flex alignSelf={'flex-start'} mb="80px" align={'center'}>
-        <Img src={letter_icon.src} w={'24px'} h={'24px'} mr={'18px'}></Img>
-        <Heading size="lg">{t('Valuation.Standard')}</Heading>
-      </Flex>
-      <Flex direction={'column'}>
-        <Flex gap={'52px'} flexWrap={'wrap'} justify={'center'} mt={'24px'}>
-          {data ? (
-            <>
-              {data?.map((item) => (
-                <ValuationCard key={item.title}>
-                  <Flex align={'center'}>
-                    <Box borderRadius="2px" bg={item.bg} w={'16px'} h={'16px'} mr={'8px'}></Box>
-                    <Text fontSize={'16px'}>{item.title}</Text>
-                  </Flex>
-                  <Heading
-                    display={'flex'}
-                    justifyContent="center"
-                    alignContent={'center'}
-                    fontWeight={'600'}
-                  >
-                    <CurrencySymbol w="16px" type={currency} />
-                    <Text ml="10px">{item.price[0]}</Text>
-                  </Heading>
-                  <Flex align={'center'}>
-                    <Text>
-                      {item.unit} / {t('Hour')}
-                    </Text>
-                  </Flex>
-                  <Box pt={'17px'} w="100%">
-                    {CYCLE.map((_item, idx) => (
-                      <Flex key={idx} w="100%" borderTop={'dashed 1px #DEE0E2'} py={'8px'}>
-                        <CurrencySymbol type={currency} />
-                        <Box ml="2px">{item.price[idx + 1]}</Box>
-                        <Flex align={'center'} ml="auto">
-                          <Text>{`${item.unit} / ${t(_item)}`}</Text>
+    <Flex w="100%" h="100%">
+      <Stack
+        flex={1}
+        bg={'#FBFBFC'}
+        alignItems="center"
+        p={'24px'}
+        borderRadius={'4px'}
+        overflowY={'auto'}
+      >
+        <Flex alignSelf={'flex-start'} mb="30px" align={'center'}>
+          <Img src={letter_icon.src} w={'24px'} h={'24px'} mr={'18px'}></Img>
+          <Heading size="lg">{t('Valuation.Standard')}</Heading>
+        </Flex>
+        <Flex direction={'column'} w="full">
+          <Box w="full" px="100px">
+            <Flex w="full" justifyContent={'flex-end'} mb="20px" align={'center'}>
+              <ListIcon w="24px" h="24px" mr="6px" />
+              <Text mr="auto">{t('common valuation')}</Text>
+              <Text>{t('Unit')}</Text>
+              <CycleMenu cycleIdx={cycleIdx} setCycleIdx={setCycleIdx} ml="auto" />
+            </Flex>
+            <TableContainer w="100%" mt="0px">
+              <Table variant="simple" borderRadius="2px">
+                <Thead background="#F1F4F6">
+                  <Tr border="1px solid #DEE0E2">
+                    {['Name', 'Unit', 'Price'].map((item) => (
+                      <Th
+                        px="24px"
+                        pt="12px"
+                        pb="14px"
+                        w="200px"
+                        key={item}
+                        bg={'#F1F4F6'}
+                        _before={{
+                          content: `""`,
+                          display: 'block',
+                          borderTopLeftRadius: '10px',
+                          borderTopRightRadius: '10px',
+                          background: '#F1F4F6'
+                        }}
+                      >
+                        <Flex display={'flex'} alignItems={'center'}>
+                          <Text mr="4px">{t(item)}</Text>
+                          {['Price'].includes(item) && <CurrencySymbol type={currency} />}
                         </Flex>
-                      </Flex>
+                      </Th>
                     ))}
-                  </Box>
-                </ValuationCard>
-              ))}
-              {gpuEnabled && gpuData.length > 0 && (
-                <ValuationCard>
-                  <Flex align={'center'}>
-                    <Box borderRadius="2px" bg={gpuProps.bg} w={'16px'} h={'16px'} mr={'8px'}></Box>
-                    <Text fontSize={'16px'}>GPU</Text>
-                  </Flex>
-                  <Flex display={'flex'} justifyContent="center" alignContent={'center'}>
-                    <Text fontSize="28px" fontStyle="normal" fontWeight={'600'}>{` ${t(
-                      'GPU Unit'
-                    )} / ${t('Hour')}`}</Text>
-                  </Flex>
-                  <Stack w="100%" mt="24px" overflow={'auto'}>
-                    {gpuData.map((item) => (
-                      <Box key={item.name} w="100%" borderTop={'dashed 1px #DEE0E2'} pt="12px">
-                        <Flex align={'center'}>
-                          <Img src={nvidaIcon.src} w="14px" h="14px" mr="6px" />
-                          <Text minW={'max-content'}>{item.name}</Text>
-                        </Flex>
-                        <Flex mt={'4px'}>
-                          <CurrencySymbol type={currency} />
-                          <Text ml="2px">{`${item.price}`}</Text>
-                        </Flex>
-                      </Box>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {data.map((x) => (
+                    <Tr border="1px solid #DEE0E2" key={x.title}>
+                      <Td display={'flex'} alignItems={'center'} border={'none'}>
+                        <x.icon h="16px" w="16px" mr="8px" />
+                        <Text textTransform={'capitalize'} textAlign={'center'}>
+                          {t(x.title)}
+                        </Text>
+                      </Td>
+                      <Td>
+                        {x.unit}/{t(CYCLE[cycleIdx])}
+                      </Td>
+                      <Td>{x.price[cycleIdx]}</Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </TableContainer>
+          </Box>
+          {gpuEnabled && gpuData.length > 0 && (
+            <Box w="full" px="100px" mt="48px">
+              <Flex w="full" justifyContent={'flex-end'} mb="20px" align={'center'}>
+                <ListIcon w="24px" h="24px" mr="6px" />
+                <Text mr="auto">{t('Gpu valuation')}</Text>
+              </Flex>
+              <TableContainer w="100%" mt="0px">
+                <Table variant="simple" borderRadius="2px">
+                  <Thead background="#F1F4F6">
+                    <Tr border="1px solid #DEE0E2">
+                      {['Name', 'Unit', 'Price'].map((item) => (
+                        <Th
+                          key={item}
+                          bg={'#F1F4F6'}
+                          px="24px"
+                          pt="12px"
+                          pb="14px"
+                          w={'200px'}
+                          _before={{
+                            content: `""`,
+                            display: 'block',
+                            borderTopLeftRadius: '10px',
+                            borderTopRightRadius: '10px',
+                            background: '#F1F4F6'
+                          }}
+                        >
+                          <Flex display={'flex'} alignItems={'center'}>
+                            <Text mr="4px">{t(item)}</Text>
+                            {['Price'].includes(item) && <CurrencySymbol type={currency} />}
+                          </Flex>
+                        </Th>
+                      ))}
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {gpuData.map((x) => (
+                      <Tr border="1px solid #DEE0E2" key={x.name}>
+                        <Td display={'flex'} alignItems={'center'} border={'none'}>
+                          <Img src={nvidaIcon.src} w="16px" h="16px" mr="8px" />
+                          <Text>{t(x.name)}</Text>
+                        </Td>
+                        <Td>
+                          {t('GPU Unit')}/{t('Hour')}
+                        </Td>
+                        <Td>{x.price}</Td>
+                      </Tr>
                     ))}
-                  </Stack>
-                </ValuationCard>
-              )}
-            </>
-          ) : (
-            <NotFound></NotFound>
+                  </Tbody>
+                </Table>
+              </TableContainer>
+            </Box>
           )}
         </Flex>
-        <Flex mt={'36px'} direction={'column'}>
-          <Flex align={'center'} mb={'20px'}>
-            <Text mr={'17px '}>{t('Next month cost estimation')}</Text>
-            <OuterLink text={t('Predict Detail')} href={'#'}></OuterLink>
+      </Stack>
+      <Stack ml="8px" w="280px" gap="8px">
+        <Stack
+          w="280px"
+          h="250px"
+          minH={'100px'}
+          overflow={'auto'}
+          borderRadius="4px"
+          background="#FBFBFC"
+        >
+          <Text py={'24px'} px={'24px'} mr="6px" borderBottom={'solid 1px #DEE0E2'}>
+            {t('Source Quota')}
+          </Text>
+          <Stack px="24px" flex={1} justify={'center'}>
+            <Quota />
+          </Stack>
+        </Stack>
+        <Stack
+          w="280px"
+          h="320px"
+          minH={'100px'}
+          overflow={'auto'}
+          borderRadius="4px"
+          background="#FBFBFC"
+        >
+          <Flex align={'center'} px={'24px'} py="24px" mr="6px" borderBottom={'solid 1px #DEE0E2'}>
+            <Text mr={'17px '}>
+              {t('Next month cost estimation')}({t('Predict Detail')})
+            </Text>
           </Flex>
-          <PredictCard />
-        </Flex>
-        <Flex mt={'36px'} direction={'column'}>
-          <Text mb="20px">{t('Source Quota')}</Text>
-          <Quota />
-        </Flex>
-      </Flex>
+          <Stack pl="24px" flex={1} justify={'center'}>
+            <PredictCard />
+          </Stack>
+        </Stack>
+      </Stack>
     </Flex>
   );
 }
