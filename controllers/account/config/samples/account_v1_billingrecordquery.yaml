@@ -1,6 +1,0 @@
-apiVersion: account.sealos.io/v1
-kind: BillingRecordQuery
-metadata:
-  name: billingrecordquery-sample
-spec:
-  # TODO(user): Add fields here

@@ -1,6 +1,0 @@
-apiVersion: user.sealos.io/v1
-kind: UserGroupBinding
-metadata:
-  name: usergroupbinding-sample
-spec:
-  # TODO(user): Add fields here

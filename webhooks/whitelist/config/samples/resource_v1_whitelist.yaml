@@ -1,6 +1,0 @@
-apiVersion: resource.sealos.io/v1
-kind: Whitelist
-metadata:
-  name: whitelist-sample
-spec:
-  # TODO(user): Add fields here
