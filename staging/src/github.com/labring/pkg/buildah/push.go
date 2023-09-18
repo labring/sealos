@@ -62,6 +62,9 @@ type pushOptions struct {
 	encryptionKeys     []string
 	encryptLayers      []int
 	insecure           bool
+
+	// TODO: remove this flag once we have a better way to handle image cr pushing to the dest registry
+	crOption CrOpionEnum
 }
 
 func newDefaultPushOptions() *pushOptions {
@@ -69,6 +72,7 @@ func newDefaultPushOptions() *pushOptions {
 		authfile:   auth.GetDefaultAuthFile(),
 		retry:      buildahcli.MaxPullPushRetries,
 		retryDelay: buildahcli.PullPushRetryDelay,
+		crOption:   CrOptionAuto,
 	}
 }
 
@@ -117,8 +121,17 @@ func newPushCommand() *cobra.Command {
 		Use:   "push",
 		Short: "Push an image to a specified destination",
 		Long:  pushDescription,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			// specific croption is only valid when crOption is auto, and switch to a specific croption `yes` / `no`
+			if opts.crOption == CrOptionAuto {
+				opts.crOption = SpecificCroption(args)
+			}
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return pushCmd(cmd, args, opts)
+		},
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			return NewAndRunImageCRBuilder(cmd, args, opts)
 		},
 		Example: fmt.Sprintf(`%[1]s push imageID docker://registry.example.com/repository:tag
   %[1]s push imageID docker-daemon:image:tagi
@@ -240,6 +253,12 @@ func pushCmd(c *cobra.Command, args []string, iopts *pushOptions) error {
 	}
 	if flagChanged(c, "compression-level") {
 		options.CompressionLevel = &iopts.compressionLevel
+	}
+
+	// check if the cr option is set to only and return before push.
+	if iopts.crOption == CrOptionOnly {
+		logger.Info("Only push image cr to the dest registry")
+		return nil
 	}
 
 	ref, digest, err := buildah.Push(getContext(), src, dest, options)
