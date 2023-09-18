@@ -60,6 +60,7 @@ func (k *KubeadmRuntime) UpdateCertSANs(certSans []string) error {
 		k.initCert,
 		k.saveNewKubeadmConfig,
 		k.uploadConfigFromKubeadm,
+		k.syncCert,
 		k.deleteAPIServer,
 		k.showKubeadmCert,
 	}
@@ -136,7 +137,28 @@ func (k *KubeadmRuntime) InitCertsAndKubeConfigs() error {
 }
 
 func (k *KubeadmRuntime) initCert() error {
-	return k.runPipelines("init cert", k.GenerateCert, k.SendNewCertAndKeyToMasters)
+	return k.runPipelines("init cert", k.GenerateCert, func() error {
+		return k.sendNewCertAndKey([]string{k.getMaster0IPAndPort()})
+	})
+}
+
+func (k *KubeadmRuntime) syncCert() error {
+	return k.runPipelines("sync all masters cert", func() error {
+		for _, master := range k.getMasterIPList()[1:] {
+			logger.Debug("start to generate cert for master %s", master)
+			err := k.execCert(master)
+			if err != nil {
+				return fmt.Errorf("failed to create cert for master %s: %v", master, err)
+			}
+
+			err = k.copyMasterKubeConfig(master)
+			if err != nil {
+				return err
+			}
+			logger.Info("succeeded generate cert %s as master", master)
+		}
+		return nil
+	})
 }
 
 func (k *KubeadmRuntime) showKubeadmCert() error {
