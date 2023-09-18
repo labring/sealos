@@ -15,8 +15,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.2
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.13.0
   name: apps.app.sealos.io
 spec:
   group: app.sealos.io
@@ -119,13 +118,115 @@ spec:
     subresources:
       status: {}
 ---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.13.0
+  name: templates.app.sealos.io
+spec:
+  group: app.sealos.io
+  names:
+    kind: Template
+    listKind: TemplateList
+    plural: templates
+    singular: template
+  scope: Namespaced
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: Template is the Schema for the templates API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: TemplateSpec defines the desired state of Template
+            properties:
+              author:
+                type: string
+              defaults:
+                additionalProperties:
+                  properties:
+                    type:
+                      type: string
+                    value:
+                      type: string
+                  required:
+                  - type
+                  - value
+                  type: object
+                type: object
+              description:
+                type: string
+              git_repo:
+                type: string
+              icon:
+                type: string
+              inputs:
+                additionalProperties:
+                  properties:
+                    description:
+                      type: string
+                    required:
+                      type: boolean
+                    type:
+                      type: string
+                    value:
+                      type: string
+                  required:
+                  - description
+                  - required
+                  - type
+                  - value
+                  type: object
+                type: object
+              readme:
+                type: string
+              template_type:
+                type: string
+              title:
+                type: string
+              url:
+                type: string
+            required:
+            - author
+            - defaults
+            - description
+            - git_repo
+            - icon
+            - inputs
+            - readme
+            - template_type
+            - title
+            - url
+            type: object
+          status:
+            description: TemplateStatus defines the observed state of Template
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    app.kuberentes.io/instance: controller-manager
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: app
+    app.kubernetes.io/instance: controller-manager-sa
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: serviceaccount
     app.kubernetes.io/part-of: app
@@ -180,7 +281,6 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
   name: app-manager-role
 rules:
 - apiGroups:
@@ -198,17 +298,15 @@ rules:
 - apiGroups:
   - app.sealos.io
   resources:
-  - apps/finalizers
+  - templates
   verbs:
-  - update
-- apiGroups:
-  - app.sealos.io
-  resources:
-  - apps/status
-  verbs:
+  - create
+  - delete
   - get
+  - list
   - patch
   - update
+  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -360,29 +458,13 @@ spec:
       labels:
         control-plane: controller-manager
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/arch
-                operator: In
-                values:
-                - amd64
-                - arm64
-                - ppc64le
-                - s390x
-              - key: kubernetes.io/os
-                operator: In
-                values:
-                - linux
       containers:
       - args:
         - --secure-listen-address=0.0.0.0:8443
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
         - --v=0
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.0
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.14.1
         name: kube-rbac-proxy
         ports:
         - containerPort: 8443

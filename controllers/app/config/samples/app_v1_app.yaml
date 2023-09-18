@@ -1,6 +1,12 @@
 apiVersion: app.sealos.io/v1
 kind: App
 metadata:
+  labels:
+    app.kubernetes.io/name: app
+    app.kubernetes.io/instance: app-sample
+    app.kubernetes.io/part-of: app
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: app
   name: app-sample
 spec:
   name: laf

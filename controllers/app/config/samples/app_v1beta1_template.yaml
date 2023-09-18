@@ -1,0 +1,42 @@
+apiVersion: app.sealos.io/v1beta1
+kind: Template
+metadata:
+  labels:
+    app.kubernetes.io/name: template
+    app.kubernetes.io/instance: template-sample
+    app.kubernetes.io/part-of: app
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: app
+  name: template-sample
+spec:
+  title: 'FastGpt'
+  url: 'https://fastgpt.run/'
+  git_repo: 'https://github.com/labring/FastGPT'
+  author: 'sealos'
+  description: 'Fast GPT allows you to use your own openai API KEY to quickly call the openai interface, currently integrating Gpt35, Gpt4 and embedding. You can build your own knowledge base.'
+  readme: 'https://raw.githubusercontent.com/labring/FastGPT/main/README.md'
+  icon: 'https://avatars.githubusercontent.com/u/50446880?s=96&v=4'
+  template_type: inline
+  defaults:
+    app_name:
+      type: string
+      value: fastgpt-${{ random(8) }}
+    app_host:
+      type: string
+      value: ${{ random(8) }}
+  inputs:
+    root_password:
+      description: 'root用户密码，用户名为: root'
+      type: string
+      default: ''
+      required: true
+    base_url:
+      description: 'api 基础地址，官方 key 不需要改'
+      type: string
+      default: 'https://api.openai.com/v1'
+      required: true
+    api_key:
+      description: 'openai api key'
+      type: string
+      default: ''
+      required: true
