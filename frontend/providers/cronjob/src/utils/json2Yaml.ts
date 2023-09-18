@@ -1,10 +1,11 @@
 import { CronJobEditType } from '@/types/job';
-import { str2Num } from '@/utils/tools';
+import { getUserTimeZone, str2Num } from '@/utils/tools';
 import yaml from 'js-yaml';
 import { getUserServiceAccount } from './user';
 
 export const json2CronJob = (data: CronJobEditType) => {
   const serviceAccount = getUserServiceAccount();
+  const timeZone = getUserTimeZone();
 
   const metadata = {
     name: data.jobName,
@@ -106,6 +107,7 @@ export const json2CronJob = (data: CronJobEditType) => {
       schedule: data.schedule,
       successfulJobsHistoryLimit: 3,
       failedJobsHistoryLimit: 3,
+      timeZone: timeZone,
       jobTemplate: {
         activeDeadlineSeconds: 600,
         spec: {
