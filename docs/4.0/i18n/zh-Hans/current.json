@@ -63,6 +63,10 @@
     "message": "Sealos 命令说明",
     "description": "The label for category Sealos 命令说明 in sidebar docSidebar"
   },
+  "sidebar.docSidebar.category.baas": {
+    "message": "后端即服务",
+    "description": "The label for category baas in sidebar docSidebar"
+  },
   "sidebar.docSidebar.category.low-code-platform": {
     "message": "低代码平台",
     "description": "The label for category low-code-platform in sidebar docSidebar"
