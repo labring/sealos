@@ -1,0 +1,62 @@
+# cluster-vminsert.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: vminsert
+  namespace: monitor-system
+  labels:
+    app: vminsert
+spec:
+  ports:
+    - name: http
+      port: 8480
+      targetPort: http
+  selector:
+    app: vminsert
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vminsert
+  namespace: monitor-system
+  labels:
+    app: vminsert
+spec:
+  selector:
+    matchLabels:
+      app: vminsert
+  template:
+    metadata:
+      labels:
+        app: vminsert
+    spec:
+      containers:
+        - name: vminsert
+          securityContext:                 
+            allowPrivilegeEscalation: false
+          image: "victoriametrics/vminsert:v1.77.0-cluster"
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - --storageNode=vmstorage-0.cluster-vmstorage.monitor-system.svc.cluster.local:8400
+            - --storageNode=vmstorage-1.cluster-vmstorage.monitor-system.svc.cluster.local:8400
+            - --envflag.enable=true
+            - --envflag.prefix=VM_
+            - --loggerFormat=json
+          ports:
+            - name: http
+              containerPort: 8480
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3

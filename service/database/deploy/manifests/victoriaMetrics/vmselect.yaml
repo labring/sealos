@@ -1,0 +1,69 @@
+# cluster-vmselect.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: vmselect
+  namespace: monitor-system
+  labels:
+    app: vmselect
+spec:
+  ports:
+    - name: http
+      port: 8481
+      targetPort: http
+  selector:
+    app: vmselect
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vmselect
+  namespace: monitor-system
+  labels:
+    app: vmselect
+spec:
+  selector:
+    matchLabels:
+      app: vmselect
+  template:
+    metadata:
+      labels:
+        app: vmselect
+    spec:
+      containers:
+        - name: vmselect
+          securityContext:                 
+            allowPrivilegeEscalation: false
+          image: "victoriametrics/vmselect:v1.77.0-cluster"
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - "--cacheDataPath=/cache"
+            - --storageNode=vmstorage-0.cluster-vmstorage.monitor-system.svc.cluster.local:8401
+            - --storageNode=vmstorage-1.cluster-vmstorage.monitor-system.svc.cluster.local:8401
+            - --envflag.enable=true
+            - --envflag.prefix=VM_
+            - --loggerFormat=json
+          ports:
+            - name: http
+              containerPort: 8481
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - mountPath: /cache
+              name: cache-volume
+      volumes:
+        - name: cache-volume
+          emptyDir: {}

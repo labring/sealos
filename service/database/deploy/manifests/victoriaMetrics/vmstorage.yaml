@@ -1,0 +1,88 @@
+# cluster-vmstorage.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: cluster-vmstorage
+  namespace: monitor-system
+  labels:
+    app: vmstorage
+spec:
+  clusterIP: None #因为你是一个Statefulset，所以要用一个headless无头服务来着的
+  ports:
+    - port: 8482
+      targetPort: http
+      name: http
+    - port: 8401
+      targetPort: vmselect
+      name: vmselect
+    - port: 8400
+      targetPort: vminsert
+      name: vminsert
+  selector:
+    app: vmstorage
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vmstorage
+  namespace: monitor-system
+  labels:
+    app: vmstorage
+spec:
+  serviceName: cluster-vmstorage
+  selector:
+    matchLabels:
+      app: vmstorage
+  replicas: 2
+  podManagementPolicy: OrderedReady
+  template:
+    metadata:
+      labels:
+        app: vmstorage
+    spec:
+      containers:
+        - name: vmstorage
+          securityContext:                 
+            allowPrivilegeEscalation: false
+          image: "victoriametrics/vmstorage:v1.77.0-cluster"
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - "--retentionPeriod=1" #默认也是1个月
+            - "--storageDataPath=/storage"
+            - --envflag.enable=true
+            - --envflag.prefix=VM_
+            - --loggerFormat=json
+          ports:
+            - name: http #storage暴露的api接口
+              containerPort: 8482
+            - name: vminsert
+              containerPort: 8400
+            - name: vmselect
+              containerPort: 8401
+          livenessProbe:
+            failureThreshold: 10
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            tcpSocket:
+              port: http
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 5
+            httpGet:
+              path: /health
+              port: http
+          volumeMounts:
+            - name: storage
+              mountPath: /storage
+  volumeClaimTemplates: #因为你是一个无状态，所以这里要使用volumeClaimTemplates
+    - metadata:
+        name: storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "10Gi"
