@@ -47,11 +47,12 @@ func newStaticPodCmd() *cobra.Command {
 }
 
 type lvscarePod struct {
-	vip    string
-	master []string
-	image  string
-	name   string
-	print  bool
+	vip     string
+	master  []string
+	image   string
+	name    string
+	options []string
+	print   bool
 }
 
 func newLvscareCmd() *cobra.Command {
@@ -79,13 +80,14 @@ func newLvscareCmd() *cobra.Command {
 	lvscareCmd.Flags().StringVar(&obj.image, "image", v1beta1.DefaultLvsCareImage, "generator lvscare static pod image")
 	lvscareCmd.Flags().BoolVar(&setImage, "set-img", false, "update lvscare image to static pod")
 	lvscareCmd.Flags().StringSliceVar(&obj.master, "masters", []string{}, "generator masters addrs")
+	lvscareCmd.Flags().StringSliceVar(&obj.options, "options", []string{}, "lvscare args options")
 	lvscareCmd.Flags().BoolVar(&obj.print, "print", false, "is print yaml")
 	return lvscareCmd
 }
 
 func genNewPod(obj lvscarePod) error {
 	fileName := fmt.Sprintf("%s.%s", obj.name, constants.YamlFileSuffix)
-	yaml, err := ipvs.LvsStaticPodYaml(obj.vip, obj.master, obj.image, obj.name)
+	yaml, err := ipvs.LvsStaticPodYaml(obj.vip, obj.master, obj.image, obj.name, obj.options)
 	if err != nil {
 		return err
 	}
