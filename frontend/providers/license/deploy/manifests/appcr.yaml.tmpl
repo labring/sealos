@@ -1,0 +1,21 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: license
+  namespace: app-system
+spec:
+  data:
+    desc: license
+    url: "https://license.{{ .cloudDomain }}"
+  icon: "https://license.{{ .cloudDomain }}/logo.svg"
+  menuData:
+    helpDropDown: false
+    nameColor: text-black
+  name: license
+  type: iframe
+  displayType: normal
+  i18n:
+    zh:
+      name: 定时任务
+    zh-Hans:
+      name: 定时任务
