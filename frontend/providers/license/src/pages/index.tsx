@@ -8,8 +8,10 @@ import { Box, Flex, Icon, Image, Link, Text, Button } from '@chakra-ui/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { debounce } from 'lodash';
 import { useState } from 'react';
+import { useTranslation } from 'next-i18next';
 
 export default function LicenseApp() {
+  const { t } = useTranslation();
   const [files, setFiles] = useState<FileItemType[]>([]);
   const { toast } = useToast();
   const [page, setPage] = useState(1);
@@ -57,23 +59,23 @@ export default function LicenseApp() {
             maxH="100%" // 设置图片的最大高度为100%以适应空间
           />
         </Box>
-        <Box position={'absolute'} color={'#FFF'} top="200px" left={'100px'}>
+        <Box position={'absolute'} color={'#FFF'}>
           <Text fontSize={'32px'} fontWeight={600}>
-            购买 License
+            {t('Purchase License')}
           </Text>
           <Box mt="45px">
-            请前往
+            {t('Please go to')}
             <Link px="4px" color={'#36ADEF'} href="https://cloud.sealos.io/license" isExternal>
               https://cloud.sealos.io/license
             </Link>
-            进行购买
+            {t('Buy')}
           </Box>
         </Box>
       </Flex>
       {/* rihgt */}
       <Box w="50%" pr="70px">
         <Text color={'#262A32'} fontSize={'24px'} fontWeight={600} mt="34px">
-          激活 License
+          {t('Activate License')}
         </Text>
         <FileSelect fileExtension={'.txt'} files={files} setFiles={setFiles} />
         <Flex
@@ -90,12 +92,12 @@ export default function LicenseApp() {
           onClick={activeLicense}
         >
           <Text color={'#fff'} fontSize={'14px'} fontWeight={500}>
-            {licenseMutation.isLoading ? 'loading' : '激活 License'}
+            {licenseMutation.isLoading ? 'loading' : t('Activate License')}
           </Text>
         </Flex>
         <Box bg={'#DEE0E2'} h={'1px'} w="100%" mt="26px"></Box>
         <Text mt="26px" color={'#262A32'} fontSize={'20px'} fontWeight={600}>
-          激活记录
+          {t('Activation Record')}
         </Text>
         <Box mt="12px" height={'300px'} overflowY={'scroll'}>
           {data?.items?.map((license, i) => (
@@ -118,7 +120,7 @@ export default function LicenseApp() {
                 {license.payload?.amt}
               </Text>
               <Text color={'#5A646E'} fontSize={'12px'} fontWeight={500} ml="auto">
-                激活时间：{license.meta.createTime}
+                {t('Activation time')} {license.meta.createTime}
               </Text>
 
               <Flex

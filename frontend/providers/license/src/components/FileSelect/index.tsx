@@ -179,7 +179,7 @@ const FileSelect = ({ fileExtension, setFiles, files, ...props }: Props) => {
         cursor={'pointer'}
         onClick={onOpen}
       >
-        上传 Token 文件
+        {t('Upload Token File')}
       </Text>
       <Box
         w="106px"
