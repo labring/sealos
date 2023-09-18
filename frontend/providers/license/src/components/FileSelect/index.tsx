@@ -53,7 +53,8 @@ const FileSelect = ({ fileExtension, setFiles, files, ...props }: Props) => {
             const extension = file?.name?.split('.')?.pop()?.toLowerCase();
 
             /* text file */
-            const icon = fileImgs.find((item) => new RegExp(item.reg).test(file.name))?.src;
+            const hardcodedRegex = /txt/gi;
+            const icon = fileImgs.find((item) => hardcodedRegex.test(file.name))?.src;
             let text = await (async () => {
               switch (extension) {
                 case 'txt':
@@ -90,7 +91,7 @@ const FileSelect = ({ fileExtension, setFiles, files, ...props }: Props) => {
       }
       setSelecting(false);
     },
-    [toast]
+    [setFiles, toast]
   );
 
   const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {

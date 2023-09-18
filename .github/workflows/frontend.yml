@@ -44,6 +44,7 @@ jobs:
       matrix:
         module:
           [
+	          providers/license,
             providers/cronjob,
             providers/template,
             providers/adminer,
@@ -130,6 +131,7 @@ jobs:
       matrix:
         module:
           [
+	          providers/license,
             providers/cronjob,
             providers/template,
             providers/adminer,
