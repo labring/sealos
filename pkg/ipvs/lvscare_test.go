@@ -25,9 +25,6 @@ var want = []string{
 kind: Pod
 metadata:
   creationTimestamp: null
-  labels:
-    component: kube-sealos-lvscare
-    tier: control-plane
   name: kube-sealos-lvscare
   namespace: kube-system
 spec:
@@ -35,7 +32,7 @@ spec:
   - args:
     - care
     - --vs
-    - 10.10.10.10:6443
+    - 10.10.10.10
     - --health-path
     - /healthz
     - --health-schem
@@ -46,6 +43,7 @@ spec:
     - 116.31.96.135:6443
     - --rs
     - 116.31.96.136:6443
+    - --aa
     command:
     - /usr/bin/lvscare
     image: fanux/lvscare:latest
@@ -59,7 +57,7 @@ spec:
       name: lib-modules
       readOnly: true
   hostNetwork: true
-  priorityClassName: system-cluster-critical
+  priorityClassName: system-node-critical
   volumes:
   - hostPath:
       path: /lib/modules
@@ -92,7 +90,7 @@ func TestLvsStaticPodYaml(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := LvsStaticPodYaml(tt.args.vip, tt.args.masters, tt.args.image, constants.LvsCareStaticPodName); got != tt.want {
+			if got, _ := LvsStaticPodYaml(tt.args.vip, tt.args.masters, tt.args.image, constants.LvsCareStaticPodName, []string{"--aa"}); got != tt.want {
 				t.Errorf("LvsStaticPodYaml() = %v, want %v", got, tt.want)
 			}
 		})
