@@ -24,8 +24,6 @@ require (
 	github.com/imdario/mergo v0.3.16
 	github.com/labring/image-cri-shim v0.0.0
 	github.com/labring/lvscare v0.0.0
-	github.com/labring/sealos/controllers/account v0.0.0
-	github.com/labring/sealos/controllers/imagehub v0.0.0
 	github.com/labring/sreg v0.1.1
 	github.com/manifoldco/promptui v0.9.0
 	github.com/modood/table v0.0.0-20220527013332-8d47e76dad33
@@ -146,7 +144,6 @@ require (
 	github.com/klauspost/compress v1.16.5 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/kr/fs v0.1.0 // indirect
-	github.com/labring/sealos/controllers/user v0.0.0 // indirect
 	github.com/letsencrypt/boulder v0.0.0-20230213213521-fdfea0d469b6 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/lithammer/dedent v1.1.0 // indirect
@@ -283,9 +280,5 @@ replace (
 
 replace (
 	github.com/labring/image-cri-shim => ./staging/src/github.com/labring/image-cri-shim
-	github.com/labring/lvscare => ./staging/src/github.com/labring/lvscare
 	github.com/labring/sealos => ./
-	github.com/labring/sealos/controllers/account => ./controllers/account
-	github.com/labring/sealos/controllers/imagehub => ./controllers/imagehub
-	github.com/labring/sealos/controllers/user => ./controllers/user
 )

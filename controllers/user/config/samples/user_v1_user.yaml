@@ -1,6 +1,0 @@
-apiVersion: user.sealos.io/v1
-kind: User
-metadata:
-  name: f8699ded-58d3-432b-a9ff-56568b57a38d
-spec:
-  csrExpirationSeconds: 1000000000
