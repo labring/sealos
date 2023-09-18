@@ -90,13 +90,13 @@ function NamespaceMenu({
               key={v}
               {...(idx === namespaceIdx
                 ? {
-                  color: '#0884DD',
-                  bg: '#F4F6F8'
-                }
+                    color: '#0884DD',
+                    bg: '#F4F6F8'
+                  }
                 : {
-                  color: '#5A646E',
-                  bg: '#FDFDFE'
-                })}
+                    color: '#5A646E',
+                    bg: '#FDFDFE'
+                  })}
               h="30px"
               fontFamily="PingFang SC"
               fontSize="12px"
@@ -362,52 +362,53 @@ function InOutTabPanel({ namespace }: { namespace: string }) {
   );
   const { t } = useTranslation();
   const tableResult = data?.data?.status?.item || [];
-  return (<TabPanel p="0">
-    <Flex alignItems={'center'} flexWrap={'wrap'}>
-      <Flex align={'center'} mb={'24px'}>
-        <Text fontSize={'12px'} mr={'12px'} width={['60px', '60px', 'auto', 'auto']}>
-          {t('Transaction Time')}
-        </Text>
-        <SelectRange isDisabled={isFetching}></SelectRange>
-      </Flex>
-      <Flex align={'center'} mb={'24px'}>
-        <Text fontSize={'12px'} mr={'12px'} width={['60px', '60px', 'auto', 'auto']}>
-          {t('Type')}
-        </Text>
-        <TypeMenu
-          selectType={selectType}
-          setType={setType}
-          isDisabled={isFetching}
-          optional={[BillingType.ALL, BillingType.CONSUME, BillingType.RECHARGE]}
-        />
-      </Flex>
-      <SearchBox isDisabled={isFetching} setOrderID={setOrderID} />
-    </Flex>
-    {isSuccess && tableResult.length > 0 ? (
-      <>
-        <Box overflow={'auto'}>
-          <CommonBillingTable
-            data={tableResult.filter((x) =>
-              [BillingType.CONSUME, BillingType.RECHARGE].includes(x.type)
-            )}
-          />
-        </Box>
-        <Flex justifyContent={'flex-end'}>
-          <SwitchPage
-            totalPage={totalPage}
-            totalItem={totalItem}
-            pageSize={pageSize}
-            currentPage={currentPage}
-            setCurrentPage={setcurrentPage}
+  return (
+    <TabPanel p="0">
+      <Flex alignItems={'center'} flexWrap={'wrap'}>
+        <Flex align={'center'} mb={'24px'}>
+          <Text fontSize={'12px'} mr={'12px'} width={['60px', '60px', 'auto', 'auto']}>
+            {t('Transaction Time')}
+          </Text>
+          <SelectRange isDisabled={isFetching}></SelectRange>
+        </Flex>
+        <Flex align={'center'} mb={'24px'}>
+          <Text fontSize={'12px'} mr={'12px'} width={['60px', '60px', 'auto', 'auto']}>
+            {t('Type')}
+          </Text>
+          <TypeMenu
+            selectType={selectType}
+            setType={setType}
+            isDisabled={isFetching}
+            optional={[BillingType.ALL, BillingType.CONSUME, BillingType.RECHARGE]}
           />
         </Flex>
-      </>
-    ) : (
-      <Flex direction={'column'} w="full" align={'center'} flex={'1'} h={'0'} justify={'center'}>
-        <NotFound></NotFound>
+        <SearchBox isDisabled={isFetching} setOrderID={setOrderID} />
       </Flex>
-    )}
-  </TabPanel>
+      {isSuccess && tableResult.length > 0 ? (
+        <>
+          <Box overflow={'auto'}>
+            <CommonBillingTable
+              data={tableResult.filter((x) =>
+                [BillingType.CONSUME, BillingType.RECHARGE].includes(x.type)
+              )}
+            />
+          </Box>
+          <Flex justifyContent={'flex-end'}>
+            <SwitchPage
+              totalPage={totalPage}
+              totalItem={totalItem}
+              pageSize={pageSize}
+              currentPage={currentPage}
+              setCurrentPage={setcurrentPage}
+            />
+          </Flex>
+        </>
+      ) : (
+        <Flex direction={'column'} w="full" align={'center'} flex={'1'} h={'0'} justify={'center'}>
+          <NotFound></NotFound>
+        </Flex>
+      )}
+    </TabPanel>
   );
 }
 function TransferTabPanel({ namespace }: { namespace: string }) {
