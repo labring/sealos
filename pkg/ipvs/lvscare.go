@@ -32,7 +32,7 @@ const (
 	LvsCareCommand = "/usr/bin/lvscare"
 )
 
-func LvsStaticPodYaml(vip string, masters []string, image, name string) (string, error) {
+func LvsStaticPodYaml(vip string, masters []string, image, name string, options []string) (string, error) {
 	if vip == "" || len(masters) == 0 {
 		return "", fmt.Errorf("vip and mster not allow empty")
 	}
@@ -43,6 +43,9 @@ func LvsStaticPodYaml(vip string, masters []string, image, name string) (string,
 	for _, m := range masters {
 		args = append(args, "--rs")
 		args = append(args, m)
+	}
+	if len(options) > 0 {
+		args = append(args, options...)
 	}
 	flag := true
 	pod := componentPod(v1.Container{
@@ -108,9 +111,10 @@ func componentPod(container v1.Container) v1.Pod {
 			Namespace: metav1.NamespaceSystem,
 		},
 		Spec: v1.PodSpec{
-			Containers:  []v1.Container{container},
-			HostNetwork: true,
-			Volumes:     volumes,
+			Containers:        []v1.Container{container},
+			HostNetwork:       true,
+			Volumes:           volumes,
+			PriorityClassName: "system-node-critical",
 		},
 	}
 }

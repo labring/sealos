@@ -23,7 +23,7 @@
 
 </div>
 
-![](/docs/4.0/img/sealos-desktop.webp)
+https://github.com/labring/sealos/assets/82700206/b1f8a25a-55cf-4d15-a47b-38cf7d507134
 
 > [文档](https://www.sealos.io/docs/Intro) | [English](README.md) | [发展规划](https://github.com/orgs/labring/projects/4/views/9)
 
