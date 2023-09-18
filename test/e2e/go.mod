@@ -6,9 +6,6 @@ replace (
 	github.com/labring/image-cri-shim => ../../staging/src/github.com/labring/image-cri-shim
 	github.com/labring/lvscare => ../../staging/src/github.com/labring/lvscare
 	github.com/labring/sealos => ../../
-	github.com/labring/sealos/controllers/cluster => ../../controllers/cluster
-	github.com/labring/sealos/controllers/imagehub => ../../controllers/imagehub
-	github.com/labring/sealos/controllers/infra => ../../controllers/infra
 )
 
 replace (
@@ -22,7 +19,6 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/labring/image-cri-shim v0.0.0
 	github.com/labring/sealos v0.0.0
-	github.com/labring/sealos/controllers/infra v0.0.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/onsi/ginkgo/v2 v2.9.7
 	github.com/onsi/gomega v1.27.8
@@ -124,8 +120,6 @@ require (
 	github.com/klauspost/compress v1.16.5 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/kr/fs v0.1.0 // indirect
-	github.com/labring/sealos/controllers/cluster v0.0.0-20230417222036-c48922461ea6 // indirect
-	github.com/labring/sealos/controllers/common v0.0.0-20230528031239-655196af17c7 // indirect
 	github.com/letsencrypt/boulder v0.0.0-20230213213521-fdfea0d469b6 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/manifoldco/promptui v0.9.0 // indirect

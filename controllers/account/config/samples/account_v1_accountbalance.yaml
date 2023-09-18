@@ -1,7 +1,0 @@
-apiVersion: account.sealos.io/v1
-kind: AccountBalance
-metadata:
-  name: accountbalance-sample
-spec:
-  owner: "account-sample"
-  amount: 100
