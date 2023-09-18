@@ -7,13 +7,11 @@ Official website: https://fireboom.cloud
 
 **Features**
 
-```
 - Minute-level delivery: Reduce the interface development time from 2 days to 2 minutes in traditional mode.
 
 - Front-end to full-stack: Visual development significantly reduces the threshold for interface development, allowing front-end developers to easily become full-stack developers.
 
 - Back-end without bricklaying: Declarative programming avoids copy and paste, reduces the probability of bugs, and allows back-end developers to focus on business development.
-```
 
 ## Step 1: Create a New Application
 
