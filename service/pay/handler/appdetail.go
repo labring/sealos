@@ -9,15 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type PMDetail struct {
-	PayMethod     string   `bson:"payMethod"`
-	Currency      string   `bson:"currency"`
-	AmountOptions []string `bson:"amountOptions"`
-	ExchangeRate  float64  `bson:"exchangeRate"`
-	TaxRate       float64  `bson:"taxRate"`
-}
-
-func GetAppDetails(request *helper.Request, client *mongo.Client) ([]PMDetail, error) {
+func GetAppDetails(request *helper.Request, client *mongo.Client) ([]helper.PayMethodDetail, error) {
 	appID := request.AppID
 	filter := bson.D{{Key: "appID", Value: appID}}
 	appColl := helper.InitDBAndColl(client, helper.Database, helper.AppColl)
@@ -30,7 +22,7 @@ func GetAppDetails(request *helper.Request, client *mongo.Client) ([]PMDetail, e
 	if !ok {
 		return nil, fmt.Errorf("methods type assertion failed")
 	}
-	var payDetails []PMDetail
+	var payDetails []helper.PayMethodDetail
 	for _, method := range methods {
 		pmColl := helper.InitDBAndColl(client, helper.Database, helper.PayMethodColl)
 		filter := bson.D{{Key: "payMethod", Value: method}}
@@ -41,7 +33,7 @@ func GetAppDetails(request *helper.Request, client *mongo.Client) ([]PMDetail, e
 			return nil, fmt.Errorf("query error: %v", err)
 		}
 		// Retrieve documents for the current payment method
-		var methodPayDetails []PMDetail
+		var methodPayDetails []helper.PayMethodDetail
 		if err := cursor.All(context.TODO(), &methodPayDetails); err != nil {
 			return nil, fmt.Errorf("cursor error: %v", err)
 		}

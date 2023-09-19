@@ -39,7 +39,7 @@ func InsertPayMethod(request *helper.Request, client *mongo.Client) (*mongo.Inse
 	coll := helper.InitDBAndColl(client, helper.Database, helper.PayMethodColl)
 
 	docs := []interface{}{
-		PMDetail{
+		helper.PayMethodDetail{
 			PayMethod:     payMethod,
 			Currency:      currency,
 			AmountOptions: amountOptions,

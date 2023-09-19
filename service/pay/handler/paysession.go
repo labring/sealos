@@ -13,26 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type PaymentDetails struct {
-	OrderID   string `bson:"orderID"`
-	User      string `bson:"user"`
-	Amount    string `bson:"amount"`
-	Currency  string `bson:"currency"`
-	PayTime   string `bson:"payTime"`
-	PayMethod string `bson:"payMethod"`
-	AppID     int64  `bson:"appID"`
-	Status    string `bson:"status"`
-}
-
-type OrderDetails struct {
-	OrderID     string                 `bson:"orderID"`
-	Amount      string                 `bson:"amount"`
-	PayTime     string                 `bson:"paytime"`
-	PayMethod   string                 `bson:"payMethod"`
-	AppID       int64                  `bson:"appID"`
-	DetailsData map[string]interface{} `bson:"detailsdata"`
-}
-
 // InsertDetails inserts data into both the payment_details and order_details tables and ensures transactionality
 func InsertDetails(client *mongo.Client, user, payMethod, amount, currency string, appID int64, details map[string]interface{}) (string, error) {
 	// create transaction options
@@ -56,7 +36,7 @@ func InsertDetails(client *mongo.Client, user, payMethod, amount, currency strin
 		}
 
 		// the insertion of data to the orderDetailsColl in a transaction
-		if err := InsertOrderDetails(client, appID, orderID, amount, payMethod, currency, details); err != nil {
+		if err := InsertOrderDetails(client, appID, user, orderID, amount, payMethod, currency, details); err != nil {
 			fmt.Println("insert order details failed:", err)
 			return nil, fmt.Errorf("insert order details failed: %v", err)
 		}
@@ -82,7 +62,7 @@ func InsertPaymentDetails(client *mongo.Client, user, payMethod, amount, currenc
 		return "", fmt.Errorf("create order id failed: %w", err)
 	}
 	docs := []interface{}{
-		PaymentDetails{
+		helper.PaymentDetails{
 			OrderID:   orderID,
 			User:      user,
 			Amount:    amount,
@@ -102,7 +82,7 @@ func InsertPaymentDetails(client *mongo.Client, user, payMethod, amount, currenc
 	return orderID, nil
 }
 
-func InsertOrderDetails(client *mongo.Client, appID int64, orderID, amount, payMethod, currency string, details map[string]interface{}) error {
+func InsertOrderDetails(client *mongo.Client, appID int64, user, orderID, amount, payMethod, currency string, details map[string]interface{}) error {
 	coll := helper.InitDBAndColl(client, helper.Database, helper.OrderDetailsColl)
 	// switched to the Chinese time zone and optimized the format
 	payTime := time.Now().UTC().In(time.FixedZone("CST", 8*60*60)).Format("2006-01-02 15:04:05")
@@ -122,9 +102,10 @@ func InsertOrderDetails(client *mongo.Client, appID int64, orderID, amount, payM
 	newAmountStr := strconv.FormatFloat(newAmount, 'f', 2, 64)
 
 	docs := []interface{}{
-		OrderDetails{
+		helper.OrderDetails{
 			OrderID:     orderID,
 			Amount:      newAmountStr,
+			User:        user,
 			PayTime:     payTime,
 			PayMethod:   payMethod,
 			AppID:       appID,

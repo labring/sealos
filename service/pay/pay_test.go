@@ -93,8 +93,9 @@ func TestGetPayStatus(t *testing.T) {
 		"sign":      helper.TestSign,
 		"orderID":   helper.TestOrderID,
 		"payMethod": helper.Stripe,
+		"user":      helper.TestUser,
 		"sessionID": helper.TestSessionID,
-		// "TradeNO": "db27af04c65bd27bb3c3708addbafc01",
+		//"TradeNO": 	 helper.TestTradeNO,
 	}
 	createPayTest(t, data, http.MethodGet, helper.GetPayStatus)
 }
@@ -105,6 +106,7 @@ func TestGetPayStatus_seesionIDLXD(t *testing.T) {
 		"sign":      helper.TestSign,
 		"orderID":   helper.TestOrderID,
 		"payMethod": helper.Stripe,
+		"user":      helper.TestUser,
 		"sessionID": helper.TestSessionID + "abc",
 		// "TradeNO": "db27af04c65bd27bb3c3708addbafc01",
 	}
@@ -118,6 +120,7 @@ func TestGetPayStatus_orderIDLXD(t *testing.T) {
 		"sign":      helper.TestSign,
 		"orderID":   helper.TestOrderID + "abc",
 		"payMethod": helper.Stripe,
+		"user":      helper.TestUser,
 		"sessionID": helper.TestSessionID,
 		// "TradeNO": "db27af04c65bd27bb3c3708addbafc01",
 	}
@@ -131,6 +134,20 @@ func TestGetPayStatus_payMethodLXD(t *testing.T) {
 		"sign":      helper.TestSign,
 		"orderID":   helper.TestOrderID,
 		"payMethod": helper.Wechat,
+		"user":      helper.TestUser,
+		"sessionID": helper.TestSessionID,
+		// "TradeNO": "db27af04c65bd27bb3c3708addbafc01",
+	}
+	createPayTest(t, data, http.MethodGet, helper.GetPayStatus)
+}
+
+func TestGetPayStatus_userLXD(t *testing.T) {
+	data := map[string]interface{}{
+		"appID":     helper.TestAppID,
+		"sign":      helper.TestSign,
+		"orderID":   helper.TestOrderID,
+		"payMethod": helper.Wechat,
+		"user":      helper.TestUser + "123",
 		"sessionID": helper.TestSessionID,
 		// "TradeNO": "db27af04c65bd27bb3c3708addbafc01",
 	}

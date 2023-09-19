@@ -9,17 +9,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type App struct {
-	AppID      int64    `bson:"appID"`
-	Sign       string   `bson:"sign"`
-	PayAppName string   `bson:"payAppName"`
-	Methods    []string `bson:"methods"`
-}
-
 func InsertApp(client *mongo.Client, appID int64, sign, appName string, methods []string) (*mongo.InsertManyResult, error) {
 	coll := helper.InitDBAndColl(client, helper.Database, helper.AppColl)
 	docs := []interface{}{
-		App{
+		helper.App{
 			AppID:      appID,
 			Sign:       sign,
 			PayAppName: appName,

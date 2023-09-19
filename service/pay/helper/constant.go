@@ -1,21 +1,5 @@
 package helper
 
-type Request struct {
-	AppID         int64    `json:"appID"`
-	Sign          string   `json:"sign"`
-	PayMethod     string   `json:"payMethod"`
-	Amount        string   `json:"amount"`
-	User          string   `json:"user"`
-	PayAppName    string   `json:"payAppName,omitempty"`
-	Currency      string   `json:"currency,omitempty"`
-	AmountOptions []string `json:"amountOptions,omitempty"`
-	ExchangeRate  float64  `json:"exchangeRate,omitempty"`
-	TaxRate       float64  `json:"taxRate,omitempty"`
-	TradeNO       string   `json:"tradeNO,omitempty"`
-	SessionID     string   `json:"sessionID,omitempty"`
-	OrderID       string   `json:"orderID,omitempty"`
-}
-
 // DB
 const (
 	DBURI = "dburi"
@@ -64,8 +48,8 @@ const (
 	GetBill         = "/bill"
 	TestAppID       = 66683568733697785
 	TestSign        = "597d7f10a27219"
-	TestUser        = "cx"
-	TestOrderID     = "VS4gw76Ej-wIzGa1p2"
-	TestSessionID   = "cs_test_a1GdmdhVBHivyUqtLdl9ILv1fXneuPIY5XdtlTpljHYInH1fPhGCN8KmWt"
-	TestTradeNO     = "db27af04c65bd27bb3c3708addbafc01"
+	TestUser        = "xy"
+	TestOrderID     = "8QC6mu7vSNJckVhpKv"
+	TestSessionID   = "cs_test_a1vbMHEx4iVfIWPoiJVVbBd7eecKDw8CDdJoLc7KRpahkMXYJ51EIlA1x5"
+	TestTradeNO     = "049dfbf0b96ae9e2fa54a4b8eed6ea34"
 )
