@@ -66,10 +66,8 @@ type TemplateSpec struct {
 	Readme       string       `json:"readme,omitempty"`
 	Icon         string       `json:"icon,omitempty"`
 	TemplateType TemplateType `json:"templateType"`
-	// +kubebuilder:pruning:PreserveUnknownFields
-	Defaults Defaults `json:"defaults,omitempty"`
-	// +kubebuilder:pruning:PreserveUnknownFields
-	Inputs Inputs `json:"inputs,omitempty"`
+	Defaults     Defaults     `json:"defaults,omitempty"`
+	Inputs       Inputs       `json:"inputs,omitempty"`
 }
 
 // TemplateStatus defines the observed state of Template
