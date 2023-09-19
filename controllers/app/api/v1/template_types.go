@@ -48,10 +48,10 @@ const (
 )
 
 type InputData struct {
-	Description string        `json:"description"`
+	Description string        `json:"description,omitempty"`
 	Type        InputDataType `json:"type"`
-	Default     string        `json:"value"`
-	Required    bool          `json:"required"`
+	Default     string        `json:"value,omitempty"`
+	Required    bool          `json:"required,omitempty"`
 }
 
 type Inputs map[string]InputData
@@ -59,15 +59,15 @@ type Inputs map[string]InputData
 // TemplateSpec defines the desired state of Template
 type TemplateSpec struct {
 	Title        string       `json:"title"`
-	URL          string       `json:"url"`
-	GitRepo      string       `json:"git_repo"`
-	Author       string       `json:"author"`
-	Description  string       `json:"description"`
-	Readme       string       `json:"readme"`
-	Icon         string       `json:"icon"`
-	TemplateType TemplateType `json:"template_type"`
-	Defaults     Defaults     `json:"defaults"`
-	Inputs       Inputs       `json:"inputs"`
+	URL          string       `json:"url,omitempty"`
+	GitRepo      string       `json:"gitRepo,omitempty"`
+	Author       string       `json:"author,omitempty"`
+	Description  string       `json:"description,omitempty"`
+	Readme       string       `json:"readme,omitempty"`
+	Icon         string       `json:"icon,omitempty"`
+	TemplateType TemplateType `json:"templateType"`
+	Defaults     Defaults     `json:"defaults,omitempty"`
+	Inputs       Inputs       `json:"inputs,omitempty"`
 }
 
 // TemplateStatus defines the observed state of Template

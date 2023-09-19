@@ -50,7 +50,7 @@ spec:
                 type: object
               description:
                 type: string
-              git_repo:
+              gitRepo:
                 type: string
               icon:
                 type: string
@@ -66,31 +66,20 @@ spec:
                     value:
                       type: string
                   required:
-                  - description
-                  - required
                   - type
-                  - value
                   type: object
                 type: object
               readme:
                 type: string
-              template_type:
+              templateType:
                 type: string
               title:
                 type: string
               url:
                 type: string
             required:
-            - author
-            - defaults
-            - description
-            - git_repo
-            - icon
-            - inputs
-            - readme
-            - template_type
+            - templateType
             - title
-            - url
             type: object
           status:
             description: TemplateStatus defines the observed state of Template
