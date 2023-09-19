@@ -8,16 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type BillDetail struct {
-	OrderID   string `bson:"orderID"`
-	Amount    string `bson:"amount"`
-	Currency  string `bson:"currency"`
-	PayTime   string `bson:"payTime"`
-	PayMethod string `bson:"payMethod"`
-	Status    string `bson:"status"`
-}
-
-func GetBillDetails(request *helper.Request, client *mongo.Client) ([]BillDetail, error) {
+func GetBillDetails(request *helper.Request, client *mongo.Client) ([]helper.BillDetail, error) {
 	coll := helper.InitDBAndColl(client, helper.Database, helper.PaymentDetailsColl)
 	filter := bson.D{
 		{Key: "user", Value: request.User},
@@ -31,7 +22,7 @@ func GetBillDetails(request *helper.Request, client *mongo.Client) ([]BillDetail
 	defer cursor.Close(context.Background())
 
 	// init result array
-	var billDetails []BillDetail
+	var billDetails []helper.BillDetail
 
 	if err := cursor.All(context.Background(), &billDetails); err != nil {
 		return nil, err

@@ -27,4 +27,5 @@ func GetSession(c *gin.Context, client *mongo.Client) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("paymethod is illegal: %v", request.PayMethod)})
 	}
 	// TODO At present, the Currency of wechat and stripe seems to be CNY, and then if there are other currencies, here needs to be changed
+	// TODO To prevent multiple orders from the same IP address, you need to add IP restrictions
 }

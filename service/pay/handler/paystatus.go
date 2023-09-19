@@ -72,14 +72,16 @@ func CheckOrderExistOrNot(client *mongo.Client, request *helper.Request) error {
 	orderID := request.OrderID
 	payMethod := request.PayMethod
 	appID := request.AppID
+	user := request.User
 	coll := helper.InitDBAndColl(client, helper.Database, helper.OrderDetailsColl)
 	filter := bson.D{
 		{Key: "orderID", Value: orderID},
 		{Key: "payMethod", Value: payMethod},
+		{Key: "user", Value: user},
 		{Key: "appID", Value: appID},
 	}
 	// Execute the MongoDB query
-	var result OrderDetails
+	var result helper.OrderDetails
 	err := coll.FindOne(context.Background(), filter).Decode(&result)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
