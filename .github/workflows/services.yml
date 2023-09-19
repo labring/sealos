@@ -74,7 +74,7 @@ jobs:
     strategy:
       matrix:
         ## TODO: add more modules
-        module: [ database ]
+        module: [ database, pay ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
