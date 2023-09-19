@@ -126,78 +126,80 @@ export default function TeamCenter() {
                 />
               </Box>
             </Stack>
-            <Box width={'730px'} borderRadius={'8px'} bgColor={'white'} h="100%">
-              <Box px="16px" py="20px">
-                <Text fontSize={'16px'} fontWeight={'600'}>
-                  管理 team
-                </Text>
-                <Box mx="10px" mt="22px">
-                  <Flex align={'center'}>
-                    <Text fontSize={'24px'} fontWeight={'600'} mr="8px">
-                      {teamName}
-                    </Text>
-                    <Box bgColor={'#ABADC3'} h="8px" w="8px" borderRadius={'50%'} />
-                    {isTeam && curTeamUser?.role === UserRole.Owner && (
-                      <DissolveTeam
-                        ml="auto"
+            {curTeamUser && (
+              <Box width={'730px'} borderRadius={'8px'} bgColor={'white'} h="100%">
+                <Box px="16px" py="20px">
+                  <Text fontSize={'16px'} fontWeight={'600'}>
+                    管理 team
+                  </Text>
+                  <Box mx="10px" mt="22px">
+                    <Flex align={'center'}>
+                      <Text fontSize={'24px'} fontWeight={'600'} mr="8px">
+                        {teamName}
+                      </Text>
+                      <Box bgColor={'#ABADC3'} h="8px" w="8px" borderRadius={'50%'} />
+                      {isTeam && curTeamUser.role === UserRole.Owner && (
+                        <DissolveTeam
+                          ml="auto"
+                          nsid={nsid}
+                          ns_uid={ns_uid}
+                          onSuccess={(delete_ns_uid) => {
+                            setNs_uid(default_ns_uid);
+                            setNsid(default_nsid);
+                          }}
+                        />
+                      )}
+                    </Flex>
+                    <Flex align={'center'} color={'#5A646E'} mt={'7px'} fontSize={'12px'}>
+                      <Text>Team ID: {nsid}</Text>
+                      <Box onClick={() => copyData(nsid)} cursor={'pointer'} ml="5px">
+                        <Iconfont
+                          iconName="icon-copy2"
+                          width={14}
+                          height={14}
+                          color="rgb(123, 131, 139)"
+                        ></Iconfont>
+                      </Box>
+                      <Text ml="24px">Created: {createTime ? formatTime(createTime) : ''}</Text>
+                    </Flex>
+                  </Box>
+                </Box>
+                <Divider bg={'rgba(0, 0, 0, 0.10)'} h="1px" />
+                <Stack mt="15px" mx="29px" flex={1}>
+                  <Flex align={'center'} gap="6px" mb={'12px'}>
+                    <Image src={'/images/list.svg'} w="20px" h="20px" />
+                    <Text>成员列表</Text>
+                    <Flex
+                      py="0px"
+                      px="6px"
+                      fontSize={'10px'}
+                      fontWeight={'600'}
+                      gap="10px"
+                      justifyContent={'center'}
+                      align={'center'}
+                      borderRadius="30px"
+                      background="#EFF0F1"
+                      color={'#5A646E'}
+                      minW="23px"
+                    >
+                      {users.length}
+                    </Flex>
+                    {isTeam && [UserRole.Owner, UserRole.Manager].includes(curTeamUser!.role) && (
+                      <InviteMember
+                        ownRole={curTeamUser.role ?? UserRole.Developer}
                         nsid={nsid}
                         ns_uid={ns_uid}
-                        onSuccess={(delete_ns_uid) => {
-                          setNs_uid(default_ns_uid);
-                          setNsid(default_nsid);
-                        }}
+                        buttonType="button"
+                        ml="auto"
                       />
                     )}
                   </Flex>
-                  <Flex align={'center'} color={'#5A646E'} mt={'7px'} fontSize={'12px'}>
-                    <Text>Team ID: {nsid}</Text>
-                    <Box onClick={() => copyData(nsid)} cursor={'pointer'} ml="5px">
-                      <Iconfont
-                        iconName="icon-copy2"
-                        width={14}
-                        height={14}
-                        color="rgb(123, 131, 139)"
-                      ></Iconfont>
-                    </Box>
-                    <Text ml="24px">Created: {createTime ? formatTime(createTime) : ''}</Text>
-                  </Flex>
-                </Box>
+                  <Box h="250px" overflow={'scroll'}>
+                    <UserTable users={users} isTeam={isTeam} ns_uid={ns_uid} nsid={nsid} />
+                  </Box>
+                </Stack>
               </Box>
-              <Divider bg={'rgba(0, 0, 0, 0.10)'} h="1px" />
-              <Stack mt="15px" mx="29px" flex={1}>
-                <Flex align={'center'} gap="6px" mb={'12px'}>
-                  <Image src={'/images/list.svg'} w="20px" h="20px" />
-                  <Text>成员列表</Text>
-                  <Flex
-                    py="0px"
-                    px="6px"
-                    fontSize={'10px'}
-                    fontWeight={'600'}
-                    gap="10px"
-                    justifyContent={'center'}
-                    align={'center'}
-                    borderRadius="30px"
-                    background="#EFF0F1"
-                    color={'#5A646E'}
-                    minW="23px"
-                  >
-                    {users.length}
-                  </Flex>
-                  {isTeam && [UserRole.Owner, UserRole.Manager].includes(curTeamUser!.role) && (
-                    <InviteMember
-                      ownRole={curTeamUser?.role ?? UserRole.Developer}
-                      nsid={nsid}
-                      ns_uid={ns_uid}
-                      buttonType="button"
-                      ml="auto"
-                    />
-                  )}
-                </Flex>
-                <Box h="250px" overflow={'scroll'}>
-                  <UserTable users={users} isTeam={isTeam} ns_uid={ns_uid} nsid={nsid} />
-                </Box>
-              </Stack>
-            </Box>
+            )}
           </ModalBody>
         </ModalContent>
       </Modal>

@@ -26,13 +26,6 @@ export const authSession = async (header: IncomingHttpHeaders) => {
     const username = kc.getCurrentUser()?.name;
     const user = payload.user;
     if (!username || user.k8s_username !== username) throw new Error('user is invaild');
-    // console.log('user',user)
-    const utn = await queryUTN({
-      userId: user.uid,
-      k8s_username: user.k8s_username,
-      namespaceId: user.ns_uid
-    });
-    if (!utn) return Promise.resolve(null);
     return Promise.resolve({ kc, user });
   } catch (err) {
     console.error(err);
