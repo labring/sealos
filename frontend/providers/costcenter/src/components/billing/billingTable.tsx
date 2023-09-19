@@ -81,13 +81,13 @@ export function CommonBillingTable({ data }: { data: BillingItem[] }) {
                         minW={'max-content'}
                         {...(item.type === BillingType.RECHARGE
                           ? {
-                            bg: '#E6F6F6',
-                            color: '#00A9A6'
-                          }
+                              bg: '#E6F6F6',
+                              color: '#00A9A6'
+                            }
                           : {
-                            bg: '#EBF7FD',
-                            color: '#0884DD'
-                          })}
+                              bg: '#EBF7FD',
+                              color: '#0884DD'
+                            })}
                         borderRadius="24px"
                         align={'center'}
                         justify={'space-evenly'}

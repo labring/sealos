@@ -5,6 +5,7 @@ import { nanoid } from 'nanoid';
 import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
 import styles from './index.module.scss';
+import useSessionStore from '@/stores/session';
 
 type Terminal = {
   id: string;
@@ -16,7 +17,7 @@ function Terminal({ url, site }: { url: string; site: string }) {
   const router = useRouter();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { query } = router;
-
+  const session = useSessionStore((s) => s.session);
   const [tabContents, setTabContents] = useState<Terminal[]>([
     {
       id: tabId,
@@ -37,7 +38,13 @@ function Terminal({ url, site }: { url: string; site: string }) {
         }
         if (e.data?.ttyd === 'ready') {
           const command = iframeRef.current?.getAttribute('data-command');
-          iframeRef?.current?.contentWindow?.postMessage({ command: command }, url);
+          iframeRef?.current?.contentWindow?.postMessage({ command }, url);
+          iframeRef.current?.contentWindow?.postMessage(
+            {
+              command: `kubectl config set-context --current --namespace=${session.user.nsid}`
+            },
+            url
+          );
         }
       } catch (error) {
         console.log(error, 'error');
