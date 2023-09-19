@@ -50,7 +50,7 @@ const (
 type InputData struct {
 	Description string        `json:"description,omitempty"`
 	Type        InputDataType `json:"type"`
-	Default     string        `json:"value,omitempty"`
+	Default     string        `json:"default,omitempty"`
 	Required    bool          `json:"required,omitempty"`
 }
 

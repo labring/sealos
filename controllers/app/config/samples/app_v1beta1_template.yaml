@@ -11,12 +11,12 @@ metadata:
 spec:
   title: 'FastGpt'
   url: 'https://fastgpt.run/'
-  git_repo: 'https://github.com/labring/FastGPT'
+  gitRepo: 'https://github.com/labring/FastGPT'
   author: 'sealos'
   description: 'Fast GPT allows you to use your own openai API KEY to quickly call the openai interface, currently integrating Gpt35, Gpt4 and embedding. You can build your own knowledge base.'
   readme: 'https://raw.githubusercontent.com/labring/FastGPT/main/README.md'
   icon: 'https://avatars.githubusercontent.com/u/50446880?s=96&v=4'
-  template_type: inline
+  templateType: inline
   defaults:
     app_name:
       type: string
