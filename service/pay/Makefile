@@ -1,5 +1,5 @@
 # Image URL to use all building/pushing image targets
-IMG ?=  ghcr.io/labring/sealos-auth-service:latest
+IMG ?=  ghcr.io/labring/sealos-pay-service:latest
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -12,6 +12,7 @@ endif
 PLATFORMS ?= linux_arm64 linux_amd64
 GOOS=linux
 CGO_ENABLED=0
+TARGETARCH=arm64
 GOARCH=$(shell go env GOARCH)
 
 GO_BUILD_FLAGS=-trimpath -ldflags "-s -w"
@@ -37,3 +38,21 @@ help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 
+##@ Build
+
+.PHONY: clean
+clean:
+	rm -f $(SERVICE_NAME)
+
+.PHONY: build
+build: clean ## Build service-hub binary.
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) go build $(GO_BUILD_FLAGS) -o bin/manager main.go
+
+.PHONY: docker-build
+docker-build: build
+	mv bin/manager bin/service-pay-$(TARGETARCH)
+	docker build -t $(IMG) .
+
+.PHONY: docker-push
+docker-push:
+	docker push $(IMG)

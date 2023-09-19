@@ -53,7 +53,7 @@ const (
 
 // Test
 const (
-	LOCALHOST       = "http://localhost:8080"
+	LOCALHOST       = "http://localhost:2303"
 	DNS             = "https://coqveoktbleo.dev.sealos.top"
 	GROUP           = "/v1alpha1/pay"
 	CreatePayMethod = "/method"

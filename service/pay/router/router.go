@@ -49,8 +49,8 @@ func RegisterPayRouter() {
 
 	// Start the HTTP server to listen on port 8080, accept the request, and process it
 	go func() {
-		err := router.Run(":8080")
-		fmt.Println("pay service is running on port 8080")
+		err := router.Run(":2303")
+		fmt.Println("pay service is running on port 2303")
 		if err != nil {
 			log.Fatalf("Error running server: %v", err)
 		}

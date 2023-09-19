@@ -1,5 +1,8 @@
-FROM alpine:latest
+FROM gcr.io/distroless/static:nonroot
 
-COPY manager /
+ARG TARGETARCH
+COPY bin/service-pay-$TARGETARCH /manager
+EXPOSE 2303
+USER 65532:65532
 
-CMD ["/manager"]
+ENTRYPOINT ["/manager"]
