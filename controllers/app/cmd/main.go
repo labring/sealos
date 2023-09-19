@@ -32,7 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	appv1 "github.com/labring/sealos/controllers/app/api/v1"
-	"github.com/labring/sealos/controllers/app/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -47,6 +46,10 @@ func init() {
 	utilruntime.Must(appv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
+
+// Note: Add role here for controllers without real controller go file, with just CRDs.
+// +kubebuilder:rbac:groups=app.sealos.io,resources=templates,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=app.sealos.io,resources=apps,verbs=get;list;watch;create;update;patch;delete
 
 func main() {
 	var metricsAddr string
@@ -89,13 +92,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.AppReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "App")
-		os.Exit(1)
-	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -109,7 +105,7 @@ func main() {
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "fail to run manager")
+		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
 }

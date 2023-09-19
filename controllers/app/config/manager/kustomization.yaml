@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: ghcr.io/labring/sealos-app-controller
-  newTag: dev
+  newTag: latest
