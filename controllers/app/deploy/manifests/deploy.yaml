@@ -167,7 +167,6 @@ spec:
                   - value
                   type: object
                 type: object
-                x-kubernetes-preserve-unknown-fields: true
               description:
                 type: string
               gitRepo:
@@ -177,19 +176,18 @@ spec:
               inputs:
                 additionalProperties:
                   properties:
+                    default:
+                      type: string
                     description:
                       type: string
                     required:
                       type: boolean
                     type:
                       type: string
-                    value:
-                      type: string
                   required:
                   - type
                   type: object
                 type: object
-                x-kubernetes-preserve-unknown-fields: true
               readme:
                 type: string
               templateType:
