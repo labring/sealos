@@ -4,6 +4,9 @@
   "Activation Record": "Activation Record",
   "Purchase License": "Purchase License",
   "Please go to": "Please go to",
-  "Buy": "Buy",
-  "Activation Time": "Activation time: "
+  "Purchase": "purchase a license.",
+  "Activation Time": "Activation time: ",
+  "Go to the message center to see the results": "Go to the message center to see the results",
+  "token does not exist": "token does not exist",
+  "No Record": "No Record"
 }

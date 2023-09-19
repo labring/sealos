@@ -3,15 +3,16 @@ import { jsonRes } from '@/services/backend/response';
 import { connectToLicenseCollection } from '@/services/db/mongodb';
 import { getK8s } from '@/services/backend/kubernetes';
 import { authSession } from '@/services/backend/auth';
-import { getUserId } from '@/utils/user';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { page = '1', pageSize = '10' } = req.query as { page: string; pageSize: string };
-    const { namespace } = await getK8s({
+    const { kube_user } = await getK8s({
       kubeconfig: await authSession(req)
     });
-    const userId = getUserId();
+    const userId = kube_user.name;
+    console.log(userId, 'userId');
+
     const skip = (parseInt(page) - 1) * parseInt(pageSize);
 
     const license_collection = await connectToLicenseCollection();
@@ -38,6 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
     });
   } catch (err) {
+    console.log(err, 'getlicense----');
     jsonRes(res, {
       code: 500,
       error: err

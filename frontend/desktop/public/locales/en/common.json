@@ -79,5 +79,14 @@
   "Dissovle Tips": "Dissolving the team will clear all resources. Are you sure you want to disband",
   "Enter Confirm.": "Please enter {{value}} to confirm",
   "Accept Invitation": "Accept Invitation",
-  "Recive Tips": "{{managerName}} invite you join in {{teamName}} as {{role}}"
+  "Recive Tips": "{{managerName}} invite you join in {{teamName}} as {{role}}",
+  "pay with stripe": "Pay With Stripe",
+  "pay with wechat": "Pay With Wechat",
+  "License Buy": "License Buy",
+  "Purchase History": "Purchase History",
+  "Purchase License": "Purchase License",
+  "Remaining Time": "Remaining Time: ",
+  "Please read and agree to the agreement": "Please read and agree to the agreement",
+  "Purchase Link Error": "Purchase Link Error",
+  "You have not purchased the License": "You have not purchased the License"
 }

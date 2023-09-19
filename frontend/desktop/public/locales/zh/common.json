@@ -73,5 +73,14 @@
   "Dissovle Tips": "解散团队会清空所有资源，确定要解散吗？",
   "Enter Confirm.": "请输入 {{value}} 确认",
   "Accept Invitation": "接受邀请",
-  "Recive Tips": "{{managerName}} 邀请你到 {{teamName}} 当 {{role}}"
+  "Recive Tips": "{{managerName}} 邀请你到 {{teamName}} 当 {{role}}",
+  "pay with wechat": "微信支付",
+  "pay with stripe": "Stripe 支付",
+  "License Buy": "License 购买",
+  "Purchase History": "购买记录",
+  "Purchase License": "购买 License",
+  "Remaining Time": "剩余激活时间: ",
+  "Please read and agree to the agreement": "请阅读并同意协议",
+  "Purchase Link Error": "购买链接错误",
+  "You have not purchased the License": "您还没有购买 License"
 }

@@ -23,4 +23,7 @@ export type LoginProps = {
 
 export type SystemEnv = {
   SEALOS_CLOUD_DOMAIN: string;
+  stripeEnabled: boolean;
+  wechatEnabledRecharge: boolean;
+  licenseEnabled: boolean;
 } & LoginProps;

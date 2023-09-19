@@ -1,4 +1,4 @@
-import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react';
+import { Flex, Text, Image, FlexProps, Icon, Box } from '@chakra-ui/react';
 import { useState } from 'react';
 type PaginationProps = {
   totalItems: number;
@@ -34,12 +34,12 @@ export default function Pagination({ totalItems, itemsPerPage, onPageChange }: P
   };
 
   return (
-    <Flex minW="350px" pr="8px" h="32px" ml="auto" align="center" mt="20px" justifyContent={'end'}>
+    <Flex h="32px" ml="auto" align="center" mt="20px">
       <Text>Total:</Text>
       <Flex w="40px">{totalItems}</Flex>
       <Flex gap="8px" alignItems={'center'}>
         <Flex
-          onClick={() => goToPage(1)}
+          onClick={handlePrevPage}
           {...buttonStyle}
           {...{
             bg: currentPage === 1 ? '#EDF0F2' : '#EDEFF1',
@@ -58,7 +58,7 @@ export default function Pagination({ totalItems, itemsPerPage, onPageChange }: P
             cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
             opacity: currentPage === 1 ? '0.5' : '1'
           }}
-          onClick={handlePrevPage}
+          onClick={() => goToPage(1)}
         >
           <Icon viewBox="0 0 12 12" fill={currentPage === 1 ? 'black' : '#262A32'}>
             <path

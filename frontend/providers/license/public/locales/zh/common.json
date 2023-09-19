@@ -3,7 +3,10 @@
   "Activate License": "激活 License",
   "Activation Record": "激活记录",
   "Purchase License": "购买 License",
-  "Please go to": "请前往",
-  "Buy": "购买",
-  "Activation Time": "激活时间: "
+  "Please go to": "请到",
+  "Purchase": "购买 license",
+  "Activation Time": "激活时间: ",
+  "Go to the message center to see the results": "前往消息中心查看结果",
+  "token does not exist": "token 不存在",
+  "No Record": "暂无记录"
 }

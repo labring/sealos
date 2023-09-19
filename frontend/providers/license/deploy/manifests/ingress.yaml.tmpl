@@ -14,7 +14,7 @@ metadata:
         add_header Cache-Control "public";
       }
   name: license-frontend
-  namespace: license-frontend
+  namespace: sealos
 spec:
   rules:
     - host: license.{{ .cloudDomain }}
@@ -30,4 +30,4 @@ spec:
   tls:
     - hosts:
         - license.{{ .cloudDomain }}
-      secretName: {{ .certSecretName }}
+      secretName: wildcard-cert
