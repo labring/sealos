@@ -67,7 +67,7 @@ func OnceWithProbe(ctx context.Context, period time.Duration, t Task) error {
 		default:
 			if !t.Probe() {
 				(t.Log()).Info("the probe is not ready, try again after some time")
-				time.Sleep(period)
+				time.Sleep(time.Second * 10)
 				continue
 			}
 			err := t.Run()
@@ -108,7 +108,7 @@ func PeriodicWithProbe(ctx context.Context, period time.Duration, t Task) error 
 		default:
 			if !t.Probe() {
 				(t.Log()).Info("the probe is not ready, try again after some time")
-				time.Sleep(time.Minute * 10)
+				time.Sleep(time.Second * 10)
 				continue
 			}
 			err := t.Run()
@@ -200,6 +200,10 @@ func (ti *TaskInstance) Run() error {
 		return NewRegister().register(ti)
 	case MemoryCleanup:
 		return NewMemoryCleaner().cleanWork(ti)
+	case ClusterBillingWork:
+		return NewClusterScaleBillingWork().billingWork(ti)
+	case ClusterBillingMonitor:
+		return NewClusterMetering().meteringWork(ti)
 	default:
 		return fmt.Errorf("the task is not supported")
 		// allow developers to add their own runnable task

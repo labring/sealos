@@ -20,6 +20,7 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
+	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -46,8 +47,13 @@ func NewInitTask(o OptionsReadOnly) *InitTask {
 }
 
 func (t *InitTask) initWork(instance *TaskInstance) error {
+	err := initClusterScaleBilling(instance)
+	if err != nil {
+		instance.logger.Info("failed to init cluster scale billing", "err", err)
+		return err
+	}
 	// register function is idempotent
-	err := t.register(instance)
+	err = t.register(instance)
 	if err != nil {
 		instance.logger.Info("failed to register", "err", err)
 		return err
@@ -104,6 +110,45 @@ func createClusterInfo() *corev1.Secret {
 		"uuid": []byte(uuid),
 	}
 	return secret
+}
+
+func initClusterScaleBilling(instance *TaskInstance) error {
+	// step 1
+	ok, err := checkClusterScaleBilling(instance)
+	if err != nil {
+		instance.logger.Info("failed to check if the cluster has been registered")
+		return err
+	}
+	if ok {
+		instance.logger.Info("cluster-scale-billing has been created")
+		return nil
+	}
+	csb := createClusterScaleBilling()
+	err = instance.Create(instance.ctx, csb)
+	if err != nil {
+		instance.logger.Info("failed to store cluster info", "err", err)
+	}
+	return err
+}
+
+func checkClusterScaleBilling(instance *TaskInstance) (bool, error) {
+	csb := &issuerv1.ClusterScaleBilling{}
+	err := instance.Get(instance.ctx, types.NamespacedName{
+		Name:      ScaleBilling,
+		Namespace: GetOptions().GetEnvOptions().Namespace,
+	}, csb)
+
+	if err != nil && apierrors.IsNotFound(err) {
+		return false, nil
+	}
+	return true, err
+}
+
+func createClusterScaleBilling() *issuerv1.ClusterScaleBilling {
+	csb := &issuerv1.ClusterScaleBilling{}
+	csb.Name = ScaleBilling
+	csb.Namespace = GetOptions().GetEnvOptions().Namespace
+	return csb
 }
 
 var onceForInit sync.Once

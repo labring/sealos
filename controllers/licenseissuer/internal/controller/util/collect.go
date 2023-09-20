@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"context"
 	"strconv"
 	"sync"
 	"time"
@@ -28,6 +29,7 @@ import (
 	"github.com/labring/sealos/controllers/pkg/database"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const dateFormat = "2006-01-02"
@@ -114,12 +116,12 @@ func (c *Collect) collectWork(instance *TaskInstance) error {
 
 func (c *Collect) collectResource(instance *TaskInstance) error {
 	tnr := TotalNodesResource{}
-	err := c.getNodeResource(instance, &tnr)
+	err := GetNodeResource(instance.ctx, instance.Client, &tnr)
 	if err != nil {
 		instance.logger.Error(err, "failed to get node resource")
 		return err
 	}
-	err = c.getPVResource(instance, &tnr)
+	err = GetPVResource(instance.ctx, instance.Client, &tnr)
 	if err != nil {
 		instance.logger.Error(err, "failed to get pv resource")
 		return err
@@ -227,11 +229,10 @@ func (c *Collect) doUsageCollect(instance *TaskInstance) error {
 	return nil
 }
 
-func (c *Collect) getPVResource(instance *TaskInstance, tnr *TotalNodesResource) error {
+func GetPVResource(ctx context.Context, client client.Client, tnr *TotalNodesResource) error {
 	pvList := &corev1.PersistentVolumeList{}
-	err := instance.List(instance.ctx, pvList)
+	err := client.List(ctx, pvList)
 	if err != nil {
-		instance.logger.Error(err, "failed to list pv")
 		return err
 	}
 	for _, pv := range pvList.Items {
@@ -241,11 +242,10 @@ func (c *Collect) getPVResource(instance *TaskInstance, tnr *TotalNodesResource)
 	return nil
 }
 
-func (c *Collect) getNodeResource(instance *TaskInstance, tnr *TotalNodesResource) error {
+func GetNodeResource(ctx context.Context, client client.Client, tnr *TotalNodesResource) error {
 	nodeList := &corev1.NodeList{}
-	err := instance.List(instance.ctx, nodeList)
+	err := client.List(ctx, nodeList)
 	if err != nil {
-		instance.logger.Error(err, "failed to list node")
 		return err
 	}
 	pool := ntf.NewPool(maxBatchSize)

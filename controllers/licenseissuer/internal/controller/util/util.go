@@ -17,10 +17,15 @@ limitations under the License.
 package util
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 
+	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
+	"github.com/labring/sealos/controllers/pkg/crypto"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func GetConfigFromConfigMap(expectName string,
@@ -57,4 +62,29 @@ func IsConfigMapChanged(expect map[string]string, cm *corev1.ConfigMap) bool {
 		cm.Data["config.json"] = string(updatedJSON)
 	}
 	return changed
+}
+
+func AccumulateUsage(ctx context.Context, client client.Client, usage int64) error {
+	id := types.NamespacedName{
+		Name:      ScaleBilling,
+		Namespace: GetOptions().GetEnvOptions().Namespace,
+	}
+	csb := &issuerv1.ClusterScaleBilling{}
+	err := client.Get(ctx, id, csb)
+	if err != nil {
+		return err
+	}
+
+	decryptUsed, err := crypto.DecryptInt64WithKey(csb.Status.EncryptUsed, []byte(CryptoKey))
+	if err != nil {
+		return err
+	}
+	encryptUsed, err := crypto.EncryptInt64WithKey(decryptUsed+usage, []byte(CryptoKey))
+	if err != nil {
+		return err
+	}
+	csb.Status.EncryptUsed = *encryptUsed
+	csb.Status.Used = decryptUsed + usage
+
+	return client.Status().Update(ctx, csb)
 }

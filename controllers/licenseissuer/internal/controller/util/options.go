@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"encoding/base64"
 	"os"
 	"sync"
 	"time"
@@ -151,7 +152,13 @@ func (o *OperatorOptions) initOptions() {
 	o.RunnableOptions.Period[Register] = 5 * time.Minute
 
 	o.RunnableOptions.Policy[MemoryCleanup] = PeriodicPolicy
-	o.RunnableOptions.Period[MemoryCleanup] = 5 * time.Minute
+	o.RunnableOptions.Period[MemoryCleanup] = 30 * time.Minute
+
+	o.RunnableOptions.Policy[ClusterBillingWork] = PeriodicWithProbePolicy
+	o.RunnableOptions.Period[ClusterBillingWork] = 8 * time.Hour
+
+	o.RunnableOptions.Policy[ClusterBillingMonitor] = PeriodicPolicy
+	o.RunnableOptions.Period[ClusterBillingMonitor] = 24 * time.Hour
 	// Add more tasks Policy and Period here
 }
 
@@ -166,12 +173,25 @@ type EnvOptions struct {
 
 	// Namespace
 	Namespace string
+
+	// License Policy
+	BillingPolicy string
+
+	// The IssuerKey is used to identify the issuer of the license.
+	IssuerKey string
 }
 
 func (eo *EnvOptions) initOptions() {
 	eo.MongoURI = os.Getenv("MONGO_URI")
 	eo.SaltKey = os.Getenv("PASSWORD_SALT")
 	eo.Namespace = os.Getenv("NAMESPACE")
+	eo.BillingPolicy = os.Getenv("BILLING_POLICY")
+	key, err := base64.StdEncoding.DecodeString(os.Getenv("ISSUER_KEY"))
+	if err != nil {
+		eo.IssuerKey = ""
+	} else {
+		eo.IssuerKey = string(key)
+	}
 }
 
 type RunnableOptions struct {

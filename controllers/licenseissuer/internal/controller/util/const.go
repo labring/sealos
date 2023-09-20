@@ -39,6 +39,7 @@ const (
 	CloudSyncURL      = "CloudSyncURL"
 	LicenseMonitorURL = "LicenseMonitorURL"
 	NetworkProbeURL   = "NetworkProbeURL"
+	LicenseIssuerURL  = "LicenseIssuerURL"
 	// Add more url here
 )
 
@@ -55,16 +56,15 @@ const (
 	ValidLicenseMessage        string = "Your license has been successfully activated and is now ready for use. Enjoy your Sealos experience!"
 	DuplicateLicenseMessage    string = "The license provided has already been activated. Please use a different license."
 	RechargeFailedMessage      string = "License recharge operation failed."
+	NoClusterInfoMessage       string = "No cluster information found."
 )
 
+// payload field name
 const (
-	CreatTimeField = "iat"
-	AmountField    = "amt"
-	NodeField      = "nod"
-	CPUField       = "cpu"
-	DurationField  = "tte"
-	AddNodeField   = "and"
-	AddCPUField    = "adc"
+	CreatTime  = "iat"
+	Amount     = "amt"
+	ExpireTime = "exp"
+	HashID     = "hid"
 )
 
 const (
@@ -75,13 +75,25 @@ const (
 )
 
 const (
-	Collector     task = "Collector"
-	DataSync      task = "DataSync"
-	Init          task = "Init"
-	Register      task = "Register"
-	Notice        task = "Notice"
-	NoticeCleanup task = "NoticeCleanup"
-	NetWorkConfig task = "NetWorkConfig"
-	MemoryCleanup task = "MemoryCleanup"
+	Collector             task = "Collector"
+	DataSync              task = "DataSync"
+	Init                  task = "Init"
+	Register              task = "Register"
+	Notice                task = "Notice"
+	NoticeCleanup         task = "NoticeCleanup"
+	NetWorkConfig         task = "NetWorkConfig"
+	MemoryCleanup         task = "MemoryCleanup"
+	ClusterBillingWork    task = "ClusterBillingWork"
+	ClusterBillingMonitor task = "ClusterMonitor"
 	// Add more tasks here
+)
+
+const (
+	ScaleBilling = "cluster-scale-billing"
+)
+
+const (
+	BillingByScale   = "scale"
+	BillingByUsage   = "usage"
+	BillingByAccount = "account"
 )

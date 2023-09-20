@@ -93,6 +93,7 @@ func CommunicateWithCloud(method string, url string, content interface{}) (HTTPR
 	return readResponse(resp)
 }
 
+// content must be a non-nil pointer
 func Convert(body []byte, content interface{}) error {
 	if body == nil {
 		return fmt.Errorf("Convert: the body is empty")

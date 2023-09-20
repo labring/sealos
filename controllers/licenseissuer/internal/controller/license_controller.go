@@ -42,11 +42,10 @@ import (
 // LicenseReconciler reconciles a License object
 type LicenseReconciler struct {
 	client.Client
-	Scheme   *runtime.Scheme
-	logger   logr.Logger
-	DBCol    util.LicenseDB
-	payload  map[string]interface{}
-	Recorder util.Map[string]
+	Scheme  *runtime.Scheme
+	logger  logr.Logger
+	DBCol   util.MongoHandler
+	payload map[string]interface{}
 
 	account   accountv1.Account
 	license   issuerv1.License
@@ -126,48 +125,11 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *LicenseReconciler) CheckLicense(ctx context.Context) (string, map[string]interface{}, bool) {
-	options := util.GetOptions()
-	// Check if the license is already used
-	ok, err := r.CheckLicenseExists()
-	if err != nil {
-		r.logger.Error(err, "failed to check license exists")
-		return util.DuplicateLicenseMessage, nil, false
-	}
-
-	if ok {
-		return util.DuplicateLicenseMessage, nil, false
-	}
-	// Check if the license is valid
-	if options.GetNetWorkOptions().EnableExternalNetWork {
-		payload, ok := util.LicenseCheckOnExternalNetwork(ctx, r.Client, r.license)
-		if !ok {
-			return util.InvalidLicenseMessage, nil, false
-		}
-		return "", payload, true
-	}
-	payload, ok := util.LicenseCheckOnInternalNetwork(r.license)
-	if !ok {
-		return util.InvalidLicenseMessage, nil, false
-	}
-	return "", payload, true
-}
-
-func (r *LicenseReconciler) CheckLicenseExists() (bool, error) {
-	ok := r.Recorder.Find(r.license.Spec.Token)
-	if ok {
-		return true, nil
-	}
-	ok, err := util.CheckLicenseExists(r.DBCol, r.license.Spec.UID, r.license.Spec.Token)
-	if err != nil {
-		r.logger.Error(err, "failed to check license exists")
-		return false, err
-	}
-	return ok, nil
-}
-
 func (r *LicenseReconciler) Authorize(ctx context.Context) (string, error) {
-	message, payload, ok := r.CheckLicense(ctx)
+	meta := util.LicenseMeta{
+		Token: r.license.Spec.Token,
+	}
+	message, payload, ok := util.CheckLicense(meta, r.DBCol)
 	if !ok {
 		return message, errors.New("invalid license")
 	}
@@ -182,17 +144,21 @@ func (r *LicenseReconciler) Authorize(ctx context.Context) (string, error) {
 		r.logger.Error(err, "failed to get account")
 		return util.RechargeFailedMessage, err
 	}
-	// recharge
-	if util.ContainsFields(payload, util.AmountField) {
+	// authorize service, amount
+	if util.ContainsFields(payload, util.Amount) {
 		err := util.RechargeByLicense(ctx, r.Client, r.account, payload)
 		if err != nil {
 			return util.RechargeFailedMessage, err
 		}
 	}
+	// add other license-related service here, for example:
+	// if util.ContainsFields(payload, <your service>) {
+	// TODO: add your service here
+	// }
 	return util.ValidLicenseMessage, nil
 }
 
 func (r *LicenseReconciler) RecordLicense(payload map[string]interface{}) error {
-	r.Recorder.Add(r.license.Spec.Token)
+	util.GetHashMap().Add(r.license.Spec.Token)
 	return util.RecordLicense(r.DBCol, util.NewLicense(r.license.Spec.UID, r.license.Spec.Token, payload))
 }
