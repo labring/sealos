@@ -27,7 +27,7 @@ import (
 	"github.com/go-logr/logr"
 	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
-	"github.com/labring/sealos/pkg/pay"
+	"github.com/labring/sealos/controllers/pkg/pay"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"

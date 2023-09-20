@@ -21,8 +21,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/common"
 	"github.com/labring/sealos/controllers/pkg/crypto"
+	"github.com/labring/sealos/controllers/pkg/resources"
 	"go.mongodb.org/mongo-driver/bson"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -101,12 +101,12 @@ func (c *ClusterScaleBilling) billingWork(ti *TaskInstance) error {
 	return nil
 }
 
-func (c *ClusterScaleBilling) GetPrices() map[string]common.Price {
-	priceMap := make(map[string]common.Price)
+func (c *ClusterScaleBilling) GetPrices() map[string]resources.Price {
+	priceMap := make(map[string]resources.Price)
 	mongoDB := NewMongoDB("cluster", "prices")
 	doc, err := mongoDB.FindDocs(bson.M{})
 	if err != nil || doc == nil {
-		return common.DefaultPrices
+		return resources.DefaultPrices
 	}
 	for _, v := range doc {
 		var price Prices
@@ -114,15 +114,15 @@ func (c *ClusterScaleBilling) GetPrices() map[string]common.Price {
 		err = bson.Unmarshal(bsonBytes, &price)
 		if err != nil {
 			// handle error
-			return common.DefaultPrices
+			return resources.DefaultPrices
 		}
 		var priceInt64 int64
 		// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
 		priceInt64, err := crypto.DecryptInt64WithKey(price.Price, []byte(CryptoKey))
 		if err != nil {
-			priceInt64 = common.DefaultPrices[price.Property].Price
+			priceInt64 = resources.DefaultPrices[price.Property].Price
 		}
-		priceMap[price.Property] = common.Price{
+		priceMap[price.Property] = resources.Price{
 			Property: price.Property,
 			Price:    priceInt64,
 			Detail:   price.Detail,

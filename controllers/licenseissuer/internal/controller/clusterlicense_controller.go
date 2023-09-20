@@ -30,11 +30,11 @@ import (
 
 	"github.com/go-logr/logr"
 	count "github.com/labring/sealos/controllers/common/account"
-	notificationv1 "github.com/labring/sealos/controllers/common/notification/api/v1"
 	infostreamv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
 	"github.com/labring/sealos/controllers/pkg/crypto"
-	ntf "github.com/labring/sealos/controllers/pkg/notification"
+	notificationv1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
+	ntf "github.com/labring/sealos/controllers/pkg/notification/utils"
 )
 
 // ClusterLicenseReconciler reconciles a ClusterLicense object

@@ -21,6 +21,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
@@ -28,6 +29,8 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+
+	jwt "github.com/golang-jwt/jwt/v4"
 )
 
 const defaultEncryptionKey = "0123456789ABCDEF0123456789ABCDEF"
@@ -152,7 +155,32 @@ func DecryptWithKey(ciphertextBase64 string, encryptionKey []byte) ([]byte, erro
 	return plaintext, nil
 }
 
-func ParseRSAPublicKeyFromPEM(keyPEM string) (*rsa.PublicKey, error) {
+func IsLicenseValid(token string, key string) (map[string]interface{}, bool) {
+	decodeKey, err := base64.StdEncoding.DecodeString(key)
+	if err != nil {
+		return nil, false
+	}
+	publicKey, err := parseRSAPublicKeyFromPEM(string(decodeKey))
+	//fmt.Println(string(decodeKey))
+	if err != nil {
+		return nil, false
+	}
+	keyFunc := func(token *jwt.Token) (interface{}, error) {
+		return publicKey, nil
+	}
+	parsedToken, err := jwt.Parse(token, keyFunc)
+	if err != nil {
+		return nil, false
+	}
+
+	claims, ok := parsedToken.Claims.(jwt.MapClaims)
+	if ok && parsedToken.Valid {
+		return claims, ok
+	}
+	return nil, false
+}
+
+func parseRSAPublicKeyFromPEM(keyPEM string) (*rsa.PublicKey, error) {
 	block, _ := pem.Decode([]byte(keyPEM))
 	if block == nil {
 		return nil, errors.New("failed to parse PEM block containing the public key")
@@ -168,4 +196,14 @@ func ParseRSAPublicKeyFromPEM(keyPEM string) (*rsa.PublicKey, error) {
 		return nil, errors.New("key is not of type *rsa.PublicKey")
 	}
 	return rsaPub, nil
+}
+
+// asymmetric encryption
+func AsymmetricEncryption(msg []byte, key string) ([]byte, error) {
+	pubKey, err := parseRSAPublicKeyFromPEM(key)
+	cipherText, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, pubKey, msg, nil)
+	if err != nil {
+		return nil, err
+	}
+	return cipherText, nil
 }
