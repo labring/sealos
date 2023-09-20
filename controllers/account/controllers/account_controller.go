@@ -71,6 +71,7 @@ type AccountReconciler struct {
 	Scheme                 *runtime.Scheme
 	Logger                 logr.Logger
 	AccountSystemNamespace string
+	DBClient               database.Interface
 	MongoDBURI             string
 }
 
@@ -145,18 +146,6 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	r.Logger.V(1).Info("query order details", "orderStatus", status, "orderAmount", orderAmount)
 	switch status {
 	case pay.PaymentSuccess:
-		dbCtx := context.Background()
-		dbClient, err := database.NewMongoDB(dbCtx, r.MongoDBURI)
-		if err != nil {
-			r.Logger.Error(err, "connect mongo client failed")
-			return ctrl.Result{Requeue: true}, err
-		}
-		defer func() {
-			err := dbClient.Disconnect(ctx)
-			if err != nil {
-				r.Logger.V(5).Info("disconnect mongo client failed", "err", err)
-			}
-		}()
 		now := time.Now().UTC()
 		//1¥ = 100WechatPayAmount; 1 WechatPayAmount = 10000 SealosAmount
 		payAmount := orderAmount * 10000
@@ -173,7 +162,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("recharge encrypt balance failed: %v", err)
 		}
-		if err := r.updateAccountStatus(ctx, account); err != nil {
+		if err := SyncAccountStatus(ctx, r.Client, account); err != nil {
 			return ctrl.Result{}, fmt.Errorf("update account failed: %v", err)
 		}
 		payment.Status.Status = string(pay.PaymentSuccess)
@@ -186,7 +175,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			r.Logger.Error(err, "create id failed", "id", id, "payment", payment)
 			return ctrl.Result{}, nil
 		}
-		err = dbClient.SaveBillingsWithAccountBalance(&accountv1.AccountBalanceSpec{
+		err = r.DBClient.SaveBillingsWithAccountBalance(&accountv1.AccountBalanceSpec{
 			Time: metav1.Time{Time: now},
 			AccountBalanceSpecInline: accountv1.AccountBalanceSpecInline{
 				OrderID:   id,
@@ -282,7 +271,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	if err != nil {
 		return nil, fmt.Errorf("recharge balance failed: %v", err)
 	}
-	if err := r.updateAccountStatus(ctx, &account); err != nil {
+	if err := SyncAccountStatus(ctx, r.Client, &account); err != nil {
 		return nil, fmt.Errorf("update account failed: %v", err)
 	}
 	r.Logger.Info("account created,will charge new account some money", "account", account, "stringAmount", stringAmount)
@@ -447,7 +436,7 @@ func (r *AccountReconciler) updateDeductionBalance(ctx context.Context, accountB
 		return fmt.Errorf("unknown accountbalance type: %v", accountBalance.Spec.Type)
 	}
 
-	if err := r.updateAccountStatus(ctx, account); err != nil {
+	if err := SyncAccountStatus(ctx, r.Client, account); err != nil {
 		r.Logger.Error(err, err.Error())
 		return err
 	}
@@ -457,26 +446,14 @@ func (r *AccountReconciler) updateDeductionBalance(ctx context.Context, accountB
 		r.Logger.Error(err, err.Error())
 		return err
 	}
-	dbCtx := context.Background()
-	dbClient, err := database.NewMongoDB(dbCtx, r.MongoDBURI)
-	if err != nil {
-		r.Logger.Error(err, "connect mongo client failed")
-		return fmt.Errorf("failed to connect mongo client: %v", err)
-	}
-	defer func() {
-		err := dbClient.Disconnect(dbCtx)
-		if err != nil {
-			r.Logger.V(5).Info("disconnect mongo client failed", "err", err)
-		}
-	}()
-	err = dbClient.SaveBillingsWithAccountBalance(&accountBalance.Spec)
+	err = r.DBClient.SaveBillingsWithAccountBalance(&accountBalance.Spec)
 	if err != nil {
 		r.Logger.Error(err, "save billings with accountBalance failed", "accountBalance", accountBalance.Spec)
 	}
 	return nil
 }
 
-func (r *AccountReconciler) updateAccountStatus(ctx context.Context, account *accountv1.Account) error {
+func SyncAccountStatus(ctx context.Context, client client.Client, account *accountv1.Account) error {
 	balance, err := crypto.DecryptInt64(*account.Status.EncryptBalance)
 	if err != nil {
 		return fmt.Errorf("update decrypt balance failed: %v", err)
@@ -487,7 +464,7 @@ func (r *AccountReconciler) updateAccountStatus(ctx context.Context, account *ac
 	}
 	account.Status.Balance = balance
 	account.Status.DeductionBalance = deductionBalance
-	return r.Status().Update(ctx, account)
+	return client.Status().Update(ctx, account)
 }
 
 func (r *AccountReconciler) initBalance(account *accountv1.Account) (err error) {
@@ -512,9 +489,6 @@ func (r *AccountReconciler) initBalance(account *accountv1.Account) (err error) 
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	r.Logger = ctrl.Log.WithName("account_controller")
 	r.AccountSystemNamespace = env.GetEnvWithDefault(ACCOUNTNAMESPACEENV, DEFAULTACCOUNTNAMESPACE)
-	if r.MongoDBURI = os.Getenv(database.MongoURI); r.MongoDBURI == "" {
-		return fmt.Errorf("mongo url is empty")
-	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}, builder.WithPredicates(predicate.And(OnlyCreatePredicate{}, predicate.Funcs{
 			CreateFunc: func(createEvent event.CreateEvent) bool {
@@ -522,7 +496,8 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 			},
 		}))).
 		Watches(&source.Kind{Type: &accountv1.Payment{}}, &handler.EnqueueRequestForObject{}).
-		Watches(&source.Kind{Type: &accountv1.AccountBalance{}}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(&NamespaceFilterPredicate{Namespace: r.AccountSystemNamespace})).
+		//TODO optimize accountbalance cr will
+		//Watches(&source.Kind{Type: &accountv1.AccountBalance{}}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(&NamespaceFilterPredicate{Namespace: r.AccountSystemNamespace})).
 		WithOptions(rateOpts).
 		Complete(r)
 }

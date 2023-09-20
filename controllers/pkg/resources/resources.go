@@ -86,18 +86,198 @@ type Price struct {
 
 // Composite index: category, property, time, speed up query
 type Monitor struct {
-	Category string    `json:"category" bson:"category"`
-	Property string    `json:"property" bson:"property"`
-	Time     time.Time `json:"time" bson:"time"`
-	Value    int64     `json:"value" bson:"value"`
-	//Status   int       `json:"status" bson:"status"`
-	Detail string `json:"detail" bson:"detail"`
+	Time time.Time `json:"time" bson:"time"`
+	// 对应namespace
+	Category string `json:"category" bson:"category"`
+	Type     uint8  `json:"type" bson:"type"`
+	Name     string `json:"name" bson:"name"`
+	Used     Used   `json:"used" bson:"used"`
+
+	Property string `json:"property" bson:"property"`
+
+	//Value    int64  `json:"value,omitempty" bson:"value,omitempty"`
+	//Status int    `json:"status" bson:"status"`
+	//Detail string `json:"detail" bson:"detail"`
 }
 
-//| Category   | Property | Time       | Value (average value) | Amount (value * price) | Detail | Status |
-//| ---------- | -------- | ---------- | --------------------- | ---------------------- | ------ | ------ |
-//| Namespace1 | Cpu      | 2023010112 | 1000                  | 67000                  |        | 0      |
+//CPU      int64     `json:"cpu" bson:"cpu"`
+//Memory   int64     `json:"memory" bson:"memory"`
+//Storage  int64     `json:"storage" bson:"storage"`
+//Network  int64     `json:"network" bson:"network"`
 
+const (
+	// Consumption 消费
+	Consumption BillingType = iota
+	// Recharge 充值
+	Recharge
+	TransferIn
+	TransferOut
+)
+
+type BillingType int
+
+type Billing struct {
+	Time    time.Time   `json:"time" bson:"time"`
+	OrderID string      `json:"order_id" bson:"order_id"`
+	Type    BillingType `json:"type" bson:"type"`
+	//Name      string      `json:"name" bson:"name"`
+	Namespace string `json:"namespace" bson:"namespace"`
+	//Used       Used        `json:"used" bson:"used"`
+	//UsedAmount Used        `json:"used_amount" bson:"used_amount"`
+
+	AppCosts []AppCost `json:"app_costs,omitempty" bson:"app_costs,omitempty"`
+	AppType  uint8     `json:"app_type,omitempty" bson:"app_type,omitempty"`
+
+	Amount int64  `json:"amount" bson:"amount,omitempty"`
+	Owner  string `json:"owner" bson:"owner,omitempty"`
+	// 0: 未结算 1: 已结算
+	Status BillingStatus `json:"status" bson:"status,omitempty"`
+}
+
+type AppCost struct {
+	Used       Used   `json:"used" bson:"used"`
+	UsedAmount Used   `json:"used_amount" bson:"used_amount"`
+	Amount     int64  `json:"amount" bson:"amount,omitempty"`
+	Name       string `json:"name" bson:"name"`
+}
+
+type BillingHandler struct {
+	OrderID string        `json:"order_id" bson:"order_id"`
+	Time    time.Time     `json:"time" bson:"time"`
+	Amount  int64         `json:"amount" bson:"amount,omitempty"`
+	Status  BillingStatus `json:"status" bson:"status,omitempty"`
+}
+
+type BillingStatus int
+
+const (
+	// 0: 未结算 1: 已结算
+	Unsettled BillingStatus = iota
+	Settled
+)
+
+const (
+	// 	DB       = 1
+	//	APP      = 2
+	//	TERMINAL = 3
+	//	JOB      = 4
+	//	OTHER    = 5
+
+	db = iota + 1
+	app
+	terminal
+	job
+	other
+)
+
+const (
+	DB       = "DB"
+	APP      = "APP"
+	TERMINAL = "TERMINAL"
+	JOB      = "JOB"
+	OTHER    = "OTHER"
+)
+
+var MonitorType = map[string]uint8{
+	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other,
+}
+
+// 资源消耗
+type Used map[uint8]int64
+
+type PropertyType struct {
+	// 对应监控存储枚举类型，使用uint8，可以节省内存
+	// 0 cpu, 1 memory, 2 storage, 3 network ... 可扩展
+	Name string `json:"name" bson:"name"`
+	Enum uint8  `json:"enum" bson:"enum"`
+	//平均值，累加值 默认为平均值
+	//AVG , SUM
+	PriceType string `json:"price_type,omitempty" bson:"price_type,omitempty"`
+	// Price = UsedAmount (平均值||累加值) / Unit * UnitPrice
+	UnitPrice int64 `json:"unit_price" bson:"unit_price"`
+	Unit      resource.Quantity
+	// <digit>           ::= 0 | 1 | ... | 9
+	// <digits>          ::= <digit> | <digit><digits>
+	// <number>          ::= <digits> | <digits>.<digits> | <digits>. | .<digits>
+	// <sign>            ::= "+" | "-"
+	// <signedNumber>    ::= <number> | <sign><number>
+	// <suffix>          ::= <binarySI> | <decimalExponent> | <decimalSI>
+	// <binarySI>        ::= Ki | Mi | Gi | Ti | Pi | Ei
+	//
+	//	(International System of units; See: http://physics.nist.gov/cuu/Units/binary.html)
+	//
+	// <decimalSI>       ::= m | "" | k | M | G | T | P | E
+	//
+	//	(Note that 1024 = 1Ki but 1000 = 1k; I didn't choose the capitalization.)
+	//
+	// <decimalExponent> ::= "e" <signedNumber> | "E" <signedNumber>
+	UnitString string `json:"unit" bson:"unit"`
+	//计费周期 second
+	UnitPeriod string `json:"unit_period,omitempty" bson:"unit_period,omitempty"`
+}
+
+type PropertyTypeLS struct {
+	Types     []PropertyType
+	StringMap map[string]PropertyType
+	EnumMap   map[uint8]PropertyType
+}
+
+var DefaultPropertyTypeLS = NewPropertyTypeLS([]PropertyType{
+	{
+		Name:       "cpu",
+		Enum:       0,
+		PriceType:  "AVG",
+		UnitPrice:  67,
+		UnitString: "1m",
+	},
+	{
+		Name:       "memory",
+		Enum:       1,
+		PriceType:  "AVG",
+		UnitPrice:  33,
+		UnitString: "1Mi",
+	},
+	{
+		Name:       "storage",
+		Enum:       2,
+		PriceType:  "AVG",
+		UnitPrice:  2,
+		UnitString: "1Mi",
+	},
+	{
+		Name:       "network",
+		Enum:       3,
+		PriceType:  "AVG",
+		UnitPrice:  781,
+		UnitString: "1Mi",
+	},
+})
+
+func NewPropertyTypeLS(types []PropertyType) (ls *PropertyTypeLS) {
+	ls = &PropertyTypeLS{
+		Types:     types,
+		StringMap: make(PropertyTypeStringMap, len(types)),
+		EnumMap:   make(PropertyTypeEnumMap, len(types)),
+	}
+	for i := range types {
+		if types[i].Unit == (resource.Quantity{}) && types[i].UnitString != "" {
+			types[i].Unit = resource.MustParse(types[i].UnitString)
+		}
+		ls.EnumMap[types[i].Enum] = types[i]
+		ls.StringMap[types[i].Name] = types[i]
+	}
+	return
+}
+
+type PropertyTypeEnumMap map[uint8]PropertyType
+
+type PropertyTypeStringMap map[string]PropertyType
+
+type PropertyList []PropertyType
+
+// | Category   | Property | Time       | Value (average value) | Amount (value * price) | Detail | Status |
+// | ---------- | -------- | ---------- | --------------------- | ---------------------- | ------ | ------ |
+// | Namespace1 | Cpu      | 2023010112 | 1000                  | 67000                  |        | 0      |
 type Metering struct {
 	Category string `json:"category" bson:"category"`
 	//time 2023010112 -> 2023-01-01 11:00:00 - 2023-01-01 12:00:00
@@ -110,7 +290,6 @@ type Metering struct {
 	// 0 -> not settled, 1 -> settled, -1 -> deleted, -2 -> refunded
 	//Status int `json:"status" bson:"status"`
 }
-
 type QuantityDetail struct {
 	*resource.Quantity
 	Detail string
@@ -123,7 +302,6 @@ const (
 	SealosMeteringCollectionName = "metering"
 	SealosBillingCollectionName  = "billing"
 )
-
 const (
 	PropertyInfraCPU    = "infra-cpu"
 	PropertyInfraMemory = "infra-memory"
@@ -134,6 +312,7 @@ const (
 const GpuResourcePrefix = "gpu-"
 
 const ResourceGPU corev1.ResourceName = gpu.NvidiaGpuKey
+const ResourceNetwork = "network"
 
 const (
 	ResourceRequestGpu corev1.ResourceName = "requests." + gpu.NvidiaGpuKey
@@ -143,11 +322,9 @@ const (
 func NewGpuResource(product string) corev1.ResourceName {
 	return corev1.ResourceName(GpuResourcePrefix + product)
 }
-
 func IsGpuResource(resource string) bool {
 	return strings.HasPrefix(resource, GpuResourcePrefix)
 }
-
 func GetGpuResourceProduct(resource string) string {
 	return strings.TrimPrefix(resource, GpuResourcePrefix)
 }
@@ -156,12 +333,12 @@ var (
 	bin1Mi  = resource.NewQuantity(1<<20, resource.BinarySI)
 	cpuUnit = resource.MustParse("1m")
 )
-
 var PricesUnit = map[corev1.ResourceName]*resource.Quantity{
 	corev1.ResourceCPU:     &cpuUnit, // 1 m CPU (1000 μ)
 	ResourceGPU:            &cpuUnit, // 1 m CPU (1000 μ)
 	corev1.ResourceMemory:  bin1Mi,   // 1 MiB
 	corev1.ResourceStorage: bin1Mi,   // 1 MiB
+	ResourceNetwork:        bin1Mi,   // 1 MiB
 }
 
 var DefaultPrices = map[string]Price{

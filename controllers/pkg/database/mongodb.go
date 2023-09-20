@@ -18,8 +18,11 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 	"time"
+
+	gonanoid "github.com/matoous/go-nanoid/v2"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/pkg/crypto"
@@ -35,11 +38,12 @@ import (
 )
 
 const (
-	DefaultDBName       = "sealos-resources"
-	DefaultMeteringConn = "metering"
-	DefaultMonitorConn  = "monitor"
-	DefaultBillingConn  = "billing"
-	DefaultPricesConn   = "prices"
+	DefaultDBName         = "sealos-resources"
+	DefaultMeteringConn   = "metering"
+	DefaultMonitorConn    = "monitor"
+	DefaultBillingConn    = "billing"
+	DefaultPricesConn     = "prices"
+	DefaultPropertiesConn = "properties"
 )
 
 const DefaultRetentionDay = 30
@@ -64,6 +68,7 @@ type MongoDB struct {
 	MeteringConn      string
 	BillingConn       string
 	PricesConn        string
+	PropertiesConn    string
 }
 
 type AccountBalanceSpecBSON struct {
@@ -98,6 +103,51 @@ func (m *MongoDB) GetBillingLastUpdateTime(owner string, _type accountv1.Type) (
 	}
 
 	return false, time.Time{}, fmt.Errorf("failed to convert time field to primitive.DateTime: %v", result["time"])
+}
+
+func (m *MongoDB) GetUnsettingBillingHandler(owner string) ([]resources.BillingHandler, error) {
+	filter := bson.M{
+		"owner": owner,
+		"status": bson.M{
+			"$in": []resources.BillingStatus{
+				resources.Unsettled,
+			},
+		},
+	}
+	findOptions := options.Find()
+	cur, err := m.getBillingCollection().Find(context.Background(), filter, findOptions)
+	if err != nil {
+		return nil, fmt.Errorf("find error: %v", err)
+	}
+	defer cur.Close(context.Background())
+	var results []resources.BillingHandler
+	for cur.Next(context.Background()) {
+		var result resources.BillingHandler
+		if err := cur.Decode(&result); err != nil {
+			return nil, fmt.Errorf("decode error: %v", err)
+		}
+		results = append(results, result)
+	}
+	if err := cur.Err(); err != nil {
+		return nil, fmt.Errorf("cursor error: %v", err)
+	}
+	return results, nil
+}
+
+func (m *MongoDB) UpdateBillingStatus(orderID string, status resources.BillingStatus) error {
+	// 创建一个查询过滤器
+	filter := bson.M{"order_id": orderID}
+	// 更新文档
+	update := bson.M{
+		"$set": bson.M{
+			"status": status,
+		},
+	}
+	_, err := m.getBillingCollection().UpdateOne(context.Background(), filter, update)
+	if err != nil {
+		return fmt.Errorf("update error: %v", err)
+	}
+	return nil
 }
 
 func (m *MongoDB) GetBillingHistoryNamespaceList(nsHistorySpec *accountv1.NamespaceBillingHistorySpec, owner string) ([]string, error) {
@@ -249,6 +299,28 @@ func (m *MongoDB) GetAllPricesMap() (map[string]resources.Price, error) {
 	return pricesMap, nil
 }
 
+func (m *MongoDB) GetPropertyTypeLS() (*resources.PropertyTypeLS, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cursor, err := m.getPropertyCollection().Find(ctx, bson.M{})
+	if err != nil {
+		return nil, fmt.Errorf("get all prices error: %v", err)
+	}
+	var properties []resources.PropertyType
+	if err = cursor.All(ctx, &properties); err != nil {
+		return nil, fmt.Errorf("get all prices error: %v", err)
+	}
+	return resources.NewPropertyTypeLS(properties), nil
+}
+
+func (m *MongoDB) GetPropertyTypeLSWithDefault() (*resources.PropertyTypeLS, error) {
+	propLS, err := m.GetPropertyTypeLS()
+	if len(propLS.Types) == 0 {
+		propLS = resources.DefaultPropertyTypeLS
+	}
+	return propLS, err
+}
+
 // 2020-12-01 23:00:00 - 2020-12-02 00:00:00
 // 2020-12-02 00:00:00 - 2020-12-02 01:00:00
 func (m *MongoDB) GenerateMeteringData(startTime, endTime time.Time, prices map[string]resources.Price) error {
@@ -291,8 +363,8 @@ func (m *MongoDB) GenerateMeteringData(startTime, endTime time.Time, prices map[
 				meteringMap[monitor.Category] = make(map[string]int64)
 				countMap[monitor.Category] = make(map[string]int64)
 			}
-
-			meteringMap[monitor.Category][monitor.Property] += monitor.Value
+			//TODO interface will delete
+			//meteringMap[monitor.Category][monitor.Property] += monitor.Value
 			countMap[monitor.Category][monitor.Property]++
 			continue
 		}
@@ -331,6 +403,142 @@ func (m *MongoDB) GenerateMeteringData(startTime, endTime time.Time, prices map[
 		}
 	}
 	return eg.Wait()
+}
+
+/*
+		monitors = append(monitors, &common.Monitor{
+		Category: namespace.Name,
+		Used:     getResourceUsed(podResource),
+		Time:     timeStamp,
+		Type:     resourceMap[name].Type(),
+		Name:     resourceMap[name].Name(),
+	})
+*/
+//按照type, name, namespace 来统计billing数据
+//统计该time范围内 所有type, name, namespace相同的monitor数据的used平均值或总值（按照其PropertyType）得出一个billing数据并写入billing表
+func (m *MongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resources.PropertyTypeLS, namespaces []string, owner string) (orderID []string, amount int64, err error) {
+	minutes := endTime.Sub(startTime).Minutes()
+
+	groupStage := bson.D{
+		primitive.E{Key: "_id", Value: bson.D{{Key: "type", Value: "$type"}, {Key: "name", Value: "$name"}, {Key: "category", Value: "$category"}}},
+		primitive.E{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+	}
+
+	projectStage := bson.D{
+		primitive.E{Key: "_id", Value: 0},
+		primitive.E{Key: "type", Value: "$_id.type"},
+		primitive.E{Key: "name", Value: "$_id.name"},
+		primitive.E{Key: "category", Value: "$_id.category"},
+	}
+
+	// 初始化 used 阶段
+	usedStage := bson.M{}
+
+	// 根据 EnumMap 动态构建 $group 和 $project 阶段
+	for key := range prols.EnumMap {
+		keyStr := strconv.Itoa(int(key))
+
+		// 添加到 $group 阶段
+		groupStage = append(groupStage, primitive.E{Key: keyStr, Value: bson.D{{Key: "$sum", Value: "$used." + keyStr}}})
+
+		// 添加到 used 阶段
+		usedStage[keyStr] = bson.D{{Key: "$toInt", Value: bson.D{{Key: "$round", Value: bson.D{{Key: "$divide", Value: bson.A{
+			"$" + keyStr, bson.D{{Key: "$cond", Value: bson.A{bson.D{{Key: "$gt", Value: bson.A{"$count", minutes}}}, "$count", minutes}}}}}}}}}}
+	}
+
+	// 将 used 阶段添加到 $project 阶段
+	projectStage = append(projectStage, primitive.E{Key: "used", Value: usedStage})
+
+	// 构建 pipeline
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bson.D{{Key: "time", Value: bson.D{{Key: "$gte", Value: startTime}, {Key: "$lt", Value: endTime}}}, {Key: "category", Value: bson.D{{Key: "$in", Value: namespaces}}}}}},
+		{{Key: "$group", Value: groupStage}},
+		{{Key: "$project", Value: projectStage}},
+	}
+
+	cursor, err := m.getMonitorCollection(startTime).Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return nil, 0, fmt.Errorf("aggregate error: %v", err)
+	}
+	defer cursor.Close(context.Background())
+
+	var appCostsMap = make(map[string]map[uint8][]resources.AppCost, len(namespaces))
+	// map[ns/type]int64
+	var nsTypeAmount = make(map[string]int64)
+
+	for cursor.Next(context.Background()) {
+		var result struct {
+			Type      uint8          `bson:"type"`
+			Namespace string         `bson:"category"`
+			Name      string         `bson:"name"`
+			Used      resources.Used `bson:"used"`
+		}
+
+		err := cursor.Decode(&result)
+		if err != nil {
+			return nil, 0, fmt.Errorf("decode error: %v", err)
+		}
+
+		if _, ok := appCostsMap[result.Namespace]; !ok {
+			appCostsMap[result.Namespace] = make(map[uint8][]resources.AppCost)
+		}
+		if _, ok := appCostsMap[result.Namespace][result.Type]; !ok {
+			appCostsMap[result.Namespace][result.Type] = make([]resources.AppCost, 0)
+		}
+		appCost := resources.AppCost{
+			Used:       result.Used,
+			Name:       result.Name,
+			UsedAmount: make(map[uint8]int64),
+		}
+		// Calculate the amount and set the used value
+		for property := range result.Used {
+			if prop, ok := prols.EnumMap[property]; ok {
+				appCost.UsedAmount[property] = result.Used[property] * prop.UnitPrice
+				appCost.Amount += appCost.UsedAmount[property]
+			}
+		}
+		if appCost.Amount == 0 {
+			continue
+		}
+		nsTypeAmount[result.Namespace+strconv.Itoa(int(result.Type))] += appCost.Amount
+		appCostsMap[result.Namespace][result.Type] = append(appCostsMap[result.Namespace][result.Type], appCost)
+	}
+
+	for ns, appCostMap := range appCostsMap {
+		for tp, appCost := range appCostMap {
+			amountt := nsTypeAmount[ns+strconv.Itoa(int(tp))]
+			if amountt == 0 {
+				continue
+			}
+			id, err := gonanoid.New(12)
+			if err != nil {
+				return nil, 0, fmt.Errorf("generate billing id error: %v", err)
+			}
+			billing := resources.Billing{
+				OrderID:   id,
+				Type:      resources.Consumption,
+				Namespace: ns,
+				AppType:   tp,
+				AppCosts:  appCost,
+				Amount:    amountt,
+				Owner:     owner,
+				Time:      endTime,
+				Status:    resources.Settled,
+			}
+			amount += amountt
+			orderID = append(orderID, id)
+			// Insert the billing document
+			_, err = m.getBillingCollection().InsertOne(context.Background(), billing)
+			if err != nil {
+				return nil, 0, fmt.Errorf("insert error: %v", err)
+			}
+		}
+	}
+
+	if err = cursor.Err(); err != nil {
+		return nil, 0, fmt.Errorf("cursor error: %v", err)
+	}
+	return orderID, amount, nil
 }
 
 func (m *MongoDB) GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error) {
@@ -611,6 +819,10 @@ func (m *MongoDB) getBillingCollection() *mongo.Collection {
 	return m.Client.Database(m.DBName).Collection(m.BillingConn)
 }
 
+func (m *MongoDB) getPropertyCollection() *mongo.Collection {
+	return m.Client.Database(m.DBName).Collection(m.PropertiesConn)
+}
+
 func (m *MongoDB) CreateBillingIfNotExist() error {
 	if exist, err := m.collectionExist(m.DBName, m.BillingConn); exist || err != nil {
 		return err
@@ -709,5 +921,6 @@ func NewMongoDB(ctx context.Context, URL string) (Interface, error) {
 		MonitorConnPrefix: DefaultMonitorConn,
 		BillingConn:       DefaultBillingConn,
 		PricesConn:        DefaultPricesConn,
+		PropertiesConn:    DefaultPropertiesConn,
 	}, err
 }

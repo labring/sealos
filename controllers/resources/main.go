@@ -20,6 +20,7 @@ import (
 	"context"
 	"flag"
 	"os"
+	"time"
 
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	"github.com/labring/sealos/controllers/resources/controllers"
@@ -114,6 +115,35 @@ func main() {
 		setupLog.Error(err, "failed to init monitor reconciler")
 		os.Exit(1)
 	}
+	defer func() {
+		if err := reconciler.DBClient.Disconnect(context.Background()); err != nil {
+			setupLog.Error(err, "failed to disconnect db client")
+		}
+	}()
+	reconciler.Properties, err = reconciler.DBClient.GetPropertyTypeLSWithDefault()
+	if err != nil {
+		setupLog.Error(err, "failed to get property type")
+		os.Exit(1)
+	}
+	// timer creates tomorrow's timing table in advance to ensure that tomorrow's table exists
+	ticker := time.NewTicker(24 * time.Hour)
+	done := make(chan bool)
+	defer close(done)
+	defer ticker.Stop()
+
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			case t := <-ticker.C:
+				err = reconciler.DBClient.CreateMonitorTimeSeriesIfNotExist(t.UTC().Add(24 * time.Hour))
+				if err != nil {
+					reconciler.Logger.Error(err, "failed to create monitor time series")
+				}
+			}
+		}
+	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
