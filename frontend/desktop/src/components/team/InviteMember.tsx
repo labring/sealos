@@ -15,7 +15,8 @@ import {
   Text,
   Flex,
   useToast,
-  Spinner
+  Spinner,
+  FlexProps
 } from '@chakra-ui/react';
 import CustomInput from './Input';
 import { useState } from 'react';
@@ -25,13 +26,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { inviteMemberRequest } from '@/api/namespace';
 import { vaildManage } from '@/utils/tools';
 import { ApiResp } from '@/types';
+import GroupAddIcon from '../icons/GroupAdd';
 //!todo 只能邀请不在team内的
 export default function InviteMember({
   ns_uid,
   ownRole,
   buttonType = 'img',
   ...props
-}: (Parameters<typeof Image>[0] | Parameters<typeof Button>[0]) & {
+}: (FlexProps | Parameters<typeof Button>[0]) & {
   ns_uid: string;
   ownRole: UserRole;
   buttonType?: 'img' | 'button';
@@ -91,15 +93,20 @@ export default function InviteMember({
     <>
       {[UserRole.Manager, UserRole.Owner].includes(ownRole) ? (
         buttonType === 'img' ? (
-          <Image
-            onClick={onOpen}
-            src="/images/group_add.svg"
-            h="16px"
-            w="16px"
-            color={'#7B838B'}
-            {...(props as Parameters<typeof Image>[0])}
+          <Flex
+            h="24px"
+            w="24px"
+            _hover={{
+              bgColor: 'rgba(0, 0, 0, 0.03)'
+            }}
+            align={'center'}
+            justify={'center'}
+            {...(props as FlexProps)}
             cursor={'pointer'}
-          />
+            onClick={onOpen}
+          >
+            <GroupAddIcon h="20px" w="20px" color={'#7B838B'} />
+          </Flex>
         ) : (
           <Button
             onClick={onOpen}
@@ -114,7 +121,7 @@ export default function InviteMember({
             {...(props as Parameters<typeof Button>[0])}
           >
             <Image src="/images/group_add.svg" h="16px" w="16px" mr="4px" />
-            邀请成员
+            邀请
           </Button>
         )
       ) : (

@@ -6,10 +6,8 @@ import Iconfont from '../iconfont';
 import { ApiResp } from '@/types';
 import InviteMember from './InviteMember';
 import { NSType, NamespaceDto, UserRole } from '@/types/team';
-// import useSessionStore from '@/stores/session';
 const NsList = ({
   click,
-  // selected,
   selected_ns_uid,
   nullNs,
   ...boxprop
@@ -17,20 +15,10 @@ const NsList = ({
   click?: (ns: NamespaceDto) => void;
   selected_ns_uid: string;
   nullNs?: (privateNamespace: NamespaceDto) => void;
-  // selected: (ns: NamespaceDto) => boolean;
 } & Parameters<typeof Box>[0]) => {
-  // const session = useSessionStore((s) => s.session);
-  // const { userId, k8s_username, ns_uid } = session.user;
   const queryClient = useQueryClient();
   const { data } = useQuery({
-    queryKey: [
-      'teamList',
-      'teamGroup'
-      // {
-      //   userId,
-      //   k8s_username
-      // }
-    ],
+    queryKey: ['teamList', 'teamGroup'],
     queryFn: () =>
       request<any, ApiResp<{ namespaces: (NamespaceDto & { role: UserRole })[] }>>(
         '/api/auth/namespace/list'
@@ -51,7 +39,7 @@ const NsList = ({
           <Flex
             key={ns.id}
             align={'center'}
-            py="6px"
+            py="10px"
             mb="2px"
             position={'relative'}
             borderRadius="2px"
@@ -59,7 +47,9 @@ const NsList = ({
               ? {
                   background: 'rgba(0, 0, 0, 0.05)'
                 }
-              : {})}
+              : {
+                  bgColor: 'unset'
+                })}
             px={'4px'}
             _hover={{
               '> .namespace-option': {
@@ -74,7 +64,6 @@ const NsList = ({
               onClick={(e) => {
                 e.preventDefault();
                 queryClient.invalidateQueries({ queryKey: ['teamList'] });
-
                 click && click(ns);
               }}
               width={'full'}
@@ -84,10 +73,10 @@ const NsList = ({
                 h="8px"
                 mr="8px"
                 borderRadius="50%"
-                bgColor={selected_ns_uid === ns.uid ? '#47C8BF' : '#ABADC3'}
+                bgColor={selected_ns_uid === ns.uid ? '#47C8BF' : ''}
               />
               <Text
-                fontSize={'12px'}
+                fontSize={'14px'}
                 {...(selected_ns_uid === ns.uid
                   ? {
                       color: '#0884DD'
@@ -106,11 +95,22 @@ const NsList = ({
               right={'0'}
             >
               {ns.nstype === NSType.Team && (
-                <InviteMember ownRole={ns.role} mr="10px" ns_uid={ns.uid} />
+                <InviteMember ownRole={ns.role} mr="6px" ns_uid={ns.uid} />
               )}
-              <Box onClick={() => copyData(ns.id)} cursor={'pointer'} mr="6px">
-                <Iconfont iconName="icon-copy2" width={14} height={14} color="#7B838B"></Iconfont>
-              </Box>
+              <Flex
+                onClick={() => copyData(ns.id)}
+                justify={'center'}
+                alignItems={'center'}
+                cursor={'pointer'}
+                mr="6px"
+                w="24px"
+                h="24px"
+                _hover={{
+                  bgColor: 'rgba(0, 0, 0, 0.03)'
+                }}
+              >
+                <Iconfont iconName="icon-copy2" width={18} height={18} color="#7B838B"></Iconfont>
+              </Flex>
             </Flex>
           </Flex>
         ))}

@@ -1,5 +1,6 @@
 import {
   Button,
+  Flex,
   Image,
   Modal,
   ModalBody,
@@ -43,17 +44,28 @@ export default function CreateTeam() {
   };
   return (
     <>
-      <Image
-        cursor={'pointer'}
-        onClick={() => {
-          onOpen();
-          setTeamName('');
+      <Flex
+        _hover={{
+          bgColor: 'rgba(0, 0, 0, 0.03)'
         }}
-        src="/images/material-symbols_add.svg"
-        h="16px"
-        w="16px"
+        w="28px"
+        h="28px"
         mr="4px"
-      />
+        transition={'all 0.3s'}
+        justify={'center'}
+        align={'center'}
+      >
+        <Image
+          cursor={'pointer'}
+          onClick={() => {
+            onOpen();
+            setTeamName('');
+          }}
+          src="/images/material-symbols_add.svg"
+          h="20px"
+          w="20px"
+        />
+      </Flex>
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
         <ModalContent

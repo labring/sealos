@@ -61,26 +61,37 @@ export default function TeamCenter() {
   const { copyData } = useCopyData();
   return (
     <>
-      <Image
-        cursor={'pointer'}
-        onClick={() => {
-          // 清理消息过滤
-          setMessageFilter([]);
-          onOpen();
-        }}
+      <Flex
         ml="auto"
-        src="/images/uil_setting.svg"
-        h="16px"
-        w="16px"
-        mr="10px"
-      />
+        _hover={{
+          bgColor: 'rgba(0, 0, 0, 0.03)'
+        }}
+        w="28px"
+        h="28px"
+        mr="6px"
+        transition={'all 0.3s'}
+        justify={'center'}
+        align={'center'}
+      >
+        <Image
+          cursor={'pointer'}
+          onClick={() => {
+            // 清理消息过滤
+            setMessageFilter([]);
+            onOpen();
+          }}
+          src="/images/uil_setting.svg"
+          h="20px"
+          w="20px"
+        />
+      </Flex>
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
         <ModalContent
           borderRadius={'8px'}
           maxW={'960px'}
           h="550px"
-          bgColor={'rgba(255, 255, 255, 0.80)'}
+          bgColor={'rgba(255, 255, 255, 0.9)'}
           backdropFilter="blur(150px)"
         >
           <ModalCloseButton zIndex={'99'} />
@@ -109,7 +120,9 @@ export default function TeamCenter() {
                 mb="4px"
                 borderBottom="1.5px solid rgba(0, 0, 0, 0.05)"
               >
-                <Text fontSize={'14px'}>Team</Text>
+                <Text fontSize={'16px'} fontWeight={'600'}>
+                  Team
+                </Text>
                 <CreateTeam />
               </Flex>
               <Box overflow={'scroll'} h="0" flex="1" px="16px">
