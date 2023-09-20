@@ -92,7 +92,7 @@ func (r *LicenseIssuerReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// payment.Status.Token = token
 	// payment.Status.Status = "Completed"
 	// return ctrl.Result{}, r.Status().Update(context.Background(), &payment)
-	return r.IssuerHandle(status, orderAmount, &payment)
+	return r.IssuerHandle(status, &payment)
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -116,7 +116,7 @@ func (r *LicenseIssuerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *LicenseIssuerReconciler) IssuerHandle(status string, orderAmount int64, payment *issuerv1.Payment) (ctrl.Result, error) {
+func (r *LicenseIssuerReconciler) IssuerHandle(status string, payment *issuerv1.Payment) (ctrl.Result, error) {
 	switch status {
 	case pay.PaymentProcessing, pay.PaymentNotPaid:
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, nil
