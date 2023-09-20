@@ -60,7 +60,7 @@ func NewResourceNamed(cr client.Object) *ResourceNamed {
 }
 
 func (p *ResourceNamed) Type() uint8 {
-	return MonitorType[p._type]
+	return AppType[p._type]
 }
 
 func (p *ResourceNamed) TypeString() string {

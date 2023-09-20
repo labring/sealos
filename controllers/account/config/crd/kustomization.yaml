@@ -4,7 +4,6 @@
 resources:
 - bases/account.sealos.io_accounts.yaml
 - bases/account.sealos.io_payments.yaml
-- bases/account.sealos.io_accountbalances.yaml
 - bases/account.sealos.io_debts.yaml
 - bases/account.sealos.io_billingrecordqueries.yaml
 - bases/account.sealos.io_pricequeries.yaml
@@ -17,7 +16,6 @@ patchesStrategicMerge:
 # patches here are for enabling the conversion webhook for each CRD
 #- patches/webhook_in_accounts.yaml
 #- patches/webhook_in_payments.yaml
-#- patches/webhook_in_accountbalances.yaml
 - patches/webhook_in_debts.yaml
 #- patches/webhook_in_billingrecordqueries.yaml
 #- patches/webhook_in_pricequeries.yaml
@@ -29,7 +27,6 @@ patchesStrategicMerge:
 # patches here are for enabling the CA injection for each CRD
 #- patches/cainjection_in_accounts.yaml
 #- patches/cainjection_in_payments.yaml
-#- patches/cainjection_in_accountbalances.yaml
 - patches/cainjection_in_debts.yaml
 #- patches/cainjection_in_billingrecordqueries.yaml
 #- patches/cainjection_in_pricequeries.yaml

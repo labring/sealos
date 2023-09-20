@@ -21,6 +21,8 @@ import (
 	"strings"
 	"time"
 
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+
 	"github.com/labring/sealos/controllers/pkg/gpu"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 
@@ -87,39 +89,20 @@ type Price struct {
 // Composite index: category, property, time, speed up query
 type Monitor struct {
 	Time time.Time `json:"time" bson:"time"`
-	// 对应namespace
+	// equal namespace
 	Category string `json:"category" bson:"category"`
 	Type     uint8  `json:"type" bson:"type"`
 	Name     string `json:"name" bson:"name"`
 	Used     Used   `json:"used" bson:"used"`
-
 	Property string `json:"property" bson:"property"`
-
-	//Value    int64  `json:"value,omitempty" bson:"value,omitempty"`
-	//Status int    `json:"status" bson:"status"`
-	//Detail string `json:"detail" bson:"detail"`
 }
-
-//CPU      int64     `json:"cpu" bson:"cpu"`
-//Memory   int64     `json:"memory" bson:"memory"`
-//Storage  int64     `json:"storage" bson:"storage"`
-//Network  int64     `json:"network" bson:"network"`
-
-const (
-	// Consumption 消费
-	Consumption BillingType = iota
-	// Recharge 充值
-	Recharge
-	TransferIn
-	TransferOut
-)
 
 type BillingType int
 
 type Billing struct {
-	Time    time.Time   `json:"time" bson:"time"`
-	OrderID string      `json:"order_id" bson:"order_id"`
-	Type    BillingType `json:"type" bson:"type"`
+	Time    time.Time      `json:"time" bson:"time"`
+	OrderID string         `json:"order_id" bson:"order_id"`
+	Type    accountv1.Type `json:"type" bson:"type"`
 	//Name      string      `json:"name" bson:"name"`
 	Namespace string `json:"namespace" bson:"namespace"`
 	//Used       Used        `json:"used" bson:"used"`
@@ -132,6 +115,25 @@ type Billing struct {
 	Owner  string `json:"owner" bson:"owner,omitempty"`
 	// 0: 未结算 1: 已结算
 	Status BillingStatus `json:"status" bson:"status,omitempty"`
+	// if type = Consumption, then payment is not nil
+	Payment *Payment `json:"payment" bson:"payment,omitempty"`
+	// if type = Transfer, then transfer is not nil
+	Transfer *Transfer `json:"transfer" bson:"transfer,omitempty"`
+}
+
+type Payment struct {
+	Method  string `json:"method" bson:"method"`
+	UserID  string `json:"user_id" bson:"user_id"`
+	Amount  int64  `json:"amount,omitempty"`
+	TradeNO string `json:"tradeNO,omitempty"`
+	// CodeURL is the codeURL of wechatpay
+	CodeURL string `json:"codeURL,omitempty"`
+}
+
+type Transfer struct {
+	From   string `json:"from" bson:"from,omitempty"`
+	To     string `json:"to" bson:"to,omitempty"`
+	Amount int64  `json:"amount" bson:"amount"`
 }
 
 type AppCost struct {
@@ -178,8 +180,12 @@ const (
 	OTHER    = "OTHER"
 )
 
-var MonitorType = map[string]uint8{
+var AppType = map[string]uint8{
 	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other,
+}
+
+var AppTypeReverse = map[uint8]string{
+	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER,
 }
 
 // 资源消耗
@@ -484,73 +490,3 @@ func GetPrices(mongoClient *mongo.Client) ([]Price, error) {
 	}
 	return prices, nil
 }
-
-// create unique index
-//func createUniqueIndex(collection *mongo.Collection, field string) error {
-//	indexModel := mongo.IndexModel{
-//		Keys:    bson.D{{Key: field, Value: 1}},
-//		Options: options.Index().SetUnique(true),
-//	}
-//
-//	_, err := collection.Indexes().CreateOne(context.Background(), indexModel)
-//	if err != nil {
-//		return fmt.Errorf("failed to create unique index on %s: %v", field, err)
-//	}
-//	return nil
-//}
-
-//func createCompoundIndex(client *mongo.Client, dbName, collectionName string) error {
-//	collection := client.Database(dbName).Collection(collectionName)
-//	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-//	defer cancel()
-//
-//	indexModel := mongo.IndexModel{
-//		Keys: bson.D{
-//			{Key: CategoryField, Value: 1},
-//			{Key: PropertyField, Value: 1},
-//			{Key: TimeField, Value: 1},
-//		},
-//	}
-//
-//	_, err := collection.Indexes().CreateOne(ctx, indexModel)
-//	return err
-//}
-
-//func ensureCompoundIndex(client *mongo.Client, dbName, collName string, indexKeys bson.M) error {
-//	collection := client.Database(dbName).Collection(collName)
-//	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-//	defer cancel()
-//
-//	// List all indexes in the collection
-//	cursor, err := collection.Indexes().List(ctx)
-//	if err != nil {
-//		return err
-//	}
-//	defer cursor.Close(ctx)
-//
-//	// Check if the compound index already exists
-//	indexExists := false
-//	for cursor.Next(ctx) {
-//		var index bson.M
-//		if err := cursor.Decode(&index); err != nil {
-//			return err
-//		}
-//		if keys, ok := index["key"].(bson.M); ok {
-//			if reflect.DeepEqual(keys, indexKeys) {
-//				indexExists = true
-//				break
-//			}
-//		}
-//	}
-//
-//	// Create the compound index if it doesn't exist
-//	if !indexExists {
-//		_, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
-//			Keys: indexKeys,
-//		})
-//		if err != nil {
-//			return err
-//		}
-//	}
-//	return nil
-//}

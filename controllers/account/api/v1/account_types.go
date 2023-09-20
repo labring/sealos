@@ -21,11 +21,30 @@ import (
 )
 
 const (
-	ChargeStatusCharging      = "charging"
-	ChargeStatusClosed        = "closed"
-	ChargeStatusTimeOUT       = "timeout"
 	AccountSystemNamespaceEnv = "ACCOUNT_SYSTEM_NAMESPACE"
 )
+
+type (
+	Status string
+	Type   int
+)
+
+const (
+	// Consumption 消费
+	Consumption Type = iota
+	// Recharge 充值
+	Recharge
+	TransferIn
+	TransferOut
+)
+
+const (
+	Completed Status = "completed"
+	Create    Status = "create"
+	Failed    Status = "failed"
+)
+
+type Costs map[string]int64
 
 const (
 	Name  = "name"

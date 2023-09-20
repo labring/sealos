@@ -34,18 +34,33 @@ type BillingRecordQuerySpec struct {
 	EndTime   metav1.Time `json:"endTime"`
 	OrderID   string      `json:"orderID,omitempty"`
 	Type      Type        `json:"type"`
+	AppType   string      `json:"appType,omitempty"`
 }
 
 // BillingRecordQueryStatus defines the observed state of BillingRecordQuery
 type BillingRecordQueryStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	TotalCount      int                  `json:"totalCount"`
-	PageLength      int                  `json:"pageLength"`
-	RechargeAmount  int64                `json:"rechargeAmount"`
-	DeductionAmount Costs                `json:"deductionAmount,omitempty"`
-	Items           []AccountBalanceSpec `json:"item,omitempty"`
-	Status          string               `json:"status"`
+	TotalCount      int                      `json:"totalCount"`
+	PageLength      int                      `json:"pageLength"`
+	RechargeAmount  int64                    `json:"rechargeAmount"`
+	DeductionAmount Costs                    `json:"deductionAmount,omitempty"`
+	Items           []BillingRecordQueryItem `json:"item,omitempty"`
+	Status          string                   `json:"status"`
+}
+
+type BillingRecordQueryItem struct {
+	Time                         metav1.Time `json:"time" bson:"time"`
+	BillingRecordQueryItemInline `json:",inline"`
+}
+
+type BillingRecordQueryItemInline struct {
+	OrderID   string `json:"order_id" bson:"order_id"`
+	Namespace string `json:"namespace,omitempty" bson:"namespace,omitempty"`
+	Type      Type   `json:"type" bson:"type"`
+	AppType   string `json:"appType,omitempty" bson:"appType,omitempty"`
+	Costs     Costs  `json:"costs,omitempty" bson:"costs,omitempty"`
+	Amount    int64  `json:"amount,omitempty" bson:"amount"`
 }
 
 //+kubebuilder:object:root=true

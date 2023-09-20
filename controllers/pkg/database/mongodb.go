@@ -74,8 +74,8 @@ type MongoDB struct {
 type AccountBalanceSpecBSON struct {
 	// Time    metav1.Time `json:"time" bson:"time"`
 	// time字段如果为time.Time类型无法转换为json crd，所以使用metav1.Time，但是使用metav1.Time无法插入到mongo中，所以需要转换为time.Time
-	Time                               time.Time `json:"time" bson:"time"`
-	accountv1.AccountBalanceSpecInline `json:",inline" bson:",inline"`
+	Time                                   time.Time `json:"time" bson:"time"`
+	accountv1.BillingRecordQueryItemInline `json:",inline" bson:",inline"`
 }
 
 func (m *MongoDB) Disconnect(ctx context.Context) error {
@@ -188,12 +188,12 @@ func (m *MongoDB) GetBillingHistoryNamespaceList(nsHistorySpec *accountv1.Namesp
 	return result.Namespaces, nil
 }
 
-func (m *MongoDB) SaveBillingsWithAccountBalance(accountBalanceSpec *accountv1.AccountBalanceSpec) error {
-	accountBalanceDoc := AccountBalanceSpecBSON{
-		Time:                     accountBalanceSpec.Time.Time.UTC(),
-		AccountBalanceSpecInline: accountBalanceSpec.AccountBalanceSpecInline,
+func (m *MongoDB) SaveBillings(billing ...*resources.Billing) error {
+	billings := make([]interface{}, len(billing))
+	for i, b := range billing {
+		billings[i] = b
 	}
-	_, err := m.getBillingCollection().InsertOne(context.Background(), accountBalanceDoc)
+	_, err := m.getBillingCollection().InsertMany(context.Background(), billings)
 	return err
 }
 
@@ -516,7 +516,7 @@ func (m *MongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 			}
 			billing := resources.Billing{
 				OrderID:   id,
-				Type:      resources.Consumption,
+				Type:      accountv1.Consumption,
 				Namespace: ns,
 				AppType:   tp,
 				AppCosts:  appCost,
@@ -571,7 +571,7 @@ func (m *MongoDB) queryBillingRecordsByOrderID(billingRecordQuery *accountv1.Bil
 			primitive.E{Key: "owner", Value: owner},
 		}},
 	}
-	var billingRecords []accountv1.AccountBalanceSpec
+	var billingRecords []accountv1.BillingRecordQueryItem
 	ctx := context.Background()
 
 	cursor, err := billingColl.Aggregate(ctx, bson.A{matchStage})
@@ -581,13 +581,19 @@ func (m *MongoDB) queryBillingRecordsByOrderID(billingRecordQuery *accountv1.Bil
 	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
-		var bsonRecord AccountBalanceSpecBSON
+		var bsonRecord resources.Billing
 		if err := cursor.Decode(&bsonRecord); err != nil {
 			return fmt.Errorf("failed to decode billing record: %w", err)
 		}
-		billingRecord := accountv1.AccountBalanceSpec{
-			Time:                     metav1.NewTime(bsonRecord.Time),
-			AccountBalanceSpecInline: bsonRecord.AccountBalanceSpecInline,
+		billingRecord := accountv1.BillingRecordQueryItem{
+			Time: metav1.NewTime(bsonRecord.Time),
+			BillingRecordQueryItemInline: accountv1.BillingRecordQueryItemInline{
+				OrderID:   bsonRecord.OrderID,
+				Type:      accountv1.Type(bsonRecord.Type),
+				Namespace: bsonRecord.Namespace,
+				AppType:   resources.AppTypeReverse[bsonRecord.AppType],
+				Amount:    bsonRecord.Amount,
+			},
 		}
 		billingRecords = append(billingRecords, billingRecord)
 	}
@@ -601,6 +607,9 @@ func (m *MongoDB) queryBillingRecordsByOrderID(billingRecordQuery *accountv1.Bil
 func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecordQuery, owner string) (err error) {
 	if billingRecordQuery.Spec.OrderID != "" {
 		return m.queryBillingRecordsByOrderID(billingRecordQuery, owner)
+	}
+	if owner == "" {
+		return fmt.Errorf("owner is empty")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -617,6 +626,9 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	}
 	if billingRecordQuery.Spec.Namespace != "" {
 		matchValue = append(matchValue, primitive.E{Key: "namespace", Value: billingRecordQuery.Spec.Namespace})
+	}
+	if billingRecordQuery.Spec.AppType != "" {
+		matchValue = append(matchValue, primitive.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(billingRecordQuery.Spec.AppType)]})
 	}
 	matchStage := bson.D{
 		primitive.E{
@@ -679,15 +691,30 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	}
 	defer cursor.Close(ctx)
 
-	var billingRecords []accountv1.AccountBalanceSpec
+	var billingRecords []accountv1.BillingRecordQueryItem
 	for cursor.Next(ctx) {
-		var bsonRecord AccountBalanceSpecBSON
+		var bsonRecord resources.Billing
 		if err := cursor.Decode(&bsonRecord); err != nil {
 			return fmt.Errorf("failed to decode billing record: %w", err)
 		}
-		billingRecord := accountv1.AccountBalanceSpec{
-			Time:                     metav1.NewTime(bsonRecord.Time),
-			AccountBalanceSpecInline: bsonRecord.AccountBalanceSpecInline,
+		billingRecord := accountv1.BillingRecordQueryItem{
+			Time: metav1.NewTime(bsonRecord.Time),
+			BillingRecordQueryItemInline: accountv1.BillingRecordQueryItemInline{
+				OrderID:   bsonRecord.OrderID,
+				Namespace: bsonRecord.Namespace,
+				Type:      accountv1.Type(bsonRecord.Type),
+				AppType:   resources.AppTypeReverse[bsonRecord.AppType],
+				Amount:    bsonRecord.Amount,
+			},
+		}
+		if len(bsonRecord.AppCosts) != 0 {
+			costs := make(map[string]int64, len(resources.DefaultPropertyTypeLS.Types))
+			for i := range bsonRecord.AppCosts {
+				for j := range bsonRecord.AppCosts[i].UsedAmount {
+					costs[resources.DefaultPropertyTypeLS.EnumMap[j].Name] += bsonRecord.AppCosts[i].UsedAmount[j]
+				}
+			}
+			billingRecord.Costs = costs
 		}
 		billingRecords = append(billingRecords, billingRecord)
 	}

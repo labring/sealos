@@ -81,8 +81,6 @@ type AccountReconciler struct {
 //+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=limitranges,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=user.sealos.io,resources=users,verbs=get;list;watch
-//+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances/status,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
@@ -97,18 +95,6 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, user); err == nil {
 		_, err = r.syncAccount(ctx, GetUserOwner(user), r.AccountSystemNamespace, "ns-"+user.Name)
 		return ctrl.Result{}, err
-	} else if client.IgnoreNotFound(err) != nil {
-		return ctrl.Result{}, err
-	}
-
-	accountBalance := accountv1.AccountBalance{}
-	if err := r.Get(ctx, req.NamespacedName, &accountBalance); err == nil {
-		err = cretry.RetryOnConflict(cretry.DefaultBackoff, func() error {
-			return r.updateDeductionBalance(ctx, &accountBalance)
-		})
-		if err != nil {
-			return ctrl.Result{}, err
-		}
 	} else if client.IgnoreNotFound(err) != nil {
 		return ctrl.Result{}, err
 	}
@@ -165,7 +151,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if err := SyncAccountStatus(ctx, r.Client, account); err != nil {
 			return ctrl.Result{}, fmt.Errorf("update account failed: %v", err)
 		}
-		payment.Status.Status = string(pay.PaymentSuccess)
+		payment.Status.Status = pay.PaymentSuccess
 		if err := r.Status().Update(ctx, payment); err != nil {
 			return ctrl.Result{}, fmt.Errorf("update payment failed: %v", err)
 		}
@@ -175,15 +161,19 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			r.Logger.Error(err, "create id failed", "id", id, "payment", payment)
 			return ctrl.Result{}, nil
 		}
-		err = r.DBClient.SaveBillingsWithAccountBalance(&accountv1.AccountBalanceSpec{
-			Time: metav1.Time{Time: now},
-			AccountBalanceSpecInline: accountv1.AccountBalanceSpecInline{
-				OrderID:   id,
-				Amount:    payment.Spec.Amount,
-				Namespace: payment.Namespace,
-				Owner:     getUsername(payment.Namespace),
-				Type:      accountv1.Recharge,
-				Details:   payment.ToJSON(),
+		err = r.DBClient.SaveBillings(&resources.Billing{
+			Time:      now,
+			OrderID:   id,
+			Amount:    gift,
+			Namespace: payment.Namespace,
+			Owner:     getUsername(payment.Spec.UserID),
+			Type:      accountv1.Recharge,
+			Payment: &resources.Payment{
+				Method:  payment.Spec.PaymentMethod,
+				TradeNO: payment.Status.TradeNO,
+				CodeURL: payment.Status.CodeURL,
+				UserID:  payment.Spec.UserID,
+				Amount:  payAmount,
 			},
 		})
 		if err != nil {
@@ -398,61 +388,6 @@ func (r *AccountReconciler) DeletePayment(ctx context.Context) error {
 	return nil
 }
 
-func (r *AccountReconciler) updateDeductionBalance(ctx context.Context, accountBalance *accountv1.AccountBalance) error {
-	if accountBalance.Status.Status == accountv1.Completed {
-		return r.Delete(ctx, accountBalance)
-	}
-
-	r.Logger.V(1).Info("enter deduction balance", "accountBalanceName", accountBalance.Name, "accountBalanceNamespace", accountBalance.Namespace, ".Spec", accountBalance.Spec, "status", accountBalance.Status)
-	account, err := r.syncAccount(ctx, accountBalance.Spec.Owner, r.AccountSystemNamespace, "ns-"+accountBalance.Spec.Owner)
-	if err != nil {
-		r.Logger.Error(err, err.Error())
-		return err
-	}
-	err = r.initBalance(account)
-	if err != nil {
-		return fmt.Errorf("sync balance failed: %v", err)
-	}
-	switch accountBalance.Spec.Type {
-	case accountv1.TransferIn:
-		err = crypto.RechargeBalance(account.Status.EncryptBalance, accountBalance.Spec.Amount)
-		if err != nil {
-			r.Logger.Error(err, err.Error())
-			return err
-		}
-	case accountv1.TransferOut:
-		err = crypto.DeductBalance(account.Status.EncryptBalance, accountBalance.Spec.Amount)
-		if err != nil {
-			r.Logger.Error(err, err.Error())
-			return err
-		}
-	case accountv1.Consumption:
-		err = crypto.RechargeBalance(account.Status.EncryptDeductionBalance, accountBalance.Spec.Amount)
-		if err != nil {
-			r.Logger.Error(err, err.Error())
-			return err
-		}
-	default:
-		return fmt.Errorf("unknown accountbalance type: %v", accountBalance.Spec.Type)
-	}
-
-	if err := SyncAccountStatus(ctx, r.Client, account); err != nil {
-		r.Logger.Error(err, err.Error())
-		return err
-	}
-
-	accountBalance.Status.Status = accountv1.Completed
-	if err := r.Status().Update(ctx, accountBalance); err != nil {
-		r.Logger.Error(err, err.Error())
-		return err
-	}
-	err = r.DBClient.SaveBillingsWithAccountBalance(&accountBalance.Spec)
-	if err != nil {
-		r.Logger.Error(err, "save billings with accountBalance failed", "accountBalance", accountBalance.Spec)
-	}
-	return nil
-}
-
 func SyncAccountStatus(ctx context.Context, client client.Client, account *accountv1.Account) error {
 	balance, err := crypto.DecryptInt64(*account.Status.EncryptBalance)
 	if err != nil {
@@ -496,8 +431,6 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 			},
 		}))).
 		Watches(&source.Kind{Type: &accountv1.Payment{}}, &handler.EnqueueRequestForObject{}).
-		//TODO optimize accountbalance cr will
-		//Watches(&source.Kind{Type: &accountv1.AccountBalance{}}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(&NamespaceFilterPredicate{Namespace: r.AccountSystemNamespace})).
 		WithOptions(rateOpts).
 		Complete(r)
 }

@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/resources"
+
 	"github.com/labring/sealos/controllers/pkg/database"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
@@ -164,6 +166,7 @@ func main() {
 		setupLog.Error(err, "unable to get property type")
 		os.Exit(1)
 	}
+	resources.DefaultPropertyTypeLS = properties
 
 	if err = (&controllers.BillingRecordQueryReconciler{
 		Client: mgr.GetClient(),
@@ -197,8 +200,9 @@ func main() {
 		os.Exit(1)
 	}
 	if err = (&controllers.TransferReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		DBClient: dbClient,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Transfer")
 		os.Exit(1)

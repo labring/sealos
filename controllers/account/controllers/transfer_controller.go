@@ -23,6 +23,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/resources"
+
+	"github.com/labring/sealos/controllers/pkg/database"
+
 	"github.com/labring/sealos/controllers/pkg/crypto"
 
 	"github.com/go-logr/logr"
@@ -45,13 +49,12 @@ type TransferReconciler struct {
 	client.Client
 	Scheme                 *runtime.Scheme
 	AccountSystemNamespace string
+	DBClient               database.Interface
 }
 
 //TODO add user, account role
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts/status,verbs=get
-//+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances/status,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=transfers,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=transfers/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=account.sealos.io,resources=transfers/finalizers,verbs=update
@@ -75,10 +78,10 @@ func (r *TransferReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if time.Since(transfer.CreationTimestamp.Time) > time.Minute*3 {
 		return ctrl.Result{}, r.Delete(ctx, &transfer)
 	}
+	//TODO Error rollback required
 	pipeLine := []func(ctx context.Context, transfer *accountv1.Transfer) error{
 		r.check,
-		r.TransferOutSaver,
-		r.TransferInSaver,
+		r.TransferSaver,
 	}
 	for _, f := range pipeLine {
 		if err := f(ctx, &transfer); err != nil {
@@ -116,33 +119,83 @@ func (r *TransferReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *TransferReconciler) TransferOutSaver(ctx context.Context, transfer *accountv1.Transfer) error {
-	id, err := gonanoid.New(12)
+func (r *TransferReconciler) TransferSaver(ctx context.Context, transfer *accountv1.Transfer) error {
+	idOut, err := gonanoid.New(12)
 	if err != nil {
 		return fmt.Errorf("create id failed: %w", err)
 	}
-	objMeta := metav1.ObjectMeta{
-		Name:      getUsername(transfer.Namespace) + "-" + time.Now().UTC().Format("20060102150405"),
-		Namespace: r.AccountSystemNamespace,
+	idIn, err := gonanoid.New(12)
+	if err != nil {
+		return fmt.Errorf("create id failed: %w", err)
 	}
-	balanceSpec := accountv1.AccountBalanceSpec{
-		Time: metav1.Time{Time: time.Now().UTC()},
-		AccountBalanceSpecInline: accountv1.AccountBalanceSpecInline{
-			OrderID: id,
-			Amount:  transfer.Spec.Amount,
-			Owner:   getUsername(transfer.Namespace),
-			Type:    accountv1.TransferOut,
-			Details: transfer.ToJSON(),
+	err = r.DBClient.SaveBillings(&resources.Billing{
+		OrderID:   idOut,
+		Amount:    transfer.Spec.Amount,
+		Owner:     getUsername(transfer.Namespace),
+		Type:      accountv1.TransferOut,
+		Namespace: transfer.Namespace,
+		Time:      transfer.CreationTimestamp.Time,
+		Transfer: &resources.Transfer{
+			To:     transfer.Spec.To,
+			Amount: transfer.Spec.Amount,
 		},
+	}, &resources.Billing{
+		OrderID:   idIn,
+		Amount:    transfer.Spec.Amount,
+		Owner:     getUsername(transfer.Spec.To),
+		Type:      accountv1.TransferIn,
+		Namespace: transfer.Namespace,
+		Time:      transfer.CreationTimestamp.Time,
+		Transfer: &resources.Transfer{
+			From:   transfer.Spec.From,
+			Amount: transfer.Spec.Amount,
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("save billing failed: %w", err)
 	}
-	from := accountv1.AccountBalance{
-		ObjectMeta: objMeta,
-		Spec:       balanceSpec,
+	if err = r.sendNotice(ctx, transfer.Namespace, transfer.Spec.To, transfer.Spec.Amount, accountv1.TransferOut); err != nil {
+		r.Logger.Error(err, "send notice failed")
 	}
-	if err := r.Create(ctx, &from); err != nil {
-		return fmt.Errorf("create transfer accountbalance failed: %w", err)
+	if err := r.sendNotice(ctx, transfer.Spec.To, transfer.Namespace, transfer.Spec.Amount, accountv1.TransferIn); err != nil {
+		r.Logger.Error(err, "send notice failed")
 	}
-	return r.sendNotice(ctx, transfer.Namespace, transfer.Spec.To, transfer.Spec.Amount, accountv1.TransferOut)
+	return nil
+}
+
+func (r *TransferReconciler) TransferAccount(ctx context.Context, transfer *accountv1.Transfer) error {
+	from, to := transfer.Namespace, transfer.Spec.To
+	var fromAccount, toAccount accountv1.Account
+	if r.Get(ctx, client.ObjectKey{Namespace: r.AccountSystemNamespace, Name: getUsername(from)}, &fromAccount) != nil {
+		return fmt.Errorf("owner %s account not found", from)
+	}
+	balance, _ := crypto.DecryptInt64(*fromAccount.Status.EncryptBalance)
+	deductionBalance, _ := crypto.DecryptInt64(*fromAccount.Status.EncryptDeductionBalance)
+	if balance < deductionBalance+transfer.Spec.Amount+MinBalance {
+		return fmt.Errorf("balance not enough")
+	}
+	if r.Get(ctx, client.ObjectKey{Namespace: r.AccountSystemNamespace, Name: getUsername(to)}, &accountv1.Account{}) != nil {
+		return fmt.Errorf("user %s account not found", transfer.Spec.To)
+	}
+	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, &toAccount, func() error {
+		err := crypto.RechargeBalance(toAccount.Status.EncryptBalance, transfer.Spec.Amount)
+		if err != nil {
+			return err
+		}
+		return r.Status().Update(ctx, &toAccount)
+	}); err != nil {
+		return fmt.Errorf("recharge balance failed: %w", err)
+	}
+	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, &fromAccount, func() error {
+		err := crypto.DeductBalance(fromAccount.Status.EncryptBalance, transfer.Spec.Amount)
+		if err != nil {
+			return err
+		}
+		return r.Status().Update(ctx, &fromAccount)
+	}); err != nil {
+		return fmt.Errorf("deduct balance failed: %w", err)
+	}
+	return nil
 }
 
 const (
@@ -178,36 +231,7 @@ func convertAmount(amount int64) int64 {
 	return amount / 1_000_000
 }
 
-func (r *TransferReconciler) TransferInSaver(ctx context.Context, transfer *accountv1.Transfer) error {
-	id, err := gonanoid.New(12)
-	if err != nil {
-		return fmt.Errorf("create id failed: %w", err)
-	}
-	objMeta := metav1.ObjectMeta{
-		Name:      getUsername(transfer.Spec.To) + "-" + time.Now().UTC().Format("200601021504"),
-		Namespace: r.AccountSystemNamespace,
-	}
-	balanceSpec := accountv1.AccountBalanceSpec{
-		Time: metav1.Time{Time: time.Now().UTC()},
-		AccountBalanceSpecInline: accountv1.AccountBalanceSpecInline{
-			OrderID: id,
-			Amount:  transfer.Spec.Amount,
-			Owner:   getUsername(transfer.Spec.To),
-			Type:    accountv1.TransferIn,
-			Details: transfer.ToJSON(),
-		},
-	}
-	to := accountv1.AccountBalance{
-		ObjectMeta: objMeta,
-		Spec:       balanceSpec,
-	}
-	if err := r.Create(ctx, &to); err != nil {
-		return fmt.Errorf("create transfer accountbalance failed: %w", err)
-	}
-	return r.sendNotice(ctx, transfer.Spec.To, transfer.Namespace, transfer.Spec.Amount, accountv1.TransferIn)
-}
-
-func (r *TransferReconciler) check(ctx context.Context, transfer *accountv1.Transfer) error {
+func (r *TransferReconciler) check(_ context.Context, transfer *accountv1.Transfer) error {
 	if transfer.Spec.Amount <= 0 {
 		return fmt.Errorf("amount must be greater than 0")
 	}
@@ -221,18 +245,6 @@ func (r *TransferReconciler) check(ctx context.Context, transfer *accountv1.Tran
 	to := transfer.Spec.To
 	if getUsername(from) == getUsername(to) {
 		return fmt.Errorf("can not transfer to self")
-	}
-	fromAccount := accountv1.Account{}
-	if r.Get(ctx, client.ObjectKey{Namespace: r.AccountSystemNamespace, Name: getUsername(from)}, &fromAccount) != nil {
-		return fmt.Errorf("owner %s account not found", from)
-	}
-	balance, _ := crypto.DecryptInt64(*fromAccount.Status.EncryptBalance)
-	deductionBalance, _ := crypto.DecryptInt64(*fromAccount.Status.EncryptDeductionBalance)
-	if balance < deductionBalance+transfer.Spec.Amount+MinBalance {
-		return fmt.Errorf("balance not enough")
-	}
-	if r.Get(ctx, client.ObjectKey{Namespace: r.AccountSystemNamespace, Name: getUsername(to)}, &accountv1.Account{}) != nil {
-		return fmt.Errorf("user %s account not found", transfer.Spec.To)
 	}
 	return nil
 }

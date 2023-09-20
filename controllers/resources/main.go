@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/resources"
+
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	"github.com/labring/sealos/controllers/resources/controllers"
 
@@ -125,6 +127,7 @@ func main() {
 		setupLog.Error(err, "failed to get property type")
 		os.Exit(1)
 	}
+	resources.DefaultPropertyTypeLS = reconciler.Properties
 	// timer creates tomorrow's timing table in advance to ensure that tomorrow's table exists
 	ticker := time.NewTicker(24 * time.Hour)
 	done := make(chan bool)

@@ -110,7 +110,7 @@ func (r *BillingRecordQueryReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	if err = r.Get(ctx, client.ObjectKey{Name: getUsername(billingRecordQuery.Namespace), Namespace: r.AccountSystemNamespace}, &accountv1.Account{}); err != nil {
 		if errors.IsNotFound(err) {
-			billingRecordQuery.Status.Status = "Please use the master account to query"
+			billingRecordQuery.Status.Status = "Please use the owner account to query"
 			return ctrl.Result{}, r.Status().Update(ctx, billingRecordQuery)
 		}
 		return ctrl.Result{}, err

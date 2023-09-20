@@ -36,6 +36,8 @@ spec:
           spec:
             description: BillingRecordQuerySpec defines the desired state of BillingRecordQuery
             properties:
+              appType:
+                type: string
               endTime:
                 format: date-time
                 type: string
@@ -71,23 +73,20 @@ spec:
                 type: object
               item:
                 items:
-                  description: AccountBalanceSpec defines the desired state of AccountBalance
                   properties:
                     amount:
                       format: int64
                       type: integer
+                    appType:
+                      type: string
                     costs:
                       additionalProperties:
                         format: int64
                         type: integer
                       type: object
-                    details:
-                      type: string
                     namespace:
                       type: string
                     order_id:
-                      type: string
-                    owner:
                       type: string
                     time:
                       format: date-time
@@ -96,7 +95,6 @@ spec:
                       type: integer
                   required:
                   - order_id
-                  - owner
                   - time
                   - type
                   type: object
