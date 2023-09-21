@@ -36,8 +36,8 @@ type Interface interface {
 	GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error)
 	GetAllPricesMap() (map[string]resources.Price, error)
 	GetPropertyTypeLS() (*resources.PropertyTypeLS, error)
-	//TODO jiami prices
-	GetPropertyTypeLSWithDefault() (*resources.PropertyTypeLS, error)
+	SetDefaultPropertyTypeLS() error
+	SavePropertyTypes(types []resources.PropertyType) error
 	GetBillingCount(accountType accountv1.Type, startTime, endTime time.Time) (count, amount int64, err error)
 	//TODO delete
 	GenerateMeteringData(startTime, endTime time.Time, prices map[string]resources.Price) error

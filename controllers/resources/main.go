@@ -122,12 +122,12 @@ func main() {
 			setupLog.Error(err, "failed to disconnect db client")
 		}
 	}()
-	reconciler.Properties, err = reconciler.DBClient.GetPropertyTypeLSWithDefault()
+	err = reconciler.DBClient.SetDefaultPropertyTypeLS()
 	if err != nil {
 		setupLog.Error(err, "failed to get property type")
 		os.Exit(1)
 	}
-	resources.DefaultPropertyTypeLS = reconciler.Properties
+	reconciler.Properties = resources.DefaultPropertyTypeLS
 	// timer creates tomorrow's timing table in advance to ensure that tomorrow's table exists
 	ticker := time.NewTicker(24 * time.Hour)
 	done := make(chan bool)

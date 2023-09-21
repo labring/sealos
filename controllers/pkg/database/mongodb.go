@@ -340,7 +340,7 @@ func (m *MongoDB) GetAllPricesMap() (map[string]resources.Price, error) {
 func (m *MongoDB) GetPropertyTypeLS() (*resources.PropertyTypeLS, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	cursor, err := m.getPropertyCollection().Find(ctx, bson.M{})
+	cursor, err := m.getPropertiesCollection().Find(ctx, bson.M{})
 	if err != nil {
 		return nil, fmt.Errorf("get all prices error: %v", err)
 	}
@@ -351,12 +351,30 @@ func (m *MongoDB) GetPropertyTypeLS() (*resources.PropertyTypeLS, error) {
 	return resources.NewPropertyTypeLS(properties), nil
 }
 
-func (m *MongoDB) GetPropertyTypeLSWithDefault() (*resources.PropertyTypeLS, error) {
-	propLS, err := m.GetPropertyTypeLS()
-	if len(propLS.Types) == 0 {
-		propLS = resources.DefaultPropertyTypeLS
+func (m *MongoDB) SetDefaultPropertyTypeLS() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cursor, err := m.getPropertiesCollection().Find(ctx, bson.M{})
+	if err != nil {
+		return fmt.Errorf("get all prices error: %v", err)
 	}
-	return propLS, err
+	var properties []resources.PropertyType
+	if err = cursor.All(ctx, &properties); err != nil {
+		return fmt.Errorf("get all prices error: %v", err)
+	}
+	if len(properties) != 0 {
+		resources.DefaultPropertyTypeLS = resources.NewPropertyTypeLS(properties)
+	}
+	return nil
+}
+
+func (m *MongoDB) SavePropertyTypes(types []resources.PropertyType) error {
+	tps := make([]interface{}, len(types))
+	for i, b := range types {
+		tps[i] = b
+	}
+	_, err := m.getPropertiesCollection().InsertMany(context.Background(), tps)
+	return err
 }
 
 // 2020-12-01 23:00:00 - 2020-12-02 00:00:00
@@ -888,7 +906,7 @@ func (m *MongoDB) getBillingCollection() *mongo.Collection {
 	return m.Client.Database(m.DBName).Collection(m.BillingConn)
 }
 
-func (m *MongoDB) getPropertyCollection() *mongo.Collection {
+func (m *MongoDB) getPropertiesCollection() *mongo.Collection {
 	return m.Client.Database(m.DBName).Collection(m.PropertiesConn)
 }
 

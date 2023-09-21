@@ -21,6 +21,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/crypto"
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 
 	"github.com/labring/sealos/controllers/pkg/gpu"
@@ -194,14 +197,16 @@ type EnumUsedMap map[uint8]int64
 type PropertyType struct {
 	// 对应监控存储枚举类型，使用uint8，可以节省内存
 	// 0 cpu, 1 memory, 2 storage, 3 network ... 可扩展
-	Name string `json:"name" bson:"name"`
-	Enum uint8  `json:"enum" bson:"enum"`
+	Name  string `json:"name" bson:"name"`
+	Alias string `json:"alias" bson:"alias"`
+	Enum  uint8  `json:"enum" bson:"enum"`
 	//平均值，累加值 默认为平均值
 	//AVG , SUM
 	PriceType string `json:"price_type,omitempty" bson:"price_type,omitempty"`
 	// Price = UsedAmount (平均值||累加值) / Unit * UnitPrice
-	UnitPrice int64 `json:"unit_price" bson:"unit_price"`
-	Unit      resource.Quantity
+	UnitPrice        int64             `json:"unit_price" bson:"unit_price"`
+	EncryptUnitPrice string            `json:"encrypt_unit_price" bson:"encrypt_unit_price"`
+	Unit             resource.Quantity `json:"-" bson:"-"`
 	// <digit>           ::= 0 | 1 | ... | 9
 	// <digits>          ::= <digit> | <digit><digits>
 	// <number>          ::= <digits> | <digits>.<digits> | <digits>. | .<digits>
@@ -228,7 +233,7 @@ type PropertyTypeLS struct {
 	EnumMap   map[uint8]PropertyType
 }
 
-var DefaultPropertyTypeLS = NewPropertyTypeLS([]PropertyType{
+var DefaultPropertyTypeList = []PropertyType{
 	{
 		Name:       "cpu",
 		Enum:       0,
@@ -257,7 +262,9 @@ var DefaultPropertyTypeLS = NewPropertyTypeLS([]PropertyType{
 		UnitPrice:  781,
 		UnitString: "1Mi",
 	},
-})
+}
+
+var DefaultPropertyTypeLS = newPropertyTypeLS(DefaultPropertyTypeList)
 
 func ConvertEnumUsedToString(costs map[uint8]int64) (costsMap map[string]int64) {
 	costsMap = make(map[string]int64, len(costs))
@@ -268,6 +275,15 @@ func ConvertEnumUsedToString(costs map[uint8]int64) (costsMap map[string]int64) 
 }
 
 func NewPropertyTypeLS(types []PropertyType) (ls *PropertyTypeLS) {
+	types, err := decryptPrice(types)
+	if err != nil {
+		logger.Warn("failed to decrypt price : %v", err)
+		types = DefaultPropertyTypeList
+	}
+	return newPropertyTypeLS(types)
+}
+
+func newPropertyTypeLS(types []PropertyType) (ls *PropertyTypeLS) {
 	ls = &PropertyTypeLS{
 		Types:     types,
 		StringMap: make(PropertyTypeStringMap, len(types)),
@@ -281,6 +297,28 @@ func NewPropertyTypeLS(types []PropertyType) (ls *PropertyTypeLS) {
 		ls.StringMap[types[i].Name] = types[i]
 	}
 	return
+}
+
+func decryptPrice(types []PropertyType) ([]PropertyType, error) {
+	for i := range types {
+		if types[i].EncryptUnitPrice == "" {
+			return types, fmt.Errorf("encrypt %s unit price is empty", types[i].Name)
+		}
+		price, err := crypto.DecryptInt64(types[i].EncryptUnitPrice)
+		if err != nil {
+			return types, fmt.Errorf("failed to decrypt %s unit price : %v", types[i].Name, err)
+		}
+		types[i].UnitPrice = price
+		//if types[i].UnitPrice != 0 {
+		//	price, err := crypto.EncryptInt64(types[i].UnitPrice)
+		//	if err != nil {
+		//		logger.Error("failed to encrypt unit price : %v", err)
+		//	} else {
+		//		types[i].EncryptUnitPrice = *price
+		//	}
+		//}
+	}
+	return types, nil
 }
 
 type PropertyTypeEnumMap map[uint8]PropertyType

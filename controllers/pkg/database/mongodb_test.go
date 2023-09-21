@@ -562,7 +562,7 @@ func TestMongoDB_GenerateBillingData(t *testing.T) {
 	t.Logf("generate billing data used %v", ids)
 }
 
-func TestMongoDB_GetPropertyTypeLS(t *testing.T) {
+func TestMongoDB_SetPropertyTypeLS(t *testing.T) {
 	dbCTX := context.Background()
 
 	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
@@ -574,13 +574,17 @@ func TestMongoDB_GetPropertyTypeLS(t *testing.T) {
 			t.Errorf("failed to disconnect mongo: error = %v", err)
 		}
 	}()
-	propLS, err := m.GetPropertyTypeLSWithDefault()
+	err = m.SetDefaultPropertyTypeLS()
 	if err != nil {
 		t.Fatalf("failed to get property type ls: %v", err)
 	}
-	t.Logf("propertyTypeLS: %+v", propLS)
+	t.Logf("propertyTypeLS: %+v", resources.DefaultPropertyTypeLS)
 
-	for _, tp := range propLS.Types {
+	for _, tp := range resources.DefaultPropertyTypeLS.Types {
 		t.Logf("propertyTypeLS type: %v", tp)
 	}
+	//err = m.SavePropertyTypes(resources.DefaultPropertyTypeLS.Types)
+	//if err != nil {
+	//	t.Fatalf("failed to save property types: %v", err)
+	//}
 }

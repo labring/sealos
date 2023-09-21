@@ -162,12 +162,11 @@ func main() {
 		mgr.GetWebhookServer().Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient()}})
 	}
 
-	properties, err := dbClient.GetPropertyTypeLSWithDefault()
+	err = dbClient.SetDefaultPropertyTypeLS()
 	if err != nil {
 		setupLog.Error(err, "unable to get property type")
 		os.Exit(1)
 	}
-	resources.DefaultPropertyTypeLS = properties
 
 	if err = (&controllers.BillingRecordQueryReconciler{
 		Client: mgr.GetClient(),
@@ -178,7 +177,7 @@ func main() {
 	}
 	if err = (&controllers.BillingReconciler{
 		DBClient:   dbClient,
-		Properties: properties,
+		Properties: resources.DefaultPropertyTypeLS,
 		Client:     mgr.GetClient(),
 		Scheme:     mgr.GetScheme(),
 	}).SetupWithManager(mgr, rateOpts); err != nil {
@@ -219,7 +218,7 @@ func main() {
 		Client:     mgr.GetClient(),
 		Scheme:     mgr.GetScheme(),
 		DBClient:   dbClient,
-		Properties: properties,
+		Properties: resources.DefaultPropertyTypeLS,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "BillingInfoQuery")
 		os.Exit(1)
