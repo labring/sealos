@@ -24,6 +24,7 @@ import ExchangeIcon from '../icons/ExchangeIcon';
 import { abdicateRequest } from '@/api/namespace';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
+import { useTranslation } from 'next-i18next';
 export default function Abdication({
   ns_uid,
   users,
@@ -32,6 +33,7 @@ export default function Abdication({
   users: TeamUserDto[];
   ns_uid: string;
 } & Parameters<typeof Button>[0]) {
+  const { t } = useTranslation();
   const { onOpen, isOpen, onClose } = useDisclosure();
   const queryClient = useQueryClient();
   const defaultUser = users[0];
@@ -71,13 +73,12 @@ export default function Abdication({
         fontWeight={'500'}
         h="auto"
         py="7px"
-        px="16px"
         display={'flex'}
         alignItems={'center'}
         {...props}
       >
         <ExchangeIcon boxSize="16px" mr="4px" />
-        <Text fontSize={'12px'}>转移</Text>
+        <Text fontSize={'12px'}>{t('Abdication')}</Text>
       </Button>
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
@@ -89,7 +90,7 @@ export default function Abdication({
           p="24px"
         >
           <ModalCloseButton right={'24px'} top="24px" p="0" />
-          <ModalHeader p="0">转移权限</ModalHeader>
+          <ModalHeader p="0">{t('Abdication')}</ModalHeader>
           {mutation.isLoading ? (
             <Spinner mx="auto" />
           ) : (
@@ -171,7 +172,7 @@ export default function Abdication({
                   submit();
                 }}
               >
-                confrim
+                {t('Confirm')}
               </Button>
             </ModalBody>
           )}

@@ -10,8 +10,10 @@ const NsList = ({
   click,
   selected_ns_uid,
   nullNs,
+  displayPoint = false,
   ...boxprop
 }: {
+  displayPoint: boolean;
   click?: (ns: NamespaceDto) => void;
   selected_ns_uid: string;
   nullNs?: (privateNamespace: NamespaceDto) => void;
@@ -43,6 +45,12 @@ const NsList = ({
             mb="2px"
             position={'relative'}
             borderRadius="2px"
+            onClick={(e) => {
+              e.preventDefault();
+              queryClient.invalidateQueries({ queryKey: ['teamList'] });
+              click && click(ns);
+            }}
+            cursor={'pointer'}
             {...(selected_ns_uid === ns.uid
               ? {
                   background: 'rgba(0, 0, 0, 0.05)'
@@ -58,22 +66,13 @@ const NsList = ({
               bgColor: 'rgba(0, 0, 0, 0.03)'
             }}
           >
-            <Flex
-              align={'center'}
-              cursor={'pointer'}
-              onClick={(e) => {
-                e.preventDefault();
-                queryClient.invalidateQueries({ queryKey: ['teamList'] });
-                click && click(ns);
-              }}
-              width={'full'}
-            >
+            <Flex align={'center'} width={'full'}>
               <Box
-                w="8px"
                 h="8px"
+                w={displayPoint ? '8px' : '0'}
                 mr="8px"
                 borderRadius="50%"
-                bgColor={selected_ns_uid === ns.uid ? '#47C8BF' : ''}
+                bgColor={selected_ns_uid === ns.uid ? '#47C8BF' : '#9699B4'}
               />
               <Text
                 fontSize={'14px'}

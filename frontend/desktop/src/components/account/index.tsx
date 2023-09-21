@@ -32,6 +32,7 @@ import { NamespaceDto } from '@/types/team';
 import { switchRequest } from '@/api/namespace';
 
 const NsMenu = () => {
+  const { t } = useTranslation();
   const session = useSessionStore((s) => s.session);
   const setSession = useSessionStore((s) => s.setSession);
   const { ns_uid } = session.user;
@@ -42,7 +43,6 @@ const NsMenu = () => {
       if (data.code === 200 && !!data.data) {
         setSession(data.data);
         router.reload();
-        console.log(data.data);
       }
     }
   });
@@ -77,15 +77,20 @@ const NsMenu = () => {
       >
         <PopoverHeader p="0">
           <Flex w="100%" align={'center'}>
-            <Text fontSize="16px" fontWeight={'600'} py="8px" pl="4px">
-              Team
+            <Text fontSize="16px" fontWeight={'600'} py="8px" pl="4px" color={'#363C42'}>
+              {t('Team')}
             </Text>
             <TeamCenter />
             <CreateTeam />
           </Flex>
         </PopoverHeader>
         <PopoverBody px="0" pb="0" pt="4px">
-          <NsList selected_ns_uid={ns_uid} click={switchTeam} nullNs={switchTeam} />
+          <NsList
+            displayPoint={true}
+            selected_ns_uid={ns_uid}
+            click={switchTeam}
+            nullNs={switchTeam}
+          />
         </PopoverBody>
       </PopoverContent>
     </Popover>

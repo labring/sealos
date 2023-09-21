@@ -19,8 +19,10 @@ import useSessionStore from '@/stores/session';
 import { createRequest } from '@/api/namespace';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
+import { useTranslation } from 'react-i18next';
 export default function CreateTeam() {
   const { onOpen, isOpen, onClose } = useDisclosure();
+  const { t } = useTranslation();
   const [teamName, setTeamName] = useState('');
   const session = useSessionStore((s) => s.session);
   const userId = session.user.userId;
@@ -76,7 +78,7 @@ export default function CreateTeam() {
           p="24px"
         >
           <ModalCloseButton right={'24px'} top="24px" p="0" />
-          <ModalHeader p="0">create team</ModalHeader>
+          <ModalHeader p="0">{t('Create Team')}</ModalHeader>
           {mutation.isLoading ? (
             <Spinner mx={'auto'} />
           ) : (
@@ -87,7 +89,7 @@ export default function CreateTeam() {
                     e.preventDefault();
                     setTeamName(e.target.value);
                   }}
-                  placeholder="team name"
+                  placeholder={t('Name of Team') || ''}
                   value={teamName}
                 />
                 <Button
@@ -107,8 +109,7 @@ export default function CreateTeam() {
                     submit();
                   }}
                 >
-                  {' '}
-                  confrim{' '}
+                  {t('Confirm')}
                 </Button>
               </ModalBody>
             </>

@@ -16,6 +16,7 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ROLE_LIST, teamMessageDto } from '@/types/team';
 import { reciveAction, verifyInviteRequest } from '@/api/namespace';
+import { useTranslation } from 'react-i18next';
 export default function ReciveMessage({
   message,
   CloseTipHandler,
@@ -36,6 +37,7 @@ export default function ReciveMessage({
       }
     }
   });
+  const { t, i18n } = useTranslation();
   const submit = (action: reciveAction) => {
     //!todo
     mutation.mutate({
@@ -57,7 +59,9 @@ export default function ReciveMessage({
         align={'center'}
       >
         <Text color={'#fff'}>
-          invite you join in {message.teamName} as {ROLE_LIST[message.role]}
+          {i18n.language === 'zh'
+            ? `邀请你到${message.teamName}当${ROLE_LIST[message.role]}`
+            : `invite you join in ${message.teamName} as ${ROLE_LIST[message.role]}`}
         </Text>
         <Text
           color="#219BF4"
@@ -68,7 +72,7 @@ export default function ReciveMessage({
           ml="18px"
           mr="16px"
         >
-          handle
+          {t('Handle')}
         </Text>
         <CloseButton
           onClick={() => {
@@ -115,7 +119,7 @@ export default function ReciveMessage({
                       submit(reciveAction.Reject);
                     }}
                   >
-                    reject
+                    {t('Reject')}
                   </Button>
                   <Button
                     variant={'unstyled'}
@@ -133,7 +137,7 @@ export default function ReciveMessage({
                       submit(reciveAction.Accepte);
                     }}
                   >
-                    accepte
+                    {t('Accept')}
                   </Button>
                 </Flex>
               </ModalBody>

@@ -27,6 +27,7 @@ import { inviteMemberRequest } from '@/api/namespace';
 import { vaildManage } from '@/utils/tools';
 import { ApiResp } from '@/types';
 import GroupAddIcon from '../icons/GroupAdd';
+import { useTranslation } from 'react-i18next';
 //!todo 只能邀请不在team内的
 export default function InviteMember({
   ns_uid,
@@ -61,13 +62,14 @@ export default function InviteMember({
     }
   });
   const canManage = vaildManage(ownRole, 'x');
+  const { t, i18n } = useTranslation();
   const submit = () => {
     //!todo
     let trim_to = userId.trim();
     if (!trim_to || trim_to.length < 6) {
       toast({
         status: 'error',
-        title: 'ID is invalid',
+        title: i18n.language === 'zh' ? 'user ID 不合法' : 'Invalid User ID',
         isClosable: true,
         position: 'top'
       });
@@ -77,7 +79,7 @@ export default function InviteMember({
     if (tk8s_username === k8s_username) {
       toast({
         status: 'error',
-        title: 'The invited user must be others',
+        title: i18n.language === 'zh' ? '只能邀请其他人' : 'The invited user must be others',
         isClosable: true,
         position: 'top'
       });
@@ -121,7 +123,7 @@ export default function InviteMember({
             {...(props as Parameters<typeof Button>[0])}
           >
             <Image src="/images/group_add.svg" h="16px" w="16px" mr="4px" />
-            邀请
+            {t('Invite Member')}
           </Button>
         )
       ) : (
@@ -137,7 +139,7 @@ export default function InviteMember({
           p="24px"
         >
           <ModalCloseButton right={'24px'} top="24px" p="0" />
-          <ModalHeader p="0">invite member</ModalHeader>
+          <ModalHeader p="0">{t('Invite Member')}</ModalHeader>
           {mutation.isLoading ? (
             <Spinner mx="auto" />
           ) : (
@@ -147,7 +149,7 @@ export default function InviteMember({
                   e.preventDefault();
                   setUserId(e.target.value);
                 }}
-                placeholder="user id/user namespace"
+                placeholder={t('private team ID of user') || ''}
                 value={userId}
               />
               <Menu>
@@ -172,7 +174,6 @@ export default function InviteMember({
                   </Flex>
                 </MenuButton>
                 <MenuList borderRadius={'2px'}>
-                  {/* roleType != 0 => role != owner*/}
                   {ROLE_LIST.map((role, idx) => (
                     <MenuItem
                       w="330px"
@@ -204,7 +205,7 @@ export default function InviteMember({
                   submit();
                 }}
               >
-                confrim
+                {t('Confirm')}
               </Button>
             </ModalBody>
           )}

@@ -20,13 +20,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       userId: tokenUser.uid,
       k8s_username: tokenUser.k8s_username
     });
-    if (currentNamespaces.length >= TEAM_LIMIT + 1)
-      return jsonRes(res, { code: 403, message: 'team is too much' });
+    if (currentNamespaces.length >= TEAM_LIMIT)
+      return jsonRes(res, { code: 403, message: 'The number of teams created is too many' });
     const alreadyNamespace = currentNamespaces.findIndex((utn) => {
       const res = utn.namespace.teamName === teamName;
       return res;
     });
-    if (alreadyNamespace > -1) return jsonRes(res, { code: 409, message: 'team is already exist' });
+    if (alreadyNamespace > -1)
+      return jsonRes(res, { code: 409, message: 'The team is already exist' });
     const user = await queryUser({ id: tokenUser.uid, provider: 'uid' });
     if (!user) throw new Error('fail to get user');
     const ns_creater = await get_k8s_username();
@@ -41,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       nstype: NSType.Team,
       teamName
     });
-    if (!namespace) return jsonRes(res, { code: 404, message: 'fail to create namespace' });
+    if (!namespace) throw new Error(`failed to create namespace: ${nsid}`);
     const k8s_username = tokenUser.k8s_username;
     // 分配owner权限
     const utnResult = await bindingRole({
@@ -51,8 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       role: UserRole.Owner,
       direct: true
     });
-    if (!utnResult) return jsonRes(res, { code: 500, message: 'fail to binding namesapce' });
-    // const result =
+    if (!utnResult) throw new Error(`fail to binding namesapce: ${nsid}`);
     await modifyTeamRole({
       k8s_username,
       userId: user.uid,
@@ -60,7 +60,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       action: 'Create',
       namespace
     });
-    // if (!result) return jsonRes(res, { code: 403, message: 'fail to get owner permission' });
     jsonRes<{ namespace: NamespaceDto }>(res, {
       code: 200,
       message: 'Successfully',
