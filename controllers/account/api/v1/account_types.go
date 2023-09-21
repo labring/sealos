@@ -38,6 +38,8 @@ const (
 	TransferOut
 )
 
+const QueryAllType Type = -1
+
 const (
 	Completed Status = "completed"
 	Create    Status = "create"

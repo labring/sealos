@@ -26,7 +26,9 @@ type Interface interface {
 	//InitDB() error
 	GetMeteringOwnerTimeResult(queryTime time.Time, queryCategories, queryProperties []string) (*MeteringOwnerTimeResult, error)
 	GetBillingLastUpdateTime(owner string, _type accountv1.Type) (bool, time.Time, error)
+	//TODO will delete this
 	GetBillingHistoryNamespaceList(ns *accountv1.NamespaceBillingHistorySpec, owner string) ([]string, error)
+	GetBillingHistoryNamespaces(startTime, endTime *time.Time, billType int, owner string) ([]string, error)
 	SaveBillings(billing ...*resources.Billing) error
 	QueryBillingRecords(billingRecordQuery *accountv1.BillingRecordQuery, owner string) error
 	GetUnsettingBillingHandler(owner string) ([]resources.BillingHandler, error)

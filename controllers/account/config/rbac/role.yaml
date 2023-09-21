@@ -52,6 +52,32 @@ rules:
 - apiGroups:
   - account.sealos.io
   resources:
+  - billinginfoqueries
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - billinginfoqueries/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - billinginfoqueries/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
   - billingrecordqueries
   verbs:
   - create

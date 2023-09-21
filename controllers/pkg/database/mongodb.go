@@ -150,6 +150,44 @@ func (m *MongoDB) UpdateBillingStatus(orderID string, status resources.BillingSt
 	return nil
 }
 
+func (m *MongoDB) GetBillingHistoryNamespaces(startTime, endTime *time.Time, billType int, owner string) ([]string, error) {
+	filter := bson.M{
+		"owner": owner,
+	}
+	if startTime != nil && endTime != nil {
+		filter["time"] = bson.M{
+			"$gte": startTime.UTC(),
+			"$lte": endTime.UTC(),
+		}
+	}
+	if billType != -1 {
+		filter["type"] = billType
+	}
+
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: filter}},
+		{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "namespaces", Value: bson.D{{Key: "$addToSet", Value: "$namespace"}}}}}},
+	}
+
+	cur, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(context.Background())
+
+	if !cur.Next(context.Background()) {
+		return []string{}, nil
+	}
+
+	var result struct {
+		Namespaces []string `bson:"namespaces"`
+	}
+	if err := cur.Decode(&result); err != nil {
+		return nil, err
+	}
+	return result.Namespaces, nil
+}
+
 func (m *MongoDB) GetBillingHistoryNamespaceList(nsHistorySpec *accountv1.NamespaceBillingHistorySpec, owner string) ([]string, error) {
 	filter := bson.M{
 		"owner": owner,
@@ -589,7 +627,7 @@ func (m *MongoDB) queryBillingRecordsByOrderID(billingRecordQuery *accountv1.Bil
 			Time: metav1.NewTime(bsonRecord.Time),
 			BillingRecordQueryItemInline: accountv1.BillingRecordQueryItemInline{
 				OrderID:   bsonRecord.OrderID,
-				Type:      accountv1.Type(bsonRecord.Type),
+				Type:      bsonRecord.Type,
 				Namespace: bsonRecord.Namespace,
 				AppType:   resources.AppTypeReverse[bsonRecord.AppType],
 				Amount:    bsonRecord.Amount,
@@ -702,7 +740,7 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 			BillingRecordQueryItemInline: accountv1.BillingRecordQueryItemInline{
 				OrderID:   bsonRecord.OrderID,
 				Namespace: bsonRecord.Namespace,
-				Type:      accountv1.Type(bsonRecord.Type),
+				Type:      bsonRecord.Type,
 				AppType:   resources.AppTypeReverse[bsonRecord.AppType],
 				Amount:    bsonRecord.Amount,
 			},

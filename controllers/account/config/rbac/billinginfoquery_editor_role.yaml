@@ -1,0 +1,24 @@
+# permissions for end users to edit billinginfoqueries.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: billinginfoquery-editor-role
+rules:
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - billinginfoqueries
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - billinginfoqueries/status
+  verbs:
+  - get

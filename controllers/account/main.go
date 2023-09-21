@@ -26,12 +26,13 @@ import (
 
 	"github.com/labring/sealos/controllers/pkg/database"
 
-	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	"github.com/labring/sealos/controllers/account/controllers"
-	"github.com/labring/sealos/controllers/account/controllers/cache"
 	notificationv1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	rate "github.com/labring/sealos/controllers/pkg/utils/rate"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	"github.com/labring/sealos/controllers/account/controllers"
+	"github.com/labring/sealos/controllers/account/controllers/cache"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -212,6 +213,15 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NamespaceBillingHistory")
+		os.Exit(1)
+	}
+	if err = (&controllers.BillingInfoQueryReconciler{
+		Client:     mgr.GetClient(),
+		Scheme:     mgr.GetScheme(),
+		DBClient:   dbClient,
+		Properties: properties,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "BillingInfoQuery")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
