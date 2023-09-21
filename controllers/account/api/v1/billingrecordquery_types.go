@@ -55,6 +55,7 @@ type BillingRecordQueryItem struct {
 }
 
 type BillingRecordQueryItemInline struct {
+	Name      string `json:"name,omitempty" bson:"name,omitempty"`
 	OrderID   string `json:"order_id" bson:"order_id"`
 	Namespace string `json:"namespace,omitempty" bson:"namespace,omitempty"`
 	Type      Type   `json:"type" bson:"type"`

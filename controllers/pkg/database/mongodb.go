@@ -506,10 +506,10 @@ func (m *MongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 
 	for cursor.Next(context.Background()) {
 		var result struct {
-			Type      uint8          `bson:"type"`
-			Namespace string         `bson:"category"`
-			Name      string         `bson:"name"`
-			Used      resources.Used `bson:"used"`
+			Type      uint8                 `bson:"type"`
+			Namespace string                `bson:"category"`
+			Name      string                `bson:"name"`
+			Used      resources.EnumUsedMap `bson:"used"`
 		}
 
 		err := cursor.Decode(&result)
@@ -623,17 +623,21 @@ func (m *MongoDB) queryBillingRecordsByOrderID(billingRecordQuery *accountv1.Bil
 		if err := cursor.Decode(&bsonRecord); err != nil {
 			return fmt.Errorf("failed to decode billing record: %w", err)
 		}
-		billingRecord := accountv1.BillingRecordQueryItem{
-			Time: metav1.NewTime(bsonRecord.Time),
-			BillingRecordQueryItemInline: accountv1.BillingRecordQueryItemInline{
-				OrderID:   bsonRecord.OrderID,
-				Type:      bsonRecord.Type,
-				Namespace: bsonRecord.Namespace,
-				AppType:   resources.AppTypeReverse[bsonRecord.AppType],
-				Amount:    bsonRecord.Amount,
-			},
+		for _, cost := range bsonRecord.AppCosts {
+			billingRecord := accountv1.BillingRecordQueryItem{
+				Time: metav1.NewTime(bsonRecord.Time),
+				BillingRecordQueryItemInline: accountv1.BillingRecordQueryItemInline{
+					OrderID:   bsonRecord.OrderID,
+					Type:      bsonRecord.Type,
+					Namespace: bsonRecord.Namespace,
+					AppType:   resources.AppTypeReverse[bsonRecord.AppType],
+					Costs:     resources.ConvertEnumUsedToString(cost.UsedAmount),
+					Amount:    cost.Amount,
+					Name:      cost.Name,
+				},
+			}
+			billingRecords = append(billingRecords, billingRecord)
 		}
-		billingRecords = append(billingRecords, billingRecord)
 	}
 
 	billingRecordQuery.Status.Items = billingRecords

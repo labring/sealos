@@ -90,11 +90,11 @@ type Price struct {
 type Monitor struct {
 	Time time.Time `json:"time" bson:"time"`
 	// equal namespace
-	Category string `json:"category" bson:"category"`
-	Type     uint8  `json:"type" bson:"type"`
-	Name     string `json:"name" bson:"name"`
-	Used     Used   `json:"used" bson:"used"`
-	Property string `json:"property" bson:"property"`
+	Category string      `json:"category" bson:"category"`
+	Type     uint8       `json:"type" bson:"type"`
+	Name     string      `json:"name" bson:"name"`
+	Used     EnumUsedMap `json:"used" bson:"used"`
+	Property string      `json:"property" bson:"property"`
 }
 
 type BillingType int
@@ -137,10 +137,10 @@ type Transfer struct {
 }
 
 type AppCost struct {
-	Used       Used   `json:"used" bson:"used"`
-	UsedAmount Used   `json:"used_amount" bson:"used_amount"`
-	Amount     int64  `json:"amount" bson:"amount,omitempty"`
-	Name       string `json:"name" bson:"name"`
+	Used       EnumUsedMap `json:"used" bson:"used"`
+	UsedAmount EnumUsedMap `json:"used_amount" bson:"used_amount"`
+	Amount     int64       `json:"amount" bson:"amount,omitempty"`
+	Name       string      `json:"name" bson:"name"`
 }
 
 type BillingHandler struct {
@@ -189,7 +189,7 @@ var AppTypeReverse = map[uint8]string{
 }
 
 // 资源消耗
-type Used map[uint8]int64
+type EnumUsedMap map[uint8]int64
 
 type PropertyType struct {
 	// 对应监控存储枚举类型，使用uint8，可以节省内存
@@ -258,6 +258,14 @@ var DefaultPropertyTypeLS = NewPropertyTypeLS([]PropertyType{
 		UnitString: "1Mi",
 	},
 })
+
+func ConvertEnumUsedToString(costs map[uint8]int64) (costsMap map[string]int64) {
+	costsMap = make(map[string]int64, len(costs))
+	for k, v := range costs {
+		costsMap[DefaultPropertyTypeLS.EnumMap[k].Name] = v
+	}
+	return
+}
 
 func NewPropertyTypeLS(types []PropertyType) (ls *PropertyTypeLS) {
 	ls = &PropertyTypeLS{
