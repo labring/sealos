@@ -46,7 +46,7 @@ function Terminal({ url, site }: { url: string; site: string }) {
           );
           iframeRef.current?.contentWindow?.postMessage(
             {
-              command: `echo -e "\\e[A\\e[K 👉  Switched to namespace \\e[1;4;32m${nsid}\\e[0m"`
+              command: `echo -e "\\e[A\\e[K 👉  Switched to namespace \\e[1;4;32m${nsid}\\e[0m" && history -c`
             },
             url
           );
