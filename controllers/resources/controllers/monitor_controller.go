@@ -25,6 +25,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/labring/sealos/pkg/utils/retry"
+
 	"github.com/go-logr/logr"
 	"golang.org/x/sync/semaphore"
 
@@ -84,14 +86,16 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 		stopCh:            make(chan struct{}),
 		periodicReconcile: 1 * time.Minute,
 	}
-	//r.initNamespaceFuncs()
-	err := r.preApply()
+	var err error
+	err = retry.Retry(2, 1*time.Second, func() error {
+		r.NvidiaGpu, err = gpu.GetNodeGpuModel(mgr.GetClient())
+		if err != nil {
+			return fmt.Errorf("failed to get node gpu model: %v", err)
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-	r.NvidiaGpu, err = gpu.GetNodeGpuModel(mgr.GetClient())
-	if err != nil {
-		return nil, fmt.Errorf("failed to get node gpu model: %v", err)
 	}
 	r.Logger.Info("get gpu model", "gpu model", r.NvidiaGpu)
 	r.startPeriodicReconcile()
@@ -211,13 +215,6 @@ func (r *MonitorReconciler) processNamespace(ctx context.Context, namespace *cor
 		return err
 	}
 
-	return nil
-}
-
-func (r *MonitorReconciler) preApply() (err error) {
-	if err = r.DBClient.CreateMonitorTimeSeriesIfNotExist(time.Now().UTC()); err != nil {
-		r.Logger.Error(err, "create table time series failed")
-	}
 	return nil
 }
 
