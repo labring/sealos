@@ -28,7 +28,6 @@ import { vaildManage } from '@/utils/tools';
 import { ApiResp } from '@/types';
 import GroupAddIcon from '../icons/GroupAdd';
 import { useTranslation } from 'react-i18next';
-//!todo 只能邀请不在team内的
 export default function InviteMember({
   ns_uid,
   ownRole,
@@ -69,7 +68,7 @@ export default function InviteMember({
     if (!trim_to || trim_to.length < 6) {
       toast({
         status: 'error',
-        title: i18n.language === 'zh' ? 'user ID 不合法' : 'Invalid User ID',
+        title: t('Invalid User ID'),
         isClosable: true,
         position: 'top'
       });
@@ -79,7 +78,7 @@ export default function InviteMember({
     if (tk8s_username === k8s_username) {
       toast({
         status: 'error',
-        title: i18n.language === 'zh' ? '只能邀请其他人' : 'The invited user must be others',
+        title: t('The invited user must be others'),
         isClosable: true,
         position: 'top'
       });

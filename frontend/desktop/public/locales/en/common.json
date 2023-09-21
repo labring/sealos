@@ -72,5 +72,12 @@
   "Operating": "Operating",
   "Waiting": "Waiting",
   "Added": "Added",
-  "Invaild Context": "You need switch to other team for handling"
+  "Invaild Context": "You need switch to other team for handling",
+  "Remove Member Tips": "Determine that you want to remove the member?",
+  "Invalid User ID": "Invalid User ID",
+  "The invited user must be others": "The invited user must be others",
+  "Dissovle Tips": "Dissolving the team will clear all resources. Are you sure you want to disband",
+  "Enter Confirm.": "Please enter {{value}} to confirm",
+  "Accept Invitation": "Accept Invitation",
+  "Recive Tips": "{{managerName}} invite you join in {{teamName}} as {{role}}"
 }

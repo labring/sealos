@@ -97,11 +97,7 @@ export default function RemoveMember({
             <Spinner mx="auto" />
           ) : (
             <ModalBody h="100%" w="100%" p="0" mt="22px">
-              <Text>
-                {i18n.language === 'zh'
-                  ? '确认要移除该成员?'
-                  : 'Determine that you want to remove the member?'}
-              </Text>
+              <Text>{t('Remove Member Tips')}</Text>
               <Flex mt="37px" justify={'flex-end'} gap={'12px'}>
                 <Button
                   variant={'unstyled'}

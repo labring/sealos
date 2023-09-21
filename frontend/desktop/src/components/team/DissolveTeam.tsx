@@ -59,7 +59,6 @@ export default function DissolveTeam({
       });
     mutation.mutate({ ns_uid });
   };
-  const { i18n } = useTranslation();
 
   return (
     <>
@@ -105,20 +104,8 @@ export default function DissolveTeam({
             <Spinner mx="auto" />
           ) : (
             <ModalBody h="100%" w="100%" p="0" mt="22px">
-              {i18n.language === 'zh' ? (
-                <>
-                  <Text>确认要解散这个团队吗？ 如果执行此操作，将删除该团队的所有数据。</Text>
-                  <Text>{`请输入"${nsid}"确认`}</Text>
-                </>
-              ) : (
-                <>
-                  <Text>
-                    Are you sure you want to dissolve this team? If you proceed with this action,
-                    all data associated with this project will be deleted.
-                  </Text>
-                  <Text>{`Please enter "${nsid}" to confirm.`}</Text>
-                </>
-              )}
+              <Text>{t('Dissovle Tips')}</Text>
+              <Text>{t(`Enter Confirm.`, { value: nsid })}</Text>
               <CustomInput
                 onChange={(e) => {
                   e.preventDefault();

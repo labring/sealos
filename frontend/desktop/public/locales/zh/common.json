@@ -66,5 +66,12 @@
   "Operating": "操作",
   "Waiting": "等待中",
   "Added": "已加入",
-  "Invaild Context": "你需要切换到其他团队操作"
+  "Invaild Context": "你需要切换到其他团队操作",
+  "Remove Member Tips": "确认要移除该成员?",
+  "Invalid User ID": "用户的 ID 不合法",
+  "The invited user must be others": "只能邀请其他人",
+  "Dissovle Tips": "解散团队会清空所有资源，确定要解散吗？",
+  "Enter Confirm.": "请输入 {{value}} 确认",
+  "Accept Invitation": "接受邀请",
+  "Recive Tips": "{{managerName}} 邀请你到 {{teamName}} 当 {{role}}"
 }

@@ -38,6 +38,12 @@ export default function ReciveMessage({
     }
   });
   const { t, i18n } = useTranslation();
+  const inviteTips = ({ managerName, teamName, role }: Record<string, string>) =>
+    t('Recive Tips', {
+      managerName,
+      teamName,
+      role
+    });
   const submit = (action: reciveAction) => {
     //!todo
     mutation.mutate({
@@ -59,9 +65,11 @@ export default function ReciveMessage({
         align={'center'}
       >
         <Text color={'#fff'}>
-          {i18n.language === 'zh'
-            ? `邀请你到${message.teamName}当${ROLE_LIST[message.role]}`
-            : `invite you join in ${message.teamName} as ${ROLE_LIST[message.role]}`}
+          {inviteTips({
+            managerName: message.managerName,
+            teamName: message.teamName,
+            role: ROLE_LIST[message.role]
+          })}
         </Text>
         <Text
           color="#219BF4"
@@ -93,14 +101,18 @@ export default function ReciveMessage({
           p="24px"
         >
           <ModalCloseButton right={'24px'} top="24px" p="0" color={'#24282C'} />
-          <ModalHeader p="0">invite member</ModalHeader>
+          <ModalHeader p="0">{t('Accept Invitation')}</ModalHeader>
           {mutation.isLoading ? (
             <Spinner mx={'auto'} />
           ) : (
             <>
               <ModalBody h="100%" w="100%" p="0" mt="22px">
                 <Box>
-                  {message.managerName} invite you join the {message.teamName} as {message.role}
+                  {inviteTips({
+                    managerName: message.managerName,
+                    teamName: message.teamName,
+                    role: ROLE_LIST[message.role]
+                  })}{' '}
                 </Box>
                 <Flex mt="37px" justify={'flex-end'} gap={'12px'}>
                   <Button

@@ -60,8 +60,12 @@ const App = ({ Component, pageProps }: AppProps) => {
       loadUserSourcePrice();
 
       try {
-        const res = await sealosApp.getSession();
-        localStorage.setItem('session', JSON.stringify(res));
+        const newSession = JSON.stringify(await sealosApp.getSession());
+        const oldSession = localStorage.getItem('session');
+        if (newSession && newSession !== oldSession) {
+          localStorage.setItem('session', newSession);
+          window.location.reload();
+        }
         console.log('app init success');
       } catch (err) {
         console.log('App is not running in desktop');
