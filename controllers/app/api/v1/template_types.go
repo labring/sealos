@@ -56,8 +56,7 @@ type InputData struct {
 
 type Inputs map[string]InputData
 
-// TemplateSpec defines the desired state of Template
-type TemplateSpec struct {
+type FastDeployData struct {
 	Title        string       `json:"title"`
 	URL          string       `json:"url,omitempty"`
 	GitRepo      string       `json:"gitRepo,omitempty"`
@@ -68,6 +67,11 @@ type TemplateSpec struct {
 	TemplateType TemplateType `json:"templateType"`
 	Defaults     Defaults     `json:"defaults,omitempty"`
 	Inputs       Inputs       `json:"inputs,omitempty"`
+}
+
+// TemplateSpec defines the desired state of Template
+type TemplateSpec struct {
+	FastDeployData `json:",inline"`
 }
 
 // TemplateStatus defines the observed state of Template
