@@ -46,7 +46,6 @@ type MonitorReconciler struct {
 	logr.Logger
 	Interval          time.Duration
 	Scheme            *runtime.Scheme
-	mongoURI          string
 	stopCh            chan struct{}
 	wg                sync.WaitGroup
 	periodicReconcile time.Duration
@@ -84,7 +83,6 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 		Logger:            ctrl.Log.WithName("controllers").WithName("Monitor"),
 		stopCh:            make(chan struct{}),
 		periodicReconcile: 1 * time.Minute,
-		mongoURI:          os.Getenv(database.MongoURI),
 	}
 	//r.initNamespaceFuncs()
 	err := r.preApply()
@@ -217,13 +215,6 @@ func (r *MonitorReconciler) processNamespace(ctx context.Context, namespace *cor
 }
 
 func (r *MonitorReconciler) preApply() (err error) {
-	if r.mongoURI == "" {
-		return fmt.Errorf("mongo uri is empty")
-	}
-	r.DBClient, err = database.NewMongoDB(context.Background(), r.mongoURI)
-	if err != nil {
-		return fmt.Errorf("failed to create mongo client: %v", err)
-	}
 	if err = r.DBClient.CreateMonitorTimeSeriesIfNotExist(time.Now().UTC()); err != nil {
 		r.Logger.Error(err, "create table time series failed")
 	}
@@ -304,6 +295,7 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, namespace *cor
 				used[pType.Enum] = int64(math.Ceil(float64(podResource[i].MilliValue()) / float64(pType.Unit.MilliValue())))
 				continue
 			}
+			r.Logger.Error(fmt.Errorf("not found resource type"), "resource", i.String())
 		}
 		return isEmpty, used
 	}
@@ -354,74 +346,3 @@ func initResources() (rs map[corev1.ResourceName]*quantity) {
 func initGpuResources() *quantity {
 	return &quantity{Quantity: resource.NewQuantity(0, resource.DecimalSI), detail: ""}
 }
-
-//func (r *MonitorReconciler) infraResourceUsage(ctx context.Context, dbClient database.Interface, namespace *corev1.Namespace) error {
-//	var infraList infrav1.InfraList
-//	if err := r.List(ctx, &infraList, client.InNamespace(namespace.Name)); err != nil {
-//		return err
-//	}
-//	if len(infraList.Items) == 0 {
-//		return nil
-//	}
-//	timeStamp := time.Now().UTC()
-//	infraResources := initResources()
-//	for i := range infraList.Items {
-//		infra := infraList.Items[i]
-//		//TODO if infra is not running, skip it,  what about pending/failed/unknown?
-//		if !r.checkInfraStatusRunning(infra) {
-//			continue
-//		}
-//		for _, host := range infra.Spec.Hosts {
-//			cnt := host.Count
-//			flavor := host.Flavor
-//			//unified infra unit: getInfraCPUQuantity/getInfraMemoryQuantity/getInfraDiskQuantity
-//			infraResources[corev1.ResourceCPU].Add(*resources.GetInfraCPUQuantity(flavor, cnt))
-//			infraResources[corev1.ResourceMemory].Add(*resources.GetInfraMemoryQuantity(flavor, cnt))
-//			for _, disk := range host.Disks {
-//				infraResources[corev1.ResourceStorage].Add(*resources.GetInfraDiskQuantity(disk.Capacity))
-//			}
-//		}
-//		r.Logger.Info("infra resources", "namespace", infra.Namespace, "cpu quantity", infraResources[corev1.ResourceCPU], "memory quantity", infraResources[corev1.ResourceMemory], "volume quantity", infraResources[corev1.ResourceStorage])
-//	}
-//	cpuUsage, memUsage, storUsage := getResourceValue(corev1.ResourceCPU, infraResources),
-//		getResourceValue(corev1.ResourceMemory, infraResources),
-//		getResourceValue(corev1.ResourceStorage, infraResources)
-//	var monitors []*resources.Monitor
-//	if cpuUsage != 0 {
-//		monitors = append(monitors, &resources.Monitor{
-//			Category: namespace.Name,
-//			Property: resources.PropertyInfraCPU,
-//			Value:    cpuUsage,
-//			Time:     timeStamp,
-//			//Detail:   "",
-//		})
-//	}
-//	if memUsage != 0 {
-//		monitors = append(monitors, &resources.Monitor{
-//			Category: namespace.Name,
-//			Property: resources.PropertyInfraMemory,
-//			Value:    memUsage,
-//			Time:     timeStamp,
-//			//Detail:   "",
-//		})
-//	}
-//	if storUsage != 0 {
-//		monitors = append(monitors, &resources.Monitor{
-//			Category: namespace.Name,
-//			Property: resources.PropertyInfraDisk,
-//			Value:    storUsage,
-//			Time:     timeStamp,
-//			//Detail:   "",
-//		})
-//	}
-//	return dbClient.InsertMonitor(ctx, monitors...)
-//}
-
-// checkInfraStatus check infra status
-//func (r *MonitorReconciler) checkInfraStatusRunning(infra infrav1.Infra) bool {
-//	if infra.Status.Status == infrav1.Running.String() {
-//		return true
-//	}
-//	r.Logger.Info("infra status is not running", "infra name", infra.Name, "infra namespace", infra.Namespace, "infra status", infra.Status.Status)
-//	return false
-//}

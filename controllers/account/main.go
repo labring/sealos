@@ -162,7 +162,7 @@ func main() {
 		mgr.GetWebhookServer().Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient()}})
 	}
 
-	err = dbClient.SetDefaultPropertyTypeLS()
+	err = dbClient.InitDefaultPropertyTypeLS()
 	if err != nil {
 		setupLog.Error(err, "unable to get property type")
 		os.Exit(1)

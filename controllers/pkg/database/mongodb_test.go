@@ -574,7 +574,7 @@ func TestMongoDB_SetPropertyTypeLS(t *testing.T) {
 			t.Errorf("failed to disconnect mongo: error = %v", err)
 		}
 	}()
-	err = m.SetDefaultPropertyTypeLS()
+	err = m.InitDefaultPropertyTypeLS()
 	if err != nil {
 		t.Fatalf("failed to get property type ls: %v", err)
 	}

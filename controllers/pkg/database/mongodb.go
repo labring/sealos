@@ -337,21 +337,7 @@ func (m *MongoDB) GetAllPricesMap() (map[string]resources.Price, error) {
 	return pricesMap, nil
 }
 
-func (m *MongoDB) GetPropertyTypeLS() (*resources.PropertyTypeLS, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	cursor, err := m.getPropertiesCollection().Find(ctx, bson.M{})
-	if err != nil {
-		return nil, fmt.Errorf("get all prices error: %v", err)
-	}
-	var properties []resources.PropertyType
-	if err = cursor.All(ctx, &properties); err != nil {
-		return nil, fmt.Errorf("get all prices error: %v", err)
-	}
-	return resources.NewPropertyTypeLS(properties), nil
-}
-
-func (m *MongoDB) SetDefaultPropertyTypeLS() error {
+func (m *MongoDB) InitDefaultPropertyTypeLS() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	cursor, err := m.getPropertiesCollection().Find(ctx, bson.M{})

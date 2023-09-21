@@ -23,9 +23,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/gpu"
-	"k8s.io/apimachinery/pkg/api/errors"
-
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 
 	"github.com/go-logr/logr"
@@ -145,20 +142,12 @@ func (r *BillingInfoQueryReconciler) AppTypeQuery(_ context.Context, _ ctrl.Requ
 
 func (r *BillingInfoQueryReconciler) ConvertPropertiesToQuery() error {
 	r.propertiesQuery = make([]accountv1.PropertyQuery, 0)
-	alias, err := gpu.GetGPUAlias(r.Client)
-	if errors.IsNotFound(err) {
-		r.Logger.Error(err, "get gpu alias failed")
-	}
 	for _, types := range r.Properties.Types {
 		property := accountv1.PropertyQuery{
 			Name:      types.Name,
 			UnitPrice: types.UnitPrice,
 			Unit:      types.UnitString,
-		}
-		if resources.IsGpuResource(types.Name) && alias != nil {
-			if propertyAlias := alias[resources.GetGpuResourceProduct(types.Name)]; propertyAlias != "" {
-				property.Alias = string(resources.NewGpuResource(propertyAlias))
-			}
+			Alias:     types.Alias,
 		}
 		r.propertiesQuery = append(r.propertiesQuery, property)
 	}

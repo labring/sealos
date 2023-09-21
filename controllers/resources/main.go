@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/database"
+
 	"github.com/labring/sealos/controllers/pkg/resources"
 
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
@@ -117,12 +119,17 @@ func main() {
 		setupLog.Error(err, "failed to init monitor reconciler")
 		os.Exit(1)
 	}
+	reconciler.DBClient, err = database.NewMongoDB(context.Background(), os.Getenv(database.MongoURI))
+	if err != nil {
+		setupLog.Error(err, "failed to init db client")
+		os.Exit(1)
+	}
 	defer func() {
 		if err := reconciler.DBClient.Disconnect(context.Background()); err != nil {
 			setupLog.Error(err, "failed to disconnect db client")
 		}
 	}()
-	err = reconciler.DBClient.SetDefaultPropertyTypeLS()
+	err = reconciler.DBClient.InitDefaultPropertyTypeLS()
 	if err != nil {
 		setupLog.Error(err, "failed to get property type")
 		os.Exit(1)
@@ -130,20 +137,14 @@ func main() {
 	reconciler.Properties = resources.DefaultPropertyTypeLS
 	// timer creates tomorrow's timing table in advance to ensure that tomorrow's table exists
 	ticker := time.NewTicker(24 * time.Hour)
-	done := make(chan bool)
-	defer close(done)
 	defer ticker.Stop()
 
+	// create tomorrow's timing table in advance
 	go func() {
-		for {
-			select {
-			case <-done:
-				return
-			case t := <-ticker.C:
-				err = reconciler.DBClient.CreateMonitorTimeSeriesIfNotExist(t.UTC().Add(24 * time.Hour))
-				if err != nil {
-					reconciler.Logger.Error(err, "failed to create monitor time series")
-				}
+		for t := range ticker.C {
+			err := reconciler.DBClient.CreateMonitorTimeSeriesIfNotExist(t.UTC().Add(24 * time.Hour))
+			if err != nil {
+				reconciler.Logger.Error(err, "failed to create monitor time series")
 			}
 		}
 	}()

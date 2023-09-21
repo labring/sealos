@@ -35,8 +35,7 @@ type Interface interface {
 	UpdateBillingStatus(orderID string, status resources.BillingStatus) error
 	GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error)
 	GetAllPricesMap() (map[string]resources.Price, error)
-	GetPropertyTypeLS() (*resources.PropertyTypeLS, error)
-	SetDefaultPropertyTypeLS() error
+	InitDefaultPropertyTypeLS() error
 	SavePropertyTypes(types []resources.PropertyType) error
 	GetBillingCount(accountType accountv1.Type, startTime, endTime time.Time) (count, amount int64, err error)
 	//TODO delete
