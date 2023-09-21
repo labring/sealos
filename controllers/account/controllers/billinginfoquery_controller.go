@@ -144,7 +144,7 @@ func (r *BillingInfoQueryReconciler) AppTypeQuery(_ context.Context, _ ctrl.Requ
 }
 
 func (r *BillingInfoQueryReconciler) ConvertPropertiesToQuery() error {
-	r.propertiesQuery = make([]accountv1.PropertyQuery, len(r.Properties.Types))
+	r.propertiesQuery = make([]accountv1.PropertyQuery, 0)
 	alias, err := gpu.GetGPUAlias(r.Client)
 	if errors.IsNotFound(err) {
 		r.Logger.Error(err, "get gpu alias failed")
@@ -171,6 +171,7 @@ func (r *BillingInfoQueryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := r.ConvertPropertiesToQuery(); err != nil {
 		return fmt.Errorf("convert properties to query failed: %w", err)
 	}
+	r.QueryFuncMap = make(map[string]func(context.Context, ctrl.Request, *accountv1.BillingInfoQuery) (string, error), 3)
 	r.QueryFuncMap[strings.ToLower(accountv1.QueryTypeNamespacesHistory)] = r.NamespacesHistoryQuery
 	r.QueryFuncMap[strings.ToLower(accountv1.QueryTypeProperties)] = r.PropertiesQuery
 	r.QueryFuncMap[strings.ToLower(accountv1.QueryTypeAppType)] = r.AppTypeQuery

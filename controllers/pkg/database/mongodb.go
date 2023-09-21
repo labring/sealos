@@ -500,7 +500,7 @@ func (m *MongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 	}
 	defer cursor.Close(context.Background())
 
-	var appCostsMap = make(map[string]map[uint8][]resources.AppCost, len(namespaces))
+	var appCostsMap = make(map[string]map[uint8][]resources.AppCost)
 	// map[ns/type]int64
 	var nsTypeAmount = make(map[string]int64)
 
@@ -746,7 +746,7 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 			},
 		}
 		if len(bsonRecord.AppCosts) != 0 {
-			costs := make(map[string]int64, len(resources.DefaultPropertyTypeLS.Types))
+			costs := make(map[string]int64)
 			for i := range bsonRecord.AppCosts {
 				for j := range bsonRecord.AppCosts[i].UsedAmount {
 					costs[resources.DefaultPropertyTypeLS.EnumMap[j].Name] += bsonRecord.AppCosts[i].UsedAmount[j]
