@@ -81,7 +81,8 @@ func (r *TransferReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	//TODO Error rollback required
 	pipeLine := []func(ctx context.Context, transfer *accountv1.Transfer) error{
 		r.check,
-		r.TransferSaver,
+		r.transferSaver,
+		r.transferAccount,
 	}
 	for _, f := range pipeLine {
 		if err := f(ctx, &transfer); err != nil {
@@ -119,7 +120,7 @@ func (r *TransferReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *TransferReconciler) TransferSaver(ctx context.Context, transfer *accountv1.Transfer) error {
+func (r *TransferReconciler) transferSaver(ctx context.Context, transfer *accountv1.Transfer) error {
 	idOut, err := gonanoid.New(12)
 	if err != nil {
 		return fmt.Errorf("create id failed: %w", err)
@@ -163,7 +164,7 @@ func (r *TransferReconciler) TransferSaver(ctx context.Context, transfer *accoun
 	return nil
 }
 
-func (r *TransferReconciler) TransferAccount(ctx context.Context, transfer *accountv1.Transfer) error {
+func (r *TransferReconciler) transferAccount(ctx context.Context, transfer *accountv1.Transfer) error {
 	from, to := transfer.Namespace, transfer.Spec.To
 	var fromAccount, toAccount accountv1.Account
 	if r.Get(ctx, client.ObjectKey{Namespace: r.AccountSystemNamespace, Name: getUsername(from)}, &fromAccount) != nil {
@@ -177,23 +178,19 @@ func (r *TransferReconciler) TransferAccount(ctx context.Context, transfer *acco
 	if r.Get(ctx, client.ObjectKey{Namespace: r.AccountSystemNamespace, Name: getUsername(to)}, &accountv1.Account{}) != nil {
 		return fmt.Errorf("user %s account not found", transfer.Spec.To)
 	}
-	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, &toAccount, func() error {
-		err := crypto.RechargeBalance(toAccount.Status.EncryptBalance, transfer.Spec.Amount)
-		if err != nil {
-			return err
-		}
-		return r.Status().Update(ctx, &toAccount)
-	}); err != nil {
-		return fmt.Errorf("recharge balance failed: %w", err)
+	err := crypto.RechargeBalance(toAccount.Status.EncryptBalance, transfer.Spec.Amount)
+	if err != nil {
+		return err
 	}
-	if _, err := ctrl.CreateOrUpdate(ctx, r.Client, &fromAccount, func() error {
-		err := crypto.DeductBalance(fromAccount.Status.EncryptBalance, transfer.Spec.Amount)
-		if err != nil {
-			return err
-		}
-		return r.Status().Update(ctx, &fromAccount)
-	}); err != nil {
-		return fmt.Errorf("deduct balance failed: %w", err)
+	err = crypto.DeductBalance(fromAccount.Status.EncryptBalance, transfer.Spec.Amount)
+	if err != nil {
+		return err
+	}
+	if err = SyncAccountStatus(ctx, r.Client, &toAccount); err != nil {
+		return fmt.Errorf("sync account status failed: %w", err)
+	}
+	if err = SyncAccountStatus(ctx, r.Client, &fromAccount); err != nil {
+		return fmt.Errorf("sync account status failed: %w", err)
 	}
 	return nil
 }
