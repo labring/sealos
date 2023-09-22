@@ -84,32 +84,28 @@ func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admissi
 		case kubeSystemGroup:
 			logger.V(1).Info("pass for kube-system")
 			return admission.ValidationResponse(true, "")
-		case fmt.Sprintf("%s:%s", saPrefix, req.Namespace):
-			if !isUserNamespace(req.Namespace) || isWhiteList(req) {
-				return admission.ValidationResponse(true, "")
-			}
-			logger.V(1).Info("check for user", "user", req.UserInfo.Username, "ns: ", req.Namespace, "name", req.Name, "Operation", req.Operation)
-			// Check if the request is for resourcequota resource
-			if req.Kind.Kind == "ResourceQuota" {
-				// Check if the operation is UPDATE or DELETE
-				switch req.Name {
-				case getDefaultQuotaName(req.Namespace), debtLimit0QuotaName:
-					return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
-				}
-			}
-			if req.Kind.Kind == "Namespace" && req.Name == req.Namespace {
-				return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
-			}
-			if req.Kind.Kind == "Payment" && req.Operation == admissionV1.Update {
-				return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
-			}
-			return checkOption(ctx, logger, d.Client, req.Namespace)
-		default:
-			// continue to check other groups
+		}
+		// is user sa
+		if !strings.HasPrefix(g, saPrefix+":ns-") {
 			continue
 		}
+		if isWhiteList(req) {
+			return admission.ValidationResponse(true, "")
+		}
+		logger.V(1).Info("check for user", "user", req.UserInfo.Username, "ns: ", req.Namespace, "name", req.Name, "Operation", req.Operation)
+		// Check if the request is for resourcequota resource
+		if req.Kind.Kind == "ResourceQuota" && isDefaultQuotaName(req.Name) {
+			// Check if the operation is UPDATE or DELETE
+			return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
+		}
+		if req.Kind.Kind == "Namespace" {
+			return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
+		}
+		if req.Kind.Kind == "Payment" && req.Operation == admissionV1.Update {
+			return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
+		}
+		return checkOption(ctx, logger, d.Client, req.Namespace)
 	}
-
 	logger.V(1).Info("pass ", "req.Namespace", req.Namespace)
 	return admission.ValidationResponse(true, "")
 }
@@ -140,17 +136,7 @@ func isWhiteList(req admission.Request) bool {
 	return false
 }
 
-func isUserNamespace(namespace string) bool {
-	return strings.HasPrefix(namespace, "ns-")
-}
-
 func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsName string) admission.Response {
-	//nsList := &corev1.NamespaceList{}
-	//if err := c.List(ctx, nsList, client.MatchingFields{"name": nsName}); err != nil {
-	//	logger.Error(err, "list ns error", "naName", nsName, "nsList", nsList)
-	//	return admission.ValidationResponse(true, nsName)
-	//}
-	// skip check if nsName is empty or equal to user system namespace
 	if nsName == "" {
 		return admission.Allowed("")
 	}
@@ -161,7 +147,7 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsNam
 	// Check if it is a user namespace
 	user, ok := ns.Labels[userV1.UserLabelOwnerKey]
 	if !ok {
-		return admission.ValidationResponse(true, fmt.Sprintf("this namespace is not user namespace %s,or have not create", ns.Name))
+		return admission.ValidationResponse(false, fmt.Sprintf("this namespace is not user namespace %s,or have not create", ns.Name))
 	}
 	logger.V(1).Info("check user namespace", "ns", ns.Name, "user", user)
 	accountList := AccountList{}
@@ -178,8 +164,8 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsNam
 	return admission.Allowed(fmt.Sprintf("pass user %s , namespace %s", user, ns.Name))
 }
 
-func getDefaultQuotaName(namespace string) string {
-	return fmt.Sprintf("quota-%s", namespace)
+func isDefaultQuotaName(name string) bool {
+	return strings.HasPrefix(name, "quota-") || name == debtLimit0QuotaName
 }
 
 func GetAccountDebtBalance(account Account) float64 {
