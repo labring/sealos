@@ -24,4 +24,5 @@ const (
 	CodeInsufficientBalance = 40001
 	// CodeAdmissionForIngressFailedCnameCheck admission webhook for ingress
 	CodeAdmissionForIngressFailedCnameCheck = 40300
+	CodeAdmissionForIngressFailedOwnerCheck = 40301
 )
