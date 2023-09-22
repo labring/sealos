@@ -170,6 +170,9 @@ func (r *TransferReconciler) transferAccount(ctx context.Context, transfer *acco
 	if r.Get(ctx, client.ObjectKey{Namespace: r.AccountSystemNamespace, Name: getUsername(from)}, &fromAccount) != nil {
 		return fmt.Errorf("owner %s account not found", from)
 	}
+	if r.Get(ctx, client.ObjectKey{Namespace: r.AccountSystemNamespace, Name: getUsername(to)}, &toAccount) != nil {
+		return fmt.Errorf("owner %s account not found", to)
+	}
 	balance, _ := crypto.DecryptInt64(*fromAccount.Status.EncryptBalance)
 	deductionBalance, _ := crypto.DecryptInt64(*fromAccount.Status.EncryptDeductionBalance)
 	if balance < deductionBalance+transfer.Spec.Amount+MinBalance {
