@@ -9,7 +9,8 @@ import {
   ModalOverlay,
   useDisclosure,
   Text,
-  Spinner
+  Spinner,
+  ButtonProps
 } from '@chakra-ui/react';
 import CustomInput from './Input';
 import { useState } from 'react';
@@ -18,6 +19,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { deleteTeamRequest } from '@/api/namespace';
 import useSessionStore from '@/stores/session';
 import { ApiResp } from '@/types';
+import { useTranslation } from 'react-i18next';
 export default function DissolveTeam({
   nsid,
   ns_uid,
@@ -27,10 +29,9 @@ export default function DissolveTeam({
   nsid: string;
   ns_uid: string;
   onSuccess?: (ns_uid: string) => void;
-} & Parameters<typeof Button>[0]) {
+} & ButtonProps) {
   const { onOpen, isOpen, onClose } = useDisclosure();
   const [teamName, setTeamName] = useState('');
-  const session = useSessionStore((s) => s.session);
   const { toast } = useCustomToast({ status: 'error' });
   const queryClient = useQueryClient();
 
@@ -49,22 +50,27 @@ export default function DissolveTeam({
       toast({ title: (error as ApiResp).message });
     }
   });
+  const session = useSessionStore((s) => s.session);
+  const { t } = useTranslation();
   const submit = () => {
-    //!todo
-    if (ns_uid === session.user.ns_uid)
-      return toast({
-        title: '请切换到其他team再解散当前team'
-      });
     if (teamName !== nsid)
       return toast({
-        title: '输入的team name不正确'
+        title: t('Invaild Name of Team')
       });
     mutation.mutate({ ns_uid });
   };
+
   return (
     <>
       <Button
-        onClick={onOpen}
+        onClick={() => {
+          if (session.user.ns_uid === ns_uid) {
+            return toast({
+              title: t('Invaild Context')
+            });
+          }
+          onOpen();
+        }}
         borderRadius="4px"
         border="1px solid #DEE0E2"
         background="#F4F6F8"
@@ -81,7 +87,7 @@ export default function DissolveTeam({
           w="16px"
           mr="4px"
         />
-        解散
+        {t('Dissolve Team')}
       </Button>
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
@@ -98,18 +104,14 @@ export default function DissolveTeam({
             <Spinner mx="auto" />
           ) : (
             <ModalBody h="100%" w="100%" p="0" mt="22px">
-              <Text>确认要解散这个 Namespace 吗？ 如果执行此操作，将删除该项目的所有数据。</Text>
-              <Text>
-                请输入
-                <code>{nsid}</code>
-                确认
-              </Text>
+              <Text>{t('Dissovle Tips')}</Text>
+              <Text>{t(`Enter Confirm.`, { value: nsid })}</Text>
               <CustomInput
                 onChange={(e) => {
                   e.preventDefault();
                   setTeamName(e.target.value);
                 }}
-                placeholder="team name"
+                placeholder={t('Name of Team') || ''}
                 value={teamName}
               />
               <Button
@@ -129,7 +131,7 @@ export default function DissolveTeam({
                   submit();
                 }}
               >
-                confrim
+                {t('Confirm')}
               </Button>
             </ModalBody>
           )}

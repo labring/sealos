@@ -1,5 +1,6 @@
 import {
   Button,
+  Flex,
   Image,
   Modal,
   ModalBody,
@@ -18,8 +19,10 @@ import useSessionStore from '@/stores/session';
 import { createRequest } from '@/api/namespace';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
+import { useTranslation } from 'react-i18next';
 export default function CreateTeam() {
   const { onOpen, isOpen, onClose } = useDisclosure();
+  const { t } = useTranslation();
   const [teamName, setTeamName] = useState('');
   const session = useSessionStore((s) => s.session);
   const userId = session.user.userId;
@@ -43,17 +46,28 @@ export default function CreateTeam() {
   };
   return (
     <>
-      <Image
-        cursor={'pointer'}
-        onClick={() => {
-          onOpen();
-          setTeamName('');
+      <Flex
+        _hover={{
+          bgColor: 'rgba(0, 0, 0, 0.03)'
         }}
-        src="/images/material-symbols_add.svg"
-        h="16px"
-        w="16px"
+        w="28px"
+        h="28px"
         mr="4px"
-      />
+        transition={'all 0.3s'}
+        justify={'center'}
+        align={'center'}
+      >
+        <Image
+          cursor={'pointer'}
+          onClick={() => {
+            onOpen();
+            setTeamName('');
+          }}
+          src="/images/material-symbols_add.svg"
+          h="20px"
+          w="20px"
+        />
+      </Flex>
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
         <ModalContent
@@ -64,7 +78,7 @@ export default function CreateTeam() {
           p="24px"
         >
           <ModalCloseButton right={'24px'} top="24px" p="0" />
-          <ModalHeader p="0">create team</ModalHeader>
+          <ModalHeader p="0">{t('Create Team')}</ModalHeader>
           {mutation.isLoading ? (
             <Spinner mx={'auto'} />
           ) : (
@@ -75,7 +89,7 @@ export default function CreateTeam() {
                     e.preventDefault();
                     setTeamName(e.target.value);
                   }}
-                  placeholder="team name"
+                  placeholder={t('Name of Team') || ''}
                   value={teamName}
                 />
                 <Button
@@ -95,8 +109,7 @@ export default function CreateTeam() {
                     submit();
                   }}
                 >
-                  {' '}
-                  confrim{' '}
+                  {t('Confirm')}
                 </Button>
               </ModalBody>
             </>

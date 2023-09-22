@@ -18,6 +18,7 @@ import { vaildManage } from '@/utils/tools';
 import RemoveMember from './RemoveMember';
 import Abdication from './Abdication';
 import ModifyRole from './ModifyRole';
+import { useTranslation } from 'react-i18next';
 export default function UserTable({
   users = [],
   isTeam,
@@ -29,11 +30,14 @@ export default function UserTable({
   ns_uid: string;
   nsid: string;
 }) {
-  const headList = ['用户名', '权限', '加入时间', '状态', '操作'];
+  const { t } = useTranslation();
+  // const headList = ['用户名', '权限', '加入时间', '状态', '操作'];
+  // const status = ['等待加入', '已加入'];
+  const headList = [t('User Name'), t('Access'), t('In Time'), t('Status'), t('Operating')];
+  const status = [t('Waiting'), t('Added')];
   const session = useSessionStore((s) => s.session);
   const { userId, k8s_username } = session.user;
   const userSelf = users.find((user) => user.uid === userId && user.k8s_username === k8s_username);
-  const status = ['等待加入', '已加入'];
   const canManage = vaildManage(userSelf?.role ?? UserRole.Developer, '');
   const abdicationUser = users.filter(
     (user) => user.uid !== userSelf?.uid && user.status === InvitedStatus.Accepted
@@ -57,7 +61,7 @@ export default function UserTable({
                   background: '#F1F4F6'
                 }}
                 fontSize={'12px'}
-                py="13px"
+                py="10px"
               >
                 {v}
               </Th>
@@ -67,7 +71,7 @@ export default function UserTable({
         <Tbody>
           {users.map((user) => (
             <Tr key={user.k8s_username}>
-              <Td color={'#24282C'}>
+              <Td color={'#24282C'} py="5px">
                 <Flex>
                   <Image
                     src={user.avatarUrl}
@@ -80,7 +84,7 @@ export default function UserTable({
                   <Text fontWeight={'600'}>{user.name}</Text>
                 </Flex>
               </Td>
-              <Td color={'#24282C'} fontWeight={'600'}>
+              <Td color={'#24282C'} fontWeight={'600'} py="5px">
                 <ModifyRole
                   ns_uid={ns_uid}
                   roles={vaildateRoles}
@@ -94,16 +98,18 @@ export default function UserTable({
                   }
                 />
               </Td>
-              <Td color={'#5A646E'}>{user.joinTime ? formatTime(user.joinTime) : '-'}</Td>
-              <Td color={user.status === InvitedStatus.Inviting ? '#8172D8' : '#00A9A6'}>
+              <Td color={'#5A646E'} py="5px">
+                {user.joinTime ? formatTime(user.joinTime) : '-'}
+              </Td>
+              <Td color={user.status === InvitedStatus.Inviting ? '#8172D8' : '#00A9A6'} py="5px">
                 {status[user.status]}
               </Td>
-              <Td>
+              <Td py="5px">
                 {isTeam ? (
                   canManage(user.role, userId) ? (
                     user.role === UserRole.Owner && abdicationUser.length !== 0 ? (
                       <Abdication ns_uid={ns_uid} users={abdicationUser} />
-                    ) : (
+                    ) : userId !== user.uid ? (
                       <RemoveMember
                         nsid={nsid}
                         ns_uid={ns_uid}
@@ -111,6 +117,8 @@ export default function UserTable({
                         k8s_username={user.k8s_username}
                         userId={user.uid}
                       />
+                    ) : (
+                      <></>
                     )
                   ) : (
                     <></>

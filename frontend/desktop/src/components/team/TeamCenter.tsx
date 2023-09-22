@@ -27,6 +27,7 @@ import { InvitedStatus, NSType, UserRole, teamMessageDto } from '@/types/team';
 import { TeamUserDto } from '@/types/user';
 import ReciveMessage from './ReciveMessage';
 import { reciveMessageRequest, teamDetailsRequest } from '@/api/namespace';
+import { useTranslation } from 'react-i18next';
 export default function TeamCenter() {
   const session = useSessionStore((s) => s.session);
   const { ns_uid: default_ns_uid, nsid: default_nsid, userId } = session.user;
@@ -38,7 +39,7 @@ export default function TeamCenter() {
     ['ns-detail', 'teamGroup', { ns_uid }],
     () => teamDetailsRequest(ns_uid),
     {
-      refetchInterval(data, query) {
+      refetchInterval(data) {
         if (data?.data?.users.some((x) => x.status === InvitedStatus.Inviting)) {
           return 2000;
         } else {
@@ -52,6 +53,7 @@ export default function TeamCenter() {
     queryFn: reciveMessageRequest,
     refetchInterval: isOpen ? 3000 : false
   });
+  const { t } = useTranslation();
   const messages: teamMessageDto[] = reciveMessage.data?.data?.messages || [];
   const users: TeamUserDto[] = [...(data?.data?.users || [])];
   const curTeamUser = users.find((user) => user.uid === userId);
@@ -61,26 +63,37 @@ export default function TeamCenter() {
   const { copyData } = useCopyData();
   return (
     <>
-      <Image
-        cursor={'pointer'}
-        onClick={() => {
-          // 清理消息过滤
-          setMessageFilter([]);
-          onOpen();
-        }}
+      <Flex
         ml="auto"
-        src="/images/uil_setting.svg"
-        h="16px"
-        w="16px"
-        mr="10px"
-      />
+        _hover={{
+          bgColor: 'rgba(0, 0, 0, 0.03)'
+        }}
+        w="28px"
+        h="28px"
+        mr="6px"
+        transition={'all 0.3s'}
+        justify={'center'}
+        align={'center'}
+      >
+        <Image
+          cursor={'pointer'}
+          onClick={() => {
+            // 清理消息过滤
+            setMessageFilter([]);
+            onOpen();
+          }}
+          src="/images/uil_setting.svg"
+          h="20px"
+          w="20px"
+        />
+      </Flex>
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
         <ModalContent
           borderRadius={'8px'}
-          maxW={'960px'}
+          maxW={'1000px'}
           h="550px"
-          bgColor={'rgba(255, 255, 255, 0.80)'}
+          bgColor={'rgba(255, 255, 255, 0.9)'}
           backdropFilter="blur(150px)"
         >
           <ModalCloseButton zIndex={'99'} />
@@ -109,11 +122,14 @@ export default function TeamCenter() {
                 mb="4px"
                 borderBottom="1.5px solid rgba(0, 0, 0, 0.05)"
               >
-                <Text fontSize={'14px'}>Team</Text>
+                <Text fontSize={'16px'} fontWeight={'600'}>
+                  {t('Team')}
+                </Text>
                 <CreateTeam />
               </Flex>
               <Box overflow={'scroll'} h="0" flex="1" px="16px">
                 <NsList
+                  displayPoint={false}
                   selected_ns_uid={ns_uid}
                   click={(ns) => {
                     setNs_uid(ns.uid);
@@ -130,28 +146,31 @@ export default function TeamCenter() {
               <Box width={'730px'} borderRadius={'8px'} bgColor={'white'} h="100%">
                 <Box px="16px" py="20px">
                   <Text fontSize={'16px'} fontWeight={'600'}>
-                    管理 team
+                    {t('Manage Team')}
                   </Text>
                   <Box mx="10px" mt="22px">
                     <Flex align={'center'}>
                       <Text fontSize={'24px'} fontWeight={'600'} mr="8px">
                         {teamName}
                       </Text>
-                      <Box bgColor={'#ABADC3'} h="8px" w="8px" borderRadius={'50%'} />
                       {isTeam && curTeamUser.role === UserRole.Owner && (
                         <DissolveTeam
                           ml="auto"
                           nsid={nsid}
                           ns_uid={ns_uid}
                           onSuccess={(delete_ns_uid) => {
-                            setNs_uid(default_ns_uid);
-                            setNsid(default_nsid);
+                            if (delete_ns_uid === ns_uid) {
+                              setNs_uid(default_ns_uid);
+                              setNsid(default_nsid);
+                            }
                           }}
                         />
                       )}
                     </Flex>
                     <Flex align={'center'} color={'#5A646E'} mt={'7px'} fontSize={'12px'}>
-                      <Text>Team ID: {nsid}</Text>
+                      <Text>
+                        {t('Team')} ID: {nsid}
+                      </Text>
                       <Box onClick={() => copyData(nsid)} cursor={'pointer'} ml="5px">
                         <Iconfont
                           iconName="icon-copy2"
@@ -160,7 +179,9 @@ export default function TeamCenter() {
                           color="rgb(123, 131, 139)"
                         ></Iconfont>
                       </Box>
-                      <Text ml="24px">Created: {createTime ? formatTime(createTime) : ''}</Text>
+                      <Text ml="24px">
+                        {t('Created Time')}: {createTime ? formatTime(createTime) : ''}
+                      </Text>
                     </Flex>
                   </Box>
                 </Box>
@@ -168,7 +189,7 @@ export default function TeamCenter() {
                 <Stack mt="15px" mx="29px" flex={1}>
                   <Flex align={'center'} gap="6px" mb={'12px'}>
                     <Image src={'/images/list.svg'} w="20px" h="20px" />
-                    <Text>成员列表</Text>
+                    <Text>{t('Member List')}</Text>
                     <Flex
                       py="0px"
                       px="6px"

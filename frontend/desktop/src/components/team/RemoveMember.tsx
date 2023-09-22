@@ -20,6 +20,7 @@ import DeleteIcon from '../icons/DeleteIcon';
 import { removeMemberRequest } from '@/api/namespace';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
+import { useTranslation } from 'react-i18next';
 export default function RemoveMember({
   ns_uid,
   status,
@@ -54,6 +55,13 @@ export default function RemoveMember({
   const submit = () => {
     mutation.mutate({ ns_uid, tUserId, tK8s_username });
   };
+  const { t, i18n } = useTranslation();
+  const removeKey =
+    status === InvitedStatus.Inviting
+      ? t('Cancel')
+      : selfUserId === tUserId
+      ? t('Quit')
+      : t('Remove');
   return (
     <>
       <Button
@@ -63,7 +71,6 @@ export default function RemoveMember({
         fontWeight={'500'}
         h="auto"
         py="7px"
-        px="16px"
         display={'flex'}
         alignItems={'center'}
         {...props}
@@ -73,9 +80,7 @@ export default function RemoveMember({
         ) : (
           <DeleteIcon boxSize="16px" mr="4px" />
         )}
-        <Text fontSize={'12px'}>
-          {status === InvitedStatus.Inviting ? '撤销' : selfUserId === tUserId ? '退出' : '移除'}
-        </Text>
+        <Text fontSize={'12px'}>{removeKey}</Text>
       </Button>
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
@@ -87,12 +92,12 @@ export default function RemoveMember({
           p="24px"
         >
           <ModalCloseButton right={'24px'} top="24px" p="0" />
-          <ModalHeader p="0">移除警告</ModalHeader>
+          <ModalHeader p="0">{t('Warning')}</ModalHeader>
           {mutation.isLoading ? (
             <Spinner mx="auto" />
           ) : (
             <ModalBody h="100%" w="100%" p="0" mt="22px">
-              <Text>确认要移除该成员?</Text>
+              <Text>{t('Remove Member Tips')}</Text>
               <Flex mt="37px" justify={'flex-end'} gap={'12px'}>
                 <Button
                   variant={'unstyled'}
@@ -110,7 +115,7 @@ export default function RemoveMember({
                     onClose();
                   }}
                 >
-                  reject
+                  {t('Cancel')}
                 </Button>
                 <Button
                   variant={'unstyled'}
@@ -128,9 +133,9 @@ export default function RemoveMember({
                     submit();
                   }}
                 >
-                  accepte
+                  {t('Confirm')}
                 </Button>
-              </Flex>{' '}
+              </Flex>
             </ModalBody>
           )}
         </ModalContent>

@@ -22,6 +22,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { modifyRoleRequest } from '@/api/namespace';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
+import { useTranslation } from 'react-i18next';
 export default function ModifyRole({
   ns_uid,
   k8s_username,
@@ -38,6 +39,7 @@ export default function ModifyRole({
 }) {
   const { onOpen, isOpen, onClose } = useDisclosure();
   const [role, setRole] = useState(currentRole);
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { toast } = useCustomToast({ status: 'error' });
   const mutation = useMutation({
@@ -139,7 +141,7 @@ export default function ModifyRole({
                   submit();
                 }}
               >
-                confirm
+                {t('Confirm')}
               </Button>
             </ModalBody>
           )}
