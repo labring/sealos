@@ -1,12 +1,12 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 ---
 
-# 使用终端快速安装应用
+# 使用终端
 
-熟悉 Kubernetes 和容器基础知识的用户可以选择使用终端命令行来部署应用。本文以 Nginx 为例，介绍如何使用终端来部署应用。
+熟悉 Kubernetes 和容器基础知识的用户可以选择使用「[终端](../../platform-components/terminal/terminal.md)」命令行来部署应用。本文以 Nginx 为例，介绍如何使用终端来部署应用。
 
-首先在 [Sealos](https://cloud.sealos.io) 桌面环境中打开终端 App。
+首先在 [Sealos](https://cloud.sealos.top) 桌面环境中打开终端 App。
 
 ![](./images/app-launchpad-1.jpg)
 
@@ -140,7 +140,7 @@ metadata:
   name: nginx
 spec:
   rules:
-  - host: nginx.cloud.sealos.io
+  - host: nginx.cloud.sealos.top
     http:
       paths:
       - backend:
@@ -152,7 +152,7 @@ spec:
         pathType: Prefix
   tls:
   - hosts:
-    - nginx.cloud.sealos.io
+    - nginx.cloud.sealos.top
     secretName: wildcard-cloud-sealos-io-cert
 ```
 

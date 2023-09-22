@@ -1,20 +1,20 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 ---
 
-# Swiftly Install Applications with Terminal
+# Use Terminal
 
-For those proficient in Kubernetes and container basics, terminal command-line deployment presents an optimal solution. This document showcases Nginx as an example, elucidating the application deployment process via terminal.
+Users familiar with Kubernetes and container fundamentals may opt to deploy applications using the **[Terminal](../../platform-components/terminal/terminal.md)** app. This guide will show you how to use the terminal for deployment, using Nginx as an example.
 
-Commence by opening the terminal application within the [Sealos](https://cloud.sealos.io) desktop environment.
+Start by launching the Terminal app within the [Sealos](https://cloud.sealos.io) desktop.
 
 ![](./images/app-launchpad-1.jpg)
 
-Upon initializing the terminal application, a default terminal window is assigned, allowing the execution of various command-line operations.
+Upon opening the Terminal app, a terminal window is automatically allocated, enabling you to execute various command-line operations.
 
 ![](./images/terminal.png)
 
-① First, create a deployment manifest for Nginx Deployment:
+① Begin by creating a deployment manifest for Nginx Deployment:
 
 ```yaml
 # deployment.yaml
@@ -48,7 +48,7 @@ spec:
             memory: 32Mi
 ```
 
-② Subsequently, construct a deployment manifest for Nginx Service:
+② Subsequently, create a deployment manifest for Nginx Service:
 
 ```yaml
 # service.yaml
@@ -68,14 +68,14 @@ spec:
     app: nginx
 ```
 
-③ Execute the following commands to generate Deployment and Service from the deployment manifest:
+③ Deploy both the Deployment and Service by executing the following:
 
 ```bash
 kubectl apply -f deployment.yaml
 kubectl apply -f service.yaml
 ```
 
-Assess if Nginx can be accessed normally:
+Verify Nginx's accessibility:
 
 ```bash
 $ kubectl get pod -l app=nginx
@@ -114,7 +114,7 @@ Commercial support is available at
 </html>
 ```
 
-④ If you desire to expose Nginx to the internet, enabling access via external network domain, you'll need to create an Ingress resource. Start by creating a deployment manifest:
+④ To expose Nginx to the internet and access it via a public domain, create an Ingress resource. Start by creating a deployment manifest:
 
 ```yaml
 # ingress.yaml
@@ -156,12 +156,12 @@ spec:
     secretName: wildcard-cloud-sealos-io-cert
 ```
 
-⑤ Execute the following command to create an Ingress resource from the deployment manifest:
+⑤ Deploy the Ingress resource:
 
 ```bash
 $ kubectl apply -f ingress.yaml
 ```
 
-⑥ Test if Nginx can be accessed normally through the external network domain:
+⑥ Confirm the Nginx's accessibility through the public domain:
 
 ![](./images/nginx.png)
