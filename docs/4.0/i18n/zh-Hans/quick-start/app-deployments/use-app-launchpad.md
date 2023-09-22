@@ -1,18 +1,18 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 ---
 
-# 在应用管理中快速安装应用
+# 使用应用管理
 
 Sealos 的桌面环境类似于单机操作系统 macOS 或 Windows 的桌面环境，桌面上的每个图标都是一个 App，类似于 Windows 的快捷方式。与单机操作系统一样，Sealos 也有系统自带的 App，要想在这个云操作系统中快速安装应用，就需要用到系统自带的 App：**应用管理**。
 
-关于应用管理的详细信息请参阅 [应用管理介绍](../platform-components/applaunchpad/applaunchpad.md)
+> 关于应用管理的详细信息请参阅 [应用管理介绍](../../platform-components/applaunchpad/applaunchpad.md)
 
-> 下面将演示如何在 Sealos 云操作系统中快速安装一些比较常见的应用。
+下面将演示如何在 Sealos 云操作系统中快速安装一些比较常见的应用。
 
 ## 快速安装 Nginx
 
-首先在 [Sealos](https://cloud.sealos.io) 桌面环境中打开**应用管理**。
+首先在 [Sealos](https://cloud.sealos.top) 桌面环境中打开**应用管理**。
 
 ![](./images/app-launchpad-zh.webp)
 

@@ -15,6 +15,10 @@
     "message": "快速开始",
     "description": "The label for category Quick Start in sidebar docSidebar"
   },
+  "sidebar.docSidebar.category.App Deployments": {
+    "message": "部署应用",
+    "description": "The label for category App Deployments in sidebar docSidebar"
+  },
   "sidebar.docSidebar.category.Platform Components": {
     "message": "平台组件",
     "description": "The label for category Platform Components in sidebar docSidebar"
