@@ -127,8 +127,6 @@ const App = ({ Component, pageProps, domain }: AppProps & { domain: string }) =>
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
           <Component {...pageProps} />
-          {/* <ConfirmChild /> */}
-          {/* <Loading loading={loading} /> */}
         </ChakraProvider>
       </QueryClientProvider>
     </>

@@ -4,10 +4,10 @@ import { useRouter } from 'next/router';
 const NonePage = () => {
   const router = useRouter();
   useEffect(() => {
-    router.push('/deploy');
+    router.push('/');
   }, [router]);
 
-  return <div></div>;
+  return null;
 };
 
 export default NonePage;

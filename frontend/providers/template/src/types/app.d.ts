@@ -13,6 +13,7 @@ export type TemplateType = {
     icon: string;
     description: string;
     template_type: 'inline';
+    draft: boolean;
     defaults: Record<
       string,
       {

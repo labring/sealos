@@ -67,24 +67,47 @@ export const getTemplateDataSource = (template: TemplateType) => {
         }
       });
     });
-    // handle input value
-    const transformedInput = inputs
-      ? Object.entries(inputs).map(([key, value]) => ({
+
+    // handle default value for inputs
+    const handleInputs = (
+      inputs: Record<
+        string,
+        {
+          description: string;
+          type: string;
+          default: string;
+          required: boolean;
+        }
+      >
+    ) => {
+      Object.entries(inputs).forEach(([key, item]) => {
+        Object.entries(functionHandlers).forEach(([handlerKey, handler]) => {
+          console.log(handler(item.default), '---');
+
+          if (item.default && item.default.includes(`\${{ ${handlerKey}(`)) {
+            item.default = handler(item.default);
+          }
+        });
+      });
+      return Object.entries(inputs).map(([key, value]) => {
+        return {
           description: value.description,
           type: value.type,
           default: value.default,
           required: value.required,
           key: key,
           label: key.replace('_', ' ')
-        }))
-      : {};
+        };
+      });
+    };
 
-    const dataSource = {
+    // handle input value
+    const transformedInput = inputs ? handleInputs(inputs) : {};
+
+    return {
       defaults: cloneDefauls,
       inputs: transformedInput
     };
-
-    return dataSource;
   } catch (error) {
     console.log(error, '---getTemplateDataSource---');
     return {};

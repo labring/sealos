@@ -10,13 +10,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     type: 'create' | 'replace' | 'dryrun';
   };
 
-  if (!yamlList || yamlList.length < 2) {
-    jsonRes(res, {
+  if (!yamlList) {
+    return jsonRes(res, {
       code: 500,
-      error: 'params error'
+      error: 'yaml list is empty'
     });
-    return;
   }
+
   try {
     const { applyYamlList } = await getK8s({
       kubeconfig: await authSession(req.headers)

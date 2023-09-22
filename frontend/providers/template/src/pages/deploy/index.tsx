@@ -1,4 +1,4 @@
-import { getTemplate, postDeployApp } from '@/api/app';
+import { getKindTemplate, getTemplate, postDeployApp } from '@/api/app';
 import MyIcon from '@/components/Icon';
 import { editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -50,12 +50,10 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     [templateSource]
   );
 
-  const { data: FastDeployTemplates } = useQuery(['cloneTemplte'], () => GET('/api/listTemplate'));
-
   const { data: platformEnvs } = useQuery(['getPlatformEnvs'], () => GET('/api/platform/getEnv'));
 
-  const templateDetail: TemplateType = FastDeployTemplates?.find(
-    (item: TemplateType) => item?.metadata?.name === templateName
+  const { data: templateDetail } = useQuery(['getKindTemplate', templateName], () =>
+    getKindTemplate(templateName)
   );
 
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -204,6 +202,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       return null;
     }
     const res: TemplateSource = await getTemplate(templateName);
+    console.log(res);
+
     setTemplateSource(res);
     try {
       const yamlString = res.yamlList?.map((item) => JSYAML.dump(item)).join('---\n');
@@ -246,8 +246,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           justifyContent={'start'}
           alignItems={'center'}
           backgroundColor={'rgba(255, 255, 255)'}
-          backdropBlur={'100px'}
-        >
+          backdropBlur={'100px'}>
           <Box cursor={'pointer'} onClick={() => router.push('/')}>
             <MyIcon ml={'46px'} name="arrowLeft" color={'#24282C'} w={'16px'} h={'16px'}></MyIcon>
           </Box>
@@ -256,8 +255,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             fontWeight={500}
             fontSize={16}
             textDecoration={'none'}
-            color={'#7B838B'}
-          >
+            color={'#7B838B'}>
             <BreadcrumbItem textDecoration={'none'}>
               <BreadcrumbLink _hover={{ color: '#219BF4', textDecoration: 'none' }} href="/">
                 {t('Template List')}
@@ -276,8 +274,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           flexDirection={'column'}
           width={'100%'}
           flexGrow={1}
-          backgroundColor={'rgba(255, 255, 255, 0.90)'}
-        >
+          backgroundColor={'rgba(255, 255, 255, 0.90)'}>
           <Header
             templateDetail={templateDetail}
             appName={''}

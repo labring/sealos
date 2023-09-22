@@ -1,4 +1,4 @@
-import yaml from 'js-yaml';
+// edge
 export const getUserKubeConfig = () => {
   let kubeConfig: string =
     process.env.NODE_ENV === 'development' ? process.env.NEXT_PUBLIC_MOCK_USER || '' : '';
@@ -12,14 +12,4 @@ export const getUserKubeConfig = () => {
     err;
   }
   return kubeConfig;
-};
-
-export const getUserNamespace = () => {
-  const kubeConfig = getUserKubeConfig();
-  const json: any = yaml.load(kubeConfig);
-  try {
-    return `ns-${json.users[0].name}`;
-  } catch (err) {
-    return 'nx-';
-  }
 };
