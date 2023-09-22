@@ -33,7 +33,7 @@ function Index() {
     staleTime: 5 * 60 * 1000
   });
 
-  useQuery(['updateRepo'], () => updateRepo(), {
+  useQuery(['updateRepo'], updateRepo, {
     refetchInterval: 5 * 60 * 1000,
     staleTime: 5 * 60 * 1000
   });
