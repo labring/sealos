@@ -73,7 +73,7 @@ func (v *IngressValidator) SetupWithManager(mgr ctrl.Manager) error {
 	iv := IngressValidator{Client: mgr.GetClient(), domain: os.Getenv("DOMAIN"), cache: mgr.GetCache()}
 
 	err := iv.cache.IndexField(
-		ctrl.SetupSignalHandler(),
+		context.Background(),
 		&netv1.Ingress{},
 		IngressHostIndex,
 		func(obj client.Object) []string {
