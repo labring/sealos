@@ -26,13 +26,21 @@ type Interface interface {
 	//InitDB() error
 	GetMeteringOwnerTimeResult(queryTime time.Time, queryCategories, queryProperties []string) (*MeteringOwnerTimeResult, error)
 	GetBillingLastUpdateTime(owner string, _type accountv1.Type) (bool, time.Time, error)
+	//TODO will delete this
 	GetBillingHistoryNamespaceList(ns *accountv1.NamespaceBillingHistorySpec, owner string) ([]string, error)
-	SaveBillingsWithAccountBalance(accountBalanceSpec *accountv1.AccountBalanceSpec) error
+	GetBillingHistoryNamespaces(startTime, endTime *time.Time, billType int, owner string) ([]string, error)
+	SaveBillings(billing ...*resources.Billing) error
 	QueryBillingRecords(billingRecordQuery *accountv1.BillingRecordQuery, owner string) error
+	GetUnsettingBillingHandler(owner string) ([]resources.BillingHandler, error)
+	UpdateBillingStatus(orderID string, status resources.BillingStatus) error
 	GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error)
 	GetAllPricesMap() (map[string]resources.Price, error)
+	InitDefaultPropertyTypeLS() error
+	SavePropertyTypes(types []resources.PropertyType) error
 	GetBillingCount(accountType accountv1.Type, startTime, endTime time.Time) (count, amount int64, err error)
+	//TODO delete
 	GenerateMeteringData(startTime, endTime time.Time, prices map[string]resources.Price) error
+	GenerateBillingData(startTime, endTime time.Time, prols *resources.PropertyTypeLS, namespaces []string, owner string) (orderID []string, amount int64, err error)
 	InsertMonitor(ctx context.Context, monitors ...*resources.Monitor) error
 	DropMonitorCollectionsOlderThan(days int) error
 	Disconnect(ctx context.Context) error

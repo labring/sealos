@@ -21,6 +21,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/crypto"
+	"github.com/labring/sealos/pkg/utils/logger"
+
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+
 	"github.com/labring/sealos/controllers/pkg/gpu"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 
@@ -86,18 +91,245 @@ type Price struct {
 
 // Composite index: category, property, time, speed up query
 type Monitor struct {
-	Category string    `json:"category" bson:"category"`
-	Property string    `json:"property" bson:"property"`
-	Time     time.Time `json:"time" bson:"time"`
-	Value    int64     `json:"value" bson:"value"`
-	//Status   int       `json:"status" bson:"status"`
-	Detail string `json:"detail" bson:"detail"`
+	Time time.Time `json:"time" bson:"time"`
+	// equal namespace
+	Category string      `json:"category" bson:"category"`
+	Type     uint8       `json:"type" bson:"type"`
+	Name     string      `json:"name" bson:"name"`
+	Used     EnumUsedMap `json:"used" bson:"used"`
+	Property string      `json:"property" bson:"property"`
 }
 
-//| Category   | Property | Time       | Value (average value) | Amount (value * price) | Detail | Status |
-//| ---------- | -------- | ---------- | --------------------- | ---------------------- | ------ | ------ |
-//| Namespace1 | Cpu      | 2023010112 | 1000                  | 67000                  |        | 0      |
+type BillingType int
 
+type Billing struct {
+	Time    time.Time      `json:"time" bson:"time"`
+	OrderID string         `json:"order_id" bson:"order_id"`
+	Type    accountv1.Type `json:"type" bson:"type"`
+	//Name      string      `json:"name" bson:"name"`
+	Namespace string `json:"namespace" bson:"namespace"`
+	//Used       Used        `json:"used" bson:"used"`
+	//UsedAmount Used        `json:"used_amount" bson:"used_amount"`
+
+	AppCosts []AppCost `json:"app_costs,omitempty" bson:"app_costs,omitempty"`
+	AppType  uint8     `json:"app_type,omitempty" bson:"app_type,omitempty"`
+
+	Amount int64  `json:"amount" bson:"amount,omitempty"`
+	Owner  string `json:"owner" bson:"owner,omitempty"`
+	// 0: 未结算 1: 已结算
+	Status BillingStatus `json:"status" bson:"status,omitempty"`
+	// if type = Consumption, then payment is not nil
+	Payment *Payment `json:"payment" bson:"payment,omitempty"`
+	// if type = Transfer, then transfer is not nil
+	Transfer *Transfer `json:"transfer" bson:"transfer,omitempty"`
+}
+
+type Payment struct {
+	Method  string `json:"method" bson:"method"`
+	UserID  string `json:"user_id" bson:"user_id"`
+	Amount  int64  `json:"amount,omitempty"`
+	TradeNO string `json:"tradeNO,omitempty"`
+	// CodeURL is the codeURL of wechatpay
+	CodeURL string `json:"codeURL,omitempty"`
+}
+
+type Transfer struct {
+	From   string `json:"from" bson:"from,omitempty"`
+	To     string `json:"to" bson:"to,omitempty"`
+	Amount int64  `json:"amount" bson:"amount"`
+}
+
+type AppCost struct {
+	Used       EnumUsedMap `json:"used" bson:"used"`
+	UsedAmount EnumUsedMap `json:"used_amount" bson:"used_amount"`
+	Amount     int64       `json:"amount" bson:"amount,omitempty"`
+	Name       string      `json:"name" bson:"name"`
+}
+
+type BillingHandler struct {
+	OrderID string        `json:"order_id" bson:"order_id"`
+	Time    time.Time     `json:"time" bson:"time"`
+	Amount  int64         `json:"amount" bson:"amount,omitempty"`
+	Status  BillingStatus `json:"status" bson:"status,omitempty"`
+}
+
+type BillingStatus int
+
+const (
+	// 0: 未结算 1: 已结算
+	Unsettled BillingStatus = iota
+	Settled
+)
+
+const (
+	// 	DB       = 1
+	//	APP      = 2
+	//	TERMINAL = 3
+	//	JOB      = 4
+	//	OTHER    = 5
+
+	db = iota + 1
+	app
+	terminal
+	job
+	other
+)
+
+const (
+	DB       = "DB"
+	APP      = "APP"
+	TERMINAL = "TERMINAL"
+	JOB      = "JOB"
+	OTHER    = "OTHER"
+)
+
+var AppType = map[string]uint8{
+	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other,
+}
+
+var AppTypeReverse = map[uint8]string{
+	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER,
+}
+
+// 资源消耗
+type EnumUsedMap map[uint8]int64
+
+type PropertyType struct {
+	// 对应监控存储枚举类型，使用uint8，可以节省内存
+	// 0 cpu, 1 memory, 2 storage, 3 network ... 可扩展
+	Name  string `json:"name" bson:"name"`
+	Alias string `json:"alias" bson:"alias"`
+	Enum  uint8  `json:"enum" bson:"enum"`
+	//平均值，累加值 默认为平均值
+	//AVG , SUM
+	PriceType string `json:"price_type,omitempty" bson:"price_type,omitempty"`
+	// Price = UsedAmount (平均值||累加值) / Unit * UnitPrice
+	UnitPrice        int64             `json:"unit_price" bson:"unit_price"`
+	EncryptUnitPrice string            `json:"encrypt_unit_price" bson:"encrypt_unit_price"`
+	Unit             resource.Quantity `json:"-" bson:"-"`
+	// <digit>           ::= 0 | 1 | ... | 9
+	// <digits>          ::= <digit> | <digit><digits>
+	// <number>          ::= <digits> | <digits>.<digits> | <digits>. | .<digits>
+	// <sign>            ::= "+" | "-"
+	// <signedNumber>    ::= <number> | <sign><number>
+	// <suffix>          ::= <binarySI> | <decimalExponent> | <decimalSI>
+	// <binarySI>        ::= Ki | Mi | Gi | Ti | Pi | Ei
+	//
+	//	(International System of units; See: http://physics.nist.gov/cuu/Units/binary.html)
+	//
+	// <decimalSI>       ::= m | "" | k | M | G | T | P | E
+	//
+	//	(Note that 1024 = 1Ki but 1000 = 1k; I didn't choose the capitalization.)
+	//
+	// <decimalExponent> ::= "e" <signedNumber> | "E" <signedNumber>
+	UnitString string `json:"unit" bson:"unit"`
+	//计费周期 second
+	UnitPeriod string `json:"unit_period,omitempty" bson:"unit_period,omitempty"`
+}
+
+type PropertyTypeLS struct {
+	Types     []PropertyType
+	StringMap map[string]PropertyType
+	EnumMap   map[uint8]PropertyType
+}
+
+var DefaultPropertyTypeList = []PropertyType{
+	{
+		Name:       "cpu",
+		Enum:       0,
+		PriceType:  "AVG",
+		UnitPrice:  67,
+		UnitString: "1m",
+	},
+	{
+		Name:       "memory",
+		Enum:       1,
+		PriceType:  "AVG",
+		UnitPrice:  33,
+		UnitString: "1Mi",
+	},
+	{
+		Name:       "storage",
+		Enum:       2,
+		PriceType:  "AVG",
+		UnitPrice:  2,
+		UnitString: "1Mi",
+	},
+	{
+		Name:       "network",
+		Enum:       3,
+		PriceType:  "AVG",
+		UnitPrice:  781,
+		UnitString: "1Mi",
+	},
+}
+
+var DefaultPropertyTypeLS = newPropertyTypeLS(DefaultPropertyTypeList)
+
+func ConvertEnumUsedToString(costs map[uint8]int64) (costsMap map[string]int64) {
+	costsMap = make(map[string]int64, len(costs))
+	for k, v := range costs {
+		costsMap[DefaultPropertyTypeLS.EnumMap[k].Name] = v
+	}
+	return
+}
+
+func NewPropertyTypeLS(types []PropertyType) (ls *PropertyTypeLS) {
+	types, err := decryptPrice(types)
+	if err != nil {
+		logger.Warn("failed to decrypt price : %v", err)
+		types = DefaultPropertyTypeList
+	}
+	return newPropertyTypeLS(types)
+}
+
+func newPropertyTypeLS(types []PropertyType) (ls *PropertyTypeLS) {
+	ls = &PropertyTypeLS{
+		Types:     types,
+		StringMap: make(PropertyTypeStringMap, len(types)),
+		EnumMap:   make(PropertyTypeEnumMap, len(types)),
+	}
+	for i := range types {
+		if types[i].Unit == (resource.Quantity{}) && types[i].UnitString != "" {
+			types[i].Unit = resource.MustParse(types[i].UnitString)
+		}
+		ls.EnumMap[types[i].Enum] = types[i]
+		ls.StringMap[types[i].Name] = types[i]
+	}
+	return
+}
+
+func decryptPrice(types []PropertyType) ([]PropertyType, error) {
+	for i := range types {
+		if types[i].EncryptUnitPrice == "" {
+			return types, fmt.Errorf("encrypt %s unit price is empty", types[i].Name)
+		}
+		price, err := crypto.DecryptInt64(types[i].EncryptUnitPrice)
+		if err != nil {
+			return types, fmt.Errorf("failed to decrypt %s unit price : %v", types[i].Name, err)
+		}
+		types[i].UnitPrice = price
+		//if types[i].UnitPrice != 0 {
+		//	price, err := crypto.EncryptInt64(types[i].UnitPrice)
+		//	if err != nil {
+		//		logger.Error("failed to encrypt unit price : %v", err)
+		//	} else {
+		//		types[i].EncryptUnitPrice = *price
+		//	}
+		//}
+	}
+	return types, nil
+}
+
+type PropertyTypeEnumMap map[uint8]PropertyType
+
+type PropertyTypeStringMap map[string]PropertyType
+
+type PropertyList []PropertyType
+
+// | Category   | Property | Time       | Value (average value) | Amount (value * price) | Detail | Status |
+// | ---------- | -------- | ---------- | --------------------- | ---------------------- | ------ | ------ |
+// | Namespace1 | Cpu      | 2023010112 | 1000                  | 67000                  |        | 0      |
 type Metering struct {
 	Category string `json:"category" bson:"category"`
 	//time 2023010112 -> 2023-01-01 11:00:00 - 2023-01-01 12:00:00
@@ -110,7 +342,6 @@ type Metering struct {
 	// 0 -> not settled, 1 -> settled, -1 -> deleted, -2 -> refunded
 	//Status int `json:"status" bson:"status"`
 }
-
 type QuantityDetail struct {
 	*resource.Quantity
 	Detail string
@@ -123,7 +354,6 @@ const (
 	SealosMeteringCollectionName = "metering"
 	SealosBillingCollectionName  = "billing"
 )
-
 const (
 	PropertyInfraCPU    = "infra-cpu"
 	PropertyInfraMemory = "infra-memory"
@@ -134,6 +364,7 @@ const (
 const GpuResourcePrefix = "gpu-"
 
 const ResourceGPU corev1.ResourceName = gpu.NvidiaGpuKey
+const ResourceNetwork = "network"
 
 const (
 	ResourceRequestGpu corev1.ResourceName = "requests." + gpu.NvidiaGpuKey
@@ -143,11 +374,9 @@ const (
 func NewGpuResource(product string) corev1.ResourceName {
 	return corev1.ResourceName(GpuResourcePrefix + product)
 }
-
 func IsGpuResource(resource string) bool {
 	return strings.HasPrefix(resource, GpuResourcePrefix)
 }
-
 func GetGpuResourceProduct(resource string) string {
 	return strings.TrimPrefix(resource, GpuResourcePrefix)
 }
@@ -156,12 +385,12 @@ var (
 	bin1Mi  = resource.NewQuantity(1<<20, resource.BinarySI)
 	cpuUnit = resource.MustParse("1m")
 )
-
 var PricesUnit = map[corev1.ResourceName]*resource.Quantity{
 	corev1.ResourceCPU:     &cpuUnit, // 1 m CPU (1000 μ)
 	ResourceGPU:            &cpuUnit, // 1 m CPU (1000 μ)
 	corev1.ResourceMemory:  bin1Mi,   // 1 MiB
 	corev1.ResourceStorage: bin1Mi,   // 1 MiB
+	ResourceNetwork:        bin1Mi,   // 1 MiB
 }
 
 var DefaultPrices = map[string]Price{
@@ -307,73 +536,3 @@ func GetPrices(mongoClient *mongo.Client) ([]Price, error) {
 	}
 	return prices, nil
 }
-
-// create unique index
-//func createUniqueIndex(collection *mongo.Collection, field string) error {
-//	indexModel := mongo.IndexModel{
-//		Keys:    bson.D{{Key: field, Value: 1}},
-//		Options: options.Index().SetUnique(true),
-//	}
-//
-//	_, err := collection.Indexes().CreateOne(context.Background(), indexModel)
-//	if err != nil {
-//		return fmt.Errorf("failed to create unique index on %s: %v", field, err)
-//	}
-//	return nil
-//}
-
-//func createCompoundIndex(client *mongo.Client, dbName, collectionName string) error {
-//	collection := client.Database(dbName).Collection(collectionName)
-//	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-//	defer cancel()
-//
-//	indexModel := mongo.IndexModel{
-//		Keys: bson.D{
-//			{Key: CategoryField, Value: 1},
-//			{Key: PropertyField, Value: 1},
-//			{Key: TimeField, Value: 1},
-//		},
-//	}
-//
-//	_, err := collection.Indexes().CreateOne(ctx, indexModel)
-//	return err
-//}
-
-//func ensureCompoundIndex(client *mongo.Client, dbName, collName string, indexKeys bson.M) error {
-//	collection := client.Database(dbName).Collection(collName)
-//	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-//	defer cancel()
-//
-//	// List all indexes in the collection
-//	cursor, err := collection.Indexes().List(ctx)
-//	if err != nil {
-//		return err
-//	}
-//	defer cursor.Close(ctx)
-//
-//	// Check if the compound index already exists
-//	indexExists := false
-//	for cursor.Next(ctx) {
-//		var index bson.M
-//		if err := cursor.Decode(&index); err != nil {
-//			return err
-//		}
-//		if keys, ok := index["key"].(bson.M); ok {
-//			if reflect.DeepEqual(keys, indexKeys) {
-//				indexExists = true
-//				break
-//			}
-//		}
-//	}
-//
-//	// Create the compound index if it doesn't exist
-//	if !indexExists {
-//		_, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
-//			Keys: indexKeys,
-//		})
-//		if err != nil {
-//			return err
-//		}
-//	}
-//	return nil
-//}

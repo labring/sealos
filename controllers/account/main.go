@@ -17,16 +17,22 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 	"time"
 
-	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	"github.com/labring/sealos/controllers/account/controllers"
-	"github.com/labring/sealos/controllers/account/controllers/cache"
+	"github.com/labring/sealos/controllers/pkg/resources"
+
+	"github.com/labring/sealos/controllers/pkg/database"
+
 	notificationv1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	rate "github.com/labring/sealos/controllers/pkg/utils/rate"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	"github.com/labring/sealos/controllers/account/controllers"
+	"github.com/labring/sealos/controllers/account/controllers/cache"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -111,9 +117,22 @@ func main() {
 		MaxConcurrentReconciles: concurrent,
 		RateLimiter:             rate.GetRateLimiter(rateLimiterOptions),
 	}
+	dbCtx := context.Background()
+	dbClient, err := database.NewMongoDB(dbCtx, os.Getenv(database.MongoURI))
+	if err != nil {
+		setupLog.Error(err, "unable to connect to mongo")
+		os.Exit(1)
+	}
+	defer func() {
+		err := dbClient.Disconnect(dbCtx)
+		if err != nil {
+			setupLog.Error(err, "unable to disconnect from mongo")
+		}
+	}()
 	if err = (&controllers.AccountReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		DBClient: dbClient,
 	}).SetupWithManager(mgr, rateOpts); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Account")
 		os.Exit(1)
@@ -143,6 +162,12 @@ func main() {
 		mgr.GetWebhookServer().Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient()}})
 	}
 
+	err = dbClient.InitDefaultPropertyTypeLS()
+	if err != nil {
+		setupLog.Error(err, "unable to get property type")
+		os.Exit(1)
+	}
+
 	if err = (&controllers.BillingRecordQueryReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -151,8 +176,10 @@ func main() {
 		os.Exit(1)
 	}
 	if err = (&controllers.BillingReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		DBClient:   dbClient,
+		Properties: resources.DefaultPropertyTypeLS,
+		Client:     mgr.GetClient(),
+		Scheme:     mgr.GetScheme(),
 	}).SetupWithManager(mgr, rateOpts); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Billing")
 		os.Exit(1)
@@ -173,8 +200,9 @@ func main() {
 		os.Exit(1)
 	}
 	if err = (&controllers.TransferReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		DBClient: dbClient,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Transfer")
 		os.Exit(1)
@@ -184,6 +212,15 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NamespaceBillingHistory")
+		os.Exit(1)
+	}
+	if err = (&controllers.BillingInfoQueryReconciler{
+		Client:     mgr.GetClient(),
+		Scheme:     mgr.GetScheme(),
+		DBClient:   dbClient,
+		Properties: resources.DefaultPropertyTypeLS,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "BillingInfoQuery")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

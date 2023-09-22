@@ -1,20 +1,24 @@
-# permissions for end users to view accountbalances.
+# permissions for end users to edit billinginfoqueries.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: accountbalance-viewer-role
+  name: billinginfoquery-editor-role
 rules:
 - apiGroups:
   - account.sealos.io
   resources:
-  - accountbalances
+  - billinginfoqueries
   verbs:
+  - create
+  - delete
   - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - account.sealos.io
   resources:
-  - accountbalances/status
+  - billinginfoqueries/status
   verbs:
   - get

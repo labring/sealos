@@ -5,24 +5,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: accountbalances.account.sealos.io
+  name: billinginfoqueries.account.sealos.io
 spec:
   group: account.sealos.io
   names:
-    kind: AccountBalance
-    listKind: AccountBalanceList
-    plural: accountbalances
-    singular: accountbalance
+    kind: BillingInfoQuery
+    listKind: BillingInfoQueryList
+    plural: billinginfoqueries
+    singular: billinginfoquery
   scope: Namespaced
   versions:
-  - additionalPrinterColumns:
-    - jsonPath: .spec.amount
-      name: Amount
-      type: integer
-    name: v1
+  - name: v1
     schema:
       openAPIV3Schema:
-        description: AccountBalance is the Schema for the accountbalances API
+        description: BillingInfoQuery is the Schema for the billinginfoqueries API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -37,40 +33,30 @@ spec:
           metadata:
             type: object
           spec:
-            description: AccountBalanceSpec defines the desired state of AccountBalance
+            description: BillingInfoQuerySpec defines the desired state of BillingInfoQuery
             properties:
-              amount:
-                format: int64
-                type: integer
-              costs:
+              args:
                 additionalProperties:
-                  format: int64
-                  type: integer
+                  type: string
                 type: object
-              details:
+              queryType:
                 type: string
-              namespace:
-                type: string
-              order_id:
-                type: string
-              owner:
-                type: string
-              time:
-                format: date-time
-                type: string
-              type:
-                type: integer
             required:
-            - order_id
-            - owner
-            - time
-            - type
+            - queryType
             type: object
           status:
-            description: AccountBalanceStatus defines the observed state of AccountBalance
+            description: BillingInfoQueryStatus defines the observed state of BillingInfoQuery
             properties:
-              billingStatus:
+              result:
                 type: string
+              status:
+                type: string
+              statusDetails:
+                type: string
+            required:
+            - result
+            - status
+            - statusDetails
             type: object
         type: object
     served: true

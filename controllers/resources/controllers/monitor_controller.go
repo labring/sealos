@@ -25,10 +25,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/labring/sealos/pkg/utils/retry"
+
 	"github.com/go-logr/logr"
 	"golang.org/x/sync/semaphore"
 
-	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/gpu"
 	"github.com/labring/sealos/controllers/pkg/resources"
@@ -47,11 +48,12 @@ type MonitorReconciler struct {
 	logr.Logger
 	Interval          time.Duration
 	Scheme            *runtime.Scheme
-	mongoURI          string
 	stopCh            chan struct{}
 	wg                sync.WaitGroup
 	periodicReconcile time.Duration
 	NvidiaGpu         map[string]gpu.NvidiaGPU
+	DBClient          database.Interface
+	Properties        *resources.PropertyTypeLS
 }
 
 type quantity struct {
@@ -65,7 +67,7 @@ const (
 	MaxConcurrencyLimit                          = 1000
 )
 
-var namespaceMonitorFuncs = make(map[string]func(ctx context.Context, dbClient database.Interface, namespace *corev1.Namespace) error)
+var namespaceMonitorFuncs = make(map[string]func(ctx context.Context, namespace *corev1.Namespace) error)
 
 //+kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
 //+kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;watch
@@ -83,19 +85,17 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 		Logger:            ctrl.Log.WithName("controllers").WithName("Monitor"),
 		stopCh:            make(chan struct{}),
 		periodicReconcile: 1 * time.Minute,
-		mongoURI:          os.Getenv(database.MongoURI),
 	}
-	if r.mongoURI == "" {
-		return nil, fmt.Errorf("mongo uri is empty")
-	}
-	r.initNamespaceFuncs()
-	err := r.preApply()
+	var err error
+	err = retry.Retry(2, 1*time.Second, func() error {
+		r.NvidiaGpu, err = gpu.GetNodeGpuModel(mgr.GetClient())
+		if err != nil {
+			return fmt.Errorf("failed to get node gpu model: %v", err)
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-	r.NvidiaGpu, err = gpu.GetNodeGpuModel(mgr.GetClient())
-	if err != nil {
-		return nil, fmt.Errorf("failed to get node gpu model: %v", err)
 	}
 	r.Logger.Info("get gpu model", "gpu model", r.NvidiaGpu)
 	r.startPeriodicReconcile()
@@ -114,26 +114,12 @@ func (r *MonitorReconciler) initNamespaceFuncs() {
 		case namespaceResourcePod:
 			namespaceMonitorFuncs[namespaceResourcePod] = r.podResourceUsage
 		case namespaceResourceInfra:
-			namespaceMonitorFuncs[namespaceResourceInfra] = r.infraResourceUsage
+			//namespaceMonitorFuncs[namespaceResourceInfra] = r.infraResourceUsage
 		}
 	}
 }
 
 func (r *MonitorReconciler) StartReconciler(ctx context.Context) error {
-	//select {
-	//case namespaceName := <-r.namespaceQueue:
-	//	if err := r.processNamespace(ctx, namespaceName); err != nil {
-	//		r.Logger.Error(err, "failed to process namespace", "namespace", namespaceName)
-	//	}
-	//case namespaceList := <-r.namespaceListQueue:
-	//	r.Logger.Info("process namespace list", "namespaceList len", len(namespaceList.Items))
-	//	if err := r.processNamespaceList(ctx, namespaceList); err != nil {
-	//		r.Logger.Error(err, "failed to process namespace", "namespaceList", namespaceList)
-	//	}
-	//case <-ctx.Done():
-	//	r.stopPeriodicReconcile()
-	//	return nil
-	//}
 	<-ctx.Done()
 	r.stopPeriodicReconcile()
 	return nil
@@ -194,18 +180,6 @@ func (r *MonitorReconciler) processNamespaceList(ctx context.Context, namespaceL
 	}
 	wg := sync.WaitGroup{}
 	wg.Add(len(namespaceList.Items))
-	dbCtx := context.Background()
-	dbClient, err := database.NewMongoDB(dbCtx, r.mongoURI)
-	if err != nil {
-		r.Logger.Error(err, "connect mongo client failed")
-		return err
-	}
-	defer func() {
-		err := dbClient.Disconnect(dbCtx)
-		if err != nil {
-			r.Logger.V(5).Info("disconnect mongo client failed", "err", err)
-		}
-	}()
 	concurrencyLimit := len(namespaceList.Items)
 	if concurrencyLimit > MaxConcurrencyLimit {
 		concurrencyLimit = MaxConcurrencyLimit
@@ -219,7 +193,7 @@ func (r *MonitorReconciler) processNamespaceList(ctx context.Context, namespaceL
 				return
 			}
 			defer sem.Release(1)
-			if err := r.processNamespace(ctx, dbClient, namespace); err != nil {
+			if err := r.processNamespace(ctx, namespace); err != nil {
 				r.Logger.Error(err, "failed to process namespace", "namespace", namespace.Name)
 			}
 		}(&namespaceList.Items[i])
@@ -229,75 +203,44 @@ func (r *MonitorReconciler) processNamespaceList(ctx context.Context, namespaceL
 	return nil
 }
 
-func (r *MonitorReconciler) processNamespace(ctx context.Context, dbClient database.Interface, namespace *corev1.Namespace) error {
-	for res := range namespaceMonitorFuncs {
-		if err := namespaceMonitorFuncs[res](ctx, dbClient, namespace); err != nil {
-			r.Logger.Error(err, "monitor namespace resource", "resource", res, "namespace", namespace.Name)
-			return err
-		}
+func (r *MonitorReconciler) processNamespace(ctx context.Context, namespace *corev1.Namespace) error {
+	//for res := range namespaceMonitorFuncs {
+	//	if err := namespaceMonitorFuncs[res](ctx, dbClient, namespace); err != nil {
+	//		r.Logger.Error(err, "monitor namespace resource", "resource", res, "namespace", namespace.Name)
+	//		return err
+	//	}
+	//}
+	if err := r.podResourceUsage(ctx, namespace); err != nil {
+		r.Logger.Error(err, "monitor pod resource", "namespace", namespace.Name)
+		return err
 	}
-	//if err := r.podResourceUsage(ctx, dbClient, namespace); err != nil {
-	//	r.Logger.Error(err, "monitor pod resource", "namespace", namespace.Name)
-	//	return err
-	//}
-	//if err = r.infraResourceUsage(ctx, dbClient, namespace.Name); err != nil {
-	//	r.Logger.Error(err, "monitor infra resource", "namespace", namespace.Name)
-	//	return ctrl.Result{Requeue: true}, err
-	//}
+
 	return nil
 }
 
-func (r *MonitorReconciler) preApply() error {
-	ctx := context.Background()
-	dbClient, err := database.NewMongoDB(ctx, r.mongoURI)
-	if err != nil {
-		return fmt.Errorf("failed to connect mongo: %v", err)
-	}
-	defer func() {
-		err := dbClient.Disconnect(ctx)
-		if err != nil {
-			r.Error(err, "disconnect mongo client failed")
-		}
-	}()
-
-	if err = dbClient.CreateMonitorTimeSeriesIfNotExist(time.Now().UTC()); err != nil {
-		r.Logger.Error(err, "create table time series failed")
-	}
-	return nil
-}
-
-func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient database.Interface, namespace *corev1.Namespace) error {
+func (r *MonitorReconciler) podResourceUsage(ctx context.Context, namespace *corev1.Namespace) error {
 	timeStamp := time.Now().UTC()
-	var (
-		quota   = corev1.ResourceQuota{}
-		podList = corev1.PodList{}
-	)
+	podList := corev1.PodList{}
+	podsRes := map[string]map[corev1.ResourceName]*quantity{}
+	resourceMap := make(map[string]*resources.ResourceNamed)
+	//logger.Info("start podResourceUsage", "namespace", namespace.Name, "time", timeStamp.Format("2006-01-02 15:04:05.000"))
 	if err := r.List(context.Background(), &podList, &client.ListOptions{Namespace: namespace.Name}); err != nil {
 		return err
 	}
-	rs := initResources()
-	hasStorageQuota := false
-	if err := r.Get(ctx, client.ObjectKey{Name: "quota-" + namespace.Name, Namespace: namespace.Name}, &quota); err != nil {
-		if client.IgnoreNotFound(err) != nil {
-			return err
-		}
-		//if _, ok := namespace.GetAnnotations()[v1.UserAnnotationOwnerKey]; ok {
-		//	r.Logger.Error(fmt.Errorf("resources quota is empty"), "", "namespace", namespace.Name)
-		//}
-		rs[corev1.ResourceStorage].detail = "no resource quota"
-	} else {
-		hasStorageQuota = true
-		rs[corev1.ResourceStorage].Add(*quota.Status.Used.Name("requests.storage", resource.BinarySI))
-	}
 	for _, pod := range podList.Items {
-		// TODO pending status need skip?
+		//TODO if pod is job && 结束时候到现在时间小于1分钟 统计资源
 		if pod.Status.Phase == corev1.PodSucceeded || pod.Spec.NodeName == "" {
 			continue
+		}
+		podResNamed := resources.NewResourceNamed(&pod)
+		resourceMap[podResNamed.String()] = podResNamed
+		if podsRes[podResNamed.String()] == nil {
+			podsRes[podResNamed.String()] = initResources()
 		}
 		for _, container := range pod.Spec.Containers {
 			// gpu only use limit and not ignore pod pending status
 			if gpuRequest, ok := container.Resources.Limits[gpu.NvidiaGpuKey]; ok {
-				err := r.getGPUResourceUsage(pod, gpuRequest, rs)
+				err := r.getGPUResourceUsage(pod, gpuRequest, podsRes[podResNamed.String()])
 				if err != nil {
 					r.Logger.Error(err, "get gpu resource usage failed", "pod", pod.Name)
 				}
@@ -306,43 +249,67 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, dbClient datab
 				continue
 			}
 			if cpuRequest, ok := container.Resources.Limits[corev1.ResourceCPU]; ok {
-				rs[corev1.ResourceCPU].Add(cpuRequest)
+				podsRes[podResNamed.String()][corev1.ResourceCPU].Add(cpuRequest)
 			} else {
-				rs[corev1.ResourceCPU].Add(container.Resources.Requests[corev1.ResourceCPU])
+				podsRes[podResNamed.String()][corev1.ResourceCPU].Add(container.Resources.Requests[corev1.ResourceCPU])
 			}
 			if memoryRequest, ok := container.Resources.Limits[corev1.ResourceMemory]; ok {
-				rs[corev1.ResourceMemory].Add(memoryRequest)
+				podsRes[podResNamed.String()][corev1.ResourceMemory].Add(memoryRequest)
 			} else {
-				rs[corev1.ResourceMemory].Add(container.Resources.Requests[corev1.ResourceMemory])
+				podsRes[podResNamed.String()][corev1.ResourceMemory].Add(container.Resources.Requests[corev1.ResourceMemory])
 			}
 		}
 	}
-	if !hasStorageQuota {
-		pvcList := corev1.PersistentVolumeClaimList{}
-		if err := r.List(context.Background(), &pvcList, &client.ListOptions{Namespace: namespace.Name}); err != nil {
-			return err
+
+	//logger.Info("mid", "namespace", namespace.Name, "time", timeStamp.Format("2006-01-02 15:04:05"), "resourceMap", resourceMap, "podsRes", podsRes)
+
+	pvcList := corev1.PersistentVolumeClaimList{}
+	if err := r.List(context.Background(), &pvcList, &client.ListOptions{Namespace: namespace.Name}); err != nil {
+		return err
+	}
+	for _, pvc := range pvcList.Items {
+		if pvc.Status.Phase != corev1.ClaimBound {
+			continue
 		}
-		for _, pvc := range pvcList.Items {
-			if pvc.Status.Phase != corev1.ClaimBound {
-				continue
-			}
-			rs[corev1.ResourceStorage].Add(pvc.Spec.Resources.Requests[corev1.ResourceStorage])
+		pvcRes := resources.NewResourceNamed(&pvc)
+		if podsRes[pvcRes.String()] == nil {
+			resourceMap[pvcRes.String()] = pvcRes
+			podsRes[pvcRes.String()] = initResources()
 		}
+		podsRes[pvcRes.String()][corev1.ResourceStorage].Add(pvc.Spec.Resources.Requests[corev1.ResourceStorage])
 	}
 	var monitors []*resources.Monitor
-	for resour, value := range rs {
-		v := getResourceValue(resour, rs)
-		if v > 0 {
-			monitors = append(monitors, &resources.Monitor{
-				Category: namespace.Name,
-				Property: resour.String(),
-				Value:    v,
-				Time:     timeStamp,
-				Detail:   value.detail,
-			})
+
+	getResourceUsed := func(podResource map[corev1.ResourceName]*quantity) (bool, map[uint8]int64) {
+		used := map[uint8]int64{}
+		isEmpty := true
+		for i := range podResource {
+			if podResource[i].MilliValue() == 0 {
+				continue
+			}
+			isEmpty = false
+			if pType, ok := r.Properties.StringMap[i.String()]; ok {
+				used[pType.Enum] = int64(math.Ceil(float64(podResource[i].MilliValue()) / float64(pType.Unit.MilliValue())))
+				continue
+			}
+			r.Logger.Error(fmt.Errorf("not found resource type"), "resource", i.String())
 		}
+		return isEmpty, used
 	}
-	return dbClient.InsertMonitor(ctx, monitors...)
+	for name, podResource := range podsRes {
+		isEmpty, used := getResourceUsed(podResource)
+		if isEmpty {
+			continue
+		}
+		monitors = append(monitors, &resources.Monitor{
+			Category: namespace.Name,
+			Used:     used,
+			Time:     timeStamp,
+			Type:     resourceMap[name].Type(),
+			Name:     resourceMap[name].Name(),
+		})
+	}
+	return r.DBClient.InsertMonitor(ctx, monitors...)
 }
 
 func (r *MonitorReconciler) getGPUResourceUsage(pod corev1.Pod, gpuReq resource.Quantity, rs map[corev1.ResourceName]*quantity) (err error) {
@@ -364,18 +331,6 @@ func (r *MonitorReconciler) getGPUResourceUsage(pod corev1.Pod, gpuReq resource.
 	return nil
 }
 
-func getResourceValue(resourceName corev1.ResourceName, res map[corev1.ResourceName]*quantity) int64 {
-	quantity := res[resourceName]
-	priceUnit := resources.PricesUnit[resourceName]
-	if strings.Contains(resourceName.String(), "gpu") {
-		priceUnit = resources.PricesUnit[resources.ResourceGPU]
-	}
-	if quantity != nil && quantity.MilliValue() != 0 {
-		return int64(math.Ceil(float64(quantity.MilliValue()) / float64(priceUnit.MilliValue())))
-	}
-	return 0
-}
-
 func initResources() (rs map[corev1.ResourceName]*quantity) {
 	rs = make(map[corev1.ResourceName]*quantity)
 	rs[resources.ResourceGPU] = initGpuResources()
@@ -387,75 +342,4 @@ func initResources() (rs map[corev1.ResourceName]*quantity) {
 
 func initGpuResources() *quantity {
 	return &quantity{Quantity: resource.NewQuantity(0, resource.DecimalSI), detail: ""}
-}
-
-func (r *MonitorReconciler) infraResourceUsage(ctx context.Context, dbClient database.Interface, namespace *corev1.Namespace) error {
-	var infraList infrav1.InfraList
-	if err := r.List(ctx, &infraList, client.InNamespace(namespace.Name)); err != nil {
-		return err
-	}
-	if len(infraList.Items) == 0 {
-		return nil
-	}
-	timeStamp := time.Now().UTC()
-	infraResources := initResources()
-	for i := range infraList.Items {
-		infra := infraList.Items[i]
-		//TODO if infra is not running, skip it,  what about pending/failed/unknown?
-		if !r.checkInfraStatusRunning(infra) {
-			continue
-		}
-		for _, host := range infra.Spec.Hosts {
-			cnt := host.Count
-			flavor := host.Flavor
-			//unified infra unit: getInfraCPUQuantity/getInfraMemoryQuantity/getInfraDiskQuantity
-			infraResources[corev1.ResourceCPU].Add(*resources.GetInfraCPUQuantity(flavor, cnt))
-			infraResources[corev1.ResourceMemory].Add(*resources.GetInfraMemoryQuantity(flavor, cnt))
-			for _, disk := range host.Disks {
-				infraResources[corev1.ResourceStorage].Add(*resources.GetInfraDiskQuantity(disk.Capacity))
-			}
-		}
-		r.Logger.Info("infra resources", "namespace", infra.Namespace, "cpu quantity", infraResources[corev1.ResourceCPU], "memory quantity", infraResources[corev1.ResourceMemory], "volume quantity", infraResources[corev1.ResourceStorage])
-	}
-	cpuUsage, memUsage, storUsage := getResourceValue(corev1.ResourceCPU, infraResources),
-		getResourceValue(corev1.ResourceMemory, infraResources),
-		getResourceValue(corev1.ResourceStorage, infraResources)
-	var monitors []*resources.Monitor
-	if cpuUsage != 0 {
-		monitors = append(monitors, &resources.Monitor{
-			Category: namespace.Name,
-			Property: resources.PropertyInfraCPU,
-			Value:    cpuUsage,
-			Time:     timeStamp,
-			//Detail:   "",
-		})
-	}
-	if memUsage != 0 {
-		monitors = append(monitors, &resources.Monitor{
-			Category: namespace.Name,
-			Property: resources.PropertyInfraMemory,
-			Value:    memUsage,
-			Time:     timeStamp,
-			//Detail:   "",
-		})
-	}
-	if storUsage != 0 {
-		monitors = append(monitors, &resources.Monitor{
-			Category: namespace.Name,
-			Property: resources.PropertyInfraDisk,
-			Value:    storUsage,
-			Time:     timeStamp,
-			//Detail:   "",
-		})
-	}
-	return dbClient.InsertMonitor(ctx, monitors...)
-}
-
-// checkInfraStatus check infra status
-func (r *MonitorReconciler) checkInfraStatusRunning(infra infrav1.Infra) bool {
-	if infra.Status.Status == infrav1.Running.String() {
-		return true
-	}
-	r.Logger.Info("infra status is not running", "infra name", infra.Name, "infra namespace", infra.Namespace, "infra status", infra.Status.Status)
-	return false
 }
