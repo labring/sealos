@@ -156,5 +156,9 @@
     "YAML File": "YAML File",
     "Template Development": "Template Development",
     "Dryrun Deploy": "Dryrun Deploy"
+  },
+  "SideBar": {
+    "Applications": "Applications",
+    "My App": "My App"
   }
 }

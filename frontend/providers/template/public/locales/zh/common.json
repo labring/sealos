@@ -162,5 +162,9 @@
     "YAML File": "YAML 文件",
     "Template Development": "模板开发",
     "Dryrun Deploy": "试运行部署"
+  },
+  "SideBar": {
+    "Applications": "所有应用",
+    "My App": "我的应用"
   }
 }

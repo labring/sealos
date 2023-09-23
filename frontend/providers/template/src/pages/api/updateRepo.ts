@@ -39,13 +39,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const jsonPath = path.resolve(originalPath, 'fast_deploy_template.json');
 
     try {
-      if (!fs.existsSync(targetPath)) {
-        await execAsync(`git clone --depth 1 ${repoHttpUrl} ${targetPath}`);
-      } else {
-        await execAsync(`cd ${targetPath} && git pull`);
-      }
+      const timeoutPromise = new Promise((resolve, reject) => {
+        setTimeout(() => {
+          reject(new Error('operation timed out'));
+        }, 30 * 1000);
+      });
+      const gitOperationPromise = !fs.existsSync(targetPath)
+        ? execAsync(`git clone --depth 1 ${repoHttpUrl} ${targetPath}`)
+        : execAsync(`cd ${targetPath} && git pull`);
+
+      await Promise.race([gitOperationPromise, timeoutPromise]);
     } catch (error) {
-      console.error(error);
+      return jsonRes(res, { error: 'git operation timed out', code: 500 });
     }
 
     if (!fs.existsSync(targetPath)) {
