@@ -18,6 +18,9 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
+
+	"github.com/pkg/errors"
 
 	"golang.org/x/sync/errgroup"
 
@@ -227,14 +230,14 @@ func (k *K3s) pullKubeConfigFromMaster0() error {
 
 func (k *K3s) copyKubeConfigFileToNodes(hosts ...string) error {
 	src := k.pathResolver.AdminFile()
-	//data, err := file.ReadAll(src)
-	//if err != nil {
-	//	return errors.WithMessage(err, "read admin.config file failed")
-	//}
-	//newData := strings.ReplaceAll(string(data), "https://0.0.0.0:6443", fmt.Sprintf("https://%s:%d", constants.DefaultAPIServerDomain, 6443))
-	//if err = file.WriteFile(src, []byte(newData)); err != nil {
-	//	return errors.WithMessage(err, "write admin.config file failed")
-	//}
+	data, err := file.ReadAll(src)
+	if err != nil {
+		return errors.WithMessage(err, "read admin.config file failed")
+	}
+	newData := strings.ReplaceAll(string(data), "https://0.0.0.0:6443", fmt.Sprintf("https://%s:%d", constants.DefaultAPIServerDomain, 6443))
+	if err = file.WriteFile(src, []byte(newData)); err != nil {
+		return errors.WithMessage(err, "write admin.config file failed")
+	}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, node := range hosts {
 		node := node

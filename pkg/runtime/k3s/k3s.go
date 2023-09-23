@@ -133,7 +133,7 @@ func (k *K3s) SyncNodeIPVS(mastersIPList, nodeIPList []string) error {
 		node := node
 		eg.Go(func() error {
 			logger.Info("start to sync lvscare static pod to node: %s master: %+v", node, masters)
-			err := k.remoteUtil.StaticPod(node, k.getVipAndPort(), constants.LvsCareStaticPodName, image, masters, k3sEtcStaticPod)
+			err := k.remoteUtil.StaticPod(node, k.getVipAndPort(), constants.LvsCareStaticPodName, image, masters, k3sEtcStaticPod, []string{"--health-status", "401"})
 			if err != nil {
 				return fmt.Errorf("update lvscare static pod failed %s %v", node, err)
 			}

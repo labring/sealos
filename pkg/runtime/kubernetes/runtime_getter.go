@@ -112,7 +112,7 @@ func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs, nodesIPs []string) error {
 
 func (k *KubeadmRuntime) execIPVSPod(ip string, masters []string) error {
 	image := k.cluster.GetLvscareImage()
-	return k.remoteUtil.StaticPod(ip, k.getVipAndPort(), constants.LvsCareStaticPodName, image, masters, kubernetesEtcStaticPod)
+	return k.remoteUtil.StaticPod(ip, k.getVipAndPort(), constants.LvsCareStaticPodName, image, masters, kubernetesEtcStaticPod, []string{})
 }
 
 func (k *KubeadmRuntime) execToken(ip, certificateKey string) (string, error) {
