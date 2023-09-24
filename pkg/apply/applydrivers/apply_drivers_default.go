@@ -33,6 +33,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	"golang.org/x/sync/errgroup"
 )
 
 func NewDefaultApplier(ctx context.Context, cluster *v2.Cluster, cf clusterfile.Interface, images []string) (Interface, error) {
@@ -271,12 +272,18 @@ func (c *Applier) deleteCluster() error {
 
 func (c *Applier) syncWorkdir() {
 	workDir := constants.ClusterDir(c.ClusterDesired.Name)
-	sshCmd, err := ssh.NewExecCmdFromRoles(c.ClusterDesired, v2.MASTER)
-	if err != nil {
-		logger.Error("failed to sync workdir: %v", err)
+	logger.Debug("sync workdir: %s", workDir)
+	ipList := c.ClusterDesired.GetMasterIPAndPortList()
+	sshClient := ssh.NewCacheClientFromCluster(c.ClusterDesired, true)
+
+	eg, _ := errgroup.WithContext(context.Background())
+	for _, ipAddr := range ipList {
+		ip := ipAddr
+		eg.Go(func() error {
+			return sshClient.Copy(ip, workDir, workDir)
+		})
 	}
-	err = sshCmd.RunCopy(workDir, workDir)
-	if err != nil {
+	if err := eg.Wait(); err != nil {
 		logger.Error("failed to sync workdir: %s error, %v", workDir, err)
 	}
 }
