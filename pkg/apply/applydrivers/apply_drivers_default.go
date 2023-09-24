@@ -23,6 +23,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/version"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/clusterfile"
@@ -271,12 +273,18 @@ func (c *Applier) deleteCluster() error {
 
 func (c *Applier) syncWorkdir() {
 	workDir := constants.ClusterDir(c.ClusterDesired.Name)
-	sshCmd, err := ssh.NewExecCmdFromRoles(c.ClusterDesired, v2.MASTER)
-	if err != nil {
-		logger.Error("failed to sync workdir: %v", err)
+	logger.Debug("sync workdir: %s", workDir)
+	ipList := c.ClusterDesired.GetMasterIPAndPortList()
+	sshClient := ssh.NewCacheClientFromCluster(c.ClusterDesired, true)
+
+	eg, _ := errgroup.WithContext(context.Background())
+	for _, ipAddr := range ipList {
+		ip := ipAddr
+		eg.Go(func() error {
+			return sshClient.Copy(ip, workDir, workDir)
+		})
 	}
-	err = sshCmd.RunCopy(workDir, workDir)
-	if err != nil {
+	if err := eg.Wait(); err != nil {
 		logger.Error("failed to sync workdir: %s error, %v", workDir, err)
 	}
 }
