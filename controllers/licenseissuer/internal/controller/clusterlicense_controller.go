@@ -115,11 +115,13 @@ func (r *ClusterLicenseReconciler) Read(ctx context.Context, req ctrl.Request) e
 	reader := &util.Reader{}
 
 	Namespace := util.GetOptions().GetEnvOptions().Namespace
+	// csb is ClusterScaleBilling object
 	csbID := types.NamespacedName{
 		Name:      util.ScaleBilling,
 		Namespace: Namespace,
 	}
 	csb := &infostreamv1.ClusterScaleBilling{}
+	// cl is ClusterLicense object
 	clID := req.NamespacedName
 	cl := &infostreamv1.ClusterLicense{}
 	reader.Add(csb, csbID)

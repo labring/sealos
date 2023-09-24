@@ -27,6 +27,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	wb "github.com/labring/sealos/controllers/licenseissuer/internal/webhook"
 	"github.com/labring/sealos/controllers/pkg/database"
 	ntf "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,6 +36,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller"
@@ -163,8 +165,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "ClusterScaleBilling")
 		os.Exit(1)
 	}
-	// pv := wb.NewPodValidator(mgr.GetClient())
-	/// mgr.GetWebhookServer().Register("/validate-infostream-sealos-io-v1-clusterscalebilling", &webhook.Admission{Handler: pv})
 	if err = (&controller.LicenseIssuerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -179,6 +179,10 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "LicensePayment")
 		os.Exit(1)
 	}
+
+	// register webhook
+	pv := wb.NewPodValidator(mgr.GetClient())
+	mgr.GetWebhookServer().Register("/validate-infostream-sealos-io-v1-clusterscalebilling", &webhook.Admission{Handler: pv})
 	//+kubebuilder:scaffold:builder
 
 	// simulate the webhook server

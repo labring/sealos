@@ -49,6 +49,11 @@ type LicensePaymentReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (r *LicensePaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Reconciling LicenseIssuer")
+	err := DeleteForInvalidPayment(ctx, r.Client)
+	if err != nil {
+		r.logger.Info("unable to delete invalid payment")
+		return ctrl.Result{}, err
+	}
 	payment := issuerv1.Payment{}
 
 	// Get the payment object
@@ -56,11 +61,7 @@ func (r *LicensePaymentReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		r.logger.Info("unable to fetch Payment")
 		return ctrl.Result{}, err
 	}
-	ok := CheckPayment(&payment)
-	if !ok {
-		r.logger.Info("invalid payment")
-		return ctrl.Result{}, r.Delete(ctx, &payment)
-	}
+
 	// Get the payment method
 	p, err := pay.NewPayHandler(payment.Spec.PaymentMethod)
 	if err != nil {
@@ -116,4 +117,20 @@ func CheckPayment(p *issuerv1.Payment) bool {
 		return false
 	}
 	return true
+}
+
+func DeleteForInvalidPayment(ctx context.Context, client client.Client) error {
+	// list all payments
+	payments := issuerv1.PaymentList{}
+	if err := client.List(ctx, &payments); err != nil {
+		return err
+	}
+	for _, p := range payments.Items {
+		if !CheckPayment(&p) {
+			if err := client.Delete(ctx, &p); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

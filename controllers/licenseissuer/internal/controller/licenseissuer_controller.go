@@ -126,7 +126,8 @@ func (r *LicenseIssuerReconciler) IssuerHandle(status string, payment *issuerv1.
 		token, err := r.IssuerLicenseToken(payment)
 		if err != nil {
 			r.logger.Info("unable to get license token", "pay_id", payment.Spec.UserID)
-			return ctrl.Result{}, err
+			payment.Status.Status = "Failed"
+			return ctrl.Result{}, r.Status().Update(context.Background(), payment)
 		}
 		payment.Status.Token = token
 		payment.Status.Status = "Completed"
