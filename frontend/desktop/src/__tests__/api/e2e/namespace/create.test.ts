@@ -63,9 +63,19 @@ describe('Login create', () => {
     ['team5', 4],
     ['team6', 5]
   ])(
-    'limit 5 team',
+    'limit 4 team',
     async (teamName: string, idx: number) => {
+      if (idx === 0) {
+        const res = await _passwordLoginRequest(request)({
+          user: 'createTest5',
+          password: 'testtest'
+        });
+        expect(res.data?.user).toBeDefined();
+        session = res.data!;
+        setAuth(session);
+      }
       const res = await createRequest({ teamName });
+      console.log('curIdx', idx, 'code', res.code);
       if (idx > 3) expect(res.code).toBe(403);
       else expect(res.code).toBe(200);
     },

@@ -89,7 +89,8 @@ function Index() {
       height={'100%'}
       overflow={'auto'}
       backgroundColor={'#edeff0'}
-      position={'relative'}>
+      position={'relative'}
+    >
       <Flex justifyContent={'center'} flexDirection={'column'} alignItems={'center'} pt={'24px'}>
         <Text color={'24282C'} fontSize={'48px'} fontWeight={500}>
           {t('Templates')}
@@ -107,7 +108,8 @@ function Index() {
           top={'26px'}
           backgroundColor={'#FFF'}
           borderRadius={'40px'}
-          onClick={() => router.push('/develop')}>
+          onClick={() => router.push('/develop')}
+        >
           <MyIcon name="tool" fill={'transparent'} />
           <Text ml="8px" color={'#485058'} fontWeight={500} cursor={'pointer'} fontSize={'12px'}>
             {t('develop.YAML Detection Tool')}
@@ -122,7 +124,8 @@ function Index() {
               width="24"
               height="24"
               viewBox="0 0 24 24"
-              fill="none">
+              fill="none"
+            >
               <path
                 d="M21.71 20.29L18 16.61C19.4401 14.8144 20.1375 12.5353 19.9488 10.2413C19.7601 7.9473 18.6997 5.81278 16.9855 4.27664C15.2714 2.7405 13.0338 1.91951 10.7329 1.98247C8.43204 2.04543 6.24273 2.98756 4.61515 4.61514C2.98757 6.24272 2.04543 8.43203 1.98247 10.7329C1.91951 13.0338 2.74051 15.2714 4.27665 16.9855C5.81279 18.6997 7.94731 19.7601 10.2413 19.9488C12.5353 20.1375 14.8144 19.4401 16.61 18L20.29 21.68C20.383 21.7737 20.4936 21.8481 20.6154 21.8989C20.7373 21.9497 20.868 21.9758 21 21.9758C21.132 21.9758 21.2627 21.9497 21.3846 21.8989C21.5064 21.8481 21.617 21.7737 21.71 21.68C21.8902 21.4935 21.991 21.2443 21.991 20.985C21.991 20.7257 21.8902 20.4765 21.71 20.29ZM11 18C9.61553 18 8.26216 17.5895 7.11101 16.8203C5.95987 16.0511 5.06266 14.9579 4.53285 13.6788C4.00303 12.3997 3.86441 10.9922 4.13451 9.63436C4.4046 8.2765 5.07129 7.02922 6.05026 6.05025C7.02922 5.07128 8.2765 4.4046 9.63437 4.1345C10.9922 3.8644 12.3997 4.00303 13.6788 4.53284C14.9579 5.06265 16.0511 5.95986 16.8203 7.111C17.5895 8.26215 18 9.61553 18 11C18 12.8565 17.2625 14.637 15.9498 15.9497C14.637 17.2625 12.8565 18 11 18Z"
                 fill="#24282C"
@@ -144,7 +147,8 @@ function Index() {
           justifyContent={'center'}
           w={'100%'}
           gridTemplateColumns="repeat(auto-fit, minmax(328px, 328px))"
-          gridGap={'24px'}>
+          gridGap={'24px'}
+        >
           {filterData &&
             filterData?.map((item: TemplateType) => {
               return (
@@ -164,14 +168,16 @@ function Index() {
                   p={'24px'}
                   borderRadius={'6px'}
                   backgroundColor={'#fff'}
-                  border={'1px solid #DEE0E2'}>
+                  border={'1px solid #DEE0E2'}
+                >
                   <Box
                     p={'6px'}
                     w={'48px'}
                     h={'48px'}
                     borderRadius={'4px'}
                     backgroundColor={'#fff'}
-                    border={' 1px solid #DEE0E2'}>
+                    border={' 1px solid #DEE0E2'}
+                  >
                     <Image src={item?.spec?.icon} alt="" width={'36px'} height={'36px'} />
                   </Box>
                   <Flex mt={'12px'} alignItems={'center'} justifyContent="space-between">
@@ -187,7 +193,8 @@ function Index() {
                       h={'28px'}
                       borderRadius={'4px'}
                       border={'1px solid #DEE0E2'}
-                      backgroundColor={'#F4F6F8'}>
+                      backgroundColor={'#F4F6F8'}
+                    >
                       Deploy
                     </Flex>
                   </Flex>
@@ -203,7 +210,8 @@ function Index() {
                     mt={'8px'}
                     fontSize={'12px'}
                     color={'5A646E'}
-                    fontWeight={400}>
+                    fontWeight={400}
+                  >
                     {item?.spec?.description}
                   </Text>
                   <Flex mt={'auto'} justifyContent={'space-between'} alignItems={'center'}>

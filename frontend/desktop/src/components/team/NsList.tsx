@@ -1,39 +1,25 @@
 import { useCopyData } from '@/hooks/useCopyData';
-import request from '@/services/request';
 import { Box, Flex, Text } from '@chakra-ui/react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import Iconfont from '../iconfont';
-import { ApiResp } from '@/types';
 import InviteMember from './InviteMember';
-import { NSType, NamespaceDto, UserRole } from '@/types/team';
+import { NSType, NamespaceDto } from '@/types/team';
+import { useTranslation } from 'react-i18next';
 const NsList = ({
   click,
   selected_ns_uid,
-  nullNs,
+  namespaces,
   displayPoint = false,
   ...boxprop
 }: {
   displayPoint: boolean;
   click?: (ns: NamespaceDto) => void;
   selected_ns_uid: string;
-  nullNs?: (privateNamespace: NamespaceDto) => void;
+  namespaces: NamespaceDto[];
 } & Parameters<typeof Box>[0]) => {
   const queryClient = useQueryClient();
-  const { data } = useQuery({
-    queryKey: ['teamList', 'teamGroup'],
-    queryFn: () =>
-      request<any, ApiResp<{ namespaces: (NamespaceDto & { role: UserRole })[] }>>(
-        '/api/auth/namespace/list'
-      )
-  });
   const { copyData } = useCopyData();
-  const namespaces = data?.data?.namespaces || [];
-  const namespace = namespaces.find((x) => x.uid === selected_ns_uid);
-  const privateNamespace = namespaces.find((x) => x.nstype === NSType.Private);
-  if (!namespace && namespaces.length > 0 && privateNamespace) {
-    // 被删了
-    nullNs && nullNs(privateNamespace);
-  }
+  const { t } = useTranslation();
   return (
     <Box {...boxprop}>
       {namespaces.length > 0 &&
@@ -83,33 +69,8 @@ const NsList = ({
                   : {})}
                 textTransform={'capitalize'}
               >
-                {ns.teamName}
+                {ns.nstype === NSType.Private ? t('Default Team') : ns.teamName}
               </Text>
-            </Flex>
-            <Flex
-              ml="auto"
-              className="namespace-option"
-              display={ns.uid === selected_ns_uid ? 'flex' : 'none'}
-              position={'absolute'}
-              right={'0'}
-            >
-              {ns.nstype === NSType.Team && (
-                <InviteMember ownRole={ns.role} mr="6px" ns_uid={ns.uid} />
-              )}
-              <Flex
-                onClick={() => copyData(ns.id)}
-                justify={'center'}
-                alignItems={'center'}
-                cursor={'pointer'}
-                mr="6px"
-                w="24px"
-                h="24px"
-                _hover={{
-                  bgColor: 'rgba(0, 0, 0, 0.03)'
-                }}
-              >
-                <Iconfont iconName="icon-copy2" width={18} height={18} color="#7B838B"></Iconfont>
-              </Flex>
             </Flex>
           </Flex>
         ))}
