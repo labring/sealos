@@ -91,7 +91,7 @@ func (c *Client) CmdAsyncWithContext(ctx context.Context, host string, cmds ...s
 	}()
 	select {
 	case <-ctx.Done():
-		return nil
+		return ctx.Err()
 	case err = <-errCh:
 		return err
 	}
@@ -99,7 +99,9 @@ func (c *Client) CmdAsyncWithContext(ctx context.Context, host string, cmds ...s
 
 // CmdAsync not actually asynchronously, just print output asynchronously
 func (c *Client) CmdAsync(host string, cmds ...string) error {
-	return c.CmdAsyncWithContext(context.Background(), host, cmds...)
+	ctx, cancel := GetTimeoutContext()
+	defer cancel()
+	return c.CmdAsyncWithContext(ctx, host, cmds...)
 }
 
 func (c *Client) Cmd(host, cmd string) ([]byte, error) {
