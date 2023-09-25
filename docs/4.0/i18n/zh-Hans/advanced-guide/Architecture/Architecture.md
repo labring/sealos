@@ -6,9 +6,9 @@ Sealos 采用应用分离与应用互联的方式构建，不同应用可以独�
 ## 整体架构
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./images/architecture_dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="./images/architecture_light.png">
-  <img src="./images/architecture_light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="./images/architecture_dark.png" />
+  <source media="(prefers-color-scheme: light)" srcset="./images/architecture_light.png" />
+  <img src="./images/architecture_light.png" />
 </picture>
 
 ## 应用架构
@@ -24,7 +24,7 @@ Sealos 上的应用采用前后端分离的架构，同时前端能够提供 `SS
 详细信息可以点击 [链接](../../platform-components) 文档了解更多。
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./images/application_dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="./images/application_light.png">
-  <img src="./images/application_light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="./images/application_dark.png" />
+  <source media="(prefers-color-scheme: light)" srcset="./images/application_light.png" />
+  <img src="./images/application_light.png" />
 </picture>
