@@ -182,8 +182,9 @@ const FileSelect = ({ fileExtension, setFiles, files, ...props }: Props) => {
         {t('Upload Token File')}
       </Text>
       <Box
-        w="106px"
-        h="50px"
+        w={'auto'}
+        maxW={'200px'}
+        h="35px"
         bottom={'0'}
         right={'0'}
         fontWeight={400}

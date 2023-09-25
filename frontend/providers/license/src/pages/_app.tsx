@@ -91,7 +91,7 @@ function App({ Component, pageProps }: AppProps) {
       const lastLang = getLangStore();
       const newLang = data.currentLanguage;
       if (lastLang !== newLang) {
-        i18n.changeLanguage(newLang);
+        i18n?.changeLanguage?.(newLang);
         setLangStore(newLang);
         setRefresh((state) => !state);
       }

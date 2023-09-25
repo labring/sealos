@@ -36,3 +36,19 @@ export const parseOpenappQuery = (openapp: string) => {
     appQuery
   };
 };
+
+export const getRemainingTime = (expirationTime: number) => {
+  const currentTime = Math.floor(Date.now() / 1000);
+
+  if (currentTime >= expirationTime) {
+    return 'expired';
+  }
+
+  const remainingTimeInSeconds = expirationTime - currentTime;
+  const hours = Math.floor(remainingTimeInSeconds / 3600);
+  const minutes = Math.floor((remainingTimeInSeconds % 3600) / 60);
+  const seconds = remainingTimeInSeconds % 60;
+
+  const formattedTime = `${hours}小时${minutes}分钟`;
+  return formattedTime;
+};

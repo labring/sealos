@@ -1,3 +1,4 @@
+// edge
 import yaml from 'js-yaml';
 
 type KC = {
@@ -47,5 +48,5 @@ export const getUserServiceAccount = () => {
 export const getUserId = () => {
   const kubeConfig = getUserKubeConfig();
   const json = yaml.load(kubeConfig) as KC;
-  return json?.contexts[0]?.context?.user || json.users[0].name;
+  return json?.contexts[0]?.context?.user || json?.users[0]?.name;
 };

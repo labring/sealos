@@ -5,7 +5,10 @@ import {
   enableWechat,
   enablePassword,
   enableSms,
-  enableGoogle
+  enableGoogle,
+  enableStripe,
+  enableWechatRecharge,
+  enableLicense
 } from '@/services/enable';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -20,6 +23,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const needSms = enableSms();
   const needGoogle = enableGoogle();
   const callback_url = process.env.CALLBACK_URL;
+  const stripeEnabled = enableStripe();
+  const wechatEnabledRecharge = enableWechatRecharge();
+  const licenseEnabled = enableLicense();
 
   jsonRes(res, {
     data: {
@@ -34,7 +40,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       needSms,
       needGithub,
       needWechat,
-      needGoogle
+      needGoogle,
+      stripeEnabled,
+      wechatEnabledRecharge,
+      licenseEnabled
     }
   });
 }

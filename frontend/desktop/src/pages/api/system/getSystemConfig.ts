@@ -22,7 +22,6 @@ export async function getSystemConfig(): Promise<SystemConfigType> {
     const res = JSON.parse(readFileSync(filename, 'utf-8'));
     return res;
   } catch (error) {
-    console.log('get system config error, set default');
     return defaultConfig;
   }
 }

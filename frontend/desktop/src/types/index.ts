@@ -6,6 +6,8 @@ export * from './crd';
 export * from './payment';
 export * from './system';
 export * from './login';
+export * from './valuation';
+export * from './license';
 
 declare global {
   var mongodb: MongoClient | null;

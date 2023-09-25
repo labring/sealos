@@ -1,10 +1,9 @@
 import Account from '@/components/account';
 import Notification from '@/components/notification';
 import useSessionStore from '@/stores/session';
-import { Box, Flex, Image, useDisclosure } from '@chakra-ui/react';
-import { i18n } from 'next-i18next';
+import { Box, Flex, FlexProps, Image, useDisclosure } from '@chakra-ui/react';
 import { useState } from 'react';
-import LangSelect from '../LangSelect';
+import LangSelectSimple from '../LangSelect/simple';
 import Iconfont from '../iconfont';
 
 enum UserMenuKeys {
@@ -13,25 +12,31 @@ enum UserMenuKeys {
   Account
 }
 
-export default function Index() {
+export default function Index(props: { userMenuStyleProps?: FlexProps }) {
   const [notificationAmount, setNotificationAmount] = useState(0);
   const accountDisclosure = useDisclosure();
   const showDisclosure = useDisclosure();
   const switchLangDisclosure = useDisclosure();
   const userInfo = useSessionStore((state) => state.getSession());
   if (!userInfo) return null;
+
+  const {
+    userMenuStyleProps = {
+      alignItems: 'center',
+      position: 'absolute',
+      top: '42px',
+      right: '42px',
+      cursor: 'pointer',
+      gap: '16px'
+    }
+  } = props;
+
   const buttonList: {
     click?: () => void;
     button: JSX.Element;
     content: JSX.Element;
     key: UserMenuKeys;
   }[] = [
-    {
-      key: UserMenuKeys.LangSelect,
-      button: <Box>{i18n?.language === 'en' ? 'en' : '中'}</Box>,
-      click: () => switchLangDisclosure.onOpen(),
-      content: <LangSelect disclosure={switchLangDisclosure} i18n={i18n} key={'langselect'} />
-    },
     {
       key: UserMenuKeys.Notification,
       button: (
@@ -63,7 +68,13 @@ export default function Index() {
     }
   ];
   return (
-    <Flex alignItems={'center'} position={'absolute'} top={'42px'} right={'42px'} gap={'16px'}>
+    <Flex {...userMenuStyleProps}>
+      <LangSelectSimple
+        w="36px"
+        h="36px"
+        background={'rgba(244, 246, 248, 0.7)'}
+        boxShadow={'0px 1.2px 2.3px rgba(0, 0, 0, 0.2)'}
+      />
       {buttonList.map((item, index) => (
         <Flex
           w="36px"
