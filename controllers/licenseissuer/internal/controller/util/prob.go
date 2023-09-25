@@ -41,7 +41,7 @@ func ProbeFor(taskType task) []Probe {
 
 type NetworkProbe interface {
 	Probe
-	ProbeForNetWork(url string)
+	ProbeForNetWork(url string) error
 }
 
 type networkProbe struct {
@@ -66,7 +66,11 @@ func (n *NetworkConfig) probe(instance *TaskInstance) error {
 		return err
 	}
 	n.url = urlMap[NetworkProbeURL]
-	n.np.ProbeForNetWork(n.url)
+	err = n.np.ProbeForNetWork(n.url)
+	if err != nil {
+		instance.logger.Info("probe for network error", "error", err)
+		return err
+	}
 	return nil
 }
 
@@ -74,15 +78,16 @@ func (n *networkProbe) Probe() bool {
 	return options.GetNetWorkOptions().EnableExternalNetWork
 }
 
-func (n *networkProbe) ProbeForNetWork(url string) {
+func (n *networkProbe) ProbeForNetWork(url string) error {
 	_, err := Get(url)
 	if err != nil {
 		// The network is not available
 		n.options.SetNetworkConfig(false)
-		return
+		return err
 	}
 	// The network is available
 	n.options.SetNetworkConfig(true)
+	return nil
 }
 
 var onceForNetworkProbe sync.Once

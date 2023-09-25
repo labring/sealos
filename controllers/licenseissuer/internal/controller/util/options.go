@@ -185,7 +185,8 @@ func (eo *EnvOptions) initOptions() {
 	eo.MongoURI = os.Getenv("MONGO_URI")
 	eo.SaltKey = os.Getenv("PASSWORD_SALT")
 	eo.Namespace = os.Getenv("NAMESPACE")
-	eo.BillingPolicy = os.Getenv("BILLING_POLICY")
+	// eo.BillingPolicy = os.Getenv("BILLING_POLICY")
+	eo.BillingPolicy = "account"
 	key, err := base64.StdEncoding.DecodeString(os.Getenv("ISSUER_KEY"))
 	if err != nil {
 		eo.IssuerKey = ""
