@@ -18,6 +18,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/labring/sealos/pkg/utils/iputils"
+
+	"github.com/labring/sealos/pkg/utils/strings"
+
 	"golang.org/x/exp/slices"
 
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -48,15 +52,33 @@ func (k *K3s) resetNode(host string) error {
 	}
 	if slices.Contains(k.cluster.GetNodeIPList(), host) {
 		vipAndPort := fmt.Sprintf("%s:%d", k.cluster.GetVIP(), k.config.APIServerPort)
-		ipvscleanErr := k.remoteUtil.IPVSClean(host, vipAndPort)
-		if ipvscleanErr != nil {
-			logger.Error("failed to clean node route and ipvs failed, %v", ipvscleanErr)
+		ipvsclearErr := k.remoteUtil.IPVSClean(host, vipAndPort)
+		if ipvsclearErr != nil {
+			logger.Error("failed to clear ipvs rules for node %s: %v", host, ipvsclearErr)
 		}
 	}
 	return nil
 }
 
 // TODO: remove from API
-func (k *K3s) deleteNode(_ string) error {
+func (k *K3s) deleteNode(node string) error {
+	//remove master
+	masterIPs := strings.RemoveFromSlice(k.cluster.GetMasterIPList(), node)
+	if len(masterIPs) > 0 {
+		// TODO: do we need draining first?
+		if err := k.removeNode(node); err != nil {
+			logger.Warn(fmt.Errorf("delete nodes %s failed %v", node, err))
+		}
+	}
 	return nil
+}
+
+func (k *K3s) removeNode(ip string) error {
+	logger.Info("start to remove node from k3s %s", ip)
+	nodeName, err := k.execer.CmdToString(k.cluster.GetMaster0IPAndPort(), fmt.Sprintf("kubectl get nodes -o wide | awk '$6==\"%s\" {print $1}'", iputils.GetHostIP(ip)), "")
+	if err != nil {
+		return fmt.Errorf("cannot get node with ip address %s: %v", ip, err)
+	}
+	logger.Debug("found node name is %s, we will delete it", nodeName)
+	return k.execer.CmdAsync(k.cluster.GetMaster0IPAndPort(), fmt.Sprintf("kubectl delete node %s --ignore-not-found=true", nodeName))
 }

@@ -18,8 +18,13 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
+
+	"github.com/pkg/errors"
 
 	"golang.org/x/sync/errgroup"
+
+	"github.com/labring/sealos/pkg/utils/iputils"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/file"
@@ -36,6 +41,9 @@ func (k *K3s) initMaster0() error {
 		k.generateAndSendInitConfig,
 		func() error { return k.enableK3sService(master0) },
 		k.pullKubeConfigFromMaster0,
+		func() error {
+			return k.remoteUtil.HostsAdd(master0, iputils.GetHostIP(master0), constants.DefaultAPIServerDomain)
+		},
 		func() error { return k.copyKubeConfigFileToNodes(k.cluster.GetMaster0IPAndPort()) },
 	)
 }
@@ -95,6 +103,9 @@ func (k *K3s) joinMaster(master string) error {
 			return k.execer.Copy(master, filepath.Join(k.pathResolver.EtcPath(), defaultJoinMastersFilename), defaultK3sConfigPath)
 		},
 		func() error { return k.enableK3sService(master) },
+		func() error {
+			return k.remoteUtil.HostsAdd(master, iputils.GetHostIP(master), constants.DefaultAPIServerDomain)
+		},
 		func() error { return k.copyKubeConfigFileToNodes(master) },
 	)
 }
@@ -111,8 +122,35 @@ func (k *K3s) joinNodes(nodes []string) error {
 	return nil
 }
 
+func (k *K3s) getAPIServerPort() int {
+	src := filepath.Join(k.pathResolver.EtcPath(), defaultInitFilename)
+	if file.IsExist(src) {
+		cfg := &Config{}
+		if err := yaml.UnmarshalFile(src, cfg); err == nil {
+			return cfg.HTTPSPort
+		}
+	}
+	return constants.DefaultAPIServerPort
+}
+
+func (k *K3s) getMasterIPListAndHTTPSPort() []string {
+	apiPort := k.getAPIServerPort()
+	masters := make([]string, 0)
+	for _, master := range k.cluster.GetMasterIPList() {
+		masters = append(masters, fmt.Sprintf("%s:%d", master, apiPort))
+	}
+	return masters
+}
+
+func (k *K3s) getVipAndPort() string {
+	return fmt.Sprintf("%s:%d", k.cluster.GetVIP(), k.getAPIServerPort())
+}
+
 func (k *K3s) joinNode(node string) error {
 	return k.runPipelines(fmt.Sprintf("join node %s", node),
+		func() error {
+			return k.remoteUtil.IPVS(node, k.getVipAndPort(), k.getMasterIPListAndHTTPSPort())
+		},
 		func() error { return k.generateAndSendTokenFiles(node, "agent-token") },
 		func() error {
 			return k.execer.Copy(node, filepath.Join(k.pathResolver.EtcPath(), defaultJoinNodesFilename), defaultK3sConfigPath)
@@ -193,6 +231,14 @@ func (k *K3s) pullKubeConfigFromMaster0() error {
 
 func (k *K3s) copyKubeConfigFileToNodes(hosts ...string) error {
 	src := k.pathResolver.AdminFile()
+	data, err := file.ReadAll(src)
+	if err != nil {
+		return errors.WithMessage(err, "read admin.config file failed")
+	}
+	newData := strings.ReplaceAll(string(data), "https://0.0.0.0", fmt.Sprintf("https://%s", constants.DefaultAPIServerDomain))
+	if err = file.WriteFile(src, []byte(newData)); err != nil {
+		return errors.WithMessage(err, "write admin.config file failed")
+	}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, node := range hosts {
 		node := node
