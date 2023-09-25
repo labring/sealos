@@ -1,6 +1,6 @@
 import { BillingType } from '@/types';
 
-export const BasicTableHeaders = ['Order Number', 'Transaction Time', 'Type'] as const;
+export const BasicTableHeaders = ['Order Number', 'Transaction Time', 'APP Type'] as const;
 export const InvoiceTableHeaders = ['Order Number', 'Transaction Time', 'True Amount'] as const;
 export const CATEGORY = ['CPU', 'Memory', 'Storage', 'Network'] as const;
 export const TableHeaders = [
