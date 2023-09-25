@@ -13,6 +13,10 @@ webhooks:
       path: /mutate-networking-k8s-io-v1-ingress
   failurePolicy: Ignore
   name: mingress.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
   rules:
   - apiGroups:
     - networking.k8s.io
@@ -33,6 +37,10 @@ webhooks:
       path: /mutate--v1-namespace
   failurePolicy: Ignore
   name: mnamespace.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
   rules:
   - apiGroups:
     - ""
@@ -59,6 +67,10 @@ webhooks:
       path: /validate-networking-k8s-io-v1-ingress
   failurePolicy: Ignore
   name: vingress.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
   rules:
   - apiGroups:
     - networking.k8s.io
@@ -80,6 +92,10 @@ webhooks:
       path: /validate--v1-namespace
   failurePolicy: Ignore
   name: vnamespace.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
   rules:
   - apiGroups:
     - ""
