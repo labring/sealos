@@ -6,11 +6,7 @@ All services are authenticated using `kubeconfig` as the application identity, e
 
 ## Overall Architecture
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./images/architecture_dark.png" />
-  <source media="(prefers-color-scheme: light)" srcset="./images/architecture_light.png" />
-  <img src="./images/architecture_light.png" />
-</picture>
+![Architecture](./images/architecture_light.png#gh-light-mode-only)![Architecture](./images/architecture_dark.png#gh-dark-mode-only)
 
 ## Application Architecture
 
@@ -24,8 +20,4 @@ Applications can also call each other, for example, a database created by a user
 
 For more information, please refer to the [link](../../platform-components) documentation.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./images/application_dark.png" />
-  <source media="(prefers-color-scheme: light)" srcset="./images/application_light.png" />
-  <img src="./images/application_light.png" />
-</picture>
+![Application](./images/application_light.png#gh-light-mode-only)![Application](./images/application_dark.png#gh-dark-mode-only)
