@@ -154,6 +154,14 @@ function sealos_run_frontend {
   --env cloudDomain=$cloudDomain \
   --env cloudPort=$cloudPort \
   --env certSecretName="wildcard-cert"
+
+  echo "run license frontend"
+  sealos run tars/frontend-license.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort=$cloudPort \
+  --env certSecretName="wildcard-cert" \
+  --env MONGODB_URI=$mongodbUri \
+  --env PASSWORD_SALT=$saltKey
 }
 
 function resource_exists {

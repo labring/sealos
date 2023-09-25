@@ -15,6 +15,9 @@ sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cl
 #sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-licenseissuer-controller:latest
 sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-template-frontend:latest
 sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/yxxchange/sealos-cloud-licenseissuer-controller:latest
+sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-license-frontend:latest
+
+
 
 sealos save -o tars/user.tar ghcr.io/labring/sealos-cloud-user-controller:latest
 sealos save -o tars/terminal.tar ghcr.io/labring/sealos-cloud-terminal-controller:latest
@@ -31,3 +34,4 @@ sealos save -o tars/frontend-dbprovider.tar ghcr.io/labring/sealos-cloud-dbprovi
 sealos save -o tars/frontend-costcenter.tar ghcr.io/labring/sealos-cloud-costcenter-frontend:latest
 sealos save -o tars/frontend-applaunchpad.tar ghcr.io/labring/sealos-cloud-applaunchpad-frontend:latest
 sealos save -o tars/frontend-template.tar ghcr.io/labring/sealos-cloud-template-frontend:latest
+sealos save -o tars/frontend-license.tar ghcr.io/labring/sealos-cloud-license-frontend:latest
