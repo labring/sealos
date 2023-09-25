@@ -84,7 +84,9 @@ func (w *wrap) CmdAsyncWithContext(ctx context.Context, host string, commands ..
 }
 
 func (w *wrap) CmdAsync(host string, commands ...string) error {
-	return w.CmdAsyncWithContext(context.Background(), host, commands...)
+	ctx, cancel := ssh.GetTimeoutContext()
+	defer cancel()
+	return w.CmdAsyncWithContext(ctx, host, commands...)
 }
 
 func warnIfNotAbs(path string) {

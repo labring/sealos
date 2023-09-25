@@ -46,7 +46,7 @@ func (o *Option) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVarP(&o.privateKey, "private-key", "i", o.privateKey,
 		"selects a file from which the identity (private key) for public key authentication is read")
 	fs.StringVar(&o.passphrase, "passphrase", o.passphrase, "passphrase for decrypting a PEM encoded private key")
-	fs.DurationVar(&o.timeout, "timeout", o.timeout, "ssh connection timeout")
+	fs.DurationVar(&o.timeout, "timeout", o.timeout, "ssh connection establish timeout")
 }
 
 const (

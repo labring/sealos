@@ -16,6 +16,7 @@ package ssh
 
 import (
 	"context"
+	"time"
 
 	"github.com/spf13/pflag"
 	"golang.org/x/crypto/ssh"
@@ -26,10 +27,21 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-var defaultMaxRetry = 5
+var (
+	defaultMaxRetry         = 5
+	defaultExecutionTimeout = 300 * time.Second
+)
 
 func RegisterFlags(fs *pflag.FlagSet) {
 	fs.IntVar(&defaultMaxRetry, "max-retry", defaultMaxRetry, "define max num of ssh retry times")
+	fs.DurationVar(&defaultExecutionTimeout, "execution-timeout", defaultExecutionTimeout, "timeout setting of command execution")
+}
+
+// GetTimeoutContext create a context.Context with default timeout
+// default execution timeout in sealos is just fine, if you want to customize the timeout setting,
+// you must invoke the `RegisterFlags` function above.
+func GetTimeoutContext() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), defaultExecutionTimeout)
 }
 
 type Interface interface {
