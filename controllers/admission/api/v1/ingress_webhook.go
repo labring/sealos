@@ -20,16 +20,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/labring/sealos/controllers/pkg/code"
 	"net"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"strings"
+
+	"github.com/labring/sealos/controllers/pkg/code"
 
 	netv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -168,8 +169,9 @@ func (v *IngressValidator) checkCname(i *netv1.Ingress, rule *netv1.IngressRule)
 	// if cname is not end with domain, return error
 	if !strings.HasSuffix(cname, v.domain) {
 		ilog.Info("deny ingress host "+rule.Host+", cname is not end with "+v.domain, "ingress namespace", i.Namespace, "ingress name", i.Name, "cname", cname)
-		return fmt.Errorf(code.MessageFormat, code.CodeAdmissionForIngressFailedCnameCheck, "can not verify ingress host "+rule.Host+", cname is not end with "+v.domain)
+		return fmt.Errorf(code.MessageFormat, code.IngressFailedCnameCheck, "can not verify ingress host "+rule.Host+", cname is not end with "+v.domain)
 	}
+	ilog.Info("ingress host "+rule.Host+" is cname to "+cname+", pass checkCname validate", "ingress namespace", i.Namespace, "ingress name", i.Name, "cname", cname)
 	return nil
 }
 
@@ -177,15 +179,16 @@ func (v *IngressValidator) checkOwner(i *netv1.Ingress, rule *netv1.IngressRule)
 	iList := &netv1.IngressList{}
 	if err := v.cache.List(context.Background(), iList, client.MatchingFields{IngressHostIndex: rule.Host}); err != nil {
 		ilog.Error(err, "can not verify ingress host "+rule.Host+", list ingress error")
-		return err
+		return fmt.Errorf(code.MessageFormat, code.IngressFailedOwnerCheck, err.Error())
 	}
 
 	for _, exitsIngress := range iList.Items {
 		if exitsIngress.Namespace != i.Namespace {
-			ilog.Info("ingress host "+rule.Host+" is owned by "+i.Namespace+", skip validate", "ingress namespace", i.Namespace, "ingress name", i.Name)
-			return fmt.Errorf(code.MessageFormat, code.CodeAdmissionForIngressFailedOwnerCheck, "ingress host "+rule.Host+" is owned by "+i.Namespace+", you can not create ingress with same host in other namespace")
+			ilog.Info("ingress host "+rule.Host+" is owned by "+i.Namespace+", failed validate", "ingress namespace", i.Namespace, "ingress name", i.Name)
+			return fmt.Errorf(code.MessageFormat, code.IngressFailedOwnerCheck, "ingress host "+rule.Host+" is owned by other user, you can not create ingress with same host.")
 		}
 	}
-
+	// pass owner check
+	ilog.Info("ingress host "+rule.Host+" is not owned by other user, pass checkOwner validate", "ingress namespace", i.Namespace, "ingress name", i.Name)
 	return nil
 }

@@ -20,9 +20,9 @@ const (
 
 // code
 const (
-	// CodeInsufficientBalance  debt webhook
-	CodeInsufficientBalance = 40001
-	// CodeAdmissionForIngressFailedCnameCheck admission webhook for ingress
-	CodeAdmissionForIngressFailedCnameCheck = 40300
-	CodeAdmissionForIngressFailedOwnerCheck = 40301
+	// InsufficientBalance  debt webhook
+	InsufficientBalance = 40001
+	// IngressFailedCnameCheck admission webhook for ingress
+	IngressFailedCnameCheck = 40300
+	IngressFailedOwnerCheck = 40301
 )
