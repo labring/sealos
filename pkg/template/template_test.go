@@ -15,32 +15,22 @@
 package template
 
 import (
-	"bytes"
-	"fmt"
 	"testing"
 )
 
 func TestTemplateSemverCompare(t *testing.T) {
-	v, b, e := TryParse(`
-version: {{if (semverCompare "^1.26.0" (default "" .ENV)) }}v1{{ else }}v1alpha2{{ end }}
-`)
-	if e != nil {
-		t.Errorf("parse err: %v", e)
+	staticPodIPVSTemplate := `static-pod lvscare --path {{.path}} --name {{.name}} --vip {{.vip}} --image {{.image}}  {{range $h := .masters}} --masters  {{$h}}  {{end}} {{range $o := .options}} --options  {{$o}} {{end}} `
+	data := map[string]interface{}{
+		"vip":     "127.0.0.1",
+		"image":   "test",
+		"masters": []string{"127.0.0.2"},
+		"name":    "lvscare",
+		"path":    "/etc/kubernetes",
+		"options": nil,
 	}
-	if !b {
-		t.Errorf("parse failed: %v", b)
+	out, err := RenderTemplate("lvscare", staticPodIPVSTemplate, data)
+	if err != nil {
+		t.Errorf("%+v", err)
 	}
-
-	out := bytes.NewBuffer(nil)
-	execErr := v.Execute(out, map[string]interface{}{
-		// comment out this to test true return
-		// "ENV": "v1.26.1",
-		// comment out this to test false return
-		"ENV": "v1.25.10",
-	})
-	if execErr != nil {
-		t.Errorf("template exec err: %v", execErr)
-	}
-
-	fmt.Println(out)
+	t.Log(out)
 }

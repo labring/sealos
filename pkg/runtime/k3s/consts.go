@@ -25,7 +25,7 @@ const (
 	defaultInitFilename        = "k3s-init.yaml"
 	defaultJoinMastersFilename = "k3s-join-master.yaml"
 	defaultJoinNodesFilename   = "k3s-join-node.yaml"
-	defaultPodManifestPath     = "pod-manifests"
+	k3sEtcStaticPod            = "/var/lib/rancher/k3s/agent/pod-manifests"
 )
 
 const (
