@@ -1,7 +1,10 @@
 <h2 align="center">
 
-![](/docs/4.0/img/sealos-left-dark.png#gh-dark-mode-only)
-![](/docs/4.0/img/sealos-left.png#gh-light-mode-only)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/4.0/img/sealos-left-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="./docs/4.0/img/sealos-left.png">
+  <img src="./docs/4.0/img/sealos-left.png">
+</picture>
 
 A Cloud Operating System designed for managing cloud-native applications
 
