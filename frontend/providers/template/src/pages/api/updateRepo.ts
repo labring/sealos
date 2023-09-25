@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const timeoutPromise = new Promise((resolve, reject) => {
         setTimeout(() => {
           reject(new Error('operation timed out'));
-        }, 30 * 1000);
+        }, 60 * 1000);
       });
       const gitOperationPromise = !fs.existsSync(targetPath)
         ? execAsync(`git clone --depth 1 ${repoHttpUrl} ${targetPath}`)
