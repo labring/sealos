@@ -92,8 +92,12 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		r.Logger.Error(err, "delete payment failed")
 	}
 	user := &userv1.User{}
+	owner := ""
 	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, user); err == nil {
-		_, err = r.syncAccount(ctx, GetUserOwner(user), r.AccountSystemNamespace, "ns-"+user.Name)
+		if owner = user.Annotations[userv1.UserAnnotationOwnerKey]; owner == "" {
+			return ctrl.Result{}, fmt.Errorf("user owner is empty")
+		}
+		_, err = r.syncAccount(ctx, owner, r.AccountSystemNamespace, "ns-"+user.Name)
 		return ctrl.Result{}, err
 	} else if client.IgnoreNotFound(err) != nil {
 		return ctrl.Result{}, err
@@ -113,7 +117,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	account, err := r.syncAccount(ctx, payment.Spec.UserID, r.AccountSystemNamespace, payment.Namespace)
+	account, err := r.syncAccount(ctx, owner, r.AccountSystemNamespace, payment.Namespace)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("get account failed: %v", err)
 	}
@@ -194,10 +198,18 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return ctrl.Result{}, nil
 }
 
-func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamespace string, userNamespace string) (*accountv1.Account, error) {
+func (r *AccountReconciler) syncAccount(ctx context.Context, owner, accountNamespace string, userNamespace string) (*accountv1.Account, error) {
+	if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
+		//return nil, fmt.Errorf("sync resource resourceQuota and limitRange failed: %v", err)
+		r.Logger.Error(err, "sync resource resourceQuota and limitRange failed")
+	}
+	//TODO delete after nodeport count quota already in resource-quota
+	if err := r.adaptNodePortCountQuota(ctx, userNamespace); err != nil {
+		r.Logger.Error(err, "adapt nodeport count quota failed")
+	}
 	account := accountv1.Account{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
+			Name:      owner,
 			Namespace: accountNamespace,
 		},
 	}
@@ -209,23 +221,16 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	}); err != nil {
 		return nil, err
 	}
+	if owner != getUsername(userNamespace) {
+		return &account, nil
+	}
 	// add role get account permission
-	if err := r.syncRoleAndRoleBinding(ctx, name, userNamespace); err != nil {
+	if err := r.syncRoleAndRoleBinding(ctx, owner, userNamespace); err != nil {
 		return nil, fmt.Errorf("sync role and rolebinding failed: %v", err)
 	}
 	err := r.initBalance(&account)
 	if err != nil {
 		return nil, fmt.Errorf("sync init balance failed: %v", err)
-	}
-	if account.GetAnnotations()[AccountAnnotationIgnoreQuota] != "true" {
-		if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
-			//return nil, fmt.Errorf("sync resource resourceQuota and limitRange failed: %v", err)
-			r.Logger.Error(err, "sync resource resourceQuota and limitRange failed")
-		}
-		//TODO delete after nodeport count quota already in resource-quota
-		if err := r.adaptNodePortCountQuota(ctx, userNamespace); err != nil {
-			r.Logger.Error(err, "adapt nodeport count quota failed")
-		}
 	}
 	// add account balance when account is new user
 	stringAmount := os.Getenv(NEWACCOUNTAMOUNTENV)

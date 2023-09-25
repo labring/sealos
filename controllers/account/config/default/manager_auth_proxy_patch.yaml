@@ -47,7 +47,7 @@ spec:
           - name: NEW_ACCOUNT_AMOUNT
             value: "ri79LzQiQrs6CVa1ctE308+AseBXbOua0RIMCXAH5hc3irs="
           - name: WHITELIST
-            value: "notifications.Notification.notification.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1"
+            value: "notifications.Notification.notification.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,billinginfoqueries.BillingInfoQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1"
           - name: ACCOUNT_SYSTEM_NAMESPACE
             valueFrom:
               fieldRef:
