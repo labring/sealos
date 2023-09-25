@@ -23,6 +23,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/labring/sealos/controllers/pkg/code"
 
@@ -132,6 +133,13 @@ func (v *IngressValidator) ValidateDelete(ctx context.Context, obj runtime.Objec
 }
 
 func (v *IngressValidator) validate(ctx context.Context, i *netv1.Ingress) error {
+	// count validate cost time
+
+	startTime := time.Now()
+	defer func() {
+		ilog.Info("finished validate", "ingress namespace", i.Namespace, "ingress name", i.Name, "cost", time.Since(startTime))
+	}()
+
 	request, _ := admission.RequestFromContext(ctx)
 	ilog.Info("validating", "ingress namespace", i.Namespace, "ingress name", i.Name, "user", request.UserInfo.Username, "userGroups", request.UserInfo.Groups)
 	if !isUserServiceAccount(request.UserInfo.Username) {
