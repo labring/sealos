@@ -29,6 +29,7 @@ import (
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/confirm"
@@ -275,13 +276,15 @@ func (c *Applier) syncWorkdir() {
 	workDir := constants.ClusterDir(c.ClusterDesired.Name)
 	logger.Debug("sync workdir: %s", workDir)
 	ipList := c.ClusterDesired.GetMasterIPAndPortList()
-	sshClient := ssh.NewCacheClientFromCluster(c.ClusterDesired, true)
-
+	execer, err := exec.New(ssh.NewCacheClientFromCluster(c.ClusterDesired, true))
+	if err != nil {
+		logger.Error("failed to create ssh client: %v", err)
+	}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, ipAddr := range ipList {
 		ip := ipAddr
 		eg.Go(func() error {
-			return sshClient.Copy(ip, workDir, workDir)
+			return execer.Copy(ip, workDir, workDir)
 		})
 	}
 	if err := eg.Wait(); err != nil {
