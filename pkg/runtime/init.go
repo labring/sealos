@@ -73,10 +73,6 @@ func (k *KubeadmRuntime) GenerateCert() error {
 	return k.sendNewCertAndKey([]string{k.getMaster0IPAndPort()})
 }
 
-func (k *KubeadmRuntime) SendNewCertAndKeyToMasters() error {
-	return k.sendNewCertAndKey(k.getMasterIPAndPortList())
-}
-
 func (k *KubeadmRuntime) CreateKubeConfig() error {
 	logger.Info("start to create kubeconfig...")
 	hostName, err := k.execHostname(k.getMaster0IPAndPort())
