@@ -37,9 +37,8 @@ var defaultMergeOpts = []func(*mergo.Config){
 }
 
 func defaultingConfig(c *Config) *Config {
-	//TODO update kube config
 	c.BindAddress = "0.0.0.0"
-	c.HTTPSPort = 6443
+	c.HTTPSPort = constants.DefaultAPIServerPort
 	c.ClusterCIDR = []string{"10.42.0.0/16"}
 	c.ServiceCIDR = []string{"10.96.0.0/16"}
 	c.ClusterDomain = constants.DefaultDNSDomain
@@ -171,16 +170,6 @@ func (k *K3s) getInitConfig(callbacks ...callback) (*Config, error) {
 		cfg = callbacks[i](cfg)
 	}
 	return cfg, nil
-}
-
-//lint:ignore U1000 Ignore unused function temporarily for debugging
-func (c *Config) getContainerRuntimeEndpoint() string {
-	if c.AgentConfig.Docker {
-		return "unix:///run/k3s/cri-dockerd/cri-dockerd.sock"
-	} else if len(c.AgentConfig.ContainerRuntimeEndpoint) == 0 {
-		return "unix:///run/k3s/containerd/containerd.sock"
-	}
-	return c.AgentConfig.ContainerRuntimeEndpoint
 }
 
 // ParseConfig return nil if data structure is not matched
