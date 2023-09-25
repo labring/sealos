@@ -54,7 +54,7 @@ func (k *K3s) resetNode(host string) error {
 		vipAndPort := fmt.Sprintf("%s:%d", k.cluster.GetVIP(), k.config.APIServerPort)
 		ipvsclearErr := k.remoteUtil.IPVSClean(host, vipAndPort)
 		if ipvsclearErr != nil {
-			logger.Error("failed to clear node route and ipvs failed, %v", ipvsclearErr)
+			logger.Error("failed to clear ipvs rules for node %s: %v", host, ipvsclearErr)
 		}
 	}
 	return nil
@@ -75,7 +75,7 @@ func (k *K3s) deleteNode(node string) error {
 
 func (k *K3s) removeNode(ip string) error {
 	logger.Info("start to remove node from k3s %s", ip)
-	nodeName, err := k.execer.CmdToString(k.cluster.GetMaster0IPAndPort(), fmt.Sprintf("kubectl get nodes -o wide | grep %s | awk '{print $1}'", iputils.GetHostIP(ip)), "")
+	nodeName, err := k.execer.CmdToString(k.cluster.GetMaster0IPAndPort(), fmt.Sprintf("kubectl get nodes -o wide | awk '$6==\"%s\" {print $1}'", iputils.GetHostIP(ip)), "")
 	if err != nil {
 		return fmt.Errorf("cannot get node with ip address %s: %v", ip, err)
 	}

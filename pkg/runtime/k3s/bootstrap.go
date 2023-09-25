@@ -134,9 +134,10 @@ func (k *K3s) getAPIServerPort() int {
 }
 
 func (k *K3s) getMasterIPListAndHTTPSPort() []string {
+	apiPort := k.getAPIServerPort()
 	masters := make([]string, 0)
 	for _, master := range k.cluster.GetMasterIPList() {
-		masters = append(masters, fmt.Sprintf("%s:%d", master, k.getAPIServerPort()))
+		masters = append(masters, fmt.Sprintf("%s:%d", master, apiPort))
 	}
 	return masters
 }
@@ -234,7 +235,7 @@ func (k *K3s) copyKubeConfigFileToNodes(hosts ...string) error {
 	if err != nil {
 		return errors.WithMessage(err, "read admin.config file failed")
 	}
-	newData := strings.ReplaceAll(string(data), "https://0.0.0.0:6443", fmt.Sprintf("https://%s:%d", constants.DefaultAPIServerDomain, 6443))
+	newData := strings.ReplaceAll(string(data), "https://0.0.0.0", fmt.Sprintf("https://%s", constants.DefaultAPIServerDomain))
 	if err = file.WriteFile(src, []byte(newData)); err != nil {
 		return errors.WithMessage(err, "write admin.config file failed")
 	}

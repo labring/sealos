@@ -86,7 +86,7 @@ func (s *Remote) IPVSClean(ip, vip string) error {
 	return s.executeRemoteUtilSubcommand(ip, out)
 }
 
-func (s *Remote) StaticPod(ip, vip, name, image string, masters []string, path string, options []string) error {
+func (s *Remote) StaticPod(ip, vip, name, image string, masters []string, path string, options ...string) error {
 	staticPodIPVSTemplate := `static-pod lvscare --path {{.path}} --name {{.name}} --vip {{.vip}} --image {{.image}}  {{range $h := .masters}} --masters  {{$h}} {{end}} {{range $o := .options}} --options  {{$o}} {{end}}`
 	data := map[string]interface{}{
 		"vip":     vip,
