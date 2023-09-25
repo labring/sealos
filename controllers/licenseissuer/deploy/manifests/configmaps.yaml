@@ -1,18 +1,9 @@
 apiVersion: v1
-data: null
-kind: ConfigMap
-metadata:
-  name: license-history
-  namespace: sealos-system
----
-apiVersion: v1
 kind: Secret
 metadata:
   name: licenseissuer-env
   namespace: sealos-system
 stringData:
-  canConnectToExternalNetwork: "true"
-  isMonitor: "true"
 ---
 apiVersion: v1
 data:

@@ -1,0 +1,12 @@
+apiVersion: infostream.sealos.io/v1
+kind: ClusterLicense
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterlicense
+    app.kubernetes.io/instance: clusterlicense-sample
+    app.kubernetes.io/part-of: licenseissuer-controller
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: licenseissuer-controller
+  name: clusterlicense-sample
+spec:
+  # TODO(user): Add fields here

@@ -11,12 +11,12 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-infostream-sealos-io-v1-license
-  failurePolicy: Ignore
-  name: vlicense.kb.io
+      path: /validate-infostream-sealos-io-v1-clusterscalebilling
+  failurePolicy: Fail
+  name: vclusterscalebilling.kb.io
   rules:
   - apiGroups:
-    - '*'
+    - ""
     apiVersions:
     - v1
     operations:

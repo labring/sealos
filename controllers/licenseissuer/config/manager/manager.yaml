@@ -99,6 +99,41 @@ spec:
             secretKeyRef:
               key: Namespace
               name: licenseissuer-env
+        - name: BILLING_POLICY
+          valueFrom:
+            secretKeyRef:
+              key: BillingPolicy
+              name: licenseissuer-env
+        - name: WechatPrivateKey
+          valueFrom:
+            secretKeyRef:
+              key: WechatPrivateKey
+              name: licenseissuer-env
+        - name: MchID
+          valueFrom:
+            secretKeyRef:
+              key: MchID
+              name: licenseissuer-env
+        - name: MchAPIv3Key
+          valueFrom:
+            secretKeyRef:
+              key: MchAPIv3Key
+              name: licenseissuer-env
+        - name: MchCertificateSerialNumber
+          valueFrom:
+            secretKeyRef:
+              key: MchCertificateSerialNumber
+              name: licenseissuer-env
+        - name: AppID
+          valueFrom:
+            secretKeyRef:
+              key: AppID
+              name: licenseissuer-env
+        - name: ISSUER_KEY
+          valueFrom:
+            secretKeyRef:
+              key: ISSUER_KEY
+              name: licenseissuer-env
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

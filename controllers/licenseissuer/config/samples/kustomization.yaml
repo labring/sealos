@@ -2,4 +2,7 @@
 resources:
 - cloud_v1_license.yaml
 - cloud_v1_launcher.yaml
+- infostream_v1_clusterlicense.yaml
+- infostream_v1_clusterscalebilling.yaml
+- infostream_v1_payment.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

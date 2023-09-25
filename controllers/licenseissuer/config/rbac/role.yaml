@@ -76,6 +76,58 @@ rules:
 - apiGroups:
   - infostream.sealos.io
   resources:
+  - clusterlicenses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - clusterlicenses/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - clusterlicenses/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - clusterscalebillings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - clusterscalebillings/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - clusterscalebillings/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
   - licenses
   verbs:
   - create
@@ -95,6 +147,26 @@ rules:
   - infostream.sealos.io
   resources:
   - licenses/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - payments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infostream.sealos.io
+  resources:
+  - payments/status
   verbs:
   - get
   - patch

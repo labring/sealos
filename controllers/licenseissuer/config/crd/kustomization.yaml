@@ -4,6 +4,9 @@
 resources:
 - bases/infostream.sealos.io_licenses.yaml
 - bases/infostream.sealos.io_launchers.yaml
+- bases/infostream.sealos.io_clusterlicenses.yaml
+- bases/infostream.sealos.io_clusterscalebillings.yaml
+- bases/infostream.sealos.io_payments.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:
@@ -11,12 +14,18 @@ patchesStrategicMerge:
 # patches here are for enabling the conversion webhook for each CRD
 #- patches/webhook_in_licenses.yaml
 #- patches/webhook_in_launchers.yaml
+- patches/webhook_in_clusterlicenses.yaml
+#- path: patches/webhook_in_clusterscalebillings.yaml
+#- path: patches/webhook_in_payments.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
 # patches here are for enabling the CA injection for each CRD
 #- patches/cainjection_in_licenses.yaml
 #- patches/cainjection_in_launchers.yaml
+- patches/cainjection_in_clusterlicenses.yaml
+#- path: patches/cainjection_in_clusterscalebillings.yaml
+#- path: patches/cainjection_in_payments.yaml
 #+kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # the following config is for teaching kustomize how to do kustomization for CRDs.
