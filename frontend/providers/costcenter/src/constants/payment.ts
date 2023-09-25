@@ -90,7 +90,7 @@ export const END_TIME = endOfDay(new Date());
 export const valuationMap = new Map([
   ['cpu', { unit: 'Core', scale: 1000, bg: '#33BABB', idx: 0 }],
   ['memory', { unit: 'GB', scale: 1024, bg: '#36ADEF', idx: 1 }],
-  ['storage', { unit: 'GB', scale: 1024, bg: '#8172D8', idx: 2 }],
-  ['gpu', { unit: 'GPU', scale: 1000, bg: '#89CD11', idx: 3 }],
-  ['network', { unit: 'M', scale: 1, bg: '#89CD11', idx: 4 }]
+  ['storage', { unit: 'GB', scale: 1024, bg: '#9A8EE0', idx: 2 }],
+  ['gpu', { unit: 'GPU', scale: 1000, bg: '#6FCA88', idx: 3 }],
+  ['network', { unit: 'M', scale: 1, bg: '#F182AA', idx: 4 }]
 ]);
