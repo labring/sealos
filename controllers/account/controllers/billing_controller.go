@@ -141,6 +141,12 @@ func (r *BillingReconciler) rechargeBalance(owner string, amount int64) (err err
 	if err = r.Get(context.Background(), types.NamespacedName{Name: owner, Namespace: r.AccountSystemNamespace}, account); err != nil {
 		return fmt.Errorf("get account cr failed: %w", err)
 	}
+	if account.Status.EncryptDeductionBalance == nil {
+		account.Status.EncryptDeductionBalance, err = crypto.EncryptInt64(0)
+		if err != nil {
+			return fmt.Errorf("encrypt balance failed: %w", err)
+		}
+	}
 	if err = crypto.RechargeBalance(account.Status.EncryptDeductionBalance, amount); err != nil {
 		return fmt.Errorf("recharge balance failed: %w", err)
 	}
