@@ -33,12 +33,13 @@ const (
 type ResourceNamed struct {
 	_name string
 	// db or app or terminal or job or other
-	_type string
+	_type  string
+	labels map[string]string
 }
 
 func NewResourceNamed(cr client.Object) *ResourceNamed {
-	p := &ResourceNamed{}
 	labels := cr.GetLabels()
+	p := &ResourceNamed{labels: labels}
 	switch {
 	case labels[DBPodLabelComponentNameKey] != "":
 		p._type = DB
@@ -61,6 +62,24 @@ func NewResourceNamed(cr client.Object) *ResourceNamed {
 
 func (p *ResourceNamed) Type() uint8 {
 	return AppType[p._type]
+}
+
+func (p *ResourceNamed) Labels() map[string]string {
+	label := make(map[string]string)
+	switch p.Type() {
+	case db:
+		label[DBPodLabelComponentNameKey] = p.labels[DBPodLabelComponentNameKey]
+		label[DBPodLabelInstanceKey] = p.labels[DBPodLabelInstanceKey]
+	case terminal:
+		label[TerminalIDLabelKey] = p.labels[TerminalIDLabelKey]
+	case app:
+		label[AppLabelKey] = p.labels[AppLabelKey]
+	case job:
+		label[JobNameLabelKey] = p.labels[JobNameLabelKey]
+		//case other:
+		//default:
+	}
+	return label
 }
 
 func (p *ResourceNamed) TypeString() string {

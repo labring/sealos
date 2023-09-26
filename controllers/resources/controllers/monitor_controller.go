@@ -25,6 +25,11 @@ import (
 	"sync"
 	"time"
 
+	sealos_networkmanager "github.com/dinoallo/sealos-networkmanager/server/proto"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
 	"github.com/go-logr/logr"
 	"golang.org/x/sync/semaphore"
 
@@ -309,6 +314,51 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, namespace *cor
 		})
 	}
 	return r.DBClient.InsertMonitor(ctx, monitors...)
+}
+
+func (r *MonitorReconciler) getPodTrafficUsed(namespace string, resourceMap map[string]*resources.ResourceNamed, podsRes map[string]map[corev1.ResourceName]*quantity) error {
+	conn, err := grpc.Dial("xxx:xxx", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return fmt.Errorf("dial grpc failed: %w", err)
+	}
+	defer conn.Close()
+
+	infoSvc := sealos_networkmanager.NewInfoServiceClient(conn)
+	/*
+		message TrafficStatRequest {
+		  string namespace = 1;
+		  TrafficType type = 2;
+		  uint32 identity = 3;
+		  optional FilterLabelOpType filter_label_op_type = 4;
+		  map<string, string> filter_labels = 5;
+		}
+	*/
+	cli, err := infoSvc.GetTrafficStat(context.Background(), &sealos_networkmanager.TrafficStatRequest{
+		Namespace: namespace,
+		Type:      sealos_networkmanager.TrafficType_IPv4Egress,
+		// 2 && 7
+		Identity:     2,
+		FilterLabels: make(map[string]string),
+	})
+	if err != nil {
+		return fmt.Errorf("get traffic stat failed: %w", err)
+	}
+	/*
+		message TrafficStatResponse {
+		  optional string namespace = 1;
+		  optional string pod = 2;
+		  optional uint64 bytes = 3;
+		  optional google.protobuf.Timestamp lastSync = 4;
+		  Status status = 5;
+		}
+	*/
+	rsp, err := cli.Recv()
+	if err != nil {
+		return fmt.Errorf("recv traffic stat failed: %w", err)
+	}
+	//rsp.Bytes
+
+	return nil
 }
 
 func (r *MonitorReconciler) getGPUResourceUsage(pod corev1.Pod, gpuReq resource.Quantity, rs map[corev1.ResourceName]*quantity) (err error) {
