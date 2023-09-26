@@ -117,7 +117,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	account, err := r.syncAccount(ctx, owner, r.AccountSystemNamespace, payment.Namespace)
+	account, err := r.syncAccount(ctx, payment.Spec.UserID, r.AccountSystemNamespace, payment.Namespace)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("get account failed: %v", err)
 	}
@@ -219,7 +219,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, owner, accountNames
 		}
 		return nil
 	}); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create account %v, err: %v", account, err)
 	}
 	if owner != getUsername(userNamespace) {
 		return &account, nil
