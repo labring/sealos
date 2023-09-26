@@ -102,6 +102,14 @@ func CheckLicense(meta LicenseMeta, handler MongoHandler) (string, map[string]in
 	if !ok {
 		return InvalidLicenseMessage, nil, false
 	}
+	// CHECK: if the license is free license for trial version
+	if ContainsFields(payload, "typ") {
+		if payload["typ"] != "free" {
+			return InvalidLicenseMessage, nil, false
+		}
+		return "", payload, true
+	}
+
 	// Check if the license is used by the correct user
 	saltKey := GetOptions().GetEnvOptions().SaltKey
 	hashID := HashCrypto(saltKey)
