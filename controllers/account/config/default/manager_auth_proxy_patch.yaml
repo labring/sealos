@@ -40,6 +40,10 @@ spec:
           runAsNonRoot: true
           allowPrivilegeEscalation: false
         env:
+          - name: DOMAIN
+            value: '{{ .cloudDomain }}'
+          - name: PORT
+            value: '{{ .cloudPort }}'
           - name: ACCOUNT_NAMESPACE
             value: "sealos-system"
           - name: NAMESPACE_NAME

@@ -16,7 +16,7 @@ spec:
   selector:
     matchLabels:
       control-plane: controller-manager
-  replicas: 3
+  replicas: 1
   template:
     metadata:
       annotations:
@@ -53,9 +53,9 @@ spec:
         resources:
           limits:
             cpu: 1000m
-            memory: 1000Mi
+            memory: 1024Mi
           requests:
             cpu: 100m
-            memory: 640Mi
+            memory: 64Mi
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
