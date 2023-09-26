@@ -76,6 +76,7 @@
   "Unit": "单位",
   "Gpu valuation": "GPU 计价",
   "common valuation": "计价表",
+  "Billing Details": "订单详情",
   "orders": {
     "list": "订单列表",
     "invoiceAmount": "发票金额",
@@ -149,5 +150,10 @@
   "Total Quota": "总计",
   "used Quota": "已用",
   "Remaining Quota": "剩余",
-  "Receipts And Disbursements": "收支"
+  "Receipts And Disbursements": "收支",
+  "APP Name": "应用名称",
+  "All APP": "所有应用",
+  "APP Type": "应用类型",
+  "Details": "详情",
+  "Handle": "操作"
 }

@@ -197,25 +197,11 @@ function Valuation() {
               <CycleMenu cycleIdx={cycleIdx} setCycleIdx={setCycleIdx} ml="auto" />
             </Flex>
             <TableContainer w="100%" mt="0px">
-              <Table variant="simple" borderRadius="2px">
-                <Thead background="#F1F4F6">
-                  <Tr border="1px solid #DEE0E2">
+              <Table variant="unstyled">
+                <Thead border="1px solid #DEE0E2" overflow={'hidden'}>
+                  <Tr borderRadius={'10px'}>
                     {['Name', 'Unit', 'Price'].map((item) => (
-                      <Th
-                        px="24px"
-                        pt="12px"
-                        pb="14px"
-                        w="200px"
-                        key={item}
-                        bg={'#F1F4F6'}
-                        _before={{
-                          content: `""`,
-                          display: 'block',
-                          borderTopLeftRadius: '10px',
-                          borderTopRightRadius: '10px',
-                          background: '#F1F4F6'
-                        }}
-                      >
+                      <Th px="24px" pt="12px" pb="14px" w="200px" background="#F1F4F6" key={item}>
                         <Flex display={'flex'} alignItems={'center'}>
                           <Text mr="4px">{t(item)}</Text>
                           {['Price'].includes(item) && <CurrencySymbol type={currency} />}
@@ -250,25 +236,11 @@ function Valuation() {
                 <Text mr="auto">{t('Gpu valuation')}</Text>
               </Flex>
               <TableContainer w="100%" mt="0px">
-                <Table variant="simple" borderRadius="2px">
-                  <Thead background="#F1F4F6">
-                    <Tr border="1px solid #DEE0E2">
+                <Table variant="simple">
+                  <Thead background="#F1F4F6" border="1px solid #DEE0E2">
+                    <Tr>
                       {['Name', 'Unit', 'Price'].map((item) => (
-                        <Th
-                          key={item}
-                          bg={'#F1F4F6'}
-                          px="24px"
-                          pt="12px"
-                          pb="14px"
-                          w={'200px'}
-                          _before={{
-                            content: `""`,
-                            display: 'block',
-                            borderTopLeftRadius: '10px',
-                            borderTopRightRadius: '10px',
-                            background: '#F1F4F6'
-                          }}
-                        >
+                        <Th key={item} bg={'#F1F4F6'} px="24px" pt="12px" pb="14px" w={'200px'}>
                           <Flex display={'flex'} alignItems={'center'}>
                             <Text mr="4px">{t(item)}</Text>
                             {['Price'].includes(item) && <CurrencySymbol type={currency} />}

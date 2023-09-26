@@ -1,5 +1,5 @@
 import { Text, Icon, IconProps, TextProps } from '@chakra-ui/react';
-export default function currencysymbol({
+export default function CurrencySymbol({
   type = 'shellCoin',
   ...props
 }: {

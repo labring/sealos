@@ -28,10 +28,12 @@ export type Costs = {
 };
 export type BillingItem<T = Costs> = {
   amount: number;
+  appType: string;
   costs: T;
   order_id: string;
   owner: string;
   time: string;
+  name: string;
   namespace: string;
   type: BillingType;
 };

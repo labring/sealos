@@ -4,39 +4,6 @@ import { jsonRes } from '@/service/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApplyYaml } from '@/service/backend/kubernetes';
 import * as yaml from 'js-yaml';
-import crypto from 'crypto';
-import * as k8s from '@kubernetes/client-node';
-type Result = {
-  status: {
-    details: string;
-    namespaceList: string[];
-    status: string;
-  };
-};
-const getNSList = (kc: k8s.KubeConfig, meta: CRDMeta, name: string) =>
-  new Promise<string[]>((resolve, reject) => {
-    let time = 5;
-    const wrap = () =>
-      GetCRD(kc, meta, name)
-        .then((res) => {
-          const body = res.body as Result;
-          if (body?.status?.status?.toLowerCase() === 'completed') {
-            resolve(body.status.namespaceList);
-          } else {
-            return Promise.reject([]);
-          }
-        })
-        .catch((_) => {
-          if (time >= 0) {
-            time--;
-            setTimeout(wrap, 1000);
-          } else {
-            reject([]);
-          }
-        });
-    wrap();
-  });
-
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
     const kc = await authSession(req.headers);
@@ -45,7 +12,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       return jsonRes(resp, { code: 403, message: 'user null' });
     }
     const namespace = kc.getContexts()[0].namespace || 'ns-' + user.name;
-    const name = new Date().getTime() + 'namespacequery';
+    const name = new Date().getTime() + 'appquery';
     const crdSchema = {
       apiVersion: `account.sealos.io/v1`,
       kind: 'BillingInfoQuery',
@@ -53,7 +20,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         name
       },
       spec: {
-        queryType: 'NamespacesHistory'
+        queryType: 'AppType'
       }
     };
     const meta: CRDMeta = {
@@ -86,11 +53,11 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     return jsonRes(resp, {
       code: 200,
       data: {
-        nsList: JSON.parse(result)
+        appList: JSON.parse(result)
       }
     });
   } catch (error) {
     console.log(error);
-    jsonRes(resp, { code: 500, message: 'get namespaceList error' });
+    jsonRes(resp, { code: 500, message: 'get price error' });
   }
 }

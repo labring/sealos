@@ -5,10 +5,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApplyYaml } from '@/service/backend/kubernetes';
 import * as yaml from 'js-yaml';
 import { ValuationBillingRecord, ValuationData } from '@/types/valuation';
-import { resolve } from 'dns';
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
-    console.log('price');
     const kc = await authSession(req.headers);
 
     // get user account payment amount
