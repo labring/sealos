@@ -28,7 +28,6 @@ import (
 	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
 	notificationv1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -47,9 +46,8 @@ type LicenseReconciler struct {
 	DBCol   util.MongoHandler
 	payload map[string]interface{}
 
-	account   accountv1.Account
-	license   issuerv1.License
-	configMap corev1.ConfigMap
+	account accountv1.Account
+	license issuerv1.License
 }
 
 //+kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=get;list;watch
@@ -86,9 +84,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	reader := &util.Reader{}
 	// get license
-	namespace := util.GetOptions().GetEnvOptions().Namespace
 	reader.Add(&r.license, req.NamespacedName)
-	reader.Add(&r.configMap, types.NamespacedName{Namespace: namespace, Name: util.LicenseHistory})
 
 	if err := reader.Read(ctx, r.Client); err != nil {
 		r.logger.Error(err, "failed to read resources...")
