@@ -21,7 +21,6 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (kube_user === null) {
       return jsonRes(resp, { code: 404, message: 'user not found' });
     }
-    const kube_namespace = kc.getContexts()[0].namespace;
     // get payment crd
     type paymentStatus = {
       tradeNo: string;
@@ -31,7 +30,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
 
     const paymentM = {
       ...paymentMeta,
-      namespace: kube_namespace || GetUserDefaultNameSpace(kube_user.name)
+      namespace: GetUserDefaultNameSpace(kube_user.name)
     };
     const paymentDesc = await GetCRD(kc, paymentM, id);
     //@ts-ignore
