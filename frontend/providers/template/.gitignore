@@ -39,3 +39,6 @@ next-env.d.ts
 platform.json
 .yalc/
 yalc.lock
+
+FastDeployTemplates
+fast_deploy_template.json
