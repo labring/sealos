@@ -14,7 +14,8 @@ import {
   MenuItem,
   Text,
   Flex,
-  Spinner
+  Spinner,
+  ButtonProps
 } from '@chakra-ui/react';
 import { useState } from 'react';
 import { ROLE_LIST, UserRole } from '@/types/team';
@@ -30,7 +31,7 @@ export default function ModifyRole({
   userId,
   roles,
   ...props
-}: Parameters<typeof Button>[0] & {
+}: ButtonProps & {
   ns_uid: string;
   userId: string;
   currentRole: UserRole;
@@ -68,7 +69,7 @@ export default function ModifyRole({
           fontSize={'12px'}
           fontWeight={'500'}
           variant={'unstyled'}
-          {...(props as Parameters<typeof Button>[0])}
+          {...props}
         >
           {ROLE_LIST[currentRole]}
         </Button>

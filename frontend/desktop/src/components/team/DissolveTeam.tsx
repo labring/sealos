@@ -53,7 +53,7 @@ export default function DissolveTeam({
   const session = useSessionStore((s) => s.session);
   const { t } = useTranslation();
   const submit = () => {
-    if (teamName !== nsid)
+    if (teamName.trim() !== nsid)
       return toast({
         title: t('Invaild Name of Team')
       });
