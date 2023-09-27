@@ -200,6 +200,9 @@ spec:
             - templateType
             - title
             type: object
+            x-kubernetes-validations:
+            - message: defaults must have app_name key
+              rule: '''app_name'' in self.defaults'
           status:
             description: InstanceStatus defines the observed state of Instance
             type: object
@@ -291,6 +294,9 @@ spec:
             - templateType
             - title
             type: object
+            x-kubernetes-validations:
+            - message: defaults must have app_name key
+              rule: '''app_name'' in self.defaults'
           status:
             description: TemplateStatus defines the observed state of Template
             type: object

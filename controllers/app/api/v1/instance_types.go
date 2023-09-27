@@ -21,8 +21,9 @@ import (
 )
 
 // InstanceSpec defines the desired state of Instance
+// +kubebuilder:validation:XValidation:rule="'app_name' in self.defaults",message="defaults must have app_name key"
 type InstanceSpec struct {
-	FastDeployData `json:",inline"`
+	TemplateData `json:",inline"`
 }
 
 // InstanceStatus defines the observed state of Instance
