@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: license-frontend-config
-  namespace: sealos
+  namespace: license-frontend
 data:
   config.yaml: |-
     addr: :3000
@@ -11,7 +11,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: license-frontend
-  namespace: sealos
+  namespace: license-frontend
 spec:
   replicas: 1
   selector:
@@ -32,16 +32,18 @@ spec:
           env:
             - name: SEALOS_DOMAIN
               value: {{ .cloudDomain }}
+            - name: LICENSE_DOMAIN
+              value: {{ .licensePuchaseDomain }}
             - name: MONGODB_URI
               valueFrom:
                 secretKeyRef:
-                  key: mongodb_uri
                   name: license-frontend-secret
+                  key: mongodb_uri
             - name: PASSWORD_SALT
               valueFrom:
                 secretKeyRef:
-                  key: password_salt
                   name: license-frontend-secret
+                  key: password_salt
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
@@ -57,7 +59,7 @@ spec:
               cpu: 10m
               memory: 128Mi
           # do not modify this image, it is used for CI/CD
-          image: zhujingyang/sealos-license-frontend:1.0.1
+          image: ghcr.io/labring/sealos-license-frontend:latest
           imagePullPolicy: Always
           volumeMounts:
             - name: license-frontend-volume
@@ -74,7 +76,7 @@ metadata:
   labels:
     app: license-frontend
   name: license-frontend
-  namespace: sealos
+  namespace: license-frontend
 spec:
   ports:
     - name: http
