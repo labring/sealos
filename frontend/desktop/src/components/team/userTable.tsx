@@ -93,8 +93,8 @@ export default function UserTable({
                   k8s_username={user.k8s_username}
                   isDisabled={
                     user.status === InvitedStatus.Inviting ||
-                    !canManage(user.role, userId) ||
-                    user.uid === userId
+                    user.uid === userId ||
+                    UserRole.Owner !== userSelf.role
                   }
                 />
               </Td>
