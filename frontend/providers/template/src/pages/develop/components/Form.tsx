@@ -1,5 +1,5 @@
 import MyIcon from '@/components/Icon';
-import { FormSourceInput, YamlSourceType } from '@/types/app';
+import { FormSourceInput, TemplateSourceType } from '@/types/app';
 import { Box, Flex, FormControl, Input, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
@@ -9,7 +9,7 @@ const Form = ({
   formSource,
   formHook
 }: {
-  formSource: YamlSourceType;
+  formSource: TemplateSourceType;
   formHook: UseFormReturn;
 }) => {
   const { t } = useTranslation();
@@ -37,8 +37,7 @@ const Form = ({
                     w="200px"
                     className="template-dynamic-label"
                     color={'#333'}
-                    userSelect={'none'}
-                  >
+                    userSelect={'none'}>
                     {item?.label}
                     {item?.required && (
                       <Text ml="2px" color={'#E53E3E'}>
@@ -67,16 +66,14 @@ const Form = ({
           alignItems="center"
           h={'100%'}
           w={'100%'}
-          flexDirection="column"
-        >
+          flexDirection="column">
           <Flex
             border={'1px dashed #9CA2A8'}
             borderRadius="50%"
             w={'48px'}
             h={'48px'}
             justifyContent="center"
-            alignItems={'center'}
-          >
+            alignItems={'center'}>
             <MyIcon color={'#7B838B'} name="empty"></MyIcon>
           </Flex>
           <Text mt={'12px'} fontSize={14} color={'#5A646E'}>

@@ -79,6 +79,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     jsonRes(res, { data: `success update template ${repoHttpUrl}`, code: 200 });
   } catch (err: any) {
+    console.log(err, '===update repo log===');
     jsonRes(res, {
       code: 500,
       error: err

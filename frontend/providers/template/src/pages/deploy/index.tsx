@@ -1,5 +1,4 @@
-import { getKindTemplate, getTemplate, postDeployApp } from '@/api/app';
-import MyIcon from '@/components/Icon';
+import { getTemplateSource, postDeployApp } from '@/api/app';
 import { editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
@@ -8,29 +7,28 @@ import { GET } from '@/services/request';
 import { useCachedStore } from '@/store/cached';
 import { useGlobalStore } from '@/store/global';
 import type { QueryType, YamlItemType } from '@/types';
-import { TemplateSource, TemplateType } from '@/types/app';
+import { TemplateInstanceType, TemplateSourceType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
 import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
-import { processEnvValue } from '@/utils/tools';
-import { Box, Breadcrumb, BreadcrumbItem, BreadcrumbLink, Flex } from '@chakra-ui/react';
+import { deepSearch } from '@/utils/tools';
+import { Box, Flex, Icon, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import JSYAML from 'js-yaml';
-import { has, isObject, mapValues, reduce } from 'lodash';
+import { cloneDeep, isEmpty, mapValues, reduce } from 'lodash';
 import debounce from 'lodash/debounce';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { sealosApp } from 'sealos-desktop-sdk/app';
 import Form from './components/Form';
-import ReadMe from './components/ReadMe';
 import Yaml from './components/Yaml';
+import ReadMe from './components/ReadMe';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
 
-const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) => {
+export default function EditApp({ appName, tabType }: { appName?: string; tabType: string }) {
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -38,9 +36,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const { Loading, setIsLoading } = useLoading();
   const [forceUpdate, setForceUpdate] = useState(false);
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
-  const [templateSource, setTemplateSource] = useState<TemplateSource>();
+  const [templateSource, setTemplateSource] = useState<TemplateSourceType>();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
-  const [correctYaml, setCorrectYaml] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const { screenWidth } = useGlobalStore();
   const { setCached, cached, insideCloud, deleteCached, setInsideCloud } = useCachedStore();
@@ -50,11 +47,9 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     [templateSource]
   );
 
-  const { data: platformEnvs } = useQuery(['getPlatformEnvs'], () => GET('/api/platform/getEnv'));
-
-  const { data: templateDetail } = useQuery(['getKindTemplate', templateName], () =>
-    getKindTemplate(templateName)
-  );
+  const { data: platformEnvs } = useQuery(['getPlatformEnvs'], () => GET('/api/platform/getEnv'), {
+    staleTime: 5 * 60 * 1000
+  });
 
   const { openConfirm, ConfirmChild } = useConfirm({
     content: insideCloud ? 'Confirm Deploy Application?' : 'Heading to sealos soon'
@@ -72,7 +67,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     return val;
   }, [screenWidth]);
 
-  const getFormDefaultValues = (templateSource: TemplateSource | undefined) => {
+  const getFormDefaultValues = (templateSource: TemplateSourceType | undefined) => {
     const inputs = templateSource?.source?.inputs;
     return reduce(
       inputs,
@@ -88,17 +83,27 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const formOnchangeDebounce = debounce((data: any) => {
     try {
       if (!templateSource) return;
+      const app_name = templateSource?.source?.defaults?.app_name?.value;
 
-      const yamlString = templateSource.yamlList?.map((item) => JSYAML.dump(item)).join('---\n');
+      const yamlString = templateSource.yamlList
+        ?.map((item) => {
+          // if (item?.kind === 'Instance') {
+          //   const _temp: TemplateInstanceType = cloneDeep(item);
+          //   _temp.spec.defaults = templateSource?.source?.defaults;
+          //   _temp.spec.inputs = isEmpty(data) ? null : data;
+          //   console.log(_temp, templateSource?.source?.defaults, data);
+          //   return JSYAML.dump(_temp);
+          // }
+          return JSYAML.dump(item);
+        })
+        .join('---\n');
       const output = mapValues(templateSource?.source.defaults, (value) => value.value);
-
       const generateStr = parseTemplateString(yamlString, /\$\{\{\s*(.*?)\s*\}\}/g, {
         ...templateSource?.source,
         inputs: data,
         defaults: output
       });
-      setCorrectYaml(generateStr);
-      setYamlList(generateYamlList(generateStr, detailName));
+      setYamlList(generateYamlList(generateStr, app_name));
     } catch (error) {
       console.log(error);
     }
@@ -133,13 +138,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         const href = `https://${_domain}/?openapp=system-fastdeploy${_name}`;
         return window.open(href, '_self');
       }
-
-      const detailName = templateSource?.source?.defaults?.app_name?.value;
-
-      const yamls = JSYAML.loadAll(correctYaml).map((item: any) => {
-        let _item = processEnvValue(item, detailName!);
-        return JSYAML.dump(_item);
-      });
+      const yamls = yamlList.map((item) => item.value);
 
       const result = await postDeployApp(yamls, 'create');
 
@@ -151,11 +150,11 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       deleteCached();
 
       openConfirm2(() => {
-        sealosApp.runEvents('openDesktopApp', {
-          appKey: 'system-applaunchpad',
-          pathname: '/app/detail',
-          query: { name: detailName },
-          messageData: {}
+        router.push({
+          pathname: '/instance',
+          query: {
+            instanceName: detailName
+          }
         });
       })();
     } catch (error) {
@@ -166,21 +165,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
   const submitError = () => {
     formHook.getValues();
-    function deepSearch(obj: any): string {
-      if (has(obj, 'message')) {
-        return obj.message;
-      }
-      for (let key in obj) {
-        if (isObject(obj[key])) {
-          let message = deepSearch(obj[key]);
-          if (message) {
-            return message;
-          }
-        }
-      }
-      return t('Submit Error');
-    }
-
     toast({
       title: deepSearch(formHook.formState.errors),
       status: 'error',
@@ -190,7 +174,66 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     });
   };
 
-  const getTemplateData = async () => {
+  const handleTemplateSource = (res: TemplateSourceType) => {
+    try {
+      setTemplateSource(res);
+      const app_name = res?.source?.defaults?.app_name?.value;
+      const _defaults = mapValues(res?.source.defaults, (value) => value.value);
+      const _inputs = getCachedValue() ? JSON.parse(cached) : getFormDefaultValues(res);
+      const yamlString = res.yamlList
+        ?.map((item) => {
+          // if (item?.kind === 'Instance') {
+          //   const _temp: TemplateInstanceType = cloneDeep(item);
+          //   _temp.spec.defaults = res.source.defaults;
+          //   _temp.spec.inputs = isEmpty(_inputs) ? null : _inputs;
+          //   console.log(_temp, res?.source.defaults, _inputs);
+          //   return JSYAML.dump(_temp);
+          // }
+          return JSYAML.dump(item);
+        })
+        .join('---\n');
+
+      const generateStr = parseTemplateString(yamlString, /\$\{\{\s*(.*?)\s*\}\}/g, {
+        ...res?.source,
+        defaults: _defaults,
+        inputs: _inputs
+      });
+      // console.log(generateStr, '------');
+      setYamlList(generateYamlList(generateStr, app_name));
+    } catch (err) {
+      console.log(err, 'getTemplateData');
+      toast({
+        title: deepSearch(err),
+        status: 'error',
+        position: 'top',
+        duration: 3000,
+        isClosable: true
+      });
+    }
+  };
+
+  const { data } = useQuery(
+    ['getTemplateSource', templateName],
+    () => getTemplateSource(templateName),
+    {
+      onSuccess(data) {
+        handleTemplateSource(data);
+      },
+      onError(err) {
+        toast({
+          title: deepSearch(err),
+          status: 'error',
+          position: 'top',
+          duration: 3000,
+          isClosable: true
+        });
+      }
+    }
+  );
+
+  useEffect(() => {
+    setInsideCloud(!(window.top === window));
+
     if (!templateName) {
       toast({
         title: t('TemplateNameError'),
@@ -199,97 +242,86 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         duration: 3000,
         isClosable: true
       });
-      return null;
     }
-    const res: TemplateSource = await getTemplate(templateName);
-    console.log(res);
-
-    setTemplateSource(res);
-    try {
-      const yamlString = res.yamlList?.map((item) => JSYAML.dump(item)).join('---\n');
-      const output = mapValues(res?.source.defaults, (value) => value.value);
-
-      const generateStr = parseTemplateString(yamlString, /\$\{\{\s*(.*?)\s*\}\}/g, {
-        ...res?.source,
-        defaults: output,
-        inputs: getCachedValue() ? JSON.parse(cached) : getFormDefaultValues(res)
-      });
-
-      setCorrectYaml(generateStr);
-      setYamlList(generateYamlList(generateStr, detailName));
-    } catch (err) {
-      console.log(err, 'getTemplateData');
-    }
-  };
-
-  useEffect(() => {
-    setInsideCloud(!(window.top === window));
-
-    (async () => {
-      try {
-        await getTemplateData();
-      } catch (error) {}
-    })();
-  }, []);
+  }, [setInsideCloud, t, templateName, toast]);
 
   return (
-    <>
-      <Flex flexDirection={'column'} alignItems={'center'} h={'100%'} minWidth={'1024px'}>
+    <Box
+      flexDirection={'column'}
+      height={'100%'}
+      overflow={'auto'}
+      position={'relative'}
+      borderRadius={'12px'}
+      background={'linear-gradient(180deg, #FFF 0%, rgba(255, 255, 255, 0.70) 100%)'}>
+      <Flex
+        zIndex={99}
+        position={'sticky'}
+        top={0}
+        left={0}
+        w={'100%'}
+        h={'50px'}
+        borderBottom={'1px solid #EAEBF0'}
+        justifyContent={'start'}
+        alignItems={'center'}
+        backgroundColor={'rgba(255, 255, 255)'}
+        backdropBlur={'100px'}>
         <Flex
-          zIndex={99}
-          position={'fixed'}
-          top={0}
-          left={0}
-          w={'100%'}
-          h={'50px'}
-          borderBottom={'1px solid #DEE0E2'}
-          justifyContent={'start'}
           alignItems={'center'}
-          backgroundColor={'rgba(255, 255, 255)'}
-          backdropBlur={'100px'}
-        >
-          <Box cursor={'pointer'} onClick={() => router.push('/')}>
-            <MyIcon ml={'46px'} name="arrowLeft" color={'#24282C'} w={'16px'} h={'16px'}></MyIcon>
-          </Box>
-          <Breadcrumb
-            ml={'14px'}
-            fontWeight={500}
-            fontSize={16}
-            textDecoration={'none'}
-            color={'#7B838B'}
-          >
-            <BreadcrumbItem textDecoration={'none'}>
-              <BreadcrumbLink _hover={{ color: '#219BF4', textDecoration: 'none' }} href="/">
-                {t('Template List')}
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbItem color={'#262A32'} isCurrentPage={router.pathname === 'deploy'}>
-              <BreadcrumbLink _hover={{ color: '#219BF4', textDecoration: 'none' }} href="#">
-                {templateDetail?.metadata?.name}
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-          </Breadcrumb>
+          fontWeight={500}
+          fontSize={16}
+          color={'#7B838B'}
+          cursor={'pointer'}>
+          <Flex
+            alignItems={'center'}
+            css={{
+              ':hover': {
+                fill: '#219BF4',
+                color: '#219BF4',
+                '> svg': {
+                  fill: '#219BF4'
+                }
+              }
+            }}>
+            <Icon
+              ml={'19px'}
+              viewBox="0 0 15 15"
+              fill={'#24282C'}
+              w={'15px'}
+              h="15px"
+              onClick={() => router.push('/')}>
+              <path d="M9.1875 13.1875L3.92187 7.9375C3.85937 7.875 3.81521 7.80729 3.78937 7.73438C3.76312 7.66146 3.75 7.58333 3.75 7.5C3.75 7.41667 3.76312 7.33854 3.78937 7.26562C3.81521 7.19271 3.85937 7.125 3.92187 7.0625L9.1875 1.79687C9.33333 1.65104 9.51562 1.57812 9.73438 1.57812C9.95312 1.57812 10.1406 1.65625 10.2969 1.8125C10.4531 1.96875 10.5312 2.15104 10.5312 2.35938C10.5312 2.56771 10.4531 2.75 10.2969 2.90625L5.70312 7.5L10.2969 12.0938C10.4427 12.2396 10.5156 12.4192 10.5156 12.6325C10.5156 12.8463 10.4375 13.0312 10.2812 13.1875C10.125 13.3438 9.94271 13.4219 9.73438 13.4219C9.52604 13.4219 9.34375 13.3438 9.1875 13.1875Z" />
+            </Icon>
+            <Text ml="4px" onClick={() => router.push('/')}>
+              {t('Template List')}
+            </Text>
+          </Flex>
+          <Text px="6px">/</Text>
+          <Text
+            _hover={{ fill: '#219BF4', color: '#219BF4' }}
+            color={router.pathname === '/deploy' ? '#262A32' : '#7B838B'}>
+            {data?.templateYaml?.metadata?.name}
+          </Text>
         </Flex>
-
+      </Flex>
+      <Flex px="42px" pb="36px" flexDirection={'column'} alignItems={'center'} minWidth={'780px'}>
         <Flex
-          mt={'50px'}
+          mt={'32px'}
           flexDirection={'column'}
           width={'100%'}
           flexGrow={1}
-          backgroundColor={'rgba(255, 255, 255, 0.90)'}
-        >
+          backgroundColor={'rgba(255, 255, 255, 0.90)'}>
           <Header
-            templateDetail={templateDetail}
+            templateDetail={data?.templateYaml!}
             appName={''}
             title={title}
             yamlList={yamlList}
             applyBtnText={insideCloud ? applyBtnText : 'Deploy on sealos'}
             applyCb={() => formHook.handleSubmit(openConfirm(submitSuccess), submitError)()}
           />
-          <Flex w={{ md: '1000px', base: '800px' }} m={'32px auto'} flexDirection="column">
+          <Flex w="100%" mt="32px" flexDirection="column">
             <Form formHook={formHook} pxVal={pxVal} formSource={templateSource?.source} />
             {/* <Yaml yamlList={yamlList} pxVal={pxVal}></Yaml> */}
-            <ReadMe templateDetail={templateDetail} />
+            <ReadMe templateDetail={data?.templateYaml!} />
           </Flex>
         </Flex>
       </Flex>
@@ -299,9 +331,9 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       {!!errorMessage && (
         <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
       )}
-    </>
+    </Box>
   );
-};
+}
 
 export async function getServerSideProps(content: any) {
   const appName = content?.query?.name || '';
@@ -315,5 +347,3 @@ export async function getServerSideProps(content: any) {
     }
   };
 }
-
-export default EditApp;

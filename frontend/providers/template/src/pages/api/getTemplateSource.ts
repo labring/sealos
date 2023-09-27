@@ -3,7 +3,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { TemplateType } from '@/types/app';
-import { getTemplateDataSource } from '@/utils/json-yaml';
+import { getTemplateDataSource, handleTemplateToInstanceYaml } from '@/utils/json-yaml';
 import fs from 'fs';
 import yaml from 'js-yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -11,7 +11,7 @@ import path from 'path';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { templateName } = req.body;
+    const { templateName } = req.query as { templateName: string };
     let user_namespace = '';
 
     try {
@@ -38,8 +38,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const templateYaml: TemplateType = yamlData.find(
       (item: any) => item.kind === 'Template'
     ) as TemplateType;
+    if (!templateYaml) {
+      return jsonRes(res, {
+        code: 400,
+        message: 'Lack of kind template'
+      });
+    }
     const yamlList = yamlData.filter((item: any) => item.kind !== 'Template');
     const dataSource = getTemplateDataSource(templateYaml);
+    // Convert template to instance
+    const instanceName = dataSource?.defaults?.['app_name']?.value;
+    if (!instanceName) {
+      return jsonRes(res, {
+        code: 400,
+        message: 'default app_name is missing'
+      });
+    }
+    const instanceYaml = handleTemplateToInstanceYaml(templateYaml, instanceName);
+    yamlList.unshift(instanceYaml);
 
     jsonRes(res, {
       code: 200,
@@ -48,7 +64,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           ...dataSource,
           ...TemplateEnvs
         },
-        yamlList: yamlList
+        yamlList: yamlList,
+        templateYaml: templateYaml
       }
     });
   } catch (err: any) {

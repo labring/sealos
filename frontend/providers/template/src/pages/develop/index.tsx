@@ -4,7 +4,7 @@ import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
 import { GET } from '@/services/request';
 import { YamlItemType } from '@/types';
-import { TemplateType, YamlSourceType } from '@/types/app';
+import { TemplateType, TemplateSourceType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
 import {
   developGenerateYamlList,
@@ -35,7 +35,7 @@ export default function Develop() {
   const { t } = useTranslation();
   const [yamlValue, setYamlValue] = useState('');
   const { toast } = useToast();
-  const [yamlSource, setYamlSource] = useState<YamlSourceType>();
+  const [yamlSource, setYamlSource] = useState<TemplateSourceType>();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const { Loading, setIsLoading } = useLoading();
   const [errorMessage, setErrorMessage] = useState('');
@@ -53,24 +53,25 @@ export default function Develop() {
     parseTemplate(value);
   };
 
-  const getYamlSource = (str: string): YamlSourceType => {
+  const getYamlSource = (str: string): TemplateSourceType => {
     const yamlData = JsYaml.loadAll(str);
     const templateYaml: TemplateType = yamlData.find(
       (item: any) => item.kind === 'Template'
     ) as TemplateType;
     const yamlList = yamlData.filter((item: any) => item.kind !== 'Template');
     const dataSource = getTemplateDataSource(templateYaml);
-    const result: YamlSourceType = {
+    const result: TemplateSourceType = {
       source: {
         ...dataSource,
         ...platformEnvs
       },
-      yamlList: yamlList
+      yamlList: yamlList,
+      templateYaml: templateYaml
     };
     return result;
   };
 
-  const generateCorrectYaml = (yamlSource: YamlSourceType, inputsForm = {}) => {
+  const generateCorrectYaml = (yamlSource: TemplateSourceType, inputsForm = {}) => {
     const yamlString = yamlSource?.yamlList?.map((item) => JsYaml.dump(item)).join('---\n');
     const output = mapValues(yamlSource?.source.defaults, (value) => value.value);
     const generateStr = parseTemplateString(yamlString, /\$\{\{\s*(.*?)\s*\}\}/g, {
@@ -182,8 +183,7 @@ export default function Develop() {
         borderRadius={'8px'}
         overflowY={'hidden'}
         overflowX={'scroll'}
-        flex={1}
-      >
+        flex={1}>
         {/* left */}
         <Flex flexDirection={'column'} w="50%" borderRight={'1px solid #EFF0F1'}>
           <Flex
@@ -193,8 +193,7 @@ export default function Develop() {
             alignItems={'center'}
             backgroundColor={'#F8FAFB'}
             px="36px"
-            borderRadius={'8px 8px 0px 0px '}
-          >
+            borderRadius={'8px 8px 0px 0px '}>
             <MyIcon name="dev" color={'#24282C'} w={'24px'} h={'24px'}></MyIcon>
             <Text fontWeight={'500'} fontSize={'16px'} color={'#24282C'} ml="8px">
               {t('develop.Development')}
@@ -222,8 +221,7 @@ export default function Develop() {
             alignItems={'center'}
             backgroundColor={'#F8FAFB'}
             pl="42px"
-            borderRadius={'8px 8px 0px 0px '}
-          >
+            borderRadius={'8px 8px 0px 0px '}>
             <MyIcon name="eyeShow" color={'#24282C'} w={'24px'} h={'24px'}></MyIcon>
             <Text fontWeight={'500'} fontSize={'16px'} color={'#24282C'} ml="8px">
               {t('develop.Preview')}
@@ -235,8 +233,7 @@ export default function Develop() {
               pt="26px"
               pr={{ sm: '20px', md: '60px' }}
               borderBottom={'1px solid #EFF0F1'}
-              flexDirection={'column'}
-            >
+              flexDirection={'column'}>
               <Text fontWeight={'500'} fontSize={'18px'} color={'#24282C'}>
                 {t('develop.Configure Form')}
               </Text>
@@ -252,8 +249,7 @@ export default function Develop() {
                   minW={'100px'}
                   h={'34px'}
                   variant={'link'}
-                  onClick={handleExportYaml}
-                >
+                  onClick={handleExportYaml}>
                   {t('Export')} Yaml
                 </Button>
               </Flex>

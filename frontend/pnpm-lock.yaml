@@ -1222,6 +1222,12 @@ importers:
       axios:
         specifier: ^1.3.4
         version: registry.npmmirror.com/axios@1.4.0
+      cron-parser:
+        specifier: ^4.9.0
+        version: registry.npmmirror.com/cron-parser@4.9.0
+      cronstrue:
+        specifier: ^2.32.0
+        version: registry.npmmirror.com/cronstrue@2.32.0
       dayjs:
         specifier: ^1.11.7
         version: registry.npmmirror.com/dayjs@1.11.9
@@ -3352,7 +3358,7 @@ packages:
       '@emotion/react': '>=10.0.35'
       react: '>=18'
     dependencies:
-      '@emotion/react': registry.npmmirror.com/@emotion/react@11.11.1(@types/react@18.0.37)(react@18.2.0)
+      '@emotion/react': registry.npmmirror.com/@emotion/react@11.11.1(@types/react@18.0.27)(react@18.2.0)
       react: registry.npmmirror.com/react@18.2.0
     dev: false
 
@@ -3908,8 +3914,8 @@ packages:
       '@chakra-ui/react-env': registry.npmmirror.com/@chakra-ui/react-env@3.1.0(react@18.2.0)
       '@chakra-ui/system': registry.npmmirror.com/@chakra-ui/system@2.6.0(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(react@18.2.0)
       '@chakra-ui/utils': registry.npmmirror.com/@chakra-ui/utils@2.0.15
-      '@emotion/react': registry.npmmirror.com/@emotion/react@11.11.1(@types/react@18.0.37)(react@18.2.0)
-      '@emotion/styled': registry.npmmirror.com/@emotion/styled@11.11.0(@emotion/react@11.11.1)(@types/react@18.0.37)(react@18.2.0)
+      '@emotion/react': registry.npmmirror.com/@emotion/react@11.11.1(@types/react@18.0.27)(react@18.2.0)
+      '@emotion/styled': registry.npmmirror.com/@emotion/styled@11.11.0(@emotion/react@11.11.1)(@types/react@18.0.27)(react@18.2.0)
       react: registry.npmmirror.com/react@18.2.0
       react-dom: registry.npmmirror.com/react-dom@18.2.0(react@18.2.0)
     dev: false
@@ -4595,8 +4601,8 @@ packages:
       '@chakra-ui/styled-system': registry.npmmirror.com/@chakra-ui/styled-system@2.9.1
       '@chakra-ui/theme-utils': registry.npmmirror.com/@chakra-ui/theme-utils@2.0.19
       '@chakra-ui/utils': registry.npmmirror.com/@chakra-ui/utils@2.0.15
-      '@emotion/react': registry.npmmirror.com/@emotion/react@11.11.1(@types/react@18.0.37)(react@18.2.0)
-      '@emotion/styled': registry.npmmirror.com/@emotion/styled@11.11.0(@emotion/react@11.11.1)(@types/react@18.0.37)(react@18.2.0)
+      '@emotion/react': registry.npmmirror.com/@emotion/react@11.11.1(@types/react@18.0.27)(react@18.2.0)
+      '@emotion/styled': registry.npmmirror.com/@emotion/styled@11.11.0(@emotion/react@11.11.1)(@types/react@18.0.27)(react@18.2.0)
       react: registry.npmmirror.com/react@18.2.0
       react-fast-compare: registry.npmmirror.com/react-fast-compare@3.2.1
     dev: false

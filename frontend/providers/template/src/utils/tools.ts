@@ -1,7 +1,8 @@
 import { useToast } from '@/hooks/useToast';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
-import { cloneDeep, forEach, isNumber, isBoolean, isObject } from 'lodash';
+import { cloneDeep, forEach, isNumber, isBoolean, isObject, has } from 'lodash';
+import { templateDeployKey } from '@/constants/keys';
 
 /**
  * copy text data
@@ -85,7 +86,7 @@ export const strToBase64 = (str: string) => {
 /**
  * cpu format
  */
-export const cpuFormatToM = (cpu: string) => {
+export const cpuFormatToM = (cpu = '0') => {
   if (!cpu || cpu === '0') {
     return 0;
   }
@@ -107,7 +108,7 @@ export const cpuFormatToM = (cpu: string) => {
 /**
  * memory format
  */
-export const memoryFormatToMi = (memory: string) => {
+export const memoryFormatToMi = (memory = '0') => {
   if (!memory || memory === '0') {
     return 0;
   }
@@ -218,8 +219,24 @@ export const processEnvValue = (obj: any, labelName: string) => {
   if (labelName) {
     newDeployment.metadata = newDeployment.metadata || {};
     newDeployment.metadata.labels = newDeployment.metadata.labels || {};
-    newDeployment.metadata.labels['cloud.sealos.io/deploy-on-sealos'] = labelName;
+    newDeployment.metadata.labels[templateDeployKey] = labelName;
   }
+  // console.log(obj.metadata, newDeployment.metadata, 'obj');
 
   return newDeployment;
 };
+
+export function deepSearch(obj: any): string {
+  if (has(obj, 'message')) {
+    return obj.message;
+  }
+  for (let key in obj) {
+    if (isObject(obj[key])) {
+      let message = deepSearch(obj[key]);
+      if (message) {
+        return message;
+      }
+    }
+  }
+  return 'Error';
+}

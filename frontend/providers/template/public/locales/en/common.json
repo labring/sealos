@@ -160,5 +160,17 @@
   "SideBar": {
     "Applications": "Applications",
     "My App": "My App"
-  }
+  },
+  "Schedule": "Schedule",
+  "Last Schedule": "Last Schedule",
+  "Last Schedule Time": "Schedule Time:",
+  "Last Successful Time": "Successful Time:",
+  "Next Execution Time": "Next Execution Time",
+  "There is no resource of this type": "There is no resource of this type",
+  "Others": "Others",
+  "Unload": "Unload",
+  "delete message": "Are you sure you want to delete this application? If you proceed, all data for this project will be deleted.",
+  "Installed": "Installed",
+  "Kind": "Kind",
+  "Component": "Component"
 }

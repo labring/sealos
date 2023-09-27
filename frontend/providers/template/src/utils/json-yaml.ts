@@ -1,5 +1,5 @@
 import { YamlItemType } from '@/types';
-import { TemplateType } from '@/types/app';
+import { ProcessedTemplateSourceType, TemplateInstanceType, TemplateType } from '@/types/app';
 import JSYAML from 'js-yaml';
 import { cloneDeep } from 'lodash';
 import { customAlphabet } from 'nanoid';
@@ -19,7 +19,7 @@ export const generateYamlList = (value: string, labelName: string): YamlItemType
       }
     ];
   } catch (error) {
-    console.log(error);
+    console.log(error, 'generateYamlList');
     return [];
   }
 };
@@ -46,9 +46,14 @@ export const parseTemplateString = (
   }
 };
 
-export const getTemplateDataSource = (template: TemplateType) => {
+export const getTemplateDataSource = (template: TemplateType): ProcessedTemplateSourceType => {
   try {
-    if (!template) return;
+    if (!template) {
+      return {
+        defaults: {},
+        inputs: []
+      };
+    }
     const { defaults, inputs } = template.spec;
     // support function list
     const functionHandlers = [
@@ -119,7 +124,10 @@ export const getTemplateDataSource = (template: TemplateType) => {
     };
   } catch (error) {
     console.log(error, '---getTemplateDataSource---');
-    return {};
+    return {
+      defaults: {},
+      inputs: []
+    };
   }
 };
 
@@ -135,4 +143,26 @@ export const developGenerateYamlList = (value: string, labelName: string): YamlI
     console.log(error);
     return [];
   }
+};
+
+export const handleTemplateToInstanceYaml = (
+  template: TemplateType,
+  instanceName: string
+): TemplateInstanceType => {
+  const {
+    spec: { github, template_type, gitRepo, templateType, ...resetSpec }
+  } = template;
+
+  return {
+    apiVersion: 'app.sealos.io/v1',
+    kind: 'Instance',
+    metadata: {
+      name: instanceName
+    },
+    spec: {
+      gitRepo: github ?? gitRepo,
+      templateType: template_type ?? templateType,
+      ...resetSpec
+    }
+  };
 };

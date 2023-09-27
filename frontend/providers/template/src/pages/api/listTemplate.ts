@@ -13,8 +13,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     if (fs.existsSync(jsonPath)) {
       const jsonData = fs.readFileSync(jsonPath, 'utf8');
       const _templates: TemplateType[] = JSON.parse(jsonData);
-      console.log(_templates?.length, 'templates length');
       const templates = _templates.filter((item) => item?.spec?.draft !== true);
+      console.log(`${templates.length}/${_templates?.length}`, 'templates length');
       return jsonRes(res, { data: templates, code: 200 });
     } else {
       return jsonRes(res, { data: [], code: 200 });
