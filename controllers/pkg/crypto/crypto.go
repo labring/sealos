@@ -161,7 +161,6 @@ func IsLicenseValid(token string, key string) (map[string]interface{}, bool) {
 		return nil, false
 	}
 	publicKey, err := parseRSAPublicKeyFromPEM(string(decodeKey))
-	//fmt.Println(string(decodeKey))
 	if err != nil {
 		return nil, false
 	}
