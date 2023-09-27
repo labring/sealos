@@ -8,6 +8,8 @@ mongodbUri=""
 tlsCrtPlaceholder="<tls-crt-placeholder>"
 tlsKeyPlaceholder="<tls-key-placeholder>"
 saltKey=""
+# the domain name of license purchase page, if it is empty, the license purchase page will not be cloud.sealos.io
+LicensePuchaseDomain="dev.sealos.top"
 
 function prepare {
   # source .env
@@ -160,6 +162,7 @@ function sealos_run_frontend {
   --env cloudDomain=$cloudDomain \
   --env cloudPort=$cloudPort \
   --env certSecretName="wildcard-cert" \
+  --env licensePuchaseDomain=$LicensePuchaseDomain \
   --env MONGODB_URI=$mongodbUri \
   --env PASSWORD_SALT=$saltKey
 }
