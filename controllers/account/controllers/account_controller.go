@@ -226,7 +226,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, owner, accountNames
 	if err := r.syncRoleAndRoleBinding(ctx, owner, userNamespace); err != nil {
 		return nil, fmt.Errorf("sync role and rolebinding failed: %v", err)
 	}
-	err := r.initBalance(&account)
+	err := initBalance(&account)
 	if err != nil {
 		return nil, fmt.Errorf("sync init balance failed: %v", err)
 	}
@@ -256,7 +256,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, owner, accountNames
 	}); err != nil {
 		return nil, err
 	}
-	err = r.initBalance(&account)
+	err = initBalance(&account)
 	if err != nil {
 		return nil, fmt.Errorf("sync init balance failed: %v", err)
 	}
@@ -405,7 +405,7 @@ func SyncAccountStatus(ctx context.Context, client client.Client, account *accou
 	return client.Status().Update(ctx, account)
 }
 
-func (r *AccountReconciler) initBalance(account *accountv1.Account) (err error) {
+func initBalance(account *accountv1.Account) (err error) {
 	if account.Status.EncryptBalance == nil {
 		encryptBalance, err := crypto.EncryptInt64(account.Status.Balance)
 		if err != nil {
