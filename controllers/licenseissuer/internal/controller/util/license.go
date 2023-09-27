@@ -21,10 +21,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"reflect"
 	"time"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/go-logr/logr"
@@ -53,7 +53,7 @@ func LicenseCheck(meta LicenseMeta) (map[string]interface{}, bool) {
 	return crypto.IsLicenseValid(meta.Token, Key)
 }
 
-func RechargeByLicense(ctx context.Context, client client.Client, account accountv1.Account, payload map[string]interface{}) error {
+func AuthorizeAccountQuota(ctx context.Context, client client.Client, account accountv1.Account, payload map[string]interface{}) error {
 	if !ContainsFields(payload, "amt") {
 		return nil
 	}
@@ -75,6 +75,44 @@ func RechargeByLicense(ctx context.Context, client client.Client, account accoun
 	}
 
 	return nil
+}
+
+func AuthorizeClusterQuota(ctx context.Context, client client.Client, csb *issuerv1.ClusterScaleBilling, payload map[string]interface{}) error {
+	amtADD, ok := payload[Amount].(float64)
+	if !ok {
+		return errors.New("amount error type")
+	}
+
+	EncryptQuota := csb.Status.EncryptQuota
+	decryptQuota, err := crypto.DecryptInt64WithKey(EncryptQuota, []byte(CryptoKey))
+	if err != nil {
+		return err
+	}
+	newQuata := decryptQuota + int64(amtADD)*count.CurrencyUnit
+	NewEncryptQuota, err := crypto.EncryptInt64WithKey(newQuata, []byte(CryptoKey))
+	if err != nil {
+		return err
+	}
+	csb.Status.EncryptQuota = *NewEncryptQuota
+	// Update the quota
+	csb.Status.Quota = newQuata
+	// Trigger the cluster scale quota
+	GetTrigger().TriggerForClusterScaleQuato(newQuata)
+	err = client.Status().Update(ctx, csb)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func SetLicensePolicy(policy string) error {
+	switch policy {
+	case BillingByScale:
+		GetTrigger().TriggerForClusterPolicy(BillingByScale)
+		return nil
+	default:
+		return errors.New("invalid policy")
+	}
 }
 
 func RecordLicense(handler MongoHandler, license interface{}) error {
@@ -103,10 +141,7 @@ func CheckLicense(meta LicenseMeta, handler MongoHandler) (string, map[string]in
 		return InvalidLicenseMessage, nil, false
 	}
 	// CHECK: if the license is free license for trial version
-	if ContainsFields(payload, "typ") {
-		if payload["typ"] != "free" {
-			return InvalidLicenseMessage, nil, false
-		}
+	if ContainsFields(payload, Type) && payload[Type] == Free {
 		return "", payload, true
 	}
 
@@ -121,14 +156,9 @@ func CheckLicense(meta LicenseMeta, handler MongoHandler) (string, map[string]in
 }
 
 func CheckLicenseExists(meta LicenseMeta, db MongoHandler) bool {
-	// memory check
-	ok := GetHashMap().Find(meta.Token)
-	if ok {
-		return true
-	}
 	// database check
 	filter := bson.M{"meta.token": meta.Token}
-	ok = db.IsExisted(filter)
+	ok := db.IsExisted(filter)
 
 	// etcd check
 	// ...
@@ -186,80 +216,6 @@ func NewLicense(uid string, token string, payload map[string]interface{}) Licens
 		Meta:    LicenseMeta{Token: token, CreateTime: time.Now().Format("2006-01-02")},
 		Payload: payload,
 	}
-}
-
-type Map[T any] interface {
-	Find(T) bool
-	Add(T)
-	Remove()
-}
-
-type HashMap[T comparable] struct {
-	m map[T]int64
-}
-
-func NewHashMap[T comparable]() Map[T] {
-	return &HashMap[T]{
-		m: make(map[T]int64),
-	}
-}
-
-func (hs *HashMap[T]) Find(item T) bool {
-	_, ok := hs.m[item]
-	return ok
-}
-
-func (hs *HashMap[T]) Add(item T) {
-	hs.m[item] = time.Now().Unix()
-}
-
-func (hs *HashMap[T]) Remove() {
-	// lifetime of item is 24 hours
-	for k, v := range hs.m {
-		if v+24*60*60*3 < time.Now().Unix() {
-			delete(hs.m, k)
-		}
-	}
-}
-
-var singleton Map[string]
-
-func GetHashMap() Map[string] {
-	if singleton == nil {
-		singleton = NewHashMap[string]()
-	}
-	return singleton
-}
-
-type Memory[T any] interface {
-	Remove()
-}
-
-type MemoryClean struct {
-	MM1 Memory[string]
-}
-
-func NewMemoryCleaner() *MemoryClean {
-	return &MemoryClean{
-		MM1: GetHashMap(),
-	}
-}
-
-func (mc *MemoryClean) cleanWork(_ *TaskInstance) error {
-	// range field
-	v := reflect.ValueOf(mc)
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-
-	for i := 0; i < v.NumField(); i++ {
-		value := v.Field(i)
-		method := value.MethodByName("Remove")
-		if method.IsValid() {
-			method.Call(nil)
-		}
-	}
-	return nil
 }
 
 func HashCrypto(text string) string {

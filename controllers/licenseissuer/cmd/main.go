@@ -150,14 +150,6 @@ func main() {
 
 	//mgr.GetWebhookServer().Register("/validate-cloud-sealos-io-v1-license", &webhook.Admission{Handler: &controller.ScaleWebhook{Client: mgr.GetClient()}})
 
-	if err = (&controller.ClusterLicenseReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		DBCol:  clusterLicenseDB,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "ClusterLicense")
-		os.Exit(1)
-	}
 	if err = (&controller.ClusterScaleBillingReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),

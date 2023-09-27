@@ -19,22 +19,22 @@ package controller
 import (
 	"context"
 
+	"github.com/go-logr/logr"
 	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
 	"github.com/labring/sealos/controllers/pkg/crypto"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // ClusterScaleBillingReconciler reconciles a ClusterScaleBilling object
 type ClusterScaleBillingReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	csb    *issuerv1.ClusterScaleBilling
+	logger logr.Logger
 }
 
 //+kubebuilder:rbac:groups=infostream.sealos.io,resources=clusterscalebillings,verbs=get;list;watch;create;update;patch;delete
@@ -51,43 +51,49 @@ type ClusterScaleBillingReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (r *ClusterScaleBillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	csb := &issuerv1.ClusterScaleBilling{}
-	if err := r.Get(ctx, req.NamespacedName, csb); err != nil {
-		log.Log.Error(err, "unable to fetch ClusterScaleBilling")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+	err := r.Get(ctx, req.NamespacedName, r.csb)
+	if err != nil && !apierrors.IsNotFound(err) {
+		r.logger.Info("get cluster scale billing error", "error", err)
+		return ctrl.Result{}, err
 	}
-	if csb.Status.EncryptQuota == "" {
-		eq, err := crypto.EncryptInt64WithKey(0, []byte(util.CryptoKey))
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		csb.Status = issuerv1.ClusterScaleBillingStatus{
-			Quota:        0,
-			Used:         0,
-			EncryptQuota: *eq,
-			EncryptUsed:  *eq,
+	if apierrors.IsNotFound(err) {
+		newCsb := &issuerv1.ClusterScaleBilling{}
+		newCsb.Name = req.Name
+		newCsb.Namespace = req.Namespace
+		return ctrl.Result{}, r.Create(ctx, newCsb)
+	}
+	// if the cluster scale billing is not initialized, init it
+	if r.csb.Status.EncryptQuota == "" {
+		r.InitClusterScaleBilling()
+	} else {
+		// if the cluster scale billing is error, init it
+		value, err := crypto.DecryptInt64WithKey(r.csb.Status.EncryptQuota, []byte(util.CryptoKey))
+		if err != nil || value != r.csb.Status.Quota {
+			r.logger.Info("decrypt quota error", "error", err)
+			r.InitClusterScaleBilling()
 		}
 	}
 
-	return ctrl.Result{}, r.Client.Status().Update(ctx, csb)
+	return ctrl.Result{}, r.Client.Status().Update(ctx, r.csb)
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ClusterScaleBillingReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	predicate := predicate.Funcs{
-		CreateFunc: func(e event.CreateEvent) bool {
-			return true
-		},
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			return false
-		},
-		DeleteFunc: func(e event.DeleteEvent) bool {
-			return false
-		},
-	}
+	r.logger = ctrl.Log.WithName("ClusterScaleBilling")
+	r.csb = &issuerv1.ClusterScaleBilling{}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
-		For(&issuerv1.ClusterScaleBilling{}, builder.WithPredicates(predicate)).
+		For(&issuerv1.ClusterScaleBilling{}).
 		Complete(r)
+}
+
+func (r *ClusterScaleBillingReconciler) InitClusterScaleBilling() {
+	eq, _ := crypto.EncryptInt64WithKey(0, []byte(util.CryptoKey))
+	r.csb.Status = issuerv1.ClusterScaleBillingStatus{
+		Quota:        0,
+		Used:         0,
+		EncryptQuota: *eq,
+		EncryptUsed:  *eq,
+	}
 }

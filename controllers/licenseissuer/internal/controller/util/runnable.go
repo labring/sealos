@@ -198,8 +198,6 @@ func (ti *TaskInstance) Run() error {
 		return NewNetworkConfig().probe(ti)
 	case Register:
 		return NewRegister().register(ti)
-	case MemoryCleanup:
-		return NewMemoryCleaner().cleanWork(ti)
 	case ClusterBillingWork:
 		return NewClusterScaleBillingWork().billingWork(ti)
 	case ClusterBillingMonitor:

@@ -76,6 +76,8 @@ func init() {
 type Service struct {
 	// ClusterID is the cluster id which the user want to license
 	Hid string `json:"hid,omitempty"`
+	// typ is a service field, which is the type of service
+	Typ string `json:"typ,omitempty"`
 	// amt is a service field, which is the amount to be charged
 	Amt int64 `json:"amt,omitempty"`
 	// add more fields

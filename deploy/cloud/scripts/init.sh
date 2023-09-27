@@ -163,7 +163,7 @@ function sealos_run_frontend {
   --env cloudPort=$cloudPort \
   --env certSecretName="wildcard-cert" \
   --env licensePuchaseDomain=$LicensePuchaseDomain \
-  --env MONGODB_URI=$mongodbUri \
+  --env MONGODB_URI=$mongodbUri/'sealos-resources?authSource=admin&directConnection=true' \
   --env PASSWORD_SALT=$saltKey
 }
 

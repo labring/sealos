@@ -130,6 +130,32 @@ func (r *LicenseReconciler) Authorize(ctx context.Context) (string, error) {
 		return message, errors.New("invalid license")
 	}
 	r.payload = payload
+
+	if !util.ContainsFields(payload, util.Type) {
+		return util.InvalidLicenseMessage, errors.New("invalid license type")
+	}
+	licenseType, ok := payload[util.Type].(string)
+	if !ok {
+		return util.InvalidLicenseMessage, errors.New("invalid license type")
+	}
+	switch licenseType {
+	case util.Free:
+		return r.ForFreeAuthorize(ctx)
+	case util.Account:
+		return r.ForAccountAuthorize(ctx)
+	case util.Cluster:
+		return r.ForClusterAuthorize(ctx)
+	// add other senarios here, if you need
+	default:
+		return util.InvalidLicenseMessage, errors.New("invalid license type")
+	}
+}
+
+func (r *LicenseReconciler) ForFreeAuthorize(ctx context.Context) (string, error) {
+	return r.ForAccountAuthorize(ctx)
+}
+
+func (r *LicenseReconciler) ForAccountAuthorize(ctx context.Context) (string, error) {
 	// get account
 	id := types.NamespacedName{
 		Namespace: util.GetOptions().GetEnvOptions().Namespace,
@@ -141,20 +167,48 @@ func (r *LicenseReconciler) Authorize(ctx context.Context) (string, error) {
 		return util.RechargeFailedMessage, err
 	}
 	// authorize service, amount
-	if util.ContainsFields(payload, util.Amount) {
-		err := util.RechargeByLicense(ctx, r.Client, r.account, payload)
+	if util.ContainsFields(r.payload, util.Amount) {
+		err := util.AuthorizeAccountQuota(ctx, r.Client, r.account, r.payload)
 		if err != nil {
 			return util.RechargeFailedMessage, err
 		}
 	}
-	// add other license-related service here, for example:
-	// if util.ContainsFields(payload, <your service>) {
-	// TODO: add your service here
-	// }
+	// add other license-related service here, if you need
+	return util.ValidLicenseMessage, nil
+}
+
+func (r *LicenseReconciler) ForClusterAuthorize(ctx context.Context) (string, error) {
+	// get cluster scale billing
+	csb := &issuerv1.ClusterScaleBilling{}
+	id := types.NamespacedName{
+		Namespace: util.GetOptions().GetEnvOptions().Namespace,
+		Name:      util.ScaleBilling,
+	}
+	err := r.Client.Get(ctx, id, csb)
+	if err != nil {
+		r.logger.Info("failed to get cluster scale billing", "error", err)
+		return util.RechargeFailedMessage, err
+	}
+	if util.ContainsFields(r.payload, util.Amount, util.Policy) {
+		policy, ok := r.payload[util.Policy].(string)
+		if !ok {
+			return util.InvalidLicenseMessage, errors.New("invalid license policy")
+		}
+		err := util.SetLicensePolicy(policy)
+		if err != nil {
+			return util.InvalidLicenseMessage, err
+		}
+		err = util.AuthorizeClusterQuota(ctx, r.Client, csb, r.payload)
+		if err != nil {
+			return util.RechargeFailedMessage, err
+		}
+	}
+
+	// add other license-related service here, if you need
+	// ......
 	return util.ValidLicenseMessage, nil
 }
 
 func (r *LicenseReconciler) RecordLicense(payload map[string]interface{}) error {
-	util.GetHashMap().Add(r.license.Spec.Token)
 	return util.RecordLicense(r.DBCol, util.NewLicense(r.license.Spec.UID, r.license.Spec.Token, payload))
 }

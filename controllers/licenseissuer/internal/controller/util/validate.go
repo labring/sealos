@@ -39,6 +39,8 @@ type Validator interface {
 // Trigger is a interface to update the expected status immediately when license applied
 type Trigger interface {
 	TriggerForClusterScaleQuato(quota int64)
+	TriggerForClusterPolicy(policy string)
+	TriggerForClusterScaleUsage(used int64)
 }
 
 func GetValidator() Validator {
@@ -84,12 +86,8 @@ func GetClusterStatus() *ClusterStatus {
 func (cv *ClusterStatus) Metering(ctx context.Context, client client.Client) error {
 	cv.lock.Lock()
 	defer cv.lock.Unlock()
-	switch cv.BillingPolicy {
-	case BillingByScale:
-		return cv.meteringForClusterScaleBilling(ctx, client)
-	default:
-		return nil
-	}
+	_ = cv.meteringForClusterScaleBilling(ctx, client)
+	return nil
 }
 
 func (cv *ClusterStatus) meteringForClusterScaleBilling(ctx context.Context, client client.Client) error {
@@ -123,8 +121,10 @@ func (cv *ClusterStatus) Validate() bool {
 	switch cv.BillingPolicy {
 	case BillingByScale:
 		return cv.validateForClusterScaleBilling()
-	default:
+	case BillingByAccount:
 		return true
+	default:
+		return false
 	}
 }
 
@@ -136,4 +136,16 @@ func (cv *ClusterStatus) TriggerForClusterScaleQuato(quota int64) {
 	cv.lock.Lock()
 	defer cv.lock.Unlock()
 	cv.CSBS.Quota = quota
+}
+
+func (cv *ClusterStatus) TriggerForClusterPolicy(policy string) {
+	cv.lock.Lock()
+	defer cv.lock.Unlock()
+	cv.BillingPolicy = policy
+}
+
+func (cv *ClusterStatus) TriggerForClusterScaleUsage(used int64) {
+	cv.lock.Lock()
+	defer cv.lock.Unlock()
+	cv.CSBS.Used = used
 }

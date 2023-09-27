@@ -65,6 +65,22 @@ const (
 	Amount     = "amt"
 	ExpireTime = "exp"
 	HashID     = "hid"
+	Type       = "typ"
+	Policy     = "pol"
+)
+
+// Type for license
+const (
+	Free    = "free"
+	Account = "account"
+	Cluster = "cluster"
+)
+
+// Policy for license
+const (
+	BillingByScale   = "scale"
+	BillingByUsage   = "usage"
+	BillingByAccount = "account"
 )
 
 const (
@@ -82,7 +98,6 @@ const (
 	Notice                task = "Notice"
 	NoticeCleanup         task = "NoticeCleanup"
 	NetWorkConfig         task = "NetWorkConfig"
-	MemoryCleanup         task = "MemoryCleanup"
 	ClusterBillingWork    task = "ClusterBillingWork"
 	ClusterBillingMonitor task = "ClusterMonitor"
 	// Add more tasks here
@@ -90,10 +105,4 @@ const (
 
 const (
 	ScaleBilling = "cluster-scale-billing"
-)
-
-const (
-	BillingByScale   = "scale"
-	BillingByUsage   = "usage"
-	BillingByAccount = "account"
 )

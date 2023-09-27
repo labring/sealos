@@ -151,14 +151,11 @@ func (o *OperatorOptions) initOptions() {
 	o.RunnableOptions.Policy[Register] = OnceWithProbePolicy
 	o.RunnableOptions.Period[Register] = 5 * time.Minute
 
-	o.RunnableOptions.Policy[MemoryCleanup] = PeriodicPolicy
-	o.RunnableOptions.Period[MemoryCleanup] = 30 * time.Minute
-
 	o.RunnableOptions.Policy[ClusterBillingWork] = PeriodicWithProbePolicy
 	o.RunnableOptions.Period[ClusterBillingWork] = 8 * time.Hour
 
 	o.RunnableOptions.Policy[ClusterBillingMonitor] = PeriodicPolicy
-	o.RunnableOptions.Period[ClusterBillingMonitor] = 24 * time.Hour
+	o.RunnableOptions.Period[ClusterBillingMonitor] = 3 * time.Minute
 	// Add more tasks Policy and Period here
 }
 
@@ -186,7 +183,7 @@ func (eo *EnvOptions) initOptions() {
 	eo.SaltKey = os.Getenv("PASSWORD_SALT")
 	eo.Namespace = os.Getenv("NAMESPACE")
 	// eo.BillingPolicy = os.Getenv("BILLING_POLICY")
-	eo.BillingPolicy = "account"
+	eo.BillingPolicy = BillingByAccount
 	key, err := base64.StdEncoding.DecodeString(os.Getenv("ISSUER_KEY"))
 	if err != nil {
 		eo.IssuerKey = ""
