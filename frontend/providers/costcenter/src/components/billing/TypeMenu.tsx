@@ -17,7 +17,6 @@ export default function TypeMenu({
 }) {
   const { isOpen, onClose, onOpen } = useDisclosure();
   const { t } = useTranslation();
-
   return (
     <Popover isOpen={isOpen} onClose={onClose} onOpen={onOpen}>
       <PopoverTrigger>

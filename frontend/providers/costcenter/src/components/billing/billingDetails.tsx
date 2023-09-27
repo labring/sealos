@@ -61,7 +61,9 @@ export default function BillingDetails({
     <>
       <Button
         gap={'8px'}
-        p={'8px'}
+        px={'8px'}
+        py="7px"
+        h="unset"
         fontStyle="normal"
         fontWeight="400"
         fontSize="12px"

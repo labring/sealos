@@ -1,7 +1,6 @@
 import { CommonBillingTable, TransferBillingTable } from '../../components/billing/billingTable';
 import {
   Box,
-  Button,
   Flex,
   Heading,
   Img,
@@ -41,12 +40,12 @@ function AmountDisplay() {
   const list = [
     {
       bgColor: '#36ADEF',
-      title: 'Charge',
+      title: 'Deduction',
       value: data?.data?.deductionBalance || 0
     },
     {
       bgColor: '#47C8BF',
-      title: 'Recharge',
+      title: 'Charge',
       value: (data?.data?.balance || 0) - deFormatMoney(5)
     }
   ] as const;
