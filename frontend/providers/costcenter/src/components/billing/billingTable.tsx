@@ -122,7 +122,10 @@ export function CommonBillingTable({ data }: { data: BillingItem[] }) {
                       orderId={item.order_id}
                       time={item.time}
                       appType={item.appType}
-                      isDisabled={['TERMINAL', 'OTHER'].includes(item.appType)}
+                      isDisabled={
+                        ['TERMINAL', 'OTHER'].includes(item.appType) ||
+                        item.type !== BillingType.CONSUME
+                      }
                     />
                   </Td>
                 </Tr>
