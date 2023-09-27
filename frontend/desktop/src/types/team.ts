@@ -110,7 +110,7 @@ export type NamespaceDto = {
   createTime: Date;
   // 展示到前端的名字
   teamName: string;
-  // role: UserRole;
+  role: UserRole;
   readonly nstype: NSType;
 };
 export enum UserRole {

@@ -10,7 +10,8 @@ import {
   ModalOverlay,
   useDisclosure,
   Divider,
-  Stack
+  Stack,
+  FlexProps
 } from '@chakra-ui/react';
 import NsList from './NsList';
 import { useState } from 'react';
@@ -26,11 +27,11 @@ import useSessionStore from '@/stores/session';
 import { InvitedStatus, NSType, UserRole, teamMessageDto } from '@/types/team';
 import { TeamUserDto } from '@/types/user';
 import ReciveMessage from './ReciveMessage';
-import { reciveMessageRequest, teamDetailsRequest } from '@/api/namespace';
+import { nsListRequest, reciveMessageRequest, teamDetailsRequest } from '@/api/namespace';
 import { useTranslation } from 'react-i18next';
-export default function TeamCenter() {
+export default function TeamCenter(props: FlexProps) {
   const session = useSessionStore((s) => s.session);
-  const { ns_uid: default_ns_uid, nsid: default_nsid, userId } = session.user;
+  const { ns_uid: default_ns_uid, nsid: default_nsid, userId, k8s_username } = session.user;
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [nsid, setNsid] = useState(default_nsid);
   const [messageFilter, setMessageFilter] = useState<string[]>([]);
@@ -40,7 +41,7 @@ export default function TeamCenter() {
     () => teamDetailsRequest(ns_uid),
     {
       refetchInterval(data) {
-        if (data?.data?.users.some((x) => x.status === InvitedStatus.Inviting)) {
+        if (data?.data?.users?.some((x) => x.status === InvitedStatus.Inviting)) {
           return 2000;
         } else {
           return false;
@@ -57,10 +58,23 @@ export default function TeamCenter() {
   const messages: teamMessageDto[] = reciveMessage.data?.data?.messages || [];
   const users: TeamUserDto[] = [...(data?.data?.users || [])];
   const curTeamUser = users.find((user) => user.uid === userId);
-  const teamName = data?.data?.namespace.teamName || '';
+  const namespace = data?.data?.namespace;
+  const teamName =
+    namespace?.nstype === NSType.Private ? t('Default Team') : namespace?.teamName || '';
   const createTime = data?.data?.namespace.createTime || '';
   const isTeam = data?.data?.namespace.nstype === NSType.Team;
   const { copyData } = useCopyData();
+  const { data: teamListData } = useQuery({
+    queryKey: ['teamList', 'teamGroup'],
+    queryFn: nsListRequest
+  });
+  const namespaces = teamListData?.data?.namespaces || [];
+  const defaultNamespace = namespaces.find((ns) => ns.nstype === NSType.Private);
+  if (defaultNamespace && !namespaces.find((ns) => ns.uid === ns_uid)) {
+    // 空了
+    setNs_uid(defaultNamespace.uid);
+    setNsid(defaultNamespace.id);
+  }
   return (
     <>
       <Flex
@@ -74,6 +88,7 @@ export default function TeamCenter() {
         transition={'all 0.3s'}
         justify={'center'}
         align={'center'}
+        {...props}
       >
         <Image
           cursor={'pointer'}
@@ -87,7 +102,7 @@ export default function TeamCenter() {
           w="20px"
         />
       </Flex>
-      <Modal isOpen={isOpen} onClose={onClose} isCentered>
+      <Modal isOpen={isOpen} onClose={onClose} isCentered closeOnOverlayClick={false}>
         <ModalOverlay />
         <ModalContent
           borderRadius={'8px'}
@@ -135,10 +150,7 @@ export default function TeamCenter() {
                     setNs_uid(ns.uid);
                     setNsid(ns.id);
                   }}
-                  nullNs={(ns) => {
-                    setNs_uid(ns.uid);
-                    setNsid(ns.id);
-                  }}
+                  namespaces={teamListData?.data?.namespaces || []}
                 />
               </Box>
             </Stack>

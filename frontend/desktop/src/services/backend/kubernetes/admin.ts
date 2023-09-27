@@ -159,31 +159,28 @@ async function setUserKubeconfig(kc: k8s.KubeConfig, uid: string, k8s_username: 
   return k8s_username;
 }
 
-async function setUserTeam(kc: k8s.KubeConfig, k8s_username: string) {
+async function setUserTeamCreate(kc: k8s.KubeConfig, k8s_username: string, owner: string) {
   const group = 'user.sealos.io';
+  const resourceKind = 'User';
   const version = 'v1';
   const plural = 'users';
   const updateTime = k8sFormatTime(new Date());
   const client = kc.makeApiClient(k8s.CustomObjectsApi);
-  const patchs = [
-    { op: 'add', path: '/metadata/labels/user.sealos.io~1type', value: 'Group' },
-    { op: 'replace', path: '/metadata/labels/updateTime', value: updateTime }
-  ];
-  await client.patchClusterCustomObject(
-    group,
-    version,
-    plural,
-    k8s_username,
-    patchs,
-    undefined,
-    undefined,
-    undefined,
-    {
-      headers: {
-        'Content-Type': 'application/json-patch+json'
+  const resourceObj = {
+    apiVersion: 'user.sealos.io/v1',
+    kind: resourceKind,
+    metadata: {
+      annotations: {
+        'user.sealos.io/owner': owner
+      },
+      name: k8s_username,
+      labels: {
+        'user.sealos.io/type': 'Group',
+        owner: updateTime
       }
     }
-  );
+  };
+  await client.createClusterCustomObject(group, version, plural, resourceObj);
   return k8s_username;
 }
 async function removeUserTeam(kc: k8s.KubeConfig, k8s_username: string) {
@@ -263,12 +260,13 @@ export const getUserKubeconfig = async (uid: string, k8s_username: string) => {
   });
   return kubeconfig;
 };
-export const setUserTeamCreate = async (k8s_username: string) => {
+// 创建Team用的伪user
+export const getTeamKubeconfig = async (k8s_username: string, owner: string) => {
   const kc = K8sApiDefault();
   const group = 'user.sealos.io';
   const version = 'v1';
   const plural = 'users';
-  await setUserTeam(kc, k8s_username);
+  await setUserTeamCreate(kc, k8s_username, owner);
 
   let body = await watchCustomClusterObject({
     kc,
@@ -276,12 +274,16 @@ export const setUserTeamCreate = async (k8s_username: string) => {
     version,
     plural,
     fn(_, cur) {
-      return cur?.metadata?.labels?.['user.sealos.io/type'] === 'Group';
+      return (
+        cur?.metadata?.labels?.['user.sealos.io/type'] === 'Group' &&
+        cur?.metadata?.annotations?.['user.sealos.io/owner'] === owner
+      );
     },
     name: k8s_username
   });
   return body;
 };
+
 export const setUserTeamDelete = async (k8s_username: string) => {
   const kc = K8sApiDefault();
   const group = 'user.sealos.io';
@@ -296,7 +298,6 @@ export const setUserTeamDelete = async (k8s_username: string) => {
     version,
     plural,
     fn(_, cur) {
-      console.log(cur?.metadata?.labels?.['user.sealos.io/status']);
       return cur?.metadata?.labels?.['user.sealos.io/status'] === 'Deleted';
     },
     name: k8s_username

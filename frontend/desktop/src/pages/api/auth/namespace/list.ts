@@ -11,12 +11,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const ns = await queryNamespacesByUser({ userId: payload.user.uid, k8s_username });
     // 没接受应该不能查看消息
     const namespaces = ns
-      .filter((x) => x.status === InvitedStatus.Accepted)
-      .map<
-        NamespaceDto & {
-          role: UserRole;
-        }
-      >((x) => ({
+      .filter(
+        (x) =>
+          x.status === InvitedStatus.Accepted &&
+          x.k8s_username === payload.user.k8s_username &&
+          x.userId === payload.user.uid
+      )
+      .map<NamespaceDto>((x) => ({
         id: x.namespace.id,
         uid: x.namespace.uid,
         createTime: x.namespace.createTime,

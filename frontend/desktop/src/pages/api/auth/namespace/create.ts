@@ -1,8 +1,8 @@
 import { authSession } from '@/services/backend/auth';
-import { createNS, queryNSByUid } from '@/services/backend/db/namespace';
+import { createNS } from '@/services/backend/db/namespace';
 import { get_k8s_username, queryUser } from '@/services/backend/db/user';
 import { queryNamespacesByUser } from '@/services/backend/db/userToNamespace';
-import { getUserKubeconfig, setUserTeamCreate } from '@/services/backend/kubernetes/admin';
+import { getTeamKubeconfig } from '@/services/backend/kubernetes/admin';
 import { GetUserDefaultNameSpace } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import { bindingRole, modifyTeamRole } from '@/services/backend/team';
@@ -34,8 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!ns_creater) throw new Error('fail to get ns_creater');
     const nsid = GetUserDefaultNameSpace(ns_creater);
     // 创建伪user
-    await getUserKubeconfig(user.uid, ns_creater);
-    const creater_kc_str = await setUserTeamCreate(ns_creater);
+    const creater_kc_str = await getTeamKubeconfig(ns_creater, tokenUser.k8s_username);
     if (!creater_kc_str) throw new Error('fail to get kubeconfig');
     const namespace = await createNS({
       namespace: nsid,
@@ -65,6 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: 'Successfully',
       data: {
         namespace: {
+          role: UserRole.Owner,
           createTime: namespace.createTime,
           uid: namespace.uid,
           id: namespace.id,
