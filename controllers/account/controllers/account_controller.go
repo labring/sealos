@@ -38,7 +38,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -97,6 +96,9 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if owner = user.Annotations[userv1.UserAnnotationOwnerKey]; owner == "" {
 			return ctrl.Result{}, fmt.Errorf("user owner is empty")
 		}
+		// This is only used to monitor and initialize user resource creation data,
+		// determine the resource quota created by the owner user and the resource quota initialized by the account user,
+		// and only the resource quota created by the team user
 		_, err = r.syncAccount(ctx, owner, r.AccountSystemNamespace, "ns-"+user.Name)
 		return ctrl.Result{}, err
 	} else if client.IgnoreNotFound(err) != nil {
@@ -117,7 +119,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	account, err := r.syncAccount(ctx, payment.Spec.UserID, r.AccountSystemNamespace, payment.Namespace)
+	account, err := r.syncAccount(ctx, getUsername(payment.Spec.UserID), r.AccountSystemNamespace, payment.Namespace)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("get account failed: %v", err)
 	}
@@ -200,12 +202,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 func (r *AccountReconciler) syncAccount(ctx context.Context, owner, accountNamespace string, userNamespace string) (*accountv1.Account, error) {
 	if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
-		//return nil, fmt.Errorf("sync resource resourceQuota and limitRange failed: %v", err)
 		r.Logger.Error(err, "sync resource resourceQuota and limitRange failed")
-	}
-	//TODO delete after nodeport count quota already in resource-quota
-	if err := r.adaptNodePortCountQuota(ctx, userNamespace); err != nil {
-		r.Logger.Error(err, "adapt nodeport count quota failed")
 	}
 	account := accountv1.Account{
 		ObjectMeta: metav1.ObjectMeta{
@@ -221,6 +218,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, owner, accountNames
 	}); err != nil {
 		return nil, fmt.Errorf("failed to create account %v, err: %v", account, err)
 	}
+	// If the user is not the owner, the user represents the team and does not perform subsequent account initialization operations
 	if owner != getUsername(userNamespace) {
 		return &account, nil
 	}
@@ -290,18 +288,18 @@ func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, 
 	return nil
 }
 
-func (r *AccountReconciler) adaptNodePortCountQuota(ctx context.Context, nsName string) error {
-	quota := resources.GetDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName)
-	return retry.Retry(10, 1*time.Second, func() error {
-		_, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
-			if _, ok := quota.Spec.Hard[corev1.ResourceServicesNodePorts]; !ok {
-				quota.Spec.Hard[corev1.ResourceServicesNodePorts] = resource.MustParse(env.GetEnvWithDefault(resources.QuotaLimitsNodePorts, resources.DefaultQuotaLimitsNodePorts))
-			}
-			return nil
-		})
-		return err
-	})
-}
+//func (r *AccountReconciler) adaptNodePortCountQuota(ctx context.Context, nsName string) error {
+//	quota := resources.GetDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName)
+//	return retry.Retry(10, 1*time.Second, func() error {
+//		_, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
+//			if _, ok := quota.Spec.Hard[corev1.ResourceServicesNodePorts]; !ok {
+//				quota.Spec.Hard[corev1.ResourceServicesNodePorts] = resource.MustParse(env.GetEnvWithDefault(resources.QuotaLimitsNodePorts, resources.DefaultQuotaLimitsNodePorts))
+//			}
+//			return nil
+//		})
+//		return err
+//	})
+//}
 
 func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, namespace string) error {
 	role := rbacv1.Role{
@@ -430,11 +428,7 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 	r.Logger = ctrl.Log.WithName("account_controller")
 	r.AccountSystemNamespace = env.GetEnvWithDefault(ACCOUNTNAMESPACEENV, DEFAULTACCOUNTNAMESPACE)
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&userv1.User{}, builder.WithPredicates(predicate.And(OnlyCreatePredicate{}, predicate.Funcs{
-			CreateFunc: func(createEvent event.CreateEvent) bool {
-				return createEvent.Object.GetAnnotations()[userv1.UserAnnotationOwnerKey] == createEvent.Object.GetName()
-			},
-		}))).
+		For(&userv1.User{}, builder.WithPredicates(predicate.And(OnlyCreatePredicate{}))).
 		Watches(&source.Kind{Type: &accountv1.Payment{}}, &handler.EnqueueRequestForObject{}).
 		WithOptions(rateOpts).
 		Complete(r)
