@@ -1,5 +1,5 @@
 import { authSession } from '@/service/backend/auth';
-import { CRDMeta, GetCRD } from '@/service/backend/kubernetes';
+import { CRDMeta, GetCRD, GetUserDefaultNameSpace } from '@/service/backend/kubernetes';
 import { jsonRes } from '@/service/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApplyYaml } from '@/service/backend/kubernetes';
@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (user === null) {
       return jsonRes(resp, { code: 403, message: 'user null' });
     }
-    const namespace = 'ns-' + user.name;
+    const namespace = GetUserDefaultNameSpace(user.name);
     const body = req.body;
     let spec: BillingSpec = body.spec;
     if (!spec) {
