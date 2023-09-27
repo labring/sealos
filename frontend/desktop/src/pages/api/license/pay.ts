@@ -19,7 +19,8 @@ export const generateLicenseCrd = (form: LicensePaymentForm) => {
       paymentMethod: form.paymentMethod,
       service: {
         amt: form.quota, // Actual value
-        hid: form.hashID
+        hid: form.hashID,
+        typ: 'account'
       }
     }
   };
