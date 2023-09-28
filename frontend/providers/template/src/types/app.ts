@@ -5,16 +5,14 @@ export type TemplateType = {
     name: string;
   };
   spec: {
-    gitRepo?: string; // new
-    templateType?: 'inline'; // new
-    github: string;
+    gitRepo: string; // new
+    templateType: 'inline'; // new
     author: string;
     title: string;
     url: string;
     readme: string;
     icon: string;
     description: string;
-    template_type: 'inline';
     draft: boolean;
     defaults: Record<
       string,

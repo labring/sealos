@@ -67,7 +67,7 @@ const Header = ({
           <Text fontSize={'24px'} fontWeight={600} color={'#24282C'}>
             {templateDetail?.spec?.title}
           </Text>
-          <Box cursor={'pointer'} onClick={(e) => goGithub(e, templateDetail?.spec?.github)}>
+          <Box cursor={'pointer'} onClick={(e) => goGithub(e, templateDetail?.spec?.gitRepo)}>
             <MyIcon ml={'16px'} name="jump"></MyIcon>
           </Box>
           <Text ml={'16px'} fontSize={'12px'} color={'5A646E'} fontWeight={400}>

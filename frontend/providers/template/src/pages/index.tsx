@@ -149,7 +149,7 @@ export default function AppList() {
                     <Text>By</Text>
                     <Text ml={'4px'}>{item?.spec?.author}</Text>
                   </Flex>
-                  <Box cursor={'pointer'} onClick={(e) => goGithub(e, item?.spec?.github)}>
+                  <Box cursor={'pointer'} onClick={(e) => goGithub(e, item?.spec?.gitRepo)}>
                     <Icon
                       width="16px"
                       height="17px"
