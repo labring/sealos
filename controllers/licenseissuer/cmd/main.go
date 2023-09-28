@@ -27,7 +27,6 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	wb "github.com/labring/sealos/controllers/licenseissuer/internal/webhook"
 	"github.com/labring/sealos/controllers/pkg/database"
 	ntf "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,6 +40,7 @@ import (
 	issuerv1 "github.com/labring/sealos/controllers/licenseissuer/api/v1"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller"
 	"github.com/labring/sealos/controllers/licenseissuer/internal/controller/util"
+	wb "github.com/labring/sealos/controllers/licenseissuer/internal/webhook"
 	//+kubebuilder:scaffold:imports
 )
 

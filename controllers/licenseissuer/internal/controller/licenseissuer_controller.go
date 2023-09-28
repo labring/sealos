@@ -66,11 +66,13 @@ func (r *LicenseIssuerReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	if payment.Status.Status == "Completed" {
 		return ctrl.Result{}, nil
 	}
+	// Check payment is valid
 	ok := CheckPayment(&payment)
 	if !ok {
 		r.logger.Info("invalid payment")
 		return ctrl.Result{}, r.Delete(ctx, &payment)
 	}
+	// get the interface for pay action
 	payHandler, err := pay.NewPayHandler(payment.Spec.PaymentMethod)
 	if err != nil {
 		r.logger.Info("unable to create payHandler", "pay_id", payment.Spec.PaymentMethod)
@@ -116,6 +118,8 @@ func (r *LicenseIssuerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+// it is a function based state machine to handle the payment action
+// it will polling status until the status is success or failed
 func (r *LicenseIssuerReconciler) IssuerHandle(status string, payment *issuerv1.Payment) (ctrl.Result, error) {
 	switch status {
 	case pay.PaymentProcessing, pay.PaymentNotPaid:
@@ -144,6 +148,10 @@ type LicenseResponse struct {
 	Token string `json:"token,omitempty"`
 }
 
+// when the payment is success, it will call this function to get the license token
+// step 1: marshal the service object and encrypt it
+// step 2: send the request to license issuer (laf)
+// step 3: get the token from the response
 func (r *LicenseIssuerReconciler) IssuerLicenseToken(payment *issuerv1.Payment) (string, error) {
 	key := util.GetOptions().GetEnvOptions().IssuerKey
 	s := payment.Spec.Service
@@ -162,7 +170,7 @@ func (r *LicenseIssuerReconciler) IssuerLicenseToken(payment *issuerv1.Payment) 
 	request := LicenseRequest{
 		Service: cryptoBytes,
 	}
-
+	// when encrypt the service, send the request to license issuer,get the token
 	return r.ApplyToken(&request)
 }
 

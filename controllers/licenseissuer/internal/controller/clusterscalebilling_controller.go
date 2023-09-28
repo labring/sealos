@@ -50,6 +50,7 @@ type ClusterScaleBillingReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
+
 func (r *ClusterScaleBillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	err := r.Get(ctx, req.NamespacedName, r.csb)
 	if err != nil && !apierrors.IsNotFound(err) {

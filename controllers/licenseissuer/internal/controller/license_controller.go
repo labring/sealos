@@ -71,6 +71,13 @@ type LicenseReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
+
+// Logic:
+// get a license
+// check the license is valid or not
+// if valid, authorize the license
+// send notification to user
+// delete the license
 func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger.Info("Enter LicenseReconcile", "namespace:", req.Namespace, "name", req.Name)
 	r.logger.Info("Start to get license-related resource...")
@@ -91,7 +98,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	// check license is valid or not
+	// Authorize the license
 	messgae, err := r.Authorize(ctx)
 	nb.WithMessage(messgae).AddToEventQueue(nq)
 	nm.Load(receiver, nq.Events).Run()
@@ -121,23 +128,32 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+// This function is used to authorize the license
+// It will return the message and error
+// The logic is:
+// 1. Check the license is used or not and is valid or not
+// 2. If the license is valid, activate the service according to the license type
 func (r *LicenseReconciler) Authorize(ctx context.Context) (string, error) {
 	meta := util.LicenseMeta{
 		Token: r.license.Spec.Token,
 	}
+	// check license is valid or not
 	message, payload, ok := util.CheckLicense(meta, r.DBCol)
 	if !ok {
 		return message, errors.New("invalid license")
 	}
 	r.payload = payload
-
+	// check license type, and activate the service by license type
+	// if there is no "typ" field in the payload, return error
 	if !util.ContainsFields(payload, util.Type) {
 		return util.InvalidLicenseMessage, errors.New("invalid license type")
 	}
+	// get license type
 	licenseType, ok := payload[util.Type].(string)
 	if !ok {
 		return util.InvalidLicenseMessage, errors.New("invalid license type")
 	}
+	// activate the service by license type
 	switch licenseType {
 	case util.Free:
 		return r.ForFreeAuthorize(ctx)
@@ -145,16 +161,18 @@ func (r *LicenseReconciler) Authorize(ctx context.Context) (string, error) {
 		return r.ForAccountAuthorize(ctx)
 	case util.Cluster:
 		return r.ForClusterAuthorize(ctx)
-	// add other senarios here, if you need
+	// add other scenarios here, if you need
 	default:
 		return util.InvalidLicenseMessage, errors.New("invalid license type")
 	}
 }
 
+// if the license is a pre-paid license for trial, type is "free", authorize it
 func (r *LicenseReconciler) ForFreeAuthorize(ctx context.Context) (string, error) {
 	return r.ForAccountAuthorize(ctx)
 }
 
+// if the license is a account license, type is "account", authorize it
 func (r *LicenseReconciler) ForAccountAuthorize(ctx context.Context) (string, error) {
 	// get account
 	id := types.NamespacedName{
@@ -177,6 +195,7 @@ func (r *LicenseReconciler) ForAccountAuthorize(ctx context.Context) (string, er
 	return util.ValidLicenseMessage, nil
 }
 
+// if the license is a cluster license, type is "cluster", authorize it
 func (r *LicenseReconciler) ForClusterAuthorize(ctx context.Context) (string, error) {
 	// get cluster scale billing
 	csb := &issuerv1.ClusterScaleBilling{}
@@ -209,6 +228,7 @@ func (r *LicenseReconciler) ForClusterAuthorize(ctx context.Context) (string, er
 	return util.ValidLicenseMessage, nil
 }
 
+// This function is used to record token and payload to database
 func (r *LicenseReconciler) RecordLicense(payload map[string]interface{}) error {
 	return util.RecordLicense(r.DBCol, util.NewLicense(r.license.Spec.UID, r.license.Spec.Token, payload))
 }

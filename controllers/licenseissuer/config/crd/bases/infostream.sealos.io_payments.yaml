@@ -55,6 +55,9 @@ spec:
                     description: ClusterID is the cluster id which the user want to
                       license
                     type: string
+                  typ:
+                    description: typ is a service field, which is the type of service
+                    type: string
                 type: object
               userID:
                 description: UserID is the user id who want to recharge
