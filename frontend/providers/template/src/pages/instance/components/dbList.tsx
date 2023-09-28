@@ -24,7 +24,7 @@ export default function AppList({ instanceName }: { instanceName: string }) {
       onSuccess(data) {
         appendResource(
           data.map((item) => {
-            return { id: item.id, name: item.name, kind: 'AppLaunchpad' };
+            return { id: item.id, name: item.name, kind: 'DataBase' };
           })
         );
       }

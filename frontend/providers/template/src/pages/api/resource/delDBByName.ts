@@ -53,8 +53,8 @@ export async function delBackupByName({
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { name } = req.query as { name: string };
-    if (!name) {
+    const { instanceName } = req.query as { instanceName: string };
+    if (!instanceName) {
       throw new Error('deploy name is empty');
     }
 
@@ -63,16 +63,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
 
     // get backup and delete
-    const backups = await getBackups({ dbName: name, req });
+    const backups = await getBackups({ dbName: instanceName, req });
     await Promise.all(
       backups.map((item) => delBackupByName({ backupName: item.metadata.name, req }))
     );
 
     // del role
     await Promise.all([
-      k8sAuth.deleteNamespacedRole(name, namespace),
-      k8sAuth.deleteNamespacedRoleBinding(name, namespace),
-      k8sCore.deleteNamespacedServiceAccount(name, namespace)
+      k8sAuth.deleteNamespacedRole(instanceName, namespace),
+      k8sAuth.deleteNamespacedRoleBinding(instanceName, namespace),
+      k8sCore.deleteNamespacedServiceAccount(instanceName, namespace)
     ]);
 
     // delete cluster
@@ -81,7 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       'v1alpha1',
       namespace,
       'clusters',
-      name
+      instanceName
     );
     jsonRes(res);
   } catch (err: any) {
