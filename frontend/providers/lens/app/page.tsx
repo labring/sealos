@@ -6,7 +6,7 @@ import {
   WorkloadTitle
 } from '@/components/overview/workload-status-overview';
 import { entries, isError, startCase } from 'lodash';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import { Box, Flex, Tab, TabList, TabPanel, TabPanels, Tabs, useToast } from '@chakra-ui/react';
 import { LoadingPage } from '@/components/common/loading';
 import { StatefulSetOverviewTable } from '@/components/statefulset/statefulset-overview-table';
@@ -37,6 +37,8 @@ const OverviewPage = observer(() => {
   const requestController = useRef(new RequestController({ timeoutDuration: 5000 }));
 
   useEffect(() => {
+    const resp = createSealosApp();
+
     const fetchData = async () => {
       const tasks = [
         podStore.fetchData,
@@ -82,6 +84,7 @@ const OverviewPage = observer(() => {
     const interval = setInterval(fetchData, 10000);
     return () => {
       clearInterval(interval);
+      resp();
     };
   }, []);
 

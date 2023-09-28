@@ -3,22 +3,18 @@ import {
   KubeObject,
   KubeObjectConstructor,
   isJsonApiDataList,
-  isPartialJsonApiData,
-} from "@/k8slens/kube-object";
-import { isArray, startCase } from "lodash";
-import { isDefined } from "@/k8slens/utilities";
-import { KubeObjectConstructorMap, Resource } from "@/k8s/types/types";
-
-const kubeconfig = process.env.NEXT_PUBLIC_MOCK_USER!;
+  isPartialJsonApiData
+} from '@/k8slens/kube-object';
+import { isArray, startCase } from 'lodash';
+import { isDefined } from '@/k8slens/utilities';
+import { KubeObjectConstructorMap, Resource } from '@/k8s/types/types';
 
 const getKubeConfig = () => {
   let kubeConfig: string =
-    process.env.NODE_ENV === "development"
-      ? process.env.NEXT_PUBLIC_MOCK_USER || ""
-      : "";
+    process.env.NODE_ENV === 'development' ? process.env.NEXT_PUBLIC_MOCK_USER || '' : '';
 
   try {
-    const store = localStorage.getItem("session");
+    const store = localStorage.getItem('session');
     if (!kubeConfig && store) {
       kubeConfig = JSON.parse(store)?.kubeconfig;
     }
@@ -32,16 +28,13 @@ export const getResource = async <Object extends KubeObject = KubeObject>(
   resource: Resource
 ): Promise<Object[]> => {
   try {
-    const res = await fetch(
-      `http://localhost:3000/api/resource?key=${resource}`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: encodeURIComponent(getKubeConfig()),
-        },
-        cache: "no-cache",
-      }
-    ).then((res) => res.json());
+    const res = await fetch(`/api/resource?key=${resource}`, {
+      method: 'GET',
+      headers: {
+        Authorization: encodeURIComponent(getKubeConfig())
+      },
+      cache: 'no-cache'
+    }).then((res) => res.json());
 
     if (res.code !== 200) {
       return Promise.reject(new Error(res.message));
@@ -61,9 +54,7 @@ export const getResource = async <Object extends KubeObject = KubeObject>(
 
     return Promise.reject(
       new Error(
-        `GET multiple request to ${resource} returned not an array: ${JSON.stringify(
-          parsed
-        )}`
+        `GET multiple request to ${resource} returned not an array: ${JSON.stringify(parsed)}`
       )
     );
   } catch (err) {
@@ -97,7 +88,7 @@ const parseResponse = <
         const object = new KubeObjectConstructor({
           ...(item as Data),
           kind: kind,
-          apiVersion,
+          apiVersion
         });
         return object;
       })
