@@ -36,6 +36,7 @@
     "postcss": "8.4.27",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "react-router": "^6.16.0",
     "request": "^2.88.2",
     "rfc6902": "^5.0.1",
     "sealos-desktop-sdk": "workspace:*",
