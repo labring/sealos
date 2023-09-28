@@ -19,6 +19,18 @@ rules:
 - apiGroups:
   - app.sealos.io
   resources:
+  - instances
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - app.sealos.io
+  resources:
   - templates
   verbs:
   - create

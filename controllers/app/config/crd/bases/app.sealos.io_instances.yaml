@@ -4,20 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.13.0
-  name: templates.app.sealos.io
+  name: instances.app.sealos.io
 spec:
   group: app.sealos.io
   names:
-    kind: Template
-    listKind: TemplateList
-    plural: templates
-    singular: template
+    kind: Instance
+    listKind: InstanceList
+    plural: instances
+    singular: instance
   scope: Namespaced
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Template is the Schema for the templates API
+        description: Instance is the Schema for the instances API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -32,7 +32,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: TemplateSpec defines the desired state of Template
+            description: InstanceSpec defines the desired state of Instance
             properties:
               author:
                 type: string
@@ -85,7 +85,7 @@ spec:
             - message: defaults must have app_name key
               rule: '''app_name'' in self.defaults'
           status:
-            description: TemplateStatus defines the observed state of Template
+            description: InstanceStatus defines the observed state of Instance
             type: object
         type: object
     served: true
