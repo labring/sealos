@@ -220,6 +220,7 @@ export const json2Service = (data: AppEditType) => {
     spec: {
       ports: data.networks.map((item, i) => ({
         port: str2Num(item.port),
+        targetPort: str2Num(item.port),
         name: item.portName
       })),
       selector: {
