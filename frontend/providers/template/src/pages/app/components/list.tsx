@@ -41,7 +41,7 @@ export default function InstanceList() {
           <MyIcon color={'#7B838B'} name="empty"></MyIcon>
         </Flex>
         <Text mt={'12px'} fontSize={14} color={'#5A646E'}>
-          {t('There is no resource of this type')}
+          {t('No Applications')}
         </Text>
       </Flex>
     );

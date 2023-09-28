@@ -172,5 +172,6 @@
   "delete message": "Are you sure you want to delete this application? If you proceed, all data for this project will be deleted.",
   "Installed": "Installed",
   "Kind": "Kind",
-  "Component": "Component"
+  "Component": "Component",
+  "No Applications": "No Applications"
 }

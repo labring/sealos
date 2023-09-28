@@ -178,5 +178,6 @@
   "delete message": "您确定要删除此应用程序吗？\n如果继续，该项目的所有数据都将被删除。",
   "Installed": "我安装的",
   "Kind": "类型",
-  "Component": "组件"
+  "Component": "组件",
+  "No Applications": "暂无应用"
 }
