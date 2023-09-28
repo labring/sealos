@@ -166,5 +166,18 @@
   "SideBar": {
     "Applications": "所有应用",
     "My App": "我的应用"
-  }
+  },
+  "Schedule": "执行周期",
+  "Last Schedule": "上次执行",
+  "Last Schedule Time": "执行时间:",
+  "Last Successful Time": "成功时间:",
+  "Next Execution Time": "下次执行时间",
+  "There is no resource of this type": "没有此类型的资源",
+  "Others": "其他资源",
+  "Unload": "卸载",
+  "delete message": "您确定要删除此应用程序吗？\n如果继续，该项目的所有数据都将被删除。",
+  "Installed": "我安装的",
+  "Kind": "类型",
+  "Component": "组件",
+  "No Applications": "暂无应用"
 }

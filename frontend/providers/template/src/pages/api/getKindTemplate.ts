@@ -3,7 +3,6 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { TemplateType } from '@/types/app';
-import { getTemplateDataSource } from '@/utils/json-yaml';
 import fs from 'fs';
 import yaml from 'js-yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -11,7 +10,7 @@ import path from 'path';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { templateName } = req.body;
+    const { templateName } = req.query as { templateName: string };
     let user_namespace = '';
 
     try {
