@@ -198,10 +198,12 @@ func syncViaHTTP(targets []string) func(context.Context, string) error {
 				return nil
 			})
 		}
+		err = eg.Wait()
 		go func() {
-			errCh <- eg.Wait()
+			// for notifying shutdown http Server
+			errCh <- err
 		}()
-		return <-errCh
+		return err
 	}
 }
 

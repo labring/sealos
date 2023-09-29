@@ -1,8 +1,0 @@
-FROM scratch
-USER 65532:65532
-
-COPY registry registry
-COPY manifests manifests
-COPY rbac rbac
-
-CMD ["kubectl apply -f manifests -f rbac"]
