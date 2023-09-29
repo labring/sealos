@@ -34,6 +34,17 @@ func (k *K3s) resetNodes(nodes []string) error {
 	for i := range nodes {
 		node := nodes[i]
 		eg.Go(func() error {
+			return k.resetNode(node)
+		})
+	}
+	return eg.Wait()
+}
+
+func (k *K3s) removeNodes(nodes []string) error {
+	eg, _ := errgroup.WithContext(context.Background())
+	for i := range nodes {
+		node := nodes[i]
+		eg.Go(func() error {
 			if err := k.deleteNode(node); err != nil {
 				return err
 			}
@@ -50,7 +61,7 @@ func (k *K3s) resetNode(host string) error {
 	if removeKubeConfigErr != nil {
 		logger.Error("failed to clean node, exec command %s failed, %v", removeKubeConfig, removeKubeConfigErr)
 	}
-	if slices.Contains(k.cluster.GetNodeIPList(), host) {
+	if slices.Contains(k.cluster.GetNodeIPAndPortList(), host) {
 		vipAndPort := fmt.Sprintf("%s:%d", k.cluster.GetVIP(), k.config.APIServerPort)
 		ipvsclearErr := k.remoteUtil.IPVSClean(host, vipAndPort)
 		if ipvsclearErr != nil {
@@ -63,7 +74,10 @@ func (k *K3s) resetNode(host string) error {
 // TODO: remove from API
 func (k *K3s) deleteNode(node string) error {
 	//remove master
-	masterIPs := strings.RemoveFromSlice(k.cluster.GetMasterIPList(), node)
+	masterIPs := k.cluster.GetMasterIPList()
+	if slices.Contains(k.cluster.GetMasterIPAndPortList(), node) {
+		masterIPs = strings.RemoveFromSlice(k.cluster.GetMasterIPList(), node)
+	}
 	if len(masterIPs) > 0 {
 		// TODO: do we need draining first?
 		if err := k.removeNode(node); err != nil {
