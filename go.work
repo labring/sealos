@@ -23,4 +23,5 @@ use (
 	./staging/src/github.com/labring/controllers/metering
 	./webhooks/whitelist
 	./test/e2e
+	controllers/aiops
 )
