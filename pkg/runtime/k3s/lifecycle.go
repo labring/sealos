@@ -34,6 +34,17 @@ func (k *K3s) resetNodes(nodes []string) error {
 	for i := range nodes {
 		node := nodes[i]
 		eg.Go(func() error {
+			return k.resetNode(node)
+		})
+	}
+	return eg.Wait()
+}
+
+func (k *K3s) removeNodes(nodes []string) error {
+	eg, _ := errgroup.WithContext(context.Background())
+	for i := range nodes {
+		node := nodes[i]
+		eg.Go(func() error {
 			if err := k.deleteNode(node); err != nil {
 				return err
 			}
