@@ -94,13 +94,13 @@ func (k *K3s) ScaleUp(masters []string, nodes []string) error {
 func (k *K3s) ScaleDown(masters []string, nodes []string) error {
 	if len(masters) != 0 {
 		logger.Info("master %s will be deleted", masters)
-		if err := k.resetNodes(masters); err != nil {
+		if err := k.removeNodes(masters); err != nil {
 			return err
 		}
 	}
 	if len(nodes) != 0 {
 		logger.Info("worker %s will be deleted", nodes)
-		return k.resetNodes(nodes)
+		return k.removeNodes(nodes)
 	}
 	return nil
 }
