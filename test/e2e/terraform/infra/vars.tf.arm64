@@ -3,20 +3,19 @@ variable "name" {
 }
 
 variable "zone" {
-  default = "cn-hongkong-b"
+  default = "ap-southeast-1a"
 }
 
 variable "region" {
-  default = "cn-hongkong"
+  default = "ap-southeast-1"
 }
 
 variable "image_id" {
-  #  default = "ubuntu_22_04_arm64_20G_alibase_20230712.vhd"
-  default = "ubuntu_22_04_x64_20G_alibase_20230613.vhd"
+  default = "ubuntu_22_04_arm64_20G_alibase_20230712.vhd"
 }
 
 variable "ecs_type" {
-  default = "ecs.g7.xlarge"
+  default = "ecs.g6r.xlarge"
 }
 
 variable "ecs_password" {

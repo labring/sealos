@@ -11,7 +11,6 @@ variable "region" {
 }
 
 variable "image_id" {
-  #  default = "ubuntu_22_04_arm64_20G_alibase_20230712.vhd"
   default = "ubuntu_22_04_x64_20G_alibase_20230613.vhd"
 }
 
