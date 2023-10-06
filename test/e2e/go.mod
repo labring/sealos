@@ -125,7 +125,7 @@ require (
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/labring/sealos/controllers/cluster v0.0.0-20230417222036-c48922461ea6 // indirect
-	github.com/labring/sreg v0.1.1 // indirect
+	github.com/labring/sreg v0.1.4 // indirect
 	github.com/letsencrypt/boulder v0.0.0-20230213213521-fdfea0d469b6 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/manifoldco/promptui v0.9.0 // indirect

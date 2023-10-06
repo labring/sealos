@@ -19,6 +19,8 @@ package e2e
 import (
 	"fmt"
 
+	"github.com/labring/sealos/test/e2e/testdata/kubeadm"
+
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
 
 	"github.com/labring/sealos/test/e2e/suites/operators"
@@ -46,7 +48,7 @@ var _ = Describe("E2E_sealos_apply_other_test", func() {
 		It("sealos apply single by containerd add Taints ", func() {
 			By("generate Clusterfile")
 			clusterfileConfig := config.Clusterfile{
-				BinData:  "testdata/containerd-svc-taints.yaml",
+				BinData:  kubeadm.PackageName + "/containerd-svc-taints.yaml",
 				Replaces: map[string]string{"127.0.0.1": utils.GetLocalIpv4()},
 			}
 			applyfile, err := clusterfileConfig.Write()
@@ -75,7 +77,7 @@ var _ = Describe("E2E_sealos_apply_other_test", func() {
 			utils.CheckErr(err, fmt.Sprintf("failed to install etcd: %v", err))
 			By("generate Clusterfile")
 			clusterfileConfig := config.Clusterfile{
-				BinData:  "testdata/containerd-svc-etcd.yaml",
+				BinData:  kubeadm.PackageName + "/containerd-svc-etcd.yaml",
 				Replaces: map[string]string{"127.0.0.1": utils.GetLocalIpv4()},
 			}
 			applyfile, err := clusterfileConfig.Write()
