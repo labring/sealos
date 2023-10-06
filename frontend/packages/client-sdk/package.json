@@ -49,22 +49,22 @@
   "author": "lizhenq2009@gmail.com",
   "license": "ISC",
   "devDependencies": {
-    "@rollup/plugin-typescript": "^11.1.2",
-    "@types/js-cookie": "^3.0.3",
-    "@types/js-yaml": "^4.0.5",
-    "@types/node": "^20.5.7",
-    "@types/uuid": "^9.0.2",
+    "@rollup/plugin-typescript": "^11.1.4",
+    "@types/js-cookie": "^3.0.4",
+    "@types/js-yaml": "^4.0.6",
+    "@types/node": "^20.7.1",
+    "@types/uuid": "^9.0.4",
     "rollup": "2.79.1",
-    "rollup-plugin-copy": "^3.4.0",
+    "rollup-plugin-copy": "^3.5.0",
     "rollup-plugin-dts": "^4.2.3",
-    "tslib": "^2.6.0"
+    "tslib": "^2.6.2"
   },
   "dependencies": {
     "@kubernetes/client-node": "^0.18.1",
-    "axios": "^1.4.0",
-    "dayjs": "^1.11.9",
+    "axios": "^1.5.1",
+    "dayjs": "^1.11.10",
     "js-cookie": "^3.0.5",
     "js-yaml": "^4.1.0",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.1"
   }
 }

@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@kubernetes/client-node": "0.18.1",
-    "@tanstack/react-query": "^4.29.25",
+    "@tanstack/react-query": "^4.35.3",
     "axios": "1.4.0",
     "clsx": "^1.2.1",
     "immer": "^10.0.2",
@@ -18,14 +18,14 @@
     "next": "13.4.5",
     "react": "18.2.0",
     "sealos-desktop-sdk": "workspace:*",
-    "zustand": "^4.3.9"
+    "zustand": "^4.4.1"
   },
   "devDependencies": {
-    "@types/js-yaml": "^4.0.5",
+    "@types/js-yaml": "^4.0.6",
     "@types/node": "20.3.1",
     "@types/react": "18.2.12",
     "eslint": "8.42.0",
     "eslint-config-next": "13.4.5",
-    "sass": "^1.63.6"
+    "sass": "^1.68.0"
   }
 }

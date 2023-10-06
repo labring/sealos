@@ -114,7 +114,8 @@ export default function AppList({ instanceName }: { instanceName: string }) {
               variant={'base'}
               leftIcon={<MyIcon name={'detail'} transform={'translateY(-1px)'} />}
               px={3}
-              onClick={handleToDetailPage}>
+              onClick={handleToDetailPage}
+            >
               {t('Details')}
             </Button>
           </Flex>
@@ -143,14 +144,16 @@ export default function AppList({ instanceName }: { instanceName: string }) {
             justifyContent={'center'}
             alignItems={'center'}
             background={'white'}
-            p="32px">
+            p="32px"
+          >
             <Flex
               border={'1px dashed #9CA2A8'}
               borderRadius="50%"
               w={'48px'}
               h={'48px'}
               justifyContent="center"
-              alignItems={'center'}>
+              alignItems={'center'}
+            >
               <MyIcon color={'#7B838B'} name="empty"></MyIcon>
             </Flex>
             <Text mt={'12px'} fontSize={14} color={'#5A646E'}>

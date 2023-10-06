@@ -104,7 +104,7 @@ const config = {
         },
         {
           position: "left",
-          to: "https://www.wenjuan.com/s/UZBZJv9ToJ/#",
+          to: "https://fael3z0zfze.feishu.cn/share/base/form/shrcnesSfEK65JZaAf2W6Fwz6Ad",
           label: "Contact",
         },
         {
