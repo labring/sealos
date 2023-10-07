@@ -1259,17 +1259,17 @@ spec:
         - /manager
         env:
         - name: DOMAIN
-          value: {{ .cloudDomain }}
+          value: '{{ .cloudDomain }}'
         - name: PORT
-          value: "{{ .cloudPort }}"
+          value: '{{ .cloudPort }}'
         - name: ACCOUNT_NAMESPACE
           value: sealos-system
         - name: NAMESPACE_NAME
           value: user-system
         - name: NEW_ACCOUNT_AMOUNT
-          value: "ri79LzQiQrs6CVa1ctE308+AseBXbOua0RIMCXAH5hc3irs="
+          value: ri79LzQiQrs6CVa1ctE308+AseBXbOua0RIMCXAH5hc3irs=
         - name: WHITELIST
-          value: notifications.Notification.notification.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1
+          value: notifications.Notification.notification.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,billinginfoqueries.BillingInfoQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1
         - name: ACCOUNT_SYSTEM_NAMESPACE
           valueFrom:
             fieldRef:
@@ -1380,11 +1380,11 @@ spec:
   selfSigned: {}
 ---
 apiVersion: admissionregistration.k8s.io/v1
-kind: MutatingWebhookConfiguration
+kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: account-system/account-serving-cert
-  name: account-mutating-webhook-configuration
+  name: account-validating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
   - v1
@@ -1398,12 +1398,8 @@ webhooks:
   name: debt.sealos.io
   namespaceSelector:
     matchExpressions:
-      - key: metadata.name
-        operator: NotIn
-        values:
-          - account-system
-          - kube-system
-          - calico-system
+      - key: user.sealos.io/owner
+        operator: Exists
   rules:
   - apiGroups:
     - '*'

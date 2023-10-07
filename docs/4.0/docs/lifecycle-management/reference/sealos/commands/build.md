@@ -58,8 +58,8 @@ Overall, the `--save-image` option provides a convenient way for Sealos to handl
 
 Here are some detailed examples:
 
-- [Build with Image List](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-image_list)
-- [Build with Manifests](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-manifests)
+- [Build with Image Manifests](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-image_list)
+- [Build with Deploy Manifests](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-manifests)
 - [Build with Helm Charts](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-helm_charts)
 - [Build with Binary](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-binary)
 - [Build with go-template](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-go_template)

@@ -42,7 +42,7 @@ export default function InviteMember({
   const session = useSessionStore((s) => s.session);
   const { k8s_username } = session.user;
   const [userId, setUserId] = useState('');
-  const [role, setRole] = useState(1);
+  const [role, setRole] = useState(UserRole.Developer);
   const toast = useToast();
   const queryClient = useQueryClient();
   const mutation = useMutation({

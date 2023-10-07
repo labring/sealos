@@ -37,6 +37,10 @@
   "Memory": "Memory",
   "Network": "Network",
   "Storage": "Storage",
+  "cpu": "CPU",
+  "memory": "Memory",
+  "network": "Network",
+  "storage": "Storage",
   "Total Amount": "Total Amount",
   "Transfer Amount": "Transfer Amount",
   "Payment Result": "Payment Result",
@@ -73,6 +77,7 @@
   "GPU Unit": "Card",
   "Gpu valuation": "GPU Price Table",
   "common valuation": "Price Table",
+  "Billing Details": "Billing Details",
   "orders": {
     "list": "Order List",
     "invoiceAmount": "Invoice Amount",
@@ -149,5 +154,10 @@
   "Total Quota": "total",
   "Used Quota": "used",
   "Remaining Quota": "remaining",
-  "Receipts And Disbursements": "Receipts And Disbursements"
+  "Receipts And Disbursements": "Receipts And Disbursements",
+  "APP Name": "App name",
+  "All APP": "all",
+  "APP Type": "App type",
+  "Details": "Details",
+  "Handle": "Handle"
 }

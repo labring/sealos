@@ -8,3 +8,6 @@ README.md
 !./FastDeployTemplates/.git
 .yalc/
 yalc.lock
+
+FastDeployTemplates
+fast_deploy_template.json

@@ -26,7 +26,6 @@ import (
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/pkg/database"
-	"github.com/labring/sealos/controllers/pkg/gpu"
 	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 
@@ -86,7 +85,7 @@ func (r *BillingRecordQueryReconciler) Reconcile(ctx context.Context, req ctrl.R
 	priceQuery := &accountv1.PriceQuery{}
 	err = r.Get(ctx, req.NamespacedName, priceQuery)
 	if err == nil {
-		return r.ReconcilePriceQuery(ctx, priceQuery, dbClient)
+		return r.ReconcilePriceQuery(ctx, priceQuery)
 	} else if client.IgnoreNotFound(err) != nil {
 		return ctrl.Result{}, err
 	}
@@ -148,36 +147,26 @@ func (r *BillingRecordQueryReconciler) SetupWithManager(mgr ctrl.Manager, rateOp
 		Complete(r)
 }
 
-func (r *BillingRecordQueryReconciler) ReconcilePriceQuery(ctx context.Context, priceQuery *accountv1.PriceQuery, dbClient database.Interface) (ctrl.Result, error) {
+func (r *BillingRecordQueryReconciler) ReconcilePriceQuery(ctx context.Context, priceQuery *accountv1.PriceQuery) (ctrl.Result, error) {
 	// TODO query price
 	if time.Since(priceQuery.CreationTimestamp.Time) > (3 * time.Minute) {
 		err := r.Delete(ctx, priceQuery)
 		return ctrl.Result{}, err
 	}
-	pricesMap, err := dbClient.GetAllPricesMap()
-	if err != nil {
-		r.Logger.Error(err, "get all prices failed")
-		pricesMap = resources.DefaultPrices
-	}
 	priceQuery.Status.BillingRecords = make([]accountv1.BillingRecord, 0)
-	alias, err := gpu.GetGPUAlias(r.Client)
-	if errors.IsNotFound(err) {
-		r.Logger.Error(err, "get gpu alias failed")
-	}
-	for property, v := range pricesMap {
-		if resources.IsGpuResource(property) && alias != nil {
-			if propertyAlias := alias[resources.GetGpuResourceProduct(property)]; propertyAlias != "" {
-				property = string(resources.NewGpuResource(propertyAlias))
-			}
+	for _, property := range resources.DefaultPropertyTypeLS.Types {
+		displayName, displayPrice := property.Name, property.UnitPrice
+		if resources.IsGpuResource(property.Name) && property.Alias != "" {
+			displayName = string(resources.NewGpuResource(property.Alias))
 		}
 		priceQuery.Status.BillingRecords = append(priceQuery.Status.BillingRecords, accountv1.BillingRecord{
-			ResourceType: property,
-			Price:        v.Price,
+			ResourceType: displayName,
+			Price:        displayPrice,
 		})
 	}
-	if err = r.Status().Update(ctx, priceQuery); err != nil {
+	if err := r.Status().Update(ctx, priceQuery); err != nil {
 		r.Logger.Error(err, "update price query status failed")
 		return ctrl.Result{Requeue: true}, err
 	}
-	return ctrl.Result{Requeue: true, RequeueAfter: time.Minute * 4}, err
+	return ctrl.Result{Requeue: true, RequeueAfter: time.Minute * 4}, nil
 }

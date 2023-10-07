@@ -44,7 +44,7 @@ jobs:
       matrix:
         module:
           [
-	          providers/license,
+            providers/license,
             providers/cronjob,
             providers/template,
             providers/adminer,
@@ -105,7 +105,15 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GH_PAT }}
-
+      - name: Cache pnpm-store
+        uses: actions/cache@v3
+        with:
+          path: pnpm-store
+          key: pnpm-store-${{ hashFiles('Dockerfile') }}
+      - name: inject pnpm-store into docker
+        uses: reproducible-containers/buildkit-cache-dance@v2.1.2
+        with:
+          cache-source: pnpm-store
       - name: Build And Push
         uses: docker/build-push-action@v4
         with:
@@ -119,6 +127,8 @@ jobs:
           push: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
   cluster-image-build:
@@ -131,7 +141,7 @@ jobs:
       matrix:
         module:
           [
-	          providers/license,
+            providers/license,
             providers/cronjob,
             providers/template,
             providers/adminer,

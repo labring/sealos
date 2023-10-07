@@ -48,8 +48,9 @@ func init() {
 }
 
 // Note: Add role here for controllers without real controller go file, with just CRDs.
-// +kubebuilder:rbac:groups=app.sealos.io,resources=templates,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=app.sealos.io,resources=apps,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=app.sealos.io,resources=templates,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=app.sealos.io,resources=instances,verbs=get;list;watch;create;update;patch;delete
 
 func main() {
 	var metricsAddr string

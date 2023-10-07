@@ -1,6 +1,5 @@
 import * as k8s from '@kubernetes/client-node';
 import * as yaml from 'js-yaml';
-import type { V1Deployment, V1StatefulSet } from '@kubernetes/client-node';
 
 export function CheckIsInCluster(): [boolean, string] {
   if (
@@ -89,6 +88,45 @@ export async function CreateYaml(
   return created;
 }
 
+export async function updateYaml(
+  kc: k8s.KubeConfig,
+  specs: k8s.KubernetesObject[],
+  canCreate = false
+): Promise<k8s.KubernetesObject[]> {
+  const client = k8s.KubernetesObjectApi.makeApiClient(kc);
+  const validSpecs = specs.filter((s) => s && s.kind && s.metadata);
+  const created = [] as k8s.KubernetesObject[];
+
+  try {
+    for (const spec of validSpecs) {
+      spec.metadata = spec.metadata || {};
+      spec.metadata.annotations = spec.metadata.annotations || {};
+      delete spec.metadata.annotations['kubectl.kubernetes.io/last-applied-configuration'];
+      spec.metadata.annotations['kubectl.kubernetes.io/last-applied-configuration'] =
+        JSON.stringify(spec);
+
+      console.log('update yaml: ', spec.kind);
+      const response = await client.create(spec);
+      created.push(response.body);
+    }
+  } catch (error: any) {
+    /* delete success specs */
+    for (const spec of validSpecs) {
+      try {
+        console.log('delete:', spec.kind);
+        await client.delete(spec);
+      } catch (error) {
+        error;
+      }
+    }
+    if (error.body.reason === 'AlreadyExists' && canCreate) {
+      return updateYaml(kc, specs);
+    }
+    return Promise.reject(error);
+  }
+  return created;
+}
+
 export async function replaceYaml(
   kc: k8s.KubeConfig,
   specs: k8s.KubernetesObject[]
@@ -137,6 +175,21 @@ export async function replaceYaml(
   return succeed;
 }
 
+export async function delYaml(kc: k8s.KubeConfig, specs: k8s.KubernetesObject[]) {
+  const client = k8s.KubernetesObjectApi.makeApiClient(kc);
+  const validSpecs = specs.filter((s) => s && s.kind && s.metadata);
+
+  try {
+    for (const spec of validSpecs) {
+      console.log('delete:', spec.kind);
+      client.delete(spec);
+    }
+  } catch (error: any) {
+    // console.error(error, '<=create error')
+    return Promise.reject(error);
+  }
+}
+
 export function GetUserDefaultNameSpace(user: string): string {
   return 'ns-' + user;
 }
@@ -174,28 +227,6 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
     return CreateYaml(kc, formatYaml);
   };
 
-  const getDeployApp = async (appName: string) => {
-    let app: V1Deployment | V1StatefulSet | null = null;
-    const k8sApp = kc.makeApiClient(k8s.AppsV1Api);
-
-    try {
-      app = (await k8sApp.readNamespacedDeployment(appName, namespace)).body;
-    } catch (error: any) {
-      error;
-    }
-
-    try {
-      app = (await k8sApp.readNamespacedStatefulSet(appName, namespace)).body;
-    } catch (error: any) {
-      error;
-    }
-    if (!app) {
-      return Promise.reject('can not find app');
-    }
-
-    return app;
-  };
-
   return Promise.resolve({
     kc,
     apiClient: client,
@@ -205,9 +236,11 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
     k8sNetworkingApp: kc.makeApiClient(k8s.NetworkingV1Api),
     k8sCustomObjects: kc.makeApiClient(k8s.CustomObjectsApi),
     metricsClient: new k8s.Metrics(kc),
+    k8sEvents: kc.makeApiClient(k8s.EventsV1Api),
+    k8sAuth: kc.makeApiClient(k8s.RbacAuthorizationV1Api),
+    k8sBatch: kc.makeApiClient(k8s.BatchV1Api),
     kube_user,
     namespace,
-    applyYamlList,
-    getDeployApp
+    applyYamlList
   });
 }

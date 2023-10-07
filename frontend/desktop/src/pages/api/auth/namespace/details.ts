@@ -14,10 +14,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (utnWithUser.length <= 0)
       return jsonRes(res, { code: 404, message: 'namespace not founded!' });
+
     const rawNamespace = utnWithUser[0].namespace;
+    const selfUtn = utnWithUser.find(
+      (utn) => utn.userId === payload.user.uid && utn.k8s_username === payload.user.k8s_username
+    );
+    if (!selfUtn) return jsonRes(res, { code: 404, message: 'You are not in the namespace' });
     const namespace: NamespaceDto = {
       uid: rawNamespace.uid,
       id: rawNamespace.id,
+      role: selfUtn.role,
       createTime: rawNamespace.createTime,
       teamName: rawNamespace.teamName,
       nstype: rawNamespace.nstype

@@ -1,5 +1,5 @@
 import MyIcon from '@/components/Icon';
-import { FormSourceInput, YamlSourceType } from '@/types/app';
+import { FormSourceInput, TemplateSourceType } from '@/types/app';
 import { Box, Flex, FormControl, Input, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
@@ -9,7 +9,7 @@ const Form = ({
   formSource,
   formHook
 }: {
-  formSource: YamlSourceType;
+  formSource: TemplateSourceType;
   formHook: UseFormReturn;
 }) => {
   const { t } = useTranslation();

@@ -15,7 +15,13 @@
 package k3s
 
 import (
+	"context"
 	"fmt"
+
+	"golang.org/x/sync/errgroup"
+
+	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/strings"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
@@ -88,13 +94,13 @@ func (k *K3s) ScaleUp(masters []string, nodes []string) error {
 func (k *K3s) ScaleDown(masters []string, nodes []string) error {
 	if len(masters) != 0 {
 		logger.Info("master %s will be deleted", masters)
-		if err := k.resetNodes(masters); err != nil {
+		if err := k.removeNodes(masters); err != nil {
 			return err
 		}
 	}
 	if len(nodes) != 0 {
 		logger.Info("worker %s will be deleted", nodes)
-		return k.resetNodes(nodes)
+		return k.removeNodes(nodes)
 	}
 	return nil
 }
@@ -115,9 +121,27 @@ func (k *K3s) GetRawConfig() ([]byte, error) {
 	return yaml.MarshalConfigs(cluster, cfg)
 }
 
-func (k *K3s) SyncNodeIPVS(_, _ []string) error {
-	logger.Error("not yet implemented, skip for testing")
-	return nil
+func (k *K3s) SyncNodeIPVS(mastersIPList, nodeIPList []string) error {
+	apiPort := k.getAPIServerPort()
+	mastersIPList = strings.RemoveDuplicate(mastersIPList)
+	masters := make([]string, 0)
+	for _, master := range mastersIPList {
+		masters = append(masters, fmt.Sprintf("%s:%d", iputils.GetHostIP(master), apiPort))
+	}
+	image := k.cluster.GetLvscareImage()
+	eg, _ := errgroup.WithContext(context.Background())
+	for _, node := range nodeIPList {
+		node := node
+		eg.Go(func() error {
+			logger.Info("start to sync lvscare static pod to node: %s master: %+v", node, masters)
+			err := k.remoteUtil.StaticPod(node, k.getVipAndPort(), constants.LvsCareStaticPodName, image, masters, k3sEtcStaticPod, "--health-status", "401")
+			if err != nil {
+				return fmt.Errorf("update lvscare static pod failed %s %v", node, err)
+			}
+			return nil
+		})
+	}
+	return eg.Wait()
 }
 
 func (k *K3s) runPipelines(phase string, pipelines ...func() error) error {

@@ -10,7 +10,7 @@ import { UseFormReturn } from 'react-hook-form';
 import Label from './Label';
 
 export default function Cron({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) {
-  if (!formHook) return;
+  if (!formHook) return <></>;
   const router = useRouter();
   const { t } = useTranslation();
   const { setValue, register, getValues } = formHook;

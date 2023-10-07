@@ -1,5 +1,5 @@
 import { authSession } from '@/service/backend/auth';
-import { CRDMeta, GetCRD } from '@/service/backend/kubernetes';
+import { CRDMeta, GetCRD, GetUserDefaultNameSpace } from '@/service/backend/kubernetes';
 import { jsonRes } from '@/service/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApplyYaml } from '@/service/backend/kubernetes';
@@ -40,39 +40,54 @@ const getNSList = (kc: k8s.KubeConfig, meta: CRDMeta, name: string) =>
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
     const kc = await authSession(req.headers);
-    // get user account payment amount
     const user = kc.getCurrentUser();
     if (user === null) {
       return jsonRes(resp, { code: 403, message: 'user null' });
     }
-    const namespace = 'ns-' + user.name;
-    // 用react query 管理缓存
-    const hash = crypto.createHash('sha256').update('' + new Date().getTime());
-    const name = hash.digest('hex');
+    // 要和kc保持一致
+    const namespace = kc.getContexts()[0].namespace || GetUserDefaultNameSpace(user.name);
+    const name = new Date().getTime() + 'namespacequery';
     const crdSchema = {
       apiVersion: `account.sealos.io/v1`,
-      kind: 'NamespaceBillingHistory',
+      kind: 'BillingInfoQuery',
       metadata: {
-        name,
-        namespace
+        name
       },
       spec: {
-        type: -1
+        queryType: 'NamespacesHistory'
       }
     };
-
     const meta: CRDMeta = {
       group: 'account.sealos.io',
       version: 'v1',
       namespace,
-      plural: 'namespacebillinghistories'
+      plural: 'billinginfoqueries'
     };
-    await ApplyYaml(kc, yaml.dump(crdSchema));
-    const nsList = await getNSList(kc, meta, name);
-    return jsonRes<{ nsList: string[] }>(resp, {
+    try {
+      await ApplyYaml(kc, yaml.dump(crdSchema));
+    } catch (err) {
+      console.log('error', err);
+    }
+    const result = await new Promise<string>((resolve, reject) => {
+      let retry = 3;
+      const wrap = () =>
+        GetCRD(kc, meta, name)
+          .then((res) => {
+            const body = res.body as { status: any };
+            const { result, status } = body.status as Record<string, string>;
+            if (status.toLocaleLowerCase() === 'completed') resolve(result as string);
+            else return Promise.reject();
+          })
+          .catch((err) => {
+            if (retry-- >= 0) wrap();
+            else reject(err);
+          });
+      wrap();
+    });
+    return jsonRes(resp, {
       code: 200,
       data: {
-        nsList
+        nsList: JSON.parse(result)
       }
     });
   } catch (error) {

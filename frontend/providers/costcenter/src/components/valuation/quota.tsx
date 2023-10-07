@@ -47,7 +47,7 @@ ${t('Remaining Quota')}: ${item.limit - item.used} ${item.unit}
               fontSize={'12px'}
               textTransform={'capitalize'}
             >
-              {item.type}
+              {t(item.type)}
               <Flex w="170px" h="7px" bg="#DEE0E2" borderRadius={'4px'} overflow={'hidden'}>
                 <Flex
                   borderRadius={'4px'}

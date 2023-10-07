@@ -122,13 +122,15 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		orderList = append(orderList, ids...)
 		consumAmount += amount
 	}
-	if err := r.rechargeBalance(owner, consumAmount); err != nil {
-		for i := range orderList {
-			if err := r.DBClient.UpdateBillingStatus(orderList[i], resources.Unsettled); err != nil {
-				r.Logger.Error(err, "update billing status failed", "id", orderList[i])
+	if consumAmount > 0 {
+		if err := r.rechargeBalance(owner, consumAmount); err != nil {
+			for i := range orderList {
+				if err := r.DBClient.UpdateBillingStatus(orderList[i], resources.Unsettled); err != nil {
+					r.Logger.Error(err, "update billing status failed", "id", orderList[i])
+				}
 			}
+			return ctrl.Result{}, fmt.Errorf("recharge balance failed: %w", err)
 		}
-		return ctrl.Result{}, fmt.Errorf("recharge balance failed: %w", err)
 	}
 	return ctrl.Result{Requeue: true, RequeueAfter: time.Until(currentHourTime.Add(1*time.Hour + 10*time.Minute))}, nil
 }
@@ -140,6 +142,9 @@ func (r *BillingReconciler) rechargeBalance(owner string, amount int64) (err err
 	account := &v12.Account{}
 	if err = r.Get(context.Background(), types.NamespacedName{Name: owner, Namespace: r.AccountSystemNamespace}, account); err != nil {
 		return fmt.Errorf("get account cr failed: %w", err)
+	}
+	if err = initBalance(account); err != nil {
+		return fmt.Errorf("failed to init balance: %v", err)
 	}
 	if err = crypto.RechargeBalance(account.Status.EncryptDeductionBalance, amount); err != nil {
 		return fmt.Errorf("recharge balance failed: %w", err)

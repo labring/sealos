@@ -26,8 +26,9 @@ require (
 	github.com/labring/lvscare v0.0.0
 	github.com/labring/sealos/controllers/account v0.0.0
 	github.com/labring/sealos/controllers/imagehub v0.0.0-20230915081145-61a2cff7ccf9
-	github.com/labring/sreg v0.1.1
+	github.com/labring/sreg v0.1.4
 	github.com/manifoldco/promptui v0.9.0
+	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/modood/table v0.0.0-20220527013332-8d47e76dad33
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.8

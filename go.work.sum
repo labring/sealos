@@ -1805,6 +1805,7 @@ github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
 github.com/labring/sealos/controllers/common v0.0.0-20230528031239-655196af17c7 h1:La1V+cMrtT9xue937Uan9BWaPb2tOT7qFntOtZUAnxI=
 github.com/labring/sealos/controllers/common v0.0.0-20230528031239-655196af17c7/go.mod h1:0R3U+OZpc2E/HrAOjgMUY1DEOKc5amA7OvCLCz1TH90=
+github.com/labring/sreg v0.1.4/go.mod h1:d519C7n2ekJJX6KxsUV78MeKO5Zon+atP4FkfwB++DM=
 github.com/labstack/echo/v4 v4.7.2/go.mod h1:xkCDAdFCIf8jsFQ5NnbK7oqaF/yU1A1X20Ltm0OvSks=
 github.com/labstack/echo/v4 v4.9.0/go.mod h1:xkCDAdFCIf8jsFQ5NnbK7oqaF/yU1A1X20Ltm0OvSks=
 github.com/labstack/gommon v0.3.1/go.mod h1:uW6kP17uPlLJsD3ijUYn3/M5bAxtlZhMI6m3MFxTMTM=

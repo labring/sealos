@@ -1,5 +1,5 @@
 import { YamlItemType } from '@/types';
-import { TemplateType } from '@/types/app';
+import { ProcessedTemplateSourceType, TemplateInstanceType, TemplateType } from '@/types/app';
 import JSYAML from 'js-yaml';
 import { cloneDeep } from 'lodash';
 import { customAlphabet } from 'nanoid';
@@ -19,7 +19,7 @@ export const generateYamlList = (value: string, labelName: string): YamlItemType
       }
     ];
   } catch (error) {
-    console.log(error);
+    console.log(error, 'generateYamlList');
     return [];
   }
 };
@@ -46,27 +46,37 @@ export const parseTemplateString = (
   }
 };
 
-export const getTemplateDataSource = (template: TemplateType) => {
+export const getTemplateDataSource = (template: TemplateType): ProcessedTemplateSourceType => {
   try {
-    if (!template) return;
+    if (!template) {
+      return {
+        defaults: {},
+        inputs: []
+      };
+    }
     const { defaults, inputs } = template.spec;
     // support function list
-    const functionHandlers = {
-      random: (value: string) => {
-        const length = value.match(/\${{ random\((\d+)\) }}/)?.[1];
-        const randomValue = nanoid(Number(length));
-        return value.replace(/\${{ random\(\d+\) }}/, randomValue);
+    const functionHandlers = [
+      {
+        name: 'random',
+        handler: (value: string) => {
+          const length = value.match(/\${{ random\((\d+)\) }}/)?.[1];
+          const randomValue = nanoid(Number(length));
+          return value.replace(/\${{ random\(\d+\) }}/, randomValue);
+        }
       }
-    };
+    ];
+
     // handle default value
     const cloneDefauls = cloneDeep(defaults);
-    Object.entries(cloneDefauls).forEach(([key, item]) => {
-      Object.entries(functionHandlers).forEach(([handlerKey, handler]) => {
-        if (item.value && item.value.includes(`\${{ ${handlerKey}(`)) {
+    for (let [key, item] of Object.entries(cloneDefauls)) {
+      for (let { name, handler } of functionHandlers) {
+        if (item.value && item.value.includes(`\${{ ${name}(`)) {
           item.value = handler(item.value);
+          break;
         }
-      });
-    });
+      }
+    }
 
     // handle default value for inputs
     const handleInputs = (
@@ -80,29 +90,33 @@ export const getTemplateDataSource = (template: TemplateType) => {
         }
       >
     ) => {
-      Object.entries(inputs).forEach(([key, item]) => {
-        Object.entries(functionHandlers).forEach(([handlerKey, handler]) => {
-          console.log(handler(item.default), '---');
+      if (!inputs || Object.keys(inputs).length === 0) {
+        return [];
+      }
 
-          if (item.default && item.default.includes(`\${{ ${handlerKey}(`)) {
+      const inputsArr = Object.entries(inputs).map(([key, item]) => {
+        for (let { name, handler } of functionHandlers) {
+          if (item.default && item.default.includes(`\${{ ${name}(`)) {
             item.default = handler(item.default);
+            break;
           }
-        });
-      });
-      return Object.entries(inputs).map(([key, value]) => {
+        }
         return {
-          description: value.description,
-          type: value.type,
-          default: value.default,
-          required: value.required,
+          description: item.description,
+          type: item.type,
+          default: item.default,
+          required: item.required,
           key: key,
           label: key.replace('_', ' ')
         };
       });
+      return inputsArr;
     };
 
-    // handle input value
-    const transformedInput = inputs ? handleInputs(inputs) : {};
+    // // handle input value
+    const cloneInputs = cloneDeep(inputs);
+    const transformedInput = handleInputs(cloneInputs);
+    // console.log(cloneDefauls, transformedInput);
 
     return {
       defaults: cloneDefauls,
@@ -110,7 +124,10 @@ export const getTemplateDataSource = (template: TemplateType) => {
     };
   } catch (error) {
     console.log(error, '---getTemplateDataSource---');
-    return {};
+    return {
+      defaults: {},
+      inputs: []
+    };
   }
 };
 
@@ -126,4 +143,26 @@ export const developGenerateYamlList = (value: string, labelName: string): YamlI
     console.log(error);
     return [];
   }
+};
+
+export const handleTemplateToInstanceYaml = (
+  template: TemplateType,
+  instanceName: string
+): TemplateInstanceType => {
+  const {
+    spec: { gitRepo, templateType, ...resetSpec }
+  } = template;
+
+  return {
+    apiVersion: 'app.sealos.io/v1',
+    kind: 'Instance',
+    metadata: {
+      name: instanceName
+    },
+    spec: {
+      gitRepo: gitRepo,
+      templateType: templateType,
+      ...resetSpec
+    }
+  };
 };

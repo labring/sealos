@@ -45,22 +45,22 @@ const Header = ({
 
   return (
     <Flex
-      w={{ md: '1000px', base: '800px' }}
-      m={'0 auto'}
+      // minW="100%"
+      w={'100%'}
       h={'80px'}
-      mt={'32px'}
       alignItems={'center'}
       backgroundColor={'rgba(255, 255, 255, 0.90)'}
     >
       <Flex
+        boxShadow={'0px 1px 2px 0.5px rgba(84, 96, 107, 0.20)'}
         flexShrink={0}
         alignItems={'center'}
         justifyContent={'center'}
         w={'80px'}
         h={'80px'}
         borderRadius={'8px'}
-        backgroundColor={'#fff'}
-        border={' 1px solid #DEE0E2'}
+        backgroundColor={'#FBFBFC'}
+        border={' 1px solid rgba(255, 255, 255, 0.50)'}
       >
         <Image src={templateDetail?.spec?.icon} alt="" width={'60px'} height={'60px'} />
       </Flex>
@@ -69,7 +69,7 @@ const Header = ({
           <Text fontSize={'24px'} fontWeight={600} color={'#24282C'}>
             {templateDetail?.spec?.title}
           </Text>
-          <Box cursor={'pointer'} onClick={(e) => goGithub(e, templateDetail?.spec?.github)}>
+          <Box cursor={'pointer'} onClick={(e) => goGithub(e, templateDetail?.spec?.gitRepo)}>
             <MyIcon ml={'16px'} name="jump"></MyIcon>
           </Box>
           <Text ml={'16px'} fontSize={'12px'} color={'5A646E'} fontWeight={400}>

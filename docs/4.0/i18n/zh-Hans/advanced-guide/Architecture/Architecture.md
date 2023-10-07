@@ -7,7 +7,6 @@ Sealos 采用应用分离与应用互联的方式构建，不同应用可以独�
 
 ![Architecture](./images/architecture_light.png#gh-light-mode-only)![Architecture](./images/architecture_dark.png#gh-dark-mode-only)
 
-
 ## 应用架构
 
 Sealos 上的应用采用前后端分离的架构，同时前端能够提供 `SSR` 能力，使得应用也可以单独对外提供服务，而不需要绑定在 Sealos 单体上。

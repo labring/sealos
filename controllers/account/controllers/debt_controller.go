@@ -320,7 +320,7 @@ var NoticeTemplate = map[int]string{
 
 func (r *DebtReconciler) sendNotice(ctx context.Context, noticeType int, namespaces []string) error {
 	now := time.Now().UTC().Unix()
-	ntf := v1.Notification{
+	ntfTmp := &v1.Notification{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "debt-notice" + strconv.Itoa(noticeType),
 		},
@@ -333,8 +333,9 @@ func (r *DebtReconciler) sendNotice(ctx context.Context, noticeType int, namespa
 		},
 	}
 	for i := range namespaces {
+		ntf := ntfTmp.DeepCopy()
 		ntf.Namespace = namespaces[i]
-		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &ntf, func() error {
+		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, ntf, func() error {
 			return nil
 		}); err != nil {
 			return err

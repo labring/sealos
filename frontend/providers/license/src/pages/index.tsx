@@ -39,7 +39,7 @@ export default function LicenseApp() {
 
   useQuery(['getPlatformEnv'], () => getPlatformEnv(), {
     onSuccess(data) {
-      const hid = data?.hid;
+      const hid = data.hid;
       if (!hid) {
         return toast({
           title: 'env hid error',
@@ -47,7 +47,7 @@ export default function LicenseApp() {
         });
       }
       const encodedHid = encodeURIComponent(hid);
-      const main = data?.domain ? data.domain : 'cloud.sealos.io';
+      const main = data.LICENSE_DOMAIN;
       const link = `https:/${main}/license?hid=${encodedHid}`;
       setPurchaseLink(link);
     }

@@ -2,12 +2,25 @@ import { BasicTableHeaders, CATEGORY, TableHeaders } from '@/constants/billing';
 import { BillingItem, BillingType } from '@/types/billing';
 import lineDown from '@/assert/lineDown.svg';
 import lineUp from '@/assert/lineUp.svg';
-import { Flex, Img, Table, TableContainer, Tbody, Td, Text, Th, Thead, Tr } from '@chakra-ui/react';
+import {
+  Box,
+  Flex,
+  Img,
+  Table,
+  TableContainer,
+  Tbody,
+  Td,
+  Text,
+  Th,
+  Thead,
+  Tr
+} from '@chakra-ui/react';
 import { format, parseISO } from 'date-fns';
 import { formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import useEnvStore from '@/stores/env';
 import CurrencySymbol from '../CurrencySymbol';
+import BillingDetails from './billingDetails';
 const Amount = ({
   type,
   amount,
@@ -31,7 +44,7 @@ export function CommonBillingTable({ data }: { data: BillingItem[] }) {
   const currency = useEnvStore((s) => s.currency);
   return (
     <TableContainer w="100%" mt="0px">
-      <Table variant="simple">
+      <Table variant="simple" fontSize={'12px'}>
         <Thead>
           <Tr>
             {[
@@ -39,7 +52,7 @@ export function CommonBillingTable({ data }: { data: BillingItem[] }) {
               ...TableHeaders,
               ...(gpuEnabled ? ['Gpu'] : []),
               'Total Amount',
-              'Namespace'
+              'Handle'
             ].map((item) => (
               <Th
                 key={item}
@@ -67,40 +80,21 @@ export function CommonBillingTable({ data }: { data: BillingItem[] }) {
             ?.filter((item) => [BillingType.CONSUME, BillingType.RECHARGE].includes(item.type))
             .map((item) => {
               return (
-                <Tr key={item.order_id} fontSize={'12px'}>
-                  <Td>{item.order_id}</Td>
+                <Tr key={item.order_id}>
+                  <Td>
+                    <Box>
+                      <Text color={'#24282C'} fontSize={'12px'}>
+                        {item.order_id}
+                      </Text>
+                      <Text fontSize={'10px'} color={'#5A646E'}>
+                        {item.namespace}
+                      </Text>
+                    </Box>
+                  </Td>
                   <Td>{format(parseISO(item.time), 'MM-dd HH:mm')}</Td>
                   <Td>
-                    {
-                      // 0:扣费 1:充值 2:收款 3:转账
-                    }
                     <Flex align={'center'} width={'full'} height={'full'}>
-                      <Flex
-                        px={'12px'}
-                        py={'4px'}
-                        minW={'max-content'}
-                        {...(item.type === BillingType.RECHARGE
-                          ? {
-                              bg: '#E6F6F6',
-                              color: '#00A9A6'
-                            }
-                          : {
-                              bg: '#EBF7FD',
-                              color: '#0884DD'
-                            })}
-                        borderRadius="24px"
-                        align={'center'}
-                        justify={'space-evenly'}
-                      >
-                        <Img
-                          src={item.type === BillingType.CONSUME ? lineDown.src : lineUp.src}
-                          w="13.14px"
-                          mr={'6px'}
-                        ></Img>
-                        <Text>
-                          {item.type === BillingType.CONSUME ? t('Deduction') : t('Charge')}
-                        </Text>
-                      </Flex>
+                      {item.appType}
                     </Flex>
                   </Td>
                   <Td>
@@ -123,7 +117,17 @@ export function CommonBillingTable({ data }: { data: BillingItem[] }) {
                   <Td>
                     <Amount type={item.type} amount={item.amount} total={true} />
                   </Td>
-                  <Td>{<span>{item.namespace}</span>}</Td>
+                  <Td>
+                    <BillingDetails
+                      orderId={item.order_id}
+                      time={item.time}
+                      appType={item.appType}
+                      isDisabled={
+                        ['TERMINAL', 'OTHER'].includes(item.appType) ||
+                        item.type !== BillingType.CONSUME
+                      }
+                    />
+                  </Td>
                 </Tr>
               );
             })}
@@ -165,7 +169,15 @@ export function TransferBillingTable({ data }: { data: BillingItem[] }) {
             ?.filter((item) => [BillingType.RECEIVE, BillingType.TRANSFER].includes(item.type))
             .map((item) => {
               return (
-                <Tr key={item.order_id} fontSize={'12px'}>
+                <Tr
+                  key={item.order_id}
+                  fontSize={'12px'}
+                  __css={{
+                    td: {
+                      py: '0'
+                    }
+                  }}
+                >
                   <Td>{item.order_id}</Td>
                   <Td>{format(parseISO(item.time), 'MM-dd HH:mm')}</Td>
                   <Td>
@@ -205,6 +217,73 @@ export function TransferBillingTable({ data }: { data: BillingItem[] }) {
                 </Tr>
               );
             })}
+        </Tbody>
+      </Table>
+    </TableContainer>
+  );
+}
+
+export function BillingDetailsTable({ data }: { data: BillingItem[] }) {
+  const { t } = useTranslation();
+  const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
+  const currency = useEnvStore((s) => s.currency);
+  return (
+    <TableContainer w="100%" mt="0px">
+      <Table variant="simple">
+        <Thead>
+          <Tr>
+            {['APP Name', ...TableHeaders, ...(gpuEnabled ? ['Gpu'] : []), 'Total Amount'].map(
+              (item) => (
+                <Th
+                  key={item}
+                  bg={'#F1F4F6'}
+                  _before={{
+                    content: `""`,
+                    display: 'block',
+                    borderTopLeftRadius: '10px',
+                    borderTopRightRadius: '10px',
+                    background: '#F1F4F6'
+                  }}
+                >
+                  <Flex display={'flex'} alignItems={'center'}>
+                    <Text mr="4px">{t(item)}</Text>
+                    {['CPU', 'Gpu', 'Memory', 'Storage', 'Network', 'Total Amount'].includes(
+                      item
+                    ) && <CurrencySymbol type={currency} />}
+                  </Flex>
+                </Th>
+              )
+            )}
+          </Tr>
+        </Thead>
+        <Tbody>
+          {data.map((item) => {
+            return (
+              <Tr key={item.order_id} fontSize={'12px'}>
+                <Td>{item.name}</Td>
+                <Td>
+                  <Amount type={item.type} amount={item?.costs?.cpu} />
+                </Td>
+                <Td>
+                  <Amount type={item.type} amount={item?.costs?.memory} />
+                </Td>
+                <Td>
+                  <Amount type={item.type} amount={item?.costs?.storage} />
+                </Td>
+                <Td>
+                  <Amount type={item.type} amount={item?.costs?.network} />
+                </Td>
+                {gpuEnabled && (
+                  <Td>
+                    <Amount type={item.type} amount={item?.costs?.gpu} />
+                  </Td>
+                )}
+                <Td>
+                  <Amount type={item.type} amount={item.amount} total={true} />
+                </Td>
+              </Tr>
+            );
+          })}
         </Tbody>
       </Table>
     </TableContainer>
