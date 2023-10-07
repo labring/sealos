@@ -198,14 +198,11 @@ func (c *Client) doCopy(client *sftp.Client, host, src, dest string, epu *progre
 			}
 		}
 	} else {
-		fn := func(host string, name string) bool {
-			exists, err := checkIfRemoteFileExists(client, name)
-			if err != nil {
-				logger.Error("failed to detect remote file exists: %v", err)
-			}
-			return exists
+		exists, err := checkIfRemoteFileExists(client, dest)
+		if err != nil {
+			logger.Error("failed to detect remote file exists: %v", err)
 		}
-		if isCheckFileMD5() && fn(host, dest) {
+		if isCheckFileMD5() && exists {
 			rfp, _ := client.Stat(dest)
 			if lfp.Size() == rfp.Size() && hash.FileDigest(src) == c.RemoteSha256Sum(host, dest) {
 				logger.Debug("remote dst %s already exists and is the latest version, skip copying process", dest)
@@ -218,7 +215,8 @@ func (c *Client) doCopy(client *sftp.Client, host, src, dest string, epu *progre
 		}
 		defer lf.Close()
 
-		dstfp, err := client.Create(dest)
+		destTmp := fmt.Sprintf("%s.%s", dest, "tmp")
+		dstfp, err := client.Create(destTmp)
 		if err != nil {
 			return fmt.Errorf("failed to create: %v", err)
 		}
@@ -239,6 +237,14 @@ func (c *Client) doCopy(client *sftp.Client, host, src, dest string, epu *progre
 			if sh != dh {
 				return fmt.Errorf("sha256 sum not match %s(%s) != %s(%s), maybe network corruption?", src, sh, dest, dh)
 			}
+		}
+		if exists {
+			if err = client.Remove(dest); err != nil {
+				return fmt.Errorf("failed to Remove %s: %v", dest, err)
+			}
+		}
+		if err = client.Rename(destTmp, dest); err != nil {
+			return fmt.Errorf("failed to Rename %s to %s: %v", destTmp, dest, err)
 		}
 		_ = epu.Add(1)
 	}
