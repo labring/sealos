@@ -58,7 +58,7 @@ prepare_configs() {
         tls_key_base64=$(cat $keyPath | base64 | tr -d '\n')
 
         # Define YAML content for certificate
-        yaml_content="
+        tls_config="
 apiVersion: apps.sealos.io/v1beta1
 kind: Config
 metadata:
@@ -73,8 +73,27 @@ spec:
       tls.key: $tls_key_base64
 "
         # Create tls-secret.yaml file
-        echo "$yaml_content" > $CLOUD_DIR/tls-secret.yaml
+        echo "$tls_config" > $CLOUD_DIR/tls-secret.yaml
     fi
+
+    ingress_config="
+apiVersion: apps.sealos.io/v1beta1
+kind: Config
+metadata:
+  creationTimestamp: null
+  name: ingress-nginx-config
+spec:
+  data: |
+    controller:
+      hostNetwork: true
+      kind: DaemonSet
+      service:
+        type: NodePort
+  match: docker.io/labring/ingress-nginx:v1.5.1
+  path: charts/ingress-nginx/values.yaml
+  strategy: merge
+"
+    echo "$ingress_config" > $CLOUD_DIR/ingress-nginx-config.yaml
 
     sealos_gen_cmd="sealos gen labring/kubernetes:v1.25.6\
         labring/helm:v3.12.0\
