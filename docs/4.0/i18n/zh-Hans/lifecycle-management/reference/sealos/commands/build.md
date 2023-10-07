@@ -57,7 +57,7 @@ sealos build -t myapp:v1.0.0 -f Dockerfile .
 
 下面有一些详细的示例：
 
-- [基于镜像列表构建](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-image_list)
+- [基于镜像清单构建](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-image_list)
 - [基于部署清单构建](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-manifests)
 - [基于helm-charts构建](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-helm_charts)
 - [基于二进制构建](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-binary)
