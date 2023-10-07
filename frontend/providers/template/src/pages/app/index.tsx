@@ -21,13 +21,15 @@ export default function MyApp() {
       borderRadius={'12px'}
       background={'linear-gradient(180deg, #FFF 0%, rgba(255, 255, 255, 0.70) 100%)'}
       pt={'36px'}
-      pl="42px">
+      pl="42px"
+    >
       <Tabs
         fontWeight={500}
         position="relative"
         variant="unstyled"
         index={tabIndex}
-        onChange={handleTabsChange}>
+        onChange={handleTabsChange}
+      >
         <TabList>
           <Tab p="0" mb="6px" color={tabIndex === 0 ? '#24282C' : '#7B838B'}>
             {t('Installed')}

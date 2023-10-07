@@ -22,7 +22,8 @@ export default function StatusTag({
       fontSize={'xs'}
       fontWeight={'bold'}
       alignItems={'center'}
-      w={'88px'}>
+      w={'88px'}
+    >
       <Box w={'10px'} h={'10px'} borderRadius={'10px'} backgroundColor={status.dotColor}></Box>
       <Box ml={2} flex={1}>
         {t(status.label)}

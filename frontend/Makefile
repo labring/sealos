@@ -1,6 +1,5 @@
 DOCKER_USERNAME := $(DOCKER_USERNAME)
 IMAGE_TAG := $(IMAGE_TAG)
-MIRROR := $(MIRROR)
 
 ifneq ($(strip $(DOCKER_USERNAME)),)
   imageOwner := $(DOCKER_USERNAME)/
@@ -61,9 +60,9 @@ image-prebuild: pnpm-lock.yaml
 	docker build --platform=linux/amd64 --target deps . -t $(imageOwner)sealos-deps:dev
 
 image-build-providers/%: image-prebuild
-	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=providers/$* --build-arg name=$* --build-arg mirror=$(MIRROR) . 
+	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=providers/$* --build-arg name=$* . 
 image-build-%: image-prebuild
-	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=$* --build-arg name=$* --build-arg mirror=$(MIRROR) . 
+	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=$* --build-arg name=$* . 
 
 image-push-providers/%: image-build-providers/%
 	docker push $(imageOwner)sealos-$*:$(imageTag) 

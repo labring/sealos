@@ -65,14 +65,16 @@ export default function SideBar({ isMobile }: { isMobile: boolean }) {
                 as={'button'}
                 onClick={() => {
                   router.push(item.url);
-                }}>
+                }}
+              >
                 <Icon
                   flexShrink={0}
                   w="18px"
                   h="18px"
                   fill={item.acriveUrl.includes(router.route) ? '#219BF4' : '#485058'}
                   viewBox="0 0 20 21"
-                  alignItems={'center'}>
+                  alignItems={'center'}
+                >
                   {item.icon}
                 </Icon>
                 {!isMobile && (
@@ -80,7 +82,8 @@ export default function SideBar({ isMobile }: { isMobile: boolean }) {
                     ml="10px"
                     color={item.acriveUrl.includes(router.route) ? '#219BF4' : '#485058'}
                     fontSize={'16px'}
-                    fontWeight={500}>
+                    fontWeight={500}
+                  >
                     {t(item.value)}
                   </Text>
                 )}
