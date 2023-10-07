@@ -141,7 +141,7 @@ func (k *KubeadmRuntime) initCert() error {
 }
 
 func (k *KubeadmRuntime) syncCert() error {
-	for _, master := range k.getMasterIPList()[1:] {
+	for _, master := range k.getMasterIPAndPortList()[1:] {
 		logger.Debug("start to generate cert for master %s", master)
 		err := k.execCert(master)
 		if err != nil {
