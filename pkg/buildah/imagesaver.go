@@ -56,7 +56,11 @@ func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.System
 	if err != nil {
 		return err
 	}
-	if len(images) == 0 {
+	tars, err := buildimage.TarList(contextDir)
+	if err != nil {
+		return err
+	}
+	if len(images) == 0 && len(tars) == 0 {
 		return nil
 	}
 	auths, err := crane.GetAuthInfo(sys)
@@ -64,13 +68,22 @@ func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.System
 		return err
 	}
 	is := save.NewImageSaver(getContext(), opts.maxPullProcs, auths)
-
+	isTar := save.NewImageTarSaver(getContext(), opts.maxPullProcs)
 	for _, pf := range platforms {
-		images, err = is.SaveImages(images, registryDir, pf)
-		if err != nil {
-			return fmt.Errorf("failed to save images: %w", err)
+		if len(images) != 0 {
+			images, err = is.SaveImages(images, registryDir, pf)
+			if err != nil {
+				return fmt.Errorf("failed to save images: %w", err)
+			}
+			logger.Info("saving images %s", strings.Join(images, ", "))
 		}
-		logger.Info("saving images %s", strings.Join(images, ", "))
+		if len(tars) != 0 {
+			tars, err = isTar.SaveImages(tars, registryDir, pf)
+			if err != nil {
+				return fmt.Errorf("failed to save tar images: %w", err)
+			}
+			logger.Info("saving tar images %s", strings.Join(tars, ", "))
+		}
 	}
 	return nil
 }
