@@ -34,5 +34,5 @@ Sealos 需要使用证书来保证通信安全，默认在您不提供证书的�
 执行命令，并根据提示输入参数：
 
 ```bash 
-curl -sfL https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh | sudo bash -s
+curl -sfL https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh 
 ```

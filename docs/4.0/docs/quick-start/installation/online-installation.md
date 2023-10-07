@@ -34,5 +34,5 @@ If you can provide a certificate, it needs to resolve the following domains (ass
 Execute the command and enter the parameters as prompted:
 
 ```bash 
-curl -sfL https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh | sudo bash -s
+curl -sfL https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh 
 ```
