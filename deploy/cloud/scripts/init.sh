@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 cloudDomain="127.0.0.1.nip.io"
 cloudPort=""
@@ -37,10 +37,10 @@ function gen_mongodbUri() {
   if [ -z "$mongodbUri" ]; then
     echo "no mongodb uri found, create mongodb and gen mongodb uri"
     kubectl apply -f manifests/mongodb.yaml
+    echo "waiting for mongodb secret generated"
     # if there is no sealos-mongodb-conn-credential secret then wait for mongodb ready
     while [ -z "$(kubectl get secret -n sealos sealos-mongodb-conn-credential)" ]; do
-      echo "waiting for mongodb secret generated"
-      sleep 5
+      sleep 3
     done
     chmod +x scripts/gen-mongodb-uri.sh
     mongodbUri=$(scripts/gen-mongodb-uri.sh)
