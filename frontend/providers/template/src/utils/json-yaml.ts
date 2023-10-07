@@ -150,7 +150,7 @@ export const handleTemplateToInstanceYaml = (
   instanceName: string
 ): TemplateInstanceType => {
   const {
-    spec: { gitRepo, templateType, ...resetSpec }
+    spec: { gitRepo, templateType, template_type, ...resetSpec }
   } = template;
 
   return {
@@ -161,7 +161,7 @@ export const handleTemplateToInstanceYaml = (
     },
     spec: {
       gitRepo: gitRepo,
-      templateType: templateType,
+      templateType: templateType || template_type,
       ...resetSpec
     }
   };
