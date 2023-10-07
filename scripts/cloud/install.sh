@@ -1,10 +1,12 @@
 #!/bin/bash
 
+
 set -e
 
 # Configurations
 CLOUD_DIR="/root/.sealos/cloud"
 SEALOS_VERSION="v4.3.3"
+# TODO add support for multiple cloud versions
 
 # Initialization
 init() {
