@@ -219,7 +219,7 @@ func (c *Client) doCopy(client *sftp.Client, host, src, dest string, epu *progre
 		defer lf.Close()
 
 		destTmp := dest + ".tmp"
-		copyToTmp := func(tmpName string) error {
+		if err = func(tmpName string) error {
 			dstfp, err := client.Create(tmpName)
 			if err != nil {
 				return fmt.Errorf("failed to create: %v", err)
@@ -233,8 +233,7 @@ func (c *Client) doCopy(client *sftp.Client, host, src, dest string, epu *progre
 				return fmt.Errorf("failed to Copy: %v", err)
 			}
 			return nil
-		}
-		if err = copyToTmp(destTmp); err != nil {
+		}(destTmp); err != nil {
 			return err
 		}
 
