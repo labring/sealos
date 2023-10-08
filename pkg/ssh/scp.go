@@ -218,16 +218,27 @@ func (c *Client) doCopy(client *sftp.Client, host, src, dest string, epu *progre
 		}
 		defer lf.Close()
 
-		dstfp, err := client.Create(dest)
-		if err != nil {
-			return fmt.Errorf("failed to create: %v", err)
+		destTmp := dest + ".tmp"
+		if err = func(tmpName string) error {
+			dstfp, err := client.Create(tmpName)
+			if err != nil {
+				return fmt.Errorf("failed to create: %v", err)
+			}
+			defer dstfp.Close()
+
+			if err = dstfp.Chmod(lfp.Mode()); err != nil {
+				return fmt.Errorf("failed to Chmod dst: %v", err)
+			}
+			if _, err = io.Copy(dstfp, lf); err != nil {
+				return fmt.Errorf("failed to Copy: %v", err)
+			}
+			return nil
+		}(destTmp); err != nil {
+			return err
 		}
-		if err = dstfp.Chmod(lfp.Mode()); err != nil {
-			return fmt.Errorf("failed to Chmod dst: %v", err)
-		}
-		defer dstfp.Close()
-		if _, err = io.Copy(dstfp, lf); err != nil {
-			return fmt.Errorf("failed to Copy: %v", err)
+
+		if err = client.PosixRename(destTmp, dest); err != nil {
+			return fmt.Errorf("failed to rename %s to %s: %v", destTmp, dest, err)
 		}
 		if isCheckFileMD5() {
 			dh := c.RemoteSha256Sum(host, dest)
