@@ -1,20 +1,20 @@
 import { getTemplateSource, postDeployApp } from '@/api/app';
+import { getPlatformEnv } from '@/api/platform';
 import { editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
-import { GET } from '@/services/request';
 import { useCachedStore } from '@/store/cached';
 import { useGlobalStore } from '@/store/global';
 import type { QueryType, YamlItemType } from '@/types';
-import { TemplateInstanceType, TemplateSourceType } from '@/types/app';
+import { TemplateSourceType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
 import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
-import { deepSearch } from '@/utils/tools';
+import { deepSearch, useCopyData } from '@/utils/tools';
 import { Box, Flex, Icon, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import JSYAML from 'js-yaml';
-import { cloneDeep, isEmpty, mapValues, reduce } from 'lodash';
+import { mapValues, reduce } from 'lodash';
 import debounce from 'lodash/debounce';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
@@ -22,20 +22,20 @@ import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Form from './components/Form';
-import Yaml from './components/Yaml';
 import ReadMe from './components/ReadMe';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
 
-export default function EditApp({ appName, tabType }: { appName?: string; tabType: string }) {
+export default function EditApp({ appName }: { appName?: string }) {
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
+  const { copyData } = useCopyData();
   const { templateName } = router.query as QueryType;
   const { Loading, setIsLoading } = useLoading();
   const [forceUpdate, setForceUpdate] = useState(false);
-  const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
+  const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(false);
   const [templateSource, setTemplateSource] = useState<TemplateSourceType>();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -47,7 +47,7 @@ export default function EditApp({ appName, tabType }: { appName?: string; tabTyp
     [templateSource]
   );
 
-  const { data: platformEnvs } = useQuery(['getPlatformEnvs'], () => GET('/api/platform/getEnv'), {
+  const { data: platformEnvs } = useQuery(['getPlatformEnvs'], getPlatformEnv, {
     staleTime: 5 * 60 * 1000
   });
 
@@ -134,7 +134,7 @@ export default function EditApp({ appName, tabType }: { appName?: string; tabTyp
         setIsLoading(false);
         setCached(JSON.stringify({ ...formHook.getValues(), cachedKey: templateName }));
         const _name = encodeURIComponent(`?templateName=${templateName}&sealos_inside=true`);
-        const _domain = platformEnvs.SEALOS_CLOUD_DOMAIN;
+        const _domain = platformEnvs?.SEALOS_CLOUD_DOMAIN;
         const href = `https://${_domain}/?openapp=system-fastdeploy${_name}`;
         return window.open(href, '_self');
       }
@@ -149,14 +149,12 @@ export default function EditApp({ appName, tabType }: { appName?: string; tabTyp
 
       deleteCached();
 
-      openConfirm2(() => {
-        router.push({
-          pathname: '/instance',
-          query: {
-            instanceName: detailName
-          }
-        });
-      })();
+      router.push({
+        pathname: '/instance',
+        query: {
+          instanceName: detailName
+        }
+      });
     } catch (error) {
       setErrorMessage(JSON.stringify(error));
     }
@@ -231,6 +229,11 @@ export default function EditApp({ appName, tabType }: { appName?: string; tabTyp
     }
   );
 
+  const copyTemplateLink = () => {
+    const str = `https://${platformEnvs?.SEALOS_CLOUD_DOMAIN}/?openapp=system-fastdeploy%3FtemplateName%3D${appName}`;
+    copyData(str);
+  };
+
   useEffect(() => {
     setInsideCloud(!(window.top === window));
 
@@ -297,6 +300,7 @@ export default function EditApp({ appName, tabType }: { appName?: string; tabTyp
           </Flex>
           <Text px="6px">/</Text>
           <Text
+            onClick={copyTemplateLink}
             _hover={{ fill: '#219BF4', color: '#219BF4' }}
             color={router.pathname === '/deploy' ? '#262A32' : '#7B838B'}>
             {data?.templateYaml?.metadata?.name}
@@ -312,7 +316,7 @@ export default function EditApp({ appName, tabType }: { appName?: string; tabTyp
           backgroundColor={'rgba(255, 255, 255, 0.90)'}>
           <Header
             templateDetail={data?.templateYaml!}
-            appName={''}
+            appName={appName || ''}
             title={title}
             yamlList={yamlList}
             applyBtnText={insideCloud ? applyBtnText : 'Deploy on sealos'}
@@ -336,13 +340,11 @@ export default function EditApp({ appName, tabType }: { appName?: string; tabTyp
 }
 
 export async function getServerSideProps(content: any) {
-  const appName = content?.query?.name || '';
-  const tabType = content?.query?.type || 'form';
+  const appName = content?.query?.templateName || '';
 
   return {
     props: {
       appName,
-      tabType,
       ...(await serviceSideProps(content))
     }
   };

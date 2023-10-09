@@ -4,7 +4,6 @@ import type { YamlItemType } from '@/types/index';
 import { downLoadBold } from '@/utils/tools';
 import { Box, Button, Flex, Image, Text } from '@chakra-ui/react';
 import dayjs from 'dayjs';
-import JSZip from 'jszip';
 import { useTranslation } from 'next-i18next';
 import { MouseEvent, useCallback } from 'react';
 

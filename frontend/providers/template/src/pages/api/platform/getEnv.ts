@@ -4,6 +4,13 @@ import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+export type EnvResponse = {
+  SEALOS_CLOUD_DOMAIN: string;
+  SEALOS_CERT_SECRET_NAME: string;
+  TEMPLATE_REPO_URL: string;
+  SEALOS_NAMESPACE: string;
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   let user_namespace = '';
 
@@ -16,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     console.log(error, 'errpr-');
   }
 
-  jsonRes(res, {
+  jsonRes<EnvResponse>(res, {
     data: {
       SEALOS_CLOUD_DOMAIN: process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io',
       SEALOS_CERT_SECRET_NAME: process.env.SEALOS_CERT_SECRET_NAME || 'wildcard-cert',
