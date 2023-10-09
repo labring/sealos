@@ -1,10 +1,11 @@
+import { postDeployApp } from '@/api/app';
+import { getPlatformEnv } from '@/api/platform';
 import MyIcon from '@/components/Icon';
 import { editModeMap } from '@/constants/editApp';
 import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
-import { GET } from '@/services/request';
 import { YamlItemType } from '@/types';
-import { TemplateType, TemplateSourceType } from '@/types/app';
+import { TemplateSourceType, TemplateType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
 import {
   developGenerateYamlList,
@@ -12,24 +13,23 @@ import {
   parseTemplateString
 } from '@/utils/json-yaml';
 import { getTemplateDefaultValues } from '@/utils/template';
+import { downLoadBold } from '@/utils/tools';
 import { Box, Button, Flex, Text } from '@chakra-ui/react';
 import { StreamLanguage } from '@codemirror/language';
 import { yaml } from '@codemirror/legacy-modes/mode/yaml';
 import { useQuery } from '@tanstack/react-query';
 import CodeMirror from '@uiw/react-codemirror';
+import dayjs from 'dayjs';
 import JsYaml from 'js-yaml';
 import { debounce, has, isObject, mapValues } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { EnvResponse } from '../api/platform/getEnv';
 import ErrorModal from '../deploy/components/ErrorModal';
 import BreadCrumbHeader from './components/BreadCrumbHeader';
 import Form from './components/Form';
 import YamlList from './components/YamlList';
-import { postDeployApp } from '@/api/app';
-import JSZip from 'jszip';
-import { downLoadBold } from '@/utils/tools';
-import dayjs from 'dayjs';
 
 export default function Develop() {
   const { t } = useTranslation();
@@ -46,7 +46,9 @@ export default function Develop() {
     [yamlSource?.source?.defaults?.app_name?.value]
   );
 
-  const { data: platformEnvs } = useQuery(['getPlatformEnvs'], () => GET('/api/platform/getEnv'));
+  const { data: platformEnvs } = useQuery(['getPlatformEnvs'], getPlatformEnv) as {
+    data: EnvResponse;
+  };
 
   const onYamlChange = (value: string) => {
     setYamlValue(value);
