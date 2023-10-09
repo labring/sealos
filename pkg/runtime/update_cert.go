@@ -130,29 +130,12 @@ func (k *KubeadmRuntime) UpdateCertByInit() error {
 func (k *KubeadmRuntime) initCert() error {
 	pipeline := []func() error{
 		k.GenerateCert,
-		k.syncCert,
+		k.SendNewCertAndKeyToMasters,
 	}
 	for _, f := range pipeline {
 		if err := f(); err != nil {
 			return fmt.Errorf("failed to generate cert %v", err)
 		}
-	}
-	return nil
-}
-
-func (k *KubeadmRuntime) syncCert() error {
-	for _, master := range k.getMasterIPAndPortList()[1:] {
-		logger.Debug("start to generate cert for master %s", master)
-		err := k.execCert(master)
-		if err != nil {
-			return fmt.Errorf("failed to create cert for master %s: %v", master, err)
-		}
-
-		err = k.copyMasterKubeConfig(master)
-		if err != nil {
-			return err
-		}
-		logger.Info("succeeded generate cert %s as master", master)
 	}
 	return nil
 }
