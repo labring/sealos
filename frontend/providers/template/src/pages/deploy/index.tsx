@@ -23,6 +23,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import ReadMe from './components/ReadMe';
+import Yaml from './components/Yaml';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });

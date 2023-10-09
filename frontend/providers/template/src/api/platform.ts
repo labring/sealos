@@ -1,4 +1,4 @@
-import { EnvResponse } from '@/pages/api/platform/getEnv';
+import { EnvResponse } from '@/types/index';
 import { GET } from '@/services/request';
 
 export const updateRepo = () => GET('/api/updateRepo');
