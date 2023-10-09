@@ -2,6 +2,7 @@ import { CronJobEditType } from '@/types/job';
 import { getUserTimeZone, str2Num } from '@/utils/tools';
 import yaml from 'js-yaml';
 import { getUserServiceAccount } from './user';
+import { cronJobKey } from '@/constants/keys';
 
 export const json2CronJob = (data: CronJobEditType) => {
   const serviceAccount = getUserServiceAccount();
@@ -12,7 +13,8 @@ export const json2CronJob = (data: CronJobEditType) => {
     annotations: {},
     labels: {
       'cronjob-type': data.jobType,
-      'cronjob-launchpad-name': data.launchpadName
+      'cronjob-launchpad-name': data.launchpadName,
+      [cronJobKey]: data.jobName
     }
   };
 

@@ -14,3 +14,6 @@ export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
 export const kubeblocksTypeKey = 'clusterdefinition.kubeblocks.io/name';
 // labels
 export const componentLabel = 'app.kubernetes.io/component';
+// cronjob
+export const cronJobTypeKey = 'cronjob-type';
+export const cronJobKey = 'cloud.sealos.io/cronjob';
