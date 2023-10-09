@@ -1,8 +1,8 @@
 import Layout from '@/layout';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
-import { theme } from '@/styles/chakraTheme';
 import '@/styles/globals.scss';
+import { theme } from '@/styles/chakraTheme';
 import { ChakraProvider } from '@chakra-ui/react';
 // import { persistQueryClient, removeOldestQuery } from '@tanstack/react-query-persist-client';
 // import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
