@@ -79,6 +79,6 @@ sealos apply -f Clusterfile --values values.yaml
 
 这条命令会根据 `values.yaml` 文件中的值应用 `Clusterfile`。
 
-**更多示例请参考[启动镜像](https://docs.sealos.io/docs/lifecycle-management/operations/run-cluster/)**
+**更多示例请参考[启动镜像](/self-hosting/lifecycle-management/operations/run-cluster/)**
 
 以上就是 `sealos apply` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。

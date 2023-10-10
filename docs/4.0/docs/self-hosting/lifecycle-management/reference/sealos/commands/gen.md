@@ -44,6 +44,6 @@ After the Clusterfile is generated, users can modify this file according to thei
 
 Example explanations:
 
-- [Custom Configuration Installation](https://docs.sealos.io/docs/lifecycle-management/operations/run-cluster/gen-apply-cluster)
+- [Custom Configuration Installation](/self-hosting/lifecycle-management/operations/run-cluster/gen-apply-cluster.md)
 
 That's the usage guide for the `sealos gen` command, and we hope it has been helpful. If you encounter any problems during usage, feel free to ask us.

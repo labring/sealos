@@ -57,12 +57,12 @@ sealos build -t myapp:v1.0.0 -f Dockerfile .
 
 下面有一些详细的示例：
 
-- [基于镜像清单构建](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-image_list)
-- [基于部署清单构建](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-manifests)
-- [基于helm-charts构建](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-helm_charts)
-- [基于二进制构建](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-binary)
-- [基于go-template构建](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-go_template)
-- [基于exec和scp构建](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-scp_exec)
+- [基于镜像清单构建](/self-hosting/lifecycle-management/operations/build-image/build-image-image_list.md)
+- [基于部署清单构建](/self-hosting/lifecycle-management/operations/build-image/build-image-manifests.md)
+- [基于helm-charts构建](/self-hosting/lifecycle-management/operations/build-image/build-image-helm_charts.md)
+- [基于二进制构建](/self-hosting/lifecycle-management/operations/build-image/build-image-binary.md)
+- [基于go-template构建](/self-hosting/lifecycle-management/operations/build-image/build-image-go_template.md)
+- [基于exec和scp构建](/self-hosting/lifecycle-management/operations/build-image/build-image-scp_exec.md)
 
 通过 Sealos `build` 命令，可以基于多种指令文件构建 OCI 镜像，为sealos提供所需的镜像。这个过程包括处理 Dockerfile 或其他指令文件中的各种指令，如 `FROM`、`RUN`、`ADD` 等，以及处理镜像层次、镜像标签等。构建过程也包括拉取基础镜像、运行命令、保存结果等步骤。每一个步骤都可以通过上述的选项进行详细的控制和定制，以满足不同的构建需求。
 

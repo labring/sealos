@@ -81,4 +81,4 @@ sealos run -e DashBoardPort=8443 mydashboard:latest  --masters 192.168.0.2,192.1
 
 These examples demonstrate the power and flexibility of the `sealos run` command, which can be customized and adjusted according to your needs.
 
-For more examples, please refer to [Run Cluster](https://docs.sealos.io/docs/lifecycle-management/operations/run-cluster).
+For more examples, please refer to [Run Cluster](/self-hosting/lifecycle-management/operations/run-cluster.md).

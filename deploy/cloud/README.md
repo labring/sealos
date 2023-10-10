@@ -34,7 +34,7 @@ Other dns api please read: https://github.com/acmesh-official/acme.sh/wiki/dnsap
 We provide a self-signed cert for you to test by default if you didn't provide a cert. You can replace it with your own cert.
 
 ### Kubernetes Setup
-Please read sealos doc to create a kubernetes cluster: https://sealos.io/docs/lifecycle-management/quick-start/installation
+Please read sealos doc to create a kubernetes cluster: https://sealos.io/docs/self-hosting/lifecycle-management/quick-start/deploy-kubernetes
 
 ```shell
 sealos gen labring/kubernetes:v1.25.6\
