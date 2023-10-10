@@ -62,7 +62,7 @@ $ sealos run labring/redis-operator:3.1.4
 
 For cluster images not available in the Sealos ecosystem, users can easily build and customize their own cluster images. For example:
 
-[Building an Ingress Cluster Image](https://docs.sealos.io/docs/lifecycle-management/quick-start/build-ingress-cluster-image)
+[Building an Ingress Cluster Image](/self-hosting/lifecycle-management/quick-start/build-ingress-cluster-image.md)
 
 You can also customize your own Kubernetes cluster:
 

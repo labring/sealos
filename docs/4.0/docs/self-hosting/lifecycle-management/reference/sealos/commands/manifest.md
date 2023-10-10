@@ -17,4 +17,4 @@ Here are some of the major `manifest` subcommands:
 
 With the `sealos manifest` command, you can flexibly manage manifest lists or image indexes, providing support for multi-architecture Docker or OCI images. Users can create custom manifest lists according to their needs, making it convenient to deploy and run Docker images on different hardware architectures.
 
-Users who want to build multi-architecture images through the manifest command can refer to the document [Building Cluster Images that Support Multiple Architectures](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-multi-arch-image).
+Users who want to build multi-architecture images through the manifest command can refer to the document [Building Cluster Images that Support Multiple Architectures](/self-hosting/lifecycle-management/operations/build-image/build-multi-arch-image.md).

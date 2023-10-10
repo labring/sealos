@@ -62,7 +62,7 @@ $ sealos run labring/redis-operator:3.1.4
 
 对于 Sealos 生态没有的集群镜像，用户可以方便地自己构建和定制属于自己的集群镜像。例如：
 
-[构建一个 ingress 集群镜像](https://docs.sealos.io/docs/lifecycle-management/quick-start/build-ingress-cluster-image)
+[构建一个 ingress 集群镜像](/self-hosting/lifecycle-management/quick-start/build-ingress-cluster-image.md)
 
 您还可以定制一个完全属于自己的 Kubernetes：
 

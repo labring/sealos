@@ -17,4 +17,4 @@ Sealos 的 `manifest` 命令用于创建、修改和推送 manifest 列表和镜
 
 通过 `sealos manifest` 命令，可以灵活地管理 manifest 列表或镜像索引，为多架构的 Docker 或 OCI 镜像提供支持。用户可以根据自己的需求，创建自定义的 manifest 列表，方便在不同的硬件架构上部署和运行 Docker 镜像。
 
-用户如果想通过manifest命令构建多架构镜像，可以参考文档[构建支持多架构的集群镜像](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-multi-arch-image)
+用户如果想通过manifest命令构建多架构镜像，可以参考文档[构建支持多架构的集群镜像](/self-hosting/lifecycle-management/operations/build-image/build-multi-arch-image.md)

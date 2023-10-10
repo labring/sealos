@@ -58,12 +58,12 @@ Overall, the `--save-image` option provides a convenient way for Sealos to handl
 
 Here are some detailed examples:
 
-- [Build with Image Manifests](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-image_list)
-- [Build with Deploy Manifests](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-manifests)
-- [Build with Helm Charts](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-helm_charts)
-- [Build with Binary](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-binary)
-- [Build with go-template](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-go_template)
-- [Build with exec and scp](https://docs.sealos.io/docs/lifecycle-management/operations/build-image/build-image-scp_exec)
+- [Build with Image Manifests](/self-hosting/lifecycle-management/operations/build-image/build-image-image_list.md)
+- [Build with Deploy Manifests](/self-hosting/lifecycle-management/operations/build-image/build-image-manifests.md)
+- [Build with Helm Charts](/self-hosting/lifecycle-management/operations/build-image/build-image-helm_charts.md)
+- [Build with Binary](/self-hosting/lifecycle-management/operations/build-image/build-image-binary.md)
+- [Build with go-template](/self-hosting/lifecycle-management/operations/build-image/build-image-go_template.md)
+- [Build with exec and scp](/self-hosting/lifecycle-management/operations/build-image/build-image-scp_exec.md)
 
 With the `build` command in Sealos, you can build OCI images based on various instruction files to provide the required images for Sealos. This process includes handling various instructions in Dockerfiles or other instruction files, such as `FROM`, `RUN`, `ADD`, etc., as well as managing image layers, labels, and more. The build process also involves pulling base images, running commands, saving the results, and more. Each step can be finely controlled and customized using the options mentioned above to accommodate different build requirements.
 

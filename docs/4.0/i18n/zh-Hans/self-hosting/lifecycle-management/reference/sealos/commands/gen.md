@@ -44,6 +44,6 @@ Sealos 的 `gen` 命令是用于生成 Kubernetes 集群的配置文件（Cluste
 
 示例说明：
 
-- [自定义配置安装](https://docs.sealos.io/docs/lifecycle-management/operations/run-cluster/gen-apply-cluster)
+- [自定义配置安装](/self-hosting/lifecycle-management/operations/run-cluster/gen-apply-cluster.md)
 
 以上就是 `sealos gen` 命令的使用指南，希望对你有所帮助。如果你在使用过程中遇到任何问题，欢迎向我们提问。
