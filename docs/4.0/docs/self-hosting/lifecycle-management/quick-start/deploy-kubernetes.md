@@ -2,7 +2,7 @@
 sidebar_position: 2
 ---
 
-# Quick Start
+# Install Kubernetes
 
 ## Prerequisites
 
@@ -114,7 +114,7 @@ $ sealos load -i kubernetes.tar
 The remaining installation steps are the same as the online installation.
 ```shell
 $ sealos images # check if the cluster images are successfully imported
-$ sealos run kubernetes:v1.25.0  # Single-node installation, similar for cluster installation
+$ sealos run labring/kubernetes:v1.25.0  # Single-node installation, similar for cluster installation
 ```
 
 ### Quick Start with Cluster Image

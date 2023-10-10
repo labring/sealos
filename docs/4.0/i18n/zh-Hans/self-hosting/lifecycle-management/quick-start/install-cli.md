@@ -5,7 +5,7 @@ sidebar_position: 1
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# 安装sealos
+# 下载 Sealos 命令行工具
 
 你可以通过运行命令来获取版本列表:
 

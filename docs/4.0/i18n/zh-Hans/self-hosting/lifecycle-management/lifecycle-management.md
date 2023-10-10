@@ -82,11 +82,11 @@ sealos run my-kuberentes:v1.25.0 ...
 
 ## 常见问题
 
-**sealos 是 Kubernetes 安装工具吗？**
+**Sealos 是 Kubernetes 安装工具吗？**
 
-安装部署是 Sealos 的一个基本功能，如同单机操作系统有 boot 模块一样，Sealos 的 boot 模块可以很好地管理 Kubernetes 在任何场景下的生命周期。
+安装部署只是 Sealos 的一个基本功能，如同单机操作系统有 Boot 模块一样，Sealos 的 Boot 模块可以很好地管理 Kubernetes 在任何场景下的生命周期。
 
-**sealos 和 rancher、kubesphere 有什么区别？**
+**Sealos 和 Rancher、KubeSphere 有什么区别？**
 
 Sealos 的设计理念是 "化整为零，自由组装，大道至简"。Sealos 利用 Kubernetes 的能力，以简单的方式提供给用户真正需要的东西。用户需要的不一定是 Kubernetes，用户需要的是具体的能力。
 

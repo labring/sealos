@@ -2,7 +2,7 @@
 sidebar_position: 2
 ---
 
-# 快速开始
+# 安装 Kubernetes 集群
 
 ## 先决条件 
 
@@ -115,7 +115,7 @@ $ sealos load -i kubernetes.tar
 剩下的安装方式与在线安装一致。
 ```shell
 $ sealos images # 查看集群镜像是否导入成功
-$ sealos run kuberentes:v1.25.0  # 单机安装，集群安装同理
+$ sealos run labring/kuberentes:v1.25.0  # 单机安装，集群安装同理
 ```
 
 ### 快速启动集群
