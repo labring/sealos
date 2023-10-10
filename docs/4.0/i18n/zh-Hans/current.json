@@ -23,6 +23,10 @@
     "message": "平台组件",
     "description": "The label for category Platform Components in sidebar docSidebar"
   },
+  "sidebar.docSidebar.category.Self Hosting": {
+    "message": "私有化部署",
+    "description": "The label for the doc item Self Hosting in sidebar docSidebar, linking to the doc Community"
+  },
   "sidebar.docSidebar.category.Cluster Lifecycle Management": {
     "message": "集群生命周期管理",
     "description": "The label for category Cluster Lifecycle Management in sidebar docSidebar"

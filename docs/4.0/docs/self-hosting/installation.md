@@ -2,7 +2,7 @@
 sidebar_position: 1
 ---
 
-# Sealos 集群在线安装指南
+# 安装 Sealos 集群
 
 ## 准备工作
 
