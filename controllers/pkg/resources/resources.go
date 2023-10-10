@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/crypto"
-	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/controllers/pkg/utils/logger"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 
