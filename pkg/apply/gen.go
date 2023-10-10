@@ -26,6 +26,7 @@ import (
 	"github.com/labring/sealos/pkg/runtime/factory"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []string) ([]byte, error) {
@@ -42,6 +43,11 @@ func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []strin
 
 	if err := c.runArgs(cmd, args, imageNames); err != nil {
 		return nil, err
+	}
+	if flagChanged(cmd, "env") {
+		logger.Info("setting global envs for cluster, will be used in all run commands later")
+		v, _ := cmd.Flags().GetStringSlice("env")
+		cluster.Spec.Env = append(cluster.Spec.Env, v...)
 	}
 
 	img, err := genImageInfo(imageNames[0])
