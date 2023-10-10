@@ -1,9 +1,10 @@
 import { YamlItemType } from '@/types';
 import { ProcessedTemplateSourceType, TemplateInstanceType, TemplateType } from '@/types/app';
 import JSYAML from 'js-yaml';
-import { cloneDeep } from 'lodash';
+import { cloneDeep, mapValues } from 'lodash';
 import { customAlphabet } from 'nanoid';
 import { processEnvValue } from './tools';
+import { EnvResponse } from '@/types/index';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz');
 
 export const generateYamlList = (value: string, labelName: string): YamlItemType[] => {
@@ -27,7 +28,11 @@ export const generateYamlList = (value: string, labelName: string): YamlItemType
 export const parseTemplateString = (
   sourceString: string,
   regex: RegExp = /\$\{\{\s*(.*?)\s*\}\}/g,
-  dataSource: any
+  dataSource: {
+    [key: string]: string | Record<string, string>;
+    defaults: Record<string, string>;
+    inputs: Record<string, string>;
+  }
 ) => {
   try {
     const replacedString = sourceString.replace(regex, (match: string, key: string) => {
@@ -46,7 +51,10 @@ export const parseTemplateString = (
   }
 };
 
-export const getTemplateDataSource = (template: TemplateType): ProcessedTemplateSourceType => {
+export const getTemplateDataSource = (
+  template: TemplateType,
+  platformEnvs?: EnvResponse
+): ProcessedTemplateSourceType => {
   try {
     if (!template) {
       return {
@@ -88,6 +96,13 @@ export const getTemplateDataSource = (template: TemplateType): ProcessedTemplate
           default: string;
           required: boolean;
         }
+      >,
+      cloneDefauls: Record<
+        string,
+        {
+          type: string;
+          value: string;
+        }
       >
     ) => {
       if (!inputs || Object.keys(inputs).length === 0) {
@@ -101,8 +116,13 @@ export const getTemplateDataSource = (template: TemplateType): ProcessedTemplate
             break;
           }
         }
+        const output = mapValues(cloneDefauls, (value) => value.value);
         return {
-          description: item.description,
+          description: parseTemplateString(item.description, /\$\{\{\s*(.*?)\s*\}\}/g, {
+            ...platformEnvs,
+            defaults: output,
+            inputs: {}
+          }),
           type: item.type,
           default: item.default,
           required: item.required,
@@ -115,7 +135,7 @@ export const getTemplateDataSource = (template: TemplateType): ProcessedTemplate
 
     // // handle input value
     const cloneInputs = cloneDeep(inputs);
-    const transformedInput = handleInputs(cloneInputs);
+    const transformedInput = handleInputs(cloneInputs, cloneDefauls);
     // console.log(cloneDefauls, transformedInput);
 
     return {
