@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/apply"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 var exampleGen = `
@@ -65,6 +66,7 @@ func newGenCmd() *cobra.Command {
 			var outputWriter io.WriteCloser
 			switch out {
 			case "", "stdout":
+				logger.Info("if you want to save the output of gen command, use '--output' option instead of redirecting to file")
 				outputWriter = os.Stdout
 			default:
 				outputWriter, err = os.Create(out)
