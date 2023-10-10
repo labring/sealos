@@ -1,9 +1,18 @@
 import request from '@/service/request';
 import useSessionStore from '@/stores/session';
 import { displayMoney, formatMoney } from '@/utils/format';
-import { Box, Button, Flex, Image, Img, Stack, Text } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Flex,
+  Image,
+  Img,
+  LayoutProps,
+  Stack,
+  SystemStyleObject,
+  Text
+} from '@chakra-ui/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import styles from './user.module.scss';
 
 import { useTranslation } from 'next-i18next';
 import { memo, useContext, useEffect, useMemo, useRef } from 'react';
@@ -56,15 +65,32 @@ export default memo(function UserCard() {
   const currency = useEnvStore((s) => s.currency);
   const balance = real_balance;
   const stripePromise = useEnvStore((s) => s.stripePromise);
+  const persudoPublic: SystemStyleObject = {
+    content: '""',
+    position: 'absolute',
+    width: '313px',
+    height: '313px',
+    backgroundColor: 'white',
+    borderRadius: '50%',
+    right: '-100px',
+    opacity: 0.1
+  };
   return (
     <>
       <Flex
-        className={styles.userCard}
         boxShadow={'0 4px #BCBFC3,0 8px #DFE2E6'}
         pt="13px"
         pb={'19px'}
         mb={'34px'}
         px="16px"
+        position={'relative'}
+        width="331px"
+        bg={'grayModern.900'}
+        borderRadius="8px"
+        color="white"
+        overflow="hidden"
+        _before={{ ...persudoPublic, bottom: '-180px' }}
+        _after={{ ...persudoPublic, bottom: '-130px' }}
         shrink={[1, 1, 1, 0]}
       >
         <Stack zIndex="2" flex={'1'} gap="0">
@@ -78,7 +104,7 @@ export default memo(function UserCard() {
               alt="user"
               width={'36px'}
               height={'36px'}
-              className={styles.avatar}
+              borderRadius={'50%'}
             />
           </Flex>
           <Box fontSize="12px" fontWeight="400" alignSelf={'center'} mt="6px !important">
