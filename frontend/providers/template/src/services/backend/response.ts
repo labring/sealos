@@ -1,12 +1,12 @@
 import { NextApiResponse } from 'next';
 import { ERROR_TEXT, ERROR_RESPONSE } from '../error';
 
-export const jsonRes = (
+export const jsonRes = <T = any>(
   res: NextApiResponse,
   props?: {
     code?: number;
     message?: string;
-    data?: any;
+    data?: T;
     error?: any;
   }
 ) => {

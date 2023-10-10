@@ -169,6 +169,8 @@ spec:
                 type: object
               description:
                 type: string
+              draft:
+                type: boolean
               gitRepo:
                 type: string
               icon:
@@ -263,6 +265,8 @@ spec:
                 type: object
               description:
                 type: string
+              draft:
+                type: boolean
               gitRepo:
                 type: string
               icon:

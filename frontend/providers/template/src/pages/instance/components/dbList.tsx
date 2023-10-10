@@ -1,20 +1,18 @@
 import { getDBListByName } from '@/api/instance';
-import StatusTag from '@/components/StatusTag';
 import MyIcon from '@/components/Icon';
+import StatusTag from '@/components/StatusTag';
 import MyTable from '@/components/Table';
+import { useResourceStore } from '@/store/resource';
 import { DBListItemType } from '@/types/db';
+import { printMemory } from '@/utils/tools';
 import { Box, Button, Flex, Icon, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { useRouter } from 'next/router';
-import { useCallback, useMemo } from 'react';
-import { printMemory } from '@/utils/tools';
-import { useResourceStore } from '@/store/resource';
+import { useMemo } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
 export default function AppList({ instanceName }: { instanceName: string }) {
   const { t } = useTranslation();
-  const router = useRouter();
   const { appendResource } = useResourceStore();
 
   const { data } = useQuery(
@@ -31,14 +29,14 @@ export default function AppList({ instanceName }: { instanceName: string }) {
     }
   );
 
-  const handleToDetailPage = useCallback(() => {
+  const handleToDetailPage = (name: string) => {
     sealosApp.runEvents('openDesktopApp', {
       appKey: 'system-dbprovider',
       pathname: '/db/detail',
-      query: { name: instanceName },
+      query: { name: name },
       messageData: {}
     });
-  }, [instanceName]);
+  };
 
   const columns = useMemo<
     {
@@ -100,15 +98,14 @@ export default function AppList({ instanceName }: { instanceName: string }) {
               variant={'base'}
               leftIcon={<MyIcon name={'detail'} transform={'translateY(-1px)'} />}
               px={3}
-              onClick={handleToDetailPage}
-            >
+              onClick={() => handleToDetailPage(item.name)}>
               {t('Details')}
             </Button>
           </Flex>
         )
       }
     ],
-    [handleToDetailPage, t]
+    [t]
   );
 
   return (
@@ -132,16 +129,14 @@ export default function AppList({ instanceName }: { instanceName: string }) {
             justifyContent={'center'}
             alignItems={'center'}
             background={'white'}
-            p="32px"
-          >
+            p="32px">
             <Flex
               border={'1px dashed #9CA2A8'}
               borderRadius="50%"
               w={'48px'}
               h={'48px'}
               justifyContent="center"
-              alignItems={'center'}
-            >
+              alignItems={'center'}>
               <MyIcon color={'#7B838B'} name="empty"></MyIcon>
             </Flex>
             <Text mt={'12px'} fontSize={14} color={'#5A646E'}>

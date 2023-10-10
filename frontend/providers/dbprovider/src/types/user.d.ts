@@ -19,6 +19,17 @@ export type Session = {
   kubeconfig: KubeConfig;
 };
 
-const sessionKey = 'session';
+export const sessionKey = 'session';
 
-export { sessionKey };
+export type userPriceType = {
+  cpu: number;
+  memory: number;
+  storage: number;
+  gpu?: { alias: string; type: string; price: number; inventory: number; vm: number }[];
+};
+
+export type UserQuotaItemType = {
+  type: 'cpu' | 'memory' | 'storage';
+  used: number;
+  limit: number;
+};

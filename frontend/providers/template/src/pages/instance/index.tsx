@@ -1,18 +1,16 @@
-import { getInstanceByName } from '@/api/instance';
-import { serviceSideProps } from '@/utils/i18n';
-import { Box, Flex, Icon, Text } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
-import AppList from './components/appList';
-import Header from './components/header';
-import DBList from './components/dbList';
-import CronJobList from './components/cronjobList';
-import OtherList from './components/otherList';
 import { useResourceStore } from '@/store/resource';
+import { serviceSideProps } from '@/utils/i18n';
+import { Box, Flex } from '@chakra-ui/react';
 import { useEffect } from 'react';
+import AppList from './components/appList';
+import CronJobList from './components/cronjobList';
+import DBList from './components/dbList';
+import Header from './components/header';
+import OtherList from './components/otherList';
 
 export default function MyApp({ instanceName }: { instanceName: string }) {
   const { resource, setInstanceName } = useResourceStore();
-  console.log(resource);
+  console.log(resource, 'resource');
 
   useEffect(() => {
     setInstanceName(instanceName);

@@ -48,7 +48,7 @@ func main() {
 
 const (
 	// pre-defined user name and password
-	defaultUser     = "root"
+	defaultUser     = "admin"
 	defaultPassword = "sealos2023"
 
 	// kubernetes default user cr is admin

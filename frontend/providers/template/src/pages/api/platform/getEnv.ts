@@ -2,6 +2,7 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
+import { EnvResponse } from '@/types/index';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
@@ -16,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     console.log(error, 'errpr-');
   }
 
-  jsonRes(res, {
+  jsonRes<EnvResponse>(res, {
     data: {
       SEALOS_CLOUD_DOMAIN: process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io',
       SEALOS_CERT_SECRET_NAME: process.env.SEALOS_CERT_SECRET_NAME || 'wildcard-cert',

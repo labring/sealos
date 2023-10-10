@@ -27,15 +27,12 @@ const Header = ({
   const { lastRoute } = useGlobalStore();
 
   const handleExportYaml = useCallback(async () => {
-    const zip = new JSZip();
-    yamlList.forEach((item) => {
-      zip.file(item.filename, item.value);
-    });
-    const res = await zip.generateAsync({ type: 'blob' });
+    const exportYamlString = yamlList.map((i) => i.value).join('---\n');
+    if (!exportYamlString) return;
     downLoadBold(
-      res,
-      'application/zip',
-      appName ? `${appName}.zip` : `yaml${dayjs().format('YYYYMMDDHHmmss')}.zip`
+      exportYamlString,
+      'application/yaml',
+      appName ? `${appName}.yaml` : `yaml${dayjs().format('YYYYMMDDHHmmss')}.yaml`
     );
   }, [appName, yamlList]);
 

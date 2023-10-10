@@ -4,7 +4,6 @@ import type { YamlItemType } from '@/types/index';
 import { downLoadBold } from '@/utils/tools';
 import { Box, Button, Flex, Image, Text } from '@chakra-ui/react';
 import dayjs from 'dayjs';
-import JSZip from 'jszip';
 import { useTranslation } from 'next-i18next';
 import { MouseEvent, useCallback } from 'react';
 
@@ -26,15 +25,12 @@ const Header = ({
   const { t } = useTranslation();
 
   const handleExportYaml = useCallback(async () => {
-    const zip = new JSZip();
-    yamlList.forEach((item) => {
-      zip.file(item.filename, item.value);
-    });
-    const res = await zip.generateAsync({ type: 'blob' });
+    const exportYamlString = yamlList.map((i) => i.value).join('---\n');
+    if (!exportYamlString) return;
     downLoadBold(
-      res,
-      'application/zip',
-      appName ? `${appName}.zip` : `yaml${dayjs().format('YYYYMMDDHHmmss')}.zip`
+      exportYamlString,
+      'application/yaml',
+      appName ? `${appName}.yaml` : `yaml${dayjs().format('YYYYMMDDHHmmss')}.yaml`
     );
   }, [appName, yamlList]);
 
@@ -49,8 +45,7 @@ const Header = ({
       w={'100%'}
       h={'80px'}
       alignItems={'center'}
-      backgroundColor={'rgba(255, 255, 255, 0.90)'}
-    >
+      backgroundColor={'rgba(255, 255, 255, 0.90)'}>
       <Flex
         boxShadow={'0px 1px 2px 0.5px rgba(84, 96, 107, 0.20)'}
         flexShrink={0}
@@ -60,8 +55,7 @@ const Header = ({
         h={'80px'}
         borderRadius={'8px'}
         backgroundColor={'#FBFBFC'}
-        border={' 1px solid rgba(255, 255, 255, 0.50)'}
-      >
+        border={' 1px solid rgba(255, 255, 255, 0.50)'}>
         <Image src={templateDetail?.spec?.icon} alt="" width={'60px'} height={'60px'} />
       </Flex>
       <Flex ml={'24px'} w="520px" flexDirection={'column'}>
@@ -83,8 +77,7 @@ const Header = ({
           mt={'8px'}
           fontSize={'12px'}
           color={'5A646E'}
-          fontWeight={400}
-        >
+          fontWeight={400}>
           {templateDetail?.spec?.description}
         </Text>
       </Flex>
@@ -98,8 +91,7 @@ const Header = ({
         bg={'myWhite.600'}
         borderColor={'myGray.200'}
         variant={'base'}
-        onClick={handleExportYaml}
-      >
+        onClick={handleExportYaml}>
         {t('Export')} Yaml
       </Button>
       <Button px={4} minW={'140px'} h={'40px'} variant={'primary'} onClick={applyCb}>

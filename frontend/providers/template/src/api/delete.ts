@@ -19,6 +19,9 @@ export const delDBByName = (instanceName: string) =>
 export const delInstanceByName = (instanceName: string) =>
   DELETE('/api/instance/deleteByName', { instanceName });
 
+export const delJobByName = (instanceName: string) =>
+  DELETE('/api/resource/delJob', { instanceName });
+
 export const deleteResourceByKind = (instanceName: string, kind: ResourceKindType) => {
   switch (kind) {
     case 'CronJob':
@@ -33,6 +36,8 @@ export const deleteResourceByKind = (instanceName: string, kind: ResourceKindTyp
       return delDBByName(instanceName);
     case 'Instance':
       return delInstanceByName(instanceName);
+    case 'Job':
+      return delJobByName(instanceName);
     default:
       throw new Error(`Unsupported kind: ${kind}`);
   }
