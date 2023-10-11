@@ -316,6 +316,7 @@ export default function EditApp({ appName }: { appName?: string }) {
           flexGrow={1}
           backgroundColor={'rgba(255, 255, 255, 0.90)'}>
           <Header
+            cloudDomain={platformEnvs?.SEALOS_CLOUD_DOMAIN || ''}
             templateDetail={data?.templateYaml!}
             appName={appName || ''}
             title={title}
