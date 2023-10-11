@@ -8,7 +8,6 @@ sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cl
 sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-terminal-frontend:latest
 sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-applaunchpad-frontend:latest
 sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-dbprovider-frontend:latest
-sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-resources-metering-controller:latest
 sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-resources-controller:latest
 sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-account-controller:latest
 sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-costcenter-frontend:latest
