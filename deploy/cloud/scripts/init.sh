@@ -39,7 +39,7 @@ function gen_mongodbUri() {
     kubectl apply -f manifests/mongodb.yaml
     echo "waiting for mongodb secret generated"
     # if there is no sealos-mongodb-conn-credential secret then wait for mongodb ready
-    while [ -z "$(kubectl get secret -n sealos sealos-mongodb-conn-credential)" ]; do
+    while [ -z "$(kubectl get secret -n sealos sealos-mongodb-conn-credential 2>/dev/null)" ]; do
       sleep 3
     done
     chmod +x scripts/gen-mongodb-uri.sh
@@ -93,10 +93,6 @@ function sealos_run_controller {
 
   # run resources monitoring controller
   sealos run tars/monitoring.tar \
-  --env MONGO_URI="$mongodbUri" --env DEFAULT_NAMESPACE="resources-system"
-
-  # run resources metering controller
-  sealos run tars/metering.tar \
   --env MONGO_URI="$mongodbUri" --env DEFAULT_NAMESPACE="resources-system"
 
   # run account controller
