@@ -275,7 +275,7 @@ func (c *Applier) deleteCluster() error {
 }
 
 func (c *Applier) syncWorkdir() {
-	if v, _ := system.Get(system.SYNC_WORKDIR_ENV_KEY); v != "" {
+	if v, _ := system.Get(system.SyncWorkDirEnvKey); v != "" {
 		vb, _ := strconv.ParseBool(v)
 		if !vb {
 			return

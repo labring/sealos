@@ -83,17 +83,12 @@ var configOptions = []ConfigOption{
 		OSEnv:       BuildahLogLevelConfigKey,
 	},
 	{
-		Key:          ScpChecksumConfigKey,
-		Description:  "whether to check the md5sum value is consistent during the copy process.",
-		DefaultValue: "false",
-	},
-	{
 		Key:         ContainerStorageConfEnvKey,
 		Description: "path of container storage config file, setting this env will override the default location",
 		OSEnv:       ContainerStorageConfEnvKey,
 	},
 	{
-		Key:          SYNC_WORKDIR_ENV_KEY,
+		Key:          SyncWorkDirEnvKey,
 		Description:  "whether to sync runtime root dir to all master nodes for backup purpose",
 		DefaultValue: "true",
 	},
@@ -106,8 +101,7 @@ const (
 	BuildahFormatConfigKey     = "BUILDAH_FORMAT"
 	BuildahLogLevelConfigKey   = "BUILDAH_LOG_LEVEL"
 	ContainerStorageConfEnvKey = "CONTAINERS_STORAGE_CONF"
-	ScpChecksumConfigKey       = "SCP_CHECKSUM"
-	SYNC_WORKDIR_ENV_KEY       = "SYNC_WORKDIR"
+	SyncWorkDirEnvKey          = "SYNC_WORKDIR"
 )
 
 func (*envSystemConfig) getValueOrDefault(key string) (*ConfigOption, error) {
