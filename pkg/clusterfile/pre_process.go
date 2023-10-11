@@ -17,8 +17,6 @@ package clusterfile
 import (
 	"bytes"
 	"errors"
-	"os"
-	"strings"
 
 	"helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/getter"
@@ -48,12 +46,6 @@ func (c *ClusterFile) Process() (err error) {
 	}
 	c.once.Do(func() {
 		err = func() error {
-			for i := range c.customEnvs {
-				kv := strings.SplitN(c.customEnvs[i], "=", 2)
-				if len(kv) == 2 {
-					_ = os.Setenv(kv[0], kv[1])
-				}
-			}
 			clusterFileData, err := c.loadClusterFile()
 			if err != nil {
 				return err
@@ -159,7 +151,7 @@ func (c *ClusterFile) DecodeConfigs(data []byte) error {
 }
 
 func (c *ClusterFile) DecodeKubeadmConfig(data []byte) error {
-	kubeadmConfig, err := runtime.LoadKubeadmConfigs(string(data), c.setDefaults, runtime.DecodeCRDFromString)
+	kubeadmConfig, err := runtime.LoadKubeadmConfigs(string(data), false, runtime.DecodeCRDFromString)
 	if err != nil {
 		return err
 	}
