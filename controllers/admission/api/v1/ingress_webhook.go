@@ -216,7 +216,7 @@ func (v *IngressValidator) checkOwner(i *netv1.Ingress, rule *netv1.IngressRule)
 		}
 	}
 	// pass owner check
-	ilog.Info("ingress host "+rule.Host+" is not owned by other user, pass checkOwner validate", "ingress namespace", i.Namespace, "ingress name", i.Name)
+	ilog.Info("ingress host "+rule.Host+" pass checkOwner validate", "ingress namespace", i.Namespace, "ingress name", i.Name)
 	return nil
 }
 
@@ -240,5 +240,7 @@ func (v *IngressValidator) checkIcp(i *netv1.Ingress, rule *netv1.IngressRule) e
 		ilog.Info("deny ingress host "+rule.Host+", icp query result is empty", "ingress namespace", i.Namespace, "ingress name", i.Name, "rule host", rule.Host, "icp result", icpRep.Result)
 		return fmt.Errorf(code.MessageFormat, code.IngressFailedIcpCheck, "icp query result is empty")
 	}
+	// pass icp check
+	ilog.Info("ingress host "+rule.Host+" pass checkIcp validate", "ingress namespace", i.Namespace, "ingress name", i.Name, "rule host", rule.Host, "icp result", icpRep.Result)
 	return nil
 }
