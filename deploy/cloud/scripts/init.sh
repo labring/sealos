@@ -38,10 +38,19 @@ function gen_mongodbUri() {
     echo "no mongodb uri found, create mongodb and gen mongodb uri"
     kubectl apply -f manifests/mongodb.yaml
     echo "waiting for mongodb secret generated"
+    message="Waiting for MongoDB ready"
     # if there is no sealos-mongodb-conn-credential secret then wait for mongodb ready
     while [ -z "$(kubectl get secret -n sealos sealos-mongodb-conn-credential 2>/dev/null)" ]; do
-      sleep 3
+      echo -ne "\r$message   \e[K"
+      sleep 0.5
+      echo -ne "\r$message .  \e[K"
+      sleep 0.5
+      echo -ne "\r$message .. \e[K"
+      sleep 0.5
+      echo -ne "\r$message ...\e[K"
+      sleep 0.5
     done
+    echo "mongodb secret has been generated successfully."
     chmod +x scripts/gen-mongodb-uri.sh
     mongodbUri=$(scripts/gen-mongodb-uri.sh)
   fi
