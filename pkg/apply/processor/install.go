@@ -147,11 +147,12 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 			if !ForceOverride {
 				continue
 			}
-			ctrName = mount.Name
 			logger.Debug("trying to override app %s", img)
-		} else {
-			ctrName = rand.Generator(8)
+			if err := c.Buildah.Delete(mount.Name); err != nil {
+				return err
+			}
 		}
+		ctrName = rand.Generator(8)
 		cluster.Spec.Image = stringsutil.Merge(cluster.Spec.Image, img)
 		bderInfo, err := c.Buildah.Create(ctrName, img)
 		if err != nil {
