@@ -3,6 +3,8 @@ package resources
 import (
 	"strings"
 
+	sealos_networkmanager "github.com/dinoallo/sealos-networkmanager-protoapi"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -28,6 +30,7 @@ const (
 	TerminalIDLabelKey         = "TerminalID"
 	AppLabelKey                = "app"
 	JobNameLabelKey            = "job-name"
+	KubeBlocksBackUpName       = "kubeblocks-backup-data"
 )
 
 type ResourceNamed struct {
@@ -53,6 +56,9 @@ func NewResourceNamed(cr client.Object) *ResourceNamed {
 	case labels[JobNameLabelKey] != "":
 		p._type = JOB
 		p._name = strings.SplitN(labels[JobNameLabelKey], "-", 2)[0]
+	case cr.GetName() == KubeBlocksBackUpName:
+		p._type = JOB
+		p._name = KubeBlocksBackUpName
 	default:
 		p._type = OTHER
 		p._name = ""
@@ -80,6 +86,75 @@ func (p *ResourceNamed) Labels() map[string]string {
 		//default:
 	}
 	return label
+}
+
+var notExistLabels = func() map[uint8][]*sealos_networkmanager.Label {
+	labels := make(map[uint8][]*sealos_networkmanager.Label)
+	for k := range AppTypeReverse {
+		labels[k] = getNotExistLabels(k)
+	}
+	return labels
+}()
+
+func (p *ResourceNamed) GetNotExistLabels() []*sealos_networkmanager.Label {
+	return notExistLabels[p.Type()]
+}
+
+func getNotExistLabels(tp uint8) []*sealos_networkmanager.Label {
+	var labels []*sealos_networkmanager.Label
+	for appType := range AppTypeReverse {
+		if tp == appType {
+			continue
+		}
+		switch appType {
+		case db:
+			labels = append(labels, &sealos_networkmanager.Label{
+				Key: DBPodLabelComponentNameKey,
+			}, &sealos_networkmanager.Label{
+				Key: DBPodLabelManagedByKey,
+			})
+		case app:
+			labels = append(labels, &sealos_networkmanager.Label{
+				Key: AppLabelKey,
+			})
+		case terminal:
+			labels = append(labels, &sealos_networkmanager.Label{
+				Key: TerminalIDLabelKey,
+			})
+		case job:
+			labels = append(labels, &sealos_networkmanager.Label{
+				Key: JobNameLabelKey,
+			})
+		}
+	}
+	return labels
+}
+
+func (p *ResourceNamed) GetInLabels() []*sealos_networkmanager.Label {
+	var labelsEqual []*sealos_networkmanager.Label
+	switch p.Type() {
+	case db:
+		labelsEqual = append(labelsEqual, &sealos_networkmanager.Label{
+			Key:   DBPodLabelComponentNameKey,
+			Value: []string{p.labels[DBPodLabelComponentNameKey]},
+		})
+	case terminal:
+		labelsEqual = append(labelsEqual, &sealos_networkmanager.Label{
+			Key:   TerminalIDLabelKey,
+			Value: []string{p.labels[TerminalIDLabelKey]},
+		})
+	case app:
+		labelsEqual = append(labelsEqual, &sealos_networkmanager.Label{
+			Key:   AppLabelKey,
+			Value: []string{p.labels[AppLabelKey]},
+		})
+	case job:
+		labelsEqual = append(labelsEqual, &sealos_networkmanager.Label{
+			Key:   JobNameLabelKey,
+			Value: []string{p.labels[JobNameLabelKey]},
+		})
+	}
+	return labelsEqual
 }
 
 func (p *ResourceNamed) TypeString() string {

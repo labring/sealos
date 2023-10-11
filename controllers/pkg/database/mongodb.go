@@ -477,13 +477,34 @@ func (m *MongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 	usedStage := bson.M{}
 
 	// 根据 EnumMap 动态构建 $group 和 $project 阶段
-	for key := range prols.EnumMap {
+	for key, value := range prols.EnumMap {
 		keyStr := strconv.Itoa(int(key))
 
-		// 添加到 $group 阶段
-		groupStage = append(groupStage, primitive.E{Key: keyStr, Value: bson.D{{Key: "$sum", Value: "$used." + keyStr}}})
+		if value.PriceType == resources.DIF {
+			// 对于非0的$min
+			minWithCondition := bson.D{
+				{Key: "$min", Value: bson.D{
+					{Key: "$cond", Value: bson.A{
+						bson.D{{Key: "$eq", Value: bson.A{"$used." + keyStr, 0}}},
+						nil, // 将0值排除在外
+						"$used." + keyStr,
+					}},
+				}},
+			}
 
-		// 添加到 used 阶段
+			groupStage = append(groupStage,
+				primitive.E{Key: keyStr + "_max", Value: bson.D{{Key: "$max", Value: "$used." + keyStr}}}, // 正常计算$max
+				primitive.E{Key: keyStr + "_min", Value: minWithCondition},
+			)
+
+			// 添加到 used 阶段
+			usedStage[keyStr] = bson.D{{Key: "$subtract", Value: bson.A{
+				"$" + keyStr + "_max",
+				"$" + keyStr + "_min",
+			}}}
+			continue
+		}
+		groupStage = append(groupStage, primitive.E{Key: keyStr, Value: bson.D{{Key: "$sum", Value: "$used." + keyStr}}})
 		usedStage[keyStr] = bson.D{{Key: "$toInt", Value: bson.D{{Key: "$round", Value: bson.D{{Key: "$divide", Value: bson.A{
 			"$" + keyStr, bson.D{{Key: "$cond", Value: bson.A{bson.D{{Key: "$gt", Value: bson.A{"$count", minutes}}}, "$count", minutes}}}}}}}}}}
 	}
@@ -520,6 +541,9 @@ func (m *MongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 		if err != nil {
 			return nil, 0, fmt.Errorf("decode error: %v", err)
 		}
+
+		//TODO delete
+		logger.Info("generate billing data", "result", result)
 
 		if _, ok := appCostsMap[result.Namespace]; !ok {
 			appCostsMap[result.Namespace] = make(map[uint8][]resources.AppCost)
@@ -574,6 +598,8 @@ func (m *MongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 			if err != nil {
 				return nil, 0, fmt.Errorf("insert error: %v", err)
 			}
+			//TODO delete
+			logger.Info("generate billing data", "billing", billing)
 		}
 	}
 

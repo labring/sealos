@@ -233,32 +233,41 @@ type PropertyTypeLS struct {
 	EnumMap   map[uint8]PropertyType
 }
 
+const (
+	// 平均值
+	AVG = "AVG"
+	// 累加值
+	SUM = "SUM"
+	// 差值
+	DIF = "DIF"
+)
+
 var DefaultPropertyTypeList = []PropertyType{
 	{
 		Name:       "cpu",
 		Enum:       0,
-		PriceType:  "AVG",
+		PriceType:  AVG,
 		UnitPrice:  67,
 		UnitString: "1m",
 	},
 	{
 		Name:       "memory",
 		Enum:       1,
-		PriceType:  "AVG",
+		PriceType:  AVG,
 		UnitPrice:  33,
 		UnitString: "1Mi",
 	},
 	{
 		Name:       "storage",
 		Enum:       2,
-		PriceType:  "AVG",
+		PriceType:  AVG,
 		UnitPrice:  2,
 		UnitString: "1Mi",
 	},
 	{
 		Name:       "network",
 		Enum:       3,
-		PriceType:  "AVG",
+		PriceType:  DIF,
 		UnitPrice:  781,
 		UnitString: "1Mi",
 	},
