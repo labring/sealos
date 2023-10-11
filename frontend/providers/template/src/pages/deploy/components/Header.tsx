@@ -172,7 +172,7 @@ const Header = ({
                   </Flex>
                 </Flex>
                 <Text mt="16px" fontSize={'12px '} fontWeight={500} color={'#485058'}>
-                  {t('Button effect')}
+                  {t('Button Effect')}
                 </Text>
                 <Image mt="4px" alt="Button effect" src="/images/ButtonEffect.svg" />
               </PopoverBody>
