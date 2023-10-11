@@ -5,6 +5,7 @@ set -e
 # Configurations
 CLOUD_DIR="/root/.sealos/cloud"
 SEALOS_VERSION="v4.3.4"
+CLOUD_VERSION="v0.0.1"
 
 # Define English and Chinese prompts
 declare -A PROMPTS_EN PROMPTS_CN
@@ -27,6 +28,9 @@ PROMPTS_EN=(
     ["ingress_installation"]="Installing ingress-nginx-controller and kubeblocks."
     ["patching_ingress"]="Patching ingress-nginx-controller tolerations to allow it to run on master node. If you don't want it to run on master node, please skip this step."
     ["installing_cloud"]="Installing sealos cloud."
+    ["avx_not_supported"]="CPU does not support AVX instructions"
+    ["ssh_private_key"]="Please configure the ssh private key path, press Enter to use the default value '/root/.ssh/id_rsa' "
+    ["ssh_password"]="Please enter the ssh password, press Enter to skip\n"
 )
 
 PROMPTS_CN=(
@@ -36,7 +40,7 @@ PROMPTS_CN=(
     ["input_node_ips"]="请输入Node IPs (多个node节点使用逗号分隔，可跳过): "
     ["pod_subnet"]="请输入pod子网 (回车使用默认值: 100.64.0.0/10): "
     ["service_subnet"]="请输入service子网 (回车使用默认值: 10.96.0.0/22): "
-    ["cloud_domain"]="请输入云域名: "
+    ["cloud_domain"]="请输入云域名：（例：127.0.0.1.nip.io) \n "
     ["cloud_port"]="请输入云端口 (回车使用默认值: 443): "
     ["input_certificate"]="您要输入证书吗？(y/n): "
     ["certificate_path"]="请输入证书路径: "
@@ -47,6 +51,9 @@ PROMPTS_CN=(
     ["ingress_installation"]="正在安装ingress-nginx-controller和kubeblocks。"
     ["patching_ingress"]="正在修改ingress-nginx-controller的容忍度，以允许它在主节点上运行。如果您不希望它在主节点上运行，请跳过此步骤。"
     ["installing_cloud"]="正在安装sealos cloud。"
+    ["avx_not_supported"]="CPU不支持AVX指令"
+    ["ssh_private_key"]="如需免密登录请配置ssh私钥路径，回车使用默认值'/root/.ssh/id_rsa' "
+    ["ssh_password"]="请输入ssh密码，配置免密登录可回车跳过\n"
 )
 
 # Choose Language
@@ -69,6 +76,15 @@ if [[ $lang_choice == "2" ]]; then
 else
     LANGUAGE="EN"
 fi
+
+#TODO check if CPU supports AVX instructions
+#precheck() {
+#  cat /proc/cpuinfo | grep avx
+#  if [ $? -ne 0 ]; then
+#    get_prompt "avx_not_supported"
+#    exit 1
+#  fi
+#}
 
 # Initialization
 init() {
@@ -119,7 +135,11 @@ collect_input() {
             get_prompt "invalid_ips"
         fi
     done
-
+    read -p "$(get_prompt "ssh_private_key")" ssh_private_key
+    if [[ -z "$ssh_private_key" ]]; then
+        ssh_private_key="${HOME}/.ssh/id_rsa"
+    fi
+    read -p "$(get_prompt "ssh_password")" ssh_password
     read -p "$(get_prompt "pod_subnet")" podCidr
     read -p "$(get_prompt "service_subnet")" serviceCidr
     read -p "$(get_prompt "cloud_domain")" cloudDomain
@@ -180,7 +200,10 @@ spec:
         labring/cilium:v1.12.14\
         labring/cert-manager:v1.8.0\
         labring/openebs:v3.4.0\
-        --masters $masterIps"
+        --masters $masterIps\
+        --pk=${ssh_private_key}\
+        --passwd=${ssh_password}\
+        "
 
     if [ -n "$nodeIps" ]; then
         sealos_gen_cmd+=" --nodes $nodeIps"
@@ -225,8 +248,8 @@ collect_input
 prepare_configs
 execute_commands
 
-# Print sealos cloud login info
-echo "Sealos cloud login info:"
-echo "URL: https://$cloudDomain:$cloudPort"
-echo "admin Username: admin"
-echo "admin Password: sealos2023"
+GREEN='\033[0;32m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
+echo -e "${BOLD}Sealos cloud login info:${RESET}\nCloud Version: ${GREEN}${CLOUD_VERSION}${RESET}\nURL: ${GREEN}https://$cloudDomain:$cloudPort${RESET}\nadmin Username: ${GREEN}admin${RESET}\nadmin Password: ${GREEN}sealos2023${RESET}"
