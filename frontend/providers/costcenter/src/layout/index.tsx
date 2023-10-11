@@ -1,6 +1,5 @@
 import useSessionStore from '@/stores/session';
 import { Box, Flex, Link, Text } from '@chakra-ui/react';
-import clsx from 'clsx';
 import { useEffect, useState } from 'react';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import styles from './index.module.scss';
@@ -32,7 +31,17 @@ export default function Layout({ children }: any) {
   }, [isLodaing, setSession]);
 
   return (
-    <Flex className={clsx(styles.desktopContainer)} alignItems={'center'} justifyContent={'center'}>
+    <Flex
+      w="100vw"
+      h="100vh"
+      position="relative"
+      background="frostyNightfall.200"
+      pt={'4px'}
+      pb="10px"
+      backdropFilter="blur(150px)"
+      alignItems={'center'}
+      justifyContent={'center'}
+    >
       {isLodaing ? (
         <Flex w={'100%'} h={'100%'} alignItems={'center'} justifyContent={'center'}>
           {isError ? (
@@ -44,17 +53,10 @@ export default function Layout({ children }: any) {
             </Text>
           ) : (
             <></>
-            // <Spinner
-            //   thickness="4px"
-            //   speed="0.65s"
-            //   emptyColor="gray.200"
-            //   color="primaryblue.600"
-            //   size="xl"
-            // />
           )}
         </Flex>
       ) : (
-        <Flex className={clsx(styles.backgroundWrap)} justify={'center'}>
+        <Flex width="full" height="full" maxWidth="1600px" justify={'center'}>
           <SideBar />
           <Box flexGrow={1} borderRadius="8px" overflow={'hidden'} w={0}>
             {children}

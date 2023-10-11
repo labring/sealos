@@ -7,6 +7,7 @@ export type TemplateType = {
   spec: {
     gitRepo: string; // new
     templateType: 'inline'; // new
+    template_type?: string;
     author: string;
     title: string;
     url: string;

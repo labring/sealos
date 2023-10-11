@@ -28,6 +28,7 @@ import (
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/unshare"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	netutil "github.com/labring/sealos/pkg/utils/net"
 )
@@ -138,10 +139,7 @@ func (w *wrap) isLocal(addr string) bool {
 	if unshare.IsRootless() {
 		return false
 	}
-	host, _, err := net.SplitHostPort(addr)
-	if err != nil {
-		return false
-	}
+	host := iputils.GetHostIP(addr)
 	if host == "localhost" || host == "127.0.0.1" || w.localAddresses.Has(host) {
 		return true
 	}

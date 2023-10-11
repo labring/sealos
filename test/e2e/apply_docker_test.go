@@ -19,6 +19,8 @@ package e2e
 import (
 	"fmt"
 
+	"github.com/labring/sealos/test/e2e/testdata/kubeadm"
+
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
 
 	"github.com/labring/sealos/test/e2e/suites/operators"
@@ -46,7 +48,7 @@ var _ = Describe("E2E_sealos_apply_docker_test", func() {
 
 			By("generate Clusterfile")
 			clusterfileConfig := config.Clusterfile{
-				BinData:  "testdata/docker-svc-sans.yaml",
+				BinData:  kubeadm.PackageName + "/docker-svc-sans.yaml",
 				Replaces: map[string]string{"127.0.0.1": utils.GetLocalIpv4()},
 			}
 			applyfile, err := clusterfileConfig.Write()
@@ -71,7 +73,7 @@ var _ = Describe("E2E_sealos_apply_docker_test", func() {
 		It("sealos apply single by docker-buildimage", func() {
 
 			By("build image from dockerfile")
-			kubeadm := `
+			kubeadmVar := `
 apiVersion: kubeadm.k8s.io/v1beta2
 kind: ClusterConfiguration
 networking:
@@ -79,7 +81,7 @@ networking:
   podSubnet: "10.160.0.0/12"
 `
 			dFile := config.RootfsDockerfile{
-				KubeadmYaml: kubeadm,
+				KubeadmYaml: kubeadmVar,
 				BaseImage:   "labring/kubernetes-docker:v1.25.0",
 			}
 			var tmpdir string
@@ -92,7 +94,7 @@ networking:
 			utils.CheckErr(err, fmt.Sprintf("failed to build image: %v", err))
 			By("generate Clusterfile")
 			clusterfileConfig := config.Clusterfile{
-				BinData:  "testdata/custome-docker-svc.yaml",
+				BinData:  kubeadm.PackageName + "/custome-docker-svc.yaml",
 				Replaces: map[string]string{"127.0.0.1": utils.GetLocalIpv4(), "labring/kubernetes-docker:v1.25.0": "apply-hack-docker:kubeadm-network"},
 			}
 			applyfile, err := clusterfileConfig.Write()

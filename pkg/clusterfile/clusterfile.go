@@ -31,7 +31,6 @@ type ClusterFile struct {
 	customValues             []string
 	customSets               []string
 	customEnvs               []string
-	setDefaults              bool
 
 	cluster       *v2.Cluster
 	configs       []v2.Config
@@ -60,12 +59,6 @@ func (c *ClusterFile) GetRuntimeConfig() runtime.Config {
 }
 
 type OptionFunc func(*ClusterFile)
-
-func WithSetDefaults(v bool) OptionFunc {
-	return func(c *ClusterFile) {
-		c.setDefaults = v
-	}
-}
 
 func WithCustomConfigFiles(files []string) OptionFunc {
 	return func(c *ClusterFile) {

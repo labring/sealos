@@ -1,10 +1,11 @@
+import { postDeployApp } from '@/api/app';
+import { getPlatformEnv } from '@/api/platform';
 import MyIcon from '@/components/Icon';
 import { editModeMap } from '@/constants/editApp';
 import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
-import { GET } from '@/services/request';
 import { YamlItemType } from '@/types';
-import { TemplateType, TemplateSourceType } from '@/types/app';
+import { TemplateSourceType, TemplateType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
 import {
   developGenerateYamlList,
@@ -12,24 +13,23 @@ import {
   parseTemplateString
 } from '@/utils/json-yaml';
 import { getTemplateDefaultValues } from '@/utils/template';
+import { downLoadBold } from '@/utils/tools';
 import { Box, Button, Flex, Text } from '@chakra-ui/react';
 import { StreamLanguage } from '@codemirror/language';
 import { yaml } from '@codemirror/legacy-modes/mode/yaml';
 import { useQuery } from '@tanstack/react-query';
 import CodeMirror from '@uiw/react-codemirror';
+import dayjs from 'dayjs';
 import JsYaml from 'js-yaml';
 import { debounce, has, isObject, mapValues } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { EnvResponse } from '@/types/index';
 import ErrorModal from '../deploy/components/ErrorModal';
 import BreadCrumbHeader from './components/BreadCrumbHeader';
 import Form from './components/Form';
 import YamlList from './components/YamlList';
-import { postDeployApp } from '@/api/app';
-import JSZip from 'jszip';
-import { downLoadBold } from '@/utils/tools';
-import dayjs from 'dayjs';
 
 export default function Develop() {
   const { t } = useTranslation();
@@ -46,7 +46,9 @@ export default function Develop() {
     [yamlSource?.source?.defaults?.app_name?.value]
   );
 
-  const { data: platformEnvs } = useQuery(['getPlatformEnvs'], () => GET('/api/platform/getEnv'));
+  const { data: platformEnvs } = useQuery(['getPlatformEnvs'], getPlatformEnv) as {
+    data: EnvResponse;
+  };
 
   const onYamlChange = (value: string) => {
     setYamlValue(value);
@@ -85,8 +87,9 @@ export default function Develop() {
   const parseTemplate = (str: string) => {
     try {
       const result = getYamlSource(str);
+      const defaultInputes = getTemplateDefaultValues(result);
       setYamlSource(result);
-      const correctYaml = generateCorrectYaml(result);
+      const correctYaml = generateCorrectYaml(result, defaultInputes);
       setYamlList(developGenerateYamlList(correctYaml, detailName));
     } catch (error: any) {
       toast({
@@ -167,12 +170,13 @@ export default function Develop() {
   };
 
   const handleExportYaml = useCallback(async () => {
-    const zip = new JSZip();
-    yamlList.forEach((item) => {
-      zip.file(item.filename, item.value);
-    });
-    const res = await zip.generateAsync({ type: 'blob' });
-    downLoadBold(res, 'application/zip', `yaml${dayjs().format('YYYYMMDDHHmmss')}.zip`);
+    const exportYamlString = yamlList.map((i) => i.value).join('---\n');
+    if (!exportYamlString) return;
+    downLoadBold(
+      exportYamlString,
+      'application/yaml',
+      `yaml${dayjs().format('YYYYMMDDHHmmss')}.yaml`
+    );
   }, [yamlList]);
 
   return (
@@ -183,8 +187,7 @@ export default function Develop() {
         borderRadius={'8px'}
         overflowY={'hidden'}
         overflowX={'scroll'}
-        flex={1}
-      >
+        flex={1}>
         {/* left */}
         <Flex flexDirection={'column'} w="50%" borderRight={'1px solid #EFF0F1'}>
           <Flex
@@ -194,8 +197,7 @@ export default function Develop() {
             alignItems={'center'}
             backgroundColor={'#F8FAFB'}
             px="36px"
-            borderRadius={'8px 8px 0px 0px '}
-          >
+            borderRadius={'8px 8px 0px 0px '}>
             <MyIcon name="dev" color={'#24282C'} w={'24px'} h={'24px'}></MyIcon>
             <Text fontWeight={'500'} fontSize={'16px'} color={'#24282C'} ml="8px">
               {t('develop.Development')}
@@ -223,8 +225,7 @@ export default function Develop() {
             alignItems={'center'}
             backgroundColor={'#F8FAFB'}
             pl="42px"
-            borderRadius={'8px 8px 0px 0px '}
-          >
+            borderRadius={'8px 8px 0px 0px '}>
             <MyIcon name="eyeShow" color={'#24282C'} w={'24px'} h={'24px'}></MyIcon>
             <Text fontWeight={'500'} fontSize={'16px'} color={'#24282C'} ml="8px">
               {t('develop.Preview')}
@@ -236,8 +237,7 @@ export default function Develop() {
               pt="26px"
               pr={{ sm: '20px', md: '60px' }}
               borderBottom={'1px solid #EFF0F1'}
-              flexDirection={'column'}
-            >
+              flexDirection={'column'}>
               <Text fontWeight={'500'} fontSize={'18px'} color={'#24282C'}>
                 {t('develop.Configure Form')}
               </Text>
@@ -253,8 +253,7 @@ export default function Develop() {
                   minW={'100px'}
                   h={'34px'}
                   variant={'link'}
-                  onClick={handleExportYaml}
-                >
+                  onClick={handleExportYaml}>
                   {t('Export')} Yaml
                 </Button>
               </Flex>

@@ -15,32 +15,6 @@ FROM node:current-alpine As base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
-FROM base AS runner
-WORKDIR /app
-
-ENV NODE_ENV production
-# Uncomment the following line in case you want to disable telemetry during runtime.
-ENV NEXT_TELEMETRY_DISABLED 1
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-RUN apk add curl \
-  && apk add ca-certificates \
-  && update-ca-certificates
-
-ARG name
-ARG path
-
-# Install Git and OpenSSH client if $name is equal to template
-RUN if [ "$name" = "template" ]; then \
-    apk add --no-cache git openssh-client; \
-fi
-USER nextjs
-
-EXPOSE 3000
-
-ENV PORT 3000
 # Install dependencies only when needed
 FROM base AS deps
 
@@ -86,16 +60,38 @@ ARG path
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm --offline --filter=$name install && pnpm --filter=$name run build
 
 # Production image, copy all the files and run next
-FROM runner As runner
+FROM node:current-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV production
+# Uncomment the following line in case you want to disable telemetry during runtime.
+ENV NEXT_TELEMETRY_DISABLED 1
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+RUN apk add curl \
+  && apk add ca-certificates \
+  && update-ca-certificates
 
 ARG name
 ARG path
+
+# Install Git and OpenSSH client if $name is equal to template
+RUN if [ "$name" = "template" ]; then \
+    apk add --no-cache git openssh-client; \
+fi
+USER nextjs
 
 # You only need to copy next.config.js if you are NOT using the default configuration
 # COPY --from=builder /app/desktop/next.config.js ./
 COPY --from=builder /app/$path/public ./$path/public
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/static ./$path/.next/static
+
+EXPOSE 3000
+
+ENV PORT 3000
 
 ENV launchpath=./${path}/server.js
 

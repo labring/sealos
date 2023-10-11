@@ -20,6 +20,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/labring/sealos/test/e2e/testdata/kubeadm"
+
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
 
 	"github.com/pkg/errors"
@@ -27,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/test/e2e/testdata"
 )
 
 type Clusterfile struct {
@@ -41,7 +42,7 @@ func (c *Clusterfile) Write() (string, error) {
 	if err != nil {
 		return "", errors.WithMessage(err, "create tmpdir failed")
 	}
-	clusterfile, err := testdata.Asset(c.BinData)
+	clusterfile, err := kubeadm.Asset(c.BinData)
 	if err != nil {
 		return "", errors.WithMessage(err, "read clusterfile failed")
 	}
