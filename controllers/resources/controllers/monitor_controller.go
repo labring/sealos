@@ -25,8 +25,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labring/sealos/pkg/utils/retry"
-
 	"github.com/go-logr/logr"
 	"golang.org/x/sync/semaphore"
 
@@ -34,6 +32,7 @@ import (
 	"github.com/labring/sealos/controllers/pkg/gpu"
 	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
+	"github.com/labring/sealos/controllers/pkg/utils/retry"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
