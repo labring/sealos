@@ -1,8 +1,9 @@
 package v1
 
 import (
-	"k8s.io/api/networking/v1"
 	"testing"
+
+	"k8s.io/api/networking/v1"
 )
 
 func TestIcpValidator_Query(t *testing.T) {
