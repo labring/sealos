@@ -66,13 +66,26 @@ type IngressValidator struct {
 	client.Client
 	domain string
 	cache  cache.Cache
+
+	IcpValidator *IcpValidator
 }
 
 const IngressHostIndex = "host"
 
 func (v *IngressValidator) SetupWithManager(mgr ctrl.Manager) error {
 	ilog.Info("starting webhook cache map")
-	iv := IngressValidator{Client: mgr.GetClient(), domain: os.Getenv("DOMAIN"), cache: mgr.GetCache()}
+
+	iv := IngressValidator{
+		Client: mgr.GetClient(),
+		domain: os.Getenv("DOMAIN"),
+		cache:  mgr.GetCache(),
+
+		IcpValidator: NewIcpValidator(
+			os.Getenv("ICP_ENABLED") == "true",
+			os.Getenv("ICP_ENDPOINT"),
+			os.Getenv("ICP_KEY"),
+		),
+	}
 
 	err := iv.cache.IndexField(
 		context.Background(),
@@ -147,14 +160,20 @@ func (v *IngressValidator) validate(ctx context.Context, i *netv1.Ingress) error
 		return nil
 	}
 
+	checks := []func(*netv1.Ingress, *netv1.IngressRule) error{
+		v.checkCname,
+		v.checkOwner,
+		v.checkIcp,
+	}
+
 	for _, rule := range i.Spec.Rules {
-		if err := v.checkCname(i, &rule); err != nil {
-			return err
-		}
-		if err := v.checkOwner(i, &rule); err != nil {
-			return err
+		for _, check := range checks {
+			if err := check(i, &rule); err != nil {
+				return err
+			}
 		}
 	}
+
 	return nil
 }
 
@@ -197,6 +216,31 @@ func (v *IngressValidator) checkOwner(i *netv1.Ingress, rule *netv1.IngressRule)
 		}
 	}
 	// pass owner check
-	ilog.Info("ingress host "+rule.Host+" is not owned by other user, pass checkOwner validate", "ingress namespace", i.Namespace, "ingress name", i.Name)
+	ilog.Info("ingress host "+rule.Host+" pass checkOwner validate", "ingress namespace", i.Namespace, "ingress name", i.Name)
+	return nil
+}
+
+func (v *IngressValidator) checkIcp(i *netv1.Ingress, rule *netv1.IngressRule) error {
+	if !v.IcpValidator.enabled {
+		ilog.Info("icp is disabled, skip check icp", "ingress namespace", i.Namespace, "ingress name", i.Name, "rule host", rule.Host)
+		return nil
+	}
+	// check rule.host icp
+	icpRep, err := v.IcpValidator.Query(rule)
+	if err != nil {
+		ilog.Error(err, "can not verify ingress host "+rule.Host+", icp query error")
+		return fmt.Errorf(code.MessageFormat, code.IngressWebhookInternalError, "can not verify ingress host "+rule.Host+", icp query error")
+	}
+	if icpRep.ErrorCode != 0 {
+		ilog.Error(err, "icp query error", "ingress namespace", i.Namespace, "ingress name", i.Name, "rule host", rule.Host, "icp error code", icpRep.ErrorCode, "icp reason", icpRep.Reason)
+		return fmt.Errorf(code.MessageFormat, code.IngressWebhookInternalError, icpRep.Reason)
+	}
+	// if icpRep.Result.SiteLicense is empty, return error, failed validate
+	if icpRep.Result.SiteLicense == "" {
+		ilog.Info("deny ingress host "+rule.Host+", icp query result is empty", "ingress namespace", i.Namespace, "ingress name", i.Name, "rule host", rule.Host, "icp result", icpRep.Result)
+		return fmt.Errorf(code.MessageFormat, code.IngressFailedIcpCheck, "icp query result is empty")
+	}
+	// pass icp check
+	ilog.Info("ingress host "+rule.Host+" pass checkIcp validate", "ingress namespace", i.Namespace, "ingress name", i.Name, "rule host", rule.Host, "icp result", icpRep.Result)
 	return nil
 }

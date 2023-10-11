@@ -6,8 +6,13 @@ COPY registry registry
 COPY manifests manifests
 
 ENV cloudDomain="cloud.sealos.io"
+
 ENV ingressWebhookEnabled="true"
 ENV ingressWebhookFailurePolicy="Fail"
+ENV icpEnabled="false"
+ENV icpEndpoint=""
+ENV icpKey=""
+
 ENV namespaceWebhookEnabled="true"
 ENV namespaceWebhookFailurePolicy="Fail"
 

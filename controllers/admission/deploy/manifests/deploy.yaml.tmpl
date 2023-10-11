@@ -296,6 +296,12 @@ spec:
         env:
         - name: DOMAIN
           value: '{{ .cloudDomain }}'
+        - name: ICP_ENABLED
+          value: '{{ .icpEnabled }}'
+        - name: ICP_ENDPOINT
+          value: '{{ .icpEndpoint }}'
+        - name: ICP_KEY
+          value: '{{ .icpKey }}'
         image: ghcr.io/labring/sealos-admission-controller:latest
         livenessProbe:
           httpGet:
