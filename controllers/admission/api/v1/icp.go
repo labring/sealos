@@ -81,9 +81,9 @@ func (i *IcpValidator) Query(rule *netv1.IngressRule) (*IcpResponse, error) {
 
 // genCacheTTL generates a cache TTL based on the response
 func genCacheTTL(rsp *IcpResponse) time.Duration {
-	// If the response is valid, and the site license is not empty, cache for 24 hours
+	// If the response is valid, and the site license is not empty, cache for 30 days
 	if rsp.ErrorCode == 0 && rsp.Result.SiteLicense != "" {
-		return 24 * time.Hour
+		return 30 * 24 * time.Hour
 	}
 	// Otherwise, cache for 5 minutes
 	return 5 * time.Minute
