@@ -26,7 +26,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // LicenseReconciler reconciles a License object
@@ -35,6 +37,8 @@ type LicenseReconciler struct {
 	Scheme    *runtime.Scheme
 	Logger    logr.Logger
 	finalizer *ctrlsdk.Finalizer
+
+	validator *LicenseValidator
 }
 
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses,verbs=get;list;watch;create;update;patch;delete
@@ -50,7 +54,9 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	// on delete reconcile, do nothing but remove finalizer and log
 	if ok, err := r.finalizer.RemoveFinalizer(ctx, license, func(ctx context.Context, obj client.Object) error {
+		r.Logger.V(1).Info("reconcile for license delete")
 		return nil
 	}); ok {
 		return ctrl.Result{}, err
@@ -65,19 +71,25 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return ctrl.Result{}, errors.New("reconcile error from Finalizer")
 }
 
-// TODO do real reconcile
-
 func (r *LicenseReconciler) reconcile(ctx context.Context, license *licensev1.License) (ctrl.Result, error) {
-	// TODO check license and do something
+	r.Logger.V(1).Info("reconcile for license", "license", license.Namespace+"/"+license.Name)
+
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	// TODO set controller by mgr
-	// TODO add predictor
-	// TODO set logger and finalizer
+	r.Logger = mgr.GetLogger().WithName("controller").WithName("License")
+	r.finalizer = ctrlsdk.NewFinalizer(r.Client, "license.sealos.io/finalizer")
+	r.Client = mgr.GetClient()
+
+	// TODO fix this
+	r.validator = &LicenseValidator{
+		Client: r.Client,
+	}
+
+	// reconcile on generation change
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&licensev1.License{}).
+		For(&licensev1.License{}, builder.WithPredicates(predicate.And(predicate.GenerationChangedPredicate{}))).
 		Complete(r)
 }
