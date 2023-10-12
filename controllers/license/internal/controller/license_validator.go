@@ -17,6 +17,5 @@ func (v *LicenseValidator) Validate(license licensev1.License) (bool, error) {
 	// TODO validate license
 	// step1: check if license type matches license mode (P2)
 	// step2: check if license token and key is valid (P1)
-	// step3: check if license token and key already been used (P1)
 	return true, nil
 }

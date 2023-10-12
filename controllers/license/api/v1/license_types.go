@@ -39,11 +39,13 @@ type LicenseStatusPhase string
 
 const (
 	LicenseStatusPhasePending LicenseStatusPhase = "Pending"
-	LicenseStatusPhaseSuccess LicenseStatusPhase = "Active"
+	LicenseStatusPhaseFailed  LicenseStatusPhase = "Failed"
+	LicenseStatusPhaseActive  LicenseStatusPhase = "Active"
 )
 
 // LicenseStatus defines the observed state of License
 type LicenseStatus struct {
+	// +kubebuilder:validation:Enum=Pending;Failed;Active:default=Pending
 	Phase LicenseStatusPhase `json:"phase,omitempty"`
 }
 

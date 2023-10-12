@@ -39,6 +39,7 @@ type LicenseReconciler struct {
 	finalizer *ctrlsdk.Finalizer
 
 	validator *LicenseValidator
+	recorder  *LicenseRecorder
 }
 
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses,verbs=get;list;watch;create;update;patch;delete
@@ -74,6 +75,42 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *LicenseReconciler) reconcile(ctx context.Context, license *licensev1.License) (ctrl.Result, error) {
 	r.Logger.V(1).Info("reconcile for license", "license", license.Namespace+"/"+license.Name)
 
+	// TODO fix logic and make it more readable
+
+	validate, err := r.validator.Validate(*license)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	_, found, err := r.recorder.Get(*license)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if !validate && !found {
+		r.Logger.V(1).Info("license is invalid", "license", license.Namespace+"/"+license.Name)
+
+		// Update license status to failed
+		license.Status.Phase = licensev1.LicenseStatusPhaseFailed
+		_ = r.Status().Update(ctx, license)
+	} else {
+		r.Logger.V(1).Info("license is valid", "license", license.Namespace+"/"+license.Name)
+		// TODO do something after license validated and license is active
+
+		// charge account or update cluster license based on license type
+		switch license.Spec.Type {
+		case licensev1.AccountLicenseType:
+			// TODO charge account
+		case licensev1.ClusterLicenseType:
+			// TODO update cluster license
+		}
+
+		// record license token and key to database to prevent reuse
+
+		// update license status to active
+		license.Status.Phase = licensev1.LicenseStatusPhaseActive
+		_ = r.Status().Update(ctx, license)
+	}
 	return ctrl.Result{}, nil
 }
 
@@ -85,6 +122,11 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	// TODO fix this
 	r.validator = &LicenseValidator{
+		Client: r.Client,
+	}
+
+	// TODO fix this
+	r.recorder = &LicenseRecorder{
 		Client: r.Client,
 	}
 
