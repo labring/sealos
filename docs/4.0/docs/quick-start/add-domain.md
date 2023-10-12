@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 # Add a domain
@@ -8,7 +8,7 @@ Assigning a custom domain to your project guarantees that visitors to your appli
 
 ## When Deploying
 
-Just enable "Public Access" when you're deploying, and Sealos will sorts you out with a domain.
+Just enable "Public Access" when you're deploying, and [Sealos](https://cloud.sealos.io) will sorts you out with a domain.
 
 ![](./images/app-launchpad-domain.png)
 

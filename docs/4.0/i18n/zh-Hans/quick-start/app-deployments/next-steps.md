@@ -6,7 +6,7 @@ sidebar_position: 5
 
 恭喜您成功进入了 Sealos 的世界，现在您可以选择深入了解 Sealos 的更多功能：
 
-+ [自定义域名](/quick-start/setup-domain.md)
-+ 修改应用配置
++ [修改应用配置](/quick-start/update-app.md)
++ [自定义域名](/quick-start/add-domain.md)
 + 多端口暴露
 + 添加定时任务

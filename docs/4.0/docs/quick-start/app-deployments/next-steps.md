@@ -6,7 +6,7 @@ sidebar_position: 5
 
 Congratulations on getting started with Sealos! Now, you can continue learning more about Sealos's many features:
 
-+ [Set up your own domain](/quick-start/setup-domain.md)
-+ Update app settings
++ [Update app](/quick-start/update-app.md)
++ [Add a domain](/quick-start/add-domain.md)
 + Expose multiple ports
 + Add CronJob
