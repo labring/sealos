@@ -6,6 +6,7 @@ set -e
 CLOUD_DIR="/root/.sealos/cloud"
 SEALOS_VERSION="v4.3.4"
 CLOUD_VERSION="v0.0.1"
+mongodbVersion="mongodb-5.0"
 
 # Define English and Chinese prompts
 declare -A PROMPTS_EN PROMPTS_CN
@@ -31,6 +32,7 @@ PROMPTS_EN=(
     ["avx_not_supported"]="CPU does not support AVX instructions"
     ["ssh_private_key"]="Please configure the ssh private key path, press Enter to use the default value '/root/.ssh/id_rsa' "
     ["ssh_password"]="Please enter the ssh password, press Enter to skip\n"
+    ["wait_cluster_ready"]="Waiting for cluster to be ready, if you want to skip this step, please enter '1'"
 )
 
 PROMPTS_CN=(
@@ -54,6 +56,7 @@ PROMPTS_CN=(
     ["avx_not_supported"]="CPU不支持AVX指令"
     ["ssh_private_key"]="如需免密登录请配置ssh私钥路径，回车使用默认值'/root/.ssh/id_rsa' "
     ["ssh_password"]="请输入ssh密码，配置免密登录可回车跳过\n"
+    ["wait_cluster_ready"]="正在等待集群就绪, 如果您想跳过此步骤，请输入'1'"
 )
 
 # Choose Language
@@ -77,14 +80,15 @@ else
     LANGUAGE="EN"
 fi
 
-#TODO check if CPU supports AVX instructions
-#precheck() {
-#  cat /proc/cpuinfo | grep avx
-#  if [ $? -ne 0 ]; then
-#    get_prompt "avx_not_supported"
-#    exit 1
-#  fi
-#}
+#TODO mongo 5.0 need avx support, if not support, change to 4.0
+setMongoVersion() {
+  cat /proc/cpuinfo | grep avx
+  if [ $? -ne 0 ]; then
+    mongodbVersion="mongodb-4.0"
+  else
+    mongodbVersion="mongodb-5.0"
+  fi
+}
 
 # Initialization
 init() {
@@ -216,9 +220,40 @@ spec:
     sed -i "s|10.96.0.0/22|${serviceCidr:-10.96.0.0/22}|g" $CLOUD_DIR/Clusterfile
 }
 
+wait_cluster_ready() {
+    local prompt_msg=$(get_prompt "wait_cluster_ready")
+    while true; do
+        if kubectl get nodes | grep "NotReady" &> /dev/null; then
+            loading_animation "$prompt_msg"
+        else
+            break
+        fi
+
+        read -t 1 -n 1 input
+        if [[ "$input" == "1" ]]; then
+            break
+        fi
+    done
+}
+
+loading_animation() {
+    local message="$1"
+    local duration="${2:-0.5}"
+
+    echo -ne "\r$message   \e[K"
+    sleep "$duration"
+    echo -ne "\r$message .  \e[K"
+    sleep "$duration"
+    echo -ne "\r$message .. \e[K"
+    sleep "$duration"
+    echo -ne "\r$message ...\e[K"
+    sleep "$duration"
+}
+
 execute_commands() {
     get_prompt "k8s_installation"
     sealos apply -f $CLOUD_DIR/Clusterfile
+    wait_cluster_ready
 
     get_prompt "ingress_installation"
     sealos run docker.io/labring/kubernetes-reflector:v7.0.151\
@@ -226,19 +261,25 @@ execute_commands() {
         docker.io/labring/kubeblocks:v0.6.2\
         --config-file $CLOUD_DIR/ingress-nginx-config.yaml
 
+    sealos run labring/metrics-server:v0.6.2
+
     get_prompt "patching_ingress"
     kubectl -n ingress-nginx patch ds ingress-nginx-controller -p '{"spec":{"template":{"spec":{"tolerations":[{"key":"node-role.kubernetes.io/control-plane","operator":"Exists","effect":"NoSchedule"}]}}}}'
 
     get_prompt "installing_cloud"
+
+    setMongoVersion
     if [[ $inputCert == "y" || $inputCert == "Y" ]]; then
         sealos run docker.io/labring/sealos-cloud:latest\
         --env cloudDomain="$cloudDomain"\
         --env cloudPort="${cloudPort:-443}"\
+        --env mongodbVersion="${mongodbVersion:-mongodb-5.0}"\
         --config-file $CLOUD_DIR/tls-secret.yaml
     else
         sealos run docker.io/labring/sealos-cloud:latest\
         --env cloudDomain="$cloudDomain"\
-        --env cloudPort="${cloudPort:-443}"
+        --env cloudPort="${cloudPort:-443}"\
+        --env mongodbVersion="${mongodbVersion:-mongodb-5.0}"
     fi
 }
 
@@ -252,4 +293,4 @@ GREEN='\033[0;32m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
-echo -e "${BOLD}Sealos cloud login info:${RESET}\nCloud Version: ${GREEN}${CLOUD_VERSION}${RESET}\nURL: ${GREEN}https://$cloudDomain:$cloudPort${RESET}\nadmin Username: ${GREEN}admin${RESET}\nadmin Password: ${GREEN}sealos2023${RESET}"
+echo -e "${BOLD}Sealos cloud login info:${RESET}\nCloud Version: ${GREEN}${CLOUD_VERSION}${RESET}\nURL: ${GREEN}https://$cloudDomain${cloudPort:+:$cloudPort}${RESET}\nadmin Username: ${GREEN}admin${RESET}\nadmin Password: ${GREEN}sealos2023${RESET}"
