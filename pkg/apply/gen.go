@@ -27,6 +27,7 @@ import (
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/maps"
 )
 
 func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []string) ([]byte, error) {
@@ -57,6 +58,7 @@ func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []strin
 	if !img.IsRootFs() {
 		return nil, fmt.Errorf("the first image %s is not a rootfs type image", imageNames[0])
 	}
+	img.Env = maps.Merge(img.Env, maps.FromSlice(cluster.Spec.Env))
 	cluster.Status.Mounts = append(cluster.Status.Mounts, *img)
 
 	cfg, err := factory.NewRuntimeConfig(cluster.GetDistribution())
