@@ -1,10 +1,10 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 # 自定义域名
 
-想让您的用户能够享受与您的品牌一致的专属体验？只需要在 Sealos 中为你的项目指定一个自定义域名。
+想让您的用户能够享受与您的品牌一致的专属体验？只需要在 [Sealos](https://cloud.sealos.io) 中为你的项目指定一个自定义域名。
 
 ## 部署时接入
 

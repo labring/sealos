@@ -20,6 +20,7 @@
           }
         ]
       },
+      "quick-start/update-app",
       "quick-start/setup-domain"
     ]
   },
