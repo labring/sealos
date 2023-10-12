@@ -21,7 +21,8 @@
         ]
       },
       "quick-start/update-app",
-      "quick-start/add-domain"
+      "quick-start/add-domain",
+      "quick-start/expose-multi-ports"
     ]
   },
   {

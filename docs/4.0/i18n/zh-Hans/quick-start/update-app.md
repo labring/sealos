@@ -2,7 +2,7 @@
 sidebar_position: 1
 ---
 
-## 修改应用配置
+# 修改应用配置
 
 [Sealos](https://cloud.sealos.io) 部署完应用后，可以随时修改应用配置。
 
