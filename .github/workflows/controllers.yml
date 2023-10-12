@@ -84,7 +84,7 @@ jobs:
           - { name: db-adminer, path: db/adminer }
           - { name: resources, path: resources }
           - { name: resources-metering, path: resources/metering }
-          - { name: licenseissuer, path: licenseissuer }
+          - { name: license, path: license }
           - { name: node, path: node }
           - { name: admission, path: admission }
     steps:
@@ -186,7 +186,7 @@ jobs:
           - { name: db-adminer, path: db/adminer }
           - { name: resources, path: resources }
           - { name: resources-metering, path: resources/metering }
-          - { name: licenseissuer, path: licenseissuer }
+          - { name: license, path: license }
           - { name: node, path: node }
           - { name: admission, path: admission }
     steps:
