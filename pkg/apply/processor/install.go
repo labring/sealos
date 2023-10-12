@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/labring/sealos/pkg/utils/rand"
+
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -32,7 +34,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
-	"github.com/labring/sealos/pkg/utils/rand"
 )
 
 var ForceOverride bool
@@ -145,11 +146,12 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 			if !ForceOverride {
 				continue
 			}
-			ctrName = mount.Name
 			logger.Debug("trying to override app %s", img)
-		} else {
-			ctrName = rand.Generator(8)
+			if err := c.Buildah.Delete(mount.Name); err != nil {
+				return err
+			}
 		}
+		ctrName = rand.Generator(8)
 		cluster.Spec.Image = merge(cluster.Spec.Image, img)
 		bderInfo, err := c.Buildah.Create(ctrName, img)
 		if err != nil {
