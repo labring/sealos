@@ -8,5 +8,5 @@ sidebar_position: 5
 
 + [修改应用配置](/quick-start/update-app.md)
 + [自定义域名](/quick-start/add-domain.md)
-+ 多端口暴露
++ [暴露多端口](/quick-start/expose-multi-ports.md)
 + 添加定时任务

@@ -8,5 +8,5 @@ Congratulations on getting started with Sealos! Now, you can continue learning m
 
 + [Update app](/quick-start/update-app.md)
 + [Add a domain](/quick-start/add-domain.md)
-+ Expose multiple ports
++ [Expose multiple ports](/quick-start/expose-multi-ports.md)
 + Add CronJob
