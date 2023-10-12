@@ -61,6 +61,11 @@ spec:
             description: LicenseStatus defines the observed state of License
             properties:
               phase:
+                default: Pending
+                enum:
+                - Pending
+                - Failed
+                - Active
                 type: string
             type: object
         type: object
