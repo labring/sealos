@@ -61,7 +61,7 @@ export default function Develop() {
       (item: any) => item.kind === 'Template'
     ) as TemplateType;
     const yamlList = yamlData.filter((item: any) => item.kind !== 'Template');
-    const dataSource = getTemplateDataSource(templateYaml);
+    const dataSource = getTemplateDataSource(templateYaml, platformEnvs);
     const result: TemplateSourceType = {
       source: {
         ...dataSource,

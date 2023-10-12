@@ -179,5 +179,12 @@
   "Installed": "我安装的",
   "Kind": "类型",
   "Component": "组件",
-  "No Applications": "暂无应用"
+  "No Applications": "暂无应用",
+  "Home Page": "项目首页",
+  "Share": "分享",
+  "Share Link": "分享链接",
+  "One click deploy button": "一键部署按钮",
+  "Html Part": "Html 片段",
+  "Markdown Part": "Markdown 片段",
+  "Button Effect": "按钮效果"
 }

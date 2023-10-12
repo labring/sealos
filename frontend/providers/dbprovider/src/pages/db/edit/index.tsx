@@ -201,7 +201,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
           yamlList={yamlList}
           applyBtnText={applyBtnText}
           applyCb={() =>
-            formHook.handleSubmit((data) => openConfirm(submitSuccess(data)), submitError)()
+            formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)()
           }
         />
 
