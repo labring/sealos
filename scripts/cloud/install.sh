@@ -224,14 +224,13 @@ wait_cluster_ready() {
     local prompt_msg=$(get_prompt "wait_cluster_ready")
     while true; do
         if kubectl get nodes | grep "NotReady" &> /dev/null; then
-            loading_animation "$prompt_msg"
+          loading_animation "$prompt_msg"
         else
-            break
+          echo && break # new line
         fi
-
-        read -t 1 -n 1 input
+        read -t 1 -n 1 -p "" input 2>/dev/null || true
         if [[ "$input" == "1" ]]; then
-            break
+          echo && break # new line
         fi
     done
 }
