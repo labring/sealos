@@ -312,8 +312,10 @@ func (r *MonitorReconciler) getResourceUsage(namespace string) ([]*resources.Mon
 		}
 		return isEmpty, used
 	}
-	if err := r.getPodTrafficUsed(namespace, &resourceMap, &podsRes); err != nil {
-		return nil, fmt.Errorf("failed to get pod traffic used: %v", err)
+	if r.TrafficSvcConn != "" {
+		if err := r.getPodTrafficUsed(namespace, &resourceMap, &podsRes); err != nil {
+			return nil, fmt.Errorf("failed to get pod traffic used: %v", err)
+		}
 	}
 	for name, podResource := range podsRes {
 		isEmpty, used := getResourceUsed(podResource)

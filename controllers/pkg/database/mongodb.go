@@ -480,6 +480,9 @@ func (m *MongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 	for key, value := range prols.EnumMap {
 		keyStr := strconv.Itoa(int(key))
 
+		// $max - $min;
+		// 当max不为零值时，为了防止特殊情况某条数据未获取到值，所以使用零值外的最小值
+		// 该小时仅1条数据或该小时无数据时 max-min=0
 		if value.PriceType == resources.DIF {
 			// 对于非0的$min
 			minWithCondition := bson.D{
