@@ -169,7 +169,7 @@ jobs:
     strategy:
       matrix:
         ## TODO: add more modules
-        module: [ database ]
+        module: [ database, pay ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -229,7 +229,7 @@ jobs:
           CLUSTER_IMAGE_NAME=${{ steps.prepare.outputs.cluster_repo }}:${{ steps.prepare.outputs.tag_name }}
           CLUSTER_IMAGE_NAME_LATEST=${{ steps.prepare.outputs.cluster_repo }}:latest
           sudo sealos tag ${CLUSTER_IMAGE_NAME}-amd64  ${CLUSTER_IMAGE_NAME_LATEST}-amd64
-          sudo sealos tag ${CLUSTER_IMAGE_NAME}-amd64  ${CLUSTER_IMAGE_NAME_LATEST}-amd64
+          sudo sealos tag ${CLUSTER_IMAGE_NAME}-arm64  ${CLUSTER_IMAGE_NAME_LATEST}-arm64
           sudo sealos images
           bash docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME_LATEST
       - name: Renew issue and Sync Images
