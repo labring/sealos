@@ -3,7 +3,7 @@ module github.com/labring/sealos/controllers/metering
 go 1.20
 
 replace (
-	github.com/labring/sealos => ../../../../../../
+	github.com/labring/sealos => ../../../../../../cli
 	github.com/labring/sealos/controllers/account => ./../../../../../../controllers/account
 	github.com/labring/sealos/controllers/user => ./../../../../../../controllers/user
 )

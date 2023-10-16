@@ -59,4 +59,4 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
-replace github.com/labring/sealos => ../../../../../
+replace github.com/labring/sealos => ../../../../../cli

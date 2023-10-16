@@ -96,7 +96,7 @@ require (
 )
 
 replace (
-	github.com/labring/sealos => ../../../../../../
+	github.com/labring/sealos => ../../../../../../cli
 	github.com/labring/sealos/controllers/cluster => ./../cluster
 )
 

@@ -1,7 +1,6 @@
 go 1.20
 
 use (
-	.
 	./controllers/account
 	./controllers/admission
 	./controllers/app
@@ -23,4 +22,5 @@ use (
 	./staging/src/github.com/labring/controllers/metering
 	./webhooks/whitelist
 	./test/e2e
+	./cli
 )
