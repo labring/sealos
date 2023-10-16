@@ -3,7 +3,7 @@
 [Fireboom](https://fireboom.cloud) is a visual API development platform designed for developers, providing a declarative development framework, a visual editing suite, and a hook mechanism.
 
 
-Official website: https://fireboom.cloud
+Official website: https://fireboom.io
 
 **Features**
 
