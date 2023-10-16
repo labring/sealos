@@ -53,6 +53,19 @@ sealos apply -f Clusterfile
 
 Note: if you want to change pod cidr, please edit the `Clusterfile` before run `sealos apply`
 
+### OpenEBS sc create
+
+```shell
+kubectl create -f - <<EOF
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-backup
+provisioner: openebs.io/local
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+EOF
+```
 
 ### Ingress-nginx setup
 We use ingress-nginx to expose our services. You can install ingress-nginx by using sealos:

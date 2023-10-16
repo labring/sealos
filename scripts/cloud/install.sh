@@ -273,27 +273,6 @@ loading_animation() {
     sleep "$duration"
 }
 
-#master_ips=34.150.68.213
-#node_ips=
-#ssh_private_key=
-#ssh_password=
-#pod_cidr=
-#service_cidr=
-#cloud_domain=34.150.68.213.nip.io
-#cloud_port=
-#input_cert=
-#cert_path=
-#key_path=
-#kubernetes_version=1.25.6
-#cilium_version=1.12.14
-#cert_manager_version=1.8.0
-#helm_version=3.12.0
-#openebs_version=3.4.0
-#reflector_version=7.0.151
-#ingress_nginx_version=1.5.1
-#kubeblocks_version=0.6.2
-#metrics_server_version=0.6.1
-
 execute_commands() {
     get_prompt "k8s_installation"
     command -v kubelet || sealos apply -f $CLOUD_DIR/Clusterfile
@@ -305,6 +284,15 @@ execute_commands() {
     wait_cluster_ready
     sealos run "labring/cert-manager:v${cert_manager_version#v:-1.8.0}"
     sealos run "labring/openebs:v${openebs_version#v:-3.4.0}"
+    kubectl create -f - <<EOF
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-backup
+provisioner: openebs.io/local
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+EOF
 
     get_prompt "ingress_installation"
     sealos run docker.io/labring/kubernetes-reflector:v${reflector_version#v:-7.0.151}\
