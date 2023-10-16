@@ -6,7 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/labring/sealos/pkg/pay"
+	"github.com/labring/sealos/controllers/pkg/pay"
+
 	"github.com/labring/sealos/service/pay/helper"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"go.mongodb.org/mongo-driver/mongo"
