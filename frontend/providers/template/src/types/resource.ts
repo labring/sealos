@@ -11,6 +11,11 @@ export type ResourceKindType =
   | 'App'
   | 'Job'
   | 'Secret'
+  | 'Issuer'
+  | 'Role'
+  | 'RoleBinding'
+  | 'ServiceAccount'
+  | 'ConfigMap'
   | 'Instance';
 
 export type OtherResourceListItemType = {
