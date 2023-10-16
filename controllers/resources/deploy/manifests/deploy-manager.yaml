@@ -60,6 +60,7 @@ spec:
                 secretKeyRef:
                   key: TRAFFICS_SERVICE_CONNECT_ADDRESS
                   name: mongo-secret
+                  optional: true
           image: ghcr.io/labring/sealos-resources-controller:latest
           imagePullPolicy: Always
           livenessProbe:

@@ -66,7 +66,6 @@ type quantity struct {
 	detail string
 }
 
-// 流量服务连接地址
 const TrafficSvcConn = "TRAFFICS_SERVICE_CONNECT_ADDRESS"
 
 const (
@@ -141,7 +140,7 @@ func (r *MonitorReconciler) startPeriodicReconcile() {
 		waitTime := time.Until(time.Now().Truncate(time.Minute).Add(1 * time.Minute))
 		if waitTime > 0 {
 			logger.Info("wait for first reconcile", "waitTime", waitTime)
-			//time.Sleep(waitTime)
+			time.Sleep(waitTime)
 		}
 		ticker := time.NewTicker(r.periodicReconcile)
 		for {
@@ -314,7 +313,7 @@ func (r *MonitorReconciler) getResourceUsage(namespace string) ([]*resources.Mon
 	}
 	if r.TrafficSvcConn != "" {
 		if err := r.getPodTrafficUsed(namespace, &resourceMap, &podsRes); err != nil {
-			return nil, fmt.Errorf("failed to get pod traffic used: %v", err)
+			r.Logger.Error(err, "failed to get pod traffic used", "namespace", namespace)
 		}
 	}
 	for name, podResource := range podsRes {
@@ -343,6 +342,7 @@ func (r *MonitorReconciler) getPodTrafficUsed(namespace string, resourceMap *map
 	infoSvc := sealos_networkmanager.NewInfoServiceClient(conn)
 	tType := sealos_networkmanager.TrafficType_IPv4Egress
 	var labelsNotIn []*sealos_networkmanager.Label
+	//logger.Info("namespace", namespace)
 	for _, named := range *resourceMap {
 		tfs := sealos_networkmanager.TrafficStatRequest{
 			Namespace:       namespace,
@@ -356,7 +356,7 @@ func (r *MonitorReconciler) getPodTrafficUsed(namespace string, resourceMap *map
 		if err != nil {
 			return fmt.Errorf("get traffic stat failed: %w", err)
 		}
-		logger.Info("get traffic stat", "namespace", namespace, "labelsIn", named.GetInLabels(), "labelsNotIn", labelsNotIn, "labelsNotExists", named.GetNotExistLabels())
+		//logger.Info("traffic stat", "named", named.String(), " labelsIn", named.GetInLabels(), " labelsNotIn", labelsNotIn, " labelsNotExists", named.GetNotExistLabels())
 		for {
 			rsp, err := cli.Recv()
 			if err != nil {
@@ -369,6 +369,7 @@ func (r *MonitorReconciler) getPodTrafficUsed(namespace string, resourceMap *map
 				continue
 			}
 			(*podsRes)[named.String()][resources.ResourceNetwork].Add(*resource.NewQuantity(int64(*rsp.Bytes), resource.BinarySI))
+			//r.Logger.Info("traffic rsp", "rsp.pod", *rsp.Pod, "rsp.bytes", *rsp.Bytes, "rsp.identity", rsp.Identity)
 		}
 		labelsNotIn = append(labelsNotIn, named.GetInLabels()...)
 	}

@@ -546,7 +546,7 @@ func (m *MongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 		}
 
 		//TODO delete
-		logger.Info("generate billing data", "result", result)
+		//logger.Info("generate billing data", "result", result)
 
 		if _, ok := appCostsMap[result.Namespace]; !ok {
 			appCostsMap[result.Namespace] = make(map[uint8][]resources.AppCost)
@@ -602,7 +602,7 @@ func (m *MongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 				return nil, 0, fmt.Errorf("insert error: %v", err)
 			}
 			//TODO delete
-			logger.Info("generate billing data", "billing", billing)
+			//logger.Info("generate billing data", "billing", billing)
 		}
 	}
 
