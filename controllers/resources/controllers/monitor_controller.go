@@ -408,3 +408,7 @@ func initResources() (rs map[corev1.ResourceName]*quantity) {
 func initGpuResources() *quantity {
 	return &quantity{Quantity: resource.NewQuantity(0, resource.DecimalSI), detail: ""}
 }
+
+func (r *MonitorReconciler) DropMonitorCollectionOlder() error {
+	return r.DBClient.DropMonitorCollectionsOlderThan(30)
+}
