@@ -9,12 +9,12 @@ import (
 )
 
 /*
-数据库： app.kubernetes.io/instance=gitea  app.kubernetes.io/managed-by=kubeblocks apps.kubeblocks.io/component-name
-应用：app: xxx
-终端： TerminalID: xxx
-定时任务：job-name: xxx
-other: xxx
-map[string][]string{}
+AppType (sort by label) :
+	Database： app.kubernetes.io/instance=gitea  app.kubernetes.io/managed-by=kubeblocks apps.kubeblocks.io/component-name
+	AppLaunchpad：app: xxx
+	Terminal： TerminalID: xxx
+	Cronjob：job-name: xxx
+	Other: in addition to the above all labels
 */
 
 const (

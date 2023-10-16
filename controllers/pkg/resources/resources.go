@@ -15,9 +15,7 @@
 package resources
 
 import (
-	"context"
 	"fmt"
-	"math"
 	"strings"
 	"time"
 
@@ -29,21 +27,9 @@ import (
 	"github.com/labring/sealos/controllers/pkg/gpu"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	CategoryField = "category"
-	PropertyField = "property"
-	TimeField     = "time"
-	ValueField    = "value"
-	PriceField    = "price"
-	AmountField   = "amount"
 )
 
 /*
@@ -52,7 +38,7 @@ Unified base unit:
 CPU: millicore (mCore) (1 core = 1000 millicores) 0.067 / 1000 * 1000000 = 67 unit price
 Memory: Mebibytes (MiB) 0.033 / 1024 (2^30) * 1000000 = 33 unit price
 Storage: Mebibytes (MiB) 0.0021 / 1024 * 1000000 = 2 unit price
-Network bandwidth: Kbps (kilobits per second) not yet available
+Network bandwidth: Mebibytes (MiB) 0.00078125 / 1024 * 1000000 = 781 unit price
 */
 
 //| property     | Price | Detail         |
@@ -191,19 +177,18 @@ var AppTypeReverse = map[uint8]string{
 	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER,
 }
 
-// 资源消耗
+// resource consumption
 type EnumUsedMap map[uint8]int64
 
 type PropertyType struct {
-	// 对应监控存储枚举类型，使用uint8，可以节省内存
-	// 0 cpu, 1 memory, 2 storage, 3 network ... 可扩展
+	// For the monitoring storage enumeration type, use uint 8 to save memory
+	// 0 cpu, 1 memory, 2 storage, 3 network ... expandable
 	Name  string `json:"name" bson:"name"`
 	Alias string `json:"alias" bson:"alias"`
 	Enum  uint8  `json:"enum" bson:"enum"`
-	//平均值，累加值 默认为平均值
-	//AVG , SUM
+	//AVG, SUM, DIF value. The cumulative value is the average value by default
 	PriceType string `json:"price_type,omitempty" bson:"price_type,omitempty"`
-	// Price = UsedAmount (平均值||累加值) / Unit * UnitPrice
+	// Price = UsedAmount (avg || accumulated-value || difference-value) / Unit * UnitPrice
 	UnitPrice        int64             `json:"unit_price" bson:"unit_price"`
 	EncryptUnitPrice string            `json:"encrypt_unit_price" bson:"encrypt_unit_price"`
 	Unit             resource.Quantity `json:"-" bson:"-"`
@@ -223,7 +208,7 @@ type PropertyType struct {
 	//
 	// <decimalExponent> ::= "e" <signedNumber> | "E" <signedNumber>
 	UnitString string `json:"unit" bson:"unit"`
-	//计费周期 second
+	//charging cycle second
 	UnitPeriod string `json:"unit_period,omitempty" bson:"unit_period,omitempty"`
 }
 
@@ -234,11 +219,11 @@ type PropertyTypeLS struct {
 }
 
 const (
-	// 平均值
+	// average value
 	AVG = "AVG"
-	// 累加值
+	// accumulated value
 	SUM = "SUM"
-	// 差值
+	// difference value
 	DIF = "DIF"
 )
 
@@ -356,19 +341,6 @@ type QuantityDetail struct {
 	Detail string
 }
 
-const (
-	SealosResourcesDBName        = "sealos-resources"
-	SealosMonitorCollectionName  = "monitor"
-	SealosPricesCollectionName   = "prices"
-	SealosMeteringCollectionName = "metering"
-	SealosBillingCollectionName  = "billing"
-)
-const (
-	PropertyInfraCPU    = "infra-cpu"
-	PropertyInfraMemory = "infra-memory"
-	PropertyInfraDisk   = "infra-disk"
-)
-
 // GpuResourcePrefix GPUResource = gpu- + gpu.Product ; ex. gpu-tesla-v100
 const GpuResourcePrefix = "gpu-"
 
@@ -390,18 +362,6 @@ func GetGpuResourceProduct(resource string) string {
 	return strings.TrimPrefix(resource, GpuResourcePrefix)
 }
 
-var (
-	bin1Mi  = resource.NewQuantity(1<<20, resource.BinarySI)
-	cpuUnit = resource.MustParse("1m")
-)
-var PricesUnit = map[corev1.ResourceName]*resource.Quantity{
-	corev1.ResourceCPU:     &cpuUnit, // 1 m CPU (1000 μ)
-	ResourceGPU:            &cpuUnit, // 1 m CPU (1000 μ)
-	corev1.ResourceMemory:  bin1Mi,   // 1 MiB
-	corev1.ResourceStorage: bin1Mi,   // 1 MiB
-	ResourceNetwork:        bin1Mi,   // 1 MiB
-}
-
 var DefaultPrices = map[string]Price{
 	"cpu": {
 		Property: "cpu",
@@ -417,25 +377,43 @@ var DefaultPrices = map[string]Price{
 	},
 }
 
-// Core
-var infraCPUMap = map[string]int{
-	"t2.medium":     2,
-	"t2.large":      2,
-	"t2.xlarge":     4,
-	"ecs.c7.large":  2,
-	"ecs.g7.large":  2,
-	"ecs.g7.xlarge": 4,
-}
-
-// GiB
-var infraMemoryMap = map[string]int{
-	"t2.medium":     4,
-	"t2.large":      8,
-	"t2.xlarge":     16,
-	"ecs.c7.large":  4,
-	"ecs.g7.large":  8,
-	"ecs.g7.xlarge": 16,
-}
+// infra residual code
+//const (
+//	PropertyInfraCPU    = "infra-cpu"
+//	PropertyInfraMemory = "infra-memory"
+//	PropertyInfraDisk   = "infra-disk"
+//)
+//var (
+//	bin1Mi  = resource.NewQuantity(1<<20, resource.BinarySI)
+//	cpuUnit = resource.MustParse("1m")
+//)
+//var PricesUnit = map[corev1.ResourceName]*resource.Quantity{
+//	corev1.ResourceCPU:     &cpuUnit, // 1 m CPU (1000 μ)
+//	ResourceGPU:            &cpuUnit, // 1 m CPU (1000 μ)
+//	corev1.ResourceMemory:  bin1Mi,   // 1 MiB
+//	corev1.ResourceStorage: bin1Mi,   // 1 MiB
+//	ResourceNetwork:        bin1Mi,   // 1 MiB
+//}
+//
+//// Core
+//var infraCPUMap = map[string]int{
+//	"t2.medium":     2,
+//	"t2.large":      2,
+//	"t2.xlarge":     4,
+//	"ecs.c7.large":  2,
+//	"ecs.g7.large":  2,
+//	"ecs.g7.xlarge": 4,
+//}
+//
+//// GiB
+//var infraMemoryMap = map[string]int{
+//	"t2.medium":     4,
+//	"t2.large":      8,
+//	"t2.xlarge":     16,
+//	"ecs.c7.large":  4,
+//	"ecs.g7.large":  8,
+//	"ecs.g7.xlarge": 16,
+//}
 
 func GetDefaultResourceQuota(ns, name string) *corev1.ResourceQuota {
 	return &corev1.ResourceQuota{
@@ -502,46 +480,24 @@ func DefaultLimitRangeLimits() []corev1.LimitRangeItem {
 	}
 }
 
-// MiB
-func GetInfraCPUQuantity(flavor string, count int) *resource.Quantity {
-	if v, ok := infraCPUMap[flavor]; ok {
-		return resource.NewQuantity(int64(v*count), resource.DecimalSI)
-	}
-	return nil
-}
-
-// Gib
-func GetInfraMemoryQuantity(flavor string, count int) *resource.Quantity {
-	if v, ok := infraMemoryMap[flavor]; ok {
-		return resource.NewQuantity(int64((v*count)<<30), resource.BinarySI)
-	}
-	return nil
-}
-
-// Gib
-func GetInfraDiskQuantity(capacity int) *resource.Quantity {
-	return resource.NewQuantity(int64(capacity<<30), resource.BinarySI)
-}
-
-func GetResourceValue(resourceName corev1.ResourceName, res map[corev1.ResourceName]*QuantityDetail) int64 {
-	quantity := res[resourceName]
-	if quantity != nil && quantity.MilliValue() != 0 {
-		return int64(math.Ceil(float64(quantity.MilliValue()) / float64(PricesUnit[resourceName].MilliValue())))
-	}
-	return 0
-}
-
-func GetPrices(mongoClient *mongo.Client) ([]Price, error) {
-	collection := mongoClient.Database(SealosResourcesDBName).Collection(SealosPricesCollectionName)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	cursor, err := collection.Find(ctx, bson.M{})
-	if err != nil {
-		return nil, fmt.Errorf("get all prices error: %v", err)
-	}
-	var prices []Price
-	if err = cursor.All(ctx, &prices); err != nil {
-		return nil, fmt.Errorf("get all prices error: %v", err)
-	}
-	return prices, nil
-}
+//
+//// MiB
+//func GetInfraCPUQuantity(flavor string, count int) *resource.Quantity {
+//	if v, ok := infraCPUMap[flavor]; ok {
+//		return resource.NewQuantity(int64(v*count), resource.DecimalSI)
+//	}
+//	return nil
+//}
+//
+//// Gib
+//func GetInfraMemoryQuantity(flavor string, count int) *resource.Quantity {
+//	if v, ok := infraMemoryMap[flavor]; ok {
+//		return resource.NewQuantity(int64((v*count)<<30), resource.BinarySI)
+//	}
+//	return nil
+//}
+//
+//// Gib
+//func GetInfraDiskQuantity(capacity int) *resource.Quantity {
+//	return resource.NewQuantity(int64(capacity<<30), resource.BinarySI)
+//}
