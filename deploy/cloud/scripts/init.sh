@@ -19,9 +19,6 @@ function prepare {
   # apply notifications crd
   kubectl apply -f manifests/notifications_crd.yaml
 
-  # apply kb database metrics
-  kubectl apply -f manifests/db-metrics.yaml
-
   # gen mongodb uri
   gen_mongodbUri
 
@@ -162,6 +159,9 @@ function sealos_run_frontend {
   --env cloudDomain=$cloudDomain \
   --env cloudPort=$cloudPort \
   --env certSecretName="wildcard-cert"
+
+  echo "run db monitoring"
+  sealos run tars/database-service.tar
 }
 
 function resource_exists {
