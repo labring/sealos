@@ -28,7 +28,7 @@ A Cloud Operating System designed for managing cloud-native applications
 
 https://github.com/labring/sealos/assets/82700206/b1f8a25a-55cf-4d15-a47b-38cf7d507134
 
-> [Docs](https://sealos.io/docs/Intro) | [简体中文](README_zh.md) | [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
+> [Docs](https://sealos.io/docs/Intro) | [简体中文](./README_zh.md) | [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
 
 Sealos['siːləs] is a cloud operating system distribution based on the Kubernetes kernel. This allows enterprises to use the cloud as effortlessly as they would use a personal computer.
 
