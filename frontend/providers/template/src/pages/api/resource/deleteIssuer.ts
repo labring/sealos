@@ -6,27 +6,28 @@ import { jsonRes } from '@/services/backend/response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { namespace } = req.query as { namespace: string };
-    const { k8sCustomObjects } = await getK8s({
+    const { instanceName } = req.query as { instanceName: string };
+    const { k8sCustomObjects, namespace } = await getK8s({
       kubeconfig: await authSession(req.headers)
     });
 
     const customResource: CRDMeta = {
-      group: 'app.sealos.io',
+      group: 'cert-manager.io',
       version: 'v1',
       namespace: namespace,
-      plural: 'apps'
+      plural: 'issuers'
     };
 
-    // 获取指定命名空间中的所有自定义资源
-    const customResourceList = await k8sCustomObjects.listNamespacedCustomObject(
+    // 删除指定名称的自定义资源
+    const reuslt = await k8sCustomObjects.deleteNamespacedCustomObject(
       customResource.group,
       customResource.version,
       customResource.namespace,
-      customResource.plural
+      customResource.plural,
+      instanceName
     );
 
-    jsonRes(res, { data: customResourceList, message: 'retrieved successfully' });
+    jsonRes(res, { data: reuslt });
   } catch (err: any) {
     jsonRes(res, {
       code: 500,
