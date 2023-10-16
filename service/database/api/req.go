@@ -71,11 +71,11 @@ var (
 		"db_size": "pg_database_size_bytes{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}",
 
 		"active_connections": " pg_stat_activity_count{namespace=~\"#\", app_kubernetes_io_instance=~\"@\",state=\"active\"}",
-		"rollbacks":          "rate (pg_stat_database_xact_rollback{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])",
-		"commits":            "rate (pg_stat_database_xact_commit{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])",
+		"rollbacks":          "rate (pg_stat_database_xact_rollback_total{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])",
+		"commits":            "rate (pg_stat_database_xact_commit_total{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])",
 		"tx_duration":        "max without(state) (max_over_time(pg_stat_activity_max_tx_duration{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m]))",
-		"block_read_time":    "rate(pg_stat_database_blk_read_time{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])",
-		"block_write_time":   "rate(pg_stat_database_blk_write_time{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])",
+		"block_read_time":    "rate(pg_stat_database_blk_read_time_total{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])",
+		"block_write_time":   "rate(pg_stat_database_blk_write_time_total{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])",
 	}
 
 	Mongo = map[string]string{
