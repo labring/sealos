@@ -131,6 +131,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 	// get payment details(status, amount)
+	// TODO The GetPaymentDetails may cause issues when using Stripe
 	status, orderAmount, err := payHandler.GetPaymentDetails(payment.Status.TradeNO)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("query order failed: %v", err)
