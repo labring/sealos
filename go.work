@@ -7,7 +7,6 @@ use (
 	./controllers/app
 	./controllers/db/adminer
 	./controllers/db/bytebase
-	./controllers/licenseissuer
 	./controllers/terminal
 	./controllers/node
 	./controllers/user
