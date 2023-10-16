@@ -1,0 +1,31 @@
+# permissions for end users to edit licenses.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: license-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: license
+    app.kubernetes.io/part-of: license
+    app.kubernetes.io/managed-by: kustomize
+  name: license-editor-role
+rules:
+- apiGroups:
+  - license.sealos.io
+  resources:
+  - licenses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - license.sealos.io
+  resources:
+  - licenses/status
+  verbs:
+  - get
