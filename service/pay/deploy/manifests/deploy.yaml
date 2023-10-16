@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: pay-service
+    cloud.sealos.io/app-deploy-manager: pay-service
+  name: pay-service
+  namespace: sealos
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 3
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: pay-service
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: pay-service
+    spec:
+      containers:
+        - envFrom:
+            - secretRef:
+                name: pay-secret
+                optional: true
+          image: ghcr.io/labring/sealos-pay-service:latest
+          imagePullPolicy: Always
+          name: pay-service
+          ports:
+            - containerPort: 2333
+              name: kxfckwudzwir
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 500m
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 25Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
