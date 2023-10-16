@@ -56,6 +56,7 @@ const (
 	PermanentRetention = "PERMANENT_RETENTION"
 )
 
+// override this value at build time
 const defaultCryptoKey = "Af0b2Bc5e9d0C84adF0A5887cF43aB63"
 
 var cryptoKey = defaultCryptoKey
@@ -73,7 +74,7 @@ type MongoDB struct {
 
 type AccountBalanceSpecBSON struct {
 	// Time    metav1.Time `json:"time" bson:"time"`
-	// time字段如果为time.Time类型无法转换为json crd，所以使用metav1.Time，但是使用metav1.Time无法插入到mongo中，所以需要转换为time.Time
+	// If the Time field is of the time. time type, it cannot be converted to json crd, so use metav1.Time. However, metav1.Time cannot be inserted into mongo, so you need to convert it to time.Time
 	Time                                   time.Time `json:"time" bson:"time"`
 	accountv1.BillingRecordQueryItemInline `json:",inline" bson:",inline"`
 }
@@ -135,9 +136,8 @@ func (m *MongoDB) GetUnsettingBillingHandler(owner string) ([]resources.BillingH
 }
 
 func (m *MongoDB) UpdateBillingStatus(orderID string, status resources.BillingStatus) error {
-	// 创建一个查询过滤器
+	// create a query filter
 	filter := bson.M{"order_id": orderID}
-	// 更新文档
 	update := bson.M{
 		"$set": bson.M{
 			"status": status,
@@ -456,8 +456,6 @@ func (m *MongoDB) GenerateMeteringData(startTime, endTime time.Time, prices map[
 		Name:     resourceMap[name].Name(),
 	})
 */
-//按照type, name, namespace 来统计billing数据
-//统计该time范围内 所有type, name, namespace相同的monitor数据的used平均值或总值（按照其PropertyType）得出一个billing数据并写入billing表
 func (m *MongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resources.PropertyTypeLS, namespaces []string, owner string) (orderID []string, amount int64, err error) {
 	minutes := endTime.Sub(startTime).Minutes()
 
@@ -473,25 +471,49 @@ func (m *MongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 		primitive.E{Key: "category", Value: "$_id.category"},
 	}
 
-	// 初始化 used 阶段
+	// initialize the used phase
 	usedStage := bson.M{}
 
-	// 根据 EnumMap 动态构建 $group 和 $project 阶段
-	for key := range prols.EnumMap {
+	// Build the $group and $project phases dynamically from EnumMap
+	for key, value := range prols.EnumMap {
 		keyStr := strconv.Itoa(int(key))
 
-		// 添加到 $group 阶段
-		groupStage = append(groupStage, primitive.E{Key: keyStr, Value: bson.D{{Key: "$sum", Value: "$used." + keyStr}}})
+		// $max - $min;
+		// When max is not zero, the minimum value other than the zero value is used to prevent some data from obtaining a value in special cases
+		// max-min=0 if the hour has only one data piece or no data piece
+		if value.PriceType == resources.DIF {
+			// for non 0 $min
+			minWithCondition := bson.D{
+				{Key: "$min", Value: bson.D{
+					{Key: "$cond", Value: bson.A{
+						bson.D{{Key: "$eq", Value: bson.A{"$used." + keyStr, 0}}},
+						nil, // 将0值排除在外
+						"$used." + keyStr,
+					}},
+				}},
+			}
 
-		// 添加到 used 阶段
+			groupStage = append(groupStage,
+				primitive.E{Key: keyStr + "_max", Value: bson.D{{Key: "$max", Value: "$used." + keyStr}}}, // 正常计算$max
+				primitive.E{Key: keyStr + "_min", Value: minWithCondition},
+			)
+
+			// added to the used phase
+			usedStage[keyStr] = bson.D{{Key: "$subtract", Value: bson.A{
+				"$" + keyStr + "_max",
+				"$" + keyStr + "_min",
+			}}}
+			continue
+		}
+		groupStage = append(groupStage, primitive.E{Key: keyStr, Value: bson.D{{Key: "$sum", Value: "$used." + keyStr}}})
 		usedStage[keyStr] = bson.D{{Key: "$toInt", Value: bson.D{{Key: "$round", Value: bson.D{{Key: "$divide", Value: bson.A{
 			"$" + keyStr, bson.D{{Key: "$cond", Value: bson.A{bson.D{{Key: "$gt", Value: bson.A{"$count", minutes}}}, "$count", minutes}}}}}}}}}}
 	}
 
-	// 将 used 阶段添加到 $project 阶段
+	// add the used phase to the $project phase
 	projectStage = append(projectStage, primitive.E{Key: "used", Value: usedStage})
 
-	// 构建 pipeline
+	// construction-pipeline
 	pipeline := mongo.Pipeline{
 		{{Key: "$match", Value: bson.D{{Key: "time", Value: bson.D{{Key: "$gte", Value: startTime}, {Key: "$lt", Value: endTime}}}, {Key: "category", Value: bson.D{{Key: "$in", Value: namespaces}}}}}},
 		{{Key: "$group", Value: groupStage}},
@@ -520,6 +542,9 @@ func (m *MongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 		if err != nil {
 			return nil, 0, fmt.Errorf("decode error: %v", err)
 		}
+
+		//TODO delete
+		//logger.Info("generate billing data", "result", result)
 
 		if _, ok := appCostsMap[result.Namespace]; !ok {
 			appCostsMap[result.Namespace] = make(map[uint8][]resources.AppCost)
@@ -574,6 +599,8 @@ func (m *MongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 			if err != nil {
 				return nil, 0, fmt.Errorf("insert error: %v", err)
 			}
+			//TODO delete
+			//logger.Info("generate billing data", "billing", billing)
 		}
 	}
 
@@ -767,7 +794,7 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 
 	totalCount := 0
 
-	// 总数量
+	// total quantity
 	cursorAll, err := billingColl.Aggregate(ctx, pipelineAll)
 	if err != nil {
 		return fmt.Errorf("failed to execute aggregate all query: %w", err)
@@ -783,7 +810,7 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 		totalCount = int(result.Result)
 	}
 
-	// 消费总金额Costs Executing the second pipeline for getting the total count, recharge and deduction amount
+	// Costs Executing the second pipeline for getting the total count, recharge and deduction amount
 	cursorCountAndAmount, err := billingColl.Aggregate(ctx, pipelineCountAndAmount)
 	if err != nil {
 		return fmt.Errorf("failed to execute aggregate query for count and amount: %w", err)
@@ -809,7 +836,7 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 		}
 	}
 
-	// 充值总金额
+	// the total amount
 	cursorRechargeAmount, err := billingColl.Aggregate(ctx, pipelineRechargeAmount)
 	if err != nil {
 		return fmt.Errorf("failed to execute aggregate query for recharge amount: %w", err)
@@ -880,7 +907,7 @@ func (m *MongoDB) getMonitorCollection(collTime time.Time) *mongo.Collection {
 }
 
 func (m *MongoDB) getMonitorCollectionName(collTime time.Time) string {
-	// 按天计算尾缀，如202012月1号 尾缀为20201201
+	// Calculate the suffix by day, for example, the suffix on the first day of 202012 is 20201201
 	return fmt.Sprintf("%s_%s", m.MonitorConnPrefix, collTime.Format("20060102"))
 }
 
@@ -906,15 +933,15 @@ func (m *MongoDB) CreateBillingIfNotExist() error {
 		return fmt.Errorf("failed to create collection for billing: %w", err)
 	}
 
-	// 创建索引
+	// create index
 	_, err = m.getBillingCollection().Indexes().CreateMany(ctx, []mongo.IndexModel{
 		{
-			// 唯一索引 owner + order_id
+			// unique index owner order_id
 			Keys:    bson.D{primitive.E{Key: "owner", Value: 1}, primitive.E{Key: "order_id", Value: 1}},
 			Options: options.Index().SetUnique(true),
 		},
 		{
-			// owner + time + type 索引
+			// owner + time + type indexes
 			Keys: bson.D{
 				primitive.E{Key: "owner", Value: 1},
 				primitive.E{Key: "time", Value: 1},

@@ -19,11 +19,16 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	sealos_networkmanager "github.com/dinoallo/sealos-networkmanager-protoapi"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/go-logr/logr"
 	"golang.org/x/sync/semaphore"
@@ -52,6 +57,7 @@ type MonitorReconciler struct {
 	periodicReconcile time.Duration
 	NvidiaGpu         map[string]gpu.NvidiaGPU
 	DBClient          database.Interface
+	TrafficSvcConn    string
 	Properties        *resources.PropertyTypeLS
 }
 
@@ -59,6 +65,8 @@ type quantity struct {
 	*resource.Quantity
 	detail string
 }
+
+const TrafficSvcConn = "TRAFFICS_SERVICE_CONNECT_ADDRESS"
 
 const (
 	namespaceMonitorResources                    = "NAMESPACE-RESOURCES"
@@ -84,6 +92,7 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 		Logger:            ctrl.Log.WithName("controllers").WithName("Monitor"),
 		stopCh:            make(chan struct{}),
 		periodicReconcile: 1 * time.Minute,
+		TrafficSvcConn:    os.Getenv(TrafficSvcConn),
 	}
 	var err error
 	err = retry.Retry(2, 1*time.Second, func() error {
@@ -111,7 +120,7 @@ func (r *MonitorReconciler) initNamespaceFuncs() {
 	for _, res := range namespaceResourceList {
 		switch res {
 		case namespaceResourcePod:
-			namespaceMonitorFuncs[namespaceResourcePod] = r.podResourceUsage
+			namespaceMonitorFuncs[namespaceResourcePod] = r.podResourceUsageInsert
 		case namespaceResourceInfra:
 			//namespaceMonitorFuncs[namespaceResourceInfra] = r.infraResourceUsage
 		}
@@ -209,7 +218,7 @@ func (r *MonitorReconciler) processNamespace(ctx context.Context, namespace *cor
 	//		return err
 	//	}
 	//}
-	if err := r.podResourceUsage(ctx, namespace); err != nil {
+	if err := r.podResourceUsageInsert(ctx, namespace); err != nil {
 		r.Logger.Error(err, "monitor pod resource", "namespace", namespace.Name)
 		return err
 	}
@@ -217,14 +226,21 @@ func (r *MonitorReconciler) processNamespace(ctx context.Context, namespace *cor
 	return nil
 }
 
-func (r *MonitorReconciler) podResourceUsage(ctx context.Context, namespace *corev1.Namespace) error {
+func (r *MonitorReconciler) podResourceUsageInsert(ctx context.Context, namespace *corev1.Namespace) error {
+	monitors, err := r.getResourceUsage(namespace.Name)
+	if err != nil {
+		return fmt.Errorf("failed to get resource usage: %v", err)
+	}
+	return r.DBClient.InsertMonitor(ctx, monitors...)
+}
+
+func (r *MonitorReconciler) getResourceUsage(namespace string) ([]*resources.Monitor, error) {
 	timeStamp := time.Now().UTC()
 	podList := corev1.PodList{}
 	podsRes := map[string]map[corev1.ResourceName]*quantity{}
 	resourceMap := make(map[string]*resources.ResourceNamed)
-	//logger.Info("start podResourceUsage", "namespace", namespace.Name, "time", timeStamp.Format("2006-01-02 15:04:05.000"))
-	if err := r.List(context.Background(), &podList, &client.ListOptions{Namespace: namespace.Name}); err != nil {
-		return err
+	if err := r.List(context.Background(), &podList, &client.ListOptions{Namespace: namespace}); err != nil {
+		return nil, err
 	}
 	for _, pod := range podList.Items {
 		//TODO if pod is job && 结束时候到现在时间小于1分钟 统计资源
@@ -263,8 +279,8 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, namespace *cor
 	//logger.Info("mid", "namespace", namespace.Name, "time", timeStamp.Format("2006-01-02 15:04:05"), "resourceMap", resourceMap, "podsRes", podsRes)
 
 	pvcList := corev1.PersistentVolumeClaimList{}
-	if err := r.List(context.Background(), &pvcList, &client.ListOptions{Namespace: namespace.Name}); err != nil {
-		return err
+	if err := r.List(context.Background(), &pvcList, &client.ListOptions{Namespace: namespace}); err != nil {
+		return nil, fmt.Errorf("failed to list pvc: %v", err)
 	}
 	for _, pvc := range pvcList.Items {
 		if pvc.Status.Phase != corev1.ClaimBound {
@@ -295,20 +311,69 @@ func (r *MonitorReconciler) podResourceUsage(ctx context.Context, namespace *cor
 		}
 		return isEmpty, used
 	}
+	if r.TrafficSvcConn != "" {
+		if err := r.getPodTrafficUsed(namespace, &resourceMap, &podsRes); err != nil {
+			r.Logger.Error(err, "failed to get pod traffic used", "namespace", namespace)
+		}
+	}
 	for name, podResource := range podsRes {
 		isEmpty, used := getResourceUsed(podResource)
 		if isEmpty {
 			continue
 		}
 		monitors = append(monitors, &resources.Monitor{
-			Category: namespace.Name,
+			Category: namespace,
 			Used:     used,
 			Time:     timeStamp,
 			Type:     resourceMap[name].Type(),
 			Name:     resourceMap[name].Name(),
 		})
 	}
-	return r.DBClient.InsertMonitor(ctx, monitors...)
+	return monitors, nil
+}
+
+func (r *MonitorReconciler) getPodTrafficUsed(namespace string, resourceMap *map[string]*resources.ResourceNamed, podsRes *map[string]map[corev1.ResourceName]*quantity) error {
+	conn, err := grpc.Dial(r.TrafficSvcConn, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return fmt.Errorf("dial grpc failed: %w", err)
+	}
+	defer conn.Close()
+
+	infoSvc := sealos_networkmanager.NewInfoServiceClient(conn)
+	tType := sealos_networkmanager.TrafficType_IPv4Egress
+	var labelsNotIn []*sealos_networkmanager.Label
+	//logger.Info("namespace", namespace)
+	for _, named := range *resourceMap {
+		tfs := sealos_networkmanager.TrafficStatRequest{
+			Namespace:       namespace,
+			Type:            &tType,
+			Identity:        []uint32{2, 8},
+			LabelsIn:        named.GetInLabels(),
+			LabelsNotIn:     labelsNotIn,
+			LabelsNotExists: named.GetNotExistLabels(),
+		}
+		cli, err := infoSvc.GetTrafficStat(context.Background(), &tfs)
+		if err != nil {
+			return fmt.Errorf("get traffic stat failed: %w", err)
+		}
+		//logger.Info("traffic stat", "named", named.String(), " labelsIn", named.GetInLabels(), " labelsNotIn", labelsNotIn, " labelsNotExists", named.GetNotExistLabels())
+		for {
+			rsp, err := cli.Recv()
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				return fmt.Errorf("recv traffic stat failed: %w", err)
+			}
+			if rsp.Bytes == nil {
+				continue
+			}
+			(*podsRes)[named.String()][resources.ResourceNetwork].Add(*resource.NewQuantity(int64(*rsp.Bytes), resource.BinarySI))
+			//r.Logger.Info("traffic rsp", "rsp.pod", *rsp.Pod, "rsp.bytes", *rsp.Bytes, "rsp.identity", rsp.Identity)
+		}
+		labelsNotIn = append(labelsNotIn, named.GetInLabels()...)
+	}
+	return nil
 }
 
 func (r *MonitorReconciler) getGPUResourceUsage(pod corev1.Pod, gpuReq resource.Quantity, rs map[corev1.ResourceName]*quantity) (err error) {
@@ -336,9 +401,14 @@ func initResources() (rs map[corev1.ResourceName]*quantity) {
 	rs[corev1.ResourceCPU] = &quantity{Quantity: resource.NewQuantity(0, resource.DecimalSI), detail: ""}
 	rs[corev1.ResourceMemory] = &quantity{Quantity: resource.NewQuantity(0, resource.BinarySI), detail: ""}
 	rs[corev1.ResourceStorage] = &quantity{Quantity: resource.NewQuantity(0, resource.BinarySI), detail: ""}
+	rs[resources.ResourceNetwork] = &quantity{Quantity: resource.NewQuantity(0, resource.BinarySI), detail: ""}
 	return
 }
 
 func initGpuResources() *quantity {
 	return &quantity{Quantity: resource.NewQuantity(0, resource.DecimalSI), detail: ""}
+}
+
+func (r *MonitorReconciler) DropMonitorCollectionOlder() error {
+	return r.DBClient.DropMonitorCollectionsOlderThan(30)
 }

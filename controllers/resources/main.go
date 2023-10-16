@@ -143,6 +143,9 @@ func main() {
 			if err != nil {
 				reconciler.Logger.Error(err, "failed to create monitor time series")
 			}
+			if err := reconciler.DropMonitorCollectionOlder(); err != nil {
+				reconciler.Logger.Error(err, "failed to drop monitor collection")
+			}
 			<-ticker.C
 		}
 	})

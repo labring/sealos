@@ -3,12 +3,14 @@ module github.com/labring/sealos/controllers/resources
 go 1.20
 
 require (
+	github.com/dinoallo/sealos-networkmanager-protoapi v0.0.0-20230928031328-cf9649d6af49
 	github.com/go-logr/logr v1.2.4
 	github.com/labring/sealos/controllers/pkg v0.0.0-00010101000000-000000000000
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.8
 	github.com/spf13/cobra v1.7.0
 	golang.org/x/sync v0.4.0
+	google.golang.org/grpc v1.57.0
 	k8s.io/api v0.27.4
 	k8s.io/apimachinery v0.27.4
 	k8s.io/client-go v0.27.4
@@ -80,6 +82,7 @@ require (
 	golang.org/x/time v0.3.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230525234030-28d5490b6b19 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
