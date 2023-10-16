@@ -83,7 +83,7 @@ type Monitor struct {
 	Type     uint8       `json:"type" bson:"type"`
 	Name     string      `json:"name" bson:"name"`
 	Used     EnumUsedMap `json:"used" bson:"used"`
-	Property string      `json:"property" bson:"property"`
+	Property string      `json:"property,omitempty" bson:"property,omitempty"`
 }
 
 type BillingType int
