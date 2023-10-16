@@ -4,8 +4,30 @@ set -e
 
 # Configurations
 CLOUD_DIR="/root/.sealos/cloud"
-SEALOS_VERSION="v4.3.4"
+SEALOS_VERSION="v4.3.5"
 CLOUD_VERSION="v0.0.1"
+#mongodb_version="mongodb-5.0"
+#master_ips=
+#node_ips=
+#ssh_private_key=
+#ssh_password=
+#pod_cidr=
+#service_cidr=
+#cloud_domain=
+#cloud_port=
+#input_cert=
+#cert_path=
+#key_path=
+kubernetes_version=1.25.6
+cilium_version=1.12.14
+cert_manager_version=1.8.0
+helm_version=3.12.0
+openebs_version=3.4.0
+reflector_version=7.0.151
+ingress_nginx_version=1.5.1
+kubeblocks_version=0.6.2
+metrics_server_version=0.6.4
+
 
 # Define English and Chinese prompts
 declare -A PROMPTS_EN PROMPTS_CN
@@ -31,6 +53,11 @@ PROMPTS_EN=(
     ["avx_not_supported"]="CPU does not support AVX instructions"
     ["ssh_private_key"]="Please configure the ssh private key path, press Enter to use the default value '/root/.ssh/id_rsa' "
     ["ssh_password"]="Please enter the ssh password, press Enter to skip\n"
+    ["wait_cluster_ready"]="Waiting for cluster to be ready, if you want to skip this step, please enter '1'"
+    ["cilium_requirement"]="When running Cilium using the container image cilium/cilium, the host system must meet these requirements:
+Hosts with either AMD64 or AArch64 architecture
+Linux kernel >= 4.19.57 or equivalent (e.g., 4.18 on RHEL8)"
+    ["mongo_avx_requirement"]="MongoDB 5.0 version depends on CPU that supports AVX instruction set, the current environment does not support avx, so only mongo4.0 version can be used. For more information, see: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
 )
 
 PROMPTS_CN=(
@@ -54,6 +81,11 @@ PROMPTS_CN=(
     ["avx_not_supported"]="CPU不支持AVX指令"
     ["ssh_private_key"]="如需免密登录请配置ssh私钥路径，回车使用默认值'/root/.ssh/id_rsa' "
     ["ssh_password"]="请输入ssh密码，配置免密登录可回车跳过\n"
+    ["wait_cluster_ready"]="正在等待集群就绪, 如果您想跳过此步骤，请输入'1'"
+    ["cilium_requirement"]="正在使用Cilium作为网络插件，主机系统必须满足以下要求：
+具有AMD64或AArch64架构的主机
+Linux内核> = 4.19.57或等效版本（例如，在RHEL8上为4.18）"
+    ["mongo_avx_requirement"]="MongoDB 5.0版本依赖支持 AVX 指令集的 CPU，当前环境不支持avx，所以仅可使用mongo4.0版本，更多信息查看：https://www.mongodb.com/docs/v5.0/administration/production-notes/"
 )
 
 # Choose Language
@@ -77,14 +109,14 @@ else
     LANGUAGE="EN"
 fi
 
-#TODO check if CPU supports AVX instructions
-#precheck() {
-#  cat /proc/cpuinfo | grep avx
-#  if [ $? -ne 0 ]; then
-#    get_prompt "avx_not_supported"
-#    exit 1
-#  fi
-#}
+#TODO mongo 5.0 need avx support, if not support, change to 4.0
+setMongoVersion() {
+  grep avx /proc/cpuinfo > /dev/null
+  if [ $? -ne 0 ]; then
+    get_prompt "mongo_avx_requirement"
+    mongodb_version="mongodb-4.0"
+  fi
+}
 
 # Initialization
 init() {
@@ -120,16 +152,16 @@ collect_input() {
 
     # Master and Node IPs
     while :; do
-        read -p "$(get_prompt "input_master_ips")" masterIps
-        if validate_ips "$masterIps" && [[ ! -z "$masterIps" ]]; then
+        read -p "$(get_prompt "input_master_ips")" master_ips
+        if validate_ips "$master_ips" && [[ ! -z "$master_ips" ]]; then
             break
         else
             get_prompt "invalid_ips"
         fi
     done
     while :; do
-        read -p "$(get_prompt "input_node_ips")" nodeIps
-        if validate_ips "$nodeIps"; then
+        read -p "$(get_prompt "input_node_ips")" node_ips
+        if validate_ips "$node_ips"; then
             break
         else
             get_prompt "invalid_ips"
@@ -140,22 +172,22 @@ collect_input() {
         ssh_private_key="${HOME}/.ssh/id_rsa"
     fi
     read -p "$(get_prompt "ssh_password")" ssh_password
-    read -p "$(get_prompt "pod_subnet")" podCidr
-    read -p "$(get_prompt "service_subnet")" serviceCidr
-    read -p "$(get_prompt "cloud_domain")" cloudDomain
-    read -p "$(get_prompt "cloud_port")" cloudPort
-    read -p "$(get_prompt "input_certificate")" inputCert
-    if [[ $inputCert == "y" || $inputCert == "Y" ]]; then
-        read -p "$(get_prompt "certificate_path")" certPath
-        read -p "$(get_prompt "private_key_path")" keyPath
+    read -p "$(get_prompt "pod_subnet")" pod_cidr
+    read -p "$(get_prompt "service_subnet")" service_cidr
+    read -p "$(get_prompt "cloud_domain")" cloud_domain
+    read -p "$(get_prompt "cloud_port")" cloud_port
+    read -p "$(get_prompt "input_certificate")" input_cert
+    if [[ $input_cert == "y" || $input_cert == "Y" ]]; then
+        read -p "$(get_prompt "certificate_path")" cert_path
+        read -p "$(get_prompt "private_key_path")" key_path
     fi
 }
 
 prepare_configs() {
-    if [[ $inputCert == "y" || $inputCert == "Y" ]]; then
+    if [[ -n "${cert_path}" ]] || [[ -n "${key_path}" ]]; then
         # Convert certificate and key to base64
-        tls_crt_base64=$(cat $certPath | base64 | tr -d '\n')
-        tls_key_base64=$(cat $keyPath | base64 | tr -d '\n')
+        tls_crt_base64=$(cat $cert_path | base64 | tr -d '\n')
+        tls_key_base64=$(cat $key_path | base64 | tr -d '\n')
 
         # Define YAML content for certificate
         tls_config="
@@ -189,62 +221,110 @@ spec:
       kind: DaemonSet
       service:
         type: NodePort
-  match: docker.io/labring/ingress-nginx:v1.5.1
+  match: docker.io/labring/ingress-nginx:v${ingress_nginx_version#v:-1.5.1}
   path: charts/ingress-nginx/values.yaml
   strategy: merge
 "
     echo "$ingress_config" > $CLOUD_DIR/ingress-nginx-config.yaml
 
-    sealos_gen_cmd="sealos gen labring/kubernetes:v1.25.6\
-        labring/helm:v3.12.0\
-        labring/cilium:v1.12.14\
-        labring/cert-manager:v1.8.0\
-        labring/openebs:v3.4.0\
-        --masters $masterIps\
-        --pk=${ssh_private_key}\
-        --passwd=${ssh_password}\
-        "
+    echo "master_ips= ${master_ips}"
+    sealos_gen_cmd="sealos gen labring/kubernetes:v${kubernetes_version#v:-1.25.6}\
+        --masters $master_ips\
+        --pk=${ssh_private_key:-$HOME/.ssh/id_rsa}\
+        --passwd=${ssh_password} -o $CLOUD_DIR/Clusterfile"
 
-    if [ -n "$nodeIps" ]; then
-        sealos_gen_cmd+=" --nodes $nodeIps"
+    if [ -n "$node_ips" ]; then
+        sealos_gen_cmd+=" --nodes $node_ips"
     fi
 
-    $sealos_gen_cmd > $CLOUD_DIR/Clusterfile
+    command -v kubelet || $sealos_gen_cmd
 
     # Modify Clusterfile with sed
-    sed -i "s|100.64.0.0/10|${podCidr:-100.64.0.0/10}|g" $CLOUD_DIR/Clusterfile
-    sed -i "s|10.96.0.0/22|${serviceCidr:-10.96.0.0/22}|g" $CLOUD_DIR/Clusterfile
+    sed -i "s|100.64.0.0/10|${pod_cidr:-100.64.0.0/10}|g" $CLOUD_DIR/Clusterfile
+    sed -i "s|10.96.0.0/22|${service_cidr:-10.96.0.0/22}|g" $CLOUD_DIR/Clusterfile
+}
+
+wait_cluster_ready() {
+    local prompt_msg=$(get_prompt "wait_cluster_ready")
+    while true; do
+        if kubectl get nodes | grep "NotReady" &> /dev/null; then
+          loading_animation "$prompt_msg"
+        else
+          echo && break # new line
+        fi
+        read -t 1 -n 1 -p "" input 2>/dev/null || true
+        if [[ "$input" == "1" ]]; then
+          echo && break # new line
+        fi
+    done
+}
+
+loading_animation() {
+    local message="$1"
+    local duration="${2:-0.5}"
+
+    echo -ne "\r$message   \e[K"
+    sleep "$duration"
+    echo -ne "\r$message .  \e[K"
+    sleep "$duration"
+    echo -ne "\r$message .. \e[K"
+    sleep "$duration"
+    echo -ne "\r$message ...\e[K"
+    sleep "$duration"
 }
 
 execute_commands() {
     get_prompt "k8s_installation"
-    sealos apply -f $CLOUD_DIR/Clusterfile
+    command -v kubelet || sealos apply -f $CLOUD_DIR/Clusterfile
+    command -v helm || sealos run "labring/helm:v${helm_version#v:-3.12.0}"
+    get_prompt "cilium_requirement"
+    if kubectl get no | grep NotReady &>/dev/null; then
+      sealos run "labring/cilium:v${cilium_version#v:-1.12.14}"
+    fi
+    wait_cluster_ready
+    sealos run "labring/cert-manager:v${cert_manager_version#v:-1.8.0}"
+    sealos run "labring/openebs:v${openebs_version#v:-3.4.0}"
+    kubectl create -f - <<EOF
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-backup
+provisioner: openebs.io/local
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+EOF
 
     get_prompt "ingress_installation"
-    sealos run docker.io/labring/kubernetes-reflector:v7.0.151\
-        docker.io/labring/ingress-nginx:v1.5.1\
-        docker.io/labring/kubeblocks:v0.6.2\
+    sealos run docker.io/labring/kubernetes-reflector:v${reflector_version#v:-7.0.151}\
+        docker.io/labring/ingress-nginx:v${ingress_nginx_version#v:-1.5.1}\
+        docker.io/labring/kubeblocks:v${kubeblocks_version#v:-0.6.2}\
         --config-file $CLOUD_DIR/ingress-nginx-config.yaml
+
+    sealos run "labring/metrics-server:v${metrics_server_version#v:-0.6.4}"
 
     get_prompt "patching_ingress"
     kubectl -n ingress-nginx patch ds ingress-nginx-controller -p '{"spec":{"template":{"spec":{"tolerations":[{"key":"node-role.kubernetes.io/control-plane","operator":"Exists","effect":"NoSchedule"}]}}}}'
 
     get_prompt "installing_cloud"
-    if [[ $inputCert == "y" || $inputCert == "Y" ]]; then
+
+    setMongoVersion
+    if [[ -n "$tls_crt_base64" ]] || [[ -n "$tls_key_base64" ]]; then
         sealos run docker.io/labring/sealos-cloud:latest\
-        --env cloudDomain="$cloudDomain"\
-        --env cloudPort="${cloudPort:-443}"\
+        --env cloudDomain="$cloud_domain"\
+        --env cloudPort="${cloud_port:-443}"\
+        --env mongodbVersion="${mongodb_version:-mongodb-5.0}"\
         --config-file $CLOUD_DIR/tls-secret.yaml
     else
         sealos run docker.io/labring/sealos-cloud:latest\
-        --env cloudDomain="$cloudDomain"\
-        --env cloudPort="${cloudPort:-443}"
+        --env cloudDomain="$cloud_domain"\
+        --env cloudPort="${cloud_port:-443}"\
+        --env mongodbVersion="${mongodb_version:-mongodb-5.0}"
     fi
 }
 
 # Main script execution
 init
-collect_input
+source $1 || collect_input
 prepare_configs
 execute_commands
 
@@ -252,4 +332,4 @@ GREEN='\033[0;32m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
-echo -e "${BOLD}Sealos cloud login info:${RESET}\nCloud Version: ${GREEN}${CLOUD_VERSION}${RESET}\nURL: ${GREEN}https://$cloudDomain:$cloudPort${RESET}\nadmin Username: ${GREEN}admin${RESET}\nadmin Password: ${GREEN}sealos2023${RESET}"
+echo -e "${BOLD}Sealos cloud login info:${RESET}\nCloud Version: ${GREEN}${CLOUD_VERSION}${RESET}\nURL: ${GREEN}https://$cloud_domain${cloud_port:+:$cloud_port}${RESET}\nadmin Username: ${GREEN}admin${RESET}\nadmin Password: ${GREEN}sealos2023${RESET}"

@@ -19,6 +19,9 @@ function prepare {
   # apply notifications crd
   kubectl apply -f manifests/notifications_crd.yaml
 
+  # apply kb database metrics
+  kubectl apply -f manifests/db-metrics.yaml
+
   # gen mongodb uri
   gen_mongodbUri
 
