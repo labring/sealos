@@ -35,8 +35,6 @@ spec:
           spec:
             description: LicenseSpec defines the desired state of License
             properties:
-              key:
-                type: string
               token:
                 type: string
               type:
@@ -48,6 +46,9 @@ spec:
           status:
             description: LicenseStatus defines the observed state of License
             properties:
+              activationTime:
+                format: date-time
+                type: string
               phase:
                 default: Pending
                 enum:

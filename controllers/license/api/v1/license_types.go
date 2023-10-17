@@ -18,7 +18,6 @@ package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
 )
 
 type Type string
@@ -48,7 +47,7 @@ type LicenseStatus struct {
 	//+kubebuilder:validation:Enum=Pending;Failed;Active
 	//+kubebuilder:default=Pending
 	Phase          LicenseStatusPhase `json:"phase,omitempty"`
-	ActivationTime time.Time          `json:"activationTime,omitempty"`
+	ActivationTime metav1.Time        `json:"activationTime,omitempty"`
 }
 
 //+kubebuilder:object:root=true

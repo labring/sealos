@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	accountutil "github.com/labring/sealos/controllers/license/internal/util/account"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"time"
 
@@ -119,7 +120,7 @@ func (r *LicenseReconciler) reconcile(ctx context.Context, license *licensev1.Li
 	}
 
 	// update license status to active
-	license.Status.ActivationTime = time.Now()
+	license.Status.ActivationTime = metav1.NewTime(time.Now())
 	license.Status.Phase = licensev1.LicenseStatusPhaseActive
 	_ = r.Status().Update(ctx, license)
 	// record license token and key to database to prevent reuse
