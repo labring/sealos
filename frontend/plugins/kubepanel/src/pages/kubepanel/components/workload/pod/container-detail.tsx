@@ -21,12 +21,12 @@ const ContainerDetail = ({ pod }: Props) => {
 
   return (
     <DrawerPanel title="Containers">
-        {initContainers.map((container) => (
-          <ContainerInfo key={container.name} pod={pod} container={container} isInitial={true} />
-        ))}
-        {containers.map((container) => (
-          <ContainerInfo key={container.name} pod={pod} container={container} isInitial={false} />
-        ))}
+      {initContainers.map((container) => (
+        <ContainerInfo key={container.name} pod={pod} container={container} isInitial={true} />
+      ))}
+      {containers.map((container) => (
+        <ContainerInfo key={container.name} pod={pod} container={container} isInitial={false} />
+      ))}
     </DrawerPanel>
   );
 };

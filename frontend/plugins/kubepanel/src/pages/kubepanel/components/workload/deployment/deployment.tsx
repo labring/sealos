@@ -78,7 +78,7 @@ const DeploymentOverviewPage = () => {
   return (
     <>
       <Table
-        title={"Deployments"}
+        title={'Deployments'}
         columns={columns}
         dataSource={dataSource}
         onRow={(record) => ({

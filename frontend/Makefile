@@ -23,7 +23,8 @@ buildTargets := \
 	providers/imagehub \
 	providers/template \
 	providers/cronjob \
-	providers/license
+	providers/license \
+	providers/objectstorage
 
 buildTargets-all := $(addprefix image-build-,$(buildTargets))
 pushTargets-all := $(addprefix image-push-,$(buildTargets))

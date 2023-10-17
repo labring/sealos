@@ -72,7 +72,7 @@ const StatefulSetOverviewPage = () => {
   return (
     <>
       <Table
-        title={"Stateful Sets"}
+        title={'Stateful Sets'}
         columns={columns}
         dataSource={dataSource}
         onRow={(record) => ({

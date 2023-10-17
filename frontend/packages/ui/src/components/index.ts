@@ -1,5 +1,3 @@
-import { Button } from './Button';
-export const components = {
-  Button
-};
-export * from './Button';
+import EditTabs from './EditTabs';
+import YamlCode from './YamlCode';
+export { YamlCode, EditTabs };

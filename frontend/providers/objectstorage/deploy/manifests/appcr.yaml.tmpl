@@ -1,0 +1,22 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: Object Storage
+  namespace: app-system
+spec:
+  data:
+    desc: sealos cloud object storage
+    url: "https://objectstorage.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+  icon: "https://objectstorage.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg"
+  i18n:
+    zh:
+      name: 对象存储
+    zh-Hans:
+      name: 对象存储
+  menuData:
+    helpDocs: https://www.sealos.io/docs/cloud/apps/objectstorage/
+    helpDropDown: false
+    nameColor: text-black
+  name: Object Storage
+  type: iframe
+  displayType: normal

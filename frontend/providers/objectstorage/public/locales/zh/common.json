@@ -1,0 +1,17 @@
+{
+  "application": "应用",
+  "export": "导出",
+  "configForm": "配置表单",
+  "yamlFile": "yaml 文件",
+  "edit": "编辑",
+  "delete": "删除",
+  "totalObjects": "总对象数量",
+  "total": "总计",
+  "used": "已用",
+  "remaining": "剩余",
+  "totalSpace": "总空间用量",
+  "s3ServiceParams": "访问密钥",
+  "refresh": "刷新",
+  "config": "基础配置",
+  "deleteWarning": "删除警告"
+}
