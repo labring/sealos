@@ -61,7 +61,10 @@ request.interceptors.request.use(
     let _headers: AxiosHeaders = config.headers || {};
 
     const session = useSessionStore.getState().session;
-    _headers['Authorization'] = encodeURIComponent(session.token);
+
+    if (session?.token && config.url && config.url?.startsWith('/api/')) {
+      _headers['Authorization'] = encodeURIComponent(session.token);
+    }
 
     if (!config.headers || config.headers['Content-Type'] === '') {
       _headers['Content-Type'] = 'application/json';
@@ -81,6 +84,13 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   (response: AxiosResponse) => {
     const { status, data } = response;
+
+    if (data.code === 401) {
+      console.log('鉴权失败');
+      useSessionStore.getState().delSession();
+      return window.location.replace('/signin');
+    }
+
     if (status < 200 || status >= 300) {
       return Promise.reject(
         status + ':' + showStatus(status) + ', ' + typeof data === 'string' ? data : String(data)

@@ -8,6 +8,7 @@ import { Session } from '@/types/session';
 import { getBase64FromRemote } from '@/utils/tools';
 import { getOauthRes } from '@/services/backend/oauth';
 import { enableWechat } from '@/services/enable';
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!enableWechat()) {

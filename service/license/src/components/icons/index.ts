@@ -21,3 +21,6 @@ export * from './EmptyIcon';
 export * from './LicenseIcon';
 export * from './DownloadIcon';
 export * from './TokenIcon';
+export * from './CodeDoneIcon';
+export * from './VectorIcon';
+export * from './SignOutIcon';

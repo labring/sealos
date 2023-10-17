@@ -6,26 +6,15 @@ const jwtSecret = (process.env.JWT_SECRET as string) || '123456789';
 
 export const authSession = async (header: IncomingHttpHeaders) => {
   try {
-    // if (!header?.authorization) {
-    //   throw new Error('缺少凭证');
-    // }
-    // const token = decodeURIComponent(header.authorization);
-    // const payload = await verifyJWT(token);
-    // if (
-    //   !payload ||
-    //   !payload.kubeconfig ||
-    //   !payload?.user?.uid ||
-    //   !payload?.user?.nsid ||
-    //   !payload?.user?.ns_uid ||
-    //   !payload?.user?.k8s_username
-    // )
-    //   throw new Error('token is null');
-    // console.log('jwt:', payload.kubeconfig)
-    // const kc = K8sApi(payload.kubeconfig);
-    // const username = kc.getCurrentUser()?.name;
-    // const user = payload.user;
-    // if (!username || user.k8s_username !== username) throw new Error('user is invaild');
-    // return Promise.resolve({ kc, user });
+    if (!header?.authorization) {
+      throw new Error('缺少凭证');
+    }
+    const token = decodeURIComponent(header.authorization);
+    const payload = await verifyJWT(token);
+    if (!payload) {
+      throw new Error('token is null');
+    }
+    return Promise.resolve(payload);
   } catch (err) {
     console.error(err, '===');
     return Promise.resolve(null);
@@ -46,6 +35,7 @@ export const verifyJWT: (token: string) => Promise<JWTPayload | null> = (token: 
       }
     });
   });
+
 export const generateJWT = (props: JWTPayload) => {
   console.log('jwt: ', props);
   return sign(props, jwtSecret, {

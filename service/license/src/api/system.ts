@@ -1,7 +1,10 @@
 import { GET } from '@/services/request';
 import { SystemEnv } from '@/types';
 
-export const getSystemEnv = () => GET<SystemEnv>('/api/platform/getEnv');
+export const getSystemEnv = (): Promise<SystemEnv> =>
+  fetch('/api/platform/getEnv')
+    .then((res) => res.json())
+    .then((res) => res.data);
 
 export const getPriceBonus = () =>
   GET<{

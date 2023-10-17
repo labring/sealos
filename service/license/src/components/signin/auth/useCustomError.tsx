@@ -26,7 +26,7 @@ const useCustomError = () => {
         }, 5000); // 默认 5000 毫秒（5秒）后自动关闭错误消息
         return () => clearTimeout(timeout);
       }
-    }, [error]);
+    }, []);
 
     return error ? (
       <Flex

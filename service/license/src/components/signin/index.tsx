@@ -6,7 +6,7 @@ import usePassword from '@/components/signin/auth/usePassword';
 import useProtocol from '@/components/signin/auth/useProtocol';
 import useSms from '@/components/signin/auth/useSms';
 import useSessionStore from '@/stores/session';
-import { ApiResp, LoginType, SystemEnv } from '@/types';
+import { LoginType } from '@/types';
 import {
   Box,
   Button,
@@ -28,7 +28,6 @@ import { useEffect, useMemo, useState } from 'react';
 
 export default function SigninComponent() {
   const { data: platformEnv } = useQuery(['getPlatformEnv'], getSystemEnv);
-  console.log(platformEnv);
 
   const {
     service_protocol = '',
@@ -56,11 +55,13 @@ export default function SigninComponent() {
   const isLoading = useMemo(() => passwordLoading || smsLoading, [passwordLoading, smsLoading]);
   const isSignIn = useSessionStore((s) => s.isUserLogin);
   const router = useRouter();
-  // useEffect(() => {
-  //   if (isSignIn()) {
-  //     router.replace('/');
-  //   }
-  // }, []);
+
+  useEffect(() => {
+    if (isSignIn()) {
+      router.push('/license');
+    }
+  }, [isSignIn, router]);
+
   const { AuthList } = useAuthList();
 
   const loginConfig = useMemo(() => {

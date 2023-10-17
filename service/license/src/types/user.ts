@@ -16,6 +16,7 @@ export type TWechatToken = {
   is_snapshotuser: 1;
   unionid: string;
 };
+
 export type TWechatUser = {
   openid: string;
   nickname: string;
@@ -27,6 +28,7 @@ export type TWechatUser = {
   privilege: string[];
   unionid: string;
 };
+
 export type TgithubUser = {
   login: string;
   id: number;
@@ -61,33 +63,21 @@ export type TgithubUser = {
   created_at: string;
   updated_at: string;
 };
-// if default, uid
-export const PROVIDERS = ['github', 'wechat', 'phone', 'uid', 'password_user', 'google'] as const;
-export type Provider = (typeof PROVIDERS)[number];
-export type OauthProvider = Exclude<Provider, 'uid' | 'password_user' | 'phone'>;
+
+export const AUTH_PROVIDERS = ['github', 'wechat', 'phone', 'password_user', 'google'] as const;
+
+export type AuthProvider = (typeof AUTH_PROVIDERS)[number];
+
+export type OauthProvider = Exclude<AuthProvider, 'password_user' | 'phone'>;
+
 export type TUserExist = { user: string; exist: boolean };
 
-export type K8s_user = {
-  name: string;
-};
 export type User = {
   uid: string;
   avatar_url: string;
   name: string;
-  github?: string;
-  wechat?: string;
-  google?: string;
-  phone?: string;
-  k8s_users?: K8s_user[];
   created_time: string;
   password?: string;
-  password_user?: string;
-};
+} & UserSignInType;
 
-export type UserDto = {
-  uid: string;
-  avatarUrl: string;
-  name: string;
-  k8s_username: string;
-  createdTime: string;
-};
+export type UserSignInType = { [key in AuthProvider]?: string };

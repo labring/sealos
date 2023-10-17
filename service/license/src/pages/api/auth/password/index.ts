@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
-
 import { Session } from '@/types/session';
 import { getOauthRes } from '@/services/backend/oauth';
 import { strongPassword } from '@/utils/crypto';
 import { enablePassword } from '@/services/enable';
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!enablePassword()) {

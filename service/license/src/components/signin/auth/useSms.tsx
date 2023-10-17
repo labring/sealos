@@ -1,16 +1,7 @@
 import { sendCodeByPhone, signInByPhone } from '@/api/user';
-import { SafetyIcon } from '@/components/icons';
+import { CodeDoneIcon, SafetyIcon } from '@/components/icons';
 import useSessionStore from '@/stores/session';
-import { ApiResp, Session } from '@/types';
-import {
-  Image,
-  Input,
-  InputGroup,
-  InputLeftAddon,
-  InputRightAddon,
-  Link,
-  Text
-} from '@chakra-ui/react';
+import { Input, InputGroup, InputLeftAddon, InputRightAddon, Link, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import NextLink from 'next/link';
 import { useRouter } from 'next/router';
@@ -47,9 +38,10 @@ export default function useSms({
         try {
           setIsLoading(true);
           const result = await signInByPhone(data.phoneNumber, data.verifyCode);
-          setSession(result.data!);
+          setSession(result);
           router.replace('/');
         } catch (error) {
+          console.log(error);
           showError(t('Invalid verification code') || 'Invalid verification code');
         } finally {
           setIsLoading(false);
@@ -83,10 +75,7 @@ export default function useSms({
       _remainTime.current = 60;
 
       try {
-        const res = await sendCodeByPhone(getValues('phoneNumber'));
-        if (res.code !== 200 || res.message !== 'successfully') {
-          throw new Error('Get code failed');
-        }
+        await sendCodeByPhone(getValues('phoneNumber'));
       } catch (err) {
         showError(t('Get code failed') || 'Get code failed');
         setRemainTime(0);
@@ -184,9 +173,7 @@ export default function useSms({
             })}
           />
           <InputRightAddon>
-            {getValues('verifyCode')?.length === 6 && (
-              <Image src="images/material-symbols_update.svg" alt="material-symbols_update" />
-            )}
+            {getValues('verifyCode')?.length === 6 && <CodeDoneIcon />}
           </InputRightAddon>
         </InputGroup>
       </>

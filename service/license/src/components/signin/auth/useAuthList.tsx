@@ -1,7 +1,6 @@
 import { getSystemEnv } from '@/api/system';
 import { GithubIcon, GoogleIcon, WechatIcon } from '@/components/icons';
 import useSessionStore from '@/stores/session';
-import { ApiResp, SystemEnv } from '@/types';
 import { OauthProvider } from '@/types/user';
 import { Button, Flex, Icon } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';

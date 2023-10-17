@@ -8,6 +8,17 @@ export const signInByPhone = (phoneNumbers: string, code: string) =>
     code: code
   });
 
+export const signInByPassword = (username: string, password: string) =>
+  POST<Session>('/api/auth/password', {
+    user: username,
+    password: password
+  });
+
+export const signInByProvider = (provider: string, code: string | string[]) =>
+  POST<Session>(`/api/auth/oauth/${provider}`, {
+    code
+  });
+
 export const sendCodeByPhone = (phoneNumbers: string) =>
   POST('/api/auth/phone/sms', {
     phoneNumbers: phoneNumbers

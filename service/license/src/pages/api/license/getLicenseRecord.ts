@@ -1,7 +1,6 @@
 import { authSession } from '@/services/backend/auth';
-import { createLicenseRecord, getLicenseRecordsByUid } from '@/services/backend/db/license';
+import { getLicenseRecordsByUid } from '@/services/backend/db/license';
 import { jsonRes } from '@/services/backend/response';
-import { LicensePayload } from '@/types';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
@@ -15,7 +14,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     };
 
     const result = await getLicenseRecordsByUid({
-      uid: payload.user.nsid,
+      uid: payload.uid,
       page: page,
       pageSize: pageSize
     });

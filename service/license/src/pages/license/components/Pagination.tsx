@@ -33,6 +33,10 @@ export default function Pagination({ totalItems, itemsPerPage, onPageChange }: P
     borderRadius: '50%'
   };
 
+  if (totalPage === 0) {
+    return <></>;
+  }
+
   return (
     <Flex h="32px" ml="auto" align="center" mt="20px">
       <Text>Total:</Text>

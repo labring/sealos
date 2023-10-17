@@ -1,6 +1,5 @@
 import { GET, POST } from '@/services/request';
 import { LicensePayStatus, LicensePayload, LicenseRecord, Payment } from '@/types';
-import { number } from 'react-i18next/icu.macro';
 
 export const licensePay = ({
   amount,

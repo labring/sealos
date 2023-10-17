@@ -1,13 +1,11 @@
+import { signInByPassword } from '@/api/user';
+import { LocklIcon, PersonIcon, VectorIcon } from '@/components/icons';
 import useSessionStore from '@/stores/session';
-import { ApiResp, Session } from '@/types';
-import { TUserExist } from '@/types/user';
-import { Flex, Image, Img, Input, InputGroup, InputLeftAddon, Text } from '@chakra-ui/react';
+import { Flex, Input, InputGroup, InputLeftAddon, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { LocklIcon, PersonIcon } from '@/components/icons';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { userExistsByPassword } from '@/api/user';
 
 export default function usePassword({
   showError
@@ -43,33 +41,9 @@ export default function usePassword({
         if (data?.username && data?.password) {
           try {
             setIsLoading(true);
-            const result = await userExistsByPassword(data.username);
-
-            if (result?.code === 200) {
-              const result = await request.post<any, ApiResp<Session>>('/api/auth/password', {
-                user: data.username,
-                password: data.password
-              });
-              setSession(result.data!);
-              router.replace('/');
-              return;
-            }
-            if (result?.code === 201) {
-              setUserExist(!!result?.data?.exist);
-              setPageState(1);
-              if (!!data?.confimPassword) {
-                if (data?.password !== data?.confimPassword) {
-                  showError('password not match');
-                } else {
-                  const result = await request.post<any, ApiResp<Session>>('/api/auth/password', {
-                    user: data.username,
-                    password: data.password
-                  });
-                  setSession(result.data!);
-                  router.replace('/');
-                }
-              }
-            }
+            const result = await signInByPassword(data.username, data.password);
+            setSession(result);
+            router.replace('/');
           } catch (error: any) {
             console.log(error);
             showError(t('Invalid username or password'));
@@ -173,9 +147,8 @@ export default function usePassword({
     return (
       <>
         <Flex p={'0'} alignItems={'center'} width="266px" minH="42px" mb="14px" borderRadius="4px">
-          <Image
-            color={'#FFFFFF'}
-            src="/images/Vector.svg"
+          <VectorIcon
+            fill={'#FFFFFF'}
             w={'20px'}
             transform={'rotate(-90deg)'}
             h={'20px'}
@@ -183,7 +156,6 @@ export default function usePassword({
             display={'inline-block'}
             verticalAlign={'middle'}
             cursor={'pointer'}
-            alt="Vector"
             onClick={() => setPageState(0)}
           />
           <Text color={'#FFFFFF'}>{t('Verify password')}</Text>

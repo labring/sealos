@@ -7,6 +7,7 @@ import LicenseRecord from './components/Record';
 import { useRouter } from 'next/router';
 import { useQuery } from '@tanstack/react-query';
 import { ApiResp, SystemEnv } from '@/types';
+import Account from '@/components/account';
 
 export default function LicensePage() {
   const { t } = useTranslation();
@@ -41,6 +42,7 @@ export default function LicensePage() {
           ｜ {t('License Buy')}
         </Text>
         <LangSelectSimple />
+        <Account />
       </Flex>
       <Flex flex={1} h={0} bg="#fefefe" overflowX={'auto'}>
         <LicenseRecord />

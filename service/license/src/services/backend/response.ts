@@ -18,7 +18,7 @@ export const jsonRes = <T = any>(
     if (typeof error === 'string') {
       msg = error;
     }
-    console.error('===jsonRes error===\n ', error);
+    console.error('===jsonRes error===\n', error);
   }
 
   res.json({

@@ -1,5 +1,5 @@
-import * as yaml from 'js-yaml';
-import { CRDMeta } from './crd';
+// import * as yaml from 'js-yaml';
+// import { CRDMeta } from './crd';
 
 export type PaymentForm = {
   paymentName: string;
@@ -8,12 +8,12 @@ export type PaymentForm = {
   amount: string;
 };
 
-export const paymentMeta: CRDMeta = {
-  group: 'account.sealos.io',
-  version: 'v1',
-  namespace: 'sealos-system',
-  plural: 'payments'
-};
+// export const paymentMeta: CRDMeta = {
+//   group: 'account.sealos.io',
+//   version: 'v1',
+//   namespace: 'sealos-system',
+//   plural: 'payments'
+// };
 
 export type Payment = {
   paymentName: string;
@@ -34,25 +34,25 @@ export type Pay = {
   tradeNO: string;
 };
 
-export const generatePaymentCrd = (form: PaymentForm) => {
-  const paymentCrd = {
-    apiVersion: 'account.sealos.io/v1',
-    kind: 'Payment',
-    metadata: {
-      name: form.paymentName,
-      namespace: form.namespace
-    },
-    spec: {
-      userID: form.userId,
-      amount: form.amount,
-      paymentMethod: 'wechat'
-    }
-  };
+// export const generatePaymentCrd = (form: PaymentForm) => {
+//   const paymentCrd = {
+//     apiVersion: 'account.sealos.io/v1',
+//     kind: 'Payment',
+//     metadata: {
+//       name: form.paymentName,
+//       namespace: form.namespace
+//     },
+//     spec: {
+//       userID: form.userId,
+//       amount: form.amount,
+//       paymentMethod: 'wechat'
+//     }
+//   };
 
-  try {
-    const result = yaml.dump(paymentCrd);
-    return result;
-  } catch (error) {
-    return '';
-  }
-};
+//   try {
+//     const result = yaml.dump(paymentCrd);
+//     return result;
+//   } catch (error) {
+//     return '';
+//   }
+// };

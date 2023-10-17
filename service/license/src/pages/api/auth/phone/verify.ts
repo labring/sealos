@@ -23,6 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       name: phoneNumbers,
       avatar_url: ''
     });
+
     return jsonRes<Session>(res, {
       data,
       code: 200,
