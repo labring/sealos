@@ -347,7 +347,6 @@ func (r *MonitorReconciler) getPodTrafficUsed(namespace string, resourceMap *map
 		tfs := sealos_networkmanager.TrafficStatRequest{
 			Namespace:       namespace,
 			Type:            &tType,
-			Identity:        []uint32{2, 8},
 			LabelsIn:        named.GetInLabels(),
 			LabelsNotIn:     labelsNotIn,
 			LabelsNotExists: named.GetNotExistLabels(),
