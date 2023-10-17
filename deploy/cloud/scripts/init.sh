@@ -111,12 +111,12 @@ function sealos_run_controller {
   --env cloudPort="$cloudPort" \
   --env DEFAULT_NAMESPACE="account-system"
 
-  # run licenseissuer controller
-  sealos run tars/licenseissuer.tar \
-  --env canConnectToExternalNetwork="true" \
-  --env enableMonitor="true" \
-  --env MongoURI="$mongodbUri" \
-  --env PasswordSalt="$saltKey"
+#  run licenseissuer controller
+#  sealos run tars/licenseissuer.tar \
+#  --env canConnectToExternalNetwork="true" \
+#  --env enableMonitor="true" \
+#  --env MongoURI="$mongodbUri" \
+#  --env PasswordSalt="$saltKey"
 }
 
 function sealos_run_frontend {
@@ -201,7 +201,7 @@ function install {
   sealos_run_frontend
 
   # sealos authorize
-  sealos_authorize
+#  sealos_authorize
 }
 
 install
