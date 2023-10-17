@@ -6,10 +6,12 @@ import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
 import { YamlItemType } from '@/types';
 import { TemplateSourceType, TemplateType } from '@/types/app';
+import { EnvResponse } from '@/types/index';
 import { serviceSideProps } from '@/utils/i18n';
 import {
   developGenerateYamlList,
   getTemplateDataSource,
+  handleTemplateToInstanceYaml,
   parseTemplateString
 } from '@/utils/json-yaml';
 import { getTemplateDefaultValues } from '@/utils/template';
@@ -23,9 +25,8 @@ import dayjs from 'dayjs';
 import JsYaml from 'js-yaml';
 import { debounce, has, isObject, mapValues } from 'lodash';
 import { useTranslation } from 'next-i18next';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { EnvResponse } from '@/types/index';
 import ErrorModal from '../deploy/components/ErrorModal';
 import BreadCrumbHeader from './components/BreadCrumbHeader';
 import Form from './components/Form';
@@ -40,11 +41,6 @@ export default function Develop() {
   const { Loading, setIsLoading } = useLoading();
   const [errorMessage, setErrorMessage] = useState('');
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(false);
-
-  const detailName = useMemo(
-    () => yamlSource?.source?.defaults?.app_name?.value || '',
-    [yamlSource?.source?.defaults?.app_name?.value]
-  );
 
   const { data: platformEnvs } = useQuery(['getPlatformEnvs'], getPlatformEnv) as {
     data: EnvResponse;
@@ -62,6 +58,9 @@ export default function Develop() {
     ) as TemplateType;
     const yamlList = yamlData.filter((item: any) => item.kind !== 'Template');
     const dataSource = getTemplateDataSource(templateYaml, platformEnvs);
+    const _instanceName = dataSource?.defaults?.app_name?.value || '';
+    const instanceYaml = handleTemplateToInstanceYaml(templateYaml, _instanceName);
+    yamlList.unshift(instanceYaml);
     const result: TemplateSourceType = {
       source: {
         ...dataSource,
@@ -73,7 +72,10 @@ export default function Develop() {
     return result;
   };
 
-  const generateCorrectYaml = (yamlSource: TemplateSourceType, inputsForm = {}) => {
+  const generateCorrectYamlList = (
+    yamlSource: TemplateSourceType,
+    inputsForm = {}
+  ): YamlItemType[] => {
     const yamlString = yamlSource?.yamlList?.map((item) => JsYaml.dump(item)).join('---\n');
     const output = mapValues(yamlSource?.source.defaults, (value) => value.value);
     const generateStr = parseTemplateString(yamlString, /\$\{\{\s*(.*?)\s*\}\}/g, {
@@ -81,7 +83,8 @@ export default function Develop() {
       inputs: inputsForm,
       defaults: output
     });
-    return generateStr;
+    const _instanceName = yamlSource?.source?.defaults?.app_name?.value || '';
+    return developGenerateYamlList(generateStr, _instanceName);
   };
 
   const parseTemplate = (str: string) => {
@@ -89,8 +92,8 @@ export default function Develop() {
       const result = getYamlSource(str);
       const defaultInputes = getTemplateDefaultValues(result);
       setYamlSource(result);
-      const correctYaml = generateCorrectYaml(result, defaultInputes);
-      setYamlList(developGenerateYamlList(correctYaml, detailName));
+      const correctYamlList = generateCorrectYamlList(result, defaultInputes);
+      setYamlList(correctYamlList);
     } catch (error: any) {
       toast({
         title: 'Parsing Yaml Error',
@@ -115,8 +118,8 @@ export default function Develop() {
   const formOnchangeDebounce = debounce((data: any) => {
     try {
       if (yamlSource) {
-        const correctYaml = generateCorrectYaml(yamlSource, data);
-        setYamlList(developGenerateYamlList(correctYaml, detailName));
+        const correctYamlList = generateCorrectYamlList(yamlSource, data);
+        setYamlList(correctYamlList);
       }
     } catch (error) {
       console.log(error);
