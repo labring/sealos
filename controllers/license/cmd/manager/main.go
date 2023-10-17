@@ -17,7 +17,9 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
+	"github.com/labring/sealos/controllers/license/internal/util/database"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -92,7 +94,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.LicenseReconciler{}).SetupWithManager(mgr); err != nil {
+	db, err := database.New(context.Background(), os.Getenv("MONGO_URI"))
+	if err != nil {
+		setupLog.Error(err, "unable to connect to database")
+		os.Exit(1)
+	}
+	defer db.Disconnect(context.Background())
+
+	if err = (&controller.LicenseReconciler{}).SetupWithManager(mgr, db); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "License")
 		os.Exit(1)
 	}

@@ -20,14 +20,13 @@ import (
 	"context"
 	"errors"
 	accountutil "github.com/labring/sealos/controllers/license/internal/util/account"
+	"github.com/labring/sealos/controllers/license/internal/util/database"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
 	"time"
 
 	"github.com/go-logr/logr"
 	ctrlsdk "github.com/labring/operator-sdk/controller"
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
-	"github.com/labring/sealos/controllers/license/internal/util/database"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -132,14 +131,10 @@ func (r *LicenseReconciler) reconcile(ctx context.Context, license *licensev1.Li
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, db *database.DataBase) error {
 	r.Logger = mgr.GetLogger().WithName("controller").WithName("License")
 	r.finalizer = ctrlsdk.NewFinalizer(r.Client, "license.sealos.io/finalizer")
 	r.Client = mgr.GetClient()
-	db, err := database.New(context.Background(), os.Getenv("MONGO_URI"))
-	if err != nil {
-		return err
-	}
 
 	r.validator = &LicenseValidator{
 		Client: r.Client,
@@ -147,7 +142,7 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	r.recorder = &LicenseRecorder{
 		Client: r.Client,
-		db:     &db,
+		db:     db,
 	}
 
 	// reconcile on generation change

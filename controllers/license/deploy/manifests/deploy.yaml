@@ -47,8 +47,6 @@ spec:
           spec:
             description: LicenseSpec defines the desired state of License
             properties:
-              key:
-                type: string
               token:
                 type: string
               type:
@@ -60,6 +58,9 @@ spec:
           status:
             description: LicenseStatus defines the observed state of License
             properties:
+              activationTime:
+                format: date-time
+                type: string
               phase:
                 default: Pending
                 enum:
@@ -144,6 +145,26 @@ metadata:
   creationTimestamp: null
   name: license-manager-role
 rules:
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - accounts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - accounts/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - license.sealos.io
   resources:
@@ -351,6 +372,9 @@ spec:
         - --leader-elect
         command:
         - /manager
+        env:
+        - name: MONOGOURI
+          value: ""
         image: ghcr.io/labring/sealos-license-controller:latest
         livenessProbe:
           httpGet:

@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/labring/sealos/controllers/license/internal/util/meta"
 
@@ -22,12 +23,12 @@ const (
 	DefaultLicenseCollection = "license"
 )
 
-func New(ctx context.Context, uri string) (DataBase, error) {
+func New(ctx context.Context, uri string) (*DataBase, error) {
 	client, err := mongo.Connect(ctx, mongoOptions.Client().ApplyURI(uri))
 	if err != nil {
-		return DataBase{}, err
+		return &DataBase{}, err
 	}
-	return DataBase{
+	return &DataBase{
 		URI:               uri,
 		Client:            client,
 		licenseCollection: client.Database(DefaultLicenseDataBase).Collection(DefaultLicenseCollection),
@@ -46,6 +47,11 @@ func (db *DataBase) GetLicenseMeta(ctx context.Context, token string) (*meta.Met
 	return lic, err
 }
 
-func (db *DataBase) Disconnect(ctx context.Context) error {
-	return db.Client.Disconnect(ctx)
+func (db *DataBase) Disconnect(ctx context.Context) {
+	err := db.Client.Disconnect(ctx)
+	if err != nil {
+		logger.Error(err, "disconnect from database failed")
+		return
+	}
+	return
 }
