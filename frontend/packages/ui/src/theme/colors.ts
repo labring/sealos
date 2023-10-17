@@ -72,13 +72,22 @@ export const colors = {
     600: '#36ADEF',
     700: '#2B8ABF'
   },
+  brightBlue: {
+    600: '#219BF4',
+    700: '#0884DD'
+  },
+  adora: {
+    600: '#8172D8'
+  },
   purple: {
     300: '#DBBDE9',
     400: '#C99CDF',
+    500: '#B779D4',
     600: '#A55AC9',
     700: '#7167AA'
   },
   frostyNightfall: {
+    100: '#F5F5F8',
     200: '#EAEBF0'
   }
 };
