@@ -19,19 +19,15 @@ package controller
 import (
 	"context"
 	"errors"
+	accountutil "github.com/labring/sealos/controllers/license/internal/util/account"
 	"os"
+	"time"
 
 	"github.com/go-logr/logr"
 	ctrlsdk "github.com/labring/operator-sdk/controller"
-	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
-	accountUtil "github.com/labring/sealos/controllers/license/internal/util/account"
 	"github.com/labring/sealos/controllers/license/internal/util/database"
-	licenseUtil "github.com/labring/sealos/controllers/license/internal/util/license"
-	"github.com/labring/sealos/controllers/license/internal/util/tools"
-
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,21 +45,11 @@ type LicenseReconciler struct {
 	recorder  *LicenseRecorder
 }
 
-const (
-	CreatTimeField = "iat"
-	AmountField    = "amt"
-	NodeField      = "nod"
-	CPUField       = "cpu"
-	DurationField  = "tte"
-	AddNodeField   = "and"
-	AddCPUField    = "adc"
-)
-
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses/finalizers,verbs=update
-
-// TODO add rbac rules
+// +kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=account.sealos.io,resources=accounts/status,verbs=get;update;patch
 
 func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Logger.V(1).Info("start reconcile for license")
@@ -92,57 +78,54 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *LicenseReconciler) reconcile(ctx context.Context, license *licensev1.License) (ctrl.Result, error) {
 	r.Logger.V(1).Info("reconcile for license", "license", license.Namespace+"/"+license.Name)
 
-	payload, validate, err := r.validator.Validate(license)
+	// check if license is valid
+	valid, err := r.validator.Validate(license)
 	if err != nil {
+		r.Logger.V(1).Error(err, "failed to validate license")
 		return ctrl.Result{}, err
 	}
-
-	_, found, err := r.recorder.GetLicense(license.Spec.Token)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	if !validate || !found {
+	// if license is invalid, update license status to failed
+	if !valid {
 		r.Logger.V(1).Info("license is invalid", "license", license.Namespace+"/"+license.Name)
-
-		// Update license status to failed
+		// TODO mv to a function
 		license.Status.Phase = licensev1.LicenseStatusPhaseFailed
 		_ = r.Status().Update(ctx, license)
-	} else {
-		r.Logger.V(1).Info("license is valid", "license", license.Namespace+"/"+license.Name)
-		// TODO do something after license validated and license is active
+		return ctrl.Result{}, nil
+	}
 
-		// charge account or update cluster license based on license type
-		//accout
-		account := accountv1.Account{}
-		switch license.Spec.Type {
-		case licensev1.AccountLicenseType:
-			namespacedName := types.NamespacedName{
-				Namespace: license.Namespace,
-				Name:      tools.GetNameByNameSpace(license.Namespace),
-			}
-			err := r.Client.Get(ctx, namespacedName, &account)
-			if err != nil {
-				r.Logger.V(1).Error(err, "failed to get account")
-				return ctrl.Result{}, err
-			}
-			err = accountUtil.Recharge(ctx, r.Client, account, payload)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-		case licensev1.ClusterLicenseType:
-			// TODO update cluster license
-		}
+	// check if license has been used
+	found, err := r.recorder.Find(ctx, license)
+	if err != nil {
+		r.Logger.V(1).Error(err, "failed to get license from database")
+		return ctrl.Result{}, err
+	}
+	// if license has been used, update license status to failed
+	if found {
+		r.Logger.V(1).Info("license has been used", "license", license.Namespace+"/"+license.Name)
+		license.Status.Phase = licensev1.LicenseStatusPhaseFailed
+		_ = r.Status().Update(ctx, license)
+		return ctrl.Result{}, nil
+	}
 
-		// record license token and key to database to prevent reuse
-		err := r.recorder.Store(licenseUtil.NewLicense(license, payload))
-		if err != nil {
-			r.Logger.V(1).Error(err, "failed to sotre license in database")
+	// TODO mv to active function
+	switch license.Spec.Type {
+	case licensev1.AccountLicenseType:
+		if err = accountutil.Recharge(ctx, r.Client, license); err != nil {
+			r.Logger.V(1).Error(err, "failed to recharge account")
 			return ctrl.Result{}, err
 		}
-		// update license status to active
-		license.Status.Phase = licensev1.LicenseStatusPhaseActive
-		_ = r.Status().Update(ctx, license)
+	case licensev1.ClusterLicenseType:
+		// TODO implement cluster license
+	}
+
+	// update license status to active
+	license.Status.ActivationTime = time.Now()
+	license.Status.Phase = licensev1.LicenseStatusPhaseActive
+	_ = r.Status().Update(ctx, license)
+	// record license token and key to database to prevent reuse
+	if err = r.recorder.Store(ctx, license); err != nil {
+		r.Logger.V(1).Error(err, "failed to store license in database")
+		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
 }
@@ -152,20 +135,18 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger = mgr.GetLogger().WithName("controller").WithName("License")
 	r.finalizer = ctrlsdk.NewFinalizer(r.Client, "license.sealos.io/finalizer")
 	r.Client = mgr.GetClient()
-	database, err := database.NewDataBase(os.Getenv("MONOGOURI"))
+	db, err := database.New(context.Background(), os.Getenv("MONGO_URI"))
 	if err != nil {
 		return err
 	}
 
-	// TODO fix this
 	r.validator = &LicenseValidator{
 		Client: r.Client,
 	}
 
-	// TODO fix this
 	r.recorder = &LicenseRecorder{
 		Client: r.Client,
-		db:     &database,
+		db:     &db,
 	}
 
 	// reconcile on generation change

@@ -11,6 +11,7 @@ use (
 	./controllers/node
 	./controllers/user
 	./controllers/resources
+	./controllers/license
 	./controllers/pkg
 	./service/database
 	./service/hub

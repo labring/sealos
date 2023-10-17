@@ -1,10 +1,12 @@
 package controller
 
 import (
+	"context"
 	"errors"
-
+	v1 "github.com/labring/sealos/controllers/license/api/v1"
 	"github.com/labring/sealos/controllers/license/internal/util/database"
-	licenseUtil "github.com/labring/sealos/controllers/license/internal/util/license"
+	"github.com/labring/sealos/controllers/license/internal/util/meta"
+	"go.mongodb.org/mongo-driver/mongo"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -14,18 +16,35 @@ type LicenseRecorder struct {
 	db *database.DataBase
 }
 
-func (r *LicenseRecorder) Store(license licenseUtil.License) error {
-	err := r.db.StoreLicense(license)
+func (r *LicenseRecorder) Get(ctx context.Context, license *v1.License) (*meta.Meta, error) {
+	m, err := r.db.GetLicenseMeta(ctx, license.Spec.Token)
 	if err != nil {
-		return errors.New("failed to store license")
+		return nil, err
 	}
-	return nil
+	return m, nil
 }
 
-func (r *LicenseRecorder) GetLicense(token string) (licenseUtil.License, bool, error) {
-	license, err := r.db.GetLicense(token)
+func (r *LicenseRecorder) Find(ctx context.Context, license *v1.License) (bool, error) {
+	_, err := r.Get(ctx, license)
 	if err != nil {
-		return licenseUtil.License{}, false, errors.New("failed to get license")
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return false, nil
+		} else {
+			return false, err
+		}
 	}
-	return license, true, nil
+	return true, nil
+}
+
+func (r *LicenseRecorder) IsExisted(ctx context.Context, license *v1.License) (bool, error) {
+	_, err := r.Get(ctx, license)
+	if err != nil {
+		return false, err
+	}
+	// TODO implement this
+	return true, nil
+}
+
+func (r *LicenseRecorder) Store(ctx context.Context, license *v1.License) error {
+	return r.db.StoreLicenseMeta(ctx, meta.New(license))
 }

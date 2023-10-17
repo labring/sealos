@@ -1,7 +1,5 @@
 package tools
 
-import "strings"
-
 func ContainsFields(data map[string]interface{}, fields ...string) bool {
 	for _, field := range fields {
 		_, ok := data[field]
@@ -10,8 +8,4 @@ func ContainsFields(data map[string]interface{}, fields ...string) bool {
 		}
 	}
 	return true
-}
-
-func GetNameByNameSpace(ns string) string {
-	return strings.Split(ns, "-")[1]
 }

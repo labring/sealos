@@ -12,6 +12,8 @@ scripts/release/Note.md
 bin
 .run
 coverage.out
+tools/*
+tools/!*.go
 tmp
 **/.DS_Store
 node_modules
