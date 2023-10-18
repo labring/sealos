@@ -56,5 +56,5 @@ func Recharge(ctx context.Context, client client.Client, license *licensev1.Lice
 }
 
 func GetNameByNameSpace(ns string) string {
-	return strings.TrimLeft(ns, "ns-")
+	return strings.TrimPrefix(ns, "ns-")
 }
