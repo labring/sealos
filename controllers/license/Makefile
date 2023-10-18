@@ -66,7 +66,7 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: build
 CONTROLLER_PKG=github.com/labring/sealos/controllers/pkg
-CONTROLLER_LICENSE=github.com/labring/sealos/controllers/license/internal/controller
+CONTROLLER_LICENSE=github.com/labring/sealos/controllers/license/internal
 build: manifests generate fmt vet ## Build manager binary.
 	LD_FLAGS=""; \
 	[ -n "$(CRYPTOKEY)" ] && LD_FLAGS+="-X ${CONTROLLER_PKG}/crypto.encryptionKey=${CRYPTOKEY} -X ${CONTROLLER_PKG}/database.cryptoKey=${CRYPTOKEY}"; \
