@@ -17,11 +17,13 @@ import (
 	"github.com/labring/sealos/controllers/pkg/crypto"
 )
 
+const Namespace = "sealos-system"
+
 // Recharge account balance by using license
 func Recharge(ctx context.Context, client client.Client, license *licensev1.License) error {
 	account := &accountv1.Account{}
 	namespacedName := types.NamespacedName{
-		Namespace: license.Namespace,
+		Namespace: Namespace,
 		Name:      GetNameByNameSpace(license.Namespace),
 	}
 
