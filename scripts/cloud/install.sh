@@ -5,7 +5,7 @@ set -e
 # Configurations
 CLOUD_DIR="/root/.sealos/cloud"
 SEALOS_VERSION="v4.3.5"
-CLOUD_VERSION="v0.0.1"
+CLOUD_VERSION="latest"
 #mongodb_version="mongodb-5.0"
 #master_ips=
 #node_ips=
@@ -18,6 +18,7 @@ CLOUD_VERSION="v0.0.1"
 #input_cert=
 #cert_path=
 #key_path=
+#local_install=y/n
 kubernetes_version=1.25.6
 cilium_version=1.12.14
 cert_manager_version=1.8.0
@@ -34,7 +35,7 @@ declare -A PROMPTS_EN PROMPTS_CN
 
 PROMPTS_EN=(
     ["install_sealos"]="Sealos CLI is not installed. Do you want to install it now? (y/n): "
-    ["input_master_ips"]="Please enter Master IPs (comma separated, at least one required): "
+    ["input_master_ips"]="Please enter Master IPs (press Enter to skip this step for local installation; comma separated for multiple master nodes, e.g: 192.168.0.1,192.168.0.2,192.168.0.3)"
     ["invalid_ips"]="Invalid IPs or no IPs provided. Please try again."
     ["input_node_ips"]="Please enter Node IPs (comma separated, leave empty if none): "
     ["pod_subnet"]="Please enter pod subnet (default: 100.64.0.0/10): "
@@ -62,12 +63,12 @@ Linux kernel >= 4.19.57 or equivalent (e.g., 4.18 on RHEL8)"
 
 PROMPTS_CN=(
     ["install_sealos"]="Sealos CLI没有安装，是否安装？(y/n): "
-    ["input_master_ips"]="请输入Master IPs (多个master节点使用逗号分隔, 例：192.168.0.1,192.168.0.2,192.168.0.3) \n"
+    ["input_master_ips"]="请输入Master IPs (单节点本地安装可回车跳过该步骤；多个master节点使用逗号分隔, 例：192.168.0.1,192.168.0.2,192.168.0.3)"
     ["invalid_ips"]="IP无效或没有提供IP，请再试一次。"
     ["input_node_ips"]="请输入Node IPs (多个node节点使用逗号分隔，可跳过): "
     ["pod_subnet"]="请输入pod子网 (回车使用默认值: 100.64.0.0/10): "
     ["service_subnet"]="请输入service子网 (回车使用默认值: 10.96.0.0/22): "
-    ["cloud_domain"]="请输入云域名：（例：127.0.0.1.nip.io) \n "
+    ["cloud_domain"]="请输入云域名：（例：127.0.0.1.nip.io) "
     ["cloud_port"]="请输入云端口 (回车使用默认值: 443): "
     ["input_certificate"]="您要输入证书吗？(y/n): "
     ["certificate_path"]="请输入证书路径: "
@@ -80,7 +81,7 @@ PROMPTS_CN=(
     ["installing_cloud"]="正在安装sealos cloud。"
     ["avx_not_supported"]="CPU不支持AVX指令"
     ["ssh_private_key"]="如需免密登录请配置ssh私钥路径，回车使用默认值'/root/.ssh/id_rsa' "
-    ["ssh_password"]="请输入ssh密码，配置免密登录可回车跳过\n"
+    ["ssh_password"]="请输入ssh密码，配置免密登录可回车跳过"
     ["wait_cluster_ready"]="正在等待集群就绪, 如果您想跳过此步骤，请输入'1'"
     ["cilium_requirement"]="正在使用Cilium作为网络插件，主机系统必须满足以下要求：
 具有AMD64或AArch64架构的主机
@@ -102,6 +103,7 @@ get_prompt "choose_language"
 echo "1. English"
 echo "2. 中文"
 read -p "$(get_prompt "enter_choice")" lang_choice
+echo -ne "\033[3F\033[2K"
 
 if [[ $lang_choice == "2" ]]; then
     LANGUAGE="CN"
@@ -126,6 +128,7 @@ init() {
     if ! command -v sealos &> /dev/null; then
         get_prompt "install_sealos"
         read -p " " installChoice
+        echo -ne "\033[1F\033[2K"
         if [[ $installChoice == "y" || $installChoice == "Y" ]]; then
             curl -sfL https://raw.githubusercontent.com/labring/sealos/${SEALOS_VERSION}/scripts/install.sh |
               sh -s ${SEALOS_VERSION} labring/sealos
@@ -136,6 +139,18 @@ init() {
     else
         echo "Sealos CLI is already installed."
     fi
+
+    # pull image
+    sealos pull docker.io/labring/kubernetes:v${kubernetes_version#v:-1.25.6}
+    sealos pull docker.io/labring/cilium:v${cilium_version#v:-1.12.14}
+    sealos pull docker.io/labring/cert-manager:v${cert_manager_version#v:-1.8.0}
+    sealos pull docker.io/labring/helm:v${helm_version#v:-3.12.0}
+    sealos pull docker.io/labring/openebs:v${openebs_version#v:-3.4.0}
+    sealos pull docker.io/labring/ingress-nginx:v${ingress_nginx_version#v:-1.5.1}
+    sealos pull docker.io/labring/kubeblocks:v${kubeblocks_version#v:-0.6.2}
+    sealos pull docker.io/labring/metrics-server:v${metrics_server_version#v:-0.6.4}
+    sealos pull docker.io/labring/kubernetes-reflector:v${reflector_version#v:-7.0.151}
+    sealos pull docker.io/labring/sealos-cloud:${CLOUD_VERSION}
 }
 
 collect_input() {
@@ -151,22 +166,31 @@ collect_input() {
     }
 
     # Master and Node IPs
-    while :; do
-        read -p "$(get_prompt "input_master_ips")" master_ips
-        if validate_ips "$master_ips" && [[ ! -z "$master_ips" ]]; then
-            break
-        else
-            get_prompt "invalid_ips"
-        fi
-    done
-    while :; do
-        read -p "$(get_prompt "input_node_ips")" node_ips
-        if validate_ips "$node_ips"; then
-            break
-        else
-            get_prompt "invalid_ips"
-        fi
-    done
+    if [[ $local_install != "y" ]]; then
+        while :; do
+            read -p "$(get_prompt "input_master_ips")" master_ips
+            echo -ne "\033[1F\033[2K"
+            if validate_ips "$master_ips"; then
+                if [[ -z "$master_ips" ]]; then
+                    local_install="y"
+                fi
+                break
+            else
+                get_prompt "invalid_ips"
+            fi
+        done
+    fi
+    if [[ $local_install != "y" ]]; then
+        while :; do
+            read -p "$(get_prompt "input_node_ips")" node_ips
+            echo -ne "\033[1F\033[2K"
+            if validate_ips "$node_ips"; then
+                break
+            else
+                get_prompt "invalid_ips"
+            fi
+        done
+    fi
     read -p "$(get_prompt "ssh_private_key")" ssh_private_key
     if [[ -z "$ssh_private_key" ]]; then
         ssh_private_key="${HOME}/.ssh/id_rsa"
@@ -229,13 +253,10 @@ spec:
 
     echo "master_ips= ${master_ips}"
     sealos_gen_cmd="sealos gen labring/kubernetes:v${kubernetes_version#v:-1.25.6}\
-        --masters $master_ips\
+        ${master_ips:+--masters $master_ips}\
+        ${node_ips:+--nodes $node_ips}\
         --pk=${ssh_private_key:-$HOME/.ssh/id_rsa}\
         --passwd=${ssh_password} -o $CLOUD_DIR/Clusterfile"
-
-    if [ -n "$node_ips" ]; then
-        sealos_gen_cmd+=" --nodes $node_ips"
-    fi
 
     command -v kubelet || $sealos_gen_cmd
 
