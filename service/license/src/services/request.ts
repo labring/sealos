@@ -52,7 +52,7 @@ const showStatus = (status: number) => {
 const request = axios.create({
   baseURL: '/',
   withCredentials: true,
-  timeout: 30000
+  timeout: 20 * 1000
 });
 
 // request interceptor

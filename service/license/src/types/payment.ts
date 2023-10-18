@@ -1,58 +1,26 @@
-// import * as yaml from 'js-yaml';
-// import { CRDMeta } from './crd';
+export enum PaymentStatus {
+  PaymentNotPaid = 'notpaid', // 未支付
+  PaymentProcessing = 'processing', // 支付中
+  PaymentFailed = 'failed', // 支付失败
+  PaymentExpired = 'expired', // 支付过期
+  PaymentSuccess = 'success', // 支付成功
+  PaymentUnknown = 'unknown' // 未知
+}
 
-export type PaymentForm = {
-  paymentName: string;
-  namespace: string;
-  userId: string;
+export type PaymentParams = {
+  // appID: number;
+  // sign: string;
   amount: string;
+  currency: string;
+  // user: string;
+  payMethod: 'stripe' | 'wechat';
 };
 
-// export const paymentMeta: CRDMeta = {
-//   group: 'account.sealos.io',
-//   version: 'v1',
-//   namespace: 'sealos-system',
-//   plural: 'payments'
-// };
-
-export type Payment = {
-  paymentName: string;
-  extra: {
-    apiVersion: 'account.sealos.io/v1';
-    kind: 'Payment';
-    metadata: unknown;
-    spec: {
-      amount: number;
-      paymentMethod: string;
-      userID: string;
-    };
-  };
+export type PaymentRequest = {
+  appID: number;
+  sign: string;
+  orderID: string;
+  payMethod: string;
+  user: string;
+  sessionID: string;
 };
-export type Pay = {
-  codeURL: string;
-  status?: 'Created' | 'SUCCESS';
-  tradeNO: string;
-};
-
-// export const generatePaymentCrd = (form: PaymentForm) => {
-//   const paymentCrd = {
-//     apiVersion: 'account.sealos.io/v1',
-//     kind: 'Payment',
-//     metadata: {
-//       name: form.paymentName,
-//       namespace: form.namespace
-//     },
-//     spec: {
-//       userID: form.userId,
-//       amount: form.amount,
-//       paymentMethod: 'wechat'
-//     }
-//   };
-
-//   try {
-//     const result = yaml.dump(paymentCrd);
-//     return result;
-//   } catch (error) {
-//     return '';
-//   }
-// };

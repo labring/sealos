@@ -22,11 +22,10 @@ export const enableGoogle = () =>
 export const enableRecharge = () => {
   return process.env.RECHARGE_ENABLED === 'true';
 };
-// costcenter
+// pay type
 export const enableStripe = () =>
   process.env['STRIPE_ENABLED'] === 'true' && !!process.env['STRIPE_PUB'];
 export const enableWechatRecharge = () => process.env['WECHAT_ENABLED'] === 'true';
-// license
-export const enableLicense = () => {
-  return process.env.LICENSE_ENABLED === 'true';
-};
+// sealos pay
+export const enableSealosPay = () =>
+  process.env.SEALOS_PAY_ID && process.env.SEALOS_PAY_KEY && process.env.SEALOS_PAY_UEL;

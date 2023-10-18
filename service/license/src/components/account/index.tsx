@@ -72,9 +72,15 @@ export default function Account() {
               <Text ml="12px">{userInfo?.user?.name}</Text>
             </Flex>
             <Divider />
-            <Flex w="100%" h="46px" justifyContent={'center'} alignItems={'center'}>
+            <Flex
+              w="100%"
+              h="46px"
+              justifyContent={'center'}
+              alignItems={'center'}
+              onClick={logout}
+            >
               <SignOutIcon />
-              <Text ml="6px" color={'#24282C'} fontSize={'12px'} fontWeight={500} onClick={logout}>
+              <Text ml="6px" color={'#24282C'} fontSize={'12px'} fontWeight={500}>
                 {t('Log Out')}
               </Text>
             </Flex>

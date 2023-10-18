@@ -1,6 +1,6 @@
 import { getLicenseResult, licensePay, createLicenseRecord } from '@/api/license';
 import { getSystemEnv } from '@/api/system';
-import { WechatIcon } from '@/components/icons';
+import { StripeIcon, WechatIcon } from '@/components/icons';
 import useBonusBox from '@/hooks/useBonusBox';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { LicensePayload } from '@/types';
@@ -213,33 +213,34 @@ export default function RechargeComponent() {
         {/* <OuterLink text={t('View Discount Rules')}></OuterLink> */}
       </Flex>
       <Flex gap={'16px'} width={'full'} mt="36px">
-        {/* {platformEnv?.data?.stripeEnabled && (
+        {platformEnv?.stripeEnabled && (
           <Button size="primary" variant="primary" mt="20px" w="full" h="auto" py="14px" px="34px">
-            <Image alt="stripe" src="icons/stripe.svg" w="24px" h="24px" />
+            <StripeIcon />
             <Text ml="12px">{t('pay with stripe')}</Text>
           </Button>
-        )} */}
+        )}
 
-        <Button
-          size="primary"
-          variant="primary"
-          mt="20px"
-          w="full"
-          h="auto"
-          py="14px"
-          px="34px"
-          onClick={() => handleWechatConfirm()}
-        >
-          <WechatIcon fill={'#33BABB'} />
-          <Text ml="12px">{t('pay with wechat')}</Text>
-        </Button>
+        {platformEnv?.wechatEnabledRecharge && (
+          <Button
+            size="primary"
+            variant="primary"
+            mt="20px"
+            w="full"
+            h="auto"
+            py="14px"
+            px="34px"
+            onClick={() => handleWechatConfirm()}
+          >
+            <WechatIcon fill={'#33BABB'} />
+            <Text ml="12px">{t('pay with wechat')}</Text>
+          </Button>
+        )}
       </Flex>
       <Modal isOpen={isOpen} onClose={onModalClose}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>充值金额</ModalHeader>
           <ModalCloseButton />
-
           <WechatPayment complete={complete} codeURL={data?.codeURL} tradeNO={data?.tradeNO} />
         </ModalContent>
       </Modal>

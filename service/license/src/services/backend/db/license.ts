@@ -1,9 +1,10 @@
-import { LicensePayload, LicenseRecord } from '@/types';
+import { LicensePayload, LicenseRecord, LicenseToken } from '@/types';
+import { sign } from 'jsonwebtoken';
 import { connectToDatabase } from './mongodb';
 
 async function connectLicenseRecordCollection() {
   const client = await connectToDatabase();
-  const collection = client.db().collection<LicenseRecord>('licenseRecord');
+  const collection = client.db().collection<LicenseRecord>('license');
   return collection;
 }
 
@@ -69,4 +70,23 @@ export async function getLicenseRecordsByUid({
   };
 
   return result;
+}
+
+export function generateLicenseToken(payload: LicenseToken) {
+  const privateKey = process.env.LICENSE_PRIVATE_KEY;
+  if (!privateKey) {
+    throw new Error('PRIVATE KEY is missing');
+  }
+  const nowInSeconds = Math.floor(Date.now() / 1000);
+  const expirationTime = nowInSeconds + 3 * 24 * 60 * 60;
+
+  const _payload = {
+    iss: 'Sealos',
+    iat: nowInSeconds,
+    exp: expirationTime,
+    ...payload
+  };
+
+  const token = sign(_payload, privateKey, { algorithm: 'RS256' });
+  return token;
 }

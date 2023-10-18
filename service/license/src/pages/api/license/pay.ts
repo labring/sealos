@@ -1,82 +1,35 @@
-// import { authSession } from '@/services/backend/auth';
-// import { jsonRes } from '@/services/backend/response';
-// import { LicensePaymentForm } from '@/types';
-// import type { NextApiRequest, NextApiResponse } from 'next';
+import { authSession } from '@/services/backend/auth';
+import { jsonRes } from '@/services/backend/response';
+import { enableSealosPay } from '@/services/enable';
+import { getSealosPay } from '@/services/pay';
+import { GET } from '@/services/request';
+import { PaymentParams } from '@/types';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
-// export const generateLicenseCrd = (form: LicensePaymentForm) => {
-//   const paymentCrd = {
-//     apiVersion: 'infostream.sealos.io/v1',
-//     kind: 'Payment',
-//     metadata: {
-//       name: form.paymentName,
-//       namespace: form.namespace
-//     },
-//     spec: {
-//       userID: form.userId,
-//       amount: form.amount, // weixin
-//       paymentMethod: form.paymentMethod,
-//       service: {
-//         amt: form.quota, // Actual value
-//         hid: form.hashID,
-//         typ: 'account'
-//       }
-//     }
-//   };
-//   try {
-//     const result = yaml.dump(paymentCrd);
-//     return result;
-//   } catch (error) {
-//     throw error;
-//   }
-// };
+export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
+  try {
+    const { amount, payMethod } = req.body as PaymentParams;
+    const userInfo = await authSession(req.headers);
+    if (!userInfo) {
+      return jsonRes(resp, { code: 401, message: 'token verify error' });
+    }
+    const { SEALOS_PAY_UEL, SEALOS_PAY_ID, SEALOS_PAY_KEY } = getSealosPay();
 
-// export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
-//   try {
-//     const payload = await authSession(req.headers);
-//     if (!payload) return jsonRes(resp, { code: 401, message: 'token verify error' });
+    const result = await GET(SEALOS_PAY_UEL, {
+      appID: SEALOS_PAY_ID,
+      sign: SEALOS_PAY_KEY,
+      amount: '199',
+      currency: 'CNY',
+      user: userInfo.uid,
+      payMethod: 'stripe'
+    });
+    console.log(result);
 
-//     const { amount, paymentMethod, hid, quota } = req.body as {
-//       amount: number;
-//       paymentMethod: 'wechat' | 'stripe';
-//       hid: string;
-//       quota: number;
-//     };
-//     console.log(amount, quota, paymentMethod, hid);
-//     if (!hid) {
-//       return jsonRes(resp, {
-//         code: 400,
-//         message: 'Missing hid parameter'
-//       });
-//     }
-//     if (amount <= 0) {
-//       return jsonRes(resp, {
-//         code: 400,
-//         message: 'Amount cannot be less than 0'
-//       });
-//     }
-
-//     const paymentName = crypto.randomUUID();
-//     const form: LicensePaymentForm = {
-//       namespace: payload.user.nsid,
-//       paymentName: paymentName,
-//       userId: payload.user.k8s_username,
-//       amount: amount,
-//       quota: quota,
-//       paymentMethod: paymentMethod,
-//       hashID: hid
-//     };
-
-//     const LicenseCrd = generateLicenseCrd(form);
-
-//     const res = await ApplyYaml(payload.kc, LicenseCrd);
-//     return jsonRes(resp, {
-//       data: {
-//         paymentName: paymentName,
-//         extra: res[0]
-//       }
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     jsonRes(resp, { code: 500, data: error });
-//   }
-// }
+    return jsonRes(resp, {
+      data: 123
+    });
+  } catch (error) {
+    console.log(error);
+    jsonRes(resp, { code: 500, data: error });
+  }
+}

@@ -24,3 +24,4 @@ export * from './TokenIcon';
 export * from './CodeDoneIcon';
 export * from './VectorIcon';
 export * from './SignOutIcon';
+export * from './StripeIcon';

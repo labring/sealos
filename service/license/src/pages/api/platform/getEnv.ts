@@ -7,9 +7,9 @@ import {
   enableSms,
   enableGoogle,
   enableStripe,
-  enableWechatRecharge,
-  enableLicense
+  enableWechatRecharge
 } from '@/services/enable';
+import { SystemEnv } from '@/types';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const wechat_client_id = process.env.WECHAT_CLIENT_ID || '';
@@ -22,12 +22,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const needPassword = enablePassword();
   const needSms = enableSms();
   const needGoogle = enableGoogle();
-  const callback_url = process.env.CALLBACK_URL;
+  const callback_url = process.env.CALLBACK_URL || '';
   const stripeEnabled = enableStripe();
   const wechatEnabledRecharge = enableWechatRecharge();
-  const licenseEnabled = enableLicense();
 
-  jsonRes(res, {
+  jsonRes<SystemEnv>(res, {
     data: {
       SEALOS_CLOUD_DOMAIN: process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io',
       wechat_client_id,
@@ -42,8 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       needWechat,
       needGoogle,
       stripeEnabled,
-      wechatEnabledRecharge,
-      licenseEnabled
+      wechatEnabledRecharge
     }
   });
 }
