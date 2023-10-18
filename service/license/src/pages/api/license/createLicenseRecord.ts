@@ -1,5 +1,5 @@
 import { authSession } from '@/services/backend/auth';
-import { createLicenseRecord } from '@/services/backend/db/license';
+import { createLicenseRecord, generateLicenseToken } from '@/services/backend/db/license';
 import { jsonRes } from '@/services/backend/response';
 import { LicensePayload } from '@/types';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -9,12 +9,14 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     const payload = await authSession(req.headers);
     if (!payload) return jsonRes(resp, { code: 401, message: 'token verify error' });
 
-    const { token, orderID, amount, quota, paymentMethod } = req.body as LicensePayload;
+    const { orderID, amount, quota, paymentMethod } = req.body as LicensePayload;
+
+    const _token = generateLicenseToken({ type: 'Account', data: { amount: quota } });
 
     const record = {
       uid: payload.uid,
       amount: amount,
-      token: token,
+      token: _token,
       orderID: orderID,
       quota: quota,
       paymentMethod: paymentMethod

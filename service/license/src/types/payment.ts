@@ -8,19 +8,32 @@ export enum PaymentStatus {
 }
 
 export type PaymentParams = {
-  // appID: number;
-  // sign: string;
   amount: string;
-  currency: string;
-  // user: string;
+  currency: 'CNY';
   payMethod: 'stripe' | 'wechat';
 };
 
-export type PaymentRequest = {
-  appID: number;
-  sign: string;
+export type StripePaymentData = {
+  amount: string;
+  currency: string;
+  message: string;
   orderID: string;
-  payMethod: string;
-  user: string;
   sessionID: string;
+  user: string;
+};
+
+export type WechatPaymentData = {
+  amount: string;
+  codeURL: string;
+  currency: string;
+  message: string;
+  orderID: string;
+  tradeNO: string;
+  user: string;
+};
+
+export type PaymentResultParams = {
+  orderID: string;
+  payMethod: 'stripe' | 'wechat';
+  sessionID?: string;
 };

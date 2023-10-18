@@ -25,6 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const callback_url = process.env.CALLBACK_URL || '';
   const stripeEnabled = enableStripe();
   const wechatEnabledRecharge = enableWechatRecharge();
+  const stripePub = process.env.STRIPE_PUB || '';
 
   jsonRes<SystemEnv>(res, {
     data: {
@@ -41,7 +42,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       needWechat,
       needGoogle,
       stripeEnabled,
-      wechatEnabledRecharge
+      wechatEnabledRecharge,
+      stripePub
     }
   });
 }

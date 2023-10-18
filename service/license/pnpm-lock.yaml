@@ -23,6 +23,9 @@ dependencies:
   '@emotion/styled':
     specifier: ^11.11.0
     version: registry.npmmirror.com/@emotion/styled@11.11.0(@emotion/react@11.11.1)(@types/react@18.0.0)(react@18.0.0)
+  '@stripe/stripe-js':
+    specifier: ^2.1.9
+    version: registry.npmmirror.com/@stripe/stripe-js@2.1.9
   '@tanstack/react-query':
     specifier: ^4.36.1
     version: registry.npmmirror.com/@tanstack/react-query@4.36.1(react-dom@18.0.0)(react@18.0.0)
@@ -92,8 +95,8 @@ devDependencies:
     specifier: ^3.0.4
     version: registry.npmmirror.com/@types/js-cookie@3.0.4
   '@types/jsonwebtoken':
-    specifier: ^9.0.3
-    version: registry.npmmirror.com/@types/jsonwebtoken@9.0.3
+    specifier: ^9.0.4
+    version: registry.npmmirror.com/@types/jsonwebtoken@9.0.4
   '@types/lodash':
     specifier: ^4.14.199
     version: registry.npmmirror.com/@types/lodash@4.14.199
@@ -2009,6 +2012,12 @@ packages:
     version: 1.5.1
     dev: true
 
+  registry.npmmirror.com/@stripe/stripe-js@2.1.9:
+    resolution: {integrity: sha512-0RSvCJrzEVx52e8hbSAcZ2vv6OzoFj5fe5XC50GSrcev1Y4t2XDE6W5CIhR/Y6l3CPgO/P4luqoLWuvpUkBhig==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@stripe/stripe-js/-/stripe-js-2.1.9.tgz}
+    name: '@stripe/stripe-js'
+    version: 2.1.9
+    dev: false
+
   registry.npmmirror.com/@swc/helpers@0.5.2:
     resolution: {integrity: sha512-E4KcWTpoLHqwPHLxidpOqQbcrZVgi0rsmmZXUle1jXmJfuIf/UWpczUJ7MZZ5tlxytgJXyp0w4PGkkeLiuIdZw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@swc/helpers/-/helpers-0.5.2.tgz}
     name: '@swc/helpers'
@@ -2065,10 +2074,10 @@ packages:
     version: 0.0.29
     dev: true
 
-  registry.npmmirror.com/@types/jsonwebtoken@9.0.3:
-    resolution: {integrity: sha512-b0jGiOgHtZ2jqdPgPnP6WLCXZk1T8p06A/vPGzUvxpFGgKMbjXJDjC5m52ErqBnIuWZFgGoIJyRdeG5AyreJjA==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@types/jsonwebtoken/-/jsonwebtoken-9.0.3.tgz}
+  registry.npmmirror.com/@types/jsonwebtoken@9.0.4:
+    resolution: {integrity: sha512-8UYapdmR0QlxgvJmyE8lP7guxD0UGVMfknsdtCFZh4ovShdBl3iOI4zdvqBHrB/IS+xUj3PSx73Qkey1fhWz+g==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@types/jsonwebtoken/-/jsonwebtoken-9.0.4.tgz}
     name: '@types/jsonwebtoken'
-    version: 9.0.3
+    version: 9.0.4
     dependencies:
       '@types/node': registry.npmmirror.com/@types/node@20.0.0
     dev: true

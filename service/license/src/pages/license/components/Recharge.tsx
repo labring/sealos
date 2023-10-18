@@ -1,9 +1,8 @@
-import { getLicenseResult, licensePay, createLicenseRecord } from '@/api/license';
+import { createLicenseRecord } from '@/api/license';
 import { getSystemEnv } from '@/api/system';
 import { StripeIcon, WechatIcon } from '@/components/icons';
 import useBonusBox from '@/hooks/useBonusBox';
-import { useCustomToast } from '@/hooks/useCustomToast';
-import { LicensePayload } from '@/types';
+import { LicensePayload, StripePaymentData } from '@/types';
 import { deFormatMoney } from '@/utils/format';
 import {
   Button,
@@ -16,16 +15,20 @@ import {
   ModalHeader,
   ModalOverlay,
   Text,
-  useDisclosure
+  useDisclosure,
+  useToast
 } from '@chakra-ui/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import WechatPayment from './WechatPayment';
+import { createPayment, getPaymentResult } from '@/api/payment';
+import { loadStripe } from '@stripe/stripe-js';
 
 export default function RechargeComponent() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [isAgree, setIsAgree] = useState(false);
   const [isInvalid, setIsInvalid] = useState(false);
   const { BonusBox, selectAmount } = useBonusBox();
@@ -35,35 +38,32 @@ export default function RechargeComponent() {
   // 0 是微信，1 是stripe
   const [payType, setPayType] = useState<'wechat' | 'stripe'>('wechat');
   const [paymentName, setPaymentName] = useState('');
-  const queryClient = useQueryClient();
-  const { toast } = useCustomToast();
-  const { query } = useRouter();
-  const [hid, setHid] = useState(''); // license key
+  const toast = useToast({ position: 'top', duration: 2000 });
+  const { data: platformEnv } = useQuery(['getPlatformEnv'], getSystemEnv);
 
-  // handle hid
-  // useEffect(() => {
-  //   if (query?.hid && typeof query.hid === 'string') {
-  //     const decodedHid = decodeURIComponent(query.hid);
-  //     setHid(decodedHid);
-  //   } else {
-  //     toast({
-  //       status: 'error',
-  //       title: 'Purchase Link Error',
-  //       isClosable: true,
-  //       position: 'top'
-  //     });
-  //   }
-  // }, []);
+  console.log(selectAmount, '11111');
 
   const onModalClose = () => {
     setComplete(0);
     onClose();
   };
 
+  const handleStripeConfirm = () => {
+    setPayType('stripe');
+    if (selectAmount < 10) {
+      return toast({
+        status: 'error',
+        title: t('Pay Minimum Tips')
+      });
+    }
+    setComplete(1);
+    paymentMutation.mutate();
+  };
+
   const handleWechatConfirm = () => {
     if (isAgree) {
       setComplete(1);
-      createPaymentLicense.mutate();
+      paymentMutation.mutate();
       onOpen();
     } else {
       toast({
@@ -75,21 +75,24 @@ export default function RechargeComponent() {
     }
   };
 
-  const { data: platformEnv } = useQuery(['getPlatformEnv'], getSystemEnv);
-
-  const createPaymentLicense = useMutation(
+  const paymentMutation = useMutation(
     () =>
-      licensePay({
-        amount: deFormatMoney(selectAmount),
-        quota: selectAmount,
-        paymentMethod: payType,
-        hid: hid
+      createPayment({
+        amount: deFormatMoney(selectAmount).toString(),
+        payMethod: payType,
+        currency: 'CNY'
       }),
-
     {
-      onSuccess(data) {
-        console.log(data);
-        setPaymentName((data?.paymentName as string).trim());
+      async onSuccess(data) {
+        console.log(data, '=======');
+        if (payType === 'stripe' && platformEnv?.stripePub && data?.sessionID) {
+          const stripe = await loadStripe(platformEnv?.stripePub);
+          stripe?.redirectToCheckout({
+            sessionId: data.sessionID
+          });
+        } else if (payType === 'wechat') {
+        }
+        // setPaymentName((data?.paymentName as string).trim());
         setComplete(2);
       },
       onError(err: any) {
@@ -119,13 +122,14 @@ export default function RechargeComponent() {
 
   const { data } = useQuery(
     ['getLicenseResult', paymentName],
-    () => getLicenseResult(paymentName),
+    () => getPaymentResult({ orderID }),
     {
       refetchInterval: complete === 2 ? 1000 : false,
       enabled: complete === 2 && !!paymentName,
       cacheTime: 0,
       staleTime: 0,
       onSuccess(data) {
+        console.log(data);
         if (data?.status === 'Completed') {
           onModalClose();
           toast({
@@ -134,14 +138,14 @@ export default function RechargeComponent() {
             isClosable: true,
             position: 'top'
           });
-          licenseRecordMutation.mutate({
-            uid: '',
-            amount: deFormatMoney(selectAmount),
-            quota: selectAmount,
-            token: data?.token,
-            orderID: data?.tradeNO,
-            paymentMethod: 'wechat'
-          });
+          // licenseRecordMutation.mutate({
+          //   uid: '',
+          //   amount: deFormatMoney(selectAmount),
+          //   quota: selectAmount,
+          //   token: data?.token,
+          //   orderID: data?.tradeNO,
+          //   paymentMethod: 'wechat'
+          // });
         }
       }
     }
@@ -214,7 +218,16 @@ export default function RechargeComponent() {
       </Flex>
       <Flex gap={'16px'} width={'full'} mt="36px">
         {platformEnv?.stripeEnabled && (
-          <Button size="primary" variant="primary" mt="20px" w="full" h="auto" py="14px" px="34px">
+          <Button
+            size="primary"
+            variant="primary"
+            mt="20px"
+            w="full"
+            h="auto"
+            py="14px"
+            px="34px"
+            onClick={() => handleStripeConfirm()}
+          >
             <StripeIcon />
             <Text ml="12px">{t('pay with stripe')}</Text>
           </Button>

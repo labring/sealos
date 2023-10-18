@@ -48,6 +48,7 @@ export const getFavorable =
     if (ratios.length > step && step > -1) ratio = [...ratios].reverse()[step];
     return Math.floor((amount * ratio) / 100);
   };
+
 export const retrySerially = <T>(fn: () => Promise<T>, times: number) =>
   new Promise((res, rej) => {
     let retries = 0;
@@ -64,3 +65,15 @@ export const retrySerially = <T>(fn: () => Promise<T>, times: number) =>
     };
     attempt();
   });
+
+// Base64 编码函数
+export function base64Encode(str: string) {
+  const encodedBuffer = Buffer.from(str, 'binary').toString('base64');
+  return encodedBuffer;
+}
+
+// Base64 解码函数
+export function base64Decode(str: string) {
+  const decodedBuffer = Buffer.from(str, 'base64').toString('binary');
+  return decodedBuffer;
+}

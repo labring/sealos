@@ -1,6 +1,7 @@
 import { LicensePayload, LicenseRecord, LicenseToken } from '@/types';
 import { sign } from 'jsonwebtoken';
 import { connectToDatabase } from './mongodb';
+import { base64Decode } from '@/utils/tools';
 
 async function connectLicenseRecordCollection() {
   const client = await connectToDatabase();
@@ -87,6 +88,6 @@ export function generateLicenseToken(payload: LicenseToken) {
     ...payload
   };
 
-  const token = sign(_payload, privateKey, { algorithm: 'RS256' });
+  const token = sign(_payload, base64Decode(privateKey), { algorithm: 'RS256' });
   return token;
 }

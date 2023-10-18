@@ -1,18 +1,59 @@
 import LangSelectSimple from '@/components/LangSelect';
-import { Flex, Image, Text } from '@chakra-ui/react';
+import { Flex, Image, Text, useToast } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import RechargeComponent from './components/Recharge';
 import LicenseRecord from './components/Record';
 import { useRouter } from 'next/router';
-import { useQuery } from '@tanstack/react-query';
-import { ApiResp, SystemEnv } from '@/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ApiResp, LicensePayload, SystemEnv } from '@/types';
 import Account from '@/components/account';
+import { useEffect } from 'react';
+import { createLicenseRecord } from '@/api/license';
+import { setCookie } from '@/utils/cookieUtils';
 
 export default function LicensePage() {
   const { t } = useTranslation();
   const router = useRouter();
   const goHome = () => router.replace('/');
+  const totast = useToast();
+  // const queryClient = useQueryClient();
+
+  // const licenseRecordMutation = useMutation(
+  //   (payload: LicensePayload) => createLicenseRecord(payload),
+  //   {
+  //     onSuccess(data) {
+  //       console.log(data);
+  //       queryClient.invalidateQueries(['getLicenseActive']);
+  //     },
+  //     onError(err: any) {
+  //       console.log(err);
+  //     }
+  //   }
+  // );
+
+  // useEffect(() => {
+  //   const { stripeState } = router.query;
+  //   if (stripeState === 'success') {
+  //     totast({
+  //       status: 'success',
+  //       duration: 3000,
+  //       title: t('Stripe Success'),
+  //       isClosable: true,
+  //       position: 'top'
+  //     });
+  //     licenseRecordMutation.mutate();
+  //   } else if (stripeState === 'error') {
+  //     totast({
+  //       status: 'error',
+  //       duration: 3000,
+  //       title: t('Stripe Cancel'),
+  //       isClosable: true,
+  //       position: 'top'
+  //     });
+  //   }
+  //   !!stripeState && router.replace(router.pathname);
+  // }, []);
 
   return (
     <Flex w="100%" h="100%" flexDirection={'column'}>
@@ -53,7 +94,10 @@ export default function LicensePage() {
 }
 
 export async function getServerSideProps({ req, res, locales }: any) {
-  const local = req?.cookies?.NEXT_LOCALE || 'en';
+  const lang: string = req?.headers?.['accept-language'] || 'zh';
+  const local = lang.indexOf('zh') !== -1 ? 'zh' : 'en';
+  console.log(local);
+  // setCookie()
 
   return {
     props: {
