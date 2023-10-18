@@ -137,4 +137,5 @@ func initMongoDB(ctx context.Context) (*mongo.Client, error) {
 		return nil, fmt.Errorf("failed to connect to mongo: %w", err)
 	}
 	return client, nil
+
 }

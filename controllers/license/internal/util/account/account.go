@@ -3,19 +3,18 @@ package account
 import (
 	"context"
 	"errors"
-	"github.com/labring/sealos/controllers/pkg/crypto"
 	"strings"
-
-	"github.com/golang-jwt/jwt/v4"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
+	claimsutil "github.com/labring/sealos/controllers/license/internal/util/claims"
 	licenseutil "github.com/labring/sealos/controllers/license/internal/util/license"
-	"github.com/labring/sealos/controllers/license/internal/util/tools"
+
 	count "github.com/labring/sealos/controllers/pkg/account"
+	"github.com/labring/sealos/controllers/pkg/crypto"
 )
 
 // Recharge account balance by using license
@@ -36,23 +35,18 @@ func Recharge(ctx context.Context, client client.Client, license *licensev1.Lice
 		return err
 	}
 
-	// TODO test this
-	payload, ok := token.Claims.(jwt.MapClaims)
+	claims, ok := token.Claims.(claimsutil.Claims)
 	if !ok {
 		return errors.New("cannot convert value of type to jwt.MapClaims")
 	}
 
-	if !tools.ContainsFields(payload, "amt") {
-		return errors.New("cannot find field amt in license token")
+	var data = &claimsutil.AccountClaimData{}
+	if err := claims.Data.SwitchToAccountData(data); err != nil {
+		return err
 	}
 
-	amount, ok := payload["amt"].(int64)
-	if !ok {
-		return errors.New("cannot convert amt value of type to int64")
-	}
-	account.Status.Balance += amount * count.CurrencyUnit
-
-	if err := crypto.RechargeBalance(account.Status.EncryptBalance, amount*count.CurrencyUnit); err != nil {
+	account.Status.Balance += data.Amount * count.CurrencyUnit
+	if err := crypto.RechargeBalance(account.Status.EncryptBalance, data.Amount*count.CurrencyUnit); err != nil {
 		return err
 	}
 	if err := client.Status().Update(ctx, account); err != nil {

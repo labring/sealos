@@ -20,18 +20,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type Type string
+type LicenseType string
 
 const (
-	AccountLicenseType Type = "Account"
-	ClusterLicenseType Type = "Cluster"
+	AccountLicenseType LicenseType = "Account"
+	ClusterLicenseType LicenseType = "Cluster"
 )
 
 // LicenseSpec defines the desired state of License
 type LicenseSpec struct {
 	//+kubebuilder:validation:Enum=Account;Cluster
-	Type  Type   `json:"type,omitempty"`
-	Token string `json:"token,omitempty"`
+	Type  LicenseType `json:"type,omitempty"`
+	Token string      `json:"token,omitempty"`
 }
 
 type LicenseStatusPhase string

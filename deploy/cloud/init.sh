@@ -11,7 +11,6 @@ sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cl
 sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-resources-controller:latest
 sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-account-controller:latest
 sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-costcenter-frontend:latest
-sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-licenseissuer-controller:latest
 sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-template-frontend:latest
 sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-database-service:latest
 
@@ -21,7 +20,6 @@ sealos save -o tars/app.tar ghcr.io/labring/sealos-cloud-app-controller:latest
 sealos save -o tars/metering.tar ghcr.io/labring/sealos-cloud-resources-metering-controller:latest
 sealos save -o tars/monitoring.tar ghcr.io/labring/sealos-cloud-resources-controller:latest
 sealos save -o tars/account.tar ghcr.io/labring/sealos-cloud-account-controller:latest
-sealos save -o tars/licenseissuer.tar ghcr.io/labring/sealos-cloud-licenseissuer-controller:latest
 
 sealos save -o tars/frontend-desktop.tar  ghcr.io/labring/sealos-cloud-desktop-frontend:latest
 sealos save -o tars/frontend-terminal.tar  ghcr.io/labring/sealos-cloud-terminal-frontend:latest

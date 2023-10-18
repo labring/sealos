@@ -28,7 +28,11 @@ A Cloud Operating System designed for managing cloud-native applications
 
 https://github.com/labring/sealos/assets/82700206/b1f8a25a-55cf-4d15-a47b-38cf7d507134
 
-> [Docs](https://sealos.io/docs/Intro) | [简体中文](./README_zh.md) | [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
+<p align="center">
+  <a href="https://sealos.io/docs/Intro">Docs</a> |
+  <a href="./README_zh.md">简体中文</a> | 
+  <a href="https://github.com/orgs/labring/projects/4/views/9">Roadmap</a>
+</p>
 
 Sealos['siːləs] is a cloud operating system distribution based on the Kubernetes kernel. This allows enterprises to use the cloud as effortlessly as they would use a personal computer.
 
@@ -58,17 +62,15 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 
 ## 💡 Core features
 
-✅ **Instant Kubernetes Usage Upon Login**: There is no need to install a Kubernetes cluster. Sealos provides the ability for **multiple tenants** to share a Kubernetes on the public internet. It also offers strong  isolation capabilities to ensure the data safety of each tenant.
+- 🚀 **Application Management**: Efficient deployment of any distributed applications with public internet accessibility.
+- 🗄️ **Database Management**: Create high-availability databases in seconds, offering support for MySQL, PostgreSQL, MongoDB, and Redis.
+- 📬 **Support for Message Queues**: Catering to a variety of message queues such as Kafka, RocketMQ, and RabbitMQ.
 
-✅ **Swiftly deploy any application on Sealos**: With the in-built App Launchpad, effortlessly deploy any application in an astonishingly short span of time.
+## 🌟 Advantages
 
-✅ **Resource Saving and Cost Reduction**: You only pay for the container. The automatic scaling function fundamentally solves the problem of resource wastage, saving between 10% to 40% in costs.
-
-✅ **Easy Public Network Access**: Sealos automatically assigns a secondary domain name to your business,  helping you achieve easy public network access. It also supports custom  domain name binding.
-
-✅ **Efficient Database Service**: Sealos offers a service that allows businesses to create  high-availability databases within seconds. Through service discovery,  the internal network DNS can connect directly to the database.
-
-✅ **User-Friendly Operating Experience**: Sealos has an in-built terminal that supports command-line operation of the Kubernetes cluster, and also has in-built App Launchpad, allowing you to have a good user experience on Sealos, regardless of your familiarity with cloud-native  technology.
+- 💰 **Resource Efficiency & Cost Reduction**: Pay exclusively for the containers. The automatic scaling feature fundamentally tackles resource wastage, thus offering substantial cost benefits.
+- 🌐 **High Universality & Ease of Use**: Users can concentrate solely on their operations without the distraction of external complexities. Regardless of one's knowledge level of Kubernetes, Sealos remains user-friendly.
+- 🛡️ **Agility & Security**: The distinctive multi-tenancy sharing model ensures both effective resource segmentation and collaboration, all under a secure framework.
 
 
 ## 🏘️ Community & support

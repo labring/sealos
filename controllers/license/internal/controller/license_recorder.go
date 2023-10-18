@@ -46,5 +46,9 @@ func (r *LicenseRecorder) IsExisted(ctx context.Context, license *v1.License) (b
 }
 
 func (r *LicenseRecorder) Store(ctx context.Context, license *v1.License) error {
-	return r.db.StoreLicenseMeta(ctx, meta.New(license))
+	m, err := meta.New(license)
+	if err != nil {
+		return err
+	}
+	return r.db.StoreLicenseMeta(ctx, m)
 }
