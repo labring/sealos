@@ -71,9 +71,7 @@ build: manifests generate fmt vet ## Build manager binary.
 	LD_FLAGS=""; \
 	[ -n "$(CRYPTOKEY)" ] && LD_FLAGS+="-X ${CONTROLLER_PKG}/crypto.encryptionKey=${CRYPTOKEY} -X ${CONTROLLER_PKG}/database.cryptoKey=${CRYPTOKEY}"; \
 	[ -n "$(LICENSE_KEY)" ] && LD_FLAGS+=" -X ${CONTROLLER_LICENSE}/util/key.EncryptionKey=${LICENSE_KEY}"; \
-	CGO_ENABLED=0 GOOS=linux  go build -ldflags "$${LD_FLAGS}" -o bin/manager cmd/manager/main.go && \
-	CGO_ENABLED=0 GOOS=linux  go build -o bin/preset-${GOARCH} cmd/preset/main.go && chmod +x bin/preset-${GOARCH} && \
-	CGO_ENABLED=0 GOOS=linux  go build -o bin/launcher-${GOARCH} cmd/launcher/main.go && chmod +x bin/launcher-${GOARCH}
+	CGO_ENABLED=0 GOOS=linux  go build -ldflags "$${LD_FLAGS}" -o bin/manager cmd/manager/main.go
 
 
 .PHONY: run
