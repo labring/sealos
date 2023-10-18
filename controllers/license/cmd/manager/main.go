@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"flag"
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/license/internal/util/database"
 	"os"
 
@@ -46,6 +47,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
+	utilruntime.Must(accountv1.AddToScheme(scheme))
 	utilruntime.Must(licensev1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
