@@ -1,7 +1,7 @@
 
 # Image URL to use all building/pushing image targets
 IMG ?= ghcr.io/labring/sealos-license-controller:latest
-
+TARGETARCH ?= amd64
 GOARCH ?= amd64
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
@@ -83,7 +83,9 @@ run: manifests generate fmt vet ## Run a controller from your host.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: docker-build
 docker-build: test ## Build docker image with the manager.
-	docker build -t ${IMG} .
+	mv bin/manager bin/controller-license-${TARGETARCH} || true
+	chmod +x bin/controller-license-${TARGETARCH}
+	docker build -t ${IMG} . --build-arg TARGETARCH=${TARGETARCH}
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.

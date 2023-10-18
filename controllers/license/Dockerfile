@@ -4,6 +4,6 @@ ARG TARGETARCH
 WORKDIR /
 USER 65532:65532
 
-COPY bin/controller-licenseissuer-$TARGETARCH /manager
+COPY bin/controller-license-$TARGETARCH /manager
 
 ENTRYPOINT ["/manager"]
