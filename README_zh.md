@@ -28,7 +28,11 @@
 
 https://github.com/labring/sealos/assets/82700206/b1f8a25a-55cf-4d15-a47b-38cf7d507134
 
-> [文档](https://www.sealos.io/docs/Intro) | [English](README.md) | [发展规划](https://github.com/orgs/labring/projects/4/views/9)
+<p align="center">
+  <a href="https://sealos.io/zh-Hans/docs/Intro">文档</a> |
+  <a href="./README.md">English</a> | 
+  <a href="https://github.com/orgs/labring/projects/4/views/9">发展规划</a>
+</p>
 
 Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以云原生的方式，抛弃了传统的云计算架构，转向以 Kubernetes 为云内核的新架构，使企业能够**像使用个人电脑一样**简单地使用云。
 
@@ -60,17 +64,15 @@ Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以
 
 ## 💡 核心功能
 
-✅ **登录即可使用 Kubernetes**：无需安装 Kubernetes 集群，Sealos 提供**多租户**在公网环境共享一个 Kubernetes 的能力。除此之外还提供了强隔离能力，以保障各个租户的数据安全。
+- **应用管理**：快速部署具有公网访问能力的任意分布式应用。
+- **数据库管理**：秒级创建高可用数据库，支持 MySQL、PostgreSQL、MongoDB 和 Redis。
+- **消息队列支持**：支持多种消息队列，包含 Kafka、RocketMQ 和 RabbitMQ 等。
 
-✅ **快速部署任意应用**：通过内置的应用管理，您可以在短时间内快速部署任意分布式应用。
+## 🌟 优势
 
-✅ **节省资源，降低开销**：只需为容器付费，自动伸缩功能从根本上解决了资源浪费的问题，可以节省10%～40%的成本。
-
-✅ **轻松实现公网访问**：为您的业务自动分配二级域名，帮助您轻松实现公网访问，同时还支持自定义域名绑定。
-
-✅ **高效数据库服务**：提供秒级创建高可用数据库的服务，使业务通过服务发现内网 DNS 能直接数据库。
-
-✅ **用户友好的操作体验**：内置终端直接支持命令行操作 Kubernetes 集群，同时支持部署 Kubernetes 管理界面，让您无论对云原生技术是否熟悉，都能在 Sealos 上拥有良好的使用体验。
+- **节省资源，降低开销**：只需为容器付费，自动伸缩功能从根本上解决了资源浪费的问题，可以节省大量的成本。
+- **通用性强，无心智负担**：用户只需专注于自己的业务，无需被其他无关的复杂性所困扰。无论用户对 Kubernetes 的掌握程度如何，都可以轻松使用 Sealos。
+- **灵活 & 安全**：其独特的多租户共享机制，能在保障安全的前提下实现资源的有效隔离和协作。
 
 
 ## 🏘️ 社区与支持
