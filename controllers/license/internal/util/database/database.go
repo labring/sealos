@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+
 	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/labring/sealos/controllers/license/internal/util/meta"
