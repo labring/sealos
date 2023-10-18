@@ -373,8 +373,11 @@ spec:
         command:
         - /manager
         env:
-        - name: MONOGOURI
-          value: ""
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              key: MONGO_URI
+              name: license-secret
         image: ghcr.io/labring/sealos-license-controller:latest
         livenessProbe:
           httpGet:

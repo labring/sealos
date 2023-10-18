@@ -72,8 +72,11 @@ spec:
         - --leader-elect
         image: controller:latest
         env:
-        - name: MONOGOURI
-          value: ""
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: license-secret
+              key: MONGO_URI
         name: manager
         securityContext:
           allowPrivilegeEscalation: false
