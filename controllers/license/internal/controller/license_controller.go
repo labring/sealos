@@ -56,7 +56,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if err := r.Get(ctx, req.NamespacedName, license); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	if license.DeletionTimestamp != nil {
+	if !license.DeletionTimestamp.IsZero() {
 		return ctrl.Result{}, nil
 	}
 	return r.reconcile(ctx, license)

@@ -10,7 +10,6 @@ import (
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	claimsutil "github.com/labring/sealos/controllers/license/internal/util/claims"
-	"github.com/labring/sealos/controllers/license/internal/util/errors"
 	licenseutil "github.com/labring/sealos/controllers/license/internal/util/license"
 
 	count "github.com/labring/sealos/controllers/pkg/account"
@@ -32,14 +31,9 @@ func Recharge(ctx context.Context, client client.Client, license *licensev1.Lice
 		return err
 	}
 
-	token, err := licenseutil.ParseLicenseToken(license)
+	claims, err := licenseutil.GetClaims(license)
 	if err != nil {
 		return err
-	}
-
-	claims, ok := token.Claims.(claimsutil.Claims)
-	if !ok {
-		return errors.ClaimsConventError
 	}
 
 	var data = &claimsutil.AccountClaimData{}

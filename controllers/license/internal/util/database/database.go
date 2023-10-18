@@ -28,6 +28,9 @@ func New(ctx context.Context, uri string) (*DataBase, error) {
 	if err != nil {
 		return &DataBase{}, err
 	}
+	if err := client.Ping(ctx, nil); err != nil {
+		return nil, err
+	}
 	return &DataBase{
 		URI:               uri,
 		Client:            client,
