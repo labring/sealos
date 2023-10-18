@@ -553,6 +553,7 @@ func isExpired(adminer *adminerv1.Adminer) bool {
 func buildLabelsMap(adminer *adminerv1.Adminer) map[string]string {
 	labelsMap := map[string]string{
 		"cloud.sealos.io/app-adminer": adminer.Name,
+		"app":                         adminer.Name,
 	}
 	return labelsMap
 }
