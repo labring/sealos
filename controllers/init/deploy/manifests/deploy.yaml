@@ -1,0 +1,12 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-job
+spec:
+  template:
+    spec:
+      containers:
+      - name: init-container
+        image: busybox:latest
+      restartPolicy: OnFailure
+  backoffLimit: 10
