@@ -55,8 +55,6 @@ func main() {
 	var enableLeaderElection bool
 	var probeAddr string
 
-	// TODO add more flags here such as mongo uri, billing type, etc...
-
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
