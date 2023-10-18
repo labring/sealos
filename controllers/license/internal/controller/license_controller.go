@@ -20,6 +20,7 @@ import (
 	"context"
 	accountutil "github.com/labring/sealos/controllers/license/internal/util/account"
 	"github.com/labring/sealos/controllers/license/internal/util/database"
+	"github.com/labring/sealos/controllers/license/internal/util/key"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 
@@ -64,6 +65,7 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *LicenseReconciler) reconcile(ctx context.Context, license *licensev1.License) (ctrl.Result, error) {
 	r.Logger.V(1).Info("reconcile for license", "license", license.Namespace+"/"+license.Name)
 
+	r.Logger.V(1).Info("encryptionKey", "encryptionKey", key.EncryptionKey)
 	// if license is active, do nothing and return
 	if license.Status.Phase == licensev1.LicenseStatusPhaseActive {
 		r.Logger.V(1).Info("license is active", "license", license.Namespace+"/"+license.Name)
