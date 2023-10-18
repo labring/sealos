@@ -13,7 +13,6 @@ replace (
 require (
 	github.com/go-logr/logr v1.2.4
 	github.com/golang-jwt/jwt/v4 v4.5.0
-	github.com/labring/operator-sdk v1.0.2
 	github.com/labring/sealos/controllers/account v0.0.0-00010101000000-000000000000
 	github.com/labring/sealos/controllers/pkg v0.0.0-20231017162246-c54da85e6cea
 	github.com/mitchellh/mapstructure v1.4.1

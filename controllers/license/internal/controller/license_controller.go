@@ -18,14 +18,12 @@ package controller
 
 import (
 	"context"
-	"errors"
 	accountutil "github.com/labring/sealos/controllers/license/internal/util/account"
 	"github.com/labring/sealos/controllers/license/internal/util/database"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 
 	"github.com/go-logr/logr"
-	ctrlsdk "github.com/labring/operator-sdk/controller"
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -37,9 +35,9 @@ import (
 // LicenseReconciler reconciles a License object
 type LicenseReconciler struct {
 	client.Client
-	Scheme    *runtime.Scheme
-	Logger    logr.Logger
-	finalizer *ctrlsdk.Finalizer
+	Scheme *runtime.Scheme
+	Logger logr.Logger
+	//finalizer *ctrlsdk.Finalizer
 
 	validator *LicenseValidator
 	recorder  *LicenseRecorder
@@ -57,22 +55,10 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if err := r.Get(ctx, req.NamespacedName, license); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-
-	// on delete reconcile, do nothing but remove finalizer and log
-	if ok, err := r.finalizer.RemoveFinalizer(ctx, license, func(ctx context.Context, obj client.Object) error {
-		r.Logger.V(1).Info("reconcile for license delete")
-		return nil
-	}); ok {
-		return ctrl.Result{}, err
+	if license.DeletionTimestamp != nil {
+		return ctrl.Result{}, nil
 	}
-
-	if ok, err := r.finalizer.AddFinalizer(ctx, license); ok {
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		return r.reconcile(ctx, license)
-	}
-	return ctrl.Result{}, errors.New("reconcile error from Finalizer")
+	return r.reconcile(ctx, license)
 }
 
 func (r *LicenseReconciler) reconcile(ctx context.Context, license *licensev1.License) (ctrl.Result, error) {
@@ -133,7 +119,7 @@ func (r *LicenseReconciler) reconcile(ctx context.Context, license *licensev1.Li
 // SetupWithManager sets up the controller with the Manager.
 func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, db *database.DataBase) error {
 	r.Logger = mgr.GetLogger().WithName("controller").WithName("License")
-	r.finalizer = ctrlsdk.NewFinalizer(r.Client, "license.sealos.io/finalizer")
+	//r.finalizer = ctrlsdk.NewFinalizer(r.Client, "license.sealos.io/finalizer")
 	r.Client = mgr.GetClient()
 
 	r.validator = &LicenseValidator{
