@@ -150,7 +150,7 @@ func syncViaSSH(s *impl, targets []string) func(context.Context, string) error {
 		for i := range targets {
 			target := targets[i]
 			eg.Go(func() error {
-				return ssh.CopyDir(s.ssh, target, localDir, s.pathResolver.RootFSPath(), nil)
+				return ssh.CopyDir(s.ssh, target, localDir, s.pathResolver.RootFSRegistryPath(), nil)
 			})
 		}
 		return eg.Wait()
