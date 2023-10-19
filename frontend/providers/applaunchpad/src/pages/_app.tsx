@@ -99,7 +99,7 @@ const App = ({ Component, pageProps }: AppProps) => {
   }, [setScreenWidth]);
 
   useEffect(() => {
-    const changeI18n = async (data: any) => {
+    const changeI18n = async (data: { currentLanguage: string }) => {
       const lastLang = getLangStore();
       const newLang = data.currentLanguage;
       if (lastLang !== newLang) {
@@ -132,7 +132,7 @@ const App = ({ Component, pageProps }: AppProps) => {
   }, [router.pathname]);
 
   useEffect(() => {
-    const lang = getLangStore() || 'en';
+    const lang = getLangStore() || 'zh';
     i18n?.changeLanguage?.(lang);
   }, [refresh, router.pathname]);
 

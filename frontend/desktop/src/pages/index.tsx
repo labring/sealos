@@ -107,6 +107,8 @@ export default function Home({
 export async function getServerSideProps({ req, res, locales }: any) {
   const lang: string = req?.headers?.['accept-language'] || 'zh';
   const local = lang.indexOf('zh') !== -1 ? 'zh' : 'en';
+  res.setHeader('Set-Cookie', `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`);
+
   const sealos_cloud_domain = process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io';
 
   return {
