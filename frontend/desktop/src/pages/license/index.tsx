@@ -65,7 +65,7 @@ export default function LicensePage() {
 }
 
 export async function getServerSideProps({ req, res, locales }: any) {
-  const local = req?.cookies?.NEXT_LOCALE || 'en';
+  const local = req?.cookies?.NEXT_LOCALE || 'zh';
 
   return {
     props: {
