@@ -111,12 +111,9 @@ function sealos_run_controller {
   --env cloudPort="$cloudPort" \
   --env DEFAULT_NAMESPACE="account-system"
 
-#  run licenseissuer controller
-#  sealos run tars/licenseissuer.tar \
-#  --env canConnectToExternalNetwork="true" \
-#  --env enableMonitor="true" \
-#  --env MongoURI="$mongodbUri" \
-#  --env PasswordSalt="$saltKey"
+  # run license controller
+  sealos run tars/license.tar \
+  --env MONGO_URI="$mongodbUri"
 }
 
 function sealos_run_frontend {
@@ -170,11 +167,11 @@ function resource_exists {
 
 
 function sealos_authorize {
-    set +x
+    # TODO mv this to job-init
     echo "start to authorize sealos"
     echo "create admin-user"
     # create admin-user
-    kubectl apply -f manifests/admin-user.yaml 
+    kubectl apply -f manifests/admin-user.yaml
     # wait for admin-user ready
     echo "waiting for admin-user generated, this may take a few minutes"
     while true; do
@@ -186,7 +183,9 @@ function sealos_authorize {
     # issue license for admin-user
     echo "license issue for admin-user"
     kubectl apply -f manifests/free-license.yaml
-    set -x
+
+    # TODO uncomment this after job-init finished
+    # sealos run tars/job-init.tar
 }
 
 
@@ -201,7 +200,7 @@ function install {
   sealos_run_frontend
 
   # sealos authorize
-#  sealos_authorize
+  sealos_authorize
 }
 
 install

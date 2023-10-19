@@ -11,6 +11,8 @@ import (
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	claimsutil "github.com/labring/sealos/controllers/license/internal/util/claims"
 	licenseutil "github.com/labring/sealos/controllers/license/internal/util/license"
+	count "github.com/labring/sealos/controllers/pkg/account"
+	"github.com/labring/sealos/controllers/pkg/crypto"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
 )
 
@@ -41,14 +43,13 @@ func Recharge(ctx context.Context, client client.Client, license *licensev1.Lice
 
 	logger.Info("recharge account", "account", account.Name, "amount", data.Amount)
 
-	// TODO skip recharge balance for test.
-	//account.Status.Balance += data.Amount * count.CurrencyUnit
-	//if err := crypto.RechargeBalance(account.Status.EncryptBalance, data.Amount*count.CurrencyUnit); err != nil {
-	//	return err
-	//}
-	//if err := client.Status().Update(ctx, account); err != nil {
-	//	return err
-	//}
+	account.Status.Balance += data.Amount * count.CurrencyUnit
+	if err := crypto.RechargeBalance(account.Status.EncryptBalance, data.Amount*count.CurrencyUnit); err != nil {
+		return err
+	}
+	if err := client.Status().Update(ctx, account); err != nil {
+		return err
+	}
 	return nil
 }
 

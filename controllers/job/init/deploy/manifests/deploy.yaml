@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-job
+  namespace: sealos
+spec:
+  template:
+    spec:
+      containers:
+      - name: job-init
+        image: ghcr.io/labring/sealos-job-init-controller:latest
+        # get env from desktop-frontend-secret
+        env:
+          - name: MONGO_URI
+            valueFrom:
+              secretKeyRef:
+                name: desktop-frontend-secret
+                key: mongodb_uri
+          - name: PASSWORD_SALT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: desktop-frontend-secret
+                key: password_salt
+      restartPolicy: OnFailure
+  backoffLimit: 10

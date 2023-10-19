@@ -82,6 +82,8 @@ jobs:
           - { name: app, path: app }
           - { name: db-bytebase, path: db/bytebase }
           - { name: db-adminer, path: db/adminer }
+          - { name: license, path: license }
+          - { name: job-init, path: job/init }
           - { name: resources, path: resources }
           - { name: resources-metering, path: resources/metering }
           - { name: node, path: node }
@@ -183,6 +185,8 @@ jobs:
           - { name: app, path: app }
           - { name: db-bytebase, path: db/bytebase }
           - { name: db-adminer, path: db/adminer }
+          - { name: license, path: license }
+          - { name: job-init, path: job/init }
           - { name: resources, path: resources }
           - { name: resources-metering, path: resources/metering }
           - { name: node, path: node }

@@ -4,6 +4,6 @@ ARG TARGETARCH
 WORKDIR /
 USER 65532:65532
 
-COPY bin/launcher-$TARGETARCH /preset
+COPY bin/controller-job-init-$TARGETARCH /preset
 
 ENTRYPOINT ["/preset"]

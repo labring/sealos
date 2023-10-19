@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	userUtil "github.com/labring/sealos/controllers/license/internal/util/user"
+	userUtil "github.com/labring/sealos/controllers/job/init/internal/util/user"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	mongoOptions "go.mongodb.org/mongo-driver/mongo/options"

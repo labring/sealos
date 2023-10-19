@@ -12,6 +12,7 @@ use (
 	./controllers/user
 	./controllers/resources
 	./controllers/license
+	./controllers/job/init
 	./controllers/pkg
 	./service/database
 	./service/hub
