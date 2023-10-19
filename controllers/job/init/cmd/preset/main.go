@@ -6,11 +6,16 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"github.com/labring/sealos/controllers/job/init/internal/util/controller"
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 
 	"github.com/google/uuid"
-	userUtil "github.com/labring/sealos/controllers/job/init/internal/util/user"
+	util "github.com/labring/sealos/controllers/job/init/internal/util/database"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	mongoOptions "go.mongodb.org/mongo-driver/mongo/options"
@@ -21,8 +26,13 @@ import (
 var (
 	scheme    = runtime.NewScheme()
 	presetLog = ctrl.Log.WithName("preset")
-	SaltKey   = os.Getenv("SaltKey")
 )
+
+func init() {
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(userv1.AddToScheme(scheme))
+	//+kubebuilder:scaffold:scheme
+}
 
 const MaxRetryConnectDB = 10
 
@@ -36,7 +46,19 @@ func main() {
 	presetLog.Info("preset root user successfully")
 }
 
+func createKubernetesClient() (client.Client, error) {
+	c, err := client.New(ctrl.GetConfigOrDie(), client.Options{})
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
 func presetUser(ctx context.Context) error {
+	if err := createUser(ctx); err != nil {
+		return err
+	}
+
 	//init mongodb database
 	client, err := initMongoDB(ctx)
 	defer client.Disconnect(context.Background())
@@ -47,8 +69,8 @@ func presetUser(ctx context.Context) error {
 
 	// preset root user
 	uuid := uuid.New().String()
-	passwd := HashPassword(userUtil.DefaultPassword, SaltKey)
-	user := NewUser(uuid, userUtil.DefaultUser, userUtil.DefaultUser, passwd, userUtil.DefaultK8sUser)
+	passwd := HashPassword(util.DefaultPassword, SaltKey)
+	user := NewUser(uuid, util.DefaultUser, util.DefaultUser, passwd, util.DefaultK8sUser)
 	userDB := os.Getenv("MONGO_USER_DB")
 	userCol := os.Getenv("MONGO_USER_COL")
 	collection := client.Database(userDB).Collection(userCol)
@@ -69,22 +91,39 @@ func presetUser(ctx context.Context) error {
 	return nil
 }
 
+// TODO fix this
+func createUser(ctx context.Context) error {
+	clt, err := createKubernetesClient()
+	if err != nil {
+		fmt.Printf("Error creating Kubernetes client: %v\n", err)
+		os.Exit(1)
+	}
+	if err := clt.Create(ctx, &userv1.User{
+		ObjectMeta: ctrl.ObjectMeta{
+			Name: controller.DefaultUser,
+		},
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
 func IsExists(ctx context.Context, collection *mongo.Collection) bool {
-	filter := bson.M{"password_user": userUtil.DefaultUser}
-	var existingUser userUtil.User
+	filter := bson.M{"password_user": util.DefaultUser}
+	var existingUser util.User
 	err := collection.FindOne(ctx, filter).Decode(&existingUser)
 	return err == nil
 }
 
-func NewUser(uid, name, passwordUser, password, k8sUser string) userUtil.User {
-	return userUtil.User{
+func NewUser(uid, name, passwordUser, password, k8sUser string) util.User {
+	return util.User{
 		UID:          uid,
 		Name:         name,
 		PasswordUser: passwordUser,
 		Password:     password,
 		// to iso string
 		CreatedTime: time.Now().Format(time.RFC3339),
-		K8sUsers: []userUtil.K8sUser{
+		K8sUsers: []util.K8sUser{
 			{
 				Name: k8sUser,
 			},

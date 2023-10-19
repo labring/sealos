@@ -1,6 +1,9 @@
-package user
+package database
 
-// user stored in mongoDB.
+import "os"
+
+var SaltKey = os.Getenv("SaltKey")
+
 type User struct {
 	UID          string    `bson:"uid" json:"uid"`
 	Name         string    `bson:"name" json:"name"`
@@ -15,7 +18,6 @@ type K8sUser struct {
 }
 
 const (
-	// pre-defined user info
 	DefaultUser     = "admin"
 	DefaultPassword = "sealos2023"
 	DefaultK8sUser  = "admin"
