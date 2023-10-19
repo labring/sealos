@@ -156,22 +156,19 @@ func initMongoDB(ctx context.Context) (*mongo.Client, error) {
 	var err error
 	MongoURI := os.Getenv("MONGO_URI")
 	clientOptions := mongoOptions.Client().ApplyURI(MongoURI)
-	for i := 0; i < MaxRetryConnectDB; i++ {
-		client, err = mongo.Connect(ctx, clientOptions)
-		if err != nil {
-			presetLog.Error(err, "failed to connect to mongo")
-			time.Sleep(5 * time.Second)
-			continue
-		}
-		err = client.Ping(ctx, nil)
-		if err != nil {
-			presetLog.Error(err, "failed to ping mongo")
-			time.Sleep(5 * time.Second)
-			continue
-		}
-		presetLog.Info("connect to mongo successfully")
-		break
+	client, err = mongo.Connect(ctx, clientOptions)
+	if err != nil {
+		presetLog.Error(err, "failed to connect to mongo")
+		time.Sleep(5 * time.Second)
+		return nil, err
 	}
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		presetLog.Error(err, "failed to ping mongo")
+		time.Sleep(5 * time.Second)
+		return client, err
+	}
+	presetLog.Info("connect to mongo successfully")
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to mongo: %w", err)
 	}
