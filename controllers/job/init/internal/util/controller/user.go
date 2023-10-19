@@ -2,9 +2,6 @@ package controller
 
 import (
 	"context"
-	"fmt"
-	"os"
-
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -13,10 +10,10 @@ import (
 // pre-defined user info in kubernetes
 
 const (
-	DefaultUser = "admin"
+	DefaultAdminUserName = "admin"
 )
 
-func NewKubernetesClient() (client.Client, error) {
+func newKubernetesClient() (client.Client, error) {
 	c, err := client.New(ctrl.GetConfigOrDie(), client.Options{})
 	if err != nil {
 		return nil, err
@@ -24,18 +21,13 @@ func NewKubernetesClient() (client.Client, error) {
 	return c, nil
 }
 
-// TODO fix this
-func NewUser(ctx context.Context) error {
-	clt, err := NewKubernetesClient()
+func PresetAdminUser(ctx context.Context) error {
+	c, err := newKubernetesClient()
 	if err != nil {
-		fmt.Printf("Error creating Kubernetes client: %v\n", err)
-		os.Exit(1)
+		return err
 	}
-	if err := clt.Create(ctx, &userv1.User{
-		ObjectMeta: ctrl.ObjectMeta{
-			Name: DefaultUser,
-		},
-	}); err != nil {
+	_, err = ctrl.CreateOrUpdate(ctx, c, &userv1.User{ObjectMeta: ctrl.ObjectMeta{Name: DefaultAdminUserName}}, func() error { return nil })
+	if err != nil {
 		return err
 	}
 	return nil

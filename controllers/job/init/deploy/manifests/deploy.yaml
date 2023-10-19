@@ -26,6 +26,8 @@ spec:
   template:
     spec:
       serviceAccountName: sealos-job-init-sa
+      securityContext:
+        runAsNonRoot: true
       containers:
       - name: job-init
         image: ghcr.io/labring/sealos-job-init-controller:latest
@@ -41,5 +43,10 @@ spec:
               secretKeyRef:
                 name: desktop-frontend-secret
                 key: password_salt
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
       restartPolicy: OnFailure
   backoffLimit: 10
