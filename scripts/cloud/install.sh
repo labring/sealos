@@ -34,6 +34,8 @@ metrics_server_version=0.6.4
 declare -A PROMPTS_EN PROMPTS_CN
 
 PROMPTS_EN=(
+    ["pre_prompt"]="Depends on iptables, please make sure iptables is installed, multi-node needs to configure ssh password-free login or the same password, using self-signed certificate to complete the installation requires self-trust certificate"
+    ["pull_image"]="Pulling images"
     ["install_sealos"]="Sealos CLI is not installed. Do you want to install it now? (y/n): "
     ["input_master_ips"]="Please enter Master IPs (press Enter to skip this step for local installation; comma separated for multiple master nodes, e.g: 192.168.0.1,192.168.0.2,192.168.0.3)"
     ["invalid_ips"]="Invalid IPs or no IPs provided. Please try again."
@@ -49,7 +51,7 @@ PROMPTS_EN=(
     ["enter_choice"]="Enter your choice (1/2): "
     ["k8s_installation"]="Installing Kubernetes cluster."
     ["ingress_installation"]="Installing ingress-nginx-controller and kubeblocks."
-    ["patching_ingress"]="Patching ingress-nginx-controller tolerations to allow it to run on master node. If you don't want it to run on master node, please skip this step."
+    ["patching_ingress"]="Patching ingress-nginx-controller tolerations to allow it to run on master node."
     ["installing_cloud"]="Installing sealos cloud."
     ["avx_not_supported"]="CPU does not support AVX instructions"
     ["ssh_private_key"]="Please configure the ssh private key path, press Enter to use the default value '/root/.ssh/id_rsa' "
@@ -62,31 +64,33 @@ Linux kernel >= 4.19.57 or equivalent (e.g., 4.18 on RHEL8)"
 )
 
 PROMPTS_CN=(
+    ["pre_prompt"]="依赖iptables，请确保iptables已经安装，多节点需要配置ssh免密登录或密码一致, 使用自签证书安装完成后需要自信任证书"
+    ["pull_image"]="正在拉取镜像"
     ["install_sealos"]="Sealos CLI没有安装，是否安装？(y/n): "
-    ["input_master_ips"]="请输入Master IPs (单节点本地安装可回车跳过该步骤；多个master节点使用逗号分隔, 例：192.168.0.1,192.168.0.2,192.168.0.3)"
+    ["input_master_ips"]="请输入Master IPs (单节点本地安装可回车跳过该步骤；多个master节点使用逗号分隔, 例: 192.168.0.1,192.168.0.2,192.168.0.3): "
     ["invalid_ips"]="IP无效或没有提供IP，请再试一次。"
     ["input_node_ips"]="请输入Node IPs (多个node节点使用逗号分隔，可跳过): "
     ["pod_subnet"]="请输入pod子网 (回车使用默认值: 100.64.0.0/10): "
     ["service_subnet"]="请输入service子网 (回车使用默认值: 10.96.0.0/22): "
-    ["cloud_domain"]="请输入云域名：（例：127.0.0.1.nip.io) "
+    ["cloud_domain"]="请输入云域名:（例:127.0.0.1.nip.io) "
     ["cloud_port"]="请输入云端口 (回车使用默认值: 443): "
-    ["input_certificate"]="您要输入证书吗？(y/n): "
+    ["input_certificate"]="请输入证书吗？(y/n): "
     ["certificate_path"]="请输入证书路径: "
     ["private_key_path"]="请输入私钥路径: "
-    ["choose_language"]="选择语言:"
+    ["choose_language"]="请选择语言:"
     ["enter_choice"]="请输入您的选择 (1/2): "
     ["k8s_installation"]="正在安装Kubernetes集群。"
     ["ingress_installation"]="正在安装ingress-nginx-controller和kubeblocks。"
-    ["patching_ingress"]="正在修改ingress-nginx-controller的容忍度，以允许它在主节点上运行。如果您不希望它在主节点上运行，请跳过此步骤。"
+    ["patching_ingress"]="正在修改ingress-nginx-controller的容忍度，以允许它在主节点上运行。"
     ["installing_cloud"]="正在安装sealos cloud。"
     ["avx_not_supported"]="CPU不支持AVX指令"
     ["ssh_private_key"]="如需免密登录请配置ssh私钥路径，回车使用默认值'/root/.ssh/id_rsa' "
     ["ssh_password"]="请输入ssh密码，配置免密登录可回车跳过"
     ["wait_cluster_ready"]="正在等待集群就绪, 如果您想跳过此步骤，请输入'1'"
-    ["cilium_requirement"]="正在使用Cilium作为网络插件，主机系统必须满足以下要求：
+    ["cilium_requirement"]="正在使用Cilium作为网络插件，主机系统必须满足以下要求:
 具有AMD64或AArch64架构的主机
 Linux内核> = 4.19.57或等效版本（例如，在RHEL8上为4.18）"
-    ["mongo_avx_requirement"]="MongoDB 5.0版本依赖支持 AVX 指令集的 CPU，当前环境不支持avx，所以仅可使用mongo4.0版本，更多信息查看：https://www.mongodb.com/docs/v5.0/administration/production-notes/"
+    ["mongo_avx_requirement"]="MongoDB 5.0版本依赖支持 AVX 指令集的 CPU，当前环境不支持avx，所以仅可使用mongo4.0版本，更多信息查看:https://www.mongodb.com/docs/v5.0/administration/production-notes/"
 )
 
 # Choose Language
@@ -103,7 +107,7 @@ get_prompt "choose_language"
 echo "1. English"
 echo "2. 中文"
 read -p "$(get_prompt "enter_choice")" lang_choice
-echo -ne "\033[3F\033[2K"
+echo -ne "\033[4F\033[2K"
 
 if [[ $lang_choice == "2" ]]; then
     LANGUAGE="CN"
@@ -113,11 +117,13 @@ fi
 
 #TODO mongo 5.0 need avx support, if not support, change to 4.0
 setMongoVersion() {
-  grep avx /proc/cpuinfo > /dev/null
+  set +e
+  grep avx /proc/cpuinfo > /dev/null 2>&1
   if [ $? -ne 0 ]; then
     get_prompt "mongo_avx_requirement"
     mongodb_version="mongodb-4.0"
   fi
+  set -e
 }
 
 # Initialization
@@ -128,7 +134,6 @@ init() {
     if ! command -v sealos &> /dev/null; then
         get_prompt "install_sealos"
         read -p " " installChoice
-        echo -ne "\033[1F\033[2K"
         if [[ $installChoice == "y" || $installChoice == "Y" ]]; then
             curl -sfL https://raw.githubusercontent.com/labring/sealos/${SEALOS_VERSION}/scripts/install.sh |
               sh -s ${SEALOS_VERSION} labring/sealos
@@ -140,17 +145,18 @@ init() {
         echo "Sealos CLI is already installed."
     fi
 
-    # pull image
-    sealos pull docker.io/labring/kubernetes:v${kubernetes_version#v:-1.25.6}
-    sealos pull docker.io/labring/cilium:v${cilium_version#v:-1.12.14}
-    sealos pull docker.io/labring/cert-manager:v${cert_manager_version#v:-1.8.0}
-    sealos pull docker.io/labring/helm:v${helm_version#v:-3.12.0}
-    sealos pull docker.io/labring/openebs:v${openebs_version#v:-3.4.0}
-    sealos pull docker.io/labring/ingress-nginx:v${ingress_nginx_version#v:-1.5.1}
-    sealos pull docker.io/labring/kubeblocks:v${kubeblocks_version#v:-0.6.2}
-    sealos pull docker.io/labring/metrics-server:v${metrics_server_version#v:-0.6.4}
-    sealos pull docker.io/labring/kubernetes-reflector:v${reflector_version#v:-7.0.151}
-    sealos pull docker.io/labring/sealos-cloud:${CLOUD_VERSION}
+    get_prompt "pre_prompt"
+    get_prompt "pull_image"
+    sealos pull -q docker.io/labring/kubernetes:v${kubernetes_version#v:-1.25.6} >/dev/null
+    sealos pull -q docker.io/labring/cilium:v${cilium_version#v:-1.12.14} >/dev/null
+    sealos pull -q docker.io/labring/cert-manager:v${cert_manager_version#v:-1.8.0} >/dev/null
+    sealos pull -q docker.io/labring/helm:v${helm_version#v:-3.12.0} >/dev/null
+    sealos pull -q docker.io/labring/openebs:v${openebs_version#v:-3.4.0} >/dev/null
+    sealos pull -q docker.io/labring/ingress-nginx:v${ingress_nginx_version#v:-1.5.1} >/dev/null
+    sealos pull -q docker.io/labring/kubeblocks:v${kubeblocks_version#v:-0.6.2} >/dev/null
+    sealos pull -q docker.io/labring/metrics-server:v${metrics_server_version#v:-0.6.4} >/dev/null
+    sealos pull -q docker.io/labring/kubernetes-reflector:v${reflector_version#v:-7.0.151} >/dev/null
+    sealos pull -q docker.io/labring/sealos-cloud:${CLOUD_VERSION} >/dev/null
 }
 
 collect_input() {
@@ -169,7 +175,6 @@ collect_input() {
     if [[ $local_install != "y" ]]; then
         while :; do
             read -p "$(get_prompt "input_master_ips")" master_ips
-            echo -ne "\033[1F\033[2K"
             if validate_ips "$master_ips"; then
                 if [[ -z "$master_ips" ]]; then
                     local_install="y"
@@ -183,27 +188,36 @@ collect_input() {
     if [[ $local_install != "y" ]]; then
         while :; do
             read -p "$(get_prompt "input_node_ips")" node_ips
-            echo -ne "\033[1F\033[2K"
             if validate_ips "$node_ips"; then
                 break
             else
                 get_prompt "invalid_ips"
             fi
         done
+        read -p "$(get_prompt "ssh_private_key")" ssh_private_key
+
+        if [[ -z "$ssh_private_key" ]]; then
+            ssh_private_key="${HOME}/.ssh/id_rsa"
+        fi
+        read -p "$(get_prompt "ssh_password")" ssh_password
+
     fi
-    read -p "$(get_prompt "ssh_private_key")" ssh_private_key
-    if [[ -z "$ssh_private_key" ]]; then
-        ssh_private_key="${HOME}/.ssh/id_rsa"
-    fi
-    read -p "$(get_prompt "ssh_password")" ssh_password
+
     read -p "$(get_prompt "pod_subnet")" pod_cidr
+
     read -p "$(get_prompt "service_subnet")" service_cidr
+
     read -p "$(get_prompt "cloud_domain")" cloud_domain
+
     read -p "$(get_prompt "cloud_port")" cloud_port
+
     read -p "$(get_prompt "input_certificate")" input_cert
+
     if [[ $input_cert == "y" || $input_cert == "Y" ]]; then
         read -p "$(get_prompt "certificate_path")" cert_path
+
         read -p "$(get_prompt "private_key_path")" key_path
+
     fi
 }
 
@@ -251,14 +265,13 @@ spec:
 "
     echo "$ingress_config" > $CLOUD_DIR/ingress-nginx-config.yaml
 
-    echo "master_ips= ${master_ips}"
     sealos_gen_cmd="sealos gen labring/kubernetes:v${kubernetes_version#v:-1.25.6}\
         ${master_ips:+--masters $master_ips}\
         ${node_ips:+--nodes $node_ips}\
         --pk=${ssh_private_key:-$HOME/.ssh/id_rsa}\
         --passwd=${ssh_password} -o $CLOUD_DIR/Clusterfile"
 
-    command -v kubelet || $sealos_gen_cmd
+    command -v kubelet > /dev/null 2>&1 || $sealos_gen_cmd
 
     # Modify Clusterfile with sed
     sed -i "s|100.64.0.0/10|${pod_cidr:-100.64.0.0/10}|g" $CLOUD_DIR/Clusterfile
@@ -295,17 +308,16 @@ loading_animation() {
 }
 
 execute_commands() {
-    get_prompt "k8s_installation"
-    command -v kubelet || sealos apply -f $CLOUD_DIR/Clusterfile
-    command -v helm || sealos run "labring/helm:v${helm_version#v:-3.12.0}"
+    command -v kubelet > /dev/null 2>&1 || (get_prompt "k8s_installation" && sealos apply -f $CLOUD_DIR/Clusterfile)
+    command -v helm > /dev/null 2>&1 || sealos run "labring/helm:v${helm_version#v:-3.12.0}"
     get_prompt "cilium_requirement"
-    if kubectl get no | grep NotReady &>/dev/null; then
+    if kubectl get no | grep NotReady > /dev/null 2>&1; then
       sealos run "labring/cilium:v${cilium_version#v:-1.12.14}"
     fi
     wait_cluster_ready
     sealos run "labring/cert-manager:v${cert_manager_version#v:-1.8.0}"
     sealos run "labring/openebs:v${openebs_version#v:-3.4.0}"
-    kubectl create -f - <<EOF
+    kubectl get sc openebs-backup > /dev/null 2>&1 || kubectl create -f - <<EOF
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -345,7 +357,7 @@ EOF
 
 # Main script execution
 init
-source $1 || collect_input
+source $1 > /dev/null 2>&1 || collect_input
 prepare_configs
 execute_commands
 
