@@ -2,11 +2,11 @@ package database
 
 import (
 	"context"
-	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 	"os"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	mongoOptions "go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 )
 
 var (
