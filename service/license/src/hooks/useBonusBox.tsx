@@ -14,7 +14,10 @@ export default function useBonusBox() {
   const { ratios, steps } = useMemo(() => {
     return {
       ratios: (bonuses?.ratios || '').split(',').map((v) => +v),
-      steps: (bonuses?.steps || '').split(',').map((v) => +v)
+      steps: (bonuses?.steps || '')
+        .split(',')
+        .map((v) => +v)
+        .concat([1])
     };
   }, [bonuses]);
 

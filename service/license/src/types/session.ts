@@ -21,4 +21,4 @@ export type JWTPayload = {
   uid: string;
 } & UserSignInType;
 
-export const sessionKey = 'session';
+export const sessionKey = 'sealos_session';

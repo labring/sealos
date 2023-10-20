@@ -4,9 +4,20 @@ export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH
   return dayjs(time).format(format);
 };
 
-// 1¥=10000
-export const formatMoney = (money: number) => {
-  return (money / 10000).toFixed(2);
+export const getRemainingTime = (expirationTime: number) => {
+  const currentTime = Math.floor(Date.now() / 1000);
+
+  if (currentTime >= expirationTime) {
+    return 'expired';
+  }
+
+  const remainingTimeInSeconds = expirationTime - currentTime;
+  const hours = Math.floor(remainingTimeInSeconds / 3600);
+  const minutes = Math.floor((remainingTimeInSeconds % 3600) / 60);
+  const seconds = remainingTimeInSeconds % 60;
+
+  const formattedTime = `${hours}小时${minutes}分钟`;
+  return formattedTime;
 };
 
 export function appWaitSeconds(ms: number) {
@@ -16,6 +27,7 @@ export function appWaitSeconds(ms: number) {
     }, ms);
   });
 }
+
 export async function getBase64FromRemote(url: string) {
   try {
     const res = await fetch(url);
@@ -77,3 +89,10 @@ export function base64Decode(str: string) {
   const decodedBuffer = Buffer.from(str, 'base64').toString('binary');
   return decodedBuffer;
 }
+
+// 1¥=100
+export const formatMoney = (money: number) => {
+  return money / 100;
+};
+
+export const deFormatMoney = (money: number) => money * 100;

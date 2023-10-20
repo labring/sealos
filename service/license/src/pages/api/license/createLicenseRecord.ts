@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     const payload = await authSession(req.headers);
     if (!payload) return jsonRes(resp, { code: 401, message: 'token verify error' });
 
-    const { orderID, amount, quota, paymentMethod } = req.body as LicensePayload;
+    const { orderID, amount, quota, payMethod } = req.body as LicensePayload;
 
     const _token = generateLicenseToken({ type: 'Account', data: { amount: quota } });
 
@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       token: _token,
       orderID: orderID,
       quota: quota,
-      paymentMethod: paymentMethod
+      payMethod: payMethod
     };
 
     const result = await createLicenseRecord(record);

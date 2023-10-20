@@ -1,11 +1,11 @@
-import { LicensePayload, LicenseRecord, LicenseToken } from '@/types';
+import { LicenseDB, LicenseRecordPayload, LicenseToken } from '@/types';
+import { base64Decode } from '@/utils/tools';
 import { sign } from 'jsonwebtoken';
 import { connectToDatabase } from './mongodb';
-import { base64Decode } from '@/utils/tools';
 
 async function connectLicenseRecordCollection() {
   const client = await connectToDatabase();
-  const collection = client.db().collection<LicenseRecord>('license');
+  const collection = client.db().collection<LicenseDB>('license');
   return collection;
 }
 
@@ -15,18 +15,18 @@ export async function createLicenseRecord({
   token,
   orderID,
   quota,
-  paymentMethod
-}: LicensePayload) {
+  payMethod
+}: LicenseRecordPayload) {
   const collection = await connectLicenseRecordCollection();
 
   const now = Math.floor(Date.now() / 1000); // Get current timestamp in seconds
-  const oneDayInSeconds = 24 * 60 * 60; // One day in seconds
+  const oneDayInSeconds = 3 * 24 * 60 * 60;
 
-  const record: LicenseRecord = {
+  const record: LicenseDB = {
     uid: uid,
     token: token,
     orderID: orderID,
-    paymentMethod: paymentMethod,
+    payMethod: payMethod,
     service: {
       quota: quota
     },
@@ -76,7 +76,7 @@ export async function getLicenseRecordsByUid({
 export function generateLicenseToken(payload: LicenseToken) {
   const privateKey = process.env.LICENSE_PRIVATE_KEY;
   if (!privateKey) {
-    throw new Error('PRIVATE KEY is missing');
+    throw new Error('LICENSE PRIVATE KEY IS MISSING');
   }
   const nowInSeconds = Math.floor(Date.now() / 1000);
   const expirationTime = nowInSeconds + 3 * 24 * 60 * 60;
@@ -90,4 +90,19 @@ export function generateLicenseToken(payload: LicenseToken) {
 
   const token = sign(_payload, base64Decode(privateKey), { algorithm: 'RS256' });
   return token;
+}
+
+export async function hasIssuedLicense({ uid, orderID }: { uid: string; orderID: string }) {
+  try {
+    const collection = await connectLicenseRecordCollection();
+
+    const existingLicense = await collection.findOne({
+      uid: uid,
+      orderID: orderID
+    });
+
+    return !!existingLicense; // 如果找到匹配的记录，返回 true；否则返回 false
+  } catch (error) {
+    throw new Error('Error checking for issued license:');
+  }
 }

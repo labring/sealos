@@ -1,13 +1,13 @@
-import { ApiResp, LicenseRecord } from '@/types';
+import { getLicenseRecord } from '@/api/license';
+import { DownloadIcon, EmptyIcon, LicenseIcon, TokenIcon } from '@/components/icons';
 import download from '@/utils/downloadFIle';
-import { formatMoney, getRemainingTime } from '@/utils/format';
+import { formatMoney, getRemainingTime } from '@/utils/tools';
 import { Box, Flex, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import Pagination from './Pagination';
-import { DownloadIcon, EmptyIcon, LicenseIcon, TokenIcon } from '@/components/icons';
-import { getLicenseRecord } from '@/api/license';
+import CurrencySymbol from './CurrencySymbol';
 
 export default function History() {
   const { t } = useTranslation();
@@ -58,9 +58,9 @@ export default function History() {
                   <Text color={'#485058'} fontSize={'16px'} fontWeight={500} mx="10px">
                     License
                   </Text>
-                  <DownloadIcon />
+                  <CurrencySymbol w="14px" h="14px" type={'shellCoin'} />
                   <Text color={'#5A646E'} fontSize={'12px'} fontWeight={500}>
-                    {formatMoney(item.amount)}
+                    {item.amount}
                   </Text>
                 </Flex>
                 <Text color={'#5A646E'} fontSize={'12px'} fontWeight={500}>
@@ -73,7 +73,9 @@ export default function History() {
                 <Text color={'#485058'} fontSize={'12px'} fontWeight={500} px="8px">
                   Token
                 </Text>
-                <DownloadIcon />
+                <Box cursor={'pointer'} onClick={() => downloadToken(item.token)}>
+                  <DownloadIcon />
+                </Box>
               </Flex>
             </Flex>
           ))}

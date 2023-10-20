@@ -2,8 +2,8 @@ import { Icon, IconProps } from '@chakra-ui/react';
 export const WechatIcon = (props: IconProps) => {
   return (
     <Icon
-      width="21"
-      height="21"
+      width="21px"
+      height="21px"
       viewBox="0 0 21 21"
       fill="black"
       xmlns="http://www.w3.org/2000/svg"

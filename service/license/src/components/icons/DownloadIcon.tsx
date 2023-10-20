@@ -2,8 +2,8 @@ import { Icon, IconProps } from '@chakra-ui/react';
 export const DownloadIcon = (props: IconProps) => {
   return (
     <Icon
-      width="21"
-      height="20"
+      width="21px"
+      height="20px"
       viewBox="0 0 21 20"
       fill="#219BF4"
       xmlns="http://www.w3.org/2000/svg"

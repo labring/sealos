@@ -2,8 +2,8 @@ import { Icon, IconProps } from '@chakra-ui/react';
 export const GithubIcon = (props: IconProps) => {
   return (
     <Icon
-      width="21"
-      height="22"
+      width="21px"
+      height="22px"
       viewBox="0 0 21 22"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"

@@ -1,9 +1,9 @@
-import { createLicenseRecord } from '@/api/license';
+import { createPayment, getPaymentResult } from '@/api/payment';
 import { getSystemEnv } from '@/api/system';
 import { StripeIcon, WechatIcon } from '@/components/icons';
 import useBonusBox from '@/hooks/useBonusBox';
-import { LicensePayload, StripePaymentData } from '@/types';
-import { deFormatMoney } from '@/utils/format';
+import { PaymentStatus, TPayMethod, WechatPaymentData } from '@/types';
+import { deFormatMoney } from '@/utils/tools';
 import {
   Button,
   Checkbox,
@@ -18,61 +18,56 @@ import {
   useDisclosure,
   useToast
 } from '@chakra-ui/react';
+import { loadStripe } from '@stripe/stripe-js';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import WechatPayment from './WechatPayment';
-import { createPayment, getPaymentResult } from '@/api/payment';
-import { loadStripe } from '@stripe/stripe-js';
 
 export default function RechargeComponent() {
-  const { t } = useTranslation();
+  const router = useRouter();
   const queryClient = useQueryClient();
-  const [isAgree, setIsAgree] = useState(false);
+  const toast = useToast({ position: 'top', duration: 2000 });
+  const { t } = useTranslation();
+  const [isAgree, setIsAgree] = useState(true);
   const [isInvalid, setIsInvalid] = useState(false);
   const { BonusBox, selectAmount } = useBonusBox();
   const { isOpen, onOpen, onClose } = useDisclosure();
   // 整个流程跑通需要状态管理, 0 初始态， 1 创建支付单， 2 支付中, 3 支付成功
   const [complete, setComplete] = useState<0 | 1 | 2 | 3>(0);
-  // 0 是微信，1 是stripe
-  const [payType, setPayType] = useState<'wechat' | 'stripe'>('wechat');
-  const [paymentName, setPaymentName] = useState('');
-  const toast = useToast({ position: 'top', duration: 2000 });
+  const [payType, setPayType] = useState<TPayMethod>('wechat');
+  const [orderID, setOrderID] = useState('');
+  const [wechatPaymentData, setWechatPaymentData] = useState<WechatPaymentData>();
   const { data: platformEnv } = useQuery(['getPlatformEnv'], getSystemEnv);
 
-  console.log(selectAmount, '11111');
-
-  const onModalClose = () => {
+  const onClosePayment = useCallback(() => {
+    setOrderID('');
     setComplete(0);
     onClose();
-  };
+  }, [onClose]);
 
-  const handleStripeConfirm = () => {
-    setPayType('stripe');
-    if (selectAmount < 10) {
+  const handlePayConfirm = (type: TPayMethod) => {
+    setPayType(type);
+    if (!isAgree) {
       return toast({
-        status: 'error',
-        title: t('Pay Minimum Tips')
-      });
-    }
-    setComplete(1);
-    paymentMutation.mutate();
-  };
-
-  const handleWechatConfirm = () => {
-    if (isAgree) {
-      setComplete(1);
-      paymentMutation.mutate();
-      onOpen();
-    } else {
-      toast({
         status: 'error',
         title: t('Please read and agree to the agreement'),
         isClosable: true,
         position: 'top'
       });
     }
+    if (type === 'stripe' && selectAmount < 10) {
+      return toast({
+        status: 'error',
+        title: t('Pay Minimum Tips')
+      });
+    }
+    if (type === 'wechat') {
+      onOpen();
+    }
+    setComplete(1);
+    paymentMutation.mutate();
   };
 
   const paymentMutation = useMutation(
@@ -84,16 +79,18 @@ export default function RechargeComponent() {
       }),
     {
       async onSuccess(data) {
-        console.log(data, '=======');
-        if (payType === 'stripe' && platformEnv?.stripePub && data?.sessionID) {
+        // setPaymentData({ ...data, payMethod: payType });
+        if (payType === 'stripe' && platformEnv && data?.sessionID) {
           const stripe = await loadStripe(platformEnv?.stripePub);
           stripe?.redirectToCheckout({
             sessionId: data.sessionID
           });
-        } else if (payType === 'wechat') {
         }
-        // setPaymentName((data?.paymentName as string).trim());
-        setComplete(2);
+        if (payType === 'wechat' && data?.tradeNO && data?.codeURL) {
+          setOrderID(data.orderID);
+          setWechatPaymentData({ tradeNO: data?.tradeNO, codeURL: data?.codeURL });
+          setComplete(2);
+        }
       },
       onError(err: any) {
         toast({
@@ -107,55 +104,56 @@ export default function RechargeComponent() {
     }
   );
 
-  const licenseRecordMutation = useMutation(
-    (payload: LicensePayload) => createLicenseRecord(payload),
-    {
-      onSuccess(data) {
-        console.log(data);
+  useQuery(['getLicenseResult', orderID], () => getPaymentResult({ orderID }), {
+    refetchInterval: complete === 2 ? 3 * 1000 : false,
+    enabled: complete === 2 && orderID !== undefined,
+    cacheTime: 0,
+    staleTime: 0,
+    onSuccess(data) {
+      console.log(data, 'xxxxxxxx');
+      if (data.status === PaymentStatus.PaymentSuccess) {
+        onClosePayment();
+        toast({
+          status: 'success',
+          title: t('Payment Successful'), // 这里改为license 签发成功
+          isClosable: true,
+          position: 'top'
+        });
         queryClient.invalidateQueries(['getLicenseActive']);
-      },
-      onError(err: any) {
-        console.log(err);
       }
+    },
+    onError(err: any) {
+      toast({
+        status: 'error',
+        title: err?.message || '',
+        isClosable: true,
+        position: 'top'
+      });
+      setComplete(0);
     }
-  );
+  });
 
-  const { data } = useQuery(
-    ['getLicenseResult', paymentName],
-    () => getPaymentResult({ orderID }),
-    {
-      refetchInterval: complete === 2 ? 1000 : false,
-      enabled: complete === 2 && !!paymentName,
-      cacheTime: 0,
-      staleTime: 0,
-      onSuccess(data) {
-        console.log(data);
-        if (data?.status === 'Completed') {
-          onModalClose();
-          toast({
-            status: 'success',
-            title: t('Payment Successful'),
-            isClosable: true,
-            position: 'top'
-          });
-          // licenseRecordMutation.mutate({
-          //   uid: '',
-          //   amount: deFormatMoney(selectAmount),
-          //   quota: selectAmount,
-          //   token: data?.token,
-          //   orderID: data?.tradeNO,
-          //   paymentMethod: 'wechat'
-          // });
-        }
-      }
+  useEffect(() => {
+    const { stripeState, orderID } = router.query;
+    if (stripeState === 'success') {
+      setComplete(2);
+      setOrderID(orderID as string);
+    } else if (stripeState === 'error') {
+      toast({
+        status: 'error',
+        duration: 3000,
+        title: t('Stripe Cancel'),
+        isClosable: true,
+        position: 'top'
+      });
+      onClosePayment();
     }
-  );
+  }, [onClosePayment, router.query, t, toast]);
 
   return (
     <Flex
       flex={1}
       flexDirection="column"
-      // justifyContent="center"
       alignItems="center"
       pt="64px"
       pb="40px"
@@ -226,7 +224,7 @@ export default function RechargeComponent() {
             h="auto"
             py="14px"
             px="34px"
-            onClick={() => handleStripeConfirm()}
+            onClick={() => handlePayConfirm('stripe')}
           >
             <StripeIcon />
             <Text ml="12px">{t('pay with stripe')}</Text>
@@ -242,19 +240,23 @@ export default function RechargeComponent() {
             h="auto"
             py="14px"
             px="34px"
-            onClick={() => handleWechatConfirm()}
+            onClick={() => handlePayConfirm('wechat')}
           >
             <WechatIcon fill={'#33BABB'} />
             <Text ml="12px">{t('pay with wechat')}</Text>
           </Button>
         )}
       </Flex>
-      <Modal isOpen={isOpen} onClose={onModalClose}>
+      <Modal isOpen={isOpen} onClose={onClosePayment}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>充值金额</ModalHeader>
           <ModalCloseButton />
-          <WechatPayment complete={complete} codeURL={data?.codeURL} tradeNO={data?.tradeNO} />
+          <WechatPayment
+            complete={complete}
+            codeURL={wechatPaymentData?.codeURL}
+            tradeNO={wechatPaymentData?.tradeNO}
+          />
         </ModalContent>
       </Modal>
     </Flex>

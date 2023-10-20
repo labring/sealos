@@ -1,9 +1,5 @@
 import { authSession } from '@/services/backend/auth';
-import {
-  createLicenseRecord,
-  generateLicenseToken,
-  hasIssuedLicense
-} from '@/services/backend/db/license';
+import { createLicenseRecord, generateLicenseToken } from '@/services/backend/db/license';
 import { getPaymentByID, updatePaymentStatus } from '@/services/backend/db/payment';
 import { jsonRes } from '@/services/backend/response';
 import { getSealosPay } from '@/services/pay';
@@ -12,9 +8,6 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    // test
-    // const _token = generateLicenseToken({ type: 'Account', data: { amount: 299 } });
-
     const { orderID } = req.body as { orderID: string };
     const userInfo = await authSession(req.headers);
     if (!userInfo) {
@@ -26,14 +19,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const payment = await getPaymentByID({ uid: userInfo.uid, orderID: orderID });
-    console.log(payment);
-
     if (!payment) {
       return jsonRes(res, { code: 400, message: 'No order found' });
-    }
-    const issuedLicense = await hasIssuedLicense({ uid: userInfo.uid, orderID: orderID });
-    if (issuedLicense) {
-      return jsonRes(res, { code: 400, message: 'orderID cannot be reused' });
     }
 
     const result: PaymentResult = await fetch(`${sealosPayUrl}/v1alpha1/pay/status`, {
@@ -48,32 +35,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         sessionID: payment?.sessionID
       })
     }).then((res) => res.json());
-
-    if (result.status === PaymentStatus.PaymentSuccess) {
-      await updatePaymentStatus({
-        uid: userInfo.uid,
-        orderID: orderID,
-        status: result.status
-      });
-      const _token = generateLicenseToken({ type: 'Account', data: { amount: payment.amount } });
-      const record = {
-        uid: userInfo.uid,
-        amount: payment.amount,
-        token: _token,
-        orderID: orderID,
-        quota: payment.amount,
-        payMethod: payment.payMethod
-      };
-      await createLicenseRecord(record);
-    }
-
-    if (result.status === PaymentStatus.PaymentProcessing) {
-      await updatePaymentStatus({
-        uid: userInfo.uid,
-        orderID: orderID,
-        status: result.status
-      });
-    }
 
     return jsonRes(res, {
       data: result

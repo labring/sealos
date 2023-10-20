@@ -1,3 +1,20 @@
+export type PaymentDB = {
+  uid: string;
+  amount: number;
+  // quota: number;
+  codeURL?: string;
+  currency: string;
+  orderID: string;
+  tradeNO?: string;
+  sessionID?: string;
+  payMethod: TPayMethod;
+  status: PaymentStatus;
+  createdAt: Date; // Creation timestamp
+  updatedAt: Date; // Modification timestamp
+};
+
+export type TPayMethod = 'stripe' | 'wechat';
+
 export enum PaymentStatus {
   PaymentNotPaid = 'notpaid', // 未支付
   PaymentProcessing = 'processing', // 支付中
@@ -10,30 +27,26 @@ export enum PaymentStatus {
 export type PaymentParams = {
   amount: string;
   currency: 'CNY';
-  payMethod: 'stripe' | 'wechat';
+  payMethod: TPayMethod;
 };
 
-export type StripePaymentData = {
+export type PaymentData = {
   amount: string;
+  codeURL?: string;
   currency: string;
   message: string;
   orderID: string;
-  sessionID: string;
-  user: string;
+  tradeNO?: string;
+  sessionID?: string;
+};
+
+export type PaymentResult = {
+  message: string;
+  orderID: string;
+  status: PaymentStatus;
 };
 
 export type WechatPaymentData = {
-  amount: string;
   codeURL: string;
-  currency: string;
-  message: string;
-  orderID: string;
   tradeNO: string;
-  user: string;
-};
-
-export type PaymentResultParams = {
-  orderID: string;
-  payMethod: 'stripe' | 'wechat';
-  sessionID?: string;
 };

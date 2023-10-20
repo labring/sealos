@@ -3,8 +3,8 @@ import { Icon, IconProps } from '@chakra-ui/react';
 export const GroupAddIcon = (props: IconProps) => {
   return (
     <Icon
-      width="13"
-      height="12"
+      width="13px"
+      height="12px"
       viewBox="0 0 13 12"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"

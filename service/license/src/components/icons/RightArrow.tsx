@@ -3,8 +3,8 @@ import { Icon, IconProps } from '@chakra-ui/react';
 export const RightIcon = (props: IconProps) => {
   return (
     <Icon
-      width="16"
-      height="16"
+      width="16px"
+      height="16px"
       viewBox="0 0 16 16"
       fill="#219BF4"
       xmlns="http://www.w3.org/2000/svg"

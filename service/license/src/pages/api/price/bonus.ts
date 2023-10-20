@@ -8,13 +8,13 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (!payload) {
       return jsonRes(resp, { code: 401, message: 'token verify error' });
     }
-
     return jsonRes(resp, {
       code: 200,
       data: {
         ratios: '10,15,20,25,30',
         steps: '299,599,1999,4999,19999'
-      }
+      },
+      message: 'asdasdasdasd'
     });
   } catch (error) {
     console.log(error);

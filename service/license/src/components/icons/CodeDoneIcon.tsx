@@ -3,8 +3,8 @@ export const CodeDoneIcon = (props: IconProps) => {
   return (
     <Icon
       xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="17"
+      width="16px"
+      height="17px"
       fill="#219BF4"
       viewBox="0 0 16 17"
     >

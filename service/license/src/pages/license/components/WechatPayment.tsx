@@ -37,7 +37,7 @@ export default function WechatPayment(props: {
             style={{ margin: '0 auto' }}
             imageSettings={{
               // 二维码中间的logo图片
-              src: 'icons/pay_wechat.svg',
+              src: 'images/pay_wechat.svg',
               height: 40,
               width: 40,
               excavate: true // 中间图片所在的位置是否镂空

@@ -104,9 +104,16 @@ export default function SigninComponent() {
       overflow={'hidden'}
       w="100vw"
       h="100vh"
-      backgroundImage={'url(/images/background.svg)'}
+      backgroundImage={'url(/images/bg.svg)'}
       backgroundRepeat={'no-repeat'}
       backgroundSize={'cover'}
+      backgroundAttachment={'fixed'}
+      min-width="100%"
+      // /min-height="100%"
+      // top={0}
+      // left={0}
+      // right={0}
+      // bottom={0}
     >
       <Head>
         <title>sealos Cloud</title>
@@ -118,7 +125,8 @@ export default function SigninComponent() {
         </Box>
         <Flex
           p="30px 48px"
-          boxShadow="0px 15px 20px rgba(0, 0, 0, 0.2)"
+          background={'rgba(255, 255, 255, 0.20)'}
+          boxShadow="0px 15px 20px 0px rgba(0, 0, 0, 0.20)"
           backdropFilter="blur(100px)"
           borderRadius="12px"
           flexDir="column"
