@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	saltKey = os.Getenv("PASSWORD_SALT_KEY")
+	saltKey = os.Getenv("PASSWORD_SALT")
 )
 
 func hashPassword(password string) string {
