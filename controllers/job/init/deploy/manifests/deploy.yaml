@@ -39,7 +39,7 @@ spec:
               secretKeyRef:
                 name: desktop-frontend-secret
                 key: mongodb_uri
-          - name: PASSWORD_SALT_KEY
+          - name: PASSWORD_SALT
             valueFrom:
               secretKeyRef:
                 name: desktop-frontend-secret

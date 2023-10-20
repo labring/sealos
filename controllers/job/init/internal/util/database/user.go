@@ -56,11 +56,7 @@ func PresetAdminUser(ctx context.Context) error {
 }
 
 func newAdminUser() (*User, error) {
-	hashedPassword, err := hashPassword(DefaultAdminPassword)
-	if err != nil {
-		return nil, err
-	}
-	return newUser(uuid.New().String(), DefaultAdminUserName, DefaultAdminUserName, hashedPassword, controller.DefaultAdminUserName), nil
+	return newUser(uuid.New().String(), DefaultAdminUserName, DefaultAdminUserName, hashPassword(DefaultAdminPassword), controller.DefaultAdminUserName), nil
 }
 
 func newUser(uid, name, passwordUser, hashedPassword, k8sUser string) *User {
