@@ -50,8 +50,17 @@ func NewKubeadmConfig() *KubeadmConfig {
 }
 
 func (k *KubeadmConfig) GetComponents() []any {
+	converted, err := k.ToConvertedKubeadmConfig()
+	if err != nil {
+		logger.Error("failed to convert kubeadmConfig: %v", err)
+		return nil
+	}
 	return []any{
-		k.InitConfiguration, k.ClusterConfiguration, k.JoinConfiguration, k.KubeProxyConfiguration, k.KubeletConfiguration,
+		converted.InitConfiguration,
+		converted.ClusterConfiguration,
+		converted.JoinConfiguration,
+		converted.KubeProxyConfiguration,
+		converted.KubeletConfiguration,
 	}
 }
 
@@ -146,8 +155,7 @@ func (k *KubeadmConfig) ToConvertedKubeadmConfig() (*ConvertedKubeadmConfig, err
 		conversion.InitConfiguration = v1beta2InitConfiguration
 		conversion.ClusterConfiguration = v1beta2ClusterConfiguration
 		conversion.JoinConfiguration = v1beta2JoinConfiguration
-
-	case KubeadmV1beta3:
+	case KubeadmV1beta3, "": // defaults to v1beta3
 		var v1beta3InitConfiguration v1beta3.InitConfiguration
 		var v1beta3ClusterConfiguration v1beta3.ClusterConfiguration
 		var v1beta3JoinConfiguration v1beta3.JoinConfiguration
@@ -169,7 +177,7 @@ func (k *KubeadmConfig) ToConvertedKubeadmConfig() (*ConvertedKubeadmConfig, err
 		conversion.InitConfiguration = v1beta3InitConfiguration
 		conversion.ClusterConfiguration = v1beta3ClusterConfiguration
 		conversion.JoinConfiguration = v1beta3JoinConfiguration
-	default:
+	default: // unknown version
 		conversion.JoinConfiguration = k.JoinConfiguration
 		conversion.InitConfiguration = k.InitConfiguration
 		conversion.ClusterConfiguration = k.ClusterConfiguration
