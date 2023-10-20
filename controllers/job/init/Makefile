@@ -50,7 +50,7 @@ vet: ## Run go vet against code.
 CONTROLLER_PKG=github.com/labring/sealos/controllers/pkg
 CONTROLLER_LICENSE=github.com/labring/sealos/controllers/license/internal/controller
 build: fmt vet ## Build manager binary.
-	CGO_ENABLED=0 GOOS=linux  go build -o bin/preset-${GOARCH} cmd/preset/main.go && chmod +x bin/preset-${GOARCH}
+	CGO_ENABLED=0 GOOS=linux  go build -o bin/preset-${GOARCH} cmd/preset/main.go && chmod +x bin/preset-${GOARCH} && cp bin/preset-${GOARCH} bin/manager
 
 
 .PHONY: run
