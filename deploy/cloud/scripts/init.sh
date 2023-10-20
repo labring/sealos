@@ -169,7 +169,14 @@ function resource_exists {
 function sealos_authorize {
   sealos run tars/job-init.tar
 
-  # TODO apply license after job-init finished.
+  # wait for admin user create
+  echo "Waiting for admin user create"
+
+  while [ -z "$(kubectl get ns -n ns-admin 2>/dev/null)" ]; do
+    sleep 1
+  done
+
+  kubectl apply -f manifests/free-license.yaml
 }
 
 
