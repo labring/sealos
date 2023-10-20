@@ -17,9 +17,8 @@ func main() {
 	if err := controller.PresetAdminUser(ctx); err != nil {
 		logger.Error(err, "preset admin user in kubernetes failed")
 		os.Exit(1)
-	} else {
-		logger.Info("preset admin user in kubernetes successfully")
 	}
+	logger.Info("preset admin user in kubernetes successfully")
 
 	if err := database.PresetAdminUser(ctx); err != nil {
 		if errors.Is(err, utilserror.ErrAdminExists) {
@@ -28,7 +27,6 @@ func main() {
 			logger.Error(err, "preset admin user in database failed")
 			os.Exit(1)
 		}
-	} else {
-		logger.Info("preset admin user in database successfully")
 	}
+	logger.Info("preset admin user in database successfully")
 }

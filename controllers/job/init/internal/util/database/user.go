@@ -3,8 +3,9 @@ package database
 import (
 	"context"
 	"fmt"
-	"github.com/labring/sealos/controllers/job/init/internal/util/errors"
 	"time"
+
+	"github.com/labring/sealos/controllers/job/init/internal/util/errors"
 
 	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/job/init/internal/util/controller"
