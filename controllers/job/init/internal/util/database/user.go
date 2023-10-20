@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"github.com/labring/sealos/controllers/job/init/internal/util/errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -43,7 +44,7 @@ func PresetAdminUser(ctx context.Context) error {
 		return err
 	}
 	if exist {
-		return fmt.Errorf("admin user already exists")
+		return errors.ErrAdminExists
 	}
 
 	// insert root user
