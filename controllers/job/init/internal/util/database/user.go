@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
-
 	"github.com/labring/sealos/controllers/job/init/internal/util/controller"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
 )
@@ -31,9 +29,7 @@ func PresetAdminUser(ctx context.Context) error {
 		}
 	}()
 
-	// get collection
-	cs, _ := connstring.ParseAndValidate(mongoURI)
-	collection := client.Database(cs.Database).Collection(mongoUserCollection)
+	collection := client.Database(mongoUserDatabase).Collection(mongoUserCollection)
 
 	// create admin user
 	user, err := newAdminUser()

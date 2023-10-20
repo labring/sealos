@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 	"os"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -9,6 +10,7 @@ import (
 )
 
 var (
+	mongoUserDatabase   string
 	mongoUserCollection string
 	mongoURI            string
 )
@@ -18,6 +20,10 @@ func init() {
 	mongoUserCollection = os.Getenv("MONGO_USER_COL")
 	if mongoUserCollection == "" {
 		mongoUserCollection = "user"
+	}
+	cs, _ := connstring.ParseAndValidate(mongoURI)
+	if cs.Database == "" {
+		mongoUserDatabase = "sealos-auth"
 	}
 }
 
