@@ -194,7 +194,7 @@ class MasterSDK {
         messageId: data.messageId,
         success: true,
         data: {
-          lng: getCookie('NEXT_LOCALE') || 'en'
+          lng: getCookie('NEXT_LOCALE') || 'zh'
         }
       });
     } else {

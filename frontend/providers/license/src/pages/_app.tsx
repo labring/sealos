@@ -121,7 +121,7 @@ function App({ Component, pageProps }: AppProps) {
   }, [router.pathname]);
 
   useEffect(() => {
-    const lang = getLangStore() || 'en';
+    const lang = getLangStore() || 'zh';
     i18n?.changeLanguage?.(lang);
   }, [refresh, router.asPath]);
 
