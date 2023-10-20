@@ -2,8 +2,9 @@ package claims
 
 import (
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/labring/sealos/controllers/license/api/v1"
 	"github.com/mitchellh/mapstructure"
+
+	v1 "github.com/labring/sealos/controllers/license/api/v1"
 )
 
 type Claims struct {

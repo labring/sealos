@@ -1,10 +1,12 @@
 package license
 
 import (
+	"testing"
+
 	"github.com/golang-jwt/jwt/v4"
+
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	utilclaims "github.com/labring/sealos/controllers/license/internal/util/claims"
-	"testing"
 )
 
 func TestIsLicenseValid(t *testing.T) {

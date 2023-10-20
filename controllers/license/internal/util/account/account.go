@@ -47,10 +47,7 @@ func Recharge(ctx context.Context, client client.Client, license *licensev1.Lice
 	if err := crypto.RechargeBalance(account.Status.EncryptBalance, data.Amount*count.CurrencyUnit); err != nil {
 		return err
 	}
-	if err := client.Status().Update(ctx, account); err != nil {
-		return err
-	}
-	return nil
+	return client.Status().Update(ctx, account)
 }
 
 func GetNameByNameSpace(ns string) string {

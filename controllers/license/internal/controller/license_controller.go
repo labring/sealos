@@ -18,14 +18,16 @@ package controller
 
 import (
 	"context"
-	accountutil "github.com/labring/sealos/controllers/license/internal/util/account"
-	"github.com/labring/sealos/controllers/license/internal/util/database"
-	"github.com/labring/sealos/controllers/license/internal/util/key"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 
 	"github.com/go-logr/logr"
+
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
+	accountutil "github.com/labring/sealos/controllers/license/internal/util/account"
+	"github.com/labring/sealos/controllers/license/internal/util/database"
+	"github.com/labring/sealos/controllers/license/internal/util/key"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"

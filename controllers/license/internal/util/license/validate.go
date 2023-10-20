@@ -2,6 +2,7 @@ package license
 
 import (
 	"encoding/base64"
+
 	"github.com/golang-jwt/jwt/v4"
 
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
@@ -37,7 +38,7 @@ func GetClaims(license *licensev1.License) (*utilclaims.Claims, error) {
 	}
 	claims, ok := token.Claims.(*utilclaims.Claims)
 	if !ok {
-		return nil, errors.ClaimsConventError
+		return nil, errors.ErrClaimsConvent
 	}
 	return claims, nil
 }

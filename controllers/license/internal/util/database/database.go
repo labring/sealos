@@ -56,5 +56,4 @@ func (db *DataBase) Disconnect(ctx context.Context) {
 		logger.Error(err, "disconnect from database failed")
 		return
 	}
-	return
 }
