@@ -6,9 +6,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 
 	"github.com/labring/sealos/controllers/job/init/internal/util/controller"
+	"github.com/labring/sealos/controllers/pkg/utils/logger"
 )
 
 func PresetAdminUser(ctx context.Context) error {
@@ -17,12 +19,24 @@ func PresetAdminUser(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer client.Disconnect(ctx)
+	defer func(client *mongo.Client, ctx context.Context) {
+		err := client.Disconnect(ctx)
+		if err != nil {
+			logger.Error(err, "disconnect mongodb client failed")
+			return
+		}
+	}(client, ctx)
 
-	cs, _ := connstring.ParseAndValidate(mongoUri)
+	// get collection
+	cs, _ := connstring.ParseAndValidate(mongoURI)
 	collection := client.Database(cs.Database).Collection(mongoUserCollection)
 
+	// create admin user
 	user, err := newAdminUser()
+	if err != nil {
+		return err
+	}
+
 	// check if the user already exists
 	exist, err := user.IsExists(ctx, collection)
 	if err != nil {

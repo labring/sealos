@@ -10,11 +10,11 @@ import (
 
 var (
 	mongoUserCollection string
-	mongoUri            string
+	mongoURI            string
 )
 
 func init() {
-	mongoUri = os.Getenv("MONGO_URI")
+	mongoURI = os.Getenv("MONGO_URI")
 	mongoUserCollection = os.Getenv("MONGO_USER_COL")
 	if mongoUserCollection == "" {
 		mongoUserCollection = "user"
@@ -22,7 +22,7 @@ func init() {
 }
 
 func InitMongoDB(ctx context.Context) (*mongo.Client, error) {
-	client, err := mongo.Connect(ctx, mongoOptions.Client().ApplyURI(mongoUri))
+	client, err := mongo.Connect(ctx, mongoOptions.Client().ApplyURI(mongoURI))
 	if err != nil || client.Ping(ctx, nil) != nil {
 		return nil, err
 	}

@@ -162,30 +162,14 @@ function sealos_run_frontend {
 }
 
 function resource_exists {
-    kubectl get $1 >/dev/null 2>&1
+  kubectl get $1 >/dev/null 2>&1
 }
 
 
 function sealos_authorize {
-    # TODO mv this to job-init
-    echo "start to authorize sealos"
-    echo "create admin-user"
-    # create admin-user
-    kubectl apply -f manifests/admin-user.yaml
-    # wait for admin-user ready
-    echo "waiting for admin-user generated, this may take a few minutes"
-    while true; do
-        if resource_exists "namespace ns-admin" && resource_exists "account admin -n sealos-system" && resource_exists "user admin"; then
-            break
-        fi
-        sleep 10
-    done
-    # issue license for admin-user
-    echo "license issue for admin-user"
-    kubectl apply -f manifests/free-license.yaml
+  sealos run tars/job-init.tar
 
-    # TODO uncomment this after job-init finished
-    # sealos run tars/job-init.tar
+  # TODO apply license after job-init finished.
 }
 
 

@@ -2,7 +2,9 @@ package controller
 
 import (
 	"context"
+
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
