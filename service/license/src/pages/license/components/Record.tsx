@@ -8,6 +8,7 @@ import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import Pagination from './Pagination';
 import CurrencySymbol from './CurrencySymbol';
+import { json2License } from '@/utils/json2Yaml';
 
 export default function History() {
   const { t } = useTranslation();
@@ -20,11 +21,9 @@ export default function History() {
       pageSize: pageSize
     })
   );
-  console.log(data);
 
   const downloadToken = (token: string) => {
-    const result = Buffer.from(token, 'binary').toString('base64');
-    download('token.txt', result);
+    download('token.yaml', json2License(token));
   };
 
   return (
