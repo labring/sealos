@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"errors"
-
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -27,11 +26,14 @@ const (
 	DefaultAdminPassword = "sealos2023"
 )
 
-func (u *User) IsExists(ctx context.Context, collection *mongo.Collection) (bool, error) {
+func (u *User) Exist(ctx context.Context, collection *mongo.Collection) (bool, error) {
 	filter := &bson.M{"password_user": u.PasswordUser}
 	user := &User{}
 	err := collection.FindOne(ctx, filter).Decode(user)
-	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return false, nil
+		}
 		return false, err
 	}
 	return true, nil

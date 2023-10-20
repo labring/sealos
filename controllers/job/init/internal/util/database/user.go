@@ -38,7 +38,7 @@ func PresetAdminUser(ctx context.Context) error {
 	}
 
 	// check if the user already exists
-	exist, err := user.IsExists(ctx, collection)
+	exist, err := user.Exist(ctx, collection)
 	if err != nil {
 		return err
 	}
