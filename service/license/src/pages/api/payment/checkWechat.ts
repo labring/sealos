@@ -1,6 +1,5 @@
 import { authSession } from '@/services/backend/auth';
-import { createLicenseRecord, generateLicenseToken } from '@/services/backend/db/license';
-import { getPaymentByID, updatePaymentStatus } from '@/services/backend/db/payment';
+import { findRecentNopayOrder, updatePaymentAndIssueLicense } from '@/services/backend/db/payment';
 import { jsonRes } from '@/services/backend/response';
 import { getSealosPay } from '@/services/pay';
 import { PaymentResult, PaymentStatus } from '@/types';
@@ -8,17 +7,22 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { orderID } = req.body as { orderID: string };
     const userInfo = await authSession(req.headers);
     if (!userInfo) {
       return jsonRes(res, { code: 401, message: 'token verify error' });
     }
+
     const { sealosPayUrl, sealosPayID, sealosPayKey } = getSealosPay();
     if (!sealosPayUrl) {
       return jsonRes(res, { code: 500, message: 'sealos payment has not been activated' });
     }
 
-    const payment = await getPaymentByID({ uid: userInfo.uid, orderID: orderID });
+    const payment = await findRecentNopayOrder({
+      uid: userInfo.uid,
+      payMethod: 'wechat',
+      status: PaymentStatus.PaymentNotPaid
+    });
+
     if (!payment) {
       return jsonRes(res, { code: 400, message: 'No order found' });
     }
@@ -35,6 +39,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         sessionID: payment?.sessionID
       })
     }).then((res) => res.json());
+
+    if (result.status === PaymentStatus.PaymentSuccess) {
+      await updatePaymentAndIssueLicense({
+        uid: userInfo.uid,
+        amount: payment.amount,
+        quota: payment.amount,
+        payMethod: payment.payMethod,
+        // pay status
+        orderID: payment?.orderID,
+        status: result.status
+      });
+    }
 
     return jsonRes(res, {
       data: result

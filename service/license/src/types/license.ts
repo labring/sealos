@@ -12,6 +12,8 @@ export type LicenseDB = {
   iat: number; // 签发日期
   exp: number; // 有效期
   amount: number; // 消费金额
+  createdAt: Date; // Creation timestamp
+  updatedAt: Date; // Modification timestamp
 };
 
 export type LicenseRecordPayload = {

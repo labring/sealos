@@ -106,6 +106,8 @@ request.interceptors.response.use(
     return response.data;
   },
   (error: any) => {
+    console.log(error);
+
     if (axios.isCancel(error)) {
       return Promise.reject('cancel request' + String(error));
     } else {

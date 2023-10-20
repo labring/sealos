@@ -20,6 +20,7 @@ export default function History() {
       pageSize: pageSize
     })
   );
+  console.log(data);
 
   const downloadToken = (token: string) => {
     const result = Buffer.from(token, 'binary').toString('base64');

@@ -6,3 +6,5 @@ export const createPayment = (payload: PaymentParams) =>
 
 export const getPaymentResult = (payload: { orderID: string }) =>
   POST<PaymentResult>('/api/payment/result', payload);
+
+export const checkWechatPay = () => GET<PaymentResult>('/api/payment/checkWechat');

@@ -38,7 +38,9 @@ export async function createUser({
     avatar_url,
     name,
     created_time: new Date().toISOString(),
-    [provider]: id
+    [provider]: id,
+    createdAt: new Date(),
+    updatedAt: new Date()
   };
 
   if (password) {

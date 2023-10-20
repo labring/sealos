@@ -1,4 +1,4 @@
-import { createPayment, getPaymentResult } from '@/api/payment';
+import { checkWechatPay, createPayment, getPaymentResult } from '@/api/payment';
 import { getSystemEnv } from '@/api/system';
 import { StripeIcon, WechatIcon } from '@/components/icons';
 import useBonusBox from '@/hooks/useBonusBox';
@@ -106,11 +106,11 @@ export default function RechargeComponent() {
 
   useQuery(['getLicenseResult', orderID], () => getPaymentResult({ orderID }), {
     refetchInterval: complete === 2 ? 3 * 1000 : false,
-    enabled: complete === 2 && orderID !== undefined,
+    enabled: complete === 2 && !!orderID,
     cacheTime: 0,
     staleTime: 0,
     onSuccess(data) {
-      console.log(data, 'xxxxxxxx');
+      console.log(data, 'getLicenseResult');
       if (data.status === PaymentStatus.PaymentSuccess) {
         onClosePayment();
         toast({
@@ -133,11 +133,33 @@ export default function RechargeComponent() {
     }
   });
 
+  useQuery(['checkWechatPay'], () => checkWechatPay(), {
+    onSuccess(data) {
+      console.log(data, 'checkWechatPay');
+      if (data.status === PaymentStatus.PaymentSuccess) {
+        toast({
+          status: 'success',
+          title: t('License issued successfully'), // 这里改为license 签发成功
+          isClosable: true,
+          duration: 9000,
+          position: 'top'
+        });
+      }
+    }
+  });
+
   useEffect(() => {
     const { stripeState, orderID } = router.query;
     if (stripeState === 'success') {
       setComplete(2);
       setOrderID(orderID as string);
+      const clearQuery = () => {
+        router.replace({
+          pathname: '/license',
+          query: null
+        });
+      };
+      setTimeout(clearQuery, 0);
     } else if (stripeState === 'error') {
       toast({
         status: 'error',
@@ -148,7 +170,8 @@ export default function RechargeComponent() {
       });
       onClosePayment();
     }
-  }, [onClosePayment, router.query, t, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Flex

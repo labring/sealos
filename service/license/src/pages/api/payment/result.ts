@@ -4,7 +4,11 @@ import {
   generateLicenseToken,
   hasIssuedLicense
 } from '@/services/backend/db/license';
-import { getPaymentByID, updatePaymentStatus } from '@/services/backend/db/payment';
+import {
+  getPaymentByID,
+  updatePaymentAndIssueLicense,
+  updatePaymentStatus
+} from '@/services/backend/db/payment';
 import { jsonRes } from '@/services/backend/response';
 import { getSealosPay } from '@/services/pay';
 import { PaymentResult, PaymentStatus } from '@/types';
@@ -26,7 +30,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const payment = await getPaymentByID({ uid: userInfo.uid, orderID: orderID });
-    console.log(payment);
 
     if (!payment) {
       return jsonRes(res, { code: 400, message: 'No order found' });
@@ -50,26 +53,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }).then((res) => res.json());
 
     if (result.status === PaymentStatus.PaymentSuccess) {
-      await updatePaymentStatus({
-        uid: userInfo.uid,
-        orderID: orderID,
-        status: result.status
-      });
-      const _token = generateLicenseToken({ type: 'Account', data: { amount: payment.amount } });
-      const record = {
+      await updatePaymentAndIssueLicense({
         uid: userInfo.uid,
         amount: payment.amount,
-        token: _token,
-        orderID: orderID,
         quota: payment.amount,
-        payMethod: payment.payMethod
-      };
-      await createLicenseRecord(record);
-    }
-
-    if (result.status === PaymentStatus.PaymentProcessing) {
-      await updatePaymentStatus({
-        uid: userInfo.uid,
+        payMethod: payment.payMethod,
+        // pay status
         orderID: orderID,
         status: result.status
       });

@@ -1,6 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
-
 const APP_ID = process.env.WECHAT_CLIENT_ID!;
 const APP_SECRET = process.env.WECHAT_CLIENT_SECRET!;
 import { TWechatToken, TWechatUser } from '@/types/user';

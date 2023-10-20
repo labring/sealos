@@ -78,6 +78,8 @@ export type User = {
   name: string;
   created_time: string;
   password?: string;
+  createdAt: Date; // Creation timestamp
+  updatedAt: Date; // Modification timestamp
 } & UserSignInType;
 
 export type UserSignInType = { [key in AuthProvider]?: string };

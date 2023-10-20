@@ -32,7 +32,9 @@ export async function createLicenseRecord({
     },
     iat: now, // Store the current timestamp as iat
     exp: now + oneDayInSeconds, // Set expiration to one day from now (in seconds)
-    amount: amount
+    amount: amount,
+    createdAt: new Date(),
+    updatedAt: new Date()
   };
 
   const result = await collection.insertOne(record);
