@@ -23,6 +23,7 @@ metadata:
   name: init-job
   namespace: sealos
 spec:
+  ttlSecondsAfterFinished: 86400
   template:
     spec:
       serviceAccountName: sealos-job-init-sa
