@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 
 	"github.com/labring/sealos/controllers/job/init/internal/util/controller"
@@ -19,13 +18,18 @@ func PresetAdminUser(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer func(client *mongo.Client, ctx context.Context) {
+
+	defer func() {
+		if client == nil {
+			logger.Error(fmt.Errorf("mongodb client is nil"), "disconnect mongodb client failed")
+			return
+		}
 		err := client.Disconnect(ctx)
 		if err != nil {
 			logger.Error(err, "disconnect mongodb client failed")
 			return
 		}
-	}(client, ctx)
+	}()
 
 	// get collection
 	cs, _ := connstring.ParseAndValidate(mongoURI)

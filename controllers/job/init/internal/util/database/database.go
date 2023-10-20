@@ -23,7 +23,10 @@ func init() {
 
 func InitMongoDB(ctx context.Context) (*mongo.Client, error) {
 	client, err := mongo.Connect(ctx, mongoOptions.Client().ApplyURI(mongoURI))
-	if err != nil || client.Ping(ctx, nil) != nil {
+	if err != nil {
+		return nil, err
+	}
+	if err := client.Ping(ctx, nil); err != nil {
 		return nil, err
 	}
 	return client, nil
