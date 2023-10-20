@@ -2,6 +2,9 @@ package controller
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 
@@ -15,8 +18,17 @@ const (
 	DefaultAdminUserName = "admin"
 )
 
+var (
+	scheme = runtime.NewScheme()
+)
+
+func init() {
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(userv1.AddToScheme(scheme))
+}
+
 func newKubernetesClient() (client.Client, error) {
-	c, err := client.New(ctrl.GetConfigOrDie(), client.Options{})
+	c, err := client.New(ctrl.GetConfigOrDie(), client.Options{Scheme: scheme})
 	if err != nil {
 		return nil, err
 	}
