@@ -31,6 +31,8 @@ spec:
           image: ghcr.io/labring/sealos-pay-service:latest
           imagePullPolicy: Always
           name: pay-service
+          securityContext:
+            allowPrivilegeEscalation: false
           ports:
             - containerPort: 2333
               name: pay-service
