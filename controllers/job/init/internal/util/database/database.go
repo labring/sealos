@@ -24,6 +24,8 @@ func init() {
 	cs, _ := connstring.ParseAndValidate(mongoURI)
 	if cs.Database == "" {
 		mongoUserDatabase = "sealos-auth"
+	} else {
+		mongoUserDatabase = cs.Database
 	}
 }
 
