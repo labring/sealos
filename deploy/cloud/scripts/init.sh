@@ -172,7 +172,7 @@ function sealos_authorize {
   # wait for admin user create
   echo "Waiting for admin user create"
 
-  while [ -z "$(kubectl get ns -n ns-admin 2>/dev/null)" ]; do
+  while [ -z "$(kubectl get ns ns-admin 2>/dev/null)" ]; do
     sleep 1
   done
 
