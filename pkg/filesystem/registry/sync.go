@@ -147,7 +147,7 @@ func getRegistryServeCommand(pathResolver constants.PathResolver, port string) s
 }
 
 func syncViaSSH(_ context.Context, s *impl, target string, localDir string) error {
-	return ssh.CopyDir(s.execer, target, localDir, s.pathResolver.RootFSPath(), nil)
+	return ssh.CopyDir(s.execer, target, localDir, s.pathResolver.RootFSRegistryPath(), nil)
 }
 
 func syncViaHTTP(ctx context.Context, target string, localDir string) error {
