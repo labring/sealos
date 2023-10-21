@@ -16,6 +16,7 @@ import {
   TabIndicator,
   TabList,
   Tabs,
+  Image,
   useDisclosure
 } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
@@ -104,17 +105,25 @@ export default function SigninComponent() {
       overflow={'hidden'}
       w="100vw"
       h="100vh"
-      backgroundImage={'url(/images/bg.svg)'}
-      backgroundRepeat={'no-repeat'}
-      backgroundSize={'cover'}
-      backgroundAttachment={'fixed'}
-      min-width="100%"
+      // backgroundImage={'url(/images/bg.svg)'}
+      // backgroundRepeat={'no-repeat'}
+      // backgroundSize={'cover'}
+      // backgroundAttachment={'fixed'}
+      // min-width="100%"
       // /min-height="100%"
       // top={0}
       // left={0}
       // right={0}
       // bottom={0}
     >
+      <Image
+        alt="bg"
+        src="/images/bg.svg"
+        zIndex={-99}
+        position={'fixed'}
+        w="100vw"
+        h="100vh"
+      ></Image>
       <Head>
         <title>sealos Cloud</title>
         <meta name="description" content="sealos cloud dashboard" />
