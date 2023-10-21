@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/labring/sealos/controllers/job/init/internal/util/errors"
-
-	"github.com/google/uuid"
+	"github.com/labring/sealos/controllers/job/init/internal/util/common"
 	"github.com/labring/sealos/controllers/job/init/internal/util/controller"
+	"github.com/labring/sealos/controllers/job/init/internal/util/errors"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
 )
 
@@ -56,7 +55,7 @@ func PresetAdminUser(ctx context.Context) error {
 }
 
 func newAdminUser() (*User, error) {
-	return newUser(uuid.New().String(), DefaultAdminUserName, DefaultAdminUserName, hashPassword(DefaultAdminPassword), controller.DefaultAdminUserName), nil
+	return newUser(common.AdminUID(), DefaultAdminUserName, DefaultAdminUserName, hashPassword(DefaultAdminPassword), controller.DefaultAdminUserName), nil
 }
 
 func newUser(uid, name, passwordUser, hashedPassword, k8sUser string) *User {
