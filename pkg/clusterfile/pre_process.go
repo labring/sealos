@@ -17,6 +17,8 @@ package clusterfile
 import (
 	"bytes"
 	"errors"
+	"os"
+	"strings"
 
 	"helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/getter"
@@ -46,6 +48,13 @@ func (c *ClusterFile) Process() (err error) {
 	}
 	c.once.Do(func() {
 		err = func() error {
+			for i := range c.customEnvs {
+				kv := strings.SplitN(c.customEnvs[i], "=", 2)
+				if len(kv) == 2 {
+					logger.Debug("set env: %s=%s", kv[0], kv[1])
+					_ = os.Setenv(kv[0], kv[1])
+				}
+			}
 			clusterFileData, err := c.loadClusterFile()
 			if err != nil {
 				return err
