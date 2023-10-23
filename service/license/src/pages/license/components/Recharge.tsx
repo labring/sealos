@@ -135,7 +135,6 @@ export default function RechargeComponent() {
 
   useQuery(['checkWechatPay'], () => checkWechatPay(), {
     onSuccess(data) {
-      console.log(data, 'checkWechatPay');
       if (data.status === PaymentStatus.PaymentSuccess) {
         toast({
           status: 'success',

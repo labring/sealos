@@ -19,14 +19,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const result: PaymentData = await fetch(`${sealosPayUrl}/v1alpha1/pay/session`, {
       method: 'POST',
       body: JSON.stringify({
-        appID: 45141910007488120,
-        sign: '076f82f8e996d7',
+        appID: +sealosPayID,
+        sign: sealosPayKey,
         amount: amount,
         currency: currency,
         user: userInfo.uid,
         payMethod: payMethod
       })
     }).then((res) => res.json());
+    console.log(result, 'PaymentData');
 
     let payRecord: PaymentDB = {
       ...result,

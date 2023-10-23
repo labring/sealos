@@ -34,8 +34,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const result: PaymentResult = await fetch(`${sealosPayUrl}/v1alpha1/pay/status`, {
       method: 'POST',
       body: JSON.stringify({
-        appID: 45141910007488120,
-        sign: '076f82f8e996d7',
+        appID: +sealosPayID,
+        sign: sealosPayKey,
         orderID: payment?.orderID,
         payMethod: payment?.payMethod,
         tradeNO: payment?.tradeNO,
