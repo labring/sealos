@@ -32,8 +32,13 @@
   background: rgba(0, 0, 0, 0.2);
   padding: 0 14px;
   margin-left: 24px;
+  position: relative;
+  width: 120px;
+  height: 32px;
   svg {
-    transform: rotate(-167.494deg);
+    position: absolute;
+    right: -8px;
+    bottom: -8px;
   }
 }
 
@@ -64,6 +69,16 @@
       font-weight: 700;
       line-height: 140%;
       margin-left: 8px;
+    }
+    
+    .sealos-banner-btn-close{
+      cursor: pointer;
+      fill: #fff;
+      width: 32px;
+      height: 32px;
+      position: absolute;
+      right: 20px;
+      // margin-left: auto;
     }
   }
 }
