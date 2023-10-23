@@ -26,6 +26,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import sealosTitle from 'public/images/sealos-title.png';
 import { useEffect, useMemo, useState } from 'react';
+import Background from './background';
 
 export default function SigninComponent() {
   const { data: platformEnv } = useQuery(['getPlatformEnv'], getSystemEnv);
@@ -116,14 +117,7 @@ export default function SigninComponent() {
       // right={0}
       // bottom={0}
     >
-      <Image
-        alt="bg"
-        src="/images/bg.svg"
-        zIndex={-99}
-        position={'fixed'}
-        w="100vw"
-        h="100vh"
-      ></Image>
+      <Background />
       <Head>
         <title>sealos Cloud</title>
         <meta name="description" content="sealos cloud dashboard" />

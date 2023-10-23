@@ -12,6 +12,7 @@ export type LicenseDB = {
   iat: number; // 签发日期
   exp: number; // 有效期
   amount: number; // 消费金额
+  type: LicenseType; // license type
   createdAt: Date; // Creation timestamp
   updatedAt: Date; // Modification timestamp
 };
@@ -23,6 +24,7 @@ export type LicenseRecordPayload = {
   payMethod: TPayMethod;
   quota: number; // 额度
   amount: number; // 重置金额
+  type: LicenseType;
 };
 
 export type LicensePayload = {
@@ -30,12 +32,15 @@ export type LicensePayload = {
   orderID: string;
   quota: number;
   payMethod: TPayMethod;
+  type: LicenseType;
 };
 
 // new
 export type LicenseToken = {
-  type: 'Account' | 'Cluster';
+  type: LicenseType;
   data: {
     amount: number;
   };
 };
+
+export type LicenseType = 'Account' | 'Cluster';

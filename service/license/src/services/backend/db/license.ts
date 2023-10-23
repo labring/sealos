@@ -15,7 +15,8 @@ export async function createLicenseRecord({
   token,
   orderID,
   quota,
-  payMethod
+  payMethod,
+  type
 }: LicenseRecordPayload) {
   const collection = await connectLicenseRecordCollection();
 
@@ -33,6 +34,7 @@ export async function createLicenseRecord({
     iat: now, // Store the current timestamp as iat
     exp: now + oneDayInSeconds, // Set expiration to one day from now (in seconds)
     amount: amount,
+    type: type,
     createdAt: new Date(),
     updatedAt: new Date()
   };

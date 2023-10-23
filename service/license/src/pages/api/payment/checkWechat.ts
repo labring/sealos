@@ -48,7 +48,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         payMethod: payment.payMethod,
         // pay status
         orderID: payment?.orderID,
-        status: result.status
+        status: result.status,
+        type: 'Account'
       });
     }
 

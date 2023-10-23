@@ -1,4 +1,4 @@
-import { LicenseRecordPayload, PaymentDB, PaymentStatus, TPayMethod } from '@/types';
+import { LicenseRecordPayload, LicenseType, PaymentDB, PaymentStatus, TPayMethod } from '@/types';
 import { connectToDatabase } from './mongodb';
 import { createLicenseRecord, generateLicenseToken } from './license';
 
@@ -57,7 +57,8 @@ export async function updatePaymentAndIssueLicense({
   status,
   amount,
   quota,
-  payMethod
+  payMethod,
+  type
 }: {
   uid: string;
   orderID: string;
@@ -65,6 +66,7 @@ export async function updatePaymentAndIssueLicense({
   amount: number;
   quota: number;
   payMethod: TPayMethod;
+  type: LicenseType;
 }) {
   const db = await connectToDatabase();
   const session = db.startSession();
@@ -85,15 +87,18 @@ export async function updatePaymentAndIssueLicense({
     });
 
     // 在事务中执行生成许可证记录操作
-    const _token = generateLicenseToken({ type: 'Account', data: { amount: amount } });
+    const _token = generateLicenseToken({ type: type, data: { amount: amount } });
     const record = {
       uid: uid,
       amount: amount,
       token: _token,
       orderID: orderID,
       quota: quota,
-      payMethod: payMethod
+      payMethod: payMethod,
+      type: type
     };
+    console.log(record, 'record');
+
     await createLicenseRecord(record);
 
     await session.commitTransaction();

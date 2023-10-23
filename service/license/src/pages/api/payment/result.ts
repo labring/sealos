@@ -1,14 +1,6 @@
 import { authSession } from '@/services/backend/auth';
-import {
-  createLicenseRecord,
-  generateLicenseToken,
-  hasIssuedLicense
-} from '@/services/backend/db/license';
-import {
-  getPaymentByID,
-  updatePaymentAndIssueLicense,
-  updatePaymentStatus
-} from '@/services/backend/db/payment';
+import { hasIssuedLicense } from '@/services/backend/db/license';
+import { getPaymentByID, updatePaymentAndIssueLicense } from '@/services/backend/db/payment';
 import { jsonRes } from '@/services/backend/response';
 import { getSealosPay } from '@/services/pay';
 import { PaymentResult, PaymentStatus } from '@/types';
@@ -60,7 +52,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         payMethod: payment.payMethod,
         // pay status
         orderID: orderID,
-        status: result.status
+        status: result.status,
+        type: 'Account'
       });
     }
 

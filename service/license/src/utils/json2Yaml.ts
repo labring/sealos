@@ -1,15 +1,17 @@
+import { LicenseType } from '@/types';
 import yaml from 'js-yaml';
 
-export const json2License = (token: string) => {
+export const json2License = ({ token, type }: { token: string; type: LicenseType }) => {
   const license_name = crypto.randomUUID();
   const template = {
-    apiVersion: 'infostream.sealos.io/v1',
+    apiVersion: 'license.sealos.io/v1',
     kind: 'License',
     metadata: {
       name: license_name,
-      namespace: ' ns-admin'
+      namespace: 'ns-admin'
     },
     spec: {
+      type: type,
       token: token
     }
   };
