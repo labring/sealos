@@ -43,7 +43,12 @@ func newAdminUser(ctx context.Context, c client.Client) (*userv1.User, error) {
 	if err := c.Get(ctx, client.ObjectKeyFromObject(u), u); client.IgnoreNotFound(err) != nil {
 		return nil, err
 	}
-	u.SetLabels(map[string]string{"uid": common.AdminUID(), "updateTime": time.Now().Format(time.RFC3339)})
+	if u.Labels == nil {
+		u.SetLabels(map[string]string{"uid": common.AdminUID(), "updateTime": time.Now().Format(time.RFC3339)})
+	} else if u.Labels["uid"] == "" {
+		u.Labels["uid"] = common.AdminUID()
+		u.Labels["updateTime"] = time.Now().Format(time.RFC3339)
+	}
 	return u, nil
 }
 
