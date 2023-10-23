@@ -16,7 +16,6 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
   const [notificationAmount, setNotificationAmount] = useState(0);
   const accountDisclosure = useDisclosure();
   const showDisclosure = useDisclosure();
-  const switchLangDisclosure = useDisclosure();
   const userInfo = useSessionStore((state) => state.getSession());
   if (!userInfo) return null;
 
@@ -75,7 +74,7 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
         background={'rgba(244, 246, 248, 0.7)'}
         boxShadow={'0px 1.2px 2.3px rgba(0, 0, 0, 0.2)'}
       />
-      {buttonList.map((item, index) => (
+      {buttonList.map((item) => (
         <Flex
           w="36px"
           h="36px"
