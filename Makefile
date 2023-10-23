@@ -14,7 +14,7 @@
 
 # ==============================================================================
 # Build options
-
+ROOT_DIR=booter
 ROOT_PACKAGE=github.com/labring/sealos
 VERSION_PACKAGE=github.com/labring/sealos/pkg/version
 
