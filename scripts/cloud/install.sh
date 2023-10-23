@@ -241,7 +241,7 @@ pull_image() {
 
   echo -ne "\033[1F\033[2K"
   get_prompt "pull_image" $inline && echo "$image_name:$image_version"
-  sealos pull -q "${image_registry}/${image_repository}/$image_name:${image_version#v:}" >/dev/null
+  sealos pull -q "${image_registry}/${image_repository}/${image_name}:${image_version}" >/dev/null
 }
 
 collect_input() {
