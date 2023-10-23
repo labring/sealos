@@ -35,6 +35,7 @@
 
 // Important, hide header and footer
 #sealos-layout-wrap-home-page {
+  position: relative;
   .navbar.navbar--fixed-top {
     position: absolute;
     visibility: hidden;
