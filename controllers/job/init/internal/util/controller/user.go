@@ -40,16 +40,15 @@ func newKubernetesClient() (client.Client, error) {
 func newAdminUser(ctx context.Context, c client.Client) (*userv1.User, error) {
 	var u = &userv1.User{}
 	u.SetName(DefaultAdminUserName)
-	err := c.Get(ctx, client.ObjectKeyFromObject(u), u)
-	if err != nil {
-		if client.IgnoreNotFound(err) == nil {
-			// admin user exists
-			return u, nil
-		}
+	if err := c.Get(ctx, client.ObjectKeyFromObject(u), u); client.IgnoreNotFound(err) != nil {
 		return nil, err
 	}
-	// admin user not exists
-	u.SetLabels(map[string]string{"uid": common.AdminUID(), "updateTime": time.Now().Format(time.RFC3339)})
+	if u.Labels == nil {
+		u.SetLabels(map[string]string{"uid": common.AdminUID(), "updateTime": time.Now().Format(time.RFC3339)})
+	} else if u.Labels["uid"] == "" {
+		u.Labels["uid"] = common.AdminUID()
+		u.Labels["updateTime"] = time.Now().Format(time.RFC3339)
+	}
 	return u, nil
 }
 
