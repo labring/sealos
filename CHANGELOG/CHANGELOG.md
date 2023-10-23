@@ -7,6 +7,8 @@ All notable changes to this project will be documented in this file.
 - [CHANGELOG-4.4.0-beta1.md](./CHANGELOG-4.4.0-beta1.md)
 - [CHANGELOG-4.4.0-alpha3.md](./CHANGELOG-4.4.0-alpha3.md)
 - [CHANGELOG-4.4.0-alpha1.md](./CHANGELOG-4.4.0-alpha1.md)
+- [CHANGELOG-4.3.7-rc1.md](./CHANGELOG-4.3.7-rc1.md)
+- [CHANGELOG-4.3.6.md](./CHANGELOG-4.3.6.md)
 - [CHANGELOG-4.3.5.md](./CHANGELOG-4.3.5.md)
 - [CHANGELOG-4.3.4.md](./CHANGELOG-4.3.4.md)
 - [CHANGELOG-4.3.3.md](./CHANGELOG-4.3.3.md)

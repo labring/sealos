@@ -2,21 +2,16 @@ package database
 
 import (
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"os"
 )
 
 var (
-	saltKey = os.Getenv("PASSWORD_SALT_KEY")
+	saltKey = os.Getenv("PASSWORD_SALT")
 )
 
-func hashPassword(password string) (string, error) {
+func hashPassword(password string) string {
 	hash := sha256.New()
-	validSalt, err := base64.StdEncoding.DecodeString(saltKey)
-	if err != nil {
-		return "", err
-	}
-	hash.Write([]byte(password + string(validSalt)))
-	return hex.EncodeToString(hash.Sum(nil)), nil
+	hash.Write([]byte(password + saltKey))
+	return hex.EncodeToString(hash.Sum(nil))
 }
