@@ -1,4 +1,5 @@
 import SigninComponent from '@/components/signin';
+import { compareFirstLanguages } from '@/utils/tools';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 export default function SigninPage() {
@@ -6,8 +7,7 @@ export default function SigninPage() {
 }
 
 export async function getServerSideProps({ req, res, locales }: any) {
-  const lang: string = req?.headers?.['accept-language'] || 'zh';
-  const local = lang.indexOf('zh') !== -1 ? 'zh' : 'en';
+  const local = compareFirstLanguages(req?.headers?.['accept-language'] || 'zh');
   res.setHeader('Set-Cookie', `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`);
 
   const props = {

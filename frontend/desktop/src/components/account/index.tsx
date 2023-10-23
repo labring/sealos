@@ -120,7 +120,12 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureReturn 
 
   const openApp = useAppStore((s) => s.openApp);
   const installApp = useAppStore((s) => s.installedApps);
-  const { ns_uid, nsid, userId, k8s_username } = user;
+  const { ns_uid, nsid, userId, k8s_username } = user || {
+    ns_uid: '',
+    nsid: '',
+    userId: '',
+    k8s_username: ''
+  };
   const { data } = useQuery({
     queryKey: ['getAccount', { ns_uid, userId, k8s_username }],
     queryFn: () =>
