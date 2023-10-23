@@ -1,0 +1,125 @@
+.sealos-banner-box {
+  position: fixed;
+  background: linear-gradient(
+    90deg,
+    rgba(20, 46, 78, 0.3) 0%,
+    rgba(33, 115, 160, 0.3) 50%,
+    rgba(20, 46, 78, 0.3) 100%
+  );
+  backdrop-filter: blur(187px);
+  width: 100%;
+  height: 48px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  color: #fff;
+  font-family: PingFang SC;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 140%;
+  letter-spacing: 0.16px;
+  z-index: 99;
+}
+
+.sealos-banner-btn {
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0 14px;
+  margin-left: 24px;
+  svg {
+    transform: rotate(-167.494deg);
+  }
+}
+
+.sealos-banner-container {
+  width: 590px;
+  height: 444px;
+  border-radius: 16px;
+  background: #0e1a28;
+  box-shadow: 0px 8px 29px 0px rgba(187, 196, 206, 0.25);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 99;
+  .title {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px 16px 0px 0px;
+    background: rgba(122, 207, 255, 0.1);
+
+    .txt {
+      color: #fff;
+      font-family: Karmilla;
+      font-size: 24px;
+      font-style: normal;
+      font-weight: 700;
+      line-height: 140%;
+      margin-left: 8px;
+    }
+  }
+}
+
+.sealos-banner-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 117px;
+
+  color: #fff;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 140%;
+  letter-spacing: 0.28px;
+
+  .banner-title {
+    font-size: 28px;
+    margin-top: 76px;
+    margin-bottom: 30px;
+  }
+
+  .banner__subtitle {
+    font-size: 18px;
+  }
+}
+
+.btn {
+  cursor: pointer;
+  border-radius: 64px;
+  background: #479ceb;
+  display: flex;
+  padding: 12px 16px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 46px;
+  width: 100%;
+}
+
+.btn-cancel {
+  cursor: pointer;
+  margin-top: 20px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.sealos-banner-modal {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.48);
+  z-index: 99;
+}
