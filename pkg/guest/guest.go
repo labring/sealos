@@ -43,7 +43,7 @@ func NewGuestManager() (Interface, error) {
 }
 
 func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts []string) error {
-	envWrapper := env.NewEnvProcessor(cluster)
+	envGetter := env.NewEnvProcessor(cluster)
 	sshClient := ssh.NewCacheClientFromCluster(cluster, true)
 	execer, err := exec.New(sshClient)
 	if err != nil {
@@ -56,7 +56,7 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts
 			eg, ctx := errgroup.WithContext(context.Background())
 			for j := range targetHosts {
 				node := targetHosts[j]
-				envs := envWrapper.Getenv(node)
+				envs := maps.Merge(m.Env, envGetter.Getenv(node))
 				cmds := formalizeImageCommands(cluster, i, m, envs)
 				eg.Go(func() error {
 					return execer.CmdAsyncWithContext(ctx, node,
@@ -69,7 +69,7 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts
 			}
 		case m.IsApplication():
 			// on run on the first master
-			envs := envWrapper.Getenv(cluster.GetMaster0IP())
+			envs := maps.Merge(m.Env, envGetter.Getenv(cluster.GetMaster0IP()))
 			cmds := formalizeImageCommands(cluster, i, m, envs)
 			if err := execer.CmdAsync(cluster.GetMaster0IPAndPort(),
 				stringsutil.RenderShellWithEnv(strings.Join(cmds, "; "), envs),
