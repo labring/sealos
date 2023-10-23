@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sealos-job-init-sa
+  namespace: sealos
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sealos-job-init-user-editor-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: user-editor-role
+subjects:
+  - kind: ServiceAccount
+    name: sealos-job-init-sa
+    namespace: sealos
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-job
+  namespace: sealos
+spec:
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      serviceAccountName: sealos-job-init-sa
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - name: job-init
+        image: ghcr.io/labring/sealos-job-init-controller:latest
+        # get env from desktop-frontend-secret
+        env:
+          - name: MONGO_URI
+            valueFrom:
+              secretKeyRef:
+                name: desktop-frontend-secret
+                key: mongodb_uri
+          - name: PASSWORD_SALT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: desktop-frontend-secret
+                key: password_salt
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+      restartPolicy: OnFailure
+  backoffLimit: 10

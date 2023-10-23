@@ -6,7 +6,9 @@ export default function SigninPage() {
 }
 
 export async function getServerSideProps({ req, res, locales }: any) {
-  const local = req?.cookies?.NEXT_LOCALE || 'en';
+  const lang: string = req?.headers?.['accept-language'] || 'zh';
+  const local = lang.indexOf('zh') !== -1 ? 'zh' : 'en';
+  res.setHeader('Set-Cookie', `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`);
 
   const props = {
     ...(await serverSideTranslations(local, undefined, null, locales || []))

@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- license_v1_license.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples

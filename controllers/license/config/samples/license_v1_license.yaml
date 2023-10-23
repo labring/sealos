@@ -1,0 +1,12 @@
+apiVersion: license.sealos.io/v1
+kind: License
+metadata:
+  labels:
+    app.kubernetes.io/name: license
+    app.kubernetes.io/instance: license-sample
+    app.kubernetes.io/part-of: license
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: license
+  name: license-sample
+spec:
+  # TODO(user): Add fields here

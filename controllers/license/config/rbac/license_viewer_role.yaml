@@ -1,0 +1,27 @@
+# permissions for end users to view licenses.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: license-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: license
+    app.kubernetes.io/part-of: license
+    app.kubernetes.io/managed-by: kustomize
+  name: license-viewer-role
+rules:
+- apiGroups:
+  - license.sealos.io
+  resources:
+  - licenses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - license.sealos.io
+  resources:
+  - licenses/status
+  verbs:
+  - get

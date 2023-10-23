@@ -11,8 +11,9 @@ scripts/release/Note.md
 .ossutil_checkpoint
 bin
 .run
-tools
 coverage.out
+tools/*
+tools/!*.go
 tmp
 **/.DS_Store
 node_modules
