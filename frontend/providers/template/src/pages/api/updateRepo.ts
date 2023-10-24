@@ -50,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       await Promise.race([gitOperationPromise, timeoutPromise]);
     } catch (error) {
-      return jsonRes(res, { error: 'git operation timed out', code: 500 });
+      // return jsonRes(res, { error: 'git operation timed out', code: 500 });
     }
 
     if (!fs.existsSync(targetPath)) {
