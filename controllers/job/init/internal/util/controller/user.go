@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"time"
 
 	"github.com/labring/sealos/controllers/job/init/internal/util/common"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
@@ -44,10 +43,10 @@ func newAdminUser(ctx context.Context, c client.Client) (*userv1.User, error) {
 		return nil, err
 	}
 	if u.Labels == nil {
-		u.SetLabels(map[string]string{"uid": common.AdminUID(), "updateTime": time.Now().Format(time.RFC3339)})
+		u.SetLabels(map[string]string{"uid": common.AdminUID(), "updateTime": "T2301-01T00-00-00"})
 	} else if u.Labels["uid"] == "" {
 		u.Labels["uid"] = common.AdminUID()
-		u.Labels["updateTime"] = time.Now().Format(time.RFC3339)
+		u.Labels["updateTime"] = "T2301-01T00-00-00"
 	}
 	return u, nil
 }
