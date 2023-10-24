@@ -117,29 +117,13 @@ func (c *Cluster) GetRootfsImage() *MountImage {
 	return nil
 }
 
-func (c *Cluster) FindImage(name string) *MountImage {
-	for _, img := range c.Status.Mounts {
+func (c *Cluster) FindImage(name string) (int, *MountImage) {
+	for i, img := range c.Status.Mounts {
 		if img.ImageName == name {
-			return &img
+			return i, &img
 		}
 	}
-	return nil
-}
-
-func (c *Cluster) SetMountImage(mount *MountImage) {
-	if mount == nil {
-		return
-	}
-
-	if c.Status.Mounts != nil {
-		for i, img := range c.Status.Mounts {
-			if img.Name == mount.Name && img.Type == mount.Type {
-				c.Status.Mounts[i] = *mount.DeepCopy()
-				return
-			}
-		}
-		c.Status.Mounts = append(c.Status.Mounts, *mount)
-	}
+	return -1, nil
 }
 
 func (c *Cluster) ReplaceRootfsImage() {
