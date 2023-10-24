@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+
 	"github.com/labring/sealos/controllers/job/init/internal/util/common"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 
