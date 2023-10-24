@@ -1,6 +1,6 @@
 import { getLicenseRecord } from '@/api/license';
 import { DownloadIcon, EmptyIcon, LicenseIcon, TokenIcon } from '@/components/icons';
-import download from '@/utils/downloadFIle';
+import { download } from '@/utils/downloadFIle';
 import { formatMoney, getRemainingTime } from '@/utils/tools';
 import { Box, Flex, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';

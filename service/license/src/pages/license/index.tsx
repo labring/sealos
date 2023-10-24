@@ -6,6 +6,8 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useRouter } from 'next/router';
 import RechargeComponent from './components/Recharge';
 import LicenseRecord from './components/Record';
+import { getFileByName } from '@/api/oos';
+import { downloadFromURL } from '@/utils/downloadFIle';
 
 export default function LicensePage() {
   const { t } = useTranslation();
@@ -14,6 +16,16 @@ export default function LicensePage() {
 
   return (
     <Flex w="100%" h="100%" flexDirection={'column'}>
+      {/* <Flex
+        onClick={() => {
+          getFileByName('token.txt').then((res) => {
+            console.log(res);
+            downloadFromURL(res);
+          });
+        }}
+      >
+        ceshi
+      </Flex> */}
       <Flex w="100%" alignItems={'center'} background={'#24282C'} h="56px" px="48px">
         <Image
           cursor={'pointer'}

@@ -17,6 +17,7 @@
     "@emotion/styled": "^11.11.0",
     "@stripe/stripe-js": "^2.1.9",
     "@tanstack/react-query": "^4.36.1",
+    "ali-oss": "^6.18.1",
     "axios": "^1.5.1",
     "clsx": "^2.0.0",
     "dayjs": "^1.11.10",
