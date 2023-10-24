@@ -7,5 +7,5 @@ sealos build -t docker.io/labring/sealos-db-adminer-controller:latest -f Dockerf
 ### How to run
 
 ```shell
-sealos run  docker.io/labring/sealos-db-adminer-controller:latest
+sealos run docker.io/labring/sealos-db-adminer-controller:latest
 ```
