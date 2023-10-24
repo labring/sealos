@@ -28,7 +28,7 @@ helm_version=${helm_version:-"3.12.0"}
 openebs_version=${openebs_version:-"3.4.0"}
 reflector_version=${reflector_version:-"7.0.151"}
 ingress_nginx_version=${ingress_nginx_version:-"1.5.1"}
-kubeblocks_version=${kubeblocks_version:-"0.6.2"}
+kubeblocks_version=${kubeblocks_version:-"0.6.4"}
 metrics_server_version=${metrics_server_version:-"0.6.4"}
 
 
@@ -75,7 +75,7 @@ Options:
    --openebs_version            # OpenEBS version (default: 3.4.0)
    --reflector_version          # Reflector version (default: 7.0.151)
    --ingress_nginx_version      # Ingress Nginx version (default: 1.5.1)
-   --kubeblocks_version         # Kubeblocks version (default: 0.6.2)
+   --kubeblocks_version         # Kubeblocks version (default: 0.6.4)
    --metrics_server_version     # Metrics Server version (default: 0.6.4)
    --cloud_version              # Sealos Cloud version (default: latest)
    --mongodb_version            # MongoDB version (default: mongodb-5.0)
@@ -137,7 +137,7 @@ Options:
    --openebs_version            # OpenEBS版本 (默认: 3.4.0)
    --reflector_version          # Reflector版本 (默认: 7.0.151)
    --ingress_nginx_version      # Ingress Nginx版本 (默认: 1.5.1)
-   --kubeblocks_version         # Kubeblocks版本 (默认: 0.6.2)
+   --kubeblocks_version         # Kubeblocks版本 (默认: 0.6.4)
    --metrics_server_version     # Metrics Server版本 (默认: 0.6.4)
    --cloud_version              # Sealos Cloud版本 (默认: latest)
    --mongodb_version            # MongoDB版本 (默认: mongodb-5.0)
