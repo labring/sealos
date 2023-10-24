@@ -1,7 +1,10 @@
+import request from '@/services/request';
+import { useGlobalStore } from '@/stores/global';
 import { theme } from '@/styles/chakraTheme';
 import '@/styles/globals.scss';
+import { ApiResp, SystemEnv } from '@/types';
 import { ChakraProvider } from '@chakra-ui/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { appWithTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
 import Router from 'next/router';

@@ -1,3 +1,4 @@
+import { passwordExistRequest, passwordLoginRequest } from '@/api/auth';
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import { ApiResp, Session } from '@/types';
@@ -43,15 +44,9 @@ export default function usePassword({
         if (data?.username && data?.password) {
           try {
             setIsLoading(true);
-            const result = await request.post<any, ApiResp<TUserExist>, { user: string }>(
-              '/api/auth/password/exist',
-              {
-                user: data.username
-              }
-            );
-
+            const result = await passwordExistRequest({ user: data.username });
             if (result?.code === 200) {
-              const result = await request.post<any, ApiResp<Session>>('/api/auth/password', {
+              const result = await passwordLoginRequest({
                 user: data.username,
                 password: data.password
               });

@@ -2,7 +2,6 @@ import { IncomingHttpHeaders } from 'http';
 import { sign, verify } from 'jsonwebtoken';
 import { K8sApi } from './kubernetes/user';
 import { JWTPayload } from '@/types';
-import { queryUTN } from './db/userToNamespace';
 
 const jwtSecret = (process.env.JWT_SECRET as string) || '123456789';
 export const authSession = async (header: IncomingHttpHeaders) => {
@@ -26,7 +25,7 @@ export const authSession = async (header: IncomingHttpHeaders) => {
     const username = kc.getCurrentUser()?.name;
     const user = payload.user;
     if (!username || user.k8s_username !== username) throw new Error('user is invaild');
-    return Promise.resolve({ kc, user });
+    return Promise.resolve({ kc, user, kcRaw: payload.kubeconfig });
   } catch (err) {
     console.error(err);
     return Promise.resolve(null);
@@ -47,7 +46,6 @@ export const verifyJWT: (token: string) => Promise<JWTPayload | null> = (token: 
     });
   });
 export const generateJWT = (props: JWTPayload) => {
-  console.log('jwt: ', props);
   return sign(props, jwtSecret, {
     expiresIn: '7d'
   });

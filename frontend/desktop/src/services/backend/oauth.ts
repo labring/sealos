@@ -154,17 +154,16 @@ async function signUp({
   password?: string;
 }) {
   const ns_uid = uuid();
-  const user = await createUser({ id, provider, name, avatar_url });
   if (provider === 'password_user') {
-    await updateUser({
-      id,
-      provider: 'password_user',
-      data: { password: hashPassword(password!) }
-    }).catch(async (_) => {
-      await removeUser({ id: '' + id, provider: 'password_user' });
-      throw new Error('Failed to create user by password');
-    });
   }
+  let user: User | null = null;
+  if (provider === 'password_user') {
+    if (!password) return null;
+    user = await createUser({ id, provider, name, avatar_url, password: hashPassword(password) });
+  } else {
+    user = await createUser({ id, provider, name, avatar_url });
+  }
+  if (!user) return null;
   const k8s_users = user.k8s_users || [];
   const userId = user.uid;
   if (!k8s_users) return null;

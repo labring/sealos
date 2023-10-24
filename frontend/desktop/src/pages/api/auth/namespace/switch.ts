@@ -1,6 +1,5 @@
 import { authSession, generateJWT } from '@/services/backend/auth';
 import { queryUsersByNamespace } from '@/services/backend/db/userToNamespace';
-import { switchNamespace } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import * as jsYaml from 'js-yaml';
 import { Session } from 'sealos-desktop-sdk';
@@ -14,11 +13,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const nsUsers = await queryUsersByNamespace({ namespaceId: ns_uid });
     const userInNs = nsUsers.find(
       (item) => item.userId === payload.user.uid && payload.user.k8s_username === item.k8s_username
-    ); // if (
-    if (!userInNs) return jsonRes(res, { code: 403, message: 'you are not in this namespace' });
-    const kubeconfig = jsYaml.dump(
-      JSON.parse(switchNamespace(payload.kc, userInNs?.namespace?.id || '').exportConfig())
     );
+    if (!userInNs) return jsonRes(res, { code: 403, message: 'you are not in this namespace' });
+
+    const oldKc = jsYaml.load(payload.kcRaw);
+    // @ts-ignore
+    oldKc.contexts[0].context.namespace = userInNs?.namespace?.id || '';
+    const kubeconfig = jsYaml.dump(oldKc);
     const user = {
       ns_uid: userInNs.namespaceId,
       nsid: userInNs.namespace.id,
@@ -48,6 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: 'Successfully'
     });
   } catch (e) {
+    console.log(e);
     jsonRes(res, { code: 500, message: 'fail to switch namespace' });
   }
 }
