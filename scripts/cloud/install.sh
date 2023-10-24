@@ -271,14 +271,16 @@ collect_input() {
         done
     fi
     if [[ $single != "y" ]]; then
-        while :; do
-            read -p "$(get_prompt "input_node_ips")" node_ips
-            if validate_ips "$node_ips"; then
-                break
-            else
-                get_prompt "invalid_ips"
-            fi
-        done
+        if [[ -z "$node_ips" ]]; then
+          while :; do
+              read -p "$(get_prompt "input_node_ips")" node_ips
+              if validate_ips "$node_ips"; then
+                  break
+              else
+                  get_prompt "invalid_ips"
+              fi
+          done
+        fi
         read -p "$(get_prompt "ssh_private_key")" ssh_private_key
 
         if [[ -z "$ssh_private_key" ]]; then
