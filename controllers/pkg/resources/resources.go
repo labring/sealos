@@ -229,24 +229,27 @@ const (
 
 var DefaultPropertyTypeList = []PropertyType{
 	{
-		Name:       "cpu",
-		Enum:       0,
-		PriceType:  AVG,
-		UnitPrice:  67,
+		Name:      "cpu",
+		Enum:      0,
+		PriceType: AVG,
+		// raw price: 67
+		UnitPrice:  20,
 		UnitString: "1m",
 	},
 	{
-		Name:       "memory",
-		Enum:       1,
-		PriceType:  AVG,
-		UnitPrice:  33,
+		Name:      "memory",
+		Enum:      1,
+		PriceType: AVG,
+		// raw price: 33
+		UnitPrice:  10,
 		UnitString: "1Mi",
 	},
 	{
-		Name:       "storage",
-		Enum:       2,
-		PriceType:  AVG,
-		UnitPrice:  2,
+		Name:      "storage",
+		Enum:      2,
+		PriceType: AVG,
+		// raw price: 21
+		UnitPrice:  1,
 		UnitString: "1Mi",
 	},
 	{
