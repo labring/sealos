@@ -75,6 +75,7 @@ spec:
                 items:
                   properties:
                     amount:
+                      description: Amount = PaymentAmount + GiftAmount
                       format: int64
                       type: integer
                     appType:
@@ -90,6 +91,14 @@ spec:
                       type: string
                     order_id:
                       type: string
+                    payment:
+                      description: when Type = Recharge, PaymentAmount is the amount
+                        of recharge
+                      properties:
+                        amount:
+                          format: int64
+                          type: integer
+                      type: object
                     time:
                       format: date-time
                       type: string
