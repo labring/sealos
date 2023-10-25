@@ -1,23 +1,45 @@
 #!/bin/bash
+set -e
 export readonly ARCH=${1:-amd64}
 mkdir -p tars
 
-sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-user-controller:latest
-sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-terminal-controller:latest
-sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-app-controller:latest
-sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-resources-controller:latest
-sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-account-controller:latest
-sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-license-controller:latest
+RetryPullImageInterval=3
+RetrySleepSeconds=3
 
-sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-desktop-frontend:latest
-sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-terminal-frontend:latest
-sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-applaunchpad-frontend:latest
-sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-dbprovider-frontend:latest
-sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-costcenter-frontend:latest
-sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-template-frontend:latest
+retryPullImage() {
+    local image=$1
+    local retry=0
+    local retryMax=3
+    set +e
+    while [ $retry -lt $RetryPullImageInterval ]; do
+        sealos pull --policy=always --platform=linux/"${ARCH}" $image >/dev/null && break
+        retry=$(($retry + 1))
+        echo "retry pull image $image, retry times: $retry"
+        sleep $RetrySleepSeconds
+    done
+    set -e
+    if [ $retry -eq $retryMax ]; then
+        echo "pull image $image failed"
+        exit 1
+    fi
+}
 
-sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-database-service:latest
-sealos pull --policy=always --platform=linux/"${ARCH}" ghcr.io/labring/sealos-cloud-job-init-controller:latest
+retryPullImage ghcr.io/labring/sealos-cloud-user-controller:latest
+retryPullImage ghcr.io/labring/sealos-cloud-terminal-controller:latest
+retryPullImage ghcr.io/labring/sealos-cloud-app-controller:latest
+retryPullImage ghcr.io/labring/sealos-cloud-resources-controller:latest
+retryPullImage ghcr.io/labring/sealos-cloud-account-controller:latest
+retryPullImage ghcr.io/labring/sealos-cloud-license-controller:latest
+
+retryPullImage ghcr.io/labring/sealos-cloud-desktop-frontend:latest
+retryPullImage ghcr.io/labring/sealos-cloud-terminal-frontend:latest
+retryPullImage ghcr.io/labring/sealos-cloud-applaunchpad-frontend:latest
+retryPullImage ghcr.io/labring/sealos-cloud-dbprovider-frontend:latest
+retryPullImage ghcr.io/labring/sealos-cloud-costcenter-frontend:latest
+retryPullImage ghcr.io/labring/sealos-cloud-template-frontend:latest
+
+retryPullImage ghcr.io/labring/sealos-cloud-database-service:latest
+retryPullImage ghcr.io/labring/sealos-cloud-job-init-controller:latest
 
 sealos save -o tars/user.tar ghcr.io/labring/sealos-cloud-user-controller:latest
 sealos save -o tars/terminal.tar ghcr.io/labring/sealos-cloud-terminal-controller:latest
