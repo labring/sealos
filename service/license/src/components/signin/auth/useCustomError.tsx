@@ -1,6 +1,6 @@
 import { Flex, Img, Button, Text } from '@chakra-ui/react';
 import React, { useState, useEffect } from 'react';
-import { WarningIcon, CloseIcon } from '@/components/icons';
+import { WarningIcon, CloseIcon } from '@/components/Icon';
 import { useTranslation } from 'next-i18next';
 
 const useCustomError = () => {

@@ -1,6 +1,6 @@
 import useSessionStore from '@/stores/session';
 import { Box, Flex, Image, useDisclosure, Text, Divider } from '@chakra-ui/react';
-import { SignOutIcon } from '../icons';
+import { SignOutIcon } from '../Icon';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 

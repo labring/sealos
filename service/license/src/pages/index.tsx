@@ -5,7 +5,7 @@ const NonePage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    router.push('/license');
+    router.push('/pricing');
   }, [router]);
 
   return <div></div>;

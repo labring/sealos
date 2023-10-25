@@ -1,10 +1,10 @@
 export type PaymentDB = {
-  uid: string;
+  uid: string; // 用户ID 唯一
   amount: number;
   // quota: number;
   codeURL?: string;
   currency: string;
-  orderID: string;
+  orderID: string; // 账单ID 唯一
   tradeNO?: string;
   sessionID?: string;
   payMethod: TPayMethod;
@@ -14,6 +14,8 @@ export type PaymentDB = {
 };
 
 export type TPayMethod = 'stripe' | 'wechat';
+
+export type StripeCallBackUrl = '/pricing' | '/license';
 
 export enum PaymentStatus {
   PaymentNotPaid = 'notpaid', // 未支付
@@ -28,6 +30,11 @@ export type PaymentParams = {
   amount: string;
   currency: 'CNY';
   payMethod: TPayMethod;
+  stripeCallBackUrl: StripeCallBackUrl;
+};
+
+export type PaymentResultParams = {
+  orderID: string;
 };
 
 export type PaymentData = {

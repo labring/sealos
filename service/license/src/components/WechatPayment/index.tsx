@@ -1,4 +1,4 @@
-import { Flex, Box, Text } from '@chakra-ui/react';
+import { Box, Flex, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { QRCodeSVG } from 'qrcode.react';
 

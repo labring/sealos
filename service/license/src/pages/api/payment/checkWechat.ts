@@ -1,5 +1,5 @@
 import { authSession } from '@/services/backend/auth';
-import { findRecentNopayOrder, updatePaymentAndIssueLicense } from '@/services/backend/db/payment';
+import { findRecentNopayOrder } from '@/services/backend/db/payment';
 import { jsonRes } from '@/services/backend/response';
 import { getSealosPay } from '@/services/pay';
 import { PaymentResult, PaymentStatus } from '@/types';
@@ -40,18 +40,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     }).then((res) => res.json());
 
-    if (result.status === PaymentStatus.PaymentSuccess) {
-      await updatePaymentAndIssueLicense({
-        uid: userInfo.uid,
-        amount: payment.amount,
-        quota: payment.amount,
-        payMethod: payment.payMethod,
-        // pay status
-        orderID: payment?.orderID,
-        status: result.status,
-        type: 'Account'
-      });
-    }
+    // if (result.status === PaymentStatus.PaymentSuccess) {
+    //   await updatePaymentAndIssueLicense({
+    //     uid: userInfo.uid,
+    //     amount: payment.amount,
+    //     quota: payment.amount,
+    //     payMethod: payment.payMethod,
+    //     // pay status
+    //     orderID: payment?.orderID,
+    //     status: result.status,
+    //     type: 'Account'
+    //   });
+    // }
 
     return jsonRes(res, {
       data: result

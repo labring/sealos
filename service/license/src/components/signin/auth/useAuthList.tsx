@@ -1,5 +1,5 @@
 import { getSystemEnv } from '@/api/system';
-import { GithubIcon, GoogleIcon, WechatIcon } from '@/components/icons';
+import { GithubIcon, GoogleIcon, WechatIcon } from '@/components/Icon';
 import useSessionStore from '@/stores/session';
 import { OauthProvider } from '@/types/user';
 import { Button, Flex, Icon } from '@chakra-ui/react';

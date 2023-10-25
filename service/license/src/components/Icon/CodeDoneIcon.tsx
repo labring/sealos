@@ -7,6 +7,7 @@ export const CodeDoneIcon = (props: IconProps) => {
       height="17px"
       fill="#219BF4"
       viewBox="0 0 16 17"
+      {...props}
     >
       <path
         stroke="#219BF4"

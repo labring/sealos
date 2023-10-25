@@ -37,6 +37,7 @@
     "react-dom": "^18",
     "react-hook-form": "^7.47.0",
     "react-i18next": "^13.3.0",
+    "react-syntax-highlighter": "^15.5.0",
     "sharp": "^0.32.6",
     "uuid": "^9.0.1",
     "zustand": "^4.4.3"
@@ -50,6 +51,7 @@
     "@types/nprogress": "^0.2.1",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/react-syntax-highlighter": "^15.5.9",
     "@types/uuid": "^9.0.5",
     "eslint": "^8",
     "eslint-config-next": "13.5.4",

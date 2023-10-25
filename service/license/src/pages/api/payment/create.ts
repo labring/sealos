@@ -8,12 +8,17 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { amount, currency, payMethod } = req.body as PaymentParams;
-
+    const {
+      amount,
+      currency,
+      payMethod,
+      stripeCallBackUrl = '/license'
+    } = req.body as PaymentParams;
+    const STRIPE_CALLBACK_URL = process.env.STRIPE_CALLBACK_URL;
     const userInfo = await authSession(req.headers);
     if (!userInfo) return jsonRes(res, { code: 401, message: 'token verify error' });
     const { sealosPayUrl, sealosPayID, sealosPayKey } = getSealosPay();
-    if (!sealosPayUrl)
+    if (!sealosPayUrl || !STRIPE_CALLBACK_URL)
       return jsonRes(res, { code: 500, message: 'sealos payment has not been activated' });
 
     const result: PaymentData = await fetch(`${sealosPayUrl}/v1alpha1/pay/session`, {
@@ -24,10 +29,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         amount: amount,
         currency: currency,
         user: userInfo.uid,
-        payMethod: payMethod
+        payMethod: payMethod,
+        stripeSuccessUrl: `${STRIPE_CALLBACK_URL}${stripeCallBackUrl}?stripeState=success`,
+        stripeCancelUrl: `${STRIPE_CALLBACK_URL}${stripeCallBackUrl}?stripeState=error`
       })
     }).then((res) => res.json());
-    console.log(result, 'PaymentData');
 
     let payRecord: PaymentDB = {
       ...result,

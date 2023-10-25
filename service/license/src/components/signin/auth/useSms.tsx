@@ -1,5 +1,5 @@
 import { sendCodeByPhone, signInByPhone } from '@/api/user';
-import { CodeDoneIcon, SafetyIcon } from '@/components/icons';
+import { CodeDoneIcon, SafetyIcon } from '@/components/Icon';
 import useSessionStore from '@/stores/session';
 import { Input, InputGroup, InputLeftAddon, InputRightAddon, Link, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';

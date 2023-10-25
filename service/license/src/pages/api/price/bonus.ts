@@ -2,13 +2,13 @@ import { authSession } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const payload = await authSession(req.headers);
     if (!payload) {
-      return jsonRes(resp, { code: 401, message: 'token verify error' });
+      return jsonRes(res, { code: 401, message: 'token verify error' });
     }
-    return jsonRes(resp, {
+    return jsonRes(res, {
       code: 200,
       data: {
         ratios: '10,15,20,25,30',
@@ -18,6 +18,6 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     });
   } catch (error) {
     console.log(error);
-    jsonRes(resp, { code: 500, message: 'get price bonus  error' });
+    jsonRes(res, { code: 500, message: 'get price bonus  error' });
   }
 }

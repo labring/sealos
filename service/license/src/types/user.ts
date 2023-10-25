@@ -1,3 +1,5 @@
+import { ObjectId } from 'mongodb';
+
 export type TgithubToken = {
   access_token: string;
   expires_in: number;
@@ -72,8 +74,10 @@ export type OauthProvider = Exclude<AuthProvider, 'password_user' | 'phone'>;
 
 export type TUserExist = { user: string; exist: boolean };
 
+// User DB
 export type User = {
-  uid: string;
+  _id?: ObjectId; // 唯一
+  uid: string; // 唯一
   avatar_url: string;
   name: string;
   created_time: string;

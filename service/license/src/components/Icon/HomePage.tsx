@@ -1,7 +1,7 @@
 import { Icon, IconProps } from '@chakra-ui/react';
 
 export const HomePageIcon = (props: IconProps) => (
-  <Icon width="16px" height="16px" viewBox="0 0 16 16" fill="#5A646E">
+  <Icon width="16px" height="16px" viewBox="0 0 16 16" fill="#5A646E" {...props}>
     <path
       fillRule="evenodd"
       clipRule="evenodd"

@@ -1,10 +1,10 @@
 import { getSystemEnv } from '@/api/system';
-import useAuthList from '@/components/signin/auth/useAuthList';
-import useCustomError from '@/components/signin/auth/useCustomError';
-import Language from '@/components/signin/auth/useLanguage';
-import usePassword from '@/components/signin/auth/usePassword';
-import useProtocol from '@/components/signin/auth/useProtocol';
-import useSms from '@/components/signin/auth/useSms';
+import useAuthList from '@/components/SignIn/auth/useAuthList';
+import useCustomError from '@/components/SignIn/auth/useCustomError';
+import Language from '@/components/SignIn/auth/useLanguage';
+import usePassword from '@/components/SignIn/auth/usePassword';
+import useProtocol from '@/components/SignIn/auth/useProtocol';
+import useSms from '@/components/SignIn/auth/useSms';
 import useSessionStore from '@/stores/session';
 import { LoginType } from '@/types';
 import {
@@ -60,7 +60,7 @@ export default function SigninComponent() {
 
   useEffect(() => {
     if (isSignIn()) {
-      router.push('/license');
+      router.push('/pricing');
     }
   }, [isSignIn, router]);
 

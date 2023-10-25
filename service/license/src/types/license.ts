@@ -1,10 +1,11 @@
+import { ObjectId } from 'mongodb';
 import { TPayMethod } from './payment';
 
 export type LicenseDB = {
-  _id?: string;
-  uid: string; // user id
+  _id?: ObjectId; // 唯一
+  uid: string; // user id 唯一
   token: string; // license token
-  orderID: string; // order number
+  orderID: string; // order number 唯一
   payMethod: TPayMethod;
   service: {
     quota: number; // 额度
@@ -27,14 +28,6 @@ export type LicenseRecordPayload = {
   type: LicenseType;
 };
 
-export type LicensePayload = {
-  amount: number;
-  orderID: string;
-  quota: number;
-  payMethod: TPayMethod;
-  type: LicenseType;
-};
-
 // new
 export type LicenseToken = {
   type: LicenseType;
@@ -44,3 +37,7 @@ export type LicenseToken = {
 };
 
 export type LicenseType = 'Account' | 'Cluster';
+
+export type CreateLicenseParams = {
+  orderID: string;
+};

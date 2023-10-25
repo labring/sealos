@@ -3,7 +3,7 @@ import { base64Decode } from '@/utils/tools';
 import { sign } from 'jsonwebtoken';
 import { connectToDatabase } from './mongodb';
 
-async function connectLicenseRecordCollection() {
+async function connectLicenseCollection() {
   const client = await connectToDatabase();
   const collection = client.db().collection<LicenseDB>('license');
   return collection;
@@ -18,7 +18,7 @@ export async function createLicenseRecord({
   payMethod,
   type
 }: LicenseRecordPayload) {
-  const collection = await connectLicenseRecordCollection();
+  const collection = await connectLicenseCollection();
 
   const now = Math.floor(Date.now() / 1000); // Get current timestamp in seconds
   const oneDayInSeconds = 3 * 24 * 60 * 60;
@@ -44,6 +44,25 @@ export async function createLicenseRecord({
   return result;
 }
 
+export async function findLicenseByUIDAndOrderID({
+  uid,
+  orderID
+}: {
+  uid: string;
+  orderID: string;
+}) {
+  const collection = await connectLicenseCollection();
+
+  const query = {
+    uid: uid,
+    orderID: orderID
+  };
+
+  const licenseRecord = await collection.findOne(query);
+
+  return licenseRecord;
+}
+
 export async function getLicenseRecordsByUid({
   uid,
   page,
@@ -53,7 +72,7 @@ export async function getLicenseRecordsByUid({
   page: number;
   pageSize: number;
 }) {
-  const collection = await connectLicenseRecordCollection();
+  const collection = await connectLicenseCollection();
 
   const skip = (page - 1) * pageSize;
 
@@ -83,7 +102,7 @@ export function generateLicenseToken(payload: LicenseToken) {
     throw new Error('LICENSE PRIVATE KEY IS MISSING');
   }
   const nowInSeconds = Math.floor(Date.now() / 1000);
-  const expirationTime = nowInSeconds + 3 * 24 * 60 * 60;
+  const expirationTime = nowInSeconds + 3 * 24 * 60 * 60; //默认三天有效时间
 
   const _payload = {
     iss: 'Sealos',
@@ -98,7 +117,7 @@ export function generateLicenseToken(payload: LicenseToken) {
 
 export async function hasIssuedLicense({ uid, orderID }: { uid: string; orderID: string }) {
   try {
-    const collection = await connectLicenseRecordCollection();
+    const collection = await connectLicenseCollection();
 
     const existingLicense = await collection.findOne({
       uid: uid,

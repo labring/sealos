@@ -1,6 +1,5 @@
-import { LicenseRecordPayload, LicenseType, PaymentDB, PaymentStatus, TPayMethod } from '@/types';
+import { PaymentDB, PaymentStatus, TPayMethod } from '@/types';
 import { connectToDatabase } from './mongodb';
-import { createLicenseRecord, generateLicenseToken } from './license';
 
 async function connectPaymentCollection() {
   const client = await connectToDatabase();
@@ -45,71 +44,77 @@ export async function updatePaymentStatus({
         status: status,
         updatedAt: new Date()
       }
+    },
+    {
+      projection: {
+        status: 1,
+        orderID: 1,
+        message: 1
+      }
     }
   );
 
   return result;
 }
 
-export async function updatePaymentAndIssueLicense({
-  uid,
-  orderID,
-  status,
-  amount,
-  quota,
-  payMethod,
-  type
-}: {
-  uid: string;
-  orderID: string;
-  status: PaymentStatus;
-  amount: number;
-  quota: number;
-  payMethod: TPayMethod;
-  type: LicenseType;
-}) {
-  const db = await connectToDatabase();
-  const session = db.startSession();
+// export async function updatePaymentAndIssueLicense({
+//   uid,
+//   orderID,
+//   status,
+//   amount,
+//   quota,
+//   payMethod,
+//   type
+// }: {
+//   uid: string;
+//   orderID: string;
+//   status: PaymentStatus;
+//   amount: number;
+//   quota: number;
+//   payMethod: TPayMethod;
+//   type: LicenseType;
+// }) {
+//   const db = await connectToDatabase();
+//   const session = db.startSession();
 
-  // const transactionOptions = {
-  //   readConcern: { level: 'majority' },
-  //   writeConcern: { w: 'majority' },
-  //   readPreference: 'primary',
-  // }
+//   // const transactionOptions = {
+//   //   readConcern: { level: 'majority' },
+//   //   writeConcern: { w: 'majority' },
+//   //   readPreference: 'primary',
+//   // }
 
-  try {
-    session.startTransaction();
-    console.log('事务状态：', session.transaction);
-    await updatePaymentStatus({
-      uid: uid,
-      orderID: orderID,
-      status: status
-    });
+//   try {
+//     session.startTransaction();
+//     console.log('事务状态：', session.transaction);
+//     await updatePaymentStatus({
+//       uid: uid,
+//       orderID: orderID,
+//       status: status
+//     });
 
-    // 在事务中执行生成许可证记录操作
-    const _token = generateLicenseToken({ type: type, data: { amount: amount } });
-    const record = {
-      uid: uid,
-      amount: amount,
-      token: _token,
-      orderID: orderID,
-      quota: quota,
-      payMethod: payMethod,
-      type: type
-    };
-    console.log(record, 'record');
+//     // 在事务中执行生成许可证记录操作
+//     const _token = generateLicenseToken({ type: type, data: { amount: amount } });
+//     const record = {
+//       uid: uid,
+//       amount: amount,
+//       token: _token,
+//       orderID: orderID,
+//       quota: quota,
+//       payMethod: payMethod,
+//       type: type
+//     };
+//     console.log(record, 'license record');
+//     await createLicenseRecord(record);
 
-    await createLicenseRecord(record);
-
-    await session.commitTransaction();
-  } catch (err) {
-    console.log(`[MongoDB transaction] ERROR: ${err}`);
-    await session.abortTransaction();
-  } finally {
-    await session.endSession();
-    console.log('事务状态：', session.transaction);
-  }
-}
+//     await session.commitTransaction();
+//   } catch (err) {
+//     console.log(`[MongoDB transaction] ERROR: ${err}`);
+//     await session.abortTransaction();
+//   } finally {
+//     await session.endSession();
+//     console.log('事务状态：', session.transaction);
+//   }
+// }
 
 export async function findRecentNopayOrder({
   uid,

@@ -1,6 +1,6 @@
-import { checkWechatPay, createPayment, getPaymentResult } from '@/api/payment';
+import { checkWechatPay, createPayment, handlePaymentResult } from '@/api/payment';
 import { getSystemEnv } from '@/api/system';
-import { StripeIcon, WechatIcon } from '@/components/icons';
+import { StripeIcon, WechatIcon } from '@/components/Icon';
 import useBonusBox from '@/hooks/useBonusBox';
 import { PaymentStatus, TPayMethod, WechatPaymentData } from '@/types';
 import { deFormatMoney } from '@/utils/tools';
@@ -23,7 +23,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useState } from 'react';
-import WechatPayment from './WechatPayment';
+import WechatPayment from '@/components/WechatPayment';
+import { createLicense } from '@/api/license';
 
 export default function RechargeComponent() {
   const router = useRouter();
@@ -75,11 +76,11 @@ export default function RechargeComponent() {
       createPayment({
         amount: deFormatMoney(selectAmount).toString(),
         payMethod: payType,
-        currency: 'CNY'
+        currency: 'CNY',
+        stripeCallBackUrl: '/license'
       }),
     {
       async onSuccess(data) {
-        // setPaymentData({ ...data, payMethod: payType });
         if (payType === 'stripe' && platformEnv && data?.sessionID) {
           const stripe = await loadStripe(platformEnv?.stripePub);
           stripe?.redirectToCheckout({
@@ -104,14 +105,11 @@ export default function RechargeComponent() {
     }
   );
 
-  useQuery(['getLicenseResult', orderID], () => getPaymentResult({ orderID }), {
-    refetchInterval: complete === 2 ? 3 * 1000 : false,
-    enabled: complete === 2 && !!orderID,
-    cacheTime: 0,
-    staleTime: 0,
-    onSuccess(data) {
-      console.log(data, 'getLicenseResult');
-      if (data.status === PaymentStatus.PaymentSuccess) {
+  const licenseMutation = useMutation(
+    ({ orderID }: { orderID: string }) => createLicense({ orderID }),
+    {
+      onSuccess(data) {
+        console.log(data, 'licenseMutation');
         onClosePayment();
         toast({
           status: 'success',
@@ -120,6 +118,28 @@ export default function RechargeComponent() {
           position: 'top'
         });
         queryClient.invalidateQueries(['getLicenseActive']);
+      },
+      onError(err: any) {
+        toast({
+          status: 'error',
+          title: err?.message || '',
+          isClosable: true,
+          position: 'top'
+        });
+        setComplete(0);
+      }
+    }
+  );
+
+  useQuery(['getPaymentResult', orderID], () => handlePaymentResult({ orderID }), {
+    refetchInterval: complete === 2 ? 3 * 1000 : false,
+    enabled: complete === 2 && !!orderID,
+    cacheTime: 0,
+    staleTime: 0,
+    onSuccess(data) {
+      console.log(data, 'getPaymentResult');
+      if (data.status === PaymentStatus.PaymentSuccess) {
+        licenseMutation.mutate({ orderID: data.orderID });
       }
     },
     onError(err: any) {
@@ -149,15 +169,16 @@ export default function RechargeComponent() {
 
   useEffect(() => {
     const { stripeState, orderID } = router.query;
+    console.log(stripeState, orderID);
+    const clearQuery = () => {
+      router.replace({
+        pathname: '/license',
+        query: null
+      });
+    };
     if (stripeState === 'success') {
       setComplete(2);
       setOrderID(orderID as string);
-      const clearQuery = () => {
-        router.replace({
-          pathname: '/license',
-          query: null
-        });
-      };
       setTimeout(clearQuery, 0);
     } else if (stripeState === 'error') {
       toast({
@@ -168,6 +189,7 @@ export default function RechargeComponent() {
         position: 'top'
       });
       onClosePayment();
+      setTimeout(clearQuery, 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -269,7 +291,7 @@ export default function RechargeComponent() {
           </Button>
         )}
       </Flex>
-      <Modal isOpen={isOpen} onClose={onClosePayment}>
+      <Modal isOpen={isOpen} onClose={onClosePayment} closeOnOverlayClick={false}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>充值金额</ModalHeader>

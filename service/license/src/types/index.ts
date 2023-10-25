@@ -5,6 +5,7 @@ export * from './payment';
 export * from './system';
 export * from './login';
 export * from './license';
+export * from './cluster';
 
 declare global {
   var mongodb: MongoClient | null;

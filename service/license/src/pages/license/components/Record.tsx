@@ -1,12 +1,12 @@
 import { getLicenseRecord } from '@/api/license';
-import { DownloadIcon, EmptyIcon, LicenseIcon, TokenIcon } from '@/components/icons';
+import { DownloadIcon, EmptyIcon, LicenseIcon, TokenIcon } from '@/components/Icon';
 import { download } from '@/utils/downloadFIle';
 import { formatMoney, getRemainingTime } from '@/utils/tools';
 import { Box, Flex, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
-import Pagination from './Pagination';
+import Pagination from '@/components/Pagination';
 import CurrencySymbol from './CurrencySymbol';
 import { json2License } from '@/utils/json2Yaml';
 
@@ -43,7 +43,7 @@ export default function History() {
         <Box w="100%" flex={1} overflowY={'auto'} pb="20px" pr="12px">
           {data?.records.map((item) => (
             <Flex
-              key={item?._id ?? item.iat}
+              key={item?._id?.toString() ?? item.iat}
               w="100%"
               minW={'350px'}
               p="12px 0 12px 16px"
@@ -73,9 +73,9 @@ export default function History() {
                 <Text color={'#485058'} fontSize={'12px'} fontWeight={500} px="8px">
                   Token
                 </Text>
-                <Box cursor={'pointer'} onClick={() => downloadToken(item.token)}>
+                <Flex cursor={'pointer'} onClick={() => downloadToken(item.token)}>
                   <DownloadIcon />
-                </Box>
+                </Flex>
               </Flex>
             </Flex>
           ))}
@@ -97,7 +97,6 @@ export default function History() {
           </Text>
         </Flex>
       )}
-
       <Flex ml="auto" mt={'auto'} pr="20px">
         <Pagination totalItems={data?.total || 0} itemsPerPage={pageSize} onPageChange={() => {}} />
       </Flex>

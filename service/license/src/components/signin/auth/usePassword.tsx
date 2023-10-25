@@ -1,5 +1,5 @@
 import { signInByPassword } from '@/api/user';
-import { LocklIcon, PersonIcon, VectorIcon } from '@/components/icons';
+import { LocklIcon, PersonIcon, VectorIcon } from '@/components/Icon';
 import useSessionStore from '@/stores/session';
 import { Flex, Input, InputGroup, InputLeftAddon, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';

@@ -87,5 +87,17 @@
   "License issued successfully": "License issued successfully",
   "Pay Minimum Tips": "The amount need to be more than 10 when paying with Stripe",
   "Stripe Cancel": "Stripe Cancel",
-  "Recharge Amount": "Recharge Amount"
+  "Recharge Amount": "Recharge Amount",
+  "price": "Price",
+  "My Cluster": "My Cluster",
+  "Cluster List": "Cluster List",
+  "Deploy": "Deploy",
+  "Cluster": "Cluster",
+  "Standard": "Standard",
+  "Enterprise": "Enterprise",
+  "You have not purchased the Cluster": "You have not purchased the Cluster",
+  "Contact Us": "Contact Us",
+  "Buy": "Buy",
+  "Checking Payment Results": "Checking Payment Results",
+  "Cluster Pay Success": "Buy {{clusterType}} Success"
 }

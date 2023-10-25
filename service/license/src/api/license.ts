@@ -1,11 +1,10 @@
-import { GET, POST } from '@/services/request';
-import { LicensePayload, LicenseDB } from '@/types';
+import { POST } from '@/services/request';
+import { CreateLicenseParams, LicenseDB } from '@/types';
 
-export const createLicenseRecord = (payload: LicensePayload) =>
-  POST('/api/license/createLicenseRecord', payload);
+export const createLicense = (payload: CreateLicenseParams) => POST('/api/license/create', payload);
 
 export const getLicenseRecord = ({ page, pageSize }: { page: number; pageSize: number }) =>
-  POST<{ total: number; records: LicenseDB[] }>('/api/license/getLicenseRecord', {
+  POST<{ total: number; records: LicenseDB[] }>('/api/license/getRecord', {
     page,
     pageSize
   });
