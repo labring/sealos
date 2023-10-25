@@ -14,7 +14,7 @@ import {
   PopoverContent,
   PopoverBody
 } from '@chakra-ui/react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useMemo } from 'react';
@@ -140,9 +140,11 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureReturn 
     }
     return real_balance;
   }, [data]);
+  const queryclient = useQueryClient();
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     delSession();
+    queryclient.clear();
     router.replace('/signin');
   };
   const needPassword = useGlobalStore((s) => s.needPassword);
