@@ -106,7 +106,7 @@ PROMPTS_CN=(
     ["input_node_ips"]="请输入Node IPs (多个node节点使用逗号分隔，可跳过): "
     ["pod_subnet"]="请输入pod子网 (回车使用默认值: 100.64.0.0/10): "
     ["service_subnet"]="请输入service子网 (回车使用默认值: 10.96.0.0/22): "
-    ["cloud_domain"]="请输入云域名:（例:127.0.0.1.nip.io) "
+    ["cloud_domain"]="请输入云域名:（如无自备域名可使用nip.io域名：[ip].nip.io, 例:127.0.0.1.nip.io) "
     ["cloud_port"]="请输入云端口 (回车使用默认值: 443): "
     ["input_certificate"]="是否需要输入证书？(y/n): "
     ["certificate_path"]="请输入证书路径: "
@@ -119,7 +119,7 @@ PROMPTS_CN=(
     ["installing_cloud"]="正在安装sealos cloud。"
     ["avx_not_supported"]="CPU不支持AVX指令"
     ["ssh_private_key"]="如需免密登录请配置ssh私钥路径，回车使用默认值'/root/.ssh/id_rsa' "
-    ["ssh_password"]="请输入ssh密码，配置免密登录可回车跳过"
+    ["ssh_password"]="请输入ssh密码，已配置免密登录可回车跳过"
     ["wait_cluster_ready"]="正在等待集群就绪, 如果您想跳过此步骤，请输入'1'"
     ["cilium_requirement"]="正在使用Cilium作为网络插件，主机系统必须满足以下要求:
 具有AMD64或AArch64架构的主机
@@ -201,8 +201,17 @@ setMongoVersion() {
   set -e
 }
 
+k8s_installed="n"
+k8s_ready="n"
+
 # Initialization
 init() {
+    if kubectl get no > /dev/null 2>&1; then
+        k8s_installed="y"
+        if ! kubectl get no | grep NotReady > /dev/null 2>&1; then
+            k8s_ready="y"
+        fi
+    fi
     mkdir -p $CLOUD_DIR
 
     # Check for sealos CLI
@@ -222,8 +231,8 @@ init() {
 
     get_prompt "pre_prompt"
     echo ""
-    pull_image "kubernetes" "v${kubernetes_version#v:-1.25.6}"
-    pull_image "cilium" "v${cilium_version#v:-1.12.14}"
+    [[ $k8s_installed == "y" ]] || pull_image "kubernetes" "v${kubernetes_version#v:-1.25.6}"
+    [[ $k8s_ready == "y" ]] || pull_image "cilium" "v${cilium_version#v:-1.12.14}"
     pull_image "cert-manager" "v${cert_manager_version#v:-1.8.0}"
     pull_image "helm" "v${helm_version#v:-3.12.0}"
     pull_image "openebs" "v${openebs_version#v:-3.4.0}"
@@ -256,21 +265,22 @@ collect_input() {
         return 0
     }
 
-    # Master and Node IPs
-    if [[ $single != "y" && $master_ips == "" ]]; then
-        while :; do
-            read -p "$(get_prompt "input_master_ips")" master_ips
-            if validate_ips "$master_ips"; then
-                if [[ -z "$master_ips" ]]; then
-                    single="y"
-                fi
-                break
-            else
-                get_prompt "invalid_ips"
-            fi
-        done
-    fi
-    if [[ $single != "y" ]]; then
+    if [[ $k8s_installed == "n" ]]; then
+      # Master and Node IPs
+      if [[ $single != "y" ]]; then
+        if [[ $master_ips == "" ]]; then
+          while :; do
+              read -p "$(get_prompt "input_master_ips")" master_ips
+              if validate_ips "$master_ips"; then
+                  if [[ -z "$master_ips" ]]; then
+                      single="y"
+                  fi
+                  break
+              else
+                  get_prompt "invalid_ips"
+              fi
+          done
+        fi
         if [[ -z "$node_ips" ]]; then
           while :; do
               read -p "$(get_prompt "input_node_ips")" node_ips
@@ -287,24 +297,22 @@ collect_input() {
             ssh_private_key="${HOME}/.ssh/id_rsa"
         fi
         read -p "$(get_prompt "ssh_password")" ssh_password
+      fi
 
+      [[ $pod_cidr != "" ]] || read -p "$(get_prompt "pod_subnet")" pod_cidr
+      [[ $service_cidr != "" ]] || read -p "$(get_prompt "service_subnet")" service_cidr
     fi
 
-    [[ $pod_cidr != "" ]] || read -p "$(get_prompt "pod_subnet")" pod_cidr
-
-    [[ $service_cidr != "" ]] || read -p "$(get_prompt "service_subnet")" service_cidr
-
-    [[ $cloud_domain != "" ]] || read -p "$(get_prompt "cloud_domain")" cloud_domain
-
+    while [[ $cloud_domain == "" ]] ; do
+        read -p "$(get_prompt "cloud_domain")" cloud_domain
+    done
     [[ $cloud_port != "" ]] || read -p "$(get_prompt "cloud_port")" cloud_port
 
-    [[ $input_cert != "" || ($cert_path != "" && $key_path != "") ]] || read -p "$(get_prompt "input_certificate")" input_cert
+    [[ $input_cert != "" || ($cert_path != "" && $key_path != "") ]] || [[ $cloud_domain == *"nip.io"* ]] || read -p "$(get_prompt "input_certificate")" input_cert
 
     if [[ $input_cert == "y" || $input_cert == "Y" ]]; then
         read -p "$(get_prompt "certificate_path")" cert_path
-
         read -p "$(get_prompt "private_key_path")" key_path
-
     fi
 }
 
@@ -358,11 +366,12 @@ spec:
         --pk=${ssh_private_key:-$HOME/.ssh/id_rsa}\
         --passwd=${ssh_password} -o $CLOUD_DIR/Clusterfile"
 
-    command -v kubelet > /dev/null 2>&1 || $sealos_gen_cmd
-
-    # Modify Clusterfile with sed
-    sed -i "s|100.64.0.0/10|${pod_cidr:-100.64.0.0/10}|g" $CLOUD_DIR/Clusterfile
-    sed -i "s|10.96.0.0/22|${service_cidr:-10.96.0.0/22}|g" $CLOUD_DIR/Clusterfile
+    if [[ $k8s_installed == "n" ]]; then
+      $sealos_gen_cmd
+      # Modify Clusterfile with sed
+      sed -i "s|100.64.0.0/10|${pod_cidr:-100.64.0.0/10}|g" $CLOUD_DIR/Clusterfile
+      sed -i "s|10.96.0.0/22|${service_cidr:-10.96.0.0/22}|g" $CLOUD_DIR/Clusterfile
+    fi
 }
 
 wait_cluster_ready() {
@@ -395,12 +404,9 @@ loading_animation() {
 }
 
 execute_commands() {
-    kubectl get no > /dev/null 2>&1 || (get_prompt "k8s_installation" && sealos apply -f $CLOUD_DIR/Clusterfile)
+    [[ $k8s_installed == "y" ]] || (get_prompt "k8s_installation" && sealos apply -f $CLOUD_DIR/Clusterfile)
     command -v helm > /dev/null 2>&1 || sealos run "${image_registry}/${image_repository}/helm:v${helm_version#v:-3.12.0}"
-    get_prompt "cilium_requirement"
-    if kubectl get no | grep NotReady > /dev/null 2>&1; then
-      sealos run "${image_registry}/${image_repository}/cilium:v${cilium_version#v:-1.12.14}"
-    fi
+    [[ $k8s_ready == "y" ]] || get_prompt "cilium_requirement" && sealos run "${image_registry}/${image_repository}/cilium:v${cilium_version#v:-1.12.14}"
     wait_cluster_ready
     sealos run "${image_registry}/${image_repository}/cert-manager:v${cert_manager_version#v:-1.8.0}"
     sealos run "${image_registry}/${image_repository}/openebs:v${openebs_version#v:-3.4.0}"
@@ -470,9 +476,33 @@ for i in "$@"; do
   --single) single="y"; shift ;;
   --zh | zh ) LANGUAGE="CN"; shift ;;
   --en | en ) LANGUAGE="EN"; shift ;;
-  -c | --config) source ${i#*=} > /dev/null; shift ;;
+  --config=* | -c ) source ${i#*=} > /dev/null; shift ;;
   -h | --help) HELP=true; shift ;;
   -d | --debug) set -x; shift ;;
+  --image_registry | image_registry | \
+  --image_repository | image_repository | \
+  --kubernetes_version | kubernetes_version | \
+  --cilium_version | cilium_version | \
+  --cert_manager_version | cert_manager_version | \
+  --helm_version | helm_version | \
+  --openebs_version | openebs_version | \
+  --reflector_version | reflector_version | \
+  --ingress_nginx_version | ingress_nginx_version | \
+  --kubeblocks_version | kubeblocks_version | \
+  --metrics_server_version | metrics_server_version | \
+  --cloud_version | cloud_version | \
+  --mongodb_version | mongodb_version | \
+  --master_ips | master_ips | \
+  --node_ips | node_ips | \
+  --ssh_private_key | ssh_private_key | \
+  --ssh_password | ssh_password | \
+  --pod_cidr | pod_cidr | \
+  --service_cidr | service_cidr | \
+  --cloud_domain | cloud_domain | \
+  --cloud_port | cloud_port | \
+  --cert_path | cert_path | \
+  --key_path | key_path | \
+  --config | config) echo "Please use '--${i#--}=' to assign value to option"; exit 1 ;;
   -*) echo "Unknown option $i"; exit 1 ;;
   *) ;;
   esac
