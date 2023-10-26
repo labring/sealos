@@ -654,20 +654,41 @@ func (m *MongoDB) queryBillingRecordsByOrderID(billingRecordQuery *accountv1.Bil
 		if err := cursor.Decode(&bsonRecord); err != nil {
 			return fmt.Errorf("failed to decode billing record: %w", err)
 		}
-		for _, cost := range bsonRecord.AppCosts {
-			billingRecord := accountv1.BillingRecordQueryItem{
-				Time: metav1.NewTime(bsonRecord.Time),
-				BillingRecordQueryItemInline: accountv1.BillingRecordQueryItemInline{
-					OrderID:   bsonRecord.OrderID,
-					Type:      bsonRecord.Type,
-					Namespace: bsonRecord.Namespace,
-					AppType:   resources.AppTypeReverse[bsonRecord.AppType],
-					Costs:     resources.ConvertEnumUsedToString(cost.UsedAmount),
-					Amount:    cost.Amount,
-					Name:      cost.Name,
-				},
+		var billingRecord = accountv1.BillingRecordQueryItem{
+			Time: metav1.NewTime(bsonRecord.Time),
+			BillingRecordQueryItemInline: accountv1.BillingRecordQueryItemInline{
+				OrderID:   bsonRecord.OrderID,
+				Type:      bsonRecord.Type,
+				Amount:    bsonRecord.Amount,
+				Namespace: bsonRecord.Namespace,
+			},
+		}
+		switch bsonRecord.Type {
+		case accountv1.Recharge:
+			paymentAmount := billingRecord.Amount
+			if bsonRecord.Payment != nil {
+				paymentAmount = bsonRecord.Payment.Amount
 			}
+			billingRecord.Payment = &accountv1.PaymentForQuery{Amount: paymentAmount}
 			billingRecords = append(billingRecords, billingRecord)
+		case accountv1.TransferOut, accountv1.TransferIn:
+			billingRecords = append(billingRecords, billingRecord)
+		default:
+			for _, cost := range bsonRecord.AppCosts {
+				billingRecord = accountv1.BillingRecordQueryItem{
+					Time: metav1.NewTime(bsonRecord.Time),
+					BillingRecordQueryItemInline: accountv1.BillingRecordQueryItemInline{
+						OrderID:   bsonRecord.OrderID,
+						Type:      bsonRecord.Type,
+						Namespace: bsonRecord.Namespace,
+						AppType:   resources.AppTypeReverse[bsonRecord.AppType],
+						Costs:     resources.ConvertEnumUsedToString(cost.UsedAmount),
+						Amount:    cost.Amount,
+						Name:      cost.Name,
+					},
+				}
+				billingRecords = append(billingRecords, billingRecord)
+			}
 		}
 	}
 
