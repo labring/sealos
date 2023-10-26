@@ -171,7 +171,7 @@ func (c *Applier) updateStatus(clusterErr error, appErr error) {
 			cmdCondition = v2.NewFailedCommandCondition(appErr.Error())
 		}
 	} else if len(c.RunNewImages) > 0 {
-		cmdCondition = v2.NewSuccessCommandCondition()
+		return
 	}
 	cmdCondition.Images = c.RunNewImages
 	c.ClusterDesired.Status.CommandConditions = v2.UpdateCommandCondition(c.ClusterDesired.Status.CommandConditions, cmdCondition)
