@@ -812,6 +812,13 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 			}
 			billingRecord.Costs = costs
 		}
+		if bsonRecord.Type == accountv1.Recharge {
+			paymentAmount := billingRecord.Amount
+			if bsonRecord.Payment != nil {
+				paymentAmount = bsonRecord.Payment.Amount
+			}
+			billingRecord.Payment = &accountv1.PaymentForQuery{Amount: paymentAmount}
+		}
 		billingRecords = append(billingRecords, billingRecord)
 	}
 
