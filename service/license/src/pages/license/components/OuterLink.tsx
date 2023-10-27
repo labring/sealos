@@ -1,7 +1,7 @@
 import { Flex, Link } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 
-export default function Index({ text, href }: { text: string; href?: string }) {
+export default function OuterLink({ text, href }: { text: string; href?: string }) {
   const { t } = useTranslation();
   return (
     <Flex align={'center'}>

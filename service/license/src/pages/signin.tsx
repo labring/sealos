@@ -1,4 +1,4 @@
-import SigninComponent from '@/components/SignIn';
+import SigninComponent from '@/components/Signin';
 import { compareFirstLanguages } from '@/utils/tools';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 

@@ -3,7 +3,7 @@ import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { ReactNode, useState } from 'react';
 import LangSelectSimple from '../LangSelect';
-import Account from '../Account';
+import Account from '@/components/Account';
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
