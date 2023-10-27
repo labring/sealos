@@ -36,95 +36,94 @@ metrics_server_version=${metrics_server_version:-"0.6.4"}
 declare -A PROMPTS_EN PROMPTS_CN
 
 PROMPTS_EN=(
-    ["pre_prompt"]="Depends on iptables, please make sure iptables is installed, multi-node needs to configure ssh password-free login or the same password, using self-signed certificate to complete the installation requires self-trust certificate"
+    ["pre_prompt"]="Depends on iptables, please make sure iptables is installed, multiple nodes need to configure ssh password-free login or the same password, after installation with the self-signed certificate provided by Sealos, you need to trust the certificate yourself."
     ["pull_image"]="Pulling image: "
-    ["install_sealos"]="Sealos CLI is not installed. Do you want to install it now? (y/n): "
-    ["input_master_ips"]="Please enter Master IPs (press Enter to skip this step for local installation; comma separated for multiple master nodes, e.g: 192.168.0.1,192.168.0.2,192.168.0.3)"
-    ["invalid_ips"]="Invalid IPs or no IPs provided. Please try again."
-    ["input_node_ips"]="Please enter Node IPs (comma separated, leave empty if none): "
-    ["pod_subnet"]="Please enter pod subnet (default: 100.64.0.0/10): "
-    ["service_subnet"]="Please enter service subnet (default: 10.96.0.0/22): "
-    ["cloud_domain"]="Please enter cloud domain: "
-    ["cloud_port"]="Please enter cloud port (default: 443): "
-    ["input_certificate"]="Do you want to input a certificate? (y/n): "
-    ["certificate_path"]="Please input the certificate path: "
-    ["private_key_path"]="Please input the private key path: "
-    ["choose_language"]="Choose prompt language / 选择提示语言:"
-    ["enter_choice"]="Enter your choice (1/2): "
+    ["pull_image_success"]="Image pulled successfully: "
+    ["pull_image_failed"]="Image pull failed: "
+    ["install_sealos"]="Sealos CLI is not installed, do you want to install it? (y/n): "
+    ["input_master_ips"]="Please enter Master IP (For single node installation, you can press enter to skip this step; separate multiple Master nodes with commas, e.g: 192.168.0.1,192.168.0.2,192.168.0.3): "
+    ["invalid_ips"]="Invalid or incorrect IP format, please try again."
+    ["input_node_ips"]="Please enter Node IP (If there are no Node nodes, you can press enter to skip this step; separate multiple Node nodes with commas, e.g: 192.168.1.1,192.168.1.2,192.168.1.3): "
+    ["pod_subnet"]="Please enter the Pod subnet (Press enter to use the default value: 100.64.0.0/10): "
+    ["service_subnet"]="Please enter the Service subnet (Press enter to use the default value: 10.96.0.0/22): "
+    ["cloud_domain"]="Please enter the cloud domain name (You can use the nip.io domain name if you need: [ip].nip.io, for more details, please refer to: http://nip.io, e.g: 127.0.0.1.nip.io): "
+    ["cloud_port"]="Please enter the cloud port (Press enter to use the default value: 443): "
+    ["certificate_path"]="Please enter the certificate path (Press enter to use the self-signed certificate provided by Sealos): "
+    ["private_key_path"]="Please enter the private key path: "
+    ["choose_language"]="Please choose a language: "
+    ["enter_choice"]="Please enter your choice (zh/en): "
     ["k8s_installation"]="Installing Kubernetes cluster."
-    ["ingress_installation"]="Installing ingress-nginx-controller and kubeblocks."
-    ["patching_ingress"]="Patching ingress-nginx-controller tolerations to allow it to run on master node."
-    ["installing_cloud"]="Installing sealos cloud."
-    ["avx_not_supported"]="CPU does not support AVX instructions"
-    ["ssh_private_key"]="Please configure the ssh private key path, press Enter to use the default value '/root/.ssh/id_rsa' "
-    ["ssh_password"]="Please enter the ssh password, press Enter to skip\n"
-    ["wait_cluster_ready"]="Waiting for cluster to be ready, if you want to skip this step, please enter '1'"
-    ["cilium_requirement"]="When running Cilium using the container image cilium/cilium, the host system must meet these requirements:
-Hosts with either AMD64 or AArch64 architecture
-Linux kernel >= 4.19.57 or equivalent (e.g., 4.18 on RHEL8)"
-    ["mongo_avx_requirement"]="MongoDB 5.0 version depends on CPU that supports AVX instruction set, the current environment does not support avx, has been switched to mongo4.0 version, for more information, see:https://www.mongodb.com/docs/v5.0/administration/production-notes/"
-    ["usage"]="Usage: $0 [options]
+    ["ingress_installation"]="Installing Ingress-nginx-controller and Kubeblocks."
+    ["patching_ingress"]="Modifying the tolerance of Ingress-nginx-controller to allow it to run on the master node."
+    ["installing_cloud"]="Installing Sealos Cloud."
+    ["avx_not_supported"]="CPU does not support AVX instruction set."
+    ["ssh_private_key"]="Please enter the ssh private key path (Press enter to use the default value: '/root/.ssh/id_rsa'): "
+    ["ssh_password"]="Please enter the ssh password (Press enter to use password-free login): "
+    ["wait_cluster_ready"]="Waiting for the cluster to be ready, if you want to skip this step, please enter 'y': "
+    ["cilium_requirement"]="Using Cilium as the network plugin, the host system must meet the following requirements:
+1. Hosts with AMD64 or AArch64 architecture;
+2. Linux kernel> = 4.19.57 or equivalent version (e.g., 4.18 on RHEL8)."
+    ["mongo_avx_requirement"]="MongoDB 5.0 version depends on a CPU that supports the AVX instruction set. The current environment does not support AVX, so it has been switched to MongoDB 4.0 version. For more information, see: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
+    ["usage"]="Usage: $0 [options]=[value] [options]=[value] ...
 
 Options:
-   --image_registry             # Image registry address (default: docker.io)
+   --image_registry             # Image repository address (default: docker.io)
    --image_repository           # Image repository name (default: labring)
    --kubernetes_version         # Kubernetes version (default: 1.25.6)
    --cilium_version             # Cilium version (default: 1.12.14)
    --cert_manager_version       # Cert Manager version (default: 1.8.0)
    --helm_version               # Helm version (default: 3.12.0)
    --openebs_version            # OpenEBS version (default: 3.4.0)
-   --reflector_version          # Reflector version (default: 7.0.151)
+   --reflector_version           # Reflector version (default: 7.0.151)
    --ingress_nginx_version      # Ingress Nginx version (default: 1.5.1)
    --kubeblocks_version         # Kubeblocks version (default: 0.6.4)
    --metrics_server_version     # Metrics Server version (default: 0.6.4)
    --cloud_version              # Sealos Cloud version (default: latest)
    --mongodb_version            # MongoDB version (default: mongodb-5.0)
-   --master_ips                 # Master node IP list, comma separated (single node and current execution node can be left blank)
-   --node_ips                   # Node node IP list, comma separated, can be skipped
+   --master_ips                 # Master node IP list, separated by commas (no need to fill in for single node and current execution node)
+   --node_ips                   # Node node IP list, separated by commas
    --ssh_private_key            # SSH private key path (default: $HOME/.ssh/id_rsa)
    --ssh_password               # SSH password
    --pod_cidr                   # Pod subnet (default: 100.64.0.0/10)
    --service_cidr               # Service subnet (default: 10.96.0.0/22)
-   --cloud_domain               # Cloud domain
+   --cloud_domain               # Cloud domain name
    --cloud_port                 # Cloud port (default: 443)
    --cert_path                  # Certificate path
    --key_path                   # Private key path
-   --single                     # Whether to install locally: y/n
+   --single                     # Whether to install on a single node (y/n)
    --zh                         # Chinese prompt
    --en                         # English prompt
    --help                       # Help information"
 )
-
 PROMPTS_CN=(
-    ["pre_prompt"]="依赖iptables，请确保iptables已经安装，多节点需要配置ssh免密登录或密码一致, 使用自签证书安装完成后需要自信任证书"
+    ["pre_prompt"]="依赖 iptables, 请确保 iptables 已经安装, 多节点需要配置 ssh 免密登录或密码一致, 使用 Sealos 提供的自签证书安装完成后需要自信任证书"
     ["pull_image"]="正在拉取镜像: "
     ["pull_image_success"]="镜像拉取成功: "
     ["pull_image_failed"]="镜像拉取失败: "
-    ["install_sealos"]="Sealos CLI没有安装，是否安装？(y/n): "
-    ["input_master_ips"]="请输入Master IPs (单节点本地安装可回车跳过该步骤；多个master节点使用逗号分隔, 例: 192.168.0.1,192.168.0.2,192.168.0.3): "
-    ["invalid_ips"]="IP无效或没有提供IP，请再试一次。"
-    ["input_node_ips"]="请输入Node IPs (多个node节点使用逗号分隔，可跳过): "
-    ["pod_subnet"]="请输入pod子网 (回车使用默认值: 100.64.0.0/10): "
-    ["service_subnet"]="请输入service子网 (回车使用默认值: 10.96.0.0/22): "
-    ["cloud_domain"]="请输入云域名:（如无自备域名可使用nip.io域名：[ip].nip.io, 例:127.0.0.1.nip.io) "
+    ["install_sealos"]="Sealos CLI 尚未安装, 是否安装? (y/n): "
+    ["input_master_ips"]="请输入 Master IP (单节点安装可输入回车跳过该步骤; 多个 Master 节点使用逗号分隔, 例: 192.168.0.1,192.168.0.2,192.168.0.3): "
+    ["invalid_ips"]="IP无效或错误格式, 请再试一次."
+    ["input_node_ips"]="请输入 Node IP (无 Node 节点可输入回车跳过该步骤; 多个 Node 节点使用逗号分隔, 例: 192.168.1.1,192.168.1.2,192.168.1.3): "
+    ["pod_subnet"]="请输入 Pod 子网 (回车使用默认值: 100.64.0.0/10): "
+    ["service_subnet"]="请输入 Service 子网 (回车使用默认值: 10.96.0.0/22): "
+    ["cloud_domain"]="请输入 Sealos Cloud 域名 (无自备域名可使用 nip.io 域名: [ip].nip.io, 详细参考: http://nip.io, 例:127.0.0.1.nip.io): "
     ["cloud_port"]="请输入云端口 (回车使用默认值: 443): "
-    ["input_certificate"]="是否需要输入证书？(y/n): "
-    ["certificate_path"]="请输入证书路径: "
+    ["certificate_path"]="请输入证书路径 (回车使用 Sealos 提供的自签证书): "
     ["private_key_path"]="请输入私钥路径: "
-    ["choose_language"]="请选择语言:"
-    ["enter_choice"]="请输入您的选择 (1/2): "
-    ["k8s_installation"]="正在安装Kubernetes集群。"
-    ["ingress_installation"]="正在安装ingress-nginx-controller和kubeblocks。"
-    ["patching_ingress"]="正在修改ingress-nginx-controller的容忍度，以允许它在主节点上运行。"
-    ["installing_cloud"]="正在安装sealos cloud。"
-    ["avx_not_supported"]="CPU不支持AVX指令"
-    ["ssh_private_key"]="如需免密登录请配置ssh私钥路径，回车使用默认值'/root/.ssh/id_rsa' "
-    ["ssh_password"]="请输入ssh密码，已配置免密登录可回车跳过"
-    ["wait_cluster_ready"]="正在等待集群就绪, 如果您想跳过此步骤，请输入'1'"
-    ["cilium_requirement"]="正在使用Cilium作为网络插件，主机系统必须满足以下要求:
-具有AMD64或AArch64架构的主机
-Linux内核> = 4.19.57或等效版本（例如，在RHEL8上为4.18）"
-    ["mongo_avx_requirement"]="MongoDB 5.0版本依赖支持 AVX 指令集的 CPU，当前环境不支持avx，已切换为mongo4.0版本，更多信息查看:https://www.mongodb.com/docs/v5.0/administration/production-notes/"
+    ["choose_language"]="请选择语言: "
+    ["enter_choice"]="请输入您的选择 (zh/en): "
+    ["k8s_installation"]="正在安装 Kubernetes 集群."
+    ["ingress_installation"]="正在安装 Ingress-nginx-controller 和 Kubeblocks."
+    ["patching_ingress"]="正在修改 Ingress-nginx-controller 的容忍度, 以允许它在主节点上运行."
+    ["installing_cloud"]="正在安装 Sealos Cloud."
+    ["avx_not_supported"]="CPU 不支持 AVX 指令集."
+    ["ssh_private_key"]="请输入 ssh 私钥路径 (回车使用默认值: '/root/.ssh/id_rsa'): "
+    ["ssh_password"]="请输入 ssh 密码 (回车使用免密登录): "
+    ["wait_cluster_ready"]="正在等待集群就绪, 如果您想跳过此步骤, 请输入'y': "
+    ["cilium_requirement"]="正在使用 Cilium 作为网络插件, 主机系统必须满足以下要求:
+1.具有AMD64或AArch64架构的主机;
+2.Linux内核> = 4.19.57或等效版本 (例如, 在RHEL8上为4.18)."
+    ["mongo_avx_requirement"]="MongoDB 5.0版本依赖支持 AVX 指令集的 CPU, 当前环境不支持 AVX, 已切换为 MongoDB 4.0版本, 更多信息查看: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
     ["usage"]="Usage: $0 [options]=[value] [options]=[value] ...
 
 Options:
@@ -135,7 +134,7 @@ Options:
    --cert_manager_version       # Cert Manager版本 (默认: 1.8.0)
    --helm_version               # Helm版本 (默认: 3.12.0)
    --openebs_version            # OpenEBS版本 (默认: 3.4.0)
-   --reflector_version          # Reflector版本 (默认: 7.0.151)
+   --reflector_version           # Reflector版本 (默认: 7.0.151)
    --ingress_nginx_version      # Ingress Nginx版本 (默认: 1.5.1)
    --kubeblocks_version         # Kubeblocks版本 (默认: 0.6.4)
    --metrics_server_version     # Metrics Server版本 (默认: 0.6.4)
@@ -151,11 +150,22 @@ Options:
    --cloud_port                 # 云端口 (默认: 443)
    --cert_path                  # 证书路径
    --key_path                   # 私钥路径
-   --single                     # 是否本地安装 (y/n)
+   --single                     # 是否单节点安装 (y/n)
    --zh                         # 中文提示
    --en                         # 英文提示
    --help                       # 帮助信息"
 )
+
+# Define error handling function
+handle_error() {
+    echo "An error occurred on line $1 of the script $0"
+    echo "Exit code: $2"
+    echo "Exiting the script now."
+    # TODO add issue address for users to report issues and solutions.
+}
+
+# Set trap to the function when an error occurs
+trap 'handle_error $LINENO $?' ERR
 
 # Choose Language
 get_prompt() {
@@ -177,11 +187,11 @@ get_prompt() {
 set_language() {
   if [[ $LANGUAGE == "" ]]; then
       get_prompt "choose_language"
-      echo "1. English"
-      echo "2. 中文"
-      get_prompt "enter_choice"
-      read -p " " lang_choice
-      if [[ $lang_choice == "2" ]]; then
+      echo "en. English"
+      echo "zh. 中文"
+      get_prompt "enter_choice" "y"
+      read -p "" lang_choice
+      if [[ $lang_choice == "zh" ]]; then
           LANGUAGE="CN"
       fi
   fi
@@ -383,7 +393,7 @@ wait_cluster_ready() {
           echo && break # new line
         fi
         read -t 1 -n 1 -p "" input 2>/dev/null || true
-        if [[ "$input" == "1" ]]; then
+        if [[ "$input" == "y" ]]; then
           echo && break # new line
         fi
     done
