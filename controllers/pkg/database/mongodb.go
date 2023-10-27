@@ -560,7 +560,7 @@ func (m *MongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 		// Calculate the amount and set the used value
 		for property := range result.Used {
 			if prop, ok := prols.EnumMap[property]; ok {
-				appCost.UsedAmount[property] = result.Used[property] * prop.UnitPrice
+				appCost.UsedAmount[property] = int64(math.Ceil(float64(result.Used[property]) / prop.UnitPrice))
 				appCost.Amount += appCost.UsedAmount[property]
 			}
 		}

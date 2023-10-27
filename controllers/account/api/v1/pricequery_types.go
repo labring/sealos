@@ -33,9 +33,9 @@ type PriceQueryStatus struct {
 }
 
 type BillingRecord struct {
-	ResourceType string `json:"resourceType"`
-	Price        int64  `json:"price"`
-	DiscountType string `json:"discountType,omitempty"`
+	ResourceType string  `json:"resourceType"`
+	Price        float64 `json:"price"`
+	DiscountType string  `json:"discountType,omitempty"`
 }
 
 //+kubebuilder:object:root=true

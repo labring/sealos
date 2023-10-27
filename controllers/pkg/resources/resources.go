@@ -189,7 +189,7 @@ type PropertyType struct {
 	//AVG, SUM, DIF value. The cumulative value is the average value by default
 	PriceType string `json:"price_type,omitempty" bson:"price_type,omitempty"`
 	// Price = UsedAmount (avg || accumulated-value || difference-value) / Unit * UnitPrice
-	UnitPrice        int64             `json:"unit_price" bson:"unit_price"`
+	UnitPrice        float64           `json:"unit_price" bson:"unit_price"`
 	EncryptUnitPrice string            `json:"encrypt_unit_price" bson:"encrypt_unit_price"`
 	Unit             resource.Quantity `json:"-" bson:"-"`
 	// <digit>           ::= 0 | 1 | ... | 9
@@ -301,11 +301,12 @@ func decryptPrice(types []PropertyType) ([]PropertyType, error) {
 		if types[i].EncryptUnitPrice == "" {
 			return types, fmt.Errorf("encrypt %s unit price is empty", types[i].Name)
 		}
-		price, err := crypto.DecryptInt64(types[i].EncryptUnitPrice)
+		price, err := crypto.DecryptFloat64(types[i].EncryptUnitPrice)
 		if err != nil {
 			return types, fmt.Errorf("failed to decrypt %s unit price : %v", types[i].Name, err)
 		}
 		types[i].UnitPrice = price
+		logger.Info("decrypt unit_price: ", types[i].UnitPrice)
 		//if types[i].UnitPrice != 0 {
 		//	price, err := crypto.EncryptInt64(types[i].UnitPrice)
 		//	if err != nil {
