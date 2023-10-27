@@ -22,7 +22,7 @@ function Home() {
       {dbList.length === 0 && initialized ? (
         <Empty />
       ) : (
-        <>
+        <> 
           <DBList dbList={dbList} refetchApps={refetch} />
         </>
       )}
