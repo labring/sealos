@@ -67,33 +67,33 @@ PROMPTS_EN=(
     ["usage"]="Usage: $0 [options]=[value] [options]=[value] ...
 
 Options:
-   --image_registry             # Image repository address (default: docker.io)
-   --image_repository           # Image repository name (default: labring)
-   --kubernetes_version         # Kubernetes version (default: 1.25.6)
-   --cilium_version             # Cilium version (default: 1.12.14)
-   --cert_manager_version       # Cert Manager version (default: 1.8.0)
-   --helm_version               # Helm version (default: 3.12.0)
-   --openebs_version            # OpenEBS version (default: 3.4.0)
-   --reflector_version           # Reflector version (default: 7.0.151)
-   --ingress_nginx_version      # Ingress Nginx version (default: 1.5.1)
-   --kubeblocks_version         # Kubeblocks version (default: 0.6.4)
-   --metrics_server_version     # Metrics Server version (default: 0.6.4)
-   --cloud_version              # Sealos Cloud version (default: latest)
-   --mongodb_version            # MongoDB version (default: mongodb-5.0)
-   --master_ips                 # Master node IP list, separated by commas (no need to fill in for single node and current execution node)
-   --node_ips                   # Node node IP list, separated by commas
-   --ssh_private_key            # SSH private key path (default: $HOME/.ssh/id_rsa)
-   --ssh_password               # SSH password
-   --pod_cidr                   # Pod subnet (default: 100.64.0.0/10)
-   --service_cidr               # Service subnet (default: 10.96.0.0/22)
-   --cloud_domain               # Cloud domain name
-   --cloud_port                 # Cloud port (default: 443)
-   --cert_path                  # Certificate path
-   --key_path                   # Private key path
-   --single                     # Whether to install on a single node (y/n)
-   --zh                         # Chinese prompt
-   --en                         # English prompt
-   --help                       # Help information"
+  --image-registry                  # Image repository address (default: docker.io)
+  --image-repository                # Image repository name (default: labring)
+  --kubernetes-version              # Kubernetes version (default: 1.25.6)
+  --cilium-version                  # Cilium version (default: 1.12.14)
+  --cert-manager-version            # Cert Manager version (default: 1.8.0)
+  --helm-version                    # Helm version (default: 3.12.0)
+  --openebs-version                 # OpenEBS version (default: 3.4.0)
+  --reflector-version                # Reflector version (default: 7.0.151)
+  --ingress-nginx-version           # Ingress Nginx version (default: 1.5.1)
+  --kubeblocks-version              # Kubeblocks version (default: 0.6.4)
+  --metrics-server-version          # Metrics Server version (default: 0.6.4)
+  --cloud-version                   # Sealos Cloud version (default: latest)
+  --mongodb-version                 # MongoDB version (default: mongodb-5.0)
+  --master-ips                      # Master node IP list, separated by commas (no need to fill in for single node and current execution node)
+  --node-ips                        # Node node IP list, separated by commas
+  --ssh-private-key                 # SSH private key path (default: $HOME/.ssh/id_rsa)
+  --ssh-password                    # SSH password
+  --pod-cidr                        # Pod subnet (default: 100.64.0.0/10)
+  --service-cidr                    # Service subnet (default: 10.96.0.0/22)
+  --cloud-domain                    # Cloud domain name
+  --cloud-port                      # Cloud port (default: 443)
+  --cert-path                       # Certificate path
+  --key-path                        # Private key path
+  --single                          # Whether to install on a single node (y/n)
+  --zh                              # Chinese prompt
+  --en                              # English prompt
+  --help                            # Help information"
 )
 PROMPTS_CN=(
     ["pre_prompt"]="依赖 iptables, 请确保 iptables 已经安装, 多节点需要配置 ssh 免密登录或密码一致, 使用 Sealos 提供的自签证书安装完成后需要自信任证书"
@@ -127,33 +127,33 @@ PROMPTS_CN=(
     ["usage"]="Usage: $0 [options]=[value] [options]=[value] ...
 
 Options:
-   --image_registry             # 镜像仓库地址 (默认: docker.io)
-   --image_repository           # 镜像仓库名称 (默认: labring)
-   --kubernetes_version         # Kubernetes版本 (默认: 1.25.6)
-   --cilium_version             # Cilium版本 (默认: 1.12.14)
-   --cert_manager_version       # Cert Manager版本 (默认: 1.8.0)
-   --helm_version               # Helm版本 (默认: 3.12.0)
-   --openebs_version            # OpenEBS版本 (默认: 3.4.0)
-   --reflector_version           # Reflector版本 (默认: 7.0.151)
-   --ingress_nginx_version      # Ingress Nginx版本 (默认: 1.5.1)
-   --kubeblocks_version         # Kubeblocks版本 (默认: 0.6.4)
-   --metrics_server_version     # Metrics Server版本 (默认: 0.6.4)
-   --cloud_version              # Sealos Cloud版本 (默认: latest)
-   --mongodb_version            # MongoDB版本 (默认: mongodb-5.0)
-   --master_ips                 # Master节点IP列表,使用英文逗号分割 (单节点且为当前执行节点可不填写)
-   --node_ips                   # Node节点IP列表,使用英文逗号分割
-   --ssh_private_key            # SSH私钥路径 (默认: $HOME/.ssh/id_rsa)
-   --ssh_password               # SSH密码
-   --pod_cidr                   # Pod子网 (默认: 100.64.0.0/10)
-   --service_cidr               # Service子网 (默认: 10.96.0.0/22)
-   --cloud_domain               # 云域名
-   --cloud_port                 # 云端口 (默认: 443)
-   --cert_path                  # 证书路径
-   --key_path                   # 私钥路径
-   --single                     # 是否单节点安装 (y/n)
-   --zh                         # 中文提示
-   --en                         # 英文提示
-   --help                       # 帮助信息"
+  --image-registry                # 镜像仓库地址 (默认: docker.io)
+  --image-repository              # 镜像仓库名称 (默认: labring)
+  --kubernetes-version            # Kubernetes版本 (默认: 1.25.6)
+  --cilium-version                # Cilium版本 (默认: 1.12.14)
+  --cert-manager-version          # Cert Manager版本 (默认: 1.8.0)
+  --helm-version                  # Helm版本 (默认: 3.12.0)
+  --openebs-version               # OpenEBS版本 (默认: 3.4.0)
+  --reflector-version              # Reflector版本 (默认: 7.0.151)
+  --ingress-nginx-version         # Ingress Nginx版本 (默认: 1.5.1)
+  --kubeblocks-version            # Kubeblocks版本 (默认: 0.6.4)
+  --metrics-server-version        # Metrics Server版本 (默认: 0.6.4)
+  --cloud-version                 # Sealos Cloud版本 (默认: latest)
+  --mongodb-version               # MongoDB版本 (默认: mongodb-5.0)
+  --master-ips                    # Master节点IP列表,使用英文逗号分割 (单节点且为当前执行节点可不填写)
+  --node-ips                      # Node节点IP列表,使用英文逗号分割
+  --ssh-private-key               # SSH私钥路径 (默认: $HOME/.ssh/id_rsa)
+  --ssh-password                  # SSH密码
+  --pod-cidr                      # Pod子网 (默认: 100.64.0.0/10)
+  --service-cidr                  # Service子网 (默认: 10.96.0.0/22)
+  --cloud-domain                  # 云域名
+  --cloud-port                    # 云端口 (默认: 443)
+  --cert-path                     # 证书路径
+  --key-path                      # 私钥路径
+  --single                        # 是否单节点安装 (y/n)
+  --zh                            # 中文提示
+  --en                            # 英文提示
+  --help                          # 帮助信息"
 )
 
 # Define error handling function
@@ -460,58 +460,58 @@ EOF
 
 for i in "$@"; do
   case ${i,,} in
-  --image_registry=*) image_registry="${i#*=}"; shift ;;
-  --image_repository=*) image_repository="${i#*=}"; shift ;;
-  --kubernetes_version=*) kubernetes_version="${i#*=}"; shift ;;
-  --cilium_version=*) cilium_version="${i#*=}"; shift ;;
-  --cert_manager_version=*) cert_manager_version="${i#*=}"; shift ;;
-  --helm_version=*) helm_version="${i#*=}"; shift ;;
-  --openebs_version=*) openebs_version="${i#*=}"; shift ;;
-  --reflector_version=*) reflector_version="${i#*=}"; shift ;;
-  --ingress_nginx_version=*) ingress_nginx_version="${i#*=}"; shift ;;
-  --kubeblocks_version=*) kubeblocks_version="${i#*=}"; shift ;;
-  --metrics_server_version=*) metrics_server_version="${i#*=}"; shift ;;
-  --cloud_version=*) CLOUD_VERSION="${i#*=}"; shift ;;
-  --mongodb_version=*) mongodb_version="${i#*=}"; shift ;;
-  --master_ips=*) master_ips="${i#*=}"; shift ;;
-  --node_ips=*) node_ips="${i#*=}"; shift ;;
-  --ssh_private_key=*) ssh_private_key="${i#*=}"; shift ;;
-  --ssh_password=*) ssh_password="${i#*=}"; shift ;;
-  --pod_cidr=*) pod_cidr="${i#*=}"; shift ;;
-  --service_cidr=*) service_cidr="${i#*=}"; shift ;;
-  --cloud_domain=*) cloud_domain="${i#*=}"; shift ;;
-  --cloud_port=*) cloud_port="${i#*=}"; shift ;;
-  --cert_path=*) cert_path="${i#*=}"; shift ;;
-  --key_path=*) key_path="${i#*=}"; shift ;;
+  --image-registry=*) image_registry="${i#*=}"; shift ;;
+  --image-repository=*) image_repository="${i#*=}"; shift ;;
+  --kubernetes-version=*) kubernetes_version="${i#*=}"; shift ;;
+  --cilium-version=*) cilium_version="${i#*=}"; shift ;;
+  --cert-manager-version=*) cert_manager_version="${i#*=}"; shift ;;
+  --helm-version=*) helm_version="${i#*=}"; shift ;;
+  --openebs-version=*) openebs_version="${i#*=}"; shift ;;
+  --reflector-version=*) reflector_version="${i#*=}"; shift ;;
+  --ingress-nginx-version=*) ingress_nginx_version="${i#*=}"; shift ;;
+  --kubeblocks-version=*) kubeblocks_version="${i#*=}"; shift ;;
+  --metrics-server-version=*) metrics_server_version="${i#*=}"; shift ;;
+  --cloud-version=*) CLOUD_VERSION="${i#*=}"; shift ;;
+  --mongodb-version=*) mongodb_version="${i#*=}"; shift ;;
+  --master-ips=*) master_ips="${i#*=}"; shift ;;
+  --node-ips=*) node_ips="${i#*=}"; shift ;;
+  --ssh-private-key=*) ssh_private_key="${i#*=}"; shift ;;
+  --ssh-password=*) ssh_password="${i#*=}"; shift ;;
+  --pod-cidr=*) pod_cidr="${i#*=}"; shift ;;
+  --service-cidr=*) service_cidr="${i#*=}"; shift ;;
+  --cloud-domain=*) cloud_domain="${i#*=}"; shift ;;
+  --cloud-port=*) cloud_port="${i#*=}"; shift ;;
+  --cert-path=*) cert_path="${i#*=}"; shift ;;
+  --key-path=*) key_path="${i#*=}"; shift ;;
   --single) single="y"; shift ;;
   --zh | zh ) LANGUAGE="CN"; shift ;;
   --en | en ) LANGUAGE="EN"; shift ;;
   --config=* | -c ) source ${i#*=} > /dev/null; shift ;;
   -h | --help) HELP=true; shift ;;
   -d | --debug) set -x; shift ;;
-  --image_registry | image_registry | \
-  --image_repository | image_repository | \
-  --kubernetes_version | kubernetes_version | \
-  --cilium_version | cilium_version | \
-  --cert_manager_version | cert_manager_version | \
-  --helm_version | helm_version | \
-  --openebs_version | openebs_version | \
-  --reflector_version | reflector_version | \
-  --ingress_nginx_version | ingress_nginx_version | \
-  --kubeblocks_version | kubeblocks_version | \
-  --metrics_server_version | metrics_server_version | \
-  --cloud_version | cloud_version | \
-  --mongodb_version | mongodb_version | \
-  --master_ips | master_ips | \
-  --node_ips | node_ips | \
-  --ssh_private_key | ssh_private_key | \
-  --ssh_password | ssh_password | \
-  --pod_cidr | pod_cidr | \
-  --service_cidr | service_cidr | \
-  --cloud_domain | cloud_domain | \
-  --cloud_port | cloud_port | \
-  --cert_path | cert_path | \
-  --key_path | key_path | \
+  --image-registry | image-registry | \
+  --image-repository | image-repository | \
+  --kubernetes-version | kubernetes-version | \
+  --cilium-version | cilium-version | \
+  --cert-manager-version | cert-manager-version | \
+  --helm-version | helm-version | \
+  --openebs-version | openebs-version | \
+  --reflector-version | reflector-version | \
+  --ingress-nginx-version | ingress-nginx-version | \
+  --kubeblocks-version | kubeblocks-version | \
+  --metrics-server-version | metrics-server-version | \
+  --cloud-version | cloud-version | \
+  --mongodb-version | mongodb-version | \
+  --master-ips | master-ips | \
+  --node-ips | node-ips | \
+  --ssh-private-key | ssh-private-key | \
+  --ssh-password | ssh-password | \
+  --pod-cidr | pod-cidr | \
+  --service-cidr | service-cidr | \
+  --cloud-domain | cloud-domain | \
+  --cloud-port | cloud-port | \
+  --cert-path | cert-path | \
+  --key-path | key-path | \
   --config | config) echo "Please use '--${i#--}=' to assign value to option"; exit 1 ;;
   -*) echo "Unknown option $i"; exit 1 ;;
   *) ;;
