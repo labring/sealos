@@ -233,7 +233,7 @@ var DefaultPropertyTypeList = []PropertyType{
 		Enum:      0,
 		PriceType: AVG,
 		// raw price: 67
-		UnitPrice:  20,
+		UnitPrice:  2.185002854,
 		UnitString: "1m",
 	},
 	{
@@ -241,7 +241,7 @@ var DefaultPropertyTypeList = []PropertyType{
 		Enum:      1,
 		PriceType: AVG,
 		// raw price: 33
-		UnitPrice:  10,
+		UnitPrice:  1.092501427,
 		UnitString: "1Mi",
 	},
 	{
@@ -249,14 +249,14 @@ var DefaultPropertyTypeList = []PropertyType{
 		Enum:      2,
 		PriceType: AVG,
 		// raw price: 21
-		UnitPrice:  1,
+		UnitPrice:  0,
 		UnitString: "1Mi",
 	},
 	{
 		Name:       "network",
 		Enum:       3,
 		PriceType:  DIF,
-		UnitPrice:  781,
+		UnitPrice:  0,
 		UnitString: "1Mi",
 	},
 }
