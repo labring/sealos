@@ -37,18 +37,6 @@ export function K8sApi(config: string): k8s.KubeConfig {
   }
   return kc;
 }
-export function switchNamespace(oldkc: k8s.KubeConfig, namespace: string) {
-  console.log('old kc :', oldkc);
-  const kc = new k8s.KubeConfig();
-  // console.log(kc)
-  const oldCtx = oldkc.contexts[0];
-  // console.log(oldCtx)
-  kc.loadFromOptions({
-    ...oldkc,
-    contexts: [{ ...oldCtx, namespace }]
-  });
-  return kc;
-}
 export async function ListPods(
   kc: k8s.KubeConfig,
   ns: string

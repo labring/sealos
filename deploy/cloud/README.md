@@ -34,7 +34,7 @@ Other dns api please read: https://github.com/acmesh-official/acme.sh/wiki/dnsap
 We provide a self-signed cert for you to test by default if you didn't provide a cert. You can replace it with your own cert.
 
 ### Kubernetes Setup
-Please read sealos doc to create a kubernetes cluster: https://sealos.io/docs/lifecycle-management/quick-start/installation
+Please read sealos doc to create a kubernetes cluster: https://sealos.io/docs/self-hosting/lifecycle-management/quick-start/deploy-kubernetes
 
 ```shell
 sealos gen labring/kubernetes:v1.25.6\
@@ -53,6 +53,19 @@ sealos apply -f Clusterfile
 
 Note: if you want to change pod cidr, please edit the `Clusterfile` before run `sealos apply`
 
+### OpenEBS sc create
+
+```shell
+kubectl create -f - <<EOF
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-backup
+provisioner: openebs.io/local
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+EOF
+```
 
 ### Ingress-nginx setup
 We use ingress-nginx to expose our services. You can install ingress-nginx by using sealos:

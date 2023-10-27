@@ -1,5 +1,5 @@
 import { defineStyleConfig, extendTheme } from '@chakra-ui/react';
-
+import { theme as originTheme } from '@sealos/ui';
 const Button = defineStyleConfig({
   baseStyle: {
     borderRadius: '4px'
@@ -20,23 +20,6 @@ const Button = defineStyleConfig({
         }
       },
       color: '#FEFEFE'
-    },
-    switchPage: {
-      width: '24px',
-      height: '24px',
-      background: '#EDEFF1',
-
-      // '#EDEFF1':'#F1F4F6'
-      borderRadius: '9999px',
-      color: '#262A32',
-      flexGrow: '0',
-      _hover: {
-        opacity: '0.7'
-      },
-      _disabled: {
-        color: '828289',
-        background: '#F1F4F6'
-      }
     }
   }
 });
@@ -94,10 +77,8 @@ const Card = defineStyleConfig({
     }
   }
 });
-export const theme = extendTheme({
+export const theme = extendTheme(originTheme, {
   components: {
-    Button,
-    Input,
     Select,
     Heading,
     Card

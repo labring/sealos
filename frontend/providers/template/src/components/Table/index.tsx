@@ -32,7 +32,8 @@ const Table = ({ columns, data, itemClass = '' }: Props) => {
           }}
           _last={{
             borderRightRadius: 'md'
-          }}>
+          }}
+        >
           {t(item.title)}
         </Box>
       ))}
@@ -56,7 +57,8 @@ const Table = ({ columns, data, itemClass = '' }: Props) => {
             borderBottomLeftRadius={index1 === data.length - 1 && index2 === 0 ? 'md' : ''}
             borderBottomEndRadius={
               index1 === data.length - 1 && index2 === columns.length - 1 ? 'md' : ''
-            }>
+            }
+          >
             {col.render ? col.render(item) : col.dataIndex ? `${item[col.dataIndex]}` : ''}
           </Flex>
         ))

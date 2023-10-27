@@ -48,7 +48,7 @@ with at least svc(s) below:
 ### Base applications requirements
 
 1. At least one storage Provider, here we use aliyun OSS and CDN. Or, you can use openebs.
-    * `AliOSS`: read [this](https://github.com/docker/docs/blob/main/content/registry/storage-drivers/oss.md)
+    * `AliOSS`: read [this](https://distribution.github.io/distribution/storage-drivers/)
     * `openebs` : `sealos run labring/openebs:v1.9.0`
 
 2. One Domain name with admin access
@@ -69,7 +69,7 @@ with at least svc(s) below:
 
 1. Example(@see [deploy.yaml](./manifests/deploy.yaml))
 
-2. Read docker registry docs about [config](https://docs.docker.com/registry/configuration/)
+2. Read docker registry docs about [config](https://distribution.github.io/distribution/about/configuration/)
 
 3. Edit `auth`, use your own auth server.
 

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { Flex, Box } from '@chakra-ui/react';
 import type { YamlItemType } from '@/types';
@@ -23,6 +23,7 @@ import { DBVersionMap } from '@/store/static';
 import Header from './components/Header';
 import Form from './components/Form';
 import Yaml from './components/Yaml';
+import { useUserStore } from '@/store/user';
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
 const defaultEdit = {
@@ -40,6 +41,8 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const { toast } = useToast();
   const { Loading, setIsLoading } = useLoading();
   const { loadDBDetail } = useDBStore();
+  const oldDBEditData = useRef<DBEditType>();
+  const { checkQuotaAllow, balance } = useUserStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!dbName);
   const { openConfirm, ConfirmChild } = useConfirm({
     content: t(applyMessage)
@@ -61,24 +64,28 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     defaultValues: defaultEdit
   });
 
+  const generateYamlList = (data: DBEditType) => {
+    return [
+      {
+        filename: 'cluster.yaml',
+        value: json2CreateCluster(data)
+      },
+      ...(isEdit
+        ? []
+        : [
+            {
+              filename: 'account.yaml',
+              value: json2Account(data)
+            }
+          ])
+    ];
+  };
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const formOnchangeDebounce = useCallback(
     debounce((data: DBEditType) => {
       try {
-        setYamlList([
-          {
-            filename: 'cluster.yaml',
-            value: json2CreateCluster(data)
-          },
-          ...(isEdit
-            ? []
-            : [
-                {
-                  filename: 'account.yaml',
-                  value: json2Account(data)
-                }
-              ])
-        ]);
+        setYamlList(generateYamlList(data));
       } catch (error) {
         console.log(error);
       }
@@ -91,16 +98,26 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     setForceUpdate(!forceUpdate);
   });
 
-  const submitSuccess = useCallback(async () => {
+  const submitSuccess = async (formData: DBEditType) => {
     setIsLoading(true);
     try {
       !isEdit && (await applyYamlList([limitRangeYaml], 'create'));
     } catch (err) {}
     try {
-      const data = yamlList.map((item) => item.value);
+      const yamlList = generateYamlList(formData).map((item) => item.value);
+      // quote check
+      const quoteCheckRes = checkQuotaAllow(formData, oldDBEditData.current);
+      if (quoteCheckRes) {
+        setIsLoading(false);
+        return toast({
+          status: 'warning',
+          title: t(quoteCheckRes),
+          duration: 5000,
+          isClosable: true
+        });
+      }
 
-      await applyYamlList(data, isEdit ? 'replace' : 'create');
-
+      await applyYamlList(yamlList, isEdit ? 'replace' : 'create');
       toast({
         title: t(applySuccess),
         status: 'success'
@@ -111,7 +128,8 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       setErrorMessage(JSON.stringify(error));
     }
     setIsLoading(false);
-  }, [applySuccess, formHook, isEdit, router, setIsLoading, t, toast, yamlList]);
+  };
+
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
@@ -152,6 +170,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     {
       onSuccess(res) {
         if (!res) return;
+        oldDBEditData.current = res;
         formHook.reset(adaptDBForm(res));
         setMinStorage(res.storage);
       },
@@ -181,7 +200,9 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
           title={title}
           yamlList={yamlList}
           applyBtnText={applyBtnText}
-          applyCb={() => formHook.handleSubmit(openConfirm(submitSuccess), submitError)()}
+          applyCb={() =>
+            formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)()
+          }
         />
 
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>

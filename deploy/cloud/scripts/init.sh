@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 cloudDomain="127.0.0.1.nip.io"
 cloudPort=""
@@ -37,11 +37,20 @@ function gen_mongodbUri() {
   if [ -z "$mongodbUri" ]; then
     echo "no mongodb uri found, create mongodb and gen mongodb uri"
     kubectl apply -f manifests/mongodb.yaml
+    echo "waiting for mongodb secret generated"
+    message="Waiting for MongoDB ready"
     # if there is no sealos-mongodb-conn-credential secret then wait for mongodb ready
-    while [ -z "$(kubectl get secret -n sealos sealos-mongodb-conn-credential)" ]; do
-      echo "waiting for mongodb secret generated"
-      sleep 5
+    while [ -z "$(kubectl get secret -n sealos sealos-mongodb-conn-credential 2>/dev/null)" ]; do
+      echo -ne "\r$message   \e[K"
+      sleep 0.5
+      echo -ne "\r$message .  \e[K"
+      sleep 0.5
+      echo -ne "\r$message .. \e[K"
+      sleep 0.5
+      echo -ne "\r$message ...\e[K"
+      sleep 0.5
     done
+    echo "mongodb secret has been generated successfully."
     chmod +x scripts/gen-mongodb-uri.sh
     mongodbUri=$(scripts/gen-mongodb-uri.sh)
   fi
@@ -58,7 +67,7 @@ function gen_saltKey() {
 
 function mutate_desktop_config() {
     # mutate etc/sealos/desktop-config.yaml by using mongodb uri and two random base64 string
-    sed -i -e "s;<your-mongodb-uri-base64>;$(echo -n "$mongodbUri" | base64 -w 0);" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-mongodb-uri-base64>;$(echo -n "${mongodbUri}/sealos-auth?authSource=admin" | base64 -w 0);" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-jwt-secret-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-password-salt-base64>;$saltKey;" etc/sealos/desktop-config.yaml
 }
@@ -95,10 +104,6 @@ function sealos_run_controller {
   sealos run tars/monitoring.tar \
   --env MONGO_URI="$mongodbUri" --env DEFAULT_NAMESPACE="resources-system"
 
-  # run resources metering controller
-  sealos run tars/metering.tar \
-  --env MONGO_URI="$mongodbUri" --env DEFAULT_NAMESPACE="resources-system"
-
   # run account controller
   sealos run tars/account.tar \
   --env MONGO_URI="$mongodbUri" \
@@ -106,12 +111,9 @@ function sealos_run_controller {
   --env cloudPort="$cloudPort" \
   --env DEFAULT_NAMESPACE="account-system"
 
-  # run licenseissuer controller
-  sealos run tars/licenseissuer.tar \
-  --env canConnectToExternalNetwork="true" \
-  --env enableMonitor="true" \
-  --env MongoURI="$mongodbUri" \
-  --env PasswordSalt="$saltKey"
+  # run license controller
+  sealos run tars/license.tar \
+  --env MONGO_URI="$mongodbUri"
 }
 
 function sealos_run_frontend {
@@ -154,31 +156,27 @@ function sealos_run_frontend {
   --env cloudDomain=$cloudDomain \
   --env cloudPort=$cloudPort \
   --env certSecretName="wildcard-cert"
+
+  echo "run db monitoring"
+  sealos run tars/database-service.tar
 }
 
 function resource_exists {
-    kubectl get $1 >/dev/null 2>&1
+  kubectl get $1 >/dev/null 2>&1
 }
 
 
 function sealos_authorize {
-    set +x
-    echo "start to authorize sealos"
-    echo "create admin-user"
-    # create admin-user
-    kubectl apply -f manifests/admin-user.yaml 
-    # wait for admin-user ready
-    echo "waiting for admin-user generated, this may take a few minutes"
-    while true; do
-        if resource_exists "namespace ns-admin" && resource_exists "account admin -n sealos-system" && resource_exists "user admin"; then
-            break
-        fi
-        sleep 10
-    done
-    # issue license for admin-user
-    echo "license issue for admin-user"
-    kubectl apply -f manifests/free-license.yaml
-    set -x
+  sealos run tars/job-init.tar
+
+  # wait for admin user create
+  echo "Waiting for admin user create"
+
+  while [ -z "$(kubectl get ns ns-admin 2>/dev/null)" ]; do
+    sleep 1
+  done
+
+  kubectl apply -f manifests/free-license.yaml
 }
 
 

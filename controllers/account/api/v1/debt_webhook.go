@@ -22,13 +22,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/labring/sealos/controllers/pkg/code"
-
-	userV1 "github.com/labring/sealos/controllers/user/api/v1"
-
 	account2 "github.com/labring/sealos/controllers/pkg/account"
+	"github.com/labring/sealos/controllers/pkg/code"
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 
-	admissionV1 "k8s.io/api/admission/v1"
+	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
@@ -68,7 +66,7 @@ func init() {
 func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admission.Response {
 	logger.V(1).Info("checking user", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.gvrk", getGVRK(req), "req.Operation", req.Operation)
 	// skip delete request (删除quota资源除外)
-	if req.Operation == admissionV1.Delete && !strings.Contains(getGVRK(req), "quotas") {
+	if req.Operation == admissionv1.Delete && !strings.Contains(getGVRK(req), "quotas") {
 		return admission.Allowed("")
 	}
 
@@ -98,7 +96,7 @@ func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admissi
 		if req.Kind.Kind == "Namespace" {
 			return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
 		}
-		if req.Kind.Kind == "Payment" && req.Operation == admissionV1.Update {
+		if req.Kind.Kind == "Payment" && req.Operation == admissionv1.Update {
 			return admission.Denied(fmt.Sprintf("ns %s request %s %s permission denied", req.Namespace, req.Kind.Kind, req.Operation))
 		}
 		return checkOption(ctx, logger, d.Client, req.Namespace)
@@ -142,7 +140,7 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsNam
 		return admission.Allowed("namespace not found")
 	}
 	// Check if it is a user namespace
-	user, ok := ns.Labels[userV1.UserLabelOwnerKey]
+	user, ok := ns.Labels[userv1.UserLabelOwnerKey]
 	if !ok {
 		return admission.ValidationResponse(false, fmt.Sprintf("this namespace is not user namespace %s,or have not create", ns.Name))
 	}

@@ -4,10 +4,8 @@ go 1.20
 
 replace (
 	github.com/labring/image-cri-shim => ../../staging/src/github.com/labring/image-cri-shim
-	github.com/labring/lvscare => ../../staging/src/github.com/labring/lvscare
 	github.com/labring/sealos => ../../
 	github.com/labring/sealos/controllers/cluster => ./../../staging/src/github.com/labring/controllers/cluster
-	github.com/labring/sealos/controllers/imagehub => ./../../staging/src/github.com/labring/controllers/imagehub
 	github.com/labring/sealos/controllers/infra => ./../../staging/src/github.com/labring/controllers/infra
 )
 
@@ -19,6 +17,8 @@ replace (
 require (
 	github.com/BurntSushi/toml v1.3.2
 	github.com/Masterminds/sprig/v3 v3.2.3
+	github.com/go-bindata/go-bindata v1.0.0
+	github.com/google/go-containerregistry v0.15.2
 	github.com/google/uuid v1.3.0
 	github.com/labring/image-cri-shim v0.0.0
 	github.com/labring/sealos v0.0.0
@@ -28,8 +28,9 @@ require (
 	github.com/onsi/gomega v1.27.8
 	github.com/pkg/errors v0.9.1
 	golang.org/x/sync v0.2.0
-	k8s.io/api v0.27.1
-	k8s.io/apimachinery v0.27.1
+	k8s.io/api v0.27.4
+	k8s.io/apimachinery v0.27.4
+	k8s.io/client-go v0.27.4
 	k8s.io/cri-api v0.27.1
 	k8s.io/kube-proxy v0.25.6
 	k8s.io/kubelet v0.25.6
@@ -40,7 +41,7 @@ require (
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/Masterminds/semver/v3 v3.2.0 // indirect
+	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/Microsoft/hcsshim v0.10.0-rc.8 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
@@ -107,7 +108,6 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/gnostic v0.6.9 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
-	github.com/google/go-containerregistry v0.15.2 // indirect
 	github.com/google/go-intervals v0.0.2 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20230323073829-e72429f035bd // indirect
@@ -125,7 +125,7 @@ require (
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/labring/sealos/controllers/cluster v0.0.0-20230417222036-c48922461ea6 // indirect
-	github.com/labring/sealos/controllers/common v0.0.0-20230528031239-655196af17c7 // indirect
+	github.com/labring/sreg v0.1.4 // indirect
 	github.com/letsencrypt/boulder v0.0.0-20230213213521-fdfea0d469b6 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/manifoldco/promptui v0.9.0 // indirect
@@ -187,7 +187,7 @@ require (
 	github.com/vishvananda/netlink v1.2.1-beta.2 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
-	go.mongodb.org/mongo-driver v1.11.3 // indirect
+	go.mongodb.org/mongo-driver v1.11.4 // indirect
 	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
@@ -214,11 +214,10 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/client-go v0.26.2 // indirect
 	k8s.io/cluster-bootstrap v0.25.6 // indirect
-	k8s.io/component-base v0.26.2 // indirect
+	k8s.io/component-base v0.27.2 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20230308215209-15aac26d736a // indirect
+	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2 // indirect
 	sigs.k8s.io/controller-runtime v0.13.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect

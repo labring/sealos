@@ -30,7 +30,7 @@ import { useTranslation } from 'next-i18next';
 import PriceBox from './PriceBox';
 import { INSTALL_ACCOUNT } from '@/store/static';
 import Tip from '@/components/Tip';
-
+import QuotaBox from './QuotaBox';
 import { obj2Query } from '@/api/tools';
 import { throttle } from 'lodash';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
@@ -196,7 +196,9 @@ const Form = ({
               </Box>
             ))}
           </Box>
-
+          <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'}>
+            <QuotaBox />
+          </Box>
           {INSTALL_ACCOUNT && (
             <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>
               <PriceBox
@@ -351,7 +353,9 @@ const Form = ({
                       step={1}
                       position={'relative'}
                       value={getValues('storage')}
-                      onChange={(e) => e && setValue('storage', +e)}
+                      onChange={(e) => {
+                        e !== '' ? setValue('storage', +e) : setValue('storage', minStorage);
+                      }}
                     >
                       <NumberInputField
                         {...register('storage', {

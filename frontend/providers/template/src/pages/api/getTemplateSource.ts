@@ -26,6 +26,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const TemplateEnvs = {
       SEALOS_CLOUD_DOMAIN: process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io',
       SEALOS_CERT_SECRET_NAME: process.env.SEALOS_CERT_SECRET_NAME || 'wildcard-cert',
+      TEMPLATE_REPO_URL:
+        process.env.TEMPLATE_REPO_URL || 'https://github.com/labring-actions/templates',
       SEALOS_NAMESPACE: user_namespace || ''
     };
 
@@ -45,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       });
     }
     const yamlList = yamlData.filter((item: any) => item.kind !== 'Template');
-    const dataSource = getTemplateDataSource(templateYaml);
+    const dataSource = getTemplateDataSource(templateYaml, TemplateEnvs);
     // Convert template to instance
     const instanceName = dataSource?.defaults?.['app_name']?.value;
     if (!instanceName) {

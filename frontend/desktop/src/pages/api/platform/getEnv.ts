@@ -8,7 +8,8 @@ import {
   enableGoogle,
   enableStripe,
   enableWechatRecharge,
-  enableLicense
+  enableLicense,
+  enableRecharge
 } from '@/services/enable';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -26,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const stripeEnabled = enableStripe();
   const wechatEnabledRecharge = enableWechatRecharge();
   const licenseEnabled = enableLicense();
-
+  const rechargeEnabled = enableRecharge();
   jsonRes(res, {
     data: {
       SEALOS_CLOUD_DOMAIN: process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io',
@@ -43,6 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       needGoogle,
       stripeEnabled,
       wechatEnabledRecharge,
+      rechargeEnabled,
       licenseEnabled
     }
   });

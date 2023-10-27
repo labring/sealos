@@ -4,7 +4,7 @@
 
 ![fireboom introduction](../images/fireboom/fireboom-intro.jpeg)
 
-官网地址： https://fireboom.cloud
+官网地址： https://fireboom.io
 
 **功能特性**
 

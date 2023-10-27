@@ -49,7 +49,7 @@ const DelModal = ({
       console.error(error);
     }
     setLoading(false);
-  }, [name, toast, t, onSuccess, onClose]);
+  }, [resource, toast, t, onSuccess, onClose]);
 
   return (
     <Modal isOpen onClose={onClose}>
@@ -86,7 +86,8 @@ const DelModal = ({
             variant={'solid'}
             isDisabled={inputValue !== name}
             isLoading={loading}
-            onClick={handleDelApp}>
+            onClick={handleDelApp}
+          >
             {t('Confirm deletion')}
           </Button>
         </ModalFooter>

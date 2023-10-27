@@ -19,7 +19,7 @@ export default function OtherList({ instanceName }: { instanceName: string }) {
       onSuccess(data) {
         appendResource(
           data.map((item) => {
-            return { id: item.id, name: item.name, kind: item.kind || 'other' };
+            return { id: item.id, name: item.name, kind: item.kind };
           })
         );
       }
@@ -81,14 +81,16 @@ export default function OtherList({ instanceName }: { instanceName: string }) {
             justifyContent={'center'}
             alignItems={'center'}
             background={'white'}
-            p="32px">
+            p="32px"
+          >
             <Flex
               border={'1px dashed #9CA2A8'}
               borderRadius="50%"
               w={'48px'}
               h={'48px'}
               justifyContent="center"
-              alignItems={'center'}>
+              alignItems={'center'}
+            >
               <MyIcon color={'#7B838B'} name="empty"></MyIcon>
             </Flex>
             <Text mt={'12px'} fontSize={14} color={'#5A646E'}>

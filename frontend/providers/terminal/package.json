@@ -9,32 +9,31 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@chakra-ui/react": "^2.8.0",
-    "@emotion/react": "^11.11.1",
-    "@emotion/styled": "^11.11.0",
     "@kubernetes/client-node": "0.18.0",
-    "@tanstack/react-query": "^4.29.25",
+    "@tanstack/react-query": "^4.35.3",
     "axios": "1.2.1",
     "clsx": "^1.2.1",
     "eslint": "8.36.0",
     "eslint-config-next": "13.2.4",
-    "framer-motion": "^10.12.22",
+    "i18next": "^22.5.1",
     "immer": "^9.0.21",
     "js-yaml": "^4.1.0",
     "lodash": "^4.17.21",
     "nanoid": "^4.0.2",
     "next": "13.2.4",
+    "next-i18next": "^13.3.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "react-i18next": "^12.3.1",
     "sealos-desktop-sdk": "workspace:*",
-    "zustand": "^4.3.9"
+    "zustand": "^4.4.1"
   },
   "devDependencies": {
-    "@types/js-yaml": "^4.0.5",
-    "@types/lodash": "^4.14.195",
+    "@types/js-yaml": "^4.0.6",
+    "@types/lodash": "^4.14.199",
     "@types/node": "18.15.5",
     "@types/react": "18.0.28",
     "@types/react-dom": "18.0.11",
-    "sass": "^1.63.6"
+    "sass": "^1.68.0"
   }
 }

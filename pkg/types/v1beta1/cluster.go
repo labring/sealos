@@ -187,16 +187,6 @@ type CommandCondition struct {
 	Message string `json:"message,omitempty"`
 }
 
-func NewSuccessCommandCondition() CommandCondition {
-	return CommandCondition{
-		Type:              CommandConditionTypeSuccess,
-		Status:            v1.ConditionTrue,
-		LastHeartbeatTime: metav1.Now(),
-		Reason:            "Apply Command",
-		Message:           "Applied to cluster successfully",
-	}
-}
-
 func NewFailedCommandCondition(message string) CommandCondition {
 	return CommandCondition{
 		Type:              CommandConditionTypeError,

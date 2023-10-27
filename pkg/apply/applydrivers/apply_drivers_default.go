@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/version"
@@ -31,6 +32,7 @@ import (
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/ssh"
+	"github.com/labring/sealos/pkg/system"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/iputils"
@@ -169,7 +171,7 @@ func (c *Applier) updateStatus(clusterErr error, appErr error) {
 			cmdCondition = v2.NewFailedCommandCondition(appErr.Error())
 		}
 	} else if len(c.RunNewImages) > 0 {
-		cmdCondition = v2.NewSuccessCommandCondition()
+		return
 	}
 	cmdCondition.Images = c.RunNewImages
 	c.ClusterDesired.Status.CommandConditions = v2.UpdateCommandCondition(c.ClusterDesired.Status.CommandConditions, cmdCondition)
@@ -273,6 +275,12 @@ func (c *Applier) deleteCluster() error {
 }
 
 func (c *Applier) syncWorkdir() {
+	if v, _ := system.Get(system.SyncWorkDirEnvKey); v != "" {
+		vb, _ := strconv.ParseBool(v)
+		if !vb {
+			return
+		}
+	}
 	workDir := constants.ClusterDir(c.ClusterDesired.Name)
 	logger.Debug("sync workdir: %s", workDir)
 	ipList := c.ClusterDesired.GetMasterIPAndPortList()
@@ -295,8 +303,14 @@ func (c *Applier) syncWorkdir() {
 // save cluster to file after apply
 func (c *Applier) saveClusterFile() {
 	clusterPath := constants.Clusterfile(c.ClusterDesired.Name)
-	logger.Debug("save objects into local: %s, objects: %v", clusterPath, c.getWriteBackObjects())
-	saveErr := yaml.MarshalFile(clusterPath, c.getWriteBackObjects()...)
+	objects := c.getWriteBackObjects()
+	if logger.IsDebugMode() {
+		out, err := yaml.MarshalConfigs(objects...)
+		if err == nil {
+			logger.Debug("save objects into local: %s, objects: %s", clusterPath, string(out))
+		}
+	}
+	saveErr := yaml.MarshalFile(clusterPath, objects...)
 	if saveErr != nil {
 		logger.Error("failed to serialize into file: %s error, %s", clusterPath, saveErr)
 	}

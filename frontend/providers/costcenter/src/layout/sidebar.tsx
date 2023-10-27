@@ -10,7 +10,6 @@ import invoice_icon from '@/assert/invoice.svg';
 import invoice_a_icon from '@/assert/invoice-active.svg';
 import type { StaticImageData } from 'next/image';
 import { useTranslation } from 'next-i18next';
-import { useEffect } from 'react';
 import useEnvStore from '@/stores/env';
 
 type Menu = {

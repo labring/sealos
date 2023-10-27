@@ -22,7 +22,8 @@ export default function Layout({ children }: { children: JSX.Element }) {
           templateColumns={isMobile ? '76px 1fr' : '270px 1fr'}
           h="100vh"
           overflow={'hidden'}
-          background={'rgba(150, 153, 180, 0.15)'}>
+          background={'rgba(150, 153, 180, 0.15)'}
+        >
           <AppMenu isMobile={isMobile} />
           <>{children}</>
         </Grid>

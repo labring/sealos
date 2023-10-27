@@ -37,7 +37,7 @@ spec:
         env:
         - name: PROMETHEUS_SERVICE_HOST
           value: http://kb-addon-prometheus-server.
-        image: ghcr.io/labring/sealos-cloud-database-monitor:latest
+        image: ghcr.io/labring/sealos-database-service:latest
         imagePullPolicy: Always
         name: database-monitor
         ports:

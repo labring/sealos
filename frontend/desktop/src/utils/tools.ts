@@ -83,3 +83,11 @@ export const vaildManage =
   };
 export const isUserRole = (role: any): role is UserRole =>
   [UserRole.Developer, UserRole.Manager, UserRole.Owner].includes(role);
+
+export function compareFirstLanguages(acceptLanguageHeader: string) {
+  const indexOfZh = acceptLanguageHeader.indexOf('zh');
+  const indexOfEn = acceptLanguageHeader.indexOf('en');
+  if (indexOfZh === -1) return 'en';
+  if (indexOfEn === -1 || indexOfZh < indexOfEn) return 'zh';
+  return 'en';
+}

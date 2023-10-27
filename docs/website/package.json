@@ -3,17 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "sync-zh-files": "mkdir -p i18n/zh-Hans/docusaurus-plugin-content-docs && cp -r ../4.0/i18n/zh-Hans/ i18n/zh-Hans/docusaurus-plugin-content-docs/current/ && cp ../4.0/i18n/zh-Hans/current.json  i18n/zh-Hans/docusaurus-plugin-content-docs/current.json && cp ../4.0/code.json i18n/zh-Hans/code.json",
     "docusaurus": "docusaurus",
-    "start": "tsc && docusaurus start",
-    "start-zh": "tsc && docusaurus start --locale zh-Hans",
-    "build": "tsc && docusaurus build",
-    "swizzle": "docusaurus swizzle",
-    "deploy": "docusaurus deploy",
-    "clear": "docusaurus clear",
-    "serve": "docusaurus serve",
-    "write-translations-en": "docusaurus write-translations --locale en",
-    "write-translations-zh": "docusaurus write-translations --locale zh-Hans",
-    "write-heading-ids": "docusaurus write-heading-ids"
+    "start": "yarn sync-zh-files && tsc && docusaurus start",
+    "start-zh": "yarn sync-zh-files && tsc && docusaurus start --locale zh-Hans",
+    "build": "yarn sync-zh-files && tsc && docusaurus build",
+    "swizzle": "yarn sync-zh-files && docusaurus swizzle",
+    "deploy": "yarn sync-zh-files && docusaurus deploy",
+    "clear": "yarn sync-zh-files && docusaurus clear",
+    "serve": "yarn sync-zh-files && docusaurus serve",
+    "write-translations-en": "yarn sync-zh-files && docusaurus write-translations --locale en",
+    "write-translations-zh": "yarn sync-zh-files && docusaurus write-translations --locale zh-Hans",
+    "write-heading-ids": "yarn sync-zh-files && docusaurus write-heading-ids"
   },
   "dependencies": {
     "@docusaurus/core": "^2.4.3",

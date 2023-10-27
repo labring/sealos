@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -131,6 +132,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 	// get payment details(status, amount)
+	// TODO The GetPaymentDetails may cause issues when using Stripe
 	status, orderAmount, err := payHandler.GetPaymentDetails(payment.Status.TradeNO)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("query order failed: %v", err)
@@ -472,7 +474,7 @@ func giveGift(amount int64, configMap *corev1.ConfigMap) (int64, error) {
 	stepsStr := strings.Split(configMap.Data["steps"], ",")
 	ratiosStr := strings.Split(configMap.Data["ratios"], ",")
 
-	var ratio int64
+	var ratio float64
 
 	for i, stepStr := range stepsStr {
 		step, err := strconv.ParseInt(stepStr, 10, 64)
@@ -480,7 +482,7 @@ func giveGift(amount int64, configMap *corev1.ConfigMap) (int64, error) {
 			return amount, fmt.Errorf("steps format error :%s", err)
 		}
 		if amount >= step*BaseUnit {
-			ratio, err = strconv.ParseInt(ratiosStr[i], 10, 64)
+			ratio, err = strconv.ParseFloat(ratiosStr[i], 32)
 			if err != nil {
 				return amount, fmt.Errorf("ratios format error :%s", err)
 			}
@@ -488,5 +490,5 @@ func giveGift(amount int64, configMap *corev1.ConfigMap) (int64, error) {
 			break
 		}
 	}
-	return amount*ratio/100 + amount, nil
+	return int64(math.Ceil(float64(amount)*ratio/100)) + amount, nil
 }

@@ -65,6 +65,7 @@ type TemplateData struct {
 	Readme       string       `json:"readme,omitempty"`
 	Icon         string       `json:"icon,omitempty"`
 	TemplateType TemplateType `json:"templateType"`
+	Draft        bool         `json:"draft,omitempty"`
 	Defaults     Defaults     `json:"defaults,omitempty"`
 	Inputs       Inputs       `json:"inputs,omitempty"`
 }

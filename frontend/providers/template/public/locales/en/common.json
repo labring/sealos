@@ -173,5 +173,12 @@
   "Installed": "Installed",
   "Kind": "Kind",
   "Component": "Component",
-  "No Applications": "No Applications"
+  "No Applications": "No Applications",
+  "Home Page": "Home Page",
+  "Share": "Share",
+  "Share Link": "Share Link",
+  "One click deploy button": "One click deploy button",
+  "Html Part": "Html Part",
+  "Markdown Part": "Markdown Part",
+  "Button Effect": "Button Effect"
 }

@@ -142,6 +142,38 @@ func TestMongoDB_QueryBillingRecords(t *testing.T) {
 	}
 }
 
+func TestMongoDB_QueryBillingRecords1(t *testing.T) {
+	dbCTX := context.Background()
+	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
+	if err != nil {
+		t.Errorf("failed to connect mongo: error = %v", err)
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+	//now := time.Now().UTC()
+	billquery := &accountv1.BillingRecordQuery{
+		Spec: accountv1.BillingRecordQuerySpec{
+			StartTime: metav1.Time{Time: time.Now().UTC().Add(-time.Hour * 24 * 30)},
+			EndTime:   metav1.Time{Time: time.Now().UTC().Add(time.Hour * 24 * 30)},
+			Page:      1,
+			PageSize:  5,
+			Type:      1,
+		},
+	}
+	err = m.QueryBillingRecords(billquery, "")
+	if err != nil {
+		t.Errorf("failed to query billing records: error = %v", err)
+	}
+	data, err := yaml.Marshal(billquery)
+	if err != nil {
+		t.Errorf("failed to marshal billingRecordQuery: error = %v", err)
+	}
+	t.Logf("billingRecordQuery: %s\n", string(data))
+}
+
 var testTime = time.Date(2023, 5, 9, 5, 0, 0, 0, time.UTC)
 
 func TestMongoDB_QueryBillingRecords2(t *testing.T) {

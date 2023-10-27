@@ -8,9 +8,10 @@ export const appDeployKey = 'cloud.sealos.io/app-deploy-manager';
 export const publicDomainKey = `cloud.sealos.io/app-deploy-manager-domain`;
 export const gpuNodeSelectorKey = 'nvidia.com/gpu.product';
 export const gpuResourceKey = 'nvidia.com/gpu';
-// fastdeploy
+// template
 export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
 // db
 export const kubeblocksTypeKey = 'clusterdefinition.kubeblocks.io/name';
+export const dbProviderKey = 'sealos-db-provider-cr';
 // labels
 export const componentLabel = 'app.kubernetes.io/component';

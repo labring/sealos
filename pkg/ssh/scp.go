@@ -20,18 +20,14 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
-
-	"github.com/labring/sealos/pkg/system"
 
 	"github.com/pkg/sftp"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/crypto/ssh"
 
 	"github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/hash"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/progress"
 )
@@ -198,68 +194,36 @@ func (c *Client) doCopy(client *sftp.Client, host, src, dest string, epu *progre
 			}
 		}
 	} else {
-		fn := func(host string, name string) bool {
-			exists, err := checkIfRemoteFileExists(client, name)
-			if err != nil {
-				logger.Error("failed to detect remote file exists: %v", err)
-			}
-			return exists
-		}
-		if isCheckFileMD5() && fn(host, dest) {
-			rfp, _ := client.Stat(dest)
-			if lfp.Size() == rfp.Size() && hash.FileDigest(src) == c.RemoteSha256Sum(host, dest) {
-				logger.Debug("remote dst %s already exists and is the latest version, skip copying process", dest)
-				return nil
-			}
-		}
 		lf, err := os.Open(filepath.Clean(src))
 		if err != nil {
 			return fmt.Errorf("failed to open: %v", err)
 		}
 		defer lf.Close()
 
-		dstfp, err := client.Create(dest)
-		if err != nil {
-			return fmt.Errorf("failed to create: %v", err)
-		}
-		if err = dstfp.Chmod(lfp.Mode()); err != nil {
-			return fmt.Errorf("failed to Chmod dst: %v", err)
-		}
-		defer dstfp.Close()
-		if _, err = io.Copy(dstfp, lf); err != nil {
-			return fmt.Errorf("failed to Copy: %v", err)
-		}
-		if isCheckFileMD5() {
-			dh := c.RemoteSha256Sum(host, dest)
-			if dh == "" {
-				// when ssh connection failed, remote sha256 is default to "", so ignore it.
-				return nil
+		destTmp := dest + ".tmp"
+		if err = func(tmpName string) error {
+			dstfp, err := client.Create(tmpName)
+			if err != nil {
+				return fmt.Errorf("failed to create: %v", err)
 			}
-			sh := hash.FileDigest(src)
-			if sh != dh {
-				return fmt.Errorf("sha256 sum not match %s(%s) != %s(%s), maybe network corruption?", src, sh, dest, dh)
+			defer dstfp.Close()
+
+			if err = dstfp.Chmod(lfp.Mode()); err != nil {
+				return fmt.Errorf("failed to Chmod dst: %v", err)
 			}
+			if _, err = io.Copy(dstfp, lf); err != nil {
+				return fmt.Errorf("failed to Copy: %v", err)
+			}
+			return nil
+		}(destTmp); err != nil {
+			return err
 		}
+
+		if err = client.PosixRename(destTmp, dest); err != nil {
+			return fmt.Errorf("failed to rename %s to %s: %v", destTmp, dest, err)
+		}
+
 		_ = epu.Add(1)
 	}
 	return nil
-}
-
-func checkIfRemoteFileExists(client *sftp.Client, fp string) (bool, error) {
-	_, err := client.Stat(fp)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		}
-		return false, err
-	}
-	return true, nil
-}
-
-func isCheckFileMD5() bool {
-	if v, err := system.Get(system.ScpChecksumConfigKey); err == nil {
-		boolVal, _ := strconv.ParseBool(v)
-		return boolVal
-	}
-	return true
 }

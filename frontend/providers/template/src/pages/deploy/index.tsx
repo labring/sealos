@@ -1,20 +1,20 @@
 import { getTemplateSource, postDeployApp } from '@/api/app';
+import { getPlatformEnv } from '@/api/platform';
 import { editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
-import { GET } from '@/services/request';
 import { useCachedStore } from '@/store/cached';
 import { useGlobalStore } from '@/store/global';
 import type { QueryType, YamlItemType } from '@/types';
-import { TemplateInstanceType, TemplateSourceType } from '@/types/app';
+import { TemplateSourceType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
 import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
-import { deepSearch } from '@/utils/tools';
+import { deepSearch, useCopyData } from '@/utils/tools';
 import { Box, Flex, Icon, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import JSYAML from 'js-yaml';
-import { cloneDeep, isEmpty, mapValues, reduce } from 'lodash';
+import { mapValues, reduce } from 'lodash';
 import debounce from 'lodash/debounce';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
@@ -22,20 +22,21 @@ import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Form from './components/Form';
-import Yaml from './components/Yaml';
 import ReadMe from './components/ReadMe';
+import Yaml from './components/Yaml';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
 
-export default function EditApp({ appName, tabType }: { appName?: string; tabType: string }) {
+export default function EditApp({ appName }: { appName?: string }) {
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
+  const { copyData } = useCopyData();
   const { templateName } = router.query as QueryType;
   const { Loading, setIsLoading } = useLoading();
   const [forceUpdate, setForceUpdate] = useState(false);
-  const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
+  const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(false);
   const [templateSource, setTemplateSource] = useState<TemplateSourceType>();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -47,7 +48,7 @@ export default function EditApp({ appName, tabType }: { appName?: string; tabTyp
     [templateSource]
   );
 
-  const { data: platformEnvs } = useQuery(['getPlatformEnvs'], () => GET('/api/platform/getEnv'), {
+  const { data: platformEnvs } = useQuery(['getPlatformEnvs'], getPlatformEnv, {
     staleTime: 5 * 60 * 1000
   });
 
@@ -134,7 +135,7 @@ export default function EditApp({ appName, tabType }: { appName?: string; tabTyp
         setIsLoading(false);
         setCached(JSON.stringify({ ...formHook.getValues(), cachedKey: templateName }));
         const _name = encodeURIComponent(`?templateName=${templateName}&sealos_inside=true`);
-        const _domain = platformEnvs.SEALOS_CLOUD_DOMAIN;
+        const _domain = platformEnvs?.SEALOS_CLOUD_DOMAIN;
         const href = `https://${_domain}/?openapp=system-fastdeploy${_name}`;
         return window.open(href, '_self');
       }
@@ -149,14 +150,12 @@ export default function EditApp({ appName, tabType }: { appName?: string; tabTyp
 
       deleteCached();
 
-      openConfirm2(() => {
-        router.push({
-          pathname: '/instance',
-          query: {
-            instanceName: detailName
-          }
-        });
-      })();
+      router.push({
+        pathname: '/instance',
+        query: {
+          instanceName: detailName
+        }
+      });
     } catch (error) {
       setErrorMessage(JSON.stringify(error));
     }
@@ -231,6 +230,11 @@ export default function EditApp({ appName, tabType }: { appName?: string; tabTyp
     }
   );
 
+  const copyTemplateLink = () => {
+    const str = `https://${platformEnvs?.SEALOS_CLOUD_DOMAIN}/?openapp=system-fastdeploy%3FtemplateName%3D${appName}`;
+    copyData(str);
+  };
+
   useEffect(() => {
     setInsideCloud(!(window.top === window));
 
@@ -252,7 +256,8 @@ export default function EditApp({ appName, tabType }: { appName?: string; tabTyp
       overflow={'auto'}
       position={'relative'}
       borderRadius={'12px'}
-      background={'linear-gradient(180deg, #FFF 0%, rgba(255, 255, 255, 0.70) 100%)'}>
+      background={'linear-gradient(180deg, #FFF 0%, rgba(255, 255, 255, 0.70) 100%)'}
+    >
       <Flex
         zIndex={99}
         position={'sticky'}
@@ -264,13 +269,15 @@ export default function EditApp({ appName, tabType }: { appName?: string; tabTyp
         justifyContent={'start'}
         alignItems={'center'}
         backgroundColor={'rgba(255, 255, 255)'}
-        backdropBlur={'100px'}>
+        backdropBlur={'100px'}
+      >
         <Flex
           alignItems={'center'}
           fontWeight={500}
           fontSize={16}
           color={'#7B838B'}
-          cursor={'pointer'}>
+          cursor={'pointer'}
+        >
           <Flex
             alignItems={'center'}
             css={{
@@ -281,14 +288,16 @@ export default function EditApp({ appName, tabType }: { appName?: string; tabTyp
                   fill: '#219BF4'
                 }
               }
-            }}>
+            }}
+          >
             <Icon
               ml={'19px'}
               viewBox="0 0 15 15"
               fill={'#24282C'}
               w={'15px'}
               h="15px"
-              onClick={() => router.push('/')}>
+              onClick={() => router.push('/')}
+            >
               <path d="M9.1875 13.1875L3.92187 7.9375C3.85937 7.875 3.81521 7.80729 3.78937 7.73438C3.76312 7.66146 3.75 7.58333 3.75 7.5C3.75 7.41667 3.76312 7.33854 3.78937 7.26562C3.81521 7.19271 3.85937 7.125 3.92187 7.0625L9.1875 1.79687C9.33333 1.65104 9.51562 1.57812 9.73438 1.57812C9.95312 1.57812 10.1406 1.65625 10.2969 1.8125C10.4531 1.96875 10.5312 2.15104 10.5312 2.35938C10.5312 2.56771 10.4531 2.75 10.2969 2.90625L5.70312 7.5L10.2969 12.0938C10.4427 12.2396 10.5156 12.4192 10.5156 12.6325C10.5156 12.8463 10.4375 13.0312 10.2812 13.1875C10.125 13.3438 9.94271 13.4219 9.73438 13.4219C9.52604 13.4219 9.34375 13.3438 9.1875 13.1875Z" />
             </Icon>
             <Text ml="4px" onClick={() => router.push('/')}>
@@ -297,8 +306,10 @@ export default function EditApp({ appName, tabType }: { appName?: string; tabTyp
           </Flex>
           <Text px="6px">/</Text>
           <Text
+            onClick={copyTemplateLink}
             _hover={{ fill: '#219BF4', color: '#219BF4' }}
-            color={router.pathname === '/deploy' ? '#262A32' : '#7B838B'}>
+            color={router.pathname === '/deploy' ? '#262A32' : '#7B838B'}
+          >
             {data?.templateYaml?.metadata?.name}
           </Text>
         </Flex>
@@ -309,10 +320,12 @@ export default function EditApp({ appName, tabType }: { appName?: string; tabTyp
           flexDirection={'column'}
           width={'100%'}
           flexGrow={1}
-          backgroundColor={'rgba(255, 255, 255, 0.90)'}>
+          backgroundColor={'rgba(255, 255, 255, 0.90)'}
+        >
           <Header
+            cloudDomain={platformEnvs?.SEALOS_CLOUD_DOMAIN || ''}
             templateDetail={data?.templateYaml!}
-            appName={''}
+            appName={appName || ''}
             title={title}
             yamlList={yamlList}
             applyBtnText={insideCloud ? applyBtnText : 'Deploy on sealos'}
@@ -336,13 +349,11 @@ export default function EditApp({ appName, tabType }: { appName?: string; tabTyp
 }
 
 export async function getServerSideProps(content: any) {
-  const appName = content?.query?.name || '';
-  const tabType = content?.query?.type || 'form';
+  const appName = content?.query?.templateName || '';
 
   return {
     props: {
       appName,
-      tabType,
       ...(await serviceSideProps(content))
     }
   };

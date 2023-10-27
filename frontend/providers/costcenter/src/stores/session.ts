@@ -21,7 +21,7 @@ const useSessionStore = create<SessionState>()(
     persist(
       immer((set, get) => ({
         session: {} as SessionV1,
-        locale: 'en',
+        locale: 'zh',
         setSession: (ss: SessionV1) => set({ session: ss }),
         setSessionProp: (key: keyof SessionV1, value: any) => {
           set((state) => {

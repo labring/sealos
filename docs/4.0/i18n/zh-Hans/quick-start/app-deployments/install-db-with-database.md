@@ -8,7 +8,7 @@ sidebar_position: 4
 
 下面将通过示例来演示 Sealos 如何快速安装 MySQL。
 
-# 快速安装 MySQL
+## 快速安装 MySQL
 
 1. 在 [Sealos](https://cloud.sealos.top) 桌面环境中打开数据库。
 
@@ -26,7 +26,7 @@ sidebar_position: 4
 
 ![](./images/database-connect.png)
 
-# 快速安装 PostgreSQL 和 MongoDB
+## 快速安装 PostgreSQL 和 MongoDB
 
 PostgreSQL 和 MongoDB 数据库的安装和 MySQL 类似，需要在基础配置界面选择相应的数据库类型。
 

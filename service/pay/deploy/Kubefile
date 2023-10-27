@@ -1,0 +1,17 @@
+FROM scratch
+COPY registry registry
+COPY manifests manifests
+
+ENV DEFAULT_NAMESPACE sealos
+ENV WECHAT_APPID ""
+ENV WECHAT_MCHAPIV3KEY ""
+ENV WECHAT_MCHID ""
+ENV WECHAT_PRIVATE_KEY ""
+ENV MONGODB_URI ""
+ENV STRIPE_API_KEY ""
+ENV STRIPE_CURRENCY ""
+ENV STRIPE_SUCCESS_POSTFIX ""
+ENV STRIPE_CANCEL_POSTFIX ""
+ENV MCH_CERTIFICATE_SERIAL_NUMBER ""
+
+CMD ["( kubectl create -f manifests/mongo-secret.yaml -n $DEFAULT_NAMESPACE || true ) && kubectl apply -f manifests/deploy.yaml"]

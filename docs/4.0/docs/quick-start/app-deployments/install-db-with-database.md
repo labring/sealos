@@ -8,7 +8,7 @@ Databases are fundamental tools for data management, designed for efficient stor
 
 This guide will show you how to install MySQL use Databse app.
 
-# Install MySQL
+## Install MySQL
 
 1. Open Database app in the [Sealos](https://cloud.sealos.io) desktop.
 
@@ -26,7 +26,7 @@ This guide will show you how to install MySQL use Databse app.
 
 ![](./images/database-connect.png)
 
-# Install PostgreSQL and MongoDB
+## Install PostgreSQL and MongoDB
 
 The installation process for PostgreSQL and MongoDB mirrors that of MySQL. Simply choose the respective database type on the basic configuration page.
 

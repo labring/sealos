@@ -67,7 +67,7 @@ jobs:
       - name: Run Linter
         uses: golangci/golangci-lint-action@v3
         with:
-          version: latest
+          version: v1.54.2
           working-directory: ${{ matrix.workdir }}
           args: "--out-${NO_FUTURE}format colored-line-number"
 
@@ -82,9 +82,10 @@ jobs:
           - { name: app, path: app }
           - { name: db-bytebase, path: db/bytebase }
           - { name: db-adminer, path: db/adminer }
+          - { name: license, path: license }
+          - { name: job-init, path: job/init }
           - { name: resources, path: resources }
           - { name: resources-metering, path: resources/metering }
-          - { name: licenseissuer, path: licenseissuer }
           - { name: node, path: node }
           - { name: admission, path: admission }
     steps:
@@ -104,14 +105,14 @@ jobs:
       - name: Build ${{ matrix.module.name }} amd64
         working-directory: controllers/${{ matrix.module.path }}
         run: |
-          GOARCH=amd64 make build
+          GOARCH=amd64 TARGETARCH=amd64 make build
           mv bin/manager bin/controller-${{ matrix.module.name }}-amd64
           chmod +x bin/controller-${{ matrix.module.name }}-amd64
 
       - name: Build ${{ matrix.module.name }} arm64
         working-directory: controllers/${{ matrix.module.path }}
         run: |
-          GOARCH=arm64 make build
+          GOARCH=arm64 TARGETARCH=arm64 make build
           mv bin/manager bin/controller-${{ matrix.module.name }}-arm64
           chmod +x bin/controller-${{ matrix.module.name }}-arm64
 
@@ -184,9 +185,10 @@ jobs:
           - { name: app, path: app }
           - { name: db-bytebase, path: db/bytebase }
           - { name: db-adminer, path: db/adminer }
+          - { name: license, path: license }
+          - { name: job-init, path: job/init }
           - { name: resources, path: resources }
           - { name: resources-metering, path: resources/metering }
-          - { name: licenseissuer, path: licenseissuer }
           - { name: node, path: node }
           - { name: admission, path: admission }
     steps:

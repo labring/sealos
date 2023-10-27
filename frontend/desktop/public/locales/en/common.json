@@ -21,6 +21,14 @@
   "password tips": "Password must be 8 characters or more",
   "username tips": "Username must be 3-16 characters, including letters, numbers",
   "Password": "Password",
+  "change": "change",
+  "changePassword": "Change Password",
+  "currentPassword": "Current Password",
+  "newPassword": "New Password",
+  "confirmNewPassword": "Confirm New Password",
+  "passwordMismatch": "Passwords do not match",
+  "passwordChangeSuccess": "Password changed successfully",
+  "currentPasswordRequired": "Current password cannot be empty",
   "Verify password": "Verify password",
   "verify code tips": "6-digit Verification Code",
   "phone number tips": "Phone Number",
@@ -89,5 +97,6 @@
   "Remaining Time": "Remaining Time: ",
   "Please read and agree to the agreement": "Please read and agree to the agreement",
   "Purchase Link Error": "Purchase Link Error",
-  "You have not purchased the License": "You have not purchased the License"
+  "You have not purchased the License": "You have not purchased the License",
+  "App Info": "App Info"
 }
