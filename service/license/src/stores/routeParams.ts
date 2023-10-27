@@ -37,7 +37,7 @@ const useRouteParamsStore = create<RouteParamsState>()(
       }
     })),
     {
-      name: 'routeparams'
+      name: 'routeParams'
     }
   )
 );

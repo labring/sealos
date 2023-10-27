@@ -15,7 +15,8 @@ export function getOssUrl({
     region: region,
     accessKeyId: process.env.ALI_OSS_KEY_ID,
     accessKeySecret: process.env.ALI_OSS_KEY_SECRET,
-    bucket: bucket
+    bucket: bucket,
+    secure: true
   });
   // 生成用于下载文件的签名URL。
   const url = client.signatureUrl(fileName, {

@@ -25,6 +25,7 @@ import { useRouter } from 'next/router';
 import { useCallback, useEffect, useState } from 'react';
 import WechatPayment from '@/components/WechatPayment';
 import { createLicense } from '@/api/license';
+import usePaymentDataStore from '@/stores/payment';
 
 export default function RechargeComponent() {
   const router = useRouter();
@@ -41,6 +42,8 @@ export default function RechargeComponent() {
   const [orderID, setOrderID] = useState('');
   const [wechatPaymentData, setWechatPaymentData] = useState<WechatPaymentData>();
   const { data: platformEnv } = useQuery(['getPlatformEnv'], getSystemEnv);
+  // 用于避免微信支付，窗口关闭后感知不到的问题
+  // const { paymentData, setPaymentData, deletePaymentData } = usePaymentDataStore();
 
   const onClosePayment = useCallback(() => {
     setOrderID('');
@@ -113,7 +116,7 @@ export default function RechargeComponent() {
         onClosePayment();
         toast({
           status: 'success',
-          title: t('Payment Successful'), // 这里改为license 签发成功
+          title: t('License issued successfully'),
           isClosable: true,
           position: 'top'
         });
@@ -153,23 +156,25 @@ export default function RechargeComponent() {
     }
   });
 
-  useQuery(['checkWechatPay'], () => checkWechatPay(), {
-    onSuccess(data) {
-      if (data.status === PaymentStatus.PaymentSuccess) {
-        toast({
-          status: 'success',
-          title: t('License issued successfully'), // 这里改为license 签发成功
-          isClosable: true,
-          duration: 9000,
-          position: 'top'
-        });
-      }
-    }
-  });
+  // checkWechatPay
+  // useQuery(['checkWechatPay'], () => checkWechatPay(), {
+  //   enabled: !!paymentData?.orderId,
+  //   onSuccess(data) {
+  //     console.log(data, '------');
+  //     if (data.status === PaymentStatus.PaymentSuccess) {
+  //       toast({
+  //         status: 'success',
+  //         title: t('Payment Successful'), // 这里改为license 签发成功
+  //         isClosable: true,
+  //         duration: 9000,
+  //         position: 'top'
+  //       });
+  //     }
+  //   }
+  // });
 
   useEffect(() => {
     const { stripeState, orderID } = router.query;
-    console.log(stripeState, orderID);
     const clearQuery = () => {
       router.replace({
         pathname: '/license',

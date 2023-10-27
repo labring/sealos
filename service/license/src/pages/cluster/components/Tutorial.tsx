@@ -22,7 +22,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 
-export default function Tutorial({ clusterId }: { clusterId: string }) {
+export default function Tutorial({
+  clusterId,
+  ossFileName
+}: {
+  clusterId: string;
+  ossFileName: string;
+}) {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
   const [ossLink, setOssLink] = useState('');
@@ -35,8 +41,7 @@ export default function Tutorial({ clusterId }: { clusterId: string }) {
     {
       async onSuccess(data) {
         if (data?.orderID && data.type === ClusterType.Enterprise) {
-          const _link = await getFileByName('/cloud/sealos-cloud-dev.tar.gz');
-          console.log(_link);
+          const _link = await getFileByName(ossFileName);
           setOssLink(_link);
         }
       }

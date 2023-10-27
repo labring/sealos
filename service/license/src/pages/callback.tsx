@@ -26,7 +26,7 @@ const Callback: NextPage = () => {
 
         const data = await signInByProvider(provider, code);
         setSession(data);
-        router.replace('/');
+        router.replace('/pricing');
       } catch (error) {
         router.replace('/signin');
       }

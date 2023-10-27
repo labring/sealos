@@ -183,19 +183,20 @@ export default function Product() {
     }
   });
 
-  useQuery(['checkWechatPay'], () => checkWechatPay(), {
-    onSuccess(data) {
-      if (data.status === PaymentStatus.PaymentSuccess) {
-        toast({
-          status: 'success',
-          title: t('License issued successfully'), // 这里改为license 签发成功
-          isClosable: true,
-          duration: 9000,
-          position: 'top'
-        });
-      }
-    }
-  });
+  // checkWechatPay
+  // useQuery(['checkWechatPay'], () => checkWechatPay(), {
+  //   onSuccess(data) {
+  //     if (data.status === PaymentStatus.PaymentSuccess) {
+  //       toast({
+  //         status: 'success',
+  //         title: t('License issued successfully'), // 这里改为license 签发成功
+  //         isClosable: true,
+  //         duration: 9000,
+  //         position: 'top'
+  //       });
+  //     }
+  //   }
+  // });
 
   // handle stripe
   useEffect(() => {
