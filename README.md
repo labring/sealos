@@ -34,7 +34,7 @@ https://github.com/labring/sealos/assets/82700206/b1f8a25a-55cf-4d15-a47b-38cf7d
   <a href="https://github.com/orgs/labring/projects/4/views/9">Roadmap</a>
 </p>
 
-Sealos['siːləs] is a cloud operating system distribution based on the Kubernetes kernel. This allows enterprises to use the cloud as effortlessly as they would use a personal computer.
+Sealos['siːləs] is a cloud operating system distribution based on the Kubernetes kernel. Using the cloud like using a personal computer, reducing the cost of the cloud to 1/10 of the original.
 
 ## 🚀 Deploy your app on Sealos
 
