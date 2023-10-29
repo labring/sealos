@@ -164,6 +164,15 @@ func (runtime *ContainerdRuntime) configFile() {
 
 func (runtime *ContainerdRuntime) processConfigFile() (string, error) {
 	// Config is a wrapper of server config for printing out.
+	type Runtime struct {
+		RuntimeType   string `toml:"runtime_type"`
+		RuntimeEngine string `toml:"runtime_engine"`
+		RuntimeRoot   string `toml:"runtime_root"`
+		Options       struct {
+			SystemdCgroup bool   `toml:"SystemdCgroup"`
+			BinaryName    string `toml:"BinaryName"`
+		} `toml:"options"`
+	}
 	type Config struct {
 		Version int    `toml:"version"`
 		Root    string `toml:"root"`
@@ -173,18 +182,9 @@ func (runtime *ContainerdRuntime) processConfigFile() (string, error) {
 				MaxContainerLogLineSize int    `toml:"max_container_log_line_size"`
 				MaxConcurrentDownloads  int    `toml:"max_concurrent_downloads"`
 				Containerd              struct {
-					Snapshotter        string `toml:"snapshotter"`
-					DefaultRuntimeName string `toml:"default_runtime_name"`
-					Runtimes           struct {
-						Runc struct {
-							RuntimeType   string `toml:"runtime_type"`
-							RuntimeEngine string `toml:"runtime_engine"`
-							RuntimeRoot   string `toml:"runtime_root"`
-							Options       struct {
-								SystemdCgroup bool `toml:"SystemdCgroup"`
-							} `toml:"options"`
-						} `toml:"runc"`
-					} `toml:"runtimes"`
+					Snapshotter        string             `toml:"snapshotter"`
+					DefaultRuntimeName string             `toml:"default_runtime_name"`
+					Runtimes           map[string]Runtime `toml:"runtimes"`
 				} `toml:"containerd"`
 			} `toml:"io.containerd.grpc.v1.cri"`
 		} `toml:"plugins"`
@@ -199,8 +199,12 @@ func (runtime *ContainerdRuntime) processConfigFile() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		if config.Plugins.IoContainerdGrpcV1Cri.Containerd.Runtimes.Runc.Options.SystemdCgroup {
-			return DefaultSystemdCgroupDriver, nil
+		defaultRuntime := config.Plugins.IoContainerdGrpcV1Cri.Containerd.DefaultRuntimeName
+		containerRuntime, ok := config.Plugins.IoContainerdGrpcV1Cri.Containerd.Runtimes[defaultRuntime]
+		if ok {
+			if containerRuntime.Options.SystemdCgroup {
+				return DefaultSystemdCgroupDriver, nil
+			}
 		}
 	}
 	return DefaultCgroupDriver, nil
