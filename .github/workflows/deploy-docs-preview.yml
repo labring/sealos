@@ -1,7 +1,7 @@
 name: Preview Sealos Docs Site
 
 on:
-  pull_request_target:
+  workflow_dispatch:
   push:
     branches: ["main"]
     paths:

@@ -314,6 +314,9 @@
   "Contact": {
     "message": "联系我们"
   },
+  "Contact US": {
+    "message": "联系我们"
+  },
   "theme.admonition.note": {
     "message": "备注",
     "description": "The default label used for the Note admonition (:::note)"

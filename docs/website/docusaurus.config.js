@@ -5,7 +5,7 @@ const generateAlgoliKey = () => "ce5b8e1e4d0d35ff587caf75ac404df4"
 const config = {
   title: "sealos",
   tagline: "Kubernetes-kernel-based cloud os! Let's sealos run kubernetes",
-  url: "https://docs.sealos.io/",
+  url: "https://sealos.io/",
   baseUrl: "/",
   onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "warn",
@@ -58,7 +58,7 @@ const config = {
   ],
 
   themeConfig: { // @type {import('@docusaurus/preset-classic').ThemeConfig}
-    metadata: [{ name: 'title', content: 'sealos by 环界云' }],
+    metadata: [{ name: 'title', content: 'Sealos by 环界云' }],
     algolia: {
       // Algolia 提供的应用 ID
       appId: "SLTSB7B9Y0",
@@ -72,7 +72,7 @@ const config = {
       contextualSearch: true,
 
       // 可选：声明哪些域名需要用 window.location 型的导航而不是 history.push。 适用于 Algolia 配置会爬取多个文档站点，而我们想要用 window.location.href 在它们之间跳转时。
-      externalUrlRegex: "sealos.io|docs.sealos.io",
+      externalUrlRegex: "sealos.io|docs.sealos.io|sealos.run",
 
       // 可选：Algolia 搜索参数
       searchParameters: {},
@@ -165,11 +165,11 @@ const config = {
             },
             {
               label: "Company",
-              to: "https://sealos.io/company",
+              to: "/company",
             },
             {
               label: "Contact US",
-              to: "https://www.wenjuan.com/s/UZBZJv9ToJ/#",
+              to: "https://fael3z0zfze.feishu.cn/share/base/form/shrcnesSfEK65JZaAf2W6Fwz6Ad",
             }
           ]
         }
