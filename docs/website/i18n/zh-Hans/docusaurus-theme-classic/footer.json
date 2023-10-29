@@ -25,7 +25,7 @@
   },
   "link.item.label.Company": {
     "message": "Company",
-    "description": "The label of footer link with label=Company linking to https://sealos.io/company"
+    "description": "The label of footer link with label=Company linking to /company"
   },
   "link.item.label.Laf FaaS": {
     "message": "开箱即用的云函数",
@@ -93,6 +93,6 @@
   },
   "link.item.label.Contact US": {
     "message": "Contact US",
-    "description": "The label of footer link with label=Contact US linking to https://www.wenjuan.com/s/UZBZJv9ToJ/#"
+    "description": "The label of footer link with label=Contact US linking to https://fael3z0zfze.feishu.cn/share/base/form/shrcnesSfEK65JZaAf2W6Fwz6Ad"
   }
 }
