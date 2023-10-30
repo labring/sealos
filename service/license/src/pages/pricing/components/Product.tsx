@@ -60,7 +60,7 @@ export default function Product() {
   const openPayModal = () => {
     setComplete(1);
     setPayType('wechat');
-    paymentMutation.mutate((1 * 100).toString());
+    paymentMutation.mutate((599 * 100).toString());
     onOpen();
   };
 
