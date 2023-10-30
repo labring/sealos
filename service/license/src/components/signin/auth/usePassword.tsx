@@ -43,7 +43,7 @@ export default function usePassword({
             setIsLoading(true);
             const result = await signInByPassword(data.username, data.password);
             setSession(result);
-            router.replace('/');
+            router.replace('/pricing');
           } catch (error: any) {
             console.log(error);
             showError(t('Invalid username or password'));

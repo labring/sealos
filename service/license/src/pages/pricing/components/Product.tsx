@@ -462,6 +462,7 @@ export default function Product() {
                 w="218px"
                 h="44px"
                 onClick={handleStripePay}
+                backgroundColor={'#24282C'}
               >
                 <StripeIcon />
                 <Text ml="12px">{t('pay with stripe')}</Text>

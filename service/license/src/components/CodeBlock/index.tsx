@@ -16,7 +16,15 @@ export default function CodeBlock({ code, language, customStyle, flexStyle }: Co
 
   return (
     <Flex position={'relative'} backgroundColor="#24282C" borderRadius={'6px'} {...flexStyle}>
-      <Flex flex={1} alignItems={'center'} overflowX={'scroll'} pt="16px" pb="10px" px="20px">
+      <Flex
+        flex={1}
+        alignItems={'center'}
+        overflowX={'scroll'}
+        pt="16px"
+        pb="10px"
+        px="20px"
+        fontSize={'14px'}
+      >
         <Text mr="10px" color={'#c99bdf'}>
           $
         </Text>

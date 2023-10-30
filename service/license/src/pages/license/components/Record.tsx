@@ -46,7 +46,7 @@ export default function History() {
               key={item?._id?.toString() ?? item.iat}
               w="100%"
               minW={'350px'}
-              p="12px 0 12px 16px"
+              p="12px 12px 12px 16px"
               border={'1px solid #EFF0F1'}
               borderRadius={'4px'}
               background={'#F8FAFB'}
@@ -71,7 +71,7 @@ export default function History() {
               <Flex justifyContent={'center'} alignItems={'center'} ml="auto" w="160px">
                 <TokenIcon />
                 <Text color={'#485058'} fontSize={'12px'} fontWeight={500} px="8px">
-                  Token
+                  License
                 </Text>
                 <Flex cursor={'pointer'} onClick={() => downloadToken(item.token)}>
                   <DownloadIcon />

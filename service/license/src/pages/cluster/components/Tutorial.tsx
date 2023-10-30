@@ -20,7 +20,7 @@ import {
 } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 export default function Tutorial({
   clusterId,
@@ -29,6 +29,7 @@ export default function Tutorial({
   clusterId: string;
   ossFileName: string;
 }) {
+  let fileName = useMemo(() => ossFileName.replace('/cloud/', ''), [ossFileName]);
   const { t } = useTranslation();
   const { copyData } = useCopyData();
   const [ossLink, setOssLink] = useState('');
@@ -64,13 +65,13 @@ export default function Tutorial({
         集群安装教程
       </Text>
       <Accordion color={'#24282C'} allowMultiple>
-        <AccordionItem bg="#fff" border={'none'} p="24px 32px" mb="8px" borderRadius={'12px'}>
+        <AccordionItem bg="#fff" border={'none'} p="10px 32px" mb="8px" borderRadius={'12px'}>
           <AccordionButton px="0px" _hover={{ bg: '#fff' }}>
-            <CheckListIcon />
-            <Text ml="16px" fontSize={'20px'} fontWeight={600}>
+            <CheckListIcon w="20px" h="20px" />
+            <Text ml="16px" fontSize={'18px'} fontWeight={600}>
               准备工作
             </Text>
-            <AccordionIcon ml="auto" />
+            <AccordionIcon ml="auto" w="24px" h="24px" />
           </AccordionButton>
           <AccordionPanel py="20px" pl="40px" gap={'12px'}>
             <Text fontSize={'18px'} fontWeight={600}>
@@ -209,16 +210,16 @@ export default function Tutorial({
         </AccordionItem>
 
         {data?.type === ClusterType.Enterprise && (
-          <AccordionItem bg="#fff" border={'none'} p="24px 32px" mb="8px" borderRadius={'12px'}>
+          <AccordionItem bg="#fff" border={'none'} p="10px 32px" mb="8px" borderRadius={'12px'}>
             <AccordionButton px="0px" _hover={{ bg: '#fff' }}>
-              <OfflineIcon />
-              <Text ml="16px" fontSize={'20px'} fontWeight={600}>
+              <OfflineIcon w="20px" h="20px" />
+              <Text ml="16px" fontSize={'18px'} fontWeight={600}>
                 离线安装
               </Text>
-              <AccordionIcon ml="auto" />
+              <AccordionIcon ml="auto" w="24px" h="24px" />
             </AccordionButton>
             <AccordionPanel py="20px" pl="40px" gap={'12px'}>
-              <Text fontSize={'18px'} fontWeight={600}>
+              <Text fontSize={'16px'} fontWeight={600}>
                 下载离线包
               </Text>
               <Center
@@ -235,65 +236,33 @@ export default function Tutorial({
                 <Text>点击下载</Text>
               </Center>
 
-              <Text mt="12px" fontSize={'18px'} fontWeight={600}>
+              <Text mt="24px" fontSize={'16px'} fontWeight={600} mb="12px">
                 服务器上下载
               </Text>
-              <CodeBlock
-                language="bash"
-                flexStyle={{
-                  mt: '20px'
-                }}
-                code={`wget ${ossLink}`}
-              ></CodeBlock>
-              {/* <Divider my="20px" />
-              <Accordion allowMultiple>
-                <AccordionItem bg="#fff" border={'none'} p="0px">
-                  <AccordionButton px="0px" _hover={{ bg: '#fff' }}>
-                    <Text mt="12px" fontSize={'18px'} fontWeight={600}>
-                      验证
-                    </Text>
-                    <AccordionIcon ml="auto" />
-                  </AccordionButton>
-                  <AccordionPanel>
-                    <CodeBlock
-                      language="bash"
-                      flexStyle={{
-                        mt: '20px'
-                      }}
-                      code={`md5sum sealos-cloud-dev.tar.gz`}
-                    ></CodeBlock>
-                  </AccordionPanel>
-                </AccordionItem>
-              </Accordion> */}
+              <CodeBlock language="bash" code={`wget ${ossLink}`}></CodeBlock>
               <Divider my="20px" />
-              <Text mt="12px" fontSize={'18px'} fontWeight={600}>
+              <Text mt="12px" fontSize={'16px'} fontWeight={600} mb="12px">
                 部署集群
               </Text>
               <CodeBlock
                 language="bash"
-                flexStyle={{
-                  mt: '20px'
-                }}
-                code={`tar xzf sealos-cloud-dev.tar.gz \ncd sealos-cloud-dev && bash install.sh`}
+                code={`tar xzf ${fileName} && cd sealos-cloud && bash install.sh`}
               ></CodeBlock>
             </AccordionPanel>
           </AccordionItem>
         )}
 
-        <AccordionItem bg="#fff" border={'none'} p="24px 32px" mb="8px" borderRadius={'12px'}>
+        <AccordionItem bg="#fff" border={'none'} p="10px 32px" mb="8px" borderRadius={'12px'}>
           <AccordionButton px="0px" _hover={{ bg: '#fff' }}>
-            <OnlineComputerIcon />
-            <Text ml="16px" fontSize={'20px'} fontWeight={600}>
+            <OnlineComputerIcon w="20px" h="20px" />
+            <Text ml="16px" fontSize={'18px'} fontWeight={600}>
               在线安装
             </Text>
-            <AccordionIcon ml="auto" />
+            <AccordionIcon ml="auto" w="24px" h="24px" />
           </AccordionButton>
           <AccordionPanel py="20px" pl="40px" gap={'12px'}>
             <CodeBlock
               language="bash"
-              flexStyle={{
-                mt: '20px'
-              }}
               code={`curl -sfL https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh`}
             ></CodeBlock>
           </AccordionPanel>

@@ -2,7 +2,7 @@ import { getClusterRecord } from '@/api/cluster';
 import { ClusterIcon, EmptyIcon, RightIcon } from '@/components/Icon';
 import Pagination from '@/components/Pagination';
 import { ClusterType } from '@/types';
-import { Box, Center, Flex, Text } from '@chakra-ui/react';
+import { Box, Center, Divider, Flex, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
@@ -76,7 +76,8 @@ export default function ClusterRecord({ changeClusterId, clusterId }: TClusterRe
                   </Center>
                 </Flex>
               </Box>
-              <Box h="100%" w="1px" border={'1px solid #EFF0F1'}></Box>
+              {/* <Box h="100%" w="2px" bg="#F8FAFB"></Box> */}
+              {/* <Divider orientation="vertical" bg={'#F8FAFB'} /> */}
               <Flex justifyContent={'center'} alignItems={'center'} ml="auto" w="160px">
                 <Text color={'#219BF4'} fontSize={'12px'} fontWeight={500}>
                   {t('Deploy')}
