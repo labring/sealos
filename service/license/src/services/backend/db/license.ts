@@ -96,13 +96,13 @@ export async function getLicenseRecordsByUid({
   return result;
 }
 
-export function generateLicenseToken(payload: LicenseToken) {
+export function generateLicenseToken(payload: LicenseToken, time = 3 * 24 * 60 * 60) {
   const privateKey = process.env.LICENSE_PRIVATE_KEY;
   if (!privateKey) {
     throw new Error('LICENSE PRIVATE KEY IS MISSING');
   }
   const nowInSeconds = Math.floor(Date.now() / 1000);
-  const expirationTime = nowInSeconds + 3 * 24 * 60 * 60; //默认三天有效时间
+  const expirationTime = nowInSeconds + time; // Valid for three days by default
 
   const _payload = {
     iss: 'Sealos',
