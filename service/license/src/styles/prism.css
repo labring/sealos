@@ -1,0 +1,13 @@
+pre {
+  background-color: #24282c !important;
+  color: #fff;
+}
+
+.operator {
+  color: #91ded9;
+}
+
+.token.function,
+.token.builtin {
+  color: #5ebdf2;
+}

@@ -1,0 +1,16 @@
+FROM scratch
+USER 65532:65532
+
+COPY registry registry
+COPY manifests manifests
+COPY scripts scripts
+
+ENV cloudDomain="127.0.0.1.nip.io"
+ENV cloudPort=""
+ENV certSecretName="wildcard-cert"
+ENV passWordEnabled="false"
+ENV githubEnabled="false"
+ENV wechatEnabled="false"
+ENV smsEnabled="false"
+
+CMD ["bash scripts/init.sh"]
