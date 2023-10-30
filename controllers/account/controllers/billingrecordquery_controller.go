@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -161,7 +162,7 @@ func (r *BillingRecordQueryReconciler) ReconcilePriceQuery(ctx context.Context, 
 		}
 		priceQuery.Status.BillingRecords = append(priceQuery.Status.BillingRecords, accountv1.BillingRecord{
 			ResourceType: displayName,
-			Price:        displayPrice,
+			Price:        strconv.FormatFloat(displayPrice, 'f', -1, 64),
 		})
 	}
 	if err := r.Status().Update(ctx, priceQuery); err != nil {

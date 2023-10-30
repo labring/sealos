@@ -17,7 +17,7 @@
 [![](https://img.shields.io/docker/pulls/labring/kubernetes)](https://hub.docker.com/r/labring/kubernetes)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_shield)
 [![codecov](https://codecov.io/gh/labring/sealos/branch/main/graph/badge.svg?token=e41ZDcj06N)](https://codecov.io/gh/labring/sealos)
-[![Website](https://img.shields.io/website?url=https%3A%2F%2Fpostwoman.io&logo=Postwoman)](https://sealos.io)
+[![Website](https://img.shields.io/website?url=https%3A%2F%2Fpostwoman.io&logo=Postwoman)](https://sealos.run)
 [![OSCS Status](https://www.oscs1024.com/platform/badge/labring/sealos.svg?size=small)](https://www.oscs1024.com/project/labring/sealos?ref=badge_small)
 
 <br />
@@ -29,7 +29,7 @@
 https://github.com/labring/sealos/assets/82700206/b1f8a25a-55cf-4d15-a47b-38cf7d507134
 
 <p align="center">
-  <a href="https://sealos.io/zh-Hans/docs/Intro">文档</a> |
+  <a href="https://sealos.run/zh-Hans/docs/Intro">文档</a> |
   <a href="./README.md">English</a> | 
   <a href="https://github.com/orgs/labring/projects/4/views/9">发展规划</a>
 </p>
@@ -41,16 +41,16 @@ Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以
 
 [在线使用](https://cloud.sealos.io)
 
-* [在 Sealos 上 30 秒内轻松部署 Nginx](https://sealos.io/docs/quick-start/app-deployments/use-app-launchpad)
-* [在 Sealos 上 30 秒启动 mysql/pgsql/mongo 高可用数据库](https://sealos.io/docs/quick-start/app-deployments/install-db-with-database)
-* [在 Sealos 上 运行 WordPress](https://sealos.io/docs/examples/blog-platform/install-wordpress)
-* [在 Sealos 上 运行 Uptime Kuma 拨测系统](https://sealos.io/docs/examples/dial-testing-system/install-uptime-kuma)
-* [在 Sealos 上 运行低代码平台](https://sealos.io/docs/category/low-code-platform)
-* [在 Sealos 上 运行搭建聊天应用](https://sealos.io/docs/examples/social-communication/install-tailchat)
+* [在 Sealos 上 30 秒内轻松部署 Nginx](https://sealos.run/zh-Hans/docs/quick-start/app-deployments/use-app-launchpad)
+* [在 Sealos 上 30 秒启动 mysql/pgsql/mongo 高可用数据库](https://sealos.run/zh-Hans/docs/quick-start/app-deployments/install-db-with-database)
+* [在 Sealos 上 运行 WordPress](https://sealos.run/zh-Hans/docs/examples/blog-platform/install-wordpress)
+* [在 Sealos 上 运行 Uptime Kuma 拨测系统](https://sealos.run/zh-Hans/docs/examples/dial-testing-system/install-uptime-kuma)
+* [在 Sealos 上 运行低代码平台](https://sealos.run/zh-Hans/docs/category/low-code-platform)
+* [在 Sealos 上 运行搭建聊天应用](https://sealos.run/zh-Hans/docs/examples/social-communication/install-tailchat)
 
 ![](/docs/4.0/img/app-launchpad-zh.png)
 
-🔍 您可以通过以下的屏幕截图进一步了解 Sealos，关于 Sealos 更为详细的介绍与说明，请参阅 [什么是 Sealos](https://sealos.io/docs/Intro)。
+🔍 您可以通过以下的屏幕截图进一步了解 Sealos，关于 Sealos 更为详细的介绍与说明，请参阅 [什么是 Sealos](https://sealos.run/zh-Hans/docs/Intro)。
 
 <div align="center">
 
@@ -77,7 +77,7 @@ Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以
 
 ## 🏘️ 社区与支持
 
-- 🌐 访问 [Sealos官网](https://sealos.io/) 获取完整的文档和实用链接。
+- 🌐 访问 [Sealos官网](https://sealos.run/) 获取完整的文档和实用链接。
 
 - 📱 扫码加入社区微信交流群👇
 

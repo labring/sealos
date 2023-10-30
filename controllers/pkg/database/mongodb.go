@@ -560,8 +560,10 @@ func (m *MongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 		// Calculate the amount and set the used value
 		for property := range result.Used {
 			if prop, ok := prols.EnumMap[property]; ok {
-				appCost.UsedAmount[property] = result.Used[property] * prop.UnitPrice
-				appCost.Amount += appCost.UsedAmount[property]
+				if prop.UnitPrice > 0 {
+					appCost.UsedAmount[property] = int64(math.Ceil(float64(result.Used[property]) / prop.UnitPrice))
+					appCost.Amount += appCost.UsedAmount[property]
+				}
 			}
 		}
 		if appCost.Amount == 0 {
@@ -809,6 +811,13 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 				}
 			}
 			billingRecord.Costs = costs
+		}
+		if bsonRecord.Type == accountv1.Recharge {
+			paymentAmount := billingRecord.Amount
+			if bsonRecord.Payment != nil {
+				paymentAmount = bsonRecord.Payment.Amount
+			}
+			billingRecord.Payment = &accountv1.PaymentForQuery{Amount: paymentAmount}
 		}
 		billingRecords = append(billingRecords, billingRecord)
 	}
