@@ -1,4 +1,4 @@
-SERVICE_NAME=sealos-db-provider
+SERVICE_NAME=sealos-cronjob
 # Image URL to use all building/pushing image targets
 IMG ?= $(SERVICE_NAME):latest
 
@@ -34,4 +34,4 @@ run: ## Run a dev service from host.
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the desktop-frontend.
-	docker build -t sealos-db-provider:latest . --network host  --build-arg HTTP_PROXY=http://127.0.0.1:7890 --build-arg HTTPS_PROXY=http://127.0.0.1:7890
+	docker build -t sealos-cronjob:latest . --network host  --build-arg HTTP_PROXY=http://127.0.0.1:7890 --build-arg HTTPS_PROXY=http://127.0.0.1:7890

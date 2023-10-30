@@ -28,19 +28,19 @@ If your business requires operation within a public cloud environment, you can d
 
 #### Capabilities of Sealos
 
-- **Application Management**: Rapid deployment of any distributed application with public network access capabilities.
-- **Database Management**: Instant creation of highly available databases, supporting MySQL, PostgreSQL, MongoDB, and Redis.
-- **Easy Public Network Access**: Businesses are automatically allocated secondary domain names, making public network access easy, and custom domain binding is also supported.
+- 🚀 **Application Management**: Efficient deployment of any distributed applications with public internet accessibility.
+- 🗄️ **Database Management**: Create high-availability databases in seconds, offering support for MySQL, PostgreSQL, MongoDB, and Redis.
+- 📬 **Support for Message Queues**: Catering to a variety of message queues such as Kafka, RocketMQ, and RabbitMQ.
 
 #### Advantages of Sealos
 
-- **Resource Saving, Cost Reduction**: You only pay for containers. The automatic scaling fundamentally solves the problem of resource wastage, saving substantial costs.
-- **High Universality, No Cognitive Load**: Users can focus exclusively on their business, without being troubled by irrelevant complexities. Regardless of the user's proficiency with Kubernetes, Sealos can be used with ease.
-- **Balance of Flexibility and Security**: Its unique multi-tenant sharing mechanism can achieve effective isolation and collaboration of resources while ensuring security.
+- 💰 **Resource Efficiency & Cost Reduction**: Pay exclusively for the containers. The automatic scaling feature fundamentally tackles resource wastage, thus offering substantial cost benefits.
+- 🌐 **High Universality & Ease of Use**: Users can concentrate solely on their operations without the distraction of external complexities. Regardless of one's knowledge level of Kubernetes, Sealos remains user-friendly.
+- 🛡️ **Agility & Security**: The distinctive multi-tenancy sharing model ensures both effective resource segmentation and collaboration, all under a secure framework.
 
 ### Private Cloud
 
-The Sealos cloud operating system is **100% open source and free**. You can find all source code on [GitHub](https://github.com/labring/sealos), which means all features of the **Sealos Public Cloud** can also be deployed in a private cloud environment to meet more diversified business needs.
+The Sealos cloud operating system is **100% open source**. You can find all source code on [GitHub](https://github.com/labring/sealos), which means all features of the **Sealos Public Cloud** can also be deployed in a private cloud environment to meet more diversified business needs.
 
 ### Strong Application Delivery Capability
 

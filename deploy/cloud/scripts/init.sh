@@ -116,62 +116,6 @@ function sealos_run_controller {
   --env MONGO_URI="$mongodbUri"
 }
 
-function sealos_run_frontend {
-  echo "run desktop frontend"
-  sealos run tars/frontend-desktop.tar \
-    --env cloudDomain=$cloudDomain \
-    --env cloudPort=$cloudPort \
-    --env certSecretName="wildcard-cert" \
-    --env passwordEnabled="true" \
-    --config-file etc/sealos/desktop-config.yaml
-
-  echo "run applaunchpad frontend"
-  sealos run tars/frontend-applaunchpad.tar \
-  --env cloudDomain=$cloudDomain \
-  --env cloudPort=$cloudPort \
-  --env certSecretName="wildcard-cert"
-
-  echo "run terminal frontend"
-  sealos run tars/frontend-terminal.tar \
-  --env cloudDomain=$cloudDomain \
-  --env cloudPort=$cloudPort \
-  --env certSecretName="wildcard-cert"
-
-  echo "run dbprovider frontend"
-  sealos run tars/frontend-dbprovider.tar \
-  --env cloudDomain=$cloudDomain \
-  --env cloudPort=$cloudPort \
-  --env certSecretName="wildcard-cert"
-
-  echo "run cost center frontend"
-  sealos run tars/frontend-costcenter.tar \
-  --env cloudDomain=$cloudDomain \
-  --env cloudPort=$cloudPort \
-  --env certSecretName="wildcard-cert" \
-  --env transferEnabled="true" \
-  --env rechargeEnabled="false"
-
-  echo "run template frontend"
-  sealos run tars/frontend-template.tar \
-  --env cloudDomain=$cloudDomain \
-  --env cloudPort=$cloudPort \
-  --env certSecretName="wildcard-cert"
-
-  echo "run license frontend"
-  sealos run tars/frontend-license.tar \
-  --env cloudDomain=$cloudDomain \
-  --env cloudPort=$cloudPort \
-  --env certSecretName="wildcard-cert"
-  --env licensePurchaseDomain="license.sealos.io"
-
-  echo "run db monitoring"
-  sealos run tars/database-service.tar
-}
-
-function resource_exists {
-  kubectl get $1 >/dev/null 2>&1
-}
-
 
 function sealos_authorize {
   sealos run tars/job-init.tar
@@ -186,6 +130,72 @@ function sealos_authorize {
   kubectl apply -f manifests/free-license.yaml
 }
 
+function sealos_run_frontend {
+  echo "run desktop frontend"
+  sealos run tars/frontend-desktop.tar \
+    --env cloudDomain=$cloudDomain \
+    --env cloudPort="$cloudPort" \
+    --env certSecretName="wildcard-cert" \
+    --env passwordEnabled="true" \
+    --config-file etc/sealos/desktop-config.yaml
+
+  # sealos authorize !!must run after sealos_run_controller frontend-desktop.tar and before sealos_run_frontend
+  sealos_authorize
+
+  echo "run applaunchpad frontend"
+  sealos run tars/frontend-applaunchpad.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort="$cloudPort" \
+  --env certSecretName="wildcard-cert"
+
+  echo "run terminal frontend"
+  sealos run tars/frontend-terminal.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort="$cloudPort" \
+  --env certSecretName="wildcard-cert"
+
+  echo "run dbprovider frontend"
+  sealos run tars/frontend-dbprovider.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort="$cloudPort" \
+  --env certSecretName="wildcard-cert"
+
+  echo "run cost center frontend"
+  sealos run tars/frontend-costcenter.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort="$cloudPort" \
+  --env certSecretName="wildcard-cert" \
+  --env transferEnabled="true" \
+  --env rechargeEnabled="false"
+
+  echo "run template frontend"
+  sealos run tars/frontend-template.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort="$cloudPort" \
+  --env certSecretName="wildcard-cert"
+
+  echo "run license frontend"
+  sealos run tars/frontend-license.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort="$cloudPort" \
+  --env certSecretName="wildcard-cert" \
+  --env licensePurchaseDomain="license.sealos.io"
+
+  echo "run cronjob frontend"
+  sealos run tars/frontend-cronjob.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort="$cloudPort" \
+  --env certSecretName="wildcard-cert"
+
+
+  echo "run db monitoring"
+  sealos run tars/database-service.tar
+}
+
+function resource_exists {
+  kubectl get "$1" >/dev/null 2>&1
+}
+
 
 function install {
   # gen mongodb uri and others
@@ -193,9 +203,6 @@ function install {
 
   # sealos run controllers
   sealos_run_controller
-
-  # sealos authorize !!must run after sealos_run_controller and before sealos_run_frontend
-  sealos_authorize
 
   # sealos run frontends
   sealos_run_frontend
