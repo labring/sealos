@@ -17,6 +17,7 @@ package processor
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/labring/sealos/pkg/utils/rand"
@@ -139,9 +140,27 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 			imageTypes.Insert(string(v2.AppImage))
 		}
 	}
+	// This code ensures that `mount` always contains the latest `MountImage` instances from `cluster.Status.Mounts`
+	// and that each `ImageName` is represented by only one corresponding instance in `mounts`.
+	mountIndexes := make(map[string]int)
+	for i := range cluster.Status.Mounts {
+		mountIndexes[cluster.Status.Mounts[i].ImageName] = i
+	}
+
+	indexes := make([]int, 0)
+	for i := range mountIndexes {
+		indexes = append(indexes, mountIndexes[i])
+	}
+	sort.Ints(indexes)
+	mounts := make([]v2.MountImage, 0)
+	for i := range indexes {
+		mounts = append(mounts, cluster.Status.Mounts[i])
+	}
+	cluster.Status.Mounts = mounts
+
 	for _, img := range c.NewImages {
+		index, mount := cluster.FindImage(img)
 		var ctrName string
-		mount := cluster.FindImage(img)
 		if mount != nil {
 			if !ForceOverride {
 				continue
@@ -167,8 +186,11 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 			return err
 		}
 		mount.Env = maps.MergeMap(mount.Env, c.ExtraEnvs)
-
-		cluster.SetMountImage(mount)
+		// This code ensures that `cluster.Status.Mounts` always contains the latest `MountImage` instances
+		if index >= 0 {
+			cluster.Status.Mounts = append(cluster.Status.Mounts[:index], cluster.Status.Mounts[index+1:]...)
+		}
+		cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
 		c.NewMounts = append(c.NewMounts, *mount)
 	}
 	runtime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
