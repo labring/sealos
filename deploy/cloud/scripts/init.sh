@@ -120,7 +120,7 @@ function sealos_run_frontend {
   echo "run desktop frontend"
   sealos run tars/frontend-desktop.tar \
     --env cloudDomain=$cloudDomain \
-    --env cloudPort=$cloudPort \
+    --env cloudPort="$cloudPort" \
     --env certSecretName="wildcard-cert" \
     --env passwordEnabled="true" \
     --config-file etc/sealos/desktop-config.yaml
@@ -128,25 +128,25 @@ function sealos_run_frontend {
   echo "run applaunchpad frontend"
   sealos run tars/frontend-applaunchpad.tar \
   --env cloudDomain=$cloudDomain \
-  --env cloudPort=$cloudPort \
+  --env cloudPort="$cloudPort" \
   --env certSecretName="wildcard-cert"
 
   echo "run terminal frontend"
   sealos run tars/frontend-terminal.tar \
   --env cloudDomain=$cloudDomain \
-  --env cloudPort=$cloudPort \
+  --env cloudPort="$cloudPort" \
   --env certSecretName="wildcard-cert"
 
   echo "run dbprovider frontend"
   sealos run tars/frontend-dbprovider.tar \
   --env cloudDomain=$cloudDomain \
-  --env cloudPort=$cloudPort \
+  --env cloudPort="$cloudPort" \
   --env certSecretName="wildcard-cert"
 
   echo "run cost center frontend"
   sealos run tars/frontend-costcenter.tar \
   --env cloudDomain=$cloudDomain \
-  --env cloudPort=$cloudPort \
+  --env cloudPort="$cloudPort" \
   --env certSecretName="wildcard-cert" \
   --env transferEnabled="true" \
   --env rechargeEnabled="false"
@@ -154,22 +154,29 @@ function sealos_run_frontend {
   echo "run template frontend"
   sealos run tars/frontend-template.tar \
   --env cloudDomain=$cloudDomain \
-  --env cloudPort=$cloudPort \
+  --env cloudPort="$cloudPort" \
   --env certSecretName="wildcard-cert"
 
   echo "run license frontend"
   sealos run tars/frontend-license.tar \
   --env cloudDomain=$cloudDomain \
-  --env cloudPort=$cloudPort \
-  --env certSecretName="wildcard-cert"
+  --env cloudPort="$cloudPort" \
+  --env certSecretName="wildcard-cert" \
   --env licensePurchaseDomain="license.sealos.io"
+
+  echo "run cronjob frontend"
+  sealos run tars/frontend-cronjob.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort="$cloudPort" \
+  --env certSecretName="wildcard-cert"
+
 
   echo "run db monitoring"
   sealos run tars/database-service.tar
 }
 
 function resource_exists {
-  kubectl get $1 >/dev/null 2>&1
+  kubectl get "$1" >/dev/null 2>&1
 }
 
 
