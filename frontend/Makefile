@@ -45,18 +45,12 @@ build-packages: fetch-deps
 build-providers/%: build-packages
 	pnpm -r --offline --filter=./providers/$* install
 	pnpm -r --offline --filter=./providers/$* build
-build-plugins/%: build-packages
-	pnpm -r --offline --filter=./plugins/$* install
-	pnpm -r --offline --filter=./plugins/$* build
 build-%: build-packages
 	pnpm -r --offline --filter=$* install
 	pnpm -r --offline --filter=$* build
 dev-providers/%: build-packages
 	pnpm -r --offline --filter=./providers/$* install
 	pnpm -r --offline --filter=./providers/$* dev
-dev-plugins/%: build-packages
-	pnpm -r --offline --filter=./plugins/$* install
-	pnpm -r --offline --filter=./plugins/$* dev
 dev-%: build-packages
 	pnpm -r --offline --filter=$* install
 	pnpm -r --offline --filter=$* dev
@@ -67,15 +61,11 @@ image-prebuild: pnpm-lock.yaml
 
 image-build-providers/%: image-prebuild
 	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=providers/$* --build-arg name=$* . 
-image-build-plugins/%: image-prebuild
-	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=plugins/$* --build-arg name=$* .
 image-build-%: image-prebuild
 	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=$* --build-arg name=$* . 
 
 image-push-providers/%: image-build-providers/%
-	docker push $(imageOwner)sealos-$*:$(imageTag)
-image-push-plugins/%: image-build-plugins/%
-	docker push $(imageOwner)sealos-$*:$(imageTag)
+	docker push $(imageOwner)sealos-$*:$(imageTag) 
 image-push-%: image-build-%
 	docker push $(imageOwner)sealos-$*:$(imageTag)
 # Default target to run all builds.
