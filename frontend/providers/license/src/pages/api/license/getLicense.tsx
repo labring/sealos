@@ -10,19 +10,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const { kube_user } = await getK8s({
       kubeconfig: await authSession(req)
     });
-    const userId = kube_user.name;
-    console.log(userId, 'userId');
+    console.log(kube_user?.name, 'user get license record');
 
     const skip = (parseInt(page) - 1) * parseInt(pageSize);
 
     const license_collection = await connectToLicenseCollection();
-    const totalCountPipeline = [
-      { $match: { uid: userId, 'meta.token': { $ne: '' } } },
-      { $count: 'totalCount' }
-    ];
+    const totalCountPipeline = [{ $match: { token: { $ne: '' } } }, { $count: 'totalCount' }];
     const contentPipeline = [
-      { $match: { uid: userId, 'meta.token': { $ne: '' } } },
-      { $sort: { 'meta.createTime': -1 } },
+      { $match: { token: { $ne: '' } } },
+      { $sort: { activationTime: -1 } },
       { $skip: skip },
       { $limit: parseInt(pageSize) }
     ];

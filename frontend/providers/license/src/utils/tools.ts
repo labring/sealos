@@ -3,6 +3,15 @@ import { addHours, format, set, startOfDay } from 'date-fns';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
 
+export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
+  return dayjs(time).format(format);
+};
+
+export function addHoursToTime(inputTimeStr: string, hoursToAdd = 8) {
+  const inputTime = new Date(inputTimeStr);
+  inputTime.setHours(inputTime.getHours() + hoursToAdd);
+  return formatTime(inputTime);
+}
 /**
  * copy text data
  */

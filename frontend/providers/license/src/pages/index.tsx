@@ -8,9 +8,9 @@ import { useToast } from '@/hooks/useToast';
 import download from '@/utils/downloadFIle';
 import { serviceSideProps } from '@/utils/i18n';
 import { json2License } from '@/utils/json2Yaml';
-import { useCopyData } from '@/utils/tools';
-import { Box, Flex, Icon, Image, Text } from '@chakra-ui/react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { addHoursToTime, formatTime, useCopyData } from '@/utils/tools';
+import { Box, Flex, Icon, Image, Link, Text } from '@chakra-ui/react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { debounce } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
@@ -23,32 +23,33 @@ export default function LicenseApp() {
   const [pageSize, setPageSize] = useState(5);
   const { copyData } = useCopyData();
   const [purchaseLink, setPurchaseLink] = useState('');
+  const queryClient = useQueryClient();
 
   const licenseMutation = useMutation({
     mutationFn: (yamlList: string[]) => applyLicense(yamlList, 'create'),
     onSuccess(data) {
+      console.log(data, 'data');
       toast({
-        title: t('Go to the message center to see the results'),
+        title: t('Activation Successful'),
         status: 'success'
       });
+      queryClient.invalidateQueries(['getLicenseActive']);
     },
-    onError(error) {
+    onError(error: { message?: string }) {
       console.log(error);
+      if (error?.message && typeof error?.message === 'string') {
+        toast({
+          title: error.message,
+          status: 'error'
+        });
+      }
     }
   });
 
   useQuery(['getPlatformEnv'], () => getPlatformEnv(), {
     onSuccess(data) {
-      const hid = data.hid;
-      if (!hid) {
-        return toast({
-          title: 'env hid error',
-          status: 'error'
-        });
-      }
-      const encodedHid = encodeURIComponent(hid);
       const main = data.LICENSE_DOMAIN;
-      const link = `https:/${main}/license?hid=${encodedHid}`;
+      const link = `https://${main}`;
       setPurchaseLink(link);
     }
   });
@@ -67,16 +68,6 @@ export default function LicenseApp() {
     const yamlList = files.map((item) => json2License(item.text));
     licenseMutation.mutate(yamlList);
   }, 500);
-
-  const copyLicenseLink = () => {
-    if (!purchaseLink) {
-      return toast({
-        title: 'env hid error',
-        status: 'error'
-      });
-    }
-    copyData(purchaseLink);
-  };
 
   const downloadToken = (token: string) => {
     const result = Buffer.from(token, 'binary').toString('base64');
@@ -102,23 +93,17 @@ export default function LicenseApp() {
             src="/icons/license-bg.svg"
             alt="license"
             objectFit="cover"
+            borderRadius={'16px'}
           />
           <Box position={'absolute'} color={'#FFF'} top={'180px'} left={'80px'}>
             <Text fontSize={'32px'} fontWeight={600}>
               {t('Purchase License')}
             </Text>
-            <Flex mt="45px" cursor={'copy'} onClick={copyLicenseLink}>
+            <Flex mt="45px" cursor={'copy'}>
               {t('Please go to')}
-              <Text
-                px="4px"
-                w="220px"
-                color={'#36ADEF'}
-                textOverflow="ellipsis"
-                whiteSpace="nowrap"
-                overflow="hidden"
-              >
-                {purchaseLink}
-              </Text>
+              <Link color={'#36ADEF'} px={'4px'} href={purchaseLink} isExternal>
+                Sealos License
+              </Link>
               {t('Purchase')}
             </Flex>
           </Box>
@@ -132,7 +117,7 @@ export default function LicenseApp() {
         <Text color={'#262A32'} fontSize={'24px'} fontWeight={600}>
           {t('Activate License')}
         </Text>
-        <FileSelect fileExtension={'.txt'} files={files} setFiles={setFiles} />
+        <FileSelect fileExtension={'.yaml'} files={files} setFiles={setFiles} />
         <Flex
           userSelect={'none'}
           ml={'auto'}
@@ -174,12 +159,21 @@ export default function LicenseApp() {
                 </Text>
                 <CurrencySymbol />
                 <Text ml="6px" color={'#5A646E'} fontSize={'14px'} fontWeight={500}>
-                  {license.payload?.amt}
+                  {license?.claims?.data?.amount}
                 </Text>
-                <Text color={'#5A646E'} fontSize={'12px'} fontWeight={500} ml="auto">
-                  {t('Activation time')} {license.meta.createTime}
+                <Text
+                  color={'#5A646E'}
+                  fontSize={'12px'}
+                  fontWeight={500}
+                  ml="auto"
+                  mr={{
+                    sm: '20px',
+                    md: '34px'
+                  }}
+                >
+                  {t('Activation time')} {addHoursToTime(license?.activationTime || '')}
                 </Text>
-                <Flex
+                {/* <Flex
                   alignItems={'center'}
                   mx={{
                     sm: '8px',
@@ -192,14 +186,14 @@ export default function LicenseApp() {
                     fontSize={'14px'}
                     fontWeight={600}
                     px="8px"
-                    onClick={() => downloadToken(license?.meta?.token)}
+                    onClick={() => downloadToken(license?.token)}
                   >
-                    Token
+                    License
                   </Text>
                   <Icon fill="#1D8CDC" viewBox="0 0 16 16">
                     <path d="M4.76693 14.0667C4.60026 13.9 4.51693 13.7027 4.51693 13.4747C4.51693 13.2471 4.60026 13.05 4.76693 12.8833L9.65026 8L4.75026 3.1C4.59471 2.94444 4.51693 2.75 4.51693 2.51666C4.51693 2.28333 4.60026 2.08333 4.76693 1.91666C4.93359 1.75 5.13093 1.66666 5.35893 1.66666C5.58648 1.66666 5.78359 1.75 5.95026 1.91666L11.5503 7.53333C11.6169 7.6 11.6643 7.67222 11.6923 7.75C11.7198 7.82778 11.7336 7.91111 11.7336 8C11.7336 8.08889 11.7198 8.17222 11.6923 8.25C11.6643 8.32778 11.6169 8.4 11.5503 8.46666L5.93359 14.0833C5.77804 14.2389 5.58648 14.3167 5.35893 14.3167C5.13093 14.3167 4.93359 14.2333 4.76693 14.0667Z" />
                   </Icon>
-                </Flex>
+                </Flex> */}
               </Flex>
             ))}
           </Box>
@@ -219,11 +213,13 @@ export default function LicenseApp() {
           </Flex>
         )}
 
-        <Pagination
-          totalItems={data?.totalCount || 0}
-          itemsPerPage={pageSize}
-          onPageChange={(page: number) => setPage(page)}
-        />
+        {data?.totalCount !== 0 && (
+          <Pagination
+            totalItems={data?.totalCount || 0}
+            itemsPerPage={pageSize}
+            onPageChange={(page: number) => setPage(page)}
+          />
+        )}
       </Box>
     </Flex>
   );

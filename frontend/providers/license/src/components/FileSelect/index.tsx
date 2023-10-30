@@ -10,7 +10,7 @@ import { DragEvent, useCallback, useState } from 'react';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 12);
 const fileImgs = [
   {
-    reg: /txt/gi,
+    reg: /yaml/gi,
     src: (
       <Icon viewBox="0 0 16 17" fill="#7B838B">
         <path d="M9.33334 2.12411H4.00001C3.26667 2.12411 2.67334 2.72411 2.67334 3.45745L2.66667 14.1241C2.66667 14.8574 3.26 15.4574 3.99334 15.4574H12C12.7333 15.4574 13.3333 14.8574 13.3333 14.1241V6.12411L9.33334 2.12411ZM4.00001 14.1241V3.45745H8.66667V6.79078H12V14.1241H4.00001Z" />
@@ -49,15 +49,17 @@ const FileSelect = ({ fileExtension, setFiles, files, ...props }: Props) => {
         // Parse file by file
         let promise = Promise.resolve<FileItemType[]>([]);
         files.forEach((file) => {
+          console.log(file, 'fiel');
+
           promise = promise.then(async (result) => {
             const extension = file?.name?.split('.')?.pop()?.toLowerCase();
 
             /* text file */
-            const hardcodedRegex = /txt/gi;
+            const hardcodedRegex = /yaml/gi;
             const icon = fileImgs.find((item) => hardcodedRegex.test(file.name))?.src;
             let text = await (async () => {
               switch (extension) {
-                case 'txt':
+                case 'yaml':
                   return readTxtContent(file);
               }
               return '';
