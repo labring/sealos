@@ -116,6 +116,20 @@ function sealos_run_controller {
   --env MONGO_URI="$mongodbUri"
 }
 
+
+function sealos_authorize {
+  sealos run tars/job-init.tar
+
+  # wait for admin user create
+  echo "Waiting for admin user create"
+
+  while [ -z "$(kubectl get ns ns-admin 2>/dev/null)" ]; do
+    sleep 1
+  done
+
+  kubectl apply -f manifests/free-license.yaml
+}
+
 function sealos_run_frontend {
   echo "run desktop frontend"
   sealos run tars/frontend-desktop.tar \
@@ -124,6 +138,9 @@ function sealos_run_frontend {
     --env certSecretName="wildcard-cert" \
     --env passwordEnabled="true" \
     --config-file etc/sealos/desktop-config.yaml
+
+  # sealos authorize !!must run after sealos_run_controller frontend-desktop.tar and before sealos_run_frontend
+  sealos_authorize
 
   echo "run applaunchpad frontend"
   sealos run tars/frontend-applaunchpad.tar \
@@ -180,29 +197,12 @@ function resource_exists {
 }
 
 
-function sealos_authorize {
-  sealos run tars/job-init.tar
-
-  # wait for admin user create
-  echo "Waiting for admin user create"
-
-  while [ -z "$(kubectl get ns ns-admin 2>/dev/null)" ]; do
-    sleep 1
-  done
-
-  kubectl apply -f manifests/free-license.yaml
-}
-
-
 function install {
   # gen mongodb uri and others
   prepare
 
   # sealos run controllers
   sealos_run_controller
-
-  # sealos authorize !!must run after sealos_run_controller and before sealos_run_frontend
-  sealos_authorize
 
   # sealos run frontends
   sealos_run_frontend
