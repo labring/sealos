@@ -34,7 +34,7 @@ type PriceQueryStatus struct {
 
 type BillingRecord struct {
 	ResourceType string `json:"resourceType"`
-	Price        int64  `json:"price"`
+	Price        string `json:"price"`
 	DiscountType string `json:"discountType,omitempty"`
 }
 
