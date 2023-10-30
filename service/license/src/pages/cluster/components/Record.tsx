@@ -104,7 +104,13 @@ export default function ClusterRecord({ changeClusterId, clusterId }: TClusterRe
         </Flex>
       )}
       <Flex ml="auto" mt={'auto'} pr="20px">
-        <Pagination totalItems={data?.total || 0} itemsPerPage={pageSize} onPageChange={() => {}} />
+        <Pagination
+          totalItems={data?.total || 0}
+          itemsPerPage={pageSize}
+          onPageChange={(page) => {
+            setPage(page);
+          }}
+        />
       </Flex>
     </Flex>
   );

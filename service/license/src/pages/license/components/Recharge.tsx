@@ -43,7 +43,7 @@ export default function RechargeComponent() {
   const [wechatPaymentData, setWechatPaymentData] = useState<WechatPaymentData>();
   const { data: platformEnv } = useQuery(['getPlatformEnv'], getSystemEnv);
   // 用于避免微信支付，窗口关闭后感知不到的问题
-  // const { paymentData, setPaymentData, deletePaymentData } = usePaymentDataStore();
+  const { paymentData, setPaymentData, deletePaymentData, isExpired } = usePaymentDataStore();
 
   const onClosePayment = useCallback(() => {
     setOrderID('');
@@ -94,6 +94,7 @@ export default function RechargeComponent() {
           setOrderID(data.orderID);
           setWechatPaymentData({ tradeNO: data?.tradeNO, codeURL: data?.codeURL });
           setComplete(2);
+          setPaymentData(data.orderID);
         }
       },
       onError(err: any) {
@@ -121,6 +122,7 @@ export default function RechargeComponent() {
           position: 'top'
         });
         queryClient.invalidateQueries(['getLicenseActive']);
+        deletePaymentData();
       },
       onError(err: any) {
         toast({
@@ -156,22 +158,24 @@ export default function RechargeComponent() {
     }
   });
 
-  // checkWechatPay
-  // useQuery(['checkWechatPay'], () => checkWechatPay(), {
-  //   enabled: !!paymentData?.orderId,
-  //   onSuccess(data) {
-  //     console.log(data, '------');
-  //     if (data.status === PaymentStatus.PaymentSuccess) {
-  //       toast({
-  //         status: 'success',
-  //         title: t('Payment Successful'), // 这里改为license 签发成功
-  //         isClosable: true,
-  //         duration: 9000,
-  //         position: 'top'
-  //       });
-  //     }
-  //   }
-  // });
+  // checkWechatPay;
+  useQuery(['checkWechatPay'], () => checkWechatPay('license'), {
+    enabled: !isExpired() && !!paymentData?.orderId,
+    onSuccess(data) {
+      console.log(data, 'Handle wechat shutdown situation');
+      if (data.status === PaymentStatus.PaymentSuccess) {
+        toast({
+          status: 'success',
+          title: t('Payment Successful'), // 这里改为license 签发成功
+          isClosable: true,
+          duration: 9000,
+          position: 'top'
+        });
+        queryClient.invalidateQueries(['getLicenseActive']);
+        deletePaymentData();
+      }
+    }
+  });
 
   useEffect(() => {
     const { stripeState, orderID } = router.query;

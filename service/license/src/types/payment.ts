@@ -13,6 +13,7 @@ export type PaymentDB = {
   updatedAt: Date; // Modification timestamp
 };
 
+export type CheckWeChatType = 'license' | 'cluster';
 export type TPayMethod = 'stripe' | 'wechat';
 
 export type StripeCallBackUrl = '/pricing' | '/license';

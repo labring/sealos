@@ -30,6 +30,7 @@ import { useCallback, useEffect, useState } from 'react';
 import ServicePackage from './ServicePackage';
 import useRouteParamsStore from '@/stores/routeParams';
 import useSessionStore from '@/stores/session';
+import usePaymentDataStore from '@/stores/payment';
 
 export default function Product() {
   const { t } = useTranslation();
@@ -48,6 +49,7 @@ export default function Product() {
   const [remainingSeconds, setRemainingSeconds] = useState(2); // 初始值为2秒
   const { data: routeParams, setRouteParams, clearRouteParams } = useRouteParamsStore();
   const { isUserLogin } = useSessionStore();
+  const { paymentData, setPaymentData, deletePaymentData, isExpired } = usePaymentDataStore();
 
   const onClosePayment = useCallback(() => {
     setOrderID('');
@@ -58,7 +60,7 @@ export default function Product() {
   const openPayModal = () => {
     setComplete(1);
     setPayType('wechat');
-    paymentMutation.mutate((599 * 100).toString());
+    paymentMutation.mutate((1 * 100).toString());
     onOpen();
   };
 
@@ -105,6 +107,7 @@ export default function Product() {
           setOrderID(data.orderID);
           setWechatData({ tradeNO: data?.tradeNO, codeURL: data?.codeURL });
           setComplete(2);
+          setPaymentData(data.orderID);
         }
       },
       onError(err: any) {
@@ -126,7 +129,7 @@ export default function Product() {
         console.log(data, 'clusterMutation');
         setComplete(3);
         queryClient.invalidateQueries(['getClusterRecord']);
-        // onClosePayment();
+        deletePaymentData();
       },
       onError(err: any) {
         toast({
@@ -148,6 +151,7 @@ export default function Product() {
         console.log(data, 'clusterAndLicenseMutation');
         setComplete(3);
         queryClient.invalidateQueries(['getClusterRecord']);
+        deletePaymentData();
       },
       onError(err: any) {
         toast({
@@ -184,19 +188,24 @@ export default function Product() {
   });
 
   // checkWechatPay
-  // useQuery(['checkWechatPay'], () => checkWechatPay(), {
-  //   onSuccess(data) {
-  //     if (data.status === PaymentStatus.PaymentSuccess) {
-  //       toast({
-  //         status: 'success',
-  //         title: t('License issued successfully'), // 这里改为license 签发成功
-  //         isClosable: true,
-  //         duration: 9000,
-  //         position: 'top'
-  //       });
-  //     }
-  //   }
-  // });
+  useQuery(['checkWechatPay'], () => checkWechatPay('cluster'), {
+    enabled: !isExpired() && !!paymentData?.orderId,
+    onSuccess(data) {
+      console.log(data, 'Handle wechat shutdown situation');
+      if (data.status === PaymentStatus.PaymentSuccess) {
+        toast({
+          status: 'success',
+          title: t('Payment Successful'), // 这里改为license 签发成功
+          isClosable: true,
+          duration: 9000,
+          position: 'top'
+        });
+        deletePaymentData();
+        queryClient.invalidateQueries(['getClusterRecord']);
+        setComplete(3);
+      }
+    }
+  });
 
   // handle stripe
   useEffect(() => {
@@ -273,6 +282,7 @@ export default function Product() {
     <Box flex={1} overflow={'scroll'} backgroundColor="#f2f5f7">
       <Flex
         minW={'1280px'}
+        // flexWrap={'wrap'}
         h="100%"
         pt="30px"
         pb="15px"

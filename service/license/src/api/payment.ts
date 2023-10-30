@@ -1,5 +1,11 @@
 import { GET, POST } from '@/services/request';
-import { PaymentData, PaymentParams, PaymentResult, PaymentResultParams } from '@/types';
+import {
+  CheckWeChatType,
+  PaymentData,
+  PaymentParams,
+  PaymentResult,
+  PaymentResultParams
+} from '@/types';
 
 export const createPayment = (payload: PaymentParams) =>
   POST<PaymentData>('/api/payment/create', payload);
@@ -7,4 +13,5 @@ export const createPayment = (payload: PaymentParams) =>
 export const handlePaymentResult = (payload: PaymentResultParams) =>
   POST<PaymentResult>('/api/payment/result', payload);
 
-export const checkWechatPay = () => GET<PaymentResult>('/api/payment/checkWechat');
+export const checkWechatPay = (type: CheckWeChatType) =>
+  GET<PaymentResult>('/api/payment/checkWechat', { type });

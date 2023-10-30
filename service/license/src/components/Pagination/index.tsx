@@ -3,7 +3,7 @@ import { useState } from 'react';
 type PaginationProps = {
   totalItems: number;
   itemsPerPage: number;
-  onPageChange: any;
+  onPageChange: (page: number) => void;
 };
 
 export default function Pagination({ totalItems, itemsPerPage, onPageChange }: PaginationProps) {
