@@ -23,8 +23,13 @@ export default function ServicePackage({ items, children }: ServicePackageProps)
       <Divider my="28px" color={'rgba(0, 0, 0, 0.10)'} />
       {items?.map((item) => (
         <Flex alignItems={'center'} key={item.label} mb="14px">
-          {item.icon === 'check' ? <CheckIcon /> : <StarIcon />}
-          <Text fontSize={'14px'} fontWeight={500} color={'#485058'} ml="15px">
+          {item.icon === 'check' ? <CheckIcon /> : <StarIcon fill={'#36ADEF'} />}
+          <Text
+            fontSize={'14px'}
+            fontWeight={500}
+            color={item.icon === 'check' ? '#485058' : '#219BF4'}
+            ml="15px"
+          >
             {item.label}
           </Text>
         </Flex>

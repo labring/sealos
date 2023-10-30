@@ -1,8 +1,8 @@
 import useSessionStore from '@/stores/session';
-import { Box, Flex, Image, useDisclosure, Text, Divider } from '@chakra-ui/react';
-import { SignOutIcon } from '../Icon';
+import { Avatar, Box, Center, Divider, Flex, Image, Text, useDisclosure } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
+import { SignOutIcon } from '../Icon';
 
 export default function Account() {
   const { t } = useTranslation();
@@ -29,14 +29,24 @@ export default function Account() {
       position={'relative'}
       onClick={accountDisclosure.onOpen}
     >
-      <Image
-        width={'36px'}
-        height={'36px'}
-        borderRadius="full"
-        src={userInfo?.user?.avatar || ''}
-        fallbackSrc="/images/sealos.svg"
-        alt="user avator"
-      />
+      {userInfo?.user?.avatar ? (
+        <Image
+          width={'36px'}
+          height={'36px'}
+          borderRadius="full"
+          src={userInfo?.user?.avatar || ''}
+          alt="user avator"
+        />
+      ) : (
+        <Avatar
+          name={userInfo?.user?.name || ''}
+          width={'36px'}
+          height={'36px'}
+          borderRadius="full"
+          bg="#36ADEF"
+        ></Avatar>
+      )}
+
       {accountDisclosure.isOpen && (
         <>
           <Box
@@ -48,7 +58,6 @@ export default function Account() {
               accountDisclosure.onClose();
             }}
           ></Box>
-
           <Flex
             w="188px"
             flexDirection={'column'}

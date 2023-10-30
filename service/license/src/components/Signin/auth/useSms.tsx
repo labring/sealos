@@ -39,7 +39,7 @@ export default function useSms({
           setIsLoading(true);
           const result = await signInByPhone(data.phoneNumber, data.verifyCode);
           setSession(result);
-          router.replace('/');
+          router.replace('/pricing');
         } catch (error) {
           console.log(error);
           showError(t('Invalid verification code') || 'Invalid verification code');
