@@ -179,6 +179,7 @@ function sealos_run_frontend {
   --env cloudDomain=$cloudDomain \
   --env cloudPort="$cloudPort" \
   --env certSecretName="wildcard-cert" \
+  --env MONGODB_URI="${mongodbUri}/sealos-license?authSource=admin" \
   --env licensePurchaseDomain="license.sealos.io"
 
   echo "run cronjob frontend"
