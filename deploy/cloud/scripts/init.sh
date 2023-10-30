@@ -157,6 +157,13 @@ function sealos_run_frontend {
   --env cloudPort=$cloudPort \
   --env certSecretName="wildcard-cert"
 
+  echo "run license frontend"
+  sealos run tars/frontend-license.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort=$cloudPort \
+  --env certSecretName="wildcard-cert"
+  --env licensePurchaseDomain="license.sealos.io"
+
   echo "run db monitoring"
   sealos run tars/database-service.tar
 }
@@ -186,12 +193,12 @@ function install {
 
   # sealos run controllers
   sealos_run_controller
-  
+
+  # sealos authorize !!must run after sealos_run_controller and before sealos_run_frontend
+  sealos_authorize
+
   # sealos run frontends
   sealos_run_frontend
-
-  # sealos authorize
-  sealos_authorize
 }
 
 install
