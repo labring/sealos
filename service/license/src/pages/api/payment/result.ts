@@ -46,7 +46,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       status: result.status,
       uid: userInfo.uid
     });
-    console.log(updateStatusResult, 'updateStatusResult');
 
     return jsonRes(res, {
       data: updateStatusResult
