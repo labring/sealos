@@ -185,9 +185,7 @@ export default function Overview() {
             {categories.map((item, idx) => (
               <Tab.Panel
                 key={idx}
-                className={`flex items-center justify-center gap-8 opacity-0 transition-opacity duration-300 ${
-                  tabIndex === idx ? 'opacity-100' : ''
-                } lg:flex-col lg:gap-6`}
+                className={`flex items-center justify-center gap-8 lg:flex-col lg:gap-6`}
               >
                 <div className="rounded-xl border border-opacity-10 border-white text-[#03080C] bg-[#BECFDC] text-xl lg:text-sm font-semibold py-3 px-6 lg:px-4 lg:py-2 flex-shrink-0">
                   {item.label}
