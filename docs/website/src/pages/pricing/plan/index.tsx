@@ -146,12 +146,12 @@ export default function Plan() {
               可通过购买 licence 文件进行续费
             </span>
           </div>
-          <div className="flex gap-5 lg:gap-2 flex-wrap ">
-            <div className="flex items-center justify-center w-[170px] h-12 lg:h-8 lg:text-xs rounded-md bg-[#BECFDC] text-lg font-semibold text-[#03080C] cursor-pointer">
+          <div className="flex gap-5 lg:gap-2 flex-wrap  lg:flex-nowrap">
+            <div className="flex items-center justify-center w-[170px] lg:w-[86px] h-12 lg:h-8 lg:text-xs rounded-md bg-[#BECFDC] text-lg font-semibold text-[#03080C] cursor-pointer">
               购买入口
             </div>
 
-            <div className="flex items-center justify-center w-[290px] h-12 lg:h-8 lg:text-xs rounded-md bg-[#B7D8FF26] text-lg font-semibold text-white/80 cursor-pointer">
+            <div className="flex items-center justify-center w-[290px] lg:w-[180px] h-12 lg:h-8 lg:text-xs rounded-md bg-[#B7D8FF26] text-lg font-semibold text-white/80 cursor-pointer">
               通过 licence 续费文档教程
             </div>
           </div>

@@ -145,7 +145,14 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
       <HeaderSvg className="header-img" />
       <nav>
         <div className="left">
-          <div className="sealos_home_header_title" onClick={() => window.location.replace('/')}>
+          <div
+            className="sealos_home_header_title"
+            onClick={() =>
+              window.location.replace(
+                `${location.origin}${currentLocale === 'en' ? '/' : '/zh-Hans'}`
+              )
+            }
+          >
             <LogoIcon width={'42px'} height={'42px'} />
             <span className="sealos-title">Sealos</span>
           </div>

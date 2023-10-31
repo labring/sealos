@@ -156,7 +156,7 @@ export default function Overview() {
       <div className="flex items-center flex-col mt-24 w-full lg:mt-10  lg:w-full lg:px-4">
         <Tab.Group selectedIndex={tabIndex} onChange={setTabIndex}>
           <Tab.List
-            className="flex flex-1 pt-[5px] px-[5px] pb-[4px] sealos_overview_tabs rounded-lg border border-solid border-white/5 bg-white/5"
+            className="flex flex-1 pt-[5px] px-[5px] pb-[4px] sealos_overview_tabs rounded-lg border border-solid border-white/5 bg-white/5 gap-2"
             ref={tabRef}
           >
             {categories.map((item) => (
@@ -165,7 +165,7 @@ export default function Overview() {
                 key={item.id}
                 className={({ selected }) =>
                   classNames(
-                    'px-8 py-3 text-lg font-semibold focus:outline-none cursor-pointer',
+                    'px-8 py-3 text-lg font-semibold focus:outline-none cursor-pointer lg:text-xs  lg:px-5 lg:py-1',
                     selected
                       ? 'text-white bg-[#B7D8FF1A] border border-solid border-white/5 rounded-md'
                       : 'text-white/70',
@@ -177,7 +177,11 @@ export default function Overview() {
               </Tab>
             ))}
           </Tab.List>
-          <Tab.Panels className={`mt-11 w-full bg-white/5 py-9 px-16 sealos_overview_panel`}>
+          <Tab.Panels
+            className={`mt-11 w-full bg-white/5 py-9 px-16 sealos_overview_panel relative`}
+          >
+            <div className="sealos_overview_gradient_background w-[380px] h-[380px] absolute top-0 left-0 pointer-events-none"></div>
+
             {categories.map((item, idx) => (
               <Tab.Panel
                 key={idx}
@@ -185,22 +189,25 @@ export default function Overview() {
                   tabIndex === idx ? 'opacity-100' : ''
                 } lg:flex-col lg:gap-6`}
               >
-                <div className="rounded-xl border border-opacity-10 border-white text-[#03080C] bg-[#BECFDC] text-xl font-semibold py-3 px-6 flex-shrink-0">
+                <div className="rounded-xl border border-opacity-10 border-white text-[#03080C] bg-[#BECFDC] text-xl lg:text-sm font-semibold py-3 px-6 lg:px-4 lg:py-2 flex-shrink-0">
                   {item.label}
                 </div>
-                <div>
+
+                <div className="lg:hidden">
                   {item.dottedLine ? (
-                    <DottedLineIcon className="lg:rotate-90" />
+                    <DottedLineIcon className="lg:rotate-90 lg:hidden" />
                   ) : (
                     <DashedIcon className="lg:rotate-90 lg:h-14" />
                   )}
                 </div>
-
+                <div className="lg:block hidden">
+                  <DashedIcon className="lg:rotate-90 lg:h-14" />
+                </div>
                 <div className="space-y-[30px]">
                   {item.features.map((i) => (
                     <div
                       key={i}
-                      className="px-5 py-4 min-w-fit flex justify-center items-center text-base font-medium text-white/90 bg-[#1F2A38] border border-solid border-white/10 rounded-[100px]"
+                      className="px-5 py-4 min-w-fit flex justify-center items-center text-base font-medium text-white/90 bg-[#1F2A38] border border-solid border-white/10 rounded-[100px] lg:text-xs lg:px-3 lg:py-2"
                     >
                       {i}
                     </div>
@@ -211,8 +218,8 @@ export default function Overview() {
                 </div>
                 <div className="flex-shrink-0 gap-4 flex flex-col">
                   {item.specificFeatures.map((i) => (
-                    <div key={i} className="flex items-center">
-                      <CheckIcon className="mr-4 flex-shrink-0" />
+                    <div key={i} className="flex items-center lg:text-xs">
+                      <CheckIcon className="mr-4 flex-shrink-0  lg:w-[18px] lg:h-[18px]" />
                       {i}
                     </div>
                   ))}

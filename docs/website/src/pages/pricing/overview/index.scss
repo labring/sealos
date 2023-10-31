@@ -41,3 +41,15 @@
   background-size: cover; /* 调整图像以填充整个元素 */
   background-repeat: no-repeat; /* 防止图像重复 */
 }
+
+.sealos_overview_gradient_background {
+  border-radius: 50%;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgba(52, 196, 216, 0.3) 0%,
+    rgba(8, 181, 192, 0.3) 33.85%,
+    rgba(7, 86, 150, 0.3) 63.02%,
+    rgba(0, 42, 150, 0.3) 100%
+  );
+  filter: blur(261px);
+}

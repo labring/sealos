@@ -50,7 +50,9 @@ function Akkordion({ items }) {
                   {item.title}
                 </div>
                 <ChevronUpIcon
-                  className={`${open ? 'rotate-180 transform' : 'rotate-90 transform'}  `}
+                  className={`${
+                    open ? 'rotate-180 transform' : 'rotate-90 transform'
+                  } lg:w-5 lg:h-5 `}
                 />
               </Disclosure.Button>
               <Transition
@@ -87,49 +89,6 @@ function Akkordion({ items }) {
 }
 
 export default function Advantage() {
-  const buttonRefs = useRef([]);
-  const openedRef = useRef(null);
-
-  const clickRecent = (index) => {
-    const clickedButton = buttonRefs.current[index];
-    if (clickedButton === openedRef.current) {
-      openedRef.current = null;
-      return;
-    }
-    if (Boolean(openedRef.current?.getAttribute('data-value'))) {
-      openedRef.current?.click();
-    }
-    openedRef.current = clickedButton;
-  };
-
-  const buttonRefs2 = useRef([]);
-  const openedRef2 = useRef(null);
-  const clickRecent2 = (index) => {
-    const clickedButton = buttonRefs2.current[index];
-    if (clickedButton === openedRef2.current) {
-      openedRef2.current = null;
-      return;
-    }
-    if (Boolean(openedRef2.current?.getAttribute('data-value'))) {
-      openedRef2.current?.click();
-    }
-    openedRef2.current = clickedButton;
-  };
-
-  const buttonRefs3 = useRef([]);
-  const openedRef3 = useRef(null);
-  const clickRecent3 = (index) => {
-    const clickedButton = buttonRefs3.current[index];
-    if (clickedButton === openedRef3.current) {
-      openedRef3.current = null;
-      return;
-    }
-    if (Boolean(openedRef3.current?.getAttribute('data-value'))) {
-      openedRef3.current?.click();
-    }
-    openedRef3.current = clickedButton;
-  };
-
   const Advantage1 = [
     {
       title: '应用管理',
