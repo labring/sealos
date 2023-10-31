@@ -456,6 +456,7 @@ EOF
         --env cloudPort="${cloud_port:-443}"\
         --env mongodbVersion="${mongodb_version:-mongodb-5.0}"
     fi
+    sealos cert --alt-names "$cloud_domain"
 }
 
 for i in "$@"; do
