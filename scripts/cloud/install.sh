@@ -318,11 +318,11 @@ collect_input() {
     done
     [[ $cloud_port != "" ]] || read -p "$(get_prompt "cloud_port")" cloud_port
 
-    [[ $input_cert != "" || ($cert_path != "" && $key_path != "") ]] || [[ $cloud_domain == *"nip.io"* ]] || read -p "$(get_prompt "input_certificate")" input_cert
-
-    if [[ $input_cert == "y" || $input_cert == "Y" ]]; then
+    if [[ $input_cert != "n" && ($cert_path == "" || $key_path == "") ]]; then
         read -p "$(get_prompt "certificate_path")" cert_path
-        read -p "$(get_prompt "private_key_path")" key_path
+        if [[ $cert_path != "" ]]; then
+            read -p "$(get_prompt "private_key_path")" key_path
+        fi
     fi
 }
 
@@ -416,7 +416,7 @@ loading_animation() {
 execute_commands() {
     [[ $k8s_installed == "y" ]] || (get_prompt "k8s_installation" && sealos apply -f $CLOUD_DIR/Clusterfile)
     command -v helm > /dev/null 2>&1 || sealos run "${image_registry}/${image_repository}/helm:v${helm_version#v:-3.12.0}"
-    [[ $k8s_ready == "y" ]] || get_prompt "cilium_requirement" && sealos run "${image_registry}/${image_repository}/cilium:v${cilium_version#v:-1.12.14}"
+    [[ $k8s_ready == "y" ]] || (get_prompt "cilium_requirement" && sealos run "${image_registry}/${image_repository}/cilium:v${cilium_version#v:-1.12.14}")
     wait_cluster_ready
     sealos run "${image_registry}/${image_repository}/cert-manager:v${cert_manager_version#v:-1.8.0}"
     sealos run "${image_registry}/${image_repository}/openebs:v${openebs_version#v:-3.4.0}"
