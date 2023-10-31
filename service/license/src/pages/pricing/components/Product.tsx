@@ -262,19 +262,11 @@ export default function Product() {
 
   // handle Jump link
   useEffect(() => {
-    const { clusterType, external } = router.query;
-    const isLogin = isUserLogin();
-    console.log(clusterType, external);
-
-    if (!isLogin) {
-      setRouteParams(external as string, clusterType as ClusterType);
-      router.push('/sigin');
-    } else if (routeParams.clusterType) {
+    const { clusterType, external } = routeParams;
+    console.log(clusterType, external, 'pricing');
+    if (clusterType && external) {
       handleProductByType(routeParams.clusterType as ClusterType);
       clearRouteParams();
-    } else {
-      console.log(11);
-      handleProductByType(clusterType as ClusterType);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
