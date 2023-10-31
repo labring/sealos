@@ -10,25 +10,25 @@ const Introduce = ({ isPc }: { isPc: boolean }) => {
 
   const i18nObj = {
     whySealos: <Translate>Why Sealos</Translate>,
-    lowerCosts: <Translate>Efficient & Economical</Translate>,
+    lowerCosts: <Translate>Lower Costs</Translate>,
     lowerCostsIntroduce: (
       <Translate>
-        Pay solely for the containers you utilize; automatic scaling prevents resource 
-        squandering and substantially reduces costs.
+        Save resources and reduce expenses by paying only for containers, with
+        automatic scaling to prevent waste.
       </Translate>
     ),
     userFriendly: <Translate>User Friendly</Translate>,
     userFriendlyIntroduce: (
       <Translate>
-        Concentrate on your core business activities without worrying about system complexities; 
-        negligible learning costs involved.
+        Focus on your business without being bogged down by unnecessary
+        complexity, regardless of your level of Kubernetes expertise.
       </Translate>
     ),
-    flexibilitySecurity: <Translate>Agility & Security</Translate>,
+    flexibilitySecurity: <Translate>Flexibility and Security</Translate>,
     flexibilitySecurityIntroduce: (
       <Translate>
-        The distinctive multi-tenancy sharing model ensures both effective resource segmentation 
-        and collaboration, all under a secure framework.
+        Its unique multi-tenant sharing mechanism can achieve effective resource
+        isolation and collaboration while ensuring safety.
       </Translate>
     ),
   }

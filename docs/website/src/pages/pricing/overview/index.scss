@@ -1,0 +1,43 @@
+.sealos_overview_tabs {
+  overflow: auto;
+  width: inherit;
+  scroll-behavior: smooth;
+
+  // &:hover {
+  //   overflow-x: auto;
+  // }
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+    border-radius: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #999;
+  }
+
+  &::-webkit-scrollbar-corner {
+    background-color: transparent;
+  }
+}
+
+.sealos_overview_panel {
+  border-radius: 16px;
+  min-height: 660px;
+  display: flex;
+  justify-content: center;
+  background-image: url('/static/price/functionBackground.svg');
+  background-size: cover; /* 调整图像以填充整个元素 */
+  background-repeat: no-repeat; /* 防止图像重复 */
+}

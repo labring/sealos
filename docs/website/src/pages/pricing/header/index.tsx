@@ -1,14 +1,12 @@
 import Link from '@docusaurus/Link';
 import Translate from '@docusaurus/Translate';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import useIsBrowser from '@docusaurus/useIsBrowser';
 import GithubIcon from '@site/static/icons/github.svg';
 import MeunIcon from '@site/static/icons/meun.svg';
 import LogoIcon from '@site/static/icons/sealos.svg';
 import React, { useEffect, useMemo, useState } from 'react';
-import VideoPlayer from '../VideoPlayer';
 import './index.scss';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import useIsBrowser from '@docusaurus/useIsBrowser';
-import HeaderSvg from '@site/static/illustrations/bg-header.svg';
 
 const navbar = [
   {
@@ -41,7 +39,6 @@ const i18nObj = {
 const HomeHeader = ({ isPc }: { isPc: boolean }) => {
   const [stars, setStars] = useState(10000);
   const isBrowser = useIsBrowser();
-
   const cloudUrl = useMemo(
     () => (window.self === window.top ? 'https://cloud.sealos.io' : 'https://cloud.sealos.top'),
     []
@@ -86,8 +83,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
 
   if (!isPc) {
     return (
-      <div id="Start" className="home-header">
-        <HeaderSvg className="header-img" />
+      <div className="sealo_price_header">
         <nav>
           <div className="left">
             <MeunIcon width={'24px'} height={'24px'} onClick={() => openSideBar()} />
@@ -101,51 +97,22 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
             </Link>
           </div>
         </nav>
-        <main>
-          {currentLocale === 'en' ? (
-            <h1>
-              <span className="txt-title">Kubernetes&nbsp;</span>
-              <span className="txt-aid">as the kernel</span>
-            </h1>
-          ) : (
-            <h1>
-              <span className="txt-aid">以&nbsp;</span>
-              <span className="txt-title">Kubernetes&nbsp;</span>
-              <span className="txt-aid">为内核</span>
-            </h1>
-          )}
-
-          <h2>{i18nObj.cloudOS}</h2>
-
-          {currentLocale === 'en' ? (
-            <h3>
-              Abstracting the entire data center as a singular server, where everything is an
-              application. You can use Sealos as seamlessly as operating a&nbsp;
-              <span className="txt-title">personal computer.</span>
-            </h3>
-          ) : (
-            <h3>
-              整个数据中心抽象成一台服务器，一切皆应用，像使用
-              <span className="txt-title">个人电脑</span>
-              一样使用 Sealos！
-            </h3>
-          )}
-          <a className="start-now-button" href={cloudUrl} target="_blank">
-            {i18nObj.startNow}
-            <div className="start-now-button-wrap"></div>
-          </a>
-          <VideoPlayer url={'https://itceb8-video.oss.laf.run/sealos-website.mp4'}></VideoPlayer>
-        </main>
       </div>
     );
   }
 
   return (
-    <div id="Start" className="home-header">
-      <HeaderSvg className="header-img" />
+    <div className="sealo_price_header">
       <nav>
         <div className="left">
-          <div className="sealos_home_header_title" onClick={() => window.location.replace('/')}>
+          <div
+            className="sealos_home_header_title"
+            onClick={() =>
+              window.location.replace(
+                `${location.origin}${currentLocale === 'en' ? 'en' : '/zh-Hans/'}`
+              )
+            }
+          >
             <LogoIcon width={'42px'} height={'42px'} />
             <span className="sealos-title">Sealos</span>
           </div>
@@ -176,38 +143,6 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
           </a>
         </div>
       </nav>
-      <main>
-        {currentLocale === 'en' ? (
-          <h1>
-            <span className="txt-title">Kubernetes&nbsp;</span>
-            <span className="txt-aid">as the kernel</span>
-          </h1>
-        ) : (
-          <h1>
-            <span className="txt-aid">以&nbsp;</span>
-            <span className="txt-title">Kubernetes&nbsp;</span>
-            <span className="txt-aid">为内核</span>
-          </h1>
-        )}
-
-        <h2>{i18nObj.cloudOS}</h2>
-
-        {currentLocale === 'en' ? (
-          <h3>
-            Abstracting the entire data center as a singular server, where everything is an
-            application. You can use Sealos as seamlessly as operating a&nbsp;
-            <span className="txt-title">personal computer.</span>
-          </h3>
-        ) : (
-          <h3>
-            整个数据中心抽象成一台服务器，一切皆应用，像使用
-            <span className="txt-title">个人电脑</span>
-            一样使用 Sealos！
-          </h3>
-        )}
-
-        <VideoPlayer url={'https://itceb8-video.oss.laf.run/sealos-website.mp4'}></VideoPlayer>
-      </main>
     </div>
   );
 };

@@ -21,6 +21,7 @@
   line-height: 140%;
   letter-spacing: 0.16px;
   z-index: 99;
+  flex-shrink: 0;
 }
 
 .sealos-banner-btn {
@@ -70,8 +71,8 @@
       line-height: 140%;
       margin-left: 8px;
     }
-    
-    .sealos-banner-btn-close{
+
+    .sealos-banner-btn-close {
       cursor: pointer;
       fill: #fff;
       width: 32px;

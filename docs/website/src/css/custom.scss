@@ -30,9 +30,9 @@
   border-radius: 10px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  // background-color: rgba(64, 158, 255, 0.8);
-}
+// ::-webkit-scrollbar-thumb:hover {
+// background-color: rgba(64, 158, 255, 0.8);
+// }
 
 :root {
   --ifm-color-primary: #4caaf4;
@@ -109,7 +109,7 @@ div.kernel-arch h3::before {
   transform: translateX(-10px);
 }
 
-@media screen and (max-width: 996px) {
+@media screen and (max-width: 1000px) {
   html {
     font-size: 14px;
   }
