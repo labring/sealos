@@ -8,7 +8,7 @@ on:
       - "docs/**"
 
 jobs:
-  deploy:
+  build-docs-image:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -60,3 +60,16 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  update-docs-image:
+    needs: build-docs-image
+    runs-on: ubuntu-latest
+    if: github.repository == 'labring/sealos'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - uses: actions-hub/kubectl@master
+        env:
+          KUBE_CONFIG: ${{ secrets.SEALOS_TOP_KUBE_CONF }}
+        with:
+          args: rollout restart deployment sealos-site
