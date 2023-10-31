@@ -18,7 +18,7 @@ export default function Banner() {
 
   useEffect(() => {
     let url = window.self === window.top ? 'cloud.sealos.io' : 'cloud.sealos.top';
-    setDoMain(url.indexOf('top') !== -1 ? 'cloud.sealos.top' : 'cloud.sealos.io');
+    setDoMain(url);
     // Get the last display timestamp from localStorage
     const lastDisplayTimestamp = localStorage.getItem('bannerLastDisplay');
     const today = new Date().toLocaleDateString();
