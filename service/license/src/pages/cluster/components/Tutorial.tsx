@@ -261,7 +261,8 @@ export default function Tutorial({
               </Text>
               <CodeBlock
                 language="bash"
-                code={`tar xzf ${fileNameParams} && cd sealos-cloud && bash install.sh`}
+                code={`tar xzvf ${fileNameParams} \n && cd sealos-cloud && bash install.sh`}
+                copyValue={`tar xzvf ${fileNameParams} && cd sealos-cloud && bash install.sh`}
               ></CodeBlock>
             </AccordionPanel>
           </AccordionItem>
