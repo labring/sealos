@@ -57,7 +57,7 @@ export default function Product() {
             className="sealos_price_btn"
             onClick={() =>
               window.open(
-                'https://license.sealos.io/pricing?external=true&clusterType=Standard',
+                'https://license.sealos.io/signin?external=true&clusterType=Standard',
                 '_black'
               )
             }
@@ -95,7 +95,7 @@ export default function Product() {
             }}
             onClick={() =>
               window.open(
-                'https://license.sealos.io/pricing?external=true&clusterType=Enterprise',
+                'https://license.sealos.io/signin?external=true&clusterType=Enterprise',
                 '_black'
               )
             }

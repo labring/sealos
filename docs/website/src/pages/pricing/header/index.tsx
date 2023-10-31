@@ -113,7 +113,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
             className="sealos_home_header_title"
             onClick={() =>
               window.location.replace(
-                `${location.origin}${currentLocale === 'en' ? '/' : '/zh-Hans'}`
+                `${location.origin}${currentLocale === 'en' ? '/' : '/zh-Hans/'}`
               )
             }
           >
