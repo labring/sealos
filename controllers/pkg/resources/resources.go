@@ -233,7 +233,7 @@ var DefaultPropertyTypeList = []PropertyType{
 		Enum:      0,
 		PriceType: AVG,
 		// raw price: 67
-		UnitPrice:  2.185002854,
+		UnitPrice:  2.237442922,
 		UnitString: "1m",
 	},
 	{
