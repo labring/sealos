@@ -18,6 +18,7 @@ export default function ServicePackage({ items, children }: ServicePackageProps)
       pt="48px"
       flexDirection={'column'}
       maxW="400px"
+      minH={'676px'}
     >
       {children}
       <Divider my="28px" color={'rgba(0, 0, 0, 0.10)'} />

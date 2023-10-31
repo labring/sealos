@@ -274,8 +274,8 @@ export default function Product() {
   return (
     <Box flex={1} overflow={'scroll'} backgroundColor="#f2f5f7">
       <Flex
-        minW={'1280px'}
-        // flexWrap={'wrap'}
+        // minW={'1280px'}
+        flexWrap={'wrap'}
         h="100%"
         pt="30px"
         pb="15px"
