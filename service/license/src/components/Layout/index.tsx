@@ -3,12 +3,16 @@ import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { ReactNode, useState } from 'react';
 import LangSelectSimple from '../LangSelect';
-import Account from '@/components/Account';
+import dynamic from 'next/dynamic';
+
+const Account = dynamic(() => import('@/components/Account'), {
+  ssr: false
+});
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const router = useRouter();
-  const goHome = () => router.replace('/');
+  const goHome = () => router.replace('/pricing');
   const [active, setActive] = useState(router.pathname);
 
   const tabs = [
@@ -53,7 +57,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <Text px="16px" color={'#fff'} fontSize={20}>
           |
         </Text>
-        <Flex alignItems={'center'}>
+        <Flex alignItems={'center'} gap={'16px'}>
           {tabs.map((i) => {
             return (
               <Box
@@ -66,7 +70,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                   router.push(i.url);
                 }}
               >
-                <Text fontSize={16} fontWeight={600} color={'#fff'}>
+                <Text fontSize={'14px'} fontWeight={600} color={'#fff'}>
                   {i.label}
                 </Text>
               </Box>

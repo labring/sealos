@@ -1,24 +1,10 @@
+import { LicenseYaml } from '@/types';
 import yaml from 'js-yaml';
-import { getUserId, getUserNamespace } from './user';
+import { getUserNamespace } from './user';
 
-export const json2License = (token: string) => {
+export const json2License = (licenseYaml: string) => {
   const namespace = getUserNamespace();
-  const userId = getUserId();
-  const license_name = crypto.randomUUID();
-  const decodedData = Buffer.from(token, 'base64').toString('binary');
-
-  const template = {
-    apiVersion: 'infostream.sealos.io/v1',
-    kind: 'License',
-    metadata: {
-      name: license_name,
-      namespace: namespace
-    },
-    spec: {
-      uid: userId,
-      token: decodedData
-    }
-  };
-  console.log(template, 'license');
+  const obj = yaml.load(licenseYaml) as LicenseYaml;
+  const template: LicenseYaml = obj;
   return yaml.dump(template);
 };

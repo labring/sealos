@@ -28,14 +28,14 @@ If your business requires operation within a public cloud environment, you can d
 
 #### Capabilities of Sealos
 
-- 🚀 **Application Management**: Efficient deployment of any distributed applications with public internet accessibility.
+- 🚀 **Application Management**: Easy management and quick release of publicly accessible distributed applications in the app store.
 - 🗄️ **Database Management**: Create high-availability databases in seconds, offering support for MySQL, PostgreSQL, MongoDB, and Redis.
-- 📬 **Support for Message Queues**: Catering to a variety of message queues such as Kafka, RocketMQ, and RabbitMQ.
+- 🌥️ **Cloud Universality**: Equally effective in both public and private cloud, enabling a seamless transition of traditional applications to the cloud.
 
 #### Advantages of Sealos
 
-- 💰 **Resource Efficiency & Cost Reduction**: Pay exclusively for the containers. The automatic scaling feature fundamentally tackles resource wastage, thus offering substantial cost benefits.
-- 🌐 **High Universality & Ease of Use**: Users can concentrate solely on their operations without the distraction of external complexities. Regardless of one's knowledge level of Kubernetes, Sealos remains user-friendly.
+- 💰 **Efficient & Economical**: Pay solely for the containers you utilize; automatic scaling prevents resource squandering and substantially reduces costs.
+- 🌐 **High Universality & Ease of Use**: Concentrate on your core business activities without worrying about system complexities; negligible learning costs involved.
 - 🛡️ **Agility & Security**: The distinctive multi-tenancy sharing model ensures both effective resource segmentation and collaboration, all under a secure framework.
 
 ### Private Cloud
