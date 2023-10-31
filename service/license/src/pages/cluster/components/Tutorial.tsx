@@ -254,7 +254,7 @@ export default function Tutorial({
               <Text mt="24px" fontSize={'16px'} fontWeight={600} mb="12px">
                 服务器上下载
               </Text>
-              <CodeBlock language="bash" code={`wget '${ossLink}'`}></CodeBlock>
+              <CodeBlock language="bash" code={`wget '${ossLink}' -O ${ossFileName}`}></CodeBlock>
               <Divider my="20px" />
               <Text mt="12px" fontSize={'16px'} fontWeight={600} mb="12px">
                 部署集群
