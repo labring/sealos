@@ -630,5 +630,8 @@
   },
   "Cloud Operating System": {
     "message": "云操作系统: Sealos"
+  },
+  "Pricing": {
+    "message": "价格"
   }
 }

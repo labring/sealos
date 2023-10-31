@@ -12,22 +12,22 @@ const i18nObj = {
   appMan: <Translate>Application Management</Translate>,
   appManagement_introduce: (
     <Translate>
-      Easy management and quick release of publicly accessible distributed applications 
-      in the app store.
+      Rapidly deploy any distributed application with the ability to access the
+      public network.
     </Translate>
   ),
   database: <Translate>Database</Translate>,
   database_introduce: (
     <Translate>
-      Create high-availability databases in seconds, offering support for MySQL, 
+      Create highly available databases in seconds that support MySQL,
       PostgreSQL, MongoDB, and Redis.
     </Translate>
   ),
-  serverless: <Translate>Cloud Universality</Translate>,
+  serverless: <Translate>Serverless</Translate>,
   serverless_introduce: (
     <Translate>
-      Equally effective in both public and private cloud, enabling a seamless transition of 
-      traditional applications to the cloud.
+      Serverless computing makes writing code as easy as blogging, allowing you
+      to launch and deploy your business code anytime, anywhere.
     </Translate>
   ),
 }

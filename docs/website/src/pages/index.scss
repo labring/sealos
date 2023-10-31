@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 .home {
   overflow-x: hidden;
   // background-color: '#FCFCFF' !important;
@@ -48,7 +52,7 @@
   display: none;
 }
 
-@media screen and (max-width: 996px) {
+@media screen and (max-width: 1000px) {
   .home {
     .title {
       height: 100px;
