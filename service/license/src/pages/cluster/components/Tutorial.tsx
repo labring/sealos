@@ -194,7 +194,7 @@ export default function Tutorial({
             <Box mt="12px" fontSize={'14px'} fontWeight={400}>
               Sealos 需要使用证书来保证通信安全，默认在您不提供证书的情况下我们会使用
               <Link href="https://cert-manager.io/docs/" color={'#219BF4'} px="4px">
-                cret-manager
+                cert-manager
               </Link>
               来自动签发证书。
             </Box>
@@ -254,7 +254,10 @@ export default function Tutorial({
               <Text mt="24px" fontSize={'16px'} fontWeight={600} mb="12px">
                 服务器上下载
               </Text>
-              <CodeBlock language="bash" code={`wget '${ossLink}' -O ${ossFileName}`}></CodeBlock>
+              <CodeBlock
+                language="bash"
+                code={`wget '${ossLink}' -O ${fileNameParams}`}
+              ></CodeBlock>
               <Divider my="20px" />
               <Text mt="12px" fontSize={'16px'} fontWeight={600} mb="12px">
                 部署集群

@@ -24,7 +24,7 @@
     "description": "The title of the footer links column with title=Labring in the footer"
   },
   "link.item.label.Company": {
-    "message": "Company",
+    "message": "关于我们",
     "description": "The label of footer link with label=Company linking to /company"
   },
   "link.item.label.Laf FaaS": {
@@ -52,15 +52,15 @@
     "description": "The label of footer link with label=Blog linking to /blog"
   },
   "link.title.Product": {
-    "message": "Product",
+    "message": "产品",
     "description": "The title of the footer links column with title=Product in the footer"
   },
   "link.title.Developer": {
-    "message": "Developer",
+    "message": "开发者",
     "description": "The title of the footer links column with title=Developer in the footer"
   },
   "link.title.Support": {
-    "message": "Support",
+    "message": "支持",
     "description": "The title of the footer links column with title=Support in the footer"
   },
   "link.item.label.Laf": {
@@ -76,23 +76,23 @@
     "description": "The label of footer link with label=FastGPT linking to https://github.com/labring/FastGPT"
   },
   "link.item.label.Contribute": {
-    "message": "Contribute",
+    "message": "参与贡献",
     "description": "The label of footer link with label=Contribute linking to https://github.com/labring/sealos/blob/main/CONTRIBUTING.md"
   },
   "link.item.label.Documentation": {
-    "message": "Documentation",
+    "message": "文档中心",
     "description": "The label of footer link with label=Documentation linking to /docs/Intro"
   },
   "link.item.label.Forum": {
-    "message": "Forum",
+    "message": "中文论坛",
     "description": "The label of footer link with label=Forum linking to https://forum.laf.run/"
   },
   "link.item.label.Feedback": {
-    "message": "Feedback",
+    "message": "问题反馈",
     "description": "The label of footer link with label=Feedback linking to https://github.com/labring/sealos/issues"
   },
   "link.item.label.Contact US": {
-    "message": "Contact US",
+    "message": "咨询合作",
     "description": "The label of footer link with label=Contact US linking to https://fael3z0zfze.feishu.cn/share/base/form/shrcnesSfEK65JZaAf2W6Fwz6Ad"
   }
 }
