@@ -3,6 +3,8 @@ package resources
 import (
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+
 	sealos_networkmanager "github.com/dinoallo/sealos-networkmanager-protoapi"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,6 +32,7 @@ const (
 	TerminalIDLabelKey         = "TerminalID"
 	AppLabelKey                = "app"
 	JobNameLabelKey            = "job-name"
+	ACMEChallengeKey           = "acme.cert-manager.io/http01-solver"
 	KubeBlocksBackUpName       = "kubeblocks-backup-data"
 )
 
@@ -59,11 +62,37 @@ func NewResourceNamed(cr client.Object) *ResourceNamed {
 	case cr.GetName() == KubeBlocksBackUpName:
 		p._type = JOB
 		p._name = KubeBlocksBackUpName
+	case labels[ACMEChallengeKey] != "":
+		p._type = APP
+		p._name = getACMEResolverName(cr)
 	default:
 		p._type = OTHER
 		p._name = ""
 	}
 	return p
+}
+
+const (
+	acmesolver                          = "acmesolver"
+	acmesolverContainerArgsDomainPrefix = "--domain="
+)
+
+func getACMEResolverName(obj client.Object) string {
+	pod, ok := obj.(*corev1.Pod)
+	if !ok {
+		return ""
+	}
+	for _, container := range pod.Spec.Containers {
+		if container.Name != acmesolver {
+			continue
+		}
+		for _, arg := range container.Args {
+			if strings.HasPrefix(arg, acmesolverContainerArgsDomainPrefix) {
+				return acmesolver + "-" + strings.TrimPrefix(arg, acmesolverContainerArgsDomainPrefix)
+			}
+		}
+	}
+	return pod.Name
 }
 
 func (p *ResourceNamed) Type() uint8 {
