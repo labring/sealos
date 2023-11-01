@@ -15,28 +15,23 @@
 package buildah
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"os/exec"
 
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/storage/pkg/unshare"
-	"github.com/labring/sreg/pkg/utils/file"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/maps"
 )
 
 type createOptions struct {
 	name     string
 	platform string
 	short    bool
-	env      []string
 }
 
 func newDefaultCreateOptions() *createOptions {
@@ -50,7 +45,6 @@ func (opts *createOptions) RegisterFlags(fs *pflag.FlagSet) {
 	fs.StringVarP(&opts.name, "cluster", "c", opts.name, "name of cluster to be created but not actually run")
 	fs.StringVar(&opts.platform, "platform", opts.platform, "set the OS/ARCH/VARIANT of the image to the provided value instead of the current operating system and architecture of the host (for example `linux/arm`)")
 	fs.BoolVar(&opts.short, "short", false, "if true, print just the mount path.")
-	fs.StringSliceVarP(&opts.env, "env", "e", opts.env, "set environment variables for template files")
 }
 
 func newCreateCmd() *cobra.Command {
@@ -81,13 +75,6 @@ func newCreateCmd() *cobra.Command {
 			} else {
 				fmt.Println(info.MountPoint)
 			}
-
-			if len(opts.env) > 0 {
-				if err := runRender([]string{info.MountPoint}, opts.env); err != nil {
-					return err
-				}
-			}
-
 			if !unshare.IsRootless() {
 				return nil
 			}
@@ -118,22 +105,4 @@ func newCreateCmd() *cobra.Command {
 	}
 	opts.RegisterFlags(createCmd.Flags())
 	return createCmd
-}
-
-func runRender(mountPoints []string, env []string) error {
-	eg, _ := errgroup.WithContext(context.Background())
-	envs := maps.FromSlice(env)
-
-	for _, mountPoint := range mountPoints {
-		mp := mountPoint
-		eg.Go(func() error {
-			if !file.IsExist(mp) {
-				logger.Debug("MountPoint %s does not exist, skipping", mp)
-				return nil
-			}
-			return RenderTemplatesWithEnv(mp, envs)
-		})
-	}
-
-	return eg.Wait()
 }
