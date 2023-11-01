@@ -125,21 +125,15 @@ func runRender(mountPoints []string, env []string) error {
 	envs := maps.FromSlice(env)
 
 	for _, mountPoint := range mountPoints {
+		mp := mountPoint
 		eg.Go(func() error {
-			if !file.IsExist(mountPoint) {
-				logger.Debug("MountPoint %s does not exist, skipping", mountPoint)
+			if !file.IsExist(mp) {
+				logger.Debug("MountPoint %s does not exist, skipping", mp)
 				return nil
 			}
-			if err := RenderTemplatesWithEnv(mountPoint, envs); err != nil {
-				return err
-			}
-			return nil
+			return RenderTemplatesWithEnv(mp, envs)
 		})
 	}
 
-	if err := eg.Wait(); err != nil {
-		return err
-	}
-
-	return nil
+	return eg.Wait()
 }
