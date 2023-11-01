@@ -5,9 +5,9 @@ import {
   DrawerHeader,
   DrawerOverlay,
   DrawerContent,
-  DrawerCloseButton,
-} from "@chakra-ui/react";
-import { MutableRefObject } from "react";
+  DrawerCloseButton
+} from '@chakra-ui/react';
+import { MutableRefObject } from 'react';
 
 export type KubeDrawerProps = {
   header: React.ReactNode;
@@ -19,7 +19,7 @@ export type KubeDrawerProps = {
 
 export const KubeDrawer = ({
   props,
-  children,
+  children
 }: {
   props: KubeDrawerProps;
   children: React.ReactNode;
@@ -31,7 +31,7 @@ export const KubeDrawer = ({
       placement="right"
       onClose={onClose}
       finalFocusRef={finalFocusRef}
-      size={"sm"}
+      size={'sm'}
     >
       <DrawerOverlay />
       <DrawerContent>

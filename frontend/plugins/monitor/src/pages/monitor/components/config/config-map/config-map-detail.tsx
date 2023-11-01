@@ -34,7 +34,13 @@ const ConfigMapDetail = ({ configMap, open, onClose }: Props) => {
           {data.map(([name, value = '']) => (
             <div key={name} className="mb-2">
               <div className="text-zinc-300 font-bold pb-0.5">{name}</div>
-              <Input.TextArea classNames={{textarea: 'font-mono'}} wrap="off" rows={6} disabled value={value} />
+              <Input.TextArea
+                classNames={{ textarea: 'font-mono' }}
+                wrap="off"
+                rows={6}
+                disabled
+                value={value}
+              />
             </div>
           ))}
         </>
