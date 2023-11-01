@@ -26,6 +26,8 @@ The `sealos create` command provides the following options:
 
 - `--short=false`: If true, only print the mount path.
 
+- `-e, --env=[]`: Specify environment variables used during the rendering of template files.
+
 Each option can be followed by an argument.
 
 ## Example
@@ -33,9 +35,9 @@ Each option can be followed by an argument.
 For example, you can use the following command to create a cluster named `mycluster`, but do not actually run it:
 
 ```bash
-sealos create docker.io/labring/kubernetes:v1.24.0
+sealos create -e registryPort=8443 docker.io/labring/kubernetes:v1.24.0
 ```
 
-This command will create a cluster working directory with an image name of `docker.io/labring/kubernetes:v1.24.0` and output the address of the cluster image, but the cluster will not actually run.
+This command will create a cluster working directory with an image name of `docker.io/labring/kubernetes:v1.24.0` and output the address of the cluster image. The `-e registryPort=8443` option specifies the environment variable used during the rendering of template files, where `registryPort` is set to `8443`. Please note that in this example, the cluster is not actually run.
 
 The above is the usage guide for the `sealos create` command, hope it helps. If you encounter any problems during use, feel free to ask us.
