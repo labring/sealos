@@ -46,7 +46,7 @@ export default function Product() {
   const [orderID, setOrderID] = useState('');
   const [wechatData, setWechatData] = useState<WechatPaymentData>();
   const { data: platformEnv } = useQuery(['getPlatformEnv'], getSystemEnv);
-  const [remainingSeconds, setRemainingSeconds] = useState(2); // 初始值为2秒
+  const [remainingSeconds, setRemainingSeconds] = useState(1); // 初始值为2秒
   const { data: routeParams, setRouteParams, clearRouteParams } = useRouteParamsStore();
   const { isUserLogin } = useSessionStore();
   const { paymentData, setPaymentData, deletePaymentData, isExpired } = usePaymentDataStore();
@@ -221,7 +221,7 @@ export default function Product() {
         status: 'success',
         title: t('Checking Payment Results'), // 这里改为license 签发成功
         isClosable: true,
-        duration: 9000,
+        duration: 3500,
         position: 'top'
       });
       setComplete(2);
@@ -262,18 +262,11 @@ export default function Product() {
 
   // handle Jump link
   useEffect(() => {
-    const { clusterType, external } = router.query;
-    const isLogin = isUserLogin();
-    console.log(clusterType, external);
-
-    if (!isLogin) {
-      setRouteParams(external as string, clusterType as ClusterType);
-    } else if (routeParams.clusterType) {
+    const { clusterType, external } = routeParams;
+    console.log(clusterType, external, 'pricing');
+    if (clusterType && external) {
       handleProductByType(routeParams.clusterType as ClusterType);
       clearRouteParams();
-    } else {
-      console.log(11);
-      handleProductByType(clusterType as ClusterType);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -281,8 +274,8 @@ export default function Product() {
   return (
     <Box flex={1} overflow={'scroll'} backgroundColor="#f2f5f7">
       <Flex
-        minW={'1280px'}
-        // flexWrap={'wrap'}
+        // minW={'1280px'}
+        flexWrap={'wrap'}
         h="100%"
         pt="30px"
         pb="15px"

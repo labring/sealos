@@ -32,7 +32,7 @@ export default function RechargeComponent() {
   const queryClient = useQueryClient();
   const toast = useToast({ position: 'top', duration: 2000 });
   const { t } = useTranslation();
-  const [isAgree, setIsAgree] = useState(true);
+  const [isAgree, setIsAgree] = useState(false);
   const [isInvalid, setIsInvalid] = useState(false);
   const { BonusBox, selectAmount } = useBonusBox();
   const { isOpen, onOpen, onClose } = useDisclosure();

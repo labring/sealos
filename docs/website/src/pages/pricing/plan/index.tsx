@@ -127,14 +127,14 @@ export default function Plan() {
           {select === 'month' && (
             <div className="my-5 text-lg lg:text-xs font-medium text-white/80">
               如集群中运行一个容器，配额是 CPU 1核 x 内存1G x 存储卷 100G x 网络 10G,
-              则一年消耗的费用为 1.61 + 0.80 + 0 + 0 = 2.41元
+              则一月消耗的费用为 1.61 + 0.80 + 0 + 0 = 2.41元
             </div>
           )}
 
           {select === 'day' && (
             <div className="my-5 text-lg lg:text-xs font-medium text-white/80">
               如集群中运行一个容器，配额是 CPU 1核 x 内存1G x 存储卷 100G x 网络 10G,
-              则一年消耗的费用为 0.05 + 0.03 + 0 + 0 = 0.08元
+              则一天消耗的费用为 0.05 + 0.03 + 0 + 0 = 0.08元
             </div>
           )}
           <div

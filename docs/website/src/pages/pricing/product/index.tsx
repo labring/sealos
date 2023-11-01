@@ -27,7 +27,7 @@ export default function Product() {
   ];
 
   return (
-    <main className="self-center flex w-full max-w-[1280px] flex-col px-10">
+    <main className="self-center flex w-full max-w-[1280px] flex-col px-10 z-10">
       <div className="mt-24 text-white text-6xl font-semibold leading-[140%] self-center max-md:text-4xl lg:text-3xl">
         Sealos 私有云
       </div>

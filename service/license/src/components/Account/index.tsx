@@ -29,23 +29,15 @@ export default function Account() {
       position={'relative'}
       onClick={accountDisclosure.onOpen}
     >
-      {userInfo?.user?.avatar ? (
-        <Image
-          width={'36px'}
-          height={'36px'}
-          borderRadius="full"
-          src={userInfo?.user?.avatar || ''}
-          alt="user avator"
-        />
-      ) : (
-        <Avatar
-          name={userInfo?.user?.name || ''}
-          width={'36px'}
-          height={'36px'}
-          borderRadius="full"
-          bg="#36ADEF"
-        ></Avatar>
-      )}
+      <Image
+        opacity={'0.9'}
+        width={'36px'}
+        height={'36px'}
+        borderRadius="full"
+        src={userInfo?.user?.avatar || ''}
+        fallbackSrc={'/images/avatar.svg'}
+        alt="user avator"
+      />
 
       {accountDisclosure.isOpen && (
         <>
@@ -75,7 +67,7 @@ export default function Account() {
                 height={'36px'}
                 borderRadius="full"
                 src={userInfo?.user?.avatar || ''}
-                fallbackSrc="/images/sealos.svg"
+                fallbackSrc={'/images/avatar.svg'}
                 alt="user avator"
               />
               <Text ml="12px">{userInfo?.user?.name}</Text>
