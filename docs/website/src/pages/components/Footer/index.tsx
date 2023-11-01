@@ -1,14 +1,15 @@
-import Link from '@docusaurus/Link'
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext'
-import DeveloperIcon from '@site/static/icons/developer.svg'
-import DiscordIcon from '@site/static/icons/discord.svg'
-import GithubIcon from '@site/static/icons/github.svg'
-import LogoIcon from '@site/static/icons/logo.svg'
-import React, { useMemo } from 'react'
-import './index.scss'
+import Link from '@docusaurus/Link';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import DeveloperIcon from '@site/static/icons/developer.svg';
+import DiscordIcon from '@site/static/icons/discord.svg';
+import GithubIcon from '@site/static/icons/github.svg';
+import LogoIcon from '@site/static/icons/logo.svg';
+import React, { useMemo } from 'react';
+import './index.scss';
+import Translate from '@docusaurus/Translate';
 interface ItemType {
-  title: string
-  items: { label: string; to: string }[]
+  title: string;
+  items: { label: string; to: string }[];
 }
 
 const Footer = ({ isPc }: { isPc: boolean }) => {
@@ -16,30 +17,30 @@ const Footer = ({ isPc }: { isPc: boolean }) => {
     siteConfig: {
       themeConfig: {
         // @ts-ignore nextline
-        footer: { links },
-      },
-    },
-  } = useDocusaurusContext()
+        footer: { links }
+      }
+    }
+  } = useDocusaurusContext();
 
-  const listData = useMemo<ItemType[]>(() => links, [])
+  const listData = useMemo<ItemType[]>(() => links, []);
 
   const FooterLinks = [
     {
       key: 'github',
       label: <GithubIcon width={20} height={20} />,
-      to: 'https://github.com/labring/sealos',
+      to: 'https://github.com/labring/sealos'
     },
     {
       key: 'discord',
       label: <DiscordIcon width={20} height={20} />,
-      to: 'https://discord.com/invite/qzBmGGZGk7',
+      to: 'https://discord.com/invite/qzBmGGZGk7'
     },
     {
       key: 'commit',
       label: <DeveloperIcon width={20} height={20} />,
-      to: 'https://forum.laf.run/',
-    },
-  ]
+      to: 'https://forum.laf.run/'
+    }
+  ];
 
   if (!isPc) {
     return (
@@ -57,7 +58,7 @@ const Footer = ({ isPc }: { isPc: boolean }) => {
               <span className="footer-title">Sealos</span>
             </div>
             <div className="footer-aid-text">
-              a cloud operating system based on the Kubernetes kernel
+              <Translate>A cloud operating system based on the Kubernetes kernel</Translate>
             </div>
           </div>
           <div className="footer-right">
@@ -75,23 +76,24 @@ const Footer = ({ isPc }: { isPc: boolean }) => {
         </div>
         <div className="footer-bottom-wrap">
           <div className="footer-bottom">
-          <div className="footer-bottom-text">
-            Made by Sealos Team. <Link to={"https://beian.miit.gov.cn/"}>粤ICP备2023048773号</Link>&nbsp;
-            珠海环界云计算有限公司版权所有
-          </div>
+            <div className="footer-bottom-text">
+              Made by Sealos Team.{' '}
+              <Link to={'https://beian.miit.gov.cn/'}>粤ICP备2023048773号</Link>&nbsp;
+              珠海环界云计算有限公司版权所有
+            </div>
             <div className="link">
               {FooterLinks.map((item) => {
                 return (
                   <Link key={item.key} className="community-logo" to={item.to}>
                     {item.label}
                   </Link>
-                )
+                );
               })}
             </div>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -109,7 +111,7 @@ const Footer = ({ isPc }: { isPc: boolean }) => {
             <span className="footer-title">Sealos</span>
           </div>
           <div className="footer-aid-text">
-            A cloud operating system based on the Kubernetes kernel
+            <Translate>A cloud operating system based on the Kubernetes kernel</Translate>
           </div>
         </div>
         <div className="footer-right">
@@ -128,8 +130,8 @@ const Footer = ({ isPc }: { isPc: boolean }) => {
       <div className="footer-bottom-wrap">
         <div className="footer-bottom">
           <div className="footer-bottom-text">
-            Made by Sealos Team. <Link to={"https://beian.miit.gov.cn/"}>粤ICP备2023048773号</Link>&nbsp;
-            珠海环界云计算有限公司版权所有
+            Made by Sealos Team. <Link to={'https://beian.miit.gov.cn/'}>粤ICP备2023048773号</Link>
+            &nbsp; 珠海环界云计算有限公司版权所有
           </div>
           <div className="link">
             {FooterLinks.map((item) => {
@@ -137,13 +139,13 @@ const Footer = ({ isPc }: { isPc: boolean }) => {
                 <Link key={item.key} className="community-logo" to={item.to}>
                   {item.label}
                 </Link>
-              )
+              );
             })}
           </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default React.memo(Footer)
+export default React.memo(Footer);

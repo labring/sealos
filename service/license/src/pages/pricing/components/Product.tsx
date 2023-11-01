@@ -272,9 +272,11 @@ export default function Product() {
   }, []);
 
   return (
-    <Box flex={1} overflow={'scroll'} backgroundColor="#f2f5f7">
+    <>
       <Flex
-        // minW={'1280px'}
+        flex={1}
+        backgroundColor="#f2f5f7"
+        overflowY={'scroll'}
         flexWrap={'wrap'}
         h="100%"
         pt="30px"
@@ -351,7 +353,6 @@ export default function Product() {
             onClick={() => handleProductByType(ClusterType.Enterprise)}
           >
             购买
-            {/* {t('Buy')} */}
           </Button>
         </ServicePackage>
         <ServicePackage items={contect}>
@@ -360,7 +361,6 @@ export default function Product() {
           </Text>
           <Text mt="32px" color={'#24282C'} fontSize={'24px'} fontWeight={600} w="200px">
             适合大规模集群与大型企业客户
-            {/* Suitable for large-scale clusters and large enterprise customers */}
           </Text>
           <Button
             mt="42px"
@@ -370,12 +370,10 @@ export default function Product() {
             fontWeight={600}
             onClick={() => handleProductByType(ClusterType.Contact)}
           >
-            {/* {t('Contact Us')} */}
             联系我们
           </Button>
         </ServicePackage>
       </Flex>
-
       <Modal isOpen={isOpen} onClose={onClosePayment} closeOnOverlayClick={false}>
         <ModalOverlay />
         <ModalContent>
@@ -464,6 +462,6 @@ export default function Product() {
           )}
         </ModalContent>
       </Modal>
-    </Box>
+    </>
   );
 }

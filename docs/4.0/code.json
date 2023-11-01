@@ -633,5 +633,8 @@
   },
   "Pricing": {
     "message": "价格"
+  },
+  "A cloud operating system based on the Kubernetes kernel": {
+    "message": "以 Kubernetes 为内核的云操作系统"
   }
 }
