@@ -34,5 +34,5 @@ spec:
                   number: 3000
   tls:
     - hosts:
-        - {{ .cloudDomain }}
+        - template.{{ .cloudDomain }}
       secretName: wildcard-cert
