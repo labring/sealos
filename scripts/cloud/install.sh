@@ -91,6 +91,7 @@ Options:
   --cert-path                       # Certificate path
   --key-path                        # Private key path
   --single                          # Whether to install on a single node (y/n)
+  --proxy-prefix                    # Sealos binary installation address proxy prefix
   --zh                              # Chinese prompt
   --en                              # English prompt
   --help                            # Help information"
@@ -151,6 +152,7 @@ Options:
   --cert-path                     # 证书路径
   --key-path                      # 私钥路径
   --single                        # 是否单节点安装 (y/n)
+  --proxy-prefix                  # sealos二进制安装地址代理前缀
   --zh                            # 中文提示
   --en                            # 英文提示
   --help                          # 帮助信息"
@@ -228,9 +230,10 @@ init() {
     if ! command -v sealos &> /dev/null; then
         get_prompt "install_sealos"
         read -p " " installChoice
-        if [[ $installChoice == "y" || $installChoice == "Y" ]]; then
-            curl -sfL https://raw.githubusercontent.com/labring/sealos/${SEALOS_VERSION}/scripts/install.sh |
-              sh -s ${SEALOS_VERSION} labring/sealos
+        if [[ "${installChoice,,}" == "y" ]]; then
+          local install_url="https://raw.githubusercontent.com/labring/sealos/${SEALOS_VERSION}/scripts/install.sh"
+          [ -z "$proxy_prefix" ] || install_url="${proxy_prefix%/}/$install_url"
+          curl -sfL "$install_url" | PROXY_PREFIX=$proxy_prefix sh -s "${SEALOS_VERSION}" labring/sealos
         else
             echo "Please install sealos CLI to proceed."
             exit 1
@@ -485,6 +488,7 @@ for i in "$@"; do
   --cert-path=*) cert_path="${i#*=}"; shift ;;
   --key-path=*) key_path="${i#*=}"; shift ;;
   --single) single="y"; shift ;;
+  --proxy-prefix=*) proxy_prefix="${i#*=}"; shift ;;
   --zh | zh ) LANGUAGE="CN"; shift ;;
   --en | en ) LANGUAGE="EN"; shift ;;
   --config=* | -c ) source ${i#*=} > /dev/null; shift ;;
@@ -513,6 +517,7 @@ for i in "$@"; do
   --cloud-port | cloud-port | \
   --cert-path | cert-path | \
   --key-path | key-path | \
+  --proxy-prefix | proxy-prefix | \
   --config | config) echo "Please use '--${i#--}=' to assign value to option"; exit 1 ;;
   -*) echo "Unknown option $i"; exit 1 ;;
   *) ;;
