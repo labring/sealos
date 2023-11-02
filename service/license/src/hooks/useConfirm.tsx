@@ -17,8 +17,6 @@ export const useConfirm = () => {
   const confirmCb = useRef<any>();
   const cancelCb = useRef<any>();
 
-  console.log(cancelCb);
-
   return {
     openConfirm: useCallback(
       (confirm?: any, cancel?: any) => {
