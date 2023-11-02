@@ -31,13 +31,14 @@ import ServicePackage from './ServicePackage';
 import useRouteParamsStore from '@/stores/routeParams';
 import useSessionStore from '@/stores/session';
 import usePaymentDataStore from '@/stores/payment';
+import { useConfirm } from '@/hooks/useConfirm';
 
 export default function Product() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const router = useRouter();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  // const { isOpen: isOpenStatus, onOpen: onOpenSuccess, onClose: onCloseSuccess } = useDisclosure();
+  const { openConfirm, ConfirmChild } = useConfirm();
   const toast = useToast({ position: 'top', duration: 2000 });
   // 整个流程跑通需要状态管理, 0 初始态， 1 创建支付单， 2 支付中, 3 支付成功
   const [complete, setComplete] = useState<0 | 1 | 2 | 3>(0);
@@ -73,8 +74,14 @@ export default function Product() {
   const handleProductByType = (type: ClusterType) => {
     setClusterType(type);
     if (type === ClusterType.Standard) {
-      onOpen();
-      clusterMutation.mutate({ type: ClusterType.Standard });
+      openConfirm(
+        () => {
+          clusterMutation.mutate({ type: ClusterType.Standard });
+        },
+        () => {
+          router.push('/cluster');
+        }
+      )();
     }
     if (type === ClusterType.Enterprise) {
       openPayModal();
@@ -462,6 +469,7 @@ export default function Product() {
           )}
         </ModalContent>
       </Modal>
+      <ConfirmChild />
     </>
   );
 }
