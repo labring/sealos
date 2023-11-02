@@ -16,16 +16,10 @@ package env
 
 // nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
-	"errors"
-	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 
-	"github.com/labring/sealos/pkg/template"
 	"github.com/labring/sealos/pkg/types/v1beta1"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
 	stringsutil "github.com/labring/sealos/pkg/utils/strings"
@@ -73,47 +67,11 @@ func (p *processor) WrapShell(host, shell string) string {
 }
 
 func (p *processor) RenderAll(host, dir string, envs map[string]string) error {
-	return filepath.Walk(dir, func(path string, info os.FileInfo, errIn error) error {
-		if errIn != nil {
-			return errIn
-		}
-		if info.IsDir() || !strings.HasSuffix(info.Name(), templateSuffix) {
-			return nil
-		}
-		fileName := strings.TrimSuffix(path, templateSuffix)
-		if fileutil.IsExist(fileName) {
-			if err := os.Remove(fileName); err != nil {
-				logger.Warn(err)
-			}
-		}
-
-		writer, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("failed to open file [%s] when render env: %v", path, err)
-		}
-
-		defer writer.Close()
-		body, err := fileutil.ReadAll(path)
-		if err != nil {
-			return err
-		}
-
-		t, isOk, err := template.TryParse(string(body))
-		if isOk {
-			if err != nil {
-				return fmt.Errorf("failed to create template: %s %v", path, err)
-			}
-			if host != "" {
-				data := maps.Merge(envs, p.getHostEnvInCache(host))
-				if err := t.Execute(writer, data); err != nil {
-					return fmt.Errorf("failed to render env template: %s %v", path, err)
-				}
-			}
-		} else {
-			return errors.New("parse template failed")
-		}
-		return nil
-	})
+	data := envs
+	if host != "" {
+		data = maps.Merge(envs, p.getHostEnvInCache(host))
+	}
+	return stringsutil.RenderTemplatesWithEnv(dir, data)
 }
 
 func (p *processor) getHostEnvInCache(hostIP string) map[string]string {

@@ -20,6 +20,8 @@ import (
 	"os"
 	"os/exec"
 
+	stringsutil "github.com/labring/sealos/pkg/utils/strings"
+
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/storage/pkg/unshare"
 	"github.com/labring/sreg/pkg/utils/file"
@@ -76,16 +78,17 @@ func newCreateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if !opts.short {
-				logger.Info("Mount point: %s", info.MountPoint)
-			} else {
-				fmt.Println(info.MountPoint)
-			}
 
 			if len(opts.env) > 0 {
 				if err := runRender([]string{info.MountPoint}, opts.env); err != nil {
 					return err
 				}
+			}
+
+			if !opts.short {
+				logger.Info("Mount point: %s", info.MountPoint)
+			} else {
+				fmt.Println(info.MountPoint)
 			}
 
 			if !unshare.IsRootless() {
@@ -131,7 +134,7 @@ func runRender(mountPoints []string, env []string) error {
 				logger.Debug("MountPoint %s does not exist, skipping", mp)
 				return nil
 			}
-			return RenderTemplatesWithEnv(mp, envs)
+			return stringsutil.RenderTemplatesWithEnv(mp, envs)
 		})
 	}
 

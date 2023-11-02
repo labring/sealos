@@ -18,6 +18,8 @@ const (
 	DefaultClusterFileName = "Clusterfile"
 )
 
+const TemplateSuffix = ".tmpl"
+
 const (
 	LvsCareStaticPodName    = "kube-sealos-lvscare"
 	YamlFileSuffix          = "yaml"
