@@ -20,8 +20,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/file"
 )
 
-const templateSuffix = ".tmpl"
-
 func PreloadIfTarFile(images []string, transport string) ([]string, error) {
 	r, err := getRuntime(nil)
 	if err != nil {

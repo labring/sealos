@@ -21,17 +21,17 @@ import (
 
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/storage/pkg/unshare"
-	"github.com/labring/sealos/pkg/utils/logger"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type createOptions struct {
 	name     string
 	platform string
 	short    bool
-	env      []string
 }
 
 func newDefaultCreateOptions() *createOptions {
@@ -45,7 +45,6 @@ func (opts *createOptions) RegisterFlags(fs *pflag.FlagSet) {
 	fs.StringVarP(&opts.name, "cluster", "c", opts.name, "name of cluster to be created but not actually run")
 	fs.StringVar(&opts.platform, "platform", opts.platform, "set the OS/ARCH/VARIANT of the image to the provided value instead of the current operating system and architecture of the host (for example `linux/arm`)")
 	fs.BoolVar(&opts.short, "short", false, "if true, print just the mount path.")
-	fs.StringSliceVarP(&opts.env, "env", "e", opts.env, "set environment variables for template files")
 }
 
 func newCreateCmd() *cobra.Command {
@@ -76,7 +75,6 @@ func newCreateCmd() *cobra.Command {
 			} else {
 				fmt.Println(info.MountPoint)
 			}
-
 			if !unshare.IsRootless() {
 				return nil
 			}
