@@ -1,4 +1,4 @@
-@media screen and (max-width: 996px) {
+@media screen and (max-width: 1000px) {
   .community {
     display: flex;
     justify-content: center;
@@ -32,10 +32,7 @@
       position: relative;
       border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.1);
-      background: var(
-        --30,
-        linear-gradient(90deg, #182941 0%, #0d3037 42.19%, #352644 97.92%)
-      );
+      background: var(--30, linear-gradient(90deg, #182941 0%, #0d3037 42.19%, #352644 97.92%));
       display: flex;
       align-items: center;
       flex-direction: column;

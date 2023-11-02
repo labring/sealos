@@ -30,3 +30,4 @@ export const enableWechatRecharge = () => process.env['WECHAT_ENABLED'] === 'tru
 export const enableLicense = () => {
   return process.env.LICENSE_ENABLED === 'true';
 };
+export const getTeamLimit = () => parseInt(process.env['TEAM_LIMIT'] || '') || 50;

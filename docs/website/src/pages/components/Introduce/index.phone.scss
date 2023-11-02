@@ -1,4 +1,4 @@
-@media screen and (max-width: 996px) {
+@media screen and (max-width: 1000px) {
   .introduce {
     display: flex;
     justify-content: center;
@@ -113,13 +113,13 @@
       }
       .tag2 {
         @extend .tag;
-        margin-top: 74px;
+        margin-top: 90px;
         width: fit-content;
         color: #8fe3de;
       }
       .tag3 {
         @extend .tag;
-        margin-top: 44px;
+        margin-top: 80px;
         color: #aa9fec;
       }
 

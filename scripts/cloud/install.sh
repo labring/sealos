@@ -91,6 +91,7 @@ Options:
   --cert-path                       # Certificate path
   --key-path                        # Private key path
   --single                          # Whether to install on a single node (y/n)
+  --proxy-prefix                    # Sealos binary installation address proxy prefix
   --zh                              # Chinese prompt
   --en                              # English prompt
   --help                            # Help information"
@@ -151,6 +152,7 @@ Options:
   --cert-path                     # 证书路径
   --key-path                      # 私钥路径
   --single                        # 是否单节点安装 (y/n)
+  --proxy-prefix                  # sealos二进制安装地址代理前缀
   --zh                            # 中文提示
   --en                            # 英文提示
   --help                          # 帮助信息"
@@ -228,9 +230,10 @@ init() {
     if ! command -v sealos &> /dev/null; then
         get_prompt "install_sealos"
         read -p " " installChoice
-        if [[ $installChoice == "y" || $installChoice == "Y" ]]; then
-            curl -sfL https://raw.githubusercontent.com/labring/sealos/${SEALOS_VERSION}/scripts/install.sh |
-              sh -s ${SEALOS_VERSION} labring/sealos
+        if [[ "${installChoice,,}" == "y" ]]; then
+          local install_url="https://raw.githubusercontent.com/labring/sealos/${SEALOS_VERSION}/scripts/install.sh"
+          [ -z "$proxy_prefix" ] || install_url="${proxy_prefix%/}/$install_url"
+          curl -sfL "$install_url" | PROXY_PREFIX=$proxy_prefix sh -s "${SEALOS_VERSION}" labring/sealos
         else
             echo "Please install sealos CLI to proceed."
             exit 1
@@ -318,11 +321,11 @@ collect_input() {
     done
     [[ $cloud_port != "" ]] || read -p "$(get_prompt "cloud_port")" cloud_port
 
-    [[ $input_cert != "" || ($cert_path != "" && $key_path != "") ]] || [[ $cloud_domain == *"nip.io"* ]] || read -p "$(get_prompt "input_certificate")" input_cert
-
-    if [[ $input_cert == "y" || $input_cert == "Y" ]]; then
+    if [[ $input_cert != "n" && ($cert_path == "" || $key_path == "") ]]; then
         read -p "$(get_prompt "certificate_path")" cert_path
-        read -p "$(get_prompt "private_key_path")" key_path
+        if [[ $cert_path != "" ]]; then
+            read -p "$(get_prompt "private_key_path")" key_path
+        fi
     fi
 }
 
@@ -416,7 +419,7 @@ loading_animation() {
 execute_commands() {
     [[ $k8s_installed == "y" ]] || (get_prompt "k8s_installation" && sealos apply -f $CLOUD_DIR/Clusterfile)
     command -v helm > /dev/null 2>&1 || sealos run "${image_registry}/${image_repository}/helm:v${helm_version#v:-3.12.0}"
-    [[ $k8s_ready == "y" ]] || get_prompt "cilium_requirement" && sealos run "${image_registry}/${image_repository}/cilium:v${cilium_version#v:-1.12.14}"
+    [[ $k8s_ready == "y" ]] || (get_prompt "cilium_requirement" && sealos run "${image_registry}/${image_repository}/cilium:v${cilium_version#v:-1.12.14}")
     wait_cluster_ready
     sealos run "${image_registry}/${image_repository}/cert-manager:v${cert_manager_version#v:-1.8.0}"
     sealos run "${image_registry}/${image_repository}/openebs:v${openebs_version#v:-3.4.0}"
@@ -456,6 +459,7 @@ EOF
         --env cloudPort="${cloud_port:-443}"\
         --env mongodbVersion="${mongodb_version:-mongodb-5.0}"
     fi
+    sealos cert --alt-names "$cloud_domain"
 }
 
 for i in "$@"; do
@@ -484,6 +488,7 @@ for i in "$@"; do
   --cert-path=*) cert_path="${i#*=}"; shift ;;
   --key-path=*) key_path="${i#*=}"; shift ;;
   --single) single="y"; shift ;;
+  --proxy-prefix=*) proxy_prefix="${i#*=}"; shift ;;
   --zh | zh ) LANGUAGE="CN"; shift ;;
   --en | en ) LANGUAGE="EN"; shift ;;
   --config=* | -c ) source ${i#*=} > /dev/null; shift ;;
@@ -512,6 +517,7 @@ for i in "$@"; do
   --cloud-port | cloud-port | \
   --cert-path | cert-path | \
   --key-path | key-path | \
+  --proxy-prefix | proxy-prefix | \
   --config | config) echo "Please use '--${i#--}=' to assign value to option"; exit 1 ;;
   -*) echo "Unknown option $i"; exit 1 ;;
   *) ;;

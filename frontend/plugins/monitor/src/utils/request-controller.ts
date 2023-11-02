@@ -1,4 +1,4 @@
-import { range } from "lodash";
+import { range } from 'lodash';
 
 export type RequestControllerProps = {
   timeoutDuration: number;
@@ -23,7 +23,7 @@ export class RequestController {
   private static timeout(ms: number) {
     return new Promise((reject) =>
       setTimeout(() => {
-        reject(new Error("Timeout Error"));
+        reject(new Error('Timeout Error'));
       }, ms)
     );
   }
@@ -34,10 +34,7 @@ export class RequestController {
     if (!task) return;
     this.index++;
     try {
-      const res = await Promise.race([
-        task(),
-        RequestController.timeout(this.timeoutDuration),
-      ]);
+      const res = await Promise.race([task(), RequestController.timeout(this.timeoutDuration)]);
       this.results[this.index] = res ?? null;
     } catch (err: any) {
       this.results[this.index] = err;
@@ -55,9 +52,7 @@ export class RequestController {
     this.tasks = tasks;
     this.results = [];
 
-    await Promise.allSettled(
-      range(this.limit).map((index) => this.executeTask(index))
-    );
+    await Promise.allSettled(range(this.limit).map((index) => this.executeTask(index)));
 
     return this.results;
   }

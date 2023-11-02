@@ -31,13 +31,14 @@ import ServicePackage from './ServicePackage';
 import useRouteParamsStore from '@/stores/routeParams';
 import useSessionStore from '@/stores/session';
 import usePaymentDataStore from '@/stores/payment';
+import { useConfirm } from '@/hooks/useConfirm';
 
 export default function Product() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const router = useRouter();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  // const { isOpen: isOpenStatus, onOpen: onOpenSuccess, onClose: onCloseSuccess } = useDisclosure();
+  const { openConfirm, ConfirmChild } = useConfirm();
   const toast = useToast({ position: 'top', duration: 2000 });
   // 整个流程跑通需要状态管理, 0 初始态， 1 创建支付单， 2 支付中, 3 支付成功
   const [complete, setComplete] = useState<0 | 1 | 2 | 3>(0);
@@ -46,7 +47,7 @@ export default function Product() {
   const [orderID, setOrderID] = useState('');
   const [wechatData, setWechatData] = useState<WechatPaymentData>();
   const { data: platformEnv } = useQuery(['getPlatformEnv'], getSystemEnv);
-  const [remainingSeconds, setRemainingSeconds] = useState(2); // 初始值为2秒
+  const [remainingSeconds, setRemainingSeconds] = useState(1); // 初始值为2秒
   const { data: routeParams, setRouteParams, clearRouteParams } = useRouteParamsStore();
   const { isUserLogin } = useSessionStore();
   const { paymentData, setPaymentData, deletePaymentData, isExpired } = usePaymentDataStore();
@@ -73,8 +74,14 @@ export default function Product() {
   const handleProductByType = (type: ClusterType) => {
     setClusterType(type);
     if (type === ClusterType.Standard) {
-      onOpen();
-      clusterMutation.mutate({ type: ClusterType.Standard });
+      openConfirm(
+        () => {
+          clusterMutation.mutate({ type: ClusterType.Standard });
+        },
+        () => {
+          router.push('/cluster');
+        }
+      )();
     }
     if (type === ClusterType.Enterprise) {
       openPayModal();
@@ -221,7 +228,7 @@ export default function Product() {
         status: 'success',
         title: t('Checking Payment Results'), // 这里改为license 签发成功
         isClosable: true,
-        duration: 9000,
+        duration: 3500,
         position: 'top'
       });
       setComplete(2);
@@ -262,27 +269,22 @@ export default function Product() {
 
   // handle Jump link
   useEffect(() => {
-    const { clusterType, external } = router.query;
-    const isLogin = isUserLogin();
-    console.log(clusterType, external);
-
-    if (!isLogin) {
-      setRouteParams(external as string, clusterType as ClusterType);
-    } else if (routeParams.clusterType) {
+    const { clusterType, external } = routeParams;
+    console.log(clusterType, external, 'pricing');
+    if (clusterType && external) {
       handleProductByType(routeParams.clusterType as ClusterType);
       clearRouteParams();
-    } else {
-      console.log(11);
-      handleProductByType(clusterType as ClusterType);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <Box flex={1} overflow={'scroll'} backgroundColor="#f2f5f7">
+    <>
       <Flex
-        minW={'1280px'}
-        // flexWrap={'wrap'}
+        flex={1}
+        backgroundColor="#f2f5f7"
+        overflowY={'scroll'}
+        flexWrap={'wrap'}
         h="100%"
         pt="30px"
         pb="15px"
@@ -358,7 +360,6 @@ export default function Product() {
             onClick={() => handleProductByType(ClusterType.Enterprise)}
           >
             购买
-            {/* {t('Buy')} */}
           </Button>
         </ServicePackage>
         <ServicePackage items={contect}>
@@ -367,7 +368,6 @@ export default function Product() {
           </Text>
           <Text mt="32px" color={'#24282C'} fontSize={'24px'} fontWeight={600} w="200px">
             适合大规模集群与大型企业客户
-            {/* Suitable for large-scale clusters and large enterprise customers */}
           </Text>
           <Button
             mt="42px"
@@ -377,12 +377,10 @@ export default function Product() {
             fontWeight={600}
             onClick={() => handleProductByType(ClusterType.Contact)}
           >
-            {/* {t('Contact Us')} */}
             联系我们
           </Button>
         </ServicePackage>
       </Flex>
-
       <Modal isOpen={isOpen} onClose={onClosePayment} closeOnOverlayClick={false}>
         <ModalOverlay />
         <ModalContent>
@@ -471,6 +469,7 @@ export default function Product() {
           )}
         </ModalContent>
       </Modal>
-    </Box>
+      <ConfirmChild />
+    </>
   );
 }

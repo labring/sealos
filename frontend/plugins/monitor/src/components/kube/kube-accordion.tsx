@@ -3,9 +3,9 @@ import {
   AccordionButton,
   AccordionIcon,
   AccordionItem,
-  AccordionPanel,
-} from "@chakra-ui/react";
-import { Key } from "react";
+  AccordionPanel
+} from '@chakra-ui/react';
+import { Key } from 'react';
 
 export type KubeAccordionItem = {
   key?: Key | null;
