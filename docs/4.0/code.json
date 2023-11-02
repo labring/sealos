@@ -636,5 +636,8 @@
   },
   "A cloud operating system based on the Kubernetes kernel": {
     "message": "以 Kubernetes 为内核的云操作系统"
+  },
+  "Explore": {
+    "message": "了解更多"
   }
 }

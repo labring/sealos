@@ -104,6 +104,11 @@ const config = {
         },
         {
           position: "left",
+          to: "/pricing",
+          label: "Pricing"
+        },
+        {
+          position: "left",
           to: "https://fael3z0zfze.feishu.cn/share/base/form/shrcnesSfEK65JZaAf2W6Fwz6Ad",
           label: "Contact",
         },

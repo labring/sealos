@@ -3,10 +3,11 @@ import DrawIcon from '@site/static/icons/draw.svg';
 import LogoIcon from '@site/static/icons/sealos.svg';
 import React, { useEffect, useState } from 'react';
 import './index.scss';
+import useWindow from '@site/src/hooks/useWindow';
 
 export default function Banner() {
   const [isBannerVisible, setIsBannerVisible] = useState(false);
-  const [doMain, setDoMain] = useState('');
+  const { screenWidth, currentLanguage, cloudUrl } = useWindow();
 
   const closeBanner = () => {
     setIsBannerVisible(false);
@@ -17,8 +18,6 @@ export default function Banner() {
   };
 
   useEffect(() => {
-    let url = window.self === window.top ? 'cloud.sealos.io' : 'cloud.sealos.top';
-    setDoMain(url);
     // Get the last display timestamp from localStorage
     const lastDisplayTimestamp = localStorage.getItem('bannerLastDisplay');
     const today = new Date().toLocaleDateString();
@@ -65,10 +64,7 @@ export default function Banner() {
             <div
               className="btn"
               onClick={() => {
-                window.open(
-                  `https://${doMain}/?openapp=system-costcenter?openRecharge=true`,
-                  '_blank'
-                );
+                window.open(`${cloudUrl}/?openapp=system-costcenter?openRecharge=true`, '_blank');
                 closeBanner();
               }}
             >

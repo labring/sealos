@@ -141,8 +141,7 @@ export default function Plan() {
             className="flex items-center justify-center w-[134px] h-[50px] lg:h-8 lg:text-xs rounded-md bg-[#B7D8FF26] text-lg font-semibold text-white/80 cursor-pointer "
             onClick={() =>
               window.open(
-                'https://rowan-nannyberry-f3f.notion.site/0aa37f19b32d4189aa006de9786a35df?pvs=4',
-                '_black'
+                'https://rowan-nannyberry-f3f.notion.site/0aa37f19b32d4189aa006de9786a35df?pvs=4'
               )
             }
           >
@@ -157,7 +156,7 @@ export default function Plan() {
           <div className="flex gap-5 lg:gap-2 flex-wrap  lg:flex-nowrap">
             <div
               className="flex items-center justify-center w-[170px] lg:w-[86px] h-12 lg:h-8 lg:text-xs rounded-md bg-[#BECFDC] text-lg font-semibold text-[#03080C] cursor-pointer"
-              onClick={() => window.open('https://license.sealos.io', '_black')}
+              onClick={() => window.open('https://license.sealos.io')}
             >
               购买入口
             </div>
@@ -165,10 +164,7 @@ export default function Plan() {
             <div
               className="flex items-center justify-center w-[290px] lg:w-[180px] h-12 lg:h-8 lg:text-xs rounded-md bg-[#B7D8FF26] text-lg font-semibold text-white/80 cursor-pointer"
               onClick={() =>
-                window.open(
-                  'https://fael3z0zfze.feishu.cn/docx/MLJVddCVqoEfIwxwP7lcO0P1nch',
-                  '_black'
-                )
+                window.open('https://fael3z0zfze.feishu.cn/docx/MLJVddCVqoEfIwxwP7lcO0P1nch')
               }
             >
               通过 licence 续费文档教程
