@@ -7,6 +7,10 @@
     "message": "商务合作",
     "description": "Navbar item with label Contact"
   },
+  "item.label.Pricing": {
+    "message": "价格",
+    "description": "Navbar item with label Contact"
+  },
   "logo.alt": {
     "message": "sealos",
     "description": "The alt text of navbar logo"

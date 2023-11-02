@@ -1,14 +1,15 @@
 import Link from '@docusaurus/Link';
 import Translate from '@docusaurus/Translate';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import useIsBrowser from '@docusaurus/useIsBrowser';
+import useWindow from '@site/src/hooks/useWindow';
 import GithubIcon from '@site/static/icons/github.svg';
 import MeunIcon from '@site/static/icons/meun.svg';
 import LogoIcon from '@site/static/icons/sealos.svg';
-import React, { useEffect, useMemo, useState } from 'react';
+import HeaderSvg from '@site/static/illustrations/bg-header.svg';
+import React, { useEffect, useState } from 'react';
 import VideoPlayer from '../VideoPlayer';
 import './index.scss';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import useIsBrowser from '@docusaurus/useIsBrowser';
-import HeaderSvg from '@site/static/illustrations/bg-header.svg';
 
 const navbar = [
   {
@@ -41,14 +42,7 @@ const i18nObj = {
 const HomeHeader = ({ isPc }: { isPc: boolean }) => {
   const [stars, setStars] = useState(10000);
   const isBrowser = useIsBrowser();
-  const [cloudUrl, setCloudurl] = useState('https://cloud.sealos.io');
-  useEffect(() => {
-    if (!!window) {
-      setCloudurl(
-        window.self === window.top ? 'https://cloud.sealos.io' : 'https://cloud.sealos.top'
-      );
-    }
-  }, []);
+  const { cloudUrl } = useWindow();
 
   const i18nMap: { [key: string]: { label: string; link: string } } = {
     en: { label: '中', link: '/zh-Hans/' },
@@ -60,7 +54,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
     siteConfig: {
       themeConfig: {
         // @ts-ignore nextLine
-        navbar: { items: navbarData }
+        // navbar: { items: navbarData }
       }
     }
   } = useDocusaurusContext();
