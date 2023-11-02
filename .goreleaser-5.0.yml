@@ -1,0 +1,78 @@
+project_name: sealos
+#gomod:
+#  # Proxy a module from proxy.golang.org, making the builds verifiable.
+#  # This will only be effective if running against a tag. Snapshots will ignore this setting.
+#  # Notice: for this to work your `build.main` must be a package, not a `.go` file.
+#  #
+#  # Default is false.
+#  proxy: true
+#
+#  # If proxy is true, use these environment variables when running `go mod` commands (namely, `go mod tidy`).
+#  # Defaults to `os.Environ()`.
+#  env:
+#    - GOPROXY=https://goproxy.cn
+
+builds:
+  - id: image-cri-shim
+    env:
+      - CGO_ENABLED=0
+    main: ./cmd/image-cri-shim
+    binary: image-cri-shim
+    goos:
+      - linux
+    goarch:
+      - amd64
+    flags:
+      - -trimpath
+    tags:
+      - containers_image_openpgp
+      - netgo
+      - exclude_graphdriver_devicemapper
+      - static
+      - osusergo
+      - exclude_graphdriver_btrfs
+    ldflags:
+      - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
+      - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
+      - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
+      - -s -w
+
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  groups:
+    - title: Dependency updates
+      regexp: '^.*?(feat|fix)\(deps\)!?:.+$'
+      order: 300
+    - title: 'New Features'
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 100
+    - title: 'Security updates'
+      regexp: '^.*?sec(\([[:word:]]+\))??!?:.+$'
+      order: 150
+    - title: 'Bug fixes'
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 200
+    - title: 'Documentation updates'
+      regexp: ^.*?doc(\([[:word:]]+\))??!?:.+$
+      order: 400
+    - title: 'Build process updates'
+      regexp: ^.*?build(\([[:word:]]+\))??!?:.+$
+      order: 400
+    - title: Other work
+      order: 9999
+  filters:
+    exclude:
+      - '^test:'
+      - '^chore'
+      - 'merge conflict'
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+      - go mod tidy
+release:
+  prerelease: auto

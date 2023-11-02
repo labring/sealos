@@ -32,64 +32,25 @@ jobs:
             libbtrfs-dev libgpgme-dev libdevmapper-dev \
             qemu-user-static binfmt-support
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GH_RELEASE_PAT }}
-
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
         with:
-          args: release --clean --release-footer-tmpl=scripts/release/footer.md.tmpl --release-header-tmpl=scripts/release/head.md.tmpl
+          args: release -f .goreleaser-5.0.yml  --clean --release-footer-tmpl=scripts/release/footer.md.tmpl --release-header-tmpl=scripts/release/head.md.tmpl
         env:
           USERNAME: ${{ github.repository_owner }}
           GITHUB_TOKEN: ${{ secrets.GH_RELEASE_PAT }}
-          FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
-
-  sync:
-    runs-on: ubuntu-20.04
-    needs:
-      - goreleaser
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       - name: Fetch Current version
         id: get-current-tag
         uses: actions-ecosystem/action-get-latest-tag@v1.6.0
-      - name: Renew issue and Sync Patch Images
-        uses: labring/gh-rebot@v0.0.6
-        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-        with:
-          version: v0.0.8-rc1
+      - name: Delete release Asset
         env:
-          GH_TOKEN: "${{ secrets.GH_PAT }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagebuild_apps sealos-patch ${{steps.get-current-tag.outputs.tag }}"
-
-      - name: Renew issue and Sync Images
-        uses: labring/gh-rebot@v0.0.6
-        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-        with:
-          version: v0.0.8-rc1
-        env:
-          GH_TOKEN: "${{ secrets.GH_PAT }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagebuild_apps sealos ${{steps.get-current-tag.outputs.tag }}"
-
+          USERNAME: ${{ github.repository_owner }}
+          GITHUB_TOKEN: ${{ secrets.GH_RELEASE_PAT }}
+        run: |
+          ASSET_IDS=$(gh release view ${{steps.get-current-tag.outputs.tag }} --repo ${USERNAME}/sealos --json assets | jq -r ".assets[].name")
+          for ASSET_ID in $ASSET_IDS; do
+             gh release delete-asset ${{steps.get-current-tag.outputs.tag }} $ASSET_ID --repo ${USERNAME}/sealos
+          done
   changelog:
     runs-on: ubuntu-20.04
     needs:
