@@ -1,4 +1,5 @@
 import { authSession } from '@/services/backend/auth';
+import { generateLicenseToken } from '@/services/backend/db/license';
 import { createPaymentRecord } from '@/services/backend/db/payment';
 import { jsonRes } from '@/services/backend/response';
 import { getSealosPay } from '@/services/pay';

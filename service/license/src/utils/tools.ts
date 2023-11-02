@@ -12,11 +12,28 @@ export const getRemainingTime = (expirationTime: number) => {
   }
 
   const remainingTimeInSeconds = expirationTime - currentTime;
-  const hours = Math.floor(remainingTimeInSeconds / 3600);
+  const days = Math.floor(remainingTimeInSeconds / 86400);
+  const hours = Math.floor((remainingTimeInSeconds % 86400) / 3600);
   const minutes = Math.floor((remainingTimeInSeconds % 3600) / 60);
-  const seconds = remainingTimeInSeconds % 60;
 
-  const formattedTime = `${hours}小时${minutes}分钟`;
+  let formattedTime = '';
+
+  if (days > 0) {
+    formattedTime += `${days}天`;
+  }
+
+  if (hours > 0) {
+    formattedTime += `${hours}小时`;
+  }
+
+  if (minutes > 0 && (days === 0 || hours === 0)) {
+    formattedTime += `${minutes}分钟`;
+  }
+
+  if (formattedTime === '') {
+    return '不足一分钟';
+  }
+
   return formattedTime;
 };
 

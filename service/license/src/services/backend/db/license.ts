@@ -3,6 +3,8 @@ import { base64Decode } from '@/utils/tools';
 import { sign } from 'jsonwebtoken';
 import { connectToDatabase } from './mongodb';
 
+const ExpiredTime = 30 * 24 * 60 * 60;
+
 async function connectLicenseCollection() {
   const client = await connectToDatabase();
   const collection = client.db().collection<LicenseDB>('license');
@@ -21,7 +23,6 @@ export async function createLicenseRecord({
   const collection = await connectLicenseCollection();
 
   const now = Math.floor(Date.now() / 1000); // Get current timestamp in seconds
-  const oneDayInSeconds = 3 * 24 * 60 * 60;
 
   const record: LicenseDB = {
     uid: uid,
@@ -32,7 +33,7 @@ export async function createLicenseRecord({
       quota: quota
     },
     iat: now, // Store the current timestamp as iat
-    exp: now + oneDayInSeconds, // Set expiration to one day from now (in seconds)
+    exp: now + ExpiredTime, // Set expiration to one day from now (in seconds)
     amount: amount,
     type: type,
     createdAt: new Date(),
@@ -96,13 +97,13 @@ export async function getLicenseRecordsByUid({
   return result;
 }
 
-export function generateLicenseToken(payload: LicenseToken) {
+export function generateLicenseToken(payload: LicenseToken, time = ExpiredTime) {
   const privateKey = process.env.LICENSE_PRIVATE_KEY;
   if (!privateKey) {
     throw new Error('LICENSE PRIVATE KEY IS MISSING');
   }
   const nowInSeconds = Math.floor(Date.now() / 1000);
-  const expirationTime = nowInSeconds + 3 * 24 * 60 * 60; //默认三天有效时间
+  const expirationTime = nowInSeconds + time; // Valid for three days by default
 
   const _payload = {
     iss: 'Sealos',

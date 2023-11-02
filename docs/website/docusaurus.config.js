@@ -9,7 +9,7 @@ const config = {
   baseUrl: "/",
   onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "warn",
-  favicon: "img/sealos.ico",
+  favicon: "img/favicon.ico",
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -104,6 +104,11 @@ const config = {
         },
         {
           position: "left",
+          to: "/pricing",
+          label: "Pricing"
+        },
+        {
+          position: "left",
           to: "https://fael3z0zfze.feishu.cn/share/base/form/shrcnesSfEK65JZaAf2W6Fwz6Ad",
           label: "Contact",
         },
@@ -195,6 +200,17 @@ const config = {
   ],
   plugins: [
     'docusaurus-plugin-sass',
+    async function myPlugin (context, options) {
+      return {
+        name: "docusaurus-tailwindcss",
+        configurePostCss (postcssOptions) {
+          // Appends TailwindCSS and AutoPrefixer.
+          postcssOptions.plugins.push(require("tailwindcss"))
+          postcssOptions.plugins.push(require("autoprefixer"))
+          return postcssOptions
+        },
+      }
+    },
   ]
 }
 

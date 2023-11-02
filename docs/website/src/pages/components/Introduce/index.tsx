@@ -1,37 +1,37 @@
-import React, { useLayoutEffect } from 'react'
-import CometIcon from '../Comet'
-import RouteIcon from '@site/static/icons/route-icon.svg'
-import useIsBrowser from '@docusaurus/useIsBrowser'
-import './index.scss'
-import Translate from '@docusaurus/Translate'
+import React, { useLayoutEffect } from 'react';
+import CometIcon from '../Comet';
+import RouteIcon from '@site/static/icons/route-icon.svg';
+import useIsBrowser from '@docusaurus/useIsBrowser';
+import './index.scss';
+import Translate from '@docusaurus/Translate';
 
 const Introduce = ({ isPc }: { isPc: boolean }) => {
-  const isBrowser = useIsBrowser()
+  const isBrowser = useIsBrowser();
 
   const i18nObj = {
     whySealos: <Translate>Why Sealos</Translate>,
     lowerCosts: <Translate>Efficient & Economical</Translate>,
     lowerCostsIntroduce: (
       <Translate>
-        Pay solely for the containers you utilize; automatic scaling prevents resource 
-        squandering and substantially reduces costs.
+        Pay solely for the containers you utilize; automatic scaling prevents resource squandering
+        and substantially reduces costs.
       </Translate>
     ),
     userFriendly: <Translate>User Friendly</Translate>,
     userFriendlyIntroduce: (
       <Translate>
-        Concentrate on your core business activities without worrying about system complexities; 
+        Concentrate on your core business activities without worrying about system complexities;
         negligible learning costs involved.
       </Translate>
     ),
     flexibilitySecurity: <Translate>Agility & Security</Translate>,
     flexibilitySecurityIntroduce: (
       <Translate>
-        The distinctive multi-tenancy sharing model ensures both effective resource segmentation 
-        and collaboration, all under a secure framework.
+        The distinctive multi-tenancy sharing model ensures both effective resource segmentation and
+        collaboration, all under a secure framework.
       </Translate>
-    ),
-  }
+    )
+  };
 
   useLayoutEffect(() => {
     // @ts-ignore nextline
@@ -42,10 +42,10 @@ const Introduce = ({ isPc }: { isPc: boolean }) => {
         animateClass: 'animate__fadeIn',
         offset: 0,
         mobile: true,
-        live: false,
-      }).init()
+        live: false
+      }).init();
     }
-  }, [isBrowser])
+  }, [isBrowser]);
 
   if (!isPc) {
     return (
@@ -74,7 +74,8 @@ const Introduce = ({ isPc }: { isPc: boolean }) => {
                 width="20"
                 height="19"
                 viewBox="0 0 20 19"
-                fill="none">
+                fill="none"
+              >
                 <circle cx="10.0002" cy="9.51913" r="9.18033" fill="#193246" />
               </svg>
             </div>
@@ -87,13 +88,11 @@ const Introduce = ({ isPc }: { isPc: boolean }) => {
             <div className="aid-text">{i18nObj.userFriendlyIntroduce}</div>
 
             <div className="tag tag3">{i18nObj.flexibilitySecurity}</div>
-            <div className="aid-text">
-              {i18nObj.flexibilitySecurityIntroduce}
-            </div>
+            <div className="aid-text">{i18nObj.flexibilitySecurityIntroduce}</div>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -130,7 +129,8 @@ const Introduce = ({ isPc }: { isPc: boolean }) => {
               width="20"
               height="19"
               viewBox="0 0 20 19"
-              fill="none">
+              fill="none"
+            >
               <circle cx="10.0002" cy="9.51913" r="9.18033" fill="#193246" />
             </svg>
           </div>
@@ -141,7 +141,7 @@ const Introduce = ({ isPc }: { isPc: boolean }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default React.memo(Introduce)
+export default React.memo(Introduce);

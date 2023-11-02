@@ -1,0 +1,111 @@
+.sealos_price_page {
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  // background: linear-gradient(to bottom, #05101d, #02070d, transparent);
+  background: linear-gradient(180deg, #05101d 0%, #02070d 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.sealos_price_btn {
+  width: 100%;
+  height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 6px;
+  background: rgba(183, 216, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 140%;
+  margin-top: 42px;
+  cursor: pointer;
+}
+
+.home-footer {
+  width: 100%;
+}
+
+.sealos_divid_line {
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 42px 0px;
+}
+
+.sealos_service_item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 18px;
+  span {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 16px;
+    font-weight: 500;
+    margin-left: 15px;
+  }
+}
+
+.sealo_price_header_bg {
+  position: absolute;
+  top: 0;
+  width: 1000px;
+  height: 1000px;
+  border-radius: 50%;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgba(82, 176, 189, 0.3) 0%,
+    rgba(38, 184, 193, 0.3) 33.85%,
+    rgba(22, 97, 158, 0.3) 63.02%,
+    rgba(18, 55, 150, 0.3) 100%
+  );
+  filter: blur(262px);
+  transform: translateY(-50%);
+}
+
+.sealos_price_gradient_background {
+  border-radius: 50%;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgba(82, 176, 189, 0.2) 0%,
+    rgba(69, 171, 177, 0.2) 33.85%,
+    rgba(43, 102, 151, 0.2) 63.02%,
+    rgba(56, 82, 149, 0.2) 100%
+  );
+  filter: blur(261.32037353515625px);
+  // background-color: red;
+}
+
+//////1000
+@media (max-width: 1000px) {
+  .sealos_price_btn {
+    font-size: 14px;
+    margin-top: 32px !important;
+    height: 38px;
+  }
+
+  // .sealos_price_btn .contact {
+  //   margin-top: 35px;
+  // }
+
+  .sealos_service_item {
+    margin-bottom: 12px;
+  }
+
+  .sealos_service_item span {
+    font-size: 12px;
+  }
+
+  .sealos_divid_line {
+    margin: 32px 0px;
+  }
+}
+
+.footer-right {
+  .list-item {
+    list-style-type: none;
+  }
+}
