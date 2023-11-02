@@ -25,8 +25,6 @@ import (
 	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 )
 
-const templateSuffix = ".tmpl"
-
 type Interface interface {
 	// WrapShell :If host already set env like DATADISK=/data
 	// This function add env to the shell, like:
