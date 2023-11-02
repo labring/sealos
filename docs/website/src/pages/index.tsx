@@ -18,7 +18,6 @@ const Home = () => {
   const isPc = useMemo(() => screenWidth > PC_MIN_WIDTH, [screenWidth]);
 
   useEffect(() => {
-    console.log(currentLanguage, cloudUrl);
     const loadUmamiScript = () => {
       const hostname = window.location.hostname;
       if (hostname === 'sealos.run') {

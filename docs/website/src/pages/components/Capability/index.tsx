@@ -101,7 +101,10 @@ const Capability = ({ isPc }: { isPc: boolean }) => {
           </div>
           <div className="application-title">{i18nObj.serverless}</div>
           <div className="application-text">{i18nObj.serverless_introduce}</div>
-          <a className="application-link" href="https://github.com/labring/laf" target="_black">
+          <a
+            className="application-link"
+            href={currentLanguage === 'en' ? '/pricing' : '/zh-Hans/pricing'}
+          >
             {i18nObj.Explore} {'>'}
           </a>
         </div>
@@ -156,7 +159,10 @@ const Capability = ({ isPc }: { isPc: boolean }) => {
           </div>
           <div className="application-title">{i18nObj.serverless}</div>
           <div className="application-text">{i18nObj.serverless_introduce}</div>
-          <a className="application-link" href="https://github.com/labring/laf" target="_black">
+          <a
+            className="application-link"
+            href={currentLanguage === 'en' ? '/pricing' : '/zh-Hans/pricing'}
+          >
             {i18nObj.Explore} {'>'}
           </a>
         </div>
