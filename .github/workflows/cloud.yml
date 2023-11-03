@@ -1,8 +1,6 @@
 name: Build Cloud Cluster image
 
 on:
-  release:
-    types: [ published ]
   workflow_run:
     workflows: [ "Build Controllers image", "Build Frontend Image" ]
     types:

@@ -1,0 +1,53 @@
+name: Release Cloud
+
+on:
+  release:
+    types: [ published ]
+
+env:
+  # Common versions
+  GO_VERSION: "1.20"
+  DEFAULT_OWNER: "labring"
+  TAG: ${{ github.event.release.tag_name }}
+
+jobs:
+  save-sealos:
+    uses: ./.github/workflows/import-save-sealos.yml
+
+  release-controllers:
+    needs:
+      - save-sealos
+    uses: ./.github/workflows/controllers.yml
+    with:
+      push_image: true
+      push_image_tag: ${{ env.TAG }}
+
+  release-frontends:
+    needs:
+      - save-sealos
+    uses: ./.github/workflows/controllers.yml
+    with:
+      push_image: true
+      push_image_tag: ${{ env.TAG }}
+    uses: ./.github/workflows/frontend.yml
+
+  release-service:
+    needs:
+      - save-sealos
+    uses: ./.github/workflows/controllers.yml
+    with:
+      push_image: true
+      push_image_tag: ${{ env.TAG }}
+    uses: ./.github/workflows/services.yml
+
+  release-cloud:
+    needs:
+      - save-sealos
+      - release-controllers
+      - release-frontends
+      - release-service
+    uses: ./.github/workflows/cloud.yml
+    with:
+      push_image: true
+      push_image_tag: ${{ env.TAG }}
+      build_from: ${{ env.TAG }}
