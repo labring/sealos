@@ -5,6 +5,23 @@ on:
     workflows: [ "Build Controllers image", "Build Frontend Image" ]
     types:
       - completed
+  workflow_call:
+    inputs:
+      push_image:
+        description: 'Push image'
+        required: false
+        type: boolean
+        default: false
+      push_image_tag:
+        description: 'Push all-in-one image tag, default is latest'
+        default: 'latest'
+        required: false
+        type: string
+      build_from:
+        description: 'Build all-in-one image from components image tag, default is latest'
+        default: 'latest'
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       push_image:
