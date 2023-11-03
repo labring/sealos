@@ -37,8 +37,7 @@ export default function InstanceList() {
           w={'48px'}
           h={'48px'}
           justifyContent="center"
-          alignItems={'center'}
-        >
+          alignItems={'center'}>
           <MyIcon color={'#7B838B'} name="empty"></MyIcon>
         </Flex>
         <Text mt={'12px'} fontSize={14} color={'#5A646E'}>
@@ -58,12 +57,12 @@ export default function InstanceList() {
       pt="24px"
       pr="42px"
       pb="42px"
-      overflow={'auto'}
-    >
+      overflow={'auto'}>
       {data &&
         data?.map((item) => {
           return (
             <Flex
+              onClick={() => goInstancePage(item.id)}
               position={'relative'}
               cursor={'pointer'}
               _hover={{
@@ -78,8 +77,7 @@ export default function InstanceList() {
               borderRadius={'8px'}
               backgroundColor={'#fff'}
               boxShadow={'0px 2px 4px 0px rgba(187, 196, 206, 0.25)'}
-              border={'1px solid #EAEBF0'}
-            >
+              border={'1px solid #EAEBF0'}>
               <Box
                 p={'6px'}
                 w={'48px'}
@@ -87,8 +85,7 @@ export default function InstanceList() {
                 boxShadow={'0px 1px 2px 0.5px rgba(84, 96, 107, 0.20)'}
                 borderRadius={'4px'}
                 backgroundColor={'#fff'}
-                border={' 1px solid rgba(255, 255, 255, 0.50)'}
-              >
+                border={' 1px solid rgba(255, 255, 255, 0.50)'}>
                 <Image src={item?.icon} alt="" width={'36px'} height={'36px'} />
               </Box>
               <Text fontSize="24px" fontWeight={600} color="#24282C">
@@ -100,21 +97,18 @@ export default function InstanceList() {
                 fontSize={'12px'}
                 color={'#5A646E'}
                 fontWeight={400}
-                mt="auto"
-              >
+                mt="auto">
                 {t('Creation Time')}: {item?.createTime}
               </Text>
               <Flex justifyContent={'space-between'} alignItems={'center'} gap={'20px'}>
                 <Flex
-                  onClick={() => goInstancePage(item.id)}
                   w="100%"
                   h="32px"
                   justifyContent={'center'}
                   alignItems={'center'}
                   cursor={'pointer'}
                   background={'#F4F6F8'}
-                  borderRadius={'4px'}
-                >
+                  borderRadius={'4px'}>
                   <Icon width="16px" height="17px" viewBox="0 0 16 17" fill="#363C42">
                     <g mask="url(#mask0_821_49862)">
                       <path

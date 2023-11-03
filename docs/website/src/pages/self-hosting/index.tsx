@@ -21,7 +21,7 @@ export default function Pricing() {
         <div className="sealos_price_page">
           <div className="sealo_price_header_bg"></div>
           <Banner />
-          <div className="px-10 w-full flex justify-center">
+          <div className="px-10 w-full flex justify-center lg:px-0">
             <Header isPc={isPc} />
           </div>
           <Product />

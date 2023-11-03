@@ -104,8 +104,8 @@ const config = {
         },
         {
           position: "left",
-          to: "/pricing",
-          label: "Pricing"
+          to: "/self-hosting",
+          label: "Hosting"
         },
         {
           position: "left",
