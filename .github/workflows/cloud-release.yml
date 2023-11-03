@@ -45,6 +45,11 @@ jobs:
     uses: ./.github/workflows/cloud.yml
     with:
       push_image: true
+<<<<<<< HEAD
       push_image_tag: ${{ github.event.release.tag_name }}
       build_from: ${{ github.event.release.tag_name }}
     secrets: inherit
+=======
+      push_image_tag: ${{ env.TAG }}
+      build_from: ${{ env.TAG }}
+>>>>>>> 73be102a (Release ci (#26))
