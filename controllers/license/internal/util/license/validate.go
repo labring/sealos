@@ -43,10 +43,19 @@ func GetClaims(license *licensev1.License) (*utilclaims.Claims, error) {
 	return claims, nil
 }
 
-func IsLicenseValid(license *licensev1.License) (bool, error) {
+func IsLicenseValid(license *licensev1.License, clusterId string) (bool, error) {
 	token, err := ParseLicenseToken(license)
 	if err != nil {
 		return false, err
 	}
+	claims, err := GetClaims(license)
+	if err != nil {
+		return false, err
+	}
+	// if clusterId is empty, it means this license is a super license.
+	if claims.ClusterId == "" || claims.ClusterId != clusterId {
+		return false, errors.ErrClusterIdNotMatch
+	}
+
 	return token.Valid, nil
 }

@@ -23,8 +23,8 @@ import (
 	"github.com/go-logr/logr"
 
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
-	accountutil "github.com/labring/sealos/controllers/license/internal/util/account"
 	"github.com/labring/sealos/controllers/license/internal/util/database"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -40,8 +40,11 @@ type LicenseReconciler struct {
 	Logger logr.Logger
 	//finalizer *ctrlsdk.Finalizer
 
+	ClusterId string
+
 	validator *LicenseValidator
 	recorder  *LicenseRecorder
+	activator *LicenseActivator
 }
 
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses,verbs=get;list;watch;create;update;patch;delete
@@ -99,15 +102,9 @@ func (r *LicenseReconciler) reconcile(ctx context.Context, license *licensev1.Li
 		return ctrl.Result{}, nil
 	}
 
-	// TODO mv to active function
-	switch license.Spec.Type {
-	case licensev1.AccountLicenseType:
-		if err = accountutil.Recharge(ctx, r.Client, license); err != nil {
-			r.Logger.V(1).Error(err, "failed to recharge account")
-			return ctrl.Result{}, err
-		}
-	case licensev1.ClusterLicenseType:
-		// TODO implement cluster license
+	if err := r.activator.Active(ctx, license); err != nil {
+		r.Logger.V(1).Error(err, "failed to active license")
+		return ctrl.Result{}, err
 	}
 
 	// update license status to active
@@ -125,11 +122,11 @@ func (r *LicenseReconciler) reconcile(ctx context.Context, license *licensev1.Li
 // SetupWithManager sets up the controller with the Manager.
 func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, db *database.DataBase) error {
 	r.Logger = mgr.GetLogger().WithName("controller").WithName("License")
-	//r.finalizer = ctrlsdk.NewFinalizer(r.Client, "license.sealos.io/finalizer")
 	r.Client = mgr.GetClient()
 
 	r.validator = &LicenseValidator{
-		Client: r.Client,
+		Client:    r.Client,
+		ClusterId: r.ClusterId,
 	}
 
 	r.recorder = &LicenseRecorder{

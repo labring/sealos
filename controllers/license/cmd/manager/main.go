@@ -101,7 +101,8 @@ func main() {
 	}
 	defer db.Disconnect(context.Background())
 
-	if err = (&controller.LicenseReconciler{}).SetupWithManager(mgr, db); err != nil {
+	clusterId := os.Getenv("CLUSTER_ID")
+	if err = (&controller.LicenseReconciler{ClusterId: clusterId}).SetupWithManager(mgr, db); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "License")
 		os.Exit(1)
 	}
