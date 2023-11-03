@@ -6,7 +6,6 @@ import useWindow from '@site/src/hooks/useWindow';
 import GithubIcon from '@site/static/icons/github.svg';
 import MeunIcon from '@site/static/icons/meun.svg';
 import LogoIcon from '@site/static/icons/sealos.svg';
-import HeaderSvg from '@site/static/illustrations/bg-header.svg';
 import React, { useEffect, useState } from 'react';
 import VideoPlayer from '../VideoPlayer';
 import './index.scss';
@@ -84,7 +83,12 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
   if (!isPc) {
     return (
       <div id="Start" className="home-header">
-        <HeaderSvg className="header-img" />
+        <img
+          draggable="false"
+          className="header-img"
+          src={require('@site/static/img/bg-header.png').default}
+          alt="community"
+        />
         <nav>
           <div className="left">
             <MeunIcon width={'24px'} height={'24px'} onClick={() => openSideBar()} />
@@ -139,7 +143,12 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
 
   return (
     <div id="Start" className="home-header">
-      <HeaderSvg className="header-img" />
+      <img
+        draggable="false"
+        className="header-img"
+        src={require('@site/static/img/bg-header.png').default}
+        alt="community"
+      />
       <nav>
         <div className="left">
           <div

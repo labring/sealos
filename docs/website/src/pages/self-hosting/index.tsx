@@ -19,7 +19,13 @@ export default function Pricing() {
     <div id="sealos-layout-wrap-home-page">
       <Layout>
         <div className="sealos_price_page">
-          <div className="sealo_price_header_bg"></div>
+          {/* <div className="sealo_price_header_bg"></div> */}
+          <img
+            draggable="false"
+            className="header-img"
+            src={require('@site/static/img/license-bg-header.png').default}
+            alt="community"
+          />
           <Banner />
           <div className="px-10 w-full flex justify-center lg:px-0">
             <Header isPc={isPc} />
