@@ -17,8 +17,9 @@ package minio
 import (
 	"context"
 	"fmt"
-	"github.com/minio/minio-go/v7"
 	"strings"
+
+	"github.com/minio/minio-go/v7"
 )
 
 func GetUserStorageSize(client *minio.Client, username string) (int64, int64, error) {
@@ -34,8 +35,8 @@ func GetUserStorageSize(client *minio.Client, username string) (int64, int64, er
 		}
 	}
 
-	var totalSize int64 = 0
-	var objectsCount int64 = 0
+	var totalSize int64
+	var objectsCount int64
 	for _, bucketName := range expectBuckets {
 		objects := client.ListObjects(context.Background(), bucketName, minio.ListObjectsOptions{
 			Recursive: true,
