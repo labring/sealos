@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 import ClusterRecord from './components/Record';
 import Tutorial from './components/Tutorial';
 
-export default function MyCluster({ ossFileName }: { ossFileName: string }) {
+export default function MyCluster({ ossFileUrl }: { ossFileUrl: string }) {
   const [clusterId, setClusterId] = useState('');
   const { t } = useTranslation();
 
@@ -66,7 +66,7 @@ export default function MyCluster({ ossFileName }: { ossFileName: string }) {
     <Layout>
       <Flex flex={1} h={0} bg="#fefefe">
         <ClusterRecord changeClusterId={changeClusterId} clusterId={clusterId} />
-        <Tutorial clusterId={clusterId} ossFileName={ossFileName} />
+        <Tutorial clusterId={clusterId} ossFileUrl={ossFileUrl} />
       </Flex>
     </Layout>
   );
@@ -79,7 +79,7 @@ export async function getServerSideProps({ req, res, locales }: any) {
 
   return {
     props: {
-      ossFileName: process.env?.OSS_FILE_NAME || '/cloud/sealos-cloud-dev.tar.gz',
+      ossFileUrl: process.env.OSS_FILE_URL,
       ...(await serverSideTranslations(local, undefined, null, locales || []))
     }
   };

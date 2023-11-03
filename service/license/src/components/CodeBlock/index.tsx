@@ -1,5 +1,5 @@
 import { useCopyData } from '@/hooks/useCopyData';
-import { Box, Center, Flex, FlexProps, Text } from '@chakra-ui/react';
+import { Box, Center, Divider, Flex, FlexProps, Text } from '@chakra-ui/react';
 import { CSSProperties } from 'react';
 import { PrismAsyncLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { CopyIcon } from '@/components/Icon';
@@ -22,7 +22,13 @@ export default function CodeBlock({
   const { copyData } = useCopyData();
 
   return (
-    <Flex position={'relative'} backgroundColor="#24282C" borderRadius={'6px'} {...flexStyle}>
+    <Flex
+      position={'relative'}
+      backgroundColor="#F8FAFB"
+      borderRadius={'6px'}
+      {...flexStyle}
+      border={'1px solid #EAEBF0'}
+    >
       <Flex
         flex={1}
         alignItems={'center'}
@@ -32,15 +38,22 @@ export default function CodeBlock({
         px="20px"
         fontSize={'14px'}
       >
-        <Box mr="10px" color={'#c99bdf'} alignSelf={'self-start'}>
+        <Box mr="10px" color={'#B779D4'} alignSelf={'self-start'}>
           $
         </Box>
-        <SyntaxHighlighter language={language} customStyle={customStyle}>
+        <SyntaxHighlighter
+          language={language}
+          customStyle={{
+            background: '#F8FAFB',
+            color: '#24282c'
+          }}
+        >
           {code}
         </SyntaxHighlighter>
       </Flex>
-      <Center mx="20px" onClick={() => copyData(copyValue ? copyValue : code)}>
-        <CopyIcon _hover={{ fill: '#219BF4' }} />
+      <Divider orientation="vertical" bg="#EAEBF0" h="auto" />
+      <Center mx="20px" cursor={'pointer'} onClick={() => copyData(copyValue ? copyValue : code)}>
+        <CopyIcon fill="#219BF4" />
       </Center>
     </Flex>
   );
