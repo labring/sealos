@@ -33,7 +33,7 @@ export const Highlight = ({children, color}) => (
 - 所有节点的时间需要同步。
 - 建议使用干净的操作系统来创建集群。**不要自己装 Docker！**
 - 支持大多数 Linux 发行版，例如：Ubuntu、CentOS、Rocky linux。
-- 支持 [Docker Hub](https://hub.docker.com/r/labring/kubernetes/tags) 中的所有 Kubernetes 版本。
+- 支持 [Docker Hub](https://hub.docker.com/r/labring/kubernetes/tags) 中的几乎所有 Kubernetes 版本（**暂不支持 1.28 版本**）。
 
 推荐配置：
 

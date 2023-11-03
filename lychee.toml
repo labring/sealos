@@ -4,4 +4,4 @@ exclude_all_private = true
 insecure = true
 no_progress = true
 output = ".dummy.report.md"
-exclude = [ '.*codecov.*','.*sealos\.hub:5000.*','.*local.*','file:///.*','.*sealos.io/payment/wechat/callback.*','.*www.sealos.io/docs/cloud/apps/appstore.*','.*chat.openai.com/c.*','.*twitter.com/sealosio.*','.*sealos.run.*', ]
+exclude = [ '.*codecov.*','.*sealos\.hub:5000.*','.*local.*','file:///.*','.*sealos.io/payment/wechat/callback.*','.*www.sealos.io/docs/cloud/apps/appstore.*','.*chat.openai.com/c.*','.*twitter.com/sealosio.*','.*sealos.run.*','.*sealos.io.*', ]
