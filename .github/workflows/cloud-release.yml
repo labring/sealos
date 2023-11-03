@@ -25,20 +25,18 @@ jobs:
   release-frontends:
     needs:
       - save-sealos
-    uses: ./.github/workflows/controllers.yml
+    uses: ./.github/workflows/frontend.yml
     with:
       push_image: true
       push_image_tag: ${{ env.TAG }}
-    uses: ./.github/workflows/frontend.yml
 
   release-service:
     needs:
       - save-sealos
-    uses: ./.github/workflows/controllers.yml
+    uses: ./.github/workflows/services.yml
     with:
       push_image: true
       push_image_tag: ${{ env.TAG }}
-    uses: ./.github/workflows/services.yml
 
   release-cloud:
     needs:
