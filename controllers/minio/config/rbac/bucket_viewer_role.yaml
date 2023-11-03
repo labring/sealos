@@ -1,0 +1,27 @@
+# permissions for end users to view buckets.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: bucket-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: minio
+    app.kubernetes.io/part-of: minio
+    app.kubernetes.io/managed-by: kustomize
+  name: bucket-viewer-role
+rules:
+  - apiGroups:
+      - minio.sealos.io
+    resources:
+      - buckets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - minio.sealos.io
+    resources:
+      - buckets/status
+    verbs:
+      - get

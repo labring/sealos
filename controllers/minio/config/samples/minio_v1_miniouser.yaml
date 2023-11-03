@@ -1,0 +1,12 @@
+apiVersion: minio.sealos.io/v1
+kind: MinioUser
+metadata:
+  labels:
+    app.kubernetes.io/name: miniouser
+    app.kubernetes.io/instance: miniouser-sample
+    app.kubernetes.io/part-of: minio
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: minio
+  name: miniouser-sample
+spec:
+# TODO(user): Add fields here

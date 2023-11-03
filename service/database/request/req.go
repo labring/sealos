@@ -75,6 +75,8 @@ func GetQuery(query *api.PromRequest) (string, error) {
 		result = api.Mongo[query.Query]
 	case "postgresql":
 		result = api.Pgsql[query.Query]
+	case "minio":
+		result = api.Minio[query.Query]
 	default:
 		fmt.Println(query.Type)
 	}

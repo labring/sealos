@@ -1,0 +1,12 @@
+apiVersion: minio.sealos.io/v1
+kind: Bucket
+metadata:
+  labels:
+    app.kubernetes.io/name: bucket
+    app.kubernetes.io/instance: bucket-sample
+    app.kubernetes.io/part-of: minio
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: minio
+  name: bucket-sample
+spec:
+# TODO(user): Add fields here

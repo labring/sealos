@@ -1,0 +1,25 @@
+domain: sealos.io
+layout:
+- go.kubebuilder.io/v3
+projectName: minio
+repo: github/labring/sealos/controllers/minio
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: minio
+  kind: MinioUser
+  path: github/labring/sealos/controllers/minio/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: minio
+  kind: Bucket
+  path: github/labring/sealos/controllers/minio/api/v1
+  version: v1
+version: "3"

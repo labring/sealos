@@ -14,6 +14,7 @@ use (
 	./controllers/license
 	./controllers/job/init
 	./controllers/pkg
+	./controllers/minio
 	./service/database
 	./service/hub
 	./service/pay
