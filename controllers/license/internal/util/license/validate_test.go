@@ -34,7 +34,7 @@ func TestIsLicenseValid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := IsLicenseValid(tt.args.license)
+			got, err := IsLicenseValid(tt.args.license, "")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("IsLicenseValid() error = %v, wantErr %v", err, tt.wantErr)
 				return

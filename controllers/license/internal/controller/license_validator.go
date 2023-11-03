@@ -9,9 +9,9 @@ import (
 
 type LicenseValidator struct {
 	client.Client
-	ClusterId string
+	ClusterID string
 }
 
 func (v *LicenseValidator) Validate(license *licensev1.License) (bool, error) {
-	return licenseutil.IsLicenseValid(license, v.ClusterId)
+	return licenseutil.IsLicenseValid(license, v.ClusterID)
 }

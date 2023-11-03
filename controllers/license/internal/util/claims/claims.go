@@ -9,7 +9,7 @@ import (
 
 type Claims struct {
 	Type      v1.LicenseType `json:"type"`
-	ClusterId string         `json:"clusterId"`
+	ClusterID string         `json:"clusterID"`
 	Data      ClaimData      `json:"data"`
 
 	jwt.RegisteredClaims

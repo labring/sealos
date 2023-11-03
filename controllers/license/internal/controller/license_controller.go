@@ -40,7 +40,7 @@ type LicenseReconciler struct {
 	Logger logr.Logger
 	//finalizer *ctrlsdk.Finalizer
 
-	ClusterId string
+	ClusterID string
 
 	validator *LicenseValidator
 	recorder  *LicenseRecorder
@@ -126,7 +126,7 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, db *database.Data
 
 	r.validator = &LicenseValidator{
 		Client:    r.Client,
-		ClusterId: r.ClusterId,
+		ClusterID: r.ClusterID,
 	}
 
 	r.recorder = &LicenseRecorder{
