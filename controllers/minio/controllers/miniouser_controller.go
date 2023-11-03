@@ -18,21 +18,23 @@ package controllers
 
 import (
 	"context"
-	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 	"time"
 
+	"github.com/go-logr/logr"
 	myminio "github.com/labring/sealos/controllers/pkg/minio"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"github.com/labring/sealos/pkg/utils/rand"
 	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7"
+
 	miniov1 "github/labring/sealos/controllers/minio/api/v1"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // MinioUserReconciler reconciles a MinioUser object
@@ -118,7 +120,7 @@ func (r *MinioUserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, nil
 	}
 
-	updated := r.initMinioUser(minioUser, username, userNamespace)
+	updated := r.initMinioUser(minioUser, username)
 
 	accessKey := minioUser.Status.AccessKey
 	secretKey := minioUser.Status.SecretKey
@@ -284,7 +286,7 @@ func (r *MinioUserReconciler) deleteMinioUser(ctx context.Context, username, use
 	return nil
 }
 
-func (r *MinioUserReconciler) initMinioUser(minioUser *miniov1.MinioUser, username, userNamespace string) bool {
+func (r *MinioUserReconciler) initMinioUser(minioUser *miniov1.MinioUser, username string) bool {
 	var updated = false
 
 	if minioUser.Status.Quota == 0 {

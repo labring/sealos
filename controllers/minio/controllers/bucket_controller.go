@@ -18,19 +18,20 @@ package controllers
 
 import (
 	"context"
-	"github.com/go-logr/logr"
-	"github.com/labring/sealos/controllers/pkg/utils/env"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"strings"
 	"time"
 
+	"github.com/go-logr/logr"
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+	"github.com/minio/minio-go/v7"
+
+	miniov1 "github/labring/sealos/controllers/minio/api/v1"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/minio/minio-go/v7"
-	miniov1 "github/labring/sealos/controllers/minio/api/v1"
 )
 
 // BucketReconciler reconciles a Bucket object
@@ -134,8 +135,8 @@ func (r *BucketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	var totalSize int64 = 0
-	var update = false
+	var totalSize int64
+	var update bool
 
 	// list objects in the bucket and calculate the total space used
 	objects := r.MinioClient.ListObjects(ctx, bucketName, minio.ListObjectsOptions{
