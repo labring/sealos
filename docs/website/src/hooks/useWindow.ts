@@ -18,6 +18,13 @@ export default function () {
     window.addEventListener('resize', updateScreenWidth);
     // handle
     setCurrentLanguage(document.documentElement.lang);
+
+    // console.log(document.documentElement.lang, window.location, navigator.language);
+    // if (navigator.language !== 'en' && !window.location.pathname.includes('zh-Hans')) {
+    //   const newPath = window.location.pathname.endsWith('/') ? 'zh-Hans/' : '/zh-Hans/';
+    //   window.location.pathname += newPath;
+    // }
+
     setCloudUrl(
       document.documentElement.lang === 'en'
         ? 'https://cloud.sealos.io'

@@ -103,7 +103,7 @@ const Capability = ({ isPc }: { isPc: boolean }) => {
           <div className="application-text">{i18nObj.serverless_introduce}</div>
           <a
             className="application-link"
-            href={currentLanguage === 'en' ? '/pricing' : '/zh-Hans/pricing'}
+            href={currentLanguage === 'en' ? '/self-hosting ' : '/zh-Hans/self-hosting '}
           >
             {i18nObj.Explore} {'>'}
           </a>
@@ -161,7 +161,7 @@ const Capability = ({ isPc }: { isPc: boolean }) => {
           <div className="application-text">{i18nObj.serverless_introduce}</div>
           <a
             className="application-link"
-            href={currentLanguage === 'en' ? '/pricing' : '/zh-Hans/pricing'}
+            href={currentLanguage === 'en' ? '/self-hosting ' : '/zh-Hans/self-hosting '}
           >
             {i18nObj.Explore} {'>'}
           </a>

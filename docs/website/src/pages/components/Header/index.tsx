@@ -23,9 +23,9 @@ const navbar = [
     to: 'https://forum.laf.run/'
   },
   {
-    key: 'pricing',
-    label: <Translate>Pricing</Translate>,
-    to: '/pricing'
+    key: 'hosting',
+    label: <Translate>Hosting</Translate>,
+    to: '/self-hosting '
   },
   {
     key: 'contact',
