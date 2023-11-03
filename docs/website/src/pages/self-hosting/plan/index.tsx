@@ -4,6 +4,7 @@ import CpuIcon from '@site/static/price/cpu.svg';
 import MemoryIcon from '@site/static/price/memory.svg';
 import DiskIcon from '@site/static/price/disk.svg';
 import FlowIcon from '@site/static/price/flow.svg';
+import useWindow from '@site/src/hooks/useWindow';
 
 export default function Plan() {
   const [select, setSelect] = useState('year');
@@ -56,6 +57,7 @@ export default function Plan() {
       day: { unit: 'M/天', value: '0' }
     }
   ]);
+  const { currentLanguage } = useWindow();
 
   return (
     <div className="mt-56 lg:mt-20 flex items-center w-full max-w-[1280px] flex-col px-10">
@@ -140,9 +142,7 @@ export default function Plan() {
           <div
             className="flex items-center justify-center w-[134px] h-[50px] lg:h-8 lg:text-xs rounded-md bg-[#B7D8FF26] text-lg font-semibold text-white/80 cursor-pointer "
             onClick={() =>
-              window.open(
-                'https://rowan-nannyberry-f3f.notion.site/0aa37f19b32d4189aa006de9786a35df?pvs=4'
-              )
+              window.open(currentLanguage === 'en' ? '/pricing' : '/zh-Hans/pricing', '_self')
             }
           >
             详细文档

@@ -5,17 +5,35 @@ toc_max_heading_level: 5
 
 # 安装 Sealos 集群
 
+export const Highlight = ({children, color}) => (
+  <span
+    style={{
+      backgroundColor: color,
+      borderRadius: '2px',
+      color: '#fff',
+      padding: '0.2rem',
+    }}>
+    {children}
+  </span>
+);
+
+:::tip
+
+大规模集群以及企业生产环境强烈建议使用 [<Highlight color="#1877F2">Sealos 私有云的企业版或者定制版</Highlight>](/pricing)。
+
+:::
+
 ## 准备工作
 
 ### 服务器
 
 以下是一些基本的要求：
 
-- 每个集群节点应该有不同的主机名。**主机名不要带下划线，也不要大写**。
+- 每个集群节点应该有不同的主机名。
 - 所有节点的时间需要同步。
 - 建议使用干净的操作系统来创建集群。**不要自己装 Docker！**
 - 支持大多数 Linux 发行版，例如：Ubuntu、CentOS、Rocky linux。
-- 支持 [Docker Hub](https://hub.docker.com/r/labring/kubernetes/tags) 中的所有 Kubernetes 版本。
+- 支持 [Docker Hub](https://hub.docker.com/r/labring/kubernetes/tags) 中的几乎所有 Kubernetes 版本（**暂不支持 1.28 版本**）。
 
 推荐配置：
 
@@ -110,9 +128,9 @@ cloud.example.io   A   192.168.1.1
 $ curl -sfL https://gh-proxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://gh-proxy.com \
-  --cloud_domain=<your_domain> \
-  --cert_path=<your_crt> \
-  --key_path=<your_key>
+  --cloud-domain=<your_domain> \
+  --cert-path=<your_crt> \
+  --key-path=<your_key>
 ```
 
 + <your_domain> 需要替换成你自己的公网域名。
@@ -136,7 +154,7 @@ cloud.example.io   A   192.168.1.1
 $ curl -sfL https://gh-proxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://gh-proxy.com \
-  --cloud_domain=<your_domain>
+  --cloud-domain=<your_domain>
 ```
 
 其中 <your_domain> 需要替换成你自己的公网域名。
@@ -194,7 +212,7 @@ $ curl -sfL https://gh-proxy.com/https://raw.githubusercontent.com/labring/sealo
 $ curl -sfL https://gh-proxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://gh-proxy.com \
-  --cloud_domain=<your_domain>
+  --cloud-domain=<your_domain>
 ```
 
 其中 <your_domain> 需要替换成你自己的自定义域名。

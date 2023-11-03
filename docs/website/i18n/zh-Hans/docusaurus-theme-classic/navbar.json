@@ -9,7 +9,7 @@
   },
   "item.label.Hosting": {
     "message": "私有云",
-    "description": "Navbar item with label Self Hosting"
+    "description": "Navbar item with label Hosting"
   },
   "logo.alt": {
     "message": "sealos",
