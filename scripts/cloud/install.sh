@@ -5,7 +5,7 @@ set -e
 # Configurations
 CLOUD_DIR="/root/.sealos/cloud"
 SEALOS_VERSION="v4.3.5"
-CLOUD_VERSION="latest"
+cloud_version="latest"
 #mongodb_version="mongodb-5.0"
 #master_ips=
 #node_ips=
@@ -253,7 +253,7 @@ init() {
     pull_image "kubeblocks" "v${kubeblocks_version#v:-0.6.2}"
     pull_image "metrics-server" "v${metrics_server_version#v:-0.6.4}"
     pull_image "kubernetes-reflector" "v${reflector_version#v:-7.0.151}"
-    pull_image "sealos-cloud" "${CLOUD_VERSION}"
+    pull_image "sealos-cloud" "${cloud_version}"
 }
 
 pull_image() {
@@ -448,13 +448,13 @@ EOF
 
     setMongoVersion
     if [[ -n "$tls_crt_base64" ]] || [[ -n "$tls_key_base64" ]]; then
-        sealos run ${image_registry}/${image_repository}/sealos-cloud:latest\
+        sealos run ${image_registry}/${image_repository}/sealos-cloud:${cloud_version}\
         --env cloudDomain="$cloud_domain"\
         --env cloudPort="${cloud_port:-443}"\
         --env mongodbVersion="${mongodb_version:-mongodb-5.0}"\
         --config-file $CLOUD_DIR/tls-secret.yaml
     else
-        sealos run ${image_registry}/${image_repository}/sealos-cloud:latest\
+        sealos run ${image_registry}/${image_repository}/sealos-cloud:${cloud_version}\
         --env cloudDomain="$cloud_domain"\
         --env cloudPort="${cloud_port:-443}"\
         --env mongodbVersion="${mongodb_version:-mongodb-5.0}"
@@ -475,7 +475,7 @@ for i in "$@"; do
   --ingress-nginx-version=*) ingress_nginx_version="${i#*=}"; shift ;;
   --kubeblocks-version=*) kubeblocks_version="${i#*=}"; shift ;;
   --metrics-server-version=*) metrics_server_version="${i#*=}"; shift ;;
-  --cloud-version=*) CLOUD_VERSION="${i#*=}"; shift ;;
+  --cloud-version=*) cloud_version="${i#*=}"; shift ;;
   --mongodb-version=*) mongodb_version="${i#*=}"; shift ;;
   --master-ips=*) master_ips="${i#*=}"; shift ;;
   --node-ips=*) node_ips="${i#*=}"; shift ;;
@@ -536,4 +536,4 @@ GREEN='\033[0;32m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
-echo -e "${BOLD}Sealos cloud login info:${RESET}\nCloud Version: ${GREEN}${CLOUD_VERSION}${RESET}\nURL: ${GREEN}https://$cloud_domain${cloud_port:+:$cloud_port}${RESET}\nadmin Username: ${GREEN}admin${RESET}\nadmin Password: ${GREEN}sealos2023${RESET}"
+echo -e "${BOLD}Sealos cloud login info:${RESET}\nCloud Version: ${GREEN}${cloud_version}${RESET}\nURL: ${GREEN}https://$cloud_domain${cloud_port:+:$cloud_port}${RESET}\nadmin Username: ${GREEN}admin${RESET}\nadmin Password: ${GREEN}sealos2023${RESET}"
