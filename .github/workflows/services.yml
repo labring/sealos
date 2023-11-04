@@ -234,6 +234,7 @@ jobs:
           sudo sealos tag ${CLUSTER_IMAGE_NAME}-amd64  ${CLUSTER_IMAGE_NAME_LATEST}-amd64
           sudo sealos tag ${CLUSTER_IMAGE_NAME}-arm64  ${CLUSTER_IMAGE_NAME_LATEST}-arm64
           sudo sealos images
+          bash docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME
           bash docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME_LATEST
       - name: Renew issue and Sync Images
         uses: labring/gh-rebot@v0.0.6
