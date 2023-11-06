@@ -51,6 +51,7 @@ const Home = () => {
             gtag('event', 'conversion', {'send_to': 'AW-786053845/LpbTCJ-8-coYENX16PYC'});
           `}
         </script>
+        <meta name="baidu-site-verification" content="codeva-gAHDaifnOq" />
       </Helmet>
       <Layout>
         <div className="home">
