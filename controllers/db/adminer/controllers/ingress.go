@@ -19,12 +19,9 @@ package controllers
 import (
 	"fmt"
 	"strings"
-	"time"
 
-	apisix "github.com/apache/apisix-ingress-controller/pkg/kube/apisix/apis/config/v2beta3"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 
 	adminerv1 "github.com/labring/sealos/controllers/db/adminer/api/v1"
 )
@@ -45,7 +42,6 @@ func (r *AdminerReconciler) createNginxIngress(adminer *adminerv1.Adminer, host 
 		Namespace: adminer.Namespace,
 		Annotations: map[string]string{
 			"kubernetes.io/ingress.class":                        "nginx",
-			"nginx.ingress.kubernetes.io/rewrite-target":         "/",
 			"nginx.ingress.kubernetes.io/proxy-send-timeout":     "86400",
 			"nginx.ingress.kubernetes.io/proxy-read-timeout":     "86400",
 			"nginx.ingress.kubernetes.io/proxy-body-size":        "256m",
@@ -96,70 +92,6 @@ func (r *AdminerReconciler) createNginxIngress(adminer *adminerv1.Adminer, host 
 		ingress.Spec.TLS = []networkingv1.IngressTLS{tls}
 	}
 	return ingress
-}
-
-// TODO: attempt use websocket https://apisix.apache.org/zh/docs/ingress-controller/concepts/apisix_route/#websocket-proxy
-func (r *AdminerReconciler) createApisixRoute(adminer *adminerv1.Adminer, host string) *apisix.ApisixRoute {
-	// config proxy_read_timeout and proxy_send_timeout
-	upstreamTimeout := &apisix.UpstreamTimeout{
-		Read: metav1.Duration{
-			Duration: time.Hour,
-		},
-		Send: metav1.Duration{
-			Duration: time.Hour,
-		},
-	}
-
-	// ApisixRoute
-	apisixRoute := &apisix.ApisixRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      adminer.Name,
-			Namespace: adminer.Namespace,
-		},
-		Spec: apisix.ApisixRouteSpec{
-			HTTP: []apisix.ApisixRouteHTTP{
-				{
-					Name: adminer.Name,
-					Match: apisix.ApisixRouteHTTPMatch{
-						Hosts: []string{host},
-						Paths: []string{"/*"},
-					},
-					Backends: []apisix.ApisixRouteHTTPBackend{
-						{
-							ServiceName: adminer.Name,
-							ServicePort: intstr.FromInt(8080),
-						},
-					},
-					Timeout: upstreamTimeout,
-					Authentication: apisix.ApisixRouteAuthentication{
-						Enable: false,
-						Type:   AuthType,
-					},
-				},
-			},
-		},
-	}
-	return apisixRoute
-}
-
-func (r *AdminerReconciler) createApisixTLS(adminer *adminerv1.Adminer, host string) *apisix.ApisixTls {
-	apisixTLS := &apisix.ApisixTls{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      adminer.Name,
-			Namespace: adminer.Namespace,
-		},
-		Spec: &apisix.ApisixTlsSpec{
-			Hosts: []apisix.HostType{
-				apisix.HostType(host),
-			},
-			Secret: apisix.ApisixSecret{
-				Name:      r.secretName,
-				Namespace: r.secretNamespace,
-			},
-		},
-	}
-
-	return apisixTLS
 }
 
 const (

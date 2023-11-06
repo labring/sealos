@@ -20,7 +20,6 @@ metadata:
     {{- include "costcenter.labels" . | nindent 4 }}
   annotations:
     kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-methods: "PUT, GET, POST, DELETE, PATCH, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-origin: "https://{{ .Values.cloudDomain }}{{ if .Values.cloudPort }}:{{ .Values.cloudPort }}{{ end }}, https://*.{{ .Values.cloudDomain }}{{ if .Values.cloudPort }}:{{ .Values.cloudPort }}{{ end }}"
