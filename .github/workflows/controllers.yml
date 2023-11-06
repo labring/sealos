@@ -3,6 +3,18 @@ name: Build Controllers image
 on:
   create:
     tags:
+  workflow_call:
+    inputs:
+      push_image:
+        description: "Push image"
+        required: false
+        type: boolean
+        default: false
+      push_image_tag:
+        description: "Push image tag"
+        default: "latest"
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       push_image:
