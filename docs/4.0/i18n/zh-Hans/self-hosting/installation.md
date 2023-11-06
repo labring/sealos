@@ -3,6 +3,9 @@ sidebar_position: 1
 toc_max_heading_level: 5
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 # 安装 Sealos 集群
 
 export const Highlight = ({children, color}) => (
@@ -19,7 +22,7 @@ export const Highlight = ({children, color}) => (
 
 :::tip
 
-大规模集群以及企业生产环境强烈建议使用 [<Highlight color="#1877F2">Sealos 私有云的企业版或者定制版</Highlight>](/pricing)。
+大规模集群以及企业生产环境强烈建议使用 [<Highlight color="#1877F2">Sealos 私有云的企业版或者定制版</Highlight>](/self-hosting)。
 
 :::
 
@@ -315,3 +318,57 @@ $ sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.ke
 4. 完成，“是”，确定。
 
 ![](./images/windows-trust-certificate.jpg)
+
+#### Linux
+
+Linux 不同发行版更新根证书存储的命令不一样，用来保存私有证书的路径也不一样。需要先复制自签名 CA 证书到特定路径，再运行命令更新根证书存储。
+
+<Tabs>
+  <TabItem value="Debian/Ubuntu/Gentoo">
+
+  ```bash
+  # Debian/Ubuntu/Gentoo
+  # - 安装
+  $ sudo cp root_ca.crt /usr/local/share/ca-certificates/root_ca.crt
+  # update-ca-certificates 会添加 /etc/ca-certificates.conf 配置文件中指定的证书
+  #   另外所有 /usr/local/share/ca-certificates/*.crt 会被列为隐式信任
+  $ sudo update-ca-certificates
+  
+  # - 删除
+  $ sudo rm /usr/local/share/ca-certificates/root_ca.crt
+  $ sudo update-ca-certificates --fresh
+  ```
+
+  </TabItem>
+  <TabItem value="CentOS/Fedora/RHEL">
+
+  ```bash
+  # CentOS/Fedora/RHEL
+  $ yum install ca-certificates
+  # 启用动态 CA 配置功能：
+  $ update-ca-trust force-enable
+  $ cp root_ca.crt /etc/pki/ca-trust/source/anchors/
+  $ update-ca-trust
+  ```
+
+  </TabItem>
+  <TabItem value="Alpine">
+
+  ```bash
+  # Alpine
+  $ apk update && apk add --no-cache ca-certificates
+  $ cp root_ca.crt /usr/local/share/ca-certificates/
+  $ update-ca-certificates
+  ```
+
+  </TabItem>
+  <TabItem value="OpenSUSE/SLES">
+
+  ```bash
+  # OpenSUSE/SLES
+  $ cp root_ca.crt /etc/pki/trust/anchors/
+  $ update-ca-certificates
+  ```
+
+  </TabItem>
+</Tabs>
