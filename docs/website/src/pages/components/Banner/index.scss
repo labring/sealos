@@ -144,4 +144,34 @@
     font-size: 12px;
     font-weight: 500;
   }
+
+  .sealos-banner-container {
+    width: 90%;
+
+    .title {
+      svg {
+        width: 36px;
+        height: 36px;
+      }
+
+      .txt {
+        font-size: 18px;
+      }
+    }
+  }
+
+  .sealos-banner-body {
+    padding: 0 12px;
+    .banner-title {
+      font-size: 20px;
+    }
+
+    .banner__subtitle {
+      font-size: 14px;
+    }
+  }
+
+  .btn {
+    font-size: 14px;
+  }
 }
