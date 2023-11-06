@@ -8,7 +8,6 @@ env:
   # Common versions
   GO_VERSION: "1.20"
   DEFAULT_OWNER: "labring"
-  TAG: ${{ github.event.release.tag_name }}
 
 jobs:
   save-sealos:
@@ -18,14 +17,14 @@ jobs:
     uses: ./.github/workflows/controllers.yml
     with:
       push_image: true
-      push_image_tag: ${{ env.TAG }}
+      push_image_tag: ${{ github.event.release.tag_name }}
     secrets: inherit
 
   release-frontends:
     uses: ./.github/workflows/frontend.yml
     with:
       push_image: true
-      push_image_tag: ${{ env.TAG }}
+      push_image_tag: ${{ github.event.release.tag_name }}
     secrets: inherit
 
   release-service:
@@ -34,7 +33,7 @@ jobs:
     uses: ./.github/workflows/services.yml
     with:
       push_image: true
-      push_image_tag: ${{ env.TAG }}
+      push_image_tag: ${{ github.event.release.tag_name }}
     secrets: inherit
 
   release-cloud:
@@ -46,6 +45,6 @@ jobs:
     uses: ./.github/workflows/cloud.yml
     with:
       push_image: true
-      push_image_tag: ${{ env.TAG }}
-      build_from: ${{ env.TAG }}
+      push_image_tag: ${{ github.event.release.tag_name }}
+      build_from: ${{ github.event.release.tag_name }}
     secrets: inherit
