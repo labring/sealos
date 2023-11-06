@@ -7,9 +7,9 @@
     "message": "商务合作",
     "description": "Navbar item with label Contact"
   },
-  "item.label.Pricing": {
-    "message": "价格",
-    "description": "Navbar item with label Contact"
+  "item.label.Hosting": {
+    "message": "私有云",
+    "description": "Navbar item with label Hosting"
   },
   "logo.alt": {
     "message": "sealos",
