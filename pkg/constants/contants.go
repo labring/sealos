@@ -18,6 +18,8 @@ import (
 	"github.com/containers/storage/pkg/homedir"
 )
 
+const TemplateSuffix = ".tmpl"
+
 const (
 	LvsCareStaticPodName    = "kube-sealos-lvscare"
 	YamlFileSuffix          = "yaml"
