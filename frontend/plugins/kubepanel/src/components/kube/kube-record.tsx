@@ -18,7 +18,7 @@ export const KubeRecord = ({
 
   return (
     <div
-      className={`grid border-b border-solid border-color-border ${
+      className={`grid border-b border-solid border-zinc-400 ${
         padding ? 'py-2' : ''
       } last:border-b-0`}
       style={{ gridTemplateColumns: 'minmax(30%, min-content) auto' }}

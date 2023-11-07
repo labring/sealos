@@ -8,6 +8,7 @@ import { Tooltip } from 'antd';
 import { isDefined } from '@/k8slens/utilities';
 import React from 'react';
 import DrawerTitle from '../../drawer/drawer-title';
+import DrawerPanel from '../../drawer/drawer-panel';
 
 interface Props {
   pod?: Pod;
@@ -19,17 +20,14 @@ const ContainerDetail = ({ pod }: Props) => {
   const containers = pod.getContainers();
 
   return (
-    <>
-      <DrawerTitle>Containers</DrawerTitle>
-      <div className="p-2">
+    <DrawerPanel title="Containers">
         {initContainers.map((container) => (
           <ContainerInfo key={container.name} pod={pod} container={container} isInitial={true} />
         ))}
         {containers.map((container) => (
           <ContainerInfo key={container.name} pod={pod} container={container} isInitial={false} />
         ))}
-      </div>
-    </>
+    </DrawerPanel>
   );
 };
 

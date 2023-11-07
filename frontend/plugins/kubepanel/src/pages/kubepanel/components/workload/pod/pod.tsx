@@ -1,5 +1,5 @@
 import { Pod, PodContainerStatus } from '@/k8slens/kube-object';
-import { Table, Tooltip } from 'antd';
+import { Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { keys } from 'lodash';
 import ContainerStatusBrick from './container-status-brick';
@@ -12,6 +12,7 @@ import { POD_STORE } from '@/store/static';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import PodDetail from './pod-detail';
+import Table from '../../table/table';
 
 interface ContainerDataType {
   name: string;
@@ -124,10 +125,9 @@ const PodOverviewPage = () => {
   return (
     <>
       <Table
-        title={() => <span className="p-4 mb-4 text-xl font-light">Pods</span>}
+        title={'Pods'}
         columns={columns}
         dataSource={dataSource}
-        scroll={{ x: true }}
         onRow={(record) => ({
           onClick: () => {
             const { key } = record;

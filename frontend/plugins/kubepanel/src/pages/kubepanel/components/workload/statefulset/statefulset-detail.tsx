@@ -6,6 +6,7 @@ import PodDetailAffinities from '../pod/pod-detail-affinities';
 import { KubeRecord } from '@/components/kube/kube-record';
 import PodDetailStatuses from '../pod/pod-detail-statuses';
 import { KubeBadge } from '@/components/kube/kube-badge';
+import DrawerPanel from '../../drawer/drawer-panel';
 
 interface Props {
   statefulSet?: StatefulSet;
@@ -28,26 +29,28 @@ const StatefulSetDetail = ({ statefulSet, childPods, open, onClose }: Props) => 
 
   return (
     <Drawer open={open} title={`StatefulSet: ${statefulSet.getName()}`} onClose={onClose}>
-      <KubeObjectInfoList obj={statefulSet} />
-      {selectors.length > 0 && (
-        <KubeRecord
-          name="Selector"
-          value={selectors.map((label) => (
-            <KubeBadge key={label} label={label} />
-          ))}
-        />
-      )}
-      {images.length > 0 && (
-        <KubeRecord
-          name="Images"
-          value={images.map((image) => (
-            <p key={image}>{image}</p>
-          ))}
-        />
-      )}
-      <PodDetailTolerations workload={statefulSet} />
-      <PodDetailAffinities workload={statefulSet} />
-      <KubeRecord name="Pod Status" value={<PodDetailStatuses pods={childPods} />} />
+      <DrawerPanel>
+        <KubeObjectInfoList obj={statefulSet} />
+        {selectors.length > 0 && (
+          <KubeRecord
+            name="Selector"
+            value={selectors.map((label) => (
+              <KubeBadge key={label} label={label} />
+            ))}
+          />
+        )}
+        {images.length > 0 && (
+          <KubeRecord
+            name="Images"
+            value={images.map((image) => (
+              <p key={image}>{image}</p>
+            ))}
+          />
+        )}
+        <PodDetailTolerations workload={statefulSet} />
+        <PodDetailAffinities workload={statefulSet} />
+        <KubeRecord name="Pod Status" value={<PodDetailStatuses pods={childPods} />} />
+      </DrawerPanel>
     </Drawer>
   );
 };

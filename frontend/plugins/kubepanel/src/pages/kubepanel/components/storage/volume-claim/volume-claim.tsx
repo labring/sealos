@@ -3,11 +3,11 @@ import { PersistentVolumeClaim, Pod } from '@/k8slens/kube-object';
 import { PERSISTENT_VOLUME_CLAIM_STORE, POD_STORE } from '@/store/static';
 import { RequestController } from '@/utils/request-controller';
 import { useQuery } from '@tanstack/react-query';
-import { Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import { observer } from 'mobx-react';
 import { useRef, useState } from 'react';
 import PersistentVolumeClaimDetail from './volume-claim-detail';
+import Table from '../../table/table';
 
 interface DataType {
   key: string;
@@ -51,6 +51,7 @@ const columns: ColumnsType<DataType> = [
     title: 'Pods',
     dataIndex: 'podsNames',
     key: 'pods',
+    ellipsis: true,
     render: (podsNames: string[]) =>
       podsNames.map((name) => (
         <span key={name} className="text-blue-300 mr-1">
@@ -93,10 +94,9 @@ const PersistentVolumeClaimOverviewPage = () => {
   return (
     <>
       <Table
-        title={() => <span className="p-4 mb-4 text-xl font-light">Persistent Volume Claims</span>}
+        title={'Persistent Volume Claims'}
         columns={columns}
         dataSource={dataSource}
-        scroll={{ x: true }}
         onRow={(record) => ({
           onClick: () => {
             const { key } = record;

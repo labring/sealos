@@ -2,9 +2,9 @@ import { PersistentVolumeClaim, Pod } from '@/k8slens/kube-object';
 import Drawer from '../../drawer/drawer';
 import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
 import { KubeRecord } from '@/components/kube/kube-record';
-import DrawerTitle from '../../drawer/drawer-title';
 import { KubeBadge } from '@/components/kube/kube-badge';
 import React from 'react';
+import DrawerPanel from '../../drawer/drawer-panel';
 
 interface Props {
   volumeClaim?: PersistentVolumeClaim;
@@ -29,37 +29,40 @@ const PersistentVolumeClaimDetail = ({ volumeClaim, pods, open, onClose }: Props
 
   return (
     <Drawer open={open} title={`PersistentVolumeClaim: ${volumeClaim.getName()}`} onClose={onClose}>
-      <KubeObjectInfoList obj={volumeClaim} />
-      <KubeRecord name={'Access Modes'} value={accessModes?.join(', ')} />
-      <KubeRecord name="Storage Class Names" value={storageClassName} />
-      <KubeRecord name="Storage" value={volumeClaim.getStorage()} />
-      <KubeRecord
-        name="Pods"
-        value={volumeClaim.getPods(pods).map((pod) => (
-          <span key={pod.getName()} className="mr-1">
-            {pod.getName()}
-          </span>
-        ))}
-      />
-      <KubeRecord name="Status" value={volumeClaim.getStatus()} />
+      <DrawerPanel>
+        <KubeObjectInfoList obj={volumeClaim} />
+        <KubeRecord name={'Access Modes'} value={accessModes?.join(', ')} />
+        <KubeRecord name="Storage Class Names" value={storageClassName} />
+        <KubeRecord name="Storage" value={volumeClaim.getStorage()} />
+        <KubeRecord
+          name="Pods"
+          value={volumeClaim.getPods(pods).map((pod) => (
+            <span key={pod.getName()} className="mr-1">
+              {pod.getName()}
+            </span>
+          ))}
+        />
+        <KubeRecord name="Status" value={volumeClaim.getStatus()} />
+      </DrawerPanel>
 
-      <DrawerTitle>Selector</DrawerTitle>
-      <KubeRecord
-        name="Match Labels"
-        value={volumeClaim.getMatchLabels().map((label) => (
-          <KubeBadge key={label} label={label} />
-        ))}
-      />
-      <KubeRecord
-        name="Match Expressions"
-        value={volumeClaim.getMatchExpressions().map(({ key, operator, values }, i) => (
-          <React.Fragment key={i}>
-            <KubeRecord name="Key" value={key} />
-            <KubeRecord name="Operator" value={operator} />
-            <KubeRecord name="Values" value={values?.join(', ')} />
-          </React.Fragment>
-        ))}
-      />
+      <DrawerPanel title="Selector">
+        <KubeRecord
+          name="Match Labels"
+          value={volumeClaim.getMatchLabels().map((label) => (
+            <KubeBadge key={label} label={label} />
+          ))}
+        />
+        <KubeRecord
+          name="Match Expressions"
+          value={volumeClaim.getMatchExpressions().map(({ key, operator, values }, i) => (
+            <React.Fragment key={i}>
+              <KubeRecord name="Key" value={key} />
+              <KubeRecord name="Operator" value={operator} />
+              <KubeRecord name="Values" value={values?.join(', ')} />
+            </React.Fragment>
+          ))}
+        />
+      </DrawerPanel>
     </Drawer>
   );
 };

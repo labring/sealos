@@ -43,9 +43,7 @@ export const PieChart = ({ title, data, color }: PieChartProps) => {
         }
       }
     },
-    label: {
-      type: 'inner'
-    },
+    label: false,
     legend: {
       layout: 'vertical' as 'vertical',
       position: 'bottom' as 'bottom'

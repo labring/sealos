@@ -31,15 +31,15 @@ function getItem(
 const items: MenuProps['items'] = [
   getItem('Workload', 'workload', <DashboardOutlined rev={undefined} />, [
     getItem('Overview', SideNavItemKey.Overview),
-    getItem('Pod', SideNavItemKey.Pod),
-    getItem('Deployment', SideNavItemKey.Deployment),
-    getItem('StatefulSet', SideNavItemKey.StatefulSet)
+    getItem('Pods', SideNavItemKey.Pod),
+    getItem('Deployments', SideNavItemKey.Deployment),
+    getItem('Stateful Sets', SideNavItemKey.StatefulSet)
   ]),
   getItem('Config', 'config', <SettingOutlined rev={undefined} />, [
-    getItem('ConfigMap', SideNavItemKey.ConfigMap)
+    getItem('Config Maps', SideNavItemKey.ConfigMap)
   ]),
   getItem('Storage', 'storage', <DatabaseOutlined rev={undefined} />, [
-    getItem('Persistent Volume Claim', SideNavItemKey.PersistentVolumeClaim)
+    getItem('Persistent Volume Claims', SideNavItemKey.PersistentVolumeClaim)
   ])
 ];
 

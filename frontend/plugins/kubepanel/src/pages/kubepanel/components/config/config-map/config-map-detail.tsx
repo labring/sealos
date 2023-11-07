@@ -4,6 +4,7 @@ import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-
 import DrawerTitle from '../../drawer/drawer-title';
 import { entries } from 'lodash';
 import { Input } from 'antd';
+import DrawerPanel from '../../drawer/drawer-panel';
 
 interface Props {
   configMap?: ConfigMap;
@@ -26,24 +27,25 @@ const ConfigMapDetail = ({ configMap, open, onClose }: Props) => {
 
   return (
     <Drawer open={open} title={`ConfigMap: ${configMap.getName()}`} onClose={onClose}>
-      <KubeObjectInfoList obj={configMap} />
+      <DrawerPanel>
+        <KubeObjectInfoList obj={configMap} />
+      </DrawerPanel>
       <div className="m-8" />
       {data.length > 0 && (
-        <>
-          <DrawerTitle>Data</DrawerTitle>
+        <DrawerPanel title="Data">
           {data.map(([name, value = '']) => (
             <div key={name} className="mb-2">
-              <div className="text-zinc-300 font-bold pb-0.5">{name}</div>
+              {name && <div className="text-black font-medium pb-0.5">{name}</div>}
               <Input.TextArea
-                classNames={{ textarea: 'font-mono' }}
+                classNames={{ textarea: 'w-full font-mono' }}
                 wrap="off"
-                rows={6}
+                rows={10}
                 disabled
                 value={value}
               />
             </div>
           ))}
-        </>
+        </DrawerPanel>
       )}
     </Drawer>
   );

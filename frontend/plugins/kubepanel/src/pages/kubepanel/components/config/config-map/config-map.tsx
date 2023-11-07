@@ -2,11 +2,11 @@ import { KubeObjectAge } from '@/components/kube/object/kube-object-age';
 import { ConfigMap } from '@/k8slens/kube-object';
 import { ColumnsType } from 'antd/es/table';
 import { observer } from 'mobx-react';
-import { Table } from 'antd';
 import { useState } from 'react';
 import { CONFIG_MAP_STORE } from '@/store/static';
 import { useQuery } from '@tanstack/react-query';
 import ConfigMapDetail from './config-map-detail';
+import Table from '../../table/table';
 interface DataType {
   key: string;
   name: string;
@@ -55,10 +55,9 @@ const ConfigMapOverviewPage = () => {
   return (
     <>
       <Table
-        title={() => <span className="p-4 mb-4 text-xl font-light">Config Maps</span>}
+        title={"Config Maps"}
         columns={columns}
         dataSource={dataSource}
-        scroll={{ x: true }}
         onRow={(record) => ({
           onClick: () => {
             const { key } = record;

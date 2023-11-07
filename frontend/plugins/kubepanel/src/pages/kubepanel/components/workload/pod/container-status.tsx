@@ -4,6 +4,7 @@ import moment from 'moment-timezone';
 import { getStatusColor } from '@/utils/status-color';
 import { entries, startCase } from 'lodash';
 import { KubeRecord } from '@/components/kube/kube-record';
+import React from 'react';
 
 interface ContainerStatusProps {
   state: string;
@@ -74,12 +75,10 @@ export const renderContainerStateTooltipTitle = (
       </div>
       <div className="flex flex-col align-center flex-wrap w-max">
         {entries(state[key]).map(([name, value]) => (
-          <KubeRecord
-            color={{ nameColor: 'white', valueColor: 'white' }}
-            key={name}
-            name={startCase(name)}
-            value={value}
-          />
+          <div className="grid gap-2.5 grid-cols-[max-content_1fr] grid-flow-row" key={name}>
+            <div className="text-right font-medium">{startCase(name)}</div>
+            <div className="text-left font-light text-gray-300">{value}</div>
+          </div>
         ))}
       </div>
     </>

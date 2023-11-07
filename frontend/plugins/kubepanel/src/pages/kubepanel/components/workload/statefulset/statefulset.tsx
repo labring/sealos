@@ -5,9 +5,9 @@ import { useQuery } from '@tanstack/react-query';
 import { ColumnsType } from 'antd/es/table';
 import { observer } from 'mobx-react';
 import { useRef, useState } from 'react';
-import { Table } from 'antd';
 import StatefulSetDetail from './statefulset-detail';
 import { RequestController } from '@/utils/request-controller';
+import Table from '../../table/table';
 
 interface DataType {
   key: string;
@@ -72,10 +72,9 @@ const StatefulSetOverviewPage = () => {
   return (
     <>
       <Table
-        title={() => <span className="p-4 mb-4 text-xl font-light">Stateful Sets</span>}
+        title={"Stateful Sets"}
         columns={columns}
         dataSource={dataSource}
-        scroll={{ x: true }}
         onRow={(record) => ({
           onClick: () => {
             const { key } = record;

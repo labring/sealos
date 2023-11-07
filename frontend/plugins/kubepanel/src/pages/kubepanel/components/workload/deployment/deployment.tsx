@@ -3,11 +3,12 @@ import { BaseKubeObjectCondition, Deployment, DeploymentStatus } from '@/k8slens
 import { DEPLOYMENT_STORE } from '@/store/static';
 import { getConditionColor } from '@/utils/condtion-color';
 import { useQuery } from '@tanstack/react-query';
-import { Tooltip, Table } from 'antd';
+import { Tooltip } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import { observer } from 'mobx-react';
 import { useState } from 'react';
 import DeploymentDetail from './deployment-detail';
+import Table from '../../table/table';
 
 interface DataType {
   key: string;
@@ -77,10 +78,9 @@ const DeploymentOverviewPage = () => {
   return (
     <>
       <Table
-        title={() => <span className="p-4 mb-4 text-xl font-light">Deployments</span>}
+        title={"Deployments"}
         columns={columns}
         dataSource={dataSource}
-        scroll={{ x: true }}
         onRow={(record) => ({
           onClick: () => {
             const { key } = record;

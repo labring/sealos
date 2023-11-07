@@ -8,6 +8,7 @@ import PodDetailTolerations from './pod-detail-tolerations';
 import PodDetailAffinities from './pod-detail-affinities';
 import ContainerDetail from './container-detail';
 import Drawer from '../../drawer/drawer';
+import DrawerPanel from '../../drawer/drawer-panel';
 
 interface Props {
   pod?: Pod;
@@ -55,73 +56,71 @@ const PodInfo = ({ pod }: { pod: Pod }) => {
   // }));
 
   return (
-    <>
-      <div className="p-2">
-        <KubeObjectInfoList obj={pod} />
-        <KubeRecord name="Status" value={<PodStatus status={pod.getStatusMessage()} />} />
-        <KubeRecord name="Pod IP" value={podIP} />
-        <KubeRecord
-          hidden={podIPs.length === 0}
-          name="Pod IPs"
-          value={podIPs.map((label) => (
-            <KubeBadge key={label} label={label} />
-          ))}
-        />
-        <KubeRecord
-          name="Service Account"
-          value={
-            // TODO: Link
-            <>{serviceAccountName}</>
-          }
-        />
-        <KubeRecord
-          hidden={priorityClassName === ''}
-          name="Priority Class"
-          value={
-            // TODO: Link
-            <>{priorityClassName}</>
-          }
-        />
-        <KubeRecord name="QoS Class" value={pod.getQosClass()} />
-        <KubeRecord
-          hidden={runtimeClassName === ''}
-          name="Runtime Class"
-          value={
-            // TODO: Link
-            <>{runtimeClassName}</>
-          }
-        />
+    <DrawerPanel>
+      <KubeObjectInfoList obj={pod} />
+      <KubeRecord name="Status" value={<PodStatus status={pod.getStatusMessage()} />} />
+      <KubeRecord name="Pod IP" value={podIP} />
+      <KubeRecord
+        hidden={podIPs.length === 0}
+        name="Pod IPs"
+        value={podIPs.map((label) => (
+          <KubeBadge key={label} label={label} />
+        ))}
+      />
+      <KubeRecord
+        name="Service Account"
+        value={
+          // TODO: Link
+          <>{serviceAccountName}</>
+        }
+      />
+      <KubeRecord
+        hidden={priorityClassName === ''}
+        name="Priority Class"
+        value={
+          // TODO: Link
+          <>{priorityClassName}</>
+        }
+      />
+      <KubeRecord name="QoS Class" value={pod.getQosClass()} />
+      <KubeRecord
+        hidden={runtimeClassName === ''}
+        name="Runtime Class"
+        value={
+          // TODO: Link
+          <>{runtimeClassName}</>
+        }
+      />
 
-        <KubeRecord
-          hidden={conditions.length === 0}
-          name={'Conditions'}
-          value={
-            <>
-              {conditions.map(({ type, status, lastTransitionTime }) => (
-                <Tooltip
-                  key={type}
-                  title={`Last transition time: ${lastTransitionTime ?? '<unknown>'}`}
-                >
-                  <KubeBadge label={type} disabled={status === 'False'} />
-                </Tooltip>
-              ))}
-            </>
-          }
-        />
-        <PodDetailTolerations workload={pod} />
-        <PodDetailAffinities workload={pod} />
+      <KubeRecord
+        hidden={conditions.length === 0}
+        name={'Conditions'}
+        value={
+          <>
+            {conditions.map(({ type, status, lastTransitionTime }) => (
+              <Tooltip
+                key={type}
+                title={`Last transition time: ${lastTransitionTime ?? '<unknown>'}`}
+              >
+                <KubeBadge label={type} disabled={status === 'False'} />
+              </Tooltip>
+            ))}
+          </>
+        }
+      />
+      <PodDetailTolerations workload={pod} />
+      <PodDetailAffinities workload={pod} />
 
-        <KubeRecord
-          hidden={secrets.length === 0}
-          name="Secrets"
-          value={secrets.map((secret) => (
-            <div className="mb-1 last:mb-0" key={secret}>
-              {secret}
-            </div>
-          ))}
-        />
-      </div>
-    </>
+      <KubeRecord
+        hidden={secrets.length === 0}
+        name="Secrets"
+        value={secrets.map((secret) => (
+          <div className="mb-1 last:mb-0" key={secret}>
+            {secret}
+          </div>
+        ))}
+      />
+    </DrawerPanel>
   );
 };
 
