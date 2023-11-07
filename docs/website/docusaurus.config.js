@@ -1,5 +1,6 @@
 // @ts-check
 const generateAlgoliKey = () => "ce5b8e1e4d0d35ff587caf75ac404df4"
+require('dotenv').config()
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -11,7 +12,7 @@ const config = {
   onBrokenMarkdownLinks: "warn",
   favicon: "img/favicon.ico",
   customFields: {
-    bdToken: process.env.BD_TOKEN,
+    BD_TOKEN: process.env.BD_TOKEN,
   },
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -198,6 +199,10 @@ const config = {
     {
       src: "https://cdn.bootcdn.net/ajax/libs/wow/1.1.2/wow.min.js",
       async: false,
+    },
+    {
+      src: "/global.js",
+      async: true,
     }
   ],
   headTags: [
@@ -206,6 +211,13 @@ const config = {
       attributes: {
         name: 'baidu-site-verification',
         content: 'codeva-gAHDaifnOq',
+      },
+    },
+    {
+      tagName: 'meta',
+      attributes: {
+        name: 'baidu-site-verification',
+        content: 'codeva-E1X5UKtV9p',
       },
     }
   ],
