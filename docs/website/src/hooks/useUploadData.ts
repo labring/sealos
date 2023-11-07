@@ -4,7 +4,7 @@ import useIsBrowser from '@docusaurus/useIsBrowser';
 
 export default function useUploadData() {
   const isBrowser = useIsBrowser();
-  const [id, setId] = useState('');
+  const [bd_vid, setBdId] = useState('');
   const {
     siteConfig: { customFields }
   } = useDocusaurusContext();
@@ -13,15 +13,15 @@ export default function useUploadData() {
     if (!isBrowser) return;
     console.log(customFields);
     let bd_vid = sessionStorage.getItem('bd_vid');
-    if (bd_vid) setId(bd_vid);
+    if (bd_vid) setBdId(bd_vid);
   }, [isBrowser]);
 
   async function uploadConvertData(params: { newType: number }[]) {
-    if (!isBrowser || !customFields?.BD_TOKEN || !id) return;
+    if (!isBrowser || !customFields?.BD_TOKEN || !bd_vid) return;
     const url = 'https://ocpc.baidu.com/ocpcapi/api/uploadConvertData';
-    const logidUrl = `${window.location.origin}?bd_vid=${id}`;
+    const logidUrl = `${window.location.origin}?bd_vid=${bd_vid}`;
 
-    console.log(customFields, id, '========', logidUrl);
+    console.log(customFields, bd_vid, logidUrl);
 
     const data = {
       token: customFields?.BD_TOKEN,
@@ -38,7 +38,7 @@ export default function useUploadData() {
   }
 
   return {
-    id,
+    bd_vid,
     uploadConvertData
   };
 }

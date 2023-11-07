@@ -43,7 +43,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
   const [stars, setStars] = useState(10000);
   const isBrowser = useIsBrowser();
   const { cloudUrl } = useWindow();
-  const { uploadConvertData } = useUploadData();
+  const { uploadConvertData, bd_vid } = useUploadData();
 
   const i18nMap: { [key: string]: { label: string; link: string } } = {
     en: { label: '中', link: '/zh-Hans/' },
@@ -133,7 +133,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
               一样使用 Sealos！
             </h3>
           )}
-          <a className="start-now-button" href={cloudUrl} target="_blank">
+          <a className="start-now-button" href={`${cloudUrl}?bd_vid=${bd_vid}`} target="_blank">
             {i18nObj.startNow}
             <div className="start-now-button-wrap"></div>
           </a>
@@ -200,7 +200,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
               </Link>
             </div>
           )}
-          <a className="start-now-button" href={cloudUrl} target="_blank">
+          <a className="start-now-button" href={`${cloudUrl}?bd_vid=${bd_vid}`} target="_blank">
             {i18nObj.startNow}
             <div className="start-now-button-wrap"></div>
           </a>
