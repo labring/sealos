@@ -1,10 +1,6 @@
 name: Build Cloud Cluster image
 
 on:
-  workflow_run:
-    workflows: [ "Build Controllers image", "Build Frontend Image" ]
-    types:
-      - completed
   workflow_call:
     inputs:
       push_image:

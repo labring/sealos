@@ -45,11 +45,28 @@ jobs:
     uses: ./.github/workflows/cloud.yml
     with:
       push_image: true
-<<<<<<< HEAD
       push_image_tag: ${{ github.event.release.tag_name }}
       build_from: ${{ github.event.release.tag_name }}
     secrets: inherit
-=======
-      push_image_tag: ${{ env.TAG }}
-      build_from: ${{ env.TAG }}
->>>>>>> 73be102a (Release ci (#26))
+
+  release-offline-tar:
+    needs:
+      - release-cloud
+    runs-on: ubuntu:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build
+        run: export CLOUD_VERSION=${{ github.event.release.tag_name }} && bash ./scripts/cloud/build-offline-tar.sh
+      - name: Setup ossutil
+        uses: manyuanrong/setup-ossutil@v2.0
+        with:
+          endpoint: ${{ secrets.OSS_ENDPOINT }}
+          access-key-id: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          access-key-secret: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+      - name: Cat md5sum
+        run: cat ./sealos-cloud.tar.gz.md5
+      - name: Upload
+        run: |
+          ossutil cp ./sealos-cloud.tar.gz oss://${{ secrets.OSS_BUCKET }}/cloud/sealos-cloud-${{ github.event.release.tag_name }}.tar.gz
+          ossutil cp ./sealos-cloud.tar.gz.md5 oss://${{ secrets.OSS_BUCKET }}/cloud/sealos-cloud-${{ github.event.release.tag_name }}.tar.gz.md5
