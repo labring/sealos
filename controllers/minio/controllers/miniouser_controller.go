@@ -65,6 +65,7 @@ const (
 //+kubebuilder:rbac:groups=minio.sealos.io,resources=miniousers,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=minio.sealos.io,resources=miniousers/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=minio.sealos.io,resources=miniousers/finalizers,verbs=update
+//+kubebuilder:rbac:groups=minio.sealos.io,resources=buckets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 
 func (r *MinioUserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -165,7 +166,7 @@ func (r *MinioUserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
-	//r.Logger.V(1).Info("[user] user info", "name", minioUser.Name, "quota", minioUser.Status.Quota, "size", size)
+	r.Logger.V(1).Info("[user] user info", "name", minioUser.Name, "quota", minioUser.Status.Quota, "size", size, "objectsCount", minioUser.Status.ObjectsCount)
 
 	if size > minioUser.Status.Quota {
 		if err := r.addUserToGroup(ctx, accessKey, UserDenyWriteGroup); err != nil {
