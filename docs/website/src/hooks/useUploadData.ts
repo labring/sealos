@@ -11,18 +11,20 @@ export default function useUploadData() {
 
   useEffect(() => {
     if (!isBrowser) return;
+    console.log(customFields);
     let bd_vid = sessionStorage.getItem('bd_vid');
     if (bd_vid) setId(bd_vid);
   }, [isBrowser]);
 
   async function uploadConvertData(params: { newType: number }[]) {
-    if (!isBrowser || !customFields?.bdToken || !id) return;
+    if (!isBrowser || !customFields?.BD_TOKEN || !id) return;
     const url = 'https://ocpc.baidu.com/ocpcapi/api/uploadConvertData';
     const logidUrl = `${window.location.origin}?bd_vid=${id}`;
+
     console.log(customFields, id, '========', logidUrl);
 
     const data = {
-      token: customFields.bdToken,
+      token: customFields?.BD_TOKEN,
       conversionTypes: params.map((newType) => ({ logidUrl: logidUrl, newType: newType }))
     };
 

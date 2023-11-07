@@ -174,7 +174,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
                     console.log('uploadConvertData');
                     uploadConvertData([
                       {
-                        newType: 51
+                        newType: 1
                       }
                     ]);
                   }
