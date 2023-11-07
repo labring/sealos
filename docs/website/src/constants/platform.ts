@@ -1,1 +1,1 @@
-export const PC_MIN_WIDTH = 996
+export const PC_MIN_WIDTH = 1000;

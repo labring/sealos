@@ -165,7 +165,7 @@
       .txt-title {
         color: #379fff;
       }
-      @media screen and (min-width: 450px) and (max-width: 996px) {
+      @media screen and (min-width: 450px) and (max-width: 1000px) {
         padding: 0 60px;
       }
     }
@@ -178,6 +178,13 @@
     justify-content: center;
     align-items: center;
   }
+}
+
+.sealos_home_header_title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
 }
 
 @media screen and (max-width: 1220px) {

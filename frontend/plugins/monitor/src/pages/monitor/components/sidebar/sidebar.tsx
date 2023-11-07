@@ -35,7 +35,9 @@ const items: MenuProps['items'] = [
     getItem('Deployment', SideNavItemKey.Deployment),
     getItem('StatefulSet', SideNavItemKey.StatefulSet)
   ]),
-  getItem('Config', 'config', <SettingOutlined rev={undefined}/>, [getItem('ConfigMap', SideNavItemKey.ConfigMap)]),
+  getItem('Config', 'config', <SettingOutlined rev={undefined} />, [
+    getItem('ConfigMap', SideNavItemKey.ConfigMap)
+  ]),
   getItem('Storage', 'storage', <DatabaseOutlined rev={undefined} />, [
     getItem('Persistent Volume Claim', SideNavItemKey.PersistentVolumeClaim)
   ])

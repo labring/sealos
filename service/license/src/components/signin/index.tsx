@@ -55,14 +55,13 @@ export default function SigninComponent() {
     isLoading: passwordLoading
   } = usePassword({ showError });
   const isLoading = useMemo(() => passwordLoading || smsLoading, [passwordLoading, smsLoading]);
-  const isSignIn = useSessionStore((s) => s.isUserLogin);
-  const router = useRouter();
-
-  useEffect(() => {
-    if (isSignIn()) {
-      router.push('/pricing');
-    }
-  }, [isSignIn, router]);
+  // const isSignIn = useSessionStore((s) => s.isUserLogin);
+  // const router = useRouter();
+  // useEffect(() => {
+  //   if (isSignIn()) {
+  //     router.push('/pricing');
+  //   }
+  // }, [isSignIn, router]);
 
   const { AuthList } = useAuthList();
 

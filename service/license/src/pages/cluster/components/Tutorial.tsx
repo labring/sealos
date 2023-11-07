@@ -29,7 +29,22 @@ export default function Tutorial({
   clusterId: string;
   ossFileName: string;
 }) {
-  let fileName = useMemo(() => ossFileName.replace('/cloud/', ''), [ossFileName]);
+  let { fileNameParams, bashParams } = useMemo(() => {
+    if (ossFileName) {
+      let match = /cloud-(.*?)\.tar/g.exec(ossFileName);
+      return {
+        fileNameParams: ossFileName?.replace('/cloud/', ''),
+        bashParams: match ? `--cloud-version=${match[1]}` : '--cloud-version v5.0.0-beta1'
+      };
+    } else {
+      return {
+        fileNameParams: '',
+        bashParams: ''
+      };
+    }
+  }, [ossFileName]);
+  // console.log(ossFileName, fileNameParams, bashParams);
+
   const { t } = useTranslation();
   const { copyData } = useCopyData();
   const [ossLink, setOssLink] = useState('');
@@ -179,7 +194,7 @@ export default function Tutorial({
             <Box mt="12px" fontSize={'14px'} fontWeight={400}>
               Sealos 需要使用证书来保证通信安全，默认在您不提供证书的情况下我们会使用
               <Link href="https://cert-manager.io/docs/" color={'#219BF4'} px="4px">
-                cret-manager
+                cert-manager
               </Link>
               来自动签发证书。
             </Box>
@@ -239,14 +254,18 @@ export default function Tutorial({
               <Text mt="24px" fontSize={'16px'} fontWeight={600} mb="12px">
                 服务器上下载
               </Text>
-              <CodeBlock language="bash" code={`wget ${ossLink}`}></CodeBlock>
+              <CodeBlock
+                language="bash"
+                code={`wget '${ossLink}' -O ${fileNameParams}`}
+              ></CodeBlock>
               <Divider my="20px" />
               <Text mt="12px" fontSize={'16px'} fontWeight={600} mb="12px">
                 部署集群
               </Text>
               <CodeBlock
                 language="bash"
-                code={`tar xzf ${fileName} && cd sealos-cloud && bash install.sh`}
+                code={`tar xzvf ${fileNameParams} \n && cd sealos-cloud && bash install.sh`}
+                copyValue={`tar xzvf ${fileNameParams} && cd sealos-cloud && bash install.sh`}
               ></CodeBlock>
             </AccordionPanel>
           </AccordionItem>
@@ -263,7 +282,7 @@ export default function Tutorial({
           <AccordionPanel py="20px" pl="40px" gap={'12px'}>
             <CodeBlock
               language="bash"
-              code={`curl -sfL https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh`}
+              code={`curl -sfL https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh ${bashParams}`}
             ></CodeBlock>
           </AccordionPanel>
         </AccordionItem>

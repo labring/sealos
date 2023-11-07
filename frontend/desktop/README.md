@@ -244,3 +244,9 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
   GOOGLE_CLIENT_ID=
   GOOGLE_CLIENT_SECRET=
   ```
+  - team
+  
+  ```
+  // default is '50'
+    TEAM_LIMIT="50"
+  ```

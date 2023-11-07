@@ -1,8 +1,29 @@
 import SigninComponent from '@/components/Signin';
+import useRouteParamsStore from '@/stores/routeParams';
+import useSessionStore from '@/stores/session';
+import { ClusterType } from '@/types';
 import { compareFirstLanguages } from '@/utils/tools';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
 
 export default function SigninPage() {
+  const router = useRouter();
+  const { data: routeParams, setRouteParams, clearRouteParams } = useRouteParamsStore();
+  const { isUserLogin } = useSessionStore();
+
+  useEffect(() => {
+    const { clusterType, external } = router.query;
+    console.log(clusterType, external, '--------');
+    if (external && clusterType) {
+      setRouteParams(external as string, clusterType as ClusterType);
+    }
+    if (isUserLogin()) {
+      router.push('/pricing');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return <SigninComponent />;
 }
 

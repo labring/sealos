@@ -1,13 +1,9 @@
-import {
-  KubeObject,
-  KubeObjectMetadata,
-  KubeObjectScope,
-} from "@/k8slens/kube-object";
+import { KubeObject, KubeObjectMetadata, KubeObjectScope } from '@/k8slens/kube-object';
 
 export type OwnerRef<
   Metadata extends KubeObjectMetadata<KubeObjectScope> = KubeObjectMetadata<KubeObjectScope>
 > = {
-  namespace: Metadata["namespace"];
+  namespace: Metadata['namespace'];
   apiVersion: string;
   kind: string;
   name: string;
@@ -28,9 +24,7 @@ export type KubeObjectInfo = {
   ownerRefs: Array<OwnerRef>;
 };
 
-export const getKubeObjectInfo = <K extends KubeObject = KubeObject>(
-  obj: K
-): KubeObjectInfo => {
+export const getKubeObjectInfo = <K extends KubeObject = KubeObject>(obj: K): KubeObjectInfo => {
   return {
     creationTimestamp: obj.metadata.creationTimestamp,
     name: obj.metadata.name,
@@ -39,6 +33,6 @@ export const getKubeObjectInfo = <K extends KubeObject = KubeObject>(
     labels: obj.getLabels(),
     annotations: obj.getAnnotations(),
     finalizers: obj.getFinalizers(),
-    ownerRefs: obj.getOwnerRefs(),
+    ownerRefs: obj.getOwnerRefs()
   };
 };

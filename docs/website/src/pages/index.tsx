@@ -1,21 +1,47 @@
 import '@site/src/css/animate.css';
 import Layout from '@theme/Layout';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
+import { Helmet } from 'react-helmet';
 import { PC_MIN_WIDTH } from '../constants/platform';
 import useWindow from '../hooks/useWindow';
+import Banner from './components/Banner';
 import Capability from './components/Capability';
 import Community from './components/Community';
 import HomeFooter from './components/Footer';
 import HomeHeader from './components/Header';
 import Introduce from './components/Introduce';
 import HomeUserBy from './components/UserBy';
-import { Helmet } from 'react-helmet';
 import './index.scss';
-import Banner from './components/Banner';
 
 const Home = () => {
-  const { screenWidth } = useWindow();
+  const { screenWidth, currentLanguage, cloudUrl } = useWindow();
   const isPc = useMemo(() => screenWidth > PC_MIN_WIDTH, [screenWidth]);
+
+  useEffect(() => {
+    const loadUmamiScript = () => {
+      const hostname = window.location.hostname;
+      if (hostname === 'sealos.run') {
+        const script1 = document.createElement('script');
+        script1.src = 'https://umami.cloud.sealos.io/oishii';
+        script1.setAttribute('data-website-id', 'e5a8009f-7cb6-4841-9522-d23b96216b7a');
+        script1.async = true;
+        document.head.appendChild(script1);
+      } else {
+        const script2 = document.createElement('script');
+        script2.src = 'https://umami.cloud.sealos.io/oishii';
+        script2.setAttribute('data-website-id', 'a1c29ace-b288-431a-a2eb-8617d1d5b5ed');
+        script2.async = true;
+        document.head.appendChild(script2);
+      }
+    };
+    loadUmamiScript();
+  }, []);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const bd_vidValue = urlParams.get('bd_vid');
+    sessionStorage.setItem('bd_vid', bd_vidValue);
+  }, []);
 
   const HomeRender = (
     <div id="sealos-layout-wrap-home-page">
@@ -31,11 +57,8 @@ const Home = () => {
             gtag('event', 'conversion', {'send_to': 'AW-786053845/LpbTCJ-8-coYENX16PYC'});
           `}
         </script>
-        <script
-          async
-          src="https://umami.cloud.sealos.io/oishii"
-          data-website-id="a1c29ace-b288-431a-a2eb-8617d1d5b5ed"
-        ></script>
+        <meta name="baidu-site-verification" content="codeva-gAHDaifnOq" />
+        {/* <script src="./linkInterception.js"></script> */}
       </Helmet>
       <Layout>
         <div className="home">

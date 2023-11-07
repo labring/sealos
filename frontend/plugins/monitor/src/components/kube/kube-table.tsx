@@ -1,13 +1,4 @@
-import {
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  TableContainer,
-  TableCaption,
-} from "@chakra-ui/react";
+import { Table, Thead, Tbody, Tr, Th, Td, TableContainer, TableCaption } from '@chakra-ui/react';
 
 export type Row = {
   idx: string | number;
@@ -21,18 +12,11 @@ export type KubeTableParams = {
 };
 
 export const KubeTable = ({ columnNames, rows }: KubeTableParams) => {
-  const columnNamesTags = columnNames.map((name, idx) => (
-    <Th key={idx}>{name}</Th>
-  ));
+  const columnNamesTags = columnNames.map((name, idx) => <Th key={idx}>{name}</Th>);
   return (
-    <TableContainer overflowX="scroll" maxW={"100vw"}>
+    <TableContainer overflowX="scroll" maxW={'100vw'}>
       <Table variant="simple">
-        <Thead
-          bgColor={"gray.100"}
-          borderRadius={"4px"}
-          padding={"2px"}
-          mb={"10px"}
-        >
+        <Thead bgColor={'gray.100'} borderRadius={'4px'} padding={'2px'} mb={'10px'}>
           <Tr>{columnNamesTags}</Tr>
         </Thead>
         <Tbody>
@@ -43,7 +27,7 @@ export const KubeTable = ({ columnNames, rows }: KubeTableParams) => {
                 row.onClickRow && row.onClickRow(row.idx);
               }}
               key={row.idx}
-              cursor={row.onClickRow ? "pointer" : "initial"}
+              cursor={row.onClickRow ? 'pointer' : 'initial'}
             >
               {row.tds.map((td, idx) => (
                 <Td key={idx}>{td}</Td>

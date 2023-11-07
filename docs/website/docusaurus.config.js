@@ -9,8 +9,10 @@ const config = {
   baseUrl: "/",
   onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "warn",
-  favicon: "img/sealos.ico",
-
+  favicon: "img/favicon.ico",
+  customFields: {
+    bdToken: process.env.BD_TOKEN,
+  },
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: "labring", // Usually your GitHub org/user name.
@@ -104,6 +106,11 @@ const config = {
         },
         {
           position: "left",
+          to: "/self-hosting",
+          label: "Hosting"
+        },
+        {
+          position: "left",
           to: "https://fael3z0zfze.feishu.cn/share/base/form/shrcnesSfEK65JZaAf2W6Fwz6Ad",
           label: "Contact",
         },
@@ -193,8 +200,28 @@ const config = {
       async: false,
     }
   ],
+  headTags: [
+    {
+      tagName: 'meta',
+      attributes: {
+        name: 'baidu-site-verification',
+        content: 'codeva-gAHDaifnOq',
+      },
+    }
+  ],
   plugins: [
     'docusaurus-plugin-sass',
+    async function myPlugin (context, options) {
+      return {
+        name: "docusaurus-tailwindcss",
+        configurePostCss (postcssOptions) {
+          // Appends TailwindCSS and AutoPrefixer.
+          postcssOptions.plugins.push(require("tailwindcss"))
+          postcssOptions.plugins.push(require("autoprefixer"))
+          return postcssOptions
+        },
+      }
+    },
   ]
 }
 
