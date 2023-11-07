@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const href = event.target.getAttribute("href")
       const currentHostname = window.location.hostname
       const bdId = sessionStorage.getItem("bd_vid")
-      console.log(bdId)
+      console.log(bdId, 'bd_vid')
       if (href.includes("sealos.io") || href.includes("sealos.top") || href.includes("sealos.run")) {
         event.preventDefault()
         console.log("特殊处理链接： " + href)

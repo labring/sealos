@@ -176,7 +176,9 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
                       {
                         newType: 1
                       }
-                    ]);
+                    ])
+                      .then((response) => response && response.json())
+                      .then((data) => console.log(data, 'bd_res'));
                   }
                 }}
               >
