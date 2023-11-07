@@ -58,6 +58,8 @@ jobs:
           context: ./docs
           file: ./docs/website/Dockerfile
           push: true
+          build-args: |
+            BD_TOKEN=${{ env.BD_TOKEN }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 

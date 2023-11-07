@@ -93,6 +93,8 @@ jobs:
           github-comment: false
           # vercel-args: '--local-config vercel.json' # Optional
           working-directory: ${{ env.BUILD_PATH }}/build
+        env:
+          BD_TOKEN: "${{ secrets.BD_TOKEN }}"
 
   docsOutput:
     needs: [ build ]
