@@ -53,7 +53,7 @@ const (
 	PublicReadwriteBucketPolicy  = "publicReadwrite"
 )
 
-//+kubebuilder:rbac:groups=minio.sealos.io,resources=buckets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=minio.sealos.io,resources=buckets,verbs=get;list;watch;create;update;patch;delete;deletecollection
 //+kubebuilder:rbac:groups=minio.sealos.io,resources=buckets/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=minio.sealos.io,resources=buckets/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete

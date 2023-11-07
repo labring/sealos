@@ -52,7 +52,6 @@ type MinioUserReconciler struct {
 const (
 	MinioAdminSecret           = "minio-sealos-user-0"
 	MinioNamespace             = "minio-system"
-	MinioUserSecret            = "minio-sealos-user-secret"
 	UserNormalGroup            = "userNormal"
 	UserDenyWriteGroup         = "userDenyWrite"
 	AccessKey                  = "CONSOLE_ACCESS_KEY"
@@ -65,7 +64,6 @@ const (
 //+kubebuilder:rbac:groups=minio.sealos.io,resources=miniousers,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=minio.sealos.io,resources=miniousers/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=minio.sealos.io,resources=miniousers/finalizers,verbs=update
-//+kubebuilder:rbac:groups=minio.sealos.io,resources=buckets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 
 func (r *MinioUserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -252,15 +250,6 @@ func (r *MinioUserReconciler) removeUserFromGroup(ctx context.Context, user stri
 }
 
 func (r *MinioUserReconciler) deleteMinioUser(ctx context.Context, username, userNamespace string) error {
-	// delete minio secret
-	secret := &corev1.Secret{}
-	secret.Name = MinioUserSecret
-	secret.Namespace = userNamespace
-	if err := r.Delete(ctx, secret); client.IgnoreNotFound(err) != nil {
-		r.Logger.Error(err, "failed to delete minio secret", "name", MinioUserSecret, "namespace", userNamespace)
-		return err
-	}
-
 	// delete all minio bucket cr of user
 	if err := r.Client.DeleteAllOf(ctx, &miniov1.Bucket{}, client.InNamespace(userNamespace)); client.IgnoreNotFound(err) != nil {
 		r.Logger.Error(err, "failed to delete all bucket of user", "name", username, "namespace", userNamespace)
