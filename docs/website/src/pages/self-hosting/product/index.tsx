@@ -4,6 +4,7 @@ import React from 'react';
 
 export default function Product() {
   const standard = ['工单服务', '应用管理', '高可用数据库', '应用市场', '多租户', '计量/配额'];
+
   const company = [
     '工单/即时通信服务',
     '周一到周五, 8h 内响应',
@@ -13,6 +14,7 @@ export default function Product() {
     '多租户',
     '计量/配额'
   ];
+
   const contact = [
     '定制化开发与业务云原生化服务',
     '超大规模集群',

@@ -37,6 +37,12 @@ const Home = () => {
     loadUmamiScript();
   }, []);
 
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const bd_vidValue = urlParams.get('bd_vid');
+    sessionStorage.setItem('bd_vid', bd_vidValue);
+  }, []);
+
   const HomeRender = (
     <div id="sealos-layout-wrap-home-page">
       <Banner />
@@ -52,6 +58,7 @@ const Home = () => {
           `}
         </script>
         <meta name="baidu-site-verification" content="codeva-gAHDaifnOq" />
+        {/* <script src="./linkInterception.js"></script> */}
       </Helmet>
       <Layout>
         <div className="home">

@@ -9,6 +9,7 @@ import LogoIcon from '@site/static/icons/sealos.svg';
 import React, { useEffect, useState } from 'react';
 import VideoPlayer from '../VideoPlayer';
 import './index.scss';
+import useUploadData from '@site/src/hooks/useUploadData';
 
 const navbar = [
   {
@@ -42,6 +43,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
   const [stars, setStars] = useState(10000);
   const isBrowser = useIsBrowser();
   const { cloudUrl } = useWindow();
+  const { uploadConvertData } = useUploadData();
 
   const i18nMap: { [key: string]: { label: string; link: string } } = {
     en: { label: '中', link: '/zh-Hans/' },
@@ -164,7 +166,20 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
           </div>
           <div className="links">
             {navbar.map((item) => (
-              <Link key={item.key} to={item.to}>
+              <Link
+                key={item.key}
+                to={item.to}
+                onClick={() => {
+                  if (item.key === 'contact') {
+                    console.log('uploadConvertData');
+                    uploadConvertData([
+                      {
+                        newType: 51
+                      }
+                    ]);
+                  }
+                }}
+              >
                 {item.label}
               </Link>
             ))}
