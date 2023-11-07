@@ -76,3 +76,5 @@ jobs:
           github-comment: false
           vercel-args: '--prod'
           working-directory: ${{ env.BUILD_PATH }}/build
+        env:
+          BD_TOKEN: "${{ secrets.BD_TOKEN }}"
