@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 const NonePage = () => {
   const router = useRouter();
   useEffect(() => {
-    router.push('/monitor');
+    router.push('/kubepanel');
   }, [router]);
 
   return <div></div>;

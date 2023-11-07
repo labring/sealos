@@ -104,6 +104,9 @@ importers:
       typed-regex:
         specifier: ^0.0.8
         version: 0.0.8
+      uuid:
+        specifier: ^9.0.1
+        version: 9.0.1
       zustand:
         specifier: ^4.3.9
         version: 4.3.9(immer@10.0.3)(react@18.0.0)

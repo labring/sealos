@@ -1,5 +1,5 @@
 {
-  "name": "monitor",
+  "name": "kubepanel",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -40,10 +40,11 @@
     "react-dom": "^18",
     "request": "^2.88.2",
     "rfc6902": "^5.0.1",
+    "sealos-desktop-sdk": "workspace:*",
     "type-fest": "^4.4.0",
     "typed-regex": "^0.0.8",
-    "zustand": "^4.3.9",
-    "sealos-desktop-sdk": "workspace:*"
+    "uuid": "^9.0.1",
+    "zustand": "^4.3.9"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.8",

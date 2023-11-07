@@ -5,7 +5,7 @@ import { Tooltip } from 'antd';
 import PodStatus from './pod-status';
 import { KubeBadge } from '@/components/kube/kube-badge';
 import PodDetailTolerations from './pod-detail-tolerations';
-import PodDetailAffinities from '@/pages/monitor/components/workload/pod/pod-detail-affinities';
+import PodDetailAffinities from './pod-detail-affinities';
 import ContainerDetail from './container-detail';
 import Drawer from '../../drawer/drawer';
 
