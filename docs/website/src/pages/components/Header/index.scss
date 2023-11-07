@@ -109,6 +109,7 @@
         border-radius: 4px;
         background: rgba(255, 255, 255, 0.2);
         filter: blur(4px);
+        pointer-events: none;
       }
 
       .start-now-button {
