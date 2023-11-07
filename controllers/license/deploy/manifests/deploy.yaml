@@ -378,11 +378,6 @@ spec:
             secretKeyRef:
               key: MONGO_URI
               name: license-secret
-        - name: CLUSTER_ID
-          valueFrom:
-            secretKeyRef:
-              key: CLUSTER_ID
-              name: license-secret
         image: ghcr.io/labring/sealos-license-controller:latest
         livenessProbe:
           httpGet:
