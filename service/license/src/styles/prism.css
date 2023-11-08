@@ -1,13 +1,13 @@
-pre {
-  background-color: #24282c !important;
-  color: #fff;
-}
+/* pre {
+  background-color: transparent !important;
+  color: #24282c;
+} */
 
 .operator {
-  color: #91ded9;
+  color: #00a9a6;
 }
 
 .token.function,
 .token.builtin {
-  color: #5ebdf2;
+  color: #219bf4;
 }

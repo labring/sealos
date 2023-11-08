@@ -45,16 +45,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         }, 60 * 1000);
       });
       const gitOperationPromise = !fs.existsSync(targetPath)
-        ? execAsync(`git clone --depth 1 ${repoHttpUrl} ${targetPath}`)
+        ? execAsync(`git clone ${repoHttpUrl} ${targetPath}`)
         : execAsync(`cd ${targetPath} && git pull`);
 
       await Promise.race([gitOperationPromise, timeoutPromise]);
     } catch (error) {
-      // return jsonRes(res, { error: 'git operation timed out', code: 500 });
+      console.log('git operation timed out');
     }
 
     if (!fs.existsSync(targetPath)) {
-      return jsonRes(res, { error: 'template repo err', code: 500 });
+      return jsonRes(res, { error: 'missing template repository file', code: 500 });
     }
 
     let fileList: unknown[] = [];
