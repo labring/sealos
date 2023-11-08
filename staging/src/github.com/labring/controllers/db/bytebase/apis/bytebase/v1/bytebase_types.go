@@ -17,9 +17,10 @@ limitations under the License.
 package v1
 
 import (
-	"github.com/labring/sealos/controllers/db/bytebase/client/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/labring/sealos/controllers/db/bytebase/client/api"
 )
 
 // +kubebuilder:validation:Enum=nginx;

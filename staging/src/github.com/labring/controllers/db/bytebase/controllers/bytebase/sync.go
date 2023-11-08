@@ -25,8 +25,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jaevor/go-nanoid"
-	bbv1 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+
+	bbv1 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
