@@ -53,7 +53,7 @@ func IsLicenseValid(license *licensev1.License, clusterID string) (bool, error) 
 		return false, err
 	}
 	// if clusterID is empty, it means this license is a super license.
-	if claims.ClusterID == "" || claims.ClusterID != clusterID {
+	if claims.ClusterID != "" && claims.ClusterID != clusterID {
 		return false, errors.ErrClusterIDNotMatch
 	}
 
