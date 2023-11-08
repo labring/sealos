@@ -14,7 +14,7 @@ import HomeUserBy from './components/UserBy';
 import './index.scss';
 
 const Home = () => {
-  const { screenWidth, currentLanguage, cloudUrl } = useWindow();
+  const { screenWidth, cloudUrl } = useWindow();
   const isPc = useMemo(() => screenWidth > PC_MIN_WIDTH, [screenWidth]);
 
   useEffect(() => {

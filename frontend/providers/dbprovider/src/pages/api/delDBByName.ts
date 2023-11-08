@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       k8sAuth.deleteNamespacedRole(name, namespace),
       k8sAuth.deleteNamespacedRoleBinding(name, namespace),
       k8sCore.deleteNamespacedServiceAccount(name, namespace)
-    ]);
+    ]).catch((err) => console.log(err, 'delete role err'));
 
     // delete cluster
     await k8sCustomObjects.deleteNamespacedCustomObject(
