@@ -19,10 +19,11 @@ import (
 
 	v1 "github.com/labring/sealos/controllers/user/api/v1"
 
-	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 )
 
 func SetupCache(mgr ctrl.Manager) error {
