@@ -26,10 +26,6 @@ import (
 	adminerv1 "github.com/labring/sealos/controllers/db/adminer/api/v1"
 )
 
-const (
-	AuthType = "basicAuth"
-)
-
 func (r *AdminerReconciler) createNginxIngress(adminer *adminerv1.Adminer, host string) *networkingv1.Ingress {
 	corsFormat := "https://%s,https://*.%s"
 	if !r.tlsEnabled {
@@ -99,11 +95,7 @@ const (
 more_clear_headers "X-Frame-Options:";
 more_set_headers "Content-Security-Policy: default-src * blob: data: *.cloud.sealos.io cloud.sealos.io; img-src * data: blob: resource: *.cloud.sealos.io cloud.sealos.io; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.cloud.sealos.io cloud.sealos.io resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.cloud.sealos.io cloud.sealos.io resource: *.baidu.com *.bdstatic.com; frame-src 'self' cloud.sealos.io *.cloud.sealos.io mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://cloud.sealos.io https://*.cloud.sealos.io";
 more_set_headers "X-Xss-Protection: 1; mode=block";
-
-if ($request_uri ~* \.(js|css|gif|jpe?g|png)) {
-expires 30d;
-add_header Cache-Control "public";
-}`
+`
 	defaultConfigDomain = "cloud.sealos.io"
 )
 

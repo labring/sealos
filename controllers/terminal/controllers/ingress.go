@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	AuthType                 = "basicAuth"
+	//TODO : higress currently do not support
 	safeConfigurationSnippet = `
 set $flag 0;
 if ($http_upgrade = 'websocket') {set $flag "${flag}1";}

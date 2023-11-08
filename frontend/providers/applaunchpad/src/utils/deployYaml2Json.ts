@@ -244,8 +244,6 @@ export const json2Ingress = (data: AppEditType) => {
       'nginx.ingress.kubernetes.io/proxy-read-timeout': '300',
       'nginx.ingress.kubernetes.io/server-snippet':
         'client_header_buffer_size 64k;\nlarge_client_header_buffers 4 128k;\n',
-      'nginx.ingress.kubernetes.io/configuration-snippet':
-        'if ($request_uri ~* \\.(js|css|gif|jpe?g|png)) {\n  expires 30d;\n  add_header Cache-Control "public";\n}\n'
     },
     GRPC: {
       'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
@@ -279,7 +277,6 @@ export const json2Ingress = (data: AppEditType) => {
           annotations: {
             'kubernetes.io/ingress.class': 'nginx',
             'nginx.ingress.kubernetes.io/proxy-body-size': '32m',
-            'nginx.ingress.kubernetes.io/server-snippet': `gzip on;gzip_min_length 1024;gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;`,
             ...map[network.protocol]
           }
         },
