@@ -1,5 +1,7 @@
 # Image Hub
 
+@Note: Deprecated, If one want to build imagehub frontend, please copy this dir into `frontend/providers/imagehub`, to have sealos workspace support.
+
 https://www.sealos.io/docs/cloud/apps/appstore/
 
 ## 目录说明
