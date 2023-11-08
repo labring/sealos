@@ -1,6 +1,5 @@
 // @ts-check
 const generateAlgoliKey = () => "ce5b8e1e4d0d35ff587caf75ac404df4"
-require('dotenv').config()
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -11,9 +10,6 @@ const config = {
   onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "warn",
   favicon: "img/favicon.ico",
-  customFields: {
-    BD_TOKEN: process.env.BD_TOKEN,
-  },
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: "labring", // Usually your GitHub org/user name.

@@ -1,3 +1,4 @@
+import { uploadConvertData } from '@/api/platform';
 import useAuthList from '@/components/signin/auth/useAuthList';
 import useCustomError from '@/components/signin/auth/useCustomError';
 import Language from '@/components/signin/auth/useLanguage';
@@ -92,6 +93,9 @@ export default function SigninComponent() {
     if (isAgree && selectedConfig) {
       const { login } = selectedConfig;
       login();
+      uploadConvertData([3]).then((res) => {
+        console.log(res);
+      });
     } else {
       setIsInvalid(true);
       showError(t('Read and agree'));

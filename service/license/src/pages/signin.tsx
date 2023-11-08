@@ -24,6 +24,15 @@ export default function SigninPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // handle baidu id
+  useEffect(() => {
+    const { bd_vid } = router.query;
+    if (bd_vid) {
+      sessionStorage.setItem('bd_vid', bd_vid as string);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return <SigninComponent />;
 }
 

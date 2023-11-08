@@ -82,6 +82,14 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     }
   }, [router, init, setAutoLaunch, sealos_cloud_domain]);
 
+  // handle baidui
+  useEffect(() => {
+    const { bd_vid } = router.query;
+    if (bd_vid) {
+      sessionStorage.setItem('bd_vid', bd_vid as string);
+    }
+  }, []);
+
   return (
     <Box position={'relative'} overflow={'hidden'} w="100vw" h="100vh">
       <Head>
