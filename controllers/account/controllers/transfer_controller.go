@@ -30,15 +30,17 @@ import (
 	"github.com/labring/sealos/controllers/pkg/crypto"
 
 	"github.com/go-logr/logr"
-	v1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 
-	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	v1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 )
 
 var MinBalance int64 = 10_000000

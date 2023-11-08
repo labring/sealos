@@ -1,0 +1,57 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: cluster-issuer-hub-service
+  namespace: hub-service-system
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@sealos.io
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: hubauth-login-sealos-io
+  namespace: hub-service-system
+spec:
+  secretName: hubauth-login-sealos-io-cert
+  dnsNames:
+    - hubauth.login.sealos.io
+  issuerRef:
+    name: cluster-issuer-hub-service
+    kind: ClusterIssuer
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hub-service-ingress
+  namespace: hub-service-system
+  labels:
+    app: hub-service
+  annotations:
+    cert-manager.io/issuer: cluster-issuer-hub-service
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+spec:
+  rules:
+    - host: hubauth.login.sealos.io
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: hub-service-manager
+                port:
+                  number: 5001
+  tls:
+    - hosts:
+        - hubauth.login.sealos.io
+      secretName: hubauth-login-sealos-io-cert

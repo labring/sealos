@@ -6,7 +6,6 @@ use (
 	./controllers/admission
 	./controllers/app
 	./controllers/db/adminer
-	./controllers/db/bytebase
 	./controllers/terminal
 	./controllers/node
 	./controllers/user
@@ -15,14 +14,15 @@ use (
 	./controllers/job/init
 	./controllers/pkg
 	./service/database
-	./service/hub
 	./service/pay
 	./staging/src/github.com/labring/image-cri-shim
 	./staging/src/github.com/labring/lvscare
 	./staging/src/github.com/labring/controllers/imagehub
 	./staging/src/github.com/labring/controllers/cluster
+	./staging/src/github.com/labring/controllers/db/bytebase
 	./staging/src/github.com/labring/controllers/infra
 	./staging/src/github.com/labring/controllers/metering
+	./staging/src/github.com/labring/service/hub
 	./webhooks/whitelist
 	./test/e2e
 )

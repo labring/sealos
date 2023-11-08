@@ -26,4 +26,4 @@ license.add: tools.verify.addlicense license.controller.add
 .PHONY: license.controller.add
 license.controller.add: tools.verify.addlicense
 	@echo "===========> Formating controllers codes"
-	@$(FIND_CONTROLLERS) -type f -name '*.go' | xargs $(TOOLS_DIR)/addlicense -v -y $(shell date +"%Y") -c "sealos." -f $(TEMPLATE)
+	@$(FIND) -type f -name '*.go' | xargs $(TOOLS_DIR)/addlicense -v -y $(shell date +"%Y") -c "sealos." -f $(TEMPLATE)

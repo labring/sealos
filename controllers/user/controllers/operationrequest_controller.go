@@ -24,6 +24,7 @@ import (
 	"github.com/go-logr/logr"
 
 	util "github.com/labring/operator-sdk/controller"
+
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
 
