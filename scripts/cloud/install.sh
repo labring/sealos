@@ -294,7 +294,7 @@ collect_input() {
               fi
           done
         fi
-        if [[ -z "$node_ips" ]]; then
+        if [[ -z "$node_ips" && $single != "y" ]]; then
           while :; do
               read -p "$(get_prompt "input_node_ips")" node_ips
               if validate_ips "$node_ips"; then
@@ -443,7 +443,7 @@ EOF
 
     get_prompt "patching_ingress"
     kubectl -n ingress-nginx patch ds ingress-nginx-controller -p '{"spec":{"template":{"spec":{"tolerations":[{"key":"node-role.kubernetes.io/control-plane","operator":"Exists","effect":"NoSchedule"}]}}}}'
-    kubectl get daemonset ingress-nginx-controller -n ingress-nginx -o json | grep https-port= >/dev/null || kubectl patch daemonset ingress-nginx-controller -n ingress-nginx --type='json' -p="[{'op': 'add', 'path': '/spec/template/spec/containers/0/args/-', 'value': '--https-port=${$cloud_port:-443}'}]"
+    kubectl get daemonset ingress-nginx-controller -n ingress-nginx -o json | grep https-port= >/dev/null || kubectl patch daemonset ingress-nginx-controller -n ingress-nginx --type='json' -p="[{'op': 'add', 'path': '/spec/template/spec/containers/0/args/-', 'value': '--https-port=${cloud_port:-443}'}]"
 
     get_prompt "installing_cloud"
 
