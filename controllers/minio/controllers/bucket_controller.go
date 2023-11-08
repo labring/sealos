@@ -98,7 +98,9 @@ func (r *BucketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 
 		// clear bucket before remove bucket
-		objects := r.MinioClient.ListObjects(ctx, bucketName, minio.ListObjectsOptions{})
+		objects := r.MinioClient.ListObjects(ctx, bucketName, minio.ListObjectsOptions{
+			Recursive: true,
+		})
 		for object := range objects {
 			if err := r.MinioClient.RemoveObject(ctx, bucketName, object.Key, minio.RemoveObjectOptions{}); err != nil {
 				r.Logger.Error(err, "failed to remove object from bucket", "object", object.Key, "bucket", bucketName)
