@@ -1,5 +1,7 @@
 # sealos bytebase
 
+@Note: Deprecated, If one want to build bytebase frontend, please copy this dir into `frontend/providers/bytebase`, to have sealos workspace support.
+
 ## directory
 
 ```
