@@ -23,7 +23,7 @@ require (
 	github.com/imdario/mergo v0.3.16
 	github.com/labring/image-cri-shim v0.0.0
 	github.com/labring/lvscare v0.0.0
-	github.com/labring/sreg v0.1.4
+	github.com/labring/sreg v0.1.6
 	github.com/manifoldco/promptui v0.9.0
 	github.com/modood/table v0.0.0-20220527013332-8d47e76dad33
 	github.com/onsi/ginkgo v1.16.5
