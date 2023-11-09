@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -136,8 +137,6 @@ func (r *MinioUserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			r.Logger.Error(err, "failed to new minio user", "name", accessKey)
 			return ctrl.Result{}, err
 		}
-		// if the minio user is newly created, just return
-		return ctrl.Result{Requeue: true, RequeueAfter: r.MinioUserDetectionCycle}, nil
 	}
 
 	// check whether the space used exceeds the quota
@@ -291,7 +290,7 @@ func (r *MinioUserReconciler) initMinioUser(minioUser *miniov1.MinioUser, userna
 	}
 
 	if minioUser.Status.SecretKey == "" {
-		minioUser.Status.SecretKey = rand.Generator(32)
+		minioUser.Status.SecretKey = rand.Generator(16)
 		updated = true
 	}
 
@@ -316,11 +315,15 @@ func (r *MinioUserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	minioUserDetectionCycleSecond := env.GetInt64EnvWithDefault(MinioUserDetectionCycleEnv, 180)
 	r.MinioUserDetectionCycle = time.Duration(minioUserDetectionCycleSecond) * time.Second
 
-	minioInternalEndpoint := env.GetEnvWithDefault(MinioInternalEndpointEnv, "minio.minio-system.svc.cluster.local")
+	minioInternalEndpoint := env.GetEnvWithDefault(MinioInternalEndpointEnv, "")
 	r.MinioInternalEndpoint = minioInternalEndpoint
 
-	minioExternalEndpoint := env.GetEnvWithDefault(MinioExternalEndpointEnv, "minioapi.dev.sealos.top")
+	minioExternalEndpoint := env.GetEnvWithDefault(MinioExternalEndpointEnv, "")
 	r.MinioExternalEndpoint = minioExternalEndpoint
+
+	if minioInternalEndpoint == "" || minioExternalEndpoint == "" {
+		return fmt.Errorf("failed to get the minio endpoint env")
+	}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&miniov1.MinioUser{}).

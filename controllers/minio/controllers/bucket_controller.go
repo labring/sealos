@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -198,8 +199,12 @@ func (r *BucketReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	minioBucketDetectionCycleSecond := env.GetInt64EnvWithDefault(MinioBucketDetectionCycleEnv, 600)
 	r.MinioBucketDetectionCycle = time.Duration(minioBucketDetectionCycleSecond) * time.Second
 
-	minioInternalEndpoint := env.GetEnvWithDefault(MinioInternalEndpointEnv, "minio.minio-system.svc.cluster.local")
+	minioInternalEndpoint := env.GetEnvWithDefault(MinioInternalEndpointEnv, "")
 	r.MinioInternalEndpoint = minioInternalEndpoint
+
+	if minioInternalEndpoint == "" {
+		return fmt.Errorf("failed to get the minio endpoint env")
+	}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&miniov1.Bucket{}).
