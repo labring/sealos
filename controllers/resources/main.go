@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"flag"
+	miniov1 "github/labring/sealos/controllers/minio/api/v1"
 	"os"
 	"time"
 
@@ -133,6 +134,9 @@ func main() {
 		os.Exit(1)
 	}
 	reconciler.Properties = resources.DefaultPropertyTypeLS
+	if reconciler.MinioClient, err = miniov1.NewMinioClient(os.Getenv("MINIO_ENDPOINT"), os.Getenv("MINIO_AK"), "MINIO_SK"); err != nil {
+		reconciler.Logger.Error(err, "failed to new minio client")
+	}
 	// timer creates tomorrow's timing table in advance to ensure that tomorrow's table exists
 	// Execute immediately and then every 24 hours.
 	time.AfterFunc(time.Until(getNextMidnight()), func() {
