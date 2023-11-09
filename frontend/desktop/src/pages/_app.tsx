@@ -30,7 +30,6 @@ const App = ({ Component, pageProps }: AppProps) => {
 
   useEffect(() => {
     const lang = getCookie('NEXT_LOCALE');
-    console.log(lang);
     i18n?.changeLanguage?.(lang);
   }, [i18n]);
 

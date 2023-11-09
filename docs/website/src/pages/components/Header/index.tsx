@@ -9,7 +9,6 @@ import LogoIcon from '@site/static/icons/sealos.svg';
 import React, { useEffect, useState } from 'react';
 import VideoPlayer from '../VideoPlayer';
 import './index.scss';
-import useUploadData from '@site/src/hooks/useUploadData';
 
 const navbar = [
   {
@@ -42,8 +41,7 @@ const i18nObj = {
 const HomeHeader = ({ isPc }: { isPc: boolean }) => {
   const [stars, setStars] = useState(10000);
   const isBrowser = useIsBrowser();
-  const { cloudUrl } = useWindow();
-  const { uploadConvertData, bd_vid } = useUploadData();
+  const { cloudUrl, bd_vid } = useWindow();
 
   const i18nMap: { [key: string]: { label: string; link: string } } = {
     en: { label: '中', link: '/zh-Hans/' },
@@ -166,22 +164,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
           </div>
           <div className="links">
             {navbar.map((item) => (
-              <Link
-                key={item.key}
-                to={item.to}
-                onClick={() => {
-                  if (item.key === 'contact') {
-                    console.log('uploadConvertData');
-                    uploadConvertData([
-                      {
-                        newType: 1
-                      }
-                    ])
-                      .then((response) => response && response.json())
-                      .then((data) => console.log(data, 'bd_res'));
-                  }
-                }}
-              >
+              <Link key={item.key} to={item.to}>
                 {item.label}
               </Link>
             ))}
@@ -194,10 +177,15 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
             <span className="git-stars">{Math.floor(stars / 1000)}k</span>
           </Link>
           {isBrowser && (
-            <div className="i18nIcon">
-              <Link to={`${location.origin}${i18nMap[currentLocale]?.link}`} target="_self">
-                {i18nMap[currentLocale]?.label}
-              </Link>
+            <div
+              className="i18nIcon"
+              onClick={() =>
+                window.location.replace(
+                  `${location.origin}${currentLocale === 'en' ? '/zh-Hans/' : '/'}`
+                )
+              }
+            >
+              {i18nMap[currentLocale]?.label}
             </div>
           )}
           <a className="start-now-button" href={`${cloudUrl}?bd_vid=${bd_vid}`} target="_blank">

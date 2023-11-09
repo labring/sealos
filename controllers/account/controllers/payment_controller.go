@@ -20,8 +20,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/pay"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+
+	"github.com/labring/sealos/controllers/pkg/pay"
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 

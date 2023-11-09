@@ -1,4 +1,4 @@
-import { getSystemEnv } from '@/api/system';
+import { getSystemEnv, uploadConvertData } from '@/api/system';
 import useAuthList from '@/components/Signin/auth/useAuthList';
 import useCustomError from '@/components/Signin/auth/useCustomError';
 import Language from '@/components/Signin/auth/useLanguage';
@@ -93,6 +93,9 @@ export default function SigninComponent() {
     if (isAgree && selectedConfig) {
       const { login } = selectedConfig;
       login();
+      uploadConvertData([3]).then((res) => {
+        console.log(res);
+      });
     } else {
       setIsInvalid(true);
       showError(t('Read and agree'));

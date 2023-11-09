@@ -17,7 +17,6 @@ buildTargets := \
 	desktop \
 	providers/terminal \
 	providers/adminer \
-	providers/bytebase \
 	providers/costcenter \
 	providers/dbprovider \
 	providers/applaunchpad \
@@ -60,12 +59,12 @@ image-prebuild: pnpm-lock.yaml
 	docker build --platform=linux/amd64 --target deps . -t $(imageOwner)sealos-deps:dev
 
 image-build-providers/%: image-prebuild
-	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=providers/$* --build-arg name=$* . 
+	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=providers/$* --build-arg name=$* .
 image-build-%: image-prebuild
-	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=$* --build-arg name=$* . 
+	docker build --platform=linux/amd64 -t $(imageOwner)sealos-$*:$(imageTag) --build-arg path=$* --build-arg name=$* .
 
 image-push-providers/%: image-build-providers/%
-	docker push $(imageOwner)sealos-$*:$(imageTag) 
+	docker push $(imageOwner)sealos-$*:$(imageTag)
 image-push-%: image-build-%
 	docker push $(imageOwner)sealos-$*:$(imageTag)
 # Default target to run all builds.

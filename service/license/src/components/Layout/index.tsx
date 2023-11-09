@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { ReactNode, useState } from 'react';
 import LangSelectSimple from '../LangSelect';
 import dynamic from 'next/dynamic';
+import Head from 'next/head';
 
 const Account = dynamic(() => import('@/components/Account'), {
   ssr: false
@@ -32,6 +33,9 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   return (
     <Flex w="100vw" h="100vh" flexDirection={'column'}>
+      <Head>
+        <title>license</title>
+      </Head>
       <Flex flexShrink={0} w="100%" alignItems={'center'} background={'#24282C'} h="56px" px="48px">
         <Image
           cursor={'pointer'}
