@@ -2,17 +2,6 @@ go 1.20
 
 use (
 	.
-	./controllers/account
-	./controllers/admission
-	./controllers/app
-	./controllers/db/adminer
-	./controllers/terminal
-	./controllers/node
-	./controllers/user
-	./controllers/resources
-	./controllers/license
-	./controllers/job/init
-	./controllers/pkg
 	./service/database
 	./service/pay
 	./staging/src/github.com/labring/image-cri-shim
