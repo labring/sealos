@@ -12,7 +12,7 @@ import { POD_STORE } from '@/store/static';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import PodDetail from './pod-detail';
-import Table from '../../table/table';
+import Table from '../../../table/table';
 
 interface ContainerDataType {
   name: string;

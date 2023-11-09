@@ -1,6 +1,6 @@
 import { KubeObjectTolerations } from '@/components/kube/object/kube-object-tolerations';
 import { KubeObject, Toleration } from '@/k8slens/kube-object';
-import DrawerCollapse from '../../drawer/drawer-collapse';
+import DrawerCollapse from '../../../drawer/drawer-collapse';
 
 interface KubeObjectWithTolerations extends KubeObject {
   getTolerations(): Toleration[];

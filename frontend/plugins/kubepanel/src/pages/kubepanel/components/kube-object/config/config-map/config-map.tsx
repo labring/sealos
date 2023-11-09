@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { CONFIG_MAP_STORE } from '@/store/static';
 import { useQuery } from '@tanstack/react-query';
 import ConfigMapDetail from './config-map-detail';
-import Table from '../../table/table';
+import Table from '../../../table/table';
 interface DataType {
   key: string;
   name: string;

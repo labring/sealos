@@ -6,8 +6,8 @@ import { getConditionColor } from '@/utils/condtion-color';
 import { Tooltip } from 'antd';
 import PodDetailTolerations from '../pod/pod-detail-tolerations';
 import PodDetailAffinities from '../pod/pod-detail-affinities';
-import Drawer from '../../drawer/drawer';
-import DrawerPanel from '../../drawer/drawer-panel';
+import Drawer from '../../../drawer/drawer';
+import DrawerPanel from '../../../drawer/drawer-panel';
 
 interface Props {
   dep?: Deployment;

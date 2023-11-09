@@ -1,10 +1,9 @@
 import { ConfigMap } from '@/k8slens/kube-object';
-import Drawer from '../../drawer/drawer';
+import Drawer from '../../../drawer/drawer';
 import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
-import DrawerTitle from '../../drawer/drawer-title';
 import { entries } from 'lodash';
-import { Input } from 'antd';
-import DrawerPanel from '../../drawer/drawer-panel';
+import DrawerPanel from '../../../drawer/drawer-panel';
+import { Editor } from '@monaco-editor/react';
 
 interface Props {
   configMap?: ConfigMap;
@@ -36,12 +35,10 @@ const ConfigMapDetail = ({ configMap, open, onClose }: Props) => {
           {data.map(([name, value = '']) => (
             <div key={name} className="mb-2">
               {name && <div className="text-black font-medium pb-0.5">{name}</div>}
-              <Input.TextArea
-                classNames={{ textarea: 'w-full font-mono' }}
-                wrap="off"
-                rows={10}
-                disabled
+              <Editor
+                height={'200px'}
                 value={value}
+                options={{ readOnly: true, minimap: { enabled: false } }}
               />
             </div>
           ))}

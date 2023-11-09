@@ -8,7 +8,7 @@ import { ColumnsType } from 'antd/es/table';
 import { observer } from 'mobx-react';
 import { useState } from 'react';
 import DeploymentDetail from './deployment-detail';
-import Table from '../../table/table';
+import Table from '../../../table/table';
 
 interface DataType {
   key: string;

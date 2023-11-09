@@ -1,10 +1,10 @@
 import { PersistentVolumeClaim, Pod } from '@/k8slens/kube-object';
-import Drawer from '../../drawer/drawer';
+import Drawer from '../../../drawer/drawer';
 import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
 import { KubeRecord } from '@/components/kube/kube-record';
 import { KubeBadge } from '@/components/kube/kube-badge';
 import React from 'react';
-import DrawerPanel from '../../drawer/drawer-panel';
+import DrawerPanel from '../../../drawer/drawer-panel';
 
 interface Props {
   volumeClaim?: PersistentVolumeClaim;

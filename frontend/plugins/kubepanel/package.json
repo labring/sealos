@@ -20,6 +20,7 @@
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@kubernetes/client-node": "^0.19.0",
+    "@monaco-editor/react": "^4.6.0",
     "@tanstack/react-query": "^4.29.25",
     "antd": "^5.11.0",
     "auto-bind": "^5.0.1",
@@ -60,6 +61,7 @@
     "eslint": "^8.51.0",
     "eslint-config-next": "^13.5.4",
     "eslint-plugin-xss": "^0.1.12",
+    "monaco-editor": "^0.44.0",
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.4",
     "typescript": "^5"

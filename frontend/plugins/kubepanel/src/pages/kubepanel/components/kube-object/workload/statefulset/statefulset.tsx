@@ -7,7 +7,7 @@ import { observer } from 'mobx-react';
 import { useRef, useState } from 'react';
 import StatefulSetDetail from './statefulset-detail';
 import { RequestController } from '@/utils/request-controller';
-import Table from '../../table/table';
+import Table from '../../../table/table';
 
 interface DataType {
   key: string;

@@ -1,7 +1,7 @@
 import { Input } from 'antd';
 import { DaemonSet, Deployment, Job, Pod, ReplicaSet, StatefulSet } from '@/k8slens/kube-object';
 import yaml from 'js-yaml';
-import DrawerCollapse from '../../drawer/drawer-collapse';
+import DrawerCollapse from '../../../drawer/drawer-collapse';
 
 export type Props = {
   workload?: Pod | Deployment | DaemonSet | StatefulSet | ReplicaSet | Job;

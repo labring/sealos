@@ -7,7 +7,7 @@ import { ColumnsType } from 'antd/es/table';
 import { observer } from 'mobx-react';
 import { useRef, useState } from 'react';
 import PersistentVolumeClaimDetail from './volume-claim-detail';
-import Table from '../../table/table';
+import Table from '../../../table/table';
 
 interface DataType {
   key: string;

@@ -7,8 +7,8 @@ import { KubeBadge } from '@/components/kube/kube-badge';
 import { Tooltip } from 'antd';
 import { isDefined } from '@/k8slens/utilities';
 import React from 'react';
-import DrawerTitle from '../../drawer/drawer-title';
-import DrawerPanel from '../../drawer/drawer-panel';
+import DrawerTitle from '../../../drawer/drawer-title';
+import DrawerPanel from '../../../drawer/drawer-panel';
 
 interface Props {
   pod?: Pod;
