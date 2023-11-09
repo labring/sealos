@@ -171,7 +171,7 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureReturn 
         p="20px"
         backdropFilter={'blur(150px)'}
       >
-        <Flex justifyContent={'end'} alignItems={'center'} overflow={'hidden'}>
+        <Flex justifyContent={'end'} alignItems={'center'} overflow={'hidden'} cursor={'pointer'}>
           <Iconfont iconName="icon-logout" width={14} height={14} color="#24282C"></Iconfont>
           <Text ml="6px" color={'#24282C'} fontSize={'12px'} fontWeight={500} onClick={logout}>
             {t('Log Out')}

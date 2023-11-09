@@ -1,8 +1,10 @@
+import useWindow from '@site/src/hooks/useWindow';
 import CheckIcon from '@site/static/price/check.svg';
 import StarIcon from '@site/static/price/star.svg';
 import React from 'react';
 
 export default function Product() {
+  const { bd_vid } = useWindow();
   const standard = ['工单服务', '应用管理', '高可用数据库', '应用市场', '多租户', '计量/配额'];
 
   const company = [
@@ -59,8 +61,7 @@ export default function Product() {
             className="sealos_price_btn"
             onClick={() =>
               window.open(
-                'https://license.sealos.io/signin?external=true&clusterType=Standard',
-                '_black'
+                `https://license.sealos.io/signin?external=true&clusterType=Standard&bd_vid=${bd_vid}`
               )
             }
           >
@@ -97,8 +98,7 @@ export default function Product() {
             }}
             onClick={() =>
               window.open(
-                'https://license.sealos.io/signin?external=true&clusterType=Enterprise',
-                '_black'
+                `https://license.sealos.io/signin?external=true&clusterType=Enterprise&bd_vid=${bd_vid}`
               )
             }
           >
@@ -130,8 +130,7 @@ export default function Product() {
             style={{ marginTop: '46px' }}
             onClick={() =>
               window.open(
-                'https://fael3z0zfze.feishu.cn/share/base/form/shrcnesSfEK65JZaAf2W6Fwz6Ad',
-                '_black'
+                'https://fael3z0zfze.feishu.cn/share/base/form/shrcnesSfEK65JZaAf2W6Fwz6Ad'
               )
             }
           >

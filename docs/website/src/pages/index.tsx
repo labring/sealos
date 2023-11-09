@@ -14,7 +14,7 @@ import HomeUserBy from './components/UserBy';
 import './index.scss';
 
 const Home = () => {
-  const { screenWidth, currentLanguage, cloudUrl } = useWindow();
+  const { screenWidth, cloudUrl } = useWindow();
   const isPc = useMemo(() => screenWidth > PC_MIN_WIDTH, [screenWidth]);
 
   useEffect(() => {
@@ -57,8 +57,6 @@ const Home = () => {
             gtag('event', 'conversion', {'send_to': 'AW-786053845/LpbTCJ-8-coYENX16PYC'});
           `}
         </script>
-        <meta name="baidu-site-verification" content="codeva-gAHDaifnOq" />
-        {/* <script src="./linkInterception.js"></script> */}
       </Helmet>
       <Layout>
         <div className="home">

@@ -7,7 +7,7 @@ import useWindow from '@site/src/hooks/useWindow';
 
 export default function Banner() {
   const [isBannerVisible, setIsBannerVisible] = useState(false);
-  const { screenWidth, currentLanguage, cloudUrl } = useWindow();
+  const { cloudUrl, bd_vid } = useWindow();
 
   const closeBanner = () => {
     setIsBannerVisible(false);
@@ -64,7 +64,10 @@ export default function Banner() {
             <div
               className="btn"
               onClick={() => {
-                window.open(`${cloudUrl}/?openapp=system-costcenter?openRecharge=true`, '_blank');
+                window.open(
+                  `${cloudUrl}/?bd_vid=${bd_vid}&openapp=system-costcenter?openRecharge=true`,
+                  '_blank'
+                );
                 closeBanner();
               }}
             >

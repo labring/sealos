@@ -25,20 +25,22 @@ import (
 	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 
-	"github.com/labring/sealos/controllers/pkg/crypto"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/labring/sealos/controllers/pkg/crypto"
 
 	v12 "github.com/labring/sealos/controllers/account/api/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"github.com/go-logr/logr"
-	"github.com/labring/sealos/controllers/pkg/database"
-	v1 "github.com/labring/sealos/controllers/user/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	"github.com/labring/sealos/controllers/pkg/database"
+	v1 "github.com/labring/sealos/controllers/user/api/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"

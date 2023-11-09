@@ -21,6 +21,7 @@ concurrency:
 
 env:
   BUILD_PATH: "./docs/website"
+  BD_TOKEN: ${{ secrets.BD_TOKEN }}
 
 jobs:
   build:

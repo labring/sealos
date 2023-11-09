@@ -6,8 +6,8 @@ metadata:
 spec:
   data:
     desc: CronJob
-    url: "https://cronjob.{{ .cloudDomain }}"
-  icon: "https://cronjob.{{ .cloudDomain }}/logo.svg"
+    url: "https://cronjob.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+  icon: "https://cronjob.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg"
   menuData:
     helpDropDown: false
     nameColor: text-black

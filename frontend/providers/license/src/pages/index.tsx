@@ -8,8 +8,8 @@ import { useToast } from '@/hooks/useToast';
 import download from '@/utils/downloadFIle';
 import { serviceSideProps } from '@/utils/i18n';
 import { json2License } from '@/utils/json2Yaml';
-import { addHoursToTime, formatTime, useCopyData } from '@/utils/tools';
-import { Box, Flex, Icon, Image, Link, Text } from '@chakra-ui/react';
+import { addHoursToTime, useCopyData } from '@/utils/tools';
+import { Box, Center, Flex, Image, Link, Text } from '@chakra-ui/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { debounce } from 'lodash';
 import { useTranslation } from 'next-i18next';
@@ -82,7 +82,6 @@ export default function LicenseApp() {
       overflow={'scroll'}
       justifyContent={'center'}
       alignItems={'center'}
-      py="20px"
     >
       <Flex w="50%" pl="48px" justifyContent="center" alignItems="center" position={'relative'}>
         <Box position="relative">
@@ -90,23 +89,53 @@ export default function LicenseApp() {
             draggable="false"
             w="616px"
             h="636px"
-            src="/icons/license-bg.svg"
+            src="/icons/license-bg.png"
             alt="license"
             objectFit="cover"
             borderRadius={'16px'}
           />
-          <Box position={'absolute'} color={'#FFF'} top={'180px'} left={'80px'}>
+          <Flex
+            alignItems={'center'}
+            justifyContent={'center'}
+            flexDirection={'column'}
+            position={'absolute'}
+            color={'#FFF'}
+            top="50%"
+            left="50%"
+            transform="translate(-50%, -50%)"
+          >
             <Text fontSize={'32px'} fontWeight={600}>
               {t('Purchase License')}
             </Text>
-            <Flex mt="45px" cursor={'copy'}>
-              {t('Please go to')}
-              <Link color={'#36ADEF'} px={'4px'} href={purchaseLink} isExternal>
-                Sealos License
-              </Link>
-              {t('Purchase')}
-            </Flex>
-          </Box>
+            <Box w="194px" h="54px" mt="50px" position={'relative'}>
+              <Center
+                position={'absolute'}
+                top={0}
+                left={0}
+                bg="rgba(255, 255, 255, 0.20)"
+                filter={'blur(4px)'}
+                w="194px"
+                h="54px"
+                borderRadius={'4px'}
+              ></Center>
+              <Center
+                cursor={'pointer'}
+                borderRadius={'4px'}
+                position={'absolute'}
+                bg={'#fff'}
+                color={'#000'}
+                w="184px"
+                h="42px"
+                top={'6px'}
+                left={'6px'}
+                fontWeight={600}
+                fontSize={'16px'}
+                onClick={() => window.open(purchaseLink)}
+              >
+                {t('Purchase')}
+              </Center>
+            </Box>
+          </Flex>
           <Flex position={'absolute'} bottom={'20px'} right={'48px'}>
             <Image alt="license" src="/icons/license-sealos.svg" />
           </Flex>

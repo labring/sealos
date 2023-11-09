@@ -40,7 +40,7 @@ const i18nObj = {
 const HomeHeader = ({ isPc }: { isPc: boolean }) => {
   const [stars, setStars] = useState(10000);
   const isBrowser = useIsBrowser();
-  const { screenWidth, currentLanguage, cloudUrl } = useWindow();
+  const { screenWidth, currentLanguage, cloudUrl, bd_vid } = useWindow();
 
   const i18nMap: { [key: string]: { label: string; link: string } } = {
     en: { label: '中', link: '/zh-Hans/' },
@@ -135,7 +135,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
               </Link>
             </div>
           )}
-          <a className="start-now-button" href={cloudUrl} target="_blank">
+          <a className="start-now-button" href={`${cloudUrl}?bd_vid=${bd_vid}`} target="_blank">
             {i18nObj.startNow}
             <div className="start-now-button-wrap"></div>
           </a>
