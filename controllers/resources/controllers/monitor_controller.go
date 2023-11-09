@@ -243,8 +243,7 @@ func (r *MonitorReconciler) getResourceUsage(namespace string) ([]*resources.Mon
 		return nil, err
 	}
 	for _, pod := range podList.Items {
-		//TODO if pod is job && 结束时候到现在时间小于1分钟 统计资源
-		if pod.Status.Phase == corev1.PodSucceeded || pod.Spec.NodeName == "" {
+		if pod.Spec.NodeName == "" || (pod.Status.Phase == corev1.PodSucceeded && time.Since(pod.Status.StartTime.Time) > 1*time.Minute) {
 			continue
 		}
 		podResNamed := resources.NewResourceNamed(&pod)
@@ -252,6 +251,8 @@ func (r *MonitorReconciler) getResourceUsage(namespace string) ([]*resources.Mon
 		if podsRes[podResNamed.String()] == nil {
 			podsRes[podResNamed.String()] = initResources()
 		}
+		// skip pods that do not start for more than 1 minute
+		skip := pod.Status.Phase != corev1.PodRunning && (pod.Status.StartTime == nil || time.Since(pod.Status.StartTime.Time) > 1*time.Minute)
 		for _, container := range pod.Spec.Containers {
 			// gpu only use limit and not ignore pod pending status
 			if gpuRequest, ok := container.Resources.Limits[gpu.NvidiaGpuKey]; ok {
@@ -260,7 +261,7 @@ func (r *MonitorReconciler) getResourceUsage(namespace string) ([]*resources.Mon
 					r.Logger.Error(err, "get gpu resource usage failed", "pod", pod.Name)
 				}
 			}
-			if pod.Status.Phase != corev1.PodRunning {
+			if skip {
 				continue
 			}
 			if cpuRequest, ok := container.Resources.Limits[corev1.ResourceCPU]; ok {
@@ -283,7 +284,7 @@ func (r *MonitorReconciler) getResourceUsage(namespace string) ([]*resources.Mon
 		return nil, fmt.Errorf("failed to list pvc: %v", err)
 	}
 	for _, pvc := range pvcList.Items {
-		if pvc.Status.Phase != corev1.ClaimBound {
+		if pvc.Status.Phase != corev1.ClaimBound || pvc.Name == resources.KubeBlocksBackUpName {
 			continue
 		}
 		pvcRes := resources.NewResourceNamed(&pvc)
