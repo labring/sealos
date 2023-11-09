@@ -86,6 +86,15 @@ func NewResourceNamed(cr client.Object) *ResourceNamed {
 	return p
 }
 
+func NewMinioResourceNamed() *ResourceNamed {
+	return minioResourceNamed
+}
+
+var minioResourceNamed = &ResourceNamed{
+	_type: MINIO,
+	_name: "sealos/minio",
+}
+
 const (
 	acmesolver                          = "acmesolver"
 	acmesolverContainerArgsDomainPrefix = "--domain="

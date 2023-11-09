@@ -26,7 +26,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/minio/minio-go/v7"
+
 	sealos_networkmanager "github.com/dinoallo/sealos-networkmanager-protoapi"
+	pkgMinio "github.com/labring/sealos/controllers/pkg/minio"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -59,6 +62,7 @@ type MonitorReconciler struct {
 	DBClient          database.Interface
 	TrafficSvcConn    string
 	Properties        *resources.PropertyTypeLS
+	MinioClient       *minio.Client
 }
 
 type quantity struct {
@@ -237,8 +241,8 @@ func (r *MonitorReconciler) podResourceUsageInsert(ctx context.Context, namespac
 func (r *MonitorReconciler) getResourceUsage(namespace string) ([]*resources.Monitor, error) {
 	timeStamp := time.Now().UTC()
 	podList := corev1.PodList{}
-	podsRes := map[string]map[corev1.ResourceName]*quantity{}
-	resourceMap := make(map[string]*resources.ResourceNamed)
+	resUsed := map[string]map[corev1.ResourceName]*quantity{}
+	resNamed := make(map[string]*resources.ResourceNamed)
 	if err := r.List(context.Background(), &podList, &client.ListOptions{Namespace: namespace}); err != nil {
 		return nil, err
 	}
@@ -247,16 +251,16 @@ func (r *MonitorReconciler) getResourceUsage(namespace string) ([]*resources.Mon
 			continue
 		}
 		podResNamed := resources.NewResourceNamed(&pod)
-		resourceMap[podResNamed.String()] = podResNamed
-		if podsRes[podResNamed.String()] == nil {
-			podsRes[podResNamed.String()] = initResources()
+		resNamed[podResNamed.String()] = podResNamed
+		if resUsed[podResNamed.String()] == nil {
+			resUsed[podResNamed.String()] = initResources()
 		}
 		// skip pods that do not start for more than 1 minute
 		skip := pod.Status.Phase != corev1.PodRunning && (pod.Status.StartTime == nil || time.Since(pod.Status.StartTime.Time) > 1*time.Minute)
 		for _, container := range pod.Spec.Containers {
 			// gpu only use limit and not ignore pod pending status
 			if gpuRequest, ok := container.Resources.Limits[gpu.NvidiaGpuKey]; ok {
-				err := r.getGPUResourceUsage(pod, gpuRequest, podsRes[podResNamed.String()])
+				err := r.getGPUResourceUsage(pod, gpuRequest, resUsed[podResNamed.String()])
 				if err != nil {
 					r.Logger.Error(err, "get gpu resource usage failed", "pod", pod.Name)
 				}
@@ -265,14 +269,14 @@ func (r *MonitorReconciler) getResourceUsage(namespace string) ([]*resources.Mon
 				continue
 			}
 			if cpuRequest, ok := container.Resources.Limits[corev1.ResourceCPU]; ok {
-				podsRes[podResNamed.String()][corev1.ResourceCPU].Add(cpuRequest)
+				resUsed[podResNamed.String()][corev1.ResourceCPU].Add(cpuRequest)
 			} else {
-				podsRes[podResNamed.String()][corev1.ResourceCPU].Add(container.Resources.Requests[corev1.ResourceCPU])
+				resUsed[podResNamed.String()][corev1.ResourceCPU].Add(container.Resources.Requests[corev1.ResourceCPU])
 			}
 			if memoryRequest, ok := container.Resources.Limits[corev1.ResourceMemory]; ok {
-				podsRes[podResNamed.String()][corev1.ResourceMemory].Add(memoryRequest)
+				resUsed[podResNamed.String()][corev1.ResourceMemory].Add(memoryRequest)
 			} else {
-				podsRes[podResNamed.String()][corev1.ResourceMemory].Add(container.Resources.Requests[corev1.ResourceMemory])
+				resUsed[podResNamed.String()][corev1.ResourceMemory].Add(container.Resources.Requests[corev1.ResourceMemory])
 			}
 		}
 	}
@@ -288,11 +292,11 @@ func (r *MonitorReconciler) getResourceUsage(namespace string) ([]*resources.Mon
 			continue
 		}
 		pvcRes := resources.NewResourceNamed(&pvc)
-		if podsRes[pvcRes.String()] == nil {
-			resourceMap[pvcRes.String()] = pvcRes
-			podsRes[pvcRes.String()] = initResources()
+		if resUsed[pvcRes.String()] == nil {
+			resNamed[pvcRes.String()] = pvcRes
+			resUsed[pvcRes.String()] = initResources()
 		}
-		podsRes[pvcRes.String()][corev1.ResourceStorage].Add(pvc.Spec.Resources.Requests[corev1.ResourceStorage])
+		resUsed[pvcRes.String()][corev1.ResourceStorage].Add(pvc.Spec.Resources.Requests[corev1.ResourceStorage])
 	}
 	var monitors []*resources.Monitor
 
@@ -313,11 +317,16 @@ func (r *MonitorReconciler) getResourceUsage(namespace string) ([]*resources.Mon
 		return isEmpty, used
 	}
 	if r.TrafficSvcConn != "" {
-		if err := r.getPodTrafficUsed(namespace, &resourceMap, &podsRes); err != nil {
+		if err := r.getPodTrafficUsed(namespace, &resNamed, &resUsed); err != nil {
 			r.Logger.Error(err, "failed to get pod traffic used", "namespace", namespace)
 		}
 	}
-	for name, podResource := range podsRes {
+	if r.MinioClient != nil {
+		if err := r.getMinioUsed(namespace, &resNamed, &resUsed); err != nil {
+			r.Logger.Error(err, "failed to get minio used", "namespace", namespace)
+		}
+	}
+	for name, podResource := range resUsed {
 		isEmpty, used := getResourceUsed(podResource)
 		if isEmpty {
 			continue
@@ -326,14 +335,31 @@ func (r *MonitorReconciler) getResourceUsage(namespace string) ([]*resources.Mon
 			Category: namespace,
 			Used:     used,
 			Time:     timeStamp,
-			Type:     resourceMap[name].Type(),
-			Name:     resourceMap[name].Name(),
+			Type:     resNamed[name].Type(),
+			Name:     resNamed[name].Name(),
 		})
 	}
 	return monitors, nil
 }
 
-func (r *MonitorReconciler) getPodTrafficUsed(namespace string, resourceMap *map[string]*resources.ResourceNamed, podsRes *map[string]map[corev1.ResourceName]*quantity) error {
+func (r *MonitorReconciler) getMinioUsed(namespace string, namedMap *map[string]*resources.ResourceNamed, resMap *map[string]map[corev1.ResourceName]*quantity) error {
+	size, count, err := pkgMinio.GetUserStorageSize(r.MinioClient, namespace)
+	if err != nil {
+		return fmt.Errorf("failed to get minio user storage size: %w", err)
+	}
+	if count == 0 || size == 0 {
+		return nil
+	}
+	minioNamed := resources.NewMinioResourceNamed()
+	(*namedMap)[minioNamed.Name()] = minioNamed
+	if _, ok := (*resMap)[minioNamed.Name()]; !ok {
+		(*resMap)[minioNamed.Name()] = initResources()
+	}
+	(*resMap)[minioNamed.Name()][corev1.ResourceStorage].Add(*resource.NewQuantity(size, resource.BinarySI))
+	return nil
+}
+
+func (r *MonitorReconciler) getPodTrafficUsed(namespace string, namedMap *map[string]*resources.ResourceNamed, podsRes *map[string]map[corev1.ResourceName]*quantity) error {
 	conn, err := grpc.Dial(r.TrafficSvcConn, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return fmt.Errorf("dial grpc failed: %w", err)
@@ -344,7 +370,7 @@ func (r *MonitorReconciler) getPodTrafficUsed(namespace string, resourceMap *map
 	tType := sealos_networkmanager.TrafficType_IPv4Egress
 	var labelsNotIn []*sealos_networkmanager.Label
 	//logger.Info("namespace", namespace)
-	for _, named := range *resourceMap {
+	for _, named := range *namedMap {
 		tfs := sealos_networkmanager.TrafficStatRequest{
 			Namespace:       namespace,
 			Type:            &tType,

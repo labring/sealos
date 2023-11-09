@@ -159,6 +159,7 @@ const (
 	terminal
 	job
 	other
+	minio
 )
 
 const (
@@ -167,14 +168,15 @@ const (
 	TERMINAL = "TERMINAL"
 	JOB      = "JOB"
 	OTHER    = "OTHER"
+	MINIO    = "MINIO"
 )
 
 var AppType = map[string]uint8{
-	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other,
+	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other, MINIO: minio,
 }
 
 var AppTypeReverse = map[uint8]string{
-	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER,
+	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER, minio: MINIO,
 }
 
 // resource consumption
