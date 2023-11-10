@@ -23,6 +23,8 @@ spec:
         volumeMounts:
         - name: www
           mountPath: /usr/share/nginx/html
+        securityContext:
+            allowPrivilegeEscalation: false
   volumeClaimTemplates:
   - metadata:
       name: www
