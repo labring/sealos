@@ -26,6 +26,9 @@ import (
 	"sync"
 	"time"
 
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	"github.com/labring/sealos/controllers/user/controllers/helper/config"
+
 	"github.com/minio/minio-go/v7"
 
 	sealos_networkmanager "github.com/dinoallo/sealos-networkmanager-protoapi"
@@ -231,19 +234,19 @@ func (r *MonitorReconciler) processNamespace(ctx context.Context, namespace *cor
 }
 
 func (r *MonitorReconciler) podResourceUsageInsert(ctx context.Context, namespace *corev1.Namespace) error {
-	monitors, err := r.getResourceUsage(namespace.Name)
+	monitors, err := r.getResourceUsage(namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get resource usage: %v", err)
 	}
 	return r.DBClient.InsertMonitor(ctx, monitors...)
 }
 
-func (r *MonitorReconciler) getResourceUsage(namespace string) ([]*resources.Monitor, error) {
+func (r *MonitorReconciler) getResourceUsage(namespace *corev1.Namespace) ([]*resources.Monitor, error) {
 	timeStamp := time.Now().UTC()
 	podList := corev1.PodList{}
 	resUsed := map[string]map[corev1.ResourceName]*quantity{}
 	resNamed := make(map[string]*resources.ResourceNamed)
-	if err := r.List(context.Background(), &podList, &client.ListOptions{Namespace: namespace}); err != nil {
+	if err := r.List(context.Background(), &podList, &client.ListOptions{Namespace: namespace.Name}); err != nil {
 		return nil, err
 	}
 	for _, pod := range podList.Items {
@@ -284,7 +287,7 @@ func (r *MonitorReconciler) getResourceUsage(namespace string) ([]*resources.Mon
 	//logger.Info("mid", "namespace", namespace.Name, "time", timeStamp.Format("2006-01-02 15:04:05"), "resourceMap", resourceMap, "podsRes", podsRes)
 
 	pvcList := corev1.PersistentVolumeClaimList{}
-	if err := r.List(context.Background(), &pvcList, &client.ListOptions{Namespace: namespace}); err != nil {
+	if err := r.List(context.Background(), &pvcList, &client.ListOptions{Namespace: namespace.Name}); err != nil {
 		return nil, fmt.Errorf("failed to list pvc: %v", err)
 	}
 	for _, pvc := range pvcList.Items {
@@ -317,13 +320,13 @@ func (r *MonitorReconciler) getResourceUsage(namespace string) ([]*resources.Mon
 		return isEmpty, used
 	}
 	if r.TrafficSvcConn != "" {
-		if err := r.getPodTrafficUsed(namespace, &resNamed, &resUsed); err != nil {
+		if err := r.getPodTrafficUsed(namespace.Name, &resNamed, &resUsed); err != nil {
 			r.Logger.Error(err, "failed to get pod traffic used", "namespace", namespace)
 		}
 	}
-	if r.MinioClient != nil {
-		if err := r.getMinioUsed(namespace, &resNamed, &resUsed); err != nil {
-			r.Logger.Error(err, "failed to get minio used", "namespace", namespace)
+	if username := config.GetUserNameByNamespace(namespace.Name); r.MinioClient != nil && namespace.Labels[userv1.UserLabelOwnerKey] == username {
+		if err := r.getMinioUsed(username, &resNamed, &resUsed); err != nil {
+			r.Logger.Error(err, "failed to get minio used", "username", username)
 		}
 	}
 	for name, podResource := range resUsed {
@@ -332,7 +335,7 @@ func (r *MonitorReconciler) getResourceUsage(namespace string) ([]*resources.Mon
 			continue
 		}
 		monitors = append(monitors, &resources.Monitor{
-			Category: namespace,
+			Category: namespace.Name,
 			Used:     used,
 			Time:     timeStamp,
 			Type:     resNamed[name].Type(),
@@ -342,8 +345,8 @@ func (r *MonitorReconciler) getResourceUsage(namespace string) ([]*resources.Mon
 	return monitors, nil
 }
 
-func (r *MonitorReconciler) getMinioUsed(namespace string, namedMap *map[string]*resources.ResourceNamed, resMap *map[string]map[corev1.ResourceName]*quantity) error {
-	size, count, err := pkgMinio.GetUserStorageSize(r.MinioClient, namespace)
+func (r *MonitorReconciler) getMinioUsed(user string, namedMap *map[string]*resources.ResourceNamed, resMap *map[string]map[corev1.ResourceName]*quantity) error {
+	size, count, err := pkgMinio.GetUserStorageSize(r.MinioClient, user)
 	if err != nil {
 		return fmt.Errorf("failed to get minio user storage size: %w", err)
 	}
