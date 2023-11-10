@@ -1,6 +1,6 @@
 import { ApiBaseParamsMap } from '@/constants/kube-api';
 import { ResourceKey } from '@/constants/kube-object';
-import { list } from '@/services/backend/api';
+import { listResource } from '@/services/backend/api';
 import { authSession } from '@/services/backend/auth';
 import { getKubeApiParams } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       code,
       error = null,
       data = null
-    } = await list({
+    } = await listResource({
       urlParams: {
         ...apiBaseParams,
         serverUrl,

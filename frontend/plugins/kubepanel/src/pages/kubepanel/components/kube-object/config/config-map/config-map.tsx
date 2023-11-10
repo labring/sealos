@@ -7,6 +7,9 @@ import { CONFIG_MAP_STORE } from '@/store/static';
 import { useQuery } from '@tanstack/react-query';
 import ConfigMapDetail from './config-map-detail';
 import Table from '../../../table/table';
+import ActionButton from '../../../action-button/action-button';
+import { deleteResource } from '@/api/delete';
+import { Resources } from '@/constants/kube-object';
 interface DataType {
   key: string;
   name: string;
@@ -40,6 +43,14 @@ const columns: ColumnsType<DataType> = [
     dataIndex: 'creationTimestamp',
     key: 'age',
     render: (creationTimestamp: string) => <KubeObjectAge creationTimestamp={creationTimestamp} />
+  },
+  {
+    dataIndex: 'name',
+    key: 'action',
+    fixed: 'right',
+    render: (name: string) => (
+      <ActionButton targetName={name} onDelete={() => deleteResource(name, Resources.ConfigMaps)} />
+    )
   }
 ];
 
@@ -55,7 +66,7 @@ const ConfigMapOverviewPage = () => {
   return (
     <>
       <Table
-        title={"Config Maps"}
+        title={'Config Maps'}
         columns={columns}
         dataSource={dataSource}
         onRow={(record) => ({

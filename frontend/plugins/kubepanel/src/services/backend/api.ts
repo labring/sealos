@@ -1,8 +1,6 @@
 import { KindMap, Resources } from '@/constants/kube-object';
-import { KubeObject } from '@/k8slens/kube-object';
 import { merge } from 'lodash';
-import { Options, get, post } from 'request';
-import { PartialDeep } from 'type-fest';
+import { Options, get, post, delete as delete_ } from 'request';
 
 type ApiPrefix = 'api' | 'apis';
 type ApiGroup = 'apps';
@@ -44,7 +42,7 @@ const generateApiUrl = (params: KubeApiUrlParams): string => {
   return `${params.serverUrl}/${params.apiPrefix}/${params.apiGroup}/${params.apiVersion}/namespaces/${params.namespace}/${params.resource}`;
 };
 
-export const list = async (
+export const listResource = async (
   { urlParams, opts }: RequestBase,
   query?: Partial<QueryParams>
 ): Promise<Response> => {
@@ -68,10 +66,7 @@ export const list = async (
   });
 };
 
-export const create = async (
-  { urlParams, opts }: RequestBase,
-  obj: unknown
-) => {
+export const createResource = async ({ urlParams, opts }: RequestBase, obj: unknown) => {
   const url = generateApiUrl(urlParams);
   const data = merge(obj, {
     kind: KindMap[urlParams.resource],
@@ -84,6 +79,32 @@ export const create = async (
   return new Promise((resolve, reject) => {
     try {
       post(url, { body: data, ...opts }, (error, response, body) => {
+        if (error) throw error;
+        if (!response || !body) throw new Error('response or body is empty');
+        resolve({
+          code: response.statusCode,
+          data: body
+        });
+      });
+    } catch (err) {
+      reject({
+        code: 500,
+        error: err
+      });
+    }
+  });
+};
+
+export const deleteResource = async (
+  { urlParams, opts }: RequestBase,
+  name: string,
+  propagationPolicy: 'Background' | 'Foreground' | 'Orphan' = 'Background'
+) => {
+  const url = `${generateApiUrl(urlParams)}/${name}?propagationPolicy=${propagationPolicy}`;
+
+  return new Promise((resolve, reject) => {
+    try {
+      delete_(url, opts, (error, response, body) => {
         if (error) throw error;
         if (!response || !body) throw new Error('response or body is empty');
         resolve({

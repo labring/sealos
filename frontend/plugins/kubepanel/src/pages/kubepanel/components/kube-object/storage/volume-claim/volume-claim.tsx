@@ -8,6 +8,9 @@ import { observer } from 'mobx-react';
 import { useRef, useState } from 'react';
 import PersistentVolumeClaimDetail from './volume-claim-detail';
 import Table from '../../../table/table';
+import ActionButton from '../../../action-button/action-button';
+import { deleteResource } from '@/api/delete';
+import { Resources } from '@/constants/kube-object';
 
 interface DataType {
   key: string;
@@ -68,7 +71,19 @@ const columns: ColumnsType<DataType> = [
   {
     title: 'Status',
     dataIndex: 'status',
+    fixed: 'right',
     key: 'status'
+  },
+  {
+    dataIndex: 'name',
+    key: 'action',
+    fixed: 'right',
+    render: (name: string) => (
+      <ActionButton
+        targetName={name}
+        onDelete={() => deleteResource(name, Resources.PersistentVolumeClaims)}
+      />
+    )
   }
 ];
 
