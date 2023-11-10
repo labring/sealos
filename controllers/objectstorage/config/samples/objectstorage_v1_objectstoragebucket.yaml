@@ -1,0 +1,12 @@
+apiVersion: objectstorage.sealos.io/v1
+kind: ObjectStorageBucket
+metadata:
+  labels:
+    app.kubernetes.io/name: objectstoragebucket
+    app.kubernetes.io/instance: objectstoragebucket-sample
+    app.kubernetes.io/part-of: objectstorage
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: objectstorage
+  name: objectstoragebucket-sample
+spec:
+# TODO(user): Add fields here
