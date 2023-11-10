@@ -13,6 +13,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import PodDetail from './pod-detail';
 import Table from '../../../table/table';
+import ActionButton from '../../../action-button/action-button';
+import { deleteResource } from '@/api/delete';
+import { Resources } from '@/constants/kube-object';
 
 interface ContainerDataType {
   name: string;
@@ -89,7 +92,7 @@ const columns: ColumnsType<DataType> = [
     dataIndex: 'ownerRefs',
     key: 'controlled-by',
     render: (ownerRefs: Array<{ name: string; kind: string }>) =>
-      ownerRefs.map(({ name, kind }) => <>{kind}</>)
+      ownerRefs.map(({ name, kind }) => <span key={name}>{kind}</span>)
   },
   {
     title: 'QoS',
@@ -110,6 +113,14 @@ const columns: ColumnsType<DataType> = [
     filters: PodStatusMessage.map((value) => ({ text: value, value })),
     onFilter: (value, record) => record.status === value,
     render: (status: string) => <PodStatus status={status} />
+  },
+  {
+    key: 'action',
+    dataIndex: 'name',
+    fixed: 'right',
+    render: (name: string) => (
+      <ActionButton targetName={name} onDelete={() => deleteResource(name, Resources.Pods)} />
+    )
   }
 ];
 

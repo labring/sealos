@@ -9,6 +9,9 @@ import { observer } from 'mobx-react';
 import { useState } from 'react';
 import DeploymentDetail from './deployment-detail';
 import Table from '../../../table/table';
+import ActionButton from '../../../action-button/action-button';
+import { deleteResource } from '@/api/delete';
+import { Resources } from '@/constants/kube-object';
 
 interface DataType {
   key: string;
@@ -63,6 +66,17 @@ const columns: ColumnsType<DataType> = [
           <span className={`mr-2 last:mr-0 text-${getConditionColor(type)}`}>{type}</span>
         </Tooltip>
       ))
+  },
+  {
+    dataIndex: 'name',
+    key: 'action',
+    fixed: 'right',
+    render: (name: string) => (
+      <ActionButton
+        targetName={name}
+        onDelete={() => deleteResource(name, Resources.Deployments)}
+      />
+    )
   }
 ];
 
@@ -78,7 +92,7 @@ const DeploymentOverviewPage = () => {
   return (
     <>
       <Table
-        title={"Deployments"}
+        title={'Deployments'}
         columns={columns}
         dataSource={dataSource}
         onRow={(record) => ({

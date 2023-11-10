@@ -8,6 +8,9 @@ import { useRef, useState } from 'react';
 import StatefulSetDetail from './statefulset-detail';
 import { RequestController } from '@/utils/request-controller';
 import Table from '../../../table/table';
+import ActionButton from '../../../action-button/action-button';
+import { deleteResource } from '@/api/delete';
+import { Resources } from '@/constants/kube-object';
 
 interface DataType {
   key: string;
@@ -49,6 +52,17 @@ const columns: ColumnsType<DataType> = [
     dataIndex: 'creationTimestamp',
     key: 'age',
     render: (creationTimestamp: string) => <KubeObjectAge creationTimestamp={creationTimestamp} />
+  },
+  {
+    dataIndex: 'name',
+    key: 'action',
+    fixed: 'right',
+    render: (name: string) => (
+      <ActionButton
+        targetName={name}
+        onDelete={() => deleteResource(name, Resources.StatefulSets)}
+      />
+    )
   }
 ];
 
@@ -72,7 +86,7 @@ const StatefulSetOverviewPage = () => {
   return (
     <>
       <Table
-        title={"Stateful Sets"}
+        title={'Stateful Sets'}
         columns={columns}
         dataSource={dataSource}
         onRow={(record) => ({
