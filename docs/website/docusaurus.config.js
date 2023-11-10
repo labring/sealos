@@ -1,4 +1,5 @@
-// @ts-check
+require('dotenv').config()
+
 const generateAlgoliKey = () => "ce5b8e1e4d0d35ff587caf75ac404df4"
 
 /** @type {import('@docusaurus/types').Config} */
@@ -19,7 +20,7 @@ const config = {
   // metadata like html lang. For example, if your site is Chinese, you may want
   // to replace "en" with "zh-Hans".
   i18n: {
-    defaultLocale: "en",
+    defaultLocale: process.env.SEALOS_LANG || 'en',
     locales: ["en", "zh-Hans"],
     // path: "../4.0/i18n"
   },
