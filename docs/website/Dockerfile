@@ -1,5 +1,6 @@
 FROM node:20.4 AS builder
 
+ARG SEALOS_LANG=zh-Hans
 ARG BD_TOKEN
 ENV BD_TOKEN=$BD_TOKEN
 
