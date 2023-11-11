@@ -16,6 +16,7 @@ import Table from '../../../table/table';
 import ActionButton from '../../../action-button/action-button';
 import { deleteResource } from '@/api/delete';
 import { Resources } from '@/constants/kube-object';
+import { updateResource } from '@/api/update';
 
 interface ContainerDataType {
   name: string;
@@ -119,7 +120,11 @@ const columns: ColumnsType<DataType> = [
     dataIndex: 'name',
     fixed: 'right',
     render: (name: string) => (
-      <ActionButton targetName={name} onDelete={() => deleteResource(name, Resources.Pods)} />
+      <ActionButton
+        obj={POD_STORE.items.filter((pod) => pod.getName() === name)[0]}
+        onDelete={() => deleteResource(name, Resources.Pods)}
+        onUpdate={(data: string) => updateResource(data, name, Resources.Pods)}
+      />
     )
   }
 ];

@@ -11,6 +11,7 @@ import Table from '../../../table/table';
 import ActionButton from '../../../action-button/action-button';
 import { deleteResource } from '@/api/delete';
 import { Resources } from '@/constants/kube-object';
+import { updateResource } from '@/api/update';
 
 interface DataType {
   key: string;
@@ -80,7 +81,12 @@ const columns: ColumnsType<DataType> = [
     fixed: 'right',
     render: (name: string) => (
       <ActionButton
-        targetName={name}
+        obj={
+          PERSISTENT_VOLUME_CLAIM_STORE.items.filter(
+            (volumeClaim) => volumeClaim.getName() === name
+          )[0]
+        }
+        onUpdate={(data: string) => updateResource(data, name, Resources.PersistentVolumeClaims)}
         onDelete={() => deleteResource(name, Resources.PersistentVolumeClaims)}
       />
     )

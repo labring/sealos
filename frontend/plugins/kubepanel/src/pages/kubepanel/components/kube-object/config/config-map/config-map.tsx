@@ -10,6 +10,7 @@ import Table from '../../../table/table';
 import ActionButton from '../../../action-button/action-button';
 import { deleteResource } from '@/api/delete';
 import { Resources } from '@/constants/kube-object';
+import { updateResource } from '@/api/update';
 interface DataType {
   key: string;
   name: string;
@@ -49,7 +50,11 @@ const columns: ColumnsType<DataType> = [
     key: 'action',
     fixed: 'right',
     render: (name: string) => (
-      <ActionButton targetName={name} onDelete={() => deleteResource(name, Resources.ConfigMaps)} />
+      <ActionButton
+        obj={CONFIG_MAP_STORE.items.filter((configMap) => configMap.getName() === name)[0]}
+        onUpdate={(data: string) => updateResource(data, name, Resources.ConfigMaps)}
+        onDelete={() => deleteResource(name, Resources.ConfigMaps)}
+      />
     )
   }
 ];

@@ -11,6 +11,7 @@ import Table from '../../../table/table';
 import ActionButton from '../../../action-button/action-button';
 import { deleteResource } from '@/api/delete';
 import { Resources } from '@/constants/kube-object';
+import { updateResource } from '@/api/update';
 
 interface DataType {
   key: string;
@@ -59,7 +60,8 @@ const columns: ColumnsType<DataType> = [
     fixed: 'right',
     render: (name: string) => (
       <ActionButton
-        targetName={name}
+        obj={STATEFUL_SET_STORE.items.filter((statefulSet) => statefulSet.getName() === name)[0]}
+        onUpdate={(data: string) => updateResource(data, name, Resources.StatefulSets)}
         onDelete={() => deleteResource(name, Resources.StatefulSets)}
       />
     )

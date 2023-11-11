@@ -30,7 +30,7 @@ const DeleteWarningModal = ({ targetName, open, onDelete, onCancel, onOk }: Prop
     };
 
     deleteRequest();
-  }, [confirmed, msgApi, onDelete, onOk]);
+  }, [confirmed]);
 
   return (
     <>
@@ -45,7 +45,6 @@ const DeleteWarningModal = ({ targetName, open, onDelete, onCancel, onOk }: Prop
             Confirm
           </Button>
         ]}
-        destroyOnClose
         open={open}
         onCancel={onCancel}
       >

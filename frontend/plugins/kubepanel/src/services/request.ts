@@ -87,8 +87,15 @@ export function DELETE<T = any>(
   data?: { [key: string]: any },
   config?: AxiosRequestConfig
 ): Promise<T> {
-  return request.get(url, {
+  return request.delete(url, {
     params: data,
     ...config
   });
+}
+export function PUT<T = any>(
+  url: string,
+  data?: { [key: string]: any },
+  config?: AxiosRequestConfig
+): Promise<T> {
+  return request.put(url, data, config);
 }
