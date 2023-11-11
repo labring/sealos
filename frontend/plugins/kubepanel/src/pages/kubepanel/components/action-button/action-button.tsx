@@ -1,17 +1,26 @@
 import { BarsOutlined, CloseOutlined, RetweetOutlined } from '@ant-design/icons';
 import { Button, type MenuProps, Dropdown } from 'antd';
 import DeleteWarningModal from './delete-waring-modal';
-import { useState } from 'react';
+import { Dispatch, SetStateAction, useCallback, useState } from 'react';
 import { ApiResp } from '@/services/kubernet';
+import UpdateEditorModal from './update-editor-modal';
+import { KubeObject } from '@/k8slens/kube-object';
 
-interface Props {
-  targetName: string;
+interface Props<K extends KubeObject> {
+  obj: K;
   onDelete?: () => Promise<ApiResp>;
-  onUpdate?: () => void;
+  onUpdate?: (data: string) => Promise<ApiResp>;
 }
 
-const ActionButton = ({ targetName, onDelete, onUpdate }: Props) => {
-  const [open, setOpen] = useState(false);
+const ActionButton = <K extends KubeObject = KubeObject>({ obj, onDelete, onUpdate }: Props<K>) => {
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [openUpdateModal, setOpenUpdateModal] = useState(false);
+  const [childKey, setChildKey] = useState(0);
+
+  const onClose = useCallback((setOpen: Dispatch<SetStateAction<boolean>>) => {
+    setOpen(false);
+    setChildKey(childKey + 1);
+  }, []);
 
   const items: MenuProps['items'] = [
     {
@@ -22,7 +31,7 @@ const ActionButton = ({ targetName, onDelete, onUpdate }: Props) => {
           type="link"
           size="small"
           danger
-          onClick={() => setOpen(true)}
+          onClick={() => setOpenDeleteModal(true)}
         >
           Delete
         </Button>
@@ -31,7 +40,12 @@ const ActionButton = ({ targetName, onDelete, onUpdate }: Props) => {
     {
       key: 'update',
       label: onUpdate && (
-        <Button icon={<RetweetOutlined />} type="link" size="small" onClick={onUpdate}>
+        <Button
+          icon={<RetweetOutlined />}
+          type="link"
+          size="small"
+          onClick={() => setOpenUpdateModal(true)}
+        >
           Update
         </Button>
       )
@@ -46,11 +60,22 @@ const ActionButton = ({ targetName, onDelete, onUpdate }: Props) => {
       </Dropdown>
       {onDelete && (
         <DeleteWarningModal
-          targetName={targetName}
+          key={`delete-${childKey}`}
+          targetName={obj.getName()}
           onDelete={onDelete}
-          open={open}
-          onCancel={() => setOpen(false)}
-          onOk={() => setOpen(false)}
+          open={openDeleteModal}
+          onCancel={() => onClose(setOpenDeleteModal)}
+          onOk={() => onClose(setOpenDeleteModal)}
+        />
+      )}
+      {onUpdate && (
+        <UpdateEditorModal
+          key={`update-${childKey}`}
+          obj={obj}
+          open={openUpdateModal}
+          onUpdate={onUpdate}
+          onCancel={() => onClose(setOpenUpdateModal)}
+          onOk={() => onClose(setOpenUpdateModal)}
         />
       )}
     </div>

@@ -1,6 +1,6 @@
 import { KindMap, Resources } from '@/constants/kube-object';
 import { merge } from 'lodash';
-import { Options, get, post, delete as delete_ } from 'request';
+import { Options, get, post, delete as delete_, put } from 'request';
 
 type ApiPrefix = 'api' | 'apis';
 type ApiGroup = 'apps';
@@ -105,6 +105,37 @@ export const deleteResource = async (
   return new Promise((resolve, reject) => {
     try {
       delete_(url, opts, (error, response, body) => {
+        if (error) throw error;
+        if (!response || !body) throw new Error('response or body is empty');
+        resolve({
+          code: response.statusCode,
+          data: body
+        });
+      });
+    } catch (err) {
+      reject({
+        code: 500,
+        error: err
+      });
+    }
+  });
+};
+
+export const updateResource = async (
+  { urlParams, opts }: RequestBase,
+  name: string,
+  obj: unknown
+) => {
+  const url = `${generateApiUrl(urlParams)}/${name}`;
+  const data = merge(obj, {
+    metadata: {
+      namespace: urlParams.namespace
+    }
+  });
+  console.log(url);
+  return new Promise((resolve, reject) => {
+    try {
+      put(url, { body: data, ...opts }, (error, response, body) => {
         if (error) throw error;
         if (!response || !body) throw new Error('response or body is empty');
         resolve({
