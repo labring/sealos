@@ -12,6 +12,7 @@ import Table from '../../../table/table';
 import ActionButton from '../../../action-button/action-button';
 import { deleteResource } from '@/api/delete';
 import { Resources } from '@/constants/kube-object';
+import { updateResource } from '@/api/update';
 
 interface DataType {
   key: string;
@@ -73,7 +74,8 @@ const columns: ColumnsType<DataType> = [
     fixed: 'right',
     render: (name: string) => (
       <ActionButton
-        targetName={name}
+        obj={DEPLOYMENT_STORE.items.filter((dep) => dep.getName() === name)[0]}
+        onUpdate={(data: string) => updateResource(data, name, Resources.Deployments)}
         onDelete={() => deleteResource(name, Resources.Deployments)}
       />
     )
