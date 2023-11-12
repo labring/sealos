@@ -16,13 +16,11 @@ package guest
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/fork/golang/expansion"
-	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
 	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/ssh"
@@ -81,19 +79,6 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts
 	return nil
 }
 
-func formalizeWorkingCommand(clusterName string, imageName string, t v2.ImageType, cmd string) string {
-	if cmd == "" {
-		return ""
-	}
-	switch t {
-	case v2.RootfsImage, v2.PatchImage:
-		return fmt.Sprintf(constants.CdAndExecCmd, constants.GetRootWorkDir(clusterName), cmd)
-	case v2.AppImage, "":
-		return fmt.Sprintf(constants.CdAndExecCmd, constants.GetAppWorkDir(clusterName, imageName), cmd)
-	}
-	return ""
-}
-
 func formalizeImageCommands(cluster *v2.Cluster, index int, m v2.MountImage, extraEnvs map[string]string) []string {
 	envs := maps.Merge(m.Env, extraEnvs)
 	envs = v2.MergeEnvWithBuiltinKeys(envs, m)
@@ -101,15 +86,15 @@ func formalizeImageCommands(cluster *v2.Cluster, index int, m v2.MountImage, ext
 
 	cmds := make([]string, 0)
 	for i := range m.Entrypoint {
-		cmds = append(cmds, formalizeWorkingCommand(cluster.Name, m.Name, m.Type, expansion.Expand(m.Entrypoint[i], mapping)))
+		cmds = append(cmds, stringsutil.FormalizeWorkingCommand(cluster.Name, m.Name, string(m.Type), expansion.Expand(m.Entrypoint[i], mapping)))
 	}
 	if index == 0 && len(cluster.Spec.Command) > 0 {
 		for i := range cluster.Spec.Command {
-			cmds = append(cmds, formalizeWorkingCommand(cluster.Name, m.Name, m.Type, expansion.Expand(cluster.Spec.Command[i], mapping)))
+			cmds = append(cmds, stringsutil.FormalizeWorkingCommand(cluster.Name, m.Name, string(m.Type), expansion.Expand(cluster.Spec.Command[i], mapping)))
 		}
 	} else {
 		for i := range m.Cmd {
-			cmds = append(cmds, formalizeWorkingCommand(cluster.Name, m.Name, m.Type, expansion.Expand(m.Cmd[i], mapping)))
+			cmds = append(cmds, stringsutil.FormalizeWorkingCommand(cluster.Name, m.Name, string(m.Type), expansion.Expand(m.Cmd[i], mapping)))
 		}
 	}
 

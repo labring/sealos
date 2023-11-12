@@ -21,6 +21,12 @@ const (
 const TemplateSuffix = ".tmpl"
 
 const (
+	AppImage    = "application"
+	RootfsImage = "rootfs"
+	PatchImage  = "patch"
+)
+
+const (
 	LvsCareStaticPodName    = "kube-sealos-lvscare"
 	YamlFileSuffix          = "yaml"
 	DefaultRegistryDomain   = "sealos.hub"
