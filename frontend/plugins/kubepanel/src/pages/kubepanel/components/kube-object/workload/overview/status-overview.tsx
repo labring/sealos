@@ -10,11 +10,7 @@ export interface WorkloadStatusOverviewData {
 const WorkloadStatusOverview = ({ data }: { data?: Array<WorkloadStatusOverviewData> }) => {
   if (!data) return null;
   return (
-    <Flex
-      wrap="wrap"
-      justify="space-around"
-      className="bg-white border border-solid border-color-border"
-    >
+    <Flex wrap="wrap" justify="space-around">
       {data.map(({ title, data, onClickTitle }) => (
         <WorkloadStatus key={title} title={title} data={data} />
       ))}

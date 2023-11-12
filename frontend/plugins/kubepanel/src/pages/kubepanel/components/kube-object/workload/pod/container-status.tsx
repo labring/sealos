@@ -3,7 +3,6 @@ import { LocaleDate } from '@/components/kube/local-date';
 import moment from 'moment-timezone';
 import { getStatusColor } from '@/utils/status-color';
 import { entries, startCase } from 'lodash';
-import { KubeRecord } from '@/components/kube/kube-record';
 import React from 'react';
 
 interface ContainerStatusProps {
