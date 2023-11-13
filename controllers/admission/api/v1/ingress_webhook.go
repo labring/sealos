@@ -28,7 +28,6 @@ import (
 	"github.com/labring/sealos/controllers/pkg/code"
 
 	netv1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -66,19 +65,17 @@ func (m *IngressMutator) Default(_ context.Context, obj runtime.Object) error {
 	if !ok {
 		return errors.New("obj convert Ingress is error")
 	}
-	initAnnotationAndLabels(&i.ObjectMeta)
 	if isUserNamespace(i.Namespace) && hasSubDomain(i, m.domain) {
 		ilog.Info("mutating ingress in user ns", "ingress namespace", i.Namespace, "ingress name", i.Name)
-		m.mutateUserIngressAnnotations(&i.ObjectMeta)
+		m.mutateUserIngressAnnotations(i)
 	}
 	return nil
 }
 
-func (m *IngressMutator) mutateUserIngressAnnotations(meta *metav1.ObjectMeta) {
-	if meta.Annotations != nil {
-		for k, v := range m.IngressAnnotations {
-			meta.Annotations[k] = v
-		}
+func (m *IngressMutator) mutateUserIngressAnnotations(i *netv1.Ingress) {
+	initAnnotationAndLabels(&i.ObjectMeta)
+	for k, v := range m.IngressAnnotations {
+		i.Annotations[k] = v
 	}
 }
 
