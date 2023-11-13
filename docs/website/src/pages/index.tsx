@@ -4,7 +4,6 @@ import React, { useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { PC_MIN_WIDTH } from '../constants/platform';
 import useWindow from '../hooks/useWindow';
-import Banner from './components/Banner';
 import Capability from './components/Capability';
 import Community from './components/Community';
 import HomeFooter from './components/Footer';
@@ -45,7 +44,6 @@ const Home = () => {
 
   const HomeRender = (
     <div id="sealos-layout-wrap-home-page">
-      <Banner />
       <Helmet>
         <script async src="https://www.googletagmanager.com/gtag/js?id=AW-786053845" />
         <script async>
