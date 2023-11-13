@@ -17,7 +17,6 @@
     align-items: center;
     justify-content: space-between;
     padding: 30px 0;
-    margin-top: 48px;
 
     .sealos-title {
       line-height: 140%;
@@ -88,6 +87,8 @@
         margin-left: 16px;
         font-weight: 500;
         color: #fff;
+        cursor: pointer;
+
         a {
           font-size: 16px;
         }
