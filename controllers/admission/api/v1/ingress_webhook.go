@@ -28,6 +28,7 @@ import (
 	"github.com/labring/sealos/controllers/pkg/code"
 
 	netv1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -47,17 +48,38 @@ var ilog = logf.Log.WithName("ingress-validating-webhook")
 
 type IngressMutator struct {
 	client.Client
+	domain             string
+	IngressAnnotations map[string]string
 }
 
 func (m *IngressMutator) SetupWithManager(mgr ctrl.Manager) error {
+	m.Client = mgr.GetClient()
+	m.domain = os.Getenv("DOMAIN")
 	return builder.WebhookManagedBy(mgr).
 		For(&netv1.Ingress{}).
-		WithDefaulter(&IngressMutator{Client: mgr.GetClient()}).
+		WithDefaulter(m).
 		Complete()
 }
 
-func (m *IngressMutator) Default(_ context.Context, _ runtime.Object) error {
+func (m *IngressMutator) Default(_ context.Context, obj runtime.Object) error {
+	i, ok := obj.(*netv1.Ingress)
+	if !ok {
+		return errors.New("obj convert Ingress is error")
+	}
+	initAnnotationAndLabels(&i.ObjectMeta)
+	if isUserNamespace(i.Namespace) && hasSubDomain(i, m.domain) {
+		ilog.Info("mutating ingress in user ns", "ingress namespace", i.Namespace, "ingress name", i.Name)
+		m.mutateUserIngressAnnotations(&i.ObjectMeta)
+	}
 	return nil
+}
+
+func (m *IngressMutator) mutateUserIngressAnnotations(meta *metav1.ObjectMeta) {
+	if meta.Annotations != nil {
+		for k, v := range m.IngressAnnotations {
+			meta.Annotations[k] = v
+		}
+	}
 }
 
 //+kubebuilder:object:generate=false
@@ -157,6 +179,11 @@ func (v *IngressValidator) validate(ctx context.Context, i *netv1.Ingress) error
 	ilog.Info("validating", "ingress namespace", i.Namespace, "ingress name", i.Name, "user", request.UserInfo.Username, "userGroups", request.UserInfo.Groups)
 	if !isUserServiceAccount(request.UserInfo.Username) {
 		ilog.Info("user is not user's serviceaccount, skip validate")
+		return nil
+	}
+
+	if !isUserNamespace(i.Namespace) {
+		ilog.Info("namespace is system namespace, skip validate")
 		return nil
 	}
 
