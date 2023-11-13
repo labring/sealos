@@ -55,7 +55,7 @@ const ConfigMapOverviewPage = () => {
   return (
     <>
       <Table
-        title={"Config Maps"}
+        title={'Config Maps'}
         columns={columns}
         dataSource={dataSource}
         onRow={(record) => ({

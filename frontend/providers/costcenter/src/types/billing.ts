@@ -30,6 +30,9 @@ export type BillingItem<T = Costs> = {
   amount: number;
   appType: string;
   costs: T;
+  payment?: {
+    amount: number;
+  };
   order_id: string;
   owner: string;
   time: string;

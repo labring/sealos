@@ -71,7 +71,7 @@ function Invoice() {
         .map<ReqGenInvoice['billings'][0]>((billing) => ({
           createdTime: parseISO(billing.time).getTime(),
           order_id: billing.order_id,
-          amount: formatMoney(billing.amount)
+          amount: formatMoney(billing.payment?.amount || billing.amount)
         }));
       return {
         tableResult,
@@ -208,11 +208,11 @@ function Invoice() {
                   data={[...tableResult]}
                   onSelect={(checked, item) => {
                     if (checked) {
-                      setInvoiceAmount(invoiceAmount + (item.payment?.amount || item.amount));
+                      setInvoiceAmount(invoiceAmount + item.amount);
                       setInvoiceCount(invoiceCount + 1);
                       selectBillings.current.push({ ...item });
                     } else {
-                      setInvoiceAmount(invoiceAmount - (item.payment?.amount || item.amount));
+                      setInvoiceAmount(invoiceAmount - item.amount);
                       setInvoiceCount(invoiceCount - 1);
                       const idx = selectBillings.current.findIndex(
                         (billing) => billing.order_id === item.order_id
