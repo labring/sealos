@@ -45,6 +45,7 @@ const (
 	DBPodLabelComponentNameKey = "apps.kubeblocks.io/component-name"
 	TerminalIDLabelKey         = "TerminalID"
 	AppLabelKey                = "app"
+	AppDeployLabelKey          = "cloud.sealos.io/app-deploy-manager"
 	JobNameLabelKey            = "job-name"
 	ACMEChallengeKey           = "acme.cert-manager.io/http01-solver"
 	KubeBlocksBackUpName       = "kubeblocks-backup-data"
@@ -70,6 +71,9 @@ func NewResourceNamed(cr client.Object) *ResourceNamed {
 	case labels[AppLabelKey] != "":
 		p._type = APP
 		p._name = labels[AppLabelKey]
+	case labels[AppDeployLabelKey] != "":
+		p._type = APP
+		p._name = labels[AppDeployLabelKey]
 	case labels[JobNameLabelKey] != "":
 		p._type = JOB
 		p._name = strings.SplitN(labels[JobNameLabelKey], "-", 2)[0]

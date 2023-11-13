@@ -301,6 +301,22 @@ func (r *MonitorReconciler) getResourceUsage(namespace *corev1.Namespace) ([]*re
 		}
 		resUsed[pvcRes.String()][corev1.ResourceStorage].Add(pvc.Spec.Resources.Requests[corev1.ResourceStorage])
 	}
+	svcList := corev1.ServiceList{}
+	if err := r.List(context.Background(), &svcList, &client.ListOptions{Namespace: namespace.Name}); err != nil {
+		return nil, fmt.Errorf("failed to list svc: %v", err)
+	}
+	for _, svc := range svcList.Items {
+		if svc.Spec.Type != corev1.ServiceTypeNodePort {
+			continue
+		}
+		svcRes := resources.NewResourceNamed(&svc)
+		if resUsed[svcRes.String()] == nil {
+			resNamed[svcRes.String()] = svcRes
+			resUsed[svcRes.String()] = initResources()
+		}
+		resUsed[svcRes.String()][corev1.ResourceServicesNodePorts].Add(*resource.NewQuantity(1, resource.BinarySI))
+	}
+
 	var monitors []*resources.Monitor
 
 	getResourceUsed := func(podResource map[corev1.ResourceName]*quantity) (bool, map[uint8]int64) {

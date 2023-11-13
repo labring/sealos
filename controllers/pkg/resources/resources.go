@@ -261,6 +261,13 @@ var DefaultPropertyTypeList = []PropertyType{
 		UnitPrice:  0,
 		UnitString: "1Mi",
 	},
+	{
+		Name:       "services.nodeports",
+		Enum:       4,
+		PriceType:  AVG,
+		UnitPrice:  0,
+		UnitString: "1",
+	},
 }
 
 var DefaultPropertyTypeLS = newPropertyTypeLS(DefaultPropertyTypeList)
