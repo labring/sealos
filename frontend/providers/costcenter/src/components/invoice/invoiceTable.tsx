@@ -63,7 +63,7 @@ export function InvoiceTable({
                 </Flex>
               </Td>
               <Td>{format(item.createdTime, 'MM-dd HH:mm')}</Td>
-              <Td color={'#219BF4'}>{item.payment?.amount || item.amount}</Td>
+              <Td color={'#219BF4'}>{item.amount}</Td>
             </Tr>
           ))}
         </Tbody>
