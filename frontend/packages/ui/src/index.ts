@@ -1,4 +1,2 @@
-export * from './colors';
-export * from './theme';
+export { theme } from './theme';
 export * from './components';
-export * from './fontSizes';
