@@ -8,7 +8,6 @@ import {
   ButtonGroup,
   Center,
   Checkbox,
-  CheckboxGroup,
   Flex,
   FlexProps,
   HStack,
@@ -31,6 +30,7 @@ import {
   Tr,
   useCheckboxGroup
 } from '@chakra-ui/react';
+import Fuse from 'fuse.js';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import PathLink from './PathLink';
@@ -46,9 +46,8 @@ import { GetObjectCommand, _Object } from '@aws-sdk/client-s3';
 import { useToast } from '@/hooks/useToast';
 import { useEffect, useState } from 'react';
 import ArrowDownSLineIcon from '../Icons/ArrowDownSLineIcon';
-import { formatBytes, searchText, useCopyData } from '@/utils/tools';
+import { formatBytes, useCopyData } from '@/utils/tools';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { useRouter } from 'next/router';
 import { format } from 'date-fns';
 import DeleteFileModal from '../common/modal/DeleteFileModal';
 import DeleteSingleFileModal from '../common/modal/DeleteSingleFileModal';
@@ -75,6 +74,9 @@ export default function FileManager({ ...styles }: FlexProps) {
   const [ContinuationToken, setContinuationToken] = useState<string | undefined>(undefined);
   const [searchVal, setSearchVal] = useState('');
   const [MaxKeys, setMaxKeys] = useState(20);
+  const { toast } = useToast();
+  const setPrefix = useOssStore((s) => s.setPrefix);
+  const queryClient = useQueryClient();
   const clearPage = () => {
     setpageStack([]);
     setContinuationToken(undefined);
@@ -104,8 +106,6 @@ export default function FileManager({ ...styles }: FlexProps) {
   useEffect(() => {
     deleteCheckBoxGroupState.setValue([]);
   }, [bucket, prefix, pageStack, ContinuationToken]);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const deleteMutation = useMutation({
     mutationFn: deleteObject(s3client!),
     onSuccess() {
@@ -125,7 +125,6 @@ export default function FileManager({ ...styles }: FlexProps) {
       });
     }
   });
-  const setPrefix = useOssStore((s) => s.setPrefix);
   const deleteEntry = (file: EntryType) => {
     if (!s3client || !bucket?.name) return;
     if (!file.isDir) {
@@ -161,6 +160,7 @@ export default function FileManager({ ...styles }: FlexProps) {
           .filter((v) => v.trim() !== '') || [];
       if (relativePath.length === 0) return [];
       const fileName = relativePath[0];
+      if (fileName === FolderPlaceholder) return [];
       const fileNameArr = fileName.split('.');
       return [
         {
@@ -184,9 +184,25 @@ export default function FileManager({ ...styles }: FlexProps) {
       isDir: true
     })) || [])
   ];
+  const fuse = new Fuse(fileList, {
+    keys: ['fileName']
+  });
+  if (prefix.length > 0)
+    fileList.unshift({
+      LastModified: undefined,
+      fileName: '..',
+      Key: [prefix, '..'].join('/'),
+      Size: 0,
+      type: 'link',
+      isDir: true
+    });
+  const fuseList = fuse.search(searchVal);
+  // --------
+  // budle delete
   const deleteCheckBoxGroupState = useCheckboxGroup({
     defaultValue: []
   });
+
   const multiDeleteEntry = async (_keyList: string[]) => {
     if (!s3client || !bucket?.name) return;
     const objs = fileList.filter((file) => _keyList.includes(file.Key) && file.type !== 'link');
@@ -227,15 +243,6 @@ export default function FileManager({ ...styles }: FlexProps) {
     trueFileList.every((f) => deleteCheckBoxGroupState.value.includes(f.Key));
   const someDelete =
     trueFileList.some((f) => deleteCheckBoxGroupState.value.includes(f.Key)) && !allDelete;
-  if (prefix.length > 0)
-    fileList.unshift({
-      LastModified: undefined,
-      fileName: '..',
-      Key: [prefix, '..'].join('/'),
-      Size: 0,
-      type: 'link',
-      isDir: true
-    });
   return (
     <Flex direction={'column'} {...styles}>
       <HStack w="full" my="16px" mb="25px">
@@ -343,114 +350,103 @@ export default function FileManager({ ...styles }: FlexProps) {
                 }
               }}
             >
-              {fileList
-                .filter((file) => file.fileName !== FolderPlaceholder)
-                .filter((file) => !!searchText(searchVal)(file.fileName))
-                .map((file) => (
-                  <Tr
-                    key={file.fileName}
-                    _hover={{
-                      bgColor: 'white_.600'
-                    }}
-                    onClick={() => {
-                      if (!file.isDir) return;
-                      clearPage();
-                      deleteCheckBoxGroupState.setValue([]);
-                      if (file.type === 'link') {
-                        const targetPrefix = [...prefix];
-                        targetPrefix.pop();
-                        setPrefix(targetPrefix);
-                      } else setPrefix([...prefix, file.fileName]);
-                    }}
-                    cursor={file.isDir ? 'pointer' : 'initial'}
-                  >
-                    <Td>
-                      <HStack gap="10px">
-                        {!(file.type === 'link' && file.isDir) && (
-                          <Box onClick={(e) => e.stopPropagation()}>
-                            <Checkbox
-                              {...deleteCheckBoxGroupState.getCheckboxProps({ value: file.Key })}
-                            />
-                          </Box>
-                        )}
-                        {
-                          // isdir
-                          file.isDir ? (
-                            <FolderIcon boxSize={'20px'} color="blue.600" />
-                          ) : (
-                            <FileIcon boxSize={'20px'} color="purple.500" />
-                          )
-                        }
-                        <Text color="grayModern.900">{file.fileName}</Text>
-                      </HStack>
-                    </Td>
-                    <Td>{file.isDir ? '--' : formatBytes(file.Size || 0).toString()}</Td>
-                    <Td>{file.type}</Td>
-                    <Td>
-                      {file.LastModified ? format(file.LastModified, 'yyyy/MM/dd hh:mm') : ''}
-                    </Td>
-                    <Td isNumeric>
-                      <ButtonGroup variant={'white-bg-icon'} color={'grayModern.900'}>
-                        {!file.isDir && (
-                          <IconButton
-                            icon={<VisibityIcon boxSize={'14px'} />}
-                            p="5px"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!s3client || !Bucket) return;
-                              getSignedUrl(
-                                s3client,
-                                new GetObjectCommand({ Bucket, Key: file.Key })
-                              )
-                                .then((url) => {
-                                  window.open(new URL(url));
-                                })
-                                .catch((err) => {
-                                  toast({
-                                    status: 'error',
-                                    title: 'get url error'
-                                  });
+              {(searchVal == '' ? fileList : fuseList.map((v) => v.item)).map((file) => (
+                <Tr
+                  key={file.fileName}
+                  _hover={{
+                    bgColor: 'white_.600'
+                  }}
+                  onClick={() => {
+                    if (!file.isDir) return;
+                    clearPage();
+                    deleteCheckBoxGroupState.setValue([]);
+                    if (file.type === 'link') {
+                      const targetPrefix = [...prefix];
+                      targetPrefix.pop();
+                      setPrefix(targetPrefix);
+                    } else setPrefix([...prefix, file.fileName]);
+                  }}
+                  cursor={file.isDir ? 'pointer' : 'initial'}
+                >
+                  <Td>
+                    <HStack gap="10px">
+                      {!(file.type === 'link' && file.isDir) && (
+                        <Box onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            {...deleteCheckBoxGroupState.getCheckboxProps({ value: file.Key })}
+                          />
+                        </Box>
+                      )}
+                      {
+                        // isdir
+                        file.isDir ? (
+                          <FolderIcon boxSize={'20px'} color="blue.600" />
+                        ) : (
+                          <FileIcon boxSize={'20px'} color="purple.500" />
+                        )
+                      }
+                      <Text color="grayModern.900">{file.fileName}</Text>
+                    </HStack>
+                  </Td>
+                  <Td>{file.isDir ? '--' : formatBytes(file.Size || 0).toString()}</Td>
+                  <Td>{file.type}</Td>
+                  <Td>{file.LastModified ? format(file.LastModified, 'yyyy/MM/dd hh:mm') : ''}</Td>
+                  <Td isNumeric>
+                    <ButtonGroup variant={'white-bg-icon'} color={'grayModern.900'}>
+                      {!file.isDir && (
+                        <IconButton
+                          icon={<VisibityIcon boxSize={'14px'} />}
+                          p="5px"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!s3client || !Bucket) return;
+                            getSignedUrl(s3client, new GetObjectCommand({ Bucket, Key: file.Key }))
+                              .then((url) => {
+                                window.open(new URL(url));
+                              })
+                              .catch((err) => {
+                                toast({
+                                  status: 'error',
+                                  title: 'get url error'
                                 });
-                            }}
-                            aria-label={'preview'}
-                          />
-                        )}
-                        {!file.isDir && (
-                          <IconButton
-                            icon={<LinkIcon boxSize={'14px'} />}
-                            p="5px"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!s3client || !Bucket) return;
-                              getSignedUrl(
-                                s3client,
-                                new GetObjectCommand({ Bucket, Key: file.Key })
-                              )
-                                .then((url) => {
-                                  copyData(url);
-                                })
-                                .catch((err) => {
-                                  toast({
-                                    status: 'error',
-                                    title: 'get url error'
-                                  });
+                              });
+                          }}
+                          aria-label={'preview'}
+                        />
+                      )}
+                      {!file.isDir && (
+                        <IconButton
+                          icon={<LinkIcon boxSize={'14px'} />}
+                          p="5px"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!s3client || !Bucket) return;
+                            getSignedUrl(s3client, new GetObjectCommand({ Bucket, Key: file.Key }))
+                              .then((url) => {
+                                copyData(url);
+                              })
+                              .catch((err) => {
+                                toast({
+                                  status: 'error',
+                                  title: 'get url error'
                                 });
-                            }}
-                            aria-label={'link'}
-                          />
-                        )}
-                        {!(file.isDir && file.type === 'link') && (
-                          <DeleteSingleFileModal
-                            aria-label={'delete'}
-                            onDelete={() => {
-                              deleteEntry(file);
-                            }}
-                          />
-                        )}
-                      </ButtonGroup>
-                    </Td>
-                  </Tr>
-                ))}
+                              });
+                          }}
+                          aria-label={'link'}
+                        />
+                      )}
+                      {!(file.isDir && file.type === 'link') && (
+                        <DeleteSingleFileModal
+                          aria-label={'delete'}
+                          onDelete={() => {
+                            deleteEntry(file);
+                          }}
+                        />
+                      )}
+                    </ButtonGroup>
+                  </Td>
+                </Tr>
+              ))}
             </Tbody>
           </Table>
           {fileList.length === 0 && (
