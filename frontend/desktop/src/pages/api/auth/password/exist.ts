@@ -4,14 +4,23 @@ import { jsonRes } from '@/services/backend/response';
 import { queryUser } from '@/services/backend/db/user';
 import { hashPassword } from '@/utils/crypto';
 import { TUserExist } from '@/types/user';
-import { enablePassword } from '@/services/enable';
+import { enablePassword, enableSignUp } from '@/services/enable';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!enablePassword()) {
       throw new Error('PASSWORD_SALT is not defined');
     }
     const { user } = req.body;
-
+    if (!enableSignUp()) {
+      return jsonRes<TUserExist>(res, {
+        code: 200,
+        message: 'Successfully',
+        data: {
+          user,
+          exist: true
+        }
+      });
+    }
     const result = await queryUser({ id: user, provider: 'password_user' });
     if (!result || !result.password || result.password === hashPassword('')) {
       return jsonRes<TUserExist>(res, {
