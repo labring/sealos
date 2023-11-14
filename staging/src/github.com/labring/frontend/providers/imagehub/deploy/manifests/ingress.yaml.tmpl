@@ -5,7 +5,6 @@ metadata:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
   name: imagehub-frontend
   namespace: imagehub-frontend
 spec:
@@ -14,7 +13,7 @@ spec:
       http:
         paths:
           - pathType: Prefix
-            path: /()(.*)
+            path: /
             backend:
               service:
                 name: imagehub-frontend

@@ -72,11 +72,5 @@ func generateDefaultNginxConfigSnippet(rootDomain string) string {
 	// set up X-Xss-Protection
 	part = `more_set_headers "X-Xss-Protection: 1; mode=block"; `
 	wholeSnippet += part
-	// set up Cache-Control
-	part = `if ($request_uri ~* \.(js|css|gif|jpe?g|png)) {
-	        expires 30d;
-	        add_header Cache-Control "public";
-	    } `
-	wholeSnippet += part
 	return wholeSnippet
 }
