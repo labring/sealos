@@ -17,21 +17,39 @@ package v1
 import (
 	"strings"
 
+	"github.com/miekg/dns"
+
+	netv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const userServiceAccountPrefix = "system:serviceaccount:ns-"
+const (
+	userServiceAccountPrefix = "system:serviceaccount:ns-"
+	userNamespacePrefix      = "ns-"
+)
 
 func isUserServiceAccount(sa string) bool {
 	return strings.HasPrefix(sa, userServiceAccountPrefix)
 }
 
-func initAnnotationAndLabels(meta metav1.ObjectMeta) metav1.ObjectMeta {
+func isUserNamespace(ns string) bool {
+	return strings.HasPrefix(ns, userNamespacePrefix)
+}
+
+func hasSubDomain(i *netv1.Ingress, domain string) bool {
+	for _, r := range i.Spec.Rules {
+		if dns.IsSubDomain(domain, r.Host) {
+			return true
+		}
+	}
+	return false
+}
+
+func initAnnotationAndLabels(meta *metav1.ObjectMeta) {
 	if meta.Annotations == nil {
 		meta.Annotations = make(map[string]string)
 	}
 	if meta.Labels == nil {
 		meta.Labels = make(map[string]string)
 	}
-	return meta
 }
