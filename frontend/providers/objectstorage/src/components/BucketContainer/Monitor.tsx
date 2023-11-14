@@ -62,29 +62,28 @@ export default function DataMonitor({ ...styles }: BoxProps) {
     if (monitorQuery.isSuccess && monitorQuery.data) {
       const _data = monitorQuery.data;
       for (let i = 0; i < 4; i++) {
-        const curdata = _data?.[i]?.reduce<[number, string][]>(
-          (pre, cur) => [
-            ...pre,
-            ...cur.values
-              .map<[number, string]>(([time, v]) => [time * 1000, v])
-              // clean data
-              .filter(([time, v], idx, arr) => {
-                if (
-                  !['minio_bucket_usage_object_total', 'minio_bucket_usage_total_bytes'].includes(
-                    cur.metric.__name__
-                  )
-                ) {
-                  if (idx > 0 && BigInt(arr[idx - 1][1]) > BigInt(v)) {
-                    console.log(time, v);
-                    return false;
-                  } else return true;
-                } else {
-                  return true;
-                }
-              })
-          ],
-          []
-        );
+        // sort slice
+        _data[i].sort((a, b) => a.values[0][0] - b.values[0][0]);
+        const curdata = _data?.[i]?.reduce<[number, string][]>((pre, cur) => {
+          let maxVal = BigInt(0);
+          const column = cur.values
+            .map<[number, string]>(([time, v]) => [time * 1000, v])
+            // clean data
+            .filter(([_time, v]) => {
+              if (
+                !['minio_bucket_usage_object_total', 'minio_bucket_usage_total_bytes'].includes(
+                  cur.metric.__name__
+                ) &&
+                maxVal > BigInt(v)
+              ) {
+                return false;
+              }
+              maxVal = BigInt(v);
+              return true;
+            });
+
+          return [...pre, ...column];
+        }, []);
         data[i].push(...curdata);
       }
     }

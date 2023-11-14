@@ -38,9 +38,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         })
       );
     }
-    Promise.all(result).then((resArr) => {
+    await Promise.all(result).then((resArr) => {
       if (resArr.every((response) => response.data.status === 'success')) {
-        return jsonRes(res, { data: resArr.map((v) => v.data.data.result) });
+        return jsonRes(res, {
+          data: resArr.map((v, i) => {
+            const result = v.data.data.result;
+            result.name = queries[i];
+            return result;
+          })
+        });
       } else {
         return jsonRes(res, { data: resArr.map((v) => v.data) });
       }

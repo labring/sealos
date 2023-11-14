@@ -5,7 +5,7 @@ import useSessionStore from '@/store/session';
 import { theme } from '@/styles/chakraTheme';
 // import '@/styles/globals.css';
 import { ChakraProvider } from '@chakra-ui/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { appWithTranslation, i18n, useTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
 import { useRouter } from 'next/router';
@@ -19,43 +19,21 @@ function App({ Component, pageProps }: AppProps) {
         queries: {
           // With SSR, we usually want to set some default staleTime
           // above 0 to avoid refetching immediately on the client
-          // staleTime: 60 * 1000,
+          staleTime: 60 * 1000
         }
       }
     })
   );
   const initMinioClient = useOssStore((s) => s.initClient);
   const client = useOssStore((s) => s.client);
-  const setSession = useSessionStore((s) => s.setSession);
-  // const {i18n} = useTranslation()
+  // const setSession = useSessionStore((s) => s.setSession);
+  const { session: oldSession, setSession } = useSessionStore();
+  const clearClient = useOssStore((s) => s.clearClient);
+  const router = useRouter();
   useEffect(() => {
     createSealosApp();
   }, []);
-  useEffect(() => {
-    if (!client) {
-      queryClient.fetchQuery({ queryFn: initUser, queryKey: [QueryKey.bucketUser] }).then(
-        (userInit) => {
-          const accessKeyId = userInit?.secret?.CONSOLE_ACCESS_KEY;
-          const secretAccessKey = userInit?.secret?.CONSOLE_SECRET_KEY;
-          const external = userInit?.secret?.external;
-          if (!accessKeyId || !secretAccessKey || !external) return;
-          initMinioClient({
-            credentials: {
-              accessKeyId,
-              secretAccessKey
-            },
-            endpoint: 'https://' + external,
-            forcePathStyle: true,
-            region: 'us-east-1'
-          });
-        },
-        (error) => {
-          console.error(error);
-        }
-      );
-    }
-  }, [client]);
-  const router = useRouter();
+
   useEffect(() => {
     const changeI18n = async (data: any) => {
       const locale = data.currentLanguage;
@@ -79,12 +57,28 @@ function App({ Component, pageProps }: AppProps) {
   useEffect(() => {
     const initApp = async () => {
       try {
-        const result = await sealosApp.getSession();
-        setSession(result);
+        const session = await sealosApp.getSession();
+        if (oldSession?.kubeconfig === session.kubeconfig && client) return;
+        setSession(session);
+        const userInit = await queryClient.fetchQuery([QueryKey.bucketUser, { session }], initUser);
+        const accessKeyId = userInit?.secret?.CONSOLE_ACCESS_KEY;
+        const secretAccessKey = userInit?.secret?.CONSOLE_SECRET_KEY;
+        const external = userInit?.secret?.external;
+        if (!accessKeyId || !secretAccessKey || !external) return;
+        initMinioClient({
+          credentials: {
+            accessKeyId,
+            secretAccessKey
+          },
+          endpoint: 'https://' + external,
+          forcePathStyle: true,
+          region: 'us-east-1'
+        });
+        queryClient.invalidateQueries();
       } catch (error) {}
     };
     initApp();
-  }, [setSession]);
+  }, [queryClient, client]);
   return (
     <QueryClientProvider client={queryClient}>
       <ChakraProvider theme={theme}>

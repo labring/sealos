@@ -1245,6 +1245,9 @@ importers:
       i18next:
         specifier: ^22.5.1
         version: 22.5.1
+      immer:
+        specifier: ^10.0.3
+        version: 10.0.3
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.0
@@ -1286,7 +1289,7 @@ importers:
         version: 5.2.2
       zustand:
         specifier: ^4.4.1
-        version: 4.4.7(@types/react@18.2.37)(immer@9.0.21)(react@18.2.0)
+        version: 4.4.7(@types/react@18.2.37)(immer@10.0.3)(react@18.2.0)
     devDependencies:
       '@types/jest':
         specifier: ^29.5.5

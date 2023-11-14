@@ -16,6 +16,35 @@ module.exports = (phase, { defaultConfig }) => {
       experimental: {
         outputFileTracingRoot: path.join(__dirname, '../../')
       },
+      webpack(config, { isServer }) {
+        if (!isServer) {
+          config.resolve = {
+            ...config.resolve,
+            fallback: {
+              ...config.resolve.fallback,
+              fs: false
+            }
+          };
+        }
+        Object.assign(config.resolve.alias, {
+          'utf-8-validate': false,
+          bufferutil: false
+        });
+        config.module = {
+          ...config.module,
+          rules: config.module.rules.concat([
+            {
+              test: /\.svg$/i,
+              issuer: /\.[jt]sx?$/,
+              use: ['@svgr/webpack']
+            }
+          ]),
+          exprContextCritical: false,
+          unknownContextCritical: false
+        };
+
+        return config;
+      },
       async headers() {
         return [
           {

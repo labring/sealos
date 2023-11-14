@@ -49,7 +49,7 @@ type MinioGroup<
 > = {
   input: Omit<
     {
-      apiVersion: 'minio.sealos.io/v1';
+      apiVersion: 'objectstorage.sealos.io/v1';
       kind: Kind;
       metadata: TMetadata;
       spec: Tspec;
@@ -58,7 +58,7 @@ type MinioGroup<
   >;
   output: Omit<
     {
-      apiVersion: 'minio.sealos.io/v1';
+      apiVersion: 'objectstorage.sealos.io/v1';
       kind: Kind;
       metadata: {
         annotations?: unknown;
@@ -75,7 +75,7 @@ type MinioGroup<
   >;
 };
 export type BucketCR = MinioGroup<
-  'Bucket',
+  'ObjectStorageBucket',
   {
     name: string;
     namespace: string;
@@ -89,7 +89,7 @@ export type BucketCR = MinioGroup<
   | undefined
 >;
 export type UserCR = MinioGroup<
-  'MinioUser',
+  'ObjectStorageUser',
   {
     name: string;
     namespace: string;
