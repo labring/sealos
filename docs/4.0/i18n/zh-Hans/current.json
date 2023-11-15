@@ -27,9 +27,9 @@
     "message": "私有化部署",
     "description": "The label for the doc item Self Hosting in sidebar docSidebar, linking to the doc Community"
   },
-  "sidebar.docSidebar.category.Cluster Lifecycle Management": {
-    "message": "集群生命周期管理",
-    "description": "The label for category Cluster Lifecycle Management in sidebar docSidebar"
+  "sidebar.docSidebar.category.Kubernetes Cluster Lifecycle Management": {
+    "message": "Kubernetes 集群生命周期管理",
+    "description": "The label for category Kubernetes Cluster Lifecycle Management in sidebar docSidebar"
   },
   "sidebar.docSidebar.doc.Community": {
     "message": "社区",
