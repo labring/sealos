@@ -1,29 +1,37 @@
 import { ApiBaseParamsMap } from '@/constants/kube-api';
 import { ResourceKey } from '@/constants/kube-object';
-import { deleteResource } from '@/services/backend/api';
+import { createResource } from '@/services/backend/api';
 import { authSession } from '@/services/backend/auth';
 import { getKubeApiParams } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
+import yaml from 'js-yaml';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    if (req.method !== 'DELETE') throw new Error(`Method not allowed: ${req.method}`);
+    if (req.method !== 'POST') throw new Error(`Method not allowed: ${req.method}`);
 
-    const { resource, name } = req.query;
-    if (typeof resource !== 'string') throw new Error(`invalid resource ${resource}`);
-    if (typeof name !== 'string') throw new Error(`invalid name ${name}`);
+    const { resource } = req.query;
+    if (!resource || typeof resource !== 'string') throw new Error(`invalid resource ${resource}`);
 
     const apiBaseParams = ApiBaseParamsMap[resource as ResourceKey];
     if (!apiBaseParams) throw new Error(`invalid resource ${resource}`);
 
     const { serverUrl, requestOpts, namespace } = getKubeApiParams(await authSession(req.headers));
-    const data = await deleteResource(
+
+    if (!req.body.data) throw new Error(`invalid data ${req.body.data}`);
+    const resourceData = yaml.load(req.body.data);
+
+    const data = await createResource(
       {
-        urlParams: { ...apiBaseParams, serverUrl, namespace },
+        urlParams: {
+          ...apiBaseParams,
+          serverUrl,
+          namespace
+        },
         opts: requestOpts
       },
-      name
+      resourceData
     );
 
     jsonRes(res, {

@@ -7,8 +7,8 @@ import { KubeBadge } from '@/components/kube/kube-badge';
 import PodDetailTolerations from './pod-detail-tolerations';
 import PodDetailAffinities from './pod-detail-affinities';
 import ContainerDetail from './container-detail';
-import Drawer from '../../drawer/drawer';
-import DrawerPanel from '../../drawer/drawer-panel';
+import Drawer from '../../../drawer/drawer';
+import DrawerPanel from '../../../drawer/drawer-panel';
 
 interface Props {
   pod?: Pod;

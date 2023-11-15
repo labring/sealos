@@ -24,3 +24,11 @@ export const KubeObjectConstructorMap: { [key in Resources]: any } = {
   [Resources.ConfigMaps]: ConfigMap,
   [Resources.PersistentVolumeClaims]: PersistentVolumeClaim
 };
+
+export const KindMap: { [key in Resources]: any } = {
+  [Resources.Pods]: 'Pod',
+  [Resources.Deployments]: 'Deployment',
+  [Resources.StatefulSets]: 'StatefulSet',
+  [Resources.ConfigMaps]: 'ConfigMap',
+  [Resources.PersistentVolumeClaims]: 'PersistentVolumeClaim'
+};

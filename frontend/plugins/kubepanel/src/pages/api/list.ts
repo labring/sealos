@@ -5,17 +5,19 @@ import { authSession } from '@/services/backend/auth';
 import { getKubeApiParams } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
-import { getRequest } from '@/utils/request';
 import { isArray, isError } from 'lodash';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { serverUrl, requestOpts, namespace } = getKubeApiParams(await authSession(req.headers));
+    if (req.method !== 'GET') throw new Error(`Method not allowed: ${req.method}`);
+
     const resource = req.query.resource;
     if (!resource || isArray(resource)) {
       throw new Error(`invalid resource ${resource}`);
     }
+
+    const { serverUrl, requestOpts, namespace } = getKubeApiParams(await authSession(req.headers));
 
     const apiBaseParams = ApiBaseParamsMap[resource as ResourceKey];
     if (!apiBaseParams) {
@@ -35,7 +37,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       opts: requestOpts
     });
 
-    const { code, error = null, data = null } = await getRequest(apiUrl, requestOpts);
     if (isError(error)) throw error;
     jsonRes(res, {
       code,
@@ -48,9 +49,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
   }
 }
-
-const generateApiBaseUrl = (params: KubeApiUrlParams): string => {
-  if (!params.apiGroup || params.apiGroup === '')
-    return `${params.serverUrl}/${params.apiPrefix}/${params.apiVersion}/namespaces/${params.namespace}/${params.resource}`;
-  return `${params.serverUrl}/${params.apiPrefix}/${params.apiGroup}/${params.apiVersion}/namespaces/${params.namespace}/${params.resource}`;
-};

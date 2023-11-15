@@ -6,11 +6,11 @@ type ApiPrefix = 'api' | 'apis';
 type ApiGroup = 'apps';
 type ApiVersion = 'v1';
 
-export type KubeApiUrlParams = {
+export interface KubeApiUrlParams {
   serverUrl: string;
-  apiPrefix: string;
-  apiGroup: string;
-  apiVersion: string;
+  apiPrefix: ApiPrefix;
+  apiGroup?: ApiGroup;
+  apiVersion: ApiVersion;
   namespace: string;
   resource: Resources;
 }

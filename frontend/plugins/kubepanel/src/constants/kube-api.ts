@@ -1,20 +1,12 @@
+import { KubeApiUrlParams } from '@/services/backend/api';
 import { Resources, ResourceKey } from './kube-object';
 
-type ApiPrefix = 'api' | 'apis';
-type ApiGroup = '' | 'apps';
-type ApiVersion = 'v1';
-
-export type UrlParams = {
-  apiPrefix: ApiPrefix;
-  apiGroup: ApiGroup;
-  apiVersion: ApiVersion;
-  resource: Resources;
-};
+type UrlParams = Omit<KubeApiUrlParams, 'serverUrl' | 'namespace'>;
 
 export const ApiBaseParamsMap: Record<ResourceKey, UrlParams> = {
   pods: {
     apiPrefix: 'api',
-    apiGroup: '',
+    apiGroup: undefined,
     apiVersion: 'v1',
     resource: Resources.Pods
   },
@@ -32,13 +24,13 @@ export const ApiBaseParamsMap: Record<ResourceKey, UrlParams> = {
   },
   configmaps: {
     apiPrefix: 'api',
-    apiGroup: '',
+    apiGroup: undefined,
     apiVersion: 'v1',
     resource: Resources.ConfigMaps
   },
   persistentvolumeclaims: {
     apiPrefix: 'api',
-    apiGroup: '',
+    apiGroup: undefined,
     apiVersion: 'v1',
     resource: Resources.PersistentVolumeClaims
   }

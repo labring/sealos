@@ -1,12 +1,12 @@
 import { Pod, StatefulSet } from '@/k8slens/kube-object';
-import Drawer from '../../drawer/drawer';
+import Drawer from '../../../drawer/drawer';
 import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
 import PodDetailTolerations from '../pod/pod-detail-tolerations';
 import PodDetailAffinities from '../pod/pod-detail-affinities';
 import { KubeRecord } from '@/components/kube/kube-record';
 import PodDetailStatuses from '../pod/pod-detail-statuses';
 import { KubeBadge } from '@/components/kube/kube-badge';
-import DrawerPanel from '../../drawer/drawer-panel';
+import DrawerPanel from '../../../drawer/drawer-panel';
 
 interface Props {
   statefulSet?: StatefulSet;
