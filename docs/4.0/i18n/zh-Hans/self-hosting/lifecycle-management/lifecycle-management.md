@@ -2,7 +2,7 @@
 sidebar_position: 0
 ---
 
-# 集群生命周期管理
+# Kubernetes 集群生命周期管理
 
 Sealos 提供一套强大的工具，使得用户可以便利地管理整个集群的生命周期。
 
