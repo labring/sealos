@@ -31,7 +31,6 @@ export default function Tutorial({
   let { fileNameParams, bashParams, ossVersion } = useMemo(() => {
     if (ossFileUrl) {
       let match = /cloud-(.*?)\.tar/g.exec(ossFileUrl);
-      console.log(match);
       return {
         fileNameParams: ossFileUrl.replace('/cloud/', ''),
         bashParams: match ? `--cloud-version=${match[1]}` : '--cloud-version v5.0.0-beta1',
@@ -102,9 +101,7 @@ export default function Tutorial({
               fontSize={'14px'}
               fontWeight={600}
               onClick={() =>
-                window.open(
-                  'https://sealos.io/zh-Hans/docs/self-hosting/installation#%E5%87%86%E5%A4%87%E5%B7%A5%E4%BD%9C'
-                )
+                window.open('https://sealos.io/zh-Hans/docs/self-hosting/sealos/installation')
               }
             >
               详细文档
@@ -172,7 +169,7 @@ export default function Tutorial({
           <AccordionPanel py="20px" pl="40px" gap={'12px'}>
             <CodeBlock
               language="bash"
-              code={`curl -sfL https://raw.githubusercontent.com/labring/sealos/${ossVersion}/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh ${bashParams}`}
+              code={`curl -sfL https://gh-proxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \ --image-registry=registry.cn-shanghai.aliyuncs.com --zh \ --proxy-prefix=https://gh-proxy.com`}
             ></CodeBlock>
             <Center
               borderRadius={'4px'}
@@ -185,9 +182,7 @@ export default function Tutorial({
               fontSize={'14px'}
               fontWeight={600}
               onClick={() =>
-                window.open(
-                  'https://sealos.io/zh-Hans/docs/self-hosting/installation#%E5%AE%89%E8%A3%85%E6%AD%A5%E9%AA%A4'
-                )
+                window.open('https://sealos.io/zh-Hans/docs/self-hosting/sealos/installation')
               }
             >
               详细文档
