@@ -20,6 +20,7 @@ import { deleteTeamRequest } from '@/api/namespace';
 import useSessionStore from '@/stores/session';
 import { ApiResp } from '@/types';
 import { useTranslation } from 'react-i18next';
+import { DeleteIcon } from '@sealos/ui';
 export default function DissolveTeam({
   nsid,
   ns_uid,
@@ -80,13 +81,9 @@ export default function DissolveTeam({
         py="7px"
         px="16px"
         {...props}
+        iconSpacing={'4px'}
+        leftIcon={<DeleteIcon boxSize={'16px'} color={'grayModern.600'} />}
       >
-        <Image
-          src="/images/material-symbols_delete-outline-rounded.svg"
-          h="16px"
-          w="16px"
-          mr="4px"
-        />
         {t('Dissolve Team')}
       </Button>
       <Modal isOpen={isOpen} onClose={onClose} isCentered>

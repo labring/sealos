@@ -14,17 +14,17 @@ import {
   Menu,
   MenuList,
   MenuItem,
-  MenuButton
+  MenuButton,
+  ButtonProps
 } from '@chakra-ui/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { UserRole } from '@/types/team';
 import { TeamUserDto } from '@/types/user';
 import { useState } from 'react';
-import ExchangeIcon from '../icons/ExchangeIcon';
 import { abdicateRequest } from '@/api/namespace';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
 import { useTranslation } from 'next-i18next';
+import { ExchangeIcon, ExpanMoreIcon } from '@sealos/ui';
 export default function Abdication({
   ns_uid,
   users,
@@ -32,7 +32,7 @@ export default function Abdication({
 }: {
   users: TeamUserDto[];
   ns_uid: string;
-} & Parameters<typeof Button>[0]) {
+} & ButtonProps) {
   const { t } = useTranslation();
   const { onOpen, isOpen, onClose } = useDisclosure();
   const queryClient = useQueryClient();
@@ -115,44 +115,34 @@ export default function Abdication({
                       mr="8px"
                     />
                     <Text>{targetUser.name}</Text>
-                    {users.length > 1 && (
-                      <Image
-                        ml="auto"
-                        src="/images/material-symbols_expand-more-rounded.svg"
-                        w="16px"
-                        h="16px"
-                        transform={'rotate(90deg)'}
-                      />
-                    )}
+                    {users.length > 1 && <ExpanMoreIcon boxSize={'16px'} ml="auto" />}
                   </Flex>
                 </MenuButton>
                 <MenuList borderRadius={'2px'}>
-                  {users
-                    .map((user, idx) => (
-                      <MenuItem
-                        w="330px"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setTargetUser({
-                            name: user.name,
-                            avatar: user.avatarUrl,
-                            k8s_username: user.k8s_username,
-                            uid: user.uid
-                          });
-                        }}
-                        key={idx}
-                      >
-                        <Image
-                          src={targetUser.avatar}
-                          fallbackSrc={'/images/sealos.svg'}
-                          boxSize={'24px'}
-                          borderRadius={'50%'}
-                          mr="8px"
-                        />
-                        <Text>{targetUser.name}</Text>
-                      </MenuItem>
-                    ))
-                    .filter((_, i) => i != UserRole.Owner)}
+                  {users.map((user) => (
+                    <MenuItem
+                      w="330px"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setTargetUser({
+                          name: user.name,
+                          avatar: user.avatarUrl,
+                          k8s_username: user.k8s_username,
+                          uid: user.uid
+                        });
+                      }}
+                      key={user.uid}
+                    >
+                      <Image
+                        src={user.avatarUrl}
+                        fallbackSrc={'/images/sealos.svg'}
+                        boxSize={'24px'}
+                        borderRadius={'50%'}
+                        mr="8px"
+                      />
+                      <Text>{user.name}</Text>
+                    </MenuItem>
+                  ))}
                 </MenuList>
               </Menu>
               <Button
