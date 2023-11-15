@@ -35,14 +35,21 @@ export const Highlight = ({children, color}) => (
 - 每个集群节点应该有不同的主机名。
 - 所有节点的时间需要同步。
 - 建议使用干净的操作系统来创建集群。**不要自己装 Docker！**
-- 支持大多数 Linux 发行版，例如：Ubuntu、CentOS、Rocky linux。
-- 支持 [Docker Hub](https://hub.docker.com/r/labring/kubernetes/tags) 中的几乎所有 Kubernetes 版本（**暂不支持 1.28 版本**）。
+- 支持大多数 Linux 发行版，例如：Ubuntu、Debian、CentOS、Rocky linux。
+- **系统内核版本在 5.4 及以上**。
 
 推荐配置：
 
-| 操作系统         | 内核版本 | CPU  | 内存 | 存储  | Master 节点数量 | Node 节点数量 |
-| ---------------- | -------- | ---- | ---- | ----- | --------------- | ------------- |
-| Ubuntu 22.04 LTS | ≥ 5.4    | 4C   | 8GB  | 100GB | 奇数台          | 任意          |
+推荐使用 Ubuntu 22.04 LTS 操作系统，内核版本在 5.4 及以上，配置如下：
+
+| 操作系统             | 内核版本  | CPU | 内存  | 存储    | Masters | Nodes |
+|------------------|-------|-----|-----|-------|---------|-------|
+| Ubuntu 22.04 LTS | ≥ 5.4 | 4C  | 8GB | 100GB | 奇数台     | 任意    |
+
+:::info注意
+Kubernetes 和 Sealos Cloud 的系统组件在每个 Master 节点上大约需要 2 核心（2c）和 2GB 内存（2g），在每个 Node 节点上则需要大约
+1 核心（1c）和 1GB 内存（1g），请确保集群中每个节点都有足够的计算资源以支持系统组件的运行。
+:::
 
 ### 网络
 
@@ -66,13 +73,17 @@ Sealos 需要使用证书来保证通信安全，默认在您不提供证书的�
 
 ## 安装步骤
 
-为了便于部署，我们提供了一个一键安装脚本。该脚本可以从零开始部署 Sealos 集群，也可以在已有的 Kubernetes 集群上部署 Sealos 集群。
+为了便于部署，我们提供了一个一键安装脚本。该脚本可以从零开始部署 Sealos 集群，也可以在已有的 Kubernetes 集群上部署 Sealos
+集群（在已有集群上执行时请谨慎操作）。
 
 :::info注意
 
 该脚本只支持在 “使用 Sealos 安装的 Kubernetes 集群” 上部署 Sealos 集群，暂不支持其他方式部署的 Kubernetes。
 
-关于如何使用 Sealos 部署 Kubernetes 集群，可以参考：[安装 Kubernetes 集群](/self-hosting/lifecycle-management/quick-start/deploy-kubernetes.md)
+关于如何使用 Sealos 部署 Kubernetes
+集群，可以参考：[安装 Kubernetes 集群](/self-hosting/lifecycle-management/quick-start/deploy-kubernetes.md)
+，支持 [Docker Hub](https://hub.docker.com/r/labring/kubernetes/tags) 中的几乎所有 Kubernetes 版本（**暂不支持 1.28 及以上版本
+**）。
 
 :::
 
@@ -226,11 +237,11 @@ $ curl -sfL https://gh-proxy.com/https://raw.githubusercontent.com/labring/sealo
 
 如果您选择了上面提供的安装方式中的 1 或 3 或 4，那么您的证书默认是不受浏览器信任的，当你访问 Sealos Cloud 时，浏览器会提示下面的信息：
 
-![](./images/chrome-certificate-1.jpg)
+![](images/chrome-certificate-1.jpg)
 
 即使点击继续访问，进入 Sealos Cloud 之后也无法正常显示 App 图标，无法打开 App。
 
-![](./images/chrome-certificate-2.jpg)
+![](images/chrome-certificate-2.jpg)
 
 我们需要导出自签名证书，并让系统信任自签名证书。步骤如下。
 
@@ -249,30 +260,30 @@ $ curl -sfL https://gh-proxy.com/https://raw.githubusercontent.com/labring/sealo
 #### Firefox
 
 1. 点击页面中的 “高级”。
-   
-   ![](./images/firefox-export-certificate-1.png)
+
+   ![](images/firefox-export-certificate-1.png)
 
 2. 然后点击 “查看证书”。
-   
-   ![](./images/firefox-export-certificate-2.jpg)
+
+   ![](images/firefox-export-certificate-2.jpg)
 
 3. 在证书页面中点击 “PEM (证书)”。
-   
-   ![](./images/firefox-export-certificate-3.jpg)
+
+   ![](images/firefox-export-certificate-3.jpg)
 
 #### Safari
 
 1. 点击页面中的 “显示详细信息”。
-   
-   ![](./images/safari-export-certificate-1.jpg)
+
+   ![](images/safari-export-certificate-1.jpg)
 
 2. 然后点击 “查看此证书”。
-   
-   ![](./images/safari-export-certificate-2.jpg)
+
+   ![](images/safari-export-certificate-2.jpg)
 
 3. 在证书视图中，可以看到一个带有证书链的窗口。
-   
-   ![](./images/safari-export-certificate-3.jpg)
+
+   ![](images/safari-export-certificate-3.jpg)
 
 4. 拖动红框圈出来的证书到桌面或文件夹中，证书就会被导出了。
 
@@ -317,7 +328,7 @@ $ sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.ke
 3. “将所有的证书都放入下列存储”，“浏览”，“受信任的根证书颁发机构”，“确定”，下一步。
 4. 完成，“是”，确定。
 
-![](./images/windows-trust-certificate.jpg)
+![](images/windows-trust-certificate.jpg)
 
 #### Linux
 

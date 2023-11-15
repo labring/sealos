@@ -174,10 +174,10 @@
       "type": "generated-index"
     },
     "items": [
-      "self-hosting/installation",
+      "self-hosting/sealos/installation",
       {
         "type": "category",
-        "label": "Cluster Lifecycle Management",
+        "label": "Kubernetes Cluster Lifecycle Management",
         "link": {
           "type": "doc",
           "id": "self-hosting/lifecycle-management/lifecycle-management"
