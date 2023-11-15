@@ -16,7 +16,7 @@ export default function NavBanner({
   };
 
   const goDetail = () => {
-    window.open(`https://seaos.run`);
+    window.open(`https://sealos.run`);
   };
 
   useEffect(() => {
