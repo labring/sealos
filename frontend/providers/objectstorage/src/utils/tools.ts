@@ -35,22 +35,6 @@ export const useCopyData = () => {
     }
   };
 };
-export const searchText = (pattern: string) => (str: string) => {
-  if (pattern.trim() === '') return true;
-  const reg = RegExp(
-    [
-      '',
-      ...pattern
-        .trim()
-        .toLocaleLowerCase()
-        .split('')
-        .map((v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
-      ''
-    ].join('(.*?)'),
-    'i'
-  );
-  return reg.test(str.trim().toLocaleLowerCase());
-};
 /*
  * format string to number or ''
  */

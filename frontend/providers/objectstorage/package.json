@@ -25,6 +25,7 @@
     "echarts": "^5.4.3",
     "echarts-for-react": "^3.0.2",
     "framer-motion": "^10.16.4",
+    "fuse.js": "^7.0.0",
     "i18next": "^22.5.1",
     "js-yaml": "^4.1.0",
     "jszip": "^3.10.1",
