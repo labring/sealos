@@ -1,5 +1,5 @@
 import { KubeBadge } from '@/components/kube/kube-badge';
-import { KubeRecord } from '@/components/kube/kube-record';
+import { DrawerItem } from '@/pages/kubepanel/components/drawer/drawer-item';
 import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
 import { Deployment } from '@/k8slens/kube-object';
 import { getConditionColor } from '@/utils/condtion-color';
@@ -34,7 +34,7 @@ const DeploymentDetail = ({ dep, open, onClose }: Props) => {
     <Drawer open={open} title={`Deployment: ${dep.getName()}`} onClose={onClose}>
       <DrawerPanel>
         <KubeObjectInfoList obj={dep} />
-        <KubeRecord
+        <DrawerItem
           name="Replicas"
           value={
             <>
@@ -45,15 +45,15 @@ const DeploymentDetail = ({ dep, open, onClose }: Props) => {
           }
         />
         {selectors.length > 0 && (
-          <KubeRecord
+          <DrawerItem
             name="Selector"
             value={selectors.map((label) => (
               <KubeBadge key={label} label={label} />
             ))}
           />
         )}
-        <KubeRecord name="Strategy Type" value={spec.strategy.type} />
-        <KubeRecord
+        <DrawerItem name="Strategy Type" value={spec.strategy.type} />
+        <DrawerItem
           name="Conditions"
           value={
             <>

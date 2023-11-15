@@ -15,7 +15,7 @@ export default function AppLayout({ children, onClickSideNavItem }: Props) {
         <ResourceSideNav onClick={onClickSideNavItem} />
       </Sider>
       <Layout>
-        <Content style={{ margin: '24px' }}>{children}</Content>
+        <Content style={{ padding: '24px', backgroundColor: "white" }}>{children}</Content>
       </Layout>
     </Layout>
   );

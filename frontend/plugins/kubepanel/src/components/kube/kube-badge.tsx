@@ -31,18 +31,20 @@ export const KubeBadge = ({
     e.stopPropagation();
   };
 
-  const { textColor = 'black', backgroundColor = 'color-vague' } = color ?? {};
+  const { textColor, backgroundColor } = color ?? {};
   const disabledClass = disabled ? 'opacity-50 cursor-not-allowed' : 'opacity-100 cursor-pointer';
 
   return (
     <div
-      className={`inline-block py-1 px-2 mr-1 max-w-full rounded-md text-xs leading-normal ${disabledClass} bg-${backgroundColor} shadow-sm ${
-        isExpanded ? '' : 'truncate'
-      }`}
+      className={`inline-block py-2 px-2 mr-1 max-w-full rounded-[4px] text-xs font-medium ${disabledClass}
+        ${isExpanded ? '' : 'truncate'} ${
+        backgroundColor ? `bg-${backgroundColor}` : 'bg-[#EFF0F1]'
+      }
+      `}
       onClick={onClick}
       ref={elem}
     >
-      <span className={`text-${textColor}`}>{label}</span>
+      <span className={textColor ? `text-${textColor}` : 'text-black'}>{label}</span>
     </div>
   );
 };

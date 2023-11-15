@@ -3,7 +3,7 @@ import Drawer from '../../../drawer/drawer';
 import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
 import PodDetailTolerations from '../pod/pod-detail-tolerations';
 import PodDetailAffinities from '../pod/pod-detail-affinities';
-import { KubeRecord } from '@/components/kube/kube-record';
+import { DrawerItem } from '@/pages/kubepanel/components/drawer/drawer-item';
 import PodDetailStatuses from '../pod/pod-detail-statuses';
 import { KubeBadge } from '@/components/kube/kube-badge';
 import DrawerPanel from '../../../drawer/drawer-panel';
@@ -32,7 +32,7 @@ const StatefulSetDetail = ({ statefulSet, childPods, open, onClose }: Props) => 
       <DrawerPanel>
         <KubeObjectInfoList obj={statefulSet} />
         {selectors.length > 0 && (
-          <KubeRecord
+          <DrawerItem
             name="Selector"
             value={selectors.map((label) => (
               <KubeBadge key={label} label={label} />
@@ -40,7 +40,7 @@ const StatefulSetDetail = ({ statefulSet, childPods, open, onClose }: Props) => 
           />
         )}
         {images.length > 0 && (
-          <KubeRecord
+          <DrawerItem
             name="Images"
             value={images.map((image) => (
               <p key={image}>{image}</p>
@@ -49,7 +49,7 @@ const StatefulSetDetail = ({ statefulSet, childPods, open, onClose }: Props) => 
         )}
         <PodDetailTolerations workload={statefulSet} />
         <PodDetailAffinities workload={statefulSet} />
-        <KubeRecord name="Pod Status" value={<PodDetailStatuses pods={childPods} />} />
+        <DrawerItem name="Pod Status" value={<PodDetailStatuses pods={childPods} />} />
       </DrawerPanel>
     </Drawer>
   );

@@ -39,7 +39,7 @@ const OverviewPage = () => {
 
   return (
     <Flex vertical justify="space-between">
-      <div className="p-4 mb-4 text-xl font-light bg-white shadow-sm ">Overview</div>
+      <div className="p-4 mb-4 text-2xl font-medium">Overview</div>
       <WorkloadStatusOverview data={overviewStatuses} />
     </Flex>
   );

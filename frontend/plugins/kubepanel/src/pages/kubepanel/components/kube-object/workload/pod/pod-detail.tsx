@@ -1,4 +1,4 @@
-import { KubeRecord } from '@/components/kube/kube-record';
+import { DrawerItem } from '@/pages/kubepanel/components/drawer/drawer-item';
 import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
 import { Pod } from '@/k8slens/kube-object';
 import { Tooltip } from 'antd';
@@ -27,7 +27,6 @@ const PodDetail = ({ pod, open, onClose }: Props) => {
   return (
     <Drawer open={open} title={`Pod: ${pod.getName()}`} onClose={onClose}>
       <PodInfo pod={pod} />
-      <div className="m-8" />
       <ContainerDetail pod={pod} />
     </Drawer>
   );
@@ -58,23 +57,23 @@ const PodInfo = ({ pod }: { pod: Pod }) => {
   return (
     <DrawerPanel>
       <KubeObjectInfoList obj={pod} />
-      <KubeRecord name="Status" value={<PodStatus status={pod.getStatusMessage()} />} />
-      <KubeRecord name="Pod IP" value={podIP} />
-      <KubeRecord
+      <DrawerItem name="Status" value={<PodStatus status={pod.getStatusMessage()} />} />
+      <DrawerItem name="Pod IP" value={podIP} />
+      <DrawerItem
         hidden={podIPs.length === 0}
         name="Pod IPs"
         value={podIPs.map((label) => (
           <KubeBadge key={label} label={label} />
         ))}
       />
-      <KubeRecord
+      <DrawerItem
         name="Service Account"
         value={
           // TODO: Link
           <>{serviceAccountName}</>
         }
       />
-      <KubeRecord
+      <DrawerItem
         hidden={priorityClassName === ''}
         name="Priority Class"
         value={
@@ -82,8 +81,8 @@ const PodInfo = ({ pod }: { pod: Pod }) => {
           <>{priorityClassName}</>
         }
       />
-      <KubeRecord name="QoS Class" value={pod.getQosClass()} />
-      <KubeRecord
+      <DrawerItem name="QoS Class" value={pod.getQosClass()} />
+      <DrawerItem
         hidden={runtimeClassName === ''}
         name="Runtime Class"
         value={
@@ -92,7 +91,7 @@ const PodInfo = ({ pod }: { pod: Pod }) => {
         }
       />
 
-      <KubeRecord
+      <DrawerItem
         hidden={conditions.length === 0}
         name={'Conditions'}
         value={
@@ -111,7 +110,7 @@ const PodInfo = ({ pod }: { pod: Pod }) => {
       <PodDetailTolerations workload={pod} />
       <PodDetailAffinities workload={pod} />
 
-      <KubeRecord
+      <DrawerItem
         hidden={secrets.length === 0}
         name="Secrets"
         value={secrets.map((secret) => (

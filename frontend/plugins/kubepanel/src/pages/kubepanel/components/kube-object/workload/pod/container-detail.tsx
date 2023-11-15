@@ -1,13 +1,12 @@
 import { Container, Pod } from '@/k8slens/kube-object';
 import ContainerStatusBrick from './container-status-brick';
 import { keys } from 'lodash';
-import { KubeRecord } from '@/components/kube/kube-record';
+import { DrawerItem } from '@/pages/kubepanel/components/drawer/drawer-item';
 import ContainerStatus, { ContainerLastState } from './container-status';
 import { KubeBadge } from '@/components/kube/kube-badge';
 import { Tooltip } from 'antd';
 import { isDefined } from '@/k8slens/utilities';
 import React from 'react';
-import DrawerTitle from '../../../drawer/drawer-title';
 import DrawerPanel from '../../../drawer/drawer-panel';
 
 interface Props {
@@ -52,22 +51,22 @@ const ContainerInfo = ({
   const startup = pod.getStartupProbe(container);
 
   return (
-    <div>
+    <>
       <div>
         <ContainerStatusBrick state={state} status={status} />
         {name}
         {isInitial ? ' (initial)' : ''}
       </div>
       {status && (
-        <KubeRecord name="Status" value={<ContainerStatus state={state} status={status} />} />
+        <DrawerItem name="Status" value={<ContainerStatus state={state} status={status} />} />
       )}
       {lastState && (
-        <KubeRecord
+        <DrawerItem
           name="Last Status"
           value={<ContainerLastState lastState={lastState} status={status} />}
         />
       )}
-      <KubeRecord
+      <DrawerItem
         name="Image"
         value={
           <Tooltip title={imageId}>
@@ -78,10 +77,10 @@ const ContainerInfo = ({
         }
       />
       {imagePullPolicy && imagePullPolicy !== 'IfNotPresent' && (
-        <KubeRecord name="ImagePullPolicy" value={imagePullPolicy} />
+        <DrawerItem name="ImagePullPolicy" value={imagePullPolicy} />
       )}
       {ports && ports.length > 0 && (
-        <KubeRecord
+        <DrawerItem
           name="Ports"
           value={ports.filter(isDefined).map((port) => {
             const { name, containerPort, protocol } = port;
@@ -95,7 +94,7 @@ const ContainerInfo = ({
         />
       )}
       {volumeMounts && volumeMounts.length > 0 && (
-        <KubeRecord
+        <DrawerItem
           name="Mounts"
           value={volumeMounts.map((mount) => {
             const { name, mountPath, readOnly } = mount;
@@ -110,7 +109,7 @@ const ContainerInfo = ({
         />
       )}
       {liveness.length > 0 && (
-        <KubeRecord
+        <DrawerItem
           name="Liveness"
           value={liveness.map((value, index) => (
             <KubeBadge key={index} label={value} />
@@ -118,7 +117,7 @@ const ContainerInfo = ({
         />
       )}
       {readiness.length > 0 && (
-        <KubeRecord
+        <DrawerItem
           name="Readiness"
           value={readiness.map((value, index) => (
             <KubeBadge key={index} label={value} />
@@ -126,16 +125,16 @@ const ContainerInfo = ({
         />
       )}
       {startup.length > 0 && (
-        <KubeRecord
+        <DrawerItem
           name="Startup"
           value={startup.map((value, index) => (
             <KubeBadge key={index} label={value} />
           ))}
         />
       )}
-      {command && <KubeRecord name="Command" value={command.join(' ')} />}
-      {args && <KubeRecord name="Arguments" value={args.join(' ')} />}
-    </div>
+      {command && <DrawerItem name="Command" value={command.join(' ')} />}
+      {args && <DrawerItem name="Arguments" value={args.join(' ')} />}
+    </>
   );
 };
 
