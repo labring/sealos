@@ -28,6 +28,11 @@ const navbar = [
     to: '/self-hosting '
   },
   {
+    key: 'blog',
+    label: <Translate>Blog</Translate>,
+    to: '/blog'
+  },
+  {
     key: 'contact',
     label: <Translate>Contact</Translate>,
     to: 'https://fael3z0zfze.feishu.cn/share/base/form/shrcnesSfEK65JZaAf2W6Fwz6Ad'

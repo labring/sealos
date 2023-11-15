@@ -4,7 +4,7 @@ const generateAlgoliKey = () => "ce5b8e1e4d0d35ff587caf75ac404df4"
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "sealos",
+  title: "Sealos: 专为云原生开发打造的以 K8s 为内核的云操作系统",
   tagline: "Kubernetes-kernel-based cloud os! Let's sealos run kubernetes",
   url: "https://sealos.io/",
   baseUrl: "/",
@@ -106,6 +106,11 @@ const config = {
           position: "left",
           to: "/self-hosting",
           label: "Hosting"
+        },
+        {
+          position: "left",
+          to: "/blog",
+          label: "Blog"
         },
         {
           position: "left",
@@ -216,6 +221,20 @@ const config = {
         name: 'baidu-site-verification',
         content: 'codeva-E1X5UKtV9p',
       },
+    },
+    {
+      tagName: 'meta',
+      attributes: {
+        name: 'description',
+        content: '高效管理你的云原生应用程序，像使用个人电脑一样在 Kubernetes 上一键安装编程语言、低代码开发平台、WordPress、数据库、AI 软件和 IM 软件。',
+      }
+    },
+    {
+      tagName: 'meta',
+      attributes: {
+        name: 'keywords',
+        content: 'Sealos, K8s, 云操作系统, 低代码开发平台, 数据库',
+      }
     }
   ],
   plugins: [
