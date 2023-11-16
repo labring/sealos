@@ -30,12 +30,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Copy Files and Directories
-        run: |
-          mkdir -p ${{ env.BUILD_PATH }}/i18n/zh-Hans/docusaurus-plugin-content-docs/
-          cp -r docs/4.0/i18n/zh-Hans/ ${{ env.BUILD_PATH }}/i18n/zh-Hans/docusaurus-plugin-content-docs/current/
-          cp docs/4.0/i18n/zh-Hans/current.json  ${{ env.BUILD_PATH }}/i18n/zh-Hans/docusaurus-plugin-content-docs/current.json
-          cp docs/4.0/code.json  ${{ env.BUILD_PATH }}/i18n/zh-Hans/code.json
 
       - name: Detect package manager
         id: detect-package-manager

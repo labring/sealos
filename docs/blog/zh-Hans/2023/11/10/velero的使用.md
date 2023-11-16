@@ -5,7 +5,7 @@ authors: [xiao-jay]
 tags: [kubernetes,sealos]
 ---
 
-## velero的使用111
+## velero的使用
 
 文档：https://velero.io/
 
