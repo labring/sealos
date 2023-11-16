@@ -1,6 +1,8 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 ---
+
+# 常见问题
 
 在部署及使用 Sealos Cloud 过程中，您可能会遇到各种问题。为了更好地帮助您解决这些问题，我们对常见问题进行了总结，并提供了详细的答案和解决方法。
 
@@ -15,7 +17,7 @@ iptables 规则或转发数据包，从而导致集群无法正常启动。
 
 **解决方法**：需要在每个节点上执行以下命令，以启用 iptables 和 IP 转发：
 
-```bash
+```shell
 $ modprobe br_netfilter
 $ echo 1 > /proc/sys/net/bridge/bridge-nf-call-iptables
 $ echo 1 > /proc/sys/net/ipv4/ip_forward
@@ -50,8 +52,9 @@ $ echo 1 > /proc/sys/net/ipv4/ip_forward
    在主节点 `master0` 上，您需要先备份当前使用的证书。这是一个防止更新过程中出现问题而导致证书丢失的重要步骤。使用以下命令进行备份：
 
    ```shell
-   kubectl get secret -n sealos-system wildcard-secret -o yaml > cert-backup.yaml
+   $ kubectl get secret -n sealos-system wildcard-secret -o yaml > cert-backup.yaml
    ```
+
    此命令会将名为 `wildcard-secret` 的证书以 YAML 格式保存到文件 `cert-backup.yaml` 中。
 
 2. **保存新证书**：
@@ -78,10 +81,11 @@ $ echo 1 > /proc/sys/net/ipv4/ip_forward
    # 使用kubectl patch命令更新Secret
    kubectl patch secret wildcard-cert -n sealos-system -p $PATCH_JSON
    ```
+   
    这个脚本的主要作用是将新证书的内容编码为 Base64 格式，并使用 `kubectl patch` 命令更新 Kubernetes 集群中的相应 Secret
    对象。
 
-#### 域名更换
+### 域名更换
 
 域名更换是一个更加复杂的过程，因为它通常涉及到集群内多个组件和服务的配置更改。目前，我们尚未在文档中提供域名更换的详细教程。不过，我们计划在未来推出
 Sealos 集群管理面板，该面板将提供更加简便的方法来替换集群域名和证书。
