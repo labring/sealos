@@ -1,6 +1,7 @@
 #!/bin/bash
 set -x
 
+ARCH=${ARCH:-"amd64"}
 CLOUD_VERSION="latest"
 
 # pull and save images
@@ -20,7 +21,7 @@ images=(
 )
 
 for image in "${images[@]}"; do
-  sealos pull "$image"
+  sealos pull --platform "linux/$ARCH" "$image"
   filename=$(echo "$image" | cut -d':' -f1 | tr / -)
   if [[ ! -f "output/tars/${filename}.tar" ]]; then
     sealos save -o "output/tars/${filename}.tar" "$image"
@@ -33,8 +34,8 @@ mkdir -p output/cli
 
 VERSION="v4.3.5"
 
-wget https://github.com/labring/sealos/releases/download/${VERSION}/sealos_${VERSION#v}_linux_amd64.tar.gz \
-   && tar zxvf sealos_${VERSION#v}_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos output/cli
+wget https://github.com/labring/sealos/releases/download/${VERSION}/sealos_${VERSION#v}_linux_${ARCH}.tar.gz \
+   && tar zxvf sealos_${VERSION#v}_linux_${ARCH}.tar.gz sealos && chmod +x sealos && mv sealos output/cli
 
 # get and save install scripts
 echo "
