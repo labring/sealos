@@ -1,12 +1,12 @@
 ---
-sidebar_position: 1
+sidebar_position: 0
 toc_max_heading_level: 5
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# 安装 Sealos 集群
+# Sealos 集群部署
 
 export const Highlight = ({children, color}) => (
   <span
