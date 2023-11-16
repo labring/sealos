@@ -46,15 +46,6 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           submodules: recursive # Fetch submodules
           fetch-depth: 0 # Fetch all history for .GitInfo and .Lastmod
-      - name: Copy Files and Directories
-        run: |
-          mkdir -p ${{ env.BUILD_PATH }}/i18n/zh-Hans/docusaurus-plugin-content-docs/
-          cp -r docs/4.0/i18n/zh-Hans/ ${{ env.BUILD_PATH }}/i18n/zh-Hans/docusaurus-plugin-content-docs/current/
-          cp docs/4.0/i18n/zh-Hans/current.json  ${{ env.BUILD_PATH }}/i18n/zh-Hans/docusaurus-plugin-content-docs/current.json
-          cp docs/4.0/code.json  ${{ env.BUILD_PATH }}/i18n/zh-Hans/code.json
-          mkdir -p ${{ env.BUILD_PATH }}/i18n/zh-Hans/docusaurus-plugin-content-blog/
-          cp -r blog/zh-Hans/ ${{ env.BUILD_PATH }}/i18n/zh-Hans/docusaurus-plugin-content-blog
-          cp blog/zh-Hans/options.json  ${{ env.BUILD_PATH }}/i18n/zh-Hans/docusaurus-plugin-content-blog/options.json
 
       - name: Detect package manager
         id: detect-package-manager
