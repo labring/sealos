@@ -10,6 +10,7 @@ import { WithId } from 'mongodb';
 import { v4 as uuid } from 'uuid';
 import { createUTN, queryUTN } from './db/userToNamespace';
 import { InvitedStatus, NSType, UserRole } from '@/types/team';
+import { enableSignUp } from '../enable';
 
 export const getOauthRes = async ({
   provider,
@@ -27,10 +28,10 @@ export const getOauthRes = async ({
   if (provider === 'password_user' && !password) {
     throw new Error('password is required');
   }
-  // 翻查一下 ns 和user
   const _user = await queryUser({ id, provider });
   let signResult = null;
   if (!_user) {
+    if (!enableSignUp()) throw new Error('Failed to find user');
     signResult = await signUp({
       provider,
       id,
@@ -49,8 +50,8 @@ export const getOauthRes = async ({
   if (!signResult) throw new Error('Failed to edit db');
   const { k8s_user, namespace, user } = signResult;
   const k8s_username = k8s_user.name;
-  // 登录和注册都需要对k8suser.namespace列做校检
-  if (namespace.nstype !== NSType.Private) return Promise.reject('Faild to get private namespace');
+  // check k8suser.namespace
+  if (namespace.nstype !== NSType.Private) return Promise.reject('Failed to get private namespace');
   const kubeconfig = await getUserKubeconfig(user.uid, k8s_username);
   if (!kubeconfig) {
     throw new Error('Failed to get user config');
@@ -91,7 +92,7 @@ async function signIn({
   const k8s_users = _user.k8s_users || [];
   const uid = _user.uid;
   let k8s_user = null;
-  // 迁移用户
+  // migrating user
   if (k8s_users.length === 0) {
     const k8s_username = await getUserKubeconfigByuid(uid);
     if (!!k8s_username) {
@@ -108,7 +109,7 @@ async function signIn({
   }
   k8s_user = k8s_users[0];
   const k8s_username = k8s_user.name;
-  // 迁移namespace
+  // migrating namespace
   let namespace = await queryNS({ id: GetUserDefaultNameSpace(k8s_username) });
   if (!namespace) {
     namespace = await createNS({
@@ -118,7 +119,7 @@ async function signIn({
     });
     if (!namespace) return Promise.reject('Faild to create namespace');
   }
-  // 迁移utn
+  // migrating utn
   let utn = await queryUTN({ userId: uid, k8s_username, namespaceId: namespace.uid });
   if (!utn)
     utn = await createUTN({
@@ -139,7 +140,7 @@ async function signIn({
     namespace
   };
 }
-// 注册
+
 async function signUp({
   provider,
   id,

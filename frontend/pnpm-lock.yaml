@@ -293,7 +293,7 @@ importers:
         version: 15.2.3(rollup@2.79.1)
       '@rollup/plugin-typescript':
         specifier: ^11.1.4
-        version: 11.1.4(rollup@2.79.1)(tslib@2.6.2)(typescript@4.9.5)
+        version: 11.1.4(rollup@2.79.1)(tslib@2.6.2)(typescript@5.2.2)
       '@types/react':
         specifier: ^18.2.37
         version: 18.2.37
@@ -305,16 +305,19 @@ importers:
         version: 2.79.1
       rollup-plugin-dts:
         specifier: ^4.2.3
-        version: 4.2.3(rollup@2.79.1)(typescript@4.9.5)
+        version: 4.2.3(rollup@2.79.1)(typescript@5.2.2)
       rollup-plugin-terser:
         specifier: ^7.0.2
         version: 7.0.2(rollup@2.79.1)
       rollup-plugin-typescript2:
         specifier: ^0.36.0
-        version: 0.36.0(rollup@2.79.1)(typescript@4.9.5)
+        version: 0.36.0(rollup@2.79.1)(typescript@5.2.2)
       tslib:
         specifier: ^2.6.2
         version: 2.6.2
+      typescript:
+        specifier: ^5.2.2
+        version: 5.2.2
 
   providers/adminer:
     dependencies:
@@ -6574,6 +6577,26 @@ packages:
       rollup: 2.79.1
       tslib: 2.6.2
       typescript: 4.9.5
+    dev: true
+
+  /@rollup/plugin-typescript@11.1.4(rollup@2.79.1)(tslib@2.6.2)(typescript@5.2.2):
+    resolution: {integrity: sha512-WZRh5LBVLQXdKFICUId5J3eIpmjGURaBqntfg3GSZACgeOAFS+lOSMGTwfzDkELTaZVp/lWdMVNU3UkwCUBg/Q==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      rollup: ^2.14.0||^3.0.0
+      tslib: '*'
+      typescript: '>=3.7.0'
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+      tslib:
+        optional: true
+    dependencies:
+      '@rollup/pluginutils': 5.0.4(rollup@2.79.1)
+      resolve: 1.22.6
+      rollup: 2.79.1
+      tslib: 2.6.2
+      typescript: 5.2.2
     dev: true
 
   /@rollup/pluginutils@3.1.0(rollup@2.79.1):
@@ -15088,6 +15111,20 @@ packages:
       '@babel/code-frame': 7.22.13
     dev: true
 
+  /rollup-plugin-dts@4.2.3(rollup@2.79.1)(typescript@5.2.2):
+    resolution: {integrity: sha512-jlcpItqM2efqfIiKzDB/IKOS9E9fDvbkJSGw5GtK/PqPGS9eC3R3JKyw2VvpTktZA+TNgJRMu1NTv244aTUzzQ==}
+    engines: {node: '>=v12.22.12'}
+    peerDependencies:
+      rollup: ^2.55
+      typescript: ^4.1
+    dependencies:
+      magic-string: 0.26.7
+      rollup: 2.79.1
+      typescript: 5.2.2
+    optionalDependencies:
+      '@babel/code-frame': 7.22.13
+    dev: true
+
   /rollup-plugin-peer-deps-external@2.2.4(rollup@2.79.1):
     resolution: {integrity: sha512-AWdukIM1+k5JDdAqV/Cxd+nejvno2FVLVeZ74NKggm3Q5s9cbbcOgUPGdbxPi4BXu7xGaZ8HG12F+thImYu/0g==}
     peerDependencies:
@@ -15108,7 +15145,7 @@ packages:
       serialize-javascript: 4.0.0
       terser: 5.20.0
 
-  /rollup-plugin-typescript2@0.36.0(rollup@2.79.1)(typescript@4.9.5):
+  /rollup-plugin-typescript2@0.36.0(rollup@2.79.1)(typescript@5.2.2):
     resolution: {integrity: sha512-NB2CSQDxSe9+Oe2ahZbf+B4bh7pHwjV5L+RSYpCu7Q5ROuN94F9b6ioWwKfz3ueL3KTtmX4o2MUH2cgHDIEUsw==}
     peerDependencies:
       rollup: '>=1.26.3'
@@ -15120,7 +15157,7 @@ packages:
       rollup: 2.79.1
       semver: 7.5.4
       tslib: 2.6.2
-      typescript: 4.9.5
+      typescript: 5.2.2
     dev: true
 
   /rollup@2.79.1:

@@ -1,4 +1,4 @@
-import { Box, Flex, Text, Img, UseDisclosureReturn } from '@chakra-ui/react';
+import { Box, Flex, Text, Img, UseDisclosureReturn, Button } from '@chakra-ui/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import Iconfont from '@/components/iconfont';
@@ -7,8 +7,8 @@ import request from '@/services/request';
 import { formatTime } from '@/utils/tools';
 import styles from './index.module.scss';
 import { useTranslation } from 'next-i18next';
-import warnIcon from 'public/icons/clear-outlined.svg';
-
+// import warnIcon from 'public/icons/clear-outlined.svg';
+import { ClearOutlineIcon } from '@sealos/ui';
 type NotificationItem = {
   metadata: {
     creationTimestamp: string;
@@ -122,12 +122,17 @@ export default function Notification(props: TNotification) {
               >
                 {t('Have Read')}
               </Box>
-              <Flex ml={'auto'} onClick={() => markAllAsRead()}>
-                <Img src={warnIcon.src}></Img>
-                <Text ml="4px" color={'#434F61'} className={styles.tab}>
+              <Button
+                ml={'auto'}
+                onClick={() => markAllAsRead()}
+                variant={'white-bg-icon'}
+                leftIcon={<ClearOutlineIcon color={'grayModern.600'} />}
+                iconSpacing="4px"
+              >
+                <Text color={'#434F61'} className={styles.tab}>
                   {t('Read All')}
                 </Text>
-              </Flex>
+              </Button>
             </Flex>
             <Flex pt={'9px'} pb="12px" direction={'column'} h="430px" className={styles.scrollWrap}>
               {notifications?.map((item: NotificationItem) => {

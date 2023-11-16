@@ -11,7 +11,8 @@ import {
   useDisclosure,
   Divider,
   Stack,
-  FlexProps
+  IconButton,
+  ButtonProps
 } from '@chakra-ui/react';
 import NsList from './NsList';
 import { useState } from 'react';
@@ -19,7 +20,6 @@ import CreateTeam from './CreateTeam';
 import DissolveTeam from './DissolveTeam';
 import { useQuery } from '@tanstack/react-query';
 import { useCopyData } from '@/hooks/useCopyData';
-import Iconfont from '../iconfont';
 import { formatTime } from '@/utils/format';
 import InviteMember from './InviteMember';
 import UserTable from './userTable';
@@ -29,9 +29,10 @@ import { TeamUserDto } from '@/types/user';
 import ReciveMessage from './ReciveMessage';
 import { nsListRequest, reciveMessageRequest, teamDetailsRequest } from '@/api/namespace';
 import { useTranslation } from 'react-i18next';
-export default function TeamCenter(props: FlexProps) {
+import { CopyIcon, ListIcon, SettingIcon } from '@sealos/ui';
+export default function TeamCenter(props: ButtonProps) {
   const session = useSessionStore((s) => s.session);
-  const { ns_uid: default_ns_uid, nsid: default_nsid, userId, k8s_username } = session.user;
+  const { ns_uid: default_ns_uid, nsid: default_nsid, userId } = session.user;
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [nsid, setNsid] = useState(default_nsid);
   const [messageFilter, setMessageFilter] = useState<string[]>([]);
@@ -77,31 +78,19 @@ export default function TeamCenter(props: FlexProps) {
   }
   return (
     <>
-      <Flex
-        ml="auto"
-        _hover={{
-          bgColor: 'rgba(0, 0, 0, 0.03)'
+      <IconButton
+        onClick={() => {
+          // 清理消息过滤
+          setMessageFilter([]);
+          onOpen();
         }}
-        w="28px"
-        h="28px"
-        mr="6px"
-        transition={'all 0.3s'}
-        justify={'center'}
-        align={'center'}
+        variant={'white-bg-icon'}
+        p="4px"
+        ml="auto"
+        icon={<SettingIcon boxSize={'20px'} color={'#219BF4'} />}
+        aria-label={'open team center'}
         {...props}
-      >
-        <Image
-          cursor={'pointer'}
-          onClick={() => {
-            // 清理消息过滤
-            setMessageFilter([]);
-            onOpen();
-          }}
-          src="/images/uil_setting.svg"
-          h="20px"
-          w="20px"
-        />
-      </Flex>
+      />
       <Modal isOpen={isOpen} onClose={onClose} isCentered closeOnOverlayClick={false}>
         <ModalOverlay />
         <ModalContent
@@ -179,18 +168,24 @@ export default function TeamCenter(props: FlexProps) {
                         />
                       )}
                     </Flex>
-                    <Flex align={'center'} color={'#5A646E'} mt={'7px'} fontSize={'12px'}>
-                      <Text>
+                    <Flex align={'center'} mt={'7px'} fontSize={'12px'}>
+                      <Text color={'grayModern.600'}>
                         {t('Team')} ID: {nsid}
                       </Text>
-                      <Box onClick={() => copyData(nsid)} cursor={'pointer'} ml="5px">
-                        <Iconfont
-                          iconName="icon-copy2"
-                          width={14}
-                          height={14}
-                          color="rgb(123, 131, 139)"
-                        ></Iconfont>
-                      </Box>
+                      <IconButton
+                        variant={'white-bg-icon'}
+                        onClick={() => copyData(nsid)}
+                        p="4px"
+                        ml="5px"
+                        icon={
+                          <CopyIcon
+                            color={'grayModern.500'}
+                            boxSize={'14px'}
+                            fill={'grayModern.500'}
+                          />
+                        }
+                        aria-label={'copy nsid'}
+                      />
                       <Text ml="24px">
                         {t('Created Time')}: {createTime ? formatTime(createTime) : ''}
                       </Text>
@@ -200,7 +195,7 @@ export default function TeamCenter(props: FlexProps) {
                 <Divider bg={'rgba(0, 0, 0, 0.10)'} h="1px" />
                 <Stack mt="15px" mx="29px" flex={1}>
                   <Flex align={'center'} gap="6px" mb={'12px'}>
-                    <Image src={'/images/list.svg'} w="20px" h="20px" />
+                    <ListIcon boxSize={'20px'} />
                     <Text>{t('Member List')}</Text>
                     <Flex
                       py="0px"
@@ -220,9 +215,7 @@ export default function TeamCenter(props: FlexProps) {
                     {isTeam && [UserRole.Owner, UserRole.Manager].includes(curTeamUser!.role) && (
                       <InviteMember
                         ownRole={curTeamUser.role ?? UserRole.Developer}
-                        nsid={nsid}
                         ns_uid={ns_uid}
-                        buttonType="button"
                         ml="auto"
                       />
                     )}
