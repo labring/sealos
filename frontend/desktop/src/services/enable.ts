@@ -23,6 +23,7 @@ export const enableRecharge = () => {
   return process.env.RECHARGE_ENABLED === 'true';
 };
 export const enableSignUp = () => process.env.SIGN_UP_ENABLED === 'true';
+export const enableApi = () => process.env.API_ENABLED === 'true';
 // costcenter
 export const enableStripe = () =>
   process.env['STRIPE_ENABLED'] === 'true' && !!process.env['STRIPE_PUB'];
