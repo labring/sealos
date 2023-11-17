@@ -45,8 +45,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         }, 60 * 1000);
       });
       const gitOperationPromise = !fs.existsSync(targetPath)
-        ? execAsync(`git clone ${repoHttpUrl} ${targetPath}`)
-        : execAsync(`cd ${targetPath} && git pull`);
+        ? execAsync(`git clone ${repoHttpUrl} ${targetPath} --depth=1`)
+        : execAsync(`cd ${targetPath} && git pull --depth=1`);
 
       await Promise.race([gitOperationPromise, timeoutPromise]);
     } catch (error) {
