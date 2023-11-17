@@ -92,6 +92,8 @@ var namespaceMonitorFuncs = make(map[string]func(ctx context.Context, namespace 
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras,verbs=get;list;watch
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras/status,verbs=get;list;watch
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras/finalizers,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=services/status,verbs=get;list;watch
 
 func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 	r := &MonitorReconciler{
@@ -447,6 +449,7 @@ func initResources() (rs map[corev1.ResourceName]*quantity) {
 	rs[corev1.ResourceMemory] = &quantity{Quantity: resource.NewQuantity(0, resource.BinarySI), detail: ""}
 	rs[corev1.ResourceStorage] = &quantity{Quantity: resource.NewQuantity(0, resource.BinarySI), detail: ""}
 	rs[resources.ResourceNetwork] = &quantity{Quantity: resource.NewQuantity(0, resource.BinarySI), detail: ""}
+	rs[corev1.ResourceServicesNodePorts] = &quantity{Quantity: resource.NewQuantity(0, resource.DecimalSI), detail: ""}
 	return
 }
 
