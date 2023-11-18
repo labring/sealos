@@ -20,7 +20,7 @@
     "@kubernetes/client-node": "^0.18.1",
     "@next/font": "13.1.6",
     "@tanstack/react-query": "^4.35.3",
-    "@uiw/react-codemirror": "4.21.17",
+    "@uiw/react-codemirror": "4.21.20",
     "axios": "^1.5.1",
     "cron-parser": "^4.9.0",
     "cronstrue": "^2.32.0",

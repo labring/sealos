@@ -20,6 +20,7 @@ import { getUserPrice, getDBVersion, StorageClassName, Domain, getEnv } from '@/
 import 'nprogress/nprogress.css';
 import 'react-day-picker/dist/style.css';
 import '@/styles/reset.scss';
+import { getAppEnv } from '@/api/platform';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -129,6 +130,33 @@ function App({ Component, pageProps }: AppProps) {
     const lang = getLangStore() || 'zh';
     i18n?.changeLanguage?.(lang);
   }, [refresh, router.asPath]);
+
+  // InternalAppCall
+  useEffect(() => {
+    const event = async (e: MessageEvent) => {
+      const envs = await getAppEnv();
+      const whitelist = [`https://${envs?.domain}`];
+      console.log(e, whitelist, 'post message');
+      if (!whitelist.includes(e.origin)) {
+        return;
+      }
+      try {
+        if (e.data?.type === 'InternalAppCall' && e.data?.name) {
+          router.push({
+            pathname: '/app/detail',
+            query: {
+              name: e.data.name
+            }
+          });
+        }
+      } catch (error) {
+        console.log(error, 'error');
+      }
+    };
+    window.addEventListener('message', event);
+    return () => window.removeEventListener('message', event);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>

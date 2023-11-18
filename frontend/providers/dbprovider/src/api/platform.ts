@@ -5,7 +5,9 @@ import { GET } from '@/services/request';
 import type { UserQuotaItemType } from '@/types/user';
 
 export const getResourcePrice = () => GET<resourcePriceResponse>('/api/platform/resourcePrice');
+
 export const getAppEnv = () => GET<EnvResponse>('/api/getEnv');
+
 export const getDBVersionMap = () => GET<DBVersionMapType>('/api/platform/getVersion');
 
 export const getUserQuota = () =>
