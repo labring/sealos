@@ -3,6 +3,10 @@ import { useToast } from '@/hooks/useToast';
 import { useTranslation } from 'next-i18next';
 import { format, set, startOfDay, getDay, addHours } from 'date-fns';
 
+export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
+  return dayjs(time).format(format);
+};
+
 /**
  * copy text data
  */

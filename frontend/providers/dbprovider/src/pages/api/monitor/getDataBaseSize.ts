@@ -23,8 +23,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       [DBTypeEnum.mongodb]: `mongodb_dbstats_dataSize{$, app_kubernetes_io_instance="${dbName}"}`
     };
 
-    console.log(dbName, dbType, queryType[dbType as string]);
-
     if (!queryType[dbType as string]) {
       return jsonRes(res, {
         code: 200,

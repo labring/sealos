@@ -94,7 +94,7 @@ function App({ Component, pageProps }: AppProps) {
       const lastLang = getLangStore();
       const newLang = data.currentLanguage;
       if (lastLang !== newLang) {
-        i18n.changeLanguage(newLang);
+        i18n?.changeLanguage(newLang);
         setLangStore(newLang);
         setRefresh((state) => !state);
       }
@@ -117,6 +117,7 @@ function App({ Component, pageProps }: AppProps) {
     })();
 
     return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // record route
@@ -124,11 +125,13 @@ function App({ Component, pageProps }: AppProps) {
     return () => {
       setLastRoute(router.asPath);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.pathname]);
 
   useEffect(() => {
     const lang = getLangStore() || 'zh';
     i18n?.changeLanguage?.(lang);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refresh, router.asPath]);
 
   // InternalAppCall
@@ -168,6 +171,19 @@ function App({ Component, pageProps }: AppProps) {
       </Head>
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
+          {/* <button
+            onClick={() => {
+              const lastLang = getLangStore();
+              let lang = lastLang === 'en' ? 'zh' : 'en';
+              if (lastLang !== lang) {
+                i18n.changeLanguage(lang);
+                setLangStore(lang);
+                setRefresh((state) => !state);
+              }
+            }}
+          >
+            asdasd
+          </button> */}
           <Component {...pageProps} />
           <ConfirmChild />
           <Loading loading={loading} />
