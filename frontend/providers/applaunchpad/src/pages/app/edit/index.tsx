@@ -33,7 +33,7 @@ import { useUserStore } from '@/store/user';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
-const formData2Yamls = (data: AppEditType) => [
+export const formData2Yamls = (data: AppEditType) => [
   {
     filename: 'service.yaml',
     value: json2Service(data)
