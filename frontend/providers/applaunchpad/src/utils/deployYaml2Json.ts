@@ -261,6 +261,8 @@ export const json2Ingress = (data: AppEditType) => {
       const host = network.customDomain
         ? network.customDomain
         : `${network.publicDomain}.${SEALOS_DOMAIN}`;
+      console.log(host, SEALOS_DOMAIN);
+
       const secretName = network.customDomain ? data.appName : INGRESS_SECRET;
 
       const ingress = {

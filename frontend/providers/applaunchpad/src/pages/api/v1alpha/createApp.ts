@@ -1,15 +1,17 @@
+import { formData2Yamls } from '@/pages/app/edit';
+import { authSession } from '@/services/backend/auth';
+import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { GetApps } from '../getApps';
+import { serverLoadInitData } from '@/store/static';
 import { AppEditType } from '@/types/app';
-import { formData2Yamls } from '@/pages/app/edit';
-import { getK8s } from '@/services/backend/kubernetes';
-import { authSession } from '@/services/backend/auth';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const { appForm } = req.body as { appForm: AppEditType };
+    // important load env
+    serverLoadInitData();
 
     const { applyYamlList } = await getK8s({
       kubeconfig: await authSession(req.headers)
@@ -25,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   } catch (err: any) {
     jsonRes(res, {
       code: 500,
-      error: err
+      error: err?.body || err
     });
   }
 }
