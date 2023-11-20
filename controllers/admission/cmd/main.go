@@ -66,6 +66,8 @@ func main() {
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
 	setupLog.Info("ingress annotations:", "annotation", ingressAnnotationString)
 	ingressAnnotations := make(map[string]string)
 	kvs := strings.Split(ingressAnnotationString, ",")
@@ -80,8 +82,6 @@ func main() {
 			os.Exit(1)
 		}
 	}
-
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
