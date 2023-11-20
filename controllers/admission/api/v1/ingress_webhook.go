@@ -161,7 +161,8 @@ func (v *IngressValidator) ValidateDelete(ctx context.Context, obj runtime.Objec
 	}
 
 	ilog.Info("validating delete", "ingress namespace", i.Namespace, "ingress name", i.Name)
-	return v.validate(ctx, i)
+	// delete ingress, pass validate
+	return nil
 }
 
 func (v *IngressValidator) validate(ctx context.Context, i *netv1.Ingress) error {
