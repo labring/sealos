@@ -127,16 +127,15 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
         }
         setPodName(data[0].metadata.name);
       }
-      setMigrateStatus(MigrateStatusEnum.Success);
     },
     onSettled() {
-      timeElapsedRef.current += 5000;
-      console.log(timeElapsedRef.current);
-      if (timeElapsedRef.current >= 60 * 1000) {
-        setMigrateStatus(MigrateStatusEnum.Fail);
-        setMigrateName('');
-        timeElapsedRef.current = 0;
-      }
+      // timeElapsedRef.current += 5000;
+      // console.log(timeElapsedRef.current);
+      // if (timeElapsedRef.current >= 8 * 60 * 1000) {
+      //   setMigrateStatus(MigrateStatusEnum.Fail);
+      //   setMigrateName('');
+      //   timeElapsedRef.current = 0;
+      // }
     }
   });
 

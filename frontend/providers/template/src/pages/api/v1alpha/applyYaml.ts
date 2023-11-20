@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const applyRes = await applyYamlList(yamlList, 'create');
 
-    jsonRes(res, { data: applyRes.map((item) => item.kind) });
+    jsonRes(res, { data: applyRes.map((item) => item.kind), message: 'success' });
   } catch (err: any) {
     jsonRes(res, {
       code: 500,
