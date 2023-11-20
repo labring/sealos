@@ -154,7 +154,7 @@ func (v *IngressValidator) ValidateUpdate(ctx context.Context, _, newObj runtime
 	return v.validate(ctx, ni)
 }
 
-func (v *IngressValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+func (v *IngressValidator) ValidateDelete(_ context.Context, obj runtime.Object) error {
 	i, ok := obj.(*netv1.Ingress)
 	if !ok {
 		return errors.New("obj convert Ingress is error")
