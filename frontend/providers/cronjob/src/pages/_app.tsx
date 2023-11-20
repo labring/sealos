@@ -130,7 +130,6 @@ function App({ Component, pageProps }: AppProps) {
     const event = async (e: MessageEvent) => {
       const envs = await getPlatformEnv();
       const whitelist = [`https://${envs?.domain}`];
-      console.log(e, whitelist, 'post message');
       if (!whitelist.includes(e.origin)) {
         return;
       }

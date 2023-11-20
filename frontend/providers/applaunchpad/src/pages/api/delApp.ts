@@ -80,7 +80,7 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
   delDependent.forEach((item) => {
     console.log(item, 'delApp err');
     if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
-      throw new Error('删除 App 异常');
+      throw new Error(item?.reason?.body?.reason || item?.reason?.body?.message || '删除 App 异常');
     }
   });
 
@@ -94,7 +94,7 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
   delApp.forEach((item) => {
     console.log(item, 'delApp err');
     if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
-      throw new Error(item?.reason?.body);
+      throw new Error(item?.reason?.body?.reason || item?.reason?.body?.message || '删除 App 异常');
     }
   });
 }

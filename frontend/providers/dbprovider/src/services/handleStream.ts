@@ -14,12 +14,9 @@ export const handleAxiosStream = async (props: AxiosRequestConfig, kubeconfig: s
       }
     };
     const doMain = process.env.MONITOR_URL || 'http://monitor-system.cloud.sealos.run';
-    const response = await fetch(`${doMain}${url}?${queryString}`, requestOptions).then((res) => {
-      console.log(res, '====');
-
-      return res.json();
-    });
-    console.log(`${doMain}${url}?${queryString}`, response);
+    const response = await fetch(`${doMain}${url}?${queryString}`, requestOptions).then((res) =>
+      res.json()
+    );
     return response;
     // const response = await axios({
     //   baseURL: 'http://localhost:9090' || 'http://monitor-system.cloud.sealos.run',

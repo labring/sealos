@@ -127,18 +127,18 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
         }
         setPodName(data[0].metadata.name);
       }
+      setMigrateStatus(MigrateStatusEnum.Success);
     },
     onSettled() {
       timeElapsedRef.current += 5000;
+      console.log(timeElapsedRef.current);
+      if (timeElapsedRef.current >= 60 * 1000) {
+        setMigrateStatus(MigrateStatusEnum.Fail);
+        setMigrateName('');
+        timeElapsedRef.current = 0;
+      }
     }
   });
-
-  useEffect(() => {
-    if (timeElapsedRef.current >= 3 * 60 * 1000) {
-      setMigrateStatus(MigrateStatusEnum.Fail);
-      timeElapsedRef.current = 0;
-    }
-  }, []);
 
   const { data: log = '' } = useQuery(
     ['getLogByNameAndContainerName', podName],
@@ -282,7 +282,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                 alignItems={'center'}
                 justifyContent={'center'}
                 pt="75px"
-                pb="12px"
+                pb="42px"
                 px="24px"
               >
                 <Flex alignItems={'center'} justifyContent={'center'} gap="10px">
@@ -309,7 +309,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                   alignItems={'center'}
                   justifyContent={'center'}
                   pt="75px"
-                  pb="12px"
+                  pb="42px"
                   px="24px"
                 >
                   <MyIcon name="success" w={'42px'} h="42px"></MyIcon>
@@ -332,9 +332,13 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                     {t('Migration Failed')}
                   </Text>
                   <Divider mt="44px" mb="24px" />
-                  <Text mt="20px" fontSize={'14px'} fontWeight={400} color={'#7B838B'}>
-                    {log ? log : t('Have Error')}
-                  </Text>
+                  <Text
+                    mt="20px"
+                    fontSize={'14px'}
+                    fontWeight={400}
+                    color={'#7B838B'}
+                    dangerouslySetInnerHTML={{ __html: log ? log : 'Have Error' }}
+                  ></Text>
                 </Flex>
               )}
             </ModalBody>

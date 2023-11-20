@@ -1,4 +1,5 @@
 import { applyYamlList, delDBServiceByName, getDBSecret, getDBServiceByName } from '@/api/db';
+import { getAppEnv } from '@/api/platform';
 import MyIcon from '@/components/Icon';
 import { DBStatusEnum, DBTypeEnum, DBTypeSecretMap, defaultDBDetail } from '@/constants/db';
 import { useToast } from '@/hooks/useToast';
@@ -43,6 +44,8 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     );
   }, [db.dbType]);
 
+  const { data: systemEnvs } = useQuery(['getDBSecret'], () => getAppEnv());
+
   const { data: secret } = useQuery(
     ['getDBSecret', db.dbName],
     () => (db.dbName ? getDBSecret({ dbName: db.dbName, dbType: db.dbType }) : null),
@@ -67,17 +70,22 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   );
 
   const externalNetWork = useMemo(() => {
-    const host = dbPods?.[0]?.hostIp;
+    const host = `${systemEnvs?.domain}`;
     const port = service?.spec?.ports?.[0]?.nodePort?.toString() || '';
-    const connection = `${DBTypeSecretMap[db.dbType].connectKey}://${secret?.username}:${
+    let connection = `${DBTypeSecretMap[db.dbType].connectKey}://${secret?.username}:${
       secret?.password
     }@${host}:${port}`;
+
+    if (db?.dbType === 'mongodb' || db?.dbType === 'postgresql') {
+      connection += '?directConnection=true';
+    }
+
     return {
       host,
       port,
       connection
     };
-  }, [db, dbPods, secret, service]);
+  }, [db, secret, service, systemEnvs]);
 
   const [baseSecret, otherSecret] = useMemo(
     () => [pick(secret, ['username', 'password']), pick(secret, ['host', 'port', 'connection'])],
