@@ -42,6 +42,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         [DBTypeEnum.redis]: {
           passwordKey: 'password',
           connectKey: 'redis'
+        },
+        [DBTypeEnum.kafka]: {
+          passwordKey: 'password',
+          connectKey: 'kafka'
+        },
+        [DBTypeEnum.qdrant]: {
+          passwordKey: 'password',
+          connectKey: 'qdrant'
+        },
+        [DBTypeEnum.nebula]: {
+          passwordKey: 'password',
+          connectKey: 'nebula'
+        },
+        [DBTypeEnum.weaviate]: {
+          passwordKey: 'password',
+          connectKey: 'weaviate'
         }
       };
       // get secret

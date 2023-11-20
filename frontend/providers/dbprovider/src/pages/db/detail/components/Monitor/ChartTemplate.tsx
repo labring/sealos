@@ -67,7 +67,7 @@ const ChartTemplate = ({
               >
                 {ChartData?.result?.yData?.map((item: { name: string }, index: number) => {
                   return (
-                    <Flex key={item?.name} alignItems={'center'} w={'fit-content'}>
+                    <Flex key={item?.name + index} alignItems={'center'} w={'fit-content'}>
                       <Box
                         w="16px"
                         h="4px"

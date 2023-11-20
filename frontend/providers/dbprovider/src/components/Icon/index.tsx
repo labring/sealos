@@ -29,7 +29,12 @@ const map = {
   connection: require('./icons/connection.svg').default,
   info: require('./icons/info.svg').default,
   restore: require('./icons/restore.svg').default,
-  download: require('./icons/download.svg').default
+  download: require('./icons/download.svg').default,
+  loading: require('./icons/loading.svg').default,
+  success: require('./icons/success.svg').default,
+  error: require('./icons/error.svg').default,
+  currency: require('./icons/currency.svg').default,
+  infoCircle: require('./icons/infoCircle.svg').default
 };
 
 const MyIcon = ({

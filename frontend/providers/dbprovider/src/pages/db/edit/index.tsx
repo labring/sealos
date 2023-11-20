@@ -50,7 +50,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const isEdit = useMemo(() => !!dbName, [dbName]);
 
   // compute container width
-  const { screenWidth } = useGlobalStore();
+  const { screenWidth, lastRoute } = useGlobalStore();
   const pxVal = useMemo(() => {
     const val = Math.floor((screenWidth - 1050) / 2);
     if (val < 20) {
@@ -116,13 +116,12 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
           isClosable: true
         });
       }
-
       await applyYamlList(yamlList, isEdit ? 'replace' : 'create');
       toast({
         title: t(applySuccess),
         status: 'success'
       });
-      router.replace(`/db/detail?name=${formHook.getValues('dbName')}`);
+      router.push(lastRoute);
     } catch (error) {
       console.error(error);
       setErrorMessage(JSON.stringify(error));

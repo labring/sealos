@@ -15,6 +15,13 @@ import type {
 
 export type DBType = `${DBTypeEnum}`;
 
+export type SupportMigrationDBType = Extract<DBType, 'postgresql' | 'mongodb' | 'apecloud-mysql'>;
+
+export type SupportConnectDBType = Extract<
+  DBType,
+  'postgresql' | 'mongodb' | 'apecloud-mysql' | 'mongodb'
+>;
+
 export type DeployKindsType =
   | V1Deployment
   | V1StatefulSet
@@ -77,6 +84,7 @@ export interface PodDetailType extends V1Pod {
   status: V1ContainerStatus[];
   nodeName: string;
   ip: string;
+  hostIp: string;
   restarts: number;
   age: string;
   cpu: number;
