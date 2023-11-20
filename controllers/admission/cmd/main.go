@@ -18,10 +18,9 @@ package main
 
 import (
 	"flag"
+	v1 "github.com/labring/sealos/controllers/admission/api/v1"
 	"os"
 	"strings"
-
-	v1 "github.com/labring/sealos/controllers/admission/api/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -70,16 +69,18 @@ func main() {
 
 	setupLog.Info("ingress annotations:", "annotation", ingressAnnotationString)
 	ingressAnnotations := make(map[string]string)
-	kvs := strings.Split(ingressAnnotationString, ",")
-	for _, kv := range kvs {
-		parts := strings.Split(kv, "=")
-		if len(parts) == 2 {
-			key := parts[0]
-			value := parts[1]
-			ingressAnnotations[key] = value
-		} else {
-			setupLog.Error(nil, "ingress annotation format error", "annotation", kv)
-			os.Exit(1)
+	if ingressAnnotationString != "" {
+		kvs := strings.Split(ingressAnnotationString, ",")
+		for _, kv := range kvs {
+			parts := strings.Split(kv, "=")
+			if len(parts) == 2 {
+				key := parts[0]
+				value := parts[1]
+				ingressAnnotations[key] = value
+			} else {
+				setupLog.Error(nil, "ingress annotation format error", "annotation", kv)
+				os.Exit(1)
+			}
 		}
 	}
 
