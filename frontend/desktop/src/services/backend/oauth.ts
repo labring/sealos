@@ -11,6 +11,8 @@ import { v4 as uuid } from 'uuid';
 import { createUTN, queryUTN } from './db/userToNamespace';
 import { InvitedStatus, NSType, UserRole } from '@/types/team';
 import { enableSignUp } from '../enable';
+import RandExp from 'randexp';
+import { reject } from 'lodash';
 
 export const getOauthRes = async ({
   provider,
@@ -73,6 +75,7 @@ export const getOauthRes = async ({
     kubeconfig
   };
 };
+
 async function signIn({
   userResult: _user,
   provider,
@@ -140,7 +143,6 @@ async function signIn({
     namespace
   };
 }
-
 async function signUp({
   provider,
   id,
@@ -155,8 +157,6 @@ async function signUp({
   password?: string;
 }) {
   const ns_uid = uuid();
-  if (provider === 'password_user') {
-  }
   let user: User | null = null;
   if (provider === 'password_user') {
     if (!password) return null;
@@ -190,4 +190,36 @@ async function signUp({
     k8s_user,
     namespace
   };
+}
+export function signUpByPassword({ password, username }: { password: string; username: string }) {
+  return signUp({
+    provider: 'password_user',
+    id: username,
+    name: username,
+    avatar_url: '',
+    password
+  });
+}
+export async function signInByPassword({
+  password,
+  username
+}: {
+  password: string;
+  username: string;
+}) {
+  const _user = await queryUser({ id: username, provider: 'password_user' });
+  if (!_user) return null;
+  return signIn({
+    userResult: _user,
+    provider: 'password_user',
+    password,
+    id: username
+  }).then(
+    (v) => v,
+    (_) => Promise.resolve(null)
+  );
+}
+export async function passwrodUserIsExist({ username: id }: { username: string }) {
+  const result = await queryUser({ id, provider: 'password_user' });
+  return result && result.password && result.password !== hashPassword('');
 }
