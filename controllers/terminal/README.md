@@ -34,7 +34,7 @@ TerminalSpec
 
 - ingressType(string)
   
-  Ingress Type, `nginx` or `apisix`. Default to `nginx`.
+  Ingress Type, `nginx`. Default to `nginx`.
 
 ## Usage
 1. run `kubectl apply terminal.yaml`

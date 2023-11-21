@@ -29,7 +29,6 @@ func (r *Reconciler) createNginxIngress(bytebase *bbv1.Bytebase, host string, sn
 		Namespace: bytebase.Namespace,
 		Annotations: map[string]string{
 			"kubernetes.io/ingress.class":                       "nginx",
-			"nginx.ingress.kubernetes.io/rewrite-target":        "/",
 			"nginx.ingress.kubernetes.io/proxy-send-timeout":    "86400",
 			"nginx.ingress.kubernetes.io/proxy-read-timeout":    "86400",
 			"nginx.ingress.kubernetes.io/configuration-snippet": snippet,

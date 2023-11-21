@@ -21,7 +21,6 @@ import (
 	"os"
 	"time"
 
-	apisix "github.com/apache/apisix-ingress-controller/pkg/kube/apisix/apis/config/v2beta3"
 	"github.com/jaevor/go-nanoid"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -86,8 +85,6 @@ type TerminalReconciler struct {
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apisix.apache.org,resources=apisixroutes,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apisix.apache.org,resources=apisixtlses,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -162,63 +159,8 @@ func (r *TerminalReconciler) syncIngress(ctx context.Context, terminal *terminal
 	switch terminal.Spec.IngressType {
 	case terminalv1.Nginx:
 		err = r.syncNginxIngress(ctx, terminal, host)
-	case terminalv1.Apisix:
-		err = r.syncApisixIngress(ctx, terminal, host)
 	}
 	return err
-}
-
-func (r *TerminalReconciler) syncApisixIngress(ctx context.Context, terminal *terminalv1.Terminal, host string) error {
-	// 1. sync ApisixRoute
-	apisixRoute := &apisix.ApisixRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      terminal.Name,
-			Namespace: terminal.Namespace,
-		},
-	}
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, apisixRoute, func() error {
-		expectRoute := r.createApisixRoute(terminal, host)
-		if len(apisixRoute.Spec.HTTP) == 0 {
-			apisixRoute.Spec.HTTP = expectRoute.Spec.HTTP
-		} else {
-			apisixRoute.Spec.HTTP[0].Name = expectRoute.Spec.HTTP[0].Name
-			apisixRoute.Spec.HTTP[0].Match = expectRoute.Spec.HTTP[0].Match
-			apisixRoute.Spec.HTTP[0].Backends = expectRoute.Spec.HTTP[0].Backends
-			apisixRoute.Spec.HTTP[0].Timeout = expectRoute.Spec.HTTP[0].Timeout
-			apisixRoute.Spec.HTTP[0].Authentication = expectRoute.Spec.HTTP[0].Authentication
-		}
-		return controllerutil.SetControllerReference(terminal, apisixRoute, r.Scheme)
-	}); err != nil {
-		return err
-	}
-
-	// 2. sync ApisixTls
-	apisixTLS := &apisix.ApisixTls{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      terminal.Name,
-			Namespace: terminal.Namespace,
-		},
-	}
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, apisixTLS, func() error {
-		expectTLS := r.createApisixTLS(terminal, host)
-		if apisixTLS.Spec != nil {
-			apisixTLS.Spec.Hosts = expectTLS.Spec.Hosts
-			apisixTLS.Spec.Secret = expectTLS.Spec.Secret
-		} else {
-			apisixTLS.Spec = expectTLS.Spec
-		}
-		return controllerutil.SetControllerReference(terminal, apisixTLS, r.Scheme)
-	}); err != nil {
-		return err
-	}
-
-	domain := Protocol + host + r.getPort()
-	if terminal.Status.Domain != domain {
-		terminal.Status.Domain = domain
-		return r.Status().Update(ctx, terminal)
-	}
-
-	return nil
 }
 
 func (r *TerminalReconciler) syncNginxIngress(ctx context.Context, terminal *terminalv1.Terminal, host string) error {
