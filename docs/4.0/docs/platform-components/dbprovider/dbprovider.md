@@ -8,13 +8,13 @@ The **Database** is a quintessential component of an application. Sealos provide
 
 - [x] Cluster CRUD
 - [x] One-click direct connection to the database
-- [ ] Manual backup
-- [ ] Automatic backup
-- [ ] Elastic scaling
+- [x] Manual backup
+- [x] Automatic backup
+- [x] Elastic scaling
 - [ ] Creation of read-only clusters
 - [ ] Visual configuration of user groups and database groups
-- [ ] Visual database management
-- [ ] Support for additional databases and versions
+- [x] Visual database management
+- [x] Support for additional databases and versions
 
 ## Getting Started
 
