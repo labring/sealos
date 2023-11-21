@@ -116,7 +116,10 @@ more_set_headers "%s: %s";
 `, clearXFrameHeader, defaultCSPHeader, defaultCSPValue, defaultXSSHeader, defaultXSSValue)
 	defaultHigressAnnotations = map[string]string{
 		"higress.io/response-header-control-remove": clearXFrameHeader,
-		"higress.io/response-header-control-update": fmt.Sprintf(`%s "%s"\n%s "%s"`, defaultCSPHeader, defaultCSPValue, defaultXSSHeader, defaultXSSValue),
+		"higress.io/response-header-control-update": fmt.Sprintf(`
+%s "%s"
+%s "%s"
+`, defaultCSPHeader, defaultCSPValue, defaultXSSHeader, defaultXSSValue),
 	}
 )
 
