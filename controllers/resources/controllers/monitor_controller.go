@@ -316,7 +316,8 @@ func (r *MonitorReconciler) getResourceUsage(namespace *corev1.Namespace) ([]*re
 			resNamed[svcRes.String()] = svcRes
 			resUsed[svcRes.String()] = initResources()
 		}
-		resUsed[svcRes.String()][corev1.ResourceServicesNodePorts].Add(*resource.NewQuantity(1, resource.BinarySI))
+		// nodeport 1:1000, the measurement is quantity 1000
+		resUsed[svcRes.String()][corev1.ResourceServicesNodePorts].Add(*resource.NewQuantity(1000, resource.BinarySI))
 	}
 
 	var monitors []*resources.Monitor
