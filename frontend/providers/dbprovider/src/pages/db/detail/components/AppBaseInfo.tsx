@@ -44,7 +44,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     );
   }, [db.dbType]);
 
-  const { data: systemEnvs } = useQuery(['getDBSecret'], () => getAppEnv());
+  const { data: systemEnvs } = useQuery(['getSystemEnvs'], () => getAppEnv());
 
   const { data: secret } = useQuery(
     ['getDBSecret', db.dbName],
@@ -378,12 +378,20 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                   {t('Billing Standards')}
                 </Text>
                 <Center mt="16px" color={'#24282C'} fontSize={'24px'} fontWeight={600}>
-                  0.05
+                  0.5
                   <MyIcon ml="8px" name="currency" w="32px" h="32px"></MyIcon>/ {t('Hour')}
                 </Center>
-                <Center p="8px" mt="20px" bg="#EBF7FD" color={'#1D8CDC'}>
+                <Center
+                  p="8px"
+                  mt="20px"
+                  bg="#EBF7FD"
+                  color={'#1D8CDC'}
+                  cursor={'pointer'}
+                  w="100%"
+                  onClick={() => window.open('https://forum.laf.run/d/1092')}
+                >
                   <MyIcon name="infoCircle" w="16px" fill={'#48A7EC'}></MyIcon>
-                  防止用户删除数据库不完全（service没删）
+                  免费方案
                 </Center>
                 <Button mt="32px" variant={'primary'} onClick={openNetWorkService}>
                   {t('Turn On')}

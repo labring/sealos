@@ -44,7 +44,12 @@ ${t('common.Surplus')}: ${`${item.limit - item.used} ${sourceMap[item.type]?.uni
   }, [userQuota, t]);
 
   return userQuota.length === 0 ? null : (
-    <Box h="50%" borderBottom={'1px solid #EAEBF0'} px="28px" pt="36px">
+    <Box
+      h="50%"
+      //  borderBottom={'1px solid #EAEBF0'}
+      px="28px"
+      pt="36px"
+    >
       <Text color={'#485058'} fontWeight={500} fontSize={'14px'}>
         {t('app.Resource Quota')}
       </Text>

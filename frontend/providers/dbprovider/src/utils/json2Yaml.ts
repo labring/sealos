@@ -960,7 +960,7 @@ export const json2DumpCR = async (data: DumpForm) => {
                 },
                 {
                   name: 'COLLECTION_NAME',
-                  value: ''
+                  value: data.collectionName
                 },
                 { name: 'TABLES_NAME', value: '' }
               ]

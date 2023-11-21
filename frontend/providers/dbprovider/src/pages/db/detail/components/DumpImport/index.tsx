@@ -189,7 +189,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
       <Flex borderRadius={'4px'} border={'1px solid #EAEBF0'} h="100%">
         <Box flex={'0 1 256px'} borderRight={'1px solid #EAEBF0'}>
           <QuotaBox />
-          {db && (
+          {/* {db && (
             <PriceBox
               components={[
                 {
@@ -211,7 +211,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                   : [])
               ]}
             />
-          )}
+          )} */}
         </Box>
         <Box flex={1} pt="35px" px="68px">
           <Text color={'#24282C'} fontSize={'16px'} fontWeight={500}>
