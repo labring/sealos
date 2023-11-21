@@ -22,7 +22,7 @@ import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
 import { useTranslation } from 'react-i18next';
 import { AddIcon, GroupAddIcon } from '@sealos/ui';
-export default function CreateTeam() {
+export default function CreateTeam({ textButton = false }: { textButton?: boolean }) {
   const { onOpen, isOpen, onClose } = useDisclosure();
   const { t } = useTranslation();
   const [teamName, setTeamName] = useState('');
@@ -48,17 +48,31 @@ export default function CreateTeam() {
   };
   return (
     <>
-      <IconButton
-        onClick={() => {
-          onOpen();
-          setTeamName('');
-        }}
-        variant={'white-bg-icon'}
-        mr="4px"
-        p="4px"
-        aria-label={'create team'}
-        icon={<AddIcon boxSize={'20px'} color={'brightBlue.600'} />}
-      />
+      {textButton ? (
+        <Button
+          onClick={() => {
+            onOpen();
+            setTeamName('');
+          }}
+          variant={'primary'}
+          leftIcon={<AddIcon boxSize={'20px'} color={'white'} />}
+          iconSpacing={'8px'}
+        >
+          {t('Create Team')}
+        </Button>
+      ) : (
+        <IconButton
+          onClick={() => {
+            onOpen();
+            setTeamName('');
+          }}
+          variant={'white-bg-icon'}
+          mr="4px"
+          p="4px"
+          aria-label={'create team'}
+          icon={<AddIcon boxSize={'20px'} color={'brightBlue.600'} />}
+        />
+      )}
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
         <ModalContent
