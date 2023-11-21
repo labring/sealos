@@ -66,22 +66,24 @@ func main() {
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
 	setupLog.Info("ingress annotations:", "annotation", ingressAnnotationString)
 	ingressAnnotations := make(map[string]string)
-	kvs := strings.Split(ingressAnnotationString, ",")
-	for _, kv := range kvs {
-		parts := strings.Split(kv, "=")
-		if len(parts) == 2 {
-			key := parts[0]
-			value := parts[1]
-			ingressAnnotations[key] = value
-		} else {
-			setupLog.Error(nil, "ingress annotation format error", "annotation", kv)
-			os.Exit(1)
+	if ingressAnnotationString != "" {
+		kvs := strings.Split(ingressAnnotationString, ",")
+		for _, kv := range kvs {
+			parts := strings.Split(kv, "=")
+			if len(parts) == 2 {
+				key := parts[0]
+				value := parts[1]
+				ingressAnnotations[key] = value
+			} else {
+				setupLog.Error(nil, "ingress annotation format error", "annotation", kv)
+				os.Exit(1)
+			}
 		}
 	}
-
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
