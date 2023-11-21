@@ -127,16 +127,15 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
         }
         setPodName(data[0].metadata.name);
       }
-      setMigrateStatus(MigrateStatusEnum.Success);
     },
     onSettled() {
-      timeElapsedRef.current += 5000;
-      console.log(timeElapsedRef.current);
-      if (timeElapsedRef.current >= 60 * 1000) {
-        setMigrateStatus(MigrateStatusEnum.Fail);
-        setMigrateName('');
-        timeElapsedRef.current = 0;
-      }
+      // timeElapsedRef.current += 5000;
+      // console.log(timeElapsedRef.current);
+      // if (timeElapsedRef.current >= 8 * 60 * 1000) {
+      //   setMigrateStatus(MigrateStatusEnum.Fail);
+      //   setMigrateName('');
+      //   timeElapsedRef.current = 0;
+      // }
     }
   });
 
@@ -190,7 +189,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
       <Flex borderRadius={'4px'} border={'1px solid #EAEBF0'} h="100%">
         <Box flex={'0 1 256px'} borderRight={'1px solid #EAEBF0'}>
           <QuotaBox />
-          {db && (
+          {/* {db && (
             <PriceBox
               components={[
                 {
@@ -212,7 +211,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                   : [])
               ]}
             />
-          )}
+          )} */}
         </Box>
         <Box flex={1} pt="35px" px="68px">
           <Text color={'#24282C'} fontSize={'16px'} fontWeight={500}>

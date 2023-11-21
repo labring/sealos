@@ -242,11 +242,11 @@ export const json2Ingress = (data: AppEditType) => {
       'nginx.ingress.kubernetes.io/proxy-send-timeout': '300',
       'nginx.ingress.kubernetes.io/proxy-read-timeout': '300',
       'nginx.ingress.kubernetes.io/server-snippet':
-        'client_header_buffer_size 64k;\nlarge_client_header_buffers 4 128k;\n',
+        'client_header_buffer_size 64k;\nlarge_client_header_buffers 4 128k;\n'
     },
     GRPC: {
       'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
-      'nginx.ingress.kubernetes.io/backend-protocol': 'GRPC',
+      'nginx.ingress.kubernetes.io/backend-protocol': 'GRPC'
     },
     WS: {
       'nginx.ingress.kubernetes.io/proxy-read-timeout': '3600',
@@ -261,6 +261,7 @@ export const json2Ingress = (data: AppEditType) => {
       const host = network.customDomain
         ? network.customDomain
         : `${network.publicDomain}.${SEALOS_DOMAIN}`;
+
       const secretName = network.customDomain ? data.appName : INGRESS_SECRET;
 
       const ingress = {

@@ -187,7 +187,7 @@
   "Advanced Configuration": "高级配置",
   "Option": "选填",
   "Internet Migration": "公网迁移",
-  "Dump Import": "Dump 导入",
+  "File Migration": "文件迁移",
   "Source Database": "源数据库",
   "Database Host": "数据库 Host",
   "DB Name": "数据库名字",

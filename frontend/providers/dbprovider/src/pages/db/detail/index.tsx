@@ -51,7 +51,7 @@ const AppDetail = ({
       ...(MigrateSupported
         ? [
             { label: 'Internet Migration', value: TabEnum.InternetMigration },
-            { label: 'Dump Import', value: TabEnum.DumpImport }
+            { label: 'File Migration', value: TabEnum.DumpImport }
           ]
         : [])
     ];

@@ -960,7 +960,7 @@ export const json2DumpCR = async (data: DumpForm) => {
                 },
                 {
                   name: 'COLLECTION_NAME',
-                  value: ''
+                  value: data.collectionName
                 },
                 { name: 'TABLES_NAME', value: '' }
               ]
@@ -990,7 +990,9 @@ export const json2NetworkService = (data: DBDetailType) => {
     apiVersion: 'v1',
     kind: 'Service',
     metadata: {
-      name: `${data.dbName}-export`
+      name: `${data.dbName}-export`,
+      'app.kubernetes.io/instance': data.dbName,
+      'apps.kubeblocks.io/component-name': data.dbType
     },
     spec: {
       ports: [
