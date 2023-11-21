@@ -3,7 +3,7 @@ import { Card, CardBody } from '@chakra-ui/react';
 import down_icon from '@/assert/ic_round-trending-down.svg';
 import up_icon from '@/assert/ic_round-trending-up.svg';
 import { useMemo } from 'react';
-import { formatMoney } from '@/utils/format';
+import { displayMoney, formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import useBillingData from '@/hooks/useBillingData';
 import CurrencySymbol from '../CurrencySymbol';
@@ -56,7 +56,7 @@ export function Buget() {
               <Flex mt="8px">
                 <CurrencySymbol w="16px" type={currency} />
                 <Text fontWeight="500" fontSize="16px" ml="4px">
-                  {v.value}
+                  {displayMoney(v.value)}
                 </Text>
               </Flex>
             </CardBody>

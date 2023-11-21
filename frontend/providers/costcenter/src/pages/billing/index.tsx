@@ -117,7 +117,7 @@ function InOutTabPanel({ namespace }: { namespace: string }) {
   const { t } = useTranslation();
   const tableResult = data?.data?.status?.item || [];
   return (
-    <TabPanel p="0">
+    <TabPanel p="0" display={'flex'} flexDirection={'column'} flex={'auto'}>
       <Flex alignItems={'center'} flexWrap={'wrap'}>
         <Flex align={'center'} mb="24px">
           <Text fontSize={'12px'} mx={'10px'} width={['60px', '60px', 'auto', 'auto']}>
@@ -146,13 +146,14 @@ function InOutTabPanel({ namespace }: { namespace: string }) {
       </Flex>
       {isSuccess && tableResult.length > 0 ? (
         <>
-          <Box overflow={'auto'}>
-            <CommonBillingTable
-              data={tableResult.filter((x) =>
-                [BillingType.CONSUME, BillingType.RECHARGE].includes(x.type)
-              )}
-            />
-          </Box>
+          <CommonBillingTable
+            data={tableResult.filter((x) =>
+              [BillingType.CONSUME, BillingType.RECHARGE].includes(x.type)
+            )}
+            flex={'auto'}
+            overflow={'auto'}
+            overflowY={'auto'}
+          />
           <Flex justifyContent={'space-between'} mt="20px">
             <AmountDisplay />
             <SwitchPage
@@ -225,7 +226,7 @@ function TransferTabPanel({ namespace }: { namespace: string }) {
   const { t } = useTranslation();
   const tableResult = data?.data?.status?.item || [];
   return (
-    <TabPanel p="0">
+    <TabPanel p="0" flex={1} display={'flex'} flexDirection={'column'}>
       <Flex alignItems={'center'} flexWrap={'wrap'}>
         <Flex align={'center'} mb="24px">
           <Text fontSize={'12px'} mr={'12px'} width={['60px', '60px', 'auto', 'auto']}>
@@ -248,13 +249,11 @@ function TransferTabPanel({ namespace }: { namespace: string }) {
       </Flex>
       {isSuccess && tableResult.length > 0 ? (
         <>
-          <Box>
-            <TransferBillingTable
-              data={tableResult.filter((x) =>
-                [BillingType.RECEIVE, BillingType.TRANSFER].includes(x.type)
-              )}
-            />
-          </Box>
+          <TransferBillingTable
+            data={tableResult.filter((x) =>
+              [BillingType.RECEIVE, BillingType.TRANSFER].includes(x.type)
+            )}
+          />
           <Flex justifyContent={'flex-end'}>
             <SwitchPage
               totalPage={totalPage}
@@ -287,7 +286,7 @@ function Billing() {
         <Heading size="lg">{t('SideBar.BillingDetails')}</Heading>
         <NamespaceMenu isDisabled={false} setNamespace={setNamespace} />
       </Flex>
-      <Tabs mt={'20px'}>
+      <Tabs mt={'20px'} flex={1} display={'flex'} flexDir={'column'}>
         <TabList borderColor={'#EFF0F1'}>
           <Tab
             px="10px"
@@ -306,7 +305,7 @@ function Billing() {
             {t('Transfer')}
           </Tab>
         </TabList>
-        <TabPanels mt="24px" flexDirection={'column'}>
+        <TabPanels mt="24px" flexDirection={'column'} flex={'1'} display={'flex'}>
           <InOutTabPanel namespace={namespace} />
           <TransferTabPanel namespace={namespace} />
         </TabPanels>

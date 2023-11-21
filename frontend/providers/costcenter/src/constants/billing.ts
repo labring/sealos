@@ -19,3 +19,19 @@ export const LIST_TYPE: { title: string; value: BillingType }[] = [
   { title: 'Recipient', value: BillingType.RECEIVE },
   { title: 'Transfer', value: BillingType.TRANSFER }
 ];
+export enum TableHeaderID {
+  'APPName' = 'APP Name',
+  'OrderNumber' = 'Order Number',
+  'TransactionTime' = 'Transaction Time',
+  'APPType' = 'APP Type',
+  'CPU' = 'CPU',
+  'GPU' = 'GPU',
+  'Port' = 'Port',
+  'TrueAmount' = 'True Amount',
+  'Memory' = 'Memory',
+  'Storage' = 'Storage',
+  'Network' = 'Network',
+  'TotalAmount' = 'Total Amount',
+  'Handle' = 'Handle',
+  'Namespace' = 'Namespace'
+}
