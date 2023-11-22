@@ -55,7 +55,7 @@ func GetUserObjectStorageSize(client *minio.Client, username string) (int64, int
 	return totalSize, objectsCount, nil
 }
 
-func GetUserObjectStorageFlow(client *minio.Client, host, username string) (int64, error) {
+func GetUserObjectStorageFlow(client *minio.Client, promURL, username string) (int64, error) {
 	buckets, err := client.ListBuckets(context.Background())
 	if err != nil {
 		return 0, fmt.Errorf("failed to list object storage buckets")
@@ -70,7 +70,7 @@ func GetUserObjectStorageFlow(client *minio.Client, host, username string) (int6
 
 	var totalFlow int64
 	for _, bucketName := range expectBuckets {
-		flow, err := QueryPrometheus(host, bucketName)
+		flow, err := QueryPrometheus(promURL, bucketName)
 		if err != nil {
 			return 0, fmt.Errorf("failed to query prometheus, bucket: %v, err: %v", bucketName, err)
 		}
@@ -117,7 +117,13 @@ func QueryPrometheus(host, bucketName string) (int64, error) {
 	sentStr := re.FindString(sentResult.String())
 
 	rcvdBytes, err := strconv.ParseInt(rcvdStr, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse rcvdBytes to int64")
+	}
 	sentBytes, err := strconv.ParseInt(sentStr, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse rcvdBytes to int64")
+	}
 
 	fmt.Printf("received bytes: %d, send bytes: %d\n", rcvdBytes, sentBytes)
 

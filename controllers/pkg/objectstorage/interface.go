@@ -19,5 +19,5 @@ import "github.com/minio/minio-go/v7"
 type Interface interface {
 	GetUserObjectStorageSize(client *minio.Client, username string) (int64, int64, error)
 
-	GetUserObjectStorageFlow(client *minio.Client, host, username string) (int64, error)
+	GetUserObjectStorageFlow(client *minio.Client, promURL, username string) (int64, error)
 }
