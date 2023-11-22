@@ -10,14 +10,15 @@ export default function MigrateStatus({
   migrateName: string;
   migrateStatus: string;
 }) {
-  const { data: MigratePods = [] } = useQuery(['getMigratePodList', migrateName], () =>
-    getMigratePodList(migrateName)
+  const { data: MigratePods = [] } = useQuery(
+    ['getMigratePodStatus', migrateName],
+    () => getMigratePodList(migrateName),
+    {
+      refetchInterval: 5000
+    }
   );
 
   const status = useMemo(() => {
-    MigratePods.map((i) => {
-      console.log(i.status?.phase);
-    });
     const isCompleted = MigratePods.every((pod) => pod?.status?.phase === 'Succeeded');
     const isFailed = MigratePods.some((pod) => pod?.status?.phase === 'Failed');
     if (migrateStatus === 'InitPrepared' && isFailed) {
@@ -26,7 +27,7 @@ export default function MigrateStatus({
     if (isCompleted) {
       return 'Complete';
     }
-    return migrateStatus;
+    return MigratePods[0]?.status?.phase || migrateStatus;
   }, [MigratePods, migrateStatus]);
 
   return <Box>{status}</Box>;

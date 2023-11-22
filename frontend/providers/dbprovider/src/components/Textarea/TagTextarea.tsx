@@ -21,22 +21,37 @@ const TagTextarea = ({ defaultValues, onUpdate, ...props }: Props) => {
   const [tags, setTags] = useState<string[]>(defaultValues);
 
   const onUpdateValue = useCallback(
-    (value?: string) => {
+    (value?: string, type: 'create' | 'delete' = 'create') => {
       setFocus(false);
-      if (!value || !InputRef.current?.value) {
-        return;
+      if (type === 'create') {
+        if (!value || !InputRef.current?.value) {
+          return;
+        }
+        if (tags.includes(value)) {
+          return toast({
+            status: 'info',
+            title: t('common.input.Repeat Value'),
+            position: 'top',
+            duration: 2000
+          });
+        }
+        setTags([...tags, value]);
+        onUpdate([...tags, value]);
+        InputRef.current.value = '';
+      } else {
+        if (tags.length === 0) {
+          return toast({
+            status: 'info',
+            title: t('common.input.No Elements to Delete'),
+            position: 'top',
+            duration: 2000
+          });
+        }
+        // Delete the last element
+        tags.pop();
+        setTags(tags);
+        onUpdate(tags);
       }
-      if (tags.includes(value)) {
-        return toast({
-          status: 'error',
-          title: t('common.input.Repeat Value'),
-          position: 'top',
-          duration: 2000
-        });
-      }
-      setTags([...tags, value]);
-      onUpdate([...tags, value]);
-      InputRef.current.value = '';
     },
     [onUpdate, t, tags, toast]
   );
@@ -90,6 +105,10 @@ const TagTextarea = ({ defaultValues, onUpdate, ...props }: Props) => {
             if (e.keyCode === 13) {
               e.preventDefault();
               onUpdateValue(InputRef.current?.value);
+            }
+            if (e.keyCode === 8 && InputRef.current?.value === '') {
+              e.preventDefault();
+              onUpdateValue(InputRef.current?.value, 'delete');
             }
           }}
         />

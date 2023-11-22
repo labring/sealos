@@ -58,7 +58,7 @@ const FileSelect = ({ fileExtension, setFiles, multiple = false, files, ...props
       </Text>
       <Box
         w={'auto'}
-        maxW={'200px'}
+        maxW={'366px'}
         h="35px"
         bottom={'0'}
         right={'0'}

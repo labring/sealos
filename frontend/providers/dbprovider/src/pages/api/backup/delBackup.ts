@@ -20,12 +20,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   }
 
   try {
-    await delBackupByName({
+    const result = await delBackupByName({
       backupName,
       req
     });
-
-    jsonRes(res);
+    jsonRes(res, { data: result?.body });
   } catch (err: any) {
     jsonRes(res, {
       code: 500,
@@ -42,7 +41,8 @@ export async function delBackupByName({ backupName, req }: Props & { req: NextAp
   const { k8sCustomObjects, namespace } = await getK8s({
     kubeconfig: await authSession(req)
   });
-  await k8sCustomObjects.deleteNamespacedCustomObject(
+
+  return await k8sCustomObjects.deleteNamespacedCustomObject(
     group,
     version,
     namespace,

@@ -4,27 +4,36 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 
+// get App Metrics By DeployName. compute average value
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { name } = req.query as { name: string };
+    const { name } = req.query;
+
     if (!name) {
-      throw new Error('name is empty');
+      throw new Error('Name is empty');
     }
 
     const { k8sCore, namespace } = await getK8s({
-      kubeconfig: await authSession(req)
+      kubeconfig: await authSession(req.headers)
     });
 
-    const { body } = await k8sCore.readNamespacedService(name, namespace);
+    // get pods
+    const {
+      body: { items: pods }
+    } = await k8sCore.listNamespacedPod(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `app=${name}`
+    );
 
     jsonRes(res, {
-      data: body
+      data: pods
     });
   } catch (err: any) {
-    console.log(err?.body, 'db get service name err');
-    if (err?.body?.code === 404) {
-      return jsonRes(res);
-    }
+    // console.log(err, 'get metrics error')
     jsonRes(res, {
       code: 500,
       error: err

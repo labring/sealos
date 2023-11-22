@@ -53,7 +53,6 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
           title: `${t('Restart')} ${podName} ${t('Have Error')}`,
           status: 'warning'
         });
-        console.log(err);
       }
     },
     [t, toast]
@@ -145,13 +144,14 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
   });
 
   return (
-    <Box h={'100%'} position={'relative'}>
+    <Box h={'100%'} position={'relative'} overflowY={'auto'}>
       <TableContainer overflow={'overlay'}>
         <Table variant={'simple'} backgroundColor={'white'}>
           <Thead>
             <Tr>
               {columns.map((item) => (
                 <Th
+                  fontSize={'12px'}
                   py={4}
                   key={item.key}
                   border={'none'}

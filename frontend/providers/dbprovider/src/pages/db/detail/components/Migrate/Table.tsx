@@ -1,29 +1,21 @@
 import { deleteMigrateByName, getMigrateList, getMigratePodList } from '@/api/migrate';
 import MyIcon from '@/components/Icon';
-import MyMenu from '@/components/Menu';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
 import { MigrateItemType } from '@/types/migrate';
 import { getErrText } from '@/utils/tools';
-import { ChevronDownIcon } from '@chakra-ui/icons';
 import {
   Box,
   Button,
   Flex,
-  MenuButton,
-  Modal,
-  ModalCloseButton,
-  ModalContent,
-  ModalOverlay,
   Table,
   TableContainer,
   Tbody,
   Td,
   Th,
   Thead,
-  Tr,
-  useDisclosure
+  Tr
 } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
@@ -43,10 +35,9 @@ export const MigrateTable = ({ dbName }: { dbName: string }) => {
   const {
     data: migrateList = [],
     refetch,
-    isInitialLoading
-  } = useQuery(['getMigrateList', dbName], () => getMigrateList(dbName), {
-    refetchInterval: 3000
-  });
+    isInitialLoading,
+    isSuccess
+  } = useQuery(['getMigrateList', dbName], () => getMigrateList(dbName));
 
   const { data: MigratePods = [] } = useQuery(
     ['getMigratePodList', migrateName],
@@ -110,8 +101,8 @@ export const MigrateTable = ({ dbName }: { dbName: string }) => {
       )
     },
     {
-      title: 'Backup Time',
-      key: 'backupTime',
+      title: 'Creation Time',
+      key: 'creationtime',
       render: (item: MigrateItemType) => <>{dayjs(item.startTime).format('YYYY/MM/DD HH:mm')}</>
     },
     {
@@ -145,13 +136,14 @@ export const MigrateTable = ({ dbName }: { dbName: string }) => {
   ];
 
   return (
-    <Box h={'100%'} position={'relative'}>
-      <TableContainer overflow={'overlay'}>
+    <Flex flexDirection={'column'} h={'100%'} position={'relative'}>
+      <TableContainer overflowY={'auto'}>
         <Table variant={'simple'} backgroundColor={'white'}>
           <Thead>
             <Tr>
               {columns.map((item) => (
                 <Th
+                  fontSize={'12px'}
                   py={4}
                   key={item.key}
                   border={'none'}
@@ -180,6 +172,12 @@ export const MigrateTable = ({ dbName }: { dbName: string }) => {
           </Tbody>
         </Table>
       </TableContainer>
+      {isSuccess && migrateList.length === 0 && (
+        <Flex justifyContent={'center'} alignItems={'center'} flexDirection={'column'} flex={1}>
+          <MyIcon name={'noEvents'} color={'transparent'} width={'36px'} height={'36px'} />
+          <Box pt={'8px'}>{t('No Data Available')}</Box>
+        </Flex>
+      )}
       <ConfirmDelChild />
       <Loading loading={isInitialLoading} fixed={false} />
 
@@ -201,7 +199,7 @@ export const MigrateTable = ({ dbName }: { dbName: string }) => {
           }}
         />
       )}
-    </Box>
+    </Flex>
   );
 };
 

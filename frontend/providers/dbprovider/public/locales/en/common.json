@@ -134,7 +134,11 @@
   "common": {
     "Total": "Total",
     "Used": "Used",
-    "Surplus": "Surplus"
+    "Surplus": "Surplus",
+    "input": {
+      "No Elements to Delete": "No Elements to Delete",
+      "Repeat Value": "Enter duplicate values"
+    }
   },
   "Data Migration Config": "Data Migration Config",
   "Migrate Now": "Migrate Now",
@@ -183,5 +187,38 @@
   "Database Port Empty": "Database Port Empty",
   "Database UserName Empty": "Database UserName Empty",
   "Database Password Empty": "Database Password Empty",
-  "Migration Failed": "Migration Failed"
+  "Migration Failed": "Migration Failed",
+  "file": {
+    "Uploading": "Uploading file, Progress: {{percent}}%",
+    "Upload Success": "File uploaded successfully"
+  },
+  "Pod Name": "Pod Name",
+  "Containers": "Containers",
+  "Restarts": "Restarts",
+  "Age": "Age",
+  "Backup Time": "Backup Time",
+  "Migrate Config": "Migrate Config",
+  "Covering Risks": "Covering Risks",
+  "Migration Permission Check": "Migration Permission Check",
+  "Important tips for migrating": "If the databases of source_database in the source database and sink_database in the sink database overlap, a new database should be created in the sink database to avoid data overlap.",
+  "I have read and completed migration preparations": "I have read and completed migration preparations",
+  "migrate": {
+    "mongodb": {
+      "stepOne": "# Replication cluster instance: no scaling is required. You need to provide the address of the primary for migration.",
+      "stepTwo": "# Standalone instance: it is required to scale a Standalone to a Replica Set with one node to use CDC. Refer to Convert a Standalone to a Replica Set for details."
+    },
+    "mongo": {
+      "check": "source account: The source account The read permission of the repository to be migrated, admin, and local\nThe sink account The read and write permission of the repository to be migrated and the read permission of admin and local"
+    },
+    "Incremental migration prompt information": "If incremental database synchronization is required, you can enable \"Continuous Migration\",default false.",
+    "postgresql": {
+      "check": "source account：LOGIN permission、The read permission of the source migration objects、REPLICATION permission \nsink account：LOGIN permission、The read/write permission of the sink",
+      "stepOne": "# Set 'wal_level' configuration to 'logical'",
+      "stepTwo": "# Make sure that the number of 'max_replication_slots' 、'max_wal_senders' configured is sufficient"
+    },
+    "mysql": {
+      "stepOne": "# Set 'binlog_format' configuration to 'row'",
+      "stepTwo": "# Set 'binlog_row_image' configuration to 'full'"
+    }
+  }
 }

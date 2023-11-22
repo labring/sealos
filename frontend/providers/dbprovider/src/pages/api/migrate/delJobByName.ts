@@ -12,7 +12,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       throw new Error('name is empty');
     }
 
-    const result = await deleteJobByName({ name, req });
+    const result = await DeleteJobByName({ name, req });
+
     jsonRes(res, { code: 200, data: result });
   } catch (err: any) {
     jsonRes(res, {
@@ -22,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   }
 }
 
-export async function getJobByName({ name, req }: { name: string } & { req: NextApiRequest }) {
+export async function GetJobByName({ name, req }: { name: string } & { req: NextApiRequest }) {
   const { k8sBatch, namespace } = await getK8s({
     kubeconfig: await authSession(req)
   });
@@ -37,9 +38,17 @@ export async function getJobByName({ name, req }: { name: string } & { req: Next
   return data.items;
 }
 
-export async function deleteJobByName({ name, req }: { name: string } & { req: NextApiRequest }) {
+export async function DeleteJobByName({ name, req }: { name: string } & { req: NextApiRequest }) {
   const { k8sBatch, namespace } = await getK8s({
     kubeconfig: await authSession(req)
   });
-  return await k8sBatch.deleteNamespacedJob(name, namespace);
+  return await k8sBatch.deleteNamespacedJob(
+    name,
+    namespace,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    'Background'
+  );
 }

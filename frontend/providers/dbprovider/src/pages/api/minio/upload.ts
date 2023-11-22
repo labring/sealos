@@ -87,6 +87,7 @@ export default async function handler(req: any, res: NextApiResponse) {
     console.log(files, '===files===');
     const bucketName = process.env?.BUCKET_NAME || 'database-test';
 
+    const startTime = performance.now();
     const upLoadResults = await Promise.all(
       files.map(async (file) => {
         const fileName = `${namespace}-${Date.now()}-${file.filename}`;
@@ -100,6 +101,9 @@ export default async function handler(req: any, res: NextApiResponse) {
           });
       })
     );
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+    console.log(`代码块运行时间：${duration} 毫秒`);
 
     jsonRes(res, {
       data: upLoadResults
