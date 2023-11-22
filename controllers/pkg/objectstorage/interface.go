@@ -17,5 +17,7 @@ package objectstorage
 import "github.com/minio/minio-go/v7"
 
 type Interface interface {
-	GetUserStorageSize(client *minio.Client, username string) int64
+	GetUserObjectStorageSize(client *minio.Client, username string) (int64, int64, error)
+
+	GetUserObjectStorageFlow(client *minio.Client, host, username string) (int64, error)
 }
