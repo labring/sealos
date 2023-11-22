@@ -36,6 +36,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// OS = object storage, OSB = object storage bucket
+
 // ObjectStorageBucketReconciler reconciles a ObjectStorageBucket object
 type ObjectStorageBucketReconciler struct {
 	client.Client
@@ -169,7 +171,7 @@ func (r *ObjectStorageBucketReconciler) Reconcile(ctx context.Context, req ctrl.
 		}
 	}
 
-	//r.Logger.V(1).Info("[bucket] bucket info", "name", bucket.Status.Name, "size", bucket.Status.Size, "policy", bucket.Spec.Policy)
+	r.Logger.V(1).Info("[bucket] bucket info", "name", bucket.Status.Name, "size", bucket.Status.Size, "policy", bucket.Spec.Policy)
 
 	return ctrl.Result{Requeue: true, RequeueAfter: r.OSBDetectionCycle}, nil
 }
@@ -201,7 +203,7 @@ func (r *ObjectStorageBucketReconciler) SetupWithManager(mgr ctrl.Manager) error
 	oSBDetectionCycleSecond := env.GetInt64EnvWithDefault(OSBDetectionCycleEnv, 600)
 	r.OSBDetectionCycle = time.Duration(oSBDetectionCycleSecond) * time.Second
 
-	internalEndpoint := env.GetEnvWithDefault(InternalEndpointEnv, "")
+	internalEndpoint := env.GetEnvWithDefault(OSInternalEndpointEnv, "")
 	r.InternalEndpoint = internalEndpoint
 
 	oSNamespace := env.GetEnvWithDefault(OSNamespace, "")

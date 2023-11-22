@@ -38,6 +38,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// OS = object storage, OSU = object storage user
+
 // ObjectStorageUserReconciler reconciles a ObjectStorageUser object
 type ObjectStorageUserReconciler struct {
 	client.Client
@@ -53,15 +55,15 @@ type ObjectStorageUserReconciler struct {
 }
 
 const (
-	UserNormalGroup      = "userNormal"
-	UserDenyWriteGroup   = "userDenyWrite"
-	AccessKey            = "CONSOLE_ACCESS_KEY"
-	SecretKey            = "CONSOLE_SECRET_KEY"
-	OSUDetectionCycleEnv = "OSUDetectionCycleSeconds"
-	InternalEndpointEnv  = "InternalEndpoint"
-	ExternalEndpointEnv  = "ExternalEndpoint"
-	OSNamespace          = "OSNamespace"
-	OSAdminSecret        = "OSAdminSecret"
+	UserNormalGroup       = "userNormal"
+	UserDenyWriteGroup    = "userDenyWrite"
+	AccessKey             = "CONSOLE_ACCESS_KEY"
+	SecretKey             = "CONSOLE_SECRET_KEY"
+	OSUDetectionCycleEnv  = "OSUDetectionCycleSeconds"
+	OSInternalEndpointEnv = "OSInternalEndpoint"
+	OSExternalEndpointEnv = "OSExternalEndpoint"
+	OSNamespace           = "OSNamespace"
+	OSAdminSecret         = "OSAdminSecret"
 )
 
 //+kubebuilder:rbac:groups=objectstorage.sealos.io,resources=objectstorageusers,verbs=get;list;watch;create;update;patch;delete
@@ -142,7 +144,7 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	// check whether the space used exceeds the quota
-	size, objectsCount, err := myObjectStorage.GetUserStorageSize(r.OSClient, user.Name)
+	size, objectsCount, err := myObjectStorage.GetUserObjectStorageSize(r.OSClient, user.Name)
 	if err != nil {
 		r.Logger.Error(err, "failed to get user space used", "name", username, "namespace", userNamespace)
 		return ctrl.Result{}, err
@@ -317,10 +319,10 @@ func (r *ObjectStorageUserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	oSUDetectionCycleSecond := env.GetInt64EnvWithDefault(OSUDetectionCycleEnv, 180)
 	r.OSUDetectionCycle = time.Duration(oSUDetectionCycleSecond) * time.Second
 
-	internalEndpoint := env.GetEnvWithDefault(InternalEndpointEnv, "")
+	internalEndpoint := env.GetEnvWithDefault(OSInternalEndpointEnv, "")
 	r.InternalEndpoint = internalEndpoint
 
-	externalEndpoint := env.GetEnvWithDefault(ExternalEndpointEnv, "")
+	externalEndpoint := env.GetEnvWithDefault(OSExternalEndpointEnv, "")
 	r.ExternalEndpoint = externalEndpoint
 
 	oSNamespace := env.GetEnvWithDefault(OSNamespace, "")
