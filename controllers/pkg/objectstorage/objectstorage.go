@@ -17,12 +17,17 @@ package objectstorage
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/minio/minio-go/v7"
+	"github.com/prometheus/client_golang/api"
+	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 )
 
-func GetUserStorageSize(client *minio.Client, username string) (int64, int64, error) {
+func GetUserObjectStorageSize(client *minio.Client, username string) (int64, int64, error) {
 	buckets, err := client.ListBuckets(context.Background())
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to list object storage buckets")
@@ -48,4 +53,73 @@ func GetUserStorageSize(client *minio.Client, username string) (int64, int64, er
 	}
 
 	return totalSize, objectsCount, nil
+}
+
+func GetUserObjectStorageFlow(client *minio.Client, host, username string) (int64, error) {
+	buckets, err := client.ListBuckets(context.Background())
+	if err != nil {
+		return 0, fmt.Errorf("failed to list object storage buckets")
+	}
+
+	var expectBuckets []string
+	for _, bucket := range buckets {
+		if strings.HasPrefix(bucket.Name, username) {
+			expectBuckets = append(expectBuckets, bucket.Name)
+		}
+	}
+
+	var totalFlow int64
+	for _, bucketName := range expectBuckets {
+		flow, err := QueryPrometheus(host, bucketName)
+		if err != nil {
+			return 0, fmt.Errorf("failed to query prometheus, bucket: %v, err: %v", bucketName, err)
+		}
+		totalFlow += flow
+	}
+
+	return totalFlow, nil
+}
+
+func QueryPrometheus(host, bucketName string) (int64, error) {
+	client, err := api.NewClient(api.Config{
+		Address: host,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("failed to new prometheus client, host: %v, err: %v", host, err)
+	}
+
+	v1api := v1.NewAPI(client)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	rcvdQuery := "sum(minio_bucket_traffic_received_bytes{bucket=\"" + bucketName + "\"})"
+	rcvdResult, rcvdWarnings, err := v1api.Query(ctx, rcvdQuery, time.Now(), v1.WithTimeout(5*time.Second))
+	if err != nil {
+		return 0, fmt.Errorf("failed to query prometheus, query: %v, err: %v", rcvdQuery, err)
+	}
+
+	if len(rcvdWarnings) > 0 {
+		return 0, fmt.Errorf("there are warnings: %v", rcvdWarnings)
+	}
+
+	sentQuery := "sum(minio_bucket_traffic_sent_bytes{bucket=\"" + bucketName + "\"})"
+	sentResult, sentWarnings, err := v1api.Query(ctx, sentQuery, time.Now(), v1.WithTimeout(5*time.Second))
+	if err != nil {
+		return 0, fmt.Errorf("failed to query prometheus, query: %v, err: %v", sentQuery, err)
+	}
+
+	if len(sentWarnings) > 0 {
+		return 0, fmt.Errorf("there are warnings: %v", sentWarnings)
+	}
+
+	re := regexp.MustCompile(`\d+`)
+	rcvdStr := re.FindString(rcvdResult.String())
+	sentStr := re.FindString(sentResult.String())
+
+	rcvdBytes, err := strconv.ParseInt(rcvdStr, 10, 64)
+	sentBytes, err := strconv.ParseInt(sentStr, 10, 64)
+
+	fmt.Printf("received bytes: %d, send bytes: %d\n", rcvdBytes, sentBytes)
+
+	return rcvdBytes + sentBytes, nil
 }
