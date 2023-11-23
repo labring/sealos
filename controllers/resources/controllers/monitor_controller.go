@@ -32,9 +32,10 @@ import (
 	"github.com/minio/minio-go/v7"
 
 	sealos_networkmanager "github.com/dinoallo/sealos-networkmanager-protoapi"
-	objstorage "github.com/labring/sealos/controllers/pkg/objectstorage"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	objstorage "github.com/labring/sealos/controllers/pkg/objectstorage"
 
 	"github.com/go-logr/logr"
 	"golang.org/x/sync/semaphore"
