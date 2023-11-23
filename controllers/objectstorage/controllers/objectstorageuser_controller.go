@@ -23,10 +23,11 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	myObjectStorage "github.com/labring/sealos/controllers/pkg/objectstorage"
-	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7"
+
+	myObjectStorage "github.com/labring/sealos/controllers/pkg/objectstorage"
+	"github.com/labring/sealos/controllers/pkg/utils/env"
 
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 

@@ -24,8 +24,9 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"github.com/minio/minio-go/v7"
+
+	"github.com/labring/sealos/controllers/pkg/utils/env"
 
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 
