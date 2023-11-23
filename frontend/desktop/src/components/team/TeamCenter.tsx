@@ -12,10 +12,13 @@ import {
   Divider,
   Stack,
   IconButton,
-  ButtonProps
+  ButtonProps,
+  Center,
+  VStack,
+  Circle
 } from '@chakra-ui/react';
 import NsList from './NsList';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import CreateTeam from './CreateTeam';
 import DissolveTeam from './DissolveTeam';
 import { useQuery } from '@tanstack/react-query';
@@ -29,53 +32,68 @@ import { TeamUserDto } from '@/types/user';
 import ReciveMessage from './ReciveMessage';
 import { nsListRequest, reciveMessageRequest, teamDetailsRequest } from '@/api/namespace';
 import { useTranslation } from 'react-i18next';
-import { CopyIcon, ListIcon, SettingIcon } from '@sealos/ui';
+import { CopyIcon, ListIcon, SettingIcon, StorageIcon } from '@sealos/ui';
 export default function TeamCenter(props: ButtonProps) {
   const session = useSessionStore((s) => s.session);
+  const { t } = useTranslation();
   const { ns_uid: default_ns_uid, nsid: default_nsid, userId } = session.user;
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { copyData } = useCopyData();
   const [nsid, setNsid] = useState(default_nsid);
   const [messageFilter, setMessageFilter] = useState<string[]>([]);
-  const [ns_uid, setNs_uid] = useState(default_ns_uid);
+  const [ns_uid, setNs_uid] = useState(() =>
+    default_nsid === 'ns-' + userId ? '' : default_ns_uid
+  );
+  // team detail and users list
   const { data } = useQuery(
-    ['ns-detail', 'teamGroup', { ns_uid }],
+    ['ns-detail', 'teamGroup', { ns_uid, userId }],
     () => teamDetailsRequest(ns_uid),
     {
       refetchInterval(data) {
+        // is personal
         if (data?.data?.users?.some((x) => x.status === InvitedStatus.Inviting)) {
           return 2000;
         } else {
           return false;
         }
-      }
+      },
+      enabled: ns_uid !== ''
     }
   );
+  const users: TeamUserDto[] = [...(data?.data?.users || [])];
+  const curTeamUser = users.find((user) => user.uid === userId);
+  const namespace = data?.data?.namespace;
+  const isTeam = namespace?.nstype === NSType.Team;
+  // inviting message list
   const reciveMessage = useQuery({
     queryKey: ['teamRecive', 'teamGroup'],
     queryFn: reciveMessageRequest,
     refetchInterval: isOpen ? 3000 : false
   });
-  const { t } = useTranslation();
   const messages: teamMessageDto[] = reciveMessage.data?.data?.messages || [];
-  const users: TeamUserDto[] = [...(data?.data?.users || [])];
-  const curTeamUser = users.find((user) => user.uid === userId);
-  const namespace = data?.data?.namespace;
-  const teamName =
-    namespace?.nstype === NSType.Private ? t('Default Team') : namespace?.teamName || '';
-  const createTime = data?.data?.namespace.createTime || '';
-  const isTeam = data?.data?.namespace.nstype === NSType.Team;
-  const { copyData } = useCopyData();
-  const { data: teamListData } = useQuery({
+  // namespace list
+  const { data: _namespaces } = useQuery({
     queryKey: ['teamList', 'teamGroup'],
-    queryFn: nsListRequest
+    queryFn: nsListRequest,
+    select(data) {
+      return data.data?.namespaces;
+    }
   });
-  const namespaces = teamListData?.data?.namespaces || [];
-  const defaultNamespace = namespaces.find((ns) => ns.nstype === NSType.Private);
-  if (defaultNamespace && !namespaces.find((ns) => ns.uid === ns_uid)) {
-    // 空了
-    setNs_uid(defaultNamespace.uid);
-    setNsid(defaultNamespace.id);
-  }
+  const namespaces = _namespaces?.filter((ns) => ns.nstype !== NSType.Private) || [];
+  useEffect(() => {
+    const defaultNamespace =
+      namespaces?.length > 0
+        ? namespaces[0]
+        : {
+            uid: '',
+            id: ''
+          };
+    if (defaultNamespace && !_namespaces?.find((ns) => ns.uid === ns_uid)) {
+      // after delete namespace
+      setNs_uid(defaultNamespace.uid);
+      setNsid(defaultNamespace.id);
+    }
+  }, [_namespaces, ns_uid]);
   return (
     <>
       <IconButton
@@ -132,100 +150,129 @@ export default function TeamCenter(props: ButtonProps) {
                 <CreateTeam />
               </Flex>
               <Box overflow={'scroll'} h="0" flex="1" px="16px">
-                <NsList
-                  displayPoint={false}
-                  selected_ns_uid={ns_uid}
-                  click={(ns) => {
-                    setNs_uid(ns.uid);
-                    setNsid(ns.id);
-                  }}
-                  namespaces={teamListData?.data?.namespaces || []}
-                />
+                {namespaces && namespaces.length > 0 ? (
+                  <NsList
+                    displayPoint={false}
+                    selected_ns_uid={ns_uid}
+                    click={(ns) => {
+                      setNs_uid(ns.uid);
+                      setNsid(ns.id);
+                    }}
+                    namespaces={namespaces || []}
+                  />
+                ) : (
+                  <Center w="full" h="full">
+                    <Text color={'grayModern.600'} fontSize={'12px'}>
+                      {t('noWorkspaceCreated')}
+                    </Text>
+                  </Center>
+                )}
               </Box>
             </Stack>
-            {curTeamUser && (
-              <Box width={'730px'} borderRadius={'8px'} bgColor={'white'} h="100%">
-                <Box px="16px" py="20px">
-                  <Text fontSize={'16px'} fontWeight={'600'}>
-                    {t('Manage Team')}
-                  </Text>
-                  <Box mx="10px" mt="22px">
-                    <Flex align={'center'}>
-                      <Text fontSize={'24px'} fontWeight={'600'} mr="8px">
-                        {teamName}
-                      </Text>
-                      {isTeam && curTeamUser.role === UserRole.Owner && (
-                        <DissolveTeam
-                          ml="auto"
-                          nsid={nsid}
+            <VStack
+              width={'730px'}
+              borderRadius={'8px'}
+              bgColor={'white'}
+              h="100%"
+              alignItems={'stretch'}
+            >
+              <Text fontSize={'16px'} fontWeight={'600'} px="16px" py="20px" width={'full'}>
+                {t('Manage Team')}
+              </Text>
+              {namespace ? (
+                <>
+                  <Box px="16px" pb="20px">
+                    <Box mx="10px">
+                      <Flex align={'center'}>
+                        <Text fontSize={'24px'} fontWeight={'600'} mr="8px">
+                          {namespace.teamName}
+                        </Text>
+                        {isTeam && curTeamUser?.role === UserRole.Owner && (
+                          <DissolveTeam
+                            ml="auto"
+                            nsid={nsid}
+                            ns_uid={ns_uid}
+                            onSuccess={(delete_ns_uid) => {
+                              if (delete_ns_uid === ns_uid) {
+                                setNs_uid('');
+                                setNsid('');
+                              }
+                            }}
+                          />
+                        )}
+                      </Flex>
+                      <Flex align={'center'} mt={'7px'} fontSize={'12px'}>
+                        <Text color={'grayModern.600'}>
+                          {t('Team')} ID: {nsid}
+                        </Text>
+                        <IconButton
+                          variant={'white-bg-icon'}
+                          onClick={() => copyData(nsid)}
+                          p="4px"
+                          ml="5px"
+                          icon={
+                            <CopyIcon
+                              color={'grayModern.500'}
+                              boxSize={'14px'}
+                              fill={'grayModern.500'}
+                            />
+                          }
+                          aria-label={'copy nsid'}
+                        />
+                        <Text ml="24px">
+                          {t('Created Time')}:{' '}
+                          {namespace.createTime ? formatTime(namespace.createTime) : ''}
+                        </Text>
+                      </Flex>
+                    </Box>
+                  </Box>{' '}
+                  <Divider bg={'rgba(0, 0, 0, 0.10)'} h="1px" />
+                  <Stack mt="15px" mx="29px" flex={1}>
+                    <Flex align={'center'} gap="6px" mb={'12px'}>
+                      <ListIcon boxSize={'20px'} />
+                      <Text>{t('Member List')}</Text>
+                      <Flex
+                        py="0px"
+                        px="6px"
+                        fontSize={'10px'}
+                        fontWeight={'600'}
+                        gap="10px"
+                        justifyContent={'center'}
+                        align={'center'}
+                        borderRadius="30px"
+                        background="#EFF0F1"
+                        color={'#5A646E'}
+                        minW="23px"
+                      >
+                        {users.length}
+                      </Flex>
+                      {isTeam && [UserRole.Owner, UserRole.Manager].includes(curTeamUser!.role) && (
+                        <InviteMember
+                          ownRole={curTeamUser?.role ?? UserRole.Developer}
                           ns_uid={ns_uid}
-                          onSuccess={(delete_ns_uid) => {
-                            if (delete_ns_uid === ns_uid) {
-                              setNs_uid(default_ns_uid);
-                              setNsid(default_nsid);
-                            }
-                          }}
+                          ml="auto"
                         />
                       )}
                     </Flex>
-                    <Flex align={'center'} mt={'7px'} fontSize={'12px'}>
-                      <Text color={'grayModern.600'}>
-                        {t('Team')} ID: {nsid}
-                      </Text>
-                      <IconButton
-                        variant={'white-bg-icon'}
-                        onClick={() => copyData(nsid)}
-                        p="4px"
-                        ml="5px"
-                        icon={
-                          <CopyIcon
-                            color={'grayModern.500'}
-                            boxSize={'14px'}
-                            fill={'grayModern.500'}
-                          />
-                        }
-                        aria-label={'copy nsid'}
-                      />
-                      <Text ml="24px">
-                        {t('Created Time')}: {createTime ? formatTime(createTime) : ''}
-                      </Text>
-                    </Flex>
-                  </Box>
-                </Box>
-                <Divider bg={'rgba(0, 0, 0, 0.10)'} h="1px" />
-                <Stack mt="15px" mx="29px" flex={1}>
-                  <Flex align={'center'} gap="6px" mb={'12px'}>
-                    <ListIcon boxSize={'20px'} />
-                    <Text>{t('Member List')}</Text>
-                    <Flex
-                      py="0px"
-                      px="6px"
-                      fontSize={'10px'}
-                      fontWeight={'600'}
-                      gap="10px"
-                      justifyContent={'center'}
-                      align={'center'}
-                      borderRadius="30px"
-                      background="#EFF0F1"
-                      color={'#5A646E'}
-                      minW="23px"
-                    >
-                      {users.length}
-                    </Flex>
-                    {isTeam && [UserRole.Owner, UserRole.Manager].includes(curTeamUser!.role) && (
-                      <InviteMember
-                        ownRole={curTeamUser.role ?? UserRole.Developer}
-                        ns_uid={ns_uid}
-                        ml="auto"
-                      />
-                    )}
-                  </Flex>
-                  <Box h="250px" overflow={'scroll'}>
-                    <UserTable users={users} isTeam={isTeam} ns_uid={ns_uid} nsid={nsid} />
-                  </Box>
-                </Stack>
-              </Box>
-            )}
+                    <Box h="250px" overflow={'scroll'}>
+                      <UserTable users={users} isTeam={isTeam} ns_uid={ns_uid} nsid={nsid} />
+                    </Box>
+                  </Stack>
+                </>
+              ) : (
+                <Center w="full" flex={'1'}>
+                  <VStack gap={'20px'}>
+                    <Circle size={'48px'} border={'0.5px dashed'} borderColor={'grayModern.400'}>
+                      <StorageIcon boxSize={'29px'} />
+                    </Circle>
+                    <Text color={'grayModern.600'} fontSize={'12px'}>
+                      {t('noWorkspaceCreated')}
+                    </Text>
+                    <CreateTeam textButton />
+                  </VStack>
+                </Center>
+              )}
+            </VStack>
           </ModalBody>
         </ModalContent>
       </Modal>

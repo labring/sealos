@@ -419,7 +419,7 @@ spec:
         - name: DOMAIN
           value: {{ .cloudDomain }}
         - name: PORT
-          value: {{ .cloudPort }}
+          value: '{{ .cloudPort }}'
         - name: SECRET_NAME
           value: {{ .wildcardCertSecretName }}
         - name: SECRET_NAMESPACE
