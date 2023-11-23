@@ -10,7 +10,7 @@ jobs:
       - name: Install sealos
         uses: labring/sealos-action@v0.0.7
         with:
-          sealosVersion: "4.1.7"
+          sealosVersion: "4.3.5"
       - name: Save Binaries
         uses: actions/upload-artifact@v3
         with:
