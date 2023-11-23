@@ -32,7 +32,7 @@ import (
 	"github.com/minio/minio-go/v7"
 
 	sealos_networkmanager "github.com/dinoallo/sealos-networkmanager-protoapi"
-	pkgMinio "github.com/labring/sealos/controllers/pkg/minio"
+	objstorage "github.com/labring/sealos/controllers/pkg/objectstorage"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -65,7 +65,8 @@ type MonitorReconciler struct {
 	DBClient          database.Interface
 	TrafficSvcConn    string
 	Properties        *resources.PropertyTypeLS
-	MinioClient       *minio.Client
+	PromURL           string
+	ObjStorageClient  *minio.Client
 }
 
 type quantity struct {
@@ -73,7 +74,10 @@ type quantity struct {
 	detail string
 }
 
-const TrafficSvcConn = "TRAFFICS_SERVICE_CONNECT_ADDRESS"
+const (
+	TrafficSvcConn = "TRAFFICS_SERVICE_CONNECT_ADDRESS"
+	PrometheusURL  = "PROM_URL"
+)
 
 const (
 	namespaceMonitorResources                    = "NAMESPACE-RESOURCES"
@@ -102,6 +106,7 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 		stopCh:            make(chan struct{}),
 		periodicReconcile: 1 * time.Minute,
 		TrafficSvcConn:    os.Getenv(TrafficSvcConn),
+		PromURL:           os.Getenv(PrometheusURL),
 	}
 	var err error
 	err = retry.Retry(2, 1*time.Second, func() error {
@@ -343,7 +348,7 @@ func (r *MonitorReconciler) getResourceUsage(namespace *corev1.Namespace) ([]*re
 			r.Logger.Error(err, "failed to get pod traffic used", "namespace", namespace)
 		}
 	}
-	if username := config.GetUserNameByNamespace(namespace.Name); r.MinioClient != nil && namespace.Labels[userv1.UserLabelOwnerKey] == username {
+	if username := config.GetUserNameByNamespace(namespace.Name); r.ObjStorageClient != nil && namespace.Labels[userv1.UserLabelOwnerKey] == username {
 		if err := r.getMinioUsed(username, &resNamed, &resUsed); err != nil {
 			r.Logger.Error(err, "failed to get minio used", "username", username)
 		}
@@ -365,12 +370,16 @@ func (r *MonitorReconciler) getResourceUsage(namespace *corev1.Namespace) ([]*re
 }
 
 func (r *MonitorReconciler) getMinioUsed(user string, namedMap *map[string]*resources.ResourceNamed, resMap *map[string]map[corev1.ResourceName]*quantity) error {
-	size, count, err := pkgMinio.GetUserStorageSize(r.MinioClient, user)
+	size, count, err := objstorage.GetUserObjectStorageSize(r.ObjStorageClient, user)
 	if err != nil {
 		return fmt.Errorf("failed to get minio user storage size: %w", err)
 	}
 	if count == 0 || size == 0 {
 		return nil
+	}
+	bytes, err := objstorage.GetUserObjectStorageFlow(r.ObjStorageClient, r.PromURL, user)
+	if err != nil {
+		return fmt.Errorf("failed to get minio user storage flow: %w", err)
 	}
 	minioNamed := resources.NewMinioResourceNamed()
 	(*namedMap)[minioNamed.Name()] = minioNamed
@@ -378,6 +387,7 @@ func (r *MonitorReconciler) getMinioUsed(user string, namedMap *map[string]*reso
 		(*resMap)[minioNamed.Name()] = initResources()
 	}
 	(*resMap)[minioNamed.Name()][corev1.ResourceStorage].Add(*resource.NewQuantity(size, resource.BinarySI))
+	(*resMap)[minioNamed.Name()][resources.ResourceNetwork].Add(*resource.NewQuantity(bytes, resource.BinarySI))
 	return nil
 }
 

@@ -19,7 +19,7 @@ package main
 import (
 	"context"
 	"flag"
-	miniov1 "github/labring/sealos/controllers/minio/api/v1"
+	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 	"os"
 	"time"
 
@@ -82,14 +82,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	//if err = (&controllers.MonitorReconciler{
-	//	Client: mgr.GetClient(),
-	//	Scheme: mgr.GetScheme(),
-	//}).SetupWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create controller", "controller", "Monitor")
-	//	os.Exit(1)
-	//}
-
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -134,10 +126,14 @@ func main() {
 		os.Exit(1)
 	}
 	reconciler.Properties = resources.DefaultPropertyTypeLS
-	endpoint, ak, sk := os.Getenv("MINIO_ENDPOINT"), os.Getenv("MINIO_AK"), os.Getenv("MINIO_SK")
-	reconciler.Logger.Info("minio info", "endpoint", endpoint, "ak", ak, "sk", sk)
-	if reconciler.MinioClient, err = miniov1.NewMinioClient(endpoint, ak, sk); err != nil {
-		reconciler.Logger.Error(err, "failed to new minio client")
+	if endpoint, ak, sk := os.Getenv("MINIO_ENDPOINT"), os.Getenv("MINIO_AK"), os.Getenv("MINIO_SK"); endpoint != "" && ak != "" && sk != "" {
+		reconciler.Logger.Info("init minio client")
+		if reconciler.ObjStorageClient, err = objectstoragev1.NewOSClient(endpoint, ak, sk); err != nil {
+			reconciler.Logger.Error(err, "failed to new minio client")
+			os.Exit(1)
+		}
+	} else {
+		reconciler.Logger.Info("minio info not found, please check env: MINIO_ENDPOINT, MINIO_AK, MINIO_SK")
 	}
 	// timer creates tomorrow's timing table in advance to ensure that tomorrow's table exists
 	// Execute immediately and then every 24 hours.

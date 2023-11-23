@@ -262,11 +262,12 @@ var DefaultPropertyTypeList = []PropertyType{
 		UnitString: "1Mi",
 	},
 	{
+		// monitor unit: 1 node port = 1000 unit
 		Name:       "services.nodeports",
 		Enum:       4,
 		PriceType:  AVG,
-		UnitPrice:  0,
-		UnitString: "1000",
+		UnitPrice:  500,
+		UnitString: "1",
 	},
 }
 
