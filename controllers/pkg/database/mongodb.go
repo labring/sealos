@@ -235,64 +235,6 @@ func (m *MongoDB) SaveBillings(billing ...*resources.Billing) error {
 	return err
 }
 
-func (m *MongoDB) GetMeteringOwnerTimeResult(queryTime time.Time, queryCategories, queryProperties []string) (*MeteringOwnerTimeResult, error) {
-	matchValue := bson.M{
-		"time":     queryTime,
-		"category": bson.M{"$in": queryCategories},
-	}
-	if len(queryProperties) > 0 {
-		matchValue["property"] = bson.M{"$in": queryProperties}
-	}
-	pipeline := bson.A{
-		bson.D{{Key: "$match", Value: matchValue}},
-		bson.D{{Key: "$group", Value: bson.M{
-			"_id":           bson.M{"property": "$property"},
-			"propertyTotal": bson.M{"$sum": "$amount"},
-		}}},
-		bson.D{{Key: "$project", Value: bson.M{
-			"_id":           0,
-			"property":      "$_id.property",
-			"propertyTotal": 1,
-		}}},
-		bson.D{{Key: "$group", Value: bson.M{
-			"_id":         nil,
-			"amountTotal": bson.M{"$sum": "$propertyTotal"},
-			"costs":       bson.M{"$push": bson.M{"k": "$property", "v": "$propertyTotal"}},
-		}}},
-		bson.D{{Key: "$addFields", Value: bson.M{
-			//"owner":  queryOwner,
-			"time":   queryTime,
-			"amount": "$amountTotal",
-			"costs":  bson.M{"$arrayToObject": "$costs"},
-		}}},
-	}
-
-	/*
-		db.metering.aggregate([
-		{ $match:
-		  { time: queryTime, category:
-		     { $in: ["ns-gxqoxr8s"] }, property: { $in: ["cpu", "memory", "storage"] } } },
-		{ $group: { _id: { property: "$property" }, propertyTotal: { $sum: "$amount" } } },
-		{ $project: { _id: 0, property: "$_id.property", propertyTotal: 1 } },
-		{ $group: { _id: null, amountTotal: { $sum: "$propertyTotal" }, costs: { $push: { k: "$property", v: "$propertyTotal" } } } },
-		{ $addFields: { orderId: "111111111", own: queryOwn, time: queryTime, type: 0, amount: "$amountTotal", costs: { $arrayToObject: "$costs" } } },
-		{ $out: "results1" }]);
-	*/
-	cursor, err := m.getMeteringCollection().Aggregate(context.Background(), pipeline)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(context.Background())
-	if cursor.Next(context.Background()) {
-		var result MeteringOwnerTimeResult
-		if err = cursor.Decode(&result); err != nil {
-			return nil, err
-		}
-		return &result, nil
-	}
-	return nil, nil
-}
-
 // InsertMonitor insert monitor data to mongodb collection monitor + time (eg: monitor_20200101)
 // The monitor data is saved daily 2020-12-01 00:00:00 - 2020-12-01 23:59:59 => monitor_20201201
 func (m *MongoDB) InsertMonitor(ctx context.Context, monitors ...*resources.Monitor) error {
@@ -988,11 +930,6 @@ func (m *MongoDB) CreateBillingIfNotExist() error {
 // CreateMonitorTimeSeriesIfNotExist creates the time series table for monitor
 func (m *MongoDB) CreateMonitorTimeSeriesIfNotExist(collTime time.Time) error {
 	return m.CreateTimeSeriesIfNotExist(m.DBName, m.getMonitorCollectionName(collTime))
-}
-
-// CreateMeteringTimeSeriesIfNotExist creates the time series table for metering
-func (m *MongoDB) CreateMeteringTimeSeriesIfNotExist() error {
-	return m.CreateTimeSeriesIfNotExist(m.DBName, m.MeteringConn)
 }
 
 func (m *MongoDB) CreateTimeSeriesIfNotExist(dbName, collectionName string) error {

@@ -33,30 +33,6 @@ import (
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 )
 
-func TestMongoDB_GetMeteringOwnerTimeResult(t *testing.T) {
-	dbCTX := context.Background()
-
-	//"mongodb://192.168.64.21:27017/"
-	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
-	if err != nil {
-		t.Errorf("failed to connect mongo: error = %v", err)
-	}
-	defer func() {
-		if err = m.Disconnect(dbCTX); err != nil {
-			t.Errorf("failed to disconnect mongo: error = %v", err)
-		}
-	}()
-
-	now := time.Now()
-	queryTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC().Add(-time.Hour)
-
-	got, err := m.GetMeteringOwnerTimeResult(queryTime, []string{"ns-0nfm8mkr"}, nil)
-	if err != nil {
-		t.Errorf("failed to get metering owner time result: error = %v", err)
-	}
-	t.Logf("all properties got: %v", got)
-}
-
 func TestMongoDB_QueryBillingRecords(t *testing.T) {
 	dbCTX := context.Background()
 

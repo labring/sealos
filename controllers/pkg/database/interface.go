@@ -24,9 +24,7 @@ import (
 
 type Interface interface {
 	//InitDB() error
-	GetMeteringOwnerTimeResult(queryTime time.Time, queryCategories, queryProperties []string) (*MeteringOwnerTimeResult, error)
 	GetBillingLastUpdateTime(owner string, _type accountv1.Type) (bool, time.Time, error)
-	//TODO will delete this
 	GetBillingHistoryNamespaceList(ns *accountv1.NamespaceBillingHistorySpec, owner string) ([]string, error)
 	GetBillingHistoryNamespaces(startTime, endTime *time.Time, billType int, owner string) ([]string, error)
 	SaveBillings(billing ...*resources.Billing) error
@@ -38,8 +36,6 @@ type Interface interface {
 	InitDefaultPropertyTypeLS() error
 	SavePropertyTypes(types []resources.PropertyType) error
 	GetBillingCount(accountType accountv1.Type, startTime, endTime time.Time) (count, amount int64, err error)
-	//TODO delete
-	GenerateMeteringData(startTime, endTime time.Time, prices map[string]resources.Price) error
 	GenerateBillingData(startTime, endTime time.Time, prols *resources.PropertyTypeLS, namespaces []string, owner string) (orderID []string, amount int64, err error)
 	InsertMonitor(ctx context.Context, monitors ...*resources.Monitor) error
 	DropMonitorCollectionsOlderThan(days int) error
@@ -51,7 +47,6 @@ type Creator interface {
 	CreateBillingIfNotExist() error
 	//suffix by day, eg： monitor_20200101
 	CreateMonitorTimeSeriesIfNotExist(collTime time.Time) error
-	CreateMeteringTimeSeriesIfNotExist() error
 }
 
 type MeteringOwnerTimeResult struct {
