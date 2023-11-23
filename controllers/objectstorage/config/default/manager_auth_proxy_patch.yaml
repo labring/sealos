@@ -75,3 +75,6 @@ spec:
             requests:
               cpu: 250m
               memory: 256Mi
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false

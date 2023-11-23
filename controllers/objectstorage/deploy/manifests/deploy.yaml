@@ -513,6 +513,7 @@ spec:
             capabilities:
               drop:
                 - ALL
+            runAsNonRoot: true
       securityContext:
         runAsNonRoot: true
       serviceAccountName: objectstorage-controller-manager
