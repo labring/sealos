@@ -56,6 +56,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/sealos
+          sudo sealos version
       - name: Build
         run: export CLOUD_VERSION=${{ github.event.release.tag_name }} && export ARCH=amd64 && bash ./scripts/cloud/build-offline-tar.sh
       - name: Setup ossutil
@@ -78,6 +88,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/sealos
+          sudo sealos version
       - name: Build
         run: export CLOUD_VERSION=${{ github.event.release.tag_name }} && export ARCH=arm64 && bash ./scripts/cloud/build-offline-tar.sh
       - name: Setup ossutil
