@@ -204,7 +204,7 @@ const Form = ({
           <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'}>
             <QuotaBox />
           </Box>
-          {INSTALL_ACCOUNT && (
+          {/* {INSTALL_ACCOUNT && (
             <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>
               <PriceBox
                 components={[
@@ -228,7 +228,7 @@ const Form = ({
                 ]}
               />
             </Box>
-          )}
+          )} */}
         </Box>
         <Box
           id={'form-container'}
@@ -259,8 +259,9 @@ const Form = ({
               </Text>
               <FormControl mt={'16px'} isInvalid={!!errors.sourceHost} w={'500px'}>
                 <Flex alignItems={'center'}>
-                  <Label w={80}>{t('Database Host')}</Label>
+                  <Label w={94}>{t('Database Host')}</Label>
                   <Input
+                    placeholder={t('Database Host') || ''}
                     {...register('sourceHost', {
                       required: t('Database Host Empty') || ''
                     })}
@@ -269,8 +270,9 @@ const Form = ({
               </FormControl>
               <FormControl mt={'16px'} isInvalid={!!errors.sourcePort} w={'500px'}>
                 <Flex alignItems={'center'}>
-                  <Label w={80}>{t('Port')}</Label>
+                  <Label w={94}>{t('Port')}</Label>
                   <Input
+                    placeholder={t('Port') || ''}
                     {...register('sourcePort', {
                       required: t('Database Port Empty') || ''
                     })}
@@ -279,8 +281,9 @@ const Form = ({
               </FormControl>
               <FormControl mt={'16px'} isInvalid={!!errors.sourceUsername} w={'500px'}>
                 <Flex alignItems={'center'}>
-                  <Label w={80}>{t('Username')}</Label>
+                  <Label w={94}>{t('Username')}</Label>
                   <Input
+                    placeholder={t('Username') || ''}
                     {...register('sourceUsername', {
                       required: t('Database UserName Empty') || ''
                     })}
@@ -289,8 +292,9 @@ const Form = ({
               </FormControl>
               <FormControl mt={'16px'} isInvalid={!!errors.sourcePassword} w={'500px'}>
                 <Flex alignItems={'center'}>
-                  <Label w={80}>{t('Password')}</Label>
+                  <Label w={94}>{t('Password')}</Label>
                   <Input
+                    placeholder={t('Password') || ''}
                     {...register('sourcePassword', {
                       required: t('Database Password Empty') || ''
                     })}
@@ -299,8 +303,9 @@ const Form = ({
               </FormControl>
               <FormControl mt={'16px'} isInvalid={!!errors.sourceDatabase} w={'500px'}>
                 <Flex alignItems={'center'}>
-                  <Label w={80}>{t('DB Name')}</Label>
+                  <Label w={94}>{t('DB Name')}</Label>
                   <Input
+                    placeholder={t('DB Name') || ''}
                     {...register('sourceDatabase', {
                       required: t('Database Name Empty') || ''
                     })}
@@ -309,7 +314,7 @@ const Form = ({
               </FormControl>
               <FormControl mt={'16px'} isInvalid={!!errors.sourceDatabaseTable} w={'500px'}>
                 <Flex alignItems={'start'}>
-                  <Label w={80}>{t('DB Table')}</Label>
+                  <Label w={94}>{t('DB Table')}</Label>
                   <TagTextarea
                     defaultValues={getValues('sourceDatabaseTable') || []}
                     onUpdate={(e) => {
@@ -320,8 +325,8 @@ const Form = ({
               </FormControl>
               <FormControl mt={'16px'} w={'500px'}>
                 <Flex alignItems={'center'}>
-                  <Label w={80}>{t('Remark')}</Label>
-                  <Input {...register('remark')} />
+                  <Label w={94}>{t('Remark')}</Label>
+                  <Input placeholder={t('Remark') || ''} {...register('remark')} />
                 </Flex>
               </FormControl>
             </Box>
@@ -356,6 +361,9 @@ const Form = ({
               </AccordionButton>
 
               <AccordionPanel px={'42px'} py={'24px'}>
+                <Text fontSize={'14px'} color={'#333333'} fontWeight={400}>
+                  {t('migrate.Incremental migration prompt information')}
+                </Text>
                 <Flex alignItems={'center'} h={'35px'}>
                   <Text fontSize={'14px'} color={'#333333'} fontWeight={400} mr="40px">
                     {t('Continuous Migration')}

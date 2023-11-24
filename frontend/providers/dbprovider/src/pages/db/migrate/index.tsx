@@ -38,7 +38,7 @@ const defaultEdit = {
   sourceDatabase: '',
   sourceDatabaseTable: ['All'],
   isChecked: false,
-  continued: true
+  continued: false
 };
 
 const EditApp = ({
@@ -173,7 +173,6 @@ const EditApp = ({
       async onSuccess(res) {
         if (!res) return;
         const dbSecret = await getDBSecret({ dbName: res.dbName, dbType: res.dbType });
-        console.log(res, dbSecret, 'db detail');
         formHook.reset((oldData) => {
           return {
             ...oldData,

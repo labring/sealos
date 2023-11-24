@@ -134,28 +134,33 @@ const App = ({ Component, pageProps }: AppProps) => {
   }, [refresh, router.pathname]);
 
   // InternalAppCall
-  useEffect(() => {
-    const event = async (e: MessageEvent) => {
+  const setupInternalAppCallListener = async () => {
+    try {
       const envs = await getPlatformEnv();
-      const whitelist = [`https://${envs?.domain}`];
-      if (!whitelist.includes(e.origin)) {
-        return;
-      }
-      try {
-        if (e.data?.type === 'InternalAppCall' && e.data?.name) {
-          router.push({
-            pathname: '/app/detail',
-            query: {
-              name: e.data.name
-            }
-          });
+      const event = async (e: MessageEvent) => {
+        const whitelist = [`https://${envs?.domain}`];
+        if (!whitelist.includes(e.origin)) {
+          return;
         }
-      } catch (error) {
-        console.log(error, 'error');
-      }
-    };
-    window.addEventListener('message', event);
-    return () => window.removeEventListener('message', event);
+        try {
+          if (e.data?.type === 'InternalAppCall' && e.data?.name) {
+            router.push({
+              pathname: '/app/detail',
+              query: {
+                name: e.data.name
+              }
+            });
+          }
+        } catch (error) {
+          console.log(error, 'error');
+        }
+      };
+      window.addEventListener('message', event);
+      return () => window.removeEventListener('message', event);
+    } catch (error) {}
+  };
+  useEffect(() => {
+    setupInternalAppCallListener();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

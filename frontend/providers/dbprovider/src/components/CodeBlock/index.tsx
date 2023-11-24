@@ -1,7 +1,8 @@
 import { useCopyData } from '@/hooks/useCopyData';
-import { Box, Flex, FlexProps, Text } from '@chakra-ui/react';
+import { Flex, FlexProps, Text } from '@chakra-ui/react';
+import { useTranslation } from 'next-i18next';
+import { useState } from 'react';
 import MyIcon from '../Icon';
-import { useMemo, useState } from 'react';
 
 type CodeBlockProps = {
   flexStyle?: FlexProps;
@@ -11,7 +12,7 @@ type CodeBlockProps = {
 export default function CodeBlock({ flexStyle, codeList }: CodeBlockProps) {
   const { copyData } = useCopyData();
   const [hoveredIndex, setHoveredIndex] = useState<null | number>();
-
+  const { t } = useTranslation();
   const isCopy = (value: string) => !value?.startsWith('#');
 
   if (!codeList) {
@@ -39,7 +40,7 @@ export default function CodeBlock({ flexStyle, codeList }: CodeBlockProps) {
             onMouseLeave={() => setHoveredIndex(null)}
             alignItems={'center'}
           >
-            <Text color={'#9CA2A8'} w="26px">
+            <Text color={'#9CA2A8'} w="26px" alignSelf={'flex-start'}>
               {index + 1}
             </Text>
             <Text color={isCopy(item) ? '#24282C' : '#7B838B'}>{item}</Text>

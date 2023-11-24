@@ -8,17 +8,21 @@ import {
   appDeployKey,
   publicDomainKey,
   gpuNodeSelectorKey,
-  gpuResourceKey
+  gpuResourceKey,
+  deployPVCResizeKey
 } from '@/constants/app';
 import dayjs from 'dayjs';
 
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
+  const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
+
   const metadata = {
     name: data.appName,
     annotations: {
       originImageName: data.imageName,
       [minReplicasKey]: `${data.hpa.use ? data.hpa.minReplicas : data.replicas}`,
-      [maxReplicasKey]: `${data.hpa.use ? data.hpa.maxReplicas : data.replicas}`
+      [maxReplicasKey]: `${data.hpa.use ? data.hpa.maxReplicas : data.replicas}`,
+      [deployPVCResizeKey]: `${totalStorage}Gi`
     },
     labels: {
       [appDeployKey]: data.appName,

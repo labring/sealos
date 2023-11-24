@@ -7,7 +7,7 @@ import { getBackups } from './backup/getBackupList';
 import { delBackupByName } from './backup/delBackup';
 import { getMigrateList } from './migrate/list';
 import { delMigrateByName } from './migrate/delete';
-import { deleteJobByName, getJobByName } from './migrate/delJobByName';
+import { DeleteJobByName, GetJobByName } from './migrate/delJobByName';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -20,10 +20,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req)
     });
 
-    const jobs = await getJobByName({ name: name, req });
-    console.log(jobs, 'jobs');
+    // get job and delete
+    const jobs = await GetJobByName({ name: name, req });
     await Promise.all(
-      jobs.map((item) => item?.metadata?.name && deleteJobByName({ name: item.metadata.name, req }))
+      jobs.map((item) => item?.metadata?.name && DeleteJobByName({ name: item.metadata.name, req }))
     ).catch((error) => {
       console.log(error);
     });
@@ -44,8 +44,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     );
 
     // del service
-    await k8sCore.deleteNamespacedService(`${name}-export`, namespace).catch((error) => {
-      console.log(error);
+    await k8sCore.deleteNamespacedService(`${name}-export`, namespace).catch((err) => {
+      if (err?.body?.code !== 404) {
+        throw new Error(err?.message || 'Delete DB Service Export Error');
+      }
     });
 
     // del role
@@ -56,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     ]).catch((err) => console.log(err, 'delete role err'));
 
     // delete cluster
-    await k8sCustomObjects.deleteNamespacedCustomObject(
+    const result = await k8sCustomObjects.deleteNamespacedCustomObject(
       'apps.kubeblocks.io',
       'v1alpha1',
       namespace,
@@ -64,7 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       name
     );
 
-    jsonRes(res);
+    jsonRes(res, { data: result?.body });
   } catch (err: any) {
     jsonRes(res, {
       code: 500,

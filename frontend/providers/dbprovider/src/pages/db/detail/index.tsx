@@ -12,7 +12,7 @@ import AppBaseInfo from './components/AppBaseInfo';
 import Pods from './components/Pods';
 import BackupTable, { type ComponentRef } from './components/BackupTable';
 import { useTranslation } from 'next-i18next';
-import { DBTypeEnum } from '@/constants/db';
+import { DBTypeEnum, dbStatusMap } from '@/constants/db';
 import Monitor from './components/Monitor';
 import dayjs from 'dayjs';
 import DumpImport from './components/DumpImport';
@@ -41,6 +41,7 @@ const AppDetail = ({
   const { t } = useTranslation();
 
   const { listNav } = useMemo(() => {
+    const PublicNetMigration = ['postgresql', 'apecloud-mysql'].includes(dbType);
     const MigrateSupported = ['postgresql', 'mongodb', 'apecloud-mysql'].includes(dbType);
     const BackupSupported = ['postgresql', 'mongodb', 'apecloud-mysql', 'redis'].includes(dbType);
 
@@ -49,14 +50,17 @@ const AppDetail = ({
       { label: 'Replicas List', value: TabEnum.pod },
       ...(BackupSupported ? [{ label: 'Backup List', value: TabEnum.backup }] : []),
       ...(MigrateSupported
-        ? [
-            { label: 'Internet Migration', value: TabEnum.InternetMigration },
-            { label: 'File Migration', value: TabEnum.DumpImport }
-          ]
+        ? PublicNetMigration
+          ? [
+              { label: 'Internet Migration', value: TabEnum.InternetMigration },
+              { label: 'File Migration', value: TabEnum.DumpImport }
+            ]
+          : [{ label: 'File Migration', value: TabEnum.DumpImport }]
         : [])
     ];
 
     return {
+      isPublicNetMigration: PublicNetMigration,
       isMigrationSupported: MigrateSupported,
       isBackupSupported: BackupSupported,
       listNav: listNavValue

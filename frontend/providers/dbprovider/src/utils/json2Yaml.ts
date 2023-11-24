@@ -15,6 +15,7 @@ import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 import { getUserNamespace } from './user';
 import { getAppEnv } from '@/api/platform';
+import { V1StatefulSet } from '@kubernetes/client-node';
 
 export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
   const resources = {
@@ -833,7 +834,6 @@ export const json2MigrateCR = (data: MigrateForm) => {
   const userNS = getUserNamespace();
   const time = formatTime(new Date(), 'YYYYMMDDHHmmss');
   const isMigrateAll = data.sourceDatabaseTable.includes('All');
-  console.log(isMigrateAll);
 
   const templateByDB: Record<DBType, string> = {
     'apecloud-mysql': 'apecloud-mysql2mysql',
@@ -865,17 +865,30 @@ export const json2MigrateCR = (data: MigrateForm) => {
         }
       },
       initialization: {
-        steps: ['preCheck', 'initStruct', 'initData']
+        steps:
+          data.dbType === 'postgresql'
+            ? ['initStruct', 'initData']
+            : ['preCheck', 'initStruct', 'initData']
       },
       sinkEndpoint: {
         address: `${data.sinkHost}:${data.sinkPort}`,
         password: data.sinkPassword,
-        userName: data.sinkUser
+        userName: data.sinkUser,
+        ...(data.dbType === 'postgresql'
+          ? {
+              databaseName: data.sourceDatabase
+            }
+          : {})
       },
       sourceEndpoint: {
         address: `${data.sourceHost}:${data.sourcePort}`,
         password: `${data.sourcePassword}`,
-        userName: `${data.sourceUsername}`
+        userName: `${data.sourceUsername}`,
+        ...(data.dbType === 'postgresql'
+          ? {
+              databaseName: data.sourceDatabase
+            }
+          : {})
       },
       migrationObj: {
         whiteList: [
@@ -974,7 +987,13 @@ export const json2DumpCR = async (data: DumpForm) => {
   return { yamlStr: yaml.dump(template), yamlObj: template };
 };
 
-export const json2NetworkService = (data: DBDetailType) => {
+export const json2NetworkService = ({
+  dbDetail,
+  dbStatefulSet
+}: {
+  dbDetail: DBDetailType;
+  dbStatefulSet: V1StatefulSet;
+}) => {
   const portMapping = {
     postgresql: 5432,
     mongodb: 27017,
@@ -990,21 +1009,31 @@ export const json2NetworkService = (data: DBDetailType) => {
     apiVersion: 'v1',
     kind: 'Service',
     metadata: {
-      name: `${data.dbName}-export`,
-      'app.kubernetes.io/instance': data.dbName,
-      'apps.kubeblocks.io/component-name': data.dbType
+      name: `${dbDetail.dbName}-export`,
+      'app.kubernetes.io/instance': dbDetail.dbName,
+      'apps.kubeblocks.io/component-name': dbDetail.dbType,
+      ownerReferences: [
+        {
+          apiVersion: dbStatefulSet.apiVersion,
+          kind: 'StatefulSet',
+          name: dbStatefulSet.metadata?.name,
+          uid: dbStatefulSet.metadata?.uid,
+          blockOwnerDeletion: true,
+          controller: true
+        }
+      ]
     },
     spec: {
       ports: [
         {
           name: 'tcp',
           protocol: 'TCP',
-          port: portMapping[data.dbType],
-          targetPort: portMapping[data.dbType]
+          port: portMapping[dbDetail.dbType],
+          targetPort: portMapping[dbDetail.dbType]
         }
       ],
       selector: {
-        'app.kubernetes.io/instance': data.dbName
+        'app.kubernetes.io/instance': dbDetail.dbName
       },
       type: 'NodePort'
     }

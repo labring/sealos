@@ -1,9 +1,12 @@
 import { applyYamlList, getDBSecret } from '@/api/db';
-import { getLogByNameAndContainerName, getMigratePodList } from '@/api/migrate';
+import {
+  deleteMigrateJobByName,
+  getLogByNameAndContainerName,
+  getMigratePodList
+} from '@/api/migrate';
 import { uploadFile } from '@/api/platform';
 import FileSelect from '@/components/FileSelect';
 import MyIcon from '@/components/Icon';
-import { DBTypeEnum, RedisHAConfig } from '@/constants/db';
 import { useToast } from '@/hooks/useToast';
 import { DBDetailType } from '@/types/db';
 import { DumpForm } from '@/types/migrate';
@@ -27,16 +30,16 @@ import {
 } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import PriceBox from './PriceBox';
 import QuotaBox from './QuotaBox';
 
 enum MigrateStatusEnum {
   Prepare = 'Prepare',
   Progress = 'Progress',
   Success = 'Success',
-  Fail = 'Fail'
+  Fail = 'Fail',
+  Running = 'Running'
 }
 
 export default function DumpImport({ db }: { db?: DBDetailType }) {
@@ -49,6 +52,8 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
   const [migrateName, setMigrateName] = useState('');
   const [podName, setPodName] = useState('');
   const timeElapsedRef = useRef(0);
+  const [fileProgressText, setFileProgressText] = useState('');
+  const LogBox = useRef<HTMLDivElement>(null);
 
   const handleConfirm = async () => {
     formHook.handleSubmit(
@@ -66,7 +71,16 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
           files.forEach((file) => {
             form.append('file', file, encodeURIComponent(file.name));
           });
-          const result = await uploadFile(form);
+          const result = await uploadFile(form, (e) => {
+            if (!e.progress) return;
+            const percent = Math.round(e.progress * 100);
+            if (percent < 100) {
+              setFileProgressText(t('file.Uploading', { percent }) || '');
+            } else {
+              setFileProgressText(t('file.Upload Success') || '');
+            }
+          });
+
           if (!result[0]) {
             closeMigrate();
             return toast({
@@ -107,11 +121,18 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
     )();
   };
 
-  const closeMigrate = () => {
-    onClose();
-    setMigrateStatus(MigrateStatusEnum.Prepare);
-    setMigrateName('');
-    setPodName('');
+  const closeMigrate = async () => {
+    try {
+      if (migrateStatus === MigrateStatusEnum.Progress && db?.dbName && migrateName) {
+        await deleteMigrateJobByName(migrateName);
+      }
+      onClose();
+      setMigrateStatus(MigrateStatusEnum.Prepare);
+      setMigrateName('');
+      setPodName('');
+    } catch (error) {
+      console.log(error, 'close migrate error');
+    }
   };
 
   useQuery(['getFileMigratePodList'], () => getMigratePodList(migrateName, 'file'), {
@@ -119,23 +140,15 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
     refetchInterval: 5000,
     onSuccess(data) {
       console.log(data, 'pod');
-      if (data?.[0]?.metadata?.name) {
-        if (data?.[0]?.status?.phase === 'Succeeded') {
+      let podStatus = data?.[0]?.status?.phase;
+      if (data?.[0]?.metadata?.name && podStatus) {
+        if (podStatus === 'Succeeded') {
           setMigrateStatus(MigrateStatusEnum.Success);
-        } else if (data?.[0]?.status?.phase === 'Failed') {
+        } else if (podStatus === 'Failed') {
           setMigrateStatus(MigrateStatusEnum.Fail);
         }
         setPodName(data[0].metadata.name);
       }
-    },
-    onSettled() {
-      // timeElapsedRef.current += 5000;
-      // console.log(timeElapsedRef.current);
-      // if (timeElapsedRef.current >= 8 * 60 * 1000) {
-      //   setMigrateStatus(MigrateStatusEnum.Fail);
-      //   setMigrateName('');
-      //   timeElapsedRef.current = 0;
-      // }
     }
   });
 
@@ -149,7 +162,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
       }),
     {
       refetchInterval: 5000,
-      enabled: !!podName && !!migrateName
+      enabled: !!podName && !!migrateName && migrateStatus === MigrateStatusEnum.Fail
     }
   );
 
@@ -185,7 +198,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
   );
 
   return (
-    <Box h={'100%'} position={'relative'} px="26px" pb="45px">
+    <Box h={'100%'} position={'relative'} px="26px" pb="40px">
       <Flex borderRadius={'4px'} border={'1px solid #EAEBF0'} h="100%">
         <Box flex={'0 1 256px'} borderRight={'1px solid #EAEBF0'}>
           <QuotaBox />
@@ -213,7 +226,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
             />
           )} */}
         </Box>
-        <Box flex={1} pt="35px" px="68px">
+        <Box flex={1} pt="35px" px="68px" overflowY={'auto'}>
           <Text color={'#24282C'} fontSize={'16px'} fontWeight={500}>
             {t('Upload dump file')}
           </Text>
@@ -273,9 +286,11 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
             </ModalBody>
           </ModalContent>
         )}
+
         {migrateStatus === MigrateStatusEnum.Progress && (
           <ModalContent>
             <ModalBody>
+              <ModalCloseButton />
               <Flex
                 flexDirection={'column'}
                 alignItems={'center'}
@@ -289,14 +304,18 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                   <Text fontSize={'24px'} fontWeight={500} color={'#24282C'}>
                     {t('Migrating')}
                   </Text>
-                </Flex>{' '}
-                <Text mt="28px" fontSize={'14px'} fontWeight={400} color={'#7B838B'}>
+                </Flex>
+                <Text mt="28px" mb="8px" fontSize={'14px'} fontWeight={400} color={'#7B838B'}>
+                  {fileProgressText}
+                </Text>
+                <Text fontSize={'14px'} fontWeight={400} color={'#7B838B'}>
                   {t('Migration prompt information')}
                 </Text>
               </Flex>
             </ModalBody>
           </ModalContent>
         )}
+
         {(migrateStatus === MigrateStatusEnum.Success ||
           migrateStatus === MigrateStatusEnum.Fail) && (
           <ModalContent maxW={migrateStatus === MigrateStatusEnum.Fail ? '60%' : '392px'}>

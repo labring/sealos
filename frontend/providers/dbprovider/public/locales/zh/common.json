@@ -177,7 +177,11 @@
   "common": {
     "Total": "总共",
     "Used": "已用",
-    "Surplus": "剩余"
+    "Surplus": "剩余",
+    "input": {
+      "No Elements to Delete": "没有要删除的元素",
+      "Repeat Value": "输入重复值"
+    }
   },
   "Data Migration Config": "数据迁移配置",
   "Migrate Now": "立即迁移",
@@ -223,5 +227,33 @@
   "Database Port Empty": "缺少数据库端口",
   "Database UserName Empty": "缺少数据库用户名",
   "Database Password Empty": "缺少数据库密码",
-  "Migration Failed": "迁移失败"
+  "Migration Failed": "迁移失败",
+  "file": {
+    "Uploading": "正在上传文件，进度: {{percent}}%",
+    "Upload Success": "文件上传成功"
+  },
+  "Migrate Config": "迁移配置",
+  "Covering Risks": "覆盖风险",
+  "Migration Permission Check": "迁移权限检查",
+  "Important tips for migrating": "如果 source 数据库中 source_database 和 sink 数据库中 sink_database 的数据库有重叠，应该在sink 数据库中新建 database，以免出现数据重叠",
+  "I have read and completed migration preparations": "我已阅读并完成迁移准备工作",
+  "migrate": {
+    "mongodb": {
+      "stepOne": "# 复制集群实例: 无需伸缩。需要提供用于迁移的主地址的地址",
+      "stepTwo": "# Standalone实例：需要将Standalone扩展到一个节点的副本集才能使用CDC"
+    },
+    "mongo": {
+      "check": "source account: 待迁移仓库的读权限、admin、local\nsink account: 待迁移仓库的读写权限以及admin和local的读权限"
+    },
+    "Incremental migration prompt information": "如果需要数据库增量同步，可以开启\"持续迁移\"，默认是关闭。",
+    "postgresql": {
+      "check": "source account：登录权限、源迁移对象的读权限、复制权限 \nsink account：登录权限、Sink的读/写权限",
+      "stepOne": "# 设置 'wal_level' 配置为 'logical'",
+      "stepTwo": "# 确保配置的\"max_replication_slots\"、\"max_wal_senders\"数量足够"
+    },
+    "mysql": {
+      "stepOne": "# 设置 'binlog_format' 配置为 'row'",
+      "stepTwo": "# 设置 'binlog_row_image' 配置为'full'"
+    }
+  }
 }

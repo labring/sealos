@@ -1,4 +1,10 @@
-import { applyYamlList, delDBServiceByName, getDBSecret, getDBServiceByName } from '@/api/db';
+import {
+  applyYamlList,
+  delDBServiceByName,
+  getDBSecret,
+  getDBServiceByName,
+  getDBStatefulSetByName
+} from '@/api/db';
 import { getAppEnv } from '@/api/platform';
 import MyIcon from '@/components/Icon';
 import { DBStatusEnum, DBTypeEnum, DBTypeSecretMap, defaultDBDetail } from '@/constants/db';
@@ -45,6 +51,14 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   }, [db.dbType]);
 
   const { data: systemEnvs } = useQuery(['getSystemEnvs'], () => getAppEnv());
+
+  const { data: dbStatefulSet } = useQuery(
+    ['getDBStatefulSetByName', db.dbName, db.dbType],
+    () => getDBStatefulSetByName(db.dbName, db.dbType),
+    {
+      enabled: !!db.dbName && !!db.dbType
+    }
+  );
 
   const { data: secret } = useQuery(
     ['getDBSecret', db.dbName],
@@ -155,7 +169,13 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
   const openNetWorkService = async () => {
     try {
-      const yaml = json2NetworkService(db);
+      if (!dbStatefulSet || !db) {
+        return toast({
+          title: 'Missing Parameters',
+          status: 'error'
+        });
+      }
+      const yaml = json2NetworkService({ dbDetail: db, dbStatefulSet: dbStatefulSet });
       console.log(yaml);
       await applyYamlList([yaml], 'create');
       onClose();

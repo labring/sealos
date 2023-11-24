@@ -36,3 +36,6 @@ export const getLogByNameAndContainerName = (data: {
 
 export const getPodStatusByName = (podName: string) =>
   GET(`/api/pod/getPodStatus?podName=${podName}`);
+
+export const deleteMigrateJobByName = (name: string) =>
+  DELETE(`/api/migrate/delJobByName?name=${name}`);
