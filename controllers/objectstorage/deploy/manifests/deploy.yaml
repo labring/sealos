@@ -491,11 +491,11 @@ spec:
             - name: OSNamespace
               value: objectstorage-system
             - name: OSAdminSecret
-              value: object-storage-sealos-user-0
+              value: '{{ .OSAdminSecret }}'
             - name: OSInternalEndpoint
-              value: object-storage.objectstorage-system.svc.cluster.local
+              value: '{{ .OSInternalEndpoint }}'
             - name: OSExternalEndpoint
-              value: objectstorageapi.dev.sealos.top
+              value: '{{ .OSExternalEndpoint }}'
             - name: OSUDetectionCycleSeconds
               value: "300"
             - name: MinioBucketDetectionCycleSeconds
