@@ -90,13 +90,11 @@ func NewResourceNamed(cr client.Object) *ResourceNamed {
 	return p
 }
 
-func NewObjStorageResourceNamed() *ResourceNamed {
-	return objStorageResourceNamed
-}
-
-var objStorageResourceNamed = &ResourceNamed{
-	_type: ObjectStorage,
-	_name: "sealos/objectstorage",
+func NewObjStorageResourceNamed(bucket string) *ResourceNamed {
+	return &ResourceNamed{
+		_type: ObjectStorage,
+		_name: bucket,
+	}
 }
 
 const (

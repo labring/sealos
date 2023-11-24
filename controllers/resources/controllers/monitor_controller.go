@@ -371,26 +371,54 @@ func (r *MonitorReconciler) getResourceUsage(namespace *corev1.Namespace) ([]*re
 }
 
 func (r *MonitorReconciler) getObjStorageUsed(user string, namedMap *map[string]*resources.ResourceNamed, resMap *map[string]map[corev1.ResourceName]*quantity) error {
-	size, count, err := objstorage.GetUserObjectStorageSize(r.ObjStorageClient, user)
+	buckets, err := objstorage.ListUserObjectStorageBucket(r.ObjStorageClient, user)
 	if err != nil {
-		return fmt.Errorf("failed to get object storage user storage size: %w", err)
+		return fmt.Errorf("failed to list object storage user %s storage size: %w", user, err)
 	}
-	if count == 0 || size == 0 {
+	if len(buckets) == 0 {
 		return nil
 	}
-	bytes, err := objstorage.GetUserObjectStorageFlow(r.ObjStorageClient, r.PromURL, user)
-	if err != nil {
-		return fmt.Errorf("failed to get object storage user storage flow: %w", err)
+	for i := range buckets {
+		size, count := objstorage.GetObjectStorageSize(r.ObjStorageClient, buckets[i])
+		if count == 0 {
+			continue
+		}
+		bytes, err := objstorage.GetObjectStorageFlow(r.PromURL, buckets[i])
+		if err != nil {
+			return fmt.Errorf("failed to get object storage user storage flow: %w", err)
+		}
+		objStorageNamed := resources.NewObjStorageResourceNamed(buckets[i])
+		(*namedMap)[objStorageNamed.String()] = objStorageNamed
+		if _, ok := (*resMap)[objStorageNamed.String()]; !ok {
+			(*resMap)[objStorageNamed.String()] = initResources()
+		}
+		(*resMap)[objStorageNamed.String()][corev1.ResourceStorage].Add(*resource.NewQuantity(size, resource.BinarySI))
+		(*resMap)[objStorageNamed.String()][resources.ResourceNetwork].Add(*resource.NewQuantity(bytes, resource.BinarySI))
 	}
-	objStorageNamed := resources.NewObjStorageResourceNamed()
-	(*namedMap)[objStorageNamed.Name()] = objStorageNamed
-	if _, ok := (*resMap)[objStorageNamed.Name()]; !ok {
-		(*resMap)[objStorageNamed.Name()] = initResources()
-	}
-	(*resMap)[objStorageNamed.Name()][corev1.ResourceStorage].Add(*resource.NewQuantity(size, resource.BinarySI))
-	(*resMap)[objStorageNamed.Name()][resources.ResourceNetwork].Add(*resource.NewQuantity(bytes, resource.BinarySI))
 	return nil
 }
+
+//func (r *MonitorReconciler) getObjStorageUsed(user string, namedMap *map[string]*resources.ResourceNamed, resMap *map[string]map[corev1.ResourceName]*quantity) error {
+//	size, count, err := objstorage.GetUserObjectStorageSize(r.ObjStorageClient, user)
+//	if err != nil {
+//		return fmt.Errorf("failed to get object storage user storage size: %w", err)
+//	}
+//	if count == 0 || size == 0 {
+//		return nil
+//	}
+//	bytes, err := objstorage.GetUserObjectStorageFlow(r.ObjStorageClient, r.PromURL, user)
+//	if err != nil {
+//		return fmt.Errorf("failed to get object storage user storage flow: %w", err)
+//	}
+//	objStorageNamed := resources.NewObjStorageResourceNamed()
+//	(*namedMap)[objStorageNamed.Name()] = objStorageNamed
+//	if _, ok := (*resMap)[objStorageNamed.Name()]; !ok {
+//		(*resMap)[objStorageNamed.Name()] = initResources()
+//	}
+//	(*resMap)[objStorageNamed.Name()][corev1.ResourceStorage].Add(*resource.NewQuantity(size, resource.BinarySI))
+//	(*resMap)[objStorageNamed.Name()][resources.ResourceNetwork].Add(*resource.NewQuantity(bytes, resource.BinarySI))
+//	return nil
+//}
 
 func (r *MonitorReconciler) getPodTrafficUsed(namespace string, namedMap *map[string]*resources.ResourceNamed, podsRes *map[string]map[corev1.ResourceName]*quantity) error {
 	conn, err := grpc.Dial(r.TrafficSvcConn, grpc.WithTransportCredentials(insecure.NewCredentials()))
