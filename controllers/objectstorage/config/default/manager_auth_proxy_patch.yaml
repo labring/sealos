@@ -71,7 +71,7 @@ spec:
             - name: OSInternalEndpoint
               value: "object-storage.objectstorage-system.svc.cluster.local"
             - name: OSExternalEndpoint
-              value: "objectstorage.dev.sealos.top"
+              value: "objectstorageapi.dev.sealos.top"
             - name: OSUDetectionCycleSeconds
               value: "300"
             - name: MinioBucketDetectionCycleSeconds

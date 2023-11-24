@@ -289,7 +289,7 @@ func (r *ObjectStorageUserReconciler) initObjectStorageUser(user *objectstoragev
 		updated = true
 	}
 
-	if user.Status.AccessKey == "" {
+	if user.Status.AccessKey != username {
 		user.Status.AccessKey = username
 		updated = true
 	}
@@ -299,12 +299,12 @@ func (r *ObjectStorageUserReconciler) initObjectStorageUser(user *objectstoragev
 		updated = true
 	}
 
-	if user.Status.Internal == "" {
+	if user.Status.Internal == r.InternalEndpoint {
 		user.Status.Internal = r.InternalEndpoint
 		updated = true
 	}
 
-	if user.Status.External == "" {
+	if user.Status.External == r.ExternalEndpoint {
 		user.Status.External = r.ExternalEndpoint
 		updated = true
 	}
