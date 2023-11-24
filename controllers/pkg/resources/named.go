@@ -90,13 +90,13 @@ func NewResourceNamed(cr client.Object) *ResourceNamed {
 	return p
 }
 
-func NewMinioResourceNamed() *ResourceNamed {
-	return minioResourceNamed
+func NewObjStorageResourceNamed() *ResourceNamed {
+	return objStorageResourceNamed
 }
 
-var minioResourceNamed = &ResourceNamed{
-	_type: MINIO,
-	_name: "sealos/minio",
+var objStorageResourceNamed = &ResourceNamed{
+	_type: ObjectStorage,
+	_name: "sealos/objectstorage",
 }
 
 const (

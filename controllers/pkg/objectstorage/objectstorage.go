@@ -30,7 +30,7 @@ import (
 func GetUserObjectStorageSize(client *minio.Client, username string) (int64, int64, error) {
 	buckets, err := client.ListBuckets(context.Background())
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to list object storage buckets")
+		return 0, 0, fmt.Errorf("failed to list object storage buckets: %v", err)
 	}
 
 	var expectBuckets []string

@@ -350,8 +350,8 @@ func (r *MonitorReconciler) getResourceUsage(namespace *corev1.Namespace) ([]*re
 		}
 	}
 	if username := config.GetUserNameByNamespace(namespace.Name); r.ObjStorageClient != nil && namespace.Labels[userv1.UserLabelOwnerKey] == username {
-		if err := r.getMinioUsed(username, &resNamed, &resUsed); err != nil {
-			r.Logger.Error(err, "failed to get minio used", "username", username)
+		if err := r.getObjStorageUsed(username, &resNamed, &resUsed); err != nil {
+			r.Logger.Error(err, "failed to get object storage used", "username", username)
 		}
 	}
 	for name, podResource := range resUsed {
@@ -370,25 +370,25 @@ func (r *MonitorReconciler) getResourceUsage(namespace *corev1.Namespace) ([]*re
 	return monitors, nil
 }
 
-func (r *MonitorReconciler) getMinioUsed(user string, namedMap *map[string]*resources.ResourceNamed, resMap *map[string]map[corev1.ResourceName]*quantity) error {
+func (r *MonitorReconciler) getObjStorageUsed(user string, namedMap *map[string]*resources.ResourceNamed, resMap *map[string]map[corev1.ResourceName]*quantity) error {
 	size, count, err := objstorage.GetUserObjectStorageSize(r.ObjStorageClient, user)
 	if err != nil {
-		return fmt.Errorf("failed to get minio user storage size: %w", err)
+		return fmt.Errorf("failed to get object storage user storage size: %w", err)
 	}
 	if count == 0 || size == 0 {
 		return nil
 	}
 	bytes, err := objstorage.GetUserObjectStorageFlow(r.ObjStorageClient, r.PromURL, user)
 	if err != nil {
-		return fmt.Errorf("failed to get minio user storage flow: %w", err)
+		return fmt.Errorf("failed to get object storage user storage flow: %w", err)
 	}
-	minioNamed := resources.NewMinioResourceNamed()
-	(*namedMap)[minioNamed.Name()] = minioNamed
-	if _, ok := (*resMap)[minioNamed.Name()]; !ok {
-		(*resMap)[minioNamed.Name()] = initResources()
+	objStorageNamed := resources.NewObjStorageResourceNamed()
+	(*namedMap)[objStorageNamed.Name()] = objStorageNamed
+	if _, ok := (*resMap)[objStorageNamed.Name()]; !ok {
+		(*resMap)[objStorageNamed.Name()] = initResources()
 	}
-	(*resMap)[minioNamed.Name()][corev1.ResourceStorage].Add(*resource.NewQuantity(size, resource.BinarySI))
-	(*resMap)[minioNamed.Name()][resources.ResourceNetwork].Add(*resource.NewQuantity(bytes, resource.BinarySI))
+	(*resMap)[objStorageNamed.Name()][corev1.ResourceStorage].Add(*resource.NewQuantity(size, resource.BinarySI))
+	(*resMap)[objStorageNamed.Name()][resources.ResourceNetwork].Add(*resource.NewQuantity(bytes, resource.BinarySI))
 	return nil
 }
 

@@ -160,6 +160,9 @@ func (r *BillingRecordQueryReconciler) ReconcilePriceQuery(ctx context.Context, 
 		if resources.IsGpuResource(property.Name) && property.Alias != "" {
 			displayName = string(resources.NewGpuResource(property.Alias))
 		}
+		if property.ViewPrice > 0 {
+			displayPrice = property.ViewPrice
+		}
 		priceQuery.Status.BillingRecords = append(priceQuery.Status.BillingRecords, accountv1.BillingRecord{
 			ResourceType: displayName,
 			Price:        strconv.FormatFloat(displayPrice, 'f', -1, 64),
