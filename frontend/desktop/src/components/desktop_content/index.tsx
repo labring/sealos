@@ -13,9 +13,7 @@ import styles from './index.module.scss';
 const TimeComponent = dynamic(() => import('./time'), {
   ssr: false
 });
-const UserMenu = dynamic(() => import('@/components/user_menu'), {
-  ssr: false
-});
+import UserMenu from '@/components/user_menu';
 
 export default function DesktopContent(props: any) {
   const { t, i18n } = useTranslation();

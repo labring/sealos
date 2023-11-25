@@ -23,6 +23,19 @@ export type Session = {
   // 帮忙导出用的
   kubeconfig: KubeConfig;
 };
+export type ApiSession = {
+  // 提供一些简单的信息
+  user: {
+    readonly kubernetesUsername: string;
+    readonly name: string;
+    readonly avatar: string;
+    readonly nsID: string;
+    readonly nsUID: string;
+    readonly userID: string;
+  };
+  // 帮忙导出用的
+  kubeconfig: KubeConfig;
+};
 export type JWTPayload = {
   kubeconfig: KubeConfig;
   user: Record<'uid' | 'nsid' | 'k8s_username' | 'ns_uid', string>;

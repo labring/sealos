@@ -24,7 +24,12 @@ const navbar = [
   {
     key: 'hosting',
     label: <Translate>Hosting</Translate>,
-    to: '/self-hosting '
+    to: '/self-hosting'
+  },
+  {
+    key: 'blog',
+    label: <Translate>Blog</Translate>,
+    to: '/blog'
   },
   {
     key: 'contact',

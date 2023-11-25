@@ -62,8 +62,7 @@ with at least svc(s) below:
 
 ### Choice what network gateway to use:
 
-1. [APISIX](../cloud-deprecated/manifests/apisix/README.md) :point_left: Recommended
-2. [Ingress-NGINX](../cloud-deprecated/manifests/ingress-nginx/README.md)
+1. [Ingress-NGINX](../cloud-deprecated/manifests/ingress-nginx/README.md)
 
 ### Modification of config.yml
 

@@ -25,7 +25,7 @@ import dayjs from 'dayjs';
 import JsYaml from 'js-yaml';
 import { debounce, has, isObject, mapValues } from 'lodash';
 import { useTranslation } from 'next-i18next';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import ErrorModal from '../deploy/components/ErrorModal';
 import BreadCrumbHeader from './components/BreadCrumbHeader';
@@ -41,6 +41,7 @@ export default function Develop() {
   const { Loading, setIsLoading } = useLoading();
   const [errorMessage, setErrorMessage] = useState('');
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(false);
+  const SuccessfulDryRun = useRef(false);
 
   const { data: platformEnvs } = useQuery(['getPlatformEnvs'], getPlatformEnv) as {
     data: EnvResponse;
@@ -133,6 +134,9 @@ export default function Develop() {
         yamlList.map((item) => item.value),
         'dryrun'
       );
+      if (result.length > 0) {
+        SuccessfulDryRun.current = true;
+      }
       toast({
         title: t(applySuccess),
         status: 'success',
@@ -182,9 +186,27 @@ export default function Develop() {
     );
   }, [yamlList]);
 
+  const formalApply = async () => {
+    try {
+      if (yamlList.length !== 0 && SuccessfulDryRun.current) {
+        const result: string[] = await postDeployApp(yamlList.map((item) => item.value));
+        toast({
+          title: t('Deployment successful, please go to My Application to view') || ' ',
+          status: 'success'
+        });
+      }
+    } catch (error) {
+      console.log(error, 'FormalApply');
+    }
+  };
+
   return (
     <Flex flexDirection={'column'} p={'0px 34px 20px 34px '} h="100vh" maxW={'1440px'} mx="auto">
-      <BreadCrumbHeader applyCb={() => formHook.handleSubmit(submitSuccess, submitError)()} />
+      <BreadCrumbHeader
+        applyCb={() => formHook.handleSubmit(submitSuccess, submitError)()}
+        isShowBtn={SuccessfulDryRun.current}
+        applyFormalCb={formalApply}
+      />
       <Flex
         border={'1px solid #DEE0E2'}
         borderRadius={'8px'}

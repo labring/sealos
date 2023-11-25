@@ -1,8 +1,6 @@
 import { useCopyData } from '@/hooks/useCopyData';
 import { Box, Flex, Text } from '@chakra-ui/react';
 import { useQueryClient } from '@tanstack/react-query';
-import Iconfont from '../iconfont';
-import InviteMember from './InviteMember';
 import { NSType, NamespaceDto } from '@/types/team';
 import { useTranslation } from 'react-i18next';
 const NsList = ({
@@ -18,7 +16,6 @@ const NsList = ({
   namespaces: NamespaceDto[];
 } & Parameters<typeof Box>[0]) => {
   const queryClient = useQueryClient();
-  const { copyData } = useCopyData();
   const { t } = useTranslation();
   return (
     <Box {...boxprop}>

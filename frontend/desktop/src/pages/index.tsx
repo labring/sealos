@@ -1,7 +1,6 @@
 import DesktopContent from '@/components/desktop_content';
 import FloatButton from '@/components/floating_button';
 import MoreApps from '@/components/more_apps';
-import { enableRecharge } from '@/services/enable';
 import request from '@/services/request';
 import useAppStore from '@/stores/app';
 import { useGlobalStore } from '@/stores/global';
@@ -27,12 +26,11 @@ export const MoreAppsContext = createContext<IMoreAppsContext | null>(null);
 
 export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: string }) {
   const router = useRouter();
-  const { isUserLogin, setSession } = useSessionStore();
+  const { isUserLogin } = useSessionStore();
   const { colorMode, toggleColorMode } = useColorMode();
   const init = useAppStore((state) => state.init);
   const setAutoLaunch = useAppStore((state) => state.setAutoLaunch);
-  const cancelAutoLaunch = useAppStore((state) => state.cancelAutoLaunch);
-  const { data: systemConfig, refetch } = useQuery(['getSystemConfig'], () =>
+  const { data: systemConfig } = useQuery(['getSystemConfig'], () =>
     request<any, ApiResp<SystemConfigType>>('/api/system/getSystemConfig')
   );
   const { data: platformEnv, isSuccess } = useQuery(['getPlatformEnv'], () =>
@@ -89,7 +87,6 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       sessionStorage.setItem('bd_vid', bd_vid as string);
     }
   }, []);
-
   return (
     <Box position={'relative'} overflow={'hidden'} w="100vw" h="100vh">
       <Head>

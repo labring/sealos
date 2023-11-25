@@ -111,4 +111,11 @@ var (
 		"blocked_connections": "sum(redis_blocked_clients{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"})",
 		"key_evictions":       "irate(redis_evicted_keys_total{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])",
 	}
+
+	Minio = map[string]string{
+		"minio_bucket_usage_object_total":     "minio_bucket_usage_object_total{bucket=\"@\"}",
+		"minio_bucket_usage_total_bytes":      "minio_bucket_usage_total_bytes{bucket=\"@\"}",
+		"minio_bucket_traffic_received_bytes": "sum(minio_bucket_traffic_received_bytes{bucket=\"@\"}) by (bucket, instance, job, namespace)",
+		"minio_bucket_traffic_sent_bytes":     "sum(minio_bucket_traffic_sent_bytes{bucket=\"@\"}) by (bucket, instance, job, namespace)",
+	}
 )

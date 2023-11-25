@@ -35,7 +35,7 @@ export default function AppList({ instanceName }: { instanceName: string }) {
       appKey: 'system-applaunchpad',
       pathname: '/app/detail',
       query: { name: name },
-      messageData: {}
+      messageData: { type: 'InternalAppCall', name: name }
     });
   }, []);
 

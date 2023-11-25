@@ -16,13 +16,13 @@ export default function NavBanner({
   };
 
   const goDetail = () => {
-    window.open(`https://seaos.run`);
+    window.open(`https://sealos.run`);
   };
 
   useEffect(() => {
     const lastCloseTimestamp = +localStorage.getItem('bannerCloseTimestamp');
     if (
-      window.location.hostname === 'localhost' &&
+      window.location.hostname === 'sealos.io' &&
       (!lastCloseTimestamp || Date.now() - lastCloseTimestamp > 7 * 24 * 60 * 60 * 1000)
     ) {
       setIsBannerVisible(true);

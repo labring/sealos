@@ -1,6 +1,5 @@
 import { Box } from '@chakra-ui/react';
 import 'github-markdown-css/github-markdown-light.css';
-import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeRewrite from 'rehype-rewrite';
@@ -8,23 +7,6 @@ import remarkGfm from 'remark-gfm';
 import remarkUnwrapImages from 'remark-unwrap-images';
 
 export default function ReadMe() {
-  const [templateReadMe, setTemplateReadMe] = useState('xxx');
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await (
-          await fetch(
-            'https://raw.githubusercontent.com/labring/sealos/main/docs/4.0/i18n/zh-Hans/self-hosting/installation.md'
-          )
-        ).text();
-        setTemplateReadMe(res);
-      } catch (error) {
-        console.log(error);
-      }
-    })();
-  }, []);
-
   // @ts-ignore
   const myRewrite = (node, index, parent) => {
     if (node.tagName === 'img' && !node.properties.src.startsWith('http')) {

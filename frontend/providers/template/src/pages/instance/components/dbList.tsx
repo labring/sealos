@@ -34,7 +34,7 @@ export default function AppList({ instanceName }: { instanceName: string }) {
       appKey: 'system-dbprovider',
       pathname: '/db/detail',
       query: { name: name },
-      messageData: {}
+      messageData: { type: 'InternalAppCall', name: name }
     });
   };
 

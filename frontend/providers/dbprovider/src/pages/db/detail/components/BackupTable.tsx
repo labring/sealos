@@ -62,7 +62,8 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
   const {
     isInitialLoading,
     refetch,
-    data: backups = []
+    data: backups = [],
+    isSuccess
   } = useQuery(
     ['intervalLoadBackups'],
     async () => {
@@ -206,13 +207,14 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
   );
 
   return (
-    <Box h={'100%'} position={'relative'}>
-      <TableContainer overflow={'overlay'}>
+    <Flex flexDirection={'column'} h="100%" position={'relative'}>
+      <TableContainer overflowY={'auto'}>
         <Table variant={'simple'} backgroundColor={'white'}>
           <Thead>
             <Tr>
               {columns.map((item) => (
                 <Th
+                  fontSize={'12px'}
                   py={4}
                   key={item.key}
                   border={'none'}
@@ -241,6 +243,12 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
           </Tbody>
         </Table>
       </TableContainer>
+      {isSuccess && backups.length === 0 && (
+        <Flex justifyContent={'center'} alignItems={'center'} flexDirection={'column'} flex={1}>
+          <MyIcon name={'noEvents'} color={'transparent'} width={'36px'} height={'36px'} />
+          <Box pt={'8px'}>{t('No Data Available')}</Box>
+        </Flex>
+      )}
       <Loading loading={isInitialLoading} fixed={false} />
       <RestartConfirmDelChild />
       {isOpenBackupModal && data && (
@@ -259,7 +267,7 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
           onClose={() => setRestoreBackupName(undefined)}
         />
       )}
-    </Box>
+    </Flex>
   );
 };
 

@@ -20,6 +20,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useMemo, useState } from 'react';
 import ReadMe from './ReadMe';
+import CommandForm from './CommandForm';
 
 export default function Tutorial({
   clusterId,
@@ -28,10 +29,13 @@ export default function Tutorial({
   clusterId: string;
   ossFileUrl: string;
 }) {
-  let { fileNameParams, bashParams, ossVersion } = useMemo(() => {
+  const { t } = useTranslation();
+  const { copyData } = useCopyData();
+  const [ossLink, setOssLink] = useState('');
+
+  const { fileNameParams, bashParams, ossVersion } = useMemo(() => {
     if (ossFileUrl) {
       let match = /cloud-(.*?)\.tar/g.exec(ossFileUrl);
-      console.log(match);
       return {
         fileNameParams: ossFileUrl.replace('/cloud/', ''),
         bashParams: match ? `--cloud-version=${match[1]}` : '--cloud-version v5.0.0-beta1',
@@ -45,10 +49,6 @@ export default function Tutorial({
       };
     }
   }, [ossFileUrl]);
-
-  const { t } = useTranslation();
-  const { copyData } = useCopyData();
-  const [ossLink, setOssLink] = useState('');
   const { data } = useQuery(
     ['findClusterByIds', clusterId],
     () =>
@@ -102,9 +102,7 @@ export default function Tutorial({
               fontSize={'14px'}
               fontWeight={600}
               onClick={() =>
-                window.open(
-                  'https://sealos.io/zh-Hans/docs/self-hosting/installation#%E5%87%86%E5%A4%87%E5%B7%A5%E4%BD%9C'
-                )
+                window.open('https://sealos.io/zh-Hans/docs/self-hosting/sealos/installation')
               }
             >
               详细文档
@@ -146,17 +144,17 @@ export default function Tutorial({
               </Text>
               <CodeBlock
                 language="bash"
-                code={`wget '${ossLink}' -O ${fileNameParams}`}
+                copyCode={`wget '${ossLink}' -O ${fileNameParams}`}
+                displayCode={`wget '${ossLink}' \\\n -O ${fileNameParams}`}
               ></CodeBlock>
               <Divider my="20px" />
               <Text mt="12px" fontSize={'16px'} fontWeight={600} mb="12px">
                 部署集群
               </Text>
-              <CodeBlock
-                language="bash"
-                code={`tar xzvf ${fileNameParams} \n && cd sealos-cloud && bash install.sh`}
-                copyValue={`tar xzvf ${fileNameParams} && cd sealos-cloud && bash install.sh`}
-              ></CodeBlock>
+              <CommandForm
+                basePath={`tar xzvf ${fileNameParams} && cd sealos-cloud && bash install.sh `}
+                cloudVersion={ossVersion}
+              />
             </AccordionPanel>
           </AccordionItem>
         )}
@@ -170,10 +168,10 @@ export default function Tutorial({
             <AccordionIcon ml="auto" w="24px" h="24px" />
           </AccordionButton>
           <AccordionPanel py="20px" pl="40px" gap={'12px'}>
-            <CodeBlock
-              language="bash"
-              code={`curl -sfL https://raw.githubusercontent.com/labring/sealos/${ossVersion}/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh ${bashParams}`}
-            ></CodeBlock>
+            <CommandForm
+              basePath={`curl -sfL https://gh-proxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash scripts/load-images.sh  && /tmp/install.sh --zh `}
+              cloudVersion={ossVersion}
+            />
             <Center
               borderRadius={'4px'}
               cursor={'pointer'}
@@ -185,9 +183,7 @@ export default function Tutorial({
               fontSize={'14px'}
               fontWeight={600}
               onClick={() =>
-                window.open(
-                  'https://sealos.io/zh-Hans/docs/self-hosting/installation#%E5%AE%89%E8%A3%85%E6%AD%A5%E9%AA%A4'
-                )
+                window.open('https://sealos.io/zh-Hans/docs/self-hosting/sealos/installation')
               }
             >
               详细文档

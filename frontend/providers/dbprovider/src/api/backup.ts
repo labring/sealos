@@ -9,7 +9,6 @@ export const getBackupPolicy = (data: { dbName: string; dbType: string }) =>
 export const createBackup = (data: CreateBackupPros) => POST('/api/backup/create', data);
 export const getBackupList = (dbName: string) =>
   GET('/api/backup/getBackupList', { dbName }).then((res) => res.map(adaptBackup));
-
 export const deleteBackup = (backupName: string) =>
   DELETE(`/api/backup/delBackup?backupName=${backupName}`);
 export const updateBackupPolicy = (data: UpdatePolicyProps) =>

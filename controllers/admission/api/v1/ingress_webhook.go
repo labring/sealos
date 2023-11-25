@@ -154,14 +154,15 @@ func (v *IngressValidator) ValidateUpdate(ctx context.Context, _, newObj runtime
 	return v.validate(ctx, ni)
 }
 
-func (v *IngressValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+func (v *IngressValidator) ValidateDelete(_ context.Context, obj runtime.Object) error {
 	i, ok := obj.(*netv1.Ingress)
 	if !ok {
 		return errors.New("obj convert Ingress is error")
 	}
 
 	ilog.Info("validating delete", "ingress namespace", i.Namespace, "ingress name", i.Name)
-	return v.validate(ctx, i)
+	// delete ingress, pass validate
+	return nil
 }
 
 func (v *IngressValidator) validate(ctx context.Context, i *netv1.Ingress) error {

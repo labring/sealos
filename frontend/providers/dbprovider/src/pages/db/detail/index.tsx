@@ -12,14 +12,19 @@ import AppBaseInfo from './components/AppBaseInfo';
 import Pods from './components/Pods';
 import BackupTable, { type ComponentRef } from './components/BackupTable';
 import { useTranslation } from 'next-i18next';
-import { DBTypeEnum } from '@/constants/db';
+import { DBTypeEnum, dbStatusMap } from '@/constants/db';
 import Monitor from './components/Monitor';
 import dayjs from 'dayjs';
+import DumpImport from './components/DumpImport';
+import MigrateTable from './components/Migrate/Table';
+import { DBType } from '@/types/db';
 
 enum TabEnum {
   pod = 'pod',
   backup = 'backup',
-  monitor = 'monitor'
+  monitor = 'monitor',
+  InternetMigration = 'InternetMigration',
+  DumpImport = 'DumpImport'
 }
 
 const AppDetail = ({
@@ -28,17 +33,40 @@ const AppDetail = ({
   dbType
 }: {
   dbName: string;
-  dbType: string;
+  dbType: DBType;
   listType: `${TabEnum}`;
 }) => {
   const BackupTableRef = useRef<ComponentRef>(null);
   const router = useRouter();
   const { t } = useTranslation();
-  const listNav = useRef([
-    { label: 'Monitor List', value: TabEnum.monitor },
-    { label: 'Replicas List', value: TabEnum.pod },
-    { label: 'Backup List', value: TabEnum.backup }
-  ]);
+
+  const { listNav } = useMemo(() => {
+    const PublicNetMigration = ['postgresql', 'apecloud-mysql'].includes(dbType);
+    const MigrateSupported = ['postgresql', 'mongodb', 'apecloud-mysql'].includes(dbType);
+    const BackupSupported = ['postgresql', 'mongodb', 'apecloud-mysql', 'redis'].includes(dbType);
+
+    const listNavValue = [
+      { label: 'Monitor List', value: TabEnum.monitor },
+      { label: 'Replicas List', value: TabEnum.pod },
+      ...(BackupSupported ? [{ label: 'Backup List', value: TabEnum.backup }] : []),
+      ...(MigrateSupported
+        ? PublicNetMigration
+          ? [
+              { label: 'Internet Migration', value: TabEnum.InternetMigration },
+              { label: 'File Migration', value: TabEnum.DumpImport }
+            ]
+          : [{ label: 'File Migration', value: TabEnum.DumpImport }]
+        : [])
+    ];
+
+    return {
+      isPublicNetMigration: PublicNetMigration,
+      isMigrationSupported: MigrateSupported,
+      isBackupSupported: BackupSupported,
+      listNav: listNavValue
+    };
+  }, [dbType]);
+
   const theme = useTheme();
   const { toast } = useToast();
   const { Loading } = useLoading();
@@ -48,7 +76,7 @@ const AppDetail = ({
   const [showSlider, setShowSlider] = useState(false);
 
   useQuery([dbName, 'loadDBDetail', 'intervalLoadPods'], () => loadDBDetail(dbName), {
-    refetchInterval: 3000,
+    // refetchInterval: 3000,
     onError(err) {
       router.replace('/dbs');
       toast({
@@ -96,7 +124,7 @@ const AppDetail = ({
           borderRadius={'md'}
         >
           <Flex p={'26px'} alignItems={'flex-start'}>
-            {listNav.current.map((item) => (
+            {listNav.map((item) => (
               <Box
                 key={item.value}
                 mr={5}
@@ -142,6 +170,19 @@ const AppDetail = ({
                 </Button>
               </Flex>
             )}
+            {listType === TabEnum.InternetMigration && (
+              <Flex alignItems={'center'}>
+                <Button
+                  ml={3}
+                  variant={'primary'}
+                  onClick={() => {
+                    router.push(`/db/migrate?name=${dbName}&dbType=${dbType}`);
+                  }}
+                >
+                  {t('Migrate')}
+                </Button>
+              </Flex>
+            )}
           </Flex>
           <Box flex={'1 0 0'} h={0}>
             {listType === TabEnum.pod && <Pods dbName={dbName} dbType={dbDetail.dbType} />}
@@ -149,6 +190,8 @@ const AppDetail = ({
             {listType === TabEnum.monitor && (
               <Monitor dbName={dbName} dbType={dbType} db={dbDetail} />
             )}
+            {listType === TabEnum.InternetMigration && <MigrateTable dbName={dbName} />}
+            {listType === TabEnum.DumpImport && <DumpImport db={dbDetail} />}
           </Box>
         </Flex>
       </Flex>

@@ -11,9 +11,10 @@ import HomeHeader from './components/Header';
 import Introduce from './components/Introduce';
 import HomeUserBy from './components/UserBy';
 import './index.scss';
+import Head from '@docusaurus/Head';
 
 const Home = () => {
-  const { screenWidth, cloudUrl } = useWindow();
+  const { screenWidth, cloudUrl, currentLanguage } = useWindow();
   const isPc = useMemo(() => screenWidth > PC_MIN_WIDTH, [screenWidth]);
 
   useEffect(() => {
@@ -44,6 +45,13 @@ const Home = () => {
 
   const HomeRender = (
     <div id="sealos-layout-wrap-home-page">
+      <Head>
+        <title>
+          {currentLanguage === 'en'
+            ? 'Sealos'
+            : 'Sealos: 专为云原生开发打造的以 K8s 为内核的云操作系统'}
+        </title>
+      </Head>
       <Helmet>
         <script async src="https://www.googletagmanager.com/gtag/js?id=AW-786053845" />
         <script async>

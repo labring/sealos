@@ -155,7 +155,8 @@
     "Configure Form": "Configure Form",
     "YAML File": "YAML File",
     "Template Development": "Template Development",
-    "Dryrun Deploy": "Dryrun Deploy"
+    "Dryrun Deploy": "Dryrun Deploy",
+    "Formal Deploy": "Formal Deploy"
   },
   "SideBar": {
     "Applications": "Applications",
@@ -180,5 +181,7 @@
   "One click deploy button": "One click deploy button",
   "Html Part": "Html Part",
   "Markdown Part": "Markdown Part",
-  "Button Effect": "Button Effect"
+  "Button Effect": "Button Effect",
+  "Type": "Type",
+  "Deployment successful, please go to My Application to view": "Deployment successful, please go to My Application to view"
 }

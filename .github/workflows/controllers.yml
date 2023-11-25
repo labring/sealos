@@ -97,7 +97,6 @@ jobs:
           - { name: license, path: license }
           - { name: job-init, path: job/init }
           - { name: resources, path: resources }
-          - { name: resources-metering, path: resources/metering }
           - { name: node, path: node }
           - { name: admission, path: admission }
     steps:
@@ -199,7 +198,6 @@ jobs:
           - { name: license, path: license }
           - { name: job-init, path: job/init }
           - { name: resources, path: resources }
-          - { name: resources-metering, path: resources/metering }
           - { name: node, path: node }
           - { name: admission, path: admission }
     steps:

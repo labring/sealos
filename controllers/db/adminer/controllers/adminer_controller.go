@@ -21,7 +21,6 @@ import (
 	"os"
 	"time"
 
-	apisix "github.com/apache/apisix-ingress-controller/pkg/kube/apisix/apis/config/v2beta3"
 	"github.com/jaevor/go-nanoid"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -89,12 +88,6 @@ type AdminerReconciler struct {
 //+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=events,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
-
-// No needed for now
-//-kubebuilder:rbac:groups=apisix.apache.org,resources=apisixroutes,verbs=get;list;watch;create;update;patch;delete
-//-kubebuilder:rbac:groups=apisix.apache.org,resources=apisixtlses,verbs=get;list;watch;create;update;patch;delete
-//-kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
-//-kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
 
 //-kubebuilder:rbac:groups=core,resources=endpoints,verbs=get;list;watch
 
@@ -424,8 +417,6 @@ func (r *AdminerReconciler) syncIngress(ctx context.Context, adminer *adminerv1.
 	switch adminer.Spec.IngressType {
 	case adminerv1.Nginx:
 		err = r.syncNginxIngress(ctx, adminer, host)
-	case adminerv1.Apisix:
-		err = r.syncApisixIngress(ctx, adminer, host)
 	}
 	return err
 }
@@ -446,66 +437,6 @@ func (r *AdminerReconciler) syncNginxIngress(ctx context.Context, adminer *admin
 		return controllerutil.SetControllerReference(adminer, ingress, r.Scheme)
 	}); err != nil {
 		return err
-	}
-
-	protocol := protocolHTTPS
-	if !r.tlsEnabled {
-		protocol = protocolHTTP
-	}
-
-	domain := protocol + host
-	if adminer.Status.Domain != domain {
-		adminer.Status.Domain = domain
-		return r.Status().Update(ctx, adminer)
-	}
-
-	return nil
-}
-
-func (r *AdminerReconciler) syncApisixIngress(ctx context.Context, adminer *adminerv1.Adminer, host string) error {
-	// 1. sync ApisixRoute
-	apisixRoute := &apisix.ApisixRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      adminer.Name,
-			Namespace: adminer.Namespace,
-		},
-	}
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, apisixRoute, func() error {
-		expectRoute := r.createApisixRoute(adminer, host)
-		if len(apisixRoute.Spec.HTTP) == 0 {
-			apisixRoute.Spec.HTTP = expectRoute.Spec.HTTP
-		} else {
-			apisixRoute.Spec.HTTP[0].Name = expectRoute.Spec.HTTP[0].Name
-			apisixRoute.Spec.HTTP[0].Match = expectRoute.Spec.HTTP[0].Match
-			apisixRoute.Spec.HTTP[0].Backends = expectRoute.Spec.HTTP[0].Backends
-			apisixRoute.Spec.HTTP[0].Timeout = expectRoute.Spec.HTTP[0].Timeout
-			apisixRoute.Spec.HTTP[0].Authentication = expectRoute.Spec.HTTP[0].Authentication
-		}
-		return controllerutil.SetControllerReference(adminer, apisixRoute, r.Scheme)
-	}); err != nil {
-		return err
-	}
-
-	// 2. sync ApisixTls
-	if r.tlsEnabled {
-		apisixTLS := &apisix.ApisixTls{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      adminer.Name,
-				Namespace: adminer.Namespace,
-			},
-		}
-		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, apisixTLS, func() error {
-			expectTLS := r.createApisixTLS(adminer, host)
-			if apisixTLS.Spec != nil {
-				apisixTLS.Spec.Hosts = expectTLS.Spec.Hosts
-				apisixTLS.Spec.Secret = expectTLS.Spec.Secret
-			} else {
-				apisixTLS.Spec = expectTLS.Spec
-			}
-			return controllerutil.SetControllerReference(adminer, apisixTLS, r.Scheme)
-		}); err != nil {
-			return err
-		}
 	}
 
 	protocol := protocolHTTPS

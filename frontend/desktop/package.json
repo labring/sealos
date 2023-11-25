@@ -10,6 +10,7 @@
     "test:e2e": "jest --testPathPattern=/e2e/ --runInBand",
     "test:e2e-namespace": "jest --testPathPattern=/e2e/namespace/ --runInBand",
     "test:e2e-auth": "jest --testPathPattern=/e2e/auth/ --runInBand",
+    "test:e2e-api": "jest --testPathPattern=/e2e/v1alpha/ --runInBand",
     "test:ci": "jest --runInBand"
   },
   "dependencies": {
@@ -46,6 +47,7 @@
     "next-pwa": "^5.6.0",
     "nprogress": "^0.2.0",
     "qrcode.react": "^3.1.0",
+    "randexp": "^0.5.3",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-draggable": "^4.4.6",

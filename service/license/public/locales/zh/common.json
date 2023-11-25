@@ -99,5 +99,11 @@
   "Contact Us": "联系我们",
   "Buy": "购买",
   "Checking Payment Results": "正在查询支付结果",
-  "Cluster Pay Success": "购买 {{clusterType}} 成功"
+  "Cluster Pay Success": "购买 {{clusterType}} 成功",
+  "common": {
+    "input": {
+      "Repeat Value": "出入重复"
+    }
+  },
+  "Enter Save": "回车保存"
 }

@@ -35,7 +35,7 @@ export default function CronJobList({ instanceName }: { instanceName: string }) 
       appKey: 'system-cronjob',
       pathname: '/job/detail',
       query: { name: name },
-      messageData: {}
+      messageData: { type: 'InternalAppCall', name: name }
     });
   }, []);
 

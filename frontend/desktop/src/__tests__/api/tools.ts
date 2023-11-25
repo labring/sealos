@@ -50,10 +50,11 @@ export const cleanDb = async (db: Db) => {
   );
 };
 
-export const _setAuth = (request: AxiosInstance) => (session: Session) => {
+export const _setAuth = (request: AxiosInstance) => (session: Partial<Session>) => {
   request.interceptors.request.clear();
-  request.interceptors.request.use((config) => {
-    config.headers.Authorization = session?.token;
-    return config;
-  });
+  session?.token &&
+    request.interceptors.request.use((config) => {
+      config.headers.Authorization = session.token;
+      return config;
+    });
 };

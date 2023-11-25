@@ -4,6 +4,7 @@ import type { DBType, PodDetailType } from '@/types/db';
 import { json2Restart } from '@/utils/json2Yaml';
 import { json2StartOrStop } from '../utils/json2Yaml';
 import type { SecretResponse } from '@/pages/api/getSecretByName';
+import { V1Service, V1StatefulSet } from '@kubernetes/client-node';
 
 export const getMyDBList = () => GET('/api/getDBList').then((data) => data.map(adaptDBListItem));
 
@@ -55,3 +56,11 @@ export const startDBByName = (data: { dbName: string; dbType: DBType }) => {
   });
   return applyYamlList([yaml], 'update');
 };
+
+export const getDBServiceByName = (name: string) =>
+  GET<V1Service>(`/api/getServiceByName?name=${name}`);
+
+export const delDBServiceByName = (name: string) => DELETE('/api/delServiceByName', { name });
+
+export const getDBStatefulSetByName = (name: string, dbType: DBType) =>
+  GET<V1StatefulSet>(`/api/getStatefulSetByName?name=${name}&dbType=${dbType}`);

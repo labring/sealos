@@ -12,4 +12,5 @@ use (
 	./license
 	./job/init
 	./pkg
+	./objectstorage
 )

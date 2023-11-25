@@ -56,7 +56,6 @@ const (
 
 const (
 	DefaultDomainSuffix = ".cloud.sealos.io"
-	AuthType            = "basicAuth"
 )
 
 // Reconciler reconciles a Bytebase object
