@@ -4,15 +4,16 @@ import { deleteResource } from '@/services/backend/api';
 import { authSession } from '@/services/backend/auth';
 import { getKubeApiParams } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
+import { mustGetTypedProperty } from '@/utils/api';
+import { isString } from 'lodash';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (req.method !== 'DELETE') throw new Error(`Method not allowed: ${req.method}`);
 
-    const { resource, name } = req.query;
-    if (typeof resource !== 'string') throw new Error(`invalid resource ${resource}`);
-    if (typeof name !== 'string') throw new Error(`invalid name ${name}`);
+    const resource = mustGetTypedProperty(req.query, 'resource', isString, 'string');
+    const name = mustGetTypedProperty(req.query, 'name', isString, 'string');
 
     const apiBaseParams = ApiBaseParamsMap[resource as ResourceKey];
     if (!apiBaseParams) throw new Error(`invalid resource ${resource}`);

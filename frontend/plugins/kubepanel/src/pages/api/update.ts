@@ -6,21 +6,20 @@ import { getKubeApiParams } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { NextApiRequest, NextApiResponse } from 'next';
 import yaml from 'js-yaml';
+import { mustGetTypedProperty } from '@/utils/api';
+import { isString } from 'lodash';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (req.method !== 'PUT') throw new Error(`Method not allowed: ${req.method}`);
 
-    const { resource, name } = req.query;
-    if (typeof resource !== 'string') throw new Error(`invalid resource ${resource}`);
-    if (typeof name !== 'string') throw new Error(`invalid name ${name}`);
+    const resource = mustGetTypedProperty(req.query, 'resource', isString, 'string');
+    const name = mustGetTypedProperty(req.query, 'name', isString, 'string');
 
     const apiBaseParams = ApiBaseParamsMap[resource as ResourceKey];
     if (!apiBaseParams) throw new Error(`invalid resource ${resource}`);
 
-    if (!req.body.data || typeof req.body.data !== 'string')
-      throw new Error(`invalid body data ${req.body.data}`);
-    const resourceData = yaml.load(req.body.data);
+    const resourceData = yaml.load(mustGetTypedProperty(req.body, 'data', isString, 'string'));
 
     const { serverUrl, requestOpts, namespace } = getKubeApiParams(await authSession(req.headers));
     const data = await updateResource(
@@ -31,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       name,
       resourceData
     );
-    
+
     jsonRes(res, {
       code: 200,
       data

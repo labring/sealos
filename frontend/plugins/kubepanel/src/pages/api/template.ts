@@ -1,15 +1,13 @@
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { NextApiRequest, NextApiResponse } from 'next';
-import yaml from 'js-yaml';
 import fs from 'fs';
-import { startCase } from 'lodash';
+import { isString, startCase } from 'lodash';
+import { mustGetTypedProperty } from '@/utils/api';
 
 export default function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { name } = req.query;
-
-    if (typeof name !== 'string') throw new Error(`invalid param ${name}`);
+    const name = mustGetTypedProperty(req.query, 'name', isString, 'string');
 
     const templatePath = `${process.cwd()}/public/create-resource-templates/${name}.yaml`;
 
