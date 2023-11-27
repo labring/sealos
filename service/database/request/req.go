@@ -84,6 +84,10 @@ func GetQuery(query *api.PromRequest) (string, error) {
 	}
 
 	fmt.Println(query.Cluster)
+	if query.Type == "minio" {
+		instance := os.Getenv("OBJECT_STORAGE_INSTANCE")
+		result = strings.ReplaceAll(result, "#", instance)
+	}
 	result = strings.ReplaceAll(result, "#", query.NS)
 	result = strings.ReplaceAll(result, "@", query.Cluster)
 	return result, nil
