@@ -26,7 +26,7 @@ func TestGetUserObjectStorageFlow(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	bytes, err := GetUserObjectStorageFlow(cli, os.Getenv("PROM_URL"), os.Getenv("MINIO_USERNAME"))
+	bytes, err := GetUserObjectStorageFlow(cli, os.Getenv("PROM_URL"), os.Getenv("MINIO_USERNAME"), os.Getenv("MINIO_INSTANCE"))
 	if err != nil {
 		t.Error(err)
 	}

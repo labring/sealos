@@ -55,8 +55,8 @@ func GetObjectStorageSize(client *minio.Client, bucket string) (int64, int64) {
 	return totalSize, objectsCount
 }
 
-func GetObjectStorageFlow(promURL, bucket string) (int64, error) {
-	flow, err := QueryPrometheus(promURL, bucket)
+func GetObjectStorageFlow(promURL, bucket, instance string) (int64, error) {
+	flow, err := QueryPrometheus(promURL, bucket, instance)
 	if err != nil {
 		return 0, fmt.Errorf("failed to query prometheus, bucket: %v, err: %v", bucket, err)
 	}
@@ -79,7 +79,7 @@ func GetUserObjectStorageSize(client *minio.Client, username string) (int64, int
 	return totalSize, objectsCount, nil
 }
 
-func GetUserObjectStorageFlow(client *minio.Client, promURL, username string) (int64, error) {
+func GetUserObjectStorageFlow(client *minio.Client, promURL, username, instance string) (int64, error) {
 	buckets, err := ListUserObjectStorageBucket(client, username)
 	if err != nil {
 		return 0, fmt.Errorf("failed to list object storage buckets: %v", err)
@@ -87,7 +87,7 @@ func GetUserObjectStorageFlow(client *minio.Client, promURL, username string) (i
 
 	var totalFlow int64
 	for _, bucketName := range buckets {
-		flow, err := QueryPrometheus(promURL, bucketName)
+		flow, err := QueryPrometheus(promURL, bucketName, instance)
 		if err != nil {
 			return 0, fmt.Errorf("failed to query prometheus, bucket: %v, err: %v", bucketName, err)
 		}
@@ -97,7 +97,7 @@ func GetUserObjectStorageFlow(client *minio.Client, promURL, username string) (i
 	return totalFlow, nil
 }
 
-func QueryPrometheus(host, bucketName string) (int64, error) {
+func QueryPrometheus(host, bucketName, instance string) (int64, error) {
 	client, err := api.NewClient(api.Config{
 		Address: host,
 	})
@@ -109,7 +109,7 @@ func QueryPrometheus(host, bucketName string) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	rcvdQuery := "sum(minio_bucket_traffic_received_bytes{bucket=\"" + bucketName + "\"})"
+	rcvdQuery := "sum(minio_bucket_traffic_received_bytes{bucket=\"" + bucketName + "\", instance=\"" + instance + "\"})"
 	rcvdResult, rcvdWarnings, err := v1api.Query(ctx, rcvdQuery, time.Now(), v1.WithTimeout(5*time.Second))
 	if err != nil {
 		return 0, fmt.Errorf("failed to query prometheus, query: %v, err: %v", rcvdQuery, err)
@@ -119,7 +119,7 @@ func QueryPrometheus(host, bucketName string) (int64, error) {
 		return 0, fmt.Errorf("there are warnings: %v", rcvdWarnings)
 	}
 
-	sentQuery := "sum(minio_bucket_traffic_sent_bytes{bucket=\"" + bucketName + "\"})"
+	sentQuery := "sum(minio_bucket_traffic_sent_bytes{bucket=\"" + bucketName + "\", instance=\"" + instance + "\"})"
 	sentResult, sentWarnings, err := v1api.Query(ctx, sentQuery, time.Now(), v1.WithTimeout(5*time.Second))
 	if err != nil {
 		return 0, fmt.Errorf("failed to query prometheus, query: %v, err: %v", sentQuery, err)
