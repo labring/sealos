@@ -57,17 +57,18 @@ import (
 type MonitorReconciler struct {
 	client.Client
 	logr.Logger
-	Interval          time.Duration
-	Scheme            *runtime.Scheme
-	stopCh            chan struct{}
-	wg                sync.WaitGroup
-	periodicReconcile time.Duration
-	NvidiaGpu         map[string]gpu.NvidiaGPU
-	DBClient          database.Interface
-	TrafficSvcConn    string
-	Properties        *resources.PropertyTypeLS
-	PromURL           string
-	ObjStorageClient  *minio.Client
+	Interval              time.Duration
+	Scheme                *runtime.Scheme
+	stopCh                chan struct{}
+	wg                    sync.WaitGroup
+	periodicReconcile     time.Duration
+	NvidiaGpu             map[string]gpu.NvidiaGPU
+	DBClient              database.Interface
+	TrafficSvcConn        string
+	Properties            *resources.PropertyTypeLS
+	PromURL               string
+	ObjStorageClient      *minio.Client
+	ObjectStorageInstance string
 }
 
 type quantity struct {
@@ -76,8 +77,9 @@ type quantity struct {
 }
 
 const (
-	TrafficSvcConn = "TRAFFICS_SERVICE_CONNECT_ADDRESS"
-	PrometheusURL  = "PROM_URL"
+	TrafficSvcConn        = "TRAFFICS_SERVICE_CONNECT_ADDRESS"
+	PrometheusURL         = "PROM_URL"
+	ObjectStorageInstance = "OBJECT_STORAGE_INSTANCE"
 )
 
 const (
@@ -102,12 +104,13 @@ var namespaceMonitorFuncs = make(map[string]func(ctx context.Context, namespace 
 
 func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 	r := &MonitorReconciler{
-		Client:            mgr.GetClient(),
-		Logger:            ctrl.Log.WithName("controllers").WithName("Monitor"),
-		stopCh:            make(chan struct{}),
-		periodicReconcile: 1 * time.Minute,
-		TrafficSvcConn:    os.Getenv(TrafficSvcConn),
-		PromURL:           os.Getenv(PrometheusURL),
+		Client:                mgr.GetClient(),
+		Logger:                ctrl.Log.WithName("controllers").WithName("Monitor"),
+		stopCh:                make(chan struct{}),
+		periodicReconcile:     1 * time.Minute,
+		TrafficSvcConn:        os.Getenv(TrafficSvcConn),
+		PromURL:               os.Getenv(PrometheusURL),
+		ObjectStorageInstance: os.Getenv(ObjectStorageInstance),
 	}
 	var err error
 	err = retry.Retry(2, 1*time.Second, func() error {
@@ -383,7 +386,7 @@ func (r *MonitorReconciler) getObjStorageUsed(user string, namedMap *map[string]
 		if count == 0 {
 			continue
 		}
-		bytes, err := objstorage.GetObjectStorageFlow(r.PromURL, buckets[i])
+		bytes, err := objstorage.GetObjectStorageFlow(r.PromURL, buckets[i], r.ObjectStorageInstance)
 		if err != nil {
 			return fmt.Errorf("failed to get object storage user storage flow: %w", err)
 		}
