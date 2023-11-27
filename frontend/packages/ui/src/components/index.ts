@@ -37,6 +37,7 @@ import GithubIcon from './icons/GithubIcon';
 import GoogleIcon from './icons/GoogleIcon';
 import WechatIcon from './icons/WechatIcon';
 import ListIcon from './icons/ListIcon';
+import PortIcon from './icons/PortIcon';
 export {
   YamlCode,
   EditTabs,
@@ -76,5 +77,6 @@ export {
   StorageIcon,
   UploadIcon,
   VisibityIcon,
-  WechatIcon
+  WechatIcon,
+  PortIcon
 };
