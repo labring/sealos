@@ -2,6 +2,7 @@ export type BaseResourceType = {
   id: string;
   name: string;
   kind: ResourceKindType;
+  apiVersion?: string;
 };
 
 export type ResourceKindType =
@@ -24,4 +25,5 @@ export type OtherResourceListItemType = {
   createTime: string;
   kind: ResourceKindType;
   label: string;
+  apiVersion?: string;
 };
