@@ -8,7 +8,7 @@ import {
 } from '@/k8slens/kube-object';
 import { isDefined } from '@/k8slens/utilities';
 import { GET } from '@/services/request';
-import { isArray, startCase } from 'lodash';
+import { isArray } from 'lodash';
 
 export const getResource = async <Object extends KubeObject = KubeObject>(
   resource: Resources
@@ -16,11 +16,7 @@ export const getResource = async <Object extends KubeObject = KubeObject>(
   try {
     const res = await GET<unknown>(`/api/list?resource=${resource}`);
 
-    const parsed = parseResponse<Object>(
-      res,
-      startCase(resource),
-      KubeObjectConstructorMap[resource]
-    );
+    const parsed = parseResponse<Object>(res, KubeObjectConstructorMap[resource]);
 
     if (isArray(parsed)) {
       return parsed;
@@ -43,7 +39,6 @@ const parseResponse = <
   Data extends KubeJsonApiDataFor<Object> = KubeJsonApiDataFor<Object>
 >(
   data: unknown,
-  kind: string,
   objectConstructor: KubeObjectConstructor<Object, Data>
 ): Object[] | null => {
   if (!data) {
@@ -63,7 +58,7 @@ const parseResponse = <
 
         const object = new KubeObjectConstructor({
           ...(item as Data),
-          kind: kind,
+          kind: objectConstructor.kind,
           apiVersion
         });
         return object;

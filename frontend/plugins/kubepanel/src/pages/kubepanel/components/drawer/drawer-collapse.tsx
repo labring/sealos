@@ -1,4 +1,4 @@
-import { KubeRecord } from '@/components/kube/kube-record';
+import { DrawerItem } from '@/pages/kubepanel/components/drawer/drawer-item';
 import { Collapse, ConfigProvider } from 'antd';
 
 interface Props {
@@ -21,12 +21,12 @@ const DrawerCollapse = ({ children, header }: Props) => {
       }}
     >
       <Collapse
-        className="py-2 bg-transparent rounded-none border-b border-solid border-color-border"
+        className="bg-transparent rounded-none"
         expandIconPosition="end"
         bordered={false}
       >
         <Collapse.Panel
-          header={<KubeRecord padding={false} name={header.name} value={header.value} />}
+          header={<DrawerItem padding={false} name={header.name} value={header.value} />}
           key="1"
         >
           {children}

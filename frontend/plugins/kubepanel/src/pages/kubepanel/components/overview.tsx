@@ -1,12 +1,15 @@
 import AppLayout from './layout';
-import OverviewPage from './workload/overview/overview';
+import OverviewPage from './kube-object/workload/overview/overview';
 import { useState } from 'react';
 import { SideNavItemKey } from './sidebar/sidebar';
-import PodOverviewPage from './workload/pod/pod';
-import DeploymentOverviewPage from './workload/deployment/deployment';
-import StatefulSetOverviewPage from './workload/statefulset/statefulset';
-import ConfigMapOverviewPage from './config/config-map/config-map';
-import PersistentVolumeClaimOverviewPage from './storage/volume-claim/volume-claim';
+import PodOverviewPage from './kube-object/workload/pod/pod';
+import DeploymentOverviewPage from './kube-object/workload/deployment/deployment';
+import StatefulSetOverviewPage from './kube-object/workload/statefulset/statefulset';
+import ConfigMapOverviewPage from './kube-object/config/config-map/config-map';
+import PersistentVolumeClaimOverviewPage from './kube-object/storage/volume-claim/volume-claim';
+import { FloatButton } from 'antd';
+import CreateResourceModal from './modal/create-resource-modal';
+import { PlusOutlined } from '@ant-design/icons';
 
 const switchPage = (key: SideNavItemKey): React.ReactNode => {
   switch (key) {
@@ -29,10 +32,20 @@ const switchPage = (key: SideNavItemKey): React.ReactNode => {
 
 const Home = () => {
   const [sideNavItemKey, setSideNavItemKey] = useState(SideNavItemKey.Overview);
+  const [openCreateResourceModal, setOpenCreateResourceModal] = useState(false);
 
   return (
     <AppLayout onClickSideNavItem={(key: SideNavItemKey) => setSideNavItemKey(key)}>
       {switchPage(sideNavItemKey)}
+      <FloatButton
+        icon={<PlusOutlined />}
+        type="primary"
+        onClick={() => setOpenCreateResourceModal(true)}
+      />
+      <CreateResourceModal
+        open={openCreateResourceModal}
+        setClose={() => setOpenCreateResourceModal(false)}
+      />
     </AppLayout>
   );
 };
