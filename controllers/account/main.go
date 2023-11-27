@@ -147,8 +147,9 @@ func main() {
 		os.Exit(1)
 	}
 	if err = (&controllers.DebtReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		DBClient: dbClient,
 	}).SetupWithManager(mgr, rateOpts); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Debt")
 		os.Exit(1)

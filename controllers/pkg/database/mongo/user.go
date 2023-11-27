@@ -18,6 +18,9 @@ func (m *mongoDB) GetUser(name string) (*types.User, error) {
 	var user types.User
 	err := collection.FindOne(context.Background(), bson.M{"k8s_users.name": name}).Decode(&user)
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("failed to find user: error = %v", err)
 	}
 	return &user, nil

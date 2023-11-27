@@ -19,8 +19,14 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/alibabacloud-go/tea/tea"
+
+	"github.com/labring/sealos/controllers/pkg/database"
 
 	client2 "github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
 	"github.com/labring/sealos/controllers/account/controllers/utils"
@@ -44,16 +50,32 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-const DebtDetectionCycleEnv = "DebtDetectionCycleSeconds"
+const (
+	DebtDetectionCycleEnv = "DebtDetectionCycleSeconds"
+
+	SMSAccessKeyIDEnv     = "SMS_AK"
+	SMSAccessKeySecretEnv = "SMS_SK"
+	SMSEndpointEnv        = "SMS_ENDPOINT"
+	SMSSignNameEnv        = "SMS_SIGN_NAME"
+	SMSCodeMapEnv         = "SMS_CODE_MAP"
+)
 
 // DebtReconciler reconciles a Debt object
 type DebtReconciler struct {
 	client.Client
+	DBClient           database.Auth
 	Scheme             *runtime.Scheme
 	DebtDetectionCycle time.Duration
 	logr.Logger
 	accountSystemNamespace string
 	accountNamespace       string
+	SmsConfig              *SmsConfig
+}
+
+type SmsConfig struct {
+	Client      *client2.Client
+	SmsSignName string
+	SmsCode     map[int]string
 }
 
 var DebtConfig = accountv1.DefaultDebtConfig
@@ -154,7 +176,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			return nil
 		}
 		update = SetDebtStatus(debt, accountv1.WarningPeriod)
-		if err := r.sendWarningNotice(ctx, userNamespaceList); err != nil {
+		if err := r.sendWarningNotice(ctx, debt.Spec.UserName, oweamount, userNamespaceList); err != nil {
 			r.Logger.Error(err, "send warning notice error")
 		}
 	case accountv1.WarningPeriod:
@@ -177,7 +199,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			return nil
 		}
 		update = SetDebtStatus(debt, accountv1.ApproachingDeletionPeriod)
-		if err := r.sendApproachingDeletionNotice(ctx, userNamespaceList); err != nil {
+		if err := r.sendApproachingDeletionNotice(ctx, debt.Spec.UserName, oweamount, userNamespaceList); err != nil {
 			r.Logger.Error(err, "sendApproachingDeletionNotice error")
 		}
 
@@ -200,7 +222,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			return nil
 		}
 		update = SetDebtStatus(debt, accountv1.ImminentDeletionPeriod)
-		if err := r.sendImminentDeletionNotice(ctx, userNamespaceList); err != nil {
+		if err := r.sendImminentDeletionNotice(ctx, debt.Spec.UserName, oweamount, userNamespaceList); err != nil {
 			r.Logger.Error(err, "sendImminentDeletionNotice error")
 		}
 		if err := r.SuspendUserResource(ctx, userNamespaceList); err != nil {
@@ -230,7 +252,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		}
 		// TODO 暂时只暂停资源，后续会添加真正删除全部资源逻辑, 或直接删除namespace
 		update = SetDebtStatus(debt, accountv1.FinalDeletionPeriod)
-		if err := r.sendFinalDeletionNotice(ctx, userNamespaceList); err != nil {
+		if err := r.sendFinalDeletionNotice(ctx, debt.Spec.UserName, oweamount, userNamespaceList); err != nil {
 			r.Error(err, "sendFinalDeletionNotice error")
 		}
 		if err := r.SuspendUserResource(ctx, userNamespaceList); err != nil {
@@ -352,17 +374,27 @@ var NoticeTemplateZH = map[int]string{
 }
 
 func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType int) error {
-	// TODO send sms
-
-	clt, err := utils.CreateSMSClient()
-	if err != nil {
-		return err
+	if r.SmsConfig == nil {
+		return nil
 	}
-	utils.SendSms(clt, &client2.SendSmsRequest{})
-	return nil
+	// TODO send sms
+	usr, err := r.DBClient.GetUser(user)
+	if err != nil {
+		return fmt.Errorf("failed to get user: %w", err)
+	}
+	if usr == nil || usr.Phone == "" {
+		r.Logger.Info("user not exist or user phone is empty, skip sms notification", "user", user)
+		return nil
+	}
+	return utils.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
+		PhoneNumbers:  tea.String(usr.Phone),
+		SignName:      tea.String(r.SmsConfig.SmsSignName),
+		TemplateCode:  tea.String(r.SmsConfig.SmsCode[noticeType]),
+		TemplateParam: tea.String("{\"oweAmount\":\"" + strconv.FormatInt(oweAmount, 10) + "\"}, \"user_id\":\"" + user + "\"}"),
+	})
 }
 
-func (r *DebtReconciler) sendNotice(ctx context.Context, noticeType int, namespaces []string) error {
+func (r *DebtReconciler) sendNotice(ctx context.Context, user string, oweAmount int64, noticeType int, namespaces []string) error {
 	now := time.Now().UTC().Unix()
 	ntfTmp := &v1.Notification{
 		ObjectMeta: metav1.ObjectMeta{
@@ -394,23 +426,23 @@ func (r *DebtReconciler) sendNotice(ctx context.Context, noticeType int, namespa
 			return err
 		}
 	}
-	return nil
+	return r.sendSMSNotice(user, oweAmount, noticeType)
 }
 
-func (r *DebtReconciler) sendWarningNotice(ctx context.Context, namespaces []string) error {
-	return r.sendNotice(ctx, WarningNotice, namespaces)
+func (r *DebtReconciler) sendWarningNotice(ctx context.Context, user string, oweAmount int64, namespaces []string) error {
+	return r.sendNotice(ctx, user, oweAmount, WarningNotice, namespaces)
 }
 
-func (r *DebtReconciler) sendApproachingDeletionNotice(ctx context.Context, namespaces []string) error {
-	return r.sendNotice(ctx, ApproachingDeletionNotice, namespaces)
+func (r *DebtReconciler) sendApproachingDeletionNotice(ctx context.Context, user string, oweAmount int64, namespaces []string) error {
+	return r.sendNotice(ctx, user, oweAmount, ApproachingDeletionNotice, namespaces)
 }
 
-func (r *DebtReconciler) sendImminentDeletionNotice(ctx context.Context, namespaces []string) error {
-	return r.sendNotice(ctx, ImminentDeletionNotice, namespaces)
+func (r *DebtReconciler) sendImminentDeletionNotice(ctx context.Context, user string, oweAmount int64, namespaces []string) error {
+	return r.sendNotice(ctx, user, oweAmount, ImminentDeletionNotice, namespaces)
 }
 
-func (r *DebtReconciler) sendFinalDeletionNotice(ctx context.Context, namespaces []string) error {
-	return r.sendNotice(ctx, FinalDeletionNotice, namespaces)
+func (r *DebtReconciler) sendFinalDeletionNotice(ctx context.Context, user string, oweAmount int64, namespaces []string) error {
+	return r.sendNotice(ctx, user, oweAmount, FinalDeletionNotice, namespaces)
 }
 
 func (r *DebtReconciler) SuspendUserResource(ctx context.Context, namespaces []string) error {
@@ -436,6 +468,45 @@ func (r *DebtReconciler) updateNamespaceStatus(ctx context.Context, status strin
 	return nil
 }
 
+// convert "1:code1,2:code2" to map[int]string
+func splitSmsCodeMap(codeStr string) (map[int]string, error) {
+	codeMap := make(map[int]string)
+	for _, code := range strings.Split(codeStr, ",") {
+		split := strings.SplitN(code, ":", 2)
+		if len(split) != 2 {
+			return nil, fmt.Errorf("invalid sms code map: %s", codeStr)
+		}
+		codeInt, err := strconv.Atoi(split[0])
+		if err != nil {
+			return nil, fmt.Errorf("invalid sms code map: %s", codeStr)
+		}
+		codeMap[codeInt] = split[1]
+	}
+	return codeMap, nil
+}
+
+func setupSmsConfig() (*SmsConfig, error) {
+	if err := env.CheckEnvSetting([]string{SMSAccessKeyIDEnv, SMSAccessKeySecretEnv, SMSEndpointEnv, SMSSignNameEnv, SMSCodeMapEnv}); err != nil {
+		return nil, fmt.Errorf("check env setting error: %w", err)
+	}
+
+	smsCodeMap, err := splitSmsCodeMap(os.Getenv(SMSCodeMapEnv))
+	if err != nil {
+		return nil, fmt.Errorf("split sms code map error: %w", err)
+	}
+
+	smsClient, err := utils.CreateSMSClient(os.Getenv(SMSAccessKeyIDEnv), os.Getenv(SMSAccessKeySecretEnv), os.Getenv(SMSEndpointEnv))
+	if err != nil {
+		return nil, fmt.Errorf("create sms client error: %w", err)
+	}
+
+	return &SmsConfig{
+		Client:      smsClient,
+		SmsSignName: os.Getenv(SMSSignNameEnv),
+		SmsCode:     smsCodeMap,
+	}, nil
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	r.Logger = ctrl.Log.WithName("DebtController")
@@ -444,6 +515,13 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.
 	setDefaultDebtPeriodWaitSecond()
 	debtDetectionCycleSecond := env.GetInt64EnvWithDefault(DebtDetectionCycleEnv, 60)
 	r.DebtDetectionCycle = time.Duration(debtDetectionCycleSecond) * time.Second
+
+	smsConfig, err := setupSmsConfig()
+	if err != nil {
+		r.Logger.Error(err, "Failed to set up SMS configuration")
+	} else {
+		r.SmsConfig = smsConfig
+	}
 
 	/*
 		{"DebtConfig":{
