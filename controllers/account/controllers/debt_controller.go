@@ -22,6 +22,9 @@ import (
 	"strconv"
 	"time"
 
+	client2 "github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
+	"github.com/labring/sealos/controllers/account/controllers/utils"
+
 	"github.com/go-logr/logr"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
@@ -312,25 +315,74 @@ const (
 	FinalDeletionNotice
 )
 
-var NoticeTemplate = map[int]string{
+const (
+	fromEn = "Debt-System"
+	fromZh = "欠费系统"
+	//languageEn = "en"
+	languageZh       = "zh"
+	debtChoicePrefix = "debt-choice-"
+)
+
+var NoticeTemplateEN = map[int]string{
 	WarningNotice:             "Your account balance is not enough to pay this month's bill, and services will be suspended for you. Please recharge in time to avoid affecting your normal use.",
 	ApproachingDeletionNotice: "Your account balance is not enough to pay this month's bill. The system will delete your resources after three days or after the arrears exceed the recharge amount. Please recharge in time to avoid affecting your normal use.",
 	ImminentDeletionNotice:    "Your container instance resources have been suspended. If you are still in arrears for more than 7 days, the resources will be completely deleted and cannot be recovered. Please recharge in time to avoid affecting your normal use.",
 	FinalDeletionNotice:       "The system has completely deleted all your resources, please recharge in time to avoid affecting your normal use.",
 }
 
+var TitleTemplateZH = map[int]string{
+	WarningNotice:             "欠费告警",
+	ApproachingDeletionNotice: "资源暂停告警",
+	ImminentDeletionNotice:    "资源释放告警",
+	FinalDeletionNotice:       "资源已释放告警",
+}
+
+var TitleTemplateEN = map[int]string{
+	WarningNotice:             "Debt Warning",
+	ApproachingDeletionNotice: "Resource Suspension Warning",
+	ImminentDeletionNotice:    "Resource Release Warning",
+	FinalDeletionNotice:       "Resource Release Warning",
+}
+
+var NoticeTemplateZH = map[int]string{
+	WarningNotice:             "您的账户余额不足，系统将为您暂停服务，请及时充值，以免影响您的正常使用。",
+	ApproachingDeletionNotice: "您的账户余额不足，系统将在三天后或欠费超过充值金额后释放您的资源，请及时充值，以免影响您的正常使用。",
+	ImminentDeletionNotice:    "您的容器实例资源已被暂停，若您仍欠费超过7天，系统将彻底释放资源，无法恢复，请及时充值，以免影响您的正常使用。",
+	FinalDeletionNotice:       "系统已彻底释放您的所有资源，请及时充值，以免影响您的正常使用。",
+}
+
+func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType int) error {
+	// TODO send sms
+
+	clt, err := utils.CreateSMSClient()
+	if err != nil {
+		return err
+	}
+	utils.SendSms(clt, &client2.SendSmsRequest{})
+	return nil
+}
+
 func (r *DebtReconciler) sendNotice(ctx context.Context, noticeType int, namespaces []string) error {
 	now := time.Now().UTC().Unix()
 	ntfTmp := &v1.Notification{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "debt-notice" + strconv.Itoa(noticeType),
+			Name: debtChoicePrefix + strconv.Itoa(noticeType),
 		},
 		Spec: v1.NotificationSpec{
-			Title:      "Debt Notice",
-			Message:    NoticeTemplate[noticeType],
-			From:       "Debt-System",
-			Importance: v1.High,
-			Timestamp:  now,
+			Title:        TitleTemplateEN[noticeType],
+			Message:      NoticeTemplateEN[noticeType],
+			From:         fromEn,
+			Importance:   v1.High,
+			DesktopPopup: true,
+			Timestamp:    now,
+			I18n: []v1.I18n{
+				{
+					Language: languageZh,
+					Title:    TitleTemplateZH[noticeType],
+					From:     fromZh,
+					Message:  NoticeTemplateZH[noticeType],
+				},
+			},
 		},
 	}
 	for i := range namespaces {
