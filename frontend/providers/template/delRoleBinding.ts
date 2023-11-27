@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
-    const result = await k8sAuth.deleteNamespacedRoleBinding(instanceName, namespace);
+    const result = await k8sAuth.deleteClusterRoleBinding(instanceName, namespace);
 
     jsonRes(res, { data: result });
   } catch (err: any) {

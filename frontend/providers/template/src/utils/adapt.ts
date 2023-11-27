@@ -114,7 +114,8 @@ export const adaptOtherList = (
         name: item.metadata?.name || '',
         createTime: dayjs(item.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
         kind: item.kind as ResourceKindType,
-        label: labels[componentLabel] ?? ''
+        label: labels[componentLabel] ?? '',
+        apiVersion: item.apiVersion
       };
     });
   });
