@@ -948,6 +948,10 @@ export const json2DumpCR = async (data: DumpForm) => {
               image: systemEnvs?.migrate_file_image,
               env: [
                 {
+                  name: 'MINIO_URL',
+                  value: `https://${systemEnvs?.minio_url}`
+                },
+                {
                   name: 'DATABASE_USER',
                   value: data.databaseUser
                 },

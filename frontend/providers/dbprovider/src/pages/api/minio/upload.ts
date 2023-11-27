@@ -65,7 +65,7 @@ const upload = new UploadModel();
 
 const minioClient = new Minio.Client({
   endPoint: process.env?.MINIO_URL || 'minioapi.dev.sealos.top',
-  port: 80,
+  port: Number(process.env?.MINIO_PORT) || 80,
   useSSL: false,
   accessKey: process.env?.MINIO_ACCESS_KEY || 'database',
   secretKey: process.env?.MINIO_SECRET_KEY || 'database'
@@ -84,26 +84,20 @@ export default async function handler(req: any, res: NextApiResponse) {
       kubeconfig: await authSession(req)
     });
     const { files } = await upload.doUpload(req, res);
-    console.log(files, '===files===');
-    const bucketName = process.env?.BUCKET_NAME || 'database-test';
+    const bucketName = process.env?.MINIO_BUCKET_NAME || 'database-test';
 
     const startTime = performance.now();
     const upLoadResults = await Promise.all(
       files.map(async (file) => {
         const fileName = `${namespace}-${Date.now()}-${file.filename}`;
-        return minioClient
-          .fPutObject(bucketName, fileName, file.path)
-          .then((res) => {
-            return fileName;
-          })
-          .catch((err) => {
-            return null;
-          });
+        await minioClient.fPutObject(bucketName, fileName, file.path);
+        return fileName;
       })
     );
     const endTime = performance.now();
     const duration = endTime - startTime;
-    console.log(`代码块运行时间：${duration} 毫秒`);
+    console.log(upLoadResults);
+    console.log(`file:${files} time:${duration}`);
 
     jsonRes(res, {
       data: upLoadResults
