@@ -1010,8 +1010,10 @@ export const json2NetworkService = ({
     kind: 'Service',
     metadata: {
       name: `${dbDetail.dbName}-export`,
-      'app.kubernetes.io/instance': dbDetail.dbName,
-      'apps.kubeblocks.io/component-name': dbDetail.dbType,
+      labels: {
+        'app.kubernetes.io/instance': dbDetail.dbName,
+        'apps.kubeblocks.io/component-name': dbDetail.dbType
+      },
       ownerReferences: [
         {
           apiVersion: dbStatefulSet.apiVersion,
