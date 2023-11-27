@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package database
+package mongo
 
 import (
 	"context"
@@ -21,6 +21,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/labring/sealos/controllers/pkg/database"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
 
@@ -38,33 +40,28 @@ import (
 )
 
 const (
-	DefaultDBName         = "sealos-resources"
+	DefaultAccountDBName  = "sealos-resources"
+	DefaultAuthDBName     = "sealos-auth"
 	DefaultMeteringConn   = "metering"
 	DefaultMonitorConn    = "monitor"
 	DefaultBillingConn    = "billing"
+	DefaultUserConn       = "user"
 	DefaultPricesConn     = "prices"
 	DefaultPropertiesConn = "properties"
 )
 
 const DefaultRetentionDay = 30
 
-const (
-	MongoURI           = "MONGO_URI"
-	MongoUsername      = "MONGO_USERNAME"
-	MongoPassword      = "MONGO_PASSWORD"
-	RetentionDay       = "RETENTION_DAY"
-	PermanentRetention = "PERMANENT_RETENTION"
-)
-
 // override this value at build time
 const defaultCryptoKey = "Af0b2Bc5e9d0C84adF0A5887cF43aB63"
 
 var cryptoKey = defaultCryptoKey
 
-type MongoDB struct {
-	URL               string
+type mongoDB struct {
 	Client            *mongo.Client
-	DBName            string
+	AccountDB         string
+	AuthDB            string
+	UserConn          string
 	MonitorConnPrefix string
 	MeteringConn      string
 	BillingConn       string
@@ -79,11 +76,11 @@ type AccountBalanceSpecBSON struct {
 	accountv1.BillingRecordQueryItemInline `json:",inline" bson:",inline"`
 }
 
-func (m *MongoDB) Disconnect(ctx context.Context) error {
+func (m *mongoDB) Disconnect(ctx context.Context) error {
 	return m.Client.Disconnect(ctx)
 }
 
-func (m *MongoDB) GetBillingLastUpdateTime(owner string, _type accountv1.Type) (bool, time.Time, error) {
+func (m *mongoDB) GetBillingLastUpdateTime(owner string, _type accountv1.Type) (bool, time.Time, error) {
 	filter := bson.M{
 		"owner": owner,
 		"type":  _type,
@@ -106,7 +103,7 @@ func (m *MongoDB) GetBillingLastUpdateTime(owner string, _type accountv1.Type) (
 	return false, time.Time{}, fmt.Errorf("failed to convert time field to primitive.DateTime: %v", result["time"])
 }
 
-func (m *MongoDB) GetUnsettingBillingHandler(owner string) ([]resources.BillingHandler, error) {
+func (m *mongoDB) GetUnsettingBillingHandler(owner string) ([]resources.BillingHandler, error) {
 	filter := bson.M{
 		"owner": owner,
 		"status": bson.M{
@@ -135,7 +132,7 @@ func (m *MongoDB) GetUnsettingBillingHandler(owner string) ([]resources.BillingH
 	return results, nil
 }
 
-func (m *MongoDB) UpdateBillingStatus(orderID string, status resources.BillingStatus) error {
+func (m *mongoDB) UpdateBillingStatus(orderID string, status resources.BillingStatus) error {
 	// create a query filter
 	filter := bson.M{"order_id": orderID}
 	update := bson.M{
@@ -150,7 +147,7 @@ func (m *MongoDB) UpdateBillingStatus(orderID string, status resources.BillingSt
 	return nil
 }
 
-func (m *MongoDB) GetBillingHistoryNamespaces(startTime, endTime *time.Time, billType int, owner string) ([]string, error) {
+func (m *mongoDB) GetBillingHistoryNamespaces(startTime, endTime *time.Time, billType int, owner string) ([]string, error) {
 	filter := bson.M{
 		"owner": owner,
 	}
@@ -188,7 +185,7 @@ func (m *MongoDB) GetBillingHistoryNamespaces(startTime, endTime *time.Time, bil
 	return result.Namespaces, nil
 }
 
-func (m *MongoDB) GetBillingHistoryNamespaceList(nsHistorySpec *accountv1.NamespaceBillingHistorySpec, owner string) ([]string, error) {
+func (m *mongoDB) GetBillingHistoryNamespaceList(nsHistorySpec *accountv1.NamespaceBillingHistorySpec, owner string) ([]string, error) {
 	filter := bson.M{
 		"owner": owner,
 	}
@@ -226,7 +223,7 @@ func (m *MongoDB) GetBillingHistoryNamespaceList(nsHistorySpec *accountv1.Namesp
 	return result.Namespaces, nil
 }
 
-func (m *MongoDB) SaveBillings(billing ...*resources.Billing) error {
+func (m *mongoDB) SaveBillings(billing ...*resources.Billing) error {
 	billings := make([]interface{}, len(billing))
 	for i, b := range billing {
 		billings[i] = b
@@ -237,7 +234,7 @@ func (m *MongoDB) SaveBillings(billing ...*resources.Billing) error {
 
 // InsertMonitor insert monitor data to mongodb collection monitor + time (eg: monitor_20200101)
 // The monitor data is saved daily 2020-12-01 00:00:00 - 2020-12-01 23:59:59 => monitor_20201201
-func (m *MongoDB) InsertMonitor(ctx context.Context, monitors ...*resources.Monitor) error {
+func (m *mongoDB) InsertMonitor(ctx context.Context, monitors ...*resources.Monitor) error {
 	if len(monitors) == 0 {
 		return nil
 	}
@@ -249,7 +246,7 @@ func (m *MongoDB) InsertMonitor(ctx context.Context, monitors ...*resources.Moni
 	return err
 }
 
-func (m *MongoDB) GetAllPricesMap() (map[string]resources.Price, error) {
+func (m *mongoDB) GetAllPricesMap() (map[string]resources.Price, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	cursor, err := m.getPricesCollection().Find(ctx, bson.M{})
@@ -279,7 +276,7 @@ func (m *MongoDB) GetAllPricesMap() (map[string]resources.Price, error) {
 	return pricesMap, nil
 }
 
-func (m *MongoDB) InitDefaultPropertyTypeLS() error {
+func (m *mongoDB) InitDefaultPropertyTypeLS() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	cursor, err := m.getPropertiesCollection().Find(ctx, bson.M{})
@@ -296,7 +293,7 @@ func (m *MongoDB) InitDefaultPropertyTypeLS() error {
 	return nil
 }
 
-func (m *MongoDB) SavePropertyTypes(types []resources.PropertyType) error {
+func (m *mongoDB) SavePropertyTypes(types []resources.PropertyType) error {
 	tps := make([]interface{}, len(types))
 	for i, b := range types {
 		tps[i] = b
@@ -307,7 +304,7 @@ func (m *MongoDB) SavePropertyTypes(types []resources.PropertyType) error {
 
 // 2020-12-01 23:00:00 - 2020-12-02 00:00:00
 // 2020-12-02 00:00:00 - 2020-12-02 01:00:00
-func (m *MongoDB) GenerateMeteringData(startTime, endTime time.Time, prices map[string]resources.Price) error {
+func (m *mongoDB) GenerateMeteringData(startTime, endTime time.Time, prices map[string]resources.Price) error {
 	filter := bson.M{
 		"time": bson.M{
 			"$gte": startTime,
@@ -398,7 +395,7 @@ func (m *MongoDB) GenerateMeteringData(startTime, endTime time.Time, prices map[
 		Name:     resourceMap[name].Name(),
 	})
 */
-func (m *MongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resources.PropertyTypeLS, namespaces []string, owner string) (orderID []string, amount int64, err error) {
+func (m *mongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resources.PropertyTypeLS, namespaces []string, owner string) (orderID []string, amount int64, err error) {
 	minutes := endTime.Sub(startTime).Minutes()
 
 	groupStage := bson.D{
@@ -554,7 +551,7 @@ func (m *MongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 	return orderID, amount, nil
 }
 
-func (m *MongoDB) GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error) {
+func (m *mongoDB) GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error) {
 	filter := bson.M{"category": category, "property": property}
 	// sort by time desc
 	opts := options.FindOne().SetSort(bson.D{primitive.E{Key: "time", Value: -1}})
@@ -573,7 +570,7 @@ func (m *MongoDB) GetUpdateTimeForCategoryAndPropertyFromMetering(category strin
 	return result.Time, nil
 }
 
-func (m *MongoDB) queryBillingRecordsByOrderID(billingRecordQuery *accountv1.BillingRecordQuery, owner string) error {
+func (m *mongoDB) queryBillingRecordsByOrderID(billingRecordQuery *accountv1.BillingRecordQuery, owner string) error {
 	if billingRecordQuery.Spec.OrderID == "" {
 		return fmt.Errorf("order id is empty")
 	}
@@ -642,7 +639,7 @@ func (m *MongoDB) queryBillingRecordsByOrderID(billingRecordQuery *accountv1.Bil
 	return nil
 }
 
-func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecordQuery, owner string) (err error) {
+func (m *mongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecordQuery, owner string) (err error) {
 	if billingRecordQuery.Spec.OrderID != "" {
 		return m.queryBillingRecordsByOrderID(billingRecordQuery, owner)
 	}
@@ -836,7 +833,7 @@ func (m *MongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	return nil
 }
 
-func (m *MongoDB) GetBillingCount(accountType accountv1.Type, startTime, endTime time.Time) (count, amount int64, err error) {
+func (m *mongoDB) GetBillingCount(accountType accountv1.Type, startTime, endTime time.Time) (count, amount int64, err error) {
 	filter := bson.M{
 		"type": accountType,
 		"time": bson.M{
@@ -869,38 +866,38 @@ func (m *MongoDB) GetBillingCount(accountType accountv1.Type, startTime, endTime
 	return
 }
 
-func (m *MongoDB) getMeteringCollection() *mongo.Collection {
-	return m.Client.Database(m.DBName).Collection(m.MeteringConn)
+func (m *mongoDB) getMeteringCollection() *mongo.Collection {
+	return m.Client.Database(m.AccountDB).Collection(m.MeteringConn)
 }
 
-func (m *MongoDB) getMonitorCollection(collTime time.Time) *mongo.Collection {
+func (m *mongoDB) getMonitorCollection(collTime time.Time) *mongo.Collection {
 	// 2020-12-01 00:00:00 - 2020-12-01 23:59:59
-	return m.Client.Database(m.DBName).Collection(m.getMonitorCollectionName(collTime))
+	return m.Client.Database(m.AccountDB).Collection(m.getMonitorCollectionName(collTime))
 }
 
-func (m *MongoDB) getMonitorCollectionName(collTime time.Time) string {
+func (m *mongoDB) getMonitorCollectionName(collTime time.Time) string {
 	// Calculate the suffix by day, for example, the suffix on the first day of 202012 is 20201201
 	return fmt.Sprintf("%s_%s", m.MonitorConnPrefix, collTime.Format("20060102"))
 }
 
-func (m *MongoDB) getPricesCollection() *mongo.Collection {
-	return m.Client.Database(m.DBName).Collection(m.PricesConn)
+func (m *mongoDB) getPricesCollection() *mongo.Collection {
+	return m.Client.Database(m.AccountDB).Collection(m.PricesConn)
 }
 
-func (m *MongoDB) getBillingCollection() *mongo.Collection {
-	return m.Client.Database(m.DBName).Collection(m.BillingConn)
+func (m *mongoDB) getBillingCollection() *mongo.Collection {
+	return m.Client.Database(m.AccountDB).Collection(m.BillingConn)
 }
 
-func (m *MongoDB) getPropertiesCollection() *mongo.Collection {
-	return m.Client.Database(m.DBName).Collection(m.PropertiesConn)
+func (m *mongoDB) getPropertiesCollection() *mongo.Collection {
+	return m.Client.Database(m.AccountDB).Collection(m.PropertiesConn)
 }
 
-func (m *MongoDB) CreateBillingIfNotExist() error {
-	if exist, err := m.collectionExist(m.DBName, m.BillingConn); exist || err != nil {
+func (m *mongoDB) CreateBillingIfNotExist() error {
+	if exist, err := m.collectionExist(m.AccountDB, m.BillingConn); exist || err != nil {
 		return err
 	}
 	ctx := context.Background()
-	err := m.Client.Database(m.DBName).CreateCollection(ctx, m.BillingConn)
+	err := m.Client.Database(m.AccountDB).CreateCollection(ctx, m.BillingConn)
 	if err != nil {
 		return fmt.Errorf("failed to create collection for billing: %w", err)
 	}
@@ -928,11 +925,11 @@ func (m *MongoDB) CreateBillingIfNotExist() error {
 }
 
 // CreateMonitorTimeSeriesIfNotExist creates the time series table for monitor
-func (m *MongoDB) CreateMonitorTimeSeriesIfNotExist(collTime time.Time) error {
-	return m.CreateTimeSeriesIfNotExist(m.DBName, m.getMonitorCollectionName(collTime))
+func (m *mongoDB) CreateMonitorTimeSeriesIfNotExist(collTime time.Time) error {
+	return m.CreateTimeSeriesIfNotExist(m.AccountDB, m.getMonitorCollectionName(collTime))
 }
 
-func (m *MongoDB) CreateTimeSeriesIfNotExist(dbName, collectionName string) error {
+func (m *mongoDB) CreateTimeSeriesIfNotExist(dbName, collectionName string) error {
 	// Check if the collection already exists
 	if exist, err := m.collectionExist(dbName, collectionName); exist || err != nil {
 		return err
@@ -946,8 +943,8 @@ func (m *MongoDB) CreateTimeSeriesIfNotExist(dbName, collectionName string) erro
 	return m.Client.Database(dbName).RunCommand(context.TODO(), cmd).Err()
 }
 
-func (m *MongoDB) DropMonitorCollectionsOlderThan(days int) error {
-	db := m.Client.Database(m.DBName)
+func (m *mongoDB) DropMonitorCollectionsOlderThan(days int) error {
+	db := m.Client.Database(m.AccountDB)
 	// Get the current time minus the number of days
 	cutoffDate := time.Now().UTC().AddDate(0, 0, -days)
 	cutoffName := m.getMonitorCollectionName(cutoffDate)
@@ -968,22 +965,23 @@ func (m *MongoDB) DropMonitorCollectionsOlderThan(days int) error {
 	return nil
 }
 
-func (m *MongoDB) collectionExist(dbName, collectionName string) (bool, error) {
+func (m *mongoDB) collectionExist(dbName, collectionName string) (bool, error) {
 	// Check if the collection already exists
 	collections, err := m.Client.Database(dbName).ListCollectionNames(context.Background(), bson.M{"name": collectionName})
 	return len(collections) > 0, err
 }
 
-func NewMongoDB(ctx context.Context, URL string) (Interface, error) {
+func NewMongoInterface(ctx context.Context, URL string) (database.Interface, error) {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(URL))
 	if err != nil {
 		return nil, err
 	}
 	err = client.Ping(ctx, nil)
-	return &MongoDB{
+	return &mongoDB{
 		Client:            client,
-		URL:               URL,
-		DBName:            DefaultDBName,
+		AccountDB:         DefaultAccountDBName,
+		AuthDB:            DefaultAuthDBName,
+		UserConn:          DefaultUserConn,
 		MeteringConn:      DefaultMeteringConn,
 		MonitorConnPrefix: DefaultMonitorConn,
 		BillingConn:       DefaultBillingConn,

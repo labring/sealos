@@ -18,11 +18,22 @@ import (
 	"context"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/types"
+
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/pkg/resources"
 )
 
 type Interface interface {
+	Account
+	Auth
+}
+
+type Auth interface {
+	GetUser(k8sUser string) (*types.User, error)
+}
+
+type Account interface {
 	//InitDB() error
 	GetBillingLastUpdateTime(owner string, _type accountv1.Type) (bool, time.Time, error)
 	GetBillingHistoryNamespaceList(ns *accountv1.NamespaceBillingHistorySpec, owner string) ([]string, error)
@@ -55,3 +66,15 @@ type MeteringOwnerTimeResult struct {
 	Amount int64            `bson:"amount"`
 	Costs  map[string]int64 `bson:"costs"`
 }
+
+//func NewDBInterface(ctx context.Context, mongoURI string) (Interface, error) {
+//	return mongo.NewMongoInterface(ctx, mongoURI)
+//}
+
+const (
+	MongoURI = "MONGO_URI"
+	//MongoUsername      = "MONGO_USERNAME"
+	//MongoPassword      = "MONGO_PASSWORD"
+	//RetentionDay       = "RETENTION_DAY"
+	//PermanentRetention = "PERMANENT_RETENTION"
+)

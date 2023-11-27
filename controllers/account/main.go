@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/database/mongo"
+
 	"github.com/labring/sealos/controllers/pkg/resources"
 
 	"github.com/labring/sealos/controllers/pkg/database"
@@ -118,7 +120,7 @@ func main() {
 		RateLimiter:             rate.GetRateLimiter(rateLimiterOptions),
 	}
 	dbCtx := context.Background()
-	dbClient, err := database.NewMongoDB(dbCtx, os.Getenv(database.MongoURI))
+	dbClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.MongoURI))
 	if err != nil {
 		setupLog.Error(err, "unable to connect to mongo")
 		os.Exit(1)
