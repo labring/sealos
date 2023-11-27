@@ -77,6 +77,8 @@ func GetQuery(query *api.PromRequest) (string, error) {
 		result = api.Pgsql[query.Query]
 	case "minio":
 		result = api.Minio[query.Query]
+	case "kafka":
+		result = api.Kafka[query.Query]
 	default:
 		fmt.Println(query.Type)
 	}
