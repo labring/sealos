@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Flex, useTheme } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useAppStore } from '@/store/app';
@@ -11,10 +11,12 @@ import Pods from './components/Pods';
 import dynamic from 'next/dynamic';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { serviceSideProps } from '@/utils/i18n';
+import useDetailDriver from '@/hooks/useDetailDriver';
 
 const AppMainInfo = dynamic(() => import('./components/AppMainInfo'), { ssr: false });
 
 const AppDetail = ({ appName }: { appName: string }) => {
+  const { UserGuide, showGuide, startGuide } = useDetailDriver();
   const theme = useTheme();
   const { toast } = useToast();
   const { Loading } = useLoading();
@@ -35,6 +37,9 @@ const AppDetail = ({ appName }: { appName: string }) => {
         title: String(err),
         status: 'error'
       });
+    },
+    onSuccess: () => {
+      startGuide();
     }
   });
 

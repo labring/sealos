@@ -24,8 +24,6 @@
   "confirmNewPassword": "确认新密码",
   "passwordMismatch": "密码不一致",
   "passwordChangeSuccess": "密码修改成功",
-  "passwordMismatch": "密码不一致",
-  "newPassword": "新密码",
   "Verify password": "确认密码",
   "change": "修改",
   "Invalid username or password": "用户名或密码错误",

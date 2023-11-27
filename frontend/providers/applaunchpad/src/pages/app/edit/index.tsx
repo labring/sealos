@@ -30,6 +30,7 @@ import { getErrText, patchYamlListV1, patchYamlList } from '@/utils/tools';
 import { useTranslation } from 'next-i18next';
 import { noGpuSliderKey } from '@/constants/app';
 import { useUserStore } from '@/store/user';
+import useDriver from '@/hooks/useDriver';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
@@ -86,6 +87,7 @@ export const formData2Yamls = (
 ];
 
 const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) => {
+  const { UserGuide, showGuide, startGuide } = useDriver();
   const { t } = useTranslation();
 
   const crOldYamls = useRef<DeployKindsType[]>([]);
@@ -277,6 +279,10 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       } catch (error) {}
     }
   }, [appName, router.query.name, tabType]);
+
+  useEffect(() => {
+    startGuide();
+  }, []);
 
   return (
     <>

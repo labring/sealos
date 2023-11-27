@@ -57,7 +57,15 @@ const Header = ({
       >
         {t('Export')} Yaml
       </Button>
-      <Button px={4} minW={'140px'} h={'40px'} variant={'primary'} onClick={applyCb}>
+      <Button
+        className="driver-deploy-button"
+        px={4}
+        minW={'140px'}
+        h={'40px'}
+        variant={'primary'}
+        onClick={applyCb}
+        _focusVisible={{ boxShadow: '' }}
+      >
         {t(applyBtnText)}
       </Button>
     </Flex>
