@@ -27,10 +27,10 @@ import (
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 )
 
-func GetUserObjectStorageSize(client *minio.Client, username string) (int64, int64, error) {
+func ListUserObjectStorageBucket(client *minio.Client, username string) ([]string, error) {
 	buckets, err := client.ListBuckets(context.Background())
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to list object storage buckets")
+		return nil, err
 	}
 
 	var expectBuckets []string
@@ -38,38 +38,55 @@ func GetUserObjectStorageSize(client *minio.Client, username string) (int64, int
 		if strings.HasPrefix(bucket.Name, username) {
 			expectBuckets = append(expectBuckets, bucket.Name)
 		}
+	}
+	return expectBuckets, nil
+}
+
+func GetObjectStorageSize(client *minio.Client, bucket string) (int64, int64) {
+	objects := client.ListObjects(context.Background(), bucket, minio.ListObjectsOptions{
+		Recursive: true,
+	})
+	var totalSize int64
+	var objectsCount int64
+	for object := range objects {
+		totalSize += object.Size
+		objectsCount++
+	}
+	return totalSize, objectsCount
+}
+
+func GetObjectStorageFlow(promURL, bucket string) (int64, error) {
+	flow, err := QueryPrometheus(promURL, bucket)
+	if err != nil {
+		return 0, fmt.Errorf("failed to query prometheus, bucket: %v, err: %v", bucket, err)
+	}
+	return flow, nil
+}
+
+func GetUserObjectStorageSize(client *minio.Client, username string) (int64, int64, error) {
+	buckets, err := ListUserObjectStorageBucket(client, username)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to list object storage buckets: %v", err)
 	}
 
 	var totalSize int64
 	var objectsCount int64
-	for _, bucketName := range expectBuckets {
-		objects := client.ListObjects(context.Background(), bucketName, minio.ListObjectsOptions{
-			Recursive: true,
-		})
-		for object := range objects {
-			totalSize += object.Size
-			objectsCount++
-		}
+	for _, bucketName := range buckets {
+		size, count := GetObjectStorageSize(client, bucketName)
+		totalSize += size
+		objectsCount += count
 	}
-
 	return totalSize, objectsCount, nil
 }
 
 func GetUserObjectStorageFlow(client *minio.Client, promURL, username string) (int64, error) {
-	buckets, err := client.ListBuckets(context.Background())
+	buckets, err := ListUserObjectStorageBucket(client, username)
 	if err != nil {
-		return 0, fmt.Errorf("failed to list object storage buckets")
-	}
-
-	var expectBuckets []string
-	for _, bucket := range buckets {
-		if strings.HasPrefix(bucket.Name, username) {
-			expectBuckets = append(expectBuckets, bucket.Name)
-		}
+		return 0, fmt.Errorf("failed to list object storage buckets: %v", err)
 	}
 
 	var totalFlow int64
-	for _, bucketName := range expectBuckets {
+	for _, bucketName := range buckets {
 		flow, err := QueryPrometheus(promURL, bucketName)
 		if err != nil {
 			return 0, fmt.Errorf("failed to query prometheus, bucket: %v, err: %v", bucketName, err)

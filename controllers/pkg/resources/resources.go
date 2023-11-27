@@ -159,22 +159,24 @@ const (
 	terminal
 	job
 	other
+	objectStorage
 )
 
 const (
-	DB       = "DB"
-	APP      = "APP"
-	TERMINAL = "TERMINAL"
-	JOB      = "JOB"
-	OTHER    = "OTHER"
+	DB            = "DB"
+	APP           = "APP"
+	TERMINAL      = "TERMINAL"
+	JOB           = "JOB"
+	OTHER         = "OTHER"
+	ObjectStorage = "OBJECT-STORAGE"
 )
 
 var AppType = map[string]uint8{
-	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other,
+	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other, ObjectStorage: objectStorage,
 }
 
 var AppTypeReverse = map[uint8]string{
-	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER,
+	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER, objectStorage: ObjectStorage,
 }
 
 // resource consumption
@@ -190,6 +192,7 @@ type PropertyType struct {
 	PriceType string `json:"price_type,omitempty" bson:"price_type,omitempty"`
 	// Price = UsedAmount (avg || accumulated-value || difference-value) / Unit * UnitPrice
 	UnitPrice        float64           `json:"unit_price" bson:"unit_price"`
+	ViewPrice        float64           `json:"view_price" bson:"view_price"`
 	EncryptUnitPrice string            `json:"encrypt_unit_price" bson:"encrypt_unit_price"`
 	Unit             resource.Quantity `json:"-" bson:"-"`
 	// <digit>           ::= 0 | 1 | ... | 9
@@ -258,6 +261,15 @@ var DefaultPropertyTypeList = []PropertyType{
 		PriceType:  DIF,
 		UnitPrice:  0,
 		UnitString: "1Mi",
+	},
+	{
+		// monitor unit: 1 node port = 1000 unit
+		Name:       "services.nodeports",
+		Enum:       4,
+		PriceType:  AVG,
+		UnitPrice:  500,
+		ViewPrice:  500000,
+		UnitString: "1",
 	},
 }
 
