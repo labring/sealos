@@ -391,7 +391,7 @@ func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType 
 		PhoneNumbers:  tea.String(usr.Phone),
 		SignName:      tea.String(r.SmsConfig.SmsSignName),
 		TemplateCode:  tea.String(r.SmsConfig.SmsCode[noticeType]),
-		TemplateParam: tea.String("{\"oweAmount\":\"" + strconv.FormatInt(oweAmount, 10) + "\"}, \"user_id\":\"" + user + "\"}"),
+		TemplateParam: tea.String("{\"user_id\":\"" + user + "\",\"oweamount\":\"" + strconv.FormatInt(oweAmount, 10) + "\"}"),
 	})
 }
 

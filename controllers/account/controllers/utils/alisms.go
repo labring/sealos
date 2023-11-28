@@ -15,6 +15,8 @@
 package utils
 
 import (
+	"fmt"
+
 	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
 	dysmsapi20170525 "github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
 	util "github.com/alibabacloud-go/tea-utils/v2/service"
@@ -37,8 +39,14 @@ func CreateSMSClient(ak, sk, endpoint string) (*dysmsapi20170525.Client, error) 
 //	   TemplateCode: tea.String("SMS_xxx"),
 //	   TemplateParam: tea.String("{\"code\":\"1234\"}"),
 //	 }/*
-func SendSms(client *dysmsapi20170525.Client, req *dysmsapi20170525.SendSmsRequest) error {
+func SendSms(client *dysmsapi20170525.Client, req *dysmsapi20170525.SendSmsRequest) (err error) {
 	runtime := &util.RuntimeOptions{}
-	_, err := client.SendSmsWithOptions(req, runtime)
+	resp, err := client.SendSmsWithOptions(req, runtime)
+	if err != nil {
+		return err
+	}
+	if *resp.Body.Code != "OK" {
+		return fmt.Errorf("send sms err code %s: %s", *resp.Body.Code, *resp.Body.Message)
+	}
 	return err
 }
