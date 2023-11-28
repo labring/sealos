@@ -52,10 +52,10 @@ $ echo 1 > /proc/sys/net/ipv4/ip_forward
    在主节点 `master0` 上，您需要先备份当前使用的证书。这是一个防止更新过程中出现问题而导致证书丢失的重要步骤。使用以下命令进行备份：
 
    ```shell
-   $ kubectl get secret -n sealos-system wildcard-secret -o yaml > cert-backup.yaml
+   $ kubectl get secret -n sealos-system wildcard-cert -o yaml > cert-backup.yaml
    ```
 
-   此命令会将名为 `wildcard-secret` 的证书以 YAML 格式保存到文件 `cert-backup.yaml` 中。
+   此命令会将名为 `wildcard-cert` 的证书以 YAML 格式保存到文件 `cert-backup.yaml` 中。
 
 2. **保存新证书**：
 

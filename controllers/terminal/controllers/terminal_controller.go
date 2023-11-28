@@ -416,7 +416,7 @@ func getSecretNamespace() string {
 }
 
 func (r *TerminalReconciler) getPort() string {
-	if r.terminalPort == "" {
+	if r.terminalPort == "" || r.terminalPort == "80" || r.terminalPort == "443" {
 		return ""
 	}
 	return ":" + r.terminalPort
