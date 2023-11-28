@@ -51,10 +51,10 @@ Certificates are crucial for the security of your Sealos cluster. Follow these s
    On the `master0` node, backup your current certificate. This step is crucial to prevent loss of the certificate during the update process. Use this command:
 
    ```shell
-   $ kubectl get secret -n sealos-system wildcard-secret -o yaml > cert-backup.yaml
+   $ kubectl get secret -n sealos-system wildcard-cert -o yaml > cert-backup.yaml
    ```
 
-   This will save the `wildcard-secret` certificate in YAML format to `cert-backup.yaml`.
+   This will save the `wildcard-cert` certificate in YAML format to `cert-backup.yaml`.
 
 2. **Storing the New Certificate**:
 
