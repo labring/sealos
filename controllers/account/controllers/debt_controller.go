@@ -404,27 +404,29 @@ func (r *DebtReconciler) sendNotice(ctx context.Context, user string, oweAmount 
 		ObjectMeta: metav1.ObjectMeta{
 			Name: debtChoicePrefix + strconv.Itoa(noticeType),
 		},
-		Spec: v1.NotificationSpec{
-			Title:        TitleTemplateEN[noticeType],
-			Message:      NoticeTemplateEN[noticeType],
-			From:         fromEn,
-			Importance:   v1.High,
-			DesktopPopup: true,
-			Timestamp:    now,
-			I18n: []v1.I18n{
-				{
-					Language: languageZh,
-					Title:    TitleTemplateZH[noticeType],
-					From:     fromZh,
-					Message:  NoticeTemplateZH[noticeType],
-				},
+	}
+	ntfTmpSpc := v1.NotificationSpec{
+		Title:        TitleTemplateEN[noticeType],
+		Message:      NoticeTemplateEN[noticeType],
+		From:         fromEn,
+		Importance:   v1.High,
+		DesktopPopup: true,
+		Timestamp:    now,
+		I18n: []v1.I18n{
+			{
+				Language: languageZh,
+				Title:    TitleTemplateZH[noticeType],
+				From:     fromZh,
+				Message:  NoticeTemplateZH[noticeType],
 			},
 		},
 	}
 	for i := range namespaces {
 		ntf := ntfTmp.DeepCopy()
+		ntfSpec := ntfTmpSpc.DeepCopy()
 		ntf.Namespace = namespaces[i]
 		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, ntf, func() error {
+			ntf.Spec = *ntfSpec
 			return nil
 		}); err != nil {
 			return err

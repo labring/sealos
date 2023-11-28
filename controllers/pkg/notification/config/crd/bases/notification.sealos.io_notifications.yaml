@@ -51,8 +51,27 @@ spec:
               UserName and whether read will be set in label,because set in label
               is ease to query
             properties:
+              desktopPopup:
+                type: boolean
               from:
                 type: string
+              i18ns:
+                items:
+                  properties:
+                    from:
+                      type: string
+                    language:
+                      type: string
+                    message:
+                      type: string
+                    title:
+                      type: string
+                  required:
+                  - language
+                  - message
+                  - title
+                  type: object
+                type: array
               importance:
                 type: string
               message:
