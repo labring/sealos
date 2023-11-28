@@ -393,16 +393,11 @@ func (r *NamespaceReconciler) setOSUserStatus(ctx context.Context, user string, 
 func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Log = ctrl.Log.WithName("controllers").WithName("Namespace")
 
-	oSAdminSecret := os.Getenv(OSAdminSecret)
-	r.OSAdminSecret = oSAdminSecret
+	r.OSAdminSecret = os.Getenv(OSAdminSecret)
+	r.InternalEndpoint = os.Getenv(OSInternalEndpointEnv)
+	r.OSNamespace = os.Getenv(OSNamespace)
 
-	internalEndpoint := os.Getenv(OSInternalEndpointEnv)
-	r.InternalEndpoint = internalEndpoint
-
-	oSNamespace := os.Getenv(OSNamespace)
-	r.OSNamespace = oSNamespace
-
-	if r.OSAdminSecret == "" || internalEndpoint == "" || oSNamespace == "" {
+	if r.OSAdminSecret == "" || r.InternalEndpoint == "" || r.OSNamespace == "" {
 		return fmt.Errorf("failed to get the endpoint or namespace or admin secret env of object storage")
 	}
 
