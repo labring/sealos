@@ -412,12 +412,11 @@ func (r *DebtReconciler) sendNotice(ctx context.Context, user string, oweAmount 
 		Importance:   v1.High,
 		DesktopPopup: true,
 		Timestamp:    now,
-		I18n: []v1.I18n{
-			{
-				Language: languageZh,
-				Title:    TitleTemplateZH[noticeType],
-				From:     fromZh,
-				Message:  NoticeTemplateZH[noticeType],
+		I18n: map[string]v1.I18n{
+			languageZh: {
+				Title:   TitleTemplateZH[noticeType],
+				From:    fromZh,
+				Message: NoticeTemplateZH[noticeType],
 			},
 		},
 	}
