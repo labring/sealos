@@ -45,7 +45,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const { dbPods } = useDBStore();
 
   const supportConnectDB = useMemo(() => {
-    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'kafka'].find(
+    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis'].find(
       (item) => item === db.dbType
     );
   }, [db.dbType]);
