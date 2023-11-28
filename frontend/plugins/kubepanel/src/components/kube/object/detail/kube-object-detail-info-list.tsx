@@ -34,7 +34,7 @@ export const KubeObjectInfoList = ({ hiddenFields = ['uid', 'resourceVersion'], 
         name="Created"
         value={
           <>
-            <KubeObjectAge creationTimestamp={creationTimestamp} compact={false} />
+            <KubeObjectAge obj={obj} compact={false} />
             {' ago '}
             {creationTimestamp && (
               <LocaleDate date={creationTimestamp} localeTimezone={moment.tz.guess()} />
