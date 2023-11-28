@@ -1,19 +1,9 @@
 package notification
 
-import (
-	//"os"
-	//
-	//openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
-	//dysmsapi20170525 "github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
-	//util "github.com/alibabacloud-go/tea-utils/v2/service"
-	//"github.com/alibabacloud-go/tea/tea"
-	"github.com/labring/sealos/service/notification/types"
-)
-
 type AliSms struct {
 }
 
-func (s *AliSms) SendMessage(message *types.Message, user *types.User, ops types.Options) error {
+func (s *AliSms) SendMessage( /*message *types.Message, user *types.User, ops types.Options*/ ) error {
 	return nil
 }
 
