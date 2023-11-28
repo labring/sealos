@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -387,11 +388,13 @@ func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType 
 		r.Logger.Info("user not exist or user phone is empty, skip sms notification", "user", user)
 		return nil
 	}
+	oweamount := strconv.FormatInt(int64(math.Abs(math.Ceil(float64(oweAmount)/1_000_000))), 10)
 	return utils.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
-		PhoneNumbers:  tea.String(usr.Phone),
-		SignName:      tea.String(r.SmsConfig.SmsSignName),
-		TemplateCode:  tea.String(r.SmsConfig.SmsCode[noticeType]),
-		TemplateParam: tea.String("{\"user_id\":\"" + user + "\",\"oweamount\":\"" + strconv.FormatInt(oweAmount, 10) + "\"}"),
+		PhoneNumbers: tea.String(usr.Phone),
+		SignName:     tea.String(r.SmsConfig.SmsSignName),
+		TemplateCode: tea.String(r.SmsConfig.SmsCode[noticeType]),
+		// ｜ownAmount/1_000_000｜
+		TemplateParam: tea.String("{\"user_id\":\"" + user + "\",\"oweamount\":\"" + oweamount + "\"}"),
 	})
 }
 
