@@ -344,6 +344,11 @@ func (r *NamespaceReconciler) resumeObjectStorage(ctx context.Context, namespace
 }
 
 func (r *NamespaceReconciler) setOSUserStatus(ctx context.Context, user string, status string) error {
+	if r.InternalEndpoint == "" || r.OSNamespace == "" || r.OSAdminSecret == "" {
+		r.Log.V(1).Info("the endpoint or namespace or admin secret env of object storage is nil")
+		return nil
+	}
+
 	if r.OSAdminClient == nil {
 		secret := &corev1.Secret{}
 		if err := r.Client.Get(ctx, client.ObjectKey{Name: r.OSAdminSecret, Namespace: r.OSNamespace}, secret); err != nil {
@@ -400,7 +405,7 @@ func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.OSNamespace = os.Getenv(OSNamespace)
 
 	if r.OSAdminSecret == "" || r.InternalEndpoint == "" || r.OSNamespace == "" {
-		return fmt.Errorf("failed to get the endpoint or namespace or admin secret env of object storage")
+		r.Log.V(1).Info("failed to get the endpoint or namespace or admin secret env of object storage")
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
