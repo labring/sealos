@@ -1,20 +1,34 @@
 import { Flex } from 'antd';
 import WorkloadStatusOverview from './status-overview';
 import { convertToPieChartStatusData } from '@/utils/pie-chart';
-import { DEPLOYMENT_STORE, POD_STORE, STATEFUL_SET_STORE } from '@/store/static';
 import { entries, startCase } from 'lodash';
-import { observer } from 'mobx-react';
 import { useRef } from 'react';
 import { RequestController } from '@/utils/request-controller';
 import { useQuery } from '@tanstack/react-query';
+import {
+  fetchData,
+  getDeploymentsStatuses,
+  getStatefulSetsStatuses,
+  useDeploymentStore,
+  usePodStore,
+  useStatefulSetStore
+} from '@/store/kube';
+import { Resources } from '@/constants/kube-object';
 
 const OverviewPage = () => {
   const requestController = useRef(new RequestController({ timeoutDuration: 10000 }));
+  const { items: pods, replace: podReplace, getStatuses: getPodStatuses } = usePodStore();
+  const { items: deps, replace: deploymentReplace } = useDeploymentStore();
+  const { items: stats, replace: statefulSetReplace } = useStatefulSetStore();
 
   useQuery(
     ['pods', 'deployments', 'statefulSets'],
     () => {
-      const tasks = [POD_STORE.fetchData, DEPLOYMENT_STORE.fetchData, STATEFUL_SET_STORE.fetchData];
+      const tasks = [
+        () => fetchData(podReplace, Resources.Pods),
+        () => fetchData(deploymentReplace, Resources.Deployments),
+        () => fetchData(statefulSetReplace, Resources.StatefulSets)
+      ];
       return requestController.current.runTasks(tasks);
     },
     {
@@ -23,13 +37,9 @@ const OverviewPage = () => {
   );
 
   const statuses = {
-    Pod: convertToPieChartStatusData(POD_STORE.getPodsStatuses()),
-    Deployment: convertToPieChartStatusData(
-      DEPLOYMENT_STORE.getDeploymentsStatuses((labels) => POD_STORE.getByLabel(labels))
-    ),
-    StatefulSet: convertToPieChartStatusData(
-      STATEFUL_SET_STORE.getStatefulSetsStatuses((ownerId) => POD_STORE.getPodsByOwnerId(ownerId))
-    )
+    Pod: convertToPieChartStatusData(getPodStatuses),
+    Deployment: convertToPieChartStatusData(getDeploymentsStatuses(deps, pods)),
+    StatefulSet: convertToPieChartStatusData(getStatefulSetsStatuses(stats, pods))
   };
 
   const overviewStatuses = entries(statuses).map(([key, value]) => ({
@@ -45,4 +55,4 @@ const OverviewPage = () => {
   );
 };
 
-export default observer(OverviewPage);
+export default OverviewPage;

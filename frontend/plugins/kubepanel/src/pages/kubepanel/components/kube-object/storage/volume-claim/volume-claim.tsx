@@ -1,10 +1,8 @@
 import { KubeObjectAge } from '@/components/kube/object/kube-object-age';
 import { PersistentVolumeClaim, Pod } from '@/k8slens/kube-object';
-import { PERSISTENT_VOLUME_CLAIM_STORE, POD_STORE } from '@/store/static';
 import { RequestController } from '@/utils/request-controller';
 import { useQuery } from '@tanstack/react-query';
 import { ColumnsType } from 'antd/es/table';
-import { observer } from 'mobx-react';
 import { useRef, useState } from 'react';
 import PersistentVolumeClaimDetail from './volume-claim-detail';
 import Table from '../../../table/table';
@@ -12,82 +10,60 @@ import ActionButton from '../../../action-button/action-button';
 import { deleteResource } from '@/api/delete';
 import { Resources } from '@/constants/kube-object';
 import { updateResource } from '@/api/update';
+import { fetchData, usePodStore, useVolumeClaimStore } from '@/store/kube';
 
-interface DataType {
-  key: string;
-  name: string;
-  storageClass?: string;
-  storage: string;
-  podsNames: string[];
-  creationTimestamp?: string;
-  status: string;
-}
-
-const getData = (volumeClaim: PersistentVolumeClaim, pods: Pod[]) => {
-  return {
-    key: volumeClaim.getName(),
-    name: volumeClaim.getName(),
-    storageClass: volumeClaim.spec.storageClassName,
-    storage: volumeClaim.getStorage(),
-    podsNames: volumeClaim.getPods(pods).map((pod) => pod.getName()),
-    creationTimestamp: volumeClaim.metadata.creationTimestamp,
-    status: volumeClaim.getStatus()
-  };
-};
-
-const columns: ColumnsType<DataType> = [
+const columns: ColumnsType<{ volumeClaim: PersistentVolumeClaim; pods: Pod[] }> = [
   {
     title: 'Name',
-    dataIndex: 'name',
-    key: 'name'
+    key: 'name',
+    fixed: 'left',
+    render: (_, { volumeClaim }) => volumeClaim.getName()
   },
   {
     title: 'Storage Class',
-    dataIndex: 'storageClass',
-    key: 'storageClass'
+    key: 'storageClass',
+    render: (_, { volumeClaim }) => volumeClaim.spec.storageClassName
   },
   {
     title: 'Size',
-    dataIndex: 'storage',
-    key: 'size'
+    key: 'size',
+    render: (_, { volumeClaim }) => volumeClaim.getStorage()
   },
   {
     title: 'Pods',
-    dataIndex: 'podsNames',
     key: 'pods',
     ellipsis: true,
-    render: (podsNames: string[]) =>
-      podsNames.map((name) => (
+    render: (_, { volumeClaim, pods }) => {
+      const podsNames = volumeClaim.getPods(pods).map((pod) => pod.getName());
+      return podsNames.map((name) => (
         <span key={name} className="text-blue-300 mr-1">
           {name}
         </span>
-      ))
+      ));
+    }
   },
   {
     title: 'Age',
-    dataIndex: 'creationTimestamp',
     key: 'age',
-    render: (creationTimestamp: string) => <KubeObjectAge creationTimestamp={creationTimestamp} />
+    render: (_, { volumeClaim }) => <KubeObjectAge obj={volumeClaim} />
   },
   {
     title: 'Status',
-    dataIndex: 'status',
     fixed: 'right',
-    key: 'status'
+    key: 'status',
+    render: (_, { volumeClaim }) => volumeClaim.getStatus()
   },
   {
     dataIndex: 'name',
     key: 'action',
     fixed: 'right',
-    render: (name: string) => (
+    render: (_, { volumeClaim }) => (
       <ActionButton
-        obj={
-          PERSISTENT_VOLUME_CLAIM_STORE.items.filter(
-            (volumeClaim) => volumeClaim.getName() === name
-          )[0]
+        obj={volumeClaim}
+        onUpdate={(data: string) =>
+          updateResource(data, volumeClaim.getName(), Resources.PersistentVolumeClaims)
         }
-        onUpdate={(data: string) => updateResource(data, name, Resources.PersistentVolumeClaims)}
-        onDelete={() => deleteResource(name, Resources.PersistentVolumeClaims)}
+        onDelete={() => deleteResource(volumeClaim.getName(), Resources.PersistentVolumeClaims)}
       />
     )
   }
@@ -97,11 +73,16 @@ const PersistentVolumeClaimOverviewPage = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
   const [volumeClaim, setVolumeClaim] = useState<PersistentVolumeClaim>();
   const requestController = useRef(new RequestController({ timeoutDuration: 5000 }));
+  const { items: volumeClaims, replace: replaceVolumeClaims } = useVolumeClaimStore();
+  const { items: pods, replace: replacePods } = usePodStore();
 
   useQuery(
     ['persistentVolumeClaims', 'pods'],
     () => {
-      const tasks = [PERSISTENT_VOLUME_CLAIM_STORE.fetchData, POD_STORE.fetchData];
+      const tasks = [
+        () => fetchData(replaceVolumeClaims, Resources.PersistentVolumeClaims),
+        () => fetchData(replacePods, Resources.Pods)
+      ];
       return requestController.current.runTasks(tasks);
     },
     {
@@ -109,21 +90,19 @@ const PersistentVolumeClaimOverviewPage = () => {
     }
   );
 
-  const dataSource = PERSISTENT_VOLUME_CLAIM_STORE.items.map((volumeClaim) =>
-    getData(volumeClaim, POD_STORE.items)
-  );
+  const dataSource = volumeClaims.map((volumeClaim) => ({
+    volumeClaim,
+    pods
+  }));
+
   return (
     <>
       <Table
         title={'Persistent Volume Claims'}
         columns={columns}
         dataSource={dataSource}
-        onRow={(record) => ({
+        onRow={({ volumeClaim }) => ({
           onClick: () => {
-            const { key } = record;
-            const volumeClaim = PERSISTENT_VOLUME_CLAIM_STORE.items.filter(
-              (volumeClaim) => volumeClaim.getName() === key
-            )[0];
             setVolumeClaim(volumeClaim);
             setOpenDrawer(true);
           }
@@ -131,7 +110,7 @@ const PersistentVolumeClaimOverviewPage = () => {
       />
       <PersistentVolumeClaimDetail
         volumeClaim={volumeClaim}
-        pods={POD_STORE.items}
+        pods={pods}
         open={openDrawer}
         onClose={() => setOpenDrawer(false)}
       />
@@ -139,4 +118,4 @@ const PersistentVolumeClaimOverviewPage = () => {
   );
 };
 
-export default observer(PersistentVolumeClaimOverviewPage);
+export default PersistentVolumeClaimOverviewPage;

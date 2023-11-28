@@ -1,4 +1,3 @@
-import { observer } from 'mobx-react';
 import moment from 'moment-timezone';
 
 export type LocaleDateProps = {
@@ -6,6 +5,6 @@ export type LocaleDateProps = {
   localeTimezone: string;
 };
 
-export const LocaleDate = observer(({ date, localeTimezone }: LocaleDateProps) => (
+export const LocaleDate = ({ date, localeTimezone }: LocaleDateProps) => (
   <>{`${moment.tz(date, localeTimezone).format()}`}</>
-));
+);
