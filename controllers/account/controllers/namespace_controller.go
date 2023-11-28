@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -32,7 +33,6 @@ import (
 
 	"github.com/go-logr/logr"
 	v1 "github.com/labring/sealos/controllers/account/api/v1"
-	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"github.com/minio/madmin-go/v3"
 
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
@@ -393,13 +393,13 @@ func (r *NamespaceReconciler) setOSUserStatus(ctx context.Context, user string, 
 func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Log = ctrl.Log.WithName("controllers").WithName("Namespace")
 
-	oSAdminSecret := env.GetEnvWithDefault(OSAdminSecret, "object-storage-sealos-user-0")
+	oSAdminSecret := os.Getenv(OSAdminSecret)
 	r.OSAdminSecret = oSAdminSecret
 
-	internalEndpoint := env.GetEnvWithDefault(OSInternalEndpointEnv, "objectstorageapi.dev.sealos.top")
+	internalEndpoint := os.Getenv(OSInternalEndpointEnv)
 	r.InternalEndpoint = internalEndpoint
 
-	oSNamespace := env.GetEnvWithDefault(OSNamespace, "objectstorage-system")
+	oSNamespace := os.Getenv(OSNamespace)
 	r.OSNamespace = oSNamespace
 
 	if r.OSAdminSecret == "" || internalEndpoint == "" || oSNamespace == "" {
