@@ -154,6 +154,7 @@ export default function Tutorial({
               <CommandForm
                 basePath={`tar xzvf ${fileNameParams} && cd sealos-cloud && bash install.sh `}
                 cloudVersion={ossVersion}
+                enterprise={true}
               />
             </AccordionPanel>
           </AccordionItem>
@@ -169,7 +170,7 @@ export default function Tutorial({
           </AccordionButton>
           <AccordionPanel py="20px" pl="40px" gap={'12px'}>
             <CommandForm
-              basePath={`curl -sfL https://gh-proxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash scripts/load-images.sh  && /tmp/install.sh --zh `}
+              basePath={`curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash scripts/load-images.sh  && bash /tmp/install.sh --zh `}
               cloudVersion={ossVersion}
             />
             <Center
