@@ -32,8 +32,9 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 
 	"github.com/go-logr/logr"
-	v1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/minio/madmin-go/v3"
+
+	v1 "github.com/labring/sealos/controllers/account/api/v1"
 
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 
