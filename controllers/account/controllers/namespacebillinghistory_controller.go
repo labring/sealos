@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/database/mongo"
+
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 
 	"github.com/go-logr/logr"
@@ -59,7 +61,7 @@ type NamespaceBillingHistoryReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
 func (r *NamespaceBillingHistoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	dbCtx := context.Background()
-	dbClient, err := database.NewMongoDB(dbCtx, r.MongoDBURI)
+	dbClient, err := mongo.NewMongoInterface(dbCtx, r.MongoDBURI)
 	if err != nil {
 		r.Logger.Error(err, "connect mongo client failed")
 		return ctrl.Result{Requeue: true}, err
@@ -91,7 +93,7 @@ func (r *NamespaceBillingHistoryReconciler) Reconcile(ctx context.Context, req c
 	return ctrl.Result{}, client.IgnoreNotFound(err)
 }
 
-func (r *NamespaceBillingHistoryReconciler) reconcile(ctx context.Context, req ctrl.Request, dbClient database.Interface, nsHistory *accountv1.NamespaceBillingHistory) error {
+func (r *NamespaceBillingHistoryReconciler) reconcile(ctx context.Context, req ctrl.Request, dbClient database.Account, nsHistory *accountv1.NamespaceBillingHistory) error {
 	user := &userv1.User{}
 	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: getUsername(req.Namespace)}, user); err != nil {
 		return fmt.Errorf("get user failed: %w", err)

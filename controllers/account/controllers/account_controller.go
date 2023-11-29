@@ -71,7 +71,7 @@ type AccountReconciler struct {
 	Scheme                 *runtime.Scheme
 	Logger                 logr.Logger
 	AccountSystemNamespace string
-	DBClient               database.Interface
+	DBClient               database.Account
 	MongoDBURI             string
 }
 

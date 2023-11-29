@@ -51,7 +51,7 @@ type TransferReconciler struct {
 	client.Client
 	Scheme                 *runtime.Scheme
 	AccountSystemNamespace string
-	DBClient               database.Interface
+	DBClient               database.Account
 }
 
 //TODO add user, account role

@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/database/mongo"
+
 	"github.com/labring/sealos/controllers/pkg/database"
 
 	"github.com/labring/sealos/controllers/pkg/resources"
@@ -111,7 +113,7 @@ func main() {
 		setupLog.Error(err, "failed to init monitor reconciler")
 		os.Exit(1)
 	}
-	reconciler.DBClient, err = database.NewMongoDB(context.Background(), os.Getenv(database.MongoURI))
+	reconciler.DBClient, err = mongo.NewMongoInterface(context.Background(), os.Getenv(database.MongoURI))
 	if err != nil {
 		setupLog.Error(err, "failed to init db client")
 		os.Exit(1)
