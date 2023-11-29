@@ -183,8 +183,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
         updateStrategy: {
           type: 'RollingUpdate',
           rollingUpdate: {
-            maxUnavailable: 0,
-            maxSurge: 1
+            maxUnavailable: '50%'
           }
         },
         minReadySeconds: 10,
