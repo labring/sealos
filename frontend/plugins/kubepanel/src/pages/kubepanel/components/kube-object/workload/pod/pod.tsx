@@ -1,14 +1,12 @@
-import { Pod, PodContainerStatus } from '@/k8slens/kube-object';
+import { Pod } from '@/k8slens/kube-object';
 import { Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { keys } from 'lodash';
 import ContainerStatusBrick from './container-status-brick';
 import { KubeObjectAge } from '@/components/kube/object/kube-object-age';
-import { observer } from 'mobx-react';
 import { renderContainerStateTooltipTitle } from './container-status';
 import { PodStatusMessage } from '@/constants/pod';
 import PodStatus from './pod-status';
-import { POD_STORE } from '@/store/static';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import PodDetail from './pod-detail';
@@ -17,83 +15,51 @@ import ActionButton from '../../../action-button/action-button';
 import { deleteResource } from '@/api/delete';
 import { Resources } from '@/constants/kube-object';
 import { updateResource } from '@/api/update';
+import { fetchData, usePodStore } from '@/store/kube';
 
-interface ContainerDataType {
-  name: string;
-  state: string;
-  status: PodContainerStatus | null | undefined;
-}
-
-interface DataType {
-  key: string;
-  name: string;
-  containers: Array<ContainerDataType>;
-  restarts: number;
-  ownerRefs: Array<{
-    name: string;
-    kind: string;
-  }>;
-  qosClass: string;
-  creationTimestamp?: string;
-  status: string;
-}
-
-const getData = (pod: Pod): DataType => {
-  return {
-    key: pod.getName(),
-    name: pod.getName(),
-    containers: pod.getContainers().map((container) => {
-      const status = pod.getContainerStatuses().find((status) => status.name === container.name);
-      const state = status ? keys(status?.state ?? {})[0] : '';
-      return {
-        name: container.name,
-        state,
-        status
-      };
-    }),
-    restarts: pod.getRestartsCount(),
-    ownerRefs: pod.getOwnerRefs(),
-    qosClass: pod.getQosClass(),
-    creationTimestamp: pod.metadata.creationTimestamp,
-    status: pod.getStatusMessage()
-  };
-};
-
-const columns: ColumnsType<DataType> = [
+const columns: ColumnsType<Pod> = [
   {
     title: 'Name',
-    dataIndex: 'name',
     key: 'name',
-    fixed: 'left'
+    fixed: 'left',
+    render: (_, pod) => pod.getName()
   },
   {
     title: 'Containers',
-    dataIndex: 'containers',
     key: 'containers',
-    render: (containers: Array<ContainerDataType>) => (
-      <div>
-        {containers.map(({ name, state, status }) => (
-          <Tooltip key={name} title={renderContainerStateTooltipTitle(name, state, status)}>
-            {/* wrapper */}
-            <span>
-              <ContainerStatusBrick state={state} status={status} />
-            </span>
-          </Tooltip>
-        ))}
-      </div>
-    )
+    render: (_, pod) => {
+      const containers = pod.getContainers().map((container) => {
+        const status = pod.getContainerStatuses().find((status) => status.name === container.name);
+        const state = status ? keys(status?.state ?? {})[0] : '';
+        return {
+          name: container.name,
+          state,
+          status
+        };
+      });
+      return (
+        <div>
+          {containers.map(({ name, state, status }) => (
+            <Tooltip key={name} title={renderContainerStateTooltipTitle(name, state, status)}>
+              {/* wrapper */}
+              <span>
+                <ContainerStatusBrick state={state} status={status} />
+              </span>
+            </Tooltip>
+          ))}
+        </div>
+      );
+    }
   },
   {
     title: 'Restarts',
-    dataIndex: 'restarts',
-    key: 'restarts'
+    key: 'restarts',
+    render: (_, pod) => pod.getRestartsCount()
   },
   {
     title: 'Controlled By',
-    dataIndex: 'ownerRefs',
     key: 'controlled-by',
-    render: (ownerRefs: Array<{ name: string; kind: string }>) =>
-      ownerRefs.map(({ name, kind }) => <span key={name}>{kind}</span>)
+    render: (_, pod) => pod.getOwnerRefs().map(({ name, kind }) => <span key={name}>{kind}</span>)
   },
   {
     title: 'QoS',
@@ -104,26 +70,24 @@ const columns: ColumnsType<DataType> = [
     title: 'Age',
     dataIndex: 'creationTimestamp',
     key: 'age',
-    render: (creationTimestamp: string) => <KubeObjectAge creationTimestamp={creationTimestamp} />
+    render: (_, pod) => <KubeObjectAge obj={pod} />
   },
   {
     title: 'Status',
-    dataIndex: 'status',
     fixed: 'right',
     key: 'status',
     filters: PodStatusMessage.map((value) => ({ text: value, value })),
-    onFilter: (value, record) => record.status === value,
-    render: (status: string) => <PodStatus status={status} />
+    onFilter: (value, pod) => pod.getStatusMessage() === value,
+    render: (_, pod) => <PodStatus status={pod.getStatusMessage()} />
   },
   {
     key: 'action',
-    dataIndex: 'name',
     fixed: 'right',
-    render: (name: string) => (
+    render: (_, pod) => (
       <ActionButton
-        obj={POD_STORE.items.filter((pod) => pod.getName() === name)[0]}
-        onDelete={() => deleteResource(name, Resources.Pods)}
-        onUpdate={(data: string) => updateResource(data, name, Resources.Pods)}
+        obj={pod}
+        onDelete={() => deleteResource(pod.getName(), Resources.Pods)}
+        onUpdate={(data: string) => updateResource(data, pod.getName(), Resources.Pods)}
       />
     )
   }
@@ -132,22 +96,20 @@ const columns: ColumnsType<DataType> = [
 const PodOverviewPage = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
   const [pod, setPod] = useState<Pod>();
+  const { items, replace } = usePodStore();
 
-  useQuery(['pods'], () => POD_STORE.fetchData(), {
+  useQuery(['pods'], () => fetchData(replace, Resources.Pods), {
     refetchInterval: 5000
   });
 
-  const dataSource = POD_STORE.items.map(getData);
   return (
     <>
       <Table
         title={'Pods'}
         columns={columns}
-        dataSource={dataSource}
-        onRow={(record) => ({
+        dataSource={items}
+        onRow={(pod) => ({
           onClick: () => {
-            const { key } = record;
-            const pod = POD_STORE.items.filter((pod) => pod.getName() === key)[0];
             setPod(pod);
             setOpenDrawer(true);
           }
@@ -158,4 +120,4 @@ const PodOverviewPage = () => {
   );
 };
 
-export default observer(PodOverviewPage);
+export default PodOverviewPage;

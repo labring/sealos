@@ -28,6 +28,8 @@ import (
 
 	"github.com/labring/sealos/controllers/resources/controllers"
 
+	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -81,14 +83,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	//if err = (&controllers.MonitorReconciler{
-	//	Client: mgr.GetClient(),
-	//	Scheme: mgr.GetScheme(),
-	//}).SetupWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create controller", "controller", "Monitor")
-	//	os.Exit(1)
-	//}
-
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -133,6 +127,31 @@ func main() {
 		os.Exit(1)
 	}
 	reconciler.Properties = resources.DefaultPropertyTypeLS
+	const (
+		MinioEndpoint = "MINIO_ENDPOINT"
+		MinioAk       = "MINIO_AK"
+		MinioSk       = "MINIO_SK"
+		PromURL       = "PROM_URL"
+	)
+	if endpoint, ak, sk := os.Getenv(MinioEndpoint), os.Getenv(MinioAk), os.Getenv(MinioSk); endpoint != "" && ak != "" && sk != "" {
+		reconciler.Logger.Info("init minio client")
+		if reconciler.ObjStorageClient, err = objectstoragev1.NewOSClient(endpoint, ak, sk); err != nil {
+			reconciler.Logger.Error(err, "failed to new minio client")
+			os.Exit(1)
+		}
+		_, err := reconciler.ObjStorageClient.ListBuckets(context.Background())
+		if err != nil {
+			reconciler.Logger.Error(err, "failed to list minio buckets")
+			os.Exit(1)
+		}
+		if promURL := os.Getenv(PromURL); promURL == "" {
+			reconciler.Logger.Info("prometheus url not found, please check env: PROM_URL")
+		} else {
+			reconciler.PromURL = promURL
+		}
+	} else {
+		reconciler.Logger.Info("minio info not found, please check env: MINIO_ENDPOINT, MINIO_AK, MINIO_SK")
+	}
 	// timer creates tomorrow's timing table in advance to ensure that tomorrow's table exists
 	// Execute immediately and then every 24 hours.
 	time.AfterFunc(time.Until(getNextMidnight()), func() {

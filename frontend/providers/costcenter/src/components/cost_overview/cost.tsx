@@ -16,7 +16,8 @@ export const Cost = memo(function Cost() {
     memory: _deduction?.memory || 0,
     storage: _deduction?.storage || 0,
     network: _deduction?.network || 0,
-    gpu: _deduction?.gpu || 0
+    gpu: _deduction?.gpu || 0,
+    port: _deduction?.port || 0
   };
   return (
     <Flex direction={'column'} flex={1}>

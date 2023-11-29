@@ -239,6 +239,7 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
     k8sEvents: kc.makeApiClient(k8s.EventsV1Api),
     k8sAuth: kc.makeApiClient(k8s.RbacAuthorizationV1Api),
     k8sBatch: kc.makeApiClient(k8s.BatchV1Api),
+    k8sApiextensions: kc.makeApiClient(k8s.ApiextensionsV1Api),
     kube_user,
     namespace,
     applyYamlList

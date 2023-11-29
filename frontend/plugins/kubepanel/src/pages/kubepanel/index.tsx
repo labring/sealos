@@ -1,55 +1,53 @@
-import { useLoading } from '@/hooks/useLoading';
-import { useToast } from '@/hooks/useToast';
-import {
-  CONFIG_MAP_STORE,
-  DEPLOYMENT_STORE,
-  PERSISTENT_VOLUME_CLAIM_STORE,
-  POD_STORE,
-  STATEFUL_SET_STORE
-} from '@/store/static';
-import { RequestController } from '@/utils/request-controller';
-import { CreateToastFnReturn } from '@chakra-ui/react';
-import { isError } from 'lodash';
-import { useEffect, useRef } from 'react';
-import OverviewPage from './components/overview';
-import { observer } from 'mobx-react';
+import AppLayout from './components/layout';
+import OverviewPage from './components/kube-object/workload/overview/overview';
+import { useState } from 'react';
+import { SideNavItemKey } from './components/sidebar/sidebar';
+import PodOverviewPage from './components/kube-object/workload/pod/pod';
+import DeploymentOverviewPage from './components/kube-object/workload/deployment/deployment';
+import StatefulSetOverviewPage from './components/kube-object/workload/statefulset/statefulset';
+import ConfigMapOverviewPage from './components/kube-object/config/config-map/config-map';
+import PersistentVolumeClaimOverviewPage from './components/kube-object/storage/volume-claim/volume-claim';
+import { FloatButton } from 'antd';
+import CreateResourceModal from './components/modal/create-resource-modal';
+import { PlusOutlined } from '@ant-design/icons';
 
-const Home = observer(() => {
-  const { isLoading, setIsLoading, Loading } = useLoading();
-  const { toast } = useToast();
-
-  const requestController = useRef(new RequestController({ timeoutDuration: 5000 }));
-
-  useEffect(() => {
-    (async () => {
-      const res = await fetchData(requestController.current);
-      toastErrors(res, toast);
-      setIsLoading(false);
-    })();
-  });
-
-  return <>{isLoading ? <Loading loading={isLoading} /> : <OverviewPage />}</>;
-});
-
-const fetchData = (requestController: RequestController) => {
-  const tasks = [
-    POD_STORE.fetchData,
-    DEPLOYMENT_STORE.fetchData,
-    STATEFUL_SET_STORE.fetchData,
-    PERSISTENT_VOLUME_CLAIM_STORE.fetchData,
-    CONFIG_MAP_STORE.fetchData
-  ];
-  return requestController.runTasks(tasks);
+const switchPage = (key: SideNavItemKey): React.ReactNode => {
+  switch (key) {
+    case SideNavItemKey.Overview:
+      return <OverviewPage />;
+    case SideNavItemKey.Pod:
+      return <PodOverviewPage />;
+    case SideNavItemKey.Deployment:
+      return <DeploymentOverviewPage />;
+    case SideNavItemKey.StatefulSet:
+      return <StatefulSetOverviewPage />;
+    case SideNavItemKey.ConfigMap:
+      return <ConfigMapOverviewPage />;
+    case SideNavItemKey.PersistentVolumeClaim:
+      return <PersistentVolumeClaimOverviewPage />;
+    default:
+      return <OverviewPage />;
+  }
 };
 
-const toastErrors = (res: any[], toast: CreateToastFnReturn) => {
-  if (isError(res)) {
-    toast({
-      title: 'Error',
-      description: res.message,
-      status: 'error'
-    });
-  }
+const Home = () => {
+  const [sideNavItemKey, setSideNavItemKey] = useState(SideNavItemKey.Overview);
+  const [openCreateResourceModal, setOpenCreateResourceModal] = useState(false);
+
+  return (
+    <AppLayout onClickSideNavItem={(key: SideNavItemKey) => setSideNavItemKey(key)}>
+      {switchPage(sideNavItemKey)}
+      <FloatButton
+        icon={<PlusOutlined />}
+        type="primary"
+        onClick={() => setOpenCreateResourceModal(true)}
+      />
+      <CreateResourceModal
+        open={openCreateResourceModal}
+        setClose={() => setOpenCreateResourceModal(false)}
+      />
+    </AppLayout>
+  );
 };
 
 export default Home;

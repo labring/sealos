@@ -1,23 +1,27 @@
 import { Pod } from '@/k8slens/kube-object';
+import { PodStore, StatusesComputed } from '@/types/state';
+import { create } from 'zustand';
+import { createKubeStoreSlice } from './kube.store';
 import { countBy } from 'lodash';
-import { ItemStore } from './data.store';
-import { Resources } from '@/constants/kube-object';
+import { computed } from 'zustand-computed';
 
-export type GetPodsByOwnerId = (ownerId: string) => Pod[];
-export type GetByLabel = (labels: string[] | Partial<Record<string, string>>) => Pod[];
+const computeState = (state: PodStore): StatusesComputed => {
+  return {
+    getStatuses: countBy(state.items, (pod) => pod.getStatus())
+  };
+};
 
-export class PodStore extends ItemStore<Pod> {
-  constructor() {
-    super(Resources.Pods);
-  }
+export const usePodStore = create<PodStore>()(
+  computed(
+    (...a) => ({
+      ...createKubeStoreSlice<Pod>(Pod.kind)(...a)
+    }),
+    computeState
+  )
+);
 
-  getPodsByOwnerId(workloadId: string): Pod[] {
-    return this.items.filter((pod) => {
-      return pod.getOwnerRefs().find((owner) => owner.uid === workloadId);
-    });
-  }
-
-  getPodsStatuses() {
-    return countBy(this.items.map((pod) => pod.getStatus()).sort());
-  }
+export function getPodsByOwnerId(pods: Pod[], workloadId: string): Pod[] {
+  return pods.filter((pod) => {
+    return pod.getOwnerRefs().find((owner) => owner.uid === workloadId);
+  });
 }

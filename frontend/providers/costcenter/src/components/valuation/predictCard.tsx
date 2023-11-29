@@ -1,29 +1,55 @@
 import useBillingStore from '@/stores/billing';
 import useEnvStore from '@/stores/env';
-import { displayMoney } from '@/utils/format';
-import { Box, Flex, Img, Stack, Text } from '@chakra-ui/react';
+import { displayMoney, formatMoney } from '@/utils/format';
+import { Box, Flex, Stack, Text, filter } from '@chakra-ui/react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import CurrencySymbol from '../CurrencySymbol';
-import { valuationMap } from '@/constants/payment';
+import { END_TIME, valuationMap } from '@/constants/payment';
+import useBillingData from '@/hooks/useBillingData';
+import { BillingType, Costs } from '@/types';
+import { isSameDay, isSameHour, parseISO } from 'date-fns';
 export default function PredictCard() {
   const { t } = useTranslation();
-  const state = useBillingStore();
+  const { data } = useBillingData({ type: BillingType.CONSUME, endTime: END_TIME });
+  const _state = useMemo<Costs & { total: number }>(() => {
+    const items = data?.data?.status.item || [];
+    if (items.length > 0) {
+      const latest = items[0];
+      const time = parseISO(latest.time);
+      const now = new Date();
+      if (isSameDay(time, now) && isSameHour(time, now))
+        return {
+          ...latest.costs,
+          total: latest.amount
+        };
+    }
+    return {
+      cpu: 0,
+      memory: 0,
+      storage: 0,
+      network: 0,
+      port: 0,
+      total: 0
+    };
+  }, [data?.data?.status.item]);
   const currency = useEnvStore((s) => s.currency);
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
   const leastCost = useMemo(() => {
+    const state = Object.fromEntries(Object.entries(_state).map(([k, v]) => [k, formatMoney(v)]));
     const origin = [
       { name: 'CPU', cost: state.cpu },
       { name: 'Memory', cost: state.memory },
       { name: 'Storage', cost: state.storage },
-      { name: 'Network', cost: state.network }
+      { name: 'Network', cost: state.network },
+      { name: 'Port', cost: state.port }
     ];
     if (!gpuEnabled) {
-      origin.push({ name: 'Total Amount', cost: state.cpu + state.memory + state.storage });
+      origin.push({ name: 'Total Amount', cost: state.total });
     } else {
       origin.push(
-        { name: 'GPU', cost: state.gpu },
-        { name: 'Total Amount', cost: state.cpu + state.memory + state.storage + state.gpu }
+        { name: 'GPU', cost: state.gpu ?? 0 },
+        { name: 'Total Amount', cost: state.total }
       );
     }
     return origin.map((item) => ({
@@ -31,7 +57,7 @@ export default function PredictCard() {
       cost: displayMoney(item.cost * 30 * 24),
       color: valuationMap.get(item.name.toLocaleLowerCase())?.bg || 'black'
     }));
-  }, [state.cpu, state.memory, state.storage, gpuEnabled]);
+  }, [_state, gpuEnabled]);
   return (
     <Stack gap="20px" fontSize={'12px'}>
       {leastCost.map((item) => (

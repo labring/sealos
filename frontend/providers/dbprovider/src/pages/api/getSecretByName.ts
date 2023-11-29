@@ -25,38 +25,49 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req)
     });
 
+    const base = {
+      passwordKey: 'password',
+      usernameKey: 'username',
+      portKey: 'port',
+      hostKey: 'host'
+    };
+
     const data = await (async () => {
       const dbTypeMap = {
         [DBTypeEnum.postgresql]: {
-          passwordKey: 'password',
+          ...base,
           connectKey: 'postgresql'
         },
         [DBTypeEnum.mongodb]: {
-          passwordKey: 'password',
+          ...base,
           connectKey: 'mongodb'
         },
         [DBTypeEnum.mysql]: {
-          passwordKey: 'password',
+          ...base,
           connectKey: 'mysql'
         },
         [DBTypeEnum.redis]: {
-          passwordKey: 'password',
+          ...base,
           connectKey: 'redis'
         },
         [DBTypeEnum.kafka]: {
-          passwordKey: 'password',
-          connectKey: 'kafka'
+          ...base,
+          connectKey: 'kafka',
+          passwordKey: 'clientPassword',
+          usernameKey: 'clientUser',
+          portKey: 'endpoint',
+          hostKey: 'superusers'
         },
         [DBTypeEnum.qdrant]: {
-          passwordKey: 'password',
+          ...base,
           connectKey: 'qdrant'
         },
         [DBTypeEnum.nebula]: {
-          passwordKey: 'password',
+          ...base,
           connectKey: 'nebula'
         },
         [DBTypeEnum.weaviate]: {
-          passwordKey: 'password',
+          ...base,
           connectKey: 'weaviate'
         }
       };
@@ -69,13 +80,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         return Promise.reject('Get secret errpr');
       }
 
-      const username = Buffer.from(secret.body.data['username'], 'base64').toString('utf-8');
+      const username = Buffer.from(
+        secret.body.data[dbTypeMap[dbType].usernameKey],
+        'base64'
+      ).toString('utf-8');
+
       const password = Buffer.from(
         secret.body.data[dbTypeMap[dbType].passwordKey],
         'base64'
       ).toString('utf-8');
-      const host = Buffer.from(secret.body.data['host'], 'base64').toString('utf-8');
-      const port = Buffer.from(secret.body.data['port'], 'base64').toString('utf-8');
+
+      const host = Buffer.from(secret.body.data[dbTypeMap[dbType].hostKey], 'base64').toString(
+        'utf-8'
+      );
+
+      const port = Buffer.from(secret.body.data[dbTypeMap[dbType].portKey], 'base64').toString(
+        'utf-8'
+      );
 
       return {
         username,

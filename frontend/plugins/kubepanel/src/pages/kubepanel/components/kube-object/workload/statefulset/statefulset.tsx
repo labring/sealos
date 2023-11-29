@@ -1,9 +1,7 @@
 import { KubeObjectAge } from '@/components/kube/object/kube-object-age';
 import { StatefulSet } from '@/k8slens/kube-object';
-import { POD_STORE, STATEFUL_SET_STORE } from '@/store/static';
 import { useQuery } from '@tanstack/react-query';
 import { ColumnsType } from 'antd/es/table';
-import { observer } from 'mobx-react';
 import { useRef, useState } from 'react';
 import StatefulSetDetail from './statefulset-detail';
 import { RequestController } from '@/utils/request-controller';
@@ -12,57 +10,41 @@ import ActionButton from '../../../action-button/action-button';
 import { deleteResource } from '@/api/delete';
 import { Resources } from '@/constants/kube-object';
 import { updateResource } from '@/api/update';
+import { fetchData, getPodsByOwnerId, usePodStore, useStatefulSetStore } from '@/store/kube';
 
-interface DataType {
-  key: string;
-  name: string;
-  pods: string;
-  replicas: number;
-  creationTimestamp?: string;
-}
-
-const getData = (statefulSet: StatefulSet): DataType => {
-  const { readyReplicas = 0, currentReplicas = 0, replicas = 0 } = statefulSet.status ?? {};
-  return {
-    key: statefulSet.getName(),
-    name: statefulSet.getName(),
-    pods: `${readyReplicas}/${replicas}`,
-    replicas: statefulSet.getReplicas(),
-    creationTimestamp: statefulSet.metadata.creationTimestamp
-  };
-};
-
-const columns: ColumnsType<DataType> = [
+const columns: ColumnsType<StatefulSet> = [
   {
     title: 'Name',
-    dataIndex: 'name',
-    key: 'name'
+    key: 'name',
+    fixed: 'left',
+    render: (_, stat) => stat.getName()
   },
   {
     title: 'Pods',
-    dataIndex: 'pods',
-    key: 'pods'
+    key: 'pods',
+    render: (_, stat) => {
+      const { readyReplicas = 0, replicas = 0 } = stat.status ?? {};
+      return `${readyReplicas}/${replicas}`;
+    }
   },
   {
     title: 'Replicas',
-    dataIndex: 'replicas',
-    key: 'replicas'
+    key: 'replicas',
+    render: (_, stat) => stat.getReplicas()
   },
   {
     title: 'Age',
-    dataIndex: 'creationTimestamp',
     key: 'age',
-    render: (creationTimestamp: string) => <KubeObjectAge creationTimestamp={creationTimestamp} />
+    render: (_, stat) => <KubeObjectAge obj={stat} />
   },
   {
-    dataIndex: 'name',
     key: 'action',
     fixed: 'right',
-    render: (name: string) => (
+    render: (_, stat) => (
       <ActionButton
-        obj={STATEFUL_SET_STORE.items.filter((statefulSet) => statefulSet.getName() === name)[0]}
-        onUpdate={(data: string) => updateResource(data, name, Resources.StatefulSets)}
-        onDelete={() => deleteResource(name, Resources.StatefulSets)}
+        obj={stat}
+        onUpdate={(data: string) => updateResource(data, stat.getName(), Resources.StatefulSets)}
+        onDelete={() => deleteResource(stat.getName(), Resources.StatefulSets)}
       />
     )
   }
@@ -70,13 +52,18 @@ const columns: ColumnsType<DataType> = [
 
 const StatefulSetOverviewPage = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
-  const [statefulSet, setStatefulSet] = useState<StatefulSet>();
+  const [stat, setStat] = useState<StatefulSet>();
+  const { items: pods, replace: replacePods } = usePodStore();
+  const { items: stats, replace: replaceStats } = useStatefulSetStore();
   const requestController = useRef(new RequestController({ timeoutDuration: 5000 }));
 
   useQuery(
     ['statefulSets', 'pods'],
     () => {
-      const task = [STATEFUL_SET_STORE.fetchData, POD_STORE.fetchData];
+      const task = [
+        () => fetchData(replaceStats, Resources.StatefulSets),
+        () => fetchData(replacePods, Resources.Pods)
+      ];
       return requestController.current.runTasks(task);
     },
     {
@@ -84,27 +71,22 @@ const StatefulSetOverviewPage = () => {
     }
   );
 
-  const dataSource = STATEFUL_SET_STORE.items.map(getData);
   return (
     <>
       <Table
         title={'Stateful Sets'}
         columns={columns}
-        dataSource={dataSource}
-        onRow={(record) => ({
+        dataSource={stats}
+        onRow={(stat) => ({
           onClick: () => {
-            const { key } = record;
-            const statefulSet = STATEFUL_SET_STORE.items.filter(
-              (statefulSet) => statefulSet.getName() === key
-            )[0];
-            setStatefulSet(statefulSet);
+            setStat(stat);
             setOpenDrawer(true);
           }
         })}
       />
       <StatefulSetDetail
-        statefulSet={statefulSet}
-        childPods={POD_STORE.getPodsByOwnerId(statefulSet?.getId() ?? '')}
+        statefulSet={stat}
+        childPods={getPodsByOwnerId(pods, stat?.getId() || '')}
         open={openDrawer}
         onClose={() => setOpenDrawer(false)}
       />
@@ -112,4 +94,4 @@ const StatefulSetOverviewPage = () => {
   );
 };
 
-export default observer(StatefulSetOverviewPage);
+export default StatefulSetOverviewPage;

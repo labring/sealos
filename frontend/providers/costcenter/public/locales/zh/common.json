@@ -35,6 +35,7 @@
   "Transaction Time": "交易时间",
   "Type": "类型",
   "CPU": "CPU",
+  "Port": "端口",
   "Memory": "内存",
   "Storage": "存储卷",
   "Network": "网络",
