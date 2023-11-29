@@ -212,8 +212,7 @@ export default function Develop() {
         borderRadius={'8px'}
         overflowY={'hidden'}
         overflowX={'scroll'}
-        flex={1}
-      >
+        flex={1}>
         {/* left */}
         <Flex flexDirection={'column'} w="50%" borderRight={'1px solid #EFF0F1'}>
           <Flex
@@ -223,8 +222,7 @@ export default function Develop() {
             alignItems={'center'}
             backgroundColor={'#F8FAFB'}
             px="36px"
-            borderRadius={'8px 8px 0px 0px '}
-          >
+            borderRadius={'8px 8px 0px 0px '}>
             <MyIcon name="dev" color={'#24282C'} w={'24px'} h={'24px'}></MyIcon>
             <Text fontWeight={'500'} fontSize={'16px'} color={'#24282C'} ml="8px">
               {t('develop.Development')}
@@ -252,8 +250,7 @@ export default function Develop() {
             alignItems={'center'}
             backgroundColor={'#F8FAFB'}
             pl="42px"
-            borderRadius={'8px 8px 0px 0px '}
-          >
+            borderRadius={'8px 8px 0px 0px '}>
             <MyIcon name="eyeShow" color={'#24282C'} w={'24px'} h={'24px'}></MyIcon>
             <Text fontWeight={'500'} fontSize={'16px'} color={'#24282C'} ml="8px">
               {t('develop.Preview')}
@@ -265,8 +262,7 @@ export default function Develop() {
               pt="26px"
               pr={{ sm: '20px', md: '60px' }}
               borderBottom={'1px solid #EFF0F1'}
-              flexDirection={'column'}
-            >
+              flexDirection={'column'}>
               <Text fontWeight={'500'} fontSize={'18px'} color={'#24282C'}>
                 {t('develop.Configure Form')}
               </Text>
@@ -282,8 +278,7 @@ export default function Develop() {
                   minW={'100px'}
                   h={'34px'}
                   variant={'link'}
-                  onClick={handleExportYaml}
-                >
+                  onClick={handleExportYaml}>
                   {t('Export')} Yaml
                 </Button>
               </Flex>
