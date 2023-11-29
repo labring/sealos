@@ -1,11 +1,9 @@
 import { KubeObjectAge } from '@/components/kube/object/kube-object-age';
-import { BaseKubeObjectCondition, Deployment, DeploymentStatus } from '@/k8slens/kube-object';
-import { DEPLOYMENT_STORE } from '@/store/static';
+import { Deployment } from '@/k8slens/kube-object';
 import { getConditionColor } from '@/utils/condtion-color';
 import { useQuery } from '@tanstack/react-query';
 import { Tooltip } from 'antd';
 import { ColumnsType } from 'antd/es/table';
-import { observer } from 'mobx-react';
 import { useState } from 'react';
 import DeploymentDetail from './deployment-detail';
 import Table from '../../../table/table';
@@ -13,70 +11,52 @@ import ActionButton from '../../../action-button/action-button';
 import { deleteResource } from '@/api/delete';
 import { Resources } from '@/constants/kube-object';
 import { updateResource } from '@/api/update';
+import { fetchData, useDeploymentStore } from '@/store/kube';
 
-interface DataType {
-  key: string;
-  name: string;
-  pods: string;
-  replicas: number;
-  creationTimestamp?: string;
-  conditions: BaseKubeObjectCondition[];
-}
-
-const getData = (dep: Deployment): DataType => {
-  const { replicas = 0, availableReplicas = 0 } = dep.status ?? {};
-  return {
-    key: dep.getName(),
-    name: dep.getName(),
-    pods: `${availableReplicas}/${replicas}`,
-    replicas: dep.getReplicas(),
-    creationTimestamp: dep.metadata.creationTimestamp,
-    conditions: dep.getConditions()
-  };
-};
-
-const columns: ColumnsType<DataType> = [
+const columns: ColumnsType<Deployment> = [
   {
     title: 'Name',
-    dataIndex: 'name',
-    key: 'name'
+    key: 'name',
+    fixed: 'left',
+    render: (_, dep) => dep.getName()
   },
   {
     title: 'Pods',
-    dataIndex: 'pods',
-    key: 'pods'
+    key: 'pods',
+    render: (_, dep) => {
+      const { replicas = 0, availableReplicas = 0 } = dep.status ?? {};
+      return `${availableReplicas}/${replicas}`;
+    }
   },
   {
     title: 'Replicas',
-    dataIndex: 'replicas',
-    key: 'replicas'
+    key: 'replicas',
+    render: (_, dep) => dep.getReplicas()
   },
   {
     title: 'Age',
     dataIndex: 'creationTimestamp',
     key: 'age',
-    render: (creationTimestamp: string) => <KubeObjectAge creationTimestamp={creationTimestamp} />
+    render: (_, dep) => <KubeObjectAge obj={dep} />
   },
   {
     title: 'Conditions',
-    dataIndex: 'conditions',
     key: 'conditions',
-    render: (conditions: BaseKubeObjectCondition[]) =>
-      conditions.map(({ type, message }) => (
+    render: (_, dep) =>
+      dep.getConditions().map(({ type, message }) => (
         <Tooltip key={type} title={message}>
           <span className={`mr-2 last:mr-0 text-${getConditionColor(type)}`}>{type}</span>
         </Tooltip>
       ))
   },
   {
-    dataIndex: 'name',
     key: 'action',
     fixed: 'right',
-    render: (name: string) => (
+    render: (_, dep) => (
       <ActionButton
-        obj={DEPLOYMENT_STORE.items.filter((dep) => dep.getName() === name)[0]}
-        onUpdate={(data: string) => updateResource(data, name, Resources.Deployments)}
-        onDelete={() => deleteResource(name, Resources.Deployments)}
+        obj={dep}
+        onUpdate={(data: string) => updateResource(data, dep.getName(), Resources.Deployments)}
+        onDelete={() => deleteResource(dep.getName(), Resources.Deployments)}
       />
     )
   }
@@ -85,22 +65,20 @@ const columns: ColumnsType<DataType> = [
 const DeploymentOverviewPage = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
   const [dep, setDep] = useState<Deployment>();
+  const { items, replace } = useDeploymentStore();
 
-  useQuery(['deployments'], () => DEPLOYMENT_STORE.fetchData(), {
+  useQuery(['deployments'], () => fetchData(replace, Resources.Deployments), {
     refetchInterval: 5000
   });
 
-  const dataSource = DEPLOYMENT_STORE.items.map(getData);
   return (
     <>
       <Table
         title={'Deployments'}
         columns={columns}
-        dataSource={dataSource}
-        onRow={(record) => ({
+        dataSource={items}
+        onRow={(dep) => ({
           onClick: () => {
-            const { key } = record;
-            const dep = DEPLOYMENT_STORE.items.filter((dep) => dep.getName() === key)[0];
             setDep(dep);
             setOpenDrawer(true);
           }
@@ -111,4 +89,4 @@ const DeploymentOverviewPage = () => {
   );
 };
 
-export default observer(DeploymentOverviewPage);
+export default DeploymentOverviewPage;

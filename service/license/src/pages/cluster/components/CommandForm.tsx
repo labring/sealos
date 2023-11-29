@@ -21,9 +21,14 @@ import { useForm } from 'react-hook-form';
 type CommandFormProps = {
   basePath: string;
   cloudVersion: string;
+  enterprise?: boolean;
 };
 
-export default function CommandForm({ basePath, cloudVersion }: CommandFormProps) {
+export default function CommandForm({
+  basePath,
+  cloudVersion,
+  enterprise = false
+}: CommandFormProps) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [displayCommand, setDisplayCommand] = useState('');
   const [copyCommand, setCopyCommand] = useState('');
@@ -42,7 +47,7 @@ export default function CommandForm({ basePath, cloudVersion }: CommandFormProps
       basePath,
       cloudVersion ? ` --cloud-version=${cloudVersion} ` : '',
       ' --image-registry=registry.cn-shanghai.aliyuncs.com ',
-      ' --proxy-prefix=https://gh-proxy.com ',
+      enterprise ? '' : ' --proxy-prefix=https://mirror.ghproxy.com ',
       masterIps ? ` --master-ips=${masterIps} ` : '',
       nodeIps ? ` --node-ips=${nodeIps} ` : '',
       data?.podSubnet ? ` --pod-cidr=${data?.podSubnet} ` : '',
@@ -148,7 +153,7 @@ export default function CommandForm({ basePath, cloudVersion }: CommandFormProps
                   fontWeight: 400
                 }}
                 w={'320px'}
-                h="50px"
+                h="80px"
                 defaultValues={getValues('masterIP') || []}
                 onUpdate={(e) => {
                   setValue('masterIP', e);
@@ -169,7 +174,7 @@ export default function CommandForm({ basePath, cloudVersion }: CommandFormProps
                   fontSize: '12px',
                   fontWeight: 400
                 }}
-                h="50px"
+                h="80px"
                 w={'320px'}
                 defaultValues={getValues('nodeIP') || []}
                 onUpdate={(e) => {
@@ -189,7 +194,7 @@ export default function CommandForm({ basePath, cloudVersion }: CommandFormProps
             <Flex alignItems={'center'} justifyContent={'start'} gap={'40px'}>
               <Label>ssh 密码</Label>
               <Input
-                placeholder="不填则免密登录"
+                placeholder="默认免密登录"
                 {...register('sshPassword', {
                   required: true
                 })}
@@ -212,7 +217,7 @@ export default function CommandForm({ basePath, cloudVersion }: CommandFormProps
               />
             </Flex>
             <Flex alignItems={'center'} justifyContent={'start'} gap={'40px'}>
-              <Label>Sealos Cloud 端口</Label>
+              <Label>Cloud 端口</Label>
               <Input
                 {...register('cloudPort', {
                   required: true
@@ -223,7 +228,7 @@ export default function CommandForm({ basePath, cloudVersion }: CommandFormProps
             <Flex alignItems={'center'} justifyContent={'start'} gap={'40px'}>
               <Label>证书路径</Label>
               <Input
-                placeholder={'不填则使用 Sealos 提供的自签证书'}
+                placeholder={'默认使用 Sealos 提供的自签证书'}
                 {...register('certPath', {
                   required: false
                 })}
@@ -233,7 +238,7 @@ export default function CommandForm({ basePath, cloudVersion }: CommandFormProps
             <Flex alignItems={'center'} justifyContent={'start'} gap={'40px'}>
               <Label>证书 Key 路径</Label>
               <Input
-                placeholder={'不填则使用 Sealos 提供的自签证书'}
+                placeholder={'默认使用 Sealos 提供的自签证书'}
                 {...register('certKeyPath', {
                   required: false
                 })}

@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       data: body
     });
   } catch (err: any) {
-    console.log(err?.body, 'db get service name err');
+    console.log(err?.body, 'api:getServiceByName');
     if (err?.body?.code === 404) {
       return jsonRes(res);
     }

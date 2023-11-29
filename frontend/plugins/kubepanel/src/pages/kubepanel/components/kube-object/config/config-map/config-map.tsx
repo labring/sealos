@@ -1,9 +1,7 @@
 import { KubeObjectAge } from '@/components/kube/object/kube-object-age';
 import { ConfigMap } from '@/k8slens/kube-object';
 import { ColumnsType } from 'antd/es/table';
-import { observer } from 'mobx-react';
 import { useState } from 'react';
-import { CONFIG_MAP_STORE } from '@/store/static';
 import { useQuery } from '@tanstack/react-query';
 import ConfigMapDetail from './config-map-detail';
 import Table from '../../../table/table';
@@ -11,75 +9,55 @@ import ActionButton from '../../../action-button/action-button';
 import { deleteResource } from '@/api/delete';
 import { Resources } from '@/constants/kube-object';
 import { updateResource } from '@/api/update';
-interface DataType {
-  key: string;
-  name: string;
-  keys: string[];
-  creationTimestamp?: string;
-}
+import { fetchData, useConfigMapStore } from '@/store/kube';
 
-const getData = (configMap: ConfigMap): DataType => {
-  return {
-    key: configMap.getName(),
-    name: configMap.getName(),
-    keys: configMap.getKeys(),
-    creationTimestamp: configMap.metadata.creationTimestamp
-  };
-};
-
-const columns: ColumnsType<DataType> = [
+const columns: ColumnsType<ConfigMap> = [
   {
     title: 'Name',
-    dataIndex: 'name',
-    key: 'name'
+    key: 'name',
+    fixed: 'left',
+    render: (_, configMap) => configMap.getName()
   },
   {
     title: 'Keys',
-    dataIndex: 'keys',
     key: 'keys',
-    render: (keys: string[]) => keys.join(', ')
+    render: (_, configMap) => configMap.getKeys().join(', ')
   },
   {
     title: 'Age',
-    dataIndex: 'creationTimestamp',
     key: 'age',
-    render: (creationTimestamp: string) => <KubeObjectAge creationTimestamp={creationTimestamp} />
+    render: (_, configMap) => <KubeObjectAge obj={configMap} />
   },
   {
-    dataIndex: 'name',
     key: 'action',
     fixed: 'right',
-    render: (name: string) => (
+    render: (_, configMap) => (
       <ActionButton
-        obj={CONFIG_MAP_STORE.items.filter((configMap) => configMap.getName() === name)[0]}
-        onUpdate={(data: string) => updateResource(data, name, Resources.ConfigMaps)}
-        onDelete={() => deleteResource(name, Resources.ConfigMaps)}
+        obj={configMap}
+        onUpdate={(data: string) => updateResource(data, configMap.getName(), Resources.ConfigMaps)}
+        onDelete={() => deleteResource(configMap.getName(), Resources.ConfigMaps)}
       />
     )
   }
 ];
 
 const ConfigMapOverviewPage = () => {
-  const [openDrawer, setOpenDrawer] = useState(false);
+  const { items, replace } = useConfigMapStore();
   const [configMap, setConfigMap] = useState<ConfigMap>();
+  const [openDrawer, setOpenDrawer] = useState(false);
 
-  useQuery(['configMaps'], () => CONFIG_MAP_STORE.fetchData(), {
+  useQuery(['configMaps'], () => fetchData(replace, Resources.ConfigMaps), {
     refetchInterval: 5000
   });
 
-  const dataSource = CONFIG_MAP_STORE.items.map(getData);
   return (
     <>
       <Table
         title={'Config Maps'}
         columns={columns}
-        dataSource={dataSource}
-        onRow={(record) => ({
+        dataSource={items}
+        onRow={(configMap) => ({
           onClick: () => {
-            const { key } = record;
-            const configMap = CONFIG_MAP_STORE.items.filter(
-              (configMap) => configMap.getName() === key
-            )[0];
             setConfigMap(configMap);
             setOpenDrawer(true);
           }
@@ -94,4 +72,4 @@ const ConfigMapOverviewPage = () => {
   );
 };
 
-export default observer(ConfigMapOverviewPage);
+export default ConfigMapOverviewPage;

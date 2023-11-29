@@ -84,6 +84,12 @@ spec:
             value: "604800"
           - name: DebtDetectionCycleSeconds
             value: "30"
+          - name: OSAdminSecret
+            value: '{{ .OSAdminSecret }}'
+          - name: OSInternalEndpoint
+            value: '{{ .OSInternalEndpoint }}'
+          - name: oSNamespace
+            value: '{{ .OSNamespace }}'
         image: ghcr.io/labring/sealos-account-controller:latest
         imagePullPolicy: Always
         args:
