@@ -13,7 +13,7 @@ const Drawer = ({ title, children, open, onClose }: Props) => {
       open={open}
       closeIcon={<CloseOutlined style={{ color: 'white', fontSize: '32px' }} />}
       title={<span className="pl-2 text-white font-medium text-base">{title}</span>}
-      width="60vh"
+      width="550px"
       onClose={onClose}
       destroyOnClose
     >

@@ -1,8 +1,8 @@
 import { KubeObject } from '@/k8slens/kube-object';
 import { ApiResp } from '@/services/kubernet';
+import { dumpKubeObject } from '@/utils/yaml';
 import { Editor } from '@monaco-editor/react';
 import { Button, Modal, message } from 'antd';
-import yaml from 'js-yaml';
 import { editor } from 'monaco-editor';
 import { useEffect, useRef, useState } from 'react';
 
@@ -42,13 +42,7 @@ const UpdateEditorModal = <K extends KubeObject = KubeObject>({
     updateRequest();
   }, [clickedUpdate]);
 
-  const editorValue = yaml.dump({
-    apiVersion: obj.apiVersion,
-    kind: obj.kind,
-    metadata: obj.metadata,
-    status: obj.status,
-    spec: obj.spec
-  });
+  const editorValue = dumpKubeObject<KubeObject>(obj);
 
   return (
     <>
