@@ -15,6 +15,7 @@ const Drawer = ({ title, children, open, onClose }: Props) => {
       title={<span className="pl-2 text-white font-medium text-base">{title}</span>}
       width="60vh"
       onClose={onClose}
+      destroyOnClose
     >
       <div className="flex flex-col gap-6">{children}</div>
     </AntdDrawer>
