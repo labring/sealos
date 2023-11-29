@@ -21,7 +21,7 @@ export const KubeBadge = ({
     const { offsetWidth = 0, scrollWidth = 0 } = elem.current ?? {};
 
     setIsExpandable(expandable && offsetWidth < scrollWidth);
-  }, [expandable, elem.current]);
+  }, [expandable]);
 
   const onClick = (e: React.MouseEvent<HTMLSpanElement>) => {
     console.log(e.target);
@@ -36,15 +36,18 @@ export const KubeBadge = ({
 
   return (
     <div
-      className={`inline-block py-2 px-2 mr-1 max-w-full rounded-[4px] text-xs font-medium ${disabledClass}
-        ${isExpanded ? '' : 'truncate'} ${
-        backgroundColor ? `bg-${backgroundColor}` : 'bg-[#EFF0F1]'
-      }
-      `}
-      onClick={onClick}
+      className={`inline-block py-2 px-2 mr-1 my-1 max-w-full rounded-[4px] ${disabledClass}
+    ${backgroundColor ? `bg-${backgroundColor}` : 'bg-[#EFF0F1]'} ${
+        isExpanded ? 'break-words' : 'truncate'
+      } `}
       ref={elem}
+      onClick={onClick}
     >
-      <span className={textColor ? `text-${textColor}` : 'text-black'}>{label}</span>
+      <span
+        className={`w-full text-xs font-medium ${textColor ? `text-${textColor}` : 'text-black'} `}
+      >
+        {label}
+      </span>
     </div>
   );
 };
