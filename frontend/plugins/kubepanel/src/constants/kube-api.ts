@@ -33,5 +33,17 @@ export const ApiBaseParamsMap: Record<ResourceKey, UrlParams> = {
     apiGroup: undefined,
     apiVersion: 'v1',
     resource: Resources.PersistentVolumeClaims
+  },
+  secrets: {
+    apiPrefix: 'api',
+    apiGroup: undefined,
+    apiVersion: 'v1',
+    resource: Resources.Secrets
+  },
+  ingresses: {
+    apiPrefix: 'apis',
+    apiGroup: 'networking.k8s.io',
+    apiVersion: 'v1',
+    resource: Resources.Ingresses
   }
 };

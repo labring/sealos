@@ -39,12 +39,26 @@ const options: Option[] = [
     ]
   },
   {
+    value: 'network',
+    label: 'Network',
+    children: [
+      {
+        value: Resources.Ingresses,
+        label: 'Ingress'
+      }
+    ]
+  },
+  {
     value: 'config',
     label: 'Config',
     children: [
       {
         value: Resources.ConfigMaps,
         label: 'Config Map'
+      },
+      {
+        value: Resources.Secrets,
+        label: 'Secret'
       }
     ]
   },
