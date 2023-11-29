@@ -43,7 +43,7 @@ type BillingInfoQueryReconciler struct {
 	client.Client
 	logr.Logger
 	Scheme          *runtime.Scheme
-	DBClient        database.Interface
+	DBClient        database.Account
 	Properties      *resources.PropertyTypeLS
 	propertiesQuery []accountv1.PropertyQuery
 	QueryFuncMap    map[string]func(context.Context, ctrl.Request, *accountv1.BillingInfoQuery) (string, error)

@@ -41,7 +41,7 @@ const AppDetail = ({
   const { t } = useTranslation();
 
   const { listNav } = useMemo(() => {
-    const PublicNetMigration = ['postgresql', 'apecloud-mysql'].includes(dbType);
+    const PublicNetMigration = ['postgresql', 'apecloud-mysql', 'mongodb'].includes(dbType);
     const MigrateSupported = ['postgresql', 'mongodb', 'apecloud-mysql'].includes(dbType);
     const BackupSupported = ['postgresql', 'mongodb', 'apecloud-mysql', 'redis'].includes(dbType);
 

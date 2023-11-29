@@ -12,35 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package env
+package mongo
 
 import (
-	"fmt"
+	"context"
 	"os"
-	"strconv"
+	"testing"
 )
 
-func GetEnvWithDefault(key, defaultValue string) string {
-	if value, ok := os.LookupEnv(key); ok && value != "" {
-		return value
+func Test_mongoDB_GetUser(t *testing.T) {
+	dbCTX := context.Background()
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
+	if err != nil {
+		t.Errorf("failed to connect mongo: error = %v", err)
 	}
-	return defaultValue
-}
-
-func GetInt64EnvWithDefault(key string, defaultValue int64) int64 {
-	if env, ok := os.LookupEnv(key); ok && env != "" {
-		if value, err := strconv.ParseInt(env, 10, 64); err == nil {
-			return value
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
 		}
+	}()
+	users, err := m.GetUser("admin")
+	if err != nil {
+		t.Errorf("failed to get user: error = %v", err)
 	}
-	return defaultValue
-}
-
-func CheckEnvSetting(keys []string) error {
-	for _, key := range keys {
-		if val, ok := os.LookupEnv(key); !ok || val == "" {
-			return fmt.Errorf("env %s not set", key)
-		}
-	}
-	return nil
+	t.Logf("users: %v", users)
 }

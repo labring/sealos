@@ -26,7 +26,6 @@ import (
 	"sync"
 	"time"
 
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
 
 	"github.com/minio/minio-go/v7"
@@ -352,7 +351,7 @@ func (r *MonitorReconciler) getResourceUsage(namespace *corev1.Namespace) ([]*re
 			r.Logger.Error(err, "failed to get pod traffic used", "namespace", namespace)
 		}
 	}
-	if username := config.GetUserNameByNamespace(namespace.Name); r.ObjStorageClient != nil && namespace.Labels[userv1.UserLabelOwnerKey] == username {
+	if username := config.GetUserNameByNamespace(namespace.Name); r.ObjStorageClient != nil {
 		if err := r.getObjStorageUsed(username, &resNamed, &resUsed); err != nil {
 			r.Logger.Error(err, "failed to get object storage used", "username", username)
 		}
