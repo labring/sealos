@@ -7,7 +7,7 @@ import { jsonRes } from '@/services/backend/response';
 import { NextApiRequest, NextApiResponse } from 'next';
 import yaml from 'js-yaml';
 import { mustGetTypedProperty } from '@/utils/api';
-import { isString } from 'lodash';
+import { entries, isString } from 'lodash';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -30,6 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       name,
       resourceData
     );
+    console.log(data);
 
     jsonRes(res, {
       code: 200,

@@ -45,10 +45,10 @@ export const ReactiveDuration = ({ timestamp, compact = true }: ReactiveDuration
   if (!timestamp) {
     return <>&lt;unknown&gt;</>;
   }
-  const [duration, setDuration] = useState(0);
-  const [ms, setMs] = useState(1000);
-
   const timestampSeconds = new Date(timestamp).getTime();
+
+  const [duration, setDuration] = useState(Date.now() - timestampSeconds);
+  const [ms, setMs] = useState(computeUpdateInterval(timestampSeconds, compact));
 
   useEffect(() => {
     const interval = setInterval(() => {
