@@ -2,7 +2,7 @@
 sidebar_position: 0
 ---
 
-# Kubernetes Cluster Lifecycle Management
+# Kubernetes Lifecycle Management
 
 Sealos provides a powerful set of tools that allow users to easily manage the entire lifecycle of a cluster.
 

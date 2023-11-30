@@ -4,7 +4,7 @@ Sealos 是一个由用户和贡献者参与推动的开源项目，如果您对�
 
 + 📱 扫码加入社区微信交流群👇
   
-  ![](./images/sealos-qr-code.jpg)
+  ![](https://oss.laf.run/htr4n1-images/sealos-qr-code.jpg)
 
 + 💬 加入我们的 [Discord 服务器](https://discord.gg/qzBmGGZGk7)，与 Sealos 开发者和终端用户进行交流。
 + 🐦 在 [Twitter](https://twitter.com/sealosio) 上关注我们。
