@@ -68,7 +68,7 @@ export default function Notification(props: TNotification) {
         handleNotificationData(messages);
       }
     },
-    refetchInterval: 2 * 60 * 1000
+    refetchInterval: 5 * 60 * 1000
   });
 
   const handleNotificationData = (data: NotificationItem[]) => {
@@ -127,6 +127,27 @@ export default function Notification(props: TNotification) {
     );
   };
 
+  const handleCharge = () => {
+    const costCenter = installedApps.find((i) => i.key === 'system-costcenter');
+    if (!costCenter) return;
+    openApp(costCenter, {
+      query: {
+        openRecharge: 'true'
+      }
+    });
+  };
+
+  const resetMessageState = () => {
+    setMessageConfig(
+      produce((draft) => {
+        draft.activeTab = 'unread';
+        draft.activePage = 'index';
+        draft.msgDetail = undefined;
+      })
+    );
+    disclosure.onClose();
+  };
+
   useEffect(() => {
     if (i18n.language) {
       refetch();
@@ -135,13 +156,7 @@ export default function Notification(props: TNotification) {
 
   return disclosure.isOpen ? (
     <>
-      <Box
-        className={styles.bg}
-        onClick={() => {
-          disclosure.onClose();
-        }}
-        cursor={'auto'}
-      ></Box>
+      <Box className={styles.bg} onClick={resetMessageState} cursor={'auto'}></Box>
       <Box className={clsx(styles.container)}>
         <Flex
           className={clsx(styles.title)}
@@ -287,12 +302,32 @@ export default function Notification(props: TNotification) {
               fontSize="12px"
               fontWeight={400}
               color="#000000"
-              className="overflow-auto"
+              h="300px"
+              overflowY="auto"
             >
               {i18n.language === 'zh' && MessageConfig.msgDetail?.spec?.i18ns?.zh?.message
                 ? MessageConfig.msgDetail?.spec?.i18ns?.zh?.message
                 : MessageConfig.msgDetail?.spec?.message}
             </Text>
+            {MessageConfig.msgDetail?.spec?.from === 'Debt-System' && (
+              <Flex justifyContent={'center'} mt="26px">
+                <Button
+                  w="159px"
+                  h="32px"
+                  bg="#24282C"
+                  borderRadius={'4px'}
+                  color={'#FFF'}
+                  fontSize={'12px'}
+                  variant={'primary'}
+                  onClick={() => {
+                    resetMessageState();
+                    handleCharge();
+                  }}
+                >
+                  {t('Charge')}
+                </Button>
+              </Flex>
+            )}
           </Box>
         )}
       </Box>
@@ -339,15 +374,18 @@ export default function Notification(props: TNotification) {
             fontWeight={400}
             color="#000000"
             className="overflow-auto"
+            noOfLines={2}
             height={'36px'}
           >
             {i18n.language === 'zh' && MessageConfig.popupMessage?.spec?.i18ns?.zh?.message
               ? MessageConfig.popupMessage?.spec?.i18ns?.zh?.message
               : MessageConfig.popupMessage?.spec?.message}
           </Text>
+
           <Flex alignItems={'center'} justifyContent={'end'} mt="18px" gap="8px">
             <Button
               w="78px"
+              h="32px"
               bg="#F8FAFB"
               borderRadius={'4px'}
               _hover={{ bg: '#F8FAFB' }}
@@ -368,6 +406,7 @@ export default function Notification(props: TNotification) {
             </Button>
             <Button
               w="78px"
+              h="32px"
               variant={'primary'}
               borderRadius={'4px'}
               onClick={() => {
@@ -378,13 +417,7 @@ export default function Notification(props: TNotification) {
                     draft.popupMessage = undefined;
                   })
                 );
-                const costCenter = installedApps.find((i) => i.key === 'system-costcenter');
-                if (!costCenter) return;
-                openApp(costCenter, {
-                  query: {
-                    openRecharge: 'true'
-                  }
-                });
+                handleCharge();
               }}
             >
               {t('Charge')}
