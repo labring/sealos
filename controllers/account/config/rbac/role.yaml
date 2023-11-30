@@ -38,6 +38,18 @@ rules:
   verbs:
   - get
 - apiGroups:
+    - ""
+  resources:
+    - secrets
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
   - account.sealos.io
   resources:
   - accounts
