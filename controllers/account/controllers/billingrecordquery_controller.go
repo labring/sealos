@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/database/mongo"
+
 	"github.com/go-logr/logr"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
@@ -71,7 +73,7 @@ func (r *BillingRecordQueryReconciler) Reconcile(ctx context.Context, req ctrl.R
 	_ = log.FromContext(ctx)
 
 	dbCtx := context.Background()
-	dbClient, err := database.NewMongoDB(dbCtx, r.MongoDBURI)
+	dbClient, err := mongo.NewMongoInterface(dbCtx, r.MongoDBURI)
 	if err != nil {
 		r.Logger.Error(err, "connect mongo client failed")
 		return ctrl.Result{Requeue: true}, err

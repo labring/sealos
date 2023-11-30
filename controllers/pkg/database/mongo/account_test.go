@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package database
+package mongo
 
 import (
 	"context"
@@ -36,7 +36,7 @@ import (
 func TestMongoDB_QueryBillingRecords(t *testing.T) {
 	dbCTX := context.Background()
 
-	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
 	if err != nil {
 		t.Errorf("failed to connect mongo: error = %v", err)
 	}
@@ -121,7 +121,7 @@ func TestMongoDB_QueryBillingRecords(t *testing.T) {
 
 func TestMongoDB_QueryBillingRecords1(t *testing.T) {
 	dbCTX := context.Background()
-	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
 	if err != nil {
 		t.Errorf("failed to connect mongo: error = %v", err)
 	}
@@ -157,7 +157,7 @@ func TestMongoDB_QueryBillingRecords2(t *testing.T) {
 	dbCTX := context.Background()
 
 	os.Setenv("MONGODB_URI", "mongodb://root:lv4nfcgz@127.0.0.1:64110/sealos-resources?authSource=admin&directConnection=true")
-	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
 	if err != nil {
 		t.Errorf("failed to connect mongo: error = %v", err)
 	}
@@ -310,7 +310,7 @@ func TestMongoDB_SaveBillingsWithAccountBalance(t *testing.T) {
 
 	dbCTX := context.Background()
 
-	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
 	if err != nil {
 		t.Errorf("failed to connect mongo: error = %v", err)
 	}
@@ -350,10 +350,9 @@ func TestMongoDB_getBillingCollection(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := &MongoDB{
-				URL:               tt.fields.URL,
+			m := &mongoDB{
 				Client:            tt.fields.Client,
-				DBName:            tt.fields.DBName,
+				AccountDB:         tt.fields.DBName,
 				MonitorConnPrefix: tt.fields.MonitorConn,
 				MeteringConn:      tt.fields.MeteringConn,
 				BillingConn:       tt.fields.BillingConn,
@@ -383,10 +382,9 @@ func TestMongoDB_getMeteringCollection(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := &MongoDB{
-				URL:               tt.fields.URL,
+			m := &mongoDB{
 				Client:            tt.fields.Client,
-				DBName:            tt.fields.DBName,
+				AccountDB:         tt.fields.DBName,
 				MonitorConnPrefix: tt.fields.MonitorConn,
 				MeteringConn:      tt.fields.MeteringConn,
 				BillingConn:       tt.fields.BillingConn,
@@ -417,10 +415,9 @@ func TestMongoDB_getMonitorCollection(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := &MongoDB{
-				URL:               tt.fields.URL,
+			m := &mongoDB{
 				Client:            tt.fields.Client,
-				DBName:            tt.fields.DBName,
+				AccountDB:         tt.fields.DBName,
 				MonitorConnPrefix: tt.fields.MonitorConn,
 				MeteringConn:      tt.fields.MeteringConn,
 				BillingConn:       tt.fields.BillingConn,
@@ -432,7 +429,7 @@ func TestMongoDB_getMonitorCollection(t *testing.T) {
 	}
 }
 
-func TestNewMongoDB(t *testing.T) {
+func TestNewMongoInterface(t *testing.T) {
 	type args struct {
 		ctx context.Context
 		URL string
@@ -440,20 +437,20 @@ func TestNewMongoDB(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *MongoDB
+		want    *mongoDB
 		wantErr bool
 	}{
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewMongoDB(tt.args.ctx, tt.args.URL)
+			got, err := NewMongoInterface(tt.args.ctx, tt.args.URL)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NewMongoDB() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("NewMongoInterface() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewMongoDB() got = %v, want %v", got, tt.want)
+				t.Errorf("NewMongoInterface() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -462,7 +459,7 @@ func TestNewMongoDB(t *testing.T) {
 func TestMongoDB_GetBillingLastUpdateTime(t *testing.T) {
 	dbCTX := context.Background()
 
-	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
 	if err != nil {
 		t.Errorf("failed to connect mongo: error = %v", err)
 	}
@@ -485,7 +482,7 @@ func TestMongoDB_GetBillingLastUpdateTime(t *testing.T) {
 func TestMongoDB_GetAllPricesMap(t *testing.T) {
 	dbCTX := context.Background()
 
-	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
 	if err != nil {
 		t.Errorf("failed to connect mongo: error = %v", err)
 	}
@@ -503,7 +500,7 @@ func TestMongoDB_GetAllPricesMap(t *testing.T) {
 
 func TestMongoDB_DropMonitorCollectionsOlderThan(t *testing.T) {
 	dbCTX := context.Background()
-	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
 	if err != nil {
 		t.Errorf("failed to connect mongo: error = %v", err)
 	}
@@ -520,7 +517,7 @@ func TestMongoDB_DropMonitorCollectionsOlderThan(t *testing.T) {
 
 func TestMongoDB_GetBillingHistoryNamespaceList(t *testing.T) {
 	dbCTX := context.Background()
-	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
 	if err != nil {
 		t.Errorf("failed to connect mongo: error = %v", err)
 	}
@@ -552,7 +549,7 @@ info generate billing data used {2 ns-7uyfrr47 pay-xy map[0:325 1:166 2:0]}
 func TestMongoDB_GenerateBillingData(t *testing.T) {
 	dbCTX := context.Background()
 
-	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
 	if err != nil {
 		t.Errorf("failed to connect mongo: error = %v", err)
 	}
@@ -574,7 +571,7 @@ func TestMongoDB_GenerateBillingData(t *testing.T) {
 func TestMongoDB_SetPropertyTypeLS(t *testing.T) {
 	dbCTX := context.Background()
 
-	m, err := NewMongoDB(dbCTX, os.Getenv("MONGODB_URI"))
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
 	if err != nil {
 		t.Errorf("failed to connect mongo: error = %v", err)
 	}

@@ -36,13 +36,6 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       matchLabels: {
         app: data.appName
       }
-    },
-    strategy: {
-      type: 'RollingUpdate',
-      rollingUpdate: {
-        maxUnavailable: 0,
-        maxSurge: 1
-      }
     }
   };
   const templateMetadata = {
@@ -158,6 +151,13 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       metadata,
       spec: {
         ...commonSpec,
+        strategy: {
+          type: 'RollingUpdate',
+          rollingUpdate: {
+            maxUnavailable: 0,
+            maxSurge: 1
+          }
+        },
         template: {
           metadata: templateMetadata,
           spec: {
@@ -180,6 +180,12 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       metadata,
       spec: {
         ...commonSpec,
+        updateStrategy: {
+          type: 'RollingUpdate',
+          rollingUpdate: {
+            maxUnavailable: '50%'
+          }
+        },
         minReadySeconds: 10,
         serviceName: data.appName,
         template: {
