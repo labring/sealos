@@ -8,7 +8,7 @@ import {
 import { DetailDrawerProps } from '@/types/detail';
 import DrawerPanel from '../../../drawer/drawer-panel';
 import Drawer from '../../../drawer/drawer';
-import { DrawerItem } from '../../../drawer/drawer-item';
+import DrawerItem from '../../../drawer/drawer-item';
 import { Button, Table } from 'antd';
 import { ColumnsType } from 'antd/lib/table';
 
@@ -43,25 +43,6 @@ const rulesColumns: ColumnsType<ComputedIngressRoute> = [
     dataIndex: 'service'
   }
 ];
-
-const IngressRules = ({ ingress }: { ingress: Ingress }) => {
-  return ingress
-    .getRules()
-    .map((rule, idx) => (
-      <div key={idx}>
-        {rule.http && (
-          <Table
-            size="small"
-            bordered
-            columns={rulesColumns}
-            dataSource={computeRuleDeclarations(ingress, rule)}
-            pagination={false}
-            title={() => <>{rule.host && `Host: ${rule.host}`}</>}
-          />
-        )}
-      </div>
-    ));
-};
 
 const pointsColumns: ColumnsType<ILoadBalancerIngress> = [
   {
@@ -106,7 +87,20 @@ const IngressDetail = ({ obj, open, onClose }: DetailDrawerProps<Ingress>) => {
         {port && <DrawerItem name="Service" value={`${port.serviceName}:${port.servicePort}`} />}
       </DrawerPanel>
       <DrawerPanel title="Rules">
-        <IngressRules ingress={obj} />
+        {obj.getRules().map((rule, idx) => (
+          <div key={idx}>
+            {rule.http && (
+              <Table
+                size="small"
+                bordered
+                columns={rulesColumns}
+                dataSource={computeRuleDeclarations(obj, rule)}
+                pagination={false}
+                title={() => <>{rule.host && `Host: ${rule.host}`}</>}
+              />
+            )}
+          </div>
+        ))}
       </DrawerPanel>
       <DrawerPanel title="Load-Balancer Ingress Points">
         <IngressPoints points={obj.status?.loadBalancer.ingress} />

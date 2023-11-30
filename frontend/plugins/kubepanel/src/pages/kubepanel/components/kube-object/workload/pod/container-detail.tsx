@@ -1,7 +1,7 @@
 import { Container, Pod } from '@/k8slens/kube-object';
 import ContainerStatusBrick from './container-status-brick';
 import { keys } from 'lodash';
-import { DrawerItem } from '@/pages/kubepanel/components/drawer/drawer-item';
+import DrawerItem from '@/pages/kubepanel/components/drawer/drawer-item';
 import ContainerStatus, { ContainerLastState } from './container-status';
 import { KubeBadge } from '@/components/kube/kube-badge';
 import { Tooltip } from 'antd';

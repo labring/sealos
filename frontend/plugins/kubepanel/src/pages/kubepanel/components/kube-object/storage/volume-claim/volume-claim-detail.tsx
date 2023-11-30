@@ -1,7 +1,7 @@
 import { PersistentVolumeClaim, Pod } from '@/k8slens/kube-object';
 import Drawer from '../../../drawer/drawer';
 import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
-import { DrawerItem } from '@/pages/kubepanel/components/drawer/drawer-item';
+import DrawerItem from '@/pages/kubepanel/components/drawer/drawer-item';
 import { KubeBadge } from '@/components/kube/kube-badge';
 import React from 'react';
 import DrawerPanel from '../../../drawer/drawer-panel';
