@@ -1,25 +1,25 @@
-import { useEffect, useState } from 'react';
-import Head from 'next/head';
-import type { AppProps } from 'next/app';
-import { ChakraProvider } from '@chakra-ui/react';
 import { theme } from '@/constants/theme';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import Router from 'next/router';
-import NProgress from 'nprogress'; //nprogress module
-import { sealosApp, createSealosApp } from 'sealos-desktop-sdk/app';
-import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { useConfirm } from '@/hooks/useConfirm';
-import throttle from 'lodash/throttle';
-import { useGlobalStore } from '@/store/global';
 import { useLoading } from '@/hooks/useLoading';
+import { useGlobalStore } from '@/store/global';
 import { loadInitData } from '@/store/static';
-import { useRouter } from 'next/router';
-import { appWithTranslation, useTranslation } from 'next-i18next';
-import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import { useUserStore } from '@/store/user';
+import { getLangStore, setLangStore } from '@/utils/cookieUtils';
+import { ChakraProvider } from '@chakra-ui/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import throttle from 'lodash/throttle';
+import { appWithTranslation, useTranslation } from 'next-i18next';
+import type { AppProps } from 'next/app';
+import Head from 'next/head';
+import Router, { useRouter } from 'next/router';
+import NProgress from 'nprogress'; //nprogress module
+import { useEffect, useState } from 'react';
+import { EVENT_NAME } from 'sealos-desktop-sdk';
+import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 
-import 'nprogress/nprogress.css';
+import { getPlatformEnv } from '@/api/platform';
 import '@/styles/reset.scss';
+import 'nprogress/nprogress.css';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -51,9 +51,7 @@ const App = ({ Component, pageProps }: AppProps) => {
 
   useEffect(() => {
     NProgress.start();
-
     const response = createSealosApp();
-
     (async () => {
       const { SEALOS_DOMAIN, FORM_SLIDER_LIST_CONFIG } = await (() => loadInitData())();
       initFormSliderList(FORM_SLIDER_LIST_CONFIG);
@@ -79,7 +77,6 @@ const App = ({ Component, pageProps }: AppProps) => {
       }
     })();
     NProgress.done();
-
     return response;
   }, []);
 
@@ -99,7 +96,7 @@ const App = ({ Component, pageProps }: AppProps) => {
   }, [setScreenWidth]);
 
   useEffect(() => {
-    const changeI18n = async (data: any) => {
+    const changeI18n = async (data: { currentLanguage: string }) => {
       const lastLang = getLangStore();
       const newLang = data.currentLanguage;
       if (lastLang !== newLang) {
@@ -132,9 +129,40 @@ const App = ({ Component, pageProps }: AppProps) => {
   }, [router.pathname]);
 
   useEffect(() => {
-    const lang = getLangStore() || 'en';
+    const lang = getLangStore() || 'zh';
     i18n?.changeLanguage?.(lang);
   }, [refresh, router.pathname]);
+
+  // InternalAppCall
+  const setupInternalAppCallListener = async () => {
+    try {
+      const envs = await getPlatformEnv();
+      const event = async (e: MessageEvent) => {
+        const whitelist = [`https://${envs?.domain}`];
+        if (!whitelist.includes(e.origin)) {
+          return;
+        }
+        try {
+          if (e.data?.type === 'InternalAppCall' && e.data?.name) {
+            router.push({
+              pathname: '/app/detail',
+              query: {
+                name: e.data.name
+              }
+            });
+          }
+        } catch (error) {
+          console.log(error, 'error');
+        }
+      };
+      window.addEventListener('message', event);
+      return () => window.removeEventListener('message', event);
+    } catch (error) {}
+  };
+  useEffect(() => {
+    setupInternalAppCallListener();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>

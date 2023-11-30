@@ -34,11 +34,11 @@ https://github.com/labring/sealos/assets/82700206/b1f8a25a-55cf-4d15-a47b-38cf7d
   <a href="https://github.com/orgs/labring/projects/4/views/9">Roadmap</a>
 </p>
 
-Sealos['siːləs] is a cloud operating system distribution based on the Kubernetes kernel. This allows enterprises to use the cloud as effortlessly as they would use a personal computer.
+Sealos['siːləs] is a cloud operating system distribution based on the Kubernetes kernel. Using the cloud like using a personal computer, reducing the cost of the cloud to 1/10 of the original.
 
 ## 🚀 Deploy your app on Sealos
 
-[Try online demo](https://cloud.sealos.io)
+[Try online，sealos public cloud](https://cloud.sealos.io)   [sealos private cloud, local hosting](https://sealos.io/zh-Hans/self-hosting)
 
 * [Easily Deploy Nginx in 30 Seconds on Sealos](https://sealos.io/docs/quick-start/app-deployments/use-app-launchpad)
 * [Start a mysql/pgsql/mongo highly available database in 30 seconds on Sealos](https://sealos.io/docs/quick-start/app-deployments/install-db-with-database)
@@ -62,14 +62,14 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 
 ## 💡 Core features
 
-- 🚀 **Application Management**: Efficient deployment of any distributed applications with public internet accessibility.
+- 🚀 **Application Management**: Easy management and quick release of publicly accessible distributed applications in the app store.
 - 🗄️ **Database Management**: Create high-availability databases in seconds, offering support for MySQL, PostgreSQL, MongoDB, and Redis.
-- 📬 **Support for Message Queues**: Catering to a variety of message queues such as Kafka, RocketMQ, and RabbitMQ.
+- 🌥️ **Cloud Universality**: Equally effective in both public and private cloud, enabling a seamless transition of traditional applications to the cloud.
 
 ## 🌟 Advantages
 
-- 💰 **Resource Efficiency & Cost Reduction**: Pay exclusively for the containers. The automatic scaling feature fundamentally tackles resource wastage, thus offering substantial cost benefits.
-- 🌐 **High Universality & Ease of Use**: Users can concentrate solely on their operations without the distraction of external complexities. Regardless of one's knowledge level of Kubernetes, Sealos remains user-friendly.
+- 💰 **Efficient & Economical**: Pay solely for the containers you utilize; automatic scaling prevents resource squandering and substantially reduces costs.
+- 🌐 **High Universality & Ease of Use**: Concentrate on your core business activities without worrying about system complexities; negligible learning costs involved.
 - 🛡️ **Agility & Security**: The distinctive multi-tenancy sharing model ensures both effective resource segmentation and collaboration, all under a secure framework.
 
 

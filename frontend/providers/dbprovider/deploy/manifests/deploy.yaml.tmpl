@@ -44,6 +44,16 @@ spec:
               value: "{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
             - name: MONITOR_URL
               value: {{ .monitorUrl }}
+            - name: MINIO_ACCESS_KEY
+              value: {{ .minioAccessKey }}
+            - name: MINIO_SECRET_KEY
+              value: {{ .minioSecretKey }}
+            - name: MIGRATE_FILE_IMAGE
+              value: {{ .migrateFileImage }}
+            - name: MINIO_PORT
+              value: {{ .minioPort }}
+            - name: MINIO_BUCKET_NAME
+              value: {{ .minioBucketName }}
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

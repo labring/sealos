@@ -64,6 +64,7 @@ export default function InstanceList() {
         data?.map((item) => {
           return (
             <Flex
+              onClick={() => goInstancePage(item.id)}
               position={'relative'}
               cursor={'pointer'}
               _hover={{
@@ -106,7 +107,6 @@ export default function InstanceList() {
               </Text>
               <Flex justifyContent={'space-between'} alignItems={'center'} gap={'20px'}>
                 <Flex
-                  onClick={() => goInstancePage(item.id)}
                   w="100%"
                   h="32px"
                   justifyContent={'center'}

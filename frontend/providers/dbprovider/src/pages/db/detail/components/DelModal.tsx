@@ -14,6 +14,7 @@ import {
 import { delDBByName } from '@/api/db';
 import { useToast } from '@/hooks/useToast';
 import { useTranslation } from 'next-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 
 const DelModal = ({
   dbName,
@@ -24,6 +25,7 @@ const DelModal = ({
   onClose: () => void;
   onSuccess: () => void;
 }) => {
+  const queryClient = useQueryClient();
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);

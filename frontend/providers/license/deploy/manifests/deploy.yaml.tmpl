@@ -1,4 +1,11 @@
 apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: license-frontend
+  name: license-frontend
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: license-frontend-config
@@ -33,17 +40,12 @@ spec:
             - name: SEALOS_DOMAIN
               value: {{ .cloudDomain }}
             - name: LICENSE_DOMAIN
-              value: {{ .licensePuchaseDomain }}
+              value: {{ .licensePurchaseDomain }}
             - name: MONGODB_URI
               valueFrom:
                 secretKeyRef:
                   name: license-frontend-secret
                   key: mongodb_uri
-            - name: PASSWORD_SALT
-              valueFrom:
-                secretKeyRef:
-                  name: license-frontend-secret
-                  key: password_salt
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

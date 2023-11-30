@@ -1,12 +1,14 @@
 {
-  "Upload Token File": "Upload Token File",
+  "Upload Token File": "Upload License File",
   "Activate License": "Activate License",
   "Activation Record": "Activation Record",
   "Purchase License": "Purchase License",
   "Please go to": "Please go to",
-  "Purchase": "purchase a license.",
+  "Purchase": "purchase",
   "Activation Time": "Activation time: ",
   "Go to the message center to see the results": "Go to the message center to see the results",
-  "token does not exist": "token does not exist",
-  "No Record": "No Record"
+  "token does not exist": "license does not exist",
+  "No Record": "No Record",
+  "Activation time": "Activation time",
+  "Activation Successful": "Activation Successful"
 }

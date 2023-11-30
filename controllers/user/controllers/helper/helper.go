@@ -17,9 +17,10 @@ limitations under the License.
 package helper
 
 import (
-	v1 "github.com/labring/sealos/controllers/user/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	v1 "github.com/labring/sealos/controllers/user/api/v1"
 )
 
 func IsConditionTrue(conditions []v1.Condition, condition v1.Condition) bool {

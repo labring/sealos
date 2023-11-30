@@ -93,6 +93,12 @@ spec:
             # set to true to enable sms login
             - name: SMS_ENABLED
               value: '{{ .smsEnabled }}'
+            # set to true to enable sign up
+            - name: SIGN_UP_ENABLED
+              value: '{{ .signUpEnabled }}'
+            # set to true to open api
+            - name: API_ENABLED
+              value: '{{ .apiEnabled }}'
             # password login env
             - name: PASSWORD_SALT
               valueFrom:

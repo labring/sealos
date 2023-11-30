@@ -94,7 +94,7 @@ request.interceptors.response.use(
 
     const apiResp = data as ApiResp;
     if (apiResp.code < 200 || apiResp.code >= 400) {
-      return Promise.reject(apiResp.code + ':' + apiResp.message);
+      return Promise.reject(apiResp);
     }
 
     response.data = apiResp.data;

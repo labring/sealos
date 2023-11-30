@@ -79,6 +79,19 @@ func DecryptInt64(in string) (int64, error) {
 	return strconv.ParseInt(string(out), 10, 64)
 }
 
+func DecryptFloat64(in string) (float64, error) {
+	out, err := Decrypt(in)
+	if err != nil {
+		return 0, fmt.Errorf("failed to decrpt balance: %w", err)
+	}
+	return strconv.ParseFloat(string(out), 64)
+}
+
+func EncryptFloat64(in float64) (*string, error) {
+	out, err := Encrypt([]byte(strconv.FormatFloat(in, 'f', -1, 64)))
+	return &out, err
+}
+
 // DecryptInt64WithKey decrypts the given ciphertext using AES-GCM.
 func DecryptInt64WithKey(in string, encryptionKey []byte) (int64, error) {
 	out, err := DecryptWithKey(in, encryptionKey)

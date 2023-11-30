@@ -5,6 +5,7 @@ import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import { Session } from '@/types';
 import { Flex, Spinner } from '@chakra-ui/react';
+import { uploadConvertData } from '@/api/platform';
 const Callback: NextPage = () => {
   const router = useRouter();
   const setSessionProp = useSessionStore((s) => s.setSessionProp);
@@ -30,7 +31,9 @@ const Callback: NextPage = () => {
           setSessionProp('token', token);
           setSessionProp('user', user);
           setSessionProp('kubeconfig', kubeconfig);
-
+          uploadConvertData([3]).then((res) => {
+            console.log(res);
+          });
           router.replace('/');
         } else {
           throw new Error();

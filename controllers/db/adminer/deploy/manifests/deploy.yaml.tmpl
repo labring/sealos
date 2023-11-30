@@ -61,7 +61,6 @@ spec:
                 default: nginx
                 enum:
                 - nginx
-                - apisix
                 type: string
               keepalived:
                 type: string
@@ -390,7 +389,7 @@ spec:
         - name: DOMAIN
           value: {{ .cloudDomain }}
         - name: TLS_ENABLED
-          value: {{ .tlsEnabled }}
+          value: '{{ .tlsEnabled }}'
         - name: IMAGE
           value: {{ .image }}
         - name: SECRET_NAME
@@ -415,7 +414,7 @@ spec:
         resources:
           limits:
             cpu: 500m
-            memory: 128Mi
+            memory: 512Mi
           requests:
             cpu: 10m
             memory: 64Mi

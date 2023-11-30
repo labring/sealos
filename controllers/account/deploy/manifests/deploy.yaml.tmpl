@@ -242,6 +242,7 @@ spec:
                 items:
                   properties:
                     amount:
+                      description: Amount = PaymentAmount + GiftAmount
                       format: int64
                       type: integer
                     appType:
@@ -257,6 +258,14 @@ spec:
                       type: string
                     order_id:
                       type: string
+                    payment:
+                      description: when Type = Recharge, PaymentAmount is the amount
+                        of recharge
+                      properties:
+                        amount:
+                          format: int64
+                          type: integer
+                      type: object
                     time:
                       format: date-time
                       type: string
@@ -568,8 +577,7 @@ spec:
                     discountType:
                       type: string
                     price:
-                      format: int64
-                      type: integer
+                      type: string
                     resourceType:
                       type: string
                   required:
@@ -1269,7 +1277,7 @@ spec:
         - name: NEW_ACCOUNT_AMOUNT
           value: ri79LzQiQrs6CVa1ctE308+AseBXbOua0RIMCXAH5hc3irs=
         - name: WHITELIST
-          value: notifications.Notification.notification.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,billinginfoqueries.BillingInfoQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1
+          value: licenses.License.license.sealos.io/v1,notifications.Notification.notification.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,billinginfoqueries.BillingInfoQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1
         - name: ACCOUNT_SYSTEM_NAMESPACE
           valueFrom:
             fieldRef:

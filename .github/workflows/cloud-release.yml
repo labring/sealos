@@ -1,0 +1,114 @@
+name: Release Cloud
+
+on:
+  release:
+    types: [ published ]
+
+env:
+  # Common versions
+  GO_VERSION: "1.20"
+  DEFAULT_OWNER: "labring"
+
+jobs:
+  save-sealos:
+    uses: ./.github/workflows/import-save-sealos.yml
+
+  release-controllers:
+    uses: ./.github/workflows/controllers.yml
+    with:
+      push_image: true
+      push_image_tag: ${{ github.event.release.tag_name }}
+    secrets: inherit
+
+  release-frontends:
+    uses: ./.github/workflows/frontend.yml
+    with:
+      push_image: true
+      push_image_tag: ${{ github.event.release.tag_name }}
+    secrets: inherit
+
+  release-service:
+    needs:
+      - save-sealos
+    uses: ./.github/workflows/services.yml
+    with:
+      push_image: true
+      push_image_tag: ${{ github.event.release.tag_name }}
+    secrets: inherit
+
+  release-cloud:
+    needs:
+      - save-sealos
+      - release-controllers
+      - release-frontends
+      - release-service
+    uses: ./.github/workflows/cloud.yml
+    with:
+      push_image: true
+      push_image_tag: ${{ github.event.release.tag_name }}
+      build_from: ${{ github.event.release.tag_name }}
+    secrets: inherit
+
+  release-amd-offline-tar:
+    needs:
+      - release-cloud
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/sealos
+          sudo sealos version
+      - name: Build
+        run: export CLOUD_VERSION=${{ github.event.release.tag_name }} && export ARCH=amd64 && bash ./scripts/cloud/build-offline-tar.sh
+      - name: Setup ossutil
+        uses: manyuanrong/setup-ossutil@v2.0
+        with:
+          endpoint: ${{ secrets.OSS_ENDPOINT }}
+          access-key-id: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          access-key-secret: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+      - name: Cat md5sum
+        run: cat ./sealos-cloud.tar.gz.md5
+      - name: Upload
+        run: |
+          ossutil cp ./sealos-cloud.tar.gz oss://${{ secrets.OSS_BUCKET }}/cloud/sealos-cloud-${{ github.event.release.tag_name }}-amd64.tar.gz
+          ossutil cp ./sealos-cloud.tar.gz.md5 oss://${{ secrets.OSS_BUCKET }}/cloud/sealos-cloud-${{ github.event.release.tag_name }}-amd64.tar.gz.md5
+
+  release-arm-offline-tar:
+    needs:
+      - release-cloud
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/sealos
+          sudo sealos version
+      - name: Build
+        run: export CLOUD_VERSION=${{ github.event.release.tag_name }} && export ARCH=arm64 && bash ./scripts/cloud/build-offline-tar.sh
+      - name: Setup ossutil
+        uses: manyuanrong/setup-ossutil@v2.0
+        with:
+          endpoint: ${{ secrets.OSS_ENDPOINT }}
+          access-key-id: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          access-key-secret: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+      - name: Cat md5sum
+        run: cat ./sealos-cloud.tar.gz.md5
+      - name: Upload
+        run: |
+          ossutil cp ./sealos-cloud.tar.gz oss://${{ secrets.OSS_BUCKET }}/cloud/sealos-cloud-${{ github.event.release.tag_name }}-arm64.tar.gz
+          ossutil cp ./sealos-cloud.tar.gz.md5 oss://${{ secrets.OSS_BUCKET }}/cloud/sealos-cloud-${{ github.event.release.tag_name }}-arm64.tar.gz.md5

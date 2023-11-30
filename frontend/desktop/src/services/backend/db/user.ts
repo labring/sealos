@@ -28,15 +28,17 @@ export async function createUser({
   id,
   provider,
   name,
-  avatar_url
+  avatar_url,
+  password
 }: {
   id: string;
   provider: Provider;
   name: string;
   avatar_url: string;
+  password?: string;
 }) {
+  if (!verifyProvider(provider)) return Promise.reject('provider error');
   const users = await connectToUserCollection();
-
   let uid = uuid();
   const k8s_username = await get_k8s_username();
   let user: User = {
@@ -50,10 +52,10 @@ export async function createUser({
       }
     ]
   };
-  if (!verifyProvider(provider)) return Promise.reject('provider error');
   user[provider] = id;
-  await users.insertOne(user);
-  return user;
+  if (password && provider === 'password_user') user.password = password;
+  const res = await users.insertOne(user);
+  return res.acknowledged ? user : null;
 }
 export async function updateUser({
   id,

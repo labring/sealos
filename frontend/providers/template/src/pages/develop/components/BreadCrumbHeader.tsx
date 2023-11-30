@@ -1,8 +1,16 @@
-import { Button, Flex, Icon, Text } from '@chakra-ui/react';
+import { Box, Button, Flex, Icon, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 
-const BreadCrumbHeader = ({ applyCb }: { applyCb: () => void }) => {
+const BreadCrumbHeader = ({
+  applyCb,
+  applyFormalCb,
+  isShowBtn = true
+}: {
+  applyFormalCb: () => void;
+  applyCb: () => void;
+  isShowBtn: boolean;
+}) => {
   const router = useRouter();
   const { t } = useTranslation();
 
@@ -55,9 +63,22 @@ const BreadCrumbHeader = ({ applyCb }: { applyCb: () => void }) => {
           {t('develop.YAML Detection Tool')}
         </Text>
       </Flex>
+
       <Button ml="auto" px={4} minW={'120px'} h={'34px'} variant={'primary'} onClick={applyCb}>
         {t('develop.Dryrun Deploy')}
       </Button>
+      {isShowBtn && (
+        <Button
+          ml="12px"
+          px={4}
+          minW={'120px'}
+          h={'34px'}
+          variant={'primary'}
+          onClick={applyFormalCb}
+        >
+          {t('develop.Formal Deploy')}
+        </Button>
+      )}
     </Flex>
   );
 };

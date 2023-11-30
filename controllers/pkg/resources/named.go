@@ -1,7 +1,23 @@
+// Copyright © 2023 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package resources
 
 import (
 	"strings"
+
+	corev1 "k8s.io/api/core/v1"
 
 	sealos_networkmanager "github.com/dinoallo/sealos-networkmanager-protoapi"
 
@@ -29,7 +45,9 @@ const (
 	DBPodLabelComponentNameKey = "apps.kubeblocks.io/component-name"
 	TerminalIDLabelKey         = "TerminalID"
 	AppLabelKey                = "app"
+	AppDeployLabelKey          = "cloud.sealos.io/app-deploy-manager"
 	JobNameLabelKey            = "job-name"
+	ACMEChallengeKey           = "acme.cert-manager.io/http01-solver"
 	KubeBlocksBackUpName       = "kubeblocks-backup-data"
 )
 
@@ -53,17 +71,53 @@ func NewResourceNamed(cr client.Object) *ResourceNamed {
 	case labels[AppLabelKey] != "":
 		p._type = APP
 		p._name = labels[AppLabelKey]
+	case labels[AppDeployLabelKey] != "":
+		p._type = APP
+		p._name = labels[AppDeployLabelKey]
 	case labels[JobNameLabelKey] != "":
 		p._type = JOB
 		p._name = strings.SplitN(labels[JobNameLabelKey], "-", 2)[0]
 	case cr.GetName() == KubeBlocksBackUpName:
 		p._type = JOB
 		p._name = KubeBlocksBackUpName
+	case labels[ACMEChallengeKey] != "":
+		p._type = APP
+		p._name = getACMEResolverName(cr)
 	default:
 		p._type = OTHER
 		p._name = ""
 	}
 	return p
+}
+
+func NewObjStorageResourceNamed(bucket string) *ResourceNamed {
+	return &ResourceNamed{
+		_type: ObjectStorage,
+		_name: bucket,
+	}
+}
+
+const (
+	acmesolver                          = "acmesolver"
+	acmesolverContainerArgsDomainPrefix = "--domain="
+)
+
+func getACMEResolverName(obj client.Object) string {
+	pod, ok := obj.(*corev1.Pod)
+	if !ok {
+		return ""
+	}
+	for _, container := range pod.Spec.Containers {
+		if container.Name != acmesolver {
+			continue
+		}
+		for _, arg := range container.Args {
+			if strings.HasPrefix(arg, acmesolverContainerArgsDomainPrefix) {
+				return acmesolver + "-" + strings.TrimPrefix(arg, acmesolverContainerArgsDomainPrefix)
+			}
+		}
+	}
+	return pod.Name
 }
 
 func (p *ResourceNamed) Type() uint8 {

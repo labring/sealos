@@ -4,6 +4,18 @@ name: Build Services image
 on:
   create:
     tags:
+  workflow_call:
+    inputs:
+      push_image:
+        description: 'Push image'
+        required: false
+        type: boolean
+        default: false
+      push_image_tag:
+        description: 'Push image tag'
+        default: 'latest'
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       push_image:
@@ -65,7 +77,7 @@ jobs:
       - name: Run Linter
         uses: golangci/golangci-lint-action@v3
         with:
-          version: latest
+          version: v1.54.2
           working-directory: ${{ matrix.workdir }}
           args: "--out-${NO_FUTURE}format colored-line-number"
 
@@ -222,6 +234,7 @@ jobs:
         run: |
           CLUSTER_IMAGE_NAME=${{ steps.prepare.outputs.cluster_repo }}:${{ steps.prepare.outputs.tag_name }}
           sudo sealos build -t ${CLUSTER_IMAGE_NAME}-amd64 --platform linux/amd64 -f Kubefile
+          sudo rm -rf registry
           sudo sealos build -t ${CLUSTER_IMAGE_NAME}-arm64 --platform linux/arm64 -f Kubefile
           sudo sealos images
       - name: Build ${{ matrix.module }}-service cluster image for latest
@@ -231,6 +244,7 @@ jobs:
           sudo sealos tag ${CLUSTER_IMAGE_NAME}-amd64  ${CLUSTER_IMAGE_NAME_LATEST}-amd64
           sudo sealos tag ${CLUSTER_IMAGE_NAME}-arm64  ${CLUSTER_IMAGE_NAME_LATEST}-arm64
           sudo sealos images
+          bash docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME
           bash docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME_LATEST
       - name: Renew issue and Sync Images
         uses: labring/gh-rebot@v0.0.6

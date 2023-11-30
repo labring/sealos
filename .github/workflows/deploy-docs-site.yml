@@ -1,6 +1,7 @@
 name: Deploy Sealos Docs Site
 
 on:
+  workflow_dispatch:
   push:
     branches: ["main"]
     paths:
@@ -20,6 +21,7 @@ concurrency:
 
 env:
   BUILD_PATH: "./docs/website"
+  BD_TOKEN: ${{ secrets.BD_TOKEN }}
 
 jobs:
   build:
@@ -28,12 +30,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Copy Files and Directories
-        run: |
-          mkdir -p ${{ env.BUILD_PATH }}/i18n/zh-Hans/docusaurus-plugin-content-docs/
-          cp -r docs/4.0/i18n/zh-Hans/ ${{ env.BUILD_PATH }}/i18n/zh-Hans/docusaurus-plugin-content-docs/current/
-          cp docs/4.0/i18n/zh-Hans/current.json  ${{ env.BUILD_PATH }}/i18n/zh-Hans/docusaurus-plugin-content-docs/current.json
-          cp docs/4.0/code.json  ${{ env.BUILD_PATH }}/i18n/zh-Hans/code.json
 
       - name: Detect package manager
         id: detect-package-manager
@@ -64,19 +60,14 @@ jobs:
       - name: Build with Docusaurus
         run: ${{ steps.detect-package-manager.outputs.runner }} run build 
         working-directory: ${{ env.BUILD_PATH }}
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+      # Push our generated site to Vercel
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        id: vercel-action
         with:
-          path: ${{ env.BUILD_PATH }}/build
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    needs: build
-    runs-on: ubuntu-latest
-    name: Deploy
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v2
+          vercel-token: ${{ secrets.VERCEL_TOKEN }} # Required
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }} #Required
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }} #Required
+          github-comment: false
+          vercel-args: '--prod'
+          working-directory: ${{ env.BUILD_PATH }}/build

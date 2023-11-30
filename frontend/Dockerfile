@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM node:current-alpine As base
+FROM node:20.4.0-alpine As base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
@@ -60,7 +60,7 @@ ARG path
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm --offline --filter=$name install && pnpm --filter=$name run build
 
 # Production image, copy all the files and run next
-FROM node:current-alpine AS runner
+FROM node:20.4.0-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV production
@@ -84,7 +84,10 @@ fi
 USER nextjs
 
 # You only need to copy next.config.js if you are NOT using the default configuration
-# COPY --from=builder /app/desktop/next.config.js ./
+COPY --from=builder /app/$path/next.config.js ./$path/next.config.js
+RUN if ["$name" = "objectstorage" ]; then \
+  COPY --from=builder /app/$path/next-i18next.config.js ./$path/next-i18next.config.js; \
+  fi
 COPY --from=builder /app/$path/public ./$path/public
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/static ./$path/.next/static

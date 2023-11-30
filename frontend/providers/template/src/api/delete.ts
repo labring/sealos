@@ -36,8 +36,11 @@ export const delRoleBindingByName = (instanceName: string) =>
 
 export const delServiceAccountByName = (instanceName: string) =>
   DELETE('/api/resource/delServiceAccount', { instanceName });
-
-const deleteResourceByKind: Record<ResourceKindType, (instanceName: string) => void> = {
+export const delPersistentVolumeClaim = (instanceName: string) =>
+  DELETE('/api/resource/delPersistentVolumeClaim', { instanceName });
+export const delCR = (data: Record<'kind' | 'name' | 'apiVersion', string>) =>
+  DELETE('/api/resource/delCR', data);
+const deleteResourceByKind: Record<string, undefined | ((instanceName: string) => void)> = {
   CronJob: (instanceName: string) => delCronJobByName(instanceName),
   App: (instanceName: string) => deleteAppCRD(instanceName),
   Secret: (instanceName: string) => deleteSecret(instanceName),
@@ -49,12 +52,21 @@ const deleteResourceByKind: Record<ResourceKindType, (instanceName: string) => v
   Issuer: (instanceName: string) => delIssuerByName(instanceName),
   Role: (instanceName: string) => delRoleByName(instanceName),
   RoleBinding: (instanceName: string) => delRoleBindingByName(instanceName),
-  ServiceAccount: (instanceName: string) => delServiceAccountByName(instanceName)
+  ServiceAccount: (instanceName: string) => delServiceAccountByName(instanceName),
+  PersistentVolumeClaim: delPersistentVolumeClaim
 };
 
 export const deleteAllResources = async (resources: BaseResourceType[]) => {
   const deletePromises = resources.map((resource) => {
-    return deleteResourceByKind[resource.kind](resource.name);
+    const fn = deleteResourceByKind[resource.kind];
+    console.log(fn);
+    if (!!fn) return fn(resource.name);
+    else
+      delCR({
+        name: resource.name,
+        apiVersion: resource.apiVersion!,
+        kind: resource.kind!
+      });
   });
   const reuslt = await Promise.allSettled(deletePromises);
   console.log(reuslt);

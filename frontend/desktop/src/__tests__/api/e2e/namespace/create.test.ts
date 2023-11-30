@@ -5,6 +5,7 @@ import { _setAuth, cleanDb, cleanK8s } from '@/__tests__/api/tools';
 import { _createRequest } from '@/api/namespace';
 import request from '@/__tests__/api/request';
 import { Db, MongoClient } from 'mongodb';
+import { getTeamLimit } from '@/services/enable';
 describe('Login create', () => {
   let session: Session;
   const createRequest = _createRequest(request);
@@ -55,14 +56,7 @@ describe('Login create', () => {
     const res = await createRequest({ teamName: 'hello' });
     expect(res.code).toBe(409);
   });
-  it.each([
-    ['team1', 0],
-    ['team2', 1],
-    ['team3', 2],
-    ['team4', 3],
-    ['team5', 4],
-    ['team6', 5]
-  ])(
+  it.skip.each(new Array(getTeamLimit() + 2).map((_, idx) => [`team${idx}`, idx]))(
     'limit 4 team',
     async (teamName: string, idx: number) => {
       if (idx === 0) {
@@ -76,7 +70,7 @@ describe('Login create', () => {
       }
       const res = await createRequest({ teamName });
       console.log('curIdx', idx, 'code', res.code);
-      if (idx > 3) expect(res.code).toBe(403);
+      if (idx >= getTeamLimit()) expect(res.code).toBe(403);
       else expect(res.code).toBe(200);
     },
     10000

@@ -6,9 +6,10 @@ import { getTeamKubeconfig } from '@/services/backend/kubernetes/admin';
 import { GetUserDefaultNameSpace } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import { bindingRole, modifyTeamRole } from '@/services/backend/team';
+import { getTeamLimit } from '@/services/enable';
 import { NSType, NamespaceDto, UserRole } from '@/types/team';
 import { NextApiRequest, NextApiResponse } from 'next';
-const TEAM_LIMIT = 5;
+const TEAM_LIMIT = getTeamLimit();
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const payload = await authSession(req.headers);

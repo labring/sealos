@@ -1,5 +1,5 @@
 import { BACKUP_REMARK_LABEL_KEY, BackupTypeEnum, backupStatusMap } from '@/constants/backup';
-import { dbStatusMap } from '@/constants/db';
+import { MigrationRemark, dbStatusMap } from '@/constants/db';
 import type { AutoBackupFormType, BackupCRItemType } from '@/types/backup';
 import type { KbPgClusterType, KubeBlockBackupPolicyType } from '@/types/cluster';
 import type { DBDetailType, DBEditType, DBListItemType, PodDetailType, PodEvent } from '@/types/db';
@@ -7,12 +7,16 @@ import {
   convertCronTime,
   cpuFormatToM,
   formatPodTime,
+  formatTime,
   memoryFormatToMi,
   storageFormatToNum
 } from '@/utils/tools';
-import type { CoreV1EventList, V1Pod } from '@kubernetes/client-node';
+import type { CoreV1EventList, V1Pod, V1Service } from '@kubernetes/client-node';
 import dayjs from 'dayjs';
 import type { BackupItemType } from '../types/db';
+import { InternetMigrationCR, MigrateForm, MigrateItemType } from '@/types/migrate';
+import { SecretResponse } from '@/pages/api/getSecretByName';
+import { getMigratePodList } from '@/api/migrate';
 
 export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
   // compute store amount
@@ -81,6 +85,7 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
     podName: pod.metadata?.name || 'pod name',
     status: pod.status?.containerStatuses || [],
     nodeName: pod.spec?.nodeName || 'node name',
+    hostIp: pod.status?.hostIP || 'host ip',
     ip: pod.status?.podIP || 'pod ip',
     restarts: pod.status?.containerStatuses
       ? pod.status?.containerStatuses.reduce((sum, item) => sum + item.restartCount, 0)
@@ -197,5 +202,15 @@ export const adaptPolicy = (policy: KubeBlockBackupPolicyType): AutoBackupFormTy
     minute,
     saveTime,
     saveType
+  };
+};
+
+export const adaptMigrateList = (item: InternetMigrationCR): MigrateItemType => {
+  return {
+    id: item.metadata?.uid,
+    name: item.metadata?.name,
+    status: item.status?.taskStatus,
+    startTime: formatTime(item.metadata?.creationTimestamp || ''),
+    remark: item.metadata.labels[MigrationRemark] || '-'
   };
 };

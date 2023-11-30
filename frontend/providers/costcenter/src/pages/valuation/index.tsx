@@ -40,6 +40,7 @@ import CpuIcon from '@/components/icons/CpuIcon';
 import { MemoryIcon } from '@/components/icons/MemoryIcon';
 import { NetworkIcon } from '@/components/icons/NetworkIcon';
 import { StorageIcon } from '@/components/icons/StorageIcon';
+import { PortIcon } from '@sealos/ui';
 type CardItem = {
   title: string;
   price: number[];
@@ -143,15 +144,21 @@ function Valuation() {
         const props = valuationMap.get(x.resourceType);
         if (!props) return [];
         let icon;
+        let title = x.resourceType;
         if (x.resourceType === 'cpu') icon = CpuIcon;
         else if (x.resourceType === 'memory') icon = MemoryIcon;
         else if (x.resourceType === 'network') icon = NetworkIcon;
         else if (x.resourceType === 'storage') icon = StorageIcon;
-        else return [];
+        else if (x.resourceType === 'services.nodeports') {
+          icon = PortIcon;
+          title = 'Port';
+        } else return [];
         return [
           {
-            title: x.resourceType,
-            price: [1, 24, 168, 720, 8760].map((v) => (v * x.price * (props.scale || 1)) / 1000000),
+            title,
+            price: [1, 24, 168, 720, 8760].map(
+              (v) => Math.floor(v * x.price * (props.scale || 1)) / 1000000
+            ),
             unit: props.unit,
             bg: props.bg,
             idx: props.idx,
@@ -220,9 +227,11 @@ function Valuation() {
                         </Text>
                       </Td>
                       <Td>
-                        {x.unit}/{t(CYCLE[cycleIdx])}
+                        {[x.unit, x.title !== 'network' ? `${t(CYCLE[cycleIdx])}` : '']
+                          .filter((v) => v.trim() !== '')
+                          .join('/')}
                       </Td>
-                      <Td>{x.price[cycleIdx]}</Td>
+                      <Td>{x.title === 'network' ? x.price[0] : x.price[cycleIdx]}</Td>
                     </Tr>
                   ))}
                 </Tbody>

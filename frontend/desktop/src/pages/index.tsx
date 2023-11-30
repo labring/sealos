@@ -1,13 +1,14 @@
 import DesktopContent from '@/components/desktop_content';
 import FloatButton from '@/components/floating_button';
 import MoreApps from '@/components/more_apps';
-import { enableRecharge } from '@/services/enable';
 import request from '@/services/request';
 import useAppStore from '@/stores/app';
+import { useGlobalStore } from '@/stores/global';
 import useSessionStore from '@/stores/session';
 import { ApiResp } from '@/types';
-import { SystemConfigType } from '@/types/system';
+import { SystemConfigType, SystemEnv } from '@/types/system';
 import { parseOpenappQuery } from '@/utils/format';
+import { compareFirstLanguages } from '@/utils/tools';
 import { Box, useColorMode } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -22,26 +23,22 @@ interface IMoreAppsContext {
   setShowMoreApps: (value: boolean) => void;
 }
 export const MoreAppsContext = createContext<IMoreAppsContext | null>(null);
-export const RechargeEnabledContext = createContext<boolean>(false);
 
-export default function Home({
-  rechargeEnabled,
-  sealos_cloud_domain
-}: {
-  rechargeEnabled: boolean;
-  sealos_cloud_domain: string;
-}) {
+export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: string }) {
   const router = useRouter();
-  const { isUserLogin, setSession } = useSessionStore();
+  const { isUserLogin } = useSessionStore();
   const { colorMode, toggleColorMode } = useColorMode();
   const init = useAppStore((state) => state.init);
   const setAutoLaunch = useAppStore((state) => state.setAutoLaunch);
-  const cancelAutoLaunch = useAppStore((state) => state.cancelAutoLaunch);
-
-  const { data: systemConfig, refetch } = useQuery(['getSystemConfig'], () =>
+  const { data: systemConfig } = useQuery(['getSystemConfig'], () =>
     request<any, ApiResp<SystemConfigType>>('/api/system/getSystemConfig')
   );
-
+  const { data: platformEnv, isSuccess } = useQuery(['getPlatformEnv'], () =>
+    request<any, ApiResp<SystemEnv>>('/api/platform/getEnv')
+  );
+  const setEnv = useGlobalStore((s) => s.setEnv);
+  // @ts-ignore
+  if (isSuccess) Object.entries(platformEnv?.data!).forEach(([k, v]) => setEnv(k, v));
   useEffect(() => {
     colorMode === 'dark' ? toggleColorMode() : null;
   }, [colorMode, toggleColorMode]);
@@ -51,7 +48,6 @@ export default function Home({
     const { query } = router;
     const is_login = isUserLogin();
     const whitelistApps = ['system-fastdeploy'];
-    console.log('index');
     if (!is_login) {
       const { appkey, appQuery } = parseOpenappQuery((query?.openapp as string) || '');
       // sealos_inside=true internal call
@@ -84,6 +80,13 @@ export default function Home({
     }
   }, [router, init, setAutoLaunch, sealos_cloud_domain]);
 
+  // handle baidui
+  useEffect(() => {
+    const { bd_vid } = router.query;
+    if (bd_vid) {
+      sessionStorage.setItem('bd_vid', bd_vid as string);
+    }
+  }, []);
   return (
     <Box position={'relative'} overflow={'hidden'} w="100vw" h="100vh">
       <Head>
@@ -94,25 +97,23 @@ export default function Home({
         return <Script key={i} {...item} />;
       })}
       <MoreAppsContext.Provider value={{ showMoreApps, setShowMoreApps }}>
-        <RechargeEnabledContext.Provider value={rechargeEnabled}>
-          <DesktopContent />
-          <FloatButton />
-          <MoreApps />
-        </RechargeEnabledContext.Provider>
+        <DesktopContent />
+        <FloatButton />
+        <MoreApps />
       </MoreAppsContext.Provider>
     </Box>
   );
 }
 
 export async function getServerSideProps({ req, res, locales }: any) {
-  const lang: string = req?.headers?.['accept-language'] || 'zh';
-  const local = lang.indexOf('zh') !== -1 ? 'zh' : 'en';
-  const sealos_cloud_domain = process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io';
+  const local =
+    req?.cookies?.NEXT_LOCALE || compareFirstLanguages(req?.headers?.['accept-language'] || 'zh');
+  res.setHeader('Set-Cookie', `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`);
 
+  const sealos_cloud_domain = process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io';
   return {
     props: {
       ...(await serverSideTranslations(local, undefined, null, locales || [])),
-      rechargeEnabled: enableRecharge(),
       sealos_cloud_domain
     }
   };

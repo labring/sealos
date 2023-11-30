@@ -159,22 +159,24 @@ const (
 	terminal
 	job
 	other
+	objectStorage
 )
 
 const (
-	DB       = "DB"
-	APP      = "APP"
-	TERMINAL = "TERMINAL"
-	JOB      = "JOB"
-	OTHER    = "OTHER"
+	DB            = "DB"
+	APP           = "APP"
+	TERMINAL      = "TERMINAL"
+	JOB           = "JOB"
+	OTHER         = "OTHER"
+	ObjectStorage = "OBJECT-STORAGE"
 )
 
 var AppType = map[string]uint8{
-	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other,
+	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other, ObjectStorage: objectStorage,
 }
 
 var AppTypeReverse = map[uint8]string{
-	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER,
+	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER, objectStorage: ObjectStorage,
 }
 
 // resource consumption
@@ -189,7 +191,8 @@ type PropertyType struct {
 	//AVG, SUM, DIF value. The cumulative value is the average value by default
 	PriceType string `json:"price_type,omitempty" bson:"price_type,omitempty"`
 	// Price = UsedAmount (avg || accumulated-value || difference-value) / Unit * UnitPrice
-	UnitPrice        int64             `json:"unit_price" bson:"unit_price"`
+	UnitPrice        float64           `json:"unit_price" bson:"unit_price"`
+	ViewPrice        float64           `json:"view_price" bson:"view_price"`
 	EncryptUnitPrice string            `json:"encrypt_unit_price" bson:"encrypt_unit_price"`
 	Unit             resource.Quantity `json:"-" bson:"-"`
 	// <digit>           ::= 0 | 1 | ... | 9
@@ -229,32 +232,44 @@ const (
 
 var DefaultPropertyTypeList = []PropertyType{
 	{
-		Name:       "cpu",
-		Enum:       0,
-		PriceType:  AVG,
-		UnitPrice:  67,
+		Name:      "cpu",
+		Enum:      0,
+		PriceType: AVG,
+		// raw price: 67
+		UnitPrice:  2.237442922,
 		UnitString: "1m",
 	},
 	{
-		Name:       "memory",
-		Enum:       1,
-		PriceType:  AVG,
-		UnitPrice:  33,
+		Name:      "memory",
+		Enum:      1,
+		PriceType: AVG,
+		// raw price: 33
+		UnitPrice:  1.092501427,
 		UnitString: "1Mi",
 	},
 	{
-		Name:       "storage",
-		Enum:       2,
-		PriceType:  AVG,
-		UnitPrice:  2,
+		Name:      "storage",
+		Enum:      2,
+		PriceType: AVG,
+		// raw price: 21
+		UnitPrice:  0,
 		UnitString: "1Mi",
 	},
 	{
 		Name:       "network",
 		Enum:       3,
 		PriceType:  DIF,
-		UnitPrice:  781,
+		UnitPrice:  0,
 		UnitString: "1Mi",
+	},
+	{
+		// monitor unit: 1 node port = 1000 unit
+		Name:       "services.nodeports",
+		Enum:       4,
+		PriceType:  AVG,
+		UnitPrice:  500,
+		ViewPrice:  500000,
+		UnitString: "1",
 	},
 }
 
@@ -298,11 +313,12 @@ func decryptPrice(types []PropertyType) ([]PropertyType, error) {
 		if types[i].EncryptUnitPrice == "" {
 			return types, fmt.Errorf("encrypt %s unit price is empty", types[i].Name)
 		}
-		price, err := crypto.DecryptInt64(types[i].EncryptUnitPrice)
+		price, err := crypto.DecryptFloat64(types[i].EncryptUnitPrice)
 		if err != nil {
 			return types, fmt.Errorf("failed to decrypt %s unit price : %v", types[i].Name, err)
 		}
 		types[i].UnitPrice = price
+		logger.Info("decrypt unit_price: ", types[i].UnitPrice)
 		//if types[i].UnitPrice != 0 {
 		//	price, err := crypto.EncryptInt64(types[i].UnitPrice)
 		//	if err != nil {

@@ -1,16 +1,16 @@
-// @ts-check
+require('dotenv').config()
+
 const generateAlgoliKey = () => "ce5b8e1e4d0d35ff587caf75ac404df4"
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "sealos",
+  title: "Sealos: 专为云原生开发打造的以 K8s 为内核的云操作系统",
   tagline: "Kubernetes-kernel-based cloud os! Let's sealos run kubernetes",
-  url: "https://docs.sealos.io/",
+  url: "https://sealos.io/",
   baseUrl: "/",
   onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "warn",
-  favicon: "img/sealos.ico",
-
+  favicon: "img/favicon.ico",
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: "labring", // Usually your GitHub org/user name.
@@ -20,7 +20,7 @@ const config = {
   // metadata like html lang. For example, if your site is Chinese, you may want
   // to replace "en" with "zh-Hans".
   i18n: {
-    defaultLocale: "en",
+    defaultLocale: process.env.SEALOS_LANG || 'en',
     locales: ["en", "zh-Hans"],
     // path: "../4.0/i18n"
   },
@@ -43,7 +43,7 @@ const config = {
           editCurrentVersion: false,
         },
         blog: {
-          path: "../blog",
+          path: "../blog/en",
           showReadingTime: true,
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
@@ -58,7 +58,7 @@ const config = {
   ],
 
   themeConfig: { // @type {import('@docusaurus/preset-classic').ThemeConfig}
-    metadata: [{ name: 'title', content: 'sealos by 环界云' }],
+    metadata: [{ name: 'title', content: 'Sealos by 环界云' }],
     algolia: {
       // Algolia 提供的应用 ID
       appId: "SLTSB7B9Y0",
@@ -72,7 +72,7 @@ const config = {
       contextualSearch: true,
 
       // 可选：声明哪些域名需要用 window.location 型的导航而不是 history.push。 适用于 Algolia 配置会爬取多个文档站点，而我们想要用 window.location.href 在它们之间跳转时。
-      externalUrlRegex: "sealos.io|docs.sealos.io",
+      externalUrlRegex: "sealos.io|docs.sealos.io|sealos.run",
 
       // 可选：Algolia 搜索参数
       searchParameters: {},
@@ -101,6 +101,16 @@ const config = {
           position: "left",
           to: "https://cloud.sealos.io",
           label: "Start Now"
+        },
+        {
+          position: "left",
+          to: "/self-hosting",
+          label: "Hosting"
+        },
+        {
+          position: "left",
+          to: "/blog",
+          label: "Blog"
         },
         {
           position: "left",
@@ -165,11 +175,11 @@ const config = {
             },
             {
               label: "Company",
-              to: "https://sealos.io/company",
+              to: "/company",
             },
             {
               label: "Contact US",
-              to: "https://www.wenjuan.com/s/UZBZJv9ToJ/#",
+              to: "https://fael3z0zfze.feishu.cn/share/base/form/shrcnesSfEK65JZaAf2W6Fwz6Ad",
             }
           ]
         }
@@ -191,10 +201,55 @@ const config = {
     {
       src: "https://cdn.bootcdn.net/ajax/libs/wow/1.1.2/wow.min.js",
       async: false,
+    },
+    {
+      src: "/global.js",
+      async: true,
+    }
+  ],
+  headTags: [
+    {
+      tagName: 'meta',
+      attributes: {
+        name: 'baidu-site-verification',
+        content: 'codeva-gAHDaifnOq',
+      },
+    },
+    {
+      tagName: 'meta',
+      attributes: {
+        name: 'baidu-site-verification',
+        content: 'codeva-E1X5UKtV9p',
+      },
+    },
+    {
+      tagName: 'meta',
+      attributes: {
+        name: 'description',
+        content: '高效管理你的云原生应用程序，像使用个人电脑一样在 Kubernetes 上一键安装编程语言、低代码开发平台、WordPress、数据库、AI 软件和 IM 软件。',
+      }
+    },
+    {
+      tagName: 'meta',
+      attributes: {
+        name: 'keywords',
+        content: 'Sealos, K8s, 云操作系统, 低代码开发平台, 数据库',
+      }
     }
   ],
   plugins: [
     'docusaurus-plugin-sass',
+    async function myPlugin (context, options) {
+      return {
+        name: "docusaurus-tailwindcss",
+        configurePostCss (postcssOptions) {
+          // Appends TailwindCSS and AutoPrefixer.
+          postcssOptions.plugins.push(require("tailwindcss"))
+          postcssOptions.plugins.push(require("autoprefixer"))
+          return postcssOptions
+        },
+      }
+    },
   ]
 }
 

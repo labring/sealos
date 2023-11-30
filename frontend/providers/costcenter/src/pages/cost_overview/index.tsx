@@ -12,8 +12,6 @@ import { Trend } from '@/components/cost_overview/trend';
 import { getCookie } from '@/utils/cookieUtils';
 import useBillingData from '@/hooks/useBillingData';
 import NotFound from '@/components/notFound';
-import useBillingStore from '@/stores/billing';
-import { isSameDay, isSameHour, parseISO } from 'date-fns';
 import { useRouter } from 'next/router';
 import useOverviewStore from '@/stores/overview';
 import { CommonBillingTable } from '@/components/billing/billingTable';
@@ -23,11 +21,6 @@ export const RechargeContext = createContext<{ rechargeRef: MutableRefObject<any
 });
 function CostOverview() {
   const { t, i18n } = useTranslation();
-  const updateCPU = useBillingStore((state) => state.updateCpu);
-  const updateMemory = useBillingStore((state) => state.updateMemory);
-  const updateStorage = useBillingStore((state) => state.updateStorage);
-  const updateNetwork = useBillingStore((state) => state.updateNetwork);
-  const updateGpu = useBillingStore((state) => state.updateGpu);
   const cookie = getCookie('NEXT_LOCALE');
   useEffect(() => {
     i18n.changeLanguage(cookie);
@@ -64,21 +57,9 @@ function CostOverview() {
   }, []);
   const { NotEnoughModal } = useNotEnough();
   const { data, isInitialLoading } = useBillingData();
-  const billingItems = data?.data?.status.item.filter((_v, i) => i < 3) || [];
   const costBillingItems = data?.data?.status.item.filter((v) => v.type === 0) || [];
+  const billingItems = costBillingItems.filter((_v, i) => i < 3) || [];
   const totast = useToast();
-  useEffect(() => {
-    if (costBillingItems.length === 0) return;
-    const time = parseISO(costBillingItems[0].time);
-    const now = new Date();
-    if (!isSameDay(time, now) || !isSameHour(time, now)) return;
-    const item = costBillingItems[0].costs;
-    updateCPU(item?.cpu || 0);
-    updateMemory(item?.memory || 0);
-    updateStorage(item?.storage || 0);
-    updateNetwork(item?.network || 0);
-    updateGpu(item?.gpu || 0);
-  }, [costBillingItems, updateCPU, updateMemory, updateStorage]);
   const rechargeRef = useRef<any>();
   return (
     <RechargeContext.Provider value={{ rechargeRef }}>
@@ -102,7 +83,7 @@ function CostOverview() {
             </Box>
           </Flex>
 
-          <Flex flexDirection={'column'}>
+          <Flex flexDirection={'column'} flex={'auto'}>
             <Box borderRadius="12px" display={['block', 'block', 'block', 'none']}>
               <Flex direction={['column', 'column', 'row', 'row']} justify={'space-between'}>
                 <Box alignSelf={'center'}>
@@ -113,18 +94,16 @@ function CostOverview() {
               <Cost></Cost>
             </Box>
             <Trend></Trend>
-            <Flex direction={'column'} h={'0'} flex={1}>
+            <Flex direction={'column'} h={'0'} flex={[1, null, null, 'auto']}>
               <Heading size={'sm'} mb={'36px'}>
                 {t('Recent Transactions')}
               </Heading>
-              <Box overflowX={'auto'}>
-                <CommonBillingTable data={billingItems} />
-                {(isInitialLoading || billingItems.length === 0) && (
-                  <Flex h="160px" justify={'center'} align={'center'}>
-                    <NotFound></NotFound>
-                  </Flex>
-                )}
-              </Box>
+              <CommonBillingTable data={billingItems} />
+              {(isInitialLoading || billingItems.length === 0) && (
+                <Flex h="160px" justify={'center'} align={'center'}>
+                  <NotFound></NotFound>
+                </Flex>
+              )}
             </Flex>
           </Flex>
         </Flex>

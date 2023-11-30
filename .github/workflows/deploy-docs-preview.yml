@@ -1,0 +1,114 @@
+name: Preview Sealos Docs Site
+
+on:
+  workflow_dispatch:
+  pull_request_target:
+    branches: ["main"]
+    paths:
+      - "docs/**"
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+env:
+  BUILD_PATH: "./docs/website"
+  BD_TOKEN: ${{ secrets.BD_TOKEN }}
+
+jobs:
+  build:
+    name: Build
+
+    # The environment this job references
+    environment:
+      name: Preview
+      url: ${{ steps.vercel-action.outputs.preview-url }}
+
+    runs-on: ubuntu-latest
+
+    # Job outputs
+    outputs:
+      url: ${{ steps.vercel-action.outputs.preview-url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          submodules: recursive # Fetch submodules
+          fetch-depth: 0 # Fetch all history for .GitInfo and .Lastmod
+
+      - name: Detect package manager
+        id: detect-package-manager
+        run: |
+          if [ -f "${{ env.BUILD_PATH }}/yarn.lock" ]; then
+            echo "manager=yarn" >> $GITHUB_OUTPUT
+            echo "command=install" >> $GITHUB_OUTPUT
+            echo "runner=yarn" >> $GITHUB_OUTPUT
+            exit 0
+          elif [ -f "${{ env.BUILD_PATH }}/package.json" ]; then
+            echo "manager=npm" >> $GITHUB_OUTPUT
+            echo "command=ci" >> $GITHUB_OUTPUT
+            echo "runner=npx --no-install" >> $GITHUB_OUTPUT
+            exit 0
+          else
+            echo "Unable to determine package manager"
+            exit 1
+          fi
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: ${{ steps.detect-package-manager.outputs.manager }}
+          cache-dependency-path: ${{ env.BUILD_PATH }}/yarn.lock
+      - name: Install dependencies
+        run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
+        working-directory: ${{ env.BUILD_PATH }}
+      - name: Build with Docusaurus
+        run: ${{ steps.detect-package-manager.outputs.runner }} run build 
+        working-directory: ${{ env.BUILD_PATH }}
+
+      # Push our generated site to Vercel
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        id: vercel-action
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }} # Required
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }} #Required
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }} #Required
+          github-comment: false
+          # vercel-args: '--local-config vercel.json' # Optional
+          working-directory: ${{ env.BUILD_PATH }}/build
+
+  docsOutput:
+    needs: [ build ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: Write md
+        run: |
+          echo "# 📘 Preview documentation website" > report.md
+          echo "[👀 Visit Preview](${{ needs.build.outputs.url }})" >> report.md
+          cat report.md
+      - name: Gh Rebot for Sealos
+        uses: labring/gh-rebot@v0.0.6
+        if: ${{ (github.event_name == 'pull_request_target') }}
+        with:
+          version: v0.0.6
+        env:
+          GH_TOKEN: "${{ secrets.GH_PAT }}"
+          SEALOS_TYPE: "pr_comment"
+          SEALOS_FILENAME: "report.md"
+          SEALOS_REPLACE_TAG: "DEFAULT_REPLACE_DEPLOY"

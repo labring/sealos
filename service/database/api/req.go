@@ -111,4 +111,19 @@ var (
 		"blocked_connections": "sum(redis_blocked_clients{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"})",
 		"key_evictions":       "irate(redis_evicted_keys_total{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])",
 	}
+
+	Minio = map[string]string{
+		"minio_bucket_usage_object_total":     "minio_bucket_usage_object_total{bucket=\"@\", instance=\"#\"}",
+		"minio_bucket_usage_total_bytes":      "minio_bucket_usage_total_bytes{bucket=\"@\", instance=\"#\"}",
+		"minio_bucket_traffic_received_bytes": "sum(minio_bucket_traffic_received_bytes{bucket=\"@\", instance=\"#\"}) by (bucket, instance, job, namespace)",
+		"minio_bucket_traffic_sent_bytes":     "sum(minio_bucket_traffic_sent_bytes{bucket=\"@\", instance=\"#\"}) by (bucket, instance, job, namespace)",
+	}
+
+	Kafka = map[string]string{
+		"cpu":           "round(max by (pod) (rate(container_cpu_usage_seconds_total{namespace=~\"#\",pod=~\"@-kafka-\\\\d\" ,container=\"kafka\"}[5m])) / on (pod) (max by (pod) (container_spec_cpu_quota{namespace=~\"#\", pod=~\"@-kafka-\\\\d\",container=\"kafka\"} / 100000)) * 100,0.01)",
+		"memory":        "round(max by (pod)(container_memory_usage_bytes{namespace=~\"#\",pod=~\"@-kafka-\\\\d\",container=\"kafka\" })/ on (pod) (max by (pod) (container_spec_memory_limit_bytes{namespace=~\"#\", pod=~\"@-kafka-\\\\d\",container=\"kafka\"})) * 100,0.01)",
+		"disk_capacity": "(max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_capacity_bytes {namespace=~\"#\", persistentvolumeclaim=~\"data-@-kafka-\\\\d\"}))",
+		"disk":          "round((max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_used_bytes {namespace=~\"#\", persistentvolumeclaim=~\"data-@-kafka-\\\\d\"})) / (max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_capacity_bytes {namespace=~\"#\", persistentvolumeclaim=~\"data-@-kafka-\\\\d\"})) * 100, 0.01)",
+		"disk_used":     "(max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_used_bytes {namespace=~\"#\", persistentvolumeclaim=~\"data-@-kafka-\\\\d\"}))",
+	}
 )

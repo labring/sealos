@@ -61,7 +61,14 @@ type BillingRecordQueryItemInline struct {
 	Type      Type   `json:"type" bson:"type"`
 	AppType   string `json:"appType,omitempty" bson:"appType,omitempty"`
 	Costs     Costs  `json:"costs,omitempty" bson:"costs,omitempty"`
-	Amount    int64  `json:"amount,omitempty" bson:"amount"`
+	//Amount = PaymentAmount + GiftAmount
+	Amount int64 `json:"amount,omitempty" bson:"amount"`
+	// when Type = Recharge, PaymentAmount is the amount of recharge
+	Payment *PaymentForQuery `json:"payment,omitempty" bson:"payment,omitempty"`
+}
+
+type PaymentForQuery struct {
+	Amount int64 `json:"amount,omitempty" bson:"amount,omitempty"`
 }
 
 //+kubebuilder:object:root=true

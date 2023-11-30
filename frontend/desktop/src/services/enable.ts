@@ -22,6 +22,8 @@ export const enableGoogle = () =>
 export const enableRecharge = () => {
   return process.env.RECHARGE_ENABLED === 'true';
 };
+export const enableSignUp = () => process.env.SIGN_UP_ENABLED === 'true';
+export const enableApi = () => process.env.API_ENABLED === 'true';
 // costcenter
 export const enableStripe = () =>
   process.env['STRIPE_ENABLED'] === 'true' && !!process.env['STRIPE_PUB'];
@@ -30,3 +32,4 @@ export const enableWechatRecharge = () => process.env['WECHAT_ENABLED'] === 'tru
 export const enableLicense = () => {
   return process.env.LICENSE_ENABLED === 'true';
 };
+export const getTeamLimit = () => parseInt(process.env['TEAM_LIMIT'] || '') || 50;

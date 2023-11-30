@@ -12,29 +12,31 @@ import {
   PopoverTrigger,
   Popover,
   PopoverContent,
-  PopoverBody
+  PopoverBody,
+  IconButton,
+  HStack
 } from '@chakra-ui/react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useContext, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import Iconfont from '../iconfont';
 import useAppStore from '@/stores/app';
-
 import { ApiResp } from '@/types';
 import { formatMoney } from '@/utils/format';
-import { RechargeEnabledContext } from '@/pages';
 import TeamCenter from '@/components/team/TeamCenter';
 import NsList from '@/components/team/NsList';
 import { nsListRequest, switchRequest } from '@/api/namespace';
-import RightIcon from '../icons/RightArrow';
 import { NSType } from '@/types/team';
+import PasswordModify from './PasswordModify';
+import { useGlobalStore } from '@/stores/global';
+import { CopyIcon, DownloadIcon, LogoutIcon, RightArrowIcon } from '@sealos/ui';
 
 const NsMenu = () => {
   const { t } = useTranslation();
   const session = useSessionStore((s) => s.session);
   const setSession = useSessionStore((s) => s.setSession);
-  const { ns_uid, k8s_username } = session.user;
+  const { ns_uid } = session.user;
   const router = useRouter();
   const mutation = useMutation({
     mutationFn: switchRequest,
@@ -83,10 +85,10 @@ const NsMenu = () => {
               transition={'0.3s'}
               p="4px"
             >
-              <Text fontSize="14px" fontWeight={'500'} color={'#363C42'}>
+              <Text fontSize="13px" fontWeight={'500'} color={'#363C42'}>
                 {namespace?.nstype === NSType.Private ? t('Default Team') : namespace?.teamName}
               </Text>
-              <RightIcon w="16px" h="16px" />
+              <RightArrowIcon w="16px" h="16px" />
             </Flex>
           </Box>
         }
@@ -110,9 +112,8 @@ const NsMenu = () => {
     </Popover>
   );
 };
-export default function Index({ disclosure }: { disclosure: UseDisclosureReturn }) {
+export default function Account({ disclosure }: { disclosure: UseDisclosureReturn }) {
   const router = useRouter();
-  const rechargeEnabled = useContext(RechargeEnabledContext);
   const { t } = useTranslation();
   const { delSession, getSession } = useSessionStore();
   const { user, kubeconfig } = getSession();
@@ -120,7 +121,12 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureReturn 
 
   const openApp = useAppStore((s) => s.openApp);
   const installApp = useAppStore((s) => s.installedApps);
-  const { ns_uid, nsid, userId, k8s_username } = user;
+  const { ns_uid, nsid, userId, k8s_username } = user || {
+    ns_uid: '',
+    nsid: '',
+    userId: '',
+    k8s_username: ''
+  };
   const { data } = useQuery({
     queryKey: ['getAccount', { ns_uid, userId, k8s_username }],
     queryFn: () =>
@@ -128,7 +134,6 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureReturn 
         '/api/account/getAmount'
       )
   });
-
   const balance = useMemo(() => {
     let real_balance = data?.data?.balance || 0;
     if (data?.data?.deductionBalance) {
@@ -136,14 +141,24 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureReturn 
     }
     return real_balance;
   }, [data]);
+  const queryclient = useQueryClient();
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     delSession();
+    queryclient.clear();
     router.replace('/signin');
   };
+  const needPassword = useGlobalStore((s) => s.needPassword);
+  const rechargeEnabled = useGlobalStore((s) => s.rechargeEnabled);
   return disclosure.isOpen ? (
     <>
-      <Box position={'fixed'} inset={0} zIndex={'998'} onClick={disclosure.onClose}></Box>
+      <Box
+        position={'fixed'}
+        inset={0}
+        zIndex={'998'}
+        cursor={'initial'}
+        onClick={disclosure.onClose}
+      ></Box>
       <Box
         w="297px"
         bg="rgba(255, 255, 255, 0.6)"
@@ -151,13 +166,14 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureReturn 
         position={'absolute'}
         top="48px"
         right={0}
+        cursor={'initial'}
         zIndex={'999'}
         borderRadius={'8px'}
         p="20px"
         backdropFilter={'blur(150px)'}
       >
-        <Flex justifyContent={'end'} alignItems={'center'} overflow={'hidden'}>
-          <Iconfont iconName="icon-logout" width={14} height={14} color="#24282C"></Iconfont>
+        <Flex justifyContent={'end'} alignItems={'center'} overflow={'hidden'} cursor={'pointer'}>
+          <LogoutIcon boxSize={'14px'} color={'#24282C'} />
           <Text ml="6px" color={'#24282C'} fontSize={'12px'} fontWeight={500} onClick={logout}>
             {t('Log Out')}
           </Text>
@@ -171,9 +187,21 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureReturn 
             fallbackSrc="/images/sealos.svg"
             alt="user avator"
           />
-          <Text color={'#24282C'} fontSize={'20px'} fontWeight={600} mb="22px">
+          <Text color={'#24282C'} fontSize={'20px'} fontWeight={600}>
             {user?.name}
           </Text>
+          <HStack mb="10px" gap="2px">
+            <Text color={'grayModern.500'} fontSize={'12px'}>
+              ID: {nsid}
+            </Text>
+            <IconButton
+              variant={'white-bg-icon'}
+              p="4px"
+              onClick={() => copyData(nsid)}
+              icon={<CopyIcon boxSize={'12px'} color={'grayModern.500'} fill={'grayModern.500'} />}
+              aria-label={'copy nsid'}
+            />
+          </HStack>
           <NsMenu />
           <Stack
             direction={'column'}
@@ -181,13 +209,26 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureReturn 
             mt="12px"
             bg="rgba(255, 255, 255, 0.6)"
             borderRadius={'8px'}
+            fontSize={'13px'}
             gap={'0px'}
           >
-            <Flex alignItems={'center'} borderBottom={'1px solid #0000001A'} p="16px">
+            <Flex alignItems={'center'} borderBottom={'1px solid #0000001A'} px="16px" py="11px">
               <Text>{t('Manage Team')}</Text>
               <TeamCenter mr="0" />
             </Flex>
-            <Flex alignItems={'center'} borderBottom={'1px solid #0000001A'} p="16px">
+            {needPassword && (
+              <Flex
+                justify={'space-between'}
+                alignItems={'center'}
+                borderBottom={'1px solid #0000001A'}
+                px="16px"
+                py="11px"
+              >
+                <Text>{t('changePassword')}</Text>
+                <PasswordModify mr="0" />
+              </Flex>
+            )}
+            <Flex px="16px" py="11px" alignItems={'center'} borderBottom={'1px solid #0000001A'}>
               <Text>
                 {t('Balance')}: {formatMoney(balance).toFixed(2)}
               </Text>
@@ -212,42 +253,32 @@ export default function Index({ disclosure }: { disclosure: UseDisclosureReturn 
                   color={'#219BF4'}
                   fontWeight="500"
                   fontSize="12px"
+                  cursor={'pointer'}
                 >
                   {t('Charge')}
                 </Box>
               )}
             </Flex>
             {
-              <Flex alignItems={'center'} py="16px">
-                <Text ml="16px">kubeconfig</Text>
-                <Box
-                  _hover={{
-                    bgColor: 'rgba(0, 0, 0, 0.03)'
-                  }}
-                  transition={'0.3s'}
+              <Flex alignItems={'center'} px="16px" py="11px">
+                <Text>kubeconfig</Text>
+
+                <IconButton
+                  variant={'white-bg-icon'}
                   p="4px"
                   ml="auto"
+                  mr="4px"
                   onClick={() => download('kubeconfig.yaml', kubeconfig)}
-                >
-                  <Iconfont
-                    iconName="icon-download"
-                    width={16}
-                    height={16}
-                    color="#219BF4"
-                  ></Iconfont>
-                </Box>
-                <Box
-                  _hover={{
-                    bgColor: 'rgba(0, 0, 0, 0.03)'
-                  }}
+                  icon={<DownloadIcon boxSize={'16px'} color={'#219BF4'} fill={'#219BF4'} />}
+                  aria-label={'Download kc'}
+                />
+                <IconButton
+                  variant={'white-bg-icon'}
                   p="4px"
-                  ml="8px"
-                  mr="20px"
                   onClick={() => copyData(kubeconfig)}
-                  cursor={'pointer'}
-                >
-                  <Iconfont iconName="icon-copy2" width={16} height={16} color="#219BF4"></Iconfont>
-                </Box>
+                  icon={<CopyIcon boxSize={'16px'} color={'#219BF4'} fill={'#219BF4'} />}
+                  aria-label={'copy kc'}
+                />
               </Flex>
             }
           </Stack>

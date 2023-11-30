@@ -10,6 +10,7 @@
 
 # Misc
 .DS_Store
+.env
 .env.local
 .env.development.local
 .env.test.local
@@ -22,3 +23,7 @@ yarn-error.log*
 .vercel
 .idea
 .vscode
+
+i18n/zh-Hans/docusaurus-plugin-content-blog
+i18n/zh-Hans/docusaurus-plugin-content-docs
+i18n/zh-Hans/code.json

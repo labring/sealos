@@ -91,6 +91,7 @@
         margin-left: 16px;
         font-weight: 500;
         color: #fff;
+        cursor: pointer;
         a {
           font-size: 16px;
         }
@@ -108,6 +109,7 @@
         border-radius: 4px;
         background: rgba(255, 255, 255, 0.2);
         filter: blur(4px);
+        pointer-events: none;
       }
 
       .start-now-button {
@@ -164,7 +166,7 @@
       .txt-title {
         color: #379fff;
       }
-      @media screen and (min-width: 450px) and (max-width: 996px) {
+      @media screen and (min-width: 450px) and (max-width: 1000px) {
         padding: 0 60px;
       }
     }
@@ -177,6 +179,13 @@
     justify-content: center;
     align-items: center;
   }
+}
+
+.sealos_home_header_title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
 }
 
 @media screen and (max-width: 1220px) {

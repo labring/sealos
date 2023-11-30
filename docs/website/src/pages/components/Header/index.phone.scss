@@ -1,4 +1,4 @@
-@media screen and (max-width: 996px) {
+@media screen and (max-width: 1000px) {
   .home-header {
     position: relative;
     overflow: hidden;
@@ -54,6 +54,7 @@
         border-radius: 4px;
         background: rgba(255, 255, 255, 0.2);
         filter: blur(4px);
+        pointer-events: none;
       }
 
       .start-now-button {

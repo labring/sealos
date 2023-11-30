@@ -67,7 +67,7 @@ function gen_saltKey() {
 
 function mutate_desktop_config() {
     # mutate etc/sealos/desktop-config.yaml by using mongodb uri and two random base64 string
-    sed -i -e "s;<your-mongodb-uri-base64>;$(echo -n "$mongodbUri" | base64 -w 0);" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-mongodb-uri-base64>;$(echo -n "${mongodbUri}/sealos-auth?authSource=admin" | base64 -w 0);" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-jwt-secret-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-password-salt-base64>;$saltKey;" etc/sealos/desktop-config.yaml
 }
@@ -111,45 +111,59 @@ function sealos_run_controller {
   --env cloudPort="$cloudPort" \
   --env DEFAULT_NAMESPACE="account-system"
 
-  # run licenseissuer controller
-  sealos run tars/licenseissuer.tar \
-  --env canConnectToExternalNetwork="true" \
-  --env enableMonitor="true" \
-  --env MongoURI="$mongodbUri" \
-  --env PasswordSalt="$saltKey"
+  # run license controller
+  sealos run tars/license.tar \
+  --env MONGO_URI="$mongodbUri"
+}
+
+
+function sealos_authorize {
+  sealos run tars/job-init.tar
+
+  # wait for admin user create
+  echo "Waiting for admin user create"
+
+  while [ -z "$(kubectl get ns ns-admin 2>/dev/null)" ]; do
+    sleep 1
+  done
+
+  kubectl apply -f manifests/free-license.yaml
 }
 
 function sealos_run_frontend {
   echo "run desktop frontend"
   sealos run tars/frontend-desktop.tar \
     --env cloudDomain=$cloudDomain \
-    --env cloudPort=$cloudPort \
+    --env cloudPort="$cloudPort" \
     --env certSecretName="wildcard-cert" \
     --env passwordEnabled="true" \
     --config-file etc/sealos/desktop-config.yaml
 
+  # sealos authorize !!must run after sealos_run_controller frontend-desktop.tar and before sealos_run_frontend
+  sealos_authorize
+
   echo "run applaunchpad frontend"
   sealos run tars/frontend-applaunchpad.tar \
   --env cloudDomain=$cloudDomain \
-  --env cloudPort=$cloudPort \
+  --env cloudPort="$cloudPort" \
   --env certSecretName="wildcard-cert"
 
   echo "run terminal frontend"
   sealos run tars/frontend-terminal.tar \
   --env cloudDomain=$cloudDomain \
-  --env cloudPort=$cloudPort \
+  --env cloudPort="$cloudPort" \
   --env certSecretName="wildcard-cert"
 
   echo "run dbprovider frontend"
   sealos run tars/frontend-dbprovider.tar \
   --env cloudDomain=$cloudDomain \
-  --env cloudPort=$cloudPort \
+  --env cloudPort="$cloudPort" \
   --env certSecretName="wildcard-cert"
 
   echo "run cost center frontend"
   sealos run tars/frontend-costcenter.tar \
   --env cloudDomain=$cloudDomain \
-  --env cloudPort=$cloudPort \
+  --env cloudPort="$cloudPort" \
   --env certSecretName="wildcard-cert" \
   --env transferEnabled="true" \
   --env rechargeEnabled="false"
@@ -157,36 +171,30 @@ function sealos_run_frontend {
   echo "run template frontend"
   sealos run tars/frontend-template.tar \
   --env cloudDomain=$cloudDomain \
-  --env cloudPort=$cloudPort \
+  --env cloudPort="$cloudPort" \
   --env certSecretName="wildcard-cert"
+
+  echo "run license frontend"
+  sealos run tars/frontend-license.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort="$cloudPort" \
+  --env certSecretName="wildcard-cert" \
+  --env MONGODB_URI="${mongodbUri}/sealos-license?authSource=admin" \
+  --env licensePurchaseDomain="license.sealos.io"
+
+  echo "run cronjob frontend"
+  sealos run tars/frontend-cronjob.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort="$cloudPort" \
+  --env certSecretName="wildcard-cert"
+
 
   echo "run db monitoring"
   sealos run tars/database-service.tar
 }
 
 function resource_exists {
-    kubectl get $1 >/dev/null 2>&1
-}
-
-
-function sealos_authorize {
-    set +x
-    echo "start to authorize sealos"
-    echo "create admin-user"
-    # create admin-user
-    kubectl apply -f manifests/admin-user.yaml 
-    # wait for admin-user ready
-    echo "waiting for admin-user generated, this may take a few minutes"
-    while true; do
-        if resource_exists "namespace ns-admin" && resource_exists "account admin -n sealos-system" && resource_exists "user admin"; then
-            break
-        fi
-        sleep 10
-    done
-    # issue license for admin-user
-    echo "license issue for admin-user"
-    kubectl apply -f manifests/free-license.yaml
-    set -x
+  kubectl get "$1" >/dev/null 2>&1
 }
 
 
@@ -196,12 +204,9 @@ function install {
 
   # sealos run controllers
   sealos_run_controller
-  
+
   # sealos run frontends
   sealos_run_frontend
-
-  # sealos authorize
-  sealos_authorize
 }
 
 install

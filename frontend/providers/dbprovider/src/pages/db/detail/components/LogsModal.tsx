@@ -46,7 +46,7 @@ const LogsModal = ({
   const ansi_up = useRef(new AnsiUp());
 
   const watchLogs = useCallback(() => {
-    // dbType is empty. pod may  has been deleted
+    // dbType is empty. pod may has been deleted
     if (!dbType) return closeFn();
 
     const controller = new AbortController();

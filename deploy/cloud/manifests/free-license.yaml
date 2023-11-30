@@ -1,9 +1,10 @@
-apiVersion: infostream.sealos.io/v1
+# TODO delete this after job-init finished
+apiVersion: license.sealos.io/v1
 kind: License
 metadata:
-  name: license
+  name: free-license
   namespace: ns-admin
 spec:
-  uid: admin
+  type: Account
   # nosemgrep: generic.secrets.security.detected-jwt-token.detected-jwt-token
-  token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJTZWFsb3MiLCJpYXQiOjE2OTA0NDU5NjIsImFtdCI6MjAwMH0.ZzZfPRbNiNvRBLMn5FGJeKitRPHmUHZ1qvnGdJUIbIH1L5mQ4yECzvvsa5S8-OTqF6HXmrw9QmFcQOjoz5GpqjqrqXdH2H-JDXFGNNAib2J9UmLFmtV1BVm3zReucfK-bOY5NiWOr5wplEVwkoUKNPHLY5Mw142y9J62vELE-XW-hb3xcmWjLTPVRYgMqk0KEi7Z7cQ_rS0QgJh1Rqb2WS6AKz2ILE5J8XUhhhUva0nCEyLzE-I8oZtV6kugQy8YjWI-SjfneFOLI8-Pg40vry6DZZ-_J_9QmjkUlZx0YNMRiRA5yg2yWeMEzVnam9L310TJgu6Od-bEUijsfOcZyw"
+  token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJTZWFsb3MiLCJpYXQiOjE2OTgxMTQzMjUsImV4cCI6MTc5MjcyMjMyNSwidHlwZSI6IkFjY291bnQiLCJkYXRhIjp7ImFtb3VudCI6Mjk5fX0.LmLPGAdG26m8mkUaSsoIZdVQLujVVv6_bqc_EvntZhNCcNE2C2v6Xk5MZGoCP0CLwwVUP_3931XzYtulYBcIoCykzPUvATasbPf8UDVrcvEp-GMgzCAGXZMQnJJioBQquKug-RA_8_-jx-h-7XHs32Glwleg5T8LGNbbicyUZZAYg-Gur49PZjcMHFS2E_KHUaKAQHtzQVmVdhDjKXpSOfvLBFuY5wnMqwxHSsql6k3h_VoEJQbluPMtnWl1aSf1xdNqb3reLzXYVnJhsuZCe6PH55jYnkdmMcMfeoaZdd4zlrj-GrgSTBVqH1mbmlr8RS06jE2vG-UtqELJrU8NEw"

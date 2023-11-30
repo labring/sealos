@@ -71,7 +71,7 @@ function Invoice() {
         .map<ReqGenInvoice['billings'][0]>((billing) => ({
           createdTime: parseISO(billing.time).getTime(),
           order_id: billing.order_id,
-          amount: formatMoney(billing.amount)
+          amount: formatMoney(billing.payment?.amount || billing.amount)
         }));
       return {
         tableResult,

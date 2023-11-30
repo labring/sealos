@@ -51,7 +51,7 @@ func Test_giveGift(t *testing.T) {
 	configMap := &corev1.ConfigMap{}
 	configMap.Data = make(map[string]string)
 	configMap.Data["steps"] = "299,599,1999,4999,19999"
-	configMap.Data["ratios"] = "10,15,20,25,30"
+	configMap.Data["ratios"] = "10.0,15.0,20.0,25.0,30.0"
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

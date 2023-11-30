@@ -35,7 +35,6 @@ async function watchClusterObject({
     try {
       const data = await client.getClusterCustomObjectStatus(group, version, plural, name);
       body = data.body;
-      console.log(body);
       if (
         'status' in body &&
         // @ts-ignore

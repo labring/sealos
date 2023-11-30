@@ -8,17 +8,21 @@ import {
   appDeployKey,
   publicDomainKey,
   gpuNodeSelectorKey,
-  gpuResourceKey
+  gpuResourceKey,
+  deployPVCResizeKey
 } from '@/constants/app';
 import dayjs from 'dayjs';
 
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
+  const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
+
   const metadata = {
     name: data.appName,
     annotations: {
       originImageName: data.imageName,
       [minReplicasKey]: `${data.hpa.use ? data.hpa.minReplicas : data.replicas}`,
-      [maxReplicasKey]: `${data.hpa.use ? data.hpa.maxReplicas : data.replicas}`
+      [maxReplicasKey]: `${data.hpa.use ? data.hpa.maxReplicas : data.replicas}`,
+      [deployPVCResizeKey]: `${totalStorage}Gi`
     },
     labels: {
       [appDeployKey]: data.appName,
@@ -31,13 +35,6 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     selector: {
       matchLabels: {
         app: data.appName
-      }
-    },
-    strategy: {
-      type: 'RollingUpdate',
-      rollingUpdate: {
-        maxUnavailable: 1,
-        maxSurge: 0
       }
     }
   };
@@ -154,6 +151,13 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       metadata,
       spec: {
         ...commonSpec,
+        strategy: {
+          type: 'RollingUpdate',
+          rollingUpdate: {
+            maxUnavailable: 0,
+            maxSurge: 1
+          }
+        },
         template: {
           metadata: templateMetadata,
           spec: {
@@ -176,6 +180,12 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       metadata,
       spec: {
         ...commonSpec,
+        updateStrategy: {
+          type: 'RollingUpdate',
+          rollingUpdate: {
+            maxUnavailable: '50%'
+          }
+        },
         minReadySeconds: 10,
         serviceName: data.appName,
         template: {
@@ -237,20 +247,16 @@ export const json2Ingress = (data: AppEditType) => {
     HTTP: {
       'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
       'nginx.ingress.kubernetes.io/backend-protocol': 'HTTP',
-      'nginx.ingress.kubernetes.io/rewrite-target': '/$2',
       'nginx.ingress.kubernetes.io/client-body-buffer-size': '64k',
       'nginx.ingress.kubernetes.io/proxy-buffer-size': '64k',
       'nginx.ingress.kubernetes.io/proxy-send-timeout': '300',
       'nginx.ingress.kubernetes.io/proxy-read-timeout': '300',
       'nginx.ingress.kubernetes.io/server-snippet':
-        'client_header_buffer_size 64k;\nlarge_client_header_buffers 4 128k;\n',
-      'nginx.ingress.kubernetes.io/configuration-snippet':
-        'if ($request_uri ~* \\.(js|css|gif|jpe?g|png)) {\n  expires 30d;\n  add_header Cache-Control "public";\n}\n'
+        'client_header_buffer_size 64k;\nlarge_client_header_buffers 4 128k;\n'
     },
     GRPC: {
       'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
-      'nginx.ingress.kubernetes.io/backend-protocol': 'GRPC',
-      'nginx.ingress.kubernetes.io/rewrite-target': '/$2'
+      'nginx.ingress.kubernetes.io/backend-protocol': 'GRPC'
     },
     WS: {
       'nginx.ingress.kubernetes.io/proxy-read-timeout': '3600',
@@ -265,6 +271,7 @@ export const json2Ingress = (data: AppEditType) => {
       const host = network.customDomain
         ? network.customDomain
         : `${network.publicDomain}.${SEALOS_DOMAIN}`;
+
       const secretName = network.customDomain ? data.appName : INGRESS_SECRET;
 
       const ingress = {
@@ -279,7 +286,6 @@ export const json2Ingress = (data: AppEditType) => {
           annotations: {
             'kubernetes.io/ingress.class': 'nginx',
             'nginx.ingress.kubernetes.io/proxy-body-size': '32m',
-            'nginx.ingress.kubernetes.io/server-snippet': `gzip on;gzip_min_length 1024;gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;`,
             ...map[network.protocol]
           }
         },
@@ -291,7 +297,7 @@ export const json2Ingress = (data: AppEditType) => {
                 paths: [
                   {
                     pathType: 'Prefix',
-                    path: '/()(.*)',
+                    path: '/',
                     backend: {
                       service: {
                         name: data.appName,

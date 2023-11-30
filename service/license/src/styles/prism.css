@@ -1,0 +1,17 @@
+/* pre {
+  background-color: transparent !important;
+  color: #24282c;
+} */
+/* pre,
+code {
+  white-space: pre-line !important;
+} */
+
+.operator {
+  color: #00a9a6;
+}
+
+.token.function,
+.token.builtin {
+  color: #219bf4;
+}

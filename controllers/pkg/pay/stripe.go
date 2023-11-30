@@ -19,8 +19,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"github.com/stripe/stripe-go/v74"
+
+	"github.com/labring/sealos/controllers/pkg/utils/env"
 )
 
 var DefaultURL = fmt.Sprintf("https://%s", env.GetEnvWithDefault("DOMAIN", DefaultDomain))
