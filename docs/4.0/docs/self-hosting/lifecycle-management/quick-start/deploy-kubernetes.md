@@ -1,159 +1,183 @@
 ---
 sidebar_position: 2
+keywords: [K8s, K8s install, K8s deploy, Kubernetes cluster setup, multi-node Kubernetes, offline Kubernetes installation]
 ---
 
 # Install Kubernetes
 
+Sealos supports installing Kubernetes clusters on `amd64` and `arm64` architecture machines.
+
 ## Prerequisites
 
-Sealos is a simple Go binary that can be installed on most Linux operating systems.
+You'll first need to [download the Sealos CLI tool](/self-hosting/lifecycle-management/quick-start/install-cli.md). Sealos is a simple Golang binary that can be installed on most Linux operating systems.
 
 Here are some basic installation requirements:
 
-- Each cluster node should have a unique hostname. Hostnames should not contain underscores.
-- Time synchronization across all nodes.
-- Run the `sealos run` command on the first node of the Kubernetes cluster. Currently, cluster installation is not supported from outside the cluster.
-- It is recommended to use a clean operating system to create the cluster. Do not install Docker manually.
-- Supported on most Linux distributions, such as Ubuntu, CentOS, and Rocky Linux.
-- Supports Kubernetes versions supported in [DockerHub](https://hub.docker.com/r/labring/kubernetes/tags).
-- Supports containerd as the container runtime.
-- For public cloud deployments, use private IP addresses.
+- Each cluster node should have a unique hostname without underscores.
+- System times must be synchronized across all nodes.
+- The `sealos run` command must be run on the **first master node** of the Kubernetes cluster. **Installation on nodes outside the cluster is not currently supported**.
+- It is recommended to use a clean OS to create the cluster. **Do not install Docker manually!**
+- Supports most Linux distributions like Ubuntu, CentOS, Rocky Linux.
+- Compatible with all Kubernetes versions available on [Docker Hub](https://hub.docker.com/r/labring/kubernetes/tags).
+- Supports Containerd as the container runtime.
+- When installing on public clouds, use **private IP** addresses.
 
-### CPU Architecture
+## View Available Cluster Images   
 
-Currently, `amd64` and `arm64` architectures are supported.
+All Sealos cluster images are hosted in the [cluster-image-docs](https://github.com/labring-actions/cluster-image-docs) repository.   
 
-## Single-node Kubernetes Installation
+You can browse all Sealos images on Docker Hub here: [https://hub.docker.com/u/labring](https://hub.docker.com/u/labring).  
+
+Use [Registry Explorer](https://explore.ggcr.dev/) to view all versions of the Kubernetes cluster images by entering `labring/kubernetes` and clicking "Submit Query":  
+
+![](images/registry-explorer.png)
+
+This will display all available tags for that image.
+
+:::info Note  
+
+Kubernetes cluster stability improves with higher minor version numbers. For example in v1.28.x, x is the minor version. It is recommended to use versions with relatively high minor numbers. Currently, the highest v1.27 version is v1.27.7, while the highest v1.28 version is v1.28.3, so **v1.27.7 is recommended**. Choose the optimal Kubernetes version based on your needs.
+
+:::
+
+## Install Single-Node Kubernetes   
 
 ```shell
 # sealos version must >= v4.1.0
-$ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single
+$ sealos run labring/kubernetes:v1.27.7 labring/helm:v3.9.4 labring/cilium:v1.13.4 --single  
 ```
 
-## Multi-node Kubernetes Installation
+## Install Kubernetes Cluster  
+
+```shell  
+$ sealos run labring/kubernetes:v1.27.7 labring/helm:v3.9.4 labring/cilium:v1.13.4 \  
+--masters 192.168.64.2,192.168.64.22,192.168.64.20 \
+--nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
+```
+
+Note: labring/helm must come before labring/cilium.   
+
+Parameter descriptions:   
+
+| Parameter | Example | Description |    
+| --- | --- | --- |    
+| --masters | 192.168.0.2 | List of master node IP addresses |   
+| --nodes | 192.168.0.3 | List of worker node IP addresses |  
+| --ssh-passwd | [your-ssh-passwd] | SSH password |  
+| kubernetes | labring/kubernetes:v1.25.0 | Kubernetes cluster image |   
+
+Running the above commands directly on clean servers will install a highly available Kubernetes cluster without any extra steps.  
+
+## Install Various Distributed Apps
+
+```shell  
+sealos run labring/helm:v3.9.4 # Install Helm   
+
+sealos run labring/openebs:v3.9.0 # Install OpenEBS   
+
+sealos run labring/minio-operator:v4.5.5 labring/ingress-nginx:4.1.0
+```  
+
+This provides highly available apps like Minio without worrying about dependencies.
+
+## Add Kubernetes Nodes   
+
+Add worker nodes:  
+
+```shell  
+$ sealos add --nodes 192.168.64.21,192.168.64.19  
+```  
+
+Add master nodes:   
+
+```shell   
+$ sealos add --masters 192.168.64.21,192.168.64.19  
+```  
+
+## Delete Kubernetes Nodes  
+
+Delete worker nodes:   
 
 ```shell
-$ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
-     --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
-     --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
+$ sealos delete --nodes 192.168.64.21,192.168.64.19  
+```  
+
+Delete master nodes:  
+
+```shell  
+$ sealos delete --masters 192.168.64.21,192.168.64.19   
+```  
+
+## Clean Up Kubernetes Cluster  
+
+```shell  
+$ sealos reset  
+```  
+
+## Offline Installation   
+
+For offline environments, first import the images - subsequent steps are identical to online installation.  
+
+First, export images from an online environment:    
+
+```shell   
+$ sealos pull registry.cn-shanghai.aliyuncs.com/labring/kubernetes:v1.27.7    
+
+$ sealos save -o kubernetes.tar registry.cn-shanghai.aliyuncs.com/labring/kubernetes:v1.27.7  
+```  
+
+### Import and Install  
+
+Copy kubernetes.tar to the offline environment and import it with:     
+
+```shell  
+$ sealos load -i kubernetes.tar  
+```  
+
+The rest of the installation process is identical to online installation:   
+
+```shell   
+$ sealos images # Verify import succeeded   
+
+$ sealos run registry.cn-shanghai.aliyuncs.com/labring/kubernetes:v1.27.7 # Single node  
+```  
+
+### Quick Cluster Install  
+
+You can also install Kubernetes by directly running:   
+
+```shell  
+$ sealos run kubernetes.tar   
 ```
 
-Notice: labring/helm should be set before labring/calico.
+## Cluster Image Version Compatibility
 
-Parameter explanation:
+### Kubernetes Compatibility with Containerd
 
-| Parameter | Example Value   | Description                              |
-| --------- | --------------- | ---------------------------------------- |
-| --masters | 192.168.0.2    | Kubernetes master node address list       |
-| --nodes   | 192.168.0.3    | Kubernetes node address list              |
-| --ssh-passwd | [your-ssh-passwd] | SSH login password                   |
-| kubernetes | labring/kubernetes:v1.25.0 | Kubernetes image |
+It's advised to use Containerd as the container runtime interface (CRI) in Kubernetes clusters. Containerd stands out for its lightweight structure and high efficiency, and it's fully compatible with Docker. Kubernetes images that utilize Containerd benefit from enhanced performance and optimized resource usage. Here are the specific supported versions:
 
-Execute the above command directly on a clean server without any additional operations to start a highly available Kubernetes cluster.
+| Kubernetes Version | Required Sealos Version | CRI Version | Cluster Image Version            |
+| ------------------ | ----------------------- | ----------- | -------------------------------- |
+| `<1.25`            | `>=v4.0.0`              | v1alpha2    | labring/kubernetes:v1.24.0       |
+| `>=1.25`           | `>=v4.1.0`              | v1alpha2    | labring/kubernetes:v1.25.0       |
+| `>=1.26`           | `>=v4.1.4-rc3`          | v1          | labring/kubernetes:v1.26.0       |
+| `>=1.27`           | `>=v4.2.0-alpha3`       | v1          | labring/kubernetes:v1.27.0       |
 
-## Install Various Distributed Applications
+The choice of Sealos and CRI versions is dependent on the Kubernetes version in question. For instance, Kubernetes v1.26.0 would require Sealos v4.1.4-rc3 or newer, along with the v1 CRI version.
 
-```shell
-sealos run labring/helm:v3.8.2 # install helm
-sealos run labring/openebs:v1.9.0 # install openebs
-sealos run labring/minio-operator:v4.4.16 labring/ingress-nginx:4.1.0 \
-   labring/mysql-operator:8.0.23-14.1 labring/redis-operator:3.1.4 # oneliner
-```
+### Kubernetes Compatibility with Docker
 
-With the above commands, you will have highly available MySQL, Redis, and more, without worrying about dependencies.
+Alternatively, Docker can also be used as the container runtime. The following table provides a breakdown of compatible Kubernetes versions with their corresponding Sealos and CRI versions for Docker-based setups:
 
-## Adding Nodes
+| Kubernetes Version | Required Sealos Version | CRI Version | Cluster Image Version                 |
+| ------------------ | ----------------------- | ----------- | -------------------------------------- |
+| `<1.25`            | `>=v4.0.0`              | v1alpha2    | labring/kubernetes-docker:v1.24.0      |
+| `>=1.25`           | `>=v4.1.0`              | v1alpha2    | labring/kubernetes-docker:v1.25.0      |
+| `>=1.26`           | `>=v4.1.4-rc3`          | v1          | labring/kubernetes-docker:v1.26.0      |
+| `>=1.27`           | `>=v4.2.0-alpha3`       | v1          | labring/kubernetes-docker:v1.27.0      |
 
-Add a node:
-```shell
-$ sealos add --nodes 192.168.64.21,192.168.64.19 
-```
-
-Add a master node:
-```shell
-$ sealos add --masters 192.168.64.21,192.168.64.19 
-```
-
-## Deleting Nodes
-
-Delete a node:
-```shell
-$ sealos delete --nodes 192.168.64.21,192.168.64.19 
-```
-
-Delete a master node:
-```shell
-$ sealos delete --masters 192.168.64.21,192.168.64.19  
-```
-
-## Cleaning up the Cluster
-
-```shell
-$ sealos reset
-```
-
-## Offline Delivery
-
-
-
-For offline environments, you only need to import the images in advance. The remaining steps are the same as online installation.
-
-First, save the installation package in an environment with internet access:
-```shell
-$ sealos pull labring/kubernetes:v1.25.0
-$ sealos save -o kubernetes.tar labring/kubernetes:v1.25.0
-```
-### Loading Images and Installation
-
-Copy the `kubernetes.tar` file to the offline environment and use the `load` command to import the images:
-
-```shell
-$ sealos load -i kubernetes.tar
-```
-
-The remaining installation steps are the same as the online installation.
-```shell
-$ sealos images # check if the cluster images are successfully imported
-$ sealos run labring/kubernetes:v1.25.0  # Single-node installation, similar for cluster installation
-```
-
-### Quick Start with Cluster Image
-
-```shell
-$ sealos run kubernetes.tar # Single-node installation, similar for cluster installation
-```
-
-
-## Cluster Image Version Support
-
-### Kubernetes with containerd (Kubernetes version >=1.18.0)
-
-| Kubernetes Version | Sealos Version       | CRI Version | Image Version                   |
-| ------------------ | -------------------- | ----------- | ------------------------------- |
-| `<1.25`            | `>=v4.0.0`           | v1alpha2    | labring/kubernetes:v1.24.0 |
-| `>=1.25`           | `>=v4.1.0`           | v1alpha2    | labring/kubernetes:v1.25.0 |
-| `>=1.26`           | `>=v4.1.4-rc3`       | v1          | labring/kubernetes:v1.26.0 |
-| `>=1.27`           | `>=v4.2.0-alpha3`    | v1          | labring/kubernetes:v1.27.0 |
-
-These images use containerd as the container runtime interface (CRI). containerd is a lightweight, high-performance container runtime that is compatible with Docker. Using containerd-based Kubernetes images can provide better performance and resource utilization.
-
-Depending on the Kubernetes version, you can choose different Sealos versions and CRI versions. For example, if you want to use Kubernetes v1.26.0, you can choose Sealos v4.1.4-rc3 or higher and use CRI v1.
-
-#### Kubernetes with Docker (Kubernetes version >=1.18.0)
-
-| Kubernetes Version | Sealos Version       | CRI Version | Image Version                          |
-| ------------------ | -------------------- | ----------- | -------------------------------------- |
-| `<1.25`            | `>=v4.0.0`           | v1alpha2    | labring/kubernetes-docker:v1.24.0 |
-| `>=1.25`           | `>=v4.1.0`           | v1alpha2    | labring/kubernetes-docker:v1.25.0 |
-| `>=1.26`           | `>=v4.1.4-rc3`       | v1          | labring/kubernetes-docker:v1.26.0 |
-| `>=1.27`           | `>=v4.2.0-alpha3`    | v1          | labring/kubernetes-docker:v1.27.0 |
-
-These images use Docker as the container runtime interface (CRI). Docker is a widely used and feature-rich container platform that provides an easy-to-use interface and a rich ecosystem. Using Docker-based Kubernetes images allows for easy integration with existing Docker infrastructure.
-
-Similar to containerd-based Kubernetes images, you can choose different Sealos versions and CRI versions based on the Kubernetes version. For
-
-example, if you want to use Kubernetes v1.26.0, you can choose Sealos v4.1.4-rc3 or higher and use CRI v1.
+As with the Containerd setup, the appropriate Sealos and CRI versions must be matched with the specific version of Kubernetes being used. For a Kubernetes v1.26.0 setup, this means selecting Sealos v4.1.4-rc3 or later, and a v1 CRI version.
 
 ## Summary
 
-We provide multiple options for running containers in your Kubernetes cluster. You can choose from different image types and versions based on your needs and preferences. Also, don't forget to check the [changelog](https://github.com/labring/sealos/blob/main/CHANGELOG/CHANGELOG.md) for any updates or additional information.
+You can choose from a variety of image types and versions to suit your individual needs and preferences. Don't forget to consult the [CHANGELOG](https://github.com/labring/sealos/blob/main/CHANGELOG/CHANGELOG.md) to stay informed about the latest updates and bug fixes for each version.
