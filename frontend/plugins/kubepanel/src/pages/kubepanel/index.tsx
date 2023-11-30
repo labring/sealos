@@ -45,6 +45,8 @@ const Home = () => {
       {switchPage(sideNavItemKey)}
       <FloatButton
         icon={<PlusOutlined />}
+        tooltip="Create a resource."
+        style={{ left: 24, bottom: 30, width: 48, height: 48 }}
         type="primary"
         onClick={() => setOpenCreateResourceModal(true)}
       />

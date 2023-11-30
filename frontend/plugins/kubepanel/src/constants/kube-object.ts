@@ -2,6 +2,7 @@ import {
   ConfigMap,
   Deployment,
   Ingress,
+  KubeEvent,
   PersistentVolumeClaim,
   Pod,
   Secret,
@@ -18,7 +19,8 @@ export enum Resources {
   ConfigMaps = 'configmaps',
   PersistentVolumeClaims = 'persistentvolumeclaims',
   Secrets = 'secrets',
-  Ingresses = 'ingresses'
+  Ingresses = 'ingresses',
+  Events = 'events'
 }
 
 export const KubeObjectConstructorMap: { [key in Resources]: any } = {
@@ -28,7 +30,8 @@ export const KubeObjectConstructorMap: { [key in Resources]: any } = {
   [Resources.ConfigMaps]: ConfigMap,
   [Resources.PersistentVolumeClaims]: PersistentVolumeClaim,
   [Resources.Secrets]: Secret,
-  [Resources.Ingresses]: Ingress
+  [Resources.Ingresses]: Ingress,
+  [Resources.Events]: KubeEvent
 };
 
 export const KindMap: { [key in Resources]: any } = {
@@ -38,5 +41,6 @@ export const KindMap: { [key in Resources]: any } = {
   [Resources.ConfigMaps]: 'ConfigMap',
   [Resources.PersistentVolumeClaims]: 'PersistentVolumeClaim',
   [Resources.Secrets]: 'Secret',
-  [Resources.Ingresses]: 'Ingress'
+  [Resources.Ingresses]: 'Ingress',
+  [Resources.Events]: 'Event'
 };

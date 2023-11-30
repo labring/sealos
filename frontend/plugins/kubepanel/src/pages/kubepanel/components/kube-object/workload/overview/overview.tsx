@@ -14,6 +14,9 @@ import {
   useStatefulSetStore
 } from '@/store/kube';
 import { Resources } from '@/constants/kube-object';
+import { Section } from '@/components/common/section/section';
+import Title from '@/components/common/title/title';
+import EventOverview from './event-overview';
 
 const OverviewPage = () => {
   const requestController = useRef(new RequestController({ timeoutDuration: 10000 }));
@@ -48,9 +51,17 @@ const OverviewPage = () => {
   }));
 
   return (
-    <Flex vertical justify="space-between">
-      <div className="p-4 mb-4 text-2xl font-medium">Overview</div>
-      <WorkloadStatusOverview data={overviewStatuses} />
+    <Flex vertical gap="12px">
+      <Section>
+        <Title type="primary">Overview</Title>
+      </Section>
+      <Section>
+        <WorkloadStatusOverview data={overviewStatuses} />
+      </Section>
+      <Section>
+        <Title type="primary">Events</Title>
+        <EventOverview />
+      </Section>
     </Flex>
   );
 };

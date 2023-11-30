@@ -2,6 +2,7 @@ import {
   ConfigMap,
   Deployment,
   Ingress,
+  KubeEvent,
   KubeObject,
   PersistentVolumeClaim,
   Pod,
@@ -34,3 +35,4 @@ type ConfigMapStore = KubeStore<ConfigMap>;
 type VolumeClaimStore = KubeStore<PersistentVolumeClaim>;
 type SecretStore = KubeStore<Secret>;
 type IngressStore = KubeStore<Ingress>;
+type EventStore = KubeStore<KubeEvent>;

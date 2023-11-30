@@ -45,5 +45,11 @@ export const ApiBaseParamsMap: Record<ResourceKey, UrlParams> = {
     apiGroup: 'networking.k8s.io',
     apiVersion: 'v1',
     resource: Resources.Ingresses
+  },
+  events: {
+    apiPrefix: 'api',
+    apiGroup: undefined,
+    apiVersion: 'v1',
+    resource: Resources.Events
   }
 };
