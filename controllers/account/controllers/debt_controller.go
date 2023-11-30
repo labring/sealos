@@ -345,6 +345,8 @@ const (
 	//languageEn = "en"
 	languageZh       = "zh"
 	debtChoicePrefix = "debt-choice-"
+	readStatusLabel  = "isRead"
+	falseStatus      = "false"
 )
 
 var NoticeTemplateEN = map[int]string{
@@ -426,6 +428,10 @@ func (r *DebtReconciler) sendNotice(ctx context.Context, user string, oweAmount 
 		ntf.Namespace = namespaces[i]
 		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, ntf, func() error {
 			ntf.Spec = *ntfSpec
+			if ntf.Labels == nil {
+				ntf.Labels = make(map[string]string)
+			}
+			ntf.Labels[readStatusLabel] = falseStatus
 			return nil
 		}); err != nil {
 			return err
