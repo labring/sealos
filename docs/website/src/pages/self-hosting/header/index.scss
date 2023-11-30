@@ -132,18 +132,7 @@
     max-width: 1120px;
     margin: 0 auto;
     z-index: 9;
-    h1 {
-      margin-top: 100px;
-      margin-bottom: 0;
-      font-size: 48px;
-      font-weight: 600;
-      .txt-title {
-        color: #379fff;
-      }
-      .txt-aid {
-        color: rgba(185, 221, 255, 1);
-      }
-    }
+
     h2 {
       margin-bottom: 0;
       color: rgba(255, 255, 255, 1);
@@ -216,11 +205,6 @@
       flex-direction: column;
       padding: 0 16px;
       z-index: 9;
-      h1 {
-        margin-top: 30px;
-        font-size: 20px;
-        font-weight: 600;
-      }
 
       h2 {
         font-weight: 600;

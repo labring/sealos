@@ -53,7 +53,7 @@ const Introduce = ({ isPc }: { isPc: boolean }) => {
         <div className="comet-icon">
           <CometIcon />
         </div>
-        <h1>{i18nObj.whySealos}</h1>
+        <div className="sealos-main-whysealos">{i18nObj.whySealos}</div>
         <div className="features">
           <div className="route">
             <div className="icon1">
@@ -100,7 +100,7 @@ const Introduce = ({ isPc }: { isPc: boolean }) => {
       <div className="comet-icon">
         <CometIcon />
       </div>
-      <h1>{i18nObj.whySealos}</h1>
+      <div className="sealos-main-whysealos">{i18nObj.whySealos}</div>
       <div className="features">
         <div className="left animate__fadeIn" data-wow-duration="1s">
           <div className="tag tag1">{i18nObj.lowerCosts}</div>
