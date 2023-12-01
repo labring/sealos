@@ -1,6 +1,5 @@
 import { Authority } from '@/consts';
 import { useToast } from '@/hooks/useToast';
-import { addHours, format, set, startOfDay } from 'date-fns';
 import { useTranslation } from 'next-i18next';
 
 /**
@@ -178,7 +177,10 @@ export const delay = (ms: number) =>
 
 export const inAuthority = (val: unknown): boolean =>
   Object.values(Authority).includes(val as Authority);
-
+// 1¥=1000000
+export const formatMoney = (money: number) => money / 1000000;
+export const deFormatMoney = (money: number) => money * 1000000;
+export const displayMoney = (money: number) => money.toFixed(2);
 export function formatBytes(
   bytes: number,
   decimals = 2

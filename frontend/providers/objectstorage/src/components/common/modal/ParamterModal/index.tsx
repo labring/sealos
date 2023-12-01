@@ -44,7 +44,7 @@ export default function ParamterModal({ ...styles }: ButtonProps) {
         >
           <ModalCloseButton right={'24px'} top="24px" p="0" />
           <ModalHeader p="0">{t('s3ServiceParams')}</ModalHeader>
-          <ModalBody h="100%" w="100%" p="40px">
+          <ModalBody h="100%" w="100%" p="20px">
             {miniouser.isSuccess ? (
               <SimpleGrid columns={2} spacingY={'15px'} gridTemplateColumns={'auto max-content'}>
                 <Box>Access Key</Box>

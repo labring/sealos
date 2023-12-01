@@ -16,7 +16,7 @@ import {
 import RefreshIcon from '@/components/Icons/RefreshIcon';
 import BucketIcon from '@/components/Icons/BucketIcon';
 import MoreIcon from '@/components/Icons/MoreIcon';
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useMemo } from 'react';
 import ParamterModal from '@/components/common/modal/ParamterModal';
 import CreateBucketModal from '@/components/common/modal/CreateBucketModal';
 import EditIcon from '../Icons/EditIcon';
@@ -27,9 +27,15 @@ import { getQuota, listBucket } from '@/api/bucket';
 import { useRouter } from 'next/router';
 import { useOssStore } from '@/store/ossStore';
 import { useToast } from '@/hooks/useToast';
-import { formatBytes } from '@/utils/tools';
+import { displayMoney, formatBytes, formatMoney } from '@/utils/tools';
 import { useTranslation } from 'next-i18next';
 import DeleteBucketModal from '../common/modal/DeleteBucketModal';
+import useBillingData from '@/hooks/useBillingData';
+import { endOfDay, formatISO, startOfDay, startOfHour } from 'date-fns';
+import { BillingData, BillingSpec, BillingType } from '@/types/billing';
+import request from '@/services/request';
+import { ApiResp } from '@/services/kubernet';
+import useSessionStore from '@/store/session';
 
 function MoreMenu({ bucket }: { bucket: TBucket }) {
   const router = useRouter();
@@ -145,26 +151,52 @@ function QuotaProgress({
   );
 }
 function BucketOverview({ ...styles }: StackProps) {
+  const session = useSessionStore((s) => s.session);
   const quotaQuery = useQuery({
-    queryKey: [QueryKey.bucketInfo],
+    queryKey: [QueryKey.bucketInfo, session],
     queryFn: getQuota
   });
   const { t } = useTranslation('common');
   const limit = quotaQuery.data?.quota.total || 0;
   const used = quotaQuery.data?.quota.used || 0;
   const count = quotaQuery.data?.quota.count || 0;
+  // const end = startOfHour(new Date());
+  // const leastCost = useQuery({
+  //   queryKey: ['billing', { end }],
+  //   queryFn: () => {
+  //     const spec: BillingSpec = {
+  //       appType: 'OBJECT-STORAGE',
+  //       startTime: formatISO(startOfDay(end), { representation: 'complete' }),
+  //       endTime: formatISO(endOfDay(end), { representation: 'complete' }),
+  //       page: 1,
+  //       pageSize: 1,
+  //       type: BillingType.CONSUME,
+  //       orderID: ''
+  //     };
+  //     return request<any, BillingData, { spec: BillingSpec }>('/api/billing', {
+  //       method: 'POST',
+  //       data: {
+  //         spec
+  //       }
+  //     });
+  //   },
+  //   select(data) {
+  //     console.log(data?.status.item);
+  //     return data?.status.item?.[0].amount || 0;
+  //   }
+  // });
   return (
     <Stack fontSize={'12px'} {...styles}>
       {
         // <Flex justifyContent={'space-between'}>
-        //   <Text>price:</Text>
-        //   <Text w="160px">123</Text>
+        //   <Text>{t('dailyEstimate')}:</Text>
+        //   <Text w="160px">{displayMoney(formatMoney((leastCost.data ?? 0) * 24))}</Text>
         // </Flex>
-        <Flex justifyContent={'space-between'}>
-          <Text>{t('totalObjects')}：</Text>
-          <Text w="160px">{count}</Text>
-        </Flex>
       }
+      <Flex justifyContent={'space-between'}>
+        <Text>{t('totalObjects')}：</Text>
+        <Text w="160px">{count}</Text>
+      </Flex>
       {!quotaQuery.isLoading && (
         <QuotaProgress
           name={'storage'}
@@ -194,12 +226,13 @@ function BucketOverview({ ...styles }: StackProps) {
 }
 
 export default function SideBar() {
-  const ossStore = useOssStore();
+  const s3client = useOssStore((s) => s.client);
+  const session = useSessionStore((s) => s.session);
   const { t } = useTranslation('bucket');
   const listBucketQuery = useQuery({
-    queryKey: [QueryKey.bucketList],
+    queryKey: [QueryKey.bucketList, session],
     queryFn: listBucket,
-    enabled: !!ossStore.client
+    enabled: !!s3client
   });
   const bucketList = listBucketQuery.data?.list || [];
   const currentBucket = useOssStore((s) => s.currentBucket);

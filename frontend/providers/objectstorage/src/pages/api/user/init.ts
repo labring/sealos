@@ -7,9 +7,9 @@ import { initK8s } from 'sealos-desktop-sdk/service';
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const client = await initK8s({ req });
-    const group = 'minio.sealos.io';
+    const group = 'objectstorage.sealos.io';
     const version = 'v1';
-    const plural = 'miniousers';
+    const plural = 'objectstorageusers';
     const name = client.namespace.replace('ns-', '');
     const getUser = async () => {
       const userRes = await client.k8sCustomObjects.getNamespacedCustomObjectStatus(
@@ -88,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           }
         );
       });
-    promise().then(
+    await promise().then(
       (secret) => {
         return jsonRes<{ secret: UserSecretData }>(res, {
           data: {
@@ -107,7 +107,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     );
   } catch (err: any) {
     console.log(err);
-    jsonRes(res, {
+    return jsonRes(res, {
       code: 500,
       message: 'get secret error'
     });

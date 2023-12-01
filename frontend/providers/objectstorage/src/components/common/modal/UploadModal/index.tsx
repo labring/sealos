@@ -26,6 +26,7 @@ import { useOssStore } from '@/store/ossStore';
 import { useDropzone } from 'react-dropzone';
 import { FolderPlaceholder, QueryKey } from '@/consts';
 import { useTranslation } from 'next-i18next';
+import { useToast } from '@/hooks/useToast';
 export default function UploadModal({ ...styles }: Omit<IconButtonProps, 'aria-label'> & {}) {
   const { onOpen, onClose, isOpen } = useDisclosure();
   const { t, i18n } = useTranslation('file');
@@ -63,12 +64,9 @@ export default function UploadModal({ ...styles }: Omit<IconButtonProps, 'aria-l
   const prefix = useOssStore((s) => s.prefix);
   const [isLoading, setIsLoading] = useState(false);
   const mutation = useMutation({
-    mutationFn: putObject(s3client!),
-    onSuccess() {
-      setIsLoading(false);
-      queryClient.invalidateQueries([QueryKey.minioFileList]);
-    }
+    mutationFn: putObject(s3client!)
   });
+  const { toast } = useToast();
   const { getRootProps, getInputProps, isDragAccept, inputRef } = useDropzone({
     noClick: true,
     noKeyboard: true,
@@ -91,9 +89,26 @@ export default function UploadModal({ ...styles }: Omit<IconButtonProps, 'aria-l
             Body: file
           });
         })
-      ).finally(() => {
+      ).then((results) => {
+        if (
+          results.some((res) => {
+            return res.status === 'rejected';
+          })
+        ) {
+          toast({
+            status: 'error',
+            title: 'upload error'
+          });
+        } else {
+          toast({
+            status: 'success',
+            title: 'upload success'
+          });
+        }
         // @ts-ignore
         inputRef.current && (inputRef.current.value = null);
+        setIsLoading(false);
+        queryClient.invalidateQueries([QueryKey.minioFileList]);
         onClose();
       });
     },

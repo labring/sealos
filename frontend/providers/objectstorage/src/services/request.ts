@@ -22,9 +22,9 @@ request.interceptors.request.use(
       config.url = '' + config.url;
     }
     let _headers: AxiosHeaders = config.headers;
-
+    const kc = getUserKubeConfig();
     //获取token，并将其添加至请求头中
-    _headers['Authorization'] = encodeURIComponent(getUserKubeConfig());
+    _headers['Authorization'] = encodeURIComponent(kc);
     if (!config.headers || config.headers['Content-Type'] === '') {
       _headers['Content-Type'] = 'application/json';
     }
