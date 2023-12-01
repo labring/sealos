@@ -1,7 +1,7 @@
-import Translate from '@docusaurus/Translate'
-import React from 'react'
-import CometIcon from '../Comet'
-import './index.scss'
+import Translate from '@docusaurus/Translate';
+import React from 'react';
+import CometIcon from '../Comet';
+import './index.scss';
 
 const HomeUserBy = ({ isPc }: { isPc: boolean }) => {
   if (!isPc) {
@@ -10,9 +10,9 @@ const HomeUserBy = ({ isPc }: { isPc: boolean }) => {
         <div className="comet-icon">
           <CometIcon />
         </div>
-        <h1 className="user-by-title">
+        <div className="user-by-title">
           <Translate>Who is Using Sealos</Translate>
-        </h1>
+        </div>
         {/* 品牌商滚动 */}
         <div className="scroll-brand">
           <div className="img-content">
@@ -27,7 +27,7 @@ const HomeUserBy = ({ isPc }: { isPc: boolean }) => {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -35,9 +35,9 @@ const HomeUserBy = ({ isPc }: { isPc: boolean }) => {
       <div className="comet-icon">
         <CometIcon />
       </div>
-      <h1 className="user-by-title">
+      <div className="user-by-title">
         <Translate>Who is Using Sealos</Translate>
-      </h1>
+      </div>
       {/* 品牌商滚动 */}
       <div className="scroll-brand">
         <div className="img-content">
@@ -52,7 +52,7 @@ const HomeUserBy = ({ isPc }: { isPc: boolean }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default React.memo(HomeUserBy)
+export default React.memo(HomeUserBy);

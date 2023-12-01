@@ -26,13 +26,13 @@
       flex-direction: column;
       padding: 0 16px;
       z-index: 9;
-      h1 {
+      .sealos-main-header {
         margin-top: 30px;
         font-size: 20px;
         font-weight: 600;
       }
 
-      h2 {
+      h1 {
         font-weight: 600;
         font-size: 30px;
         @media screen and (max-width: 385px) {

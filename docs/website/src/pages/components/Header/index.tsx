@@ -120,19 +120,19 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
         </nav>
         <main>
           {currentLocale === 'en' ? (
-            <h1>
+            <div className="sealos-main-header">
               <span className="txt-title">Kubernetes&nbsp;</span>
               <span className="txt-aid">as the kernel</span>
-            </h1>
+            </div>
           ) : (
-            <h1>
+            <div className="sealos-main-header">
               <span className="txt-aid">以&nbsp;</span>
               <span className="txt-title">Kubernetes&nbsp;</span>
               <span className="txt-aid">为内核</span>
-            </h1>
+            </div>
           )}
 
-          <h2>{i18nObj.cloudOS}</h2>
+          <h1>{i18nObj.cloudOS}</h1>
 
           {currentLocale === 'en' ? (
             <h3>
@@ -219,19 +219,19 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
       </nav>
       <main>
         {currentLocale === 'en' ? (
-          <h1>
+          <div className="sealos-main-header">
             <span className="txt-title">Kubernetes&nbsp;</span>
             <span className="txt-aid">as the kernel</span>
-          </h1>
+          </div>
         ) : (
-          <h1>
+          <div className="sealos-main-header">
             <span className="txt-aid">以&nbsp;</span>
             <span className="txt-title">Kubernetes&nbsp;</span>
             <span className="txt-aid">为内核</span>
-          </h1>
+          </div>
         )}
 
-        <h2>{i18nObj.cloudOS}</h2>
+        <h1>{i18nObj.cloudOS}</h1>
 
         {currentLocale === 'en' ? (
           <h3>
