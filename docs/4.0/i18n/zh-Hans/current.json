@@ -31,9 +31,9 @@
     "message": "Sealos 私有云",
     "description": "The label for category Sealos Self Hosting in sidebar docSidebar"
   },
-  "sidebar.docSidebar.category.Kubernetes Cluster Lifecycle Management": {
+  "sidebar.docSidebar.category.Kubernetes Lifecycle Management": {
     "message": "K8s 集群生命周期管理",
-    "description": "The label for category Kubernetes Cluster Lifecycle Management in sidebar docSidebar"
+    "description": "The label for category Kubernetes Lifecycle Management in sidebar docSidebar"
   },
   "sidebar.docSidebar.doc.Community": {
     "message": "社区",

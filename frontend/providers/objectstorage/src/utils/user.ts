@@ -19,9 +19,9 @@ type KC = {
 };
 
 export const getUserKubeConfig = () =>
-  (process.env.NODE_ENV === 'development'
-    ? process.env.NEXT_PUBLIC_MOCK_USER
-    : useSessionStore.getState().session?.kubeconfig) || '';
+  // (process.env.NODE_ENV === 'development'
+  //   ? process.env.NEXT_PUBLIC_MOCK_USER
+  useSessionStore.getState().session?.kubeconfig || '';
 
 export const getUserNamespace = () => {
   const kubeConfig = getUserKubeConfig();

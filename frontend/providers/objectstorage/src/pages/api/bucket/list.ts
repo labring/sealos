@@ -6,10 +6,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   try {
     const client = await initK8s({ req });
     const k8sRes = await client.k8sCustomObjects.listNamespacedCustomObject(
-      'minio.sealos.io',
+      'objectstorage.sealos.io',
       'v1',
       client.namespace,
-      'buckets'
+      'objectstoragebuckets'
     );
     if (k8sRes.response.statusCode !== 200) throw k8sRes.response.errored;
     const list = (

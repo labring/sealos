@@ -64,7 +64,7 @@ jobs:
             providers/terminal,
             providers/dbprovider,
             providers/costcenter,
-            #            providers/objectstorage,
+            providers/objectstorage,
             desktop,
           ]
     steps:

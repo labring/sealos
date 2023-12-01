@@ -86,6 +86,7 @@ export default function TrendChart({
           width: 0.5
         }
       },
+      minInterval: 1,
       nameTextStyle: {
         padding: [10, 10, 10, 10]
       }

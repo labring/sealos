@@ -18,16 +18,26 @@ import { putObject } from '@/api/s3';
 import { useOssStore } from '@/store/ossStore';
 import { FolderPlaceholder, QueryKey } from '@/consts';
 import { useTranslation } from 'next-i18next';
+import { useToast } from '@/hooks/useToast';
 export default function CreateFolderModal({ ...styles }: Omit<IconButtonProps, 'aria-label'>) {
   const { onOpen, onClose, isOpen } = useDisclosure();
   const [folderName, setFolderName] = useState('');
   const queryClient = useQueryClient();
   const oss = useOssStore();
   const { t } = useTranslation('file');
+  const { toast } = useToast();
   const mutation = useMutation({
     mutationFn: putObject(oss.client!),
     onSuccess() {
       queryClient.invalidateQueries([QueryKey.minioFileList]);
+      onClose();
+    },
+    onError(error) {
+      toast({
+        //@ts-ignore
+        title: error.message,
+        status: 'error'
+      });
       onClose();
     }
   });

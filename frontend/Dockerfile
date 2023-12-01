@@ -31,6 +31,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 COPY ./tsconfig.json ./tsconfig.json
 COPY ./tsconfig.deps.json ./tsconfig.deps.json
 COPY ./tsconfig.base.json ./tsconfig.base.json
+COPY ./tsconfig.web.json ./tsconfig.web.json
 COPY ./packages ./packages
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
@@ -51,11 +52,10 @@ ENV NEXT_TELEMETRY_DISABLED 1
 
 # COPY --from=deps /app/packages ./packages
 
-COPY . .
-
-
 ARG name
 ARG path
+
+COPY ${path} ${path}
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm --offline --filter=$name install && pnpm --filter=$name run build
 

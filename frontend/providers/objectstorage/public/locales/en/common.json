@@ -14,5 +14,6 @@
   "totalSpace": "Total Space",
   "s3ServiceParams": "Access Key",
   "refresh": "Refresh",
+  "dailyEstimate": "Daily Estimate",
   "deleteWarning": "Delete Warning"
 }

@@ -189,7 +189,7 @@
       },
       {
         "type": "category",
-        "label": "Kubernetes Cluster Lifecycle Management",
+        "label": "Kubernetes Lifecycle Management",
         "link": {
           "type": "doc",
           "id": "self-hosting/lifecycle-management/lifecycle-management"

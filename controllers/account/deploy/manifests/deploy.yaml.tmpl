@@ -735,6 +735,18 @@ rules:
   verbs:
   - get
 - apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - account.sealos.io
   resources:
   - accounts
@@ -1296,6 +1308,12 @@ spec:
           value: "604800"
         - name: DebtDetectionCycleSeconds
           value: "30"
+        - name: OSAdminSecret
+          value: '{{ .OSAdminSecret }}'
+        - name: OSInternalEndpoint
+          value: '{{ .OSInternalEndpoint }}'
+        - name: OSNamespace
+          value: '{{ .OSNamespace }}'
         envFrom:
         - secretRef:
             name: payment-secret

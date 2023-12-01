@@ -52,6 +52,7 @@ import { format } from 'date-fns';
 import DeleteFileModal from '../common/modal/DeleteFileModal';
 import DeleteSingleFileModal from '../common/modal/DeleteSingleFileModal';
 import StorageIcon from '../Icons/StorageIcon';
+import useSessionStore from '@/store/session';
 
 type EntryType = {
   LastModified?: Date;
@@ -67,6 +68,7 @@ export default function FileManager({ ...styles }: FlexProps) {
   const { t: toolsT } = useTranslation('tools');
   const bucket = useOssStore((s) => s.currentBucket);
   const s3client = useOssStore((s) => s.client);
+  const session = useSessionStore((s) => s.session);
   const Bucket = bucket?.name || '';
   const prefix = useOssStore((s) => s.prefix);
   const Prefix = prefix.length === 0 ? '' : [...prefix, ''].join('/');
@@ -81,9 +83,13 @@ export default function FileManager({ ...styles }: FlexProps) {
     setpageStack([]);
     setContinuationToken(undefined);
   };
+
   const { copyData } = useCopyData();
   const objectsQuery = useQuery({
-    queryKey: [QueryKey.minioFileList, { Bucket, Prefix, MaxKeys, ContinuationToken }],
+    queryKey: [
+      QueryKey.minioFileList,
+      { Bucket, Prefix, MaxKeys, ContinuationToken, s3client, session }
+    ],
     queryFn: () =>
       listObjects(s3client!)({ Bucket, Prefix, Delimiter: '/', ContinuationToken, MaxKeys }),
     select(data) {
@@ -91,9 +97,11 @@ export default function FileManager({ ...styles }: FlexProps) {
     },
     enabled: !!s3client && !!Bucket
   });
-
   useEffect(() => {
-    if (objectsQuery.data?.IsTruncated) {
+    if (objectsQuery.isError) {
+      // @ts-ignore
+      toast({ title: objectsQuery.failureReason?.message, status: 'error' });
+    } else if (objectsQuery.data?.IsTruncated) {
       const data = objectsQuery.data;
       const token = data.NextContinuationToken;
       if (!!token && !pageStack.includes(token)) {
@@ -101,7 +109,7 @@ export default function FileManager({ ...styles }: FlexProps) {
         setpageStack((pageStack) => [...pageStack, token]);
       }
     }
-  }, [objectsQuery.data]);
+  }, [objectsQuery.data, objectsQuery.isError]);
   // clear delete items
   useEffect(() => {
     deleteCheckBoxGroupState.setValue([]);
@@ -265,6 +273,7 @@ export default function FileManager({ ...styles }: FlexProps) {
           gap={['0', null, null, null, '16px']}
           ml="auto"
           mr="12px"
+          isDisabled={objectsQuery.isError}
           color="grayModern.500"
         >
           <UploadModal />
@@ -465,18 +474,6 @@ export default function FileManager({ ...styles }: FlexProps) {
         </TableContainer>
       )}
       <HStack justifyContent={'flex-end'} minH={'max-content'} mt="auto" mb="0">
-        {
-          // <HStack>
-          //   <HStack gap="8px">
-          //     <Circle size={'8px'} bg={'blue.600'} />
-          //     <Text> 对象数 : 132</Text>
-          //   </HStack>
-          //   <HStack gap="8px">
-          //     <Circle size={'8px'} bg="adora.600" />
-          //     <Text> 已使用 13KB</Text>
-          //   </HStack>
-          // </HStack>
-        }
         <ButtonGroup variant={'white-bg-icon'}>
           <Button
             isDisabled={

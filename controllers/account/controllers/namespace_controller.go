@@ -325,9 +325,11 @@ func (r *NamespaceReconciler) suspendObjectStorage(ctx context.Context, namespac
 
 	err := r.setOSUserStatus(ctx, user, Disabled)
 	if err != nil {
-		r.Log.Error(err, "failed to suspend object storage")
+		r.Log.Error(err, "failed to suspend object storage", "user", user)
+		return err
 	}
 
+	r.Log.Info("suspend object storage", "user", user)
 	return nil
 }
 
@@ -337,9 +339,11 @@ func (r *NamespaceReconciler) resumeObjectStorage(ctx context.Context, namespace
 
 	err := r.setOSUserStatus(ctx, user, Enabled)
 	if err != nil {
-		r.Log.Error(err, "failed to resume object storage")
+		r.Log.Error(err, "failed to resume object storage", "user", user)
+		return err
 	}
 
+	r.Log.Info("resume object storage", "user", user)
 	return nil
 }
 
@@ -367,7 +371,17 @@ func (r *NamespaceReconciler) setOSUserStatus(ctx context.Context, user string, 
 		r.OSAdminClient = oSAdminClient
 	}
 
-	err := r.OSAdminClient.SetUserStatus(ctx, user, madmin.AccountStatus(status))
+	users, err := r.OSAdminClient.ListUsers(ctx)
+	if err != nil {
+		r.Log.Error(err, "failed to list minio user", "user", user)
+		return err
+	}
+
+	if _, ok := users[user]; !ok {
+		return nil
+	}
+
+	err = r.OSAdminClient.SetUserStatus(ctx, user, madmin.AccountStatus(status))
 	if err != nil {
 		r.Log.Error(err, "failed to set user status", "user", user, "status", status)
 		return err
