@@ -7,7 +7,7 @@ import { editor } from 'monaco-editor';
 import { useEffect, useRef, useState } from 'react';
 
 interface Props<K extends KubeObject> {
-  obj: K;
+  obj?: K;
   open: boolean;
   onUpdate: (data: string) => Promise<ApiResp>;
   onCancel: () => void;
@@ -21,6 +21,8 @@ const UpdateEditorModal = <K extends KubeObject = KubeObject>({
   onCancel,
   onOk
 }: Props<K>) => {
+  if (!obj) return null;
+  
   const [clickedUpdate, setClickedUpdate] = useState(false);
   const [msgApi, contextHolder] = message.useMessage();
   const editorRef = useRef<editor.IStandaloneCodeEditor>();

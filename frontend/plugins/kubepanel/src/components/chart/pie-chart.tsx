@@ -35,7 +35,7 @@ export const PieChart = ({ title, data, color }: PieChartProps) => {
               <div className="font-medium text-base text-black">{title}</div>
               <div className="font-medium text-4xl text-black">{sum(data.map((d) => d.value))}</div>
             </div>
-          );
+          ) as unknown as string;
         }
       }
     },

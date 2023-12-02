@@ -8,6 +8,10 @@ export const theme: ThemeConfig = {
     },
     Collapse: {
       headerPadding: 0
+    },
+    Table: {
+      headerBorderRadius: 0,
+      headerBg: '#F6F8F9'
     }
   }
 };

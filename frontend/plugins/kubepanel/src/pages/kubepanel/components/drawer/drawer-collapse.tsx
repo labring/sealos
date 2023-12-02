@@ -1,4 +1,4 @@
-import { DrawerItem } from '@/pages/kubepanel/components/drawer/drawer-item';
+import DrawerItem from '@/pages/kubepanel/components/drawer/drawer-item';
 import { Collapse } from 'antd';
 
 interface Props {

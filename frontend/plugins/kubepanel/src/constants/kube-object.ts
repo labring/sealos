@@ -1,8 +1,11 @@
 import {
   ConfigMap,
   Deployment,
+  Ingress,
+  KubeEvent,
   PersistentVolumeClaim,
   Pod,
+  Secret,
   StatefulSet
 } from '@/k8slens/kube-object';
 import { StringKeyOf } from 'type-fest';
@@ -14,7 +17,10 @@ export enum Resources {
   Deployments = 'deployments',
   StatefulSets = 'statefulsets',
   ConfigMaps = 'configmaps',
-  PersistentVolumeClaims = 'persistentvolumeclaims'
+  PersistentVolumeClaims = 'persistentvolumeclaims',
+  Secrets = 'secrets',
+  Ingresses = 'ingresses',
+  Events = 'events'
 }
 
 export const KubeObjectConstructorMap: { [key in Resources]: any } = {
@@ -22,7 +28,10 @@ export const KubeObjectConstructorMap: { [key in Resources]: any } = {
   [Resources.Deployments]: Deployment,
   [Resources.StatefulSets]: StatefulSet,
   [Resources.ConfigMaps]: ConfigMap,
-  [Resources.PersistentVolumeClaims]: PersistentVolumeClaim
+  [Resources.PersistentVolumeClaims]: PersistentVolumeClaim,
+  [Resources.Secrets]: Secret,
+  [Resources.Ingresses]: Ingress,
+  [Resources.Events]: KubeEvent
 };
 
 export const KindMap: { [key in Resources]: any } = {
@@ -30,5 +39,8 @@ export const KindMap: { [key in Resources]: any } = {
   [Resources.Deployments]: 'Deployment',
   [Resources.StatefulSets]: 'StatefulSet',
   [Resources.ConfigMaps]: 'ConfigMap',
-  [Resources.PersistentVolumeClaims]: 'PersistentVolumeClaim'
+  [Resources.PersistentVolumeClaims]: 'PersistentVolumeClaim',
+  [Resources.Secrets]: 'Secret',
+  [Resources.Ingresses]: 'Ingress',
+  [Resources.Events]: 'Event'
 };

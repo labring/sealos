@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-export interface KubeBadgeProps {
+interface KubeBadgeProps {
   label: React.ReactNode;
   disabled?: boolean;
   expandable?: boolean;
@@ -32,14 +32,14 @@ export const KubeBadge = ({
   };
 
   const { textColor, backgroundColor } = color ?? {};
-  const disabledClass = disabled ? 'opacity-50 cursor-not-allowed' : 'opacity-100 cursor-pointer';
+  const disabledClass = disabled && 'opacity-50 cursor-not-allowed';
+  const expandedClass = isExpanded ? 'break-words' : 'truncate';
+  const expandableClass = isExpandable && 'cursor-pointer';
+  const bgColorClass = backgroundColor ? `bg-${backgroundColor}` : 'bg-[#EFF0F1]';
 
   return (
     <div
-      className={`inline-block py-2 px-2 mr-1 my-1 max-w-full rounded-[4px] ${disabledClass}
-    ${backgroundColor ? `bg-${backgroundColor}` : 'bg-[#EFF0F1]'} ${
-        isExpanded ? 'break-words' : 'truncate'
-      } `}
+      className={`inline-block py-1 px-1.5 mr-1 mb-1 max-w-full rounded-[4px] ${disabledClass} ${expandableClass} ${expandedClass} ${bgColorClass}`}
       ref={elem}
       onClick={onClick}
     >
