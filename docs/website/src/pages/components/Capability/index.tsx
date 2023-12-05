@@ -58,7 +58,7 @@ const Capability = ({ isPc }: { isPc: boolean }) => {
         <div className="comet-icon">
           <CometIcon />
         </div>
-        <h1>{i18nObj.capability}</h1>
+        <h2>{i18nObj.capability}</h2>
         <div className="app-management">
           <div className="app-management-text">
             <div className="logo">
@@ -120,7 +120,7 @@ const Capability = ({ isPc }: { isPc: boolean }) => {
       <div className="comet-icon">
         <CometIcon />
       </div>
-      <h1>{i18nObj.capability}</h1>
+      <h2>{i18nObj.capability}</h2>
       <div className="app-management animate__fadeIn" data-wow-duration="1s">
         <div className="app-management-text">
           <div className="logo">
