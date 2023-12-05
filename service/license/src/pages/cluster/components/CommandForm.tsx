@@ -46,7 +46,7 @@ export default function CommandForm({
     const commandParts = [
       basePath,
       cloudVersion ? ` --cloud-version=${cloudVersion} ` : '',
-      ' --image-registry=registry.cn-shanghai.aliyuncs.com ',
+      enterprise ? '' : ' --image-registry=registry.cn-shanghai.aliyuncs.com ',
       enterprise ? '' : ' --proxy-prefix=https://mirror.ghproxy.com ',
       masterIps ? ` --master-ips=${masterIps} ` : '',
       nodeIps ? ` --node-ips=${nodeIps} ` : '',
