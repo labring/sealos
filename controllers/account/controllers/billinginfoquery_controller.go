@@ -165,7 +165,11 @@ func (r *BillingInfoQueryReconciler) RechargeQuery(ctx context.Context, req ctrl
 
 	if len(userActivities) > 0 {
 		if _, phase, _ := types.GetUserActivityDiscount(r.Activities, &userActivities); phase != nil {
-			rechargeDiscount = phase.RechargeDiscount
+			if len(phase.RechargeDiscount.DiscountSteps) > 0 {
+				rechargeDiscount.DiscountSteps = phase.RechargeDiscount.DiscountSteps
+				rechargeDiscount.DiscountRates = phase.RechargeDiscount.DiscountRates
+			}
+			rechargeDiscount.SpecialDiscount = phase.RechargeDiscount.SpecialDiscount
 		}
 	}
 

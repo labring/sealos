@@ -543,6 +543,11 @@ func (r *AccountReconciler) getRatesAndSteps(amount int64, account *accountv1.Ac
 	update := false
 	if len(userActivities) > 0 {
 		if activityType, phase, _ := pkgtypes.GetUserActivityDiscount(r.Activities, &userActivities); phase != nil {
+			if len(phase.RechargeDiscount.DiscountSteps) > 0 {
+				rechargeDiscount.DiscountSteps = phase.RechargeDiscount.DiscountSteps
+				rechargeDiscount.DiscountRates = phase.RechargeDiscount.DiscountRates
+			}
+			rechargeDiscount.SpecialDiscount = phase.RechargeDiscount.SpecialDiscount
 			rechargeDiscount = phase.RechargeDiscount
 			currentPhase := userActivities[activityType].Phases[userActivities[activityType].CurrentPhase]
 			account.Annotations = pkgtypes.SetUserPhaseRechargeTimes(account.Annotations, activityType, currentPhase.Name, currentPhase.RechargeNums+1)
@@ -556,14 +561,10 @@ func getAmountWithDiscount(amount int64, discount pkgtypes.RechargeDiscount) int
 	if discount.SpecialDiscount != nil && discount.SpecialDiscount[amount/BaseUnit] != 0 {
 		return amount + discount.SpecialDiscount[amount/BaseUnit]*BaseUnit
 	}
-	return getAmountWithRatio(amount, discount.DiscountSteps, discount.DiscountRates)
-}
-
-func getAmountWithRatio(amount int64, step []int64, ratio []float64) int64 {
 	var r float64
-	for i, s := range step {
+	for i, s := range discount.DiscountSteps {
 		if amount >= s*BaseUnit {
-			r = ratio[i]
+			r = discount.DiscountRates[i]
 		} else {
 			break
 		}
