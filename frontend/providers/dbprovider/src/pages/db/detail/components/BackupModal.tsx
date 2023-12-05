@@ -57,6 +57,13 @@ const BackupModal = ({
     content: t('Manual Backup Tip'),
     confirmText: 'Start Backup'
   });
+
+  const { openConfirm: CloseAutoBackup, ConfirmChild: AutoBackupConfirmChild } = useConfirm({
+    title: 'Prompt',
+    content: t('Are you sure you want to turn off automatic backup'),
+    confirmText: 'Confirm'
+  });
+
   const [refresh, setRefresh] = useState(false);
   const [currentNav, setCurrentNav] = useState<`${NavEnum}`>(NavEnum.manual);
   const {
@@ -162,12 +169,16 @@ const BackupModal = ({
       })();
 
       const patch = [
-        { op: 'replace', path: '/spec/retention/ttl', value: `${data.saveTime}${data.saveType}` },
-        { op: 'replace', path: '/spec/schedule/datafile/enable', value: data.start },
         {
           op: 'replace',
-          path: '/spec/schedule/datafile/cronExpression',
-          value: convertCronTime(cron, -8)
+          path: '/spec/backup',
+          value: {
+            enabled: data.start,
+            cronExpression: convertCronTime(cron, -8),
+            method: 'backupTool',
+            pitrEnabled: false,
+            retentionPeriod: `${data.saveTime}${data.saveType}`
+          }
         }
       ];
 
@@ -193,6 +204,38 @@ const BackupModal = ({
     }
   });
 
+  const { mutate: onclickCloseAutoBackup } = useMutation({
+    mutationFn: async () => {
+      const patch = [
+        {
+          op: 'replace',
+          path: '/spec/backup/enabled',
+          value: false
+        }
+      ];
+
+      return updateBackupPolicy({
+        dbName,
+        dbType,
+        patch
+      });
+    },
+    onSuccess() {
+      toast({
+        status: 'success',
+        title: t('Automatic backup is turned off')
+      });
+      refetchPolicy();
+      onClose();
+    },
+    onError(err) {
+      toast({
+        status: 'error',
+        title: t('Failed to turn off automatic backup')
+      });
+    }
+  });
+
   return (
     <>
       <Modal isOpen onClose={onClose} isCentered>
@@ -209,6 +252,10 @@ const BackupModal = ({
                   variant={'deepLight'}
                   isChecked={getAutoValues('start')}
                   onChange={(e) => {
+                    if (defaultVal.start) {
+                      CloseAutoBackup(onclickCloseAutoBackup)();
+                      return;
+                    }
                     setAutoValue('start', e.target.checked);
                     setRefresh((state) => !state);
                   }}
@@ -389,6 +436,7 @@ const BackupModal = ({
         </ModalContent>
       </Modal>
       <ConfirmChild />
+      <AutoBackupConfirmChild />
     </>
   );
 };

@@ -46,11 +46,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       });
       const gitOperationPromise = !fs.existsSync(targetPath)
         ? execAsync(`git clone ${repoHttpUrl} ${targetPath} --depth=1`)
-        : execAsync(`cd ${targetPath} && git pull --depth=1`);
+        : execAsync(`cd ${targetPath} && git pull --depth=1 --rebase`);
 
       await Promise.race([gitOperationPromise, timeoutPromise]);
     } catch (error) {
-      console.log('git operation timed out');
+      console.log('git operation timed out: \n', error);
     }
 
     if (!fs.existsSync(targetPath)) {
