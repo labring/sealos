@@ -8,7 +8,6 @@ require (
 	github.com/alibabacloud-go/tea v1.2.1
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.4
 	github.com/go-logr/logr v1.2.4
-	github.com/joho/godotenv v1.5.1
 	github.com/labring/sealos/controllers/pkg v0.0.0-00010101000000-000000000000
 	github.com/labring/sealos/controllers/user v0.0.0
 	github.com/matoous/go-nanoid/v2 v2.0.0
