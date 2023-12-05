@@ -39,11 +39,11 @@ import (
 	"github.com/labring/sealos/controllers/pkg/types"
 )
 
-type RookieBonusReconciler struct {
+type ActivityReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
 	Logger   logr.Logger
-	activity map[string]types.Activity
+	Activity types.Activities
 }
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
@@ -59,7 +59,7 @@ type RookieBonusReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
-func (r *RookieBonusReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *ActivityReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Logger = log.FromContext(ctx)
 
 	account := &accountv1.Account{}
@@ -85,9 +85,9 @@ func (r *RookieBonusReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	return ctrl.Result{}, nil
 }
 
-func (r *RookieBonusReconciler) giveAmount(userActivities types.UserActivities, account *accountv1.Account) error {
+func (r *ActivityReconciler) giveAmount(userActivities types.UserActivities, account *accountv1.Account) error {
 	for activityType, userActivity := range userActivities {
-		activity, exist := r.activity[activityType]
+		activity, exist := r.Activity[activityType]
 		if !exist {
 			r.Logger.Error(nil, "activity not exist", "activity", activity)
 			continue
@@ -99,7 +99,6 @@ func (r *RookieBonusReconciler) giveAmount(userActivities types.UserActivities, 
 		}
 		giveAmount := activity.Phases[userActivity.CurrentPhase].GiveAmount
 		if giveAmount != 0 && userPhase.GiveAmount == 0 {
-			//TODO transfer can not use activity bonus
 			err := crypto.RechargeBalance(account.Status.EncryptBalance, int64(giveAmount))
 			if err != nil {
 				return fmt.Errorf("give account %s amount failed: %w", account.Name, err)
@@ -111,10 +110,9 @@ func (r *RookieBonusReconciler) giveAmount(userActivities types.UserActivities, 
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *RookieBonusReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
-	const controllerName = "payment_controller"
+func (r *ActivityReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
+	const controllerName = "activity_controller"
 	r.Logger = ctrl.Log.WithName(controllerName)
-	r.Logger.V(1).Info("init reconcile controller payment")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&accountv1.Account{}).
 		WithEventFilter(predicate.Funcs{

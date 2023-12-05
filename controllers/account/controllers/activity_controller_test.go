@@ -1,14 +1,29 @@
+// Copyright © 2023 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package controllers
 
 import (
 	"testing"
+	"time"
 
 	"github.com/labring/sealos/controllers/pkg/types"
 )
 
 func Test_parseUserActivitiesAnnotation(t *testing.T) {
 	annotations := map[string]string{
-		"activity/beginner-guide/launchpad/startTime":    "$time",
+		"activity/beginner-guide/launchpad/startTime":    "2016-03-04T15:04:05Z",
 		"activity/beginner-guide/launchpad/rechargeNums": "1",
 		"activity/beginner-guide/launchpad/giveAmount":   "10000",
 		"activity/beginner-guide/current-phase":          "launchpad",
@@ -19,12 +34,10 @@ func Test_parseUserActivitiesAnnotation(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	// 验证是否正确解析
 	if len(userActivities) != 1 {
 		t.Errorf("Expected 1 activity type, got %d", len(userActivities))
 	}
 
-	// 验证 userActivities 中的数据是否正确
 	activity, exists := userActivities["beginner-guide"]
 	if !exists {
 		t.Errorf("Expected activity type 'beginner-guide' not found")
@@ -46,8 +59,8 @@ func Test_parseUserActivitiesAnnotation(t *testing.T) {
 	if phase.Name != "launchpad" {
 		t.Errorf("Expected phase name 'launchpad', got %s", phase.Name)
 	}
-
-	if phase.StartTime != "$time" {
+	tmpTime, _ := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
+	if phase.StartTime.Equal(tmpTime) {
 		t.Errorf("Expected phase start time '$time', got %s", phase.StartTime)
 	}
 

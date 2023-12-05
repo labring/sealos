@@ -18,12 +18,15 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
 	gonanoid "github.com/matoous/go-nanoid/v2"
@@ -33,6 +36,7 @@ import (
 	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/pay"
 	"github.com/labring/sealos/controllers/pkg/resources"
+	pkgtypes "github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"github.com/labring/sealos/controllers/pkg/utils/retry"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
@@ -41,7 +45,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	cretry "k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -73,6 +76,9 @@ type AccountReconciler struct {
 	AccountSystemNamespace string
 	DBClient               database.Account
 	MongoDBURI             string
+	Activities             pkgtypes.Activities
+	RechargeStep           []int64
+	RechargeRatio          []float64
 }
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
@@ -143,12 +149,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		now := time.Now().UTC()
 		//1¥ = 100WechatPayAmount; 1 WechatPayAmount = 10000 SealosAmount
 		payAmount := orderAmount * 10000
-		// get recharge-gift configmap
-		configMap := &corev1.ConfigMap{}
-		if err := r.Client.Get(ctx, types.NamespacedName{Name: RECHARGEGIFT, Namespace: SEALOS}, configMap); err != nil {
-			r.Logger.Error(err, "get recharge-gift ConfigMap failed")
-		}
-		gift, err := giveGift(payAmount, configMap)
+		gift, err := r.getRatesAndSteps(payAmount, account)
 		if err != nil {
 			r.Logger.Error(err, "get gift error")
 		}
@@ -436,6 +437,48 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		Complete(r)
 }
 
+func ParseRechargeConfig(clt client.Client) (activities pkgtypes.Activities, discountsteps []int64, discountratios []float64, returnErr error) {
+	configMap := &corev1.ConfigMap{}
+	if err := clt.Get(context.Background(), types.NamespacedName{Name: RECHARGEGIFT, Namespace: SEALOS}, configMap); err != nil {
+		returnErr = fmt.Errorf("get recharge-gift ConfigMap failed: %v", err)
+		return
+	}
+
+	if returnErr = parseConfigList(configMap.Data["steps"], &discountsteps, "steps"); returnErr != nil {
+		return
+	}
+
+	if returnErr = parseConfigList(configMap.Data["ratios"], &discountratios, "ratios"); returnErr != nil {
+		return
+	}
+
+	if activityStr := configMap.Data["activities"]; activityStr != "" {
+		returnErr = json.Unmarshal([]byte(activityStr), &activities)
+	}
+
+	return
+}
+
+func parseConfigList(s string, list interface{}, configName string) error {
+	for _, v := range strings.Split(s, ",") {
+		switch list := list.(type) {
+		case *[]int64:
+			i, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				return fmt.Errorf("%s format error: %v", configName, err)
+			}
+			*list = append(*list, i)
+		case *[]float64:
+			f, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return fmt.Errorf("%s format error: %v", configName, err)
+			}
+			*list = append(*list, f)
+		}
+	}
+	return nil
+}
+
 func GetUserOwner(user *userv1.User) string {
 	own := user.Annotations[userv1.UserAnnotationOwnerKey]
 	if own == "" {
@@ -467,28 +510,39 @@ func (p *NamespaceFilterPredicate) Generic(e event.GenericEvent) bool {
 
 const BaseUnit = 1_000_000
 
-func giveGift(amount int64, configMap *corev1.ConfigMap) (int64, error) {
-	if configMap.Data == nil {
-		return amount, fmt.Errorf("configMap's data is nil")
+func (r *AccountReconciler) getRatesAndSteps(amount int64, account *accountv1.Account) (int64, error) {
+	userActivities, err := pkgtypes.ParseUserActivities(account.Annotations)
+	if err != nil {
+		return 0, fmt.Errorf("parse user activities failed: %w", err)
 	}
-	stepsStr := strings.Split(configMap.Data["steps"], ",")
-	ratiosStr := strings.Split(configMap.Data["ratios"], ",")
 
-	var ratio float64
-
-	for i, stepStr := range stepsStr {
-		step, err := strconv.ParseInt(stepStr, 10, 64)
-		if err != nil {
-			return amount, fmt.Errorf("steps format error :%s", err)
+	rechargeDiscount := pkgtypes.RechargeDiscount{
+		DiscountSteps: r.RechargeStep,
+		DiscountRates: r.RechargeRatio,
+	}
+	if len(userActivities) > 0 {
+		if discount, err := pkgtypes.GetUserActivityDiscount(r.Activities, &userActivities); err == nil && discount != nil {
+			rechargeDiscount = *discount
 		}
-		if amount >= step*BaseUnit {
-			ratio, err = strconv.ParseFloat(ratiosStr[i], 32)
-			if err != nil {
-				return amount, fmt.Errorf("ratios format error :%s", err)
-			}
+	}
+	return getAmountWithDiscount(amount, rechargeDiscount), nil
+}
+
+func getAmountWithDiscount(amount int64, discount pkgtypes.RechargeDiscount) int64 {
+	if discount.SpecialDiscount != nil && discount.SpecialDiscount[amount/BaseUnit] != 0 {
+		return amount + discount.SpecialDiscount[amount/BaseUnit]*BaseUnit
+	}
+	return getAmountWithRatio(amount, discount.DiscountSteps, discount.DiscountRates)
+}
+
+func getAmountWithRatio(amount int64, step []int64, ratio []float64) int64 {
+	var r float64
+	for i, s := range step {
+		if amount >= s*BaseUnit {
+			r = ratio[i]
 		} else {
 			break
 		}
 	}
-	return int64(math.Ceil(float64(amount)*ratio/100)) + amount, nil
+	return int64(math.Ceil(float64(amount)*r)) + amount
 }

@@ -23,6 +23,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/types"
+
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 
 	"github.com/go-logr/logr"
@@ -46,6 +48,9 @@ type BillingInfoQueryReconciler struct {
 	DBClient        database.Account
 	Properties      *resources.PropertyTypeLS
 	propertiesQuery []accountv1.PropertyQuery
+	Activities      types.Activities
+	RechargeStep    []int64
+	RechargeRatio   []float64
 	QueryFuncMap    map[string]func(context.Context, ctrl.Request, *accountv1.BillingInfoQuery) (string, error)
 }
 
@@ -141,6 +146,36 @@ func (r *BillingInfoQueryReconciler) AppTypeQuery(_ context.Context, _ ctrl.Requ
 	return string(data), nil
 }
 
+func (r *BillingInfoQueryReconciler) RechargeQuery(ctx context.Context, req ctrl.Request, _ *accountv1.BillingInfoQuery) (result string, err error) {
+	account := &accountv1.Account{}
+	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: getUsername(req.Namespace)}, account); err != nil {
+		return "", fmt.Errorf("get account failed: %w", err)
+	}
+
+	userActivities, err := types.ParseUserActivities(account.Annotations)
+	if err != nil {
+		return "", fmt.Errorf("parse user activities failed: %w", err)
+	}
+
+	rechargeDiscount := types.RechargeDiscount{
+		DiscountSteps: r.RechargeStep,
+		DiscountRates: r.RechargeRatio,
+	}
+
+	if len(userActivities) > 0 {
+		if discount, err := types.GetUserActivityDiscount(r.Activities, &userActivities); err == nil && discount != nil {
+			rechargeDiscount = *discount
+		}
+	}
+
+	data, err := json.Marshal(rechargeDiscount)
+	if err != nil {
+		return "", fmt.Errorf("marshal recharge discount failed: %w", err)
+	}
+
+	return string(data), nil
+}
+
 func (r *BillingInfoQueryReconciler) ConvertPropertiesToQuery() error {
 	r.propertiesQuery = make([]accountv1.PropertyQuery, 0)
 	for _, types := range r.Properties.Types {
@@ -165,6 +200,7 @@ func (r *BillingInfoQueryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.QueryFuncMap[strings.ToLower(accountv1.QueryTypeNamespacesHistory)] = r.NamespacesHistoryQuery
 	r.QueryFuncMap[strings.ToLower(accountv1.QueryTypeProperties)] = r.PropertiesQuery
 	r.QueryFuncMap[strings.ToLower(accountv1.QueryTypeAppType)] = r.AppTypeQuery
+	r.QueryFuncMap[strings.ToLower(accountv1.QueryTypeRecharge)] = r.RechargeQuery
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&accountv1.BillingInfoQuery{}).
 		Complete(r)
