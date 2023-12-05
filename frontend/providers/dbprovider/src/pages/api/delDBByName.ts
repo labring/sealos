@@ -12,6 +12,7 @@ import { DeleteJobByName, GetJobByName } from './migrate/delJobByName';
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const { name } = req.query as { name: string };
+
     if (!name) {
       throw new Error('deploy name is empty');
     }
@@ -29,13 +30,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
 
     // get migrates and delete
-    const migrates = await getMigrateList({ migrateName: name, req });
-    console.log(migrates, 'migrates');
-    await Promise.all(
-      migrates.map((item) => delMigrateByName({ migrateName: item.metadata.name, req }))
-    ).catch((error) => {
+    try {
+      const migrates = await getMigrateList({ migrateName: name, req });
+      await Promise.all(
+        migrates.map((item) => delMigrateByName({ migrateName: item.metadata.name, req }))
+      );
+    } catch (error) {
       console.log(error);
-    });
+    }
 
     // get backup and delete
     const backups = await getBackups({ dbName: name, req });
@@ -68,6 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     jsonRes(res, { data: result?.body });
   } catch (err: any) {
+    console.log(err, 'delete db by name err');
     jsonRes(res, {
       code: 500,
       error: err
