@@ -150,7 +150,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		now := time.Now().UTC()
 		//1¥ = 100WechatPayAmount; 1 WechatPayAmount = 10000 SealosAmount
 		payAmount := orderAmount * 10000
-		updateAnno, gift, err := r.getRatesAndSteps(payAmount, account)
+		updateAnno, gift, err := r.getAmountWithRates(payAmount, account)
 		if err != nil {
 			r.Logger.Error(err, "get gift error")
 		}
@@ -165,7 +165,8 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if err := r.Status().Update(ctx, payment); err != nil {
 			return ctrl.Result{}, fmt.Errorf("update payment failed: %v", err)
 		}
-		if updateAnno {
+		if len(updateAnno) > 0 {
+			account.Annotations = updateAnno
 			if err := r.Update(ctx, account); err != nil {
 				return ctrl.Result{}, fmt.Errorf("update account failed: %v", err)
 			}
@@ -530,17 +531,16 @@ func (p *NamespaceFilterPredicate) Generic(e event.GenericEvent) bool {
 
 const BaseUnit = 1_000_000
 
-func (r *AccountReconciler) getRatesAndSteps(amount int64, account *accountv1.Account) (bool, int64, error) {
+func (r *AccountReconciler) getAmountWithRates(amount int64, account *accountv1.Account) (anno map[string]string, amt int64, err error) {
 	userActivities, err := pkgtypes.ParseUserActivities(account.Annotations)
 	if err != nil {
-		return false, 0, fmt.Errorf("parse user activities failed: %w", err)
+		return nil, 0, fmt.Errorf("parse user activities failed: %w", err)
 	}
 
 	rechargeDiscount := pkgtypes.RechargeDiscount{
 		DiscountSteps: r.RechargeStep,
 		DiscountRates: r.RechargeRatio,
 	}
-	update := false
 	if len(userActivities) > 0 {
 		if activityType, phase, _ := pkgtypes.GetUserActivityDiscount(r.Activities, &userActivities); phase != nil {
 			if len(phase.RechargeDiscount.DiscountSteps) > 0 {
@@ -550,11 +550,10 @@ func (r *AccountReconciler) getRatesAndSteps(amount int64, account *accountv1.Ac
 			rechargeDiscount.SpecialDiscount = phase.RechargeDiscount.SpecialDiscount
 			rechargeDiscount = phase.RechargeDiscount
 			currentPhase := userActivities[activityType].Phases[userActivities[activityType].CurrentPhase]
-			account.Annotations = pkgtypes.SetUserPhaseRechargeTimes(account.Annotations, activityType, currentPhase.Name, currentPhase.RechargeNums+1)
-			update = true
+			anno = pkgtypes.SetUserPhaseRechargeTimes(account.Annotations, activityType, currentPhase.Name, currentPhase.RechargeNums+1)
 		}
 	}
-	return update, getAmountWithDiscount(amount, rechargeDiscount), nil
+	return anno, getAmountWithDiscount(amount, rechargeDiscount), nil
 }
 
 func getAmountWithDiscount(amount int64, discount pkgtypes.RechargeDiscount) int64 {
