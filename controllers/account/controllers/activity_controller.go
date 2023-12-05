@@ -72,20 +72,26 @@ func (r *ActivityReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		r.Logger.Error(err, "parse user activities failed")
 		return ctrl.Result{}, err
 	}
-	if err := r.giveAmount(userActivities, account); err != nil {
-		r.Logger.Error(err, "give amount failed")
+	anno, err := r.giveAmount(userActivities, account)
+	if err != nil {
 		return ctrl.Result{}, err
 	}
-
-	if err := r.Status().Update(ctx, account); err != nil {
-		r.Logger.Error(err, "update account failed: %v", "account", *account)
-		return ctrl.Result{}, err
+	if anno != nil {
+		if err := SyncAccountStatus(context.Background(), r.Client, account); err != nil {
+			r.Logger.Error(err, "update account status failed: %+v", "account", *account)
+			return ctrl.Result{}, err
+		}
+		account.Annotations = anno
+		if err := r.Update(ctx, account); err != nil {
+			r.Logger.Error(err, "update account failed: %v", "account", *account)
+			return ctrl.Result{}, err
+		}
+		r.Logger.Info("update account success", "account", account.Name, "anno", account.Status.Balance)
 	}
-
 	return ctrl.Result{}, nil
 }
 
-func (r *ActivityReconciler) giveAmount(userActivities types.UserActivities, account *accountv1.Account) error {
+func (r *ActivityReconciler) giveAmount(userActivities types.UserActivities, account *accountv1.Account) (annotations map[string]string, err error) {
 	for activityType, userActivity := range userActivities {
 		activity, exist := r.Activity[activityType]
 		if !exist {
@@ -94,19 +100,24 @@ func (r *ActivityReconciler) giveAmount(userActivities types.UserActivities, acc
 		}
 		userPhase, exist := userActivity.Phases[userActivity.CurrentPhase]
 		if !exist {
-			r.Logger.Error(nil, "userPhase not exist", "userPhase", userPhase)
+			r.Logger.Error(nil, "userPhase not exist", "activity", activityType, "phase", userActivity.CurrentPhase)
+			continue
+		}
+		if userPhase.EndTime.IsZero() {
 			continue
 		}
 		giveAmount := activity.Phases[userActivity.CurrentPhase].GiveAmount
 		if giveAmount != 0 && userPhase.GiveAmount == 0 {
-			err := crypto.RechargeBalance(account.Status.EncryptBalance, int64(giveAmount))
+			err := crypto.RechargeBalance(account.Status.EncryptBalance, giveAmount)
 			if err != nil {
-				return fmt.Errorf("give account %s amount failed: %w", account.Name, err)
+				return nil, fmt.Errorf("give account %s amount failed: %w", account.Name, err)
 			}
-			account.Status.ActivityBonus += int64(giveAmount)
+			account.Status.Balance += giveAmount
+			account.Status.ActivityBonus += giveAmount
+			return types.SetUserPhaseGiveAmount(account.Annotations, activityType, userActivity.CurrentPhase, giveAmount), nil
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -117,7 +128,7 @@ func (r *ActivityReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts control
 		For(&accountv1.Account{}).
 		WithEventFilter(predicate.Funcs{
 			CreateFunc: func(e event.CreateEvent) bool {
-				return false
+				return len(e.Object.GetAnnotations()) > 1
 			},
 			UpdateFunc: func(e event.UpdateEvent) bool {
 				accountOld := e.ObjectOld.(*accountv1.Account)
@@ -125,7 +136,7 @@ func (r *ActivityReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts control
 				if len(accountNew.Annotations) == 0 {
 					return false
 				}
-				return reflect.DeepEqual(accountOld.Annotations, accountNew.Annotations)
+				return !reflect.DeepEqual(accountOld.Annotations, accountNew.Annotations)
 			},
 			DeleteFunc: func(e event.DeleteEvent) bool {
 				return false

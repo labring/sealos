@@ -44,14 +44,15 @@ import (
 type BillingInfoQueryReconciler struct {
 	client.Client
 	logr.Logger
-	Scheme          *runtime.Scheme
-	DBClient        database.Account
-	Properties      *resources.PropertyTypeLS
-	propertiesQuery []accountv1.PropertyQuery
-	Activities      types.Activities
-	RechargeStep    []int64
-	RechargeRatio   []float64
-	QueryFuncMap    map[string]func(context.Context, ctrl.Request, *accountv1.BillingInfoQuery) (string, error)
+	Scheme                 *runtime.Scheme
+	DBClient               database.Account
+	AccountSystemNamespace string
+	Properties             *resources.PropertyTypeLS
+	propertiesQuery        []accountv1.PropertyQuery
+	Activities             types.Activities
+	RechargeStep           []int64
+	RechargeRatio          []float64
+	QueryFuncMap           map[string]func(context.Context, ctrl.Request, *accountv1.BillingInfoQuery) (string, error)
 }
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=billinginfoqueries,verbs=get;list;watch;create;update;patch;delete
@@ -148,7 +149,7 @@ func (r *BillingInfoQueryReconciler) AppTypeQuery(_ context.Context, _ ctrl.Requ
 
 func (r *BillingInfoQueryReconciler) RechargeQuery(ctx context.Context, req ctrl.Request, _ *accountv1.BillingInfoQuery) (result string, err error) {
 	account := &accountv1.Account{}
-	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: getUsername(req.Namespace)}, account); err != nil {
+	if err := r.Get(ctx, client.ObjectKey{Namespace: r.AccountSystemNamespace, Name: getUsername(req.Namespace)}, account); err != nil {
 		return "", fmt.Errorf("get account failed: %w", err)
 	}
 
@@ -163,8 +164,8 @@ func (r *BillingInfoQueryReconciler) RechargeQuery(ctx context.Context, req ctrl
 	}
 
 	if len(userActivities) > 0 {
-		if discount, err := types.GetUserActivityDiscount(r.Activities, &userActivities); err == nil && discount != nil {
-			rechargeDiscount = *discount
+		if _, phase, _ := types.GetUserActivityDiscount(r.Activities, &userActivities); phase != nil {
+			rechargeDiscount = phase.RechargeDiscount
 		}
 	}
 

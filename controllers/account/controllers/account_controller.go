@@ -26,7 +26,9 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
+
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/go-logr/logr"
 	gonanoid "github.com/matoous/go-nanoid/v2"
@@ -41,7 +43,6 @@ import (
 	"github.com/labring/sealos/controllers/pkg/utils/retry"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 
-	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -149,7 +150,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		now := time.Now().UTC()
 		//1¥ = 100WechatPayAmount; 1 WechatPayAmount = 10000 SealosAmount
 		payAmount := orderAmount * 10000
-		gift, err := r.getRatesAndSteps(payAmount, account)
+		updateAnno, gift, err := r.getRatesAndSteps(payAmount, account)
 		if err != nil {
 			r.Logger.Error(err, "get gift error")
 		}
@@ -158,11 +159,16 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{}, fmt.Errorf("recharge encrypt balance failed: %v", err)
 		}
 		if err := SyncAccountStatus(ctx, r.Client, account); err != nil {
-			return ctrl.Result{}, fmt.Errorf("update account failed: %v", err)
+			return ctrl.Result{}, fmt.Errorf("update account status failed: %v", err)
 		}
 		payment.Status.Status = pay.PaymentSuccess
 		if err := r.Status().Update(ctx, payment); err != nil {
 			return ctrl.Result{}, fmt.Errorf("update payment failed: %v", err)
+		}
+		if updateAnno {
+			if err := r.Update(ctx, account); err != nil {
+				return ctrl.Result{}, fmt.Errorf("update account failed: %v", err)
+			}
 		}
 
 		id, err := gonanoid.New(12)
@@ -437,13 +443,28 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		Complete(r)
 }
 
-func ParseRechargeConfig(clt client.Client) (activities pkgtypes.Activities, discountsteps []int64, discountratios []float64, returnErr error) {
-	configMap := &corev1.ConfigMap{}
-	if err := clt.Get(context.Background(), types.NamespacedName{Name: RECHARGEGIFT, Namespace: SEALOS}, configMap); err != nil {
-		returnErr = fmt.Errorf("get recharge-gift ConfigMap failed: %v", err)
+func RawParseRechargeConfig() (activities pkgtypes.Activities, discountsteps []int64, discountratios []float64, returnErr error) {
+	// local test
+	//config, err := clientcmd.BuildConfigFromFlags("", os.Getenv("KUBECONFIG"))
+	//if err != nil {
+	//	fmt.Printf("Error building kubeconfig: %v\n", err)
+	//	os.Exit(1)
+	//}
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		returnErr = fmt.Errorf("get in cluster config failed: %v", err)
 		return
 	}
-
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		returnErr = fmt.Errorf("get clientset failed: %v", err)
+		return
+	}
+	configMap, err := clientset.CoreV1().ConfigMaps(SEALOS).Get(context.TODO(), RECHARGEGIFT, metav1.GetOptions{})
+	if err != nil {
+		returnErr = fmt.Errorf("get configmap failed: %v", err)
+		return
+	}
 	if returnErr = parseConfigList(configMap.Data["steps"], &discountsteps, "steps"); returnErr != nil {
 		return
 	}
@@ -455,7 +476,6 @@ func ParseRechargeConfig(clt client.Client) (activities pkgtypes.Activities, dis
 	if activityStr := configMap.Data["activities"]; activityStr != "" {
 		returnErr = json.Unmarshal([]byte(activityStr), &activities)
 	}
-
 	return
 }
 
@@ -510,22 +530,26 @@ func (p *NamespaceFilterPredicate) Generic(e event.GenericEvent) bool {
 
 const BaseUnit = 1_000_000
 
-func (r *AccountReconciler) getRatesAndSteps(amount int64, account *accountv1.Account) (int64, error) {
+func (r *AccountReconciler) getRatesAndSteps(amount int64, account *accountv1.Account) (bool, int64, error) {
 	userActivities, err := pkgtypes.ParseUserActivities(account.Annotations)
 	if err != nil {
-		return 0, fmt.Errorf("parse user activities failed: %w", err)
+		return false, 0, fmt.Errorf("parse user activities failed: %w", err)
 	}
 
 	rechargeDiscount := pkgtypes.RechargeDiscount{
 		DiscountSteps: r.RechargeStep,
 		DiscountRates: r.RechargeRatio,
 	}
+	update := false
 	if len(userActivities) > 0 {
-		if discount, err := pkgtypes.GetUserActivityDiscount(r.Activities, &userActivities); err == nil && discount != nil {
-			rechargeDiscount = *discount
+		if activityType, phase, _ := pkgtypes.GetUserActivityDiscount(r.Activities, &userActivities); phase != nil {
+			rechargeDiscount = phase.RechargeDiscount
+			currentPhase := userActivities[activityType].Phases[userActivities[activityType].CurrentPhase]
+			account.Annotations = pkgtypes.SetUserPhaseRechargeTimes(account.Annotations, activityType, currentPhase.Name, currentPhase.RechargeNums+1)
+			update = true
 		}
 	}
-	return getAmountWithDiscount(amount, rechargeDiscount), nil
+	return update, getAmountWithDiscount(amount, rechargeDiscount), nil
 }
 
 func getAmountWithDiscount(amount int64, discount pkgtypes.RechargeDiscount) int64 {

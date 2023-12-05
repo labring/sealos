@@ -31,7 +31,7 @@ type RechargeDiscount struct {
 
 type Phase struct {
 	Name             string           `json:"name"`
-	GiveAmount       int              `json:"giveAmount"`
+	GiveAmount       int64            `json:"giveAmount"`
 	RechargeDiscount RechargeDiscount `json:",inline"`
 }
 
@@ -63,7 +63,7 @@ func ParseUserActivities(annotations map[string]string) (UserActivities, error) 
 	userActivities := make(map[string]*UserActivity)
 
 	for key, value := range annotations {
-		parts := strings.Split(key, "/")
+		parts := strings.Split(key, ".")
 
 		if len(parts) == 3 && parts[0] == "activity" && parts[2] == "current-phase" {
 			if _, exists := userActivities[parts[1]]; !exists {
@@ -116,30 +116,44 @@ func ParseUserActivities(annotations map[string]string) (UserActivities, error) 
 	return userActivities, nil
 }
 
-func GetUserActivityDiscount(activities Activities, userActivities *UserActivities) (*RechargeDiscount, error) {
+func SetUserPhaseRechargeTimes(annotations map[string]string, activityType string, phase string, rechargeNums int64) map[string]string {
+	annotations[fmt.Sprintf("activity.%s.%s.rechargeNums", activityType, phase)] = fmt.Sprintf("%d", rechargeNums)
+	return annotations
+}
+
+func SetUserPhaseGiveAmount(annotations map[string]string, activityType string, phase string, giveAmount int64) map[string]string {
+	annotations[fmt.Sprintf("activity.%s.%s.giveAmount", activityType, phase)] = fmt.Sprintf("%d", giveAmount)
+	return annotations
+}
+
+func GetUserActivityDiscount(activities Activities, userActivities *UserActivities) (activityType string, returnPhase *Phase, returnErr error) {
 	if activities == nil || userActivities == nil {
-		return nil, fmt.Errorf("activities is nil")
+		returnErr = fmt.Errorf("activities is nil")
+		return
 	}
-	for activityType, userActivity := range *userActivities {
-		activity := activities[activityType]
+	for aType, userActivity := range *userActivities {
+		activity := activities[aType]
 		phase, exists := activity.Phases[userActivity.CurrentPhase]
 		if !exists {
-			return nil, fmt.Errorf("phase %s not exist", userActivity.CurrentPhase)
+			returnErr = fmt.Errorf("phase %s not exist", userActivity.CurrentPhase)
+			return
 		}
 
 		if phase.RechargeDiscount.LimitTimes > 0 && userActivity.Phases[userActivity.CurrentPhase].RechargeNums >= phase.RechargeDiscount.LimitTimes {
-			return nil, nil
+			return
 		}
 		if phase.RechargeDiscount.LimitDuration != "" {
 			duration, err := time.ParseDuration(phase.RechargeDiscount.LimitDuration)
 			if err != nil {
-				return nil, fmt.Errorf("parse duration failed: %w", err)
+				returnErr = fmt.Errorf("parse duration failed: %w", err)
+				return
 			}
-			if time.Now().After(userActivity.Phases[userActivity.CurrentPhase].StartTime.Add(duration)) {
-				return nil, nil
+			if time.Now().After(userActivity.Phases[userActivity.CurrentPhase].EndTime.Add(duration)) {
+				return
 			}
 		}
-		return &phase.RechargeDiscount, nil
+		return aType, &phase, nil
 	}
-	return nil, fmt.Errorf("user activity not exist")
+	returnErr = fmt.Errorf("user activity not exist")
+	return
 }

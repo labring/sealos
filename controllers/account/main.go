@@ -22,6 +22,11 @@ import (
 	"os"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	"github.com/labring/sealos/controllers/account/controllers/cache"
+
 	"github.com/labring/sealos/controllers/pkg/database/mongo"
 
 	"github.com/labring/sealos/controllers/pkg/resources"
@@ -34,18 +39,14 @@ import (
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/account/controllers"
-	"github.com/labring/sealos/controllers/account/controllers/cache"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -91,6 +92,11 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	// local test env
+	//err := godotenv.Load()
+	//if err != nil {
+	//	setupLog.Error(err, "unable to load .env file")
+	//}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
@@ -146,10 +152,11 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}
-	activities, discountSteps, discountRatios, err := controllers.ParseRechargeConfig(mgr.GetClient())
+	activities, discountSteps, discountRatios, err := controllers.RawParseRechargeConfig()
 	if err != nil {
 		setupLog.Error(err, "parse recharge config failed")
 	} else {
+		setupLog.Info("parse recharge config success", "activities", activities, "discountSteps", discountSteps, "discountRatios", discountRatios)
 		accountReconciler.Activities = activities
 		accountReconciler.RechargeStep = discountSteps
 		accountReconciler.RechargeRatio = discountRatios
@@ -238,6 +245,7 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupManagerError(err, "NamespaceBillingHistory")
 	}
+	billingInfoQueryReconciler.AccountSystemNamespace = accountReconciler.AccountSystemNamespace
 	if err = (billingInfoQueryReconciler).SetupWithManager(mgr); err != nil {
 		setupManagerError(err, "BillingInfoQuery")
 	}

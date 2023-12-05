@@ -23,10 +23,10 @@ import (
 
 func Test_parseUserActivitiesAnnotation(t *testing.T) {
 	annotations := map[string]string{
-		"activity/beginner-guide/launchpad/startTime":    "2016-03-04T15:04:05Z",
-		"activity/beginner-guide/launchpad/rechargeNums": "1",
-		"activity/beginner-guide/launchpad/giveAmount":   "10000",
-		"activity/beginner-guide/current-phase":          "launchpad",
+		"activity.beginner-guide.launchpad.startTime":    "2016-03-04T15:04:05Z",
+		"activity.beginner-guide.launchpad.rechargeNums": "1",
+		"activity.beginner-guide.launchpad.giveAmount":   "10000",
+		"activity.beginner-guide.current-phase":          "launchpad",
 	}
 
 	userActivities, err := types.ParseUserActivities(annotations)
