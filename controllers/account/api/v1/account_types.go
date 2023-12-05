@@ -93,7 +93,7 @@ type AccountStatus struct {
 	// Recharge amount
 	Balance int64 `json:"balance,omitempty"`
 	// ActivityBonus: for demonstration purposes only and does not participate in calculation
-	ActivityBonus int64 `json:"rookieBonus,omitempty"`
+	ActivityBonus int64 `json:"activityBonus,omitempty"`
 	//Deduction amount
 	DeductionBalance int64 `json:"deductionBalance,omitempty"`
 	// EncryptDeductionBalance is to encrypt DeductionBalance
