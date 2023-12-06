@@ -9,10 +9,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     if (!bucketName) return jsonRes(res, { code: 400, data: { error: 'bucketName is invaild' } });
     await client.k8sCustomObjects
       .deleteNamespacedCustomObject(
-        'minio.sealos.io',
+        'objectstorage.sealos.io',
         'v1',
         client.namespace,
-        'buckets',
+        'objectstoragebuckets',
         bucketName.replace(client.namespace.replace('ns-', '') + '-', '')
       )
       .then(

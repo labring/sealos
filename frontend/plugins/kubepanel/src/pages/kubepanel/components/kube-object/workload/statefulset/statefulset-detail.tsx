@@ -3,7 +3,7 @@ import Drawer from '../../../drawer/drawer';
 import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
 import PodDetailTolerations from '../pod/pod-detail-tolerations';
 import PodDetailAffinities from '../pod/pod-detail-affinities';
-import { DrawerItem } from '@/pages/kubepanel/components/drawer/drawer-item';
+import DrawerItem from '@/pages/kubepanel/components/drawer/drawer-item';
 import PodDetailStatuses from '../pod/pod-detail-statuses';
 import { KubeBadge } from '@/components/kube/kube-badge';
 import DrawerPanel from '../../../drawer/drawer-panel';

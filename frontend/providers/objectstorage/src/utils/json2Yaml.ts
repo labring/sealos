@@ -6,8 +6,8 @@ export const generateBucketCR = (data: {
   policy: Authority;
   namespace: string;
 }): BucketCR['input'] => ({
-  apiVersion: 'minio.sealos.io/v1',
-  kind: 'Bucket',
+  apiVersion: 'objectstorage.sealos.io/v1',
+  kind: 'ObjectStorageBucket',
   metadata: {
     name: data.name,
     namespace: data.namespace
@@ -23,8 +23,8 @@ export const generateUserCR = ({
   name: string;
   namespace: string;
 }): UserCR['input'] => ({
-  apiVersion: 'minio.sealos.io/v1',
-  kind: 'MinioUser',
+  apiVersion: 'objectstorage.sealos.io/v1',
+  kind: 'ObjectStorageUser',
   metadata: {
     name,
     namespace

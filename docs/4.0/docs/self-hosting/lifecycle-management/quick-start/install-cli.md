@@ -1,5 +1,6 @@
 ---
 sidebar_position: 1
+keywords: [sealos, sealos cli]
 ---
 
 import Tabs from '@theme/Tabs';

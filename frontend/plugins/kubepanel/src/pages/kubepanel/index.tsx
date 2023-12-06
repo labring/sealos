@@ -10,6 +10,8 @@ import PersistentVolumeClaimOverviewPage from './components/kube-object/storage/
 import { FloatButton } from 'antd';
 import CreateResourceModal from './components/modal/create-resource-modal';
 import { PlusOutlined } from '@ant-design/icons';
+import SecretOverviewPage from './components/kube-object/config/secret/secret';
+import IngressOverviewPage from './components/kube-object/network/ingress/ingress';
 
 const switchPage = (key: SideNavItemKey): React.ReactNode => {
   switch (key) {
@@ -25,6 +27,10 @@ const switchPage = (key: SideNavItemKey): React.ReactNode => {
       return <ConfigMapOverviewPage />;
     case SideNavItemKey.PersistentVolumeClaim:
       return <PersistentVolumeClaimOverviewPage />;
+    case SideNavItemKey.Secret:
+      return <SecretOverviewPage />;
+    case SideNavItemKey.Ingress:
+      return <IngressOverviewPage />;
     default:
       return <OverviewPage />;
   }
@@ -39,6 +45,8 @@ const Home = () => {
       {switchPage(sideNavItemKey)}
       <FloatButton
         icon={<PlusOutlined />}
+        tooltip="Create a resource."
+        style={{ left: 24, bottom: 30, width: 48, height: 48 }}
         type="primary"
         onClick={() => setOpenCreateResourceModal(true)}
       />

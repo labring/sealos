@@ -1,4 +1,4 @@
-import { DrawerItem } from '@/pages/kubepanel/components/drawer/drawer-item';
+import DrawerItem from '@/pages/kubepanel/components/drawer/drawer-item';
 import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
 import { Pod } from '@/k8slens/kube-object';
 import { Tooltip } from 'antd';

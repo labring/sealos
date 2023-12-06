@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "sync-zh-files": "mkdir -p i18n/zh-Hans/docusaurus-plugin-content-docs && cp -r ../4.0/i18n/zh-Hans i18n/zh-Hans/docusaurus-plugin-content-docs/current && cp ../4.0/i18n/zh-Hans/current.json  i18n/zh-Hans/docusaurus-plugin-content-docs/current.json && cp ../4.0/code.json i18n/zh-Hans/code.json && mkdir -p i18n/zh-Hans/docusaurus-plugin-content-blog && cp -r ../blog/zh-Hans/* i18n/zh-Hans/docusaurus-plugin-content-blog/ && cp ../blog/zh-Hans/options.json  i18n/zh-Hans/docusaurus-plugin-content-blog/options.json",
+    "sync-zh-files": "mkdir -p i18n/zh-Hans/docusaurus-plugin-content-docs/current && cp -r ../4.0/i18n/zh-Hans/* i18n/zh-Hans/docusaurus-plugin-content-docs/current/ && cp ../4.0/i18n/zh-Hans/current.json  i18n/zh-Hans/docusaurus-plugin-content-docs/current.json && cp ../4.0/code.json i18n/zh-Hans/code.json && mkdir -p i18n/zh-Hans/docusaurus-plugin-content-blog && cp -r ../blog/zh-Hans/* i18n/zh-Hans/docusaurus-plugin-content-blog/ && cp ../blog/zh-Hans/options.json  i18n/zh-Hans/docusaurus-plugin-content-blog/options.json",
     "docusaurus": "docusaurus",
     "start": "yarn sync-zh-files && tsc && docusaurus start",
     "start-zh": "yarn sync-zh-files && tsc && docusaurus start --locale zh-Hans",

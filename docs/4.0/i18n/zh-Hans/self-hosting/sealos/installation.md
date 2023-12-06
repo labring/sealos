@@ -100,9 +100,9 @@ Sealos 需要使用证书来保证通信安全，默认在您不提供证书的�
 使用 nip.io 作为 Sealos 的域名非常简单，只需在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash 
-$ curl -sfL https://gh-proxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
-  --proxy-prefix=https://gh-proxy.com
+  --proxy-prefix=https://mirror.ghproxy.com
 ```
 
 当需要你输入 Sealos Cloud 域名时，你需要输入这种格式的域名：`[ip].nip.io`，其中 [ip] 是你的 Master 节点 IP。
@@ -139,9 +139,9 @@ cloud.example.io   A   192.168.1.1
 然后在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash
-$ curl -sfL https://gh-proxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
-  --proxy-prefix=https://gh-proxy.com \
+  --proxy-prefix=https://mirror.ghproxy.com \
   --cloud-domain=<your_domain> \
   --cert-path=<your_crt> \
   --key-path=<your_key>
@@ -165,9 +165,9 @@ cloud.example.io   A   192.168.1.1
 然后在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash
-$ curl -sfL https://gh-proxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
-  --proxy-prefix=https://gh-proxy.com \
+  --proxy-prefix=https://mirror.ghproxy.com \
   --cloud-domain=<your_domain>
 ```
 
@@ -223,9 +223,9 @@ $ curl -sfL https://gh-proxy.com/https://raw.githubusercontent.com/labring/sealo
 然后在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash
-$ curl -sfL https://gh-proxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
-  --proxy-prefix=https://gh-proxy.com \
+  --proxy-prefix=https://mirror.ghproxy.com \
   --cloud-domain=<your_domain>
 ```
 

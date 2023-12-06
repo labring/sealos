@@ -1,13 +1,13 @@
 import { KubeObject } from '@/k8slens/kube-object';
 import { ApiResp } from '@/services/kubernet';
+import { dumpKubeObject } from '@/utils/yaml';
 import { Editor } from '@monaco-editor/react';
 import { Button, Modal, message } from 'antd';
-import yaml from 'js-yaml';
 import { editor } from 'monaco-editor';
 import { useEffect, useRef, useState } from 'react';
 
 interface Props<K extends KubeObject> {
-  obj: K;
+  obj?: K;
   open: boolean;
   onUpdate: (data: string) => Promise<ApiResp>;
   onCancel: () => void;
@@ -21,6 +21,8 @@ const UpdateEditorModal = <K extends KubeObject = KubeObject>({
   onCancel,
   onOk
 }: Props<K>) => {
+  if (!obj) return null;
+  
   const [clickedUpdate, setClickedUpdate] = useState(false);
   const [msgApi, contextHolder] = message.useMessage();
   const editorRef = useRef<editor.IStandaloneCodeEditor>();
@@ -42,13 +44,7 @@ const UpdateEditorModal = <K extends KubeObject = KubeObject>({
     updateRequest();
   }, [clickedUpdate]);
 
-  const editorValue = yaml.dump({
-    apiVersion: obj.apiVersion,
-    kind: obj.kind,
-    metadata: obj.metadata,
-    status: obj.status,
-    spec: obj.spec
-  });
+  const editorValue = dumpKubeObject<KubeObject>(obj);
 
   return (
     <>

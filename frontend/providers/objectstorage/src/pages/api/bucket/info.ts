@@ -7,10 +7,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const { bucketName } = req.body as { bucketName?: string };
     if (!bucketName) return jsonRes(res, { code: 400, data: { error: 'bucketName is invaild' } });
     const infoRes = await client.k8sCustomObjects.getNamespacedCustomObject(
-      'minio.sealos.io',
+      'objectstorage.sealos.io',
       'v1',
       client.namespace,
-      'buckets',
+      'objectstoragebuckets',
       bucketName
     );
     jsonRes(res, { data: infoRes });

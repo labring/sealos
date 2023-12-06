@@ -19,9 +19,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         code: 400,
         message: '"bucketPolicy" is invaild'
       });
-    const group = 'minio.sealos.io';
+    const group = 'objectstorage.sealos.io';
     const version = 'v1';
-    const plural = 'buckets';
+    const plural = 'objectstoragebuckets';
     const name = bucketName;
     const policy = bucketPolicy;
     const getBucket = () =>
@@ -31,6 +31,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         client.namespace,
         plural,
         name
+      );
+    const listBucket = () =>
+      client.k8sCustomObjects.listNamespacedCustomObject(
+        group,
+        version,
+        client.namespace,
+        plural,
+        undefined,
+        undefined,
+        undefined,
+        `metadata.name=${name}`
       );
     const createBucket = () =>
       client.k8sCustomObjects.createNamespacedCustomObject(
@@ -44,7 +55,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       getBucket().then(
         (data) => {
           // 修改Bucket
-          console.log(data);
           client.k8sCustomObjects
             .patchNamespacedCustomObject(
               group,
@@ -75,8 +85,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           //没有，要创建
           if (body.code === 404)
             createBucket()
-              .then((data) => {
-                resolve(data);
+              .then(() => {
+                let retries = 3;
+                const makeSureFn = () => {
+                  listBucket().then(
+                    (data) => {
+                      resolve(data);
+                    },
+                    (err) => {
+                      if (retries-- > 0) {
+                        new Promise((_resolve) => setTimeout(_resolve, 1000)).finally(makeSureFn);
+                      } else {
+                        reject(err.body);
+                      }
+                    }
+                  );
+                };
+                makeSureFn();
               })
               .catch((err) => {
                 const _body = err.body as V1Status;

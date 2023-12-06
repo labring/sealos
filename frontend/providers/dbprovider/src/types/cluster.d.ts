@@ -49,6 +49,13 @@ export interface KubeBlockClusterSpec {
       };
     }[];
   }[];
+  backup: {
+    enabled: boolean;
+    cronExpression: string;
+    method: string;
+    pitrEnabled: boolean;
+    retentionPeriod: string;
+  };
 }
 export interface KubeBlockClusterStatus {
   clusterDefGeneration: number;

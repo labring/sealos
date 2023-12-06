@@ -3,7 +3,7 @@ import { merge } from 'lodash';
 import { Options, get, post, delete as delete_, put } from 'request';
 
 type ApiPrefix = 'api' | 'apis';
-type ApiGroup = 'apps';
+type ApiGroup = string;
 type ApiVersion = 'v1';
 
 export interface KubeApiUrlParams {
@@ -132,7 +132,6 @@ export const updateResource = async (
       namespace: urlParams.namespace
     }
   });
-  console.log(url);
   return new Promise((resolve, reject) => {
     try {
       put(url, { body: data, ...opts }, (error, response, body) => {

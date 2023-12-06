@@ -38,6 +38,9 @@ import GoogleIcon from './icons/GoogleIcon';
 import WechatIcon from './icons/WechatIcon';
 import ListIcon from './icons/ListIcon';
 import PortIcon from './icons/PortIcon';
+import WarnIcon from './icons/WarnIcon';
+import CloseIcon from './icons/CloseIcon';
+
 export {
   YamlCode,
   EditTabs,
@@ -78,5 +81,7 @@ export {
   UploadIcon,
   VisibityIcon,
   WechatIcon,
-  PortIcon
+  PortIcon,
+  WarnIcon,
+  CloseIcon
 };

@@ -1,5 +1,5 @@
 import { KubeBadge } from '@/components/kube/kube-badge';
-import { DrawerItem } from '@/pages/kubepanel/components/drawer/drawer-item';
+import DrawerItem from '@/pages/kubepanel/components/drawer/drawer-item';
 import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
 import { Deployment } from '@/k8slens/kube-object';
 import { getConditionColor } from '@/utils/condtion-color';

@@ -1,10 +1,11 @@
 import {
   DashboardOutlined,
   DatabaseOutlined,
+  GatewayOutlined,
   ReloadOutlined,
   SettingOutlined
 } from '@ant-design/icons';
-import { Button, ConfigProvider, Divider, Flex, Menu, MenuProps } from 'antd';
+import { Button, Flex, Menu, MenuProps } from 'antd';
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -13,8 +14,10 @@ export enum SideNavItemKey {
   Pod = 'pod',
   Deployment = 'deployment',
   ConfigMap = 'config-map',
-  PersistentVolumeClaim = 'pvc',
-  StatefulSet = 'stateful-set'
+  PersistentVolumeClaim = 'volume-claim',
+  StatefulSet = 'stateful-set',
+  Secret = 'secret',
+  Ingress = 'ingress'
 }
 
 function getItem(
@@ -41,8 +44,10 @@ const items: MenuProps['items'] = [
     getItem('Stateful Sets', SideNavItemKey.StatefulSet)
   ]),
   getItem('Config', 'config', <SettingOutlined />, [
-    getItem('Config Maps', SideNavItemKey.ConfigMap)
+    getItem('Config Maps', SideNavItemKey.ConfigMap),
+    getItem('Secrets', SideNavItemKey.Secret)
   ]),
+  getItem('Network', 'network', <GatewayOutlined />, [getItem('Ingress', SideNavItemKey.Ingress)]),
   getItem('Storage', 'storage', <DatabaseOutlined />, [
     getItem('Persistent Volume Claims', SideNavItemKey.PersistentVolumeClaim)
   ])
@@ -54,39 +59,25 @@ interface Props {
 
 const ResourceSideNav = ({ onClick = () => {} }: Props) => {
   return (
-    <ConfigProvider
-      theme={{
-        components: {
-          Menu: {
-            itemSelectedBg: '#9699B41A',
-            itemColor: '#485058'
-          }
-        },
-        token: {
-          fontFamily: 'PingFang SC'
-        }
-      }}
-    >
-      <Flex vertical style={{ height: '100vh', backgroundColor: '#F2F2F4' }}>
-        <div className="border-b-[1px] border-color-border border-solid px-[18px] py-[12px] w-full">
-          <div className="flex justify-between align-middle">
-            <div className="text-[#24282C] text-[16px] font-medium p-1">KubePanel</div>
-            <Button
-              type="text"
-              icon={<ReloadOutlined style={{ color: '#219BF4', fontSize: 'large' }} />}
-            />
-          </div>
+    <Flex vertical style={{ height: '100vh', backgroundColor: '#F2F2F4' }}>
+      <div className="border-b-[1px] border-color-border border-solid px-[18px] py-[12px] w-full">
+        <div className="flex justify-between align-middle">
+          <div className="text-[#24282C] text-[16px] font-medium p-1">KubePanel</div>
+          <Button
+            type="text"
+            icon={<ReloadOutlined style={{ color: '#219BF4', fontSize: 'large' }} />}
+          />
         </div>
-        <Menu
-          style={{ backgroundColor: '#F2F2F4', borderRight: 'none' }}
-          defaultSelectedKeys={['overview']}
-          defaultOpenKeys={['workload']}
-          mode="inline"
-          items={items}
-          onClick={({ key }) => onClick(key as SideNavItemKey)}
-        />
-      </Flex>
-    </ConfigProvider>
+      </div>
+      <Menu
+        style={{ backgroundColor: '#F2F2F4', borderRight: 'none' }}
+        defaultSelectedKeys={['overview']}
+        defaultOpenKeys={['workload']}
+        mode="inline"
+        items={items}
+        onClick={({ key }) => onClick(key as SideNavItemKey)}
+      />
+    </Flex>
   );
 };
 

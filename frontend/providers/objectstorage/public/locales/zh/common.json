@@ -12,6 +12,7 @@
   "totalSpace": "总空间用量",
   "s3ServiceParams": "访问密钥",
   "refresh": "刷新",
+  "dailyEstimate": "每日估价",
   "config": "基础配置",
   "deleteWarning": "删除警告"
 }
