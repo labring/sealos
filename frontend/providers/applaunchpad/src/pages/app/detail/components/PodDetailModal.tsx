@@ -99,7 +99,7 @@ const Logs = ({
     );
   }, []);
 
-  const { isLoading } = useQuery(['init'], () => getPodEvents(pod.podName), {
+  const { isLoading } = useQuery(['initPodEvents'], () => getPodEvents(pod.podName), {
     refetchInterval: 3000,
     onSuccess(res) {
       setEvents(res);
