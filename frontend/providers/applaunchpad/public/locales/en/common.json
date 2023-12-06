@@ -159,5 +159,7 @@
   "common": {
     "Used": "Used",
     "Surplus": "Surplus"
-  }
+  },
+  "Store At Least One": "Store At Least One",
+  "Network port conflict": "Network port conflict"
 }

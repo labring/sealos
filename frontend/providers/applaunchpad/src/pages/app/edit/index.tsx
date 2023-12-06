@@ -26,14 +26,18 @@ import Form from './components/Form';
 import Yaml from './components/Yaml';
 import dynamic from 'next/dynamic';
 import { serviceSideProps } from '@/utils/i18n';
-import { getErrText, patchYamlList } from '@/utils/tools';
+import { getErrText, patchYamlListV1, patchYamlList } from '@/utils/tools';
 import { useTranslation } from 'next-i18next';
 import { noGpuSliderKey } from '@/constants/app';
 import { useUserStore } from '@/store/user';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
-export const formData2Yamls = (data: AppEditType) => [
+export const formData2Yamls = (
+  data: AppEditType,
+  handleType: 'edit' | 'create' = 'create',
+  crYamlList?: DeployKindsType[]
+) => [
   {
     filename: 'service.yaml',
     value: json2Service(data)
@@ -41,11 +45,11 @@ export const formData2Yamls = (data: AppEditType) => [
   !!data.storeList?.length
     ? {
         filename: 'statefulSet.yaml',
-        value: json2DeployCr(data, 'statefulset')
+        value: json2DeployCr(data, 'statefulset', handleType, crYamlList)
       }
     : {
         filename: 'deployment.yaml',
-        value: json2DeployCr(data, 'deployment')
+        value: json2DeployCr(data, 'deployment', handleType, crYamlList)
       },
   ...(data.configMapList.length > 0
     ? [
@@ -83,7 +87,7 @@ export const formData2Yamls = (data: AppEditType) => [
 
 const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) => {
   const { t } = useTranslation();
-  const formOldYamls = useRef<YamlItemType[]>([]);
+
   const crOldYamls = useRef<DeployKindsType[]>([]);
   const oldAppEditData = useRef<AppEditType>();
 
@@ -150,12 +154,10 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         const yamls = yamlList.map((item) => item.value);
 
         if (appName) {
-          const patch = patchYamlList({
-            formOldYamlList: formOldYamls.current.map((item) => item.value),
-            crYamlList: crOldYamls.current,
+          const patch = patchYamlListV1({
+            oldYamlList: crOldYamls.current,
             newYamlList: yamls
           });
-          console.log(patch);
 
           await putApp({
             patch,
@@ -213,7 +215,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   }, [formHook.formState.errors, t, toast]);
 
   useQuery(
-    ['init'],
+    ['initLaunchpadApp'],
     () => {
       if (!appName) {
         const defaultApp = {
@@ -242,7 +244,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       onSuccess(res) {
         if (!res) return;
         oldAppEditData.current = res;
-        formOldYamls.current = formData2Yamls(res);
+
         crOldYamls.current = res.crYamlList;
 
         setDefaultStorePathList(res.storeList.map((item) => item.path));
@@ -265,10 +267,16 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   useEffect(() => {
     if (tabType === 'yaml') {
       try {
-        setYamlList(formData2Yamls(realTimeForm.current));
+        setYamlList(
+          formData2Yamls(
+            realTimeForm.current,
+            appName !== '' ? 'edit' : 'create',
+            crOldYamls.current
+          )
+        );
       } catch (error) {}
     }
-  }, [router.query.name, tabType]);
+  }, [appName, router.query.name, tabType]);
 
   return (
     <>
@@ -286,7 +294,11 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           applyBtnText={applyBtnText}
           applyCb={() =>
             formHook.handleSubmit((data) => {
-              const parseYamls = formData2Yamls(data);
+              const parseYamls = formData2Yamls(
+                data,
+                appName !== '' ? 'edit' : 'create',
+                crOldYamls.current
+              );
               setYamlList(parseYamls);
               // balance check
               if (balance <= 0) {

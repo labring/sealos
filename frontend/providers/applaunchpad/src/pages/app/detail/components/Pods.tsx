@@ -10,7 +10,9 @@ import {
   Td,
   TableContainer,
   Flex,
-  MenuButton
+  MenuButton,
+  Tooltip,
+  Center
 } from '@chakra-ui/react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { restartPodByName } from '@/api/app';
@@ -135,70 +137,68 @@ const Pods = ({
       title: 'Operation',
       key: 'control',
       render: (item: PodDetailType, i: number) => (
-        <Flex>
-          <Button
-            mr={3}
-            leftIcon={<MyIcon name="log" />}
-            variant={'base'}
-            px={3}
-            onClick={() => setLogsPodIndex(i)}
-          >
-            {t('Log')}
-          </Button>
-          <MyMenu
-            width={100}
-            Button={
-              <MenuButton
-                w={'32px'}
-                h={'32px'}
-                borderRadius={'sm'}
-                _hover={{
-                  bg: 'myWhite.400',
-                  color: 'hover.iconBlue'
-                }}
-              >
-                <MyIcon name={'more'} px={3} />
-              </MenuButton>
-            }
-            menuList={[
-              {
-                child: (
-                  <>
-                    <MyIcon name={'terminal'} w={'14px'} />
-                    <Box ml={2}>{t('Terminal')}</Box>
-                  </>
-                ),
-                onClick: () => {
-                  const defaultCommand = `kubectl exec -it ${item.podName} -c ${appName} -- sh -c "clear; (bash || ash || sh)"`;
-                  sealosApp.runEvents('openDesktopApp', {
-                    appKey: 'system-terminal',
-                    query: {
-                      defaultCommand
-                    },
-                    messageData: { type: 'new terminal', command: defaultCommand }
-                  });
-                }
-              },
-              {
-                child: (
-                  <>
-                    <MyIcon name={'detail'} w={'14px'} />
-                    <Box ml={2}>{t('Details')}</Box>
-                  </>
-                ),
-                onClick: () => setDetailPodIndex(i)
-              },
-              {
-                child: (
-                  <>
-                    <MyIcon name={'restart'} />
-                    <Box ml={2}>{t('Restart')} </Box>
-                  </>
-                ),
-                onClick: openConfirmRestart(() => handleRestartPod(item.podName))
-              }
-            ]}
-          />
+        <Flex alignItems={'center'}>
+          <MyTooltip label={t('Log')} offset={[0, 10]}>
+            <Center
+              p="6px"
+              _hover={{
+                bg: '#F4F6F8'
+              }}
+              cursor={'pointer'}
+              borderRadius={'4px'}
+              onClick={() => setLogsPodIndex(i)}
+            >
+              <MyIcon name="log" w="20px" h="20px" />
+            </Center>
+          </MyTooltip>
+          <MyTooltip offset={[0, 10]} label={t('Terminal')}>
+            <Center
+              p="6px"
+              _hover={{
+                bg: '#F4F6F8'
+              }}
+              cursor={'pointer'}
+              borderRadius={'4px'}
+              onClick={() => {
+                const defaultCommand = `kubectl exec -it ${item.podName} -c ${appName} -- sh -c "clear; (bash || ash || sh)"`;
+                sealosApp.runEvents('openDesktopApp', {
+                  appKey: 'system-terminal',
+                  query: {
+                    defaultCommand
+                  },
+                  messageData: { type: 'new terminal', command: defaultCommand }
+                });
+              }}
+            >
+              <MyIcon name={'terminal'} w="20px" h="20px" />
+            </Center>
+          </MyTooltip>
+          <MyTooltip offset={[0, 10]} label={t('Details')}>
+            <Center
+              p="6px"
+              _hover={{
+                bg: '#F4F6F8'
+              }}
+              cursor={'pointer'}
+              borderRadius={'4px'}
+              onClick={() => setDetailPodIndex(i)}
+            >
+              <MyIcon name={'detail'} w="20px" h="20px" />
+            </Center>
+          </MyTooltip>
+          <MyTooltip offset={[0, 10]} label={t('Restart')}>
+            <Center
+              p="6px"
+              _hover={{
+                bg: '#F4F6F8'
+              }}
+              cursor={'pointer'}
+              borderRadius={'4px'}
+              onClick={openConfirmRestart(() => handleRestartPod(item.podName))}
+            >
+              <MyIcon name={'restart'} w="20px" h="20px" />
+            </Center>
+          </MyTooltip>
         </Flex>
       )
     }
