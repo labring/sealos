@@ -36,6 +36,7 @@ const (
 	Recharge
 	TransferIn
 	TransferOut
+	ActivityGiving
 )
 
 const QueryAllType Type = -1

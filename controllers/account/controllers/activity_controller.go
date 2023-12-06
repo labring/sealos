@@ -20,6 +20,13 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
+
+	gonanoid "github.com/matoous/go-nanoid/v2"
+
+	"github.com/labring/sealos/controllers/pkg/resources"
+
+	"github.com/labring/sealos/controllers/pkg/database"
 
 	"github.com/labring/sealos/controllers/pkg/crypto"
 
@@ -44,6 +51,7 @@ type ActivityReconciler struct {
 	Scheme   *runtime.Scheme
 	Logger   logr.Logger
 	Activity types.Activities
+	DBClient database.Account
 }
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
@@ -72,26 +80,47 @@ func (r *ActivityReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		r.Logger.Error(err, "parse user activities failed")
 		return ctrl.Result{}, err
 	}
-	anno, err := r.giveAmount(userActivities, account)
+	anno, amount, err := r.giveAmount(userActivities, account)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 	if anno != nil {
-		if err := SyncAccountStatus(context.Background(), r.Client, account); err != nil {
-			r.Logger.Error(err, "update account status failed: %+v", "account", *account)
-			return ctrl.Result{}, err
+		if err := r.handleBonus(account, anno, amount); err != nil {
+			return ctrl.Result{}, fmt.Errorf("handle bonus failed: %v", err)
 		}
-		account.Annotations = anno
-		if err := r.Update(ctx, account); err != nil {
-			r.Logger.Error(err, "update account failed: %v", "account", *account)
-			return ctrl.Result{}, err
-		}
-		r.Logger.Info("update account success", "account", account.Name, "anno", account.Status.Balance)
 	}
 	return ctrl.Result{}, nil
 }
 
-func (r *ActivityReconciler) giveAmount(userActivities types.UserActivities, account *accountv1.Account) (annotations map[string]string, err error) {
+func (r *ActivityReconciler) handleBonus(account *accountv1.Account, annotations map[string]string, amount int64) error {
+	if err := SyncAccountStatus(context.Background(), r.Client, account); err != nil {
+		return fmt.Errorf("update account status failed: %v", err)
+	}
+
+	account.Annotations = annotations
+	if err := r.Update(context.Background(), account); err != nil {
+		return fmt.Errorf("update account failed: %v", err)
+	}
+	id, err := gonanoid.New(12)
+	if err != nil {
+		return fmt.Errorf("create id failed: %v", err)
+	}
+
+	if err = r.DBClient.SaveBillings(&resources.Billing{
+		Time:      time.Now().UTC(),
+		OrderID:   id,
+		Amount:    amount,
+		Namespace: GetUserNamespace(account.Name),
+		Owner:     getUsername(account.Name),
+		Type:      accountv1.ActivityGiving,
+	}); err != nil {
+		return fmt.Errorf("save billing failed: %v", err)
+	}
+	r.Logger.Info("update account success", "account", account.Name, "bonus amount", amount, "balance", account.Status.Balance)
+	return nil
+}
+
+func (r *ActivityReconciler) giveAmount(userActivities types.UserActivities, account *accountv1.Account) (annotations map[string]string, amount int64, err error) {
 	for activityType, userActivity := range userActivities {
 		activity, exist := r.Activity[activityType]
 		if !exist {
@@ -110,14 +139,14 @@ func (r *ActivityReconciler) giveAmount(userActivities types.UserActivities, acc
 		if giveAmount != 0 && userPhase.GiveAmount == 0 {
 			err := crypto.RechargeBalance(account.Status.EncryptBalance, giveAmount)
 			if err != nil {
-				return nil, fmt.Errorf("give account %s amount failed: %w", account.Name, err)
+				return nil, 0, fmt.Errorf("give account %s amount failed: %w", account.Name, err)
 			}
 			account.Status.Balance += giveAmount
 			account.Status.ActivityBonus += giveAmount
-			return types.SetUserPhaseGiveAmount(account.Annotations, activityType, userActivity.CurrentPhase, giveAmount), nil
+			return types.SetUserPhaseGiveAmount(account.Annotations, activityType, userActivity.CurrentPhase, giveAmount), giveAmount, nil
 		}
 	}
-	return nil, nil
+	return nil, 0, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
