@@ -10,7 +10,7 @@ import { MouseEvent, useCallback, useEffect, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
-import useDriver from './useDriver';
+import useDriver from '@/hooks/useDriver';
 
 const TimeComponent = dynamic(() => import('./time'), {
   ssr: false

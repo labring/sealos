@@ -274,7 +274,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
         transform="translate(-50%, -50%)"
       >
         <Box fontSize={'32px'} fontWeight={500}>
-          您好, 欢迎来到
+          {t('Hello, welcome')}
           <Text display={'inline'} color={'#0884DD'} px="8px">
             Sealos
           </Text>

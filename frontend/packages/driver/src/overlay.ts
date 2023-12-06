@@ -109,9 +109,47 @@ function mountOverlay(stagePosition: StageDefinition) {
 
     document.body.appendChild(skipButton);
 
+    let countdown = 5;
+    let timeoutId = 1;
+    let isButtonDisabled = true;
+
+    const updateButtonText = () => {
+      skipButton.innerText = `${getConfig('overlaySkipButton') || ''} (${countdown}s)`;
+    };
+
+    const countdownInterval = setInterval(() => {
+      countdown -= 1;
+      updateButtonText();
+    }, 1000);
+
+    timeoutId = setTimeout(() => {
+      console.log('Auto skipping after 5 seconds');
+      clearInterval(countdownInterval);
+      enableButton();
+      skipButton.innerText = getConfig('overlaySkipButton') || '';
+    }, 5000);
+
+    updateButtonText();
+
+    function disableButton() {
+      isButtonDisabled = true;
+      skipButton.style.pointerEvents = 'none';
+      skipButton.style.opacity = '0.5';
+    }
+
+    function enableButton() {
+      isButtonDisabled = false;
+      skipButton.style.pointerEvents = 'auto';
+      skipButton.style.opacity = '1';
+    }
+
     onDriverClick(skipButton, () => {
-      console.log('skipButton');
-      driver().destroy();
+      if (!isButtonDisabled) {
+        disableButton();
+        clearInterval(countdownInterval);
+        clearTimeout(timeoutId);
+        driver().destroy();
+      }
     });
 
     setState('__overlayBtn', skipButton);
