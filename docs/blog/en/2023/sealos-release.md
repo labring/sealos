@@ -5,7 +5,7 @@ description: Explore the journey of Sealos, a grand cloud operating system proje
 authors: [fanux]
 tags: [Kubernetes, Sealos]
 keywords: [cloud operating system, Sealos, Kubernetes, cloud native, Cloud computing, cluster image, Sealer, cloud-native technologies]
-image: https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting5@main/uPic/2023-08-31-09-52-gLmSek.jpg
+image: https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting5@main/uPic/2023-08-31-09-52-gLmSek.jpg
 date: 2023-06-13T10:00
 ---
 

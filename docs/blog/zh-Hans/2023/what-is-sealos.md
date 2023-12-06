@@ -5,7 +5,7 @@ description: 深入探讨 Sealos 的核心功能、技术特点、设计理念�
 authors: [fanux]
 tags: [Kubernetes, Sealos]
 keywords: [云操作系统, Sealos, K8s, 云原生, 云计算, 分布式, PaaS, Rancher, KubeSphere, 云服务]
-image: https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-15-50-TKK1Ol.webp
+image: https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-15-50-TKK1Ol.webp
 date: 2023-07-10T10:00
 ---
 
@@ -19,7 +19,7 @@ date: 2023-07-10T10:00
 
 Sealos 在概念上类似于如 Windows 这样的操作系统，但有两个关键的不同点。首先，Sealos 不是在单个服务器上运行，它的核心理念是**将整个数据中心或跨多服务器的资源视为一个统一的整体**。这种方法突破了传统操作系统只在单一机器上运行的局限，将资源和应用管理扩展到了更大规模，能够**在整个数据中心范围内运行和管理应用**，从而大幅提升云资源的利用效率和运维能力。
 
-![](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-13-46-9Nel1a.png)
+![](https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-13-46-9Nel1a.png)
 
 与普通操作系统支持的 QQ、微信等日常应用不同，Sealos 专注于为开发者提供所需的分布式应用环境。在 Sealos 的世界里，**复杂的云计算任务变得像使用个人电脑一样简单直观**。无论是运行常见的 Web 服务如 Nginx，还是部署和管理各种编程语言编写的分布式应用，Sealos 都能一键完成，极大地减少了配置和管理的复杂性。它的设计哲学强调用户友好性和简洁性，致力于消除使用云服务时的技术壁垒，让每个用户都能轻松享受到云计算的强大能力。
 
@@ -45,7 +45,7 @@ Sealos 平台则完全遵循了操作系统的理念。它专注于用户所需�
 
 许多人对产品的理解仅限于其 GUI，但实际上，一个没有 API 的云服务产品对企业而言几乎无用。企业为了提高效率，需要打通和对接各种系统，这时 API 的重要性就显现出来了。云服务的设计往往不仅仅是为了人类用户，更多的是为了其他程序或系统，以实现企业操作的高度自动化。
 
-![](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-14-36-qnQmDa.jpg)
+![](https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-14-36-qnQmDa.jpg)
 
 具体来说，Sealos 提供的 API 与 K8s 的 CRD (Custom Resource Definitions，自定义资源定义) 设计完全兼容。用户可以通过 Sealos 的 API，以与操作 K8s 环境相同的方式来管理和控制他们的云资源。为了安全性，Sealos 为每个租户分配了权限受限的 kubeconfig 认证文件。这些文件允许租户在保证安全的前提下，灵活地对接和管理不同的系统和资源。
 
@@ -67,7 +67,7 @@ Sealos 平台则完全遵循了操作系统的理念。它专注于用户所需�
 
 Sealos 并不自己去设定标准，而是严格遵循成熟的体系和事实标准，这一策略确保了我们的服务与整个云原生生态系统的高度兼容。所有云原生应用均可在 Sealos 上安全运行，即便没有产品化的一些应用也可以通过 Sealos 的终端来运行。我们的兼容性建立在全面支持 K8s 的基础上，同时在安全性方面进行了加强。
 
-![](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-14-48-vbJezM.png)
+![](https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-14-48-vbJezM.png)
 
 在 Sealos 中，为了避免不当操作或不适当的镜像下载对整个系统造成灾难性影响，每位用户的权限被限制在其自身的命名空间内。这种权限管理机制加强了企业级[云操作系统](https://sealos.run)的安全性与稳定性。
 
@@ -81,13 +81,13 @@ Sealos 并不自己去设定标准，而是严格遵循成熟的体系和事实�
 
 为何选择放弃这一经典架构？原因在于，传统的分层模式已不再符合当前的技术发展和市场需求。以 IaaS 为例，它通过软件模拟数据中心中的路由器、交换机和虚拟机等硬件，虽然提高了调度的灵活性，但同时也导致软件成本急剧增加。以 OpenStack 为例，没有数十人的团队是难以维护其稳定性的，这直接导致了高昂的软件成本。过去，这种方式似乎是提高资源利用率的必要手段，但现在从应用的角度看，许多应用在运行时并不关心它们是否运行在独立的 VPC 中。
 
-![](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-15-00-2jC2C8.png)
+![](https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-15-00-2jC2C8.png)
 
 以上是我五年前画的一张图，现在逐渐变成了现实，这与单机操作系统的发展历程类似：最初是分层的，后来逐渐发展成为更高效的内核架构。云计算的分层架构同样携带着历史的包袱。一旦企业摒弃了 IaaS，它们就可以节省大量成本，并享受到更高的性能。
 
 从这个新的视角出发，我们发现，实际上并不需要 IaaS。同时，从技术角度来看，PaaS 和 SaaS 本质上是相同的，它们都是应用层面的服务，因此也无需进行过度区分。在新的云内核架构中，我们只需要有效地实现多租户之间的隔离。这并不需要复杂重量级的解决方案。例如，Sealos 提供了一种在不可信公网环境中实现多租户共享一个 K8s 集群的方式。我们利用强隔离容器 (如 Firecracker)、网络策略 (如 Cilium) 以及存储块设备隔离 (如 OpenEBS) 来实现这一目标，不仅成本更低，效果也更好。
 
-![](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-15-02-6N4ygp.png)
+![](https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-15-02-6N4ygp.png)
 
 #### 提高应用密度和调度效率
 
@@ -101,7 +101,7 @@ Sealos 并不自己去设定标准，而是严格遵循成熟的体系和事实�
 
 夜间企业的不活跃应用应该都去睡觉休息，把资源留给离线计算或者训练任务，这点其实用公有云更有优势，因为可以直接释放资源，节省大量成本。
 
-![](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-16-18-LIZ6Yt.png)
+![](https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-16-18-LIZ6Yt.png)
 
 Sealos 直接把这一重要特性内置。如果企业所有应用都以这样的方式运行，可以节省巨量的成本。
 
@@ -115,7 +115,7 @@ Sealos 直接把这一重要特性内置。如果企业所有应用都以这样�
 
 要想杜绝资源浪费就需要这样精细化运营，Sealos 以极低的成本达到这个目的，企业管理者唯一要做的事就是给每个子账户分钱即可。
 
-![](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-16-18-ijXZ4y.png)
+![](https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-16-18-ijXZ4y.png)
 
 这样你可以精细化的控制到每个部门每个人用多少钱，从而进一步分析 ROI。
 
@@ -133,7 +133,7 @@ Sealos 的开发者花了不到一半精力维护整个云，8000 个应用时�
 
 我是一个研发，我至少 50% 以上的精力花在了研发之外的事上，那些杂事加起来可能有 20% 但是其影响可能是 80% 。它会割裂我正在做的事，比如你写完代码想着还要卖服务器，配置证书，打包，上线一想到这些我敢打赌没有哪个开发者喜欢做这些事，除非他是个变态。开发者是群懒人，为了偷懒开发出一大堆工具，这是偷懒者的胜利，sealos 也是一群偷懒者创造的，所以能自动绝不手动，能 AI 绝不人工。
 
-![](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-16-18-as6HSI.png)
+![](https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-16-18-as6HSI.png)
 
 自己分析问题多累，AI 比人还专业。
 
@@ -153,7 +153,7 @@ Sealos 对云计算的理解是深刻的：
 
 Sealos 设计之初就考虑到这一点，其实公有云与私有云本质是一样的，都是链接计算资源。很多人可能觉得不一样啊，公有云还有充值计费什么的，其实只需要把这些功能放到一个单独的应用中即可，这样在不需要的场景直接不安装这个应用。
 
-![](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-16-18-vMGZyu.png)
+![](https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-16-18-vMGZyu.png)
 
 但其实大一点的企业即便做私有云它的形态也应该和公有云一样，计量计费是非常重要的一个功能，企业超过 10 个人都需要精细化运营云资源，就更别说成千上万人的企业用私有云了，各部门的成本分摊等。
 
@@ -172,7 +172,7 @@ Sealos 选择一条非常有挑战的场景：在公网不可信的环境中让�
 
 我们解决了这个技术挑战，那不仅在公有云上为客户提供很大价值，在私有云场景就更轻松拿捏了。
 
-![](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-16-19-sJYA9X.png)
+![](https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-16-19-sJYA9X.png)
 
 从这张图中拆解 Sealos 的技术体系：
 
@@ -192,7 +192,7 @@ Sealos 选择一条非常有挑战的场景：在公网不可信的环境中让�
 
 网络我们对计量和隔离的要求极高，而 calico 这些你懂的，隔离会使用大量的 iptables 规则，规模一大基本网络就不可用了，我们测试过 5000 条规则时压力测试一下就有 30% 的失败率。网络这块我们就引入了 cilium，通过 ebpf 来解决这这些问题，还有多租户的网络计量。
 
-![](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-16-19-REW9Fy.png)
+![](https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-16-19-REW9Fy.png)
 
 存储我们使用 openebs + lvm，为每个用户挂载独立隔离的卷，这样用户可以享受到本地磁盘的性能。而文件存储又变成一个大问题，nfs 这些几乎只是玩具，根本无法生产。所以我们世界冠军同学带队基于 rust 完全自研 sealfs 文件系统，架构超级精简，主打高性能，支持 RDMA。
 
@@ -249,7 +249,7 @@ Laf 直接集成 GPT4，大部分代码就不用你自己写了，我们训练�
 
 Laf AI 写代码，sealos 故障自动诊断，AI 自动上线应用，自动构建 Docker 镜像，这些统统靠 fastGPT 这个项目，自动帮你构建知识库。
 
-![](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-16-19-cCinq3.png)
+![](https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-16-19-cCinq3.png)
 
 ### 数据库/消息队列等应用
 
