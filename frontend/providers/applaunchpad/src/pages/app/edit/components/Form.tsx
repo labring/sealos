@@ -56,6 +56,7 @@ import { obj2Query } from '@/api/tools';
 import { throttle } from 'lodash';
 import { ProtocolList, noGpuSliderKey } from '@/constants/app';
 import { sliderNumber2MarkList } from '@/utils/adapt';
+import { useToast } from '@/hooks/useToast';
 
 const labelWidth = 120;
 
@@ -79,6 +80,7 @@ const Form = ({
   const { formSliderListConfig } = useGlobalStore();
   const { userSourcePrice } = useUserStore();
   const router = useRouter();
+  const { toast } = useToast();
   const { name } = router.query as QueryType;
   const theme = useTheme();
   const isEdit = useMemo(() => !!name, [name]);
@@ -1101,7 +1103,16 @@ const Form = ({
                             className={styles.deleteIcon}
                             ml={3}
                             cursor={'pointer'}
-                            onClick={() => removeStoreList(index)}
+                            onClick={() => {
+                              if (storeList.length === 1) {
+                                toast({
+                                  title: t('Store At Least One'),
+                                  status: 'error'
+                                });
+                              } else {
+                                removeStoreList(index);
+                              }
+                            }}
                           >
                             <MyIcon name="delete" w={'16px'} h={'16px'} />
                           </Box>

@@ -195,7 +195,7 @@ const AppList = ({
             <Button
               mr={5}
               variant={'base'}
-              leftIcon={<MyIcon name={'detail'} transform={'translateY(-1px)'} />}
+              leftIcon={<MyIcon name={'detail'} w={'14px'} h="14px" />}
               px={3}
               onClick={() => router.push(`/app/detail?name=${item.name}`)}
             >
@@ -251,7 +251,7 @@ const AppList = ({
                       {
                         child: (
                           <>
-                            <MyIcon name={'restart'} />
+                            <MyIcon name={'restart'} w="16px" />
                             <Box ml={2}>{t('Restart')}</Box>
                           </>
                         ),
@@ -262,7 +262,7 @@ const AppList = ({
                 {
                   child: (
                     <>
-                      <MyIcon name={'delete'} w={'12px'} />
+                      <MyIcon name={'delete'} w={'14px'} />
                       <Box ml={2}>{t('Delete')}</Box>
                     </>
                   ),

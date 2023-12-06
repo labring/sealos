@@ -55,7 +55,11 @@ export const pathFormat = (str: string) => {
   return `./${str}`;
 };
 export const pathToNameFormat = (str: string) => {
-  return str.replace(/(\/|\.)/g, 'vn-').toLocaleLowerCase();
+  const endsWithSlash = str.endsWith('/');
+  const withoutTrailingSlash = endsWithSlash ? str.slice(0, -1) : str;
+  const replacedStr = withoutTrailingSlash.replace(/_/g, '-').replace(/[\/.]/g, 'vn-');
+
+  return endsWithSlash ? replacedStr : replacedStr.toLowerCase();
 };
 
 /**
@@ -342,6 +346,69 @@ export const patchYamlList = ({
         type: 'patch',
         kind: newYamlJson.kind as `${YamlKindEnum}`,
         value: actionsJson as any
+      });
+    } else {
+      actions.push({
+        type: 'create',
+        kind: newYamlJson.kind as `${YamlKindEnum}`,
+        value: yaml.dump(newYamlJson)
+      });
+    }
+  });
+
+  return actions;
+};
+
+export const patchYamlListV1 = ({
+  newYamlList,
+  oldYamlList
+}: {
+  newYamlList: string[];
+  oldYamlList: DeployKindsType[];
+}) => {
+  const newFormJsonList = newYamlList.map((item) => yaml.loadAll(item)).flat() as DeployKindsType[];
+  console.log('new:', newFormJsonList, '\n old', oldYamlList);
+
+  const actions: AppPatchPropsType = [];
+
+  // find delete
+  oldYamlList.forEach((oldYamlJson) => {
+    const item = newFormJsonList.find(
+      (item) => item.kind === oldYamlJson.kind && item.metadata?.name === oldYamlJson.metadata?.name
+    );
+    if (!item && oldYamlJson.metadata?.name) {
+      actions.push({
+        type: 'delete',
+        kind: oldYamlJson.kind as `${YamlKindEnum}`,
+        name: oldYamlJson.metadata?.name
+      });
+    }
+  });
+
+  // find create and patch
+  newFormJsonList.forEach((newYamlJson) => {
+    const oldFormJson = oldYamlList.find(
+      (item) =>
+        item.kind === newYamlJson.kind && item?.metadata?.name === newYamlJson?.metadata?.name
+    );
+
+    if (oldFormJson) {
+      // adapt service ports
+      if (newYamlJson.kind === YamlKindEnum.Service) {
+        // @ts-ignore
+        const ports = newYamlJson?.spec.ports || [];
+
+        // @ts-ignore
+        if (ports.length > 1 && !ports[0]?.name) {
+          // @ts-ignore
+          newYamlJson.spec.ports[0].name = 'adaptport';
+        }
+      }
+
+      actions.push({
+        type: 'patch',
+        kind: newYamlJson.kind as `${YamlKindEnum}`,
+        value: newYamlJson as any
       });
     } else {
       actions.push({

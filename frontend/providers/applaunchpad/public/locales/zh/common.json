@@ -202,5 +202,6 @@
   },
   "user": {
     "Insufficient account balance": "账号余额不足~"
-  }
+  },
+  "Store At Least One": "存储最少保留一个"
 }
