@@ -19,10 +19,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/common"
+
 	"github.com/labring/sealos/controllers/pkg/crypto"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
-
-	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 
 	"github.com/labring/sealos/controllers/pkg/gpu"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
@@ -89,9 +89,9 @@ type Monitor struct {
 type BillingType int
 
 type Billing struct {
-	Time    time.Time      `json:"time" bson:"time"`
-	OrderID string         `json:"order_id" bson:"order_id"`
-	Type    accountv1.Type `json:"type" bson:"type"`
+	Time    time.Time   `json:"time" bson:"time"`
+	OrderID string      `json:"order_id" bson:"order_id"`
+	Type    common.Type `json:"type" bson:"type"`
 	//Name      string      `json:"name" bson:"name"`
 	Namespace string `json:"namespace" bson:"namespace"`
 	//Used       Used        `json:"used" bson:"used"`

@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/common"
+
 	"github.com/labring/sealos/controllers/pkg/resources"
 
 	"github.com/labring/sealos/controllers/pkg/database"
@@ -206,12 +208,12 @@ const (
 	TransferOutNotification = `You have a new transfer to %s, amount: %d`
 )
 
-var transferNotification = map[accountv1.Type]string{
+var transferNotification = map[common.Type]string{
 	accountv1.TransferIn:  TransferInNotification,
 	accountv1.TransferOut: TransferOutNotification,
 }
 
-func (r *TransferReconciler) sendNotice(ctx context.Context, namespace string, user string, amount int64, _type accountv1.Type) error {
+func (r *TransferReconciler) sendNotice(ctx context.Context, namespace string, user string, amount int64, _type common.Type) error {
 	now := time.Now().UTC().Unix()
 	ntf := v1.Notification{
 		ObjectMeta: metav1.ObjectMeta{
