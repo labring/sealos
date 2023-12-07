@@ -2,6 +2,12 @@ package dao
 
 import (
 	"context"
+	"fmt"
+	"time"
+
+	"github.com/labring/sealos/service/account/common"
+
+	"github.com/labring/sealos/controllers/pkg/resources"
 
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -12,13 +18,36 @@ import (
 
 type Interface interface {
 	GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHistoryReq) ([]string, error)
-	//GetProperties() (map[string]interface{}, error)
+	GetProperties() ([]common.PropertyQuery, error)
 }
 
 type MongoDB struct {
-	Client        *mongo.Client
-	AccountDBName string
-	BillingConn   string
+	Client         *mongo.Client
+	AccountDBName  string
+	BillingConn    string
+	PropertiesConn string
+	Properties     *resources.PropertyTypeLS
+}
+
+func (m *MongoDB) GetProperties() ([]common.PropertyQuery, error) {
+	propertiesQuery := make([]common.PropertyQuery, 0)
+	if m.Properties == nil {
+		if properties, err := m.getProperties(); err != nil {
+			return nil, fmt.Errorf("get properties error: %v", err)
+		} else {
+			m.Properties = properties
+		}
+	}
+	for _, types := range m.Properties.Types {
+		property := common.PropertyQuery{
+			Name:      types.Name,
+			UnitPrice: types.ViewPrice,
+			Unit:      types.UnitString,
+			Alias:     types.Alias,
+		}
+		propertiesQuery = append(propertiesQuery, property)
+	}
+	return propertiesQuery, nil
 }
 
 func NewMongoInterface(url string) (Interface, error) {
@@ -28,10 +57,32 @@ func NewMongoInterface(url string) (Interface, error) {
 	}
 	err = client.Ping(context.Background(), nil)
 	return &MongoDB{
-		Client:        client,
-		AccountDBName: "sealos-resources",
-		BillingConn:   "billing",
+		Client:         client,
+		AccountDBName:  "sealos-resources",
+		BillingConn:    "billing",
+		PropertiesConn: "properties",
 	}, err
+}
+
+func (m *MongoDB) getProperties() (*resources.PropertyTypeLS, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cursor, err := m.getPropertiesCollection().Find(ctx, bson.M{})
+	if err != nil {
+		return nil, fmt.Errorf("get all prices error: %v", err)
+	}
+	var properties []resources.PropertyType
+	if err = cursor.All(ctx, &properties); err != nil {
+		return nil, fmt.Errorf("get all prices error: %v", err)
+	}
+	if len(properties) != 0 {
+		resources.DefaultPropertyTypeLS = resources.NewPropertyTypeLS(properties)
+	}
+	return resources.DefaultPropertyTypeLS, nil
+}
+
+func (m *MongoDB) getPropertiesCollection() *mongo.Collection {
+	return m.Client.Database(m.AccountDBName).Collection(m.PropertiesConn)
 }
 
 func (m *MongoDB) GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHistoryReq) ([]string, error) {
@@ -40,8 +91,8 @@ func (m *MongoDB) GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHis
 	}
 	if req.StartTime != req.EndTime {
 		filter["time"] = bson.M{
-			"$gte": req.StartTime.Time.UTC(),
-			"$lte": req.EndTime.Time.UTC(),
+			"$gte": req.StartTime.UTC(),
+			"$lte": req.EndTime.UTC(),
 		}
 	}
 	if req.Type != -1 {

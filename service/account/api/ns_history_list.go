@@ -33,3 +33,20 @@ func GetBillingHistoryNamespaceList(c *gin.Context) {
 		"message": "successfully retrieved namespace billing history list",
 	})
 }
+
+func GetProperties(c *gin.Context) {
+	// Get the properties from the database
+	properties, err := dao.DbClient.GetProperties()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get properties: %v", err)})
+		return
+	}
+
+	// Return the properties as JSON response
+	c.JSON(http.StatusOK, gin.H{
+		"data": map[string]interface{}{
+			"properties": properties,
+		},
+		"message": "successfully retrieved properties",
+	})
+}
