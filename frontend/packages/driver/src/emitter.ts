@@ -1,11 +1,12 @@
 type allowedEvents =
-  | "overlayClick"
-  | "escapePress"
-  | "nextClick"
-  | "prevClick"
-  | "closeClick"
-  | "arrowRightPress"
-  | "arrowLeftPress";
+  | 'overlayClick'
+  | 'escapePress'
+  | 'nextClick'
+  | 'prevClick'
+  | 'closeClick'
+  | 'arrowRightPress'
+  | 'arrowLeftPress'
+  | 'skipButtonClick';
 
 let registeredListeners: Partial<{ [key in allowedEvents]: () => void }> = {};
 

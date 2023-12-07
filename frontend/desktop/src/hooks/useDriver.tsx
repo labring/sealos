@@ -1,3 +1,6 @@
+import { getPriceBonus, getSystemEnv, getUserAccount, updateDesktopGuide } from '@/api/platform';
+import { GUIDE_DESKTOP_INDEX_KEY } from '@/constants/account';
+import { formatMoney } from '@/utils/format';
 import { Box, Button, Flex, FlexProps, Icon, Image, Text } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
 import { useTranslation } from 'next-i18next';
@@ -39,22 +42,38 @@ export function DriverStarIcon() {
 export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
   const { t, i18n } = useTranslation();
   const [showGuide, setShowGuide] = useState(false);
+  const [giftAmount, setGiftAmount] = useState(8);
 
   const handleSkipGuide = () => {
     console.log('handleSkipGuide');
-    localStorage.setItem('guideCloseTimestamp', Date.now().toString());
     setShowGuide(false);
+    updateDesktopGuide().catch((err) => {
+      console.log(err);
+    });
   };
 
   useEffect(() => {
-    const lastCloseTimestamp = localStorage.getItem('guideCloseTimestamp');
-    if (lastCloseTimestamp) {
-      let time = 7 * 24 * 60 * 60 * 1000;
-      setShowGuide(Date.now() - Number(lastCloseTimestamp) > time);
-    } else {
-      setShowGuide(true);
-    }
-    setShowGuide(true);
+    const handleUserGuide = async () => {
+      try {
+        const { data: env } = await getSystemEnv();
+        const { data } = await getUserAccount();
+        const bonus = await getPriceBonus();
+        if (bonus.data?.activities) {
+          const strategy = JSON.parse(bonus.data?.activities);
+          const rewardBalance = formatMoney(
+            strategy?.['beginner-guide']?.phases?.launchpad?.giveAmount || 8000000
+          );
+          setGiftAmount(rewardBalance);
+        }
+        if (env?.guideEnabled && data?.metadata?.annotations) {
+          const isGuidedDesktop = !!data.metadata.annotations?.[GUIDE_DESKTOP_INDEX_KEY];
+          !isGuidedDesktop ? setShowGuide(true) : '';
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    handleUserGuide();
   }, []);
 
   const PopoverBodyInfo = (props: FlexProps) => (
@@ -68,7 +87,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
       {...props}
     >
       <Text color={'#FFF'} fontSize={'13px'} fontWeight={500}>
-        {t('Click anywhere to continue')}
+        {t('Click on any shadow to skip')}
       </Text>
       <Icon
         xmlns="http://www.w3.org/2000/svg"
@@ -86,169 +105,177 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
     </Flex>
   );
 
-  const startGuide = () => {
-    const driverObj = driver({
-      showProgress: false,
-      allowClose: false,
-      allowClickMaskNextStep: true,
-      allowPreviousStep: true,
-      isShowButtons: false,
-      allowKeyboardControl: false,
-      disableActiveInteraction: true,
-      steps: [
-        {
-          element: '.floatButtonNav',
-          popover: {
-            side: 'left',
-            align: 'center',
-            borderRadius: '0px 12px 12px 12px',
-            PopoverBody: (
-              <Flex gap={'6px'}>
-                <DriverStarIcon />
-                <Text color={'#24282C'} fontSize={'13px'}>
-                  快捷应用切换悬浮球
-                </Text>
-                <PopoverBodyInfo />
-              </Flex>
-            )
-          }
-        },
-        {
-          element: '.system-terminal',
-          popover: {
-            side: 'bottom',
-            align: 'start',
-            borderRadius: '0px 12px 12px 12px',
-            PopoverBody: (
-              <Flex gap={'6px'}>
-                <DriverStarIcon />
-                <Text color={'#24282C'} fontSize={'13px'}>
-                  您可通过终端直接使用 kubectl 命令
-                </Text>
-                <PopoverBodyInfo />
-              </Flex>
-            )
-          }
-        },
-        {
-          element: '.system-dbprovider',
-          popover: {
-            side: 'bottom',
-            align: 'start',
-            borderRadius: '0px 12px 12px 12px',
-            PopoverBody: (
-              <Flex gap={'6px'}>
-                <DriverStarIcon />
-                <Text color={'#24282C'} fontSize={'13px'}>
-                  帮您启用高可用数据库
-                </Text>
-                <PopoverBodyInfo />
-              </Flex>
-            )
-          }
-        },
-        {
-          element: '.system-template',
-          popover: {
-            side: 'top',
-            align: 'start',
-            borderRadius: '12px 12px 12px 0px',
-            PopoverBody: (
-              <Flex gap={'6px'}>
-                <DriverStarIcon />
-                <Text color={'#24282C'} fontSize={'13px'}>
-                  一键启动各种第三方应用
-                </Text>
-                <PopoverBodyInfo top={'-120px'} />
-              </Flex>
-            )
-          }
-        },
-        {
-          element: '.system-costcenter',
-          popover: {
-            side: 'top',
-            align: 'start',
-            borderRadius: '12px 12px 12px 0px',
-            PopoverBody: (
-              <Flex gap={'6px'}>
-                <DriverStarIcon />
-                <Text color={'#24282C'} fontSize={'13px'}>
-                  您可通过终端直接使用 kubectl 命令
-                </Text>
-                <PopoverBodyInfo top={'-120px'} />
-              </Flex>
-            )
-          }
-        },
-        {
-          element: '.system-applaunchpad',
-          popover: {
-            side: 'left',
-            align: 'start',
-            borderRadius: '12px 0px 12px 12px',
-            PopoverBody: (
-              <Box color={'#24282C'} padding={'10px'}>
-                <Flex gap={'6px'}>
-                  <DriverStarIcon />
-                  <Text fontSize={'16px'} fontWeight={'600'}>
-                    来部署一个应用吧～
-                  </Text>
-                </Flex>
-                <Box fontSize={'13px'} fontWeight={500} mt="12px">
-                  花
-                  <Text color={'#219BF4'} display={'inline'} px="2px">
-                    30s
-                  </Text>
-                  部署一个 nginx ，首次完成 将
-                  <Text color={'#219BF4'} display={'inline'} px="2px">
-                    奖励 8 元余额。
-                  </Text>
-                </Box>
-                <Flex mt="20px">
-                  <Button
-                    color={'#24282C'}
-                    fontSize={'12px'}
-                    p="4px 16px"
-                    border={'1px solid #DEE0E2'}
-                    bg="#FFF"
-                    ml="auto"
-                    borderRadius={'4px'}
-                    cursor={'pointer'}
-                    onClick={() => {
-                      driverObj.destroy();
-                      handleSkipGuide();
-                    }}
-                  >
-                    下次吧
-                  </Button>
-                  <Button
-                    ml="12px"
-                    color={'#FEFEFE'}
-                    fontSize={'12px'}
-                    p="4px 16px"
-                    bg="#000"
-                    borderRadius={'4px'}
-                    cursor={'pointer'}
-                    onClick={() => {
-                      driverObj.destroy();
-                      handleSkipGuide();
-                      openDesktopApp({ appKey: 'system-applaunchpad', pathname: '/app/edit' });
-                    }}
-                  >
-                    立即开始
-                  </Button>
-                </Flex>
-              </Box>
-            )
-          }
+  const driverObj = driver({
+    showProgress: false,
+    allowClose: false,
+    allowClickMaskNextStep: true,
+    allowPreviousStep: true,
+    isShowButtons: false,
+    allowKeyboardControl: false,
+    disableActiveInteraction: true,
+    steps: [
+      {
+        element: '.floatButtonNav',
+        popover: {
+          side: 'left',
+          align: 'center',
+          borderRadius: '0px 12px 12px 12px',
+          PopoverBody: (
+            <Flex gap={'6px'}>
+              <DriverStarIcon />
+              <Text color={'#24282C'} fontSize={'13px'}>
+                {t('Quick application switching floating ball')}
+              </Text>
+              <PopoverBodyInfo />
+            </Flex>
+          )
         }
-      ],
-      onDestroyed: () => {
-        console.log('onDestroyed');
-        handleSkipGuide();
+      },
+      {
+        element: '.system-terminal',
+        popover: {
+          side: 'bottom',
+          align: 'start',
+          borderRadius: '0px 12px 12px 12px',
+          PopoverBody: (
+            <Flex gap={'6px'}>
+              <DriverStarIcon />
+              <Text color={'#24282C'} fontSize={'13px'}>
+                {t('You can use the kubectl command directly from the terminal')}
+              </Text>
+              <PopoverBodyInfo />
+            </Flex>
+          )
+        }
+      },
+      {
+        element: '.system-dbprovider',
+        popover: {
+          side: 'bottom',
+          align: 'start',
+          borderRadius: '0px 12px 12px 12px',
+          PopoverBody: (
+            <Flex gap={'6px'}>
+              <DriverStarIcon />
+              <Text color={'#24282C'} fontSize={'13px'}>
+                {t('Help you enable high availability database')}
+              </Text>
+              <PopoverBodyInfo />
+            </Flex>
+          )
+        }
+      },
+      {
+        element: '.system-template',
+        popover: {
+          side: 'top',
+          align: 'start',
+          borderRadius: '12px 12px 12px 0px',
+          PopoverBody: (
+            <Flex gap={'6px'}>
+              <DriverStarIcon />
+              <Text color={'#24282C'} fontSize={'13px'}>
+                {t('Launch various third-party applications with one click')}
+              </Text>
+              <PopoverBodyInfo top={'-120px'} />
+            </Flex>
+          )
+        }
+      },
+      {
+        element: '.system-costcenter',
+        popover: {
+          side: 'top',
+          align: 'start',
+          borderRadius: '12px 12px 12px 0px',
+          PopoverBody: (
+            <Flex gap={'6px'}>
+              <DriverStarIcon />
+              <Text color={'#24282C'} fontSize={'13px'}>
+                {t('You can view fees through the fee center')}
+              </Text>
+              <PopoverBodyInfo top={'-120px'} />
+            </Flex>
+          )
+        }
+      },
+      {
+        element: '.system-applaunchpad',
+        popover: {
+          side: 'left',
+          align: 'start',
+          borderRadius: '12px 0px 12px 12px',
+          onPopoverRender: () => {
+            const svg = driverObj.getState('__overlaySvg');
+            if (svg) {
+              const pathElement = svg.querySelector('path');
+              if (pathElement) {
+                pathElement.style.pointerEvents = 'none';
+              }
+            }
+          },
+          PopoverBody: (
+            <Box color={'#24282C'} padding={'10px'}>
+              <Flex gap={'6px'}>
+                <DriverStarIcon />
+                <Text fontSize={'16px'} fontWeight={'600'}>
+                  {t('deploy an application')}
+                </Text>
+              </Flex>
+              <Box fontSize={'13px'} fontWeight={500} mt="12px">
+                {t('spend')}
+                <Text color={'#219BF4'} display={'inline'} px="2px">
+                  30s
+                </Text>
+                {t('Completed the deployment of an nginx for the first time')}
+                <Text color={'#219BF4'} display={'inline'} px="2px">
+                  {t('gift amount', { amount: giftAmount })}
+                </Text>
+              </Box>
+              <Flex mt="20px">
+                <Button
+                  color={'#24282C'}
+                  fontSize={'12px'}
+                  p="4px 16px"
+                  border={'1px solid #DEE0E2'}
+                  bg="#FFF"
+                  ml="auto"
+                  borderRadius={'4px'}
+                  cursor={'pointer'}
+                  onClick={() => {
+                    driverObj.destroy();
+                  }}
+                >
+                  {t('Next time')}
+                </Button>
+                <Button
+                  ml="12px"
+                  color={'#FEFEFE'}
+                  fontSize={'12px'}
+                  p="4px 16px"
+                  bg="#000"
+                  borderRadius={'4px'}
+                  cursor={'pointer'}
+                  onClick={() => {
+                    driverObj.destroy();
+                    openDesktopApp({ appKey: 'system-applaunchpad', pathname: '/app/edit' });
+                  }}
+                >
+                  {t('start immediately')}
+                </Button>
+              </Flex>
+            </Box>
+          )
+        }
       }
-    });
+    ],
+    onDestroyed: () => {
+      console.log('onDestroyed');
+      handleSkipGuide();
+    }
+  });
+
+  const startGuide = () => {
     setShowGuide(false);
     driverObj.drive();
   };
@@ -306,7 +333,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
             startGuide();
           }}
         >
-          开始您的 Sealos 之旅
+          {t('Start your Sealos journey')}
         </Button>
       </Flex>
     </Box>

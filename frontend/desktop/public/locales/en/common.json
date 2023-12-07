@@ -100,8 +100,20 @@
   "Purchase Link Error": "Purchase Link Error",
   "You have not purchased the License": "You have not purchased the License",
   "App Info": "App Info",
-  "Click anywhere to continue": "Click on any blank space to continue",
   "Jump Over": "Jump Over",
   "Detail": "Detail",
-  "Hello, welcome": "Hello, welcome to"
+  "Hello, welcome": "Hello, welcome to",
+  "Quick application switching floating ball": "Quick application switching floating ball",
+  "You can use the kubectl command directly from the terminal": "You can use the kubectl command directly from the terminal",
+  "Help you enable high availability database": "Help you enable high availability database",
+  "Launch various third-party applications with one click": "Launch various third-party applications with one click",
+  "You can view fees through the fee center": "You can view fees through the fee center",
+  "deploy an application": "Let’s deploy an application~",
+  "spend": "spend",
+  "Completed the deployment of an nginx for the first time": "Completed the deployment of an nginx for the first time",
+  "Next time": "Next",
+  "start immediately": "Start",
+  "Click on any shadow to skip": "Click on any shadow to skip",
+  "Start your Sealos journey": "Start your Sealos journey",
+  "gift amount": "Reward {{amount}} balance."
 }

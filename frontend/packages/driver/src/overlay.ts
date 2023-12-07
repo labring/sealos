@@ -101,7 +101,9 @@ function mountOverlay(stagePosition: StageDefinition) {
 
   setState('__overlaySvg', overlaySvg);
 
-  if (getConfig('overlaySkipButton')) {
+  const allowSkipButton = getConfig('overlaySkipButton');
+
+  if (allowSkipButton && allowSkipButton !== '') {
     const skipButton = document.createElement('div');
     skipButton.id = 'driver-popover-overlay-skip-btn';
     skipButton.classList.add('driver-popover-overlay-skip-btn');
@@ -110,7 +112,7 @@ function mountOverlay(stagePosition: StageDefinition) {
     document.body.appendChild(skipButton);
 
     let countdown = 5;
-    let timeoutId = 1;
+    let timeoutId: any;
     let isButtonDisabled = true;
 
     const updateButtonText = () => {
@@ -148,11 +150,11 @@ function mountOverlay(stagePosition: StageDefinition) {
         disableButton();
         clearInterval(countdownInterval);
         clearTimeout(timeoutId);
-        driver().destroy();
+        emit('skipButtonClick');
       }
     });
 
-    setState('__overlayBtn', skipButton);
+    setState('__overlaySkipBtn', skipButton);
   }
 }
 
@@ -245,7 +247,7 @@ export function destroyOverlay() {
 }
 
 export function destroyOverlayBtn() {
-  const overlayBtn = getState('__overlayBtn');
+  const overlayBtn = getState('__overlaySkipBtn');
   if (overlayBtn) {
     overlayBtn.remove();
   }

@@ -1,22 +1,22 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import useDetailDriver from '@/hooks/useDetailDriver';
+import { useLoading } from '@/hooks/useLoading';
+import { useToast } from '@/hooks/useToast';
+import { MOCK_APP_DETAIL } from '@/mock/apps';
+import { useAppStore } from '@/store/app';
+import { useGlobalStore } from '@/store/global';
+import { serviceSideProps } from '@/utils/i18n';
 import { Box, Flex, useTheme } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
-import { useAppStore } from '@/store/app';
-import { useToast } from '@/hooks/useToast';
-import { useLoading } from '@/hooks/useLoading';
-import { useGlobalStore } from '@/store/global';
-import Header from './components/Header';
-import AppBaseInfo from './components/AppBaseInfo';
-import Pods from './components/Pods';
 import dynamic from 'next/dynamic';
-import { MOCK_APP_DETAIL } from '@/mock/apps';
-import { serviceSideProps } from '@/utils/i18n';
-import useDetailDriver from '@/hooks/useDetailDriver';
+import React, { useMemo, useState } from 'react';
+import AppBaseInfo from './components/AppBaseInfo';
+import Header from './components/Header';
+import Pods from './components/Pods';
 
 const AppMainInfo = dynamic(() => import('./components/AppMainInfo'), { ssr: false });
 
 const AppDetail = ({ appName }: { appName: string }) => {
-  const { UserGuide, showGuide, startGuide } = useDetailDriver();
+  const { startGuide } = useDetailDriver();
   const theme = useTheme();
   const { toast } = useToast();
   const { Loading } = useLoading();
@@ -31,15 +31,12 @@ const AppDetail = ({ appName }: { appName: string }) => {
   const [podsLoaded, setPodsLoaded] = useState(false);
   const [showSlider, setShowSlider] = useState(false);
 
-  const { refetch } = useQuery(['setAppDetail'], () => setAppDetail(appName), {
+  const { refetch, isSuccess } = useQuery(['setAppDetail'], () => setAppDetail(appName), {
     onError(err) {
       toast({
         title: String(err),
         status: 'error'
       });
-    },
-    onSuccess: () => {
-      startGuide();
     }
   });
 

@@ -56,6 +56,7 @@ export type Config = {
   allowPreviousStep?: boolean;
   isShowButtons?: boolean;
   overlaySkipButton?: string;
+  interceptSkipButtonClick?: () => void;
 };
 
 let currentConfig: Config = {};

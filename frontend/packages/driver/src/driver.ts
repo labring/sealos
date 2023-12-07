@@ -133,6 +133,14 @@ export function driver(options: Config = {}) {
 
     listen('overlayClick', getConfig('allowClickMaskNextStep') ? moveNext : handleClose);
     listen('escapePress', handleClose);
+    listen('skipButtonClick', () => {
+      const interceptSkipButtonClick = getConfig('interceptSkipButtonClick');
+      if (interceptSkipButtonClick) {
+        interceptSkipButtonClick();
+      } else {
+        destroy();
+      }
+    });
     listen('arrowLeftPress', handleArrowLeft);
     listen('arrowRightPress', handleArrowRight);
   }
