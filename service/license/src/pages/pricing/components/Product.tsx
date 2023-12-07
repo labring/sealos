@@ -181,9 +181,13 @@ export default function Product() {
       console.log(data, 'getPaymentResult');
       if (data.status === PaymentStatus.PaymentSuccess) {
         clusterAndLicenseMutation.mutate({ orderID: data.orderID, type: ClusterType.Enterprise });
-        uploadConvertData([90]).then((res) => {
-          console.log(res);
-        });
+        uploadConvertData([90])
+          .then((res) => {
+            console.log(res);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
       }
     },
     onError(err: any) {

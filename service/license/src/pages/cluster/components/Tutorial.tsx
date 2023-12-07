@@ -152,7 +152,7 @@ export default function Tutorial({
                 部署集群
               </Text>
               <CommandForm
-                basePath={`tar xzvf ${fileNameParams} && cd sealos-cloud && bash scripts/load-images.sh && bash install.sh `}
+                basePath={`tar xzvf ${fileNameParams} && cd sealos-cloud && bash scripts/load-images.sh && bash scripts/install.sh `}
                 cloudVersion={ossVersion}
                 enterprise={true}
               />

@@ -31,9 +31,13 @@ const Callback: NextPage = () => {
           setSessionProp('token', token);
           setSessionProp('user', user);
           setSessionProp('kubeconfig', kubeconfig);
-          uploadConvertData([3]).then((res) => {
-            console.log(res);
-          });
+          uploadConvertData([3])
+            .then((res) => {
+              console.log(res);
+            })
+            .catch((err) => {
+              console.log(err);
+            });
           router.replace('/');
         } else {
           throw new Error();
