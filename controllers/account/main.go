@@ -22,6 +22,11 @@ import (
 	"os"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	"github.com/labring/sealos/controllers/account/controllers/cache"
+
 	"github.com/labring/sealos/controllers/pkg/database/mongo"
 
 	"github.com/labring/sealos/controllers/pkg/resources"
@@ -32,20 +37,17 @@ import (
 	rate "github.com/labring/sealos/controllers/pkg/utils/rate"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 
-	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	"github.com/labring/sealos/controllers/account/controllers"
-	"github.com/labring/sealos/controllers/account/controllers/cache"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	"github.com/labring/sealos/controllers/account/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -91,6 +93,11 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	// local test env
+	//err := godotenv.Load()
+	//if err != nil {
+	//	setupLog.Error(err, "unable to load .env file")
+	//}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
@@ -131,28 +138,57 @@ func main() {
 			setupLog.Error(err, "unable to disconnect from mongo")
 		}
 	}()
-	if err = (&controllers.AccountReconciler{
+	accountReconciler := &controllers.AccountReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		DBClient: dbClient,
-	}).SetupWithManager(mgr, rateOpts); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Account")
+	}
+	billingInfoQueryReconciler := &controllers.BillingInfoQueryReconciler{
+		Client:     mgr.GetClient(),
+		Scheme:     mgr.GetScheme(),
+		DBClient:   dbClient,
+		Properties: resources.DefaultPropertyTypeLS,
+	}
+	activityReconciler := &controllers.ActivityReconciler{
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		DBClient: dbClient,
+	}
+	activities, discountSteps, discountRatios, err := controllers.RawParseRechargeConfig()
+	if err != nil {
+		setupLog.Error(err, "parse recharge config failed")
+	} else {
+		setupLog.Info("parse recharge config success", "activities", activities, "discountSteps", discountSteps, "discountRatios", discountRatios)
+		accountReconciler.Activities = activities
+		accountReconciler.RechargeStep = discountSteps
+		accountReconciler.RechargeRatio = discountRatios
+		billingInfoQueryReconciler.Activities = activities
+		billingInfoQueryReconciler.RechargeStep = discountSteps
+		billingInfoQueryReconciler.RechargeRatio = discountRatios
+		activityReconciler.Activity = activities
+	}
+	setupManagerError := func(err error, controller string) {
+		setupLog.Error(err, "unable to create controller", "controller", controller)
 		os.Exit(1)
+	}
+	if err = (activityReconciler).SetupWithManager(mgr, rateOpts); err != nil {
+		setupManagerError(err, "Activity")
+	}
+	if err = (accountReconciler).SetupWithManager(mgr, rateOpts); err != nil {
+		setupManagerError(err, "Account")
 	}
 	if err = (&controllers.PaymentReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr, rateOpts); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Payment")
-		os.Exit(1)
+		setupManagerError(err, "Payment")
 	}
 	if err = (&controllers.DebtReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		DBClient: dbClient,
 	}).SetupWithManager(mgr, rateOpts); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Debt")
-		os.Exit(1)
+		setupManagerError(err, "Debt")
 	}
 
 	if err = cache.SetupCache(mgr); err != nil {
@@ -175,8 +211,7 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr, rateOpts); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "BillingRecordQuery")
-		os.Exit(1)
+		setupManagerError(err, "BillingRecordQuery")
 	}
 	if err = (&controllers.BillingReconciler{
 		DBClient:   dbClient,
@@ -184,47 +219,37 @@ func main() {
 		Client:     mgr.GetClient(),
 		Scheme:     mgr.GetScheme(),
 	}).SetupWithManager(mgr, rateOpts); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Billing")
-		os.Exit(1)
+		setupManagerError(err, "Billing")
 	}
 
 	if err = (&controllers.PodReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Pod")
-		os.Exit(1)
+		setupManagerError(err, "Pod")
 	}
 	if err = (&controllers.NamespaceReconciler{
 		Client: watchClient,
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Namespace")
-		os.Exit(1)
+		setupManagerError(err, "Namespace")
 	}
 	if err = (&controllers.TransferReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		DBClient: dbClient,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Transfer")
-		os.Exit(1)
+		setupManagerError(err, "Transfer")
 	}
 	if err = (&controllers.NamespaceBillingHistoryReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "NamespaceBillingHistory")
-		os.Exit(1)
+		setupManagerError(err, "NamespaceBillingHistory")
 	}
-	if err = (&controllers.BillingInfoQueryReconciler{
-		Client:     mgr.GetClient(),
-		Scheme:     mgr.GetScheme(),
-		DBClient:   dbClient,
-		Properties: resources.DefaultPropertyTypeLS,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "BillingInfoQuery")
-		os.Exit(1)
+	billingInfoQueryReconciler.AccountSystemNamespace = accountReconciler.AccountSystemNamespace
+	if err = (billingInfoQueryReconciler).SetupWithManager(mgr); err != nil {
+		setupManagerError(err, "BillingInfoQuery")
 	}
 	//+kubebuilder:scaffold:builder
 
