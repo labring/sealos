@@ -2,6 +2,7 @@ package clusterid
 
 import (
 	"context"
+	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -13,5 +14,9 @@ func GetClusterID(ctx context.Context, c client.Client) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(ns.UID), nil
+	res := string(ns.UID)
+	if res == "" || len(res) < 8 {
+		return "", fmt.Errorf("failed to get cluster id")
+	}
+	return res[0:8], nil
 }

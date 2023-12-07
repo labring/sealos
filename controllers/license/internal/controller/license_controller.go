@@ -22,8 +22,11 @@ import (
 
 	"github.com/go-logr/logr"
 
+	"errors"
+
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	"github.com/labring/sealos/controllers/license/internal/util/database"
+	utilerrors "github.com/labring/sealos/controllers/license/internal/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -75,6 +78,12 @@ func (r *LicenseReconciler) reconcile(ctx context.Context, license *licensev1.Li
 
 	// check if license is valid
 	valid, err := r.validator.Validate(license)
+	if errors.Is(err, utilerrors.ErrClusterIDNotMatch) {
+		r.Logger.V(1).Info("license clusterID not match", "license", license.Namespace+"/"+license.Name)
+		license.Status.Phase = licensev1.LicenseStatusPhaseFailed
+		_ = r.Status().Update(ctx, license)
+		return ctrl.Result{}, nil
+	}
 	if err != nil {
 		r.Logger.V(1).Error(err, "failed to validate license")
 		return ctrl.Result{}, err
