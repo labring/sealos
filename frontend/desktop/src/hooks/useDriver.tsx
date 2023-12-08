@@ -119,7 +119,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
         popover: {
           side: 'left',
           align: 'center',
-          borderRadius: '0px 12px 12px 12px',
+          borderRadius: '12px 12px 0px 12px',
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
@@ -168,9 +168,9 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
       {
         element: '.system-template',
         popover: {
-          side: 'top',
-          align: 'start',
-          borderRadius: '12px 12px 12px 0px',
+          side: 'left',
+          align: 'center',
+          borderRadius: '12px 12px 0px 12px',
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
