@@ -9,7 +9,6 @@ import { Buget } from '@/components/cost_overview/buget';
 import UserCard from '@/components/cost_overview/components/user';
 import { Cost } from '@/components/cost_overview/cost';
 import { Trend } from '@/components/cost_overview/trend';
-import { getCookie } from '@/utils/cookieUtils';
 import useBillingData from '@/hooks/useBillingData';
 import NotFound from '@/components/notFound';
 import { useRouter } from 'next/router';
@@ -20,11 +19,7 @@ export const RechargeContext = createContext<{ rechargeRef: MutableRefObject<any
   rechargeRef: null
 });
 function CostOverview() {
-  const { t, i18n } = useTranslation();
-  const cookie = getCookie('NEXT_LOCALE');
-  useEffect(() => {
-    i18n.changeLanguage(cookie);
-  }, [cookie, i18n]);
+  const { t } = useTranslation();
   const setRecharge = useOverviewStore((s) => s.setRecharge);
   const router = useRouter();
   useEffect(() => {
@@ -56,9 +51,8 @@ function CostOverview() {
     }
   }, []);
   const { NotEnoughModal } = useNotEnough();
-  const { data, isInitialLoading } = useBillingData();
-  const costBillingItems = data?.data?.status.item.filter((v) => v.type === 0) || [];
-  const billingItems = costBillingItems.filter((_v, i) => i < 3) || [];
+  const { data, isInitialLoading } = useBillingData({ pageSize: 3 });
+  const billingItems = data?.data?.status.item.filter((v) => v.type === 0) || [];
   const totast = useToast();
   const rechargeRef = useRef<any>();
   return (

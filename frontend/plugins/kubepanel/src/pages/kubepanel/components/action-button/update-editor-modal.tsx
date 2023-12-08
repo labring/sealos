@@ -22,7 +22,7 @@ const UpdateEditorModal = <K extends KubeObject = KubeObject>({
   onOk
 }: Props<K>) => {
   if (!obj) return null;
-  
+
   const [clickedUpdate, setClickedUpdate] = useState(false);
   const [msgApi, contextHolder] = message.useMessage();
   const editorRef = useRef<editor.IStandaloneCodeEditor>();

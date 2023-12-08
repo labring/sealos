@@ -35,6 +35,7 @@ import type { AxiosInstance } from 'axios';
 import useEnvStore from '@/stores/env';
 import Currencysymbol from '@/components/CurrencySymbol';
 import { useCustomToast } from '@/hooks/useCustomToast';
+import { status } from 'nprogress';
 const StripeForm = (props: {
   tradeNO?: string;
   complete: number;
@@ -278,34 +279,31 @@ const RechargeModal = forwardRef(
       _onClose();
     };
 
+    const { toast } = useCustomToast();
     const { data: bonuses, isSuccess } = useQuery(
       ['bonus'],
       () =>
         request.get<
           any,
           ApiResp<{
-            steps: string;
-            ratios: string;
+            steps: number[];
+            ratios: number[];
+            specialDiscount: [number, number][];
           }>
         >('/api/price/bonus'),
       {}
     );
-    const ratios = useMemo(
-      () => (bonuses?.data?.ratios || '').split(',').map((v) => +v),
-      [bonuses?.data?.ratios]
-    );
-    const steps = useMemo(
-      () => (bonuses?.data?.steps || '').split(',').map((v) => +v),
-      [bonuses?.data?.steps]
-    );
+    const ratios = bonuses?.data?.ratios || [];
+    const steps = bonuses?.data?.steps || [];
+    const specialBonus = bonuses?.data?.specialDiscount;
     const [amount, setAmount] = useState(() => 0);
     const getBonus = useCallback(
       (amount: number) => {
         if (isSuccess && ratios && steps && ratios.length === steps.length)
-          return getFavorable(steps, ratios)(amount);
+          return getFavorable(steps, ratios, specialBonus)(amount);
         else return 0;
       },
-      [isSuccess, ratios, steps]
+      [isSuccess, ratios, steps, specialBonus]
     );
     const { stripeEnabled, wechatEnabled } = useEnvStore();
     useEffect(() => {
@@ -313,14 +311,12 @@ const RechargeModal = forwardRef(
         setAmount(steps[0]);
       }
     }, [steps]);
-
     const handleWechatConfirm = () => {
       setPayType('wechat');
       setComplete(1);
       createPaymentRes.mutate();
     };
 
-    const { toast } = useCustomToast();
     const handleStripeConfirm = () => {
       setPayType('stripe');
       if (amount < 10) {
@@ -564,6 +560,12 @@ const RechargeModal = forwardRef(
                       {step + '<='} {t('Recharge Amount')}{' '}
                       {idx < steps.length - 1 ? `< ${steps[idx + 1]}` : ''} {t('Bonus')}{' '}
                       {ratios[idx]}%{' '}
+                    </Text>
+                  ))}
+                {specialBonus &&
+                  specialBonus.map(([k, v], i) => (
+                    <Text key={i}>
+                      {k + '='} {t('Recharge Amount')} {t('Bonus')} {v}
                     </Text>
                   ))}
               </Flex>

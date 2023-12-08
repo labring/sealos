@@ -1,19 +1,20 @@
 import request from '@/service/request';
 import useOverviewStore from '@/stores/overview';
 import { ApiResp } from '@/types/api';
-import { BillingSpec, BillingData } from '@/types/billing';
+import { BillingSpec, BillingData, BillingType } from '@/types/billing';
 import { useQuery } from '@tanstack/react-query';
 import { differenceInDays, formatISO } from 'date-fns';
 
 export default function useBillingData(props?: {
-  type: -1 | 0 | 1 | 2 | 3;
+  type?: BillingType;
   endTime?: Date;
   startTime?: Date;
+  pageSize?: number;
 }) {
   const startTime = useOverviewStore((state) => state.startTime);
   const endTime = useOverviewStore((state) => state.endTime);
   return useQuery({
-    queryKey: ['billing', { startTime, endTime }],
+    queryKey: ['billing', { startTime, endTime, pageSize: props?.pageSize }],
     queryFn: () => {
       const start = props?.startTime ?? startTime;
       const end = props?.endTime ?? endTime;
@@ -22,7 +23,7 @@ export default function useBillingData(props?: {
         startTime: formatISO(start, { representation: 'complete' }),
         endTime: formatISO(end, { representation: 'complete' }),
         page: 1,
-        pageSize: (delta + 1) * 48,
+        pageSize: props ? props.pageSize : (delta + 1) * 48,
         type: props?.type ?? -1,
         orderID: ''
       };
