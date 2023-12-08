@@ -32,8 +32,6 @@ type QueryResult struct {
 }
 
 var (
-	ErrNoAuth          = errors.New("no permission for this namespace")
-	ErrNoSealosHost    = errors.New("unable to get the sealos host")
 	ErrNoPromHost      = errors.New("unable to get the prometheus host")
 	ErrUncompleteParam = errors.New("at least provide both namespace and query")
 	ErrEmptyKubeconfig = errors.New("empty kubeconfig")

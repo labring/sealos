@@ -23,12 +23,13 @@ func Authenticate(auth Auth) error {
 	if auth.KubeConfig == "" || auth.Owner == "" {
 		return fmt.Errorf("kubeconfig and owner must be set")
 	}
-	if !strings.HasPrefix(auth.Owner, "ns-") {
-		auth.Owner = "ns-" + auth.Owner
+	userNamespace := auth.Owner
+	if !strings.HasPrefix(userNamespace, "ns-") {
+		userNamespace = "ns-" + userNamespace
 	}
 	// Identity authentication
-	if err := auth2.Authenticate(auth.Owner, auth.KubeConfig); err != nil {
-		logger.Error("failed to auth %s: %v", auth.Owner, err)
+	if err := auth2.Authenticate(userNamespace, auth.KubeConfig); err != nil {
+		logger.Error("failed to auth %s: %v", userNamespace, err)
 		return fmt.Errorf("authentication failure")
 	}
 	return nil
