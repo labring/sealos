@@ -7,6 +7,6 @@ type ClusterResource struct {
 }
 
 type Request struct {
-	ClusterID       string           `json:"cluster_id"`
-	ClusterResource *ClusterResource `json:"cluster_resource"`
+	ClusterID       string           `json:"clusterID"`
+	ClusterResource *ClusterResource `json:"clusterResource"`
 }
