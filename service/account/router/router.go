@@ -7,11 +7,16 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/labring/sealos/service/account/docs"
+
 	"github.com/labring/sealos/service/account/dao"
 
 	"github.com/labring/sealos/service/account/api"
 
 	"github.com/labring/sealos/service/account/helper"
+
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,11 +27,14 @@ func RegisterPayRouter() {
 	if err := dao.InitDB(); err != nil {
 		log.Fatalf("Error initializing database: %v", err)
 	}
-	// /v1alpha1/account/{/namespaces | /properties | /costs}
+	// /account/v1alpha1/{/namespaces | /properties | /costs}
 	router.Group(helper.GROUP).
 		POST(helper.GetHistoryNamespaces, api.GetBillingHistoryNamespaceList).
 		POST(helper.GetProperties, api.GetProperties).
 		POST(helper.GetUserCosts, api.GetCosts)
+
+	docs.SwaggerInfo.BasePath = helper.GROUP
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	// Create a buffered channel interrupt and use the signal.
 	interrupt := make(chan os.Signal, 1)

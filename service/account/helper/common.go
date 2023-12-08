@@ -1,7 +1,7 @@
 package helper
 
 const (
-	GROUP                = "/v1alpha1/account"
+	GROUP                = "/account/v1alpha1"
 	GetHistoryNamespaces = "/namespaces"
 	GetProperties        = "/properties"
 	GetUserCosts         = "/usercosts"

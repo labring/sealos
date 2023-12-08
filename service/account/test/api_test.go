@@ -13,7 +13,7 @@ import (
 
 func Test_Auth(t *testing.T) {
 	host := "http://localhost:2333"
-	url := host + helper.GROUP + helper.GetHistoryNamespaces
+	url := host + helper.GROUP + helper.GetProperties
 	kubeConfig, err := os.ReadFile("./kubeconfig")
 	if err != nil {
 		t.Errorf("failed to read kubeconfig: %v", err)
