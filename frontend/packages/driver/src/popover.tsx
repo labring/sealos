@@ -112,19 +112,19 @@ export function renderPopover(element: Element, step: DriveStep) {
     borderRadius
   } = step.popover || {};
 
-  popover.nextButton.innerHTML = nextBtnText;
-  popover.previousButton.innerHTML = prevBtnText;
-  popover.progress.innerHTML = progressText;
+  popover.nextButton.textContent = nextBtnText;
+  popover.previousButton.textContent = prevBtnText;
+  popover.progress.textContent = progressText;
 
   if (title) {
-    popover.title.innerHTML = title;
+    popover.title.textContent = title;
     popover.title.style.display = 'block';
   } else {
     popover.title.style.display = 'none';
   }
 
   if (description) {
-    popover.description.innerHTML = description;
+    popover.description.textContent = description;
     popover.description.style.display = 'block';
   } else {
     popover.description.style.display = 'none';

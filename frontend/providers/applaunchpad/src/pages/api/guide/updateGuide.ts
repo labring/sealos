@@ -41,7 +41,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       message: string;
     } = await response.json();
 
-    console.log(result, payload);
     if (result.code !== 200) {
       return jsonRes(res, { code: result.code, message: 'desktop api is err' });
     } else {
