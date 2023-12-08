@@ -568,5 +568,5 @@ func getAmountWithDiscount(amount int64, discount pkgtypes.RechargeDiscount) int
 			break
 		}
 	}
-	return int64(math.Ceil(float64(amount)*r)) + amount
+	return int64(math.Ceil(float64(amount)*r/100)) + amount
 }
