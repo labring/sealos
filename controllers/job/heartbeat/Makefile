@@ -60,8 +60,8 @@ run: fmt vet ## Run a controller from your host.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
-	mv bin/heartbeat-${TARGETARCH} bin/controller-job-init-${TARGETARCH} || true
-	chmod +x bin/controller-job-init-${TARGETARCH}
+	mv bin/heartbeat-${TARGETARCH} bin/controller-job-heartbeat-${TARGETARCH} || true
+	chmod +x bin/controller-job-heartbeat-${TARGETARCH}
 	docker build -t ${IMG} . --build-arg TARGETARCH=${TARGETARCH}
 
 .PHONY: docker-push
