@@ -12,14 +12,18 @@ import (
 
 func GetBillingHistoryNamespaceList(c *gin.Context) {
 	// Parse the namespace billing history request
-	req, err := helper.ParseNamespaceBillingHistoryRequest(c)
+	req, err := helper.ParseNamespaceBillingHistoryReq(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse namespace billing history request: %v", err)})
 		return
 	}
+	if err := helper.Authenticate(req.Auth); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
 
 	// Get the billing history namespace list from the database
-	nsList, err := dao.DbClient.GetBillingHistoryNamespaceList(req)
+	nsList, err := dao.DBClient.GetBillingHistoryNamespaceList(req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get namespace billing history list: %v", err)})
 		return
@@ -35,8 +39,12 @@ func GetBillingHistoryNamespaceList(c *gin.Context) {
 }
 
 func GetProperties(c *gin.Context) {
+	if err := helper.AuthenticateWithBind(c); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
 	// Get the properties from the database
-	properties, err := dao.DbClient.GetProperties()
+	properties, err := dao.DBClient.GetProperties()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get properties: %v", err)})
 		return
@@ -48,5 +56,26 @@ func GetProperties(c *gin.Context) {
 			"properties": properties,
 		},
 		"message": "successfully retrieved properties",
+	})
+}
+
+func GetCosts(c *gin.Context) {
+	req, err := helper.ParseUserCostsAmountReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user hour costs amount request: %v", err)})
+		return
+	}
+	if err := helper.Authenticate(req.Auth); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	costs, err := dao.DBClient.GetCostAmount(req.Owner, req.StartTime, req.EndTime)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get cost : %v", err)})
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data": map[string]interface{}{
+			"costs": costs,
+		},
 	})
 }

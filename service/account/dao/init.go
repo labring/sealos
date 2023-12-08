@@ -6,10 +6,10 @@ import (
 	"github.com/labring/sealos/service/account/helper"
 )
 
-var DbClient Interface
+var DBClient Interface
 
 func InitDB() error {
 	var err error
-	DbClient, err = NewMongoInterface(os.Getenv(helper.ENV_MONGO_URI))
+	DBClient, err = NewMongoInterface(os.Getenv(helper.EnvMongoURI))
 	return err
 }

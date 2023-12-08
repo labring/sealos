@@ -4,9 +4,10 @@ const (
 	GROUP                = "/v1alpha1/account"
 	GetHistoryNamespaces = "/namespaces"
 	GetProperties        = "/properties"
+	GetUserCosts         = "/usercosts"
 )
 
 // env
 const (
-	ENV_MONGO_URI = "MONGO_URI"
+	EnvMongoURI = "MONGO_URI"
 )

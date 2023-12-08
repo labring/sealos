@@ -6,3 +6,5 @@ type PropertyQuery struct {
 	UnitPrice float64 `json:"unit_price" bson:"unit_price"`
 	Unit      string  `json:"unit" bson:"unit"`
 }
+
+type TimeCostsMap [][]interface{}

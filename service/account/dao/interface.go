@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/labring/sealos/service/account/common"
@@ -19,6 +20,7 @@ import (
 type Interface interface {
 	GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHistoryReq) ([]string, error)
 	GetProperties() ([]common.PropertyQuery, error)
+	GetCostAmount(user string, startTime, endTime time.Time) (common.TimeCostsMap, error)
 }
 
 type MongoDB struct {
@@ -32,11 +34,11 @@ type MongoDB struct {
 func (m *MongoDB) GetProperties() ([]common.PropertyQuery, error) {
 	propertiesQuery := make([]common.PropertyQuery, 0)
 	if m.Properties == nil {
-		if properties, err := m.getProperties(); err != nil {
+		properties, err := m.getProperties()
+		if err != nil {
 			return nil, fmt.Errorf("get properties error: %v", err)
-		} else {
-			m.Properties = properties
 		}
+		m.Properties = properties
 	}
 	for _, types := range m.Properties.Types {
 		property := common.PropertyQuery{
@@ -48,6 +50,38 @@ func (m *MongoDB) GetProperties() ([]common.PropertyQuery, error) {
 		propertiesQuery = append(propertiesQuery, property)
 	}
 	return propertiesQuery, nil
+}
+
+func (m *MongoDB) GetCostAmount(user string, startTime, endTime time.Time) (common.TimeCostsMap, error) {
+	filter := bson.M{
+		"type": 0,
+		"time": bson.M{
+			"$gte": startTime,
+			"$lte": endTime,
+		},
+		"owner": user,
+	}
+	cursor, err := m.getBillingCollection().Find(context.Background(), filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get billing collection: %v", err)
+	}
+	defer cursor.Close(context.Background())
+	var (
+		accountBalanceList []struct {
+			Time   time.Time `bson:"time"`
+			Amount int64     `bson:"amount"`
+		}
+	)
+	err = cursor.All(context.Background(), &accountBalanceList)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode all billing record: %w", err)
+	}
+	var costsMap = make(common.TimeCostsMap, len(accountBalanceList))
+	for i := range accountBalanceList {
+		costsMap[i] = append(costsMap[i], accountBalanceList[i].Time.Unix())
+		costsMap[i] = append(costsMap[i], strconv.FormatInt(accountBalanceList[i].Amount, 10))
+	}
+	return costsMap, nil
 }
 
 func NewMongoInterface(url string) (Interface, error) {

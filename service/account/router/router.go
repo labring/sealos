@@ -23,10 +23,12 @@ func RegisterPayRouter() {
 	}
 	router.Group(helper.GROUP).
 		//curl -X GET -H "Content-Type: application/json" -d '{"startTime": "2023-01-01T00:00:00Z", "endTime": "2023-12-01T00:00:00Z", "type": -1, "owner": "admin"}' http://localhost:2333/v1alpha1/account/namespaces
-		GET(helper.GetHistoryNamespaces, func(c *gin.Context) {
+		POST(helper.GetHistoryNamespaces, func(c *gin.Context) {
 			api.GetBillingHistoryNamespaceList(c)
-		}).GET(helper.GetProperties, func(c *gin.Context) {
+		}).POST(helper.GetProperties, func(c *gin.Context) {
 		api.GetProperties(c)
+	}).POST(helper.GetUserCosts, func(c *gin.Context) {
+		api.GetCosts(c)
 	})
 
 	// Create a buffered channel interrupt and use the signal.
