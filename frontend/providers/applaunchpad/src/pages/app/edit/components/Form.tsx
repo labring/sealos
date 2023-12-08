@@ -413,7 +413,7 @@ const Form = ({
                 </Flex>
               </FormControl>
               {/* image */}
-              <Box mb={7}>
+              <Box mb={7} className="driver-deploy-image">
                 <Flex alignItems={'center'}>
                   <Label>{t('Image')}</Label>
                   <Tabs
@@ -504,6 +504,7 @@ const Form = ({
                 <Flex alignItems={'center'}>
                   <Label>{t('Deployment Mode')}</Label>
                   <Tabs
+                    className="driver-deploy-instance"
                     w={'195px'}
                     size={'sm'}
                     list={[
@@ -797,6 +798,7 @@ const Form = ({
                     </Box>
                     <Flex alignItems={'center'} h={'35px'}>
                       <Switch
+                        className="driver-deploy-network-switch"
                         size={'lg'}
                         colorScheme={'blackAlpha'}
                         isChecked={!!network.openPublicDomain}

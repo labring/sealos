@@ -170,7 +170,7 @@ const Pods = ({
                 });
               }}
             >
-              <MyIcon name={'terminal'} w="20px" h="20px" />
+              <MyIcon className="driver-detail-terminal" name={'terminal'} w="20px" h="20px" />
             </Center>
           </MyTooltip>
           <MyTooltip offset={[0, 10]} label={t('Details')}>

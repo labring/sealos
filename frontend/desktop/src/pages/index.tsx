@@ -47,7 +47,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   useEffect(() => {
     const { query } = router;
     const is_login = isUserLogin();
-    const whitelistApps = ['system-fastdeploy'];
+    const whitelistApps = ['system-template'];
     if (!is_login) {
       const { appkey, appQuery } = parseOpenappQuery((query?.openapp as string) || '');
       // sealos_inside=true internal call

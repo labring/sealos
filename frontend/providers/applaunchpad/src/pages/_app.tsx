@@ -16,10 +16,10 @@ import NProgress from 'nprogress'; //nprogress module
 import { useEffect, useState } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
-
 import { getPlatformEnv } from '@/api/platform';
 import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
+import '@sealos/driver/src/driver.css';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -174,6 +174,19 @@ const App = ({ Component, pageProps }: AppProps) => {
       </Head>
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
+          <button
+            onClick={() => {
+              const lastLang = getLangStore();
+              let lang = lastLang === 'en' ? 'zh' : 'en';
+              if (lastLang !== lang) {
+                i18n.changeLanguage(lang);
+                setLangStore(lang);
+                setRefresh((state) => !state);
+              }
+            }}
+          >
+            changeLanguage
+          </button>
           <Component {...pageProps} />
           <ConfirmChild />
           <Loading loading={loading} />
