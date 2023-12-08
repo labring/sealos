@@ -12,6 +12,8 @@ var (
 	scheme = runtime.NewScheme()
 )
 
+const KubeSystemObjectMeta = "kube-system"
+
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 }

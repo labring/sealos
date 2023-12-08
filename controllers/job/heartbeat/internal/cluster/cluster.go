@@ -2,9 +2,12 @@ package cluster
 
 import (
 	"context"
+	"fmt"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/labring/sealos/controllers/job/heartbeat/api/v1alpha"
 	"github.com/labring/sealos/controllers/job/heartbeat/internal/util"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -34,4 +37,20 @@ func GetClusterResources() (*v1alpha.ClusterResource, error) {
 		CPU:  totalCPU.Value(),
 		Mem:  totalMem.Value(),
 	}, err
+}
+
+func GetClusterID() (string, error) {
+	c, err := util.NewKubernetesClient()
+	if err != nil {
+		return "", err
+	}
+	kubeSystemNamespace := &corev1.Namespace{}
+	if err := c.Get(context.Background(), client.ObjectKey{Namespace: "kube-system", Name: "kube-system"}, kubeSystemNamespace); err != nil {
+		return "", err
+	}
+	res := string(kubeSystemNamespace.UID)
+	if len(res) < 8 {
+		return "", fmt.Errorf("cluster id is invalid")
+	}
+	return res[0:8], nil
 }
