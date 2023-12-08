@@ -33,20 +33,26 @@ import ReciveMessage from './ReciveMessage';
 import { nsListRequest, reciveMessageRequest, teamDetailsRequest } from '@/api/namespace';
 import { useTranslation } from 'react-i18next';
 import { CopyIcon, ListIcon, SettingIcon, StorageIcon } from '@sealos/ui';
+import { GetUserDefaultNameSpace } from '@/services/backend/kubernetes/user';
+
 export default function TeamCenter(props: ButtonProps) {
   const session = useSessionStore((s) => s.session);
   const { t } = useTranslation();
-  const { ns_uid: default_ns_uid, nsid: default_nsid, userId } = session.user;
+  const user = session?.user;
+  const default_ns_uid = user?.ns_uid || '';
+  const default_nsid = user?.nsid || '';
+  const userCrUid = user?.userCrUid || '';
+  const k8s_username = user?.k8s_username || '';
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { copyData } = useCopyData();
   const [nsid, setNsid] = useState(default_nsid);
   const [messageFilter, setMessageFilter] = useState<string[]>([]);
   const [ns_uid, setNs_uid] = useState(() =>
-    default_nsid === 'ns-' + userId ? '' : default_ns_uid
+    default_nsid === 'ns-' + k8s_username ? '' : default_ns_uid
   );
   // team detail and users list
   const { data } = useQuery(
-    ['ns-detail', 'teamGroup', { ns_uid, userId }],
+    ['ns-detail', 'teamGroup', { ns_uid, userCrUid }],
     () => teamDetailsRequest(ns_uid),
     {
       refetchInterval(data) {
@@ -61,7 +67,7 @@ export default function TeamCenter(props: ButtonProps) {
     }
   );
   const users: TeamUserDto[] = [...(data?.data?.users || [])];
-  const curTeamUser = users.find((user) => user.uid === userId);
+  const curTeamUser = users.find((user) => user.crUid === userCrUid);
   const namespace = data?.data?.namespace;
   const isTeam = namespace?.nstype === NSType.Team;
   // inviting message list
@@ -225,7 +231,7 @@ export default function TeamCenter(props: ButtonProps) {
                         </Text>
                       </Flex>
                     </Box>
-                  </Box>{' '}
+                  </Box>
                   <Divider bg={'rgba(0, 0, 0, 0.10)'} h="1px" />
                   <Stack mt="15px" mx="29px" flex={1}>
                     <Flex align={'center'} gap="6px" mb={'12px'}>
@@ -246,13 +252,15 @@ export default function TeamCenter(props: ButtonProps) {
                       >
                         {users.length}
                       </Flex>
-                      {isTeam && [UserRole.Owner, UserRole.Manager].includes(curTeamUser!.role) && (
-                        <InviteMember
-                          ownRole={curTeamUser?.role ?? UserRole.Developer}
-                          ns_uid={ns_uid}
-                          ml="auto"
-                        />
-                      )}
+                      {isTeam &&
+                        curTeamUser &&
+                        [UserRole.Owner, UserRole.Manager].includes(curTeamUser.role) && (
+                          <InviteMember
+                            ownRole={curTeamUser?.role ?? UserRole.Developer}
+                            ns_uid={ns_uid}
+                            ml="auto"
+                          />
+                        )}
                     </Flex>
                     <Box h="250px" overflow={'scroll'}>
                       <UserTable users={users} isTeam={isTeam} ns_uid={ns_uid} nsid={nsid} />

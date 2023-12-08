@@ -1,7 +1,3 @@
-import { authSession } from '@/services/backend/auth';
-import { createNS } from '@/services/backend/db/namespace';
-import { get_k8s_username, queryUser } from '@/services/backend/db/user';
-import { queryNamespacesByUser } from '@/services/backend/db/userToNamespace';
 import { getTeamKubeconfig } from '@/services/backend/kubernetes/admin';
 import { GetUserDefaultNameSpace } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
@@ -9,56 +5,71 @@ import { bindingRole, modifyTeamRole } from '@/services/backend/team';
 import { getTeamLimit } from '@/services/enable';
 import { NSType, NamespaceDto, UserRole } from '@/types/team';
 import { NextApiRequest, NextApiResponse } from 'next';
+import { prisma } from '@/services/backend/db/init';
+import { get_k8s_username } from '@/services/backend/regionAuth';
+import { verifyAccessToken } from '@/services/backend/auth';
+
 const TEAM_LIMIT = getTeamLimit();
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const payload = await authSession(req.headers);
+    const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'token verify error' });
-    const { user: tokenUser } = payload;
+    // const { user: tokenUser } = payload;
     const { teamName } = req.body as { teamName?: string };
     if (!teamName) return jsonRes(res, { code: 400, message: 'teamName is required' });
-    const currentNamespaces = await queryNamespacesByUser({
-      userId: tokenUser.uid,
-      k8s_username: tokenUser.k8s_username
+    const currentNamespaces = await prisma.userWorkspace.findMany({
+      where: {
+        userCrUid: payload.userCrUid
+      },
+      include: {
+        workspace: {
+          select: {
+            displayName: true
+          }
+        }
+      }
     });
     if (currentNamespaces.length >= TEAM_LIMIT)
       return jsonRes(res, { code: 403, message: 'The number of teams created is too many' });
     const alreadyNamespace = currentNamespaces.findIndex((utn) => {
-      const res = utn.namespace.teamName === teamName;
+      const res = utn.workspace.displayName === teamName;
       return res;
     });
     if (alreadyNamespace > -1)
       return jsonRes(res, { code: 409, message: 'The team is already exist' });
-    const user = await queryUser({ id: tokenUser.uid, provider: 'uid' });
-    if (!user) throw new Error('fail to get user');
-    const ns_creater = await get_k8s_username();
-    if (!ns_creater) throw new Error('fail to get ns_creater');
-    const nsid = GetUserDefaultNameSpace(ns_creater);
-    // 创建伪user
-    const creater_kc_str = await getTeamKubeconfig(ns_creater, tokenUser.k8s_username);
-    if (!creater_kc_str) throw new Error('fail to get kubeconfig');
-    const namespace = await createNS({
-      namespace: nsid,
-      nstype: NSType.Team,
-      teamName
+    const user = await prisma.userCr.findUnique({
+      where: {
+        userUid: payload.userUid,
+        uid: payload.userCrUid
+      }
     });
-    if (!namespace) throw new Error(`failed to create namespace: ${nsid}`);
-    const k8s_username = tokenUser.k8s_username;
+    if (!user) throw new Error('fail to get user');
+    const workspace_creater = await get_k8s_username();
+    if (!workspace_creater) throw new Error('fail to get workspace_creater');
+    const workspaceId = GetUserDefaultNameSpace(workspace_creater);
+    // 创建伪user
+    const creater_kc_str = await getTeamKubeconfig(workspace_creater, payload.userCrName);
+    if (!creater_kc_str) throw new Error('fail to get kubeconfig');
+    const workspace = await prisma.workspace.create({
+      data: {
+        id: workspaceId,
+        displayName: teamName
+      }
+    });
+    if (!workspace) throw new Error(`failed to create namespace: ${workspaceId}`);
     // 分配owner权限
     const utnResult = await bindingRole({
-      userId: user.uid,
-      k8s_username,
-      ns_uid: namespace?.uid,
+      userCrUid: user.uid,
+      ns_uid: workspace.uid,
       role: UserRole.Owner,
       direct: true
     });
-    if (!utnResult) throw new Error(`fail to binding namesapce: ${nsid}`);
+    if (!utnResult) throw new Error(`fail to binding namesapce: ${workspace.id}`);
     await modifyTeamRole({
-      k8s_username,
-      userId: user.uid,
       role: UserRole.Owner,
       action: 'Create',
-      namespace
+      workspaceId,
+      k8s_username: payload.userCrName
     });
     jsonRes<{ namespace: NamespaceDto }>(res, {
       code: 200,
@@ -66,11 +77,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: {
         namespace: {
           role: UserRole.Owner,
-          createTime: namespace.createTime,
-          uid: namespace.uid,
-          id: namespace.id,
-          nstype: namespace.nstype,
-          teamName: namespace.teamName
+          createTime: workspace.createdAt,
+          uid: workspace.uid,
+          id: workspace.id,
+          nstype: NSType.Team,
+          teamName: workspace.displayName
         }
       }
     });

@@ -1,70 +1,86 @@
-import { authSession } from '@/services/backend/auth';
-import { changeOwnerBinding, queryUsersByNamespace } from '@/services/backend/db/userToNamespace';
 import { jsonRes } from '@/services/backend/response';
-import { modifyBinding, modifyTeamRole, unbindingRole } from '@/services/backend/team';
-import { InvitedStatus, NSType, UserRole } from '@/types/team';
+import { modifyTeamRole } from '@/services/backend/team';
+import { UserRole } from '@/types/team';
 import { NextApiRequest, NextApiResponse } from 'next';
+import { prisma } from '@/services/backend/db/init';
+import { retrySerially } from '@/utils/tools';
+import { validate as uuidValidate } from 'uuid';
+import { JoinStatus, Role } from 'prisma/region/generated/client';
+import { verifyAccessToken } from '@/services/backend/auth';
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const payload = await authSession(req.headers);
+    const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'token verify error' });
-    const { ns_uid, targetUsername, targetUserId } = req.body as {
+    const { ns_uid, targetUserCrUid } = req.body as {
       ns_uid?: string;
-      targetUserId?: string;
-      targetUsername?: string;
+      targetUserCrUid?: string;
     };
-    if (!ns_uid) return jsonRes(res, { code: 400, message: 'ns_uid is required' });
-    if (!targetUsername) return jsonRes(res, { code: 400, message: 'targetUsername is required' });
-    if (!targetUserId) return jsonRes(res, { code: 400, message: 'targetUserId is required' });
-    if (targetUserId === payload.user.uid)
+    if (!ns_uid || !uuidValidate(ns_uid))
+      return jsonRes(res, { code: 400, message: 'ns_uid is invaild' });
+    if (!targetUserCrUid || !uuidValidate(targetUserCrUid))
+      return jsonRes(res, { code: 400, message: 'targetUserId is invaild' });
+    if (targetUserCrUid === payload.userCrUid)
       return jsonRes(res, { code: 409, message: "the targetUserId can't be self" });
     // 校检自身user
-    const utns = await queryUsersByNamespace({ namespaceId: ns_uid });
-    const ownUtn = utns.find((utn) => utn.userId === payload.user.uid);
-    if (!ownUtn) return jsonRes(res, { code: 404, message: 'you are not in namespace' });
-    if (ownUtn)
-      if (ownUtn.role !== UserRole.Owner)
-        return jsonRes(res, { code: 403, message: 'you are not owner' });
-    if (ownUtn.namespace.nstype === NSType.Private)
-      return jsonRes(res, { code: 403, message: "you can't abdicate private " });
-    // 校检目标user
-    const targetUtn = utns.find(
-      (utn) => utn.userId === targetUserId && utn.k8s_username === targetUsername
-    );
-    if (!targetUtn || targetUtn.status !== InvitedStatus.Accepted)
-      return jsonRes(res, { code: 404, message: 'the targetUser is not in namespace' });
-
+    const workspaceToRegionUsers = await prisma.userWorkspace.findMany({
+      where: {
+        userCrUid: {
+          in: [payload.userCrUid, targetUserCrUid]
+        },
+        workspaceUid: ns_uid
+      },
+      include: {
+        workspace: true,
+        userCr: true
+      }
+    });
+    const own = workspaceToRegionUsers.find((item) => item.userCrUid === payload.userCrUid);
+    if (!own) return jsonRes(res, { code: 403, message: 'You are not in namespace' });
+    if (own.isPrivate) return jsonRes(res, { code: 403, message: 'Invaild namespace' });
+    if (own.role !== Role.OWNER) return jsonRes(res, { code: 403, message: 'you are not owner' });
+    const target = workspaceToRegionUsers.find((item) => item.userCrUid === targetUserCrUid);
+    if (!target || target.status !== JoinStatus.IN_WORKSPACE)
+      return jsonRes(res, { code: 404, message: 'The targetUser is not in namespace' });
+    // modify K8S
     await modifyTeamRole({
       action: 'Change',
-      pre_k8s_username: payload.user.k8s_username,
-      k8s_username: targetUsername,
-      userId: targetUserId,
+      pre_k8s_username: payload.userCrUid,
+      k8s_username: target.userCr.crName,
       role: UserRole.Owner,
-      namespace: ownUtn.namespace
+      workspaceId: target.workspace.id
     });
-    // 升级为 owner
-    // const bindResult = await modifyBinding({
-    // 	k8s_username: targetUsername,
-    // 	namespaceId: ns_uid,
-    // 	role: UserRole.Owner,
-    // 	userId: targetUserId
-    // });
-    // if (!bindResult) throw new Error('fail to binding role');
-    // // 降级为 developer
-    // const unbindResult = await modifyBinding({
-    // 	k8s_username: payload.user.k8s_username,
-    // 	role: UserRole.Developer,
-    // 	userId: payload.user.uid,
-    // 	namespaceId: ns_uid
-    // });
-    // if (!unbindResult) throw new Error('fail to unbinding role');
-    await changeOwnerBinding({
-      userId: payload.user.uid,
-      k8s_username: payload.user.k8s_username,
-      namespaceId: ns_uid,
-      tUserId: targetUserId,
-      tK8sUsername: targetUsername
-    });
+    // modify db
+    await retrySerially(
+      () =>
+        prisma.$transaction(async (tx) => {
+          const result1 = await tx.userWorkspace.update({
+            where: {
+              workspaceUid_userCrUid: {
+                workspaceUid: ns_uid,
+                userCrUid: targetUserCrUid
+              }
+            },
+            data: {
+              role: Role.OWNER
+            }
+          });
+          if (!result1) throw Error();
+          const result2 = await tx.userWorkspace.update({
+            where: {
+              workspaceUid_userCrUid: {
+                workspaceUid: ns_uid,
+                userCrUid: payload.userCrUid
+              }
+            },
+            data: {
+              role: Role.DEVELOPER
+            }
+          });
+          if (!result2) throw Error();
+        }),
+      3
+    );
     jsonRes(res, {
       code: 200,
       message: 'Successfully'

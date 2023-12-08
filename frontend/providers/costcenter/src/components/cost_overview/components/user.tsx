@@ -18,12 +18,13 @@ import { useTranslation } from 'next-i18next';
 import { memo, useContext, useEffect, useMemo, useRef } from 'react';
 import { ApiResp } from '@/types/api';
 import jsyaml from 'js-yaml';
-import RechargeModal from './RechargeModal';
-import TransferModal from './TransferModal';
+import RechargeModal from '../../RechargeModal';
+import TransferModal from '../../TransferModal';
 import useEnvStore from '@/stores/env';
 import CurrencySymbol from '@/components/CurrencySymbol';
 import useOverviewStore from '@/stores/overview';
 import { RechargeContext } from '@/pages/cost_overview';
+
 export default memo(function UserCard() {
   const getSession = useSessionStore((state) => state.getSession);
   const transferEnabled = useEnvStore((state) => state.transferEnabled);

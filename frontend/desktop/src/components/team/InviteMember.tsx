@@ -39,7 +39,7 @@ export default function InviteMember({
 }) {
   const { onOpen, isOpen, onClose } = useDisclosure();
   const session = useSessionStore((s) => s.session);
-  const { k8s_username } = session.user;
+  const k8s_username = session?.user.k8s_username;
   const [userId, setUserId] = useState('');
   const [role, setRole] = useState(UserRole.Developer);
   const toast = useToast();
@@ -63,7 +63,7 @@ export default function InviteMember({
   const { t } = useTranslation();
   const submit = () => {
     let trim_to = userId.trim();
-    if (!trim_to || trim_to.length < 6) {
+    if (!trim_to || trim_to.length !== 10) {
       toast({
         status: 'error',
         title: t('Invalid User ID'),
@@ -84,7 +84,7 @@ export default function InviteMember({
     }
     mutation.mutate({
       ns_uid,
-      targetUsername: trim_to.replace('ns-', ''),
+      targetUserId: trim_to,
       role
     });
   };

@@ -27,6 +27,7 @@ export const useGlobalStore = create<GlobalState>()(
       private_protocol: '',
       service_protocol: '',
       stripeEnabled: false,
+      oauth_proxy: '',
       guideEnabled: false,
       wechatEnabledRecharge: false,
       SEALOS_CLOUD_DOMAIN: 'cloud.sealos.io',

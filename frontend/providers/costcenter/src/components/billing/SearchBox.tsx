@@ -8,7 +8,7 @@ export default function SearchBox({
   ...props
 }: {
   isDisabled: boolean;
-  setOrderID: Dispatch<SetStateAction<string>>;
+  setOrderID: (val: string) => void;
 } & FlexProps) {
   const { t } = useTranslation();
   const [searchValue, setSearch] = useState('');

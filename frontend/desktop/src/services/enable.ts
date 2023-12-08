@@ -1,4 +1,6 @@
 // for service
+import process from 'process';
+
 export const enablePassword = () =>
   process.env.PASSWORD_ENABLED === 'true' && !!process.env.PASSWORD_SALT;
 export const enableGithub = () =>
@@ -35,3 +37,11 @@ export const enableLicense = () => {
   return process.env.LICENSE_ENABLED === 'true';
 };
 export const getTeamLimit = () => parseInt(process.env['TEAM_LIMIT'] || '') || 50;
+export const getRegionUid = () => process.env['REGION_UID'] || '';
+export const enablePersistImage = () =>
+  !!process.env.OS_URL &&
+  !!process.env.OS_BUCKET_NAME &&
+  !!Number(process.env.OS_PORT) &&
+  !!process.env.OS_ACCESS_KEY &&
+  !!process.env.OS_SECRET_KEY &&
+  process.env.PERSIST_AVATAR_ENABLED === 'true';

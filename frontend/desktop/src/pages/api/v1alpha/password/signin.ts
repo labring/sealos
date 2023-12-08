@@ -1,9 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
-import { ApiSession, Session } from '@/types/session';
-import { signInByPassword } from '@/services/backend/oauth';
+import { ApiSession } from '@/types/session';
 import { enableApi, enablePassword } from '@/services/enable';
-import { getUserKubeconfig } from '@/services/backend/kubernetes/admin';
+import { signInByPassword } from '@/services/backend/globalAuth';
+import { getRegionToken } from '@/services/backend/regionAuth';
+import { verifyAccessToken, verifyJWT } from '@/services/backend/auth';
+import { AccessTokenPayload } from '@/types/token';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!enablePassword()) {
@@ -13,32 +15,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { password, username } = req.body as Record<string, string>;
     if (!password) return jsonRes(res, { code: 400, message: 'password is Required' });
     if (!username) return jsonRes(res, { code: 400, message: 'username is Required' });
-    const signResult = await signInByPassword({
-      username,
+
+    const _data = await signInByPassword({
+      id: username,
       password
     });
-    if (!signResult)
+    if (!_data)
       return jsonRes(res, {
-        code: 403,
-        message: 'user is invaild'
+        code: 401,
+        message: 'Unauthorized'
       });
-    const { k8s_user, namespace, user } = signResult;
-    const kubernetesUsername = k8s_user.name;
-    const kubeconfig = await getUserKubeconfig(user.uid, kubernetesUsername);
-    if (!kubeconfig) {
-      throw new Error('Failed to get user config');
-    }
+    const data = await getRegionToken({
+      userUid: _data.user.uid,
+      userId: _data.user.name
+    });
+    if (!data)
+      return jsonRes(res, {
+        code: 401,
+        message: 'Unauthorized'
+      });
+    const regionUser = (await verifyJWT<AccessTokenPayload>(data.token))!;
+
     return jsonRes<ApiSession>(res, {
       data: {
         user: {
-          name: user.name,
-          kubernetesUsername,
-          avatar: user.avatar_url,
-          nsID: namespace.id,
-          nsUID: namespace.uid,
-          userID: user.uid
+          name: _data.user.nickname,
+          kubernetesUsername: regionUser.userCrName,
+          avatar: _data.user.avatarUri,
+          nsID: regionUser.workspaceId,
+          nsUID: regionUser.workspaceUid,
+          userID: regionUser.userCrName
         },
-        kubeconfig
+        kubeconfig: data.kubeconfig
       },
       code: 200,
       message: 'Successfully'

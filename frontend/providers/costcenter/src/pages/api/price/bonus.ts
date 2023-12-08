@@ -4,6 +4,7 @@ import { jsonRes } from '@/service/backend/response';
 import { enableRecharge } from '@/service/enabled';
 import * as yaml from 'js-yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
+
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
     if (!enableRecharge) {
@@ -14,8 +15,15 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (user === null) {
       return jsonRes(resp, { code: 403, message: 'user null' });
     }
-    const namespace = kc.getContexts()[0].namespace || GetUserDefaultNameSpace(user.name);
+    const namespace = GetUserDefaultNameSpace(user.name);
     const name = new Date().getTime() + 'bonusquery';
+
+    const meta: CRDMeta = {
+      group: 'account.sealos.io',
+      version: 'v1',
+      namespace,
+      plural: 'billinginfoqueries'
+    };
     const crdSchema = {
       apiVersion: `account.sealos.io/v1`,
       kind: 'BillingInfoQuery',
@@ -26,12 +34,6 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       spec: {
         queryType: 'Recharge'
       }
-    };
-    const meta: CRDMeta = {
-      group: 'account.sealos.io',
-      version: 'v1',
-      namespace,
-      plural: 'billinginfoqueries'
     };
     const result1 = await ApplyYaml(kc, yaml.dump(crdSchema));
     const result = await new Promise<{
@@ -44,16 +46,24 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         GetCRD(kc, meta, name)
           .then((res) => {
             const body = res.body as { status: any };
+            if (!body.status) return Promise.reject();
             const { result, status } = body.status as Record<string, string>;
             if (status.toLocaleLowerCase() === 'completed') resolve(JSON.parse(result));
             else return Promise.reject();
           })
-          .catch((err) => {
-            if (retry-- >= 0) wrap();
-            else reject(err);
+          .catch(async (err) => {
+            if (retry-- >= 0) {
+              await new Promise((res) => setTimeout(res, 1000));
+              await wrdocap();
+            } else reject(err);
           });
       wrap();
     });
+    if (!result)
+      return jsonRes(resp, {
+        code: 404,
+        message: 'bonus is not found'
+      });
     return jsonRes(resp, {
       code: 200,
       data: {

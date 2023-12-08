@@ -42,11 +42,10 @@ import SortPolygonUpIcon from './icons/SortPolygonUpIcon';
 import SortPolygonDownIcon from './icons/SortPolygonDownIcon';
 import WarningIcon from './icons/WarningIcon';
 import SealosCoin from './icons/SealosCoin';
-
 import useMessage from './Message/index';
 import EditTabs from './EditTabs';
 import YamlCode from './YamlCode';
-
+import ProviderIcon from './icons/ProviderIcon';
 export {
   SealosCoin,
   WarningIcon,
@@ -94,5 +93,6 @@ export {
   WarnIcon,
   CloseIcon,
   SortPolygonUpIcon,
-  SortPolygonDownIcon
+  SortPolygonDownIcon,
+  ProviderIcon
 };

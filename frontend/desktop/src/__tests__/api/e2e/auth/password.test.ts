@@ -1,35 +1,33 @@
-import { Session } from 'sealos-desktop-sdk/*';
 import * as k8s from '@kubernetes/client-node';
 import { _passwordLoginRequest, _passwordModifyRequest } from '@/api/auth';
 import { _setAuth, cleanDb, cleanK8s } from '@/__tests__/api/tools';
-import { _createRequest } from '@/api/namespace';
 import request from '@/__tests__/api/request';
-import { Db, MongoClient } from 'mongodb';
+import { PrismaClient } from 'prisma/region/generated/client';
+
 describe('Password', () => {
-  let session: Session;
-  const createRequest = _createRequest(request);
   const modifyRequest = _passwordModifyRequest(request);
-  let db: Db;
-  let connection: MongoClient;
+  console.log('?', process.env.REGION_DATABASE_URL!);
+  const prisma = new PrismaClient({
+    datasourceUrl: process.env.REGION_DATABASE_URL!
+  });
+  // let db;
   const setAuth = _setAuth(request);
+  const passwordLoginRequest = _passwordLoginRequest(request, setAuth);
   beforeAll(async () => {
-    //@ts-ignore
-    const uri = process.env.MONGODB_URI as string;
-    // console.log('MONGODB_URI', uri)
-    connection = new MongoClient(uri);
-    await connection.connect();
-    db = connection.db();
+    // await prisma.$connect();
     const kc = new k8s.KubeConfig();
-    await cleanK8s(kc, db);
-    await cleanDb(db);
-    const res = await _passwordLoginRequest(request)({ user: 'createTest', password: 'testtest' });
-    expect(res.data?.user).toBeDefined();
-    session = res.data!;
-    setAuth(session);
-    console.log('create,', session.user);
+    console.log('clean start!');
+    await cleanK8s(kc, prisma);
+    await cleanDb(prisma);
+    console.log('clean end');
+    const res = await passwordLoginRequest({ user: 'createTest', password: 'testtest' });
+    const token = res?.data?.token!;
+    expect(token).toBeDefined();
+    setAuth(token);
+    console.log('create,', token);
   }, 100000);
   afterAll(async () => {
-    await connection.close();
+    // await prisma.$disconnect();
   });
   it('modify: null param', async () => {
     // @ts-ignore
@@ -53,15 +51,15 @@ describe('Password', () => {
 
   it('same password', async () => {
     const res = await modifyRequest({ oldPassword: 'testtest', newPassword: 'testtest' });
-    expect(res.code).toBe(409);
+    expect(res.code).toBe(200);
   });
   it('right password', async () => {
     const res = await modifyRequest({ oldPassword: 'testtest', newPassword: 'testtest2' });
     expect(res.code).toBe(200);
-    const res2 = await _passwordLoginRequest(request)({
+    const res2 = await passwordLoginRequest({
       user: 'createTest',
       password: 'testtest2'
     });
-    expect(res2.code).toBe(200);
+    expect(res2?.code).toBe(200);
   });
 });

@@ -1,47 +1,59 @@
 import { reciveAction } from '@/api/namespace';
-import { authSession } from '@/services/backend/auth';
-import { queryNSByUid } from '@/services/backend/db/namespace';
-import { queryUTN } from '@/services/backend/db/userToNamespace';
 import { jsonRes } from '@/services/backend/response';
 import { acceptInvite, modifyTeamRole, unbindingRole } from '@/services/backend/team';
 
 import { NextApiRequest, NextApiResponse } from 'next';
+import { prisma } from '@/services/backend/db/init';
+import { roleToUserRole } from '@/utils/tools';
+import { validate } from 'uuid';
+import { JoinStatus } from 'prisma/region/generated/client';
+import { verifyAccessToken } from '@/services/backend/auth';
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const payload = await authSession(req.headers);
+    const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'token verify error' });
 
-    const { k8s_username, uid } = payload.user;
     const { ns_uid, action } = req.body as { ns_uid?: string; action: reciveAction };
-    if (!ns_uid) return jsonRes(res, { code: 400, message: 'nsid is required' });
+    if (!ns_uid || !validate(ns_uid))
+      return jsonRes(res, { code: 400, message: 'ns_uid is invalid' });
     if (![reciveAction.Accepte, reciveAction.Reject].includes(action))
       return jsonRes(res, {
         code: 400,
         message: `action must be ${reciveAction.Accepte}, ${reciveAction.Reject}`
       });
-    const namespace = await queryNSByUid({ uid: ns_uid });
-    if (!namespace) return jsonRes(res, { code: 404, message: 'fail to get ns' });
-    // 邀请状态这层,
-    // const user = await queryUser({ id: payload.user.uid, provider: 'uid' });
-    // if (!user) return jsonRes(res, { code: 404, message: 'fail to get user' });
-    const utn = await queryUTN({ userId: uid, k8s_username, namespaceId: ns_uid });
-    if (!utn) return jsonRes(res, { code: 404, message: "you're not invited" });
+    const queryStatus = await prisma.userWorkspace.findUnique({
+      where: {
+        workspaceUid_userCrUid: {
+          workspaceUid: ns_uid,
+          userCrUid: payload.userCrUid
+        },
+        isPrivate: false,
+        status: JoinStatus.INVITED
+      },
+      include: {
+        userCr: true,
+        workspace: true
+      }
+    });
+    if (!queryStatus) return jsonRes(res, { code: 404, message: "You're not invited" });
     if (action === reciveAction.Accepte) {
       await modifyTeamRole({
-        k8s_username,
-        role: utn.role,
-        userId: uid,
-        namespace,
+        k8s_username: queryStatus.userCr.crName,
+        role: roleToUserRole(queryStatus.role),
+        workspaceId: queryStatus.workspace.id,
         action: 'Grant'
       });
       const result = await acceptInvite({
-        k8s_username,
-        ns_uid,
-        userId: uid
+        userCrUid: payload.userCrUid,
+        workspaceUid: ns_uid
       });
       if (!result) throw new Error('failed to change Status');
     } else if (action === reciveAction.Reject) {
-      const unbindingResult = await unbindingRole({ k8s_username, ns_uid, userId: uid });
+      const unbindingResult = await unbindingRole({
+        workspaceUid: ns_uid,
+        userCrUid: payload.userCrUid
+      });
       if (!unbindingResult) throw new Error('fail to unbinding');
     }
 

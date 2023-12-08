@@ -65,7 +65,7 @@ export default function DissolveTeam({
     <>
       <Button
         onClick={() => {
-          if (session.user.ns_uid === ns_uid) {
+          if (session?.user?.ns_uid === ns_uid) {
             return toast({
               title: t('Invaild Context')
             });

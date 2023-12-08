@@ -1,0 +1,110 @@
+generator globalClient {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider     = "cockroachdb"
+  url          = env("GLOBAL_DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model OauthProvider {
+  uid          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid      String       @db.Uuid
+  createdAt    DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime     @updatedAt @db.Timestamptz(3)
+  providerType ProviderType
+  providerId   String
+  password     String?
+  user         User         @relation(fields: [userUid], references: [uid])
+
+  @@unique([providerId, providerType])
+  @@index([userUid])
+}
+
+model Region {
+  uid         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  displayName String
+  location    String
+  domain      String
+  description String?
+}
+
+model Account {
+  userUid                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  activityBonus           BigInt
+  encryptBalance          String
+  encryptDeductionBalance String
+  created_at              DateTime @default(now()) @db.Timestamptz(3)
+  create_region_id        String
+  balance                 BigInt?
+  deduction_balance       BigInt?
+}
+
+model ErrorPaymentCreate {
+  userUid         String   @db.Uuid
+  regionUid       String   @db.Uuid
+  created_at      DateTime @default(now()) @db.Timestamptz(3)
+  regionUserOwner String
+  method          String
+  amount          BigInt
+  gift            BigInt?
+  trade_no        String   @unique
+  code_url        String?
+  invoiced_at     Boolean? @default(false)
+  remark          String?
+  message         String
+  create_time     DateTime @default(now()) @db.Timestamptz(3)
+}
+
+model Payment {
+  id              String   @id
+  userUid         String   @db.Uuid
+  regionUid       String   @db.Uuid
+  created_at      DateTime @default(now()) @db.Timestamptz(3)
+  regionUserOwner String
+  method          String
+  amount          BigInt
+  gift            BigInt?
+  trade_no        String   @unique
+  code_url        String?
+  invoiced_at     Boolean? @default(false)
+  remark          String?
+  message         String
+}
+
+model User {
+  uid           String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt     DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime        @updatedAt @db.Timestamptz(3)
+  avatarUri     String
+  nickname      String
+  id            String          @unique
+  name          String          @unique
+  oauthProvider OauthProvider[]
+}
+
+model ErrorAccountCreate {
+  userUid                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  activityBonus           BigInt
+  encryptBalance          String
+  encryptDeductionBalance String
+  created_at              DateTime @default(now()) @db.Timestamptz(3)
+  create_region_id        String
+  balance                 BigInt?
+  deduction_balance       BigInt?
+  userCr                  String   @unique
+  error_time              DateTime @default(now()) @db.Timestamptz(3)
+  regionUid               String   @db.Uuid
+  regionUserOwner         String
+  message                 String
+}
+
+enum ProviderType {
+  PHONE
+  GITHUB
+  WECHAT
+  GOOGLE
+  PASSWORD
+}

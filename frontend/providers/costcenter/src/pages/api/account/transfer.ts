@@ -61,6 +61,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         reason: string;
       };
     };
+
     if (body.status.progress === TransferState.TransferStateFailed) {
       return jsonRes(resp, {
         data: body,

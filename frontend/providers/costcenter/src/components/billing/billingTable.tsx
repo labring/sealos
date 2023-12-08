@@ -1,5 +1,5 @@
 import { TableHeaderID } from '@/constants/billing';
-import { BillingItem, BillingType } from '@/types/billing';
+import { BillingItem, BillingType, RechargeBillingItem } from '@/types/billing';
 import lineDown from '@/assert/lineDown.svg';
 import lineUp from '@/assert/lineUp.svg';
 import {
@@ -17,22 +17,26 @@ import {
   Tr
 } from '@chakra-ui/react';
 import { format, parseISO } from 'date-fns';
-import { formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import useEnvStore from '@/stores/env';
 import CurrencySymbol from '../CurrencySymbol';
 import BillingDetails from './billingDetails';
 import {
-  useReactTable,
-  getCoreRowModel,
+  CellContext,
   createColumnHelper,
   flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
   HeaderContext,
-  CellContext,
-  Table as TTable
+  RowData,
+  Table as TTable,
+  useReactTable
 } from '@tanstack/react-table';
 import { useMemo } from 'react';
 import { enableGpu } from '@/service/enabled';
+import Amount from '@/components/billing/AmountTableHeader';
+
 export function CommonBillingTable({
   data,
   isOverview = false,
@@ -171,6 +175,7 @@ export function CommonBillingTable({
   });
   return <BaseTable table={table} {...styles} />;
 }
+
 export function TransferBillingTable({ data }: { data: BillingItem[] }) {
   const { t } = useTranslation();
   const currency = useEnvStore((s) => s.currency);
@@ -371,27 +376,11 @@ export function BillingDetailsTable({
   });
   return <BaseTable table={table} h="auto" {...styles} />;
 }
-const Amount = ({
-  type,
-  amount,
-  total
-}: {
-  type: BillingType;
-  amount: number | undefined | null;
-  total?: boolean;
-}) => {
-  if (amount === undefined || amount === null) return <span>-</span>;
-  if (amount === 0) return <span>0</span>;
-  if ([BillingType.CONSUME, BillingType.TRANSFER].includes(type))
-    return <Text color={total ? '#0884DD' : ''}>-{formatMoney(amount)}</Text>;
-  else if ([BillingType.RECHARGE, BillingType.RECEIVE].includes(type))
-    return <Text color={total ? '#00A9A6' : ''}>+{formatMoney(amount)}</Text>;
-  else return <span>-</span>;
-};
-const BaseTable = <T extends unknown>({
+
+export function BaseTable<T extends unknown>({
   table,
   ...styles
-}: { table: TTable<T> } & TableContainerProps) => {
+}: { table: TTable<T> } & TableContainerProps) {
   return (
     <TableContainer w="100%" mt="0px" flex={'1'} h="0" overflowY={'auto'} {...styles}>
       <Table variant="simple" fontSize={'12px'} width={'full'}>
@@ -496,6 +485,4 @@ const BaseTable = <T extends unknown>({
       </Table>
     </TableContainer>
   );
-};
-
-BaseTable.displayName = 'BaseTable';
+}

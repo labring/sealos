@@ -31,7 +31,7 @@ export type TWechatUser = {
 };
 export type TgithubUser = {
   login: string;
-  id: number;
+  id?: number;
   node_id: string;
   avatar_url: string;
   gravatar_id: string;
@@ -96,8 +96,9 @@ export type User = {
 };
 export type UserDto = {
   uid: string;
+  crUid: string;
   avatarUrl: string;
-  name: string;
+  nickname: string;
   k8s_username: string;
   createdTime: string;
 };

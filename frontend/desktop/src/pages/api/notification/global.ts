@@ -1,4 +1,4 @@
-import { authSession } from '@/services/backend/auth';
+import { verifyAccessToken} from '@/services/backend/auth';
 import { K8sApiDefault } from '@/services/backend/kubernetes/admin';
 import { CRDMeta, ListCRD } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
@@ -7,7 +7,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const payload = await authSession(req.headers);
+    const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'failed to get info' });
     const defaultKc = K8sApiDefault();
 

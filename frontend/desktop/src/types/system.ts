@@ -24,6 +24,7 @@ export type LoginProps = {
   service_protocol_en: string;
   private_protocol_en: string;
   needPassword: boolean;
+  oauth_proxy: string;
   needSms: boolean;
   needGithub: boolean;
   needWechat: boolean;
@@ -32,7 +33,6 @@ export type LoginProps = {
 
 export type SystemEnv = {
   SEALOS_CLOUD_DOMAIN: string;
-  stripeEnabled: boolean;
   wechatEnabledRecharge: boolean;
   rechargeEnabled: boolean;
   licenseEnabled: boolean;

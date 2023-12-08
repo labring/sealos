@@ -1,5 +1,4 @@
 import request from '@/__tests__/api/request';
-import { _passwordLoginRequest } from '@/api/auth';
 import {
   _abdicateRequest,
   _createRequest,
@@ -36,8 +35,7 @@ describe('notLogin', () => {
   it('abdicate team', async () => {
     const res = await abdicateRequest({
       ns_uid: 'xxx',
-      targetUserId: 'xxx',
-      targetUsername: 'XXX'
+      targetUserCrUid: 'xxx'
     });
     expect(res.code).toBe(401);
   });
@@ -45,15 +43,14 @@ describe('notLogin', () => {
     const res = await inviteMemberRequest({
       ns_uid: 'xxx',
       role: UserRole.Developer,
-      targetUsername: 'XXX'
+      targetUserId: 'XXX'
     });
     expect(res.code).toBe(401);
   });
   it('modify role', async () => {
     const res = await modifyRoleRequest({
       ns_uid: 'xxx',
-      tUserId: 'xxx',
-      tK8s_username: 'XXX',
+      targetUserCrUid: 'xxx',
       tRole: UserRole.Manager
     });
     expect(res.code).toBe(401);
@@ -67,7 +64,7 @@ describe('notLogin', () => {
     expect(res.code).toBe(401);
   });
   it('remove member', async () => {
-    const res = await removeMemberRequest({ ns_uid: 'xxx', tUserId: 'xxx', tK8s_username: 'XXX' });
+    const res = await removeMemberRequest({ ns_uid: 'xxx', targetUserCrUid: 'xxx' });
     expect(res.code).toBe(401);
   });
   it('team details', async () => {

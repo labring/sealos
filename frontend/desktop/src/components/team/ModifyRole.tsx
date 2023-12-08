@@ -1,6 +1,5 @@
 import {
   Button,
-  Image,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -13,7 +12,6 @@ import {
   MenuList,
   MenuItem,
   Text,
-  Flex,
   Spinner,
   ButtonProps
 } from '@chakra-ui/react';
@@ -29,12 +27,12 @@ export default function ModifyRole({
   ns_uid,
   k8s_username,
   currentRole,
-  userId,
+  userCrUid,
   roles,
   ...props
 }: ButtonProps & {
   ns_uid: string;
-  userId: string;
+  userCrUid: string;
   currentRole: UserRole;
   roles: UserRole[];
   k8s_username: string;
@@ -57,9 +55,8 @@ export default function ModifyRole({
   const submit = () => {
     mutation.mutate({
       ns_uid,
-      tK8s_username: k8s_username,
       tRole: role,
-      tUserId: userId
+      targetUserCrUid: userCrUid
     });
   };
   return (

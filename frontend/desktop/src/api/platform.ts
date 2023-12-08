@@ -50,7 +50,7 @@ export const getWechatQR = () =>
   );
 
 export const getWechatResult = (payload: { code: string }) =>
-  request.get<any, ApiResp<Session>>('/api/auth/publicWechat/getWechatResult', {
+  request.get<any, ApiResp<{ token: string }>>('/api/auth/publicWechat/getWechatResult', {
     params: payload
   });
 

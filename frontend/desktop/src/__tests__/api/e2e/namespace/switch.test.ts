@@ -1,68 +1,60 @@
 import { _passwordLoginRequest } from '@/api/auth';
-import {
-  _abdicateRequest,
-  _createRequest,
-  _deleteTeamRequest,
-  _inviteMemberRequest,
-  _modifyRoleRequest,
-  _nsListRequest,
-  _reciveMessageRequest,
-  _removeMemberRequest,
-  _switchRequest,
-  _teamDetailsRequest,
-  _verifyInviteRequest,
-  reciveAction
-} from '@/api/namespace';
-import { NamespaceDto, UserRole } from '@/types/team';
-import { Session } from 'sealos-desktop-sdk/*';
+import { _createRequest, _switchRequest } from '@/api/namespace';
+import { NamespaceDto } from '@/types/team';
 import * as k8s from '@kubernetes/client-node';
-import { Db, MongoClient } from 'mongodb';
 import request from '@/__tests__/api/request';
 import { _setAuth, cleanDb, cleanK8s } from '@/__tests__/api/tools';
+import { AccessTokenPayload } from '@/types/token';
+import { prisma } from '@/services/backend/db/init';
+import { jwtDecode } from 'jwt-decode';
+
 const createRequest = _createRequest(request);
-const inviteMemberRequest = _inviteMemberRequest(request);
-const verifyInviteRequest = _verifyInviteRequest(request);
-const passwordLoginRequest = _passwordLoginRequest(request);
-const modifyRoleRequest = _modifyRoleRequest(request);
 const switchRequest = _switchRequest(request);
-describe('modify role', () => {
-  let session: Session;
-  let session2: Session;
-  let connection: MongoClient;
-  let db: Db;
+describe('switch ns', () => {
+  let token1: string;
   let ns: NamespaceDto;
+  let payload1: AccessTokenPayload;
   const setAuth = _setAuth(request);
+  const passwordLoginRequest = _passwordLoginRequest(request, setAuth);
   beforeAll(async () => {
     //@ts-ignore
-    const uri = process.env.MONGODB_URI as string;
-    connection = new MongoClient(uri);
-    await connection.connect();
-    db = connection.db();
+    // console.log('MONGODB_URI', uri)
     const kc = new k8s.KubeConfig();
-    await cleanK8s(kc, db);
-    await cleanDb(db);
-    const res = await passwordLoginRequest({ user: 'modifytesttest', password: 'testtest' });
+    await cleanK8s(kc, prisma);
+    await cleanDb(prisma);
+    setAuth();
+    const res = await passwordLoginRequest({ user: 'abdicatetesttest', password: 'testtest' });
     // 保证session合理
-    expect(res.data?.user).toBeDefined();
-    session = res.data as Session;
-    setAuth(session);
+    expect(res!.data).toBeDefined();
+    token1 = res!.data!.token;
+    payload1 = jwtDecode<AccessTokenPayload>(token1);
+    setAuth(token1);
     const nsRes = await createRequest({ teamName: 'teamZero' });
-    expect(nsRes.data?.namespace).toBeDefined();
-    ns = nsRes.data?.namespace!;
+    expect(nsRes.data).toBeDefined();
+    ns = nsRes.data!.namespace;
   }, 100000);
   afterAll(async () => {
-    await connection.close();
+    // await connection.close();
   });
   it('easy switch', async () => {
     const res1 = await switchRequest(ns.uid);
     expect(res1.code).toBe(200);
-    expect(res1.data).toMatchObject<Session>({
-      user: {
-        k8s_username: session.user.k8s_username,
-        userId: session.user.userId,
-        ns_uid: ns.uid,
-        nsid: ns.id
-      }
+    const { workspaceUid, workspaceId, userId, userCrUid, userCrName, userUid } =
+      jwtDecode<AccessTokenPayload>(res1.data!.token);
+    expect<Omit<AccessTokenPayload, 'regionUid'>>({
+      workspaceUid,
+      workspaceId,
+      userCrName,
+      userCrUid,
+      userUid,
+      userId
+    }).toMatchObject({
+      workspaceUid: ns.uid,
+      workspaceId: ns.id,
+      userCrName: payload1.userCrName,
+      userCrUid: payload1.userCrUid,
+      userUid: payload1.userUid,
+      userId: payload1.userId
     });
   });
 });
