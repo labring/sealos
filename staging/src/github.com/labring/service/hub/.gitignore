@@ -1,4 +1,0 @@
-ca-certificates.crt
-auth_server
-vendor/*/
-version.*
