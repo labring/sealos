@@ -63,7 +63,9 @@ func NewKubeHealthy(client clientset.Interface, timeout time.Duration) Healthy {
 // ForAPI waits for the API Server's /healthz endpoint to report "ok"
 func (w *kubeHealthy) ForAPI() error {
 	start := time.Now()
-	return wait.PollImmediate(APICallRetryInterval, w.timeout, func() (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), w.timeout)
+	defer cancel()
+	return wait.PollUntilContextCancel(ctx, APICallRetryInterval, true, func(ctx context.Context) (done bool, err error) {
 		healthStatus := 0
 		w.client.Discovery().RESTClient().Get().AbsPath("/healthz").Do(context.TODO()).StatusCode(&healthStatus)
 		if healthStatus != http.StatusOK {

@@ -63,7 +63,7 @@ func GenerateToken(config, certificateKey string) (*types.Token, error) {
 		afterTokens := ListToken()
 		diff := afterTokens.ToStrings().Difference(tokens.ToStrings())
 		if diff.Len() == 1 {
-			token.JoinToken = diff.List()[0]
+			token.JoinToken = diff.UnsortedList()[0]
 			hashs, err := discoveryTokenCaCertHash(defaultAdminConf)
 			if err != nil {
 				return nil, err
@@ -118,8 +118,8 @@ func processTokenList(data string) BootstrapTokens {
 
 type BootstrapTokens []v1.BootstrapToken
 
-func (c BootstrapTokens) ToStrings() sets.String {
-	s := sets.NewString()
+func (c BootstrapTokens) ToStrings() sets.Set[string] {
+	s := sets.New[string]()
 	for _, token := range c {
 		s.Insert(token.Token.String())
 	}

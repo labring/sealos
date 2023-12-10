@@ -30,7 +30,10 @@ import (
 func (k *KubeadmRuntime) InitMaster0() error {
 	logger.Info("start to init master0...")
 	master0 := k.getMaster0IPAndPort()
-	cmdInit := k.Command(k.getKubeVersion(), InitMaster)
+	if err := k.imagePull(master0); err != nil {
+		return err
+	}
+	cmdInit := k.Command(InitMaster)
 	if cmdInit == "" {
 		return fmt.Errorf("get init master command failed, kubernetes version is %s", k.getKubeVersion())
 	}
@@ -39,6 +42,15 @@ func (k *KubeadmRuntime) InitMaster0() error {
 		return fmt.Errorf("init master0 failed, error: %s. Please clean and reinstall", err.Error())
 	}
 	return k.copyMasterKubeConfig(master0)
+}
+
+func (k *KubeadmRuntime) imagePull(hostAndPort string) error {
+	imagePull := fmt.Sprintf("kubeadm config images pull --cri-socket unix://%s  --kubernetes-version %s %s", k.cluster.GetImageEndpoint(), k.getKubeVersion(), vlogToStr(k.klogLevel))
+	err := k.sshCmdAsync(hostAndPort, imagePull)
+	if err != nil {
+		return fmt.Errorf("master pull image failed, error: %s", err.Error())
+	}
+	return nil
 }
 
 // sendJoinCPConfig send join CP masters configuration
@@ -105,12 +117,15 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	if err = k.mergeWithBuiltinKubeadmConfig(); err != nil {
 		return err
 	}
-	joinCmd := k.Command(k.getKubeVersion(), JoinMaster)
+	joinCmd := k.Command(JoinMaster)
 	if joinCmd == "" {
 		return fmt.Errorf("get join master command failed, kubernetes version is %s", k.getKubeVersion())
 	}
 	for _, master := range masters {
 		logger.Info("start to join %s as master", master)
+		if err = k.imagePull(master); err != nil {
+			return err
+		}
 		logger.Debug("start to generate cert for master %s", master)
 		err = k.execCert(master)
 		if err != nil {

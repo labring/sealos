@@ -29,7 +29,6 @@ import (
 	proxy "k8s.io/kube-proxy/config/v1alpha1"
 	kubelet "k8s.io/kubelet/config/v1beta1"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
-	kubeadmv1beta2 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2"
 	kubeadmv1beta3 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
 	kubeletconfig "k8s.io/kubernetes/pkg/kubelet/apis/config/v1beta1"
 	proxyconfig "k8s.io/kubernetes/pkg/proxy/apis/config/v1alpha1"
@@ -55,7 +54,6 @@ func init() {
 		s.AddTypeDefaultingFunc(&kubelet.KubeletConfiguration{}, overrideKubeletDefaults)
 		return nil
 	})
-	utilruntime.Must(kubeadmv1beta2.AddToScheme(scheme))
 	utilruntime.Must(kubeadmv1beta3.AddToScheme(scheme))
 	utilruntime.Must(kubeletconfig.AddToScheme(scheme))
 	utilruntime.Must(proxyconfig.AddToScheme(scheme))
