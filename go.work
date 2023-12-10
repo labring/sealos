@@ -9,7 +9,6 @@ use (
 	./staging/src/github.com/labring/controllers/db/bytebase
 	./staging/src/github.com/labring/controllers/infra
 	./staging/src/github.com/labring/controllers/metering
-	./staging/src/github.com/labring/service/hub
 	./webhooks/whitelist
 	./test/e2e
 )
