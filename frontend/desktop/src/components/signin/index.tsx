@@ -93,9 +93,13 @@ export default function SigninComponent() {
     if (isAgree && selectedConfig) {
       const { login } = selectedConfig;
       login();
-      uploadConvertData([3]).then((res) => {
-        console.log(res);
-      });
+      uploadConvertData([3])
+        .then((res) => {
+          console.log(res);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
     } else {
       setIsInvalid(true);
       showError(t('Read and agree'));

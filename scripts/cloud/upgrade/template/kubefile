@@ -1,0 +1,8 @@
+FROM scratch
+
+USER 65532:65532
+
+COPY registry registry
+COPY scripts scripts
+
+CMD ["bash scripts/entrypoint.sh"]

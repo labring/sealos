@@ -42,7 +42,6 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const [isChecked, setIsChecked] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { toast } = useToast();
-  const { dbPods } = useDBStore();
 
   const supportConnectDB = useMemo(() => {
     return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis'].find(
@@ -401,7 +400,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                   0.5
                   <MyIcon ml="8px" name="currency" w="32px" h="32px"></MyIcon>/ {t('Hour')}
                 </Center>
-                <Center
+                {/* <Center
                   p="8px"
                   mt="20px"
                   bg="#EBF7FD"
@@ -412,7 +411,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 >
                   <MyIcon name="infoCircle" w="16px" fill={'#48A7EC'}></MyIcon>
                   免费方案
-                </Center>
+                </Center> */}
                 <Button mt="32px" variant={'primary'} onClick={openNetWorkService}>
                   {t('Turn On')}
                 </Button>

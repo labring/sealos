@@ -4,6 +4,7 @@ import { immer } from 'zustand/middleware/immer';
 import { END_TIME, NOW_MONTH, NOW_WEEK, NOW_YEAR, START_TIME } from '@/constants/payment';
 import { BillingData, BillingItem, BillingSpec } from '@/types/billing';
 import { Ref, useRef } from 'react';
+import { subDays } from 'date-fns';
 export enum By {
   month,
   week
@@ -26,7 +27,7 @@ const useOverviewStore = create<OverviewState>()(
     immer((set, get) => ({
       rechargeSource: 0,
       balance: 0,
-      startTime: START_TIME,
+      startTime: subDays(END_TIME, 2),
       endTime: END_TIME,
       preItems: [],
       items: [],

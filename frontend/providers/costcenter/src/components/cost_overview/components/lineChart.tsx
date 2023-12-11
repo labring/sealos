@@ -62,7 +62,6 @@ export default function Trend({ data }: { data: BillingItem[] }) {
         return x.map((v, i) => (i !== 0 ? formatMoney(v as number) : v));
       }) || [];
   const source = [...INITAL_SOURCE, ...sourceValue.reverse()];
-  console.log(source);
   const option = {
     xAxis: {
       type: 'time',

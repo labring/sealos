@@ -8,10 +8,14 @@ import CurrencySymbol from '../CurrencySymbol';
 import { END_TIME, valuationMap } from '@/constants/payment';
 import useBillingData from '@/hooks/useBillingData';
 import { BillingType, Costs } from '@/types';
-import { isSameDay, isSameHour, parseISO } from 'date-fns';
+import { isSameDay, isSameHour, parseISO, subHours } from 'date-fns';
 export default function PredictCard() {
   const { t } = useTranslation();
-  const { data } = useBillingData({ type: BillingType.CONSUME, endTime: END_TIME });
+  const { data } = useBillingData({
+    type: BillingType.CONSUME,
+    endTime: END_TIME,
+    startTime: subHours(END_TIME, 1)
+  });
   const _state = useMemo<Costs & { total: number }>(() => {
     const items = data?.data?.status.item || [];
     if (items.length > 0) {

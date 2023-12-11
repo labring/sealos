@@ -117,7 +117,7 @@ const Header = ({
             flex={1}
             h={'40px'}
             borderColor={'myGray.200'}
-            leftIcon={<MyIcon name="detail" w={'14px'} h={'14px'} transform={'translateY(3px)'} />}
+            leftIcon={<MyIcon name="detail" w="16px" h="16px" />}
             variant={'base'}
             bg={'white'}
             onClick={() => setShowSlider(true)}
@@ -158,6 +158,8 @@ const Header = ({
       )}
       {!isPause && (
         <Button
+          className="driver-detail-update-button"
+          _focusVisible={{ boxShadow: '' }}
           mr={5}
           h={'40px'}
           borderColor={'myGray.200'}
@@ -180,7 +182,7 @@ const Header = ({
           borderColor={'myGray.200'}
           variant={'base'}
           bg={'white'}
-          leftIcon={<MyIcon name="restart" w={'14px'} h={'14px'} />}
+          leftIcon={<MyIcon name="restart" w={'16px'} h={'16px'} />}
           onClick={openRestartConfirm(handleRestartApp)}
           isLoading={loading}
         >

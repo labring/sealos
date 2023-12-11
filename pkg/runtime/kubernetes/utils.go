@@ -29,11 +29,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-const (
-	KUBECONTROLLERCONFIGFILE = "/etc/kubernetes/controller-manager.conf"
-	KUBESCHEDULERCONFIGFILE  = "/etc/kubernetes/scheduler.conf"
-)
-
 func (k *KubeadmRuntime) runPipelines(phase string, pipelines ...func() error) error {
 	for i := range pipelines {
 		if err := pipelines[i](); err != nil {
@@ -50,29 +45,7 @@ func (k *KubeadmRuntime) SendJoinMasterKubeConfigs(masters []string, files ...st
 			return err
 		}
 	}
-	if k.ReplaceKubeConfigV1991V1992(masters) {
-		logger.Info("set kubernetes v1.19.1 v1.19.2 kube Config")
-	}
 	return nil
-}
-
-func (k *KubeadmRuntime) ReplaceKubeConfigV1991V1992(masters []string) bool {
-	version := k.getKubeVersion()
-	const V1991 = "v1.19.1"
-	const V1992 = "v1.19.2"
-	const RemoteReplaceKubeConfig = `grep -qF "apiserver.cluster.local" %s  && sed -i 's/apiserver.cluster.local/%s/' %s && sed -i 's/apiserver.cluster.local/%s/' %s`
-	// fix > 1.19.1 kube-controller-manager and kube-scheduler use the LocalAPIEndpoint instead of the ControlPlaneEndpoint.
-	if version == V1991 || version == V1992 {
-		for _, v := range masters {
-			replaceCmd := fmt.Sprintf(RemoteReplaceKubeConfig, KUBESCHEDULERCONFIGFILE, v, KUBECONTROLLERCONFIGFILE, v, KUBESCHEDULERCONFIGFILE)
-			if err := k.sshCmdAsync(v, replaceCmd); err != nil {
-				logger.Info("failed to replace kube Config on %s:%v ", v, err)
-				return false
-			}
-		}
-		return true
-	}
-	return false
 }
 
 func (k *KubeadmRuntime) sendKubeConfigFile(hosts []string, filename string) error {

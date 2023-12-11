@@ -44,7 +44,7 @@ func (f *fakeSingleTaintsClient) Verify() error {
 	}
 	for _, node := range nodes.Items {
 		for _, taint := range node.Spec.Taints {
-			if taint.Key == constants.LabelNodeRoleOldControlPlane {
+			if taint.Key == "node-role.kubernetes.io/master" {
 				return fmt.Errorf("expect node role is master, but got %s", taint.Key)
 			}
 			if taint.Key == constants.LabelNodeRoleControlPlane {

@@ -110,7 +110,7 @@ func (k *KubeadmRuntime) uploadConfigFromKubeadm() error {
 	if err != nil {
 		return fmt.Errorf("copy config update kubeadm yaml error: %s", err.Error())
 	}
-	cmd := k.Command(k.getKubeVersion(), UpdateCluster)
+	cmd := k.Command(UpdateCluster)
 	if cmd == "" {
 		return fmt.Errorf("get config update kubeadm command failed, kubernetes version is %s", k.getKubeVersion())
 	}

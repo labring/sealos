@@ -1,13 +1,12 @@
-import React, { useCallback } from 'react';
-import { Box, Flex, Button } from '@chakra-ui/react';
-import { useRouter } from 'next/router';
 import MyIcon from '@/components/Icon';
-import JSZip from 'jszip';
+import { useGlobalStore } from '@/store/global';
 import type { YamlItemType } from '@/types/index';
 import { downLoadBold } from '@/utils/tools';
+import { Box, Button, Flex } from '@chakra-ui/react';
 import dayjs from 'dayjs';
-import { useGlobalStore } from '@/store/global';
 import { useTranslation } from 'next-i18next';
+import { useRouter } from 'next/router';
+import { useCallback } from 'react';
 
 const Header = ({
   appName,
@@ -57,7 +56,15 @@ const Header = ({
       >
         {t('Export')} Yaml
       </Button>
-      <Button px={4} minW={'140px'} h={'40px'} variant={'primary'} onClick={applyCb}>
+      <Button
+        className="driver-deploy-button"
+        px={4}
+        minW={'140px'}
+        h={'40px'}
+        variant={'primary'}
+        onClick={applyCb}
+        _focusVisible={{ boxShadow: '' }}
+      >
         {t(applyBtnText)}
       </Button>
     </Flex>

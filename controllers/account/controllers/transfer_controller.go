@@ -177,7 +177,8 @@ func (r *TransferReconciler) transferAccount(ctx context.Context, transfer *acco
 	}
 	balance, _ := crypto.DecryptInt64(*fromAccount.Status.EncryptBalance)
 	deductionBalance, _ := crypto.DecryptInt64(*fromAccount.Status.EncryptDeductionBalance)
-	if balance < deductionBalance+transfer.Spec.Amount+MinBalance {
+	// check balance is enough ( balance - deductionBalance - transferAmount - MinBalance - ActivityBonus) activity give amount not included
+	if balance < deductionBalance+transfer.Spec.Amount+MinBalance+fromAccount.Status.ActivityBonus {
 		return fmt.Errorf("balance not enough")
 	}
 	if r.Get(ctx, client.ObjectKey{Namespace: r.AccountSystemNamespace, Name: getUsername(to)}, &accountv1.Account{}) != nil {

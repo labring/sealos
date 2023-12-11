@@ -45,7 +45,7 @@ type httpProber struct {
 	timeout            time.Duration
 
 	client      *http.Client
-	validStatus sets.Int
+	validStatus sets.Set[int]
 }
 
 func (p *httpProber) RegisterFlags(fs *pflag.FlagSet) {
@@ -69,7 +69,7 @@ func (p *httpProber) ValidateAndSetDefaults() error {
 		return fmt.Errorf("unsupported scheme %s", p.HealthScheme)
 	}
 	if p.validStatus == nil {
-		p.validStatus = sets.NewInt(p.ValidStatusCodes...)
+		p.validStatus = sets.New[int](p.ValidStatusCodes...)
 	}
 	return nil
 }

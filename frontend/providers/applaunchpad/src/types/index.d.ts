@@ -24,4 +24,5 @@ declare global {
 
 export type EnvResponse = {
   domain: string;
+  guideEnabled: boolean;
 };
