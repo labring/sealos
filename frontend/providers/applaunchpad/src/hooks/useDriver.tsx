@@ -1,11 +1,9 @@
 import { getPlatformEnv, getUserAccount, updateDesktopGuide } from '@/api/platform';
 import { GUIDE_LAUNCHPAD_CREATE_KEY } from '@/constants/account';
-import { AppEditType } from '@/types/app';
 import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
-import { UseFormReturn } from 'react-hook-form';
 
 export function DriverStarIcon() {
   return (
@@ -40,11 +38,7 @@ export function DriverStarIcon() {
   );
 }
 
-export default function useDriver({
-  formHook
-}: {
-  formHook: UseFormReturn<AppEditType, any, undefined>;
-}) {
+export default function useDriver() {
   const { t } = useTranslation();
   const [isGuided, setIsGuided] = useState(true);
 
@@ -57,7 +51,6 @@ export default function useDriver({
           const isGuided = !!userAccount.metadata.annotations?.[GUIDE_LAUNCHPAD_CREATE_KEY];
           if (!isGuided) {
             startGuide();
-            formHook.setValue('appName', 'hello-world-guide');
           }
           setIsGuided(isGuided);
         }

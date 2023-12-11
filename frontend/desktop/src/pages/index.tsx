@@ -47,7 +47,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   useEffect(() => {
     const { query } = router;
     const is_login = isUserLogin();
-    const whitelistApps = ['system-template'];
+    const whitelistApps = ['system-template', 'system-fastdeploy'];
     if (!is_login) {
       const { appkey, appQuery } = parseOpenappQuery((query?.openapp as string) || '');
       // sealos_inside=true internal call
@@ -71,6 +71,9 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           appQuery = state.launchQuery.raw;
         }
         if (!appkey) return;
+        if (appkey === 'system-fastdeploy') {
+          appkey = 'system-template';
+        }
         const app = state.installedApps.find((item) => item.key === appkey);
         if (!app) return;
         state.openApp(app, { raw: appQuery }).then(() => {

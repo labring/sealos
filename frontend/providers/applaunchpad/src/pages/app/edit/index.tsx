@@ -21,7 +21,7 @@ import {
   json2Service
 } from '@/utils/deployYaml2Json';
 import { serviceSideProps } from '@/utils/i18n';
-import { getErrText, patchYamlListV1 } from '@/utils/tools';
+import { getErrText, patchYamlList, patchYamlListV1 } from '@/utils/tools';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -89,6 +89,7 @@ export const formData2Yamls = (
 
 const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) => {
   const { t } = useTranslation();
+  const formOldYamls = useRef<YamlItemType[]>([]);
   const crOldYamls = useRef<DeployKindsType[]>([]);
   const oldAppEditData = useRef<AppEditType>();
   const { toast } = useToast();
@@ -123,7 +124,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const formHook = useForm<AppEditType>({
     defaultValues: defaultEditVal
   });
-  const { isGuided, closeGuide } = useDriver({ formHook });
+  const { isGuided, closeGuide } = useDriver();
 
   const realTimeForm = useRef(defaultEditVal);
 
@@ -154,10 +155,10 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       setIsLoading(true);
       try {
         const yamls = yamlList.map((item) => item.value);
-
         if (appName) {
-          const patch = patchYamlListV1({
-            oldYamlList: crOldYamls.current,
+          const patch = patchYamlList({
+            formOldYamlList: formOldYamls.current.map((item) => item.value),
+            crYamlList: crOldYamls.current,
             newYamlList: yamls
           });
 
@@ -257,7 +258,11 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       onSuccess(res) {
         if (!res) return;
         oldAppEditData.current = res;
-
+        formOldYamls.current = formData2Yamls(
+          res,
+          appName !== '' ? 'edit' : 'create',
+          res.crYamlList
+        );
         crOldYamls.current = res.crYamlList;
 
         setDefaultStorePathList(res.storeList.map((item) => item.path));
