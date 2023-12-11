@@ -8,14 +8,14 @@ replace (
 )
 
 replace (
-	k8s.io/api => k8s.io/api v0.25.6
-	k8s.io/apimachinery => k8s.io/apimachinery v0.25.6
-	k8s.io/client-go => k8s.io/client-go v0.25.6
-	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.25.6
-	k8s.io/component-base => k8s.io/component-base v0.25.6
-	k8s.io/cri-api => k8s.io/cri-api v0.25.6
-	k8s.io/kube-proxy => k8s.io/kube-proxy v0.25.6
-	k8s.io/kubelet => k8s.io/kubelet v0.25.6
+	k8s.io/api => k8s.io/api v0.27.4
+	k8s.io/apimachinery => k8s.io/apimachinery v0.27.4
+	k8s.io/client-go => k8s.io/client-go v0.27.4
+	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.27.4
+	k8s.io/component-base => k8s.io/component-base v0.27.4
+	k8s.io/cri-api => k8s.io/cri-api v0.27.4
+	k8s.io/kube-proxy => k8s.io/kube-proxy v0.27.4
+	k8s.io/kubelet => k8s.io/kubelet v0.27.4
 )
 
 replace (

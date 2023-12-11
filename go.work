@@ -4,8 +4,8 @@ use (
 	.
 	./staging/src/github.com/labring/image-cri-shim
 	./staging/src/github.com/labring/lvscare
-	./staging/src/github.com/labring/controllers/imagehub
-	./staging/src/github.com/labring/controllers/db/bytebase
 	./webhooks/whitelist
 	./test/e2e
+	./deprecated/controllers/db/bytebase
+	./deprecated/controllers/imagehub
 )

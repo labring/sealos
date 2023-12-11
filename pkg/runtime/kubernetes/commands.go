@@ -20,9 +20,6 @@ import (
 	"fmt"
 	"path"
 	"strconv"
-	"strings"
-
-	"github.com/Masterminds/semver/v3"
 )
 
 type CommandType int
@@ -40,46 +37,25 @@ func vlogToStr(vlog int) string {
 }
 
 const (
-	initMasterLt115  = `kubeadm init --config=%s --experimental-upload-certs`
-	joinMasterLt115  = `kubeadm join %s:%d --token %s %s --experimental-control-plane --certificate-key %s`
-	joinNodeLt115    = `kubeadm join %s:%d --token %s %s`
 	initMasterGte115 = `kubeadm init --config=%s --skip-certificate-key-print --skip-token-print` // --upload-certs --skip-certificate-key-print --skip-token-print
 	joinMasterGte115 = "kubeadm join --config=%s"
 	joinNodeGte115   = "kubeadm join --config=%s"
 	updateClusterAll = "kubeadm init phase upload-config kubeadm --config=%s"
 )
 
-func (k *KubeadmRuntime) Command(version string, cmdType CommandType) (cmd string) {
+func (k *KubeadmRuntime) Command(cmdType CommandType) (cmd string) {
 	initConfigPath := k.getInitMasterKubeadmConfigFilePath()
 	joinMasterConfigPath := path.Join(k.pathResolver.ConfigsPath(), defaultJoinMasterKubeadmFileName)
 	joinNodeConfigPath := path.Join(k.pathResolver.ConfigsPath(), defaultJoinNodeKubeadmFileName)
 	updateClusterConfigPath := path.Join(k.pathResolver.ConfigsPath(), defaultUpdateKubeadmFileName)
 
-	var discoveryTokens []string
-	for _, data := range k.getTokenCaCertHash() {
-		discoveryTokens = append(discoveryTokens, "--discovery-token-ca-cert-hash "+data)
-	}
-
-	sver := semver.MustParse(version)
 	switch cmdType {
 	case InitMaster:
-		if gte(sver, V1150) {
-			cmd = fmt.Sprintf(initMasterGte115, initConfigPath)
-		} else {
-			cmd = fmt.Sprintf(initMasterLt115, initConfigPath)
-		}
+		cmd = fmt.Sprintf(initMasterGte115, initConfigPath)
 	case JoinMaster:
-		if gte(sver, V1150) {
-			cmd = fmt.Sprintf(joinMasterGte115, joinMasterConfigPath)
-		} else {
-			cmd = fmt.Sprintf(joinMasterLt115, k.getMaster0IP(), k.getAPIServerPort(), k.getJoinToken(), strings.Join(discoveryTokens, " "), k.getJoinCertificateKey())
-		}
+		cmd = fmt.Sprintf(joinMasterGte115, joinMasterConfigPath)
 	case JoinNode:
-		if gte(sver, V1150) {
-			cmd = fmt.Sprintf(joinNodeGte115, joinNodeConfigPath)
-		} else {
-			cmd = fmt.Sprintf(joinNodeLt115, k.getVip(), k.getAPIServerPort(), k.getJoinToken(), strings.Join(discoveryTokens, " "))
-		}
+		cmd = fmt.Sprintf(joinNodeGte115, joinNodeConfigPath)
 	case UpdateCluster:
 		cmd = fmt.Sprintf(updateClusterAll, updateClusterConfigPath)
 	default:

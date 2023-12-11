@@ -56,7 +56,7 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 				return fmt.Errorf("run ipvs once failed %v", err)
 			}
 			logger.Info("start join node: %s", node)
-			joinCmd := k.Command(k.getKubeVersion(), JoinNode)
+			joinCmd := k.Command(JoinNode)
 			if joinCmd == "" {
 				return fmt.Errorf("get join node command failed, kubernetes version is %s", k.getKubeVersion())
 			}
