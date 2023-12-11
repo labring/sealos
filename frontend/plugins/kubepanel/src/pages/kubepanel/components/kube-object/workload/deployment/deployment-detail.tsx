@@ -9,23 +9,11 @@ import PodDetailAffinities from '../pod/pod-detail-affinities';
 import Drawer from '../../../drawer/drawer';
 import DrawerPanel from '../../../drawer/drawer-panel';
 
-interface Props {
-  dep?: Deployment;
-  open: boolean;
-  onClose: () => void;
-}
-
-const DeploymentDetail = ({ dep, open, onClose }: Props) => {
-  if (!dep) {
+const DeploymentDetail = ({ obj: dep, open, onClose }: DetailDrawerProps<Deployment>) => {
+  if (!dep || !(dep instanceof Deployment)) {
     return null;
   }
-
-  if (!(dep instanceof Deployment)) {
-    // logger.error("[DeploymentDetails]: passed object that is not an instanceof Deployment", deployment);
-
-    return null;
-  }
-
+  
   const { status, spec } = dep;
   const selectors = dep.getSelectors();
   const conditions = dep.getConditions();

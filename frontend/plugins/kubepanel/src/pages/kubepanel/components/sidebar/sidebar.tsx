@@ -6,6 +6,7 @@ import {
   SettingOutlined
 } from '@ant-design/icons';
 import { Button, Flex, Menu, MenuProps } from 'antd';
+import { useRouter } from 'next/router';
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -58,6 +59,8 @@ interface Props {
 }
 
 const ResourceSideNav = ({ onClick = () => {} }: Props) => {
+  const router = useRouter();
+
   return (
     <Flex vertical style={{ height: '100vh', backgroundColor: '#F2F2F4' }}>
       <div className="border-b-[1px] border-color-border border-solid px-[18px] py-[12px] w-full">
@@ -66,6 +69,7 @@ const ResourceSideNav = ({ onClick = () => {} }: Props) => {
           <Button
             type="text"
             icon={<ReloadOutlined style={{ color: '#219BF4', fontSize: 'large' }} />}
+            onClick={() => router.reload()}
           />
         </div>
       </div>

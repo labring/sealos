@@ -5,7 +5,6 @@ import {
   Ingress,
   computeRuleDeclarations
 } from '@/k8slens/kube-object';
-import { DetailDrawerProps } from '@/types/detail';
 import DrawerPanel from '../../../drawer/drawer-panel';
 import Drawer from '../../../drawer/drawer';
 import DrawerItem from '../../../drawer/drawer-item';
@@ -69,32 +68,32 @@ const IngressPoints = ({ points }: { points?: ILoadBalancerIngress[] }) => {
   );
 };
 
-const IngressDetail = ({ obj, open, onClose }: DetailDrawerProps<Ingress>) => {
-  if (!obj || !(obj instanceof Ingress)) return null;
+const IngressDetail = ({ obj: ingress, open, onClose }: DetailDrawerProps<Ingress>) => {
+  if (!ingress || !(ingress instanceof Ingress)) return null;
 
-  const port = obj.getServiceNamePort();
+  const port = ingress.getServiceNamePort();
   return (
-    <Drawer open={open} title={`Ingress: ${obj.getName()}`} onClose={onClose}>
+    <Drawer open={open} title={`Ingress: ${ingress.getName()}`} onClose={onClose}>
       <DrawerPanel>
-        <KubeObjectInfoList obj={obj} />
-        <DrawerItem name="Ports" value={obj.getPorts()} />
+        <KubeObjectInfoList obj={ingress} />
+        <DrawerItem name="Ports" value={ingress.getPorts()} />
         <DrawerItem
           name="TLS"
-          value={obj.spec.tls.map((tls, idx) => (
+          value={ingress.spec.tls.map((tls, idx) => (
             <p key={idx}>{tls.secretName}</p>
           ))}
         />
         {port && <DrawerItem name="Service" value={`${port.serviceName}:${port.servicePort}`} />}
       </DrawerPanel>
       <DrawerPanel title="Rules">
-        {obj.getRules().map((rule, idx) => (
+        {ingress.getRules().map((rule, idx) => (
           <div key={idx}>
             {rule.http && (
               <Table
                 size="small"
                 bordered
                 columns={rulesColumns}
-                dataSource={computeRuleDeclarations(obj, rule)}
+                dataSource={computeRuleDeclarations(ingress, rule)}
                 pagination={false}
                 title={() => <>{rule.host && `Host: ${rule.host}`}</>}
               />
@@ -103,7 +102,7 @@ const IngressDetail = ({ obj, open, onClose }: DetailDrawerProps<Ingress>) => {
         ))}
       </DrawerPanel>
       <DrawerPanel title="Load-Balancer Ingress Points">
-        <IngressPoints points={obj.status?.loadBalancer.ingress} />
+        <IngressPoints points={ingress.status?.loadBalancer.ingress} />
       </DrawerPanel>
     </Drawer>
   );

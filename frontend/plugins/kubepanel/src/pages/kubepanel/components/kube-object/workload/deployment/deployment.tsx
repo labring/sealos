@@ -1,17 +1,12 @@
 import { KubeObjectAge } from '@/components/kube/object/kube-object-age';
 import { Deployment } from '@/k8slens/kube-object';
 import { getConditionColor } from '@/utils/condtion-color';
-import { useQuery } from '@tanstack/react-query';
 import { Tooltip } from 'antd';
 import { ColumnsType } from 'antd/es/table';
-import { useState } from 'react';
 import DeploymentDetail from './deployment-detail';
-import Table from '../../../table/table';
+import { useDeploymentStore } from '@/store/kube';
+import PanelTable from '../../../panel-table/table';
 import ActionButton from '../../../action-button/action-button';
-import { deleteResource } from '@/api/delete';
-import { Resources } from '@/constants/kube-object';
-import { updateResource } from '@/api/update';
-import { fetchData, useDeploymentStore } from '@/store/kube';
 
 const columns: ColumnsType<Deployment> = [
   {
@@ -52,40 +47,25 @@ const columns: ColumnsType<Deployment> = [
   {
     key: 'action',
     fixed: 'right',
-    render: (_, dep) => (
-      <ActionButton
-        obj={dep}
-        onUpdate={(data: string) => updateResource(data, dep.getName(), Resources.Deployments)}
-        onDelete={() => deleteResource(dep.getName(), Resources.Deployments)}
-      />
-    )
+    render: (_, dep) => <ActionButton obj={dep} />
   }
 ];
 
 const DeploymentOverviewPage = () => {
-  const [openDrawer, setOpenDrawer] = useState(false);
-  const [dep, setDep] = useState<Deployment>();
-  const { items, replace } = useDeploymentStore();
-
-  useQuery(['deployments'], () => fetchData(replace, Resources.Deployments), {
-    refetchInterval: 5000
-  });
+  const { items, initialize, isLoaded, watch } = useDeploymentStore();
 
   return (
-    <>
-      <Table
-        title={'Deployments'}
-        columns={columns}
-        dataSource={items}
-        onRow={(dep) => ({
-          onClick: () => {
-            setDep(dep);
-            setOpenDrawer(true);
-          }
-        })}
-      />
-      <DeploymentDetail dep={dep} open={openDrawer} onClose={() => setOpenDrawer(false)} />
-    </>
+    <PanelTable
+      columns={columns}
+      loading={!isLoaded}
+      dataSource={items}
+      sectionTitle="Deployments"
+      DetailDrawer={DeploymentDetail}
+      getRowKey={(deployment) => deployment.getId()}
+      initializers={[initialize]}
+      watchers={[watch]}
+      getDetailItem={(deployment) => deployment}
+    />
   );
 };
 

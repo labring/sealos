@@ -24,5 +24,5 @@ export function getDeploymentsStatuses(deps: Deployment[], pods: Pod[]) {
 }
 
 export const useDeploymentStore = create<DeploymentStore>()((...a) => ({
-  ...createKubeStoreSlice<Deployment>(Deployment.kind)(...a)
+  ...createKubeStoreSlice<Deployment>(Deployment.kind, Deployment)(...a)
 }));

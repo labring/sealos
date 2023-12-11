@@ -14,7 +14,7 @@ const computeState = (state: PodStore): StatusesComputed => {
 export const usePodStore = create<PodStore>()(
   computed(
     (...a) => ({
-      ...createKubeStoreSlice<Pod>(Pod.kind)(...a)
+      ...createKubeStoreSlice<Pod>(Pod.kind, Pod)(...a)
     }),
     computeState
   )
