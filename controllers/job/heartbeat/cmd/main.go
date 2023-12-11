@@ -30,18 +30,18 @@ func main() {
 	}
 	logger.Info("cluster resource: %+v", resource)
 
-	clusterId, err := cluster.GetClusterID()
+	clusterID, err := cluster.GetClusterID()
 	if err != nil {
 		logger.Error(err.Error())
 		return
 	}
-	logger.Info("cluster id: %s", clusterId)
+	logger.Info("cluster id: %s", clusterID)
 
 	client := resty.New()
 	_, err = client.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(v1alpha.Request{
-			ClusterID:       clusterId,
+			ClusterID:       clusterID,
 			ClusterResource: resource,
 		}).
 		Post("https://license.sealos.io/api/v1alpha/heartbeat/cluster")
