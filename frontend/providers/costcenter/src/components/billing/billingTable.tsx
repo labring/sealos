@@ -379,7 +379,6 @@ const BaseTable = <T extends unknown>({
   table,
   ...styles
 }: { table: TTable<T> } & TableContainerProps) => {
-  console.log(table.getColumn(TableHeaderID.TotalAmount)?.getPinnedIndex());
   return (
     <TableContainer w="100%" mt="0px" flex={'1'} h="0" overflowY={'auto'} {...styles}>
       <Table variant="simple" fontSize={'12px'} width={'full'}>

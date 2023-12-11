@@ -29,7 +29,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import dayjs from 'dayjs';
 import { BackupStatusEnum, backupTypeMap } from '@/constants/backup';
 import { useTranslation } from 'next-i18next';
-import { deleteBackup, getBackupPolicy } from '@/api/backup';
+import { deleteBackup, getBackupPolicy, getBackupPolicyByCluster } from '@/api/backup';
 import { getErrText } from '@/utils/tools';
 import { getBackupList } from '@/api/backup';
 import MyIcon from '@/components/Icon';
@@ -190,20 +190,10 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
   }));
 
   const { data, refetch: refetchPolicy } = useQuery(['initpolicy', db.dbName, db.dbType], () =>
-    db.dbName && db.dbType
-      ? getBackupPolicy({
-          dbName: db.dbName,
-          dbType: db.dbType
-        })
-      : {
-          start: false,
-          hour: '18',
-          minute: '00',
-          week: [],
-          type: 'day',
-          saveTime: 7,
-          saveType: 'day'
-        }
+    getBackupPolicyByCluster({
+      dbName: db.dbName,
+      dbType: db.dbType
+    })
   );
 
   return (

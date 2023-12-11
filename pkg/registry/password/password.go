@@ -48,11 +48,11 @@ type Upgrade interface {
 }
 
 func NewUpgrade(name string, sshInterface exec.Interface) Upgrade {
-	return &upgrade{Cluster: name, SSHInterface: sshInterface, mk: &maker{sets.NewString()}}
+	return &upgrade{Cluster: name, SSHInterface: sshInterface, mk: &maker{sets.New[string]()}}
 }
 
 type maker struct {
-	paths sets.String
+	paths sets.Set[string]
 }
 
 type upgrade struct {

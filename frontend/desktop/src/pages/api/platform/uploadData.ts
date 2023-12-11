@@ -8,7 +8,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       bd_vid: string;
       main_url: string;
     };
-
     const BD_TOKEN = process.env.BD_TOKEN;
 
     if (!BD_TOKEN || !bd_vid) {
@@ -19,7 +18,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const url = 'https://ocpc.baidu.com/ocpcapi/api/uploadConvertData';
-
     const logidUrl = `${main_url}?bd_vid=${bd_vid}`;
 
     const data = {
@@ -37,12 +35,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     ).json();
 
-    console.log(data, result);
-
+    console.log('upload data success', data);
     jsonRes(res, {
       data: result
     });
   } catch (error) {
+    console.log('upload data error', error);
     jsonRes(res, { code: 500, data: error });
   }
 }

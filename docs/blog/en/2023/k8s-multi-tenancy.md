@@ -5,7 +5,7 @@ description: explores the value proposition of multi-tenant Kubernetes, implemen
 authors: [fanux]
 tags: [Kubernetes, Sealos, Multi-Tenant]
 keywords: [Cloud Operating System, Sealos, K8s, Cloud Native, Cloud Computing, Cloud OS, PaaS, Multi-Tenant, Runtime Isolation, Namespace]
-image: https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-17-36-fBsk9p.jpg
+image: https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-17-36-fBsk9p.jpg
 date: 2023-11-29T10:00
 ---
 
@@ -19,7 +19,7 @@ In today's business landscape, managing cloud and server resources is becoming i
 
 Multi-tenancy refers to an architecture allowing multiple users or "tenants" to share resources from the same system while keeping data isolated and secure. For Kubernetes, this means running workloads from different teams on a shared cluster without risk of resource conflicts, data leaks, or security issues.
 
-![Diagram of single vs multi-tenant Kubernetes](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-34-rLPyaY.jpg)
+![Diagram of single vs multi-tenant Kubernetes](https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-34-rLPyaY.jpg)
 
 ### Pain Points of Single-Tenant Setups
 
@@ -30,7 +30,7 @@ Consider an enterprise Kubernetes cluster used by 20 internal departments. Witho
 3. **Sprawl** - Lacking isolation allows cluster entanglement over time.
 4. **Limitations** - Fixed single-tenant structure strains under changing demands.
 
-![Comparison table of single vs multi-tenant Kubernetes](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-15-53-DGg4ig.png)
+![Comparison table of single vs multi-tenant Kubernetes](https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-15-53-DGg4ig.png)
 
 ### The Multi-Tenant Advantage
 
@@ -55,13 +55,13 @@ Sealos addresses these concerns through a multi-faceted isolation approach. It e
 
 Inherent to K8s is the absence of a native user management framework. This necessitates the creation of a user identity system, integration with external user management platforms, and issuance of unique kubeconfig files or tokens. Moreover, it's imperative to forge a multifaceted linkage between users and namespaces, coupled with the distribution of tailored permissions.
 
-![Image Depicting User-Namespace Association](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-34-Dfn5xa.png)
+![Image Depicting User-Namespace Association](https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-34-Dfn5xa.png)
 
 Sealos's framework enables administrators to effectively slot users into designated namespaces and regulate their roles, thereby achieving a granular control over permissions. This guarantees that users access only the resources they are legitimately permitted to use.
 
-![Image Illustrating User Permissions Management](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-34-wknQxI.png)
+![Image Illustrating User Permissions Management](https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-34-wknQxI.png)
 
-![Image Showcasing User Role Control](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-34-RQFrTB.png)
+![Image Showcasing User Role Control](https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-34-RQFrTB.png)
 
 ### Challenge 3: Metering and Managing Quotas
 
@@ -69,13 +69,13 @@ A critical aspect of multi-tenancy in K8s is the equitable distribution and meti
 
 Utilizing eBPF technology, Sealos adeptly monitors network traffic, correlating it with tenant information and storing it in a database for precise billing and resource management. For compute and storage resources, Sealos relies on controllers to gather and administer relevant data, ensuring efficient resource oversight.
 
-![](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-36-HsycaI.png)
+![](https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-36-HsycaI.png)
 
 ## Extreme Multi-Tenancy - The Sealos Challenge
 
 In the realm of multi-tenancy, Sealos embarks on an ambitious journey, operating within the unpredictable confines of a public network. This scenario invites any developer to join and partake in a communal Kubernetes cluster, which inherently raises substantial security and stability risks.
 
-![](https://jsd.onmicrosoft.cn/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-54-kbCMsN.png)
+![](https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-54-kbCMsN.png)
 
 The method adopted by Sealos brings forth distinct benefits: cost-effectiveness, as it negates the need for users to independently build and manage their clusters, leading to significant cost reductions in cloud services. It also enhances resource utilization, allowing container operations on a smaller scale, thereby leveraging the platform’s flexibility and resources. Crucially, establishing strong isolation in such a public network setting can bolster security and stability.
 

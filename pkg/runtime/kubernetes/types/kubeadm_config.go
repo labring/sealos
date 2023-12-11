@@ -23,7 +23,6 @@ import (
 	kubeproxyconfigv1alpha1 "k8s.io/kube-proxy/config/v1alpha1"
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm" // internal version
-	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
 
 	"github.com/labring/sealos/pkg/runtime/decode"
@@ -132,29 +131,6 @@ func (k *KubeadmConfig) ToConvertedKubeadmConfig() (*ConvertedKubeadmConfig, err
 	var err error
 
 	switch k.InitConfiguration.APIVersion {
-	case KubeadmV1beta2:
-		var v1beta2InitConfiguration v1beta2.InitConfiguration
-		var v1beta2ClusterConfiguration v1beta2.ClusterConfiguration
-		var v1beta2JoinConfiguration v1beta2.JoinConfiguration
-		if err = v1beta2.Convert_kubeadm_InitConfiguration_To_v1beta2_InitConfiguration(&k.InitConfiguration, &v1beta2InitConfiguration, nil); err != nil {
-			return nil, err
-		}
-		if err = v1beta2.Convert_kubeadm_ClusterConfiguration_To_v1beta2_ClusterConfiguration(&k.ClusterConfiguration, &v1beta2ClusterConfiguration, nil); err != nil {
-			return nil, err
-		}
-		if err = v1beta2.Convert_kubeadm_JoinConfiguration_To_v1beta2_JoinConfiguration(&k.JoinConfiguration, &v1beta2JoinConfiguration, nil); err != nil {
-			return nil, err
-		}
-
-		v1beta2InitConfiguration.APIVersion = v1beta2.SchemeGroupVersion.String()
-		v1beta2ClusterConfiguration.APIVersion = v1beta2.SchemeGroupVersion.String()
-		v1beta2JoinConfiguration.APIVersion = v1beta2.SchemeGroupVersion.String()
-		v1beta2InitConfiguration.Kind = "InitConfiguration"
-		v1beta2ClusterConfiguration.Kind = "ClusterConfiguration"
-		v1beta2JoinConfiguration.Kind = "JoinConfiguration"
-		conversion.InitConfiguration = v1beta2InitConfiguration
-		conversion.ClusterConfiguration = v1beta2ClusterConfiguration
-		conversion.JoinConfiguration = v1beta2JoinConfiguration
 	case KubeadmV1beta3, "": // defaults to v1beta3
 		var v1beta3InitConfiguration v1beta3.InitConfiguration
 		var v1beta3ClusterConfiguration v1beta3.ClusterConfiguration
@@ -239,6 +215,7 @@ func (k *KubeadmConfig) FinalizeFeatureGatesConfiguration() {
 		k.KubeletConfiguration.FeatureGates, k.ClusterConfiguration.KubernetesVersion).(map[string]bool)
 }
 
+// https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates-removed/
 var featureGatesUpdate = map[string][]string{
 	"CSIStorageCapacity":  {"LessThan", "v1.21.0"},
 	"TTLAfterFinished":    {"AtLeast", "v1.24.0"},

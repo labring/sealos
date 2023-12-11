@@ -11,6 +11,7 @@ use (
 	./resources
 	./license
 	./job/init
+	./job/heartbeat
 	./pkg
 	./objectstorage
 )

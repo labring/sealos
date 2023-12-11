@@ -59,6 +59,37 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
   };
 };
 
+export const adaptBackupByCluster = (db: KbPgClusterType): AutoBackupFormType => {
+  const backup = db.spec.backup
+    ? adaptPolicy({
+        metadata: {
+          name: db.metadata.name,
+          uid: db.metadata.uid
+        },
+        spec: {
+          retention: {
+            ttl: db.spec.backup.retentionPeriod
+          },
+          schedule: {
+            datafile: {
+              cronExpression: db.spec.backup.cronExpression,
+              enable: db.spec.backup.enabled
+            }
+          }
+        }
+      })
+    : {
+        start: false,
+        hour: '18',
+        minute: '00',
+        week: [],
+        type: 'day',
+        saveTime: 7,
+        saveType: 'd'
+      };
+  return backup;
+};
+
 export const adaptDBForm = (db: DBDetailType): DBEditType => {
   const keys: Record<keyof DBEditType, any> = {
     dbType: 1,

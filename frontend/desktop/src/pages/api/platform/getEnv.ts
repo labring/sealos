@@ -28,6 +28,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const wechatEnabledRecharge = enableWechatRecharge();
   const licenseEnabled = enableLicense();
   const rechargeEnabled = enableRecharge();
+  const guideEnabled = process.env.GUIDE_ENABLED === 'true';
+
   jsonRes(res, {
     data: {
       SEALOS_CLOUD_DOMAIN: process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io',
@@ -45,7 +47,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       stripeEnabled,
       wechatEnabledRecharge,
       rechargeEnabled,
-      licenseEnabled
+      licenseEnabled,
+      guideEnabled
     }
   });
 }

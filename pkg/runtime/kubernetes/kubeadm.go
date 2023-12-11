@@ -66,25 +66,13 @@ func (k *KubeadmRuntime) setAPIVersion(apiVersion string) {
 
 // GetterKubeadmAPIVersion is covert version to kubeadmAPIServerVersion
 // The support matrix will look something like this now and in the future:
-// v1.10 and earlier: v1alpha1
-// v1.11: v1alpha1 read-only, writes only v1alpha2 Config
-// v1.12: v1alpha2 read-only, writes only v1alpha3 Config. Errors if the user tries to use v1alpha1
-// v1.13: v1alpha3 read-only, writes only v1beta1 Config. Errors if the user tries to use v1alpha1 or v1alpha2
-// v1.14: v1alpha3 convert only, writes only v1beta1 Config. Errors if the user tries to use v1alpha1 or v1alpha2
-// v1.15: v1beta1 read-only, writes only v1beta2 Config. Errors if the user tries to use v1alpha1, v1alpha2 or v1alpha3
 // v1.22: v1beta2 read-only, writes only v1beta3 Config. Errors if the user tries to use v1beta1 and older
 func getterKubeadmAPIVersion(kubeVersion string) string {
 	v := semver.MustParse(kubeVersion)
 	var apiVersion string
 	switch {
-	// kubernetes gt 1.13, lt 1.15
-	case gte(v, V1130) && v.LessThan(V1150):
-		apiVersion = types.KubeadmV1beta1
-	// kubernetes gt 1.15, lt 1.22
-	case gte(v, V1150) && v.LessThan(V1220):
-		apiVersion = types.KubeadmV1beta2
 	// kubernetes gte 1.22
-	case gte(v, V1220) && v.LessThan(V1280):
+	case gte(v, V1220):
 		apiVersion = types.KubeadmV1beta3
 	default:
 		apiVersion = types.KubeadmV1beta3
@@ -327,25 +315,11 @@ func (k *KubeadmRuntime) setJoinToken(token string) {
 	k.kubeadmConfig.JoinConfiguration.Discovery.BootstrapToken.Token = token
 }
 
-func (k *KubeadmRuntime) getJoinToken() string {
-	if k.kubeadmConfig.JoinConfiguration.Discovery.BootstrapToken == nil {
-		return ""
-	}
-	return k.kubeadmConfig.JoinConfiguration.Discovery.BootstrapToken.Token
-}
-
 func (k *KubeadmRuntime) setTokenCaCertHash(tokenCaCertHash []string) {
 	if k.kubeadmConfig.JoinConfiguration.Discovery.BootstrapToken == nil {
 		k.kubeadmConfig.JoinConfiguration.Discovery.BootstrapToken = &kubeadm.BootstrapTokenDiscovery{}
 	}
 	k.kubeadmConfig.JoinConfiguration.Discovery.BootstrapToken.CACertHashes = tokenCaCertHash
-}
-
-func (k *KubeadmRuntime) getTokenCaCertHash() []string {
-	if k.kubeadmConfig.JoinConfiguration.Discovery.BootstrapToken == nil || len(k.kubeadmConfig.JoinConfiguration.Discovery.BootstrapToken.CACertHashes) == 0 {
-		return nil
-	}
-	return k.kubeadmConfig.JoinConfiguration.Discovery.BootstrapToken.CACertHashes
 }
 
 func (k *KubeadmRuntime) setJoinCertificateKey(certificateKey string) {
@@ -361,13 +335,6 @@ func (k *KubeadmRuntime) setInitCertificateKey(certificateKey string) {
 
 func (k *KubeadmRuntime) getInitCertificateKey() string {
 	return k.kubeadmConfig.InitConfiguration.CertificateKey
-}
-
-func (k *KubeadmRuntime) getJoinCertificateKey() string {
-	if k.kubeadmConfig.JoinConfiguration.ControlPlane == nil {
-		return ""
-	}
-	return k.kubeadmConfig.JoinConfiguration.ControlPlane.CertificateKey
 }
 
 func (k *KubeadmRuntime) setAPIServerEndpoint(endpoint string) {
@@ -433,8 +400,11 @@ func (k *KubeadmRuntime) getCRISocket(node string) (string, error) {
 
 //nolint:all
 func (k *KubeadmRuntime) setCRISocket(criSocket string) {
-	k.kubeadmConfig.JoinConfiguration.NodeRegistration.CRISocket = criSocket
-	k.kubeadmConfig.InitConfiguration.NodeRegistration.CRISocket = criSocket
+	k.kubeadmConfig.JoinConfiguration.NodeRegistration.CRISocket = fmt.Sprintf("unix://%s", criSocket)
+	k.kubeadmConfig.JoinConfiguration.NodeRegistration.ImagePullPolicy = v1.PullNever
+	k.kubeadmConfig.InitConfiguration.NodeRegistration.CRISocket = fmt.Sprintf("unix://%s", criSocket)
+	k.kubeadmConfig.InitConfiguration.NodeRegistration.ImagePullPolicy = v1.PullNever
+	k.kubeadmConfig.KubeletConfiguration.ContainerRuntimeEndpoint = fmt.Sprintf("unix://%s", criSocket)
 }
 
 var setCGroupDriverAndSocket = func(krt *KubeadmRuntime) error {
@@ -541,6 +511,7 @@ func (k *KubeadmRuntime) setCGroupDriverAndSocket(node string) error {
 	}
 	logger.Debug("node: %s , criSocket: %s", node, criSocket)
 	k.setCRISocket(criSocket)
+	k.setImageSocket()
 	cGroupDriver, err := k.getCGroupDriver(node)
 	if err != nil {
 		return err
@@ -548,4 +519,9 @@ func (k *KubeadmRuntime) setCGroupDriverAndSocket(node string) error {
 	logger.Debug("node: %s , cGroupDriver: %s", node, cGroupDriver)
 	k.setCgroupDriver(cGroupDriver)
 	return nil
+}
+
+func (k *KubeadmRuntime) setImageSocket() {
+	imageEndpoint := k.cluster.GetImageEndpoint()
+	k.kubeadmConfig.KubeletConfiguration.ImageServiceEndpoint = fmt.Sprintf("unix://%s", imageEndpoint)
 }
