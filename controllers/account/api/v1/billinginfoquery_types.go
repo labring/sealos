@@ -27,6 +27,7 @@ const (
 	QueryTypeNamespacesHistory = "NamespacesHistory"
 	QueryTypeProperties        = "Properties"
 	QueryTypeAppType           = "AppType"
+	QueryTypeRecharge          = "Recharge"
 )
 
 // BillingInfoQuerySpec defines the desired state of BillingInfoQuery

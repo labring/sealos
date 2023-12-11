@@ -480,3 +480,7 @@ export const getErrText = (err: any, def = '') => {
   msg && console.log('error =>', msg);
   return msg;
 };
+
+export const formatMoney = (mone: number) => {
+  return mone / 1000000;
+};

@@ -78,6 +78,9 @@ importers:
       '@kubernetes/client-node':
         specifier: ^0.18.1
         version: 0.18.1
+      '@sealos/driver':
+        specifier: workspace:^
+        version: link:../packages/driver
       '@sealos/ui':
         specifier: workspace:^
         version: link:../packages/ui
@@ -270,6 +273,22 @@ importers:
         specifier: ^2.6.2
         version: 2.6.2
 
+  packages/driver:
+    dependencies:
+      react:
+        specifier: ^18.2.0
+        version: 18.2.0
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.2.0(react@18.2.0)
+    devDependencies:
+      '@types/react':
+        specifier: 18.2.37
+        version: 18.2.37
+      '@types/react-dom':
+        specifier: 18.0.11
+        version: 18.0.11
+
   packages/ui:
     dependencies:
       react:
@@ -415,6 +434,9 @@ importers:
       '@next/font':
         specifier: 13.1.6
         version: 13.1.6
+      '@sealos/driver':
+        specifier: workspace:^
+        version: link:../../packages/driver
       '@tanstack/react-query':
         specifier: ^4.35.3
         version: 4.36.1(react-dom@18.2.0)(react@18.2.0)

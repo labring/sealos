@@ -158,6 +158,8 @@ const Header = ({
       )}
       {!isPause && (
         <Button
+          className="driver-detail-update-button"
+          _focusVisible={{ boxShadow: '' }}
           mr={5}
           h={'40px'}
           borderColor={'myGray.200'}

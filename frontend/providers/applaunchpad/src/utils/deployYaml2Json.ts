@@ -20,8 +20,6 @@ export const json2DeployCr = (
   handleType: 'edit' | 'create' = 'create',
   crYamlList?: DeployKindsType[]
 ) => {
-  console.log(data, 'form data');
-
   const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
 
   const metadata = {
