@@ -6,7 +6,7 @@ const generateAlgoliKey = () => "ce5b8e1e4d0d35ff587caf75ac404df4"
 const config = {
   title: "Sealos: 专为云原生开发打造的以 K8s 为内核的云操作系统",
   tagline: "Kubernetes-kernel-based cloud os! Let's sealos run kubernetes",
-  url: "https://sealos.io/",
+  url: process.env.SEALOS_LANG === "zh-Hans" ? "https://sealos.run/" : "https://sealos.io/",
   baseUrl: "/",
   onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "warn",
