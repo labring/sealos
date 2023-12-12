@@ -191,7 +191,10 @@ func NewRemoteFromSSH(clusterName string, sshInterface Interface) *Remote {
 
 func (s *Remote) executeRemoteUtilSubcommand(ip, cmd string) error {
 	cmd = fmt.Sprintf("%s %s", s.pathResolver.RootFSSealctlPath(), cmd)
-	return s.execer.CmdAsync(ip, cmd)
+	if err := s.execer.CmdAsync(ip, cmd); err != nil {
+		return fmt.Errorf("failed to execute remote command `%s`: %v", cmd, err)
+	}
+	return nil
 }
 
 func (s *Remote) outputRemoteUtilSubcommand(ip, cmd string) (string, error) {
