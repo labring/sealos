@@ -1,5 +1,6 @@
 import { applyYamlList, getDBSecret } from '@/api/db';
 import {
+  applyDumpCR,
   deleteMigrateJobByName,
   getLogByNameAndContainerName,
   getMigratePodList
@@ -10,7 +11,6 @@ import MyIcon from '@/components/Icon';
 import { useToast } from '@/hooks/useToast';
 import { DBDetailType } from '@/types/db';
 import { DumpForm } from '@/types/migrate';
-import { json2DumpCR } from '@/utils/json2Yaml';
 import {
   Box,
   Button,
@@ -89,10 +89,8 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
             });
           }
           formHook.setValue('fileName', result[0]);
-          const { yamlStr, yamlObj } = await json2DumpCR({ ...data, fileName: result[0] });
-          setMigrateName(yamlObj.metadata.name);
-          console.log(yamlStr, yamlObj.metadata.name);
-          await applyYamlList([yamlStr], 'create');
+          const res = await applyDumpCR({ ...data, fileName: result[0] });
+          setMigrateName(res.name);
         } catch (error: any) {
           toast({
             title: String(error),
