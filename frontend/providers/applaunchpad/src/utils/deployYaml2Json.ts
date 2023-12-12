@@ -430,7 +430,8 @@ export const json2Ingress = (data: AppEditType) => {
               {
                 http01: {
                   ingress: {
-                    class: 'nginx'
+                    class: 'nginx',
+                    serviceType: 'ClusterIP'
                   }
                 }
               }
