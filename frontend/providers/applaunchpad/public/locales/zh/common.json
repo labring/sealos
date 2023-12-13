@@ -220,5 +220,6 @@
   "let me think again": "我再想想",
   "Configurable number of instances or automatic horizontal scaling": "可配置实例数或自动横向伸缩",
   "gift time tip": "{{time}} 小时内",
-  "gift amount tip": "充值 {{amount}} 赠送 {{gift}} "
+  "gift amount tip": "充值 {{amount}} 赠送 {{gift}} ",
+  "ConfigMap Tip": "配置文件"
 }

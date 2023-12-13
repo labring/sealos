@@ -178,5 +178,9 @@
   "let me think again": "let me think again",
   "Configurable number of instances or automatic horizontal scaling": "Configurable number of instances or automatic horizontal scaling",
   "gift time tip": "Within {{time}} hours ",
-  "gift amount tip": "Recharge {{amount}} and get {{gift}} free"
+  "gift amount tip": "Recharge {{amount}} and get {{gift}} free",
+  "Add Port": "Add Port",
+  "Age": "Age",
+  "Amount": "Amount",
+  "ConfigMap Tip": "ConfigMap"
 }
