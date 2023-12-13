@@ -12,7 +12,7 @@ sidebar_position: 3
 + **Prometheus 监控和应用服务**：如果你的应用既有业务端口，又有一个用于 Prometheus 监控的 `/metrics` 端口，你可能需要同时暴露两者。
 + **GRPC 和 RESTful 服务并存**：如果你的应用同时提供 GRPC 和 RESTful 服务，你可能需要为每种服务类型暴露不同的端口。
 
-[Sealos](https://cloud.sealos.io) 在使用「[应用管理](/platform-components/applaunchpad.md)」部署应用时，可以轻松地选择暴露多个端口。在部署应用的过程中，用户只需要点击「网络配置」选项，然后选择「添加端口」，即可实现多端口的配置。
+[Sealos](https://cloud.sealos.io) 在使用「[应用管理](/guides/applaunchpad/applaunchpad.md)」部署应用时，可以轻松地选择暴露多个端口。在部署应用的过程中，用户只需要点击「网络配置」选项，然后选择「添加端口」，即可实现多端口的配置。
 
 ![](./images/multi-ports1.png)
 

@@ -13,7 +13,7 @@ In complex application environments, it's common for services to expose multiple
 + **Prometheus Monitoring and App Service**: If your application has a business port and another port for Prometheus monitoring via `/metrics`, you might need to expose both.
 + **Coexistence of GRPC and RESTful services**: If your application offers both GRPC and RESTful services, you might need to expose separate ports for each type of service.
 
-When deploying applications using "[App Launchpad](/platform-components/applaunchpad.md)" on [Sealos](https://cloud.sealos.io), you can easily choose to expose multiple ports. During the deployment process, users simply click on the "Network" option and then select "Add Port" to configure multiple ports.
+When deploying applications using "[App Launchpad](/guides/applaunchpad/applaunchpad.md)" on [Sealos](https://cloud.sealos.io), you can easily choose to expose multiple ports. During the deployment process, users simply click on the "Network" option and then select "Add Port" to configure multiple ports.
 
 ![](./images/multi-ports1.png)
 

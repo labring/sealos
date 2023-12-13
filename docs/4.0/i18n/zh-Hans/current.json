@@ -19,9 +19,9 @@
     "message": "部署应用",
     "description": "The label for category App Deployments in sidebar docSidebar"
   },
-  "sidebar.docSidebar.category.Platform Components": {
-    "message": "平台组件",
-    "description": "The label for category Platform Components in sidebar docSidebar"
+  "sidebar.docSidebar.category.How-to Guides": {
+    "message": "使用指南",
+    "description": "The label for category How-to Guides in sidebar docSidebar"
   },
   "sidebar.docSidebar.category.Self Hosting": {
     "message": "私有化部署",

@@ -30,23 +30,23 @@ Complete the deployment and access in just 6 steps:
 
 1. Enter the **App Launchpad** app from the Sealos Desktop.
 
-![](./imgs/app-launchpad.jpg)
+![](./images/app-launchpad.jpg)
 
 2. Click to create a new application.
 
-![](./imgs/app-list.png)
+![](./images/app-list.png)
 
 3. Turn on the **External Access** switch. The Nginx image is already filled in by default, no need for modification. Then Click Deploy Aplication.
 
-![](./imgs/app-launchpad3.png)
+![](./images/app-launchpad3.png)
 
 4. Enter the App details.
 
-![](./imgs/app-launchpad4.png)
+![](./images/app-launchpad4.png)
 
 5. Click the "External Address" to access Nginx.
 
-![](./imgs/app-launchpad6.png)
+![](./images/app-launchpad6.png)
 
 ## Detailed Features
 
@@ -54,9 +54,9 @@ Complete the deployment and access in just 6 steps:
 
 You can freely switch between fixed instances or elastic scaling mode during application creation/change.
 
-![img](./imgs/app-launchpad7.png) 
+![img](./images/app-launchpad7.png) 
 
-![img](./imgs/app-launchpad8.png)
+![img](./images/app-launchpad8.png)
 
 - Fixed Instance: Permanently create a fixed number of Pods, unaffected by actual traffic.
 - Elastic Scaling: You can choose to dynamically adjust the number of Pods based on the percentage of CPU or Memory. Setting up elastic scaling requires a certain understanding of your own business traffic. Of course, you can also directly select 1~20 instance numbers, as the billing system will only calculate the actual running instances, inactive ones will not be charged.
@@ -69,13 +69,13 @@ You can freely switch between fixed instances or elastic scaling mode during app
 2. Follow the prompt to modify the DNS at the domain service provider, CNAME resolve to the prompted domain.
 3. Confirm the creation/update of the application.
 
-![](./imgs/app-launchpad9.png) 
+![](./images/app-launchpad9.png) 
 
 ### Environment
 
 **App Launchpad** uses batch input to enter environment variables, split by line, **=** sign, and **:** sign, and invalid characters in the key will be removed.
 
-![img](./imgs/app-launchpad10.png)
+![img](./images/app-launchpad10.png)
 
 **Examples of valid environment variable formats:**
 
@@ -105,7 +105,7 @@ You can think of ConfigMap as volumes in Docker. Mount a custom file into the co
 - File Value: Corresponds to the content of the file. If the content is too complex, you can edit it locally before pasting it here.
 - Note: ConfigMap mounts individual files, not directories.
 
-![](./imgs/app-launchpad11.png)
+![](./images/app-launchpad11.png)
 
 ### Persistent Storage
 
@@ -113,6 +113,6 @@ Any content saved in the Pod is temporary, so be sure not to save content that n
 
 Suppose you need to deploy a PostgreSQL database, you must create a storage volume to persistently store the content in the database.
 
-![](./imgs/app-launchpad12.png)
+![](./images/app-launchpad12.png)
 
 Of course, we recommend you use [Database Management](./dbprovider/dbprovider.md) for deploying and managing databases.
