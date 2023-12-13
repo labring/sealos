@@ -31,7 +31,7 @@ export default function ClusterRecord() {
       alignItems={'center'}
       pt="52px"
       pb="40px"
-      px={{ base: '12px', md: '20px', lg: '56px' }}
+      px={{ base: '12px', md: '20px', lg: '42px' }}
       position={'relative'}
     >
       <Text mb="10px" color={'#262A32'} fontSize={'24px'} fontWeight={600} alignSelf={'flex-start'}>
@@ -90,8 +90,8 @@ export default function ClusterRecord() {
                   </Center>
                 </Flex>
                 <Text mt="8px" color={'#7B838B'} fontSize={'11px'} fontWeight={400}>
-                  集群ID: {item?.kubeSystemID ? item?.kubeSystemID : '未绑定'},
-                  {formatTime(item.createdAt, 'YYYY-MM-DD HH:mm')}
+                  集群ID: {item?.kubeSystemID ? item?.kubeSystemID : '未绑定'}
+                  {/* {formatTime(item.createdAt, 'YYYY-MM-DD HH:mm')} */}
                 </Text>
               </Flex>
               <Flex justifyContent={'center'} alignItems={'center'} ml="auto" flexShrink={0}>

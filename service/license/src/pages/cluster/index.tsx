@@ -40,6 +40,7 @@ export default function MyCluster({ ossFileUrl }: { ossFileUrl: string }) {
   const router = useRouter();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [clusterType, setClusterType] = useState<string>('Standard');
+  const [noCluster, setNoCluster] = useState(false);
   const queryClient = useQueryClient();
   const toast = useToast();
 
@@ -75,11 +76,8 @@ export default function MyCluster({ ossFileUrl }: { ossFileUrl: string }) {
       }
       const cluster = findStandardRecordWithoutClusterId(data?.records, clusterType);
       if (!cluster) {
-        return toast({
-          position: 'top',
-          status: 'info',
-          description: '无可激活集群,请前往购买'
-        });
+        setNoCluster(true);
+        return;
       }
       setClusterDetail(cluster);
       const res = await activeClusterBySystemId({
@@ -159,43 +157,64 @@ export default function MyCluster({ ossFileUrl }: { ossFileUrl: string }) {
         <ModalContent>
           <ModalHeader py="20px">激活集群</ModalHeader>
           <ModalCloseButton />
-          <Flex alignItems={'center'} justifyContent={'center'} flexDirection={'column'}>
-            <Text fontSize={'16px'} color={'#262A32'} fontWeight={500}>
-              集群版本
-            </Text>
-            <Flex gap="20px" mt="26px">
-              {['Standard', 'Enterprise'].map((item) => (
-                <Flex
-                  key={item}
-                  alignItems={'center'}
-                  justifyContent={'center'}
-                  w="140px"
-                  h="62px"
-                  color={clusterType === item ? '#36ADEF' : '#24282C'}
-                  fontSize={'16px'}
-                  fontWeight={'500'}
-                  border={clusterType === item ? '1px solid #36ADEF' : ''}
-                  borderRadius={'4px'}
-                  bg="#F4F6F8"
-                  cursor={'pointer'}
-                  onClick={() => setClusterType(item)}
-                >
-                  {t(item)}
-                </Flex>
-              ))}
+          {noCluster ? (
+            <Flex alignItems={'center'} justifyContent={'center'} flexDirection={'column'}>
+              <Text mt="30px" color={'#262A32'} fontWeight={500} fontSize={'16px'}>
+                暂无可激活 {t(clusterType)}集群，可前往购买
+              </Text>
+              <Button
+                mt="20px"
+                mb="60px"
+                w="114px"
+                h="36px"
+                borderRadius={'2px'}
+                variant={'black'}
+                onClick={() => {
+                  router.push('/pricing');
+                }}
+              >
+                去购买
+              </Button>
             </Flex>
-            <Button
-              mt="56px"
-              mb="44px"
-              w="200px"
-              h="36px"
-              borderRadius={'2px'}
-              variant={'black'}
-              onClick={handleActivateCluster}
-            >
-              激活
-            </Button>
-          </Flex>
+          ) : (
+            <Flex alignItems={'center'} justifyContent={'center'} flexDirection={'column'}>
+              <Text fontSize={'16px'} color={'#262A32'} fontWeight={500}>
+                集群版本
+              </Text>
+              <Flex gap="20px" mt="26px">
+                {['Standard', 'Enterprise'].map((item) => (
+                  <Flex
+                    key={item}
+                    alignItems={'center'}
+                    justifyContent={'center'}
+                    w="140px"
+                    h="62px"
+                    color={clusterType === item ? '#36ADEF' : '#24282C'}
+                    fontSize={'16px'}
+                    fontWeight={'500'}
+                    border={clusterType === item ? '1px solid #36ADEF' : ''}
+                    borderRadius={'4px'}
+                    bg="#F4F6F8"
+                    cursor={'pointer'}
+                    onClick={() => setClusterType(item)}
+                  >
+                    {t(item)}
+                  </Flex>
+                ))}
+              </Flex>
+              <Button
+                mt="56px"
+                mb="44px"
+                w="200px"
+                h="36px"
+                borderRadius={'2px'}
+                variant={'black'}
+                onClick={handleActivateCluster}
+              >
+                激活
+              </Button>
+            </Flex>
+          )}
         </ModalContent>
       </Modal>
     </Layout>
