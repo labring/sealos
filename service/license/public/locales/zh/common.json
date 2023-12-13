@@ -77,7 +77,6 @@
   "Recive Tips": "{{managerName}} 邀请你到 {{teamName}} 当 {{role}}",
   "pay with wechat": "微信支付",
   "pay with stripe": "Stripe 支付",
-  "License Buy": "License 购买",
   "Purchase History": "购买记录",
   "Purchase License": "购买 License",
   "Remaining Time": "剩余激活时间: ",
@@ -106,5 +105,6 @@
       "No Elements to Delete": "没有元素可以删除"
     }
   },
-  "Enter Save": "回车保存"
+  "Enter Save": "回车保存",
+  "License History": "历史 License"
 }

@@ -23,7 +23,13 @@ const Button = defineStyleConfig({
       },
       color: '#FEFEFE'
     },
-    black: {}
+    black: {
+      bg: '#24282C',
+      color: '#FEFEFE',
+      borderRadius: '2px',
+      fontSize: '14px',
+      fontWeight: 600
+    }
   }
 });
 
