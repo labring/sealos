@@ -16,7 +16,7 @@ select the template you’d like to deploy
 
 ![Viewing the templates marketplace](./images/templates-2.png)
 
-Not sure which one to use? How about [exploring FastGPT](../../examples/ai-applications/install-fastgpt-on-desktop.md)
+Not sure which one to use? How about [exploring FastGPT](/examples/ai-applications/install-fastgpt-on-desktop.md)
 
 ## 2. Deploy the template to Sealos
 

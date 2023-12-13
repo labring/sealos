@@ -16,7 +16,7 @@ sidebar_position: 1
 
 ![查看模板市场](./images/templates-2.png)
 
-不知道部署哪个应用？可以试试 [FastGPT AI 知识库](../../examples/ai-applications/install-fastgpt-on-desktop.md)
+不知道部署哪个应用？可以试试 [FastGPT AI 知识库](/examples/ai-applications/install-fastgpt-on-desktop.md)
 
 ## 2. 将模板应用部署到 Sealos
 
