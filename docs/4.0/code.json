@@ -631,13 +631,16 @@
   "Cloud Operating System": {
     "message": "云操作系统: Sealos"
   },
-  "Pricing": {
-    "message": "价格"
+  "Hosting": {
+    "message": "私有云"
   },
   "A cloud operating system based on the Kubernetes kernel": {
     "message": "以 Kubernetes 为内核的云操作系统"
   },
   "Explore": {
     "message": "了解更多"
+  },
+  "Blog": {
+    "message": "博客"
   }
 }

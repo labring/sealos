@@ -66,7 +66,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
 
     const { dbName, dbType, queryKey, start, end, step } = req.query;
-    console.log(dbName, dbType, queryKey);
 
     const endTime = Date.now(); // 当前时间的时间戳
     const startTime = endTime - 60 * 60 * 1000; // 前向推进1个小时的时间戳
@@ -80,6 +79,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       end: endTime / 1000,
       step: '1m'
     };
+    console.log(params, 'getMonitorData');
 
     const result = await handleAxiosStream(
       {

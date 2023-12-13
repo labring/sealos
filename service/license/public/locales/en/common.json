@@ -99,5 +99,12 @@
   "Contact Us": "Contact Us",
   "Buy": "Buy",
   "Checking Payment Results": "Checking Payment Results",
-  "Cluster Pay Success": "Buy {{clusterType}} Success"
+  "Cluster Pay Success": "Buy {{clusterType}} Success",
+  "common": {
+    "input": {
+      "Repeat Value": "Repeat Value",
+      "No Elements to Delete": "No Elements to Delete"
+    }
+  },
+  "Enter Save": "Enter Save"
 }

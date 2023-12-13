@@ -19,6 +19,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -29,27 +31,45 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/watch"
 
+	"github.com/go-logr/logr"
+	"github.com/minio/madmin-go/v3"
+
 	v1 "github.com/labring/sealos/controllers/account/api/v1"
 
-	"github.com/go-logr/logr"
+	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const DebtLimit0Name = "debt-limit0"
-
 // NamespaceReconciler reconciles a Namespace object
 type NamespaceReconciler struct {
-	Client client.WithWatch
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Client           client.WithWatch
+	Log              logr.Logger
+	Scheme           *runtime.Scheme
+	OSAdminClient    *madmin.AdminClient
+	OSNamespace      string
+	OSAdminSecret    string
+	InternalEndpoint string
 }
+
+const (
+	DebtLimit0Name        = "debt-limit0"
+	OSAccessKey           = "CONSOLE_ACCESS_KEY"
+	OSSecretKey           = "CONSOLE_SECRET_KEY"
+	Disabled              = "disabled"
+	Enabled               = "enabled"
+	OSInternalEndpointEnv = "OSInternalEndpoint"
+	OSNamespace           = "OSNamespace"
+	OSAdminSecret         = "OSAdminSecret"
+)
 
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=namespaces/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=core,resources=namespaces/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -115,6 +135,7 @@ func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace
 		r.deleteControlledPod,
 		//TODO how to suspend infra cr or delete infra cr
 		//r.suspendInfraResources,
+		r.suspendObjectStorage,
 	}
 	for _, fn := range pipelines {
 		if err := fn(ctx, namespace); err != nil {
@@ -130,6 +151,7 @@ func (r *NamespaceReconciler) ResumeUserResource(ctx context.Context, namespace 
 	pipelines := []func(context.Context, string) error{
 		r.limitResourceQuotaDelete,
 		r.resumePod,
+		r.resumeObjectStorage,
 	}
 	for _, fn := range pipelines {
 		if err := fn(ctx, namespace); err != nil {
@@ -297,6 +319,77 @@ func (r *NamespaceReconciler) recreatePod(ctx context.Context, oldPod corev1.Pod
 	return nil
 }
 
+func (r *NamespaceReconciler) suspendObjectStorage(ctx context.Context, namespace string) error {
+	split := strings.Split(namespace, "-")
+	user := split[1]
+
+	err := r.setOSUserStatus(ctx, user, Disabled)
+	if err != nil {
+		r.Log.Error(err, "failed to suspend object storage", "user", user)
+		return err
+	}
+
+	r.Log.Info("suspend object storage", "user", user)
+	return nil
+}
+
+func (r *NamespaceReconciler) resumeObjectStorage(ctx context.Context, namespace string) error {
+	split := strings.Split(namespace, "-")
+	user := split[1]
+
+	err := r.setOSUserStatus(ctx, user, Enabled)
+	if err != nil {
+		r.Log.Error(err, "failed to resume object storage", "user", user)
+		return err
+	}
+
+	r.Log.Info("resume object storage", "user", user)
+	return nil
+}
+
+func (r *NamespaceReconciler) setOSUserStatus(ctx context.Context, user string, status string) error {
+	if r.InternalEndpoint == "" || r.OSNamespace == "" || r.OSAdminSecret == "" {
+		r.Log.V(1).Info("the endpoint or namespace or admin secret env of object storage is nil")
+		return nil
+	}
+
+	if r.OSAdminClient == nil {
+		secret := &corev1.Secret{}
+		if err := r.Client.Get(ctx, client.ObjectKey{Name: r.OSAdminSecret, Namespace: r.OSNamespace}, secret); err != nil {
+			r.Log.Error(err, "failed to get secret", "name", r.OSAdminSecret, "namespace", r.OSNamespace)
+			return err
+		}
+
+		accessKey := string(secret.Data[OSAccessKey])
+		secretKey := string(secret.Data[OSSecretKey])
+
+		oSAdminClient, err := objectstoragev1.NewOSAdminClient(r.InternalEndpoint, accessKey, secretKey)
+		if err != nil {
+			r.Log.Error(err, "failed to new object storage admin client")
+			return err
+		}
+		r.OSAdminClient = oSAdminClient
+	}
+
+	users, err := r.OSAdminClient.ListUsers(ctx)
+	if err != nil {
+		r.Log.Error(err, "failed to list minio user", "user", user)
+		return err
+	}
+
+	if _, ok := users[user]; !ok {
+		return nil
+	}
+
+	err = r.OSAdminClient.SetUserStatus(ctx, user, madmin.AccountStatus(status))
+	if err != nil {
+		r.Log.Error(err, "failed to set user status", "user", user, "status", status)
+		return err
+	}
+
+	return nil
+}
+
 //func (r *NamespaceReconciler) deleteInfraResources(ctx context.Context, namespace string) error {
 //
 //	u := unstructured.UnstructuredList{}
@@ -320,6 +413,15 @@ func (r *NamespaceReconciler) recreatePod(ctx context.Context, oldPod corev1.Pod
 // SetupWithManager sets up the controller with the Manager.
 func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Log = ctrl.Log.WithName("controllers").WithName("Namespace")
+
+	r.OSAdminSecret = os.Getenv(OSAdminSecret)
+	r.InternalEndpoint = os.Getenv(OSInternalEndpointEnv)
+	r.OSNamespace = os.Getenv(OSNamespace)
+
+	if r.OSAdminSecret == "" || r.InternalEndpoint == "" || r.OSNamespace == "" {
+		r.Log.V(1).Info("failed to get the endpoint or namespace or admin secret env of object storage")
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Namespace{}, builder.WithPredicates(AnnotationChangedPredicate{})).
 		Complete(r)

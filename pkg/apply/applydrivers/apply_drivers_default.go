@@ -88,8 +88,12 @@ func (c *Applier) Apply() error {
 	// clusterErr and appErr should not appear in the same time
 	var clusterErr, appErr error
 	defer func() {
-		switch clusterErr.(type) {
-		case *processor.CheckError, *processor.PreProcessError:
+		var checkError *processor.CheckError
+		var preProcessError *processor.PreProcessError
+		switch {
+		case errors.As(clusterErr, &checkError):
+			return
+		case errors.As(clusterErr, &preProcessError):
 			return
 		}
 		c.applyAfter()

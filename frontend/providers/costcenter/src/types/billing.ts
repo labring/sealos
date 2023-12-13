@@ -18,18 +18,25 @@ export type BillingSpec =
   | {
       orderID: string; //如果给定orderId，则查找该id的值，该值为唯一值，因此当orderId给定时忽略其他查找限定值
     };
-export type RawCosts = Record<'network' | 'cpu' | 'memory' | 'storage' | `gpu-${string}`, number>;
+export type RawCosts = Record<
+  'network' | 'cpu' | 'memory' | 'storage' | `gpu-${string}` | 'services.nodeports',
+  number
+>;
 export type Costs = {
   cpu: number;
   memory: number;
   storage: number;
   network: number;
+  port: number;
   gpu?: number;
 };
 export type BillingItem<T = Costs> = {
   amount: number;
   appType: string;
   costs: T;
+  payment?: {
+    amount: number;
+  };
   order_id: string;
   owner: string;
   time: string;
@@ -44,7 +51,7 @@ export type BillingData<T = Costs> = {
   spec: BillingSpec;
   status: {
     deductionAmount: T;
-    item: BillingItem[];
+    item: BillingItem<T>[];
     pageLength: number;
     totalCount: number;
     rechargeAmount: number;

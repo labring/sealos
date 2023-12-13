@@ -1,7 +1,6 @@
 import { authSession } from '@/services/backend/auth';
 import { GetConfigMap } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
-import { enableRecharge } from '@/services/enable';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
@@ -18,7 +17,8 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       code: 200,
       data: {
         ratios: result.body.data.ratios,
-        steps: result.body.data.steps
+        steps: result.body.data.steps,
+        activities: result.body.data.activities
       }
     });
   } catch (error) {

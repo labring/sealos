@@ -1,11 +1,9 @@
-import GithubIcon from '@/components/icons/GithubIcon';
-import GoogleIcon from '@/components/icons/GoogleIcon';
-import WechatIcon from '@/components/icons/WechatIcon';
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import { ApiResp, SystemEnv } from '@/types';
 import { OauthProvider } from '@/types/user';
 import { Button, Flex, Icon, Image } from '@chakra-ui/react';
+import { GithubIcon, GoogleIcon, WechatIcon } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { MouseEventHandler } from 'react';
 
@@ -31,7 +29,6 @@ const useAuthList = () => {
 
   const authList: { icon: typeof Icon; cb: MouseEventHandler; need: boolean }[] = [
     {
-      // src: '/images/github.svg',
       icon: GithubIcon,
       cb: (e) => {
         e.preventDefault();

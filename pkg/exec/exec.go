@@ -37,7 +37,7 @@ type Interface ssh.Interface
 
 type wrap struct {
 	inner          ssh.Interface
-	localAddresses sets.String
+	localAddresses sets.Set[string]
 }
 
 func New(inner ssh.Interface) (Interface, error) {
@@ -47,7 +47,7 @@ func New(inner ssh.Interface) (Interface, error) {
 	}
 	return &wrap{
 		inner:          inner,
-		localAddresses: netutil.AddressSet(isValid, addr),
+		localAddresses: sets.Set[string](netutil.AddressSet(isValid, addr)),
 	}, nil
 }
 

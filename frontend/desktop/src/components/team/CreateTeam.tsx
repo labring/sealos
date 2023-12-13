@@ -1,6 +1,7 @@
 import {
   Button,
   Flex,
+  IconButton,
   Image,
   Modal,
   ModalBody,
@@ -20,7 +21,8 @@ import { createRequest } from '@/api/namespace';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
 import { useTranslation } from 'react-i18next';
-export default function CreateTeam() {
+import { AddIcon, GroupAddIcon } from '@sealos/ui';
+export default function CreateTeam({ textButton = false }: { textButton?: boolean }) {
   const { onOpen, isOpen, onClose } = useDisclosure();
   const { t } = useTranslation();
   const [teamName, setTeamName] = useState('');
@@ -46,28 +48,31 @@ export default function CreateTeam() {
   };
   return (
     <>
-      <Flex
-        _hover={{
-          bgColor: 'rgba(0, 0, 0, 0.03)'
-        }}
-        w="28px"
-        h="28px"
-        mr="4px"
-        transition={'all 0.3s'}
-        justify={'center'}
-        align={'center'}
-      >
-        <Image
-          cursor={'pointer'}
+      {textButton ? (
+        <Button
           onClick={() => {
             onOpen();
             setTeamName('');
           }}
-          src="/images/material-symbols_add.svg"
-          h="20px"
-          w="20px"
+          variant={'primary'}
+          leftIcon={<AddIcon boxSize={'20px'} color={'white'} />}
+          iconSpacing={'8px'}
+        >
+          {t('Create Team')}
+        </Button>
+      ) : (
+        <IconButton
+          onClick={() => {
+            onOpen();
+            setTeamName('');
+          }}
+          variant={'white-bg-icon'}
+          mr="4px"
+          p="4px"
+          aria-label={'create team'}
+          icon={<AddIcon boxSize={'20px'} color={'brightBlue.600'} />}
         />
-      </Flex>
+      )}
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
         <ModalContent

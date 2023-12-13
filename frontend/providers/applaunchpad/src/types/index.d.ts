@@ -21,3 +21,8 @@ declare global {
   var FormSliderListConfig: FormSliderListType;
   var logger: WstLogger;
 }
+
+export type EnvResponse = {
+  domain: string;
+  guideEnabled: boolean;
+};

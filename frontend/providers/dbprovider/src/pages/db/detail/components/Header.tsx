@@ -126,6 +126,21 @@ const Header = ({
       <Box flex={1} />
 
       {/* btns */}
+      {/* Migrate */}
+      {/* <Button
+        mr={5}
+        h={'36px'}
+        borderColor={'myGray.200'}
+        leftIcon={<MyIcon name={'change'} w={'14px'} />}
+        isLoading={loading}
+        variant={'base'}
+        bg={'white'}
+        onClick={() => {
+          router.push(`/db/migrate?name=${db.dbName}&dbType=${db.dbType}`);
+        }}
+      >
+        {t('Migrate')}
+      </Button> */}
       {db.status.value !== 'Stopped' && (
         <Button
           mr={5}

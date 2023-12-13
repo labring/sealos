@@ -13,7 +13,7 @@ const nextConfig = {
   i18n,
   reactStrictMode: false,
   output: 'standalone',
-  transpilePackages: ['echarts'],
+  transpilePackages: ['echarts', 'sealos@ui'],
   experimental: {
     // this includes files from the monorepo base two directories up
     outputFileTracingRoot: path.join(__dirname, '../../')

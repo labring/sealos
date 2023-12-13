@@ -1,6 +1,6 @@
 import { createCluster, createClusterAndLicense } from '@/api/cluster';
 import { checkWechatPay, createPayment, handlePaymentResult } from '@/api/payment';
-import { getSystemEnv } from '@/api/system';
+import { getSystemEnv, uploadConvertData } from '@/api/system';
 import { StripeIcon, SuccessIcon } from '@/components/Icon';
 import { company, contect, standard } from '@/constant/product';
 import { ClusterType, PaymentStatus, TPayMethod, WechatPaymentData } from '@/types';
@@ -181,6 +181,13 @@ export default function Product() {
       console.log(data, 'getPaymentResult');
       if (data.status === PaymentStatus.PaymentSuccess) {
         clusterAndLicenseMutation.mutate({ orderID: data.orderID, type: ClusterType.Enterprise });
+        uploadConvertData([90])
+          .then((res) => {
+            console.log(res);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
       }
     },
     onError(err: any) {

@@ -18,18 +18,15 @@ package controllers
 
 import (
 	"fmt"
-	"time"
 
-	apisix "github.com/apache/apisix-ingress-controller/pkg/kube/apisix/apis/config/v2beta3"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 
 	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
 )
 
 const (
-	AuthType                 = "basicAuth"
+	//TODO : higress currently do not support
 	safeConfigurationSnippet = `
 set $flag 0;
 if ($http_upgrade = 'websocket') {set $flag "${flag}1";}
@@ -45,7 +42,6 @@ func (r *TerminalReconciler) createNginxIngress(terminal *terminalv1.Terminal, h
 		Namespace: terminal.Namespace,
 		Annotations: map[string]string{
 			"kubernetes.io/ingress.class":                        "nginx",
-			"nginx.ingress.kubernetes.io/rewrite-target":         "/",
 			"nginx.ingress.kubernetes.io/proxy-send-timeout":     "86400",
 			"nginx.ingress.kubernetes.io/proxy-read-timeout":     "86400",
 			"nginx.ingress.kubernetes.io/proxy-body-size":        "32m",
@@ -93,68 +89,4 @@ func (r *TerminalReconciler) createNginxIngress(terminal *terminalv1.Terminal, h
 		},
 	}
 	return ingress
-}
-
-// TODO: attempt use websocket https://apisix.apache.org/zh/docs/ingress-controller/concepts/apisix_route/#websocket-proxy
-func (r *TerminalReconciler) createApisixRoute(terminal *terminalv1.Terminal, host string) *apisix.ApisixRoute {
-	// config proxy_read_timeout and proxy_send_timeout
-	upstreamTimeout := &apisix.UpstreamTimeout{
-		Read: metav1.Duration{
-			Duration: time.Hour,
-		},
-		Send: metav1.Duration{
-			Duration: time.Hour,
-		},
-	}
-
-	// ApisixRoute
-	apisixRoute := &apisix.ApisixRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      terminal.Name,
-			Namespace: terminal.Namespace,
-		},
-		Spec: apisix.ApisixRouteSpec{
-			HTTP: []apisix.ApisixRouteHTTP{
-				{
-					Name: terminal.Name,
-					Match: apisix.ApisixRouteHTTPMatch{
-						Hosts: []string{host},
-						Paths: []string{"/*"},
-					},
-					Backends: []apisix.ApisixRouteHTTPBackend{
-						{
-							ServiceName: terminal.Name,
-							ServicePort: intstr.FromInt(8080),
-						},
-					},
-					Timeout: upstreamTimeout,
-					Authentication: apisix.ApisixRouteAuthentication{
-						Enable: false,
-						Type:   AuthType,
-					},
-				},
-			},
-		},
-	}
-	return apisixRoute
-}
-
-func (r *TerminalReconciler) createApisixTLS(terminal *terminalv1.Terminal, host string) *apisix.ApisixTls {
-	apisixTLS := &apisix.ApisixTls{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      terminal.Name,
-			Namespace: terminal.Namespace,
-		},
-		Spec: &apisix.ApisixTlsSpec{
-			Hosts: []apisix.HostType{
-				apisix.HostType(host),
-			},
-			Secret: apisix.ApisixSecret{
-				Name:      r.secretName,
-				Namespace: r.secretNamespace,
-			},
-		},
-	}
-
-	return apisixTLS
 }

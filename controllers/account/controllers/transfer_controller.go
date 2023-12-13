@@ -30,15 +30,17 @@ import (
 	"github.com/labring/sealos/controllers/pkg/crypto"
 
 	"github.com/go-logr/logr"
-	v1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 
-	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	v1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 )
 
 var MinBalance int64 = 10_000000
@@ -49,7 +51,7 @@ type TransferReconciler struct {
 	client.Client
 	Scheme                 *runtime.Scheme
 	AccountSystemNamespace string
-	DBClient               database.Interface
+	DBClient               database.Account
 }
 
 //TODO add user, account role
@@ -175,7 +177,8 @@ func (r *TransferReconciler) transferAccount(ctx context.Context, transfer *acco
 	}
 	balance, _ := crypto.DecryptInt64(*fromAccount.Status.EncryptBalance)
 	deductionBalance, _ := crypto.DecryptInt64(*fromAccount.Status.EncryptDeductionBalance)
-	if balance < deductionBalance+transfer.Spec.Amount+MinBalance {
+	// check balance is enough ( balance - deductionBalance - transferAmount - MinBalance - ActivityBonus) activity give amount not included
+	if balance < deductionBalance+transfer.Spec.Amount+MinBalance+fromAccount.Status.ActivityBonus {
 		return fmt.Errorf("balance not enough")
 	}
 	if r.Get(ctx, client.ObjectKey{Namespace: r.AccountSystemNamespace, Name: getUsername(to)}, &accountv1.Account{}) != nil {

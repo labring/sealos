@@ -8,12 +8,13 @@ import crypto from 'crypto';
 import type { BillingData, BillingItem, BillingSpec, Costs, RawCosts } from '@/types/billing';
 const convertGpu = (_deduction?: RawCosts) =>
   _deduction
-    ? Object.entries(_deduction).reduce<Costs>(
+    ? (Object.entries(_deduction) as [keyof RawCosts, number][]).reduce<Costs>(
         (pre, cur) => {
           if (cur[0] === 'cpu') pre.cpu = cur[1];
           else if (cur[0] === 'memory') pre.memory = cur[1];
           else if (cur[0] === 'storage') pre.storage = cur[1];
           else if (cur[0] === 'network') pre.network = cur[1];
+          else if (cur[0] === 'services.nodeports') pre.port = cur[1];
           else if (cur[0].startsWith('gpu-')) {
             typeof pre.gpu === 'number' && (pre.gpu += cur[1]);
           }
@@ -24,6 +25,7 @@ const convertGpu = (_deduction?: RawCosts) =>
           memory: 0,
           storage: 0,
           gpu: 0,
+          port: 0,
           network: 0
         }
       )
@@ -31,6 +33,7 @@ const convertGpu = (_deduction?: RawCosts) =>
         cpu: 0,
         memory: 0,
         storage: 0,
+        port: 0,
         network: 0,
         gpu: 0
       };

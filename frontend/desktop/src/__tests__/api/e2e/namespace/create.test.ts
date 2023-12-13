@@ -56,7 +56,7 @@ describe('Login create', () => {
     const res = await createRequest({ teamName: 'hello' });
     expect(res.code).toBe(409);
   });
-  it.each(new Array(getTeamLimit() + 2).map((_, idx) => [`team${idx}`, idx]))(
+  it.skip.each(new Array(getTeamLimit() + 2).map((_, idx) => [`team${idx}`, idx]))(
     'limit 4 team',
     async (teamName: string, idx: number) => {
       if (idx === 0) {

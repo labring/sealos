@@ -15,7 +15,7 @@
 package types
 
 const (
-	defaultKubeadmConfig = `apiVersion: kubeadm.k8s.io/v1beta2
+	defaultKubeadmConfig = `apiVersion: kubeadm.k8s.io/v1beta3
 kind: InitConfiguration
 localAPIEndpoint:
   # advertiseAddress: 192.168.2.110
@@ -24,7 +24,7 @@ nodeRegistration:
   criSocket: /run/containerd/containerd.sock
 
 ---
-apiVersion: kubeadm.k8s.io/v1beta2
+apiVersion: kubeadm.k8s.io/v1beta3
 kind: ClusterConfiguration
 kubernetesVersion: v1.19.8
 #controlPlaneEndpoint: "apiserver.cluster.local:6443"
@@ -176,7 +176,7 @@ featureGates:
   TTLAfterFinished: true
   EphemeralContainers: true
 ---
-apiVersion: kubeadm.k8s.io/v1beta2
+apiVersion: kubeadm.k8s.io/v1beta3
 kind: JoinConfiguration
 caCertPath: /etc/kubernetes/pki/ca.crt
 discovery:

@@ -20,6 +20,7 @@ import { getUserPrice, getDBVersion, StorageClassName, Domain, getEnv } from '@/
 import 'nprogress/nprogress.css';
 import 'react-day-picker/dist/style.css';
 import '@/styles/reset.scss';
+import { getAppEnv } from '@/api/platform';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -93,7 +94,7 @@ function App({ Component, pageProps }: AppProps) {
       const lastLang = getLangStore();
       const newLang = data.currentLanguage;
       if (lastLang !== newLang) {
-        i18n.changeLanguage(newLang);
+        i18n?.changeLanguage(newLang);
         setLangStore(newLang);
         setRefresh((state) => !state);
       }
@@ -116,6 +117,7 @@ function App({ Component, pageProps }: AppProps) {
     })();
 
     return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // record route
@@ -123,12 +125,45 @@ function App({ Component, pageProps }: AppProps) {
     return () => {
       setLastRoute(router.asPath);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.pathname]);
 
   useEffect(() => {
     const lang = getLangStore() || 'zh';
     i18n?.changeLanguage?.(lang);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refresh, router.asPath]);
+
+  // InternalAppCall
+  const setupInternalAppCallListener = async () => {
+    try {
+      const envs = await getAppEnv();
+      const event = async (e: MessageEvent) => {
+        const whitelist = [`https://${envs?.domain}`];
+        if (!whitelist.includes(e.origin)) {
+          return;
+        }
+        try {
+          if (e.data?.type === 'InternalAppCall' && e.data?.name) {
+            router.push({
+              pathname: '/app/detail',
+              query: {
+                name: e.data.name
+              }
+            });
+          }
+        } catch (error) {
+          console.log(error, 'error');
+        }
+      };
+      window.addEventListener('message', event);
+      return () => window.removeEventListener('message', event);
+    } catch (error) {}
+  };
+  useEffect(() => {
+    setupInternalAppCallListener();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>
@@ -140,6 +175,19 @@ function App({ Component, pageProps }: AppProps) {
       </Head>
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
+          {/* <button
+            onClick={() => {
+              const lastLang = getLangStore();
+              let lang = lastLang === 'en' ? 'zh' : 'en';
+              if (lastLang !== lang) {
+                i18n.changeLanguage(lang);
+                setLangStore(lang);
+                setRefresh((state) => !state);
+              }
+            }}
+          >
+            changeLanguage
+          </button> */}
           <Component {...pageProps} />
           <ConfirmChild />
           <Loading loading={loading} />

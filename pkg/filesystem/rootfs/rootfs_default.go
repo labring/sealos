@@ -193,23 +193,8 @@ func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) erro
 }
 
 func renderTemplatesWithEnv(mountDir string, ipList []string, p env.Interface, envs map[string]string) error {
-	var (
-		renderEtc       = filepath.Join(mountDir, constants.EtcDirName)
-		renderScripts   = filepath.Join(mountDir, constants.ScriptsDirName)
-		renderManifests = filepath.Join(mountDir, constants.ManifestsDirName)
-	)
-
 	// currently only render once
-	for _, dir := range []string{renderEtc, renderScripts, renderManifests} {
-		logger.Debug("render env dir: %s", dir)
-		if file.IsExist(dir) {
-			err := p.RenderAll(ipList[0], dir, envs)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
+	return p.RenderAll(ipList[0], mountDir, envs)
 }
 
 func newDefaultRootfs(mounts []v2.MountImage) (filesystem.Mounter, error) {

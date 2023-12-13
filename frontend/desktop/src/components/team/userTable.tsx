@@ -31,8 +31,6 @@ export default function UserTable({
   nsid: string;
 }) {
   const { t } = useTranslation();
-  // const headList = ['用户名', '权限', '加入时间', '状态', '操作'];
-  // const status = ['等待加入', '已加入'];
   const headList = [t('User Name'), t('Access'), t('In Time'), t('Status'), t('Operating')];
   const status = [t('Waiting'), t('Added')];
   const session = useSessionStore((s) => s.session);
@@ -42,6 +40,7 @@ export default function UserTable({
   const abdicationUser = users.filter(
     (user) => user.uid !== userSelf?.uid && user.status === InvitedStatus.Accepted
   );
+
   const vaildateRoles: UserRole[] = [];
   if (userSelf?.role === UserRole.Owner) vaildateRoles.push(UserRole.Manager, UserRole.Developer);
   else if (userSelf?.role === UserRole.Manager) vaildateRoles.push(UserRole.Developer);

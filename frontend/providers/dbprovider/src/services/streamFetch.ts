@@ -25,6 +25,7 @@ export const streamFetch = ({
         body: JSON.stringify(data),
         signal: abortSignal.signal
       });
+      console.log(res, 'streamFetch');
       const reader = res.body?.getReader();
       if (!reader) return;
       const decoder = new TextDecoder();

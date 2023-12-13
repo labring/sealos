@@ -2,15 +2,15 @@ import { getClusterRecord } from '@/api/cluster';
 import { EmptyIcon } from '@/components/Icon';
 import Layout from '@/components/Layout';
 import { compareFirstLanguages } from '@/utils/tools';
-import { Flex, Spinner, Text } from '@chakra-ui/react';
+import { Flex, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import ClusterRecord from './components/Record';
 import Tutorial from './components/Tutorial';
 
-export default function MyCluster({ ossFileName }: { ossFileName: string }) {
+export default function MyCluster({ ossFileUrl }: { ossFileUrl: string }) {
   const [clusterId, setClusterId] = useState('');
   const { t } = useTranslation();
 
@@ -32,16 +32,6 @@ export default function MyCluster({ ossFileName }: { ossFileName: string }) {
       }
     }
   );
-
-  // if (isLoading) {
-  //   return (
-  //     <Layout>
-  //       <Flex flex={1} alignItems={'center'} justifyContent={'center'} overflow={'hidden'}>
-  //         <Spinner size="xl" />
-  //       </Flex>
-  //     </Layout>
-  //   );
-  // }
 
   if (isSuccess && data?.total === 0) {
     return (
@@ -66,7 +56,7 @@ export default function MyCluster({ ossFileName }: { ossFileName: string }) {
     <Layout>
       <Flex flex={1} h={0} bg="#fefefe">
         <ClusterRecord changeClusterId={changeClusterId} clusterId={clusterId} />
-        <Tutorial clusterId={clusterId} ossFileName={ossFileName} />
+        <Tutorial clusterId={clusterId} ossFileUrl={ossFileUrl} />
       </Flex>
     </Layout>
   );
@@ -79,7 +69,7 @@ export async function getServerSideProps({ req, res, locales }: any) {
 
   return {
     props: {
-      ossFileName: process.env?.OSS_FILE_NAME || '/cloud/sealos-cloud-dev.tar.gz',
+      ossFileUrl: process.env.OSS_FILE_URL,
       ...(await serverSideTranslations(local, undefined, null, locales || []))
     }
   };

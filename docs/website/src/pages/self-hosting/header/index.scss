@@ -1,0 +1,264 @@
+.sealo_price_header {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  max-width: 1280px;
+  // padding: 0px 40px;
+  box-sizing: content-box;
+
+  nav {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 30px 0;
+
+    .sealos-title {
+      line-height: 140%;
+      color: #fff;
+      font-size: 24px;
+      font-style: normal;
+      font-weight: 700;
+    }
+
+    .left {
+      display: flex;
+      align-items: center;
+      cursor: default;
+
+      svg {
+        margin-right: 6px;
+        height: 46px;
+      }
+    }
+
+    .links {
+      margin-left: 40px;
+      a {
+        position: relative;
+        margin-right: 28px;
+        font-size: 1rem;
+        color: #fff;
+        font-weight: 500;
+        text-decoration: none;
+
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 0;
+          height: 2px;
+          background-color: #69bcf8;
+          transition: 0.2s;
+        }
+
+        &:hover::after {
+          width: 100%;
+        }
+      }
+    }
+
+    .right {
+      display: flex;
+      align-items: center;
+      color: #fff;
+      .git-icon {
+        margin-left: 20px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+      }
+
+      .git-stars {
+        margin-left: 8px;
+        font-weight: 500;
+        font-size: 16px;
+        color: #fff;
+      }
+
+      .i18nIcon {
+        margin-left: 16px;
+        font-weight: 500;
+        color: #fff;
+        cursor: pointer;
+
+        a {
+          font-size: 16px;
+        }
+      }
+
+      a {
+        color: #fff;
+        font-size: 1.1rem;
+      }
+
+      .start-now-button-wrap {
+        position: absolute;
+        width: 150px;
+        height: 42px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.2);
+        filter: blur(4px);
+        pointer-events: none;
+      }
+
+      .start-now-button {
+        margin-left: 44px;
+        cursor: pointer;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #000;
+        font-weight: 600;
+        font-size: 1rem;
+        width: 142px;
+        height: 36px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        text-decoration: none;
+      }
+    }
+  }
+  main {
+    text-align: center;
+    max-width: 1120px;
+    margin: 0 auto;
+    z-index: 9;
+
+    h2 {
+      margin-bottom: 0;
+      color: rgba(255, 255, 255, 1);
+      text-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+      font-size: 96px;
+      font-weight: 600;
+      line-height: 140%;
+    }
+    h3 {
+      margin: 28px 48px 0px 48px;
+      color: #b9ddff;
+      text-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+      font-size: 24px;
+      font-weight: 600;
+      line-height: 140%;
+      margin-top: 16px;
+      .txt-title {
+        color: #379fff;
+      }
+      @media screen and (min-width: 450px) and (max-width: 1000px) {
+        padding: 0 60px;
+      }
+    }
+  }
+  .comet {
+    width: 100%;
+    height: 30px;
+    margin-top: 140px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}
+
+@media screen and (max-width: 1220px) {
+  .sealo_price_header {
+    main {
+      h2 {
+        font-size: 80px;
+      }
+    }
+  }
+}
+
+@media screen and (max-width: 1000px) {
+  .sealo_price_header {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+
+    nav {
+      padding: 28px 16px;
+      // display: none;
+      .left {
+        svg {
+          margin: 0;
+        }
+      }
+    }
+
+    main {
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      padding: 0 16px;
+      z-index: 9;
+
+      h2 {
+        font-weight: 600;
+        font-size: 30px;
+        @media screen and (max-width: 385px) {
+          font-size: 24px;
+        }
+      }
+
+      h3 {
+        font-weight: 600;
+        font-size: 14px;
+        margin: 0;
+        margin-top: 10px;
+      }
+
+      .start-now-button-wrap {
+        position: absolute;
+        width: 150px;
+        height: 42px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.2);
+        filter: blur(4px);
+        pointer-events: none;
+      }
+
+      .start-now-button {
+        cursor: pointer;
+        margin-top: 27px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #000;
+        font-weight: 600;
+        font-size: 1rem;
+        width: 142px;
+        height: 36px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        text-decoration: none;
+      }
+
+      video {
+        width: 100%;
+        margin-top: 35px;
+      }
+    }
+  }
+}
+
+.sealos_home_header_title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}

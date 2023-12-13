@@ -94,6 +94,9 @@ verify_downloader() {
     DOWNLOADER=$1
     # Set verified executable as our downloader program and return success
     DOWNLOADER_PREFIX=https://github.com/${OWN_REPO}/releases/download/
+    if [ -n "$PROXY_PREFIX" ]; then
+        DOWNLOADER_PREFIX="${PROXY_PREFIX%/}/${DOWNLOADER_PREFIX}"
+    fi
     DOWNLOADER_URL=${DOWNLOADER_PREFIX}${VERSION}/${FILE_NAME}_${VERSION##v}_linux_${ARCH}.tar.gz
     return 0
 }

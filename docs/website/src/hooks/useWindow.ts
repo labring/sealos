@@ -8,6 +8,13 @@ export default function () {
     isBrowser ? document.documentElement.lang : 'en'
   );
   const [cloudUrl, setCloudUrl] = useState('https://cloud.sealos.io');
+  const [bd_vid, setBdId] = useState('');
+
+  useEffect(() => {
+    if (!isBrowser) return;
+    let bd_vid = sessionStorage.getItem('bd_vid');
+    if (bd_vid) setBdId(bd_vid);
+  }, [isBrowser]);
 
   useEffect(() => {
     if (!isBrowser) return;
@@ -16,10 +23,11 @@ export default function () {
       requestAnimationFrame(() => setScreenWidth(document?.body.clientWidth));
     };
     window.addEventListener('resize', updateScreenWidth);
-    // handle
+
     setCurrentLanguage(document.documentElement.lang);
+
     setCloudUrl(
-      document.documentElement.lang === 'en'
+      window.location.hostname === 'sealos.io'
         ? 'https://cloud.sealos.io'
         : 'https://cloud.sealos.top'
     );
@@ -32,6 +40,7 @@ export default function () {
   return {
     screenWidth,
     currentLanguage,
-    cloudUrl
+    cloudUrl,
+    bd_vid
   };
 }

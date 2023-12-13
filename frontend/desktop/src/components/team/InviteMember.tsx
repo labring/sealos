@@ -16,7 +16,8 @@ import {
   Flex,
   useToast,
   Spinner,
-  FlexProps
+  FlexProps,
+  ButtonProps
 } from '@chakra-ui/react';
 import CustomInput from './Input';
 import { useState } from 'react';
@@ -26,17 +27,15 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { inviteMemberRequest } from '@/api/namespace';
 import { vaildManage } from '@/utils/tools';
 import { ApiResp } from '@/types';
-import GroupAddIcon from '../icons/GroupAdd';
 import { useTranslation } from 'react-i18next';
+import { GroupAddIcon } from '@sealos/ui';
 export default function InviteMember({
   ns_uid,
   ownRole,
-  buttonType = 'img',
   ...props
-}: (FlexProps | Parameters<typeof Button>[0]) & {
+}: ButtonProps & {
   ns_uid: string;
   ownRole: UserRole;
-  buttonType?: 'img' | 'button';
 }) {
   const { onOpen, isOpen, onClose } = useDisclosure();
   const session = useSessionStore((s) => s.session);
@@ -61,9 +60,8 @@ export default function InviteMember({
     }
   });
   const canManage = vaildManage(ownRole, 'x');
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const submit = () => {
-    //!todo
     let trim_to = userId.trim();
     if (!trim_to || trim_to.length < 6) {
       toast({
@@ -93,38 +91,21 @@ export default function InviteMember({
   return (
     <>
       {[UserRole.Manager, UserRole.Owner].includes(ownRole) ? (
-        buttonType === 'img' ? (
-          <Flex
-            h="24px"
-            w="24px"
-            _hover={{
-              bgColor: 'rgba(0, 0, 0, 0.03)'
-            }}
-            align={'center'}
-            justify={'center'}
-            {...(props as FlexProps)}
-            cursor={'pointer'}
-            onClick={onOpen}
-          >
-            <GroupAddIcon h="20px" w="20px" color={'#7B838B'} />
-          </Flex>
-        ) : (
-          <Button
-            onClick={onOpen}
-            borderRadius="4px"
-            border="1px solid #DEE0E2"
-            background="#F4F6F8"
-            fontSize={'12px'}
-            fontWeight={'500'}
-            h="auto"
-            py="7px"
-            px="16px"
-            {...(props as Parameters<typeof Button>[0])}
-          >
-            <Image src="/images/group_add.svg" h="16px" w="16px" mr="4px" />
-            {t('Invite Member')}
-          </Button>
-        )
+        <Button
+          onClick={onOpen}
+          borderRadius="4px"
+          border="1px solid #DEE0E2"
+          background="#F4F6F8"
+          fontSize={'12px'}
+          fontWeight={'500'}
+          h="auto"
+          py="7px"
+          px="16px"
+          leftIcon={<GroupAddIcon boxSize={'16px'} color={'grayModern.600'} />}
+          {...props}
+        >
+          {t('Invite Member')}
+        </Button>
       ) : (
         <></>
       )}

@@ -1,5 +1,5 @@
 import { checkWechatPay, createPayment, handlePaymentResult } from '@/api/payment';
-import { getSystemEnv } from '@/api/system';
+import { getSystemEnv, uploadConvertData } from '@/api/system';
 import { StripeIcon, WechatIcon } from '@/components/Icon';
 import useBonusBox from '@/hooks/useBonusBox';
 import { PaymentStatus, TPayMethod, WechatPaymentData } from '@/types';
@@ -145,6 +145,13 @@ export default function RechargeComponent() {
       console.log(data, 'getPaymentResult');
       if (data.status === PaymentStatus.PaymentSuccess) {
         licenseMutation.mutate({ orderID: data.orderID });
+        uploadConvertData([90])
+          .then((res) => {
+            console.log(res);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
       }
     },
     onError(err: any) {

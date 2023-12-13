@@ -1,0 +1,14 @@
+FROM scratch
+
+USER 65532:65532
+
+COPY registry registry
+COPY manifests manifests
+
+ENV certSecretName="wildcard-cert"
+ENV cloudDomain="127.0.0.1.nip.io"
+ENV cloudPort=""
+ENV transferEnabled="true"
+ENV rechargeEnabled="true"
+
+CMD ["kubectl apply -f manifests"]

@@ -46,3 +46,19 @@ export type ClusterResult = {
   licenseID?: ObjectId; // license ID
   type: ClusterType; // license type
 };
+
+export type CommandFormType = {
+  cloudVersion: string;
+  imageRegistry: string;
+  proxyPrefix: string;
+  masterIP: string[];
+  nodeIP: string[];
+  sshPath: string;
+  sshPassword: string;
+  podSubnet: string;
+  serviceSubnet: string;
+  cloudDomain: string;
+  cloudPort: string;
+  certPath: string;
+  certKeyPath: string;
+};

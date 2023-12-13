@@ -18,15 +18,10 @@ package controller
 
 import (
 	"context"
+  "errors"
 	"time"
-
-	"github.com/go-logr/logr"
-
-	"errors"
-
-	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
-	"github.com/labring/sealos/controllers/license/internal/util/database"
-	utilerrors "github.com/labring/sealos/controllers/license/internal/util/errors"
+  
+  "github.com/go-logr/logr"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,6 +29,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+  util "github.com/labring/sealos/controllers/license/internal/util/errors"
+	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
+	accountutil "github.com/labring/sealos/controllers/license/internal/util/account"
+	"github.com/labring/sealos/controllers/license/internal/util/database"
 )
 
 // LicenseReconciler reconciles a License object

@@ -4,16 +4,26 @@ import { jsonRes } from '@/services/backend/response';
 import { queryUser } from '@/services/backend/db/user';
 import { hashPassword } from '@/utils/crypto';
 import { TUserExist } from '@/types/user';
-import { enablePassword } from '@/services/enable';
+import { enablePassword, enableSignUp } from '@/services/enable';
+import { passwrodUserIsExist } from '@/services/backend/oauth';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!enablePassword()) {
       throw new Error('PASSWORD_SALT is not defined');
     }
     const { user } = req.body;
-
-    const result = await queryUser({ id: user, provider: 'password_user' });
-    if (!result || !result.password || result.password === hashPassword('')) {
+    if (!enableSignUp()) {
+      return jsonRes<TUserExist>(res, {
+        code: 200,
+        message: 'Successfully',
+        data: {
+          user,
+          exist: true
+        }
+      });
+    }
+    const isExist = await passwrodUserIsExist({ username: user });
+    if (!isExist)
       return jsonRes<TUserExist>(res, {
         message: 'user not found',
         code: 201,
@@ -22,15 +32,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           exist: false
         }
       });
-    }
-    return jsonRes<TUserExist>(res, {
-      code: 200,
-      message: 'Successfully',
-      data: {
-        user,
-        exist: true
-      }
-    });
+    else
+      return jsonRes<TUserExist>(res, {
+        code: 200,
+        message: 'Successfully',
+        data: {
+          user,
+          exist: true
+        }
+      });
   } catch (err) {
     console.log(err);
     return jsonRes(res, {

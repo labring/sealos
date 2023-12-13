@@ -28,7 +28,6 @@ import (
 	shimType "github.com/labring/image-cri-shim/pkg/types"
 	"github.com/onsi/ginkgo/v2"
 	k8sv1 "k8s.io/cri-api/pkg/apis/runtime/v1"
-	k8sv1alpha2api "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -175,36 +174,6 @@ COPY image-cri-shim cri`
 			utils.CheckErr(err)
 		})
 	})
-	ginkgo.Context("image-cri-shim image service test using k8sv1alpha2api", func() {
-
-		ginkgo.It("check service is running", func() {
-			_, err = exec.RunSimpleCmd(fmt.Sprintf(CheckServiceFormatCommand, "image-cri-shim"))
-			utils.CheckErr(err, "image-cri-shim service not exist, skip image-cri-shim test")
-			shimConfig, err := shimType.Unmarshal(DefaultImageCRIShimConfig)
-			utils.CheckErr(err, fmt.Sprintf("failed to unmarshal image shim config from /etc/image-cri-shim.yaml: %v", err))
-			_, err = shimConfig.PreProcess()
-			utils.CheckErr(err)
-			clt, err = server.NewClient(server.CRIClientOptions{ImageSocket: shimConfig.ImageShimSocket})
-			utils.CheckErr(err, fmt.Sprintf("failed to get new shim client: %v", err))
-			gCon, err := clt.Connect(server.ConnectOptions{Wait: true})
-			utils.CheckErr(err, fmt.Sprintf("failed to get connect shim client: %v", err))
-			imageShimService = image.NewFakeImageServiceClientWithV1alpha2(k8sv1alpha2api.NewImageServiceClient(gCon))
-		})
-
-		ginkgo.It("list image", listTestCases)
-		ginkgo.It("pull image from remote", pullTestCases)
-		ginkgo.It("image status exists test", statusExitImagesTestCases)
-		ginkgo.It("image status by id test", statusByIDTestCases)
-		ginkgo.It("pull image from images again", pullAgainImagesTestCases)
-		ginkgo.It("image status not exists test", statusNotExitImagesTestCases)
-		ginkgo.It("remove image", removeTestCases)
-		ginkgo.It("remove image by id", removeByIDTestCases)
-		ginkgo.It("get fs info", fsInfoTestCases)
-		ginkgo.It("close grpc", func() {
-			clt.Close()
-		})
-	})
-
 	ginkgo.Context("image-cri-shim image service test using k8sv1", func() {
 		ginkgo.It("check service is running", func() {
 			_, err = exec.RunSimpleCmd(fmt.Sprintf(CheckServiceFormatCommand, "image-cri-shim"))

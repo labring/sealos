@@ -1,19 +1,18 @@
 import AppWindow from '@/components/app_window';
 import MoreButton from '@/components/more_button';
+import UserMenu from '@/components/user_menu';
 import useAppStore from '@/stores/app';
 import { TApp } from '@/types';
-import { Box, Flex, Grid, GridItem, Image, Text } from '@chakra-ui/react';
+import { Box, Flex, Grid, GridItem, Image, Text, Icon, FlexProps, Button } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { MouseEvent, useCallback, useEffect, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
+import useDriver from '@/hooks/useDriver';
 
 const TimeComponent = dynamic(() => import('./time'), {
-  ssr: false
-});
-const UserMenu = dynamic(() => import('@/components/user_menu'), {
   ssr: false
 });
 
@@ -68,6 +67,8 @@ export default function DesktopContent(props: any) {
     return masterApp?.addEventListen('openDesktopApp', openDesktopApp);
   }, [openDesktopApp]);
 
+  const { UserGuide, showGuide } = useDriver({ openDesktopApp });
+
   return (
     <Box
       id="desktop"
@@ -80,6 +81,22 @@ export default function DesktopContent(props: any) {
         <Box mt="12vh" minW={'508px'}>
           <TimeComponent />
         </Box>
+        {showGuide ? (
+          <>
+            <UserGuide />
+            <Box
+              position="fixed"
+              top="0"
+              left="0"
+              width="100%"
+              height="100%"
+              backgroundColor="rgba(0, 0, 0, 0.7)" // 半透明黑色背景
+              zIndex="11000" // 保证蒙层在最上层
+            />
+          </>
+        ) : (
+          <></>
+        )}
         {/* desktop apps */}
         <Grid
           mt="50px"
@@ -100,6 +117,7 @@ export default function DesktopContent(props: any) {
                 onClick={(e) => handleDoubleClick(e, item)}
               >
                 <Box
+                  className={item.key}
                   w="72px"
                   h="72px"
                   p={'12px'}
@@ -134,7 +152,6 @@ export default function DesktopContent(props: any) {
         <MoreButton />
         <UserMenu />
       </Flex>
-
       {/* opened apps */}
       {runningInfo.map((process) => {
         return (

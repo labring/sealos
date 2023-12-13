@@ -18,8 +18,8 @@ package main
 
 import (
 	"flag"
-
 	"os"
+	"strings"
 
 	v1 "github.com/labring/sealos/controllers/admission/api/v1"
 
@@ -52,11 +52,14 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var ingressAnnotationString string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.StringVar(&ingressAnnotationString, "ingress-mutating-annotations", "", "Ingress annotations: 'key1=value1,key2=value2'")
+
 	opts := zap.Options{
 		Development: true,
 	}
@@ -64,6 +67,23 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	setupLog.Info("ingress annotations:", "annotation", ingressAnnotationString)
+	ingressAnnotations := make(map[string]string)
+	if ingressAnnotationString != "" {
+		kvs := strings.Split(ingressAnnotationString, ",")
+		for _, kv := range kvs {
+			parts := strings.Split(kv, "=")
+			if len(parts) == 2 {
+				key := parts[0]
+				value := parts[1]
+				ingressAnnotations[key] = value
+			} else {
+				setupLog.Error(nil, "ingress annotation format error", "annotation", kv)
+				os.Exit(1)
+			}
+		}
+	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
@@ -94,7 +114,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	if (&v1.IngressMutator{}).SetupWithManager(mgr) != nil {
+	if (&v1.IngressMutator{
+		IngressAnnotations: ingressAnnotations,
+	}).SetupWithManager(mgr) != nil {
 		setupLog.Error(err, "unable to create ingress mutator webhook")
 		os.Exit(1)
 	}

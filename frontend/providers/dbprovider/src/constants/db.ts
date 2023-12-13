@@ -2,12 +2,20 @@ import { DBEditType, DBDetailType, PodDetailType } from '@/types/db';
 import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
 
 export const crLabelKey = 'sealos-db-provider-cr';
+export const CloudMigraionLabel = 'sealos-db-provider-cr-migrate';
+export const KBMigrationTaskLabel = 'datamigration.apecloud.io/migrationtask';
+export const SealosMigrationTaskLabel = 'datamigration.sealos.io/file-migration-task';
+export const MigrationRemark = 'migration-remark';
 
 export enum DBTypeEnum {
   postgresql = 'postgresql',
   mongodb = 'mongodb',
   mysql = 'apecloud-mysql',
-  redis = 'redis'
+  redis = 'redis',
+  kafka = 'kafka',
+  qdrant = 'qdrant',
+  nebula = 'nebula',
+  weaviate = 'weaviate'
 }
 
 export enum DBStatusEnum {
@@ -151,19 +159,33 @@ export const DBTypeList = [
   { id: DBTypeEnum.postgresql, label: 'postgres' },
   { id: DBTypeEnum.mongodb, label: 'mongo' },
   { id: DBTypeEnum.mysql, label: 'mysql' },
-  { id: DBTypeEnum.redis, label: 'redis' }
+  { id: DBTypeEnum.redis, label: 'redis' },
+  { id: DBTypeEnum.kafka, label: 'kafka' }
+  // { id: DBTypeEnum.qdrant, label: 'qdrant' },
+  // { id: DBTypeEnum.nebula, label: 'nebula' },
+  // { id: DBTypeEnum.weaviate, label: 'weaviate' }
 ];
+
 export const DBComponentNameMap = {
   [DBTypeEnum.postgresql]: 'postgresql',
   [DBTypeEnum.mongodb]: 'mongo',
   [DBTypeEnum.mysql]: 'mysql',
-  [DBTypeEnum.redis]: 'redis'
+  [DBTypeEnum.redis]: 'redis',
+  [DBTypeEnum.kafka]: 'kafka',
+  [DBTypeEnum.qdrant]: 'qdrant',
+  [DBTypeEnum.nebula]: 'nebula',
+  [DBTypeEnum.weaviate]: 'weaviate'
 };
+
 export const DBBackupPolicyNameMap = {
   [DBTypeEnum.postgresql]: 'postgresql',
   [DBTypeEnum.mongodb]: 'mongodb',
   [DBTypeEnum.mysql]: 'mysql',
-  [DBTypeEnum.redis]: 'redis'
+  [DBTypeEnum.redis]: 'redis',
+  [DBTypeEnum.kafka]: 'kafka',
+  [DBTypeEnum.qdrant]: 'qdrant',
+  [DBTypeEnum.nebula]: 'nebula',
+  [DBTypeEnum.weaviate]: 'weaviate'
 };
 
 export const defaultDBEditValue: DBEditType = {
@@ -192,7 +214,8 @@ export const defaultPod: PodDetailType = {
   restarts: 0,
   age: '1s',
   cpu: 1,
-  memory: 1
+  memory: 1,
+  hostIp: ''
 };
 
 export const RedisHAConfig = (ha = true) => {
@@ -210,4 +233,31 @@ export const RedisHAConfig = (ha = true) => {
     storage: 0,
     replicas: 1
   };
+};
+
+export const DBTypeSecretMap = {
+  postgresql: {
+    connectKey: 'postgresql'
+  },
+  mongodb: {
+    connectKey: 'mongodb'
+  },
+  'apecloud-mysql': {
+    connectKey: 'mysql'
+  },
+  redis: {
+    connectKey: 'redis'
+  },
+  kafka: {
+    connectKey: 'kafka'
+  },
+  qdrant: {
+    connectKey: 'qdrant'
+  },
+  nebula: {
+    connectKey: 'nebula'
+  },
+  weaviate: {
+    connectKey: 'weaviate'
+  }
 };

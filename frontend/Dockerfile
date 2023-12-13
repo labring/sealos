@@ -31,6 +31,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 COPY ./tsconfig.json ./tsconfig.json
 COPY ./tsconfig.deps.json ./tsconfig.deps.json
 COPY ./tsconfig.base.json ./tsconfig.base.json
+COPY ./tsconfig.web.json ./tsconfig.web.json
 COPY ./packages ./packages
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
@@ -51,11 +52,10 @@ ENV NEXT_TELEMETRY_DISABLED 1
 
 # COPY --from=deps /app/packages ./packages
 
-COPY . .
-
-
 ARG name
 ARG path
+
+COPY ${path} ${path}
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm --offline --filter=$name install && pnpm --filter=$name run build
 
@@ -85,6 +85,9 @@ USER nextjs
 
 # You only need to copy next.config.js if you are NOT using the default configuration
 COPY --from=builder /app/$path/next.config.js ./$path/next.config.js
+RUN if ["$name" = "objectstorage" ]; then \
+  COPY --from=builder /app/$path/next-i18next.config.js ./$path/next-i18next.config.js; \
+  fi
 COPY --from=builder /app/$path/public ./$path/public
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/static ./$path/.next/static

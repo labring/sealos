@@ -3,12 +3,12 @@ import Translate from '@docusaurus/Translate';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useIsBrowser from '@docusaurus/useIsBrowser';
 import useWindow from '@site/src/hooks/useWindow';
+import NavBanner from '@site/src/components/NavBanner';
 import GithubIcon from '@site/static/icons/github.svg';
 import MeunIcon from '@site/static/icons/meun.svg';
 import LogoIcon from '@site/static/icons/sealos.svg';
-import HeaderSvg from '@site/static/illustrations/bg-header.svg';
 import React, { useEffect, useState } from 'react';
-import VideoPlayer from '../VideoPlayer';
+import VideoPlayer from '@site/src/pages/components/VideoPlayer';
 import './index.scss';
 
 const navbar = [
@@ -23,9 +23,14 @@ const navbar = [
     to: 'https://forum.laf.run/'
   },
   {
-    key: 'pricing',
-    label: <Translate>Pricing</Translate>,
-    to: '/pricing'
+    key: 'hosting',
+    label: <Translate>Hosting</Translate>,
+    to: '/self-hosting '
+  },
+  {
+    key: 'blog',
+    label: <Translate>Blog</Translate>,
+    to: '/blog'
   },
   {
     key: 'contact',
@@ -42,22 +47,23 @@ const i18nObj = {
 const HomeHeader = ({ isPc }: { isPc: boolean }) => {
   const [stars, setStars] = useState(10000);
   const isBrowser = useIsBrowser();
-  const { cloudUrl } = useWindow();
-
-  const i18nMap: { [key: string]: { label: string; link: string } } = {
-    en: { label: '中', link: '/zh-Hans/' },
-    ['zh-Hans']: { label: 'En', link: '/' }
-  };
+  const { cloudUrl, bd_vid } = useWindow();
+  const [isBannerVisible, setIsBannerVisible] = useState(false);
 
   const {
-    i18n: { currentLocale },
-    siteConfig: {
-      themeConfig: {
-        // @ts-ignore nextLine
-        // navbar: { items: navbarData }
-      }
-    }
+    i18n: { currentLocale, defaultLocale }
   } = useDocusaurusContext();
+
+  const i18nMap: { [key: string]: { label: string; link: string } } =
+    defaultLocale === 'en'
+      ? {
+          en: { label: '中', link: '/zh-Hans/' },
+          ['zh-Hans']: { label: 'En', link: '/' }
+        }
+      : {
+          en: { label: '中', link: '/' },
+          ['zh-Hans']: { label: 'En', link: '/en/' }
+        };
 
   useEffect(() => {
     const getStars = async () => {
@@ -84,8 +90,22 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
   if (!isPc) {
     return (
       <div id="Start" className="home-header">
-        <HeaderSvg className="header-img" />
-        <nav>
+        <img
+          draggable="false"
+          className="header-img"
+          src={require('@site/static/img/bg-header.png').default}
+          alt="community"
+        />
+        <NavBanner isBannerVisible={isBannerVisible} setIsBannerVisible={setIsBannerVisible} />
+        <nav
+          style={
+            isBannerVisible
+              ? {
+                  marginTop: '48px'
+                }
+              : {}
+          }
+        >
           <div className="left">
             <MeunIcon width={'24px'} height={'24px'} onClick={() => openSideBar()} />
             <LogoIcon width={'42px'} height={'42px'} />
@@ -100,19 +120,19 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
         </nav>
         <main>
           {currentLocale === 'en' ? (
-            <h1>
+            <div className="sealos-main-header">
               <span className="txt-title">Kubernetes&nbsp;</span>
               <span className="txt-aid">as the kernel</span>
-            </h1>
+            </div>
           ) : (
-            <h1>
+            <div className="sealos-main-header">
               <span className="txt-aid">以&nbsp;</span>
               <span className="txt-title">Kubernetes&nbsp;</span>
               <span className="txt-aid">为内核</span>
-            </h1>
+            </div>
           )}
 
-          <h2>{i18nObj.cloudOS}</h2>
+          <h1>{i18nObj.cloudOS}</h1>
 
           {currentLocale === 'en' ? (
             <h3>
@@ -127,7 +147,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
               一样使用 Sealos！
             </h3>
           )}
-          <a className="start-now-button" href={cloudUrl} target="_blank">
+          <a className="start-now-button" href={`${cloudUrl}?bd_vid=${bd_vid}`} target="_blank">
             {i18nObj.startNow}
             <div className="start-now-button-wrap"></div>
           </a>
@@ -139,14 +159,28 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
 
   return (
     <div id="Start" className="home-header">
-      <HeaderSvg className="header-img" />
-      <nav>
+      <img
+        draggable="false"
+        className="header-img"
+        src={require('@site/static/img/bg-header.png').default}
+        alt="community"
+      />
+      <NavBanner isBannerVisible={isBannerVisible} setIsBannerVisible={setIsBannerVisible} />
+      <nav
+        style={
+          isBannerVisible
+            ? {
+                marginTop: '48px'
+              }
+            : {}
+        }
+      >
         <div className="left">
           <div
             className="sealos_home_header_title"
             onClick={() =>
               window.location.replace(
-                `${location.origin}${currentLocale === 'en' ? '/' : '/zh-Hans/'}`
+                `${location.origin}${currentLocale === defaultLocale ? '/' : `/${currentLocale}/`}`
               )
             }
           >
@@ -168,13 +202,16 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
             <span className="git-stars">{Math.floor(stars / 1000)}k</span>
           </Link>
           {isBrowser && (
-            <div className="i18nIcon">
-              <Link to={`${location.origin}${i18nMap[currentLocale]?.link}`} target="_self">
-                {i18nMap[currentLocale]?.label}
-              </Link>
+            <div
+              className="i18nIcon"
+              onClick={() =>
+                window.location.replace(`${location.origin}${i18nMap[currentLocale].link}`)
+              }
+            >
+              {i18nMap[currentLocale].label}
             </div>
           )}
-          <a className="start-now-button" href={cloudUrl} target="_blank">
+          <a className="start-now-button" href={`${cloudUrl}?bd_vid=${bd_vid}`} target="_blank">
             {i18nObj.startNow}
             <div className="start-now-button-wrap"></div>
           </a>
@@ -182,19 +219,19 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
       </nav>
       <main>
         {currentLocale === 'en' ? (
-          <h1>
+          <div className="sealos-main-header">
             <span className="txt-title">Kubernetes&nbsp;</span>
             <span className="txt-aid">as the kernel</span>
-          </h1>
+          </div>
         ) : (
-          <h1>
+          <div className="sealos-main-header">
             <span className="txt-aid">以&nbsp;</span>
             <span className="txt-title">Kubernetes&nbsp;</span>
             <span className="txt-aid">为内核</span>
-          </h1>
+          </div>
         )}
 
-        <h2>{i18nObj.cloudOS}</h2>
+        <h1>{i18nObj.cloudOS}</h1>
 
         {currentLocale === 'en' ? (
           <h3>

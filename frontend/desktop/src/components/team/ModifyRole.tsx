@@ -24,6 +24,7 @@ import { modifyRoleRequest } from '@/api/namespace';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
 import { useTranslation } from 'react-i18next';
+import { ExpanMoreIcon } from '@sealos/ui';
 export default function ModifyRole({
   ns_uid,
   k8s_username,
@@ -99,16 +100,11 @@ export default function ModifyRole({
                   w="100%"
                   mt="24px"
                   px="12px"
+                  display={'flex'}
+                  justifyContent={'space-between'}
+                  rightIcon={<ExpanMoreIcon boxSize={'16px'} />}
                 >
-                  <Flex alignItems={'center'} justifyContent={'space-between'}>
-                    <Text>{ROLE_LIST[role]}</Text>
-                    <Image
-                      src="/images/material-symbols_expand-more-rounded.svg"
-                      w="16px"
-                      h="16px"
-                      transform={'rotate(90deg)'}
-                    />
-                  </Flex>
+                  <Text>{ROLE_LIST[role]}</Text>
                 </MenuButton>
                 <MenuList borderRadius={'2px'}>
                   {roles.map((_role, idx) => (

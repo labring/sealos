@@ -15,8 +15,7 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { InvitedStatus } from '@/types/team';
 import useSessionStore from '@/stores/session';
-import CancelIcon from '../icons/CancelIcon';
-import DeleteIcon from '../icons/DeleteIcon';
+import { CancelIcon, DeleteIcon } from '@sealos/ui';
 import { removeMemberRequest } from '@/api/namespace';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';

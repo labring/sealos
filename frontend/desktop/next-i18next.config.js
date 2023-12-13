@@ -7,5 +7,6 @@ module.exports = {
     defaultLocale: 'zh',
     locales: ['en', 'zh'],
     localeDetection: false
-  }
+  },
+  reloadOnPrerender: process.env.NODE_ENV === 'development'
 };

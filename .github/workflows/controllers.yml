@@ -3,6 +3,18 @@ name: Build Controllers image
 on:
   create:
     tags:
+  workflow_call:
+    inputs:
+      push_image:
+        description: "Push image"
+        required: false
+        type: boolean
+        default: false
+      push_image_tag:
+        description: "Push image tag"
+        default: "latest"
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       push_image:
@@ -50,6 +62,7 @@ jobs:
         run: bash ./scripts/resolve-modules.sh ./controllers
 
   golangci-lint:
+    if: ${{ github.event_name }} == 'push' || ${{ github.event_name }} == 'pull_request'
     needs: [ resolve-modules ]
     runs-on: ubuntu-20.04
     strategy:
@@ -80,14 +93,14 @@ jobs:
           - { name: terminal, path: terminal }
           - { name: account, path: account }
           - { name: app, path: app }
-          - { name: db-bytebase, path: db/bytebase }
           - { name: db-adminer, path: db/adminer }
           - { name: license, path: license }
           - { name: job-init, path: job/init }
+          - { name: job-heartbeat, path: job/heartbeat }
           - { name: resources, path: resources }
-          - { name: resources-metering, path: resources/metering }
           - { name: node, path: node }
           - { name: admission, path: admission }
+          - { name: objectstorage, path: objectstorage }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -183,14 +196,14 @@ jobs:
           - { name: terminal, path: terminal }
           - { name: account, path: account }
           - { name: app, path: app }
-          - { name: db-bytebase, path: db/bytebase }
           - { name: db-adminer, path: db/adminer }
           - { name: license, path: license }
           - { name: job-init, path: job/init }
+          - { name: job-heartbeat, path: job/heartbeat }
           - { name: resources, path: resources }
-          - { name: resources-metering, path: resources/metering }
           - { name: node, path: node }
           - { name: admission, path: admission }
+          - { name: objectstorage, path: objectstorage }
     steps:
       - name: Checkout
         uses: actions/checkout@v3

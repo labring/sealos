@@ -2,27 +2,10 @@ go 1.20
 
 use (
 	.
-	./controllers/account
-	./controllers/admission
-	./controllers/app
-	./controllers/db/adminer
-	./controllers/db/bytebase
-	./controllers/terminal
-	./controllers/node
-	./controllers/user
-	./controllers/resources
-	./controllers/license
-	./controllers/job/init
-	./controllers/pkg
-	./service/database
-	./service/hub
-	./service/pay
 	./staging/src/github.com/labring/image-cri-shim
 	./staging/src/github.com/labring/lvscare
-	./staging/src/github.com/labring/controllers/imagehub
-	./staging/src/github.com/labring/controllers/cluster
-	./staging/src/github.com/labring/controllers/infra
-	./staging/src/github.com/labring/controllers/metering
 	./webhooks/whitelist
 	./test/e2e
+	./deprecated/controllers/db/bytebase
+	./deprecated/controllers/imagehub
 )
