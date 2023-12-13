@@ -126,8 +126,6 @@ function sealos_authorize {
   while [ -z "$(kubectl get ns ns-admin 2>/dev/null)" ]; do
     sleep 1
   done
-
-  kubectl apply -f manifests/free-license.yaml
 }
 
 function sealos_run_frontend {
