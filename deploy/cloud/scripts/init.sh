@@ -119,6 +119,7 @@ function sealos_run_controller {
 
 function sealos_authorize {
   sealos run tars/job-init.tar
+  sealos run tars/job-heartbeat.tar
 
   # wait for admin user create
   echo "Waiting for admin user create"
