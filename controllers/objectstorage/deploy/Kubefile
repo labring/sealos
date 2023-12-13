@@ -5,9 +5,8 @@ USER 65532:65532
 COPY registry registry
 COPY manifests manifests
 
-ENV DEFAULT_NAMESPACE objectstorage-system
 ENV OSAdminSecret=""
 ENV OSInternalEndpoint=""
 ENV OSExternalEndpoint=""
 
-CMD ["kubectl apply -f manifests/deploy.yaml -n $DEFAULT_NAMESPACE"]
+CMD ["kubectl apply -f manifests/deploy.yaml"]

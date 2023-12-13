@@ -74,7 +74,7 @@ spec:
               value: '{{ .OSExternalEndpoint }}'
             - name: OSUDetectionCycleSeconds
               value: "300"
-            - name: MinioBucketDetectionCycleSeconds
+            - name: OSBDetectionCycleSeconds
               value: "300"
           image: ghcr.io/labring/sealos-objectstorage-controller:latest
           imagePullPolicy: Always
@@ -87,8 +87,8 @@ spec:
               cpu: 500m
               memory: 512Mi
             requests:
-              cpu: 250m
-              memory: 256Mi
+              cpu: 5m
+              memory: 64Mi
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
