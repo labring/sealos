@@ -5,21 +5,18 @@ import DrawerItem from '@/pages/kubepanel/components/drawer/drawer-item';
 import { KubeBadge } from '@/components/kube/kube-badge';
 import React from 'react';
 import DrawerPanel from '../../../drawer/drawer-panel';
+import { isArray } from 'lodash';
 
-interface Props {
-  volumeClaim?: PersistentVolumeClaim;
-  pods: Pod[];
-  open: boolean;
-  onClose: () => void;
-}
-const PersistentVolumeClaimDetail = ({ volumeClaim, pods, open, onClose }: Props) => {
-  if (!volumeClaim) return null;
+const PersistentVolumeClaimDetail = ({
+  obj,
+  open,
+  onClose
+}: DetailDrawerProps<{ volumeClaim: PersistentVolumeClaim; pods: Pod[] }>) => {
+  if (!obj) return null;
 
-  if (!(volumeClaim instanceof PersistentVolumeClaim)) {
-    // logger.error("[PersistentVolumeClaimDetail]: passed object that is not an instanceof PersistentVolumeClaim", volumeClaim);
-
-    return null;
-  }
+  const { volumeClaim, pods } = obj;
+  if (!volumeClaim || !(volumeClaim instanceof PersistentVolumeClaim)) return null;
+  if (!pods || !isArray(pods)) return null;
 
   const { storageClassName, accessModes } = volumeClaim.spec;
 

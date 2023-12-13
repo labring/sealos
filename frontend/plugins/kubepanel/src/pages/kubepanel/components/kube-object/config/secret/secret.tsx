@@ -2,15 +2,10 @@ import { KubeBadge } from '@/components/kube/kube-badge';
 import { KubeObjectAge } from '@/components/kube/object/kube-object-age';
 import { Secret } from '@/k8slens/kube-object';
 import { ColumnsType } from 'antd/lib/table';
-import ActionButton from '../../../action-button/action-button';
-import { deleteResource } from '@/api/delete';
-import { updateResource } from '@/api/update';
-import { Resources } from '@/constants/kube-object';
-import Table from '../../../table/table';
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import { fetchData, useSecretStore } from '@/store/kube';
+import { useSecretStore } from '@/store/kube';
 import SecretDetail from './secret-detail';
+import PanelTable from '../../../panel-table/table';
+import ActionButton from '../../../action-button/action-button';
 
 const columns: ColumnsType<Secret> = [
   {
@@ -41,40 +36,27 @@ const columns: ColumnsType<Secret> = [
     render: (_, secret) => <KubeObjectAge obj={secret} />
   },
   {
-    key: 'action',
     fixed: 'right',
-    render: (_, secret) => (
-      <ActionButton
-        obj={secret}
-        onUpdate={(data: string) => updateResource(data, secret.getName(), Resources.Secrets)}
-        onDelete={() => deleteResource(secret.getName(), Resources.Secrets)}
-      />
-    )
+    key: 'action',
+    render: (_, secret) => <ActionButton obj={secret} />
   }
 ];
 
 const SecretOverviewPage = () => {
-  const [secret, setSecret] = useState<Secret>();
-  const [openDrawer, setOpenDrawer] = useState(false);
-  const { items, replace } = useSecretStore();
-
-  useQuery(['secrets'], () => fetchData(replace, Resources.Secrets), { refetchInterval: 5000 });
+  const { items, initialize, isLoaded, watch } = useSecretStore();
 
   return (
-    <>
-      <Table
-        title={'Secrets'}
-        columns={columns}
-        dataSource={items}
-        onRow={(secret) => ({
-          onClick: () => {
-            setSecret(secret);
-            setOpenDrawer(true);
-          }
-        })}
-      />
-      <SecretDetail obj={secret} open={openDrawer} onClose={() => setOpenDrawer(false)} />
-    </>
+    <PanelTable
+      columns={columns}
+      dataSource={items}
+      loading={!isLoaded}
+      sectionTitle="Secrets"
+      DetailDrawer={SecretDetail}
+      getRowKey={(secret) => secret.getId()}
+      initializers={[initialize]}
+      watchers={[watch]}
+      getDetailItem={(secret) => secret}
+    />
   );
 };
 

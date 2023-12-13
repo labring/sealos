@@ -1,56 +1,72 @@
-import { ApiResp } from '@/services/kubernet';
+import { deleteResource } from '@/api/kubernetes';
+import { KubeObject } from '@/k8slens/kube-object';
+import { buildErrorResponse } from '@/services/backend/response';
 import { Button, Input, Modal, message } from 'antd';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
-interface Props {
-  targetName: string;
+interface Props<K extends KubeObject> {
+  obj: K;
   open: boolean;
-  onDelete: () => Promise<ApiResp>;
   onCancel: () => void;
   onOk: () => void;
 }
 
-const DeleteWarningModal = ({ targetName, open, onDelete, onCancel, onOk }: Props) => {
+const DeleteWarningModal = <K extends KubeObject = KubeObject>({
+  obj,
+  open,
+  onCancel,
+  onOk
+}: Props<K>) => {
+  if (!obj) return null;
+
   const [isConfirmed, setIsConfirmed] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
-
   const [msgApi, contextHolder] = message.useMessage();
-
-  useEffect(() => {
-    if (!confirmed) return;
-    const deleteRequest = async () => {
-      const resp = await onDelete();
-      if (resp.code === 200) {
-        msgApi.success('Successfully deleted');
-      } else {
-        msgApi.error(`Failed to delete: ${resp.data.message}`);
-      }
-      setConfirmed(false);
-      onOk();
-    };
-
-    deleteRequest();
-  }, [confirmed]);
+  const msgKey = 'deletedMsg';
 
   return (
     <>
       {contextHolder}
       <Modal
         title={<div>Delete Warning</div>}
+        open={open}
+        onCancel={onCancel}
+        destroyOnClose
         footer={[
           <Button key="cancel" onClick={onCancel}>
             Cancel
           </Button>,
-          <Button key="confirm" onClick={() => setConfirmed(true)} danger disabled={!isConfirmed}>
+          <Button
+            key="confirm"
+            onClick={() => {
+              msgApi.loading({ content: 'Deleting...', key: msgKey, duration: 0 });
+              deleteResource(obj.kind, obj.getName())
+                .then((res) => {
+                  msgApi.success({
+                    content: `Successfully deleted ${res.data.kind} ${res.data.metadata.name}`,
+                    key: msgKey
+                  });
+                  onOk();
+                })
+                .catch((err) => {
+                  const errResp = buildErrorResponse(err);
+                  msgApi.error({
+                    content: `Failed to update ${obj.kind} ${obj.getName()}: ${
+                      errResp.error.message
+                    }`,
+                    key: msgKey
+                  });
+                });
+            }}
+            danger
+            disabled={!isConfirmed}
+          >
             Confirm
           </Button>
         ]}
-        open={open}
-        onCancel={onCancel}
       >
         <div>
           <p className="text-center mb-2">
-            Are you sure to delete <span className="font-bold">{targetName}</span>?
+            Are you sure to delete <span className="font-bold">{obj.getName()}</span>?
           </p>
           <p className="text-center">
             Please enter <span className="font-semibold">Confirm</span> to confirm deletion:

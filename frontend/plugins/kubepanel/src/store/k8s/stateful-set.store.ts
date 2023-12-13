@@ -25,5 +25,5 @@ export function getStatefulSetsStatuses(statefulSets: StatefulSet[], pods: Pod[]
 }
 
 export const useStatefulSetStore = create<StatefulSetStore>()((...a) => ({
-  ...createKubeStoreSlice<StatefulSet>(StatefulSet.kind)(...a)
+  ...createKubeStoreSlice<StatefulSet>(StatefulSet.kind, StatefulSet)(...a)
 }));

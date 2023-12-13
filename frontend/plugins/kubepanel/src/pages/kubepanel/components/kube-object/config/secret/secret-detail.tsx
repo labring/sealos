@@ -2,15 +2,14 @@ import { Secret } from '@/k8slens/kube-object';
 import DrawerPanel from '../../../drawer/drawer-panel';
 import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
 import Drawer from '../../../drawer/drawer';
-import React, { Suspense } from 'react';
+import React from 'react';
 import { Button, Input, Space } from 'antd';
 import { EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons';
-import { DetailDrawerProps } from '@/types/detail';
 import { entries } from 'lodash';
-import { updateResource } from '@/api/update';
-import { Resources } from '@/constants/kube-object';
 import { dumpKubeObject } from '@/utils/yaml';
 import useMessage from 'antd/lib/message/useMessage';
+import { updateResource } from '@/api/kubernetes';
+import { buildErrorResponse } from '@/services/backend/response';
 
 type RevealableInput = {
   name: string;
@@ -53,7 +52,7 @@ const SecretDataInput = ({ name, initValue, onChange }: RevealableInput) => {
 
 const SecretDataForm = ({ secret }: { secret: Secret }) => {
   const [isSaving, setIsSaving] = React.useState(false);
-  const [msgApi, contextHolder] = useMessage({});
+  const [msgApi, contextHolder] = useMessage();
   const dataMap = React.useRef<Partial<Record<string, string>>>(secret.data).current;
 
   return (
@@ -69,46 +68,47 @@ const SecretDataForm = ({ secret }: { secret: Secret }) => {
           }}
         />
       ))}
-      <Suspense>
-        <Button
-          style={{ width: 'max-content' }}
-          loading={isSaving}
-          onClick={() => {
-            setIsSaving(true);
-            updateResource(
-              dumpKubeObject<Secret>({
-                ...secret,
-                data: dataMap
-              }),
-              secret.getName(),
-              Resources.Secrets
-            )
-              .then((res) => {
-                if (res.code >= 300 || res.code < 200) msgApi.error(res.message);
-                else msgApi.success('Successfully Saved!');
-              })
-              .finally(() => {
-                setIsSaving(false);
-              });
-          }}
-        >
-          Save
-        </Button>
-      </Suspense>
+      <Button
+        style={{ width: 'max-content' }}
+        loading={isSaving}
+        onClick={() => {
+          setIsSaving(true);
+          updateResource(
+            secret.kind,
+            secret.getName(),
+            dumpKubeObject<Secret>({
+              ...secret,
+              data: dataMap
+            })
+          )
+            .then(() => {
+              msgApi.success('Saved');
+            })
+            .catch((err) => {
+              const errResp = buildErrorResponse(err);
+              msgApi.error(errResp.error.message);
+            })
+            .finally(() => {
+              setIsSaving(false);
+            });
+        }}
+      >
+        Save
+      </Button>
     </>
   );
 };
 
-const SecretDetail = ({ obj, open, onClose }: DetailDrawerProps<Secret>) => {
-  if (!obj || !(obj instanceof Secret)) return null;
+const SecretDetail = ({ obj: secret, open, onClose }: DetailDrawerProps<Secret>) => {
+  if (!secret || !(secret instanceof Secret)) return null;
 
   return (
-    <Drawer open={open} title={`Secret: ${obj.getName()}`} onClose={onClose}>
+    <Drawer open={open} title={`Secret: ${secret.getName()}`} onClose={onClose}>
       <DrawerPanel>
-        <KubeObjectInfoList obj={obj} />
+        <KubeObjectInfoList obj={secret} />
       </DrawerPanel>
       <DrawerPanel title="Data">
-        <SecretDataForm secret={obj} />
+        <SecretDataForm secret={secret} />
       </DrawerPanel>
     </Drawer>
   );

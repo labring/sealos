@@ -1,7 +1,5 @@
-import { KubeObject } from '@/k8slens/kube-object';
-
-type DetailDrawerProps<K extends KubeObject> = {
-  obj?: K;
+type DetailDrawerProps<K> = {
+  obj: K | null;
   onClose: () => void;
   open: boolean;
 };

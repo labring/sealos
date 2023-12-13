@@ -4,5 +4,5 @@ import { createKubeStoreSlice } from './kube.store';
 import { ConfigMapStore } from '@/types/state';
 
 export const useConfigMapStore = create<ConfigMapStore>()((...a) => ({
-  ...createKubeStoreSlice<ConfigMap>(ConfigMap.kind)(...a)
+  ...createKubeStoreSlice<ConfigMap>(ConfigMap.kind, ConfigMap)(...a)
 }));

@@ -10,19 +10,8 @@ import ContainerDetail from './container-detail';
 import Drawer from '../../../drawer/drawer';
 import DrawerPanel from '../../../drawer/drawer-panel';
 
-interface Props {
-  pod?: Pod;
-  open: boolean;
-  onClose: () => void;
-}
-const PodDetail = ({ pod, open, onClose }: Props) => {
-  if (!pod) return null;
-
-  if (!(pod instanceof Pod)) {
-    // logger.error("[PodDetail]: passed object that is not an instanceof Pod", pod);
-
-    return null;
-  }
+const PodDetail = ({ obj: pod, open, onClose }: DetailDrawerProps<Pod>) => {
+  if (!pod || !(pod instanceof Pod)) return null;
 
   return (
     <Drawer open={open} title={`Pod: ${pod.getName()}`} onClose={onClose}>

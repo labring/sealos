@@ -1,15 +1,15 @@
+import { updateResource } from '@/api/kubernetes';
 import { KubeObject } from '@/k8slens/kube-object';
-import { ApiResp } from '@/services/kubernet';
+import { buildErrorResponse } from '@/services/backend/response';
 import { dumpKubeObject } from '@/utils/yaml';
 import { Editor } from '@monaco-editor/react';
 import { Button, Modal, message } from 'antd';
 import { editor } from 'monaco-editor';
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 
 interface Props<K extends KubeObject> {
   obj?: K;
   open: boolean;
-  onUpdate: (data: string) => Promise<ApiResp>;
   onCancel: () => void;
   onOk: () => void;
 }
@@ -17,32 +17,14 @@ interface Props<K extends KubeObject> {
 const UpdateEditorModal = <K extends KubeObject = KubeObject>({
   obj,
   open,
-  onUpdate,
   onCancel,
   onOk
 }: Props<K>) => {
   if (!obj) return null;
 
-  const [clickedUpdate, setClickedUpdate] = useState(false);
   const [msgApi, contextHolder] = message.useMessage();
+  const msgKey = 'updatedMsg';
   const editorRef = useRef<editor.IStandaloneCodeEditor>();
-
-  useEffect(() => {
-    if (!clickedUpdate || !editorRef.current) return;
-    const updateRequest = async () => {
-      const resp = await onUpdate(editorRef.current!.getValue());
-      if (resp.code === 200) {
-        msgApi.success('Successfully updated');
-        onOk();
-      } else {
-        msgApi.error(`Failed to update: ${resp.data.message}`);
-      }
-
-      setClickedUpdate(false);
-    };
-
-    updateRequest();
-  }, [clickedUpdate]);
 
   const editorValue = dumpKubeObject<KubeObject>(obj);
 
@@ -53,8 +35,38 @@ const UpdateEditorModal = <K extends KubeObject = KubeObject>({
         title={<div>{`${obj.kind}: ${obj.getName()}`}</div>}
         open={open}
         onCancel={onCancel}
+        destroyOnClose
         footer={[
-          <Button key="ok" type="link" onClick={() => setClickedUpdate(true)}>
+          <Button
+            key="ok"
+            type="link"
+            onClick={() => {
+              msgApi.loading({ content: 'Updating...', key: msgKey }, 0);
+              if (!editorRef.current) {
+                msgApi.error(
+                  'There is an error to get the editor value. You can try to reopen the modal.'
+                );
+                return;
+              }
+              updateResource(obj.kind, obj.getName(), editorRef.current.getValue())
+                .then((res) => {
+                  msgApi.success({
+                    content: `Successfully updated ${res.data.kind} ${res.data.metadata.name}`,
+                    key: msgKey
+                  });
+                  onOk();
+                })
+                .catch((err) => {
+                  const errResp = buildErrorResponse(err);
+                  msgApi.error({
+                    content: `Failed to update ${obj.kind} ${obj.getName()}: ${
+                      errResp.error.message
+                    }`,
+                    key: msgKey
+                  });
+                });
+            }}
+          >
             Update
           </Button>,
           <Button key="cancel" onClick={onCancel} danger>

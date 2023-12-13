@@ -1,16 +1,11 @@
 import { KubeObjectAge } from '@/components/kube/object/kube-object-age';
 import { Ingress, computeRouteDeclarations } from '@/k8slens/kube-object';
 import { ColumnsType } from 'antd/lib/table';
-import ActionButton from '../../../action-button/action-button';
-import { deleteResource } from '@/api/delete';
-import { updateResource } from '@/api/update';
-import { Resources } from '@/constants/kube-object';
-import Table from '../../../table/table';
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import { fetchData, useIngressStore } from '@/store/kube';
+import { useIngressStore } from '@/store/kube';
 import { Button } from 'antd';
 import IngressDetail from './ingress-detail';
+import PanelTable from '../../../panel-table/table';
+import ActionButton from '../../../action-button/action-button';
 
 const columns: ColumnsType<Ingress> = [
   {
@@ -56,40 +51,27 @@ const columns: ColumnsType<Ingress> = [
       ))
   },
   {
-    key: 'action',
     fixed: 'right',
-    render: (_, ingress) => (
-      <ActionButton
-        obj={ingress}
-        onUpdate={(data: string) => updateResource(data, ingress.getName(), Resources.Ingresses)}
-        onDelete={() => deleteResource(ingress.getName(), Resources.Ingresses)}
-      />
-    )
+    key: 'action',
+    render: (_, ingress) => <ActionButton obj={ingress} />
   }
 ];
 
 const IngressOverviewPage = () => {
-  const [ingress, setIngress] = useState<Ingress>();
-  const [openDrawer, setOpenDrawer] = useState(false);
-  const { items, replace } = useIngressStore();
-
-  useQuery(['ingresss'], () => fetchData(replace, Resources.Ingresses), { refetchInterval: 5000 });
+  const { items, initialize, isLoaded, watch } = useIngressStore();
 
   return (
-    <>
-      <Table
-        title={'Ingresses'}
-        columns={columns}
-        dataSource={items}
-        onRow={(ingress) => ({
-          onClick: () => {
-            setIngress(ingress);
-            setOpenDrawer(true);
-          }
-        })}
-      />
-      <IngressDetail obj={ingress} open={openDrawer} onClose={() => setOpenDrawer(false)} />
-    </>
+    <PanelTable
+      columns={columns}
+      dataSource={items}
+      loading={!isLoaded}
+      sectionTitle="Ingresses"
+      DetailDrawer={IngressDetail}
+      getRowKey={(ingress) => ingress.getId()}
+      initializers={[initialize]}
+      watchers={[watch]}
+      getDetailItem={(ingress) => ingress}
+    />
   );
 };
 
