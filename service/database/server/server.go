@@ -8,8 +8,9 @@ import (
 	"net/url"
 	"text/template"
 
+	"github.com/labring/sealos/service/pkg/auth"
+
 	"github.com/labring/sealos/service/database/api"
-	"github.com/labring/sealos/service/database/auth"
 	"github.com/labring/sealos/service/database/request"
 )
 
