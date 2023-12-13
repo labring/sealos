@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/common"
 	"github.com/labring/sealos/controllers/pkg/database"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
@@ -80,7 +81,7 @@ func (m *mongoDB) Disconnect(ctx context.Context) error {
 	return m.Client.Disconnect(ctx)
 }
 
-func (m *mongoDB) GetBillingLastUpdateTime(owner string, _type accountv1.Type) (bool, time.Time, error) {
+func (m *mongoDB) GetBillingLastUpdateTime(owner string, _type common.Type) (bool, time.Time, error) {
 	filter := bson.M{
 		"owner": owner,
 		"type":  _type,
@@ -833,7 +834,7 @@ func (m *mongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	return nil
 }
 
-func (m *mongoDB) GetBillingCount(accountType accountv1.Type, startTime, endTime time.Time) (count, amount int64, err error) {
+func (m *mongoDB) GetBillingCount(accountType common.Type, startTime, endTime time.Time) (count, amount int64, err error) {
 	filter := bson.M{
 		"type": accountType,
 		"time": bson.M{

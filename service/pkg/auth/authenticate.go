@@ -2,11 +2,11 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net"
 	"os"
 
-	"github.com/labring/sealos/service/database/api"
 	authorizationapi "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -15,9 +15,15 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+var (
+	ErrNilNs        = errors.New("namespace not found")
+	ErrNoAuth       = errors.New("no permission for this namespace")
+	ErrNoSealosHost = errors.New("unable to get the sealos host")
+)
+
 func Authenticate(ns, kc string) error {
 	if ns == "" {
-		return api.ErrNilNs
+		return ErrNilNs
 	}
 	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kc))
 	if err != nil {
@@ -28,7 +34,7 @@ func Authenticate(ns, kc string) error {
 	if k8shost := GetKubernetesHostFromEnv(); k8shost != "" {
 		config.Host = k8shost
 	} else {
-		return api.ErrNoSealosHost
+		return ErrNoSealosHost
 	}
 
 	client, err := kubernetes.NewForConfig(config)
@@ -78,15 +84,13 @@ func CheckResourceAccess(client *kubernetes.Clientset, namespace, verb, resource
 			},
 		},
 	}
-
 	resp, err := client.AuthorizationV1().SelfSubjectAccessReviews().Create(context.TODO(), review, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
 
 	if !resp.Status.Allowed {
-		return api.ErrNoAuth
+		return ErrNoAuth
 	}
-
 	return nil
 }

@@ -12,12 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package errors
+package clusterid
 
 import (
+	"context"
 	"fmt"
+
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var ErrLicenseInvalid = fmt.Errorf("the license provided appears to be invalid")
-var ErrClaimsConvent = fmt.Errorf("the claims data provided appears to be invalid")
-var ErrClusterIDNotMatch = fmt.Errorf("the cluster id provided appears to be invalid")
+func GetClusterID(ctx context.Context, c client.Client) (string, error) {
+	ns := &corev1.Namespace{}
+	err := c.Get(ctx, client.ObjectKey{Name: "kube-system"}, ns)
+	if err != nil {
+		return "", err
+	}
+	res := string(ns.UID)
+	if res == "" || len(res) < 8 {
+		return "", fmt.Errorf("failed to get cluster id")
+	}
+	return res[0:8], nil
+}

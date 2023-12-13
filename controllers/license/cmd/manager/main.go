@@ -35,6 +35,7 @@ import (
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	"github.com/labring/sealos/controllers/license/internal/controller"
+	utilid "github.com/labring/sealos/controllers/license/internal/util/clusterid"
 	"github.com/labring/sealos/controllers/license/internal/util/database"
 	//+kubebuilder:scaffold:imports
 )
@@ -101,7 +102,14 @@ func main() {
 	}
 	defer db.Disconnect(context.Background())
 
-	if err = (&controller.LicenseReconciler{}).SetupWithManager(mgr, db); err != nil {
+	clusterID, err := utilid.GetClusterID(context.Background(), mgr.GetClient())
+	if err != nil {
+		setupLog.Error(err, "unable to get cluster id")
+		os.Exit(1)
+	}
+	setupLog.Info("cluster id", "id", clusterID)
+
+	if err = (&controller.LicenseReconciler{ClusterID: clusterID}).SetupWithManager(mgr, db); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "License")
 		os.Exit(1)
 	}

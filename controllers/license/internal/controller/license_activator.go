@@ -15,17 +15,27 @@
 package controller
 
 import (
+	"context"
+
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
-	licenseutil "github.com/labring/sealos/controllers/license/internal/util/license"
+	accountutil "github.com/labring/sealos/controllers/license/internal/util/account"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type LicenseValidator struct {
+type LicenseActivator struct {
 	client.Client
-	ClusterID string
 }
 
-func (v *LicenseValidator) Validate(license *licensev1.License) (bool, error) {
-	return licenseutil.IsLicenseValid(license, v.ClusterID)
+func (a *LicenseActivator) Active(ctx context.Context, license *licensev1.License) error {
+	// TODO mv to active function
+	switch license.Spec.Type {
+	case licensev1.AccountLicenseType:
+		if err := accountutil.Recharge(ctx, a.Client, license); err != nil {
+			return err
+		}
+	case licensev1.ClusterLicenseType:
+		// TODO implement cluster license
+	}
+	return nil
 }
