@@ -343,7 +343,7 @@ metadata:
   name: secret
 spec:
   path: manifests/tls-secret.yaml
-  match: ${image_registry}/${image_repository}/sealos-cloud:latest
+  match: ${image_registry}/${image_repository}/sealos-cloud:${cloud_version}
   strategy: merge
   data: |
     data:
