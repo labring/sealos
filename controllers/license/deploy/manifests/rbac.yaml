@@ -1,0 +1,22 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kube-system-namespace-read-cluster-role
+rules:
+  - apiGroups: [ "" ]
+    resources: [ "namespaces" ]
+    resourceNames: [ "kube-system" ]
+    verbs: [ "get" ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: license-controller-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kube-system-namespace-read-cluster-role
+subjects:
+  - kind: ServiceAccount
+    name: license-controller-manager
+    namespace: license-system
