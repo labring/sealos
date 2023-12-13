@@ -36,9 +36,9 @@ import Yaml from './components/Yaml';
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
 export const formData2Yamls = (
-  data: AppEditType,
-  handleType: 'edit' | 'create' = 'create',
-  crYamlList?: DeployKindsType[]
+  data: AppEditType
+  // handleType: 'edit' | 'create' = 'create',
+  // crYamlList?: DeployKindsType[]
 ) => [
   {
     filename: 'service.yaml',
@@ -47,11 +47,11 @@ export const formData2Yamls = (
   !!data.storeList?.length
     ? {
         filename: 'statefulSet.yaml',
-        value: json2DeployCr(data, 'statefulset', handleType, crYamlList)
+        value: json2DeployCr(data, 'statefulset')
       }
     : {
         filename: 'deployment.yaml',
-        value: json2DeployCr(data, 'deployment', handleType, crYamlList)
+        value: json2DeployCr(data, 'deployment')
       },
   ...(data.configMapList.length > 0
     ? [
@@ -257,12 +257,9 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     {
       onSuccess(res) {
         if (!res) return;
+        console.log(res, 'init res');
         oldAppEditData.current = res;
-        formOldYamls.current = formData2Yamls(
-          res,
-          appName !== '' ? 'edit' : 'create',
-          res.crYamlList
-        );
+        formOldYamls.current = formData2Yamls(res);
         crOldYamls.current = res.crYamlList;
 
         setDefaultStorePathList(res.storeList.map((item) => item.path));
@@ -285,16 +282,10 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   useEffect(() => {
     if (tabType === 'yaml') {
       try {
-        setYamlList(
-          formData2Yamls(
-            realTimeForm.current,
-            appName !== '' ? 'edit' : 'create',
-            crOldYamls.current
-          )
-        );
+        setYamlList(formData2Yamls(realTimeForm.current));
       } catch (error) {}
     }
-  }, [appName, router.query.name, tabType]);
+  }, [router.query.name, tabType]);
 
   return (
     <>
@@ -313,11 +304,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           applyCb={() => {
             closeGuide();
             formHook.handleSubmit((data) => {
-              const parseYamls = formData2Yamls(
-                data,
-                appName !== '' ? 'edit' : 'create',
-                crOldYamls.current
-              );
+              const parseYamls = formData2Yamls(data);
               setYamlList(parseYamls);
               // balance check
               if (balance <= 0) {

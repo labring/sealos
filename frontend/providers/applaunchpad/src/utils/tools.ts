@@ -233,6 +233,8 @@ export const patchYamlList = ({
   newYamlList: string[];
   crYamlList: DeployKindsType[];
 }) => {
+  console.log(formOldYamlList, newYamlList, crYamlList, '=======');
+
   const oldFormJsonList = formOldYamlList
     .map((item) => yaml.loadAll(item))
     .flat() as DeployKindsType[];
@@ -355,7 +357,7 @@ export const patchYamlList = ({
       });
     }
   });
-
+  console.log(actions, 'actions');
   return actions;
 };
 
