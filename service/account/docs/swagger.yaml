@@ -1,0 +1,211 @@
+basePath: /account/v1alpha1
+definitions:
+  common.PropertyQuery:
+    properties:
+      alias:
+        example: gpu-tesla-v100
+        type: string
+      name:
+        example: cpu
+        type: string
+      unit:
+        example: 1m
+        type: string
+      unit_price:
+        example: 10000
+        type: number
+    type: object
+  helper.Auth:
+    properties:
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+    required:
+    - kubeConfig
+    - owner
+    type: object
+  helper.ErrorMessage:
+    properties:
+      error:
+        example: authentication failure
+        type: string
+    type: object
+  helper.GetPropertiesResp:
+    properties:
+      data:
+        $ref: '#/definitions/helper.GetPropertiesRespData'
+      message:
+        example: successfully retrieved properties
+        type: string
+    type: object
+  helper.GetPropertiesRespData:
+    properties:
+      properties:
+        items:
+          $ref: '#/definitions/common.PropertyQuery'
+        type: array
+    type: object
+  helper.NamespaceBillingHistoryReq:
+    properties:
+      endTime:
+        example: "2021-12-01T00:00:00Z"
+        type: string
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      startTime:
+        example: "2021-01-01T00:00:00Z"
+        type: string
+      type:
+        description: |-
+          @Summary Type of the request (optional)
+          @Description Type of the request (optional)
+          @JSONSchema
+        type: integer
+    required:
+    - kubeConfig
+    - owner
+    type: object
+  helper.NamespaceBillingHistoryRespData:
+    properties:
+      list:
+        example:
+        - '["ns-admin"'
+        - '"ns-test1"]'
+        items:
+          type: string
+        type: array
+    type: object
+  helper.UserCostsAmountReq:
+    properties:
+      endTime:
+        example: "2021-12-01T00:00:00Z"
+        type: string
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      startTime:
+        example: "2021-01-01T00:00:00Z"
+        type: string
+    required:
+    - kubeConfig
+    - owner
+    type: object
+host: localhost:2333
+info:
+  contact:
+    email: bxy4543@gmail.com
+  description: Your API description.
+  termsOfService: https://cloud.sealos.io
+  title: sealos account service
+  version: v1alpha1
+paths:
+  /account/v1alpha1/costs:
+    post:
+      consumes:
+      - application/json
+      description: Get user costs within a specified time range
+      parameters:
+      - description: User costs amount request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.UserCostsAmountReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved user costs
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse user hour costs amount request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get user costs
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user costs
+      tags:
+      - Costs
+  /account/v1alpha1/namespaces:
+    post:
+      consumes:
+      - application/json
+      description: Get the billing history namespace list from the database
+      parameters:
+      - description: Namespace billing history request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.NamespaceBillingHistoryReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved namespace billing history list
+          schema:
+            $ref: '#/definitions/helper.NamespaceBillingHistoryRespData'
+        "400":
+          description: failed to parse namespace billing history request
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "401":
+          description: authenticate error
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "500":
+          description: failed to get namespace billing history list
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+      summary: Get namespace billing history list
+      tags:
+      - BillingHistory
+  /account/v1alpha1/properties:
+    post:
+      consumes:
+      - application/json
+      description: Get properties from the database
+      parameters:
+      - description: auth request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.Auth'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved properties
+          schema:
+            $ref: '#/definitions/helper.GetPropertiesResp'
+        "401":
+          description: authenticate error
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "500":
+          description: failed to get properties
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+      summary: Get properties
+      tags:
+      - Properties
+swagger: "2.0"

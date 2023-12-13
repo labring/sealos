@@ -12,12 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package errors
+package common
 
-import (
-	"fmt"
-)
-
-var ErrLicenseInvalid = fmt.Errorf("the license provided appears to be invalid")
-var ErrClaimsConvent = fmt.Errorf("the claims data provided appears to be invalid")
-var ErrClusterIDNotMatch = fmt.Errorf("the cluster id provided appears to be invalid")
+type Type int
