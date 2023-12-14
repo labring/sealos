@@ -66,6 +66,7 @@ spec:
 + seq_page_cost #设置顺序磁盘页面访问的成本
 + archive_command #设置WAL文件的归档命令
 + archive_mode #设置是否启用WAL归档
+
 常见的mysql参数：
 + innodb_buffer_pool_size: 设置InnoDB缓冲池的大小
 + max_connections: 允许的最大并发连接数
@@ -87,6 +88,7 @@ spec:
 + long_query_time: 定义慢查询的阈值（秒）
 + server-id: 服务器ID，用于复制
 + secure_file_priv: 限制LOAD DATA、SELECT ... INTO OUTFILE和LOAD_FILE()的文件访问
+
 常见的redis参数：
 + bind: 绑定的IP地址
 + protected-mode: 开启保护模式，防止非法访问
@@ -108,6 +110,7 @@ spec:
 + hash-max-ziplist-entries: 哈希类型内部编码转换的阈值
 + list-max-ziplist-size: 列表类型内部编码转换的阈值
 + set-max-intset-entries: 集合类型内部编码转换的阈值
+
 常见的mongo参数：
 + storage.dbPath: 数据文件存放路径
 + storage.journal.enabled: 启用日志
