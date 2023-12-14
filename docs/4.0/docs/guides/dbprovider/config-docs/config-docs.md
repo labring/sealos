@@ -12,10 +12,10 @@ Some parameters of the database cannot take effect immediately after modificatio
 
 2. Edit pg-config.yaml：
 
-![config_2](./imgs/config_2.png)
 ```bash
 $ vim pg-config.yaml
 ```
+![config_2](./imgs/config_2.png)
 
 3. Copy yaml to pg-config.yaml and save pg-config.yaml：
 
@@ -67,7 +67,7 @@ Common PostgreSQL Parameters:
 + seq_page_cost - Sets the cost of sequential disk page access.
 + archive_command - Sets the command for archiving WAL files.
 + archive_mode - Sets whether to enable WAL archiving.
-  Common MySQL Parameters:
+Common MySQL Parameters:
 + innodb_buffer_pool_size - Sets the size of the InnoDB buffer pool.
 + max_connections - The maximum number of concurrent connections allowed.
 + query_cache_size - The size of the query cache.
@@ -88,7 +88,7 @@ Common PostgreSQL Parameters:
 + long_query_time - The threshold for defining slow queries (in seconds).
 + server-id - The server ID, used for replication.
 + secure_file_priv - Restricts file access for LOAD DATA, SELECT ... INTO OUTFILE, and LOAD_FILE().
-  Common Redis Parameters:
+Common Redis Parameters:
 + bind - The bound IP address.
 + protected-mode - Enables protected mode to prevent unauthorized access.
 + port - The listening port.
@@ -109,7 +109,7 @@ Common PostgreSQL Parameters:
 + hash-max-ziplist-entries - The threshold for internal encoding transformation of the hash type.
 + list-max-ziplist-size - The threshold for internal encoding transformation of the list type.
 + set-max-intset-entries - The threshold for internal encoding transformation of the set type.
-  Common MongoDB Parameters:
+Common MongoDB Parameters:
 + storage.dbPath - The path for storing data files.
 + storage.journal.enabled - Enables logging.
 + net.port - The server port.
