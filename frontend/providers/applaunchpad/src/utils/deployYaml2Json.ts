@@ -14,12 +14,7 @@ import {
 import dayjs from 'dayjs';
 import jsonpatch, { Operation } from 'fast-json-patch';
 
-export const json2DeployCr = (
-  data: AppEditType,
-  type: 'deployment' | 'statefulset',
-  handleType: 'edit' | 'create' = 'create',
-  crYamlList?: DeployKindsType[]
-) => {
+export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
   const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
 
   const metadata = {
@@ -220,91 +215,6 @@ export const json2DeployCr = (
     }
   };
 
-  const differentJsonPatch = jsonpatch.compare(template['deployment'], template['statefulset']);
-
-  // JSON Patch
-  const patch: Operation[] = [
-    { op: 'add', path: '/metadata', value: metadata },
-    { op: 'replace', path: '/spec/replicas', value: commonSpec.replicas },
-    { op: 'replace', path: '/spec/revisionHistoryLimit', value: commonSpec.revisionHistoryLimit },
-    { op: 'replace', path: '/spec/selector', value: commonSpec.selector },
-    { op: 'replace', path: '/spec/template/metadata/labels', value: templateMetadata.labels },
-    {
-      op: 'replace',
-      path: '/spec/template/spec/containers/0',
-      value: {
-        ...commonContainer,
-        volumeMounts: [...configMapVolumeMounts]
-      }
-    },
-    {
-      op: 'replace',
-      path: '/spec/template/spec/volumes',
-      value: [...configMapVolumes]
-    },
-    // gpu
-    {
-      op: 'replace',
-      path: '/spec/template/spec/restartPolicy',
-      value: gpuMap.restartPolicy
-    },
-    {
-      op: 'replace',
-      path: '/spec/template/spec/runtimeClassName',
-      value: gpuMap.runtimeClassName
-    },
-    {
-      op: 'replace',
-      path: '/spec/template/spec/nodeSelector',
-      value: gpuMap.nodeSelector
-    },
-    // status
-    {
-      op: 'remove',
-      path: '/status'
-    }
-  ];
-
-  const statefulsetPatch: Operation[] = [
-    {
-      op: 'replace',
-      path: '/spec/template/spec/containers/0',
-      value: {
-        ...commonContainer,
-        volumeMounts: [
-          ...configMapVolumeMounts,
-          ...data.storeList.map((item) => ({
-            name: item.name,
-            mountPath: item.path
-          }))
-        ]
-      }
-    }
-  ];
-
-  if (handleType === 'edit' && crYamlList) {
-    if (type === 'deployment') {
-      const originYaml = crYamlList.find((i) => i.kind === 'Deployment');
-      const cloneYaml = jsonpatch.deepClone(originYaml);
-      const updated = jsonpatch.applyPatch(cloneYaml, patch);
-      return yaml.dump(updated.newDocument);
-    } else {
-      let originStatefulSetYaml = crYamlList.find((i) => i.kind === 'StatefulSet');
-      const deploymentYaml = crYamlList.find((i) => i.kind === 'Deployment');
-
-      // handle deployment to StatefulSet
-      if (!originStatefulSetYaml && deploymentYaml?.metadata?.name) {
-        originStatefulSetYaml = jsonpatch.applyPatch(
-          jsonpatch.deepClone(deploymentYaml),
-          differentJsonPatch
-        ).newDocument;
-      }
-
-      const cloneYaml = jsonpatch.deepClone(originStatefulSetYaml);
-      const updated = jsonpatch.applyPatch(cloneYaml, patch.concat(statefulsetPatch));
-      return yaml.dump(updated.newDocument);
-    }
-  }
   return yaml.dump(template[type]);
 };
 
@@ -363,7 +273,7 @@ export const json2Ingress = (data: AppEditType) => {
         ? network.customDomain
         : `${network.publicDomain}.${SEALOS_DOMAIN}`;
 
-      const secretName = network.customDomain ? data.appName : INGRESS_SECRET;
+      const secretName = network.customDomain ? network.networkName : INGRESS_SECRET;
 
       const ingress = {
         apiVersion: 'networking.k8s.io/v1',

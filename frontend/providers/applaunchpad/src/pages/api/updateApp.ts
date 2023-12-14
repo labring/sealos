@@ -110,19 +110,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         delete: (name) => k8sNetworkingApp.deleteNamespacedIngress(name, namespace)
       },
       [YamlKindEnum.Issuer]: {
-        patch: (jsonPatch: Object) =>
-          k8sCustomObjects.patchNamespacedCustomObject(
+        patch: (jsonPatch: Object) => {
+          // @ts-ignore
+          const name = jsonPatch?.metadata?.name;
+          return k8sCustomObjects.patchNamespacedCustomObject(
             'cert-manager.io',
             'v1',
             namespace,
             'issuers',
-            appName,
+            name,
             jsonPatch,
             undefined,
             undefined,
             undefined,
             { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
-          ),
+          );
+        },
         delete: (name) =>
           k8sCustomObjects.deleteNamespacedCustomObject(
             'cert-manager.io',
@@ -133,19 +136,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           )
       },
       [YamlKindEnum.Certificate]: {
-        patch: (jsonPatch: Object) =>
-          k8sCustomObjects.patchNamespacedCustomObject(
+        patch: (jsonPatch: Object) => {
+          // @ts-ignore
+          const name = jsonPatch?.metadata?.name;
+          return k8sCustomObjects.patchNamespacedCustomObject(
             'cert-manager.io',
             'v1',
             namespace,
             'certificates',
-            appName,
+            name,
             jsonPatch,
             undefined,
             undefined,
             undefined,
             { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
-          ),
+          );
+        },
         delete: (name) =>
           k8sCustomObjects.deleteNamespacedCustomObject(
             'cert-manager.io',

@@ -5,6 +5,8 @@ import { ReactNode, useState } from 'react';
 import LangSelectSimple from '../LangSelect';
 import dynamic from 'next/dynamic';
 import Head from 'next/head';
+import { useQuery } from '@tanstack/react-query';
+import { hasHistorical } from '@/api/license';
 
 const Account = dynamic(() => import('@/components/Account'), {
   ssr: false
@@ -15,6 +17,8 @@ export default function Layout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const goHome = () => router.replace('/pricing');
   const [active, setActive] = useState(router.pathname);
+
+  const { data: hasHistory } = useQuery(['hasHistorical'], () => hasHistorical());
 
   const tabs = [
     {
@@ -27,7 +31,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     },
     {
       url: '/license',
-      label: t('License Buy')
+      label: t('License History')
     }
   ];
 
@@ -73,6 +77,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 onClick={() => {
                   router.push(i.url);
                 }}
+                display={i.url === '/license' && !hasHistory ? 'none' : 'block'}
               >
                 <Text fontSize={'14px'} fontWeight={600} color={'#fff'}>
                   {i.label}

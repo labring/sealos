@@ -18,7 +18,8 @@ export async function createLicenseRecord({
   orderID,
   quota,
   payMethod,
-  type
+  type,
+  clusterId
 }: LicenseRecordPayload) {
   const collection = await connectLicenseCollection();
 
@@ -37,7 +38,8 @@ export async function createLicenseRecord({
     amount: amount,
     type: type,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
+    clusterId: clusterId
   };
 
   const result = await collection.insertOne(record);
@@ -129,4 +131,47 @@ export async function hasIssuedLicense({ uid, orderID }: { uid: string; orderID:
   } catch (error) {
     throw new Error('Error checking for issued license:');
   }
+}
+
+export async function getLicenseRecordsByUidAndClusterId({
+  uid,
+  clusterId,
+  page,
+  pageSize
+}: {
+  uid: string;
+  clusterId: string;
+  page: number;
+  pageSize: number;
+}) {
+  const collection = await connectLicenseCollection();
+  const skip = (page - 1) * pageSize;
+  const query = { uid: uid, clusterId: clusterId };
+  const options = {
+    skip: skip,
+    limit: pageSize
+  };
+  const records = await collection.find(query, options).sort({ iat: -1 }).toArray();
+  const totalCount = await collection.countDocuments(query);
+  const result = {
+    records: records,
+    total: totalCount
+  };
+  return result;
+}
+
+export async function hasHistoricalLicense(uid: string) {
+  const collection = await connectLicenseCollection();
+  const query = { uid: uid, clusterId: { $exists: false } };
+  const latestRecord = await collection.findOne(query, { sort: { iat: -1 } });
+
+  if (latestRecord) {
+    const currentTimestamp = Math.floor(new Date().getTime() / 1000);
+    const expTimestamp = latestRecord.exp;
+    const isExpired = expTimestamp && expTimestamp < currentTimestamp;
+
+    return !isExpired;
+  }
+
+  return false;
 }

@@ -40,10 +40,9 @@ metadata:
   namespace: sealos
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
-  name: heartbeat-cronjob-role
-  namespace: sealos
+  name: heartbeat-cronjob-cluster-role
 rules:
   - apiGroups: [ "" ]
     resources: [ "nodes" ]
@@ -54,14 +53,13 @@ rules:
     verbs: [ "get" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
-  name: heartbeat-cronjob-role-binding
-  namespace: sealos
+  name: heartbeat-cronjob-cluster-role-binding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: heartbeat-cronjob-role
+  kind: ClusterRole
+  name: heartbeat-cronjob-cluster-role
 subjects:
   - kind: ServiceAccount
     name: heartbeat-cronjob

@@ -1,5 +1,4 @@
 import { authSession } from '@/services/backend/auth';
-import { generateLicenseToken } from '@/services/backend/db/license';
 import { createPaymentRecord } from '@/services/backend/db/payment';
 import { jsonRes } from '@/services/backend/response';
 import { getSealosPay } from '@/services/pay';
@@ -9,12 +8,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const {
-      amount,
-      currency,
-      payMethod,
-      stripeCallBackUrl = '/license'
-    } = req.body as PaymentParams;
+    const { amount, currency, payMethod, stripeCallBackUrl } = req.body as PaymentParams;
     const STRIPE_CALLBACK_URL = process.env.STRIPE_CALLBACK_URL;
     const userInfo = await authSession(req.headers);
     if (!userInfo) return jsonRes(res, { code: 401, message: 'token verify error' });
@@ -31,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         currency: currency,
         user: userInfo.uid,
         payMethod: payMethod,
-        stripeSuccessUrl: `${STRIPE_CALLBACK_URL}${stripeCallBackUrl}?stripeState=success`,
+        stripeSuccessUrl: `${STRIPE_CALLBACK_URL}${stripeCallBackUrl}`,
         stripeCancelUrl: `${STRIPE_CALLBACK_URL}${stripeCallBackUrl}?stripeState=error`
       })
     }).then((res) => res.json());

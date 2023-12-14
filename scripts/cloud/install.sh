@@ -343,7 +343,7 @@ metadata:
   name: secret
 spec:
   path: manifests/tls-secret.yaml
-  match: ${image_registry}/${image_repository}/sealos-cloud:latest
+  match: ${image_registry}/${image_repository}/sealos-cloud:${cloud_version}
   strategy: merge
   data: |
     data:
@@ -444,6 +444,7 @@ EOF
     get_prompt "patching_ingress"
     kubectl -n ingress-nginx patch ds ingress-nginx-controller -p '{"spec":{"template":{"spec":{"tolerations":[{"key":"node-role.kubernetes.io/control-plane","operator":"Exists","effect":"NoSchedule"}]}}}}'
     kubectl get daemonset ingress-nginx-controller -n ingress-nginx -o json | grep https-port= >/dev/null || kubectl patch daemonset ingress-nginx-controller -n ingress-nginx --type='json' -p="[{'op': 'add', 'path': '/spec/template/spec/containers/0/args/-', 'value': '--https-port=${cloud_port:-443}'}]"
+    kubectl get daemonset ingress-nginx-controller -n ingress-nginx -o json | grep default-ssl-certificate= >/dev/null || kubectl patch daemonset ingress-nginx-controller -n ingress-nginx --type='json' -p="[{'op': 'add', 'path': '/spec/template/spec/containers/0/args/-', 'value': '--default-ssl-certificate=sealos-system/wildcard-cert'}]"
 
     get_prompt "installing_cloud"
 

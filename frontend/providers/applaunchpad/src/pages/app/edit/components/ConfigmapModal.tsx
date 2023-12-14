@@ -60,7 +60,10 @@ const ConfigmapModal = ({
       <Modal isOpen onClose={closeCb}>
         <ModalOverlay />
         <ModalContent maxH={'90vh'} maxW={'90vw'} minW={'600px'} w={'auto'}>
-          <ModalHeader>{t(textMap[type].title)} ConfigMap</ModalHeader>
+          <ModalHeader>
+            {t(textMap[type].title)}
+            {t('ConfigMap Tip')}
+          </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <MyFormControl showError errorText={errors.mountPath?.message}>
