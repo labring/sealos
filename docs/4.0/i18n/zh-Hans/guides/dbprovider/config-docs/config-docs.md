@@ -7,18 +7,18 @@ sidebar_position: 2
 由于数据库的某些参数在修改后无法立即生效，因此需要通过应用yaml来实现修改参数并重启数据库通过yaml修改参数会导致数据库重启，整个过程大概会持续20s左右。这里以Postgres数据库的参数修改为例，具体操作步骤如下：
 1. 进入终端：
 
-![config_1](./imgs/migration_1.png)
+![config_1](./imgs/config_1.png)
 
 2. 编辑pg-config.yaml：
 
-![config_2](./imgs/migration_2.png)
+![config_2](./imgs/config_2.png)
 ```bash
 $ vim pg-config.yaml
 ```
 
 3. 复制yaml到pg-config.yaml中，保存pg-config.yaml：
 
-![config_3](./imgs/migration_3.png)
+![config_3](./imgs/config_3.png)
 ```yaml
 apiVersion: apps.kubeblocks.io/v1alpha1
 kind: OpsRequest
@@ -132,7 +132,7 @@ spec:
 
 4. 应用pg-config.yaml：
 
-![config_4](./imgs/migration_4.png)
+![config_4](./imgs/config_4.png)
 ```bash
 $ kubectl apply -f pg-config.yaml
 ```
@@ -143,12 +143,12 @@ $ kubectl apply -f pg-config.yaml
 $ kubectl get OpsRequest
 $ kubectl get pod
 ```
-![config_5](./imgs/migration_5.png)
+![config_5](./imgs/config_5.png)
 
 6. 进入数据库查看配置是否生效：
 ```bash
 $ show max_connections;
 ```
-![config_6](./imgs/migration_6.png)
-![config_7](./imgs/migration_6.png)
+![config_6](./imgs/config_6.png)
+![config_7](./imgs/config_7.png)
 

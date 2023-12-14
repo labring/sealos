@@ -8,18 +8,18 @@ Some parameters of the database cannot take effect immediately after modificatio
 
 1. Access the terminal：
 
-![config_1](./imgs/migration_1.png)
+![config_1](./imgs/config_1.png)
 
 2. Edit pg-config.yaml：
 
-![config_2](./imgs/migration_2.png)
+![config_2](./imgs/config_2.png)
 ```bash
 $ vim pg-config.yaml
 ```
 
 3. Copy yaml to pg-config.yaml and save pg-config.yaml：
 
-![config_3](./imgs/migration_3.png)
+![config_3](./imgs/config_3.png)
 ```yaml
 apiVersion: apps.kubeblocks.io/v1alpha1
 kind: OpsRequest
@@ -133,7 +133,7 @@ Common PostgreSQL Parameters:
 
 4. Apply pg-config.yaml：
 
-![config_4](./imgs/migration_4.png)
+![config_4](./imgs/config_4.png)
 ```bash
 $ kubectl apply -f pg-config.yaml
 ```
@@ -144,12 +144,12 @@ $ kubectl apply -f pg-config.yaml
 $ kubectl get OpsRequest
 $ kubectl get pod
 ```
-![config_5](./imgs/migration_5.png)
+![config_5](./imgs/config_5.png)
 
 6. Access the database to check whether the configuration takes effect：
 ```bash
 $ show max_connections;
 ```
-![config_6](./imgs/migration_6.png)
-![config_7](./imgs/migration_6.png)
+![config_6](./imgs/config_6.png)
+![config_7](./imgs/config_7.png)
 
