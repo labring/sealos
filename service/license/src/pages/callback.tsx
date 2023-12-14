@@ -27,9 +27,13 @@ const Callback: NextPage = () => {
 
         const data = await signInByProvider(provider, code);
         setSession(data);
-        uploadConvertData([3]).then((res) => {
-          console.log(res);
-        });
+        uploadConvertData([3])
+          .then((res) => {
+            console.log(res);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
         router.replace('/pricing');
       } catch (error) {
         router.replace('/signin');

@@ -7,15 +7,10 @@ import { KubeObjectAge } from '@/components/kube/object/kube-object-age';
 import { renderContainerStateTooltipTitle } from './container-status';
 import { PodStatusMessage } from '@/constants/pod';
 import PodStatus from './pod-status';
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
 import PodDetail from './pod-detail';
-import Table from '../../../table/table';
+import { usePodStore } from '@/store/kube';
+import PanelTable from '../../../panel-table/table';
 import ActionButton from '../../../action-button/action-button';
-import { deleteResource } from '@/api/delete';
-import { Resources } from '@/constants/kube-object';
-import { updateResource } from '@/api/update';
-import { fetchData, usePodStore } from '@/store/kube';
 
 const columns: ColumnsType<Pod> = [
   {
@@ -81,42 +76,27 @@ const columns: ColumnsType<Pod> = [
     render: (_, pod) => <PodStatus status={pod.getStatusMessage()} />
   },
   {
-    key: 'action',
     fixed: 'right',
-    render: (_, pod) => (
-      <ActionButton
-        obj={pod}
-        onDelete={() => deleteResource(pod.getName(), Resources.Pods)}
-        onUpdate={(data: string) => updateResource(data, pod.getName(), Resources.Pods)}
-      />
-    )
+    key: 'action',
+    render: (_, pod) => <ActionButton obj={pod} />
   }
 ];
 
 const PodOverviewPage = () => {
-  const [openDrawer, setOpenDrawer] = useState(false);
-  const [pod, setPod] = useState<Pod>();
-  const { items, replace } = usePodStore();
-
-  useQuery(['pods'], () => fetchData(replace, Resources.Pods), {
-    refetchInterval: 5000
-  });
+  const { items, initialize, isLoaded, watch } = usePodStore();
 
   return (
-    <>
-      <Table
-        title={'Pods'}
-        columns={columns}
-        dataSource={items}
-        onRow={(pod) => ({
-          onClick: () => {
-            setPod(pod);
-            setOpenDrawer(true);
-          }
-        })}
-      />
-      <PodDetail pod={pod} open={openDrawer} onClose={() => setOpenDrawer(false)} />
-    </>
+    <PanelTable
+      columns={columns}
+      loading={!isLoaded}
+      dataSource={items}
+      sectionTitle="Pods"
+      DetailDrawer={PodDetail}
+      getRowKey={(pod) => pod.getId()}
+      getDetailItem={(pod) => pod}
+      initializers={[initialize]}
+      watchers={[watch]}
+    />
   );
 };
 

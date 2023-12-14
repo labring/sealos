@@ -119,6 +119,7 @@ function sealos_run_controller {
 
 function sealos_authorize {
   sealos run tars/job-init.tar
+  sealos run tars/job-heartbeat.tar
 
   # wait for admin user create
   echo "Waiting for admin user create"
@@ -126,8 +127,6 @@ function sealos_authorize {
   while [ -z "$(kubectl get ns ns-admin 2>/dev/null)" ]; do
     sleep 1
   done
-
-  kubectl apply -f manifests/free-license.yaml
 }
 
 function sealos_run_frontend {

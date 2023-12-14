@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/common"
+
 	"github.com/labring/sealos/controllers/pkg/resources"
 
 	"github.com/labring/sealos/controllers/pkg/database"
@@ -177,7 +179,8 @@ func (r *TransferReconciler) transferAccount(ctx context.Context, transfer *acco
 	}
 	balance, _ := crypto.DecryptInt64(*fromAccount.Status.EncryptBalance)
 	deductionBalance, _ := crypto.DecryptInt64(*fromAccount.Status.EncryptDeductionBalance)
-	if balance < deductionBalance+transfer.Spec.Amount+MinBalance {
+	// check balance is enough ( balance - deductionBalance - transferAmount - MinBalance - ActivityBonus) activity give amount not included
+	if balance < deductionBalance+transfer.Spec.Amount+MinBalance+fromAccount.Status.ActivityBonus {
 		return fmt.Errorf("balance not enough")
 	}
 	if r.Get(ctx, client.ObjectKey{Namespace: r.AccountSystemNamespace, Name: getUsername(to)}, &accountv1.Account{}) != nil {
@@ -205,12 +208,12 @@ const (
 	TransferOutNotification = `You have a new transfer to %s, amount: %d`
 )
 
-var transferNotification = map[accountv1.Type]string{
+var transferNotification = map[common.Type]string{
 	accountv1.TransferIn:  TransferInNotification,
 	accountv1.TransferOut: TransferOutNotification,
 }
 
-func (r *TransferReconciler) sendNotice(ctx context.Context, namespace string, user string, amount int64, _type accountv1.Type) error {
+func (r *TransferReconciler) sendNotice(ctx context.Context, namespace string, user string, amount int64, _type common.Type) error {
 	now := time.Now().UTC().Unix()
 	ntf := v1.Notification{
 		ObjectMeta: metav1.ObjectMeta{

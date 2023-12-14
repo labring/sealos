@@ -71,8 +71,8 @@ export interface AppEditType {
     port: number;
     protocol: 'HTTP' | 'GRPC' | 'WS';
     openPublicDomain: boolean;
-    publicDomain: string;
-    customDomain: string;
+    publicDomain: string; // default domain
+    customDomain: string; // custom domain
   }[];
   envs: {
     key: string;

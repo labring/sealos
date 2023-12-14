@@ -1,21 +1,13 @@
 import { authSession } from '@/services/backend/auth';
-import { createClusterAndLicense } from '@/services/backend/db/cluster';
-import { generateLicenseToken } from '@/services/backend/db/license';
-import { findRecentNopayOrder, updatePaymentAndIssueLicense } from '@/services/backend/db/payment';
+import { findRecentNopayOrder } from '@/services/backend/db/payment';
 import { jsonRes } from '@/services/backend/response';
 import { getSealosPay } from '@/services/pay';
-import {
-  CheckWeChatType,
-  ClusterType,
-  LicenseRecordPayload,
-  PaymentResult,
-  PaymentStatus
-} from '@/types';
+import { CheckWeChatType, PaymentResult, PaymentStatus } from '@/types';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { type } = req.query as { type: CheckWeChatType };
+    const { type, clusterId } = req.query as { type: CheckWeChatType; clusterId?: string };
     const userInfo = await authSession(req.headers);
     if (!userInfo) {
       return jsonRes(res, { code: 401, message: 'token verify error' });
@@ -49,40 +41,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     }).then((res) => res.json());
 
-    if (type === 'license' && result.status === PaymentStatus.PaymentSuccess) {
-      await updatePaymentAndIssueLicense({
-        uid: userInfo.uid,
-        status: result.status,
-        amount: payment.amount,
-        quota: payment.amount,
-        orderID: payment.orderID,
-        payMethod: payment.payMethod,
-        type: 'Account'
-      });
-    }
-
-    if (type === 'cluster' && result.status === PaymentStatus.PaymentSuccess) {
-      const _token = generateLicenseToken({ type: 'Account', data: { amount: payment.amount } });
-      const record: LicenseRecordPayload = {
-        uid: userInfo.uid,
-        amount: payment.amount,
-        token: _token,
-        orderID: payment.orderID,
-        quota: payment.amount,
-        payMethod: payment.payMethod,
-        type: 'Account'
-      };
-      await createClusterAndLicense({
-        licensePayload: record,
-        clusterPayload: {
-          uid: userInfo.uid,
-          orderID: payment.orderID,
-          type: ClusterType.Enterprise
-        }
-      });
-    }
-
-    console.log('Handle wechat shutdown situation');
     return jsonRes(res, {
       data: result
     });

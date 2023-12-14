@@ -2,42 +2,43 @@ import { Flex } from 'antd';
 import WorkloadStatusOverview from './status-overview';
 import { convertToPieChartStatusData } from '@/utils/pie-chart';
 import { entries, startCase } from 'lodash';
-import { useRef } from 'react';
-import { RequestController } from '@/utils/request-controller';
-import { useQuery } from '@tanstack/react-query';
+import { useCallback, useEffect } from 'react';
 import {
-  fetchData,
   getDeploymentsStatuses,
   getStatefulSetsStatuses,
   useDeploymentStore,
   usePodStore,
   useStatefulSetStore
 } from '@/store/kube';
-import { Resources } from '@/constants/kube-object';
 import { Section } from '@/components/common/section/section';
 import Title from '@/components/common/title/title';
 import EventOverview from './event-overview';
+import { APICallback } from '@/types/state';
+import useNotification from 'antd/lib/notification/useNotification';
 
 const OverviewPage = () => {
-  const requestController = useRef(new RequestController({ timeoutDuration: 10000 }));
-  const { items: pods, replace: podReplace, getStatuses: getPodStatuses } = usePodStore();
-  const { items: deps, replace: deploymentReplace } = useDeploymentStore();
-  const { items: stats, replace: statefulSetReplace } = useStatefulSetStore();
-
-  useQuery(
-    ['pods', 'deployments', 'statefulSets'],
-    () => {
-      const tasks = [
-        () => fetchData(podReplace, Resources.Pods),
-        () => fetchData(deploymentReplace, Resources.Deployments),
-        () => fetchData(statefulSetReplace, Resources.StatefulSets)
-      ];
-      return requestController.current.runTasks(tasks);
+  const { items: pods, initialize: initializePods, getStatuses: getPodStatuses } = usePodStore();
+  const { items: deps, initialize: initializeDeployments } = useDeploymentStore();
+  const { items: stats, initialize: initializeStatefulSets } = useStatefulSetStore();
+  const [notifyApi, cxtHolder] = useNotification();
+  const callback = useCallback<APICallback>(
+    (_, e) => {
+      if (e) {
+        notifyApi.error({
+          message: e.error.reason,
+          description: e.error.message,
+          duration: 5
+        });
+      }
     },
-    {
-      refetchInterval: 10000
-    }
+    [notifyApi]
   );
+
+  useEffect(() => {
+    initializePods(callback);
+    initializeDeployments(callback);
+    initializeStatefulSets(callback);
+  }, []);
 
   const statuses = {
     Pod: convertToPieChartStatusData(getPodStatuses),
@@ -56,6 +57,7 @@ const OverviewPage = () => {
         <Title type="primary">Overview</Title>
       </Section>
       <Section>
+        {cxtHolder}
         <WorkloadStatusOverview data={overviewStatuses} />
       </Section>
       <Section>

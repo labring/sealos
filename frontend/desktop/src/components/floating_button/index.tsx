@@ -169,7 +169,7 @@ export default function Index(props: any) {
       >
         <div
           id="floatButtonNav"
-          className={clsx(styles.container, dragging ? styles.notrans : '')}
+          className={clsx(styles.container, 'floatButtonNav', dragging ? styles.notrans : '')}
           data-open={isOpen}
           onMouseEnter={(e) => {
             if (suction !== Suction.None) return;

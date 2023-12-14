@@ -86,7 +86,6 @@ request.interceptors.response.use(
     const { status, data } = response;
 
     if (data.code === 401) {
-      console.log('鉴权失败');
       useSessionStore.getState().delSession();
       return window.location.replace('/signin');
     }
@@ -106,8 +105,6 @@ request.interceptors.response.use(
     return response.data;
   },
   (error: any) => {
-    console.log(error);
-
     if (axios.isCancel(error)) {
       return Promise.reject('cancel request' + String(error));
     } else {
@@ -141,7 +138,7 @@ export function DELETE<T = any>(
   data?: { [key: string]: any },
   config?: AxiosRequestConfig
 ): Promise<T> {
-  return request.get(url, {
+  return request.delete(url, {
     params: data,
     ...config
   });

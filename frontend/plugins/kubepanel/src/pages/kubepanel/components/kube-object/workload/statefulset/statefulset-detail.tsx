@@ -7,30 +7,26 @@ import DrawerItem from '@/pages/kubepanel/components/drawer/drawer-item';
 import PodDetailStatuses from '../pod/pod-detail-statuses';
 import { KubeBadge } from '@/components/kube/kube-badge';
 import DrawerPanel from '../../../drawer/drawer-panel';
+import { isArray } from 'lodash';
 
-interface Props {
-  statefulSet?: StatefulSet;
-  childPods: Pod[];
-  open: boolean;
-  onClose: () => void;
-}
+const StatefulSetDetail = ({
+  obj,
+  open,
+  onClose
+}: DetailDrawerProps<{ stat: StatefulSet; childPods: Pod[] }>) => {
+  if (!obj) return null;
 
-const StatefulSetDetail = ({ statefulSet, childPods, open, onClose }: Props) => {
-  if (!statefulSet) return null;
+  const { stat, childPods } = obj;
+  if (!stat || !(stat instanceof StatefulSet)) return null;
+  if (!childPods || !isArray(childPods)) return null;
 
-  if (!(statefulSet instanceof StatefulSet)) {
-    // logger.error("[StatefulSetDetails]: passed object that is not an instanceof StatefulSet", statefulSet);
-
-    return null;
-  }
-
-  const images = statefulSet.getImages();
-  const selectors = statefulSet.getSelectors();
+  const images = stat.getImages();
+  const selectors = stat.getSelectors();
 
   return (
-    <Drawer open={open} title={`StatefulSet: ${statefulSet.getName()}`} onClose={onClose}>
+    <Drawer open={open} title={`StatefulSet: ${stat.getName()}`} onClose={onClose}>
       <DrawerPanel>
-        <KubeObjectInfoList obj={statefulSet} />
+        <KubeObjectInfoList obj={stat} />
         {selectors.length > 0 && (
           <DrawerItem
             name="Selector"
@@ -47,8 +43,8 @@ const StatefulSetDetail = ({ statefulSet, childPods, open, onClose }: Props) => 
             ))}
           />
         )}
-        <PodDetailTolerations workload={statefulSet} />
-        <PodDetailAffinities workload={statefulSet} />
+        <PodDetailTolerations workload={stat} />
+        <PodDetailAffinities workload={stat} />
         <DrawerItem name="Pod Status" value={<PodDetailStatuses pods={childPods} />} />
       </DrawerPanel>
     </Drawer>

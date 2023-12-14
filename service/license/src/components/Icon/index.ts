@@ -33,3 +33,5 @@ export * from './CheckListIcon';
 export * from './OfflineIcon';
 export * from './OnlineComputerIcon';
 export * from './CopyIcon';
+export * from './TimeIcon';
+export * from './LeftIcon';

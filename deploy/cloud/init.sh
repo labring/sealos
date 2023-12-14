@@ -42,6 +42,7 @@ retryPullImage ghcr.io/labring/sealos-cloud-cronjob-frontend:latest
 
 retryPullImage ghcr.io/labring/sealos-cloud-database-service:latest
 retryPullImage ghcr.io/labring/sealos-cloud-job-init-controller:latest
+retryPullImage ghcr.io/labring/sealos-cloud-job-heartbeat-controller:latest
 
 sealos save -o tars/user.tar ghcr.io/labring/sealos-cloud-user-controller:latest
 sealos save -o tars/terminal.tar ghcr.io/labring/sealos-cloud-terminal-controller:latest
@@ -61,3 +62,4 @@ sealos save -o tars/frontend-cronjob.tar ghcr.io/labring/sealos-cloud-cronjob-fr
 
 sealos save -o tars/database-service.tar ghcr.io/labring/sealos-cloud-database-service:latest
 sealos save -o tars/job-init.tar ghcr.io/labring/sealos-cloud-job-init-controller:latest
+sealos save -o tars/job-heartbeat.tar ghcr.io/labring/sealos-cloud-job-heartbeat-controller:latest

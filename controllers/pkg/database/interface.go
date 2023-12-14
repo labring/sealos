@@ -20,6 +20,8 @@ import (
 
 	"github.com/labring/sealos/controllers/pkg/types"
 
+	"github.com/labring/sealos/controllers/pkg/common"
+
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/pkg/resources"
 )
@@ -35,7 +37,7 @@ type Auth interface {
 
 type Account interface {
 	//InitDB() error
-	GetBillingLastUpdateTime(owner string, _type accountv1.Type) (bool, time.Time, error)
+	GetBillingLastUpdateTime(owner string, _type common.Type) (bool, time.Time, error)
 	GetBillingHistoryNamespaceList(ns *accountv1.NamespaceBillingHistorySpec, owner string) ([]string, error)
 	GetBillingHistoryNamespaces(startTime, endTime *time.Time, billType int, owner string) ([]string, error)
 	SaveBillings(billing ...*resources.Billing) error
@@ -46,7 +48,7 @@ type Account interface {
 	GetAllPricesMap() (map[string]resources.Price, error)
 	InitDefaultPropertyTypeLS() error
 	SavePropertyTypes(types []resources.PropertyType) error
-	GetBillingCount(accountType accountv1.Type, startTime, endTime time.Time) (count, amount int64, err error)
+	GetBillingCount(accountType common.Type, startTime, endTime time.Time) (count, amount int64, err error)
 	GenerateBillingData(startTime, endTime time.Time, prols *resources.PropertyTypeLS, namespaces []string, owner string) (orderID []string, amount int64, err error)
 	InsertMonitor(ctx context.Context, monitors ...*resources.Monitor) error
 	DropMonitorCollectionsOlderThan(days int) error

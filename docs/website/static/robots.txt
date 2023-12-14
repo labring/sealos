@@ -1,0 +1,7 @@
+User-agent: *
+Disallow:
+
+Sitemap: https://sealos.io/sitemap.xml
+Sitemap: https://sealos.io/zh-Hans/sitemap.xml
+Sitemap: https://sealos.run/sitemap.xml
+Sitemap: https://sealos.run/en/sitemap.xml

@@ -110,7 +110,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                         </MyTooltip>
                       </Flex>
                     </th>
-                    <th>
+                    <th className="driver-detail-network-public">
                       <Flex alignItems={'center'} justifyContent={'space-between'}>
                         <MyTooltip
                           label={network.public ? t('Open Link') : ''}

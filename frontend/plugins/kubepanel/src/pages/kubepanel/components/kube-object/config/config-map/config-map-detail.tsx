@@ -5,20 +5,8 @@ import { entries } from 'lodash';
 import DrawerPanel from '../../../drawer/drawer-panel';
 import { Editor } from '@monaco-editor/react';
 
-interface Props {
-  configMap?: ConfigMap;
-  open: boolean;
-  onClose: () => void;
-}
-
-const ConfigMapDetail = ({ configMap, open, onClose }: Props) => {
-  if (!configMap) {
-    return null;
-  }
-
-  if (!(configMap instanceof ConfigMap)) {
-    // logger.error("[ConfigMapDetail]: passed object that is not an instanceof ConfigMap", configMap);
-
+const ConfigMapDetail = ({ obj: configMap, open, onClose }: DetailDrawerProps<ConfigMap>) => {
+  if (!configMap || !(configMap instanceof ConfigMap)) {
     return null;
   }
 

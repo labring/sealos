@@ -13,10 +13,24 @@ export default function AppLayout({ children, onClickSideNavItem }: Props) {
   return (
     <ConfigProvider theme={theme}>
       <Layout>
-        <Sider width={256} theme="light" breakpoint="lg" collapsedWidth="0">
+        <Sider
+          style={{
+            overflow: 'auto',
+            height: '100vh',
+            backgroundColor: '#F2F2F4',
+            position: 'fixed',
+            left: 0,
+            top: 0,
+            bottom: 0
+          }}
+          width={256}
+          theme="light"
+          breakpoint="lg"
+          collapsedWidth="0"
+        >
           <ResourceSideNav onClick={onClickSideNavItem} />
         </Sider>
-        <Layout>
+        <Layout style={{ marginLeft: 256 }}>
           <Content style={{ backgroundColor: '#F2F2F4' }}>{children}</Content>
         </Layout>
       </Layout>

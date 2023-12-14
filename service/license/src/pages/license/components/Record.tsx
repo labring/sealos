@@ -1,14 +1,14 @@
 import { getLicenseRecord } from '@/api/license';
+import CurrencySymbol from '@/components/CurrencySymbol';
 import { DownloadIcon, EmptyIcon, LicenseIcon, TokenIcon } from '@/components/Icon';
+import Pagination from '@/components/Pagination';
 import { download } from '@/utils/downloadFIle';
-import { formatMoney, getRemainingTime } from '@/utils/tools';
+import { json2License } from '@/utils/json2Yaml';
+import { getRemainingTime } from '@/utils/tools';
 import { Box, Flex, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
-import Pagination from '@/components/Pagination';
-import CurrencySymbol from './CurrencySymbol';
-import { json2License } from '@/utils/json2Yaml';
 
 export default function History() {
   const { t } = useTranslation();
@@ -33,7 +33,7 @@ export default function History() {
       alignItems={'center'}
       pt="64px"
       pb="40px"
-      pl="130px"
+      px="130px"
       position={'relative'}
     >
       <Text mb="20px" color={'#262A32'} fontSize={'28px'} fontWeight={600} alignSelf={'flex-start'}>

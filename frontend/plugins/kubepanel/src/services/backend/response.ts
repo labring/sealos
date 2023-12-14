@@ -1,39 +1,58 @@
 import { NextApiResponse } from 'next';
-import { ERROR_TEXT, ERROR_RESPONSE } from '../error';
+import { Errno, ErrnoCode, buildErrno, isErrno } from './error';
+import { isAxiosError } from 'axios';
+import { KubeStatus } from '@/types/kube-resource';
 
-export const jsonRes = <T = any>(
-  res: NextApiResponse,
-  props?: {
-    code?: number;
-    message?: string;
-    data?: T;
-    error?: any;
+/**
+ * Builds an error response.
+ *
+ * @param error - The error object or value.
+ * @returns `ErrorResponse`
+ */
+export function buildErrorResponse(error: unknown) {
+  let errResp: ErrorResponse;
+  if (isErrno(error)) {
+    errResp = {
+      code: error.code,
+      error: {
+        errno: error.errno,
+        message: error.message,
+        reason: error.reason
+      }
+    };
+  } else {
+    errResp = buildErrorResponse(
+      buildErrno("It's not your problem, it's ours", ErrnoCode.ServerInternalError)
+    );
   }
-) => {
-  const { code = 200, message = '', data = null, error } = props || {};
+  return errResp;
+}
 
-  // Specified error
-  if (typeof error === 'string' && ERROR_RESPONSE[error]) {
-    return res.json(ERROR_RESPONSE[error]);
+/**
+ * Sends an error response to the Next.js API response object.
+ *
+ * @param res The Next.js API response object.
+ * @param error The error object.
+ */
+export function sendErrorResponse(res: NextApiResponse<ErrorResponse>, error: Error) {
+  const errResp = buildErrorResponse(error);
+  res.status(errResp.code).json(errResp);
+}
+
+/**
+ *
+ *
+ * @param error A error object can be not a `AxiosError` object.
+ * @param reqErrnoCode ErrnoCode for the API request error.
+ * @param respErrnoCode ErrnoCode for the API response error.
+ *
+ * @returns An `Errno` object or original error object determining is `AxiosError` or not.
+ */
+export function handlerAxiosError(error: Error, reqErrnoCode: ErrnoCode, respErrnoCode: ErrnoCode) {
+  if (!isAxiosError(error)) return error;
+  if (error.response) {
+    const kubeStatus = error.response.data as KubeStatus;
+    return new Errno(error.response.status, respErrnoCode, kubeStatus.reason, kubeStatus.message);
   }
-
-  // another error
-  let msg = message;
-  if ((code < 200 || code >= 400) && !message) {
-    msg = error?.body?.message || error?.message || '请求错误';
-    if (typeof error === 'string') {
-      msg = error;
-    } else if (error?.code && error.code in ERROR_TEXT) {
-      msg = ERROR_TEXT[error.code];
-    }
-    console.log('error:', error);
-    console.log('error message:', msg);
-  }
-
-  res.json({
-    code,
-    statusText: '',
-    message: msg,
-    data: data || error || null
-  });
-};
+  return new Errno(500, reqErrnoCode, error.name, error.message);
+}

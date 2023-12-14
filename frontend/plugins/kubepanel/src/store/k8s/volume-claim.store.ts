@@ -4,5 +4,8 @@ import { VolumeClaimStore } from '@/types/state';
 import { create } from 'zustand';
 
 export const useVolumeClaimStore = create<VolumeClaimStore>()((...a) => ({
-  ...createKubeStoreSlice<PersistentVolumeClaim>(PersistentVolumeClaim.kind)(...a)
+  ...createKubeStoreSlice<PersistentVolumeClaim>(
+    PersistentVolumeClaim.kind,
+    PersistentVolumeClaim
+  )(...a)
 }));

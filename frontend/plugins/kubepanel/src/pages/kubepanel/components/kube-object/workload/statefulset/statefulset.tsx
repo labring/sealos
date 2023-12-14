@@ -1,16 +1,10 @@
 import { KubeObjectAge } from '@/components/kube/object/kube-object-age';
 import { StatefulSet } from '@/k8slens/kube-object';
-import { useQuery } from '@tanstack/react-query';
 import { ColumnsType } from 'antd/es/table';
-import { useRef, useState } from 'react';
 import StatefulSetDetail from './statefulset-detail';
-import { RequestController } from '@/utils/request-controller';
-import Table from '../../../table/table';
+import { getPodsByOwnerId, usePodStore, useStatefulSetStore } from '@/store/kube';
+import PanelTable from '../../../panel-table/table';
 import ActionButton from '../../../action-button/action-button';
-import { deleteResource } from '@/api/delete';
-import { Resources } from '@/constants/kube-object';
-import { updateResource } from '@/api/update';
-import { fetchData, getPodsByOwnerId, usePodStore, useStatefulSetStore } from '@/store/kube';
 
 const columns: ColumnsType<StatefulSet> = [
   {
@@ -40,57 +34,36 @@ const columns: ColumnsType<StatefulSet> = [
   {
     key: 'action',
     fixed: 'right',
-    render: (_, stat) => (
-      <ActionButton
-        obj={stat}
-        onUpdate={(data: string) => updateResource(data, stat.getName(), Resources.StatefulSets)}
-        onDelete={() => deleteResource(stat.getName(), Resources.StatefulSets)}
-      />
-    )
+    render: (_, stat) => <ActionButton obj={stat} />
   }
 ];
 
 const StatefulSetOverviewPage = () => {
-  const [openDrawer, setOpenDrawer] = useState(false);
-  const [stat, setStat] = useState<StatefulSet>();
-  const { items: pods, replace: replacePods } = usePodStore();
-  const { items: stats, replace: replaceStats } = useStatefulSetStore();
-  const requestController = useRef(new RequestController({ timeoutDuration: 5000 }));
-
-  useQuery(
-    ['statefulSets', 'pods'],
-    () => {
-      const task = [
-        () => fetchData(replaceStats, Resources.StatefulSets),
-        () => fetchData(replacePods, Resources.Pods)
-      ];
-      return requestController.current.runTasks(task);
-    },
-    {
-      refetchInterval: 5000
-    }
-  );
+  const {
+    items: pods,
+    initialize: initializePods,
+    isLoaded: isPodsLoaded,
+    watch: watchPods
+  } = usePodStore();
+  const {
+    items: stats,
+    initialize: initializeStats,
+    isLoaded: isStatsLoaded,
+    watch: watchStats
+  } = useStatefulSetStore();
 
   return (
-    <>
-      <Table
-        title={'Stateful Sets'}
-        columns={columns}
-        dataSource={stats}
-        onRow={(stat) => ({
-          onClick: () => {
-            setStat(stat);
-            setOpenDrawer(true);
-          }
-        })}
-      />
-      <StatefulSetDetail
-        statefulSet={stat}
-        childPods={getPodsByOwnerId(pods, stat?.getId() || '')}
-        open={openDrawer}
-        onClose={() => setOpenDrawer(false)}
-      />
-    </>
+    <PanelTable
+      columns={columns}
+      loading={!isStatsLoaded || !isPodsLoaded}
+      dataSource={stats}
+      sectionTitle="Stateful Sets"
+      DetailDrawer={StatefulSetDetail}
+      getRowKey={(stat) => stat.getId()}
+      initializers={[initializeStats, initializePods]}
+      watchers={[watchStats, watchPods]}
+      getDetailItem={(stat) => ({ stat, childPods: getPodsByOwnerId(pods, stat.getId()) })}
+    />
   );
 };
 

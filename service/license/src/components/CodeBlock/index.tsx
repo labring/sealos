@@ -44,7 +44,7 @@ export default function CodeBlock({
         fontSize={'14px'}
       >
         <Box mr="10px" color={'#B779D4'} alignSelf={'self-start'}>
-          $
+          #
         </Box>
         <SyntaxHighlighter
           language={language}

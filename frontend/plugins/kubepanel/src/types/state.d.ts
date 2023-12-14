@@ -4,22 +4,31 @@ import {
   Ingress,
   KubeEvent,
   KubeObject,
+  KubeObjectConstructor,
   PersistentVolumeClaim,
   Pod,
   Secret,
   StatefulSet
 } from '@/k8slens/kube-object';
+import EventSource from 'eventsource';
+
+type APICallback = (successResp?: number, errResp?: ErrorResponse) => void;
+type WatchCloser = () => void;
 
 type KubeStoreState<K extends KubeObject> = {
   items: Array<K>;
   kind: K['kind'];
+  objConstructor: KubeObjectConstructor<K>;
   isLoaded: boolean;
+  resourceVersion: string;
+  es?: EventSource;
 };
+
 type KubeStoreAction<K extends KubeObject> = {
   modify: (item: K) => void;
   remove: (item: K) => void;
-  replace: (items: K[]) => void;
-  setIsLoaded: (isLoaded: boolean) => void;
+  initialize: (callback: APICallback) => void;
+  watch: (callback: APICallback) => WatchCloser;
 };
 
 type KubeStore<K extends KubeObject> = KubeStoreState<K> & KubeStoreAction<K>;

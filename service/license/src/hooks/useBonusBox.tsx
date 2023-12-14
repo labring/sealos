@@ -1,10 +1,10 @@
 import { getPriceBonus } from '@/api/system';
+import CurrencySymbol from '@/components/CurrencySymbol';
 import { getFavorable } from '@/utils/tools';
 import { Flex, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useMemo, useState } from 'react';
-import CurrencySymbol from '../pages/license/components/CurrencySymbol';
 
 export default function useBonusBox() {
   const { t } = useTranslation();

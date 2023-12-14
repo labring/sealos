@@ -52,6 +52,11 @@ spec:
           status:
             description: AccountStatus defines the observed state of Account
             properties:
+              activityBonus:
+                description: 'ActivityBonus: for demonstration purposes only and does
+                  not participate in calculation'
+                format: int64
+                type: integer
               balance:
                 description: Recharge amount
                 format: int64

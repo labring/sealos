@@ -24,7 +24,6 @@ export const KubeBadge = ({
   }, [expandable]);
 
   const onClick = (e: React.MouseEvent<HTMLSpanElement>) => {
-    console.log(e.target);
     if (isExpandable) {
       setIsExpanded(!isExpanded);
     }

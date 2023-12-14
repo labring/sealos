@@ -4,7 +4,6 @@ import { compareFirstLanguages } from '@/utils/tools';
 import { Flex, Spinner } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import RechargeComponent from './components/Recharge';
 import LicenseRecord from './components/Record';
 
 export default function LicensePage() {
@@ -29,7 +28,6 @@ export default function LicensePage() {
     <Layout>
       <Flex flex={1} h={0} bg="#fefefe" overflowX={'auto'}>
         <LicenseRecord />
-        <RechargeComponent />
       </Flex>
     </Layout>
   );

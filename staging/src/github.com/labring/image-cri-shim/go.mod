@@ -3,11 +3,14 @@ module github.com/labring/image-cri-shim
 go 1.20
 
 require (
+	github.com/docker/docker v24.0.2+incompatible
+	github.com/google/go-containerregistry v0.15.2
 	github.com/labring/sealos v0.0.0
+	github.com/labring/sreg v0.1.6
 	github.com/pelletier/go-toml v1.9.5
 	google.golang.org/grpc v1.50.1
-	k8s.io/apimachinery v0.25.6
-	k8s.io/cri-api v0.25.6
+	k8s.io/apimachinery v0.27.4
+	k8s.io/cri-api v0.27.4
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -17,7 +20,7 @@ require (
 	github.com/containers/libtrust v0.0.0-20200511145503-9c3a6c22cd9a // indirect
 	github.com/containers/ocicrypt v1.1.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/docker/distribution v2.8.1+incompatible // indirect
+	github.com/docker/distribution v2.8.2+incompatible // indirect
 	github.com/docker/docker v20.10.18+incompatible // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect

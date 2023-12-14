@@ -1,16 +1,10 @@
 import { KubeObjectAge } from '@/components/kube/object/kube-object-age';
 import { PersistentVolumeClaim, Pod } from '@/k8slens/kube-object';
-import { RequestController } from '@/utils/request-controller';
-import { useQuery } from '@tanstack/react-query';
 import { ColumnsType } from 'antd/es/table';
-import { useRef, useState } from 'react';
 import PersistentVolumeClaimDetail from './volume-claim-detail';
-import Table from '../../../table/table';
+import { usePodStore, useVolumeClaimStore } from '@/store/kube';
+import PanelTable from '../../../panel-table/table';
 import ActionButton from '../../../action-button/action-button';
-import { deleteResource } from '@/api/delete';
-import { Resources } from '@/constants/kube-object';
-import { updateResource } from '@/api/update';
-import { fetchData, usePodStore, useVolumeClaimStore } from '@/store/kube';
 
 const columns: ColumnsType<{ volumeClaim: PersistentVolumeClaim; pods: Pod[] }> = [
   {
@@ -54,41 +48,25 @@ const columns: ColumnsType<{ volumeClaim: PersistentVolumeClaim; pods: Pod[] }> 
     render: (_, { volumeClaim }) => volumeClaim.getStatus()
   },
   {
-    dataIndex: 'name',
     key: 'action',
     fixed: 'right',
-    render: (_, { volumeClaim }) => (
-      <ActionButton
-        obj={volumeClaim}
-        onUpdate={(data: string) =>
-          updateResource(data, volumeClaim.getName(), Resources.PersistentVolumeClaims)
-        }
-        onDelete={() => deleteResource(volumeClaim.getName(), Resources.PersistentVolumeClaims)}
-      />
-    )
+    render: (_, { volumeClaim }) => <ActionButton obj={volumeClaim} />
   }
 ];
 
 const PersistentVolumeClaimOverviewPage = () => {
-  const [openDrawer, setOpenDrawer] = useState(false);
-  const [volumeClaim, setVolumeClaim] = useState<PersistentVolumeClaim>();
-  const requestController = useRef(new RequestController({ timeoutDuration: 5000 }));
-  const { items: volumeClaims, replace: replaceVolumeClaims } = useVolumeClaimStore();
-  const { items: pods, replace: replacePods } = usePodStore();
-
-  useQuery(
-    ['persistentVolumeClaims', 'pods'],
-    () => {
-      const tasks = [
-        () => fetchData(replaceVolumeClaims, Resources.PersistentVolumeClaims),
-        () => fetchData(replacePods, Resources.Pods)
-      ];
-      return requestController.current.runTasks(tasks);
-    },
-    {
-      refetchInterval: 5000
-    }
-  );
+  const {
+    items: volumeClaims,
+    initialize: initializeVolumeClaims,
+    isLoaded: isVolumeClaimsLoaded,
+    watch: watchVolumeClaims
+  } = useVolumeClaimStore();
+  const {
+    items: pods,
+    initialize: initializePods,
+    isLoaded: isPodsLoaded,
+    watch: watchPods
+  } = usePodStore();
 
   const dataSource = volumeClaims.map((volumeClaim) => ({
     volumeClaim,
@@ -96,25 +74,17 @@ const PersistentVolumeClaimOverviewPage = () => {
   }));
 
   return (
-    <>
-      <Table
-        title={'Persistent Volume Claims'}
-        columns={columns}
-        dataSource={dataSource}
-        onRow={({ volumeClaim }) => ({
-          onClick: () => {
-            setVolumeClaim(volumeClaim);
-            setOpenDrawer(true);
-          }
-        })}
-      />
-      <PersistentVolumeClaimDetail
-        volumeClaim={volumeClaim}
-        pods={pods}
-        open={openDrawer}
-        onClose={() => setOpenDrawer(false)}
-      />
-    </>
+    <PanelTable
+      columns={columns}
+      dataSource={dataSource}
+      loading={!isVolumeClaimsLoaded || !isPodsLoaded}
+      sectionTitle="Persistent Volume Claims"
+      DetailDrawer={PersistentVolumeClaimDetail}
+      getRowKey={({ volumeClaim }) => volumeClaim.getId()}
+      initializers={[initializeVolumeClaims, initializePods]}
+      watchers={[watchVolumeClaims, watchPods]}
+      getDetailItem={(record) => record}
+    />
   );
 };
 

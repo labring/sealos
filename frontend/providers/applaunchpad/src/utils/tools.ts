@@ -233,6 +233,8 @@ export const patchYamlList = ({
   newYamlList: string[];
   crYamlList: DeployKindsType[];
 }) => {
+  console.log(formOldYamlList, newYamlList, crYamlList, '=======');
+
   const oldFormJsonList = formOldYamlList
     .map((item) => yaml.loadAll(item))
     .flat() as DeployKindsType[];
@@ -355,7 +357,7 @@ export const patchYamlList = ({
       });
     }
   });
-
+  console.log(actions, 'actions');
   return actions;
 };
 
@@ -479,4 +481,8 @@ export const getErrText = (err: any, def = '') => {
   const msg: string = typeof err === 'string' ? err : err?.message || def || '';
   msg && console.log('error =>', msg);
   return msg;
+};
+
+export const formatMoney = (mone: number) => {
+  return mone / 1000000;
 };

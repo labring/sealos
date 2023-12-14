@@ -18,6 +18,8 @@ package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/labring/sealos/controllers/pkg/common"
 )
 
 const (
@@ -26,16 +28,17 @@ const (
 
 type (
 	Status string
-	Type   int
+	Type   common.Type
 )
 
 const (
 	// Consumption 消费
-	Consumption Type = iota
+	Consumption common.Type = iota
 	// Recharge 充值
 	Recharge
 	TransferIn
 	TransferOut
+	ActivityGiving
 )
 
 const QueryAllType Type = -1
@@ -92,6 +95,8 @@ type AccountStatus struct {
 	EncryptBalance *string `json:"encryptBalance,omitempty"`
 	// Recharge amount
 	Balance int64 `json:"balance,omitempty"`
+	// ActivityBonus: for demonstration purposes only and does not participate in calculation
+	ActivityBonus int64 `json:"activityBonus,omitempty"`
 	//Deduction amount
 	DeductionBalance int64 `json:"deductionBalance,omitempty"`
 	// EncryptDeductionBalance is to encrypt DeductionBalance

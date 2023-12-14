@@ -1,9 +1,19 @@
-import { createCluster, createClusterAndLicense } from '@/api/cluster';
+import { createCluster } from '@/api/cluster';
 import { checkWechatPay, createPayment, handlePaymentResult } from '@/api/payment';
 import { getSystemEnv, uploadConvertData } from '@/api/system';
 import { StripeIcon, SuccessIcon } from '@/components/Icon';
 import { company, contect, standard } from '@/constant/product';
-import { ClusterType, PaymentStatus, TPayMethod, WechatPaymentData } from '@/types';
+import { useConfirm } from '@/hooks/useConfirm';
+import usePaymentDataStore from '@/stores/payment';
+import useRouteParamsStore from '@/stores/routeParams';
+import useSessionStore from '@/stores/session';
+import {
+  ClusterType,
+  CreateClusterParams,
+  PaymentStatus,
+  TPayMethod,
+  WechatPaymentData
+} from '@/types';
 import {
   AbsoluteCenter,
   Box,
@@ -28,10 +38,6 @@ import { useRouter } from 'next/router';
 import { QRCodeSVG } from 'qrcode.react';
 import { useCallback, useEffect, useState } from 'react';
 import ServicePackage from './ServicePackage';
-import useRouteParamsStore from '@/stores/routeParams';
-import useSessionStore from '@/stores/session';
-import usePaymentDataStore from '@/stores/payment';
-import { useConfirm } from '@/hooks/useConfirm';
 
 export default function Product() {
   const { t } = useTranslation();
@@ -50,6 +56,7 @@ export default function Product() {
   const [remainingSeconds, setRemainingSeconds] = useState(1); // 初始值为2秒
   const { data: routeParams, setRouteParams, clearRouteParams } = useRouteParamsStore();
   const { isUserLogin } = useSessionStore();
+  // Used to detect missing WeChat payment results
   const { paymentData, setPaymentData, deletePaymentData, isExpired } = usePaymentDataStore();
 
   const onClosePayment = useCallback(() => {
@@ -100,7 +107,7 @@ export default function Product() {
         amount: amount,
         payMethod: payType,
         currency: 'CNY',
-        stripeCallBackUrl: '/pricing'
+        stripeCallBackUrl: '/pricing?stripeState=success'
       }),
     {
       async onSuccess(data) {
@@ -129,61 +136,41 @@ export default function Product() {
     }
   );
 
-  const clusterMutation = useMutation(
-    ({ type }: { type: ClusterType }) => createCluster({ type }),
-    {
-      onSuccess(data) {
-        console.log(data, 'clusterMutation');
-        setComplete(3);
-        queryClient.invalidateQueries(['getClusterRecord']);
-        deletePaymentData();
-      },
-      onError(err: any) {
-        toast({
-          status: 'error',
-          title: err?.message || '',
-          isClosable: true,
-          position: 'top'
-        });
-        setComplete(0);
-      }
+  // Create a standard cluster
+  const clusterMutation = useMutation((payload: CreateClusterParams) => createCluster(payload), {
+    onSuccess(data) {
+      console.log(data, 'clusterMutation');
+      setComplete(3);
+      queryClient.invalidateQueries(['getClusterList']);
+      deletePaymentData();
+    },
+    onError(err: any) {
+      toast({
+        status: 'error',
+        title: err?.message || '',
+        isClosable: true,
+        position: 'top'
+      });
+      setComplete(0);
     }
-  );
+  });
 
-  const clusterAndLicenseMutation = useMutation(
-    ({ type, orderID }: { type: ClusterType; orderID: string }) =>
-      createClusterAndLicense({ orderID, type: type }),
-    {
-      onSuccess(data) {
-        console.log(data, 'clusterAndLicenseMutation');
-        setComplete(3);
-        queryClient.invalidateQueries(['getClusterRecord']);
-        deletePaymentData();
-      },
-      onError(err: any) {
-        toast({
-          status: 'error',
-          title: err?.message || '',
-          isClosable: true,
-          position: 'top'
-        });
-        setComplete(0);
-      }
-    }
-  );
-
+  // Purchase Enterprise Edition Cluster
   useQuery(['getPaymentResult', orderID], () => handlePaymentResult({ orderID }), {
     refetchInterval: complete === 2 ? 3 * 1000 : false,
     enabled: complete === 2 && !!orderID,
     cacheTime: 0,
     staleTime: 0,
     onSuccess(data) {
-      console.log(data, 'getPaymentResult');
       if (data.status === PaymentStatus.PaymentSuccess) {
-        clusterAndLicenseMutation.mutate({ orderID: data.orderID, type: ClusterType.Enterprise });
-        uploadConvertData([90]).then((res) => {
-          console.log(res);
-        });
+        clusterMutation.mutate({ orderID: data.orderID, type: ClusterType.Enterprise });
+        uploadConvertData([90])
+          .then((res) => {
+            console.log(res);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
       }
     },
     onError(err: any) {
@@ -203,17 +190,11 @@ export default function Product() {
     onSuccess(data) {
       console.log(data, 'Handle wechat shutdown situation');
       if (data.status === PaymentStatus.PaymentSuccess) {
-        toast({
-          status: 'success',
-          title: t('Payment Successful'), // 这里改为license 签发成功
-          isClosable: true,
-          duration: 9000,
-          position: 'top'
-        });
-        deletePaymentData();
-        queryClient.invalidateQueries(['getClusterRecord']);
-        setComplete(3);
+        clusterMutation.mutate({ orderID: data.orderID, type: ClusterType.Enterprise });
       }
+    },
+    onError(err) {
+      console.log(err);
     }
   });
 
@@ -234,6 +215,7 @@ export default function Product() {
         duration: 3500,
         position: 'top'
       });
+      setClusterType(ClusterType.Enterprise);
       setComplete(2);
       setOrderID(orderID as string);
       setTimeout(clearQuery, 0);
