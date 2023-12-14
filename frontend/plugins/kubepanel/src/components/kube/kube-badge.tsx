@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-export interface KubeBadgeProps {
+interface KubeBadgeProps {
   label: React.ReactNode;
   disabled?: boolean;
   expandable?: boolean;
@@ -21,28 +21,32 @@ export const KubeBadge = ({
     const { offsetWidth = 0, scrollWidth = 0 } = elem.current ?? {};
 
     setIsExpandable(expandable && offsetWidth < scrollWidth);
-  }, [expandable, elem.current]);
+  }, [expandable]);
 
   const onClick = (e: React.MouseEvent<HTMLSpanElement>) => {
-    console.log(e.target);
     if (isExpandable) {
       setIsExpanded(!isExpanded);
     }
     e.stopPropagation();
   };
 
-  const { textColor = 'black', backgroundColor = 'color-vague' } = color ?? {};
-  const disabledClass = disabled ? 'opacity-50 cursor-not-allowed' : 'opacity-100 cursor-pointer';
+  const { textColor, backgroundColor } = color ?? {};
+  const disabledClass = disabled && 'opacity-50 cursor-not-allowed';
+  const expandedClass = isExpanded ? 'break-words' : 'truncate';
+  const expandableClass = isExpandable && 'cursor-pointer';
+  const bgColorClass = backgroundColor ? `bg-${backgroundColor}` : 'bg-[#EFF0F1]';
 
   return (
     <div
-      className={`inline-block py-1 px-2 mr-1 max-w-full rounded-md text-xs leading-normal ${disabledClass} bg-${backgroundColor} shadow-sm ${
-        isExpanded ? '' : 'truncate'
-      }`}
-      onClick={onClick}
+      className={`inline-block py-1 px-1.5 mr-1 mb-1 max-w-full rounded-[4px] ${disabledClass} ${expandableClass} ${expandedClass} ${bgColorClass}`}
       ref={elem}
+      onClick={onClick}
     >
-      <span className={`text-${textColor}`}>{label}</span>
+      <span
+        className={`w-full text-xs font-medium ${textColor ? `text-${textColor}` : 'text-black'} `}
+      >
+        {label}
+      </span>
     </div>
   );
 };

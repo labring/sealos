@@ -40,7 +40,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       undefined,
       labelSelector
     );
-
     // issuer
     const certIssuerPromise = k8sCustomObjects.listNamespacedCustomObject(
       'cert-manager.io',
@@ -112,6 +111,83 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       undefined,
       `${labelSelector},!${dbProviderKey},!${deployManagerKey}`
     );
+    // promi
+    const prometheusPromiseRule = k8sCustomObjects.listNamespacedCustomObject(
+      'monitoring.coreos.com',
+      'v1',
+      namespace,
+      'prometheusrules',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      labelSelector
+    ) as Promise<{
+      response: IncomingMessage;
+      body: {
+        items: { kind?: string }[];
+        kind: 'PromehteusRuleList';
+      };
+    }>;
+    const prometheusPromise = k8sCustomObjects.listNamespacedCustomObject(
+      'monitoring.coreos.com',
+      'v1',
+      namespace,
+      'prometheuses',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      labelSelector
+    ) as Promise<{
+      response: IncomingMessage;
+      body: {
+        items: { kind?: string }[];
+        kind: 'PromehteusList';
+      };
+    }>;
+    const prometheusPvcPromise = k8sCore.listNamespacedPersistentVolumeClaim(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `app.kubernetes.io/name=prometheus,prometheus=${instanceName}`
+    );
+    const servicemonitorPromise = k8sCustomObjects.listNamespacedCustomObject(
+      'monitoring.coreos.com',
+      'v1',
+      namespace,
+      'servicemonitors',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      labelSelector
+    ) as Promise<{
+      response: IncomingMessage;
+      body: {
+        items: { kind?: string }[];
+        kind: 'ServiceMonitorList';
+      };
+    }>;
+    const probePromise = k8sCustomObjects.listNamespacedCustomObject(
+      'monitoring.coreos.com',
+      'v1',
+      namespace,
+      'probes',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      labelSelector
+    ) as Promise<{
+      response: IncomingMessage;
+      body: {
+        items: { kind?: string }[];
+        kind: 'ProbeList';
+      };
+    }>;
     // 使用 Promise.allSettled 获取所有结果 [secretResult, jobResult, customResourceResult]
     const result = await Promise.allSettled([
       secretPromise,
@@ -121,9 +197,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       rolePromise,
       roleBindingPromise,
       saPromise,
-      configMapPromise
+      configMapPromise,
+      prometheusPromise,
+      prometheusPromiseRule,
+      prometheusPvcPromise,
+      servicemonitorPromise,
+      probePromise
     ]);
-
     const data = result
       .map((res) => {
         if (res.status === 'fulfilled') {

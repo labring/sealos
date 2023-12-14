@@ -203,6 +203,14 @@ func (c *Cluster) GetVIP() string {
 	return defaultVIP
 }
 
+func (c *Cluster) GetImageEndpoint() string {
+	root := c.GetRootfsImage()
+	if root != nil {
+		return root.Env[ImageImageEndpointSysKey]
+	}
+	return "/var/run/image-cri-shim.sock"
+}
+
 func (c *Cluster) GetLvscareImage() string {
 	root := c.GetRootfsImage()
 	if root != nil {

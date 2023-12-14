@@ -18,6 +18,8 @@ package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/labring/sealos/controllers/pkg/common"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -55,12 +57,12 @@ type BillingRecordQueryItem struct {
 }
 
 type BillingRecordQueryItemInline struct {
-	Name      string `json:"name,omitempty" bson:"name,omitempty"`
-	OrderID   string `json:"order_id" bson:"order_id"`
-	Namespace string `json:"namespace,omitempty" bson:"namespace,omitempty"`
-	Type      Type   `json:"type" bson:"type"`
-	AppType   string `json:"appType,omitempty" bson:"appType,omitempty"`
-	Costs     Costs  `json:"costs,omitempty" bson:"costs,omitempty"`
+	Name      string      `json:"name,omitempty" bson:"name,omitempty"`
+	OrderID   string      `json:"order_id" bson:"order_id"`
+	Namespace string      `json:"namespace,omitempty" bson:"namespace,omitempty"`
+	Type      common.Type `json:"type" bson:"type"`
+	AppType   string      `json:"appType,omitempty" bson:"appType,omitempty"`
+	Costs     Costs       `json:"costs,omitempty" bson:"costs,omitempty"`
 	//Amount = PaymentAmount + GiftAmount
 	Amount int64 `json:"amount,omitempty" bson:"amount"`
 	// when Type = Recharge, PaymentAmount is the amount of recharge

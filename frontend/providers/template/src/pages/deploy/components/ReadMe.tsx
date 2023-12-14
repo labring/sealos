@@ -61,7 +61,8 @@ const ReadMe = ({ templateDetail }: { templateDetail: TemplateType }) => {
         borderBottom={'1px solid #DEE0E2'}
         color={'#24282C'}
         fontSize={'18px'}
-        fontWeight={500}>
+        fontWeight={500}
+      >
         <MyIcon name={'markdown'} mr={5} w={'24px'} h={'24px'} ml={'42px'} color={'myGray.500'} />
         README.md
       </Box>
@@ -69,7 +70,8 @@ const ReadMe = ({ templateDetail }: { templateDetail: TemplateType }) => {
         <ReactMarkdown
           linkTarget={'_blank'}
           rehypePlugins={[rehypeRaw, [rehypeRewrite, { rewrite: myRewrite }]]}
-          remarkPlugins={[remarkGfm, remarkUnwrapImages]}>
+          remarkPlugins={[remarkGfm, remarkUnwrapImages]}
+        >
           {templateReadMe}
         </ReactMarkdown>
       </Box>

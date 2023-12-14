@@ -159,5 +159,28 @@
   "common": {
     "Used": "Used",
     "Surplus": "Surplus"
-  }
+  },
+  "Store At Least One": "Store At Least One",
+  "Network port conflict": "Network port conflict",
+  "skip": "skip",
+  "Can help you deploy any Docker image": "Can help you deploy any Docker image",
+  "Second-level domain name tips": "After turning it on, you will be automatically assigned an external second-level domain name.",
+  "Click the Deploy Application button": "Click the Deploy Application button",
+  "Click on any shadow to skip": "Click on any shadow to skip",
+  "Click here to visit the website": "Click here to visit the website",
+  "You can enter the container through the terminal": "You can enter the container through the terminal",
+  "Adjust application configuration": "Adjust application configuration",
+  "You have successfully deployed an application": "You have successfully deployed an application",
+  "receive": "receive",
+  "Balance": "Balance",
+  "First time completion guide benefits": "First time completion guide benefits",
+  "Go to recharge": "Recharge",
+  "let me think again": "let me think again",
+  "Configurable number of instances or automatic horizontal scaling": "Configurable number of instances or automatic horizontal scaling",
+  "gift time tip": "Within {{time}} hours ",
+  "gift amount tip": "Recharge {{amount}} and get {{gift}} free",
+  "Add Port": "Add Port",
+  "Age": "Age",
+  "Amount": "Amount",
+  "ConfigMap Tip": "ConfigMap"
 }

@@ -60,7 +60,7 @@ type BillingReconciler struct {
 	Scheme *runtime.Scheme
 	logr.Logger
 	AccountSystemNamespace string
-	DBClient               database.Interface
+	DBClient               database.Account
 	Properties             *resources.PropertyTypeLS
 }
 

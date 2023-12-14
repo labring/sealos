@@ -96,10 +96,11 @@ jobs:
           - { name: db-adminer, path: db/adminer }
           - { name: license, path: license }
           - { name: job-init, path: job/init }
+          - { name: job-heartbeat, path: job/heartbeat }
           - { name: resources, path: resources }
-          - { name: resources-metering, path: resources/metering }
           - { name: node, path: node }
           - { name: admission, path: admission }
+          - { name: objectstorage, path: objectstorage }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -198,10 +199,11 @@ jobs:
           - { name: db-adminer, path: db/adminer }
           - { name: license, path: license }
           - { name: job-init, path: job/init }
+          - { name: job-heartbeat, path: job/heartbeat }
           - { name: resources, path: resources }
-          - { name: resources-metering, path: resources/metering }
           - { name: node, path: node }
           - { name: admission, path: admission }
+          - { name: objectstorage, path: objectstorage }
     steps:
       - name: Checkout
         uses: actions/checkout@v3

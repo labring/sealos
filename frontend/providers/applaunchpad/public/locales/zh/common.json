@@ -202,5 +202,24 @@
   },
   "user": {
     "Insufficient account balance": "账号余额不足~"
-  }
+  },
+  "Store At Least One": "存储最少保留一个",
+  "skip": "跳过",
+  "Can help you deploy any Docker image": "可以帮您部署任意 Docker 镜像",
+  "Second-level domain name tips": "开启后将自动为您分配一个外网二级域名",
+  "Click the Deploy Application button": "点击部署应用按钮",
+  "Click on any shadow to skip": "点击任意阴影跳过",
+  "Click here to visit the website": "点击这里访问网站",
+  "You can enter the container through the terminal": "可以通过终端进入容器",
+  "Adjust application configuration": "调整应用配置",
+  "You have successfully deployed an application": "您已成功部署一个应用",
+  "receive": "获得",
+  "Balance": "余额",
+  "First time completion guide benefits": "首次完成引导福利",
+  "Go to recharge": "去充值",
+  "let me think again": "我再想想",
+  "Configurable number of instances or automatic horizontal scaling": "可配置实例数或自动横向伸缩",
+  "gift time tip": "{{time}} 小时内",
+  "gift amount tip": "充值 {{amount}} 赠送 {{gift}} ",
+  "ConfigMap Tip": "配置文件"
 }

@@ -39,3 +39,16 @@ subjects:
   - kind: ServiceAccount
     name: desktop-frontend
     namespace: sealos
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: desktop-deleterequest-editor-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: deleterequest-editor-role
+subjects:
+  - kind: ServiceAccount
+    name: desktop-frontend
+    namespace: sealos

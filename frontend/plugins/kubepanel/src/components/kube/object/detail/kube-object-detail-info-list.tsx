@@ -1,4 +1,4 @@
-import { KubeRecord } from '../../kube-record';
+import DrawerItem from '../../../../pages/kubepanel/components/drawer/drawer-item';
 import { KubeObjectAge } from '../kube-object-age';
 import { LocaleDate } from '../../local-date';
 import moment from 'moment-timezone';
@@ -29,12 +29,12 @@ export const KubeObjectInfoList = ({ hiddenFields = ['uid', 'resourceVersion'], 
 
   return (
     <>
-      <KubeRecord
+      <DrawerItem
         hidden={hiddenFields.includes('creationTimestamp') || !creationTimestamp}
         name="Created"
         value={
           <>
-            <KubeObjectAge creationTimestamp={creationTimestamp} compact={false} />
+            <KubeObjectAge obj={obj} compact={false} />
             {' ago '}
             {creationTimestamp && (
               <LocaleDate date={creationTimestamp} localeTimezone={moment.tz.guess()} />
@@ -42,19 +42,19 @@ export const KubeObjectInfoList = ({ hiddenFields = ['uid', 'resourceVersion'], 
           </>
         }
       />
-      <KubeRecord
+      <DrawerItem
         hidden={hiddenFields.includes('name')}
         name="Name"
         value={name} // TODO: KubeObject Icon
       />
-      <KubeRecord hidden={hiddenFields.includes('uid')} name="UID" value={uid} />
-      <KubeRecord
+      <DrawerItem hidden={hiddenFields.includes('uid')} name="UID" value={uid} />
+      <DrawerItem
         hidden={hiddenFields.includes('resourceVersion')}
         name="Resource Version"
         value={resourceVersion}
       />
       {labels.length > 0 && (
-        <KubeRecord
+        <DrawerItem
           hidden={hiddenFields.includes('labels')}
           name="Labels"
           value={labels.map((label) => (
@@ -63,7 +63,7 @@ export const KubeObjectInfoList = ({ hiddenFields = ['uid', 'resourceVersion'], 
         />
       )}
       {annotations.length > 0 && (
-        <KubeRecord
+        <DrawerItem
           hidden={hiddenFields.includes('annotations')}
           name="Annotations"
           value={annotations.map((label) => (
@@ -73,7 +73,7 @@ export const KubeObjectInfoList = ({ hiddenFields = ['uid', 'resourceVersion'], 
       )}
 
       {finalizers.length > 0 && (
-        <KubeRecord
+        <DrawerItem
           hidden={hiddenFields.includes('finalizers')}
           name="Finalizers"
           value={finalizers.map((label) => (
@@ -82,7 +82,7 @@ export const KubeObjectInfoList = ({ hiddenFields = ['uid', 'resourceVersion'], 
         />
       )}
       {ownerRefs.length > 0 && (
-        <KubeRecord
+        <DrawerItem
           hidden={hiddenFields.includes('ownerRefs')}
           name="ControlledBy"
           value={ownerRefs.map(({ name, kind }) => (

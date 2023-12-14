@@ -3,6 +3,7 @@ import { K8sApi } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { DBTypeEnum } from '@/constants/db';
 import * as k8s from '@kubernetes/client-node';
+import { DBVersionMap } from '@/store/static';
 
 export type Response = Record<
   `${DBTypeEnum}`,
@@ -12,12 +13,7 @@ export type Response = Record<
   }[]
 >;
 
-const MOCK = {
-  [DBTypeEnum.postgresql]: [{ id: 'postgresql-14.8.0', label: 'postgresql-14.8.0' }],
-  [DBTypeEnum.mongodb]: [{ id: 'mongodb-5.0.14', label: 'mongodb-5.0.14' }],
-  [DBTypeEnum.mysql]: [{ id: 'ac-mysql-8.0.30', label: 'ac-mysql-8.0.30' }],
-  [DBTypeEnum.redis]: [{ id: 'redis-7.0.6', label: 'redis-7.0.6' }]
-};
+const MOCK: Response = DBVersionMap;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -25,7 +21,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       [DBTypeEnum.postgresql]: [],
       [DBTypeEnum.mongodb]: [],
       [DBTypeEnum.mysql]: [],
-      [DBTypeEnum.redis]: []
+      [DBTypeEnum.redis]: [],
+      [DBTypeEnum.kafka]: [],
+      [DBTypeEnum.qdrant]: [],
+      [DBTypeEnum.nebula]: [],
+      [DBTypeEnum.weaviate]: []
     };
 
     // source price

@@ -57,7 +57,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: desktop-app-demo
-  namespace: 
+  namespace:
 ---
 apiVersion: v1
 kind: Service
@@ -121,7 +121,7 @@ spec:
       volumes:
         - name: desktop-app-demo-volume
           configMap:
-            name: desktop-app-demo-config    
+            name: desktop-app-demo-config
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -130,7 +130,6 @@ metadata:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
   name: desktop-app-demo
   namespace: ns-34dccadb-8e62-4205-8c1b-fc2dc146cd68
 spec:
@@ -139,7 +138,7 @@ spec:
       http:
         paths:
           - pathType: Prefix
-            path: /()(.*)
+            path: /
             backend:
               service:
                 name: desktop-app-demo

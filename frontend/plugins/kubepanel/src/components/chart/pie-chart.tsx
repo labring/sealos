@@ -23,23 +23,19 @@ export const PieChart = ({ title, data, color }: PieChartProps) => {
     angleField: 'value',
     colorField: 'type',
     color: (datum: Datum) => color(datum['type']),
-    width: 150,
+    width: 200,
     radius: 1,
-    innerRadius: 0.88,
+    innerRadius: 0.75,
     statistic: {
-      title: {
-        content: title,
-        style: {
-          fontSize: '14px',
-          whiteSpace: 'pre-wrap',
-          overflow: 'visible'
-        }
-      },
+      title: false,
       content: {
-        content: `${sum(data.map((d) => d.value))}`,
-        style: {
-          fontSize: '14px',
-          fontWeight: 'bold'
+        customHtml: () => {
+          return (
+            <div>
+              <div className="font-medium text-base text-black">{title}</div>
+              <div className="font-medium text-4xl text-black">{sum(data.map((d) => d.value))}</div>
+            </div>
+          ) as unknown as string;
         }
       }
     },

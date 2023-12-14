@@ -32,8 +32,6 @@ type QueryResult struct {
 }
 
 var (
-	ErrNoAuth          = errors.New("no permission for this namespace")
-	ErrNoSealosHost    = errors.New("unable to get the sealos host")
 	ErrNoPromHost      = errors.New("unable to get the prometheus host")
 	ErrUncompleteParam = errors.New("at least provide both namespace and query")
 	ErrEmptyKubeconfig = errors.New("empty kubeconfig")
@@ -110,5 +108,20 @@ var (
 		"commands_duration":   "avg(rate(redis_commands_duration_seconds_total{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])) by (cmd) / avg(irate(redis_commands_total{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])) by (cmd)",
 		"blocked_connections": "sum(redis_blocked_clients{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"})",
 		"key_evictions":       "irate(redis_evicted_keys_total{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])",
+	}
+
+	Minio = map[string]string{
+		"minio_bucket_usage_object_total":     "minio_bucket_usage_object_total{bucket=\"@\", instance=\"#\"}",
+		"minio_bucket_usage_total_bytes":      "minio_bucket_usage_total_bytes{bucket=\"@\", instance=\"#\"}",
+		"minio_bucket_traffic_received_bytes": "sum(minio_bucket_traffic_received_bytes{bucket=\"@\", instance=\"#\"}) by (bucket, instance, job, namespace)",
+		"minio_bucket_traffic_sent_bytes":     "sum(minio_bucket_traffic_sent_bytes{bucket=\"@\", instance=\"#\"}) by (bucket, instance, job, namespace)",
+	}
+
+	Kafka = map[string]string{
+		"cpu":           "round(max by (pod) (rate(container_cpu_usage_seconds_total{namespace=~\"#\",pod=~\"@-(kafka-broker|kafka-server|controller)-\\\\d\" ,container=\"kafka\"}[5m])) / on (pod) (max by (pod) (container_spec_cpu_quota{namespace=~\"#\", pod=~\"@-(kafka-broker|kafka-server|controller)-\\\\d\",container=\"kafka\"} / 100000)) * 100,0.01)",
+		"memory":        "round(max by (pod)(container_memory_usage_bytes{namespace=~\"#\",pod=~\"@-(kafka-broker|kafka-server|controller)-\\\\d\",container=\"kafka\" })/ on (pod) (max by (pod) (container_spec_memory_limit_bytes{namespace=~\"#\", pod=~\"@-(kafka-broker|kafka-server|controller)-\\\\d\",container=\"kafka\"})) * 100,0.01)",
+		"disk_capacity": "(max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_capacity_bytes {namespace=~\"#\", persistentvolumeclaim=~\"data-@-(kafka-broker|kafka-server)-\\\\d\"}))",
+		"disk":          "round((max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_used_bytes {namespace=~\"#\", persistentvolumeclaim=~\"data-@-(kafka-broker|kafka-server)-\\\\d\"})) / (max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_capacity_bytes {namespace=~\"#\", persistentvolumeclaim=~\"data-@-(kafka-broker|kafka-server)-\\\\d\"})) * 100, 0.01)",
+		"disk_used":     "(max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_used_bytes {namespace=~\"#\", persistentvolumeclaim=~\"data-@-(kafka-broker|kafka-server)-\\\\d\"}))",
 	}
 )

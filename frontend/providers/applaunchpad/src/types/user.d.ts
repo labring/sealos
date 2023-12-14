@@ -35,3 +35,20 @@ export type UserQuotaItemType = {
   used: number;
   limit: number;
 };
+
+export type AccountCRD = {
+  apiVersion: string;
+  kind: string;
+  metadata: {
+    annotations: Record<string, string>;
+    creationTimestamp: string;
+    generation: number;
+  };
+  status: {
+    activityBonus: number;
+    balance: number;
+    deductionBalance: number;
+    encryptBalance: string;
+    encryptDeductionBalance: string;
+  };
+};

@@ -37,12 +37,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     ).json();
 
-    console.log(data, result);
-
     jsonRes(res, {
       data: result
     });
   } catch (error) {
+    console.log('upload data err', error);
     jsonRes(res, { code: 500, data: error });
   }
 }

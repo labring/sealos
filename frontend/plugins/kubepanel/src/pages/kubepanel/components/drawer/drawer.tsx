@@ -1,4 +1,5 @@
-import { Drawer as AntdDrawer } from 'antd';
+import { CloseOutlined } from '@ant-design/icons';
+import { Drawer as AntdDrawer, Button } from 'antd';
 interface Props {
   title: string;
   children: React.ReactNode;
@@ -8,14 +9,20 @@ interface Props {
 const Drawer = ({ title, children, open, onClose }: Props) => {
   return (
     <AntdDrawer
-      classNames={{ body: 'bg-gray-300', header: 'bg-zinc-600' }}
-      styles={{ body: { padding: 0 } }}
+      styles={{
+        header: {
+          padding: '12px',
+          backgroundColor: '#24282C'
+        }
+      }}
       open={open}
-      title={<span className="text-white">{title}</span>}
-      width="60vh"
+      closeIcon={<CloseOutlined style={{ color: 'white', fontSize: '24px', padding: '4px' }} />}
+      title={<span className="text-white font-medium text-base">{title}</span>}
+      width="550px"
       onClose={onClose}
+      destroyOnClose
     >
-      {children}
+      <div className="flex flex-col gap-6">{children}</div>
     </AntdDrawer>
   );
 };

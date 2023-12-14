@@ -21,12 +21,13 @@
     "react": "18.2.0",
     "react-i18next": "^12.3.1",
     "sealos-desktop-sdk": "workspace:*",
+    "typescript": "^5.2.2",
     "zustand": "^4.4.1"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.6",
     "@types/node": "20.3.1",
-    "@types/react": "18.2.12",
+    "@types/react": "18.2.37",
     "eslint": "8.42.0",
     "eslint-config-next": "13.4.5",
     "sass": "^1.68.0"

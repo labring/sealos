@@ -1,0 +1,10 @@
+FROM scratch
+
+USER 65532:65532
+
+COPY manifests manifests
+
+ENV cloudDomain="127.0.0.1.nip.io"
+ENV cloudPort=""
+
+CMD ["kubectl apply -f manifests"]

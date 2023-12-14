@@ -215,10 +215,10 @@ func (ki *kubeIdempotency) CreateOrUpdateClusterRoleBinding(clusterRoleBinding *
 // This is a condition function meant to be used with wait.Poll. false, nil
 // implies it is safe to try again, an error indicates no more tries should be
 // made and true indicates success.
-func (ki *kubeIdempotency) patchNodeOnce(nodeName string, patchFn func(*v1.Node)) func() (bool, error) {
-	return func() (bool, error) {
+func (ki *kubeIdempotency) patchNodeOnce(nodeName string, patchFn func(*v1.Node)) func(ctx context.Context) (bool, error) {
+	return func(ctx context.Context) (bool, error) {
 		// First get the node object
-		n, err := ki.client.CoreV1().Nodes().Get(context.TODO(), nodeName, metav1.GetOptions{})
+		n, err := ki.client.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
 		if err != nil {
 			return false, nil //nolint:nilerr
 		}
@@ -247,7 +247,7 @@ func (ki *kubeIdempotency) patchNodeOnce(nodeName string, patchFn func(*v1.Node)
 			return false, fmt.Errorf("failed to create two way merge patch: %w", err)
 		}
 
-		if _, err := ki.client.CoreV1().Nodes().Patch(context.TODO(), n.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{}); err != nil {
+		if _, err := ki.client.CoreV1().Nodes().Patch(ctx, n.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{}); err != nil {
 			if apierrors.IsConflict(err) {
 				logger.Debug("Temporarily unable to update node metadata due to conflict (will retry)")
 				return false, nil
@@ -262,8 +262,11 @@ func (ki *kubeIdempotency) patchNodeOnce(nodeName string, patchFn func(*v1.Node)
 // PatchNode tries to patch a node using patchFn for the actual mutating logic.
 // Retries are provided by the wait package.
 func (ki *kubeIdempotency) PatchNode(nodeName string, patchFn func(*v1.Node)) error {
+	ctx, cancel := context.WithTimeout(context.Background(), PatchNodeTimeout)
+	defer cancel()
+	return wait.PollUntilContextCancel(ctx, APICallRetryInterval, true, ki.patchNodeOnce(nodeName, patchFn))
 	// wait.Poll will rerun the condition function every interval function if
 	// the function returns false. If the condition function returns an error
 	// then the retries end and the error is returned.
-	return wait.Poll(APICallRetryInterval, PatchNodeTimeout, ki.patchNodeOnce(nodeName, patchFn))
+	//return wait.Poll(APICallRetryInterval, PatchNodeTimeout, ki.patchNodeOnce(nodeName, patchFn))
 }

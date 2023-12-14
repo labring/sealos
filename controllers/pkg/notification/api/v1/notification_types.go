@@ -29,11 +29,19 @@ const Low Type = "Low"
 // NotificationSpec defines the desired state of Notification
 // UserName and whether read will be set in label,because set in label is ease to query
 type NotificationSpec struct {
-	Title      string `json:"title"`
-	Message    string `json:"message"`
-	Timestamp  int64  `json:"timestamp"`
-	From       string `json:"from,omitempty"`
-	Importance Type   `json:"importance,omitempty"`
+	Title        string          `json:"title"`
+	Message      string          `json:"message"`
+	Timestamp    int64           `json:"timestamp"`
+	From         string          `json:"from,omitempty"`
+	Importance   Type            `json:"importance,omitempty"`
+	DesktopPopup bool            `json:"desktopPopup,omitempty"`
+	I18n         map[string]I18n `json:"i18ns,omitempty"`
+}
+
+type I18n struct {
+	Title   string `json:"title"`
+	Message string `json:"message"`
+	From    string `json:"from,omitempty"`
 }
 
 // NotificationStatus defines the observed state of Notification

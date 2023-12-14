@@ -7,7 +7,11 @@ import React from 'react';
 import { ReactiveDuration } from '../reactive-duration';
 
 export interface KubeObjectAgeProps {
-  creationTimestamp?: string;
+  obj: {
+    metadata: {
+      creationTimestamp?: string;
+    };
+  };
 
   /**
    * Whether the display string should prefer length over precision
@@ -16,6 +20,6 @@ export interface KubeObjectAgeProps {
   compact?: boolean;
 }
 
-export const KubeObjectAge = ({ creationTimestamp, compact = true }: KubeObjectAgeProps) => (
-  <ReactiveDuration timestamp={creationTimestamp} compact={compact} />
+export const KubeObjectAge = ({ obj, compact = true }: KubeObjectAgeProps) => (
+  <ReactiveDuration timestamp={obj.metadata.creationTimestamp} compact={compact} />
 );

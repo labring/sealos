@@ -23,8 +23,9 @@ import (
 
 type LicenseValidator struct {
 	client.Client
+	ClusterID string
 }
 
 func (v *LicenseValidator) Validate(license *licensev1.License) (bool, error) {
-	return licenseutil.IsLicenseValid(license)
+	return licenseutil.IsLicenseValid(license, v.ClusterID)
 }

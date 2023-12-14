@@ -5,19 +5,19 @@ import { PrismAsyncLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { CopyIcon } from '@/components/Icon';
 
 type CodeBlockProps = {
-  code: string;
-  copyValue?: string;
+  copyCode: string;
+  displayCode?: string;
   language: string;
   customStyle?: CSSProperties | undefined;
   flexStyle?: FlexProps;
 };
 
 export default function CodeBlock({
-  code,
+  displayCode,
+  copyCode,
   language,
   customStyle,
-  flexStyle,
-  copyValue
+  flexStyle
 }: CodeBlockProps) {
   const { copyData } = useCopyData();
 
@@ -28,6 +28,11 @@ export default function CodeBlock({
       borderRadius={'6px'}
       {...flexStyle}
       border={'1px solid #EAEBF0'}
+      _hover={{
+        '.copy-button': {
+          opacity: 0.9
+        }
+      }}
     >
       <Flex
         flex={1}
@@ -39,7 +44,7 @@ export default function CodeBlock({
         fontSize={'14px'}
       >
         <Box mr="10px" color={'#B779D4'} alignSelf={'self-start'}>
-          $
+          #
         </Box>
         <SyntaxHighlighter
           language={language}
@@ -47,12 +52,22 @@ export default function CodeBlock({
             background: '#F8FAFB',
             color: '#24282c'
           }}
+          {...customStyle}
         >
-          {code}
+          {displayCode ? displayCode : copyCode}
         </SyntaxHighlighter>
       </Flex>
-      <Divider orientation="vertical" bg="#EAEBF0" h="auto" />
-      <Center mx="20px" cursor={'pointer'} onClick={() => copyData(copyValue ? copyValue : code)}>
+
+      <Center
+        position="absolute" // 绝对定位
+        top="16px" // 顶部对齐
+        right="8px" // 右侧对齐
+        cursor={'pointer'}
+        onClick={() => copyData(copyCode)}
+        className="copy-button"
+        opacity={0}
+        transition="opacity 0.3s"
+      >
         <CopyIcon fill="#219BF4" />
       </Center>
     </Flex>

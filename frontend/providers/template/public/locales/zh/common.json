@@ -161,7 +161,8 @@
     "Configure Form": "配置表单",
     "YAML File": "YAML 文件",
     "Template Development": "模板开发",
-    "Dryrun Deploy": "试运行部署"
+    "Dryrun Deploy": "试运行部署",
+    "Formal Deploy": "正式部署"
   },
   "SideBar": {
     "Applications": "所有应用",
@@ -186,5 +187,7 @@
   "One click deploy button": "一键部署按钮",
   "Html Part": "Html 片段",
   "Markdown Part": "Markdown 片段",
-  "Button Effect": "按钮效果"
+  "Button Effect": "按钮效果",
+  "Deployment successful, please go to My Application to view": "部署成功，请前往我的应用查看",
+  "Type": "类型"
 }

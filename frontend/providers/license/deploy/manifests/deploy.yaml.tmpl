@@ -6,6 +6,25 @@ metadata:
   name: license-frontend
 ---
 apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: license-frontend
+  namespace: license-frontend
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: license-frontend-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kube-system-namespace-read-cluster-role
+subjects:
+  - kind: ServiceAccount
+    name: license-frontend
+    namespace: license-frontend
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: license-frontend-config
@@ -34,6 +53,7 @@ spec:
       labels:
         app: license-frontend
     spec:
+      serviceAccountName: license-frontend
       containers:
         - name: license-frontend
           env:

@@ -4,24 +4,22 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 
-type Props = {
+export type GetPodMetricsProps = {
   podsName: string[];
 };
 
-// get App Metrics By DeployName. compute average value
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { podsName } = req.body as Props;
+    const { podsName } = req.body as GetPodMetricsProps;
 
     if (!podsName) {
       throw new Error('podsName is empty');
     }
 
     jsonRes(res, {
-      data: await getPodMetrics({ req, podsName })
+      data: await GetPodMetrics({ req, podsName })
     });
   } catch (err: any) {
-    // console.log(err, 'get metrics error')
     jsonRes(res, {
       code: 500,
       error: err
@@ -29,11 +27,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   }
 }
 
-export const getPodMetrics = async ({ req, podsName }: Props & { req: NextApiRequest }) => {
+export const GetPodMetrics = async ({
+  req,
+  podsName
+}: GetPodMetricsProps & { req: NextApiRequest }) => {
   const { metricsClient, namespace } = await getK8s({
     kubeconfig: await authSession(req.headers)
   });
-  // get pods metrics
+
   const metrics = await Promise.allSettled(
     podsName.map((name) => metricsClient.getPodMetrics(namespace, name))
   );

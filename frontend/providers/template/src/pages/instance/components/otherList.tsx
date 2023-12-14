@@ -19,7 +19,7 @@ export default function OtherList({ instanceName }: { instanceName: string }) {
       onSuccess(data) {
         appendResource(
           data.map((item) => {
-            return { id: item.id, name: item.name, kind: item.kind };
+            return { id: item.id, name: item.name, kind: item.kind, apiVersion: item.apiVersion };
           })
         );
       }

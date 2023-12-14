@@ -1,12 +1,12 @@
 import axios, {
   InternalAxiosRequestConfig,
   AxiosHeaders,
-  AxiosResponse,
-  AxiosRequestConfig
+  AxiosRequestConfig,
+  AxiosResponse
 } from 'axios';
-import type { ApiResp } from './kubernet';
-import { isApiResp } from './kubernet';
 import { getUserKubeConfig } from '@/utils/user';
+import { isSuccessResponse } from '@/utils/types';
+import { ErrnoCode, buildErrno } from './backend/error';
 
 const request = axios.create({
   baseURL: '/',
@@ -15,55 +15,33 @@ const request = axios.create({
 });
 
 // request interceptor
-request.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    // auto append service prefix
-    if (config.url && !config.url?.startsWith('/api/')) {
-      config.url = '' + config.url;
-    }
-    let _headers: AxiosHeaders = config.headers;
-
-    //获取token，并将其添加至请求头中
-    _headers['Authorization'] = encodeURIComponent(getUserKubeConfig());
-    if (!config.headers || config.headers['Content-Type'] === '') {
-      _headers['Content-Type'] = 'application/json';
-    }
-
-    config.headers = _headers;
-    return config;
-  },
-  (error: any) => {
-    error.data = {};
-    error.data.msg = '服务器异常，请联系管理员！';
-    return Promise.resolve(error);
+request.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  // auto append service prefix
+  if (config.url && !config.url?.startsWith('/api/')) {
+    config.url = '' + config.url;
   }
-);
+  let _headers: AxiosHeaders = config.headers;
 
-// response interceptor
-request.interceptors.response.use(
-  (response: AxiosResponse) => {
-    const { status, data } = response;
-    if (status < 200 || status >= 300 || !isApiResp(data)) {
-      return Promise.reject(data);
-    }
-
-    const apiResp = data as ApiResp;
-    if (apiResp.code < 200 || apiResp.code >= 400) {
-      return Promise.reject(apiResp);
-    }
-
-    response.data = apiResp.data;
-    return response.data;
-  },
-  (error: any) => {
-    if (axios.isCancel(error)) {
-      return Promise.reject('cancel request' + String(error));
-    } else {
-      error.errMessage = '请求超时或服务器异常，请检查网络或联系管理员！';
-    }
-    return Promise.reject(error);
+  //获取token，并将其添加至请求头中
+  _headers['Authorization'] = encodeURIComponent(getUserKubeConfig());
+  if (!config.headers || config.headers['Content-Type'] === '') {
+    _headers['Content-Type'] = 'application/json';
   }
-);
+
+  config.headers = _headers;
+  return config;
+});
+
+request.interceptors.response.use((response: AxiosResponse) => {
+  const { data } = response;
+
+  if (!isSuccessResponse(data))
+    return Promise.reject(
+      buildErrno('Response is not correct type', ErrnoCode.ServerInternalError)
+    );
+
+  return response.data;
+});
 
 export function GET<T = any>(
   url: string,
@@ -87,8 +65,15 @@ export function DELETE<T = any>(
   data?: { [key: string]: any },
   config?: AxiosRequestConfig
 ): Promise<T> {
-  return request.get(url, {
+  return request.delete(url, {
     params: data,
     ...config
   });
+}
+export function PUT<T = any>(
+  url: string,
+  data?: { [key: string]: any },
+  config?: AxiosRequestConfig
+): Promise<T> {
+  return request.put(url, data, config);
 }

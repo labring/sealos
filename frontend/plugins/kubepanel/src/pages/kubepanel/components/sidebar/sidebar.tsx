@@ -1,5 +1,12 @@
-import { DashboardOutlined, DatabaseOutlined, SettingOutlined } from '@ant-design/icons';
-import { Menu, MenuProps } from 'antd';
+import {
+  DashboardOutlined,
+  DatabaseOutlined,
+  GatewayOutlined,
+  ReloadOutlined,
+  SettingOutlined
+} from '@ant-design/icons';
+import { Button, Flex, Menu, MenuProps } from 'antd';
+import { useRouter } from 'next/router';
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -8,8 +15,10 @@ export enum SideNavItemKey {
   Pod = 'pod',
   Deployment = 'deployment',
   ConfigMap = 'config-map',
-  PersistentVolumeClaim = 'pvc',
-  StatefulSet = 'stateful-set'
+  PersistentVolumeClaim = 'volume-claim',
+  StatefulSet = 'stateful-set',
+  Secret = 'secret',
+  Ingress = 'ingress'
 }
 
 function getItem(
@@ -29,16 +38,18 @@ function getItem(
 }
 
 const items: MenuProps['items'] = [
-  getItem('Workload', 'workload', <DashboardOutlined rev={undefined} />, [
+  getItem('Workload', 'workload', <DashboardOutlined />, [
     getItem('Overview', SideNavItemKey.Overview),
     getItem('Pods', SideNavItemKey.Pod),
     getItem('Deployments', SideNavItemKey.Deployment),
     getItem('Stateful Sets', SideNavItemKey.StatefulSet)
   ]),
-  getItem('Config', 'config', <SettingOutlined rev={undefined} />, [
-    getItem('Config Maps', SideNavItemKey.ConfigMap)
+  getItem('Config', 'config', <SettingOutlined />, [
+    getItem('Config Maps', SideNavItemKey.ConfigMap),
+    getItem('Secrets', SideNavItemKey.Secret)
   ]),
-  getItem('Storage', 'storage', <DatabaseOutlined rev={undefined} />, [
+  getItem('Network', 'network', <GatewayOutlined />, [getItem('Ingress', SideNavItemKey.Ingress)]),
+  getItem('Storage', 'storage', <DatabaseOutlined />, [
     getItem('Persistent Volume Claims', SideNavItemKey.PersistentVolumeClaim)
   ])
 ];
@@ -48,15 +59,29 @@ interface Props {
 }
 
 const ResourceSideNav = ({ onClick = () => {} }: Props) => {
+  const router = useRouter();
+
   return (
-    <Menu
-      style={{ height: '100vh', overflowY: 'auto' }}
-      defaultSelectedKeys={['overview']}
-      defaultOpenKeys={['workload']}
-      mode="inline"
-      items={items}
-      onClick={({ key }) => onClick(key as SideNavItemKey)}
-    />
+    <Flex vertical>
+      <div className="border-b-[1px] border-color-border border-solid px-[18px] py-[12px] w-full">
+        <div className="flex justify-between align-middle">
+          <div className="text-[#24282C] text-[16px] font-medium p-1">KubePanel</div>
+          <Button
+            type="text"
+            icon={<ReloadOutlined style={{ color: '#219BF4', fontSize: 'large' }} />}
+            onClick={() => router.reload()}
+          />
+        </div>
+      </div>
+      <Menu
+        style={{ backgroundColor: '#F2F2F4', borderRight: 'none' }}
+        defaultSelectedKeys={['overview']}
+        defaultOpenKeys={['workload']}
+        mode="inline"
+        items={items}
+        onClick={({ key }) => onClick(key as SideNavItemKey)}
+      />
+    </Flex>
   );
 };
 

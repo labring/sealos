@@ -45,7 +45,7 @@ func (m *NamespaceMutator) Default(_ context.Context, obj runtime.Object) error 
 		return errors.New("obj convert to Namespace error")
 	}
 	nlog.Info("mutating create/update", "name", i.Name)
-	i.ObjectMeta = initAnnotationAndLabels(i.ObjectMeta)
+	initAnnotationAndLabels(&i.ObjectMeta)
 
 	// add sealos.io/namespace annotation
 	i.Annotations["sealos.io/namespace"] = i.Name

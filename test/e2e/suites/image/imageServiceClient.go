@@ -18,45 +18,35 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
 	v1api "k8s.io/cri-api/pkg/apis/runtime/v1"
-	"k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const V1 = "v1"
-const V1alpha2 = "v1alpha2"
 
 type FakeImageServiceClient struct {
-	Version                    string
-	V1ImageServiceClient       v1api.ImageServiceClient
-	V1alpha2ImageServiceClient v1alpha2.ImageServiceClient
+	Version              string
+	V1ImageServiceClient v1api.ImageServiceClient
 }
 
 func NewFakeImageServiceClientWithV1(client v1api.ImageServiceClient) FakeImageCRIShimInterface {
 	return &FakeImageServiceClient{V1ImageServiceClient: client, Version: V1}
 }
 
-func NewFakeImageServiceClientWithV1alpha2(client v1alpha2.ImageServiceClient) FakeImageCRIShimInterface {
-	return &FakeImageServiceClient{V1alpha2ImageServiceClient: client, Version: V1alpha2}
-}
-
 type FakeImageCRIShimInterface interface {
 	ListImages() ([]string, error)
-	ImageStatus(image string) (*v1alpha2.ImageStatusResponse, error)
+	ImageStatus(image string) (*v1api.ImageStatusResponse, error)
 	PullImage(image string) (string, error)
 	RemoveImage(image string) error
-	ImageFsInfo() ([]*v1alpha2.FilesystemUsage, error)
+	ImageFsInfo() ([]*v1api.FilesystemUsage, error)
 }
 
 func (f FakeImageServiceClient) ListImages() ([]string, error) {
 	var (
 		ctx, cancel   = context.WithCancel(context.Background())
-		imageListResp *v1alpha2.ListImagesResponse
+		imageListResp *v1api.ListImagesResponse
 		imageList     = []string{}
-		err           error
 	)
 	defer cancel()
 	if f.Version == V1 {
@@ -64,12 +54,7 @@ func (f FakeImageServiceClient) ListImages() ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		imageListResp = ConvertV1ImageListRespToV1alpha2(v1ImageListResp)
-	} else {
-		imageListResp, err = f.V1alpha2ImageServiceClient.ListImages(ctx, &v1alpha2.ListImagesRequest{})
-		if err != nil {
-			return nil, err
-		}
+		imageListResp = v1ImageListResp
 	}
 	if imageListResp.Images == nil {
 		logger.Info("images is nil: %#+v", imageListResp)
@@ -85,11 +70,9 @@ func (f FakeImageServiceClient) ListImages() ([]string, error) {
 	return imageList, nil
 }
 
-func (f FakeImageServiceClient) ImageStatus(image string) (*v1alpha2.ImageStatusResponse, error) {
+func (f FakeImageServiceClient) ImageStatus(image string) (*v1api.ImageStatusResponse, error) {
 	var (
-		ctx, cancel     = context.WithCancel(context.Background())
-		imageStatusResp *v1alpha2.ImageStatusResponse
-		err             error
+		ctx, cancel = context.WithCancel(context.Background())
 	)
 	defer cancel()
 	v1ImageSpec := &v1api.ImageSpec{Image: image}
@@ -98,23 +81,16 @@ func (f FakeImageServiceClient) ImageStatus(image string) (*v1alpha2.ImageStatus
 		if err != nil {
 			return nil, err
 		}
-		imageStatusResp = ConvertV1ImageStatusResponseToV1alpha2(v1ImageListResp)
-	} else {
-		imageStatusResp, err = f.V1alpha2ImageServiceClient.ImageStatus(ctx, &v1alpha2.ImageStatusRequest{Image: ConvertV1ImageSpecToV1alpha2(v1ImageSpec), Verbose: true})
-		if err != nil {
-			return nil, err
-		}
+		return v1ImageListResp, nil
 	}
-	return imageStatusResp, nil
+	return nil, fmt.Errorf("not support cri api v1")
 }
 
 // return image ID
 func (f FakeImageServiceClient) PullImage(image string) (string, error) {
 	var (
-		ctx, cancel   = context.WithCancel(context.Background())
-		imagePullResp *v1alpha2.PullImageResponse
-		v1ImageSpec   = &v1api.ImageSpec{Image: image}
-		err           error
+		ctx, cancel = context.WithCancel(context.Background())
+		v1ImageSpec = &v1api.ImageSpec{Image: image}
 	)
 	defer cancel()
 	if f.Version == V1 {
@@ -122,20 +98,14 @@ func (f FakeImageServiceClient) PullImage(image string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		imagePullResp = ConvertV1PullImageResponseToV1alpha2(v1ImageListResp)
-	} else {
-		imagePullResp, err = f.V1alpha2ImageServiceClient.PullImage(ctx, &v1alpha2.PullImageRequest{Image: ConvertV1ImageSpecToV1alpha2(v1ImageSpec)})
-		if err != nil {
-			return "", err
-		}
+		return v1ImageListResp.ImageRef, nil
 	}
-	return imagePullResp.ImageRef, nil
+	return "", fmt.Errorf("not support cri api v1")
 }
 
 func (f FakeImageServiceClient) RemoveImage(image string) error {
 	var (
 		ctx, cancel = context.WithCancel(context.Background())
-		err         error
 	)
 	defer cancel()
 	v1ImageSpec := &v1api.ImageSpec{Image: image}
@@ -144,17 +114,14 @@ func (f FakeImageServiceClient) RemoveImage(image string) error {
 		if err != nil {
 			return err
 		}
-	} else {
-		_, err = f.V1alpha2ImageServiceClient.RemoveImage(ctx, &v1alpha2.RemoveImageRequest{Image: ConvertV1ImageSpecToV1alpha2(v1ImageSpec)})
+		return nil
 	}
-	return err
+	return fmt.Errorf("not support cri api v1")
 }
 
-func (f FakeImageServiceClient) ImageFsInfo() ([]*v1alpha2.FilesystemUsage, error) {
+func (f FakeImageServiceClient) ImageFsInfo() ([]*v1api.FilesystemUsage, error) {
 	var (
-		ctx, cancel     = context.WithCancel(context.Background())
-		imageFsInfoResp *v1alpha2.ImageFsInfoResponse
-		err             error
+		ctx, cancel = context.WithCancel(context.Background())
 	)
 	defer cancel()
 	if f.Version == V1 {
@@ -162,66 +129,7 @@ func (f FakeImageServiceClient) ImageFsInfo() ([]*v1alpha2.FilesystemUsage, erro
 		if err != nil {
 			return nil, err
 		}
-		imageFsInfoResp = ConvertV1ImageFsInfoResponseToV1alpha2(v1ImageListResp)
-	} else {
-		imageFsInfoResp, err = f.V1alpha2ImageServiceClient.ImageFsInfo(ctx, &v1alpha2.ImageFsInfoRequest{})
-		if err != nil {
-			return nil, err
-		}
+		return v1ImageListResp.ImageFilesystems, nil
 	}
-	return imageFsInfoResp.ImageFilesystems, nil
-}
-
-func ConvertV1ImageListRespToV1alpha2(in *v1api.ListImagesResponse) (out *v1alpha2.ListImagesResponse) {
-	data, err := in.Marshal()
-	utils.CheckErr(err, fmt.Sprintf("failed to marshal v1 imageList data: %v", err))
-	out = &v1alpha2.ListImagesResponse{}
-	err = out.Unmarshal(data)
-	utils.CheckErr(err, fmt.Sprintf("failed to unmarshal to v1aplha2 imageList: %v", err))
-	return
-}
-
-func ConvertV1ImageStatusResponseToV1alpha2(in *v1api.ImageStatusResponse) (out *v1alpha2.ImageStatusResponse) {
-	data, err := in.Marshal()
-	utils.CheckErr(err, fmt.Sprintf("failed to marshal v1 ImageStatusResponse data: %v", err))
-	out = &v1alpha2.ImageStatusResponse{}
-	err = out.Unmarshal(data)
-	utils.CheckErr(err, fmt.Sprintf("failed to unmarshal to v1aplha2 ImageStatusResponse : %v", err))
-	return
-}
-
-func ConvertV1ImageSpecToV1alpha2(in *v1api.ImageSpec) (out *v1alpha2.ImageSpec) {
-	data, err := in.Marshal()
-	utils.CheckErr(err, fmt.Sprintf("failed to marshal v1 ImageSpec data: %v", err))
-	out = &v1alpha2.ImageSpec{}
-	err = out.Unmarshal(data)
-	utils.CheckErr(err, fmt.Sprintf("failed to unmarshal to v1aplha2 ImageSpec: %v", err))
-	return
-}
-
-func ConvertV1PullImageResponseToV1alpha2(in *v1api.PullImageResponse) (out *v1alpha2.PullImageResponse) {
-	data, err := in.Marshal()
-	utils.CheckErr(err, fmt.Sprintf("failed to marshal v1 PullImageResponse data: %v", err))
-	out = &v1alpha2.PullImageResponse{}
-	err = out.Unmarshal(data)
-	utils.CheckErr(err, fmt.Sprintf("failed to unmarshal to v1aplha2 PullImageResponse: %v", err))
-	return
-}
-
-func ConvertV1RemoveImageResponseToV1alpha2(in *v1api.RemoveImageResponse) (out *v1alpha2.RemoveImageResponse) {
-	data, err := in.Marshal()
-	utils.CheckErr(err, fmt.Sprintf("failed to marshal v1 RemoveImageResponse data: %v", err))
-	out = &v1alpha2.RemoveImageResponse{}
-	err = out.Unmarshal(data)
-	utils.CheckErr(err, fmt.Sprintf("failed to unmarshal to v1aplha2 RemoveImageResponse: %v", err))
-	return
-}
-
-func ConvertV1ImageFsInfoResponseToV1alpha2(in *v1api.ImageFsInfoResponse) (out *v1alpha2.ImageFsInfoResponse) {
-	data, err := in.Marshal()
-	utils.CheckErr(err, fmt.Sprintf("failed to marshal v1 ImageFsInfoResponse data: %v", err))
-	out = &v1alpha2.ImageFsInfoResponse{}
-	err = out.Unmarshal(data)
-	utils.CheckErr(err, fmt.Sprintf("failed to unmarshal to v1aplha2 ImageFsInfoResponse: %v", err))
-	return
+	return nil, fmt.Errorf("not support cri api v1")
 }

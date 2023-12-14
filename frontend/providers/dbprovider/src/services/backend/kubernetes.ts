@@ -46,6 +46,7 @@ export function K8sApi(config = ''): k8s.KubeConfig {
         skipTLSVerify: cluster.skipTLSVerify
       };
     }
+    // console.log(server, 'server');
     kc.clusters.forEach((item, i) => {
       if (item.name === cluster.name) {
         kc.clusters[i] = server;
@@ -318,6 +319,7 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
     k8sEvents: kc.makeApiClient(k8s.EventsV1Api),
     k8sAuth: kc.makeApiClient(k8s.RbacAuthorizationV1Api),
     metricsClient: new k8s.Metrics(kc),
+    k8sBatch: kc.makeApiClient(k8s.BatchV1Api),
     kube_user,
     namespace,
     applyYamlList,

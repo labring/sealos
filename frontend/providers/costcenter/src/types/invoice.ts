@@ -23,9 +23,6 @@ export type ReqGenInvoice = {
     order_id: string;
     amount: number;
     // timeStamp
-    payment?: {
-      amount: number;
-    };
     createdTime: number;
   }[];
 };

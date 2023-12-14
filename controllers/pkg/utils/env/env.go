@@ -15,6 +15,7 @@
 package env
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 )
@@ -33,4 +34,13 @@ func GetInt64EnvWithDefault(key string, defaultValue int64) int64 {
 		}
 	}
 	return defaultValue
+}
+
+func CheckEnvSetting(keys []string) error {
+	for _, key := range keys {
+		if val, ok := os.LookupEnv(key); !ok || val == "" {
+			return fmt.Errorf("env %s not set", key)
+		}
+	}
+	return nil
 }

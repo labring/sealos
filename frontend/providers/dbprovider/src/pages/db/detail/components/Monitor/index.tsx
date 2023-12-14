@@ -23,7 +23,7 @@ const Monitor = ({ db, dbName, dbType }: { dbName: string; dbType: string; db?: 
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentTime(dayjs().format('HH:mm:ss'));
+      setCurrentTime(dayjs().format('HH:mm'));
     }, 1000);
 
     return () => {

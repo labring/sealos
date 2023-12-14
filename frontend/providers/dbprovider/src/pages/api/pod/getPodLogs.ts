@@ -51,6 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
 
     const containerName = DBBackupPolicyNameMap[dbType];
+    console.log(containerName, 'containerName');
 
     if (!stream) {
       // get pods

@@ -18,12 +18,13 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/labring/sealos/pkg/runtime"
+
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/runtime"
 	"github.com/labring/sealos/pkg/runtime/factory"
 	fileutils "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"

@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/database/mongo"
+
 	"github.com/go-logr/logr"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
@@ -71,7 +73,7 @@ func (r *BillingRecordQueryReconciler) Reconcile(ctx context.Context, req ctrl.R
 	_ = log.FromContext(ctx)
 
 	dbCtx := context.Background()
-	dbClient, err := database.NewMongoDB(dbCtx, r.MongoDBURI)
+	dbClient, err := mongo.NewMongoInterface(dbCtx, r.MongoDBURI)
 	if err != nil {
 		r.Logger.Error(err, "connect mongo client failed")
 		return ctrl.Result{Requeue: true}, err
@@ -159,6 +161,9 @@ func (r *BillingRecordQueryReconciler) ReconcilePriceQuery(ctx context.Context, 
 		displayName, displayPrice := property.Name, property.UnitPrice
 		if resources.IsGpuResource(property.Name) && property.Alias != "" {
 			displayName = string(resources.NewGpuResource(property.Alias))
+		}
+		if property.ViewPrice > 0 {
+			displayPrice = property.ViewPrice
 		}
 		priceQuery.Status.BillingRecords = append(priceQuery.Status.BillingRecords, accountv1.BillingRecord{
 			ResourceType: displayName,

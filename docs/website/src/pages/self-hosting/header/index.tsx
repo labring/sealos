@@ -2,12 +2,13 @@ import Link from '@docusaurus/Link';
 import Translate from '@docusaurus/Translate';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useIsBrowser from '@docusaurus/useIsBrowser';
+import useWindow from '@site/src/hooks/useWindow';
+import NavBanner from '@site/src/components/NavBanner';
 import GithubIcon from '@site/static/icons/github.svg';
 import MeunIcon from '@site/static/icons/meun.svg';
 import LogoIcon from '@site/static/icons/sealos.svg';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './index.scss';
-import useWindow from '@site/src/hooks/useWindow';
 
 const navbar = [
   {
@@ -23,7 +24,12 @@ const navbar = [
   {
     key: 'hosting',
     label: <Translate>Hosting</Translate>,
-    to: '/self-hosting '
+    to: '/self-hosting'
+  },
+  {
+    key: 'blog',
+    label: <Translate>Blog</Translate>,
+    to: '/blog'
   },
   {
     key: 'contact',
@@ -40,22 +46,23 @@ const i18nObj = {
 const HomeHeader = ({ isPc }: { isPc: boolean }) => {
   const [stars, setStars] = useState(10000);
   const isBrowser = useIsBrowser();
-  const { screenWidth, currentLanguage, cloudUrl, bd_vid } = useWindow();
-
-  const i18nMap: { [key: string]: { label: string; link: string } } = {
-    en: { label: '中', link: '/zh-Hans/' },
-    ['zh-Hans']: { label: 'En', link: '/' }
-  };
+  const { cloudUrl, bd_vid } = useWindow();
+  const [isBannerVisible, setIsBannerVisible] = useState(false);
 
   const {
-    i18n: { currentLocale },
-    siteConfig: {
-      themeConfig: {
-        // @ts-ignore nextLine
-        // navbar: { items: navbarData }
-      }
-    }
+    i18n: { currentLocale, defaultLocale }
   } = useDocusaurusContext();
+
+  const i18nMap: { [key: string]: { label: string; link: string } } =
+    defaultLocale === 'en'
+      ? {
+          en: { label: '中', link: '/zh-Hans/' },
+          ['zh-Hans']: { label: 'En', link: '/' }
+        }
+      : {
+          en: { label: '中', link: '/' },
+          ['zh-Hans']: { label: 'En', link: '/en/' }
+        };
 
   useEffect(() => {
     const getStars = async () => {
@@ -82,7 +89,16 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
   if (!isPc) {
     return (
       <div className="sealo_price_header">
-        <nav>
+        <NavBanner isBannerVisible={isBannerVisible} setIsBannerVisible={setIsBannerVisible} />
+        <nav
+          style={
+            isBannerVisible
+              ? {
+                  marginTop: '48px'
+                }
+              : {}
+          }
+        >
           <div className="left">
             <MeunIcon width={'24px'} height={'24px'} onClick={() => openSideBar()} />
             <LogoIcon width={'42px'} height={'42px'} />
@@ -101,13 +117,22 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
 
   return (
     <div className="sealo_price_header">
-      <nav>
+      <NavBanner isBannerVisible={isBannerVisible} setIsBannerVisible={setIsBannerVisible} />
+      <nav
+        style={
+          isBannerVisible
+            ? {
+                marginTop: '48px'
+              }
+            : {}
+        }
+      >
         <div className="left">
           <div
             className="sealos_home_header_title"
             onClick={() =>
               window.location.replace(
-                `${location.origin}${currentLocale === 'en' ? '/' : '/zh-Hans/'}`
+                `${location.origin}${currentLocale === defaultLocale ? '/' : `/${currentLocale}/`}`
               )
             }
           >
@@ -129,10 +154,13 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
             <span className="git-stars">{Math.floor(stars / 1000)}k</span>
           </Link>
           {isBrowser && (
-            <div className="i18nIcon">
-              <Link to={`${location.origin}${i18nMap[currentLocale]?.link}`} target="_self">
-                {i18nMap[currentLocale]?.label}
-              </Link>
+            <div
+              className="i18nIcon"
+              onClick={() =>
+                window.location.replace(`${location.origin}${i18nMap[currentLocale].link}`)
+              }
+            >
+              {i18nMap[currentLocale].label}
             </div>
           )}
           <a className="start-now-button" href={`${cloudUrl}?bd_vid=${bd_vid}`} target="_blank">

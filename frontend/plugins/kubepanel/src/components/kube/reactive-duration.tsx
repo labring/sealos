@@ -3,12 +3,8 @@
  * Licensed under MIT License. See LICENSE in root directory for more information.
  */
 
-import { observer } from 'mobx-react';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { formatDuration } from '@/k8slens/utilities';
-import type { IResource } from 'mobx-utils';
-import { fromResource } from 'mobx-utils';
-import { _isComputingDerivation } from 'mobx';
 
 export interface ReactiveDurationProps {
   timestamp: string | undefined;
@@ -45,77 +41,27 @@ function computeUpdateInterval(creationTimestampEpoch: number, compact: boolean)
   return everyMinute;
 }
 
-export const ReactiveDuration = observer(({ timestamp, compact = true }: ReactiveDurationProps) => {
+export const ReactiveDuration = ({ timestamp, compact = true }: ReactiveDurationProps) => {
   if (!timestamp) {
-    return <>{'<unknown>'}</>;
+    return <>&lt;unknown&gt;</>;
   }
-
   const timestampSeconds = new Date(timestamp).getTime();
 
-  return (
-    <>
-      {formatDuration(
-        reactiveNow(computeUpdateInterval(timestampSeconds, compact)) - timestampSeconds,
-        compact
-      )}
-    </>
-  );
-});
+  const [duration, setDuration] = useState(Date.now() - timestampSeconds);
+  const [ms, setMs] = useState(computeUpdateInterval(timestampSeconds, compact));
 
-const tickers: Record<number | string, IResource<number>> = {};
-function reactiveNow(interval?: number | 'frame') {
-  if (interval === void 0) {
-    interval = 1000;
-  }
-
-  if (!_isComputingDerivation()) {
-    // See #40
-    return Date.now();
-  }
-
-  // Note: This is the kludge until https://github.com/mobxjs/mobx-utils/issues/306 is fixed
-  const synchronizationIsEnabled = !process.env.JEST_WORKER_ID;
-
-  if (!tickers[interval] || !synchronizationIsEnabled) {
-    if (typeof interval === 'number') tickers[interval] = createIntervalTicker(interval);
-    else tickers[interval] = createAnimationFrameTicker();
-  }
-
-  return tickers[interval].current();
-}
-
-function createIntervalTicker(interval: number) {
-  let subscriptionHandle: NodeJS.Timeout;
-  return fromResource(
-    function (sink) {
-      sink(Date.now());
-      subscriptionHandle = setInterval(function () {
-        return sink(Date.now());
-      }, interval);
-    },
-    function () {
-      clearInterval(subscriptionHandle);
-    },
-    Date.now()
-  );
-}
-
-function createAnimationFrameTicker() {
-  const frameBasedTicker = fromResource(
-    function (sink) {
-      sink(Date.now());
-
-      function scheduleTick() {
-        window.requestAnimationFrame(function () {
-          sink(Date.now());
-          if (frameBasedTicker.isAlive()) scheduleTick();
-        });
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const nextMs = computeUpdateInterval(timestampSeconds, compact);
+      if (ms !== nextMs) {
+        setMs(computeUpdateInterval(timestampSeconds, compact));
+        clearInterval(interval);
       }
-      scheduleTick();
-    },
-    function () {},
-    Date.now()
-  );
+      setDuration(Date.now() - timestampSeconds);
+    }, ms);
 
-  return frameBasedTicker;
-}
+    return () => clearInterval(interval);
+  }, [compact, ms, timestampSeconds]);
+
+  return <>{formatDuration(duration, compact)}</>;
+};

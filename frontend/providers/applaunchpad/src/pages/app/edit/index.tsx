@@ -1,39 +1,45 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import { Flex, Box } from '@chakra-ui/react';
-import type { YamlItemType } from '@/types';
-import {
-  json2DeployCr,
-  json2Service,
-  json2Ingress,
-  json2ConfigMap,
-  json2Secret,
-  json2HPA
-} from '@/utils/deployYaml2Json';
-import { useForm } from 'react-hook-form';
-import { defaultEditVal, editModeMap } from '@/constants/editApp';
 import { postDeployApp, putApp } from '@/api/app';
+import { updateDesktopGuide } from '@/api/platform';
+import { noGpuSliderKey } from '@/constants/app';
+import { defaultEditVal, editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
+import useDriver from '@/hooks/useDriver';
+import { useLoading } from '@/hooks/useLoading';
+import { useToast } from '@/hooks/useToast';
+import { useAppStore } from '@/store/app';
+import { useGlobalStore } from '@/store/global';
+import { useUserStore } from '@/store/user';
+import type { YamlItemType } from '@/types';
 import type { AppEditType, DeployKindsType } from '@/types/app';
 import { adaptEditAppData } from '@/utils/adapt';
-import { useToast } from '@/hooks/useToast';
-import { useQuery } from '@tanstack/react-query';
-import { useAppStore } from '@/store/app';
-import { useLoading } from '@/hooks/useLoading';
-import { useGlobalStore } from '@/store/global';
-import Header from './components/Header';
-import Form from './components/Form';
-import Yaml from './components/Yaml';
-import dynamic from 'next/dynamic';
+import {
+  json2ConfigMap,
+  json2DeployCr,
+  json2HPA,
+  json2Ingress,
+  json2Secret,
+  json2Service
+} from '@/utils/deployYaml2Json';
 import { serviceSideProps } from '@/utils/i18n';
-import { getErrText, patchYamlList } from '@/utils/tools';
+import { getErrText, patchYamlList, patchYamlListV1 } from '@/utils/tools';
+import { Box, Flex } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { noGpuSliderKey } from '@/constants/app';
-import { useUserStore } from '@/store/user';
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import Form from './components/Form';
+import Header from './components/Header';
+import Yaml from './components/Yaml';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
-const formData2Yamls = (data: AppEditType) => [
+export const formData2Yamls = (
+  data: AppEditType
+  // handleType: 'edit' | 'create' = 'create',
+  // crYamlList?: DeployKindsType[]
+) => [
   {
     filename: 'service.yaml',
     value: json2Service(data)
@@ -86,7 +92,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const formOldYamls = useRef<YamlItemType[]>([]);
   const crOldYamls = useRef<DeployKindsType[]>([]);
   const oldAppEditData = useRef<AppEditType>();
-
   const { toast } = useToast();
   const { Loading, setIsLoading } = useLoading();
   const router = useRouter();
@@ -119,6 +124,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const formHook = useForm<AppEditType>({
     defaultValues: defaultEditVal
   });
+  const { isGuided, closeGuide } = useDriver();
+
   const realTimeForm = useRef(defaultEditVal);
 
   // watch form change, compute new yaml
@@ -148,14 +155,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       setIsLoading(true);
       try {
         const yamls = yamlList.map((item) => item.value);
-
         if (appName) {
           const patch = patchYamlList({
             formOldYamlList: formOldYamls.current.map((item) => item.value),
             crYamlList: crOldYamls.current,
             newYamlList: yamls
           });
-          console.log(patch);
 
           await putApp({
             patch,
@@ -167,6 +172,16 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         }
 
         router.replace(`/app/detail?name=${formHook.getValues('appName')}`);
+        if (!isGuided) {
+          updateDesktopGuide({
+            activityType: 'beginner-guide',
+            phase: 'launchpad',
+            phasePage: 'create',
+            shouldSendGift: true
+          }).catch((err) => {
+            console.log(err);
+          });
+        }
         toast({
           title: t(applySuccess),
           status: 'success'
@@ -191,7 +206,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       t,
       applySuccess,
       userSourcePrice?.gpu,
-      refetchPrice
+      refetchPrice,
+      isGuided
     ]
   );
   const submitError = useCallback(() => {
@@ -213,7 +229,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   }, [formHook.formState.errors, t, toast]);
 
   useQuery(
-    ['init'],
+    ['initLaunchpadApp'],
     () => {
       if (!appName) {
         const defaultApp = {
@@ -241,6 +257,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     {
       onSuccess(res) {
         if (!res) return;
+        console.log(res, 'init res');
         oldAppEditData.current = res;
         formOldYamls.current = formData2Yamls(res);
         crOldYamls.current = res.crYamlList;
@@ -284,7 +301,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           title={title}
           yamlList={yamlList}
           applyBtnText={applyBtnText}
-          applyCb={() =>
+          applyCb={() => {
+            closeGuide();
             formHook.handleSubmit((data) => {
               const parseYamls = formData2Yamls(data);
               setYamlList(parseYamls);
@@ -327,8 +345,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               }
 
               openConfirm(() => submitSuccess(parseYamls))();
-            }, submitError)()
-          }
+            }, submitError)();
+          }}
         />
 
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
