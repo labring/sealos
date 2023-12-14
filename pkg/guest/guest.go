@@ -86,15 +86,15 @@ func formalizeImageCommands(cluster *v2.Cluster, index int, m v2.MountImage, ext
 
 	cmds := make([]string, 0)
 	for i := range m.Entrypoint {
-		cmds = append(cmds, stringsutil.FormalizeWorkingCommand(cluster.Name, m.Name, string(m.Type), expansion.Expand(m.Entrypoint[i], mapping)))
+		cmds = append(cmds, FormalizeWorkingCommand(cluster.Name, m.Name, string(m.Type), expansion.Expand(m.Entrypoint[i], mapping)))
 	}
 	if index == 0 && len(cluster.Spec.Command) > 0 {
 		for i := range cluster.Spec.Command {
-			cmds = append(cmds, stringsutil.FormalizeWorkingCommand(cluster.Name, m.Name, string(m.Type), expansion.Expand(cluster.Spec.Command[i], mapping)))
+			cmds = append(cmds, FormalizeWorkingCommand(cluster.Name, m.Name, string(m.Type), expansion.Expand(cluster.Spec.Command[i], mapping)))
 		}
 	} else {
 		for i := range m.Cmd {
-			cmds = append(cmds, stringsutil.FormalizeWorkingCommand(cluster.Name, m.Name, string(m.Type), expansion.Expand(m.Cmd[i], mapping)))
+			cmds = append(cmds, FormalizeWorkingCommand(cluster.Name, m.Name, string(m.Type), expansion.Expand(m.Cmd[i], mapping)))
 		}
 	}
 
