@@ -16,8 +16,6 @@ export type PaymentDB = {
 export type CheckWeChatType = 'license' | 'cluster';
 export type TPayMethod = 'stripe' | 'wechat';
 
-export type StripeCallBackUrl = '/pricing' | '/license';
-
 export enum PaymentStatus {
   PaymentNotPaid = 'notpaid', // 未支付
   PaymentProcessing = 'processing', // 支付中
@@ -31,7 +29,8 @@ export type PaymentParams = {
   amount: string;
   currency: 'CNY';
   payMethod: TPayMethod;
-  stripeCallBackUrl: StripeCallBackUrl;
+  stripeCallBackUrl: string;
+  // clusterId: string;
 };
 
 export type PaymentResultParams = {

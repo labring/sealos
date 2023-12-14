@@ -33,11 +33,65 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
       kubeconfig: await authSession(req.headers)
     });
 
+  // delete Certificate
+  const certificatesList = (await k8sCustomObjects.listNamespacedCustomObject(
+    'cert-manager.io',
+    'v1',
+    namespace,
+    'certificates',
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    `${appDeployKey}=${name}`
+  )) as { body: { items: any[] } };
+  const delCertList = certificatesList.body.items.map((item) =>
+    k8sCustomObjects.deleteNamespacedCustomObject(
+      'cert-manager.io',
+      'v1',
+      namespace,
+      'certificates',
+      item.metadata.name
+    )
+  );
+
+  // delete Issuer
+  const issuersList = (await k8sCustomObjects.listNamespacedCustomObject(
+    'cert-manager.io',
+    'v1',
+    namespace,
+    'issuers',
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    `${appDeployKey}=${name}`
+  )) as { body: { items: any[] } };
+  const delIssuerList = issuersList.body.items.map(async (item) =>
+    k8sCustomObjects.deleteNamespacedCustomObject(
+      'cert-manager.io',
+      'v1',
+      namespace,
+      'issuers',
+      item.metadata.name
+    )
+  );
+
+  const delIssuerAndCert = await Promise.allSettled([...delCertList, ...delIssuerList]);
+  /* find not 404 error */
+  delIssuerAndCert.forEach((item) => {
+    console.log(item, 'delIssuerAndCert err');
+    if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
+      throw new Error(item?.reason?.body?.message || item?.reason?.body?.reason || '删除 App 异常');
+    }
+  });
+
   /* delete all sources */
   const delDependent = await Promise.allSettled([
     k8sCore.deleteNamespacedService(name, namespace), // delete service
     k8sCore.deleteNamespacedConfigMap(name, namespace), // delete configMap
     k8sCore.deleteNamespacedSecret(name, namespace), // delete secret
+    // delete Ingress
     k8sNetworkingApp.deleteCollectionNamespacedIngress(
       namespace,
       undefined,
@@ -46,25 +100,9 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
       undefined,
       undefined,
       `${appDeployKey}=${name}`
-    ), // delete Ingress
-    k8sCustomObjects.deleteNamespacedCustomObject(
-      // delete Issuer
-      'cert-manager.io',
-      'v1',
-      namespace,
-      'issuers',
-      name
     ),
-    k8sCustomObjects.deleteNamespacedCustomObject(
-      // delete Certificate
-      'cert-manager.io',
-      'v1',
-      namespace,
-      'certificates',
-      name
-    ),
+    // delete pvc
     k8sCore.deleteCollectionNamespacedPersistentVolumeClaim(
-      // delete pvc
       namespace,
       undefined,
       undefined,
@@ -92,7 +130,7 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
 
   /* find not 404 error */
   delApp.forEach((item) => {
-    console.log(item, 'delApp err');
+    console.log(item, 'delApp Deployment StatefulSet err');
     if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
       throw new Error(item?.reason?.body?.reason || item?.reason?.body?.message || '删除 App 异常');
     }

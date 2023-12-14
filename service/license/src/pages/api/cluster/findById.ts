@@ -1,11 +1,6 @@
 import { authSession } from '@/services/backend/auth';
-import {
-  findClusterByUIDAndClusterID,
-  getClusterRecordsByUid
-} from '@/services/backend/db/cluster';
-import { getOssUrl } from '@/services/backend/db/oss';
+import { findClusterByUIDAndClusterID } from '@/services/backend/db/cluster';
 import { jsonRes } from '@/services/backend/response';
-import { ClusterType } from '@/types';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
