@@ -132,10 +132,11 @@ spec:
 
 4. 应用pg-config.yaml：
 
-![config_4](./imgs/config_4.png)
+
 ```bash
 $ kubectl apply -f pg-config.yaml
 ```
+![config_4](./imgs/config_4.png)
 
 5. 检查pg-config.yaml是否应用成功：
 ```bash

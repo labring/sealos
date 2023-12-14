@@ -133,10 +133,10 @@ Common MongoDB Parameters:
 
 4. Apply pg-config.yaml：
 
-![config_4](./imgs/config_4.png)
 ```bash
 $ kubectl apply -f pg-config.yaml
 ```
+![config_4](./imgs/config_4.png)
 
 5. Check whether pg-config.yaml is successfully applied：
 ```bash
