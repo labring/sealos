@@ -3,7 +3,6 @@ import Translate from '@docusaurus/Translate';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useIsBrowser from '@docusaurus/useIsBrowser';
 import useWindow from '@site/src/hooks/useWindow';
-import NavBanner from '@site/src/components/NavBanner';
 import GithubIcon from '@site/static/icons/github.svg';
 import MeunIcon from '@site/static/icons/meun.svg';
 import LogoIcon from '@site/static/icons/sealos.svg';
@@ -48,7 +47,6 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
   const [stars, setStars] = useState(10000);
   const isBrowser = useIsBrowser();
   const { cloudUrl, bd_vid } = useWindow();
-  const [isBannerVisible, setIsBannerVisible] = useState(false);
 
   const {
     i18n: { currentLocale, defaultLocale }
@@ -96,16 +94,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
           src={require('@site/static/img/bg-header.png').default}
           alt="community"
         />
-        <NavBanner isBannerVisible={isBannerVisible} setIsBannerVisible={setIsBannerVisible} />
-        <nav
-          style={
-            isBannerVisible
-              ? {
-                  marginTop: '48px'
-                }
-              : {}
-          }
-        >
+        <nav>
           <div className="left">
             <MeunIcon width={'24px'} height={'24px'} onClick={() => openSideBar()} />
             <LogoIcon width={'42px'} height={'42px'} />
@@ -165,16 +154,7 @@ const HomeHeader = ({ isPc }: { isPc: boolean }) => {
         src={require('@site/static/img/bg-header.png').default}
         alt="community"
       />
-      <NavBanner isBannerVisible={isBannerVisible} setIsBannerVisible={setIsBannerVisible} />
-      <nav
-        style={
-          isBannerVisible
-            ? {
-                marginTop: '48px'
-              }
-            : {}
-        }
-      >
+      <nav>
         <div className="left">
           <div
             className="sealos_home_header_title"
