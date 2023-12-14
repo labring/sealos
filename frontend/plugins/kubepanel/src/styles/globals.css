@@ -1,3 +1,23 @@
+/**
+*   fix: tailwind css conflict with antd
+*   @link https://github.com/ant-design/ant-design/issues/38794#issuecomment-1345475630
+*/
+@import 'antd/dist/reset.css';
+
+*,
+::before,
+::after {
+  box-sizing: border-box; /* 1 */
+  border-width: 0; /* 2 */
+  border-style: solid; /* 2 */
+  border-color: theme('borderColor.DEFAULT', currentColor); /* 2 */
+}
+
+::before,
+::after {
+  --tw-content: '';
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
