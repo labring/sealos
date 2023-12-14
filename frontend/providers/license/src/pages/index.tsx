@@ -1,5 +1,5 @@
 import { applyLicense, getLicenseRecord } from '@/api/license';
-import { getPlatformEnv } from '@/api/platform';
+import { getClusterId, getPlatformEnv } from '@/api/platform';
 import CurrencySymbol from '@/components/CurrencySymbol';
 import FileSelect, { FileItemType } from '@/components/FileSelect';
 import MyIcon from '@/components/Icon';
@@ -46,11 +46,28 @@ export default function LicenseApp() {
     }
   });
 
-  useQuery(['getPlatformEnv'], () => getPlatformEnv(), {
+  const { data: kubeSystem } = useQuery(['getClusterId'], () => getClusterId(), {
     onSuccess(data) {
-      const main = data.LICENSE_DOMAIN;
-      const link = `https://${main}`;
-      setPurchaseLink(link);
+      getPlatformEnv()
+        .then((res) => {
+          const main = res.LICENSE_DOMAIN;
+          const link = `https://${main}/cluster?systemId=${data?.systemId}`;
+          setPurchaseLink(link);
+        })
+        .catch((err) => {
+          toast({
+            position: 'top',
+            status: 'error',
+            description: 'Get system env error'
+          });
+        });
+    },
+    onError(err) {
+      toast({
+        position: 'top',
+        status: 'error',
+        description: t('Failed to obtain cluster ID, contact administrator')
+      });
     }
   });
 
@@ -104,8 +121,8 @@ export default function LicenseApp() {
             left="50%"
             transform="translate(-50%, -50%)"
           >
-            <Text fontSize={'32px'} fontWeight={600}>
-              {t('Purchase License')}
+            <Text fontSize={'24px'} fontWeight={600}>
+              {t('Cluster ID', { id: kubeSystem?.systemId })}
             </Text>
             <Box w="194px" h="54px" mt="50px" position={'relative'}>
               <Center
@@ -132,7 +149,7 @@ export default function LicenseApp() {
                 fontSize={'16px'}
                 onClick={() => window.open(purchaseLink)}
               >
-                {t('Purchase')}
+                {t('Purchase Tip')}
               </Center>
             </Box>
           </Flex>

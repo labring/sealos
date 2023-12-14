@@ -1,17 +1,17 @@
 import { authSession } from '@/services/backend/auth';
-import { findClusterByUIDAndClusterID } from '@/services/backend/db/cluster';
+import { findClusterByUIDAndSystemId } from '@/services/backend/db/cluster';
 import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { clusterId } = req.query as { clusterId: string };
+    const { systemId } = req.query as { systemId: string };
     const userInfo = await authSession(req.headers);
     if (!userInfo) return jsonRes(res, { code: 401, message: 'token verify error' });
 
-    const cluster = await findClusterByUIDAndClusterID({
+    const cluster = await findClusterByUIDAndSystemId({
       uid: userInfo.uid,
-      clusterId: clusterId
+      systemId: systemId
     });
 
     return jsonRes(res, {

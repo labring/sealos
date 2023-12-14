@@ -54,8 +54,8 @@ export default function CommandForm({
       data?.serviceSubnet ? ` --service-cidr=${data?.serviceSubnet} ` : '',
       data?.cloudDomain ? ` --cloud-domain=${data?.cloudDomain} ` : '',
       data?.cloudPort ? ` --cloud-port=${data?.cloudPort} ` : '',
-      data?.certPath ? ` --cert-patch=${data?.certPath} ` : '',
-      data?.certKeyPath ? ` --key-patch=${data?.certKeyPath} ` : '',
+      data?.certPath ? ` --cert-path=${data?.certPath} ` : '',
+      data?.certKeyPath ? ` --key-path=${data?.certKeyPath} ` : '',
       data?.sshPath ? ` --ssh-private-key=${data?.sshPath} ` : '',
       data?.sshPassword ? ` --ssh-password=${data?.sshPassword}` : ''
     ];
@@ -126,7 +126,7 @@ export default function CommandForm({
         closeOnOverlayClick={false}
       >
         <ModalOverlay />
-        <ModalContent minW={'575px'} maxH={'80%'}>
+        <ModalContent minW={'575px'} maxH={'90%'}>
           <ModalHeader>生成安装命令</ModalHeader>
           <ModalCloseButton />
           <Flex
@@ -248,7 +248,7 @@ export default function CommandForm({
             <Divider mt="24px" />
             <Text
               textAlign={'center'}
-              my="16px"
+              my="6px"
               color={'myBlack.900'}
               fontSize={'14px'}
               fontWeight={600}

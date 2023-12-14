@@ -7,35 +7,29 @@ export enum ClusterType {
 }
 
 export type ClusterDB = {
-  _id?: ObjectId; // cluster ID 唯一
-  clusterId: string; // cluster ID 唯一
-  uid: string; // user ID 唯一
-  orderID?: string; // order ID 唯一
+  _id?: ObjectId; // cluster ID
+  clusterId: string; // cluster ID
+  uid: string; // user ID
+  orderID?: string; // order ID
+  type: ClusterType;
+  createdAt: Date;
+  updatedAt: Date;
   licenseID?: ObjectId; // license ID
-  // amount: number;
-  type: ClusterType; // license type
-  // ossUrl?: {
-  //   tar: string;
-  //   md5: string;
-  // creationTime: Date;
-  // expirationTime: Date;
-  // };
-  createdAt: Date; // Creation timestamp
-  updatedAt: Date; // Modification timestamp
+  // v1 new
+  displayName?: string;
+  kubeSystemID?: string; // bind kube-system id
+  kubeSystemUpdateAt?: Date;
+  isDeleted?: boolean;
 };
 
 export type ClusterRecordPayload = {
   uid: string; // user ID
   orderID?: string; // order ID
-  licenseID?: ObjectId; // license ID
-  // amount: number;
-  // tar: string;
-  // md5: string;
-  type: ClusterType; // license type
+  type: ClusterType; // cluster type
 };
 
 export type CreateClusterParams = {
-  orderID: string; // order ID
+  orderID?: string; // order ID
   type: ClusterType; // license type
 };
 
@@ -45,6 +39,13 @@ export type ClusterResult = {
   orderID?: string; // order ID 唯一
   licenseID?: ObjectId; // license ID
   type: ClusterType; // license type
+  createdAt: Date;
+  updatedAt: Date;
+  // v1 new
+  displayName?: string;
+  kubeSystemID?: string;
+  kubeSystemUpdateAt?: Date;
+  isDeleted?: boolean;
 };
 
 export type CommandFormType = {

@@ -76,7 +76,6 @@
   "Recive Tips": "{{managerName}} invite you join in {{teamName}} as {{role}}",
   "pay with stripe": "Pay With Stripe",
   "pay with wechat": "Pay With Wechat",
-  "License Buy": "License Buy",
   "Purchase History": "Purchase History",
   "Purchase License": "Purchase License",
   "Remaining Time": "Remaining Time: ",
@@ -106,5 +105,6 @@
       "No Elements to Delete": "No Elements to Delete"
     }
   },
-  "Enter Save": "Enter Save"
+  "Enter Save": "Enter Save",
+  "License History": "License History"
 }
