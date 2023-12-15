@@ -37,7 +37,6 @@ import (
 	objstorage "github.com/labring/sealos/controllers/pkg/objectstorage"
 
 	"github.com/go-logr/logr"
-	"golang.org/x/sync/semaphore"
 
 	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/gpu"
@@ -154,11 +153,11 @@ func (r *MonitorReconciler) startPeriodicReconcile() {
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
-		waitTime := time.Until(time.Now().Truncate(time.Minute).Add(1 * time.Minute))
-		if waitTime > 0 {
-			logger.Info("wait for first reconcile", "waitTime", waitTime)
-			time.Sleep(waitTime)
-		}
+		//waitTime := time.Until(time.Now().Truncate(time.Minute).Add(1 * time.Minute))
+		//if waitTime > 0 {
+		//	logger.Info("wait for first reconcile", "waitTime", waitTime)
+		//	time.Sleep(waitTime)
+		//}
 		ticker := time.NewTicker(r.periodicReconcile)
 		for {
 			select {
@@ -190,11 +189,6 @@ func (r *MonitorReconciler) enqueueNamespacesForReconcile() {
 	if err := r.processNamespaceList(ctx, namespaceList); err != nil {
 		r.Logger.Error(err, "failed to process namespace", "time", time.Now().Format(time.RFC3339))
 	}
-	//r.namespaceListQueue <- namespaceList
-
-	//for i := range namespaceList.Items {
-	//	r.namespaceQueue <- &namespaceList.Items[i]
-	//}
 }
 
 func (r *MonitorReconciler) processNamespaceList(ctx context.Context, namespaceList *corev1.NamespaceList) error {
@@ -205,41 +199,16 @@ func (r *MonitorReconciler) processNamespaceList(ctx context.Context, namespaceL
 	}
 	wg := sync.WaitGroup{}
 	wg.Add(len(namespaceList.Items))
-	concurrencyLimit := len(namespaceList.Items)
-	if concurrencyLimit > MaxConcurrencyLimit {
-		concurrencyLimit = MaxConcurrencyLimit
-	}
-	sem := semaphore.NewWeighted(int64(concurrencyLimit))
 	for i := range namespaceList.Items {
 		go func(namespace *corev1.Namespace) {
 			defer wg.Done()
-			if err := sem.Acquire(context.Background(), 1); err != nil {
-				fmt.Printf("Failed to acquire semaphore: %v\n", err)
-				return
-			}
-			defer sem.Release(1)
-			if err := r.processNamespace(ctx, namespace); err != nil {
-				r.Logger.Error(err, "failed to process namespace", "namespace", namespace.Name)
+			if err := r.podResourceUsageInsert(ctx, namespace); err != nil {
+				r.Logger.Error(err, "monitor pod resource", "namespace", namespace.Name)
 			}
 		}(&namespaceList.Items[i])
 	}
 	wg.Wait()
 	logger.Info("end processNamespaceList", "time", time.Now().Format("2006-01-02 15:04:05"))
-	return nil
-}
-
-func (r *MonitorReconciler) processNamespace(ctx context.Context, namespace *corev1.Namespace) error {
-	//for res := range namespaceMonitorFuncs {
-	//	if err := namespaceMonitorFuncs[res](ctx, dbClient, namespace); err != nil {
-	//		r.Logger.Error(err, "monitor namespace resource", "resource", res, "namespace", namespace.Name)
-	//		return err
-	//	}
-	//}
-	if err := r.podResourceUsageInsert(ctx, namespace); err != nil {
-		r.Logger.Error(err, "monitor pod resource", "namespace", namespace.Name)
-		return err
-	}
-
 	return nil
 }
 
