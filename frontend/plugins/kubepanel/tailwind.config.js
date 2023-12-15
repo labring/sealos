@@ -1,6 +1,14 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
+  /**
+   * fix: tailwind css conflict with antd
+   * @link https://github.com/ant-design/ant-design/issues/38794#issuecomment-1345475630
+   */
+  corePlugins: {
+    preflight: false
+  },
+  important: '#app',
   theme: {
     extend: {
       colors: {

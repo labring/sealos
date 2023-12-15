@@ -12,7 +12,10 @@ export default function Document() {
         <meta name="description" content="sealos cloud" />
         <meta name="format-detection" content="telephone=no" />
       </Head>
-      <body>
+      {/* fix: tailwind css conflict with antd
+       * @link https://github.com/ant-design/ant-design/issues/38794#issuecomment-1345475630
+       */}
+      <body id="app">
         <Main />
         <NextScript />
       </body>
