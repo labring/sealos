@@ -7,14 +7,13 @@ import {
   RedisHAConfig,
   crLabelKey
 } from '@/constants/db';
-import { StorageClassName } from '@/store/static';
+import { StorageClassName } from '@/store/env';
 import type { DBDetailType, DBEditType, DBType } from '@/types/db';
 import { DumpForm, MigrateForm } from '@/types/migrate';
 import { formatTime, str2Num } from '@/utils/tools';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 import { getUserNamespace } from './user';
-import { getAppEnv } from '@/api/platform';
 import { V1StatefulSet } from '@kubernetes/client-node';
 
 export const json2CreateCluster = (data: DBEditType, backupName?: string) => {

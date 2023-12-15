@@ -1,15 +1,14 @@
-import { getResourcePrice, getDBVersionMap, getAppEnv } from '@/api/platform';
-import type { Response as resourcePriceResponse } from '@/pages/api/platform/resourcePrice';
+import { getDBVersionMap, getResourcePrice } from '@/api/platform';
 import { DBTypeEnum } from '@/constants/db';
 import type { Response as DBVersionMapType } from '@/pages/api/platform/getVersion';
+import type { Response as resourcePriceResponse } from '@/pages/api/platform/resourcePrice';
 
 export let SOURCE_PRICE: resourcePriceResponse = {
   cpu: 0.067,
   memory: 0.033792,
   storage: 0.002048
 };
-export let StorageClassName: string | undefined;
-export let Domain: string | undefined;
+
 export let INSTALL_ACCOUNT = false;
 
 let retryGetPrice = 3;
@@ -40,20 +39,7 @@ export const getUserPrice = async () => {
     }
   }
 };
-export const getEnv = async () => {
-  try {
-    const res = await getAppEnv();
-    StorageClassName = res.env_storage_className;
-    Domain = res.domain;
-  } catch {
-    retryGetEnv--;
-    if (retryGetEnv >= 0) {
-      setTimeout(() => {
-        getEnv();
-      }, 1000);
-    }
-  }
-};
+
 export const getDBVersion = async () => {
   try {
     const res = await getDBVersionMap();

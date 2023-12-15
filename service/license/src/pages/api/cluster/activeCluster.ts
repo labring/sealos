@@ -32,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (isBound) {
       return jsonRes(res, {
         code: 400,
-        message: 'systemID is already bound to another cluster'
+        message: 'clusterID is already bound to another cluster'
       });
     }
 
@@ -125,7 +125,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         uid: userInfo.uid,
         clusterId: clusterId,
         updates: {
-          kubeSystemID: kubeSystemID
+          kubeSystemID: kubeSystemID,
+          kubeSystemUpdateAt: new Date()
         }
       });
     };
