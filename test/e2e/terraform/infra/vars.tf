@@ -10,6 +10,10 @@ variable "region" {
   default = "cn-hongkong"
 }
 
+variable "resource_group_id" {
+  default = "rg-aek2rlg23xjy2jq"
+}
+
 variable "image_id" {
   default = "ubuntu_22_04_x64_20G_alibase_20230613.vhd"
 }

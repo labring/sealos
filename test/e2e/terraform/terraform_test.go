@@ -14,18 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package terraform
 
 import (
 	"os"
 	"testing"
 )
 
+var tf = &Terraform{
+	AccessKey: os.Getenv("ALIYUN_AKID"),
+	SecretKey: os.Getenv("ALIYUN_AKSK"),
+}
+
 func TestTerraform_Apply(t *testing.T) {
-	tf := &Terraform{
-		accessKey: os.Getenv("ALIYUN_AKID"),
-		secretKey: os.Getenv("ALIYUN_AKSK"),
-	}
 	if err := tf.Apply("amd64"); err != nil {
 		t.Errorf("%+v", err)
 		return
@@ -34,10 +35,6 @@ func TestTerraform_Apply(t *testing.T) {
 }
 
 func TestTerraform_Destroy(t *testing.T) {
-	tf := &Terraform{
-		accessKey: os.Getenv("ALIYUN_AKID"),
-		secretKey: os.Getenv("ALIYUN_AKSK"),
-	}
 	if err := tf.Destroy(); err != nil {
 		t.Errorf("%+v", err)
 		return
@@ -46,10 +43,6 @@ func TestTerraform_Destroy(t *testing.T) {
 }
 
 func TestTerraform_Detail(t *testing.T) {
-	tf := &Terraform{
-		accessKey: os.Getenv("ALIYUN_AKID"),
-		secretKey: os.Getenv("ALIYUN_AKSK"),
-	}
 	var err error
 	var d *InfraDetail
 	if d, err = tf.Detail(); err != nil {
@@ -57,4 +50,5 @@ func TestTerraform_Detail(t *testing.T) {
 		return
 	}
 	t.Logf("SUCCESS: %+v", d)
+	t.Logf("public: %+v", *d.Public)
 }
