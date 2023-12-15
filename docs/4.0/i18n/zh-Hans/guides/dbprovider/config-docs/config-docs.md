@@ -42,11 +42,11 @@ spec:
 
 |       参数名             |              描述                  |
 |-------------------------|-----------------------------------|
-| max_connections         | 设置可以同时与数据库建立的最大连接数    |
+| max_connections         | 设置可以同时与数据库建立<br/>的最大连接数    |
 | max_wal_size            | 设置WAL文件的最大大小                |
 | min_wal_size            | 设置WAL文件的最小大小                |
-| max_worker_processes    | 设置PostgreSQL可以启动的最大后台进程数 |
-| shared_buffers          | 设置PostgreSQL可以启动的最大后台进程数 |
+| max_worker_processes    | 设置PostgreSQL可以启动<br/>的最大后台进程数 |
+| shared_buffers          | 设置PostgreSQL可以启动<br/>的最大后台进程数 |
 
 **常见的mysql参数**：
 
@@ -59,6 +59,15 @@ spec:
 | max_allowed_packet      | 最大数据包大小                       |
 | innodb_log_file_size    | InnoDB日志文件的大小                 |
 
+**常见的mongo参数**：
+
+|          参数名          |              描述                   |
+|-------------------------|------------------------------------|
+| storage.dbPath          | 数据文件存放路径                     |
+| storage.journal.enabled | 启用日志                            |
+| net.port                | 服务器端口                          |
+| net.bindIp              | 绑定的IP地址                        |
+
 **常见的redis参数**：
 
 |          参数名         |              描述                    |
@@ -68,16 +77,6 @@ spec:
 | maxmemory-policy       | 内存淘汰策略                          |
 | appendonly             | AOF持久化开关                         |
 | appendfsync            | AOF文件刷新频率                       |
-
-
-**常见的mongo参数**：
-
-|          参数名          |              描述                   |
-|-------------------------|------------------------------------|
-| storage.dbPath          | 数据文件存放路径                     |
-| storage.journal.enabled | 启用日志                            |
-| net.port                | 服务器端口                          |
-| net.bindIp              | 绑定的IP地址                        |
 
 
 4. **应用pg-config.yaml**：
