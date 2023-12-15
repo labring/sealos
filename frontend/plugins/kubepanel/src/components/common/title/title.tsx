@@ -1,5 +1,6 @@
 interface PageTitleProps {
   children: string;
+  className?: string;
   type: 'primary' | 'secondary' | 'table';
 }
 
@@ -17,6 +18,10 @@ const titleClassName: Record<PageTitleProps['type'], string> = {
  * @param {string} props.type - The type of the title component.
  * @return {JSX.Element} The rendered title component.
  */
-export default function Title({ children, type }: PageTitleProps) {
-  return <span className={titleClassName[type]}>{children}</span>;
+export default function Title({ children, type, className }: PageTitleProps) {
+  return (
+    <div className={className}>
+      <span className={titleClassName[type]}>{children}</span>
+    </div>
+  );
 }
