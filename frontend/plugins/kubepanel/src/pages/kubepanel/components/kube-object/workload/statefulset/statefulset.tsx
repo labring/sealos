@@ -4,7 +4,7 @@ import { ColumnsType } from 'antd/es/table';
 import StatefulSetDetail from './statefulset-detail';
 import { getPodsByOwnerId, usePodStore, useStatefulSetStore } from '@/store/kube';
 import PanelTable from '../../../panel-table/table';
-import ActionButton from '../../../action-button/action-button';
+import ActionButton from '../../../action/action-button';
 
 const columns: ColumnsType<StatefulSet> = [
   {

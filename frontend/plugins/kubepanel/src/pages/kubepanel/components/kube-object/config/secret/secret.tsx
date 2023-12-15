@@ -5,7 +5,7 @@ import { ColumnsType } from 'antd/lib/table';
 import { useSecretStore } from '@/store/kube';
 import SecretDetail from './secret-detail';
 import PanelTable from '../../../panel-table/table';
-import ActionButton from '../../../action-button/action-button';
+import ActionButton from '../../../action/action-button';
 
 const columns: ColumnsType<Secret> = [
   {

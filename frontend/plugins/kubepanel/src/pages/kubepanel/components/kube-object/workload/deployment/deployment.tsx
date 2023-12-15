@@ -6,7 +6,7 @@ import { ColumnsType } from 'antd/es/table';
 import DeploymentDetail from './deployment-detail';
 import { useDeploymentStore } from '@/store/kube';
 import PanelTable from '../../../panel-table/table';
-import ActionButton from '../../../action-button/action-button';
+import ActionButton from '../../../action/action-button';
 
 const columns: ColumnsType<Deployment> = [
   {

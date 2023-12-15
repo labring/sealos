@@ -10,7 +10,7 @@ import PodStatus from './pod-status';
 import PodDetail from './pod-detail';
 import { usePodStore } from '@/store/kube';
 import PanelTable from '../../../panel-table/table';
-import ActionButton from '../../../action-button/action-button';
+import ActionButton from '../../../action/action-button';
 
 const columns: ColumnsType<Pod> = [
   {

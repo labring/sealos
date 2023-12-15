@@ -5,7 +5,7 @@ import { useIngressStore } from '@/store/kube';
 import { Button } from 'antd';
 import IngressDetail from './ingress-detail';
 import PanelTable from '../../../panel-table/table';
-import ActionButton from '../../../action-button/action-button';
+import ActionButton from '../../../action/action-button';
 
 const columns: ColumnsType<Ingress> = [
   {

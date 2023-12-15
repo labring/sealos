@@ -1,8 +1,8 @@
 import { BarsOutlined, CloseOutlined, RetweetOutlined } from '@ant-design/icons';
 import { Button, type MenuProps, Dropdown } from 'antd';
-import DeleteWarningModal from './delete-waring-modal';
+import DeleteWarningModal from '../action-button/delete-waring-modal';
 import { Dispatch, SetStateAction, useCallback, useState } from 'react';
-import UpdateEditorModal from './update-editor-modal';
+import UpdateEditorModal from '../action-button/update-editor-modal';
 import { KubeObject } from '@/k8slens/kube-object';
 
 interface Props<K extends KubeObject> {

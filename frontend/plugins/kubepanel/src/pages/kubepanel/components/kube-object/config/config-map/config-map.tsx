@@ -4,7 +4,7 @@ import { ColumnsType } from 'antd/es/table';
 import ConfigMapDetail from './config-map-detail';
 import { useConfigMapStore } from '@/store/kube';
 import PanelTable from '../../../panel-table/table';
-import ActionButton from '../../../action-button/action-button';
+import ActionButton from '../../../action/action-button';
 
 const columns: ColumnsType<ConfigMap> = [
   {
