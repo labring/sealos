@@ -39,19 +39,14 @@ spec:
   ttlSecondsAfterSucceed: 0
   type: Reconfiguring
 ```
-Common PostgreSQL Parameters:
+**Common PostgreSQL Parameters**:
 + max_connections - Sets the maximum number of connections that can be established with the database simultaneously.
 + max_wal_size - Sets the maximum size of WAL (Write-Ahead Logging) files.
 + min_wal_size - Sets the minimum size of WAL files.
-+ wal_keep_size - Sets the size of the minimum number of WAL files that the primary server should retain.
 + max_worker_processes - Sets the maximum number of background processes that PostgreSQL can start.
-+ max_parallel_workers_per_gather - Controls the maximum number of parallel worker processes that can be started in a single query operation.
-+ max_parallel_workers - Sets the overall maximum number of parallel worker processes that the database can start.
 + shared_buffers - The size of memory used for data caching.
-+ effective_cache_size - Informs the query optimizer about the estimated amount of memory available for caching.
-+ work_mem - Sets the memory limit for query operations such as sorting and hash tables.
 
-Common MySQL Parameters:
+**Common MySQL Parameters**:
 + innodb_buffer_pool_size - Sets the size of the InnoDB buffer pool.
 + max_connections - The maximum number of concurrent connections allowed.
 + query_cache_size - The size of the query cache.
@@ -59,16 +54,14 @@ Common MySQL Parameters:
 + max_allowed_packet - The maximum packet size.
 + innodb_log_file_size - The size of the InnoDB log file.
 
-Common Redis Parameters:
+**Common Redis Parameters**:
 + maxclients - The maximum number of client connections.
 + maxmemory - The maximum amount of memory usage.
 + maxmemory-policy - The memory eviction policy.
-+ save - The configuration of time and change count for RDB persistence.
 + appendonly - Switch for AOF persistence.
 + appendfsync - The frequency of AOF file flushing.
-+ dbfilename - The name of the RDB file.
 
-Common MongoDB Parameters:
+**Common MongoDB Parameters**:
 + storage.dbPath - The path for storing data files.
 + storage.journal.enabled - Enables logging.
 + net.port - The server port.

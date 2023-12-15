@@ -38,18 +38,14 @@ spec:
   ttlSecondsAfterSucceed: 0
   type: Reconfiguring
 ```
-常见的postgres参数：
+**常见的postgres参数**：
 + max_connections #设置可以同时与数据库建立的最大连接数
 + max_wal_size #设置WAL文件的最大大小
 + min_wal_size #设置WAL文件的最小大小
-+ wal_keep_size #设置主服务器应该保留的最小WAL文件数量的大小
 + max_worker_processes #设置PostgreSQL可以启动的最大后台进程数
-+ max_parallel_workers #设置数据库可以启动的并行工作进程的总体最大数量
 + shared_buffers #用于数据缓存的内存大小
-+ effective_cache_size #通知查询优化器可用于缓存的预估内存量
-+ work_mem #设置用于查询操作（如排序和哈希表）的内存限制
 
-常见的mysql参数：
+**常见的mysql参数**：
 + innodb_buffer_pool_size: 设置InnoDB缓冲池的大小
 + max_connections: 允许的最大并发连接数
 + query_cache_size: 查询缓存的大小
@@ -57,16 +53,14 @@ spec:
 + max_allowed_packet: 最大数据包大小
 + innodb_log_file_size: InnoDB日志文件的大小
 
-常见的redis参数：
+**常见的redis参数**：
 + maxclients: 最大客户端连接数
 + maxmemory: 最大内存使用量
 + maxmemory-policy: 内存淘汰策略
-+ save: RDB持久化的时间和更改次数配置
 + appendonly: AOF持久化开关
 + appendfsync: AOF文件刷新频率
-+ dbfilename: RDB文件名称
 
-常见的mongo参数：
+**常见的mongo参数**：
 + storage.dbPath: 数据文件存放路径
 + storage.journal.enabled: 启用日志
 + net.port: 服务器端口
