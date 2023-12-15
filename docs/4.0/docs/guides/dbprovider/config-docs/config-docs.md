@@ -40,32 +40,45 @@ spec:
   type: Reconfiguring
 ```
 **Common PostgreSQL Parameters**:
-+ max_connections - Sets the maximum number of connections that can be established with the database simultaneously.
-+ max_wal_size - Sets the maximum size of WAL (Write-Ahead Logging) files.
-+ min_wal_size - Sets the minimum size of WAL files.
-+ max_worker_processes - Sets the maximum number of background processes that PostgreSQL can start.
-+ shared_buffers - The size of memory used for data caching.
+
+|    Parameter Name    |                                         Description                                              |
+|----------------------|--------------------------------------------------------------------------------------------------|
+| max_connections      | Sets the maximum number of connections that can be established with the database simultaneously. |
+| max_wal_size         | Sets the maximum size of WAL (Write-Ahead Logging) files.                                        |
+| min_wal_size         | Sets the minimum size of WAL files.                                                              |
+| max_worker_processes | Sets the maximum number of background processes that PostgreSQL can start.                       |
+| shared_buffers       | The size of memory used for data caching.                                                        |
 
 **Common MySQL Parameters**:
-+ innodb_buffer_pool_size - Sets the size of the InnoDB buffer pool.
-+ max_connections - The maximum number of concurrent connections allowed.
-+ query_cache_size - The size of the query cache.
-+ thread_cache_size - The size of the thread cache.
-+ max_allowed_packet - The maximum packet size.
-+ innodb_log_file_size - The size of the InnoDB log file.
+
+|     Parameter Name      |                      Description                      |
+|-------------------------|-------------------------------------------------------|
+| innodb_buffer_pool_size | Sets the size of the InnoDB buffer pool.              |
+| max_connections         | The maximum number of concurrent connections allowed. |
+| query_cache_size        | The size of the query cache.                          |
+| thread_cache_size       | The size of the thread cache.                         |
+| max_allowed_packet      | The maximum packet size.                              |
+| innodb_log_file_size    | The size of the InnoDB log file.                      |
 
 **Common Redis Parameters**:
-+ maxclients - The maximum number of client connections.
-+ maxmemory - The maximum amount of memory usage.
-+ maxmemory-policy - The memory eviction policy.
-+ appendonly - Switch for AOF persistence.
-+ appendfsync - The frequency of AOF file flushing.
+
+|  Parameter Name  |               Description                 |
+|------------------|-------------------------------------------|
+| maxclients       | The maximum number of client connections. |
+| maxmemory        | The maximum amount of memory usage.       |
+| maxmemory-policy | The memory eviction policy.               |
+| appendonly       | Switch for AOF persistence.               |
+| appendfsync      | The frequency of AOF file flushing.       |
 
 **Common MongoDB Parameters**:
-+ storage.dbPath - The path for storing data files.
-+ storage.journal.enabled - Enables logging.
-+ net.port - The server port.
-+ net.bindIp - The bound IP address.
+
+|     Parameter Name      |                     Description                           |
+|-------------------------|-----------------------------------------------------------|
+| storage.dbPath          | The path for storing data files.                          |
+| storage.journal.enabled | Sets the maximum size of WAL (Write-Ahead Logging) files. |
+| min_wal_size            | Enables logging.                                          |
+| net.port                | The server port.                                          |
+| net.bindIp              | The bound IP address.                                     |
 
 4. **Apply pg-config.yaml**：
 
