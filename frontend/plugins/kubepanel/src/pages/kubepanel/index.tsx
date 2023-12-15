@@ -8,7 +8,7 @@ import StatefulSetOverviewPage from './components/kube-object/workload/statefuls
 import ConfigMapOverviewPage from './components/kube-object/config/config-map/config-map';
 import PersistentVolumeClaimOverviewPage from './components/kube-object/storage/volume-claim/volume-claim';
 import { FloatButton } from 'antd';
-import CreateResourceModal from './components/modal/create-resource-modal';
+import CreateResourceModal from './components/action/create-resource-modal';
 import { PlusOutlined } from '@ant-design/icons';
 import SecretOverviewPage from './components/kube-object/config/secret/secret';
 import IngressOverviewPage from './components/kube-object/network/ingress/ingress';
