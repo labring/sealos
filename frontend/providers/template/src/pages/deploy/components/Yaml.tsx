@@ -1,13 +1,13 @@
 import MyIcon from '@/components/Icon';
-import YamlCode from '@/components/YamlCode/index';
 import type { QueryType, YamlItemType } from '@/types';
 import { useCopyData } from '@/utils/tools';
 import { Box, Flex, useTheme } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import styles from './index.module.scss';
+import { YamlCode } from '@sealos/ui';
 
-const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: number }) => {
+const Yaml = ({ yamlList = [] }: { yamlList: YamlItemType[]; pxVal: number }) => {
   const theme = useTheme();
   const router = useRouter();
   const { name } = router.query as QueryType;
@@ -41,7 +41,11 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
             </Box>
           </Flex>
           <Box flex={1} h={0} overflow={'auto'} bg={'#ffffff'} p={4}>
-            <YamlCode className={styles.code} content={yamlList[selectedIndex].value} />
+            <YamlCode
+              markdown={{
+                children: yamlList[selectedIndex].value
+              }}
+            />
           </Box>
         </Flex>
       )}

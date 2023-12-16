@@ -5,6 +5,7 @@ import {
   defineStyleConfig,
   extendTheme
 } from '@chakra-ui/react';
+import { theme as sealosTheme } from '@sealos/ui';
 // @ts-ignore
 import { selectAnatomy, switchAnatomy } from '@chakra-ui/anatomy';
 const { definePartsStyle: selectPart, defineMultiStyleConfig: selectMultiStyle } =
@@ -159,7 +160,7 @@ const Tooltip = defineStyleConfig({
   }
 });
 
-export const theme = extendTheme({
+export const theme = extendTheme(sealosTheme, {
   styles: {
     global: {
       'html, body': {
