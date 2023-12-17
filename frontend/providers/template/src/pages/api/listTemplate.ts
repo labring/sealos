@@ -6,15 +6,13 @@ import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 
-function replaceRawWithCDN(url: string, cdnUrl: string) {
+export function replaceRawWithCDN(url: string, cdnUrl: string) {
   let parsedUrl = parseGithubUrl(url);
   if (!parsedUrl || !cdnUrl) return url;
-
   if (parsedUrl.hostname === 'raw.githubusercontent.com') {
     const newUrl = `https://${cdnUrl}/gh/${parsedUrl.organization}/${parsedUrl.repository}@${parsedUrl.branch}/${parsedUrl.remainingPath}`;
     return newUrl;
   }
-
   return url;
 }
 
