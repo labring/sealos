@@ -1,6 +1,5 @@
-import { LicenseType, PaymentDB, PaymentStatus, TPayMethod } from '@/types';
+import { PaymentDB, PaymentStatus, TPayMethod } from '@/types';
 import { connectToDatabase } from './mongodb';
-import { createLicenseRecord, generateLicenseToken } from './license';
 
 async function connectPaymentCollection() {
   const client = await connectToDatabase();

@@ -70,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const _token = generateLicenseToken({
         type: 'Account',
-        clusterID: clusterId,
+        clusterID: kubeSystemID,
         data: { amount: payment.amount }
       });
 
@@ -98,7 +98,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const handleStandardAndLicense = async () => {
       const _token = generateLicenseToken({
         type: 'Account',
-        clusterID: clusterId,
+        clusterID: kubeSystemID,
         data: { amount: 299 }
       });
       const record: LicenseRecordPayload = {
