@@ -196,11 +196,13 @@ export const parseGithubUrl = (url: string) => {
   if (!url) return null;
   let urlObj = new URL(url);
   let pathParts = urlObj.pathname.split('/');
+
   return {
     hostname: urlObj.hostname,
     organization: pathParts[1],
     repository: pathParts[2],
-    branch: pathParts[3]
+    branch: pathParts[3],
+    remainingPath: pathParts.slice(4).join('/') + urlObj.search
   };
 };
 
