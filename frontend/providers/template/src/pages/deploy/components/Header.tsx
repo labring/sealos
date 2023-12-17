@@ -21,10 +21,6 @@ import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
 import { MouseEvent, useCallback, useMemo } from 'react';
 
-const MdPart = `![](https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg)](https://cloud.sealos.io/?openapp=system-template%3FtemplateName%3Dfastgpt`;
-
-const HtmlPart = `<a href="https://cloud.sealos.io/?openapp=system-template%3FtemplateName%3Dfastgpt"><img src="https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg" alt="Deploy on Sealos"/></a>`;
-
 const Header = ({
   appName,
   title,
@@ -73,6 +69,10 @@ const Header = ({
     const str = `https://${cloudDomain}/?openapp=system-template%3FtemplateName%3D${appName}`;
     copyData(str);
   };
+
+  const MdPart = `[![](https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg)](https://${cloudDomain}/?openapp=system-template%3FtemplateName%3D${appName})`;
+
+  const HtmlPart = `<a href="https://${cloudDomain}/?openapp=system-template%3FtemplateName%3D${appName}"><img src="https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg" alt="Deploy on Sealos"/></a>`;
 
   return (
     <Flex w={'100%'} h={'80px'} alignItems={'center'} backgroundColor={'rgba(255, 255, 255, 0.90)'}>
@@ -188,7 +188,8 @@ const Header = ({
             mt={'8px'}
             fontSize={'12px'}
             color={'5A646E'}
-            fontWeight={400}>
+            fontWeight={400}
+            onClick={() => copyData(templateDetail?.spec?.description)}>
             {templateDetail?.spec?.description}
           </Text>
         </Tooltip>

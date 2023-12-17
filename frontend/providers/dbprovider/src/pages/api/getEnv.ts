@@ -2,7 +2,7 @@ import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-export type Response = {
+export type SystemEnvResponse = {
   domain: string;
   env_storage_className: string;
   migrate_file_image: string;
@@ -10,7 +10,7 @@ export type Response = {
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
-  jsonRes<Response>(res, {
+  jsonRes<SystemEnvResponse>(res, {
     data: {
       domain: process.env.SEALOS_DOMAIN || 'cloud.sealos.io',
       env_storage_className: process.env.STORAGE_CLASSNAME || 'openebs-backup',
