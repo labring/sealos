@@ -17,6 +17,8 @@ package kubernetes
 import (
 	"path/filepath"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 
 	"k8s.io/client-go/discovery"
@@ -44,8 +46,7 @@ type kubernetesClient struct {
 	config *rest.Config
 }
 
-// NewKubernetesClient creates a KubernetesClient
-func NewKubernetesClient(kubeconfig, apiserver string) (Client, error) {
+func newKubernetesClient(kubeconfig, apiserver string, insecure bool) (Client, error) {
 	if kubeconfig == "" || !fileutil.IsExist(kubeconfig) {
 		defaultKubeconfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
 		if !fileutil.IsExist(defaultKubeconfig) {
@@ -60,6 +61,13 @@ func NewKubernetesClient(kubeconfig, apiserver string) (Client, error) {
 	}
 	config.QPS = 1e6
 	config.Burst = 1e6
+	if insecure {
+		config.TLSClientConfig.CAFile = ""
+		config.TLSClientConfig.CAData = nil
+		config.TLSClientConfig.Insecure = true
+		//logger.Info("insecure mode, skip verify apiserver certificate", config.TLSClientConfig)
+	}
+	logger.Info("kubernetes client config", config.TLSClientConfig)
 	var k kubernetesClient
 
 	k8s, err := kubernetes.NewForConfig(config)
@@ -82,6 +90,15 @@ func NewKubernetesClient(kubeconfig, apiserver string) (Client, error) {
 
 	k.config = config
 	return &k, nil
+}
+
+func NewKubernetesClientSkipTLSVerify(kubeconfig, apiserver string) (Client, error) {
+	return newKubernetesClient(kubeconfig, apiserver, true)
+}
+
+// NewKubernetesClient creates a KubernetesClient
+func NewKubernetesClient(kubeconfig, apiserver string) (Client, error) {
+	return newKubernetesClient(kubeconfig, apiserver, false)
 }
 
 func NewKubernetesClientByConfig(config *rest.Config) (Client, error) {

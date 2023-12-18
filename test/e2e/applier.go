@@ -208,13 +208,14 @@ func (a *Applier) CheckNodeNum(num int) {
 		//not_ready_nodes=$(kubectl get nodes --no-headers | awk '{ if ($2 != "Ready") print $1 }')
 		for _, node := range nodes.Items {
 			for _, condition := range node.Status.Conditions {
-				if condition.Status == "False" || condition.Status == "Unknown" {
+				if condition.Reason != "KubeletReady" {
 					continue
 				}
 				if condition.Type != "Ready" {
 					notReady[node.Name] = struct{}{}
-					return fmt.Errorf("node %s is not ready", node.Name)
+					return fmt.Errorf("node %s is not ready： %s", node.Name, condition.Type)
 				}
+				logger.Info("node %s is ready", node.Name)
 				delete(notReady, node.Name)
 			}
 		}

@@ -26,8 +26,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 
 	. "github.com/onsi/ginkgo/v2"
-
-	"github.com/labring/sealos/test/e2e/testhelper/settings"
 )
 
 var _ = Describe("E2E_sealos_k3s_multi_node_test", func() {
@@ -73,11 +71,12 @@ var _ = Describe("E2E_sealos_k3s_multi_node_test", func() {
 			})
 
 			By("test run app image", func() {
-				logger.Info("runOpts: %#+v", runOpts.Args())
-				utils.CheckErr(applier.RemoteSealosCmd.Run(&cmd2.RunOptions{
-					Images:  []string{settings.HelmImageName, settings.CalicoImageName},
+				runAppOps := &cmd2.RunOptions{
 					Cluster: applier.ClusterName,
-				}))
+					Images:  applier.RunImages,
+				}
+				logger.Info("runOpts: %#+v", runAppOps.Args())
+				utils.CheckErr(applier.RemoteSealosCmd.Run(runAppOps))
 			})
 
 			applier.FetchRemoteKubeConfig()
