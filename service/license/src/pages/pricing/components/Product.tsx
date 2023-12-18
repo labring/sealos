@@ -107,7 +107,8 @@ export default function Product() {
         amount: amount,
         payMethod: payType,
         currency: 'CNY',
-        stripeCallBackUrl: '/pricing?stripeState=success'
+        stripeSuccessCallBackUrl: '/pricing?stripeState=success',
+        stripeErrorCallBackUrl: '/pricing?stripeState=error'
       }),
     {
       async onSuccess(data) {

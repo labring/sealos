@@ -29,8 +29,8 @@ export type PaymentParams = {
   amount: string;
   currency: 'CNY';
   payMethod: TPayMethod;
-  stripeCallBackUrl: string;
-  // clusterId: string;
+  stripeSuccessCallBackUrl: string;
+  stripeErrorCallBackUrl: string;
 };
 
 export type PaymentResultParams = {
