@@ -1,5 +1,5 @@
 interface PageTitleProps {
-  children: string;
+  children: string | string[];
   className?: string;
   type: 'primary' | 'secondary' | 'table';
 }

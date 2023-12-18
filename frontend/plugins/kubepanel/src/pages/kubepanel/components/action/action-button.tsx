@@ -1,31 +1,26 @@
-import { BarsOutlined, CloseOutlined, RetweetOutlined } from '@ant-design/icons';
+import { CloseOutlined, MoreOutlined, RetweetOutlined } from '@ant-design/icons';
 import { Button, type MenuProps, Dropdown } from 'antd';
-import DeleteWarningModal from '../action-button/delete-waring-modal';
-import { Dispatch, SetStateAction, useCallback, useState } from 'react';
-import UpdateEditorModal from '../action-button/update-editor-modal';
+import { useState } from 'react';
+import UpdateEditorModal from './update-editor-modal';
 import { KubeObject } from '@/k8slens/kube-object';
+import { DeletePopconfirm } from './delete-waring-modal';
 
 interface Props<K extends KubeObject> {
   obj: K;
 }
 
 const ActionButton = <K extends KubeObject = KubeObject>({ obj }: Props<K>) => {
-  const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [openUpdateModal, setOpenUpdateModal] = useState(false);
 
   const items: MenuProps['items'] = [
     {
       key: 'delete',
       label: (
-        <Button
-          icon={<CloseOutlined />}
-          type="link"
-          size="small"
-          danger
-          onClick={() => setOpenDeleteModal(true)}
-        >
-          Delete
-        </Button>
+        <DeletePopconfirm obj={obj}>
+          <Button icon={<CloseOutlined />} type="link" size="small" danger>
+            Delete
+          </Button>
+        </DeletePopconfirm>
       )
     },
     {
@@ -46,18 +41,11 @@ const ActionButton = <K extends KubeObject = KubeObject>({ obj }: Props<K>) => {
   return (
     // wrapper to stop click event propagation
     <div onClick={(e) => e.stopPropagation()}>
-      <Dropdown disabled={items.length === 0} menu={{ items }}>
-        <Button icon={<BarsOutlined />}></Button>
+      <Dropdown disabled={items.length === 0} menu={{ items }} arrow trigger={['click']}>
+        <MoreOutlined className="text-[25px] text-[#667085] hover:text-[#24282C]" />
       </Dropdown>
-      <DeleteWarningModal
-        key={`delete`}
-        obj={obj}
-        open={openDeleteModal}
-        onCancel={() => setOpenDeleteModal(false)}
-        onOk={() => setOpenDeleteModal(false)}
-      />
       <UpdateEditorModal
-        key={`update`}
+        key={'update'}
         obj={obj}
         open={openUpdateModal}
         onCancel={() => setOpenUpdateModal(false)}

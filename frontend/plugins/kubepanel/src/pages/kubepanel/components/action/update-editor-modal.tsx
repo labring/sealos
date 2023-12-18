@@ -1,8 +1,9 @@
 import { updateResource } from '@/api/kubernetes';
+import StyledEditor from '@/components/common/editor/styled';
+import Title from '@/components/common/title/title';
 import { KubeObject } from '@/k8slens/kube-object';
 import { buildErrorResponse } from '@/services/backend/response';
 import { dumpKubeObject } from '@/utils/yaml';
-import { Editor } from '@monaco-editor/react';
 import { Button, Modal, message } from 'antd';
 import { editor } from 'monaco-editor';
 import { useRef } from 'react';
@@ -32,14 +33,16 @@ const UpdateEditorModal = <K extends KubeObject = KubeObject>({
     <>
       {contextHolder}
       <Modal
-        title={<div>{`${obj.kind}: ${obj.getName()}`}</div>}
         open={open}
+        width={'90vw'}
         onCancel={onCancel}
-        destroyOnClose
         footer={[
+          <Button key="cancel" onClick={onCancel}>
+            Cancel
+          </Button>,
           <Button
-            key="ok"
-            type="link"
+            key="update"
+            type="primary"
             onClick={() => {
               msgApi.loading({ content: 'Updating...', key: msgKey }, 0);
               if (!editorRef.current) {
@@ -68,17 +71,16 @@ const UpdateEditorModal = <K extends KubeObject = KubeObject>({
             }}
           >
             Update
-          </Button>,
-          <Button key="cancel" onClick={onCancel} danger>
-            Cancel
           </Button>
         ]}
       >
-        <Editor
+        <Title type="primary" className="pb-5">
+          {obj.kind}: {obj.getName()}
+        </Title>
+        <StyledEditor
           onMount={(editor) => (editorRef.current = editor)}
           value={editorValue}
           language="yaml"
-          height="50vh"
         />
       </Modal>
     </>
