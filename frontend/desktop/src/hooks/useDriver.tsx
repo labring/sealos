@@ -4,6 +4,7 @@ import { formatMoney } from '@/utils/format';
 import { Box, Button, Flex, FlexProps, Icon, Image, Text } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
 import { useTranslation } from 'next-i18next';
+import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 
 export function DriverStarIcon() {
@@ -43,6 +44,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
   const { t, i18n } = useTranslation();
   const [showGuide, setShowGuide] = useState(false);
   const [giftAmount, setGiftAmount] = useState(8);
+  const router = useRouter();
 
   const handleSkipGuide = () => {
     console.log('handleSkipGuide');
@@ -65,7 +67,8 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
           );
           setGiftAmount(rewardBalance);
         }
-        if (env?.guideEnabled && data?.metadata?.annotations) {
+
+        if (env?.guideEnabled && data?.metadata?.annotations && !router.query?.openapp) {
           const isGuidedDesktop = !!data.metadata.annotations?.[GUIDE_DESKTOP_INDEX_KEY];
           !isGuidedDesktop ? setShowGuide(true) : '';
         }
@@ -74,6 +77,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
       }
     };
     handleUserGuide();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const PopoverBodyInfo = (props: FlexProps) => (
