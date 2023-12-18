@@ -160,6 +160,7 @@ func (r *MonitorReconciler) startPeriodicReconcile() {
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
+		waitNextMinute()
 		ticker := time.NewTicker(r.periodicReconcile)
 		for {
 			select {
@@ -182,6 +183,14 @@ func (r *MonitorReconciler) getNamespaceList() (*corev1.NamespaceList, error) {
 	return namespaceList, r.List(context.Background(), namespaceList, &client.ListOptions{
 		LabelSelector: labels.NewSelector().Add(*req),
 	})
+}
+
+func waitNextMinute() {
+	waitTime := time.Until(time.Now().Truncate(time.Minute).Add(1 * time.Minute))
+	if waitTime > 0 {
+		logger.Info("wait for first reconcile", "waitTime", waitTime)
+		time.Sleep(waitTime)
+	}
 }
 
 func (r *MonitorReconciler) startMonitorTraffic() {
@@ -254,21 +263,21 @@ func (r *MonitorReconciler) processNamespaceList(ctx context.Context, namespaceL
 	return nil
 }
 
-func (r *MonitorReconciler) podResourceUsageInsert(ctx context.Context, namespace *corev1.Namespace) error {
-	monitors, err := r.getResourceUsage(namespace)
+func (r *MonitorReconciler) podResourceUsageInsert(_ context.Context, namespace *corev1.Namespace) error {
+	err := r.monitorResourceUsage(namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get resource usage: %v", err)
 	}
-	return r.DBClient.InsertMonitor(ctx, monitors...)
+	return nil
 }
 
-func (r *MonitorReconciler) getResourceUsage(namespace *corev1.Namespace) ([]*resources.Monitor, error) {
+func (r *MonitorReconciler) monitorResourceUsage(namespace *corev1.Namespace) error {
 	timeStamp := time.Now().UTC()
 	podList := corev1.PodList{}
 	resUsed := map[string]map[corev1.ResourceName]*quantity{}
 	resNamed := make(map[string]*resources.ResourceNamed)
 	if err := r.List(context.Background(), &podList, &client.ListOptions{Namespace: namespace.Name}); err != nil {
-		return nil, err
+		return err
 	}
 	for _, pod := range podList.Items {
 		if pod.Spec.NodeName == "" || (pod.Status.Phase == corev1.PodSucceeded && time.Since(pod.Status.StartTime.Time) > 1*time.Minute) {
@@ -309,7 +318,7 @@ func (r *MonitorReconciler) getResourceUsage(namespace *corev1.Namespace) ([]*re
 
 	pvcList := corev1.PersistentVolumeClaimList{}
 	if err := r.List(context.Background(), &pvcList, &client.ListOptions{Namespace: namespace.Name}); err != nil {
-		return nil, fmt.Errorf("failed to list pvc: %v", err)
+		return fmt.Errorf("failed to list pvc: %v", err)
 	}
 	for _, pvc := range pvcList.Items {
 		if pvc.Status.Phase != corev1.ClaimBound || pvc.Name == resources.KubeBlocksBackUpName {
@@ -324,7 +333,7 @@ func (r *MonitorReconciler) getResourceUsage(namespace *corev1.Namespace) ([]*re
 	}
 	svcList := corev1.ServiceList{}
 	if err := r.List(context.Background(), &svcList, &client.ListOptions{Namespace: namespace.Name}); err != nil {
-		return nil, fmt.Errorf("failed to list svc: %v", err)
+		return fmt.Errorf("failed to list svc: %v", err)
 	}
 	for _, svc := range svcList.Items {
 		if svc.Spec.Type != corev1.ServiceTypeNodePort {
@@ -359,7 +368,7 @@ func (r *MonitorReconciler) getResourceUsage(namespace *corev1.Namespace) ([]*re
 			Name:     resNamed[name].Name(),
 		})
 	}
-	return monitors, nil
+	return r.DBClient.InsertMonitor(context.Background(), monitors...)
 }
 
 func (r *MonitorReconciler) getResourceUsed(podResource map[corev1.ResourceName]*quantity) (bool, map[uint8]int64) {
@@ -406,28 +415,6 @@ func (r *MonitorReconciler) getObjStorageUsed(user string, namedMap *map[string]
 	}
 	return nil
 }
-
-//func (r *MonitorReconciler) getObjStorageUsed(user string, namedMap *map[string]*resources.ResourceNamed, resMap *map[string]map[corev1.ResourceName]*quantity) error {
-//	size, count, err := objstorage.GetUserObjectStorageSize(r.ObjStorageClient, user)
-//	if err != nil {
-//		return fmt.Errorf("failed to get object storage user storage size: %w", err)
-//	}
-//	if count == 0 || size == 0 {
-//		return nil
-//	}
-//	bytes, err := objstorage.GetUserObjectStorageFlow(r.ObjStorageClient, r.PromURL, user)
-//	if err != nil {
-//		return fmt.Errorf("failed to get object storage user storage flow: %w", err)
-//	}
-//	objStorageNamed := resources.NewObjStorageResourceNamed()
-//	(*namedMap)[objStorageNamed.Name()] = objStorageNamed
-//	if _, ok := (*resMap)[objStorageNamed.Name()]; !ok {
-//		(*resMap)[objStorageNamed.Name()] = initResources()
-//	}
-//	(*resMap)[objStorageNamed.Name()][corev1.ResourceStorage].Add(*resource.NewQuantity(size, resource.BinarySI))
-//	(*resMap)[objStorageNamed.Name()][resources.ResourceNetwork].Add(*resource.NewQuantity(bytes, resource.BinarySI))
-//	return nil
-//}
 
 func (r *MonitorReconciler) MonitorPodTrafficUsed(namespace corev1.Namespace) error {
 	podList := corev1.PodList{}
