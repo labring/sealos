@@ -3,7 +3,7 @@ import { Button, type MenuProps, Dropdown } from 'antd';
 import { useState } from 'react';
 import UpdateEditorModal from './update-editor-modal';
 import { KubeObject } from '@/k8slens/kube-object';
-import { DeletePopconfirm } from './delete-waring-modal';
+import { DeletePopconfirm } from './delete-popconfirm';
 
 interface Props<K extends KubeObject> {
   obj: K;
