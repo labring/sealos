@@ -5,11 +5,10 @@ import {
   getDBServiceByName,
   getDBStatefulSetByName
 } from '@/api/db';
-import { getAppEnv } from '@/api/platform';
 import MyIcon from '@/components/Icon';
 import { DBStatusEnum, DBTypeEnum, DBTypeSecretMap, defaultDBDetail } from '@/constants/db';
 import { useToast } from '@/hooks/useToast';
-import { useDBStore } from '@/store/db';
+import useEnvStore from '@/store/env';
 import type { DBDetailType } from '@/types/db';
 import { json2NetworkService } from '@/utils/json2Yaml';
 import { printMemory, useCopyData } from '@/utils/tools';
@@ -38,6 +37,7 @@ import { sealosApp } from 'sealos-desktop-sdk/app';
 const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
+  const { SystemEnv, initSystemEnv } = useEnvStore();
   const [showSecret, setShowSecret] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -48,8 +48,6 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       (item) => item === db.dbType
     );
   }, [db.dbType]);
-
-  const { data: systemEnvs } = useQuery(['getSystemEnvs'], () => getAppEnv());
 
   const { data: dbStatefulSet } = useQuery(
     ['getDBStatefulSetByName', db.dbName, db.dbType],
@@ -83,7 +81,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   );
 
   const externalNetWork = useMemo(() => {
-    const host = `${systemEnvs?.domain}`;
+    const host = `${SystemEnv?.domain}`;
     const port = service?.spec?.ports?.[0]?.nodePort?.toString() || '';
     let connection = `${DBTypeSecretMap[db.dbType].connectKey}://${secret?.username}:${
       secret?.password
@@ -98,7 +96,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       port,
       connection
     };
-  }, [db, secret, service, systemEnvs]);
+  }, [db, secret, service, SystemEnv]);
 
   const [baseSecret, otherSecret] = useMemo(
     () => [pick(secret, ['username', 'password']), pick(secret, ['host', 'port', 'connection'])],

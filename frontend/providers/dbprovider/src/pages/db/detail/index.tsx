@@ -1,23 +1,23 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Flex, Button, useTheme } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
-import { useDBStore } from '@/store/db';
-import { useToast } from '@/hooks/useToast';
+import { DBTypeEnum } from '@/constants/db';
 import { useLoading } from '@/hooks/useLoading';
+import { useToast } from '@/hooks/useToast';
+import { useDBStore } from '@/store/db';
+import useEnvStore from '@/store/env';
 import { useGlobalStore } from '@/store/global';
-import { serviceSideProps } from '@/utils/i18n';
-import { useRouter } from 'next/router';
-import Header from './components/Header';
-import AppBaseInfo from './components/AppBaseInfo';
-import Pods from './components/Pods';
-import BackupTable, { type ComponentRef } from './components/BackupTable';
-import { useTranslation } from 'next-i18next';
-import { DBTypeEnum, dbStatusMap } from '@/constants/db';
-import Monitor from './components/Monitor';
-import dayjs from 'dayjs';
-import DumpImport from './components/DumpImport';
-import MigrateTable from './components/Migrate/Table';
 import { DBType } from '@/types/db';
+import { serviceSideProps } from '@/utils/i18n';
+import { Box, Button, Flex, useTheme } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'next-i18next';
+import { useRouter } from 'next/router';
+import { useMemo, useRef, useState } from 'react';
+import AppBaseInfo from './components/AppBaseInfo';
+import BackupTable, { type ComponentRef } from './components/BackupTable';
+import DumpImport from './components/DumpImport';
+import Header from './components/Header';
+import MigrateTable from './components/Migrate/Table';
+import Monitor from './components/Monitor';
+import Pods from './components/Pods';
 
 enum TabEnum {
   pod = 'pod',
@@ -39,6 +39,7 @@ const AppDetail = ({
   const BackupTableRef = useRef<ComponentRef>(null);
   const router = useRouter();
   const { t } = useTranslation();
+  const { SystemEnv } = useEnvStore();
 
   const { listNav } = useMemo(() => {
     const PublicNetMigration = ['postgresql', 'apecloud-mysql', 'mongodb'].includes(dbType);
@@ -49,13 +50,11 @@ const AppDetail = ({
       { label: 'Monitor List', value: TabEnum.monitor },
       { label: 'Replicas List', value: TabEnum.pod },
       ...(BackupSupported ? [{ label: 'Backup List', value: TabEnum.backup }] : []),
-      ...(MigrateSupported
-        ? PublicNetMigration
-          ? [
-              { label: 'Internet Migration', value: TabEnum.InternetMigration },
-              { label: 'File Migration', value: TabEnum.DumpImport }
-            ]
-          : [{ label: 'File Migration', value: TabEnum.DumpImport }]
+      ...(PublicNetMigration
+        ? [{ label: 'Internet Migration', value: TabEnum.InternetMigration }]
+        : []),
+      ...(PublicNetMigration && !!SystemEnv.minio_url
+        ? [{ label: 'File Migration', value: TabEnum.DumpImport }]
         : [])
     ];
 
@@ -65,7 +64,7 @@ const AppDetail = ({
       isBackupSupported: BackupSupported,
       listNav: listNavValue
     };
-  }, [dbType]);
+  }, [SystemEnv.minio_url, dbType]);
 
   const theme = useTheme();
   const { toast } = useToast();
