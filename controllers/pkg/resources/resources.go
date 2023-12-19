@@ -267,7 +267,7 @@ var DefaultPropertyTypeList = []PropertyType{
 		Name:       "services.nodeports",
 		Enum:       4,
 		PriceType:  AVG,
-		UnitPrice:  10,
+		UnitPrice:  0.042,
 		ViewPrice:  10000,
 		UnitString: "1",
 	},
