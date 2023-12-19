@@ -12,7 +12,7 @@ ENV passWordEnabled="false"
 ENV githubEnabled="false"
 ENV wechatEnabled="false"
 ENV smsEnabled="false"
-ENV signUpEnabled="false"
+ENV signUpEnabled="true"
 ENV apiEnabled="false"
 
 CMD ["bash scripts/init.sh"]
