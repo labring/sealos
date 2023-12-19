@@ -38,10 +38,15 @@ func (c *Client) Ping(host string) error {
 }
 
 func (c *Client) wrapCommands(cmds ...string) string {
+	cmdJoined := strings.Join(cmds, "; ")
 	if !c.Option.sudo || c.Option.user == defaultUsername {
-		return strings.Join(cmds, "; ")
+		return cmdJoined
 	}
-	return fmt.Sprintf("sudo -E /bin/bash -c '%s'", strings.Join(cmds, "; "))
+
+	// Escape single quotes in cmd, fix https://github.com/labring/sealos/issues/4424
+	// e.g. echo 'hello world' -> `sudo -E /bin/bash -c 'echo "hello world"'`
+	cmdEscaped := strings.ReplaceAll(cmdJoined, `'`, `"`)
+	return fmt.Sprintf("sudo -E /bin/bash -c '%s'", cmdEscaped)
 }
 
 func (c *Client) CmdAsyncWithContext(ctx context.Context, host string, cmds ...string) error {
