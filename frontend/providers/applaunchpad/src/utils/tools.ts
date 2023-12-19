@@ -233,12 +233,12 @@ export const patchYamlList = ({
   newYamlList: string[];
   crYamlList: DeployKindsType[];
 }) => {
-  console.log(formOldYamlList, newYamlList, crYamlList, '=======');
-
   const oldFormJsonList = formOldYamlList
     .map((item) => yaml.loadAll(item))
     .flat() as DeployKindsType[];
   const newFormJsonList = newYamlList.map((item) => yaml.loadAll(item)).flat() as DeployKindsType[];
+
+  console.log(oldFormJsonList, newFormJsonList, crYamlList, '===patchYamlList===');
 
   const actions: AppPatchPropsType = [];
 
@@ -298,7 +298,21 @@ export const patchYamlList = ({
           }
 
           /* generate new json */
-          const patchResYamlJson = jsonpatch.applyPatch(crOldYamlJson, patchRes, true).newDocument;
+          const _patchRes: jsonpatch.Operation[] = patchRes.map((item) => {
+            let jsonPatchError = jsonpatch.validate([item], crOldYamlJson);
+            if (
+              jsonPatchError?.operation &&
+              jsonPatchError?.name === 'OPERATION_PATH_UNRESOLVABLE'
+            ) {
+              return {
+                ...jsonPatchError.operation,
+                op: 'add'
+              };
+            } else {
+              return item;
+            }
+          });
+          const patchResYamlJson = jsonpatch.applyPatch(crOldYamlJson, _patchRes, true).newDocument;
 
           // delete invalid field
           // @ts-ignore
@@ -314,8 +328,7 @@ export const patchYamlList = ({
 
           return patchResYamlJson;
         } catch (error) {
-          console.log(error);
-
+          console.log('ACTIONS JSON ERROR\n', error);
           return newYamlJson;
         }
       })();
@@ -344,73 +357,18 @@ export const patchYamlList = ({
         }
       }
 
+      console.log(
+        'patch result===',
+        oldFormJson.metadata?.name,
+        oldFormJson.kind,
+        patchRes,
+        actionsJson
+      );
+
       actions.push({
         type: 'patch',
         kind: newYamlJson.kind as `${YamlKindEnum}`,
         value: actionsJson as any
-      });
-    } else {
-      actions.push({
-        type: 'create',
-        kind: newYamlJson.kind as `${YamlKindEnum}`,
-        value: yaml.dump(newYamlJson)
-      });
-    }
-  });
-  console.log(actions, 'actions');
-  return actions;
-};
-
-export const patchYamlListV1 = ({
-  newYamlList,
-  oldYamlList
-}: {
-  newYamlList: string[];
-  oldYamlList: DeployKindsType[];
-}) => {
-  const newFormJsonList = newYamlList.map((item) => yaml.loadAll(item)).flat() as DeployKindsType[];
-  console.log('new:', newFormJsonList, '\n old', oldYamlList);
-
-  const actions: AppPatchPropsType = [];
-
-  // find delete
-  oldYamlList.forEach((oldYamlJson) => {
-    const item = newFormJsonList.find(
-      (item) => item.kind === oldYamlJson.kind && item.metadata?.name === oldYamlJson.metadata?.name
-    );
-    if (!item && oldYamlJson.metadata?.name) {
-      actions.push({
-        type: 'delete',
-        kind: oldYamlJson.kind as `${YamlKindEnum}`,
-        name: oldYamlJson.metadata?.name
-      });
-    }
-  });
-
-  // find create and patch
-  newFormJsonList.forEach((newYamlJson) => {
-    const oldFormJson = oldYamlList.find(
-      (item) =>
-        item.kind === newYamlJson.kind && item?.metadata?.name === newYamlJson?.metadata?.name
-    );
-
-    if (oldFormJson) {
-      // adapt service ports
-      if (newYamlJson.kind === YamlKindEnum.Service) {
-        // @ts-ignore
-        const ports = newYamlJson?.spec.ports || [];
-
-        // @ts-ignore
-        if (ports.length > 1 && !ports[0]?.name) {
-          // @ts-ignore
-          newYamlJson.spec.ports[0].name = 'adaptport';
-        }
-      }
-
-      actions.push({
-        type: 'patch',
-        kind: newYamlJson.kind as `${YamlKindEnum}`,
-        value: newYamlJson as any
       });
     } else {
       actions.push({

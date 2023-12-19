@@ -1,18 +1,17 @@
-import yaml from 'js-yaml';
-import type { AppEditType, DeployKindsType } from '@/types/app';
-import { strToBase64, str2Num, pathFormat, pathToNameFormat } from '@/utils/tools';
-import { SEALOS_DOMAIN, INGRESS_SECRET } from '@/store/static';
 import {
-  maxReplicasKey,
-  minReplicasKey,
   appDeployKey,
-  publicDomainKey,
+  deployPVCResizeKey,
   gpuNodeSelectorKey,
   gpuResourceKey,
-  deployPVCResizeKey
+  maxReplicasKey,
+  minReplicasKey,
+  publicDomainKey
 } from '@/constants/app';
+import { INGRESS_SECRET, SEALOS_DOMAIN } from '@/store/static';
+import type { AppEditType } from '@/types/app';
+import { pathFormat, pathToNameFormat, str2Num, strToBase64 } from '@/utils/tools';
 import dayjs from 'dayjs';
-import jsonpatch, { Operation } from 'fast-json-patch';
+import yaml from 'js-yaml';
 
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
   const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
