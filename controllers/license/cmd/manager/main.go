@@ -102,7 +102,7 @@ func main() {
 	}
 	defer db.Disconnect(context.Background())
 
-	clusterID, err := utilid.GetClusterID(context.Background(), mgr.GetClient())
+	clusterID, err := utilid.GetClusterID(mgr.GetConfig())
 	if err != nil {
 		setupLog.Error(err, "unable to get cluster id")
 		os.Exit(1)

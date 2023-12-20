@@ -30,7 +30,20 @@ export default function DesktopContent(props: any) {
   };
 
   /**
-   * open app
+   * Open Desktop Application
+   *
+   * @param {object} options - Options for opening the application
+   * @param {string} options.appKey - Unique identifier key for the application
+   * @param {object} [options.query={}] - Query parameter object
+   * @param {object} [options.messageData={}] - Message data to be sent to the application
+   * @param {string} options.pathname - Path when the application opens
+   *
+   * Logic:
+   * - Find information about the application and its running state
+   * - If the application does not exist, exit
+   * - If the application is not open (not running), call the openApp method to open it
+   * - If the application is already open (running), bring it to the highest layer
+   * - Send a postMessage to the application window to handle the message data
    */
   const openDesktopApp = useCallback(
     ({

@@ -60,3 +60,24 @@
     }
   }
 }
+
+div[role='banner'] {
+  background: linear-gradient(
+    90deg,
+    rgba(20, 46, 78, 0.3) 0%,
+    rgba(33, 115, 160, 0.3) 50%,
+    rgba(20, 46, 78, 0.3) 100%
+  );
+  backdrop-filter: blur(187px);
+  border: none;
+  height: 48px;
+}
+
+div[role='banner'] > div:first-child {
+  display: none;
+}
+
+div[role='banner'] button {
+  position: absolute;
+  opacity: 0;
+}

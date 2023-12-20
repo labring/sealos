@@ -1,28 +1,19 @@
-import MyIcon from '@/components/Icon';
-import YamlCode from '@/components/YamlCode/index';
-import type { QueryType, YamlItemType } from '@/types';
-import { useCopyData } from '@/utils/tools';
-import { Box, Flex, useTheme } from '@chakra-ui/react';
-import { useRouter } from 'next/router';
+import type { YamlItemType } from '@/types';
+import { Box, Flex, Grid } from '@chakra-ui/react';
 import { useState } from 'react';
-import styles from './index.module.scss';
-
+import { YamlCode } from '@sealos/ui';
 const YamlList = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
-  const theme = useTheme();
-  const router = useRouter();
-  const { name } = router.query as QueryType;
-  const { copyData } = useCopyData();
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   return (
     <Flex
       flexGrow={1}
+      // h="0"
       mt={'12px'}
       alignItems={'start'}
       zIndex={1}
       position={'relative'}
-      overflow={'scroll'}
-    >
+      overflow={'scroll'}>
       <Box flexShrink={0} mt={3} borderRadius={'sm'} overflow={'hidden'} bg={'white'}>
         {yamlList.map((file, index) => (
           <Box
@@ -47,24 +38,15 @@ const YamlList = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
                   borderColor: 'myGray.200',
                   backgroundColor: 'transparent'
                 })}
-            onClick={() => setSelectedIndex(index)}
-          >
+            onClick={() => setSelectedIndex(index)}>
             {file.filename.replace(/-.*/, '')}
           </Box>
         ))}
       </Box>
       {!!yamlList[selectedIndex] && (
-        <Flex
-          w="100%"
-          h="100%"
-          className={styles.codeBox}
-          flexDirection={'column'}
-          position={'relative'}
-        >
-          <Box flex={1} h={0} bg={'#ffffff'} p={4}>
-            <YamlCode className={styles.code} content={yamlList[selectedIndex].value} />
-          </Box>
-        </Flex>
+        <Grid w="0" h="full" flex={'auto'} overflow={'auto'}>
+          <YamlCode markdown={{ children: yamlList[selectedIndex].value }}></YamlCode>
+        </Grid>
       )}
     </Flex>
   );

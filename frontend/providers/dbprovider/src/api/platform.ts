@@ -1,4 +1,4 @@
-import { Response as EnvResponse } from '@/pages/api/getEnv';
+import { SystemEnvResponse } from '@/pages/api/getEnv';
 import type { Response as DBVersionMapType } from '@/pages/api/platform/getVersion';
 import type { Response as resourcePriceResponse } from '@/pages/api/platform/resourcePrice';
 import { GET, POST } from '@/services/request';
@@ -7,7 +7,7 @@ import { AxiosProgressEvent } from 'axios';
 
 export const getResourcePrice = () => GET<resourcePriceResponse>('/api/platform/resourcePrice');
 
-export const getAppEnv = () => GET<EnvResponse>('/api/getEnv');
+export const getAppEnv = () => GET<SystemEnvResponse>('/api/getEnv');
 
 export const getDBVersionMap = () => GET<DBVersionMapType>('/api/platform/getVersion');
 

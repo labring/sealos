@@ -22,7 +22,8 @@ const readFileList = (targetPath: string, fileList: unknown[] = [], handlePath: 
     // ok:path-join-resolve-traversal
     const filePath = path.join(sanitizePath(targetPath), sanitizePath(item));
     const stats = fs.statSync(filePath);
-    if (stats.isFile() && path.extname(item) === '.yaml' && item !== 'template.yaml') {
+    const isYamlFile = path.extname(item) === '.yaml' || path.extname(item) === '.yml';
+    if (stats.isFile() && isYamlFile && item !== 'template.yaml') {
       fileList.push(filePath);
     } else if (stats.isDirectory() && item === handlePath) {
       readFileList(filePath, fileList, handlePath);

@@ -142,6 +142,10 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, db *database.Data
 		db:     db,
 	}
 
+	r.activator = &LicenseActivator{
+		Client: r.Client,
+	}
+
 	// reconcile on generation change
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&licensev1.License{}, builder.WithPredicates(predicate.And(predicate.GenerationChangedPredicate{}))).

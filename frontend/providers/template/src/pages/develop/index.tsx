@@ -16,41 +16,47 @@ import {
 } from '@/utils/json-yaml';
 import { getTemplateDefaultValues } from '@/utils/template';
 import { downLoadBold } from '@/utils/tools';
-import { Box, Button, Flex, Text } from '@chakra-ui/react';
-import { StreamLanguage } from '@codemirror/language';
-import { yaml } from '@codemirror/legacy-modes/mode/yaml';
+import { Button, Center, Flex, Spinner, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
-import CodeMirror from '@uiw/react-codemirror';
 import dayjs from 'dayjs';
 import JsYaml from 'js-yaml';
 import { debounce, has, isObject, mapValues } from 'lodash';
 import { useTranslation } from 'next-i18next';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import ErrorModal from '../deploy/components/ErrorModal';
 import BreadCrumbHeader from './components/BreadCrumbHeader';
 import Form from './components/Form';
 import YamlList from './components/YamlList';
-
+import { type EditorState } from '@codemirror/state';
+import dynamic from 'next/dynamic';
+const Editor = dynamic(() => import('./components/Editor'), {
+  loading() {
+    return (
+      <Center w="full" h="full">
+        <Spinner size={'lg'} />
+      </Center>
+    );
+  },
+  ssr: false
+});
 export default function Develop() {
   const { t } = useTranslation();
-  const [yamlValue, setYamlValue] = useState('');
   const { toast } = useToast();
   const [yamlSource, setYamlSource] = useState<TemplateSourceType>();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const { Loading, setIsLoading } = useLoading();
   const [errorMessage, setErrorMessage] = useState('');
-  const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(false);
+  const { applySuccess, applyError } = editModeMap(false);
   const SuccessfulDryRun = useRef(false);
-
   const { data: platformEnvs } = useQuery(['getPlatformEnvs'], getPlatformEnv) as {
     data: EnvResponse;
   };
 
-  const onYamlChange = (value: string) => {
-    setYamlValue(value);
+  const onYamlChange = debounce((state: EditorState) => {
+    const value = state.doc.toString();
     parseTemplate(value);
-  };
+  }, 1000);
 
   const getYamlSource = (str: string): TemplateSourceType => {
     const yamlData = JsYaml.loadAll(str);
@@ -89,6 +95,11 @@ export default function Develop() {
   };
 
   const parseTemplate = (str: string) => {
+    if (!str || !str.trim()) {
+      setYamlSource(void 0);
+      setYamlList([]);
+      return;
+    }
     try {
       const result = getYamlSource(str);
       const defaultInputes = getTemplateDefaultValues(result);
@@ -112,9 +123,13 @@ export default function Develop() {
   });
 
   // watch form change, compute new yaml
-  formHook.watch((data: any) => {
-    data && formOnchangeDebounce(data);
-  });
+  useEffect(
+    () =>
+      formHook.watch((data: any) => {
+        data && formOnchangeDebounce(data);
+      }).unsubscribe,
+    [formHook.watch]
+  );
 
   const formOnchangeDebounce = debounce((data: any) => {
     try {
@@ -212,8 +227,7 @@ export default function Develop() {
         borderRadius={'8px'}
         overflowY={'hidden'}
         overflowX={'scroll'}
-        flex={1}
-      >
+        flex={1}>
         {/* left */}
         <Flex flexDirection={'column'} w="50%" borderRight={'1px solid #EFF0F1'}>
           <Flex
@@ -223,8 +237,7 @@ export default function Develop() {
             alignItems={'center'}
             backgroundColor={'#F8FAFB'}
             px="36px"
-            borderRadius={'8px 8px 0px 0px '}
-          >
+            borderRadius={'8px 8px 0px 0px '}>
             <MyIcon name="dev" color={'#24282C'} w={'24px'} h={'24px'}></MyIcon>
             <Text fontWeight={'500'} fontSize={'16px'} color={'#24282C'} ml="8px">
               {t('develop.Development')}
@@ -233,15 +246,13 @@ export default function Develop() {
               {t('develop.Please enter YAML code')}
             </Text>
           </Flex>
-          <Box h="100%" w="100%" position={'relative'} overflow={'auto'}>
-            <CodeMirror
-              extensions={[StreamLanguage.define(yaml)]}
-              width="100%"
-              height="100%"
-              minHeight="1200px"
-              onChange={debounce(onYamlChange, 1000)}
-            />
-          </Box>
+          <Editor
+            h="100%"
+            w="100%"
+            position={'relative'}
+            overflow={'auto'}
+            onDocChange={(s) => onYamlChange(s)}
+          />
         </Flex>
         {/* right */}
         <Flex w="50%" flexDirection={'column'} position={'relative'}>
@@ -252,8 +263,7 @@ export default function Develop() {
             alignItems={'center'}
             backgroundColor={'#F8FAFB'}
             pl="42px"
-            borderRadius={'8px 8px 0px 0px '}
-          >
+            borderRadius={'8px 8px 0px 0px '}>
             <MyIcon name="eyeShow" color={'#24282C'} w={'24px'} h={'24px'}></MyIcon>
             <Text fontWeight={'500'} fontSize={'16px'} color={'#24282C'} ml="8px">
               {t('develop.Preview')}
@@ -265,8 +275,7 @@ export default function Develop() {
               pt="26px"
               pr={{ sm: '20px', md: '60px' }}
               borderBottom={'1px solid #EFF0F1'}
-              flexDirection={'column'}
-            >
+              flexDirection={'column'}>
               <Text fontWeight={'500'} fontSize={'18px'} color={'#24282C'}>
                 {t('develop.Configure Form')}
               </Text>
@@ -282,8 +291,7 @@ export default function Develop() {
                   minW={'100px'}
                   h={'34px'}
                   variant={'link'}
-                  onClick={handleExportYaml}
-                >
+                  onClick={handleExportYaml}>
                   {t('Export')} Yaml
                 </Button>
               </Flex>

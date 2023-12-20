@@ -8,6 +8,7 @@ import fs from 'fs';
 import yaml from 'js-yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
+import { replaceRawWithCDN } from './listTemplate';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -60,6 +61,7 @@ export async function GetTemplateByName({
   namespace: string;
   templateName: string;
 }) {
+  const cdnUrl = process.env.CDN_URL;
   const TemplateEnvs = {
     SEALOS_CLOUD_DOMAIN: process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io',
     SEALOS_CERT_SECRET_NAME: process.env.SEALOS_CERT_SECRET_NAME || 'wildcard-cert',
@@ -83,6 +85,11 @@ export async function GetTemplateByName({
       message: 'Lack of kind template'
     };
   }
+  if (cdnUrl) {
+    templateYaml.spec.readme = replaceRawWithCDN(templateYaml.spec.readme, cdnUrl);
+    templateYaml.spec.icon = replaceRawWithCDN(templateYaml.spec.icon, cdnUrl);
+  }
+
   const yamlList = yamlData.filter((item: any) => item.kind !== 'Template');
   const dataSource = getTemplateDataSource(templateYaml, TemplateEnvs);
 

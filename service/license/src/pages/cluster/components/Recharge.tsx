@@ -96,7 +96,8 @@ export default forwardRef(function RechargeComponent(props, ref) {
         amount: deFormatMoney(selectAmount).toString(),
         payMethod: payType,
         currency: 'CNY',
-        stripeCallBackUrl: `/cluster?clusterId=${clusterDetail?.clusterId}&stripeState=success&tab=license`
+        stripeSuccessCallBackUrl: `/cluster?clusterId=${clusterDetail?.clusterId}&tab=license&stripeState=success`,
+        stripeErrorCallBackUrl: `/cluster?clusterId=${clusterDetail?.clusterId}&tab=license&stripeState=error`
       }),
     {
       async onSuccess(data) {
@@ -212,6 +213,7 @@ export default forwardRef(function RechargeComponent(props, ref) {
     });
     setClusterDetail(cluster);
   };
+
   useEffect(() => {
     const { stripeState, orderID, clusterId, tab } = router.query;
     console.log(stripeState, orderID, clusterId);
@@ -229,6 +231,7 @@ export default forwardRef(function RechargeComponent(props, ref) {
       setOrderID(orderID as string);
       setTimeout(clearQuery, 0);
     } else if (stripeState === 'error') {
+      clusterId ? getCluster(clusterId as string) : '';
       toast({
         status: 'error',
         duration: 3000,
