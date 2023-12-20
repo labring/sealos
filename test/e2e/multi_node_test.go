@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/labring/sealos/test/e2e/testhelper/settings"
+
 	"github.com/labring/sealos/test/e2e/terraform"
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
 
@@ -28,30 +30,29 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 )
 
-var _ = Describe("E2E_sealos_k3s_multi_node_test", func() {
+var _ = Describe("E2E_sealos_multi_node_test", func() {
 	Context("start apply", func() {
 
 		var tf = &terraform.Terraform{
-			AccessKey: os.Getenv("ALIYUN_AKID"),
-			SecretKey: os.Getenv("ALIYUN_AKSK"),
+			AccessKey: os.Getenv("ALIYUN_ACCESS_KEY_ID"),
+			SecretKey: os.Getenv("ALIYUN_ACCESS_KEY_SECRET"),
 		}
 		var (
 			applier     *Applier
 			infraDetail *terraform.InfraDetail
 		)
 		BeforeEach(func() {
-			//err := tf.Apply(os.Getenv("SEALOS_TEST_ARCH"))
-			//utils.CheckErr(err, "failed to apply terraform")
-			var err error
+			err := tf.Apply(settings.GetEnvWithDefault("SEALOS_TEST_ARCH", "amd64"))
+			utils.CheckErr(err, "failed to apply terraform")
 			infraDetail, err = tf.Detail()
 			utils.CheckErr(err, fmt.Sprintf("failed to get infra detail: %v", err))
 			applier, err = NewApplier(infraDetail)
 			utils.CheckErr(err, fmt.Sprintf("failed to new applier: %v", err))
 		})
-		//AfterEach(func() {
-		//	err := tf.Destroy()
-		//	utils.CheckErr(err, "failed to destroy terraform")
-		//})
+		AfterEach(func() {
+			err := tf.Destroy()
+			utils.CheckErr(err, "failed to destroy terraform")
+		})
 
 		// all ips: ip1 ip2 ip3 ip4
 		It("apply run test", func() {
@@ -71,12 +72,12 @@ var _ = Describe("E2E_sealos_k3s_multi_node_test", func() {
 			})
 
 			By("test run app image", func() {
-				runAppOps := &cmd2.RunOptions{
-					Cluster: applier.ClusterName,
+				runAppOpts := &cmd2.RunOptions{
 					Images:  applier.RunImages,
+					Cluster: applier.ClusterName,
 				}
-				logger.Info("runOpts: %#+v", runAppOps.Args())
-				utils.CheckErr(applier.RemoteSealosCmd.Run(runAppOps))
+				logger.Info("runAppOpts: %#+v", runAppOpts.Args())
+				utils.CheckErr(applier.RemoteSealosCmd.Run(runAppOpts))
 			})
 
 			applier.FetchRemoteKubeConfig()

@@ -1,9 +1,12 @@
-name: E2E Apply Test
+name: E2E k8s Multi Node Test
 
 on:
   workflow_dispatch:
   pull_request_target:
     types: [ labeled ]
+
+env:
+  TERRAFORM_VERSION: "1.5.7"
 
 jobs:
   call_ci_workflow:
@@ -27,6 +30,10 @@ jobs:
       test_arm64_result: ${{ steps.apply_test.outputs.test_arm64_result }}
       test_amd64_result: ${{ steps.apply_test.outputs.test_amd64_result }}
     steps:
+      - name: Download terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
       - name: Download sealos binary
         uses: actions/download-artifact@v3
         with:
@@ -55,7 +62,8 @@ jobs:
         id: apply_test
         shell: bash
         env:
-          SEALOS_E2E_TEST_IMAGE_NAME: registry.cn-shanghai.aliyuncs.com/labring/kubernetes:v1.25.6
+          SEALOS_TEST_ARCH: ${{ matrix.arch }}
+          SEALOS_E2E_TEST_IMAGE_NAME: registry.cn-shanghai.aliyuncs.com/labring/kubernetes:v1.28.4
           SEALOS_E2E_TEST_PATCH_IMAGE_TAR: /tmp/sealos/images/patch-${{ matrix.arch }}.tar.gz
           SEALOS_E2E_TEST_PATCH_IMAGE_NAME: ghcr.io/labring/sealos-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}
           SEALOS_E2E_TEST_SEALOS_BIN_PATH: /tmp/sealos/bin/sealos
@@ -68,7 +76,7 @@ jobs:
           sudo su
           chmod a+x /tmp/e2e.test
           gzip /tmp/sealos/images/patch-${{ matrix.arch }}.tar
-          /tmp/e2e.test --ginkgo.v --ginkgo.focus="E2E_sealos_apply_multi_node_test"
+          /tmp/e2e.test --ginkgo.v --ginkgo.focus="E2E_sealos_multi_node_test"
           echo 'test_${{ matrix.arch }}_result=success' >> "$GITHUB_OUTPUT"
   issue_commit:
     needs: [ e2e_apply_test ]
@@ -87,5 +95,5 @@ jobs:
           comment-author: 'github-actions[bot]'
           repository: ${{ github.repository }}
           body: |
-            🤖 says: E2E ARM64 Apply Test Result: ${{ env.ARM_TEST_RESULT }} , E2E AMD64 Apply Test Result: ${{ env.AMD_TEST_RESULT }}<br/>See: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            🤖 says: E2E k8s multi node `ARM64` Test Result: ${{ env.ARM_TEST_RESULT }} , E2E k8s multi node `AMD64` Test Result: ${{ env.AMD_TEST_RESULT }}<br/>See: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           token: "${{ secrets.GH_PAT }}"
