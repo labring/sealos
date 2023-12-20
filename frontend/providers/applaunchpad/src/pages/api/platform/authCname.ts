@@ -11,6 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await (async () =>
       new Promise((resolve, reject) => {
         dns.resolveCname(customDomain, (err, address) => {
+          console.log(err, address);
           if (err) return reject(err);
 
           if (address[0] !== publicDomain)

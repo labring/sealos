@@ -6,7 +6,8 @@ import type { Response as resourcePriceResponse } from '@/pages/api/platform/res
 export let SOURCE_PRICE: resourcePriceResponse = {
   cpu: 0.067,
   memory: 0.033792,
-  storage: 0.002048
+  storage: 0.002048,
+  nodeports: 0.5
 };
 
 export let INSTALL_ACCOUNT = false;
