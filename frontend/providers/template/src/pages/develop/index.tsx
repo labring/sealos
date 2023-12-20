@@ -56,7 +56,7 @@ export default function Develop() {
   const onYamlChange = debounce((state: EditorState) => {
     const value = state.doc.toString();
     parseTemplate(value);
-  }, 1000);
+  }, 500);
 
   const getYamlSource = (str: string): TemplateSourceType => {
     const yamlData = JsYaml.loadAll(str);

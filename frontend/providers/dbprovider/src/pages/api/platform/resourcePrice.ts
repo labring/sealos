@@ -8,6 +8,7 @@ export type Response = {
   cpu: number;
   memory: number;
   storage: number;
+  nodeports: number;
 };
 type ResourceType =
   | 'cpu'
@@ -18,7 +19,8 @@ type ResourceType =
   | 'mongodb'
   | 'minio'
   | 'infra-memory'
-  | 'infra-disk';
+  | 'infra-disk'
+  | 'services.nodeports';
 type PriceCrdType = {
   apiVersion: 'account.sealos.io/v1';
   kind: 'PriceQuery';
@@ -72,7 +74,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const data = {
       cpu: countSourcePrice(priceResponse, 'cpu'),
       memory: countSourcePrice(priceResponse, 'memory'),
-      storage: countSourcePrice(priceResponse, 'storage')
+      storage: countSourcePrice(priceResponse, 'storage'),
+      nodeports: countSourcePrice(priceResponse, 'services.nodeports')
     };
 
     jsonRes(res, {

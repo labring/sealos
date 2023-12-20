@@ -162,8 +162,8 @@ export default function EditApp({ appName }: { appName?: string }) {
     setIsLoading(false);
   };
 
-  const submitError = () => {
-    formHook.getValues();
+  const submitError = async () => {
+    await formHook.trigger();
     toast({
       title: deepSearch(formHook.formState.errors),
       status: 'error',

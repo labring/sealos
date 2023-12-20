@@ -1,5 +1,6 @@
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
+import { TemplateType } from '@/types/app';
 import { exec } from 'child_process';
 import fs from 'fs';
 import JSYAML from 'js-yaml';
@@ -65,9 +66,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     fileList.forEach((item: any) => {
       try {
         if (!item) return;
+        const fileName = path.basename(item);
         const content = fs.readFileSync(item, 'utf-8');
-        const yamlTemplate: any = JSYAML.loadAll(content)[0];
+        const yamlTemplate = JSYAML.loadAll(content)[0] as TemplateType;
         if (!!yamlTemplate) {
+          yamlTemplate.spec['fileName'] = fileName;
           jsonObjArr.push(yamlTemplate);
         }
       } catch (error) {

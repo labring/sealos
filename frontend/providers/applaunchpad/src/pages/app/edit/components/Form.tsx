@@ -974,16 +974,18 @@ const Form = ({
                             return (
                               <tr key={env.id}>
                                 <th>{env.key}</th>
-                                <MyTooltip label={valText}>
-                                  <th
-                                    className={styles.textEllipsis}
-                                    style={{
-                                      userSelect: 'auto'
-                                    }}
-                                  >
-                                    {valText}
-                                  </th>
-                                </MyTooltip>
+                                <th>
+                                  <MyTooltip label={valText}>
+                                    <Box
+                                      className={styles.textEllipsis}
+                                      style={{
+                                        userSelect: 'auto'
+                                      }}
+                                    >
+                                      {valText}
+                                    </Box>
+                                  </MyTooltip>
+                                </th>
                               </tr>
                             );
                           })}
