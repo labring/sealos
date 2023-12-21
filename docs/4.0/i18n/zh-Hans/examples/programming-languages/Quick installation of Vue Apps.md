@@ -80,7 +80,7 @@ docker build -t my-vue-app .
   ```
 
 
-## 步骤6：登陆 Sealos
+## 步骤6：登录 Sealos
 
 - 进入 [Sealos](https://cloud.sealos.io/) 官网
 
