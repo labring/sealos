@@ -620,6 +620,7 @@ execute_commands() {
     wait_cluster_ready
     sealos run "${image_registry}/${image_repository}/cert-manager:v${cert_manager_version#v:-1.8.0}"
     sealos run "${image_registry}/${image_repository}/openebs:v${openebs_version#v:-3.4.0}"
+    sealos run "${image_registry}/${image_repository}/metrics-server:v${metrics_server_version#v:-0.6.4}"
     kubectl get sc openebs-backup > /dev/null 2>&1 || kubectl create -f - <<EOF
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -638,8 +639,6 @@ EOF
     kbcli addon enable prometheus
 
     get_prompt "installing_monitoring"
-
-    sealos run "${image_registry}/${image_repository}/metrics-server:v${metrics_server_version#v:-0.6.4}"
     sealos run "${image_registry}/${image_repository}/kube-prometheus-stack:v${kube_prometheus_stack_version#v:-0.63.0}"
 
     kubectl patch cm kb-addon-prometheus-server -n kb-system --patch-file $CLOUD_DIR/kb-addon-prometheus-server-patch.yaml
