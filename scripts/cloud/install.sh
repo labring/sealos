@@ -531,7 +531,7 @@ data:
           regex: "9093"
           action: keep
 '
-    echo $kb_addon_prometheus_server_patch > $CLOUD_DIR/kb-addon-prometheus-server-patch.yaml
+    echo "$kb_addon_prometheus_server_patch" > $CLOUD_DIR/kb-addon-prometheus-server-patch.yaml
 
 
     sealos_gen_cmd="sealos gen ${image_registry}/${image_repository}/kubernetes:v${kubernetes_version#v:-1.25.6}\

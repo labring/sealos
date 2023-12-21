@@ -14,7 +14,7 @@ images=(
   docker.io/labring/cilium:v1.12.14
   docker.io/labring/cert-manager:v1.8.0
   docker.io/labring/openebs:v3.4.0
-  docker.io/labring/kubernetes-reflector:v7.0.151
+  docker.io/labring/kube-prometheus-stack:v0.63.0
   docker.io/labring/ingress-nginx:v1.5.1
   docker.io/labring/kubeblocks:v0.6.4
   docker.io/labring/metrics-server:v0.6.4
@@ -32,7 +32,7 @@ done
 # get and save cli
 mkdir -p output/cli
 
-VERSION="v4.3.5"
+VERSION="v4.3.7"
 
 wget https://github.com/labring/sealos/releases/download/${VERSION}/sealos_${VERSION#v}_linux_${ARCH}.tar.gz \
    && tar zxvf sealos_${VERSION#v}_linux_${ARCH}.tar.gz sealos && chmod +x sealos && mv sealos output/cli
