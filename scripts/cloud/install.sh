@@ -385,16 +385,76 @@ data:
     rule_files:
     - /etc/config/recording_rules.yml
     - /etc/config/alerting_rules.yml
+    - /etc/config/kubelet_alert_rules.yml
     - /etc/config/mysql_alert_rules.yml
     - /etc/config/postgresql_alert_rules.yml
     - /etc/config/redis_alert_rules.yml
     - /etc/config/kafka_alert_rules.yml
-    - /etc/config/mongodb_replicaset_alert_rules.yaml
+    - /etc/config/mongodb_alert_rules.yml
     scrape_configs:
     - job_name: prometheus
       static_configs:
       - targets:
         - localhost:9090
+    - honor_labels: true
+      job_name: kubeblocks-service
+      kubernetes_sd_configs:
+      - role: endpoints
+      relabel_configs:
+      - action: keep
+        regex: kubeblocks
+        source_labels:
+        - __meta_kubernetes_service_label_app_kubernetes_io_managed_by
+      - action: drop
+        regex: agamotto
+        source_labels:
+        - __meta_kubernetes_service_label_monitor_kubeblocks_io_managed_by
+      - action: keep
+        regex: true
+        source_labels:
+        - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_scrape
+      - action: replace
+        regex: (https?)
+        source_labels:
+        - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_scheme
+        target_label: __scheme__
+      - action: replace
+        regex: (.+)
+        source_labels:
+        - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_path
+        target_label: __metrics_path__
+      - action: replace
+        regex: (.+?)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        source_labels:
+        - __address__
+        - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_port
+        target_label: __address__
+      - action: labelmap
+        regex: __meta_kubernetes_service_annotation_monitor_kubeblocks_io_param_(.+)
+        replacement: __param_$1
+      - action: labelmap
+        regex: __meta_kubernetes_service_label_(.+)
+      - action: replace
+        source_labels:
+        - __meta_kubernetes_namespace
+        target_label: namespace
+      - action: replace
+        source_labels:
+        - __meta_kubernetes_service_name
+        target_label: service
+      - action: replace
+        source_labels:
+        - __meta_kubernetes_pod_node_name
+        target_label: node
+      - action: replace
+        source_labels:
+        - __meta_kubernetes_pod_name
+        target_label: pod
+      - action: drop
+        regex: Pending|Succeeded|Failed|Completed
+        source_labels:
+        - __meta_kubernetes_pod_phase
     - bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
       job_name: kubernetes-apiservers
       kubernetes_sd_configs:
@@ -447,22 +507,18 @@ data:
         ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
         insecure_skip_verify: true
     - honor_labels: true
-      job_name: kubeblocks-service-endpoints
+      job_name: kubeblocks-agamotto
       kubernetes_sd_configs:
       - role: endpoints
       relabel_configs:
       - action: keep
-        regex: kubeblocks
+        regex: agamotto
         source_labels:
-        - __meta_kubernetes_service_label_app_kubernetes_io_managed_by
+        - __meta_kubernetes_service_label_monitor_kubeblocks_io_managed_by
       - action: keep
         regex: true
         source_labels:
         - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_scrape
-      - action: drop
-        regex: true
-        source_labels:
-        - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_scrape_slow
       - action: replace
         regex: (https?)
         source_labels:
@@ -483,30 +539,10 @@ data:
       - action: labelmap
         regex: __meta_kubernetes_service_annotation_monitor_kubeblocks_io_param_(.+)
         replacement: __param_$1
-      - action: labelmap
-        regex: __meta_kubernetes_service_label_(.+)
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_namespace
-        target_label: namespace
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_service_name
-        target_label: service
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_pod_node_name
-        target_label: node
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_pod_name
-        target_label: pod
       - action: drop
         regex: Pending|Succeeded|Failed|Completed
         source_labels:
         - __meta_kubernetes_pod_phase
-      scrape_interval: 5m
-      scrape_timeout: 30s
     alerting:
       alertmanagers:
       - kubernetes_sd_configs:
@@ -531,7 +567,7 @@ data:
           regex: "9093"
           action: keep
 '
-    echo $kb_addon_prometheus_server_patch > $CLOUD_DIR/kb-addon-prometheus-server-patch.yaml
+    echo "$kb_addon_prometheus_server_patch" > $CLOUD_DIR/kb-addon-prometheus-server-patch.yaml
 
 
     sealos_gen_cmd="sealos gen ${image_registry}/${image_repository}/kubernetes:v${kubernetes_version#v:-1.25.6}\
