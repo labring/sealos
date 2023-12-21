@@ -13,7 +13,7 @@ const DeploymentDetail = ({ obj: dep, open, onClose }: DetailDrawerProps<Deploym
   if (!dep || !(dep instanceof Deployment)) {
     return null;
   }
-  
+
   const { status, spec } = dep;
   const selectors = dep.getSelectors();
   const conditions = dep.getConditions();

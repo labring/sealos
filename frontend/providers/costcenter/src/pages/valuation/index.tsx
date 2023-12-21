@@ -17,7 +17,8 @@ import {
   Button,
   PopoverContent,
   ButtonProps,
-  Icon
+  Icon,
+  Link
 } from '@chakra-ui/react';
 import letter_icon from '@/assert/format_letter_spacing_standard_black.svg';
 import { QueryClient, dehydrate, useQuery } from '@tanstack/react-query';
@@ -41,6 +42,8 @@ import { MemoryIcon } from '@/components/icons/MemoryIcon';
 import { NetworkIcon } from '@/components/icons/NetworkIcon';
 import { StorageIcon } from '@/components/icons/StorageIcon';
 import { PortIcon } from '@sealos/ui';
+import OuterLink from '@/components/outerLink';
+
 type CardItem = {
   title: string;
   price: number[];
@@ -126,6 +129,7 @@ function CycleMenu({
     </Flex>
   );
 }
+
 function Valuation() {
   const { t, i18n } = useTranslation();
   const cookie = getCookie('NEXT_LOCALE');
@@ -196,7 +200,7 @@ function Valuation() {
           <Heading size="lg">{t('Valuation.Standard')}</Heading>
         </Flex>
         <Flex direction={'column'} w="full">
-          <Box w="full" px="100px">
+          <Box w="full" px={['50px', '60px', '70px', '100px']}>
             <Flex w="full" justifyContent={'flex-end'} mb="20px" align={'center'}>
               <ListIcon w="24px" h="24px" mr="6px" />
               <Text mr="auto">{t('common valuation')}</Text>
@@ -222,9 +226,21 @@ function Valuation() {
                     <Tr border="1px solid #DEE0E2" key={x.title}>
                       <Td display={'flex'} alignItems={'center'} border={'none'}>
                         <x.icon h="16px" w="16px" mr="8px" />
-                        <Text textTransform={'capitalize'} textAlign={'center'}>
-                          {t(x.title)}
-                        </Text>
+                        <Flex flexDirection={'column'} alignItems={'flex-start'}>
+                          <Text textTransform={'capitalize'} textAlign={'center'}>
+                            {t(x.title)}
+                          </Text>
+                          {x.title === 'Port' && (
+                            <Link
+                              fontStyle="normal"
+                              fontWeight="400"
+                              fontSize="12px"
+                              color="#1D8CDC"
+                            >
+                              {t('onlyChargedWhenOpenDBPublicAccess')}
+                            </Link>
+                          )}
+                        </Flex>
                       </Td>
                       <Td>
                         {[x.unit, x.title !== 'network' ? `${t(CYCLE[cycleIdx])}` : '']
@@ -239,7 +255,7 @@ function Valuation() {
             </TableContainer>
           </Box>
           {gpuEnabled && gpuData.length > 0 && (
-            <Box w="full" px="100px" mt="48px">
+            <Box w="full" px={['50px', '60px', '70px', '100px']} mt="48px">
               <Flex w="full" justifyContent={'flex-end'} mb="20px" align={'center'}>
                 <ListIcon w="24px" h="24px" mr="6px" />
                 <Text mr="auto">{t('Gpu valuation')}</Text>
@@ -315,7 +331,9 @@ function Valuation() {
     </Flex>
   );
 }
+
 export default Valuation;
+
 export async function getServerSideProps(content: any) {
   const locale = content?.req?.cookies?.NEXT_LOCALE || 'zh';
   process.env.NODE_ENV === 'development' && i18n?.reloadResources(locale, undefined);

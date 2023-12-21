@@ -13,7 +13,8 @@ const YamlList = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
       alignItems={'start'}
       zIndex={1}
       position={'relative'}
-      overflow={'scroll'}>
+      overflow={'scroll'}
+    >
       <Box flexShrink={0} mt={3} borderRadius={'sm'} overflow={'hidden'} bg={'white'}>
         {yamlList.map((file, index) => (
           <Box
@@ -38,7 +39,8 @@ const YamlList = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
                   borderColor: 'myGray.200',
                   backgroundColor: 'transparent'
                 })}
-            onClick={() => setSelectedIndex(index)}>
+            onClick={() => setSelectedIndex(index)}
+          >
             {file.filename.replace(/-.*/, '')}
           </Box>
         ))}
