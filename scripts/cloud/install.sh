@@ -254,7 +254,6 @@ init() {
     pull_image "ingress-nginx" "v${ingress_nginx_version#v:-1.5.1}"
     pull_image "kubeblocks" "v${kubeblocks_version#v:-0.6.2}"
     pull_image "metrics-server" "v${metrics_server_version#v:-0.6.4}"
-    pull_image "kubernetes-reflector" "v${reflector_version#v:-7.0.151}"
     pull_image "sealos-cloud" "${cloud_version}"
 }
 
