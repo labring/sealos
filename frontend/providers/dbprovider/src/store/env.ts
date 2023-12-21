@@ -17,7 +17,8 @@ const useEnvStore = create<EnvState>()(
       domain: '',
       env_storage_className: '',
       migrate_file_image: '',
-      minio_url: ''
+      minio_url: '',
+      BACKUP_ENABLED: false
     },
     initSystemEnv: async () => {
       try {
