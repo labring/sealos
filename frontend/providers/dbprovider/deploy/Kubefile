@@ -15,5 +15,6 @@ ENV minioSecretKey=""
 ENV minioPort=""
 ENV migrateFileImage=""
 ENV minioBucketName=""
+ENV BACKUP_ENABLED="false"
 
 CMD ["kubectl apply -f manifests"]

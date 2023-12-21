@@ -7,10 +7,6 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { namespace } = await getK8s({
-      kubeconfig: await authSession(req)
-    });
-
     const defaultKc = K8sApiDefault();
 
     const result = await defaultKc.makeApiClient(k8s.CoreV1Api).readNamespace('kube-system');
