@@ -1,5 +1,5 @@
 import { deleteObject, listObjects } from '@/api/s3';
-import { FolderPlaceholder, QueryKey } from '@/consts';
+import { Authority, FolderPlaceholder, QueryKey } from '@/consts';
 import { useOssStore } from '@/store/ossStore';
 import {
   AbsoluteCenter,
@@ -42,7 +42,7 @@ import VisibityIcon from '../Icons/VisibilityIcon';
 import LinkIcon from '../Icons/LinkIcon';
 import FileIcon from '../Icons/FileIcon';
 import FolderIcon from '../Icons/FolderIcon';
-import { GetObjectCommand, _Object } from '@aws-sdk/client-s3';
+import { GetObjectCommand, S3, S3Client } from '@aws-sdk/client-s3';
 import { useToast } from '@/hooks/useToast';
 import { useEffect, useState } from 'react';
 import ArrowDownSLineIcon from '../Icons/ArrowDownSLineIcon';
@@ -205,6 +205,23 @@ export default function FileManager({ ...styles }: FlexProps) {
       isDir: true
     });
   const fuseList = fuse.search(searchVal);
+  // get url
+  const generateUrl = async (client: S3, Bucket: string, Key: string) => {
+    if (bucket?.policy === Authority.private) {
+      return getSignedUrl(
+        client,
+        new GetObjectCommand({
+          Bucket,
+          Key
+        })
+      );
+    } else {
+      const ep = await client.config.endpoint!();
+      const { protocol, hostname, path } = ep;
+      const url = `${protocol}//${hostname}${path}${Bucket}/${Key}`;
+      return url;
+    }
+  };
   // --------
   // budle delete
   const deleteCheckBoxGroupState = useCheckboxGroup({
@@ -243,6 +260,7 @@ export default function FileManager({ ...styles }: FlexProps) {
     });
     deleteCheckBoxGroupState.setValue([]);
   };
+
   const trueFileList = fileList.filter(
     (f) => !((f.fileName === '..' && f.isDir) || f.fileName === FolderPlaceholder)
   );
@@ -409,7 +427,7 @@ export default function FileManager({ ...styles }: FlexProps) {
                           onClick={(e) => {
                             e.stopPropagation();
                             if (!s3client || !Bucket) return;
-                            getSignedUrl(s3client, new GetObjectCommand({ Bucket, Key: file.Key }))
+                            generateUrl(s3client, Bucket, file.Key)
                               .then((url) => {
                                 window.open(new URL(url));
                               })
@@ -430,7 +448,7 @@ export default function FileManager({ ...styles }: FlexProps) {
                           onClick={(e) => {
                             e.stopPropagation();
                             if (!s3client || !Bucket) return;
-                            getSignedUrl(s3client, new GetObjectCommand({ Bucket, Key: file.Key }))
+                            generateUrl(s3client, Bucket, file.Key)
                               .then((url) => {
                                 copyData(url);
                               })
