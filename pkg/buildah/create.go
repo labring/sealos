@@ -158,11 +158,11 @@ func printCommands(name string, env []string, info buildah.BuilderInfo) {
 
 	cmds := make([]string, 0)
 	for i := range info.OCIv1.Config.Entrypoint {
-		cmds = append(cmds, guest.FormalizeWorkingCommand(name, info.Container, typeKey, expansion.Expand(info.OCIv1.Config.Entrypoint[i], mapping)))
+		cmds = append(cmds, guest.FormalizeWorkingCommand(name, info.Container, v2.ImageType(typeKey), expansion.Expand(info.OCIv1.Config.Entrypoint[i], mapping)))
 	}
 
 	for i := range info.OCIv1.Config.Cmd {
-		cmds = append(cmds, guest.FormalizeWorkingCommand(name, info.Container, typeKey, expansion.Expand(info.OCIv1.Config.Cmd[i], mapping)))
+		cmds = append(cmds, guest.FormalizeWorkingCommand(name, info.Container, v2.ImageType(typeKey), expansion.Expand(info.OCIv1.Config.Cmd[i], mapping)))
 	}
 
 	logger.Info("Shell command: %s", stringsutil.RenderShellWithEnv(strings.Join(cmds, "; "), envs))
