@@ -1,6 +1,11 @@
-import { getConfig } from "./config";
+import { getConfig } from './config';
 
-export function easeInOutQuad(elapsed: number, initialValue: number, amountOfChange: number, duration: number): number {
+export function easeInOutQuad(
+  elapsed: number,
+  initialValue: number,
+  amountOfChange: number,
+  duration: number
+): number {
   if ((elapsed /= duration / 2) < 1) {
     return (amountOfChange / 2) * elapsed * elapsed + initialValue;
   }
@@ -12,14 +17,14 @@ export function getFocusableElements(parentEls: Element[] | HTMLElement[]) {
     'a[href]:not([disabled]), button:not([disabled]), textarea:not([disabled]), input[type="text"]:not([disabled]), input[type="radio"]:not([disabled]), input[type="checkbox"]:not([disabled]), select:not([disabled])';
 
   return parentEls
-    .flatMap(parentEl => {
+    .flatMap((parentEl) => {
       const isParentFocusable = parentEl.matches(focusableQuery);
       const focusableEls: HTMLElement[] = Array.from(parentEl.querySelectorAll(focusableQuery));
 
       return [...(isParentFocusable ? [parentEl as HTMLElement] : []), ...focusableEls];
     })
-    .filter(el => {
-      return getComputedStyle(el).pointerEvents !== "none" && isElementVisible(el);
+    .filter((el) => {
+      return getComputedStyle(el).pointerEvents !== 'none' && isElementVisible(el);
     });
 }
 
@@ -28,14 +33,14 @@ export function bringInView(element: Element) {
     return;
   }
 
-  const shouldSmoothScroll = getConfig("smoothScroll");
+  const shouldSmoothScroll = getConfig('smoothScroll');
 
   element.scrollIntoView({
     // Removing the smooth scrolling for elements which exist inside the scrollable parent
     // This was causing the highlight to not properly render
-    behavior: !shouldSmoothScroll || hasScrollableParent(element) ? "auto" : "smooth",
-    inline: "center",
-    block: "center",
+    behavior: !shouldSmoothScroll || hasScrollableParent(element) ? 'auto' : 'smooth',
+    inline: 'center',
+    block: 'center'
   });
 }
 
