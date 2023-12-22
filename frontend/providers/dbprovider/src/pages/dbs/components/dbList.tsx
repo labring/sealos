@@ -200,7 +200,8 @@ const DBList = ({
                           <Box ml={2}>{t('Update')}</Box>
                         </>
                       ),
-                      onClick: () => router.push(`/db/edit?name=${item.name}`)
+                      onClick: () => router.push(`/db/edit?name=${item.name}`),
+                      isDisabled: item.status.value === 'Updating'
                     },
                     {
                       child: (
@@ -209,7 +210,8 @@ const DBList = ({
                           <Box ml={2}>{t('Restart')}</Box>
                         </>
                       ),
-                      onClick: () => handleRestartApp(item)
+                      onClick: () => handleRestartApp(item),
+                      isDisabled: item.status.value === 'Updating'
                     }
                   ]),
               ...(item.status.value === DBStatusEnum.Running
@@ -233,7 +235,8 @@ const DBList = ({
                     <Box ml={2}>{t('Delete')}</Box>
                   </>
                 ),
-                onClick: () => setDelAppName(item.name)
+                onClick: () => setDelAppName(item.name),
+                isDisabled: item.status.value === 'Updating'
               }
             ]}
           />

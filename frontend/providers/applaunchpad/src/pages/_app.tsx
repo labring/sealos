@@ -2,7 +2,7 @@ import { theme } from '@/constants/theme';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useGlobalStore } from '@/store/global';
-import { loadInitData } from '@/store/static';
+import { SEALOS_DOMAIN, loadInitData } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import { ChakraProvider } from '@chakra-ui/react';
@@ -50,7 +50,6 @@ const App = ({ Component, pageProps }: AppProps) => {
   });
 
   useEffect(() => {
-    NProgress.start();
     const response = createSealosApp();
     (async () => {
       const { SEALOS_DOMAIN, FORM_SLIDER_LIST_CONFIG } = await (() => loadInitData())();
@@ -69,14 +68,12 @@ const App = ({ Component, pageProps }: AppProps) => {
         console.log('App is not running in desktop');
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
           localStorage.removeItem('session');
-
           openConfirm(() => {
             window.open(`https://${SEALOS_DOMAIN}`, '_self');
           })();
         }
       }
     })();
-    NProgress.done();
     return response;
   }, []);
 
@@ -133,35 +130,32 @@ const App = ({ Component, pageProps }: AppProps) => {
     i18n?.changeLanguage?.(lang);
   }, [refresh, router.pathname]);
 
-  // InternalAppCall
-  const setupInternalAppCallListener = async () => {
-    try {
-      const envs = await getPlatformEnv();
-      const event = async (e: MessageEvent) => {
-        const whitelist = [`https://${envs?.domain}`];
-        if (!whitelist.includes(e.origin)) {
-          return;
-        }
-        try {
-          if (e.data?.type === 'InternalAppCall' && e.data?.name) {
-            router.push({
-              pathname: '/app/detail',
-              query: {
-                name: e.data.name
-              }
-            });
-          }
-        } catch (error) {
-          console.log(error, 'error');
-        }
-      };
-      window.addEventListener('message', event);
-      return () => window.removeEventListener('message', event);
-    } catch (error) {}
-  };
   useEffect(() => {
+    const setupInternalAppCallListener = async () => {
+      try {
+        const event = async (e: MessageEvent) => {
+          const whitelist = [`https://${SEALOS_DOMAIN}`];
+          if (!whitelist.includes(e.origin)) {
+            return;
+          }
+          try {
+            if (e.data?.type === 'InternalAppCall' && e.data?.name) {
+              router.push({
+                pathname: '/app/detail',
+                query: {
+                  name: e.data.name
+                }
+              });
+            }
+          } catch (error) {
+            console.log(error, 'error');
+          }
+        };
+        window.addEventListener('message', event);
+        return () => window.removeEventListener('message', event);
+      } catch (error) {}
+    };
     setupInternalAppCallListener();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

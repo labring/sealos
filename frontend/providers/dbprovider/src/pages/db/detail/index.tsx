@@ -75,7 +75,7 @@ const AppDetail = ({
   const [showSlider, setShowSlider] = useState(false);
 
   useQuery([dbName, 'loadDBDetail', 'intervalLoadPods'], () => loadDBDetail(dbName), {
-    // refetchInterval: 3000,
+    refetchInterval: 3000,
     onError(err) {
       router.replace('/dbs');
       toast({

@@ -348,7 +348,7 @@ const Form = ({
                   <Tooltip label={`${t('Storage Range')}${minStorage}~200 Gi`}>
                     <NumberInput
                       w={'180px'}
-                      max={200}
+                      max={300}
                       min={minStorage}
                       step={1}
                       position={'relative'}
