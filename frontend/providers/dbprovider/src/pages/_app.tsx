@@ -11,7 +11,7 @@ import { appWithTranslation, useTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import Router, { useRouter } from 'next/router';
-import NProgress from 'nprogress'; //nprogress module
+import NProgress from 'nprogress';
 import { useEffect, useState } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
@@ -19,7 +19,6 @@ import useEnvStore from '@/store/env';
 
 import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
-import 'react-day-picker/dist/style.css';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -50,31 +49,29 @@ function App({ Component, pageProps }: AppProps) {
   });
 
   useEffect(() => {
-    initSystemEnv();
-  }, [initSystemEnv]);
-
-  useEffect(() => {
-    NProgress.start();
     const response = createSealosApp();
-
     (async () => {
+      const { domain } = await initSystemEnv();
       try {
-        const res = await sealosApp.getSession();
-        localStorage.setItem('session', JSON.stringify(res));
+        const newSession = JSON.stringify(await sealosApp.getSession());
+        const oldSession = localStorage.getItem('session');
+        if (newSession && newSession !== oldSession) {
+          localStorage.setItem('session', newSession);
+          window.location.reload();
+        }
         console.log('app init success');
       } catch (err) {
         console.log('App is not running in desktop');
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
           localStorage.removeItem('session');
           openConfirm(() => {
-            window.open(`https://${SystemEnv.domain}`, '_self');
+            window.open(`https://${domain}`, '_self');
           })();
         }
       }
     })();
-    NProgress.done();
     return response;
-  }, [SystemEnv.domain, openConfirm]);
+  }, []);
 
   // add resize event
   useEffect(() => {
@@ -93,6 +90,9 @@ function App({ Component, pageProps }: AppProps) {
 
   // init
   useEffect(() => {
+    getUserPrice();
+    getDBVersion();
+
     const changeI18n = async (data: any) => {
       const lastLang = getLangStore();
       const newLang = data.currentLanguage;
@@ -102,9 +102,6 @@ function App({ Component, pageProps }: AppProps) {
         setRefresh((state) => !state);
       }
     };
-
-    getUserPrice();
-    getDBVersion();
 
     (async () => {
       try {
@@ -138,7 +135,6 @@ function App({ Component, pageProps }: AppProps) {
   }, [refresh, router.asPath]);
 
   useEffect(() => {
-    // InternalAppCall
     const setupInternalAppCallListener = async () => {
       try {
         const event = async (e: MessageEvent) => {
@@ -164,7 +160,7 @@ function App({ Component, pageProps }: AppProps) {
       } catch (error) {}
     };
     setupInternalAppCallListener();
-  }, [SystemEnv, router]);
+  }, [SystemEnv.domain, router]);
 
   return (
     <>

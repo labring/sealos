@@ -19,13 +19,7 @@ const Empty = () => {
     >
       <MyIcon name={'noEvents'} color={'transparent'} width={'80px'} height={'80px'} />
       <Box py={8}>{t("You haven't created any application yet.")}</Box>
-      <Button
-        w={155}
-        mt={5}
-        variant={'primary'}
-        leftIcon={<MyIcon name="plus" />}
-        onClick={() => router.push('/app/edit')}
-      >
+      <Button w={155} mt={5} variant={'primary'} onClick={() => router.push('/app/edit')}>
         {t('Create Application')}
       </Button>
     </Box>

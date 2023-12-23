@@ -29,17 +29,8 @@ import BreadCrumbHeader from './components/BreadCrumbHeader';
 import Form from './components/Form';
 import YamlList from './components/YamlList';
 import { type EditorState } from '@codemirror/state';
-import dynamic from 'next/dynamic';
-const Editor = dynamic(() => import('./components/Editor'), {
-  loading() {
-    return (
-      <Center w="full" h="full">
-        <Spinner size={'lg'} />
-      </Center>
-    );
-  },
-  ssr: false
-});
+import Editor from './components/Editor';
+
 export default function Develop() {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -56,7 +47,7 @@ export default function Develop() {
   const onYamlChange = debounce((state: EditorState) => {
     const value = state.doc.toString();
     parseTemplate(value);
-  }, 500);
+  }, 800);
 
   const getYamlSource = (str: string): TemplateSourceType => {
     const yamlData = JsYaml.loadAll(str);
@@ -202,6 +193,7 @@ export default function Develop() {
   }, [yamlList]);
 
   const formalApply = async () => {
+    setIsLoading(true);
     try {
       if (yamlList.length !== 0 && SuccessfulDryRun.current) {
         const result: string[] = await postDeployApp(yamlList.map((item) => item.value));
@@ -213,6 +205,7 @@ export default function Develop() {
     } catch (error) {
       console.log(error, 'FormalApply');
     }
+    setIsLoading(false);
   };
 
   return (
@@ -248,13 +241,17 @@ export default function Develop() {
               {t('develop.Please enter YAML code')}
             </Text>
           </Flex>
-          <Editor
-            h="100%"
-            w="100%"
-            position={'relative'}
-            overflow={'auto'}
-            onDocChange={(s) => onYamlChange(s)}
-          />
+          {platformEnvs && (
+            <Editor
+              h="100%"
+              w="100%"
+              position={'relative'}
+              overflow={'auto'}
+              onDocChange={(s) => {
+                onYamlChange(s);
+              }}
+            />
+          )}
         </Flex>
         {/* right */}
         <Flex w="50%" flexDirection={'column'} position={'relative'}>
