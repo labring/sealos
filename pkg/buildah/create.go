@@ -19,6 +19,14 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
+
+	"github.com/labring/sealos/pkg/guest"
+
+	"github.com/containers/buildah"
+
+	"github.com/labring/sealos/fork/golang/expansion"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 
 	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 
@@ -86,6 +94,7 @@ func newCreateCmd() *cobra.Command {
 			}
 
 			if !opts.short {
+				printCommands(opts.name, opts.env, info)
 				logger.Info("Mount point: %s", info.MountPoint)
 			} else {
 				fmt.Println(info.MountPoint)
@@ -139,4 +148,22 @@ func runRender(mountPoints []string, env []string) error {
 	}
 
 	return eg.Wait()
+}
+
+func printCommands(name string, env []string, info buildah.BuilderInfo) {
+	envs := maps.Merge(maps.FromSlice(info.OCIv1.Config.Env), maps.FromSlice(env))
+	mapping := expansion.MappingFuncFor(envs)
+
+	typeKey := maps.GetFromKeys(info.OCIv1.Config.Labels, v2.ImageTypeKeys...)
+
+	cmds := make([]string, 0)
+	for i := range info.OCIv1.Config.Entrypoint {
+		cmds = append(cmds, guest.FormalizeWorkingCommand(name, info.Container, v2.ImageType(typeKey), expansion.Expand(info.OCIv1.Config.Entrypoint[i], mapping)))
+	}
+
+	for i := range info.OCIv1.Config.Cmd {
+		cmds = append(cmds, guest.FormalizeWorkingCommand(name, info.Container, v2.ImageType(typeKey), expansion.Expand(info.OCIv1.Config.Cmd[i], mapping)))
+	}
+
+	logger.Info("Shell command: %s", stringsutil.RenderShellWithEnv(strings.Join(cmds, "; "), envs))
 }

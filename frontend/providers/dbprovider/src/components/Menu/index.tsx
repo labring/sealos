@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, MenuList, MenuItem } from '@chakra-ui/react';
+import { Menu, MenuList, MenuItem, MenuItemProps } from '@chakra-ui/react';
 
 interface Props {
   width: number;
@@ -8,11 +8,12 @@ interface Props {
     isActive?: boolean;
     child: React.ReactNode;
     onClick: () => void;
+    isDisabled?: boolean;
   }[];
 }
 
 const MyMenu = ({ width, Button, menuList }: Props) => {
-  const menuItemStyles = {
+  const menuItemStyles: MenuItemProps = {
     borderRadius: 'sm',
     py: 2,
     display: 'flex',
@@ -20,6 +21,12 @@ const MyMenu = ({ width, Button, menuList }: Props) => {
     _hover: {
       backgroundColor: 'myWhite.600',
       color: 'hover.blue'
+    },
+    _disabled: {
+      _hover: {
+        color: '#485264',
+        cursor: 'not-allowed'
+      }
     }
   };
 
@@ -34,6 +41,7 @@ const MyMenu = ({ width, Button, menuList }: Props) => {
       >
         {menuList.map((item, i) => (
           <MenuItem
+            isDisabled={item?.isDisabled || false}
             key={i}
             {...menuItemStyles}
             onClick={item.onClick}

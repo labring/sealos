@@ -44,17 +44,17 @@ const AppDetail = ({
   const { listNav } = useMemo(() => {
     const PublicNetMigration = ['postgresql', 'apecloud-mysql', 'mongodb'].includes(dbType);
     const MigrateSupported = ['postgresql', 'mongodb', 'apecloud-mysql'].includes(dbType);
-    const BackupSupported = ['postgresql', 'mongodb', 'apecloud-mysql', 'redis'].includes(dbType);
+    const BackupSupported =
+      ['postgresql', 'mongodb', 'apecloud-mysql', 'redis'].includes(dbType) &&
+      SystemEnv.BACKUP_ENABLED;
 
     const listNavValue = [
       { label: 'Monitor List', value: TabEnum.monitor },
       { label: 'Replicas List', value: TabEnum.pod },
       ...(BackupSupported ? [{ label: 'Backup List', value: TabEnum.backup }] : []),
-      ...(PublicNetMigration
-        ? [{ label: 'Internet Migration', value: TabEnum.InternetMigration }]
-        : []),
+      ...(PublicNetMigration ? [{ label: 'Online Import', value: TabEnum.InternetMigration }] : []),
       ...(PublicNetMigration && !!SystemEnv.minio_url
-        ? [{ label: 'File Migration', value: TabEnum.DumpImport }]
+        ? [{ label: 'Import Through File', value: TabEnum.DumpImport }]
         : [])
     ];
 
@@ -64,7 +64,7 @@ const AppDetail = ({
       isBackupSupported: BackupSupported,
       listNav: listNavValue
     };
-  }, [SystemEnv.minio_url, dbType]);
+  }, [SystemEnv, dbType]);
 
   const theme = useTheme();
   const { toast } = useToast();
@@ -75,7 +75,7 @@ const AppDetail = ({
   const [showSlider, setShowSlider] = useState(false);
 
   useQuery([dbName, 'loadDBDetail', 'intervalLoadPods'], () => loadDBDetail(dbName), {
-    // refetchInterval: 3000,
+    refetchInterval: 3000,
     onError(err) {
       router.replace('/dbs');
       toast({

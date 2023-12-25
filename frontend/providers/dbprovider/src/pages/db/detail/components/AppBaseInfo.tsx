@@ -9,6 +9,7 @@ import MyIcon from '@/components/Icon';
 import { DBStatusEnum, DBTypeEnum, DBTypeSecretMap, defaultDBDetail } from '@/constants/db';
 import { useToast } from '@/hooks/useToast';
 import useEnvStore from '@/store/env';
+import { SOURCE_PRICE } from '@/store/static';
 import type { DBDetailType } from '@/types/db';
 import { json2NetworkService } from '@/utils/json2Yaml';
 import { printMemory, useCopyData } from '@/utils/tools';
@@ -395,21 +396,9 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                   {t('Billing Standards')}
                 </Text>
                 <Center mt="16px" color={'#24282C'} fontSize={'24px'} fontWeight={600}>
-                  0.5
+                  {SOURCE_PRICE.nodeports}
                   <MyIcon ml="8px" name="currency" w="32px" h="32px"></MyIcon>/ {t('Hour')}
                 </Center>
-                {/* <Center
-                  p="8px"
-                  mt="20px"
-                  bg="#EBF7FD"
-                  color={'#1D8CDC'}
-                  cursor={'pointer'}
-                  w="100%"
-                  onClick={() => window.open('https://forum.laf.run/d/1092')}
-                >
-                  <MyIcon name="infoCircle" w="16px" fill={'#48A7EC'}></MyIcon>
-                  免费方案
-                </Center> */}
                 <Button mt="32px" variant={'primary'} onClick={openNetWorkService}>
                   {t('Turn On')}
                 </Button>

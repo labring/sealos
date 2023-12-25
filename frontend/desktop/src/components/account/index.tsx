@@ -100,7 +100,7 @@ const NsMenu = () => {
         w="250px"
         background="linear-gradient(270deg, #F1F1F1 0%, #EEE 43.75%, #ECECEC 100%)"
       >
-        <PopoverBody px="0" pb="0" pt="4px">
+        <PopoverBody px="0" pb="0" pt="4px" maxH={'320px'} overflowY={'auto'}>
           <NsList
             displayPoint={true}
             selected_ns_uid={ns_uid}

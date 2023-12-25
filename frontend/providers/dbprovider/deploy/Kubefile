@@ -8,12 +8,13 @@ COPY manifests manifests
 ENV cloudDomain="127.0.0.1.nip.io"
 ENV cloudPort=""
 ENV certSecretName="wildcard-cert"
-ENV monitorUrl=""
+ENV monitorUrl="http://database-monitor.sealos.svc.cluster.local:9090"
 ENV minioUrl=""
 ENV minioAccessKey=""
 ENV minioSecretKey=""
 ENV minioPort=""
 ENV migrateFileImage=""
 ENV minioBucketName=""
+ENV BACKUP_ENABLED="false"
 
 CMD ["kubectl apply -f manifests"]

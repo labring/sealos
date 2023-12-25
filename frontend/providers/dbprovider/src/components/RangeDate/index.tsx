@@ -1,19 +1,9 @@
-import {
-  Flex,
-  Input,
-  Popover,
-  PopoverTrigger,
-  Img,
-  PopoverContent,
-  Button,
-  Box,
-  useTheme
-} from '@chakra-ui/react';
-import { format, parse, isValid, isAfter, isBefore } from 'date-fns';
-import { useState, ChangeEventHandler, useEffect, useMemo } from 'react';
-import { DateRange, SelectRangeEventHandler, DayPicker } from 'react-day-picker';
-import { useQueryClient } from '@tanstack/react-query';
 import { CalendarIcon } from '@chakra-ui/icons';
+import { Box, Button, Popover, PopoverContent, PopoverTrigger, useTheme } from '@chakra-ui/react';
+import { format } from 'date-fns';
+import { useState } from 'react';
+import { DateRange, DayPicker } from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
 
 export default function RangeDate({
   isDisabled = false,
