@@ -37,7 +37,6 @@ spec:
         env:
         - name: PROMETHEUS_SERVICE_HOST
           value: http://kb-addon-prometheus-server.kb-system.svc.cluster.local
-        - name: OBJECT_STORAGE_INSTANCE
         image: ghcr.io/labring/sealos-database-service:latest
         imagePullPolicy: Always
         name: database-monitor
