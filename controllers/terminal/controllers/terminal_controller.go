@@ -39,6 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 const (
@@ -156,11 +157,40 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 func (r *TerminalReconciler) syncIngress(ctx context.Context, terminal *terminalv1.Terminal, hostname string) error {
 	var err error
 	host := hostname + "." + r.terminalDomain
-	switch terminal.Spec.IngressType {
+	switch terminal.Spec.GatewayType {
 	case terminalv1.Nginx:
 		err = r.syncNginxIngress(ctx, terminal, host)
+	case terminalv1.Gateway:
+		err = r.syncGateway(ctx, terminal, host)
 	}
 	return err
+}
+
+func (r *TerminalReconciler) syncGateway(ctx context.Context, terminal *terminalv1.Terminal, host string) error {
+	httproute := &gatewayv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      terminal.Name,
+			Namespace: terminal.Namespace,
+		},
+	}
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, httproute, func() error {
+		expectHttproute := r.createGateway(terminal, host)
+		httproute.ObjectMeta.Labels = expectHttproute.ObjectMeta.Labels
+		httproute.ObjectMeta.Annotations = expectHttproute.ObjectMeta.Annotations
+		httproute.Spec.Rules = expectHttproute.Spec.Rules
+		httproute.Spec.Hostnames = expectHttproute.Spec.Hostnames
+		httproute.Spec.CommonRouteSpec = expectHttproute.Spec.CommonRouteSpec
+		return controllerutil.SetControllerReference(terminal, httproute, r.Scheme)
+	}); err != nil {
+		return err
+	}
+
+	domain := Protocol + host + r.getPort()
+	if terminal.Status.Domain != domain {
+		terminal.Status.Domain = domain
+		return r.Status().Update(ctx, terminal)
+	}
+	return nil
 }
 
 func (r *TerminalReconciler) syncNginxIngress(ctx context.Context, terminal *terminalv1.Terminal, host string) error {
