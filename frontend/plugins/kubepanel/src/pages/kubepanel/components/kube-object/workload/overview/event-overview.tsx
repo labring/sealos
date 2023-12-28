@@ -1,13 +1,11 @@
 import Title from '@/components/common/title/title';
 import { KubeObjectAge } from '@/components/kube/object/kube-object-age';
 import { ReactiveDuration } from '@/components/kube/reactive-duration';
+import { useWatcher } from '@/hooks/useWatcher';
 import { KubeEvent, ObjectReference } from '@/k8slens/kube-object';
 import { useEventStore } from '@/store/k8s/event.store';
-import { APICallback } from '@/types/state';
 import { Table, Tooltip } from 'antd';
-import useNotification from 'antd/lib/notification/useNotification';
 import { ColumnsType } from 'antd/lib/table';
-import { useCallback, useEffect } from 'react';
 
 const columns: ColumnsType<KubeEvent> = [
   {
@@ -79,24 +77,8 @@ const columns: ColumnsType<KubeEvent> = [
 ];
 
 const EventOverview = () => {
-  const { items, initialize, isLoaded } = useEventStore();
-  const [notifyApi, cxtHolder] = useNotification();
-  const callback = useCallback<APICallback>(
-    (_, e) => {
-      if (e) {
-        notifyApi.error({
-          message: e.error.reason,
-          description: e.error.message,
-          duration: 5
-        });
-      }
-    },
-    [notifyApi]
-  );
-
-  useEffect(() => {
-    initialize(callback);
-  }, []);
+  const { items, initialize, isLoaded, watch } = useEventStore();
+  const cxtHolder = useWatcher({ initializers: [initialize], watchers: [watch] });
 
   return (
     <>

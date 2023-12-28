@@ -110,7 +110,7 @@ export function createKubeStoreSlice<
           return;
         }
 
-        set({ resourceVersion: data.object.metadata.resourceVersion });
+        console.log('watch data', data);
         switch (data.type) {
           case 'ADDED':
           case 'MODIFIED':

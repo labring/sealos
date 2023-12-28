@@ -1,10 +1,10 @@
 import { Section } from '@/components/common/section/section';
 import Title from '@/components/common/title/title';
-import { APICallback, KubeStoreAction, WatchCloser } from '@/types/state';
+import { useWatcher } from '@/hooks/useWatcher';
+import { KubeStoreAction } from '@/types/state';
 import { TableProps } from 'antd';
 import { Table } from 'antd';
-import useNotification from 'antd/lib/notification/useNotification';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 
 type DefaultRecordType = Record<string, any>;
 
@@ -32,39 +32,7 @@ const PanelTable = <RecordType extends DefaultRecordType, Item = any>(
   } = tableProps;
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
-  const [watchTrigger, setWatchTrigger] = useState(false);
-  const [notifyApi, cxtHolder] = useNotification({ placement: 'topRight' });
-
-  const trigger = useCallback<APICallback>((_, e) => {
-    if (e) {
-      if (e.code === 410) {
-        notifyApi.error({
-          description: 'Resource version is too old, you need to refresh the page',
-          message: 'Outdated Resource'
-        });
-        setWatchTrigger(!watchTrigger);
-        return;
-      }
-      notifyApi.error({
-        description: (
-          <div>
-            <p>code: {e.error.errno}</p>
-            <p>{e.error.message}</p>
-          </div>
-        ),
-        message: e.error.reason,
-        duration: 5
-      });
-    }
-  }, []);
-
-  useEffect(() => {
-    let closers: Array<WatchCloser>;
-    Promise.allSettled(initializers.map((initializer) => initializer(trigger))).finally(() => {
-      closers = watchers.map((watcher) => watcher(trigger));
-    });
-    return () => closers.forEach((c) => c());
-  }, [watchTrigger]);
+  const cxtHolder = useWatcher({ initializers, watchers });
 
   return (
     <Section>

@@ -2,7 +2,6 @@ import { Flex } from 'antd';
 import WorkloadStatusOverview from './status-overview';
 import { convertToPieChartStatusData } from '@/utils/pie-chart';
 import { entries, startCase } from 'lodash';
-import { useCallback, useEffect } from 'react';
 import {
   getDeploymentsStatuses,
   getStatefulSetsStatuses,
@@ -13,32 +12,17 @@ import {
 import { Section } from '@/components/common/section/section';
 import Title from '@/components/common/title/title';
 import EventOverview from './event-overview';
-import { APICallback } from '@/types/state';
-import useNotification from 'antd/lib/notification/useNotification';
+import { useWatcher } from '@/hooks/useWatcher';
 
 const OverviewPage = () => {
-  const { items: pods, initialize: initializePods, getStatuses: getPodStatuses } = usePodStore();
-  const { items: deps, initialize: initializeDeployments } = useDeploymentStore();
-  const { items: stats, initialize: initializeStatefulSets } = useStatefulSetStore();
-  const [notifyApi, cxtHolder] = useNotification();
-  const callback = useCallback<APICallback>(
-    (_, e) => {
-      if (e) {
-        notifyApi.error({
-          message: e.error.reason,
-          description: e.error.message,
-          duration: 5
-        });
-      }
-    },
-    [notifyApi]
-  );
+  const { items: pods, initialize: initializePods, watch: watchPods, getStatuses: getPodStatuses } = usePodStore();
+  const { items: deps, initialize: initializeDeployments, watch: watchDeployments } = useDeploymentStore();
+  const { items: stats, initialize: initializeStatefulSets, watch: watchStatefulSets } = useStatefulSetStore();
 
-  useEffect(() => {
-    initializePods(callback);
-    initializeDeployments(callback);
-    initializeStatefulSets(callback);
-  }, []);
+  const cxtHolder = useWatcher({
+    initializers: [initializePods, initializeDeployments, initializeStatefulSets],
+    watchers: [watchPods, watchDeployments, watchStatefulSets]
+  });
 
   const statuses = {
     Pod: convertToPieChartStatusData(getPodStatuses),
