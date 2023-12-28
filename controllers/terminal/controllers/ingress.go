@@ -21,7 +21,6 @@ import (
 
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 	"k8s.io/utils/ptr"
 
 	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
@@ -127,9 +126,9 @@ func (r *TerminalReconciler) createGateway(terminal *terminalv1.Terminal, host s
 						Group: (*gatewayv1.Group)(ptr.To("")),
 						Kind:  (*gatewayv1.Kind)(ptr.To("Service")),
 						Name:  gatewayv1.ObjectName(terminal.Name),
-						Port:  (*gatewayv1.PortNumber)(pointer.Int32Ptr(3000)),
+						Port:  (*gatewayv1.PortNumber)(ptr.To(int32(3000))),
 					},
-					Weight: pointer.Int32Ptr(1),
+					Weight: ptr.To(int32(1)),
 				},
 			},
 		},
