@@ -5,6 +5,7 @@ import { KubeStoreAction } from '@/types/state';
 import { TableProps } from 'antd';
 import { Table } from 'antd';
 import { useState } from 'react';
+import { getPaginationProps } from './pagination';
 
 type DefaultRecordType = Record<string, any>;
 
@@ -22,7 +23,6 @@ const PanelTable = <RecordType extends DefaultRecordType, Item = any>(
 ) => {
   const {
     scroll = { x: true },
-    pagination = false,
     sectionTitle: title,
     DetailDrawer,
     getRowKey,
@@ -42,7 +42,7 @@ const PanelTable = <RecordType extends DefaultRecordType, Item = any>(
         {...tableProps}
         rowKey={getRowKey}
         scroll={scroll}
-        pagination={pagination}
+        pagination={getPaginationProps(tableProps.dataSource?.length || 0)}
         rowClassName="cursor-pointer"
         onRow={(record) => ({
           onClick: () => {
