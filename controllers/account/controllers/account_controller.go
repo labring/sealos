@@ -26,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 
 	"k8s.io/client-go/kubernetes"
@@ -214,6 +215,9 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, owner, accountNames
 	if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
 		r.Logger.Error(err, "sync resource resourceQuota and limitRange failed")
 	}
+	if err := r.adaptEphemeralStorageLimitRange(ctx, userNamespace); err != nil {
+		r.Logger.Error(err, "adapt ephemeral storage limitRange failed")
+	}
 	account := accountv1.Account{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      owner,
@@ -298,18 +302,22 @@ func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, 
 	return nil
 }
 
-//func (r *AccountReconciler) adaptNodePortCountQuota(ctx context.Context, nsName string) error {
-//	quota := resources.GetDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName)
-//	return retry.Retry(10, 1*time.Second, func() error {
-//		_, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
-//			if _, ok := quota.Spec.Hard[corev1.ResourceServicesNodePorts]; !ok {
-//				quota.Spec.Hard[corev1.ResourceServicesNodePorts] = resource.MustParse(env.GetEnvWithDefault(resources.QuotaLimitsNodePorts, resources.DefaultQuotaLimitsNodePorts))
-//			}
-//			return nil
-//		})
-//		return err
-//	})
-//}
+func (r *AccountReconciler) adaptEphemeralStorageLimitRange(ctx context.Context, nsName string) error {
+	limit := resources.GetDefaultLimitRange(nsName, nsName)
+	return retry.Retry(10, 1*time.Second, func() error {
+		_, err := controllerutil.CreateOrUpdate(ctx, r.Client, limit, func() error {
+			if len(limit.Spec.Limits) == 0 {
+				limit = resources.GetDefaultLimitRange(nsName, nsName)
+			}
+			limit.Spec.Limits[0].DefaultRequest[corev1.ResourceEphemeralStorage] = resources.LimitRangeDefault[corev1.ResourceEphemeralStorage]
+			limit.Spec.Limits[0].Default[corev1.ResourceEphemeralStorage] = resources.LimitRangeDefault[corev1.ResourceEphemeralStorage]
+			//if _, ok := limit.Spec.Limits[0].Default[corev1.ResourceEphemeralStorage]; !ok {
+			//}
+			return nil
+		})
+		return err
+	})
+}
 
 func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, namespace string) error {
 	role := rbacv1.Role{
