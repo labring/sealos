@@ -3,7 +3,6 @@ const path = require('path');
 const runtimeCaching = require('next-pwa/cache');
 const isProduction = process.env.NODE_ENV === 'production';
 const { i18n } = require('./next-i18next.config');
-
 const withPWA = require('next-pwa')({
   dest: 'public',
   runtimeCaching,
