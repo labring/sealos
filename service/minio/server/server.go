@@ -8,11 +8,11 @@ import (
 	"github.com/labring/sealos/service/pkg/server"
 )
 
-type DatabaseServer struct {
+type MinioServer struct {
 	ConfigFile string
 }
 
-func (rs *DatabaseServer) Serve(c *server.Config) {
+func (rs *MinioServer) Serve(c *server.Config) {
 	ps, err := server.NewPromServer(c)
 	if err != nil {
 		fmt.Printf("Failed to create auth server: %s\n", err)

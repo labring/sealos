@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	dbserver "github.com/labring/sealos/service/database/server"
+	minioserver "github.com/labring/sealos/service/minio/server"
 	"github.com/labring/sealos/service/pkg/server"
 )
 
@@ -27,7 +27,7 @@ func main() {
 		return
 	}
 
-	rs := dbserver.DatabaseServer{
+	rs := minioserver.MinioServer{
 		ConfigFile: cf,
 	}
 
