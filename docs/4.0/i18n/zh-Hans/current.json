@@ -23,6 +23,10 @@
     "message": "使用指南",
     "description": "The label for category How-to Guides in sidebar docSidebar"
   },
+  "sidebar.docSidebar.category.Master Services Agreement": {
+    "message": "服务政策",
+    "description": "The label for category Master Services Agreement in sidebar docSidebar"
+  },
   "sidebar.docSidebar.category.Self Hosting": {
     "message": "私有化部署",
     "description": "The label for the doc item Self Hosting in sidebar docSidebar, linking to the doc Community"
