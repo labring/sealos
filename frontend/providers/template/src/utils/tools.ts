@@ -243,3 +243,15 @@ export function deepSearch(obj: any): string {
   }
   return 'Error';
 }
+
+export const formatStarNumber = (number: number) => {
+  if (number < 1000) {
+    return number.toString();
+  } else if (number < 10000) {
+    const thousands = Math.floor(number / 1000);
+    const remainder = number % 1000;
+    return `${thousands}.${remainder.toString()[0]}k`;
+  } else {
+    return (number / 1000).toFixed(1) + 'k';
+  }
+};

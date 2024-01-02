@@ -10,6 +10,8 @@ export const gpuNodeSelectorKey = 'nvidia.com/gpu.product';
 export const gpuResourceKey = 'nvidia.com/gpu';
 // template
 export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
+export const templateDisplayNameKey = 'cloud.sealos.io/deploy-on-sealos-displayName';
+
 // db
 export const kubeblocksTypeKey = 'clusterdefinition.kubeblocks.io/name';
 export const dbProviderKey = 'sealos-db-provider-cr';
