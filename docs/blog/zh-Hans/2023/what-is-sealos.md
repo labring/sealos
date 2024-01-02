@@ -87,7 +87,7 @@ Sealos 并不自己去设定标准，而是严格遵循成熟的体系和事实�
 
 从这个新的视角出发，我们发现，实际上并不需要 IaaS。同时，从技术角度来看，PaaS 和 SaaS 本质上是相同的，它们都是应用层面的服务，因此也无需进行过度区分。在新的云内核架构中，我们只需要有效地实现多租户之间的隔离。这并不需要复杂重量级的解决方案。例如，Sealos 提供了一种在不可信公网环境中实现多租户共享一个 K8s 集群的方式。我们利用强隔离容器 (如 Firecracker)、网络策略 (如 Cilium) 以及存储块设备隔离 (如 OpenEBS) 来实现这一目标，不仅成本更低，效果也更好。
 
-![](https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-15-02-6N4ygp.png)
+![](https://cdn.jsdelivr.us/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-15-02-6N4ygp.png)
 
 #### 提高应用密度和调度效率
 
