@@ -20,7 +20,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const originalPath = process.cwd();
   const jsonPath = path.resolve(originalPath, 'fast_deploy_template.json');
   const cdnUrl = process.env.CDN_URL;
-
   try {
     if (fs.existsSync(jsonPath)) {
       const jsonData = fs.readFileSync(jsonPath, 'utf8');

@@ -1,3 +1,4 @@
+import { K8sApiDefault } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { TemplateType } from '@/types/app';
@@ -7,9 +8,10 @@ import JSYAML from 'js-yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import util from 'util';
+import * as k8s from '@kubernetes/client-node';
 const execAsync = util.promisify(exec);
 
-const readFileList = (targetPath: string, fileList: unknown[] = [], handlePath: string) => {
+const readFileList = (targetPath: string, fileList: unknown[] = []) => {
   // fix ci
   const sanitizePath = (inputPath: string) => {
     if (typeof inputPath !== 'string') {
@@ -26,16 +28,39 @@ const readFileList = (targetPath: string, fileList: unknown[] = [], handlePath: 
     const isYamlFile = path.extname(item) === '.yaml' || path.extname(item) === '.yml';
     if (stats.isFile() && isYamlFile && item !== 'template.yaml') {
       fileList.push(filePath);
-    } else if (stats.isDirectory() && item === handlePath) {
-      readFileList(filePath, fileList, handlePath);
+    } else if (stats.isDirectory()) {
+      readFileList(filePath, fileList);
     }
   });
 };
+
+export async function GetTemplateStatic() {
+  try {
+    const defaultKC = K8sApiDefault();
+    const result = await defaultKC
+      .makeApiClient(k8s.CoreV1Api)
+      .readNamespacedConfigMap('template-static', 'template-frontend');
+
+    const inputString = result?.body?.data?.['install-count'] || '';
+    const installCountArray = inputString.split(/\n/).filter(Boolean);
+
+    const temp: { [key: string]: number } = {};
+    installCountArray.forEach((item) => {
+      const [count, name] = item.trim().split(/\s/);
+      temp[name] = parseInt(count, 10);
+    });
+    return temp;
+  } catch (error) {
+    console.log(error, 'error: kubectl get configmap/template-static ');
+    return {};
+  }
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const repoHttpUrl =
       process.env.TEMPLATE_REPO_URL || 'https://github.com/labring-actions/templates';
+    const targetFolder = process.env.TEMPLATE_REPO_FOLDER || 'template';
     const originalPath = process.cwd();
     const targetPath = path.resolve(originalPath, 'FastDeployTemplates');
     const jsonPath = path.resolve(originalPath, 'fast_deploy_template.json');
@@ -60,8 +85,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     let fileList: unknown[] = [];
-    readFileList(targetPath, fileList, 'template');
+    const _targetPath = path.join(targetPath, targetFolder);
+    readFileList(_targetPath, fileList);
 
+    const templateStaticMap: { [key: string]: number } = await GetTemplateStatic();
     let jsonObjArr: unknown[] = [];
     fileList.forEach((item: any) => {
       try {
@@ -70,6 +97,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         const content = fs.readFileSync(item, 'utf-8');
         const yamlTemplate = JSYAML.loadAll(content)[0] as TemplateType;
         if (!!yamlTemplate) {
+          const appTitle = yamlTemplate.spec.title.toUpperCase();
+          yamlTemplate.spec['deployCount'] = templateStaticMap[appTitle];
+          yamlTemplate.spec['filePath'] = item;
           yamlTemplate.spec['fileName'] = fileName;
           jsonObjArr.push(yamlTemplate);
         }

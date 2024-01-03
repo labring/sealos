@@ -154,7 +154,6 @@
   "Heading to sealos soon": "即将前往sealos",
   "develop": {
     "publish": "发布",
-    "YAML Detection Tool": "YAML 检测工具",
     "Development": "开发",
     "Please enter YAML code": "请输入yaml代码",
     "Preview": "预览",
@@ -162,7 +161,8 @@
     "YAML File": "YAML 文件",
     "Template Development": "模板开发",
     "Dryrun Deploy": "试运行部署",
-    "Formal Deploy": "正式部署"
+    "Formal Deploy": "正式部署",
+    "Debugging Template": "在线调试模板"
   },
   "SideBar": {
     "Applications": "所有应用",
@@ -189,5 +189,9 @@
   "Markdown Part": "Markdown 片段",
   "Button Effect": "按钮效果",
   "Deployment successful, please go to My Application to view": "部署成功，请前往我的应用查看",
-  "Type": "类型"
+  "Type": "类型",
+  "Edit": "编辑",
+  "Edit App Name": "编辑应用名称",
+  "Installation Time": "安装时间",
+  "users installed the app": "已有 {{count}} 名用户安装应用"
 }
