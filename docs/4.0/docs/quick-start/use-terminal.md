@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Use Terminal
 
-Users familiar with Kubernetes and container fundamentals may opt to deploy applications using the **[Terminal](../../platform-components/terminal/terminal.md)** app. This guide will show you how to use the terminal for deployment, using Nginx as an example.
+Users familiar with Kubernetes and container fundamentals may opt to deploy applications using the **[Terminal](/guides/terminal/terminal.md)** app. This guide will show you how to use the terminal for deployment, using Nginx as an example.
 
 Start by launching the Terminal app within the [Sealos](https://cloud.sealos.io) desktop.
 

@@ -4,115 +4,52 @@ sidebar_position: 1
 
 # App Launchpad
 
-**App Launchpad** is a single-image deployment tool offered by Sealos that can help you deploy an image online within 5 minutes.
+**App Launchpad** is a feature within Sealos that serves as a single-image deployment tool. Its main goal is to streamline and expedite the process of deploying applications, allowing you to launch your application in as little as 5 minutes.
 
-- [x] Private image
-- [x] Customizable CPU and memory
-- [x] Multiple replicas
-- [x] HPA
-- [x] External access address
-- [x] Custom domains
-- [x] ConfigMap configuration files
-- [x] Persistent storage
-- [x] APP and Pod monitoring
-- [x] Logs
-- [x] Events analysis
-- [x] One-click entry into containers
-- [x] One-click deployment to Sealos Desktop
-- [x] Editable Yaml
-- [x] Support for multiple external exposed ports
+The tool currently boasts a range of functionalities:
 
-## Quick Start
+- Capability to deploy applications using private images.
+- Flexibility to tailor CPU and memory resources according to the specific needs of the application.
+- Support for deploying multiple replicas.
+- Horizontal Pod Autoscaling (HPA) for dynamic scaling.
+- Provision of external URLs for easy access from the public network.
+- Option to assign custom domain to applications, enhancing both brand visibility and the user experience.
+- Utilization of ConfigMap for configuration file management.
+- Persistent storage solutions for application data, ensuring both its security and continuity.
+- Real-time monitoring features for applications and Pods to facilitate prompt issue detection and resolution.
+- Comprehensive logging of application activities, aiding in troubleshooting and performance optimization.
+- Analysis of system events (Events) to extract critical insights for enhancing application performance.
+- A convenient one-click feature to access the container terminal, simplifying management and debugging tasks.
+- Ability to expose several ports of an application to the external network.
 
-Let's take deploying a simple Nginx as an example, to demonstrate the convenience of container deployment and **App Launchpad**.
+## [Quick Start](/quick-start/use-app-launchpad.md)
 
-Complete the deployment and access in just 6 steps:
+For quick and easy installation of commonly utilized applications.
 
-1. Enter the **App Launchpad** app from the Sealos Desktop.
+## [Update Application](/guides/applaunchpad/update-app.md)
 
-![](./images/app-launchpad.jpg)
+Guidance on modifying application configurations after initial deployment.
 
-2. Click to create a new application.
+## [Add a domain](/guides/applaunchpad/add-domain.md)
 
-![](./images/app-list.png)
+Instructions for integrating a custom domain with your application.
 
-3. Turn on the **External Access** switch. The Nginx image is already filled in by default, no need for modification. Then Click Deploy Aplication.
+## [Exposing Multiple Ports](/guides/applaunchpad/expose-multi-ports.md)
 
-![](./images/app-launchpad3.png)
+Details on how to make multiple ports of an application accessible externally.
 
-4. Enter the App details.
+## [Environment](/guides/applaunchpad/environment.md)
 
-![](./images/app-launchpad4.png)
+Directions for configuring applications through the use of environment variables.
 
-5. Click the "External Address" to access Nginx.
+## [ConfigMap](/guides/applaunchpad/configmap.md)
 
-![](./images/app-launchpad6.png)
+Guidelines for setting up application configurations via configuration files.
 
-## Detailed Features
+## [Autoscaling](/guides/applaunchpad/autoscale.md)
 
-### Auto Scaling
+Strategy for autoscaling the number of application instances in response to varying workloads.
 
-You can freely switch between fixed instances or elastic scaling mode during application creation/change.
+## [Persistent Volume](/guides/applaunchpad/persistent-volume.md)
 
-![img](./images/app-launchpad7.png) 
-
-![img](./images/app-launchpad8.png)
-
-- Fixed Instance: Permanently create a fixed number of Pods, unaffected by actual traffic.
-- Elastic Scaling: You can choose to dynamically adjust the number of Pods based on the percentage of CPU or Memory. Setting up elastic scaling requires a certain understanding of your own business traffic. Of course, you can also directly select 1~20 instance numbers, as the billing system will only calculate the actual running instances, inactive ones will not be charged.
-
-### Custom Domains
-
-**App Launchpad** will provide you with an SSL-certified external access domain by default. Of course, when serving externally, you may wish for users to access your domain. At this time, you can set your own domain in **App Launchpad**. You'll need to make two adjustments:
-
-1. Fill in your own domain in the custom domain input box under the **Network Configuration** section.
-2. Follow the prompt to modify the DNS at the domain service provider, CNAME resolve to the prompted domain.
-3. Confirm the creation/update of the application.
-
-![](./images/app-launchpad9.png) 
-
-### Environment
-
-**App Launchpad** uses batch input to enter environment variables, split by line, **=** sign, and **:** sign, and invalid characters in the key will be removed.
-
-![img](./images/app-launchpad10.png)
-
-**Examples of valid environment variable formats:**
-
-```
-makefile
-host=127.0.0.1
-port:3000
-name: sealos
-- username=123
-- password:123
-# Comments like this will be ignored as they don't contain = : two marking characters.
-```
-
-**Examples of invalid environment variable formats:**
-
-```
-makefile
-# This line will be parsed: because it contains : or =
-host=127.0.0.1 # This comment will also be parsed because there is an = sign in front of it
-```
-
-### ConfigMap
-
-You can think of ConfigMap as volumes in Docker. Mount a custom file into the container to modify container configurations. Below is an example of modifying the Nginx configuration file.
-
-- File Name: Corresponds to the file in the Nginx container, refer to the instructions provided by the image provider.
-- File Value: Corresponds to the content of the file. If the content is too complex, you can edit it locally before pasting it here.
-- Note: ConfigMap mounts individual files, not directories.
-
-![](./images/app-launchpad11.png)
-
-### Persistent Storage
-
-Any content saved in the Pod is temporary, so be sure not to save content that needs to be persisted directly in the Pod!!! If you want to allocate a space for persistent storage to the Pod, you can add a **Storage Volume**.
-
-Suppose you need to deploy a PostgreSQL database, you must create a storage volume to persistently store the content in the database.
-
-![](./images/app-launchpad12.png)
-
-Of course, we recommend you use [Database Management](./dbprovider/dbprovider.md) for deploying and managing databases.
+Utilizing persistent storage for the long-term preservation of data.
