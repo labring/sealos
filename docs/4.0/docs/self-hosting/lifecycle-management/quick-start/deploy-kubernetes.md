@@ -156,12 +156,13 @@ $ sealos run kubernetes.tar
 
 It's advised to use Containerd as the container runtime interface (CRI) in Kubernetes clusters. Containerd stands out for its lightweight structure and high efficiency, and it's fully compatible with Docker. Kubernetes images that utilize Containerd benefit from enhanced performance and optimized resource usage. Here are the specific supported versions:
 
-| Kubernetes Version | Required Sealos Version | CRI Version | Cluster Image Version            |
-| ------------------ | ----------------------- | ----------- | -------------------------------- |
-| `<1.25`            | `>=v4.0.0`              | v1alpha2    | labring/kubernetes:v1.24.0       |
-| `>=1.25`           | `>=v4.1.0`              | v1alpha2    | labring/kubernetes:v1.25.0       |
-| `>=1.26`           | `>=v4.1.4-rc3`          | v1          | labring/kubernetes:v1.26.0       |
-| `>=1.27`           | `>=v4.2.0-alpha3`       | v1          | labring/kubernetes:v1.27.0       |
+| Kubernetes Version | Required Sealos Version | CRI Version | Cluster Image Version      |
+| ------------------ | ----------------------- | ----------- |----------------------------|
+| `<1.25`            | `>=v4.0.0`              | v1alpha2    | labring/kubernetes:v1.24.0 |
+| `>=1.25`           | `>=v4.1.0`              | v1alpha2    | labring/kubernetes:v1.25.0 |
+| `>=1.26`           | `>=v4.1.4-rc3`          | v1          | labring/kubernetes:v1.26.0 |
+| `>=1.27`           | `>=v4.2.0-alpha3`       | v1          | labring/kubernetes:v1.27.0 |
+| `>=1.28`           | `>=v5.0.0`              | v1          | labring/kubernetes:v1.28.0 |
 
 The choice of Sealos and CRI versions is dependent on the Kubernetes version in question. For instance, Kubernetes v1.26.0 would require Sealos v4.1.4-rc3 or newer, along with the v1 CRI version.
 
@@ -169,12 +170,19 @@ The choice of Sealos and CRI versions is dependent on the Kubernetes version in 
 
 Alternatively, Docker can also be used as the container runtime. The following table provides a breakdown of compatible Kubernetes versions with their corresponding Sealos and CRI versions for Docker-based setups:
 
-| Kubernetes Version | Required Sealos Version | CRI Version | Cluster Image Version                 |
-| ------------------ | ----------------------- | ----------- | -------------------------------------- |
-| `<1.25`            | `>=v4.0.0`              | v1alpha2    | labring/kubernetes-docker:v1.24.0      |
-| `>=1.25`           | `>=v4.1.0`              | v1alpha2    | labring/kubernetes-docker:v1.25.0      |
-| `>=1.26`           | `>=v4.1.4-rc3`          | v1          | labring/kubernetes-docker:v1.26.0      |
-| `>=1.27`           | `>=v4.2.0-alpha3`       | v1          | labring/kubernetes-docker:v1.27.0      |
+| Kubernetes Version | Required Sealos Version | CRI Version | Cluster Image Version             |
+|--------------------|-------------------------| ----------- |-----------------------------------|
+| `<1.25`            | `>=v4.0.0`              | v1alpha2    | labring/kubernetes-docker:v1.24.0 |
+| `>=1.25`           | `>=v4.1.0`              | v1alpha2    | labring/kubernetes-docker:v1.25.0 |
+| `>=1.26`           | `>=v4.1.4-rc3`          | v1          | labring/kubernetes-docker:v1.26.0 |
+| `>=1.27`           | `>=v4.2.0-alpha3`       | v1          | labring/kubernetes-docker:v1.27.0 |
+| `>=1.28`           | `>=v5.0.0`              | v1          | labring/kubernetes-docker:v1.28.0 |
+
+### k3s Compatibility with Containerd
+
+| Kubernetes Version | Required Sealos Version | Cluster Image Version |
+|--------------------|-------------------------|-----------------------|
+| `>=1.24`           | `>=v5.0.0`              | labring/k3s:v1.24.0   |
 
 As with the Containerd setup, the appropriate Sealos and CRI versions must be matched with the specific version of Kubernetes being used. For a Kubernetes v1.26.0 setup, this means selecting Sealos v4.1.4-rc3 or later, and a v1 CRI version.
 
