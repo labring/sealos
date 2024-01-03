@@ -162,6 +162,7 @@ $ sealos run kubernetes.tar # 单机安装，集群安装同理
 | `>=1.25` | `>=v4.1.0`        | v1alpha2 | labring/kubernetes:v1.25.0 |
 | `>=1.26` | `>=v4.1.4-rc3`    | v1       | labring/kubernetes:v1.26.0 |
 | `>=1.27` | `>=v4.2.0-alpha3` | v1       | labring/kubernetes:v1.27.0 |
+| `>=1.28` | `>=v5.0.0`        | v1       | labring/kubernetes:v1.28.0 |
 
 根据 Kubernetes 版本的不同，您可以选择不同的 Sealos 版本和 CRI 版本。例如，如果您要使用 Kubernetes v1.26.0 版本，您可以选择 sealos v4.1.4-rc3 及更高版本，并使用 v1 CRI 版本。
 
@@ -175,8 +176,16 @@ $ sealos run kubernetes.tar # 单机安装，集群安装同理
 | `>=1.25` | `>=v4.1.0`        | v1alpha2 | labring/kubernetes-docker:v1.25.0 |
 | `>=1.26` | `>=v4.1.4-rc3`    | v1       | labring/kubernetes-docker:v1.26.0 |
 | `>=1.27` | `>=v4.2.0-alpha3` | v1       | labring/kubernetes-docker:v1.27.0 |
+| `>=1.28` | `>=v5.0.0`        | v1       | labring/kubernetes-docker:v1.28.0 |
+
 
 与支持 Containerd 的 Kubernetes 镜像类似，您可以根据 Kubernetes 版本的不同选择不同的 Sealos 版本和 CRI 版本。例如，如果您要使用 Kubernetes v1.26.0 版本，您可以选择 sealos v4.1.4-rc3 及更高版本，并使用 v1 CRI 版本。
+
+### 支持 Containerd 的 k3s
+
+| K8s 版本   | Sealos 版本  | 集群镜像版本                      |
+|----------|------------| --------------------------------- |
+| `>=1.24` | `>=v5.0.0` | labring/kubernetes-docker:v1.24.0 |
 
 ## 总结
 
