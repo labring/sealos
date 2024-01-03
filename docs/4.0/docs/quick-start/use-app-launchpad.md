@@ -6,7 +6,7 @@ sidebar_position: 2
 
 Sealos desktop is similar to that of PC operating systems, such as macOS or Windows. Each icon on the desktop represents an app, similar to the shortcuts in Windows. Like PC operating systems, Sealos also comes with built-in apps. To quickly install applications on this cloud operating system, you need to use the system's built-in **App Launchpad**.
 
-> For more information about application management, please refer to [Introduction to App Launchpad](../../platform-components/applaunchpad/applaunchpad.md)
+> For more information about application management, please refer to [Introduction to App Launchpad](/guides/applaunchpad/applaunchpad.md)
 
 This guide will show you how to quickly install some common applications on the Sealos cloud operating system.
 

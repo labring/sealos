@@ -6,7 +6,7 @@ sidebar_position: 2
 
 Sealos 的桌面环境类似于单机操作系统 macOS 或 Windows 的桌面环境，桌面上的每个图标都是一个 App，类似于 Windows 的快捷方式。与单机操作系统一样，Sealos 也有系统自带的 App，要想在这个云操作系统中快速安装应用，就需要用到系统自带的 App：**应用管理**。
 
-> 关于应用管理的详细信息请参阅 [应用管理介绍](../../platform-components/applaunchpad/applaunchpad.md)
+> 关于应用管理的详细信息请参阅 [应用管理介绍](/guides/applaunchpad/applaunchpad.md)
 
 下面将演示如何在 Sealos 云操作系统中快速安装一些比较常见的应用。
 
