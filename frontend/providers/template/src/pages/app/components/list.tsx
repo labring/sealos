@@ -88,10 +88,10 @@ export default function InstanceList() {
                   <Image src={item?.icon} alt="" width={'36px'} height={'36px'} />
                 </Box>
                 <Box ml="16px">
-                  <Text fontSize="24px" fontWeight={600} color="#24282C">
+                  <Text fontSize="16px" fontWeight={500} color="#000000">
                     {item?.displayName ? item.displayName : item?.id}
                   </Text>
-                  <Text fontSize={'16px'} color={'#111824'} fontWeight={400}>
+                  <Text fontSize={'12px'} color={'#485264'} fontWeight={500}>
                     {item?.id}
                   </Text>
                 </Box>
@@ -110,7 +110,7 @@ export default function InstanceList() {
                     fill="#485264"
                   />
                 </Icon>
-                <Text fontSize={'12px'} color={'#5A646E'} fontWeight={400}>
+                <Text fontSize={'12px'} color={'#485264'} fontWeight={400}>
                   {t('Installation Time')}: {item?.createTime}
                 </Text>
               </Flex>
