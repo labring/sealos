@@ -178,13 +178,13 @@ Alternatively, Docker can also be used as the container runtime. The following t
 | `>=1.27`           | `>=v4.2.0-alpha3`       | v1          | labring/kubernetes-docker:v1.27.0 |
 | `>=1.28`           | `>=v5.0.0`              | v1          | labring/kubernetes-docker:v1.28.0 |
 
+As with the Containerd setup, the appropriate Sealos and CRI versions must be matched with the specific version of Kubernetes being used. For a Kubernetes v1.26.0 setup, this means selecting Sealos v4.1.4-rc3 or later, and a v1 CRI version.
+
 ### k3s Compatibility with Containerd
 
-| Kubernetes Version | Required Sealos Version | Cluster Image Version |
-|--------------------|-------------------------|-----------------------|
-| `>=1.24`           | `>=v5.0.0`              | labring/k3s:v1.24.0   |
-
-As with the Containerd setup, the appropriate Sealos and CRI versions must be matched with the specific version of Kubernetes being used. For a Kubernetes v1.26.0 setup, this means selecting Sealos v4.1.4-rc3 or later, and a v1 CRI version.
+| k3s Version | Required Sealos Version | Cluster Image Version |
+|-------------|-------------------------|-----------------------|
+| `>=1.24`    | `>=v5.0.0`              | labring/k3s:v1.24.0   |
 
 ## Summary
 
