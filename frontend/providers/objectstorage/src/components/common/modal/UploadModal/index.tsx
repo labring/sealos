@@ -171,7 +171,7 @@ export default function UploadModal({ ...styles }: Omit<IconButtonProps, 'aria-l
           {t('upload')}
         </Text>
       </Button>
-      <Modal isOpen={isOpen} onClose={onClose} isCentered>
+      <Modal isOpen={isOpen} onClose={onClose} isCentered closeOnOverlayClick={false}>
         <ModalOverlay />
         <ModalContent
           borderRadius={'4px'}
