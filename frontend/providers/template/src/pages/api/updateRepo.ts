@@ -42,12 +42,19 @@ export async function GetTemplateStatic() {
       .readNamespacedConfigMap('template-static', 'template-frontend');
 
     const inputString = result?.body?.data?.['install-count'] || '';
+
     const installCountArray = inputString.split(/\n/).filter(Boolean);
 
     const temp: { [key: string]: number } = {};
     installCountArray.forEach((item) => {
-      const [count, name] = item.trim().split(/\s/);
-      temp[name] = parseInt(count, 10);
+      const match = item.trim().match(/^(\d+)\s(.+)$/);
+      if (match) {
+        const count = match[1];
+        const name = match[2];
+        temp[name] = parseInt(count, 10);
+      } else {
+        console.error(`Data format error: ${item}`);
+      }
     });
     return temp;
   } catch (error) {
@@ -89,6 +96,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     readFileList(_targetPath, fileList);
 
     const templateStaticMap: { [key: string]: number } = await GetTemplateStatic();
+    console.log(templateStaticMap);
+
     let jsonObjArr: unknown[] = [];
     fileList.forEach((item: any) => {
       try {
