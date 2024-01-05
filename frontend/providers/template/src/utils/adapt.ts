@@ -1,4 +1,10 @@
-import { componentLabel, maxReplicasKey, minReplicasKey, pauseKey } from '@/constants/keys';
+import {
+  componentLabel,
+  maxReplicasKey,
+  minReplicasKey,
+  pauseKey,
+  templateDisplayNameKey
+} from '@/constants/keys';
 import { StatusEnum, StatusMap } from '@/constants/status';
 import { InstanceListItemType, TemplateInstanceType } from '@/types/app';
 import { AppCrdType } from '@/types/appCRD';
@@ -35,7 +41,9 @@ export function adaptInstanceListItem(item: TemplateInstanceType): InstanceListI
     readme: item.spec.readme,
     templateType: item.spec.templateType,
     title: item.spec.title,
-    url: item.spec.url
+    url: item.spec.url,
+    yamlCR: item,
+    displayName: item.metadata?.labels?.[templateDisplayNameKey]
   };
 }
 

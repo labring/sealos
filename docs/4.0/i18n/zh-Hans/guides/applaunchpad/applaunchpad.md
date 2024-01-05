@@ -1,5 +1,5 @@
 ---
-sidebar_position: 0
+sidebar_position: 1
 ---
 
 # 应用管理
@@ -22,7 +22,7 @@ sidebar_position: 0
 - 一键进入容器终端，方便管理和调试；
 - 支持将应用的多个端口暴露到外网。
 
-## [快速开始](/quick-start/app-deployments/use-app-launchpad.md)
+## [快速开始](/quick-start/use-app-launchpad.md)
 
 快速安装一些比较常见的应用。
 

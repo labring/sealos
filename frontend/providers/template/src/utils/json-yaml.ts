@@ -127,7 +127,7 @@ export const getTemplateDataSource = (
           default: item.default,
           required: item.required,
           key: key,
-          label: key.replace('_', ' ')
+          label: key
         };
       });
       return inputsArr;

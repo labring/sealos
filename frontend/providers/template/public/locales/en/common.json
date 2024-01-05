@@ -148,7 +148,6 @@
   "Heading to sealos soon": "Heading to sealos soon",
   "develop": {
     "publish": "publish",
-    "YAML Detection Tool": "YAML Detection Tool",
     "Development": "Development",
     "Please enter YAML code": "Please enter YAML code",
     "Preview": "Preview",
@@ -156,7 +155,8 @@
     "YAML File": "YAML File",
     "Template Development": "Template Development",
     "Dryrun Deploy": "Dryrun Deploy",
-    "Formal Deploy": "Formal Deploy"
+    "Formal Deploy": "Formal Deploy",
+    "Debugging Template": "Debugging Template"
   },
   "SideBar": {
     "Applications": "Applications",
@@ -183,5 +183,9 @@
   "Markdown Part": "Markdown Part",
   "Button Effect": "Button Effect",
   "Type": "Type",
-  "Deployment successful, please go to My Application to view": "Deployment successful, please go to My Application to view"
+  "Deployment successful, please go to My Application to view": "Deployment successful, please go to My Application to view",
+  "Edit": "Edit",
+  "Edit App Name": "Edit App Name",
+  "Installation Time": "Installation Time",
+  "users installed the app": "{{count}} users have installed the app"
 }

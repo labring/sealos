@@ -1,8 +1,10 @@
 import { CopyLinkIcon, HomePageIcon, HtmlIcon, MdIcon, ShareIcon } from '@/components/icons';
 import { TemplateType } from '@/types/app';
 import type { YamlItemType } from '@/types/index';
-import { downLoadBold, useCopyData } from '@/utils/tools';
+import { downLoadBold, formatStarNumber, useCopyData } from '@/utils/tools';
 import {
+  Avatar,
+  AvatarGroup,
   Box,
   Button,
   Divider,
@@ -18,6 +20,7 @@ import {
   Tooltip
 } from '@chakra-ui/react';
 import dayjs from 'dayjs';
+import { nanoid } from 'nanoid';
 import { useTranslation } from 'next-i18next';
 import { MouseEvent, useCallback, useMemo } from 'react';
 
@@ -38,6 +41,8 @@ const Header = ({
   templateDetail: TemplateType;
   cloudDomain: string;
 }) => {
+  console.log(templateDetail, 'templateDetail');
+
   const { t } = useTranslation();
   const { copyData } = useCopyData();
   const handleExportYaml = useCallback(async () => {
@@ -74,6 +79,28 @@ const Header = ({
 
   const HtmlPart = `<a href="https://${cloudDomain}/?openapp=system-template%3FtemplateName%3D${appName}"><img src="https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg" alt="Deploy on Sealos"/></a>`;
 
+  const DeployCountComponent = useMemo(() => {
+    return (
+      <>
+        {templateDetail?.spec?.deployCount && templateDetail?.spec?.deployCount > 6 && (
+          <Tooltip
+            label={t('users installed the app', { count: templateDetail.spec.deployCount })}
+            hasArrow
+            bg="#FFF">
+            <Flex gap={'6px'} cursor={'pointer'}>
+              <AvatarGroup size={'xs'} max={3}>
+                <Avatar name={nanoid(6)} />
+                <Avatar name={nanoid(6)} />
+                <Avatar name={nanoid(6)} />
+              </AvatarGroup>
+              <Text>+{formatStarNumber(templateDetail.spec.deployCount)}</Text>
+            </Flex>
+          </Tooltip>
+        )}
+      </>
+    );
+  }, [t, templateDetail?.spec?.deployCount]);
+
   return (
     <Flex w={'100%'} h={'80px'} alignItems={'center'} backgroundColor={'rgba(255, 255, 255, 0.90)'}>
       <Flex
@@ -85,26 +112,24 @@ const Header = ({
         h={'80px'}
         borderRadius={'8px'}
         backgroundColor={'#FBFBFC'}
-        border={' 1px solid rgba(255, 255, 255, 0.50)'}
-      >
+        border={' 1px solid rgba(255, 255, 255, 0.50)'}>
         <Image src={templateDetail?.spec?.icon} alt="" width={'60px'} height={'60px'} />
       </Flex>
       <Flex ml={'24px'} w="520px" flexDirection={'column'}>
-        <Flex alignItems={'center'}>
+        <Flex alignItems={'center'} gap={'12px'}>
           <Text fontSize={'24px'} fontWeight={600} color={'#24282C'}>
             {templateDetail?.spec?.title}
           </Text>
+          {DeployCountComponent}
           <Flex
             cursor={'pointer'}
-            ml="12px"
             p="6px"
             borderRadius={'4px'}
             alignItems={'center'}
             _hover={{
               background: '#F4F6F8'
             }}
-            onClick={(e) => goGithub(e, templateDetail?.spec?.gitRepo)}
-          >
+            onClick={(e) => goGithub(e, templateDetail?.spec?.gitRepo)}>
             <HomePageIcon />
             <Text fontSize={'12px '} fontWeight={400} pl="6px">
               {t('Home Page')}
@@ -115,14 +140,12 @@ const Header = ({
             <PopoverTrigger>
               <Flex
                 cursor={'pointer'}
-                ml="12px"
                 p="6px"
                 borderRadius={'4px'}
                 alignItems={'center'}
                 _hover={{
                   background: '#F4F6F8'
-                }}
-              >
+                }}>
                 <ShareIcon />
                 <Text fontSize={'12px '} fontWeight={400} color={'#485058'} pl="6px">
                   {t('Share')}
@@ -137,8 +160,7 @@ const Header = ({
                   w="60px"
                   flexDirection={'column'}
                   justifyContent={'center'}
-                  alignItems={'center'}
-                >
+                  alignItems={'center'}>
                   <Flex {...IconBox}>
                     <CopyLinkIcon />
                   </Flex>
@@ -154,8 +176,7 @@ const Header = ({
                   <Flex
                     flexDirection={'column'}
                     alignItems={'center'}
-                    onClick={() => copyData(HtmlPart)}
-                  >
+                    onClick={() => copyData(HtmlPart)}>
                     <Flex {...IconBox}>
                       <HtmlIcon />
                     </Flex>
@@ -167,8 +188,7 @@ const Header = ({
                     flexDirection={'column'}
                     alignItems={'center'}
                     ml="auto"
-                    onClick={() => copyData(MdPart)}
-                  >
+                    onClick={() => copyData(MdPart)}>
                     <Flex {...IconBox}>
                       <MdIcon />
                     </Flex>
@@ -195,8 +215,7 @@ const Header = ({
             fontSize={'12px'}
             color={'5A646E'}
             fontWeight={400}
-            onClick={() => copyData(templateDetail?.spec?.description)}
-          >
+            onClick={() => copyData(templateDetail?.spec?.description)}>
             {templateDetail?.spec?.description}
           </Text>
         </Tooltip>
@@ -211,8 +230,7 @@ const Header = ({
         bg={'myWhite.600'}
         borderColor={'myGray.200'}
         variant={'base'}
-        onClick={handleExportYaml}
-      >
+        onClick={handleExportYaml}>
         {t('Export')} Yaml
       </Button>
       <Button px={4} minW={'140px'} h={'40px'} variant={'primary'} onClick={applyCb}>

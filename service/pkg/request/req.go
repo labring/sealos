@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/labring/sealos/service/database/api"
+	"github.com/labring/sealos/service/pkg/api"
 )
 
 func Request(addr string, params *bytes.Buffer) ([]byte, error) {

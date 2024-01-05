@@ -21,28 +21,17 @@ export default function MyApp() {
       borderRadius={'12px'}
       background={'linear-gradient(180deg, #FFF 0%, rgba(255, 255, 255, 0.70) 100%)'}
       pt={'36px'}
-      pl="42px"
-    >
+      pl="42px">
       <Tabs
         fontWeight={500}
         position="relative"
         variant="unstyled"
         index={tabIndex}
-        onChange={handleTabsChange}
-      >
+        onChange={handleTabsChange}>
         <TabList>
           <Tab p="0" mb="6px" color={tabIndex === 0 ? '#24282C' : '#7B838B'}>
             {t('Installed')}
           </Tab>
-          {/* <Tab
-            isDisabled
-            p="0"
-            mb="6px"
-            pb="10px"
-            ml="26px"
-            color={tabIndex === 0 ? '#7B838B' : '#24282C'}>
-            我收藏的
-          </Tab> */}
         </TabList>
         <TabIndicator mt="-1.5px" height="2px" bg="#24282C" borderRadius="1px" />
       </Tabs>

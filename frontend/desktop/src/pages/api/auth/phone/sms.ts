@@ -20,14 +20,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!enableSms()) {
       throw new Error('SMS is not enabled');
     }
-    const { phoneNumbers } = req.body;
-    if (!(await checkSendable(phoneNumbers))) {
+    const { phoneNumbers } = req.body as { phoneNumbers?: string };
+    if (!phoneNumbers)
+      return jsonRes(res, {
+        message: 'phoneNumbers is invalid',
+        code: 400
+      });
+    if (!(await checkSendable({ phone: phoneNumbers }))) {
       return jsonRes(res, {
         message: 'code already sent',
         code: 400
       });
     }
-
     // randomly generate six bit check code
     const code = Math.floor(Math.random() * 900000 + 100000).toString();
     const sendSmsRequest = new dysmsapi.SendSmsRequest({
