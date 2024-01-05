@@ -6,6 +6,7 @@ replace (
 	github.com/labring/sealos/service => ../service
 	github.com/labring/sealos/service/account => ../service/account
 	github.com/labring/sealos/service/database => ../service/database
+	github.com/labring/sealos/service/launchpad => ../service/launchpad
 	github.com/labring/sealos/service/pkg => ../pkg
 )
 
