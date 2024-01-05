@@ -233,7 +233,7 @@ init() {
         get_prompt "install_sealos"
         read -p " " installChoice
         if [[ "${installChoice,,}" == "y" ]]; then
-          local install_url="https://raw.githubusercontent.com/labring/sealos/${SEALOS_VERSION}/scripts/install.sh"
+          local install_url="https://raw.githubusercontent.com/labring/sealos/main/scripts/install.sh"
           [ -z "$proxy_prefix" ] || install_url="${proxy_prefix%/}/$install_url"
           curl -sfL "$install_url" | PROXY_PREFIX=$proxy_prefix sh -s "${SEALOS_VERSION}" labring/sealos
         else
