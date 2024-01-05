@@ -315,9 +315,9 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "v1alpha1",
-	Host:             "localhost:2333",
-	BasePath:         "/account/v1alpha1",
+	Version: "v1alpha1",
+	Host:    "localhost:2333",
+	//BasePath:         "/account/v1alpha1",
 	Schemes:          []string{},
 	Title:            "sealos account service",
 	Description:      "Your API description.",

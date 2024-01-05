@@ -7,6 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+
 	"github.com/labring/sealos/service/account/docs"
 
 	"github.com/labring/sealos/service/account/dao"
@@ -32,8 +34,7 @@ func RegisterPayRouter() {
 		POST(helper.GetHistoryNamespaces, api.GetBillingHistoryNamespaceList).
 		POST(helper.GetProperties, api.GetProperties).
 		POST(helper.GetUserCosts, api.GetCosts)
-
-	docs.SwaggerInfo.BasePath = helper.GROUP
+	docs.SwaggerInfo.Host = env.GetEnvWithDefault("SWAGGER_HOST", "localhost:2333")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	// Create a buffered channel interrupt and use the signal.
