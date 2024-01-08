@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   ButtonGroup,
+  ButtonProps,
   Center,
   Checkbox,
   Flex,
@@ -27,10 +28,10 @@ import {
   Text,
   Th,
   Thead,
+  Tooltip,
   Tr,
-  useCheckboxGroup
+  VStack
 } from '@chakra-ui/react';
-import Fuse from 'fuse.js';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import PathLink from './PathLink';
@@ -42,9 +43,9 @@ import VisibityIcon from '../Icons/VisibilityIcon';
 import LinkIcon from '../Icons/LinkIcon';
 import FileIcon from '../Icons/FileIcon';
 import FolderIcon from '../Icons/FolderIcon';
-import { GetObjectCommand, S3, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, S3 } from '@aws-sdk/client-s3';
 import { useToast } from '@/hooks/useToast';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ArrowDownSLineIcon from '../Icons/ArrowDownSLineIcon';
 import { formatBytes, useCopyData } from '@/utils/tools';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -53,7 +54,16 @@ import DeleteFileModal from '../common/modal/DeleteFileModal';
 import DeleteSingleFileModal from '../common/modal/DeleteSingleFileModal';
 import StorageIcon from '../Icons/StorageIcon';
 import useSessionStore from '@/store/session';
-
+import { SortPolygonDownIcon, SortPolygonUpIcon } from '@sealos/ui';
+import {
+  SortDirection,
+  createColumnHelper,
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  flexRender,
+  getFilteredRowModel
+} from '@tanstack/react-table';
 type EntryType = {
   LastModified?: Date;
   fileName: string;
@@ -62,6 +72,75 @@ type EntryType = {
   type: string;
   isDir: boolean;
 };
+
+enum SortState {
+  None,
+  Ascending,
+  Descending
+}
+
+const SortButton = ({
+  state,
+  nextState,
+  onClick,
+  children,
+  ...styles
+}: {
+  state: SortDirection | false;
+  nextState: SortDirection | false;
+} & ButtonProps) => {
+  const { t } = useTranslation('file');
+  const map = new Map<SortDirection | false, string>([
+    [false, t('clickToCancelSort')],
+    ['asc', t('clickToAscend')],
+    ['desc', t('clickToDescend')]
+  ]);
+  return (
+    <Tooltip
+      hasArrow
+      label={map.get(nextState)}
+      placement="top"
+      bg={'white'}
+      color={'black'}
+      py="8px"
+      px="10.5px"
+      fontSize={'12px'}
+      borderRadius={'4px'}
+    >
+      <Button
+        aria-label={'sort'}
+        onClick={onClick}
+        variant={'unstyled'}
+        size={'xs'}
+        display={'flex'}
+        gap={'8px'}
+        {...styles}
+      >
+        {children}
+        <VStack gap={'4px'}>
+          <SortPolygonUpIcon
+            color={state === 'asc' ? 'brightBlue.600' : 'grayModern.600'}
+            w={'6px'}
+            h={'3.73px'}
+          />
+          <SortPolygonDownIcon
+            color={state === 'desc' ? 'brightBlue.600' : 'grayModern.600'}
+            w={'6px'}
+            h={'3.73px'}
+          />
+        </VStack>
+      </Button>
+    </Tooltip>
+  );
+};
+export enum TableHeaderID {
+  'select' = 'select',
+  'fileName' = 'fileName',
+  'fileSize' = 'fileSize',
+  'modifiedTime' = 'modifiedTime',
+  'fileType' = 'fileType',
+  'action' = 'action'
+}
 export default function FileManager({ ...styles }: FlexProps) {
   const { t } = useTranslation('file');
   const { t: commonT } = useTranslation('common');
@@ -74,11 +153,11 @@ export default function FileManager({ ...styles }: FlexProps) {
   const Prefix = prefix.length === 0 ? '' : [...prefix, ''].join('/');
   const [pageStack, setpageStack] = useState<string[]>([]);
   const [ContinuationToken, setContinuationToken] = useState<string | undefined>(undefined);
-  const [searchVal, setSearchVal] = useState('');
   const [MaxKeys, setMaxKeys] = useState(20);
   const { toast } = useToast();
   const setPrefix = useOssStore((s) => s.setPrefix);
   const queryClient = useQueryClient();
+  // sort
   const clearPage = () => {
     setpageStack([]);
     setContinuationToken(undefined);
@@ -112,7 +191,7 @@ export default function FileManager({ ...styles }: FlexProps) {
   }, [objectsQuery.data, objectsQuery.isError]);
   // clear delete items
   useEffect(() => {
-    deleteCheckBoxGroupState.setValue([]);
+    table.toggleAllRowsSelected(false);
   }, [bucket, prefix, pageStack, ContinuationToken]);
   const deleteMutation = useMutation({
     mutationFn: deleteObject(s3client!),
@@ -160,51 +239,41 @@ export default function FileManager({ ...styles }: FlexProps) {
       });
     }
   };
-  const fileList: EntryType[] = [
-    ...(objectsQuery.data?.Contents?.flatMap((_file) => {
-      const relativePath =
-        _file.Key?.replace(Prefix, '')
-          .split('/')
-          .filter((v) => v.trim() !== '') || [];
-      if (relativePath.length === 0) return [];
-      const fileName = relativePath[0];
-      if (fileName === FolderPlaceholder) return [];
-      const fileNameArr = fileName.split('.');
-      return [
-        {
-          LastModified: _file.LastModified,
-          fileName,
-          Key: _file.Key!,
-          Size: _file.Size!,
-          type: fileNameArr.length > 1 ? fileNameArr.pop()! : 'plain',
-          isDir: false
-        }
-      ];
-    }) || []),
-    ...(objectsQuery.data?.CommonPrefixes?.map((v) => ({
-      LastModified: undefined,
-      Size: 0,
-      Key: v.Prefix || '/',
-      fileName: v.Prefix?.split('/')
-        .filter((v) => v.trim() !== '')
-        .pop()!,
-      type: 'folder',
-      isDir: true
-    })) || [])
-  ];
-  const fuse = new Fuse(fileList, {
-    keys: ['fileName']
-  });
-  if (prefix.length > 0)
-    fileList.unshift({
-      LastModified: undefined,
-      fileName: '..',
-      Key: [prefix, '..'].join('/'),
-      Size: 0,
-      type: 'link',
-      isDir: true
-    });
-  const fuseList = fuse.search(searchVal);
+  const fileList: EntryType[] = useMemo(
+    () => [
+      ...(objectsQuery.data?.Contents?.flatMap((_file) => {
+        const relativePath =
+          _file.Key?.replace(Prefix, '')
+            .split('/')
+            .filter((v) => v.trim() !== '') || [];
+        if (relativePath.length === 0) return [];
+        const fileName = relativePath[0];
+        if (fileName === FolderPlaceholder) return [];
+        const fileNameArr = fileName.split('.');
+        return [
+          {
+            LastModified: _file.LastModified,
+            fileName,
+            Key: _file.Key!,
+            Size: _file.Size!,
+            type: fileNameArr.length > 1 ? fileNameArr.pop()! : 'plain',
+            isDir: false
+          }
+        ];
+      }) || []),
+      ...(objectsQuery.data?.CommonPrefixes?.map((v) => ({
+        LastModified: undefined,
+        Size: 0,
+        Key: v.Prefix || '/',
+        fileName: v.Prefix?.split('/')
+          .filter((v) => v.trim() !== '')
+          .pop()!,
+        type: 'folder',
+        isDir: true
+      })) || [])
+    ],
+    [objectsQuery.data]
+  );
   // get url
   const generateUrl = async (client: S3, Bucket: string, Key: string) => {
     if (bucket?.policy === Authority.private) {
@@ -222,11 +291,8 @@ export default function FileManager({ ...styles }: FlexProps) {
       return url;
     }
   };
-  // --------
-  // budle delete
-  const deleteCheckBoxGroupState = useCheckboxGroup({
-    defaultValue: []
-  });
+  // // --------
+  // // budle delete
 
   const multiDeleteEntry = async (_keyList: string[]) => {
     if (!s3client || !bucket?.name) return;
@@ -258,17 +324,248 @@ export default function FileManager({ ...styles }: FlexProps) {
         Objects: fileObjs
       }
     });
-    deleteCheckBoxGroupState.setValue([]);
   };
-
-  const trueFileList = fileList.filter(
-    (f) => !((f.fileName === '..' && f.isDir) || f.fileName === FolderPlaceholder)
-  );
-  const allDelete =
-    trueFileList.length > 0 &&
-    trueFileList.every((f) => deleteCheckBoxGroupState.value.includes(f.Key));
-  const someDelete =
-    trueFileList.some((f) => deleteCheckBoxGroupState.value.includes(f.Key)) && !allDelete;
+  const columns = useMemo(() => {
+    const columnHelper = createColumnHelper<EntryType>();
+    return [
+      columnHelper.display({
+        enablePinning: true,
+        id: TableHeaderID.select,
+        header({ table }) {
+          return (
+            <Center onClick={(e) => e.stopPropagation()}>
+              <Checkbox
+                isChecked={table.getIsAllRowsSelected()}
+                onChange={table.getToggleAllRowsSelectedHandler()}
+                isIndeterminate={!table.getIsAllRowsSelected() && table.getIsSomeRowsSelected()}
+              />
+            </Center>
+          );
+        },
+        cell({ row }) {
+          return (
+            <Center onClick={(e) => e.stopPropagation()}>
+              <Checkbox
+                isDisabled={!row.getCanSelect()}
+                isChecked={row.getIsSelected()}
+                onChange={row.getToggleSelectedHandler()}
+              />
+            </Center>
+          );
+        }
+      }),
+      columnHelper.accessor((row) => row.fileName, {
+        header({ column }) {
+          return (
+            <SortButton
+              onClick={column.getToggleSortingHandler()}
+              state={column.getIsSorted()}
+              nextState={column.getNextSortingOrder()}
+            >
+              {t('fileName')}
+            </SortButton>
+          );
+        },
+        id: TableHeaderID.fileName,
+        enablePinning: true,
+        sortDescFirst: true,
+        cell(props) {
+          const file = props.row.original;
+          return (
+            <HStack gap="10px">
+              {file.isDir ? (
+                <FolderIcon boxSize={'20px'} color="blue.600" />
+              ) : (
+                <FileIcon boxSize={'20px'} color="purple.500" />
+              )}
+              <Tooltip
+                hasArrow
+                label={file.fileName}
+                placement="top"
+                bg={'white'}
+                color={'black'}
+                py="8px"
+                px="10.5px"
+                fontSize={'12px'}
+                borderRadius={'4px'}
+              >
+                <Text
+                  width={'180px'}
+                  whiteSpace="nowrap"
+                  overflow="hidden"
+                  textOverflow="ellipsis"
+                  color="grayModern.900"
+                >
+                  {file.fileName}
+                </Text>
+              </Tooltip>
+            </HStack>
+          );
+        },
+        sortingFn: 'textCaseSensitive'
+      }),
+      columnHelper.accessor((row) => row.Size, {
+        header({ column }) {
+          return (
+            <SortButton
+              state={column.getIsSorted()}
+              nextState={column.getNextSortingOrder()}
+              onClick={column.getToggleSortingHandler()}
+            >
+              {t('fileSize')}
+            </SortButton>
+          );
+        },
+        id: TableHeaderID.fileSize,
+        enablePinning: true,
+        cell(props) {
+          const file = props.row.original;
+          return (
+            <Text color={'grayModern.600'}>
+              {file.isDir ? '--' : formatBytes(file.Size || 0).toString()}
+            </Text>
+          );
+        },
+        sortingFn(row1, row2, id) {
+          const size1 = row1.getValue<number | undefined>(id);
+          const size2 = row2.getValue<number | undefined>(id);
+          if (size2 === void 0) {
+            return 1;
+          } else if (size1 === void 0) {
+            return -1;
+          } else {
+            return size1 > size2 ? 1 : size2 > size1 ? -1 : 0;
+          }
+        }
+      }),
+      columnHelper.accessor((row) => row.type, {
+        header({ column }) {
+          return (
+            <SortButton
+              state={column.getIsSorted()}
+              onClick={column.getToggleSortingHandler()}
+              nextState={column.getNextSortingOrder()}
+            >
+              {t('fileType')}
+            </SortButton>
+          );
+        },
+        cell({ cell }) {
+          return <Text color={'grayModern.600'}>{cell.getValue()}</Text>;
+        },
+        id: TableHeaderID.fileType,
+        enablePinning: true,
+        sortingFn: 'text'
+      }),
+      columnHelper.accessor((row) => row.LastModified, {
+        header(props) {
+          return (
+            <SortButton
+              state={props.column.getIsSorted()}
+              nextState={props.column.getNextSortingOrder()}
+              onClick={props.column.getToggleSortingHandler()}
+            >
+              {t('modifiedTime')}
+            </SortButton>
+          );
+        },
+        id: TableHeaderID.modifiedTime,
+        cell(props) {
+          const dateVal = props.cell.getValue();
+          return (
+            <Text color={'grayModern.600'}>
+              {dateVal ? format(dateVal, 'yyyy/MM/dd hh:mm') : ''}
+            </Text>
+          );
+        },
+        sortingFn: 'datetime'
+      }),
+      columnHelper.display({
+        header() {
+          return t('action');
+        },
+        id: TableHeaderID.action,
+        enablePinning: true,
+        cell(props) {
+          const file = props.row.original;
+          return (
+            <ButtonGroup variant={'white-bg-icon'} color={'grayModern.900'}>
+              {!file.isDir && (
+                <IconButton
+                  icon={<VisibityIcon boxSize={'14px'} />}
+                  p="5px"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!s3client || !Bucket) return;
+                    generateUrl(s3client, Bucket, file.Key)
+                      .then((url) => {
+                        window.open(new URL(url));
+                      })
+                      .catch(() => {
+                        toast({
+                          status: 'error',
+                          title: 'get url error'
+                        });
+                      });
+                  }}
+                  aria-label={'preview'}
+                />
+              )}
+              {!file.isDir && (
+                <IconButton
+                  icon={<LinkIcon boxSize={'14px'} />}
+                  p="5px"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!s3client || !Bucket) return;
+                    generateUrl(s3client, Bucket, file.Key)
+                      .then((url) => {
+                        copyData(url);
+                      })
+                      .catch((err) => {
+                        toast({
+                          status: 'error',
+                          title: 'get url error'
+                        });
+                      });
+                  }}
+                  aria-label={'link'}
+                />
+              )}
+              {!(file.isDir && file.type === 'link') && (
+                <DeleteSingleFileModal
+                  aria-label={'delete'}
+                  onDelete={() => {
+                    deleteEntry(file);
+                  }}
+                />
+              )}
+            </ButtonGroup>
+          );
+        }
+      })
+    ];
+  }, [t, Bucket, s3client]);
+  const table = useReactTable<EntryType>({
+    data: fileList,
+    state: {
+      columnPinning: {
+        left: [TableHeaderID.select, TableHeaderID.fileName],
+        right: [TableHeaderID.action]
+      }
+    },
+    enableRowSelection(row) {
+      const file = row.original;
+      return !(file.type === 'link' && file.isDir);
+    },
+    enableSorting: true,
+    enableColumnPinning: true,
+    columns,
+    getSortedRowModel: getSortedRowModel(),
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    debugTable: false
+  });
   return (
     <Flex direction={'column'} {...styles}>
       <HStack w="full" my="16px" mb="25px">
@@ -282,8 +579,10 @@ export default function FileManager({ ...styles }: FlexProps) {
             type="text"
             maxW="270px"
             placeholder={t('searchFile')}
-            onChange={(v) => setSearchVal(v.target.value.trim())}
-            value={searchVal}
+            onChange={(v) =>
+              table.getColumn(TableHeaderID.fileName)?.setFilterValue(v.target.value.trim())
+            }
+            value={table.getColumn(TableHeaderID.fileName)?.getFilterValue() as string}
           />
         </InputGroup>
         <ButtonGroup
@@ -298,15 +597,15 @@ export default function FileManager({ ...styles }: FlexProps) {
           <CreateFolderModal />
           <DeleteFileModal
             onDelete={() => {
-              multiDeleteEntry(deleteCheckBoxGroupState.value as string[]);
+              multiDeleteEntry(table.getSelectedRowModel().rows.map((v) => v.original.Key));
             }}
-            fileListLength={deleteCheckBoxGroupState.value.length}
+            fileListLength={table.getSelectedRowModel().rows.length}
           />
           <Button
             display={'flex'}
             gap="8px"
             onClick={() => {
-              deleteCheckBoxGroupState.setValue([]);
+              table.toggleAllRowsSelected(false);
               queryClient.invalidateQueries({ queryKey: [QueryKey.minioFileList] }).then(() => {
                 toast({
                   status: 'success',
@@ -333,145 +632,117 @@ export default function FileManager({ ...styles }: FlexProps) {
           flex={'auto'}
           sx={{
             th: {
-              px: '17px',
+              px: '4px',
               py: '7px'
+            },
+            td: {
+              px: '4px',
+              py: '7px',
+              fontSize: '12px'
             }
           }}
           position={'relative'}
         >
           <Table variant="simple">
             <Thead>
-              <Tr bgColor={'white_.500'} color={'grayModern.600'}>
-                <Th>
-                  <Flex gap="10px">
-                    <Box onClick={(e) => e.stopPropagation()}>
-                      {trueFileList.length > 0 && (
-                        <Checkbox
-                          isChecked={allDelete}
-                          onChange={(e) => {
-                            e.target.checked
-                              ? deleteCheckBoxGroupState.setValue(trueFileList.map((f) => f.Key))
-                              : deleteCheckBoxGroupState.setValue([]);
-                          }}
-                          isIndeterminate={someDelete}
-                        />
-                      )}
-                    </Box>
-                    {t('fileName')}
-                  </Flex>
-                </Th>
-                <Th>{t('fileSize')}</Th>
-                <Th>{t('fileType')}</Th>
-                <Th>{t('modifiedTime')}</Th>
-                <Th isNumeric>
-                  <Text>{t('action')}</Text>
-                </Th>
-              </Tr>
+              {table.getHeaderGroups().map((group) => {
+                return (
+                  <Tr
+                    bgColor={'white_.500'}
+                    zIndex={10}
+                    key={group.id}
+                    position={'sticky'}
+                    top={'0'}
+                  >
+                    {group.headers.map((header) => (
+                      <Th
+                        {...(header.column.getIsPinned()
+                          ? {
+                              [header.column.getIsPinned() as string]:
+                                24 * header.column.getPinnedIndex() + 'px',
+                              pos: 'sticky',
+                              zIndex: 2
+                            }
+                          : {})}
+                        bgColor={'inherit'}
+                        w={header.column.id === TableHeaderID.select ? '24px' : 'initial'}
+                        color={'grayModern.600'}
+                        isNumeric={[TableHeaderID.action].includes(header.id as TableHeaderID)}
+                        key={header.id}
+                        colSpan={header.colSpan}
+                      >
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                      </Th>
+                    ))}
+                  </Tr>
+                );
+              })}
             </Thead>
-            <Tbody
-              color="grayModern.600"
-              sx={{
-                td: {
-                  px: '17px',
-                  py: '11px'
-                }
-              }}
-            >
-              {(searchVal == '' ? fileList : fuseList.map((v) => v.item)).map((file) => (
+            <Tbody>
+              {prefix.length > 0 && (
                 <Tr
-                  key={file.fileName}
+                  borderColor={'frostyNightfall.100'}
+                  borderBottom={'1px solid'}
+                  onClick={() => {
+                    clearPage();
+                    table.toggleAllRowsSelected(false);
+                    const targetPrefix = [...prefix];
+                    targetPrefix.pop();
+                    setPrefix(targetPrefix);
+                  }}
+                  bgColor="#FAFAFB"
+                  _hover={{
+                    bgColor: 'white_.600'
+                  }}
+                  cursor={'pointer'}
+                >
+                  <Td pos={'sticky'} left={'0'} w="24px" />
+                  <Td pos={'sticky'} left={'24px'} w="200px">
+                    <HStack gap="10px">
+                      <FolderIcon boxSize={'20px'} color="blue.600" />
+                      <Text color="grayModern.900">..</Text>
+                    </HStack>
+                  </Td>
+                  <Td />
+                  <Td />
+                  <Td />
+                  <Td />
+                </Tr>
+              )}
+              {table.getRowModel().rows.map((row) => (
+                <Tr
+                  key={row.id}
+                  bgColor={'#FAFAFB'}
                   _hover={{
                     bgColor: 'white_.600'
                   }}
                   onClick={() => {
+                    const file = row.original;
                     if (!file.isDir) return;
                     clearPage();
-                    deleteCheckBoxGroupState.setValue([]);
-                    if (file.type === 'link') {
-                      const targetPrefix = [...prefix];
-                      targetPrefix.pop();
-                      setPrefix(targetPrefix);
-                    } else setPrefix([...prefix, file.fileName]);
+                    table.toggleAllRowsSelected(false);
+                    setPrefix([...prefix, file.fileName]);
                   }}
-                  cursor={file.isDir ? 'pointer' : 'initial'}
+                  cursor={row.original.isDir ? 'pointer' : 'initial'}
                 >
-                  <Td>
-                    <HStack gap="10px">
-                      {!(file.type === 'link' && file.isDir) && (
-                        <Box onClick={(e) => e.stopPropagation()}>
-                          <Checkbox
-                            {...deleteCheckBoxGroupState.getCheckboxProps({ value: file.Key })}
-                          />
-                        </Box>
-                      )}
-                      {
-                        // isdir
-                        file.isDir ? (
-                          <FolderIcon boxSize={'20px'} color="blue.600" />
-                        ) : (
-                          <FileIcon boxSize={'20px'} color="purple.500" />
-                        )
-                      }
-                      <Text color="grayModern.900">{file.fileName}</Text>
-                    </HStack>
-                  </Td>
-                  <Td>{file.isDir ? '--' : formatBytes(file.Size || 0).toString()}</Td>
-                  <Td>{file.type}</Td>
-                  <Td>{file.LastModified ? format(file.LastModified, 'yyyy/MM/dd hh:mm') : ''}</Td>
-                  <Td isNumeric>
-                    <ButtonGroup variant={'white-bg-icon'} color={'grayModern.900'}>
-                      {!file.isDir && (
-                        <IconButton
-                          icon={<VisibityIcon boxSize={'14px'} />}
-                          p="5px"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (!s3client || !Bucket) return;
-                            generateUrl(s3client, Bucket, file.Key)
-                              .then((url) => {
-                                window.open(new URL(url));
-                              })
-                              .catch((err) => {
-                                toast({
-                                  status: 'error',
-                                  title: 'get url error'
-                                });
-                              });
-                          }}
-                          aria-label={'preview'}
-                        />
-                      )}
-                      {!file.isDir && (
-                        <IconButton
-                          icon={<LinkIcon boxSize={'14px'} />}
-                          p="5px"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (!s3client || !Bucket) return;
-                            generateUrl(s3client, Bucket, file.Key)
-                              .then((url) => {
-                                copyData(url);
-                              })
-                              .catch((err) => {
-                                toast({
-                                  status: 'error',
-                                  title: 'get url error'
-                                });
-                              });
-                          }}
-                          aria-label={'link'}
-                        />
-                      )}
-                      {!(file.isDir && file.type === 'link') && (
-                        <DeleteSingleFileModal
-                          aria-label={'delete'}
-                          onDelete={() => {
-                            deleteEntry(file);
-                          }}
-                        />
-                      )}
-                    </ButtonGroup>
-                  </Td>
+                  {row.getAllCells().map((cell) => (
+                    <Td
+                      w={cell.column.id === TableHeaderID.select ? '24px' : 'initial'}
+                      key={cell.id}
+                      {...(cell.column.getIsPinned()
+                        ? {
+                            [cell.column.getIsPinned() as string]:
+                              24 * cell.column.getPinnedIndex() + 'px',
+                            position: 'sticky',
+                            zIndex: 2
+                          }
+                        : {})}
+                      bgColor={'inherit'}
+                      isNumeric={[TableHeaderID.action].includes(cell.column.id as TableHeaderID)}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </Td>
+                  ))}
                 </Tr>
               ))}
             </Tbody>
