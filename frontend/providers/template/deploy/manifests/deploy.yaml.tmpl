@@ -91,6 +91,8 @@ metadata:
   namespace: template-frontend
   name: template-static
 spec:
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
   schedule: "0 0 * * *"
   jobTemplate:
     spec:
