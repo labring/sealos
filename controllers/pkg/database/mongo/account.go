@@ -70,6 +70,16 @@ type mongoDB struct {
 	PropertiesConn    string
 }
 
+func (m *mongoDB) GetTrafficSentBytes(_, _ time.Time, _ string, _ uint8, _ string) (int64, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mongoDB) GetTrafficRecvBytes(_, _ time.Time, _ string, _ uint8, _ string) (int64, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 type AccountBalanceSpecBSON struct {
 	// Time    metav1.Time `json:"time" bson:"time"`
 	// If the Time field is of the time. time type, it cannot be converted to json crd, so use metav1.Time. However, metav1.Time cannot be inserted into mongo, so you need to convert it to time.Time
@@ -245,6 +255,44 @@ func (m *mongoDB) InsertMonitor(ctx context.Context, monitors ...*resources.Moni
 	}
 	_, err := m.getMonitorCollection(monitors[0].Time).InsertMany(ctx, manyMonitor)
 	return err
+}
+
+func (m *mongoDB) GetDistinctMonitorCombinations(startTime, endTime time.Time, namespace string) ([]resources.Monitor, error) {
+	matchStage := bson.D{
+		{Key: "$match", Value: bson.M{
+			"time": bson.M{
+				"$gte": startTime.UTC(),
+				"$lt":  endTime.UTC(),
+			},
+			"category": namespace,
+		}},
+	}
+	groupStage := bson.D{
+		{Key: "$group", Value: bson.M{
+			"_id": bson.M{
+				"category": "$category",
+				"name":     "$name",
+				"type":     "$type",
+			},
+		}},
+	}
+	cursor, err := m.getMonitorCollection(startTime).Aggregate(context.Background(), mongo.Pipeline{matchStage, groupStage})
+	if err != nil {
+		return nil, fmt.Errorf("aggregate error: %v", err)
+	}
+	defer cursor.Close(context.Background())
+	var monitors []resources.Monitor
+	for cursor.Next(context.Background()) {
+		var monitor resources.Monitor
+		if err := cursor.Decode(&monitor); err != nil {
+			return nil, fmt.Errorf("decode error: %v", err)
+		}
+		monitors = append(monitors, monitor)
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, fmt.Errorf("cursor error: %v", err)
+	}
+	return monitors, nil
 }
 
 func (m *mongoDB) GetAllPricesMap() (map[string]resources.Price, error) {
@@ -443,6 +491,11 @@ func (m *mongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 				"$" + keyStr + "_max",
 				"$" + keyStr + "_min",
 			}}}
+			continue
+		}
+		if value.PriceType == resources.SUM {
+			groupStage = append(groupStage, primitive.E{Key: keyStr, Value: bson.D{{Key: "$sum", Value: "$used." + keyStr}}})
+			usedStage[keyStr] = primitive.E{Key: keyStr, Value: bson.D{{Key: "$sum", Value: "$used." + keyStr}}}
 			continue
 		}
 		groupStage = append(groupStage, primitive.E{Key: keyStr, Value: bson.D{{Key: "$sum", Value: "$used." + keyStr}}})
