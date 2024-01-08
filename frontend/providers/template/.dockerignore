@@ -5,9 +5,9 @@ npm-debug.log
 README.md
 .next
 .git
-!./FastDeployTemplates/.git
+!./templates/.git
 .yalc/
 yalc.lock
 
-FastDeployTemplates
-fast_deploy_template.json
+templates
+templates.json

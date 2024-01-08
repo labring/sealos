@@ -168,7 +168,7 @@ export const DBTypeList = [
 
 export const DBComponentNameMap = {
   [DBTypeEnum.postgresql]: 'postgresql',
-  [DBTypeEnum.mongodb]: 'mongo',
+  [DBTypeEnum.mongodb]: 'mongodb',
   [DBTypeEnum.mysql]: 'mysql',
   [DBTypeEnum.redis]: 'redis',
   [DBTypeEnum.kafka]: 'kafka',

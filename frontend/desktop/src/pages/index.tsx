@@ -52,7 +52,10 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       const { appkey, appQuery } = parseOpenappQuery((query?.openapp as string) || '');
       // sealos_inside=true internal call
       if (whitelistApps.includes(appkey) && appQuery.indexOf('sealos_inside=true') === -1) {
-        window.open(`https://fastdeploy.${sealos_cloud_domain}/deploy?${appQuery}`, '_self');
+        sessionStorage.setItem(
+          'accessTemplatesNoLogin',
+          `https://template.${sealos_cloud_domain}/deploy?${appQuery}`
+        );
         return;
       }
       if (appkey && typeof appQuery === 'string') setAutoLaunch(appkey, { raw: appQuery });
