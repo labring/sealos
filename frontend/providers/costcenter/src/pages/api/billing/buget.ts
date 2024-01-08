@@ -22,28 +22,40 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         code: 400,
         message: 'endTime is invalid'
       });
-    const url = process.env.BILLING_URI + '/account/v1alpha1/namespaces';
-    console.log(url);
-    const res = await (
-      await fetch(url, {
-        method: 'POST',
-        body: JSON.stringify({
-          endTime,
-          kubeConfig: kc.exportConfig(),
-          owner: user.name,
-          startTime,
-          type: 0
+    const consumptionUrl = process.env.BILLING_URI + '/account/v1alpha1/costs/consumption';
+    const rechagreUrl = process.env.BILLING_URI + '/account/v1alpha1/costs/recharge';
+
+    const results = await Promise.all([
+      (
+        await fetch(consumptionUrl, {
+          method: 'POST',
+          body: JSON.stringify({
+            endTime,
+            kubeConfig: kc.exportConfig(),
+            owner: user.name,
+            startTime
+          })
         })
-      })
-    ).json();
-    console.log(res);
+      ).json(),
+      (
+        await fetch(rechagreUrl, {
+          method: 'POST',
+          body: JSON.stringify({
+            endTime,
+            kubeConfig: kc.exportConfig(),
+            owner: user.name,
+            startTime
+          })
+        })
+      ).json()
+    ]);
+
     return jsonRes(resp, {
       code: 200,
-      data: res.data,
-      message: res.message
+      data: results
     });
   } catch (error) {
     console.log(error);
-    jsonRes(resp, { code: 500, message: 'get namespaceList error' });
+    jsonRes(resp, { code: 500, message: 'get buget error' });
   }
 }

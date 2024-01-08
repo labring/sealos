@@ -22,8 +22,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         code: 400,
         message: 'endTime is invalid'
       });
-    const url = process.env.BILLING_URI + '/account/v1alpha1/namespaces';
-    console.log(url);
+    const url = process.env.BILLING_URI + '/account/v1alpha1/costs';
     const res = await (
       await fetch(url, {
         method: 'POST',
@@ -31,12 +30,10 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
           endTime,
           kubeConfig: kc.exportConfig(),
           owner: user.name,
-          startTime,
-          type: 0
+          startTime
         })
       })
     ).json();
-    console.log(res);
     return jsonRes(resp, {
       code: 200,
       data: res.data,
@@ -44,6 +41,6 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     });
   } catch (error) {
     console.log(error);
-    jsonRes(resp, { code: 500, message: 'get namespaceList error' });
+    jsonRes(resp, { code: 500, message: 'get billing cost error' });
   }
 }

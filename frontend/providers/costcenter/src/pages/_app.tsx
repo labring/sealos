@@ -8,7 +8,7 @@ import { ChakraProvider } from '@chakra-ui/react';
 // import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { Hydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { AppProps } from 'next/app';
-import Router from 'next/router';
+import Router, { useRouter } from 'next/router';
 import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 import 'react-day-picker/dist/style.css';
@@ -31,17 +31,6 @@ const queryClient = new QueryClient({
     }
   }
 });
-// if (typeof window !== 'undefined') {
-//   const syncStoragePersister = createSyncStoragePersister({
-//     storage: window.localStorage,
-//     retry: removeOldestQuery
-//   });
-
-//   persistQueryClient({
-//     persister: syncStoragePersister,
-//     queryClient: queryClient
-//   });
-// }
 
 Router.events.on('routeChangeStart', () => NProgress.start());
 Router.events.on('routeChangeComplete', () => NProgress.done());
@@ -49,14 +38,20 @@ Router.events.on('routeChangeError', () => NProgress.done());
 
 const App = ({ Component, pageProps }: AppProps) => {
   const state = useEnvStore();
+  const router = useRouter();
   useEffect(() => {
-    const changeI18n = (data: any) => {
-      setCookie('NEXT_LOCALE', data.currentLanguage, {
-        expires: 30,
-        sameSite: 'None',
-        secure: true
-      });
-      i18n?.changeLanguage(data.currentLanguage);
+    const changeI18n = (data: { currentLanguage: string }) => {
+      // setCookie('NEXT_LOCALE', data.currentLanguage, {
+      //   expires: 30,
+      //   sameSite: 'None',
+      //   secure: true
+      // });
+      console.log(data);
+      router.replace(router.basePath, router.asPath, { locale: data.currentLanguage });
+      // router.replace(router.asPath,router.asPath, {
+      //   locale: data.currentLanguage
+      // })
+      // i18n?.changeLanguage(data.currentLanguage);
     };
 
     (async () => {
@@ -66,7 +61,9 @@ const App = ({ Component, pageProps }: AppProps) => {
           currentLanguage: lang.lng
         });
       } catch (error) {
-        changeI18n('zh');
+        changeI18n({
+          currentLanguage: 'zh'
+        });
       }
     })();
     (async () => {
