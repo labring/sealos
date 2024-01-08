@@ -74,9 +74,9 @@ export async function GetTemplateByName({
   };
 
   const originalPath = process.cwd();
-  const targetPath = path.resolve(originalPath, 'FastDeployTemplates', targetFolder);
+  const targetPath = path.resolve(originalPath, 'templates', targetFolder);
   // Query by file name in template details
-  const jsonPath = path.resolve(originalPath, 'fast_deploy_template.json');
+  const jsonPath = path.resolve(originalPath, 'templates.json');
   const jsonData: TemplateType[] = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
   const _tempalte = jsonData.find((item) => item.metadata.name === templateName);
   const _tempalteName = _tempalte ? _tempalte.spec.fileName : `${templateName}.yaml`;

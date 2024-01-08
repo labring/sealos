@@ -1,8 +1,17 @@
 import SigninComponent from '@/components/signin';
 import { compareFirstLanguages } from '@/utils/tools';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useEffect } from 'react';
 
 export default function SigninPage() {
+  useEffect(() => {
+    const url = sessionStorage.getItem('accessTemplatesNoLogin');
+    if (url) {
+      sessionStorage.clear();
+      window.location.replace(url);
+    }
+  }, []);
+
   return <SigninComponent />;
 }
 
