@@ -258,7 +258,7 @@ var DefaultPropertyTypeList = []PropertyType{
 	{
 		Name:       "network",
 		Enum:       3,
-		PriceType:  DIF,
+		PriceType:  SUM,
 		UnitPrice:  0,
 		UnitString: "1Mi",
 	},
@@ -376,21 +376,6 @@ func IsGpuResource(resource string) bool {
 }
 func GetGpuResourceProduct(resource string) string {
 	return strings.TrimPrefix(resource, GpuResourcePrefix)
-}
-
-var DefaultPrices = map[string]Price{
-	"cpu": {
-		Property: "cpu",
-		Price:    67,
-	},
-	"memory": {
-		Property: "memory",
-		Price:    33,
-	},
-	"storage": {
-		Property: "storage",
-		Price:    2,
-	},
 }
 
 // infra residual code
