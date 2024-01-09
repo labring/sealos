@@ -29,11 +29,14 @@ func RegisterPayRouter() {
 	if err := dao.InitDB(); err != nil {
 		log.Fatalf("Error initializing database: %v", err)
 	}
-	// /account/v1alpha1/{/namespaces | /properties | /costs}
+	// /account/v1alpha1/{/namespaces | /properties | {/costs | /costs/recharge | /costs/consumption | /costs/properties}}
 	router.Group(helper.GROUP).
 		POST(helper.GetHistoryNamespaces, api.GetBillingHistoryNamespaceList).
 		POST(helper.GetProperties, api.GetProperties).
-		POST(helper.GetUserCosts, api.GetCosts)
+		POST(helper.GetUserCosts, api.GetCosts).
+		POST(helper.GetRechargeAmount, api.GetRechargeAmount).
+		POST(helper.GetConsumptionAmount, api.GetConsumptionAmount).
+		POST(helper.GetPropertiesUsed, api.GetPropertiesUsedAmount)
 	docs.SwaggerInfo.Host = env.GetEnvWithDefault("SWAGGER_HOST", "localhost:2333")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 

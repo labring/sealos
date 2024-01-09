@@ -42,7 +42,7 @@ clean:
 	rm -f $(SERVICE_NAME)
 
 .PHONY: build
-build: clean ## Build service-hub binary.
+build: ## Build service-hub binary.
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) go build $(GO_BUILD_FLAGS) -o bin/manager main.go
 
 .PHONY: docker-build

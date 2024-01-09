@@ -10,7 +10,7 @@ import (
 // @termsOfService https://cloud.sealos.io
 // @contact.email bxy4543@gmail.com
 // @host localhost:2333
-// @BasePath /account/v1alpha1
+// @BasePath
 func main() {
 	router.RegisterPayRouter()
 }
