@@ -11,7 +11,7 @@ import { SEALOS_DOMAIN, loadInitData } from '@/store/static';
 import Head from 'next/head';
 
 import 'nprogress/nprogress.css';
-import '@ant-design/flowchart/dist/index.css';
+// import '@ant-design/flowchart/dist/index.css';
 import '@/styles/globals.css';
 
 //Binding events.
