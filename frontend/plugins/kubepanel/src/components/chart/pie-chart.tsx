@@ -23,7 +23,9 @@ export const PieChart = ({ title, data, color }: PieChartProps) => {
     angleField: 'value',
     colorField: 'type',
     color: (datum: Datum) => color(datum['type']),
+    padding: 0.1, //Try to avoid dial misalignment caused by different legends' number
     width: 200,
+    height: 400,
     radius: 1,
     innerRadius: 0.75,
     statistic: {
@@ -41,8 +43,23 @@ export const PieChart = ({ title, data, color }: PieChartProps) => {
     },
     label: false,
     legend: {
-      layout: 'vertical' as 'vertical',
-      position: 'bottom' as 'bottom'
+      layout: 'vertical',
+      position: 'bottom',
+      offsetY: -15,
+      marker: {
+        symbol: (x: number, y: number, r: number) => {
+          const width = r * 4;
+          const height = width * 0.5;
+          return [
+            ['M', x - width / 2, y - height / 2],
+            ['L', x + width / 2, y - height / 2],
+            ['L', x + width / 2, y + height / 2],
+            ['L', x - width / 2, y + height / 2],
+            ['Z']
+          ];
+        },
+        spacing: 13
+      }
     }
   };
   return <DynamicPie {...config} animation={false} />;
