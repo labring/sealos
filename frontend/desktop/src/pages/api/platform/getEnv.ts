@@ -32,8 +32,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const licenseEnabled = enableLicense();
   const rechargeEnabled = enableRecharge();
   const guideEnabled = process.env.GUIDE_ENABLED === 'true';
-
-  jsonRes<SystemEnv>(res, {
+  const cf_sitekey = process.env.CF_SITE_KEY || '';
+  return jsonRes<SystemEnv>(res, {
     data: {
       SEALOS_CLOUD_DOMAIN: process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io',
       wechat_client_id,
@@ -53,7 +53,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       wechatEnabledRecharge,
       rechargeEnabled,
       licenseEnabled,
-      guideEnabled
+      guideEnabled,
+      cf_sitekey
     }
   });
 }

@@ -25,6 +25,7 @@
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@kubernetes/client-node": "^0.18.1",
+    "@marsidev/react-turnstile": "^0.4.1",
     "@sealos/driver": "workspace:^",
     "@sealos/ui": "workspace:^",
     "@tanstack/react-query": "^4.35.3",

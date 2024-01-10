@@ -12,7 +12,6 @@ const useProtocol = ({
   const { t, i18n } = useTranslation();
   const [isAgree, setIsAgree] = useState(false);
   const [isInvalid, setIsInvalid] = useState(false);
-  console.log(service_protocol, private_protocol);
   const Protocol = () => (
     <Flex
       className="protocol"

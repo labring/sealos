@@ -204,6 +204,16 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
     SMS_ENABLED=true
     RECHAGRE_ENABLED=true
     ```
+- 注册功能开关
+  
+  ```
+    SIGN_UP_ENABLED="false"
+  ```
+- 暴露api 
+  
+  ```
+  API_ENABLED="true"
+  ```
 
 - 每个登陆要配置的变量
   - wechat
@@ -249,4 +259,10 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
   ```
   // default is '50'
     TEAM_LIMIT="50"
+  ```
+  - cloudflare
+
+  ```
+    CF_SITE_KEY=
+    CF_SECRET_KEY=
   ```

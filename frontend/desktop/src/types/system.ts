@@ -21,6 +21,7 @@ export type LoginProps = {
   needGithub: boolean;
   needWechat: boolean;
   needGoogle: boolean;
+  cf_sitekey: string;
 };
 
 export type SystemEnv = {

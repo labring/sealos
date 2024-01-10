@@ -78,6 +78,9 @@ importers:
       '@kubernetes/client-node':
         specifier: ^0.18.1
         version: 0.18.1
+      '@marsidev/react-turnstile':
+        specifier: ^0.4.1
+        version: 0.4.1(react-dom@18.2.0)(react@18.2.0)
       '@sealos/driver':
         specifier: workspace:^
         version: link:../packages/driver
@@ -5657,6 +5660,16 @@ packages:
     resolution: {integrity: sha512-z5mY4LStlA3yL7aHT/rqgG614cfcvklS+8oFRFBYrs4YaWLJyKKM4+nN6KopToX0o9Hj6zmH6M5kinOYuy06ug==}
     dependencies:
       '@lezer/common': 1.1.1
+    dev: false
+
+  /@marsidev/react-turnstile@0.4.1(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-uZusUW9mPr0csWpls8bApe5iuRK0YK7H1PCKqfM4djW3OA9GB9rU68irjk7xRO8qlHyj0aDTeVu9tTLPExBO4Q==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+    dependencies:
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
     dev: false
 
   /@mongodb-js/saslprep@1.1.1:

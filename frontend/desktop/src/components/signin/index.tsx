@@ -5,7 +5,6 @@ import Language from '@/components/signin/auth/useLanguage';
 import usePassword from '@/components/signin/auth/usePassword';
 import useProtocol from '@/components/signin/auth/useProtocol';
 import useSms from '@/components/signin/auth/useSms';
-import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import { ApiResp, LoginType, SystemEnv } from '@/types';
 import {
@@ -25,7 +24,9 @@ import { useTranslation } from 'next-i18next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import sealosTitle from 'public/images/sealos-title.png';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+import { Turnstile, TurnstileInstance } from '@marsidev/react-turnstile';
 
 export default function SigninComponent() {
   const { data: platformEnv } = useQuery(['getPlatformEnv'], getSystemEnv);
@@ -36,14 +37,14 @@ export default function SigninComponent() {
     service_protocol_en = '',
     private_protocol_en = '',
     needPassword = false,
-    needSms = false
+    needSms = false,
+    cf_sitekey
   } = platformEnv?.data || {};
   const needTabs = needPassword && needSms;
 
   const disclosure = useDisclosure();
   const { t, i18n } = useTranslation();
   const [tabIndex, setTabIndex] = useState<LoginType>(LoginType.NONE);
-
   const { ErrorComponent, showError } = useCustomError();
   let protocol_data: Parameters<typeof useProtocol>[0];
   if (['zh', 'zh-Hans'].includes(i18n.language))
@@ -56,7 +57,6 @@ export default function SigninComponent() {
       service_protocol: service_protocol_en,
       private_protocol: private_protocol_en
     };
-  console.log(protocol_data);
   const { Protocol, isAgree, setIsInvalid } = useProtocol(protocol_data!);
   const { SmsModal, login: smsSubmit, isLoading: smsLoading } = useSms({ showError });
   const {
@@ -75,11 +75,21 @@ export default function SigninComponent() {
   }, []);
   const { AuthList } = useAuthList();
 
+  const turnstileRef = useRef<TurnstileInstance>(null);
   const loginConfig = useMemo(() => {
     return {
       [LoginType.SMS]: {
         login: smsSubmit,
-        component: <SmsModal />
+        component: (
+          <SmsModal
+            onAfterGetCode={() => {
+              turnstileRef.current?.reset();
+            }}
+            getCfToken={() => {
+              return turnstileRef.current?.getResponse();
+            }}
+          />
+        )
       },
       [LoginType.PASSWORD]: {
         login: passwordSubmit,
@@ -87,7 +97,7 @@ export default function SigninComponent() {
       },
       [LoginType.NONE]: null
     };
-  }, [PasswordComponent, SmsModal, passwordSubmit, smsSubmit]);
+  }, [PasswordComponent, SmsModal, passwordSubmit, smsSubmit, turnstileRef.current]);
 
   useEffect(() => {
     setTabIndex(needSms ? LoginType.SMS : needPassword ? LoginType.PASSWORD : LoginType.NONE);
@@ -178,6 +188,15 @@ export default function SigninComponent() {
 
           <Protocol />
 
+          {!!cf_sitekey && (
+            <Turnstile
+              options={{
+                size: 'invisible'
+              }}
+              ref={turnstileRef}
+              siteKey={cf_sitekey}
+            />
+          )}
           <Button
             variant={'unstyled'}
             background="linear-gradient(90deg, #000000 0%, rgba(36, 40, 44, 0.9) 98.29%)"
