@@ -66,6 +66,7 @@ type MonitorReconciler struct {
 	periodicReconcile     time.Duration
 	NvidiaGpu             map[string]gpu.NvidiaGPU
 	DBClient              database.Interface
+	TrafficClient         database.Interface
 	TrafficSvcConn        string
 	Properties            *resources.PropertyTypeLS
 	PromURL               string
@@ -414,28 +415,28 @@ func (r *MonitorReconciler) MonitorPodTrafficUsed(startTime, endTime time.Time) 
 }
 
 func (r *MonitorReconciler) monitorPodTrafficUsed(namespace corev1.Namespace, startTime, endTime time.Time) error {
-	// TODO: test ns-admin, will delete
-	if namespace.Name != "ns-admin" {
-		return nil
-	}
-	logger.Info("start monitor pod traffic used", "namespace", namespace.Name, "startTime", startTime, "endTime", endTime)
 	monitors, err := r.DBClient.GetDistinctMonitorCombinations(startTime, endTime, namespace.Name)
 	if err != nil {
 		return fmt.Errorf("failed to get distinct monitor combinations: %w", err)
 	}
 	for _, monitor := range monitors {
-		// TODO: need get traffic sent bytes
-		//bytes, err := r.DBClient.GetTrafficSentBytes(startTime, endTime, namespace.Name, monitor.Type, monitor.Name)
-		//if err != nil {
-		//	return fmt.Errorf("failed to get traffic sent bytes: %w", err)
-		//}
+		bytes, err := r.DBClient.GetTrafficSentBytes(startTime, endTime, namespace.Name, monitor.Type, monitor.Name)
+		if err != nil {
+			return fmt.Errorf("failed to get traffic sent bytes: %w", err)
+		}
+		unit := r.Properties.StringMap[resources.ResourceNetwork].Unit
+		used := int64(math.Ceil(float64(resource.NewQuantity(bytes, resource.BinarySI).MilliValue()) / float64(unit.MilliValue())))
+		if used == 0 {
+			continue
+		}
 		ro := resources.Monitor{
 			Category: namespace.Name,
 			Name:     monitor.Name,
-			Used:     map[uint8]int64{r.Properties.StringMap[resources.ResourceNetwork].Enum: 1024},
+			Used:     map[uint8]int64{r.Properties.StringMap[resources.ResourceNetwork].Enum: used},
 			Time:     endTime.Add(-1 * time.Minute),
 			Type:     monitor.Type,
 		}
+		r.Logger.Info("monitor traffic used", "monitor", ro)
 		err = r.DBClient.InsertMonitor(context.Background(), &ro)
 		if err != nil {
 			return fmt.Errorf("failed to insert monitor: %w", err)

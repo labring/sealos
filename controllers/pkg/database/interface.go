@@ -61,6 +61,9 @@ type Account interface {
 type Traffic interface {
 	GetTrafficSentBytes(startTime, endTime time.Time, namespace string, _type uint8, name string) (int64, error)
 	GetTrafficRecvBytes(startTime, endTime time.Time, namespace string, _type uint8, name string) (int64, error)
+
+	GetPodTrafficSentBytes(startTime, endTime time.Time, namespace string, name string) (int64, error)
+	GetPodTrafficRecvBytes(startTime, endTime time.Time, namespace string, name string) (int64, error)
 }
 
 type Creator interface {
@@ -81,7 +84,8 @@ type MeteringOwnerTimeResult struct {
 //}
 
 const (
-	MongoURI = "MONGO_URI"
+	MongoURI        = "MONGO_URI"
+	TrafficMongoURI = "TRAFFIC_MONGO_URI"
 	//MongoUsername      = "MONGO_USERNAME"
 	//MongoPassword      = "MONGO_PASSWORD"
 	//RetentionDay       = "RETENTION_DAY"

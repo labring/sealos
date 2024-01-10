@@ -41,6 +41,7 @@ import (
 
 const (
 	DefaultAccountDBName  = "sealos-resources"
+	DefaultTrafficDBName  = "sealos-networkmanager-synchronizer"
 	DefaultAuthDBName     = "sealos-auth"
 	DefaultMeteringConn   = "metering"
 	DefaultMonitorConn    = "monitor"
@@ -62,6 +63,7 @@ var cryptoKey = defaultCryptoKey
 type mongoDB struct {
 	Client            *mongo.Client
 	AccountDB         string
+	TrafficDB         string
 	AuthDB            string
 	UserConn          string
 	MonitorConnPrefix string
@@ -406,7 +408,7 @@ func (m *mongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 		}
 		groupStage = append(groupStage, primitive.E{Key: keyStr, Value: bson.D{{Key: "$sum", Value: "$used." + keyStr}}})
 		usedStage[keyStr] = bson.D{{Key: "$toInt", Value: bson.D{{Key: "$round", Value: bson.D{{Key: "$divide", Value: bson.A{
-			"$" + keyStr, bson.D{{Key: "$cond", Value: bson.A{bson.D{{Key: "$gt", Value: bson.A{"$count", minutes}}}, "$count", minutes}}}}}}}}}}
+			"$" + keyStr, minutes}}}}}}}
 	}
 
 	// add the used phase to the $project phase
@@ -940,6 +942,7 @@ func NewMongoInterface(ctx context.Context, URL string) (database.Interface, err
 	return &mongoDB{
 		Client:            client,
 		AccountDB:         DefaultAccountDBName,
+		TrafficDB:         DefaultTrafficDBName,
 		AuthDB:            DefaultAuthDBName,
 		UserConn:          DefaultUserConn,
 		MeteringConn:      DefaultMeteringConn,
