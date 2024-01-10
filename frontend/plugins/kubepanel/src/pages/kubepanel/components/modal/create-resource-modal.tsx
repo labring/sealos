@@ -5,6 +5,12 @@ import { Button, Cascader, Modal, Spin, message } from 'antd';
 import { BaseOptionType } from 'antd/lib/cascader';
 import React, { useEffect, useRef, useState } from 'react';
 import { createResource, getTemplate } from '@/api/kubernetes';
+import {
+  DashboardOutlined,
+  DatabaseOutlined,
+  GatewayOutlined,
+  SettingOutlined
+} from '@ant-design/icons';
 
 interface Props {
   open: boolean;
@@ -13,14 +19,24 @@ interface Props {
 
 interface Option extends BaseOptionType {
   value: string;
-  label: string;
+  label: React.ReactNode;
   children?: Option[];
 }
+
+// render icon+label
+const labelRender = (icon: React.ReactNode, label: string) => {
+  return (
+    <div>
+      {icon}
+      <span className="ml-2">{label}</span>
+    </div>
+  );
+};
 
 const options: Option[] = [
   {
     value: 'workload',
-    label: 'Workload',
+    label: labelRender(<DashboardOutlined />, 'workload'),
     children: [
       {
         value: KubeObjectKind.Pod,
@@ -38,7 +54,7 @@ const options: Option[] = [
   },
   {
     value: 'network',
-    label: 'Network',
+    label: labelRender(<GatewayOutlined />, 'network'),
     children: [
       {
         value: KubeObjectKind.Ingress,
@@ -48,7 +64,7 @@ const options: Option[] = [
   },
   {
     value: 'config',
-    label: 'Config',
+    label: labelRender(<SettingOutlined />, 'config'),
     children: [
       {
         value: KubeObjectKind.ConfigMap,
@@ -62,7 +78,7 @@ const options: Option[] = [
   },
   {
     value: 'storage',
-    label: 'Storage',
+    label: labelRender(<DatabaseOutlined />, 'storage'),
     children: [
       {
         value: KubeObjectKind.PersistentVolumeClaim,
@@ -72,7 +88,7 @@ const options: Option[] = [
   }
 ];
 
-const defaultTemplate = 'Please select a template first.';
+const defaultTemplate = 'please choose a template.';
 
 const CreateResourceModal = ({ open, setClose }: Props) => {
   const [disabled, setDisabled] = useState(true);
@@ -156,23 +172,29 @@ const CreateResourceModal = ({ open, setClose }: Props) => {
         onCancel={setClose}
         onOk={setClose}
         footer={[
+          <Button key="cancel" onClick={setClose} className="w-20">
+            Cancel
+          </Button>,
           <Button
             key="create"
-            type="link"
             loading={confirmLoading}
+            type="primary"
             onClick={onCreate}
             disabled={disabled}
+            className="w-20"
           >
             Create
-          </Button>,
-          <Button key="cancel" danger type="primary" onClick={setClose}>
-            Cancel
           </Button>
         ]}
       >
         <div className="pb-3">
-          <div>choose a template</div>
-          <Cascader onChange={onChange} placeholder="Please select" options={options} />
+          <Cascader
+            onChange={onChange}
+            placeholder="Choose a Template"
+            options={options}
+            bordered={false}
+            className="bg-[#F4F4F7] rounded-md "
+          />
         </div>
         <Spin spinning={loading}>
           <div>

@@ -21,3 +21,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.ant-cascader-menu-item-active {
+  color: #0884dd;
+}
