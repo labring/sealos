@@ -1,7 +1,7 @@
 import { APICallback, KubeStoreAction, WatchCloser } from '@/types/state';
 import useNotification from 'antd/lib/notification/useNotification';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Props {
   initializers: Array<KubeStoreAction<any>['initialize']>;
@@ -9,17 +9,19 @@ interface Props {
 }
 
 export function useWatcher({ watchers, initializers }: Props) {
+  const [rewatchTrigger, setRewatchTrigger] = useState(false);
+  const closers = useRef<Array<WatchCloser>>([]);
   const [notifyApi, cxtHolder] = useNotification();
 
   const callback = useCallback<APICallback>(
     (_, e) => {
       if (e) {
         if (e.code === 410) {
-          notifyApi.error({
-            description:
-              'Resource version failed to automatically update, please refresh the page.',
+          notifyApi.info({
+            description: 'Resource is outdated. We will reinitialize the resource.',
             message: 'Outdated Resource'
           });
+          setRewatchTrigger(!rewatchTrigger);
           return;
         }
         notifyApi.error({
@@ -29,15 +31,22 @@ export function useWatcher({ watchers, initializers }: Props) {
         });
       }
     },
-    [notifyApi]
+    [notifyApi, rewatchTrigger]
   );
 
   useEffect(() => {
-    let closers: Array<WatchCloser>;
     Promise.allSettled(initializers.map((initializer) => initializer(callback))).finally(() => {
-      closers = watchers.map((watcher) => watcher(callback));
+      closers.current = watchers.map((watcher) => watcher(callback));
     });
-  }, [callback, initializers, watchers]);
+  }, [initializers, watchers, callback, rewatchTrigger]);
+
+  useEffect(() => {
+    return () => {
+      closers.current.forEach((closer) => {
+        closer();
+      });
+    };
+  }, []);
 
   return cxtHolder;
 }

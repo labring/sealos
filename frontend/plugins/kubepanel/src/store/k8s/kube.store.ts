@@ -85,7 +85,7 @@ export function createKubeStoreSlice<
         callback(undefined, evt.data);
       };
 
-      nxtES.addEventListener('watch', (evt) => {
+      nxtES.addEventListener('watch', async (evt) => {
         const data = JSON.parse(evt.data) as WatchEvent<Data | KubeStatus>;
         if (data.type === 'ERROR') {
           const kubeStatus = data.object as KubeStatus;
@@ -93,9 +93,22 @@ export function createKubeStoreSlice<
           // callback hook must recall this function
           if (kubeStatus.code === 410) {
             nxtES.close();
-            console.log('finished watching');
-          }
-          console.log('watch error', kubeStatus);
+            console.log('finished watching, then start reinitialize');
+            try {
+              const res = await listResources<K, Data>(kind);
+              const parsed = parseResponse<K, Data>(res.data, kind, objConstructor);
+              set({
+                items: parsed.sort((a, b) => a.getName().localeCompare(b.getName())),
+                resourceVersion: res.data.metadata.resourceVersion
+              });
+            } catch (err: any) {
+              console.log('Failed to reinitialize', err);
+              err.message =
+                'Failed to reinitialize, you need to refresh this page, sorry.\n' + err.message;
+              callback(undefined, buildErrorResponse(err));
+            }
+          } else console.log('watch error', kubeStatus);
+
           callback(
             undefined,
             buildErrorResponse(
