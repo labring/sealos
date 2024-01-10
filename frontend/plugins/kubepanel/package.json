@@ -12,16 +12,14 @@
   },
   "dependencies": {
     "@ant-design/charts": "^1.4.2",
-    "@ant-design/colors": "^7.0.0",
     "@ant-design/cssinjs": "^1.17.2",
     "@ant-design/icons": "^5.2.6",
     "@ant-design/plots": "^1.2.5",
     "@chakra-ui/react": "^2.8.1",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
-    "@kubernetes/client-node": "^0.19.0",
     "@monaco-editor/react": "^4.6.0",
-    "antd": "^5.11.0",
+    "antd": "^5.12.0",
     "auto-bind": "^5.0.1",
     "axios": "^1.5.1",
     "byline": "^5.0.0",
@@ -64,6 +62,7 @@
     "eslint-plugin-xss": "^0.1.12",
     "monaco-editor": "^0.44.0",
     "postcss": "^8.4.31",
+    "postcss-nesting": "^12.0.1",
     "tailwindcss": "^3.3.4",
     "typescript": "^5"
   }

@@ -43,7 +43,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         params: {
           resourceVersion,
           watch: 1,
-          allowBookmarks: true
+          allowWatchBookmarks: true
         },
         signal: abortController.signal,
         responseType: 'stream'

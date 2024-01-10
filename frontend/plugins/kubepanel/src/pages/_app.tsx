@@ -9,6 +9,8 @@ import { throttle } from 'lodash';
 import { sealosApp, createSealosApp } from 'sealos-desktop-sdk/app';
 import { SEALOS_DOMAIN, loadInitData } from '@/store/static';
 import Head from 'next/head';
+import { useMonaco } from '@monaco-editor/react';
+import { monacoTheme } from '@/constants/theme';
 
 import 'nprogress/nprogress.css';
 import '@ant-design/flowchart/dist/index.css';
@@ -27,6 +29,14 @@ export default function App({ Component, pageProps }: AppProps) {
     title: '跳转提示',
     content: '该应用不允许单独使用，点击确认前往 Sealos Desktop 使用。'
   });
+
+  // monaco theme
+  const monaco = useMonaco();
+  useEffect(() => {
+    if (monaco) {
+      monaco.editor.defineTheme('kubepanel', monacoTheme);
+    }
+  }, [monaco]);
 
   useEffect(() => {
     NProgress.start();

@@ -1,17 +1,17 @@
-import AppLayout from './components/layout';
-import OverviewPage from './components/kube-object/workload/overview/overview';
+import AppLayout from './layout';
+import OverviewPage from './kube-object/workload/overview/overview';
 import { useState } from 'react';
-import { SideNavItemKey } from './components/sidebar/sidebar';
-import PodOverviewPage from './components/kube-object/workload/pod/pod';
-import DeploymentOverviewPage from './components/kube-object/workload/deployment/deployment';
-import StatefulSetOverviewPage from './components/kube-object/workload/statefulset/statefulset';
-import ConfigMapOverviewPage from './components/kube-object/config/config-map/config-map';
-import PersistentVolumeClaimOverviewPage from './components/kube-object/storage/volume-claim/volume-claim';
+import { SideNavItemKey } from '../../components/common/sidebar/sidebar';
+import PodOverviewPage from './kube-object/workload/pod/pod';
+import DeploymentOverviewPage from './kube-object/workload/deployment/deployment';
+import StatefulSetOverviewPage from './kube-object/workload/statefulset/statefulset';
+import ConfigMapOverviewPage from './kube-object/config/config-map/config-map';
+import PersistentVolumeClaimOverviewPage from './kube-object/storage/volume-claim/volume-claim';
 import { FloatButton } from 'antd';
-import CreateResourceModal from './components/modal/create-resource-modal';
+import { CreateResourceModal } from '@/components/common/action/create-resource-modal';
 import { PlusOutlined } from '@ant-design/icons';
-import SecretOverviewPage from './components/kube-object/config/secret/secret';
-import IngressOverviewPage from './components/kube-object/network/ingress/ingress';
+import SecretOverviewPage from './kube-object/config/secret/secret';
+import IngressOverviewPage from './kube-object/network/ingress/ingress';
 
 const switchPage = (key: SideNavItemKey): React.ReactNode => {
   switch (key) {
