@@ -1,4 +1,3 @@
-basePath: /account/v1alpha1
 definitions:
   common.PropertyQuery:
     properties:
@@ -144,6 +143,120 @@ paths:
       summary: Get user costs
       tags:
       - Costs
+  /account/v1alpha1/costs/consumption:
+    post:
+      consumes:
+      - application/json
+      description: Get user consumption amount within a specified time range
+      parameters:
+      - description: User consumption amount request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.UserCostsAmountReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved user consumption amount
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse user consumption amount request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get user consumption amount
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user consumption amount
+      tags:
+      - ConsumptionAmount
+  /account/v1alpha1/costs/properties:
+    post:
+      consumes:
+      - application/json
+      description: Get user properties used amount within a specified time range
+      parameters:
+      - description: User properties used amount request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.UserCostsAmountReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved user properties used amount
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse user properties used amount request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get user properties used amount
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user properties used amount
+      tags:
+      - PropertiesUsedAmount
+  /account/v1alpha1/costs/recharge:
+    post:
+      consumes:
+      - application/json
+      description: Get user recharge amount within a specified time range
+      parameters:
+      - description: User recharge amount request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.UserCostsAmountReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved user recharge amount
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse user recharge amount request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get user recharge amount
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user recharge amount
+      tags:
+      - RechargeAmount
   /account/v1alpha1/namespaces:
     post:
       consumes:

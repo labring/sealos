@@ -2,6 +2,7 @@ package helper
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/labring/sealos/service/account/common"
@@ -89,5 +90,6 @@ func ParseUserCostsAmountReq(c *gin.Context) (*UserCostsAmountReq, error) {
 	if userCosts.TimeRange.EndTime.After(time.Now()) {
 		userCosts.TimeRange.EndTime = time.Now()
 	}
+	userCosts.Owner = strings.TrimPrefix(userCosts.Owner, "ns-")
 	return userCosts, nil
 }
