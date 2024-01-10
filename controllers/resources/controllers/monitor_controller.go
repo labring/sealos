@@ -405,7 +405,7 @@ func (r *MonitorReconciler) MonitorPodTrafficUsed(startTime, endTime time.Time) 
 	if err != nil {
 		return fmt.Errorf("failed to list namespaces")
 	}
-	logger.Info("start getPodTrafficUsed", "namespace length", len(namespaceList.Items))
+	logger.Info("start getPodTrafficUsed", "startTime", startTime.Format(time.RFC3339), "endTime", endTime.Format(time.RFC3339))
 	for _, namespace := range namespaceList.Items {
 		if err := r.monitorPodTrafficUsed(namespace, startTime, endTime); err != nil {
 			r.Logger.Error(err, "failed to monitor pod traffic used", "namespace", namespace.Name)
@@ -420,7 +420,7 @@ func (r *MonitorReconciler) monitorPodTrafficUsed(namespace corev1.Namespace, st
 		return fmt.Errorf("failed to get distinct monitor combinations: %w", err)
 	}
 	for _, monitor := range monitors {
-		bytes, err := r.DBClient.GetTrafficSentBytes(startTime, endTime, namespace.Name, monitor.Type, monitor.Name)
+		bytes, err := r.TrafficClient.GetTrafficSentBytes(startTime, endTime, namespace.Name, monitor.Type, monitor.Name)
 		if err != nil {
 			return fmt.Errorf("failed to get traffic sent bytes: %w", err)
 		}
@@ -429,6 +429,7 @@ func (r *MonitorReconciler) monitorPodTrafficUsed(namespace corev1.Namespace, st
 		if used == 0 {
 			continue
 		}
+		logger.Info("traffic used ", "monitor", monitor, "used", used, "unit", unit, "bytes", bytes)
 		ro := resources.Monitor{
 			Category: namespace.Name,
 			Name:     monitor.Name,
