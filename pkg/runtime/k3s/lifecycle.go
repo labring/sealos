@@ -62,8 +62,7 @@ func (k *K3s) resetNode(host string) error {
 		logger.Error("failed to clean node, exec command %s failed, %v", removeKubeConfig, removeKubeConfigErr)
 	}
 	if slices.Contains(k.cluster.GetNodeIPAndPortList(), host) {
-		vipAndPort := fmt.Sprintf("%s:%d", k.cluster.GetVIP(), k.config.APIServerPort)
-		ipvsclearErr := k.remoteUtil.IPVSClean(host, vipAndPort)
+		ipvsclearErr := k.remoteUtil.IPVSClean(host, k.getVipAndPort())
 		if ipvsclearErr != nil {
 			logger.Error("failed to clear ipvs rules for node %s: %v", host, ipvsclearErr)
 		}

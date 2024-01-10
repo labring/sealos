@@ -267,8 +267,8 @@ var DefaultPropertyTypeList = []PropertyType{
 		Name:       "services.nodeports",
 		Enum:       4,
 		PriceType:  AVG,
-		UnitPrice:  10,
-		ViewPrice:  10000,
+		UnitPrice:  2.083,
+		ViewPrice:  2083,
 		UnitString: "1",
 	},
 }
@@ -487,13 +487,17 @@ func DefaultResourceQuotaHard() corev1.ResourceList {
 func DefaultLimitRangeLimits() []corev1.LimitRangeItem {
 	return []corev1.LimitRangeItem{
 		{
-			Type: corev1.LimitTypeContainer,
-			Default: corev1.ResourceList{
-				corev1.ResourceCPU:    resource.MustParse("50m"),
-				corev1.ResourceMemory: resource.MustParse("64Mi"),
-			},
+			Type:           corev1.LimitTypeContainer,
+			Default:        LimitRangeDefault,
+			DefaultRequest: LimitRangeDefault,
 		},
 	}
+}
+
+var LimitRangeDefault = corev1.ResourceList{
+	corev1.ResourceCPU:              resource.MustParse("50m"),
+	corev1.ResourceMemory:           resource.MustParse("64Mi"),
+	corev1.ResourceEphemeralStorage: resource.MustParse("100Mi"),
 }
 
 //

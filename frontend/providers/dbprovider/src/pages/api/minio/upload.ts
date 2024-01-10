@@ -65,8 +65,8 @@ const upload = new UploadModel();
 
 const minioClient = new Minio.Client({
   endPoint: process.env?.MINIO_URL || 'minioapi.dev.sealos.top',
-  port: Number(process.env?.MINIO_PORT) || 80,
-  useSSL: false,
+  port: Number(process.env?.MINIO_PORT) || 443,
+  useSSL: Boolean(process.env?.MINIO_USE_SSL) || true,
   accessKey: process.env?.MINIO_ACCESS_KEY || 'database',
   secretKey: process.env?.MINIO_SECRET_KEY || 'database'
 });

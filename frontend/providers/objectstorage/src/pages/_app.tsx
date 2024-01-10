@@ -42,7 +42,7 @@ function App({ Component, pageProps }: AppProps) {
     (async () => {
       try {
         const lang = await sealosApp.getLanguage();
-        changeI18n({
+        await changeI18n({
           currentLanguage: lang.lng
         });
       } catch (error) {
@@ -74,7 +74,7 @@ function App({ Component, pageProps }: AppProps) {
           forcePathStyle: true,
           region: 'us-east-1'
         });
-        queryClient.invalidateQueries();
+        await queryClient.invalidateQueries();
       } catch (error) {}
     };
     initApp();

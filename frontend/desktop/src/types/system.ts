@@ -12,8 +12,10 @@ export type LoginProps = {
   github_client_id: string;
   google_client_id: string;
   callback_url: string;
-  service_protocol: string;
-  private_protocol: string;
+  service_protocol_zh: string;
+  private_protocol_zh: string;
+  service_protocol_en: string;
+  private_protocol_en: string;
   needPassword: boolean;
   needSms: boolean;
   needGithub: boolean;
@@ -27,4 +29,5 @@ export type SystemEnv = {
   wechatEnabledRecharge: boolean;
   rechargeEnabled: boolean;
   licenseEnabled: boolean;
+  guideEnabled: boolean;
 } & LoginProps;

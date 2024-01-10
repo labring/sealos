@@ -7,6 +7,10 @@ export type TemplateType = {
   spec: {
     gitRepo: string; // new
     templateType: 'inline'; // new
+    fileName: string; // new
+    filePath: string; // new
+    deployCount?: number;
+
     template_type?: string;
     author: string;
     title: string;
@@ -87,6 +91,7 @@ export type TemplateInstanceType = {
   metadata: {
     name: string;
     creationTimestamp?: string;
+    labels?: Record<string, string>;
   };
   spec: {
     gitRepo: string;
@@ -137,4 +142,6 @@ export type InstanceListItemType = {
   templateType: string;
   title: string;
   url: string;
+  yamlCR: TemplateInstanceType;
+  displayName?: string;
 };

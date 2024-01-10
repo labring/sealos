@@ -85,15 +85,15 @@ const ChartTemplate = ({
           </Flex>
         </Flex>
       ) : (
-        <Flex
-          justifyContent={'center'}
-          alignItems={'center'}
-          flexDirection={'column'}
-          w="100%"
-          h="100%"
-        >
-          <MyIcon name={'noEvents'} color={'transparent'} width={'36px'} height={'36px'} />
-          <Box pt={'8px'}>{t('No Data Available')}</Box>
+        <Flex flexDirection={'column'} h="100%">
+          <Box fontSize={'12px'} fontWeight={500} color={'#24282C'}>
+            {t(chartTitle)}
+            {unit ? `(${unit})` : ''}
+          </Box>
+          <Flex justifyContent={'center'} alignItems={'center'} flexDirection={'column'} flex={1}>
+            <MyIcon name={'noEvents'} color={'transparent'} width={'36px'} height={'36px'} />
+            <Box pt={'8px'}>{t('No Data Available')}</Box>
+          </Flex>
         </Flex>
       )}
     </Box>

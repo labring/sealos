@@ -13,7 +13,7 @@ export default function PathLink() {
       [{ path: [], name: '' }]
     ) || [];
   return (
-    <HStack gap="0">
+    <HStack gap="0" transitionDuration={'3s'}>
       {paths.map((v) => (
         <Flex key={v.path.join('/')} fontSize={'14px'}>
           <Link

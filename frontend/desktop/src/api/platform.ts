@@ -1,5 +1,5 @@
 import request from '@/services/request';
-import { ApiResp } from '@/types';
+import { ApiResp, SystemConfigType, SystemEnv } from '@/types';
 import { AccountCRD } from '@/types/user';
 
 // handle baidu
@@ -26,9 +26,11 @@ export const getUserAccount = () => {
 };
 
 export const getSystemEnv = () => {
-  return request.get('/api/platform/getEnv');
+  return request.get<SystemEnv>('/api/platform/getEnv');
 };
-
+export const getSystemConfig = () => {
+  return request.get<SystemConfigType>('./api/system/getSystemConfig');
+};
 export const getPriceBonus = () => {
   return request.get<
     any,

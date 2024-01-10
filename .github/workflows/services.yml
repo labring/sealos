@@ -86,7 +86,7 @@ jobs:
     strategy:
       matrix:
         ## TODO: add more modules
-        module: [ database, pay, account ]
+        module: [database, pay, account, minio]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -181,7 +181,7 @@ jobs:
     strategy:
       matrix:
         ## TODO: add more modules
-        module: [ database, pay, account ]
+        module: [database, pay, account, minio]
     steps:
       - name: Checkout
         uses: actions/checkout@v3

@@ -57,3 +57,13 @@ export type BillingData<T = Costs> = {
     rechargeAmount: number;
   };
 };
+export type PropertiesCost = {
+  amount: {
+    cpu: number;
+    memory: number;
+    network: number;
+    gpu?: number;
+    'services.nodeports': number;
+    storage: number;
+  };
+};

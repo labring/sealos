@@ -150,6 +150,7 @@ const Header = ({
           isLoading={loading}
           variant={'base'}
           bg={'white'}
+          isDisabled={db.status.value === 'Updating'}
           onClick={() => {
             router.push(`/db/edit?name=${db.dbName}`);
           }}
@@ -179,6 +180,7 @@ const Header = ({
           isLoading={loading}
           variant={'base'}
           bg={'white'}
+          isDisabled={db.status.value === 'Updating'}
           onClick={onOpenPause(handlePauseApp)}
         >
           {t('Pause')}
@@ -210,6 +212,7 @@ const Header = ({
           variant={'base'}
           bg={'white'}
           leftIcon={<MyIcon name="restart" w={'14px'} h={'14px'} />}
+          isDisabled={db.status.value === 'Updating'}
           onClick={openRestartConfirm(handleRestartApp)}
           isLoading={loading}
         >
@@ -226,7 +229,8 @@ const Header = ({
         _hover={{
           color: '#FF324A'
         }}
-        isDisabled={loading}
+        isLoading={loading}
+        isDisabled={db.status.value === 'Updating'}
         onClick={onOpenDelModal}
       >
         {t('Delete')}

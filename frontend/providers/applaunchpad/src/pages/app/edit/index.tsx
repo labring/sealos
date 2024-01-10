@@ -21,7 +21,7 @@ import {
   json2Service
 } from '@/utils/deployYaml2Json';
 import { serviceSideProps } from '@/utils/i18n';
-import { getErrText, patchYamlList, patchYamlListV1 } from '@/utils/tools';
+import { getErrText, patchYamlList } from '@/utils/tools';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -158,10 +158,9 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         if (appName) {
           const patch = patchYamlList({
             formOldYamlList: formOldYamls.current.map((item) => item.value),
-            crYamlList: crOldYamls.current,
-            newYamlList: yamls
+            newYamlList: yamls,
+            crYamlList: crOldYamls.current
           });
-
           await putApp({
             patch,
             appName,

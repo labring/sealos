@@ -36,9 +36,7 @@ spec:
         - /manager
         env:
         - name: PROMETHEUS_SERVICE_HOST
-          value: http://kb-addon-prometheus-server.
-        - name: OBJECT_STORAGE_INSTANCE
-          value:
+          value: http://kb-addon-prometheus-server.kb-system.svc.cluster.local
         image: ghcr.io/labring/sealos-database-service:latest
         imagePullPolicy: Always
         name: database-monitor
@@ -46,9 +44,12 @@ spec:
         - containerPort: 9090
           protocol: TCP
         resources:
+          limits:
+            cpu: 500m
+            memory: 1024Mi
           requests:
-            cpu: 1m
-            memory: 500M
+            cpu: 5m
+            memory: 64Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

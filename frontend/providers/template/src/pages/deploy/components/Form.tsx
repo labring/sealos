@@ -79,7 +79,7 @@ const Form = ({
                     autoFocus={true}
                     placeholder={item?.description}
                     {...register(item?.key, {
-                      required: item?.required
+                      required: item?.required ? `${item.label} is required` : ''
                     })}
                   />
                 </Flex>

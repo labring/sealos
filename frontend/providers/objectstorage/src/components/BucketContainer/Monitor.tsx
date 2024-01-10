@@ -63,32 +63,38 @@ export default function DataMonitor({ ...styles }: BoxProps) {
       const _data = monitorQuery.data;
       for (let i = 0; i < 4; i++) {
         // sort slice
-        _data[i].sort((a, b) => a.values[0][0] - b.values[0][0]);
+        // _data[i].sort((a, b) => a.values[0][0] - b.values[0][0]);
+        // merge multi pools
         const curdata = _data?.[i]?.reduce<[number, string][]>((pre, cur) => {
           let maxVal = BigInt(0);
-          const column = cur.values
-            .map<[number, string]>(([time, v]) => [time * 1000, v])
-            // clean data
-            .filter(([_time, v]) => {
-              if (
-                !['minio_bucket_usage_object_total', 'minio_bucket_usage_total_bytes'].includes(
-                  cur.metric.__name__
-                ) &&
-                maxVal > BigInt(v)
-              ) {
-                return false;
-              }
-              maxVal = BigInt(v);
-              return true;
-            });
+          // single pool
+          const column = cur.values.map<[number, string]>(([time, v]) => [time * 1000, v]);
+          // clean data
+          // .filter(([_time, v]) => {
+          //   if (
+          //     !['minio_bucket_usage_object_total', 'minio_bucket_usage_total_bytes'].includes(
+          //       cur.metric.__name__
+          //     ) &&
+          //     maxVal > BigInt(v)
+          //   ) {
+          //     return false;
+          //   }
+          //   maxVal = BigInt(v);
+          //   return true;
+          // });
 
           return [...pre, ...column];
         }, []);
+        curdata.sort((a, b) => a[0] - b[0]);
+        // if (['minio_bucket_usage_object_total', 'minio_bucket_usage_total_bytes'].includes(
+        // _data?.[i].values[0][0].metric.__name__
+        // )
         data[i].push(...curdata);
       }
     }
     return data;
   }, [monitorQuery.data]);
+  console.log(data);
   return (
     <Box mt="32px" flex={'1 1 0'} h="0" overflowY={'auto'} {...styles}>
       <Flex

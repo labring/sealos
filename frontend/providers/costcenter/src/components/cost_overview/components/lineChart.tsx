@@ -11,12 +11,10 @@ import {
 import { LineChart } from 'echarts/charts';
 import { UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
-import { INITAL_SOURCE } from '@/constants/billing';
-import { BillingItem } from '@/types/billing';
-import { parseISO, format, isSameDay, startOfDay } from 'date-fns';
-import { formatMoney } from '@/utils/format';
+import { format } from 'date-fns';
 import { useTranslation } from 'next-i18next';
 import useOverviewStore from '@/stores/overview';
+import { displayMoney, formatMoney } from '@/utils/format';
 
 echarts.use([
   GridComponent,
@@ -29,43 +27,32 @@ echarts.use([
   UniversalTransition
 ]);
 
-export default function Trend({ data }: { data: BillingItem[] }) {
+export default function Trend({ data }: { data: [number, string][] }) {
   const { t } = useTranslation();
   const startTime = useOverviewStore((s) => s.startTime);
   const endTime = useOverviewStore((s) => s.endTime);
-  const sourceValue =
-    data
-      .filter((v) => v.type === 0)
-      .map<[Date, number, number, number, number, number]>((item) => [
-        parseISO(item.time),
-        item.costs?.cpu || 0,
-        item.costs?.memory || 0,
-        item.costs?.storage || 0,
-        item.costs?.network || 0,
-        item.amount
-      ])
-      // 归并为当天的开始
-      .reduce<[Date, number, number, number, number, number][]>((pre, cur) => {
-        if (pre.length !== 0) {
-          const precost = pre[pre.length - 1];
-          if (isSameDay(precost[0], cur[0])) {
-            cur.forEach((v, i) => i > 0 && ((precost[i] as number) += v as number));
-            return pre;
-          }
+  const source = [
+    ['date', 'amount'],
+    ...data
+      .reduce<[number, number][]>((pre, cur) => {
+        const len = pre.length;
+        const time = cur[0];
+        let val = parseInt(cur[1]);
+        if (len === 0) return [[time, val]];
+        if (pre[len - 1][0] === time) {
+          // multi namespace
+          pre[len - 1][1] += val;
+        } else {
+          pre.push([time, val]);
         }
-        cur[0] = startOfDay(cur[0]);
-        pre.push(cur);
-
         return pre;
-      }, [])
-      .map((x) => {
-        return x.map((v, i) => (i !== 0 ? formatMoney(v as number) : v));
-      }) || [];
-  const source = [...INITAL_SOURCE, ...sourceValue.reverse()];
+      }, [] as [number, number][])
+      .map(([date, val]) => [date * 1000, val / 1000000])
+  ];
   const option = {
     xAxis: {
       type: 'time',
-      minInterval: 24 * 60 * 60 * 1000, // 最小刻度为一天
+      // minInterval: 24 * 60 * 60 * 1000, // 最小刻度为一天
       // maxInterval: 30 * 24 * 60 * 60 * 1000, // 最大刻度为一周
       min: startTime,
       max: endTime,
@@ -82,7 +69,6 @@ export default function Trend({ data }: { data: BillingItem[] }) {
         color: 'rgba(107, 112, 120, 1)'
       }
     },
-
     yAxis: {
       name: '元',
       type: 'value',
@@ -109,7 +95,7 @@ export default function Trend({ data }: { data: BillingItem[] }) {
       }
     },
     dataset: {
-      dimensions: INITAL_SOURCE[0],
+      dimensions: ['date', 'amount'],
       source
     },
     grid: {
@@ -129,11 +115,9 @@ export default function Trend({ data }: { data: BillingItem[] }) {
       padding: '0px',
 
       formatter: function (params: any) {
-        // 如果不允许使用 `innerHTML`，可以使用 DOM API 来创建和添加元素。例如：
-
         const { data, value } = params[0];
         const date = format(data[0], 'yyyy-MM-dd');
-        const totalCost = value[5];
+        const totalCost = value[1];
         // 创建外层 div 元素
         const resDom = document.createElement('div');
         resDom.style.background = '#FFFFFF';

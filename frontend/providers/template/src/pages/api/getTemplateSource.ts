@@ -13,6 +13,7 @@ import { replaceRawWithCDN } from './listTemplate';
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const { templateName } = req.query as { templateName: string };
+
     let user_namespace = '';
 
     try {
@@ -62,6 +63,8 @@ export async function GetTemplateByName({
   templateName: string;
 }) {
   const cdnUrl = process.env.CDN_URL;
+  const targetFolder = process.env.TEMPLATE_REPO_FOLDER || 'template';
+
   const TemplateEnvs = {
     SEALOS_CLOUD_DOMAIN: process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io',
     SEALOS_CERT_SECRET_NAME: process.env.SEALOS_CERT_SECRET_NAME || 'wildcard-cert',
@@ -71,9 +74,15 @@ export async function GetTemplateByName({
   };
 
   const originalPath = process.cwd();
-  const targetPath = path.resolve(originalPath, 'FastDeployTemplates', 'template');
-
-  const yamlString = fs.readFileSync(`${targetPath}/${templateName}.yaml`, 'utf-8');
+  const targetPath = path.resolve(originalPath, 'templates', targetFolder);
+  // Query by file name in template details
+  const jsonPath = path.resolve(originalPath, 'templates.json');
+  const jsonData: TemplateType[] = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+  const _tempalte = jsonData.find((item) => item.metadata.name === templateName);
+  const _tempalteName = _tempalte ? _tempalte.spec.fileName : `${templateName}.yaml`;
+  const yamlString = _tempalte?.spec?.filePath
+    ? fs.readFileSync(_tempalte?.spec?.filePath, 'utf-8')
+    : fs.readFileSync(`${targetPath}/${_tempalteName}`, 'utf-8');
 
   const yamlData = yaml.loadAll(yamlString);
   const templateYaml: TemplateType = yamlData.find(
@@ -85,6 +94,7 @@ export async function GetTemplateByName({
       message: 'Lack of kind template'
     };
   }
+  templateYaml.spec.deployCount = _tempalte?.spec?.deployCount;
   if (cdnUrl) {
     templateYaml.spec.readme = replaceRawWithCDN(templateYaml.spec.readme, cdnUrl);
     templateYaml.spec.icon = replaceRawWithCDN(templateYaml.spec.icon, cdnUrl);

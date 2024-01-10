@@ -1,4 +1,8 @@
+import Highlight from '@site/src/components/Highlight'
+
 # 什么是 Sealos？
+
+<Highlight content="在线使用 Sealos" url="https://cloud.sealos.io" />
 
 云原生生态之庞大与复杂，无疑让许多企业感到手足无措，这个生态依然缺乏好用的、开箱即用的发行版。在云原生市场还急需一款云操作系统以进一步降低云原生门槛与成本。
 
