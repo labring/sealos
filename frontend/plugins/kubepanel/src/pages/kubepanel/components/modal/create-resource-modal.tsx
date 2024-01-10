@@ -9,7 +9,8 @@ import {
   DashboardOutlined,
   DatabaseOutlined,
   GatewayOutlined,
-  SettingOutlined
+  SettingOutlined,
+  CloseOutlined
 } from '@ant-design/icons';
 
 interface Props {
@@ -23,13 +24,13 @@ interface Option extends BaseOptionType {
   children?: Option[];
 }
 
-// render icon+label
+// function: render icon+label
 const labelRender = (icon: React.ReactNode, label: string) => {
   return (
-    <div>
+    <span>
       {icon}
       <span className="ml-2">{label}</span>
-    </div>
+    </span>
   );
 };
 
@@ -193,17 +194,26 @@ const CreateResourceModal = ({ open, setClose }: Props) => {
             placeholder="Choose a Template"
             options={options}
             bordered={false}
-            className="bg-[#F4F4F7] rounded-md "
+            autoClearSearchValue
+            className=" rounded-md"
+            style={{ width: '200px' }}
           />
         </div>
         <Spin spinning={loading}>
-          <div>
+          <div className="border-solid rounded-md border-2	border-[#DFE2EA] p-1">
             <Editor
               onMount={onEditorMount}
-              height={'50vh'}
+              height={'70vh'}
               language="yaml"
               value={template}
-              options={{ readOnly: disabled }}
+              options={{
+                readOnly: disabled,
+                minimap: { enabled: false },
+                scrollbar: {
+                  vertical: 'hidden'
+                },
+                rulers: []
+              }}
             />
           </div>
         </Spin>

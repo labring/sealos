@@ -32,9 +32,12 @@ const theme = {
       lineWidth: 2
     },
     Select: {
-      colorTextPlaceholder: '#0884DD'
+      colorTextPlaceholder: '#485264'
     },
-    Menu: { itemSelectedColor: '#0884DD' }
+    Menu: { itemSelectedColor: '#0884DD' },
+    Modal: {
+      titleFontSize: 28
+    }
   },
   token: {
     colorTextBase: 'black'

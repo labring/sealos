@@ -22,6 +22,37 @@
 @tailwind components;
 @tailwind utilities;
 
+/* selected menu text */
 .ant-cascader-menu-item-active {
   color: #0884dd;
+}
+
+/* modal to fullscreen */
+.ant-modal {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  top: 0;
+  padding-bottom: 0;
+}
+
+.ant-modal-body {
+  height: calc(100vh - 135px);
+  overflow-y: auto;
+}
+
+/* adjust size of close */
+.ant-modal-close svg {
+  height: 1.5rem !important;
+  width: 1.5rem !important;
+  color: black;
+}
+.ant-modal-close {
+  display: absolute;
+  top: 30px !important;
+  right: 30px !important;
+}
+
+.ant-select-open {
+  background-color: #f4f4f7 !important;
+  color: #0884dd !important;
 }
