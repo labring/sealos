@@ -10,12 +10,6 @@ import ActionButton from '../../../action/action-button';
 
 const columns: ColumnsType<Deployment> = [
   {
-    title: 'Name',
-    key: 'name',
-    fixed: 'left',
-    render: (_, dep) => dep.getName()
-  },
-  {
     title: 'Pods',
     key: 'pods',
     render: (_, dep) => {

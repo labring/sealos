@@ -14,12 +14,6 @@ import ActionButton from '../../../action/action-button';
 
 const columns: ColumnsType<Pod> = [
   {
-    title: 'Name',
-    key: 'name',
-    fixed: 'left',
-    render: (_, pod) => pod.getName()
-  },
-  {
     title: 'Containers',
     key: 'containers',
     render: (_, pod) => {

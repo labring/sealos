@@ -9,12 +9,6 @@ import ActionButton from '../../../action/action-button';
 
 const columns: ColumnsType<Secret> = [
   {
-    title: 'Name',
-    key: 'name',
-    fixed: 'left',
-    render: (_, secret) => secret.getName()
-  },
-  {
     title: 'Labels',
     key: 'labels',
     render: (_, secret) =>

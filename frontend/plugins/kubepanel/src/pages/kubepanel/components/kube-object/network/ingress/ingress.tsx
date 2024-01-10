@@ -9,12 +9,6 @@ import ActionButton from '../../../action/action-button';
 
 const columns: ColumnsType<Ingress> = [
   {
-    title: 'Name',
-    key: 'name',
-    fixed: 'left',
-    render: (_, ingress) => ingress.getName()
-  },
-  {
     title: 'LoadBalancers',
     key: 'load-balancers',
     render: (_, ingress) => ingress.getLoadBalancers().map((lb) => <p key={lb}>{lb}</p>)

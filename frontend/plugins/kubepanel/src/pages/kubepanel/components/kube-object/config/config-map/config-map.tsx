@@ -8,12 +8,6 @@ import ActionButton from '../../../action/action-button';
 
 const columns: ColumnsType<ConfigMap> = [
   {
-    title: 'Name',
-    key: 'name',
-    fixed: 'left',
-    render: (_, configMap) => configMap.getName()
-  },
-  {
     title: 'Keys',
     key: 'keys',
     render: (_, configMap) => configMap.getKeys().join(', ')

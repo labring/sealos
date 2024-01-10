@@ -2,17 +2,11 @@ import { KubeObjectAge } from '@/components/kube/object/kube-object-age';
 import { StatefulSet } from '@/k8slens/kube-object';
 import { ColumnsType } from 'antd/es/table';
 import StatefulSetDetail from './statefulset-detail';
-import { getPodsByOwnerId, usePodStore, useStatefulSetStore } from '@/store/kube';
+import { usePodStore, useStatefulSetStore } from '@/store/kube';
 import PanelTable from '../../../panel-table/table';
 import ActionButton from '../../../action/action-button';
 
 const columns: ColumnsType<StatefulSet> = [
-  {
-    title: 'Name',
-    key: 'name',
-    fixed: 'left',
-    render: (_, stat) => stat.getName()
-  },
   {
     title: 'Pods',
     key: 'pods',
@@ -39,12 +33,8 @@ const columns: ColumnsType<StatefulSet> = [
 ];
 
 const StatefulSetOverviewPage = () => {
-  const {
-    items: pods,
-    initialize: initializePods,
-    isLoaded: isPodsLoaded,
-    watch: watchPods
-  } = usePodStore();
+  // The detailed information of Stateful Set resource needs to be provided by Pod resource.
+  const { initialize: initializePods, isLoaded: isPodsLoaded, watch: watchPods } = usePodStore();
   const {
     items: stats,
     initialize: initializeStats,
@@ -62,7 +52,7 @@ const StatefulSetOverviewPage = () => {
       getRowKey={(stat) => stat.getId()}
       initializers={[initializeStats, initializePods]}
       watchers={[watchStats, watchPods]}
-      getDetailItem={(stat) => ({ stat, childPods: getPodsByOwnerId(pods, stat.getId()) })}
+      getDetailItem={(stat) => stat}
     />
   );
 };

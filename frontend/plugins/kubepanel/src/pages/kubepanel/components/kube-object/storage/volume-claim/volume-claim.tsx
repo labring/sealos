@@ -8,12 +8,6 @@ import ActionButton from '../../../action/action-button';
 
 const columns: ColumnsType<{ volumeClaim: PersistentVolumeClaim; pods: Pod[] }> = [
   {
-    title: 'Name',
-    key: 'name',
-    fixed: 'left',
-    render: (_, { volumeClaim }) => volumeClaim.getName()
-  },
-  {
     title: 'Storage Class',
     key: 'storageClass',
     render: (_, { volumeClaim }) => volumeClaim.spec.storageClassName
@@ -79,11 +73,17 @@ const PersistentVolumeClaimOverviewPage = () => {
       dataSource={dataSource}
       loading={!isVolumeClaimsLoaded || !isPodsLoaded}
       sectionTitle="Persistent Volume Claims"
-      DetailDrawer={PersistentVolumeClaimDetail}
+      DetailDrawer={({ obj, open, onClose }) => (
+        <PersistentVolumeClaimDetail
+          obj={obj instanceof PersistentVolumeClaim ? { volumeClaim: obj, pods } : null}
+          open={open}
+          onClose={onClose}
+        />
+      )}
       getRowKey={({ volumeClaim }) => volumeClaim.getId()}
       initializers={[initializeVolumeClaims, initializePods]}
       watchers={[watchVolumeClaims, watchPods]}
-      getDetailItem={(record) => record}
+      getDetailItem={(record) => record.volumeClaim}
     />
   );
 };

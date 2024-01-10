@@ -1,4 +1,4 @@
-import { Pod, StatefulSet } from '@/k8slens/kube-object';
+import { StatefulSet } from '@/k8slens/kube-object';
 import Drawer from '../../../drawer/drawer';
 import { KubeObjectInfoList } from '@/components/kube/object/detail/kube-object-detail-info-list';
 import PodDetailTolerations from '../pod/pod-detail-tolerations';
@@ -8,15 +8,14 @@ import PodDetailStatuses from '../pod/pod-detail-statuses';
 import { KubeBadge } from '@/components/kube/kube-badge';
 import DrawerPanel from '../../../drawer/drawer-panel';
 import { isArray } from 'lodash';
+import { getPodsByOwnerId, usePodStore } from '@/store/kube';
 
-const StatefulSetDetail = ({
-  obj,
-  open,
-  onClose
-}: DetailDrawerProps<{ stat: StatefulSet; childPods: Pod[] }>) => {
-  if (!obj) return null;
+const StatefulSetDetail = ({ obj: stat, open, onClose }: DetailDrawerProps<StatefulSet>) => {
+  if (!stat) return null;
 
-  const { stat, childPods } = obj;
+  const { items: pods } = usePodStore();
+  const childPods = getPodsByOwnerId(pods, stat.getId());
+
   if (!stat || !(stat instanceof StatefulSet)) return null;
   if (!childPods || !isArray(childPods)) return null;
 

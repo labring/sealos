@@ -4,8 +4,10 @@ import { useWatcher } from '@/hooks/useWatcher';
 import { KubeStoreAction } from '@/types/state';
 import { TableProps } from 'antd';
 import { Table } from 'antd';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { getPaginationProps } from './pagination';
+import { KubeObject } from '@/k8slens/kube-object';
+import { getSearchNameFilterProps } from './search-filter';
 
 type DefaultRecordType = Record<string, any>;
 
@@ -18,12 +20,13 @@ interface Props<RecordType = unknown, Item = any> extends Omit<TableProps<Record
   DetailDrawer: (props: DetailDrawerProps<Item>) => JSX.Element | null;
 }
 
-const PanelTable = <RecordType extends DefaultRecordType, Item = any>(
+const PanelTable = <RecordType extends DefaultRecordType, Item extends KubeObject>(
   tableProps: Props<RecordType, Item>
 ) => {
   const {
     scroll = { x: true },
     sectionTitle: title,
+    columns = [],
     DetailDrawer,
     getRowKey,
     getDetailItem,
@@ -33,6 +36,17 @@ const PanelTable = <RecordType extends DefaultRecordType, Item = any>(
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
   const cxtHolder = useWatcher({ initializers, watchers });
+  const searchNameFilterProps = getSearchNameFilterProps<RecordType>((_, record) =>
+    getDetailItem(record).getName()
+  );
+
+  const modifiedCols = useMemo(
+    () => [
+      { title: 'Name', key: 'name', fixed: 'left' as 'left', ...searchNameFilterProps },
+      ...columns
+    ],
+    [columns, searchNameFilterProps]
+  );
 
   return (
     <Section>
@@ -40,6 +54,7 @@ const PanelTable = <RecordType extends DefaultRecordType, Item = any>(
       <Title type="primary">{title}</Title>
       <Table
         {...tableProps}
+        columns={modifiedCols}
         rowKey={getRowKey}
         scroll={scroll}
         pagination={getPaginationProps(tableProps.dataSource?.length || 0)}
