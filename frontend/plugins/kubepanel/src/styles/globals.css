@@ -43,6 +43,9 @@
 .ant-dropdown-menu-submenu {
   left: 4px;
 }
+.ant-dropdown-menu-submenu {
+  left: 4px;
+}
 
 /* btn style overrides */
 #app .ant-btn-primary {
