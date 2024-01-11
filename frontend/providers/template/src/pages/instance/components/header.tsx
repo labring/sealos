@@ -85,14 +85,16 @@ export default function Header({ instanceName }: { instanceName: string }) {
       pl="24px"
       pr="36px"
       alignItems={'center'}
-      borderBottom={'1px solid rgba(0, 0, 0, 0.07)'}>
+      borderBottom={'1px solid rgba(0, 0, 0, 0.07)'}
+    >
       <Icon
         cursor={'pointer'}
         width="35px"
         height="36px"
         viewBox="0 0 35 36"
         fill="#5A646E"
-        onClick={() => router.push('/app')}>
+        onClick={() => router.push('/app')}
+      >
         <path d="M20.3207 27L11.6118 18L20.3207 9L22.3527 11.1L15.676 18L22.3527 24.9L20.3207 27Z" />
       </Icon>
       <Box
@@ -103,7 +105,8 @@ export default function Header({ instanceName }: { instanceName: string }) {
         boxShadow={'0px 1px 2px 0.5px rgba(84, 96, 107, 0.20)'}
         borderRadius={'4px'}
         backgroundColor={'#fff'}
-        border={' 1px solid rgba(255, 255, 255, 0.50)'}>
+        border={' 1px solid rgba(255, 255, 255, 0.50)'}
+      >
         <Image src={data?.icon} alt="" width={'32px'} height={'32px'} />
       </Box>
 
@@ -118,7 +121,8 @@ export default function Header({ instanceName }: { instanceName: string }) {
               width="15px"
               height="15px"
               viewBox="0 0 15 15"
-              fill="none">
+              fill="none"
+            >
               <path
                 d="M11.0198 3.07493L12.1747 4.22987L12.9681 3.4365C13.1145 3.29012 13.1877 3.21692 13.2292 3.13931C13.3229 2.9642 13.3229 2.75386 13.2292 2.57875C13.1877 2.50114 13.1145 2.42795 12.9681 2.28157C12.8217 2.13519 12.7485 2.06198 12.6709 2.02046C12.4958 1.92677 12.2855 1.92677 12.1103 2.02046C12.0327 2.06198 11.9595 2.13517 11.8132 2.28156L11.0198 3.07493Z"
                 fill="#485264"
@@ -152,7 +156,8 @@ export default function Header({ instanceName }: { instanceName: string }) {
         background={'#FFF'}
         borderRadius={'4px'}
         border={'1px solid #DEE0E2'}
-        onClick={onOpenDelModal}>
+        onClick={onOpenDelModal}
+      >
         <Icon width="16px" height="17px" viewBox="0 0 16 17" fill="#121416">
           <path d="M4.66667 14.5C4.30001 14.5 3.98601 14.3693 3.72467 14.108C3.46334 13.8467 3.33289 13.5329 3.33334 13.1667V4.5H2.66667V3.16667H6.00001V2.5H10V3.16667H13.3333V4.5H12.6667V13.1667C12.6667 13.5333 12.536 13.8473 12.2747 14.1087C12.0133 14.37 11.6996 14.5004 11.3333 14.5H4.66667ZM11.3333 4.5H4.66667V13.1667H11.3333V4.5ZM6.00001 11.8333H7.33334V5.83333H6.00001V11.8333ZM8.66667 11.8333H10V5.83333H8.66667V11.8333Z" />
         </Icon>

@@ -15,9 +15,22 @@ import EventOverview from './event-overview';
 import { useWatcher } from '@/hooks/useWatcher';
 
 const OverviewPage = () => {
-  const { items: pods, initialize: initializePods, watch: watchPods, getStatuses: getPodStatuses } = usePodStore();
-  const { items: deps, initialize: initializeDeployments, watch: watchDeployments } = useDeploymentStore();
-  const { items: stats, initialize: initializeStatefulSets, watch: watchStatefulSets } = useStatefulSetStore();
+  const {
+    items: pods,
+    initialize: initializePods,
+    watch: watchPods,
+    getStatuses: getPodStatuses
+  } = usePodStore();
+  const {
+    items: deps,
+    initialize: initializeDeployments,
+    watch: watchDeployments
+  } = useDeploymentStore();
+  const {
+    items: stats,
+    initialize: initializeStatefulSets,
+    watch: watchStatefulSets
+  } = useStatefulSetStore();
 
   const cxtHolder = useWatcher({
     initializers: [initializePods, initializeDeployments, initializeStatefulSets],
