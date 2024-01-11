@@ -13,7 +13,7 @@ module.exports = {
     extend: {
       colors: {
         color: {
-          ok: '#399c3d',
+          ok: '#039855',
           warning: '#ff9800',
           error: '#ce3933',
           success: '#206923',

@@ -74,7 +74,7 @@ export const ResourceSideNav = ({ onClick = () => {} }: Props) => {
         </div>
       </div>
       <Menu
-        style={{ backgroundColor: '#F2F2F4', borderRight: 'none' }}
+        style={{ backgroundColor: '#F2F2F4', borderRight: 'none', fontWeight: 500 }}
         defaultSelectedKeys={['overview']}
         defaultOpenKeys={['workload']}
         mode="inline"

@@ -71,7 +71,6 @@
   top: 0;
   padding-bottom: 0;
 }
-
 .ant-modal-body {
   height: calc(100vh - 85px);
   overflow-y: auto;
@@ -83,4 +82,9 @@
   width: 1.5em;
   height: 1.5em;
   color: #111824;
+}
+
+/* tooltip style overrides */
+.ant-tooltip {
+  max-width: 300px;
 }
