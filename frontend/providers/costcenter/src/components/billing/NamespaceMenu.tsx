@@ -1,5 +1,5 @@
 import request from '@/service/request';
-import { ApiResp } from '@/types';
+import useOverviewStore from '@/stores/overview';
 import { Button, Flex, Popover, PopoverContent, PopoverTrigger } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -12,15 +12,29 @@ export default function NamespaceMenu({
   isDisabled: boolean;
   setNamespace: (x: string) => void;
 }) {
+  const startTime = useOverviewStore((s) => s.startTime);
+  const endTime = useOverviewStore((s) => s.endTime);
   const [namespaceIdx, setNamespaceIdx] = useState(0);
   const { data: nsListData } = useQuery({
     queryFn() {
-      return request<any, ApiResp<{ nsList: string[] }>>('/api/billing/getNamespaceList');
+      return request.post('/api/billing/getNamespaceList', {
+        startTime,
+        endTime
+      });
     },
-    queryKey: ['nsList']
+    queryKey: [
+      'nsList',
+      {
+        startTime,
+        endTime
+      }
+    ]
   });
   const { t } = useTranslation();
-  const namespaceList: string[] = [t('All Namespace'), ...(nsListData?.data?.nsList || [])];
+  const namespaceList: string[] = [
+    t('All Namespace'),
+    ...((nsListData?.data?.list as string[]) || [])
+  ];
   return (
     <Flex align={'center'} ml="28px">
       <Popover>
@@ -76,7 +90,7 @@ export default function NamespaceMenu({
               isDisabled={isDisabled}
               onClick={() => {
                 setNamespaceIdx(idx);
-                setNamespace(idx === 0 ? '' : namespaceList[namespaceIdx + 1]);
+                setNamespace(idx === 0 ? '' : v);
               }}
             >
               {v}

@@ -23,14 +23,12 @@ import {
 import letter_icon from '@/assert/format_letter_spacing_standard_black.svg';
 import { QueryClient, dehydrate, useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
-import { ValuationBillingRecord } from '@/types/valuation';
 import { valuationMap } from '@/constants/payment';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { i18n, useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next';
 import { ApiResp } from '@/types/api';
 import nvidaIcon from '@/assert/bi_nvidia.svg';
-import { getCookie } from '@/utils/cookieUtils';
 import { CYCLE } from '@/constants/valuation';
 import PredictCard from '@/components/valuation/predictCard';
 import useEnvStore from '@/stores/env';
@@ -42,7 +40,7 @@ import { MemoryIcon } from '@/components/icons/MemoryIcon';
 import { NetworkIcon } from '@/components/icons/NetworkIcon';
 import { StorageIcon } from '@/components/icons/StorageIcon';
 import { PortIcon } from '@sealos/ui';
-import OuterLink from '@/components/outerLink';
+import { ValuationStandard } from '@/types/valuation';
 
 type CardItem = {
   title: string;
@@ -52,9 +50,6 @@ type CardItem = {
   idx: number;
   icon: typeof Icon;
 };
-
-const getValuation = () =>
-  request<any, ApiResp<{ billingRecords: ValuationBillingRecord[] }>>('/api/price');
 
 function CycleMenu({
   cycleIdx,
@@ -129,31 +124,27 @@ function CycleMenu({
     </Flex>
   );
 }
-
+const getValuation = () =>
+  request<any, ApiResp<{ properties: ValuationStandard[] }>>('/api/properties');
 function Valuation() {
-  const { t, i18n } = useTranslation();
-  const cookie = getCookie('NEXT_LOCALE');
+  const { t } = useTranslation();
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
   const [cycleIdx, setCycleIdx] = useState(0);
   const currency = useEnvStore((s) => s.currency);
-  useEffect(() => {
-    i18n.changeLanguage(cookie);
-  }, [cookie, i18n]);
   const { data: _data } = useQuery(['valuation'], getValuation);
-
   const data =
-    _data?.data?.billingRecords
-      ?.filter((x) => !x.resourceType.startsWith('gpu-'))
+    _data?.data?.properties
+      ?.filter((x) => !x.name.startsWith('gpu-'))
       ?.flatMap<CardItem>((x) => {
-        const props = valuationMap.get(x.resourceType);
+        const props = valuationMap.get(x.name);
         if (!props) return [];
         let icon;
-        let title = x.resourceType;
-        if (x.resourceType === 'cpu') icon = CpuIcon;
-        else if (x.resourceType === 'memory') icon = MemoryIcon;
-        else if (x.resourceType === 'network') icon = NetworkIcon;
-        else if (x.resourceType === 'storage') icon = StorageIcon;
-        else if (x.resourceType === 'services.nodeports') {
+        let title = x.name;
+        if (x.name === 'cpu') icon = CpuIcon;
+        else if (x.name === 'memory') icon = MemoryIcon;
+        else if (x.name === 'network') icon = NetworkIcon;
+        else if (x.name === 'storage') icon = StorageIcon;
+        else if (x.name === 'services.nodeports') {
           icon = PortIcon;
           title = 'Port';
         } else return [];
@@ -161,7 +152,7 @@ function Valuation() {
           {
             title,
             price: [1, 24, 168, 720, 8760].map(
-              (v) => Math.floor(v * x.price * (props.scale || 1)) / 1000000
+              (v) => Math.floor(v * (x.unit_price || 0) * (props.scale || 1)) / 1000000
             ),
             unit: props.unit,
             bg: props.bg,
@@ -173,11 +164,11 @@ function Valuation() {
       ?.sort((a, b) => a.idx - b.idx) || [];
   const gpuProps = valuationMap.get('gpu')!;
   const gpuData = gpuEnabled
-    ? _data?.data?.billingRecords
-        ?.filter((x) => x.resourceType.startsWith('gpu-'))
+    ? _data?.data?.properties
+        ?.filter((x) => x.name.startsWith('gpu-'))
         ?.map((x) => {
-          const name = x.resourceType.replace('gpu-', '').replace('_', ' ');
-          const price = (x.price * (gpuProps.scale || 1)) / 1000000;
+          const name = x.name.replace('gpu-', '').replace('_', ' ');
+          const price = ((x.unit_price || 0) * (gpuProps.scale || 1)) / 1000000;
           return {
             name,
             price
@@ -334,16 +325,12 @@ function Valuation() {
 
 export default Valuation;
 
-export async function getServerSideProps(content: any) {
-  const locale = content?.req?.cookies?.NEXT_LOCALE || 'zh';
-  process.env.NODE_ENV === 'development' && i18n?.reloadResources(locale, undefined);
-
+export async function getServerSideProps({ locale }: { locale: string }) {
   const queryClient = new QueryClient();
   await queryClient.prefetchQuery(['valuation'], getValuation);
   return {
     props: {
-      ...(await serverSideTranslations(locale, undefined, null, content.locales)),
-
+      ...(await serverSideTranslations(locale, ['common'], null, ['zh', 'en'])),
       dehydratedState: dehydrate(queryClient)
     }
   };

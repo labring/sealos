@@ -4,7 +4,10 @@ const (
 	GROUP                = "/account/v1alpha1"
 	GetHistoryNamespaces = "/namespaces"
 	GetProperties        = "/properties"
-	GetUserCosts         = "/usercosts"
+	GetRechargeAmount    = "/costs/recharge"
+	GetConsumptionAmount = "/costs/consumption"
+	GetPropertiesUsed    = "/costs/properties"
+	GetUserCosts         = "/costs"
 )
 
 // env

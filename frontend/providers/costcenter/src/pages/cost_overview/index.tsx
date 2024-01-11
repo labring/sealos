@@ -14,6 +14,9 @@ import NotFound from '@/components/notFound';
 import { useRouter } from 'next/router';
 import useOverviewStore from '@/stores/overview';
 import { CommonBillingTable } from '@/components/billing/billingTable';
+import { QueryClient } from '@tanstack/react-query';
+import request from '@/service/request';
+const getProperties = () => request.post('/api/billing/propertiesUsedAmount');
 
 export const RechargeContext = createContext<{ rechargeRef: MutableRefObject<any> | null }>({
   rechargeRef: null
@@ -123,11 +126,10 @@ function CostOverview() {
   );
 }
 
-export async function getServerSideProps(content: any) {
-  const locale = content?.req?.cookies?.NEXT_LOCALE || 'zh';
+export async function getServerSideProps({ locale }: { locale: string }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, undefined, null, content.locales))
+      ...(await serverSideTranslations(locale, undefined, null, ['zh', 'en']))
     }
   };
 }
