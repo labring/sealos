@@ -3,13 +3,14 @@ import Layout from '@/layout';
 import SideBar from '@/components/SideBar';
 import DefaultContainer from '@/components/DefaultContainer';
 import BucketContainer from '@/components/BucketContainer';
-import { useQuery } from '@tanstack/react-query';
+import { QueryClient, dehydrate, useQuery } from '@tanstack/react-query';
 import { QueryKey } from '@/consts';
-import { initUser, listBucket } from '@/api/bucket';
+import { listBucket } from '@/api/bucket';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-// import BucketContainer from '@/components/BucketContainer'
+import useSessionStore from '@/store/session';
 export default function Home() {
-  const _bucketList = useQuery([QueryKey.bucketList], listBucket);
+  const session = useSessionStore((s) => s.session);
+  const _bucketList = useQuery([QueryKey.bucketList, session], listBucket, {});
   const bucketList = _bucketList.data?.list || [];
   return (
     <Layout>
@@ -28,13 +29,14 @@ export default function Home() {
 }
 
 export async function getStaticProps({ locale }: { locale: string }) {
+  const queryClient = new QueryClient();
   return {
     props: {
       ...(await serverSideTranslations(locale, ['common', 'file', 'tools', 'bucket'], null, [
         'zh',
         'en'
-      ]))
-      // Will be passed to the page component as props
+      ])),
+      dehydratedState: dehydrate(queryClient) // Will be passed to the page component as props
     }
   };
 }

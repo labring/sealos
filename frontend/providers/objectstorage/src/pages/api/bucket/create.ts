@@ -1,7 +1,6 @@
 import { Authority, BucketCR } from '@/consts';
 import { ApiResp, jsonRes } from '@/services/backend/response';
 import { generateBucketCR } from '@/utils/json2Yaml';
-import { Bucket } from '@aws-sdk/client-s3';
 import { V1Status, V1StatusCause } from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { initK8s } from 'sealos-desktop-sdk/service';
@@ -31,17 +30,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         client.namespace,
         plural,
         name
-      );
-    const listBucket = () =>
-      client.k8sCustomObjects.listNamespacedCustomObject(
-        group,
-        version,
-        client.namespace,
-        plural,
-        undefined,
-        undefined,
-        undefined,
-        `metadata.name=${name}`
       );
     const createBucket = () =>
       client.k8sCustomObjects.createNamespacedCustomObject(
@@ -88,7 +76,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               .then(() => {
                 let retries = 3;
                 const makeSureFn = () => {
-                  listBucket().then(
+                  getBucket().then(
                     (data) => {
                       resolve(data);
                     },
