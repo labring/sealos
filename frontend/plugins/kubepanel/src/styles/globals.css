@@ -40,6 +40,9 @@
     background-color: #9699b41a;
   }
 }
+.ant-dropdown-menu-submenu {
+  left: 4px;
+}
 
 /* btn style overrides */
 #app .ant-btn-primary {
@@ -56,4 +59,25 @@
     color: var(--ant-color-text-disabled);
     background: var(--ant-color-bg-container-disabled);
   }
+}
+
+/* modal style overrides*/
+.ant-modal {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  top: 0;
+  padding-bottom: 0;
+}
+
+.ant-modal-body {
+  height: calc(100vh - 85px);
+  overflow-y: auto;
+}
+.ant-modal-close {
+  margin-top: 1%;
+}
+.ant-modal-close-x svg {
+  width: 1.5em;
+  height: 1.5em;
+  color: #111824;
 }
