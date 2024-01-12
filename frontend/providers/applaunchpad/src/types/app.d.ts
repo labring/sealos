@@ -11,6 +11,7 @@ import type {
   SinglePodMetrics,
   V1StatefulSet
 } from '@kubernetes/client-node';
+import { MonitorDataResult } from './monitor';
 
 export type HpaTarget = 'cpu' | 'memory';
 
@@ -48,8 +49,8 @@ export interface AppListItemType {
   cpu: number;
   memory: number;
   gpu?: GpuType;
-  usedCpu: number[];
-  useMemory: number[];
+  usedCpu: MonitorDataResult;
+  usedMemory: MonitorDataResult; // average value
   activeReplicas: number;
   minReplicas: number;
   maxReplicas: number;
@@ -109,8 +110,8 @@ export interface AppDetailType extends AppEditType {
   status: AppStatusMapType;
   isPause: boolean;
   imageName: string;
-  usedCpu: number[];
-  usedMemory: number[];
+  usedCpu: MonitorDataResult;
+  usedMemory: MonitorDataResult;
   crYamlList: DeployKindsType[];
 
   // pods: PodDetailType[];
@@ -130,8 +131,8 @@ export interface PodDetailType extends V1Pod {
   ip: string;
   restarts: number;
   age: string;
-  usedCpu: number[];
-  usedMemory: number[];
+  usedCpu: MonitorDataResult;
+  usedMemory: MonitorDataResult;
   cpu: number;
   memory: number;
   podReason?: string;

@@ -12,6 +12,7 @@ export type UpdateUserGuideParams = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
+    if (process.env.GUIDE_ENABLED !== 'true') return jsonRes(res, { data: null });
     const { activityType, phase, phasePage, shouldSendGift } = req.body as UpdateUserGuideParams;
 
     if (!activityType || !phase || !phasePage)

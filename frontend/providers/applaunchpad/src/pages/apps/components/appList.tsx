@@ -1,24 +1,22 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { useRouter } from 'next/router';
-import { Box, Button, Flex, MenuButton } from '@chakra-ui/react';
-import { AppListItemType } from '@/types/app';
-import PodLineChart from '@/components/PodLineChart';
+import { pauseAppByName, restartAppByName, startAppByName } from '@/api/app';
 import AppStatusTag from '@/components/AppStatusTag';
-import MyIcon from '@/components/Icon';
-import { useTheme } from '@chakra-ui/react';
-import { useGlobalStore } from '@/store/global';
-import { useToast } from '@/hooks/useToast';
-import { restartAppByName, pauseAppByName, startAppByName } from '@/api/app';
-import { useConfirm } from '@/hooks/useConfirm';
-import { useTranslation } from 'next-i18next';
-import { useUserStore } from '@/store/user';
-
-import dynamic from 'next/dynamic';
-
-import MyMenu from '@/components/Menu';
-import MyTable from '@/components/Table';
 import GPUItem from '@/components/GPUItem';
+import MyIcon from '@/components/Icon';
+import MyMenu from '@/components/Menu';
+import PodLineChart from '@/components/PodLineChart';
+import MyTable from '@/components/Table';
+import { useConfirm } from '@/hooks/useConfirm';
+import { useToast } from '@/hooks/useToast';
+import { useGlobalStore } from '@/store/global';
+import { useUserStore } from '@/store/user';
+import { AppListItemType } from '@/types/app';
 import { getErrText } from '@/utils/tools';
+import { Box, Button, Flex, MenuButton, useTheme } from '@chakra-ui/react';
+import { useTranslation } from 'next-i18next';
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/router';
+import React, { useCallback, useMemo, useState } from 'react';
+
 const DelModal = dynamic(() => import('@/pages/app/detail/components/DelModal'));
 
 const AppList = ({
@@ -34,6 +32,7 @@ const AppList = ({
   const { toast } = useToast();
   const theme = useTheme();
   const router = useRouter();
+  // console.log(apps, 'apps');
 
   const [delAppName, setDelAppName] = useState('');
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
@@ -142,7 +141,7 @@ const AppList = ({
         key: 'cpu',
         render: (item: AppListItemType) => (
           <Box h={'35px'} w={['120px', '130px', '140px']}>
-            <PodLineChart type="blue" limit={item.cpu} data={item.usedCpu.slice(-10)} />
+            <PodLineChart type="blue" data={item.usedCpu} />
           </Box>
         )
       },
@@ -151,7 +150,7 @@ const AppList = ({
         key: 'storage',
         render: (item: AppListItemType) => (
           <Box h={'35px'} w={['120px', '130px', '140px']}>
-            <PodLineChart type="purple" limit={item.memory} data={item.useMemory.slice(-10)} />
+            <PodLineChart type="purple" data={item.usedMemory} />
           </Box>
         )
       },
@@ -304,7 +303,9 @@ const AppList = ({
           {t('Create Application')}
         </Button>
       </Flex>
+
       <MyTable itemClass="appItem" columns={columns} data={apps} />
+
       <PauseChild />
       {!!delAppName && (
         <DelModal appName={delAppName} onClose={() => setDelAppName('')} onSuccess={refetchApps} />

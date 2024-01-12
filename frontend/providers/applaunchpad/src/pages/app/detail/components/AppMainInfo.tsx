@@ -1,20 +1,21 @@
-import React, { useMemo } from 'react';
-import { Box, Flex, Grid, Link, Text } from '@chakra-ui/react';
-import type { AppDetailType } from '@/types/app';
-import PodLineChart from '@/components/PodLineChart';
-import { printMemory, useCopyData } from '@/utils/tools';
-import dayjs from 'dayjs';
-import { getUserNamespace } from '@/utils/user';
-import { SEALOS_DOMAIN, DOMAIN_PORT } from '@/store/static';
 import MyIcon from '@/components/Icon';
-import { MOCK_APP_DETAIL } from '@/mock/apps';
-import { useTranslation } from 'next-i18next';
-import { ProtocolList } from '@/constants/app';
 import MyTooltip from '@/components/MyTooltip';
+import PodLineChart from '@/components/PodLineChart';
+import { ProtocolList } from '@/constants/app';
+import { MOCK_APP_DETAIL } from '@/mock/apps';
+import { DOMAIN_PORT, SEALOS_DOMAIN } from '@/store/static';
+import type { AppDetailType } from '@/types/app';
+import { useCopyData } from '@/utils/tools';
+import { getUserNamespace } from '@/utils/user';
+import { Box, Flex, Grid } from '@chakra-ui/react';
+import dayjs from 'dayjs';
+import { useTranslation } from 'next-i18next';
+import { useMemo } from 'react';
 
 const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
+
   const networks = useMemo(
     () =>
       app.networks.map((network) => ({
@@ -30,12 +31,6 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
     [app]
   );
 
-  const cpuUsed = useMemo(
-    () => `${((app.usedCpu[app.usedCpu.length - 1] / app.cpu) * 100).toFixed(2)}%`,
-    [app]
-  );
-  const memoryUsed = useMemo(() => printMemory(app.usedMemory[app.usedMemory.length - 1]), [app]);
-
   return (
     <Box px={6} py={6} position={'relative'}>
       <>
@@ -46,7 +41,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           </Box>
           <Box ml={2} color={'myGray.400'}>
             ({t('Update Time')}&ensp;
-            {dayjs().format('HH:mm:ss')})
+            {dayjs().format('HH:mm')})
           </Box>
         </Flex>
         <Grid
@@ -60,18 +55,18 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
         >
           <Box>
             <Box mb={2} fontSize={'sm'}>
-              CPU&ensp;({cpuUsed})
+              CPU&ensp;({app.usedCpu.yData[app.usedCpu.yData.length - 1]}%)
             </Box>
             <Box h={'80px'}>
-              <PodLineChart type={'blue'} data={app.usedCpu.slice(-15)} limit={app.cpu} />
+              <PodLineChart type={'blue'} data={app.usedCpu} />
             </Box>
           </Box>
           <Box>
             <Box mb={2} fontSize={'sm'}>
-              {t('Memory')}&ensp;({memoryUsed})
+              {t('Memory')}&ensp;({app.usedMemory.yData[app.usedMemory.yData.length - 1]}%)
             </Box>
             <Box h={'80px'}>
-              <PodLineChart type={'purple'} data={app.usedMemory.slice(-15)} limit={app.memory} />
+              <PodLineChart type={'purple'} data={app.usedMemory} />
             </Box>
           </Box>
         </Grid>
