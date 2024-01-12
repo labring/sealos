@@ -86,8 +86,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const { queryName, queryKey, start, end, step = '1m' } = req.query;
 
-    const endTime = Date.now(); // 当前时间的时间戳
-    const startTime = endTime - 60 * 60 * 1000; // 前向推进1个小时的时间戳
+    // One hour of monitoring data
+    const endTime = Date.now();
+    const startTime = endTime - 60 * 60 * 1000;
 
     const params = {
       type: queryKey,
