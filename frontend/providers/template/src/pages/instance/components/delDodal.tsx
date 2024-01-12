@@ -86,8 +86,7 @@ const DelModal = ({
             variant={'solid'}
             isDisabled={inputValue !== name}
             isLoading={loading}
-            onClick={handleDelApp}
-          >
+            onClick={handleDelApp}>
             {t('Confirm deletion')}
           </Button>
         </ModalFooter>

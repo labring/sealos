@@ -12,7 +12,7 @@ import Empty from './components/empty';
 
 const Home = () => {
   const router = useRouter();
-  const { appList, setAppList, intervalLoadPods } = useAppStore();
+  const { appList, setAppList, intervalLoadPods, loadAvgMonitorData } = useAppStore();
   const { Loading } = useLoading();
   const [refresh, setFresh] = useState(false);
   const list = useRef<AppListItemType[]>(appList);
@@ -26,12 +26,16 @@ const Home = () => {
     [appList]
   );
 
-  const { isLoading, refetch } = useQuery(['appListQuery'], () => setAppList(false), {
-    onSettled(res) {
-      if (!res) return;
-      refreshList(res);
+  const { isLoading, refetch: refetchAppList } = useQuery(
+    ['appListQuery'],
+    () => setAppList(false),
+    {
+      onSettled(res) {
+        if (!res) return;
+        refreshList(res);
+      }
     }
-  });
+  );
 
   const requestController = useRef(new RequestController());
 
@@ -77,6 +81,40 @@ const Home = () => {
     }
   );
 
+  const { refetch: refetchAvgMonitorData } = useQuery(
+    ['loadAvgMonitorData', appList.length],
+    () => {
+      const doms = document.querySelectorAll(`.appItem`);
+      const viewportDomIds = Array.from(doms)
+        .filter((item) => isElementInViewport(item))
+        .map((item) => item.getAttribute('data-id'));
+
+      const viewportApps =
+        viewportDomIds.length < 3
+          ? appList
+          : appList.filter((app) => viewportDomIds.includes(app.id));
+
+      return requestController.current.runTasks({
+        tasks: viewportApps
+          .filter((app) => !app.isPause)
+          .map((app) => {
+            return () => loadAvgMonitorData(app.name);
+          }),
+        limit: 3
+      });
+    },
+    {
+      refetchOnMount: true,
+      refetchInterval: 2 * 60 * 1000,
+      onError(err) {
+        console.log(err);
+      },
+      onSettled() {
+        refreshList();
+      }
+    }
+  );
+
   useEffect(() => {
     router.prefetch('/app/detail');
     router.prefetch('/app/edit');
@@ -91,7 +129,13 @@ const Home = () => {
       {appList.length === 0 && !isLoading ? (
         <Empty />
       ) : (
-        <AppList apps={list.current} refetchApps={refetch} />
+        <AppList
+          apps={list.current}
+          refetchApps={() => {
+            refetchAppList();
+            refetchAvgMonitorData();
+          }}
+        />
       )}
       <Loading loading={isLoading} />
     </>

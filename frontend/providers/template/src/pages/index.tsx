@@ -1,9 +1,8 @@
-import { updateRepo } from '@/api/platform';
-import { GET } from '@/services/request';
 import { useCachedStore } from '@/store/cached';
 import { useSearchStore } from '@/store/search';
 import { TemplateType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
+import { formatStarNumber } from '@/utils/tools';
 import {
   Avatar,
   AvatarGroup,
@@ -16,44 +15,24 @@ import {
   Text,
   Tooltip
 } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
+import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { MouseEvent, useEffect, useMemo } from 'react';
-import { customAlphabet } from 'nanoid';
-import { formatStarNumber } from '@/utils/tools';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
-export default function AppList() {
+export default function AppList({ tempaltes }: { tempaltes: any }) {
   const { t } = useTranslation();
   const router = useRouter();
   const { searchValue } = useSearchStore();
   const { setInsideCloud, insideCloud } = useCachedStore();
 
-  const { data: FastDeployTemplates, refetch } = useQuery(
-    ['listTemplte'],
-    () => GET('/api/listTemplate'),
-    {
-      refetchInterval: 5 * 60 * 1000,
-      staleTime: 5 * 60 * 1000
-    }
-  );
-
-  const { isLoading } = useQuery(['updateRepo'], () => updateRepo(), {
-    refetchInterval: 5 * 60 * 1000,
-    staleTime: 5 * 60 * 1000,
-    onSettled(data) {
-      console.log(data);
-      refetch();
-    }
-  });
-
   const filterData = useMemo(() => {
-    const searchResults = FastDeployTemplates?.filter((item: TemplateType) => {
+    const searchResults = tempaltes?.filter((item: TemplateType) => {
       return item?.metadata?.name?.toLowerCase().includes(searchValue.toLowerCase());
     });
-    return searchValue ? searchResults : FastDeployTemplates;
-  }, [FastDeployTemplates, searchValue]);
+    return searchValue ? searchResults : tempaltes;
+  }, [tempaltes, searchValue]);
 
   const goDeploy = (name: string) => {
     if (!name) return;
@@ -93,7 +72,7 @@ export default function AppList() {
       background={'linear-gradient(180deg, #FFF 0%, rgba(255, 255, 255, 0.70) 100%)'}
       py={'36px'}
       px="42px">
-      {!!FastDeployTemplates?.length ? (
+      {!!tempaltes?.length ? (
         <Grid
           justifyContent={'center'}
           w={'100%'}
@@ -201,9 +180,27 @@ export default function AppList() {
 }
 
 export async function getServerSideProps(content: any) {
-  return {
-    props: {
-      ...(await serviceSideProps(content))
+  try {
+    const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
+
+    let result = await (await fetch(`${baseurl}/api/listTemplate`)).json();
+    if (result.code === 201) {
+      result = await (await fetch(`${baseurl}/api/listTemplate`)).json();
     }
-  };
+
+    return {
+      props: {
+        ...(await serviceSideProps(content)),
+        tempaltes: result.data
+      }
+    };
+  } catch (error) {
+    console.log(error);
+    return {
+      props: {
+        ...(await serviceSideProps(content)),
+        tempaltes: []
+      }
+    };
+  }
 }
