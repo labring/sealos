@@ -67,7 +67,6 @@ type MonitorReconciler struct {
 	NvidiaGpu             map[string]gpu.NvidiaGPU
 	DBClient              database.Interface
 	TrafficClient         database.Interface
-	TrafficSvcConn        string
 	Properties            *resources.PropertyTypeLS
 	PromURL               string
 	ObjStorageClient      *minio.Client
@@ -80,7 +79,6 @@ type quantity struct {
 }
 
 const (
-	TrafficSvcConn        = "TRAFFICS_SERVICE_CONNECT_ADDRESS"
 	PrometheusURL         = "PROM_URL"
 	ObjectStorageInstance = "OBJECT_STORAGE_INSTANCE"
 	ConcurrentLimit       = "CONCURRENT_LIMIT"
@@ -110,7 +108,6 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 		Logger:                ctrl.Log.WithName("controllers").WithName("Monitor"),
 		stopCh:                make(chan struct{}),
 		periodicReconcile:     1 * time.Minute,
-		TrafficSvcConn:        os.Getenv(TrafficSvcConn),
 		PromURL:               os.Getenv(PrometheusURL),
 		ObjectStorageInstance: os.Getenv(ObjectStorageInstance),
 	}
@@ -127,12 +124,14 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 		return nil, err
 	}
 	r.Logger.Info("get gpu model", "gpu model", r.NvidiaGpu)
-	r.startPeriodicReconcile()
-	r.startMonitorTraffic()
 	return r, nil
 }
 
 func (r *MonitorReconciler) StartReconciler(ctx context.Context) error {
+	r.startPeriodicReconcile()
+	if r.TrafficClient != nil {
+		r.startMonitorTraffic()
+	}
 	<-ctx.Done()
 	r.stopPeriodicReconcile()
 	return nil

@@ -123,16 +123,20 @@ func main() {
 			setupLog.Error(err, "failed to disconnect db client")
 		}
 	}()
-	reconciler.TrafficClient, err = mongo.NewMongoInterface(context.Background(), os.Getenv(database.TrafficMongoURI))
-	if err != nil {
-		setupLog.Error(err, "failed to init traffic db client")
-		os.Exit(1)
-	}
-	defer func() {
-		if err := reconciler.TrafficClient.Disconnect(context.Background()); err != nil {
-			setupLog.Error(err, "failed to disconnect traffic db client")
+	if trafficURI := os.Getenv(database.TrafficMongoURI); trafficURI != "" {
+		reconciler.TrafficClient, err = mongo.NewMongoInterface(context.Background(), trafficURI)
+		if err != nil {
+			setupLog.Error(err, "failed to init traffic db client")
+			os.Exit(1)
 		}
-	}()
+		defer func() {
+			if err := reconciler.TrafficClient.Disconnect(context.Background()); err != nil {
+				setupLog.Error(err, "failed to disconnect traffic db client")
+			}
+		}()
+	} else {
+		setupLog.Info("traffic mongo uri not found, please check env: TRAFFIC_MONGO_URI")
+	}
 
 	err = reconciler.DBClient.InitDefaultPropertyTypeLS()
 	if err != nil {
