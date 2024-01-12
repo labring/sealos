@@ -135,11 +135,11 @@ func QueryPrometheus(host, bucketName, instance string) (int64, error) {
 
 	rcvdBytes, err := strconv.ParseInt(rcvdStr, 10, 64)
 	if err != nil {
-		return 0, fmt.Errorf("failed to parse rcvdBytes to int64")
+		return 0, fmt.Errorf("failed to parse rcvdStr %s to int64: %v", rcvdStr, err)
 	}
 	sentBytes, err := strconv.ParseInt(sentStr, 10, 64)
 	if err != nil {
-		return 0, fmt.Errorf("failed to parse rcvdBytes to int64")
+		return 0, fmt.Errorf("failed to parse sentStr %s to int64: %v", sentStr, err)
 	}
 
 	fmt.Printf("received bytes: %d, send bytes: %d\n", rcvdBytes, sentBytes)
