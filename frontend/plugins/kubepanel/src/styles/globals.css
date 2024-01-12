@@ -88,3 +88,12 @@
 .ant-tooltip {
   max-width: 300px;
 }
+
+/* pagination style overrides */
+.ant-pagination-simple-pager input {
+  border: none !important;
+  width: 20px;
+}
+.ant-pagination-total-text {
+  line-height: 25px !important;
+}

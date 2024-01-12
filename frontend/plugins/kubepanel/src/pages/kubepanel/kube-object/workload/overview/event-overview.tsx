@@ -47,7 +47,7 @@ const columns: ColumnsType<KubeEvent> = [
     dataIndex: 'involvedObject',
     render: (involvedObject: Required<ObjectReference> | undefined) => {
       if (!involvedObject) return '<unknown>';
-      return <span className="text-blue-300">{involvedObject.name}</span>;
+      return <span className="text-[#0884DD]">{involvedObject.name}</span>;
     }
   },
   {
