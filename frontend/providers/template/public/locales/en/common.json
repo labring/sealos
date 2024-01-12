@@ -187,5 +187,8 @@
   "Edit": "Edit",
   "Edit App Name": "Edit App Name",
   "Installation Time": "Installation Time",
-  "users installed the app": "{{count}} users have installed the app"
+  "users installed the app": "{{count}} users have installed the app",
+  "Please Enter": "Please Enter",
+  "Delete successful": "Delete successful",
+  "Delete Failed": "Delete Failed"
 }
