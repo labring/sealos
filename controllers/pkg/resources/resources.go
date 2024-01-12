@@ -318,15 +318,7 @@ func decryptPrice(types []PropertyType) ([]PropertyType, error) {
 			return types, fmt.Errorf("failed to decrypt %s unit price : %v", types[i].Name, err)
 		}
 		types[i].UnitPrice = price
-		logger.Info("decrypt unit_price: ", types[i].UnitPrice)
-		//if types[i].UnitPrice != 0 {
-		//	price, err := crypto.EncryptInt64(types[i].UnitPrice)
-		//	if err != nil {
-		//		logger.Error("failed to encrypt unit price : %v", err)
-		//	} else {
-		//		types[i].EncryptUnitPrice = *price
-		//	}
-		//}
+		logger.Info("parse properties", types[i].Enum, types[i].UnitPrice)
 	}
 	return types, nil
 }
@@ -336,26 +328,6 @@ type PropertyTypeEnumMap map[uint8]PropertyType
 type PropertyTypeStringMap map[string]PropertyType
 
 type PropertyList []PropertyType
-
-// | Category   | Property | Time       | Value (average value) | Amount (value * price) | Detail | Status |
-// | ---------- | -------- | ---------- | --------------------- | ---------------------- | ------ | ------ |
-// | Namespace1 | Cpu      | 2023010112 | 1000                  | 67000                  |        | 0      |
-type Metering struct {
-	Category string `json:"category" bson:"category"`
-	//time 2023010112 -> 2023-01-01 11:00:00 - 2023-01-01 12:00:00
-	Amount int64 `json:"amount" bson:"amount"`
-	// 2023010112 -> 2023-01-01 12:00:00
-	Property string    `json:"property" bson:"property"`
-	Value    int64     `json:"value" bson:"value"`
-	Time     time.Time `json:"time" bson:"time"`
-	Detail   string    `json:"detail" bson:"detail"`
-	// 0 -> not settled, 1 -> settled, -1 -> deleted, -2 -> refunded
-	//Status int `json:"status" bson:"status"`
-}
-type QuantityDetail struct {
-	*resource.Quantity
-	Detail string
-}
 
 // GpuResourcePrefix GPUResource = gpu- + gpu.Product ; ex. gpu-tesla-v100
 const GpuResourcePrefix = "gpu-"
@@ -377,44 +349,6 @@ func IsGpuResource(resource string) bool {
 func GetGpuResourceProduct(resource string) string {
 	return strings.TrimPrefix(resource, GpuResourcePrefix)
 }
-
-// infra residual code
-//const (
-//	PropertyInfraCPU    = "infra-cpu"
-//	PropertyInfraMemory = "infra-memory"
-//	PropertyInfraDisk   = "infra-disk"
-//)
-//var (
-//	bin1Mi  = resource.NewQuantity(1<<20, resource.BinarySI)
-//	cpuUnit = resource.MustParse("1m")
-//)
-//var PricesUnit = map[corev1.ResourceName]*resource.Quantity{
-//	corev1.ResourceCPU:     &cpuUnit, // 1 m CPU (1000 μ)
-//	ResourceGPU:            &cpuUnit, // 1 m CPU (1000 μ)
-//	corev1.ResourceMemory:  bin1Mi,   // 1 MiB
-//	corev1.ResourceStorage: bin1Mi,   // 1 MiB
-//	ResourceNetwork:        bin1Mi,   // 1 MiB
-//}
-//
-//// Core
-//var infraCPUMap = map[string]int{
-//	"t2.medium":     2,
-//	"t2.large":      2,
-//	"t2.xlarge":     4,
-//	"ecs.c7.large":  2,
-//	"ecs.g7.large":  2,
-//	"ecs.g7.xlarge": 4,
-//}
-//
-//// GiB
-//var infraMemoryMap = map[string]int{
-//	"t2.medium":     4,
-//	"t2.large":      8,
-//	"t2.xlarge":     16,
-//	"ecs.c7.large":  4,
-//	"ecs.g7.large":  8,
-//	"ecs.g7.xlarge": 16,
-//}
 
 func GetDefaultResourceQuota(ns, name string) *corev1.ResourceQuota {
 	return &corev1.ResourceQuota{
@@ -464,7 +398,7 @@ func DefaultResourceQuotaHard() corev1.ResourceList {
 		corev1.ResourceLimitsMemory:           resource.MustParse(env.GetEnvWithDefault(QuotaLimitsMemory, DefaultQuotaLimitsMemory)),
 		corev1.ResourceRequestsStorage:        resource.MustParse(env.GetEnvWithDefault(QuotaLimitsStorage, DefaultQuotaLimitsStorage)),
 		corev1.ResourceLimitsEphemeralStorage: resource.MustParse(env.GetEnvWithDefault(QuotaLimitsStorage, DefaultQuotaLimitsStorage)),
-		corev1.ResourceServicesNodePorts:      resource.MustParse(DefaultQuotaLimitsNodePorts),
+		corev1.ResourceServicesNodePorts:      resource.MustParse(env.GetEnvWithDefault(QuotaLimitsNodePorts, DefaultQuotaLimitsNodePorts)),
 		//TODO storage.diskio.read, storage.diskio.write
 	}
 }
@@ -484,25 +418,3 @@ var LimitRangeDefault = corev1.ResourceList{
 	corev1.ResourceMemory:           resource.MustParse("64Mi"),
 	corev1.ResourceEphemeralStorage: resource.MustParse("100Mi"),
 }
-
-//
-//// MiB
-//func GetInfraCPUQuantity(flavor string, count int) *resource.Quantity {
-//	if v, ok := infraCPUMap[flavor]; ok {
-//		return resource.NewQuantity(int64(v*count), resource.DecimalSI)
-//	}
-//	return nil
-//}
-//
-//// Gib
-//func GetInfraMemoryQuantity(flavor string, count int) *resource.Quantity {
-//	if v, ok := infraMemoryMap[flavor]; ok {
-//		return resource.NewQuantity(int64((v*count)<<30), resource.BinarySI)
-//	}
-//	return nil
-//}
-//
-//// Gib
-//func GetInfraDiskQuantity(capacity int) *resource.Quantity {
-//	return resource.NewQuantity(int64(capacity<<30), resource.BinarySI)
-//}
