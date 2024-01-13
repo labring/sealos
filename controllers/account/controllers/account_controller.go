@@ -386,7 +386,7 @@ func (r *AccountReconciler) DeletePayment(ctx context.Context) error {
 			r.Logger.Error(err, "get payment handler failed")
 			return err
 		}
-		//delete payment if it is exist for more than 5 minutes
+		//delete payment if it is existed for more than 5 minutes
 		if time.Since(payment.CreationTimestamp.Time) > time.Minute*5 {
 			if payment.Status.TradeNO != "" {
 				status, amount, err := payHandler.GetPaymentDetails(payment.Status.TradeNO)
