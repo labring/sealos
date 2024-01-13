@@ -18,6 +18,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/labring/sealos/controllers/pkg/types"
 
 	"github.com/labring/sealos/controllers/pkg/common"
@@ -50,6 +52,7 @@ type Account interface {
 	InitDefaultPropertyTypeLS() error
 	SavePropertyTypes(types []resources.PropertyType) error
 	GetBillingCount(accountType common.Type, startTime, endTime time.Time) (count, amount int64, err error)
+	//GetNodePortAmount(owner string, endTime time.Time) (int64, error)
 	GenerateBillingData(startTime, endTime time.Time, prols *resources.PropertyTypeLS, namespaces []string, owner string) (orderID []string, amount int64, err error)
 	InsertMonitor(ctx context.Context, monitors ...*resources.Monitor) error
 	GetDistinctMonitorCombinations(startTime, endTime time.Time, namespace string) ([]resources.Monitor, error)
@@ -64,6 +67,22 @@ type Traffic interface {
 
 	GetPodTrafficSentBytes(startTime, endTime time.Time, namespace string, name string) (int64, error)
 	GetPodTrafficRecvBytes(startTime, endTime time.Time, namespace string, name string) (int64, error)
+}
+
+type UserQueryOpts struct {
+	UID   uuid.UUID
+	Owner string
+}
+
+type AccountV2 interface {
+	Close() error
+	GetUser(user UserQueryOpts) (*types.RegionUser, error)
+	GetAccount(user UserQueryOpts) (*types.Account, error)
+	AddBalance(user UserQueryOpts, balance int64) error
+	CreateAccount(user UserQueryOpts) (*types.Account, error)
+	TransferAccount(from, to UserQueryOpts, amount int64) error
+	GetUserAccountRechargeDiscount(user UserQueryOpts) (*types.RechargeDiscount, error)
+	AddDeductionBalance(user UserQueryOpts, balance int64) error
 }
 
 type Creator interface {

@@ -149,11 +149,6 @@ func main() {
 		DBClient:   dbClient,
 		Properties: resources.DefaultPropertyTypeLS,
 	}
-	activityReconciler := &controllers.ActivityReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		DBClient: dbClient,
-	}
 	activities, discountSteps, discountRatios, err := controllers.RawParseRechargeConfig()
 	if err != nil {
 		setupLog.Error(err, "parse recharge config failed")
@@ -165,14 +160,10 @@ func main() {
 		billingInfoQueryReconciler.Activities = activities
 		billingInfoQueryReconciler.RechargeStep = discountSteps
 		billingInfoQueryReconciler.RechargeRatio = discountRatios
-		activityReconciler.Activity = activities
 	}
 	setupManagerError := func(err error, controller string) {
 		setupLog.Error(err, "unable to create controller", "controller", controller)
 		os.Exit(1)
-	}
-	if err = (activityReconciler).SetupWithManager(mgr, rateOpts); err != nil {
-		setupManagerError(err, "Activity")
 	}
 	if err = (accountReconciler).SetupWithManager(mgr, rateOpts); err != nil {
 		setupManagerError(err, "Account")
@@ -233,13 +224,6 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupManagerError(err, "Namespace")
-	}
-	if err = (&controllers.TransferReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		DBClient: dbClient,
-	}).SetupWithManager(mgr); err != nil {
-		setupManagerError(err, "Transfer")
 	}
 	if err = (&controllers.NamespaceBillingHistoryReconciler{
 		Client: mgr.GetClient(),

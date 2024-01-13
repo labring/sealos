@@ -795,6 +795,40 @@ func (m *mongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	return nil
 }
 
+//func (m *mongoDB) GetNodePortAmount(owner string, endTime time.Time) (int64, error) {
+//	filter := bson.M{
+//		"owner": owner,
+//		"time": bson.M{
+//			"$lte": endTime,
+//		},
+//		"type":          accountv1.Consumption,
+//		"used_amount.4": bson.M{"$ne": 0},
+//	}
+//
+//	cursor, err := m.getBillingCollection().Find(context.Background(), filter)
+//	if err != nil {
+//		return 0, fmt.Errorf("failed to execute aggregate query: %w", err)
+//	}
+//	defer cursor.Close(context.Background())
+//
+//	var billings []resources.Billing
+//	if err := cursor.All(context.Background(), &billings); err != nil {
+//		return 0, fmt.Errorf("failed to decode all billing record: %w", err)
+//	}
+//	amountTotal := int64(0)
+//	for i := range billings {
+//		for j := range billings[i].AppCosts {
+//			amount := billings[i].AppCosts[j].UsedAmount[4]
+//			if amount > 0 {
+//				amountTotal += amount
+//			}
+//		}
+//	}
+//
+//	return amountTotal, nil
+//
+//}
+
 func (m *mongoDB) GetBillingCount(accountType common.Type, startTime, endTime time.Time) (count, amount int64, err error) {
 	filter := bson.M{
 		"type": accountType,

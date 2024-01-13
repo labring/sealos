@@ -25,6 +25,10 @@ import (
 	"strings"
 	"time"
 
+	pkgtypes "github.com/labring/sealos/controllers/pkg/types"
+
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+
 	"github.com/alibabacloud-go/tea/tea"
 
 	"github.com/labring/sealos/controllers/pkg/database"
@@ -65,12 +69,12 @@ const (
 // DebtReconciler reconciles a Debt object
 type DebtReconciler struct {
 	client.Client
+	GlobalClient       database.AccountV2
 	DBClient           database.Auth
 	Scheme             *runtime.Scheme
 	DebtDetectionCycle time.Duration
 	logr.Logger
 	accountSystemNamespace string
-	accountNamespace       string
 	SmsConfig              *SmsConfig
 }
 
@@ -97,44 +101,26 @@ var DebtConfig = accountv1.DefaultDebtConfig
 
 func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	debt := &accountv1.Debt{}
-	account := &accountv1.Account{}
-	if err := r.Get(ctx, req.NamespacedName, account); err == nil {
-		if account.DeletionTimestamp != nil {
-			return ctrl.Result{}, nil
-		}
-		if err := r.Get(ctx, client.ObjectKey{Name: GetDebtName(account.Name), Namespace: r.accountSystemNamespace}, debt); client.IgnoreNotFound(err) != nil {
-			return ctrl.Result{}, err
-		} else if err != nil {
-			if err := r.syncDebt(ctx, account, debt); err != nil {
-				return ctrl.Result{}, err
-			}
-			r.Logger.Info("create or update debt success", "debt", debt)
-		}
-	} else if client.IgnoreNotFound(err) != nil {
-		r.Logger.Error(err, err.Error())
-		return ctrl.Result{}, err
+	owner := req.NamespacedName.Name
+	account, err := r.GlobalClient.GetAccount(database.UserQueryOpts{Owner: owner})
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to get account %s: %v", owner, err)
+	}
+	if account == nil {
+		r.Logger.Error(fmt.Errorf("account %s not exist", owner), "account not exist")
+		return ctrl.Result{RequeueAfter: time.Minute}, nil
 	}
 
-	if err := r.Get(ctx, req.NamespacedName, debt); err == nil {
-		if debt.DeletionTimestamp != nil {
-			return ctrl.Result{}, nil
-		}
-		if err := r.Get(ctx, types.NamespacedName{Name: debt.Spec.UserName, Namespace: r.accountNamespace}, account); err != nil {
+	if err := r.Get(ctx, client.ObjectKey{Name: GetDebtName(owner), Namespace: r.accountSystemNamespace}, debt); client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, err
+	} else if err != nil {
+		if err := r.syncDebt(ctx, owner, debt); err != nil {
 			return ctrl.Result{}, err
 		}
-	} else if client.IgnoreNotFound(err) != nil {
-		r.Logger.Error(err, err.Error())
-		return ctrl.Result{}, err
+		r.Logger.Info("create or update debt success", "debt", debt)
 	}
 
-	if debt.Name == "" || account.Name == "" {
-		r.Logger.Info("not get debt or not get account", "debt name", debt.Name, "account name", account.Name)
-		return ctrl.Result{}, nil
-	}
-	// now should get debt and account
-	//r.Logger.Info("debt info", "debt", debt)
-
-	nsList, err := getOwnNsList(r.Client, getUsername(account.Name))
+	nsList, err := getOwnNsList(r.Client, getUsername(owner))
 	if err != nil {
 		r.Logger.Error(err, "get own ns list error")
 		return ctrl.Result{}, fmt.Errorf("get own ns list error: %v", err)
@@ -157,8 +143,8 @@ NormalPeriod -> WarningPeriod -> ApproachingDeletionPeriod -> ImmediateDeletePer
 
 欠费后到完全删除的总周期=WarningPeriodSeconds+ApproachingDeletionPeriodSeconds+ImmediateDeletePeriodSeconds+FinalDeletePeriodSeconds
 */
-func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv1.Debt, account *accountv1.Account, userNamespaceList []string) error {
-	oweamount := account.Status.Balance - account.Status.DeductionBalance
+func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv1.Debt, account *pkgtypes.Account, userNamespaceList []string) error {
+	oweamount := account.Balance - account.DeductionBalance
 	//更新间隔秒钟数
 	updateIntervalSeconds := time.Now().UTC().Unix() - debt.Status.LastUpdateTimestamp
 	lastStatus := debt.Status
@@ -197,7 +183,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			break
 		}
 		//上次更新时间小于临近删除时间
-		if updateIntervalSeconds < DebtConfig[accountv1.ApproachingDeletionPeriod] && (account.Status.Balance/2)+oweamount > 0 {
+		if updateIntervalSeconds < DebtConfig[accountv1.ApproachingDeletionPeriod] && (account.Balance/2)+oweamount > 0 {
 			return nil
 		}
 		update = SetDebtStatus(debt, accountv1.ApproachingDeletionPeriod)
@@ -220,7 +206,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			//TODO 撤销临近删除消息通知
 			break
 		}
-		if updateIntervalSeconds < DebtConfig[accountv1.ImminentDeletionPeriod] && account.Status.Balance+oweamount > 0 {
+		if updateIntervalSeconds < DebtConfig[accountv1.ImminentDeletionPeriod] && account.Balance+oweamount > 0 {
 			return nil
 		}
 		update = SetDebtStatus(debt, accountv1.ImminentDeletionPeriod)
@@ -284,7 +270,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 	}
 
 	if update {
-		r.Logger.Info("update debt status", "account", account.Name,
+		r.Logger.Info("update debt status", "account", debt.Spec.UserName,
 			"last status", lastStatus, "last update time", time.Unix(debt.Status.LastUpdateTimestamp, 0).Format(time.RFC3339),
 			"current status", debt.Status.AccountDebtStatus, "time", time.Now().UTC().Format(time.RFC3339))
 		return r.Status().Update(ctx, debt)
@@ -292,11 +278,11 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 	return nil
 }
 
-func (r *DebtReconciler) syncDebt(ctx context.Context, account *accountv1.Account, debt *accountv1.Debt) error {
-	debt.Name = GetDebtName(account.Name)
+func (r *DebtReconciler) syncDebt(ctx context.Context, owner string, debt *accountv1.Debt) error {
+	debt.Name = GetDebtName(owner)
 	debt.Namespace = r.accountSystemNamespace
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, debt, func() error {
-		debt.Spec.UserName = account.Name
+		debt.Spec.UserName = owner
 		return nil
 	}); err != nil {
 		return err
@@ -522,7 +508,6 @@ func setupSmsConfig() (*SmsConfig, error) {
 func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	r.Logger = ctrl.Log.WithName("DebtController")
 	r.accountSystemNamespace = env.GetEnvWithDefault(accountv1.AccountSystemNamespaceEnv, "account-system")
-	r.accountNamespace = env.GetEnvWithDefault(ACCOUNTNAMESPACEENV, "sealos-system")
 	setDefaultDebtPeriodWaitSecond()
 	debtDetectionCycleSecond := env.GetInt64EnvWithDefault(DebtDetectionCycleEnv, 60)
 	r.DebtDetectionCycle = time.Duration(debtDetectionCycleSecond) * time.Second
@@ -544,10 +529,9 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.
 		"accountNamespace": "sealos-system"}
 	*/
 	r.Logger.Info("set config", "DebtConfig", DebtConfig, "DebtDetectionCycle", r.DebtDetectionCycle,
-		"accountSystemNamespace", r.accountSystemNamespace, "accountNamespace", r.accountNamespace)
+		"accountSystemNamespace", r.accountSystemNamespace)
 	return ctrl.NewControllerManagedBy(mgr).
-		// update status should not enter reconcile
-		For(&accountv1.Account{}, builder.WithPredicates(OnlyCreatePredicate{})).
+		For(&userv1.User{}, builder.WithPredicates(predicate.And(UserOwnerPredicate{}))).
 		WithOptions(rateOpts).
 		Complete(r)
 }
@@ -563,6 +547,19 @@ func setDefaultDebtPeriodWaitSecond() {
 	DebtConfig[accountv1.ApproachingDeletionPeriod] = env.GetInt64EnvWithDefault(string(accountv1.ApproachingDeletionPeriod), 4*accountv1.DaySecond)
 	DebtConfig[accountv1.ImminentDeletionPeriod] = env.GetInt64EnvWithDefault(string(accountv1.ImminentDeletionPeriod), 3*accountv1.DaySecond)
 	DebtConfig[accountv1.FinalDeletionPeriod] = env.GetInt64EnvWithDefault(string(accountv1.FinalDeletionPeriod), 7*accountv1.DaySecond)
+}
+
+type UserOwnerPredicate struct {
+	predicate.Funcs
+}
+
+func (UserOwnerPredicate) Create(e event.CreateEvent) bool {
+	owner := e.Object.GetLabels()[userv1.UserAnnotationOwnerKey]
+	return owner != "" && owner == e.Object.GetName()
+}
+
+func (UserOwnerPredicate) Update(_ event.UpdateEvent) bool {
+	return false
 }
 
 type OnlyCreatePredicate struct {

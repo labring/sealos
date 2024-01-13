@@ -22,14 +22,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/resources"
-	"github.com/labring/sealos/controllers/pkg/utils/env"
-
-	"k8s.io/apimachinery/pkg/types"
-
-	"github.com/labring/sealos/controllers/pkg/crypto"
-
 	v12 "github.com/labring/sealos/controllers/account/api/v1"
+	"github.com/labring/sealos/controllers/pkg/resources"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
@@ -59,9 +53,9 @@ type BillingReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	logr.Logger
-	AccountSystemNamespace string
-	DBClient               database.Account
-	Properties             *resources.PropertyTypeLS
+	DBClient     database.Account
+	GlobalClient database.AccountV2
+	Properties   *resources.PropertyTypeLS
 }
 
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
@@ -141,18 +135,8 @@ func (r *BillingReconciler) rechargeBalance(owner string, amount int64) (err err
 	if amount == 0 {
 		return nil
 	}
-	account := &v12.Account{}
-	if err = r.Get(context.Background(), types.NamespacedName{Name: owner, Namespace: r.AccountSystemNamespace}, account); err != nil {
-		return fmt.Errorf("get account cr failed: %w", err)
-	}
-	if err = initBalance(account); err != nil {
-		return fmt.Errorf("failed to init balance: %v", err)
-	}
-	if err = crypto.RechargeBalance(account.Status.EncryptDeductionBalance, amount); err != nil {
-		return fmt.Errorf("recharge balance failed: %w", err)
-	}
-	if err = SyncAccountStatus(context.Background(), r.Client, account); err != nil {
-		return fmt.Errorf("sync account status failed: %w", err)
+	if err := r.GlobalClient.AddDeductionBalance(database.UserQueryOpts{Owner: owner}, amount); err != nil {
+		return fmt.Errorf("add balance failed: %w", err)
 	}
 	return nil
 }
@@ -179,7 +163,6 @@ func (r *BillingReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 	if err := r.initDB(); err != nil {
 		r.Logger.Error(err, "init db failed")
 	}
-	r.AccountSystemNamespace = env.GetEnvWithDefault(ACCOUNTNAMESPACEENV, DEFAULTACCOUNTNAMESPACE)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Namespace{}, builder.WithPredicates(predicate.Funcs{
 			CreateFunc: func(createEvent event.CreateEvent) bool {
