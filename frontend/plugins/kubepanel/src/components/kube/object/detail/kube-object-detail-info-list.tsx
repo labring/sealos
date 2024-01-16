@@ -1,4 +1,4 @@
-import DrawerItem from '../../../../pages/kubepanel/components/drawer/drawer-item';
+import { DrawerItem } from '@/components/common/drawer/drawer-item';
 import { KubeObjectAge } from '../kube-object-age';
 import { LocaleDate } from '../../local-date';
 import moment from 'moment-timezone';

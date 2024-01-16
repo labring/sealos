@@ -1,4 +1,4 @@
-import { WorkloadStatusData } from '@/pages/kubepanel/components/kube-object/workload/overview/status-chart';
+import { WorkloadStatusData } from '@/pages/kubepanel/kube-object/workload/overview/status-chart';
 import { Dictionary, capitalize, entries } from 'lodash';
 
 export const convertToPieChartStatusData = (dict: Dictionary<number>) => {

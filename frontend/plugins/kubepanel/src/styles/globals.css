@@ -21,3 +21,39 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* dropdown style overrides */
+#app .ant-dropdown-menu-item {
+  text-align: center;
+  color: #485264;
+
+  &:hover {
+    color: #0884dd;
+    background-color: #9699b41a;
+  }
+}
+#app .ant-dropdown-menu-submenu-title {
+  color: #485264;
+
+  &:hover {
+    color: #0884dd;
+    background-color: #9699b41a;
+  }
+}
+
+/* btn style overrides */
+#app .ant-btn-primary {
+  color: #fff;
+  background-color: #111824;
+
+  &:hover {
+    background-color: #111824e5;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    border-color: var(--ant-button-border-color-disabled);
+    color: var(--ant-color-text-disabled);
+    background: var(--ant-color-bg-container-disabled);
+  }
+}

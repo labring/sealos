@@ -71,15 +71,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const originalPath = process.cwd();
     const targetPath = path.resolve(originalPath, 'templates');
     const jsonPath = path.resolve(originalPath, 'templates.json');
+    const branch = process.env.TEMPLATE_REPO_BRANCH || 'main';
 
     try {
+      execAsync('git config --global --add safe.directory /app/providers/template/templates');
       const timeoutPromise = new Promise((resolve, reject) => {
         setTimeout(() => {
           reject(new Error('operation timed out'));
         }, 60 * 1000);
       });
       const gitOperationPromise = !fs.existsSync(targetPath)
-        ? execAsync(`git clone ${repoHttpUrl} ${targetPath} --depth=1`)
+        ? execAsync(`git clone -b ${branch} ${repoHttpUrl} ${targetPath} --depth=1`)
         : execAsync(`cd ${targetPath} && git pull --depth=1 --rebase`);
 
       await Promise.race([gitOperationPromise, timeoutPromise]);
@@ -120,7 +122,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const jsonContent = JSON.stringify(jsonObjArr, null, 2);
     fs.writeFileSync(jsonPath, jsonContent, 'utf-8');
 
-    jsonRes(res, { data: `success update template ${repoHttpUrl}`, code: 200 });
+    jsonRes(res, { data: `success update template ${repoHttpUrl} branch ${branch}`, code: 200 });
   } catch (err: any) {
     console.log(err, '===update repo log===');
     jsonRes(res, {

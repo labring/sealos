@@ -50,11 +50,12 @@ mkdir -p output/scripts
 echo '
 #!/bin/bash
 
+cp cli/sealos /usr/local/bin
+
 for file in tars/*.tar; do
-  sealos load -i $file
+  /usr/local/bin/sealos load -i $file
 done
 
-cp cli/sealos /usr/local/bin
 '  > output/scripts/load-images.sh
 
 curl -sfL https://raw.githubusercontent.com/labring/sealos/${CLOUD_VERSION}/scripts/cloud/install.sh -o output/scripts/install.sh
