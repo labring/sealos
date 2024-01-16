@@ -96,9 +96,10 @@ export default function AppMenu({ isMobile }: { isMobile: boolean }) {
           </Text>
         </Flex>
       )}
-      {insideCloud && (
+      {!insideCloud && (
         <Flex
           {...baseStyle}
+          color={'#485058'}
           w="28px"
           h="28px"
           borderRadius={'50%'}

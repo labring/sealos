@@ -44,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       hasAddCron = true;
       cron.schedule('*/5 * * * *', async () => {
         const result = await (await fetch(`${baseurl}/api/updateRepo`)).json();
-        console.log(`scheduling cron ${new Date().toString()}`, result);
+        console.log(`scheduling cron`);
       });
     }
 
