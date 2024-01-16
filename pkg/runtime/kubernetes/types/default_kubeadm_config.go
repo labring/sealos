@@ -131,7 +131,7 @@ enforceNodeAllocatable:
 eventBurst: 10
 eventRecordQPS: 5
 evictionHard:
-  imagefs.available: 15%
+  imagefs.available: 10%
   memory.available: 100Mi
   nodefs.available: 10%
   nodefs.inodesFree: 5%
@@ -143,7 +143,7 @@ healthzBindAddress: 0.0.0.0
 healthzPort: 10248
 httpCheckFrequency: 20s
 imageGCHighThresholdPercent: 85
-imageGCLowThresholdPercent: 80
+imageGCLowThresholdPercent: 75
 imageMinimumGCAge: 2m0s
 iptablesDropBit: 15
 iptablesMasqueradeBit: 14
