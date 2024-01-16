@@ -188,21 +188,17 @@ const Logs = ({
         </Flex>
         <Grid gridTemplateColumns={'1fr 1fr'} gridGap={2} py={2} px={7}>
           <Box>
-            <Box mb={3}>
-              CPU ({((pod.usedCpu[pod.usedCpu.length - 1] / pod.cpu) * 100).toFixed(2)}%)
-            </Box>
+            <Box mb={3}>CPU ({pod.usedCpu.yData[pod.usedCpu.yData.length - 1]}%)</Box>
             <Box h={'80px'} w={'100%'}>
-              <PodLineChart type={'blue'} limit={pod.cpu} data={pod.usedCpu} />
+              <PodLineChart type={'blue'} data={pod.usedCpu} />
             </Box>
           </Box>
           <Box>
             <Box mb={3}>
-              {t('Memory')} (
-              {((pod.usedMemory[pod.usedMemory.length - 1] / pod.memory) * 100).toFixed(2)}
-              %)
+              {t('Memory')} ({pod.usedMemory.yData[pod.usedMemory.yData.length - 1]}%)
             </Box>
             <Box h={'80px'} w={'100%'}>
-              <PodLineChart type={'purple'} limit={pod.memory} data={pod.usedMemory} />
+              <PodLineChart type={'purple'} data={pod.usedMemory} />
             </Box>
           </Box>
         </Grid>

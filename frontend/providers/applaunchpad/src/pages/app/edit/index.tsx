@@ -137,7 +137,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
   const { refetch: refetchPrice } = useQuery(['init-price'], loadUserSourcePrice, {
     enabled: !!userSourcePrice?.gpu,
-    refetchInterval: 5000
+    refetchInterval: 6000
   });
 
   // add already deployment gpu amount if they exists

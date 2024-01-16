@@ -233,6 +233,8 @@ export const patchYamlList = ({
   newYamlList: string[];
   crYamlList: DeployKindsType[];
 }) => {
+  console.log(formOldYamlList, newYamlList, crYamlList, '=======');
+
   const oldFormJsonList = formOldYamlList
     .map((item) => yaml.loadAll(item))
     .flat() as DeployKindsType[];
@@ -378,7 +380,7 @@ export const patchYamlList = ({
       });
     }
   });
-
+  console.log(actions, 'actions');
   return actions;
 };
 
@@ -443,4 +445,20 @@ export const getErrText = (err: any, def = '') => {
 
 export const formatMoney = (mone: number) => {
   return mone / 1000000;
+};
+
+// convertBytes 1024
+export const convertBytes = (bytes: number, unit: 'kb' | 'mb' | 'gb' | 'tb') => {
+  switch (unit.toLowerCase()) {
+    case 'kb':
+      return bytes / 1024;
+    case 'mb':
+      return bytes / Math.pow(1024, 2);
+    case 'gb':
+      return bytes / Math.pow(1024, 3);
+    case 'tb':
+      return bytes / Math.pow(1024, 4);
+    default:
+      return bytes;
+  }
 };

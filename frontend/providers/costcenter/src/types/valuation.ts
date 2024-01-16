@@ -1,7 +1,7 @@
 export type ValuationStandard = {
   name: string;
   unit: string;
-  price: string;
+  unit_price?: number;
 };
 export type ValuationBillingRecord = {
   price: number;

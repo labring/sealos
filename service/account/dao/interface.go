@@ -20,7 +20,10 @@ import (
 type Interface interface {
 	GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHistoryReq) ([]string, error)
 	GetProperties() ([]common.PropertyQuery, error)
-	GetCostAmount(user string, startTime, endTime time.Time) (common.TimeCostsMap, error)
+	GetCosts(user string, startTime, endTime time.Time) (common.TimeCostsMap, error)
+	GetConsumptionAmount(user string, startTime, endTime time.Time) (int64, error)
+	GetRechargeAmount(user string, startTime, endTime time.Time) (int64, error)
+	GetPropertiesUsedAmount(user string, startTime, endTime time.Time) (map[string]int64, error)
 }
 
 type MongoDB struct {
@@ -41,9 +44,13 @@ func (m *MongoDB) GetProperties() ([]common.PropertyQuery, error) {
 		m.Properties = properties
 	}
 	for _, types := range m.Properties.Types {
+		price := types.ViewPrice
+		if price == 0 {
+			price = types.UnitPrice
+		}
 		property := common.PropertyQuery{
 			Name:      types.Name,
-			UnitPrice: types.ViewPrice,
+			UnitPrice: price,
 			Unit:      types.UnitString,
 			Alias:     types.Alias,
 		}
@@ -52,7 +59,7 @@ func (m *MongoDB) GetProperties() ([]common.PropertyQuery, error) {
 	return propertiesQuery, nil
 }
 
-func (m *MongoDB) GetCostAmount(user string, startTime, endTime time.Time) (common.TimeCostsMap, error) {
+func (m *MongoDB) GetCosts(user string, startTime, endTime time.Time) (common.TimeCostsMap, error) {
 	filter := bson.M{
 		"type": 0,
 		"time": bson.M{
@@ -82,6 +89,87 @@ func (m *MongoDB) GetCostAmount(user string, startTime, endTime time.Time) (comm
 		costsMap[i] = append(costsMap[i], strconv.FormatInt(accountBalanceList[i].Amount, 10))
 	}
 	return costsMap, nil
+}
+
+func (m *MongoDB) GetConsumptionAmount(user string, startTime, endTime time.Time) (int64, error) {
+	return m.getAmountWithType(0, user, startTime, endTime)
+}
+
+func (m *MongoDB) GetRechargeAmount(user string, startTime, endTime time.Time) (int64, error) {
+	return m.getAmountWithType(1, user, startTime, endTime)
+}
+
+func (m *MongoDB) getAmountWithType(_type int64, user string, startTime, endTime time.Time) (int64, error) {
+	pipeline := bson.A{
+		bson.D{{Key: "$match", Value: bson.M{
+			"type":  _type,
+			"time":  bson.M{"$gte": startTime, "$lte": endTime},
+			"owner": user,
+		}}},
+		bson.D{{Key: "$group", Value: bson.M{
+			"_id":   nil,
+			"total": bson.M{"$sum": "$amount"},
+		}}},
+	}
+
+	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return 0, fmt.Errorf("failed to aggregate billing collection: %v", err)
+	}
+	defer cursor.Close(context.Background())
+
+	var result struct {
+		Total int64 `bson:"total"`
+	}
+
+	if cursor.Next(context.Background()) {
+		if err := cursor.Decode(&result); err != nil {
+			return 0, fmt.Errorf("failed to decode result: %v", err)
+		}
+	}
+	return result.Total, nil
+}
+
+func (m *MongoDB) GetPropertiesUsedAmount(user string, startTime, endTime time.Time) (map[string]int64, error) {
+	propertiesUsedAmount := make(map[string]int64)
+	for _, property := range m.Properties.Types {
+		amount, err := m.getSumOfUsedAmount(property.Enum, user, startTime, endTime)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get sum of used amount: %v", err)
+		}
+		propertiesUsedAmount[property.Name] = amount
+	}
+	return propertiesUsedAmount, nil
+}
+
+func (m *MongoDB) getSumOfUsedAmount(propertyType uint8, user string, startTime, endTime time.Time) (int64, error) {
+	pipeline := bson.A{
+		bson.D{{Key: "$match", Value: bson.M{
+			"time":                    bson.M{"$gte": startTime, "$lte": endTime},
+			"owner":                   user,
+			"app_costs.used_amount.0": bson.M{"$exists": true},
+		}}},
+		bson.D{{Key: "$unwind", Value: "$app_costs"}},
+		bson.D{{Key: "$group", Value: bson.M{
+			"_id":         nil,
+			"totalAmount": bson.M{"$sum": "$app_costs.used_amount." + strconv.Itoa(int(propertyType))},
+		}}},
+	}
+	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get billing collection: %v", err)
+	}
+	defer cursor.Close(context.Background())
+	var result struct {
+		TotalAmount int64 `bson:"totalAmount"`
+	}
+
+	if cursor.Next(context.Background()) {
+		if err := cursor.Decode(&result); err != nil {
+			return 0, fmt.Errorf("failed to decode result: %v", err)
+		}
+	}
+	return result.TotalAmount, nil
 }
 
 func NewMongoInterface(url string) (Interface, error) {

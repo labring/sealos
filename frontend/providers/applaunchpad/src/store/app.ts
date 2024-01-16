@@ -1,10 +1,10 @@
+import { getAppByName, getAppMonitorData, getAppPodsByAppName, getMyApps } from '@/api/app';
+import { PodStatusEnum, appStatusMap } from '@/constants/app';
+import { MOCK_APP_DETAIL } from '@/mock/apps';
+import type { AppDetailType, AppListItemType, PodDetailType } from '@/types/app';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { AppListItemType, AppDetailType, PodDetailType } from '@/types/app';
-import { getMyApps, getAppPodsByAppName, getAppByName, getPodsMetrics } from '@/api/app';
-import { appStatusMap, PodStatusEnum } from '@/constants/app';
-import { MOCK_APP_DETAIL } from '@/mock/apps';
 
 type State = {
   appList: AppListItemType[];
@@ -13,34 +13,22 @@ type State = {
   appDetailPods: PodDetailType[];
   setAppDetail: (appName: string) => Promise<AppDetailType>;
   intervalLoadPods: (appName: string, updateDetail: boolean) => Promise<any>;
+  loadAvgMonitorData: (appName: string) => Promise<any>;
+  loadDetailMonitorData: (appName: string) => Promise<any>;
 };
 
 export const useAppStore = create<State>()(
   devtools(
     immer((set, get) => ({
-      appList: [],
+      appList: [] as AppListItemType[],
       appDetail: MOCK_APP_DETAIL,
-      appDetailPods: [],
+      appDetailPods: [] as PodDetailType[],
       setAppList: async (init = false) => {
         const res = await getMyApps();
-
-        const storeList = res.map((item) => {
-          const store = get().appList.find((app) => app.name === item.name);
-
-          if (!store || init) return item;
-
-          return {
-            ...item,
-            status: store.status,
-            usedCpu: store.usedCpu,
-            useMemory: store.useMemory
-          };
-        });
-
         set((state) => {
-          state.appList = storeList;
+          state.appList = res;
         });
-        return storeList;
+        return res;
       },
       setAppDetail: async (appName: string) => {
         set((state) => {
@@ -56,9 +44,9 @@ export const useAppStore = create<State>()(
         });
         return res;
       },
+      // updata applist appdetail status
       intervalLoadPods: async (appName, updateDetail) => {
         if (!appName) return Promise.reject('app name is empty');
-        // get pod and update
         const pods = await getAppPodsByAppName(appName);
 
         // one pod running, app is running
@@ -68,13 +56,10 @@ export const useAppStore = create<State>()(
             : appStatusMap.creating;
 
         set((state) => {
-          // update app detail
           if (state?.appDetail?.appName === appName && updateDetail) {
             state.appDetail.status = appStatus;
-            // update pods info except cpu and memory
             state.appDetailPods = pods.map((pod) => {
               const oldPod = state.appDetailPods.find((item) => item.podName === pod.podName);
-
               return {
                 ...pod,
                 usedCpu: oldPod ? oldPod.usedCpu : pod.usedCpu,
@@ -87,45 +72,67 @@ export const useAppStore = create<State>()(
             status: item.name === appName ? appStatus : item.status
           }));
         });
-
-        // ============================================
-
-        // get metrics and update
-        const metrics = await getPodsMetrics(pods.map((pod) => pod.podName));
+        return 'success';
+      },
+      loadAvgMonitorData: async (appName) => {
+        const [averageCpu, averageMemory] = await Promise.all([
+          getAppMonitorData({
+            queryKey: 'average_cpu',
+            queryName: appName,
+            step: '2m'
+          }),
+          getAppMonitorData({
+            queryKey: 'average_memory',
+            queryName: appName,
+            step: '2m'
+          })
+        ]);
         set((state) => {
-          const aveCpu = Number(
-            metrics.reduce((sum, item) => sum + item.cpu / metrics.length, 0).toFixed(4)
-          );
-          const aveMemory = Number(
-            metrics.reduce((sum, item) => sum + item.memory / metrics.length, 0).toFixed(4)
-          );
-
-          // update detailApp average cpu and memory
-          if (state?.appDetail?.appName === appName && updateDetail) {
-            state.appDetail.usedCpu = [...state.appDetail.usedCpu.slice(1), aveCpu];
-            state.appDetail.usedMemory = [...state.appDetail.usedMemory.slice(1), aveMemory];
-
-            // update pod cpu and memory
-            state.appDetailPods = state.appDetailPods.map((pod) => {
-              const currentCpu = metrics.find((item) => item.podName === pod.podName)?.cpu || 0;
-              const currentMemory =
-                metrics.find((item) => item.podName === pod.podName)?.memory || 0;
-
-              return {
-                ...pod,
-                usedCpu: [...pod.usedCpu.slice(1), currentCpu],
-                usedMemory: [...pod.usedMemory.slice(1), currentMemory]
-              };
-            });
-          }
-
-          //  update appList
           state.appList = state.appList.map((item) => ({
             ...item,
-            usedCpu: item.name === appName ? [...item.usedCpu.slice(1), aveCpu] : item.usedCpu,
-            useMemory:
-              item.name === appName ? [...item.useMemory.slice(1), aveMemory] : item.useMemory
+            usedCpu: item.name === appName && averageCpu[0] ? averageCpu[0] : item.usedCpu,
+            usedMemory:
+              item.name === appName && averageMemory[0] ? averageMemory[0] : item.usedMemory
           }));
+        });
+      },
+      loadDetailMonitorData: async (appName) => {
+        const pods = await getAppPodsByAppName(appName);
+        set((state) => {
+          state.appDetailPods = pods.map((pod) => {
+            const oldPod = state.appDetailPods.find((item) => item.podName === pod.podName);
+            return {
+              ...pod,
+              usedCpu: oldPod ? oldPod.usedCpu : pod.usedCpu,
+              usedMemory: oldPod ? oldPod.usedMemory : pod.usedMemory
+            };
+          });
+        });
+
+        const [cpuData, memoryData, averageCpuData, averageMemoryData] = await Promise.all([
+          getAppMonitorData({ queryKey: 'cpu', queryName: appName, step: '2m' }),
+          getAppMonitorData({ queryKey: 'memory', queryName: appName, step: '2m' }),
+          getAppMonitorData({ queryKey: 'average_cpu', queryName: appName, step: '2m' }),
+          getAppMonitorData({ queryKey: 'average_memory', queryName: appName, step: '2m' })
+        ]);
+        set((state) => {
+          if (state?.appDetail?.appName === appName && state.appDetail?.isPause !== true) {
+            state.appDetail.usedCpu = averageCpuData[0]
+              ? averageCpuData[0]
+              : { xData: new Array(30).fill(0), yData: new Array(30).fill('0'), name: '' };
+            state.appDetail.usedMemory = averageMemoryData[0]
+              ? averageMemoryData[0]
+              : { xData: new Array(30).fill(0), yData: new Array(30).fill('0'), name: '' };
+          }
+          state.appDetailPods = pods.map((pod) => {
+            const currentCpu = cpuData.find((item) => item.name === pod.podName);
+            const currentMemory = memoryData.find((item) => item.name === pod.podName);
+            return {
+              ...pod,
+              usedCpu: currentCpu ? currentCpu : pod.usedCpu,
+              usedMemory: currentMemory ? currentMemory : pod.usedMemory
+            };
+          });
         });
         return 'success';
       }

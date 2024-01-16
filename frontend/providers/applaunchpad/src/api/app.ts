@@ -8,6 +8,7 @@ import {
   adaptEvents
 } from '@/utils/adapt';
 import type { AppPatchPropsType } from '@/types/app';
+import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
 
 export const postDeployApp = (yamlList: string[]) => POST('/api/applyApp', { yamlList });
 
@@ -50,3 +51,9 @@ export const pauseAppByName = (appName: string) => GET(`/api/pauseApp?appName=${
 export const startAppByName = (appName: string) => GET(`/api/startApp?appName=${appName}`);
 
 export const restartPodByName = (podName: string) => GET(`/api/restartPod?podName=${podName}`);
+
+export const getAppMonitorData = (payload: {
+  queryName: string;
+  queryKey: keyof MonitorQueryKey;
+  step: string;
+}) => GET<MonitorDataResult[]>(`/api/monitor/getMonitorData`, payload);

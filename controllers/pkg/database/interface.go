@@ -29,6 +29,7 @@ import (
 type Interface interface {
 	Account
 	Auth
+	Traffic
 }
 
 type Auth interface {
@@ -51,9 +52,18 @@ type Account interface {
 	GetBillingCount(accountType common.Type, startTime, endTime time.Time) (count, amount int64, err error)
 	GenerateBillingData(startTime, endTime time.Time, prols *resources.PropertyTypeLS, namespaces []string, owner string) (orderID []string, amount int64, err error)
 	InsertMonitor(ctx context.Context, monitors ...*resources.Monitor) error
+	GetDistinctMonitorCombinations(startTime, endTime time.Time, namespace string) ([]resources.Monitor, error)
 	DropMonitorCollectionsOlderThan(days int) error
 	Disconnect(ctx context.Context) error
 	Creator
+}
+
+type Traffic interface {
+	GetTrafficSentBytes(startTime, endTime time.Time, namespace string, _type uint8, name string) (int64, error)
+	GetTrafficRecvBytes(startTime, endTime time.Time, namespace string, _type uint8, name string) (int64, error)
+
+	GetPodTrafficSentBytes(startTime, endTime time.Time, namespace string, name string) (int64, error)
+	GetPodTrafficRecvBytes(startTime, endTime time.Time, namespace string, name string) (int64, error)
 }
 
 type Creator interface {
@@ -74,7 +84,8 @@ type MeteringOwnerTimeResult struct {
 //}
 
 const (
-	MongoURI = "MONGO_URI"
+	MongoURI        = "MONGO_URI"
+	TrafficMongoURI = "TRAFFIC_MONGO_URI"
 	//MongoUsername      = "MONGO_USERNAME"
 	//MongoPassword      = "MONGO_PASSWORD"
 	//RetentionDay       = "RETENTION_DAY"
