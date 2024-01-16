@@ -17,6 +17,7 @@ limitations under the License.
 package terraform
 
 import (
+	"encoding/json"
 	"os"
 	"testing"
 )
@@ -49,6 +50,11 @@ func TestTerraform_Detail(t *testing.T) {
 		t.Errorf("%+v", err)
 		return
 	}
-	t.Logf("SUCCESS: %+v", d)
+	data, _ := json.MarshalIndent(d, "", "  ")
+	t.Logf("SUCCESS: %s", string(data))
 	t.Logf("public: %+v", *d.Public)
+}
+
+func TestMain_Init(t *testing.T) {
+	main()
 }
