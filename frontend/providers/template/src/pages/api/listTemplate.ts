@@ -41,24 +41,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
   try {
     if (!hasAddCron) {
+      hasAddCron = true;
       cron.schedule('*/5 * * * *', async () => {
         const result = await (await fetch(`${baseurl}/api/updateRepo`)).json();
-        console.log('scheduling cron: */5 * * * *', result);
+        console.log(`scheduling cron ${new Date().toString()}`, result);
       });
-      hasAddCron = true;
     }
 
-    if (fs.existsSync(jsonPath)) {
-      console.log(1);
-      const templates = readTemplates(jsonPath, cdnUrl);
-      return jsonRes(res, { data: templates, code: 200 });
-    } else {
-      console.log(2);
+    if (!fs.existsSync(jsonPath)) {
+      console.log(`${baseurl}/api/updateRepo`);
       await fetch(`${baseurl}/api/updateRepo`);
-      return jsonRes(res, { data: [], code: 201 });
     }
+
+    const templates = readTemplates(jsonPath, cdnUrl);
+    jsonRes(res, { data: templates, code: 200 });
   } catch (error) {
-    console.log(error);
     jsonRes(res, { code: 500, data: 'error' });
   }
 }

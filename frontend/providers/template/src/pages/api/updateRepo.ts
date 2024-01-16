@@ -98,7 +98,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     readFileList(_targetPath, fileList);
 
     const templateStaticMap: { [key: string]: number } = await GetTemplateStatic();
-    console.log(templateStaticMap);
 
     let jsonObjArr: unknown[] = [];
     fileList.forEach((item: any) => {
@@ -124,7 +123,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     jsonRes(res, { data: `success update template ${repoHttpUrl} branch ${branch}`, code: 200 });
   } catch (err: any) {
-    console.log(err, '===update repo log===');
     jsonRes(res, {
       code: 500,
       error: err

@@ -1,3 +1,5 @@
+import Banner from '@/components/Banner';
+import { GET } from '@/services/request';
 import { useCachedStore } from '@/store/cached';
 import { useSearchStore } from '@/store/search';
 import { TemplateType } from '@/types/app';
@@ -15,24 +17,34 @@ import {
   Text,
   Tooltip
 } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
 import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { MouseEvent, useEffect, useMemo } from 'react';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
-export default function AppList({ tempaltes }: { tempaltes: any }) {
+export default function AppList() {
   const { t } = useTranslation();
   const router = useRouter();
   const { searchValue } = useSearchStore();
   const { setInsideCloud, insideCloud } = useCachedStore();
 
+  const { data: FastDeployTemplates, refetch } = useQuery(
+    ['listTemplte'],
+    () => GET('/api/listTemplate'),
+    {
+      refetchInterval: 5 * 60 * 1000,
+      staleTime: 5 * 60 * 1000
+    }
+  );
+
   const filterData = useMemo(() => {
-    const searchResults = tempaltes?.filter((item: TemplateType) => {
+    const searchResults = FastDeployTemplates?.filter((item: TemplateType) => {
       return item?.metadata?.name?.toLowerCase().includes(searchValue.toLowerCase());
     });
-    return searchValue ? searchResults : tempaltes;
-  }, [tempaltes, searchValue]);
+    return searchValue ? searchResults : FastDeployTemplates;
+  }, [FastDeployTemplates, searchValue]);
 
   const goDeploy = (name: string) => {
     if (!name) return;
@@ -72,7 +84,8 @@ export default function AppList({ tempaltes }: { tempaltes: any }) {
       background={'linear-gradient(180deg, #FFF 0%, rgba(255, 255, 255, 0.70) 100%)'}
       py={'36px'}
       px="42px">
-      {!!tempaltes?.length ? (
+      {/* <Banner></Banner> */}
+      {!!FastDeployTemplates?.length ? (
         <Grid
           justifyContent={'center'}
           w={'100%'}
@@ -186,27 +199,9 @@ export default function AppList({ tempaltes }: { tempaltes: any }) {
 }
 
 export async function getServerSideProps(content: any) {
-  try {
-    const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
-
-    let result = await (await fetch(`${baseurl}/api/listTemplate`)).json();
-    if (result.code === 201) {
-      result = await (await fetch(`${baseurl}/api/listTemplate`)).json();
+  return {
+    props: {
+      ...(await serviceSideProps(content))
     }
-
-    return {
-      props: {
-        ...(await serviceSideProps(content)),
-        tempaltes: result.data
-      }
-    };
-  } catch (error) {
-    console.log(error);
-    return {
-      props: {
-        ...(await serviceSideProps(content)),
-        tempaltes: []
-      }
-    };
-  }
+  };
 }
