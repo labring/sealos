@@ -71,6 +71,9 @@
   top: 0;
   padding-bottom: 0;
 }
+.ant-modal-content {
+  border-radius: 0% !important;
+}
 .ant-modal-body {
   height: calc(100vh - 85px);
   overflow-y: auto;
