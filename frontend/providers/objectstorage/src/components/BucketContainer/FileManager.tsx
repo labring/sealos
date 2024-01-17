@@ -3,10 +3,8 @@ import { Authority, FolderPlaceholder, QueryKey } from '@/consts';
 import { useOssStore } from '@/store/ossStore';
 import {
   AbsoluteCenter,
-  Box,
   Button,
   ButtonGroup,
-  ButtonProps,
   Center,
   Checkbox,
   Flex,
@@ -29,8 +27,7 @@ import {
   Th,
   Thead,
   Tooltip,
-  Tr,
-  VStack
+  Tr
 } from '@chakra-ui/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -43,9 +40,10 @@ import VisibityIcon from '../Icons/VisibilityIcon';
 import LinkIcon from '../Icons/LinkIcon';
 import FileIcon from '../Icons/FileIcon';
 import FolderIcon from '../Icons/FolderIcon';
+import SortButton from './SortButton';
 import { GetObjectCommand, S3 } from '@aws-sdk/client-s3';
 import { useToast } from '@/hooks/useToast';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useState, useTransition } from 'react';
 import ArrowDownSLineIcon from '../Icons/ArrowDownSLineIcon';
 import { formatBytes, useCopyData } from '@/utils/tools';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -54,9 +52,7 @@ import DeleteFileModal from '../common/modal/DeleteFileModal';
 import DeleteSingleFileModal from '../common/modal/DeleteSingleFileModal';
 import StorageIcon from '../Icons/StorageIcon';
 import useSessionStore from '@/store/session';
-import { SortPolygonDownIcon, SortPolygonUpIcon } from '@sealos/ui';
 import {
-  SortDirection,
   createColumnHelper,
   useReactTable,
   getCoreRowModel,
@@ -64,6 +60,7 @@ import {
   flexRender,
   getFilteredRowModel
 } from '@tanstack/react-table';
+
 type EntryType = {
   LastModified?: Date;
   fileName: string;
@@ -73,66 +70,6 @@ type EntryType = {
   isDir: boolean;
 };
 
-enum SortState {
-  None,
-  Ascending,
-  Descending
-}
-
-const SortButton = ({
-  state,
-  nextState,
-  onClick,
-  children,
-  ...styles
-}: {
-  state: SortDirection | false;
-  nextState: SortDirection | false;
-} & ButtonProps) => {
-  const { t } = useTranslation('file');
-  const map = new Map<SortDirection | false, string>([
-    [false, t('clickToCancelSort')],
-    ['asc', t('clickToAscend')],
-    ['desc', t('clickToDescend')]
-  ]);
-  return (
-    <Tooltip
-      hasArrow
-      label={map.get(nextState)}
-      placement="top"
-      bg={'white'}
-      color={'black'}
-      py="8px"
-      px="10.5px"
-      fontSize={'12px'}
-      borderRadius={'4px'}
-    >
-      <Button
-        aria-label={'sort'}
-        onClick={onClick}
-        variant={'unstyled'}
-        size={'xs'}
-        display={'flex'}
-        gap={'8px'}
-        {...styles}
-      >
-        {children}
-        <VStack gap={'4px'}>
-          <SortPolygonUpIcon
-            color={state === 'asc' ? 'brightBlue.600' : 'grayModern.600'}
-            w={'6px'}
-            h={'3.73px'}
-          />
-          <SortPolygonDownIcon
-            color={state === 'desc' ? 'brightBlue.600' : 'grayModern.600'}
-            w={'6px'}
-            h={'3.73px'}
-          />
-        </VStack>
-      </Button>
-    </Tooltip>
-  );
-};
 export enum TableHeaderID {
   'select' = 'select',
   'fileName' = 'fileName',
@@ -157,6 +94,9 @@ export default function FileManager({ ...styles }: FlexProps) {
   const { toast } = useToast();
   const setPrefix = useOssStore((s) => s.setPrefix);
   const queryClient = useQueryClient();
+  // search
+  const [searchVal, setSearchVal] = useState('');
+  const [, startTransition] = useTransition();
   // sort
   const clearPage = () => {
     setpageStack([]);
@@ -196,13 +136,13 @@ export default function FileManager({ ...styles }: FlexProps) {
   const deleteMutation = useMutation({
     mutationFn: deleteObject(s3client!),
     onSuccess() {
-      queryClient.invalidateQueries({
-        queryKey: [QueryKey.minioFileList],
-        exact: false
-      });
       toast({
         status: 'success',
         title: 'delete successfully'
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QueryKey.minioFileList],
+        exact: false
       });
     },
     onError(data: { message: string }) {
@@ -291,8 +231,7 @@ export default function FileManager({ ...styles }: FlexProps) {
       return url;
     }
   };
-  // // --------
-  // // budle delete
+  // budle delete
 
   const multiDeleteEntry = async (_keyList: string[]) => {
     if (!s3client || !bucket?.name) return;
@@ -579,10 +518,14 @@ export default function FileManager({ ...styles }: FlexProps) {
             type="text"
             maxW="270px"
             placeholder={t('searchFile')}
-            onChange={(v) =>
-              table.getColumn(TableHeaderID.fileName)?.setFilterValue(v.target.value.trim())
-            }
-            value={table.getColumn(TableHeaderID.fileName)?.getFilterValue() as string}
+            onChange={(v) => {
+              const val = v.target.value.trim();
+              setSearchVal(val);
+              startTransition(() => {
+                table.getColumn(TableHeaderID.fileName)?.setFilterValue(val);
+              });
+            }}
+            value={searchVal}
           />
         </InputGroup>
         <ButtonGroup

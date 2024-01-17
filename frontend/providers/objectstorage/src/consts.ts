@@ -110,6 +110,7 @@ export type TBucket = {
   name: string;
   crName: string;
   policy: Authority;
+  isComplete: boolean;
 };
 export type bucketConfigQueryParam = { bucketName?: string; bucketPolicy?: Authority };
 export type UserSecretData = {

@@ -37,7 +37,8 @@ export default function InstanceList() {
           w={'48px'}
           h={'48px'}
           justifyContent="center"
-          alignItems={'center'}>
+          alignItems={'center'}
+        >
           <MyIcon color={'#7B838B'} name="empty"></MyIcon>
         </Flex>
         <Text mt={'12px'} fontSize={14} color={'#5A646E'}>
@@ -57,7 +58,8 @@ export default function InstanceList() {
       pt="24px"
       pr="42px"
       pb="42px"
-      overflow={'auto'}>
+      overflow={'auto'}
+    >
       {data &&
         data?.map((item) => {
           return (
@@ -75,7 +77,8 @@ export default function InstanceList() {
               borderRadius={'8px'}
               backgroundColor={'#fff'}
               boxShadow={'0px 2px 4px 0px rgba(187, 196, 206, 0.25)'}
-              border={'1px solid #EAEBF0'}>
+              border={'1px solid #EAEBF0'}
+            >
               <Flex alignItems={'center'}>
                 <Box
                   p={'6px'}
@@ -84,7 +87,8 @@ export default function InstanceList() {
                   boxShadow={'0px 1px 2px 0.5px rgba(84, 96, 107, 0.20)'}
                   borderRadius={'4px'}
                   backgroundColor={'#fff'}
-                  border={' 1px solid rgba(255, 255, 255, 0.50)'}>
+                  border={' 1px solid rgba(255, 255, 255, 0.50)'}
+                >
                   <Image src={item?.icon} alt="" width={'36px'} height={'36px'} />
                 </Box>
                 <Box ml="16px">
@@ -102,7 +106,8 @@ export default function InstanceList() {
                   width="14px"
                   height="15px"
                   viewBox="0 0 14 15"
-                  fill="none">
+                  fill="none"
+                >
                   <path
                     fillRule="evenodd"
                     clipRule="evenodd"
