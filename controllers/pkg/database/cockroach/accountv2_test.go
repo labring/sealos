@@ -53,6 +53,11 @@ func TestAccount_V1ToV2(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to new account : %v", err)
 	}
+	defer func() {
+		if err := accountItf.Close(); err != nil {
+			t.Errorf("failed close connection: %v", err)
+		}
+	}()
 	wg := errgroup.Group{}
 	for _, a := range accounts.Items {
 		account := a

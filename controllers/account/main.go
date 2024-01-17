@@ -140,11 +140,17 @@ func main() {
 			setupLog.Error(err, "unable to disconnect from mongo")
 		}
 	}()
-	v2Account, err := cockroach.NewAccountV2(database.CockroachURI)
+	v2Account, err := cockroach.NewAccountV2(os.Getenv(database.CockroachURI))
 	if err != nil {
 		setupLog.Error(err, "unable to connect to cockroach")
 		os.Exit(1)
 	}
+	defer func() {
+		err := v2Account.Close()
+		if err != nil {
+			setupLog.Error(err, "unable to disconnect from cockroach")
+		}
+	}()
 	accountReconciler := &controllers.AccountReconciler{
 		Client:    mgr.GetClient(),
 		Scheme:    mgr.GetScheme(),
