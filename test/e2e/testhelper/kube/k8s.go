@@ -40,7 +40,7 @@ type K8sClient struct {
 }
 
 func NewK8sClient(kubeconfig string, apiServer string) (K8s, error) {
-	client, err := kubernetes.NewKubernetesClient(kubeconfig, apiServer)
+	client, err := kubernetes.NewKubernetesClientSkipTLSVerify(kubeconfig, apiServer)
 	if err != nil {
 		return nil, err
 	}
