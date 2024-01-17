@@ -18,7 +18,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 
 	"github.com/labring/sealos/controllers/pkg/types"
 
@@ -61,6 +63,17 @@ type Account interface {
 	Creator
 }
 
+type BillingRecordQuery struct {
+	Page      int         `json:"page"`
+	PageSize  int         `json:"pageSize"`
+	Namespace string      `json:"namespace,omitempty"`
+	StartTime v1.Time     `json:"startTime"`
+	EndTime   v1.Time     `json:"endTime"`
+	OrderID   string      `json:"orderID,omitempty"`
+	Type      common.Type `json:"type"`
+	AppType   string      `json:"appType,omitempty"`
+}
+
 type Traffic interface {
 	GetTrafficSentBytes(startTime, endTime time.Time, namespace string, _type uint8, name string) (int64, error)
 	GetTrafficRecvBytes(startTime, endTime time.Time, namespace string, _type uint8, name string) (int64, error)
@@ -69,21 +82,16 @@ type Traffic interface {
 	GetPodTrafficRecvBytes(startTime, endTime time.Time, namespace string, name string) (int64, error)
 }
 
-type UserQueryOpts struct {
-	UID   uuid.UUID
-	Owner string
-}
-
 type AccountV2 interface {
 	Close() error
-	GetUser(user UserQueryOpts) (*types.RegionUser, error)
-	GetAccount(user UserQueryOpts) (*types.Account, error)
-	AddBalance(user UserQueryOpts, balance int64) error
-	NewAccount(user UserQueryOpts) (*types.Account, error)
-	CreateAccount(ops UserQueryOpts, account *types.Account) (*types.Account, error)
-	TransferAccount(from, to UserQueryOpts, amount int64) error
-	GetUserAccountRechargeDiscount(user UserQueryOpts) (*types.RechargeDiscount, error)
-	AddDeductionBalance(user UserQueryOpts, balance int64) error
+	GetUser(user types.UserQueryOpts) (*types.RegionUser, error)
+	GetAccount(user types.UserQueryOpts) (*types.Account, error)
+	AddBalance(user types.UserQueryOpts, balance int64) error
+	NewAccount(user types.UserQueryOpts) (*types.Account, error)
+	CreateAccount(ops types.UserQueryOpts, account *types.Account) (*types.Account, error)
+	TransferAccount(from, to types.UserQueryOpts, amount int64) error
+	GetUserAccountRechargeDiscount(user types.UserQueryOpts) (*types.RechargeDiscount, error)
+	AddDeductionBalance(user types.UserQueryOpts, balance int64) error
 }
 
 type Creator interface {
@@ -112,3 +120,9 @@ const (
 	//RetentionDay       = "RETENTION_DAY"
 	//PermanentRetention = "PERMANENT_RETENTION"
 )
+
+var _ = AccountV2(&cockroach.Cockroach{})
+
+func NewAccountV2(url string) (AccountV2, error) {
+	return cockroach.NewCockRoach(url)
+}

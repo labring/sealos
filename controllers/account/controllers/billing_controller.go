@@ -22,6 +22,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/types"
+
 	v12 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/pkg/resources"
 
@@ -135,7 +137,7 @@ func (r *BillingReconciler) rechargeBalance(owner string, amount int64) (err err
 	if amount == 0 {
 		return nil
 	}
-	if err := r.AccountV2.AddDeductionBalance(database.UserQueryOpts{Owner: owner}, amount); err != nil {
+	if err := r.AccountV2.AddDeductionBalance(types.UserQueryOpts{Owner: owner}, amount); err != nil {
 		return fmt.Errorf("add balance failed: %w", err)
 	}
 	return nil

@@ -1,10 +1,26 @@
-package cockroach
+// Copyright © 2024 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package database
 
 import (
 	"context"
 	"encoding/json"
 	"os"
 	"testing"
+
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
 
@@ -21,9 +37,6 @@ import (
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 
-	"gorm.io/gorm"
-
-	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/types"
 )
 
@@ -62,7 +75,7 @@ func TestAccount_V1ToV2(t *testing.T) {
 	for _, a := range accounts.Items {
 		account := a
 		wg.Go(func() error {
-			_, err := accountItf.CreateAccount(database.UserQueryOpts{Owner: account.Name}, &types.Account{
+			_, err := accountItf.CreateAccount(types.UserQueryOpts{Owner: account.Name}, &types.Account{
 				EncryptBalance:          *account.Status.EncryptBalance,
 				EncryptDeductionBalance: *account.Status.EncryptDeductionBalance,
 				Balance:                 account.Status.Balance,
@@ -132,13 +145,13 @@ func TestAccountV2_CreateAccount(t *testing.T) {
 			t.Errorf("failed close connection: %v", err)
 		}
 	}()
-	aa, err := account.NewAccount(database.UserQueryOpts{Owner: "eoxwhh80"})
+	aa, err := account.NewAccount(types.UserQueryOpts{Owner: "eoxwhh80"})
 	if err != nil {
 		t.Errorf("failed to create account: %v", err)
 	}
 	t.Logf("success create account: %v", aa)
 
-	aa, err = account.NewAccount(database.UserQueryOpts{Owner: "1ycieb5b"})
+	aa, err = account.NewAccount(types.UserQueryOpts{Owner: "1ycieb5b"})
 	if err != nil {
 		t.Errorf("failed to create account: %v", err)
 	}
@@ -155,13 +168,13 @@ func TestAccountV2_GetAccount(t *testing.T) {
 			t.Errorf("failed close connection: %v", err)
 		}
 	}()
-	aa, err := account.GetAccount(database.UserQueryOpts{Owner: "eoxwhh80"})
+	aa, err := account.GetAccount(types.UserQueryOpts{Owner: "eoxwhh80"})
 	if err != nil {
 		t.Errorf("failed to get account: %v", err)
 	}
 	t.Logf("success create account: %+v", aa)
 
-	aa, err = account.GetAccount(database.UserQueryOpts{Owner: "1ycieb5b"})
+	aa, err = account.GetAccount(types.UserQueryOpts{Owner: "1ycieb5b"})
 	if err != nil {
 		t.Errorf("failed to get account: %v", err)
 	}
@@ -178,7 +191,7 @@ func TestAccountV2_GetUser(t *testing.T) {
 			t.Errorf("failed close connection: %v", err)
 		}
 	}()
-	user, err := account.GetUser(database.UserQueryOpts{Owner: "eoxwhh80"})
+	user, err := account.GetUser(types.UserQueryOpts{Owner: "eoxwhh80"})
 	if err != nil {
 		t.Errorf("failed to get user: %v", err)
 	}
@@ -195,17 +208,17 @@ func TestAccountV2_TransferAccount(t *testing.T) {
 			t.Errorf("failed close connection: %v", err)
 		}
 	}()
-	err = account.TransferAccount(database.UserQueryOpts{Owner: "eoxwhh80"}, database.UserQueryOpts{Owner: "1ycieb5b"}, 85*BaseUnit)
+	err = account.TransferAccount(types.UserQueryOpts{Owner: "eoxwhh80"}, types.UserQueryOpts{Owner: "1ycieb5b"}, 85*cockroach.BaseUnit)
 	if err != nil {
 		t.Errorf("failed to transfer account: %v", err)
 	}
-	aa, err := account.GetAccount(database.UserQueryOpts{Owner: "eoxwhh80"})
+	aa, err := account.GetAccount(types.UserQueryOpts{Owner: "eoxwhh80"})
 	if err != nil {
 		t.Errorf("failed to get eoxwhh80 account: %v", err)
 	}
 	t.Logf("success create eoxwhh80 account: %+v", aa)
 
-	aa, err = account.GetAccount(database.UserQueryOpts{Owner: "1ycieb5b"})
+	aa, err = account.GetAccount(types.UserQueryOpts{Owner: "1ycieb5b"})
 	if err != nil {
 		t.Errorf("failed to get 1ycieb5b account: %v", err)
 	}
@@ -222,7 +235,7 @@ func TestAccountV2_AddBalance(t *testing.T) {
 			t.Errorf("failed close connection: %v", err)
 		}
 	}()
-	err = account.AddBalance(database.UserQueryOpts{Owner: "eoxwhh80"}, 100*BaseUnit)
+	err = account.AddBalance(types.UserQueryOpts{Owner: "eoxwhh80"}, 100*cockroach.BaseUnit)
 	if err != nil {
 		t.Errorf("failed to add balance: %v", err)
 	}
@@ -230,43 +243,9 @@ func TestAccountV2_AddBalance(t *testing.T) {
 	//if err != nil {
 	//	t.Errorf("failed to add deduction balance: %v", err)
 	//}
-	aa, err := account.GetAccount(database.UserQueryOpts{Owner: "eoxwhh80"})
+	aa, err := account.GetAccount(types.UserQueryOpts{Owner: "eoxwhh80"})
 	if err != nil {
 		t.Errorf("failed to get account: %v", err)
 	}
 	t.Logf("success create account: %+v", aa)
-}
-
-func TestAccountV2_AddDeductionBalance(t *testing.T) {
-	type fields struct {
-		db                      *gorm.DB
-		localRegion             *types.Region
-		activities              types.Activities
-		defaultRechargeDiscount types.RechargeDiscount
-	}
-	type args struct {
-		ops    database.UserQueryOpts
-		amount int64
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			g := &AccountV2{
-				db:                      tt.fields.db,
-				localRegion:             tt.fields.localRegion,
-				activities:              tt.fields.activities,
-				defaultRechargeDiscount: tt.fields.defaultRechargeDiscount,
-			}
-			if err := g.AddDeductionBalance(tt.args.ops, tt.args.amount); (err != nil) != tt.wantErr {
-				t.Errorf("AddDeductionBalance() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
 }

@@ -1,3 +1,17 @@
+// Copyright © 2024 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package cockroach
 
 import (
@@ -5,62 +19,55 @@ import (
 	"os"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/database"
+	"gorm.io/driver/postgres"
 
 	"github.com/labring/sealos/controllers/pkg/crypto"
 
 	"github.com/google/uuid"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
 	"github.com/labring/sealos/controllers/pkg/types"
 )
 
-type AccountV2 struct {
-	db *gorm.DB
-	//TODO need init
-	localRegion *types.Region
-	newAccount  types.Account
+type Cockroach struct {
+	DB          *gorm.DB
+	LocalRegion *types.Region
+	ZeroAccount types.Account
 	activities  types.Activities
 	//TODO need init
 	defaultRechargeDiscount types.RechargeDiscount
 }
 
 const (
-	AccountTable = "Account"
-	UserTable    = "user"
-
 	LocalRegion = "LOCAL_REGION"
 )
 
-var _ = database.AccountV2(&AccountV2{})
-
-func (g *AccountV2) GetUser(ops database.UserQueryOpts) (*types.RegionUser, error) {
+func (g *Cockroach) GetUser(ops types.UserQueryOpts) (*types.RegionUser, error) {
 	if err := checkOps(ops); err != nil {
 		return nil, err
 	}
 	query := &types.RegionUser{
-		RegionUID: g.localRegion.UID,
+		RegionUID: g.LocalRegion.UID,
 		ID:        ops.Owner,
 	}
 	if ops.UID != uuid.Nil {
 		query.UID = ops.UID
 	}
 	var user types.RegionUser
-	if err := g.db.Where(query).First(&user).Error; err != nil {
+	if err := g.DB.Where(query).First(&user).Error; err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 	return &user, nil
 }
 
-func checkOps(ops database.UserQueryOpts) error {
+func checkOps(ops types.UserQueryOpts) error {
 	if ops.Owner == "" && ops.UID == uuid.Nil {
 		return fmt.Errorf("empty query opts")
 	}
 	return nil
 }
 
-func (g *AccountV2) GetAccount(ops database.UserQueryOpts) (*types.Account, error) {
+func (g *Cockroach) GetAccount(ops types.UserQueryOpts) (*types.Account, error) {
 	if ops.UID == uuid.Nil {
 		user, err := g.GetUser(ops)
 		if err != nil {
@@ -69,7 +76,7 @@ func (g *AccountV2) GetAccount(ops database.UserQueryOpts) (*types.Account, erro
 		ops.UID = user.UID
 	}
 	var account types.Account
-	if err := g.db.Where(types.Account{UserUID: ops.UID}).First(&account).Error; err != nil {
+	if err := g.DB.Where(types.Account{UserUID: ops.UID}).First(&account).Error; err != nil {
 		return nil, fmt.Errorf("failed to get account: %w", err)
 	}
 	balance, err := crypto.DecryptInt64(account.EncryptBalance)
@@ -85,7 +92,7 @@ func (g *AccountV2) GetAccount(ops database.UserQueryOpts) (*types.Account, erro
 	return &account, nil
 }
 
-func (g *AccountV2) updateBalance(tx *gorm.DB, ops database.UserQueryOpts, amount int64, isDeduction bool) error {
+func (g *Cockroach) updateBalance(tx *gorm.DB, ops types.UserQueryOpts, amount int64, isDeduction bool) error {
 	if ops.UID == uuid.Nil {
 		user, err := g.GetUser(ops)
 		if err != nil {
@@ -129,19 +136,19 @@ func (g *AccountV2) updateBalance(tx *gorm.DB, ops database.UserQueryOpts, amoun
 	return nil
 }
 
-func (g *AccountV2) AddBalance(ops database.UserQueryOpts, amount int64) error {
-	return g.db.Transaction(func(tx *gorm.DB) error {
+func (g *Cockroach) AddBalance(ops types.UserQueryOpts, amount int64) error {
+	return g.DB.Transaction(func(tx *gorm.DB) error {
 		return g.updateBalance(tx, ops, amount, false)
 	})
 }
 
-func (g *AccountV2) AddDeductionBalance(ops database.UserQueryOpts, amount int64) error {
-	return g.db.Transaction(func(tx *gorm.DB) error {
+func (g *Cockroach) AddDeductionBalance(ops types.UserQueryOpts, amount int64) error {
+	return g.DB.Transaction(func(tx *gorm.DB) error {
 		return g.updateBalance(tx, ops, amount, true)
 	})
 }
 
-func (g *AccountV2) CreateAccount(ops database.UserQueryOpts, account *types.Account) (*types.Account, error) {
+func (g *Cockroach) CreateAccount(ops types.UserQueryOpts, account *types.Account) (*types.Account, error) {
 	if ops.UID == uuid.Nil {
 		user, err := g.GetUser(ops)
 		if err != nil {
@@ -154,7 +161,7 @@ func (g *AccountV2) CreateAccount(ops database.UserQueryOpts, account *types.Acc
 		return nil, fmt.Errorf("empty encrypt balance")
 	}
 
-	if err := g.db.FirstOrCreate(account).Error; err != nil {
+	if err := g.DB.FirstOrCreate(account).Error; err != nil {
 		return nil, fmt.Errorf("failed to create account: %w", err)
 	}
 
@@ -162,7 +169,7 @@ func (g *AccountV2) CreateAccount(ops database.UserQueryOpts, account *types.Acc
 }
 
 // NewAccount create a new account
-func (g *AccountV2) NewAccount(ops database.UserQueryOpts) (*types.Account, error) {
+func (g *Cockroach) NewAccount(ops types.UserQueryOpts) (*types.Account, error) {
 	if ops.UID == uuid.Nil {
 		user, err := g.GetUser(ops)
 		if err != nil {
@@ -172,21 +179,21 @@ func (g *AccountV2) NewAccount(ops database.UserQueryOpts) (*types.Account, erro
 	}
 	account := &types.Account{
 		UserUID:                 ops.UID,
-		EncryptDeductionBalance: g.newAccount.EncryptDeductionBalance,
-		EncryptBalance:          g.newAccount.EncryptBalance,
-		Balance:                 g.newAccount.Balance,
-		DeductionBalance:        g.newAccount.DeductionBalance,
+		EncryptDeductionBalance: g.ZeroAccount.EncryptDeductionBalance,
+		EncryptBalance:          g.ZeroAccount.EncryptBalance,
+		Balance:                 g.ZeroAccount.Balance,
+		DeductionBalance:        g.ZeroAccount.DeductionBalance,
 		CreatedAt:               time.Now(),
 	}
 
-	if err := g.db.FirstOrCreate(account).Error; err != nil {
+	if err := g.DB.FirstOrCreate(account).Error; err != nil {
 		return nil, fmt.Errorf("failed to create account: %w", err)
 	}
 
 	return account, nil
 }
 
-func (g *AccountV2) GetUserAccountRechargeDiscount(ops database.UserQueryOpts) (*types.RechargeDiscount, error) {
+func (g *Cockroach) GetUserAccountRechargeDiscount(ops types.UserQueryOpts) (*types.RechargeDiscount, error) {
 	userID := ops.UID
 	if userID == uuid.Nil {
 		user, err := g.GetUser(ops)
@@ -196,7 +203,7 @@ func (g *AccountV2) GetUserAccountRechargeDiscount(ops database.UserQueryOpts) (
 		userID = user.UID
 	}
 	var userActivities []types.UserActivity
-	if err := g.db.Table("UserActivities").Where(types.UserActivity{
+	if err := g.DB.Table("UserActivities").Where(types.UserActivity{
 		UserID: userID,
 	}).Find(userActivities).Error; err != nil {
 		return nil, fmt.Errorf("failed to get user activities: %w", err)
@@ -207,7 +214,7 @@ func (g *AccountV2) GetUserAccountRechargeDiscount(ops database.UserQueryOpts) (
 	for _, activity := range userActivities {
 		currentPhase := activity.CurrentPhase
 		var userPhase types.UserPhase
-		err := g.db.Table("UserPhase").Where(types.UserPhase{
+		err := g.DB.Table("UserPhase").Where(types.UserPhase{
 			UserActivityID: activity.UserID,
 			Name:           currentPhase,
 		}).First(&userPhase).Error
@@ -235,7 +242,7 @@ const (
 	MinBalance = 10 * BaseUnit
 )
 
-func (g *AccountV2) TransferAccount(from, to database.UserQueryOpts, amount int64) error {
+func (g *Cockroach) TransferAccount(from, to types.UserQueryOpts, amount int64) error {
 	if from.UID == uuid.Nil {
 		fromUser, err := g.GetUser(from)
 		if err != nil {
@@ -250,8 +257,8 @@ func (g *AccountV2) TransferAccount(from, to database.UserQueryOpts, amount int6
 		}
 		to.UID = toUser.UID
 	}
-	err := g.db.Transaction(func(tx *gorm.DB) error {
-		sender, err := g.GetAccount(database.UserQueryOpts{UID: from.UID})
+	err := g.DB.Transaction(func(tx *gorm.DB) error {
+		sender, err := g.GetAccount(types.UserQueryOpts{UID: from.UID})
 		if err != nil {
 			return fmt.Errorf("failed to get sender account: %w", err)
 		}
@@ -259,10 +266,10 @@ func (g *AccountV2) TransferAccount(from, to database.UserQueryOpts, amount int6
 			return fmt.Errorf("insufficient balance in sender account, the transferable amount is: %d", sender.Balance-sender.DeductionBalance-MinBalance-sender.ActivityBonus)
 		}
 
-		if err = g.updateBalance(tx, database.UserQueryOpts{UID: from.UID}, -amount, false); err != nil {
+		if err = g.updateBalance(tx, types.UserQueryOpts{UID: from.UID}, -amount, false); err != nil {
 			return fmt.Errorf("failed to update sender balance: %w", err)
 		}
-		if err = g.updateBalance(tx, database.UserQueryOpts{UID: to.UID}, amount, false); err != nil {
+		if err = g.updateBalance(tx, types.UserQueryOpts{UID: to.UID}, amount, false); err != nil {
 			return fmt.Errorf("failed to update receiver balance: %w", err)
 		}
 		return nil
@@ -271,7 +278,7 @@ func (g *AccountV2) TransferAccount(from, to database.UserQueryOpts, amount int6
 	return err
 }
 
-func NewAccountV2(url string) (database.AccountV2, error) {
+func NewCockRoach(url string) (*Cockroach, error) {
 	db, err := gorm.Open(postgres.Open(url), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open url %s : %v", url, err)
@@ -297,12 +304,12 @@ func NewAccountV2(url string) (database.AccountV2, error) {
 	localRegion := &types.Region{
 		UID: uuid.MustParse(localRegionStr),
 	}
-	return &AccountV2{db: db, newAccount: types.Account{EncryptBalance: *newEncryptBalance, EncryptDeductionBalance: *newEncryptDeductionBalance, Balance: 0, DeductionBalance: 5}, localRegion: localRegion}, nil
+	return &Cockroach{DB: db, ZeroAccount: types.Account{EncryptBalance: *newEncryptBalance, EncryptDeductionBalance: *newEncryptDeductionBalance, Balance: 0, DeductionBalance: 5}, LocalRegion: localRegion}, nil
 }
 
 // Close db connection
-func (g *AccountV2) Close() error {
-	db, err := g.db.DB()
+func (g *Cockroach) Close() error {
+	db, err := g.DB.DB()
 	if err != nil {
 		return fmt.Errorf("failed to get db: %w", err)
 	}

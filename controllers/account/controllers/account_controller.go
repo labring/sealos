@@ -151,7 +151,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			r.Logger.Error(err, "get gift error")
 		}
 		payment.Status.Status = pay.PaymentSuccess
-		if err = r.AccountV2.AddBalance(database.UserQueryOpts{UID: account.UserUID}, gift); err != nil {
+		if err = r.AccountV2.AddBalance(pkgtypes.UserQueryOpts{UID: account.UserUID}, gift); err != nil {
 			r.Logger.Error(err, "add balance failed")
 			return ctrl.Result{}, fmt.Errorf("add balance failed: %v", err)
 		}
@@ -203,7 +203,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, owner string, userN
 	if getUsername(userNamespace) != owner {
 		return nil, nil
 	}
-	account, err := r.AccountV2.NewAccount(database.UserQueryOpts{Owner: owner})
+	account, err := r.AccountV2.NewAccount(pkgtypes.UserQueryOpts{Owner: owner})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create %s account: %v", owner, err)
 	}
@@ -381,7 +381,7 @@ func (r *AccountReconciler) getAmountWithRates(amount int64, account *pkgtypes.A
 	//}
 	//return anno, getAmountWithDiscount(amount, rechargeDiscount), nil
 
-	discount, err := r.AccountV2.GetUserAccountRechargeDiscount(database.UserQueryOpts{UID: account.UserUID})
+	discount, err := r.AccountV2.GetUserAccountRechargeDiscount(pkgtypes.UserQueryOpts{UID: account.UserUID})
 	if err != nil {
 		return 0, fmt.Errorf("get user %s account recharge discount failed: %w", account.UserUID, err)
 	}

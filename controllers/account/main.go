@@ -24,8 +24,9 @@ import (
 
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/labring/sealos/controllers/account/controllers/cache"
 
@@ -140,7 +141,7 @@ func main() {
 			setupLog.Error(err, "unable to disconnect from mongo")
 		}
 	}()
-	v2Account, err := cockroach.NewAccountV2(os.Getenv(database.CockroachURI))
+	v2Account, err := cockroach.NewCockRoach(os.Getenv(database.CockroachURI))
 	if err != nil {
 		setupLog.Error(err, "unable to connect to cockroach")
 		os.Exit(1)
@@ -205,7 +206,7 @@ func main() {
 	if os.Getenv("DISABLE_WEBHOOKS") == "true" {
 		setupLog.Info("disable all webhooks")
 	} else {
-		mgr.GetWebhookServer().Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient()}})
+		mgr.GetWebhookServer().Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient(), AccountV2: v2Account}})
 	}
 
 	err = dbClient.InitDefaultPropertyTypeLS()
