@@ -28,9 +28,11 @@ export const getUserAccount = () => {
 export const getSystemEnv = () => {
   return request.get<SystemEnv>('/api/platform/getEnv');
 };
+
 export const getSystemConfig = () => {
-  return request.get<SystemConfigType>('./api/system/getSystemConfig');
+  return request.get<SystemConfigType>('/api/system/getSystemConfig');
 };
+
 export const getPriceBonus = () => {
   return request.get<
     any,

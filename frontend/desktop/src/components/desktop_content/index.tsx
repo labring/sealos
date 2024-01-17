@@ -86,7 +86,7 @@ export default function DesktopContent(props: any) {
     <Box
       id="desktop"
       className={styles.desktop}
-      backgroundImage={'url(/images/background.svg)'}
+      backgroundImage={'url(/images/bg-blue.svg)'}
       backgroundRepeat={'no-repeat'}
       backgroundSize={'cover'}
     >
