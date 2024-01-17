@@ -79,7 +79,8 @@ type AccountV2 interface {
 	GetUser(user UserQueryOpts) (*types.RegionUser, error)
 	GetAccount(user UserQueryOpts) (*types.Account, error)
 	AddBalance(user UserQueryOpts, balance int64) error
-	CreateAccount(user UserQueryOpts) (*types.Account, error)
+	NewAccount(user UserQueryOpts) (*types.Account, error)
+	CreateAccount(ops UserQueryOpts, account *types.Account) (*types.Account, error)
 	TransferAccount(from, to UserQueryOpts, amount int64) error
 	GetUserAccountRechargeDiscount(user UserQueryOpts) (*types.RechargeDiscount, error)
 	AddDeductionBalance(user UserQueryOpts, balance int64) error
@@ -104,6 +105,7 @@ type MeteringOwnerTimeResult struct {
 
 const (
 	MongoURI        = "MONGO_URI"
+	CockroachURI    = "COCKROACH_URI"
 	TrafficMongoURI = "TRAFFIC_MONGO_URI"
 	//MongoUsername      = "MONGO_USERNAME"
 	//MongoPassword      = "MONGO_PASSWORD"

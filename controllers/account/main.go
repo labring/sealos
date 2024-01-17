@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
@@ -138,16 +140,23 @@ func main() {
 			setupLog.Error(err, "unable to disconnect from mongo")
 		}
 	}()
+	v2Account, err := cockroach.NewAccountV2(database.CockroachURI)
+	if err != nil {
+		setupLog.Error(err, "unable to connect to cockroach")
+		os.Exit(1)
+	}
 	accountReconciler := &controllers.AccountReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		DBClient: dbClient,
+		Client:    mgr.GetClient(),
+		Scheme:    mgr.GetScheme(),
+		DBClient:  dbClient,
+		AccountV2: v2Account,
 	}
 	billingInfoQueryReconciler := &controllers.BillingInfoQueryReconciler{
 		Client:     mgr.GetClient(),
 		Scheme:     mgr.GetScheme(),
 		DBClient:   dbClient,
 		Properties: resources.DefaultPropertyTypeLS,
+		AccountV2:  v2Account,
 	}
 	activities, discountSteps, discountRatios, err := controllers.RawParseRechargeConfig()
 	if err != nil {
@@ -175,9 +184,10 @@ func main() {
 		setupManagerError(err, "Payment")
 	}
 	if err = (&controllers.DebtReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		DBClient: dbClient,
+		Client:    mgr.GetClient(),
+		Scheme:    mgr.GetScheme(),
+		DBClient:  dbClient,
+		AccountV2: v2Account,
 	}).SetupWithManager(mgr, rateOpts); err != nil {
 		setupManagerError(err, "Debt")
 	}
@@ -209,6 +219,7 @@ func main() {
 		Properties: resources.DefaultPropertyTypeLS,
 		Client:     mgr.GetClient(),
 		Scheme:     mgr.GetScheme(),
+		AccountV2:  v2Account,
 	}).SetupWithManager(mgr, rateOpts); err != nil {
 		setupManagerError(err, "Billing")
 	}

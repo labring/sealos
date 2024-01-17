@@ -53,9 +53,9 @@ type BillingReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	logr.Logger
-	DBClient     database.Account
-	GlobalClient database.AccountV2
-	Properties   *resources.PropertyTypeLS
+	DBClient   database.Account
+	AccountV2  database.AccountV2
+	Properties *resources.PropertyTypeLS
 }
 
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
@@ -135,7 +135,7 @@ func (r *BillingReconciler) rechargeBalance(owner string, amount int64) (err err
 	if amount == 0 {
 		return nil
 	}
-	if err := r.GlobalClient.AddDeductionBalance(database.UserQueryOpts{Owner: owner}, amount); err != nil {
+	if err := r.AccountV2.AddDeductionBalance(database.UserQueryOpts{Owner: owner}, amount); err != nil {
 		return fmt.Errorf("add balance failed: %w", err)
 	}
 	return nil

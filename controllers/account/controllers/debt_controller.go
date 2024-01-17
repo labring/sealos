@@ -69,7 +69,7 @@ const (
 // DebtReconciler reconciles a Debt object
 type DebtReconciler struct {
 	client.Client
-	GlobalClient       database.AccountV2
+	AccountV2          database.AccountV2
 	DBClient           database.Auth
 	Scheme             *runtime.Scheme
 	DebtDetectionCycle time.Duration
@@ -102,7 +102,7 @@ var DebtConfig = accountv1.DefaultDebtConfig
 func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	debt := &accountv1.Debt{}
 	owner := req.NamespacedName.Name
-	account, err := r.GlobalClient.GetAccount(database.UserQueryOpts{Owner: owner})
+	account, err := r.AccountV2.GetAccount(database.UserQueryOpts{Owner: owner})
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to get account %s: %v", owner, err)
 	}

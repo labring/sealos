@@ -10,9 +10,10 @@ import (
 	"github.com/labring/sealos/controllers/pkg/crypto"
 
 	"github.com/google/uuid"
-	"github.com/labring/sealos/controllers/pkg/types"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"github.com/labring/sealos/controllers/pkg/types"
 )
 
 type AccountV2 struct {
@@ -140,8 +141,28 @@ func (g *AccountV2) AddDeductionBalance(ops database.UserQueryOpts, amount int64
 	})
 }
 
-// CreateAccount 创建账户
-func (g *AccountV2) CreateAccount(ops database.UserQueryOpts) (*types.Account, error) {
+func (g *AccountV2) CreateAccount(ops database.UserQueryOpts, account *types.Account) (*types.Account, error) {
+	if ops.UID == uuid.Nil {
+		user, err := g.GetUser(ops)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user: %v", err)
+		}
+		ops.UID = user.UID
+	}
+	account.UserUID = ops.UID
+	if account.EncryptBalance == "" || account.EncryptDeductionBalance == "" {
+		return nil, fmt.Errorf("empty encrypt balance")
+	}
+
+	if err := g.db.FirstOrCreate(account).Error; err != nil {
+		return nil, fmt.Errorf("failed to create account: %w", err)
+	}
+
+	return account, nil
+}
+
+// NewAccount create a new account
+func (g *AccountV2) NewAccount(ops database.UserQueryOpts) (*types.Account, error) {
 	if ops.UID == uuid.Nil {
 		user, err := g.GetUser(ops)
 		if err != nil {
