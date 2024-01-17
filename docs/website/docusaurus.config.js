@@ -228,7 +228,7 @@ const config = {
   },
   scripts: [
     {
-      src: "https://cdn.bootcdn.net/ajax/libs/wow/1.1.2/wow.min.js",
+      src: "/wow.min.js",
       async: false,
     },
     {
