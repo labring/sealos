@@ -11,6 +11,7 @@ import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
 import useDriver from '@/hooks/useDriver';
+import { BackgroundImageUrl } from '@/constants/config';
 
 const TimeComponent = dynamic(() => import('./time'), {
   ssr: false
@@ -86,7 +87,7 @@ export default function DesktopContent(props: any) {
     <Box
       id="desktop"
       className={styles.desktop}
-      backgroundImage={'url(/images/bg-blue.svg)'}
+      backgroundImage={`url(${BackgroundImageUrl})`}
       backgroundRepeat={'no-repeat'}
       backgroundSize={'cover'}
     >

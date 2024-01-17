@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { editModeMap } from '@/constants/editApp';
 import { defaultDBEditValue } from '@/constants/db';
 import debounce from 'lodash/debounce';
-import { applyYamlList } from '@/api/db';
+import { adapterMongoHaConfig, applyYamlList, getPodsByDBName } from '@/api/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import type { DBEditType } from '@/types/db';
 import { useToast } from '@/hooks/useToast';
@@ -99,9 +99,12 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   });
 
   const submitSuccess = async (formData: DBEditType) => {
+    const needMongoAdapter =
+      formData.dbType === 'mongodb' && formData.replicas !== oldDBEditData.current?.replicas;
     setIsLoading(true);
     try {
       !isEdit && (await applyYamlList([limitRangeYaml], 'create'));
+      needMongoAdapter && (await adapterMongoHaConfig({ name: formData.dbName }));
     } catch (err) {}
     try {
       const yamlList = generateYamlList(formData).map((item) => item.value);
@@ -117,6 +120,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         });
       }
       await applyYamlList(yamlList, isEdit ? 'replace' : 'create');
+
       toast({
         title: t(applySuccess),
         status: 'success'

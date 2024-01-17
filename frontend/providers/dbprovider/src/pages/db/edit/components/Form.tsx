@@ -340,6 +340,18 @@ const Form = ({
                     size="sm"
                   />
                 )}
+                {(getValues('dbType') === DBTypeEnum.mongodb ||
+                  getValues('dbType') === DBTypeEnum.mysql) &&
+                  getValues('replicas') > 1 && (
+                    <Tip
+                      ml={4}
+                      icon={<InfoOutlineIcon />}
+                      text={t('db instances tip', {
+                        db: getValues('dbType')
+                      })}
+                      size="sm"
+                    />
+                  )}
               </Flex>
 
               <FormControl isInvalid={!!errors.storage} w={'500px'}>
