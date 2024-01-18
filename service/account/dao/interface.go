@@ -6,6 +6,14 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/labring/sealos/controllers/pkg/crypto"
+	"gorm.io/driver/postgres"
+
+	"gorm.io/gorm"
+
+	"github.com/labring/sealos/controllers/pkg/types"
+
 	"github.com/labring/sealos/service/account/common"
 
 	"github.com/labring/sealos/controllers/pkg/resources"
@@ -24,6 +32,12 @@ type Interface interface {
 	GetConsumptionAmount(user string, startTime, endTime time.Time) (int64, error)
 	GetRechargeAmount(user string, startTime, endTime time.Time) (int64, error)
 	GetPropertiesUsedAmount(user string, startTime, endTime time.Time) (map[string]int64, error)
+	GetAccount(ops types.UserQueryOpts) (*types.Account, error)
+}
+
+type Account struct {
+	*MongoDB
+	*Cockroach
 }
 
 type MongoDB struct {
@@ -32,6 +46,61 @@ type MongoDB struct {
 	BillingConn    string
 	PropertiesConn string
 	Properties     *resources.PropertyTypeLS
+}
+
+type Cockroach struct {
+	DB          *gorm.DB
+	LocalRegion *types.Region
+}
+
+func (g *Cockroach) GetAccount(ops types.UserQueryOpts) (*types.Account, error) {
+	if ops.UID == uuid.Nil {
+		user, err := g.GetUser(ops)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user: %v", err)
+		}
+		ops.UID = user.UID
+	}
+	var account types.Account
+	if err := g.DB.Where(types.Account{UserUID: ops.UID}).First(&account).Error; err != nil {
+		return nil, fmt.Errorf("failed to get account: %w", err)
+	}
+	balance, err := crypto.DecryptInt64(account.EncryptBalance)
+	if err != nil {
+		return nil, fmt.Errorf("failed to descrypt balance: %v", err)
+	}
+	deductionBalance, err := crypto.DecryptInt64(account.EncryptDeductionBalance)
+	if err != nil {
+		return nil, fmt.Errorf("failed to descrypt deduction balance: %v", err)
+	}
+	account.Balance = balance
+	account.DeductionBalance = deductionBalance
+	return &account, nil
+}
+
+func (g *Cockroach) GetUser(ops types.UserQueryOpts) (*types.RegionUser, error) {
+	if err := checkOps(ops); err != nil {
+		return nil, err
+	}
+	query := &types.RegionUser{
+		RegionUID: g.LocalRegion.UID,
+		ID:        ops.Owner,
+	}
+	if ops.UID != uuid.Nil {
+		query.UID = ops.UID
+	}
+	var user types.RegionUser
+	if err := g.DB.Where(query).First(&user).Error; err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+	return &user, nil
+}
+
+func checkOps(ops types.UserQueryOpts) error {
+	if ops.Owner == "" && ops.UID == uuid.Nil {
+		return fmt.Errorf("empty query opts")
+	}
+	return nil
 }
 
 func (m *MongoDB) GetProperties() ([]common.PropertyQuery, error) {
@@ -172,17 +241,30 @@ func (m *MongoDB) getSumOfUsedAmount(propertyType uint8, user string, startTime,
 	return result.TotalAmount, nil
 }
 
-func NewMongoInterface(url string) (Interface, error) {
-	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(url))
+func NewAccountInterface(mongoURI, cockRoachURI, localRegionID string) (Interface, error) {
+	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoURI))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to connect mongodb: %v", err)
 	}
-	err = client.Ping(context.Background(), nil)
-	return &MongoDB{
+	if err = client.Ping(context.Background(), nil); err != nil {
+		return nil, fmt.Errorf("failed to ping mongodb: %v", err)
+	}
+	mongodb := &MongoDB{
 		Client:         client,
 		AccountDBName:  "sealos-resources",
 		BillingConn:    "billing",
 		PropertiesConn: "properties",
+	}
+	db, err := gorm.Open(postgres.Open(cockRoachURI), &gorm.Config{})
+	if err != nil {
+		return nil, err
+	}
+	localRegion := &types.Region{
+		UID: uuid.MustParse(localRegionID),
+	}
+	return &Account{
+		MongoDB:   mongodb,
+		Cockroach: &Cockroach{DB: db, LocalRegion: localRegion},
 	}, err
 }
 

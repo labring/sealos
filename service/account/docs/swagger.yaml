@@ -79,7 +79,7 @@ definitions:
           type: string
         type: array
     type: object
-  helper.UserCostsAmountReq:
+  helper.UserBaseReq:
     properties:
       endTime:
         example: "2021-12-01T00:00:00Z"
@@ -105,6 +105,39 @@ info:
   title: sealos account service
   version: v1alpha1
 paths:
+  /account/v1alpha1/account:
+    post:
+      consumes:
+      - application/json
+      description: Get user account
+      parameters:
+      - description: auth request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.Auth'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved user account
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get user account
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user account
+      tags:
+      - Account
   /account/v1alpha1/costs:
     post:
       consumes:
@@ -116,7 +149,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/helper.UserCostsAmountReq'
+          $ref: '#/definitions/helper.UserBaseReq'
       produces:
       - application/json
       responses:
@@ -154,7 +187,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/helper.UserCostsAmountReq'
+          $ref: '#/definitions/helper.UserBaseReq'
       produces:
       - application/json
       responses:
@@ -192,7 +225,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/helper.UserCostsAmountReq'
+          $ref: '#/definitions/helper.UserBaseReq'
       produces:
       - application/json
       responses:
@@ -230,7 +263,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/helper.UserCostsAmountReq'
+          $ref: '#/definitions/helper.UserBaseReq'
       produces:
       - application/json
       responses:

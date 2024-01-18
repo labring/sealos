@@ -70,7 +70,7 @@ func ParseNamespaceBillingHistoryReq(c *gin.Context) (*NamespaceBillingHistoryRe
 	return nsList, nil
 }
 
-type UserCostsAmountReq struct {
+type UserBaseReq struct {
 	TimeRange `json:",inline" bson:",inline"`
 
 	// @Summary Authentication information
@@ -79,8 +79,8 @@ type UserCostsAmountReq struct {
 	Auth `json:",inline" bson:",inline"`
 }
 
-func ParseUserCostsAmountReq(c *gin.Context) (*UserCostsAmountReq, error) {
-	userCosts := &UserCostsAmountReq{}
+func ParseUserBaseReq(c *gin.Context) (*UserBaseReq, error) {
+	userCosts := &UserBaseReq{}
 	if err := c.ShouldBindJSON(userCosts); err != nil {
 		return nil, fmt.Errorf("bind json error: %v", err)
 	}

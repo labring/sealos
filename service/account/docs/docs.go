@@ -18,6 +18,55 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/account/v1alpha1/account": {
+            "post": {
+                "description": "Get user account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Get user account",
+                "parameters": [
+                    {
+                        "description": "auth request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.Auth"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully retrieved user account",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get user account",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/account/v1alpha1/costs": {
             "post": {
                 "description": "Get user costs within a specified time range",
@@ -38,7 +87,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/helper.UserCostsAmountReq"
+                            "$ref": "#/definitions/helper.UserBaseReq"
                         }
                     }
                 ],
@@ -94,7 +143,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/helper.UserCostsAmountReq"
+                            "$ref": "#/definitions/helper.UserBaseReq"
                         }
                     }
                 ],
@@ -150,7 +199,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/helper.UserCostsAmountReq"
+                            "$ref": "#/definitions/helper.UserBaseReq"
                         }
                     }
                 ],
@@ -206,7 +255,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/helper.UserCostsAmountReq"
+                            "$ref": "#/definitions/helper.UserBaseReq"
                         }
                     }
                 ],
@@ -454,7 +503,7 @@ const docTemplate = `{
                 }
             }
         },
-        "helper.UserCostsAmountReq": {
+        "helper.UserBaseReq": {
             "type": "object",
             "required": [
                 "kubeConfig",

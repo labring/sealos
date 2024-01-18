@@ -203,9 +203,15 @@ func (g *Cockroach) GetUserAccountRechargeDiscount(ops types.UserQueryOpts) (*ty
 		userID = user.UID
 	}
 	var userActivities []types.UserActivity
+	if !g.DB.Migrator().HasTable("UserActivities") {
+		return &g.defaultRechargeDiscount, nil
+	}
 	if err := g.DB.Table("UserActivities").Where(types.UserActivity{
 		UserID: userID,
 	}).Find(userActivities).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return &g.defaultRechargeDiscount, nil
+		}
 		return nil, fmt.Errorf("failed to get user activities: %w", err)
 	}
 	if len(userActivities) == 0 {
