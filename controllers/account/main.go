@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/types"
+
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -171,11 +173,15 @@ func main() {
 	} else {
 		setupLog.Info("parse recharge config success", "activities", activities, "discountSteps", discountSteps, "discountRatios", discountRatios)
 		accountReconciler.Activities = activities
-		accountReconciler.RechargeStep = discountSteps
-		accountReconciler.RechargeRatio = discountRatios
+		accountReconciler.DefaultDiscount = types.RechargeDiscount{
+			DiscountRates: discountRatios,
+			DiscountSteps: discountSteps,
+		}
 		billingInfoQueryReconciler.Activities = activities
-		billingInfoQueryReconciler.RechargeStep = discountSteps
-		billingInfoQueryReconciler.RechargeRatio = discountRatios
+		billingInfoQueryReconciler.DefaultDiscount = types.RechargeDiscount{
+			DiscountRates: discountRatios,
+			DiscountSteps: discountSteps,
+		}
 	}
 	setupManagerError := func(err error, controller string) {
 		setupLog.Error(err, "unable to create controller", "controller", controller)

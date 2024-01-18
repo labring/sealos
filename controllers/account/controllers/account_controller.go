@@ -74,8 +74,7 @@ type AccountReconciler struct {
 	DBClient               database.Account
 	MongoDBURI             string
 	Activities             pkgtypes.Activities
-	RechargeStep           []int64
-	RechargeRatio          []float64
+	DefaultDiscount        pkgtypes.RechargeDiscount
 }
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
@@ -384,6 +383,9 @@ func (r *AccountReconciler) getAmountWithRates(amount int64, account *pkgtypes.A
 	discount, err := r.AccountV2.GetUserAccountRechargeDiscount(pkgtypes.UserQueryOpts{UID: account.UserUID})
 	if err != nil {
 		return 0, fmt.Errorf("get user %s account recharge discount failed: %w", account.UserUID, err)
+	}
+	if discount == nil || discount.DiscountSteps == nil || discount.DiscountRates == nil {
+		return getAmountWithDiscount(amount, r.DefaultDiscount), nil
 	}
 	return getAmountWithDiscount(amount, *discount), nil
 }

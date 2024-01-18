@@ -129,6 +129,7 @@ func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 			return ctrl.Result{}, fmt.Errorf("recharge balance failed: %w", err)
 		}
+		r.Logger.V(1).Info("success recharge balance", "owner", owner, "amount", consumAmount)
 	}
 	return ctrl.Result{Requeue: true, RequeueAfter: time.Until(currentHourTime.Add(1*time.Hour + 10*time.Minute))}, nil
 }

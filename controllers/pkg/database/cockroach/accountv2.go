@@ -126,8 +126,10 @@ func (g *Cockroach) updateBalance(tx *gorm.DB, ops types.UserQueryOpts, amount i
 	}
 	if isDeduction {
 		account.EncryptDeductionBalance = *newEncryptBalance
+		account.DeductionBalance = currentBalance
 	} else {
 		account.EncryptBalance = *newEncryptBalance
+		account.Balance = currentBalance
 	}
 
 	if err := tx.Save(&account).Error; err != nil {

@@ -39,9 +39,9 @@ type Phase struct {
 }
 
 type RechargeDiscount struct {
-	DiscountRates   []float64
-	DiscountSteps   []int64
-	SpecialDiscount map[int64]int64 `gorm:"type:jsonb"`
+	DiscountRates   []float64       `json:"discountRates"`
+	DiscountSteps   []int64         `json:"discountSteps"`
+	SpecialDiscount map[int64]int64 `json:"specialDiscount" gorm:"type:jsonb"`
 }
 
 type RechargeDiscountInfo struct {
