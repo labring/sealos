@@ -292,12 +292,10 @@ spec:
         - --metrics-bind-address=127.0.0.1:8080
         - --leader-elect
         - --ingress-mutating-annotations={{ .ingressMutatingAnnotations }}
-        - --domains={{ .cloudDomain }}
+        - --domains={{ .domains }}
         command:
         - /manager
         env:
-        - name: DOMAIN
-          value: '{{ .cloudDomain }}'
         - name: ICP_ENABLED
           value: '{{ .icpEnabled }}'
         - name: ICP_ENDPOINT

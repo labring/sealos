@@ -70,8 +70,8 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	if len(domains) == 0 {
-		os.Getenv("DOMAIN")
-		domains = strings.Split(os.Getenv("DOMAIN"), ",")
+		setupLog.Error(nil, "domains is empty")
+		os.Exit(1)
 	}
 
 	setupLog.Info("ingress annotations:", "annotation", ingressAnnotationString)
