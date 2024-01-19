@@ -59,7 +59,7 @@ func (g *Cockroach) GetAccount(ops types.UserQueryOpts) (*types.Account, error) 
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user: %v", err)
 		}
-		ops.UID = user.UID
+		ops.UID = user.RealUserUID
 	}
 	var account types.Account
 	if err := g.DB.Where(types.Account{UserUID: ops.UID}).First(&account).Error; err != nil {
@@ -87,7 +87,7 @@ func (g *Cockroach) GetUser(ops types.UserQueryOpts) (*types.RegionUser, error) 
 		ID:        ops.Owner,
 	}
 	if ops.UID != uuid.Nil {
-		query.UID = ops.UID
+		query.RealUserUID = ops.UID
 	}
 	var user types.RegionUser
 	if err := g.DB.Where(query).First(&user).Error; err != nil {

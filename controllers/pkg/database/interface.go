@@ -84,14 +84,16 @@ type Traffic interface {
 
 type AccountV2 interface {
 	Close() error
-	GetUser(user types.UserQueryOpts) (*types.RegionUser, error)
-	GetAccount(user types.UserQueryOpts) (*types.Account, error)
-	AddBalance(user types.UserQueryOpts, balance int64) error
-	NewAccount(user types.UserQueryOpts) (*types.Account, error)
-	CreateAccount(ops types.UserQueryOpts, account *types.Account) (*types.Account, error)
-	TransferAccount(from, to types.UserQueryOpts, amount int64) error
-	GetUserAccountRechargeDiscount(user types.UserQueryOpts) (*types.RechargeDiscount, error)
-	AddDeductionBalance(user types.UserQueryOpts, balance int64) error
+	GetUser(user *types.UserQueryOpts) (*types.RegionUser, error)
+	GetAccount(user *types.UserQueryOpts) (*types.Account, error)
+	AddBalance(user *types.UserQueryOpts, balance int64) error
+	NewAccount(user *types.UserQueryOpts) (*types.Account, error)
+	CreateAccount(ops *types.UserQueryOpts, account *types.Account) (*types.Account, error)
+	CreateErrorAccountCreate(account *types.Account, owner, errorMsg string) error
+	TransferAccount(from, to *types.UserQueryOpts, amount int64) error
+	TransferAccountV1(owner string, account *types.Account) (*types.Account, error)
+	GetUserAccountRechargeDiscount(user *types.UserQueryOpts) (*types.RechargeDiscount, error)
+	AddDeductionBalance(user *types.UserQueryOpts, balance int64) error
 }
 
 type Creator interface {

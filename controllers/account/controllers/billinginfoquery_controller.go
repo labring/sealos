@@ -150,7 +150,7 @@ func (r *BillingInfoQueryReconciler) AppTypeQuery(_ context.Context, _ ctrl.Requ
 
 func (r *BillingInfoQueryReconciler) RechargeQuery(_ context.Context, _ ctrl.Request, billingInfoQuery *accountv1.BillingInfoQuery) (result string, err error) {
 	//TODO get owner
-	userDiscount, err := r.AccountV2.GetUserAccountRechargeDiscount(types.UserQueryOpts{Owner: getUsername(billingInfoQuery.Namespace)})
+	userDiscount, err := r.AccountV2.GetUserAccountRechargeDiscount(&types.UserQueryOpts{Owner: getUsername(billingInfoQuery.Namespace)})
 	if err != nil {
 		return "", fmt.Errorf("parse user activities failed: %w", err)
 	}

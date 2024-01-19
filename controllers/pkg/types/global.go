@@ -51,7 +51,8 @@ type Region struct {
 }
 
 type RegionUser struct {
-	UID         uuid.UUID `gorm:"type:uid;default:gen_random_uuid();primary_key"`
+	UID uuid.UUID `gorm:"type:uid;default:gen_random_uuid();primary_key"`
+	// id = region owner id
 	ID          string    `gorm:"type:text;not null;unique"`
 	RegionUID   uuid.UUID `gorm:"column:regionUid;type:uuid;not null"`
 	RealUserUID uuid.UUID `gorm:"column:realUserUid;type:uuid;not null"`
@@ -94,3 +95,25 @@ type Workspace struct {
 // Role and JoinStatus are custom types that need to be defined based on your specific implementation.
 type Role string
 type JoinStatus string
+
+type TransferAccountV1 struct {
+	//RealUser   RealUser
+	RegionUID       uuid.UUID `gorm:"column:regionUid;type:uuid;not null"`
+	RegionUserOwner string    `gorm:"column:regionUserOwner;type:text;not null"`
+	Account
+}
+
+func (TransferAccountV1) TableName() string {
+	return "TransferAccountV1"
+}
+
+type ErrorAccountCreate struct {
+	Account
+	RegionUID       uuid.UUID `gorm:"column:regionUid;type:uuid;not null"`
+	RegionUserOwner string    `gorm:"column:regionUserOwner;type:text;not null"`
+	Message         string    `gorm:"type:text;not null"`
+}
+
+func (ErrorAccountCreate) TableName() string {
+	return "ErrorAccountCreate"
+}

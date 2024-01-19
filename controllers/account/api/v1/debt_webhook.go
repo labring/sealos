@@ -153,7 +153,7 @@ func (d *DebtValidate) checkOption(ctx context.Context, logger logr.Logger, c cl
 		logger.Error(err, "get account error", "user", user)
 		return admission.ValidationResponse(true, err.Error())
 	}
-	account, err := d.AccountV2.GetAccount(pkgtype.UserQueryOpts{Owner: user})
+	account, err := d.AccountV2.GetAccount(&pkgtype.UserQueryOpts{Owner: user})
 	if err != nil {
 		logger.Error(err, "get account error", "user", user)
 		return admission.ValidationResponse(false, err.Error())

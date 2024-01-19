@@ -17,6 +17,7 @@ package types
 import "github.com/google/uuid"
 
 type UserQueryOpts struct {
-	UID   uuid.UUID
-	Owner string
+	UID         uuid.UUID
+	Owner       string
+	IgnoreEmpty bool
 }
