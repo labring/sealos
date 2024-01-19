@@ -1,4 +1,4 @@
-import fs from 'node:fs';
+import fs from 'fs';
 import { sendErrorResponse } from '@/services/backend/response';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { isObject, isString } from 'lodash';
