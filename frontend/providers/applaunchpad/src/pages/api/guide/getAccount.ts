@@ -5,6 +5,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
+    if (process.env.GUIDE_ENABLED !== 'true') return jsonRes(res, { data: null });
     const kubeconfig = await authSession(req.headers);
     const domain = process.env.SEALOS_DOMAIN;
     console.log(`https://${domain}/api/v1alpha/account/getAccount`);

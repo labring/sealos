@@ -1,16 +1,38 @@
-import { Box, Flex, Input, InputGroup, InputLeftElement, Text } from '@chakra-ui/react';
-import { useTranslation } from 'next-i18next';
-import SideBar from './sidebar';
-import { useRouter } from 'next/router';
-import MyIcon from '../Icon';
-import { useGlobalStore } from '@/store/global';
-import { useMemo } from 'react';
+import { useCachedStore } from '@/store/cached';
 import { useSearchStore } from '@/store/search';
+import { getLangStore, setLangStore } from '@/utils/cookieUtils';
+import { Box, Flex, FlexProps, Input, InputGroup, InputLeftElement, Text } from '@chakra-ui/react';
+import { useTranslation } from 'next-i18next';
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
+import MyIcon from '../Icon';
+import SideBar from './sidebar';
 
 export default function AppMenu({ isMobile }: { isMobile: boolean }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const { searchValue, setSearchValue } = useSearchStore();
+  const { insideCloud, setInsideCloud } = useCachedStore();
+
+  const changeI18n = async (newLang: string) => {
+    const lastLang = getLangStore();
+    if (lastLang !== newLang && i18n?.changeLanguage) {
+      i18n.changeLanguage(newLang);
+      setLangStore(newLang);
+    }
+  };
+
+  const baseStyle: FlexProps = {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+    bg: 'rgba(150, 153, 180, 0.15)',
+    userSelect: 'none'
+  };
+
+  useEffect(() => {
+    setInsideCloud(!(window.top === window));
+  }, [setInsideCloud]);
 
   return (
     <Box py="28px" px="16px" position={'relative'}>
@@ -50,27 +72,49 @@ export default function AppMenu({ isMobile }: { isMobile: boolean }) {
           </InputGroup>
         </>
       )}
-
       <SideBar isMobile={isMobile} />
-
-      <Flex
-        justifyContent={'center'}
-        alignItems={'center'}
-        p="4px 12px"
-        position={'absolute'}
-        backgroundColor={'rgba(150, 153, 180, 0.15)'}
-        borderRadius={'40px'}
-        bottom={'28px'}
-        userSelect={'none'}
-        onClick={() => router.push('/develop')}
-      >
-        <MyIcon name="tool" fill={'transparent'} />
-        {!isMobile && (
+      {isMobile ? (
+        <Flex
+          {...baseStyle}
+          w="28px"
+          h="28px"
+          borderRadius={'50%'}
+          bottom={'28px'}
+          right={isMobile ? '24px' : '16px'}
+          onClick={() => router.push('/develop')}>
+          <MyIcon name="tool" fill={'transparent'} />
+        </Flex>
+      ) : (
+        <Flex
+          {...baseStyle}
+          p="4px 12px"
+          borderRadius={'40px'}
+          bottom={'28px'}
+          onClick={() => router.push('/develop')}>
+          <MyIcon name="tool" fill={'transparent'} />
           <Text ml="8px" color={'#485058'} fontWeight={500} cursor={'pointer'} fontSize={'12px'}>
             {t('develop.Debugging Template')}
           </Text>
-        )}
-      </Flex>
+        </Flex>
+      )}
+      {!insideCloud && (
+        <Flex
+          {...baseStyle}
+          color={'#485058'}
+          w="28px"
+          h="28px"
+          borderRadius={'50%'}
+          bottom={isMobile ? '66px' : '28px'}
+          right={isMobile ? '24px' : '16px'}
+          fontSize={'12px'}
+          fontWeight={500}
+          cursor={'pointer'}
+          onClick={() => {
+            changeI18n(i18n?.language === 'en' ? 'zh' : 'en');
+          }}>
+          {i18n?.language === 'en' ? 'En' : '中'}
+        </Flex>
+      )}
     </Box>
   );
 }

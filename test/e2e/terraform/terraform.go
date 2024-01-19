@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package terraform
 
 import (
 	"context"
@@ -38,8 +38,8 @@ import (
 var HomeDir string
 
 type Terraform struct {
-	accessKey string
-	secretKey string
+	AccessKey string
+	SecretKey string
 }
 
 func (tf *Terraform) Apply(architecture string) error {
@@ -180,8 +180,8 @@ func (tf *Terraform) Detail() (*InfraDetail, error) {
 }
 
 func (tf *Terraform) setEnv() {
-	_ = os.Setenv("ALICLOUD_ACCESS_KEY", tf.accessKey)
-	_ = os.Setenv("ALICLOUD_SECRET_KEY", tf.secretKey)
+	_ = os.Setenv("ALICLOUD_ACCESS_KEY", tf.AccessKey)
+	_ = os.Setenv("ALICLOUD_SECRET_KEY", tf.SecretKey)
 }
 
 func (tf *Terraform) unsetEnv() {

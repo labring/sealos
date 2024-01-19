@@ -18,17 +18,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           items: BucketCR['output'][];
         };
       }
-    ).body.items.flatMap<TBucket>((v) =>
-      !!v.status
-        ? [
-            {
-              name: v.status.name,
-              crName: v.metadata.name,
-              policy: v.spec.policy
-            }
-          ]
-        : []
-    );
+    ).body.items.flatMap<TBucket>((v) => [
+      {
+        name: `${client.namespace.replace(/^ns-/, '')}-${v.metadata.name}`,
+        crName: v.metadata.name,
+        policy: v.spec.policy,
+        isComplete: !!v.status
+      }
+    ]);
     return jsonRes(res, { data: { list } });
   } catch (err: any) {
     console.log(err);

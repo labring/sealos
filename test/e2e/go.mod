@@ -28,7 +28,7 @@ replace (
 require (
 	github.com/BurntSushi/toml v1.3.2
 	github.com/Masterminds/sprig/v3 v3.2.3
-	github.com/go-bindata/go-bindata v1.0.0
+	github.com/go-bindata/go-bindata v3.1.2+incompatible
 	github.com/google/go-containerregistry v0.15.2
 	github.com/labring/image-cri-shim v0.0.0
 	github.com/labring/sealos v0.0.0
@@ -39,10 +39,10 @@ require (
 	k8s.io/api v0.27.4
 	k8s.io/apimachinery v0.27.4
 	k8s.io/client-go v0.27.4
-	k8s.io/cri-api v0.27.1
-	k8s.io/kube-proxy v0.25.6
-	k8s.io/kubelet v0.25.6
-	k8s.io/kubernetes v1.25.6
+	k8s.io/cri-api v0.27.4
+	k8s.io/kube-proxy v0.27.4
+	k8s.io/kubelet v0.27.4
+	k8s.io/kubernetes v1.27.4
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -127,12 +127,12 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/cluster-bootstrap v0.25.6 // indirect
+	k8s.io/cluster-bootstrap v0.27.4 // indirect
 	k8s.io/component-base v0.28.1 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
-	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect
+	sigs.k8s.io/kustomize/kyaml v0.14.1 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )

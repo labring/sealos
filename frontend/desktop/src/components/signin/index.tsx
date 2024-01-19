@@ -5,6 +5,7 @@ import Language from '@/components/signin/auth/useLanguage';
 import usePassword from '@/components/signin/auth/usePassword';
 import useProtocol from '@/components/signin/auth/useProtocol';
 import useSms from '@/components/signin/auth/useSms';
+import { BackgroundImageUrl } from '@/constants/config';
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import { ApiResp, LoginType, SystemEnv } from '@/types';
@@ -122,7 +123,7 @@ export default function SigninComponent() {
       overflow={'hidden'}
       w="100vw"
       h="100vh"
-      backgroundImage={'url(/images/background.svg)'}
+      backgroundImage={`url(${BackgroundImageUrl})`}
       backgroundRepeat={'no-repeat'}
       backgroundSize={'cover'}
     >

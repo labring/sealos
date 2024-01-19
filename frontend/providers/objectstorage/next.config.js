@@ -11,7 +11,7 @@ module.exports = (phase, { defaultConfig }) => {
   if (phase === PHASE_DEVELOPMENT_SERVER) {
     /** @type {import('next').NextConfig} */
     const nextConfig = {
-      reactStrictMode: true,
+      reactStrictMode: false,
       i18n,
       experimental: {
         outputFileTracingRoot: path.join(__dirname, '../../')

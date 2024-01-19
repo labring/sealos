@@ -1,9 +1,10 @@
-import { updateRepo } from '@/api/platform';
+import Banner from '@/components/Banner';
 import { GET } from '@/services/request';
 import { useCachedStore } from '@/store/cached';
 import { useSearchStore } from '@/store/search';
 import { TemplateType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
+import { formatStarNumber } from '@/utils/tools';
 import {
   Avatar,
   AvatarGroup,
@@ -17,11 +18,10 @@ import {
   Tooltip
 } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
+import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { MouseEvent, useEffect, useMemo } from 'react';
-import { customAlphabet } from 'nanoid';
-import { formatStarNumber } from '@/utils/tools';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
 export default function AppList() {
@@ -38,15 +38,6 @@ export default function AppList() {
       staleTime: 5 * 60 * 1000
     }
   );
-
-  const { isLoading } = useQuery(['updateRepo'], () => updateRepo(), {
-    refetchInterval: 5 * 60 * 1000,
-    staleTime: 5 * 60 * 1000,
-    onSettled(data) {
-      console.log(data);
-      refetch();
-    }
-  });
 
   const filterData = useMemo(() => {
     const searchResults = FastDeployTemplates?.filter((item: TemplateType) => {
@@ -92,8 +83,8 @@ export default function AppList() {
       borderRadius={'12px'}
       background={'linear-gradient(180deg, #FFF 0%, rgba(255, 255, 255, 0.70) 100%)'}
       py={'36px'}
-      px="42px"
-    >
+      px="42px">
+      {/* <Banner></Banner> */}
       {!!FastDeployTemplates?.length ? (
         <Grid
           justifyContent={'center'}

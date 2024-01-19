@@ -38,7 +38,7 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 
 ## 🚀 Deploy your app on Sealos
 
-[Try online，sealos public cloud](https://cloud.sealos.io)   [sealos private cloud, local hosting](https://sealos.io/zh-Hans/self-hosting)
+[Quick Start](https://cloud.sealos.io) 
 
 * [Easily Deploy Nginx in 30 Seconds on Sealos](https://sealos.io/docs/quick-start/app-deployments/use-app-launchpad)
 * [Start a mysql/pgsql/mongo highly available database in 30 seconds on Sealos](https://sealos.io/docs/quick-start/app-deployments/install-db-with-database)
@@ -46,7 +46,7 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 * [Running the Uptime Kuma dial test system on Sealos](https://docs.sealos.io/docs/examples/dial-testing-system/install-uptime-kuma)
 * [Running a low-code platform on Sealos](https://docs.sealos.io/docs/category/low-code-platform)
 
-![](/docs/4.0/img/app-launchpad.png)
+![image](https://github.com/labring/sealos/assets/8912557/0499c8b5-32e1-4da3-887d-cbf57ddf46e6)
 
 🔍 Some Screen Shots of Sealos:
 
@@ -59,6 +59,11 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 | ![](/docs/4.0/img/database.webp) | ![](/docs/4.0/img/laf.webp) |
 
 </div>
+
+## Install
+
+* Install Sealos cloud: [Self hosting](https://sealos.io/self-hosting)
+* Install Kubernetes and kubernetes lifecycle managemant: [One command install kubernetes HA cluster](https://sealos.io/docs/self-hosting/lifecycle-management/quick-start/deploy-kubernetes#install-single-node-kubernetes)
 
 ## 💡 Core features
 

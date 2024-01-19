@@ -26,8 +26,10 @@ const AppDetail = ({ appName }: { appName: string }) => {
     appDetail = MOCK_APP_DETAIL,
     setAppDetail,
     appDetailPods,
-    intervalLoadPods
+    intervalLoadPods,
+    loadDetailMonitorData
   } = useAppStore();
+
   const [podsLoaded, setPodsLoaded] = useState(false);
   const [showSlider, setShowSlider] = useState(false);
 
@@ -40,7 +42,6 @@ const AppDetail = ({ appName }: { appName: string }) => {
     }
   });
 
-  // interval get pods metrics
   useQuery(
     ['app-detail-pod'],
     () => {
@@ -53,6 +54,18 @@ const AppDetail = ({ appName }: { appName: string }) => {
       onSettled() {
         setPodsLoaded(true);
       }
+    }
+  );
+
+  useQuery(
+    ['loadDetailMonitorData', appName, appDetail?.isPause],
+    () => {
+      if (appDetail?.isPause) return null;
+      return loadDetailMonitorData(appName);
+    },
+    {
+      refetchOnMount: true,
+      refetchInterval: 2 * 60 * 1000
     }
   );
 

@@ -193,5 +193,8 @@
   "Edit": "编辑",
   "Edit App Name": "编辑应用名称",
   "Installation Time": "安装时间",
-  "users installed the app": "已有 {{count}} 名用户安装应用"
+  "users installed the app": "已有 {{count}} 名用户安装应用",
+  "Please Enter": "请输入",
+  "Delete successful": "删除成功",
+  "Delete Failed": "删除失败"
 }

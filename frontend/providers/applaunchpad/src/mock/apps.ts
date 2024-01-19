@@ -11,8 +11,16 @@ export const MOCK_APPS: AppListItemType[] = [
     createTime: 'string',
     cpu: 100,
     memory: 100,
-    usedCpu: new Array(30).fill(0),
-    useMemory: new Array(30).fill(0),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
     activeReplicas: 1,
     isPause: false,
     maxReplicas: 1,
@@ -26,9 +34,17 @@ export const MOCK_APPS: AppListItemType[] = [
     createTime: 'string',
     cpu: 100,
     memory: 100,
-    usedCpu: new Array(30).fill(0),
     isPause: false,
-    useMemory: new Array(30).fill(0),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
     activeReplicas: 1,
     maxReplicas: 1,
     minReplicas: 1,
@@ -42,8 +58,16 @@ export const MOCK_APPS: AppListItemType[] = [
     isPause: false,
     cpu: 100,
     memory: 100,
-    usedCpu: new Array(30).fill(0),
-    useMemory: new Array(30).fill(0),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
     activeReplicas: 1,
     maxReplicas: 1,
     minReplicas: 1,
@@ -158,8 +182,16 @@ export const MOCK_PODS: PodDetailType[] = [
     restarts: 10,
     age: '22',
     status: podStatusMap.running,
-    usedCpu: new Array(30).fill(0),
-    usedMemory: new Array(30).fill(0),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
     cpu: 0,
     memory: 0
   },
@@ -170,8 +202,16 @@ export const MOCK_PODS: PodDetailType[] = [
     restarts: 10,
     age: '22',
     status: podStatusMap.running,
-    usedCpu: new Array(30).fill(0),
-    usedMemory: new Array(30).fill(0),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
     cpu: 0,
     memory: 0
   },
@@ -182,8 +222,16 @@ export const MOCK_PODS: PodDetailType[] = [
     restarts: 10,
     age: '22',
     status: podStatusMap.running,
-    usedCpu: new Array(30).fill(0),
-    usedMemory: new Array(30).fill(0),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
     cpu: 0,
     memory: 0
   },
@@ -195,8 +243,16 @@ export const MOCK_PODS: PodDetailType[] = [
     restarts: 10,
     age: '22',
     status: podStatusMap.running,
-    usedCpu: new Array(30).fill(0),
-    usedMemory: new Array(30).fill(0),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
     cpu: 0,
     memory: 0
   },
@@ -209,8 +265,16 @@ export const MOCK_PODS: PodDetailType[] = [
     restarts: 10,
     age: '22',
     status: podStatusMap.running,
-    usedCpu: new Array(30).fill(0),
-    usedMemory: new Array(30).fill(0),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
     cpu: 0,
     memory: 0
   },
@@ -222,8 +286,16 @@ export const MOCK_PODS: PodDetailType[] = [
     restarts: 10,
     age: '22',
     status: podStatusMap.running,
-    usedCpu: new Array(30).fill(0),
-    usedMemory: new Array(30).fill(0),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
     cpu: 0,
     memory: 0
   },
@@ -235,8 +307,16 @@ export const MOCK_PODS: PodDetailType[] = [
     restarts: 10,
     age: '22',
     status: podStatusMap.running,
-    usedCpu: new Array(30).fill(0),
-    usedMemory: new Array(30).fill(0),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
     cpu: 0,
     memory: 0
   },
@@ -248,8 +328,16 @@ export const MOCK_PODS: PodDetailType[] = [
     restarts: 10,
     age: '22',
     status: podStatusMap.running,
-    usedCpu: new Array(30).fill(0),
-    usedMemory: new Array(30).fill(0),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
     cpu: 0,
     memory: 0
   },
@@ -262,8 +350,16 @@ export const MOCK_PODS: PodDetailType[] = [
     restarts: 10,
     age: '22',
     status: podStatusMap.running,
-    usedCpu: new Array(30).fill(0),
-    usedMemory: new Array(30).fill(0),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
     cpu: 0,
     memory: 0
   },
@@ -276,8 +372,16 @@ export const MOCK_PODS: PodDetailType[] = [
     restarts: 10,
     age: '22',
     status: podStatusMap.running,
-    usedCpu: new Array(30).fill(0),
-    usedMemory: new Array(30).fill(0),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
     cpu: 0,
     memory: 0
   }
@@ -296,8 +400,16 @@ export const MOCK_APP_DETAIL: AppDetailType = {
   replicas: 5,
   cpu: 0,
   memory: 0,
-  usedCpu: new Array(30).fill(0),
-  usedMemory: new Array(30).fill(0),
+  usedCpu: {
+    name: '',
+    xData: new Array(30).fill(0),
+    yData: new Array(30).fill('0')
+  },
+  usedMemory: {
+    name: '',
+    xData: new Array(30).fill(0),
+    yData: new Array(30).fill('0')
+  },
   networks: [
     {
       networkName: '',

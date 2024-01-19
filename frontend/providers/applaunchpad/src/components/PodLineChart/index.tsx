@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import * as echarts from 'echarts';
 import { useGlobalStore } from '@/store/global';
+import { MonitorDataResult } from '@/types/monitor';
+import dayjs from 'dayjs';
 
 const map = {
   blue: {
@@ -92,14 +94,16 @@ const map = {
 
 const PodLineChart = ({
   type,
-  limit = 1000000,
   data
 }: {
   type: 'blue' | 'deepBlue' | 'green' | 'purple';
-  limit: number;
-  data: number[];
+  data?: MonitorDataResult;
 }) => {
   const { screenWidth } = useGlobalStore();
+  const xData =
+    data?.xData?.map((time) => (time ? dayjs(time * 1000).format('HH:mm') : '')) ||
+    new Array(30).fill(0);
+  const yData = data?.yData || new Array(30).fill('');
 
   const Dom = useRef<HTMLDivElement>(null);
   const myChart = useRef<echarts.ECharts>();
@@ -125,7 +129,7 @@ const PodLineChart = ({
       type: 'category',
       show: false,
       boundaryGap: false,
-      data: data.map((_, i) => i)
+      data: xData
     },
     yAxis: {
       type: 'value',
@@ -146,11 +150,14 @@ const PodLineChart = ({
       axisPointer: {
         type: 'line'
       },
-      formatter: (e: any[]) => `${e[0]?.value || 0}%`
+      formatter: (params: any[]) => {
+        const axisValue = params[0]?.axisValue;
+        return `${axisValue} ${params[0]?.value || 0}%`;
+      }
     },
     series: [
       {
-        data: new Array(data.length).fill(0),
+        data: yData,
         type: 'line',
         showSymbol: false,
         smooth: true,
@@ -158,7 +165,6 @@ const PodLineChart = ({
         animationEasingUpdate: 'linear',
         ...optionStyle,
         emphasis: {
-          // highlight
           disabled: true
         }
       }
@@ -175,14 +181,10 @@ const PodLineChart = ({
   // data changed, update
   useEffect(() => {
     if (!myChart.current || !myChart?.current?.getOption()) return;
-
-    const uniData = data.map((item) => ((item / limit) * 100).toFixed(2));
-
-    const x = option.current.xAxis.data;
-    option.current.xAxis.data = [...x.slice(1), x[x.length - 1] + 1];
-    option.current.series[0].data = uniData;
+    option.current.xAxis.data = xData;
+    option.current.series[0].data = yData;
     myChart.current.setOption(option.current);
-  }, [data, limit]);
+  }, [xData, yData]);
 
   // type changed, update
   useEffect(() => {
