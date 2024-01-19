@@ -96,18 +96,15 @@ const IngressHostIndex = "host"
 func (v *IngressValidator) SetupWithManager(mgr ctrl.Manager) error {
 	ilog.Info("starting webhook cache map")
 
-	iv := IngressValidator{
-		Client: mgr.GetClient(),
-		cache:  mgr.GetCache(),
+	v.Client = mgr.GetClient()
+	v.cache = mgr.GetCache()
+	v.IcpValidator = NewIcpValidator(
+		os.Getenv("ICP_ENABLED") == "true",
+		os.Getenv("ICP_ENDPOINT"),
+		os.Getenv("ICP_KEY"),
+	)
 
-		IcpValidator: NewIcpValidator(
-			os.Getenv("ICP_ENABLED") == "true",
-			os.Getenv("ICP_ENDPOINT"),
-			os.Getenv("ICP_KEY"),
-		),
-	}
-
-	err := iv.cache.IndexField(
+	err := v.cache.IndexField(
 		context.Background(),
 		&netv1.Ingress{},
 		IngressHostIndex,
@@ -126,7 +123,7 @@ func (v *IngressValidator) SetupWithManager(mgr ctrl.Manager) error {
 
 	return builder.WebhookManagedBy(mgr).
 		For(&netv1.Ingress{}).
-		WithValidator(&iv).
+		WithValidator(v).
 		Complete()
 }
 
@@ -204,20 +201,22 @@ func (v *IngressValidator) validate(ctx context.Context, i *netv1.Ingress) error
 }
 
 func (v *IngressValidator) checkCname(i *netv1.Ingress, rule *netv1.IngressRule) error {
+	ilog.Info("checking cname", "ingress namespace", i.Namespace, "ingress name", i.Name, "rule host", rule.Host)
+	ilog.Info("domains:", "domains", strings.Join(v.Domains, ","))
+	// get cname and check if it is cname to domain
+	cname, err := net.LookupCNAME(rule.Host)
+	if err != nil {
+		ilog.Error(err, "can not verify ingress host "+rule.Host+", lookup cname error")
+		return err
+	}
+	// remove last dot
+	cname = strings.TrimSuffix(cname, ".")
 	for _, domain := range v.Domains {
 		// check if ingress host is end with domain
 		if strings.HasSuffix(rule.Host, domain) {
 			ilog.Info("ingress host is end with "+domain+", skip validate", "ingress namespace", i.Namespace, "ingress name", i.Name)
 			return nil
 		}
-		// get cname and check if it is cname to domain
-		cname, err := net.LookupCNAME(rule.Host)
-		if err != nil {
-			ilog.Error(err, "can not verify ingress host "+rule.Host+", lookup cname error")
-			return err
-		}
-		// remove last dot
-		cname = strings.TrimSuffix(cname, ".")
 		// if cname is not end with domain, return error
 		if strings.HasSuffix(cname, domain) {
 			ilog.Info("ingress host "+rule.Host+" is cname to "+cname+", pass checkCname validate", "ingress namespace", i.Namespace, "ingress name", i.Name, "cname", cname)

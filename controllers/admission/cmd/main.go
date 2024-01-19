@@ -74,6 +74,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	setupLog.Info("domains:", "domains", strings.Join(domains, ","))
 	setupLog.Info("ingress annotations:", "annotation", ingressAnnotationString)
 	ingressAnnotations := make(map[string]string)
 	if ingressAnnotationString != "" {
