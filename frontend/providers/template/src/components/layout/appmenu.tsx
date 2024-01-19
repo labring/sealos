@@ -4,7 +4,7 @@ import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import { Box, Flex, FlexProps, Input, InputGroup, InputLeftElement, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import MyIcon from '../Icon';
 import SideBar from './sidebar';
 
@@ -12,7 +12,12 @@ export default function AppMenu({ isMobile }: { isMobile: boolean }) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const { searchValue, setSearchValue } = useSearchStore();
-  const { insideCloud, setInsideCloud } = useCachedStore();
+  const { insideCloud } = useCachedStore();
+  const [isClientRendered, setClientRendered] = useState(false);
+
+  useEffect(() => {
+    setClientRendered(true);
+  }, []);
 
   const changeI18n = async (newLang: string) => {
     const lastLang = getLangStore();
@@ -29,10 +34,6 @@ export default function AppMenu({ isMobile }: { isMobile: boolean }) {
     bg: 'rgba(150, 153, 180, 0.15)',
     userSelect: 'none'
   };
-
-  useEffect(() => {
-    setInsideCloud(!(window.top === window));
-  }, [setInsideCloud]);
 
   return (
     <Box py="28px" px="16px" position={'relative'}>
@@ -72,7 +73,9 @@ export default function AppMenu({ isMobile }: { isMobile: boolean }) {
           </InputGroup>
         </>
       )}
-      <SideBar isMobile={isMobile} />
+
+      {isClientRendered && <SideBar isMobile={isMobile} />}
+
       {isMobile ? (
         <Flex
           {...baseStyle}
@@ -81,7 +84,8 @@ export default function AppMenu({ isMobile }: { isMobile: boolean }) {
           borderRadius={'50%'}
           bottom={'28px'}
           right={isMobile ? '24px' : '16px'}
-          onClick={() => router.push('/develop')}>
+          onClick={() => router.push('/develop')}
+        >
           <MyIcon name="tool" fill={'transparent'} />
         </Flex>
       ) : (
@@ -90,14 +94,16 @@ export default function AppMenu({ isMobile }: { isMobile: boolean }) {
           p="4px 12px"
           borderRadius={'40px'}
           bottom={'28px'}
-          onClick={() => router.push('/develop')}>
+          onClick={() => router.push('/develop')}
+        >
           <MyIcon name="tool" fill={'transparent'} />
           <Text ml="8px" color={'#485058'} fontWeight={500} cursor={'pointer'} fontSize={'12px'}>
             {t('develop.Debugging Template')}
           </Text>
         </Flex>
       )}
-      {!insideCloud && (
+
+      {isClientRendered && !insideCloud && (
         <Flex
           {...baseStyle}
           color={'#485058'}
@@ -111,7 +117,8 @@ export default function AppMenu({ isMobile }: { isMobile: boolean }) {
           cursor={'pointer'}
           onClick={() => {
             changeI18n(i18n?.language === 'en' ? 'zh' : 'en');
-          }}>
+          }}
+        >
           {i18n?.language === 'en' ? 'En' : '中'}
         </Flex>
       )}

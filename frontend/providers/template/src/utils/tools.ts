@@ -255,3 +255,11 @@ export const formatStarNumber = (number: number) => {
     return (number / 1000).toFixed(1) + 'k';
   }
 };
+
+export function compareFirstLanguages(acceptLanguageHeader: string) {
+  const indexOfZh = acceptLanguageHeader.indexOf('zh');
+  const indexOfEn = acceptLanguageHeader.indexOf('en');
+  if (indexOfZh === -1) return 'en';
+  if (indexOfEn === -1 || indexOfZh < indexOfEn) return 'zh';
+  return 'en';
+}

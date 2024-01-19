@@ -9,29 +9,29 @@ export const SlideData = [
   {
     image:
       'https://images.unsplash.com/photo-1546768292-fb12f6c92568?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-    bg: '#824DFF',
-    title: '1111',
-    desc: 'Build the tools you can’t buy off the shelf',
+    bg: 'linear-gradient(274deg, #824DFF 13.19%, #A97CFF 93.1%)',
+    title: 'Laf',
+    desc: 'Laf 是开源的云开发平台，提供云函数、云数据库、云存储等开箱即用的应用资源。让开发者专注于业务开发，无需折腾服务器，快速释放创意。',
     borderRadius: '8px',
-    icon: 'https://jsd.onmicrosoft.cn/gh/appsmithorg/appsmith@release/static/logo.png'
+    icon: 'https://laf.run/homepage/logo_icon.svg'
   },
   {
     image:
       'https://images.unsplash.com/photo-1501446529957-6226bd447c46?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&auto=format&fit=crop&w=1489&q=80',
-    bg: '#3770FE',
-    title: '222',
-    desc: 'Make AI more knowledgeable about you',
+    bg: 'linear-gradient(274deg, #3770FE 6.31%, #6793FF 93.69%)',
+    title: 'Umami',
+    desc: 'Umami is an open source, privacy-focused alternative to Google Analytics.',
     borderRadius: '8px',
-    icon: 'https://jsd.onmicrosoft.cn/gh/appsmithorg/appsmith@release/static/logo.png'
+    icon: 'https://jsd.onmicrosoft.cn/gh/umami-software/umami@master/src/assets/logo.svg'
   },
   {
     image:
       'https://images.unsplash.com/photo-1483729558449-99ef09a8c325?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&auto=format&fit=crop&w=1350&q=80',
     bg: '#824DFF',
-    title: '333',
-    desc: 'Build the tools you can’t buy off the shelf',
+    title: 'Lobe Chat',
+    desc: 'LobeChat 是开源的高性能聊天机器人框架，支持语音合成、多模态、可扩展的（Function Call）插件系统。支持一键免费部署私人 ChatGPT/LLM 网页应用程序。',
     borderRadius: '8px',
-    icon: 'https://jsd.onmicrosoft.cn/gh/appsmithorg/appsmith@release/static/logo.png'
+    icon: 'https://jsd.onmicrosoft.cn/npm/@lobehub/assets-logo@1.0.0/assets/logo-3d.webp'
   },
   {
     image:
@@ -46,7 +46,6 @@ export const SlideData = [
 
 export default function Banner() {
   const swiperRef = useRef<SwiperRef>(null);
-  const swiper = useSwiper();
 
   const handlePrev = () => {
     if (swiperRef.current) {
@@ -109,7 +108,13 @@ export default function Banner() {
                       {item.title}
                     </Text>
                   </Flex>
-                  <Text mb="26px" w="215px" fontSize={'16px'} color={'#FFF'} fontWeight={600}>
+                  <Text
+                    noOfLines={2}
+                    mb="26px"
+                    w="215px"
+                    fontSize={'16px'}
+                    color={'#FFF'}
+                    fontWeight={600}>
                     {item.desc}
                   </Text>
                 </Flex>
@@ -142,7 +147,13 @@ export default function Banner() {
                       {SlideData[(index + 1) % SlideData.length].title}
                     </Text>
                   </Flex>
-                  <Text mb="26px" w="215px" fontSize={'16px'} color={'#FFF'} fontWeight={600}>
+                  <Text
+                    noOfLines={2}
+                    mb="26px"
+                    w="215px"
+                    fontSize={'16px'}
+                    color={'#FFF'}
+                    fontWeight={600}>
                     {SlideData[(index + 1) % SlideData.length].desc}
                   </Text>
                 </Flex>
