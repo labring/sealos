@@ -28,13 +28,17 @@ const columns: ColumnsType<KubeEvent> = [
       let renderedMessage: React.ReactNode;
       switch (event.type) {
         case 'Warning':
-          renderedMessage = <span className="text-color-error">{message}</span>;
+          renderedMessage = <span className="text-color-error ">{message}</span>;
           break;
         case 'Normal':
         default:
           renderedMessage = message;
       }
-      return <Tooltip title={message}>{renderedMessage}</Tooltip>;
+      return (
+        <Tooltip title={message} className="inline-block overflow-hidden w-full text-ellipsis">
+          {renderedMessage}
+        </Tooltip>
+      );
     }
   },
   {
@@ -43,7 +47,7 @@ const columns: ColumnsType<KubeEvent> = [
     dataIndex: 'involvedObject',
     render: (involvedObject: Required<ObjectReference> | undefined) => {
       if (!involvedObject) return '<unknown>';
-      return <span className="text-blue-300">{involvedObject.name}</span>;
+      return <span className="text-[#0884DD]">{involvedObject.name}</span>;
     }
   },
   {

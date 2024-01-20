@@ -16,6 +16,10 @@ export const theme: ThemeConfig = {
     Table: {
       headerBorderRadius: 0,
       headerBg: '#F6F8F9'
+    },
+    Tooltip: {
+      colorBgSpotlight: '#FFFFFF',
+      colorTextLightSolid: '#000000'
     }
   },
   token: {

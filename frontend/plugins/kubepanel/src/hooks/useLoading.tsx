@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Spinner, Flex } from '@chakra-ui/react';
-
+import { Flex } from '@chakra-ui/react';
+import { Spin } from 'antd';
 export const useLoading = (props?: { defaultLoading: boolean }) => {
   const [isLoading, setIsLoading] = useState(props?.defaultLoading || false);
 
@@ -19,7 +19,7 @@ export const useLoading = (props?: { defaultLoading: boolean }) => {
           justifyContent={'center'}
           visibility={isLoading || loading ? 'visible' : 'hidden'}
         >
-          <Spinner thickness="4px" speed="0.65s" emptyColor="gray.200" color="blue.500" size="xl" />
+          <Spin size="large" spinning={loading} />
         </Flex>
       );
     },
