@@ -1,4 +1,4 @@
-# Copyright © 2023 sealos.
+# Copyright © 2024 sealos.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -103,9 +103,12 @@ spec:
                 type: integer
               domain:
                 type: string
+              serviceName:
+                type: string
             required:
             - availableReplicas
             - domain
+            - serviceName
             type: object
         type: object
     served: true
