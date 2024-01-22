@@ -55,6 +55,7 @@ type TerminalSpec struct {
 // TerminalStatus defines the observed state of Terminal
 type TerminalStatus struct {
 	AvailableReplicas int32  `json:"availableReplicas"`
+	ServiceName       string `json:"serviceName"`
 	Domain            string `json:"domain"`
 }
 
