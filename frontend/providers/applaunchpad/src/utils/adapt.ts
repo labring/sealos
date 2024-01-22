@@ -99,6 +99,7 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
       const container = pod.status?.containerStatuses || [];
       if (container.length > 0) {
         const stateObj = container[0].state;
+        const lasteStateObj = container[0].lastState;
         if (stateObj) {
           const stateKeys = Object.keys(stateObj);
           const key = stateKeys?.[0] as `${PodStatusEnum}`;
@@ -106,7 +107,10 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
             return podStatusMap[PodStatusEnum.running];
           }
           if (key && podStatusMap[key]) {
+            const lastStateReason =
+              lasteStateObj && lasteStateObj[key] ? lasteStateObj[key]?.reason : '';
             return {
+              lastStateReason,
               ...podStatusMap[key],
               ...stateObj[key]
             };

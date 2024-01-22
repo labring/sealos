@@ -88,7 +88,9 @@ const Pods = ({
           {item.status.label}
           {!!item.status.reason && (
             <MyTooltip
-              label={`Reason: ${item.status.reason}${
+              label={`${
+                item.status?.lastStateReason ? `LastReason: ${item.status?.lastStateReason}\n` : ''
+              }Reason: ${item.status.reason}${
                 item.status.message ? `\nMessage: ${item.status.message}` : ''
               }`}
               whiteSpace={'pre-wrap'}
