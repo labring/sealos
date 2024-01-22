@@ -228,11 +228,11 @@ const config = {
   },
   scripts: [
     {
-      src: "/wow.min.js",
+      src: "wow.min.js",
       async: false,
     },
     {
-      src: "/global.js",
+      src: "global.js",
       async: true,
     }
   ],
