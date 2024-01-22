@@ -107,7 +107,7 @@ export const json2CronJob = (data: CronJobEditType) => {
     metadata: metadata,
     spec: {
       schedule: data.schedule,
-      concurrencyPolicy: 'Forbid',
+      concurrencyPolicy: 'Replace',
       startingDeadlineSeconds: 60,
       successfulJobsHistoryLimit: 3,
       failedJobsHistoryLimit: 3,
