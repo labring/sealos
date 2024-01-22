@@ -48,23 +48,23 @@ Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以
 * [在 Sealos 上 运行低代码平台](https://sealos.run/docs/category/low-code-platform)
 * [在 Sealos 上 运行搭建聊天应用](https://sealos.run/docs/examples/social-communication/install-tailchat)
 
-![](/docs/4.0/img/app-launchpad-zh.png)
+![](/docs/4.0/img/sealos-desktop-zh.webp)
 
 🔍 您可以通过以下的屏幕截图进一步了解 Sealos，关于 Sealos 更为详细的介绍与说明，请参阅 [什么是 Sealos](https://sealos.run/docs/Intro)。
 
 <div align="center">
 
-| 终端 | 应用管理 |
+| 模板市场 | 应用管理 |
 | :---: | :---: |
-| ![](/docs/4.0/img/terminal-zh.webp) | ![](/docs/4.0/img/app-launchpad-1-zh.webp) |
+| ![](/docs/4.0/img/templates-zh.jpg) | ![](/docs/4.0/img/app-launchpad-1-zh.jpg) |
 | 数据库管理 | 函数计算 |
-| ![](/docs/4.0/img/database-zh.webp) | ![](/docs/4.0/img/laf-zh.webp) |
+| ![](/docs/4.0/img/database-zh.jpg) | ![](/docs/4.0/img/laf-zh.jpg) |
 
 </div>
 
 ## 💡 核心功能
 
-- 🚀 **应用管理**：在应用商店中轻松管理并快速发布可公网访问的分布式应用。
+- 🚀 **应用管理**：在模板市场中轻松管理并快速发布可公网访问的分布式应用。
 - 🗄️ **数据库管理**：秒级创建高可用数据库，支持 MySQL、PostgreSQL、MongoDB 和 Redis。
 - 🌥️ **公私一致**：即是公有云也是私有云，支持传统应用无缝迁移到云环境。
 

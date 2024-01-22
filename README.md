@@ -46,17 +46,17 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 * [Running the Uptime Kuma dial test system on Sealos](https://docs.sealos.io/docs/examples/dial-testing-system/install-uptime-kuma)
 * [Running a low-code platform on Sealos](https://docs.sealos.io/docs/category/low-code-platform)
 
-![image](https://github.com/labring/sealos/assets/8912557/0499c8b5-32e1-4da3-887d-cbf57ddf46e6)
+![](/docs/4.0/img/sealos-desktop.webp)
 
 🔍 Some Screen Shots of Sealos:
 
 <div align="center">
 
-| Terminal | App Launchpad |
+| Templates | App Launchpad |
 | :---: | :---: |
-| ![](/docs/4.0/img/terminal.webp) | ![](/docs/4.0/img/app-launchpad-1.webp) |
+| ![](/docs/4.0/img/templates.jpg) | ![](/docs/4.0/img/app-launchpad-1.jpg) |
 | Database | Serverless |
-| ![](/docs/4.0/img/database.webp) | ![](/docs/4.0/img/laf.webp) |
+| ![](/docs/4.0/img/database.jpg) | ![](/docs/4.0/img/laf.jpg) |
 
 </div>
 
@@ -67,7 +67,7 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 
 ## 💡 Core features
 
-- 🚀 **Application Management**: Easy management and quick release of publicly accessible distributed applications in the app store.
+- 🚀 **Application Management**: Easy management and quick release of publicly accessible distributed applications in the templates marketplace.
 - 🗄️ **Database Management**: Create high-availability databases in seconds, offering support for MySQL, PostgreSQL, MongoDB, and Redis.
 - 🌥️ **Cloud Universality**: Equally effective in both public and private cloud, enabling a seamless transition of traditional applications to the cloud.
 
