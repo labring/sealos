@@ -20,16 +20,16 @@ export type WorkloadStatusData = {
 };
 
 const statusBackgroundColorMapping = {
-  Running: '#399c3d',
+  Running: '#039855',
   Scheduled: '#399c3d',
-  Pending: '#ff9800',
+  Pending: '#F79009',
   Suspended: '#ff9800',
   Evicted: '#ce3933',
   Succeeded: '#206923',
-  Failed: '#ce3933',
+  Failed: '#D92D20',
   Terminated: '#9dabb5',
   Terminating: '#9dabb5',
-  Unknown: '#ededed',
+  Unknown: '#EDEDED',
   Empty: '#ededed',
   Complete: '#206923'
 } as { [key in WorkloadStatusType]: string };
@@ -39,6 +39,7 @@ const WorkloadStatus = ({ title, data }: { title: string; data?: Array<WorkloadS
   if (data.length === 0) {
     data = [{ type: 'Empty', value: 0 }];
   }
+  console.log(data);
 
   return (
     <PieChart

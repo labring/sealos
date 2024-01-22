@@ -69,14 +69,14 @@ export const renderContainerStateTooltipTitle = (
 
   return (
     <>
-      <div className="text-center">
+      <div className="text-left font-medium">
         {name} {<ContainerStatus state={key} status={status} />}
       </div>
-      <div className="flex flex-col align-center flex-wrap w-max">
+      <div className="flex flex-col align-center flex-wrap">
         {entries(state[key]).map(([name, value]) => (
-          <div className="grid gap-2.5 grid-cols-[max-content_1fr] grid-flow-row" key={name}>
-            <div className="text-right font-medium">{startCase(name)}</div>
-            <div className="text-left font-light text-gray-300">{value}</div>
+          <div className="grid gap-3 grid-cols-[max-content_1fr] grid-flow-row 	" key={name}>
+            <div className="text-left font-medium">{startCase(name)}</div>
+            <div className="text-left font-[#131A26]">{value}</div>
           </div>
         ))}
       </div>

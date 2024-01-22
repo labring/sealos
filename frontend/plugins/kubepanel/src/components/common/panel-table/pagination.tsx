@@ -81,7 +81,7 @@ export function usePaginationProps(total: number): PaginationProps {
   );
 
   return {
-    showTotal: (total) => <div>{`Total ${total} items`}</div>,
+    showTotal: (total) => <span>{`Total Items: ${total}`}</span>,
     current: nxtPage,
     pageSize,
     size: 'default',

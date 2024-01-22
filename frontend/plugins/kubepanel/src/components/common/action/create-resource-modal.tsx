@@ -105,7 +105,6 @@ export const CreateResourceModal = ({ open, setClose }: Props) => {
       {contextHolder}
       <Modal
         open={open}
-        width={'90vw'}
         onCancel={setClose}
         onOk={setClose}
         footer={[
@@ -133,7 +132,22 @@ export const CreateResourceModal = ({ open, setClose }: Props) => {
               value={template}
               language="yaml"
               onMount={onEditorMount}
-              options={{ readOnly: disabled }}
+              options={{
+                readOnly: disabled,
+                minimap: { enabled: false },
+                scrollbar: {
+                  vertical: 'auto',
+                  horizontal: 'auto'
+                },
+                contextmenu: false,
+                cursorBlinking: 'smooth',
+                scrollBeyondLastLine: false,
+                overviewRulerBorder: false,
+                codeLens: false,
+                acceptSuggestionOnCommitCharacter: false,
+                acceptSuggestionOnEnter: 'off',
+                accessibilitySupport: 'off'
+              }}
             />
           </Spin>
         </Flex>

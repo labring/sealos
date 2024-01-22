@@ -123,6 +123,7 @@ export interface PodStatusMapType {
   color: string;
   reason?: string;
   message?: string;
+  lastStateReason?: string;
 }
 export interface PodDetailType extends V1Pod {
   podName: string;
