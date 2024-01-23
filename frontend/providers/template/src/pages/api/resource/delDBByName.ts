@@ -68,6 +68,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       backups.map((item) => delBackupByName({ backupName: item.metadata.name, req }))
     );
 
+    // del service
+    await k8sCore.deleteNamespacedService(`${instanceName}-export`, namespace).catch((err) => {
+      if (err?.body?.code !== 404) {
+        throw new Error(err?.message || 'Delete DB Service Export Error');
+      }
+    });
+
     // del role
     await Promise.all([
       k8sAuth.deleteNamespacedRole(instanceName, namespace),
