@@ -19,9 +19,9 @@ export type ResourceKindType =
 export type ResourceListItemType = {
   id: string;
   name: string;
-  createTime: string;
   kind: ResourceKindType;
-  label: string;
+  createTime?: string;
+  label?: string;
   apiVersion?: string;
   servicePorts?: V1ServicePort[];
 };

@@ -105,8 +105,8 @@ export default function Banner() {
                       backgroundColor={'#fff'}
                       border={' 1px solid rgba(255, 255, 255, 0.50)'}
                     >
-                      <Image src={item.icon} alt="" width={'36px'} height={'36px'} />
-                    </Box>
+                      <Image src={item.icon} alt="logo" width={'24px'} height={'24px'} />
+                    </Center>
                     <Text fontSize={'20px'} color={'#FFF'} fontWeight={600}>
                       {item.title}
                     </Text>
@@ -117,7 +117,8 @@ export default function Banner() {
                     w="215px"
                     fontSize={'16px'}
                     color={'#FFF'}
-                    fontWeight={600}>
+                    fontWeight={600}
+                  >
                     {item.desc}
                   </Text>
                 </Flex>
@@ -142,7 +143,7 @@ export default function Banner() {
                     >
                       <Image
                         src={SlideData[(index + 1) % SlideData.length].icon}
-                        alt=""
+                        alt="logo"
                         width={'24px'}
                         height={'24px'}
                       />
@@ -157,7 +158,8 @@ export default function Banner() {
                     w="215px"
                     fontSize={'16px'}
                     color={'#FFF'}
-                    fontWeight={600}>
+                    fontWeight={600}
+                  >
                     {SlideData[(index + 1) % SlideData.length].desc}
                   </Text>
                 </Flex>
