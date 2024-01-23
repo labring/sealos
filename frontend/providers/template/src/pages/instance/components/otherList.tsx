@@ -58,7 +58,7 @@ export default function OtherList({ instanceName }: { instanceName: string }) {
         render: (item: ResourceListItemType) => {
           const text = item?.servicePorts
             ? item?.servicePorts
-                ?.map((item) => `${item?.port}:${item?.targetPort}/${item?.protocol}`)
+                ?.map((item) => `${item?.port}:${item?.nodePort}/${item?.protocol}`)
                 .join(', ')
             : '';
           return <Text>{text}</Text>;
