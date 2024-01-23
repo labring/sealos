@@ -70,7 +70,6 @@ export const memoryFormatToMi = (memory: string) => {
   } else if (/Ti/gi.test(memory)) {
     value = value * 1024 * 1024;
   } else {
-    console.log('Invalid memory value');
     value = 0;
   }
 

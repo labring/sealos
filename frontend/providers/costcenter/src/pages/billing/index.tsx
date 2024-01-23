@@ -78,7 +78,7 @@ function InOutTabPanel({ namespace }: { namespace: string }) {
   const { data, isFetching, isSuccess } = useQuery(
     ['billing', { currentPage, startTime, endTime, orderID, selectType, namespace, appType }],
     () => {
-      const spec = {
+      const spec: BillingSpec = {
         page: currentPage,
         pageSize: pageSize,
         type: selectType,

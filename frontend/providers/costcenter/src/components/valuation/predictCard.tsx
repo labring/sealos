@@ -9,33 +9,50 @@ import { END_TIME, valuationMap } from '@/constants/payment';
 import useBillingData from '@/hooks/useBillingData';
 import { BillingType, Costs } from '@/types';
 import { isSameDay, isSameHour, parseISO, subHours } from 'date-fns';
+
 export default function PredictCard() {
   const { t } = useTranslation();
+  const NOW_TIME = new Date();
+
   const { data } = useBillingData({
     type: BillingType.CONSUME,
-    endTime: END_TIME,
-    startTime: subHours(END_TIME, 1)
+    endTime: NOW_TIME,
+    startTime: subHours(NOW_TIME, 3)
   });
   const _state = useMemo<Costs & { total: number }>(() => {
+    let times = 3;
     const items = data?.data?.status.item || [];
-    if (items.length > 0) {
-      const latest = items[0];
-      const time = parseISO(latest.time);
-      const now = new Date();
-      if (isSameDay(time, now) && isSameHour(time, now))
-        return {
-          ...latest.costs,
-          total: latest.amount
-        };
-    }
-    return {
+    let state = {
       cpu: 0,
       memory: 0,
       storage: 0,
       network: 0,
       port: 0,
+      gpu: 0,
       total: 0
     };
+    while (times--) {
+      let existSame = false;
+      items.reduce((pre, cur) => {
+        const time = parseISO(cur.time);
+        if (
+          isSameDay(time, subHours(NOW_TIME, 3 - times)) &&
+          isSameHour(time, subHours(NOW_TIME, 3 - times))
+        ) {
+          pre.cpu += cur.costs.cpu;
+          pre.memory += cur.costs.memory;
+          pre.storage += cur.costs.storage;
+          pre.network += cur.costs.network;
+          pre.port += cur.costs.port;
+          pre.gpu += cur.costs.gpu || 0;
+          pre.total += cur.amount;
+          existSame = true;
+        }
+        return pre;
+      }, state);
+      if (existSame) break;
+    }
+    return state;
   }, [data?.data?.status.item]);
   const currency = useEnvStore((s) => s.currency);
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
