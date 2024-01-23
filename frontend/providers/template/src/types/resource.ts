@@ -1,9 +1,4 @@
-export type BaseResourceType = {
-  id: string;
-  name: string;
-  kind: ResourceKindType;
-  apiVersion?: string;
-};
+import { V1ServicePort } from '@kubernetes/client-node';
 
 export type ResourceKindType =
   | 'DataBase'
@@ -17,13 +12,16 @@ export type ResourceKindType =
   | 'RoleBinding'
   | 'ServiceAccount'
   | 'ConfigMap'
-  | 'Instance';
+  | 'Instance'
+  | 'Service'
+  | 'PersistentVolumeClaim';
 
-export type OtherResourceListItemType = {
+export type ResourceListItemType = {
   id: string;
   name: string;
   createTime: string;
   kind: ResourceKindType;
   label: string;
   apiVersion?: string;
+  servicePorts?: V1ServicePort[];
 };

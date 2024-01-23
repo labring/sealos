@@ -11,8 +11,15 @@ import { AppCrdType } from '@/types/appCRD';
 import { CronJobListItemType } from '@/types/cronJob';
 import { DBListItemType, KbPgClusterType } from '@/types/db';
 import { AppListItemType } from '@/types/launchpad';
-import { BaseResourceType, OtherResourceListItemType, ResourceKindType } from '@/types/resource';
-import { V1CronJob, V1Deployment, V1Job, V1Secret, V1StatefulSet } from '@kubernetes/client-node';
+import { ResourceListItemType, ResourceKindType } from '@/types/resource';
+import {
+  V1CronJob,
+  V1Deployment,
+  V1Job,
+  V1Secret,
+  V1Service,
+  V1StatefulSet
+} from '@kubernetes/client-node';
 import cronParser from 'cron-parser';
 import cronstrue from 'cronstrue';
 import 'cronstrue/locales/en';
@@ -112,19 +119,27 @@ export const adaptCronJobList = (job: V1CronJob): CronJobListItemType => {
 };
 
 export const adaptOtherList = (
-  data: (AppCrdType[] | V1Secret[] | V1Job[])[]
-): OtherResourceListItemType[] => {
+  data: (AppCrdType[] | V1Secret[] | V1Job[] | V1Service[])[]
+): ResourceListItemType[] => {
   return flatMap(data, (innerArray) => {
-    return innerArray.map((item) => {
-      const labels: { [key: string]: string } = item.metadata?.labels || {};
-      return {
-        id: item.metadata?.uid || '',
-        name: item.metadata?.name || '',
-        createTime: dayjs(item.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
-        kind: item.kind as ResourceKindType,
-        label: labels[componentLabel] ?? '',
-        apiVersion: item.apiVersion
-      };
-    });
+    return innerArray
+      .filter((item) => {
+        const kind = item.kind as ResourceKindType;
+        // Exclude service type that is not nodeport
+        return !(kind === 'Service' && (item as V1Service)?.spec?.type !== 'NodePort');
+      })
+      .map((item) => {
+        const labels: { [key: string]: string } = item.metadata?.labels || {};
+        const kind = item.kind as ResourceKindType;
+        return {
+          id: item.metadata?.uid || '',
+          name: item.metadata?.name || '',
+          createTime: dayjs(item.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
+          kind: kind,
+          label: labels[componentLabel] ?? '',
+          apiVersion: item.apiVersion,
+          servicePorts: kind === 'Service' ? (item as V1Service)?.spec?.ports || [] : []
+        };
+      });
   });
 };

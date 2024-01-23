@@ -2,7 +2,7 @@ import { listOtherByName } from '@/api/instance';
 import MyIcon from '@/components/Icon';
 import MyTable from '@/components/Table';
 import { useResourceStore } from '@/store/resource';
-import { OtherResourceListItemType } from '@/types/resource';
+import { ResourceListItemType } from '@/types/resource';
 import { Box, Flex, Icon, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -17,11 +17,7 @@ export default function OtherList({ instanceName }: { instanceName: string }) {
     () => listOtherByName(instanceName),
     {
       onSuccess(data) {
-        appendResource(
-          data.map((item) => {
-            return { id: item.id, name: item.name, kind: item.kind, apiVersion: item.apiVersion };
-          })
-        );
+        appendResource(data);
       }
     }
   );
@@ -29,16 +25,16 @@ export default function OtherList({ instanceName }: { instanceName: string }) {
   const columns = useMemo<
     {
       title: string;
-      dataIndex?: keyof OtherResourceListItemType;
+      dataIndex?: keyof ResourceListItemType;
       key: string;
-      render?: (item: OtherResourceListItemType) => JSX.Element;
+      render?: (item: ResourceListItemType) => JSX.Element;
     }[]
   >(
     () => [
       {
         title: 'Name',
         key: 'name',
-        render: (item: OtherResourceListItemType) => {
+        render: (item: ResourceListItemType) => {
           return (
             <Box pl={4} color={'myGray.900'} fontSize={'md'} fontWeight={'bold'}>
               {item.name}
@@ -55,6 +51,18 @@ export default function OtherList({ instanceName }: { instanceName: string }) {
         title: 'Component',
         dataIndex: 'label',
         key: 'label'
+      },
+      {
+        title: 'Description',
+        key: 'service ports',
+        render: (item: ResourceListItemType) => {
+          const text = item?.servicePorts
+            ? item?.servicePorts
+                ?.map((item) => `${item?.port}:${item?.targetPort}/${item?.protocol}`)
+                .join(', ')
+            : '';
+          return <Text>{text}</Text>;
+        }
       }
     ],
     []
