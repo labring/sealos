@@ -69,7 +69,8 @@ export default function Banner() {
         '.my-prev-button, .my-next-button': {
           opacity: 1
         }
-      }}>
+      }}
+    >
       <Swiper
         ref={swiperRef}
         slidesPerView={1}
@@ -82,7 +83,8 @@ export default function Banner() {
         autoplay={{
           delay: 5000,
           disableOnInteraction: false
-        }}>
+        }}
+      >
         {SlideData.map((item, index) => (
           <SwiperSlide key={index}>
             <Flex w="full" h="213px" gap={'16px'} overflow={'hidden'}>
@@ -91,7 +93,8 @@ export default function Banner() {
                 bg={item.bg}
                 borderRadius={item.borderRadius}
                 p="16px 24px"
-                justifyContent={'space-between'}>
+                justifyContent={'space-between'}
+              >
                 <Flex flexDirection={'column'} justifyContent={'space-between'}>
                   <Flex gap="12px" alignItems={'center'} mt="26px">
                     <Box
@@ -101,7 +104,8 @@ export default function Banner() {
                       boxShadow={'0px 1px 2px 0.5px rgba(84, 96, 107, 0.20)'}
                       borderRadius={'4px'}
                       backgroundColor={'#fff'}
-                      border={' 1px solid rgba(255, 255, 255, 0.50)'}>
+                      border={' 1px solid rgba(255, 255, 255, 0.50)'}
+                    >
                       <Image src={item.icon} alt="" width={'36px'} height={'36px'} />
                     </Box>
                     <Text fontSize={'20px'} color={'#FFF'} fontWeight={600}>
@@ -125,7 +129,8 @@ export default function Banner() {
                 bg={SlideData[(index + 1) % SlideData.length].bg}
                 borderRadius={SlideData[(index + 1) % SlideData.length].borderRadius}
                 p="16px 24px"
-                justifyContent={'space-between'}>
+                justifyContent={'space-between'}
+              >
                 <Flex flexDirection={'column'} justifyContent={'space-between'}>
                   <Flex gap="12px" alignItems={'center'} mt="26px">
                     <Box
@@ -135,7 +140,8 @@ export default function Banner() {
                       boxShadow={'0px 1px 2px 0.5px rgba(84, 96, 107, 0.20)'}
                       borderRadius={'4px'}
                       backgroundColor={'#fff'}
-                      border={' 1px solid rgba(255, 255, 255, 0.50)'}>
+                      border={' 1px solid rgba(255, 255, 255, 0.50)'}
+                    >
                       <Image
                         src={SlideData[(index + 1) % SlideData.length].icon}
                         alt=""
@@ -173,7 +179,8 @@ export default function Banner() {
         zIndex={10}
         top="50%"
         left="-30px"
-        transform="translateY(-50%) rotate(180deg)">
+        transform="translateY(-50%) rotate(180deg)"
+      >
         <ArrowRightIcon />
       </Box>
       <Box
@@ -186,7 +193,8 @@ export default function Banner() {
         zIndex={10}
         top="50%"
         right="-30px"
-        transform="translateY(-50%)">
+        transform="translateY(-50%)"
+      >
         <ArrowRightIcon />
       </Box>
     </Box>

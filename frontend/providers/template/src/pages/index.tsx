@@ -83,8 +83,8 @@ export default function AppList() {
       borderRadius={'12px'}
       background={'linear-gradient(180deg, #FFF 0%, rgba(255, 255, 255, 0.70) 100%)'}
       py={'36px'}
-      px="42px">
-      {/* <Banner /> */}
+      px="42px"
+    >
       {!!FastDeployTemplates?.length ? (
         <Grid
           justifyContent={'center'}

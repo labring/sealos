@@ -23,7 +23,6 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         message: 'endTime is invalid'
       });
     const url = process.env.BILLING_URI + '/account/v1alpha1/namespaces';
-    console.log(url);
     const res = await (
       await fetch(url, {
         method: 'POST',
@@ -36,7 +35,6 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         })
       })
     ).json();
-    console.log(res);
     return jsonRes(resp, {
       code: 200,
       data: res.data,
