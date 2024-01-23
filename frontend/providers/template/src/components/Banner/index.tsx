@@ -1,4 +1,4 @@
-import { Box, Flex, Image, Text } from '@chakra-ui/react';
+import { Box, Center, Flex, Image, Text } from '@chakra-ui/react';
 import { useRef } from 'react';
 import { Autoplay } from 'swiper/modules';
 import { Swiper, SwiperRef, SwiperSlide, useSwiper } from 'swiper/react';
@@ -97,17 +97,16 @@ export default function Banner() {
               >
                 <Flex flexDirection={'column'} justifyContent={'space-between'}>
                   <Flex gap="12px" alignItems={'center'} mt="26px">
-                    <Box
-                      p={'6px'}
-                      w={'48px'}
-                      h={'48px'}
+                    <Center
+                      w={'36px'}
+                      h={'36px'}
                       boxShadow={'0px 1px 2px 0.5px rgba(84, 96, 107, 0.20)'}
                       borderRadius={'4px'}
                       backgroundColor={'#fff'}
                       border={' 1px solid rgba(255, 255, 255, 0.50)'}
                     >
-                      <Image src={item.icon} alt="" width={'36px'} height={'36px'} />
-                    </Box>
+                      <Image src={item.icon} alt="logo" width={'24px'} height={'24px'} />
+                    </Center>
                     <Text fontSize={'20px'} color={'#FFF'} fontWeight={600}>
                       {item.title}
                     </Text>
@@ -118,7 +117,8 @@ export default function Banner() {
                     w="215px"
                     fontSize={'16px'}
                     color={'#FFF'}
-                    fontWeight={600}>
+                    fontWeight={600}
+                  >
                     {item.desc}
                   </Text>
                 </Flex>
@@ -133,10 +133,9 @@ export default function Banner() {
               >
                 <Flex flexDirection={'column'} justifyContent={'space-between'}>
                   <Flex gap="12px" alignItems={'center'} mt="26px">
-                    <Box
-                      p={'6px'}
-                      w={'48px'}
-                      h={'48px'}
+                    <Center
+                      w={'36px'}
+                      h={'36px'}
                       boxShadow={'0px 1px 2px 0.5px rgba(84, 96, 107, 0.20)'}
                       borderRadius={'4px'}
                       backgroundColor={'#fff'}
@@ -144,11 +143,11 @@ export default function Banner() {
                     >
                       <Image
                         src={SlideData[(index + 1) % SlideData.length].icon}
-                        alt=""
-                        width={'36px'}
-                        height={'36px'}
+                        alt="logo"
+                        width={'24px'}
+                        height={'24px'}
                       />
-                    </Box>
+                    </Center>
                     <Text fontSize={'20px'} color={'#FFF'} fontWeight={600}>
                       {SlideData[(index + 1) % SlideData.length].title}
                     </Text>
@@ -159,7 +158,8 @@ export default function Banner() {
                     w="215px"
                     fontSize={'16px'}
                     color={'#FFF'}
-                    fontWeight={600}>
+                    fontWeight={600}
+                  >
                     {SlideData[(index + 1) % SlideData.length].desc}
                   </Text>
                 </Flex>

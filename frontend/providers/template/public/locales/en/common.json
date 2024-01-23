@@ -190,5 +190,6 @@
   "users installed the app": "{{count}} users have installed the app",
   "Please Enter": "Please Enter",
   "Delete successful": "Delete successful",
-  "Delete Failed": "Delete Failed"
+  "Delete Failed": "Delete Failed",
+  "Description": "Description"
 }

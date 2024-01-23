@@ -188,7 +188,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         kind: 'ProbeList';
       };
     }>;
-    // 使用 Promise.allSettled 获取所有结果 [secretResult, jobResult, customResourceResult]
+
+    const servicePromise = k8sCore.listNamespacedService(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `${labelSelector}`
+    );
+
     const result = await Promise.allSettled([
       secretPromise,
       jobPromise,
@@ -202,13 +211,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       prometheusPromiseRule,
       prometheusPvcPromise,
       servicemonitorPromise,
-      probePromise
+      probePromise,
+      servicePromise
     ]);
     const data = result
       .map((res) => {
         if (res.status === 'fulfilled') {
           return res.value.body.items.map((item) => {
-            // console.log(item, '==');
+            // console.log(item, '===');
             return {
               ...item,
               kind: item.kind ? item.kind : res.value?.body?.kind?.replace('List', '')

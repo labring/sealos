@@ -1,13 +1,13 @@
-import { BaseResourceType } from '@/types/resource';
+import { ResourceListItemType } from '@/types/resource';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 type State = {
   instanceName: string;
-  resource: BaseResourceType[];
+  resource: ResourceListItemType[];
   setInstanceName: (instanceName: string) => void;
-  appendResource: (data: BaseResourceType[]) => void;
+  appendResource: (data: ResourceListItemType[]) => void;
 };
 
 export const useResourceStore = create<State>()(
@@ -21,7 +21,7 @@ export const useResourceStore = create<State>()(
           state.resource = [];
         });
       },
-      appendResource: (data: BaseResourceType[]) => {
+      appendResource: (data: ResourceListItemType[]) => {
         set((state) => {
           data.forEach((newItem) => {
             const exists = state.resource.some((item) => item.id === newItem.id);
