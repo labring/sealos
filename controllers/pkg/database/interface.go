@@ -51,6 +51,7 @@ type Account interface {
 	UpdateBillingStatus(orderID string, status resources.BillingStatus) error
 	GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error)
 	GetAllPricesMap() (map[string]resources.Price, error)
+	GetAllPayment() ([]resources.Billing, error)
 	InitDefaultPropertyTypeLS() error
 	SavePropertyTypes(types []resources.PropertyType) error
 	GetBillingCount(accountType common.Type, startTime, endTime time.Time) (count, amount int64, err error)
@@ -87,7 +88,12 @@ type AccountV2 interface {
 	GetUser(user *types.UserQueryOpts) (*types.RegionUser, error)
 	GetAccount(user *types.UserQueryOpts) (*types.Account, error)
 	AddBalance(user *types.UserQueryOpts, balance int64) error
+	ReduceBalance(ops *types.UserQueryOpts, amount int64) error
+	ReduceDeductionBalance(ops *types.UserQueryOpts, amount int64) error
 	NewAccount(user *types.UserQueryOpts) (*types.Account, error)
+	Payment(payment *types.Payment) error
+	SavePayment(payment *types.Payment) error
+	CreateErrorPaymentCreate(payment types.Payment, errorMsg string) error
 	CreateAccount(ops *types.UserQueryOpts, account *types.Account) (*types.Account, error)
 	CreateErrorAccountCreate(account *types.Account, owner, errorMsg string) error
 	TransferAccount(from, to *types.UserQueryOpts, amount int64) error

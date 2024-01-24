@@ -111,6 +111,7 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{RequeueAfter: time.Minute}, nil
 	}
 
+	r.Logger.Info("reconcile debt", "account", owner, "balance", account.Balance, "deduction balance", account.DeductionBalance)
 	if err := r.Get(ctx, client.ObjectKey{Name: GetDebtName(owner), Namespace: r.accountSystemNamespace}, debt); client.IgnoreNotFound(err) != nil {
 		return ctrl.Result{}, err
 	} else if err != nil {
@@ -554,7 +555,7 @@ type UserOwnerPredicate struct {
 }
 
 func (UserOwnerPredicate) Create(e event.CreateEvent) bool {
-	owner := e.Object.GetLabels()[userv1.UserAnnotationOwnerKey]
+	owner := e.Object.GetAnnotations()[userv1.UserAnnotationOwnerKey]
 	return owner != "" && owner == e.Object.GetName()
 }
 

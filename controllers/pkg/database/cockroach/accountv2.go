@@ -20,6 +20,8 @@ import (
 	"os"
 	"time"
 
+	gonanoid "github.com/matoous/go-nanoid/v2"
+
 	"gorm.io/driver/postgres"
 
 	"github.com/labring/sealos/controllers/pkg/crypto"
@@ -33,7 +35,7 @@ import (
 type Cockroach struct {
 	DB          *gorm.DB
 	LocalRegion *types.Region
-	ZeroAccount types.Account
+	ZeroAccount *types.Account
 	activities  types.Activities
 	//TODO need init
 	defaultRechargeDiscount types.RechargeDiscount
@@ -101,7 +103,7 @@ func (g *Cockroach) getAccount(ops *types.UserQueryOpts) (*types.Account, error)
 	return &account, nil
 }
 
-func (g *Cockroach) updateBalance(tx *gorm.DB, ops *types.UserQueryOpts, amount int64, isDeduction bool) error {
+func (g *Cockroach) updateBalance(tx *gorm.DB, ops *types.UserQueryOpts, amount int64, isDeduction, add bool) error {
 	if ops.UID == uuid.Nil {
 		user, err := g.GetUser(ops)
 		if err != nil {
@@ -115,7 +117,7 @@ func (g *Cockroach) updateBalance(tx *gorm.DB, ops *types.UserQueryOpts, amount 
 		return fmt.Errorf("failed to get account: %w", err)
 	}
 
-	if err := g.updateWithAccount(isDeduction, &account, amount); err != nil {
+	if err := g.updateWithAccount(isDeduction, add, &account, amount); err != nil {
 		return err
 	}
 	if err := tx.Save(&account).Error; err != nil {
@@ -124,7 +126,7 @@ func (g *Cockroach) updateBalance(tx *gorm.DB, ops *types.UserQueryOpts, amount 
 	return nil
 }
 
-func (g *Cockroach) updateWithAccount(isDeduction bool, account *types.Account, amount int64) error {
+func (g *Cockroach) updateWithAccount(isDeduction bool, add bool, account *types.Account, amount int64) error {
 	var fieldToUpdate string
 	if isDeduction {
 		fieldToUpdate = account.EncryptDeductionBalance
@@ -137,7 +139,11 @@ func (g *Cockroach) updateWithAccount(isDeduction bool, account *types.Account, 
 		return fmt.Errorf("failed to decrypt balance: %w", err)
 	}
 
-	currentBalance += amount
+	if add {
+		currentBalance += amount
+	} else {
+		currentBalance -= amount
+	}
 
 	newEncryptBalance, err := crypto.EncryptInt64(currentBalance)
 	if err != nil {
@@ -156,13 +162,25 @@ func (g *Cockroach) updateWithAccount(isDeduction bool, account *types.Account, 
 
 func (g *Cockroach) AddBalance(ops *types.UserQueryOpts, amount int64) error {
 	return g.DB.Transaction(func(tx *gorm.DB) error {
-		return g.updateBalance(tx, ops, amount, false)
+		return g.updateBalance(tx, ops, amount, false, true)
+	})
+}
+
+func (g *Cockroach) ReduceBalance(ops *types.UserQueryOpts, amount int64) error {
+	return g.DB.Transaction(func(tx *gorm.DB) error {
+		return g.updateBalance(tx, ops, amount, false, false)
+	})
+}
+
+func (g *Cockroach) ReduceDeductionBalance(ops *types.UserQueryOpts, amount int64) error {
+	return g.DB.Transaction(func(tx *gorm.DB) error {
+		return g.updateBalance(tx, ops, amount, false, false)
 	})
 }
 
 func (g *Cockroach) AddDeductionBalance(ops *types.UserQueryOpts, amount int64) error {
 	return g.DB.Transaction(func(tx *gorm.DB) error {
-		return g.updateBalance(tx, ops, amount, true)
+		return g.updateBalance(tx, ops, amount, true, true)
 	})
 }
 
@@ -194,6 +212,14 @@ func (g *Cockroach) CreateErrorAccountCreate(account *types.Account, owner, erro
 		RegionUID:       g.LocalRegion.UID,
 	}).Error; err != nil {
 		return fmt.Errorf("failed to create error account create error msg: %w", err)
+	}
+	return nil
+}
+
+func (g *Cockroach) CreateErrorPaymentCreate(payment types.Payment, errorMsg string) error {
+	if err := g.DB.Create(&types.ErrorPaymentCreate{
+		PaymentRaw: payment.PaymentRaw, Message: errorMsg, CreateTime: time.Now().UTC()}).Error; err != nil {
+		return fmt.Errorf("failed to create error payment create error msg: %w", err)
 	}
 	return nil
 }
@@ -235,10 +261,10 @@ func (g *Cockroach) TransferAccountV1(owner string, account *types.Account) (*ty
 			if accountV2.CreatedAt.After(account.CreatedAt) {
 				accountV2.CreatedAt = account.CreatedAt
 			}
-			if err := g.updateWithAccount(true, accountV2, account.DeductionBalance); err != nil {
+			if err := g.updateWithAccount(true, true, accountV2, account.DeductionBalance); err != nil {
 				return fmt.Errorf("failed to update account DeductionBalance: %v", err)
 			}
-			if err := g.updateWithAccount(false, accountV2, account.Balance); err != nil {
+			if err := g.updateWithAccount(false, true, accountV2, account.Balance); err != nil {
 				return fmt.Errorf("failed to update account Balance: %v", err)
 			}
 			if err := g.DB.Save(accountV2).Error; err != nil {
@@ -255,6 +281,55 @@ func (g *Cockroach) TransferAccountV1(owner string, account *types.Account) (*ty
 		return nil
 	})
 	return accountV2, err
+}
+
+func (g *Cockroach) Payment(payment *types.Payment) error {
+	return g.payment(payment, true)
+}
+
+func (g *Cockroach) SavePayment(payment *types.Payment) error {
+	return g.payment(payment, false)
+}
+
+func (g *Cockroach) payment(payment *types.Payment, updateBalance bool) error {
+	if payment.ID == "" {
+		id, err := gonanoid.New(12)
+		if err != nil {
+			return fmt.Errorf("failed to generate payment id: %v", err)
+		}
+		payment.ID = id
+	}
+	if payment.CreatedAt.IsZero() {
+		payment.CreatedAt = time.Now()
+	}
+	if payment.RegionUID == uuid.Nil {
+		payment.RegionUID = g.LocalRegion.UID
+	}
+	if payment.UserUID == uuid.Nil {
+		if payment.RegionUserOwner == "" {
+			return fmt.Errorf("empty payment owner and user")
+		}
+		user, err := g.GetUser(&types.UserQueryOpts{Owner: payment.RegionUserOwner})
+		if err != nil {
+			return fmt.Errorf("failed to get user: %v", err)
+		}
+		payment.UserUID = user.RealUserUID
+	}
+
+	return g.DB.Transaction(func(tx *gorm.DB) error {
+		if err := g.DB.First(&types.Payment{ID: payment.ID}).Error; err == nil {
+			return nil
+		}
+		if err := g.DB.Create(payment).Error; err != nil {
+			return fmt.Errorf("failed to save payment: %w", err)
+		}
+		if updateBalance {
+			if err := g.AddBalance(&types.UserQueryOpts{UID: payment.UserUID}, payment.Amount+payment.Gift); err != nil {
+				return fmt.Errorf("failed to add balance: %w", err)
+			}
+		}
+		return nil
+	})
 }
 
 // NewAccount create a new account
@@ -333,9 +408,14 @@ func (g *Cockroach) GetUserAccountRechargeDiscount(ops *types.UserQueryOpts) (*t
 }
 
 const (
-	BaseUnit    = 1_000_000
-	MinBalance  = 10 * BaseUnit
-	BaseBalance = 5 * BaseUnit
+	BaseUnit           = 1_000_000
+	MinBalance         = 10 * BaseUnit
+	DefaultBaseBalance = 5 * BaseUnit
+)
+
+var (
+	BaseBalance        = int64(DefaultBaseBalance)
+	EncryptBaseBalance string
 )
 
 func (g *Cockroach) TransferAccount(from, to *types.UserQueryOpts, amount int64) error {
@@ -362,10 +442,10 @@ func (g *Cockroach) TransferAccount(from, to *types.UserQueryOpts, amount int64)
 			return fmt.Errorf("insufficient balance in sender account, the transferable amount is: %d", sender.Balance-sender.DeductionBalance-MinBalance-sender.ActivityBonus)
 		}
 
-		if err = g.updateBalance(tx, &types.UserQueryOpts{UID: from.UID}, -amount, false); err != nil {
+		if err = g.updateBalance(tx, &types.UserQueryOpts{UID: from.UID}, -amount, false, true); err != nil {
 			return fmt.Errorf("failed to update sender balance: %w", err)
 		}
-		if err = g.updateBalance(tx, &types.UserQueryOpts{UID: to.UID}, amount, false); err != nil {
+		if err = g.updateBalance(tx, &types.UserQueryOpts{UID: to.UID}, amount, false, true); err != nil {
 			return fmt.Errorf("failed to update receiver balance: %w", err)
 		}
 		return nil
@@ -386,10 +466,10 @@ func NewCockRoach(url string) (*Cockroach, error) {
 		return nil, fmt.Errorf("failed to open url %s : %v", url, err)
 	}
 	baseBalance, err := crypto.DecryptInt64(os.Getenv(EnvBaseBalance))
-	if err != nil {
-		baseBalance = BaseBalance
+	if err == nil {
+		BaseBalance = baseBalance
 	}
-	newEncryptBalance, err := crypto.EncryptInt64(baseBalance)
+	newEncryptBalance, err := crypto.EncryptInt64(BaseBalance)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encrypt zero value")
 	}
@@ -397,7 +477,7 @@ func NewCockRoach(url string) (*Cockroach, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to encrypt zero value")
 	}
-	if err := CreateTableIfNotExist(db, types.Account{}, types.TransferAccountV1{}, types.ErrorAccountCreate{}); err != nil {
+	if err := CreateTableIfNotExist(db, types.Account{}, types.TransferAccountV1{}, types.ErrorAccountCreate{}, types.ErrorPaymentCreate{}, types.Payment{}); err != nil {
 		return nil, err
 	}
 	//TODO region with local
@@ -408,7 +488,7 @@ func NewCockRoach(url string) (*Cockroach, error) {
 	localRegion := &types.Region{
 		UID: uuid.MustParse(localRegionStr),
 	}
-	return &Cockroach{DB: db, ZeroAccount: types.Account{EncryptBalance: *newEncryptBalance, EncryptDeductionBalance: *newEncryptDeductionBalance, Balance: 0, DeductionBalance: 5}, LocalRegion: localRegion}, nil
+	return &Cockroach{DB: db, ZeroAccount: &types.Account{EncryptBalance: *newEncryptBalance, EncryptDeductionBalance: *newEncryptDeductionBalance, Balance: baseBalance, DeductionBalance: 0}, LocalRegion: localRegion}, nil
 }
 
 func CreateTableIfNotExist(db *gorm.DB, tables ...interface{}) error {

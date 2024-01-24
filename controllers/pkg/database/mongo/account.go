@@ -317,6 +317,24 @@ func (m *mongoDB) GetAllPricesMap() (map[string]resources.Price, error) {
 	return pricesMap, nil
 }
 
+func (m *mongoDB) GetAllPayment() ([]resources.Billing, error) {
+	filter := bson.M{
+		"type":           1,
+		"payment.amount": bson.M{"$gt": 0},
+	}
+
+	cursor, err := m.getBillingCollection().Find(context.Background(), filter)
+	if err != nil {
+		return nil, fmt.Errorf("get all payment error: %v", err)
+	}
+
+	var payments []resources.Billing
+	if err = cursor.All(context.Background(), &payments); err != nil {
+		return nil, fmt.Errorf("get all payment error: %v", err)
+	}
+	return payments, nil
+}
+
 func (m *mongoDB) InitDefaultPropertyTypeLS() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

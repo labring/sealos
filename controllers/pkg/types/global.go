@@ -117,3 +117,38 @@ type ErrorAccountCreate struct {
 func (ErrorAccountCreate) TableName() string {
 	return "ErrorAccountCreate"
 }
+
+type ErrorPaymentCreate struct {
+	PaymentRaw
+	CreateTime time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp();not null"`
+	Message    string    `gorm:"type:text;not null"`
+}
+
+type PaymentRaw struct {
+	UserUID         uuid.UUID `gorm:"column:userUid;type:uuid;not null"`
+	RegionUID       uuid.UUID `gorm:"column:regionUid;type:uuid;not null"`
+	CreatedAt       time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp();not null"`
+	RegionUserOwner string    `gorm:"column:regionUserOwner;type:text;not null"`
+	Method          string    `gorm:"type:text;not null"`
+	Amount          int64     `gorm:"type:bigint;not null"`
+	Gift            int64     `gorm:"type:bigint"`
+	TradeNO         string    `gorm:"type:text;unique;not null"`
+	// CodeURL is the codeURL of wechatpay
+	CodeURL    string `gorm:"type:text"`
+	InvoicedAt bool   `gorm:"type:boolean;default:false"`
+	Remark     string `gorm:"type:text"`
+	Message    string `gorm:"type:text;not null"`
+}
+
+func (ErrorPaymentCreate) TableName() string {
+	return "ErrorPaymentCreate"
+}
+
+type Payment struct {
+	ID string `gorm:"type:text;primary_key"`
+	PaymentRaw
+}
+
+func (Payment) TableName() string {
+	return "Payment"
+}

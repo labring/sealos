@@ -25,13 +25,12 @@ import (
 	"strings"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/go-logr/logr"
-	gonanoid "github.com/matoous/go-nanoid/v2"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/pkg/database"
@@ -142,42 +141,32 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	r.Logger.V(1).Info("query order details", "orderStatus", status, "orderAmount", orderAmount)
 	switch status {
 	case pay.PaymentSuccess:
-		now := time.Now().UTC()
 		//1¥ = 100WechatPayAmount; 1 WechatPayAmount = 10000 SealosAmount
 		payAmount := orderAmount * 10000
 		gift, err := r.getAmountWithRates(payAmount, account)
 		if err != nil {
 			r.Logger.Error(err, "get gift error")
 		}
-		payment.Status.Status = pay.PaymentSuccess
-		if err = r.AccountV2.AddBalance(&pkgtypes.UserQueryOpts{UID: account.UserUID}, gift); err != nil {
-			r.Logger.Error(err, "add balance failed")
-			return ctrl.Result{}, fmt.Errorf("add balance failed: %v", err)
-		}
-		id, err := gonanoid.New(12)
-		if err != nil {
-			r.Logger.Error(err, "create id failed", "id", id, "payment", payment)
-			return ctrl.Result{}, nil
-		}
-		err = r.DBClient.SaveBillings(&resources.Billing{
-			Time:      now,
-			OrderID:   id,
-			Amount:    gift,
-			Namespace: payment.Namespace,
-			Owner:     getUsername(payment.Spec.UserID),
-			Type:      accountv1.Recharge,
-			Payment: &resources.Payment{
-				Method:  payment.Spec.PaymentMethod,
-				TradeNO: payment.Status.TradeNO,
-				CodeURL: payment.Status.CodeURL,
-				UserID:  payment.Spec.UserID,
-				Amount:  payAmount,
+		if err = r.AccountV2.Payment(&pkgtypes.Payment{
+			PaymentRaw: pkgtypes.PaymentRaw{
+				UserUID:         account.UserUID,
+				Amount:          payAmount,
+				Gift:            gift,
+				CreatedAt:       payment.CreationTimestamp.Time,
+				RegionUserOwner: owner,
+				Method:          payment.Spec.PaymentMethod,
+				TradeNO:         payment.Status.TradeNO,
+				CodeURL:         payment.Status.CodeURL,
 			},
-		})
-		if err != nil {
-			r.Logger.Error(err, "save billings failed", "id", id, "payment", payment)
+		}); err != nil {
+			r.Logger.Error(err, "save payment failed", "payment", payment)
 			return ctrl.Result{}, nil
 		}
+		payment.Status.Status = pay.PaymentSuccess
+		if err := r.Status().Update(ctx, payment); err != nil {
+			return ctrl.Result{}, fmt.Errorf("update payment failed: %v", err)
+		}
+
 	case pay.PaymentProcessing, pay.PaymentNotPaid:
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, nil
 	case pay.PaymentFailed, pay.PaymentExpired:
@@ -402,5 +391,5 @@ func getAmountWithDiscount(amount int64, discount pkgtypes.RechargeDiscount) int
 			break
 		}
 	}
-	return int64(math.Ceil(float64(amount)*r/100)) + amount
+	return int64(math.Ceil(float64(amount) * r / 100))
 }

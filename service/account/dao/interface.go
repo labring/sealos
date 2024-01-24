@@ -137,7 +137,7 @@ func (m *MongoDB) GetCosts(user string, startTime, endTime time.Time) (common.Ti
 		},
 		"owner": user,
 	}
-	cursor, err := m.getBillingCollection().Find(context.Background(), filter)
+	cursor, err := m.getBillingCollection().Find(context.Background(), filter, options.Find().SetSort(bson.M{"time": 1}))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get billing collection: %v", err)
 	}
