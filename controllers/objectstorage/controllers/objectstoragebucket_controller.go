@@ -143,22 +143,7 @@ func (r *ObjectStorageBucketReconciler) Reconcile(ctx context.Context, req ctrl.
 		return ctrl.Result{}, err
 	}
 
-	var totalSize int64
 	var update bool
-
-	// list objects in the bucket and calculate the total space used
-	objects := r.OSClient.ListObjects(ctx, bucketName, minio.ListObjectsOptions{
-		Recursive: true,
-	})
-
-	for object := range objects {
-		totalSize += object.Size
-	}
-
-	if bucket.Status.Size != totalSize {
-		bucket.Status.Size = totalSize
-		update = true
-	}
 
 	if bucket.Status.Name != bucketName {
 		bucket.Status.Name = bucketName
