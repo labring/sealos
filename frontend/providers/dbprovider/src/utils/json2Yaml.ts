@@ -8,7 +8,7 @@ import {
   crLabelKey
 } from '@/constants/db';
 import { StorageClassName } from '@/store/env';
-import type { DBDetailType, DBEditType, DBType } from '@/types/db';
+import type { BackupItemType, DBDetailType, DBEditType, DBType } from '@/types/db';
 import { DumpForm, MigrateForm } from '@/types/migrate';
 import { formatTime, str2Num } from '@/utils/tools';
 import dayjs from 'dayjs';
@@ -16,7 +16,8 @@ import yaml from 'js-yaml';
 import { getUserNamespace } from './user';
 import { V1StatefulSet } from '@kubernetes/client-node';
 
-export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
+export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType) => {
+  const userNS = getUserNamespace();
   const resources = {
     limits: {
       cpu: `${str2Num(Math.floor(data.cpu))}m`,
@@ -27,6 +28,7 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
       memory: `${Math.floor(str2Num(data.memory) * 0.1)}Mi`
     }
   };
+  const terminationPolicy = backupInfo?.name ? 'WipeOut' : 'Delete';
   const metadata = {
     finalizers: ['cluster.kubeblocks.io/finalizer'],
     labels: {
@@ -35,10 +37,21 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
       [crLabelKey]: data.dbName
     },
     annotations: {
-      ...(backupName ? { [BACKUP_LABEL_KEY]: JSON.stringify({ [data.dbType]: backupName }) } : {})
+      ...(backupInfo?.name
+        ? {
+            [BACKUP_LABEL_KEY]: JSON.stringify({
+              [data.dbType === 'apecloud-mysql' ? 'mysql' : data.dbType]: {
+                name: backupInfo.name,
+                namespace: userNS,
+                connectionPassword: backupInfo.connectionPassword
+              }
+            })
+          }
+        : {})
     },
     name: data.dbName
   };
+
   const storageClassName = StorageClassName ? { storageClassName: StorageClassName } : {};
 
   const redisHA = RedisHAConfig(data.replicas > 1);
@@ -85,7 +98,7 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
               ]
             }
           ],
-          terminationPolicy: 'Delete',
+          terminationPolicy,
           tolerations: []
         }
       }
@@ -128,7 +141,7 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
               ]
             }
           ],
-          terminationPolicy: 'Delete',
+          terminationPolicy,
           tolerations: []
         }
       }
@@ -174,7 +187,7 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
               ]
             }
           ],
-          terminationPolicy: 'Delete',
+          terminationPolicy,
           tolerations: []
         }
       }
@@ -255,7 +268,7 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
                 : {})
             }
           ],
-          terminationPolicy: 'Delete',
+          terminationPolicy,
           tolerations: []
         }
       }
@@ -364,7 +377,7 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
               ]
             }
           ],
-          terminationPolicy: 'Delete',
+          terminationPolicy,
           tolerations: []
         }
       }
@@ -406,7 +419,7 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
               ]
             }
           ],
-          terminationPolicy: 'Delete',
+          terminationPolicy,
           tolerations: []
         }
       }
@@ -511,7 +524,7 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
               ]
             }
           ],
-          terminationPolicy: 'Delete',
+          terminationPolicy,
           tolerations: []
         }
       }
@@ -553,12 +566,101 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
               ]
             }
           ],
-          terminationPolicy: 'Delete',
+          terminationPolicy,
+          tolerations: []
+        }
+      }
+    ],
+    [DBTypeEnum.milvus]: [
+      {
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'Cluster',
+        metadata,
+        spec: {
+          affinity: {
+            podAntiAffinity: 'Preferred',
+            tenancy: 'SharedNode'
+          },
+          clusterDefinitionRef: 'milvus',
+          clusterVersionRef: data.dbVersion,
+          componentSpecs: [
+            {
+              componentDefRef: 'milvus',
+              monitor: false,
+              name: 'milvus',
+              noCreatePDB: false,
+              replicas: data.replicas,
+              resources,
+              rsmTransformPolicy: 'ToSts',
+              serviceAccountName: data.dbName,
+              volumeClaimTemplates: [
+                {
+                  name: 'data',
+                  spec: {
+                    accessModes: ['ReadWriteOnce'],
+                    resources: {
+                      requests: {
+                        storage: `${data.storage}Gi`
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              componentDefRef: 'etcd',
+              monitor: false,
+              name: 'etcd',
+              noCreatePDB: false,
+              replicas: data.replicas,
+              resources,
+              rsmTransformPolicy: 'ToSts',
+              serviceAccountName: data.dbName,
+              volumeClaimTemplates: [
+                {
+                  name: 'data',
+                  spec: {
+                    accessModes: ['ReadWriteOnce'],
+                    resources: {
+                      requests: {
+                        storage: `${data.storage}Gi`
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              componentDefRef: 'minio',
+              monitor: false,
+              name: 'minio',
+              noCreatePDB: false,
+              replicas: data.replicas,
+              resources,
+              rsmTransformPolicy: 'ToSts',
+              serviceAccountName: data.dbName,
+              volumeClaimTemplates: [
+                {
+                  name: 'data',
+                  spec: {
+                    accessModes: ['ReadWriteOnce'],
+                    resources: {
+                      requests: {
+                        storage: `${data.storage}Gi`
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          terminationPolicy,
           tolerations: []
         }
       }
     ]
   };
+  console.log(map[data.dbType].map((item) => yaml.dump(item)).join('\n---\n'));
 
   return map[data.dbType].map((item) => yaml.dump(item)).join('\n---\n');
 };
@@ -615,32 +717,47 @@ export const json2Account = (data: DBEditType) => {
     ]
   };
 
+  const baseRoleRules = [
+    {
+      apiGroups: [''],
+      resources: ['events'],
+      verbs: ['create']
+    },
+    {
+      apiGroups: [''],
+      resources: ['configmaps'],
+      verbs: ['create', 'get', 'list', 'patch', 'update', 'watch', 'delete']
+    },
+    {
+      apiGroups: [''],
+      resources: ['endpoints'],
+      verbs: ['create', 'get', 'list', 'patch', 'update', 'watch', 'delete']
+    },
+    {
+      apiGroups: [''],
+      resources: ['pods'],
+      verbs: ['get', 'list', 'patch', 'update', 'watch']
+    }
+  ];
+
+  const BackupRoleRules = [
+    {
+      apiGroups: ['dataprotection.kubeblocks.io'],
+      resources: ['backups'],
+      verbs: ['create', 'get', 'list', 'patch', 'update', 'watch', 'delete']
+    },
+    {
+      apiGroups: ['dataprotection.kubeblocks.io'],
+      resources: ['backups/status'],
+      verbs: ['create', 'get', 'list', 'patch', 'update', 'watch', 'delete']
+    }
+  ];
+
   const pgAccountTemplate = [
     commonBase,
     {
       ...dbRolesBase,
-      rules: [
-        {
-          apiGroups: [''],
-          resources: ['events'],
-          verbs: ['create']
-        },
-        {
-          apiGroups: [''],
-          resources: ['configmaps'],
-          verbs: ['create', 'get', 'list', 'patch', 'update', 'watch', 'delete']
-        },
-        {
-          apiGroups: [''],
-          resources: ['endpoints'],
-          verbs: ['create', 'get', 'list', 'patch', 'update', 'watch', 'delete']
-        },
-        {
-          apiGroups: [''],
-          resources: ['pods'],
-          verbs: ['get', 'list', 'patch', 'update', 'watch']
-        }
-      ]
+      rules: [...baseRoleRules, ...BackupRoleRules]
     },
     dbRoleBindingBase
   ];
@@ -656,7 +773,8 @@ export const json2Account = (data: DBEditType) => {
             apiGroups: [''],
             resources: ['events'],
             verbs: ['create']
-          }
+          },
+          ...BackupRoleRules
         ]
       },
       dbRoleBindingBase
@@ -667,10 +785,17 @@ export const json2Account = (data: DBEditType) => {
         ...dbRolesBase,
         rules: [
           {
-            apiGroups: [''],
-            resources: ['events'],
-            verbs: ['create']
-          }
+            apiGroups: ['apps.kubeblocks.io'],
+            resources: ['clusters'],
+            verbs: ['get', 'list']
+          },
+          {
+            apiGroups: ['apps.kubeblocks.io'],
+            resources: ['clusters/status'],
+            verbs: ['get']
+          },
+          ...baseRoleRules,
+          ...BackupRoleRules
         ]
       },
       dbRoleBindingBase
@@ -684,7 +809,8 @@ export const json2Account = (data: DBEditType) => {
             apiGroups: [''],
             resources: ['events'],
             verbs: ['create']
-          }
+          },
+          ...BackupRoleRules
         ]
       },
       dbRoleBindingBase
@@ -692,7 +818,8 @@ export const json2Account = (data: DBEditType) => {
     [DBTypeEnum.kafka]: pgAccountTemplate,
     [DBTypeEnum.qdrant]: pgAccountTemplate,
     [DBTypeEnum.nebula]: pgAccountTemplate,
-    [DBTypeEnum.weaviate]: pgAccountTemplate
+    [DBTypeEnum.weaviate]: pgAccountTemplate,
+    [DBTypeEnum.milvus]: pgAccountTemplate
   };
   return map[data.dbType].map((item) => yaml.dump(item)).join('\n---\n');
 };
@@ -792,8 +919,10 @@ export const json2Restart = ({ dbName, dbType }: { dbName: string; dbType: DBTyp
 export const json2ManualBackup = ({
   name,
   backupPolicyName,
-  remark = ''
+  backupMethod,
+  remark
 }: {
+  backupMethod: string;
   name: string;
   backupPolicyName: string;
   remark?: string;
@@ -802,7 +931,7 @@ export const json2ManualBackup = ({
     apiVersion: 'dataprotection.kubeblocks.io/v1alpha1',
     kind: 'Backup',
     metadata: {
-      finalizers: ['dataprotection.kubeblocks.io/finalizer'],
+      // finalizers: ['dataprotection.kubeblocks.io/finalizer'],
       labels: {
         [BACKUP_REMARK_LABEL_KEY]: remark
       },
@@ -810,7 +939,8 @@ export const json2ManualBackup = ({
     },
     spec: {
       backupPolicyName,
-      backupType: 'datafile'
+      // backupType: 'datafile'
+      backupMethod
     }
   };
   return yaml.dump(template);
@@ -842,7 +972,8 @@ export const json2MigrateCR = (data: MigrateForm) => {
     kafka: '',
     qdrant: '',
     nebula: '',
-    weaviate: ''
+    weaviate: '',
+    milvus: ''
   };
 
   const template = {
@@ -931,7 +1062,8 @@ export const json2NetworkService = ({
     kafka: '',
     qdrant: '',
     nebula: '',
-    weaviate: ''
+    weaviate: '',
+    milvus: ''
   };
 
   const template = {

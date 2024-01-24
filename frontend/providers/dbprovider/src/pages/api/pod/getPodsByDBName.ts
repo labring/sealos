@@ -3,6 +3,7 @@ import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
+import { KBBackupNameLabel } from '@/constants/db';
 
 // get App Metrics By DeployName. compute average value
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
@@ -26,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       undefined,
       undefined,
       undefined,
-      `app.kubernetes.io/instance=${name}`
+      `app.kubernetes.io/instance=${name},!${KBBackupNameLabel}`
     );
 
     jsonRes(res, {

@@ -156,12 +156,6 @@ const AppDetail = ({
                   ml={3}
                   variant={'primary'}
                   onClick={() => {
-                    if (dbDetail.dbType === DBTypeEnum.redis) {
-                      return toast({
-                        status: 'warning',
-                        title: t('Redis does not support backup at this time')
-                      });
-                    }
                     BackupTableRef.current?.openBackup();
                   }}
                 >

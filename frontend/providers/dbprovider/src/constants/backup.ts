@@ -3,8 +3,10 @@ import { BackupStatusMapType } from '@/types/db';
 export enum BackupStatusEnum {
   Completed = 'Completed',
   InProgress = 'InProgress',
-  'Failed' = 'Failed',
-  'UnKnow' = 'UnKnow'
+  Failed = 'Failed',
+  UnKnow = 'UnKnow',
+  Running = 'Running',
+  Deleting = 'Deleting'
 }
 
 export const backupStatusMap: Record<`${BackupStatusEnum}`, BackupStatusMapType> = {
@@ -21,6 +23,16 @@ export const backupStatusMap: Record<`${BackupStatusEnum}`, BackupStatusMapType>
   [BackupStatusEnum.Failed]: {
     label: 'Backup Failed',
     value: BackupStatusEnum.Failed,
+    color: '#FF5B6E'
+  },
+  [BackupStatusEnum.Running]: {
+    label: 'Backup Running',
+    value: BackupStatusEnum.Running,
+    color: '#13B2A9'
+  },
+  [BackupStatusEnum.Deleting]: {
+    label: 'Backup Deleting',
+    value: BackupStatusEnum.Deleting,
     color: '#FF5B6E'
   },
   [BackupStatusEnum.UnKnow]: {

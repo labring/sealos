@@ -25,7 +25,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       [DBTypeEnum.kafka]: [],
       [DBTypeEnum.qdrant]: [],
       [DBTypeEnum.nebula]: [],
-      [DBTypeEnum.weaviate]: []
+      [DBTypeEnum.weaviate]: [],
+      [DBTypeEnum.milvus]: []
     };
 
     // source price

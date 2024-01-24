@@ -29,8 +29,8 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
         ? dbStatusMap[db?.status?.phase]
         : dbStatusMap.UnKnow,
     createTime: dayjs(db.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
-    cpu: cpuFormatToM(db.spec?.componentSpecs?.[0]?.resources.limits.cpu),
-    memory: cpuFormatToM(db.spec?.componentSpecs?.[0]?.resources.limits.memory),
+    cpu: cpuFormatToM(db.spec?.componentSpecs?.[0]?.resources?.limits?.cpu),
+    memory: cpuFormatToM(db.spec?.componentSpecs?.[0]?.resources?.limits?.memory),
     storage:
       db.spec?.componentSpecs?.[0]?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage ||
       '-',
@@ -149,6 +149,8 @@ export const adaptEvents = (events: CoreV1EventList): PodEvent[] => {
 
 export const adaptBackup = (backup: BackupCRItemType): BackupItemType => {
   const autoLabel = 'dataprotection.kubeblocks.io/autobackup';
+  const passwordLabel = 'dataprotection.kubeblocks.io/connection-password';
+
   return {
     id: backup.metadata.uid,
     name: backup.metadata.name,
@@ -159,7 +161,8 @@ export const adaptBackup = (backup: BackupCRItemType): BackupItemType => {
     startTime: backup.metadata.creationTimestamp,
     type: autoLabel in backup.metadata.labels ? BackupTypeEnum.auto : BackupTypeEnum.manual,
     remark: backup.metadata.labels[BACKUP_REMARK_LABEL_KEY] || '-',
-    failureReason: backup.status?.failureReason
+    failureReason: backup.status?.failureReason,
+    connectionPassword: backup.metadata?.annotations?.[passwordLabel]
   };
 };
 
