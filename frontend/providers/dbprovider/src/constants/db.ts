@@ -4,6 +4,7 @@ import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
 export const crLabelKey = 'sealos-db-provider-cr';
 export const CloudMigraionLabel = 'sealos-db-provider-cr-migrate';
 export const KBMigrationTaskLabel = 'datamigration.apecloud.io/migrationtask';
+export const KBBackupNameLabel = 'dataprotection.kubeblocks.io/backup-name';
 export const SealosMigrationTaskLabel = 'datamigration.sealos.io/file-migration-task';
 export const MigrationRemark = 'migration-remark';
 
@@ -15,7 +16,8 @@ export enum DBTypeEnum {
   kafka = 'kafka',
   qdrant = 'qdrant',
   nebula = 'nebula',
-  weaviate = 'weaviate'
+  weaviate = 'weaviate',
+  milvus = 'milvus'
 }
 
 export enum DBStatusEnum {
@@ -31,7 +33,8 @@ export enum DBStatusEnum {
   VerticalScaling = 'VerticalScaling',
   VolumeExpanding = 'VolumeExpanding',
   Failed = 'Failed',
-  UnKnow = 'UnKnow'
+  UnKnow = 'UnKnow',
+  Deleting = 'Deleting'
 }
 export const dbStatusMap = {
   [DBStatusEnum.Creating]: {
@@ -124,6 +127,13 @@ export const dbStatusMap = {
     color: '#787A90',
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
+  },
+  [DBStatusEnum.Deleting]: {
+    label: 'Deleting',
+    value: DBStatusEnum.Deleting,
+    color: '#DC6803',
+    backgroundColor: '#FFFAEB',
+    dotColor: '#DC6803'
   }
 };
 
@@ -160,7 +170,8 @@ export const DBTypeList = [
   { id: DBTypeEnum.mongodb, label: 'mongo' },
   { id: DBTypeEnum.mysql, label: 'mysql' },
   { id: DBTypeEnum.redis, label: 'redis' },
-  { id: DBTypeEnum.kafka, label: 'kafka' }
+  { id: DBTypeEnum.kafka, label: 'kafka' },
+  { id: DBTypeEnum.milvus, label: 'milvus' }
   // { id: DBTypeEnum.qdrant, label: 'qdrant' },
   // { id: DBTypeEnum.nebula, label: 'nebula' },
   // { id: DBTypeEnum.weaviate, label: 'weaviate' }
@@ -174,7 +185,8 @@ export const DBComponentNameMap = {
   [DBTypeEnum.kafka]: 'kafka',
   [DBTypeEnum.qdrant]: 'qdrant',
   [DBTypeEnum.nebula]: 'nebula',
-  [DBTypeEnum.weaviate]: 'weaviate'
+  [DBTypeEnum.weaviate]: 'weaviate',
+  [DBTypeEnum.milvus]: 'milvus'
 };
 
 export const DBBackupPolicyNameMap = {
@@ -185,7 +197,21 @@ export const DBBackupPolicyNameMap = {
   [DBTypeEnum.kafka]: 'kafka',
   [DBTypeEnum.qdrant]: 'qdrant',
   [DBTypeEnum.nebula]: 'nebula',
-  [DBTypeEnum.weaviate]: 'weaviate'
+  [DBTypeEnum.weaviate]: 'weaviate',
+  [DBTypeEnum.milvus]: 'milvus'
+};
+
+export const DBBackupMethodNameMap = {
+  [DBTypeEnum.postgresql]: 'pg-basebackup',
+  [DBTypeEnum.mongodb]: 'dump',
+  [DBTypeEnum.mysql]: 'xtrabackup',
+  [DBTypeEnum.redis]: 'datafile',
+  // not support
+  [DBTypeEnum.kafka]: 'kafka',
+  [DBTypeEnum.qdrant]: 'qdrant',
+  [DBTypeEnum.nebula]: 'nebula',
+  [DBTypeEnum.weaviate]: 'weaviate',
+  [DBTypeEnum.milvus]: 'milvus'
 };
 
 export const defaultDBEditValue: DBEditType = {
@@ -259,5 +285,8 @@ export const DBTypeSecretMap = {
   },
   weaviate: {
     connectKey: 'weaviate'
+  },
+  milvus: {
+    connectKey: 'milvus'
   }
 };

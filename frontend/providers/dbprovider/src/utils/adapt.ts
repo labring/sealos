@@ -19,6 +19,8 @@ import { SecretResponse } from '@/pages/api/getSecretByName';
 import { getMigratePodList } from '@/api/migrate';
 
 export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
+  // console.log(db?.status?.phase, db.metadata?.name, '=');
+
   // compute store amount
   return {
     id: db.metadata?.uid || ``,
@@ -149,6 +151,7 @@ export const adaptEvents = (events: CoreV1EventList): PodEvent[] => {
 
 export const adaptBackup = (backup: BackupCRItemType): BackupItemType => {
   const autoLabel = 'dataprotection.kubeblocks.io/autobackup';
+
   return {
     id: backup.metadata.uid,
     name: backup.metadata.name,

@@ -69,6 +69,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         [DBTypeEnum.weaviate]: {
           ...base,
           connectKey: 'weaviate'
+        },
+        [DBTypeEnum.milvus]: {
+          ...base,
+          connectKey: 'milvus'
         }
       };
       // get secret

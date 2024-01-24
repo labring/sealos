@@ -151,7 +151,8 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       [DBTypeEnum.kafka]: ``,
       [DBTypeEnum.qdrant]: ``,
       [DBTypeEnum.nebula]: ``,
-      [DBTypeEnum.weaviate]: ``
+      [DBTypeEnum.weaviate]: ``,
+      [DBTypeEnum.milvus]: ``
     };
 
     const defaultCommand = commandMap[db.dbType];

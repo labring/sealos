@@ -261,5 +261,8 @@
   "Failed to turn off automatic backup": "关闭自动备份失败",
   "Automatic backup is turned off": "已关闭自动备份",
   "Are you sure you want to turn off automatic backup": "确定关闭自动备份吗",
-  "db instances tip": "{{db}} 实例数量建议为奇数"
+  "db instances tip": "{{db}} 实例数量建议为奇数",
+  "Deleting": "删除中",
+  "Backup Running": "备份中",
+  "Backup Deleting": "删除中"
 }
