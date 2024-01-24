@@ -109,11 +109,17 @@ export default function CostChart({ data }: { data: BillingData['status']['deduc
         type: 'pie',
         radius: [publicOption.radius[0], publicOption.radius[0]],
         center: publicOption.center,
+        selected: true,
         label: {
           position: 'center',
           show: true,
           formatter: function (params: any) {
-            return amount.toFixed(2) + `\n${t('Expenditure')}`;
+            let result = amount.toFixed(2) + `\n${t('Expenditure')}`;
+            if (result) return result;
+            else return ' ';
+          },
+          emphasis: {
+            label: true
           },
           fontSize: 16,
           textStyle: {
@@ -124,7 +130,7 @@ export default function CostChart({ data }: { data: BillingData['status']['deduc
           label: {
             show: false
           },
-          scale: 0
+          scale: false
         },
         encode: {
           itemName: 'name',

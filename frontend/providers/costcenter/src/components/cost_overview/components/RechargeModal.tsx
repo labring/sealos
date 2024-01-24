@@ -168,7 +168,7 @@ const BonusBox = (props: {
         {t('Bonus')} {props.bouns}
       </Text>
       <Flex align={'center'}>
-        <Currencysymbol w="24px" type={currency} />
+        <Currencysymbol boxSize="20px" type={currency} />
         <Text ml="4px" fontStyle="normal" fontWeight="500" fontSize="24px">
           {props.amount}
         </Text>
@@ -357,7 +357,7 @@ const RechargeModal = forwardRef(
                     <Text color="#7B838B" fontWeight={'normal'} mr={'20px'}>
                       {t('Balance')}
                     </Text>
-                    <Currencysymbol w="24px" type={currency} />
+                    <Currencysymbol boxSize="20px" type={currency} />
                     <Text ml="4px" color="#24282C" fontSize="24px" fontWeight={'medium'}>
                       {formatMoney(balance).toFixed(2)}
                     </Text>
@@ -404,7 +404,7 @@ const RechargeModal = forwardRef(
                       variant={'unstyled'}
                       onChange={(str, v) => (str.trim() ? setAmount(v) : setAmount(0))}
                     >
-                      <Currencysymbol w="16px" type={currency} />
+                      <Currencysymbol boxSize="12px" mr={'2px'} type={currency} />
                       <NumberInputField />
                       <NumberInputStepper>
                         <NumberIncrementStepper>

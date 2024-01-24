@@ -161,5 +161,6 @@
   "All APP": "all",
   "APP Type": "App type",
   "Details": "Details",
-  "Handle": "Handle"
+  "Handle": "Handle",
+  "currencyUnit": "Currency Unit"
 }

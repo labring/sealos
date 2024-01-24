@@ -1,7 +1,7 @@
 import bar_icon from '@/assert/bar_chart_4_bars_black.svg';
 import SelectRange from '@/components/billing/selectDateRange';
 import useNotEnough from '@/hooks/useNotEnough';
-import { Box, Flex, Heading, Img, useToast } from '@chakra-ui/react';
+import { Box, Flex, Heading, HStack, Img, Text, useToast } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { MutableRefObject, createContext, useEffect, useRef } from 'react';
@@ -16,11 +16,15 @@ import useOverviewStore from '@/stores/overview';
 import { CommonBillingTable } from '@/components/billing/billingTable';
 import { QueryClient } from '@tanstack/react-query';
 import request from '@/service/request';
+import CurrencySymbol from '@/components/CurrencySymbol';
+import useEnvStore from '@/stores/env';
+
 const getProperties = () => request.post('/api/billing/propertiesUsedAmount');
 
 export const RechargeContext = createContext<{ rechargeRef: MutableRefObject<any> | null }>({
   rechargeRef: null
 });
+
 function CostOverview() {
   const { t } = useTranslation();
   const setRecharge = useOverviewStore((s) => s.setRecharge);
@@ -58,6 +62,7 @@ function CostOverview() {
   const billingItems = data?.data?.status.item.filter((v) => v.type === 0) || [];
   const totast = useToast();
   const rechargeRef = useRef<any>();
+  const currency = useEnvStore((s) => s.currency);
   return (
     <RechargeContext.Provider value={{ rechargeRef }}>
       <Flex h={'100%'}>
@@ -92,10 +97,16 @@ function CostOverview() {
             </Box>
             <Trend></Trend>
             <Flex direction={'column'} h={'0'} flex={[1, null, null, 'auto']}>
-              <Heading size={'sm'} mb={'36px'}>
-                {t('Recent Transactions')}
-              </Heading>
-              <CommonBillingTable data={billingItems} />
+              <HStack h={'auto'} gap={'12px'} mb={'36px'}>
+                <Heading fontWeight={'500'} size={'sm'} verticalAlign={'middle'} display={'flex'}>
+                  {t('Recent Transactions')}
+                </Heading>
+                <Text fontSize={'12px'}>
+                  ({t('currencyUnit')}:{' '}
+                  <CurrencySymbol type={currency} boxSize={'14px'} verticalAlign={'middle'} /> )
+                </Text>
+              </HStack>
+              <CommonBillingTable data={billingItems} isOverview={true} />
               {(isInitialLoading || billingItems.length === 0) && (
                 <Flex h="160px" justify={'center'} align={'center'}>
                   <NotFound></NotFound>
