@@ -57,7 +57,7 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
     content: t('Confirm delete the backup')
   });
 
-  const [restoreBackupName, setRestoreBackupName] = useState<string>();
+  const [backupInfo, setBackupInfo] = useState<BackupItemType>();
 
   const {
     isInitialLoading,
@@ -160,7 +160,7 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
         item.status.value !== BackupStatusEnum.InProgress ? (
           <Flex>
             <Tooltip label={t('Restore Backup')}>
-              <Flex {...operationIconBoxStyles} onClick={() => setRestoreBackupName(item.name)}>
+              <Flex {...operationIconBoxStyles} onClick={() => setBackupInfo(item)}>
                 <MyIcon name={'restore'} {...operationIconStyles} />
               </Flex>
             </Tooltip>
@@ -250,12 +250,8 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
           refetchPolicy={refetchPolicy}
         />
       )}
-      {!!restoreBackupName && (
-        <RestoreModal
-          db={db}
-          backupName={restoreBackupName}
-          onClose={() => setRestoreBackupName(undefined)}
-        />
+      {!!backupInfo?.name && (
+        <RestoreModal db={db} backupInfo={backupInfo} onClose={() => setBackupInfo(undefined)} />
       )}
     </Flex>
   );

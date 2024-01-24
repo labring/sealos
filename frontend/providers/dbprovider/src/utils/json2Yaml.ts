@@ -8,7 +8,7 @@ import {
   crLabelKey
 } from '@/constants/db';
 import { StorageClassName } from '@/store/env';
-import type { DBDetailType, DBEditType, DBType } from '@/types/db';
+import type { BackupItemType, DBDetailType, DBEditType, DBType } from '@/types/db';
 import { DumpForm, MigrateForm } from '@/types/migrate';
 import { formatTime, str2Num } from '@/utils/tools';
 import dayjs from 'dayjs';
@@ -16,7 +16,7 @@ import yaml from 'js-yaml';
 import { getUserNamespace } from './user';
 import { V1StatefulSet } from '@kubernetes/client-node';
 
-export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
+export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType) => {
   const userNS = getUserNamespace();
   const resources = {
     limits: {
@@ -28,7 +28,7 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
       memory: `${Math.floor(str2Num(data.memory) * 0.1)}Mi`
     }
   };
-  const terminationPolicy = backupName ? 'WipeOut' : 'Delete';
+  const terminationPolicy = backupInfo?.name ? 'WipeOut' : 'Delete';
   const metadata = {
     finalizers: ['cluster.kubeblocks.io/finalizer'],
     labels: {
@@ -37,12 +37,13 @@ export const json2CreateCluster = (data: DBEditType, backupName?: string) => {
       [crLabelKey]: data.dbName
     },
     annotations: {
-      ...(backupName
+      ...(backupInfo?.name
         ? {
             [BACKUP_LABEL_KEY]: JSON.stringify({
               [data.dbType === 'apecloud-mysql' ? 'mysql' : data.dbType]: {
-                name: backupName,
-                namespace: userNS
+                name: backupInfo.name,
+                namespace: userNS,
+                connectionPassword: backupInfo.connectionPassword
               }
             })
           }
