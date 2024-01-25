@@ -33,7 +33,7 @@ import Tip from '@/components/Tip';
 import QuotaBox from './QuotaBox';
 import { obj2Query } from '@/api/tools';
 import { throttle } from 'lodash';
-import { InfoOutlineIcon } from '@chakra-ui/icons';
+import { InfoOutlineIcon, WarningIcon } from '@chakra-ui/icons';
 
 const Form = ({
   formHook,
@@ -332,6 +332,14 @@ const Form = ({
                     setValue('replicas', val || 1);
                   }}
                 />
+                {getValues('replicas') === 1 && (
+                  <Tip
+                    ml={4}
+                    icon={<WarningIcon />}
+                    text="The Single-node database is only suitable for development testing."
+                    size="sm"
+                  />
+                )}
                 {getValues('dbType') === DBTypeEnum.redis && getValues('replicas') > 1 && (
                   <Tip
                     ml={4}

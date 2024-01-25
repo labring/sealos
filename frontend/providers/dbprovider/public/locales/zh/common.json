@@ -121,6 +121,7 @@
   "Auto Backup": "自动备份",
   "Containers": "容器",
   "Redis does not support backup at this time": "Redis 暂时不支持备份",
+  "The Single-node database is only suitable for development testing.": "单节点数据库仅适用开发测试",
   "The multi-replica Redis includes High Availability (HA) nodes. Please note, the anticipated price already encompasses the cost for the HA nodes.": "Redis 多副本包含 HA 节点，请悉知，预估价格已包含 HA 节点费用",
   "CronExpression": "循环周期",
   "Monday": "周一",
