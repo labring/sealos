@@ -4,7 +4,6 @@ import {
   AppMessageType,
   AppSendMessageType,
   MasterReplyMessageType,
-  Session,
   SessionV1
 } from './types';
 import { isBrowser } from './utils';
@@ -45,7 +44,7 @@ class ClientSDK {
 
         this.callback.set(messageId, (data: MasterReplyMessageType) => {
           clearTimeout(timer);
-          if (data.success === true) {
+          if (data.success) {
             resolve(data.data);
           } else {
             reject(data);
@@ -102,7 +101,7 @@ class ClientSDK {
     if (this.userSession) {
       return Promise.resolve(this.userSession);
     }
-    return this.sendMessageToMaster(API_NAME.USER_GET_INFO);
+    return this.sendMessageToMaster(API_NAME.USER_GET_INFO, { success: true });
   }
 
   getLanguage(): Promise<{ lng: string }> {
