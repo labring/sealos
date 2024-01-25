@@ -14,7 +14,8 @@ class ClientSDK {
   private desktopOrigin = '*';
   private commonConfig = {
     appKey: '',
-    clientLocation: ''
+    clientLocation: '',
+    success: true
   };
   private userSession: SessionV1 | undefined;
   private readonly callback = new Map<string, (data: MasterReplyMessageType) => void>();
@@ -101,7 +102,7 @@ class ClientSDK {
     if (this.userSession) {
       return Promise.resolve(this.userSession);
     }
-    return this.sendMessageToMaster(API_NAME.USER_GET_INFO, { success: true });
+    return this.sendMessageToMaster(API_NAME.USER_GET_INFO);
   }
 
   getLanguage(): Promise<{ lng: string }> {
