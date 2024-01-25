@@ -1,10 +1,12 @@
 #!/bin/bash
 
-# TODO
 # 1. create minio instance
 bash ./minio.sh
 # 2. create prometheus instance
-bash ./
+bash ./prometheus.sh
 # 3. run objectstorage controller
+sealos run ghcr.io/labring/sealos-cloud-objectstorage-controller:latest
 # 4. run objectstorage frontend
+sealos run ghcr.io/labring/sealos-cloud-objectstorage-frontend:latest
 # 5. run objectstorage monitor service
+sealos run ghcr.io/labring/sealos-cloud-minio-service:latest

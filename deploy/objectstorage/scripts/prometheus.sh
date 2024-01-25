@@ -5,7 +5,6 @@ function deploy_prometheus() {
   kubectl apply -f manifests/prometheus/deploy.yaml
 }
 
-
 function install() {
     deploy_prometheus
 }
