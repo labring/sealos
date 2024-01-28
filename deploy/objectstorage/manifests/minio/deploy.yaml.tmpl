@@ -120,11 +120,11 @@ metadata:
       large_client_header_buffers 4 128k;
     nginx.ingress.kubernetes.io/ssl-redirect: 'false'
     nginx.ingress.kubernetes.io/backend-protocol: HTTP
-    nginx.ingress.kubernetes.io/rewrite-target: /\$2
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/client-body-buffer-size: 64k
     nginx.ingress.kubernetes.io/proxy-buffer-size: 64k
     nginx.ingress.kubernetes.io/configuration-snippet: |
-      if (\$request_uri ~* \.(js|css|gif|jpe?g|png)) {
+      if ($request_uri ~* \.(js|css|gif|jpe?g|png)) {
         expires 30d;
         add_header Cache-Control "public";
       }
@@ -158,11 +158,11 @@ metadata:
       large_client_header_buffers 4 128k;
     nginx.ingress.kubernetes.io/ssl-redirect: 'false'
     nginx.ingress.kubernetes.io/backend-protocol: HTTP
-    nginx.ingress.kubernetes.io/rewrite-target: /\$2
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/client-body-buffer-size: 64k
     nginx.ingress.kubernetes.io/proxy-buffer-size: 64k
     nginx.ingress.kubernetes.io/configuration-snippet: |
-      if (\$request_uri ~* \.(js|css|gif|jpe?g|png)) {
+      if ($request_uri ~* \.(js|css|gif|jpe?g|png)) {
         expires 30d;
         add_header Cache-Control "public";
       }
