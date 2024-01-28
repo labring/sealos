@@ -12,7 +12,7 @@ metadata:
     v1.min.io/tenant: object-storage
 data:
   config.env: >-
-    '{{ .ENCODED_CONFIG_ENV }}'
+    {{ .ENCODED_CONFIG_ENV }}
 type: Opaque
 ---
 apiVersion: v1
@@ -36,8 +36,8 @@ metadata:
     v1.min.io/tenant: object-storage
 immutable: true
 data:
-  CONSOLE_ACCESS_KEY: '{{ .CONSOLE_ACCESS_KEY }}'
-  CONSOLE_SECRET_KEY: '{{ .CONSOLE_SECRET_KEY }}'
+  CONSOLE_ACCESS_KEY: {{ .CONSOLE_ACCESS_KEY }}
+  CONSOLE_SECRET_KEY: {{ .CONSOLE_SECRET_KEY }}
 type: Opaque
 ---
 apiVersion: minio.min.io/v2
@@ -76,7 +76,7 @@ spec:
             - ReadWriteOnce
           resources:
             requests:
-              storage: '{{ .storageSize }}'
+              storage: {{ .storageSize }}
         status: {}
       volumesPerServer: 1
   requestAutoCert: false
@@ -130,7 +130,7 @@ metadata:
       }
 spec:
   rules:
-    - host: objectstorageapi.'{{ .cloudDomain }}'
+    - host: objectstorageapi.{{ .cloudDomain }}
       http:
         paths:
           - pathType: Prefix
@@ -142,7 +142,7 @@ spec:
                   number: 80
   tls:
     - hosts:
-        - objectstorageapi.'{{ .cloudDomain }}'
+        - objectstorageapi.{{ .cloudDomain }}
       secretName: wildcard-cert
 ---
 apiVersion: networking.k8s.io/v1
@@ -168,7 +168,7 @@ metadata:
       }
 spec:
   rules:
-    - host: osconsole.'{{ .cloudDomain }}'
+    - host: osconsole.{{ .cloudDomain }}
       http:
         paths:
           - pathType: Prefix
@@ -180,5 +180,5 @@ spec:
                   number: 9090
   tls:
     - hosts:
-        - osconsole.'{{ .cloudDomain }}'
+        - osconsole.{{ .cloudDomain }}
       secretName: wildcard-cert

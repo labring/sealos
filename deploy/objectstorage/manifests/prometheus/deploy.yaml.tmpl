@@ -90,13 +90,13 @@ spec:
       metadata:
         annotations:
           path: /prometheus
-          value: '{{ .storageSize }}'
+          value: {{ .storageSize }}
       spec:
         accessModes:
           - ReadWriteOnce
         resources:
           requests:
-            storage: '{{ .storageSize }}'
+            storage: {{ .storageSize }}
 ---
 apiVersion: v1
 kind: ServiceAccount
