@@ -67,7 +67,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/configuration-snippet: |
-      if (\$request_uri ~* \.(js|css|gif|jpe?g|png)) {
+      if ($request_uri ~* \.(js|css|gif|jpe?g|png)) {
         expires 30d;
         add_header Cache-Control "public";
       }
@@ -88,7 +88,7 @@ spec:
             name: object-storage-frontend
             port:
               number: 3000
-        path: /()(.*)
+        path: /
         pathType: Prefix
   tls:
   - hosts:
