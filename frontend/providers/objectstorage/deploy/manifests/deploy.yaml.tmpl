@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: ${NAMESPACE}
+  name: objectstorage-frontend
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
  name: object-storage-frontend
- namespace: ${NAMESPACE}
+ namespace: objectstorage-frontend
  labels:
    app: object-storage-frontend
 spec:
@@ -34,7 +34,7 @@ spec:
              protocol: TCP
          env:
            - name: MONITOR_URL
-             value: https://object-storage-monitor.${cloudDomain}/q
+             value: https://object-storage-monitor.{{ .cloudDomain }}/q
          resources:
            limits:
              cpu: 500m
@@ -50,7 +50,7 @@ apiVersion: v1
 kind: Service
 metadata:
  name: object-storage-frontend
- namespace: ${NAMESPACE}
+ namespace: objectstorage-frontend
  labels:
    app: object-storage-frontend
 spec:
@@ -77,10 +77,10 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-next-upstream-timeout: '180'
     nginx.ingress.kubernetes.io/proxy-send-timeout: '180'
   name: object-storage-frontend
-  namespace: ${NAMESPACE}
+  namespace: objectstorage-frontend
 spec:
   rules:
-  - host: objectstorage.${cloudDomain}
+  - host: objectstorage.{{ .cloudDomain }}
     http:
       paths:
       - backend:
@@ -92,5 +92,5 @@ spec:
         pathType: Prefix
   tls:
   - hosts:
-    - objectstorage.${cloudDomain}
+    - objectstorage.{{ .cloudDomain }}
     secretName: wildcard-cert

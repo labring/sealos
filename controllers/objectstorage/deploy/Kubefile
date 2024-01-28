@@ -6,9 +6,8 @@ COPY registry registry
 COPY manifests manifests
 
 ENV cloudDomain="127.0.0.1.nip.io"
-ENV NAMESPACE=${NAMESPACE:-"objectstorage-system"}
 ENV ADMIN_SECRET="object-storage-user-0"
-ENV INTERNAL_ENDPOINT="object-storage.${NAMESPACE}.svc.cluster.local"
+ENV INTERNAL_ENDPOINT="object-storage.objectstorage-system.svc.cluster.local"
 ENV EXTERNAL_ENDPOINT="objectstorageapi.${cloudDomain}"
 
 CMD ["kubectl apply -f manifests/deploy.yaml"]
