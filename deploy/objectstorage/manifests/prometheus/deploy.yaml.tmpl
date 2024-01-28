@@ -2,13 +2,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: object-storage-sa
-  namespace: ${backendNamespace}
+  namespace: objectstorage-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: object-storage-role
-  namespace: ${backendNamespace}
+  namespace: objectstorage-system
 rules:
   - verbs:
       - get
@@ -39,7 +39,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: object-storage-rolebind
-  namespace: ${backendNamespace}
+  namespace: objectstorage-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -47,7 +47,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: object-storage-sa
-    namespace: ${backendNamespace}
+    namespace: objectstorage-system
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
@@ -55,7 +55,7 @@ metadata:
   labels:
     app: prometheus-object-storage
   name: object-storage
-  namespace: ${backendNamespace}
+  namespace: objectstorage-system
 spec:
   podMetadata:
     labels:
@@ -102,13 +102,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: object-storage-sa
-  namespace: ${backendNamespace}
+  namespace: objectstorage-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: object-storage-role
-  namespace: ${backendNamespace}
+  namespace: objectstorage-system
 rules:
   - verbs:
       - get
@@ -139,7 +139,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: object-storage-rolebind
-  namespace: ${backendNamespace}
+  namespace: objectstorage-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -147,5 +147,5 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: object-storage-sa
-    namespace: ${backendNamespace}
+    namespace: objectstorage-system
 

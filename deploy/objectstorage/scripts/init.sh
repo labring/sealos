@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # 1. create minio instance
-bash minio.sh
+bash scripts/minio.sh
 # 2. create prometheus instance
-bash prometheus.sh
+bash scripts/prometheus.sh
 # 3. run objectstorage controller
 sealos run ghcr.io/nowinkeyy/sealos-cloud-objectstorage-controller:latest
 # 4. run objectstorage frontend

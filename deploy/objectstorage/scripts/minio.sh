@@ -18,7 +18,7 @@ function deploy_minio() {
   ENCODED_CONFIG_ENV=$(echo -n "$CONFIG_ENV" | base64 -w 0)
 
   if kubectl get secret object-storage-env-configuration -n objectstorage-system 2>&1; then
-    ENCODED_CONFIG_ENV=$(kubectl get secret object-storage-env-configuration -n ${backendNamespace} -o jsonpath='{.data.config\.env}')
+    ENCODED_CONFIG_ENV=$(kubectl get secret object-storage-env-configuration -n objectstorage-system -o jsonpath='{.data.config\.env}')
   fi
 
   kubectl apply -f manifests/minio/deploy.yaml
@@ -32,14 +32,14 @@ function init_minio() {
   chmod +x $HOME/minio-binaries/mc
   export PATH=$PATH:$HOME/minio-binaries/
 
-  while kubectl wait -l statefulset.kubernetes.io/pod-name=object-storage-pool-0-0 --for=condition=ready pod -n ${backendNamespace} --timeout=-1s 2>&1 | grep -q "error: no matching resources found"; do
+  while kubectl wait -l statefulset.kubernetes.io/pod-name=object-storage-pool-0-0 --for=condition=ready pod -n objectstorage-system --timeout=-1s 2>&1 | grep -q "error: no matching resources found"; do
     sleep 1
   done
 
-  kubectl wait -l statefulset.kubernetes.io/pod-name=object-storage-pool-0-0 --for=condition=ready pod -n ${backendNamespace} --timeout=-1s
-  kubectl wait -l statefulset.kubernetes.io/pod-name=object-storage-pool-0-1 --for=condition=ready pod -n ${backendNamespace} --timeout=-1s
-  kubectl wait -l statefulset.kubernetes.io/pod-name=object-storage-pool-0-2 --for=condition=ready pod -n ${backendNamespace} --timeout=-1s
-  kubectl wait -l statefulset.kubernetes.io/pod-name=object-storage-pool-0-3 --for=condition=ready pod -n ${backendNamespace} --timeout=-1s
+  kubectl wait -l statefulset.kubernetes.io/pod-name=object-storage-pool-0-0 --for=condition=ready pod -n objectstorage-system --timeout=-1s
+  kubectl wait -l statefulset.kubernetes.io/pod-name=object-storage-pool-0-1 --for=condition=ready pod -n objectstorage-system --timeout=-1s
+  kubectl wait -l statefulset.kubernetes.io/pod-name=object-storage-pool-0-2 --for=condition=ready pod -n objectstorage-system --timeout=-1s
+  kubectl wait -l statefulset.kubernetes.io/pod-name=object-storage-pool-0-3 --for=condition=ready pod -n objectstorage-system --timeout=-1s
 
   while mc alias set objectstorage ${MINIO_EXTERNAL_ENDPOINT} ${minioAdminUser} ${minioAdminPassword} 2>&1 | grep -q "Unable to initialize new alias from the provided credentials."; do
     sleep 1

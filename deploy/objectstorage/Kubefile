@@ -9,6 +9,5 @@ ENV cloudPort=""
 ENV storageSize=${storageSize:-1Gi}
 ENV minioAdminUser=${minioAdminUser:-"admin"}
 ENV minioAdminPassword=${minioAdminPassword:-"passw0rd"}
-ENV backendNamespace=${backendNamespace:-"objectstorage-system"}
 
 CMD ["bash scripts/init.sh"]

@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: ${backendNamespace}
+  name: objectstorage-system
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   name: object-storage-env-configuration
-  namespace: ${backendNamespace}
+  namespace: objectstorage-system
   labels:
     v1.min.io/tenant: object-storage
 data:
@@ -19,7 +19,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: object-storage-secret
-  namespace: ${backendNamespace}
+  namespace: objectstorage-system
   labels:
     v1.min.io/tenant: object-storage
 data:
@@ -31,7 +31,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: object-storage-user-0
-  namespace: ${backendNamespace}
+  namespace: objectstorage-system
   labels:
     v1.min.io/tenant: object-storage
 immutable: true
@@ -44,7 +44,7 @@ apiVersion: minio.min.io/v2
 kind: Tenant
 metadata:
   name: object-storage
-  namespace: ${backendNamespace}
+  namespace: objectstorage-system
 spec:
   configuration:
     name: object-storage-env-configuration
@@ -89,7 +89,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: object-storage
-  namespace: ${backendNamespace}
+  namespace: objectstorage-system
 spec:
   ports:
     - name: http-minio
@@ -111,7 +111,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: object-storage-api
-  namespace: ${backendNamespace}
+  namespace: objectstorage-system
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/proxy-body-size: 3g
@@ -149,7 +149,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: object-storage-console
-  namespace: ${backendNamespace}
+  namespace: objectstorage-system
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/proxy-body-size: 3g
