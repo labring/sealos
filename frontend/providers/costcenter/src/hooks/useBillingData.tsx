@@ -23,9 +23,11 @@ export default function useBillingData(props?: {
         startTime: formatISO(start, { representation: 'complete' }),
         endTime: formatISO(end, { representation: 'complete' }),
         page: 1,
-        pageSize: props ? props.pageSize : (delta + 1) * 48,
+        pageSize: props?.pageSize ? props.pageSize : (delta + 1) * 48,
         type: props?.type ?? -1,
-        orderID: ''
+        orderID: '',
+        appType: '',
+        namespace: ''
       };
       return request<any, ApiResp<BillingData>, { spec: BillingSpec }>('/api/billing', {
         method: 'POST',

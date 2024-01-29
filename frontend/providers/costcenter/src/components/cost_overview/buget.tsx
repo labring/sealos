@@ -5,31 +5,38 @@ import up_icon from '@/assert/ic_round-trending-up.svg';
 import { useMemo } from 'react';
 import { displayMoney, formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
-import useBillingData from '@/hooks/useBillingData';
 import CurrencySymbol from '../CurrencySymbol';
 import useEnvStore from '@/stores/env';
+import useBillingData from '@/hooks/useBillingData';
+import request from '@/service/request';
+import { useQuery } from '@tanstack/react-query';
+import useOverviewStore from '@/stores/overview';
+// const getBuget = ()=>request.post('api/billing/buget',)
 export function Buget() {
   const { t } = useTranslation();
-  const { data } = useBillingData();
+  const startTime = useOverviewStore((state) => state.startTime);
+  const endTime = useOverviewStore((state) => state.endTime);
+  const { data, isSuccess } = useQuery({
+    queryKey: ['billing', 'buget', { startTime, endTime }],
+    queryFn: () => {
+      return request.post<{ amount: number }[]>('/api/billing/buget', {
+        startTime,
+        endTime
+      });
+    }
+  });
   const currency = useEnvStore((s) => s.currency);
-  const [_out, _in] = useMemo(
-    () =>
-      (data?.data?.status.item || []).reduce<[number, number]>(
-        (pre, cur) => {
-          if (cur.type === 0) {
-            pre[0] += cur.amount;
-          } else if (cur.type === 1) {
-            pre[1] += cur.amount;
-          }
-          return pre;
-        },
-        [0, 0]
-      ),
-    [data]
-  );
   const list = [
-    { title: 'Deduction', src: down_icon.src, value: formatMoney(_out) },
-    { title: 'Charge', src: up_icon.src, value: formatMoney(_in) }
+    {
+      title: 'Deduction',
+      src: down_icon.src,
+      value: formatMoney(isSuccess ? data?.data[0].amount || 0 : 0)
+    },
+    {
+      title: 'Charge',
+      src: up_icon.src,
+      value: formatMoney(isSuccess ? data?.data[1].amount || 0 : 0)
+    }
   ];
   return (
     <Flex direction={'column'} mb={'34px'}>

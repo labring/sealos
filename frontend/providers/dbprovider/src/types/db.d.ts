@@ -114,4 +114,5 @@ export interface BackupItemType {
   startTime: Date;
   failureReason?: string;
   type: `${BackupTypeEnum}`;
+  connectionPassword: string;
 }

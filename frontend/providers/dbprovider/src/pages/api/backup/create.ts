@@ -4,7 +4,7 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { json2ManualBackup } from '@/utils/json2Yaml';
-import { DBBackupPolicyNameMap, DBTypeEnum } from '@/constants/db';
+import { DBBackupMethodNameMap, DBBackupPolicyNameMap, DBTypeEnum } from '@/constants/db';
 
 export type Props = {
   backupName: string;
@@ -34,15 +34,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
 
     // get backup backupolicies.dataprotection.kubeblocks.io
-    const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
-      group,
-      version,
-      namespace,
-      plural,
-      `${dbName}-${DBBackupPolicyNameMap[dbType]}-backup-policy`
-    )) as { body: any };
+    // const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
+    //   group,
+    //   version,
+    //   namespace,
+    //   plural,
+    //   `${dbName}-${DBBackupPolicyNameMap[dbType]}-backup-policy`
+    // )) as { body: any };
 
-    const backupPolicyName = body?.metadata?.name;
+    const backupPolicyName = `${dbName}-${DBBackupPolicyNameMap[dbType]}-backup-policy`;
+    const backupMethod = DBBackupMethodNameMap[dbType];
 
     if (!backupPolicyName) {
       throw new Error('Cannot find backup policy');
@@ -51,8 +52,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const backupCr = json2ManualBackup({
       name: backupName,
       backupPolicyName,
+      backupMethod,
       remark
     });
+
+    console.info(backupCr);
 
     // create backup
     await applyYamlList([backupCr], 'create');

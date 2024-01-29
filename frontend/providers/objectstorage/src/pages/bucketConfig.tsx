@@ -5,10 +5,10 @@ import { inAuthority } from '@/utils/tools';
 import ConfigHeader from '@/components/buckConfig/ConfigHeader';
 import ConfigMain from '@/components/buckConfig/Configmain';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createBucket } from '@/api/bucket';
-import { useRouter } from 'next/router';
+import { QueryClient, dehydrate, useMutation, useQueryClient } from '@tanstack/react-query';
+import { createBucket, listBucket } from '@/api/bucket';
 import { useToast } from '@/hooks/useToast';
+import { useRouter } from 'next/router';
 const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
   const methods = useForm<FormSchema>({
     defaultValues: {
@@ -17,14 +17,23 @@ const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
     }
   });
   const { toast } = useToast();
-  const router = useRouter();
   const client = useQueryClient();
+  const router = useRouter();
   const mutation = useMutation({
     mutationFn: createBucket,
-    onSuccess(data) {
-      client.invalidateQueries([QueryKey.bucketList]);
-      client.invalidateQueries([QueryKey.bucketUser]);
-      client.invalidateQueries([QueryKey.bucketInfo]);
+    async onSuccess(data) {
+      await client.invalidateQueries({
+        queryKey: [QueryKey.bucketList],
+        refetchType: 'all'
+      });
+      await client.invalidateQueries({
+        queryKey: [QueryKey.bucketUser],
+        refetchType: 'all'
+      });
+      await client.invalidateQueries({
+        queryKey: [QueryKey.bucketInfo],
+        refetchType: 'all'
+      });
       toast({
         title: 'apply successfully',
         status: 'success'
@@ -71,6 +80,7 @@ export async function getServerSideProps(context: any) {
   const query = context.query as bucketConfigQueryParam;
   const bucketName = (query.bucketName || '') as string;
   const bucketPolicy = inAuthority(query.bucketPolicy) ? query.bucketPolicy : Authority.private;
+  const queryClient = new QueryClient();
   return {
     props: {
       ...(await serverSideTranslations(context.locale, ['common', 'tools', 'bucket'], null, [
@@ -78,7 +88,8 @@ export async function getServerSideProps(context: any) {
         'en'
       ])),
       bucketName,
-      bucketPolicy
+      bucketPolicy,
+      dehydratedState: dehydrate(queryClient)
     }
   };
 }

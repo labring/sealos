@@ -27,16 +27,10 @@ import { getQuota, listBucket } from '@/api/bucket';
 import { useRouter } from 'next/router';
 import { useOssStore } from '@/store/ossStore';
 import { useToast } from '@/hooks/useToast';
-import { displayMoney, formatBytes, formatMoney } from '@/utils/tools';
+import { formatBytes } from '@/utils/tools';
 import { useTranslation } from 'next-i18next';
 import DeleteBucketModal from '../common/modal/DeleteBucketModal';
-import useBillingData from '@/hooks/useBillingData';
-import { endOfDay, formatISO, startOfDay, startOfHour } from 'date-fns';
-import { BillingData, BillingSpec, BillingType } from '@/types/billing';
-import request from '@/services/request';
-import { ApiResp } from '@/services/kubernet';
 import useSessionStore from '@/store/session';
-
 function MoreMenu({ bucket }: { bucket: TBucket }) {
   const router = useRouter();
   const { t } = useTranslation(['common', 'bucket']);
@@ -160,39 +154,8 @@ function BucketOverview({ ...styles }: StackProps) {
   const limit = quotaQuery.data?.quota.total || 0;
   const used = quotaQuery.data?.quota.used || 0;
   const count = quotaQuery.data?.quota.count || 0;
-  // const end = startOfHour(new Date());
-  // const leastCost = useQuery({
-  //   queryKey: ['billing', { end }],
-  //   queryFn: () => {
-  //     const spec: BillingSpec = {
-  //       appType: 'OBJECT-STORAGE',
-  //       startTime: formatISO(startOfDay(end), { representation: 'complete' }),
-  //       endTime: formatISO(endOfDay(end), { representation: 'complete' }),
-  //       page: 1,
-  //       pageSize: 1,
-  //       type: BillingType.CONSUME,
-  //       orderID: ''
-  //     };
-  //     return request<any, BillingData, { spec: BillingSpec }>('/api/billing', {
-  //       method: 'POST',
-  //       data: {
-  //         spec
-  //       }
-  //     });
-  //   },
-  //   select(data) {
-  //     console.log(data?.status.item);
-  //     return data?.status.item?.[0].amount || 0;
-  //   }
-  // });
   return (
     <Stack fontSize={'12px'} {...styles}>
-      {
-        // <Flex justifyContent={'space-between'}>
-        //   <Text>{t('dailyEstimate')}:</Text>
-        //   <Text w="160px">{displayMoney(formatMoney((leastCost.data ?? 0) * 24))}</Text>
-        // </Flex>
-      }
       <Flex justifyContent={'space-between'}>
         <Text>{t('totalObjects')}：</Text>
         <Text w="160px">{count}</Text>
@@ -232,6 +195,13 @@ export default function SideBar() {
   const listBucketQuery = useQuery({
     queryKey: [QueryKey.bucketList, session],
     queryFn: listBucket,
+    select(data) {
+      return data;
+    },
+    refetchInterval(data, query) {
+      if (data?.list.some((bucket) => !bucket.isComplete)) return 5000;
+      else return false;
+    },
     enabled: !!s3client
   });
   const bucketList = listBucketQuery.data?.list || [];
@@ -261,9 +231,9 @@ export default function SideBar() {
             p="5px"
             aria-label={'refresh bucket'}
             variant={'white-bg-icon'}
-            onClick={() => {
-              queryClient.invalidateQueries([QueryKey.bucketList]);
-              queryClient.invalidateQueries([QueryKey.bucketInfo]);
+            onClick={async () => {
+              await queryClient.invalidateQueries([QueryKey.bucketList]);
+              await queryClient.invalidateQueries([QueryKey.bucketInfo]);
               toast({
                 status: 'success',
                 title: 'refresh successfully'

@@ -20,19 +20,19 @@ import Tip from '@/components/Tip';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import { useTranslation } from 'next-i18next';
 import { useForm } from 'react-hook-form';
-import { DBDetailType } from '@/types/db';
+import { BackupItemType, DBDetailType } from '@/types/db';
 import { json2CreateCluster, json2Account } from '@/utils/json2Yaml';
 import { useRouter } from 'next/router';
 import { applyYamlList } from '@/api/db';
 
 const BackupModal = ({
   db,
-  backupName,
+  backupInfo,
   onClose,
   onSuccess
 }: {
   db: DBDetailType;
-  backupName: string;
+  backupInfo: BackupItemType;
   onClose: () => void;
   onSuccess?: () => void;
 }) => {
@@ -53,7 +53,7 @@ const BackupModal = ({
         ...db,
         dbName: databaseName
       };
-      const yamlList = [json2CreateCluster(dbData, backupName), json2Account(dbData)];
+      const yamlList = [json2CreateCluster(dbData, backupInfo), json2Account(dbData)];
       return applyYamlList(yamlList, 'create');
     },
     onSuccess() {

@@ -121,6 +121,7 @@
   "Auto Backup": "自动备份",
   "Containers": "容器",
   "Redis does not support backup at this time": "Redis 暂时不支持备份",
+  "The Single-node database is only suitable for development testing.": "单节点数据库仅适用开发测试",
   "The multi-replica Redis includes High Availability (HA) nodes. Please note, the anticipated price already encompasses the cost for the HA nodes.": "Redis 多副本包含 HA 节点，请悉知，预估价格已包含 HA 节点费用",
   "CronExpression": "循环周期",
   "Monday": "周一",
@@ -260,5 +261,9 @@
   "Backup Name cannot empty": "备份名称不能为空",
   "Failed to turn off automatic backup": "关闭自动备份失败",
   "Automatic backup is turned off": "已关闭自动备份",
-  "Are you sure you want to turn off automatic backup": "确定关闭自动备份吗"
+  "Are you sure you want to turn off automatic backup": "确定关闭自动备份吗",
+  "db instances tip": "{{db}} 实例数量建议为奇数",
+  "Deleting": "删除中",
+  "Backup Running": "备份中",
+  "Backup Deleting": "删除中"
 }

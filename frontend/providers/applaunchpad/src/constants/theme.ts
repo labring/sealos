@@ -162,7 +162,8 @@ export const theme = extendTheme({
         fontSize: 'md',
         height: '100%',
         overflow: 'overlay',
-        fontWeight: 400
+        fontWeight: 400,
+        minWidth: '1024px'
       }
     }
   },

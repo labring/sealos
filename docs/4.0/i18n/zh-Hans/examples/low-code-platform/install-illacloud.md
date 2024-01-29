@@ -1,6 +1,6 @@
 # 快速安装 ILLA Cloud
 
-[ILLA Cloud](https://www.illacloud.com/zh-CN) 是一个开源的低代码平台，使用户能够创建、部署和管理内部应用程序。通过 ILLA Cloud，您可以使用直观的拖放组件来灵活地构建各种应用程序，从基本的 CRUD 应用程序到更复杂的多步骤工作流程。
+[ILLA Cloud](https://www.illacloud.com/zh) 是一个开源的低代码平台，使用户能够创建、部署和管理内部应用程序。通过 ILLA Cloud，您可以使用直观的拖放组件来灵活地构建各种应用程序，从基本的 CRUD 应用程序到更复杂的多步骤工作流程。
 
 ## 步骤 1：在 [Sealos](https://cloud.sealos.io) 桌面环境中打开 「应用管理」 应用
 

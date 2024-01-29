@@ -60,7 +60,7 @@ func (r *TerminalReconciler) createNginxIngress(terminal *terminalv1.Terminal, h
 		Path:     "/",
 		Backend: networkingv1.IngressBackend{
 			Service: &networkingv1.IngressServiceBackend{
-				Name: terminal.Name,
+				Name: terminal.Status.ServiceName,
 				Port: networkingv1.ServiceBackendPort{
 					Number: 8080,
 				},

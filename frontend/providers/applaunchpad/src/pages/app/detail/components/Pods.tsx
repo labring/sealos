@@ -1,33 +1,29 @@
-import React, { useState, useCallback } from 'react';
-import {
-  Box,
-  Button,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  TableContainer,
-  Flex,
-  MenuButton,
-  Tooltip,
-  Center
-} from '@chakra-ui/react';
-import { sealosApp } from 'sealos-desktop-sdk/app';
 import { restartPodByName } from '@/api/app';
-import type { PodDetailType } from '@/types/app';
-import { useLoading } from '@/hooks/useLoading';
-import { useToast } from '@/hooks/useToast';
-import PodLineChart from '@/components/PodLineChart';
-import dynamic from 'next/dynamic';
 import MyIcon from '@/components/Icon';
+import MyTooltip from '@/components/MyTooltip';
+import PodLineChart from '@/components/PodLineChart';
 import { PodStatusEnum } from '@/constants/app';
 import { useConfirm } from '@/hooks/useConfirm';
-import MyMenu from '@/components/Menu';
-import { useTranslation } from 'next-i18next';
+import { useLoading } from '@/hooks/useLoading';
+import { useToast } from '@/hooks/useToast';
+import type { PodDetailType } from '@/types/app';
 import { QuestionOutlineIcon } from '@chakra-ui/icons';
-import MyTooltip from '@/components/MyTooltip';
+import {
+  Box,
+  Center,
+  Flex,
+  Table,
+  TableContainer,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr
+} from '@chakra-ui/react';
+import { useTranslation } from 'next-i18next';
+import dynamic from 'next/dynamic';
+import React, { useCallback, useState } from 'react';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 
 const LogsModal = dynamic(() => import('./LogsModal'));
 const DetailModel = dynamic(() => import('./PodDetailModal'));
@@ -92,7 +88,9 @@ const Pods = ({
           {item.status.label}
           {!!item.status.reason && (
             <MyTooltip
-              label={`Reason: ${item.status.reason}${
+              label={`${
+                item.status?.lastStateReason ? `LastReason: ${item.status?.lastStateReason}\n` : ''
+              }Reason: ${item.status.reason}${
                 item.status.message ? `\nMessage: ${item.status.message}` : ''
               }`}
               whiteSpace={'pre-wrap'}
@@ -120,7 +118,7 @@ const Pods = ({
       key: 'cpu',
       render: (item: PodDetailType) => (
         <Box h={'45px'} w={'120px'}>
-          <PodLineChart type="green" limit={item.cpu} data={item.usedCpu.slice(-8)} />
+          <PodLineChart type="green" data={item.usedCpu} />
         </Box>
       )
     },
@@ -129,7 +127,7 @@ const Pods = ({
       key: 'memory',
       render: (item: PodDetailType) => (
         <Box h={'45px'} w={'120px'}>
-          <PodLineChart type="deepBlue" limit={item.memory} data={item.usedMemory.slice(-8)} />
+          <PodLineChart type="deepBlue" data={item.usedMemory} />
         </Box>
       )
     },

@@ -40,6 +40,8 @@ import ListIcon from './icons/ListIcon';
 import PortIcon from './icons/PortIcon';
 import WarnIcon from './icons/WarnIcon';
 import CloseIcon from './icons/CloseIcon';
+import SortPolygonUpIcon from './icons/SortPolygonUpIcon';
+import SortPolygonDownIcon from './icons/SortPolygonDownIcon';
 
 export {
   YamlCode,
@@ -83,5 +85,7 @@ export {
   WechatIcon,
   PortIcon,
   WarnIcon,
-  CloseIcon
+  CloseIcon,
+  SortPolygonUpIcon,
+  SortPolygonDownIcon
 };

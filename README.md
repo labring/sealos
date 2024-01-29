@@ -18,7 +18,7 @@ A Cloud Operating System designed for managing cloud-native applications
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_shield)
 [![codecov](https://codecov.io/gh/labring/sealos/branch/main/graph/badge.svg?token=e41ZDcj06N)](https://codecov.io/gh/labring/sealos)
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Fpostwoman.io&logo=Postwoman)](https://sealos.io)
-[![OSCS Status](https://www.oscs1024.com/platform/badge/labring/sealos.svg?size=small)](https://www.oscs1024.com/project/labring/sealos?ref=badge_small)
+[![OSCS Status](https://www.oscs1024.com/platform/badge/labring/sealos.svg?size=small)](https://www.oscs1024.com/repo/labring/sealos?ref=badge_small)
 
 <br />
 
@@ -38,7 +38,7 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 
 ## 🚀 Deploy your app on Sealos
 
-[Try online，sealos public cloud](https://cloud.sealos.io)   [sealos private cloud, local hosting](https://sealos.io/zh-Hans/self-hosting)
+[Quick Start](https://cloud.sealos.io) 
 
 * [Easily Deploy Nginx in 30 Seconds on Sealos](https://sealos.io/docs/quick-start/app-deployments/use-app-launchpad)
 * [Start a mysql/pgsql/mongo highly available database in 30 seconds on Sealos](https://sealos.io/docs/quick-start/app-deployments/install-db-with-database)
@@ -46,23 +46,28 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 * [Running the Uptime Kuma dial test system on Sealos](https://docs.sealos.io/docs/examples/dial-testing-system/install-uptime-kuma)
 * [Running a low-code platform on Sealos](https://docs.sealos.io/docs/category/low-code-platform)
 
-![](/docs/4.0/img/app-launchpad.png)
+![](/docs/4.0/img/sealos-desktop.webp)
 
 🔍 Some Screen Shots of Sealos:
 
 <div align="center">
 
-| Terminal | App Launchpad |
+| Templates | App Launchpad |
 | :---: | :---: |
-| ![](/docs/4.0/img/terminal.webp) | ![](/docs/4.0/img/app-launchpad-1.webp) |
+| ![](/docs/4.0/img/templates.jpg) | ![](/docs/4.0/img/app-launchpad-1.jpg) |
 | Database | Serverless |
-| ![](/docs/4.0/img/database.webp) | ![](/docs/4.0/img/laf.webp) |
+| ![](/docs/4.0/img/database.jpg) | ![](/docs/4.0/img/laf.jpg) |
 
 </div>
 
+## Install
+
+* Install Sealos cloud: [Self hosting](https://sealos.io/self-hosting)
+* Install Kubernetes and kubernetes lifecycle managemant: [One command install kubernetes HA cluster](https://sealos.io/docs/self-hosting/lifecycle-management/quick-start/deploy-kubernetes#install-single-node-kubernetes)
+
 ## 💡 Core features
 
-- 🚀 **Application Management**: Easy management and quick release of publicly accessible distributed applications in the app store.
+- 🚀 **Application Management**: Easy management and quick release of publicly accessible distributed applications in the templates marketplace.
 - 🗄️ **Database Management**: Create high-availability databases in seconds, offering support for MySQL, PostgreSQL, MongoDB, and Redis.
 - 🌥️ **Cloud Universality**: Equally effective in both public and private cloud, enabling a seamless transition of traditional applications to the cloud.
 

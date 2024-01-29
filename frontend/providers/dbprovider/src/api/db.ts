@@ -64,3 +64,6 @@ export const delDBServiceByName = (name: string) => DELETE('/api/delServiceByNam
 
 export const getDBStatefulSetByName = (name: string, dbType: DBType) =>
   GET<V1StatefulSet>(`/api/getStatefulSetByName?name=${name}&dbType=${dbType}`);
+
+export const adapterMongoHaConfig = (payload: { name: string }) =>
+  POST('/api/adapter/mongodb', payload);

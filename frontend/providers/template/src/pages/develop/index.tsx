@@ -94,8 +94,10 @@ export default function Develop() {
     try {
       const result = getYamlSource(str);
       const defaultInputes = getTemplateDefaultValues(result);
+      const formInputs = formHook.getValues();
+
       setYamlSource(result);
-      const correctYamlList = generateCorrectYamlList(result, defaultInputes);
+      const correctYamlList = generateCorrectYamlList(result, formInputs);
       setYamlList(correctYamlList);
     } catch (error: any) {
       toast({
@@ -114,13 +116,9 @@ export default function Develop() {
   });
 
   // watch form change, compute new yaml
-  useEffect(
-    () =>
-      formHook.watch((data: any) => {
-        data && formOnchangeDebounce(data);
-      }).unsubscribe,
-    [formHook.watch]
-  );
+  formHook.watch((data: any) => {
+    data && formOnchangeDebounce(data);
+  });
 
   const formOnchangeDebounce = debounce((data: any) => {
     try {

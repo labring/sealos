@@ -10,6 +10,14 @@ import { useBreakpointValue } from '@chakra-ui/react';
 import { BillingData } from '@/types/billing';
 import { useTranslation } from 'next-i18next';
 import useEnvStore from '@/stores/env';
+import {
+  ComposeOption,
+  DatasetComponentOption,
+  LabelLayoutOptionCallback,
+  LegendComponentOption,
+  PieSeriesOption,
+  TooltipComponentOption
+} from 'echarts';
 
 echarts.use([
   TooltipComponent,
@@ -22,7 +30,7 @@ echarts.use([
 
 export default function CostChart({ data }: { data: BillingData['status']['deductionAmount'] }) {
   const { t } = useTranslation();
-  const { cpu = 0, memory = 0, storage = 0, gpu = 0, network = 0 } = data;
+  const { cpu = 0, memory = 0, storage = 0, gpu = 0, network = 0, port = 0 } = data;
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
   const radius = useBreakpointValue({
     xl: ['45%', '70%'],
@@ -43,18 +51,17 @@ export default function CostChart({ data }: { data: BillingData['status']['deduc
       ['memory', formatMoney(memory).toFixed(2)],
       ['storage', formatMoney(storage).toFixed(2)],
       ['network', formatMoney(network).toFixed(2)],
+      ['port', formatMoney(port).toFixed(2)],
       ...(gpuEnabled ? [['gpu', formatMoney(gpu).toFixed(2)]] : [])
     ],
     [cpu, memory, storage, gpu, gpuEnabled]
   );
-  const amount = formatMoney(cpu + memory + storage + gpu);
+  const amount = formatMoney(cpu + memory + storage + gpu + port + network);
   const publicOption = {
     name: 'Cost Form',
     radius: radius || ['45%', '70%'],
     avoidLabelOverlap: false,
     center: ['50%', '60%'],
-    // selectedMode: 'single',
-
     left: 'left',
     emptyCircleStyle: {
       borderCap: 'ronud'
@@ -71,21 +78,10 @@ export default function CostChart({ data }: { data: BillingData['status']['deduc
     legend: {
       top: '10%'
     },
-    color: ['#24282C', '#485058', '#7B838B', '#BDC1C5'],
+    color: ['#24282C', '#485058', '#7B838B', '#BDC1C5', '#9CA2A8', '#DEE0E2'],
     series: [
       {
         type: 'pie',
-
-        // label: {
-        //   show:true,
-        //   formatter: '{b}\n￥{@cost}\n({d}%)',
-        //   lineHeight: 15,
-
-        // },
-        // label: {
-        //   show: false,
-        //   // position: 'center'
-        // },
         emphasis: {
           label: {
             show: false
@@ -95,54 +91,16 @@ export default function CostChart({ data }: { data: BillingData['status']['deduc
           show: false,
           fontSize: 14
         },
-
         labelLine: {
           show: false
         },
-        // label: {
-        //   formatter: '{a|{a}}{abg|}\n{hr|}\n  {b|{b}：}{c}  {per|{d}%}  ',
-        //   backgroundColor: '#F6F8FC',
-        //   borderColor: '#8C8D8E',
-        //   borderWidth: 1,
-        //   borderRadius: 4,
-        //   rich: {
-        //     a: {
-        //       color: '#6E7079',
-        //       lineHeight: 22,
-        //       align: 'center'
-        //     },
-        //     hr: {
-        //       borderColor: '#8C8D8E',
-        //       width: '100%',
-        //       borderWidth: 1,
-        //       height: 0
-        //     },
-        //     b: {
-        //       color: '#4C5058',
-        //       fontSize: 14,
-        //       fontWeight: 'bold',
-        //       lineHeight: 33
-        //     },
-        //     per: {
-        //       color: '#fff',
-        //       backgroundColor: '#4C5058',
-        //       padding: [3, 4],
-        //       borderRadius: 4
-        //     }
-        //   }
-        // },
-        // emphasis: {
-        //   label:{
-        //     show:true
-        //   }
-        // },
         encode: {
           itemName: 'name',
           value: 'cost'
         },
         itemStyle: {
           borderWidth: 1,
-          borderColor: '#fff',
+          borderColor: 'rgba(0,0,0,0)',
           left: 0
         },
         ...publicOption
@@ -172,12 +130,8 @@ export default function CostChart({ data }: { data: BillingData['status']['deduc
           itemName: 'name',
           value: 'cost'
         }
-        // itemStyle: {
-        //   borderWidth: 0,
-        // }
       }
     ]
-    // ]
   };
   return (
     <ReactEChartsCore
@@ -189,7 +143,6 @@ export default function CostChart({ data }: { data: BillingData['status']['deduc
         aspectRatio,
         width: '100%',
         flex: 1
-        // pointerEvents: 'none'
       }}
     />
   );

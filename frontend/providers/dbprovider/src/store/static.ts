@@ -23,7 +23,8 @@ export let DBVersionMap: DBVersionMapType = {
   [DBTypeEnum.kafka]: [{ id: 'kafka-3.3.2', label: 'kafka-3.3.2' }],
   [DBTypeEnum.qdrant]: [{ id: 'qdrant-1.1.0', label: 'qdrant-1.1.0' }],
   [DBTypeEnum.nebula]: [{ id: 'nebula-v3.5.0', label: 'nebula-v3.5.0' }],
-  [DBTypeEnum.weaviate]: [{ id: 'weaviate-1.18.0', label: 'weaviate-1.18.0' }]
+  [DBTypeEnum.weaviate]: [{ id: 'weaviate-1.18.0', label: 'weaviate-1.18.0' }],
+  [DBTypeEnum.milvus]: [{ id: 'milvus-2.2.4', label: 'milvus-2.2.4' }]
 };
 
 export const getUserPrice = async () => {

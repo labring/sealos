@@ -141,7 +141,7 @@
   "File Name": "文件名",
   "Filename can not empty": "文件名不能为空",
   "File Value can not empty": "文件值不能为空",
-  "ConfigMap Conflict": "ConfigMap Path Conflict",
+  "ConfigMap Conflict": "配置映射冲突",
   "Storage path can not empty": "挂载路径不能为空",
   "Storage Range": "容量范围",
   "Storage Value can not empty": "容量不能为空",
@@ -221,5 +221,10 @@
   "Configurable number of instances or automatic horizontal scaling": "可配置实例数或自动横向伸缩",
   "gift time tip": "{{time}} 小时内",
   "gift amount tip": "充值 {{amount}} 赠送 {{gift}} ",
-  "ConfigMap Tip": "配置文件"
+  "ConfigMap Tip": "配置文件",
+  "No Data Available": "暂无数据",
+  "Restart Success": "重启成功",
+  "ConfigMap Path Conflict": "ConfigMap 路径冲突",
+  "Deploy Application": "部署应用",
+  "Reboot Success": "重启成功"
 }

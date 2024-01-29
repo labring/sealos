@@ -36,12 +36,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"golang.org/x/sync/errgroup"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	DefaultAccountDBName  = "sealos-resources"
+	DefaultTrafficDBName  = "sealos-networkmanager-synchronizer"
 	DefaultAuthDBName     = "sealos-auth"
 	DefaultMeteringConn   = "metering"
 	DefaultMonitorConn    = "monitor"
@@ -49,6 +49,8 @@ const (
 	DefaultUserConn       = "user"
 	DefaultPricesConn     = "prices"
 	DefaultPropertiesConn = "properties"
+	//TODO fix
+	DefaultTrafficConn = "traffic"
 )
 
 const DefaultRetentionDay = 30
@@ -61,6 +63,7 @@ var cryptoKey = defaultCryptoKey
 type mongoDB struct {
 	Client            *mongo.Client
 	AccountDB         string
+	TrafficDB         string
 	AuthDB            string
 	UserConn          string
 	MonitorConnPrefix string
@@ -68,6 +71,7 @@ type mongoDB struct {
 	BillingConn       string
 	PricesConn        string
 	PropertiesConn    string
+	TrafficConn       string
 }
 
 type AccountBalanceSpecBSON struct {
@@ -247,6 +251,42 @@ func (m *mongoDB) InsertMonitor(ctx context.Context, monitors ...*resources.Moni
 	return err
 }
 
+func (m *mongoDB) GetDistinctMonitorCombinations(startTime, endTime time.Time, namespace string) ([]resources.Monitor, error) {
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bson.M{
+			"time": bson.M{
+				"$gte": startTime.UTC(),
+				"$lt":  endTime.UTC(),
+			},
+			"category": namespace,
+		}}},
+		{{Key: "$group", Value: bson.M{
+			"_id": bson.M{
+				"category": "$category",
+				"name":     "$name",
+				"type":     "$type",
+			},
+		}}},
+	}
+	cursor, err := m.getMonitorCollection(startTime).Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("aggregate error: %v", err)
+	}
+	defer cursor.Close(context.Background())
+	var monitors []resources.Monitor
+	for cursor.Next(context.Background()) {
+		var result = make(map[string]resources.Monitor, 1)
+		if err := cursor.Decode(result); err != nil {
+			return nil, fmt.Errorf("decode error: %v", err)
+		}
+		monitors = append(monitors, result["_id"])
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, fmt.Errorf("cursor error: %v", err)
+	}
+	return monitors, nil
+}
+
 func (m *mongoDB) GetAllPricesMap() (map[string]resources.Price, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -301,90 +341,6 @@ func (m *mongoDB) SavePropertyTypes(types []resources.PropertyType) error {
 	}
 	_, err := m.getPropertiesCollection().InsertMany(context.Background(), tps)
 	return err
-}
-
-// 2020-12-01 23:00:00 - 2020-12-02 00:00:00
-// 2020-12-02 00:00:00 - 2020-12-02 01:00:00
-func (m *mongoDB) GenerateMeteringData(startTime, endTime time.Time, prices map[string]resources.Price) error {
-	filter := bson.M{
-		"time": bson.M{
-			"$gte": startTime,
-			"$lt":  endTime,
-		},
-	}
-	cursor, err := m.getMonitorCollection(startTime).Find(context.Background(), filter)
-	if err != nil {
-		return fmt.Errorf("find monitors error: %v", err)
-	}
-	defer cursor.Close(context.Background())
-
-	meteringMap := make(map[string]map[string]int64)
-	countMap := make(map[string]map[string]int64)
-	updateTimeMap := make(map[string]map[string]*time.Time)
-
-	for cursor.Next(context.Background()) {
-		var monitor resources.Monitor
-		if err := cursor.Decode(&monitor); err != nil {
-			return fmt.Errorf("decode monitor error: %v", err)
-		}
-
-		if _, ok := updateTimeMap[monitor.Category]; !ok {
-			updateTimeMap[monitor.Category] = make(map[string]*time.Time)
-		}
-		if _, ok := updateTimeMap[monitor.Category][monitor.Property]; !ok {
-			lastUpdateTime, err := m.GetUpdateTimeForCategoryAndPropertyFromMetering(monitor.Category, monitor.Property)
-			if err != nil {
-				logger.Debug(err, "get latest update time failed", "category", monitor.Category, "property", monitor.Property)
-			}
-			updateTimeMap[monitor.Category][monitor.Property] = &lastUpdateTime
-		}
-		lastUpdateTime := updateTimeMap[monitor.Category][monitor.Property].UTC()
-
-		if /* skip last update lte 1 hour*/ lastUpdateTime.Before(startTime) || lastUpdateTime.Equal(startTime) {
-			if _, ok := meteringMap[monitor.Category]; !ok {
-				meteringMap[monitor.Category] = make(map[string]int64)
-				countMap[monitor.Category] = make(map[string]int64)
-			}
-			//TODO interface will delete
-			//meteringMap[monitor.Category][monitor.Property] += monitor.Value
-			countMap[monitor.Category][monitor.Property]++
-			continue
-		}
-		logger.Debug("Info", "skip metering", "category", monitor.Category, "property", monitor.Property, "lastUpdateTime", updateTimeMap[monitor.Category][monitor.Property].UTC(), "startTime", startTime)
-	}
-
-	if err := cursor.Err(); err != nil {
-		return fmt.Errorf("cursor error: %v", err)
-	}
-	eg, _ := errgroup.WithContext(context.Background())
-
-	for category, propertyMap := range meteringMap {
-		for property, totalValue := range propertyMap {
-			count := countMap[category][property]
-			if count < 60 {
-				count = 60
-			}
-			unitValue := math.Ceil(float64(totalValue) / float64(count))
-			metering := &resources.Metering{
-				Category: category,
-				Property: property,
-				Time:     endTime,
-				Amount:   int64(unitValue * float64(prices[property].Price)),
-				Value:    int64(unitValue),
-				//Detail:   "",
-			}
-			_category, _property := category, property
-			eg.Go(func() error {
-				_, err := m.getMeteringCollection().InsertOne(context.Background(), metering)
-				if err != nil {
-					//TODO if insert failed, should todo?
-					logger.Error(err, "insert metering data failed", "category", _category, "property", _property)
-				}
-				return err
-			})
-		}
-	}
-	return eg.Wait()
 }
 
 /*
@@ -445,9 +401,14 @@ func (m *mongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 			}}}
 			continue
 		}
+		if value.PriceType == resources.SUM {
+			groupStage = append(groupStage, primitive.E{Key: keyStr, Value: bson.D{{Key: "$sum", Value: "$used." + keyStr}}})
+			usedStage[keyStr] = bson.D{{Key: "$toInt", Value: "$" + keyStr}}
+			continue
+		}
 		groupStage = append(groupStage, primitive.E{Key: keyStr, Value: bson.D{{Key: "$sum", Value: "$used." + keyStr}}})
 		usedStage[keyStr] = bson.D{{Key: "$toInt", Value: bson.D{{Key: "$round", Value: bson.D{{Key: "$divide", Value: bson.A{
-			"$" + keyStr, bson.D{{Key: "$cond", Value: bson.A{bson.D{{Key: "$gt", Value: bson.A{"$count", minutes}}}, "$count", minutes}}}}}}}}}}
+			"$" + keyStr, minutes}}}}}}}
 	}
 
 	// add the used phase to the $project phase
@@ -981,6 +942,7 @@ func NewMongoInterface(ctx context.Context, URL string) (database.Interface, err
 	return &mongoDB{
 		Client:            client,
 		AccountDB:         DefaultAccountDBName,
+		TrafficDB:         DefaultTrafficDBName,
 		AuthDB:            DefaultAuthDBName,
 		UserConn:          DefaultUserConn,
 		MeteringConn:      DefaultMeteringConn,
@@ -988,5 +950,6 @@ func NewMongoInterface(ctx context.Context, URL string) (database.Interface, err
 		BillingConn:       DefaultBillingConn,
 		PricesConn:        DefaultPricesConn,
 		PropertiesConn:    DefaultPropertiesConn,
+		TrafficConn:       DefaultTrafficConn,
 	}, err
 }

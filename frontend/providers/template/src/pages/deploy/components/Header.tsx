@@ -86,7 +86,8 @@ const Header = ({
           <Tooltip
             label={t('users installed the app', { count: templateDetail.spec.deployCount })}
             hasArrow
-            bg="#FFF">
+            bg="#FFF"
+          >
             <Flex gap={'6px'} cursor={'pointer'}>
               <AvatarGroup size={'xs'} max={3}>
                 <Avatar name={nanoid(6)} />
@@ -112,7 +113,8 @@ const Header = ({
         h={'80px'}
         borderRadius={'8px'}
         backgroundColor={'#FBFBFC'}
-        border={' 1px solid rgba(255, 255, 255, 0.50)'}>
+        border={' 1px solid rgba(255, 255, 255, 0.50)'}
+      >
         <Image src={templateDetail?.spec?.icon} alt="" width={'60px'} height={'60px'} />
       </Flex>
       <Flex ml={'24px'} w="520px" flexDirection={'column'}>
@@ -129,7 +131,8 @@ const Header = ({
             _hover={{
               background: '#F4F6F8'
             }}
-            onClick={(e) => goGithub(e, templateDetail?.spec?.gitRepo)}>
+            onClick={(e) => goGithub(e, templateDetail?.spec?.gitRepo)}
+          >
             <HomePageIcon />
             <Text fontSize={'12px '} fontWeight={400} pl="6px">
               {t('Home Page')}
@@ -145,7 +148,8 @@ const Header = ({
                 alignItems={'center'}
                 _hover={{
                   background: '#F4F6F8'
-                }}>
+                }}
+              >
                 <ShareIcon />
                 <Text fontSize={'12px '} fontWeight={400} color={'#485058'} pl="6px">
                   {t('Share')}
@@ -160,7 +164,8 @@ const Header = ({
                   w="60px"
                   flexDirection={'column'}
                   justifyContent={'center'}
-                  alignItems={'center'}>
+                  alignItems={'center'}
+                >
                   <Flex {...IconBox}>
                     <CopyLinkIcon />
                   </Flex>
@@ -176,7 +181,8 @@ const Header = ({
                   <Flex
                     flexDirection={'column'}
                     alignItems={'center'}
-                    onClick={() => copyData(HtmlPart)}>
+                    onClick={() => copyData(HtmlPart)}
+                  >
                     <Flex {...IconBox}>
                       <HtmlIcon />
                     </Flex>
@@ -188,7 +194,8 @@ const Header = ({
                     flexDirection={'column'}
                     alignItems={'center'}
                     ml="auto"
-                    onClick={() => copyData(MdPart)}>
+                    onClick={() => copyData(MdPart)}
+                  >
                     <Flex {...IconBox}>
                       <MdIcon />
                     </Flex>
@@ -215,7 +222,8 @@ const Header = ({
             fontSize={'12px'}
             color={'5A646E'}
             fontWeight={400}
-            onClick={() => copyData(templateDetail?.spec?.description)}>
+            onClick={() => copyData(templateDetail?.spec?.description)}
+          >
             {templateDetail?.spec?.description}
           </Text>
         </Tooltip>
@@ -230,7 +238,8 @@ const Header = ({
         bg={'myWhite.600'}
         borderColor={'myGray.200'}
         variant={'base'}
-        onClick={handleExportYaml}>
+        onClick={handleExportYaml}
+      >
         {t('Export')} Yaml
       </Button>
       <Button px={4} minW={'140px'} h={'40px'} variant={'primary'} onClick={applyCb}>

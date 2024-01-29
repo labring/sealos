@@ -43,6 +43,7 @@
     "nanoid": "^4.0.2",
     "next": "13.1.6",
     "next-i18next": "^13.3.0",
+    "node-cron": "^3.0.3",
     "nprogress": "^0.2.0",
     "octokit": "^3.1.1",
     "pluralize": "^8.0.0",
@@ -58,6 +59,7 @@
     "remark-unwrap-images": "^3.0.1",
     "sass": "^1.68.0",
     "sealos-desktop-sdk": "workspace:^",
+    "swiper": "^11.0.5",
     "typescript": "5.2.2",
     "zustand": "^4.4.1"
   },

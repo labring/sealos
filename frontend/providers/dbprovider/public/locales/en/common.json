@@ -258,5 +258,9 @@
   "Wednesday": "Wednesday",
   "Failed to turn off automatic backup": "Failed to turn off automatic backup",
   "Automatic backup is turned off": "Automatic backup is turned off",
-  "Are you sure you want to turn off automatic backup": "Are you sure you want to turn off automatic backup?"
+  "Are you sure you want to turn off automatic backup": "Are you sure you want to turn off automatic backup?",
+  "db instances tip": "The number of {{db}} instances is recommended to be an odd number",
+  "Deleting": "Deleting",
+  "Backup Running": "Backup Running",
+  "Backup Deleting": "Backup Deleting"
 }

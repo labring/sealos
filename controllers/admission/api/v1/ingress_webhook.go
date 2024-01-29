@@ -47,13 +47,12 @@ var ilog = logf.Log.WithName("ingress-validating-webhook")
 
 type IngressMutator struct {
 	client.Client
-	domain             string
+	Domains            DomainList
 	IngressAnnotations map[string]string
 }
 
 func (m *IngressMutator) SetupWithManager(mgr ctrl.Manager) error {
 	m.Client = mgr.GetClient()
-	m.domain = os.Getenv("DOMAIN")
 	return builder.WebhookManagedBy(mgr).
 		For(&netv1.Ingress{}).
 		WithDefaulter(m).
@@ -65,9 +64,12 @@ func (m *IngressMutator) Default(_ context.Context, obj runtime.Object) error {
 	if !ok {
 		return errors.New("obj convert Ingress is error")
 	}
-	if isUserNamespace(i.Namespace) && hasSubDomain(i, m.domain) {
-		ilog.Info("mutating ingress in user ns", "ingress namespace", i.Namespace, "ingress name", i.Name)
-		m.mutateUserIngressAnnotations(i)
+
+	for _, domain := range m.Domains {
+		if isUserNamespace(i.Namespace) && hasSubDomain(i, domain) {
+			ilog.Info("mutating ingress in user ns", "ingress namespace", i.Namespace, "ingress name", i.Name)
+			m.mutateUserIngressAnnotations(i)
+		}
 	}
 	return nil
 }
@@ -83,8 +85,8 @@ func (m *IngressMutator) mutateUserIngressAnnotations(i *netv1.Ingress) {
 
 type IngressValidator struct {
 	client.Client
-	domain string
-	cache  cache.Cache
+	Domains DomainList
+	cache   cache.Cache
 
 	IcpValidator *IcpValidator
 }
@@ -94,19 +96,15 @@ const IngressHostIndex = "host"
 func (v *IngressValidator) SetupWithManager(mgr ctrl.Manager) error {
 	ilog.Info("starting webhook cache map")
 
-	iv := IngressValidator{
-		Client: mgr.GetClient(),
-		domain: os.Getenv("DOMAIN"),
-		cache:  mgr.GetCache(),
+	v.Client = mgr.GetClient()
+	v.cache = mgr.GetCache()
+	v.IcpValidator = NewIcpValidator(
+		os.Getenv("ICP_ENABLED") == "true",
+		os.Getenv("ICP_ENDPOINT"),
+		os.Getenv("ICP_KEY"),
+	)
 
-		IcpValidator: NewIcpValidator(
-			os.Getenv("ICP_ENABLED") == "true",
-			os.Getenv("ICP_ENDPOINT"),
-			os.Getenv("ICP_KEY"),
-		),
-	}
-
-	err := iv.cache.IndexField(
+	err := v.cache.IndexField(
 		context.Background(),
 		&netv1.Ingress{},
 		IngressHostIndex,
@@ -125,7 +123,7 @@ func (v *IngressValidator) SetupWithManager(mgr ctrl.Manager) error {
 
 	return builder.WebhookManagedBy(mgr).
 		For(&netv1.Ingress{}).
-		WithValidator(&iv).
+		WithValidator(v).
 		Complete()
 }
 
@@ -203,12 +201,8 @@ func (v *IngressValidator) validate(ctx context.Context, i *netv1.Ingress) error
 }
 
 func (v *IngressValidator) checkCname(i *netv1.Ingress, rule *netv1.IngressRule) error {
-	// check if ingress host is end with domain
-	if strings.HasSuffix(rule.Host, v.domain) {
-		ilog.Info("ingress host is end with "+v.domain+", skip validate", "ingress namespace", i.Namespace, "ingress name", i.Name)
-		return nil
-	}
-
+	ilog.Info("checking cname", "ingress namespace", i.Namespace, "ingress name", i.Name, "rule host", rule.Host)
+	ilog.Info("domains:", "domains", strings.Join(v.Domains, ","))
 	// get cname and check if it is cname to domain
 	cname, err := net.LookupCNAME(rule.Host)
 	if err != nil {
@@ -217,14 +211,19 @@ func (v *IngressValidator) checkCname(i *netv1.Ingress, rule *netv1.IngressRule)
 	}
 	// remove last dot
 	cname = strings.TrimSuffix(cname, ".")
-
-	// if cname is not end with domain, return error
-	if !strings.HasSuffix(cname, v.domain) {
-		ilog.Info("deny ingress host "+rule.Host+", cname is not end with "+v.domain, "ingress namespace", i.Namespace, "ingress name", i.Name, "cname", cname)
-		return fmt.Errorf(code.MessageFormat, code.IngressFailedCnameCheck, "can not verify ingress host "+rule.Host+", cname is not end with "+v.domain)
+	for _, domain := range v.Domains {
+		// check if ingress host is end with domain
+		if strings.HasSuffix(rule.Host, domain) {
+			ilog.Info("ingress host is end with "+domain+", skip validate", "ingress namespace", i.Namespace, "ingress name", i.Name)
+			return nil
+		}
+		// if cname is not end with domain, return error
+		if strings.HasSuffix(cname, domain) {
+			ilog.Info("ingress host "+rule.Host+" is cname to "+cname+", pass checkCname validate", "ingress namespace", i.Namespace, "ingress name", i.Name, "cname", cname)
+			return nil
+		}
 	}
-	ilog.Info("ingress host "+rule.Host+" is cname to "+cname+", pass checkCname validate", "ingress namespace", i.Namespace, "ingress name", i.Name, "cname", cname)
-	return nil
+	return fmt.Errorf(code.MessageFormat, code.IngressFailedCnameCheck, "can not verify ingress host "+rule.Host+", cname is not end with any domains in "+strings.Join(v.Domains, ","))
 }
 
 func (v *IngressValidator) checkOwner(i *netv1.Ingress, rule *netv1.IngressRule) error {

@@ -1,0 +1,99 @@
+name: E2E k8s Multi Node Test
+
+on:
+  workflow_dispatch:
+  pull_request_target:
+    types: [ labeled ]
+
+env:
+  TERRAFORM_VERSION: "1.5.7"
+
+jobs:
+  call_ci_workflow:
+    uses: ./.github/workflows/import-patch-image.yml
+    if: ${{ github.event.action == 'labeled' && github.event.label.name == 'need-e2e-apply-test' }}
+    with:
+      arch: amd64,arm64
+      e2e: true
+      image: true
+      target_pull: true
+  e2e_apply_test:
+    needs: [ call_ci_workflow ]
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [ arm64, amd64 ]
+    outputs:
+      test_arm64_result: ${{ steps.apply_test.outputs.test_arm64_result }}
+      test_amd64_result: ${{ steps.apply_test.outputs.test_amd64_result }}
+    steps:
+      - name: Download terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      - name: Download sealos binary
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos-${{ matrix.arch }}
+          path: /tmp/sealos/bin/
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos-amd64
+          path: /tmp/verify/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/verify/sealos
+          sudo /tmp/verify/sealos version
+      - name: Download patch image tar
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-image-${{ matrix.arch }}.tar
+          path: /tmp/sealos/images/
+      - name: Download e2e test
+        uses: actions/download-artifact@v3
+        with:
+          name: e2e.test
+          path: /tmp/
+      - name: Install ginkgo && Run e2e apply test
+        id: apply_test
+        shell: bash
+        env:
+          SEALOS_TEST_ARCH: ${{ matrix.arch }}
+          SEALOS_E2E_TEST_IMAGE_NAME: registry.cn-shanghai.aliyuncs.com/labring/kubernetes:v1.28.4
+          SEALOS_E2E_TEST_PATCH_IMAGE_TAR: /tmp/sealos/images/patch-${{ matrix.arch }}.tar.gz
+          SEALOS_E2E_TEST_PATCH_IMAGE_NAME: ghcr.io/labring/sealos-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}
+          SEALOS_E2E_TEST_SEALOS_BIN_PATH: /tmp/sealos/bin/sealos
+          ALIYUN_ACCESS_KEY_ID: ${{ secrets.E2E_ALIYUN_ACCESS_KEY_ID }}
+          ALIYUN_ACCESS_KEY_SECRET: ${{ secrets.E2E_ALIYUN_ACCESS_KEY_SECRET }}
+          ALIYUN_RESOURCE_GROUP_ID: ${{ secrets.E2E_ALIYUN_RESOURCE_GROUP_ID }}
+          ALIYUN_REGION_ID: ${{ secrets.E2E_ALIYUN_REGION_ID }}
+        run: |
+          set -ex
+          sudo su
+          chmod a+x /tmp/e2e.test
+          gzip /tmp/sealos/images/patch-${{ matrix.arch }}.tar
+          /tmp/e2e.test --ginkgo.v --ginkgo.focus="E2E_sealos_multi_node_test"
+          echo 'test_${{ matrix.arch }}_result=success' >> "$GITHUB_OUTPUT"
+  issue_commit:
+    needs: [ e2e_apply_test ]
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    if: ${{ always() && github.event.label.name == 'need-e2e-apply-test' }} #success() || failure()
+    steps:
+      - name: Add comment to PR with test status
+        uses: peter-evans/create-or-update-comment@v1
+        env:
+          ARM_TEST_RESULT: ${{ needs.e2e_apply_test.outputs.test_arm64_result == 'success' && 'Success 🎉🎉!' || '‼️ Failure' }}
+          AMD_TEST_RESULT: ${{ needs.e2e_apply_test.outputs.test_amd64_result == 'success' && 'Success 🎉🎉!' || '‼️ Failure' }}
+        with:
+          issue-number: ${{ github.event.number }}
+          comment-author: 'github-actions[bot]'
+          repository: ${{ github.repository }}
+          body: |
+            🤖 says: E2E k8s multi node `ARM64` Test Result: ${{ env.ARM_TEST_RESULT }} , E2E k8s multi node `AMD64` Test Result: ${{ env.AMD_TEST_RESULT }}<br/>See: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          token: "${{ secrets.GH_PAT }}"

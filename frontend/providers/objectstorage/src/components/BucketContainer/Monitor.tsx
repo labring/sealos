@@ -45,7 +45,6 @@ export default function DataMonitor({ ...styles }: BoxProps) {
       monitor({
         bucket: currentBucket!.name
       }),
-    // enabled: false,
     queryKey: [
       'monitor',
       {
@@ -62,28 +61,12 @@ export default function DataMonitor({ ...styles }: BoxProps) {
     if (monitorQuery.isSuccess && monitorQuery.data) {
       const _data = monitorQuery.data;
       for (let i = 0; i < 4; i++) {
-        // sort slice
-        _data[i].sort((a, b) => a.values[0][0] - b.values[0][0]);
         const curdata = _data?.[i]?.reduce<[number, string][]>((pre, cur) => {
-          let maxVal = BigInt(0);
-          const column = cur.values
-            .map<[number, string]>(([time, v]) => [time * 1000, v])
-            // clean data
-            .filter(([_time, v]) => {
-              if (
-                !['minio_bucket_usage_object_total', 'minio_bucket_usage_total_bytes'].includes(
-                  cur.metric.__name__
-                ) &&
-                maxVal > BigInt(v)
-              ) {
-                return false;
-              }
-              maxVal = BigInt(v);
-              return true;
-            });
-
+          // single pool
+          const column = cur.values.map<[number, string]>(([time, v]) => [time * 1000, v]);
           return [...pre, ...column];
         }, []);
+        curdata.sort((a, b) => a[0] - b[0]);
         data[i].push(...curdata);
       }
     }

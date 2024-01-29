@@ -41,9 +41,9 @@ const Table = ({ columns, data, itemClass = '' }: Props) => {
       </Grid>
       {data.map((item: any, index1) => (
         <Grid
-          key={index1}
           templateColumns={`repeat(${columns.length},1fr)`}
           overflowX={'auto'}
+          key={index1}
           bg={'white'}
           _hover={{
             bg: '#FBFBFC'

@@ -40,6 +40,15 @@ const nextConfig = {
         ]
       }
     ];
+  },
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/cost_overview',
+        permanent: true
+      }
+    ];
   }
 };
 

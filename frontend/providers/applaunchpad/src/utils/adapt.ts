@@ -73,8 +73,16 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
       ),
       manufacturers: 'nvidia'
     },
-    usedCpu: new Array(30).fill(0),
-    useMemory: new Array(30).fill(0),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
     activeReplicas: app.status?.readyReplicas || 0,
     maxReplicas: +(app.metadata?.annotations?.[maxReplicasKey] || app.status?.readyReplicas || 0),
     minReplicas: +(app.metadata?.annotations?.[minReplicasKey] || app.status?.readyReplicas || 0),
@@ -91,6 +99,7 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
       const container = pod.status?.containerStatuses || [];
       if (container.length > 0) {
         const stateObj = container[0].state;
+        const lasteStateObj = container[0].lastState;
         if (stateObj) {
           const stateKeys = Object.keys(stateObj);
           const key = stateKeys?.[0] as `${PodStatusEnum}`;
@@ -98,7 +107,10 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
             return podStatusMap[PodStatusEnum.running];
           }
           if (key && podStatusMap[key]) {
+            const lastStateReason =
+              lasteStateObj && lasteStateObj[key] ? lasteStateObj[key]?.reason : '';
             return {
+              lastStateReason,
               ...podStatusMap[key],
               ...stateObj[key]
             };
@@ -111,8 +123,16 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
     ip: pod.status?.podIP || 'pod ip',
     restarts: pod.status?.containerStatuses ? pod.status?.containerStatuses[0].restartCount : 0,
     age: formatPodTime(pod.metadata?.creationTimestamp),
-    usedCpu: new Array(30).fill(0),
-    usedMemory: new Array(30).fill(0),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
     cpu: cpuFormatToM(pod.spec?.containers?.[0]?.resources?.limits?.cpu || '0'),
     memory: memoryFormatToMi(pod.spec?.containers?.[0]?.resources?.limits?.memory || '0')
   };
@@ -217,8 +237,16 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
       ),
       manufacturers: 'nvidia'
     },
-    usedCpu: new Array(30).fill(0),
-    usedMemory: new Array(30).fill(0),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
     envs:
       appDeploy.spec?.template?.spec?.containers?.[0]?.env?.map((env) => {
         return {

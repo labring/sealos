@@ -5,7 +5,7 @@ import useSessionStore from '@/store/session';
 import { theme } from '@/styles/chakraTheme';
 // import '@/styles/globals.css';
 import { ChakraProvider } from '@chakra-ui/react';
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { Hydrate, QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { appWithTranslation, i18n, useTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
 import { useRouter } from 'next/router';
@@ -42,7 +42,7 @@ function App({ Component, pageProps }: AppProps) {
     (async () => {
       try {
         const lang = await sealosApp.getLanguage();
-        changeI18n({
+        await changeI18n({
           currentLanguage: lang.lng
         });
       } catch (error) {
@@ -74,16 +74,18 @@ function App({ Component, pageProps }: AppProps) {
           forcePathStyle: true,
           region: 'us-east-1'
         });
-        queryClient.invalidateQueries();
+        await queryClient.invalidateQueries();
       } catch (error) {}
     };
     initApp();
   }, [queryClient, client]);
   return (
     <QueryClientProvider client={queryClient}>
-      <ChakraProvider theme={theme}>
-        <Component {...pageProps} />
-      </ChakraProvider>
+      <Hydrate state={pageProps.dehydratedState}>
+        <ChakraProvider theme={theme}>
+          <Component {...pageProps} />
+        </ChakraProvider>
+      </Hydrate>
     </QueryClientProvider>
   );
 }

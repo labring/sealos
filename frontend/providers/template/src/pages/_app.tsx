@@ -59,9 +59,8 @@ const App = ({ Component, pageProps, domain }: AppProps & { domain: string }) =>
       }
     })();
     NProgress.done();
-
     return response;
-  }, [domain, openConfirm]);
+  }, [openConfirm]);
 
   // add resize event
   useEffect(() => {
@@ -96,12 +95,9 @@ const App = ({ Component, pageProps, domain }: AppProps & { domain: string }) =>
           currentLanguage: lang.lng
         });
       } catch (error) {
-        changeI18n({
-          currentLanguage: 'zh'
-        });
+        console.warn('get desktop getLanguage error');
       }
     })();
-
     return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
   }, []);
 
@@ -113,8 +109,10 @@ const App = ({ Component, pageProps, domain }: AppProps & { domain: string }) =>
   }, [router.pathname]);
 
   useEffect(() => {
-    const lang = getLangStore() || 'zh';
-    i18n?.changeLanguage?.(lang);
+    const lang = getLangStore();
+    if (lang) {
+      i18n?.changeLanguage?.(lang);
+    }
   }, [refresh, router.pathname]);
 
   return (

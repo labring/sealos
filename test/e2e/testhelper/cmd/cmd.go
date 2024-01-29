@@ -20,6 +20,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/labring/sealos/pkg/types/v1beta1"
+
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/file"
 )
@@ -36,22 +38,22 @@ var _ = (Interface)(&RemoteCmd{})
 var _ = (Interface)(&LocalCmd{})
 
 // Exec executes the given command on the remote machine
-func (c RemoteCmd) Exec(cmd string, args ...string) ([]byte, error) {
+func (c *RemoteCmd) Exec(cmd string, args ...string) ([]byte, error) {
 	if c.Interface == nil {
 		return nil, errors.New("SSHInterface not initialized")
 	}
 	return c.Cmd(c.Host, strings.Join(append([]string{cmd}, args...), " "))
 }
 
-func (c RemoteCmd) AsyncExec(cmd string, args ...string) error {
+func (c *RemoteCmd) AsyncExec(cmd string, args ...string) error {
 	return c.CmdAsync(c.Host, strings.Join(append([]string{cmd}, args...), " "))
 }
 
-func (c RemoteCmd) Copy(src string, dst string) error {
+func (c *RemoteCmd) Copy(src string, dst string) error {
 	return c.Interface.Copy(c.Host, src, dst)
 }
 
-func (c RemoteCmd) CopyR(dst string, src string) error {
+func (c *RemoteCmd) CopyR(dst string, src string) error {
 	return c.Interface.Fetch(c.Host, src, dst)
 }
 
@@ -59,6 +61,13 @@ func (c RemoteCmd) CopyR(dst string, src string) error {
 type RemoteCmd struct {
 	Host string
 	ssh.Interface
+}
+
+func NewRemoteCmd(host string, s *v1beta1.SSH) Interface {
+	return &RemoteCmd{
+		Host:      host,
+		Interface: ssh.MustNewClient(s, true),
+	}
 }
 
 // LocalCmd implements the Interface for local command execution using os/exec

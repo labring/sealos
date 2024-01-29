@@ -5,7 +5,7 @@ description: 深入探讨 Sealos 的核心功能、技术特点、设计理念�
 authors: [fanux]
 tags: [Kubernetes, Sealos]
 keywords: [云操作系统, Sealos, K8s, 云原生, 云计算, 分布式, PaaS, Rancher, KubeSphere, 云服务]
-image: https://jsd.cdn.zzko.cn/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-15-50-TKK1Ol.webp
+image: https://cdn.jsdelivr.us/gh/yangchuansheng/imghosting-test@main/uPic/2023-11-17-15-50-TKK1Ol.webp
 date: 2023-07-10T10:00
 ---
 

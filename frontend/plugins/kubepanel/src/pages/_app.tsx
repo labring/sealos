@@ -2,34 +2,44 @@ import type { AppProps } from 'next/app';
 import { Router, useRouter } from 'next/router';
 import NProgress from 'nprogress';
 import { useGlobalStore } from '@/store/global';
-import { useLoading } from '@/hooks/useLoading';
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useConfirm } from '@/hooks/useConfirm';
 import { throttle } from 'lodash';
 import { sealosApp, createSealosApp } from 'sealos-desktop-sdk/app';
 import { SEALOS_DOMAIN, loadInitData } from '@/store/static';
 import Head from 'next/head';
+import { useMonaco } from '@monaco-editor/react';
+import { monacoTheme } from '@/constants/theme';
 
 import 'nprogress/nprogress.css';
-import '@ant-design/flowchart/dist/index.css';
 import '@/styles/globals.css';
 
-//Binding events.
+//Binding router events.
 Router.events.on('routeChangeStart', () => NProgress.start());
 Router.events.on('routeChangeComplete', () => NProgress.done());
 Router.events.on('routeChangeError', () => NProgress.done());
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
-  const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
-  const { Loading } = useLoading();
+  const { setScreenWidth, setLastRoute } = useGlobalStore();
+  // const { Loading } = useLoading();
   const { openConfirm, ConfirmChild } = useConfirm({
     title: '跳转提示',
     content: '该应用不允许单独使用，点击确认前往 Sealos Desktop 使用。'
   });
 
+  // monaco theme
+  const monaco = useMonaco();
+  useEffect(() => {
+    if (monaco) {
+      monaco.editor.defineTheme('kubepanel', monacoTheme);
+    }
+  }, [monaco]);
+
+  // app init
   useEffect(() => {
     NProgress.start();
+
     const response = createSealosApp();
 
     (async () => {
@@ -78,7 +88,6 @@ export default function App({ Component, pageProps }: AppProps) {
       setLastRoute(router.asPath);
     };
   }, [router.asPath, router.pathname, setLastRoute]);
-
   return (
     <>
       <Head>
@@ -89,7 +98,6 @@ export default function App({ Component, pageProps }: AppProps) {
       </Head>
       <Component {...pageProps} />
       <ConfirmChild />
-      <Loading loading={loading} />
     </>
   );
 }

@@ -20,5 +20,8 @@
   "confirmDeleteFile": "Confirm to delete these files",
   "confirmDeleteSingleFile": "Confirm to delete the file",
   "searchFile": "Search File",
-  "selectedItems": "Selected {{count}} item"
+  "selectedItems": "Selected {{count}} item",
+  "clickToAscend": "Click to ascend",
+  "clickToDescend": "Click to descend",
+  "clickToCancelSort": "Click to cancel sorting"
 }

@@ -1,10 +1,11 @@
-import { uploadConvertData } from '@/api/platform';
+import { getSystemEnv, uploadConvertData } from '@/api/platform';
 import useAuthList from '@/components/signin/auth/useAuthList';
 import useCustomError from '@/components/signin/auth/useCustomError';
 import Language from '@/components/signin/auth/useLanguage';
 import usePassword from '@/components/signin/auth/usePassword';
 import useProtocol from '@/components/signin/auth/useProtocol';
 import useSms from '@/components/signin/auth/useSms';
+import { BackgroundImageUrl } from '@/constants/config';
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import { ApiResp, LoginType, SystemEnv } from '@/types';
@@ -28,17 +29,16 @@ import sealosTitle from 'public/images/sealos-title.png';
 import { useEffect, useMemo, useState } from 'react';
 
 export default function SigninComponent() {
-  const { data: platformEnv } = useQuery(['getPlatformEnv'], () =>
-    request<any, ApiResp<SystemEnv>>('/api/platform/getEnv')
-  );
+  const { data: platformEnv } = useQuery(['getPlatformEnv'], getSystemEnv);
 
   const {
-    service_protocol = '',
-    private_protocol = '',
+    service_protocol_zh = '',
+    private_protocol_zh = '',
+    service_protocol_en = '',
+    private_protocol_en = '',
     needPassword = false,
     needSms = false
   } = platformEnv?.data || {};
-
   const needTabs = needPassword && needSms;
 
   const disclosure = useDisclosure();
@@ -46,8 +46,19 @@ export default function SigninComponent() {
   const [tabIndex, setTabIndex] = useState<LoginType>(LoginType.NONE);
 
   const { ErrorComponent, showError } = useCustomError();
-
-  const { Protocol, isAgree, setIsInvalid } = useProtocol({ service_protocol, private_protocol });
+  let protocol_data: Parameters<typeof useProtocol>[0];
+  if (['zh', 'zh-Hans'].includes(i18n.language))
+    protocol_data = {
+      service_protocol: service_protocol_zh,
+      private_protocol: private_protocol_zh
+    };
+  else
+    protocol_data = {
+      service_protocol: service_protocol_en,
+      private_protocol: private_protocol_en
+    };
+  console.log(protocol_data);
+  const { Protocol, isAgree, setIsInvalid } = useProtocol(protocol_data!);
   const { SmsModal, login: smsSubmit, isLoading: smsLoading } = useSms({ showError });
   const {
     PasswordComponent,
@@ -112,7 +123,7 @@ export default function SigninComponent() {
       overflow={'hidden'}
       w="100vw"
       h="100vh"
-      backgroundImage={'url(/images/background.svg)'}
+      backgroundImage={`url(${BackgroundImageUrl})`}
       backgroundRepeat={'no-repeat'}
       backgroundSize={'cover'}
     >

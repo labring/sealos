@@ -92,3 +92,17 @@ Sealos 集群管理面板，该面板将提供更加简便的方法来替换集�
 
 请注意，域名更换通常需要对集群的网络配置进行深入了解，并且可能涉及到 DNS
 设置、服务发现等多个方面。因此，建议在执行此类操作时，确保您具备相应的技术知识或咨询专业人士的帮助。
+
+### 用户注册开关
+
+关闭用户注册:
+
+```shell
+kubectl -n sealos patch deployment desktop-frontend -p '{"spec":{"template":{"spec":{"containers":[{"name":"desktop-frontend","env":[{"name":"SIGN_UP_ENABLED","value":"false"}]}]}}}}'
+```
+
+开启用户注册:
+
+```shell
+kubectl -n sealos patch deployment desktop-frontend -p '{"spec":{"template":{"spec":{"containers":[{"name":"desktop-frontend","env":[{"name":"SIGN_UP_ENABLED","value":"true"}]}]}}}}'
+```

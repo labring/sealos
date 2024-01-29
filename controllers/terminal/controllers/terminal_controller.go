@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -129,6 +130,13 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
+	if terminal.Status.ServiceName == "" {
+		terminal.Status.ServiceName = terminal.Name + "-svc" + rand.String(5)
+		if err := r.Status().Update(ctx, terminal); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
 	var hostname string
 	if err := r.syncDeployment(ctx, terminal, &hostname); err != nil {
 		logger.Error(err, "create deployment failed")
@@ -194,7 +202,7 @@ func (r *TerminalReconciler) syncService(ctx context.Context, terminal *terminal
 	labelsMap := buildLabelsMap(terminal)
 	expectService := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      terminal.Name,
+			Name:      terminal.Status.ServiceName,
 			Namespace: terminal.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
@@ -208,7 +216,7 @@ func (r *TerminalReconciler) syncService(ctx context.Context, terminal *terminal
 
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      terminal.Name,
+			Name:      terminal.Status.ServiceName,
 			Namespace: terminal.Namespace,
 		},
 	}

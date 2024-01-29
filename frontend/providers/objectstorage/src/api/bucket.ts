@@ -7,7 +7,7 @@ export const _createBucket =
     request.post<any>('/api/bucket/create', data);
 export const createBucket = _createBucket(request);
 export const _listBucket = (request: AxiosInstance) => () =>
-  request.post<any, { list: TBucket[] }>('/api/bucket/list');
+  request.post<any, { list: TBucket[] }>(`/api/bucket/list`);
 export const listBucket = _listBucket(request);
 export const _getQuota = (request: AxiosInstance) => () =>
   request.post<any, { quota: QuotaData }>('/api/quota');

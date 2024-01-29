@@ -13,7 +13,8 @@ export type BillingSpec =
       endTime: string;
       type: BillingType; //0为扣费，1为充值；用于billing数据查找：如为-1则查找type为0和1的数据，如果给定type值则查找type为给定值的数据
       owner?: string; //用于billing数据中查找的owner字段值
-      namespace?: string;
+      namespace: string;
+      appType: string;
     }
   | {
       orderID: string; //如果给定orderId，则查找该id的值，该值为唯一值，因此当orderId给定时忽略其他查找限定值
@@ -55,5 +56,15 @@ export type BillingData<T = Costs> = {
     pageLength: number;
     totalCount: number;
     rechargeAmount: number;
+  };
+};
+export type PropertiesCost = {
+  amount: {
+    cpu: number;
+    memory: number;
+    network: number;
+    gpu?: number;
+    'services.nodeports': number;
+    storage: number;
   };
 };

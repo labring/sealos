@@ -41,6 +41,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       },
       [DBTypeEnum.weaviate]: {
         key: 'weaviate'
+      },
+      [DBTypeEnum.milvus]: {
+        key: 'milvus'
       }
     };
 

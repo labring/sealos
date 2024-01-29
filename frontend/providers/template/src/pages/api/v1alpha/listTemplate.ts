@@ -7,7 +7,7 @@ import path from 'path';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   const originalPath = process.cwd();
-  const jsonPath = path.resolve(originalPath, 'fast_deploy_template.json');
+  const jsonPath = path.resolve(originalPath, 'templates.json');
 
   try {
     if (fs.existsSync(jsonPath)) {

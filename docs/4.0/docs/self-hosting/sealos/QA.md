@@ -88,3 +88,17 @@ Certificates are crucial for the security of your Sealos cluster. Follow these s
 Changing a domain name in a Sealos cluster is complex, often requiring adjustments in multiple components and services. We do not currently provide a comprehensive guide for this process in our documentation. However, future plans include the release of a Sealos Cluster Management Panel for easier domain name and certificate replacement.
 
 It's important to note that domain name changes demand deep knowledge of the cluster's network setup and may involve intricate DNS settings and service discovery. We recommend undertaking such changes only if you have the requisite expertise or with guidance from a professional.
+
+### user registration switch
+
+disabled user register:
+
+```shell
+kubectl -n sealos patch deployment desktop-frontend -p '{"spec":{"template":{"spec":{"containers":[{"name":"desktop-frontend","env":[{"name":"SIGN_UP_ENABLED","value":"false"}]}]}}}}'
+```
+
+enabled user register:
+
+```shell
+kubectl -n sealos patch deployment desktop-frontend -p '{"spec":{"template":{"spec":{"containers":[{"name":"desktop-frontend","env":[{"name":"SIGN_UP_ENABLED","value":"true"}]}]}}}}'
+```

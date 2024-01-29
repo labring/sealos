@@ -21,7 +21,6 @@ import SelectRange from '@/components/billing/selectDateRange';
 import useOverviewStore from '@/stores/overview';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useTranslation } from 'next-i18next';
-import { getCookie } from '@/utils/cookieUtils';
 import NotFound from '@/components/notFound';
 import NamespaceMenu from '@/components/billing/NamespaceMenu';
 import TypeMenu from '@/components/billing/TypeMenu';
@@ -79,7 +78,7 @@ function InOutTabPanel({ namespace }: { namespace: string }) {
   const { data, isFetching, isSuccess } = useQuery(
     ['billing', { currentPage, startTime, endTime, orderID, selectType, namespace, appType }],
     () => {
-      const spec = {
+      const spec: BillingSpec = {
         page: currentPage,
         pageSize: pageSize,
         type: selectType,
@@ -273,11 +272,7 @@ function TransferTabPanel({ namespace }: { namespace: string }) {
   );
 }
 function Billing() {
-  const { t, i18n } = useTranslation();
-  const cookie = getCookie('NEXT_LOCALE');
-  useEffect(() => {
-    i18n.changeLanguage(cookie);
-  }, [cookie, i18n]);
+  const { t } = useTranslation();
   const [namespace, setNamespace] = useState('');
   return (
     <Flex flexDirection="column" w="100%" h="100%" bg={'white'} p="24px" overflow={'auto'}>
@@ -315,11 +310,10 @@ function Billing() {
 }
 
 export default Billing;
-export async function getServerSideProps(content: any) {
-  const locale = content?.req?.cookies?.NEXT_LOCALE || 'zh';
+export async function getServerSideProps({ locale }: { locale: string }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, undefined, null, content.locales))
+      ...(await serverSideTranslations(locale, undefined, null, ['zh', 'en']))
     }
   };
 }

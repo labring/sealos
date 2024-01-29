@@ -20,5 +20,8 @@
   "confirmDeleteFile": "确认要删除这些文件吗",
   "confirmDeleteSingleFile": "确认要删除这个文件吗",
   "searchFile": "搜索文件",
-  "selectedItems": "已选择 {{count}} 项"
+  "selectedItems": "已选择 {{count}} 项",
+  "clickToAscend": "点击升序",
+  "clickToDescend": "点击降序",
+  "clickToCancelSort": "点击取消排序"
 }
