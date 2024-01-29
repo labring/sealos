@@ -10,4 +10,4 @@ ENV storageSize=${storageSize:-1Gi}
 ENV minioAdminUser=${minioAdminUser:-"username"}
 ENV minioAdminPassword=${minioAdminPassword:-"passw0rd"}
 
-CMD ["bash init.sh"]
+CMD ["bash scripts/init.sh"]

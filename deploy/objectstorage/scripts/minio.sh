@@ -10,14 +10,14 @@ function deploy_minio() {
   MINIO_ROOT_USER=$(openssl rand -hex 12 | head -c 16)
   MINIO_ROOT_PASSWORD=$(openssl rand -hex 24 | head -c 32)
 
-  CONFIG_ENV="export MINIO_STORAGE_CLASS_STANDARD=\"EC:2\"
-  export MINIO_BROWSER=\"on\"
-  export MINIO_ROOT_USER=\"${MINIO_ROOT_USER}\"
-  export MINIO_ROOT_PASSWORD=\"${MINIO_ROOT_PASSWORD}\""
+CONFIG_ENV="export MINIO_STORAGE_CLASS_STANDARD=\"EC:2\"
+export MINIO_BROWSER=\"on\"
+export MINIO_ROOT_USER=\"${MINIO_ROOT_USER}\"
+export MINIO_ROOT_PASSWORD=\"${MINIO_ROOT_PASSWORD}\""
 
   ENCODED_CONFIG_ENV=$(echo -n "$CONFIG_ENV" | base64 -w 0)
 
-  if kubectl get secret object-storage-env-configuration -n objectstorage-system 2>&1; then
+  if kubectl get secret object-storage-env-configuration -n objectstorage-system 2>/dev/null >/dev/; then
     ENCODED_CONFIG_ENV=$(kubectl get secret object-storage-env-configuration -n objectstorage-system -o jsonpath='{.data.config\.env}')
   fi
 
