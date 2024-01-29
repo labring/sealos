@@ -21,6 +21,10 @@ function deploy_minio() {
     ENCODED_CONFIG_ENV=$(kubectl get secret object-storage-env-configuration -n objectstorage-system -o jsonpath='{.data.config\.env}')
   fi
 
+  sed -i 's/${ENCODED_CONFIG_ENV}/$ENCODED_CONFIG_ENV/g' manifests/minio.deploy.yaml
+  sed -i 's/${CONSOLE_ACCESS_KEY}/$CONSOLE_ACCESS_KEY/g' manifests/minio.deploy.yaml
+  sed -i 's/${CONSOLE_SECRET_KEY}/$CONSOLE_SECRET_KEY/g' manifests/minio.deploy.yaml
+
   kubectl apply -f manifests/minio/deploy.yaml
 }
 

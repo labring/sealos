@@ -9,8 +9,5 @@ ENV cloudPort=""
 ENV storageSize=${storageSize:-1Gi}
 ENV minioAdminUser=${minioAdminUser:-"username"}
 ENV minioAdminPassword=${minioAdminPassword:-"passw0rd"}
-ENV ENCODED_CONFIG_ENV="dXNlcm5hbWU="
-ENV CONSOLE_ACCESS_KEY="dXNlcm5hbWU="
-ENV CONSOLE_SECRET_KEY="dXNlcm5hbWU="
 
 CMD ["bash scripts/init.sh"]
