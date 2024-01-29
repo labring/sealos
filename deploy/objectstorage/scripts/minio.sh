@@ -49,9 +49,9 @@ function init_minio() {
     sleep 1
   done
 
-  mc admin policy create objectstorage userNormal ./manifests/policy/user_normal.json
-  mc admin policy create objectstorage userDenyWrite ./manifests/policy/user_deny_write.json
-  mc admin policy create objectstorage kubeblocks ./manifests/policy/kubeblocks.json
+  mc admin policy create objectstorage userNormal etc/minio/policy/user_normal.json
+  mc admin policy create objectstorage userDenyWrite etc/minio/policy/user_deny_write.json
+  mc admin policy create objectstorage kubeblocks etc/minio/policy/kubeblocks.json
 
   mc admin user add objectstorage kubeblocks sealos.12345
   mc admin user add objectstorage testuser sealos2023
