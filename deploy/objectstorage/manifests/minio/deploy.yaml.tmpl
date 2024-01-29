@@ -12,7 +12,7 @@ metadata:
     v1.min.io/tenant: object-storage
 data:
   config.env: >-
-    "{{ .ENCODED_CONFIG_ENV }}"
+    {{ .ENCODED_CONFIG_ENV }}
 type: Opaque
 ---
 apiVersion: v1
@@ -36,8 +36,8 @@ metadata:
     v1.min.io/tenant: object-storage
 immutable: true
 data:
-  CONSOLE_ACCESS_KEY: "{{ .CONSOLE_ACCESS_KEY }}"
-  CONSOLE_SECRET_KEY: "{{ .CONSOLE_SECRET_KEY }}"
+  CONSOLE_ACCESS_KEY: {{ .CONSOLE_ACCESS_KEY }}
+  CONSOLE_SECRET_KEY: {{ .CONSOLE_SECRET_KEY }}
 type: Opaque
 ---
 apiVersion: minio.min.io/v2
