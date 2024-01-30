@@ -66,3 +66,14 @@ export type AutoBackupFormType = {
   saveTime: number;
   saveType: string;
 };
+
+export type BackupRepoCRItemType = {
+  kind: 'BackupRepo';
+  metadata: {
+    annotations: Record<string, string>;
+    creationTimestamp: Date;
+    labels: Record<string, string>;
+    name: string;
+    uid: string;
+  };
+};

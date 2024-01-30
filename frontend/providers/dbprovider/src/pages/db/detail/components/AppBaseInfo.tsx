@@ -45,7 +45,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const { toast } = useToast();
 
   const supportConnectDB = useMemo(() => {
-    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis'].find(
+    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus'].find(
       (item) => item === db.dbType
     );
   }, [db.dbType]);
@@ -276,29 +276,33 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 color={'myGray.600'}
               ></MyIcon>
             </Center>
-            <Center
-              ml="12px"
-              h="24px"
-              color={'#24282C'}
-              fontSize={'12px'}
-              bg="#F4F6F8"
-              borderRadius={'4px'}
-              px="8px"
-              cursor={'pointer'}
-              onClick={() => onclickConnectDB()}
-            >
-              <MyIcon name="terminal" w="16px" h="16px" />
-              {t('Direct Connection')}
-            </Center>
-            <Center fontSize={'12px'} fontWeight={400} ml="auto">
-              <Text> {t('External Network')} </Text>
-              <Switch
-                ml="8px"
-                size="sm"
-                isChecked={isChecked}
-                onChange={(e) => (isChecked ? closeNetWorkService() : onOpen())}
-              />
-            </Center>
+            {db.dbType !== 'milvus' && (
+              <>
+                <Center
+                  ml="12px"
+                  h="24px"
+                  color={'#24282C'}
+                  fontSize={'12px'}
+                  bg="#F4F6F8"
+                  borderRadius={'4px'}
+                  px="8px"
+                  cursor={'pointer'}
+                  onClick={() => onclickConnectDB()}
+                >
+                  <MyIcon name="terminal" w="16px" h="16px" />
+                  {t('Direct Connection')}
+                </Center>
+                <Center fontSize={'12px'} fontWeight={400} ml="auto">
+                  <Text> {t('External Network')} </Text>
+                  <Switch
+                    ml="8px"
+                    size="sm"
+                    isChecked={isChecked}
+                    onChange={(e) => (isChecked ? closeNetWorkService() : onOpen())}
+                  />
+                </Center>
+              </>
+            )}
           </Flex>
           <Box
             mt={3}

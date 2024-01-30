@@ -3,6 +3,13 @@ import { cpuFormatToM, memoryFormatToMi } from '@/utils/tools';
 import * as k8s from '@kubernetes/client-node';
 import * as yaml from 'js-yaml';
 
+// Load default kc
+export function K8sApiDefault(): k8s.KubeConfig {
+  const kc = new k8s.KubeConfig();
+  kc.loadFromDefault();
+  return kc;
+}
+
 export function CheckIsInCluster(): [boolean, string] {
   if (
     process.env.KUBERNETES_SERVICE_HOST !== undefined &&
@@ -89,13 +96,12 @@ export async function createYaml(
     for (const spec of created) {
       try {
         console.log('delete:', spec.kind);
-        client.delete(spec);
+        await client.delete(spec);
       } catch (error) {
         error;
       }
     }
-    // console.error(error, '<=create error')
-    return Promise.reject(error);
+    return Promise.reject(error?.body || 'Create Yaml Error');
   }
   return created;
 }
