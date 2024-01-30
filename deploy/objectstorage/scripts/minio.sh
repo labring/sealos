@@ -58,7 +58,7 @@ function init_minio() {
   mc admin group add objectstorage userNormal testuser
   mc admin group add objectstorage userDenyWrite testuser
 
-  mc admin user rm testuser
+  mc admin user remove objectstorage testuser
 
   mc admin policy attach objectstorage userNormal --group userNormal
   mc admin policy attach objectstorage userDenyWrite --group userDenyWrite
