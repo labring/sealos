@@ -477,11 +477,11 @@ spec:
             - name: OSNamespace
               value: objectstorage-system
             - name: OSAdminSecret
-              value: {{ .ADMIN_SECRET }}
+              value: object-storage-user-0
             - name: OSInternalEndpoint
-              value: {{ .INTERNAL_ENDPOINT }}
+              value: object-storage.objectstorage-system.svc.cluster.local
             - name: OSExternalEndpoint
-              value: {{ .EXTERNAL_ENDPOINT }}
+              value: objectstorageapi.{{ .cloudDomain }}
             - name: OSUDetectionCycleSeconds
               value: "300"
             - name: MinioBucketDetectionCycleSeconds
