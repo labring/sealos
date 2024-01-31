@@ -71,7 +71,7 @@ spec:
           value: object-storage.objectstorage-system.svc.cluster.local:80
         - name: PROMETHEUS_SERVICE_HOST
           value: http://prometheus-object-storage.objectstorage-system.svc.cluster.local:9090
-        image: docker.io/nowinkey/sealos-database-service:v1.2.0
+        image: ghcr.io/labring/sealos-minio-service:latest
         imagePullPolicy: Always
         name: object-storage-monitor
         ports:
