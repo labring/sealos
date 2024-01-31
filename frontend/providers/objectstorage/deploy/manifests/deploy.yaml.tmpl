@@ -94,3 +94,25 @@ spec:
   - hosts:
     - objectstorage.{{ .cloudDomain }}
     secretName: wildcard-cert
+---
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: objectstorage
+  namespace: app-system
+spec:
+  data:
+    desc: object storage
+    url: https://objectstorage.{{ .cloudDomain }}:{{ .cloudPort }}
+  displayType: normal
+  i18n:
+    zh:
+      name: 对象存储
+    zh-Hans:
+      name: 对象存储
+  icon: https://objectstorage.{{ .cloudDomain }}:{{ .cloudPort }}/logo.svg
+  menuData:
+    helpDropDown: false
+    nameColor: text-black
+  name: Object Storage
+  type: iframe
