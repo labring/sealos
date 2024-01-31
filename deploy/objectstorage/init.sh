@@ -24,10 +24,10 @@ retryPullImage() {
     fi
 }
 
-retryPullImage ghcr.io/nowinkeyy/sealos-cloud-objectstorage-controller:latest
-retryPullImage ghcr.io/nowinkeyy/sealos-cloud-objectstorage-frontend:latest
-retryPullImage ghcr.io/nowinkeyy/sealos-cloud-minio-service:latest
+retryPullImage ghcr.io/labring/sealos-cloud-objectstorage-controller:latest
+retryPullImage ghcr.io/labring/sealos-cloud-objectstorage-frontend:latest
+retryPullImage ghcr.io/labring/sealos-cloud-minio-service:latest
 
-sealos save -o tars/objectstorage-controller.tar ghcr.io/nowinkeyy/sealos-cloud-objectstorage-controller:latest
-sealos save -o tars/objectstorage-frontend.tar ghcr.io/nowinkeyy/sealos-cloud-objectstorage-frontend:latest
-sealos save -o tars/objectstorage-service.tar ghcr.io/nowinkeyy/sealos-cloud-minio-service:latest
+sealos save -o tars/objectstorage-controller.tar ghcr.io/labring/sealos-cloud-objectstorage-controller:latest
+sealos save -o tars/objectstorage-frontend.tar ghcr.io/labring/sealos-cloud-objectstorage-frontend:latest
+sealos save -o tars/objectstorage-service.tar ghcr.io/labring/sealos-cloud-minio-service:latest
