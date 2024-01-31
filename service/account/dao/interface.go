@@ -49,8 +49,8 @@ type MongoDB struct {
 }
 
 type Cockroach struct {
-	DB          *gorm.DB
-	LocalRegion *types.Region
+	DB      *gorm.DB
+	LocalDB *gorm.DB
 }
 
 func (g *Cockroach) GetAccount(ops types.UserQueryOpts) (*types.Account, error) {
@@ -89,7 +89,7 @@ func (g *Cockroach) GetUser(ops types.UserQueryOpts) (*types.RegionUser, error) 
 		query.RealUserUID = ops.UID
 	}
 	var user types.RegionUser
-	if err := g.DB.Where(query).First(&user).Error; err != nil {
+	if err := g.LocalDB.Where(query).First(&user).Error; err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 	return &user, nil
@@ -240,7 +240,7 @@ func (m *MongoDB) getSumOfUsedAmount(propertyType uint8, user string, startTime,
 	return result.TotalAmount, nil
 }
 
-func NewAccountInterface(mongoURI, cockRoachURI, localRegionID string) (Interface, error) {
+func NewAccountInterface(mongoURI, cockRoachURI, localCockRoachURI string) (Interface, error) {
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect mongodb: %v", err)
@@ -256,14 +256,13 @@ func NewAccountInterface(mongoURI, cockRoachURI, localRegionID string) (Interfac
 	}
 	db, err := gorm.Open(postgres.Open(cockRoachURI), &gorm.Config{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to connect cockroach uri %s: %v", cockRoachURI, err)
 	}
-	account := &Account{MongoDB: mongodb, Cockroach: &Cockroach{DB: db}}
-	if localRegionID != "" {
-		account.LocalRegion = &types.Region{
-			UID: uuid.MustParse(localRegionID),
-		}
+	localDB, err := gorm.Open(postgres.Open(localCockRoachURI), &gorm.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect local cockroach uri %s: %v", localCockRoachURI, err)
 	}
+	account := &Account{MongoDB: mongodb, Cockroach: &Cockroach{DB: db, LocalDB: localDB}}
 	return account, nil
 }
 

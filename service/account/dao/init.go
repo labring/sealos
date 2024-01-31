@@ -11,22 +11,22 @@ var DBClient Interface
 
 func InitDB() error {
 	var err error
-	cockroachStr := os.Getenv(helper.ENVCockroach)
-	if cockroachStr == "" {
-		return fmt.Errorf("empty cockroach uri, please check env: %s", helper.ENVCockroach)
+	globalCockroach := os.Getenv(helper.ENVGlobalCockroach)
+	if globalCockroach == "" {
+		return fmt.Errorf("empty global cockroach uri, please check env: %s", helper.ENVGlobalCockroach)
 	}
-	localRegionStr := os.Getenv(helper.EnvLocalRegion)
-	if localRegionStr == "" {
-		return fmt.Errorf("empty local region, please check env: %s", helper.EnvLocalRegion)
+	localCockroach := os.Getenv(helper.ENVLocalCockroach)
+	if localCockroach == "" {
+		return fmt.Errorf("empty local cockroach uri, please check env: %s", helper.ENVLocalCockroach)
 	}
 	mongoURI := os.Getenv(helper.EnvMongoURI)
 	if mongoURI == "" {
 		return fmt.Errorf("empty mongo uri, please check env: %s", helper.EnvMongoURI)
 	}
-	fmt.Println("cockroachStr: ", cockroachStr)
-	fmt.Println("localRegionStr: ", localRegionStr)
+	fmt.Println("cockroachStr: ", globalCockroach)
+	fmt.Println("localRegionStr: ", localCockroach)
 	fmt.Println("mongoURI: ", mongoURI)
-	DBClient, err = NewAccountInterface(mongoURI, cockroachStr, localRegionStr)
+	DBClient, err = NewAccountInterface(mongoURI, globalCockroach, localCockroach)
 	if err != nil {
 		return err
 	}

@@ -13,7 +13,8 @@ const (
 
 // env
 const (
-	EnvMongoURI    = "MONGO_URI"
-	ENVCockroach   = "COCKROACH_URI"
-	EnvLocalRegion = "LOCAL_REGION"
+	EnvMongoURI        = "MONGO_URI"
+	ENVGlobalCockroach = "GLOBAL_COCKROACH_URI"
+	ENVLocalCockroach  = "LOCAL_COCKROACH_URI"
+	EnvLocalRegion     = "LOCAL_REGION"
 )
