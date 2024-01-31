@@ -484,16 +484,17 @@ func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 	if err := CreateTableIfNotExist(db, types.Account{}, types.TransferAccountV1{}, types.ErrorAccountCreate{}, types.ErrorPaymentCreate{}, types.Payment{}); err != nil {
 		return nil, err
 	}
+	cockroach := &Cockroach{DB: db, Localdb: localdb, ZeroAccount: &types.Account{EncryptBalance: *newEncryptBalance, EncryptDeductionBalance: *newEncryptDeductionBalance, Balance: baseBalance, DeductionBalance: 0}}
 	//TODO region with local
 	localRegionStr := os.Getenv(EnvLocalRegion)
-	localRegion := &types.Region{
-		UID: uuid.MustParse(localRegionStr),
-	}
-	if localRegionStr == "" {
-		localRegion = nil
+	if localRegionStr != "" {
+		cockroach.LocalRegion = &types.Region{
+			UID: uuid.MustParse(localRegionStr),
+		}
+	} else {
 		fmt.Printf("empty local region \n")
 	}
-	return &Cockroach{DB: db, Localdb: localdb, ZeroAccount: &types.Account{EncryptBalance: *newEncryptBalance, EncryptDeductionBalance: *newEncryptDeductionBalance, Balance: baseBalance, DeductionBalance: 0}, LocalRegion: localRegion}, nil
+	return cockroach, nil
 }
 
 func CreateTableIfNotExist(db *gorm.DB, tables ...interface{}) error {

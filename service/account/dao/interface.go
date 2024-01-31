@@ -258,16 +258,13 @@ func NewAccountInterface(mongoURI, cockRoachURI, localRegionID string) (Interfac
 	if err != nil {
 		return nil, err
 	}
-	localRegion := &types.Region{
-		UID: uuid.MustParse(localRegionID),
+	account := &Account{MongoDB: mongodb, Cockroach: &Cockroach{DB: db}}
+	if localRegionID != "" {
+		account.LocalRegion = &types.Region{
+			UID: uuid.MustParse(localRegionID),
+		}
 	}
-	if localRegionID == "" {
-		localRegion = nil
-	}
-	return &Account{
-		MongoDB:   mongodb,
-		Cockroach: &Cockroach{DB: db, LocalRegion: localRegion},
-	}, err
+	return account, nil
 }
 
 func (m *MongoDB) getProperties() (*resources.PropertyTypeLS, error) {
