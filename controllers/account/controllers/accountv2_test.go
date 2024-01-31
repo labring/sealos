@@ -42,6 +42,7 @@ import (
 
 var (
 	testV2GlobalDBURI = ""
+	testV2LocalDBURI  = ""
 )
 
 type Region struct {
@@ -74,7 +75,7 @@ func TestAccount_V1ToV2(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to get account: %v", err)
 		}
-		accountItf, err := database.NewAccountV2(testV2GlobalDBURI)
+		accountItf, err := database.NewAccountV2(testV2GlobalDBURI, testV2LocalDBURI)
 		if err != nil {
 			t.Fatalf("failed to new account : %v", err)
 		}
@@ -121,7 +122,7 @@ func TestConvertPayment_V1ToV2(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to set env: %v", err)
 		}
-		accountV2, err := database.NewAccountV2(testV2GlobalDBURI)
+		accountV2, err := database.NewAccountV2(testV2GlobalDBURI, testV2LocalDBURI)
 		if err != nil {
 			t.Fatalf("failed to new account : %v", err)
 		}
@@ -219,7 +220,7 @@ func TestConvertPayment_V1ToV2(t *testing.T) {
 //}
 
 func TestAccountV2_CreateAccount(t *testing.T) {
-	account, err := database.NewAccountV2(testV2GlobalDBURI)
+	account, err := database.NewAccountV2(testV2GlobalDBURI, testV2LocalDBURI)
 	if err != nil {
 		t.Errorf("failed to new account : %v", err)
 	}
@@ -242,7 +243,7 @@ func TestAccountV2_CreateAccount(t *testing.T) {
 }
 
 func TestAccountV2_GetAccount(t *testing.T) {
-	account, err := database.NewAccountV2(testV2GlobalDBURI)
+	account, err := database.NewAccountV2(testV2GlobalDBURI, testV2LocalDBURI)
 	if err != nil {
 		t.Errorf("failed to new account : %v", err)
 	}
@@ -265,7 +266,7 @@ func TestAccountV2_GetAccount(t *testing.T) {
 }
 
 func TestAccountV2_GetUser(t *testing.T) {
-	account, err := database.NewAccountV2(testV2GlobalDBURI)
+	account, err := database.NewAccountV2(testV2GlobalDBURI, testV2LocalDBURI)
 	if err != nil {
 		t.Errorf("failed to new account : %v", err)
 	}
@@ -282,7 +283,7 @@ func TestAccountV2_GetUser(t *testing.T) {
 }
 
 func TestAccountV2_TransferAccount(t *testing.T) {
-	account, err := database.NewAccountV2(testV2GlobalDBURI)
+	account, err := database.NewAccountV2(testV2GlobalDBURI, testV2LocalDBURI)
 	if err != nil {
 		t.Errorf("failed to new account : %v", err)
 	}
@@ -309,7 +310,7 @@ func TestAccountV2_TransferAccount(t *testing.T) {
 }
 
 func TestAccountV2_AddBalance(t *testing.T) {
-	account, err := database.NewAccountV2(testV2GlobalDBURI)
+	account, err := database.NewAccountV2(testV2GlobalDBURI, testV2LocalDBURI)
 	if err != nil {
 		t.Fatalf("failed to new account : %v", err)
 	}

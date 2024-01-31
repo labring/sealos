@@ -143,7 +143,7 @@ func main() {
 			setupLog.Error(err, "unable to disconnect from mongo")
 		}
 	}()
-	v2Account, err := cockroach.NewCockRoach(os.Getenv(database.CockroachURI))
+	v2Account, err := cockroach.NewCockRoach(os.Getenv(database.GlobalCockroachURI), os.Getenv(database.LocalCockroachURI))
 	if err != nil {
 		setupLog.Error(err, "unable to connect to cockroach")
 		os.Exit(1)

@@ -50,11 +50,11 @@ type Region struct {
 	Domain      string    `gorm:"type:text;not null"`
 }
 
+// RegionUser is located in the region
 type RegionUser struct {
 	UID uuid.UUID `gorm:"type:uid;default:gen_random_uuid();primary_key"`
 	// id = region owner id
 	ID          string    `gorm:"type:text;not null;unique"`
-	RegionUID   uuid.UUID `gorm:"column:regionUid;type:uuid;not null"`
 	RealUserUID uuid.UUID `gorm:"column:realUserUid;type:uuid;not null"`
 	CreatedAt   time.Time `gorm:"type:timestamp(3);default:current_timestamp();not null"`
 	UpdatedAt   time.Time `gorm:"type:timestamp(3);default:current_timestamp();not null"`
@@ -72,6 +72,7 @@ func (RegionUser) TableName() string {
 	return "RegionUser"
 }
 
+// RegionUserToWorkspace is located in the region
 type RegionUserToWorkspace struct {
 	UID           uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
 	CreatedAt     time.Time  `gorm:"type:timestamp(3) with time zone;default:current_timestamp();not null"`
@@ -84,6 +85,7 @@ type RegionUserToWorkspace struct {
 	JoinAt        time.Time  `gorm:"type:timestamp(3) with time zone"`
 }
 
+// Workspace is located in the region
 type Workspace struct {
 	UID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
 	ID          string    `gorm:"type:text;not null;unique"`

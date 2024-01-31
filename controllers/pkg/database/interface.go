@@ -120,9 +120,10 @@ type MeteringOwnerTimeResult struct {
 //}
 
 const (
-	MongoURI        = "MONGO_URI"
-	CockroachURI    = "COCKROACH_URI"
-	TrafficMongoURI = "TRAFFIC_MONGO_URI"
+	MongoURI           = "MONGO_URI"
+	GlobalCockroachURI = "GLOBAL_COCKROACH_URI"
+	LocalCockroachURI  = "LOCAL_COCKROACH_URI"
+	TrafficMongoURI    = "TRAFFIC_MONGO_URI"
 	//MongoUsername      = "MONGO_USERNAME"
 	//MongoPassword      = "MONGO_PASSWORD"
 	//RetentionDay       = "RETENTION_DAY"
@@ -131,6 +132,6 @@ const (
 
 var _ = AccountV2(&cockroach.Cockroach{})
 
-func NewAccountV2(url string) (AccountV2, error) {
-	return cockroach.NewCockRoach(url)
+func NewAccountV2(globalURI, localURI string) (AccountV2, error) {
+	return cockroach.NewCockRoach(globalURI, localURI)
 }

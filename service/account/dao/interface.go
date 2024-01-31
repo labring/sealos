@@ -83,8 +83,7 @@ func (g *Cockroach) GetUser(ops types.UserQueryOpts) (*types.RegionUser, error) 
 		return nil, err
 	}
 	query := &types.RegionUser{
-		RegionUID: g.LocalRegion.UID,
-		ID:        ops.Owner,
+		ID: ops.Owner,
 	}
 	if ops.UID != uuid.Nil {
 		query.RealUserUID = ops.UID
@@ -261,6 +260,9 @@ func NewAccountInterface(mongoURI, cockRoachURI, localRegionID string) (Interfac
 	}
 	localRegion := &types.Region{
 		UID: uuid.MustParse(localRegionID),
+	}
+	if localRegionID == "" {
+		localRegion = nil
 	}
 	return &Account{
 		MongoDB:   mongodb,

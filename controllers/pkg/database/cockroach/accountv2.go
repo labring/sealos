@@ -34,6 +34,7 @@ import (
 
 type Cockroach struct {
 	DB          *gorm.DB
+	Localdb     *gorm.DB
 	LocalRegion *types.Region
 	ZeroAccount *types.Account
 	activities  types.Activities
@@ -51,14 +52,13 @@ func (g *Cockroach) GetUser(ops *types.UserQueryOpts) (*types.RegionUser, error)
 		return nil, err
 	}
 	query := &types.RegionUser{
-		RegionUID: g.LocalRegion.UID,
-		ID:        ops.Owner,
+		ID: ops.Owner,
 	}
 	if ops.UID != uuid.Nil {
 		query.RealUserUID = ops.UID
 	}
 	var user types.RegionUser
-	if err := g.DB.Where(query).First(&user).Error; err != nil {
+	if err := g.Localdb.Where(query).First(&user).Error; err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 	return &user, nil
@@ -460,10 +460,14 @@ type Config struct {
 	LocalRegion *types.Region
 }
 
-func NewCockRoach(url string) (*Cockroach, error) {
-	db, err := gorm.Open(postgres.Open(url), &gorm.Config{})
+func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
+	db, err := gorm.Open(postgres.Open(globalURI), &gorm.Config{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to open url %s : %v", url, err)
+		return nil, fmt.Errorf("failed to open url %s : %v", globalURI, err)
+	}
+	localdb, err := gorm.Open(postgres.Open(localURI), &gorm.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to open url %s : %v", localURI, err)
 	}
 	baseBalance, err := crypto.DecryptInt64(os.Getenv(EnvBaseBalance))
 	if err == nil {
@@ -482,13 +486,14 @@ func NewCockRoach(url string) (*Cockroach, error) {
 	}
 	//TODO region with local
 	localRegionStr := os.Getenv(EnvLocalRegion)
-	if localRegionStr == "" {
-		return nil, fmt.Errorf("empty local region, please check env: LOCAL_REGION")
-	}
 	localRegion := &types.Region{
 		UID: uuid.MustParse(localRegionStr),
 	}
-	return &Cockroach{DB: db, ZeroAccount: &types.Account{EncryptBalance: *newEncryptBalance, EncryptDeductionBalance: *newEncryptDeductionBalance, Balance: baseBalance, DeductionBalance: 0}, LocalRegion: localRegion}, nil
+	if localRegionStr == "" {
+		localRegion = nil
+		fmt.Printf("empty local region \n")
+	}
+	return &Cockroach{DB: db, Localdb: localdb, ZeroAccount: &types.Account{EncryptBalance: *newEncryptBalance, EncryptDeductionBalance: *newEncryptDeductionBalance, Balance: baseBalance, DeductionBalance: 0}, LocalRegion: localRegion}, nil
 }
 
 func CreateTableIfNotExist(db *gorm.DB, tables ...interface{}) error {
@@ -508,6 +513,13 @@ func (g *Cockroach) Close() error {
 	db, err := g.DB.DB()
 	if err != nil {
 		return fmt.Errorf("failed to get db: %w", err)
+	}
+	if err := db.Close(); err != nil {
+		return fmt.Errorf("failed to close db: %w", err)
+	}
+	db, err = g.Localdb.DB()
+	if err != nil {
+		return fmt.Errorf("failed to get localdb: %w", err)
 	}
 	return db.Close()
 }
