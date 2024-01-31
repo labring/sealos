@@ -76,7 +76,7 @@ spec:
             - ReadWriteOnce
           resources:
             requests:
-              storage: {{ .storageSize }}
+              storage: {{ .minioStorageSize }}
         status: {}
       volumesPerServer: 1
   requestAutoCert: false

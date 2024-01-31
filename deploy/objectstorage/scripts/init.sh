@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# 0.create minio-operator
-sealos run docker.io/nowinkey/minio-operator:v5.0.6
 # 1. create minio instance
 bash scripts/minio.sh
 # 2. create prometheus instance

@@ -1,5 +1,2 @@
 quay.io/prometheus/prometheus:v2.45.0
-quay.io/minio/minio
-ghcr.io/nowinkeyy/sealos-cloud-objectstorage-controller:latest
-ghcr.io/nowinkeyy/sealos-cloud-objectstorage-frontend:latest
-ghcr.io/nowinkeyy/sealos-cloud-minio-service:latest
+quay.io/minio/minio:RELEASE.2023-11-20T22-40-07Z
