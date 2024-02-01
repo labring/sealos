@@ -110,8 +110,14 @@ export default memo(function UserCard() {
           <Box fontSize="12px" fontWeight="400" alignSelf={'center'} mt="6px !important">
             {t('Balance')}
           </Box>
-          <Flex fontSize="24px" fontWeight="500" alignSelf={'center'} mt="3px !important">
-            <CurrencySymbol color={'white'} w="20px" type={currency} />
+          <Flex
+            fontSize="24px"
+            fontWeight="500"
+            alignSelf={'center'}
+            mt="3px !important"
+            alignItems={'center'}
+          >
+            <CurrencySymbol color={'white'} boxSize="20px" type={currency} />
             <Text ml="6px">{displayMoney(formatMoney(balance))}</Text>
           </Flex>
           <Flex alignItems="center" alignSelf={'center'} gap="10px" mt={'20px !important'}>

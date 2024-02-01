@@ -35,8 +35,9 @@ import { useMemo } from 'react';
 import { enableGpu } from '@/service/enabled';
 export function CommonBillingTable({
   data,
+  isOverview = false,
   ...styles
-}: { data: BillingItem[] } & TableContainerProps) {
+}: { data: BillingItem[]; isOverview?: boolean } & TableContainerProps) {
   const { t } = useTranslation();
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
   const currency = useEnvStore((s) => s.currency);
@@ -47,7 +48,11 @@ export function CommonBillingTable({
         return (
           <Flex display={'flex'} alignItems={'center'}>
             <Text mr="4px">{t(header.id)}</Text>
-            {!!needCurrency && <CurrencySymbol type={currency} />}
+            {!!needCurrency && (
+              <Text>
+                (<CurrencySymbol type={currency} />)
+              </Text>
+            )}
           </Flex>
         );
       };
@@ -96,41 +101,41 @@ export function CommonBillingTable({
       }),
       columnHelper.accessor((row) => row.costs.cpu, {
         id: TableHeaderID.CPU,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       columnHelper.accessor((row) => row.costs.memory, {
         id: TableHeaderID.Memory,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       columnHelper.accessor((row) => row.costs.network, {
         id: TableHeaderID.Network,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       columnHelper.accessor((row) => row.costs.storage, {
         id: TableHeaderID.Storage,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       columnHelper.accessor((row) => row.costs.port, {
         id: TableHeaderID.Port,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       ...(gpuEnabled
         ? [
             columnHelper.accessor((row) => row.costs.gpu, {
               id: TableHeaderID.GPU,
-              header: customTh(true),
+              header: customTh(),
               cell: customCell()
             })
           ]
         : []),
       columnHelper.accessor((row) => row.amount, {
         id: TableHeaderID.TotalAmount,
-        header: customTh(true),
+        header: customTh(!isOverview),
         cell: customCell(true)
       }),
       columnHelper.display({
@@ -176,7 +181,11 @@ export function TransferBillingTable({ data }: { data: BillingItem[] }) {
         return (
           <Flex display={'flex'} alignItems={'center'}>
             <Text mr="4px">{t(header.id)}</Text>
-            {!!needCurrency && <CurrencySymbol type={currency} />}
+            {!!needCurrency && (
+              <Text>
+                (<CurrencySymbol type={currency} />)
+              </Text>
+            )}
           </Flex>
         );
       };
@@ -209,7 +218,7 @@ export function TransferBillingTable({ data }: { data: BillingItem[] }) {
       }),
       columnHelper.accessor((row) => row.appType, {
         id: TableHeaderID.APPType,
-        header: customTh(true),
+        header: customTh(),
         cell(props) {
           const item = props.row.original;
           return (
@@ -243,7 +252,7 @@ export function TransferBillingTable({ data }: { data: BillingItem[] }) {
         }
       }),
       columnHelper.accessor((row) => row.amount, {
-        header: customTh(),
+        header: customTh(true),
         id: TableHeaderID.TotalAmount,
         cell(props) {
           const original = props.row.original;
@@ -289,7 +298,11 @@ export function BillingDetailsTable({
         return (
           <Flex display={'flex'} alignItems={'center'}>
             <Text mr="4px">{t(header.id)}</Text>
-            {!!needCurrency && <CurrencySymbol type={currency} />}
+            {!!needCurrency && (
+              <Text>
+                (<CurrencySymbol type={currency} />)
+              </Text>
+            )}
           </Flex>
         );
       };
@@ -306,34 +319,34 @@ export function BillingDetailsTable({
       }),
       columnHelper.accessor((row) => row.costs.cpu, {
         id: TableHeaderID.CPU,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       columnHelper.accessor((row) => row.costs.memory, {
         id: TableHeaderID.Memory,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       columnHelper.accessor((row) => row.costs.network, {
         id: TableHeaderID.Network,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       columnHelper.accessor((row) => row.costs.storage, {
         id: TableHeaderID.Storage,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       columnHelper.accessor((row) => row.costs.port, {
         id: TableHeaderID.Port,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       ...(gpuEnabled
         ? [
             columnHelper.accessor((row) => row.costs.gpu, {
               id: TableHeaderID.GPU,
-              header: customTh(true),
+              header: customTh(),
               cell: customCell()
             })
           ]

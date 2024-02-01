@@ -161,5 +161,6 @@
   "All APP": "所有应用",
   "APP Type": "应用类型",
   "Details": "详情",
-  "Handle": "操作"
+  "Handle": "操作",
+  "currencyUnit": "金额单位"
 }

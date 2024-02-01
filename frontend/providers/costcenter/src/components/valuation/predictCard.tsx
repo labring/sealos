@@ -4,7 +4,6 @@ import { displayMoney, formatMoney } from '@/utils/format';
 import { Box, Flex, Stack, Text, filter } from '@chakra-ui/react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import CurrencySymbol from '../CurrencySymbol';
 import { END_TIME, valuationMap } from '@/constants/payment';
 import useBillingData from '@/hooks/useBillingData';
 import { BillingType, Costs } from '@/types';
@@ -88,7 +87,6 @@ export default function PredictCard() {
             <Text>{t(item.name)}</Text>
           </Flex>
           <Flex align={'center'}>
-            <CurrencySymbol w="14px" type={currency} mr="6px" color={'#5A646E'} />
             <Text>{item.cost}</Text>
           </Flex>
         </Flex>
