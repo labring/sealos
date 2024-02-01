@@ -214,6 +214,44 @@ paths:
       summary: Get user consumption amount
       tags:
       - ConsumptionAmount
+  /account/v1alpha1/costs/payment:
+    post:
+      consumes:
+      - application/json
+      description: Get user payment within a specified time range
+      parameters:
+      - description: User payment request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.UserBaseReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved user payment
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse user payment request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get user payment
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user payment
+      tags:
+      - Payment
   /account/v1alpha1/costs/properties:
     post:
       consumes:

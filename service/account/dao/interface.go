@@ -30,9 +30,10 @@ type Interface interface {
 	GetProperties() ([]common.PropertyQuery, error)
 	GetCosts(user string, startTime, endTime time.Time) (common.TimeCostsMap, error)
 	GetConsumptionAmount(user string, startTime, endTime time.Time) (int64, error)
-	GetRechargeAmount(user string, startTime, endTime time.Time) (int64, error)
+	GetRechargeAmount(ops types.UserQueryOpts, startTime, endTime time.Time) (int64, error)
 	GetPropertiesUsedAmount(user string, startTime, endTime time.Time) (map[string]int64, error)
 	GetAccount(ops types.UserQueryOpts) (*types.Account, error)
+	GetPayment(ops types.UserQueryOpts, startTime, endTime time.Time) ([]types.Payment, error)
 }
 
 type Account struct {
@@ -76,6 +77,39 @@ func (g *Cockroach) GetAccount(ops types.UserQueryOpts) (*types.Account, error) 
 	account.Balance = balance
 	account.DeductionBalance = deductionBalance
 	return &account, nil
+}
+
+func (g *Cockroach) GetPayment(ops types.UserQueryOpts, startTime, endTime time.Time) ([]types.Payment, error) {
+	if ops.UID == uuid.Nil {
+		user, err := g.GetUser(ops)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user: %v", err)
+		}
+		ops.UID = user.RealUserUID
+	}
+	var payment []types.Payment
+	if startTime != endTime {
+		if err := g.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: ops.UID}}).Where("created_at >= ? AND created_at <= ?", startTime, endTime).Find(&payment).Error; err != nil {
+			return nil, fmt.Errorf("failed to get payment: %w", err)
+		}
+	} else {
+		if err := g.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: ops.UID}}).Find(&payment).Error; err != nil {
+			return nil, fmt.Errorf("failed to get payment: %w", err)
+		}
+	}
+	return payment, nil
+}
+
+func (g *Cockroach) GetRechargeAmount(ops types.UserQueryOpts, startTime, endTime time.Time) (int64, error) {
+	payment, err := g.GetPayment(ops, startTime, endTime)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get payment: %v", err)
+	}
+	paymentAmount := int64(0)
+	for i := range payment {
+		paymentAmount += payment[i].Amount
+	}
+	return paymentAmount, nil
 }
 
 func (g *Cockroach) GetUser(ops types.UserQueryOpts) (*types.RegionUser, error) {
@@ -161,10 +195,6 @@ func (m *MongoDB) GetCosts(user string, startTime, endTime time.Time) (common.Ti
 
 func (m *MongoDB) GetConsumptionAmount(user string, startTime, endTime time.Time) (int64, error) {
 	return m.getAmountWithType(0, user, startTime, endTime)
-}
-
-func (m *MongoDB) GetRechargeAmount(user string, startTime, endTime time.Time) (int64, error) {
-	return m.getAmountWithType(1, user, startTime, endTime)
 }
 
 func (m *MongoDB) getAmountWithType(_type int64, user string, startTime, endTime time.Time) (int64, error) {

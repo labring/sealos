@@ -3,6 +3,7 @@ package helper
 const (
 	GROUP                = "/account/v1alpha1"
 	GetAccount           = "/account"
+	GetPayment           = "/payment"
 	GetHistoryNamespaces = "/namespaces"
 	GetProperties        = "/properties"
 	GetRechargeAmount    = "/costs/recharge"

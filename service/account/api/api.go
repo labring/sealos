@@ -107,9 +107,42 @@ func GetConsumptionAmount(c *gin.Context) {
 	amount, err := dao.DBClient.GetConsumptionAmount(req.Owner, req.TimeRange.StartTime, req.TimeRange.EndTime)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get consumption amount : %v", err)})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"amount": amount,
+	})
+}
+
+// GetPayment
+// @Summary Get user payment
+// @Description Get user payment within a specified time range
+// @Tags Payment
+// @Accept json
+// @Produce json
+// @Param request body helper.UserBaseReq true "User payment request"
+// @Success 200 {object} map[string]interface{} "successfully retrieved user payment"
+// @Failure 400 {object} map[string]interface{} "failed to parse user payment request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get user payment"
+// @Router /account/v1alpha1/costs/payment [post]
+func GetPayment(c *gin.Context) {
+	req, err := helper.ParseUserBaseReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user payment request: %v", err)})
+		return
+	}
+	if err := helper.Authenticate(req.Auth); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	payment, err := dao.DBClient.GetPayment(types.UserQueryOpts{Owner: req.Owner}, req.TimeRange.StartTime, req.TimeRange.EndTime)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get payment : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"payment": payment,
 	})
 }
 
@@ -135,9 +168,10 @@ func GetRechargeAmount(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
-	amount, err := dao.DBClient.GetRechargeAmount(req.Owner, req.TimeRange.StartTime, req.TimeRange.EndTime)
+	amount, err := dao.DBClient.GetRechargeAmount(types.UserQueryOpts{Owner: req.Owner}, req.TimeRange.StartTime, req.TimeRange.EndTime)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get recharge amount : %v", err)})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"amount": amount,
@@ -169,6 +203,7 @@ func GetPropertiesUsedAmount(c *gin.Context) {
 	amount, err := dao.DBClient.GetPropertiesUsedAmount(req.Owner, req.TimeRange.StartTime, req.TimeRange.EndTime)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get properties used amount : %v", err)})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"amount": amount,
@@ -208,6 +243,7 @@ func GetCosts(c *gin.Context) {
 	costs, err := dao.DBClient.GetCosts(req.Auth.Owner, req.TimeRange.StartTime, req.TimeRange.EndTime)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get cost : %v", err)})
+		return
 	}
 	c.JSON(http.StatusOK, CostsResult{
 		Data:    CostsResultData{Costs: costs},
@@ -239,6 +275,7 @@ func GetAccount(c *gin.Context) {
 	account, err := dao.DBClient.GetAccount(types.UserQueryOpts{Owner: req.Auth.Owner})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get account : %v", err)})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"account": account,
