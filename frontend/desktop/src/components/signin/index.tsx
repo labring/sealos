@@ -181,7 +181,7 @@ export default function SigninComponent() {
                   {t('Password Login')}
                 </Tab>
                 <Tab px="0" _selected={{ color: 'white' }}>
-                  公众号登录
+                  {t('Official account login')}
                 </Tab>
               </TabList>
               <TabIndicator mt="-2px" height="2px" bg="#FFFFFF" borderRadius="1px" />
