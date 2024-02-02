@@ -64,7 +64,15 @@ export type TgithubUser = {
   updated_at: string;
 };
 // if default, uid
-export const PROVIDERS = ['github', 'wechat', 'phone', 'uid', 'password_user', 'google'] as const;
+export const PROVIDERS = [
+  'github',
+  'wechat',
+  'phone',
+  'uid',
+  'password_user',
+  'google',
+  'wechat_open'
+] as const;
 export type Provider = (typeof PROVIDERS)[number];
 export type OauthProvider = Exclude<Provider, 'uid' | 'password_user' | 'phone'>;
 export type TUserExist = { user: string; exist: boolean };
@@ -78,6 +86,7 @@ export type User = {
   name: string;
   github?: string;
   wechat?: string;
+  wechat_open?: string;
   google?: string;
   phone?: string;
   k8s_users?: K8s_user[];
