@@ -29,9 +29,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const userInfo = (await (await fetch(userUrl)).json()) as TWechatUser;
     const avatar_url = (await getBase64FromRemote(userInfo?.headimgurl)) as string;
 
+    if (!userInfo?.openid) {
+      return jsonRes(res, {
+        code: 500,
+        message: 'Failed to obtain WeChat information'
+      });
+    }
+
     const data = await getOauthRes({
       provider: 'wechat_open',
-      id: userInfo?.openid || userInfo?.unionid,
+      id: userInfo.openid,
       name: userInfo?.nickname,
       avatar_url
     });
