@@ -33,7 +33,7 @@ spec:
       labels:
         app: template-frontend
     spec:
-     initContainers:
+      initContainers:
         - command:
           - sh
           - -c
@@ -42,8 +42,8 @@ spec:
           imagePullPolicy: Always
           name: template-frontend-init
           volumeMounts:
-          - mountPath: /template-data
-            name: template-data
+            - mountPath: /template-data
+              name: template-data
       containers:
         - name: template-frontend
           resources:
