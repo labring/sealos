@@ -28,7 +28,7 @@ import { useForm } from 'react-hook-form';
 import type { AutoBackupFormType, AutoBackupType } from '@/types/backup';
 import Tabs from '@/components/Tabs';
 import MySelect from '@/components/Select';
-import { DBTypeEnum } from '@/constants/db';
+import { DBBackupMethodNameMap, DBTypeEnum } from '@/constants/db';
 
 enum NavEnum {
   manual = 'manual',
@@ -168,24 +168,18 @@ const BackupModal = ({
         return `${data.minute} * * * *`;
       })();
 
-      const patch = [
-        {
-          op: 'replace',
-          path: '/spec/backup',
-          value: {
-            enabled: data.start,
-            cronExpression: convertCronTime(cron, -8),
-            method: 'backupTool',
-            pitrEnabled: false,
-            retentionPeriod: `${data.saveTime}${data.saveType}`
-          }
-        }
-      ];
+      const autoBackup = {
+        enabled: data.start,
+        cronExpression: convertCronTime(cron, -8),
+        method: DBBackupMethodNameMap[dbType],
+        retentionPeriod: `${data.saveTime}${data.saveType}`,
+        repoName: ''
+      };
 
       return updateBackupPolicy({
         dbName,
         dbType,
-        patch
+        autoBackup
       });
     },
     onSuccess() {
@@ -206,18 +200,10 @@ const BackupModal = ({
 
   const { mutate: onclickCloseAutoBackup } = useMutation({
     mutationFn: async () => {
-      const patch = [
-        {
-          op: 'replace',
-          path: '/spec/backup/enabled',
-          value: false
-        }
-      ];
-
       return updateBackupPolicy({
         dbName,
         dbType,
-        patch
+        autoBackup: undefined
       });
     },
     onSuccess() {

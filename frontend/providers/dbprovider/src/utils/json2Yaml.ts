@@ -660,7 +660,6 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
       }
     ]
   };
-  console.log(map[data.dbType].map((item) => yaml.dump(item)).join('\n---\n'));
 
   return map[data.dbType].map((item) => yaml.dump(item)).join('\n---\n');
 };
