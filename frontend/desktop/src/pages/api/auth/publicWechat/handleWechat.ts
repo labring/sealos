@@ -119,11 +119,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (msgType === 'event') {
       const eventHandler = new WeChatEventHandler();
       const result = await eventHandler.handleEvent(message);
-      res.send(result);
+      res.json(result);
     }
     if (msgType === 'text') {
       const result = textMsg(message, `欢迎来到公众号,收到消息=> ${message.Content[0]}`);
-      res.send(result);
+      res.json(result);
     }
   } catch (error) {
     console.log(error);

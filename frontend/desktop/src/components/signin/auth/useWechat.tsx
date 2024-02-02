@@ -27,7 +27,7 @@ export default function useWechat() {
     ['getWechatResult', wechatInfo?.code],
     () => getWechatResult({ code: wechatInfo?.code || '' }),
     {
-      refetchInterval: 1 * 1000,
+      refetchInterval: 3 * 1000,
       enabled: !!wechatInfo?.code,
       onSuccess(data) {
         console.log(data);
