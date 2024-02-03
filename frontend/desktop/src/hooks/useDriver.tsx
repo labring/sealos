@@ -58,6 +58,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
     const handleUserGuide = async () => {
       try {
         const { data: env } = await getSystemEnv();
+        if (!env.guideEnabled) return;
         const { data } = await getUserAccount();
         const bonus = await getPriceBonus();
         if (bonus.data?.activities) {

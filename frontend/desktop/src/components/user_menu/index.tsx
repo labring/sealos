@@ -1,10 +1,11 @@
 import Account from '@/components/account';
 import Notification from '@/components/notification';
 import useSessionStore from '@/stores/session';
-import { Box, Flex, FlexProps, Image, useDisclosure } from '@chakra-ui/react';
+import { Box, Center, Flex, FlexProps, Image, useDisclosure } from '@chakra-ui/react';
 import { useState } from 'react';
 import LangSelectSimple from '../LangSelect/simple';
 import Iconfont from '../iconfont';
+import GithubComponent from './github';
 
 enum UserMenuKeys {
   LangSelect,
@@ -29,6 +30,13 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
       gap: '16px'
     }
   } = props;
+
+  const baseItemStyle = {
+    w: '36px',
+    h: '36px',
+    background: 'rgba(244, 246, 248, 0.7)',
+    boxShadow: '0px 1.2px 2.3px rgba(0, 0, 0, 0.2)'
+  };
 
   const buttonList: {
     click?: () => void;
@@ -68,27 +76,20 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
   ];
   return (
     <Flex {...userMenuStyleProps}>
-      <LangSelectSimple
-        w="36px"
-        h="36px"
-        background={'rgba(244, 246, 248, 0.7)'}
-        boxShadow={'0px 1.2px 2.3px rgba(0, 0, 0, 0.2)'}
-      />
+      <LangSelectSimple {...baseItemStyle} />
+      <GithubComponent {...baseItemStyle} />
       {buttonList.map((item) => (
         <Flex
-          w="36px"
-          h="36px"
           key={item.key}
           borderRadius={'50%'}
-          background={'rgba(244, 246, 248, 0.7)'}
           justifyContent={'center'}
           alignItems={'center'}
           position={'relative'}
-          boxShadow={'0px 1.2px 2.3px rgba(0, 0, 0, 0.2)'}
+          {...baseItemStyle}
         >
-          <Box onClick={item.click} cursor={'pointer'}>
+          <Center w="100%" h="100%" onClick={item.click} cursor={'pointer'}>
             {item.button}
-          </Box>
+          </Center>
           {item.content}
           {item.key === UserMenuKeys.Notification && notificationAmount > 0 && (
             <Box
