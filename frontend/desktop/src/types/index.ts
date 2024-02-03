@@ -11,4 +11,6 @@ export * from './license';
 
 declare global {
   var mongodb: MongoClient | null;
+  var WechatAccessToken: string | undefined;
+  var WechatExpiresIn: number | undefined;
 }

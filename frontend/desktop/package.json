@@ -57,6 +57,7 @@
     "sass": "^1.68.0",
     "sealos-desktop-sdk": "workspace:*",
     "uuid": "^9.0.1",
+    "xml2js": "^0.6.2",
     "zustand": "^4.4.1"
   },
   "devDependencies": {

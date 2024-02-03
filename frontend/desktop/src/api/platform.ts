@@ -1,5 +1,5 @@
 import request from '@/services/request';
-import { ApiResp, SystemConfigType, SystemEnv } from '@/types';
+import { ApiResp, Session, SystemConfigType, SystemEnv } from '@/types';
 import { AccountCRD } from '@/types/user';
 
 // handle baidu
@@ -43,3 +43,13 @@ export const getPriceBonus = () => {
     }>
   >('/api/price/bonus');
 };
+
+export const getWechatQR = () =>
+  request.get<any, ApiResp<{ code: string; codeUrl: string }>>(
+    '/api/auth/publicWechat/getWechatQR'
+  );
+
+export const getWechatResult = (payload: { code: string }) =>
+  request.get<any, ApiResp<Session>>('/api/auth/publicWechat/getWechatResult', {
+    params: payload
+  });
