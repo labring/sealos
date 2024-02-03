@@ -30,4 +30,5 @@ export type SystemEnv = {
   rechargeEnabled: boolean;
   licenseEnabled: boolean;
   guideEnabled: boolean;
+  openWechatEnabled: boolean;
 } & LoginProps;

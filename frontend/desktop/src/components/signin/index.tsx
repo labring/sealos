@@ -37,9 +37,10 @@ export default function SigninComponent() {
     service_protocol_en = '',
     private_protocol_en = '',
     needPassword = false,
-    needSms = false
+    needSms = false,
+    openWechatEnabled = false
   } = platformEnv?.data || {};
-  const needTabs = needPassword && needSms;
+  const needTabs = (needPassword && needSms) || (needSms && openWechatEnabled);
 
   const disclosure = useDisclosure();
   const { t, i18n } = useTranslation();
@@ -180,9 +181,11 @@ export default function SigninComponent() {
                 <Tab px="0" _selected={{ color: 'white' }}>
                   {t('Password Login')}
                 </Tab>
-                <Tab px="0" _selected={{ color: 'white' }}>
-                  {t('Official account login')}
-                </Tab>
+                {openWechatEnabled && (
+                  <Tab px="0" _selected={{ color: 'white' }}>
+                    {t('Official account login')}
+                  </Tab>
+                )}
               </TabList>
               <TabIndicator mt="-2px" height="2px" bg="#FFFFFF" borderRadius="1px" />
             </Tabs>
