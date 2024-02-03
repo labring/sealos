@@ -21,7 +21,6 @@ export const monitorFetch = async (props: AxiosRequestConfig, kubeconfig: string
     const jsonResponse = await response.json();
     return jsonResponse;
   } catch (error) {
-    console.error('Error monitorFetch:', error);
     throw error;
   }
 };
