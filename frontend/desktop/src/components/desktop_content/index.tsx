@@ -1,17 +1,17 @@
 import AppWindow from '@/components/app_window';
 import MoreButton from '@/components/more_button';
 import UserMenu from '@/components/user_menu';
+import { BackgroundImageUrl } from '@/constants/config';
+import useDriver from '@/hooks/useDriver';
 import useAppStore from '@/stores/app';
 import { TApp } from '@/types';
-import { Box, Flex, Grid, GridItem, Image, Text, Icon, FlexProps, Button } from '@chakra-ui/react';
+import { Box, Flex, Grid, GridItem, Image, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { MouseEvent, useCallback, useEffect, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
-import useDriver from '@/hooks/useDriver';
-import { BackgroundImageUrl } from '@/constants/config';
 
 const TimeComponent = dynamic(() => import('./time'), {
   ssr: false
