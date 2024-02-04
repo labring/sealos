@@ -9,7 +9,8 @@ import {
   enableStripe,
   enableWechatRecharge,
   enableLicense,
-  enableRecharge
+  enableRecharge,
+  enableOpenWechat
 } from '@/services/enable';
 import { ApiResp, SystemEnv } from '@/types';
 
@@ -32,6 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const licenseEnabled = enableLicense();
   const rechargeEnabled = enableRecharge();
   const guideEnabled = process.env.GUIDE_ENABLED === 'true';
+  const openWechatEnabled = enableOpenWechat();
 
   jsonRes<SystemEnv>(res, {
     data: {
@@ -53,7 +55,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       wechatEnabledRecharge,
       rechargeEnabled,
       licenseEnabled,
-      guideEnabled
+      guideEnabled,
+      openWechatEnabled
     }
   });
 }

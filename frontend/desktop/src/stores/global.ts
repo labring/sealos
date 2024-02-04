@@ -31,6 +31,7 @@ export const useGlobalStore = create<GlobalState>()(
       wechatEnabledRecharge: false,
       SEALOS_CLOUD_DOMAIN: 'cloud.sealos.io',
       rechargeEnabled: false,
+      openWechatEnabled: false,
       setEnv(env, val) {
         set({ [env]: val });
       }

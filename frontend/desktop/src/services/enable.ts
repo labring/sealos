@@ -22,6 +22,8 @@ export const enableGoogle = () =>
 export const enableRecharge = () => {
   return process.env.RECHARGE_ENABLED === 'true';
 };
+export const enableOpenWechat = () =>
+  !!process.env.PBULIC_WECHAT_APP_ID && !!process.env.PBULIC_WECHAT_APP_SECRET;
 export const enableSignUp = () => process.env.SIGN_UP_ENABLED === 'true';
 export const enableApi = () => process.env.API_ENABLED === 'true';
 // costcenter

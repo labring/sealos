@@ -1,3 +1,47 @@
+// new !!!
+const baseColors = {
+  yellow: {
+    25: '#FFFDFA',
+    50: '#FFFAEB',
+    100: '#FEF0C7',
+    200: '#FEDF89',
+    300: '#FEC84B',
+    400: '#FDB022',
+    500: '#F79009',
+    600: '#DC6803',
+    700: '#B54708',
+    800: '#93370D',
+    900: '#7A2E0E'
+  },
+  sealosGrayModern: {
+    '05': 'rgba(17, 24, 36, 0.05)',
+    1: 'rgba(17, 24, 36, 0.1)',
+    15: 'rgba(17, 24, 36, 0.15)',
+    25: '#FBFBFC',
+    50: '#F7F8FA',
+    100: '#F4F4F7',
+    150: '#F0F1F6',
+    200: '#E8EBF0',
+    250: '#DFE2EA',
+    300: '#C4CBD7',
+    400: '#8A95A7',
+    500: '#667085',
+    600: '#485264',
+    700: '#383F50',
+    800: '#1D2532',
+    900: '#111824'
+  },
+  sealosRed: {
+    50: '#FEF3F2',
+    600: '#D92D20'
+  }
+};
+
+const otherColors = {
+  surfaceLow: baseColors.sealosGrayModern[50],
+  surface: baseColors.sealosGrayModern[100]
+};
+
 export const colors = {
   primary: {
     100: '#E6F6F6',
@@ -89,5 +133,7 @@ export const colors = {
   frostyNightfall: {
     100: '#F5F5F8',
     200: '#EAEBF0'
-  }
+  },
+  ...baseColors,
+  ...otherColors
 };

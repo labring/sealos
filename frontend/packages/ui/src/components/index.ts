@@ -1,5 +1,3 @@
-import EditTabs from './EditTabs';
-import YamlCode from './YamlCode';
 import CopyIcon from './icons/CopyIcon';
 import DownloadIcon from './icons/DownloadIcon';
 import DeleteIcon from './icons/DeleteIcon';
@@ -42,8 +40,15 @@ import WarnIcon from './icons/WarnIcon';
 import CloseIcon from './icons/CloseIcon';
 import SortPolygonUpIcon from './icons/SortPolygonUpIcon';
 import SortPolygonDownIcon from './icons/SortPolygonDownIcon';
+import WarningIcon from './icons/WarningIcon';
+
+import useMessage from './Message/index';
+import EditTabs from './EditTabs';
+import YamlCode from './YamlCode';
 
 export {
+  WarningIcon,
+  useMessage,
   YamlCode,
   EditTabs,
   AddIcon,
