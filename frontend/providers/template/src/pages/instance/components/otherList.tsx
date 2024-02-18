@@ -56,11 +56,10 @@ export default function OtherList({ instanceName }: { instanceName: string }) {
         title: 'Description',
         key: 'service ports',
         render: (item: ResourceListItemType) => {
-          const text = item?.servicePorts
-            ? item?.servicePorts
-                ?.map((item) => `${item?.port}:${item?.nodePort}/${item?.protocol}`)
-                .join(', ')
-            : '';
+          const text =
+            item?.servicePorts && item.serviceType === 'NodePort'
+              ? item?.servicePorts?.map((i) => `${i.port}:${i.nodePort}/${i.protocol}`).join(', ')
+              : '';
           return <Text>{text}</Text>;
         }
       }

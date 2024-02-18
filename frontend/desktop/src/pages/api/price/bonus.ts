@@ -21,8 +21,8 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         activities: result.body.data.activities
       }
     });
-  } catch (error) {
-    console.log(error);
+  } catch (error: any) {
+    console.log(error?.body);
     jsonRes(resp, { code: 500, message: 'get price error' });
   }
 }

@@ -5,7 +5,7 @@ import { immer } from 'zustand/middleware/immer';
 
 type EnvState = {
   SystemEnv: EnvResponse;
-  initSystemEnv: () => void;
+  initSystemEnv: () => Promise<EnvResponse>;
 };
 
 const useEnvStore = create<EnvState>()(
@@ -16,12 +16,14 @@ const useEnvStore = create<EnvState>()(
     initSystemEnv: async () => {
       try {
         const data = await getPlatformEnv();
-
         set((state) => {
           state.SystemEnv = data;
         });
+        return data;
       } catch (error) {
-        console.log(error, 'get system env');
+        return {
+          domain: 'cloud.sealos.io'
+        };
       }
     }
   }))

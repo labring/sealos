@@ -18,6 +18,7 @@ import Layout from '@/components/layout';
 
 import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
+import useSessionStore from '@/store/session';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -37,6 +38,7 @@ const queryClient = new QueryClient({
 
 const App = ({ Component, pageProps, domain }: AppProps & { domain: string }) => {
   const router = useRouter();
+  const { setSession } = useSessionStore();
   const { i18n } = useTranslation();
   const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
   const { Loading } = useLoading();
@@ -52,10 +54,9 @@ const App = ({ Component, pageProps, domain }: AppProps & { domain: string }) =>
     (async () => {
       try {
         const res = await sealosApp.getSession();
-        localStorage.setItem('session', JSON.stringify(res));
-        console.log('app init success');
+        setSession(res);
       } catch (err) {
-        console.log(err, 'App is not running in desktop');
+        console.warn('App is not running in desktop');
       }
     })();
     NProgress.done();
