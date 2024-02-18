@@ -1,4 +1,5 @@
 import { getPlatformEnv } from '@/api/platform';
+import { defaultDomain } from '@/constants/keys';
 import { EnvResponse } from '@/pages/api/platform/getEnv';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
@@ -22,7 +23,7 @@ const useEnvStore = create<EnvState>()(
         return data;
       } catch (error) {
         return {
-          domain: 'cloud.sealos.io'
+          domain: defaultDomain
         };
       }
     }
