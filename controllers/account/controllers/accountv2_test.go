@@ -163,7 +163,7 @@ func TestConvertPayment_V1ToV2(t *testing.T) {
 				}
 				err = accountV2.SavePayment(&payment)
 				if err != nil {
-					//logger.Error("failed to create payment %s: %v", payment.ID, err)
+					//logger.Error("failed to create payment %s: %v", payment.CrName, err)
 					if err2 := accountV2.CreateErrorPaymentCreate(payment, err.Error()); err2 != nil {
 						logger.Error("failed to create err msg %s: %v", payment.ID, err2)
 					}

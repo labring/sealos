@@ -47,17 +47,17 @@ const (
 	EnvBaseBalance = "BASE_BALANCE"
 )
 
-func (g *Cockroach) GetUser(ops *types.UserQueryOpts) (*types.RegionUser, error) {
+func (g *Cockroach) GetUser(ops *types.UserQueryOpts) (*types.RegionUserCr, error) {
 	if err := checkOps(ops); err != nil {
 		return nil, err
 	}
-	query := &types.RegionUser{
-		ID: ops.Owner,
+	query := &types.RegionUserCr{
+		CrName: ops.Owner,
 	}
 	if ops.UID != uuid.Nil {
-		query.RealUserUID = ops.UID
+		query.UserUID = ops.UID
 	}
-	var user types.RegionUser
+	var user types.RegionUserCr
 	if err := g.Localdb.Where(query).First(&user).Error; err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
@@ -81,7 +81,7 @@ func (g *Cockroach) getAccount(ops *types.UserQueryOpts) (*types.Account, error)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user: %v", err)
 		}
-		ops.UID = user.RealUserUID
+		ops.UID = user.UserUID
 	}
 	var account types.Account
 	if err := g.DB.Where(types.Account{UserUID: ops.UID}).First(&account).Error; err != nil {
@@ -109,7 +109,7 @@ func (g *Cockroach) updateBalance(tx *gorm.DB, ops *types.UserQueryOpts, amount 
 		if err != nil {
 			return fmt.Errorf("failed to get user: %v", err)
 		}
-		ops.UID = user.RealUserUID
+		ops.UID = user.UserUID
 	}
 	var account types.Account
 	//TODO update UserUid = ?
@@ -190,7 +190,7 @@ func (g *Cockroach) CreateAccount(ops *types.UserQueryOpts, account *types.Accou
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user: %v", err)
 		}
-		ops.UID = user.RealUserUID
+		ops.UID = user.UserUID
 	}
 	account.UserUID = ops.UID
 	if account.EncryptBalance == "" || account.EncryptDeductionBalance == "" {
@@ -313,7 +313,7 @@ func (g *Cockroach) payment(payment *types.Payment, updateBalance bool) error {
 		if err != nil {
 			return fmt.Errorf("failed to get user: %v", err)
 		}
-		payment.UserUID = user.RealUserUID
+		payment.UserUID = user.UserUID
 	}
 
 	return g.DB.Transaction(func(tx *gorm.DB) error {
@@ -339,7 +339,7 @@ func (g *Cockroach) NewAccount(ops *types.UserQueryOpts) (*types.Account, error)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user: %v", err)
 		}
-		ops.UID = user.RealUserUID
+		ops.UID = user.UserUID
 	}
 	account := &types.Account{
 		UserUID:                 ops.UID,
@@ -364,7 +364,7 @@ func (g *Cockroach) GetUserAccountRechargeDiscount(ops *types.UserQueryOpts) (*t
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user %v: %v", ops, err)
 		}
-		userID = user.RealUserUID
+		userID = user.UserUID
 	}
 	var userActivities []types.UserActivity
 	if !g.DB.Migrator().HasTable("UserActivities") {
@@ -424,14 +424,14 @@ func (g *Cockroach) TransferAccount(from, to *types.UserQueryOpts, amount int64)
 		if err != nil {
 			return fmt.Errorf("failed to get user: %v", err)
 		}
-		from.UID = fromUser.RealUserUID
+		from.UID = fromUser.UserUID
 	}
 	if to.UID == uuid.Nil {
 		toUser, err := g.GetUser(to)
 		if err != nil {
 			return fmt.Errorf("failed to get user: %v", err)
 		}
-		to.UID = toUser.RealUserUID
+		to.UID = toUser.UserUID
 	}
 	err := g.DB.Transaction(func(tx *gorm.DB) error {
 		sender, err := g.GetAccount(&types.UserQueryOpts{UID: from.UID})

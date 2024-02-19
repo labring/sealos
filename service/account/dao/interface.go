@@ -60,7 +60,7 @@ func (g *Cockroach) GetAccount(ops types.UserQueryOpts) (*types.Account, error) 
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user: %v", err)
 		}
-		ops.UID = user.RealUserUID
+		ops.UID = user.UserUID
 	}
 	var account types.Account
 	if err := g.DB.Where(types.Account{UserUID: ops.UID}).First(&account).Error; err != nil {
@@ -85,7 +85,7 @@ func (g *Cockroach) GetPayment(ops types.UserQueryOpts, startTime, endTime time.
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user: %v", err)
 		}
-		ops.UID = user.RealUserUID
+		ops.UID = user.UserUID
 	}
 	var payment []types.Payment
 	if startTime != endTime {
@@ -112,17 +112,17 @@ func (g *Cockroach) GetRechargeAmount(ops types.UserQueryOpts, startTime, endTim
 	return paymentAmount, nil
 }
 
-func (g *Cockroach) GetUser(ops types.UserQueryOpts) (*types.RegionUser, error) {
+func (g *Cockroach) GetUser(ops types.UserQueryOpts) (*types.RegionUserCr, error) {
 	if err := checkOps(ops); err != nil {
 		return nil, err
 	}
-	query := &types.RegionUser{
-		ID: ops.Owner,
+	query := &types.RegionUserCr{
+		CrName: ops.Owner,
 	}
 	if ops.UID != uuid.Nil {
-		query.RealUserUID = ops.UID
+		query.UserUID = ops.UID
 	}
-	var user types.RegionUser
+	var user types.RegionUserCr
 	if err := g.LocalDB.Where(query).First(&user).Error; err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
