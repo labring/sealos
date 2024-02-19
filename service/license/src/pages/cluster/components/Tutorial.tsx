@@ -1,7 +1,13 @@
 import { findClusterById } from '@/api/cluster';
 import { getFileByName } from '@/api/oos';
 import CodeBlock from '@/components/CodeBlock';
-import { CheckListIcon, DownloadIcon, OfflineIcon, OnlineComputerIcon } from '@/components/Icon';
+import {
+  BookIcon,
+  CheckListIcon,
+  DownloadIcon,
+  OfflineIcon,
+  OnlineComputerIcon
+} from '@/components/Icon';
 import { useCopyData } from '@/hooks/useCopyData';
 import { ClusterType } from '@/types';
 import { downloadFromURL } from '@/utils/downloadFIle';
@@ -21,18 +27,22 @@ import {
   TabPanel,
   TabPanels,
   Tabs,
+  Tag,
+  TagLeftIcon,
+  TagLabel,
   Text,
-  useToast
+  useToast,
+  Button
 } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useMemo, useState } from 'react';
 import ReadMe from './ReadMe';
-import CommandForm from './CommandForm';
 import LicensePanel from './LicensePanel';
 import ClusterPanel from './ClusterPanel';
 import useClusterDetail from '@/stores/cluster';
 import { useRouter } from 'next/router';
+import ConfigForm from './ConfigForm';
 
 const TAB_QUERY_PARAM = 'tab';
 const TAB_QUERY_ARR = ['tutorial', 'cluster', 'license'];
@@ -101,6 +111,22 @@ export default function Tutorial({ ossFileUrl }: { ossFileUrl: string }) {
     }
   );
 
+  const DocsComponent = (
+    <Tag
+      ml="12px"
+      onClick={() => window.open('https://sealos.io/zh-Hans/docs/self-hosting/sealos/installation')}
+      _hover={{
+        color: 'brightBlue.600',
+        svg: {
+          fill: 'brightBlue.600'
+        }
+      }}
+    >
+      <TagLeftIcon as={BookIcon} />
+      <TagLabel>详细文档</TagLabel>
+    </Tag>
+  );
+
   return (
     <Flex flex={1} pt="46px" pb="40px" px={'46px'} bg="#F4F6F8" overflow="scroll">
       <Tabs
@@ -111,56 +137,47 @@ export default function Tutorial({ ossFileUrl }: { ossFileUrl: string }) {
         height={'100%'}
         w="100%"
       >
-        <TabList gap={'8px'} fontWeight={500} fontSize={'18px'}>
-          <Tab p="4px" color={tabIndex === 0 ? '#24282C ' : '#5A646E'}>
+        <TabList gap={'8px'} fontSize={'18px'}>
+          <Tab p="4px" fontWeight={500} color={tabIndex === 0 ? 'gray.900 ' : 'gray.500'}>
             部署教程
           </Tab>
-          <Tab p="4px" color={tabIndex === 1 ? '#24282C ' : '#5A646E'}>
+          <Tab p="4px" fontWeight={500} color={tabIndex === 1 ? 'gray.900 ' : 'gray.500'}>
             集群管理
           </Tab>
           {clusterDetail?.kubeSystemID && (
-            <Tab p="4px" color={tabIndex === 2 ? '#24282C ' : '#5A646E'}>
+            <Tab p="4px" fontWeight={500} color={tabIndex === 2 ? 'gray.900 ' : 'gray.500'}>
               License 管理
             </Tab>
           )}
         </TabList>
         <TabIndicator mt="-1.5px" height="2px" bg="#24282C" borderRadius="1px" />
         <TabPanels>
-          <TabPanel p="0px" mt="32px">
-            <Accordion color={'#24282C'} allowMultiple>
-              <AccordionItem bg="#fff" border={'none'} p="10px 32px" mb="8px" borderRadius={'12px'}>
-                <AccordionButton px="0px" _hover={{ bg: '#fff' }}>
+          <TabPanel p="0" mt="32px">
+            <Accordion color={'#24282C'} allowToggle>
+              <AccordionItem
+                bg="#fff"
+                border={'1px solid #E8EBF0'}
+                p="10px 32px"
+                mb="8px"
+                borderRadius={'12px'}
+              >
+                <AccordionButton px="0" _hover={{ bg: '#fff' }}>
                   <CheckListIcon w="20px" h="20px" />
                   <Text ml="16px" fontSize={'18px'} fontWeight={600}>
                     准备工作
                   </Text>
+                  {DocsComponent}
                   <AccordionIcon ml="auto" w="24px" h="24px" />
                 </AccordionButton>
-                <AccordionPanel py="20px" pl="40px" gap={'12px'}>
+                <AccordionPanel py="16px" pl="32px">
                   <ReadMe />
-                  <Center
-                    borderRadius={'4px'}
-                    cursor={'pointer'}
-                    mt="20px"
-                    w="218px"
-                    h="44px"
-                    color={'#FFF'}
-                    bg="#24282C"
-                    fontSize={'14px'}
-                    fontWeight={600}
-                    onClick={() =>
-                      window.open('https://sealos.io/zh-Hans/docs/self-hosting/sealos/installation')
-                    }
-                  >
-                    详细文档
-                  </Center>
                 </AccordionPanel>
               </AccordionItem>
 
               {clusterDetail?.type === ClusterType.Enterprise && (
                 <AccordionItem
                   bg="#fff"
-                  border={'none'}
+                  border={'1px solid #E8EBF0'}
                   p="10px 32px"
                   mb="8px"
                   borderRadius={'12px'}
@@ -176,21 +193,14 @@ export default function Tutorial({ ossFileUrl }: { ossFileUrl: string }) {
                     <Text fontSize={'16px'} fontWeight={600}>
                       下载离线包
                     </Text>
-                    <Center
-                      borderRadius={'4px'}
-                      cursor={'pointer'}
+                    <Button
                       mt="12px"
-                      w="218px"
-                      h="44px"
-                      color={'#FFF'}
-                      bg="#24282C"
-                      fontSize={'14px'}
-                      fontWeight={600}
+                      size={'lg'}
+                      variant={'black'}
                       onClick={() => downloadFromURL(ossLink)}
                     >
-                      <DownloadIcon fill={'#fff'} mr="8px" />
-                      <Text>点击下载</Text>
-                    </Center>
+                      点击下载
+                    </Button>
 
                     <Text mt="24px" fontSize={'16px'} fontWeight={600} mb="12px">
                       服务器上下载
@@ -204,7 +214,7 @@ export default function Tutorial({ ossFileUrl }: { ossFileUrl: string }) {
                     <Text mt="12px" fontSize={'16px'} fontWeight={600} mb="12px">
                       部署集群
                     </Text>
-                    <CommandForm
+                    <ConfigForm
                       basePath={`tar xzvf ${fileNameParams} && cd sealos-cloud && bash scripts/load-images.sh && bash scripts/install.sh `}
                       cloudVersion={ossVersion}
                       enterprise={true}
@@ -213,35 +223,26 @@ export default function Tutorial({ ossFileUrl }: { ossFileUrl: string }) {
                 </AccordionItem>
               )}
 
-              <AccordionItem bg="#fff" border={'none'} p="10px 32px" mb="8px" borderRadius={'12px'}>
+              <AccordionItem
+                bg="#fff"
+                border={'1px solid #E8EBF0'}
+                p="10px 32px"
+                mb="8px"
+                borderRadius={'12px'}
+              >
                 <AccordionButton px="0px" _hover={{ bg: '#fff' }}>
                   <OnlineComputerIcon w="20px" h="20px" />
                   <Text ml="16px" fontSize={'18px'} fontWeight={600}>
                     在线安装
                   </Text>
+                  {DocsComponent}
                   <AccordionIcon ml="auto" w="24px" h="24px" />
                 </AccordionButton>
-                <AccordionPanel py="20px" pl="40px" gap={'12px'}>
-                  <CommandForm
+                <AccordionPanel py="20px" px="0px">
+                  <ConfigForm
                     basePath={`curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh --zh  `}
                     cloudVersion={ossVersion}
                   />
-                  <Center
-                    borderRadius={'4px'}
-                    cursor={'pointer'}
-                    mt="20px"
-                    w="218px"
-                    h="44px"
-                    color={'#FFF'}
-                    bg="#24282C"
-                    fontSize={'14px'}
-                    fontWeight={600}
-                    onClick={() =>
-                      window.open('https://sealos.io/zh-Hans/docs/self-hosting/sealos/installation')
-                    }
-                  >
-                    详细文档
-                  </Center>
                 </AccordionPanel>
               </AccordionItem>
             </Accordion>

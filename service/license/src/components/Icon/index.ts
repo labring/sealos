@@ -35,3 +35,7 @@ export * from './OnlineComputerIcon';
 export * from './CopyIcon';
 export * from './TimeIcon';
 export * from './LeftIcon';
+export * from './BookIcon';
+export * from './CodeIcon';
+export * from './ReduceIcon';
+export * from './AddIcon';

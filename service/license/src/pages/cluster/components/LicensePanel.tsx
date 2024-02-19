@@ -53,9 +53,7 @@ export default function License() {
             License 列表
           </Text>
           <Button
-            w="151px"
-            h="40px"
-            borderRadius={'4px'}
+            w="140px"
             variant={'black'}
             onClick={() => {
               rechargeRef.current?.onOpen();

@@ -110,6 +110,7 @@ export default function MyCluster({ ossFileUrl }: { ossFileUrl: string }) {
     return null;
   }
 
+  // The existence of systemId triggers cluster activation
   useEffect(() => {
     if (router.query?.systemId) {
       const systemId = router.query.systemId as string;
@@ -152,22 +153,34 @@ export default function MyCluster({ ossFileUrl }: { ossFileUrl: string }) {
         <ClusterList />
         <Tutorial ossFileUrl={ossFileUrl} />
       </Flex>
-      <Modal isOpen={isOpen} onClose={onClose}>
+      <Modal isOpen={isOpen} onClose={onClose} autoFocus={false}>
         <ModalOverlay />
-        <ModalContent>
-          <ModalHeader py="20px">激活集群</ModalHeader>
+        <ModalContent borderRadius={'12px'}>
+          <ModalHeader
+            py="12px"
+            px="24px"
+            fontSize={'18px'}
+            fontWeight={500}
+            color="gray.900"
+            bg="#FBFBFC"
+            borderTopRadius={'12px'}
+          >
+            激活集群
+          </ModalHeader>
           <ModalCloseButton />
           {noCluster ? (
-            <Flex alignItems={'center'} justifyContent={'center'} flexDirection={'column'}>
-              <Text mt="30px" color={'#262A32'} fontWeight={500} fontSize={'16px'}>
-                暂无可激活 {t(clusterType)}集群，可前往购买
+            <Flex
+              py="64px"
+              alignItems={'center'}
+              justifyContent={'center'}
+              flexDirection={'column'}
+            >
+              <Text mt="12px" color={'#262A32'} fontWeight={500} fontSize={'16px'}>
+                暂无可激活集群，可前往购买
               </Text>
               <Button
-                mt="20px"
-                mb="60px"
-                w="114px"
-                h="36px"
-                borderRadius={'2px'}
+                my="24px"
+                size={'lg'}
                 variant={'black'}
                 onClick={() => {
                   router.push('/pricing');
@@ -178,23 +191,30 @@ export default function MyCluster({ ossFileUrl }: { ossFileUrl: string }) {
             </Flex>
           ) : (
             <Flex alignItems={'center'} justifyContent={'center'} flexDirection={'column'}>
-              <Text fontSize={'16px'} color={'#262A32'} fontWeight={500}>
-                集群版本
+              <Text mt="9" fontSize={'16px'} color={'#262A32'} fontWeight={500}>
+                请选择集群版本
               </Text>
-              <Flex gap="20px" mt="26px">
+              <Flex gap="20px" mt="24px">
                 {['Standard', 'Enterprise'].map((item) => (
                   <Flex
                     key={item}
                     alignItems={'center'}
                     justifyContent={'center'}
-                    w="140px"
-                    h="62px"
-                    color={clusterType === item ? '#36ADEF' : '#24282C'}
+                    w="134px"
+                    h="56px"
                     fontSize={'16px'}
                     fontWeight={'500'}
-                    border={clusterType === item ? '1px solid #36ADEF' : ''}
-                    borderRadius={'4px'}
-                    bg="#F4F6F8"
+                    bg={'gray.50'}
+                    _hover={{
+                      borderColor: 'brightBlue.300'
+                    }}
+                    border={'1px solid'}
+                    color={clusterType === item ? '#36ADEF' : '#24282C'}
+                    borderColor={clusterType === item ? 'brightBlue.500' : 'gray.100'}
+                    boxShadow={
+                      clusterType === item ? '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)' : ''
+                    }
+                    borderRadius={'8px'}
                     cursor={'pointer'}
                     onClick={() => setClusterType(item)}
                   >
@@ -203,12 +223,10 @@ export default function MyCluster({ ossFileUrl }: { ossFileUrl: string }) {
                 ))}
               </Flex>
               <Button
-                mt="56px"
-                mb="44px"
-                w="200px"
-                h="36px"
-                borderRadius={'2px'}
+                mt="24px"
+                mb="48px"
                 variant={'black'}
+                size={'lg'}
                 onClick={handleActivateCluster}
               >
                 激活
