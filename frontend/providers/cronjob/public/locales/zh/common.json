@@ -237,5 +237,7 @@
   "Basic Information": "基础信息",
   "Succeeded": "成功数",
   "Failures": "失败数",
-  "Log": "日志"
+  "Log": "日志",
+  "Username for the image registry": "用户名",
+  "The password cannot be empty": "密码不能为空"
 }

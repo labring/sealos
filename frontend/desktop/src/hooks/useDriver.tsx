@@ -73,9 +73,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
           const isGuidedDesktop = !!data.metadata.annotations?.[GUIDE_DESKTOP_INDEX_KEY];
           !isGuidedDesktop ? setShowGuide(true) : '';
         }
-      } catch (error) {
-        console.log(error);
-      }
+      } catch (error) {}
     };
     handleUserGuide();
     // eslint-disable-next-line react-hooks/exhaustive-deps

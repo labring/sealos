@@ -24,4 +24,5 @@ export type ResourceListItemType = {
   label?: string;
   apiVersion?: string;
   servicePorts?: V1ServicePort[];
+  serviceType?: string;
 };

@@ -41,5 +41,5 @@ export const getUserNamespace = () => {
 export const getUserServiceAccount = () => {
   const kubeConfig = getUserKubeConfig();
   const json = yaml.load(kubeConfig) as KC;
-  return json?.contexts[0]?.context?.user || json?.users[0]?.name;
+  return json?.contexts[0]?.context?.namespace?.replace('ns-', '') || json?.users[0]?.name;
 };

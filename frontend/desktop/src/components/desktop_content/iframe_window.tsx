@@ -12,7 +12,7 @@ export default function Iframe_window({ pid }: { pid: number }) {
     <iframe
       className={styles.iframeContainer}
       src={url}
-      allow="camera;microphone;clipboard-write;"
+      allow="camera;microphone;clipboard-write;clipboard-read;"
       id={`app-window-${app?.key}`}
     />
   );

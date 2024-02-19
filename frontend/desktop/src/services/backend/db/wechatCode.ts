@@ -61,7 +61,6 @@ export async function getWeChatAccessToken() {
 
   function isAccessTokenValid(expiresIn: number) {
     const currentTime = Date.now();
-    console.log(expiresIn, currentTime);
     return expiresIn > currentTime;
   }
 
