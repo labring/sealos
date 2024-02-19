@@ -71,8 +71,6 @@ metadata:
         expires 30d;
         add_header Cache-Control "public";
       }
-    nginx.ingress.kubernetes.io/cors-allow-methods: PUT, GET, POST, DELETE, PATCH, OPTIONS
-    nginx.ingress.kubernetes.io/cors-allow-origin: '*'
     nginx.ingress.kubernetes.io/proxy-body-size: 3g
     nginx.ingress.kubernetes.io/proxy-next-upstream-timeout: '180'
     nginx.ingress.kubernetes.io/proxy-send-timeout: '180'
