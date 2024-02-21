@@ -66,7 +66,7 @@ export default forwardRef(function RechargeComponent(props, ref) {
         }
       };
     },
-    []
+    [onOpen]
   );
 
   const handlePayConfirm = (type: TPayMethod) => {

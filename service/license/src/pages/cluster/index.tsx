@@ -126,6 +126,7 @@ export default function MyCluster({ ossFileUrl }: { ossFileUrl: string }) {
         }
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (isSuccess && data?.total === 0) {

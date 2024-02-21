@@ -288,6 +288,7 @@ export default function CommandForm({
                     密码
                   </Text>
                   <Input
+                    autoComplete="new-password"
                     type="password"
                     value={getValues('ssh.password')}
                     mt="1"

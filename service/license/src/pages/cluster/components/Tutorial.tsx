@@ -76,6 +76,7 @@ export default function Tutorial({ ossFileUrl }: { ossFileUrl: string }) {
     } else {
       setTabIndex(selectedTab === 'cluster' ? 1 : 0);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clusterDetail?.kubeSystemID]);
 
   const { fileNameParams, bashParams, ossVersion } = useMemo(() => {
