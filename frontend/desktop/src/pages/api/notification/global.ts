@@ -29,7 +29,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (listCrd.body?.items) {
       listCrd.body.items.sort(compareByTimestamp);
-      console.log(listCrd.body.items[0]);
       if (listCrd.body.items[0]) {
         return jsonRes(res, { data: listCrd.body.items[0] });
       }
