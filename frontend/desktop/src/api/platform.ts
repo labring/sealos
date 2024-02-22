@@ -1,5 +1,5 @@
 import request from '@/services/request';
-import { ApiResp, Session, SystemConfigType, SystemEnv } from '@/types';
+import { ApiResp, NotificationItem, Session, SystemConfigType, SystemEnv } from '@/types';
 import { AccountCRD } from '@/types/user';
 
 // handle baidu
@@ -53,3 +53,7 @@ export const getWechatResult = (payload: { code: string }) =>
   request.get<any, ApiResp<Session>>('/api/auth/publicWechat/getWechatResult', {
     params: payload
   });
+
+export const getGlobalNotification = () => {
+  return request.get<any, ApiResp<NotificationItem>>('/api/notification/global');
+};

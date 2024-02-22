@@ -86,6 +86,9 @@ rules:
   - apiGroups: ['account.sealos.io']
     resources: ['accounts']
     verbs: ['list', 'get', 'create', 'update', 'patch', 'watch']
+  - apiGroups: ['notification.sealos.io']
+    resources: ['notifications']
+    verbs: ['list', 'get', 'create', 'update', 'patch', 'watch']
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

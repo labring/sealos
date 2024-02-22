@@ -12,6 +12,9 @@ import { MouseEvent, useCallback, useEffect, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
+import { useQuery } from '@tanstack/react-query';
+import { getGlobalNotification } from '@/api/platform';
+import { useMessage } from '@sealos/ui';
 
 const TimeComponent = dynamic(() => import('./time'), {
   ssr: false
@@ -22,6 +25,7 @@ export default function DesktopContent(props: any) {
   const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
   const renderApps = apps.filter((item: TApp) => item?.displayType === 'normal');
   const [maxItems, setMaxItems] = useState(10);
+  const { message } = useMessage();
 
   const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
     e.preventDefault();
@@ -82,6 +86,22 @@ export default function DesktopContent(props: any) {
   }, [openDesktopApp]);
 
   const { UserGuide, showGuide } = useDriver({ openDesktopApp });
+
+  useQuery(['getGlobalNotification'], getGlobalNotification, {
+    onSuccess(data) {
+      const newID = data.data?.metadata?.uid;
+      if (!newID || newID === localStorage.getItem('GlobalNotification')) return;
+      localStorage.setItem('GlobalNotification', newID);
+      const title =
+        i18n.language === 'zh' && data.data?.spec?.i18ns?.zh?.message
+          ? data.data?.spec?.i18ns?.zh?.message
+          : data.data?.spec?.message;
+      message({
+        title: title,
+        status: 'info'
+      });
+    }
+  });
 
   return (
     <Box

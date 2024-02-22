@@ -34,6 +34,7 @@ import Editor from './components/Editor';
 export default function Develop() {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const [forceUpdate, setForceUpdate] = useState(false);
   const [yamlSource, setYamlSource] = useState<TemplateSourceType>();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const { Loading, setIsLoading } = useLoading();
@@ -97,7 +98,7 @@ export default function Develop() {
       const formInputs = formHook.getValues();
 
       setYamlSource(result);
-      const correctYamlList = generateCorrectYamlList(result, formInputs);
+      const correctYamlList = generateCorrectYamlList(result, { ...defaultInputes, ...formInputs });
       setYamlList(correctYamlList);
     } catch (error: any) {
       toast({
@@ -118,6 +119,7 @@ export default function Develop() {
   // watch form change, compute new yaml
   formHook.watch((data: any) => {
     data && formOnchangeDebounce(data);
+    setForceUpdate(!forceUpdate);
   });
 
   const formOnchangeDebounce = debounce((data: any) => {
