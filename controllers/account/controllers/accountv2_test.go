@@ -85,6 +85,7 @@ func TestAccount_V1ToV2(t *testing.T) {
 			}
 		}()
 		wg, ctx := errgroup.WithContext(context.Background())
+		wg.SetLimit(20)
 		for _, a := range accounts.Items {
 			account := a
 			wg.Go(func() error {

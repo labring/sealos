@@ -206,7 +206,8 @@ func (g *Cockroach) CreateAccount(ops *types.UserQueryOpts, account *types.Accou
 
 func (g *Cockroach) CreateErrorAccountCreate(account *types.Account, owner, errorMsg string) error {
 	if err := g.DB.Create(&types.ErrorAccountCreate{
-		Account:         *account,
+		Account: *account,
+		//ErrorTime:       time.Now().UTC(),
 		Message:         errorMsg,
 		RegionUserOwner: owner,
 		RegionUID:       g.LocalRegion.UID,

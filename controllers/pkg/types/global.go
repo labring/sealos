@@ -72,6 +72,7 @@ func (TransferAccountV1) TableName() string {
 
 type ErrorAccountCreate struct {
 	Account
+	ErrorTime       time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp();not null"`
 	RegionUID       uuid.UUID `gorm:"column:regionUid;type:uuid;not null"`
 	RegionUserOwner string    `gorm:"column:regionUserOwner;type:text;not null"`
 	Message         string    `gorm:"type:text;not null"`
