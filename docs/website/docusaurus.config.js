@@ -228,12 +228,12 @@ const config = {
   },
   scripts: [
     {
-      src: "wow.min.js",
-      async: false,
+      src: "/wow.min.js",
+      async: true
     },
     {
-      src: "global.js",
-      async: true,
+      src: "/global.js",
+      async: true
     }
   ],
   headTags: [
