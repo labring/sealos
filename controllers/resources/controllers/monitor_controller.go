@@ -24,6 +24,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 
 	"golang.org/x/sync/semaphore"
@@ -400,47 +402,54 @@ func (r *MonitorReconciler) getObjStorageUsed(user string, namedMap *map[string]
 }
 
 func (r *MonitorReconciler) MonitorPodTrafficUsed(startTime, endTime time.Time) error {
-	namespaceList, err := r.getNamespaceList()
-	if err != nil {
-		return fmt.Errorf("failed to list namespaces")
-	}
 	logger.Info("start getPodTrafficUsed", "startTime", startTime.Format(time.RFC3339), "endTime", endTime.Format(time.RFC3339))
-	for _, namespace := range namespaceList.Items {
-		if err := r.monitorPodTrafficUsed(namespace, startTime, endTime); err != nil {
-			r.Logger.Error(err, "failed to monitor pod traffic used", "namespace", namespace.Name)
-		}
+	execTime := time.Now().UTC()
+	if err := r.monitorPodTrafficUsed(startTime, endTime); err != nil {
+		r.Logger.Error(err, "failed to monitor pod traffic used")
 	}
+	r.Logger.Info("success to monitor pod traffic used", "startTime", startTime.Format(time.RFC3339), "endTime", endTime.Format(time.RFC3339), "execTime", time.Since(execTime).String())
 	return nil
 }
 
-func (r *MonitorReconciler) monitorPodTrafficUsed(namespace corev1.Namespace, startTime, endTime time.Time) error {
-	monitors, err := r.DBClient.GetDistinctMonitorCombinations(startTime, endTime, namespace.Name)
+func (r *MonitorReconciler) monitorPodTrafficUsed(startTime, endTime time.Time) error {
+	monitors, err := r.DBClient.GetDistinctMonitorCombinations(startTime, endTime)
 	if err != nil {
 		return fmt.Errorf("failed to get distinct monitor combinations: %w", err)
 	}
-	for _, monitor := range monitors {
-		bytes, err := r.TrafficClient.GetTrafficSentBytes(startTime, endTime, namespace.Name, monitor.Type, monitor.Name)
-		if err != nil {
-			return fmt.Errorf("failed to get traffic sent bytes: %w", err)
-		}
-		unit := r.Properties.StringMap[resources.ResourceNetwork].Unit
-		used := int64(math.Ceil(float64(resource.NewQuantity(bytes, resource.BinarySI).MilliValue()) / float64(unit.MilliValue())))
-		if used == 0 {
-			continue
-		}
-		logger.Info("traffic used ", "monitor", monitor, "used", used, "unit", unit, "bytes", bytes)
-		ro := resources.Monitor{
-			Category: namespace.Name,
-			Name:     monitor.Name,
-			Used:     map[uint8]int64{r.Properties.StringMap[resources.ResourceNetwork].Enum: used},
-			Time:     endTime.Add(-1 * time.Minute),
-			Type:     monitor.Type,
-		}
-		r.Logger.Info("monitor traffic used", "monitor", ro)
-		err = r.DBClient.InsertMonitor(context.Background(), &ro)
-		if err != nil {
-			return fmt.Errorf("failed to insert monitor: %w", err)
-		}
+	r.Logger.Info("distinct monitor combinations", "monitors len", len(monitors))
+	wg, _ := errgroup.WithContext(context.Background())
+	wg.SetLimit(100)
+	for i := range monitors {
+		monitor := monitors[i]
+		wg.Go(func() error {
+			return r.handlerTrafficUsed(startTime, endTime, monitor)
+		})
+	}
+	return wg.Wait()
+}
+
+func (r *MonitorReconciler) handlerTrafficUsed(startTime, endTime time.Time, monitor resources.Monitor) error {
+	bytes, err := r.TrafficClient.GetTrafficSentBytes(startTime, endTime, monitor.Category, monitor.Type, monitor.Name)
+	if err != nil {
+		return fmt.Errorf("failed to get traffic sent bytes: %w", err)
+	}
+	unit := r.Properties.StringMap[resources.ResourceNetwork].Unit
+	used := int64(math.Ceil(float64(resource.NewQuantity(bytes, resource.BinarySI).MilliValue()) / float64(unit.MilliValue())))
+	if used == 0 {
+		return nil
+	}
+	//logger.Info("traffic used ", "monitor", monitor, "used", used, "unit", unit, "bytes", bytes)
+	ro := resources.Monitor{
+		Category: monitor.Category,
+		Name:     monitor.Name,
+		Used:     map[uint8]int64{r.Properties.StringMap[resources.ResourceNetwork].Enum: used},
+		Time:     endTime.Add(-1 * time.Minute),
+		Type:     monitor.Type,
+	}
+	r.Logger.Info("monitor traffic used", "monitor", ro)
+	err = r.DBClient.InsertMonitor(context.Background(), &ro)
+	if err != nil {
+		return fmt.Errorf("failed to insert monitor: %w", err)
 	}
 	return nil
 }
