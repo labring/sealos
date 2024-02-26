@@ -22,6 +22,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+
 	"github.com/labring/sealos/controllers/pkg/common"
 	"github.com/labring/sealos/controllers/pkg/database"
 
@@ -40,8 +42,14 @@ import (
 )
 
 const (
+	EnvAccountDBName = "ACCOUNT_DB_NAME"
+	EnvTrafficDBName = "TRAFFIC_DB_NAME"
+	EnvTrafficConn   = "TRAFFIC_CONN"
+)
+
+const (
 	DefaultAccountDBName  = "sealos-resources"
-	DefaultTrafficDBName  = "sealos-networkmanager-synchronizer"
+	DefaultTrafficDBName  = "sealos-networkmanager"
 	DefaultAuthDBName     = "sealos-auth"
 	DefaultMeteringConn   = "metering"
 	DefaultMonitorConn    = "monitor"
@@ -941,8 +949,8 @@ func NewMongoInterface(ctx context.Context, URL string) (database.Interface, err
 	err = client.Ping(ctx, nil)
 	return &mongoDB{
 		Client:            client,
-		AccountDB:         DefaultAccountDBName,
-		TrafficDB:         DefaultTrafficDBName,
+		AccountDB:         env.GetEnvWithDefault(EnvAccountDBName, DefaultAccountDBName),
+		TrafficDB:         env.GetEnvWithDefault(EnvTrafficDBName, DefaultTrafficDBName),
 		AuthDB:            DefaultAuthDBName,
 		UserConn:          DefaultUserConn,
 		MeteringConn:      DefaultMeteringConn,
@@ -950,6 +958,6 @@ func NewMongoInterface(ctx context.Context, URL string) (database.Interface, err
 		BillingConn:       DefaultBillingConn,
 		PricesConn:        DefaultPricesConn,
 		PropertiesConn:    DefaultPropertiesConn,
-		TrafficConn:       DefaultTrafficConn,
+		TrafficConn:       env.GetEnvWithDefault(EnvTrafficConn, DefaultTrafficConn),
 	}, err
 }
