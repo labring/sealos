@@ -8,7 +8,7 @@ ENV cloudDomain=${cloudDomain:-"127.0.0.1.nip.io"}
 ENV cloudPort=""
 ENV minioStorageSize=${minioStorageSize:-1Gi}
 ENV promStorageSize=${promStorageSize:-1Gi}
-ENV minioAdminUser=${minioAdminUser:-"username"}
+ENV minioAdminUser=${minioAdminUser:-"admin"}
 ENV minioAdminPassword=${minioAdminPassword:-"passw0rd"}
 
 CMD ["bash scripts/init.sh"]
