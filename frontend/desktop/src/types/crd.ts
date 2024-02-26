@@ -96,3 +96,29 @@ export type TAppCRList = {
   kind: 'AppList';
   metadata: { continue: string; resourceVersion: string };
 };
+
+export type NotificationItem = {
+  metadata: {
+    creationTimestamp: string;
+    labels: {
+      isRead: string;
+    };
+    name: string;
+    namespace: string;
+    uid: string;
+  };
+  spec: {
+    from: string;
+    message: string;
+    timestamp: number;
+    title: string;
+    desktopPopup?: boolean;
+    i18ns?: {
+      zh?: {
+        from: string;
+        message: string;
+        title: string;
+      };
+    };
+  };
+};

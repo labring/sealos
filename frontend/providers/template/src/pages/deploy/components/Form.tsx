@@ -1,10 +1,11 @@
 import MyIcon from '@/components/Icon';
+import MySelect from '@/components/Select';
 import type { QueryType } from '@/types';
 import { FormSourceInput } from '@/types/app';
 import { Box, Flex, FormControl, Input, Text, useTheme } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 
 const Form = ({
@@ -54,6 +55,45 @@ const Form = ({
       {isShowContent ? (
         <Box px={'42px'} py={'24px'}>
           {formSource?.inputs?.map((item: FormSourceInput, index: number) => {
+            if (item.type === 'choice' && item.options) {
+              return (
+                <FormControl key={item?.key} mb={7} isInvalid={!!errors.appName}>
+                  <Flex alignItems={'center'} align="stretch">
+                    <Flex
+                      position={'relative'}
+                      w="200px"
+                      className="template-dynamic-label"
+                      color={'#333'}
+                      userSelect={'none'}
+                    >
+                      {item?.label}
+                      {item?.required && (
+                        <Text ml="2px" color={'#E53E3E'}>
+                          *
+                        </Text>
+                      )}
+                    </Flex>
+                    <Box maxW={'500px'} ml={'17px'} w={'100%'}>
+                      <MySelect
+                        w={'100%'}
+                        bg={'transparent'}
+                        borderRadius={'2px'}
+                        value={formHook.getValues(item.key) || item.default}
+                        list={item.options?.map((option) => {
+                          return {
+                            value: option,
+                            label: option
+                          };
+                        })}
+                        onchange={(val: any) => {
+                          formHook.setValue(item.key, val);
+                        }}
+                      />
+                    </Box>
+                  </Flex>
+                </FormControl>
+              );
+            }
             return (
               <FormControl key={item?.key} mb={7} isInvalid={!!errors.appName}>
                 <Flex alignItems={'center'} align="stretch">

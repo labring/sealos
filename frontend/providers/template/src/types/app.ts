@@ -82,7 +82,8 @@ export type FormSourceInput = {
   key: string;
   label: string;
   required: boolean;
-  type: string;
+  type: string; // string | number | 'choice' | boolean;
+  options?: string[];
 };
 
 export type TemplateInstanceType = {

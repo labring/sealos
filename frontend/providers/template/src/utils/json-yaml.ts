@@ -95,6 +95,7 @@ export const getTemplateDataSource = (
           type: string;
           default: string;
           required: boolean;
+          options?: string[];
         }
       >,
       cloneDefauls: Record<
@@ -118,6 +119,7 @@ export const getTemplateDataSource = (
         }
         const output = mapValues(cloneDefauls, (value) => value.value);
         return {
+          ...item,
           description: parseTemplateString(item.description, /\$\{\{\s*(.*?)\s*\}\}/g, {
             ...platformEnvs,
             defaults: output,
