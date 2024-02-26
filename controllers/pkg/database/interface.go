@@ -58,7 +58,7 @@ type Account interface {
 	//GetNodePortAmount(owner string, endTime time.Time) (int64, error)
 	GenerateBillingData(startTime, endTime time.Time, prols *resources.PropertyTypeLS, namespaces []string, owner string) (orderID []string, amount int64, err error)
 	InsertMonitor(ctx context.Context, monitors ...*resources.Monitor) error
-	GetDistinctMonitorCombinations(startTime, endTime time.Time, namespace string) ([]resources.Monitor, error)
+	GetDistinctMonitorCombinations(startTime, endTime time.Time) ([]resources.Monitor, error)
 	DropMonitorCollectionsOlderThan(days int) error
 	Disconnect(ctx context.Context) error
 	Creator

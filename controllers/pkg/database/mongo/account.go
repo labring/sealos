@@ -259,14 +259,13 @@ func (m *mongoDB) InsertMonitor(ctx context.Context, monitors ...*resources.Moni
 	return err
 }
 
-func (m *mongoDB) GetDistinctMonitorCombinations(startTime, endTime time.Time, namespace string) ([]resources.Monitor, error) {
+func (m *mongoDB) GetDistinctMonitorCombinations(startTime, endTime time.Time) ([]resources.Monitor, error) {
 	pipeline := mongo.Pipeline{
 		{{Key: "$match", Value: bson.M{
 			"time": bson.M{
 				"$gte": startTime.UTC(),
 				"$lt":  endTime.UTC(),
 			},
-			"category": namespace,
 		}}},
 		{{Key: "$group", Value: bson.M{
 			"_id": bson.M{
@@ -275,21 +274,23 @@ func (m *mongoDB) GetDistinctMonitorCombinations(startTime, endTime time.Time, n
 				"type":     "$type",
 			},
 		}}},
+		{{Key: "$project", Value: bson.M{
+			"_id":      0,
+			"category": "$_id.category",
+			"name":     "$_id.name",
+			"type":     "$_id.type",
+		}}},
 	}
 	cursor, err := m.getMonitorCollection(startTime).Aggregate(context.Background(), pipeline)
 	if err != nil {
 		return nil, fmt.Errorf("aggregate error: %v", err)
 	}
 	defer cursor.Close(context.Background())
-	var monitors []resources.Monitor
-	for cursor.Next(context.Background()) {
-		var result = make(map[string]resources.Monitor, 1)
-		if err := cursor.Decode(result); err != nil {
-			return nil, fmt.Errorf("decode error: %v", err)
-		}
-		monitors = append(monitors, result["_id"])
+	if !cursor.Next(context.Background()) {
+		return nil, nil
 	}
-	if err := cursor.Err(); err != nil {
+	var monitors []resources.Monitor
+	if err := cursor.All(context.Background(), &monitors); err != nil {
 		return nil, fmt.Errorf("cursor error: %v", err)
 	}
 	return monitors, nil
