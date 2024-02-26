@@ -1,0 +1,185 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: objectstorage-system
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: object-storage-env-configuration
+  namespace: objectstorage-system
+  labels:
+    v1.min.io/tenant: object-storage
+data:
+  config.env: >-
+    {ENCODED_CONFIG_ENV}
+type: Opaque
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: object-storage-secret
+  namespace: objectstorage-system
+  labels:
+    v1.min.io/tenant: object-storage
+data:
+  accesskey: ''
+  secretkey: ''
+type: Opaque
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: object-storage-user-0
+  namespace: objectstorage-system
+  labels:
+    v1.min.io/tenant: object-storage
+immutable: true
+data:
+  CONSOLE_ACCESS_KEY: {CONSOLE_ACCESS_KEY}
+  CONSOLE_SECRET_KEY: {CONSOLE_SECRET_KEY}
+type: Opaque
+---
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  name: object-storage
+  namespace: objectstorage-system
+spec:
+  configuration:
+    name: object-storage-env-configuration
+  credsSecret:
+    name: object-storage-secret
+  exposeServices:
+    console: true
+    minio: true
+  features: {}
+  image: minio/minio:RELEASE.2023-11-11T08-14-41Z
+  imagePullSecret: {}
+  mountPath: /export
+  pools:
+    - name: pool-0
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 2Gi
+        requests:
+          cpu: 100m
+          memory: 256Mi
+      runtimeClassName: ''
+      servers: 4
+      volumeClaimTemplate:
+        metadata:
+          name: data
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: {{ .minioStorageSize }}
+        status: {}
+      volumesPerServer: 1
+  requestAutoCert: false
+  users:
+    - name: object-storage-user-0
+scheduler:
+  name: ''
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: object-storage
+  namespace: objectstorage-system
+  labels:
+      v1.min.io/tenant: object-storage
+spec:
+  ports:
+    - name: http-minio
+      protocol: TCP
+      port: 80
+      targetPort: 9000
+  selector:
+    v1.min.io/tenant: object-storage
+  type: LoadBalancer
+  sessionAffinity: None
+  externalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  allocateLoadBalancerNodePorts: true
+  internalTrafficPolicy: Cluster
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: object-storage-api
+  namespace: objectstorage-system
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: 3g
+    nginx.ingress.kubernetes.io/server-snippet: |
+      client_header_buffer_size 64k;
+      large_client_header_buffers 4 128k;
+    nginx.ingress.kubernetes.io/ssl-redirect: 'false'
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/client-body-buffer-size: 64k
+    nginx.ingress.kubernetes.io/proxy-buffer-size: 64k
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      if ($request_uri ~* \.(js|css|gif|jpe?g|png)) {
+        expires 30d;
+        add_header Cache-Control "public";
+      }
+spec:
+  rules:
+    - host: objectstorageapi.{{ .cloudDomain }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /()(.*)
+            backend:
+              service:
+                name: object-storage
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - objectstorageapi.{{ .cloudDomain }}
+      secretName: wildcard-cert
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: object-storage-console
+  namespace: objectstorage-system
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: 3g
+    nginx.ingress.kubernetes.io/server-snippet: |
+      client_header_buffer_size 64k;
+      large_client_header_buffers 4 128k;
+    nginx.ingress.kubernetes.io/ssl-redirect: 'false'
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    nginx.ingress.kubernetes.io/client-body-buffer-size: 64k
+    nginx.ingress.kubernetes.io/proxy-buffer-size: 64k
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      if ($request_uri ~* \.(js|css|gif|jpe?g|png)) {
+        expires 30d;
+        add_header Cache-Control "public";
+      }
+spec:
+  rules:
+    - host: osconsole.{{ .cloudDomain }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: object-storage-console
+                port:
+                  number: 9090
+  tls:
+    - hosts:
+        - osconsole.{{ .cloudDomain }}
+      secretName: wildcard-cert
