@@ -50,6 +50,10 @@ spec:
             properties:
               author:
                 type: string
+              categories:
+                items:
+                  type: string
+                type: array
               defaults:
                 additionalProperties:
                   properties:
