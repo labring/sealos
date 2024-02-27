@@ -44,6 +44,7 @@ export default function usePassword({
         if (data?.username && data?.password) {
           try {
             setIsLoading(true);
+            const inviterId = localStorage.getItem('inviterId');
             const result = await passwordExistRequest({ user: data.username });
             if (result?.code === 200) {
               const result = await passwordLoginRequest({
@@ -63,7 +64,8 @@ export default function usePassword({
                 } else {
                   const result = await request.post<any, ApiResp<Session>>('/api/auth/password', {
                     user: data.username,
-                    password: data.password
+                    password: data.password,
+                    inviterId
                   });
                   setSession(result.data!);
                   router.replace('/');

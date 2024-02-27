@@ -1,7 +1,6 @@
 import AppWindow from '@/components/app_window';
 import MoreButton from '@/components/more_button';
 import UserMenu from '@/components/user_menu';
-import { BackgroundImageUrl } from '@/constants/config';
 import useDriver from '@/hooks/useDriver';
 import useAppStore from '@/stores/app';
 import { TApp } from '@/types';
@@ -15,6 +14,7 @@ import styles from './index.module.scss';
 import { useQuery } from '@tanstack/react-query';
 import { getGlobalNotification } from '@/api/platform';
 import { useMessage } from '@sealos/ui';
+import { BackgroundImageUrl, ImageFallBackUrl } from '@/stores/config';
 
 const TimeComponent = dynamic(() => import('./time'), {
   ssr: false
@@ -98,7 +98,8 @@ export default function DesktopContent(props: any) {
           : data.data?.spec?.message;
       message({
         title: title,
-        status: 'info'
+        status: 'info',
+        duration: null
       });
     }
   });
@@ -164,7 +165,7 @@ export default function DesktopContent(props: any) {
                     width="100%"
                     height="100%"
                     src={item?.icon}
-                    fallbackSrc="/images/sealos.svg"
+                    fallbackSrc={ImageFallBackUrl}
                     alt="user avator"
                   />
                 </Box>

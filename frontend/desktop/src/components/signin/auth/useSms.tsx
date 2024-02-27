@@ -45,9 +45,11 @@ export default function useSms({
       async (data) => {
         try {
           setIsLoading(true);
+          const inviterId = localStorage.getItem('inviterId');
           const result = await request.post<any, ApiResp<Session>>('/api/auth/phone/verify', {
             phoneNumbers: data.phoneNumber,
-            code: data.verifyCode
+            code: data.verifyCode,
+            inviterId
           });
           setSession(result.data!);
           router.replace('/');

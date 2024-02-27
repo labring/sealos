@@ -5,19 +5,18 @@ import Language from '@/components/signin/auth/useLanguage';
 import usePassword from '@/components/signin/auth/usePassword';
 import useProtocol from '@/components/signin/auth/useProtocol';
 import useSms from '@/components/signin/auth/useSms';
-import { BackgroundImageUrl } from '@/constants/config';
-import request from '@/services/request';
+import { BackgroundImageUrl, useSystemConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
-import { ApiResp, LoginType, SystemEnv } from '@/types';
+import { LoginType } from '@/types';
 import {
   Box,
   Button,
   Flex,
-  Img,
   Tab,
   TabIndicator,
   TabList,
   Tabs,
+  Text,
   useDisclosure
 } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
@@ -25,12 +24,12 @@ import { debounce } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import sealosTitle from 'public/images/sealos-title.png';
 import { useEffect, useMemo, useState } from 'react';
 import useWechat from './auth/useWechat';
 
 export default function SigninComponent() {
   const { data: platformEnv } = useQuery(['getPlatformEnv'], getSystemEnv);
+  const { systemConfig } = useSystemConfigStore();
   const {
     service_protocol_zh = '',
     private_protocol_zh = '',
@@ -134,12 +133,19 @@ export default function SigninComponent() {
       backgroundSize={'cover'}
     >
       <Head>
-        <title>sealos Cloud</title>
-        <meta name="description" content="sealos cloud dashboard" />
+        <title>{systemConfig?.metaTitle}</title>
+        <meta name="description" content={systemConfig?.metaDescription} />
       </Head>
       <Flex h="full" w="full" flexDir={'column'} justifyContent={'center'} alignItems={'center'}>
         <Box mb="36px">
-          <Img src={sealosTitle.src} w="135px"></Img>
+          <Text
+            color={'#FFF'}
+            fontSize={'44px'}
+            fontWeight={700}
+            textShadow={'0px 2px 6px rgba(0, 0, 0, 0.30)'}
+          >
+            {systemConfig?.title}
+          </Text>
         </Box>
         <Flex
           p="30px 48px"

@@ -12,16 +12,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 
 const defaultConfig: SystemConfigType = {
-  scripts: []
+  scripts: [],
+  backgroundImageUrl: '/images/bg-blue.svg',
+  imageFallBackUrl: 'logo.svg',
+  title: 'Sealos',
+  metaTitle: 'sealos Cloud',
+  metaDescription: 'sealos cloud dashboard',
+  showGithubStar: true,
+  isSystemConfigEnabled: true
 };
 
 export async function getSystemConfig(): Promise<SystemConfigType> {
   try {
     const filename =
       process.env.NODE_ENV === 'development' ? 'data/config.local.json' : '/app/data/config.json';
-    const res = JSON.parse(readFileSync(filename, 'utf-8'));
-    return res;
+    const res = JSON.parse(readFileSync(filename, 'utf-8')) as SystemConfigType;
+    return res?.isSystemConfigEnabled ? res : defaultConfig;
   } catch (error) {
+    console.log('-getSystemConfig-\n', error);
     return defaultConfig;
   }
 }

@@ -6,6 +6,7 @@ import { useState } from 'react';
 import LangSelectSimple from '../LangSelect/simple';
 import Iconfont from '../iconfont';
 import GithubComponent from './github';
+import { ImageFallBackUrl, useSystemConfigStore } from '@/stores/config';
 
 enum UserMenuKeys {
   LangSelect,
@@ -18,6 +19,7 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
   const accountDisclosure = useDisclosure();
   const showDisclosure = useDisclosure();
   const userInfo = useSessionStore((state) => state.getSession());
+  const { systemConfig } = useSystemConfigStore();
   if (!userInfo) return null;
 
   const {
@@ -66,7 +68,7 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
           height={'36px'}
           borderRadius="full"
           src={userInfo?.user?.avatar || ''}
-          fallbackSrc="/images/sealos.svg"
+          fallbackSrc={ImageFallBackUrl}
           alt="user avator"
         />
       ),
@@ -77,7 +79,7 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
   return (
     <Flex {...userMenuStyleProps}>
       <LangSelectSimple {...baseItemStyle} />
-      <GithubComponent {...baseItemStyle} />
+      {systemConfig?.showGithubStar && <GithubComponent {...baseItemStyle} />}
       {buttonList.map((item) => (
         <Flex
           key={item.key}

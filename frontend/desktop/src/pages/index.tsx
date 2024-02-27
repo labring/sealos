@@ -13,7 +13,8 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Script from 'next/script';
 import { createContext, useEffect, useState } from 'react';
-import { getSystemConfig, getSystemEnv } from '@/api/platform';
+import { getSystemEnv } from '@/api/platform';
+import { useSystemConfigStore } from '@/stores/config';
 
 const destination = '/signin';
 interface IMoreAppsContext {
@@ -27,7 +28,8 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const { colorMode, toggleColorMode } = useColorMode();
   const init = useAppStore((state) => state.init);
   const setAutoLaunch = useAppStore((state) => state.setAutoLaunch);
-  const { data: systemConfig } = useQuery(['getSystemConfig'], getSystemConfig);
+  const { systemConfig } = useSystemConfigStore();
+
   const { data: platformEnv, isSuccess } = useQuery(['getPlatformEnv'], getSystemEnv);
   const setEnv = useGlobalStore((s) => s.setEnv);
   // @ts-ignore
@@ -43,6 +45,12 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     const whitelistApps = ['system-template', 'system-fastdeploy'];
     if (!is_login) {
       const { appkey, appQuery } = parseOpenappQuery((query?.openapp as string) || '');
+      // Invited new user
+      const urlParams = new URLSearchParams(appQuery);
+      const uid = urlParams.get('uid');
+      if (uid) {
+        localStorage.setItem('inviterId', uid);
+      }
       // sealos_inside=true internal call
       if (whitelistApps.includes(appkey) && appQuery.indexOf('sealos_inside=true') === -1) {
         sessionStorage.setItem(
@@ -86,13 +94,14 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       sessionStorage.setItem('bd_vid', bd_vid as string);
     }
   }, []);
+
   return (
     <Box position={'relative'} overflow={'hidden'} w="100vw" h="100vh">
       <Head>
-        <title>sealos Cloud</title>
-        <meta name="description" content="sealos cloud dashboard" />
+        <title>{systemConfig?.metaTitle}</title>
+        <meta name="description" content={systemConfig?.metaTitle} />
       </Head>
-      {systemConfig?.data?.scripts?.map((item, i) => {
+      {systemConfig?.scripts?.map((item, i) => {
         return <Script key={i} {...item} />;
       })}
       <MoreAppsContext.Provider value={{ showMoreApps, setShowMoreApps }}>
@@ -104,7 +113,17 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   );
 }
 
-export async function getServerSideProps({ req, res, locales }: any) {
+export async function getServerSideProps({ req, res, locales, query }: any) {
+  // Invitation short link
+  // if (query?.uid) {
+  //   return {
+  //     redirect: {
+  //       permanent: false,
+  //       destination: `/?openapp=system-template%3FtemplateName%3Dpalworld%26uid=${query?.uid}`
+  //     }
+  //   };
+  // }
+
   const local =
     req?.cookies?.NEXT_LOCALE || compareFirstLanguages(req?.headers?.['accept-language'] || 'zh');
   res.setHeader('Set-Cookie', `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`);

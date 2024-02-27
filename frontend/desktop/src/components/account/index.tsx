@@ -31,6 +31,7 @@ import { NSType } from '@/types/team';
 import PasswordModify from './PasswordModify';
 import { useGlobalStore } from '@/stores/global';
 import { CopyIcon, DownloadIcon, LogoutIcon, RightArrowIcon } from '@sealos/ui';
+import { ImageFallBackUrl } from '@/stores/config';
 
 const NsMenu = () => {
   const { t } = useTranslation();
@@ -184,7 +185,7 @@ export default function Account({ disclosure }: { disclosure: UseDisclosureRetur
             height={'80px'}
             borderRadius="full"
             src={user?.avatar}
-            fallbackSrc="/images/sealos.svg"
+            fallbackSrc={ImageFallBackUrl}
             alt="user avator"
           />
           <Text color={'#24282C'} fontSize={'20px'} fontWeight={600}>

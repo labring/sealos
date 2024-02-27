@@ -10,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!enableSms()) {
       throw new Error('sms client is not defined');
     }
-    const { phoneNumbers, code } = req.body;
+    const { phoneNumbers, code, inviterId } = req.body;
     if (!(await checkCode({ phone: phoneNumbers, code }))) {
       return jsonRes(res, {
         message: 'SMS code is wrong',
@@ -21,7 +21,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       provider: 'phone',
       id: phoneNumbers,
       name: phoneNumbers,
-      avatar_url: ''
+      avatar_url: '',
+      inviterId
     });
     return jsonRes<Session>(res, {
       data,
