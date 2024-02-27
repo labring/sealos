@@ -2,7 +2,6 @@
 set -e
 
 function deploy_minio() {
-  MINIO_EXTERNAL_ENDPOINT="https://objectstorageapi.${cloudDomain}"
   CONSOLE_ACCESS_KEY=$(echo -n "${minioAdminUser}" | base64 -w 0)
   CONSOLE_SECRET_KEY=$(echo -n "${minioAdminPassword}" | base64 -w 0)
 
@@ -45,24 +44,33 @@ function init_minio() {
   kubectl wait -l statefulset.kubernetes.io/pod-name=object-storage-pool-0-2 --for=condition=ready pod -n objectstorage-system --timeout=-1s
   kubectl wait -l statefulset.kubernetes.io/pod-name=object-storage-pool-0-3 --for=condition=ready pod -n objectstorage-system --timeout=-1s
 
-  while mc alias set objectstorage ${MINIO_EXTERNAL_ENDPOINT} ${minioAdminUser} ${minioAdminPassword} 2>&1 | grep -q "Unable to initialize new alias from the provided credentials."; do
+  MINIO_INTERNAL_ENDPOINT=$(kubectl get svc object-storage -n objectstorage-system -o jsonpath='{.spec.clusterIP}')
+
+  count=0
+  while true; do
+    if mc alias set objectstorage http://${MINIO_INTERNAL_ENDPOINT}:80 ${minioAdminUser} ${minioAdminPassword} 2>&1 | grep -q "Unable to initialize new alias from the provided credentials."; then
+      count=$((count+1))
+      if [ $count -eq 60 ]; then
+        echo "Failed to set alias three times. Exiting."
+        break
+      fi
+    else
+      echo "Alias set successfully."
+      mc admin policy create objectstorage userNormal etc/minio/policy/user_normal.json
+      mc admin policy create objectstorage userDenyWrite etc/minio/policy/user_deny_write.json
+      mc admin policy create objectstorage kubeblocks etc/minio/policy/kubeblocks.json
+      mc admin user add objectstorage kubeblocks sealos.12345
+      mc admin user add objectstorage testuser sealos2023
+      mc admin group add objectstorage userNormal testuser
+      mc admin group add objectstorage userDenyWrite testuser
+      mc admin user remove objectstorage testuser
+      mc admin policy attach objectstorage userNormal --group userNormal
+      mc admin policy attach objectstorage userDenyWrite --group userDenyWrite
+      mc admin policy attach objectstorage kubeblocks --user kubeblocks
+      break
+    fi
     sleep 1
   done
-
-  mc admin policy create objectstorage userNormal etc/minio/policy/user_normal.json
-  mc admin policy create objectstorage userDenyWrite etc/minio/policy/user_deny_write.json
-  mc admin policy create objectstorage kubeblocks etc/minio/policy/kubeblocks.json
-
-  mc admin user add objectstorage kubeblocks sealos.12345
-  mc admin user add objectstorage testuser sealos2023
-  mc admin group add objectstorage userNormal testuser
-  mc admin group add objectstorage userDenyWrite testuser
-
-  mc admin user remove objectstorage testuser
-
-  mc admin policy attach objectstorage userNormal --group userNormal
-  mc admin policy attach objectstorage userDenyWrite --group userDenyWrite
-  mc admin policy attach objectstorage kubeblocks --user kubeblocks
 }
 
 function install() {
