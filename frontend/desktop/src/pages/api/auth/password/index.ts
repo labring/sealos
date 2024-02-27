@@ -10,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!enablePassword()) {
       throw new Error('PASSWORD_SALT is not defined');
     }
-    const { user: name, password } = req.body;
+    const { user: name, password, inviterId } = req.body;
     if (!strongPassword(password)) {
       return jsonRes(res, {
         message:
@@ -23,7 +23,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       id: '' + name,
       name,
       avatar_url: '',
-      password
+      password,
+      inviterId
     });
     return jsonRes<Session>(res, {
       data,

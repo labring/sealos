@@ -30,7 +30,7 @@ export const getSystemEnv = () => {
 };
 
 export const getSystemConfig = () => {
-  return request.get<SystemConfigType>('/api/system/getSystemConfig');
+  return request.get<SystemConfigType>('/api/platform/getSystemConfig');
 };
 
 export const getPriceBonus = () => {

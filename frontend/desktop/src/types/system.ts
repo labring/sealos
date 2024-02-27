@@ -1,5 +1,12 @@
 export type SystemConfigType = {
   scripts: ScriptConfig[];
+  isSystemConfigEnabled: boolean; // Compatible with older versions
+  backgroundImageUrl: string;
+  imageFallBackUrl: string;
+  title: string;
+  metaTitle: string;
+  metaDescription: string;
+  showGithubStar: boolean;
 };
 
 export type ScriptConfig = {

@@ -73,8 +73,9 @@ export default function UserTable({
               <Td color={'#24282C'} py="5px">
                 <Flex>
                   <Image
+                    alt="avatar"
                     src={user.avatarUrl}
-                    fallbackSrc={'/images/sealos.svg'}
+                    fallbackSrc={'/logo.svg'}
                     w="20px"
                     h="20px"
                     mr="8px"

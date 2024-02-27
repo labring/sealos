@@ -7,6 +7,7 @@ import Iconfont from '../iconfont';
 import styles from './index.module.scss';
 import clsx from 'clsx';
 import { useTranslation } from 'next-i18next';
+import { ImageFallBackUrl } from '@/stores/config';
 
 export default function Index() {
   const { t, i18n } = useTranslation();
@@ -103,7 +104,7 @@ export default function Index() {
                     width="100%"
                     height="100%"
                     src={item?.icon}
-                    fallbackSrc="/images/sealos.svg"
+                    fallbackSrc={ImageFallBackUrl}
                     alt="user avator"
                   />
                 </Box>

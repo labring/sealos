@@ -108,8 +108,9 @@ export default function Abdication({
                 >
                   <Flex alignItems={'center'}>
                     <Image
+                      alt="avatar"
                       src={targetUser.avatar}
-                      fallbackSrc={'/images/sealos.svg'}
+                      fallbackSrc={'/logo.svg'}
                       boxSize={'24px'}
                       borderRadius={'50%'}
                       mr="8px"
@@ -134,8 +135,9 @@ export default function Abdication({
                       key={user.uid}
                     >
                       <Image
+                        alt="logo"
                         src={user.avatarUrl}
-                        fallbackSrc={'/images/sealos.svg'}
+                        fallbackSrc={'/logo.svg'}
                         boxSize={'24px'}
                         borderRadius={'50%'}
                         mr="8px"

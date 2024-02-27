@@ -12,11 +12,10 @@ import { serviceSideProps } from '@/utils/i18n';
 import { json2CronJob } from '@/utils/json2Yaml';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
-import debounce from 'lodash/debounce';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
@@ -65,30 +64,20 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
   const formHook = useForm<CronJobEditType>({
     defaultValues: defaultEdit
   });
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const formOnchangeDebounce = useCallback(
-    debounce((data: CronJobEditType) => {
-      try {
-        console.log(data, 'data---');
-        const yamlList = formData2Yamls(data);
-        setYamlList(yamlList);
-      } catch (error) {
-        console.log(error);
-      }
-    }, 500),
-    []
-  );
+  const realTimeForm = useRef(defaultEdit);
 
   // watch form change, compute new yaml
   formHook.watch((data) => {
-    data && formOnchangeDebounce(data as CronJobEditType);
+    if (!data) return;
+    realTimeForm.current = data as CronJobEditType;
     setForceUpdate(!forceUpdate);
   });
 
   const submitSuccess = useCallback(async () => {
     setIsLoading(true);
     try {
+      const yamlList = formData2Yamls(realTimeForm.current);
+      setYamlList(yamlList);
       const data = yamlList.map((item) => item.value);
       await applyYamlList(data, isEdit ? 'replace' : 'create');
       toast({
@@ -151,6 +140,14 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
       }
     }
   );
+
+  useEffect(() => {
+    if (tabType === 'yaml') {
+      try {
+        setYamlList(formData2Yamls(realTimeForm.current));
+      } catch (error) {}
+    }
+  }, [router.query.name, tabType]);
 
   return (
     <>

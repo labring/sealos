@@ -19,13 +19,15 @@ export const getOauthRes = async ({
   id,
   name,
   avatar_url,
-  password
+  password,
+  inviterId
 }: {
   provider: Provider;
   id: string;
   name: string;
   avatar_url: string;
   password?: string;
+  inviterId?: string;
 }): Promise<Session> => {
   if (provider === 'password_user' && !password) {
     throw new Error('password is required');
@@ -41,6 +43,32 @@ export const getOauthRes = async ({
       avatar_url,
       password
     });
+    if (inviterId && process.env.INVITE_ENABLED === 'true') {
+      const payload = {
+        inviterId,
+        inviteeId: signResult?.k8s_user.name,
+        secretKey: process.env.LAF_SECRET_KEY,
+        data: {
+          type: 'signup',
+          signResult
+        }
+      };
+      const baseUrl = process.env.LAF_BASE_URL;
+      fetch(`https://${baseUrl}/uploadData`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log('Upload laf success:', data);
+        })
+        .catch((error) => {
+          console.error('Upload laf error:', error);
+        });
+    }
   } else {
     signResult = await signIn({
       userResult: _user,

@@ -10,6 +10,7 @@ import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
 import { useEffect } from 'react';
+import { useSystemConfigStore } from '@/stores/config';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,6 +29,11 @@ Router.events.on('routeChangeError', () => NProgress.done());
 
 const App = ({ Component, pageProps }: AppProps) => {
   const { i18n } = useTranslation();
+  const { initSystemConfig } = useSystemConfigStore();
+
+  useEffect(() => {
+    initSystemConfig();
+  }, []);
 
   useEffect(() => {
     const lang = getCookie('NEXT_LOCALE');
