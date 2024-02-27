@@ -34,6 +34,7 @@ import { pick } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useMemo, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { SealosCoin } from '@sealos/ui';
 
 const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const { t } = useTranslation();
@@ -402,7 +403,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 </Text>
                 <Center mt="16px" color={'#24282C'} fontSize={'24px'} fontWeight={600}>
                   {SOURCE_PRICE.nodeports}
-                  <MyIcon ml="8px" name="currency" w="32px" h="32px"></MyIcon>/ {t('Hour')}
+                  <SealosCoin ml="8px" name="currency" w="20px" h="20px"></SealosCoin>/ {t('Hour')}
                 </Center>
                 <Button mt="32px" variant={'primary'} onClick={openNetWorkService}>
                   {t('Turn On')}

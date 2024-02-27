@@ -8,7 +8,20 @@ import type { QueryType } from '@/types';
 import { CronJobEditType } from '@/types/job';
 import { sliderNumber2MarkList } from '@/utils/adapt';
 import { obj2Query } from '@/utils/tools';
-import { Box, Flex, FormControl, Icon, Input, Text } from '@chakra-ui/react';
+import {
+  Box,
+  Flex,
+  FormControl,
+  Icon,
+  Input,
+  NumberDecrementStepper,
+  NumberIncrementStepper,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+  Switch,
+  Text
+} from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
@@ -25,6 +38,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
   const { name } = router.query as QueryType;
   const isEdit = useMemo(() => !!name, [name]);
   const { data: launchpadApps, refetch } = useQuery(['getLaunchpadApps'], getMyApps);
+
   const {
     register,
     control,
@@ -210,7 +224,6 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                   width={'300px'}
                   autoComplete="off"
                   backgroundColor={getValues('url') ? 'myWhite.500' : 'myWhite.400'}
-                  // placeholder={`${t('Username for the image registry')}`}
                   {...register('url', {
                     required: true
                   })}
@@ -257,7 +270,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                         width={'300px'}
                         value={getValues('imageName')}
                         backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
-                        placeholder={`${t('Image Name')}`}
+                        placeholder={`${t('Form.Image Name')}`}
                         {...register('imageName', {
                           required: 'Image name cannot be empty.',
                           setValueAs(e) {
@@ -393,11 +406,11 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                 </Box>
 
                 {/* 副本数 */}
-                {/* <Flex mb={'12px'} pl="80px" alignItems={'center'}>
+                <Flex mb={'12px'} pl="80px" alignItems={'center'}>
                   <Text w="60px" fontSize={'12px'} fontWeight={400}>
                     {t('Form.Replicas')}
                   </Text>
-                  <Switch
+                  {/* <Switch
                     ml="8px"
                     size={'md'}
                     colorScheme={'blackAlpha'}
@@ -405,7 +418,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                     {...register('enableNumberCopies', {
                       onChange: (e) => setValue('enableNumberCopies', e.target.checked)
                     })}
-                  />
+                  /> */}
                 </Flex>
                 <Flex mb={'16px'} alignItems={'center'} pl="80px">
                   <NumberInput
@@ -421,7 +434,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                       <NumberDecrementStepper />
                     </NumberInputStepper>
                   </NumberInput>
-                </Flex> */}
+                </Flex>
 
                 {/* cpu && memory */}
                 <Flex mb={'16px'} pl="80px">
