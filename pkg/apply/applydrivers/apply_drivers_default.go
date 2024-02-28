@@ -22,12 +22,10 @@ import (
 	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/version"
 
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/apply/processor"
-	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/exec"
@@ -76,12 +74,10 @@ func NewDefaultScaleApplier(ctx context.Context, current, cluster *v2.Cluster) (
 
 type Applier struct {
 	context.Context
-	ClusterDesired     *v2.Cluster
-	ClusterCurrent     *v2.Cluster
-	ClusterFile        clusterfile.Interface
-	Client             kubernetes.Client
-	CurrentClusterInfo *version.Info
-	RunNewImages       []string
+	ClusterDesired *v2.Cluster
+	ClusterCurrent *v2.Cluster
+	ClusterFile    clusterfile.Interface
+	RunNewImages   []string
 }
 
 func (c *Applier) Apply() error {
@@ -221,11 +217,7 @@ func (c *Applier) installApp(images []string) error {
 	if err != nil {
 		return err
 	}
-	err = installProcessor.Execute(c.ClusterDesired)
-	if err != nil {
-		return err
-	}
-	return nil
+	return installProcessor.Execute(c.ClusterDesired)
 }
 
 func (c *Applier) scaleCluster(mj, md, nj, nd []string) error {
