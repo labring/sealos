@@ -3,11 +3,13 @@ import { getUserTimeZone, str2Num } from '@/utils/tools';
 import yaml from 'js-yaml';
 import { getUserKubeConfig, getUserServiceAccount } from './user';
 import { cronJobKey } from '@/constants/keys';
+import useEnvStore from '@/store/env';
 
 export const json2CronJob = (data: CronJobEditType) => {
   const serviceAccount = getUserServiceAccount();
   const timeZone = getUserTimeZone();
   const kcHeader = encodeURIComponent(getUserKubeConfig());
+  const { applaunchpadUrl } = useEnvStore.getState().SystemEnv;
 
   const metadata = {
     name: data.jobName,
@@ -48,8 +50,8 @@ export const json2CronJob = (data: CronJobEditType) => {
     };
     const getArgs = () => {
       let command = '';
-      if (data.enableNumberCopies) {
-        command += `curl -X POST -H "Authorization: ${kcHeader}" -d "appName=${data.launchpadName}&replica=${data.replicas}" https://applaunchpad.dev.sealos.top/api/v1alpha/updateReplica`;
+      if (data.enableNumberCopies && applaunchpadUrl) {
+        command += `curl -X POST -H "Authorization: ${kcHeader}" -d "appName=${data.launchpadName}&replica=${data.replicas}" http://${applaunchpadUrl}/api/v1alpha/updateReplica`;
       }
       if (data.enableResources) {
         if (command) {

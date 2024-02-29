@@ -49,7 +49,8 @@ spec:
               value: "{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
             - name: INGRESS_SECRET
               value: {{ .ingressSecret }}
-            - name: FASTGPT_KEY
+            - name: GUIDE_ENABLED
+              value: false
           name: applaunchpad-frontend
           securityContext:
             runAsNonRoot: true

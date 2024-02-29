@@ -17,10 +17,14 @@ const Table = ({ columns, data, itemClass = '' }: Props) => {
   const { t } = useTranslation();
   return (
     <>
-      <Grid templateColumns={`repeat(${columns.length},1fr)`} overflowX={'auto'}>
+      <Grid
+        templateColumns={`repeat(${columns.length},1fr)`}
+        overflowX={'auto'}
+        borderRadius={'8px'}
+        mb={2}
+      >
         {columns.map((item, i) => (
           <Box
-            mb={2}
             px={3}
             py={3}
             bg={'white'}
@@ -28,11 +32,7 @@ const Table = ({ columns, data, itemClass = '' }: Props) => {
             color={'myGray.700'}
             whiteSpace={'nowrap'}
             _first={{
-              borderLeftRadius: 'md',
               pl: 7
-            }}
-            _last={{
-              borderRightRadius: 'md'
             }}
           >
             {t(item.title)}
@@ -48,6 +48,8 @@ const Table = ({ columns, data, itemClass = '' }: Props) => {
           _hover={{
             bg: '#FBFBFC'
           }}
+          borderTopRadius={index1 === 0 ? '8px' : '0px'}
+          borderBottomRadius={index1 === data.length - 1 ? '8px' : '0px'}
         >
           {columns.map((col, index2) => (
             <Flex
@@ -62,12 +64,6 @@ const Table = ({ columns, data, itemClass = '' }: Props) => {
               color={'myGray.700'}
               borderBottom={'1px solid'}
               borderBottomColor={index1 !== data.length - 1 ? 'myGray.100' : 'transparent'}
-              borderTopLeftRadius={index1 === 0 && index2 === 0 ? 'md' : ''}
-              borderTopRightRadius={index1 === 0 && index2 === columns.length - 1 ? 'md' : ''}
-              borderBottomLeftRadius={index1 === data.length - 1 && index2 === 0 ? 'md' : ''}
-              borderBottomEndRadius={
-                index1 === data.length - 1 && index2 === columns.length - 1 ? 'md' : ''
-              }
             >
               {col.render ? col.render(item) : col.dataIndex ? `${item[col.dataIndex]}` : ''}
             </Flex>

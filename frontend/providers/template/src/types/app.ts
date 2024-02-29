@@ -5,12 +5,14 @@ export type TemplateType = {
     name: string;
   };
   spec: {
-    gitRepo: string; // new
-    templateType: 'inline'; // new
-    fileName: string; // new
-    filePath: string; // new
+    // local json data
+    fileName: string;
+    filePath: string;
     deployCount?: number;
-
+    // instance
+    categories?: string[];
+    templateType: 'inline';
+    gitRepo: string;
     template_type?: string;
     author: string;
     title: string;
@@ -95,6 +97,7 @@ export type TemplateInstanceType = {
     labels?: Record<string, string>;
   };
   spec: {
+    categories: string[];
     gitRepo: string;
     templateType: string;
     author: string;
