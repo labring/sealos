@@ -50,16 +50,25 @@ export type ClusterResult = {
 
 export type CommandFormType = {
   cloudVersion: string;
+  useImageRegistry: boolean;
   imageRegistry: string;
+  useProxyPrefix: boolean;
   proxyPrefix: string;
-  masterIP: string[];
-  nodeIP: string[];
-  sshPath: string;
-  sshPassword: string;
+  masterIP: {
+    ip: string;
+  }[];
+  nodeIP: { ip: string }[];
+  ssh: {
+    useKey: boolean;
+    path: string;
+    password: string;
+  };
+  k8sVersion: string;
   podSubnet: string;
   serviceSubnet: string;
   cloudDomain: string;
   cloudPort: string;
+  selfSigned: boolean;
   certPath: string;
   certKeyPath: string;
 };

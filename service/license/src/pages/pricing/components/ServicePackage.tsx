@@ -28,7 +28,7 @@ export default function ServicePackage({ items, children }: ServicePackageProps)
           <Text
             fontSize={'14px'}
             fontWeight={500}
-            color={item.icon === 'check' ? '#485058' : '#219BF4'}
+            color={item.icon === 'check' ? '#485058' : 'brightBlue.500'}
             ml="15px"
           >
             {item.label}

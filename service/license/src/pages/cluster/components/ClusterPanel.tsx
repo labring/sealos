@@ -128,7 +128,7 @@ export default function TutorialPanel() {
         {!clusterDetail?.kubeSystemID && (
           <Flex mt="16px" justifyContent={'end'}>
             <Button
-              w="114px"
+              w="100px"
               h="36px"
               variant={'black'}
               onClick={() => handleUpdateCluster({ updateName: false })}
@@ -150,14 +150,7 @@ export default function TutorialPanel() {
         </Flex>
 
         <Flex mt="16px" justifyContent={'end'}>
-          <Button
-            w="114px"
-            h="36px"
-            variant={'black'}
-            onClick={() => handleUpdateCluster({ updateName: true })}
-          >
-            保存
-          </Button>
+          <Button onClick={() => handleUpdateCluster({ updateName: true })}>保存</Button>
         </Flex>
       </Box>
       <Flex
@@ -166,10 +159,11 @@ export default function TutorialPanel() {
         justifyContent="center"
         w="100%"
         h="44px"
-        bg="#fff"
         borderRadius={'8px'}
         cursor={'pointer'}
         onClick={handleDelteCluster}
+        bg="white"
+        _hover={{ bg: 'red.50' }}
       >
         <DeleteIcon fill={'#FF324A'} w="20px" h="20px" mr="8px" />
         <Text color={'#FF324A'} fontSize={'14px'} fontWeight={600}>

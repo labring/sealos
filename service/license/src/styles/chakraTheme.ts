@@ -1,14 +1,22 @@
-import { defineStyleConfig, extendTheme } from '@chakra-ui/react';
+import { inputAnatomy, switchAnatomy, tagAnatomy } from '@chakra-ui/anatomy';
+import { createMultiStyleConfigHelpers, defineStyleConfig, extendTheme } from '@chakra-ui/react';
+import { ThemeColors } from './colors';
+
+const TagHelper = createMultiStyleConfigHelpers(tagAnatomy.keys);
+const InputHelper = createMultiStyleConfigHelpers(inputAnatomy.keys);
+const SwitchHelper = createMultiStyleConfigHelpers(switchAnatomy.keys);
 
 const Button = defineStyleConfig({
-  baseStyle: {
-    borderRadius: '6px'
-  },
   sizes: {
-    sm: {},
-    md: {},
     primary: {
-      width: '215px',
+      width: '215px'
+    },
+    md: {
+      width: '100px',
+      height: '36px'
+    },
+    lg: {
+      width: '180px',
       height: '36px'
     }
   },
@@ -24,44 +32,78 @@ const Button = defineStyleConfig({
       color: '#FEFEFE'
     },
     black: {
-      bg: '#24282C',
-      color: '#FEFEFE',
-      borderRadius: '2px',
+      bg: ThemeColors.gray[900],
+      color: '#FFF',
+      borderRadius: '8px',
       fontSize: '14px',
-      fontWeight: 600
-    }
-  }
-});
-
-const Input = defineStyleConfig({
-  baseStyle: {},
-  variants: {
-    samll: {
-      field: {
-        color: '#24282C',
-        width: '320px',
-        height: '32px',
-        bg: 'myWhite.300',
-        border: '1px solid',
-        borderRadius: '2px',
-        borderColor: 'myGray.200',
-        _focus: {
-          borderColor: 'myBlue.600',
-          boxShadow: '0px 0px 4px #A8DBFF',
-          bg: 'white'
-        },
-        _disabled: {
-          color: 'myGray.400',
-          bg: 'myWhite.300'
-        },
-        fontSize: '12px',
-        fontWeight: 400
+      fontWeight: 500,
+      _hover: {
+        opacity: '0.9'
+      }
+    },
+    square: {
+      borderRadius: '8px',
+      bg: '#F0F1F6',
+      minW: '30px',
+      width: '30px',
+      height: '30px',
+      p: '0px',
+      _hover: {
+        svg: {
+          fill: ThemeColors.brightBlue[500]
+        }
       }
     }
   },
   defaultProps: {
     size: 'md',
-    variant: 'samll'
+    variant: 'black'
+  }
+});
+
+const Input = InputHelper.defineMultiStyleConfig({
+  variants: {
+    outline: {
+      field: {
+        width: '300px',
+        fontSize: '12px',
+        fontWeight: 400,
+        height: '32px',
+        borderRadius: 'lg',
+        border: '1px solid #E8EBF0',
+        bg: ThemeColors.gray[50],
+        _focusVisible: {
+          borderColor: ThemeColors.brightBlue[500],
+          boxShadow: ThemeColors.boxShadowBlue,
+          bg: '#FFF',
+          color: '#111824'
+        },
+        _disabled: {
+          color: '#8A95A7',
+          bg: '#FBFBFC',
+          _hover: {}
+        },
+        _hover: {
+          borderColor: ThemeColors.brightBlue[300],
+          bg: ThemeColors.gray[50]
+        },
+        _invalid: {
+          bg: '#FFF',
+          borderColor: '#D92D20',
+          boxShadow: '0px 0px 0px 2.4px rgba(217, 45, 32, 0.15)'
+        },
+        _placeholder: {
+          color: '#667085',
+          fontSize: '12px',
+          fontWeight: 400,
+          lineHeight: '16px'
+        }
+      }
+    }
+  },
+  defaultProps: {
+    size: 'md',
+    variant: 'outline'
   }
 });
 
@@ -79,71 +121,38 @@ const Select = defineStyleConfig({
   }
 });
 
+const Tag = TagHelper.defineMultiStyleConfig({
+  baseStyle: {
+    container: {
+      borderRadius: '8px',
+      backgroundColor: 'gray.150'
+    },
+    label: {
+      fontWeight: 500,
+      fontSize: '12px'
+    }
+  }
+});
+
+const Switch = SwitchHelper.defineMultiStyleConfig({
+  baseStyle: {
+    track: {
+      bg: 'gray.100',
+      _checked: {
+        bg: 'gray.700'
+      }
+    }
+  }
+});
+
 export const theme = extendTheme({
   initialColorMode: 'light',
-  colors: {
-    divider: {
-      100: '#E5E7E9'
-    },
-    hover: {
-      blue: '#0884DD',
-      iconBlue: '#219BF4'
-    },
-    myGray: {
-      100: '#EFF0F1',
-      200: '#DEE0E2',
-      300: '#BDC1C5',
-      400: '#9CA2A8',
-      500: '#7B838B',
-      600: '#5A646E',
-      700: '#485058',
-      800: '#363C42',
-      900: '#24282C',
-      1000: '#121416'
-    },
-    myWhite: {
-      100: '#FEFEFE',
-      200: '#FDFDFE',
-      300: '#FBFBFC',
-      400: '#F8FAFB',
-      500: '#F6F8F9',
-      600: '#F4F6F8',
-      700: '#C3C5C6',
-      800: '#929495',
-      900: '#626263',
-      1000: '#313132'
-    },
-    myBlue: {
-      100: '#EBF7FD',
-      200: '#D7EFFC',
-      300: '#AFDEF9',
-      400: '#86CEF5',
-      500: '#5EBDF2',
-      600: '#36ADEF',
-      700: '#2B8ABF',
-      800: '#20688F',
-      900: '#164560',
-      1000: '#0B2330'
-    },
-    myRed: {
-      100: '#FFEBED',
-      200: '#FFD6DB',
-      300: '#FFADB7',
-      400: '#FF8492',
-      500: '#FF5B6E',
-      600: '#FF324A',
-      700: '#CC283B',
-      800: '#991E2C',
-      900: '#66141E',
-      1000: '#330A0F'
-    },
-    myBlack: {
-      900: '#24282C'
-    }
-  },
+  colors: ThemeColors,
   components: {
     Button,
     Input,
-    Select
+    Select,
+    Tag,
+    Switch
   }
 });

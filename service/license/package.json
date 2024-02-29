@@ -6,12 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "gen:theme-typings": "pnpm chakra-cli tokens ./src/styles/chakraTheme.ts --out node_modules/.pnpm/node_modules/@chakra-ui/styled-system/dist/theming.types.d.ts",
+    "postinstall": "pnpm run gen:theme-typings"
   },
   "dependencies": {
     "@alicloud/dysmsapi20170525": "^2.0.24",
     "@alicloud/openapi-client": "^0.4.6",
     "@alicloud/tea-util": "^1.4.7",
+    "@chakra-ui/anatomy": "^2.2.2",
     "@chakra-ui/react": "^2.8.1",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
@@ -49,6 +52,7 @@
     "zustand": "^4.4.3"
   },
   "devDependencies": {
+    "@chakra-ui/cli": "^2.4.1",
     "@types/js-cookie": "^3.0.4",
     "@types/js-yaml": "^4.0.8",
     "@types/jsonwebtoken": "^9.0.4",

@@ -1,4 +1,5 @@
 import {
+  Button,
   Center,
   Flex,
   Modal,
@@ -48,23 +49,18 @@ export const useConfirm = () => {
               <Text mt="28px" fontSize={'14px'} fontWeight={400} color={'#7B838B'}>
                 点击立即开始后将会新建一个集群
               </Text>
-              <Center
+              <Button
                 mt="62px"
                 w="218px"
                 h="44px"
-                bg={'#24282C'}
-                color={'white'}
-                fontSize={'14px'}
-                fontWeight={500}
-                borderRadius={'4px'}
-                cursor={'pointer'}
+                variant={'black'}
                 onClick={() => {
                   onClose();
                   typeof confirmCb.current === 'function' && confirmCb.current();
                 }}
               >
                 立即开始
-              </Center>
+              </Button>
               <Center
                 mt="16px"
                 w="218px"
