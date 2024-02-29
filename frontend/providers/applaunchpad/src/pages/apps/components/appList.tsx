@@ -141,7 +141,9 @@ const AppList = ({
         key: 'cpu',
         render: (item: AppListItemType) => (
           <Box h={'35px'} w={['120px', '130px', '140px']}>
-            <PodLineChart type="blue" data={item.usedCpu} />
+            <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
+              <PodLineChart type="blue" data={item.usedCpu} />
+            </Box>
           </Box>
         )
       },
@@ -150,7 +152,9 @@ const AppList = ({
         key: 'storage',
         render: (item: AppListItemType) => (
           <Box h={'35px'} w={['120px', '130px', '140px']}>
-            <PodLineChart type="purple" data={item.usedMemory} />
+            <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
+              <PodLineChart type="purple" data={item.usedMemory} />
+            </Box>
           </Box>
         )
       },

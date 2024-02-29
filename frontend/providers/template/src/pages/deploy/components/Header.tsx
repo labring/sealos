@@ -1,13 +1,10 @@
 import { CopyLinkIcon, HomePageIcon, HtmlIcon, MdIcon, ShareIcon } from '@/components/icons';
-import { useCachedStore } from '@/store/cached';
-import useSessionStore from '@/store/session';
 import { TemplateType } from '@/types/app';
 import type { YamlItemType } from '@/types/index';
 import { downLoadBold, formatStarNumber, useCopyData } from '@/utils/tools';
 import {
   Avatar,
   AvatarGroup,
-  Box,
   Button,
   Divider,
   Flex,
@@ -43,9 +40,6 @@ const Header = ({
   templateDetail: TemplateType;
   cloudDomain: string;
 }) => {
-  console.log(templateDetail, 'templateDetail');
-  const { insideCloud } = useCachedStore();
-  const { session } = useSessionStore();
   const { t } = useTranslation();
   const { copyData } = useCopyData();
   const handleExportYaml = useCallback(async () => {

@@ -12,20 +12,15 @@ type EnvState = {
 const useEnvStore = create<EnvState>()(
   immer((set, get) => ({
     SystemEnv: {
-      domain: ''
+      domain: '',
+      applaunchpadUrl: ''
     },
     initSystemEnv: async () => {
-      try {
-        const data = await getPlatformEnv();
-        set((state) => {
-          state.SystemEnv = data;
-        });
-        return data;
-      } catch (error) {
-        return {
-          domain: defaultDomain
-        };
-      }
+      const data = await getPlatformEnv();
+      set((state) => {
+        state.SystemEnv = data;
+      });
+      return data;
     }
   }))
 );

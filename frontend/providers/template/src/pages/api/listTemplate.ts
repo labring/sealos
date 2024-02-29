@@ -18,11 +18,21 @@ export function replaceRawWithCDN(url: string, cdnUrl: string) {
   return url;
 }
 
-export const readTemplates = (jsonPath: string, cdnUrl?: string) => {
+export const readTemplates = (
+  jsonPath: string,
+  cdnUrl?: string,
+  blacklistedCategories?: string[]
+) => {
   const jsonData = fs.readFileSync(jsonPath, 'utf8');
   const _templates: TemplateType[] = JSON.parse(jsonData);
+
   const templates = _templates
-    .filter((item) => item?.spec?.draft !== true)
+    .filter((item) => {
+      const isBlacklisted =
+        blacklistedCategories &&
+        blacklistedCategories.some((category) => (item?.spec?.categories ?? []).includes(category));
+      return !item?.spec?.draft && !isBlacklisted;
+    })
     .map((item) => {
       if (!!cdnUrl) {
         item.spec.readme = replaceRawWithCDN(item.spec.readme, cdnUrl);
@@ -30,6 +40,7 @@ export const readTemplates = (jsonPath: string, cdnUrl?: string) => {
       }
       return item;
     });
+
   return templates;
 };
 
@@ -38,6 +49,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const jsonPath = path.resolve(originalPath, 'templates.json');
   const cdnUrl = process.env.CDN_URL;
   const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
+  const blacklistedCategories = process.env.BLACKLIST_CATEGORIES
+    ? process.env.BLACKLIST_CATEGORIES.split(',')
+    : [];
 
   try {
     if (!hasAddCron) {
@@ -53,7 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       await fetch(`${baseurl}/api/updateRepo`);
     }
 
-    const templates = readTemplates(jsonPath, cdnUrl);
+    const templates = readTemplates(jsonPath, cdnUrl, blacklistedCategories);
     jsonRes(res, { data: templates, code: 200 });
   } catch (error) {
     jsonRes(res, { code: 500, data: 'error' });
