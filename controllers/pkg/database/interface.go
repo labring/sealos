@@ -87,6 +87,7 @@ type AccountV2 interface {
 	Close() error
 	GetUser(user *types.UserQueryOpts) (*types.RegionUserCr, error)
 	GetAccount(user *types.UserQueryOpts) (*types.Account, error)
+	GetUserOauthProvider(ops *types.UserQueryOpts) (*types.OauthProvider, error)
 	AddBalance(user *types.UserQueryOpts, balance int64) error
 	ReduceBalance(ops *types.UserQueryOpts, amount int64) error
 	ReduceDeductionBalance(ops *types.UserQueryOpts, amount int64) error

@@ -26,6 +26,7 @@ type Account struct {
 	EncryptBalance          string    `gorm:"column:encryptBalance;type:text;not null"`
 	EncryptDeductionBalance string    `gorm:"column:encryptDeductionBalance;type:text;not null"`
 	CreatedAt               time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp();not null"`
+	CreateRegionID          string    `gorm:"type:text;not null"`
 	Balance                 int64
 	DeductionBalance        int64
 }
@@ -51,6 +52,25 @@ type RegionUserCr struct {
 	UpdatedAt time.Time `gorm:"type:timestamp(3);default:current_timestamp();not null"`
 }
 
+type OauthProvider struct {
+	UID          uuid.UUID         `gorm:"type:uid;default:gen_random_uuid();primary_key"`
+	UserUID      uuid.UUID         `gorm:"column:userUid;type:uuid;not null"`
+	ProviderType OauthProviderType `gorm:"column:providerType;type:text;not null"`
+	ProviderID   string            `gorm:"column:providerId;type:text;not null"`
+}
+
+type OauthProviderType string
+
+const (
+	OauthProviderTypePhone  OauthProviderType = "PHONE"
+	OauthProviderTypeGithub OauthProviderType = "GITHUB"
+	OauthProviderTypeWechat OauthProviderType = "WECHAT"
+)
+
+func (OauthProvider) TableName() string {
+	return "OauthProvider"
+}
+
 func (Region) TableName() string {
 	return "Region"
 }
@@ -70,8 +90,18 @@ func (TransferAccountV1) TableName() string {
 	return "TransferAccountV1"
 }
 
+type NullUserRecord struct {
+	CrName   string `gorm:"column:crName;type:text;not null;unique"`
+	RegionID string `gorm:"type:text;not null"`
+}
+
+func (NullUserRecord) TableName() string {
+	return "NullUserRecord"
+}
+
 type ErrorAccountCreate struct {
 	Account
+	UserCr          string    `gorm:"column:userCr;type:text;not null;unique"`
 	ErrorTime       time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp();not null"`
 	RegionUID       uuid.UUID `gorm:"column:regionUid;type:uuid;not null"`
 	RegionUserOwner string    `gorm:"column:regionUserOwner;type:text;not null"`

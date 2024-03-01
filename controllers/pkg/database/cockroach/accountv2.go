@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
@@ -59,7 +60,7 @@ func (g *Cockroach) GetUser(ops *types.UserQueryOpts) (*types.RegionUserCr, erro
 	}
 	var user types.RegionUserCr
 	if err := g.Localdb.Where(query).First(&user).Error; err != nil {
-		return nil, fmt.Errorf("failed to get user: %w", err)
+		return nil, err
 	}
 	return &user, nil
 }
@@ -79,7 +80,7 @@ func (g *Cockroach) getAccount(ops *types.UserQueryOpts) (*types.Account, error)
 	if ops.UID == uuid.Nil {
 		user, err := g.GetUser(ops)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get user: %v", err)
+			return nil, err
 		}
 		ops.UID = user.UserUID
 	}
@@ -101,6 +102,24 @@ func (g *Cockroach) getAccount(ops *types.UserQueryOpts) (*types.Account, error)
 	account.Balance = balance
 	account.DeductionBalance = deductionBalance
 	return &account, nil
+}
+
+func (g *Cockroach) GetUserOauthProvider(ops *types.UserQueryOpts) (*types.OauthProvider, error) {
+	if ops.UID == uuid.Nil {
+		user, err := g.GetUser(ops)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user: %v", err)
+		}
+		ops.UID = user.UserUID
+	}
+	var provider types.OauthProvider
+	if err := g.DB.Where(types.OauthProvider{UserUID: ops.UID}).First(&provider).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get user oauth provider: %v", err)
+	}
+	return &provider, nil
 }
 
 func (g *Cockroach) updateBalance(tx *gorm.DB, ops *types.UserQueryOpts, amount int64, isDeduction, add bool) error {
@@ -205,13 +224,15 @@ func (g *Cockroach) CreateAccount(ops *types.UserQueryOpts, account *types.Accou
 }
 
 func (g *Cockroach) CreateErrorAccountCreate(account *types.Account, owner, errorMsg string) error {
-	if err := g.DB.Create(&types.ErrorAccountCreate{
-		Account: *account,
-		//ErrorTime:       time.Now().UTC(),
+	accountErrSave := &types.ErrorAccountCreate{
+		Account:         *account,
+		UserCr:          owner,
+		ErrorTime:       time.Now().UTC(),
 		Message:         errorMsg,
 		RegionUserOwner: owner,
 		RegionUID:       g.LocalRegion.UID,
-	}).Error; err != nil {
+	}
+	if err := g.DB.FirstOrCreate(accountErrSave, types.ErrorAccountCreate{UserCr: owner}).Error; err != nil {
 		return fmt.Errorf("failed to create error account create error msg: %w", err)
 	}
 	return nil
@@ -227,20 +248,43 @@ func (g *Cockroach) CreateErrorPaymentCreate(payment types.Payment, errorMsg str
 
 // TransferAccountV1 account indicates the CRD value of the original account
 func (g *Cockroach) TransferAccountV1(owner string, account *types.Account) (*types.Account, error) {
-	transfer := &types.TransferAccountV1{}
-	// if existed, it indicates that the system has been migrated
-	err := g.DB.Where(&types.TransferAccountV1{RegionUID: g.LocalRegion.UID, RegionUserOwner: owner}).First(transfer).Error
-	if err == nil {
+	//transfer := &types.TransferAccountV1{}
+	//// if existed, it indicates that the system has been migrated
+	//err := g.DB.Where(&types.TransferAccountV1{RegionUID: g.LocalRegion.UID, RegionUserOwner: owner}).First(transfer).Error
+	//if err == nil {
+	//	return nil, nil
+	//}
+	//if !errors.Is(err, gorm.ErrRecordNotFound) {
+	//	return nil, fmt.Errorf("failed to get transfer account: %w", err)
+	//}
+
+	if _, err := os.Stat(filepath.Join("transfer_account_v1", g.LocalRegion.UID.String(), owner)); err == nil {
 		return nil, nil
+	} else if !os.IsNotExist(err) {
+		return nil, fmt.Errorf("failed to get transfer account: %v", err)
 	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("failed to get transfer account: %w", err)
-	}
+
 	// if not existed, it indicates that the system has not been migrated
 
 	query := &types.UserQueryOpts{Owner: owner, IgnoreEmpty: true}
 	accountV2, err := g.GetAccount(query)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			if err = g.saveNullUserRecord(types.NullUserRecord{
+				CrName:   owner,
+				RegionID: g.LocalRegion.UID.String(),
+			}); err != nil {
+				return nil, fmt.Errorf("failed to save null user record: %v", err)
+			}
+			//nullUser := &types.NullUserRecord{
+			//	CrName:   owner,
+			//	RegionID: g.LocalRegion.UID.String(),
+			//}
+			//if err := g.DB.FirstOrCreate(nullUser, types.NullUserRecord{CrName: owner, RegionID: g.LocalRegion.UID.String()}).Error; err != nil {
+			//	return nil, fmt.Errorf("failed to create null user record: %v", err)
+			//}
+			return nil, nil
+		}
 		return nil, fmt.Errorf("failed to get account: %v", err)
 	}
 	err = g.DB.Transaction(func(tx *gorm.DB) error {
@@ -272,16 +316,42 @@ func (g *Cockroach) TransferAccountV1(owner string, account *types.Account) (*ty
 				return fmt.Errorf("failed to save account: %v", err)
 			}
 		}
-		if err := g.DB.Save(&types.TransferAccountV1{
+		accountV2.CreateRegionID = g.LocalRegion.UID.String()
+		transfer := types.TransferAccountV1{
 			RegionUID:       g.LocalRegion.UID,
 			RegionUserOwner: owner,
 			Account:         *accountV2,
-		}).Error; err != nil {
+		}
+		//if err := g.DB.Save(&transfer).Error; err != nil {
+		//	return fmt.Errorf("failed to save transfer account: %v", err)
+		//}
+		if err := g.saveTransferAccountV1(transfer); err != nil {
 			return fmt.Errorf("failed to save transfer account: %v", err)
 		}
 		return nil
 	})
 	return accountV2, err
+}
+
+func (g *Cockroach) saveTransferAccountV1(transfer types.TransferAccountV1) error {
+	savePath := filepath.Join("transferv1tov2", "transfer_account_v1", transfer.RegionUID.String(), transfer.RegionUserOwner)
+	file, err := os.Create(savePath)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %v", err)
+	}
+	return file.Close()
+}
+
+func (g *Cockroach) saveNullUserRecord(nullUser types.NullUserRecord) error {
+	savePath := filepath.Join("transferv1tov2", "null_user_record", nullUser.RegionID, nullUser.CrName)
+	file, err := os.Create(savePath)
+	if err != nil {
+		if errors.Is(err, os.ErrExist) {
+			return nil
+		}
+		return fmt.Errorf("failed to create file: %v", err)
+	}
+	return file.Close()
 }
 
 func (g *Cockroach) Payment(payment *types.Payment) error {
@@ -455,12 +525,6 @@ func (g *Cockroach) TransferAccount(from, to *types.UserQueryOpts, amount int64)
 	return err
 }
 
-type Config struct {
-	URI         string
-	BaseBalance int64
-	LocalRegion *types.Region
-}
-
 func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 	db, err := gorm.Open(postgres.Open(globalURI), &gorm.Config{})
 	if err != nil {
@@ -482,7 +546,7 @@ func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to encrypt zero value")
 	}
-	if err := CreateTableIfNotExist(db, types.Account{}, types.TransferAccountV1{}, types.ErrorAccountCreate{}, types.ErrorPaymentCreate{}, types.Payment{}); err != nil {
+	if err := CreateTableIfNotExist(db, types.Account{}, types.TransferAccountV1{}, types.ErrorAccountCreate{}, types.ErrorPaymentCreate{}, types.NullUserRecord{}, types.Payment{}); err != nil {
 		return nil, err
 	}
 	cockroach := &Cockroach{DB: db, Localdb: localdb, ZeroAccount: &types.Account{EncryptBalance: *newEncryptBalance, EncryptDeductionBalance: *newEncryptDeductionBalance, Balance: baseBalance, DeductionBalance: 0}}
@@ -493,7 +557,7 @@ func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 			UID: uuid.MustParse(localRegionStr),
 		}
 	} else {
-		fmt.Printf("empty local region \n")
+		return nil, fmt.Errorf("empty local region")
 	}
 	return cockroach, nil
 }

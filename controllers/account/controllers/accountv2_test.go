@@ -17,6 +17,7 @@ package controllers
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/labring/sealos/controllers/pkg/database"
@@ -45,24 +46,34 @@ var (
 	testV2LocalDBURI  = ""
 )
 
-type Region struct {
-	ID         string
-	V1dbURI    string
-	Kubeconfig string
+type testConfig struct {
+	RegionID      string
+	V1dbURI       string
+	V2GlobalDBURI string
+	V2LocalDBURI  string
+	Kubeconfig    string
 }
 
-var Regions = []Region{}
+var RegionsConfig = []testConfig{}
 
 func TestAccount_V1ToV2(t *testing.T) {
-	for i := range Regions {
+	for i := range RegionsConfig {
 		os.Unsetenv("LOCAL_REGION")
-		err := os.Setenv("LOCAL_REGION", Regions[i].ID)
+		err := os.Setenv("LOCAL_REGION", RegionsConfig[i].RegionID)
 		if err != nil {
 			t.Fatalf("failed to set env: %v", err)
 		}
+		err = os.MkdirAll(filepath.Join("transferv1tov2", "null_user_record", RegionsConfig[i].RegionID), 0755)
+		if err != nil {
+			t.Fatalf("failed to create dir: %v", err)
+		}
+		err = os.MkdirAll(filepath.Join("transferv1tov2", "transfer_account_v1", RegionsConfig[i].RegionID), 0755)
+		if err != nil {
+			t.Fatalf("failed to create dir: %v", err)
+		}
 		scheme := runtime.NewScheme()
 		utilruntime.Must(accountv1.AddToScheme(scheme))
-		config, err := clientcmd.BuildConfigFromFlags("", Regions[i].Kubeconfig)
+		config, err := clientcmd.BuildConfigFromFlags("", RegionsConfig[i].Kubeconfig)
 		if err != nil {
 			t.Fatalf("Error building kubeconfig: %v\n", err)
 		}
@@ -75,7 +86,7 @@ func TestAccount_V1ToV2(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to get account: %v", err)
 		}
-		accountItf, err := database.NewAccountV2(testV2GlobalDBURI, testV2LocalDBURI)
+		accountItf, err := database.NewAccountV2(RegionsConfig[i].V2GlobalDBURI, RegionsConfig[i].V2LocalDBURI)
 		if err != nil {
 			t.Fatalf("failed to new account : %v", err)
 		}
@@ -85,7 +96,7 @@ func TestAccount_V1ToV2(t *testing.T) {
 			}
 		}()
 		wg, ctx := errgroup.WithContext(context.Background())
-		wg.SetLimit(20)
+		wg.SetLimit(50)
 		for _, a := range accounts.Items {
 			account := a
 			wg.Go(func() error {
@@ -117,13 +128,13 @@ func TestAccount_V1ToV2(t *testing.T) {
 }
 
 func TestConvertPayment_V1ToV2(t *testing.T) {
-	for i := range Regions {
+	for i := range RegionsConfig {
 		os.Unsetenv("LOCAL_REGION")
-		err := os.Setenv("LOCAL_REGION", Regions[i].ID)
+		err := os.Setenv("LOCAL_REGION", RegionsConfig[i].RegionID)
 		if err != nil {
 			t.Fatalf("failed to set env: %v", err)
 		}
-		accountV2, err := database.NewAccountV2(testV2GlobalDBURI, testV2LocalDBURI)
+		accountV2, err := database.NewAccountV2(RegionsConfig[i].V2GlobalDBURI, RegionsConfig[i].V2LocalDBURI)
 		if err != nil {
 			t.Fatalf("failed to new account : %v", err)
 		}
@@ -132,7 +143,7 @@ func TestConvertPayment_V1ToV2(t *testing.T) {
 				t.Errorf("failed close connection: %v", err)
 			}
 		}()
-		accountV1, err := mongo.NewMongoInterface(context.Background(), Regions[i].V1dbURI)
+		accountV1, err := mongo.NewMongoInterface(context.Background(), RegionsConfig[i].V1dbURI)
 		if err != nil {
 			t.Fatalf("failed to new account : %v", err)
 		}
@@ -332,24 +343,7 @@ func TestAccountV2_AddBalance(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get account: %v", err)
 	}
-	//1098
 	t.Logf("success create DeductionBalance: %+v", aa.DeductionBalance/cockroach.BaseUnit)
-	// 1408
-	// 1060
-	// 1160
-	// 1408
-	// 2568
-
-	//106 + 10 = 116 + 128 + 12.8 = 256.8
-	//266    + 128 + 12.8 = 407.6
-	//
-
-	//281600000
-	// 281.6
-	// 291.6
-	// 432.4
-	// 1046.8
-	// 2246.8
 
 	t.Logf("success create Balance: %+v", aa.Balance/cockroach.BaseUnit)
 	t.Logf("success create accountbalance: %+v", (aa.Balance-aa.DeductionBalance)/cockroach.BaseUnit)
