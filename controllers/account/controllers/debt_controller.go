@@ -377,10 +377,10 @@ var TitleTemplateEN = map[int]string{
 }
 
 var NoticeTemplateZH = map[int]string{
-	WarningNotice:             "您的账户余额不足，系统将为您暂停服务，请及时充值，以免影响您的正常使用。",
-	ApproachingDeletionNotice: fmt.Sprintf("您的账户余额不足，系统将在%2.f小时后或欠费超过充值金额后释放您的资源，请及时充值，以免影响您的正常使用。", math.Ceil(float64(DebtConfig[accountv1.ImminentDeletionPeriod])/3600)),
-	ImminentDeletionNotice:    fmt.Sprintf("您的容器实例资源已被暂停，系统将在%2.f小时后彻底释放资源，无法恢复，请及时充值，以免影响您的正常使用。", math.Ceil(float64(DebtConfig[accountv1.FinalDeletionPeriod])/3600)),
-	FinalDeletionNotice:       "系统将随时彻底释放您的所有资源，请及时充值，以免影响您的正常使用。",
+	WarningNotice:             "当前工作空间所属账户余额不足，系统将为您暂停服务，请及时充值，以免影响您的正常使用。",
+	ApproachingDeletionNotice: fmt.Sprintf("当前工作空间所属账户余额不足，系统将在%2.f小时后或欠费超过充值金额后释放当前空间的资源，请及时充值，以免影响您的正常使用。", math.Ceil(float64(DebtConfig[accountv1.ImminentDeletionPeriod])/3600)),
+	ImminentDeletionNotice:    fmt.Sprintf("当前工作空间容器实例资源已被暂停，系统将在%2.f小时后彻底释放资源，无法恢复，请及时充值，以免影响您的正常使用。", math.Ceil(float64(DebtConfig[accountv1.FinalDeletionPeriod])/3600)),
+	FinalDeletionNotice:       "系统将随时彻底释放当前工作空间所属账户下的所有资源，请及时充值，以免影响您的正常使用。",
 }
 
 func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType int) error {

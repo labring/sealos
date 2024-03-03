@@ -17,9 +17,12 @@ package cockroach
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
+
+	"gorm.io/gorm/logger"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
 
@@ -258,7 +261,7 @@ func (g *Cockroach) TransferAccountV1(owner string, account *types.Account) (*ty
 	//	return nil, fmt.Errorf("failed to get transfer account: %w", err)
 	//}
 
-	if _, err := os.Stat(filepath.Join("transfer_account_v1", g.LocalRegion.UID.String(), owner)); err == nil {
+	if _, err := os.Stat(filepath.Join(transferAccountV1, g.LocalRegion.UID.String(), owner)); err == nil {
 		return nil, nil
 	} else if !os.IsNotExist(err) {
 		return nil, fmt.Errorf("failed to get transfer account: %v", err)
@@ -287,63 +290,79 @@ func (g *Cockroach) TransferAccountV1(owner string, account *types.Account) (*ty
 		}
 		return nil, fmt.Errorf("failed to get account: %v", err)
 	}
-	err = g.DB.Transaction(func(tx *gorm.DB) error {
-		if accountV2 == nil {
-			accountV2 = &types.Account{
-				UserUID:                 query.UID,
-				ActivityBonus:           account.ActivityBonus,
-				EncryptDeductionBalance: account.EncryptDeductionBalance,
-				EncryptBalance:          account.EncryptBalance,
-				Balance:                 account.Balance,
-				DeductionBalance:        account.DeductionBalance,
-				//TODO need init
-				CreatedAt: account.CreatedAt,
-			}
-			if err := g.DB.FirstOrCreate(accountV2).Error; err != nil {
-				return fmt.Errorf("failed to create account: %w", err)
-			}
-		} else {
-			if accountV2.CreatedAt.After(account.CreatedAt) {
-				accountV2.CreatedAt = account.CreatedAt
-			}
-			if err := g.updateWithAccount(true, true, accountV2, account.DeductionBalance); err != nil {
-				return fmt.Errorf("failed to update account DeductionBalance: %v", err)
-			}
-			if err := g.updateWithAccount(false, true, accountV2, account.Balance); err != nil {
-				return fmt.Errorf("failed to update account Balance: %v", err)
-			}
-			if err := g.DB.Save(accountV2).Error; err != nil {
-				return fmt.Errorf("failed to save account: %v", err)
-			}
+	transfer := types.TransferAccountV1{
+		RegionUID:       g.LocalRegion.UID,
+		RegionUserOwner: owner,
+	}
+	if accountV2 == nil {
+		accountV2 = &types.Account{
+			UserUID:                 query.UID,
+			ActivityBonus:           account.ActivityBonus,
+			EncryptDeductionBalance: account.EncryptDeductionBalance,
+			EncryptBalance:          account.EncryptBalance,
+			Balance:                 account.Balance,
+			DeductionBalance:        account.DeductionBalance,
+			CreateRegionID:          g.LocalRegion.UID.String(),
+			//TODO need init
+			CreatedAt: account.CreatedAt,
 		}
-		accountV2.CreateRegionID = g.LocalRegion.UID.String()
-		transfer := types.TransferAccountV1{
-			RegionUID:       g.LocalRegion.UID,
-			RegionUserOwner: owner,
-			Account:         *accountV2,
+		if err := g.DB.FirstOrCreate(accountV2).Error; err != nil {
+			return nil, fmt.Errorf("failed to create account: %w", err)
 		}
-		//if err := g.DB.Save(&transfer).Error; err != nil {
-		//	return fmt.Errorf("failed to save transfer account: %v", err)
-		//}
-		if err := g.saveTransferAccountV1(transfer); err != nil {
-			return fmt.Errorf("failed to save transfer account: %v", err)
+	} else {
+		if accountV2.CreatedAt.After(account.CreatedAt) {
+			accountV2.CreatedAt = account.CreatedAt
 		}
-		return nil
-	})
+		if err := g.updateWithAccount(true, true, accountV2, account.DeductionBalance); err != nil {
+			return nil, fmt.Errorf("failed to update account DeductionBalance: %v", err)
+		}
+		if err := g.updateWithAccount(false, true, accountV2, account.Balance); err != nil {
+			return nil, fmt.Errorf("failed to update account Balance: %v", err)
+		}
+		if err := g.DB.Save(accountV2).Error; err != nil {
+			return nil, fmt.Errorf("failed to save account: %v", err)
+		}
+		transfer.Exist = true
+	}
+
+	transfer.Account = *accountV2
+	//if err := g.DB.Save(&transfer).Error; err != nil {
+	//	return fmt.Errorf("failed to save transfer account: %v", err)
+	//}
+	if err := g.saveTransferAccountV1(transfer); err != nil {
+		return nil, fmt.Errorf("failed to save transfer account: %v", err)
+	}
 	return accountV2, err
 }
 
+var (
+	transferV1toV2    = "transferv1tov2"
+	transferAccountV1 = filepath.Join(transferV1toV2, "transfer_account_v1")
+	transferV1Exist   = filepath.Join(transferV1toV2, "transfer_account_v1_exist")
+	nullUserRecord    = filepath.Join(transferV1toV2, "null_user_record")
+)
+
 func (g *Cockroach) saveTransferAccountV1(transfer types.TransferAccountV1) error {
-	savePath := filepath.Join("transferv1tov2", "transfer_account_v1", transfer.RegionUID.String(), transfer.RegionUserOwner)
+	name := transfer.RegionUserOwner
+	savePath := filepath.Join(transferAccountV1, transfer.RegionUID.String(), name)
 	file, err := os.Create(savePath)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %v", err)
 	}
-	return file.Close()
+	defer file.Close()
+	if !transfer.Exist {
+		return nil
+	}
+	saveExistPath := filepath.Join(transferV1Exist, transfer.RegionUID.String(), name)
+	existFile, err := os.Create(saveExistPath)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %v", err)
+	}
+	return existFile.Close()
 }
 
 func (g *Cockroach) saveNullUserRecord(nullUser types.NullUserRecord) error {
-	savePath := filepath.Join("transferv1tov2", "null_user_record", nullUser.RegionID, nullUser.CrName)
+	savePath := filepath.Join(nullUserRecord, nullUser.RegionID, nullUser.CrName)
 	file, err := os.Create(savePath)
 	if err != nil {
 		if errors.Is(err, os.ErrExist) {
@@ -526,13 +545,23 @@ func (g *Cockroach) TransferAccount(from, to *types.UserQueryOpts, amount int64)
 }
 
 func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
-	db, err := gorm.Open(postgres.Open(globalURI), &gorm.Config{})
+	dbLogger := logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags), logger.Config{
+		SlowThreshold:             200 * time.Millisecond,
+		LogLevel:                  logger.Error,
+		IgnoreRecordNotFoundError: true,
+		Colorful:                  true,
+	})
+	db, err := gorm.Open(postgres.Open(globalURI), &gorm.Config{
+		Logger: dbLogger,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to open url %s : %v", globalURI, err)
+		return nil, fmt.Errorf("failed to open global url %s : %v", globalURI, err)
 	}
-	localdb, err := gorm.Open(postgres.Open(localURI), &gorm.Config{})
+	localdb, err := gorm.Open(postgres.Open(localURI), &gorm.Config{
+		Logger: dbLogger,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to open url %s : %v", localURI, err)
+		return nil, fmt.Errorf("failed to open local url %s : %v", localURI, err)
 	}
 	baseBalance, err := crypto.DecryptInt64(os.Getenv(EnvBaseBalance))
 	if err == nil {
@@ -546,7 +575,7 @@ func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to encrypt zero value")
 	}
-	if err := CreateTableIfNotExist(db, types.Account{}, types.TransferAccountV1{}, types.ErrorAccountCreate{}, types.ErrorPaymentCreate{}, types.NullUserRecord{}, types.Payment{}); err != nil {
+	if err := CreateTableIfNotExist(db, types.Account{}, types.ErrorAccountCreate{}, types.ErrorPaymentCreate{}, types.Payment{}); err != nil {
 		return nil, err
 	}
 	cockroach := &Cockroach{DB: db, Localdb: localdb, ZeroAccount: &types.Account{EncryptBalance: *newEncryptBalance, EncryptDeductionBalance: *newEncryptDeductionBalance, Balance: baseBalance, DeductionBalance: 0}}

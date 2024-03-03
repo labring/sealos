@@ -83,6 +83,7 @@ type TransferAccountV1 struct {
 	//RealUser   RealUser
 	RegionUID       uuid.UUID `gorm:"column:regionUid;type:uuid;not null"`
 	RegionUserOwner string    `gorm:"column:regionUserOwner;type:text;not null"`
+	Exist           bool      `gorm:"type:boolean;default:false"`
 	Account
 }
 
