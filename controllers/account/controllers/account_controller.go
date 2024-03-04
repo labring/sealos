@@ -19,11 +19,14 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"strconv"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 
 	"k8s.io/client-go/rest"
 
@@ -193,6 +196,9 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, owner string, userN
 	}
 	account, err := r.AccountV2.NewAccount(&pkgtypes.UserQueryOpts{Owner: owner})
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("failed to create %s account: %v", owner, err)
 	}
 	return account, nil

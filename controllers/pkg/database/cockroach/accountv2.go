@@ -427,7 +427,7 @@ func (g *Cockroach) NewAccount(ops *types.UserQueryOpts) (*types.Account, error)
 	if ops.UID == uuid.Nil {
 		user, err := g.GetUser(ops)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get user: %v", err)
+			return nil, err
 		}
 		ops.UID = user.UserUID
 	}
