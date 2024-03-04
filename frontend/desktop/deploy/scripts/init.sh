@@ -9,5 +9,5 @@ if [[ -n "$secret_exists" ]]; then
   echo "desktop-frontend-secret already exists, skip create desktop secret"
 else
   echo "create desktop secret"
-  kubectl apply -f manifests/secret.yaml
+  kubectl apply -f manifests/secret.yaml --validate=false
 fi
