@@ -172,9 +172,9 @@ spec:
             - name: SEALOS_CLOUD_DOMAIN
               value: {{ .cloudDomain }}
             - name: INVITE_ENABLED
-              value: false
+              value: "false"
             - name: GUIDE_ENABLED
-              value: false
+              value: "false"
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

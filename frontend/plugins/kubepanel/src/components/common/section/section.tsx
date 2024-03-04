@@ -10,7 +10,7 @@ interface SectionProps {
  */
 export function Section({ children }: SectionProps) {
   return (
-    <section className="w-full bg-white px-10 py-8 flex flex-col flex-wrap gap-3">
+    <section className="w-full bg-white px-10 py-8 flex flex-col flex-wrap gap-3 rounded-lg	">
       {children}
     </section>
   );
