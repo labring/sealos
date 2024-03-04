@@ -161,6 +161,7 @@ jobs:
             providers/dbprovider,
             providers/costcenter,
             providers/objectstorage,
+            plugins/kubepanel,
             desktop,
           ]
     steps:
