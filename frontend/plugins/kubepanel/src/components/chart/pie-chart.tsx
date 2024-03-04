@@ -21,12 +21,15 @@ export const PieChart = ({ title, data, color }: PieChartProps) => {
   const config: PieConfig = {
     data: data,
     angleField: 'value',
+    style: {
+      transform: 'scale(0.95)'
+    },
     colorField: 'type',
     color: (datum: Datum) => color(datum['type']),
     padding: 0.1, //Try to avoid dial misalignment caused by different legends' number
     width: 200,
-    height: 400,
-    radius: 1,
+    height: 350,
+    radius: 0.9,
     innerRadius: 0.75,
     statistic: {
       title: false,
@@ -45,7 +48,7 @@ export const PieChart = ({ title, data, color }: PieChartProps) => {
     legend: {
       layout: 'vertical',
       position: 'bottom',
-      offsetY: -15,
+      offsetY: -30,
       marker: {
         symbol: (x: number, y: number, r: number) => {
           const width = r * 4;

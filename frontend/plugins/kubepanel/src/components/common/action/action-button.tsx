@@ -1,9 +1,10 @@
-import { CloseOutlined, MoreOutlined, RetweetOutlined } from '@ant-design/icons';
+import { CloseOutlined, RetweetOutlined } from '@ant-design/icons';
 import { Button, type MenuProps, Dropdown } from 'antd';
 import { useState } from 'react';
 import { UpdateEditorModal } from './update-editor-modal';
 import { KubeObject } from '@/k8slens/kube-object';
 import { DeletePopconfirm } from './delete-popconfirm';
+import { MdOutlineMoreVert } from 'react-icons/md';
 
 interface Props<K extends KubeObject> {
   obj: K;
@@ -17,7 +18,7 @@ export const ActionButton = <K extends KubeObject = KubeObject>({ obj }: Props<K
       key: 'delete',
       label: (
         <DeletePopconfirm obj={obj}>
-          <Button icon={<CloseOutlined />} type="link" size="small" danger>
+          <Button icon={<CloseOutlined />} type="link" size="small" className="text-[#d92d20]">
             Delete
           </Button>
         </DeletePopconfirm>
@@ -31,6 +32,7 @@ export const ActionButton = <K extends KubeObject = KubeObject>({ obj }: Props<K
           type="link"
           size="small"
           onClick={() => setOpenUpdateModal(true)}
+          className="text-[#0884dd]"
         >
           Update
         </Button>
@@ -42,7 +44,7 @@ export const ActionButton = <K extends KubeObject = KubeObject>({ obj }: Props<K
     // wrapper to stop click event propagation
     <div onClick={(e) => e.stopPropagation()}>
       <Dropdown disabled={items.length === 0} menu={{ items }} arrow trigger={['click']}>
-        <MoreOutlined className="text-[25px] text-[#667085] hover:text-[#24282C]" />
+        <MdOutlineMoreVert className="text-[25px] text-[#667085] hover:text-[#24282C]" />
       </Dropdown>
       <UpdateEditorModal
         key={'update'}
