@@ -23,7 +23,7 @@ image_registry=${image_registry:-"docker.io"}
 image_repository=${image_repository:-"labring"}
 kubernetes_version=${kubernetes_version:-"1.25.6"}
 cilium_version=${cilium_version:-"1.12.14"}
-cert_manager_version=${cert_manager_version:-"1.8.0"}
+cert_manager_version=${cert_manager_version:-"1.13.3"}
 helm_version=${helm_version:-"3.12.0"}
 openebs_version=${openebs_version:-"3.4.0"}
 ingress_nginx_version=${ingress_nginx_version:-"1.5.1"}
@@ -72,7 +72,7 @@ Options:
   --image-repository                # Image repository name (default: labring)
   --kubernetes-version              # Kubernetes version (default: 1.25.6)
   --cilium-version                  # Cilium version (default: 1.12.14)
-  --cert-manager-version            # Cert Manager version (default: 1.8.0)
+  --cert-manager-version            # Cert Manager version (default: 1.13.3)
   --helm-version                    # Helm version (default: 3.12.0)
   --openebs-version                 # OpenEBS version (default: 3.4.0)
   --reflector-version                # Reflector version (default: 7.0.151)
@@ -134,7 +134,7 @@ Options:
   --image-repository              # 镜像仓库名称 (默认: labring)
   --kubernetes-version            # Kubernetes版本 (默认: 1.25.6)
   --cilium-version                # Cilium版本 (默认: 1.12.14)
-  --cert-manager-version          # Cert Manager版本 (默认: 1.8.0)
+  --cert-manager-version          # Cert Manager版本 (默认: 1.13.3)
   --helm-version                  # Helm版本 (默认: 3.12.0)
   --openebs-version               # OpenEBS版本 (默认: 3.4.0)
   --reflector-version              # Reflector版本 (默认: 7.0.151)
