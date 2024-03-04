@@ -15,7 +15,7 @@
 package pay
 
 type Interface interface {
-	CreatePayment(amount int64, user string) (string, string, error)
+	CreatePayment(amount int64, user, describe string) (string, string, error)
 	GetPaymentDetails(sessionID string) (string, int64, error)
 	ExpireSession(payment string) error
 }

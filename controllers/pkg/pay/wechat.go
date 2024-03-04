@@ -16,9 +16,9 @@ package pay
 
 import "fmt"
 
-func (w WechatPayment) CreatePayment(amount int64, user string) (string, string, error) {
+func (w WechatPayment) CreatePayment(amount int64, user, describe string) (string, string, error) {
 	tradeNO := GetRandomString(32)
-	codeURL, err := WechatPay(amount, user, tradeNO, "", "")
+	codeURL, err := WechatPay(amount, user, tradeNO, describe, "")
 	if err != nil {
 		return "", "", err
 	}

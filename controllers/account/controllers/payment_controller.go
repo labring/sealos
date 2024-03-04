@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -82,7 +83,7 @@ func (r *PaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 	// get tradeNO and codeURL
-	tradeNO, codeURL, err := payHandler.CreatePayment(p.Spec.Amount/10000, p.Spec.UserID)
+	tradeNO, codeURL, err := payHandler.CreatePayment(p.Spec.Amount/10000, p.Spec.UserID, "sealos cloud pay [region-user-id="+p.Name+" domain="+os.Getenv("DOMAIN")+"]")
 	if err != nil {
 		r.Logger.Error(err, "get tradeNO and codeURL failed")
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, err
