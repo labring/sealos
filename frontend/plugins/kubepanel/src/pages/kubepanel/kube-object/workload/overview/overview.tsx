@@ -49,14 +49,13 @@ const OverviewPage = () => {
   }));
 
   return (
-    <Flex vertical gap="12px">
+    <Flex vertical gap="15px" className="bg-[#f4f4f7]">
       <Section>
         <Title type="primary">Overview</Title>
       </Section>
-      <Section>
-        {cxtHolder}
+      <div className="w-full bg-white px-5  flex flex-col flex-wrap gap-3 rounded-lg">
         <WorkloadStatusOverview data={overviewStatuses} />
-      </Section>
+      </div>
       <Section>
         <Title type="primary">Events</Title>
         <EventOverview />

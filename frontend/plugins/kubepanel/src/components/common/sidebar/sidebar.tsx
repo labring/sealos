@@ -64,9 +64,12 @@ export const ResourceSideNav = ({ onClick = () => {} }: Props) => {
   return (
     <Flex vertical>
       <div className="border-b-[1px] border-color-border border-solid px-[18px] py-[12px] w-full">
-        <div className="flex justify-between align-middle">
-          <div className="text-[#24282C] text-[16px] font-medium p-1">KubePanel</div>
+        <div className="flex justify-between items-center">
+          <div className="text-[#24282C] text-[16px] font-medium pl-2 align-middle">
+            <span>KubePanel</span>
+          </div>
           <Button
+            className="flex items-center justify-center"
             type="text"
             icon={<ReloadOutlined style={{ color: '#219BF4', fontSize: 'large' }} />}
             onClick={() => router.reload()}
@@ -74,7 +77,7 @@ export const ResourceSideNav = ({ onClick = () => {} }: Props) => {
         </div>
       </div>
       <Menu
-        style={{ backgroundColor: '#F2F2F4', borderRight: 'none', fontWeight: 500 }}
+        style={{ backgroundColor: '#f4f4f7', borderRight: 'none', fontWeight: 500 }}
         defaultSelectedKeys={['overview']}
         defaultOpenKeys={['workload']}
         mode="inline"
