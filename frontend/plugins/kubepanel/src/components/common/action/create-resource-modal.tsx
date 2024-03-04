@@ -108,7 +108,7 @@ export const CreateResourceModal = ({ open, setClose }: Props) => {
         onCancel={setClose}
         onOk={setClose}
         footer={[
-          <Button key="cancel" onClick={setClose}>
+          <Button key="cancel" onClick={setClose} className="mr-2">
             Cancel
           </Button>,
           <Button
@@ -122,7 +122,7 @@ export const CreateResourceModal = ({ open, setClose }: Props) => {
           </Button>
         ]}
       >
-        <Title type="primary" className="pb-5">
+        <Title type="primary" className="pb-3">
           Create Resource
         </Title>
         <Flex vertical gap="12px">

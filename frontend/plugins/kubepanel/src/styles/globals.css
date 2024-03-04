@@ -29,7 +29,7 @@
 
   &:hover {
     color: #0884dd;
-    background-color: #9699b41a;
+    background-color: #e9e9ec;
   }
 }
 #app .ant-dropdown-menu-submenu-title {
@@ -37,9 +37,24 @@
 
   &:hover {
     color: #0884dd;
-    background-color: #9699b41a;
+    background-color: #e9e9ec;
   }
 }
+.ant-menu-item-selected {
+  background-color: #e9e9ec !important;
+}
+.ant-menu.ant-menu-sub.ant-menu-inline {
+  background-color: #f4f4f7 !important;
+}
+.ant-menu-submenu-active .ant-menu-submenu-title,
+.ant-menu-submenu-selected .ant-menu-submenu-title,
+.ant-menu-submenu-open .ant-menu-submenu-title {
+  color: #485264 !important;
+}
+.ant-menu-submenu-active:active div {
+  background-color: #e9e9ec !important;
+}
+
 .ant-dropdown-menu-submenu {
   left: 4px;
 }
@@ -80,12 +95,19 @@
 }
 .ant-modal-close {
   margin-top: 1%;
+  margin-right: 1%;
 }
 .ant-modal-close-x svg {
   width: 1.5em;
   height: 1.5em;
   color: #111824;
 }
+/* .ant-modal-close-x:hover {
+  background-color: white !important;
+}
+.ant-modal-close-x svg:hover {
+  background-color: white !important;
+} */
 
 /* tooltip style overrides */
 .ant-tooltip {
@@ -99,4 +121,23 @@
 }
 .ant-pagination-total-text {
   line-height: 25px !important;
+}
+
+/* button overrides */
+.ant-float-btn-body {
+  background-color: #219bf4 !important;
+
+  &:hover {
+    background-color: #56b1f1 !important;
+  }
+}
+
+/* ant-table-filter-dropdown overrides*/
+.ant-table-filter-dropdown ul li {
+  text-align: start !important;
+}
+
+/* ant-table overrides */
+.ant-table-thead tr th {
+  background-color: #f4f4f7 !important;
 }
