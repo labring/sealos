@@ -594,3 +594,23 @@ func TestMongoDB_SetPropertyTypeLS(t *testing.T) {
 	//	t.Fatalf("failed to save property types: %v", err)
 	//}
 }
+
+func Test_mongoDB_GetDistinctMonitorCombinations(t *testing.T) {
+	dbCTX := context.Background()
+
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
+	if err != nil {
+		t.Errorf("failed to connect mongo: error = %v", err)
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+	queryTime := time.Now().UTC()
+	monitorCombinations, err := m.GetDistinctMonitorCombinations(queryTime.Add(-time.Hour), queryTime)
+	if err != nil {
+		t.Fatalf("failed to get distinct monitor combinations: %v", err)
+	}
+	t.Logf("monitorCombinations: %v", monitorCombinations)
+}
