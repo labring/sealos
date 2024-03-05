@@ -63,7 +63,6 @@ function init_minio() {
       mc admin user add objectstorage testuser sealos2023
       mc admin group add objectstorage userNormal testuser
       mc admin group add objectstorage userDenyWrite testuser
-      mc admin user remove objectstorage testuser
       mc admin policy attach objectstorage userNormal --group userNormal
       mc admin policy attach objectstorage userDenyWrite --group userDenyWrite
       mc admin policy attach objectstorage kubeblocks --user kubeblocks
