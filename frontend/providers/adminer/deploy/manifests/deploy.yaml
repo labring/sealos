@@ -37,8 +37,8 @@ spec:
         - name: adminer-frontend
           resources:
             limits:
-              cpu: 100m
-              memory: 500Mi
+              cpu: 1000m
+              memory: 1024Mi
             requests:
               cpu: 10m
               memory: 128Mi
