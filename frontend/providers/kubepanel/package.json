@@ -34,7 +34,7 @@
     "react-dom": "^18.2.0",
     "react-icons": "^5.0.1",
     "rfc6902": "^5.0.1",
-    "sealos-desktop-sdk": "^0.1.14",
+    "sealos-desktop-sdk": "workspace:*",
     "type-fest": "^4.4.0",
     "typed-regex": "^0.0.8",
     "uuid": "^9.0.1",
