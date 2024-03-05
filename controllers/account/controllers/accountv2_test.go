@@ -19,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/labring/sealos/controllers/pkg/database"
 
@@ -56,6 +57,16 @@ type testConfig struct {
 
 var RegionsConfig = []testConfig{}
 
+func mkdirs(dirs ...string) error {
+	for _, dir := range dirs {
+		err := os.MkdirAll(dir, 0755)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func TestAccount_V1ToV2(t *testing.T) {
 	for i := range RegionsConfig {
 		os.Unsetenv("LOCAL_REGION")
@@ -63,11 +74,9 @@ func TestAccount_V1ToV2(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to set env: %v", err)
 		}
-		err = os.MkdirAll(filepath.Join("transferv1tov2", "null_user_record", RegionsConfig[i].RegionID), 0755)
-		if err != nil {
-			t.Fatalf("failed to create dir: %v", err)
-		}
-		err = os.MkdirAll(filepath.Join("transferv1tov2", "transfer_account_v1", RegionsConfig[i].RegionID), 0755)
+		err = mkdirs(filepath.Join("transferv1tov2", "null_user_record", RegionsConfig[i].RegionID),
+			filepath.Join("transferv1tov2", "transfer_account_v1", RegionsConfig[i].RegionID),
+			filepath.Join("transferv1tov2", "transfer_account_v1_exist", RegionsConfig[i].RegionID))
 		if err != nil {
 			t.Fatalf("failed to create dir: %v", err)
 		}
@@ -86,6 +95,7 @@ func TestAccount_V1ToV2(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to get account: %v", err)
 		}
+		t.Logf("success get region account len: %d, startTime: %s", len(accounts.Items), time.Now().UTC().Format("2006-01-02 15:04:05"))
 		accountItf, err := database.NewAccountV2(RegionsConfig[i].V2GlobalDBURI, RegionsConfig[i].V2LocalDBURI)
 		if err != nil {
 			t.Fatalf("failed to new account : %v", err)
@@ -96,7 +106,7 @@ func TestAccount_V1ToV2(t *testing.T) {
 			}
 		}()
 		wg, ctx := errgroup.WithContext(context.Background())
-		wg.SetLimit(50)
+		wg.SetLimit(100)
 		for _, a := range accounts.Items {
 			account := a
 			wg.Go(func() error {
@@ -106,6 +116,7 @@ func TestAccount_V1ToV2(t *testing.T) {
 					Balance:                 account.Status.Balance,
 					DeductionBalance:        account.Status.DeductionBalance,
 					CreatedAt:               account.CreationTimestamp.Time,
+					CreateRegionID:          RegionsConfig[i].RegionID,
 					ActivityBonus:           account.Status.ActivityBonus,
 				}
 				_, err := accountItf.TransferAccountV1(account.Name, createAccount)
@@ -117,7 +128,7 @@ func TestAccount_V1ToV2(t *testing.T) {
 					}
 					return err
 				}
-				t.Logf("success create account %s", account.Name)
+				//t.Logf("success create account %s", account.Name)
 				return nil
 			})
 		}
@@ -157,6 +168,7 @@ func TestConvertPayment_V1ToV2(t *testing.T) {
 			t.Fatalf("failed to get billing: %v", err)
 		}
 		eg := errgroup.Group{}
+		eg.SetLimit(100)
 
 		for i := range billings {
 			bill := billings[i]

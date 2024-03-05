@@ -42,6 +42,7 @@ type PaymentReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	Logger logr.Logger
+	domain string
 }
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=payments,verbs=get;list;watch;create;update;patch;delete
@@ -83,7 +84,7 @@ func (r *PaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 	// get tradeNO and codeURL
-	tradeNO, codeURL, err := payHandler.CreatePayment(p.Spec.Amount/10000, p.Spec.UserID, "sealos cloud pay [region-user-id="+p.Name+" domain="+os.Getenv("DOMAIN")+"]")
+	tradeNO, codeURL, err := payHandler.CreatePayment(p.Spec.Amount/10000, p.Spec.UserID, "sealos cloud pay [domain="+r.domain+"]")
 	if err != nil {
 		r.Logger.Error(err, "get tradeNO and codeURL failed")
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, err
@@ -105,6 +106,7 @@ func (r *PaymentReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 	const controllerName = "payment_controller"
 	r.Logger = ctrl.Log.WithName(controllerName)
 	r.Logger.V(1).Info("init reconcile controller payment")
+	r.domain = os.Getenv("DOMAIN")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&accountv1.Payment{}, builder.WithPredicates(OnlyCreatePredicate{})).
 		WithOptions(rateOpts).
