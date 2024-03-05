@@ -172,9 +172,9 @@ spec:
             - name: SEALOS_CLOUD_DOMAIN
               value: {{ .cloudDomain }}
             - name: INVITE_ENABLED
-              value: false
+              value: "false"
             - name: GUIDE_ENABLED
-              value: false
+              value: "false"
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
@@ -193,8 +193,8 @@ spec:
               subPath: config.json
           resources:
             limits:
-              cpu: 1000m
-              memory: 512Mi
+              cpu: 2000m
+              memory: 2048Mi
             requests:
               cpu: 100m
               memory: 128Mi

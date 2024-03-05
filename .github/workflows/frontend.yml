@@ -65,6 +65,7 @@ jobs:
             providers/dbprovider,
             providers/costcenter,
             providers/objectstorage,
+            plugins/kubepanel,
             desktop,
           ]
     steps:
@@ -161,6 +162,7 @@ jobs:
             providers/dbprovider,
             providers/costcenter,
             providers/objectstorage,
+            plugins/kubepanel,
             desktop,
           ]
     steps:

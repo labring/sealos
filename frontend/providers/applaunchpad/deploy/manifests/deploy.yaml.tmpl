@@ -50,7 +50,7 @@ spec:
             - name: INGRESS_SECRET
               value: {{ .ingressSecret }}
             - name: GUIDE_ENABLED
-              value: false
+              value: "false"
           name: applaunchpad-frontend
           securityContext:
             runAsNonRoot: true
@@ -61,8 +61,8 @@ spec:
                 - "ALL"
           resources:
             limits:
-              cpu: 1000m
-              memory: 1024Mi
+              cpu: 2000m
+              memory: 2048Mi
             requests:
               cpu: 10m
               memory: 128Mi
