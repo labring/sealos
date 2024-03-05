@@ -6,9 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "link-sdk": "pnpm link sealos-desktop-sdk",
-    "unlink-sdk": "pnpm unlink sealos-desktop-sdk"
+    "lint": "next lint"
   },
   "dependencies": {
     "@ant-design/charts": "^1.4.2",
