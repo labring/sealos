@@ -62,8 +62,8 @@ export default function CommandForm({
       },
       k8sVersion: '1.25.6',
       podSubnet: '100.64.0.0/10',
-      serviceSubnet: '100.96.0.0/22',
-      selfSigned: false,
+      serviceSubnet: '10.96.0.0/22',
+      selfSigned: true,
       cloudPort: '443',
       useImageRegistry: true,
       imageRegistry: 'registry.cn-shanghai.aliyuncs.com',
@@ -132,7 +132,8 @@ export default function CommandForm({
       data?.certKeyPath ? ` --key-path=${data?.certKeyPath} ` : '',
       data?.ssh.useKey
         ? ` --ssh-private-key=${data?.ssh.path} `
-        : ` --ssh-password=${data?.ssh.password} `
+        : ` --ssh-password=${data?.ssh.password} `,
+      data?.k8sVersion ? ` --kubernetes-version=${data.k8sVersion} ` : ''
     ];
     const displayCommand = commandParts.filter(Boolean).join('\\\n');
     setCopyCommand(displayCommand);
