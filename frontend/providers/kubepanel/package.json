@@ -6,9 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "link-sdk": "pnpm link sealos-desktop-sdk",
-    "unlink-sdk": "pnpm unlink sealos-desktop-sdk"
+    "lint": "next lint"
   },
   "dependencies": {
     "@ant-design/charts": "^1.4.2",
@@ -34,6 +32,7 @@
     "prettier": "^2.8.8",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-icons": "^5.0.1",
     "rfc6902": "^5.0.1",
     "sealos-desktop-sdk": "workspace:*",
     "type-fest": "^4.4.0",

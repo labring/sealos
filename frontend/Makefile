@@ -24,6 +24,7 @@ buildTargets := \
 	providers/template \
 	providers/cronjob \
 	providers/license \
+	providers/kubepanel \
 	providers/objectstorage
 
 buildTargets-all := $(addprefix image-build-,$(buildTargets))
