@@ -6,48 +6,48 @@ on:
   workflow_call:
     inputs:
       push_image:
-        description: "Push image"
+        description: 'Push image'
         required: false
         type: boolean
         default: false
       push_image_tag:
-        description: "Push image tag"
-        default: "latest"
+        description: 'Push image tag'
+        default: 'latest'
         required: false
         type: string
   workflow_dispatch:
     inputs:
       push_image:
-        description: "Push image"
+        description: 'Push image'
         required: false
         type: boolean
         default: false
       push_image_tag:
-        description: "Push image tag"
-        default: "latest"
+        description: 'Push image tag'
+        default: 'latest'
         required: false
         type: string
   push:
-    branches: ["main"]
+    branches: ['main']
     paths:
-      - "frontend/desktop/**"
-      - "frontend/providers/**"
-      - ".github/workflows/frontend.yml"
-      - "!**/*.md"
-      - "!**/*.yaml"
+      - 'frontend/desktop/**'
+      - 'frontend/providers/**'
+      - '.github/workflows/frontend.yml'
+      - '!**/*.md'
+      - '!**/*.yaml'
   pull_request:
-    branches: ["*"]
+    branches: ['*']
     paths:
-      - "frontend/desktop/**"
-      - "frontend/providers/**"
-      - ".github/workflows/frontend.yml"
-      - "!**/*.md"
-      - "!**/*.yaml"
+      - 'frontend/desktop/**'
+      - 'frontend/providers/**'
+      - '.github/workflows/frontend.yml'
+      - '!**/*.md'
+      - '!**/*.yaml'
 
 env:
   # Common versions
-  GO_VERSION: "1.20"
-  DEFAULT_OWNER: "labring"
+  GO_VERSION: '1.20'
+  DEFAULT_OWNER: 'labring'
 
 jobs:
   image-build:
@@ -65,7 +65,7 @@ jobs:
             providers/dbprovider,
             providers/costcenter,
             providers/objectstorage,
-            plugins/kubepanel,
+            providers/kubepanel,
             desktop,
           ]
     steps:
@@ -162,7 +162,7 @@ jobs:
             providers/dbprovider,
             providers/costcenter,
             providers/objectstorage,
-            plugins/kubepanel,
+            providers/kubepanel,
             desktop,
           ]
     steps:
@@ -238,14 +238,14 @@ jobs:
         with:
           version: v0.0.8-rc1
         env:
-          GH_TOKEN: "${{ secrets.GH_PAT }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagesync ${{ steps.prepare.outputs.cluster_image }}"
+          GH_TOKEN: '${{ secrets.GH_PAT }}'
+          SEALOS_TYPE: 'issue_renew'
+          SEALOS_ISSUE_TITLE: '[DaylyReport] Auto build for sealos'
+          SEALOS_ISSUE_BODYFILE: 'scripts/ISSUE_RENEW.md'
+          SEALOS_ISSUE_LABEL: 'dayly-report'
+          SEALOS_ISSUE_TYPE: 'day'
+          SEALOS_ISSUE_REPO: 'labring-actions/cluster-image'
+          SEALOS_COMMENT_BODY: '/imagesync ${{ steps.prepare.outputs.cluster_image }}'
 
       - name: Renew issue and Sync Images for ${{ steps.prepare.outputs.latest_cluster_image }}
         uses: labring/gh-rebot@v0.0.6
@@ -253,11 +253,11 @@ jobs:
         with:
           version: v0.0.8-rc1
         env:
-          GH_TOKEN: "${{ secrets.GH_PAT }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagesync ${{ steps.prepare.outputs.latest_cluster_image }}"
+          GH_TOKEN: '${{ secrets.GH_PAT }}'
+          SEALOS_TYPE: 'issue_renew'
+          SEALOS_ISSUE_TITLE: '[DaylyReport] Auto build for sealos'
+          SEALOS_ISSUE_BODYFILE: 'scripts/ISSUE_RENEW.md'
+          SEALOS_ISSUE_LABEL: 'dayly-report'
+          SEALOS_ISSUE_TYPE: 'day'
+          SEALOS_ISSUE_REPO: 'labring-actions/cluster-image'
+          SEALOS_COMMENT_BODY: '/imagesync ${{ steps.prepare.outputs.latest_cluster_image }}'
