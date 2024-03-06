@@ -2,7 +2,7 @@ import { GetCRD, K8sApi } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import { CRDMeta } from '@/types';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getUserKubeconfig, K8sApiDefault } from '@/services/backend/kubernetes/admin';
+import { getUserKubeconfigNotPatch, K8sApiDefault } from '@/services/backend/kubernetes/admin';
 import { verifyAccessToken } from '@/services/backend/auth';
 export const AccountMeta: CRDMeta = {
   group: 'account.sealos.io',
@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'token is invaild' });
-    const kc = await getUserKubeconfig(payload.userCrUid, payload.userCrName);
+    const kc = await getUserKubeconfigNotPatch(payload.userCrName);
     if (!kc) return jsonRes(res, { code: 404, message: ' kubeconfig is not found' });
     const result = await GetCRD(K8sApiDefault(), AccountMeta, payload.userCrName);
     jsonRes(res, { data: result?.body });

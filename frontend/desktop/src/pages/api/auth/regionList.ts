@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (err) {
     console.log(err);
     return jsonRes(res, {
-      message: 'Failed to authenticate with password',
+      message: 'Failed to get region list',
       code: 500
     });
   }

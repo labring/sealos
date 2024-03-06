@@ -3,9 +3,9 @@ import { jsonRes } from '@/services/backend/response';
 import { TWechatUser } from '@/types/user';
 import { getBase64FromRemote } from '@/utils/tools';
 import { NextApiRequest, NextApiResponse } from 'next';
-import {getGlobalToken} from "@/services/backend/globalAuth";
-import {ProviderType} from "prisma/global/generated/client";
-import {getRegionToken} from "@/services/backend/regionAuth";
+import { getGlobalToken } from '@/services/backend/globalAuth';
+import { ProviderType } from 'prisma/global/generated/client';
+import { getRegionToken } from '@/services/backend/regionAuth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -52,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const data = await getRegionToken({
       userUid: _data.user.userUid,
       userId: _data.user.name
-    })
+    });
     return jsonRes(res, {
       code: 200,
       message: 'Successfully',

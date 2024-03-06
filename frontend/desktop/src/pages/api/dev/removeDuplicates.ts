@@ -18,7 +18,7 @@ async function pullUserData() {
     .listNamespacedCustomObject('account.sealos.io', 'v1', 'sealos-system', 'accounts');
   console.log('get account success');
   const accountsMap = new Map<string, [number, number | undefined]>(
-      // @ts-ignore
+    // @ts-ignore
     accountsCRList.body.items.map((item) => [
       item.metadata.name,
       [item.status.balance, item.status.deductionBalance]

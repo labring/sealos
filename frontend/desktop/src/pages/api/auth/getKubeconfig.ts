@@ -1,7 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
-import { getUserKubeconfig } from '@/services/backend/kubernetes/admin';
+import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
 import { verifyAccessToken } from '@/services/backend/auth';
+import { switchKubeconfigNamespace } from '@/services/backend/kubernetes/user';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -11,9 +12,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         code: 401,
         message: 'invalid token'
       });
-    const kubeconfig = await getUserKubeconfig(regionUser.userCrUid, regionUser.userCrName);
-    if (!kubeconfig)
-      throw new Error('get kubeconfig error, regionUserUid: ' + regionUser.userCrUid);
+    const defaultKc = await getUserKubeconfigNotPatch(regionUser.userCrName);
+    if (!defaultKc) throw new Error('get kubeconfig error, regionUserUid: ' + regionUser.userCrUid);
+    const kubeconfig = switchKubeconfigNamespace(defaultKc, regionUser.workspaceId);
+
     return jsonRes(res, {
       code: 200,
       message: 'Successfully',
@@ -24,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (err) {
     console.log(err);
     return jsonRes(res, {
-      message: 'Failed to authenticate with password',
+      message: 'Failed to get kubeconfig',
       code: 500
     });
   }

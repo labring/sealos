@@ -1,20 +1,28 @@
 import { verifyAccessToken } from '@/services/backend/auth';
-import { CRDMeta, K8sApi, UpdateCRD } from '@/services/backend/kubernetes/user';
+import {
+  CRDMeta,
+  K8sApi,
+  switchKubeconfigNamespace,
+  UpdateCRD
+} from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getUserKubeconfig } from '@/services/backend/kubernetes/admin';
 import * as k8s from '@kubernetes/client-node';
+import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { name } = req.body;
     const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'failed to get info' });
-    const kc = await getUserKubeconfig(payload.userCrUid, payload.userCrName);
-    if (!kc) return jsonRes(res, { code: 404, message: 'The kubeconfig is not found' });
+    const namespace = payload.workspaceId;
+    const _kc = await getUserKubeconfigNotPatch(payload.userCrName);
+    if (!_kc) return jsonRes(res, { code: 404, message: 'user is not found' });
+    const realKc = switchKubeconfigNamespace(_kc, namespace);
+    const kc = K8sApi(realKc);
     const meta: CRDMeta = {
       group: 'notification.sealos.io',
       version: 'v1',
-      namespace: payload.workspaceId,
+      namespace,
       plural: 'notifications'
     };
 
@@ -32,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     let result = [];
     for (const n of name) {
-      let temp = await UpdateCRD(K8sApi(kc), meta, n, patch);
+      let temp = await UpdateCRD(kc, meta, n, patch);
       result.push(temp?.body);
     }
     jsonRes(res, { data: result });

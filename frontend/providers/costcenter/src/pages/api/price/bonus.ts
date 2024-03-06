@@ -54,7 +54,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
           .catch(async (err) => {
             if (retry-- >= 0) {
               await new Promise((res) => setTimeout(res, 1000));
-              await wrdocap();
+              await wrap();
             } else reject(err);
           });
       wrap();

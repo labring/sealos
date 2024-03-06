@@ -2,14 +2,14 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { K8sApi, ListCRD, switchKubeconfigNamespace } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import { CRDMeta, TAppCRList, TAppConfig } from '@/types';
-import { getUserKubeconfig } from '@/services/backend/kubernetes/admin';
+import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
 import { verifyAccessToken } from '@/services/backend/auth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'token is invaild' });
-    const _kc = await getUserKubeconfig(payload.userCrUid, payload.userCrName);
+    const _kc = await getUserKubeconfigNotPatch(payload.userCrName);
     if (!_kc) return jsonRes(res, { code: 404, message: 'user is not found' });
     const realKc = switchKubeconfigNamespace(_kc, payload.workspaceId);
     const kc = K8sApi(realKc);

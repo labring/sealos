@@ -23,7 +23,15 @@ async function signIn({ provider, id }: { provider: ProviderType; id: string }) 
   };
 }
 
-export const hasIniterId = ({inviteeId, inviterId, signResult}: {inviteeId: string, inviterId: string, signResult: any})=>{
+export const hasIniterId = ({
+  inviteeId,
+  inviterId,
+  signResult
+}: {
+  inviteeId: string;
+  inviterId: string;
+  signResult: any;
+}) => {
   const payload = {
     inviterId,
     inviteeId,
@@ -41,15 +49,14 @@ export const hasIniterId = ({inviteeId, inviterId, signResult}: {inviteeId: stri
     },
     body: JSON.stringify(payload)
   })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log('Upload laf success:', data);
-      })
-      .catch((error) => {
-        console.error('Upload laf error:', error);
-      });
-
-}
+    .then((response) => response.json())
+    .then((data) => {
+      console.log('Upload laf success:', data);
+    })
+    .catch((error) => {
+      console.error('Upload laf error:', error);
+    });
+};
 export async function signInByPassword({ id, password }: { id: string; password: string }) {
   const userProvider = await globalPrisma.oauthProvider.findUnique({
     where: {
