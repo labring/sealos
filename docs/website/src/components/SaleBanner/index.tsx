@@ -13,7 +13,7 @@ export default function SaleBanner() {
   };
 
   const goDetailFeishu = () => {
-    window.open(`https://mp.weixin.qq.com/s/ZX4rjixcQSeV8wyf9B8eKA`, '_blank');
+    window.open(`https://forum.laf.run/d/1207`, '_blank');
   };
 
   useEffect(() => {
