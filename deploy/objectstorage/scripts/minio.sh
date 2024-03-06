@@ -28,12 +28,8 @@ function deploy_minio() {
 }
 
 function init_minio() {
-  if [ ! -f "$HOME/minio-binaries/mc" ]; then
-    curl https://dl.min.io/client/mc/release/linux-amd64/mc --create-dirs -o $HOME/minio-binaries/mc
-  fi
-
-  chmod +x $HOME/minio-binaries/mc
-  export PATH=$PATH:$HOME/minio-binaries/
+  chmod +x ./etc/minio-binaries/mc
+  export PATH=$PATH:./etc/minio-binaries/
 
   while kubectl wait -l statefulset.kubernetes.io/pod-name=object-storage-pool-0-0 --for=condition=ready pod -n objectstorage-system --timeout=-1s 2>&1 | grep -q "error: no matching resources found"; do
     sleep 1
