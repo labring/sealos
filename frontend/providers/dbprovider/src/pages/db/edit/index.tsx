@@ -66,10 +66,6 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
   const generateYamlList = (data: DBEditType) => {
     return [
-      {
-        filename: 'cluster.yaml',
-        value: json2CreateCluster(data)
-      },
       ...(isEdit
         ? []
         : [
@@ -77,7 +73,11 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
               filename: 'account.yaml',
               value: json2Account(data)
             }
-          ])
+          ]),
+      {
+        filename: 'cluster.yaml',
+        value: json2CreateCluster(data)
+      }
     ];
   };
 
