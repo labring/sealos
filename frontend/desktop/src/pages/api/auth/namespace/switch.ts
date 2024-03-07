@@ -5,7 +5,7 @@ import { getUserKubeconfig } from '@/services/backend/kubernetes/admin';
 import { switchKubeconfigNamespace } from '@/services/backend/kubernetes/user';
 import { validate } from 'uuid';
 import { JoinStatus } from 'prisma/region/generated/client';
-import { generateAccessToken, verifyAccessToken } from '@/services/backend/auth';
+import { generateAccessToken, generateAppToken, verifyAccessToken } from '@/services/backend/auth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -26,19 +26,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         userCr: true
       }
     });
-    const curWorkspaceItem = queryResults.find(
-      (item) => item.workspace.uid === payload.workspaceUid
-    );
-    if (!curWorkspaceItem)
-      return jsonRes(res, { code: 403, message: 'You are not in this workspace' });
     const newWorkspaceItem = queryResults.find((item) => item.workspace.uid === ns_uid);
     if (!newWorkspaceItem)
       return jsonRes(res, { code: 403, message: 'You are not in this workspace' });
     const oldKcRaw = await getUserKubeconfig(payload.userCrUid, payload.userCrName);
     if (!oldKcRaw) return jsonRes(res, { code: 404, message: 'The kubeconfig is not found' });
     const kubeconfig = switchKubeconfigNamespace(oldKcRaw, newWorkspaceItem.workspace.id);
-
-    const token = generateAccessToken({
+    const jwtPayload = {
       workspaceUid: newWorkspaceItem.workspaceUid,
       workspaceId: newWorkspaceItem.workspace.id,
       regionUid: payload.regionUid,
@@ -46,10 +40,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       userCrName: payload.userCrName,
       userId: payload.userId,
       userUid: payload.userUid
-    });
+    };
+    const token = generateAccessToken(jwtPayload);
+    const appToken = generateAppToken(jwtPayload);
     const data = {
       token,
-      kubeconfig
+      kubeconfig,
+      appToken
     };
     return jsonRes(res, {
       data,

@@ -6,6 +6,7 @@ import { getRegionUid } from '@/services/enable';
 
 const jwtSecret = (process.env.JWT_SECRET as string) || '123456789';
 const regionJwtSecret = process.env.JWT_SECRET_REGION || '123456789';
+const appJwtSecret = process.env.JWT_SECRET_APP || '123456789';
 const verifyToken = async <T extends Object>(header: IncomingHttpHeaders) => {
   try {
     if (!header?.authorization) {
@@ -60,6 +61,7 @@ export const verifyJWT = <T extends Object = JWTPayload>(token?: string, secret?
   });
 export const generateAccessToken = (props: AccessTokenPayload) =>
   sign(props, jwtSecret, { expiresIn: '7d' });
-
+export const generateAppToken = (props: AccessTokenPayload) =>
+  sign(props, appJwtSecret, { expiresIn: '7d' });
 export const generateAuthenticationToken = (props: AuthenticationTokenPayload) =>
   sign(props, regionJwtSecret, { expiresIn: '60000' });

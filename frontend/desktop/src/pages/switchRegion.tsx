@@ -8,6 +8,7 @@ import { getRegionToken, UserInfo } from '@/api/auth';
 import { isString } from 'lodash';
 import { jwtDecode } from 'jwt-decode';
 import { AccessTokenPayload } from '@/types/token';
+import { sessionConfig } from '@/utils/sessionConfig';
 
 const Callback: NextPage = () => {
   const router = useRouter();
@@ -28,32 +29,7 @@ const Callback: NextPage = () => {
         setToken(globalToken);
         const regionTokenRes = await getRegionToken();
         if (regionTokenRes?.data) {
-          const regionUserToken = regionTokenRes.data.token;
-          setToken(regionUserToken);
-          const infoData = await UserInfo();
-          const payload = jwtDecode<AccessTokenPayload>(regionUserToken);
-          setSession({
-            token: regionUserToken,
-            user: {
-              k8s_username: payload.userCrName,
-              name: infoData.data?.info.nickname || '',
-              avatar: infoData.data?.info.avatarUri || '',
-              nsid: payload.workspaceId,
-              ns_uid: payload.workspaceUid,
-              userCrUid: payload.userCrUid,
-              userId: payload.userId,
-              userUid: payload.userUid
-            },
-            kubeconfig: regionTokenRes.data.kubeconfig
-          });
-          uploadConvertData([3]).then(
-            (res) => {
-              console.log(res);
-            },
-            (err) => {
-              console.log(err);
-            }
-          );
+          await sessionConfig(regionTokenRes.data);
           await router.replace('/');
           return;
         } else {

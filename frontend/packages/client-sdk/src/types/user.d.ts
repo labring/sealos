@@ -18,9 +18,7 @@ export type KubeConfig = string;
 
 export type Session = {
   token: string; // jwt token
-  // 提供一些简单的信息
   user: UserInfo;
-  // 帮忙导出用的
   kubeconfig: KubeConfig;
 };
 
@@ -39,7 +37,7 @@ export type UserInfoV1 = Readonly<{
 }>;
 
 export type SessionV1 = {
-  token?: OAuthToken;
+  token?: string;
   user: UserInfoV1;
   kubeconfig: KubeConfig;
 };

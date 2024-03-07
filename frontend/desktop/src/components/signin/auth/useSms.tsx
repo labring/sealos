@@ -19,6 +19,7 @@ import { getRegionToken, UserInfo } from '@/api/auth';
 import { jwtDecode } from 'jwt-decode';
 import { uploadConvertData } from '@/api/platform';
 import { AccessTokenPayload } from '@/types/token';
+import { sessionConfig } from '@/utils/sessionConfig';
 
 export default function useSms({
   showError
@@ -61,24 +62,7 @@ export default function useSms({
           setToken(globalToken);
           const regionTokenRes = await getRegionToken();
           if (regionTokenRes?.data) {
-            const regionUserToken = regionTokenRes.data.token;
-            setToken(regionUserToken);
-            const infoData = await UserInfo();
-            const payload = jwtDecode<AccessTokenPayload>(regionUserToken);
-            setSession({
-              token: regionUserToken,
-              user: {
-                k8s_username: payload.userCrName,
-                name: infoData.data?.info.nickname || '',
-                avatar: infoData.data?.info.avatarUri || '',
-                nsid: payload.workspaceId,
-                ns_uid: payload.workspaceUid,
-                userCrUid: payload.userCrUid,
-                userId: payload.userId,
-                userUid: payload.userUid
-              },
-              kubeconfig: regionTokenRes.data.kubeconfig
-            });
+            await sessionConfig(regionTokenRes.data);
             uploadConvertData([3]).then(
               (res) => {
                 console.log(res);

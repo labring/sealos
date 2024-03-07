@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { jwtDecode } from 'jwt-decode';
 import { AccessTokenPayload } from '@/types/token';
+import { sessionConfig } from '@/utils/sessionConfig';
 
 export default function usePassword({
   showError
@@ -53,25 +54,7 @@ export default function usePassword({
                 inviterId
               });
               if (!!result?.data) {
-                const regionUserToken = result.data.token;
-                setToken(regionUserToken);
-                const infoData = await UserInfo();
-                const payload = jwtDecode<AccessTokenPayload>(regionUserToken);
-                setSession({
-                  token: regionUserToken,
-                  user: {
-                    k8s_username: payload.userCrName,
-                    name: infoData.data?.info.nickname || '',
-                    avatar: infoData.data?.info.avatarUri || '',
-                    nsid: payload.workspaceId,
-                    ns_uid: payload.workspaceUid,
-                    userCrUid: payload.userCrUid,
-                    userUid: payload.userUid,
-                    userId: payload.userId
-                  },
-                  // @ts-ignore
-                  kubeconfig: result.data.kubeconfig
-                });
+                await sessionConfig(result.data);
                 await router.replace('/');
               }
               return;
