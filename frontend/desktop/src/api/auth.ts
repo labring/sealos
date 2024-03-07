@@ -6,7 +6,9 @@ import { AxiosHeaders, AxiosHeaderValue, type AxiosInstance } from 'axios';
 import useSessionStore from '@/stores/session';
 
 export const _getRegionToken = (request: AxiosInstance) => () =>
-  request.post<any, ApiResp<{ token: string; kubeconfig: string }>>('/api/auth/regionToken');
+  request.post<any, ApiResp<{ token: string; kubeconfig: string; appToken: string }>>(
+    '/api/auth/regionToken'
+  );
 
 export const getRegionToken = _getRegionToken(request);
 export const _passwordExistRequest = (request: AxiosInstance) => (data: { user: string }) =>

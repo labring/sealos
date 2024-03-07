@@ -130,8 +130,8 @@ describe('invite member', () => {
         role
       });
       console.log(res);
-      console.log(ns)
-      console.log(payload1)
+      console.log(ns);
+      console.log(payload1);
       expect(res.code).toBe(200);
       setAuth(token2);
       const res2 = await verifyInviteRequest({ action: reciveAction.Accepte, ns_uid });

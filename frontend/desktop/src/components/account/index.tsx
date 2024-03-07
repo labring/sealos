@@ -34,6 +34,7 @@ import { CopyIcon, DownloadIcon, LogoutIcon, RightArrowIcon } from '@sealos/ui';
 import { ImageFallBackUrl } from '@/stores/config';
 import { jwtDecode } from 'jwt-decode';
 import { AccessTokenPayload } from '@/types/token';
+import { sessionConfig } from '@/utils/sessionConfig';
 
 const NsMenu = () => {
   const { t } = useTranslation();
@@ -46,21 +47,9 @@ const NsMenu = () => {
     mutationFn: switchRequest,
     async onSuccess(data) {
       if (data.code === 200 && !!data.data) {
-        setToken(data.data.token);
-        const payload = jwtDecode<AccessTokenPayload>(data.data.token);
-        if (session) {
-          setSession({
-            ...session,
-            user: {
-              ...session.user,
-              nsid: payload.workspaceId,
-              ns_uid: payload.workspaceUid
-            },
-            kubeconfig: data.data.kubeconfig
-          });
-        } else {
-          throw Error('session in invalid');
-        }
+        await sessionConfig(data.data);
+      } else {
+        throw Error('session in invalid');
       }
     }
   });

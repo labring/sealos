@@ -53,9 +53,12 @@ export const _teamDetailsRequest = (request: AxiosInstance) => (ns_uid: string) 
 export const _reciveMessageRequest = (request: AxiosInstance) => () =>
   request.post<any, ApiResp<{ messages: teamMessageDto[] }>>('/api/auth/namespace/recive');
 export const _switchRequest = (request: AxiosInstance) => (ns_uid: string) =>
-  request.post<any, ApiResp<{ token: string; kubeconfig: string }>>('/api/auth/namespace/switch', {
-    ns_uid
-  });
+  request.post<any, ApiResp<{ token: string; kubeconfig: string; appToken: string }>>(
+    '/api/auth/namespace/switch',
+    {
+      ns_uid
+    }
+  );
 // 提供给prod/dev环境使用
 export const abdicateRequest = _abdicateRequest(request);
 export const createRequest = _createRequest(request);

@@ -6,7 +6,7 @@ import { customAlphabet } from 'nanoid';
 import { retrySerially } from '@/utils/tools';
 import { AccessTokenPayload } from '@/types/token';
 import { JoinStatus, Role } from 'prisma/region/generated/client';
-import { generateAccessToken } from '@/services/backend/auth';
+import { generateAccessToken, generateAppToken } from '@/services/backend/auth';
 
 const LetterBytes = 'abcdefghijklmnopqrstuvwxyz0123456789';
 const HostnameLength = 8;
@@ -35,6 +35,7 @@ export async function getRegionToken({
 }): Promise<{
   kubeconfig: string;
   token: string;
+  appToken: string;
 }> {
   const region = await globalPrisma.region.findUnique({
     where: {
@@ -141,28 +142,7 @@ export async function getRegionToken({
 
   return {
     kubeconfig,
-    token: generateAccessToken(payload)
+    token: generateAccessToken(payload),
+    appToken: generateAppToken(payload)
   };
-}
-
-export function verifyK8sUser({
-  workspaceUid,
-  userCrUid
-}: {
-  workspaceUid: string;
-  userCrUid: string;
-}) {
-  return prisma.userWorkspace
-    .findUnique({
-      where: {
-        workspaceUid_userCrUid: {
-          userCrUid,
-          workspaceUid
-        }
-      }
-    })
-    .then(
-      (result) => !!result,
-      () => false
-    );
 }
