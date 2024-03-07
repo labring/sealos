@@ -25,6 +25,7 @@ import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
 import { useTranslation } from 'next-i18next';
 import { ExchangeIcon, ExpanMoreIcon } from '@sealos/ui';
+
 export default function Abdication({
   ns_uid,
   users,
@@ -38,10 +39,11 @@ export default function Abdication({
   const queryClient = useQueryClient();
   const defaultUser = users[0];
   const [targetUser, setTargetUser] = useState({
-    name: defaultUser?.name || '',
+    name: defaultUser?.nickname || '',
     avatar: defaultUser?.avatarUrl || '',
     uid: defaultUser?.uid || '',
-    k8s_username: defaultUser?.k8s_username || ''
+    k8s_username: defaultUser?.k8s_username || '',
+    crUid: defaultUser?.crUid || ''
   });
   const { toast } = useCustomToast({ status: 'error' });
   const mutation = useMutation({
@@ -60,8 +62,7 @@ export default function Abdication({
   const submit = () => {
     mutation.mutate({
       ns_uid,
-      targetUserId: targetUser.uid,
-      targetUsername: targetUser.k8s_username
+      targetUserCrUid: targetUser.crUid
     });
   };
   return (
@@ -126,10 +127,11 @@ export default function Abdication({
                       onClick={(e) => {
                         e.preventDefault();
                         setTargetUser({
-                          name: user.name,
+                          name: user.nickname,
                           avatar: user.avatarUrl,
                           k8s_username: user.k8s_username,
-                          uid: user.uid
+                          uid: user.uid,
+                          crUid: user.crUid
                         });
                       }}
                       key={user.uid}
@@ -142,7 +144,7 @@ export default function Abdication({
                         borderRadius={'50%'}
                         mr="8px"
                       />
-                      <Text>{user.name}</Text>
+                      <Text>{user.nickname}</Text>
                     </MenuItem>
                   ))}
                 </MenuList>

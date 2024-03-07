@@ -5,8 +5,7 @@ import { TeamUserDto } from '@/types/user';
 import { AxiosInstance } from 'axios';
 import { Session } from 'sealos-desktop-sdk/*';
 export const _abdicateRequest =
-  (request: AxiosInstance) =>
-  (data: { ns_uid: string; targetUserId: string; targetUsername: string }) =>
+  (request: AxiosInstance) => (data: { ns_uid: string; targetUserCrUid: string }) =>
     request.post<any, ApiResp<null>>('/api/auth/namespace/abdicate', data);
 
 export const _createRequest =
@@ -23,12 +22,12 @@ export const _deleteTeamRequest =
       ns_uid
     });
 export const _inviteMemberRequest =
-  (request: AxiosInstance) => (props: { ns_uid: string; targetUsername: string; role: UserRole }) =>
+  (request: AxiosInstance) => (props: { ns_uid: string; targetUserId: string; role: UserRole }) =>
     request.post<typeof props, ApiResp<null>>('/api/auth/namespace/invite', props);
 
 export const _modifyRoleRequest =
   (request: AxiosInstance) =>
-  (props: { ns_uid: string; tUserId: string; tK8s_username: string; tRole: UserRole }) =>
+  (props: { ns_uid: string; targetUserCrUid: string; tRole: UserRole }) =>
     request.post<typeof props, ApiResp<null>>('/api/auth/namespace/modifyRole', props);
 
 export const _nsListRequest = (request: AxiosInstance) => () =>
@@ -43,7 +42,7 @@ type verifyParam = { ns_uid: string; action: reciveAction };
 export const _verifyInviteRequest = (request: AxiosInstance) => (data: verifyParam) =>
   request.post<verifyParam, ApiResp<{ result: unknown }>>('/api/auth/namespace/verifyInvite', data);
 export const _removeMemberRequest =
-  (request: AxiosInstance) => (data: { ns_uid: string; tUserId: string; tK8s_username: string }) =>
+  (request: AxiosInstance) => (data: { ns_uid: string; targetUserCrUid: string }) =>
     request.post<typeof data, ApiResp<null>>('/api/auth/namespace/removeUser', data);
 
 export const _teamDetailsRequest = (request: AxiosInstance) => (ns_uid: string) =>
@@ -54,7 +53,7 @@ export const _teamDetailsRequest = (request: AxiosInstance) => (ns_uid: string) 
 export const _reciveMessageRequest = (request: AxiosInstance) => () =>
   request.post<any, ApiResp<{ messages: teamMessageDto[] }>>('/api/auth/namespace/recive');
 export const _switchRequest = (request: AxiosInstance) => (ns_uid: string) =>
-  request.post<any, ApiResp<Session>>('/api/auth/namespace/switch', {
+  request.post<any, ApiResp<{ token: string; kubeconfig: string }>>('/api/auth/namespace/switch', {
     ns_uid
   });
 // 提供给prod/dev环境使用

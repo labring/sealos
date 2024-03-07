@@ -129,10 +129,9 @@ export async function getServerSideProps({ req, res, locales, query }: any) {
   res.setHeader('Set-Cookie', `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`);
   const sealos_cloud_domain = process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io';
   const queryClient = new QueryClient();
-  await queryClient.prefetchQuery({ queryKey: ['getPlatformEnv'], queryFn: getSystemEnv });
   return {
     props: {
-      ...(await serverSideTranslations(local, undefined, null, locales || [])),
+      ...(await serverSideTranslations(local, ['common', 'cloudProviders'], null, locales || [])),
       sealos_cloud_domain,
       dehydratedState: dehydrate(queryClient)
     }

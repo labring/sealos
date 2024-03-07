@@ -24,7 +24,7 @@ export default function useBillingData(props?: {
         endTime: formatISO(end, { representation: 'complete' }),
         page: 1,
         pageSize: props?.pageSize ? props.pageSize : (delta + 1) * 48,
-        type: props?.type ?? -1,
+        type: -1,
         orderID: '',
         appType: '',
         namespace: ''

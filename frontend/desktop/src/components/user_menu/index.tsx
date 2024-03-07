@@ -2,26 +2,27 @@ import Account from '@/components/account';
 import Notification from '@/components/notification';
 import useSessionStore from '@/stores/session';
 import { Box, Center, Flex, FlexProps, Image, useDisclosure } from '@chakra-ui/react';
-import { useState } from 'react';
 import LangSelectSimple from '../LangSelect/simple';
 import Iconfont from '../iconfont';
 import GithubComponent from './github';
 import { ImageFallBackUrl, useSystemConfigStore } from '@/stores/config';
+import { ReactElement, useState } from 'react';
+import RegionToggle from '@/components/region/RegionToggle';
 
 enum UserMenuKeys {
   LangSelect,
   Notification,
-  Account
+  Account,
+  Region
 }
 
 export default function Index(props: { userMenuStyleProps?: FlexProps }) {
   const [notificationAmount, setNotificationAmount] = useState(0);
   const accountDisclosure = useDisclosure();
   const showDisclosure = useDisclosure();
-  const userInfo = useSessionStore((state) => state.getSession());
-  const { systemConfig } = useSystemConfigStore();
-  if (!userInfo) return null;
 
+  const { systemConfig } = useSystemConfigStore();
+  const userInfo = useSessionStore((state) => state.session);
   const {
     userMenuStyleProps = {
       alignItems: 'center',
@@ -42,8 +43,8 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
 
   const buttonList: {
     click?: () => void;
-    button: JSX.Element;
-    content: JSX.Element;
+    button: ReactElement;
+    content: ReactElement;
     key: UserMenuKeys;
   }[] = [
     {
@@ -78,6 +79,7 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
   ];
   return (
     <Flex {...userMenuStyleProps}>
+      <RegionToggle />
       <LangSelectSimple {...baseItemStyle} />
       {systemConfig?.showGithubStar && <GithubComponent {...baseItemStyle} />}
       {buttonList.map((item) => (

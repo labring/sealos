@@ -13,12 +13,15 @@ const config = {
   // Add more setup options before each test is run
   // setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1'
+    '^@/(.*)$': '<rootDir>/src/$1',
+    "^nanoid(/(.*)|$)": "nanoid$1"
   },
   testSequencer:'./src/__tests__/jest-sequencer.cjs',
-	testMatch: ['**/__tests__/**/*.test.ts'],
-  testEnvironment:'node',
-  maxWorkers: 1
+  testMatch: ['**/__tests__/**/*.test.ts'],
+  maxWorkers: 1,
+  "transformIgnorePatterns": [
+    "/node_modules/(?!(nanoid)/)"
+  ]
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

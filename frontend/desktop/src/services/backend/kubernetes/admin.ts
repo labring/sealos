@@ -1,7 +1,7 @@
 import * as k8s from '@kubernetes/client-node';
-// import { customAlphabet } from 'nanoid';
 import { k8sFormatTime } from '@/utils/format';
 import { StatusCR, UserCR } from '@/types';
+import { KubeConfig } from '@kubernetes/client-node';
 
 export function K8sApiDefault(): k8s.KubeConfig {
   const kc = new k8s.KubeConfig();
@@ -54,6 +54,7 @@ async function watchClusterObject({
     }
   }
 }
+
 async function watchCustomClusterObject({
   kc,
   group,
@@ -96,6 +97,7 @@ async function watchCustomClusterObject({
   }
   return null;
 }
+
 async function setUserKubeconfig(kc: k8s.KubeConfig, uid: string, k8s_username: string) {
   const resourceKind = 'User';
   const group = 'user.sealos.io';
@@ -182,6 +184,7 @@ async function setUserTeamCreate(kc: k8s.KubeConfig, k8s_username: string, owner
   await client.createClusterCustomObject(group, version, plural, resourceObj);
   return k8s_username;
 }
+
 async function removeUserTeam(kc: k8s.KubeConfig, k8s_username: string) {
   const group = 'user.sealos.io';
   const version = 'v1';
@@ -209,40 +212,29 @@ async function removeUserTeam(kc: k8s.KubeConfig, k8s_username: string) {
   );
   return k8s_username;
 }
-// 系统迁移
-async function setUserKubeconfigByuid(kc: k8s.KubeConfig, uid: string) {
-  const resourceType = 'User';
+
+export const getUserCr = async (kc: KubeConfig, name: string) => {
+  const resourceKind = 'User';
   const group = 'user.sealos.io';
   const version = 'v1';
   const plural = 'users';
-  const labelSelector = `uid=${uid}`;
-  let name: string = '';
   const client = kc.makeApiClient(k8s.CustomObjectsApi);
-  const { response } = (await client.listClusterCustomObject(
-    group,
-    version,
-    plural,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    labelSelector
-  )) as unknown as { response: { body: { items: any[] } } };
-  if (response.body.items.length === 0) {
-    console.log(`Created new ${resourceType} with labels ${JSON.stringify(labelSelector)}`);
-  } else {
-    // 找name
-    const existingResource = response.body.items[response.body.items.length - 1];
-    name = existingResource.metadata.name;
-  }
-  return name;
-}
-
-export const getUserKubeconfigByuid = async (uid: string) => {
-  const kc = K8sApiDefault();
-  return await setUserKubeconfigByuid(kc, uid);
+  return await client
+    .getClusterCustomObject(group, version, plural, name)
+    .then((res) => res.body as UserCR);
 };
-
+// for enter user state
+export const getUserKubeconfigNotPatch = async (name: string) => {
+  const kc = K8sApiDefault();
+  try {
+    const userCr = await getUserCr(kc, name);
+    if (userCr?.status?.kubeConfig) return userCr.status.kubeConfig;
+    else return null;
+  } catch (e) {
+    return null;
+  }
+};
+// for update sign in
 export const getUserKubeconfig = async (uid: string, k8s_username: string) => {
   const kc = K8sApiDefault();
   const group = 'user.sealos.io';
@@ -259,7 +251,7 @@ export const getUserKubeconfig = async (uid: string, k8s_username: string) => {
   });
   return kubeconfig;
 };
-// 创建Team用的伪user
+// for create workspace
 export const getTeamKubeconfig = async (k8s_username: string, owner: string) => {
   const kc = K8sApiDefault();
   const group = 'user.sealos.io';

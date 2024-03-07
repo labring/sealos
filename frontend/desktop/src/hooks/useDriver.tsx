@@ -6,6 +6,7 @@ import { driver } from '@sealos/driver';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 export function DriverStarIcon() {
   return (
@@ -45,7 +46,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
   const [showGuide, setShowGuide] = useState(false);
   const [giftAmount, setGiftAmount] = useState(8);
   const router = useRouter();
-
+  const { data, isSuccess } = useQuery(['getPlatformEnv'], getSystemEnv);
   const handleSkipGuide = () => {
     console.log('handleSkipGuide');
     setShowGuide(false);
@@ -69,15 +70,15 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
           setGiftAmount(rewardBalance);
         }
 
-        if (env?.guideEnabled && data?.metadata?.annotations && !router.query?.openapp) {
+        if (data?.metadata?.annotations && !router.query?.openapp) {
           const isGuidedDesktop = !!data.metadata.annotations?.[GUIDE_DESKTOP_INDEX_KEY];
           !isGuidedDesktop ? setShowGuide(true) : '';
         }
       } catch (error) {}
     };
-    handleUserGuide();
+    data?.data?.guideEnabled && handleUserGuide();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [data]);
 
   const PopoverBodyInfo = (props: FlexProps) => (
     <Flex

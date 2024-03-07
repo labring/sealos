@@ -1,5 +1,6 @@
-import { UserRole } from '@/types/team';
+import { InvitedStatus, UserNsStatus, UserRole } from '@/types/team';
 import dayjs from 'dayjs';
+import { JoinStatus, Role } from 'prisma/region/generated/client';
 
 export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
   return dayjs(time).format(format);
@@ -50,7 +51,7 @@ export const getFavorable =
     return Math.floor((amount * ratio) / 100);
   };
 export const retrySerially = <T>(fn: () => Promise<T>, times: number) =>
-  new Promise((res, rej) => {
+  new Promise<T>((res, rej) => {
     let retries = 0;
     const attempt = () => {
       fn()
@@ -83,7 +84,25 @@ export const vaildManage =
   };
 export const isUserRole = (role: any): role is UserRole =>
   [UserRole.Developer, UserRole.Manager, UserRole.Owner].includes(role);
-
+export const roleToUserRole = (role: Role): UserRole => {
+  const map: Record<Role, UserRole> = {
+    [Role.OWNER]: UserRole.Owner,
+    [Role.MANAGER]: UserRole.Manager,
+    [Role.DEVELOPER]: UserRole.Developer
+  };
+  return map[role];
+};
+export const joinStatusToNStatus = (js: JoinStatus): InvitedStatus => {
+  const map: Record<JoinStatus, InvitedStatus> = {
+    [JoinStatus.NOT_IN_WORKSPACE]: InvitedStatus.Rejected,
+    [JoinStatus.INVITED]: InvitedStatus.Inviting,
+    [JoinStatus.IN_WORKSPACE]: InvitedStatus.Accepted
+  };
+  return map[js];
+};
+export const NStatusToJoinStatus = (ns: InvitedStatus): JoinStatus => {
+  return [JoinStatus.INVITED, JoinStatus.IN_WORKSPACE, JoinStatus.NOT_IN_WORKSPACE][ns];
+};
 export function compareFirstLanguages(acceptLanguageHeader: string) {
   const indexOfZh = acceptLanguageHeader.indexOf('zh');
   const indexOfEn = acceptLanguageHeader.indexOf('en');

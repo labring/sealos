@@ -1,7 +1,6 @@
 import useSessionStore from '@/stores/session';
 import type { ApiResp } from '@/types';
 import axios, { AxiosHeaders, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-
 const request = axios.create({
   baseURL: '/',
   withCredentials: true,
@@ -13,9 +12,9 @@ request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     let _headers: AxiosHeaders = config.headers || {};
 
-    const session = useSessionStore.getState().session;
-    if (session?.token && config.url && config.url?.startsWith('/api/')) {
-      _headers['Authorization'] = encodeURIComponent(session.token);
+    const token = useSessionStore.getState().token;
+    if (token && config.url && config.url?.startsWith('/api/')) {
+      _headers['Authorization'] = encodeURIComponent(token);
     }
 
     if (!config.headers || config.headers['Content-Type'] === '') {
@@ -39,6 +38,7 @@ request.interceptors.response.use(
     if (data.code === 401) {
       console.log('鉴权失败');
       useSessionStore.getState().delSession();
+      useSessionStore.getState().setToken('');
       return window.location.replace('/signin');
     }
     if (status < 200 || status >= 300) {

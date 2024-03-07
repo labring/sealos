@@ -42,7 +42,7 @@ export type UserCR = {
       status: string;
       type: string;
     }[];
-    kubeConfig: KubeConfig;
+    kubeConfig: string;
     observedCSRExpirationSeconds: number;
     observedGeneration: number;
     phase: string;

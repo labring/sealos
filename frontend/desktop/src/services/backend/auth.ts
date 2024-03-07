@@ -1,39 +1,52 @@
 import { IncomingHttpHeaders } from 'http';
 import { sign, verify } from 'jsonwebtoken';
-import { K8sApi } from './kubernetes/user';
 import { JWTPayload } from '@/types';
+import { AuthenticationTokenPayload, AccessTokenPayload } from '@/types/token';
+import { getRegionUid } from '@/services/enable';
 
 const jwtSecret = (process.env.JWT_SECRET as string) || '123456789';
-export const authSession = async (header: IncomingHttpHeaders) => {
+const regionJwtSecret = process.env.JWT_SECRET_REGION || '123456789';
+const verifyToken = async <T extends Object>(header: IncomingHttpHeaders) => {
   try {
     if (!header?.authorization) {
       throw new Error('缺少凭证');
     }
     const token = decodeURIComponent(header.authorization);
-    const payload = await verifyJWT(token);
-    if (
-      !payload ||
-      !payload.kubeconfig ||
-      !payload?.user?.uid ||
-      !payload?.user?.nsid ||
-      !payload?.user?.ns_uid ||
-      !payload?.user?.k8s_username
-    )
-      throw new Error('token is null');
-    // console.log('jwt:', payload.kubeconfig)
-    const kc = K8sApi(payload.kubeconfig);
-    const username = kc.getCurrentUser()?.name;
-    const user = payload.user;
-    if (!username || user.k8s_username !== username) throw new Error('user is invaild');
-    return Promise.resolve({ kc, user, kcRaw: payload.kubeconfig });
+    const payload = await verifyJWT<T>(token);
+    return payload;
   } catch (err) {
     console.error(err);
-    return Promise.resolve(null);
+    return null;
   }
 };
-export const verifyJWT: (token: string) => Promise<JWTPayload | null> = (token: string) =>
-  new Promise((resolve) => {
-    verify(token, jwtSecret, (err, payload) => {
+export const verifyAccessToken = async (header: IncomingHttpHeaders) =>
+  verifyToken<AccessTokenPayload>(header).then(
+    (payload) => {
+      if (payload?.regionUid === getRegionUid()) {
+        return payload;
+      } else {
+        return null;
+      }
+    },
+    (err) => null
+  );
+export const verifyAuthenticationToken = async (header: IncomingHttpHeaders) => {
+  try {
+    if (!header?.authorization) {
+      throw new Error('缺少凭证');
+    }
+    const token = decodeURIComponent(header.authorization);
+    const payload = await verifyJWT<AuthenticationTokenPayload>(token, regionJwtSecret);
+    return payload;
+  } catch (err) {
+    console.error(err);
+    return null;
+  }
+};
+export const verifyJWT = <T extends Object = JWTPayload>(token?: string, secret?: string) =>
+  new Promise<T | null>((resolve) => {
+    if (!token) return resolve(null);
+    verify(token, secret || jwtSecret, (err, payload) => {
       if (err) {
         console.log(err);
         resolve(null);
@@ -41,12 +54,12 @@ export const verifyJWT: (token: string) => Promise<JWTPayload | null> = (token: 
         console.log('payload is null');
         resolve(null);
       } else {
-        resolve(payload as JWTPayload);
+        resolve(payload as T);
       }
     });
   });
-export const generateJWT = (props: JWTPayload) => {
-  return sign(props, jwtSecret, {
-    expiresIn: '7d'
-  });
-};
+export const generateAccessToken = (props: AccessTokenPayload) =>
+  sign(props, jwtSecret, { expiresIn: '7d' });
+
+export const generateAuthenticationToken = (props: AuthenticationTokenPayload) =>
+  sign(props, regionJwtSecret, { expiresIn: '60000' });

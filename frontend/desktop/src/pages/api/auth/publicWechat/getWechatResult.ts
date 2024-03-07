@@ -1,9 +1,11 @@
 import { getWeChatAccessToken, verifyWechatCode } from '@/services/backend/db/wechatCode';
-import { getOauthRes } from '@/services/backend/oauth';
 import { jsonRes } from '@/services/backend/response';
 import { TWechatUser } from '@/types/user';
 import { getBase64FromRemote } from '@/utils/tools';
 import { NextApiRequest, NextApiResponse } from 'next';
+import { getGlobalToken } from '@/services/backend/globalAuth';
+import { ProviderType } from 'prisma/global/generated/client';
+import { getRegionToken } from '@/services/backend/regionAuth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -36,13 +38,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const data = await getOauthRes({
-      provider: 'wechat_open',
+    const _data = await getGlobalToken({
+      provider: ProviderType.WECHAT,
       id: userInfo.openid,
-      name: userInfo?.nickname,
-      avatar_url
+      avatar_url,
+      name: userInfo?.nickname
     });
-
+    if (!_data)
+      return jsonRes(res, {
+        code: 401,
+        message: 'Unauthorized'
+      });
+    const data = await getRegionToken({
+      userUid: _data.user.userUid,
+      userId: _data.user.name
+    });
     return jsonRes(res, {
       code: 200,
       message: 'Successfully',

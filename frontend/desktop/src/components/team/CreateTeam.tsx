@@ -27,11 +27,11 @@ export default function CreateTeam({ textButton = false }: { textButton?: boolea
   const { t } = useTranslation();
   const [teamName, setTeamName] = useState('');
   const session = useSessionStore((s) => s.session);
-  const userId = session.user.userId;
+  const userCrUid = session?.user?.userCrUid;
   const queryClient = useQueryClient();
   const { toast } = useCustomToast({ status: 'error' });
   const mutation = useMutation(createRequest, {
-    mutationKey: [{ teamName, userId }],
+    mutationKey: [{ teamName, userCrUid }],
     onSuccess(data) {
       if (data.code === 200) {
         queryClient.invalidateQueries({ queryKey: ['teamList'] });

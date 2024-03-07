@@ -1,5 +1,5 @@
+import AuthList from '@/components/signin/auth/AuthList';
 import { getSystemEnv, uploadConvertData } from '@/api/platform';
-import useAuthList from '@/components/signin/auth/useAuthList';
 import useCustomError from '@/components/signin/auth/useCustomError';
 import Language from '@/components/signin/auth/useLanguage';
 import usePassword from '@/components/signin/auth/usePassword';
@@ -19,7 +19,7 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { debounce } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import Head from 'next/head';
@@ -39,8 +39,7 @@ export default function SigninComponent() {
     needSms = false,
     openWechatEnabled = false
   } = platformEnv?.data || {};
-  const needTabs = (needPassword && needSms) || (needSms && openWechatEnabled);
-
+  const needTabs = needPassword && needSms;
   const disclosure = useDisclosure();
   const { t, i18n } = useTranslation();
   const [tabIndex, setTabIndex] = useState<LoginType>(LoginType.NONE);
@@ -57,7 +56,6 @@ export default function SigninComponent() {
       service_protocol: service_protocol_en,
       private_protocol: private_protocol_en
     };
-
   const { Protocol, isAgree, setIsInvalid } = useProtocol(protocol_data!);
   const { WechatComponent, login: wechatSubmit } = useWechat();
   const { SmsModal, login: smsSubmit, isLoading: smsLoading } = useSms({ showError });
@@ -69,13 +67,19 @@ export default function SigninComponent() {
   } = usePassword({ showError });
   const isLoading = useMemo(() => passwordLoading || smsLoading, [passwordLoading, smsLoading]);
   const isSignIn = useSessionStore((s) => s.isUserLogin);
+  const delSession = useSessionStore((s) => s.delSession);
+  const setToken = useSessionStore((s) => s.setToken);
   const router = useRouter();
+  const queryClient = useQueryClient();
   useEffect(() => {
     if (isSignIn()) {
       router.replace('/');
+    } else {
+      queryClient.clear();
+      delSession();
+      setToken('');
     }
   }, []);
-  const { AuthList } = useAuthList();
 
   const loginConfig = useMemo(() => {
     return {

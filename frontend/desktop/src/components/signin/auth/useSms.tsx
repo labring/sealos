@@ -15,6 +15,10 @@ import NextLink from 'next/link';
 import { useRouter } from 'next/router';
 import { MouseEventHandler, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { getRegionToken, UserInfo } from '@/api/auth';
+import { jwtDecode } from 'jwt-decode';
+import { uploadConvertData } from '@/api/platform';
+import { AccessTokenPayload } from '@/types/token';
 
 export default function useSms({
   showError
@@ -24,9 +28,9 @@ export default function useSms({
   const { t } = useTranslation();
   const _remainTime = useRef(0);
   const router = useRouter();
-  const { setSession } = useSessionStore();
+  const setSession = useSessionStore((s) => s.setSession);
   const [isLoading, setIsLoading] = useState(false);
-
+  const setToken = useSessionStore((s) => s.setToken);
   const { register, handleSubmit, trigger, getValues } = useForm<{
     phoneNumber: string;
     verifyCode: string;
@@ -41,18 +45,50 @@ export default function useSms({
       return deepSearch(Object.values(obj)[0]);
     };
 
-    handleSubmit(
+    await handleSubmit(
       async (data) => {
         try {
           setIsLoading(true);
-          const inviterId = localStorage.getItem('inviterId');
-          const result = await request.post<any, ApiResp<Session>>('/api/auth/phone/verify', {
-            phoneNumbers: data.phoneNumber,
-            code: data.verifyCode,
-            inviterId
-          });
-          setSession(result.data!);
-          router.replace('/');
+          const result1 = await request.post<any, ApiResp<{ token: string }>>(
+            '/api/auth/phone/verify',
+            {
+              phoneNumbers: data.phoneNumber,
+              code: data.verifyCode
+            }
+          );
+          const globalToken = result1?.data?.token;
+          if (!globalToken) throw Error();
+          setToken(globalToken);
+          const regionTokenRes = await getRegionToken();
+          if (regionTokenRes?.data) {
+            const regionUserToken = regionTokenRes.data.token;
+            setToken(regionUserToken);
+            const infoData = await UserInfo();
+            const payload = jwtDecode<AccessTokenPayload>(regionUserToken);
+            setSession({
+              token: regionUserToken,
+              user: {
+                k8s_username: payload.userCrName,
+                name: infoData.data?.info.nickname || '',
+                avatar: infoData.data?.info.avatarUri || '',
+                nsid: payload.workspaceId,
+                ns_uid: payload.workspaceUid,
+                userCrUid: payload.userCrUid,
+                userId: payload.userId,
+                userUid: payload.userUid
+              },
+              kubeconfig: regionTokenRes.data.kubeconfig
+            });
+            uploadConvertData([3]).then(
+              (res) => {
+                console.log(res);
+              },
+              (err) => {
+                console.log(err);
+              }
+            );
+            await router.replace('/');
+          }
         } catch (error) {
           showError(t('Invalid verification code') || 'Invalid verification code');
         } finally {

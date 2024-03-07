@@ -1,35 +1,38 @@
-import { Session } from 'sealos-desktop-sdk/*';
 import * as k8s from '@kubernetes/client-node';
 import { _passwordLoginRequest } from '@/api/auth';
 import { _setAuth, cleanDb, cleanK8s } from '@/__tests__/api/tools';
 import { _createRequest } from '@/api/namespace';
 import request from '@/__tests__/api/request';
-import { Db, MongoClient } from 'mongodb';
 import { getTeamLimit } from '@/services/enable';
+import { prisma } from '@/services/backend/db/init';
+import { jwtDecode } from 'jwt-decode';
+import { AccessTokenPayload } from '@/types/token';
+
 describe('Login create', () => {
-  let session: Session;
   const createRequest = _createRequest(request);
-  let db: Db;
-  let connection: MongoClient;
+  let token1: string;
+  let token2: string;
+  let payload1: AccessTokenPayload;
+  let payload2: AccessTokenPayload;
   const setAuth = _setAuth(request);
+  const passwordLoginRequest = _passwordLoginRequest(request, setAuth);
   beforeAll(async () => {
     //@ts-ignore
-    const uri = process.env.MONGODB_URI as string;
     // console.log('MONGODB_URI', uri)
-    connection = new MongoClient(uri);
-    await connection.connect();
-    db = connection.db();
     const kc = new k8s.KubeConfig();
-    await cleanK8s(kc, db);
-    await cleanDb(db);
-    const res = await _passwordLoginRequest(request)({ user: 'createTest', password: 'testtest' });
-    expect(res.data?.user).toBeDefined();
-    session = res.data!;
-    setAuth(session);
-    console.log('create,', session.user);
+    await cleanK8s(kc, prisma);
+    await cleanDb(prisma);
+    setAuth();
+    const res = await passwordLoginRequest({ user: 'abdicatetesttest', password: 'testtest' });
+    // 保证session合理
+    expect(res!.data).toBeDefined();
+    token1 = res!.data!.token;
+    payload1 = jwtDecode<AccessTokenPayload>(token1);
+    console.log('payload1', payload1);
+    setAuth(token1);
   }, 100000);
   afterAll(async () => {
-    await connection.close();
+    // await connection.close();
   });
   it('null team', async () => {
     const res = await createRequest({ teamName: '' });
@@ -60,13 +63,19 @@ describe('Login create', () => {
     'limit 4 team',
     async (teamName: string, idx: number) => {
       if (idx === 0) {
-        const res = await _passwordLoginRequest(request)({
-          user: 'createTest5',
-          password: 'testtest'
-        });
-        expect(res.data?.user).toBeDefined();
-        session = res.data!;
-        setAuth(session);
+        // const res = await _passwordLoginRequest(request)({
+        //     user: 'createTest5',
+        //     password: 'testtest'
+        // });
+        // expect(res.data?.user).toBeDefined();
+        // session = res.data!;
+        // setAuth(session);
+        const res = await passwordLoginRequest({ user: 'abdicatetesttest', password: 'testtest' });
+        // 保证session合理
+        expect(res!.data).toBeDefined();
+        token1 = res!.data!.token;
+        payload1 = jwtDecode<AccessTokenPayload>(token1);
+        setAuth(token1);
       }
       const res = await createRequest({ teamName });
       console.log('curIdx', idx, 'code', res.code);

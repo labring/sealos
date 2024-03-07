@@ -1,56 +1,45 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
-import { Session } from '@/types/session';
 import { hashPassword, strongPassword, verifyPassword } from '@/utils/crypto';
 import { enablePassword } from '@/services/enable';
-import { authSession } from '@/services/backend/auth';
-import { queryUser, updateUser } from '@/services/backend/db/user';
+import { findUser, signInByPassword, updatePassword } from '@/services/backend/globalAuth';
+import { ProviderType } from 'prisma/global/generated/client';
+import { verifyAccessToken } from '@/services/backend/auth';
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!enablePassword()) {
       throw new Error('PASSWORD_SALT is not defined');
     }
-    const payload = await authSession(req.headers);
+    // const payload = await verifyToken<RealUserTokenPayload>(req.headers)
+    const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'token verify error' });
-    const uid = payload.user.uid;
     const { oldPassword, newPassword } = req.body;
     if (!oldPassword) return jsonRes(res, { code: 400, message: 'oldPassword is required' });
     if (!newPassword) return jsonRes(res, { code: 400, message: 'newPassword is required' });
-    const _user = await queryUser({ id: uid, provider: 'uid' });
-    if (!_user) return jsonRes(res, { code: 404, message: 'user is not founded' });
-    if (!_user.password) {
-      return jsonRes(res, { code: 409, message: 'Please login by password' });
-    }
-    if (
-      !oldPassword ||
-      !verifyPassword(oldPassword, _user.password) ||
-      oldPassword === newPassword
-    ) {
-      return jsonRes(res, { code: 409, message: 'password error' });
-    }
+    const user = await findUser({ userUid: payload.userUid });
+    const passwordProvider = user?.oauthProvider.find(
+      (val) => val.providerType === ProviderType.PASSWORD
+    );
+
+    if (!passwordProvider) return jsonRes(res, { code: 404, message: 'user is not founded' });
+    const signIn = await signInByPassword({
+      id: passwordProvider.providerId,
+      password: oldPassword
+    });
+    if (!signIn) return jsonRes(res, { code: 409, message: 'user is not founded' });
     if (!strongPassword(newPassword)) {
       return jsonRes(res, {
-        message:
-          'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number and one special character',
+        message: 'Password must be at least 8 characters long',
         code: 400
       });
     }
-    const updateRes = await updateUser({
-      id: uid,
-      provider: 'uid',
-      data: { password: hashPassword(newPassword) }
+    const updateRes = await updatePassword({
+      id: passwordProvider.providerId,
+      password: hashPassword(newPassword)
     });
-    if (!updateRes.acknowledged) throw new Error('modify password error');
-    console.log(
-      'modify',
-      updateRes,
-      oldPassword,
-      newPassword,
-      'hash',
-      hashPassword(oldPassword),
-      hashPassword(newPassword)
-    );
-    return jsonRes<Session>(res, {
+    if (!updateRes) throw new Error('modify password error');
+    return jsonRes(res, {
       code: 200,
       message: 'Successfully!'
     });

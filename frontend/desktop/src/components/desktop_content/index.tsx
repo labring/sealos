@@ -15,7 +15,6 @@ import { useQuery } from '@tanstack/react-query';
 import { getGlobalNotification } from '@/api/platform';
 import { useMessage } from '@sealos/ui';
 import { BackgroundImageUrl, ImageFallBackUrl } from '@/stores/config';
-
 const TimeComponent = dynamic(() => import('./time'), {
   ssr: false
 });

@@ -1,0 +1,250 @@
+import { hashPassword, verifyPassword } from '@/utils/crypto';
+import { enableSignUp } from '../enable';
+import { globalPrisma, prisma } from '@/services/backend/db/init';
+import { ProviderType, User } from 'prisma/global/generated/client';
+import { nanoid } from 'nanoid';
+import { generateAuthenticationToken } from '@/services/backend/auth';
+
+async function signIn({ provider, id }: { provider: ProviderType; id: string }) {
+  const userProvider = await globalPrisma.oauthProvider.findUnique({
+    where: {
+      providerId_providerType: {
+        providerType: provider,
+        providerId: id
+      }
+    },
+    include: {
+      user: true
+    }
+  });
+  if (!userProvider) return null;
+  return {
+    user: userProvider.user
+  };
+}
+
+export const hasIniterId = ({
+  inviteeId,
+  inviterId,
+  signResult
+}: {
+  inviteeId: string;
+  inviterId: string;
+  signResult: any;
+}) => {
+  const payload = {
+    inviterId,
+    inviteeId,
+    secretKey: process.env.LAF_SECRET_KEY,
+    data: {
+      type: 'signup',
+      signResult
+    }
+  };
+  const baseUrl = process.env.LAF_BASE_URL;
+  fetch(`https://${baseUrl}/uploadData`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      console.log('Upload laf success:', data);
+    })
+    .catch((error) => {
+      console.error('Upload laf error:', error);
+    });
+};
+export async function signInByPassword({ id, password }: { id: string; password: string }) {
+  const userProvider = await globalPrisma.oauthProvider.findUnique({
+    where: {
+      providerId_providerType: {
+        providerType: ProviderType.PASSWORD,
+        providerId: id
+      },
+      password: hashPassword(password)
+    },
+    include: {
+      user: true
+    }
+  });
+  if (!userProvider) return null;
+  return {
+    user: userProvider.user
+  };
+}
+
+async function signUp({
+  provider,
+  id,
+  name,
+  avatar_url
+}: {
+  provider: ProviderType;
+  id: string;
+  name: string;
+  avatar_url: string;
+}) {
+  try {
+    let user: User | null = null;
+    const name = nanoid(10);
+    user = await globalPrisma.user.create({
+      data: {
+        name,
+        id: name,
+        nickname: name,
+        avatarUri: avatar_url,
+        oauthProvider: {
+          create: {
+            providerId: id,
+            providerType: provider
+          }
+        }
+      }
+    });
+    if (!user) return null;
+    return {
+      user
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+export async function signUpByPassword({
+  id,
+  name: nickname,
+  avatar_url,
+  password
+}: {
+  id: string;
+  name: string;
+  avatar_url: string;
+  password: string;
+}) {
+  const name = nanoid(10);
+  const user = await globalPrisma.user.create({
+    data: {
+      nickname,
+      avatarUri: avatar_url,
+      id: name,
+      name,
+      oauthProvider: {
+        create: {
+          providerId: id,
+          providerType: ProviderType.PASSWORD,
+          password: hashPassword(password)
+        }
+      }
+    }
+  });
+  if (!user) return null;
+  return {
+    user
+  };
+}
+
+export async function updatePassword({ id, password }: { id: string; password: string }) {
+  return globalPrisma.oauthProvider.update({
+    where: {
+      providerId_providerType: {
+        providerId: id,
+        providerType: ProviderType.PASSWORD
+      }
+    },
+    data: {
+      password
+    }
+  });
+}
+export async function findUser({ userUid }: { userUid: string }) {
+  return globalPrisma.user.findUnique({
+    where: {
+      uid: userUid
+    },
+    include: {
+      oauthProvider: true
+    }
+  });
+}
+export const getGlobalToken = async ({
+  provider,
+  id,
+  name,
+  avatar_url,
+  password
+}: {
+  provider: ProviderType;
+  id: string;
+  name: string;
+  avatar_url: string;
+  password?: string;
+}) => {
+  let user: User | null = null;
+
+  const _user = await globalPrisma.oauthProvider.findUnique({
+    where: {
+      providerId_providerType: {
+        providerType: provider,
+        providerId: id
+      }
+    }
+  });
+  if (provider === ProviderType.PASSWORD) {
+    if (!password) {
+      return null;
+    }
+    if (!_user) {
+      if (!enableSignUp()) throw new Error('Failed to signUp user');
+      const result = await signUpByPassword({
+        id,
+        name,
+        avatar_url,
+        password
+      });
+      result && (user = result.user);
+    } else {
+      const result = await signInByPassword({
+        id,
+        password
+      });
+      // password is wrong
+      if (!result) return null;
+      user = result.user;
+    }
+  } else {
+    if (!_user) {
+      if (!enableSignUp()) throw new Error('Failed to signUp user');
+      const result = await signUp({
+        provider,
+        id,
+        name,
+        avatar_url
+      });
+      result && (user = result.user);
+    } else {
+      const result = await signIn({
+        provider,
+        id
+      });
+      result && (user = result.user);
+    }
+  }
+
+  if (!user) throw new Error('Failed to edit db');
+
+  const token = generateAuthenticationToken({
+    userUid: user.uid,
+    userId: user.name
+  });
+  return {
+    token,
+    user: {
+      name: user.nickname,
+      avatar: user.avatarUri,
+      userUid: user.uid
+    }
+  };
+};

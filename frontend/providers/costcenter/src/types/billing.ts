@@ -5,6 +5,7 @@ export enum BillingType {
   RECEIVE,
   TRANSFER
 }
+
 export type BillingSpec =
   | {
       page: number; //给定结果数据的page页
@@ -67,4 +68,14 @@ export type PropertiesCost = {
     'services.nodeports': number;
     storage: number;
   };
+};
+export type RechargeBillingItem = {
+  ID: string;
+  UserUID: string;
+  CreatedAt: string;
+  Amount: number;
+  Gift: number;
+};
+export type RechargeBillingData = {
+  payment: RechargeBillingItem[];
 };

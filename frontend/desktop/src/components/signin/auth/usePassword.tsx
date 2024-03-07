@@ -1,14 +1,13 @@
-import { passwordExistRequest, passwordLoginRequest } from '@/api/auth';
-import request from '@/services/request';
+import { passwordExistRequest, passwordLoginRequest, UserInfo } from '@/api/auth';
 import useSessionStore from '@/stores/session';
-import { ApiResp, Session } from '@/types';
-import { TUserExist } from '@/types/user';
 import { Flex, Image, Img, Input, InputGroup, InputLeftAddon, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import lockIcon from 'public/images/lock.svg';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { jwtDecode } from 'jwt-decode';
+import { AccessTokenPayload } from '@/types/token';
 
 export default function usePassword({
   showError
@@ -22,8 +21,8 @@ export default function usePassword({
   // 对于注册的用户，需要先验证密码 0 默认页面;1为验证密码页面
   const [pageState, setPageState] = useState(0);
 
+  const setToken = useSessionStore((s) => s.setToken);
   const setSession = useSessionStore((s) => s.setSession);
-
   const { register, handleSubmit, watch, trigger, getValues } = useForm<{
     username: string;
     password: string;
@@ -39,36 +38,76 @@ export default function usePassword({
       return deepSearch(Object.values(obj)[0]);
     };
 
-    handleSubmit(
+    await handleSubmit(
       async (data) => {
         if (data?.username && data?.password) {
           try {
             setIsLoading(true);
             const inviterId = localStorage.getItem('inviterId');
             const result = await passwordExistRequest({ user: data.username });
+
             if (result?.code === 200) {
               const result = await passwordLoginRequest({
                 user: data.username,
-                password: data.password
+                password: data.password,
+                inviterId
               });
-              setSession(result.data!);
-              router.replace('/');
+              if (!!result?.data) {
+                const regionUserToken = result.data.token;
+                setToken(regionUserToken);
+                const infoData = await UserInfo();
+                const payload = jwtDecode<AccessTokenPayload>(regionUserToken);
+                setSession({
+                  token: regionUserToken,
+                  user: {
+                    k8s_username: payload.userCrName,
+                    name: infoData.data?.info.nickname || '',
+                    avatar: infoData.data?.info.avatarUri || '',
+                    nsid: payload.workspaceId,
+                    ns_uid: payload.workspaceUid,
+                    userCrUid: payload.userCrUid,
+                    userUid: payload.userUid,
+                    userId: payload.userId
+                  },
+                  // @ts-ignore
+                  kubeconfig: result.data.kubeconfig
+                });
+                await router.replace('/');
+              }
               return;
-            }
-            if (result?.code === 201) {
+            } else if (result?.code === 201) {
               setUserExist(!!result?.data?.exist);
               setPageState(1);
               if (!!data?.confimPassword) {
                 if (data?.password !== data?.confimPassword) {
                   showError('password not match');
                 } else {
-                  const result = await request.post<any, ApiResp<Session>>('/api/auth/password', {
+                  const regionResult = await passwordLoginRequest({
                     user: data.username,
                     password: data.password,
                     inviterId
                   });
-                  setSession(result.data!);
-                  router.replace('/');
+                  if (!!regionResult?.data) {
+                    setToken(regionResult.data.token);
+                    const infoData = await UserInfo();
+                    const payload = jwtDecode<AccessTokenPayload>(regionResult.data.token);
+                    setSession({
+                      token: regionResult.data.token,
+                      user: {
+                        k8s_username: payload.userCrName,
+                        name: infoData.data?.info.nickname || '',
+                        avatar: infoData.data?.info.avatarUri || '',
+                        nsid: payload.workspaceId,
+                        ns_uid: payload.workspaceUid,
+                        userCrUid: payload.userCrUid,
+                        userId: payload.userId,
+                        userUid: payload.userUid
+                      },
+                      // @ts-ignore
+                      kubeconfig: result.data.kubeconfig
+                    });
+                    await router.replace('/');
+                  }
                 }
               }
             }

@@ -1,10 +1,15 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
-import { ApiSession, Session } from '@/types/session';
-import { passwrodUserIsExist, signUpByPassword } from '@/services/backend/oauth';
+import { ApiSession } from '@/types/session';
 import { enablePassword, enableApi, enableSignUp } from '@/services/enable';
-import { getUserKubeconfig } from '@/services/backend/kubernetes/admin';
 import { strongPassword } from '@/utils/crypto';
+import { globalPrisma } from '@/services/backend/db/init';
+import { signUpByPassword } from '@/services/backend/globalAuth';
+import { getRegionToken } from '@/services/backend/regionAuth';
+import { verifyJWT } from '@/services/backend/auth';
+import { ProviderType } from 'prisma/global/generated/client';
+import { AccessTokenPayload } from '@/types/token';
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!enablePassword()) {
@@ -15,9 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { password, username } = req.body as Record<string, string>;
     if (!password) return jsonRes(res, { code: 400, message: 'password is Required' });
     if (!username) return jsonRes(res, { code: 400, message: 'username is Required' });
-    // const userAndPassword = await getUserAndPassword();
-    // if (!userAndPassword) throw Error('Failed to generate user ');
-    // const { username, password } = userAndPassword;
+
     if (!strongPassword(password)) {
       return jsonRes(res, {
         message:
@@ -25,34 +28,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         code: 400
       });
     }
-    const isExist = await passwrodUserIsExist({ username });
-    if (isExist)
+    const _user = await globalPrisma.oauthProvider.findUnique({
+      where: {
+        providerId_providerType: {
+          providerType: ProviderType.PASSWORD,
+          providerId: username
+        }
+      }
+    });
+    if (!!_user)
       return jsonRes(res, {
         message: 'User is already exist',
         code: 409
       });
-    const signResult = await signUpByPassword({
-      username,
-      password
+    const globalData = await signUpByPassword({
+      id: username,
+      password,
+      avatar_url: '',
+      name: username
     });
-    if (!signResult) throw new Error('Failed to edit db');
-    const { k8s_user, namespace, user } = signResult;
-    const kubernetesUsername = k8s_user.name;
-    const kubeconfig = await getUserKubeconfig(user.uid, kubernetesUsername);
-    if (!kubeconfig) {
-      throw new Error('Failed to get user config');
-    }
+    if (!globalData) throw new Error('Failed to edit db');
+    const realUser = globalData.user;
+    const data = await getRegionToken({ userUid: realUser.uid, userId: realUser.nickname });
+    if (!data)
+      return jsonRes(res, {
+        code: 401,
+        message: 'Unauthorized'
+      });
+    const regionUser = (await verifyJWT<AccessTokenPayload>(data.token))!;
     return jsonRes<ApiSession>(res, {
       data: {
         user: {
-          name: user.name,
-          kubernetesUsername,
-          avatar: user.avatar_url,
-          nsID: namespace.id,
-          nsUID: namespace.uid,
-          userID: user.uid
+          name: realUser.nickname,
+          kubernetesUsername: regionUser.userCrName,
+          avatar: realUser.avatarUri,
+          nsID: regionUser.workspaceId,
+          nsUID: regionUser.workspaceUid,
+          userID: regionUser.userCrUid
         },
-        kubeconfig
+        kubeconfig: data.kubeconfig
       },
       code: 200,
       message: 'Successfully'
