@@ -1,5 +1,5 @@
 import useOverviewStore from '@/stores/overview';
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { BillingData, BillingSpec, BillingType } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { formatISO } from 'date-fns';
@@ -53,7 +53,7 @@ export default function InOutTabPanel({ namespace }: { namespace: string }) {
       onSuccess(data) {
         const totalPage = data.data.status.pageLength;
         if (totalPage === 0) {
-          // 搜索时的bug
+          // search reset
           setTotalPage(1);
           setTotalItem(1);
         } else {
@@ -80,7 +80,7 @@ export default function InOutTabPanel({ namespace }: { namespace: string }) {
           <Text fontSize={'12px'} mr={'12px'} width={['60px', '60px', 'auto', 'auto']}>
             {t('Transaction Time')}
           </Text>
-          <SelectRange isDisabled={isFetching}></SelectRange>
+          {<SelectRange isDisabled={isFetching}></SelectRange>}
         </Flex>
         <SearchBox isDisabled={isFetching} setOrderID={setOrderID} />
       </Flex>
