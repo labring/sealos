@@ -75,6 +75,9 @@ spec:
             - name: template-frontend-volume
               mountPath: /config.yaml
               subPath: config.yaml
+            - name: template-frontend-volume
+              mountPath: /app/data/config.json
+              subPath: config.json
             - name: template-data
               mountPath: /app/providers/template/templates
       volumes:

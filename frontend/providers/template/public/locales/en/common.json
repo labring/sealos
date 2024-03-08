@@ -160,7 +160,13 @@
   },
   "SideBar": {
     "Applications": "Applications",
-    "My App": "My Apps"
+    "My App": "My Apps",
+    "Backend": "Backend",
+    "Database": "Database",
+    "Monitor": "Monitor",
+    "Frontend": "Frontend",
+    "Game": "Game",
+    "AI": "AI"
   },
   "Schedule": "Schedule",
   "Last Schedule": "Last Schedule",
