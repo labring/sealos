@@ -22,7 +22,7 @@ export const readTemplates = (
   jsonPath: string,
   cdnUrl?: string,
   blacklistedCategories?: string[]
-) => {
+): TemplateType[] => {
   const jsonData = fs.readFileSync(jsonPath, 'utf8');
   const _templates: TemplateType[] = JSON.parse(jsonData);
 
@@ -30,7 +30,9 @@ export const readTemplates = (
     .filter((item) => {
       const isBlacklisted =
         blacklistedCategories &&
-        blacklistedCategories.some((category) => (item?.spec?.categories ?? []).includes(category));
+        blacklistedCategories.some((category) =>
+          (item?.spec?.categories ?? []).map((c) => c.toLowerCase()).includes(category)
+        );
       return !item?.spec?.draft && !isBlacklisted;
     })
     .map((item) => {
@@ -70,6 +72,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const templates = readTemplates(jsonPath, cdnUrl, blacklistedCategories);
     jsonRes(res, { data: templates, code: 200 });
   } catch (error) {
-    jsonRes(res, { code: 500, data: 'error' });
+    jsonRes(res, { code: 500, data: 'api listTemplate error' });
   }
 }

@@ -149,3 +149,28 @@ export type InstanceListItemType = {
   yamlCR: TemplateInstanceType;
   displayName?: string;
 };
+
+export enum ApplicationType {
+  All = 'all',
+  AI = 'ai',
+  Game = 'game',
+  Monitor = 'monitor',
+  Frontend = 'frontend',
+  Backend = 'backend',
+  Database = 'database'
+}
+
+export type SlideDataType = {
+  title: string;
+  desc: string;
+  bg: string;
+  image: string;
+  borderRadius: string;
+  icon: string;
+  templateName: string;
+};
+
+export type SystemConfigType = {
+  showCarousel: boolean;
+  slideData: SlideDataType[];
+};

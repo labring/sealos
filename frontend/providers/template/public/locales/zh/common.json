@@ -166,7 +166,13 @@
   },
   "SideBar": {
     "Applications": "所有应用",
-    "My App": "我的应用"
+    "My App": "我的应用",
+    "Backend": "后端",
+    "Database": "数据库",
+    "Monitor": "监控",
+    "Frontend": "前端",
+    "Game": "游戏",
+    "AI": "AI"
   },
   "Schedule": "执行周期",
   "Last Schedule": "上次执行",
