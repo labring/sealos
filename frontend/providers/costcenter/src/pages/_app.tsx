@@ -41,17 +41,7 @@ const App = ({ Component, pageProps }: AppProps) => {
   const router = useRouter();
   useEffect(() => {
     const changeI18n = (data: { currentLanguage: string }) => {
-      // setCookie('NEXT_LOCALE', data.currentLanguage, {
-      //   expires: 30,
-      //   sameSite: 'None',
-      //   secure: true
-      // });
-      console.log(data);
       router.replace(router.basePath, router.asPath, { locale: data.currentLanguage });
-      // router.replace(router.asPath,router.asPath, {
-      //   locale: data.currentLanguage
-      // })
-      // i18n?.changeLanguage(data.currentLanguage);
     };
 
     (async () => {

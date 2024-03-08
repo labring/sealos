@@ -1,16 +1,5 @@
-import {
-  Box,
-  Flex,
-  Heading,
-  Img,
-  Tab,
-  TabList,
-  TabPanel,
-  TabPanels,
-  Tabs,
-  Text
-} from '@chakra-ui/react';
-import { useEffect, useRef, useState } from 'react';
+import { Flex, Heading, Img, Tab, TabList, TabPanels, Tabs } from '@chakra-ui/react';
+import { useState } from 'react';
 import receipt_icon from '@/assert/receipt_long_black.svg';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useTranslation } from 'next-i18next';

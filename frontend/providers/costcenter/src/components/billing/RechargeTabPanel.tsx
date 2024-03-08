@@ -27,8 +27,7 @@ import Amount from '@/components/billing/AmountTableHeader';
 import SearchBox from '@/components/billing/SearchBox';
 
 export default function RechargeTabPanel() {
-  const startTime = useOverviewStore((state) => state.startTime);
-  const endTime = useOverviewStore((state) => state.endTime);
+  const { startTime, endTime } = useOverviewStore();
   const { data, isFetching, isSuccess } = useQuery(
     ['billing', 'in', { startTime, endTime }],
     () => {
@@ -44,7 +43,10 @@ export default function RechargeTabPanel() {
     }
   );
   const { t } = useTranslation();
-  const tableResult = data?.data?.payment || [];
+  const tableResult = useMemo(() => {
+    if (data?.data?.payment) return data.data.payment;
+    else return [];
+  }, [data?.data?.payment]);
   const currency = useEnvStore((s) => s.currency);
   const columns = useMemo(() => {
     const columnHelper = createColumnHelper<RechargeBillingItem>();
@@ -112,6 +114,7 @@ export default function RechargeTabPanel() {
     columns,
     getCoreRowModel: getCoreRowModel()
   });
+
   useEffect(() => {
     table.resetPageIndex(true);
   }, [startTime, endTime]);
