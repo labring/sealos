@@ -105,6 +105,7 @@ export default function Index() {
                     height="100%"
                     src={item?.icon}
                     fallbackSrc={ImageFallBackUrl}
+                    draggable={false}
                     alt="user avator"
                   />
                 </Box>
