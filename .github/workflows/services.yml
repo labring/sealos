@@ -46,6 +46,7 @@ env:
   # Common versions
   GO_VERSION: "1.20"
   DEFAULT_OWNER: "labring"
+  CRYPTOKEY: ${{ secrets.CONTROLLER_BUILD_CRYPTOKEY }}
 
 jobs:
   resolve-modules:

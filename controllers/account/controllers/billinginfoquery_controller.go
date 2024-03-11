@@ -44,14 +44,15 @@ import (
 type BillingInfoQueryReconciler struct {
 	client.Client
 	logr.Logger
-	Scheme                 *runtime.Scheme
-	DBClient               database.Account
+	Scheme   *runtime.Scheme
+	DBClient database.Account
+	//TODO init
+	AccountV2              database.AccountV2
 	AccountSystemNamespace string
 	Properties             *resources.PropertyTypeLS
 	propertiesQuery        []accountv1.PropertyQuery
 	Activities             types.Activities
-	RechargeStep           []int64
-	RechargeRatio          []float64
+	DefaultDiscount        types.RechargeDiscount
 	QueryFuncMap           map[string]func(context.Context, ctrl.Request, *accountv1.BillingInfoQuery) (string, error)
 }
 
@@ -147,37 +148,19 @@ func (r *BillingInfoQueryReconciler) AppTypeQuery(_ context.Context, _ ctrl.Requ
 	return string(data), nil
 }
 
-func (r *BillingInfoQueryReconciler) RechargeQuery(ctx context.Context, req ctrl.Request, _ *accountv1.BillingInfoQuery) (result string, err error) {
-	account := &accountv1.Account{}
-	if err := r.Get(ctx, client.ObjectKey{Namespace: r.AccountSystemNamespace, Name: getUsername(req.Namespace)}, account); err != nil {
-		return "", fmt.Errorf("get account failed: %w", err)
-	}
-
-	userActivities, err := types.ParseUserActivities(account.Annotations)
+func (r *BillingInfoQueryReconciler) RechargeQuery(_ context.Context, _ ctrl.Request, billingInfoQuery *accountv1.BillingInfoQuery) (result string, err error) {
+	//TODO get owner
+	userDiscount, err := r.AccountV2.GetUserAccountRechargeDiscount(&types.UserQueryOpts{Owner: getUsername(billingInfoQuery.Namespace)})
 	if err != nil {
 		return "", fmt.Errorf("parse user activities failed: %w", err)
 	}
-
-	rechargeDiscount := types.RechargeDiscount{
-		DiscountSteps: r.RechargeStep,
-		DiscountRates: r.RechargeRatio,
+	if userDiscount == nil || len(userDiscount.DiscountRates) == 0 || len(userDiscount.DiscountSteps) == 0 {
+		userDiscount = &r.DefaultDiscount
 	}
-
-	if len(userActivities) > 0 {
-		if _, phase, _ := types.GetUserActivityDiscount(r.Activities, &userActivities); phase != nil {
-			if len(phase.RechargeDiscount.DiscountSteps) > 0 {
-				rechargeDiscount.DiscountSteps = phase.RechargeDiscount.DiscountSteps
-				rechargeDiscount.DiscountRates = phase.RechargeDiscount.DiscountRates
-			}
-			rechargeDiscount.SpecialDiscount = phase.RechargeDiscount.SpecialDiscount
-		}
-	}
-
-	data, err := json.Marshal(rechargeDiscount)
+	data, err := json.Marshal(userDiscount)
 	if err != nil {
 		return "", fmt.Errorf("marshal recharge discount failed: %w", err)
 	}
-
 	return string(data), nil
 }
 

@@ -326,6 +326,24 @@ func (m *mongoDB) GetAllPricesMap() (map[string]resources.Price, error) {
 	return pricesMap, nil
 }
 
+func (m *mongoDB) GetAllPayment() ([]resources.Billing, error) {
+	filter := bson.M{
+		"type":           1,
+		"payment.amount": bson.M{"$gt": 0},
+	}
+
+	cursor, err := m.getBillingCollection().Find(context.Background(), filter)
+	if err != nil {
+		return nil, fmt.Errorf("get all payment error: %v", err)
+	}
+
+	var payments []resources.Billing
+	if err = cursor.All(context.Background(), &payments); err != nil {
+		return nil, fmt.Errorf("get all payment error: %v", err)
+	}
+	return payments, nil
+}
+
 func (m *mongoDB) InitDefaultPropertyTypeLS() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -804,37 +822,78 @@ func (m *mongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	return nil
 }
 
+//func (m *mongoDB) GetNodePortAmount(owner string, endTime time.Time) (int64, error) {
+//	filter := bson.M{
+//		"owner": owner,
+//		"time": bson.M{
+//			"$lte": endTime,
+//		},
+//		"type":          accountv1.Consumption,
+//		"used_amount.4": bson.M{"$ne": 0},
+//	}
+//
+//	cursor, err := m.getBillingCollection().Find(context.Background(), filter)
+//	if err != nil {
+//		return 0, fmt.Errorf("failed to execute aggregate query: %w", err)
+//	}
+//	defer cursor.Close(context.Background())
+//
+//	var billings []resources.Billing
+//	if err := cursor.All(context.Background(), &billings); err != nil {
+//		return 0, fmt.Errorf("failed to decode all billing record: %w", err)
+//	}
+//	amountTotal := int64(0)
+//	for i := range billings {
+//		for j := range billings[i].AppCosts {
+//			amount := billings[i].AppCosts[j].UsedAmount[4]
+//			if amount > 0 {
+//				amountTotal += amount
+//			}
+//		}
+//	}
+//
+//	return amountTotal, nil
+//
+//}
+
 func (m *mongoDB) GetBillingCount(accountType common.Type, startTime, endTime time.Time) (count, amount int64, err error) {
-	filter := bson.M{
-		"type": accountType,
-		"time": bson.M{
-			"$gte": startTime,
-			"$lte": endTime,
+	pipeline := bson.A{
+		bson.M{
+			"$match": bson.M{
+				"type": accountType,
+				"time": bson.M{
+					"$gte": startTime,
+					"$lte": endTime,
+				},
+			},
+		},
+		bson.M{
+			"$group": bson.M{
+				"_id":    nil,
+				"count":  bson.M{"$sum": 1},
+				"amount": bson.M{"$sum": "$amount"},
+			},
 		},
 	}
-	cursor, err := m.getBillingCollection().Find(context.Background(), filter)
+
+	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
 	if err != nil {
 		return 0, 0, err
 	}
 	defer cursor.Close(context.Background())
-	var accountBalanceList []AccountBalanceSpecBSON
-	err = cursor.All(context.Background(), &accountBalanceList)
-	if err != nil {
-		return 0, 0, fmt.Errorf("failed to decode all billing record: %w", err)
+
+	var result struct {
+		Count  int64 `bson:"count"`
+		Amount int64 `bson:"amount"`
 	}
-	for i := range accountBalanceList {
-		count++
-		amount += accountBalanceList[i].Amount
+
+	if cursor.Next(context.Background()) {
+		if err := cursor.Decode(&result); err != nil {
+			return 0, 0, fmt.Errorf("failed to decode aggregation result: %w", err)
+		}
 	}
-	//for cursor.Next(context.Background()) {
-	//    var accountBalance AccountBalanceSpecBSON
-	//    if err := cursor.Decode(&accountBalance); err != nil {
-	//        return 0, 0, err
-	//    }
-	//    count++
-	//    amount += accountBalance.Amount
-	//}
-	return
+
+	return result.Count, result.Amount, nil
 }
 
 func (m *mongoDB) getMeteringCollection() *mongo.Collection {
