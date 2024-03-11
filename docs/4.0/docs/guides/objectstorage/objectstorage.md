@@ -2,70 +2,72 @@
 sidebar_position: 0
 ---
 
-# 对象存储
+# Object Storage
 
-「对象存储」是 Sealos 内置的对象存储服务，主要用于存储和管理非结构化数据。
+**Object Storage** is Sealos' built-in object storage service, which is primarily used to store and manage unstructured
+data.
 
-目前「对象存储」具备以下功能：
+Currently, **Object Storage** has the following features:
 
-- 上传文件
-- 下载文件
-- 公开访问「存储桶」
-- SDK 访问「存储桶」
-- 「存储桶」资源指标监控
+- Upload files to bucket
+- Download files from bucket
+- Expose the access permission of the bucket
+- Use SDK to access bucket
+- Monitors bucket resource metrics
 
-## 快速开始
+## Quick start
 
-### 上传文件
+### Upload files to bucket
 
-进入「对象存储」
+Go to Object Storage
 ![](./images/1.png)
 
-创建「存储桶」
+Create a bucket
 ![](./images/2.png)
 
-设置「存储桶」名字为 test，权限为 private
+Set bucket name to test and permission to private
 ![](./images/3.png)
 
-「存储桶」创建成功
+Bucket is created successfully
 ![](./images/4.png)
 
-上传文件
+Upload file
 ![](./images/5.png)
 
-上传文件成功
+File uploaded successfully
 ![](./images/6.png)
 
-## 进阶操作
+### Expose the access permission of the bucket
 
-查看访问密钥，Access Key
-![](./images/11.png)
-
-### 公开「存储桶」
-
-点击「编辑」
+Click the Edit button
 ![](./images/7.png)
 
-设置「存储桶权限」为 publicRead，点击「应用」
+Set Bucket Permission to publicRead and click the Application button
 ![](./images/8.png)
 
-复制文件链接
+Copy file link
 ![](./images/9.png)
 
-粘贴到浏览器地址栏访问文件
+Paste to browser address bar to access files
 ![](./images/10.png)
 
-### SDK 访问「存储桶」
+### View the access key configuration
 
-SDK 访问「存储桶」需要三个参数：AccessKey、SecretKey、Endpoint。参数都在访问密钥中，Internal 是内网地址 Endpoint，External 是外网地址
-Endpoint。（如果需要使用 Region 参数，默认使用 us-east-1）
+An Object Storage user consists of a unique access key (username) and corresponding secret key (password). Internal is
+the internal access address of Object Storage, and External is the external access address of Object Storage.
+![](./images/11.png)
+
+### Use SDK to access bucket
+
+The SDK requires three parameters to access bucket: AccessKey, SecretKey, and Endpoint (Internal or External). If the
+Region parameter is required, us-east-1 is used by default.
 
 #### Go Client SDK
 
-详细文档参考：https://min.io/docs/minio/linux/developers/go/API.html
+Detailed documentation reference: https://min.io/docs/minio/linux/developers/go/API.html
 
-例子：使用 Go Client SDK 上传文件 style.css 到 sv3dd7u4-test 存储桶。（使用外网地址 Endpoint，如果服务部署在 K8s
-集群内，可以改为内网地址 Endpoint）
+Example: Use the Go Client SDK to upload the style.css file to the sv3dd7u4-test bucket, and set the endpoint to the
+external address. If the service is deployed in the K8s cluster, you can change the endpoint to the internal address.
 
 ```go
 package main
@@ -113,15 +115,15 @@ func main() {
 }
 ```
 
-文件上传成功
+File uploaded successfully
 ![](./images/12.png)
 
 #### Java Client SDK
 
-详细文档参考：https://min.io/docs/minio/linux/developers/java/API.html
+Detailed documentation reference: https://min.io/docs/minio/linux/developers/java/API.html
 
-例子：使用 Go Client SDK 上传文件 style1.css 到 sv3dd7u4-test 存储桶。（使用外网地址 Endpoint，如果服务部署在 K8s
-集群内，可以改为内网地址 Endpoint）
+Example: Use the Java Client SDK to upload the style1.css file to the sv3dd7u4-test bucket, and set the endpoint to the
+external address. If the service is deployed in the K8s cluster, you can change the endpoint to the internal address.
 
 ```xml
 
@@ -160,12 +162,12 @@ public class FileUploader {
 }
 ```
 
-文件上传成功
+File uploaded successfully
 ![](./images/13.png)
 
-#### 其他语言 SDK 略
+#### Omit other language SDK
 
-详细文档参考：https://min.io/docs/minio/linux/developers/minio-drivers.html
+Detailed documentation reference: https://min.io/docs/minio/linux/developers/minio-drivers.html
 
 
 

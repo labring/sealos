@@ -8,11 +8,11 @@ sidebar_position: 0
 
 目前「对象存储」具备以下功能：
 
-- 上传文件
-- 下载文件
-- 公开访问「存储桶」
-- SDK 访问「存储桶」
-- 「存储桶」资源指标监控
+- 上传文件到「存储桶」
+- 从「存储桶」下载文件
+- 公开「存储桶」的访问权限
+- 使用 SDK 访问「存储桶」
+- 监控「存储桶」资源指标
 
 ## 快速开始
 
@@ -36,11 +36,6 @@ sidebar_position: 0
 上传文件成功
 ![](./images/6.png)
 
-## 进阶操作
-
-查看访问密钥，Access Key
-![](./images/11.png)
-
 ### 公开「存储桶」
 
 点击「编辑」
@@ -54,6 +49,12 @@ sidebar_position: 0
 
 粘贴到浏览器地址栏访问文件
 ![](./images/10.png)
+
+### 查看访问密钥配置
+
+对象存储用户由唯一的 Access Key（用户名）和对应的 Secret Key（密码）组成。Internal 为对象存储的内部访问地址，External
+为对象存储的外部访问地址。
+![](./images/11.png)
 
 ### SDK 访问「存储桶」
 
@@ -120,8 +121,8 @@ func main() {
 
 详细文档参考：https://min.io/docs/minio/linux/developers/java/API.html
 
-例子：使用 Go Client SDK 上传文件 style1.css 到 sv3dd7u4-test 存储桶。（使用外网地址 Endpoint，如果服务部署在 K8s
-集群内，可以改为内网地址 Endpoint）
+例子：使用 Java Client SDK 上传 style.css 文件到 sv3dd7u4-test 存储桶，将 Endpoint 设置为外网地址 External。如果服务部署在当前
+K8s 集群内，可以将 Endpoint 改为内网地址 Internal。
 
 ```xml
 
