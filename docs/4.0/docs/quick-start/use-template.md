@@ -2,7 +2,7 @@
 sidebar_position: 1
 ---
 
-# Use a template
+# Use Template
 
 This guide will show you how to use templates to fast-track applications deployment. and maximize Sealos's features.
 
