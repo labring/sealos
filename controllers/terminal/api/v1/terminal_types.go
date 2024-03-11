@@ -24,10 +24,11 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // +kubebuilder:validation:Enum=nginx
-type IngressType string
+type GatewayType string
 
 const (
-	Nginx IngressType = "nginx"
+	Nginx   GatewayType = "nginx"
+	Gateway GatewayType = "envoy"
 )
 
 // TerminalSpec defines the desired state of Terminal
@@ -49,7 +50,7 @@ type TerminalSpec struct {
 	APIServer string `json:"apiServer"`
 	//+kubebuilder:validation:Optional
 	//+kubebuilder:default=nginx
-	IngressType IngressType `json:"ingressType"`
+	GatewayType GatewayType `json:"gatewayType"`
 }
 
 // TerminalStatus defines the observed state of Terminal
