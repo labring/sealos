@@ -35,7 +35,7 @@ const queryClient = new QueryClient({
   }
 });
 
-const App = ({ Component, pageProps, domain }: AppProps & { domain: string }) => {
+const App = ({ Component, pageProps }: AppProps) => {
   const router = useRouter();
   const { setSession } = useSessionStore();
   const { i18n } = useTranslation();
@@ -113,7 +113,7 @@ const App = ({ Component, pageProps, domain }: AppProps & { domain: string }) =>
     if (lang) {
       i18n?.changeLanguage?.(lang);
     }
-  }, [refresh, router.pathname]);
+  }, [i18n, refresh, router.pathname]);
 
   return (
     <>
@@ -132,10 +132,6 @@ const App = ({ Component, pageProps, domain }: AppProps & { domain: string }) =>
       </QueryClientProvider>
     </>
   );
-};
-
-App.getInitialProps = async () => {
-  return { domain: process.env.SEALOS_DOMAIN || 'cloud.sealos.io' };
 };
 
 export default appWithTranslation(App);

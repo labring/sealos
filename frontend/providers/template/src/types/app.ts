@@ -157,7 +157,13 @@ export enum ApplicationType {
   Monitor = 'monitor',
   Frontend = 'frontend',
   Backend = 'backend',
-  Database = 'database'
+  Database = 'database',
+  MyApp = 'myapp',
+  Blog = 'blog',
+  LowCode = 'low-code',
+  Storage = 'storage',
+  Tool = 'tool',
+  DevOps = 'dev-ops'
 }
 
 export type SlideDataType = {
@@ -168,6 +174,12 @@ export type SlideDataType = {
   borderRadius: string;
   icon: string;
   templateName: string;
+};
+
+export type SideBarMenu = {
+  id: string;
+  value: string;
+  type: ApplicationType;
 };
 
 export type SystemConfigType = {

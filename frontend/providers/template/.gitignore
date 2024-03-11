@@ -42,3 +42,4 @@ yalc.lock
 
 templates
 templates.json
+data/config.local.json

@@ -6,7 +6,7 @@ export default function GithubComponent(props: FlexProps) {
     ['getGithubStar'],
     () => fetch('https://api.github.com/repos/labring/sealos').then((res) => res.json()),
     {
-      staleTime: 60 * 60 * 1000
+      staleTime: 24 * 60 * 60 * 1000
     }
   );
 
