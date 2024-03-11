@@ -5,16 +5,19 @@ import { Center, Flex, Icon, Input, InputGroup, InputLeftElement, Text } from '@
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import SideBar from './sidebar';
+import { ApplicationType } from '@/types/app';
 
 export default function AppMenu() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
-  const { setSearchValue } = useSearchStore();
+  const { setSearchValue, setAppType } = useSearchStore();
   const { insideCloud } = useCachedStore();
 
-  const changeI18n = async (newLang: string) => {
+  const changeI18n = () => {
     const lastLang = getLangStore();
-    if (lastLang !== newLang && i18n?.changeLanguage) {
+    const newLang = lastLang === 'en' ? 'zh' : 'en';
+    console.log(lastLang);
+    if (i18n?.changeLanguage) {
       i18n.changeLanguage(newLang);
       setLangStore(newLang);
     }
@@ -40,7 +43,7 @@ export default function AppMenu() {
         <Input
           border={'1px solid transparent'}
           borderRadius={'4px'}
-          placeholder={t('Template Name') || 'Template Name'}
+          placeholder={t('Application Name') || 'Application Name'}
           onChange={(e) => {
             setSearchValue(e.target.value);
           }}
@@ -66,7 +69,8 @@ export default function AppMenu() {
         }}
         alignItems={'center'}
         onClick={() => {
-          router.push('/app');
+          router.replace('/app');
+          setAppType(ApplicationType.MyApp);
         }}
       >
         <Icon
@@ -103,8 +107,9 @@ export default function AppMenu() {
             fontSize={'12px'}
             fontWeight={500}
             cursor={'pointer'}
-            onClick={() => {
-              changeI18n(i18n?.language === 'en' ? 'zh' : 'en');
+            onClick={(e) => {
+              e.stopPropagation();
+              changeI18n();
             }}
           >
             {i18n?.language === 'en' ? 'En' : '中'}

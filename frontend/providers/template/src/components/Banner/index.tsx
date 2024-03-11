@@ -41,7 +41,14 @@ const Card = ({ item, onClick }: { item: SlideDataType; onClick: () => void }) =
           {item.desc}
         </Text>
       </Flex>
-      <Image maxW={'200px'} height={'100%'} src={item.image} alt={`slide-${item.templateName}`} />
+
+      <Image
+        alignSelf={'center'}
+        w={'226px'}
+        height={'150px'}
+        src={item.image}
+        alt={`slide-${item.templateName}`}
+      />
     </Flex>
   );
 };
@@ -99,7 +106,7 @@ export default React.memo(function Banner() {
         }}
         modules={[Autoplay]}
         autoplay={{
-          delay: 8000,
+          delay: 5000,
           disableOnInteraction: false
         }}
       >

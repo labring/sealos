@@ -59,7 +59,7 @@
     "remark-unwrap-images": "^3.0.1",
     "sass": "^1.68.0",
     "sealos-desktop-sdk": "workspace:^",
-    "swiper": "^11.0.5",
+    "swiper": "^11.0.7",
     "typescript": "5.2.2",
     "zustand": "^4.4.1"
   },

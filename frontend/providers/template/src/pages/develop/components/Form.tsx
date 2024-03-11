@@ -13,6 +13,7 @@ const Form = ({
   formSource: TemplateSourceType;
   formHook: UseFormReturn;
 }) => {
+  if (!formHook) return null;
   const { t } = useTranslation();
 
   const isShowContent = useMemo(
