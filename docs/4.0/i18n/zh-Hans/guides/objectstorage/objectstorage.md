@@ -132,86 +132,31 @@ func main() {
 </dependency>
 ```
 
-```js
-package
-org.example;
+```java
+package org.example;
 
-import io
+import io.minio.MinioClient;
+import io.minio.UploadObjectArgs;
 
-.
-minio.MinioClient;
-import io
+public class FileUploader {
+    public static void main(String[] args) throws Exception {
 
-.
-minio.UploadObjectArgs;
-
-public
-
-class FileUploader {
-    public static void
-
-    main(String
-
-    []
-    args
-)
-    throws
-    Exception {
-
-    MinioClient
-    minioClient =
-        MinioClient.builder()
-            .endpoint("https://objectstorageapi.xxx.xxx.xxx")
-            .credentials("xxxxxxxx", "xxxxxxxxxxxxxxxx")
-            .build();
+        MinioClient minioClient =
+                MinioClient.builder()
+                        .endpoint("https://objectstorageapi.xxx.xxx.xxx")
+                        .credentials("xxxxxxxx", "xxxxxxxxxxxxxxxx")
+                        .build();
 
 
-    minioClient
-.
+        minioClient.uploadObject(
+                UploadObjectArgs.builder()
+                        .bucket("sv3dd7u4-test")
+                        .object("style1.css")
+                        .filename("src/main/java/org/example/style1.css")
+                        .build());
 
-    uploadObject(
-        UploadObjectArgs
-
-.
-
-    builder()
-
-.
-
-    bucket(
-
-    "sv3dd7u4-test"
-)
-.
-
-    object(
-
-    "style1.css"
-)
-.
-
-    filename(
-
-    "src/main/java/org/example/style1.css"
-)
-.
-
-    build()
-
-)
-    ;
-
-    System
-.
-    out
-.
-
-    println(
-
-    "Successfully uploaded bytes."
-)
-    ;
-}
+        System.out.println("Successfully uploaded bytes.");
+    }
 }
 ```
 
