@@ -262,5 +262,6 @@
   "db instances tip": "The number of {{db}} instances is recommended to be an odd number",
   "Deleting": "Deleting",
   "Backup Running": "Backup Running",
-  "Backup Deleting": "Backup Deleting"
+  "Backup Deleting": "Backup Deleting",
+  "DataBase": "DataBase"
 }

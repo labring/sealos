@@ -173,17 +173,6 @@ const Form = ({
                     fontWeight: 'bold',
                     borderColor: 'myGray.900'
                   }}
-                  // {...(activeNav === item.id
-                  //   ? {
-                  //       fontWeight: 'bold',
-                  //       borderColor: 'myGray.900',
-                  //       backgroundColor: 'myWhite.600 !important'
-                  //     }
-                  //   : {
-                  //       color: 'myGray.500',
-                  //       borderColor: 'myGray.200',
-                  //       backgroundColor: 'transparent'
-                  //     })}
                 >
                   <MyIcon
                     name={item.icon as any}
@@ -317,6 +306,12 @@ const Form = ({
                   value={getValues('replicas')}
                   min={1}
                   max={20}
+                  step={
+                    getValues('dbType') === DBTypeEnum.mongodb ||
+                    getValues('dbType') === DBTypeEnum.mysql
+                      ? 2
+                      : 1
+                  }
                   setVal={(val) => {
                     register('replicas', {
                       required: t('Replicas Cannot Empty') || '',
@@ -329,7 +324,11 @@ const Form = ({
                         message: `${t('Max Replicas')}20`
                       }
                     });
-                    setValue('replicas', val || 1);
+                    const dbType = getValues('dbType');
+                    const oddVal = val % 2 === 0 ? val + 1 : val;
+                    const replicasValue =
+                      dbType === DBTypeEnum.mongodb || dbType === DBTypeEnum.mysql ? oddVal : val;
+                    setValue('replicas', isNaN(replicasValue) ? 1 : replicasValue);
                   }}
                 />
                 {getValues('replicas') === 1 && (

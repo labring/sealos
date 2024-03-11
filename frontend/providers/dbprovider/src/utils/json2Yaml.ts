@@ -111,9 +111,9 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
         spec: {
           affinity: {
             nodeLabels: {},
-            podAntiAffinity: 'Preferred',
+            podAntiAffinity: 'Required',
             tenancy: 'SharedNode',
-            topologyKeys: []
+            topologyKeys: ['kubernetes.io/hostname']
           },
           clusterDefinitionRef: 'apecloud-mysql',
           clusterVersionRef: data.dbVersion,
