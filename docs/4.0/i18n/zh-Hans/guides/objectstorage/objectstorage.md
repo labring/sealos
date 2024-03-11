@@ -59,14 +59,14 @@ sidebar_position: 0
 ### SDK 访问「存储桶」
 
 SDK 访问「存储桶」需要三个参数：AccessKey、SecretKey、Endpoint。参数都在访问密钥中，Internal 是内网地址 Endpoint，External 是外网地址
-Endpoint。（如果需要使用 Region 参数，默认使用 us-east-1）
+Endpoint。如果需要使用 Region 参数，默认使用 us-east-1。
 
 #### Go Client SDK
 
 详细文档参考：https://min.io/docs/minio/linux/developers/go/API.html
 
-例子：使用 Go Client SDK 上传文件 style.css 到 sv3dd7u4-test 存储桶。（使用外网地址 Endpoint，如果服务部署在 K8s
-集群内，可以改为内网地址 Endpoint）
+例子：使用 Go Client SDK 上传 style.css 文件到 sv3dd7u4-test 存储桶，将 Endpoint 设置为外网地址 External。如果服务部署在当前
+K8s 集群内，可以将 Endpoint 改为内网地址 Internal。
 
 ```go
 package main
@@ -121,7 +121,7 @@ func main() {
 
 详细文档参考：https://min.io/docs/minio/linux/developers/java/API.html
 
-例子：使用 Java Client SDK 上传 style.css 文件到 sv3dd7u4-test 存储桶，将 Endpoint 设置为外网地址 External。如果服务部署在当前
+例子：使用 Java Client SDK 上传 style1.css 文件到 sv3dd7u4-test 存储桶，将 Endpoint 设置为外网地址 External。如果服务部署在当前
 K8s 集群内，可以将 Endpoint 改为内网地址 Internal。
 
 ```xml
