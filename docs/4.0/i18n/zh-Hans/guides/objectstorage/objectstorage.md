@@ -36,7 +36,7 @@ sidebar_position: 0
 上传文件成功
 ![](./images/6.png)
 
-### 公开「存储桶」
+### 公开「存储桶」的访问权限
 
 点击「编辑」
 ![](./images/7.png)
@@ -56,7 +56,7 @@ sidebar_position: 0
 为对象存储的外部访问地址。
 ![](./images/11.png)
 
-### SDK 访问「存储桶」
+### 使用 SDK 访问「存储桶」
 
 SDK 访问「存储桶」需要三个参数：AccessKey、SecretKey、Endpoint。参数都在访问密钥中，Internal 是内网地址 Endpoint，External 是外网地址
 Endpoint。如果需要使用 Region 参数，默认使用 us-east-1。
