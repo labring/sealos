@@ -2,7 +2,7 @@
 sidebar_position: 4
 ---
 
-# Use Database App
+# Use Database
 
 Databases are fundamental tools for data management, designed for efficient storage and access. Sealos offers a user-friendly database interface, eliminating the complexities of command-line operations. This assists in managing an array of databases, such as relational databases, NoSQL, vector databases, and streaming databases. With just a few clicks in the "[Database](/guides/dbprovider/dbprovider.md)" app, you can seamlessly create a variety of databases, including MySQL, PostgreSQL, MongoDB, Redis, and many more.
 
