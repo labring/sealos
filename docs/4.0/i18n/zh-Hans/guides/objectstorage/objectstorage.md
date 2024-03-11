@@ -132,7 +132,7 @@ func main() {
 </dependency>
 ```
 
-```java
+```javascript
 package org.example;
 
 import io.minio.MinioClient;
