@@ -1,4 +1,4 @@
-// Copyright © 2023 sealos.
+// Copyright © 2024 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package crypto
+package types
 
-import "testing"
+import "github.com/google/uuid"
 
-func TestRechargeBalance(t *testing.T) {
-	data, _ := DecryptInt64("")
-	t.Log(data)
+type UserQueryOpts struct {
+	UID         uuid.UUID
+	Owner       string
+	IgnoreEmpty bool
 }

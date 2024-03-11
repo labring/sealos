@@ -1,4 +1,4 @@
-// Copyright © 2023 sealos.
+// Copyright © 2024 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package crypto
+package pay
 
-import "testing"
+import (
+	"testing"
+)
 
-func TestRechargeBalance(t *testing.T) {
-	data, _ := DecryptInt64("")
-	t.Log(data)
+func TestCreateCheckoutSession(t *testing.T) {
+	stripe, err := CreateCheckoutSession(2000, "cny", "http://localhost:8080", "http://localhost:8080")
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(stripe.ID)
 }

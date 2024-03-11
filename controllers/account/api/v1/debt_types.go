@@ -63,8 +63,16 @@ type DebtSpec struct {
 
 // DebtStatus defines the observed state of Debt
 type DebtStatus struct {
-	LastUpdateTimestamp int64          `json:"lastUpdateTimestamp,omitempty"`
-	AccountDebtStatus   DebtStatusType `json:"status,omitempty"`
+	LastUpdateTimestamp int64              `json:"lastUpdateTimestamp,omitempty"`
+	DebtStatusRecords   []DebtStatusRecord `json:"debtStatusRecords,omitempty"`
+	AccountDebtStatus   DebtStatusType     `json:"status,omitempty"`
+}
+
+// DebtStatusRecord defines the observed state of Debt
+type DebtStatusRecord struct {
+	LastStatus    DebtStatusType `json:"lastDebtStatus,omitempty"`
+	CurrentStatus DebtStatusType `json:"currentStatus,omitempty"`
+	UpdateTime    int64          `json:"updateTime,omitempty"`
 }
 
 //+kubebuilder:object:root=true

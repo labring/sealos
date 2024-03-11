@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -28,7 +29,7 @@ func Authenticate(ns, kc string) error {
 	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kc))
 	if err != nil {
 		log.Printf("kubeconfig failed (%s)\n", kc)
-		return err
+		return fmt.Errorf("kubeconfig failed  %v", err)
 	}
 
 	if k8shost := GetKubernetesHostFromEnv(); k8shost != "" {
@@ -39,25 +40,25 @@ func Authenticate(ns, kc string) error {
 
 	client, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to new client: %v", err)
 	}
 	discovery, err := discovery.NewDiscoveryClientForConfig(config)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to new discovery client: %v", err)
 	}
 	res, err := discovery.RESTClient().Get().AbsPath("/readyz").DoRaw(context.Background())
 	if err != nil {
 		log.Println("Authenticate false, ping apiserver error")
-		return err
+		return fmt.Errorf("ping apiserver error: %v", err)
 	}
 	if string(res) != "ok" {
 		log.Println("Authenticate false, response not ok")
-		return err
+		return fmt.Errorf("ping apiserver is no ok: %v", string(res))
 	}
 
 	if err := CheckResourceAccess(client, ns, "get", "pods"); err != nil {
 		// fmt.Println(err.Error())
-		return err
+		return fmt.Errorf("check resource access error: %v", err)
 	}
 
 	return nil

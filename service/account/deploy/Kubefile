@@ -2,7 +2,7 @@ FROM scratch
 COPY registry registry
 COPY manifests manifests
 
-ENV DEFAULT_NAMESPACE sealos
+ENV DEFAULT_NAMESPACE account-system
 ENV MONGO_URI mongodb://mongo:27017
 
 CMD ["kubectl apply -f manifests/deploy.yaml -n $DEFAULT_NAMESPACE"]

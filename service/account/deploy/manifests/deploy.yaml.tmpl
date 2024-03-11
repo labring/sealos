@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: account-service
+  namespace: account-system
   labels:
     cloud.sealos.io/app-deploy-manager: account-service
 spec:
@@ -15,6 +16,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: account-service
+  namespace: account-system
   annotations:
     originImageName: ghcr.io/labring/sealos-account-service:latest
     deploy.cloud.sealos.io/minReplicas: '1'
@@ -43,7 +45,13 @@ spec:
           image: ghcr.io/labring/sealos-account-service:latest
           env:
             - name: MONGO_URI
-              value: {{ .MONGO_URI }}
+              valueFrom:
+                secretKeyRef:
+                  key: MONGO_URI
+                  name: mongo-secret
+          envFrom:
+          - configMapRef:
+              name: account-manager-env
           resources:
             requests:
               cpu: 50m
@@ -55,4 +63,5 @@ spec:
             - containerPort: 2333
           imagePullPolicy: Always
           volumeMounts: []
+      serviceAccountName: account-controller-manager
       volumes: []
