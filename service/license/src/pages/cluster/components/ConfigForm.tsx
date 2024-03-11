@@ -165,7 +165,7 @@ export default function CommandForm({
       <Flex alignItems={'center'} py="6px">
         <CodeIcon w="18px" h="18px" />
         <Text ml="12px" fontSize={'16px'} fontWeight={600}>
-          生成在线安装命令
+          生成安装命令
         </Text>
       </Flex>
       {/* base */}

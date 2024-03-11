@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (event.target.tagName === "A") {
       const href = event.target.getAttribute("href")
       const currentHostname = window.location.hostname
-      const targetHostname = "sealos.io"
+      const targetHostname = currentHostname === "sealos.io" ? 'sealos.io' : 'sealos.run'
 
       if (href.includes("sealos.io") || href.includes("sealos.top") || href.includes("sealos.run")) {
         event.preventDefault()
