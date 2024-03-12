@@ -1,4 +1,5 @@
 import CopyIcon from './icons/CopyIcon';
+import WebHostIcon from './icons/WebHostIcon';
 import DownloadIcon from './icons/DownloadIcon';
 import DeleteIcon from './icons/DeleteIcon';
 import AddIcon from './icons/AddIcon';
@@ -94,5 +95,6 @@ export {
   CloseIcon,
   SortPolygonUpIcon,
   SortPolygonDownIcon,
-  ProviderIcon
+  ProviderIcon,
+  WebHostIcon
 };

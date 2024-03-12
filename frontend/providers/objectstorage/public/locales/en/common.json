@@ -15,5 +15,11 @@
   "s3ServiceParams": "Access Key",
   "refresh": "Refresh",
   "dailyEstimate": "Daily Estimate",
-  "deleteWarning": "Delete Warning"
+  "deleteWarning": "Delete Warning",
+  "Current Domain": "Current Domain",
+  "Enable Hosting": "Enable Hosting",
+  "Custom Domain": "Custom Domain",
+  "Disable Hosting": "Disable Hosting",
+  "Effective": "Effective",
+  "Unable to Access": "Unable to Access"
 }

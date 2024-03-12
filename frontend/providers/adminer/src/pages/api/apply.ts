@@ -25,7 +25,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const kc = K8sApi(kubeconfig);
 
     const kube_user = kc.getCurrentUser();
-
     if (
       !kube_user ||
       !kube_user.name ||
