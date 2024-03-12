@@ -36,7 +36,7 @@ export default function AppList() {
   const { setInsideCloud } = useCachedStore();
   const { menuKeys, setMenuKeys, setSideBarMenu } = useSystemConfigStore();
 
-  const { data } = useQuery(['listTemplte'], getTemplates, {
+  const { data } = useQuery(['listTemplate'], getTemplates, {
     refetchInterval: 5 * 60 * 1000,
     staleTime: 5 * 60 * 1000,
     onSuccess(data) {

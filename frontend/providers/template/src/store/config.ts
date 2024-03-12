@@ -1,19 +1,19 @@
 import { getSystemConfig } from '@/api/platform';
-import { ApplicationType, SideBarMenu, SystemConfigType } from '@/types/app';
+import { ApplicationType, SideBarMenuType, SystemConfigType } from '@/types/app';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 type State = {
   systemConfig: SystemConfigType | undefined;
-  sideBarMenu: SideBarMenu[];
+  sideBarMenu: SideBarMenuType[];
   menuKeys: string;
   initSystemConfig: () => Promise<SystemConfigType>;
-  setSideBarMenu: (newMenu: SideBarMenu[]) => void;
+  setSideBarMenu: (newMenu: SideBarMenuType[]) => void;
   setMenuKeys: (key: string) => void;
 };
 
-export const baseSideBarMenu = [
+export const baseSideBarMenu: SideBarMenuType[] = [
   {
     id: 'applications',
     type: ApplicationType.All,
@@ -34,7 +34,7 @@ export const useSystemConfigStore = create<State>()(
         });
         return data;
       },
-      setSideBarMenu(newMenu: SideBarMenu[]) {
+      setSideBarMenu(newMenu: SideBarMenuType[]) {
         set((state) => {
           state.sideBarMenu = newMenu;
         });
