@@ -152,18 +152,7 @@ export type InstanceListItemType = {
 
 export enum ApplicationType {
   All = 'all',
-  AI = 'ai',
-  Game = 'game',
-  Monitor = 'monitor',
-  Frontend = 'frontend',
-  Backend = 'backend',
-  Database = 'database',
-  MyApp = 'myapp',
-  Blog = 'blog',
-  LowCode = 'low-code',
-  Storage = 'storage',
-  Tool = 'tool',
-  DevOps = 'dev-ops'
+  MyApp = 'myapp'
 }
 
 export type SlideDataType = {

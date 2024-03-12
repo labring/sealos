@@ -13,7 +13,7 @@ type State = {
   setMenuKeys: (key: string) => void;
 };
 
-export const baseSideBarMenu = [
+export const baseSideBarMenu: SideBarMenu[] = [
   {
     id: 'applications',
     type: ApplicationType.All,

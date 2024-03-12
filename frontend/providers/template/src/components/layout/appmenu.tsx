@@ -16,7 +16,6 @@ export default function AppMenu() {
   const changeI18n = () => {
     const lastLang = getLangStore();
     const newLang = lastLang === 'en' ? 'zh' : 'en';
-    console.log(lastLang);
     if (i18n?.changeLanguage) {
       i18n.changeLanguage(newLang);
       setLangStore(newLang);
