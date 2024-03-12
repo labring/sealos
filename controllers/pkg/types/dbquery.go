@@ -18,6 +18,7 @@ import "github.com/google/uuid"
 
 type UserQueryOpts struct {
 	UID         uuid.UUID
+	ID          string
 	Owner       string
 	IgnoreEmpty bool
 }

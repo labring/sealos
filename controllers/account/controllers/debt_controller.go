@@ -75,7 +75,6 @@ const (
 type DebtReconciler struct {
 	client.Client
 	AccountV2          database.AccountV2
-	DBClient           database.Auth
 	Scheme             *runtime.Scheme
 	DebtDetectionCycle time.Duration
 	LocalRegionID      string
@@ -377,11 +376,6 @@ func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType 
 	if r.SmsConfig == nil {
 		return nil
 	}
-	// TODO send sms
-	//usr, err := r.DBClient.GetUser(user)
-	//if err != nil {
-	//	return fmt.Errorf("failed to get user: %w", err)
-	//}
 	outh, err := r.AccountV2.GetUserOauthProvider(&pkgtypes.UserQueryOpts{Owner: user})
 	if err != nil {
 		return fmt.Errorf("failed to get user oauth provider: %w", err)

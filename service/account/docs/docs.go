@@ -347,6 +347,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/account/v1alpha1/get-transfer": {
+            "post": {
+                "description": "Get transfer",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transfer"
+                ],
+                "summary": "Get transfer",
+                "parameters": [
+                    {
+                        "description": "auth request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.Auth"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully get transfer",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get transfer",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/account/v1alpha1/namespaces": {
             "post": {
                 "description": "Get the billing history namespace list from the database",
@@ -399,6 +448,62 @@ const docTemplate = `{
                 }
             }
         },
+        "/account/v1alpha1/payment/set-invoice": {
+            "post": {
+                "description": "Set payment invoice",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "PaymentInvoice"
+                ],
+                "summary": "Set payment invoice",
+                "parameters": [
+                    {
+                        "description": "Set payment invoice request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.SetPaymentInvoiceReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully set payment invoice",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse set payment invoice request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to set payment invoice",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/account/v1alpha1/properties": {
             "post": {
                 "description": "Get properties from the database",
@@ -440,6 +545,62 @@ const docTemplate = `{
                         "description": "failed to get properties",
                         "schema": {
                             "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/transfer": {
+            "post": {
+                "description": "Transfer amount",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "TransferAmount"
+                ],
+                "summary": "Transfer amount",
+                "parameters": [
+                    {
+                        "description": "Transfer amount request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.TransferAmountReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully transfer amount",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse transfer amount request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to transfer amount",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -556,6 +717,62 @@ const docTemplate = `{
                         "[\"ns-admin\"",
                         "\"ns-test1\"]"
                     ]
+                }
+            }
+        },
+        "helper.SetPaymentInvoiceReq": {
+            "type": "object",
+            "required": [
+                "kubeConfig",
+                "owner",
+                "paymentIDList"
+            ],
+            "properties": {
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "paymentIDList": {
+                    "description": "@Summary Payment ID list\n@Description Payment ID list\n@JSONSchema required",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"payment-id-1\"",
+                        "\"payment-id-2\"]"
+                    ]
+                }
+            }
+        },
+        "helper.TransferAmountReq": {
+            "type": "object",
+            "required": [
+                "amount",
+                "kubeConfig",
+                "owner",
+                "toUser"
+            ],
+            "properties": {
+                "amount": {
+                    "description": "@Summary Transfer amount\n@Description Transfer amount\n@JSONSchema required",
+                    "type": "integer",
+                    "example": 100000000
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "toUser": {
+                    "description": "@Summary To user\n@Description To user\n@JSONSchema required",
+                    "type": "string",
+                    "example": "admin"
                 }
             }
         },

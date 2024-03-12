@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/labring/sealos/controllers/pkg/crypto"
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
+
 	"gorm.io/driver/postgres"
 
 	"gorm.io/gorm"
@@ -34,6 +34,9 @@ type Interface interface {
 	GetPropertiesUsedAmount(user string, startTime, endTime time.Time) (map[string]int64, error)
 	GetAccount(ops types.UserQueryOpts) (*types.Account, error)
 	GetPayment(ops types.UserQueryOpts, startTime, endTime time.Time) ([]types.Payment, error)
+	SetPaymentInvoice(req *helper.SetPaymentInvoiceReq) error
+	Transfer(req *helper.TransferAmountReq) error
+	GetTransfer(ops *types.UserQueryOpts) ([]types.Transfer, error)
 }
 
 type Account struct {
@@ -52,52 +55,78 @@ type MongoDB struct {
 type Cockroach struct {
 	DB      *gorm.DB
 	LocalDB *gorm.DB
+	ck      *cockroach.Cockroach
 }
 
 func (g *Cockroach) GetAccount(ops types.UserQueryOpts) (*types.Account, error) {
-	if ops.UID == uuid.Nil {
-		user, err := g.GetUser(ops)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get user: %v", err)
-		}
-		ops.UID = user.UserUID
-	}
-	var account types.Account
-	if err := g.DB.Where(types.Account{UserUID: ops.UID}).First(&account).Error; err != nil {
-		return nil, fmt.Errorf("failed to get account: %w", err)
-	}
-	balance, err := crypto.DecryptInt64(account.EncryptBalance)
+	account, err := g.ck.GetAccount(&ops)
 	if err != nil {
-		return nil, fmt.Errorf("failed to descrypt balance: %v", err)
+		return nil, fmt.Errorf("failed to get account: %v", err)
 	}
-	deductionBalance, err := crypto.DecryptInt64(account.EncryptDeductionBalance)
-	if err != nil {
-		return nil, fmt.Errorf("failed to descrypt deduction balance: %v", err)
-	}
-	account.Balance = balance
-	account.DeductionBalance = deductionBalance
-	return &account, nil
+	return account, nil
+	//userUID, err := g.ck.GetUserUID(&ops)
+	//if err != nil {
+	//	return nil, fmt.Errorf("failed to get user uid: %v", err)
+	//}
+	//var account types.Account
+	//if err := g.DB.Where(types.Account{UserUID: userUID}).First(&account).Error; err != nil {
+	//	return nil, fmt.Errorf("failed to get account: %w", err)
+	//}
+	//balance, err := crypto.DecryptInt64(account.EncryptBalance)
+	//if err != nil {
+	//	return nil, fmt.Errorf("failed to descrypt balance: %v", err)
+	//}
+	//deductionBalance, err := crypto.DecryptInt64(account.EncryptDeductionBalance)
+	//if err != nil {
+	//	return nil, fmt.Errorf("failed to descrypt deduction balance: %v", err)
+	//}
+	//account.Balance = balance
+	//account.DeductionBalance = deductionBalance
+	//return &account, nil
 }
 
 func (g *Cockroach) GetPayment(ops types.UserQueryOpts, startTime, endTime time.Time) ([]types.Payment, error) {
-	if ops.UID == uuid.Nil {
-		user, err := g.GetUser(ops)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get user: %v", err)
-		}
-		ops.UID = user.UserUID
+	userUID, err := g.ck.GetUserUID(&ops)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user uid: %v", err)
 	}
 	var payment []types.Payment
 	if startTime != endTime {
-		if err := g.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: ops.UID}}).Where("created_at >= ? AND created_at <= ?", startTime, endTime).Find(&payment).Error; err != nil {
+		if err := g.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}).Where("created_at >= ? AND created_at <= ?", startTime, endTime).Find(&payment).Error; err != nil {
 			return nil, fmt.Errorf("failed to get payment: %w", err)
 		}
 	} else {
-		if err := g.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: ops.UID}}).Find(&payment).Error; err != nil {
+		if err := g.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}).Find(&payment).Error; err != nil {
 			return nil, fmt.Errorf("failed to get payment: %w", err)
 		}
 	}
 	return payment, nil
+}
+
+func (g *Cockroach) SetPaymentInvoice(req *helper.SetPaymentInvoiceReq) error {
+	userUID, err := g.ck.GetUserUID(&types.UserQueryOpts{Owner: req.Auth.Owner})
+	if err != nil {
+		return fmt.Errorf("failed to get user uid: %v", err)
+	}
+	var payment []types.Payment
+	if err := g.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}).Where("id IN ?", req.PaymentIDList).Find(&payment).Error; err != nil {
+		return fmt.Errorf("failed to get payment: %w", err)
+	}
+	for i := range payment {
+		payment[i].InvoicedAt = true
+		if err := g.DB.Save(&payment[i]).Error; err != nil {
+			return fmt.Errorf("failed to save payment: %v", err)
+		}
+	}
+	return nil
+}
+
+func (g *Cockroach) Transfer(req *helper.TransferAmountReq) error {
+	return g.ck.TransferAccount(&types.UserQueryOpts{Owner: req.Owner}, &types.UserQueryOpts{ID: req.ToUser}, req.Amount)
+}
+
+func (g *Cockroach) GetTransfer(ops *types.UserQueryOpts) ([]types.Transfer, error) {
+	return g.ck.GetTransfer(ops)
 }
 
 func (g *Cockroach) GetRechargeAmount(ops types.UserQueryOpts, startTime, endTime time.Time) (int64, error) {
@@ -110,30 +139,6 @@ func (g *Cockroach) GetRechargeAmount(ops types.UserQueryOpts, startTime, endTim
 		paymentAmount += payment[i].Amount
 	}
 	return paymentAmount, nil
-}
-
-func (g *Cockroach) GetUser(ops types.UserQueryOpts) (*types.RegionUserCr, error) {
-	if err := checkOps(ops); err != nil {
-		return nil, err
-	}
-	query := &types.RegionUserCr{
-		CrName: ops.Owner,
-	}
-	if ops.UID != uuid.Nil {
-		query.UserUID = ops.UID
-	}
-	var user types.RegionUserCr
-	if err := g.LocalDB.Where(query).First(&user).Error; err != nil {
-		return nil, fmt.Errorf("failed to get user: %w", err)
-	}
-	return &user, nil
-}
-
-func checkOps(ops types.UserQueryOpts) error {
-	if ops.Owner == "" && ops.UID == uuid.Nil {
-		return fmt.Errorf("empty query opts")
-	}
-	return nil
 }
 
 func (m *MongoDB) GetProperties() ([]common.PropertyQuery, error) {
