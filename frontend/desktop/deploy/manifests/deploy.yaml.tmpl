@@ -175,6 +175,31 @@ spec:
               value: "false"
             - name: GUIDE_ENABLED
               value: "false"
+            - name: GLOBAL_DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      key: global_database_url
+                      name: desktop-frontend-secret
+            - name: REGION_DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      key: region_database_url
+                      name: desktop-frontend-secret
+            - name: BILLING_URI
+                  valueFrom:
+                    secretKeyRef:
+                      key: billing_uri
+                      name: desktop-frontend-secret
+            - name: JWT_SECRET_REGION
+                  valueFrom:
+                    secretKeyRef:
+                      key: jwt_secret_region
+                      name: desktop-frontend-secret
+            - name: REGION_UID
+                  valueFrom:
+                    secretKeyRef:
+                      key: region_uid
+                      name: desktop-frontend-secret
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
