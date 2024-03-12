@@ -1,4 +1,10 @@
-import { InvoicesCollection, Tbilling, TInvoiceContract, TInvoiceDetail } from '@/types';
+import {
+  InvoicesCollection,
+  RechargeBillingItem,
+  Tbilling,
+  TInvoiceContract,
+  TInvoiceDetail
+} from '@/types';
 import { ObjectId } from 'mongodb';
 import { connectToDatabase } from './mongodb';
 
@@ -21,6 +27,7 @@ export async function addInvoice({
   k8s_user: string;
 }) {
   const invoices = await connectToUserCollection();
+
   const result = await invoices.insertOne({
     detail,
     contract,

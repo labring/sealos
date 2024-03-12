@@ -1,35 +1,34 @@
 import { InvoiceTable } from '@/components/invoice/invoiceTable';
 import { Box, Button, Flex, Heading, Img, Input, Text } from '@chakra-ui/react';
 import { useEffect, useRef, useState } from 'react';
-import { endOfDay, formatISO, parseISO } from 'date-fns';
 import receipt_icon from '@/assert/invoice-active.svg';
 import arrow_icon from '@/assert/Vector.svg';
 import arrow_left_icon from '@/assert/toleft.svg';
 import magnifyingGlass_icon from '@/assert/magnifyingGlass.svg';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import request from '@/service/request';
-import { BillingData, BillingSpec } from '@/types/billing';
+import {
+  BillingData,
+  BillingSpec,
+  RechargeBillingData,
+  RechargeBillingItem
+} from '@/types/billing';
 import SelectRange from '@/components/billing/selectDateRange';
 import useOverviewStore from '@/stores/overview';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useTranslation } from 'next-i18next';
-import { getCookie } from '@/utils/cookieUtils';
 import NotFound from '@/components/notFound';
-import { formatMoney } from '@/utils/format';
 import listIcon from '@/assert/list.svg';
-import { ReqGenInvoice } from '@/types';
+import { ApiResp, ReqGenInvoice } from '@/types';
 import InvoicdForm from './InvoicdForm';
 import { enableInvoice } from '@/service/enabled';
+import { formatMoney } from '@/utils/format';
 
 function Invoice() {
   const { t, i18n } = useTranslation();
-  const cookie = getCookie('NEXT_LOCALE');
-  useEffect(() => {
-    i18n.changeLanguage(cookie);
-  }, [cookie, i18n]);
   const startTime = useOverviewStore((state) => state.startTime);
   const endTime = useOverviewStore((state) => state.endTime);
-  const selectBillings = useRef<ReqGenInvoice['billings']>([]);
+  const selectBillings = useRef<RechargeBillingItem[]>([]);
   const [searchValue, setSearch] = useState('');
   const [orderID, setOrderID] = useState('');
   const [totalPage, setTotalPage] = useState(1);
@@ -39,64 +38,35 @@ function Invoice() {
   const [invoiceAmount, setInvoiceAmount] = useState(0);
   const [processState, setProcessState] = useState(0);
   const [invoiceCount, setInvoiceCount] = useState(0);
-  const { data: filterData } = useQuery(['billing', 'invoice'], () => {
-    return request<any, { data: { billings: string[] } }>('/api/invoice/billings');
-  });
   const { data, isLoading, isSuccess } = useQuery(
-    ['billing', { currentPage, startTime, endTime, orderID }],
-    async () => {
-      let spec = {} as BillingSpec;
-      spec = {
-        page: currentPage,
-        pageSize: pageSize,
-        type: 1,
-        startTime: formatISO(startTime, { representation: 'complete' }),
-        // startTime,
-        endTime: formatISO(endOfDay(endTime), { representation: 'complete' }),
-        // endTime,
-        orderID
-      };
-      const result = await request<any, { data: BillingData }, { spec: BillingSpec }>(
-        '/api/billing',
-        {
-          method: 'POST',
-          data: {
-            spec
-          }
-        }
-      );
-
-      const tableResult = result.data.status.item
-        .filter((billing) => billing.type === 1)
-        .map<ReqGenInvoice['billings'][0]>((billing) => ({
-          createdTime: parseISO(billing.time).getTime(),
-          order_id: billing.order_id,
-          amount: formatMoney(billing.payment?.amount || billing.amount)
-        }));
-      return {
-        tableResult,
-        pageLength: result.data.status.pageLength,
-        totalCount: result.data.status.totalCount || tableResult.length
-      };
+    [
+      'billing',
+      'invoice',
+      {
+        startTime,
+        endTime
+      }
+    ],
+    () => {
+      return request<any, ApiResp<RechargeBillingData>>('/api/billing/recharge', {
+        data: {
+          startTime,
+          endTime
+        },
+        method: 'POST'
+      });
     },
     {
-      onSuccess(data) {
-        const totalPage = data.pageLength;
-        if (totalPage === 0) {
-          // 搜索时
-          setTotalPage(1);
-          return;
-        }
-        setTotalPage(totalPage);
-      },
-      staleTime: 1000,
-      cacheTime: 0,
-      enabled: filterData !== undefined
+      select(data) {
+        return ((data?.data?.payment || []) as RechargeBillingItem[])
+          .filter((d) => !d.InvoicedAt)
+          .map((d) => ({
+            ...d,
+            Amount: formatMoney(d.Amount)
+          }));
+      }
     }
   );
-  const billingFilter = <T extends { order_id: string }>(billing: T): boolean =>
-    !(filterData?.data.billings || []).includes(billing.order_id);
-  let tableResult = data?.tableResult?.filter(billingFilter) || [];
 
   return (
     <Flex flexDirection="column" w="100%" h="100%" bg={'white'} p="24px" overflow={'auto'}>
@@ -164,7 +134,7 @@ function Invoice() {
               </Button>
             </Flex>
           </Flex>
-          {isSuccess && tableResult.length > 0 ? (
+          {isSuccess ? (
             <>
               <Box
                 overflow={'auto'}
@@ -205,17 +175,17 @@ function Invoice() {
                 </Flex>
                 <InvoiceTable
                   selectbillings={selectBillings.current || []}
-                  data={[...tableResult]}
+                  data={data}
                   onSelect={(checked, item) => {
                     if (checked) {
-                      setInvoiceAmount(invoiceAmount + item.amount);
+                      setInvoiceAmount(invoiceAmount + item.Amount);
                       setInvoiceCount(invoiceCount + 1);
                       selectBillings.current.push({ ...item });
                     } else {
-                      setInvoiceAmount(invoiceAmount - item.amount);
+                      setInvoiceAmount(invoiceAmount - item.Amount);
                       setInvoiceCount(invoiceCount - 1);
                       const idx = selectBillings.current.findIndex(
-                        (billing) => billing.order_id === item.order_id
+                        (billing) => billing.ID === item.ID
                       );
                       selectBillings.current.splice(idx, 1);
                     }
@@ -224,7 +194,7 @@ function Invoice() {
               </Box>
               <Flex w="370px" h="32px" align={'center'} mt={'20px'} mx="auto">
                 <Text>{t('Total')}:</Text>
-                <Flex w="40px">{data.totalCount - (filterData?.data?.billings || []).length}</Flex>
+                <Flex w="40px">{data.length}</Flex>
                 <Flex gap={'8px'}>
                   <Button
                     variant={'switchPage'}
@@ -246,7 +216,9 @@ function Invoice() {
                   >
                     <Img src={arrow_icon.src} transform={'rotate(-90deg)'}></Img>
                   </Button>
-                  <Text>{currentPage}</Text>/<Text>{totalPage}</Text>
+                  <Flex my={'auto'}>
+                    <Text>{currentPage}</Text>/<Text>{totalPage}</Text>
+                  </Flex>
                   <Button
                     variant={'switchPage'}
                     isDisabled={currentPage === totalPage}
@@ -317,9 +289,10 @@ function Invoice() {
     </Flex>
   );
 }
+
 export default Invoice;
-export async function getServerSideProps(content: any) {
-  const locale = content?.req?.cookies?.NEXT_LOCALE || 'zh';
+
+export async function getServerSideProps({ locale }: { locale: string }) {
   if (!enableInvoice()) {
     return {
       redirect: {
@@ -330,7 +303,7 @@ export async function getServerSideProps(content: any) {
   }
   return {
     props: {
-      ...(await serverSideTranslations(locale, undefined, null, content.locales))
+      ...(await serverSideTranslations(locale, undefined, null, ['zh', 'en']))
     }
   };
 }
