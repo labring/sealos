@@ -2,9 +2,8 @@ import { getTemplates } from '@/api/platform';
 import Banner from '@/components/Banner';
 import MyIcon from '@/components/Icon';
 import { useCachedStore } from '@/store/cached';
-import { baseSideBarMenu, useSystemConfigStore } from '@/store/config';
 import { useSearchStore } from '@/store/search';
-import { ApplicationType, TemplateType } from '@/types/app';
+import { TemplateType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
 import { compareFirstLanguages, formatStarNumber } from '@/utils/tools';
 import {
@@ -34,24 +33,11 @@ export default function AppList() {
   const router = useRouter();
   const { searchValue, appType } = useSearchStore();
   const { setInsideCloud } = useCachedStore();
-  const { menuKeys, setMenuKeys, setSideBarMenu } = useSystemConfigStore();
 
   const { data } = useQuery(['listTemplate'], getTemplates, {
     refetchInterval: 5 * 60 * 1000,
     staleTime: 5 * 60 * 1000,
-    onSuccess(data) {
-      if (data.menuKeys && data.menuKeys !== menuKeys) {
-        const menus = baseSideBarMenu.concat(
-          data.menuKeys.split(',').map((i) => ({
-            id: i,
-            type: i as ApplicationType,
-            value: `SideBar.${i}`
-          }))
-        );
-        setMenuKeys(menuKeys);
-        setSideBarMenu(menus);
-      }
-    }
+    retry: 3
   });
 
   const filterData = useMemo(() => {
