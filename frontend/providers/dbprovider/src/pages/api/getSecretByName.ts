@@ -94,9 +94,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         'base64'
       ).toString('utf-8');
 
-      const host = Buffer.from(secret.body.data[dbTypeMap[dbType].hostKey], 'base64').toString(
-        'utf-8'
-      );
+      const host =
+        Buffer.from(secret.body.data[dbTypeMap[dbType].hostKey], 'base64').toString('utf-8') +
+        `.${namespace}.svc`;
 
       const port = Buffer.from(secret.body.data[dbTypeMap[dbType].portKey], 'base64').toString(
         'utf-8'

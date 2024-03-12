@@ -1064,6 +1064,23 @@ export const json2NetworkService = ({
     weaviate: '',
     milvus: ''
   };
+  const labelMap = {
+    postgresql: {
+      'kubeblocks.io/role': 'primary'
+    },
+    mongodb: {
+      'kubeblocks.io/role': 'primary'
+    },
+    'apecloud-mysql': {
+      'kubeblocks.io/role': 'leader'
+    },
+    redis: {},
+    kafka: {},
+    qdrant: {},
+    nebula: {},
+    weaviate: {},
+    milvus: {}
+  };
 
   const template = {
     apiVersion: 'v1',
@@ -1072,7 +1089,8 @@ export const json2NetworkService = ({
       name: `${dbDetail.dbName}-export`,
       labels: {
         'app.kubernetes.io/instance': dbDetail.dbName,
-        'apps.kubeblocks.io/component-name': dbDetail.dbType
+        'apps.kubeblocks.io/component-name': dbDetail.dbType,
+        ...labelMap[dbDetail.dbType]
       },
       ownerReferences: [
         {
