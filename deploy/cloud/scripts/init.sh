@@ -38,13 +38,37 @@ function prepare {
   create_tls_secret
 }
 
+# Function to retry `kubectl apply -f` command until it succeeds or reaches a maximum number of attempts
+retry_kubectl_apply() {
+    local file_path=$1  # The path to the Kubernetes manifest file
+    local max_attempts=6  # Maximum number of attempts
+    local attempt=0  # Current attempt counter
+    local wait_seconds=10  # Seconds to wait before retrying
+
+    while [ $attempt -lt $max_attempts ]; do
+        # Attempt to execute the kubectl command
+        kubectl apply -f "$file_path" && {
+            return 0  # Exit the function successfully
+        }
+        # If the command did not execute successfully, increase the attempt counter and report failure
+        attempt=$((attempt + 1))
+        # If the maximum number of attempts has been reached, stop retrying
+        if [ $attempt -eq $max_attempts ]; then
+            return 1  # Exit the function with failure
+        fi
+        # Wait for a specified time before retrying
+        sleep $wait_seconds
+    done
+}
+
+
 function gen_mongodbUri() {
   # if mongodbUri is empty then create mongodb and gen mongodb uri
   if [ -z "$mongodbUri" ]; then
     echo "no mongodb uri found, create mongodb and gen mongodb uri"
-    kubectl apply -f manifests/mongodb.yaml
+    retry_kubectl_apply "manifests/mongodb.yaml"
     echo "waiting for mongodb secret generated"
-    message="Waiting for MongoDB ready"
+    message="waiting for mongodb ready"
     # if there is no sealos-mongodb-conn-credential secret then wait for mongodb ready
     while [ -z "$(kubectl get secret -n sealos sealos-mongodb-conn-credential 2>/dev/null)" ]; do
       echo -ne "\r$message   \e[K"
@@ -65,12 +89,16 @@ function gen_mongodbUri() {
 function gen_cockroachdbUri() {
   if [ -z "$cockroachdbUri" ]; then
     echo "no cockroachdb uri found, create cockroachdb and gen cockroachdb uri"
-    kubectl apply -f manifests/cockroachdb.yaml
-
+    retry_kubectl_apply "manifests/cockroachdb.yaml"
     message="waiting for cockroachdb ready"
 
     NAMESPACE="sealos"
     STATEFULSET_NAME="sealos-cockroachdb"
+
+    while : ; do
+        kubectl get statefulset $STATEFULSET_NAME -n $NAMESPACE >/dev/null 2>&1 && break
+    done
+
     while : ; do
       REPLICAS=$(kubectl get statefulset $STATEFULSET_NAME -n $NAMESPACE -o jsonpath='{.spec.replicas}')
       READY_REPLICAS=$(kubectl get statefulset $STATEFULSET_NAME -n $NAMESPACE -o jsonpath='{.status.readyReplicas}')
