@@ -8,10 +8,6 @@ import (
 
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 
-	"gorm.io/driver/postgres"
-
-	"gorm.io/gorm"
-
 	"github.com/labring/sealos/controllers/pkg/types"
 
 	"github.com/labring/sealos/service/account/common"
@@ -53,9 +49,7 @@ type MongoDB struct {
 }
 
 type Cockroach struct {
-	DB      *gorm.DB
-	LocalDB *gorm.DB
-	ck      *cockroach.Cockroach
+	ck *cockroach.Cockroach
 }
 
 func (g *Cockroach) GetAccount(ops types.UserQueryOpts) (*types.Account, error) {
@@ -64,61 +58,14 @@ func (g *Cockroach) GetAccount(ops types.UserQueryOpts) (*types.Account, error) 
 		return nil, fmt.Errorf("failed to get account: %v", err)
 	}
 	return account, nil
-	//userUID, err := g.ck.GetUserUID(&ops)
-	//if err != nil {
-	//	return nil, fmt.Errorf("failed to get user uid: %v", err)
-	//}
-	//var account types.Account
-	//if err := g.DB.Where(types.Account{UserUID: userUID}).First(&account).Error; err != nil {
-	//	return nil, fmt.Errorf("failed to get account: %w", err)
-	//}
-	//balance, err := crypto.DecryptInt64(account.EncryptBalance)
-	//if err != nil {
-	//	return nil, fmt.Errorf("failed to descrypt balance: %v", err)
-	//}
-	//deductionBalance, err := crypto.DecryptInt64(account.EncryptDeductionBalance)
-	//if err != nil {
-	//	return nil, fmt.Errorf("failed to descrypt deduction balance: %v", err)
-	//}
-	//account.Balance = balance
-	//account.DeductionBalance = deductionBalance
-	//return &account, nil
 }
 
 func (g *Cockroach) GetPayment(ops types.UserQueryOpts, startTime, endTime time.Time) ([]types.Payment, error) {
-	userUID, err := g.ck.GetUserUID(&ops)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user uid: %v", err)
-	}
-	var payment []types.Payment
-	if startTime != endTime {
-		if err := g.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}).Where("created_at >= ? AND created_at <= ?", startTime, endTime).Find(&payment).Error; err != nil {
-			return nil, fmt.Errorf("failed to get payment: %w", err)
-		}
-	} else {
-		if err := g.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}).Find(&payment).Error; err != nil {
-			return nil, fmt.Errorf("failed to get payment: %w", err)
-		}
-	}
-	return payment, nil
+	return g.ck.GetPayment(&ops, startTime, endTime)
 }
 
 func (g *Cockroach) SetPaymentInvoice(req *helper.SetPaymentInvoiceReq) error {
-	userUID, err := g.ck.GetUserUID(&types.UserQueryOpts{Owner: req.Auth.Owner})
-	if err != nil {
-		return fmt.Errorf("failed to get user uid: %v", err)
-	}
-	var payment []types.Payment
-	if err := g.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}).Where("id IN ?", req.PaymentIDList).Find(&payment).Error; err != nil {
-		return fmt.Errorf("failed to get payment: %w", err)
-	}
-	for i := range payment {
-		payment[i].InvoicedAt = true
-		if err := g.DB.Save(&payment[i]).Error; err != nil {
-			return fmt.Errorf("failed to save payment: %v", err)
-		}
-	}
-	return nil
+	return g.ck.SetPaymentInvoice(&types.UserQueryOpts{Owner: req.Auth.Owner}, req.PaymentIDList)
 }
 
 func (g *Cockroach) Transfer(req *helper.TransferAmountReq) error {
@@ -275,7 +222,7 @@ func (m *MongoDB) getSumOfUsedAmount(propertyType uint8, user string, startTime,
 	return result.TotalAmount, nil
 }
 
-func NewAccountInterface(mongoURI, cockRoachURI, localCockRoachURI string) (Interface, error) {
+func NewAccountInterface(mongoURI, globalCockRoachURI, localCockRoachURI string) (Interface, error) {
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect mongodb: %v", err)
@@ -289,15 +236,11 @@ func NewAccountInterface(mongoURI, cockRoachURI, localCockRoachURI string) (Inte
 		BillingConn:    "billing",
 		PropertiesConn: "properties",
 	}
-	db, err := gorm.Open(postgres.Open(cockRoachURI), &gorm.Config{})
+	ck, err := cockroach.NewCockRoach(globalCockRoachURI, localCockRoachURI)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect cockroach uri %s: %v", cockRoachURI, err)
+		return nil, fmt.Errorf("failed to connect cockroach: %v", err)
 	}
-	localDB, err := gorm.Open(postgres.Open(localCockRoachURI), &gorm.Config{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect local cockroach uri %s: %v", localCockRoachURI, err)
-	}
-	account := &Account{MongoDB: mongodb, Cockroach: &Cockroach{DB: db, LocalDB: localDB}}
+	account := &Account{MongoDB: mongodb, Cockroach: &Cockroach{ck: ck}}
 	return account, nil
 }
 

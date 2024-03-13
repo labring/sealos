@@ -476,6 +476,42 @@ func (g *Cockroach) payment(payment *types.Payment, updateBalance bool) error {
 	})
 }
 
+func (g *Cockroach) GetPayment(ops *types.UserQueryOpts, startTime, endTime time.Time) ([]types.Payment, error) {
+	userUID, err := g.GetUserUID(ops)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user uid: %v", err)
+	}
+	var payment []types.Payment
+	if startTime != endTime {
+		if err := g.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}).Where("created_at >= ? AND created_at <= ?", startTime, endTime).Find(&payment).Error; err != nil {
+			return nil, fmt.Errorf("failed to get payment: %w", err)
+		}
+	} else {
+		if err := g.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}).Find(&payment).Error; err != nil {
+			return nil, fmt.Errorf("failed to get payment: %w", err)
+		}
+	}
+	return payment, nil
+}
+
+func (g *Cockroach) SetPaymentInvoice(ops *types.UserQueryOpts, paymentIDList []string) error {
+	userUID, err := g.GetUserUID(ops)
+	if err != nil {
+		return fmt.Errorf("failed to get user uid: %v", err)
+	}
+	var payment []types.Payment
+	if err := g.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}).Where("id IN ?", paymentIDList).Find(&payment).Error; err != nil {
+		return fmt.Errorf("failed to get payment: %w", err)
+	}
+	for i := range payment {
+		payment[i].InvoicedAt = true
+		if err := g.DB.Save(&payment[i]).Error; err != nil {
+			return fmt.Errorf("failed to save payment: %v", err)
+		}
+	}
+	return nil
+}
+
 // NewAccount create a new account
 func (g *Cockroach) NewAccount(ops *types.UserQueryOpts) (*types.Account, error) {
 	if ops.UID == uuid.Nil {
@@ -636,7 +672,7 @@ func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to encrypt zero value")
 	}
-	if err := CreateTableIfNotExist(db, types.Account{}, types.ErrorAccountCreate{}, types.ErrorPaymentCreate{}, types.Payment{}); err != nil {
+	if err := CreateTableIfNotExist(db, types.Account{}, types.ErrorAccountCreate{}, types.ErrorPaymentCreate{}, types.Payment{}, types.Transfer{}); err != nil {
 		return nil, err
 	}
 	cockroach := &Cockroach{DB: db, Localdb: localdb, ZeroAccount: &types.Account{EncryptBalance: *newEncryptBalance, EncryptDeductionBalance: *newEncryptDeductionBalance, Balance: baseBalance, DeductionBalance: 0}}
