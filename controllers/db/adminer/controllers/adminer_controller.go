@@ -27,16 +27,19 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	adminerv1 "github.com/labring/sealos/controllers/db/adminer/api/v1"
+	"github.com/labring/sealos/controllers/pkg/utils/label"
 )
 
 const (
@@ -46,6 +49,10 @@ const (
 	HostnameLength      = 8
 	KeepaliveAnnotation = "lastUpdateTime"
 	LetterBytes         = "abcdefghijklmnopqrstuvwxyz0123456789"
+)
+
+const (
+	AdminerPartOf = "adminer"
 )
 
 const (
@@ -134,26 +141,32 @@ func (r *AdminerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	if err := r.syncSecret(ctx, adminer); err != nil {
+	recLabels := label.RecommendedLabels(&label.Recommended{
+		Name:      adminer.Name,
+		ManagedBy: label.DefaultManagedBy,
+		PartOf:    AdminerPartOf,
+	})
+
+	if err := r.syncSecret(ctx, adminer, recLabels); err != nil {
 		logger.Error(err, "create secret failed")
 		r.recorder.Eventf(adminer, corev1.EventTypeWarning, "Create secret failed", "%v", err)
 		return ctrl.Result{}, err
 	}
 
 	var hostname string
-	if err := r.syncDeployment(ctx, adminer, &hostname); err != nil {
+	if err := r.syncDeployment(ctx, adminer, &hostname, recLabels); err != nil {
 		logger.Error(err, "create deployment failed")
 		r.recorder.Eventf(adminer, corev1.EventTypeWarning, "Create deployment failed", "%v", err)
 		return ctrl.Result{}, err
 	}
 
-	if err := r.syncService(ctx, adminer); err != nil {
+	if err := r.syncService(ctx, adminer, recLabels); err != nil {
 		logger.Error(err, "create service failed")
 		r.recorder.Eventf(adminer, corev1.EventTypeWarning, "Create service failed", "%v", err)
 		return ctrl.Result{}, err
 	}
 
-	if err := r.syncIngress(ctx, adminer, hostname); err != nil {
+	if err := r.syncIngress(ctx, adminer, hostname, recLabels); err != nil {
 		logger.Error(err, "create ingress failed")
 		r.recorder.Eventf(adminer, corev1.EventTypeWarning, "Create ingress failed", "%v", err)
 		return ctrl.Result{}, err
@@ -198,11 +211,12 @@ func (r *AdminerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 // 	})
 // }
 
-func (r *AdminerReconciler) syncSecret(ctx context.Context, adminer *adminerv1.Adminer) error {
+func (r *AdminerReconciler) syncSecret(ctx context.Context, adminer *adminerv1.Adminer, recLabels map[string]string) error {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      adminer.Name,
 			Namespace: adminer.Namespace,
+			Labels:    recLabels,
 		},
 	}
 
@@ -217,20 +231,19 @@ func (r *AdminerReconciler) syncSecret(ctx context.Context, adminer *adminerv1.A
 	return nil
 }
 
-func (r *AdminerReconciler) syncDeployment(ctx context.Context, adminer *adminerv1.Adminer, hostname *string) error {
-	labelsMap := buildLabelsMap(adminer)
-
+func (r *AdminerReconciler) syncDeployment(ctx context.Context, adminer *adminerv1.Adminer, hostname *string, recLabels map[string]string) error {
 	objectMeta := metav1.ObjectMeta{
 		Name:      adminer.Name,
 		Namespace: adminer.Namespace,
+		Labels:    recLabels,
 	}
 
 	selector := &metav1.LabelSelector{
-		MatchLabels: labelsMap,
+		MatchLabels: recLabels,
 	}
 
 	templateObjMeta := metav1.ObjectMeta{
-		Labels: labelsMap,
+		Labels: recLabels,
 	}
 
 	containers := []corev1.Container{
@@ -369,19 +382,12 @@ func (r *AdminerReconciler) syncDeployment(ctx context.Context, adminer *adminer
 	return r.Status().Update(ctx, adminer)
 }
 
-func (r *AdminerReconciler) syncService(ctx context.Context, adminer *adminerv1.Adminer) error {
-	labelsMap := buildLabelsMap(adminer)
-	expectService := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      adminer.Name,
-			Namespace: adminer.Namespace,
-		},
-		Spec: corev1.ServiceSpec{
-			Selector: labelsMap,
-			Type:     corev1.ServiceTypeClusterIP,
-			Ports: []corev1.ServicePort{
-				{Name: "adminer", Port: 8080, TargetPort: intstr.FromInt(8080), Protocol: corev1.ProtocolTCP},
-			},
+func (r *AdminerReconciler) syncService(ctx context.Context, adminer *adminerv1.Adminer, recLabels map[string]string) error {
+	expectServiceSpec := corev1.ServiceSpec{
+		Selector: recLabels,
+		Type:     corev1.ServiceTypeClusterIP,
+		Ports: []corev1.ServicePort{
+			{Name: "adminer", Port: 8080, TargetPort: intstr.FromInt(8080), Protocol: corev1.ProtocolTCP},
 		},
 	}
 
@@ -389,20 +395,21 @@ func (r *AdminerReconciler) syncService(ctx context.Context, adminer *adminerv1.
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      adminer.Name,
 			Namespace: adminer.Namespace,
+			Labels:    recLabels,
 		},
 	}
 
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
 		// only update some specific fields
-		service.Spec.Selector = expectService.Spec.Selector
-		service.Spec.Type = expectService.Spec.Type
+		service.Spec.Selector = expectServiceSpec.Selector
+		service.Spec.Type = expectServiceSpec.Type
 		if len(service.Spec.Ports) == 0 {
-			service.Spec.Ports = expectService.Spec.Ports
+			service.Spec.Ports = expectServiceSpec.Ports
 		} else {
-			service.Spec.Ports[0].Name = expectService.Spec.Ports[0].Name
-			service.Spec.Ports[0].Port = expectService.Spec.Ports[0].Port
-			service.Spec.Ports[0].TargetPort = expectService.Spec.Ports[0].TargetPort
-			service.Spec.Ports[0].Protocol = expectService.Spec.Ports[0].Protocol
+			service.Spec.Ports[0].Name = expectServiceSpec.Ports[0].Name
+			service.Spec.Ports[0].Port = expectServiceSpec.Ports[0].Port
+			service.Spec.Ports[0].TargetPort = expectServiceSpec.Ports[0].TargetPort
+			service.Spec.Ports[0].Protocol = expectServiceSpec.Ports[0].Protocol
 		}
 		return controllerutil.SetControllerReference(adminer, service, r.Scheme)
 	}); err != nil {
@@ -411,21 +418,22 @@ func (r *AdminerReconciler) syncService(ctx context.Context, adminer *adminerv1.
 	return nil
 }
 
-func (r *AdminerReconciler) syncIngress(ctx context.Context, adminer *adminerv1.Adminer, hostname string) error {
+func (r *AdminerReconciler) syncIngress(ctx context.Context, adminer *adminerv1.Adminer, hostname string, recLabels map[string]string) error {
 	var err error
 	host := hostname + "." + r.adminerDomain
 	switch adminer.Spec.IngressType {
 	case adminerv1.Nginx:
-		err = r.syncNginxIngress(ctx, adminer, host)
+		err = r.syncNginxIngress(ctx, adminer, host, recLabels)
 	}
 	return err
 }
 
-func (r *AdminerReconciler) syncNginxIngress(ctx context.Context, adminer *adminerv1.Adminer, host string) error {
+func (r *AdminerReconciler) syncNginxIngress(ctx context.Context, adminer *adminerv1.Adminer, host string, recLabels map[string]string) error {
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      adminer.Name,
 			Namespace: adminer.Namespace,
+			Labels:    recLabels,
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, ingress, func() error {
@@ -481,14 +489,6 @@ func isExpired(adminer *adminerv1.Adminer) bool {
 	return lastUpdateTime.Add(duration).Before(time.Now())
 }
 
-func buildLabelsMap(adminer *adminerv1.Adminer) map[string]string {
-	labelsMap := map[string]string{
-		"cloud.sealos.io/app-adminer": adminer.Name,
-		"app":                         adminer.Name,
-	}
-	return labelsMap
-}
-
 func getDomain() string {
 	domain := os.Getenv("DOMAIN")
 	if domain == "" {
@@ -527,6 +527,24 @@ func getSecretNamespace() string {
 		return DefaultSecretNamespace
 	}
 	return secretNamespace
+}
+
+func NewCache() cache.NewCacheFunc {
+	cacheLabelSelector := cache.ObjectSelector{
+		Label: labels.SelectorFromSet(labels.Set{
+			label.AppManagedBy: label.DefaultManagedBy,
+			label.AppPartOf:    AdminerPartOf,
+		}),
+	}
+
+	return cache.BuilderWithOptions(cache.Options{
+		SelectorsByObject: cache.SelectorsByObject{
+			&appsv1.Deployment{}:    cacheLabelSelector,
+			&corev1.Service{}:       cacheLabelSelector,
+			&corev1.Secret{}:        cacheLabelSelector,
+			&networkingv1.Ingress{}: cacheLabelSelector,
+		},
+	})
 }
 
 // SetupWithManager sets up the controller with the Manager.
