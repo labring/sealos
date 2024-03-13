@@ -1,6 +1,7 @@
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { TemplateType } from '@/types/app';
+import { findTopKeyWords } from '@/utils/template';
 import { parseGithubUrl } from '@/utils/tools';
 import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -22,7 +23,7 @@ export const readTemplates = (
   jsonPath: string,
   cdnUrl?: string,
   blacklistedCategories?: string[]
-) => {
+): TemplateType[] => {
   const jsonData = fs.readFileSync(jsonPath, 'utf8');
   const _templates: TemplateType[] = JSON.parse(jsonData);
 
@@ -30,7 +31,9 @@ export const readTemplates = (
     .filter((item) => {
       const isBlacklisted =
         blacklistedCategories &&
-        blacklistedCategories.some((category) => (item?.spec?.categories ?? []).includes(category));
+        blacklistedCategories.some((category) =>
+          (item?.spec?.categories ?? []).map((c) => c.toLowerCase()).includes(category)
+        );
       return !item?.spec?.draft && !isBlacklisted;
     })
     .map((item) => {
@@ -52,6 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const blacklistedCategories = process.env.BLACKLIST_CATEGORIES
     ? process.env.BLACKLIST_CATEGORIES.split(',')
     : [];
+  const menuCount = Number(process.env.SIDEBAR_MENU_COUNT) || 10;
 
   try {
     if (!hasAddCron) {
@@ -68,8 +72,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     const templates = readTemplates(jsonPath, cdnUrl, blacklistedCategories);
-    jsonRes(res, { data: templates, code: 200 });
+    const categories = templates.map((item) => (item.spec?.categories ? item.spec.categories : []));
+    const topKeys = findTopKeyWords(categories, menuCount);
+
+    jsonRes(res, { data: { templates: templates, menuKeys: topKeys.join(',') }, code: 200 });
   } catch (error) {
-    jsonRes(res, { code: 500, data: 'error' });
+    jsonRes(res, { code: 500, data: 'api listTemplate error' });
   }
 }

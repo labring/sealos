@@ -1,6 +1,5 @@
+import Layout from '@/components/layout';
 import { theme } from '@/constants/theme';
-import { useConfirm } from '@/hooks/useConfirm';
-import { useLoading } from '@/hooks/useLoading';
 import { useGlobalStore } from '@/store/global';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import { ChakraProvider } from '@chakra-ui/react';
@@ -14,11 +13,11 @@ import NProgress from 'nprogress'; //nprogress module
 import { useEffect, useState } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
-import Layout from '@/components/layout';
 
+import { useSystemConfigStore } from '@/store/config';
+import useSessionStore from '@/store/session';
 import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
-import useSessionStore from '@/store/session';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -36,17 +35,17 @@ const queryClient = new QueryClient({
   }
 });
 
-const App = ({ Component, pageProps, domain }: AppProps & { domain: string }) => {
+const App = ({ Component, pageProps }: AppProps) => {
   const router = useRouter();
   const { setSession } = useSessionStore();
   const { i18n } = useTranslation();
-  const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
-  const { Loading } = useLoading();
+  const { setScreenWidth, setLastRoute } = useGlobalStore();
+  const { initSystemConfig } = useSystemConfigStore();
   const [refresh, setRefresh] = useState(false);
-  const { openConfirm, ConfirmChild } = useConfirm({
-    title: 'jump_prompt',
-    content: 'jump_message'
-  });
+
+  useEffect(() => {
+    initSystemConfig();
+  }, []);
 
   useEffect(() => {
     NProgress.start();
@@ -61,7 +60,7 @@ const App = ({ Component, pageProps, domain }: AppProps & { domain: string }) =>
     })();
     NProgress.done();
     return response;
-  }, [openConfirm]);
+  }, []);
 
   // add resize event
   useEffect(() => {
@@ -114,7 +113,7 @@ const App = ({ Component, pageProps, domain }: AppProps & { domain: string }) =>
     if (lang) {
       i18n?.changeLanguage?.(lang);
     }
-  }, [refresh, router.pathname]);
+  }, [i18n, refresh, router.pathname]);
 
   return (
     <>
@@ -133,10 +132,6 @@ const App = ({ Component, pageProps, domain }: AppProps & { domain: string }) =>
       </QueryClientProvider>
     </>
   );
-};
-
-App.getInitialProps = async () => {
-  return { domain: process.env.SEALOS_DOMAIN || 'cloud.sealos.io' };
 };
 
 export default appWithTranslation(App);

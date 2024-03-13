@@ -54,11 +54,10 @@ export default function InstanceList() {
       w={'100%'}
       gridTemplateColumns="repeat(auto-fill,minmax(344px,1fr))"
       gridGap={'24px'}
-      minW={'765px'}
       pt="24px"
-      pr="42px"
       pb="42px"
       overflow={'auto'}
+      minW={'712px'}
     >
       {data &&
         data?.map((item) => {

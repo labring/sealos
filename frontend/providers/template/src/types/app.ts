@@ -149,3 +149,29 @@ export type InstanceListItemType = {
   yamlCR: TemplateInstanceType;
   displayName?: string;
 };
+
+export enum ApplicationType {
+  All = 'all',
+  MyApp = 'myapp'
+}
+
+export type SlideDataType = {
+  title: string;
+  desc: string;
+  bg: string;
+  image: string;
+  borderRadius: string;
+  icon: string;
+  templateName: string;
+};
+
+export type SideBarMenuType = {
+  id: string;
+  value: string;
+  type: ApplicationType;
+};
+
+export type SystemConfigType = {
+  showCarousel: boolean;
+  slideData: SlideDataType[];
+};
