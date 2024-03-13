@@ -47,7 +47,7 @@ retry_kubectl_apply() {
 
     while [ $attempt -lt $max_attempts ]; do
         # Attempt to execute the kubectl command
-        kubectl apply -f "$file_path" && {
+        kubectl apply -f "$file_path" >> /dev/null && {
             return 0  # Exit the function successfully
         }
         # If the command did not execute successfully, increase the attempt counter and report failure
@@ -184,8 +184,8 @@ function sealos_run_controller {
   --env DEFAULT_NAMESPACE="account-system"
 
   # run license controller
-  sealos run tars/license.tar \
-  --env MONGO_URI="$mongodbUri"
+#  sealos run tars/license.tar \
+#  --env MONGO_URI="$mongodbUri"
 }
 
 
@@ -246,13 +246,13 @@ function sealos_run_frontend {
   --env cloudPort="$cloudPort" \
   --env certSecretName="wildcard-cert"
 
-  echo "run license frontend"
-  sealos run tars/frontend-license.tar \
-  --env cloudDomain=$cloudDomain \
-  --env cloudPort="$cloudPort" \
-  --env certSecretName="wildcard-cert" \
-  --env MONGODB_URI="${mongodbUri}/sealos-license?authSource=admin" \
-  --env licensePurchaseDomain="license.sealos.io"
+#  echo "run license frontend"
+#  sealos run tars/frontend-license.tar \
+#  --env cloudDomain=$cloudDomain \
+#  --env cloudPort="$cloudPort" \
+#  --env certSecretName="wildcard-cert" \
+#  --env MONGODB_URI="${mongodbUri}/sealos-license?authSource=admin" \
+#  --env licensePurchaseDomain="license.sealos.io"
 
   echo "run cronjob frontend"
   sealos run tars/frontend-cronjob.tar \
