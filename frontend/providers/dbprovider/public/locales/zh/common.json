@@ -265,5 +265,6 @@
   "db instances tip": "{{db}} 实例数量建议为奇数",
   "Deleting": "删除中",
   "Backup Running": "备份中",
-  "Backup Deleting": "删除中"
+  "Backup Deleting": "删除中",
+  "DataBase": "数据库"
 }
