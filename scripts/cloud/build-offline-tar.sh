@@ -9,14 +9,15 @@ mkdir -p output/tars
 
 images=(
   docker.io/labring/sealos-cloud:$CLOUD_VERSION
-  docker.io/labring/kubernetes:v1.25.6
+  docker.io/labring/kubernetes:v1.27.11
   docker.io/labring/helm:v3.12.0
   docker.io/labring/cilium:v1.12.14
   docker.io/labring/cert-manager:v1.8.0
   docker.io/labring/openebs:v3.4.0
   docker.io/labring/kube-prometheus-stack:v0.63.0
   docker.io/labring/ingress-nginx:v1.5.1
-  docker.io/labring/kubeblocks:v0.6.4
+  docker.io/labring/kubeblocks:v0.7.2
+  docker.io/labring/cockroach-operator:v2.13.0
   docker.io/labring/metrics-server:v0.6.4
 )
 
@@ -32,7 +33,7 @@ done
 # get and save cli
 mkdir -p output/cli
 
-VERSION="v4.3.7"
+VERSION="v5.0.0-beta5"
 
 wget https://github.com/labring/sealos/releases/download/${VERSION}/sealos_${VERSION#v}_linux_${ARCH}.tar.gz \
    && tar zxvf sealos_${VERSION#v}_linux_${ARCH}.tar.gz sealos && chmod +x sealos && mv sealos output/cli

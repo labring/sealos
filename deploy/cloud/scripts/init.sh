@@ -4,6 +4,9 @@ set -e
 cloudDomain="127.0.0.1.nip.io"
 cloudPort=""
 mongodbUri=""
+cockroachdbUri=""
+cockroachdbLocalUri=""
+cockroachdbGlobalUri=""
 
 tlsCrtPlaceholder="<tls-crt-placeholder>"
 tlsKeyPlaceholder="<tls-key-placeholder>"
@@ -21,6 +24,9 @@ function prepare {
 
   # gen mongodb uri
   gen_mongodbUri
+
+  # gen cockroachdb uri
+  gen_cockroachdbUri
 
   # gen saltKey if not set or not found in secret
   gen_saltKey
@@ -56,6 +62,41 @@ function gen_mongodbUri() {
   fi
 }
 
+function gen_cockroachdbUri() {
+  if [ -z "$cockroachdbUri" ]; then
+    echo "no cockroachdb uri found, create cockroachdb and gen cockroachdb uri"
+    kubectl apply -f manifests/cockroachdb.yaml
+
+    message="waiting for cockroachdb ready"
+
+    NAMESPACE="sealos"
+    STATEFULSET_NAME="sealos-cockroachdb"
+    while : ; do
+      REPLICAS=$(kubectl get statefulset $STATEFULSET_NAME -n $NAMESPACE -o jsonpath='{.spec.replicas}')
+      READY_REPLICAS=$(kubectl get statefulset $STATEFULSET_NAME -n $NAMESPACE -o jsonpath='{.status.readyReplicas}')
+      if [ "$READY_REPLICAS" == "$REPLICAS" ]; then
+        echo -e "\rcockroachdb is ready."
+        break
+      else
+        echo -ne "\r$message    \e[K"
+        sleep 0.5
+        echo -ne "\r$message .  \e[K"
+        sleep 0.5
+        echo -ne "\r$message .. \e[K"
+        sleep 0.5
+        echo -ne "\r$message ...\e[K"
+        sleep 0.5
+      fi
+    done
+
+    echo "cockroachdb secret has been generated successfully."
+    chmod +x scripts/gen-cockroachdb-uri.sh
+    cockroachdbUri=$(scripts/gen-cockroachdb-uri.sh)
+  fi
+  cockroachdbLocalUri="$cockroachdbUri/local"
+  cockroachdbGlobalUri="$cockroachdbUri/global"
+}
+
 function gen_saltKey() {
     password_salt=$(kubectl get secret desktop-frontend-secret -n sealos -o jsonpath="{.data.password_salt}" 2>/dev/null || true)
     if [[ -z "$password_salt" ]]; then
@@ -69,7 +110,10 @@ function mutate_desktop_config() {
     # mutate etc/sealos/desktop-config.yaml by using mongodb uri and two random base64 string
     sed -i -e "s;<your-mongodb-uri-base64>;$(echo -n "${mongodbUri}/sealos-auth?authSource=admin" | base64 -w 0);" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-jwt-secret-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-jwt-secret-region-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-password-salt-base64>;$saltKey;" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-region-database-url-base64>;$cockroachdbLocalUri;" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-global-database-url-base64>;$cockroachdbGlobalUri;" etc/sealos/desktop-config.yaml
 }
 
 function create_tls_secret {
@@ -139,7 +183,8 @@ function sealos_run_frontend {
     --config-file etc/sealos/desktop-config.yaml
 
   # sealos authorize !!must run after sealos_run_controller frontend-desktop.tar and before sealos_run_frontend
-  sealos_authorize
+  # TODO fix sealos_authorize in controller/job/init
+  # sealos_authorize
 
   echo "run applaunchpad frontend"
   sealos run tars/frontend-applaunchpad.tar \

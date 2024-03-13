@@ -1,40 +1,3 @@
-apiVersion: apps.kubeblocks.io/v1alpha1
-kind: Cluster
-metadata:
-  finalizers:
-    - cluster.kubeblocks.io/finalizer
-  generation: 1
-  labels:
-    clusterdefinition.kubeblocks.io/name: mongodb
-    clusterversion.kubeblocks.io/name: {{ .mongodbVersion }}
-  name: sealos-mongodb
-  namespace: sealos
-spec:
-  clusterDefinitionRef: mongodb
-  clusterVersionRef: {{ .mongodbVersion }}
-  componentSpecs:
-    - componentDefRef: mongodb
-      monitor: true
-      name: mongodb
-      replicas: 1
-      resources:
-        limits:
-          cpu: "1"
-          memory: 2Gi
-        requests:
-          cpu: "0.5"
-          memory: 1Gi
-      serviceAccountName: sealos-mongodb-sa
-      volumeClaimTemplates:
-        - name: data
-          spec:
-            accessModes:
-              - ReadWriteOnce
-            resources:
-              requests:
-                storage: 10Gi
-  terminationPolicy: Delete
----
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -75,3 +38,40 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: sealos-mongodb-sa
+---
+apiVersion: apps.kubeblocks.io/v1alpha1
+kind: Cluster
+metadata:
+  finalizers:
+    - cluster.kubeblocks.io/finalizer
+  generation: 1
+  labels:
+    clusterdefinition.kubeblocks.io/name: mongodb
+    clusterversion.kubeblocks.io/name: {{ .mongodbVersion }}
+  name: sealos-mongodb
+  namespace: sealos
+spec:
+  clusterDefinitionRef: mongodb
+  clusterVersionRef: {{ .mongodbVersion }}
+  componentSpecs:
+    - componentDefRef: mongodb
+      monitor: true
+      name: mongodb
+      replicas: 1
+      resources:
+        limits:
+          cpu: "1"
+          memory: 2Gi
+        requests:
+          cpu: "0.5"
+          memory: 1Gi
+      serviceAccountName: sealos-mongodb-sa
+      volumeClaimTemplates:
+        - name: data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 5Gi
+  terminationPolicy: Delete

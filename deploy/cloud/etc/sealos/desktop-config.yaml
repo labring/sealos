@@ -12,3 +12,6 @@ spec:
       mongodb_uri: <your-mongodb-uri-base64>
       jwt_secret: <your-jwt-secret-base64>
       password_salt: <your-password-salt-base64>
+      jwt_secret_region: <your-jwt-secret-region-base64>
+      region_database_url: <your-region-database-url-base64>
+      global_database_url: <your-global-database-url-base64>

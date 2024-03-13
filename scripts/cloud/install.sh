@@ -4,7 +4,7 @@ set -e
 
 # Configurations
 CLOUD_DIR="/root/.sealos/cloud"
-SEALOS_VERSION="v4.3.7"
+SEALOS_VERSION="v5.0.0-bate5"
 cloud_version="latest"
 #mongodb_version="mongodb-5.0"
 #master_ips=
@@ -21,13 +21,13 @@ cloud_version="latest"
 #single=y/n
 image_registry=${image_registry:-"docker.io"}
 image_repository=${image_repository:-"labring"}
-kubernetes_version=${kubernetes_version:-"1.25.6"}
+kubernetes_version=${kubernetes_version:-"1.27.11"}
 cilium_version=${cilium_version:-"1.12.14"}
 cert_manager_version=${cert_manager_version:-"1.13.3"}
 helm_version=${helm_version:-"3.12.0"}
 openebs_version=${openebs_version:-"3.4.0"}
 ingress_nginx_version=${ingress_nginx_version:-"1.5.1"}
-kubeblocks_version=${kubeblocks_version:-"0.6.4"}
+kubeblocks_version=${kubeblocks_version:-"0.7.2"}
 metrics_server_version=${metrics_server_version:-"0.6.4"}
 kube_prometheus_stack_version=${kube_prometheus_stack_version:-"0.63.0"}
 
@@ -70,12 +70,11 @@ PROMPTS_EN=(
 Options:
   --image-registry                  # Image repository address (default: docker.io)
   --image-repository                # Image repository name (default: labring)
-  --kubernetes-version              # Kubernetes version (default: 1.25.6)
+  --kubernetes-version              # Kubernetes version (default: 1.27.11)
   --cilium-version                  # Cilium version (default: 1.12.14)
   --cert-manager-version            # Cert Manager version (default: 1.13.3)
   --helm-version                    # Helm version (default: 3.12.0)
   --openebs-version                 # OpenEBS version (default: 3.4.0)
-  --reflector-version                # Reflector version (default: 7.0.151)
   --ingress-nginx-version           # Ingress Nginx version (default: 1.5.1)
   --kubeblocks-version              # Kubeblocks version (default: 0.6.4)
   --metrics-server-version          # Metrics Server version (default: 0.6.4)
@@ -132,12 +131,11 @@ PROMPTS_CN=(
 Options:
   --image-registry                # 镜像仓库地址 (默认: docker.io)
   --image-repository              # 镜像仓库名称 (默认: labring)
-  --kubernetes-version            # Kubernetes版本 (默认: 1.25.6)
+  --kubernetes-version            # Kubernetes版本 (默认: 1.27.11)
   --cilium-version                # Cilium版本 (默认: 1.12.14)
   --cert-manager-version          # Cert Manager版本 (默认: 1.13.3)
   --helm-version                  # Helm版本 (默认: 3.12.0)
   --openebs-version               # OpenEBS版本 (默认: 3.4.0)
-  --reflector-version              # Reflector版本 (默认: 7.0.151)
   --ingress-nginx-version         # Ingress Nginx版本 (默认: 1.5.1)
   --kubeblocks-version            # Kubeblocks版本 (默认: 0.6.4)
   --metrics-server-version        # Metrics Server版本 (默认: 0.6.4)
@@ -246,13 +244,13 @@ init() {
 
     get_prompt "pre_prompt"
     echo ""
-    [[ $k8s_installed == "y" ]] || pull_image "kubernetes" "v${kubernetes_version#v:-1.25.6}"
+    [[ $k8s_installed == "y" ]] || pull_image "kubernetes" "v${kubernetes_version#v:-1.27.11}"
     [[ $k8s_ready == "y" ]] || pull_image "cilium" "v${cilium_version#v:-1.12.14}"
     pull_image "cert-manager" "v${cert_manager_version#v:-1.8.0}"
     pull_image "helm" "v${helm_version#v:-3.12.0}"
     pull_image "openebs" "v${openebs_version#v:-3.4.0}"
     pull_image "ingress-nginx" "v${ingress_nginx_version#v:-1.5.1}"
-    pull_image "kubeblocks" "v${kubeblocks_version#v:-0.6.2}"
+    pull_image "kubeblocks" "v${kubeblocks_version#v:-0.7.2}"
     pull_image "metrics-server" "v${metrics_server_version#v:-0.6.4}"
     pull_image "kube-prometheus-stack" "v${kube_prometheus_stack_version#v:-0.63.0}"
     pull_image "sealos-cloud" "${cloud_version}"
@@ -570,7 +568,7 @@ data:
     echo "$kb_addon_prometheus_server_patch" > $CLOUD_DIR/kb-addon-prometheus-server-patch.yaml
 
 
-    sealos_gen_cmd="sealos gen ${image_registry}/${image_repository}/kubernetes:v${kubernetes_version#v:-1.25.6}\
+    sealos_gen_cmd="sealos gen ${image_registry}/${image_repository}/kubernetes:v${kubernetes_version#v:-1.27.11}\
         ${master_ips:+--masters $master_ips}\
         ${node_ips:+--nodes $node_ips}\
         --pk=${ssh_private_key:-$HOME/.ssh/id_rsa}\
@@ -633,13 +631,17 @@ EOF
 
     get_prompt "ingress_installation"
     sealos run ${image_registry}/${image_repository}/ingress-nginx:v${ingress_nginx_version#v:-1.5.1}\
-        ${image_registry}/${image_repository}/kubeblocks:v${kubeblocks_version#v:-0.6.2}\
+        ${image_registry}/${image_repository}/kubeblocks:v${kubeblocks_version#v:-0.7.2}\
         --config-file $CLOUD_DIR/ingress-nginx-config.yaml
 
     kbcli addon enable prometheus
 
     get_prompt "installing_monitoring"
     sealos run "${image_registry}/${image_repository}/kube-prometheus-stack:v${kube_prometheus_stack_version#v:-0.63.0}"
+
+    # TODO use sealos run to install cockroachdb-operator
+    kubectl apply -f https://raw.githubusercontent.com/cockroachdb/cockroach-operator/v2.12.0/install/crds.yaml
+    kubectl apply -f https://raw.githubusercontent.com/cockroachdb/cockroach-operator/v2.12.0/install/operator.yaml
 
     kubectl patch cm kb-addon-prometheus-server -n kb-system --patch-file $CLOUD_DIR/kb-addon-prometheus-server-patch.yaml
 
@@ -675,7 +677,6 @@ for i in "$@"; do
   --cert-manager-version=*) cert_manager_version="${i#*=}"; shift ;;
   --helm-version=*) helm_version="${i#*=}"; shift ;;
   --openebs-version=*) openebs_version="${i#*=}"; shift ;;
-  --reflector-version=*) reflector_version="${i#*=}"; shift ;;
   --ingress-nginx-version=*) ingress_nginx_version="${i#*=}"; shift ;;
   --kubeblocks-version=*) kubeblocks_version="${i#*=}"; shift ;;
   --metrics-server-version=*) metrics_server_version="${i#*=}"; shift ;;
@@ -705,7 +706,6 @@ for i in "$@"; do
   --cert-manager-version | cert-manager-version | \
   --helm-version | helm-version | \
   --openebs-version | openebs-version | \
-  --reflector-version | reflector-version | \
   --ingress-nginx-version | ingress-nginx-version | \
   --kubeblocks-version | kubeblocks-version | \
   --metrics-server-version | metrics-server-version | \
