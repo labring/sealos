@@ -16,7 +16,7 @@ images=(
   docker.io/labring/openebs:v3.4.0
   docker.io/labring/kube-prometheus-stack:v0.63.0
   docker.io/labring/ingress-nginx:v1.5.1
-  docker.io/labring/kubeblocks:v0.7.2
+  docker.io/labring/kubeblocks:v0.6.4
   docker.io/labring/cockroach-operator:v2.13.0
   docker.io/labring/metrics-server:v0.6.4
 )
