@@ -89,9 +89,10 @@ func (User) TableName() string {
 type OauthProviderType string
 
 const (
-	OauthProviderTypePhone  OauthProviderType = "PHONE"
-	OauthProviderTypeGithub OauthProviderType = "GITHUB"
-	OauthProviderTypeWechat OauthProviderType = "WECHAT"
+	OauthProviderTypePhone    OauthProviderType = "PHONE"
+	OauthProviderTypeGithub   OauthProviderType = "GITHUB"
+	OauthProviderTypeWechat   OauthProviderType = "WECHAT"
+	OauthProviderTypePassword OauthProviderType = "PASSWORD"
 )
 
 func (OauthProvider) TableName() string {

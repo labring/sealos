@@ -21,7 +21,6 @@ import (
 	v1 "github.com/labring/sealos/controllers/license/api/v1"
 	"github.com/labring/sealos/controllers/license/internal/util/database"
 	"github.com/labring/sealos/controllers/license/internal/util/meta"
-
 	"go.mongodb.org/mongo-driver/mongo"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
