@@ -140,8 +140,8 @@ function mutate_desktop_config() {
     sed -i -e "s;<your-jwt-secret-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-jwt-secret-region-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-password-salt-base64>;$saltKey;" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-region-database-url-base64>;$cockroachdbLocalUri;" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-global-database-url-base64>;$cockroachdbGlobalUri;" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-region-database-url-base64>;$(echo -n "${cockroachdbLocalUri}" | base64 -w 0);" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-global-database-url-base64>;$(echo -n "${cockroachdbGlobalUri}" | base64 -w 0);" etc/sealos/desktop-config.yaml
 }
 
 function create_tls_secret {
