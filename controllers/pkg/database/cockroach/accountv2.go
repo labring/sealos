@@ -77,13 +77,13 @@ func (g *Cockroach) GetUserUID(ops *types.UserQueryOpts) (uuid.UUID, error) {
 		if err := g.DB.Where(&types.User{ID: ops.ID}).First(&user).Error; err != nil {
 			return uuid.Nil, fmt.Errorf("failed to get user: %v", err)
 		}
-		return ops.UID, nil
+		return user.UID, nil
 	}
-	user, err := g.GetUserCr(ops)
+	userCr, err := g.GetUserCr(ops)
 	if err != nil {
 		return uuid.Nil, err
 	}
-	return user.UserUID, nil
+	return userCr.UserUID, nil
 }
 
 func checkOps(ops *types.UserQueryOpts) error {
