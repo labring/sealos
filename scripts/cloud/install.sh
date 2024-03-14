@@ -4,7 +4,7 @@ set -e
 
 # Configurations
 CLOUD_DIR="/root/.sealos/cloud"
-SEALOS_VERSION="v5.0.0-bate5"
+SEALOS_VERSION="v5.0.0-bate4"
 cloud_version="latest"
 #mongodb_version="mongodb-5.0"
 #master_ips=
@@ -27,7 +27,7 @@ cert_manager_version=${cert_manager_version:-"1.13.3"}
 helm_version=${helm_version:-"3.12.0"}
 openebs_version=${openebs_version:-"3.4.0"}
 ingress_nginx_version=${ingress_nginx_version:-"1.5.1"}
-kubeblocks_version=${kubeblocks_version:-"0.7.2"}
+kubeblocks_version=${kubeblocks_version:-"0.6.4"}
 metrics_server_version=${metrics_server_version:-"0.6.4"}
 kube_prometheus_stack_version=${kube_prometheus_stack_version:-"0.63.0"}
 
@@ -250,7 +250,7 @@ init() {
     pull_image "helm" "v${helm_version#v:-3.12.0}"
     pull_image "openebs" "v${openebs_version#v:-3.4.0}"
     pull_image "ingress-nginx" "v${ingress_nginx_version#v:-1.5.1}"
-    pull_image "kubeblocks" "v${kubeblocks_version#v:-0.7.2}"
+    pull_image "kubeblocks" "v${kubeblocks_version#v:-0.6.4}"
     pull_image "metrics-server" "v${metrics_server_version#v:-0.6.4}"
     pull_image "kube-prometheus-stack" "v${kube_prometheus_stack_version#v:-0.63.0}"
     pull_image "sealos-cloud" "${cloud_version}"
@@ -631,7 +631,7 @@ EOF
 
     get_prompt "ingress_installation"
     sealos run ${image_registry}/${image_repository}/ingress-nginx:v${ingress_nginx_version#v:-1.5.1}\
-        ${image_registry}/${image_repository}/kubeblocks:v${kubeblocks_version#v:-0.7.2}\
+        ${image_registry}/${image_repository}/kubeblocks:v${kubeblocks_version#v:-0.6.4}\
         --config-file $CLOUD_DIR/ingress-nginx-config.yaml
 
     kbcli addon enable prometheus
