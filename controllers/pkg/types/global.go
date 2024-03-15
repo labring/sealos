@@ -36,7 +36,7 @@ func (Account) TableName() string {
 }
 
 type Region struct {
-	UID         uuid.UUID `gorm:"type:uid;default:gen_random_uuid();primary_key"`
+	UID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
 	DisplayName string    `gorm:"type:text;not null"`
 	Location    string    `gorm:"type:text;not null"`
 	Domain      string    `gorm:"type:text;not null"`
@@ -45,7 +45,7 @@ type Region struct {
 
 // RegionUserCr is located in the region
 type RegionUserCr struct {
-	UID       uuid.UUID `gorm:"type:uid;default:gen_random_uuid();primary_key"`
+	UID       uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
 	CrName    string    `gorm:"type:text;column:crName;not null;unique"`
 	UserUID   uuid.UUID `gorm:"column:userUid;type:uuid;not null"`
 	CreatedAt time.Time `gorm:"type:timestamp(3);default:current_timestamp();not null"`
@@ -53,10 +53,37 @@ type RegionUserCr struct {
 }
 
 type OauthProvider struct {
-	UID          uuid.UUID         `gorm:"type:uid;default:gen_random_uuid();primary_key"`
+	UID          uuid.UUID         `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
 	UserUID      uuid.UUID         `gorm:"column:userUid;type:uuid;not null"`
 	ProviderType OauthProviderType `gorm:"column:providerType;type:text;not null"`
 	ProviderID   string            `gorm:"column:providerId;type:text;not null"`
+}
+
+type Transfer struct {
+	UID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
+	FromUserUID uuid.UUID `gorm:"column:fromUserUid;type:uuid;not null"`
+	ToUserUID   uuid.UUID `gorm:"column:toUserUid;type:uuid;not null"`
+	Amount      int64     `gorm:"type:bigint;not null"`
+	Remark      string    `gorm:"type:text;not null"`
+	CreatedAt   time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp();not null"`
+}
+
+func (Transfer) TableName() string {
+	return "Transfer"
+}
+
+type User struct {
+	UID       uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
+	CreateAt  time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp();not null"`
+	UpdateAt  time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp();not null"`
+	AvatarURI string    `gorm:"column:avatarUri;type:text;not null"`
+	Nickname  string    `gorm:"type:text;not null"`
+	ID        string    `gorm:"type:text;not null;unique"`
+	Name      string    `gorm:"type:text;not null"`
+}
+
+func (User) TableName() string {
+	return "User"
 }
 
 type OauthProviderType string

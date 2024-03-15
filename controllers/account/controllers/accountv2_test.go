@@ -299,7 +299,7 @@ func TestAccountV2_GetUser(t *testing.T) {
 			t.Errorf("failed close connection: %v", err)
 		}
 	}()
-	user, err := account.GetUser(&types.UserQueryOpts{Owner: "eoxwhh80"})
+	user, err := account.GetUserCr(&types.UserQueryOpts{Owner: "eoxwhh80"})
 	if err != nil {
 		t.Errorf("failed to get user: %v", err)
 	}

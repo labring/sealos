@@ -51,7 +51,7 @@ const (
 	EnvBaseBalance = "BASE_BALANCE"
 )
 
-func (g *Cockroach) GetUser(ops *types.UserQueryOpts) (*types.RegionUserCr, error) {
+func (g *Cockroach) GetUserCr(ops *types.UserQueryOpts) (*types.RegionUserCr, error) {
 	if err := checkOps(ops); err != nil {
 		return nil, err
 	}
@@ -61,11 +61,29 @@ func (g *Cockroach) GetUser(ops *types.UserQueryOpts) (*types.RegionUserCr, erro
 	if ops.UID != uuid.Nil {
 		query.UserUID = ops.UID
 	}
-	var user types.RegionUserCr
-	if err := g.Localdb.Where(query).First(&user).Error; err != nil {
+	var userCr types.RegionUserCr
+	if err := g.Localdb.Where(query).First(&userCr).Error; err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return &userCr, nil
+}
+
+func (g *Cockroach) GetUserUID(ops *types.UserQueryOpts) (uuid.UUID, error) {
+	if ops.UID != uuid.Nil {
+		return ops.UID, nil
+	}
+	if ops.ID != "" {
+		var user types.User
+		if err := g.DB.Where(&types.User{ID: ops.ID}).First(&user).Error; err != nil {
+			return uuid.Nil, fmt.Errorf("failed to get user: %v", err)
+		}
+		return user.UID, nil
+	}
+	userCr, err := g.GetUserCr(ops)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return userCr.UserUID, nil
 }
 
 func checkOps(ops *types.UserQueryOpts) error {
@@ -79,9 +97,45 @@ func (g *Cockroach) GetAccount(ops *types.UserQueryOpts) (*types.Account, error)
 	return g.getAccount(ops)
 }
 
+func (g *Cockroach) GetTransfer(ops *types.UserQueryOpts) ([]types.Transfer, error) {
+	userUID, err := g.GetUserUID(ops)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user uid: %v", err)
+	}
+	var transfers []types.Transfer
+	if err := g.DB.Where(types.Transfer{FromUserUID: userUID}).Or(types.Transfer{ToUserUID: userUID}).Find(&transfers).Error; err != nil {
+		return nil, fmt.Errorf("failed to get transfer: %v", err)
+	}
+	return transfers, nil
+}
+
+func (g *Cockroach) GetTransferTo(ops *types.UserQueryOpts) ([]types.Transfer, error) {
+	userUID, err := g.GetUserUID(ops)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user uid: %v", err)
+	}
+	var transfers []types.Transfer
+	if err := g.DB.Where(types.Transfer{ToUserUID: userUID}).Find(&transfers).Error; err != nil {
+		return nil, fmt.Errorf("failed to get transfer: %v", err)
+	}
+	return transfers, nil
+}
+
+func (g *Cockroach) GetTransferFrom(ops *types.UserQueryOpts) ([]types.Transfer, error) {
+	userUID, err := g.GetUserUID(ops)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user uid: %v", err)
+	}
+	var transfers []types.Transfer
+	if err := g.DB.Where(types.Transfer{FromUserUID: userUID}).Find(&transfers).Error; err != nil {
+		return nil, fmt.Errorf("failed to get transfer: %v", err)
+	}
+	return transfers, nil
+}
+
 func (g *Cockroach) getAccount(ops *types.UserQueryOpts) (*types.Account, error) {
 	if ops.UID == uuid.Nil {
-		user, err := g.GetUser(ops)
+		user, err := g.GetUserCr(ops)
 		if err != nil {
 			return nil, err
 		}
@@ -109,7 +163,7 @@ func (g *Cockroach) getAccount(ops *types.UserQueryOpts) (*types.Account, error)
 
 func (g *Cockroach) GetUserOauthProvider(ops *types.UserQueryOpts) (*types.OauthProvider, error) {
 	if ops.UID == uuid.Nil {
-		user, err := g.GetUser(ops)
+		user, err := g.GetUserCr(ops)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user: %v", err)
 		}
@@ -127,7 +181,7 @@ func (g *Cockroach) GetUserOauthProvider(ops *types.UserQueryOpts) (*types.Oauth
 
 func (g *Cockroach) updateBalance(tx *gorm.DB, ops *types.UserQueryOpts, amount int64, isDeduction, add bool) error {
 	if ops.UID == uuid.Nil {
-		user, err := g.GetUser(ops)
+		user, err := g.GetUserCr(ops)
 		if err != nil {
 			return fmt.Errorf("failed to get user: %v", err)
 		}
@@ -208,7 +262,7 @@ func (g *Cockroach) AddDeductionBalance(ops *types.UserQueryOpts, amount int64) 
 
 func (g *Cockroach) CreateAccount(ops *types.UserQueryOpts, account *types.Account) (*types.Account, error) {
 	if ops.UID == uuid.Nil {
-		user, err := g.GetUser(ops)
+		user, err := g.GetUserCr(ops)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user: %v", err)
 		}
@@ -399,7 +453,7 @@ func (g *Cockroach) payment(payment *types.Payment, updateBalance bool) error {
 		if payment.RegionUserOwner == "" {
 			return fmt.Errorf("empty payment owner and user")
 		}
-		user, err := g.GetUser(&types.UserQueryOpts{Owner: payment.RegionUserOwner})
+		user, err := g.GetUserCr(&types.UserQueryOpts{Owner: payment.RegionUserOwner})
 		if err != nil {
 			return fmt.Errorf("failed to get user: %v", err)
 		}
@@ -422,10 +476,46 @@ func (g *Cockroach) payment(payment *types.Payment, updateBalance bool) error {
 	})
 }
 
+func (g *Cockroach) GetPayment(ops *types.UserQueryOpts, startTime, endTime time.Time) ([]types.Payment, error) {
+	userUID, err := g.GetUserUID(ops)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user uid: %v", err)
+	}
+	var payment []types.Payment
+	if startTime != endTime {
+		if err := g.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}).Where("created_at >= ? AND created_at <= ?", startTime, endTime).Find(&payment).Error; err != nil {
+			return nil, fmt.Errorf("failed to get payment: %w", err)
+		}
+	} else {
+		if err := g.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}).Find(&payment).Error; err != nil {
+			return nil, fmt.Errorf("failed to get payment: %w", err)
+		}
+	}
+	return payment, nil
+}
+
+func (g *Cockroach) SetPaymentInvoice(ops *types.UserQueryOpts, paymentIDList []string) error {
+	userUID, err := g.GetUserUID(ops)
+	if err != nil {
+		return fmt.Errorf("failed to get user uid: %v", err)
+	}
+	var payment []types.Payment
+	if err := g.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUID}}).Where("id IN ?", paymentIDList).Find(&payment).Error; err != nil {
+		return fmt.Errorf("failed to get payment: %w", err)
+	}
+	for i := range payment {
+		payment[i].InvoicedAt = true
+		if err := g.DB.Save(&payment[i]).Error; err != nil {
+			return fmt.Errorf("failed to save payment: %v", err)
+		}
+	}
+	return nil
+}
+
 // NewAccount create a new account
 func (g *Cockroach) NewAccount(ops *types.UserQueryOpts) (*types.Account, error) {
 	if ops.UID == uuid.Nil {
-		user, err := g.GetUser(ops)
+		user, err := g.GetUserCr(ops)
 		if err != nil {
 			return nil, err
 		}
@@ -450,7 +540,7 @@ func (g *Cockroach) NewAccount(ops *types.UserQueryOpts) (*types.Account, error)
 func (g *Cockroach) GetUserAccountRechargeDiscount(ops *types.UserQueryOpts) (*types.RechargeDiscount, error) {
 	userID := ops.UID
 	if userID == uuid.Nil {
-		user, err := g.GetUser(ops)
+		user, err := g.GetUserCr(ops)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user %v: %v", ops, err)
 		}
@@ -510,18 +600,18 @@ var (
 
 func (g *Cockroach) TransferAccount(from, to *types.UserQueryOpts, amount int64) error {
 	if from.UID == uuid.Nil {
-		fromUser, err := g.GetUser(from)
+		fromUserUID, err := g.GetUserUID(from)
 		if err != nil {
 			return fmt.Errorf("failed to get user: %v", err)
 		}
-		from.UID = fromUser.UserUID
+		from.UID = fromUserUID
 	}
 	if to.UID == uuid.Nil {
-		toUser, err := g.GetUser(to)
+		toUserUID, err := g.GetUserUID(to)
 		if err != nil {
 			return fmt.Errorf("failed to get user: %v", err)
 		}
-		to.UID = toUser.UserUID
+		to.UID = toUserUID
 	}
 	err := g.DB.Transaction(func(tx *gorm.DB) error {
 		sender, err := g.GetAccount(&types.UserQueryOpts{UID: from.UID})
@@ -537,6 +627,13 @@ func (g *Cockroach) TransferAccount(from, to *types.UserQueryOpts, amount int64)
 		}
 		if err = g.updateBalance(tx, &types.UserQueryOpts{UID: to.UID}, amount, false, true); err != nil {
 			return fmt.Errorf("failed to update receiver balance: %w", err)
+		}
+		if err = g.DB.Create(&types.Transfer{
+			FromUserUID: from.UID,
+			ToUserUID:   to.UID,
+			Amount:      amount,
+		}).Error; err != nil {
+			return fmt.Errorf("failed to create transfer record: %w", err)
 		}
 		return nil
 	})
@@ -575,7 +672,7 @@ func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to encrypt zero value")
 	}
-	if err := CreateTableIfNotExist(db, types.Account{}, types.ErrorAccountCreate{}, types.ErrorPaymentCreate{}, types.Payment{}); err != nil {
+	if err := CreateTableIfNotExist(db, types.Account{}, types.ErrorAccountCreate{}, types.ErrorPaymentCreate{}, types.Payment{}, types.Transfer{}); err != nil {
 		return nil, err
 	}
 	cockroach := &Cockroach{DB: db, Localdb: localdb, ZeroAccount: &types.Account{EncryptBalance: *newEncryptBalance, EncryptDeductionBalance: *newEncryptDeductionBalance, Balance: baseBalance, DeductionBalance: 0}}

@@ -9,7 +9,10 @@ const (
 	GetRechargeAmount    = "/costs/recharge"
 	GetConsumptionAmount = "/costs/consumption"
 	GetPropertiesUsed    = "/costs/properties"
+	SetPaymentInvoice    = "/payment/set-invoice"
 	GetUserCosts         = "/costs"
+	SetTransfer          = "/transfer"
+	GetTransfer          = "/get-transfer"
 )
 
 // env

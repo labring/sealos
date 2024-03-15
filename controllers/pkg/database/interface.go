@@ -32,12 +32,7 @@ import (
 
 type Interface interface {
 	Account
-	Auth
 	Traffic
-}
-
-type Auth interface {
-	GetUser(k8sUser string) (*types.User, error)
 }
 
 type Account interface {
@@ -85,7 +80,7 @@ type Traffic interface {
 
 type AccountV2 interface {
 	Close() error
-	GetUser(user *types.UserQueryOpts) (*types.RegionUserCr, error)
+	GetUserCr(user *types.UserQueryOpts) (*types.RegionUserCr, error)
 	GetAccount(user *types.UserQueryOpts) (*types.Account, error)
 	GetUserOauthProvider(ops *types.UserQueryOpts) (*types.OauthProvider, error)
 	AddBalance(user *types.UserQueryOpts, balance int64) error

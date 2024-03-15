@@ -6,11 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/labring/sealos/controllers/pkg/crypto"
-	"gorm.io/driver/postgres"
-
-	"gorm.io/gorm"
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 
 	"github.com/labring/sealos/controllers/pkg/types"
 
@@ -34,6 +30,9 @@ type Interface interface {
 	GetPropertiesUsedAmount(user string, startTime, endTime time.Time) (map[string]int64, error)
 	GetAccount(ops types.UserQueryOpts) (*types.Account, error)
 	GetPayment(ops types.UserQueryOpts, startTime, endTime time.Time) ([]types.Payment, error)
+	SetPaymentInvoice(req *helper.SetPaymentInvoiceReq) error
+	Transfer(req *helper.TransferAmountReq) error
+	GetTransfer(ops *types.UserQueryOpts) ([]types.Transfer, error)
 }
 
 type Account struct {
@@ -50,54 +49,31 @@ type MongoDB struct {
 }
 
 type Cockroach struct {
-	DB      *gorm.DB
-	LocalDB *gorm.DB
+	ck *cockroach.Cockroach
 }
 
 func (g *Cockroach) GetAccount(ops types.UserQueryOpts) (*types.Account, error) {
-	if ops.UID == uuid.Nil {
-		user, err := g.GetUser(ops)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get user: %v", err)
-		}
-		ops.UID = user.UserUID
-	}
-	var account types.Account
-	if err := g.DB.Where(types.Account{UserUID: ops.UID}).First(&account).Error; err != nil {
-		return nil, fmt.Errorf("failed to get account: %w", err)
-	}
-	balance, err := crypto.DecryptInt64(account.EncryptBalance)
+	account, err := g.ck.GetAccount(&ops)
 	if err != nil {
-		return nil, fmt.Errorf("failed to descrypt balance: %v", err)
+		return nil, fmt.Errorf("failed to get account: %v", err)
 	}
-	deductionBalance, err := crypto.DecryptInt64(account.EncryptDeductionBalance)
-	if err != nil {
-		return nil, fmt.Errorf("failed to descrypt deduction balance: %v", err)
-	}
-	account.Balance = balance
-	account.DeductionBalance = deductionBalance
-	return &account, nil
+	return account, nil
 }
 
 func (g *Cockroach) GetPayment(ops types.UserQueryOpts, startTime, endTime time.Time) ([]types.Payment, error) {
-	if ops.UID == uuid.Nil {
-		user, err := g.GetUser(ops)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get user: %v", err)
-		}
-		ops.UID = user.UserUID
-	}
-	var payment []types.Payment
-	if startTime != endTime {
-		if err := g.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: ops.UID}}).Where("created_at >= ? AND created_at <= ?", startTime, endTime).Find(&payment).Error; err != nil {
-			return nil, fmt.Errorf("failed to get payment: %w", err)
-		}
-	} else {
-		if err := g.DB.Where(types.Payment{PaymentRaw: types.PaymentRaw{UserUID: ops.UID}}).Find(&payment).Error; err != nil {
-			return nil, fmt.Errorf("failed to get payment: %w", err)
-		}
-	}
-	return payment, nil
+	return g.ck.GetPayment(&ops, startTime, endTime)
+}
+
+func (g *Cockroach) SetPaymentInvoice(req *helper.SetPaymentInvoiceReq) error {
+	return g.ck.SetPaymentInvoice(&types.UserQueryOpts{Owner: req.Auth.Owner}, req.PaymentIDList)
+}
+
+func (g *Cockroach) Transfer(req *helper.TransferAmountReq) error {
+	return g.ck.TransferAccount(&types.UserQueryOpts{Owner: req.Owner}, &types.UserQueryOpts{ID: req.ToUser}, req.Amount)
+}
+
+func (g *Cockroach) GetTransfer(ops *types.UserQueryOpts) ([]types.Transfer, error) {
+	return g.ck.GetTransfer(ops)
 }
 
 func (g *Cockroach) GetRechargeAmount(ops types.UserQueryOpts, startTime, endTime time.Time) (int64, error) {
@@ -110,30 +86,6 @@ func (g *Cockroach) GetRechargeAmount(ops types.UserQueryOpts, startTime, endTim
 		paymentAmount += payment[i].Amount
 	}
 	return paymentAmount, nil
-}
-
-func (g *Cockroach) GetUser(ops types.UserQueryOpts) (*types.RegionUserCr, error) {
-	if err := checkOps(ops); err != nil {
-		return nil, err
-	}
-	query := &types.RegionUserCr{
-		CrName: ops.Owner,
-	}
-	if ops.UID != uuid.Nil {
-		query.UserUID = ops.UID
-	}
-	var user types.RegionUserCr
-	if err := g.LocalDB.Where(query).First(&user).Error; err != nil {
-		return nil, fmt.Errorf("failed to get user: %w", err)
-	}
-	return &user, nil
-}
-
-func checkOps(ops types.UserQueryOpts) error {
-	if ops.Owner == "" && ops.UID == uuid.Nil {
-		return fmt.Errorf("empty query opts")
-	}
-	return nil
 }
 
 func (m *MongoDB) GetProperties() ([]common.PropertyQuery, error) {
@@ -270,7 +222,7 @@ func (m *MongoDB) getSumOfUsedAmount(propertyType uint8, user string, startTime,
 	return result.TotalAmount, nil
 }
 
-func NewAccountInterface(mongoURI, cockRoachURI, localCockRoachURI string) (Interface, error) {
+func NewAccountInterface(mongoURI, globalCockRoachURI, localCockRoachURI string) (Interface, error) {
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect mongodb: %v", err)
@@ -284,15 +236,11 @@ func NewAccountInterface(mongoURI, cockRoachURI, localCockRoachURI string) (Inte
 		BillingConn:    "billing",
 		PropertiesConn: "properties",
 	}
-	db, err := gorm.Open(postgres.Open(cockRoachURI), &gorm.Config{})
+	ck, err := cockroach.NewCockRoach(globalCockRoachURI, localCockRoachURI)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect cockroach uri %s: %v", cockRoachURI, err)
+		return nil, fmt.Errorf("failed to connect cockroach: %v", err)
 	}
-	localDB, err := gorm.Open(postgres.Open(localCockRoachURI), &gorm.Config{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect local cockroach uri %s: %v", localCockRoachURI, err)
-	}
-	account := &Account{MongoDB: mongodb, Cockroach: &Cockroach{DB: db, LocalDB: localDB}}
+	account := &Account{MongoDB: mongodb, Cockroach: &Cockroach{ck: ck}}
 	return account, nil
 }
 

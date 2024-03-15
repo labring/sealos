@@ -199,7 +199,6 @@ func main() {
 	if err = (&controllers.DebtReconciler{
 		Client:    mgr.GetClient(),
 		Scheme:    mgr.GetScheme(),
-		DBClient:  dbClient,
 		AccountV2: v2Account,
 	}).SetupWithManager(mgr, rateOpts); err != nil {
 		setupManagerError(err, "Debt")
