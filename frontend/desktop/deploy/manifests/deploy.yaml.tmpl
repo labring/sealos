@@ -69,6 +69,25 @@ spec:
         app: desktop-frontend
     spec:
       serviceAccountName: desktop-frontend
+      initContainers:
+        - name: init-database
+          image: ghcr.io/labring/sealos-desktop-frontend:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              prisma migrate deploy --schema /app/desktop/prisma/global/schema.prisma
+              prisma migrate deploy --schema /app/desktop/prisma/region/schema.prisma
+          env:
+            - name: GLOBAL_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  key: global_database_url
+                  name: desktop-frontend-secret
+            - name: REGION_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  key: region_database_url
+                  name: desktop-frontend-secret
       containers:
         - name: desktop-frontend
           env:

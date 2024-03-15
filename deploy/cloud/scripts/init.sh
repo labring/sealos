@@ -4,6 +4,9 @@ set -e
 cloudDomain="127.0.0.1.nip.io"
 cloudPort=""
 mongodbUri=""
+cockroachdbUri=""
+cockroachdbLocalUri=""
+cockroachdbGlobalUri=""
 
 tlsCrtPlaceholder="<tls-crt-placeholder>"
 tlsKeyPlaceholder="<tls-key-placeholder>"
@@ -22,6 +25,9 @@ function prepare {
   # gen mongodb uri
   gen_mongodbUri
 
+  # gen cockroachdb uri
+  gen_cockroachdbUri
+
   # gen saltKey if not set or not found in secret
   gen_saltKey
 
@@ -32,13 +38,37 @@ function prepare {
   create_tls_secret
 }
 
+# Function to retry `kubectl apply -f` command until it succeeds or reaches a maximum number of attempts
+retry_kubectl_apply() {
+    local file_path=$1  # The path to the Kubernetes manifest file
+    local max_attempts=6  # Maximum number of attempts
+    local attempt=0  # Current attempt counter
+    local wait_seconds=10  # Seconds to wait before retrying
+
+    while [ $attempt -lt $max_attempts ]; do
+        # Attempt to execute the kubectl command
+        kubectl apply -f "$file_path" >> /dev/null && {
+            return 0  # Exit the function successfully
+        }
+        # If the command did not execute successfully, increase the attempt counter and report failure
+        attempt=$((attempt + 1))
+        # If the maximum number of attempts has been reached, stop retrying
+        if [ $attempt -eq $max_attempts ]; then
+            return 1  # Exit the function with failure
+        fi
+        # Wait for a specified time before retrying
+        sleep $wait_seconds
+    done
+}
+
+
 function gen_mongodbUri() {
   # if mongodbUri is empty then create mongodb and gen mongodb uri
   if [ -z "$mongodbUri" ]; then
     echo "no mongodb uri found, create mongodb and gen mongodb uri"
-    kubectl apply -f manifests/mongodb.yaml
+    retry_kubectl_apply "manifests/mongodb.yaml"
     echo "waiting for mongodb secret generated"
-    message="Waiting for MongoDB ready"
+    message="waiting for mongodb ready"
     # if there is no sealos-mongodb-conn-credential secret then wait for mongodb ready
     while [ -z "$(kubectl get secret -n sealos sealos-mongodb-conn-credential 2>/dev/null)" ]; do
       echo -ne "\r$message   \e[K"
@@ -56,6 +86,45 @@ function gen_mongodbUri() {
   fi
 }
 
+function gen_cockroachdbUri() {
+  if [ -z "$cockroachdbUri" ]; then
+    echo "no cockroachdb uri found, create cockroachdb and gen cockroachdb uri"
+    retry_kubectl_apply "manifests/cockroachdb.yaml"
+    message="waiting for cockroachdb ready"
+
+    NAMESPACE="sealos"
+    STATEFULSET_NAME="sealos-cockroachdb"
+
+    while : ; do
+        kubectl get statefulset $STATEFULSET_NAME -n $NAMESPACE >/dev/null 2>&1 && break
+    done
+
+    while : ; do
+      REPLICAS=$(kubectl get statefulset $STATEFULSET_NAME -n $NAMESPACE -o jsonpath='{.spec.replicas}')
+      READY_REPLICAS=$(kubectl get statefulset $STATEFULSET_NAME -n $NAMESPACE -o jsonpath='{.status.readyReplicas}')
+      if [ "$READY_REPLICAS" == "$REPLICAS" ]; then
+        echo -e "\rcockroachdb is ready."
+        break
+      else
+        echo -ne "\r$message    \e[K"
+        sleep 0.5
+        echo -ne "\r$message .  \e[K"
+        sleep 0.5
+        echo -ne "\r$message .. \e[K"
+        sleep 0.5
+        echo -ne "\r$message ...\e[K"
+        sleep 0.5
+      fi
+    done
+
+    echo "cockroachdb secret has been generated successfully."
+    chmod +x scripts/gen-cockroachdb-uri.sh
+    cockroachdbUri=$(scripts/gen-cockroachdb-uri.sh)
+  fi
+  cockroachdbLocalUri="$cockroachdbUri/local"
+  cockroachdbGlobalUri="$cockroachdbUri/global"
+}
+
 function gen_saltKey() {
     password_salt=$(kubectl get secret desktop-frontend-secret -n sealos -o jsonpath="{.data.password_salt}" 2>/dev/null || true)
     if [[ -z "$password_salt" ]]; then
@@ -69,7 +138,10 @@ function mutate_desktop_config() {
     # mutate etc/sealos/desktop-config.yaml by using mongodb uri and two random base64 string
     sed -i -e "s;<your-mongodb-uri-base64>;$(echo -n "${mongodbUri}/sealos-auth?authSource=admin" | base64 -w 0);" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-jwt-secret-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-jwt-secret-region-base64>;$(tr -cd 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0);" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-password-salt-base64>;$saltKey;" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-region-database-url-base64>;$(echo -n "${cockroachdbLocalUri}" | base64 -w 0);" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-global-database-url-base64>;$(echo -n "${cockroachdbGlobalUri}" | base64 -w 0);" etc/sealos/desktop-config.yaml
 }
 
 function create_tls_secret {
@@ -112,8 +184,8 @@ function sealos_run_controller {
   --env DEFAULT_NAMESPACE="account-system"
 
   # run license controller
-  sealos run tars/license.tar \
-  --env MONGO_URI="$mongodbUri"
+#  sealos run tars/license.tar \
+#  --env MONGO_URI="$mongodbUri"
 }
 
 
@@ -139,7 +211,8 @@ function sealos_run_frontend {
     --config-file etc/sealos/desktop-config.yaml
 
   # sealos authorize !!must run after sealos_run_controller frontend-desktop.tar and before sealos_run_frontend
-  sealos_authorize
+  # TODO fix sealos_authorize in controller/job/init
+  # sealos_authorize
 
   echo "run applaunchpad frontend"
   sealos run tars/frontend-applaunchpad.tar \
@@ -173,13 +246,13 @@ function sealos_run_frontend {
   --env cloudPort="$cloudPort" \
   --env certSecretName="wildcard-cert"
 
-  echo "run license frontend"
-  sealos run tars/frontend-license.tar \
-  --env cloudDomain=$cloudDomain \
-  --env cloudPort="$cloudPort" \
-  --env certSecretName="wildcard-cert" \
-  --env MONGODB_URI="${mongodbUri}/sealos-license?authSource=admin" \
-  --env licensePurchaseDomain="license.sealos.io"
+#  echo "run license frontend"
+#  sealos run tars/frontend-license.tar \
+#  --env cloudDomain=$cloudDomain \
+#  --env cloudPort="$cloudPort" \
+#  --env certSecretName="wildcard-cert" \
+#  --env MONGODB_URI="${mongodbUri}/sealos-license?authSource=admin" \
+#  --env licensePurchaseDomain="license.sealos.io"
 
   echo "run cronjob frontend"
   sealos run tars/frontend-cronjob.tar \
