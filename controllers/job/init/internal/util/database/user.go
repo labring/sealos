@@ -15,75 +15,49 @@
 package database
 
 import (
-	"context"
 	"fmt"
-	"time"
+	"os"
 
 	"github.com/labring/sealos/controllers/job/init/internal/util/common"
-	"github.com/labring/sealos/controllers/job/init/internal/util/controller"
-	"github.com/labring/sealos/controllers/job/init/internal/util/errors"
+
+	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
+	gonanoid "github.com/matoous/go-nanoid/v2"
+
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
+	"github.com/labring/sealos/controllers/pkg/types"
 )
 
-func PresetAdminUser(ctx context.Context) error {
-	//init mongodb database
-	client, err := InitMongoDB(ctx)
+func PresetAdminUser() error {
+	var ck cockroach.Cockroach
+	v2Account, err := cockroach.NewCockRoach(os.Getenv(database.GlobalCockroachURI), os.Getenv(database.LocalCockroachURI))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to connect to cockroach: %v", err)
 	}
-
 	defer func() {
-		if client == nil {
-			logger.Error(fmt.Errorf("mongodb client is nil"), "disconnect mongodb client failed")
-			return
-		}
-		err := client.Disconnect(ctx)
+		err := v2Account.Close()
 		if err != nil {
-			logger.Error(err, "disconnect mongodb client failed")
-			return
+			logger.Warn("failed to close cockroach connection: %v", err)
 		}
 	}()
-
-	collection := client.Database(mongoUserDatabase).Collection(mongoUserCollection)
-
-	// create admin user
-	user, err := newAdminUser()
+	userNanoID, err := gonanoid.New(10)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to generate nano id: %v", err)
 	}
-
-	// check if the user already exists
-	exist, err := user.Exist(ctx, collection)
-	if err != nil {
-		return err
-	}
-	if exist {
-		return errors.ErrAdminExists
-	}
-
-	// insert root user
-	if _, err := collection.InsertOne(ctx, user); err != nil {
-		return err
+	if err = ck.CreateUser(&types.OauthProvider{
+		UserUID:      common.AdminUID(),
+		ProviderType: types.OauthProviderTypePassword,
+		ProviderID:   adminPassword,
+	}, &types.RegionUserCr{
+		CrName:  adminUserName,
+		UserUID: common.AdminUID(),
+	}, &types.User{
+		UID:      common.AdminUID(),
+		ID:       userNanoID,
+		Name:     adminUserName,
+		Nickname: userNanoID,
+	}); err != nil {
+		return fmt.Errorf("failed to create user: %v", err)
 	}
 	return nil
-}
-
-func newAdminUser() (*User, error) {
-	return newUser(common.AdminUID(), DefaultAdminUserName, DefaultAdminUserName, hashPassword(DefaultAdminPassword), controller.DefaultAdminUserName), nil
-}
-
-func newUser(uid, name, passwordUser, hashedPassword, k8sUser string) *User {
-	return &User{
-		UID:          uid,
-		Name:         name,
-		PasswordUser: passwordUser,
-		Password:     hashedPassword,
-		// to iso string
-		CreatedTime: time.Now().Format(time.RFC3339),
-		K8sUsers: []K8sUser{
-			{
-				Name: k8sUser,
-			},
-		},
-	}
 }

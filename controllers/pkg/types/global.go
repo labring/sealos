@@ -76,8 +76,8 @@ type User struct {
 	UID       uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
 	CreateAt  time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp();not null"`
 	UpdateAt  time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp();not null"`
-	AvatarURI string    `gorm:"column:avatarUri;type:text;not null"`
-	Nickname  string    `gorm:"type:text;not null"`
+	AvatarURI string    `gorm:"column:avatarUri;type:text"`
+	Nickname  string    `gorm:"type:text"`
 	ID        string    `gorm:"type:text;not null;unique"`
 	Name      string    `gorm:"type:text;not null"`
 }

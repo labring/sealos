@@ -16,11 +16,11 @@ package common
 
 import "github.com/google/uuid"
 
-var adminUID string
+var adminUID uuid.UUID
 
-func AdminUID() string {
-	if adminUID == "" {
-		adminUID = uuid.New().String()
+func AdminUID() uuid.UUID {
+	if adminUID == uuid.Nil {
+		adminUID = uuid.New()
 	}
 	return adminUID
 }
