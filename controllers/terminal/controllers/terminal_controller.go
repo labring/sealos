@@ -190,7 +190,6 @@ func (r *TerminalReconciler) syncNginxIngress(ctx context.Context, terminal *ter
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, ingress, func() error {
 		expectIngress := r.createNginxIngress(terminal, host)
-		ingress.ObjectMeta.Labels = expectIngress.ObjectMeta.Labels
 		ingress.ObjectMeta.Annotations = expectIngress.ObjectMeta.Annotations
 		ingress.Spec.Rules = expectIngress.Spec.Rules
 		ingress.Spec.TLS = expectIngress.Spec.TLS
