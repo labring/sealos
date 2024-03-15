@@ -11,6 +11,7 @@ export const useGlobalStore = create<GlobalState>()(
   persist(
     immer((set) => ({
       callback_url: '',
+      cf_sitekey: '',
       service_protocol_en: '',
       service_protocol_zh: '',
       private_protocol_en: '',

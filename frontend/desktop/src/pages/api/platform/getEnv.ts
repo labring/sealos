@@ -23,6 +23,7 @@ export default async function handler(_: NextApiRequest, res: NextApiResponse) {
   const private_protocol_en = process.env.PRIVATE_PROTOCOL_EN || '';
   const oauth_proxy = process.env.OAUTH_PROXY || '';
   const callback_url = process.env.CALLBACK_URL || '';
+  const cf_sitekey = process.env.CF_SITE_KEY || '';
   const needGithub = enableGithub();
   const needWechat = enableWechat();
   const needPassword = enablePassword();
@@ -33,7 +34,6 @@ export default async function handler(_: NextApiRequest, res: NextApiResponse) {
   const rechargeEnabled = enableRecharge();
   const guideEnabled = process.env.GUIDE_ENABLED === 'true';
   const openWechatEnabled = enableOpenWechat();
-
   return jsonRes<SystemEnv>(res, {
     data: {
       SEALOS_CLOUD_DOMAIN: process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io',
@@ -55,7 +55,8 @@ export default async function handler(_: NextApiRequest, res: NextApiResponse) {
       rechargeEnabled,
       licenseEnabled,
       guideEnabled,
-      openWechatEnabled
+      openWechatEnabled,
+      cf_sitekey
     }
   });
 }

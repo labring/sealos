@@ -85,7 +85,13 @@ export default function useSms({
     )();
   };
 
-  const SmsModal = () => {
+  const SmsModal = ({
+    onAfterGetCode,
+    getCfToken
+  }: {
+    getCfToken?: () => string | undefined;
+    onAfterGetCode?: () => void;
+  }) => {
     const [remainTime, setRemainTime] = useState(_remainTime.current);
 
     useEffect(() => {
@@ -107,8 +113,10 @@ export default function useSms({
       _remainTime.current = 60;
 
       try {
+        const cfToken = getCfToken?.();
         const res = await request.post<any, ApiResp<any>>('/api/auth/phone/sms', {
-          phoneNumbers: getValues('phoneNumber')
+          phoneNumbers: getValues('phoneNumber'),
+          cfToken
         });
         if (res.code !== 200 || res.message !== 'successfully') {
           throw new Error('Get code failed');
@@ -117,6 +125,8 @@ export default function useSms({
         showError(t('Get code failed') || 'Get code failed');
         setRemainTime(0);
         _remainTime.current = 0;
+      } finally {
+        onAfterGetCode?.();
       }
     };
 
