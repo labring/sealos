@@ -438,7 +438,6 @@ func (r *AdminerReconciler) syncNginxIngress(ctx context.Context, adminer *admin
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, ingress, func() error {
 		expectIngress := r.createNginxIngress(adminer, host)
-		ingress.ObjectMeta.Labels = expectIngress.ObjectMeta.Labels
 		ingress.ObjectMeta.Annotations = expectIngress.ObjectMeta.Annotations
 		ingress.Spec.Rules = expectIngress.Spec.Rules
 		ingress.Spec.TLS = expectIngress.Spec.TLS
