@@ -24,8 +24,9 @@ import { debounce } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import useWechat from './auth/useWechat';
+import { Turnstile, TurnstileInstance } from '@marsidev/react-turnstile';
 
 export default function SigninComponent() {
   const { data: platformEnv } = useQuery(['getPlatformEnv'], getSystemEnv);
@@ -37,7 +38,8 @@ export default function SigninComponent() {
     private_protocol_en = '',
     needPassword = false,
     needSms = false,
-    openWechatEnabled = false
+    openWechatEnabled = false,
+    cf_sitekey
   } = platformEnv?.data || {};
   const needTabs = needPassword && needSms;
   const disclosure = useDisclosure();
@@ -80,12 +82,21 @@ export default function SigninComponent() {
       setToken('');
     }
   }, []);
-
+  const turnstileRef = useRef<TurnstileInstance>(null);
   const loginConfig = useMemo(() => {
     return {
       [LoginType.SMS]: {
         login: smsSubmit,
-        component: <SmsModal />
+        component: (
+          <SmsModal
+            onAfterGetCode={() => {
+              turnstileRef.current?.reset();
+            }}
+            getCfToken={() => {
+              return turnstileRef.current?.getResponse();
+            }}
+          />
+        )
       },
       [LoginType.PASSWORD]: {
         login: passwordSubmit,
@@ -97,7 +108,15 @@ export default function SigninComponent() {
       },
       [LoginType.NONE]: null
     };
-  }, [PasswordComponent, SmsModal, WechatComponent, passwordSubmit, smsSubmit, wechatSubmit]);
+  }, [
+    PasswordComponent,
+    SmsModal,
+    WechatComponent,
+    passwordSubmit,
+    smsSubmit,
+    wechatSubmit,
+    turnstileRef.current
+  ]);
 
   useEffect(() => {
     setTabIndex(needSms ? LoginType.SMS : needPassword ? LoginType.PASSWORD : LoginType.NONE);
@@ -206,6 +225,15 @@ export default function SigninComponent() {
           {tabIndex !== LoginType.WeChat && (
             <>
               <Protocol />
+              {!!cf_sitekey && (
+                <Turnstile
+                  options={{
+                    size: 'invisible'
+                  }}
+                  ref={turnstileRef}
+                  siteKey={cf_sitekey}
+                />
+              )}
               <Button
                 variant={'unstyled'}
                 background="linear-gradient(90deg, #000000 0%, rgba(36, 40, 44, 0.9) 98.29%)"

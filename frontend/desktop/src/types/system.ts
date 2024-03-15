@@ -19,6 +19,7 @@ export type LoginProps = {
   github_client_id: string;
   google_client_id: string;
   callback_url: string;
+  cf_sitekey: string;
   service_protocol_zh: string;
   private_protocol_zh: string;
   service_protocol_en: string;
