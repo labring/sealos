@@ -20,9 +20,10 @@ import (
 
 	"github.com/labring/sealos/controllers/job/init/internal/util/common"
 
+	gonanoid "github.com/matoous/go-nanoid/v2"
+
 	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
-	gonanoid "github.com/matoous/go-nanoid/v2"
 
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	"github.com/labring/sealos/controllers/pkg/types"
