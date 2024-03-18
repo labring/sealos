@@ -75,15 +75,17 @@ export const useAppStore = create<State>()(
         return 'success';
       },
       loadAvgMonitorData: async (appName) => {
+        const pods = await getAppPodsByAppName(appName);
+        const queryName = pods[0].podName || appName;
         const [averageCpu, averageMemory] = await Promise.all([
           getAppMonitorData({
             queryKey: 'average_cpu',
-            queryName: appName,
+            queryName: queryName,
             step: '2m'
           }),
           getAppMonitorData({
             queryKey: 'average_memory',
-            queryName: appName,
+            queryName: queryName,
             step: '2m'
           })
         ]);
@@ -98,6 +100,8 @@ export const useAppStore = create<State>()(
       },
       loadDetailMonitorData: async (appName) => {
         const pods = await getAppPodsByAppName(appName);
+        const queryName = pods[0].podName || appName;
+
         set((state) => {
           state.appDetailPods = pods.map((pod) => {
             const oldPod = state.appDetailPods.find((item) => item.podName === pod.podName);
@@ -110,11 +114,12 @@ export const useAppStore = create<State>()(
         });
 
         const [cpuData, memoryData, averageCpuData, averageMemoryData] = await Promise.all([
-          getAppMonitorData({ queryKey: 'cpu', queryName: appName, step: '2m' }),
-          getAppMonitorData({ queryKey: 'memory', queryName: appName, step: '2m' }),
-          getAppMonitorData({ queryKey: 'average_cpu', queryName: appName, step: '2m' }),
-          getAppMonitorData({ queryKey: 'average_memory', queryName: appName, step: '2m' })
+          getAppMonitorData({ queryKey: 'cpu', queryName: queryName, step: '2m' }),
+          getAppMonitorData({ queryKey: 'memory', queryName: queryName, step: '2m' }),
+          getAppMonitorData({ queryKey: 'average_cpu', queryName: queryName, step: '2m' }),
+          getAppMonitorData({ queryKey: 'average_memory', queryName: queryName, step: '2m' })
         ]);
+
         set((state) => {
           if (state?.appDetail?.appName === appName && state.appDetail?.isPause !== true) {
             state.appDetail.usedCpu = averageCpuData[0]
