@@ -95,6 +95,7 @@ export const getTemplateDataSource = (
           type: string;
           default: string;
           required: boolean;
+          options?: string[];
         }
       >,
       cloneDefauls: Record<
@@ -118,6 +119,7 @@ export const getTemplateDataSource = (
         }
         const output = mapValues(cloneDefauls, (value) => value.value);
         return {
+          ...item,
           description: parseTemplateString(item.description, /\$\{\{\s*(.*?)\s*\}\}/g, {
             ...platformEnvs,
             defaults: output,
@@ -170,7 +172,7 @@ export const handleTemplateToInstanceYaml = (
   instanceName: string
 ): TemplateInstanceType => {
   const {
-    spec: { gitRepo, templateType, template_type, ...resetSpec }
+    spec: { gitRepo, templateType, template_type, categories, ...resetSpec }
   } = template;
 
   return {
@@ -182,6 +184,7 @@ export const handleTemplateToInstanceYaml = (
     spec: {
       gitRepo: gitRepo,
       templateType: templateType || template_type,
+      categories: categories || [],
       ...resetSpec
     }
   };

@@ -95,7 +95,7 @@ export const adaptCronJobDetail = async (job: V1CronJob): Promise<CronJobEditTyp
     // launchpad
     enableNumberCopies: Boolean(enableNumberCopies),
     enableResources: Boolean(enableResources),
-    replicas: Number(replicas) || 1,
+    replicas: Number(replicas) || 0,
     cpu: cpuFormatToM(cpu || '0'),
     memory: memoryFormatToMi(memory || '0'),
     launchpadName: launchpadName || '',
@@ -139,7 +139,7 @@ export const adaptAppListItem = (app: V1Deployment): AppListItemType => {
     memory: memoryFormatToMi(
       app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory || '0'
     ),
-    replicas: app.spec?.replicas || 1
+    replicas: app.spec?.replicas || 0
   };
 };
 

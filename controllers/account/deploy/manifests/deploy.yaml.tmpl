@@ -1283,16 +1283,10 @@ spec:
         command:
         - /manager
         env:
-        - name: DOMAIN
-          value: '{{ .cloudDomain }}'
-        - name: PORT
-          value: '{{ .cloudPort }}'
         - name: ACCOUNT_NAMESPACE
           value: sealos-system
         - name: NAMESPACE_NAME
           value: user-system
-        - name: NEW_ACCOUNT_AMOUNT
-          value: ri79LzQiQrs6CVa1ctE308+AseBXbOua0RIMCXAH5hc3irs=
         - name: WHITELIST
           value: licenses.License.license.sealos.io/v1,notifications.Notification.notification.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,billinginfoqueries.BillingInfoQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1
         - name: ACCOUNT_SYSTEM_NAMESPACE
@@ -1305,24 +1299,12 @@ spec:
             secretKeyRef:
               key: MONGO_URI
               name: mongo-secret
-        - name: ApproachingDeletionPeriod
-          value: "345600"
-        - name: ImminentDeletionPeriod
-          value: "259200"
-        - name: FinalDeletionPeriod
-          value: "604800"
-        - name: DebtDetectionCycleSeconds
-          value: "30"
-        - name: OSAdminSecret
-          value: '{{ .OSAdminSecret }}'
-        - name: OSInternalEndpoint
-          value: '{{ .OSInternalEndpoint }}'
-        - name: OSNamespace
-          value: '{{ .OSNamespace }}'
         envFrom:
         - secretRef:
             name: payment-secret
             optional: true
+        - configMapRef:
+            name: account-manager-env
         image: ghcr.io/labring/sealos-account-controller:latest
         imagePullPolicy: Always
         livenessProbe:

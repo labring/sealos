@@ -7,6 +7,8 @@ README.md
 .git
 .env.local
 config.yaml
-
 .yalc/
 yalc.lock
+
+prisma/global/generated/
+prisma/region/generated/

@@ -17,3 +17,4 @@ export const componentLabel = 'app.kubernetes.io/component';
 // cronjob
 export const cronJobTypeKey = 'cronjob-type';
 export const cronJobKey = 'cloud.sealos.io/cronjob';
+export const defaultDomain = 'cloud.sealos.io';

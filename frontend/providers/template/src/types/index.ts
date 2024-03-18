@@ -18,4 +18,5 @@ export type EnvResponse = {
   SEALOS_CERT_SECRET_NAME: string;
   TEMPLATE_REPO_URL: string;
   SEALOS_NAMESPACE: string;
+  SEALOS_SERVICE_ACCOUNT: string;
 };

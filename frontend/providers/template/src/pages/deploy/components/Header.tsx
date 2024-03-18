@@ -5,7 +5,6 @@ import { downLoadBold, formatStarNumber, useCopyData } from '@/utils/tools';
 import {
   Avatar,
   AvatarGroup,
-  Box,
   Button,
   Divider,
   Flex,
@@ -41,8 +40,6 @@ const Header = ({
   templateDetail: TemplateType;
   cloudDomain: string;
 }) => {
-  console.log(templateDetail, 'templateDetail');
-
   const { t } = useTranslation();
   const { copyData } = useCopyData();
   const handleExportYaml = useCallback(async () => {
@@ -70,10 +67,10 @@ const Header = ({
     cursor: 'pointer'
   };
 
-  const copyTemplateLink = () => {
+  const copyTemplateLink = useCallback(() => {
     const str = `https://${cloudDomain}/?openapp=system-template%3FtemplateName%3D${appName}`;
     copyData(str);
-  };
+  }, [appName, cloudDomain, copyData]);
 
   const MdPart = `[![](https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg)](https://${cloudDomain}/?openapp=system-template%3FtemplateName%3D${appName})`;
 
@@ -161,10 +158,9 @@ const Header = ({
               <PopoverBody p={'20px'}>
                 <Flex
                   onClick={copyTemplateLink}
-                  w="60px"
                   flexDirection={'column'}
                   justifyContent={'center'}
-                  alignItems={'center'}
+                  alignItems={'start'}
                 >
                   <Flex {...IconBox}>
                     <CopyLinkIcon />

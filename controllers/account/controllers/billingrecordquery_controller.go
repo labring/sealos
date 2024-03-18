@@ -32,7 +32,6 @@ import (
 	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -110,13 +109,6 @@ func (r *BillingRecordQueryReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, err
 	}
 
-	if err = r.Get(ctx, client.ObjectKey{Name: getUsername(billingRecordQuery.Namespace), Namespace: r.AccountSystemNamespace}, &accountv1.Account{}); err != nil {
-		if errors.IsNotFound(err) {
-			billingRecordQuery.Status.Status = "Please use the owner account to query"
-			return ctrl.Result{}, r.Status().Update(ctx, billingRecordQuery)
-		}
-		return ctrl.Result{}, err
-	}
 	err = dbClient.QueryBillingRecords(billingRecordQuery, getUsername(billingRecordQuery.Namespace))
 	if err != nil {
 		r.Logger.Error(err, "query billing records failed")

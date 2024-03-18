@@ -229,6 +229,7 @@ func MountClusterImages(bdah buildah.Interface, cluster *v2.Cluster, skipApp boo
 			return err
 		}
 		if idx >= 0 {
+			mount.Env = maps.Merge(mount.Env, cluster.Status.Mounts[idx].Env)
 			cluster.Status.Mounts[idx] = *mount
 		} else {
 			cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)

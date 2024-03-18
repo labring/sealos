@@ -1,5 +1,12 @@
 export type SystemConfigType = {
   scripts: ScriptConfig[];
+  isSystemConfigEnabled: boolean; // Compatible with older versions
+  backgroundImageUrl: string;
+  imageFallBackUrl: string;
+  title: string;
+  metaTitle: string;
+  metaDescription: string;
+  showGithubStar: boolean;
 };
 
 export type ScriptConfig = {
@@ -12,11 +19,13 @@ export type LoginProps = {
   github_client_id: string;
   google_client_id: string;
   callback_url: string;
+  cf_sitekey: string;
   service_protocol_zh: string;
   private_protocol_zh: string;
   service_protocol_en: string;
   private_protocol_en: string;
   needPassword: boolean;
+  oauth_proxy: string;
   needSms: boolean;
   needGithub: boolean;
   needWechat: boolean;
@@ -25,9 +34,9 @@ export type LoginProps = {
 
 export type SystemEnv = {
   SEALOS_CLOUD_DOMAIN: string;
-  stripeEnabled: boolean;
   wechatEnabledRecharge: boolean;
   rechargeEnabled: boolean;
   licenseEnabled: boolean;
   guideEnabled: boolean;
+  openWechatEnabled: boolean;
 } & LoginProps;

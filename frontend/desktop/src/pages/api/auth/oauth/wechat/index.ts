@@ -4,10 +4,11 @@ import { jsonRes } from '@/services/backend/response';
 const APP_ID = process.env.WECHAT_CLIENT_ID!;
 const APP_SECRET = process.env.WECHAT_CLIENT_SECRET!;
 import { TWechatToken, TWechatUser } from '@/types/user';
-import { Session } from '@/types/session';
-import { getBase64FromRemote } from '@/utils/tools';
-import { getOauthRes } from '@/services/backend/oauth';
 import { enableWechat } from '@/services/enable';
+import { getGlobalToken } from '@/services/backend/globalAuth';
+import { persistImage } from '@/services/backend/persistImage';
+import { ProviderType } from 'prisma/global/generated/client';
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!enableWechat()) {
@@ -28,14 +29,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const userUrl = `https://api.weixin.qq.com/sns/userinfo?access_token=${access_token}&openid=${openid}&lang=zh_CN`;
-    const {
-      nickname: name,
-      unionid: id,
-      headimgurl
-    } = (await (await fetch(userUrl)).json()) as TWechatUser;
-    const avatar_url = (await getBase64FromRemote(headimgurl)) as string;
-    const data = await getOauthRes({ provider: 'wechat', id: '' + id || openid, name, avatar_url });
-    return jsonRes<Session>(res, {
+    const response = await fetch(userUrl);
+    if (!response.ok)
+      return jsonRes(res, {
+        code: 401,
+        message: 'Unauthorized'
+      });
+    const { nickname: name, unionid: id, headimgurl } = (await response.json()) as TWechatUser;
+    const avatar_url =
+      (await persistImage(headimgurl, 'avatar/' + ProviderType.WECHAT + '/' + id)) || '';
+    const data = await getGlobalToken({
+      provider: ProviderType.WECHAT,
+      id,
+      avatar_url,
+      name
+    });
+    if (!data)
+      return jsonRes(res, {
+        code: 401,
+        message: 'Unauthorized'
+      });
+    return jsonRes(res, {
       data,
       code: 200,
       message: 'Successfully'

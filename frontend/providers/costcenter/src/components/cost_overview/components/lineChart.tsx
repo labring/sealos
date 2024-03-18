@@ -14,7 +14,6 @@ import { CanvasRenderer } from 'echarts/renderers';
 import { format } from 'date-fns';
 import { useTranslation } from 'next-i18next';
 import useOverviewStore from '@/stores/overview';
-import { displayMoney, formatMoney } from '@/utils/format';
 
 echarts.use([
   GridComponent,
@@ -116,7 +115,7 @@ export default function Trend({ data }: { data: [number, string][] }) {
 
       formatter: function (params: any) {
         const { data, value } = params[0];
-        const date = format(data[0], 'yyyy-MM-dd');
+        const date = format(data[0], 'yyyy-MM-dd HH:mm:ss');
         const totalCost = value[1];
         // 创建外层 div 元素
         const resDom = document.createElement('div');

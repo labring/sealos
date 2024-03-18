@@ -1,17 +1,15 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
-
-import { queryUser } from '@/services/backend/db/user';
-import { hashPassword } from '@/utils/crypto';
 import { TUserExist } from '@/types/user';
 import { enablePassword, enableSignUp } from '@/services/enable';
-import { passwrodUserIsExist } from '@/services/backend/oauth';
+import { globalPrisma } from '@/services/backend/db/init';
+import { ProviderType } from 'prisma/global/generated/client';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!enablePassword()) {
       throw new Error('PASSWORD_SALT is not defined');
     }
-    const { user } = req.body;
+    const { user } = req.body as { user: string };
     if (!enableSignUp()) {
       return jsonRes<TUserExist>(res, {
         code: 200,
@@ -22,11 +20,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       });
     }
-    const isExist = await passwrodUserIsExist({ username: user });
+    // const userRes = await findUser({realUserUid: payload.realUserUid})
+    // const passwordProvider = userRes?.oauthProvider.find(val=>val.providerType === ProviderType.PASSWORD)
+    const isExist = globalPrisma.oauthProvider.findUnique({
+      where: {
+        providerId_providerType: {
+          providerType: ProviderType.PASSWORD,
+          providerId: user
+        }
+      }
+    });
     if (!isExist)
-      return jsonRes<TUserExist>(res, {
-        message: 'user not found',
+      return jsonRes(res, {
         code: 201,
+        message: 'user is not founded',
         data: {
           user,
           exist: false

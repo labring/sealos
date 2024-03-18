@@ -1,7 +1,12 @@
 import * as k8s from '@kubernetes/client-node';
 import http from 'http';
 import * as yaml from 'js-yaml';
-
+export function switchKubeconfigNamespace(kc: string, namespace: string) {
+  const oldKc = yaml.load(kc);
+  // @ts-ignore
+  oldKc.contexts[0].context.namespace = namespace;
+  return yaml.dump(oldKc);
+}
 export function K8sApi(config: string): k8s.KubeConfig {
   const kc = new k8s.KubeConfig();
   kc.loadFromString(config);
@@ -11,6 +16,7 @@ export function K8sApi(config: string): k8s.KubeConfig {
     let server: k8s.Cluster;
 
     const [inCluster, hosts] = CheckIsInCluster();
+
     if (inCluster && hosts !== '') {
       server = {
         name: cluster.name,

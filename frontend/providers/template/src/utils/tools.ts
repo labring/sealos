@@ -224,7 +224,6 @@ export const processEnvValue = (obj: any, labelName: string) => {
     newDeployment.metadata.labels = newDeployment.metadata.labels || {};
     newDeployment.metadata.labels[templateDeployKey] = labelName;
   }
-  // console.log(obj.metadata, newDeployment.metadata, 'obj');
 
   return newDeployment;
 };

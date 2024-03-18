@@ -25,7 +25,7 @@ export default function SwitchPage({
   totalPage: number;
   totalItem: number;
   pageSize: number;
-  setCurrentPage: Dispatch<SetStateAction<number>>;
+  setCurrentPage: (idx: number) => void;
 } & FlexProps) {
   const { t } = useTranslation();
   const switchStyle: ButtonProps = {

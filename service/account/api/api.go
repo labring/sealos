@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/labring/sealos/controllers/pkg/types"
+
 	"github.com/labring/sealos/service/account/common"
 
 	"github.com/labring/sealos/service/account/dao"
@@ -86,14 +88,14 @@ func GetProperties(c *gin.Context) {
 // @Tags ConsumptionAmount
 // @Accept json
 // @Produce json
-// @Param request body helper.UserCostsAmountReq true "User consumption amount request"
+// @Param request body helper.UserBaseReq true "User consumption amount request"
 // @Success 200 {object} map[string]interface{} "successfully retrieved user consumption amount"
 // @Failure 400 {object} map[string]interface{} "failed to parse user consumption amount request"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
 // @Failure 500 {object} map[string]interface{} "failed to get user consumption amount"
 // @Router /account/v1alpha1/costs/consumption [post]
 func GetConsumptionAmount(c *gin.Context) {
-	req, err := helper.ParseUserCostsAmountReq(c)
+	req, err := helper.ParseUserBaseReq(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user consumption amount request: %v", err)})
 		return
@@ -105,9 +107,42 @@ func GetConsumptionAmount(c *gin.Context) {
 	amount, err := dao.DBClient.GetConsumptionAmount(req.Owner, req.TimeRange.StartTime, req.TimeRange.EndTime)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get consumption amount : %v", err)})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"amount": amount,
+	})
+}
+
+// GetPayment
+// @Summary Get user payment
+// @Description Get user payment within a specified time range
+// @Tags Payment
+// @Accept json
+// @Produce json
+// @Param request body helper.UserBaseReq true "User payment request"
+// @Success 200 {object} map[string]interface{} "successfully retrieved user payment"
+// @Failure 400 {object} map[string]interface{} "failed to parse user payment request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get user payment"
+// @Router /account/v1alpha1/costs/payment [post]
+func GetPayment(c *gin.Context) {
+	req, err := helper.ParseUserBaseReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user payment request: %v", err)})
+		return
+	}
+	if err := helper.Authenticate(req.Auth); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	payment, err := dao.DBClient.GetPayment(types.UserQueryOpts{Owner: req.Owner}, req.TimeRange.StartTime, req.TimeRange.EndTime)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get payment : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"payment": payment,
 	})
 }
 
@@ -117,14 +152,14 @@ func GetConsumptionAmount(c *gin.Context) {
 // @Tags RechargeAmount
 // @Accept json
 // @Produce json
-// @Param request body helper.UserCostsAmountReq true "User recharge amount request"
+// @Param request body helper.UserBaseReq true "User recharge amount request"
 // @Success 200 {object} map[string]interface{} "successfully retrieved user recharge amount"
 // @Failure 400 {object} map[string]interface{} "failed to parse user recharge amount request"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
 // @Failure 500 {object} map[string]interface{} "failed to get user recharge amount"
 // @Router /account/v1alpha1/costs/recharge [post]
 func GetRechargeAmount(c *gin.Context) {
-	req, err := helper.ParseUserCostsAmountReq(c)
+	req, err := helper.ParseUserBaseReq(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user recharge amount request: %v", err)})
 		return
@@ -133,9 +168,10 @@ func GetRechargeAmount(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
-	amount, err := dao.DBClient.GetRechargeAmount(req.Owner, req.TimeRange.StartTime, req.TimeRange.EndTime)
+	amount, err := dao.DBClient.GetRechargeAmount(types.UserQueryOpts{Owner: req.Owner}, req.TimeRange.StartTime, req.TimeRange.EndTime)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get recharge amount : %v", err)})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"amount": amount,
@@ -148,14 +184,14 @@ func GetRechargeAmount(c *gin.Context) {
 // @Tags PropertiesUsedAmount
 // @Accept json
 // @Produce json
-// @Param request body helper.UserCostsAmountReq true "User properties used amount request"
+// @Param request body helper.UserBaseReq true "User properties used amount request"
 // @Success 200 {object} map[string]interface{} "successfully retrieved user properties used amount"
 // @Failure 400 {object} map[string]interface{} "failed to parse user properties used amount request"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
 // @Failure 500 {object} map[string]interface{} "failed to get user properties used amount"
 // @Router /account/v1alpha1/costs/properties [post]
 func GetPropertiesUsedAmount(c *gin.Context) {
-	req, err := helper.ParseUserCostsAmountReq(c)
+	req, err := helper.ParseUserBaseReq(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user properties used amount request: %v", err)})
 		return
@@ -167,6 +203,7 @@ func GetPropertiesUsedAmount(c *gin.Context) {
 	amount, err := dao.DBClient.GetPropertiesUsedAmount(req.Owner, req.TimeRange.StartTime, req.TimeRange.EndTime)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get properties used amount : %v", err)})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"amount": amount,
@@ -187,14 +224,14 @@ type CostsResultData struct {
 // @Tags Costs
 // @Accept json
 // @Produce json
-// @Param request body helper.UserCostsAmountReq true "User costs amount request"
+// @Param request body helper.UserBaseReq true "User costs amount request"
 // @Success 200 {object} map[string]interface{} "successfully retrieved user costs"
 // @Failure 400 {object} map[string]interface{} "failed to parse user hour costs amount request"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
 // @Failure 500 {object} map[string]interface{} "failed to get user costs"
 // @Router /account/v1alpha1/costs [post]
 func GetCosts(c *gin.Context) {
-	req, err := helper.ParseUserCostsAmountReq(c)
+	req, err := helper.ParseUserBaseReq(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user hour costs amount request: %v", err)})
 		return
@@ -206,9 +243,134 @@ func GetCosts(c *gin.Context) {
 	costs, err := dao.DBClient.GetCosts(req.Auth.Owner, req.TimeRange.StartTime, req.TimeRange.EndTime)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get cost : %v", err)})
+		return
 	}
 	c.JSON(http.StatusOK, CostsResult{
 		Data:    CostsResultData{Costs: costs},
 		Message: "successfully retrieved user costs",
+	})
+}
+
+// GetAccount
+// @Summary Get user account
+// @Description Get user account
+// @Tags Account
+// @Accept json
+// @Produce json
+// @Param request body helper.Auth true "auth request"
+// @Success 200 {object} map[string]interface{} "successfully retrieved user account"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get user account"
+// @Router /account/v1alpha1/account [post]
+func GetAccount(c *gin.Context) {
+	req, err := helper.ParseUserBaseReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse user hour costs amount request: %v", err)})
+		return
+	}
+	if err := helper.Authenticate(req.Auth); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	account, err := dao.DBClient.GetAccount(types.UserQueryOpts{Owner: req.Auth.Owner})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get account : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"account": account,
+	})
+}
+
+// SetPaymentInvoice
+// @Summary Set payment invoice
+// @Description Set payment invoice
+// @Tags PaymentInvoice
+// @Accept json
+// @Produce json
+// @Param request body helper.SetPaymentInvoiceReq true "Set payment invoice request"
+// @Success 200 {object} map[string]interface{} "successfully set payment invoice"
+// @Failure 400 {object} map[string]interface{} "failed to parse set payment invoice request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to set payment invoice"
+// @Router /account/v1alpha1/payment/set-invoice [post]
+func SetPaymentInvoice(c *gin.Context) {
+	req, err := helper.ParseSetPaymentInvoiceReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse set payment invoice request: %v", err)})
+		return
+	}
+	if err := helper.Authenticate(req.Auth); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	if err := dao.DBClient.SetPaymentInvoice(req); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to set payment invoice : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "successfully set payment invoice",
+	})
+}
+
+// TransferAmount
+// @Summary Transfer amount
+// @Description Transfer amount
+// @Tags TransferAmount
+// @Accept json
+// @Produce json
+// @Param request body helper.TransferAmountReq true "Transfer amount request"
+// @Success 200 {object} map[string]interface{} "successfully transfer amount"
+// @Failure 400 {object} map[string]interface{} "failed to parse transfer amount request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to transfer amount"
+// @Router /account/v1alpha1/transfer [post]
+func TransferAmount(c *gin.Context) {
+	req, err := helper.ParseTransferAmountReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse transfer amount request: %v", err)})
+		return
+	}
+	if err := helper.Authenticate(req.Auth); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	if err := dao.DBClient.Transfer(req); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to transfer amount : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "successfully transfer amount",
+	})
+}
+
+// GetTransfer
+// @Summary Get transfer
+// @Description Get transfer
+// @Tags Transfer
+// @Accept json
+// @Produce json
+// @Param request body helper.Auth true "auth request"
+// @Success 200 {object} map[string]interface{} "successfully get transfer"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get transfer"
+// @Router /account/v1alpha1/get-transfer [post]
+func GetTransfer(c *gin.Context) {
+	req, err := helper.ParseUserBaseReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse get transfer amount request: %v", err)})
+		return
+	}
+	if err := helper.Authenticate(req.Auth); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	transfer, err := dao.DBClient.GetTransfer(&types.UserQueryOpts{Owner: req.Auth.Owner})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get transfer amount : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"transfer": transfer,
 	})
 }

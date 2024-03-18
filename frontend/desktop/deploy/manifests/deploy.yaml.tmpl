@@ -39,7 +39,14 @@ data:
     addr: :3000
   config.json: |-
     {
-      "scripts": []
+      "scripts": [],
+      "isSystemConfigEnabled": true,
+      "backgroundImageUrl": '/images/bg-blue.svg',
+      "imageFallBackUrl": 'logo.svg',
+      "title": 'Sealos',
+      "metaTitle": 'sealos Cloud',
+      "metaDescription": 'sealos cloud dashboard',
+      "showGithubStar": true
     }
 ---
 apiVersion: apps/v1
@@ -62,6 +69,25 @@ spec:
         app: desktop-frontend
     spec:
       serviceAccountName: desktop-frontend
+      initContainers:
+        - name: init-database
+          image: ghcr.io/labring/sealos-desktop-frontend:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              prisma migrate deploy --schema /app/desktop/prisma/global/schema.prisma
+              prisma migrate deploy --schema /app/desktop/prisma/region/schema.prisma
+          env:
+            - name: GLOBAL_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  key: global_database_url
+                  name: desktop-frontend-secret
+            - name: REGION_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  key: region_database_url
+                  name: desktop-frontend-secret
       containers:
         - name: desktop-frontend
           env:
@@ -162,6 +188,42 @@ spec:
                   name: desktop-frontend-secret
                   key: ali_sms_template_code
                   optional: true
+            - name: SEALOS_CLOUD_DOMAIN
+              value: {{ .cloudDomain }}
+            - name: INVITE_ENABLED
+              value: "false"
+            - name: GUIDE_ENABLED
+              value: "false"
+            - name: GLOBAL_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  key: global_database_url
+                  name: desktop-frontend-secret
+            - name: REGION_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  key: region_database_url
+                  name: desktop-frontend-secret
+            - name: BILLING_URI
+              valueFrom:
+                secretKeyRef:
+                  key: billing_uri
+                  name: desktop-frontend-secret
+            - name: JWT_SECRET_REGION
+              valueFrom:
+                secretKeyRef:
+                  key: jwt_secret_region
+                  name: desktop-frontend-secret
+            - name: JWT_SECRET_APP
+              valueFrom:
+                secretKeyRef:
+                  key: jwt_secret_app
+                  name: desktop-frontend-secret
+            - name: REGION_UID
+              valueFrom:
+                secretKeyRef:
+                  key: region_uid
+                  name: desktop-frontend-secret
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
@@ -180,8 +242,8 @@ spec:
               subPath: config.json
           resources:
             limits:
-              cpu: 1000m
-              memory: 512Mi
+              cpu: 2000m
+              memory: 2048Mi
             requests:
               cpu: 100m
               memory: 128Mi

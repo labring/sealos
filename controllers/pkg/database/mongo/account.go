@@ -22,6 +22,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+
 	"github.com/labring/sealos/controllers/pkg/common"
 	"github.com/labring/sealos/controllers/pkg/database"
 
@@ -40,8 +42,14 @@ import (
 )
 
 const (
+	EnvAccountDBName = "ACCOUNT_DB_NAME"
+	EnvTrafficDBName = "TRAFFIC_DB_NAME"
+	EnvTrafficConn   = "TRAFFIC_CONN"
+)
+
+const (
 	DefaultAccountDBName  = "sealos-resources"
-	DefaultTrafficDBName  = "sealos-networkmanager-synchronizer"
+	DefaultTrafficDBName  = "sealos-networkmanager"
 	DefaultAuthDBName     = "sealos-auth"
 	DefaultMeteringConn   = "metering"
 	DefaultMonitorConn    = "monitor"
@@ -251,14 +259,13 @@ func (m *mongoDB) InsertMonitor(ctx context.Context, monitors ...*resources.Moni
 	return err
 }
 
-func (m *mongoDB) GetDistinctMonitorCombinations(startTime, endTime time.Time, namespace string) ([]resources.Monitor, error) {
+func (m *mongoDB) GetDistinctMonitorCombinations(startTime, endTime time.Time) ([]resources.Monitor, error) {
 	pipeline := mongo.Pipeline{
 		{{Key: "$match", Value: bson.M{
 			"time": bson.M{
 				"$gte": startTime.UTC(),
 				"$lt":  endTime.UTC(),
 			},
-			"category": namespace,
 		}}},
 		{{Key: "$group", Value: bson.M{
 			"_id": bson.M{
@@ -267,21 +274,23 @@ func (m *mongoDB) GetDistinctMonitorCombinations(startTime, endTime time.Time, n
 				"type":     "$type",
 			},
 		}}},
+		{{Key: "$project", Value: bson.M{
+			"_id":      0,
+			"category": "$_id.category",
+			"name":     "$_id.name",
+			"type":     "$_id.type",
+		}}},
 	}
 	cursor, err := m.getMonitorCollection(startTime).Aggregate(context.Background(), pipeline)
 	if err != nil {
 		return nil, fmt.Errorf("aggregate error: %v", err)
 	}
 	defer cursor.Close(context.Background())
-	var monitors []resources.Monitor
-	for cursor.Next(context.Background()) {
-		var result = make(map[string]resources.Monitor, 1)
-		if err := cursor.Decode(result); err != nil {
-			return nil, fmt.Errorf("decode error: %v", err)
-		}
-		monitors = append(monitors, result["_id"])
+	if !cursor.Next(context.Background()) {
+		return nil, nil
 	}
-	if err := cursor.Err(); err != nil {
+	var monitors []resources.Monitor
+	if err := cursor.All(context.Background(), &monitors); err != nil {
 		return nil, fmt.Errorf("cursor error: %v", err)
 	}
 	return monitors, nil
@@ -315,6 +324,24 @@ func (m *mongoDB) GetAllPricesMap() (map[string]resources.Price, error) {
 		}
 	}
 	return pricesMap, nil
+}
+
+func (m *mongoDB) GetAllPayment() ([]resources.Billing, error) {
+	filter := bson.M{
+		"type":           1,
+		"payment.amount": bson.M{"$gt": 0},
+	}
+
+	cursor, err := m.getBillingCollection().Find(context.Background(), filter)
+	if err != nil {
+		return nil, fmt.Errorf("get all payment error: %v", err)
+	}
+
+	var payments []resources.Billing
+	if err = cursor.All(context.Background(), &payments); err != nil {
+		return nil, fmt.Errorf("get all payment error: %v", err)
+	}
+	return payments, nil
 }
 
 func (m *mongoDB) InitDefaultPropertyTypeLS() error {
@@ -795,37 +822,78 @@ func (m *mongoDB) QueryBillingRecords(billingRecordQuery *accountv1.BillingRecor
 	return nil
 }
 
+//func (m *mongoDB) GetNodePortAmount(owner string, endTime time.Time) (int64, error) {
+//	filter := bson.M{
+//		"owner": owner,
+//		"time": bson.M{
+//			"$lte": endTime,
+//		},
+//		"type":          accountv1.Consumption,
+//		"used_amount.4": bson.M{"$ne": 0},
+//	}
+//
+//	cursor, err := m.getBillingCollection().Find(context.Background(), filter)
+//	if err != nil {
+//		return 0, fmt.Errorf("failed to execute aggregate query: %w", err)
+//	}
+//	defer cursor.Close(context.Background())
+//
+//	var billings []resources.Billing
+//	if err := cursor.All(context.Background(), &billings); err != nil {
+//		return 0, fmt.Errorf("failed to decode all billing record: %w", err)
+//	}
+//	amountTotal := int64(0)
+//	for i := range billings {
+//		for j := range billings[i].AppCosts {
+//			amount := billings[i].AppCosts[j].UsedAmount[4]
+//			if amount > 0 {
+//				amountTotal += amount
+//			}
+//		}
+//	}
+//
+//	return amountTotal, nil
+//
+//}
+
 func (m *mongoDB) GetBillingCount(accountType common.Type, startTime, endTime time.Time) (count, amount int64, err error) {
-	filter := bson.M{
-		"type": accountType,
-		"time": bson.M{
-			"$gte": startTime,
-			"$lte": endTime,
+	pipeline := bson.A{
+		bson.M{
+			"$match": bson.M{
+				"type": accountType,
+				"time": bson.M{
+					"$gte": startTime,
+					"$lte": endTime,
+				},
+			},
+		},
+		bson.M{
+			"$group": bson.M{
+				"_id":    nil,
+				"count":  bson.M{"$sum": 1},
+				"amount": bson.M{"$sum": "$amount"},
+			},
 		},
 	}
-	cursor, err := m.getBillingCollection().Find(context.Background(), filter)
+
+	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
 	if err != nil {
 		return 0, 0, err
 	}
 	defer cursor.Close(context.Background())
-	var accountBalanceList []AccountBalanceSpecBSON
-	err = cursor.All(context.Background(), &accountBalanceList)
-	if err != nil {
-		return 0, 0, fmt.Errorf("failed to decode all billing record: %w", err)
+
+	var result struct {
+		Count  int64 `bson:"count"`
+		Amount int64 `bson:"amount"`
 	}
-	for i := range accountBalanceList {
-		count++
-		amount += accountBalanceList[i].Amount
+
+	if cursor.Next(context.Background()) {
+		if err := cursor.Decode(&result); err != nil {
+			return 0, 0, fmt.Errorf("failed to decode aggregation result: %w", err)
+		}
 	}
-	//for cursor.Next(context.Background()) {
-	//    var accountBalance AccountBalanceSpecBSON
-	//    if err := cursor.Decode(&accountBalance); err != nil {
-	//        return 0, 0, err
-	//    }
-	//    count++
-	//    amount += accountBalance.Amount
-	//}
-	return
+
+	return result.Count, result.Amount, nil
 }
 
 func (m *mongoDB) getMeteringCollection() *mongo.Collection {
@@ -941,8 +1009,8 @@ func NewMongoInterface(ctx context.Context, URL string) (database.Interface, err
 	err = client.Ping(ctx, nil)
 	return &mongoDB{
 		Client:            client,
-		AccountDB:         DefaultAccountDBName,
-		TrafficDB:         DefaultTrafficDBName,
+		AccountDB:         env.GetEnvWithDefault(EnvAccountDBName, DefaultAccountDBName),
+		TrafficDB:         env.GetEnvWithDefault(EnvTrafficDBName, DefaultTrafficDBName),
 		AuthDB:            DefaultAuthDBName,
 		UserConn:          DefaultUserConn,
 		MeteringConn:      DefaultMeteringConn,
@@ -950,6 +1018,6 @@ func NewMongoInterface(ctx context.Context, URL string) (database.Interface, err
 		BillingConn:       DefaultBillingConn,
 		PricesConn:        DefaultPricesConn,
 		PropertiesConn:    DefaultPropertiesConn,
-		TrafficConn:       DefaultTrafficConn,
+		TrafficConn:       env.GetEnvWithDefault(EnvTrafficConn, DefaultTrafficConn),
 	}, err
 }

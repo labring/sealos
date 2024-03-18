@@ -39,6 +39,8 @@ spec:
           env:
             - name: SEALOS_DOMAIN
               value: {{ .cloudDomain }}
+            - name: APPLAUNCHPAD_URL
+              value: applaunchpad.{{ .cloudDomain }}
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

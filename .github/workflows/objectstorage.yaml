@@ -1,0 +1,147 @@
+name: Build Object Storage Cluster image
+
+on:
+  workflow_call:
+    inputs:
+      push_image:
+        description: 'Push image'
+        required: false
+        type: boolean
+        default: false
+      push_image_tag:
+        description: 'Push all-in-one image tag, default is latest'
+        default: 'latest'
+        required: false
+        type: string
+      build_from:
+        description: 'Build all-in-one image from components image tag, default is latest'
+        default: 'latest'
+        required: false
+        type: string
+  workflow_dispatch:
+    inputs:
+      push_image:
+        description: 'Push image'
+        required: false
+        type: boolean
+        default: false
+      push_image_tag:
+        description: 'Push all-in-one image tag, default is latest'
+        default: 'latest'
+        required: false
+        type: string
+      build_from:
+        description: 'Build all-in-one image from components image tag, default is latest'
+        default: 'latest'
+        required: false
+        type: string
+  push:
+    branches: [ "main" ]
+    paths:
+      - "deploy/objectstorage/**"
+      - ".github/workflows/objectstorage.yml"
+      - "!**/*.md"
+      - "!**/*.yaml"
+  pull_request:
+    branches: [ "*" ]
+    paths:
+      - "deploy/objectstorage/**"
+      - ".github/workflows/objectstorage.yml"
+      - "!**/*.md"
+      - "!**/*.yaml"
+
+env:
+  # Common versions
+  GO_VERSION: "1.20"
+  DEFAULT_OWNER: "labring"
+
+jobs:
+  save-sealos:
+    uses: ./.github/workflows/import-save-sealos.yml
+
+  build-cluster-image:
+    if: ${{ (github.event_name == 'release') ||(github.event_name == 'push')  || (inputs.push_image == true) }}
+    needs:
+      - save-sealos
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Expose git commit data
+        uses: rlespinasse/git-commit-data-action@v1
+      - name: Check if tag
+        id: check_tag
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "isTag=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "isTag=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Prepare
+        id: prepare
+        run: |
+          bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}"     
+          echo repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-objectstorage >> $GITHUB_OUTPUT
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/sealos
+          sudo sealos version
+
+      # todo: mutate image tag in images/shim and scripts or change scripts to use changeable tags
+
+      - name: Sealos login to ghcr.io
+        # if push to master, then login to ghcr.io
+        run: |
+          sudo sealos login -u ${{ github.repository_owner }} -p ${{ secrets.GH_PAT }} --debug ghcr.io
+
+      - name: Build sealos cloud cluster image
+        working-directory: deploy/objectstorage
+        run: |
+          [ -z "${{ inputs.build_from }}" ] && BuildFromTag="latest" || BuildFromTag="${{ inputs.build_from }}"; echo "BuildFromTag=${BuildFromTag}" 
+          sed -i "s#labring#${{ github.repository_owner }}#g" init.sh
+          sed -i "s#latest#${BuildFromTag}#g" init.sh
+          
+          sudo bash init.sh amd64 
+          sudo sealos build -t ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }}-amd64 --platform linux/amd64 -f Kubefile
+          sudo sealos build -t ${{ steps.prepare.outputs.repo }}:latest-amd64 --platform linux/amd64 -f Kubefile
+          
+          
+          # delete old registry cache
+          sudo rm -rf registry
+          sudo rm -rf tars
+          
+          sudo bash init.sh arm64 
+          sudo sealos build -t ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }}-arm64 --platform linux/arm64 -f Kubefile
+          sudo sealos build -t ${{ steps.prepare.outputs.repo }}:latest-arm64 --platform linux/arm64 -f Kubefile
+
+      - name: Manifest Cluster Images
+        # if push to master, then patch images to ghcr.io
+        run: |
+          sudo sealos images
+          bash docker/patch/manifest-cluster-images.sh ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }}
+          bash docker/patch/manifest-cluster-images.sh ${{ steps.prepare.outputs.repo }}:latest
+        env:
+          OWNER: ${{ github.repository_owner }}
+
+      - name: Renew issue and Sync Images
+        uses: labring/gh-rebot@v0.0.6
+        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
+        with:
+          version: v0.0.8-rc1
+        env:
+          GH_TOKEN: "${{ secrets.GH_PAT }}"
+          SEALOS_TYPE: "issue_renew"
+          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
+          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
+          SEALOS_ISSUE_LABEL: "dayly-report"
+          SEALOS_ISSUE_TYPE: "day"
+          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
+          SEALOS_COMMENT_BODY: "/imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-objectstorage:${{ steps.prepare.outputs.tag_name }}"

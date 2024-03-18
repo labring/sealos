@@ -6,6 +6,7 @@ import React, { useRef, useState } from 'react';
 import Draggable, { DraggableEventHandler } from 'react-draggable';
 import styles from './index.module.scss';
 import { useTranslation } from 'next-i18next';
+import { ImageFallBackUrl } from '@/stores/config';
 
 export default function AppWindow(props: {
   style?: React.CSSProperties;
@@ -110,7 +111,7 @@ export default function AppWindow(props: {
           <Flex ml="16px" alignItems={'center'} fontSize={'12px'} fontWeight={400}>
             <Image
               src={wnapp?.icon}
-              fallbackSrc="/images/sealos.svg"
+              fallbackSrc={ImageFallBackUrl}
               alt={wnapp?.name}
               width={'20px'}
               height={'20px'}
@@ -148,7 +149,7 @@ export default function AppWindow(props: {
             >
               <Image
                 src="/icons/minimize.png"
-                fallbackSrc="/images/sealos.svg"
+                fallbackSrc={ImageFallBackUrl}
                 alt={wnapp?.name}
                 width={'12px'}
                 height={'12px'}
@@ -169,7 +170,7 @@ export default function AppWindow(props: {
             >
               <Image
                 src={wnapp.size === 'maximize' ? '/icons/maximize.png' : '/icons/maxmin.png'}
-                fallbackSrc="/images/sealos.svg"
+                fallbackSrc={ImageFallBackUrl}
                 alt={wnapp?.name}
                 width={'12px'}
                 height={'12px'}
@@ -190,7 +191,7 @@ export default function AppWindow(props: {
             >
               <Image
                 src={'/icons/close.png'}
-                fallbackSrc="/images/sealos.svg"
+                fallbackSrc={ImageFallBackUrl}
                 alt={wnapp?.name}
                 width={'12px'}
                 height={'12px'}

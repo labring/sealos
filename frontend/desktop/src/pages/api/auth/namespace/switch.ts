@@ -1,47 +1,52 @@
-import { authSession, generateJWT } from '@/services/backend/auth';
-import { queryUsersByNamespace } from '@/services/backend/db/userToNamespace';
 import { jsonRes } from '@/services/backend/response';
-import * as jsYaml from 'js-yaml';
-import { Session } from 'sealos-desktop-sdk';
 import { NextApiRequest, NextApiResponse } from 'next';
+import { prisma } from '@/services/backend/db/init';
+import { getUserKubeconfig } from '@/services/backend/kubernetes/admin';
+import { switchKubeconfigNamespace } from '@/services/backend/kubernetes/user';
+import { validate } from 'uuid';
+import { JoinStatus } from 'prisma/region/generated/client';
+import { generateAccessToken, generateAppToken, verifyAccessToken } from '@/services/backend/auth';
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const payload = await authSession(req.headers);
+    const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'token verify error' });
-    const { ns_uid } = req.body;
-    if (!ns_uid) return jsonRes(res, { code: 400, message: 'ns_uid is required' });
-    const nsUsers = await queryUsersByNamespace({ namespaceId: ns_uid });
-    const userInNs = nsUsers.find(
-      (item) => item.userId === payload.user.uid && payload.user.k8s_username === item.k8s_username
-    );
-    if (!userInNs) return jsonRes(res, { code: 403, message: 'you are not in this namespace' });
-
-    const oldKc = jsYaml.load(payload.kcRaw);
-    // @ts-ignore
-    oldKc.contexts[0].context.namespace = userInNs?.namespace?.id || '';
-    const kubeconfig = jsYaml.dump(oldKc);
-    const user = {
-      ns_uid: userInNs.namespaceId,
-      nsid: userInNs.namespace.id,
-      userId: payload.user.uid,
-      k8s_username: payload.user.k8s_username,
-      name: userInNs.user.name,
-      avatar: userInNs.user.avatar_url
+    const { ns_uid } = req.body as {
+      ns_uid?: string;
     };
-
-    const token = generateJWT({
-      kubeconfig,
-      user: {
-        uid: user.userId,
-        k8s_username: user.k8s_username,
-        ns_uid: user.ns_uid,
-        nsid: user.nsid
+    if (!ns_uid || !validate(ns_uid))
+      return jsonRes(res, { code: 400, message: 'ns_uid is invalid' });
+    const queryResults = await prisma.userWorkspace.findMany({
+      where: {
+        userCrUid: payload.userCrUid,
+        status: JoinStatus.IN_WORKSPACE
+      },
+      include: {
+        workspace: true,
+        userCr: true
       }
     });
-    const data: Session = {
+    const newWorkspaceItem = queryResults.find((item) => item.workspace.uid === ns_uid);
+    if (!newWorkspaceItem)
+      return jsonRes(res, { code: 403, message: 'You are not in this workspace' });
+    const oldKcRaw = await getUserKubeconfig(payload.userCrUid, payload.userCrName);
+    if (!oldKcRaw) return jsonRes(res, { code: 404, message: 'The kubeconfig is not found' });
+    const kubeconfig = switchKubeconfigNamespace(oldKcRaw, newWorkspaceItem.workspace.id);
+    const jwtPayload = {
+      workspaceUid: newWorkspaceItem.workspaceUid,
+      workspaceId: newWorkspaceItem.workspace.id,
+      regionUid: payload.regionUid,
+      userCrUid: payload.userCrUid,
+      userCrName: payload.userCrName,
+      userId: payload.userId,
+      userUid: payload.userUid
+    };
+    const token = generateAccessToken(jwtPayload);
+    const appToken = generateAppToken(jwtPayload);
+    const data = {
       token,
-      user,
-      kubeconfig
+      kubeconfig,
+      appToken
     };
     return jsonRes(res, {
       data,

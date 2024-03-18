@@ -1,43 +1,66 @@
-import { authSession } from '@/services/backend/auth';
-import { queryUsersByNamespace } from '@/services/backend/db/userToNamespace';
 import { jsonRes } from '@/services/backend/response';
-import { NamespaceDto } from '@/types/team';
+import { NamespaceDto, NSType } from '@/types/team';
 import { TeamUserDto } from '@/types/user';
 import { NextApiRequest, NextApiResponse } from 'next';
+import { globalPrisma, prisma } from '@/services/backend/db/init';
+import { joinStatusToNStatus, roleToUserRole } from '@/utils/tools';
+import { validate } from 'uuid';
+import { verifyAccessToken } from '@/services/backend/auth';
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const payload = await authSession(req.headers);
+    const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'token verify error' });
     const { ns_uid } = req.body;
-    if (!ns_uid) return jsonRes(res, { code: 400, message: 'nsid is required' });
-    const utnWithUser = await queryUsersByNamespace({ namespaceId: ns_uid });
+    if (!ns_uid || !validate(ns_uid))
+      return jsonRes(res, { code: 400, message: 'ns_uid is invaild' });
+    const queryResult = await prisma.userWorkspace.findMany({
+      where: {
+        workspaceUid: ns_uid,
+        isPrivate: false
+      },
+      include: {
+        workspace: true,
+        userCr: true
+      }
+    });
 
-    if (utnWithUser.length <= 0)
+    if (queryResult.length <= 0)
       return jsonRes(res, { code: 404, message: 'namespace not founded!' });
 
-    const rawNamespace = utnWithUser[0].namespace;
-    const selfUtn = utnWithUser.find(
-      (utn) => utn.userId === payload.user.uid && utn.k8s_username === payload.user.k8s_username
-    );
-    if (!selfUtn) return jsonRes(res, { code: 404, message: 'You are not in the namespace' });
+    const workspace = queryResult[0].workspace;
+    const selfItem = queryResult.find((item) => item.userCrUid === payload.userCrUid);
+    if (!selfItem) return jsonRes(res, { code: 404, message: 'You are not in the namespace' });
+    const userResult = await globalPrisma.user.findMany({
+      where: {
+        uid: {
+          in: queryResult.map((x) => x.userCr.userUid)
+        }
+      }
+    });
+    if (!userResult) throw Error(`userUid is invalid: ${selfItem.userCr.userUid}`);
     const namespace: NamespaceDto = {
-      uid: rawNamespace.uid,
-      id: rawNamespace.id,
-      role: selfUtn.role,
-      createTime: rawNamespace.createTime,
-      teamName: rawNamespace.teamName,
-      nstype: rawNamespace.nstype
+      uid: workspace.uid,
+      id: workspace.id,
+      role: roleToUserRole(selfItem.role),
+      createTime: workspace.createdAt,
+      teamName: workspace.displayName,
+      nstype: NSType.Team
     };
-    const users = utnWithUser.map<TeamUserDto>((x) => ({
-      uid: x.userId,
-      k8s_username: x.k8s_username,
-      avatarUrl: x.user.avatar_url,
-      name: x.user.name,
-      createdTime: x.user.created_time,
-      joinTime: x.joinTime,
-      role: x.role,
-      status: x.status
-    }));
+    const users = queryResult.map<TeamUserDto>((x) => {
+      const user = userResult.find((user) => user.uid === x.userCr.userUid)!;
+      return {
+        uid: x.userCr.userUid,
+        crUid: x.userCrUid,
+        k8s_username: x.userCr.crName,
+        avatarUrl: user.avatarUri,
+        nickname: user.nickname,
+        createdTime: x.userCr.createdAt.toString(),
+        joinTime: x.joinAt || undefined,
+        role: roleToUserRole(x.role),
+        status: joinStatusToNStatus(x.status)
+      };
+    });
     jsonRes(res, {
       code: 200,
       message: 'Successfully',

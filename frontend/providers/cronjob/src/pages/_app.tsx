@@ -47,14 +47,10 @@ function App({ Component, pageProps }: AppProps) {
   });
 
   useEffect(() => {
-    initSystemEnv();
-  }, [initSystemEnv]);
-
-  useEffect(() => {
     NProgress.start();
     const response = createSealosApp();
-
     (async () => {
+      const SystemEnv = await initSystemEnv();
       try {
         const res = await sealosApp.getSession();
         localStorage.setItem('session', JSON.stringify(res));
@@ -72,7 +68,7 @@ function App({ Component, pageProps }: AppProps) {
     NProgress.done();
 
     return response;
-  }, [SystemEnv.domain, openConfirm]);
+  }, [openConfirm]);
 
   // add resize event
   useEffect(() => {

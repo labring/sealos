@@ -1,74 +1,65 @@
 import { _passwordLoginRequest } from '@/api/auth';
 import {
-  _abdicateRequest,
   _createRequest,
-  _deleteTeamRequest,
   _inviteMemberRequest,
   _modifyRoleRequest,
-  _nsListRequest,
-  _reciveMessageRequest,
-  _removeMemberRequest,
-  _teamDetailsRequest,
   _verifyInviteRequest,
   reciveAction
 } from '@/api/namespace';
 import { NamespaceDto, UserRole } from '@/types/team';
-import { Session } from 'sealos-desktop-sdk/*';
 import * as k8s from '@kubernetes/client-node';
-import { Db, MongoClient } from 'mongodb';
 import request from '@/__tests__/api/request';
 import { _setAuth, cleanDb, cleanK8s } from '@/__tests__/api/tools';
+import { AccessTokenPayload } from '@/types/token';
+import { prisma } from '@/services/backend/db/init';
+import { jwtDecode } from 'jwt-decode';
+import { v4 } from 'uuid';
+
 const createRequest = _createRequest(request);
 const inviteMemberRequest = _inviteMemberRequest(request);
 const verifyInviteRequest = _verifyInviteRequest(request);
-const passwordLoginRequest = _passwordLoginRequest(request);
 const modifyRoleRequest = _modifyRoleRequest(request);
 describe('modify role', () => {
-  let session: Session;
-  let session2: Session;
-  let connection: MongoClient;
-  let db: Db;
+  let token1: string;
+  let token2: string;
+  let payload1: AccessTokenPayload;
+  let payload2: AccessTokenPayload;
   let ns: NamespaceDto;
   const setAuth = _setAuth(request);
+  const passwordLoginRequest = _passwordLoginRequest(request, setAuth);
   beforeAll(async () => {
-    //@ts-ignore
-    const uri = process.env.MONGODB_URI as string;
-    connection = new MongoClient(uri);
-    await connection.connect();
-    db = connection.db();
     const kc = new k8s.KubeConfig();
-    await cleanK8s(kc, db);
-    await cleanDb(db);
-    const res = await passwordLoginRequest({ user: 'modifytesttest', password: 'testtest' });
+    await cleanK8s(kc, prisma);
+    await cleanDb(prisma);
+    setAuth();
+    const res = await passwordLoginRequest({ user: 'removetesttest', password: 'testtest' });
     // 保证session合理
-    expect(res.data?.user).toBeDefined();
-    session = res.data as Session;
-    const res2 = await passwordLoginRequest({ user: 'modifytesttest2', password: 'testtest2' });
+    token1 = res!.data!.token;
+    expect(token1).toBeDefined();
+    payload1 = jwtDecode(token1);
+    setAuth();
+    const res2 = await passwordLoginRequest({ user: 'removetesttest2', password: 'testtest2' });
     // 保证session合理
-    expect(res2.data?.user).toBeDefined();
-    session2 = res2.data as Session;
-    setAuth(session);
+    token2 = res2!.data!.token;
+    expect(token2).toBeDefined();
+    setAuth(token1);
+    payload2 = jwtDecode(token2);
     const nsRes = await createRequest({ teamName: 'teamZero' });
     expect(nsRes.data?.namespace).toBeDefined();
     ns = nsRes.data?.namespace!;
   }, 100000);
-  afterAll(async () => {
-    await connection.close();
-  });
   describe('owner request', () => {
     it('null param', async () => {
       const res = await modifyRoleRequest({
         ns_uid: '',
-        tUserId: 'xxx',
-        tK8s_username: 'yyy',
+        targetUserCrUid: 'xxx',
         tRole: UserRole.Developer
       });
       // 没参数
       expect(res.code).toBe(400);
       const res2 = await modifyRoleRequest({
-        ns_uid: 'xxx',
-        tUserId: '',
-        tK8s_username: 'yyy',
+        ns_uid: v4(),
+        targetUserCrUid: '',
         tRole: UserRole.Developer
       });
 
@@ -76,16 +67,20 @@ describe('modify role', () => {
       expect(res2.code).toBe(400);
       const res3 = await modifyRoleRequest({
         ns_uid: 'xxx',
-        tUserId: 'xxx',
-        tK8s_username: '',
+        targetUserCrUid: v4(),
+        tRole: UserRole.Developer
+      });
+      expect(res2.code).toBe(400);
+      const res5 = await modifyRoleRequest({
+        ns_uid: v4(),
+        targetUserCrUid: 'xxx',
         tRole: UserRole.Developer
       });
       // 没参数
-      expect(res3.code).toBe(400);
+      expect(res5.code).toBe(400);
       const res4 = await modifyRoleRequest({
-        ns_uid: 'xxx',
-        tUserId: 'xxx',
-        tK8s_username: 'yyy',
+        ns_uid: v4(),
+        targetUserCrUid: v4(),
         tRole: '' as any
       });
       // 没参数
@@ -95,9 +90,8 @@ describe('modify role', () => {
       'modify prviate team',
       async (role) => {
         const res = await modifyRoleRequest({
-          ns_uid: session.user.ns_uid,
-          tUserId: session.user.userId,
-          tK8s_username: session.user.k8s_username,
+          ns_uid: payload1.workspaceUid,
+          targetUserCrUid: payload1.userCrUid,
           tRole: role
         });
         expect(res.code).toBe(403);
@@ -108,23 +102,23 @@ describe('modify role', () => {
       async (role) => {
         const res = await modifyRoleRequest({
           ns_uid: ns.uid,
-          tUserId: 'xxx',
-          tK8s_username: 'yyy',
+          targetUserCrUid: payload2.userCrUid,
           tRole: role
         });
-        expect(res.code).toBe(403);
+        expect(res.code).toBe(404);
       }
     );
     it.each([[UserRole.Developer], [UserRole.Manager], [UserRole.Owner]])(
       'modify to self',
       async (role) => {
+        setAuth(token1);
         const ns_uid = ns.uid;
         const res = await modifyRoleRequest({
           ns_uid,
-          tUserId: session.user.userId,
-          tK8s_username: session.user.k8s_username,
+          targetUserCrUid: payload1.userCrUid,
           tRole: role
         });
+        console.log(res);
         expect(res.code).toBe(403);
       }
     );
@@ -135,19 +129,19 @@ describe('modify role', () => {
     ])(
       'modify member',
       async (role, teamName) => {
-        setAuth(session);
+        setAuth(token1);
         // setup
         const nsRes = await createRequest({ teamName });
         const ns = nsRes.data?.namespace!;
         expect(ns).toBeDefined();
         const inviteRes = await inviteMemberRequest({
           ns_uid: ns.uid,
-          targetUsername: session2.user.k8s_username,
+          targetUserId: payload2.userId,
           role
         });
         expect(inviteRes.code).toBe(200);
         // switch people
-        setAuth(session2);
+        setAuth(token2);
         const verifyRes = await verifyInviteRequest({
           ns_uid: ns.uid,
           action: reciveAction.Accepte
@@ -155,13 +149,11 @@ describe('modify role', () => {
         expect(verifyRes.code).toBe(200);
         // switch people
 
-        setAuth(session);
-        console.log('main', session);
+        setAuth(token1);
         // main
         const res = await modifyRoleRequest({
           ns_uid: ns.uid,
-          tUserId: session2.user.userId,
-          tK8s_username: session2.user.k8s_username,
+          targetUserCrUid: payload2.userCrUid,
           tRole: role
         });
         console.log(res);

@@ -1,4 +1,4 @@
-import { Flex, Text, Heading, Img } from '@chakra-ui/react';
+import { Flex, Text, Heading, Img, VStack, HStack } from '@chakra-ui/react';
 import { Card, CardBody } from '@chakra-ui/react';
 import down_icon from '@/assert/ic_round-trending-down.svg';
 import up_icon from '@/assert/ic_round-trending-up.svg';
@@ -60,12 +60,12 @@ export function Buget() {
               <Text fontSize={'12px'} mt={'6px'}>
                 {t(v.title)}
               </Text>
-              <Flex mt="8px">
-                <CurrencySymbol w="16px" type={currency} />
+              <HStack mt="8px" gap={'6px'}>
+                <CurrencySymbol boxSize="16px" type={currency} />
                 <Text fontWeight="500" fontSize="16px" ml="4px">
                   {displayMoney(v.value)}
                 </Text>
-              </Flex>
+              </HStack>
             </CardBody>
           </Card>
         ))}

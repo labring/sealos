@@ -72,7 +72,7 @@ const TagTextarea = ({ defaultValues, onUpdate, inputStyle, ...props }: Props) =
       bg={'#FBFBFC'}
       {...(focus && {
         boxShadow: '0px 0px 4px #A8DBFF',
-        borderColor: 'myBlue.600',
+        borderColor: 'blue.600',
         bg: '#FFFFFF'
       })}
       {...props}

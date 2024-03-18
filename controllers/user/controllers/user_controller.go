@@ -237,10 +237,11 @@ func (r *UserReconciler) syncNamespace(ctx context.Context, user *userv1.User) c
 			r.Logger.V(1).Info("define namespace User namespace is created", "isCreated", isCreated, "namespace", ns.Name)
 		}
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, ns, func() error {
-			ns.Annotations = map[string]string{
-				userAnnotationCreatorKey: user.Name,
-				userAnnotationOwnerKey:   user.Annotations[userAnnotationOwnerKey],
+			if ns.Annotations == nil {
+				ns.Annotations = make(map[string]string)
 			}
+			ns.Annotations[userAnnotationCreatorKey] = user.Name
+			ns.Annotations[userAnnotationOwnerKey] = user.Annotations[userAnnotationOwnerKey]
 			ns.Labels = config.SetPodSecurity(ns.Labels)
 			// add label for namespace to filter
 			ns.Labels[userLabelOwnerKey] = user.Annotations[userAnnotationOwnerKey]

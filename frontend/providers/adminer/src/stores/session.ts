@@ -1,9 +1,9 @@
-import type { Session } from '@/interfaces/session';
 import { sessionKey } from '@/interfaces/session';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import * as yaml from 'js-yaml';
+import { SessionV1 as Session } from 'sealos-desktop-sdk';
 
 type SessionState = {
   session: Session;

@@ -57,8 +57,8 @@ export async function GetTemplateStatic() {
       }
     });
     return temp;
-  } catch (error) {
-    console.log(error, 'error: kubectl get configmap/template-static ');
+  } catch (error: any) {
+    console.log('error: kubectl get configmap/template-static \n', error?.body);
     return {};
   }
 }

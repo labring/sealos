@@ -11,7 +11,10 @@ export type UserInfo = {
   readonly avatar: string;
   readonly nsid: string;
   readonly ns_uid: string;
+  readonly userUid: string;
   readonly userId: string;
+  readonly userCrUid: string;
+  // readonly globalUserId: string;
 };
 
 export type KubeConfig = string;

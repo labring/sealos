@@ -5,12 +5,14 @@ export type TemplateType = {
     name: string;
   };
   spec: {
-    gitRepo: string; // new
-    templateType: 'inline'; // new
-    fileName: string; // new
-    filePath: string; // new
+    // local json data
+    fileName: string;
+    filePath: string;
     deployCount?: number;
-
+    // instance
+    categories?: string[];
+    templateType: 'inline';
+    gitRepo: string;
     template_type?: string;
     author: string;
     title: string;
@@ -82,7 +84,8 @@ export type FormSourceInput = {
   key: string;
   label: string;
   required: boolean;
-  type: string;
+  type: string; // string | number | 'choice' | boolean;
+  options?: string[];
 };
 
 export type TemplateInstanceType = {
@@ -94,6 +97,7 @@ export type TemplateInstanceType = {
     labels?: Record<string, string>;
   };
   spec: {
+    categories: string[];
     gitRepo: string;
     templateType: string;
     author: string;
@@ -144,4 +148,30 @@ export type InstanceListItemType = {
   url: string;
   yamlCR: TemplateInstanceType;
   displayName?: string;
+};
+
+export enum ApplicationType {
+  All = 'all',
+  MyApp = 'myapp'
+}
+
+export type SlideDataType = {
+  title: string;
+  desc: string;
+  bg: string;
+  image: string;
+  borderRadius: string;
+  icon: string;
+  templateName: string;
+};
+
+export type SideBarMenuType = {
+  id: string;
+  value: string;
+  type: ApplicationType;
+};
+
+export type SystemConfigType = {
+  showCarousel: boolean;
+  slideData: SlideDataType[];
 };

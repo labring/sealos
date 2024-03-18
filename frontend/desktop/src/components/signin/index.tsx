@@ -1,46 +1,47 @@
+import AuthList from '@/components/signin/auth/AuthList';
 import { getSystemEnv, uploadConvertData } from '@/api/platform';
-import useAuthList from '@/components/signin/auth/useAuthList';
 import useCustomError from '@/components/signin/auth/useCustomError';
 import Language from '@/components/signin/auth/useLanguage';
 import usePassword from '@/components/signin/auth/usePassword';
 import useProtocol from '@/components/signin/auth/useProtocol';
 import useSms from '@/components/signin/auth/useSms';
-import { BackgroundImageUrl } from '@/constants/config';
-import request from '@/services/request';
+import { BackgroundImageUrl, useSystemConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
-import { ApiResp, LoginType, SystemEnv } from '@/types';
+import { LoginType } from '@/types';
 import {
   Box,
   Button,
   Flex,
-  Img,
   Tab,
   TabIndicator,
   TabList,
   Tabs,
+  Text,
   useDisclosure
 } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { debounce } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import sealosTitle from 'public/images/sealos-title.png';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import useWechat from './auth/useWechat';
+import { Turnstile, TurnstileInstance } from '@marsidev/react-turnstile';
 
 export default function SigninComponent() {
   const { data: platformEnv } = useQuery(['getPlatformEnv'], getSystemEnv);
-
+  const { systemConfig } = useSystemConfigStore();
   const {
     service_protocol_zh = '',
     private_protocol_zh = '',
     service_protocol_en = '',
     private_protocol_en = '',
     needPassword = false,
-    needSms = false
+    needSms = false,
+    openWechatEnabled = false,
+    cf_sitekey
   } = platformEnv?.data || {};
   const needTabs = needPassword && needSms;
-
   const disclosure = useDisclosure();
   const { t, i18n } = useTranslation();
   const [tabIndex, setTabIndex] = useState<LoginType>(LoginType.NONE);
@@ -57,8 +58,8 @@ export default function SigninComponent() {
       service_protocol: service_protocol_en,
       private_protocol: private_protocol_en
     };
-  console.log(protocol_data);
   const { Protocol, isAgree, setIsInvalid } = useProtocol(protocol_data!);
+  const { WechatComponent, login: wechatSubmit } = useWechat();
   const { SmsModal, login: smsSubmit, isLoading: smsLoading } = useSms({ showError });
   const {
     PasswordComponent,
@@ -68,27 +69,54 @@ export default function SigninComponent() {
   } = usePassword({ showError });
   const isLoading = useMemo(() => passwordLoading || smsLoading, [passwordLoading, smsLoading]);
   const isSignIn = useSessionStore((s) => s.isUserLogin);
+  const delSession = useSessionStore((s) => s.delSession);
+  const setToken = useSessionStore((s) => s.setToken);
   const router = useRouter();
+  const queryClient = useQueryClient();
   useEffect(() => {
     if (isSignIn()) {
       router.replace('/');
+    } else {
+      queryClient.clear();
+      delSession();
+      setToken('');
     }
   }, []);
-  const { AuthList } = useAuthList();
-
+  const turnstileRef = useRef<TurnstileInstance>(null);
   const loginConfig = useMemo(() => {
     return {
       [LoginType.SMS]: {
         login: smsSubmit,
-        component: <SmsModal />
+        component: (
+          <SmsModal
+            onAfterGetCode={() => {
+              turnstileRef.current?.reset();
+            }}
+            getCfToken={() => {
+              return turnstileRef.current?.getResponse();
+            }}
+          />
+        )
       },
       [LoginType.PASSWORD]: {
         login: passwordSubmit,
         component: <PasswordComponent />
       },
+      [LoginType.WeChat]: {
+        login: wechatSubmit,
+        component: <WechatComponent />
+      },
       [LoginType.NONE]: null
     };
-  }, [PasswordComponent, SmsModal, passwordSubmit, smsSubmit]);
+  }, [
+    PasswordComponent,
+    SmsModal,
+    WechatComponent,
+    passwordSubmit,
+    smsSubmit,
+    wechatSubmit,
+    turnstileRef.current
+  ]);
 
   useEffect(() => {
     setTabIndex(needSms ? LoginType.SMS : needPassword ? LoginType.PASSWORD : LoginType.NONE);
@@ -128,12 +156,19 @@ export default function SigninComponent() {
       backgroundSize={'cover'}
     >
       <Head>
-        <title>sealos Cloud</title>
-        <meta name="description" content="sealos cloud dashboard" />
+        <title>{systemConfig?.metaTitle}</title>
+        <meta name="description" content={systemConfig?.metaDescription} />
       </Head>
       <Flex h="full" w="full" flexDir={'column'} justifyContent={'center'} alignItems={'center'}>
         <Box mb="36px">
-          <Img src={sealosTitle.src} w="135px"></Img>
+          <Text
+            color={'#FFF'}
+            fontSize={'44px'}
+            fontWeight={700}
+            textShadow={'0px 2px 6px rgba(0, 0, 0, 0.30)'}
+          >
+            {systemConfig?.title}
+          </Text>
         </Box>
         <Flex
           p="30px 48px"
@@ -150,7 +185,12 @@ export default function SigninComponent() {
           {pageState === 0 && needTabs && (
             <Tabs
               index={tabIndex}
-              onChange={(idx) => setTabIndex(idx)}
+              onChange={(idx) => {
+                if (idx === LoginType.WeChat) {
+                  wechatSubmit();
+                }
+                setTabIndex(idx);
+              }}
               variant="unstyled"
               p={'0'}
               width={'full'}
@@ -170,6 +210,11 @@ export default function SigninComponent() {
                 <Tab px="0" _selected={{ color: 'white' }}>
                   {t('Password Login')}
                 </Tab>
+                {openWechatEnabled && (
+                  <Tab px="0" _selected={{ color: 'white' }}>
+                    {t('Official account login')}
+                  </Tab>
+                )}
               </TabList>
               <TabIndicator mt="-2px" height="2px" bg="#FFFFFF" borderRadius="1px" />
             </Tabs>
@@ -177,30 +222,42 @@ export default function SigninComponent() {
 
           {LoginComponent}
 
-          <Protocol />
-
-          <Button
-            variant={'unstyled'}
-            background="linear-gradient(90deg, #000000 0%, rgba(36, 40, 44, 0.9) 98.29%)"
-            boxShadow="0px 4px 4px rgba(0, 0, 0, 0.25)"
-            color="#fff"
-            display={'flex'}
-            justifyContent={'center'}
-            alignItems={'center'}
-            type="submit"
-            _hover={{
-              opacity: '0.85'
-            }}
-            width="266px"
-            minH="42px"
-            mb="14px"
-            borderRadius="4px"
-            p="10px"
-            onClick={handleLogin}
-          >
-            {isLoading ? (t('Loading') || 'Loading') + '...' : t('Log In') || 'Log In'}
-          </Button>
-          <AuthList />
+          {tabIndex !== LoginType.WeChat && (
+            <>
+              <Protocol />
+              {!!cf_sitekey && (
+                <Turnstile
+                  options={{
+                    size: 'invisible'
+                  }}
+                  ref={turnstileRef}
+                  siteKey={cf_sitekey}
+                />
+              )}
+              <Button
+                variant={'unstyled'}
+                background="linear-gradient(90deg, #000000 0%, rgba(36, 40, 44, 0.9) 98.29%)"
+                boxShadow="0px 4px 4px rgba(0, 0, 0, 0.25)"
+                color="#fff"
+                display={'flex'}
+                justifyContent={'center'}
+                alignItems={'center'}
+                type="submit"
+                _hover={{
+                  opacity: '0.85'
+                }}
+                width="266px"
+                minH="42px"
+                mb="14px"
+                borderRadius="4px"
+                p="10px"
+                onClick={handleLogin}
+              >
+                {isLoading ? (t('Loading') || 'Loading') + '...' : t('Log In') || 'Log In'}
+              </Button>
+              <AuthList />
+            </>
+          )}
         </Flex>
       </Flex>
       <Language disclosure={disclosure} i18n={i18n} />

@@ -9,6 +9,7 @@ import yaml from 'js-yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { replaceRawWithCDN } from './listTemplate';
+import { EnvResponse } from '@/types';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -65,12 +66,13 @@ export async function GetTemplateByName({
   const cdnUrl = process.env.CDN_URL;
   const targetFolder = process.env.TEMPLATE_REPO_FOLDER || 'template';
 
-  const TemplateEnvs = {
+  const TemplateEnvs: EnvResponse = {
     SEALOS_CLOUD_DOMAIN: process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io',
     SEALOS_CERT_SECRET_NAME: process.env.SEALOS_CERT_SECRET_NAME || 'wildcard-cert',
     TEMPLATE_REPO_URL:
       process.env.TEMPLATE_REPO_URL || 'https://github.com/labring-actions/templates',
-    SEALOS_NAMESPACE: namespace || ''
+    SEALOS_NAMESPACE: namespace || '',
+    SEALOS_SERVICE_ACCOUNT: namespace.replace('ns-', '')
   };
 
   const originalPath = process.cwd();

@@ -1,6 +1,6 @@
 {
   "SwitchLanguage": "Switch Language",
-  "Charge": "Charge",
+  "Charge": "Recharge",
   "Balance is insufficient": "Balance is insufficient",
   "Payment Status": "Payment Status",
   "Scan with WeChat": "Scan with WeChat",
@@ -161,5 +161,6 @@
   "All APP": "all",
   "APP Type": "App type",
   "Details": "Details",
-  "Handle": "Handle"
+  "Handle": "Handle",
+  "currencyUnit": "Currency Unit"
 }

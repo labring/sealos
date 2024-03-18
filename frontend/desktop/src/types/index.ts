@@ -8,7 +8,9 @@ export * from './system';
 export * from './login';
 export * from './valuation';
 export * from './license';
-
+export * from './region';
 declare global {
   var mongodb: MongoClient | null;
+  var WechatAccessToken: string | undefined;
+  var WechatExpiresIn: number | undefined;
 }

@@ -50,5 +50,6 @@ const MyIcon = ({
     <Icon as={map[name]} verticalAlign={'text-top'} fill={'currentColor'} w={w} h={h} {...props} />
   ) : null;
 };
+export type IconType = keyof typeof map;
 
 export default MyIcon;

@@ -22,8 +22,13 @@ import (
 	"os"
 	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/labring/sealos/controllers/pkg/types"
+
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/labring/sealos/controllers/account/controllers/cache"
 
@@ -138,21 +143,29 @@ func main() {
 			setupLog.Error(err, "unable to disconnect from mongo")
 		}
 	}()
+	v2Account, err := cockroach.NewCockRoach(os.Getenv(database.GlobalCockroachURI), os.Getenv(database.LocalCockroachURI))
+	if err != nil {
+		setupLog.Error(err, "unable to connect to cockroach")
+		os.Exit(1)
+	}
+	defer func() {
+		err := v2Account.Close()
+		if err != nil {
+			setupLog.Error(err, "unable to disconnect from cockroach")
+		}
+	}()
 	accountReconciler := &controllers.AccountReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		DBClient: dbClient,
+		Client:    mgr.GetClient(),
+		Scheme:    mgr.GetScheme(),
+		DBClient:  dbClient,
+		AccountV2: v2Account,
 	}
 	billingInfoQueryReconciler := &controllers.BillingInfoQueryReconciler{
 		Client:     mgr.GetClient(),
 		Scheme:     mgr.GetScheme(),
 		DBClient:   dbClient,
 		Properties: resources.DefaultPropertyTypeLS,
-	}
-	activityReconciler := &controllers.ActivityReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		DBClient: dbClient,
+		AccountV2:  v2Account,
 	}
 	activities, discountSteps, discountRatios, err := controllers.RawParseRechargeConfig()
 	if err != nil {
@@ -160,19 +173,19 @@ func main() {
 	} else {
 		setupLog.Info("parse recharge config success", "activities", activities, "discountSteps", discountSteps, "discountRatios", discountRatios)
 		accountReconciler.Activities = activities
-		accountReconciler.RechargeStep = discountSteps
-		accountReconciler.RechargeRatio = discountRatios
+		accountReconciler.DefaultDiscount = types.RechargeDiscount{
+			DiscountRates: discountRatios,
+			DiscountSteps: discountSteps,
+		}
 		billingInfoQueryReconciler.Activities = activities
-		billingInfoQueryReconciler.RechargeStep = discountSteps
-		billingInfoQueryReconciler.RechargeRatio = discountRatios
-		activityReconciler.Activity = activities
+		billingInfoQueryReconciler.DefaultDiscount = types.RechargeDiscount{
+			DiscountRates: discountRatios,
+			DiscountSteps: discountSteps,
+		}
 	}
 	setupManagerError := func(err error, controller string) {
 		setupLog.Error(err, "unable to create controller", "controller", controller)
 		os.Exit(1)
-	}
-	if err = (activityReconciler).SetupWithManager(mgr, rateOpts); err != nil {
-		setupManagerError(err, "Activity")
 	}
 	if err = (accountReconciler).SetupWithManager(mgr, rateOpts); err != nil {
 		setupManagerError(err, "Account")
@@ -184,9 +197,9 @@ func main() {
 		setupManagerError(err, "Payment")
 	}
 	if err = (&controllers.DebtReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		DBClient: dbClient,
+		Client:    mgr.GetClient(),
+		Scheme:    mgr.GetScheme(),
+		AccountV2: v2Account,
 	}).SetupWithManager(mgr, rateOpts); err != nil {
 		setupManagerError(err, "Debt")
 	}
@@ -198,7 +211,7 @@ func main() {
 	if os.Getenv("DISABLE_WEBHOOKS") == "true" {
 		setupLog.Info("disable all webhooks")
 	} else {
-		mgr.GetWebhookServer().Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient()}})
+		mgr.GetWebhookServer().Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient(), AccountV2: v2Account}})
 	}
 
 	err = dbClient.InitDefaultPropertyTypeLS()
@@ -218,6 +231,7 @@ func main() {
 		Properties: resources.DefaultPropertyTypeLS,
 		Client:     mgr.GetClient(),
 		Scheme:     mgr.GetScheme(),
+		AccountV2:  v2Account,
 	}).SetupWithManager(mgr, rateOpts); err != nil {
 		setupManagerError(err, "Billing")
 	}
@@ -233,13 +247,6 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupManagerError(err, "Namespace")
-	}
-	if err = (&controllers.TransferReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		DBClient: dbClient,
-	}).SetupWithManager(mgr); err != nil {
-		setupManagerError(err, "Transfer")
 	}
 	if err = (&controllers.NamespaceBillingHistoryReconciler{
 		Client: mgr.GetClient(),

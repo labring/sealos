@@ -18,6 +18,10 @@ import (
 	"context"
 	"time"
 
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
+
 	"github.com/labring/sealos/controllers/pkg/types"
 
 	"github.com/labring/sealos/controllers/pkg/common"
@@ -28,12 +32,7 @@ import (
 
 type Interface interface {
 	Account
-	Auth
 	Traffic
-}
-
-type Auth interface {
-	GetUser(k8sUser string) (*types.User, error)
 }
 
 type Account interface {
@@ -47,15 +46,28 @@ type Account interface {
 	UpdateBillingStatus(orderID string, status resources.BillingStatus) error
 	GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error)
 	GetAllPricesMap() (map[string]resources.Price, error)
+	GetAllPayment() ([]resources.Billing, error)
 	InitDefaultPropertyTypeLS() error
 	SavePropertyTypes(types []resources.PropertyType) error
 	GetBillingCount(accountType common.Type, startTime, endTime time.Time) (count, amount int64, err error)
+	//GetNodePortAmount(owner string, endTime time.Time) (int64, error)
 	GenerateBillingData(startTime, endTime time.Time, prols *resources.PropertyTypeLS, namespaces []string, owner string) (orderID []string, amount int64, err error)
 	InsertMonitor(ctx context.Context, monitors ...*resources.Monitor) error
-	GetDistinctMonitorCombinations(startTime, endTime time.Time, namespace string) ([]resources.Monitor, error)
+	GetDistinctMonitorCombinations(startTime, endTime time.Time) ([]resources.Monitor, error)
 	DropMonitorCollectionsOlderThan(days int) error
 	Disconnect(ctx context.Context) error
 	Creator
+}
+
+type BillingRecordQuery struct {
+	Page      int         `json:"page"`
+	PageSize  int         `json:"pageSize"`
+	Namespace string      `json:"namespace,omitempty"`
+	StartTime v1.Time     `json:"startTime"`
+	EndTime   v1.Time     `json:"endTime"`
+	OrderID   string      `json:"orderID,omitempty"`
+	Type      common.Type `json:"type"`
+	AppType   string      `json:"appType,omitempty"`
 }
 
 type Traffic interface {
@@ -64,6 +76,26 @@ type Traffic interface {
 
 	GetPodTrafficSentBytes(startTime, endTime time.Time, namespace string, name string) (int64, error)
 	GetPodTrafficRecvBytes(startTime, endTime time.Time, namespace string, name string) (int64, error)
+}
+
+type AccountV2 interface {
+	Close() error
+	GetUserCr(user *types.UserQueryOpts) (*types.RegionUserCr, error)
+	GetAccount(user *types.UserQueryOpts) (*types.Account, error)
+	GetUserOauthProvider(ops *types.UserQueryOpts) (*types.OauthProvider, error)
+	AddBalance(user *types.UserQueryOpts, balance int64) error
+	ReduceBalance(ops *types.UserQueryOpts, amount int64) error
+	ReduceDeductionBalance(ops *types.UserQueryOpts, amount int64) error
+	NewAccount(user *types.UserQueryOpts) (*types.Account, error)
+	Payment(payment *types.Payment) error
+	SavePayment(payment *types.Payment) error
+	CreateErrorPaymentCreate(payment types.Payment, errorMsg string) error
+	CreateAccount(ops *types.UserQueryOpts, account *types.Account) (*types.Account, error)
+	CreateErrorAccountCreate(account *types.Account, owner, errorMsg string) error
+	TransferAccount(from, to *types.UserQueryOpts, amount int64) error
+	TransferAccountV1(owner string, account *types.Account) (*types.Account, error)
+	GetUserAccountRechargeDiscount(user *types.UserQueryOpts) (*types.RechargeDiscount, error)
+	AddDeductionBalance(user *types.UserQueryOpts, balance int64) error
 }
 
 type Creator interface {
@@ -84,10 +116,18 @@ type MeteringOwnerTimeResult struct {
 //}
 
 const (
-	MongoURI        = "MONGO_URI"
-	TrafficMongoURI = "TRAFFIC_MONGO_URI"
+	MongoURI           = "MONGO_URI"
+	GlobalCockroachURI = "GLOBAL_COCKROACH_URI"
+	LocalCockroachURI  = "LOCAL_COCKROACH_URI"
+	TrafficMongoURI    = "TRAFFIC_MONGO_URI"
 	//MongoUsername      = "MONGO_USERNAME"
 	//MongoPassword      = "MONGO_PASSWORD"
 	//RetentionDay       = "RETENTION_DAY"
 	//PermanentRetention = "PERMANENT_RETENTION"
 )
+
+var _ = AccountV2(&cockroach.Cockroach{})
+
+func NewAccountV2(globalURI, localURI string) (AccountV2, error) {
+	return cockroach.NewCockRoach(globalURI, localURI)
+}

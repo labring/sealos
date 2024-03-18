@@ -15,6 +15,11 @@ import NextLink from 'next/link';
 import { useRouter } from 'next/router';
 import { MouseEventHandler, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { getRegionToken, UserInfo } from '@/api/auth';
+import { jwtDecode } from 'jwt-decode';
+import { uploadConvertData } from '@/api/platform';
+import { AccessTokenPayload } from '@/types/token';
+import { sessionConfig } from '@/utils/sessionConfig';
 
 export default function useSms({
   showError
@@ -24,9 +29,9 @@ export default function useSms({
   const { t } = useTranslation();
   const _remainTime = useRef(0);
   const router = useRouter();
-  const { setSession } = useSessionStore();
+  const setSession = useSessionStore((s) => s.setSession);
   const [isLoading, setIsLoading] = useState(false);
-
+  const setToken = useSessionStore((s) => s.setToken);
   const { register, handleSubmit, trigger, getValues } = useForm<{
     phoneNumber: string;
     verifyCode: string;
@@ -41,16 +46,33 @@ export default function useSms({
       return deepSearch(Object.values(obj)[0]);
     };
 
-    handleSubmit(
+    await handleSubmit(
       async (data) => {
         try {
           setIsLoading(true);
-          const result = await request.post<any, ApiResp<Session>>('/api/auth/phone/verify', {
-            phoneNumbers: data.phoneNumber,
-            code: data.verifyCode
-          });
-          setSession(result.data!);
-          router.replace('/');
+          const result1 = await request.post<any, ApiResp<{ token: string }>>(
+            '/api/auth/phone/verify',
+            {
+              phoneNumbers: data.phoneNumber,
+              code: data.verifyCode
+            }
+          );
+          const globalToken = result1?.data?.token;
+          if (!globalToken) throw Error();
+          setToken(globalToken);
+          const regionTokenRes = await getRegionToken();
+          if (regionTokenRes?.data) {
+            await sessionConfig(regionTokenRes.data);
+            uploadConvertData([3]).then(
+              (res) => {
+                console.log(res);
+              },
+              (err) => {
+                console.log(err);
+              }
+            );
+            await router.replace('/');
+          }
         } catch (error) {
           showError(t('Invalid verification code') || 'Invalid verification code');
         } finally {
@@ -63,7 +85,13 @@ export default function useSms({
     )();
   };
 
-  const SmsModal = () => {
+  const SmsModal = ({
+    onAfterGetCode,
+    getCfToken
+  }: {
+    getCfToken?: () => string | undefined;
+    onAfterGetCode?: () => void;
+  }) => {
     const [remainTime, setRemainTime] = useState(_remainTime.current);
 
     useEffect(() => {
@@ -85,8 +113,10 @@ export default function useSms({
       _remainTime.current = 60;
 
       try {
+        const cfToken = getCfToken?.();
         const res = await request.post<any, ApiResp<any>>('/api/auth/phone/sms', {
-          phoneNumbers: getValues('phoneNumber')
+          phoneNumbers: getValues('phoneNumber'),
+          cfToken
         });
         if (res.code !== 200 || res.message !== 'successfully') {
           throw new Error('Get code failed');
@@ -95,6 +125,8 @@ export default function useSms({
         showError(t('Get code failed') || 'Get code failed');
         setRemainTime(0);
         _remainTime.current = 0;
+      } finally {
+        onAfterGetCode?.();
       }
     };
 

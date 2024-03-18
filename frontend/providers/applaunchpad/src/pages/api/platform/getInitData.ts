@@ -34,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       global.FormSliderListConfig = res;
     }
   } catch (error) {
-    console.log(error);
+    console.log('error: /api/platform/getInitData', error);
 
     global.FormSliderListConfig = defaultVal;
   }

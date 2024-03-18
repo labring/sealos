@@ -1,12 +1,16 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
+
 const clientId = process.env.GITHUB_CLIENT_ID!;
 const clientSecret = process.env.GITHUB_CLIENT_SECRET!;
 import { TgithubToken, TgithubUser } from '@/types/user';
 
-import { Session } from '@/types/session';
-import { getOauthRes } from '@/services/backend/oauth';
 import { enableGithub } from '@/services/enable';
+import { getGlobalToken } from '@/services/backend/globalAuth';
+import { persistImage } from '@/services/backend/persistImage';
+import { isNumber } from 'lodash';
+import { ProviderType } from 'prisma/global/generated/client';
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!enableGithub()) {
@@ -26,19 +30,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
     const userUrl = `https://api.github.com/user`;
-    const result = (await (
-      await fetch(userUrl, {
-        headers: {
-          Authorization: `Bearer ${access_token}`
-        }
-      })
-    ).json()) as TgithubUser;
-    const name = result.login;
-    const id = '' + result.id;
-    const avatar_url = result.avatar_url;
+    const response = await fetch(userUrl, {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      }
+    });
+    if (!response.ok)
+      return jsonRes(res, {
+        code: 401,
+        message: 'Unauthorized'
+      });
+    const result = (await response.json()) as TgithubUser;
 
-    const data = await getOauthRes({ provider: 'github', id, name, avatar_url });
-    return jsonRes<Session>(res, {
+    const name = result.login;
+    const id = result.id;
+    if (!isNumber(id)) throw Error();
+    const persistUrl = await persistImage(
+      result.avatar_url,
+      'avatar/' + ProviderType.GITHUB + '/' + result.id
+    );
+    const avatar_url = persistUrl || '';
+    const data = await getGlobalToken({
+      provider: ProviderType.GITHUB,
+      id: id + '',
+      avatar_url,
+      name
+    });
+    if (!data)
+      return jsonRes(res, {
+        code: 401,
+        message: 'Unauthorized'
+      });
+    return jsonRes(res, {
       data,
       code: 200,
       message: 'Successfully'

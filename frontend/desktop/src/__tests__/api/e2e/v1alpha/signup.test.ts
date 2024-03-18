@@ -1,12 +1,10 @@
 import { Session } from 'sealos-desktop-sdk/*';
 import * as k8s from '@kubernetes/client-node';
-import { _passwordLoginRequest, _passwordModifyRequest } from '@/api/auth';
 import { _setAuth, cleanDb, cleanK8s } from '@/__tests__/api/tools';
-import { _createRequest } from '@/api/namespace';
 import request from '@/__tests__/api/request';
-import { Db, MongoClient } from 'mongodb';
 import { ApiResp } from '@/types';
 import RandExp from 'randexp';
+import { prisma } from '@/services/backend/db/init';
 
 export const getUserAndPassword = () => {
   const userFactory = new RandExp('[a-zA-Z0-9_-]{10,16}');
@@ -24,22 +22,12 @@ describe('v1alpha/signup', () => {
       '/api/v1alpha/password/signin',
       data
     );
-  let db: Db;
-  let connection: MongoClient;
   const setAuth = _setAuth(request);
   beforeAll(async () => {
-    //@ts-ignore
-    const uri = process.env.MONGODB_URI as string;
-    connection = new MongoClient(uri);
-    await connection.connect();
-    db = connection.db();
     const kc = new k8s.KubeConfig();
-    await cleanK8s(kc, db);
-    await cleanDb(db);
+    await cleanK8s(kc, prisma);
+    await cleanDb(prisma);
   }, 100000);
-  afterAll(async () => {
-    await connection.close();
-  });
   it.each([[1], [2], [3], [4], [5]])(
     'sign up test',
     async (time) => {
@@ -57,7 +45,7 @@ describe('v1alpha/signup', () => {
         const res = await signinRequest(user);
         expect(res.code).toBe(403);
       }
-      setAuth({});
+      setAuth();
     },
     10000
   );

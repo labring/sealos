@@ -79,7 +79,57 @@ definitions:
           type: string
         type: array
     type: object
-  helper.UserCostsAmountReq:
+  helper.SetPaymentInvoiceReq:
+    properties:
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      paymentIDList:
+        description: |-
+          @Summary Payment ID list
+          @Description Payment ID list
+          @JSONSchema required
+        example:
+        - '["payment-id-1"'
+        - '"payment-id-2"]'
+        items:
+          type: string
+        type: array
+    required:
+    - kubeConfig
+    - owner
+    - paymentIDList
+    type: object
+  helper.TransferAmountReq:
+    properties:
+      amount:
+        description: |-
+          @Summary Transfer amount
+          @Description Transfer amount
+          @JSONSchema required
+        example: 100000000
+        type: integer
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      toUser:
+        description: |-
+          @Summary To user
+          @Description To user
+          @JSONSchema required
+        example: admin
+        type: string
+    required:
+    - amount
+    - kubeConfig
+    - owner
+    - toUser
+    type: object
+  helper.UserBaseReq:
     properties:
       endTime:
         example: "2021-12-01T00:00:00Z"
@@ -105,6 +155,39 @@ info:
   title: sealos account service
   version: v1alpha1
 paths:
+  /account/v1alpha1/account:
+    post:
+      consumes:
+      - application/json
+      description: Get user account
+      parameters:
+      - description: auth request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.Auth'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved user account
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get user account
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user account
+      tags:
+      - Account
   /account/v1alpha1/costs:
     post:
       consumes:
@@ -116,7 +199,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/helper.UserCostsAmountReq'
+          $ref: '#/definitions/helper.UserBaseReq'
       produces:
       - application/json
       responses:
@@ -154,7 +237,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/helper.UserCostsAmountReq'
+          $ref: '#/definitions/helper.UserBaseReq'
       produces:
       - application/json
       responses:
@@ -181,6 +264,44 @@ paths:
       summary: Get user consumption amount
       tags:
       - ConsumptionAmount
+  /account/v1alpha1/costs/payment:
+    post:
+      consumes:
+      - application/json
+      description: Get user payment within a specified time range
+      parameters:
+      - description: User payment request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.UserBaseReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved user payment
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse user payment request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get user payment
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user payment
+      tags:
+      - Payment
   /account/v1alpha1/costs/properties:
     post:
       consumes:
@@ -192,7 +313,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/helper.UserCostsAmountReq'
+          $ref: '#/definitions/helper.UserBaseReq'
       produces:
       - application/json
       responses:
@@ -230,7 +351,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/helper.UserCostsAmountReq'
+          $ref: '#/definitions/helper.UserBaseReq'
       produces:
       - application/json
       responses:
@@ -257,6 +378,39 @@ paths:
       summary: Get user recharge amount
       tags:
       - RechargeAmount
+  /account/v1alpha1/get-transfer:
+    post:
+      consumes:
+      - application/json
+      description: Get transfer
+      parameters:
+      - description: auth request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.Auth'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully get transfer
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get transfer
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get transfer
+      tags:
+      - Transfer
   /account/v1alpha1/namespaces:
     post:
       consumes:
@@ -291,6 +445,44 @@ paths:
       summary: Get namespace billing history list
       tags:
       - BillingHistory
+  /account/v1alpha1/payment/set-invoice:
+    post:
+      consumes:
+      - application/json
+      description: Set payment invoice
+      parameters:
+      - description: Set payment invoice request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.SetPaymentInvoiceReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully set payment invoice
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse set payment invoice request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to set payment invoice
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Set payment invoice
+      tags:
+      - PaymentInvoice
   /account/v1alpha1/properties:
     post:
       consumes:
@@ -321,4 +513,42 @@ paths:
       summary: Get properties
       tags:
       - Properties
+  /account/v1alpha1/transfer:
+    post:
+      consumes:
+      - application/json
+      description: Transfer amount
+      parameters:
+      - description: Transfer amount request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.TransferAmountReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully transfer amount
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse transfer amount request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to transfer amount
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Transfer amount
+      tags:
+      - TransferAmount
 swagger: "2.0"

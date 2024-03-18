@@ -1,16 +1,15 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
-
-import { Session } from '@/types/session';
-import { getOauthRes } from '@/services/backend/oauth';
 import { strongPassword } from '@/utils/crypto';
 import { enablePassword } from '@/services/enable';
+import { getGlobalToken } from '@/services/backend/globalAuth';
+import { ProviderType } from 'prisma/global/generated/client';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!enablePassword()) {
       throw new Error('PASSWORD_SALT is not defined');
     }
-    const { user: name, password } = req.body;
+    const { user: name, password, inviterId } = req.body;
     if (!strongPassword(password)) {
       return jsonRes(res, {
         message:
@@ -18,22 +17,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         code: 400
       });
     }
-    const data = await getOauthRes({
-      provider: 'password_user',
-      id: '' + name,
-      name,
+    const data = await getGlobalToken({
+      provider: ProviderType.PASSWORD,
+      id: name,
       avatar_url: '',
-      password
+      password,
+      name
     });
-    return jsonRes<Session>(res, {
-      data,
+    if (!data)
+      return jsonRes(res, {
+        code: 401,
+        message: 'Unauthorized'
+      });
+    return jsonRes(res, {
+      data: {
+        token: data.token
+      },
       code: 200,
       message: 'Successfully'
     });
   } catch (err) {
     console.log(err);
     return jsonRes(res, {
-      message: 'Failed to authenticate with password',
+      message: 'Failed to authorize with password',
       code: 500
     });
   }

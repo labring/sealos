@@ -79,18 +79,17 @@ export async function CreateYaml(
       created.push(response.body);
     }
   } catch (error: any) {
-    console.log('create error');
+    console.log('create yaml error');
     /* delete success specs */
     for (const spec of created) {
       try {
         console.log('delete:', spec.kind);
-        client.delete(spec);
-      } catch (error) {
-        error;
+        await client.delete(spec);
+      } catch (error: any) {
+        console.log('delete error:', spec.kind, error.body);
       }
     }
-    // console.error(error, '<=create error')
-    return Promise.reject(error);
+    return Promise.reject(error.body || 'CreateYaml Error');
   }
   return created;
 }
@@ -189,7 +188,7 @@ export async function delYaml(kc: k8s.KubeConfig, specs: k8s.KubernetesObject[])
   try {
     for (const spec of validSpecs) {
       console.log('delete:', spec.kind);
-      client.delete(spec);
+      await client.delete(spec);
     }
   } catch (error: any) {
     // console.error(error, '<=create error')

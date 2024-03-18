@@ -24,6 +24,8 @@
   "confirmNewPassword": "确认新密码",
   "passwordMismatch": "密码不一致",
   "passwordChangeSuccess": "密码修改成功",
+  "passwordMismatch": "密码不一致",
+  "newPassword": "新密码",
   "Verify password": "确认密码",
   "change": "修改",
   "Invalid username or password": "用户名或密码错误",
@@ -94,6 +96,7 @@
   "Purchase Link Error": "购买链接错误",
   "You have not purchased the License": "您还没有购买 License",
   "App Info": "应用信息",
+  "Click anywhere to continue": "点击任意空白继续",
   "Jump Over": "跳过",
   "Detail": "详情",
   "Hello, welcome": "您好, 欢迎来到",
@@ -110,5 +113,11 @@
   "Click on any shadow to skip": "点击任意阴影跳过",
   "Start your Sealos journey": "开始您的 Sealos 之旅",
   "gift amount": "赠送 {{amount}} 余额.",
-  "Doc": "文档"
+  "Doc": "文档",
+  "Official account login": "公众号登录",
+  "Region": "可用区",
+  "Year": "年",
+  "Core": "核",
+  "Yuan": "元",
+  "Description": "描述"
 }

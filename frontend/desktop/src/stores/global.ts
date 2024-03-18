@@ -11,6 +11,7 @@ export const useGlobalStore = create<GlobalState>()(
   persist(
     immer((set) => ({
       callback_url: '',
+      cf_sitekey: '',
       service_protocol_en: '',
       service_protocol_zh: '',
       private_protocol_en: '',
@@ -27,10 +28,12 @@ export const useGlobalStore = create<GlobalState>()(
       private_protocol: '',
       service_protocol: '',
       stripeEnabled: false,
+      oauth_proxy: '',
       guideEnabled: false,
       wechatEnabledRecharge: false,
       SEALOS_CLOUD_DOMAIN: 'cloud.sealos.io',
       rechargeEnabled: false,
+      openWechatEnabled: false,
       setEnv(env, val) {
         set({ [env]: val });
       }

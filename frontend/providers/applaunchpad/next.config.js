@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const { i18n } = require('./next-i18next.config');
-const analyzer = process.env === 'production' ? [new BundleAnalyzerPlugin()] : [];
 const path = require('path');
 const nextConfig = {
   i18n,
@@ -16,7 +14,7 @@ const nextConfig = {
         use: ['@svgr/webpack']
       }
     ]);
-    config.plugins = [...config.plugins, ...analyzer];
+    config.plugins = [...config.plugins];
     return config;
   },
   transpilePackages: ['@sealos/driver'],

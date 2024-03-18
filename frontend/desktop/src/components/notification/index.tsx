@@ -10,32 +10,7 @@ import { produce } from 'immer';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
 import styles from './index.module.scss';
-
-type NotificationItem = {
-  metadata: {
-    creationTimestamp: string;
-    labels: {
-      isRead: string;
-    };
-    name: string;
-    namespace: string;
-    uid: string;
-  };
-  spec: {
-    from: string;
-    message: string;
-    timestamp: number;
-    title: string;
-    desktopPopup?: boolean;
-    i18ns?: {
-      zh?: {
-        from: string;
-        message: string;
-        title: string;
-      };
-    };
-  };
-};
+import { NotificationItem } from '@/types';
 
 type TNotification = {
   disclosure: UseDisclosureReturn;

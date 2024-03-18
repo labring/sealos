@@ -66,7 +66,7 @@ export default forwardRef(function RechargeComponent(props, ref) {
         }
       };
     },
-    []
+    [onOpen]
   );
 
   const handlePayConfirm = (type: TPayMethod) => {
@@ -248,7 +248,13 @@ export default forwardRef(function RechargeComponent(props, ref) {
   return (
     <Modal isOpen={isOpen} onClose={onClosePayment}>
       <ModalOverlay />
-      <ModalContent maxW="502px" minH={'495px'} display={'flex'} flexDirection={'column'}>
+      <ModalContent
+        borderRadius={'12px'}
+        maxW="502px"
+        minH={'495px'}
+        display={'flex'}
+        flexDirection={'column'}
+      >
         <ModalCloseButton />
         {detail ? (
           <>

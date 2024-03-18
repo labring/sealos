@@ -11,14 +11,13 @@ import {
   Box
 } from '@chakra-ui/react';
 import { format, parse, isValid, isAfter, isBefore, endOfDay, startOfDay, addDays } from 'date-fns';
-import { useState, ChangeEventHandler } from 'react';
+import { useState, ChangeEventHandler, useCallback, useEffect } from 'react';
 import { DateRange, SelectRangeEventHandler, DayPicker } from 'react-day-picker';
+import { useShallow } from 'zustand/react/shallow';
+import { subscribeWithSelector } from 'zustand/middleware';
 
 export default function SelectRange({ isDisabled }: { isDisabled: boolean | undefined }) {
-  let { startTime, endTime } = useOverviewStore();
-  const setStartTime = useOverviewStore((state) => state.setStartTime);
-  const setEndTime = useOverviewStore((state) => state.setEndTime);
-
+  const { setStartTime, setEndTime, startTime, endTime } = useOverviewStore();
   const initState = { from: startTime, to: endTime };
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(initState);
   const [fromValue, setFromValue] = useState<string>(format(initState.from, 'y-MM-dd'));
@@ -68,9 +67,9 @@ export default function SelectRange({ isDisabled }: { isDisabled: boolean | unde
     if (range) {
       let { from, to } = range;
       if (inputState === 0) {
-        // 输入from
+        // from
         if (from === selectedRange?.from) {
-          // 组件动了to
+          // when 'to' is changed
           from = to;
         } else {
           to = from;
@@ -94,7 +93,7 @@ export default function SelectRange({ isDisabled }: { isDisabled: boolean | unde
         setToValue(from ? format(from, 'y-MM-dd') : '');
       }
     } else {
-      // 选了第一个日期，组件默认的行为是取消选择
+      // default is cancel
       if (fromValue && selectedRange?.from) {
         setToValue(fromValue);
         setSelectedRange({
@@ -111,10 +110,10 @@ export default function SelectRange({ isDisabled }: { isDisabled: boolean | unde
       if (selectedRange?.to) {
         if (from) {
           if (!to) {
-            // 证明直接重合
+            // proof 'to' = 'from'
             to = from;
           } else if (from === selectedRange?.from) {
-            // 组件动了to
+            // when 'to' is changed
             from = to;
             to = selectedRange.to;
           }
@@ -130,16 +129,15 @@ export default function SelectRange({ isDisabled }: { isDisabled: boolean | unde
     }
   };
   const handleRangeSelectTo: SelectRangeEventHandler = (range: DateRange | undefined) => {
-    console.log(range, selectedRange);
     if (range) {
       let { from, to } = range;
       if (selectedRange?.from) {
         if (to) {
           if (!from) {
-            // 证明直接重合
+            // proof 'to' = 'from'
             from = to;
           } else if (to === selectedRange?.to) {
-            // 组件动了from
+            // when 'from' is changed
             to = from;
             from = selectedRange.from;
           }
@@ -153,7 +151,7 @@ export default function SelectRange({ isDisabled }: { isDisabled: boolean | unde
         }
       }
     } else {
-      // 选了第一个日期，组件默认的行为是取消选择
+      // default is cancelgit
       if (fromValue && selectedRange?.from) {
         setToValue(fromValue);
         setSelectedRange({
@@ -187,10 +185,7 @@ export default function SelectRange({ isDisabled }: { isDisabled: boolean | unde
               value={fromValue}
               minW="90px"
               onChange={handleFromChange}
-              onBlur={() => {
-                selectedRange?.from && setStartTime(startOfDay(selectedRange.from));
-                console.log(selectedRange?.from);
-              }}
+              onBlur={onClose}
             />
           </Button>
         </PopoverTrigger>
@@ -199,7 +194,7 @@ export default function SelectRange({ isDisabled }: { isDisabled: boolean | unde
             mode="range"
             selected={selectedRange}
             onSelect={handleRangeSelectFrom}
-            defaultMonth={startTime}
+            defaultMonth={initState.from}
             styles={{
               day: {
                 borderRadius: 'unset',
@@ -221,10 +216,7 @@ export default function SelectRange({ isDisabled }: { isDisabled: boolean | unde
               flex={1}
               minW="90px"
               onChange={handleToChange}
-              onBlur={() => {
-                selectedRange?.to && setEndTime(endOfDay(selectedRange.to));
-                console.log(selectedRange?.to);
-              }}
+              onBlur={onClose}
             />
           </Button>
         </PopoverTrigger>
@@ -233,7 +225,7 @@ export default function SelectRange({ isDisabled }: { isDisabled: boolean | unde
             mode="range"
             selected={selectedRange}
             onSelect={handleRangeSelectTo}
-            defaultMonth={endTime}
+            defaultMonth={initState.to}
             styles={{
               day: {
                 borderRadius: 'unset',

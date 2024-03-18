@@ -24,17 +24,17 @@ export default function RemoveMember({
   ns_uid,
   status,
   k8s_username: tK8s_username,
-  userId: tUserId,
+  targetUserCrUid,
   ...props
 }: {
-  userId: string;
+  targetUserCrUid: string;
   ns_uid: string;
   k8s_username: string;
   status: InvitedStatus;
 } & Parameters<typeof Button>[0]) {
   const { onOpen, isOpen, onClose } = useDisclosure();
   const session = useSessionStore((s) => s.session);
-  const selfUserId = session.user.userId;
+  const selfUserCrUid = session?.user.userCrUid;
   const queryClient = useQueryClient();
 
   const { toast } = useCustomToast({ status: 'error' });
@@ -52,13 +52,13 @@ export default function RemoveMember({
     }
   });
   const submit = () => {
-    mutation.mutate({ ns_uid, tUserId, tK8s_username });
+    mutation.mutate({ ns_uid, targetUserCrUid });
   };
   const { t, i18n } = useTranslation();
   const removeKey =
     status === InvitedStatus.Inviting
       ? t('Cancel')
-      : selfUserId === tUserId
+      : selfUserCrUid === targetUserCrUid
       ? t('Quit')
       : t('Remove');
   return (

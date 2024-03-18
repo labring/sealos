@@ -45,7 +45,7 @@ func init() {
 	Currency = currency
 }
 
-func (s StripePayment) CreatePayment(amount int64, _ string) (string, string, error) {
+func (s StripePayment) CreatePayment(amount int64, _, _ string) (string, string, error) {
 	session, err := CreateCheckoutSession(amount, Currency, DefaultURL+os.Getenv(stripeSuccessPostfix), DefaultURL+os.Getenv(stripeCancelPostfix))
 	if err != nil {
 		return "", "", err

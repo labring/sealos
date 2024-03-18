@@ -3,12 +3,12 @@ import { jsonRes } from '@/services/backend/response';
 const clientId = process.env.GOOGLE_CLIENT_ID!;
 const clientSecret = process.env.GOOGLE_CLIENT_SECRET!;
 const callbackUrl = process.env.CALLBACK_URL || '';
-import { TgithubToken, TgithubUser } from '@/types/user';
 import * as jwt from 'jsonwebtoken';
-import { Session } from '@/types/session';
-import { getOauthRes } from '@/services/backend/oauth';
 import { enableGoogle } from '@/services/enable';
 import { getBase64FromRemote } from '@/utils/tools';
+import { getGlobalToken } from '@/services/backend/globalAuth';
+import { persistImage } from '@/services/backend/persistImage';
+import { ProviderType } from 'prisma/global/generated/client';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!enableGoogle()) {
@@ -21,9 +21,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message: 'The code is required'
       });
     const url = `https://oauth2.googleapis.com/token?client_id=${clientId}&client_secret=${clientSecret}&code=${code}&redirect_uri=${callbackUrl}&grant_type=authorization_code`;
-    const __data = (await (
-      await fetch(url, { method: 'POST', headers: { Accept: 'application/json' } })
-    ).json()) as {
+    const response = await fetch(url, { method: 'POST', headers: { Accept: 'application/json' } });
+    if (!response.ok)
+      return jsonRes(res, {
+        code: 401,
+        message: 'Unauthorized'
+      });
+    const __data = (await response.json()) as {
       access_token: string;
       scope: string;
       token_type: string;
@@ -45,10 +49,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
     const name = userInfo.name;
     const id = userInfo.sub;
-    const avatar_url = (await getBase64FromRemote(userInfo.picture)) as string;
+    const avatar_url =
+      (await persistImage(userInfo.picture, 'avatar/' + ProviderType.WECHAT + '/' + id)) || '';
     if (!id) throw new Error('fail to get google openid');
-    const data = await getOauthRes({ provider: 'google', id, name, avatar_url });
-    return jsonRes<Session>(res, {
+    const data = await getGlobalToken({
+      provider: ProviderType.GOOGLE,
+      id: name,
+      avatar_url,
+      name
+    });
+    if (!data)
+      return jsonRes(res, {
+        code: 401,
+        message: 'Unauthorized'
+      });
+    return jsonRes(res, {
       data,
       code: 200,
       message: 'Successfully'

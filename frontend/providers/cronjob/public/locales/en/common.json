@@ -190,5 +190,9 @@
   "Basic Information": "Basic Information",
   "Succeeded": "Succeeded",
   "Failures": "Failures",
-  "Log": "Log"
+  "Log": "Log",
+  "Basic": "Basic",
+  "Username for the image registry": "Username for the image registry'",
+  "The password cannot be empty": "The password cannot be empty",
+  "Deploy": "Deploy"
 }

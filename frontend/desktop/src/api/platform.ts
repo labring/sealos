@@ -1,5 +1,5 @@
 import request from '@/services/request';
-import { ApiResp, SystemConfigType, SystemEnv } from '@/types';
+import { ApiResp, NotificationItem, Session, SystemConfigType, SystemEnv } from '@/types';
 import { AccountCRD } from '@/types/user';
 
 // handle baidu
@@ -30,7 +30,7 @@ export const getSystemEnv = () => {
 };
 
 export const getSystemConfig = () => {
-  return request.get<SystemConfigType>('/api/system/getSystemConfig');
+  return request.get<SystemConfigType>('/api/platform/getSystemConfig');
 };
 
 export const getPriceBonus = () => {
@@ -42,4 +42,18 @@ export const getPriceBonus = () => {
       activities: string;
     }>
   >('/api/price/bonus');
+};
+
+export const getWechatQR = () =>
+  request.get<any, ApiResp<{ code: string; codeUrl: string }>>(
+    '/api/auth/publicWechat/getWechatQR'
+  );
+
+export const getWechatResult = (payload: { code: string }) =>
+  request.get<any, ApiResp<{ token: string }>>('/api/auth/publicWechat/getWechatResult', {
+    params: payload
+  });
+
+export const getGlobalNotification = () => {
+  return request.get<any, ApiResp<NotificationItem>>('/api/notification/global');
 };

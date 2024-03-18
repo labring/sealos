@@ -1,28 +1,33 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { ApiResp } from '@/services/kubernet';
+import { DBTypeEnum } from '@/constants/db';
 import { authSession } from '@/services/backend/auth';
-import { getK8s } from '@/services/backend/kubernetes';
+import { K8sApi, K8sApiDefault, getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
+import { ApiResp } from '@/services/kubernet';
+import { BackupRepoCRItemType } from '@/types/backup';
+import * as k8s from '@kubernetes/client-node';
 import { PatchUtils } from '@kubernetes/client-node';
-import { DBBackupPolicyNameMap, DBTypeEnum } from '@/constants/db';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 export type Props = {
   dbName: string;
   dbType: `${DBTypeEnum}`;
-  patch: Object;
+  autoBackup?: {
+    enabled: boolean;
+    cronExpression: string;
+    method: string;
+    retentionPeriod: string;
+    repoName: string;
+  };
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
-  const { dbName, dbType, patch } = req.body as Props;
+  const { dbName, dbType, autoBackup } = req.body as Props;
 
-  console.log(dbName, dbType, patch);
-
-  if (!dbName || !dbType || !patch) {
-    jsonRes(res, {
+  if (!dbName || !dbType) {
+    return jsonRes(res, {
       code: 500,
       error: 'params error'
     });
-    return;
   }
 
   const group = 'apps.kubeblocks.io';
@@ -33,6 +38,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const { k8sCustomObjects, namespace } = await getK8s({
       kubeconfig: await authSession(req)
     });
+
+    // Get cluster backup repository
+    const kc = K8sApiDefault();
+    const backupRepos = (await kc
+      .makeApiClient(k8s.CustomObjectsApi)
+      .listClusterCustomObject('dataprotection.kubeblocks.io', 'v1alpha1', 'backuprepos')) as {
+      body: {
+        items: BackupRepoCRItemType[];
+      };
+    };
+    const backupRepoName = backupRepos?.body?.items?.[0]?.metadata?.name;
+
+    if (!backupRepoName) {
+      throw new Error('Missing backup repository');
+    }
+    const patch = autoBackup
+      ? [
+          {
+            op: 'replace',
+            path: '/spec/backup',
+            value: {
+              ...autoBackup,
+              repoName: backupRepoName
+            }
+          }
+        ]
+      : [
+          {
+            op: 'replace',
+            path: '/spec/backup/enabled',
+            value: false
+          }
+        ];
 
     // get backup backupolicies.dataprotection.kubeblocks.io
     const result = await k8sCustomObjects.patchNamespacedCustomObject(

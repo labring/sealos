@@ -122,24 +122,19 @@ export const adaptOtherList = (
   data: (AppCrdType[] | V1Secret[] | V1Job[] | V1Service[])[]
 ): ResourceListItemType[] => {
   return flatMap(data, (innerArray) => {
-    return innerArray
-      .filter((item) => {
-        const kind = item.kind as ResourceKindType;
-        // Exclude service type that is not nodeport
-        return !(kind === 'Service' && (item as V1Service)?.spec?.type !== 'NodePort');
-      })
-      .map((item) => {
-        const labels: { [key: string]: string } = item.metadata?.labels || {};
-        const kind = item.kind as ResourceKindType;
-        return {
-          id: item.metadata?.uid || '',
-          name: item.metadata?.name || '',
-          createTime: dayjs(item.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
-          kind: kind,
-          label: labels[componentLabel] ?? '',
-          apiVersion: item.apiVersion,
-          servicePorts: kind === 'Service' ? (item as V1Service)?.spec?.ports || [] : []
-        };
-      });
+    return innerArray.map((item) => {
+      const labels: { [key: string]: string } = item.metadata?.labels || {};
+      const kind = item.kind as ResourceKindType;
+      return {
+        id: item.metadata?.uid || '',
+        name: item.metadata?.name || '',
+        createTime: dayjs(item.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
+        kind: kind,
+        label: labels[componentLabel] ?? '',
+        apiVersion: item.apiVersion,
+        servicePorts: kind === 'Service' ? (item as V1Service)?.spec?.ports || [] : [],
+        serviceType: (item as V1Service)?.spec?.type || 'ClusterIP'
+      };
+    });
   });
 };

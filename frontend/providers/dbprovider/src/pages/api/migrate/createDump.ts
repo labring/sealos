@@ -21,8 +21,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       namespace
     });
 
-    console.log(yamlStr);
-
     await applyYamlList([yamlStr], 'create');
 
     return jsonRes(res, {

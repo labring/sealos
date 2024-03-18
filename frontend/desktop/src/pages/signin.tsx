@@ -23,7 +23,6 @@ export async function getServerSideProps({ req, res, locales }: any) {
   res.setHeader('Set-Cookie', `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`);
 
   const queryClient = new QueryClient();
-  await queryClient.prefetchQuery({ queryKey: ['getPlatformEnv'], queryFn: getSystemEnv });
   const props = {
     ...(await serverSideTranslations(local, undefined, null, locales || [])),
     dehydratedState: dehydrate(queryClient)

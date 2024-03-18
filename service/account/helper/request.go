@@ -29,6 +29,35 @@ type NamespaceBillingHistoryReq struct {
 	Type int `json:"type" bson:"type"`
 }
 
+type SetPaymentInvoiceReq struct {
+	// @Summary Payment ID list
+	// @Description Payment ID list
+	// @JSONSchema required
+	PaymentIDList []string `json:"paymentIDList" bson:"paymentIDList" binding:"required" example:"[\"payment-id-1\",\"payment-id-2\"]"`
+
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	Auth `json:",inline" bson:",inline"`
+}
+
+type TransferAmountReq struct {
+	// @Summary Transfer amount
+	// @Description Transfer amount
+	// @JSONSchema required
+	Amount int64 `json:"amount" bson:"amount" binding:"required" example:"100000000"`
+
+	// @Summary To user
+	// @Description To user
+	// @JSONSchema required
+	ToUser string `json:"toUser" bson:"toUser" binding:"required" example:"admin"`
+
+	// @Summary Authentication information
+	// @Description Authentication information
+	// @JSONSchema required
+	Auth `json:",inline" bson:",inline"`
+}
+
 type NamespaceBillingHistoryResp struct {
 	Data    NamespaceBillingHistoryRespData `json:"data,omitempty" bson:"data,omitempty"`
 	Message string                          `json:"message,omitempty" bson:"message" example:"successfully retrieved namespace list"`
@@ -70,7 +99,24 @@ func ParseNamespaceBillingHistoryReq(c *gin.Context) (*NamespaceBillingHistoryRe
 	return nsList, nil
 }
 
-type UserCostsAmountReq struct {
+func ParseSetPaymentInvoiceReq(c *gin.Context) (*SetPaymentInvoiceReq, error) {
+	paymentList := &SetPaymentInvoiceReq{}
+	err := c.ShouldBindJSON(paymentList)
+	if err != nil {
+		return nil, fmt.Errorf("bind json error : %v", err)
+	}
+	return paymentList, nil
+}
+
+func ParseTransferAmountReq(c *gin.Context) (*TransferAmountReq, error) {
+	transferAmount := &TransferAmountReq{}
+	if err := c.ShouldBindJSON(transferAmount); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	return transferAmount, nil
+}
+
+type UserBaseReq struct {
 	TimeRange `json:",inline" bson:",inline"`
 
 	// @Summary Authentication information
@@ -79,8 +125,8 @@ type UserCostsAmountReq struct {
 	Auth `json:",inline" bson:",inline"`
 }
 
-func ParseUserCostsAmountReq(c *gin.Context) (*UserCostsAmountReq, error) {
-	userCosts := &UserCostsAmountReq{}
+func ParseUserBaseReq(c *gin.Context) (*UserBaseReq, error) {
+	userCosts := &UserBaseReq{}
 	if err := c.ShouldBindJSON(userCosts); err != nil {
 		return nil, fmt.Errorf("bind json error: %v", err)
 	}

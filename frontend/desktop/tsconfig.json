@@ -4,9 +4,17 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": ["src/*"],
+      "prisma/*": ["prisma/*"]
+    },
+    "types": ["@types/jest"]
   },
-  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx"],
+  "include": [
+    "next-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "./scripts/**/*.ts",
+    "./prisma/**/*.ts"
+  ],
   "extends": "../tsconfig.web.json"
 }

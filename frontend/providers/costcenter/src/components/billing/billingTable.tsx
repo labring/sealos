@@ -1,5 +1,5 @@
 import { TableHeaderID } from '@/constants/billing';
-import { BillingItem, BillingType } from '@/types/billing';
+import { BillingItem, BillingType, RechargeBillingItem } from '@/types/billing';
 import lineDown from '@/assert/lineDown.svg';
 import lineUp from '@/assert/lineUp.svg';
 import {
@@ -17,26 +17,31 @@ import {
   Tr
 } from '@chakra-ui/react';
 import { format, parseISO } from 'date-fns';
-import { formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import useEnvStore from '@/stores/env';
 import CurrencySymbol from '../CurrencySymbol';
 import BillingDetails from './billingDetails';
 import {
-  useReactTable,
-  getCoreRowModel,
+  CellContext,
   createColumnHelper,
   flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
   HeaderContext,
-  CellContext,
-  Table as TTable
+  RowData,
+  Table as TTable,
+  useReactTable
 } from '@tanstack/react-table';
 import { useMemo } from 'react';
 import { enableGpu } from '@/service/enabled';
+import Amount from '@/components/billing/AmountTableHeader';
+
 export function CommonBillingTable({
   data,
+  isOverview = false,
   ...styles
-}: { data: BillingItem[] } & TableContainerProps) {
+}: { data: BillingItem[]; isOverview?: boolean } & TableContainerProps) {
   const { t } = useTranslation();
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
   const currency = useEnvStore((s) => s.currency);
@@ -47,7 +52,11 @@ export function CommonBillingTable({
         return (
           <Flex display={'flex'} alignItems={'center'}>
             <Text mr="4px">{t(header.id)}</Text>
-            {!!needCurrency && <CurrencySymbol type={currency} />}
+            {!!needCurrency && (
+              <Text>
+                (<CurrencySymbol type={currency} />)
+              </Text>
+            )}
           </Flex>
         );
       };
@@ -96,41 +105,41 @@ export function CommonBillingTable({
       }),
       columnHelper.accessor((row) => row.costs.cpu, {
         id: TableHeaderID.CPU,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       columnHelper.accessor((row) => row.costs.memory, {
         id: TableHeaderID.Memory,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       columnHelper.accessor((row) => row.costs.network, {
         id: TableHeaderID.Network,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       columnHelper.accessor((row) => row.costs.storage, {
         id: TableHeaderID.Storage,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       columnHelper.accessor((row) => row.costs.port, {
         id: TableHeaderID.Port,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       ...(gpuEnabled
         ? [
             columnHelper.accessor((row) => row.costs.gpu, {
               id: TableHeaderID.GPU,
-              header: customTh(true),
+              header: customTh(),
               cell: customCell()
             })
           ]
         : []),
       columnHelper.accessor((row) => row.amount, {
         id: TableHeaderID.TotalAmount,
-        header: customTh(true),
+        header: customTh(!isOverview),
         cell: customCell(true)
       }),
       columnHelper.display({
@@ -166,6 +175,7 @@ export function CommonBillingTable({
   });
   return <BaseTable table={table} {...styles} />;
 }
+
 export function TransferBillingTable({ data }: { data: BillingItem[] }) {
   const { t } = useTranslation();
   const currency = useEnvStore((s) => s.currency);
@@ -176,7 +186,11 @@ export function TransferBillingTable({ data }: { data: BillingItem[] }) {
         return (
           <Flex display={'flex'} alignItems={'center'}>
             <Text mr="4px">{t(header.id)}</Text>
-            {!!needCurrency && <CurrencySymbol type={currency} />}
+            {!!needCurrency && (
+              <Text>
+                (<CurrencySymbol type={currency} />)
+              </Text>
+            )}
           </Flex>
         );
       };
@@ -209,7 +223,7 @@ export function TransferBillingTable({ data }: { data: BillingItem[] }) {
       }),
       columnHelper.accessor((row) => row.appType, {
         id: TableHeaderID.APPType,
-        header: customTh(true),
+        header: customTh(),
         cell(props) {
           const item = props.row.original;
           return (
@@ -243,7 +257,7 @@ export function TransferBillingTable({ data }: { data: BillingItem[] }) {
         }
       }),
       columnHelper.accessor((row) => row.amount, {
-        header: customTh(),
+        header: customTh(true),
         id: TableHeaderID.TotalAmount,
         cell(props) {
           const original = props.row.original;
@@ -289,7 +303,11 @@ export function BillingDetailsTable({
         return (
           <Flex display={'flex'} alignItems={'center'}>
             <Text mr="4px">{t(header.id)}</Text>
-            {!!needCurrency && <CurrencySymbol type={currency} />}
+            {!!needCurrency && (
+              <Text>
+                (<CurrencySymbol type={currency} />)
+              </Text>
+            )}
           </Flex>
         );
       };
@@ -306,34 +324,34 @@ export function BillingDetailsTable({
       }),
       columnHelper.accessor((row) => row.costs.cpu, {
         id: TableHeaderID.CPU,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       columnHelper.accessor((row) => row.costs.memory, {
         id: TableHeaderID.Memory,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       columnHelper.accessor((row) => row.costs.network, {
         id: TableHeaderID.Network,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       columnHelper.accessor((row) => row.costs.storage, {
         id: TableHeaderID.Storage,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       columnHelper.accessor((row) => row.costs.port, {
         id: TableHeaderID.Port,
-        header: customTh(true),
+        header: customTh(),
         cell: customCell()
       }),
       ...(gpuEnabled
         ? [
             columnHelper.accessor((row) => row.costs.gpu, {
               id: TableHeaderID.GPU,
-              header: customTh(true),
+              header: customTh(),
               cell: customCell()
             })
           ]
@@ -358,27 +376,11 @@ export function BillingDetailsTable({
   });
   return <BaseTable table={table} h="auto" {...styles} />;
 }
-const Amount = ({
-  type,
-  amount,
-  total
-}: {
-  type: BillingType;
-  amount: number | undefined | null;
-  total?: boolean;
-}) => {
-  if (amount === undefined || amount === null) return <span>-</span>;
-  if (amount === 0) return <span>0</span>;
-  if ([BillingType.CONSUME, BillingType.TRANSFER].includes(type))
-    return <Text color={total ? '#0884DD' : ''}>-{formatMoney(amount)}</Text>;
-  else if ([BillingType.RECHARGE, BillingType.RECEIVE].includes(type))
-    return <Text color={total ? '#00A9A6' : ''}>+{formatMoney(amount)}</Text>;
-  else return <span>-</span>;
-};
-const BaseTable = <T extends unknown>({
+
+export function BaseTable<T extends unknown>({
   table,
   ...styles
-}: { table: TTable<T> } & TableContainerProps) => {
+}: { table: TTable<T> } & TableContainerProps) {
   return (
     <TableContainer w="100%" mt="0px" flex={'1'} h="0" overflowY={'auto'} {...styles}>
       <Table variant="simple" fontSize={'12px'} width={'full'}>
@@ -483,6 +485,4 @@ const BaseTable = <T extends unknown>({
       </Table>
     </TableContainer>
   );
-};
-
-BaseTable.displayName = 'BaseTable';
+}

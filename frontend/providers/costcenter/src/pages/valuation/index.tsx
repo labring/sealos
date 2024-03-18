@@ -124,13 +124,14 @@ function CycleMenu({
     </Flex>
   );
 }
+
 const getValuation = () =>
   request<any, ApiResp<{ properties: ValuationStandard[] }>>('/api/properties');
+
 function Valuation() {
   const { t } = useTranslation();
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
   const [cycleIdx, setCycleIdx] = useState(0);
-  const currency = useEnvStore((s) => s.currency);
   const { data: _data } = useQuery(['valuation'], getValuation);
   const data =
     _data?.data?.properties
@@ -176,6 +177,7 @@ function Valuation() {
         })
         ?.sort((a, b) => (a.name > b.name ? 1 : -1)) || []
     : [];
+  const currency = useEnvStore((s) => s.currency);
   return (
     <Flex w="100%" h="100%">
       <Stack
@@ -309,9 +311,21 @@ function Valuation() {
           borderRadius="4px"
           background="#FBFBFC"
         >
-          <Flex align={'center'} px={'24px'} py="24px" mr="6px" borderBottom={'solid 1px #DEE0E2'}>
-            <Text mr={'17px '}>
-              {t('Next month cost estimation')}({t('Predict Detail')})
+          <Flex
+            align={'center'}
+            px={'24px'}
+            py="24px"
+            mr="6px"
+            borderBottom={'solid 1px #DEE0E2'}
+            justifyContent={'space-between'}
+            alignItems={'center'}
+          >
+            <Text fontSize={'14px'} width={'500'}>
+              {t('Next month cost estimation')}
+              <Text as={'span'}>({t('Predict Detail')})</Text>
+            </Text>
+            <Text fontSize={'12px'} width={'500'}>
+              ( {t('Unit')} <CurrencySymbol boxSize={'14px'} type={currency} /> )
             </Text>
           </Flex>
           <Stack pl="24px" flex={1} justify={'center'}>

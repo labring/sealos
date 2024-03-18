@@ -1,6 +1,5 @@
-import LangSelect from '@/components/LangSelect';
 import LangSelectSimple from '@/components/LangSelect/simple';
-import { Box, Flex, UseDisclosureReturn } from '@chakra-ui/react';
+import { Flex, UseDisclosureReturn } from '@chakra-ui/react';
 import { I18n } from 'next-i18next';
 
 type LanguageType = { disclosure: UseDisclosureReturn; i18n: I18n | null };

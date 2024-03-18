@@ -3,7 +3,7 @@ import { getInstanceByName } from '@/api/instance';
 import { templateDisplayNameKey } from '@/constants/keys';
 import { useToast } from '@/hooks/useToast';
 import { useResourceStore } from '@/store/resource';
-import { TemplateInstanceType } from '@/types/app';
+import { ApplicationType, TemplateInstanceType } from '@/types/app';
 import {
   Box,
   Button,
@@ -25,6 +25,7 @@ import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useRef, useState } from 'react';
 import DelModal from './delDodal';
+import { useSearchStore } from '@/store/search';
 
 export default function Header({ instanceName }: { instanceName: string }) {
   const router = useRouter();
@@ -39,6 +40,7 @@ export default function Header({ instanceName }: { instanceName: string }) {
   } = useDisclosure();
   const [displayName, setDisplayName] = useState('');
   const yamlCR = useRef<TemplateInstanceType>();
+  const { setAppType } = useSearchStore();
 
   const { data, refetch } = useQuery(
     ['getInstanceByName', instanceName],
@@ -93,7 +95,10 @@ export default function Header({ instanceName }: { instanceName: string }) {
         height="36px"
         viewBox="0 0 35 36"
         fill="#5A646E"
-        onClick={() => router.push('/app')}
+        onClick={() => {
+          setAppType(ApplicationType.MyApp);
+          router.push('/app');
+        }}
       >
         <path d="M20.3207 27L11.6118 18L20.3207 9L22.3527 11.1L15.676 18L22.3527 24.9L20.3207 27Z" />
       </Icon>

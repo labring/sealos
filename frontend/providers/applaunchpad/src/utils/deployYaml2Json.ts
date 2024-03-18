@@ -161,6 +161,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
         template: {
           metadata: templateMetadata,
           spec: {
+            automountServiceAccountToken: false,
             imagePullSecrets,
             containers: [
               {
@@ -191,6 +192,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
         template: {
           metadata: templateMetadata,
           spec: {
+            automountServiceAccountToken: false,
             imagePullSecrets,
             terminationGracePeriodSeconds: 10,
             containers: [

@@ -1,0 +1,143 @@
+/**
+*   fix: tailwind css conflict with antd
+*   @link https://github.com/ant-design/ant-design/issues/38794#issuecomment-1345475630
+*/
+@import 'antd/dist/reset.css';
+
+*,
+::before,
+::after {
+  box-sizing: border-box; /* 1 */
+  border-width: 0; /* 2 */
+  border-style: solid; /* 2 */
+  border-color: theme('borderColor.DEFAULT', currentColor); /* 2 */
+}
+
+::before,
+::after {
+  --tw-content: '';
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* dropdown style overrides */
+#app .ant-dropdown-menu-item {
+  text-align: center;
+  color: #485264;
+
+  &:hover {
+    color: #0884dd;
+    background-color: #e9e9ec;
+  }
+}
+#app .ant-dropdown-menu-submenu-title {
+  color: #485264;
+
+  &:hover {
+    color: #0884dd;
+    background-color: #e9e9ec;
+  }
+}
+.ant-menu-item-selected {
+  background-color: #e9e9ec !important;
+}
+.ant-menu.ant-menu-sub.ant-menu-inline {
+  background-color: #f4f4f7 !important;
+}
+.ant-menu-submenu-active .ant-menu-submenu-title,
+.ant-menu-submenu-selected .ant-menu-submenu-title,
+.ant-menu-submenu-open .ant-menu-submenu-title {
+  color: #485264 !important;
+}
+.ant-menu-submenu-active:active div {
+  background-color: #e9e9ec !important;
+}
+
+.ant-dropdown-menu-submenu {
+  left: 4px;
+}
+.ant-dropdown-menu-submenu {
+  left: 4px;
+}
+
+/* btn style overrides */
+#app .ant-btn-primary {
+  color: #fff;
+  background-color: #111824;
+
+  &:hover {
+    background-color: #111824e5;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    border-color: var(--ant-button-border-color-disabled);
+    color: var(--ant-color-text-disabled);
+    background: var(--ant-color-bg-container-disabled);
+  }
+}
+
+/* modal style overrides*/
+.ant-modal {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  top: 0;
+  padding-bottom: 0;
+}
+.ant-modal-content {
+  border-radius: 0% !important;
+}
+.ant-modal-body {
+  height: calc(100vh - 85px);
+  overflow-y: auto;
+}
+.ant-modal-close {
+  margin-top: 1%;
+  margin-right: 1%;
+}
+.ant-modal-close-x svg {
+  width: 1.5em;
+  height: 1.5em;
+  color: #111824;
+}
+/* .ant-modal-close-x:hover {
+  background-color: white !important;
+}
+.ant-modal-close-x svg:hover {
+  background-color: white !important;
+} */
+
+/* tooltip style overrides */
+.ant-tooltip {
+  max-width: 300px;
+}
+
+/* pagination style overrides */
+.ant-pagination-simple-pager input {
+  border: none !important;
+  width: 20px;
+}
+.ant-pagination-total-text {
+  line-height: 25px !important;
+}
+
+/* button overrides */
+.ant-float-btn-body {
+  background-color: #219bf4 !important;
+
+  &:hover {
+    background-color: #56b1f1 !important;
+  }
+}
+
+/* ant-table-filter-dropdown overrides*/
+.ant-table-filter-dropdown ul li {
+  text-align: start !important;
+}
+
+/* ant-table overrides */
+.ant-table-thead tr th {
+  background-color: #f4f4f7 !important;
+}

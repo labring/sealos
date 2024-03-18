@@ -1,0 +1,16 @@
+{
+  "Upload Token File": "Upload License File",
+  "Activate License": "Activate License",
+  "Activation Record": "Activation Record",
+  "Purchase License": "Purchase License",
+  "Please go to": "Please go to",
+  "Activation Time": "Activation time: ",
+  "Go to the message center to see the results": "Go to the message center to see the results",
+  "token does not exist": "license does not exist",
+  "No Record": "No Record",
+  "Activation time": "Activation time",
+  "Activation Successful": "Activation Successful",
+  "Failed to obtain cluster ID, contact administrator": "Failed to obtain cluster ID, contact administrator",
+  "Cluster ID": "Cluster ID: {{id}}",
+  "Purchase Tip": "Activate / Purchase"
+}

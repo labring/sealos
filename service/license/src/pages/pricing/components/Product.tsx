@@ -303,6 +303,7 @@ export default function Product() {
             适合开发者测试，或 POC demo
           </Text>
           <Button
+            w="100%"
             mt="28px"
             bgColor={'#F4F6F8'}
             fontSize={'16px'}
@@ -338,6 +339,7 @@ export default function Product() {
             适合企业生产环境
           </Text>
           <Button
+            w="100%"
             mt="28px"
             bgColor={'#AFDEF9'}
             fontSize={'16px'}
@@ -356,6 +358,7 @@ export default function Product() {
             适合大规模集群与大型企业客户
           </Text>
           <Button
+            w="100%"
             mt="42px"
             bgColor={'#F4F6F8'}
             fontSize={'16px'}

@@ -19,7 +19,6 @@ export const useUserStore = create<State>()(
       userQuota: [],
       loadUserQuota: async () => {
         const response = await getUserQuota();
-        console.log(response);
         set((state) => {
           state.userQuota = response.quota;
           state.balance = response.balance;

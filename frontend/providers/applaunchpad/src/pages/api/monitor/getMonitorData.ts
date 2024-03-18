@@ -99,8 +99,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       step: step
     };
 
-    console.log(params, 'getMonitorData');
-
     const result: MonitorDataResult = await monitorFetch(
       {
         url: '/query',
