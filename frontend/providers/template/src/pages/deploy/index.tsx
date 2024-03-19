@@ -6,8 +6,9 @@ import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
 import { useCachedStore } from '@/store/cached';
 import { useGlobalStore } from '@/store/global';
+import { useSearchStore } from '@/store/search';
 import type { QueryType, YamlItemType } from '@/types';
-import { TemplateSourceType } from '@/types/app';
+import { ApplicationType, TemplateSourceType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
 import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
 import { deepSearch, useCopyData } from '@/utils/tools';
@@ -23,7 +24,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import ReadMe from './components/ReadMe';
-import Yaml from './components/Yaml';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
@@ -42,6 +42,7 @@ export default function EditApp({ appName }: { appName?: string }) {
   const [errorMessage, setErrorMessage] = useState('');
   const { screenWidth } = useGlobalStore();
   const { setCached, cached, insideCloud, deleteCached, setInsideCloud } = useCachedStore();
+  const { setAppType } = useSearchStore();
 
   const detailName = useMemo(
     () => templateSource?.source?.defaults?.app_name?.value || '',
@@ -141,7 +142,7 @@ export default function EditApp({ appName }: { appName?: string }) {
       }
       const yamls = yamlList.map((item) => item.value);
 
-      const result = await postDeployApp(yamls, 'create');
+      await postDeployApp(yamls, 'create');
 
       toast({
         title: t(applySuccess),
@@ -149,7 +150,7 @@ export default function EditApp({ appName }: { appName?: string }) {
       });
 
       deleteCached();
-
+      setAppType(ApplicationType.MyApp);
       router.push({
         pathname: '/instance',
         query: {
