@@ -17,6 +17,7 @@ package database
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/labring/sealos/controllers/job/init/internal/util/common"
 
@@ -47,15 +48,22 @@ func PresetAdminUser() error {
 	if err = v2Account.CreateUser(&types.OauthProvider{
 		UserUID:      common.AdminUID(),
 		ProviderType: types.OauthProviderTypePassword,
-		ProviderID:   adminPassword,
+		ProviderID:   adminUserName,
+		Password:     adminPassword,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}, &types.RegionUserCr{
-		CrName:  adminUserName,
-		UserUID: common.AdminUID(),
+		CrName:    adminUserName,
+		UserUID:   common.AdminUID(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}, &types.User{
-		UID:      common.AdminUID(),
-		ID:       userNanoID,
-		Name:     adminUserName,
-		Nickname: userNanoID,
+		UID:       common.AdminUID(),
+		ID:        userNanoID,
+		Name:      adminUserName,
+		Nickname:  userNanoID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}); err != nil {
 		return fmt.Errorf("failed to create user: %v", err)
 	}

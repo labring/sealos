@@ -52,18 +52,18 @@ const (
 )
 
 func (g *Cockroach) CreateUser(oAuth *types.OauthProvider, regionUserCr *types.RegionUserCr, user *types.User) error {
-	return g.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.FirstOrCreate(user).Error; err != nil {
+	if g.Localdb.Where(&types.RegionUserCr{CrName: regionUserCr.CrName}).First(&types.RegionUserCr{}).Error == gorm.ErrRecordNotFound {
+		if err := g.DB.Where(&types.User{Name: user.Name}).FirstOrCreate(user).Error; err != nil {
 			return fmt.Errorf("failed to create user: %w", err)
 		}
-		if err := tx.FirstOrCreate(oAuth).Error; err != nil {
+		if err := g.DB.Where(types.OauthProvider{ProviderID: oAuth.ProviderID}).FirstOrCreate(oAuth).Error; err != nil {
 			return fmt.Errorf("failed to create user oauth provider: %w", err)
 		}
-		if err := tx.FirstOrCreate(&regionUserCr).Error; err != nil {
+		if err := g.Localdb.Where(types.RegionUserCr{CrName: regionUserCr.CrName}).FirstOrCreate(&regionUserCr).Error; err != nil {
 			return fmt.Errorf("failed to create user region cr: %w", err)
 		}
-		return nil
-	})
+	}
+	return nil
 }
 
 func (g *Cockroach) GetUserCr(ops *types.UserQueryOpts) (*types.RegionUserCr, error) {
