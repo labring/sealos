@@ -134,7 +134,13 @@ export default function AppList() {
                         backgroundColor={'#fff'}
                         border={' 1px solid rgba(255, 255, 255, 0.50)'}
                       >
-                        <Image src={item?.spec?.icon} alt="" width={'36px'} height={'36px'} />
+                        <Image
+                          src={item?.spec?.icon}
+                          alt="logo"
+                          width={'36px'}
+                          height={'36px'}
+                          loading="lazy"
+                        />
                       </Box>
                       <Flex ml="16px" noOfLines={2} flexDirection={'column'}>
                         <Text fontSize={'18px'} fontWeight={600} color={'#111824'}>
