@@ -7,6 +7,7 @@ mongodbUri=""
 cockroachdbUri=""
 cockroachdbLocalUri=""
 cockroachdbGlobalUri=""
+defaultLocalRegionUID="ed257b4d-6832-437a-9e06-d683e7edb320"
 
 tlsCrtPlaceholder="<tls-crt-placeholder>"
 tlsKeyPlaceholder="<tls-key-placeholder>"
@@ -142,6 +143,7 @@ function mutate_desktop_config() {
     sed -i -e "s;<your-password-salt-base64>;$saltKey;" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-region-database-url-base64>;$(echo -n "${cockroachdbLocalUri}" | base64 -w 0);" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-global-database-url-base64>;$(echo -n "${cockroachdbGlobalUri}" | base64 -w 0);" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-global-database-url-base64>;$(echo -n "${defaultLocalRegionUID}" | base64 -w 0);" etc/sealos/desktop-config.yaml
 }
 
 function create_tls_secret {
@@ -181,16 +183,20 @@ function sealos_run_controller {
   --env MONGO_URI="$mongodbUri" \
   --env cloudDomain="$cloudDomain" \
   --env cloudPort="$cloudPort" \
-  --env DEFAULT_NAMESPACE="account-system"
+  --env DEFAULT_NAMESPACE="account-system" \
+  --env GLOBAL_COCKROACH_URI="$cockroachdbGlobalUri" \
+  --env LOCAL_COCKROACH_URI="$cockroachdbLocalUri" \
+  --env LOCAL_REGION="$defaultLocalRegionUID"
+
+  sealos run tars/account-service.tar
 
   # run license controller
-#  sealos run tars/license.tar \
-#  --env MONGO_URI="$mongodbUri"
+  sealos run tars/license.tar
 }
 
 
 function sealos_authorize {
-  sealos run tars/job-init.tar
+  sealos run tars/job-init.tar --env PASSWORD_SALT="$(echo -n "$saltKey" | base64 -d)"
   sealos run tars/job-heartbeat.tar
 
   # wait for admin user create
@@ -212,7 +218,7 @@ function sealos_run_frontend {
 
   # sealos authorize !!must run after sealos_run_controller frontend-desktop.tar and before sealos_run_frontend
   # TODO fix sealos_authorize in controller/job/init
-  # sealos_authorize
+  sealos_authorize
 
   echo "run applaunchpad frontend"
   sealos run tars/frontend-applaunchpad.tar \

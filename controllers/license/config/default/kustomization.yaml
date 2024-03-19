@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Adds namespace to all resources.
-namespace: license-system
+namespace: account-system
 
 # Value of this field is prepended to the
 # names of all resources, e.g. a deployment named
