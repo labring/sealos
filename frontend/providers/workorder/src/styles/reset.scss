@@ -1,0 +1,151 @@
+body,
+h1,
+h2,
+h3,
+h4,
+hr,
+p,
+blockquote,
+dl,
+dt,
+dd,
+ul,
+ol,
+li,
+pre,
+form,
+fieldset,
+legend,
+button,
+input,
+textarea,
+th,
+td {
+  margin: 0;
+}
+body,
+button,
+input,
+select,
+textarea {
+  font: 12px/1.5tahoma, arial, \5b8b\4f53;
+}
+// h1, h2, h3, h4, h5, h6{ font-size:100%; }
+address,
+cite,
+dfn,
+em,
+var {
+  font-style: normal;
+}
+
+small {
+  font-size: 12px;
+}
+ul,
+ol {
+  list-style: none;
+  padding: 0;
+}
+a {
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+sup {
+  vertical-align: text-top;
+}
+sub {
+  vertical-align: text-bottom;
+}
+legend {
+  color: #000;
+}
+fieldset,
+img {
+  border: 0;
+}
+button,
+input,
+select,
+textarea {
+  font-size: 100%;
+}
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.15em;
+  fill: currentColor;
+  overflow: hidden;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--chakra-colors-blackAlpha-400);
+}
+
+#__next {
+  height: 100%;
+}
+
+::-webkit-scrollbar,
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-track {
+  background: transparent !important;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb {
+  background: rgba(189, 193, 197, 1) !important;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(189, 193, 197, 1) !important;
+}
+
+div {
+  &::-webkit-scrollbar-thumb,
+  &::-webkit-scrollbar-thumb {
+    background: transparent !important;
+    border-radius: 2px;
+    transition: 1s;
+  }
+  &:hover {
+    &::-webkit-scrollbar-thumb,
+    &::-webkit-scrollbar-thumb {
+      background: rgba(189, 193, 197, 0.5) !important;
+    }
+    &::-webkit-scrollbar-thumb:hover,
+    &::-webkit-scrollbar-thumb:hover {
+      background: rgba(189, 193, 197, 1) !important;
+    }
+  }
+}
+
+div.rdp {
+  --rdp-cell-size: 40px;
+  --rdp-accent-color: black;
+  --rdp-background-color: #f4f6f8;
+  /* Switch to dark colors for dark themes */
+  // --rdp-accent-color-dark: #3003e1;
+  // --rdp-background-color-dark: #180270;
+  /* Outline border for focused elements */
+  --rdp-outline: 2px solid var(--rdp-accent-color);
+  /* Outline border for focused and selected elements */
+  --rdp-outline-selected: 2px solid rgba(0, 0, 0, 0.75);
+}
