@@ -48,8 +48,8 @@ type RegionUserCr struct {
 	UID       uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
 	CrName    string    `gorm:"type:text;column:crName;not null;unique"`
 	UserUID   uuid.UUID `gorm:"column:userUid;type:uuid;not null"`
-	CreatedAt time.Time `gorm:"type:timestamp(3);default:current_timestamp();not null"`
-	UpdatedAt time.Time `gorm:"type:timestamp(3);default:current_timestamp();not null"`
+	CreatedAt time.Time `gorm:"column:createdAt;type:timestamp(3);default:current_timestamp();not null"`
+	UpdatedAt time.Time `gorm:"column:updatedAt;type:timestamp(3);default:current_timestamp();not null"`
 }
 
 type OauthProvider struct {
@@ -57,6 +57,9 @@ type OauthProvider struct {
 	UserUID      uuid.UUID         `gorm:"column:userUid;type:uuid;not null"`
 	ProviderType OauthProviderType `gorm:"column:providerType;type:text;not null"`
 	ProviderID   string            `gorm:"column:providerId;type:text;not null"`
+	CreatedAt    time.Time         `gorm:"column:createdAt;type:timestamp(3);default:current_timestamp();not null"`
+	UpdatedAt    time.Time         `gorm:"column:updatedAt;type:timestamp(3);default:current_timestamp();not null"`
+	Password     string            `gorm:"type:text"`
 }
 
 type Transfer struct {
@@ -74,8 +77,8 @@ func (Transfer) TableName() string {
 
 type User struct {
 	UID       uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
-	CreateAt  time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp();not null"`
-	UpdateAt  time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp();not null"`
+	CreatedAt time.Time `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp();not null"`
+	UpdatedAt time.Time `gorm:"column:updatedAt;type:timestamp(3) with time zone;default:current_timestamp();not null"`
 	AvatarURI string    `gorm:"column:avatarUri;type:text"`
 	Nickname  string    `gorm:"type:text"`
 	ID        string    `gorm:"type:text;not null;unique"`
