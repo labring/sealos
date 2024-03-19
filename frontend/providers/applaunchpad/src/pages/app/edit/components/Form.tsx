@@ -947,7 +947,7 @@ const Form = ({
                     </Flex>
                   </FormControl>
 
-                  <Divider my={'30px'} bg={'myGray.100'} />
+                  <Divider my={'30px'} borderColor={'#EFF0F1'} />
 
                   {/* env */}
                   <Box w={'100%'} maxW={'600px'}>
@@ -994,7 +994,7 @@ const Form = ({
                     </Box>
                   </Box>
 
-                  <Divider my={'30px'} bg={'myGray.100'} />
+                  <Divider my={'30px'} borderColor={'#EFF0F1'} />
 
                   <Box>
                     <Flex alignItems={'center'}>
@@ -1051,7 +1051,7 @@ const Form = ({
                     </Box>
                   </Box>
 
-                  <Divider my={'30px'} bg={'myGray.100'} />
+                  <Divider my={'30px'} borderColor={'#EFF0F1'} />
 
                   <Box>
                     <Flex alignItems={'center'} mb={'10px'}>
