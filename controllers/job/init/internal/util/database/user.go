@@ -30,7 +30,6 @@ import (
 )
 
 func PresetAdminUser() error {
-	var ck cockroach.Cockroach
 	v2Account, err := cockroach.NewCockRoach(os.Getenv(database.GlobalCockroachURI), os.Getenv(database.LocalCockroachURI))
 	if err != nil {
 		return fmt.Errorf("failed to connect to cockroach: %v", err)
@@ -45,7 +44,7 @@ func PresetAdminUser() error {
 	if err != nil {
 		return fmt.Errorf("failed to generate nano id: %v", err)
 	}
-	if err = ck.CreateUser(&types.OauthProvider{
+	if err = v2Account.CreateUser(&types.OauthProvider{
 		UserUID:      common.AdminUID(),
 		ProviderType: types.OauthProviderTypePassword,
 		ProviderID:   adminPassword,
