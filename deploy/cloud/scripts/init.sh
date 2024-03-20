@@ -7,7 +7,7 @@ mongodbUri=""
 cockroachdbUri=""
 cockroachdbLocalUri=""
 cockroachdbGlobalUri=""
-defaultLocalRegionUID="ed257b4d-6832-437a-9e06-d683e7edb320"
+defaultLocalRegionUID=$(uuidgen)
 
 tlsCrtPlaceholder="<tls-crt-placeholder>"
 tlsKeyPlaceholder="<tls-key-placeholder>"
@@ -143,7 +143,7 @@ function mutate_desktop_config() {
     sed -i -e "s;<your-password-salt-base64>;$saltKey;" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-region-database-url-base64>;$(echo -n "${cockroachdbLocalUri}" | base64 -w 0);" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-global-database-url-base64>;$(echo -n "${cockroachdbGlobalUri}" | base64 -w 0);" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-global-database-url-base64>;$(echo -n "${defaultLocalRegionUID}" | base64 -w 0);" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-local-region-uid-base64>;$(echo -n "${defaultLocalRegionUID}" | base64 -w 0);" etc/sealos/desktop-config.yaml
 }
 
 function create_tls_secret {
