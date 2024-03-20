@@ -1,11 +1,9 @@
 import { theme } from '@/constants/theme';
-import { useGlobalStore } from '@/store/global';
 import useSessionStore from '@/store/session';
 import '@/styles/reset.scss';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import { ChakraProvider } from '@chakra-ui/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { throttle } from 'lodash';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
 import Router, { useRouter } from 'next/router';
@@ -34,42 +32,26 @@ const queryClient = new QueryClient({
 
 function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
-  const { setSession } = useSessionStore();
+  const { setSession, delSession } = useSessionStore();
   const { i18n } = useTranslation();
-  const { setScreenWidth, loading, setLastRoute, lastRoute } = useGlobalStore();
+
   const [refresh, setRefresh] = useState(false);
 
   useEffect(() => {
     NProgress.start();
     const response = createSealosApp();
-
     (async () => {
       try {
         const res = await sealosApp.getSession();
         setSession(res);
       } catch (err) {
-        console.warn('App is not running in desktop');
+        console.log('App is not running in desktop');
       }
     })();
+    localStorage.removeItem('session');
     NProgress.done();
-
     return response;
   }, []);
-
-  // add resize event
-  useEffect(() => {
-    const resize = throttle((e: Event) => {
-      const documentWidth = document.documentElement.clientWidth || document.body.clientWidth;
-      setScreenWidth(documentWidth);
-    }, 200);
-    window.addEventListener('resize', resize);
-    const documentWidth = document.documentElement.clientWidth || document.body.clientWidth;
-    setScreenWidth(documentWidth);
-
-    return () => {
-      window.removeEventListener('resize', resize);
-    };
-  }, [setScreenWidth]);
 
   // init
   useEffect(() => {
@@ -98,13 +80,6 @@ function App({ Component, pageProps }: AppProps) {
 
     return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
   }, []);
-
-  // record route
-  useEffect(() => {
-    return () => {
-      setLastRoute(router.asPath);
-    };
-  }, [router.pathname]);
 
   useEffect(() => {
     const lang = getLangStore() || 'zh';
