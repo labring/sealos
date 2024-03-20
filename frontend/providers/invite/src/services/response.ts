@@ -1,5 +1,5 @@
 import { NextApiResponse } from 'next';
-import { ERROR_TEXT, ERROR_RESPONSE } from '../error';
+import { ERROR_TEXT, ERROR_RESPONSE } from './error';
 
 export const jsonRes = <T = any>(
   res: NextApiResponse,
@@ -27,7 +27,6 @@ export const jsonRes = <T = any>(
       msg = ERROR_TEXT[error.code];
     }
     console.log('error:', error?.body || error);
-    console.log('error message:', msg);
   }
 
   res.json({

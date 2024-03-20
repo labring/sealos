@@ -1,4 +1,4 @@
-import { jsonRes } from '@/services/backend/response';
+import { jsonRes } from '@/services/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export type InvitationResult = {
@@ -16,7 +16,6 @@ export type InvitationResult = {
 export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { inviterId } = req.query;
-    console.log(inviterId);
     const baseUrl = process.env.LAF_BASE_URL;
 
     const defaultObj: InvitationResult = {
