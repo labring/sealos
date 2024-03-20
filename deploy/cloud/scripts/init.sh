@@ -7,7 +7,7 @@ mongodbUri=""
 cockroachdbUri=""
 cockroachdbLocalUri=""
 cockroachdbGlobalUri=""
-defaultLocalRegionUID=$(uuidgen)
+defaultLocalRegionUID=""
 
 tlsCrtPlaceholder="<tls-crt-placeholder>"
 tlsKeyPlaceholder="<tls-key-placeholder>"
@@ -31,6 +31,9 @@ function prepare {
 
   # gen saltKey if not set or not found in secret
   gen_saltKey
+
+  # gen regionUID if not set or not found in secret
+  gen_regionUID
 
   # mutate desktop config
   mutate_desktop_config
@@ -132,6 +135,15 @@ function gen_saltKey() {
         saltKey=$(tr -dc 'a-z0-9' </dev/urandom | head -c64 | base64 -w 0)
     else
         saltKey=$password_salt
+    fi
+}
+
+function gen_regionUID(){
+    regionUID=$(kubectl get secret desktop-frontend-secret -n sealos -o jsonpath="{.data.region_uid}" 2>/dev/null || true)
+    if [[ -z "$regionUID" ]]; then
+        defaultLocalRegionUID=$(uuidgen)
+    else
+        defaultLocalRegionUID=$(echo -n "$regionUID" | base64 -d)
     fi
 }
 
