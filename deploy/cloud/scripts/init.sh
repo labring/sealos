@@ -7,7 +7,7 @@ mongodbUri=""
 cockroachdbUri=""
 cockroachdbLocalUri=""
 cockroachdbGlobalUri=""
-defaultLocalRegionUID=""
+localRegionUID=""
 
 tlsCrtPlaceholder="<tls-crt-placeholder>"
 tlsKeyPlaceholder="<tls-key-placeholder>"
@@ -139,11 +139,11 @@ function gen_saltKey() {
 }
 
 function gen_regionUID(){
-    regionUID=$(kubectl get secret desktop-frontend-secret -n sealos -o jsonpath="{.data.region_uid}" 2>/dev/null || true)
-    if [[ -z "$regionUID" ]]; then
-        defaultLocalRegionUID=$(uuidgen)
+    uid=$(kubectl get secret desktop-frontend-secret -n sealos -o jsonpath="{.data.region_uid}" 2>/dev/null || true)
+    if [[ -z "$uid" ]]; then
+        localRegionUID=$(uuidgen)
     else
-        defaultLocalRegionUID=$(echo -n "$regionUID" | base64 -d)
+        localRegionUID=$(echo -n "$uid" | base64 -d)
     fi
 }
 
@@ -155,7 +155,7 @@ function mutate_desktop_config() {
     sed -i -e "s;<your-password-salt-base64>;$saltKey;" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-region-database-url-base64>;$(echo -n "${cockroachdbLocalUri}" | base64 -w 0);" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-global-database-url-base64>;$(echo -n "${cockroachdbGlobalUri}" | base64 -w 0);" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-local-region-uid-base64>;$(echo -n "${defaultLocalRegionUID}" | base64 -w 0);" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-local-region-uid-base64>;$(echo -n "${localRegionUID}" | base64 -w 0);" etc/sealos/desktop-config.yaml
 }
 
 function create_tls_secret {
@@ -198,7 +198,7 @@ function sealos_run_controller {
   --env DEFAULT_NAMESPACE="account-system" \
   --env GLOBAL_COCKROACH_URI="$cockroachdbGlobalUri" \
   --env LOCAL_COCKROACH_URI="$cockroachdbLocalUri" \
-  --env LOCAL_REGION="$defaultLocalRegionUID"
+  --env LOCAL_REGION="$localRegionUID"
 
   sealos run tars/account-service.tar
 
