@@ -105,6 +105,7 @@ const NsMenu = () => {
         p="6px"
         w="250px"
         background="linear-gradient(270deg, #F1F1F1 0%, #EEE 43.75%, #ECECEC 100%)"
+        border={'none'}
       >
         <PopoverBody px="0" pb="0" pt="4px" maxH={'320px'} overflowY={'auto'}>
           <NsList
@@ -119,6 +120,7 @@ const NsMenu = () => {
   );
 };
 export default function Account({ disclosure }: { disclosure: UseDisclosureReturn }) {
+  const { needPassword, rechargeEnabled } = useGlobalStore((state) => state.systemEnv);
   const router = useRouter();
   const { copyData } = useCopyData();
   const openApp = useAppStore((s) => s.openApp);
@@ -155,8 +157,7 @@ export default function Account({ disclosure }: { disclosure: UseDisclosureRetur
     router.replace('/signin');
     setToken('');
   };
-  const needPassword = useGlobalStore((s) => s.needPassword);
-  const rechargeEnabled = useGlobalStore((s) => s.rechargeEnabled);
+
   return disclosure.isOpen ? (
     <>
       <Box
