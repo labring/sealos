@@ -26,7 +26,8 @@ export default function SideBar() {
               p="12px"
               h="36px"
               alignItems={'center'}
-              as={'button'}
+              cursor={'pointer'}
+              id={item.id}
               onClick={() => {
                 router.replace('/');
                 setAppType(item.type);

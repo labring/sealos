@@ -3,7 +3,7 @@ import Banner from '@/components/Banner';
 import MyIcon from '@/components/Icon';
 import { useCachedStore } from '@/store/cached';
 import { useSearchStore } from '@/store/search';
-import { TemplateType } from '@/types/app';
+import { SystemConfigType, TemplateType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
 import { compareFirstLanguages, formatStarNumber } from '@/utils/tools';
 import {
@@ -28,7 +28,7 @@ import { MouseEvent, useEffect, useMemo } from 'react';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
-export default function AppList() {
+export default function AppList({ showCarousel }: { showCarousel: boolean }) {
   const { t } = useTranslation();
   const router = useRouter();
   const { searchValue, appType } = useSearchStore();
@@ -93,10 +93,9 @@ export default function AppList() {
       py="24px"
       px="42px"
     >
-      <Banner />
-
       {!!data?.templates?.length ? (
         <>
+          {showCarousel && <Banner />}
           {filterData?.length && filterData?.length > 0 ? (
             <Grid
               justifyContent={'center'}
@@ -250,9 +249,15 @@ export async function getServerSideProps(content: any) {
     `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`
   );
 
+  const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
+  const { data } = (await (await fetch(`${baseurl}/api/platform/getSystemConfig`)).json()) as {
+    data: SystemConfigType;
+  };
+
   return {
     props: {
-      ...(await serviceSideProps(content))
+      ...(await serviceSideProps(content)),
+      showCarousel: data.showCarousel
     }
   };
 }

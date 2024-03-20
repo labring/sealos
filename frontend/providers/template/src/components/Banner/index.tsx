@@ -1,13 +1,13 @@
-import { Box, Center, Flex, Image, Text } from '@chakra-ui/react';
-import { useRef } from 'react';
+import { useSystemConfigStore } from '@/store/config';
+import { SlideDataType } from '@/types/app';
+import { Box, Center, Flex, Text } from '@chakra-ui/react';
+import { useRouter } from 'next/router';
+import React, { useRef } from 'react';
 import 'swiper/css';
 import { Autoplay } from 'swiper/modules';
 import { Swiper, SwiperRef, SwiperSlide } from 'swiper/react';
 import { ArrowRightIcon } from '../icons/ArrowRight';
-import { useSystemConfigStore } from '@/store/config';
-import { useRouter } from 'next/router';
-import { SlideDataType } from '@/types/app';
-import React from 'react';
+import Image from 'next/image';
 
 const Card = ({ item, onClick }: { item: SlideDataType; onClick: () => void }) => {
   return (
@@ -31,7 +31,7 @@ const Card = ({ item, onClick }: { item: SlideDataType; onClick: () => void }) =
             backgroundColor={'#fff'}
             border={' 1px solid rgba(255, 255, 255, 0.50)'}
           >
-            <Image src={item.icon} alt="logo" width={'24px'} height={'24px'} />
+            <Image src={item.icon} alt="logo" width={'24'} height={'24'} priority />
           </Center>
           <Text fontSize={'20px'} color={'#FFF'} fontWeight={600}>
             {item.title}
@@ -43,11 +43,12 @@ const Card = ({ item, onClick }: { item: SlideDataType; onClick: () => void }) =
       </Flex>
 
       <Image
-        alignSelf={'center'}
-        w={'226px'}
-        height={'150px'}
+        width={'226'}
+        height={'150'}
         src={item.image}
+        style={{ width: '226px', height: 'auto' }}
         alt={`slide-${item.templateName}`}
+        priority
       />
     </Flex>
   );
@@ -79,10 +80,6 @@ export default React.memo(function Banner() {
       }
     });
   };
-
-  if (!systemConfig?.showCarousel) {
-    return null;
-  }
 
   return (
     <Box
