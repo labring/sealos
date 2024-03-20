@@ -7,7 +7,7 @@ mongodbUri=""
 cockroachdbUri=""
 cockroachdbLocalUri=""
 cockroachdbGlobalUri=""
-defaultLocalRegionUID="ed257b4d-6832-437a-9e06-d683e7edb320"
+localRegionUID=""
 
 tlsCrtPlaceholder="<tls-crt-placeholder>"
 tlsKeyPlaceholder="<tls-key-placeholder>"
@@ -31,6 +31,9 @@ function prepare {
 
   # gen saltKey if not set or not found in secret
   gen_saltKey
+
+  # gen regionUID if not set or not found in secret
+  gen_regionUID
 
   # mutate desktop config
   mutate_desktop_config
@@ -135,6 +138,15 @@ function gen_saltKey() {
     fi
 }
 
+function gen_regionUID(){
+    uid=$(kubectl get secret desktop-frontend-secret -n sealos -o jsonpath="{.data.region_uid}" 2>/dev/null || true)
+    if [[ -z "$uid" ]]; then
+        localRegionUID=$(uuidgen)
+    else
+        localRegionUID=$(echo -n "$uid" | base64 -d)
+    fi
+}
+
 function mutate_desktop_config() {
     # mutate etc/sealos/desktop-config.yaml by using mongodb uri and two random base64 string
     sed -i -e "s;<your-mongodb-uri-base64>;$(echo -n "${mongodbUri}/sealos-auth?authSource=admin" | base64 -w 0);" etc/sealos/desktop-config.yaml
@@ -143,7 +155,7 @@ function mutate_desktop_config() {
     sed -i -e "s;<your-password-salt-base64>;$saltKey;" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-region-database-url-base64>;$(echo -n "${cockroachdbLocalUri}" | base64 -w 0);" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-global-database-url-base64>;$(echo -n "${cockroachdbGlobalUri}" | base64 -w 0);" etc/sealos/desktop-config.yaml
-    sed -i -e "s;<your-global-database-url-base64>;$(echo -n "${defaultLocalRegionUID}" | base64 -w 0);" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-local-region-uid-base64>;$(echo -n "${localRegionUID}" | base64 -w 0);" etc/sealos/desktop-config.yaml
 }
 
 function create_tls_secret {
@@ -186,7 +198,7 @@ function sealos_run_controller {
   --env DEFAULT_NAMESPACE="account-system" \
   --env GLOBAL_COCKROACH_URI="$cockroachdbGlobalUri" \
   --env LOCAL_COCKROACH_URI="$cockroachdbLocalUri" \
-  --env LOCAL_REGION="$defaultLocalRegionUID"
+  --env LOCAL_REGION="$localRegionUID"
 
   sealos run tars/account-service.tar
 
