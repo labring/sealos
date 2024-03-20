@@ -30,7 +30,7 @@ export function K8sApi(config: string): k8s.KubeConfig {
 
   const cluster = kc.getCurrentCluster();
 
-  if (cluster) {
+  if (cluster && process.env.NODE_ENV !== 'development') {
     const [inCluster, hosts] = CheckIsInCluster();
 
     const server: k8s.Cluster = {
@@ -89,7 +89,7 @@ export async function CreateYaml(
         console.log('delete error:', spec.kind, error.body);
       }
     }
-    return Promise.reject(error.body || 'CreateYaml Error');
+    return Promise.reject(error.body || error);
   }
   return created;
 }

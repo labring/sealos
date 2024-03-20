@@ -37,7 +37,7 @@ const queryClient = new QueryClient({
 
 const App = ({ Component, pageProps }: AppProps) => {
   const router = useRouter();
-  const { setSession, delSession } = useSessionStore();
+  const { setSession } = useSessionStore();
   const { i18n } = useTranslation();
   const { setScreenWidth, setLastRoute } = useGlobalStore();
   const { initSystemConfig } = useSystemConfigStore();
@@ -56,11 +56,9 @@ const App = ({ Component, pageProps }: AppProps) => {
         setSession(res);
       } catch (err) {
         console.log('App is not running in desktop');
-        if (!process.env.NEXT_PUBLIC_MOCK_USER) {
-          delSession();
-        }
       }
     })();
+    localStorage.removeItem('session');
     NProgress.done();
     return response;
   }, []);
