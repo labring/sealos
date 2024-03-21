@@ -87,6 +87,18 @@ spec:
             - name: license-frontend-volume
               mountPath: /config.yaml
               subPath: config.yaml
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: "app"
+                  operator: In
+                  values:
+                  - license-frontend
+              topologyKey: "kubernetes.io/hostname"
       volumes:
         - name: license-frontend-volume
           configMap:

@@ -44,6 +44,18 @@ spec:
               memory: 128Mi
          imagePullPolicy: Always
          volumeMounts: []
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: "app"
+                  operator: In
+                  values:
+                  - object-storage-frontend
+              topologyKey: "kubernetes.io/hostname"
      volumes: []
 ---
 apiVersion: v1

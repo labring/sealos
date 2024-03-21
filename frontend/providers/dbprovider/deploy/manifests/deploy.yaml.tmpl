@@ -79,6 +79,18 @@ spec:
             - name: dbprovider-frontend-volume
               mountPath: /config.yaml
               subPath: config.yaml
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: "app"
+                  operator: In
+                  values:
+                  - dbprovider-frontend
+              topologyKey: "kubernetes.io/hostname"
       volumes:
         - name: dbprovider-frontend-volume
           configMap:
