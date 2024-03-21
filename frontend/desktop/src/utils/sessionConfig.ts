@@ -31,3 +31,7 @@ export const sessionConfig = async ({
     kubeconfig
   });
 };
+
+export const getInviterId = () => localStorage.getItem('inviterId');
+
+export const setInviterId = (id: string) => localStorage.setItem('inviterId', id);

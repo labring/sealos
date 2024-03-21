@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!enableGithub()) {
       throw new Error('github clinet is not defined');
     }
-    const { code } = req.body;
+    const { code, inviterId } = req.body;
     const url = ` https://github.com/login/oauth/access_token?client_id=${clientId}&client_secret=${clientSecret}&code=${code}`;
     const __data = (await (
       await fetch(url, { method: 'POST', headers: { Accept: 'application/json' } })
@@ -54,7 +54,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       provider: ProviderType.GITHUB,
       id: id + '',
       avatar_url,
-      name
+      name,
+      inviterId
     });
     if (!data)
       return jsonRes(res, {

@@ -5,6 +5,7 @@ import useAppStore from '@/stores/app';
 import { useSystemConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import { parseOpenappQuery } from '@/utils/format';
+import { setInviterId } from '@/utils/sessionConfig';
 import { compareFirstLanguages } from '@/utils/tools';
 import { Box, useColorMode } from '@chakra-ui/react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -39,10 +40,8 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     if (!is_login) {
       const { appkey, appQuery } = parseOpenappQuery((query?.openapp as string) || '');
       // Invited new user
-      const urlParams = new URLSearchParams(appQuery);
-      const uid = urlParams.get('uid');
-      if (uid) {
-        localStorage.setItem('inviterId', uid);
+      if (query?.uid && typeof query?.uid === 'string') {
+        setInviterId(query.uid);
       }
       // sealos_inside=true internal call
       if (whitelistApps.includes(appkey) && appQuery.indexOf('sealos_inside=true') === -1) {

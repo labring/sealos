@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!enableWechat()) {
       throw new Error('wechat clinet is not defined');
     }
-    const { code } = req.body;
+    const { code, inviterId } = req.body;
     const url = `https://api.weixin.qq.com/sns/oauth2/access_token?appid=${APP_ID}&secret=${APP_SECRET}&code=${code}&grant_type=authorization_code`;
     const { access_token, openid } = (await (
       await fetch(url, { headers: { Accept: 'application/json' } })
@@ -42,7 +42,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       provider: ProviderType.WECHAT,
       id,
       avatar_url,
-      name
+      name,
+      inviterId
     });
     if (!data)
       return jsonRes(res, {

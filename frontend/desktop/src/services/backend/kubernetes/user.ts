@@ -13,7 +13,7 @@ export function K8sApi(config: string): k8s.KubeConfig {
 
   const cluster = kc.getCurrentCluster();
 
-  if (cluster && process.env.NODE_ENV === 'production') {
+  if (cluster && process.env.NODE_ENV !== 'development') {
     const [inCluster, hosts] = CheckIsInCluster();
     const server = {
       name: cluster.name,

@@ -21,7 +21,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       provider: ProviderType.PHONE,
       id: phoneNumbers,
       name: phoneNumbers,
-      avatar_url: ''
+      avatar_url: '',
+      inviterId
     });
     return jsonRes(res, {
       data,
