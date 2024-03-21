@@ -85,6 +85,18 @@ spec:
               subPath: config.json
             - name: template-data
               mountPath: /app/providers/template/templates
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: "app"
+                  operator: In
+                  values:
+                  - template-frontend
+              topologyKey: "kubernetes.io/hostname"
       volumes:
         - name: template-frontend-volume
           configMap:
