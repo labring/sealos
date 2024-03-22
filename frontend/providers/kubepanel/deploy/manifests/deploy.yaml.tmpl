@@ -62,6 +62,18 @@ spec:
             - name: kubepanel-frontend-volume
               mountPath: /config.yaml
               subPath: config.yaml
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: "app"
+                  operator: In
+                  values:
+                  - kubepanel-frontend
+              topologyKey: "kubernetes.io/hostname"
       volumes:
         - name: kubepanel-frontend-volume
           configMap:
