@@ -169,7 +169,7 @@ function create_tls_secret {
   fi
 }
 
-function sealos_run_desktop{
+function sealos_run_desktop {
     echo "run desktop frontend"
     sealos run tars/frontend-desktop.tar \
       --env cloudDomain=$cloudDomain \
