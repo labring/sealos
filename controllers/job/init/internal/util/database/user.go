@@ -19,6 +19,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/retry"
+
 	"github.com/labring/sealos/controllers/job/init/internal/util/common"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
@@ -41,6 +43,16 @@ func PresetAdminUser() error {
 			logger.Warn("failed to close cockroach connection: %v", err)
 		}
 	}()
+	err = retry.Retry(10, 5*time.Second, func() error {
+		if !v2Account.DB.Migrator().HasTable(types.User{}) {
+			return fmt.Errorf("user table is null, please check")
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to check user table: %v", err)
+	}
+
 	userNanoID, err := gonanoid.New(10)
 	if err != nil {
 		return fmt.Errorf("failed to generate nano id: %v", err)
