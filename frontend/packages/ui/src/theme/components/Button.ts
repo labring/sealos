@@ -53,32 +53,39 @@ export const Button = defineStyleConfig({
       p: '4px'
     },
     // <<<
-    black: {
+    solid: {
       bg: ThemeColors.grayModern[900],
       color: '#FFF',
-      borderRadius: '8px',
+      borderRadius: 'md',
       fontSize: '14px',
       fontWeight: 500,
       _hover: {
-        opacity: '0.9'
+        opacity: '0.9',
+        bg: ThemeColors.grayModern[900]
+      },
+      _active: {
+        bg: ''
       }
     },
-    square: {
-      borderRadius: '8px',
-      bg: '#F0F1F6',
-      minW: '30px',
-      width: '30px',
-      height: '30px',
-      p: '0px',
+
+    outline: {
+      bg: '#FFF',
+      borderRadius: 'md',
+      fontSize: '14px',
+      fontWeight: 500,
+      border: '1px solid #DFE2EA',
+      color: 'grayModern.600',
       _hover: {
-        svg: {
-          fill: ThemeColors.brightBlue[500]
-        }
+        bg: '#FFF',
+        opacity: '0.9'
+      },
+      _active: {
+        bg: ''
       }
     }
   },
   defaultProps: {
     size: 'md',
-    variant: 'black'
+    variant: 'solid'
   }
 });

@@ -10,9 +10,11 @@ import {
 } from '@chakra-ui/react';
 import type { ButtonProps } from '@chakra-ui/react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
-import MyIcon, { type IconType } from '../Icon';
+import MyIcon, { type IconType } from '../../../../../providers/applaunchpad/src/components/Icon';
 
 interface Props extends ButtonProps {
+  width?: string;
+  height?: string;
   value?: string;
   placeholder?: string;
   list: {
@@ -24,20 +26,11 @@ interface Props extends ButtonProps {
 }
 
 const MySelect = (
-  { placeholder, value, width = 'auto', list, onchange, ...props }: Props,
+  { placeholder, value, width = 'auto', height = '30px', list, onchange, ...props }: Props,
   selectRef: any
 ) => {
   const ref = useRef<HTMLButtonElement>(null);
   const SelectRef = useRef<HTMLDivElement>(null);
-  const menuItemStyles = {
-    borderRadius: 'sm',
-    py: 2,
-    display: 'flex',
-    alignItems: 'center',
-    _hover: {
-      backgroundColor: 'myWhite.600'
-    }
-  };
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   useOutsideClick({
@@ -59,22 +52,33 @@ const MySelect = (
         }}
       >
         <Button
-          ref={ref}
           width={width}
-          px={3}
-          variant={'base'}
+          height={height}
+          ref={ref}
           display={'flex'}
           alignItems={'center'}
           justifyContent={'space-between'}
+          border={'1px solid #E8EBF0'}
+          borderRadius={'8px'}
+          fontSize={'12px'}
+          fontWeight={'400'}
+          variant={'outline'}
+          _hover={{
+            borderColor: 'brightBlue.300',
+            bg: 'grayModern.50'
+          }}
           _active={{
             transform: ''
           }}
           {...(isOpen
             ? {
-                boxShadow: '0px 0px 4px #A8DBFF',
-                borderColor: 'myBlue.600'
+                boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                borderColor: 'brightBlue.600',
+                bg: '#FFF'
               }
-            : {})}
+            : {
+                bg: '#F7F8FA'
+              })}
           {...props}
         >
           {activeMenu ? (
@@ -103,22 +107,27 @@ const MySelect = (
               : `${width} !important`;
           })()}
           p={'6px'}
-          border={'1px solid #fff'}
+          borderRadius={'8px'}
+          border={'1px solid #E8EBF0'}
           boxShadow={
-            '0px 2px 4px rgba(161, 167, 179, 0.25), 0px 0px 1px rgba(121, 141, 159, 0.25);'
+            '0px 4px 10px 0px rgba(19, 51, 107, 0.10), 0px 0px 1px 0px rgba(19, 51, 107, 0.10)'
           }
           zIndex={99}
-          transform={'translateY(35px) !important'}
+          transform={'translateY(40px) !important'}
         >
           {list.map((item) => (
             <MenuItem
               key={item.value}
-              {...menuItemStyles}
               {...(value === item.value
                 ? {
-                    color: 'myBlue.600'
+                    color: 'brightBlue.600'
                   }
                 : {})}
+              borderRadius={'4px'}
+              _hover={{
+                bg: 'rgba(17, 24, 36, 0.05)',
+                color: 'brightBlue.600'
+              }}
               onClick={() => {
                 if (onchange && value !== item.value) {
                   onchange(item.value);

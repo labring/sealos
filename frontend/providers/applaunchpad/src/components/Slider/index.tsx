@@ -43,7 +43,7 @@ const MySlider = ({
           whiteSpace={'nowrap'}
           {...(activeVal === item.value
             ? { color: 'myGray.900', fontWeight: 'bold' }
-            : { color: 'myGray.500' })}
+            : { color: 'grayModern.900' })}
         >
           <Box px={3} cursor={'pointer'}>
             {item.label}
@@ -51,9 +51,9 @@ const MySlider = ({
         </SliderMark>
       ))}
       <SliderTrack bg={'#EAEDF3'} borderRadius={'4px'} overflow={'hidden'} h={'4px'}>
-        <SliderFilledTrack bg={'myGray.800'} />
+        <SliderFilledTrack bg={'grayModern.900'} />
       </SliderTrack>
-      <SliderThumb border={'2.5px solid'} borderColor={'myGray.700'}></SliderThumb>
+      <SliderThumb bg={'grayModern.900'}></SliderThumb>
     </Slider>
   );
 };

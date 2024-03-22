@@ -6,8 +6,8 @@ const TagHelper = createMultiStyleConfigHelpers(tagAnatomy.keys);
 export const Tag = TagHelper.defineMultiStyleConfig({
   baseStyle: {
     container: {
-      borderRadius: '8px',
-      backgroundColor: 'gray.150'
+      borderRadius: 'md',
+      backgroundColor: 'grayModern.150'
     },
     label: {
       fontWeight: 500,

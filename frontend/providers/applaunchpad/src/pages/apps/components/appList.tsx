@@ -2,7 +2,7 @@ import { pauseAppByName, restartAppByName, startAppByName } from '@/api/app';
 import AppStatusTag from '@/components/AppStatusTag';
 import GPUItem from '@/components/GPUItem';
 import MyIcon from '@/components/Icon';
-import MyMenu from '@/components/Menu';
+import { SealosMenu } from '@sealos/ui';
 import PodLineChart from '@/components/PodLineChart';
 import MyTable from '@/components/Table';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -196,25 +196,28 @@ const AppList = ({
         render: (item: AppListItemType) => (
           <Flex>
             <Button
-              bg={'grayModern.150'}
-              size={'sm'}
               mr={5}
-              leftIcon={<MyIcon name={'detail'} w={'14px'} h="14px" />}
-              px={3}
+              size={'sm'}
+              fontSize={'base'}
+              bg={'grayModern.150'}
+              color={'grayModern.900'}
+              _hover={{
+                color: 'brightBlue.600'
+              }}
+              leftIcon={<MyIcon name={'detail'} w={'16px'} h="16px" />}
               onClick={() => router.push(`/app/detail?name=${item.name}`)}
             >
               {t('Details')}
             </Button>
-            <MyMenu
+            <SealosMenu
               width={100}
               Button={
                 <MenuButton
-                  w={'32px'}
-                  h={'32px'}
+                  w={'30px'}
+                  h={'30px'}
                   borderRadius={'sm'}
                   _hover={{
-                    bg: 'myWhite.400',
-                    color: 'hover.iconBlue'
+                    color: 'brightBlue.600'
                   }}
                 >
                   <MyIcon name={'more'} px={3} />
@@ -226,8 +229,10 @@ const AppList = ({
                       {
                         child: (
                           <>
-                            <MyIcon name={'continue'} w={'14px'} />
-                            <Box ml={2}>{t('Start Up')}</Box>
+                            <MyIcon name={'continue'} w={'16px'} />
+                            <Box ml={2} fontWeight={'bold'}>
+                              {t('Start Up')}
+                            </Box>
                           </>
                         ),
                         onClick: () => handleStartApp(item.name)
@@ -237,8 +242,10 @@ const AppList = ({
                       {
                         child: (
                           <>
-                            <MyIcon name={'pause'} w={'14px'} />
-                            <Box ml={2}>{t('Pause')}</Box>
+                            <MyIcon name={'pause'} w={'16px'} />
+                            <Box ml={2} fontWeight={'bold'}>
+                              {t('Pause')}
+                            </Box>
                           </>
                         ),
                         onClick: onOpenPause(() => handlePauseApp(item.name))
@@ -246,8 +253,10 @@ const AppList = ({
                       {
                         child: (
                           <>
-                            <MyIcon name={'change'} w={'14px'} />
-                            <Box ml={2}>{t('Update')}</Box>
+                            <MyIcon name={'change'} w={'16px'} />
+                            <Box ml={2} fontWeight={'bold'}>
+                              {t('Update')}
+                            </Box>
                           </>
                         ),
                         onClick: () => router.push(`/app/edit?name=${item.name}`)
@@ -256,7 +265,9 @@ const AppList = ({
                         child: (
                           <>
                             <MyIcon name={'restart'} w="16px" />
-                            <Box ml={2}>{t('Restart')}</Box>
+                            <Box ml={2} fontWeight={'bold'}>
+                              {t('Restart')}
+                            </Box>
                           </>
                         ),
                         onClick: () => handleRestartApp(item.name)
@@ -266,8 +277,10 @@ const AppList = ({
                 {
                   child: (
                     <>
-                      <MyIcon name={'delete'} w={'14px'} />
-                      <Box ml={2}>{t('Delete')}</Box>
+                      <MyIcon name={'delete'} w={'16px'} />
+                      <Box ml={2} fontWeight={'bold'}>
+                        {t('Delete')}
+                      </Box>
                     </>
                   ),
                   onClick: () => setDelAppName(item.name)
@@ -290,7 +303,7 @@ const AppList = ({
           mr={4}
           backgroundColor={'#FEFEFE'}
           border={theme.borders[200]}
-          borderRadius={'xl'}
+          borderRadius={'md'}
         >
           <MyIcon name="logo" w={'24px'} h={'24px'} />
         </Center>
@@ -306,7 +319,7 @@ const AppList = ({
           h={'40px'}
           w={'156px'}
           flex={'0 0 auto'}
-          leftIcon={<MyIcon name={'plus'} />}
+          leftIcon={<MyIcon name={'plus'} w={'20px'} fill={'#FFF'} />}
           onClick={() => router.push('/app/edit')}
         >
           {t('Create Application')}

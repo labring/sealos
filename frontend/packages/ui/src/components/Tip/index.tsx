@@ -1,6 +1,5 @@
-import React, { useMemo } from 'react';
-import { BoxProps, Flex, Box } from '@chakra-ui/react';
-import { useTranslation } from 'next-i18next';
+import { BoxProps, Flex } from '@chakra-ui/react';
+import { useMemo } from 'react';
 
 interface Props extends BoxProps {
   text: string;
@@ -9,8 +8,7 @@ interface Props extends BoxProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-const Tip = ({ size = 'md', text, icon, theme, ...props }: Props) => {
-  const { t } = useTranslation();
+export const Tip = ({ size = 'md', text, icon, theme, ...props }: Props) => {
   const sizeMap = useMemo(() => {
     switch (size) {
       case 'sm':
@@ -35,6 +33,7 @@ const Tip = ({ size = 'md', text, icon, theme, ...props }: Props) => {
         return {};
     }
   }, [size]);
+
   const themeMap = useMemo(() => {
     switch (theme) {
       case 'blue':
@@ -53,7 +52,7 @@ const Tip = ({ size = 'md', text, icon, theme, ...props }: Props) => {
   return (
     <Flex
       alignItems={'center'}
-      borderRadius={'sm'}
+      borderRadius={'md'}
       {...sizeMap}
       {...themeMap}
       whiteSpace={'nowrap'}
@@ -64,9 +63,7 @@ const Tip = ({ size = 'md', text, icon, theme, ...props }: Props) => {
           {icon}
         </Flex>
       ) : null}
-      {t(text)}
+      {text}
     </Flex>
   );
 };
-
-export default Tip;

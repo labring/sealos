@@ -7,7 +7,7 @@ import {
   Box
 } from '@chakra-ui/react';
 
-const MyRangeSlider = ({
+export const MyRangeSlider = ({
   value,
   max = 100,
   min = 0,
@@ -20,19 +20,6 @@ const MyRangeSlider = ({
   min?: number;
   step?: number;
 }) => {
-  const startEndPointStyle = {
-    content: '""',
-    borderRadius: '8px',
-    width: '8px',
-    height: '8px',
-    backgroundColor: '#ffffff',
-    border: '2px solid #D7DBE2',
-    position: 'absolute',
-    zIndex: 1,
-    top: 0,
-    transform: 'translateY(-4px)'
-  };
-
   const startEndValStyle = {
     position: 'absolute' as const,
     top: '10px'
@@ -50,35 +37,21 @@ const MyRangeSlider = ({
       minStepsBetweenThumbs={1}
       onChange={setVal}
     >
-      <RangeSliderTrack
-        bg={'#EAEDF3'}
-        overflow={'visible'}
-        h={'4px'}
-        _before={{
-          ...startEndPointStyle,
-          left: '-6px'
-        }}
-        _after={{
-          ...startEndPointStyle,
-          right: '-6px'
-        }}
-      >
+      <RangeSliderTrack overflow={'visible'} h={'4px'}>
         <Box {...startEndValStyle} left={0} transform={'translateX(-50%)'}>
           {min}
         </Box>
         <Box {...startEndValStyle} right={0} transform={'translateX(50%)'}>
           {max}
         </Box>
-        <RangeSliderFilledTrack bg={'myGray.700'} />
+        <RangeSliderFilledTrack bg={'grayModern.900'} />
       </RangeSliderTrack>
-      <RangeSliderThumb index={0} border={'2.5px solid'} borderColor={'myGray.700'}>
+      <RangeSliderThumb index={0} bg={'grayModern.900'}>
         <Box transform={'translateY(18px)'}>{value[0] === min ? '' : value[0]}</Box>
       </RangeSliderThumb>
-      <RangeSliderThumb index={1} border={'2.5px solid'} borderColor={'myGray.700'}>
+      <RangeSliderThumb index={1} bg={'grayModern.900'}>
         <Box transform={'translateY(18px)'}>{value[1] === max ? '' : value[1]}</Box>
       </RangeSliderThumb>
     </RangeSlider>
   );
 };
-
-export default MyRangeSlider;

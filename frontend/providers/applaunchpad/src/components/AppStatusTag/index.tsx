@@ -21,18 +21,17 @@ const AppStatusTag = ({
       backgroundColor={statusMap.backgroundColor}
       border={showBorder ? '1px solid' : 'none'}
       borderColor={statusMap.color}
-      py={2}
-      px={3}
+      py={'6px'}
+      px={'12px'}
       borderRadius={'24px'}
       fontSize={'xs'}
       fontWeight={'bold'}
       alignItems={'center'}
-      w={'88px'}
+      w={'68px'}
+      gap={'4px'}
     >
-      <Box w={'10px'} h={'10px'} borderRadius={'10px'} backgroundColor={statusMap.dotColor}></Box>
-      <Box ml={2} flex={1}>
-        {t(statusMap.label)}
-      </Box>
+      <Box w={'6px'} h={'6px'} borderRadius={'10px'} backgroundColor={statusMap.dotColor} />
+      <Box>{t(statusMap.label)}</Box>
     </Flex>
   );
 };

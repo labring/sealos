@@ -34,12 +34,12 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   return (
     <Box px={6} py={6} position={'relative'}>
       <>
-        <Flex alignItems={'center'}>
-          <MyIcon name={'listen'} w={'14px'} color={'myGray.500'} />
+        <Flex alignItems={'center'} fontSize={'12px'} fontWeight={'bold'}>
+          <MyIcon name={'listen'} w={'14px'} color={'grayModern.600'} />
           <Box ml={3} color={'myGray.600'}>
             {t('Real-time Monitoring')}
           </Box>
-          <Box ml={2} color={'myGray.400'}>
+          <Box ml={2} color={'grayModern.500'}>
             ({t('Update Time')}&ensp;
             {dayjs().format('HH:mm')})
           </Box>
@@ -49,41 +49,48 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           templateColumns={'1fr 1fr'}
           gap={3}
           mt={2}
-          p={3}
-          backgroundColor={'#F8F8FA'}
-          borderRadius={'sm'}
+          p={'16px'}
+          backgroundColor={'grayModern.50'}
+          borderRadius={'md'}
+          fontSize={'12px'}
+          color={'grayModern.600'}
+          fontWeight={'bold'}
         >
           <Box>
-            <Box mb={2} fontSize={'sm'}>
-              CPU&ensp;({app.usedCpu.yData[app.usedCpu.yData.length - 1]}%)
-            </Box>
-            <Box h={'80px'}>
+            <Box mb={'4px'}>CPU&ensp;({app.usedCpu.yData[app.usedCpu.yData.length - 1]}%)</Box>
+            <Box h={'60px'}>
               <PodLineChart type={'blue'} data={app.usedCpu} />
             </Box>
           </Box>
           <Box>
-            <Box mb={2} fontSize={'sm'}>
+            <Box mb={'4px'}>
               {t('Memory')}&ensp;({app.usedMemory.yData[app.usedMemory.yData.length - 1]}%)
             </Box>
-            <Box h={'80px'}>
+            <Box h={'60px'}>
               <PodLineChart type={'purple'} data={app.usedMemory} />
             </Box>
           </Box>
         </Grid>
-        <Flex mt={3} alignItems={'center'}>
-          <MyIcon name={'network'} w={'14px'} color={'myGray.500'} />
-          <Box ml={3} color={'myGray.600'}>
+        <Flex
+          mt={3}
+          alignItems={'center'}
+          fontSize={'12px'}
+          color={'grayModern.600'}
+          fontWeight={'bold'}
+        >
+          <MyIcon name={'network'} w={'14px'} />
+          <Box ml={3}>
             {t('Network Configuration')}({networks.length})
           </Box>
         </Flex>
-        <Flex mt={2}>
+        <Flex mt={'12px'}>
           <table className={'table-cross'}>
             <thead>
               <tr>
-                <Box as={'th'} bg={'myWhite.600'}>
+                <Box as={'th'} fontSize={'12px'}>
                   {t('Private Address')}
                 </Box>
-                <Box as={'th'} bg={'myWhite.600'}>
+                <Box as={'th'} fontSize={'12px'}>
                   {t('Public Address')}
                 </Box>
               </tr>
@@ -130,7 +137,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                             mr={2}
                             name={'copy'}
                             w={'14px'}
-                            color={'myGray.400'}
+                            color={'grayModern.500'}
                             _hover={{
                               color: 'hover.iconBlue'
                             }}

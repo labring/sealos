@@ -20,10 +20,10 @@ const Table = ({ columns, data, itemClass = '' }: Props) => {
       <Grid
         templateColumns={`repeat(${columns.length},1fr)`}
         overflowX={'auto'}
-        borderRadius={'8px'}
+        borderRadius={'md'}
         mb={2}
         fontSize={'base'}
-        color={'gray.600'}
+        color={'grayModern.600'}
       >
         {columns.map((item, i) => (
           <Box
@@ -49,8 +49,8 @@ const Table = ({ columns, data, itemClass = '' }: Props) => {
           _hover={{
             bg: '#FBFBFC'
           }}
-          borderTopRadius={index1 === 0 ? '8px' : '0px'}
-          borderBottomRadius={index1 === data.length - 1 ? '8px' : '0px'}
+          borderTopRadius={index1 === 0 ? 'md' : '0px'}
+          borderBottomRadius={index1 === data.length - 1 ? 'md' : '0px'}
           borderBottom={'1px solid'}
           borderBottomColor={index1 !== data.length - 1 ? 'grayModern.150' : 'transparent'}
         >

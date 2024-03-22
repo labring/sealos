@@ -48,7 +48,7 @@ const RangeInput = ({
         w={`${w}px`}
         position={'relative'}
         borderBottom={`2px solid`}
-        borderColor={isFocus ? 'myBlue.600' : 'gray.300'}
+        borderColor={isFocus ? 'brightBlue.600' : 'gray.300'}
         onBlurCapture={() => {
           setIsFocus(false);
         }}

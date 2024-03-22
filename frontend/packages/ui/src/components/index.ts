@@ -47,7 +47,15 @@ import useMessage from './Message/index';
 import EditTabs from './EditTabs';
 import YamlCode from './YamlCode';
 import ProviderIcon from './icons/ProviderIcon';
+
+export { SealosMenu } from './Menu';
+export { Tabs } from './Tabs';
+export { MyRangeSlider } from './RangeSlider';
+export { Tip } from './Tip';
+import MySelect from './Select';
+
 export {
+  MySelect,
   SealosCoin,
   WarningIcon,
   useMessage,

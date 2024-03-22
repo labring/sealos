@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { Box, Grid } from '@chakra-ui/react';
 import type { GridProps } from '@chakra-ui/react';
-import { useTranslation } from 'next-i18next';
 
 // @ts-ignore
 interface Props extends GridProps {
@@ -11,21 +10,20 @@ interface Props extends GridProps {
   onChange: (id: string) => void;
 }
 
-const Tabs = ({ list, size = 'md', activeId, onChange, ...props }: Props) => {
-  const { t } = useTranslation();
+export const Tabs = ({ list, size = 'md', activeId, onChange, ...props }: Props) => {
   const sizeMap = useMemo(() => {
     switch (size) {
       case 'sm':
         return {
-          fontSize: 'sm',
+          fontSize: 'xs',
           outP: '3px',
-          inlineP: 1
+          inlineP: '4px'
         };
       case 'md':
         return {
           fontSize: 'md',
           outP: '4px',
-          inlineP: 2
+          inlineP: '6px'
         };
       case 'lg':
         return {
@@ -37,39 +35,44 @@ const Tabs = ({ list, size = 'md', activeId, onChange, ...props }: Props) => {
   }, [size]);
   return (
     <Grid
-      border={'1px solid #DEE0E2'}
+      border={'1px solid #E8EBF0'}
       gridTemplateColumns={`repeat(${list.length},1fr)`}
       p={sizeMap.outP}
-      borderRadius={'sm'}
-      backgroundColor={'myWhite.600'}
+      borderRadius={'8px'}
+      backgroundColor={'grayModern.50'}
       fontSize={sizeMap.fontSize}
+      fontWeight={500}
       {...props}
     >
       {list.map((item) => (
         <Box
           key={item.id}
+          px={'2'}
           py={sizeMap.inlineP}
-          borderRadius={'sm'}
+          borderRadius={'6px'}
           textAlign={'center'}
+          _hover={{
+            color: 'brightBlue.600'
+          }}
           {...(activeId === item.id
             ? {
                 boxShadow: '0px 2px 2px rgba(137, 156, 171, 0.25)',
                 backgroundColor: 'white',
-                cursor: 'default'
+                cursor: 'default',
+                color: 'grayModern.900'
               }
             : {
-                cursor: 'pointer'
+                cursor: 'pointer',
+                color: 'grayModern.500'
               })}
           onClick={() => {
             if (activeId === item.id) return;
             onChange(item.id);
           }}
         >
-          {t(item.label)}
+          {item.label}
         </Box>
       ))}
     </Grid>
   );
 };
-
-export default Tabs;

@@ -12,8 +12,9 @@ export const Input = InputHelper.defineMultiStyleConfig({
         fontSize: '12px',
         fontWeight: 400,
         height: '32px',
-        borderRadius: 'lg',
-        border: '1px solid #E8EBF0',
+        borderRadius: 'md',
+        border: '1px solid',
+        borderColor: '#E8EBF0',
         bg: colors.grayModern[50],
         _focusVisible: {
           borderColor: colors.brightBlue[500],

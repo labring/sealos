@@ -24,7 +24,8 @@ import { useLoading } from '@/hooks/useLoading';
 import MyIcon from '@/components/Icon';
 import { streamFetch } from '@/services/streamFetch';
 import { useToast } from '@/hooks/useToast';
-import MyMenu from '@/components/Menu';
+import { SealosMenu } from '@sealos/ui';
+
 import MyTooltip from '@/components/MyTooltip';
 
 import styles from '../index.module.scss';
@@ -161,14 +162,14 @@ const Logs = ({
             Pod {t('Details')}
           </Box>
           <Box px={3}>
-            <MyMenu
+            <SealosMenu
               width={240}
               Button={
                 <MenuButton
                   minW={'240px'}
                   h={'32px'}
                   textAlign={'start'}
-                  bg={'myWhite.400'}
+                  bg={'grayModern.100'}
                   border={theme.borders.base}
                   borderRadius={'md'}
                 >

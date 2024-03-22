@@ -7,7 +7,8 @@ const _theme = {
   components,
   fonts: {
     body: '-apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Helvetica, Arial, "PingFang SC", "Noto Sans SC", sans-serif',
-    heading: 'Georgia, serif',
+    heading:
+      '-apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Helvetica, Arial, "PingFang SC", "Noto Sans SC", sans-serif',
     mono: 'Menlo, monospace'
   },
   fontSizes: {
@@ -15,7 +16,8 @@ const _theme = {
     base: '12px',
     md: '14px',
     lg: '16px',
-    xl: '18px'
+    xl: '18px',
+    '2xl': '20px'
   },
   breakpoints: {
     sm: '1024px',
@@ -30,14 +32,16 @@ const _theme = {
   radii: {
     xs: '1px',
     sm: '2px',
-    base: '2px',
-    md: '4px',
-    lg: '6px',
-    xl: '8px'
+    base: '4px',
+    md: '6px',
+    lg: '8px',
+    xl: '12px',
+    '2xl': '16px'
   },
   borders: {
     150: '1px solid #F0F1F6',
-    200: '1px solid #E8EBF0'
+    200: '1px solid #E8EBF0',
+    base: '1px solid #E8EBF0'
   }
 };
 
