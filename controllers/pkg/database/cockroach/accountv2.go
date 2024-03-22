@@ -66,6 +66,13 @@ func (g *Cockroach) CreateUser(oAuth *types.OauthProvider, regionUserCr *types.R
 	return nil
 }
 
+func (g *Cockroach) CreateRegion(region *types.Region) error {
+	if err := g.DB.Where(&types.Region{UID: region.UID}).FirstOrCreate(region).Error; err != nil {
+		return fmt.Errorf("failed to create region: %w", err)
+	}
+	return nil
+}
+
 func (g *Cockroach) GetUserCr(ops *types.UserQueryOpts) (*types.RegionUserCr, error) {
 	if err := checkOps(ops); err != nil {
 		return nil, err
@@ -687,7 +694,7 @@ func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to encrypt zero value")
 	}
-	if err := CreateTableIfNotExist(db, types.Account{}, types.ErrorAccountCreate{}, types.ErrorPaymentCreate{}, types.Payment{}, types.Transfer{}); err != nil {
+	if err := CreateTableIfNotExist(db, types.Account{}, types.ErrorAccountCreate{}, types.ErrorPaymentCreate{}, types.Payment{}, types.Transfer{}, types.Region{}); err != nil {
 		return nil, err
 	}
 	cockroach := &Cockroach{DB: db, Localdb: localdb, ZeroAccount: &types.Account{EncryptBalance: *newEncryptBalance, EncryptDeductionBalance: *newEncryptDeductionBalance, Balance: baseBalance, DeductionBalance: 0}}
