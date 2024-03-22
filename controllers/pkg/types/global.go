@@ -37,10 +37,10 @@ func (Account) TableName() string {
 
 type Region struct {
 	UID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
-	DisplayName string    `gorm:"type:text;not null"`
-	Location    string    `gorm:"type:text;not null"`
-	Domain      string    `gorm:"type:text;not null"`
-	Description string    `gorm:"type:text;not null"`
+	DisplayName string    `gorm:"type:text"`
+	Location    string    `gorm:"type:text"`
+	Domain      string    `gorm:"type:text;not null;unique"`
+	Description string    `gorm:"type:text"`
 }
 
 // RegionUserCr is located in the region

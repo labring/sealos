@@ -19,6 +19,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/google/uuid"
+
+	"github.com/labring/sealos/controllers/pkg/utils/retry"
+
 	"github.com/labring/sealos/controllers/job/init/internal/util/common"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
@@ -41,6 +45,32 @@ func PresetAdminUser() error {
 			logger.Warn("failed to close cockroach connection: %v", err)
 		}
 	}()
+	domain := os.Getenv("DOMAIN")
+	if domain == "" {
+		return fmt.Errorf("'DOMAIN' the environment variable is not set. please check")
+	}
+	regionUID, err := uuid.Parse(os.Getenv(cockroach.EnvLocalRegion))
+	if err != nil {
+		return fmt.Errorf("failed to parse region %s uid: %v", os.Getenv(cockroach.EnvLocalRegion), err)
+	}
+	err = retry.Retry(10, 5*time.Second, func() error {
+		if !v2Account.DB.Migrator().HasTable(types.User{}) {
+			return fmt.Errorf("user table is null, please check")
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to check user table: %v", err)
+	}
+	if err = v2Account.CreateRegion(&types.Region{
+		UID:         regionUID,
+		Domain:      domain,
+		DisplayName: domain,
+		Location:    domain,
+	}); err != nil {
+		return fmt.Errorf("failed to create region: %v", err)
+	}
+
 	userNanoID, err := gonanoid.New(10)
 	if err != nil {
 		return fmt.Errorf("failed to generate nano id: %v", err)
