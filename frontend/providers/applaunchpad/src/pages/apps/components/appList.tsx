@@ -11,11 +11,12 @@ import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
 import { AppListItemType } from '@/types/app';
 import { getErrText } from '@/utils/tools';
-import { Box, Button, Flex, MenuButton, useTheme } from '@chakra-ui/react';
+import { Box, Button, Center, Flex, MenuButton, useTheme } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import React, { useCallback, useMemo, useState } from 'react';
+import type { ThemeType } from '@sealos/ui';
 
 const DelModal = dynamic(() => import('@/pages/app/detail/components/DelModal'));
 
@@ -30,9 +31,8 @@ const AppList = ({
   const { setLoading } = useGlobalStore();
   const { userSourcePrice } = useUserStore();
   const { toast } = useToast();
-  const theme = useTheme();
+  const theme = useTheme<ThemeType>();
   const router = useRouter();
-  // console.log(apps, 'apps');
 
   const [delAppName, setDelAppName] = useState('');
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
@@ -196,8 +196,9 @@ const AppList = ({
         render: (item: AppListItemType) => (
           <Flex>
             <Button
+              bg={'grayModern.150'}
+              size={'sm'}
               mr={5}
-              variant={'base'}
               leftIcon={<MyIcon name={'detail'} w={'14px'} h="14px" />}
               px={3}
               onClick={() => router.push(`/app/detail?name=${item.name}`)}
@@ -281,27 +282,31 @@ const AppList = ({
   );
 
   return (
-    <Box backgroundColor={'#F3F4F5'} px={'34px'} pb={5} minH={'100%'}>
+    <Box backgroundColor={'grayModern.100'} px={'32px'} pb={5} minH={'100%'}>
       <Flex h={'88px'} alignItems={'center'}>
-        <Box mr={4} p={2} backgroundColor={'#FEFEFE'} border={theme.borders.sm} borderRadius={'sm'}>
+        <Center
+          w="46px"
+          h={'46px'}
+          mr={4}
+          backgroundColor={'#FEFEFE'}
+          border={theme.borders[200]}
+          borderRadius={'xl'}
+        >
           <MyIcon name="logo" w={'24px'} h={'24px'} />
-        </Box>
-        <Box fontSize={'2xl'} color={'black'}>
+        </Center>
+        <Box fontSize={'xl'} color={'grayModern.900'} fontWeight={'bold'}>
           {t('Applications')}
         </Box>
         {/* <LangSelect /> */}
-        <Box ml={3} color={'gray.500'}>
+        <Box ml={3} color={'grayModern.500'}>
           ( {apps.length} )
         </Box>
         <Box flex={1}></Box>
-
         <Button
-          flex={'0 0 auto'}
-          px={5}
           h={'40px'}
-          colorScheme={'primary'}
-          leftIcon={<MyIcon name={'plus'} w={'12px'} />}
-          variant={'primary'}
+          w={'156px'}
+          flex={'0 0 auto'}
+          leftIcon={<MyIcon name={'plus'} />}
           onClick={() => router.push('/app/edit')}
         >
           {t('Create Application')}

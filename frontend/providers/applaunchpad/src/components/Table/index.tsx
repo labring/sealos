@@ -22,6 +22,8 @@ const Table = ({ columns, data, itemClass = '' }: Props) => {
         overflowX={'auto'}
         borderRadius={'8px'}
         mb={2}
+        fontSize={'base'}
+        color={'gray.600'}
       >
         {columns.map((item, i) => (
           <Box
@@ -29,7 +31,6 @@ const Table = ({ columns, data, itemClass = '' }: Props) => {
             py={3}
             bg={'white'}
             key={item.key}
-            color={'myGray.700'}
             whiteSpace={'nowrap'}
             _first={{
               pl: 7
@@ -50,6 +51,8 @@ const Table = ({ columns, data, itemClass = '' }: Props) => {
           }}
           borderTopRadius={index1 === 0 ? '8px' : '0px'}
           borderBottomRadius={index1 === data.length - 1 ? '8px' : '0px'}
+          borderBottom={'1px solid'}
+          borderBottomColor={index1 !== data.length - 1 ? 'grayModern.150' : 'transparent'}
         >
           {columns.map((col, index2) => (
             <Flex
@@ -59,11 +62,9 @@ const Table = ({ columns, data, itemClass = '' }: Props) => {
               alignItems={'center'}
               px={3}
               py={4}
-              fontSize={'sm'}
+              fontSize={'base'}
               fontWeight={'bold'}
-              color={'myGray.700'}
-              borderBottom={'1px solid'}
-              borderBottomColor={index1 !== data.length - 1 ? 'myGray.100' : 'transparent'}
+              color={'grayModern.900'}
             >
               {col.render ? col.render(item) : col.dataIndex ? `${item[col.dataIndex]}` : ''}
             </Flex>

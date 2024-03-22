@@ -1,6 +1,6 @@
 import { ReactNode, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
-import SyntaxHighlighter from 'react-syntax-highlighter';
+import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { codeTheme } from './hljs';
 import { Box, BoxProps } from '@chakra-ui/react';
 import { ReactMarkdownOptions } from 'react-markdown/lib/react-markdown';

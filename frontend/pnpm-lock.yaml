@@ -464,6 +464,9 @@ importers:
       '@sealos/driver':
         specifier: workspace:^
         version: link:../../packages/driver
+      '@sealos/ui':
+        specifier: workspace:^
+        version: link:../../packages/ui
       '@tanstack/react-query':
         specifier: ^4.35.3
         version: 4.36.1(react-dom@18.2.0)(react@18.2.0)

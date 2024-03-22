@@ -1,15 +1,36 @@
-import { border, defineStyle, defineStyleConfig } from '@chakra-ui/react';
+import { defineStyleConfig } from '@chakra-ui/react';
+import { colors as ThemeColors } from '../colors';
 
 export const Button = defineStyleConfig({
-  baseStyle: {
-    borderRadius: '4px'
+  sizes: {
+    primary: {
+      width: '215px'
+    },
+    sm: {
+      width: '75px',
+      height: '32px'
+    },
+    md: {
+      width: '100px',
+      height: '36px'
+    },
+    lg: {
+      width: '180px',
+      height: '36px'
+    }
   },
   variants: {
     primary: {
-      background: 'grayModern.900',
-      color: 'white',
-      fontSize: '14px'
+      bg: '#3E3B3B',
+      _hover: {
+        bg: '#3E3B3B',
+        _disabled: {
+          bg: '#3E3B3B'
+        }
+      },
+      color: '#FEFEFE'
     },
+    // >>>old
     secondary: {
       border: '1px solid',
       borderColor: 'grayModern.200',
@@ -30,6 +51,34 @@ export const Button = defineStyleConfig({
       minW: 'unset',
       h: 'unset',
       p: '4px'
+    },
+    // <<<
+    black: {
+      bg: ThemeColors.grayModern[900],
+      color: '#FFF',
+      borderRadius: '8px',
+      fontSize: '14px',
+      fontWeight: 500,
+      _hover: {
+        opacity: '0.9'
+      }
+    },
+    square: {
+      borderRadius: '8px',
+      bg: '#F0F1F6',
+      minW: '30px',
+      width: '30px',
+      height: '30px',
+      p: '0px',
+      _hover: {
+        svg: {
+          fill: ThemeColors.brightBlue[500]
+        }
+      }
     }
+  },
+  defaultProps: {
+    size: 'md',
+    variant: 'black'
   }
 });
