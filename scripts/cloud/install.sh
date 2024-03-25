@@ -27,7 +27,7 @@ cert_manager_version=${cert_manager_version:-"1.13.3"}
 helm_version=${helm_version:-"3.12.0"}
 openebs_version=${openebs_version:-"3.4.0"}
 ingress_nginx_version=${ingress_nginx_version:-"1.5.1"}
-kubeblocks_version=${kubeblocks_version:-"0.6.4"}
+kubeblocks_version=${kubeblocks_version:-"0.8.2"}
 metrics_server_version=${metrics_server_version:-"0.6.4"}
 kube_prometheus_stack_version=${kube_prometheus_stack_version:-"0.63.0"}
 
@@ -76,7 +76,7 @@ Options:
   --helm-version                    # Helm version (default: 3.12.0)
   --openebs-version                 # OpenEBS version (default: 3.4.0)
   --ingress-nginx-version           # Ingress Nginx version (default: 1.5.1)
-  --kubeblocks-version              # Kubeblocks version (default: 0.6.4)
+  --kubeblocks-version              # Kubeblocks version (default: 0.8.2)
   --metrics-server-version          # Metrics Server version (default: 0.6.4)
   --cloud-version                   # Sealos Cloud version (default: latest)
   --mongodb-version                 # MongoDB version (default: mongodb-5.0)
@@ -137,7 +137,7 @@ Options:
   --helm-version                  # Helm版本 (默认: 3.12.0)
   --openebs-version               # OpenEBS版本 (默认: 3.4.0)
   --ingress-nginx-version         # Ingress Nginx版本 (默认: 1.5.1)
-  --kubeblocks-version            # Kubeblocks版本 (默认: 0.6.4)
+  --kubeblocks-version            # Kubeblocks版本 (默认: 0.8.2)
   --metrics-server-version        # Metrics Server版本 (默认: 0.6.4)
   --cloud-version                 # Sealos Cloud版本 (默认: latest)
   --mongodb-version               # MongoDB版本 (默认: mongodb-5.0)
@@ -250,7 +250,7 @@ init() {
     pull_image "helm" "v${helm_version#v:-3.12.0}"
     pull_image "openebs" "v${openebs_version#v:-3.4.0}"
     pull_image "ingress-nginx" "v${ingress_nginx_version#v:-1.5.1}"
-    pull_image "kubeblocks" "v${kubeblocks_version#v:-0.6.4}"
+    pull_image "kubeblocks" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "metrics-server" "v${metrics_server_version#v:-0.6.4}"
     pull_image "kube-prometheus-stack" "v${kube_prometheus_stack_version#v:-0.63.0}"
     pull_image "sealos-cloud" "${cloud_version}"
@@ -631,7 +631,7 @@ EOF
 
     get_prompt "ingress_installation"
     sealos run ${image_registry}/${image_repository}/ingress-nginx:v${ingress_nginx_version#v:-1.5.1}\
-        ${image_registry}/${image_repository}/kubeblocks:v${kubeblocks_version#v:-0.6.4}\
+        ${image_registry}/${image_repository}/kubeblocks:v${kubeblocks_version#v:-0.8.2}\
         --config-file $CLOUD_DIR/ingress-nginx-config.yaml
 
     kbcli addon enable prometheus
