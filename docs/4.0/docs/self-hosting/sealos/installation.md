@@ -39,9 +39,9 @@ Recommended System Configuration:
 
 We advise using Ubuntu 22.04 LTS with a kernel version of 5.4 or higher. The specifications are as follows:
 
-| Operating System | Kernel Version | CPU  | Memory | Storage | Masters    | Nodes |
-| ---------------- | -------------- | ---- | ------ | ------- | ---------- | ----- |
-| Ubuntu 22.04 LTS | ≥ 5.4          | 4C   | 8GB    | 100GB   | Odd Number | Any   |
+| Operating System | Kernel Version | CPU | Memory | Storage | Masters    | Nodes |
+|------------------|----------------|-----|--------|---------|------------|-------|
+| Ubuntu 22.04 LTS | ≥ 5.4          | 8C  | 16GB   | 100GB   | Odd Number | Any   |
 
 :::info 
 Kubernetes and Sealos Cloud Operating system require roughly 2 cores (2c) and 2GB of memory (2g) per Master node, and about 1 core (1c) and 1GB of memory (1g) per Node node. Ensure each node in your cluster is well-equipped for these system components. 
