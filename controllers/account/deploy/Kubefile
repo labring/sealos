@@ -16,4 +16,4 @@ ENV OSNamespace="objectstorage-system"
 ENV OSAdminSecret=""
 ENV OSInternalEndpoint=""
 
-CMD ["( kubectl create ns $DEFAULT_NAMESPACE || true ) && ( kubectl create -f manifests/mongo-secret.yaml -n $DEFAULT_NAMESPACE || true ) && ( kubectl create -f manifests/account-manager-config.yaml -n $DEFAULT_NAMESPACE || true ) && kubectl apply -f manifests/deploy.yaml -n $DEFAULT_NAMESPACE"]
+CMD ["( kubectl create ns $DEFAULT_NAMESPACE || true ) && ( kubectl create -f manifests/account-manager-config.yaml -n $DEFAULT_NAMESPACE || true ) && kubectl apply -f manifests/deploy.yaml -n $DEFAULT_NAMESPACE"]

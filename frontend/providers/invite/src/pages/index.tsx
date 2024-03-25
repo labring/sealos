@@ -1,5 +1,6 @@
 import { getInvitationIno } from '@/api/account';
 import useSessionStore from '@/store/session';
+import { serviceSideProps } from '@/utils/i18n';
 import { formatMoney, useCopyData } from '@/utils/tools';
 import {
   Box,
@@ -20,6 +21,7 @@ import {
 } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
+import { useTranslation } from 'next-i18next';
 import { useCallback } from 'react';
 
 export default function Index({
@@ -31,11 +33,13 @@ export default function Index({
 }) {
   const theme = useTheme();
   const { copyData } = useCopyData();
-  const { session } = useSessionStore();
+  const userInfo = useSessionStore((state) => state?.session?.user);
+
+  const { t } = useTranslation();
 
   const { data, isLoading } = useQuery(
-    ['getPromotionInitData', session?.user?.k8sUsername],
-    () => getInvitationIno({ inviterId: session?.user?.k8sUsername }),
+    ['getPromotionInitData', userInfo?.id],
+    () => getInvitationIno({ inviterId: userInfo?.id || '' }),
     {
       refetchInterval: 5 * 60 * 1000
     }
@@ -55,38 +59,37 @@ export default function Index({
   };
 
   const copyInviteLink = useCallback(() => {
-    const userId = session?.user?.k8sUsername;
-    const uid = userId ? `?uid=${userId}` : '';
-    const str = `https://${SEALOS_DOMAIN}/${uid}`;
+    const userId = userInfo?.id;
+    const str = `https://${SEALOS_DOMAIN}/?uid=${userId}`;
     copyData(str);
-  }, [SEALOS_DOMAIN, copyData, session?.user?.k8sUsername]);
+  }, [SEALOS_DOMAIN, copyData, userInfo?.id]);
 
   return (
     <Flex flexDirection={'column'} p={10} h={'100%'} position={'relative'}>
       <Grid gridTemplateColumns={['1fr 1fr', 'repeat(2,1fr)', 'repeat(4,1fr)']} gridGap={5}>
         <Box {...statisticsStyles}>
-          <Box>累计邀请人数</Box>
+          <Box>{t('Cumulative number of invitees')}</Box>
           <Box {...titleStyles}>{data?.totalPeople || 0}</Box>
         </Box>
         <Box {...statisticsStyles}>
-          <Box>收益</Box>
+          <Box>{t('Earnings')}</Box>
           <Box {...titleStyles}>{formatMoney(data?.totalAmount || 0)}</Box>
         </Box>
         <Box {...statisticsStyles}>
           <Flex alignItems={'center'} justifyContent={'center'} flexDirection={'column'}>
-            <Box mb="4px">返现比例</Box>
+            <Box mb="4px">{t('Cashback Ratio')}</Box>
             <Text fontSize={'12px'}>
-              好友每次充值，您都获得 {parseFloat(GIFT_RATIO) * 100}% 的余额奖励
+              {t('Every time a friend recharges', { amount: `${parseFloat(GIFT_RATIO) * 100}%` })}
             </Text>
           </Flex>
           <Box {...titleStyles}>{parseFloat(GIFT_RATIO) * 100}%</Box>
         </Box>
         <Box {...statisticsStyles}>
           <Flex alignItems={'center'} justifyContent={'center'}>
-            <Box>邀请链接</Box>
+            <Text>{t('Invitation link')}</Text>
           </Flex>
           <Button mt={4} fontSize={'sm'} onClick={copyInviteLink}>
-            复制链接
+            {t('Copy link')}
           </Button>
         </Box>
       </Grid>
@@ -95,10 +98,10 @@ export default function Index({
           <Table>
             <Thead>
               <Tr>
-                <Th>时间</Th>
+                <Th>{t('Time')}</Th>
                 <Th>
                   <Flex gap={'4px'}>
-                    <Text>金额</Text>
+                    <Text>{t('Amount')}</Text>
                     <Icon
                       xmlns="http://www.w3.org/2000/svg"
                       width="12px"
@@ -175,7 +178,7 @@ export default function Index({
               />
             </Icon>
             <Box mt={2} color={'myGray.500'}>
-              无邀请记录~
+              {t('No invitation records')}
             </Box>
           </Flex>
         )}
@@ -190,6 +193,7 @@ export async function getServerSideProps(content: any) {
 
   return {
     props: {
+      ...(await serviceSideProps(content)),
       SEALOS_DOMAIN,
       GIFT_RATIO
     }

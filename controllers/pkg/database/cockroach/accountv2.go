@@ -51,6 +51,28 @@ const (
 	EnvBaseBalance = "BASE_BALANCE"
 )
 
+func (g *Cockroach) CreateUser(oAuth *types.OauthProvider, regionUserCr *types.RegionUserCr, user *types.User) error {
+	if g.Localdb.Where(&types.RegionUserCr{CrName: regionUserCr.CrName}).First(&types.RegionUserCr{}).Error == gorm.ErrRecordNotFound {
+		if err := g.DB.Where(&types.User{Name: user.Name}).FirstOrCreate(user).Error; err != nil {
+			return fmt.Errorf("failed to create user: %w", err)
+		}
+		if err := g.DB.Where(types.OauthProvider{ProviderID: oAuth.ProviderID}).FirstOrCreate(oAuth).Error; err != nil {
+			return fmt.Errorf("failed to create user oauth provider: %w", err)
+		}
+		if err := g.Localdb.Where(types.RegionUserCr{CrName: regionUserCr.CrName}).FirstOrCreate(&regionUserCr).Error; err != nil {
+			return fmt.Errorf("failed to create user region cr: %w", err)
+		}
+	}
+	return nil
+}
+
+func (g *Cockroach) CreateRegion(region *types.Region) error {
+	if err := g.DB.Where(&types.Region{UID: region.UID}).FirstOrCreate(region).Error; err != nil {
+		return fmt.Errorf("failed to create region: %w", err)
+	}
+	return nil
+}
+
 func (g *Cockroach) GetUserCr(ops *types.UserQueryOpts) (*types.RegionUserCr, error) {
 	if err := checkOps(ops); err != nil {
 		return nil, err
@@ -672,7 +694,7 @@ func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to encrypt zero value")
 	}
-	if err := CreateTableIfNotExist(db, types.Account{}, types.ErrorAccountCreate{}, types.ErrorPaymentCreate{}, types.Payment{}, types.Transfer{}); err != nil {
+	if err := CreateTableIfNotExist(db, types.Account{}, types.ErrorAccountCreate{}, types.ErrorPaymentCreate{}, types.Payment{}, types.Transfer{}, types.Region{}); err != nil {
 		return nil, err
 	}
 	cockroach := &Cockroach{DB: db, Localdb: localdb, ZeroAccount: &types.Account{EncryptBalance: *newEncryptBalance, EncryptDeductionBalance: *newEncryptDeductionBalance, Balance: baseBalance, DeductionBalance: 0}}

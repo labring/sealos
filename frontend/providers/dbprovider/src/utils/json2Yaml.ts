@@ -111,9 +111,9 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
         spec: {
           affinity: {
             nodeLabels: {},
-            podAntiAffinity: 'Required',
+            podAntiAffinity: 'Preferred',
             tenancy: 'SharedNode',
-            topologyKeys: ['kubernetes.io/hostname']
+            topologyKeys: []
           },
           clusterDefinitionRef: 'apecloud-mysql',
           clusterVersionRef: data.dbVersion,
@@ -1089,8 +1089,7 @@ export const json2NetworkService = ({
       name: `${dbDetail.dbName}-export`,
       labels: {
         'app.kubernetes.io/instance': dbDetail.dbName,
-        'apps.kubeblocks.io/component-name': dbDetail.dbType,
-        ...labelMap[dbDetail.dbType]
+        'apps.kubeblocks.io/component-name': dbDetail.dbType
       },
       ownerReferences: [
         {
@@ -1113,7 +1112,8 @@ export const json2NetworkService = ({
         }
       ],
       selector: {
-        'app.kubernetes.io/instance': dbDetail.dbName
+        'app.kubernetes.io/instance': dbDetail.dbName,
+        ...labelMap[dbDetail.dbType]
       },
       type: 'NodePort'
     }

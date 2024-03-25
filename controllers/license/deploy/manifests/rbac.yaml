@@ -33,4 +33,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: license-controller-manager
-    namespace: license-system
+    namespace: account-system

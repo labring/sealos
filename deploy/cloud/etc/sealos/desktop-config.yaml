@@ -15,3 +15,4 @@ spec:
       jwt_secret_region: <your-jwt-secret-region-base64>
       region_database_url: <your-region-database-url-base64>
       global_database_url: <your-global-database-url-base64>
+      region_uid: <your-local-region-uid-base64>

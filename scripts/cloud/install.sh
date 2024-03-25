@@ -4,7 +4,7 @@ set -e
 
 # Configurations
 CLOUD_DIR="/root/.sealos/cloud"
-SEALOS_VERSION="v5.0.0-bate4"
+SEALOS_VERSION="v5.0.0-beta4"
 cloud_version="latest"
 #mongodb_version="mongodb-5.0"
 #master_ips=
@@ -640,8 +640,7 @@ EOF
     sealos run "${image_registry}/${image_repository}/kube-prometheus-stack:v${kube_prometheus_stack_version#v:-0.63.0}"
 
     # TODO use sealos run to install cockroachdb-operator
-    kubectl apply -f https://raw.githubusercontent.com/cockroachdb/cockroach-operator/v2.12.0/install/crds.yaml
-    kubectl apply -f https://raw.githubusercontent.com/cockroachdb/cockroach-operator/v2.12.0/install/operator.yaml
+    sealos run "${image_registry}/${image_repository}/cockroach:latest"
 
     kubectl patch cm kb-addon-prometheus-server -n kb-system --patch-file $CLOUD_DIR/kb-addon-prometheus-server-patch.yaml
 

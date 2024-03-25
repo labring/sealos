@@ -5,7 +5,7 @@ import { Box, Flex, useTheme } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import styles from './index.module.scss';
-import { YamlCode } from '@sealos/ui';
+import YamlCode from '@/components/YamlCode';
 
 const Yaml = ({ yamlList = [] }: { yamlList: YamlItemType[]; pxVal: number }) => {
   const theme = useTheme();
@@ -41,11 +41,7 @@ const Yaml = ({ yamlList = [] }: { yamlList: YamlItemType[]; pxVal: number }) =>
             </Box>
           </Flex>
           <Box flex={1} h={0} overflow={'auto'} bg={'#ffffff'} p={4}>
-            <YamlCode
-              markdown={{
-                children: yamlList[selectedIndex].value
-              }}
-            />
+            <YamlCode content={yamlList[selectedIndex].value} />
           </Box>
         </Flex>
       )}
