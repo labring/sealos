@@ -17,6 +17,7 @@ limitations under the License.
 package controllers
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"strings"
@@ -33,6 +34,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/rand"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -65,6 +67,12 @@ const (
 	OSExternalEndpointEnv = "OSExternalEndpoint"
 	OSNamespace           = "OSNamespace"
 	OSAdminSecret         = "OSAdminSecret"
+
+	OSKeySecret          = "object-storage-key"
+	OSKeySecretAccessKey = "accessKey"
+	OSKeySecretSecretKey = "secretKey"
+	OSKeySecretInternal  = "internal"
+	OSKeySecretExternal  = "external"
 )
 
 //+kubebuilder:rbac:groups=objectstorage.sealos.io,resources=objectstorageusers,verbs=get;list;watch;create;update;patch;delete
@@ -144,6 +152,27 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		}
 	}
 
+	secret := &corev1.Secret{}
+	if err := r.Get(ctx, client.ObjectKey{Name: OSKeySecret, Namespace: userNamespace}, secret); err != nil {
+		if !errors.IsNotFound(err) {
+			r.Logger.Error(err, "failed to get object storage key secret", "name", OSKeySecret, "namespace", userNamespace)
+			return ctrl.Result{}, err
+		}
+
+		if err := r.newObjectStorageKeySecret(ctx, secret, user, accessKey, secretKey); err != nil {
+			r.Logger.Error(err, "failed to new object storage key secret", "name", OSKeySecret, "namespace", userNamespace)
+			return ctrl.Result{}, err
+		}
+	}
+
+	keySecretUpdated := r.initObjectStorageKeySecret(secret, accessKey, secretKey)
+
+	if keySecretUpdated {
+		if err := r.Update(ctx, secret); err != nil {
+			r.Logger.Error(err, "failed to update object storage key secret", "name", OSKeySecret, "namespace", userNamespace)
+		}
+	}
+
 	// check whether the space used exceeds the quota
 	size, objectsCount, err := myObjectStorage.GetUserObjectStorageSize(r.OSClient, user.Name)
 	if err != nil {
@@ -197,6 +226,31 @@ func (r *ObjectStorageUserReconciler) NewObjectStorageUser(ctx context.Context, 
 	}
 
 	return nil
+}
+
+func (r *ObjectStorageUserReconciler) newObjectStorageKeySecret(ctx context.Context, secret *corev1.Secret, user *objectstoragev1.ObjectStorageUser, accessKey, secretKey string) error {
+	secret.SetName(OSKeySecret)
+	secret.SetNamespace(user.Namespace)
+
+	secret.Data = make(map[string][]byte)
+	secret.Data[OSKeySecretAccessKey] = []byte(accessKey)
+	secret.Data[OSKeySecretSecretKey] = []byte(secretKey)
+	secret.Data[OSKeySecretInternal] = []byte(r.InternalEndpoint)
+	secret.Data[OSKeySecretExternal] = []byte(r.ExternalEndpoint)
+
+	reference := metav1.OwnerReference{
+		APIVersion:         user.APIVersion,
+		Kind:               user.Kind,
+		Name:               user.Name,
+		UID:                user.UID,
+		Controller:         nil,
+		BlockOwnerDeletion: nil,
+	}
+	refList := make([]metav1.OwnerReference, 0)
+	refList = append(refList, reference)
+	secret.SetOwnerReferences(refList)
+
+	return r.Create(ctx, secret)
 }
 
 func (r *ObjectStorageUserReconciler) addUserToGroup(ctx context.Context, user string, group string) error {
@@ -306,6 +360,32 @@ func (r *ObjectStorageUserReconciler) initObjectStorageUser(user *objectstoragev
 
 	if user.Status.External != r.ExternalEndpoint {
 		user.Status.External = r.ExternalEndpoint
+		updated = true
+	}
+
+	return updated
+}
+
+func (r *ObjectStorageUserReconciler) initObjectStorageKeySecret(secret *corev1.Secret, accessKey, secretKey string) bool {
+	var updated = false
+
+	if !bytes.Equal(secret.Data[OSKeySecretAccessKey], []byte(accessKey)) {
+		secret.Data[OSKeySecretAccessKey] = []byte(accessKey)
+		updated = true
+	}
+
+	if !bytes.Equal(secret.Data[OSKeySecretSecretKey], []byte(secretKey)) {
+		secret.Data[OSKeySecretSecretKey] = []byte(secretKey)
+		updated = true
+	}
+
+	if !bytes.Equal(secret.Data[OSKeySecretInternal], []byte(r.InternalEndpoint)) {
+		secret.Data[OSKeySecretInternal] = []byte(r.InternalEndpoint)
+		updated = true
+	}
+
+	if !bytes.Equal(secret.Data[OSKeySecretExternal], []byte(r.ExternalEndpoint)) {
+		secret.Data[OSKeySecretExternal] = []byte(r.ExternalEndpoint)
 		updated = true
 	}
 
