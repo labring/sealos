@@ -2,19 +2,17 @@ import DesktopContent from '@/components/desktop_content';
 import FloatButton from '@/components/floating_button';
 import MoreApps from '@/components/more_apps';
 import useAppStore from '@/stores/app';
-import { useGlobalStore } from '@/stores/global';
+import { useSystemConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import { parseOpenappQuery } from '@/utils/format';
+import { setInviterId } from '@/utils/sessionConfig';
 import { compareFirstLanguages } from '@/utils/tools';
 import { Box, useColorMode } from '@chakra-ui/react';
-import { QueryClient, dehydrate, useQuery } from '@tanstack/react-query';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Script from 'next/script';
 import { createContext, useEffect, useState } from 'react';
-import { getSystemEnv } from '@/api/platform';
-import { useSystemConfigStore } from '@/stores/config';
 
 const destination = '/signin';
 interface IMoreAppsContext {
@@ -30,10 +28,6 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const setAutoLaunch = useAppStore((state) => state.setAutoLaunch);
   const { systemConfig } = useSystemConfigStore();
 
-  const { data: platformEnv, isSuccess } = useQuery(['getPlatformEnv'], getSystemEnv);
-  const setEnv = useGlobalStore((s) => s.setEnv);
-  // @ts-ignore
-  if (isSuccess) Object.entries(platformEnv?.data!).forEach(([k, v]) => setEnv(k, v));
   useEffect(() => {
     colorMode === 'dark' ? toggleColorMode() : null;
   }, [colorMode, toggleColorMode]);
@@ -46,10 +40,8 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     if (!is_login) {
       const { appkey, appQuery } = parseOpenappQuery((query?.openapp as string) || '');
       // Invited new user
-      const urlParams = new URLSearchParams(appQuery);
-      const uid = urlParams.get('uid');
-      if (uid) {
-        localStorage.setItem('inviterId', uid);
+      if (query?.uid && typeof query?.uid === 'string') {
+        setInviterId(query.uid);
       }
       // sealos_inside=true internal call
       if (whitelistApps.includes(appkey) && appQuery.indexOf('sealos_inside=true') === -1) {
@@ -114,26 +106,15 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
 }
 
 export async function getServerSideProps({ req, res, locales, query }: any) {
-  // Invitation short link
-  // if (query?.uid) {
-  //   return {
-  //     redirect: {
-  //       permanent: false,
-  //       destination: `/?openapp=system-template%3FtemplateName%3Dpalworld%26uid=${query?.uid}`
-  //     }
-  //   };
-  // }
-
   const local =
     req?.cookies?.NEXT_LOCALE || compareFirstLanguages(req?.headers?.['accept-language'] || 'zh');
   res.setHeader('Set-Cookie', `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`);
   const sealos_cloud_domain = process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io';
-  const queryClient = new QueryClient();
+
   return {
     props: {
       ...(await serverSideTranslations(local, ['common', 'cloudProviders'], null, locales || [])),
-      sealos_cloud_domain,
-      dehydratedState: dehydrate(queryClient)
+      sealos_cloud_domain
     }
   };
 }

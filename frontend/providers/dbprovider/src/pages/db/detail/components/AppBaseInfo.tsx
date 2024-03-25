@@ -257,7 +257,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
         </Box>
       ))}
       {/* secret */}
-      {secret && db.status.value === DBStatusEnum.Running && (
+      {secret && (
         <>
           <Flex mt={6} alignItems={'center'} color={'myGray.500'}>
             <MyIcon w={'16px'} name={'connection'} fill={'#5A646E'}></MyIcon>
@@ -338,7 +338,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             <Text fontWeight={500} fontSize={'12px'} color={'#24282C'}>
               {t('Intranet Address')}
             </Text>
-            <Divider my="12px" />
+            <Divider my="12px" borderColor={'rgb(226, 232, 240)'} />
             {Object.entries(otherSecret).map(([name, value]) => (
               <Box
                 key={name}

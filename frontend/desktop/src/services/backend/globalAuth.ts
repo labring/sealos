@@ -23,7 +23,7 @@ async function signIn({ provider, id }: { provider: ProviderType; id: string }) 
   };
 }
 
-export const hasIniterId = ({
+export const inviteHandler = ({
   inviteeId,
   inviterId,
   signResult
@@ -32,16 +32,22 @@ export const hasIniterId = ({
   inviterId: string;
   signResult: any;
 }) => {
+  const secretKey = process.env.LAF_SECRET_KEY;
+  const baseUrl = process.env.LAF_BASE_URL;
+  const inviteEnabled = process.env.INVITE_ENABLED;
+
+  if (inviteEnabled !== 'true' || !baseUrl || inviterId === inviteeId) return;
+
   const payload = {
     inviterId,
     inviteeId,
-    secretKey: process.env.LAF_SECRET_KEY,
+    secretKey: secretKey,
     data: {
       type: 'signup',
       signResult
     }
   };
-  const baseUrl = process.env.LAF_BASE_URL;
+
   fetch(`https://${baseUrl}/uploadData`, {
     method: 'POST',
     headers: {
@@ -57,6 +63,7 @@ export const hasIniterId = ({
       console.error('Upload laf error:', error);
     });
 };
+
 export async function signInByPassword({ id, password }: { id: string; password: string }) {
   const userProvider = await globalPrisma.oauthProvider.findUnique({
     where: {
@@ -174,13 +181,15 @@ export const getGlobalToken = async ({
   id,
   name,
   avatar_url,
-  password
+  password,
+  inviterId
 }: {
   provider: ProviderType;
   id: string;
   name: string;
   avatar_url: string;
   password?: string;
+  inviterId?: string;
 }) => {
   let user: User | null = null;
 
@@ -205,6 +214,13 @@ export const getGlobalToken = async ({
         password
       });
       result && (user = result.user);
+      if (inviterId && result) {
+        inviteHandler({
+          inviterId: inviterId,
+          inviteeId: result?.user.name,
+          signResult: result
+        });
+      }
     } else {
       const result = await signInByPassword({
         id,
@@ -224,6 +240,13 @@ export const getGlobalToken = async ({
         avatar_url
       });
       result && (user = result.user);
+      if (inviterId && result) {
+        inviteHandler({
+          inviterId: inviterId,
+          inviteeId: result?.user.name,
+          signResult: result
+        });
+      }
     } else {
       const result = await signIn({
         provider,
@@ -239,6 +262,7 @@ export const getGlobalToken = async ({
     userUid: user.uid,
     userId: user.name
   });
+
   return {
     token,
     user: {

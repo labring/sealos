@@ -1,11 +1,12 @@
+import { uploadConvertData } from '@/api/platform';
 import AuthList from '@/components/signin/auth/AuthList';
-import { getSystemEnv, uploadConvertData } from '@/api/platform';
 import useCustomError from '@/components/signin/auth/useCustomError';
 import Language from '@/components/signin/auth/useLanguage';
 import usePassword from '@/components/signin/auth/usePassword';
 import useProtocol from '@/components/signin/auth/useProtocol';
 import useSms from '@/components/signin/auth/useSms';
 import { BackgroundImageUrl, useSystemConfigStore } from '@/stores/config';
+import { useGlobalStore } from '@/stores/global';
 import useSessionStore from '@/stores/session';
 import { LoginType } from '@/types';
 import {
@@ -19,7 +20,7 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { debounce } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import Head from 'next/head';
@@ -29,7 +30,8 @@ import useWechat from './auth/useWechat';
 import { Turnstile, TurnstileInstance } from '@marsidev/react-turnstile';
 
 export default function SigninComponent() {
-  const { data: platformEnv } = useQuery(['getPlatformEnv'], getSystemEnv);
+  const platformEnv = useGlobalStore((state) => state.systemEnv);
+
   const { systemConfig } = useSystemConfigStore();
   const {
     service_protocol_zh = '',
@@ -40,7 +42,7 @@ export default function SigninComponent() {
     needSms = false,
     openWechatEnabled = false,
     cf_sitekey
-  } = platformEnv?.data || {};
+  } = platformEnv || {};
   const needTabs = needPassword && needSms;
   const disclosure = useDisclosure();
   const { t, i18n } = useTranslation();

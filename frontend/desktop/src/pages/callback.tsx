@@ -10,7 +10,7 @@ import { jwtDecode } from 'jwt-decode';
 import { isString } from 'lodash';
 import { getRegionToken, UserInfo } from '@/api/auth';
 import { AccessTokenPayload } from '@/types/token';
-import { sessionConfig } from '@/utils/sessionConfig';
+import { getInviterId, sessionConfig } from '@/utils/sessionConfig';
 
 const Callback: NextPage = () => {
   const router = useRouter();
@@ -64,7 +64,7 @@ const Callback: NextPage = () => {
               realUserUid: string;
             };
           }>
-        >('/api/auth/oauth/' + provider, { code });
+        >('/api/auth/oauth/' + provider, { code, inviterId: getInviterId() });
         setProvider();
         if (data.code === 200 && data.data?.token) {
           const token = data.data?.token;
