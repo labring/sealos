@@ -1849,6 +1849,9 @@ importers:
       sealos-desktop-sdk:
         specifier: workspace:^
         version: link:../../packages/client-sdk
+      sharp:
+        specifier: ^0.32.6
+        version: 0.32.6
       swiper:
         specifier: ^11.0.7
         version: 11.0.7
