@@ -80,15 +80,21 @@ func PresetAdminUser() error {
 		ProviderType: types.OauthProviderTypePassword,
 		ProviderID:   adminUserName,
 		Password:     adminPassword,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}, &types.RegionUserCr{
-		UID:     genUserCrUID,
-		CrName:  adminUserName,
-		UserUID: common.AdminUID(),
+		UID:       genUserCrUID,
+		CrName:    adminUserName,
+		UserUID:   common.AdminUID(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}, &types.User{
-		UID:      common.AdminUID(),
-		ID:       userNanoID,
-		Name:     adminUserName,
-		Nickname: userNanoID,
+		UID:       common.AdminUID(),
+		ID:        userNanoID,
+		Name:      adminUserName,
+		Nickname:  userNanoID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}, &types.Workspace{
 		UID:         genWorkspaceUID,
 		ID:          workspacePrefix + adminUserName,
@@ -101,6 +107,9 @@ func PresetAdminUser() error {
 		Role:         types.RoleOwner,
 		Status:       types.JoinStatusInWorkspace,
 		IsPrivate:    true,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+		JoinAt:       time.Now(),
 	}); err != nil {
 		return fmt.Errorf("failed to create user: %v", err)
 	}
