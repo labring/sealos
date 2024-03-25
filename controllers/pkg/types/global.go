@@ -89,14 +89,53 @@ func (User) TableName() string {
 	return "User"
 }
 
-type OauthProviderType string
+type Workspace struct {
+	UID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
+	ID          string    `gorm:"type:text;not null;unique"`
+	DisplayName string    `gorm:"column:displayName;type:text;not null"`
+	CreatedAt   time.Time `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp()"`
+	UpdatedAt   time.Time `gorm:"column:updatedAt;type:timestamp(3) with time zone;default:current_timestamp()"`
+}
+
+type UserWorkspace struct {
+	UID          uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
+	CreatedAt    time.Time `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp()"`
+	UpdatedAt    time.Time `gorm:"column:updatedAt;type:timestamp(3) with time zone;default:current_timestamp()"`
+	WorkspaceUID uuid.UUID `gorm:"column:workspaceUid;type:uuid;not null"`
+	UserCrUID    uuid.UUID `gorm:"column:userCrUid;type:uuid;not null"`
+	HandlerUID   uuid.UUID `gorm:"column:handlerUid;type:uuid"`
+	Role         Role      `gorm:"type:Role;default:'DEVELOPER'::defaultdb.public.'Role';not null"`
+	Status       JoinStatus
+	IsPrivate    bool      `gorm:"column:isPrivate;type:boolean;not null"`
+	JoinAt       time.Time `gorm:"column:joinAt;type:timestamp(3) with time zone"`
+}
+
+type (
+	Role              string
+	JoinStatus        string
+	OauthProviderType string
+)
 
 const (
 	OauthProviderTypePhone    OauthProviderType = "PHONE"
-	OauthProviderTypeGithub   OauthProviderType = "GITHUB"
-	OauthProviderTypeWechat   OauthProviderType = "WECHAT"
 	OauthProviderTypePassword OauthProviderType = "PASSWORD"
+	//OauthProviderTypeGithub   OauthProviderType = "GITHUB"
+	//OauthProviderTypeWechat   OauthProviderType = "WECHAT"
+
+	RoleOwner Role = "OWNER"
+	//RoleDeveloper Role = "DEVELOPER"
+	//RoleManager   Role = "MANAGER"
+
+	JoinStatusInWorkspace JoinStatus = "IN_WORKSPACE"
 )
+
+func (UserWorkspace) TableName() string {
+	return "UserWorkspace"
+}
+
+func (Workspace) TableName() string {
+	return "Workspace"
+}
 
 func (OauthProvider) TableName() string {
 	return "OauthProvider"

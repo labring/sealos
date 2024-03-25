@@ -24,11 +24,13 @@ const (
 )
 
 const (
-	EnvAdminUserName = "ADMIN_USER_NAME"
-	EnvAdminPassword = "ADMIN_PASSWORD"
+	EnvAdminUserName   = "ADMIN_USER_NAME"
+	EnvAdminPassword   = "ADMIN_PASSWORD"
+	EnvWorkspacePrefix = "WORKSPACE_PREFIX"
 )
 
 var (
-	adminPassword = hashPassword(env.GetEnvWithDefault(EnvAdminPassword, DefaultAdminPassword))
-	adminUserName = env.GetEnvWithDefault(EnvAdminUserName, DefaultAdminUserName)
+	adminPassword   = hashPassword(env.GetEnvWithDefault(EnvAdminPassword, DefaultAdminPassword))
+	adminUserName   = env.GetEnvWithDefault(EnvAdminUserName, DefaultAdminUserName)
+	workspacePrefix = env.GetEnvWithDefault(EnvWorkspacePrefix, "ns-")
 )
