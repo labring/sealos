@@ -22,14 +22,14 @@ cloud_version="latest"
 image_registry=${image_registry:-"docker.io"}
 image_repository=${image_repository:-"labring"}
 kubernetes_version=${kubernetes_version:-"1.27.11"}
-cilium_version=${cilium_version:-"1.12.14"}
-cert_manager_version=${cert_manager_version:-"1.13.3"}
-helm_version=${helm_version:-"3.12.0"}
-openebs_version=${openebs_version:-"3.4.0"}
-ingress_nginx_version=${ingress_nginx_version:-"1.5.1"}
-kubeblocks_version=${kubeblocks_version:-"0.6.4"}
+cilium_version=${cilium_version:-"1.14.8"}
+cert_manager_version=${cert_manager_version:-"1.14.4"}
+helm_version=${helm_version:-"3.14.1"}
+openebs_version=${openebs_version:-"3.10.0"}
+ingress_nginx_version=${ingress_nginx_version:-"1.9.4"}
+kubeblocks_version=${kubeblocks_version:-"0.8.2"}
 metrics_server_version=${metrics_server_version:-"0.6.4"}
-kube_prometheus_stack_version=${kube_prometheus_stack_version:-"0.63.0"}
+kube_prometheus_stack_version=${kube_prometheus_stack_version:-"0.70.0"}
 
 
 # Define English and Chinese prompts
@@ -71,12 +71,12 @@ Options:
   --image-registry                  # Image repository address (default: docker.io)
   --image-repository                # Image repository name (default: labring)
   --kubernetes-version              # Kubernetes version (default: 1.27.11)
-  --cilium-version                  # Cilium version (default: 1.12.14)
-  --cert-manager-version            # Cert Manager version (default: 1.13.3)
-  --helm-version                    # Helm version (default: 3.12.0)
-  --openebs-version                 # OpenEBS version (default: 3.4.0)
-  --ingress-nginx-version           # Ingress Nginx version (default: 1.5.1)
-  --kubeblocks-version              # Kubeblocks version (default: 0.6.4)
+  --cilium-version                  # Cilium version (default: 1.14.8)
+  --cert-manager-version            # Cert Manager version (default: 1.14.4)
+  --helm-version                    # Helm version (default: 3.14.1)
+  --openebs-version                 # OpenEBS version (default: 3.10.0)
+  --ingress-nginx-version           # Ingress Nginx version (default: 1.9.4)
+  --kubeblocks-version              # Kubeblocks version (default: 0.8.2)
   --metrics-server-version          # Metrics Server version (default: 0.6.4)
   --cloud-version                   # Sealos Cloud version (default: latest)
   --mongodb-version                 # MongoDB version (default: mongodb-5.0)
@@ -132,12 +132,12 @@ Options:
   --image-registry                # 镜像仓库地址 (默认: docker.io)
   --image-repository              # 镜像仓库名称 (默认: labring)
   --kubernetes-version            # Kubernetes版本 (默认: 1.27.11)
-  --cilium-version                # Cilium版本 (默认: 1.12.14)
-  --cert-manager-version          # Cert Manager版本 (默认: 1.13.3)
-  --helm-version                  # Helm版本 (默认: 3.12.0)
-  --openebs-version               # OpenEBS版本 (默认: 3.4.0)
-  --ingress-nginx-version         # Ingress Nginx版本 (默认: 1.5.1)
-  --kubeblocks-version            # Kubeblocks版本 (默认: 0.6.4)
+  --cilium-version                # Cilium版本 (默认: 1.14.8)
+  --cert-manager-version          # Cert Manager版本 (默认: 1.14.4)
+  --helm-version                  # Helm版本 (默认: 3.14.1)
+  --openebs-version               # OpenEBS版本 (默认: 3.10.0)
+  --ingress-nginx-version         # Ingress Nginx版本 (默认: 1.9.4)
+  --kubeblocks-version            # Kubeblocks版本 (默认: 0.8.2)
   --metrics-server-version        # Metrics Server版本 (默认: 0.6.4)
   --cloud-version                 # Sealos Cloud版本 (默认: latest)
   --mongodb-version               # MongoDB版本 (默认: mongodb-5.0)
@@ -245,12 +245,12 @@ init() {
     get_prompt "pre_prompt"
     echo ""
     [[ $k8s_installed == "y" ]] || pull_image "kubernetes" "v${kubernetes_version#v:-1.27.11}"
-    [[ $k8s_ready == "y" ]] || pull_image "cilium" "v${cilium_version#v:-1.12.14}"
+    [[ $k8s_ready == "y" ]] || pull_image "cilium" "v${cilium_version#v:-1.14.8}"
     pull_image "cert-manager" "v${cert_manager_version#v:-1.8.0}"
-    pull_image "helm" "v${helm_version#v:-3.12.0}"
-    pull_image "openebs" "v${openebs_version#v:-3.4.0}"
-    pull_image "ingress-nginx" "v${ingress_nginx_version#v:-1.5.1}"
-    pull_image "kubeblocks" "v${kubeblocks_version#v:-0.6.4}"
+    pull_image "helm" "v${helm_version#v:-3.14.1}"
+    pull_image "openebs" "v${openebs_version#v:-3.10.0}"
+    pull_image "ingress-nginx" "v${ingress_nginx_version#v:-1.9.4}"
+    pull_image "kubeblocks" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "metrics-server" "v${metrics_server_version#v:-0.6.4}"
     pull_image "kube-prometheus-stack" "v${kube_prometheus_stack_version#v:-0.63.0}"
     pull_image "sealos-cloud" "${cloud_version}"
@@ -367,7 +367,7 @@ spec:
       kind: DaemonSet
       service:
         type: NodePort
-  match: ${image_registry}/${image_repository}/ingress-nginx:v${ingress_nginx_version#v:-1.5.1}
+  match: ${image_registry}/${image_repository}/ingress-nginx:v${ingress_nginx_version#v:-1.9.4}
   path: charts/ingress-nginx/values.yaml
   strategy: merge
 "
@@ -613,11 +613,11 @@ loading_animation() {
 
 execute_commands() {
     [[ $k8s_installed == "y" ]] || (get_prompt "k8s_installation" && sealos apply -f $CLOUD_DIR/Clusterfile)
-    command -v helm > /dev/null 2>&1 || sealos run "${image_registry}/${image_repository}/helm:v${helm_version#v:-3.12.0}"
-    [[ $k8s_ready == "y" ]] || (get_prompt "cilium_requirement" && sealos run "${image_registry}/${image_repository}/cilium:v${cilium_version#v:-1.12.14}" --env ExtraValues="ipam.mode=kubernetes")
+    command -v helm > /dev/null 2>&1 || sealos run "${image_registry}/${image_repository}/helm:v${helm_version#v:-3.14.1}"
+    [[ $k8s_ready == "y" ]] || (get_prompt "cilium_requirement" && sealos run "${image_registry}/${image_repository}/cilium:v${cilium_version#v:-1.14.8}" --env ExtraValues="ipam.mode=kubernetes")
     wait_cluster_ready
     sealos run "${image_registry}/${image_repository}/cert-manager:v${cert_manager_version#v:-1.8.0}"
-    sealos run "${image_registry}/${image_repository}/openebs:v${openebs_version#v:-3.4.0}"
+    sealos run "${image_registry}/${image_repository}/openebs:v${openebs_version#v:-3.10.0}"
     sealos run "${image_registry}/${image_repository}/metrics-server:v${metrics_server_version#v:-0.6.4}"
     kubectl get sc openebs-backup > /dev/null 2>&1 || kubectl create -f - <<EOF
 apiVersion: storage.k8s.io/v1
@@ -630,8 +630,8 @@ volumeBindingMode: WaitForFirstConsumer
 EOF
 
     get_prompt "ingress_installation"
-    sealos run ${image_registry}/${image_repository}/ingress-nginx:v${ingress_nginx_version#v:-1.5.1}\
-        ${image_registry}/${image_repository}/kubeblocks:v${kubeblocks_version#v:-0.6.4}\
+    sealos run ${image_registry}/${image_repository}/ingress-nginx:v${ingress_nginx_version#v:-1.9.4}\
+        ${image_registry}/${image_repository}/kubeblocks:v${kubeblocks_version#v:-0.8.2}\
         --config-file $CLOUD_DIR/ingress-nginx-config.yaml
 
     kbcli addon enable prometheus
