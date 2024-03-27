@@ -27,6 +27,7 @@ export default function RegionToggle() {
     }
   }, [token]);
   const curRegion = regionList.find((r) => r.uid === curRegionUid);
+
   const handleCick = async (region: Region) => {
     const target = new URL(`https://${region.domain}/switchRegion`);
     const res = await request.get<any, ApiResp<{ token: string }>>('/api/auth/globalToken');
@@ -50,8 +51,8 @@ export default function RegionToggle() {
           onClick={() => disclosure.onOpen()}
         >
           <Text>
-            {providerT(curRegion?.location || '')} {curRegion?.description.serial}
-          </Text>{' '}
+            {providerT(curRegion?.location || '')} {curRegion?.description?.serial}
+          </Text>
           <ExchangeIcon />
         </HStack>
         {disclosure.isOpen ? (
@@ -77,7 +78,7 @@ export default function RegionToggle() {
               >
                 <HStack gap={'12px'} alignItems={'stretch'}>
                   {regionList.map((region) => {
-                    const cpuPrice = region.description.prices.find((p) => p.name === 'CPU');
+                    const cpuPrice = region?.description?.prices?.find((p) => p.name === 'CPU');
                     return (
                       <Box
                         bgColor={'rgba(255, 255, 255, 0.75)'}
@@ -103,7 +104,7 @@ export default function RegionToggle() {
                       >
                         <Box px={'16px'} fontSize={'14px'} fontWeight={'500'}>
                           <Text color={'#152539'}>
-                            {providerT(region.location)} {region.description.serial}
+                            {providerT(region?.location)} {region?.description?.serial}
                           </Text>
                           {cpuPrice && (
                             <Text color={'#0884DD'} whiteSpace={'nowrap'}>
@@ -119,15 +120,14 @@ export default function RegionToggle() {
                             <Text>{providerT('Provider')}</Text>
                           </HStack>
                           <Text color={'#111824'} mb={'8px'}>
-                            {providerT(region.description.provider)}
+                            {providerT(region?.description?.provider)}
                           </Text>
                           <HStack color={'#485264'} gap={'4px'} mb={'2px'}>
                             <InfoIcon boxSize={'12px'} />
                             <Text>{t('Description')}</Text>
                           </HStack>
                           <Text color={'#111824'} lineHeight={'20px'}>
-                            {' '}
-                            {t(region.description.description.zh)}
+                            {t(region?.description?.description?.zh)}
                           </Text>
                         </Box>
                       </Box>
