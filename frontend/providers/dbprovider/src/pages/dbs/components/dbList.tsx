@@ -201,7 +201,7 @@ const DBList = ({
                         </>
                       ),
                       onClick: () => router.push(`/db/edit?name=${item.name}`),
-                      isDisabled: item.status.value === 'Updating'
+                      isDisabled: item.status.value === 'Updating' && !item.isDiskSpaceOverflow
                     },
                     {
                       child: (
@@ -258,12 +258,25 @@ const DBList = ({
           ( {dbList.length} )
         </Box>
         <Box flex={1}></Box>
-
+        <Button
+          flex={'0 0 156px'}
+          h={'42px'}
+          mr={'24px'}
+          bg={'#FFF'}
+          color={'#24282C'}
+          leftIcon={<MyIcon name={'docs'} w={'16px'} />}
+          onClick={() => window.open('https://sealos.run/docs/guides/dbprovider/config-docs/')}
+          _hover={{
+            bg: '#FFF'
+          }}
+        >
+          {t('Use Docs')}
+        </Button>
         <Button
           flex={'0 0 155px'}
           h={'40px'}
           colorScheme={'primary'}
-          leftIcon={<MyIcon name={'plus'} w={'12px'} />}
+          leftIcon={<MyIcon name={'plus'} w={'20px'} />}
           variant={'primary'}
           onClick={() => router.push('/db/edit')}
         >

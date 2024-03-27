@@ -30,7 +30,7 @@ import { useTranslation } from 'next-i18next';
 import PriceBox from './PriceBox';
 import { INSTALL_ACCOUNT } from '@/store/static';
 import Tip from '@/components/Tip';
-import QuotaBox from './QuotaBox';
+import QuotaBox from '@/components/QuotaBox';
 import { obj2Query } from '@/api/tools';
 import { throttle } from 'lodash';
 import { InfoOutlineIcon, WarningIcon } from '@chakra-ui/icons';
@@ -186,7 +186,7 @@ const Form = ({
             ))}
           </Box>
           <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'}>
-            <QuotaBox />
+            <QuotaBox titleStyle={{ borderBottom: '1px solid rgb(222, 224, 226)' }} />
           </Box>
           {INSTALL_ACCOUNT && (
             <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>

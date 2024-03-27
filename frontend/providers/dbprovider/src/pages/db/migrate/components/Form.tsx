@@ -26,7 +26,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import PriceBox from './PriceBox';
-import QuotaBox from './QuotaBox';
+import QuotaBox from '@/components/QuotaBox';
 import PrepareBox from './Prepare';
 import { SupportMigrationDBType } from '@/types/db';
 
@@ -202,7 +202,7 @@ const Form = ({
             ))}
           </Box>
           <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'}>
-            <QuotaBox />
+            <QuotaBox titleStyle={{ borderBottom: '1px solid rgb(222, 224, 226)' }} />
           </Box>
           {/* {INSTALL_ACCOUNT && (
             <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'} p={3}>

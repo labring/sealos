@@ -678,6 +678,15 @@ export const json2Account = (data: DBEditType) => {
       labels: {
         ...commonLabels
       },
+      ownerReferences: [
+        {
+          apiVersion: 'apps.kubeblocks.io/v1alpha1',
+          blockOwnerDeletion: true,
+          controller: true,
+          kind: 'Component',
+          name: data.dbName
+        }
+      ],
       name: data.dbName
     }
   };
@@ -689,6 +698,15 @@ export const json2Account = (data: DBEditType) => {
       labels: {
         ...commonLabels
       },
+      ownerReferences: [
+        {
+          apiVersion: 'apps.kubeblocks.io/v1alpha1',
+          blockOwnerDeletion: true,
+          controller: true,
+          kind: 'Component',
+          name: data.dbName
+        }
+      ],
       name: data.dbName
     }
   };
@@ -700,6 +718,15 @@ export const json2Account = (data: DBEditType) => {
       labels: {
         ...commonLabels
       },
+      ownerReferences: [
+        {
+          apiVersion: 'apps.kubeblocks.io/v1alpha1',
+          blockOwnerDeletion: true,
+          controller: true,
+          kind: 'Component',
+          name: data.dbName
+        }
+      ],
       name: data.dbName
     },
     roleRef: {
@@ -718,37 +745,13 @@ export const json2Account = (data: DBEditType) => {
 
   const baseRoleRules = [
     {
-      apiGroups: [''],
-      resources: ['events'],
-      verbs: ['create']
+      apiGroups: ['*']
     },
     {
-      apiGroups: [''],
-      resources: ['configmaps'],
-      verbs: ['create', 'get', 'list', 'patch', 'update', 'watch', 'delete']
+      resources: ['*']
     },
     {
-      apiGroups: [''],
-      resources: ['endpoints'],
-      verbs: ['create', 'get', 'list', 'patch', 'update', 'watch', 'delete']
-    },
-    {
-      apiGroups: [''],
-      resources: ['pods'],
-      verbs: ['get', 'list', 'patch', 'update', 'watch']
-    }
-  ];
-
-  const BackupRoleRules = [
-    {
-      apiGroups: ['dataprotection.kubeblocks.io'],
-      resources: ['backups'],
-      verbs: ['create', 'get', 'list', 'patch', 'update', 'watch', 'delete']
-    },
-    {
-      apiGroups: ['dataprotection.kubeblocks.io'],
-      resources: ['backups/status'],
-      verbs: ['create', 'get', 'list', 'patch', 'update', 'watch', 'delete']
+      verbs: ['*']
     }
   ];
 
@@ -756,64 +759,16 @@ export const json2Account = (data: DBEditType) => {
     commonBase,
     {
       ...dbRolesBase,
-      rules: [...baseRoleRules, ...BackupRoleRules]
+      rules: baseRoleRules
     },
     dbRoleBindingBase
   ];
 
   const map = {
     [DBTypeEnum.postgresql]: pgAccountTemplate,
-    [DBTypeEnum.mysql]: [
-      commonBase,
-      {
-        ...dbRolesBase,
-        rules: [
-          {
-            apiGroups: [''],
-            resources: ['events'],
-            verbs: ['create']
-          },
-          ...BackupRoleRules
-        ]
-      },
-      dbRoleBindingBase
-    ],
-    [DBTypeEnum.mongodb]: [
-      commonBase,
-      {
-        ...dbRolesBase,
-        rules: [
-          {
-            apiGroups: ['apps.kubeblocks.io'],
-            resources: ['clusters'],
-            verbs: ['get', 'list']
-          },
-          {
-            apiGroups: ['apps.kubeblocks.io'],
-            resources: ['clusters/status'],
-            verbs: ['get']
-          },
-          ...baseRoleRules,
-          ...BackupRoleRules
-        ]
-      },
-      dbRoleBindingBase
-    ],
-    [DBTypeEnum.redis]: [
-      commonBase,
-      {
-        ...dbRolesBase,
-        rules: [
-          {
-            apiGroups: [''],
-            resources: ['events'],
-            verbs: ['create']
-          },
-          ...BackupRoleRules
-        ]
-      },
-      dbRoleBindingBase
-    ],
+    [DBTypeEnum.mysql]: pgAccountTemplate,
+    [DBTypeEnum.mongodb]: pgAccountTemplate,
+    [DBTypeEnum.redis]: pgAccountTemplate,
     [DBTypeEnum.kafka]: pgAccountTemplate,
     [DBTypeEnum.qdrant]: pgAccountTemplate,
     [DBTypeEnum.nebula]: pgAccountTemplate,

@@ -34,7 +34,8 @@ const map = {
   success: require('./icons/success.svg').default,
   error: require('./icons/error.svg').default,
   currency: require('./icons/currency.svg').default,
-  infoCircle: require('./icons/infoCircle.svg').default
+  infoCircle: require('./icons/infoCircle.svg').default,
+  docs: require('./icons/docs.svg').default
 };
 
 const MyIcon = ({
