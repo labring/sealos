@@ -67,6 +67,7 @@ func PresetAdminUser() error {
 		Domain:      domain,
 		DisplayName: domain,
 		Location:    domain,
+		Description: domain,
 	}); err != nil {
 		return fmt.Errorf("failed to create region: %v", err)
 	}
