@@ -19,7 +19,7 @@ metadata:
   namespace: app-system
 spec:
   data:
-    desc: sealos Cloud Kubernetes Dashboard
+    desc: Sealos Cloud Kubernetes Dashboard
     url: ""
   icon: /images/kubernetes.svg
   menuData:
