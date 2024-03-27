@@ -16,7 +16,7 @@ const defaultConfig: SystemConfigType = {
   backgroundImageUrl: '/images/bg-blue.svg',
   imageFallBackUrl: 'logo.svg',
   title: 'Sealos',
-  metaTitle: 'sealos Cloud',
+  metaTitle: 'Sealos Cloud',
   metaDescription: 'sealos cloud dashboard',
   showGithubStar: true,
   isSystemConfigEnabled: true
