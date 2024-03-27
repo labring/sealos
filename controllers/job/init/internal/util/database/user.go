@@ -67,7 +67,14 @@ func PresetAdminUser() error {
 		Domain:      domain,
 		DisplayName: domain,
 		Location:    domain,
-		Description: domain,
+		Description: types.RegionDescriptionJSON(types.RegionDescription{
+			Provider: domain + "-local",
+			Serial:   "A",
+			Description: map[string]string{
+				"zh": domain + "-本地",
+				"en": domain + "-local",
+			},
+		}),
 	}); err != nil {
 		return fmt.Errorf("failed to create region: %v", err)
 	}
@@ -92,8 +99,8 @@ func PresetAdminUser() error {
 	}, &types.User{
 		UID:       common.AdminUID(),
 		ID:        userNanoID,
-		Name:      adminUserName,
-		Nickname:  userNanoID,
+		Name:      userNanoID,
+		Nickname:  adminUserName,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}, &types.Workspace{
