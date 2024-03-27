@@ -73,12 +73,14 @@ func (g *Cockroach) CreateUser(oAuth *types.OauthProvider, regionUserCr *types.R
 		}
 	}
 	if g.Localdb.Where(types.UserWorkspace{UserCrUID: findRegionUserCr.UID}).First(findUserWorkspace).Error == gorm.ErrRecordNotFound {
-		workspace.UID = findUserWorkspace.WorkspaceUID
+		userWorkspace.UserCrUID = findRegionUserCr.UID
+		findUserWorkspace = userWorkspace
 		if err := g.Localdb.Save(userWorkspace).Error; err != nil {
 			return fmt.Errorf("failed to create user workspace: %w", err)
 		}
 	}
-	if g.Localdb.Where(types.Workspace{UID: workspace.UID}).First(&types.Workspace{}).Error == gorm.ErrRecordNotFound {
+	if g.Localdb.Where(types.Workspace{UID: findUserWorkspace.WorkspaceUID}).First(&types.Workspace{}).Error == gorm.ErrRecordNotFound {
+		workspace.UID = findUserWorkspace.WorkspaceUID
 		if err := g.Localdb.Save(workspace).Error; err != nil {
 			return fmt.Errorf("failed to create workspace: %w", err)
 		}
