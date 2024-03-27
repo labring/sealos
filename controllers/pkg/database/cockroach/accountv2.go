@@ -53,7 +53,7 @@ const (
 
 func (g *Cockroach) CreateUser(oAuth *types.OauthProvider, regionUserCr *types.RegionUserCr, user *types.User, workspace *types.Workspace, userWorkspace *types.UserWorkspace) error {
 	findUser, findRegionUserCr, findUserWorkspace := &types.User{}, &types.RegionUserCr{}, &types.UserWorkspace{}
-	if g.DB.Where(&types.User{Name: user.Name}).First(findUser).Error == gorm.ErrRecordNotFound {
+	if g.DB.Where(&types.User{Nickname: user.Nickname}).First(findUser).Error == gorm.ErrRecordNotFound {
 		findUser = user
 		if err := g.DB.Save(user).Error; err != nil {
 			return fmt.Errorf("failed to create user: %w", err)

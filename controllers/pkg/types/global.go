@@ -43,6 +43,30 @@ type Region struct {
 	Description string    `gorm:"column:description;type:text"`
 }
 
+type RegionDescription struct {
+	Provider    string            `json:"provider"`
+	Serial      string            `json:"serial"`
+	Description map[string]string `json:"description"`
+}
+
+func RegionDescriptionJSON(data RegionDescription) string {
+	jsonString := `{
+		"provider": "` + data.Provider + `",
+		"serial": "` + data.Serial + `",
+		"description": {`
+
+	for key, value := range data.Description {
+		jsonString += `"` + key + `": "` + value + `",`
+	}
+
+	jsonString = jsonString[:len(jsonString)-1]
+
+	jsonString += `}
+	}`
+
+	return jsonString
+}
+
 // RegionUserCr is located in the region
 type RegionUserCr struct {
 	UID       uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
