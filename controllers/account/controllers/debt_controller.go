@@ -124,7 +124,7 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			}
 		}
 		r.Logger.Error(fmt.Errorf("account %s not exist", owner), "account not exist")
-		return ctrl.Result{RequeueAfter: 60 * time.Minute}, nil
+		return ctrl.Result{RequeueAfter: 10 * time.Minute}, nil
 	}
 	// In a multi-region scenario, select the region where the account is created for SMS notification
 	smsEnable := account.CreateRegionID == r.LocalRegionID

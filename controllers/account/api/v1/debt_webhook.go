@@ -148,15 +148,10 @@ func (d *DebtValidate) checkOption(ctx context.Context, logger logr.Logger, c cl
 		return admission.ValidationResponse(false, fmt.Sprintf("this namespace is not user namespace %s,or have not create", ns.Name))
 	}
 	logger.V(1).Info("check user namespace", "ns", ns.Name, "user", user)
-	accountList := AccountList{}
-	if err := c.List(ctx, &accountList, client.MatchingFields{Name: user}); err != nil {
-		logger.Error(err, "get account error", "user", user)
-		return admission.ValidationResponse(true, err.Error())
-	}
 	account, err := d.AccountV2.GetAccount(&pkgtype.UserQueryOpts{Owner: user})
 	if err != nil {
 		logger.Error(err, "get account error", "user", user)
-		return admission.ValidationResponse(false, err.Error())
+		return admission.ValidationResponse(true, err.Error())
 	}
 	if account.Balance < account.DeductionBalance {
 		return admission.ValidationResponse(false, fmt.Sprintf(code.MessageFormat, code.InsufficientBalance, fmt.Sprintf("account balance less than 0,now account is %.2f¥. Please recharge the user %s.", GetAccountDebtBalance(*account), user)))

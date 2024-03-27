@@ -51,16 +51,38 @@ const (
 	EnvBaseBalance = "BASE_BALANCE"
 )
 
-func (g *Cockroach) CreateUser(oAuth *types.OauthProvider, regionUserCr *types.RegionUserCr, user *types.User) error {
-	if g.Localdb.Where(&types.RegionUserCr{CrName: regionUserCr.CrName}).First(&types.RegionUserCr{}).Error == gorm.ErrRecordNotFound {
-		if err := g.DB.Where(&types.User{Name: user.Name}).FirstOrCreate(user).Error; err != nil {
+func (g *Cockroach) CreateUser(oAuth *types.OauthProvider, regionUserCr *types.RegionUserCr, user *types.User, workspace *types.Workspace, userWorkspace *types.UserWorkspace) error {
+	findUser, findRegionUserCr, findUserWorkspace := &types.User{}, &types.RegionUserCr{}, &types.UserWorkspace{}
+	if g.DB.Where(&types.User{Name: user.Name}).First(findUser).Error == gorm.ErrRecordNotFound {
+		findUser = user
+		if err := g.DB.Save(user).Error; err != nil {
 			return fmt.Errorf("failed to create user: %w", err)
 		}
-		if err := g.DB.Where(types.OauthProvider{ProviderID: oAuth.ProviderID}).FirstOrCreate(oAuth).Error; err != nil {
+	}
+	if g.DB.Where(types.OauthProvider{UserUID: findUser.UID}).First(&types.OauthProvider{}).Error == gorm.ErrRecordNotFound {
+		oAuth.UserUID = findUser.UID
+		if err := g.DB.Save(oAuth).Error; err != nil {
 			return fmt.Errorf("failed to create user oauth provider: %w", err)
 		}
-		if err := g.Localdb.Where(types.RegionUserCr{CrName: regionUserCr.CrName}).FirstOrCreate(&regionUserCr).Error; err != nil {
+	}
+	if g.Localdb.Where(&types.RegionUserCr{CrName: regionUserCr.CrName}).First(findRegionUserCr).Error == gorm.ErrRecordNotFound {
+		regionUserCr.UserUID = findUser.UID
+		findRegionUserCr = regionUserCr
+		if err := g.Localdb.Save(regionUserCr).Error; err != nil {
 			return fmt.Errorf("failed to create user region cr: %w", err)
+		}
+	}
+	if g.Localdb.Where(types.UserWorkspace{UserCrUID: findRegionUserCr.UID}).First(findUserWorkspace).Error == gorm.ErrRecordNotFound {
+		userWorkspace.UserCrUID = findRegionUserCr.UID
+		findUserWorkspace = userWorkspace
+		if err := g.Localdb.Save(userWorkspace).Error; err != nil {
+			return fmt.Errorf("failed to create user workspace: %w", err)
+		}
+	}
+	if g.Localdb.Where(types.Workspace{UID: findUserWorkspace.WorkspaceUID}).First(&types.Workspace{}).Error == gorm.ErrRecordNotFound {
+		workspace.UID = findUserWorkspace.WorkspaceUID
+		if err := g.Localdb.Save(workspace).Error; err != nil {
+			return fmt.Errorf("failed to create workspace: %w", err)
 		}
 	}
 	return nil

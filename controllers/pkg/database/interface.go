@@ -81,7 +81,7 @@ type Traffic interface {
 type AccountV2 interface {
 	Close() error
 	GetUserCr(user *types.UserQueryOpts) (*types.RegionUserCr, error)
-	CreateUser(oAuth *types.OauthProvider, regionUserCr *types.RegionUserCr, user *types.User) error
+	CreateUser(oAuth *types.OauthProvider, regionUserCr *types.RegionUserCr, user *types.User, workspace *types.Workspace, userWorkspace *types.UserWorkspace) error
 	GetAccount(user *types.UserQueryOpts) (*types.Account, error)
 	GetUserOauthProvider(ops *types.UserQueryOpts) (*types.OauthProvider, error)
 	AddBalance(user *types.UserQueryOpts, balance int64) error
