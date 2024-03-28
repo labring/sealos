@@ -169,7 +169,19 @@ File uploaded successfully
 
 Detailed documentation reference: https://min.io/docs/minio/linux/developers/minio-drivers.html
 
+### Static host
 
+Create a permission for publicRead/publicReadwrite bucket, click Enable Hosting.
+![](./images/14.png)
+
+Click on the address to jump to access.
+![](./images/15.png)
+
+Click Custom Domain.
+![](./images/16.png)
+
+In the Update area of App Launchpad, you can customize the domain.
+![](./images/17.png)
 
 
 
