@@ -664,7 +664,7 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
   return map[data.dbType].map((item) => yaml.dump(item)).join('\n---\n');
 };
 
-export const json2Account = (data: DBEditType) => {
+export const json2Account = (data: DBEditType, ownerId?: string) => {
   const commonLabels = {
     [crLabelKey]: data.dbName,
     'app.kubernetes.io/instance': data.dbName,
@@ -678,15 +678,18 @@ export const json2Account = (data: DBEditType) => {
       labels: {
         ...commonLabels
       },
-      ownerReferences: [
-        {
-          apiVersion: 'apps.kubeblocks.io/v1alpha1',
-          blockOwnerDeletion: true,
-          controller: true,
-          kind: 'Component',
-          name: data.dbName
-        }
-      ],
+      ...(ownerId && {
+        ownerReferences: [
+          {
+            apiVersion: 'apps.kubeblocks.io/v1alpha1',
+            blockOwnerDeletion: true,
+            controller: true,
+            kind: 'Cluster',
+            uid: ownerId,
+            name: data.dbName
+          }
+        ]
+      }),
       name: data.dbName
     }
   };
@@ -698,15 +701,18 @@ export const json2Account = (data: DBEditType) => {
       labels: {
         ...commonLabels
       },
-      ownerReferences: [
-        {
-          apiVersion: 'apps.kubeblocks.io/v1alpha1',
-          blockOwnerDeletion: true,
-          controller: true,
-          kind: 'Component',
-          name: data.dbName
-        }
-      ],
+      ...(ownerId && {
+        ownerReferences: [
+          {
+            apiVersion: 'apps.kubeblocks.io/v1alpha1',
+            blockOwnerDeletion: true,
+            controller: true,
+            kind: 'Cluster',
+            uid: ownerId,
+            name: data.dbName
+          }
+        ]
+      }),
       name: data.dbName
     }
   };
@@ -718,15 +724,18 @@ export const json2Account = (data: DBEditType) => {
       labels: {
         ...commonLabels
       },
-      ownerReferences: [
-        {
-          apiVersion: 'apps.kubeblocks.io/v1alpha1',
-          blockOwnerDeletion: true,
-          controller: true,
-          kind: 'Component',
-          name: data.dbName
-        }
-      ],
+      ...(ownerId && {
+        ownerReferences: [
+          {
+            apiVersion: 'apps.kubeblocks.io/v1alpha1',
+            blockOwnerDeletion: true,
+            controller: true,
+            kind: 'Cluster',
+            uid: ownerId,
+            name: data.dbName
+          }
+        ]
+      }),
       name: data.dbName
     },
     roleRef: {
@@ -745,12 +754,8 @@ export const json2Account = (data: DBEditType) => {
 
   const baseRoleRules = [
     {
-      apiGroups: ['*']
-    },
-    {
-      resources: ['*']
-    },
-    {
+      apiGroups: ['*'],
+      resources: ['*'],
       verbs: ['*']
     }
   ];

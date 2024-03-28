@@ -1,29 +1,29 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { useRouter } from 'next/router';
-import { Flex, Box } from '@chakra-ui/react';
-import type { YamlItemType } from '@/types';
-import { json2CreateCluster, json2Account, limitRangeYaml } from '@/utils/json2Yaml';
-import { useForm } from 'react-hook-form';
-import { editModeMap } from '@/constants/editApp';
+import { adapterMongoHaConfig, applyYamlList, createDB } from '@/api/db';
 import { defaultDBEditValue } from '@/constants/db';
-import debounce from 'lodash/debounce';
-import { adapterMongoHaConfig, applyYamlList, getPodsByDBName } from '@/api/db';
+import { editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
-import type { DBEditType } from '@/types/db';
-import { useToast } from '@/hooks/useToast';
-import { useQuery } from '@tanstack/react-query';
-import { useDBStore } from '@/store/db';
 import { useLoading } from '@/hooks/useLoading';
-import dynamic from 'next/dynamic';
+import { useToast } from '@/hooks/useToast';
+import { useDBStore } from '@/store/db';
 import { useGlobalStore } from '@/store/global';
-import { serviceSideProps } from '@/utils/i18n';
-import { useTranslation } from 'next-i18next';
-import { adaptDBForm } from '@/utils/adapt';
 import { DBVersionMap } from '@/store/static';
-import Header from './components/Header';
-import Form from './components/Form';
-import Yaml from './components/Yaml';
 import { useUserStore } from '@/store/user';
+import type { YamlItemType } from '@/types';
+import type { DBEditType } from '@/types/db';
+import { adaptDBForm } from '@/utils/adapt';
+import { serviceSideProps } from '@/utils/i18n';
+import { json2Account, json2CreateCluster, limitRangeYaml } from '@/utils/json2Yaml';
+import { Box, Flex } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
+import debounce from 'lodash/debounce';
+import { useTranslation } from 'next-i18next';
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/router';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import Form from './components/Form';
+import Header from './components/Header';
+import Yaml from './components/Yaml';
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
 const defaultEdit = {
@@ -107,7 +107,6 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       needMongoAdapter && (await adapterMongoHaConfig({ name: formData.dbName }));
     } catch (err) {}
     try {
-      const yamlList = generateYamlList(formData).map((item) => item.value);
       // quote check
       const quoteCheckRes = checkQuotaAllow(formData, oldDBEditData.current);
       if (quoteCheckRes) {
@@ -119,7 +118,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
           isClosable: true
         });
       }
-      await applyYamlList(yamlList, isEdit ? 'replace' : 'create');
+      await createDB({ payload: formData, isEdit });
 
       toast({
         title: t(applySuccess),

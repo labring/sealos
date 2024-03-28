@@ -16,7 +16,7 @@ export const handleAxiosStream = async (props: AxiosRequestConfig, kubeconfig: s
     );
     return response;
   } catch (error) {
-    console.log(error, '===monitor===');
+    console.log('===monitor===\n', error);
     throw error;
   }
 };

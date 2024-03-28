@@ -1,6 +1,6 @@
 import { GET, POST, DELETE } from '@/services/request';
 import { adaptDBListItem, adaptDBDetail, adaptPod, adaptEvents } from '@/utils/adapt';
-import type { DBType, PodDetailType } from '@/types/db';
+import type { DBEditType, DBType, PodDetailType } from '@/types/db';
 import { json2Restart } from '@/utils/json2Yaml';
 import { json2StartOrStop } from '../utils/json2Yaml';
 import type { SecretResponse } from '@/pages/api/getSecretByName';
@@ -13,6 +13,9 @@ export const getMyDBList = () =>
 
 export const getDBByName = (name: string) =>
   GET(`/api/getDBByName?name=${name}`).then(adaptDBDetail);
+
+export const createDB = (payload: { payload: DBEditType; isEdit: boolean }) =>
+  POST(`/api/createDB`, payload);
 
 export const getDBEvents = (name: string) => GET(`/api/getDBEvents?name=${name}`);
 

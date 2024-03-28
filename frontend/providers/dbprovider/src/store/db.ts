@@ -22,7 +22,7 @@ const getDiskOverflowStatus = async (dbName: string, dbType: string): Promise<bo
     start: Date.now() / 1000,
     end: Date.now() / 1000
   });
-  const isDiskOverflow = temp?.result?.yData.some((item) => item.data.some((value) => value >= 98));
+  const isDiskOverflow = temp?.result?.yData.some((item) => item.data.some((value) => value >= 10));
   return isDiskOverflow;
 };
 

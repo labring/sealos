@@ -265,7 +265,7 @@ const DBList = ({
           bg={'#FFF'}
           color={'#24282C'}
           leftIcon={<MyIcon name={'docs'} w={'16px'} />}
-          onClick={() => window.open('https://sealos.run/docs/guides/dbprovider/config-docs/')}
+          onClick={() => window.open('https://sealos.run/docs/guides/dbprovider/')}
           _hover={{
             bg: '#FFF'
           }}
