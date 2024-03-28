@@ -14,6 +14,7 @@ Currently, **Object Storage** has the following features:
 - Expose the access permission of the bucket
 - Use SDK to access bucket
 - Monitors bucket resource metrics
+- Static host
 
 ## Quick start
 
