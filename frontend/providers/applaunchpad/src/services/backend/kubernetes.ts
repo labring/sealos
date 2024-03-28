@@ -33,7 +33,7 @@ export function K8sApi(config: string): k8s.KubeConfig {
       name: cluster.name,
       caData: cluster.caData,
       caFile: cluster.caFile,
-      server: inCluster && hosts ? hosts : 'https://apiserver.cluster.local:6443',
+      server: inCluster && hosts ? hosts : cluster.server,
       skipTLSVerify: cluster.skipTLSVerify
     };
 

@@ -212,7 +212,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
-      if (!obj) return t('Submit Error');
+      if (!obj || typeof obj !== 'object') return t('Submit Error');
       if (!!obj.message) {
         return obj.message;
       }

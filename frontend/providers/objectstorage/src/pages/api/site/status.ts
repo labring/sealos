@@ -14,7 +14,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const headers = {
       Authorization: req.headers.authorization
     };
-    console.log(headers);
     const result = await appLanuchPadClient.get('/getAppByAppName', {
       headers,
       params: {

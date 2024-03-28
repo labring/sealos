@@ -393,7 +393,7 @@ const Form = ({
                     disabled={isEdit}
                     title={isEdit ? t('Not allowed to change app name') || '' : ''}
                     autoFocus={true}
-                    maxLength={30}
+                    maxLength={60}
                     placeholder={
                       t(
                         'Starts with a letter and can contain only lowercase letters, digits, and hyphens (-)'
@@ -401,7 +401,7 @@ const Form = ({
                     }
                     {...register('appName', {
                       required: t('Not allowed to change app name') || '',
-                      maxLength: 30,
+                      maxLength: 60,
                       pattern: {
                         value: /^[a-z][a-z0-9]+([-.][a-z0-9]+)*$/g,
                         message: t(

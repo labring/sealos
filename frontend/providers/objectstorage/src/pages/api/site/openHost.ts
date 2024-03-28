@@ -19,8 +19,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           runCMD: '',
           cmdParam: '',
           replicas: 1,
-          cpu: 1000,
-          memory: 512,
+          cpu: 200,
+          memory: 128,
           networks: [
             {
               networkName: `network-${appName}`,
