@@ -36,6 +36,7 @@ export default function RegionToggle() {
     target.searchParams.append('token', token);
     await router.replace(target);
   };
+
   return (
     <>
       <HStack h="36px" borderRadius={'12px'} position={'relative'}>
@@ -127,7 +128,7 @@ export default function RegionToggle() {
                             <Text>{t('Description')}</Text>
                           </HStack>
                           <Text color={'#111824'} lineHeight={'20px'}>
-                            {t(region?.description?.description?.zh)}
+                            {region?.description?.description?.[i18n.language as 'zh' | 'en']}
                           </Text>
                         </Box>
                       </Box>

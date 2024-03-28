@@ -6,6 +6,7 @@ import {
   Circle,
   HStack,
   IconButton,
+  Link,
   Menu,
   MenuButton,
   MenuItem,
@@ -97,9 +98,12 @@ export function HostStatus() {
         </HStack>
       ) : (
         <HStack>
-          <Text>
-            {t('Current Domain')}: {domain}
-          </Text>
+          <Box>
+            {t('Current Domain')}:
+            <Link href={`https://${domain}`} isExternal style={{ textDecoration: 'none' }}>
+              {domain}
+            </Link>
+          </Box>
           <StatusTag hostStatus={hostStatus} />
           <Menu>
             <MenuButton
@@ -120,7 +124,7 @@ export function HostStatus() {
                   const name = `static-host-${currentBucket?.name}`;
                   sealosApp.runEvents('openDesktopApp', {
                     appKey: 'system-applaunchpad',
-                    pathname: '/app/detail',
+                    pathname: '/app/edit',
                     query: { name },
                     messageData: { type: 'InternalAppCall', name }
                   });
