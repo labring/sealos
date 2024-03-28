@@ -65,9 +65,9 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
         spec: {
           affinity: {
             nodeLabels: {},
-            podAntiAffinity: 'Preferred',
+            podAntiAffinity: 'Required',
             tenancy: 'SharedNode',
-            topologyKeys: []
+            topologyKeys: ['kubernetes.io/hostname']
           },
           clusterDefinitionRef: 'postgresql',
           clusterVersionRef: data.dbVersion,
@@ -111,9 +111,9 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
         spec: {
           affinity: {
             nodeLabels: {},
-            podAntiAffinity: 'Preferred',
+            podAntiAffinity: 'Required',
             tenancy: 'SharedNode',
-            topologyKeys: []
+            topologyKeys: ['kubernetes.io/hostname']
           },
           clusterDefinitionRef: 'apecloud-mysql',
           clusterVersionRef: data.dbVersion,
@@ -157,9 +157,9 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
         spec: {
           affinity: {
             nodeLabels: {},
-            podAntiAffinity: 'Preferred',
+            podAntiAffinity: 'Required',
             tenancy: 'SharedNode',
-            topologyKeys: []
+            topologyKeys: ['kubernetes.io/hostname']
           },
           clusterDefinitionRef: 'mongodb',
           clusterVersionRef: data.dbVersion,
@@ -200,9 +200,9 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
         spec: {
           affinity: {
             nodeLabels: {},
-            podAntiAffinity: 'Preferred',
+            podAntiAffinity: 'Required',
             tenancy: 'SharedNode',
-            topologyKeys: []
+            topologyKeys: ['kubernetes.io/hostname']
           },
           clusterDefinitionRef: 'redis',
           clusterVersionRef: data.dbVersion,
@@ -746,8 +746,7 @@ export const json2Account = (data: DBEditType, ownerId?: string) => {
     subjects: [
       {
         kind: 'ServiceAccount',
-        name: data.dbName,
-        namespace: getUserNamespace()
+        name: data.dbName
       }
     ]
   };
