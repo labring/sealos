@@ -2,49 +2,122 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    app.kubernetes.io/instance: mongo-name
+    sealos-db-provider-cr: sealos-mongodb
+    app.kubernetes.io/instance: sealos-mongodb
     app.kubernetes.io/managed-by: kbcli
-  name: sealos-mongodb-sa
+  name: sealos-mongodb
   namespace: sealos
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   labels:
-    app.kubernetes.io/instance: mongo-name
+    sealos-db-provider-cr: sealos-mongodb
+    app.kubernetes.io/instance: sealos-mongodb
     app.kubernetes.io/managed-by: kbcli
-  name: sealos-mongodb-role
+  name: sealos-mongodb
   namespace: sealos
 rules:
   - apiGroups:
-      - ""
+      - apps.kubeblocks.io
+    resources:
+      - clusters
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - apps.kubeblocks.io
+    resources:
+      - clusters/status
+    verbs:
+      - get
+  - apiGroups:
+      - ''
     resources:
       - events
     verbs:
       - create
+  - apiGroups:
+      - ''
+    resources:
+      - configmaps
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+      - delete
+  - apiGroups:
+      - ''
+    resources:
+      - endpoints
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+      - delete
+  - apiGroups:
+      - ''
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - dataprotection.kubeblocks.io
+    resources:
+      - backups
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+      - delete
+  - apiGroups:
+      - dataprotection.kubeblocks.io
+    resources:
+      - backups/status
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+      - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
-    app.kubernetes.io/instance: mongo-name
+    sealos-db-provider-cr: sealos-mongodb
+    app.kubernetes.io/instance: sealos-mongodb
     app.kubernetes.io/managed-by: kbcli
-  name: sealos-mongodb-rolebinding
+  name: sealos-mongodb
   namespace: sealos
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: sealos-mongodb-role
+  name: sealos-mongodb
 subjects:
   - kind: ServiceAccount
-    name: sealos-mongodb-sa
+    name: sealos-mongodb
 ---
 apiVersion: apps.kubeblocks.io/v1alpha1
 kind: Cluster
 metadata:
   finalizers:
     - cluster.kubeblocks.io/finalizer
-  generation: 1
   labels:
     clusterdefinition.kubeblocks.io/name: mongodb
     clusterversion.kubeblocks.io/name: {{ .mongodbVersion }}
@@ -63,9 +136,9 @@ spec:
           cpu: "1"
           memory: 2Gi
         requests:
-          cpu: "0.5"
-          memory: 1Gi
-      serviceAccountName: sealos-mongodb-sa
+          cpu: 100m
+          memory: 102Mi
+      serviceAccountName: sealos-mongodb
       volumeClaimTemplates:
         - name: data
           spec:

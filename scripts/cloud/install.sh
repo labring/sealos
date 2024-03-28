@@ -251,6 +251,10 @@ init() {
     pull_image "openebs" "v${openebs_version#v:-3.10.0}"
     pull_image "ingress-nginx" "v${ingress_nginx_version#v:-1.9.4}"
     pull_image "kubeblocks" "v${kubeblocks_version#v:-0.8.2}"
+    pull_image "kubeblocks-redis" "v${kubeblocks_version#v:-0.8.2}"
+    pull_image "kubeblocks-apecloud-mysql" "v${kubeblocks_version#v:-0.8.2}"
+    pull_image "kubeblocks-postgresql" "v${kubeblocks_version#v:-0.8.2}"
+    pull_image "kubeblocks-mongodb" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "metrics-server" "v${metrics_server_version#v:-0.6.4}"
     pull_image "kube-prometheus-stack" "v${kube_prometheus_stack_version#v:-0.63.0}"
     pull_image "sealos-cloud" "${cloud_version}"
@@ -629,19 +633,22 @@ reclaimPolicy: Delete
 volumeBindingMode: WaitForFirstConsumer
 EOF
 
+    # TODO use sealos run to install cockroachdb-operator
+    sealos run "${image_registry}/${image_repository}/cockroach:latest"
+
     get_prompt "ingress_installation"
-    sealos run ${image_registry}/${image_repository}/ingress-nginx:v${ingress_nginx_version#v:-1.9.4}\
-        ${image_registry}/${image_repository}/kubeblocks:v${kubeblocks_version#v:-0.8.2}\
-        --config-file $CLOUD_DIR/ingress-nginx-config.yaml
+    sealos run ${image_registry}/${image_repository}/ingress-nginx:v${ingress_nginx_version#v:-1.9.4} --config-file $CLOUD_DIR/ingress-nginx-config.yaml
+
+    sealos run ${image_registry}/${image_repository}/kubeblocks:v${kubeblocks_version#v:-0.8.2} \
+      ${image_registry}/${image_repository}/kubeblocks-apecloud-mysql:v${kubeblocks_version#v:-0.8.2} \
+      ${image_registry}/${image_repository}/kubeblocks-postgresql:v${kubeblocks_version#v:-0.8.2} \
+      ${image_registry}/${image_repository}/kubeblocks-mongodb:v${kubeblocks_version#v:-0.8.2} \
+      ${image_registry}/${image_repository}/kubeblocks-redis:v${kubeblocks_version#v:-0.8.2}
 
     kbcli addon enable prometheus
 
     get_prompt "installing_monitoring"
     sealos run "${image_registry}/${image_repository}/kube-prometheus-stack:v${kube_prometheus_stack_version#v:-0.63.0}"
-
-    # TODO use sealos run to install cockroachdb-operator
-    sealos run "${image_registry}/${image_repository}/cockroach:latest"
-
     kubectl patch cm kb-addon-prometheus-server -n kb-system --patch-file $CLOUD_DIR/kb-addon-prometheus-server-patch.yaml
 
     get_prompt "patching_ingress"
