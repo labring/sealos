@@ -253,7 +253,7 @@ init() {
     pull_image "kubeblocks" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "kubeblocks-redis" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "kubeblocks-apecloud-mysql" "v${kubeblocks_version#v:-0.8.2}"
-    pull_image "kubeblocks-postgres" "v${kubeblocks_version#v:-0.8.2}"
+    pull_image "kubeblocks-postgresql" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "kubeblocks-mongodb" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "metrics-server" "v${metrics_server_version#v:-0.6.4}"
     pull_image "kube-prometheus-stack" "v${kube_prometheus_stack_version#v:-0.63.0}"
