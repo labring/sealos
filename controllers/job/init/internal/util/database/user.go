@@ -134,6 +134,9 @@ func PresetAdminUser() error {
 	if err = v2Account.InitTables(); err != nil {
 		return fmt.Errorf("failed to init tables: %v", err)
 	}
+	if _, err = v2Account.NewAccount(&types.UserQueryOpts{Owner: adminUserName}); err != nil {
+		return fmt.Errorf("failed to create account: %v", err)
+	}
 	return nil
 }
 
