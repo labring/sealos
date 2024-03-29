@@ -3,14 +3,13 @@ package request
 import (
 	"bytes"
 	"fmt"
+	"github.com/labring/sealos/service/pkg/api"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
-
-	"github.com/labring/sealos/service/pay/api"
 )
 
 func Request(addr string, params *bytes.Buffer) ([]byte, error) {

@@ -10,8 +10,8 @@ import (
 
 	"github.com/labring/sealos/service/pkg/auth"
 
-	"github.com/labring/sealos/service/database/api"
-	"github.com/labring/sealos/service/database/request"
+	"github.com/labring/sealos/service/launchpad/request"
+	"github.com/labring/sealos/service/pkg/api"
 )
 
 type VMServer struct {
@@ -29,12 +29,12 @@ func (vs *VMServer) Authenticate(vr *api.VMRequest) error {
 	return auth.Authenticate(vr.NS, vr.Pwd)
 }
 
-func (vs *VMServer) DBReq(vr *api.VMRequest) (*api.QueryResult, error) {
+func (vs *VMServer) DBReq(vr *api.VMRequest) (*api.LaunchpadQueryResult, error) {
 	body, err := request.VMNew(vr)
 	if err != nil {
 		return nil, err
 	}
-	var result *api.QueryResult
+	var result *api.LaunchpadQueryResult
 	if err := json.Unmarshal(body, &result); err != nil {
 		return nil, err
 	}
