@@ -1,6 +1,7 @@
 import { restartPodByName } from '@/api/app';
 import MyIcon from '@/components/Icon';
-import MyTooltip from '@/components/MyTooltip';
+import { MyTooltip } from '@sealos/ui';
+
 import PodLineChart from '@/components/PodLineChart';
 import { PodStatusEnum } from '@/constants/app';
 import { useConfirm } from '@/hooks/useConfirm';

@@ -1,9 +1,9 @@
 import { obj2Query } from '@/api/tools';
 import MyIcon from '@/components/Icon';
-import MyTooltip from '@/components/MyTooltip';
-import RangeInput from '@/components/RangeInput';
+import { MyTooltip } from '@sealos/ui';
+import { RangeInput } from '@sealos/ui';
 import { MySelect } from '@sealos/ui';
-import MySlider from '@/components/Slider';
+import { MySlider } from '@sealos/ui';
 import { ProtocolList, noGpuSliderKey } from '@/constants/app';
 import { GpuAmountMarkList } from '@/constants/editApp';
 import { useToast } from '@/hooks/useToast';
@@ -1043,7 +1043,7 @@ const Form = ({
                             border={theme.borders.base}
                             flex={'0 0 320px'}
                             w={0}
-                            borderRadius={'xl'}
+                            borderRadius={'md'}
                             cursor={'pointer'}
                             onClick={() => setConfigEdit(item)}
                             bg={'grayModern.25'}
@@ -1108,7 +1108,7 @@ const Form = ({
                             border={theme.borders.base}
                             flex={'0 0 320px'}
                             w={0}
-                            borderRadius={'xl'}
+                            borderRadius={'md'}
                             cursor={'pointer'}
                             bg={'grayModern.25'}
                             onClick={() => setStoreEdit(item)}

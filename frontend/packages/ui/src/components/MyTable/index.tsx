@@ -1,6 +1,5 @@
 import React from 'react';
 import { Box, BoxProps, Grid, Flex } from '@chakra-ui/react';
-import { useTranslation } from 'next-i18next';
 
 interface Props extends BoxProps {
   columns: {
@@ -13,8 +12,7 @@ interface Props extends BoxProps {
   itemClass?: string;
 }
 
-const Table = ({ columns, data, itemClass = '' }: Props) => {
-  const { t } = useTranslation();
+export const MyTable = ({ columns, data, itemClass = '' }: Props) => {
   return (
     <>
       <Grid
@@ -36,7 +34,7 @@ const Table = ({ columns, data, itemClass = '' }: Props) => {
               pl: 7
             }}
           >
-            {t(item.title)}
+            {item.title}
           </Box>
         ))}
       </Grid>
@@ -74,5 +72,3 @@ const Table = ({ columns, data, itemClass = '' }: Props) => {
     </>
   );
 };
-
-export default React.memo(Table);

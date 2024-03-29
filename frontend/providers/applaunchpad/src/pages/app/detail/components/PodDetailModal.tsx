@@ -26,7 +26,7 @@ import { streamFetch } from '@/services/streamFetch';
 import { useToast } from '@/hooks/useToast';
 import { SealosMenu } from '@sealos/ui';
 
-import MyTooltip from '@/components/MyTooltip';
+import { MyTooltip } from '@sealos/ui';
 
 import styles from '../index.module.scss';
 import { useTranslation } from 'next-i18next';
@@ -63,13 +63,13 @@ const Logs = ({
     ({ label, children }: { label: string; children: React.ReactNode }) => {
       return (
         <Flex w={'100%'} my={5} alignItems="center">
-          <Box flex={'0 0 100px'} w={0}>
+          <Box flex={'0 0 100px'} w={0} color={'grayModern.900'}>
             {label}
           </Box>
           <Box
             flex={'1 0 0'}
             w={0}
-            color={'myGray.600'}
+            color={'grayModern.600'}
             userSelect={typeof children === 'string' ? 'all' : 'auto'}
           >
             {children}
@@ -85,14 +85,14 @@ const Logs = ({
         <Box
           py={1}
           px={4}
-          backgroundColor={'myWhite.600'}
+          backgroundColor={'grayModern.100'}
           whiteSpace={'nowrap'}
           overflow={'hidden'}
           textOverflow={'ellipsis'}
-          color={'myGray.600'}
+          color={'grayModern.700'}
           cursor={'default'}
-          border={'1px solid'}
-          borderColor={'myGray.100'}
+          border={theme.borders.base}
+          borderRadius={'md'}
         >
           {children}
         </Box>
@@ -278,7 +278,7 @@ const Logs = ({
                     borderRadius: '8px',
                     backgroundColor: '#fff',
                     border: '2px solid',
-                    borderColor: event.type === 'Warning' ? '#FF8492' : '#33BABB'
+                    borderColor: event.type === 'Warning' ? '#D92D20' : '#039855'
                   }}
                 >
                   <Flex lineHeight={1} mb={2} alignItems={'center'}>

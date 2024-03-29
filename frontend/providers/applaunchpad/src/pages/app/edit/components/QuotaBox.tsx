@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import { Box, Flex, useTheme, Progress, css, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import MyTooltip from '@/components/MyTooltip';
+import { MyTooltip } from '@sealos/ui';
+
 import { useUserStore } from '@/store/user';
 
 const sourceMap = {

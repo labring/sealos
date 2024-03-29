@@ -14,21 +14,6 @@ import {
 import { useTranslation } from 'next-i18next';
 import { AppEditType } from '@/types/app';
 
-const CustomCloseButton = () => {
-  return (
-    <Button
-      position="absolute"
-      top="8px"
-      right="8px"
-      bg="transparent"
-      _hover={{ bg: 'transparent' }}
-      _active={{ bg: 'transparent' }}
-    >
-      test
-    </Button>
-  );
-};
-
 const EditEnvs = ({
   defaultEnv = [],
   successCb,

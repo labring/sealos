@@ -52,6 +52,11 @@ export { SealosMenu } from './Menu';
 export { Tabs } from './Tabs';
 export { MyRangeSlider } from './RangeSlider';
 export { Tip } from './Tip';
+export { MyTooltip } from './MyTooltip';
+export { RangeInput } from './RangeInput';
+export { MySlider } from './MySlider';
+export { MyTable } from './MyTable';
+
 import MySelect from './Select';
 
 export {

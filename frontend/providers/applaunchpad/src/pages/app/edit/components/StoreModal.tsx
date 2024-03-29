@@ -21,7 +21,7 @@ import { useForm } from 'react-hook-form';
 import MyFormControl from '@/components/FormControl';
 import { useTranslation } from 'next-i18next';
 import { pathToNameFormat } from '@/utils/tools';
-import MyTooltip from '@/components/MyTooltip';
+import { MyTooltip } from '@sealos/ui';
 
 export type StoreType = {
   id?: string;

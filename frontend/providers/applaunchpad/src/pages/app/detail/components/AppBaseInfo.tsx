@@ -18,7 +18,7 @@ import dynamic from 'next/dynamic';
 const ConfigMapDetailModal = dynamic(() => import('./ConfigMapDetailModal'));
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { useTranslation } from 'next-i18next';
-import MyTooltip from '@/components/MyTooltip';
+import { MyTooltip } from '@sealos/ui';
 import GPUItem from '@/components/GPUItem';
 import MyIcon from '@/components/Icon';
 
@@ -228,11 +228,20 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                 <AccordionIcon />
               </AccordionButton>
               <AccordionPanel pt={0} pb={app.envs.length === 0 ? 0 : 3}>
-                <Flex flexDirection={'column'} gap={'8px'}>
-                  {app.envs.map((env) => {
+                <Flex flexDirection={'column'} border={theme.borders.base}>
+                  {app.envs.map((env, index) => {
                     const valText = env.value ? env.value : env.valueFrom ? 'value from | ***' : '';
                     return (
-                      <Flex key={env.key} gap={'24px'}>
+                      <Flex
+                        key={env.key}
+                        gap={'24px'}
+                        px="10px"
+                        py="8px"
+                        borderBottom={'1px solid'}
+                        borderBottomColor={
+                          index !== app.envs.length - 1 ? 'grayModern.150' : 'transparent'
+                        }
+                      >
                         <Box flex={1} maxW={'40%'} overflowWrap={'break-word'}>
                           {env.key}
                         </Box>

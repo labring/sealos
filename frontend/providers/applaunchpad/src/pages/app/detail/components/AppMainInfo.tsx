@@ -1,5 +1,6 @@
 import MyIcon from '@/components/Icon';
-import MyTooltip from '@/components/MyTooltip';
+import { MyTooltip } from '@sealos/ui';
+
 import PodLineChart from '@/components/PodLineChart';
 import { ProtocolList } from '@/constants/app';
 import { MOCK_APP_DETAIL } from '@/mock/apps';

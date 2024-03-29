@@ -8,7 +8,7 @@ import {
   Box
 } from '@chakra-ui/react';
 
-const MySlider = ({
+export const MySlider = ({
   markList,
   setVal,
   activeVal,
@@ -57,5 +57,3 @@ const MySlider = ({
     </Slider>
   );
 };
-
-export default MySlider;

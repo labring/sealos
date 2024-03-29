@@ -4,7 +4,7 @@ import GPUItem from '@/components/GPUItem';
 import MyIcon from '@/components/Icon';
 import { SealosMenu } from '@sealos/ui';
 import PodLineChart from '@/components/PodLineChart';
-import MyTable from '@/components/Table';
+import { MyTable } from '@sealos/ui';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
@@ -114,7 +114,7 @@ const AppList = ({
   >(
     () => [
       {
-        title: 'Name',
+        title: t('Name'),
         key: 'name',
         render: (item: AppListItemType) => {
           return (
@@ -125,19 +125,19 @@ const AppList = ({
         }
       },
       {
-        title: 'Status',
+        title: t('Status'),
         key: 'status',
         render: (item: AppListItemType) => (
           <AppStatusTag status={item.status} isPause={item.isPause} showBorder={false} />
         )
       },
       {
-        title: 'Creation Time',
+        title: t('Creation Time'),
         dataIndex: 'createTime',
         key: 'createTime'
       },
       {
-        title: 'CPU',
+        title: t('CPU'),
         key: 'cpu',
         render: (item: AppListItemType) => (
           <Box h={'35px'} w={['120px', '130px', '140px']}>
@@ -148,7 +148,7 @@ const AppList = ({
         )
       },
       {
-        title: 'Memory',
+        title: t('Memory'),
         key: 'storage',
         render: (item: AppListItemType) => (
           <Box h={'35px'} w={['120px', '130px', '140px']}>
@@ -161,14 +161,14 @@ const AppList = ({
       ...(userSourcePrice?.gpu
         ? [
             {
-              title: 'GPU',
+              title: t('GPU'),
               key: 'gpu',
               render: (item: AppListItemType) => <GPUItem gpu={item.gpu} />
             }
           ]
         : []),
       {
-        title: 'Replicas',
+        title: t('Replicas'),
         key: 'activeReplicas',
         render: (item: AppListItemType) => (
           <Flex whiteSpace={'nowrap'}>
@@ -184,14 +184,14 @@ const AppList = ({
         )
       },
       {
-        title: 'Storage',
+        title: t('Storage'),
         key: 'store',
         render: (item: AppListItemType) => (
           <>{item.storeAmount > 0 ? `${item.storeAmount}Gi` : '-'}</>
         )
       },
       {
-        title: 'Operation',
+        title: t('Operation'),
         key: 'control',
         render: (item: AppListItemType) => (
           <Flex>
