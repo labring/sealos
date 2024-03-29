@@ -19,6 +19,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+	v1 "github.com/labring/sealos/controllers/account/api/v1"
+	"github.com/minio/madmin-go/v3"
 	"os"
 	"strings"
 	"time"
@@ -31,13 +33,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/watch"
 
+	kbv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
 	"github.com/go-logr/logr"
-	"github.com/minio/madmin-go/v3"
-
-	v1 "github.com/labring/sealos/controllers/account/api/v1"
-
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -130,6 +128,7 @@ func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace
 	// suspend pod: deploy pod && clone unmanaged pod
 	// delete infra cr
 	pipelines := []func(context.Context, string) error{
+		r.suspendKBCluster,
 		r.suspendOrphanPod,
 		r.limitResourceQuotaCreate,
 		r.deleteControlledPod,
@@ -185,6 +184,25 @@ func GetLimit0ResourceQuota(namespace string) *corev1.ResourceQuota {
 		corev1.ResourceRequestsStorage: resource.MustParse("0"),
 	}
 	return &quota
+}
+
+func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace string) error {
+	kbClusterList := kbv1alpha1.ClusterList{}
+	if err := r.Client.List(ctx, &kbClusterList, client.InNamespace(namespace)); err != nil {
+		return err
+	}
+	for _, kbCluster := range kbClusterList.Items {
+		ops := kbv1alpha1.OpsRequest{}
+		ops.ObjectMeta.Name = kbCluster.Name
+		ops.ObjectMeta.GenerateName = "stop-"
+		ops.Spec.ClusterRef = kbCluster.Name
+		ops.Spec.Type = "Stop"
+		err := r.Client.Create(ctx, &ops)
+		if err != nil {
+			return fmt.Errorf("crete kbcluster `%s` opsrequest failed: %w", kbCluster.Name, err)
+		}
+	}
+	return nil
 }
 
 func (r *NamespaceReconciler) suspendOrphanPod(ctx context.Context, namespace string) error {
