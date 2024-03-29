@@ -21,6 +21,8 @@ type SessionState = {
   setProvider: (provider?: OauthProvider) => void;
   setToken: (token: string) => void;
   setState: (state: string) => void;
+  lastWorkSpaceId: string;
+  setWorkSpaceId: (id: string) => void;
 };
 
 const useSessionStore = create<SessionState>()(
@@ -30,6 +32,7 @@ const useSessionStore = create<SessionState>()(
       provider: undefined,
       oauth_state: '',
       token: '',
+      lastWorkSpaceId: '',
       setSession: (ss: Session) => set({ session: ss }),
       setSessionProp: (key: keyof Session, value: any) => {
         set((state) => {
@@ -63,6 +66,9 @@ const useSessionStore = create<SessionState>()(
       },
       setToken: (token) => {
         set({ token });
+      },
+      setWorkSpaceId: (id) => {
+        set({ lastWorkSpaceId: id });
       }
     })),
     {
