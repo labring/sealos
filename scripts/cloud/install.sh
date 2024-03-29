@@ -646,6 +646,7 @@ EOF
       ${image_registry}/${image_repository}/kubeblocks-redis:v${kubeblocks_version#v:-0.8.2}
 
     kbcli addon enable prometheus
+    kbcli addon enable snapshot-controller
 
     get_prompt "installing_monitoring"
     sealos run "${image_registry}/${image_repository}/kube-prometheus-stack:v${kube_prometheus_stack_version#v:-0.63.0}"
