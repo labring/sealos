@@ -169,6 +169,16 @@ function create_tls_secret {
   fi
 }
 
+function sealos_run_desktop {
+    echo "run desktop frontend"
+    sealos run tars/frontend-desktop.tar \
+      --env cloudDomain=$cloudDomain \
+      --env cloudPort="$cloudPort" \
+      --env certSecretName="wildcard-cert" \
+      --env passwordEnabled="true" \
+      --config-file etc/sealos/desktop-config.yaml
+}
+
 function sealos_run_controller {
   # run user controller
   sealos run tars/user.tar \
@@ -220,18 +230,6 @@ function sealos_authorize {
 }
 
 function sealos_run_frontend {
-  echo "run desktop frontend"
-  sealos run tars/frontend-desktop.tar \
-    --env cloudDomain=$cloudDomain \
-    --env cloudPort="$cloudPort" \
-    --env certSecretName="wildcard-cert" \
-    --env passwordEnabled="true" \
-    --config-file etc/sealos/desktop-config.yaml
-
-  # sealos authorize !!must run after sealos_run_controller frontend-desktop.tar and before sealos_run_frontend
-  # TODO fix sealos_authorize in controller/job/init
-  sealos_authorize
-
   echo "run applaunchpad frontend"
   sealos run tars/frontend-applaunchpad.tar \
   --env cloudDomain=$cloudDomain \
@@ -264,13 +262,13 @@ function sealos_run_frontend {
   --env cloudPort="$cloudPort" \
   --env certSecretName="wildcard-cert"
 
-#  echo "run license frontend"
-#  sealos run tars/frontend-license.tar \
-#  --env cloudDomain=$cloudDomain \
-#  --env cloudPort="$cloudPort" \
-#  --env certSecretName="wildcard-cert" \
-#  --env MONGODB_URI="${mongodbUri}/sealos-license?authSource=admin" \
-#  --env licensePurchaseDomain="license.sealos.io"
+  echo "run license frontend"
+  sealos run tars/frontend-license.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort="$cloudPort" \
+  --env certSecretName="wildcard-cert" \
+  --env MONGODB_URI="${mongodbUri}/sealos-license?authSource=admin" \
+  --env licensePurchaseDomain="license.sealos.io"
 
   echo "run cronjob frontend"
   sealos run tars/frontend-cronjob.tar \
@@ -292,8 +290,15 @@ function install {
   # gen mongodb uri and others
   prepare
 
+  # sealos run desktop
+  sealos_run_desktop
+
   # sealos run controllers
   sealos_run_controller
+
+  # sealos authorize !!must run after sealos_run_controller frontend-desktop.tar and before sealos_run_frontend
+  # TODO fix sealos_authorize in controller/job/init
+  sealos_authorize
 
   # sealos run frontends
   sealos_run_frontend

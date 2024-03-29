@@ -34,12 +34,33 @@ export const parseTemplateString = (
     inputs: Record<string, string>;
   }
 ) => {
+  // support function list
+  const functionHandlers = [
+    {
+      name: 'base64',
+      handler: (value: string) => {
+        const regex = /base64\((.*?)\)/;
+        const match = value.match(regex);
+        if (match) {
+          const token = match[1];
+          const value = token.split('.').reduce((obj: any, prop: string) => obj[prop], dataSource);
+          return Buffer.from(value).toString('base64');
+        }
+        return value;
+      }
+    }
+  ];
+
   try {
     const replacedString = sourceString.replace(regex, (match: string, key: string) => {
       if (dataSource[key] && key.indexOf('.') === -1) {
         return dataSource[key];
       }
       if (key.indexOf('.') !== -1) {
+        const hasMatchingFunction = functionHandlers.find(({ name }) => key.includes(`${name}(`));
+        if (hasMatchingFunction) {
+          return hasMatchingFunction.handler(key);
+        }
         const value = key.split('.').reduce((obj: any, prop: string) => obj[prop], dataSource);
         return value !== undefined ? value : match;
       }

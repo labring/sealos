@@ -3,7 +3,6 @@ import { QueryKey } from '@/consts';
 import { useOssStore } from '@/store/ossStore';
 import useSessionStore from '@/store/session';
 import { theme } from '@/styles/chakraTheme';
-// import '@/styles/globals.css';
 import { ChakraProvider } from '@chakra-ui/react';
 import { Hydrate, QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { appWithTranslation, i18n, useTranslation } from 'next-i18next';

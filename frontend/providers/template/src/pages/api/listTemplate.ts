@@ -77,6 +77,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     jsonRes(res, { data: { templates: templates, menuKeys: topKeys.join(',') }, code: 200 });
   } catch (error) {
-    jsonRes(res, { code: 500, data: 'api listTemplate error' });
+    jsonRes(res, { code: 500, data: 'api listTemplate error', error: error });
   }
 }

@@ -125,7 +125,7 @@ export default function SigninComponent() {
     >
       <Background />
       <Head>
-        <title>sealos Cloud</title>
+        <title>Sealos Cloud</title>
         <meta name="description" content="sealos cloud dashboard" />
       </Head>
       <Flex h="full" w="full" flexDir={'column'} justifyContent={'center'} alignItems={'center'}>

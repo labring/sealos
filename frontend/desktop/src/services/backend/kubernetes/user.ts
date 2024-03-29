@@ -12,35 +12,23 @@ export function K8sApi(config: string): k8s.KubeConfig {
   kc.loadFromString(config);
 
   const cluster = kc.getCurrentCluster();
-  if (cluster !== null) {
-    let server: k8s.Cluster;
 
+  if (cluster && process.env.NODE_ENV !== 'development') {
     const [inCluster, hosts] = CheckIsInCluster();
-
-    if (inCluster && hosts !== '') {
-      server = {
-        name: cluster.name,
-        caData: cluster.caData,
-        caFile: cluster.caFile,
-        // server: 'https://kubernetes.default.svc.cluster.local:443',
-        server: hosts,
-        skipTLSVerify: cluster.skipTLSVerify
-      };
-    } else {
-      server = {
-        name: cluster.name,
-        caData: cluster.caData,
-        caFile: cluster.caFile,
-        server: 'https://apiserver.cluster.local:6443',
-        skipTLSVerify: cluster.skipTLSVerify
-      };
-    }
+    const server = {
+      name: cluster.name,
+      caData: cluster.caData,
+      caFile: cluster.caFile,
+      server: inCluster && hosts ? hosts : 'https://apiserver.cluster.local:6443',
+      skipTLSVerify: cluster.skipTLSVerify
+    };
     kc.clusters.forEach((item, i) => {
       if (item.name === cluster.name) {
         kc.clusters[i] = server;
       }
     });
   }
+
   return kc;
 }
 export async function ListPods(

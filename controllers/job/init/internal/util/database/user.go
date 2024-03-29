@@ -53,9 +53,19 @@ func PresetAdminUser() error {
 	if err != nil {
 		return fmt.Errorf("failed to parse region %s uid: %v", os.Getenv(cockroach.EnvLocalRegion), err)
 	}
-	err = retry.Retry(10, 5*time.Second, func() error {
-		if !v2Account.DB.Migrator().HasTable(types.User{}) {
-			return fmt.Errorf("user table is null, please check")
+	err = retry.Retry(10, 3*time.Second, func() error {
+		tableTypes := []interface{}{
+			types.User{},
+			types.Region{},
+			types.RegionUserCr{},
+			types.Workspace{},
+			types.UserWorkspace{},
+		}
+		for _, tableType := range tableTypes {
+			if err := checkTableExists(v2Account, tableType); err != nil {
+				fmt.Println(err)
+				return err
+			}
 		}
 		return nil
 	})
@@ -67,14 +77,22 @@ func PresetAdminUser() error {
 		Domain:      domain,
 		DisplayName: domain,
 		Location:    domain,
+		Description: types.RegionDescriptionJSON(types.RegionDescription{
+			Provider: domain + "-local",
+			Serial:   "A",
+			Description: map[string]string{
+				"zh": domain + "-本地",
+				"en": domain + "-local",
+			},
+		}),
 	}); err != nil {
 		return fmt.Errorf("failed to create region: %v", err)
 	}
-
 	userNanoID, err := gonanoid.New(10)
 	if err != nil {
 		return fmt.Errorf("failed to generate nano id: %v", err)
 	}
+	genUserCrUID, genWorkspaceUID := uuid.New(), uuid.New()
 	if err = v2Account.CreateUser(&types.OauthProvider{
 		UserUID:      common.AdminUID(),
 		ProviderType: types.OauthProviderTypePassword,
@@ -83,6 +101,7 @@ func PresetAdminUser() error {
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}, &types.RegionUserCr{
+		UID:       genUserCrUID,
 		CrName:    adminUserName,
 		UserUID:   common.AdminUID(),
 		CreatedAt: time.Now(),
@@ -90,12 +109,40 @@ func PresetAdminUser() error {
 	}, &types.User{
 		UID:       common.AdminUID(),
 		ID:        userNanoID,
-		Name:      adminUserName,
-		Nickname:  userNanoID,
+		Name:      userNanoID,
+		Nickname:  adminUserName,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
+	}, &types.Workspace{
+		UID:         genWorkspaceUID,
+		ID:          workspacePrefix + adminUserName,
+		DisplayName: "private team",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}, &types.UserWorkspace{
+		WorkspaceUID: genWorkspaceUID,
+		UserCrUID:    genUserCrUID,
+		Role:         types.RoleOwner,
+		Status:       types.JoinStatusInWorkspace,
+		IsPrivate:    true,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+		JoinAt:       time.Now(),
 	}); err != nil {
 		return fmt.Errorf("failed to create user: %v", err)
+	}
+	if err = v2Account.InitTables(); err != nil {
+		return fmt.Errorf("failed to init tables: %v", err)
+	}
+	if _, err = v2Account.NewAccount(&types.UserQueryOpts{Owner: adminUserName}); err != nil {
+		return fmt.Errorf("failed to create account: %v", err)
+	}
+	return nil
+}
+
+func checkTableExists(m *cockroach.Cockroach, tableType interface{}) error {
+	if !m.DB.Migrator().HasTable(tableType) && !m.Localdb.Migrator().HasTable(tableType) {
+		return fmt.Errorf("%T table is null, please check", tableType)
 	}
 	return nil
 }

@@ -1074,7 +1074,9 @@ export const json2NetworkService = ({
     'apecloud-mysql': {
       'kubeblocks.io/role': 'leader'
     },
-    redis: {},
+    redis: {
+      'kubeblocks.io/role': 'primary'
+    },
     kafka: {},
     qdrant: {},
     nebula: {},

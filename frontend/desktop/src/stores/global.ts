@@ -1,15 +1,16 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { immer } from 'zustand/middleware/immer';
+import { getSystemEnv } from '@/api/platform';
 import { SystemEnv } from '@/types';
+import { create } from 'zustand';
+import { immer } from 'zustand/middleware/immer';
 
-type GlobalState = SystemEnv & {
-  setEnv: <T extends keyof SystemEnv>(env: T, val: SystemEnv[T]) => void;
+type GlobalState = {
+  systemEnv: SystemEnv;
+  initSystemEnv: () => void;
 };
 
 export const useGlobalStore = create<GlobalState>()(
-  persist(
-    immer((set) => ({
+  immer((set, get) => ({
+    systemEnv: {
       callback_url: '',
       cf_sitekey: '',
       service_protocol_en: '',
@@ -33,13 +34,13 @@ export const useGlobalStore = create<GlobalState>()(
       wechatEnabledRecharge: false,
       SEALOS_CLOUD_DOMAIN: 'cloud.sealos.io',
       rechargeEnabled: false,
-      openWechatEnabled: false,
-      setEnv(env, val) {
-        set({ [env]: val });
-      }
-    })),
-    {
-      name: 'sealos-desktop-global'
+      openWechatEnabled: false
+    },
+    async initSystemEnv() {
+      const data = await getSystemEnv();
+      set((state) => {
+        state.systemEnv = data.data;
+      });
     }
-  )
+  }))
 );

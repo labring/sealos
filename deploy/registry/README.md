@@ -34,8 +34,8 @@ sequenceDiagram
 
 ## Pre-Requirements
 
-1. [sealos Cloud](../cloud/README.md) for auth.
-2. [sealos clxuster](./install_base_server.md) for registry.
+1. [Sealos Cloud](../cloud/README.md) for auth.
+2. [Sealos Cluster](./install_base_server.md) for registry.
 
 ### A running sealos kubernetes cluster
 

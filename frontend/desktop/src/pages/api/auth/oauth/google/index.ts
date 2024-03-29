@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!enableGoogle()) {
       throw new Error('google clinet is not defined');
     }
-    const { code } = req.body;
+    const { code, inviterId } = req.body;
     if (!code)
       return jsonRes(res, {
         code: 400,
@@ -56,7 +56,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       provider: ProviderType.GOOGLE,
       id: name,
       avatar_url,
-      name
+      name,
+      inviterId
     });
     if (!data)
       return jsonRes(res, {
