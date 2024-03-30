@@ -8,6 +8,20 @@
 
 A Cloud Operating System designed for managing cloud-native applications
 
+<a
+    href="https://runacap.com/ross-index/annual-2023/"
+    target="_blank"
+    rel="noopener"
+>
+    <img
+        style="width: 260px; height: 56px"
+        src="https://runacap.com/wp-content/uploads/2024/03/Annual_ROSS_badge_black_2023.svg"
+        alt="ROSS Index - Fastest Growing Open-Source Startups | Runa Capital"
+        width="260"
+        height="56"
+    />
+</a>
+
 </h2>
 
 <div align="center">
