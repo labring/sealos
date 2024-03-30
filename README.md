@@ -7,7 +7,7 @@
   A Cloud Operating System designed for managing cloud-native applications
 </h2>
 
-<div>
+<div align="center">
 <a
     href="https://runacap.com/ross-index/annual-2023/"
     target="_blank"
