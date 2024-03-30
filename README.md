@@ -1,12 +1,11 @@
 <h2 align="center">
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/4.0/img/sealos-left-dark.png" />
-  <source media="(prefers-color-scheme: light)" srcset="./docs/4.0/img/sealos-left.png" />
-  <img src="./docs/4.0/img/sealos-left.png" />
-</picture>
-
-A Cloud Operating System designed for managing cloud-native applications
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/4.0/img/sealos-left-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/4.0/img/sealos-left.png" />
+    <img src="./docs/4.0/img/sealos-left.png" />
+  </picture>
+  A Cloud Operating System designed for managing cloud-native applications
+</h2>
 
 <a
     href="https://runacap.com/ross-index/annual-2023/"
@@ -21,8 +20,6 @@ A Cloud Operating System designed for managing cloud-native applications
         height="56"
     />
 </a>
-
-</h2>
 
 <div align="center">
 
