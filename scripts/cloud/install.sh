@@ -30,7 +30,6 @@ victoria_metrics_k8s_stack_version=${victoria-metrics-k8s-stack_version:-"1.96.0
 ingress_nginx_version=${ingress_nginx_version:-"1.5.1"}
 kubeblocks_version=${kubeblocks_version:-"0.6.4"}
 metrics_server_version=${metrics_server_version:-"0.6.4"}
-kube_prometheus_stack_version=${kube_prometheus_stack_version:-"0.63.0"}
 
 
 # Define English and Chinese prompts
