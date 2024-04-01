@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
-import SyntaxHighlighter from 'react-syntax-highlighter';
+import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { codeTheme } from './hljs';
 import styles from './index.module.scss';
 

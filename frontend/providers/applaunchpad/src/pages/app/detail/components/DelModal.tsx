@@ -15,6 +15,7 @@ import { delAppByName } from '@/api/app';
 import { useToast } from '@/hooks/useToast';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
+import { useMessage } from '@sealos/ui';
 
 const DelModal = ({
   appName,
@@ -28,7 +29,7 @@ const DelModal = ({
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const router = useRouter();
 
   const handleDelApp = useCallback(async () => {
@@ -79,18 +80,18 @@ const DelModal = ({
           />
         </ModalBody>
         <ModalFooter>
-          <Button onClick={onClose} variant={'base'}>
+          <Button width={'64px'} onClick={onClose} variant={'outline'}>
             {t('Cancel')}
           </Button>
           <Button
-            colorScheme="red"
+            width={'64px'}
             ml={3}
             variant={'solid'}
             isDisabled={inputValue !== appName}
             isLoading={loading}
             onClick={handleDelApp}
           >
-            {t('Confirm deletion')}
+            {t('Delete')}
           </Button>
         </ModalFooter>
       </ModalContent>

@@ -32,6 +32,7 @@ import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
+import { useMessage } from '@sealos/ui';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
@@ -92,7 +93,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const formOldYamls = useRef<YamlItemType[]>([]);
   const crOldYamls = useRef<DeployKindsType[]>([]);
   const oldAppEditData = useRef<AppEditType>();
-  const { toast } = useToast();
+  const { message: toast } = useMessage();
   const { Loading, setIsLoading } = useLoading();
   const router = useRouter();
   const [forceUpdate, setForceUpdate] = useState(false);
