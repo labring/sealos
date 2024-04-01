@@ -17,6 +17,8 @@ import BucketHeader from './BucketHeader';
 import FileManager from './FileManager';
 import DataMonitor from './Monitor';
 import { useTranslation } from 'next-i18next';
+import { Authority } from '@/consts';
+import { HostStatus } from '@/components/BucketContainer/HostStatus';
 
 export default function BucketContainer(props: StackProps) {
   const bucket = useOssStore((s) => s.currentBucket);
@@ -60,6 +62,7 @@ export default function BucketContainer(props: StackProps) {
                   <Text fontSize={'14px'}>{item.title}</Text>
                 </Tab>
               ))}
+              {bucket.policy !== Authority.private && <HostStatus />}
             </TabList>
             <TabPanels h="0" flex="auto" overflow={'auto'}>
               <TabPanel h="full" p="0">

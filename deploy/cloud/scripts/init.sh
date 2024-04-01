@@ -7,6 +7,7 @@ mongodbUri=""
 cockroachdbUri=""
 cockroachdbLocalUri=""
 cockroachdbGlobalUri=""
+localRegionUID=""
 
 tlsCrtPlaceholder="<tls-crt-placeholder>"
 tlsKeyPlaceholder="<tls-key-placeholder>"
@@ -30,6 +31,9 @@ function prepare {
 
   # gen saltKey if not set or not found in secret
   gen_saltKey
+
+  # gen regionUID if not set or not found in secret
+  gen_regionUID
 
   # mutate desktop config
   mutate_desktop_config
@@ -134,6 +138,15 @@ function gen_saltKey() {
     fi
 }
 
+function gen_regionUID(){
+    uid=$(kubectl get secret desktop-frontend-secret -n sealos -o jsonpath="{.data.region_uid}" 2>/dev/null || true)
+    if [[ -z "$uid" ]]; then
+        localRegionUID=$(uuidgen)
+    else
+        localRegionUID=$(echo -n "$uid" | base64 -d)
+    fi
+}
+
 function mutate_desktop_config() {
     # mutate etc/sealos/desktop-config.yaml by using mongodb uri and two random base64 string
     sed -i -e "s;<your-mongodb-uri-base64>;$(echo -n "${mongodbUri}/sealos-auth?authSource=admin" | base64 -w 0);" etc/sealos/desktop-config.yaml
@@ -142,6 +155,7 @@ function mutate_desktop_config() {
     sed -i -e "s;<your-password-salt-base64>;$saltKey;" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-region-database-url-base64>;$(echo -n "${cockroachdbLocalUri}" | base64 -w 0);" etc/sealos/desktop-config.yaml
     sed -i -e "s;<your-global-database-url-base64>;$(echo -n "${cockroachdbGlobalUri}" | base64 -w 0);" etc/sealos/desktop-config.yaml
+    sed -i -e "s;<your-local-region-uid-base64>;$(echo -n "${localRegionUID}" | base64 -w 0);" etc/sealos/desktop-config.yaml
 }
 
 function create_tls_secret {
@@ -153,6 +167,16 @@ function create_tls_secret {
     echo "tls secret is already set"
     kubectl apply -f manifests/tls-secret.yaml
   fi
+}
+
+function sealos_run_desktop {
+    echo "run desktop frontend"
+    sealos run tars/frontend-desktop.tar \
+      --env cloudDomain=$cloudDomain \
+      --env cloudPort="$cloudPort" \
+      --env certSecretName="wildcard-cert" \
+      --env passwordEnabled="true" \
+      --config-file etc/sealos/desktop-config.yaml
 }
 
 function sealos_run_controller {
@@ -181,16 +205,20 @@ function sealos_run_controller {
   --env MONGO_URI="$mongodbUri" \
   --env cloudDomain="$cloudDomain" \
   --env cloudPort="$cloudPort" \
-  --env DEFAULT_NAMESPACE="account-system"
+  --env DEFAULT_NAMESPACE="account-system" \
+  --env GLOBAL_COCKROACH_URI="$cockroachdbGlobalUri" \
+  --env LOCAL_COCKROACH_URI="$cockroachdbLocalUri" \
+  --env LOCAL_REGION="$localRegionUID"
+
+  sealos run tars/account-service.tar
 
   # run license controller
-#  sealos run tars/license.tar \
-#  --env MONGO_URI="$mongodbUri"
+  sealos run tars/license.tar
 }
 
 
 function sealos_authorize {
-  sealos run tars/job-init.tar
+  sealos run tars/job-init.tar --env PASSWORD_SALT="$(echo -n "$saltKey" | base64 -d)"
   sealos run tars/job-heartbeat.tar
 
   # wait for admin user create
@@ -202,18 +230,6 @@ function sealos_authorize {
 }
 
 function sealos_run_frontend {
-  echo "run desktop frontend"
-  sealos run tars/frontend-desktop.tar \
-    --env cloudDomain=$cloudDomain \
-    --env cloudPort="$cloudPort" \
-    --env certSecretName="wildcard-cert" \
-    --env passwordEnabled="true" \
-    --config-file etc/sealos/desktop-config.yaml
-
-  # sealos authorize !!must run after sealos_run_controller frontend-desktop.tar and before sealos_run_frontend
-  # TODO fix sealos_authorize in controller/job/init
-  # sealos_authorize
-
   echo "run applaunchpad frontend"
   sealos run tars/frontend-applaunchpad.tar \
   --env cloudDomain=$cloudDomain \
@@ -246,13 +262,13 @@ function sealos_run_frontend {
   --env cloudPort="$cloudPort" \
   --env certSecretName="wildcard-cert"
 
-#  echo "run license frontend"
-#  sealos run tars/frontend-license.tar \
-#  --env cloudDomain=$cloudDomain \
-#  --env cloudPort="$cloudPort" \
-#  --env certSecretName="wildcard-cert" \
-#  --env MONGODB_URI="${mongodbUri}/sealos-license?authSource=admin" \
-#  --env licensePurchaseDomain="license.sealos.io"
+  echo "run license frontend"
+  sealos run tars/frontend-license.tar \
+  --env cloudDomain=$cloudDomain \
+  --env cloudPort="$cloudPort" \
+  --env certSecretName="wildcard-cert" \
+  --env MONGODB_URI="${mongodbUri}/sealos-license?authSource=admin" \
+  --env licensePurchaseDomain="license.sealos.io"
 
   echo "run cronjob frontend"
   sealos run tars/frontend-cronjob.tar \
@@ -274,8 +290,15 @@ function install {
   # gen mongodb uri and others
   prepare
 
+  # sealos run desktop
+  sealos_run_desktop
+
   # sealos run controllers
   sealos_run_controller
+
+  # sealos authorize !!must run after sealos_run_controller frontend-desktop.tar and before sealos_run_frontend
+  # TODO fix sealos_authorize in controller/job/init
+  sealos_authorize
 
   # sealos run frontends
   sealos_run_frontend

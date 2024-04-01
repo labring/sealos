@@ -1,16 +1,12 @@
-import request from '@/services/request';
+import { useGlobalStore } from '@/stores/global';
 import useSessionStore from '@/stores/session';
-import { ApiResp, SystemEnv } from '@/types';
 import { OauthProvider } from '@/types/user';
 import { Button, Flex, Icon } from '@chakra-ui/react';
 import { GithubIcon, GoogleIcon, WechatIcon } from '@sealos/ui';
-import { useQuery } from '@tanstack/react-query';
-import { MouseEventHandler } from 'react';
 import { useRouter } from 'next/router';
+import { MouseEventHandler } from 'react';
 const AuthList = () => {
-  const { data: platformEnv } = useQuery(['getPlatformEnv'], () =>
-    request<any, ApiResp<SystemEnv>>('/api/platform/getEnv')
-  );
+  const { systemEnv } = useGlobalStore();
   const {
     needGithub = false,
     needWechat = false,
@@ -21,7 +17,7 @@ const AuthList = () => {
     callback_url = '',
     // https://sealos.io/siginIn
     oauth_proxy = ''
-  } = platformEnv?.data ?? {};
+  } = systemEnv ?? {};
   const oauthLogin = async ({ url, provider }: { url: string; provider?: OauthProvider }) => {
     setProvider(provider);
     window.location.href = url;

@@ -19,9 +19,10 @@ import (
 	"errors"
 	"os"
 
+	"gorm.io/gorm"
+
 	"github.com/labring/sealos/controllers/job/init/internal/util/controller"
 	"github.com/labring/sealos/controllers/job/init/internal/util/database"
-	utilserror "github.com/labring/sealos/controllers/job/init/internal/util/errors"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
 )
 
@@ -34,8 +35,8 @@ func main() {
 	}
 	logger.Info("preset admin user in kubernetes successfully")
 
-	if err := database.PresetAdminUser(ctx); err != nil {
-		if errors.Is(err, utilserror.ErrAdminExists) {
+	if err := database.PresetAdminUser(); err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			logger.Info("admin user already exists in database")
 		} else {
 			logger.Error(err, "preset admin user in database failed")

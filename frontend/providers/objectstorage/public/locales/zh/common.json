@@ -14,5 +14,11 @@
   "refresh": "刷新",
   "dailyEstimate": "每日估价",
   "config": "基础配置",
-  "deleteWarning": "删除警告"
+  "deleteWarning": "删除警告",
+  "Current Domain": "当前域名",
+  "Custom Domain": "自定义域名",
+  "Disable Hosting": "关闭托管",
+  "Enable Hosting": "打开托管",
+  "Effective": "已生效",
+  "Unable to Access": "无法访问"
 }

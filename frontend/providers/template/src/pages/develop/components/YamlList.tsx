@@ -1,7 +1,8 @@
+import YamlCode from '@/components/YamlCode';
 import type { YamlItemType } from '@/types';
 import { Box, Flex, Grid } from '@chakra-ui/react';
 import { useState } from 'react';
-import { YamlCode } from '@sealos/ui';
+
 const YamlList = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -47,7 +48,7 @@ const YamlList = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
       </Box>
       {!!yamlList[selectedIndex] && (
         <Grid w="0" h="full" flex={'auto'} overflow={'auto'}>
-          <YamlCode markdown={{ children: yamlList[selectedIndex].value }}></YamlCode>
+          <YamlCode content={yamlList[selectedIndex].value} />
         </Grid>
       )}
     </Flex>

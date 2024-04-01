@@ -21,6 +21,8 @@ import (
 	"errors"
 	"time"
 
+	database2 "github.com/labring/sealos/controllers/pkg/database"
+
 	"github.com/go-logr/logr"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,8 +54,6 @@ type LicenseReconciler struct {
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses/finalizers,verbs=update
-// +kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=account.sealos.io,resources=accounts/status,verbs=get;update;patch
 
 func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Logger.V(1).Info("start reconcile for license")
@@ -110,7 +110,7 @@ func (r *LicenseReconciler) reconcile(ctx context.Context, license *licensev1.Li
 		return ctrl.Result{}, nil
 	}
 
-	if err := r.activator.Active(ctx, license); err != nil {
+	if err := r.activator.Active(license); err != nil {
 		r.Logger.V(1).Error(err, "failed to active license")
 		return ctrl.Result{}, err
 	}
@@ -128,7 +128,7 @@ func (r *LicenseReconciler) reconcile(ctx context.Context, license *licensev1.Li
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, db *database.DataBase) error {
+func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, db *database.DataBase, accountDB database2.AccountV2) error {
 	r.Logger = mgr.GetLogger().WithName("controller").WithName("License")
 	r.Client = mgr.GetClient()
 
@@ -143,7 +143,7 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, db *database.Data
 	}
 
 	r.activator = &LicenseActivator{
-		Client: r.Client,
+		accountDB: accountDB,
 	}
 
 	// reconcile on generation change

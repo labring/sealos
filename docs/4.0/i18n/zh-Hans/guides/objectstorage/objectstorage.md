@@ -13,6 +13,7 @@ sidebar_position: 0
 - 公开「存储桶」的访问权限
 - 使用 SDK 访问「存储桶」
 - 监控「存储桶」资源指标
+- 静态托管
 
 ## 快速开始
 
@@ -168,7 +169,19 @@ public class FileUploader {
 
 详细文档参考：https://min.io/docs/minio/linux/developers/minio-drivers.html
 
+### 静态托管
 
+创建一个权限为 publicRead/publicReadwrite 的「存储桶」，点击「打开托管」
+![](./images/14.png)
+
+点击地址跳转访问
+![](./images/15.png)
+
+点击「自定义域名」
+![](./images/16.png)
+
+跳转到「应用管理」的「变更」中，可以自定义域名
+![](./images/17.png)
 
 
 

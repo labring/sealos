@@ -1,18 +1,15 @@
+import { verifyAccessToken } from '@/services/backend/auth';
+import { globalPrisma } from '@/services/backend/db/init';
 import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import process from 'process';
-import { verifyAccessToken } from '@/services/backend/auth';
-import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
-import { globalPrisma } from '@/services/backend/db/init';
 
 type accountStatus = {
   balance: number;
   deductionBalance: number;
 };
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const base = process.env['BILLING_URI'];
-    if (!base) throw Error("can't ot get alapha1");
     const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'token is invaild' });
     const status = await globalPrisma.account.findUnique({

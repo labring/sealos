@@ -55,9 +55,10 @@ const App = ({ Component, pageProps }: AppProps) => {
         const res = await sealosApp.getSession();
         setSession(res);
       } catch (err) {
-        console.warn('App is not running in desktop');
+        console.log('App is not running in desktop');
       }
     })();
+    localStorage.removeItem('session');
     NProgress.done();
     return response;
   }, []);

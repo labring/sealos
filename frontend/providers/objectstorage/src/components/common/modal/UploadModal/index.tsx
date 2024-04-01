@@ -15,6 +15,7 @@ import {
   Link
 } from '@chakra-ui/react';
 import UploadIcon from '@/components/Icons/UploadIcon';
+
 type TFileItem = {
   file: File;
   path: string;
@@ -27,6 +28,7 @@ import { useDropzone } from 'react-dropzone';
 import { FolderPlaceholder, QueryKey } from '@/consts';
 import { useTranslation } from 'next-i18next';
 import { useToast } from '@/hooks/useToast';
+
 export default function UploadModal({ ...styles }: Omit<IconButtonProps, 'aria-label'> & {}) {
   const { onOpen, onClose, isOpen } = useDisclosure();
   const { t, i18n } = useTranslation('file');
@@ -76,41 +78,57 @@ export default function UploadModal({ ...styles }: Omit<IconButtonProps, 'aria-l
     onDropAccepted(files) {
       if (!bucket) return;
       setIsLoading(true);
-      Promise.allSettled(
-        files.map((file) => {
-          // clear '/' and merege path
-          const Key = [...prefix, ...(Reflect.get(file, 'path') as string).split('/')]
-            .filter((v) => v !== '')
-            .join('/');
-          return mutation.mutateAsync({
-            Bucket: bucket.name,
-            Key,
-            ContentType: file.type,
-            Body: file
-          });
-        })
-      ).then((results) => {
-        if (
-          results.some((res) => {
-            return res.status === 'rejected';
-          })
-        ) {
-          toast({
-            status: 'error',
-            title: 'upload error'
-          });
-        } else {
-          toast({
-            status: 'success',
-            title: 'upload success'
-          });
-        }
-        // @ts-ignore
-        inputRef.current && (inputRef.current.value = null);
-        setIsLoading(false);
-        queryClient.invalidateQueries([QueryKey.minioFileList]);
-        onClose();
+      const values = files.map((file) => {
+        // clear '/' and merege path
+        const Key = [...prefix, ...(Reflect.get(file, 'path') as string).split('/')]
+          .filter((v) => v !== '')
+          .join('/');
+        const reqV = {
+          Bucket: bucket.name,
+          Key,
+          ContentType: file.type,
+          Body: file
+        };
+        return reqV;
       });
+      const values2: typeof values = [];
+      Promise.allSettled(
+        values.map((v) => {
+          return mutation.mutateAsync(v);
+        })
+      )
+        .then((results) => {
+          // retry
+          results.forEach((res, i) => {
+            if (res.status === 'rejected') {
+              values2.push(values[i]);
+            }
+          });
+          values.length = 0;
+          return Promise.allSettled(values2.map((v) => mutation.mutateAsync(v)));
+        })
+        .then((results) => {
+          if (
+            results.some((res) => {
+              return res.status === 'rejected';
+            })
+          ) {
+            toast({
+              status: 'error',
+              title: 'upload error'
+            });
+          } else {
+            toast({
+              status: 'success',
+              title: 'upload success'
+            });
+          }
+          // @ts-ignore
+          inputRef.current && (inputRef.current.value = null);
+          setIsLoading(false);
+          queryClient.invalidateQueries([QueryKey.minioFileList]);
+          onClose();
+        });
     },
     async getFilesFromEvent(event) {
       const files: File[] = [];

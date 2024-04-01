@@ -393,7 +393,7 @@ const Form = ({
                     disabled={isEdit}
                     title={isEdit ? t('Not allowed to change app name') || '' : ''}
                     autoFocus={true}
-                    maxLength={30}
+                    maxLength={60}
                     placeholder={
                       t(
                         'Starts with a letter and can contain only lowercase letters, digits, and hyphens (-)'
@@ -401,7 +401,7 @@ const Form = ({
                     }
                     {...register('appName', {
                       required: t('Not allowed to change app name') || '',
-                      maxLength: 30,
+                      maxLength: 60,
                       pattern: {
                         value: /^[a-z][a-z0-9]+([-.][a-z0-9]+)*$/g,
                         message: t(
@@ -947,7 +947,7 @@ const Form = ({
                     </Flex>
                   </FormControl>
 
-                  <Divider my={'30px'} bg={'myGray.100'} />
+                  <Divider my={'30px'} borderColor={'#EFF0F1'} />
 
                   {/* env */}
                   <Box w={'100%'} maxW={'600px'}>
@@ -994,7 +994,7 @@ const Form = ({
                     </Box>
                   </Box>
 
-                  <Divider my={'30px'} bg={'myGray.100'} />
+                  <Divider my={'30px'} borderColor={'#EFF0F1'} />
 
                   <Box>
                     <Flex alignItems={'center'}>
@@ -1051,7 +1051,7 @@ const Form = ({
                     </Box>
                   </Box>
 
-                  <Divider my={'30px'} bg={'myGray.100'} />
+                  <Divider my={'30px'} borderColor={'#EFF0F1'} />
 
                   <Box>
                     <Flex alignItems={'center'} mb={'10px'}>

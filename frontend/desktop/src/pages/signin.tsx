@@ -1,4 +1,3 @@
-import { getSystemEnv } from '@/api/platform';
 import SigninComponent from '@/components/signin';
 import { compareFirstLanguages } from '@/utils/tools';
 import { QueryClient, dehydrate } from '@tanstack/react-query';

@@ -203,7 +203,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           ))}
           {/* env */}
           <Accordion allowToggle defaultIndex={0} mt={4}>
-            <AccordionItem borderBottom={0}>
+            <AccordionItem borderBottom={0} borderColor={'#EFF0F1'}>
               <AccordionButton
                 py={4}
                 display={'flex'}
@@ -249,7 +249,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           </Accordion>
           {/* configMap */}
           <Accordion allowToggle defaultIndex={0}>
-            <AccordionItem borderBottom={0}>
+            <AccordionItem borderBottom={0} borderColor={'#EFF0F1'}>
               <AccordionButton
                 display={'flex'}
                 textAlign={'left'}
@@ -300,7 +300,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           </Accordion>
           {/* store */}
           <Accordion allowToggle defaultIndex={0}>
-            <AccordionItem borderBottom={0}>
+            <AccordionItem borderBottom={0} borderColor={'#EFF0F1'}>
               <AccordionButton
                 display={'flex'}
                 textAlign={'left'}

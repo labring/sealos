@@ -9,6 +9,9 @@ export enum QueryKey {
   bucketInfo = 'bucketInfo',
   bucketUser = 'bucketUser',
   minioFileList = 'minioFileList',
+  HostStatus = 'hostStatus',
+  openHost = 'openHost',
+  closeHost = 'closeHost',
   minioBucketDetial = 'minioBucketDetial'
 }
 export type FormSchema = {

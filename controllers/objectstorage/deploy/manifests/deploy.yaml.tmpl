@@ -484,7 +484,7 @@ spec:
               value: objectstorageapi.{{ .cloudDomain }}
             - name: OSUDetectionCycleSeconds
               value: "300"
-            - name: MinioBucketDetectionCycleSeconds
+            - name: OSBDetectionCycleSeconds
               value: "300"
           image: ghcr.io/labring/sealos-objectstorage-controller:latest
           imagePullPolicy: Always
@@ -518,3 +518,15 @@ spec:
         runAsNonRoot: true
       serviceAccountName: objectstorage-controller-manager
       terminationGracePeriodSeconds: 10
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: "control-plane"
+                  operator: In
+                  values:
+                  - controller-manager
+              topologyKey: "kubernetes.io/hostname"

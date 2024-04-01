@@ -22,7 +22,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       id: name,
       avatar_url: '',
       password,
-      name
+      name,
+      inviterId
     });
     if (!data)
       return jsonRes(res, {

@@ -19,7 +19,7 @@ import { getRegionToken, UserInfo } from '@/api/auth';
 import { jwtDecode } from 'jwt-decode';
 import { uploadConvertData } from '@/api/platform';
 import { AccessTokenPayload } from '@/types/token';
-import { sessionConfig } from '@/utils/sessionConfig';
+import { getInviterId, sessionConfig } from '@/utils/sessionConfig';
 
 export default function useSms({
   showError
@@ -54,7 +54,8 @@ export default function useSms({
             '/api/auth/phone/verify',
             {
               phoneNumbers: data.phoneNumber,
-              code: data.verifyCode
+              code: data.verifyCode,
+              inviterId: getInviterId()
             }
           );
           const globalToken = result1?.data?.token;

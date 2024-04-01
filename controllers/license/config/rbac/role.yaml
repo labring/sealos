@@ -20,26 +20,6 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - account.sealos.io
-  resources:
-  - accounts
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - account.sealos.io
-  resources:
-  - accounts/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
   - license.sealos.io
   resources:
   - licenses

@@ -57,9 +57,9 @@ func newAdminUser(ctx context.Context, c client.Client) (*userv1.User, error) {
 		return nil, err
 	}
 	if u.Labels == nil {
-		u.SetLabels(map[string]string{"uid": common.AdminUID(), "updateTime": "T2301-01T00-00-00"})
+		u.SetLabels(map[string]string{"uid": common.AdminUID().String(), "updateTime": "T2301-01T00-00-00"})
 	} else if u.Labels["uid"] == "" {
-		u.Labels["uid"] = common.AdminUID()
+		u.Labels["uid"] = common.AdminUID().String()
 		u.Labels["updateTime"] = "T2301-01T00-00-00"
 	}
 	return u, nil

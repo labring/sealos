@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { jwtDecode } from 'jwt-decode';
 import { AccessTokenPayload } from '@/types/token';
-import { sessionConfig } from '@/utils/sessionConfig';
+import { getInviterId, sessionConfig } from '@/utils/sessionConfig';
 
 export default function usePassword({
   showError
@@ -44,7 +44,7 @@ export default function usePassword({
         if (data?.username && data?.password) {
           try {
             setIsLoading(true);
-            const inviterId = localStorage.getItem('inviterId');
+            const inviterId = getInviterId();
             const result = await passwordExistRequest({ user: data.username });
 
             if (result?.code === 200) {

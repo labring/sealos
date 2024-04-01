@@ -44,7 +44,7 @@ data:
       "backgroundImageUrl": '/images/bg-blue.svg',
       "imageFallBackUrl": 'logo.svg',
       "title": 'Sealos',
-      "metaTitle": 'sealos Cloud',
+      "metaTitle": 'Sealos Cloud',
       "metaDescription": 'sealos cloud dashboard',
       "showGithubStar": true
     }
@@ -247,6 +247,18 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: "app"
+                  operator: In
+                  values:
+                  - desktop-frontend
+              topologyKey: "kubernetes.io/hostname"
       volumes:
         - name: desktop-frontend-volume
           configMap:
