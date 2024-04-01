@@ -42,8 +42,8 @@ export default function Product() {
         且维护成本极低，仅需半个人力
       </div>
       <div className="flex justify-center mt-14">
-        <Link
-          to={'https://license.sealos.io/'}
+        <div
+          onClick={() => window.open('https://license.sealos.io/')}
           className="rounded-md cursor-pointer hover:no-underline text-[#FFFFFFCC] hover:text-[#FFFFFFCC] bg-[#B7D8FF26] flex justify-center items-center font-semibold text-lg gap-2 py-3 px-4  lg:text-sm"
         >
           <svg
@@ -73,7 +73,7 @@ export default function Product() {
             </g>
           </svg>
           管理私有云
-        </Link>
+        </div>
       </div>
 
       <div className="flex mt-24 gap-9 flex-wrap">
