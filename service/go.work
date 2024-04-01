@@ -4,6 +4,7 @@ use (
 	./database
 	./pay
 	./account
+	./launchpad
 	.
 )
 

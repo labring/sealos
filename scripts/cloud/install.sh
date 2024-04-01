@@ -29,7 +29,7 @@ openebs_version=${openebs_version:-"3.10.0"}
 ingress_nginx_version=${ingress_nginx_version:-"1.9.4"}
 kubeblocks_version=${kubeblocks_version:-"0.8.2"}
 metrics_server_version=${metrics_server_version:-"0.6.4"}
-kube_prometheus_stack_version=${kube_prometheus_stack_version:-"0.70.0"}
+victoria_metrics_k8s_stack_version=${victoria_metrics_k8s_stack_version:-"1.96.0"}
 
 
 # Define English and Chinese prompts
@@ -256,7 +256,7 @@ init() {
     pull_image "kubeblocks-postgresql" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "kubeblocks-mongodb" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "metrics-server" "v${metrics_server_version#v:-0.6.4}"
-    pull_image "kube-prometheus-stack" "v${kube_prometheus_stack_version#v:-0.63.0}"
+    pull_image "victoria-metrics-k8s-stack" "v${victoria_metrics_k8s_stack_version#v:-1.96.0}"
     pull_image "sealos-cloud" "${cloud_version}"
 }
 
@@ -649,7 +649,8 @@ EOF
     kbcli addon enable snapshot-controller
 
     get_prompt "installing_monitoring"
-    sealos run "${image_registry}/${image_repository}/kube-prometheus-stack:v${kube_prometheus_stack_version#v:-0.63.0}"
+    sealos run "${image_registry}/${image_repository}/victoria-metrics-k8s-stack:v${victoria_metrics_k8s_stack_version#v:-1.96.0}"
+
     kubectl patch cm kb-addon-prometheus-server -n kb-system --patch-file $CLOUD_DIR/kb-addon-prometheus-server-patch.yaml
 
     get_prompt "patching_ingress"
