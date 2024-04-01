@@ -92,8 +92,10 @@ export const Button = defineStyleConfig({
       boxShadow: ThemeColors.buttonBoxShadow,
       color: 'grayModern.600',
       _hover: {
-        bg: '#FFF',
-        opacity: '0.9'
+        opacity: '0.9',
+        bg: 'rgba(33, 155, 244, 0.05)',
+        color: 'brightBlue.700',
+        borderColor: 'brightBlue.300'
       },
       _active: {
         bg: ''
