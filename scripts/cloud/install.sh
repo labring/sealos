@@ -252,7 +252,7 @@ init() {
     pull_image "ingress-nginx" "v${ingress_nginx_version#v:-1.5.1}"
     pull_image "kubeblocks" "v${kubeblocks_version#v:-0.6.4}"
     pull_image "metrics-server" "v${metrics_server_version#v:-0.6.4}"
-    sealos run docker.io/labring/victoria-metrics-k8s-stack:v1.96.0
+    sealos run "v${docker.io/labring/victoria-metrics-k8s-stack#v:-v1.96.0}"
     pull_image "sealos-cloud" "${cloud_version}"
 }
 
