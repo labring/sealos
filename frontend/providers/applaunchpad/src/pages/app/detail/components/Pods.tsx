@@ -11,6 +11,7 @@ import type { PodDetailType } from '@/types/app';
 import { QuestionOutlineIcon } from '@chakra-ui/icons';
 import {
   Box,
+  Button,
   Center,
   Flex,
   Table,
@@ -146,26 +147,13 @@ const Pods = ({
       render: (item: PodDetailType, i: number) => (
         <Flex alignItems={'center'}>
           <MyTooltip label={t('Log')} offset={[0, 10]}>
-            <Center
-              p="6px"
-              _hover={{
-                bg: '#F4F6F8'
-              }}
-              cursor={'pointer'}
-              borderRadius={'8px'}
-              onClick={() => setLogsPodIndex(i)}
-            >
+            <Button variant={'square'} onClick={() => setLogsPodIndex(i)}>
               <MyIcon name="log" w="18px" h="18px" fill={'#485264'} />
-            </Center>
+            </Button>
           </MyTooltip>
           <MyTooltip offset={[0, 10]} label={t('Terminal')}>
-            <Center
-              p="6px"
-              _hover={{
-                bg: '#F4F6F8'
-              }}
-              cursor={'pointer'}
-              borderRadius={'8px'}
+            <Button
+              variant={'square'}
               onClick={() => {
                 const defaultCommand = `kubectl exec -it ${item.podName} -c ${appName} -- sh -c "clear; (bash || ash || sh)"`;
                 sealosApp.runEvents('openDesktopApp', {
@@ -184,33 +172,20 @@ const Pods = ({
                 h="18px"
                 fill={'#485264'}
               />
-            </Center>
+            </Button>
           </MyTooltip>
           <MyTooltip offset={[0, 10]} label={t('Details')}>
-            <Center
-              p="6px"
-              _hover={{
-                bg: '#F4F6F8'
-              }}
-              cursor={'pointer'}
-              borderRadius={'8px'}
-              onClick={() => setDetailPodIndex(i)}
-            >
+            <Button variant={'square'} onClick={() => setDetailPodIndex(i)}>
               <MyIcon name={'detail'} w="18px" h="18px" fill={'#485264'} />
-            </Center>
+            </Button>
           </MyTooltip>
           <MyTooltip offset={[0, 10]} label={t('Restart')}>
-            <Center
-              p="6px"
-              _hover={{
-                bg: '#F4F6F8'
-              }}
-              cursor={'pointer'}
-              borderRadius={'8px'}
+            <Button
+              variant={'square'}
               onClick={openConfirmRestart(() => handleRestartPod(item.podName))}
             >
               <MyIcon name={'restart'} w="18px" h="18px" fill={'#485264'} />
-            </Center>
+            </Button>
           </MyTooltip>
         </Flex>
       )

@@ -71,7 +71,17 @@ export const Button = defineStyleConfig({
         bg: ''
       }
     },
-
+    square: {
+      borderRadius: '6px',
+      minW: '30px',
+      width: '30px',
+      height: '30px',
+      p: '0px',
+      _hover: {
+        color: 'brightBlue.600',
+        bg: 'rgba(17, 24, 36, 0.05)'
+      }
+    },
     outline: {
       bg: '#FFF',
       borderRadius: 'md',

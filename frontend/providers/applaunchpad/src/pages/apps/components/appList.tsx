@@ -212,14 +212,7 @@ const AppList = ({
             <SealosMenu
               width={100}
               Button={
-                <MenuButton
-                  w={'30px'}
-                  h={'30px'}
-                  borderRadius={'sm'}
-                  _hover={{
-                    color: 'brightBlue.600'
-                  }}
-                >
+                <MenuButton as={Button} variant={'square'} w={'30px'} h={'30px'}>
                   <MyIcon name={'more'} px={3} />
                 </MenuButton>
               }

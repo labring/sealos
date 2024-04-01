@@ -94,10 +94,12 @@ const map = {
 
 const PodLineChart = ({
   type,
-  data
+  data,
+  isShowLabel = false
 }: {
   type: 'blue' | 'deepBlue' | 'green' | 'purple';
   data?: MonitorDataResult;
+  isShowLabel?: boolean;
 }) => {
   const { screenWidth } = useGlobalStore();
   const xData =
@@ -127,22 +129,35 @@ const PodLineChart = ({
   const option = useRef({
     xAxis: {
       type: 'category',
-      show: false,
+      show: isShowLabel,
       boundaryGap: false,
-      data: xData
+      data: xData,
+      axisLabel: {
+        show: isShowLabel
+      },
+      axisTick: {
+        show: false
+      },
+      axisLine: {
+        show: false
+      }
     },
     yAxis: {
       type: 'value',
       boundaryGap: false,
       splitNumber: 2,
       max: 100,
-      min: 0
+      min: 0,
+      axisLabel: {
+        show: isShowLabel
+      }
     },
     grid: {
+      containLabel: isShowLabel,
       show: false,
       left: 0,
-      right: 0,
-      top: 0,
+      right: isShowLabel ? 14 : 0,
+      top: 10,
       bottom: 2
     },
     tooltip: {

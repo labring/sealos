@@ -8,14 +8,16 @@ import { DOMAIN_PORT, SEALOS_DOMAIN } from '@/store/static';
 import type { AppDetailType } from '@/types/app';
 import { useCopyData } from '@/utils/tools';
 import { getUserNamespace } from '@/utils/user';
-import { Box, Flex, Grid } from '@chakra-ui/react';
+import { Box, Button, Center, Flex, Grid, useDisclosure } from '@chakra-ui/react';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
+import MonitorModal from './MonitorModal';
 
 const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const networks = useMemo(
     () =>
@@ -37,7 +39,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
       <>
         <Flex alignItems={'center'} fontSize={'12px'} fontWeight={'bold'}>
           <MyIcon name={'listen'} w={'14px'} color={'grayModern.600'} />
-          <Box ml={3} color={'grayModern.600'}>
+          <Box ml={'12px'} color={'grayModern.600'}>
             {t('Real-time Monitoring')}
           </Box>
           <Box ml={2} color={'grayModern.500'}>
@@ -56,7 +58,17 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           fontSize={'12px'}
           color={'grayModern.600'}
           fontWeight={'bold'}
+          position={'relative'}
         >
+          <Button
+            variant={'square'}
+            position={'absolute'}
+            right={'12px'}
+            top={'8px'}
+            onClick={onOpen}
+          >
+            <MyIcon name="enlarge" width={'16px'} fill={'#667085'} />
+          </Button>
           <Box>
             <Box mb={'4px'}>CPU&ensp;({app.usedCpu.yData[app.usedCpu.yData.length - 1]}%)</Box>
             <Box h={'60px'}>
@@ -80,7 +92,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           fontWeight={'bold'}
         >
           <MyIcon name={'network'} w={'14px'} />
-          <Box ml={3}>
+          <Box ml={'12px'}>
             {t('Network Configuration')}({networks.length})
           </Box>
         </Flex>
@@ -154,6 +166,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           </table>
         </Flex>
       </>
+      <MonitorModal isOpen={isOpen} onClose={onClose} />
     </Box>
   );
 };
