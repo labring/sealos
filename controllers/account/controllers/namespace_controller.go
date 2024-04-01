@@ -23,8 +23,9 @@ import (
 	"strings"
 	"time"
 
-	v1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/minio/madmin-go/v3"
+
+	v1 "github.com/labring/sealos/controllers/account/api/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
