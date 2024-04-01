@@ -46,7 +46,7 @@ spec:
             - name: SEALOS_DOMAIN
               value: {{ .cloudDomain }}
             - name: MONITOR_URL
-              value {{ .monitorUrl }}
+              value: {{ .monitorUrl }}
             - name: DOMAIN_PORT
               value: "{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
             - name: INGRESS_SECRET
