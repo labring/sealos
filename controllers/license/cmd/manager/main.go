@@ -21,6 +21,9 @@ import (
 	"flag"
 	"os"
 
+	database2 "github.com/labring/sealos/controllers/pkg/database"
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -109,7 +112,19 @@ func main() {
 	}
 	setupLog.Info("cluster id", "id", clusterID)
 
-	if err = (&controller.LicenseReconciler{ClusterID: clusterID}).SetupWithManager(mgr, db); err != nil {
+	accountDB, err := cockroach.NewCockRoach(os.Getenv(database2.GlobalCockroachURI), os.Getenv(database2.LocalCockroachURI))
+	if err != nil {
+		setupLog.Error(err, "unable to connect to cockroach")
+		os.Exit(1)
+	}
+	defer func() {
+		err := accountDB.Close()
+		if err != nil {
+			setupLog.Error(err, "unable to disconnect from cockroach")
+		}
+	}()
+
+	if err = (&controller.LicenseReconciler{ClusterID: clusterID}).SetupWithManager(mgr, db, accountDB); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "License")
 		os.Exit(1)
 	}

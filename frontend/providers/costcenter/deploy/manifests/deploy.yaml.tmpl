@@ -61,6 +61,18 @@ spec:
             - name: costcenter-frontend-volume
               mountPath: /config.yaml
               subPath: config.yaml
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: "app"
+                  operator: In
+                  values:
+                  - costcenter-frontend
+              topologyKey: "kubernetes.io/hostname"
       volumes:
         - name: costcenter-frontend-volume
           configMap:

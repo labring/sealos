@@ -9,6 +9,8 @@ import { isString } from 'lodash';
 import { jwtDecode } from 'jwt-decode';
 import { AccessTokenPayload } from '@/types/token';
 import { sessionConfig } from '@/utils/sessionConfig';
+import { useMutation } from '@tanstack/react-query';
+import { nsListRequest, switchRequest } from '@/api/namespace';
 
 const Callback: NextPage = () => {
   const router = useRouter();
@@ -16,6 +18,19 @@ const Callback: NextPage = () => {
   const setToken = useSessionStore((s) => s.setToken);
   const delSession = useSessionStore((s) => s.delSession);
   const curToken = useSessionStore((s) => s.token);
+  const { lastWorkSpaceId } = useSessionStore();
+
+  const mutation = useMutation({
+    mutationFn: switchRequest,
+    async onSuccess(data) {
+      if (data.code === 200 && !!data.data) {
+        await sessionConfig(data.data);
+      } else {
+        throw Error('session in invalid');
+      }
+    }
+  });
+
   useEffect(() => {
     if (!router.isReady) return;
     (async () => {
@@ -30,6 +45,15 @@ const Callback: NextPage = () => {
         const regionTokenRes = await getRegionToken();
         if (regionTokenRes?.data) {
           await sessionConfig(regionTokenRes.data);
+          const session = useSessionStore.getState().session;
+          if (session?.token && session?.user?.ns_uid) {
+            const nsList = await nsListRequest();
+            const namespaces = nsList?.data?.namespaces || [];
+            const existNamespace = namespaces.find((x) => x.uid === lastWorkSpaceId);
+            if (existNamespace && existNamespace.uid !== session.user.ns_uid) {
+              await mutation.mutateAsync(existNamespace.uid);
+            }
+          }
           await router.replace('/');
           return;
         } else {

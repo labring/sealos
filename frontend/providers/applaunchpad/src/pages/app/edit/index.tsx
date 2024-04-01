@@ -212,7 +212,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const submitError = useCallback(() => {
     // deep search message
     const deepSearch = (obj: any): string => {
-      if (!obj) return t('Submit Error');
+      if (!obj || typeof obj !== 'object') return t('Submit Error');
       if (!!obj.message) {
         return obj.message;
       }
@@ -306,12 +306,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               const parseYamls = formData2Yamls(data);
               setYamlList(parseYamls);
               // balance check
-              if (balance <= 0) {
-                return toast({
-                  status: 'warning',
-                  title: t('user.Insufficient account balance')
-                });
-              }
+              // if (balance <= 0) {
+              //   return toast({
+              //     status: 'warning',
+              //     title: t('user.Insufficient account balance')
+              //   });
+              // }
 
               // gpu inventory check
               if (data.gpu?.type) {

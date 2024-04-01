@@ -1,16 +1,11 @@
 {
-  "Upload Token File": "上传 License 文件",
-  "Activate License": "激活 License",
-  "Activation Record": "激活记录",
-  "Purchase License": "购买 License",
-  "Please go to": "请前往",
-  "Activation Time": "激活时间: ",
-  "Go to the message center to see the results": "前往消息中心查看结果",
-  "token does not exist": "license 不存在",
-  "No Record": "暂无记录",
-  "Activation time": "激活时间",
-  "Activation Successful": "激活成功",
-  "Failed to obtain cluster ID, contact administrator": "获取集群id失败, 联系管理员",
-  "Cluster ID": "集群 ID: {{id}}",
-  "Purchase Tip": "激活 / 购买"
+  "Cumulative number of invitees": "累计邀请人数",
+  "Earnings": "收益",
+  "Cashback Ratio": "返现比例",
+  "Every time a friend recharges": "好友每次充值，您都获得 {{amount}} 的余额奖励",
+  "Invitation link": "邀请链接",
+  "Copy link": "复制链接",
+  "Time": "时间",
+  "Amount": "金额",
+  "No invitation records": "无邀请记录~"
 }

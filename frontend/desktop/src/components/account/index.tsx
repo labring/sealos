@@ -20,7 +20,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import useAppStore from '@/stores/app';
 import { ApiResp, Region } from '@/types';
 import { formatMoney } from '@/utils/format';
@@ -38,9 +38,7 @@ import { sessionConfig } from '@/utils/sessionConfig';
 
 const NsMenu = () => {
   const { t } = useTranslation();
-  const session = useSessionStore((s) => s.session);
-  const setToken = useSessionStore((s) => s.setToken);
-  const setSession = useSessionStore((s) => s.setSession);
+  const { session } = useSessionStore();
   const ns_uid = session?.user?.ns_uid || '';
   const router = useRouter();
   const mutation = useMutation({
@@ -105,6 +103,7 @@ const NsMenu = () => {
         p="6px"
         w="250px"
         background="linear-gradient(270deg, #F1F1F1 0%, #EEE 43.75%, #ECECEC 100%)"
+        border={'none'}
       >
         <PopoverBody px="0" pb="0" pt="4px" maxH={'320px'} overflowY={'auto'}>
           <NsList
@@ -119,6 +118,8 @@ const NsMenu = () => {
   );
 };
 export default function Account({ disclosure }: { disclosure: UseDisclosureReturn }) {
+  const [showId, setShowId] = useState(true);
+  const { needPassword, rechargeEnabled } = useGlobalStore((state) => state.systemEnv);
   const router = useRouter();
   const { copyData } = useCopyData();
   const openApp = useAppStore((s) => s.openApp);
@@ -155,8 +156,7 @@ export default function Account({ disclosure }: { disclosure: UseDisclosureRetur
     router.replace('/signin');
     setToken('');
   };
-  const needPassword = useGlobalStore((s) => s.needPassword);
-  const rechargeEnabled = useGlobalStore((s) => s.rechargeEnabled);
+
   return disclosure.isOpen ? (
     <>
       <Box
@@ -198,13 +198,20 @@ export default function Account({ disclosure }: { disclosure: UseDisclosureRetur
             {user?.name}
           </Text>
           <HStack mb="10px" gap="2px">
-            <Text color={'grayModern.500'} fontSize={'12px'}>
-              ID: {user?.userId || ''}
+            <Text
+              color={'grayModern.500'}
+              fontSize={'12px'}
+              cursor={'pointer'}
+              onClick={() => setShowId((s) => !s)}
+            >
+              {showId ? `ID: ${user?.userId}` : `NS: ${user?.nsid}`}
             </Text>
             <IconButton
               variant={'white-bg-icon'}
               p="4px"
-              onClick={() => copyData(user?.userId || '')}
+              onClick={() => {
+                if (user?.userId && user.nsid) copyData(showId ? user?.userId : user?.nsid);
+              }}
               icon={<CopyIcon boxSize={'12px'} color={'grayModern.500'} fill={'grayModern.500'} />}
               aria-label={'copy nsid'}
             />

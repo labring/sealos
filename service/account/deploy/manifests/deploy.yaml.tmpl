@@ -43,12 +43,6 @@ spec:
       containers:
         - name: account-service
           image: ghcr.io/labring/sealos-account-service:latest
-          env:
-            - name: MONGO_URI
-              valueFrom:
-                secretKeyRef:
-                  key: MONGO_URI
-                  name: mongo-secret
           envFrom:
           - configMapRef:
               name: account-manager-env

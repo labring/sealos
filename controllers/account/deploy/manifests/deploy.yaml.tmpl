@@ -1139,6 +1139,8 @@ rules:
   - get
   - list
   - watch
+  - create
+  - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -1294,11 +1296,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
-        - name: MONGO_URI
-          valueFrom:
-            secretKeyRef:
-              key: MONGO_URI
-              name: mongo-secret
         envFrom:
         - secretRef:
             name: payment-secret
@@ -1364,6 +1361,18 @@ spec:
         runAsNonRoot: true
       serviceAccountName: account-controller-manager
       terminationGracePeriodSeconds: 10
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: "control-plane"
+                  operator: In
+                  values:
+                  - controller-manager
+              topologyKey: "kubernetes.io/hostname"
       volumes:
       - name: cert
         secret:

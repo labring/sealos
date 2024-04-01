@@ -1,12 +1,18 @@
 import { Box, Grid } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
-import AppMenu from './appmenu';
+
+import dynamic from 'next/dynamic';
 
 const ShowLayoutRoute: Record<string, boolean> = {
   '/': true,
   '/app': true,
   '/deploy': true
 };
+
+const AppMenu = dynamic(() => import('./appmenu'), {
+  ssr: false,
+  loading: () => <div></div>
+});
 
 export default function Layout({ children }: { children: JSX.Element }) {
   const router = useRouter();

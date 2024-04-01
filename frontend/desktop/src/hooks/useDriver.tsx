@@ -1,12 +1,12 @@
-import { getPriceBonus, getSystemEnv, getUserAccount, updateDesktopGuide } from '@/api/platform';
+import { getPriceBonus, getUserAccount, updateDesktopGuide } from '@/api/platform';
 import { GUIDE_DESKTOP_INDEX_KEY } from '@/constants/account';
+import { useGlobalStore } from '@/stores/global';
 import { formatMoney } from '@/utils/format';
 import { Box, Button, Flex, FlexProps, Icon, Image, Text } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 
 export function DriverStarIcon() {
   return (
@@ -46,7 +46,8 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
   const [showGuide, setShowGuide] = useState(false);
   const [giftAmount, setGiftAmount] = useState(8);
   const router = useRouter();
-  const { data, isSuccess } = useQuery(['getPlatformEnv'], getSystemEnv);
+
+  const { systemEnv } = useGlobalStore();
   const handleSkipGuide = () => {
     console.log('handleSkipGuide');
     setShowGuide(false);
@@ -58,8 +59,7 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
   useEffect(() => {
     const handleUserGuide = async () => {
       try {
-        const { data: env } = await getSystemEnv();
-        if (!env.guideEnabled) return;
+        if (!systemEnv.guideEnabled) return;
         const { data } = await getUserAccount();
         const bonus = await getPriceBonus();
         if (bonus.data?.activities) {
@@ -76,9 +76,9 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
         }
       } catch (error) {}
     };
-    data?.data?.guideEnabled && handleUserGuide();
+    systemEnv?.guideEnabled && handleUserGuide();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+  }, [systemEnv]);
 
   const PopoverBodyInfo = (props: FlexProps) => (
     <Flex

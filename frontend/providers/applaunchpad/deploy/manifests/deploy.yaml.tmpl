@@ -78,6 +78,18 @@ spec:
             - mountPath: /app/data/form_slider_config.json
               name: applaunchpad-frontend-volume
               subPath: form_slider_config.json
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: "app"
+                  operator: In
+                  values:
+                  - applaunchpad-frontend
+              topologyKey: "kubernetes.io/hostname"
       volumes:
         - name: applaunchpad-frontend-volume
           configMap:

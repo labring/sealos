@@ -1,4 +1,3 @@
-import { getUserKubeConfig } from '@/utils/user';
 import axios, {
   AxiosHeaders,
   AxiosRequestConfig,
@@ -59,13 +58,8 @@ const request = axios.create({
 // request interceptor
 request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // auto append service prefix
-    if (config.url && !config.url?.startsWith('/api/')) {
-      config.url = '' + config.url;
-    }
     let _headers: AxiosHeaders = config.headers;
 
-    _headers['Authorization'] = encodeURIComponent(getUserKubeConfig());
     if (!config.headers || config.headers['Content-Type'] === '') {
       _headers['Content-Type'] = 'application/json';
     }
