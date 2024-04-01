@@ -22,14 +22,14 @@ cloud_version="latest"
 image_registry=${image_registry:-"docker.io"}
 image_repository=${image_repository:-"labring"}
 kubernetes_version=${kubernetes_version:-"1.27.11"}
-cilium_version=${cilium_version:-"1.12.14"}
-cert_manager_version=${cert_manager_version:-"1.13.3"}
-helm_version=${helm_version:-"3.12.0"}
-openebs_version=${openebs_version:-"3.4.0"}
-victoria_metrics_k8s_stack_version=${victoria_metrics_k8s_stack_version:-"1.96.0"}
-ingress_nginx_version=${ingress_nginx_version:-"1.5.1"}
-kubeblocks_version=${kubeblocks_version:-"0.6.4"}
+cilium_version=${cilium_version:-"1.14.8"}
+cert_manager_version=${cert_manager_version:-"1.14.4"}
+helm_version=${helm_version:-"3.14.1"}
+openebs_version=${openebs_version:-"3.10.0"}
+ingress_nginx_version=${ingress_nginx_version:-"1.9.4"}
+kubeblocks_version=${kubeblocks_version:-"0.8.2"}
 metrics_server_version=${metrics_server_version:-"0.6.4"}
+victoria_metrics_k8s_stack_version=${victoria_metrics_k8s_stack_version:-"1.96.0"}
 
 
 # Define English and Chinese prompts
@@ -619,7 +619,6 @@ execute_commands() {
     sealos run "${image_registry}/${image_repository}/cert-manager:v${cert_manager_version#v:-1.8.0}"
     sealos run "${image_registry}/${image_repository}/openebs:v${openebs_version#v:-3.4.0}"
     sealos run "${image_registry}/${image_repository}/metrics-server:v${metrics_server_version#v:-0.6.4}"
-    sealos run "${image_registry}/${image_repository}/victoria-metrics-k8s-stack:v${victoria_metrics_k8s_stack_version#v:-1.96.0}"
     kubectl get sc openebs-backup > /dev/null 2>&1 || kubectl create -f - <<EOF
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -638,6 +637,7 @@ EOF
     kbcli addon enable prometheus
 
     get_prompt "installing_monitoring"
+    sealos run "${image_registry}/${image_repository}/victoria-metrics-k8s-stack:v${victoria_metrics_k8s_stack_version#v:-1.96.0}"
 
     # TODO use sealos run to install cockroachdb-operator
     kubectl apply -f https://raw.githubusercontent.com/cockroachdb/cockroach-operator/v2.12.0/install/crds.yaml
