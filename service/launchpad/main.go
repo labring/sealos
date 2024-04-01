@@ -8,15 +8,15 @@ import (
 	"net/http"
 	"os"
 
-	launchpadServer "github.com/labring/sealos/service/launchpad/server"
+	"github.com/labring/sealos/service/launchpad/server"
 )
 
 type RestartableServer struct {
 	configFile string
 }
 
-func (rs *RestartableServer) Serve(c *launchpadServer.Config) {
-	var vs, err = launchpadServer.NewVMServer(c)
+func (rs *RestartableServer) Serve(c *server.Config) {
+	var vs, err = server.NewVMServer(c)
 	if err != nil {
 		fmt.Printf("Failed to create auth server: %s\n", err)
 		return
@@ -52,7 +52,7 @@ func main() {
 		return
 	}
 
-	config, err := launchpadServer.InitConfig(cf)
+	config, err := server.InitConfig(cf)
 	if err != nil {
 		fmt.Println(err)
 		return
