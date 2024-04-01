@@ -1,3 +1,3 @@
-module github.com/wally/sealos-latest-1/service/launchpad
+module github.com/wally/sealos/service/launchpad
 
 go 1.20
