@@ -10,5 +10,6 @@ ENV cloudPort=""
 
 ENV certSecretName="wildcard-cert"
 ENV ingressSecret="wildcard-cert"
+ENv monitorUrl="http://database-monitor.sealos.svc.cluster.local:9090"
 
 CMD ["kubectl apply -f manifests"]
