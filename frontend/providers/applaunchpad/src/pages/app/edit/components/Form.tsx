@@ -1025,6 +1025,7 @@ const Form = ({
                       <Label className={styles.formSecondTitle}>{t('Configuration File')}</Label>
                       <Button
                         w={'100%'}
+                        height={'32px'}
                         variant={'outline'}
                         onClick={() => setConfigEdit({ mountPath: '', value: '' })}
                         leftIcon={<MyIcon name="plus" w={'16px'} fill="#485264" />}
@@ -1085,6 +1086,7 @@ const Form = ({
 
                       <Button
                         w={'320px'}
+                        height={'32px'}
                         variant={'outline'}
                         onClick={() => setStoreEdit({ name: '', path: '', value: 1 })}
                         leftIcon={<MyIcon name="plus" w={'16px'} fill="#485264" />}
