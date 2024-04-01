@@ -38,7 +38,7 @@ export const Tabs = ({ list, size = 'md', activeId, onChange, ...props }: Props)
       border={'1px solid #E8EBF0'}
       gridTemplateColumns={`repeat(${list.length},1fr)`}
       p={sizeMap.outP}
-      borderRadius={'8px'}
+      borderRadius={'md'}
       backgroundColor={'grayModern.50'}
       fontSize={sizeMap.fontSize}
       fontWeight={500}
@@ -49,7 +49,7 @@ export const Tabs = ({ list, size = 'md', activeId, onChange, ...props }: Props)
           key={item.id}
           px={'2'}
           py={sizeMap.inlineP}
-          borderRadius={'6px'}
+          borderRadius={'base'}
           textAlign={'center'}
           _hover={{
             color: 'brightBlue.600'

@@ -58,7 +58,7 @@ const DelModal = ({
       <ModalContent>
         <ModalHeader>{t('Deletion warning')} </ModalHeader>
         <ModalCloseButton />
-        <ModalBody pb={4}>
+        <ModalBody>
           <Box color={'myGray.600'}>
             {t(
               'Are you sure you want to delete this application? If you proceed, all data for this project will be deleted.'

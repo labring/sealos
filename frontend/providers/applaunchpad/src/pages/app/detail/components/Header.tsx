@@ -139,7 +139,7 @@ const Header = ({
           variant={'outline'}
           mr={5}
           h={'40px'}
-          leftIcon={<MyIcon name="continue" w={'14px'} />}
+          leftIcon={<MyIcon name="continue" w={'20px'} fill={'#485264'} />}
           isLoading={loading}
           onClick={handleStartApp}
         >
@@ -151,7 +151,7 @@ const Header = ({
           variant={'outline'}
           mr={5}
           h={'40px'}
-          leftIcon={<MyIcon name="pause" w={'14px'} />}
+          leftIcon={<MyIcon name="pause" w={'20px'} fill={'#485264'} />}
           isLoading={loading}
           onClick={onOpenPause(handlePauseApp)}
         >
@@ -166,7 +166,7 @@ const Header = ({
           h={'40px'}
           width={'96px'}
           variant={'outline'}
-          leftIcon={<MyIcon name={'change'} w={'14px'} />}
+          leftIcon={<MyIcon name={'change'} w={'20px'} fill={'#485264'} />}
           isLoading={loading}
           onClick={() => {
             router.push(`/app/edit?name=${appName}`);
@@ -182,7 +182,7 @@ const Header = ({
           h={'40px'}
           width={'96px'}
           variant={'outline'}
-          leftIcon={<MyIcon name="restart" w={'16px'} h={'16px'} />}
+          leftIcon={<MyIcon name="restart" w={'20px'} fill={'#485264'} />}
           onClick={openRestartConfirm(handleRestartApp)}
           isLoading={loading}
         >
@@ -193,7 +193,7 @@ const Header = ({
         h={'40px'}
         width={'96px'}
         variant={'outline'}
-        leftIcon={<MyIcon name="delete" w={'14px'} h={'14px'} />}
+        leftIcon={<MyIcon name="delete" w={'20px'} fill={'#485264'} />}
         _hover={{
           color: '#FF324A'
         }}

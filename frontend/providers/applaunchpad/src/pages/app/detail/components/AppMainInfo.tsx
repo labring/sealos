@@ -37,7 +37,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
       <>
         <Flex alignItems={'center'} fontSize={'12px'} fontWeight={'bold'}>
           <MyIcon name={'listen'} w={'14px'} color={'grayModern.600'} />
-          <Box ml={3} color={'myGray.600'}>
+          <Box ml={3} color={'grayModern.600'}>
             {t('Real-time Monitoring')}
           </Box>
           <Box ml={2} color={'grayModern.500'}>

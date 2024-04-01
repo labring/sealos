@@ -59,9 +59,13 @@ export const Button = defineStyleConfig({
       borderRadius: 'md',
       fontSize: '14px',
       fontWeight: 500,
+      boxShadow: ThemeColors.buttonBoxShadow,
       _hover: {
         opacity: '0.9',
         bg: ThemeColors.grayModern[900]
+        // _disabled: {
+        //   bg: ''
+        // }
       },
       _active: {
         bg: ''
@@ -73,7 +77,9 @@ export const Button = defineStyleConfig({
       borderRadius: 'md',
       fontSize: '14px',
       fontWeight: 500,
-      border: '1px solid #DFE2EA',
+      border: '1px solid',
+      borderColor: 'grayModern.250',
+      boxShadow: ThemeColors.buttonBoxShadow,
       color: 'grayModern.600',
       _hover: {
         bg: '#FFF',

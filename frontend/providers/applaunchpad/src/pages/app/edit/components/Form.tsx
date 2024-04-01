@@ -219,7 +219,7 @@ const Form = ({
   const headerStyles = {
     py: 4,
     pl: '42px',
-    borderTopRadius: '12px',
+    borderTopRadius: 'lg',
     fontSize: 'xl',
     color: 'grayModern.900',
     fontWeight: 'bold',
@@ -327,7 +327,7 @@ const Form = ({
             {navList.map((item) => (
               <Box key={item.id} onClick={() => router.replace(`#${item.id}`)}>
                 <Flex
-                  borderRadius={'md'}
+                  borderRadius={'base'}
                   cursor={'pointer'}
                   gap={'8px'}
                   alignItems={'center'}
@@ -862,8 +862,8 @@ const Form = ({
                             px={4}
                             border={theme.borders.base}
                             borderLeft={0}
-                            borderTopRightRadius={'8px'}
-                            borderBottomRightRadius={'8px'}
+                            borderTopRightRadius={'md'}
+                            borderBottomRightRadius={'md'}
                           >
                             <Box flex={1} userSelect={'all'} className="textEllipsis">
                               {network.customDomain

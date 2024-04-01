@@ -155,7 +155,7 @@ const Pods = ({
               borderRadius={'8px'}
               onClick={() => setLogsPodIndex(i)}
             >
-              <MyIcon name="log" w="20px" h="20px" />
+              <MyIcon name="log" w="18px" h="18px" fill={'#485264'} />
             </Center>
           </MyTooltip>
           <MyTooltip offset={[0, 10]} label={t('Terminal')}>
@@ -177,7 +177,13 @@ const Pods = ({
                 });
               }}
             >
-              <MyIcon className="driver-detail-terminal" name={'terminal'} w="20px" h="20px" />
+              <MyIcon
+                className="driver-detail-terminal"
+                name={'terminal'}
+                w="18px"
+                h="18px"
+                fill={'#485264'}
+              />
             </Center>
           </MyTooltip>
           <MyTooltip offset={[0, 10]} label={t('Details')}>
@@ -190,7 +196,7 @@ const Pods = ({
               borderRadius={'8px'}
               onClick={() => setDetailPodIndex(i)}
             >
-              <MyIcon name={'detail'} w="20px" h="20px" />
+              <MyIcon name={'detail'} w="18px" h="18px" fill={'#485264'} />
             </Center>
           </MyTooltip>
           <MyTooltip offset={[0, 10]} label={t('Restart')}>
@@ -203,7 +209,7 @@ const Pods = ({
               borderRadius={'8px'}
               onClick={openConfirmRestart(() => handleRestartPod(item.podName))}
             >
-              <MyIcon name={'restart'} w="18px" h="18px" />
+              <MyIcon name={'restart'} w="18px" h="18px" fill={'#485264'} />
             </Center>
           </MyTooltip>
         </Flex>
@@ -213,7 +219,7 @@ const Pods = ({
 
   return (
     <Box h={'100%'} py={5} position={'relative'}>
-      <Flex px={6} alignItems={'center'} fontSize={'12px'}>
+      <Flex px={6} alignItems={'center'} fontSize={'12px'} fontWeight={'bold'}>
         <MyIcon name="podList" w={'14px'} fill={'grayModern.600'} />
         <Box ml={3} flex={1} color={'grayModern.600'}>
           {t('Pods List')}

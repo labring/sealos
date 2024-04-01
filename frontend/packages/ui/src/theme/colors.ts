@@ -101,7 +101,9 @@ const baseColors = {
 const otherColors = {
   surfaceLow: baseColors.grayModern[50],
   surface: baseColors.grayModern[100],
-  boxShadowBlue: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)'
+  boxShadowBlue: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+  buttonBoxShadow:
+    '0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)'
 };
 
 export const colors = {

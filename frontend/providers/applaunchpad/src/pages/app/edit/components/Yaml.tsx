@@ -45,7 +45,7 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
         <Flex
           flexDirection={'column'}
           mt={3}
-          borderRadius={'xl'}
+          borderRadius={'md'}
           overflow={'hidden'}
           bg={'white'}
           p="4px"
@@ -58,7 +58,7 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
               cursor={'pointer'}
               alignItems={'center'}
               h={'40px'}
-              borderRadius={'lg'}
+              borderRadius={'base'}
               _hover={{
                 backgroundColor: 'grayModern.100'
               }}
@@ -95,10 +95,10 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
           h={'100%'}
           overflow={'hidden'}
           border={theme.borders.base}
-          borderRadius={'xl'}
+          borderRadius={'lg'}
           position={'relative'}
         >
-          <Flex px={8} py={4} bg={'grayModern.50'}>
+          <Flex px={8} py={4} bg={'grayModern.50'} alignItems={'center'}>
             <Box flex={1} fontSize={'xl'} color={'grayModern.900'} fontWeight={'bold'}>
               {yamlList[selectedIndex].filename}
             </Box>

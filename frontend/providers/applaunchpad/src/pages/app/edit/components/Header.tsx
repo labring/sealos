@@ -49,14 +49,7 @@ const Header = ({
         </Box>
       </Flex>
       <Box flex={1}></Box>
-      <Button
-        h={'40px'}
-        mr={'14px'}
-        minW={'140px'}
-        borderColor={'myGray.200'}
-        variant={'outline'}
-        onClick={handleExportYaml}
-      >
+      <Button h={'40px'} mr={'14px'} minW={'140px'} variant={'outline'} onClick={handleExportYaml}>
         {t('Export')} Yaml
       </Button>
       <Button

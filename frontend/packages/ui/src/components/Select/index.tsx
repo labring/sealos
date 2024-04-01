@@ -59,7 +59,7 @@ const MySelect = (
           alignItems={'center'}
           justifyContent={'space-between'}
           border={'1px solid #E8EBF0'}
-          borderRadius={'8px'}
+          borderRadius={'md'}
           fontSize={'12px'}
           fontWeight={'400'}
           variant={'outline'}
@@ -107,7 +107,7 @@ const MySelect = (
               : `${width} !important`;
           })()}
           p={'6px'}
-          borderRadius={'8px'}
+          borderRadius={'base'}
           border={'1px solid #E8EBF0'}
           boxShadow={
             '0px 4px 10px 0px rgba(19, 51, 107, 0.10), 0px 0px 1px 0px rgba(19, 51, 107, 0.10)'

@@ -294,7 +294,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         alignItems={'center'}
         h={'100%'}
         minWidth={'1024px'}
-        backgroundColor={'#F3F4F5'}
+        backgroundColor={'grayModern.100'}
       >
         <Header
           appName={formHook.getValues('appName')}

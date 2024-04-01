@@ -30,7 +30,9 @@ export const Modal = ModalHelper.defineMultiStyleConfig({
       py: '24px'
     },
     footer: {
-      px: '36px'
+      px: '36px',
+      pb: '24px',
+      pt: '0px'
     }
   }
 });

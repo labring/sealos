@@ -38,7 +38,9 @@ export const SealosMenu = ({ width, Button, menuList }: Props) => {
             key={i}
             {...menuItemStyles}
             onClick={item.onClick}
-            color={item.isActive ? 'hover.blue' : ''}
+            color={item.isActive ? 'hover.blue' : 'grayModern.600'}
+            py={'6px'}
+            px={'4px'}
           >
             {item.child}
           </MenuItem>
