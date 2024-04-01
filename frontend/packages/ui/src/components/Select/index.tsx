@@ -10,7 +10,6 @@ import {
 } from '@chakra-ui/react';
 import type { ButtonProps } from '@chakra-ui/react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
-import MyIcon, { type IconType } from '../../../../../providers/applaunchpad/src/components/Icon';
 
 interface Props extends ButtonProps {
   width?: string;
@@ -18,7 +17,6 @@ interface Props extends ButtonProps {
   value?: string;
   placeholder?: string;
   list: {
-    icon?: string;
     label: string | React.ReactNode;
     value: string;
   }[];
@@ -83,7 +81,6 @@ const MySelect = (
         >
           {activeMenu ? (
             <>
-              {!!activeMenu.icon && <MyIcon mr={2} name={activeMenu.icon as IconType} w={'18px'} />}
               <Box>{activeMenu.label}</Box>
             </>
           ) : (
@@ -134,7 +131,6 @@ const MySelect = (
                 }
               }}
             >
-              {!!item.icon && <MyIcon mr={2} name={item.icon as IconType} w={'18px'} />}
               <Box>{item.label}</Box>
             </MenuItem>
           ))}
