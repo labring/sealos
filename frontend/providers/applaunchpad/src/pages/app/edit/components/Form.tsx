@@ -1,49 +1,52 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import {
-  Box,
-  Button,
-  Flex,
-  Grid,
-  FormControl,
-  Input,
-  Divider,
-  Switch,
-  Accordion,
-  AccordionButton,
-  AccordionItem,
-  AccordionPanel,
-  AccordionIcon,
-  useTheme,
-  useDisclosure,
-  IconButton
-} from '@chakra-ui/react';
-import { AddIcon, InfoOutlineIcon, MinusIcon } from '@chakra-ui/icons';
-import { useFieldArray, UseFormReturn } from 'react-hook-form';
-import { useRouter } from 'next/router';
-
-import type { CustomAccessModalParams } from './CustomAccessModal';
-import type { ConfigMapType } from './ConfigmapModal';
-import type { StoreType } from './StoreModal';
+import { obj2Query } from '@/api/tools';
+import MyIcon from '@/components/Icon';
+import { MyTooltip } from '@sealos/ui';
+import { RangeInput } from '@sealos/ui';
+import { MySelect } from '@sealos/ui';
+import { MySlider } from '@sealos/ui';
+import { ProtocolList, noGpuSliderKey } from '@/constants/app';
+import { GpuAmountMarkList } from '@/constants/editApp';
+import { useToast } from '@/hooks/useToast';
+import { useGlobalStore } from '@/store/global';
+import { SEALOS_DOMAIN } from '@/store/static';
+import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import type { AppEditType } from '@/types/app';
+import { sliderNumber2MarkList } from '@/utils/adapt';
+import { InfoOutlineIcon } from '@chakra-ui/icons';
+import {
+  Accordion,
+  AccordionButton,
+  AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
+  Box,
+  Button,
+  Center,
+  Divider,
+  Flex,
+  FormControl,
+  Grid,
+  IconButton,
+  Input,
+  Switch,
+  useDisclosure,
+  useTheme
+} from '@chakra-ui/react';
+import { MyRangeSlider, Tabs, Tip } from '@sealos/ui';
+import { throttle } from 'lodash';
 import { customAlphabet } from 'nanoid';
-import { GpuAmountMarkList } from '@/constants/editApp';
-import { SEALOS_DOMAIN } from '@/store/static';
 import { useTranslation } from 'next-i18next';
-import { useGlobalStore } from '@/store/global';
-import { useUserStore } from '@/store/user';
-
-import Tabs from '@/components/Tabs';
-import Tip from '@/components/Tip';
-import MySelect from '@/components/Select';
-import PriceBox from './PriceBox';
 import dynamic from 'next/dynamic';
-import RangeInput from '@/components/RangeInput';
-import MySlider from '@/components/Slider';
-import MyRangeSlider from '@/components/RangeSlider';
-import MyIcon from '@/components/Icon';
-import MyTooltip from '@/components/MyTooltip';
+import { useRouter } from 'next/router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { UseFormReturn, useFieldArray } from 'react-hook-form';
+import type { ConfigMapType } from './ConfigmapModal';
+import type { CustomAccessModalParams } from './CustomAccessModal';
+import PriceBox from './PriceBox';
 import QuotaBox from './QuotaBox';
+import type { StoreType } from './StoreModal';
+import styles from './index.module.scss';
 
 const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
@@ -51,12 +54,6 @@ const StoreModal = dynamic(() => import('./StoreModal'));
 const EditEnvs = dynamic(() => import('./EditEnvs'));
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
-import styles from './index.module.scss';
-import { obj2Query } from '@/api/tools';
-import { throttle } from 'lodash';
-import { ProtocolList, noGpuSliderKey } from '@/constants/app';
-import { sliderNumber2MarkList } from '@/utils/adapt';
-import { useToast } from '@/hooks/useToast';
 
 const labelWidth = 120;
 
@@ -203,7 +200,8 @@ const Form = ({
   }) => (
     <Box
       flex={`0 0 ${w === 'auto' ? 'auto' : `${w}px`}`}
-      color={'#333'}
+      color={'grayModern.900'}
+      fontWeight={'bold'}
       userSelect={'none'}
       {...props}
     >
@@ -213,19 +211,21 @@ const Form = ({
 
   const boxStyles = {
     border: theme.borders.base,
-    borderRadius: 'sm',
+    borderRadius: 'lg',
     mb: 4,
     bg: 'white'
   };
+
   const headerStyles = {
     py: 4,
-    pl: '46px',
-    fontSize: '2xl',
-    color: 'myGray.900',
+    pl: '42px',
+    borderTopRadius: 'lg',
+    fontSize: 'xl',
+    color: 'grayModern.900',
     fontWeight: 'bold',
     display: 'flex',
     alignItems: 'center',
-    backgroundColor: 'myWhite.600'
+    backgroundColor: 'grayModern.50'
   };
 
   // add NoGPU select item
@@ -242,17 +242,17 @@ const Form = ({
               label: (
                 <Flex>
                   <Box color={'myGray.900'}>{item.alias}</Box>
-                  <Box mx={3} color={'myGray.500'}>
+                  <Box mx={3} color={'grayModern.900'}>
                     |
                   </Box>
-                  <Box color={'myGray.500'}>
+                  <Box color={'grayModern.900'}>
                     {t('vm')} : {Math.round(item.vm)}G
                   </Box>
-                  <Box mx={3} color={'myGray.500'}>
+                  <Box mx={3} color={'grayModern.900'}>
                     |
                   </Box>
                   <Flex pr={3}>
-                    <Box color={'myGray.500'}>{t('Inventory')}&ensp;:&ensp;</Box>
+                    <Box color={'grayModern.900'}>{t('Inventory')}&ensp;:&ensp;</Box>
                     <Box color={'#FB7C3C'}>{countGpuInventory(item.type)}</Box>
                   </Flex>
                 </Flex>
@@ -303,8 +303,8 @@ const Form = ({
         <Box>
           <Tabs
             list={[
-              { id: 'form', label: 'Config Form' },
-              { id: 'yaml', label: 'YAML File' }
+              { id: 'form', label: t('Config Form') },
+              { id: 'yaml', label: t('YAML File') }
             ]}
             activeId={'form'}
             onChange={() =>
@@ -316,39 +316,52 @@ const Form = ({
               )
             }
           />
-          <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'}>
+          <Box
+            mt={3}
+            borderRadius={'md'}
+            overflow={'hidden'}
+            backgroundColor={'white'}
+            border={theme.borders.base}
+            p={'4px'}
+          >
             {navList.map((item) => (
               <Box key={item.id} onClick={() => router.replace(`#${item.id}`)}>
                 <Flex
-                  px={5}
-                  py={3}
+                  borderRadius={'base'}
                   cursor={'pointer'}
-                  borderLeft={'2px solid'}
+                  gap={'8px'}
                   alignItems={'center'}
-                  h={'48px'}
+                  h={'40px'}
                   _hover={{
-                    backgroundColor: 'myWhite.400'
+                    backgroundColor: 'grayModern.100'
                   }}
-                  color="myGray.500"
-                  borderColor="myGray.200"
-                  backgroundColor="transparent"
+                  color="grayModern.900"
+                  backgroundColor={activeNav === item.id ? 'grayModern.100' : 'transparent'}
                 >
+                  <Box
+                    w={'2px'}
+                    h={'24px'}
+                    justifySelf={'start'}
+                    bg={'grayModern.900'}
+                    borderRadius={'12px'}
+                    opacity={activeNav === item.id ? 1 : 0}
+                  ></Box>
                   <MyIcon
                     name={item.icon as any}
                     w={'20px'}
                     h={'20px'}
-                    color={activeNav === item.id ? 'myGray.500' : 'myGray.400'}
+                    color={activeNav === item.id ? 'grayModern.900' : 'grayModern.500'}
                   />
-                  <Box ml={4}>{t(item.label)}</Box>
+                  <Box>{t(item.label)}</Box>
                 </Flex>
               </Box>
             ))}
           </Box>
-          <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'}>
+          <Box mt={3} overflow={'hidden'}>
             <QuotaBox />
           </Box>
           {userSourcePrice && (
-            <Box mt={3} borderRadius={'sm'} overflow={'hidden'} backgroundColor={'white'}>
+            <Box mt={3} overflow={'hidden'}>
               <PriceBox
                 pods={
                   getValues('hpa.use')
@@ -381,7 +394,7 @@ const Form = ({
           {/* base info */}
           <Box id={'baseInfo'} {...boxStyles}>
             <Box {...headerStyles}>
-              <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'myGray.500'} />
+              <MyIcon name={'formInfo'} mr={'12px'} w={'24px'} color={'grayModern.900'} />
               {t('Basic Config')}
             </Box>
             <Box px={'42px'} py={'24px'}>
@@ -421,11 +434,11 @@ const Form = ({
                     size={'sm'}
                     list={[
                       {
-                        label: 'public',
+                        label: t('public'),
                         id: `public`
                       },
                       {
-                        label: 'private',
+                        label: t('private'),
                         id: `private`
                       }
                     ]}
@@ -446,7 +459,7 @@ const Form = ({
                     </Box>
                     <Input
                       value={getValues('imageName')}
-                      backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
+                      backgroundColor={getValues('imageName') ? 'myWhite.500' : 'grayModern.100'}
                       placeholder={`${t('Image Name')}`}
                       {...register('imageName', {
                         required: 'Image name cannot be empty.',
@@ -463,7 +476,9 @@ const Form = ({
                           {t('Username')}
                         </Box>
                         <Input
-                          backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
+                          backgroundColor={
+                            getValues('imageName') ? 'myWhite.500' : 'grayModern.100'
+                          }
                           placeholder={`${t('Username for the image registry')}`}
                           {...register('secret.username', {
                             required: t('The user name cannot be empty') || ''
@@ -477,7 +492,9 @@ const Form = ({
                         <Input
                           type={'password'}
                           placeholder={`${t('Password for the image registry')}`}
-                          backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
+                          backgroundColor={
+                            getValues('imageName') ? 'myWhite.500' : 'grayModern.100'
+                          }
                           {...register('secret.password', {
                             required: t('The password cannot be empty') || ''
                           })}
@@ -488,7 +505,9 @@ const Form = ({
                           {t('Image Address')}
                         </Box>
                         <Input
-                          backgroundColor={getValues('imageName') ? 'myWhite.500' : 'myWhite.400'}
+                          backgroundColor={
+                            getValues('imageName') ? 'myWhite.500' : 'grayModern.100'
+                          }
                           placeholder={`${t('Image Address')}`}
                           {...register('secret.serverAddress', {
                             required: t('The image cannot be empty') || ''
@@ -509,11 +528,11 @@ const Form = ({
                     size={'sm'}
                     list={[
                       {
-                        label: 'Fixed instance',
+                        label: t('Fixed instance'),
                         id: `static`
                       },
                       {
-                        label: 'Auto scaling',
+                        label: t('Auto scaling'),
                         id: `hpa`
                       }
                     ]}
@@ -532,7 +551,8 @@ const Form = ({
                     <>
                       <Flex alignItems={'center'}>
                         <MySelect
-                          width={'130px'}
+                          width={'120px'}
+                          height="32px"
                           value={getValues('hpa.target')}
                           list={[
                             { value: 'cpu', label: t('CPU') },
@@ -540,12 +560,13 @@ const Form = ({
                           ]}
                           onchange={(val: any) => setValue('hpa.target', val)}
                         />
-
                         <Input
+                          width={'80px'}
                           type={'number'}
-                          backgroundColor={getValues('hpa.value') ? 'myWhite.500' : 'myWhite.400'}
+                          backgroundColor={
+                            getValues('hpa.value') ? 'myWhite.500' : 'grayModern.100'
+                          }
                           mx={2}
-                          w={`${labelWidth}px`}
                           {...register('hpa.value', {
                             required: t('The Cpu target is empty') || '',
                             valueAsNumber: true,
@@ -563,7 +584,7 @@ const Form = ({
                         <Tip
                           ml={4}
                           icon={<InfoOutlineIcon />}
-                          text="CPU target is the CPU utilization rate of any container"
+                          text={t('CPU target is the CPU utilization rate of any container')}
                           size="sm"
                         />
                       </Flex>
@@ -588,7 +609,7 @@ const Form = ({
                     </>
                   ) : (
                     <Flex alignItems={'center'}>
-                      <Label w={'auto'} mr={3}>
+                      <Label w={'auto'} mr={3} fontSize={'12px'}>
                         {t('Replicas')}
                       </Label>
                       <RangeInput
@@ -625,8 +646,7 @@ const Form = ({
                   <Flex alignItems={'center'}>
                     <Label>GPU</Label>
                     <MySelect
-                      minW={'300px'}
-                      w={'auto'}
+                      width={'300px'}
                       placeholder={t('No GPU') || ''}
                       value={getValues('gpu.type')}
                       list={gpuSelectList}
@@ -663,7 +683,7 @@ const Form = ({
                                 bg={'myWhite.500'}
                                 {...(getValues('gpu.amount') === item.value
                                   ? {
-                                      borderColor: 'myBlue.600',
+                                      borderColor: 'brightBlue.600',
                                       boxShadow: '0px 0px 4px #A8DBFF'
                                     }
                                   : {
@@ -711,7 +731,7 @@ const Form = ({
                   min={0}
                   step={1}
                 />
-                <Box ml={5} transform={'translateY(10px)'} color={'myGray.500'}>
+                <Box ml={5} transform={'translateY(10px)'} color={'grayModern.900'}>
                   (Core)
                 </Box>
               </Flex>
@@ -734,7 +754,7 @@ const Form = ({
           {/* network */}
           <Box id={'network'} {...boxStyles}>
             <Box {...headerStyles}>
-              <MyIcon name={'network'} mr={5} w={'20px'} color={'myGray.500'} />
+              <MyIcon name={'network'} mr={'12px'} w={'24px'} color={'grayModern.900'} />
               {t('Network Configuration')}
             </Box>
             <Box px={'42px'} py={'24px'} userSelect={'none'}>
@@ -746,14 +766,14 @@ const Form = ({
                   _notFirst={{ pt: 6 }}
                 >
                   <Box>
-                    <Box mb={1} h={'20px'} fontSize={'sm'}>
+                    <Box mb={'10px'} h={'20px'} fontSize={'base'} color={'grayModern.900'}>
                       {t('Container Port')}
                     </Box>
                     <Input
-                      h={'35px'}
+                      h={'32px'}
                       type={'number'}
-                      w={'100px'}
-                      bg={'myWhite.400'}
+                      w={'110px'}
+                      bg={'grayModern.50'}
                       {...register(`networks.${i}.port`, {
                         required:
                           t('app.The container exposed port cannot be empty') ||
@@ -773,8 +793,8 @@ const Form = ({
                       <Box mt={3}>
                         <Button
                           w={'100px'}
-                          variant={'base'}
-                          leftIcon={<MyIcon name="plus" w={'10px'} />}
+                          variant={'outline'}
+                          leftIcon={<MyIcon name="plus" w={'18px'} fill={'#485264'} />}
                           onClick={() =>
                             appendNetworks({
                               networkName: '',
@@ -793,7 +813,7 @@ const Form = ({
                     )}
                   </Box>
                   <Box mx={7}>
-                    <Box mb={1} h={'20px'} fontSize={'sm'}>
+                    <Box mb={'8px'} h={'20px'} fontSize={'base'} color={'grayModern.900'}>
                       {t('Open Public Access')}
                     </Box>
                     <Flex alignItems={'center'} h={'35px'}>
@@ -817,15 +837,15 @@ const Form = ({
                   {network.openPublicDomain && (
                     <>
                       <Box flex={'1 0 0'}>
-                        <Box mb={1} h={'20px'}></Box>
+                        <Box mb={'8px'} h={'20px'}></Box>
                         <Flex alignItems={'center'} h={'35px'}>
                           <MySelect
-                            width={'100px'}
-                            h={'35px'}
+                            width={'120px'}
+                            height={'32px'}
                             borderTopRightRadius={0}
                             borderBottomRightRadius={0}
                             value={network.protocol}
-                            border={theme.borders.base}
+                            // border={theme.borders.base}
                             list={ProtocolList}
                             onchange={(val: any) => {
                               updateNetworks(i, {
@@ -837,11 +857,13 @@ const Form = ({
                           <Flex
                             flex={'1 0 0'}
                             alignItems={'center'}
-                            h={'35px'}
-                            bg={'myWhite.500'}
+                            h={'32px'}
+                            bg={'grayModern.50'}
                             px={4}
                             border={theme.borders.base}
                             borderLeft={0}
+                            borderTopRightRadius={'md'}
+                            borderBottomRightRadius={'md'}
                           >
                             <Box flex={1} userSelect={'all'} className="textEllipsis">
                               {network.customDomain
@@ -849,8 +871,8 @@ const Form = ({
                                 : `${network.publicDomain}.${SEALOS_DOMAIN}`}
                             </Box>
                             <Box
-                              fontSize={'sm'}
-                              color={'myBlue.600'}
+                              fontSize={'11px'}
+                              color={'brightBlue.600'}
                               cursor={'pointer'}
                               onClick={() =>
                                 setCustomAccessModalData({
@@ -868,11 +890,13 @@ const Form = ({
                   )}
                   {networks.length > 1 && (
                     <Box ml={3}>
-                      <Box mb={1} h={'20px'}></Box>
+                      <Box mb={'8px'} h={'20px'}></Box>
                       <IconButton
-                        icon={<MinusIcon />}
-                        aria-label={''}
-                        bg={'myWhite.500'}
+                        width={'32px'}
+                        variant={'outline'}
+                        icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
+                        aria-label={'button'}
+                        bg={'#FFF'}
                         onClick={() => removeNetworks(i)}
                       />
                     </Box>
@@ -895,32 +919,30 @@ const Form = ({
                   _hover={{ bg: '' }}
                 >
                   <Flex alignItems={'center'}>
-                    <MyIcon name={'settings'} mr={5} w={'20px'} color={'myGray.500'} />
+                    <MyIcon name={'settings'} mr={'12px'} w={'24px'} color={'grayModern.900'} />
                     <Box>{t('Advanced Configuration')}</Box>
-                    <Box
-                      bg={'myGray.100'}
-                      w={'46px'}
-                      py={'2px'}
-                      ml={3}
-                      fontSize={'sm'}
-                      borderRadius={'20px'}
-                      color={'myGray.600'}
-                      border={'1px solid'}
-                      borderColor={'myGray.200'}
+                    <Center
+                      bg={'grayModern.200'}
+                      w={'48px'}
+                      height={'28px'}
+                      ml={'14px'}
+                      fontSize={'11px'}
+                      borderRadius={'33px'}
+                      color={'grayModern.700'}
                     >
                       {t('Option')}
-                    </Box>
+                    </Center>
                   </Flex>
-                  <AccordionIcon w={'1.3em'} h={'1.3em'} color={'myGray.700'} />
+                  <AccordionIcon w={'1.3em'} h={'1.3em'} />
                 </AccordionButton>
 
                 <AccordionPanel px={'42px'} py={'24px'}>
-                  <Flex mb={4}>
+                  <Flex mb={'16px'}>
                     <Label className={styles.formSecondTitle}>{t('Command')}</Label>
                     <Tip
                       icon={<InfoOutlineIcon />}
                       size="sm"
-                      text="If no, the default command is used"
+                      text={t('If no, the default command is used')}
                     />
                   </Flex>
                   {/* command && param */}
@@ -929,7 +951,7 @@ const Form = ({
                       <Label>{t('Run command')}</Label>
                       <Input
                         w={'350px'}
-                        bg={getValues('runCMD') ? 'myWhite.500' : 'myWhite.400'}
+                        bg={getValues('runCMD') ? 'myWhite.500' : 'grayModern.100'}
                         placeholder={`${t('Such as')} /bin/bash -c`}
                         {...register('runCMD')}
                       />
@@ -940,7 +962,7 @@ const Form = ({
                       <Label>{t('Command parameters')}</Label>
                       <Input
                         w={'350px'}
-                        bg={getValues('cmdParam') ? 'myWhite.500' : 'myWhite.400'}
+                        bg={getValues('cmdParam') ? 'myWhite.500' : 'grayModern.100'}
                         placeholder={`${t('Such as')} sleep 10 && /entrypoint.sh db createdb`}
                         {...register('cmdParam')}
                       />
@@ -955,8 +977,10 @@ const Form = ({
                       <Label className={styles.formSecondTitle}>{t('Environment Variables')}</Label>
                       <Button
                         w={'100%'}
-                        variant={'base'}
-                        leftIcon={<MyIcon name="edit" />}
+                        height={'32px'}
+                        variant={'outline'}
+                        fontSize={'base'}
+                        leftIcon={<MyIcon name="edit" width={'16px'} fill={'#485264'} />}
                         onClick={onOpenEditEnvs}
                       >
                         {t('Edit Environment Variables')}
@@ -997,13 +1021,14 @@ const Form = ({
                   <Divider my={'30px'} borderColor={'#EFF0F1'} />
 
                   <Box>
-                    <Flex alignItems={'center'}>
+                    <Flex alignItems={'center'} maxW={'600px'}>
                       <Label className={styles.formSecondTitle}>{t('Configuration File')}</Label>
                       <Button
+                        w={'100%'}
+                        height={'32px'}
+                        variant={'outline'}
                         onClick={() => setConfigEdit({ mountPath: '', value: '' })}
-                        variant={'base'}
-                        leftIcon={<MyIcon name="plus" w={'10px'} />}
-                        w={'320px'}
+                        leftIcon={<MyIcon name="plus" w={'16px'} fill="#485264" />}
                       >
                         {t('Add')}
                         {t('Configuration File')}
@@ -1019,10 +1044,10 @@ const Form = ({
                             border={theme.borders.base}
                             flex={'0 0 320px'}
                             w={0}
-                            borderRadius={'sm'}
+                            borderRadius={'md'}
                             cursor={'pointer'}
                             onClick={() => setConfigEdit(item)}
-                            bg={'myWhite.300'}
+                            bg={'grayModern.25'}
                           >
                             <MyIcon name={'configMap'} />
                             <Box ml={4} flex={'1 0 0'} w={0}>
@@ -1031,7 +1056,7 @@ const Form = ({
                               </Box>
                               <Box
                                 className={styles.textEllipsis}
-                                color={'myGray.500'}
+                                color={'grayModern.900'}
                                 fontSize={'sm'}
                               >
                                 {item.value}
@@ -1060,10 +1085,11 @@ const Form = ({
                       </Label>
 
                       <Button
-                        onClick={() => setStoreEdit({ name: '', path: '', value: 1 })}
-                        variant={'base'}
-                        leftIcon={<MyIcon name="plus" w={'10px'} />}
                         w={'320px'}
+                        height={'32px'}
+                        variant={'outline'}
+                        onClick={() => setStoreEdit({ name: '', path: '', value: 1 })}
+                        leftIcon={<MyIcon name="plus" w={'16px'} fill="#485264" />}
                       >
                         {t('Add volume')}
                       </Button>
@@ -1071,7 +1097,7 @@ const Form = ({
                         ml={4}
                         icon={<InfoOutlineIcon />}
                         size="sm"
-                        text="Data cannot be communicated between multiple instances"
+                        text={t('Data cannot be communicated between multiple instances')}
                       />
                     </Flex>
                     <Box mt={4} pl={`${labelWidth}px`}>
@@ -1084,9 +1110,9 @@ const Form = ({
                             border={theme.borders.base}
                             flex={'0 0 320px'}
                             w={0}
-                            borderRadius={'sm'}
+                            borderRadius={'md'}
                             cursor={'pointer'}
-                            bg={'myWhite.300'}
+                            bg={'grayModern.25'}
                             onClick={() => setStoreEdit(item)}
                           >
                             <MyIcon name={'store'} />
@@ -1096,7 +1122,7 @@ const Form = ({
                               </Box>
                               <Box
                                 className={styles.textEllipsis}
-                                color={'myGray.500'}
+                                color={'grayModern.900'}
                                 fontSize={'sm'}
                               >
                                 {item.value} Gi

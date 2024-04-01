@@ -1,6 +1,7 @@
 import { restartPodByName } from '@/api/app';
 import MyIcon from '@/components/Icon';
-import MyTooltip from '@/components/MyTooltip';
+import { MyTooltip } from '@sealos/ui';
+
 import PodLineChart from '@/components/PodLineChart';
 import { PodStatusEnum } from '@/constants/app';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -10,6 +11,7 @@ import type { PodDetailType } from '@/types/app';
 import { QuestionOutlineIcon } from '@chakra-ui/icons';
 import {
   Box,
+  Button,
   Center,
   Flex,
   Table,
@@ -75,7 +77,7 @@ const Pods = ({
       title: 'Pod Name',
       key: 'podName',
       render: (_: PodDetailType, i: number) => (
-        <Box>
+        <Box fontSize={'12px'} color={'grayModern.900'} fontWeight={500}>
           {appName}-{i + 1}
         </Box>
       )
@@ -106,12 +108,20 @@ const Pods = ({
     {
       title: 'Restarts Num',
       key: 'restarts',
-      dataIndex: 'restarts'
+      render: (item: PodDetailType) => (
+        <Box fontSize={'12px'} color={'grayModern.900'} fontWeight={500}>
+          {item.restarts}
+        </Box>
+      )
     },
     {
       title: 'Age',
       key: 'age',
-      dataIndex: 'age'
+      render: (item: PodDetailType) => (
+        <Box fontSize={'12px'} color={'grayModern.900'} fontWeight={500}>
+          {item.age}
+        </Box>
+      )
     },
     {
       title: 'Cpu',
@@ -137,26 +147,13 @@ const Pods = ({
       render: (item: PodDetailType, i: number) => (
         <Flex alignItems={'center'}>
           <MyTooltip label={t('Log')} offset={[0, 10]}>
-            <Center
-              p="6px"
-              _hover={{
-                bg: '#F4F6F8'
-              }}
-              cursor={'pointer'}
-              borderRadius={'4px'}
-              onClick={() => setLogsPodIndex(i)}
-            >
-              <MyIcon name="log" w="20px" h="20px" />
-            </Center>
+            <Button variant={'square'} onClick={() => setLogsPodIndex(i)}>
+              <MyIcon name="log" w="18px" h="18px" fill={'#485264'} />
+            </Button>
           </MyTooltip>
           <MyTooltip offset={[0, 10]} label={t('Terminal')}>
-            <Center
-              p="6px"
-              _hover={{
-                bg: '#F4F6F8'
-              }}
-              cursor={'pointer'}
-              borderRadius={'4px'}
+            <Button
+              variant={'square'}
               onClick={() => {
                 const defaultCommand = `kubectl exec -it ${item.podName} -c ${appName} -- sh -c "clear; (bash || ash || sh)"`;
                 sealosApp.runEvents('openDesktopApp', {
@@ -168,34 +165,27 @@ const Pods = ({
                 });
               }}
             >
-              <MyIcon className="driver-detail-terminal" name={'terminal'} w="20px" h="20px" />
-            </Center>
+              <MyIcon
+                className="driver-detail-terminal"
+                name={'terminal'}
+                w="18px"
+                h="18px"
+                fill={'#485264'}
+              />
+            </Button>
           </MyTooltip>
           <MyTooltip offset={[0, 10]} label={t('Details')}>
-            <Center
-              p="6px"
-              _hover={{
-                bg: '#F4F6F8'
-              }}
-              cursor={'pointer'}
-              borderRadius={'4px'}
-              onClick={() => setDetailPodIndex(i)}
-            >
-              <MyIcon name={'detail'} w="20px" h="20px" />
-            </Center>
+            <Button variant={'square'} onClick={() => setDetailPodIndex(i)}>
+              <MyIcon name={'detail'} w="18px" h="18px" fill={'#485264'} />
+            </Button>
           </MyTooltip>
           <MyTooltip offset={[0, 10]} label={t('Restart')}>
-            <Center
-              p="6px"
-              _hover={{
-                bg: '#F4F6F8'
-              }}
-              cursor={'pointer'}
-              borderRadius={'4px'}
+            <Button
+              variant={'square'}
               onClick={openConfirmRestart(() => handleRestartPod(item.podName))}
             >
-              <MyIcon name={'restart'} w="20px" h="20px" />
-            </Center>
+              <MyIcon name={'restart'} w="18px" h="18px" fill={'#485264'} />
+            </Button>
           </MyTooltip>
         </Flex>
       )
@@ -204,26 +194,27 @@ const Pods = ({
 
   return (
     <Box h={'100%'} py={5} position={'relative'}>
-      <Flex px={6} alignItems={'center'}>
-        <MyIcon name="podList" w={'14px'} color={'myGray.500'} />
-        <Box ml={3} flex={1} color={'myGray.600'}>
+      <Flex px={6} alignItems={'center'} fontSize={'12px'} fontWeight={'bold'}>
+        <MyIcon name="podList" w={'14px'} fill={'grayModern.600'} />
+        <Box ml={3} flex={1} color={'grayModern.600'}>
           {t('Pods List')}
         </Box>
-        <Box color={'myGray.500'}>
+        <Box color={'grayModern.500'}>
           {pods.length} {t('Items')}
         </Box>
       </Flex>
       <TableContainer mt={5} overflow={'auto'}>
         <Table variant={'simple'} backgroundColor={'white'}>
-          <Thead>
+          <Thead backgroundColor={'grayModern.50'}>
             <Tr>
               {columns.map((item) => (
                 <Th
                   py={4}
                   key={item.key}
                   border={'none'}
-                  backgroundColor={'#F8F8FA'}
+                  fontSize={'12px'}
                   fontWeight={'500'}
+                  color={'grayModern.600'}
                 >
                   {t(item.title)}
                 </Th>

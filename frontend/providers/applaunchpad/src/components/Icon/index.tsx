@@ -31,7 +31,8 @@ const map = {
   analyze: require('./icons/analyze.svg').default,
   terminal: require('./icons/terminal.svg').default,
   log: require('./icons/log.svg').default,
-  nvidia: require('./icons/gpu/nvidia.svg').default
+  nvidia: require('./icons/gpu/nvidia.svg').default,
+  enlarge: require('./icons/enlarge.svg').default
 };
 
 export type IconType = keyof typeof map;

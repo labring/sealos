@@ -24,14 +24,14 @@ export default function useMessage(props?: UseToastOptions) {
 
   const message = useToast({
     position: 'top',
-    isClosable: true,
+    duration: 2000,
     ...props,
     render: (props) => {
       return (
         <Box
           position={'relative'}
           background={'white'}
-          py={3}
+          py={props?.description ? '16px' : '12px'}
           px={5}
           fontSize={'md'}
           borderRadius={'lg'}
@@ -46,7 +46,7 @@ export default function useMessage(props?: UseToastOptions) {
                 <Box
                   fontSize={props?.description ? '16px' : '14px'}
                   fontWeight={props?.description ? 500 : 400}
-                  mb={props?.description ? '4px' : '0px'}
+                  mb={props?.description ? '6px' : '0px'}
                 >
                   {props?.title}
                 </Box>

@@ -8,7 +8,8 @@ import {
   ModalBody,
   ModalCloseButton,
   Button,
-  Textarea
+  Textarea,
+  Box
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { AppEditType } from '@/types/app';
@@ -68,25 +69,26 @@ const EditEnvs = ({
   return (
     <Modal isOpen onClose={onClose}>
       <ModalOverlay />
-      <ModalContent maxH={'90vh'} maxW={'90vw'} minW={'600px'} w={'auto'}>
+      <ModalContent maxH={'90vh'} maxW={'90vw'} minW={'530px'} w={'auto'}>
         <ModalHeader>{t('Edit Environment Variables')}</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
+          <Box fontSize={'14px'} fontWeight={500} color={'messenger.900'} mb={'8px'}>
+            {t('Environment Variables')}
+          </Box>
           <Textarea
             h={'350px'}
             maxH={'100%'}
             value={inputVal}
             resize={'both'}
-            bg={'myWhite.300'}
             placeholder={t('Env Placeholder') || ''}
             overflowX={'auto'}
             whiteSpace={inputVal === '' ? 'pre-wrap' : 'nowrap'}
             onChange={(e) => setInputVal(e.target.value)}
           />
         </ModalBody>
-
         <ModalFooter>
-          <Button w={'110px'} variant={'primary'} onClick={onSubmit}>
+          <Button w={'88px'} onClick={onSubmit}>
             {t('Confirm')}
           </Button>
         </ModalFooter>

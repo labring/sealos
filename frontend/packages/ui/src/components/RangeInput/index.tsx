@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { HStack, Input, useNumberInput, IconButton } from '@chakra-ui/react';
 import { AddIcon, MinusIcon } from '@chakra-ui/icons';
-import MyTooltip from '../MyTooltip';
+import { MyTooltip } from '../MyTooltip';
 
-const RangeInput = ({
+export const RangeInput = ({
   w = 200,
   step = 1,
   precision = 0,
@@ -48,7 +48,7 @@ const RangeInput = ({
         w={`${w}px`}
         position={'relative'}
         borderBottom={`2px solid`}
-        borderColor={isFocus ? 'myBlue.600' : 'gray.300'}
+        borderColor={isFocus ? 'brightBlue.600' : 'gray.300'}
         onBlurCapture={() => {
           setIsFocus(false);
         }}
@@ -81,5 +81,3 @@ const RangeInput = ({
     </MyTooltip>
   );
 };
-
-export default RangeInput;

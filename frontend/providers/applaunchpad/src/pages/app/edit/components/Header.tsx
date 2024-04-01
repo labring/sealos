@@ -37,31 +37,25 @@ const Header = ({
 
   return (
     <Flex w={'100%'} px={10} h={'86px'} alignItems={'center'}>
-      <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace(lastRoute)}>
-        <MyIcon name="arrowLeft" />
-        <Box ml={6} fontWeight={'bold'} color={'black'} fontSize={'3xl'}>
+      <Flex
+        alignItems={'center'}
+        cursor={'pointer'}
+        gap={'10px'}
+        onClick={() => router.replace(lastRoute)}
+      >
+        <MyIcon name="arrowLeft" w={'36px'} />
+        <Box fontWeight={'bold'} color={'grayModern.900'} fontSize={'2xl'}>
           {t(title)}
         </Box>
       </Flex>
       <Box flex={1}></Box>
-      <Button
-        h={'40px'}
-        mr={5}
-        px={4}
-        minW={'140px'}
-        bg={'myWhite.600'}
-        borderColor={'myGray.200'}
-        variant={'base'}
-        onClick={handleExportYaml}
-      >
+      <Button h={'40px'} mr={'14px'} minW={'140px'} variant={'outline'} onClick={handleExportYaml}>
         {t('Export')} Yaml
       </Button>
       <Button
         className="driver-deploy-button"
-        px={4}
         minW={'140px'}
         h={'40px'}
-        variant={'primary'}
         onClick={applyCb}
         _focusVisible={{ boxShadow: '' }}
       >

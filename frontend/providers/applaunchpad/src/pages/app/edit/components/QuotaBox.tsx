@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
-import { Box, Flex, useTheme, Progress, css } from '@chakra-ui/react';
+import { Box, Flex, useTheme, Progress, css, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import MyTooltip from '@/components/MyTooltip';
+import { MyTooltip } from '@sealos/ui';
+
 import { useUserStore } from '@/store/user';
 
 const sourceMap = {
@@ -45,9 +46,15 @@ ${t('common.Surplus')}: ${`${item.limit - item.used} ${sourceMap[item.type]?.uni
   }, [userQuota, t]);
 
   return userQuota.length === 0 ? null : (
-    <Box>
-      <Box py={3} px={4} borderBottom={theme.borders.base}>
-        <strong>{t('app.Resource Quota')}</strong>
+    <Box borderRadius={'md'} border={theme.borders.base} bg={'#FFF'}>
+      <Box
+        py={3}
+        px={4}
+        borderBottom={theme.borders.base}
+        color={'grayModern.900'}
+        fontWeight={500}
+      >
+        <Text>{t('app.Resource Quota')}</Text>
       </Box>
       <Box py={3} px={4}>
         {quotaList.map((item) => (

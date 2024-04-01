@@ -11,15 +11,15 @@ interface Props {
   }[];
 }
 
-const MyMenu = ({ width, Button, menuList }: Props) => {
+export const SealosMenu = ({ width, Button, menuList }: Props) => {
   const menuItemStyles = {
-    borderRadius: 'sm',
+    borderRadius: '4px',
     py: 3,
     display: 'flex',
     alignItems: 'center',
     _hover: {
-      backgroundColor: 'myWhite.600',
-      color: 'hover.blue'
+      backgroundColor: 'rgba(17, 24, 36, 0.05)',
+      color: 'brightBlue.600'
     }
   };
 
@@ -27,6 +27,7 @@ const MyMenu = ({ width, Button, menuList }: Props) => {
     <Menu offset={[0, 10]} autoSelect={false} isLazy>
       {Button}
       <MenuList
+        borderRadius={'md'}
         minW={`${width}px !important`}
         p={'6px'}
         border={'1px solid #fff'}
@@ -37,7 +38,9 @@ const MyMenu = ({ width, Button, menuList }: Props) => {
             key={i}
             {...menuItemStyles}
             onClick={item.onClick}
-            color={item.isActive ? 'hover.blue' : ''}
+            color={item.isActive ? 'hover.blue' : 'grayModern.600'}
+            py={'6px'}
+            px={'4px'}
           >
             {item.child}
           </MenuItem>
@@ -46,5 +49,3 @@ const MyMenu = ({ width, Button, menuList }: Props) => {
     </Menu>
   );
 };
-
-export default MyMenu;

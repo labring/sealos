@@ -14,7 +14,8 @@ import {
 import { useLoading } from '@/hooks/useLoading';
 import { downLoadBold } from '@/utils/tools';
 import styles from '../index.module.scss';
-import MyMenu from '@/components/Menu';
+import { SealosMenu } from '@sealos/ui';
+
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import { streamFetch } from '@/services/streamFetch';
 import { default as AnsiUp } from 'ansi_up';
@@ -114,14 +115,14 @@ const LogsModal = ({
             Pod {t('Log')}
           </Box>
           <Box px={3}>
-            <MyMenu
+            <SealosMenu
               width={240}
               Button={
                 <MenuButton
                   minW={'240px'}
                   h={'32px'}
                   textAlign={'start'}
-                  bg={'myWhite.400'}
+                  bg={'grayModern.100'}
                   border={theme.borders.base}
                   borderRadius={'md'}
                 >
