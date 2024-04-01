@@ -19,11 +19,12 @@ package controllers
 import (
 	"context"
 	"fmt"
-	v1 "github.com/labring/sealos/controllers/account/api/v1"
-	"github.com/minio/madmin-go/v3"
 	"os"
 	"strings"
 	"time"
+
+	v1 "github.com/labring/sealos/controllers/account/api/v1"
+	"github.com/minio/madmin-go/v3"
 
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -33,9 +34,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/watch"
 
+	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
+
 	kbv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
 	"github.com/go-logr/logr"
-	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
