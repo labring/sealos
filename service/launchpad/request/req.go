@@ -3,13 +3,14 @@ package request
 import (
 	"bytes"
 	"fmt"
-	"github.com/labring/sealos/service/pkg/api"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/labring/sealos/service/pkg/api"
 )
 
 func Request(addr string, params *bytes.Buffer) ([]byte, error) {
@@ -59,7 +60,6 @@ func getPodName(str string) string {
 }
 
 func VMNew(query *api.VMRequest) ([]byte, error) {
-
 	result, _ := GetQuery(query)
 
 	formData := url.Values{}
