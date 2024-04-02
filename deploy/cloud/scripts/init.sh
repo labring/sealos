@@ -276,9 +276,11 @@ function sealos_run_frontend {
   --env cloudPort="$cloudPort" \
   --env certSecretName="wildcard-cert"
 
-
-  echo "run db monitoring"
+  echo "run database monitoring"
   sealos run tars/database-service.tar
+
+  echo "run launchpad monitoring"
+  sealos run tars/launchpad-service.tar
 }
 
 function resource_exists {

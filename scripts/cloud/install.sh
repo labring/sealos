@@ -640,8 +640,8 @@ EOF
     get_prompt "ingress_installation"
     sealos run ${image_registry}/${image_repository}/ingress-nginx:v${ingress_nginx_version#v:-1.9.4} --config-file $CLOUD_DIR/ingress-nginx-config.yaml
 
-    sealos run ${image_registry}/${image_repository}/kubeblocks:v${kubeblocks_version#v:-0.8.2} \
-      ${image_registry}/${image_repository}/kubeblocks-apecloud-mysql:v${kubeblocks_version#v:-0.8.2} \
+    sealos run ${image_registry}/${image_repository}/kubeblocks:v${kubeblocks_version#v:-0.8.2}
+    sealos run ${image_registry}/${image_repository}/kubeblocks-apecloud-mysql:v${kubeblocks_version#v:-0.8.2} \
       ${image_registry}/${image_repository}/kubeblocks-postgresql:v${kubeblocks_version#v:-0.8.2} \
       ${image_registry}/${image_repository}/kubeblocks-mongodb:v${kubeblocks_version#v:-0.8.2} \
       ${image_registry}/${image_repository}/kubeblocks-redis:v${kubeblocks_version#v:-0.8.2}
@@ -652,13 +652,13 @@ EOF
     get_prompt "installing_monitoring"
     sealos run "${image_registry}/${image_repository}/victoria-metrics-k8s-stack:v${victoria_metrics_k8s_stack_version#v:-1.96.0}"
 
-    kubectl patch cm kb-addon-prometheus-server -n kb-system --patch-file $CLOUD_DIR/kb-addon-prometheus-server-patch.yaml
-
     get_prompt "patching_ingress"
     kubectl patch cm -n ingress-nginx ingress-nginx-controller --patch '{"data":{"allow-snippet-annotations":"true","annotation-value-word-blocklist":"load_module,lua_package,_by_lua,location,root,proxy_pass,serviceaccount"}}'
     kubectl -n ingress-nginx patch ds ingress-nginx-controller -p '{"spec":{"template":{"spec":{"tolerations":[{"key":"node-role.kubernetes.io/control-plane","operator":"Exists","effect":"NoSchedule"}]}}}}'
     kubectl get daemonset ingress-nginx-controller -n ingress-nginx -o json | grep https-port= >/dev/null || kubectl patch daemonset ingress-nginx-controller -n ingress-nginx --type='json' -p="[{'op': 'add', 'path': '/spec/template/spec/containers/0/args/-', 'value': '--https-port=${cloud_port:-443}'}]"
     kubectl get daemonset ingress-nginx-controller -n ingress-nginx -o json | grep default-ssl-certificate= >/dev/null || kubectl patch daemonset ingress-nginx-controller -n ingress-nginx --type='json' -p="[{'op': 'add', 'path': '/spec/template/spec/containers/0/args/-', 'value': '--default-ssl-certificate=sealos-system/wildcard-cert'}]"
+
+    kubectl patch cm kb-addon-prometheus-server -n kb-system --patch-file $CLOUD_DIR/kb-addon-prometheus-server-patch.yaml
 
     get_prompt "installing_cloud"
 
