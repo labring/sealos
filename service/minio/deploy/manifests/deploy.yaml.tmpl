@@ -78,9 +78,12 @@ spec:
         - containerPort: 9090
           protocol: TCP
         resources:
+          limits:
+            cpu: 50m
+            memory: 512Mi
           requests:
-            cpu: 1m
-            memory: 500M
+            cpu: 5m
+            memory: 64Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
