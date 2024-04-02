@@ -47,7 +47,12 @@ import ConfigForm from './ConfigForm';
 const TAB_QUERY_PARAM = 'tab';
 const TAB_QUERY_ARR = ['tutorial', 'cluster', 'license'];
 
-export default function Tutorial({ ossFileUrl }: { ossFileUrl: string }) {
+export type TutorialProps = {
+  ossFileUrl: string;
+  customBasePatch: string;
+};
+
+export default function Tutorial({ ossFileUrl, customBasePatch }: TutorialProps) {
   const { t } = useTranslation();
   const { clusterDetail } = useClusterDetail();
   const { copyData } = useCopyData();
@@ -241,7 +246,7 @@ export default function Tutorial({ ossFileUrl }: { ossFileUrl: string }) {
                 </AccordionButton>
                 <AccordionPanel py="20px" px="0px">
                   <ConfigForm
-                    basePath={`curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh --zh  `}
+                    basePath={`curl -sfL ${customBasePatch} -o /tmp/install.sh && bash /tmp/install.sh --zh  `}
                     cloudVersion={ossVersion}
                   />
                 </AccordionPanel>

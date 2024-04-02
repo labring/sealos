@@ -29,11 +29,11 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import ClusterList from './components/List';
-import Tutorial from './components/Tutorial';
+import Tutorial, { TutorialProps } from './components/Tutorial';
 
 // Activation field systemId
 // Cluster recharge callback clusterId
-export default function MyCluster({ ossFileUrl }: { ossFileUrl: string }) {
+export default function MyCluster({ ossFileUrl, customBasePatch }: TutorialProps) {
   const { t } = useTranslation();
   const { clusterDetail, setClusterDetail, clearClusterDetail } = useClusterDetail();
   const [isLargerThanLG] = useMediaQuery(['(min-width: 992px)', '(display-mode: browser)']);
@@ -152,7 +152,7 @@ export default function MyCluster({ ossFileUrl }: { ossFileUrl: string }) {
     <Layout>
       <Flex flex={1} h={0} bg="#fefefe" position={'relative'}>
         <ClusterList />
-        <Tutorial ossFileUrl={ossFileUrl} />
+        <Tutorial ossFileUrl={ossFileUrl} customBasePatch={customBasePatch} />
       </Flex>
       <Modal isOpen={isOpen} onClose={onClose} autoFocus={false}>
         <ModalOverlay />
@@ -248,6 +248,7 @@ export async function getServerSideProps({ req, res, locales }: any) {
   return {
     props: {
       ossFileUrl: process.env.OSS_FILE_URL,
+      customBasePatch: process.env.CUSTOM_BASE_PATH,
       ...(await serverSideTranslations(local, undefined, null, locales || []))
     }
   };
