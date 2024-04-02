@@ -143,60 +143,43 @@ func QueryPrometheus(host, bucketName, instance string, startTime, endTime time.
 	sentStr1 := re.FindString(sentResult1.String())
 	sentStr2 := re.FindString(sentResult2.String())
 
-	var rcvdBytes1 int64 = 0
-	if rcvdStr1 != "" {
-		rcvdBytes1, err = strconv.ParseInt(rcvdStr1, 10, 64)
-		if err != nil {
-			return 0, fmt.Errorf("failed to parse rcvdStr1 %s to int64: %v", rcvdStr1, err)
-		}
+	rcvdBytes1, err := parseBytesStr(rcvdStr1)
+	if err != nil {
+		fmt.Printf("failed to parse string %s to int64: %v", rcvdStr1, err)
+		return 0, err
 	}
-	var rcvdBytes2 int64 = 0
-	if rcvdStr2 != "" {
-		rcvdBytes2, err = strconv.ParseInt(rcvdStr2, 10, 64)
-		if err != nil {
-			return 0, fmt.Errorf("failed to parse rcvdStr2 %s to int64: %v", rcvdStr2, err)
-		}
+	rcvdBytes2, err := parseBytesStr(rcvdStr1)
+	if err != nil {
+		fmt.Printf("failed to parse string %s to int64: %v", rcvdStr2, err)
+		return 0, err
 	}
-	var sentBytes1 int64 = 0
-	if sentStr1 != "" {
-		sentBytes1, err = strconv.ParseInt(sentStr1, 10, 64)
-		if err != nil {
-			return 0, fmt.Errorf("failed to parse sentStr1 %s to int64: %v", rcvdStr1, err)
-		}
+	sentBytes1, err := parseBytesStr(sentStr1)
+	if err != nil {
+		fmt.Printf("failed to parse string %s to int64: %v", sentStr1, err)
+		return 0, err
 	}
-	var sentBytes2 int64 = 0
-	if sentStr2 != "" {
-		sentBytes2, err = strconv.ParseInt(sentStr2, 10, 64)
-		if err != nil {
-			return 0, fmt.Errorf("failed to parse sentStr2 %s to int64: %v", rcvdStr1, err)
-		}
+	sentBytes2, err := parseBytesStr(sentStr2)
+	if err != nil {
+		fmt.Printf("failed to parse string %s to int64: %v", sentStr2, err)
+		return 0, err
 	}
-
-	//rcvdBytes1, err = strconv.ParseInt(rcvdStr1, 10, 64)
-	//if err != nil {
-	//	rcvdBytes1 = 0
-	//	//return 0, fmt.Errorf("failed to parse rcvdStr %s to int64: %v", rcvdStr1, err)
-	//}
-	//rcvdBytes2, err := strconv.ParseInt(rcvdStr2, 10, 64)
-	//if err != nil {
-	//	rcvdBytes2 = 0
-	//	//return 0, fmt.Errorf("failed to parse rcvdStr %s to int64: %v", rcvdStr1, err)
-	//}
-	//sentBytes1, err := strconv.ParseInt(sentStr1, 10, 64)
-	//if err != nil {
-	//	sentBytes1 = 0
-	//	//return 0, fmt.Errorf("failed to parse sentStr %s to int64: %v", sentStr1, err)
-	//}
-	//sentBytes2, err := strconv.ParseInt(sentStr2, 10, 64)
-	//if err != nil {
-	//	sentBytes2 = 0
-	//	//return 0, fmt.Errorf("failed to parse sentStr %s to int64: %v", sentStr2, err)
-	//}
-	// user info	{"name": "1yjdiv74", "quota": 1073741824, "size": 0, "objectsCount": 0}
 
 	fmt.Printf("bucket: %v, received bytes in duration: %v, sent bytes in duration: %v\n", bucketName, rcvdBytes2-rcvdBytes1, sentBytes2-sentBytes1)
 	fmt.Printf("received bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n", startTime.Format("2006-01-02 15:04:05"), rcvdBytes1, endTime.Format("2006-01-02 15:04:05"), rcvdBytes2)
 	fmt.Printf("sent bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n", startTime.Format("2006-01-02 15:04:05"), sentBytes1, endTime.Format("2006-01-02 15:04:05"), sentBytes2)
 
 	return rcvdBytes2 + sentBytes2 - rcvdBytes1 - sentBytes1, nil
+}
+
+func parseBytesStr(bytesStr string) (int64, error) {
+	var bytes int64 = 0
+	var err error
+	if bytesStr != "" {
+		bytes, err = strconv.ParseInt(bytesStr, 10, 64)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse string %s to int64: %v", bytesStr, err)
+		}
+	}
+
+	return bytes, nil
 }
