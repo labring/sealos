@@ -1,29 +1,27 @@
-import React from 'react';
+import { createDB } from '@/api/db';
+import Tip from '@/components/Tip';
+import { useToast } from '@/hooks/useToast';
+import { BackupItemType, DBDetailType } from '@/types/db';
+import { getErrText } from '@/utils/tools';
+import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
   Box,
   Button,
   Flex,
-  Input
+  Input,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay
 } from '@chakra-ui/react';
 import { useMutation } from '@tanstack/react-query';
-import { getErrText } from '@/utils/tools';
-import { useToast } from '@/hooks/useToast';
 import { customAlphabet } from 'nanoid';
-const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 6);
-import Tip from '@/components/Tip';
-import { InfoOutlineIcon } from '@chakra-ui/icons';
 import { useTranslation } from 'next-i18next';
-import { useForm } from 'react-hook-form';
-import { BackupItemType, DBDetailType } from '@/types/db';
-import { json2CreateCluster, json2Account } from '@/utils/json2Yaml';
 import { useRouter } from 'next/router';
-import { applyYamlList } from '@/api/db';
+import { useForm } from 'react-hook-form';
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 6);
 
 const BackupModal = ({
   db,
@@ -53,8 +51,11 @@ const BackupModal = ({
         ...db,
         dbName: databaseName
       };
-      const yamlList = [json2CreateCluster(dbData, backupInfo), json2Account(dbData)];
-      return applyYamlList(yamlList, 'create');
+      return createDB({
+        dbForm: dbData,
+        isEdit: false,
+        backupInfo: backupInfo
+      });
     },
     onSuccess() {
       router.replace(`/dbs`);
