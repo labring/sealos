@@ -147,9 +147,9 @@ $ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring
   --key-path=<your_key>
 ```
 
-+ <your_domain> 需要替换成你自己的公网域名。
-+ <your_crt> 需要替换成你的证书位置，通常是 `.crt` 或 `.pem` 文件。例如：`/root/certs/example.crt`。
-+ <your_key> 需要替换成你的私钥位置，通常是 `.key` 或 `.pem` 文件。例如：`/root/certs/example.key`。
++ `<your_domain>` 需要替换成你自己的公网域名。
++ `<your_crt>` 需要替换成你的证书位置，通常是 `.crt` 或 `.pem` 文件。例如：`/root/certs/example.crt`。
++ `<your_key>` 需要替换成你的私钥位置，通常是 `.key` 或 `.pem` 文件。例如：`/root/certs/example.key`。
 
 ### 3、有公网域名，想内网访问
 
@@ -171,7 +171,7 @@ $ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring
   --cloud-domain=<your_domain>
 ```
 
-其中 <your_domain> 需要替换成你自己的公网域名。
+其中 `<your_domain>` 需要替换成你自己的公网域名。
 
 安装过程中 Sealos 会使用 [cert-manager](https://cert-manager.io/docs/) 来自签名证书。
 
@@ -229,7 +229,7 @@ $ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring
   --cloud-domain=<your_domain>
 ```
 
-其中 <your_domain> 需要替换成你自己的自定义域名。
+其中 `<your_domain>` 需要替换成你自己的自定义域名。
 
 安装过程中 Sealos 会使用 [cert-manager](https://cert-manager.io/docs/) 来自签名证书。
 
