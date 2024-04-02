@@ -22,7 +22,7 @@ const getDiskOverflowStatus = async (dbName: string, dbType: string): Promise<bo
     start: Date.now() / 1000,
     end: Date.now() / 1000
   });
-  const isDiskOverflow = temp?.result?.yData.some((item) => item.data.some((value) => value >= 10));
+  const isDiskOverflow = temp?.result?.yData.some((item) => item.data.some((value) => value >= 98));
   return isDiskOverflow;
 };
 
@@ -32,12 +32,14 @@ export const useDBStore = create<State>()(
       dbList: [],
       setDBList: async () => {
         const res = await getMyDBList();
-        for (const db of res) {
-          if (db.status.value === 'Updating') {
-            const isDiskOverflow = await getDiskOverflowStatus(db.name, db.dbType);
-            db.isDiskSpaceOverflow = isDiskOverflow;
-          }
-        }
+        // try {
+        //   for (const db of res) {
+        //     if (db.status.value === 'Updating') {
+        //       const isDiskOverflow = await getDiskOverflowStatus(db.name, db.dbType);
+        //       db.isDiskSpaceOverflow = isDiskOverflow;
+        //     }
+        //   }
+        // } catch (error) {}
         set((state) => {
           state.dbList = res as DBListItemType[];
         });
