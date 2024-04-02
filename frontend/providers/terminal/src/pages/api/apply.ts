@@ -37,6 +37,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (terminalStatus.availableReplicas > 0) {
           // temporarily add domain scheme
           return jsonRes(res, { data: terminalStatus.domain || '' });
+        } else {
+          return jsonRes(res, { code: 201, data: terminalStatus.domain || '' });
         }
       }
     } catch (error) {}
