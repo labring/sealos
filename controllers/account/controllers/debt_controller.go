@@ -112,10 +112,13 @@ var DebtConfig = accountv1.DefaultDebtConfig
 func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	payment := &accountv1.Payment{}
 	var reconcileErr error
-	if err := r.Get(ctx, client.ObjectKey{Name: req.Name, Namespace: r.accountSystemNamespace}, payment); err == nil {
+	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, payment); err == nil {
+		if payment.Status.Status != pay.PaymentSuccess {
+			return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+		}
 		reconcileErr = r.reconcile(ctx, payment.Spec.UserID)
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return ctrl.Result{}, err
+	} else if client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to get payment %s: %v", req.Name, err)
 	} else {
 		reconcileErr = r.reconcile(ctx, req.NamespacedName.Name)
 	}
@@ -599,7 +602,7 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.
 		"accountSystemNamespace", r.accountSystemNamespace)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}, builder.WithPredicates(predicate.And(UserOwnerPredicate{}))).
-		Watches(&source.Kind{Type: &accountv1.Payment{}}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(PaymentSuccessStatusPredicate{})).
+		Watches(&source.Kind{Type: &accountv1.Payment{}}, &handler.EnqueueRequestForObject{}).
 		WithOptions(rateOpts).
 		Complete(r)
 }
@@ -656,28 +659,4 @@ func (OnlyCreatePredicate) Create(_ event.CreateEvent) bool {
 
 func init() {
 	setDefaultDebtPeriodWaitSecond()
-}
-
-type PaymentSuccessStatusPredicate struct {
-	predicate.Funcs
-}
-
-func (PaymentSuccessStatusPredicate) Create(_ event.CreateEvent) bool {
-	return false
-}
-
-func (PaymentSuccessStatusPredicate) Update(e event.UpdateEvent) bool {
-	payment, ok := e.ObjectNew.(*accountv1.Payment)
-	if !ok {
-		return false
-	}
-	return payment.Status.Status == pay.PaymentSuccess
-}
-
-func (PaymentSuccessStatusPredicate) Delete(_ event.DeleteEvent) bool {
-	return false
-}
-
-func (PaymentSuccessStatusPredicate) Generic(_ event.GenericEvent) bool {
-	return false
 }
