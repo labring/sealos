@@ -55,8 +55,8 @@ func GetObjectStorageSize(client *minio.Client, bucket string) (int64, int64) {
 	return totalSize, objectsCount
 }
 
-func GetObjectStorageFlow(promURL, bucket, instance string) (int64, error) {
-	flow, err := QueryPrometheus(promURL, bucket, instance)
+func GetObjectStorageFlow(promURL, bucket, instance string, startTime, endTime time.Time) (int64, error) {
+	flow, err := QueryPrometheus(promURL, bucket, instance, startTime, endTime)
 	if err != nil {
 		return 0, fmt.Errorf("failed to query prometheus, bucket: %v, err: %v", bucket, err)
 	}
@@ -79,7 +79,7 @@ func GetUserObjectStorageSize(client *minio.Client, username string) (int64, int
 	return totalSize, objectsCount, nil
 }
 
-func GetUserObjectStorageFlow(client *minio.Client, promURL, username, instance string) (int64, error) {
+func GetUserObjectStorageFlow(client *minio.Client, promURL, username, instance string, startTime, endTime time.Time) (int64, error) {
 	buckets, err := ListUserObjectStorageBucket(client, username)
 	if err != nil {
 		return 0, fmt.Errorf("failed to list object storage buckets: %v", err)
@@ -87,7 +87,7 @@ func GetUserObjectStorageFlow(client *minio.Client, promURL, username, instance 
 
 	var totalFlow int64
 	for _, bucketName := range buckets {
-		flow, err := QueryPrometheus(promURL, bucketName, instance)
+		flow, err := QueryPrometheus(promURL, bucketName, instance, startTime, endTime)
 		if err != nil {
 			return 0, fmt.Errorf("failed to query prometheus, bucket: %v, err: %v", bucketName, err)
 		}
@@ -97,7 +97,7 @@ func GetUserObjectStorageFlow(client *minio.Client, promURL, username, instance 
 	return totalFlow, nil
 }
 
-func QueryPrometheus(host, bucketName, instance string) (int64, error) {
+func QueryPrometheus(host, bucketName, instance string, startTime, endTime time.Time) (int64, error) {
 	client, err := api.NewClient(api.Config{
 		Address: host,
 	})
@@ -110,39 +110,93 @@ func QueryPrometheus(host, bucketName, instance string) (int64, error) {
 	defer cancel()
 
 	rcvdQuery := "sum(minio_bucket_traffic_received_bytes{bucket=\"" + bucketName + "\", instance=\"" + instance + "\"})"
-	rcvdResult, rcvdWarnings, err := v1api.Query(ctx, rcvdQuery, time.Now(), v1.WithTimeout(5*time.Second))
+	rcvdResult1, rcvdWarnings1, err := v1api.Query(ctx, rcvdQuery, startTime, v1.WithTimeout(5*time.Second))
+	if err != nil {
+		return 0, fmt.Errorf("failed to query prometheus, query: %v, err: %v", rcvdQuery, err)
+	}
+	rcvdResult2, rcvdWarnings2, err := v1api.Query(ctx, rcvdQuery, endTime, v1.WithTimeout(5*time.Second))
 	if err != nil {
 		return 0, fmt.Errorf("failed to query prometheus, query: %v, err: %v", rcvdQuery, err)
 	}
 
-	if len(rcvdWarnings) > 0 {
-		return 0, fmt.Errorf("there are warnings: %v", rcvdWarnings)
+	if len(rcvdWarnings1) > 0 || len(rcvdWarnings2) > 0 {
+		return 0, fmt.Errorf("there are warnings, warning1: %v, warning2: %v", rcvdWarnings1, rcvdWarnings2)
 	}
 
 	sentQuery := "sum(minio_bucket_traffic_sent_bytes{bucket=\"" + bucketName + "\", instance=\"" + instance + "\"})"
-	sentResult, sentWarnings, err := v1api.Query(ctx, sentQuery, time.Now(), v1.WithTimeout(5*time.Second))
+	sentResult1, sentWarnings1, err := v1api.Query(ctx, sentQuery, startTime, v1.WithTimeout(5*time.Second))
+	if err != nil {
+		return 0, fmt.Errorf("failed to query prometheus, query: %v, err: %v", sentQuery, err)
+	}
+	sentResult2, sentWarnings2, err := v1api.Query(ctx, sentQuery, endTime, v1.WithTimeout(5*time.Second))
 	if err != nil {
 		return 0, fmt.Errorf("failed to query prometheus, query: %v, err: %v", sentQuery, err)
 	}
 
-	if len(sentWarnings) > 0 {
-		return 0, fmt.Errorf("there are warnings: %v", sentWarnings)
+	if len(sentWarnings1) > 0 || len(sentWarnings2) > 0 {
+		return 0, fmt.Errorf("there are warnings, warning1: %v, warning2: %v", sentWarnings1, sentWarnings2)
 	}
 
 	re := regexp.MustCompile(`\d+`)
-	rcvdStr := re.FindString(rcvdResult.String())
-	sentStr := re.FindString(sentResult.String())
+	rcvdStr1 := re.FindString(rcvdResult1.String())
+	rcvdStr2 := re.FindString(rcvdResult2.String())
+	sentStr1 := re.FindString(sentResult1.String())
+	sentStr2 := re.FindString(sentResult2.String())
 
-	rcvdBytes, err := strconv.ParseInt(rcvdStr, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("failed to parse rcvdStr %s to int64: %v", rcvdStr, err)
+	var rcvdBytes1 int64 = 0
+	if rcvdStr1 != "" {
+		rcvdBytes1, err = strconv.ParseInt(rcvdStr1, 10, 64)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse rcvdStr1 %s to int64: %v", rcvdStr1, err)
+		}
 	}
-	sentBytes, err := strconv.ParseInt(sentStr, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("failed to parse sentStr %s to int64: %v", sentStr, err)
+	var rcvdBytes2 int64 = 0
+	if rcvdStr2 != "" {
+		rcvdBytes2, err = strconv.ParseInt(rcvdStr2, 10, 64)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse rcvdStr2 %s to int64: %v", rcvdStr2, err)
+		}
+	}
+	var sentBytes1 int64 = 0
+	if sentStr1 != "" {
+		sentBytes1, err = strconv.ParseInt(sentStr1, 10, 64)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse sentStr1 %s to int64: %v", rcvdStr1, err)
+		}
+	}
+	var sentBytes2 int64 = 0
+	if sentStr2 != "" {
+		sentBytes2, err = strconv.ParseInt(sentStr2, 10, 64)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse sentStr2 %s to int64: %v", rcvdStr1, err)
+		}
 	}
 
-	fmt.Printf("received bytes: %d, send bytes: %d\n", rcvdBytes, sentBytes)
+	//rcvdBytes1, err = strconv.ParseInt(rcvdStr1, 10, 64)
+	//if err != nil {
+	//	rcvdBytes1 = 0
+	//	//return 0, fmt.Errorf("failed to parse rcvdStr %s to int64: %v", rcvdStr1, err)
+	//}
+	//rcvdBytes2, err := strconv.ParseInt(rcvdStr2, 10, 64)
+	//if err != nil {
+	//	rcvdBytes2 = 0
+	//	//return 0, fmt.Errorf("failed to parse rcvdStr %s to int64: %v", rcvdStr1, err)
+	//}
+	//sentBytes1, err := strconv.ParseInt(sentStr1, 10, 64)
+	//if err != nil {
+	//	sentBytes1 = 0
+	//	//return 0, fmt.Errorf("failed to parse sentStr %s to int64: %v", sentStr1, err)
+	//}
+	//sentBytes2, err := strconv.ParseInt(sentStr2, 10, 64)
+	//if err != nil {
+	//	sentBytes2 = 0
+	//	//return 0, fmt.Errorf("failed to parse sentStr %s to int64: %v", sentStr2, err)
+	//}
+	// user info	{"name": "1yjdiv74", "quota": 1073741824, "size": 0, "objectsCount": 0}
 
-	return rcvdBytes + sentBytes, nil
+	fmt.Printf("bucket: %v, received bytes in duration: %v, sent bytes in duration: %v\n", bucketName, rcvdBytes2-rcvdBytes1, sentBytes2-sentBytes1)
+	fmt.Printf("received bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n", startTime.Format("2006-01-02 15:04:05"), rcvdBytes1, endTime.Format("2006-01-02 15:04:05"), rcvdBytes2)
+	fmt.Printf("sent bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n", startTime.Format("2006-01-02 15:04:05"), sentBytes1, endTime.Format("2006-01-02 15:04:05"), sentBytes2)
+
+	return rcvdBytes2 + sentBytes2 - rcvdBytes1 - sentBytes1, nil
 }
