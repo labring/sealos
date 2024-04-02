@@ -26,6 +26,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/pay"
+
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
+
 	"gorm.io/gorm"
 
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
@@ -105,8 +110,27 @@ var DebtConfig = accountv1.DefaultDebtConfig
 //+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 
 func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	payment := &accountv1.Payment{}
+	var reconcileErr error
+	if err := r.Get(ctx, client.ObjectKey{Name: req.Name, Namespace: r.accountSystemNamespace}, payment); err == nil {
+		reconcileErr = r.reconcile(ctx, payment.Spec.UserID)
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return ctrl.Result{}, err
+	} else {
+		reconcileErr = r.reconcile(ctx, req.NamespacedName.Name)
+	}
+	if reconcileErr != nil {
+		if reconcileErr == ErrAccountNotExist {
+			return ctrl.Result{RequeueAfter: 10 * time.Minute}, nil
+		}
+		r.Logger.Error(reconcileErr, "reconcile debt error")
+		return ctrl.Result{}, reconcileErr
+	}
+	return ctrl.Result{RequeueAfter: r.DebtDetectionCycle}, nil
+}
+
+func (r *DebtReconciler) reconcile(ctx context.Context, owner string) error {
 	debt := &accountv1.Debt{}
-	owner := req.NamespacedName.Name
 	account, err := r.AccountV2.GetAccount(&pkgtypes.UserQueryOpts{Owner: owner})
 	if account == nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -114,27 +138,27 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			if err := r.Get(ctx, types.NamespacedName{Name: owner, Namespace: r.accountSystemNamespace}, userOwner); err != nil {
 				// if user not exist, skip
 				if client.IgnoreNotFound(err) == nil {
-					return ctrl.Result{}, nil
+					return nil
 				}
-				return ctrl.Result{}, fmt.Errorf("failed to get user %s: %v", owner, err)
+				return fmt.Errorf("failed to get user %s: %v", owner, err)
 			}
 			// if user not exist, skip
 			if userOwner.CreationTimestamp.Add(20 * 24 * time.Hour).Before(time.Now()) {
-				return ctrl.Result{}, nil
+				return nil
 			}
 		}
 		r.Logger.Error(fmt.Errorf("account %s not exist", owner), "account not exist")
-		return ctrl.Result{RequeueAfter: 10 * time.Minute}, nil
+		return ErrAccountNotExist
 	}
 	// In a multi-region scenario, select the region where the account is created for SMS notification
 	smsEnable := account.CreateRegionID == r.LocalRegionID
 
 	r.Logger.Info("reconcile debt", "account", owner, "balance", account.Balance, "deduction balance", account.DeductionBalance)
 	if err := r.Get(ctx, client.ObjectKey{Name: GetDebtName(owner), Namespace: r.accountSystemNamespace}, debt); client.IgnoreNotFound(err) != nil {
-		return ctrl.Result{}, err
+		return err
 	} else if err != nil {
 		if err := r.syncDebt(ctx, owner, debt); err != nil {
-			return ctrl.Result{}, err
+			return err
 		}
 		r.Logger.Info("create or update debt success", "debt", debt)
 	}
@@ -142,15 +166,16 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	nsList, err := getOwnNsList(r.Client, getUsername(owner))
 	if err != nil {
 		r.Logger.Error(err, "get own ns list error")
-		return ctrl.Result{}, fmt.Errorf("get own ns list error: %v", err)
+		return fmt.Errorf("get own ns list error: %v", err)
 	}
 	if err := r.reconcileDebtStatus(ctx, debt, account, nsList, smsEnable); err != nil {
 		r.Logger.Error(err, "reconcile debt status error")
-		return ctrl.Result{}, err
+		return err
 	}
-	//Debt Detection Cycle
-	return ctrl.Result{Requeue: true, RequeueAfter: r.DebtDetectionCycle}, nil
+	return nil
 }
+
+var ErrAccountNotExist = errors.New("account not exist")
 
 /*
 NormalPeriod -> WarningPeriod -> ApproachingDeletionPeriod -> ImmediateDeletePeriod -> FinalDeletePeriod
@@ -198,7 +223,9 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		*/
 		if oweamount >= 0 {
 			update = SetDebtStatus(debt, accountv1.NormalPeriod)
-			//TODO 撤销警告消息通知
+			if err := r.readNotice(ctx, userNamespaceList, WarningNotice); err != nil {
+				r.Logger.Error(err, "readNotice WarningNotice error")
+			}
 			break
 		}
 		//上次更新时间小于临近删除时间
@@ -222,7 +249,9 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		*/
 		if oweamount >= 0 {
 			update = SetDebtStatus(debt, accountv1.NormalPeriod)
-			//TODO 撤销临近删除消息通知
+			if err := r.readNotice(ctx, userNamespaceList, ApproachingDeletionNotice, WarningNotice); err != nil {
+				r.Logger.Error(err, "readNotice ApproachingDeletionNotice error")
+			}
 			break
 		}
 		if updateIntervalSeconds < DebtConfig[accountv1.ImminentDeletionPeriod] && account.Balance+oweamount > 0 {
@@ -250,7 +279,9 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			if err := r.ResumeUserResource(ctx, userNamespaceList); err != nil {
 				return err
 			}
-			//TODO 撤销最终删除消息通知
+			if err := r.readNotice(ctx, userNamespaceList, ImminentDeletionNotice, ApproachingDeletionNotice, WarningNotice); err != nil {
+				r.Logger.Error(err, "readNotice ImminentDeletionNotice error")
+			}
 			break
 		}
 		//上次更新时间小于最终删除时间, 且欠费不大于总金额的两倍
@@ -271,6 +302,9 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			  最终删除期 -> 正常期：更新status 状态normal事件及更新时间
 		*/
 		if oweamount >= 0 {
+			if err := r.readNotice(ctx, userNamespaceList, FinalDeletionNotice, ImminentDeletionNotice, ApproachingDeletionNotice, WarningNotice); err != nil {
+				r.Logger.Error(err, "readNotice FinalDeletionNotice error")
+			}
 			//TODO 用户从欠费到正常，是否需要发送消息通知
 			update = SetDebtStatus(debt, accountv1.NormalPeriod)
 
@@ -352,6 +386,7 @@ const (
 	debtChoicePrefix = "debt-choice-"
 	readStatusLabel  = "isRead"
 	falseStatus      = "false"
+	trueStatus       = "true"
 )
 
 var NoticeTemplateEN map[int]string
@@ -392,6 +427,27 @@ func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType 
 		// ｜ownAmount/1_000_000｜
 		TemplateParam: tea.String("{\"user_id\":\"" + user + "\",\"oweamount\":\"" + oweamount + "\"}"),
 	})
+}
+
+func (r *DebtReconciler) readNotice(ctx context.Context, namespaces []string, noticeTypes ...int) error {
+	for i := range namespaces {
+		for j := range noticeTypes {
+			ntf := &v1.Notification{}
+			if err := r.Get(ctx, types.NamespacedName{Name: debtChoicePrefix + strconv.Itoa(noticeTypes[j]), Namespace: namespaces[i]}, ntf); client.IgnoreNotFound(err) != nil {
+				return err
+			} else if err != nil {
+				continue
+			}
+			if ntf.Labels != nil && ntf.Labels[readStatusLabel] == trueStatus {
+				continue
+			}
+			ntf.Labels[readStatusLabel] = trueStatus
+			if err := r.Client.Update(ctx, ntf); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (r *DebtReconciler) sendNotice(ctx context.Context, user string, oweAmount int64, noticeType int, namespaces []string, smsEnable bool) error {
@@ -520,7 +576,7 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.
 	r.Logger = ctrl.Log.WithName("DebtController")
 	r.accountSystemNamespace = env.GetEnvWithDefault(accountv1.AccountSystemNamespaceEnv, "account-system")
 	r.LocalRegionID = os.Getenv(cockroach.EnvLocalRegion)
-	debtDetectionCycleSecond := env.GetInt64EnvWithDefault(DebtDetectionCycleEnv, 60)
+	debtDetectionCycleSecond := env.GetInt64EnvWithDefault(DebtDetectionCycleEnv, 1800)
 	r.DebtDetectionCycle = time.Duration(debtDetectionCycleSecond) * time.Second
 
 	smsConfig, err := setupSmsConfig()
@@ -543,6 +599,7 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.
 		"accountSystemNamespace", r.accountSystemNamespace)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}, builder.WithPredicates(predicate.And(UserOwnerPredicate{}))).
+		Watches(&source.Kind{Type: &accountv1.Payment{}}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(PaymentSuccessStatusPredicate{})).
 		WithOptions(rateOpts).
 		Complete(r)
 }
@@ -599,4 +656,28 @@ func (OnlyCreatePredicate) Create(_ event.CreateEvent) bool {
 
 func init() {
 	setDefaultDebtPeriodWaitSecond()
+}
+
+type PaymentSuccessStatusPredicate struct {
+	predicate.Funcs
+}
+
+func (PaymentSuccessStatusPredicate) Create(_ event.CreateEvent) bool {
+	return false
+}
+
+func (PaymentSuccessStatusPredicate) Update(e event.UpdateEvent) bool {
+	payment, ok := e.ObjectNew.(*accountv1.Payment)
+	if !ok {
+		return false
+	}
+	return payment.Status.Status == pay.PaymentSuccess
+}
+
+func (PaymentSuccessStatusPredicate) Delete(_ event.DeleteEvent) bool {
+	return false
+}
+
+func (PaymentSuccessStatusPredicate) Generic(_ event.GenericEvent) bool {
+	return false
 }

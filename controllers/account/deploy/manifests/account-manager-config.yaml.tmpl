@@ -6,7 +6,7 @@ data:
   ApproachingDeletionPeriod: '{{ .ApproachingDeletionPeriod | default "345600" }}'
   ImminentDeletionPeriod: '{{ .ImminentDeletionPeriod | default "259200" }}'
   FinalDeletionPeriod: '{{ .FinalDeletionPeriod | default "604800" }}'
-  DebtDetectionCycleSeconds: '{{ .DebtDetectionCycleSeconds | default "30" }}'
+  DebtDetectionCycleSeconds: '{{ .DebtDetectionCycleSeconds | default "1800" }}'
   OSAdminSecret: '{{ .OSAdminSecret }}'
   OSInternalEndpoint: '{{ .OSInternalEndpoint }}'
   OSNamespace: '{{ .OSNamespace }}'
