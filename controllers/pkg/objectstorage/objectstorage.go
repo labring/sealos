@@ -155,27 +155,6 @@ func QueryPrometheus(host, bucketName, instance string, startTime, endTime time.
 		return 0, err
 	}
 
-	/*	rcvdBytes1, err := parseBytesStr(rcvdStr1)
-		if err != nil {
-			fmt.Printf("failed to parse string %s to int64: %v", rcvdStr1, err)
-			return 0, err
-		}
-		rcvdBytes2, err := parseBytesStr(rcvdStr1)
-		if err != nil {
-			fmt.Printf("failed to parse string %s to int64: %v", rcvdStr2, err)
-			return 0, err
-		}
-		sentBytes1, err := parseBytesStr(sentStr1)
-		if err != nil {
-			fmt.Printf("failed to parse string %s to int64: %v", sentStr1, err)
-			return 0, err
-		}
-		sentBytes2, err := parseBytesStr(sentStr2)
-		if err != nil {
-			fmt.Printf("failed to parse string %s to int64: %v", sentStr2, err)
-			return 0, err
-		}*/
-
 	fmt.Printf("bucket: %v, received bytes in duration: %v, sent bytes in duration: %v\n", bucketName, rcvdValues[1]-rcvdValues[0], sentValues[1]-sentValues[0])
 	fmt.Printf("received bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n", startTime.Format("2006-01-02 15:04:05"), rcvdValues[0], endTime.Format("2006-01-02 15:04:05"), rcvdValues[1])
 	fmt.Printf("sent bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n", startTime.Format("2006-01-02 15:04:05"), sentValues[0], endTime.Format("2006-01-02 15:04:05"), sentValues[1])
