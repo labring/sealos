@@ -64,7 +64,11 @@ export default function EditOrder() {
         orderId: res.orderId,
         content: data.description
       });
-      await FeishuNotification(data);
+      await FeishuNotification({
+        type: data.type,
+        description: data.description,
+        orderId: res.orderId
+      });
       toast({
         status: 'success',
         title: 'success'
