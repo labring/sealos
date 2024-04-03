@@ -1,12 +1,18 @@
 import { verifyAccessToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
-import { WorkOrderEditForm } from '@/types/workorder';
+import { WorkOrderType } from '@/types/workorder';
 import type { NextApiRequest, NextApiResponse } from 'next';
+
+export type FeishuNotificationParams = {
+  type: WorkOrderType;
+  description: string;
+  orderId: string;
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const userForm = req.body as WorkOrderEditForm;
+    const userForm = req.body as FeishuNotificationParams;
     const { userId } = await verifyAccessToken(req);
     const feishuUrl = process.env.ADMIN_FEISHU_URL;
     const feishuCallBackUrl = process.env.ADMIN_FEISHU_CALLBACK_URL;
@@ -30,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                 },
                 type: 'primary',
                 multi_url: {
-                  url: feishuCallBackUrl,
+                  url: feishuCallBackUrl + `?orderId=${userForm.orderId}`,
                   android_url: '',
                   ios_url: '',
                   pc_url: ''
