@@ -1,6 +1,7 @@
 import { SystemEnvResponse } from '@/pages/api/platform/getEnv';
 import { GET, POST } from '@/services/request';
 import { AppSession } from '@/types/user';
+import { WorkOrderEditForm } from '@/types/workorder';
 import { AxiosProgressEvent } from 'axios';
 
 export const getSystemEnv = () => GET<SystemEnvResponse>('/api/platform/getEnv');
@@ -34,4 +35,5 @@ export const deleteFileByName = ({ fileName }: { fileName: string }) => {
 export const AuthByDesktopSession = (payload: { token: string }) =>
   POST<AppSession>('/api/auth/desktop', payload);
 
-export const FeishuNotification = () => POST('/api/platform/feishu');
+export const FeishuNotification = (payload: WorkOrderEditForm) =>
+  POST('/api/platform/feishu', payload);

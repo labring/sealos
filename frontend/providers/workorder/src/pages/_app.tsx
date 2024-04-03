@@ -55,7 +55,6 @@ function App({ Component, pageProps }: AppProps) {
       const { domain } = await initSystemEnv();
       try {
         const res = await sealosApp.getSession();
-        console.log(res, 'session=====');
         if (!res?.token) return;
         authUser(res.token);
       } catch (err) {
