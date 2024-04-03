@@ -65,9 +65,9 @@ K8s 本身不具备原生的用户管理系统。因此，需要通过扩展功�
 
 Sealos 的设计允许管理员将用户加入特定的命名空间，并对其角色进行管理，从而有效地控制权限。这样管理员就可以细粒度地管理用户权限，确保每个用户只能访问和修改他们被授权的资源。
 
-![](https://cdn.jsdelivr.us/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-34-wknQxI.png)
+![](https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-34-wknQxI.png)
 
-![](https://cdn.jsdelivr.us/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-34-RQFrTB.png)
+![](https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting6@main/uPic/2023-11-29-10-34-RQFrTB.png)
 
 ### 挑战 3：计量与配额管理
 
