@@ -1,31 +1,49 @@
+import { verifyAccessToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
+import { WorkOrderEditForm } from '@/types/workorder';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
+    const userForm = req.body as WorkOrderEditForm;
+    const { userId } = await verifyAccessToken(req);
     const feishuUrl = process.env.ADMIN_FEISHU_URL;
     const feishuCallBackUrl = process.env.ADMIN_FEISHU_CALLBACK_URL;
 
     const payload = {
-      msg_type: 'post',
-      content: {
-        post: {
-          zh_cn: {
-            title: '工单提醒',
-            content: [
-              [
-                {
-                  tag: 'text',
-                  text: '有新工单: '
+      msg_type: 'interactive',
+      card: {
+        elements: [
+          {
+            tag: 'markdown',
+            content: `**用户ID:** ${userId}\n所属分类: ${userForm.type}\n描述信息: ${userForm.description}`
+          },
+          {
+            tag: 'action',
+            actions: [
+              {
+                tag: 'button',
+                text: {
+                  tag: 'plain_text',
+                  content: '查看详情'
                 },
-                {
-                  tag: 'a',
-                  text: '请查看链接',
-                  href: feishuCallBackUrl
+                type: 'primary',
+                multi_url: {
+                  url: feishuCallBackUrl,
+                  android_url: '',
+                  ios_url: '',
+                  pc_url: ''
                 }
-              ]
+              }
             ]
+          }
+        ],
+        header: {
+          template: 'blue',
+          title: {
+            content: '有新的工单，请立即查看',
+            tag: 'plain_text'
           }
         }
       }

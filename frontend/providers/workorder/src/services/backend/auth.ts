@@ -2,7 +2,6 @@ import { AppTokenPayload, DesktopTokenPayload } from '@/types/user';
 import { verify, sign } from 'jsonwebtoken';
 import type { NextApiRequest } from 'next';
 import { ERROR_ENUM } from '../error';
-import { reject } from 'lodash';
 
 const desktopJwtSecret = (process.env.DESKTOP_JWT_SECRET as string) || '123456789';
 const appJwtSecret = (process.env.APP_JWT_SECRET as string) || '123456789';
@@ -30,7 +29,7 @@ export const verifyDesktopToken: (token: string) => Promise<DesktopTokenPayload 
   });
 
 export const verifyAppToken: (token: string) => Promise<AppTokenPayload> = (token) =>
-  new Promise((resolve) => {
+  new Promise((resolve, reject) => {
     verify(token, appJwtSecret, (err, payload) => {
       if (err) {
         reject(err);

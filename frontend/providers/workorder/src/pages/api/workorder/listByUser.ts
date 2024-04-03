@@ -38,6 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: result
     });
   } catch (error) {
-    jsonRes(res, { code: 500, data: error });
+    console.log(error);
+    jsonRes(res, { code: 500, error: error });
   }
 }
