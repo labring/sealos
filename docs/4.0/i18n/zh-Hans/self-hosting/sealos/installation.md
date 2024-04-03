@@ -37,6 +37,7 @@ export const Highlight = ({children, color}) => (
 - 建议使用干净的操作系统来创建集群。**不要自己装 Docker！**
 - 支持大多数 Linux 发行版，例如：Ubuntu、Debian、CentOS、Rocky linux。
 - **系统内核版本在 5.4 及以上**。
+- **必须使用 root 用户安装！**
 
 推荐配置：
 
@@ -100,7 +101,8 @@ Sealos 需要使用证书来保证通信安全，默认在您不提供证书的�
 使用 nip.io 作为 Sealos 的域名非常简单，只需在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash 
-$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta4/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+  --cloud-version=v5.0.0-beta4 \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://mirror.ghproxy.com
 ```
@@ -121,17 +123,21 @@ admin Password: sealos2023
 
 如果你有自己的公网域名，并且想通过公网访问 Sealos，那你就需要准备好公网受信任的 SSL/TLS 证书。你可以通过 acme.sh 等工具自动签发证书，也可以从域名提供商处下载免费证书或者购买商业证书。
 
+:::info注意
+如果你的公网 IP 在国内，那么域名必须要备案！
+:::
+
 准备好域名证书后，需要将证书放到第一个 Master 节点的某个目录中，例如 `/root/certs/`。
 
 :::info注意
 
 您还需要在域名服务商处添加一条该域名的 A 记录，地址解析到第一个 Master 节点的公网 IP 地址。同时还需要添加一条泛解析记录，将该域名的子域名也解析到第一个 Master 节点的公网 IP 地址。
 
-例如 (假设你的域名是 `cloud.example.io`，假设你的 Master 节点内网地址是 `192.168.1.10`)：
+例如 (假设你的域名是 `cloud.example.io`，假设你的 Master 节点公网地址是 `192.168.1.10`)：
 
 ```bash
-cloud.example.io   A   192.168.1.1
-*.cloud.example.io   A   192.168.1.1
+cloud.example.io   A   192.168.1.10
+*.cloud.example.io   A   192.168.1.10
 ```
 
 :::
@@ -139,7 +145,8 @@ cloud.example.io   A   192.168.1.1
 然后在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash
-$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta4/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+  --cloud-version=v5.0.0-beta4 \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://mirror.ghproxy.com \
   --cloud-domain=<your_domain> \
@@ -158,14 +165,15 @@ $ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring
 例如 (假设你的域名是 `cloud.example.io`，假设你的 Master 节点内网地址是 `192.168.1.10`)：
 
 ```bash
-cloud.example.io   A   192.168.1.1
-*.cloud.example.io   A   192.168.1.1
+cloud.example.io   A   192.168.1.10
+*.cloud.example.io   A   192.168.1.10
 ```
 
 然后在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash
-$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta4/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+  --cloud-version=v5.0.0-beta4 \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://mirror.ghproxy.com \
   --cloud-domain=<your_domain>
@@ -223,7 +231,8 @@ $ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring
 然后在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash
-$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/main/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta4/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+  --cloud-version=v5.0.0-beta4 \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://mirror.ghproxy.com \
   --cloud-domain=<your_domain>
@@ -383,3 +392,37 @@ Linux 不同发行版更新根证书存储的命令不一样，用来保存私�
 
   </TabItem>
 </Tabs>
+
+## 激活集群
+
+集群安装完成后，默认只有 5 元的额度，你需要激活集群以获取赠送的 299 元余额。步骤如下：
+
+1. 首先点击桌面的「许可证」打开许可证应用：
+
+   ![](images/sealos-license.png)
+
+2. 然后点击「激活/购买」：
+  
+   ![](images/sealos-license-activate.jpg)
+
+   然后浏览器会跳转到 License 页面，并跳出一个弹窗：
+
+   ![](images/sealos-license-activate1.png)
+
+3. 如果你还没有在该页面创建过集群，就点击「理立即开始」创建一个集群；如果你已经创建过集群了，只需要点击「已有集群」便会跳转到已有集群。
+
+   跳转到集群列表之后。你就会看到集群已经被激活了：
+
+   ![](images/sealos-license-activate2.png)
+
+4. 点击 「License 管理」，然后下载免费赠送的价值 299 元的 License：
+
+   ![](images/sealos-license-activate3.png)
+
+5. 然后回到 Sealos 集群的「许可证」应用界面，点击「上传 License 文件」：
+
+   ![](images/sealos-license-activate4.png)
+
+   选择刚刚下载的 License 文件进行上传，然后点击右下角的「激活 License」，便可激活 License。激活成功后，集群中的余额就变成了 304 元。
+
+   ![](images/sealos-cost-center.jpg)
