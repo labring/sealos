@@ -40,10 +40,10 @@ const Header = ({
       <Flex
         alignItems={'center'}
         cursor={'pointer'}
-        gap={'10px'}
+        gap={'6px'}
         onClick={() => router.replace(lastRoute)}
       >
-        <MyIcon name="arrowLeft" w={'36px'} />
+        <MyIcon name="arrowLeft" w={'24px'} />
         <Box fontWeight={'bold'} color={'grayModern.900'} fontSize={'2xl'}>
           {t(title)}
         </Box>

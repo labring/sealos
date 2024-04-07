@@ -60,7 +60,9 @@ ${t('common.Surplus')}: ${`${item.limit - item.used} ${sourceMap[item.type]?.uni
         {quotaList.map((item) => (
           <MyTooltip key={item.type} label={item.tip} placement={'top-end'} lineHeight={1.7}>
             <Flex alignItems={'center'} _notFirst={{ mt: 3 }}>
-              <Box flex={'0 0 60px'}>{t(item.type)}</Box>
+              <Box fontSize={'base'} flex={'0 0 60px'}>
+                {t(item.type)}
+              </Box>
               <Progress
                 flex={'1 0 0'}
                 borderRadius={'sm'}

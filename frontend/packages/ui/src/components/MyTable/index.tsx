@@ -22,6 +22,7 @@ export const MyTable = ({ columns, data, itemClass = '' }: Props) => {
         mb={2}
         fontSize={'base'}
         color={'grayModern.600'}
+        fontWeight={'bold'}
       >
         {columns.map((item, i) => (
           <Box

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, MenuList, MenuItem } from '@chakra-ui/react';
+import { Menu, MenuList, MenuItem, MenuItemProps } from '@chakra-ui/react';
 
 interface Props {
   width: number;
@@ -8,13 +8,13 @@ interface Props {
     isActive?: boolean;
     child: React.ReactNode;
     onClick: () => void;
+    menuItemStyle?: MenuItemProps;
   }[];
 }
 
 export const SealosMenu = ({ width, Button, menuList }: Props) => {
   const menuItemStyles = {
     borderRadius: '4px',
-    py: 3,
     display: 'flex',
     alignItems: 'center',
     _hover: {
@@ -36,11 +36,12 @@ export const SealosMenu = ({ width, Button, menuList }: Props) => {
         {menuList.map((item, i) => (
           <MenuItem
             key={i}
-            {...menuItemStyles}
             onClick={item.onClick}
             color={item.isActive ? 'hover.blue' : 'grayModern.600'}
             py={'6px'}
             px={'4px'}
+            {...menuItemStyles}
+            {...item.menuItemStyle}
           >
             {item.child}
           </MenuItem>

@@ -10,7 +10,9 @@ export const Textarea: ComponentStyleConfig = {
       borderColor: '#E8EBF0',
       _focusVisible: {
         borderColor: colors.brightBlue[500],
-        boxShadow: colors.boxShadowBlue
+        boxShadow: colors.boxShadowBlue,
+        bg: '#FFF',
+        color: '#111824'
       }
     }
   },

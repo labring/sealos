@@ -128,6 +128,7 @@ export default memo(function UserCard() {
                 h="32px"
                 bg={'white'}
                 color="black"
+                _hover={{ bg: '' }}
                 onClick={(e) => {
                   e.preventDefault();
                   transferRef?.current!.onOpen();
@@ -142,6 +143,7 @@ export default memo(function UserCard() {
                 h="32px"
                 bg={'white'}
                 color="black"
+                _hover={{ bg: '' }}
                 onClick={(e) => {
                   e.preventDefault();
                   rechargeRef?.current!.onOpen();

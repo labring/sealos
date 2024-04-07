@@ -403,6 +403,7 @@ const Form = ({
                 <Flex alignItems={'center'}>
                   <Label>{t('App Name')}</Label>
                   <Input
+                    width={'350px'}
                     disabled={isEdit}
                     title={isEdit ? t('Not allowed to change app name') || '' : ''}
                     autoFocus={true}
@@ -458,6 +459,7 @@ const Form = ({
                       {t('Image Name')}
                     </Box>
                     <Input
+                      width={'350px'}
                       value={getValues('imageName')}
                       backgroundColor={getValues('imageName') ? 'myWhite.500' : 'grayModern.100'}
                       placeholder={`${t('Image Name')}`}
@@ -855,6 +857,7 @@ const Form = ({
                             }}
                           />
                           <Flex
+                            maxW={'350px'}
                             flex={'1 0 0'}
                             alignItems={'center'}
                             h={'32px'}
@@ -892,11 +895,16 @@ const Form = ({
                     <Box ml={3}>
                       <Box mb={'8px'} h={'20px'}></Box>
                       <IconButton
+                        height={'32px'}
                         width={'32px'}
-                        variant={'outline'}
-                        icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
                         aria-label={'button'}
+                        variant={'outline'}
                         bg={'#FFF'}
+                        _hover={{
+                          color: 'red.600',
+                          bg: 'rgba(17, 24, 36, 0.05)'
+                        }}
+                        icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
                         onClick={() => removeNetworks(i)}
                       />
                     </Box>
@@ -933,7 +941,7 @@ const Form = ({
                       {t('Option')}
                     </Center>
                   </Flex>
-                  <AccordionIcon w={'1.3em'} h={'1.3em'} />
+                  <AccordionIcon w={'20px'} h={'20px'} color={'#485264'} />
                 </AccordionButton>
 
                 <AccordionPanel px={'42px'} py={'24px'}>
@@ -1063,14 +1071,20 @@ const Form = ({
                               </Box>
                             </Box>
                           </Flex>
-                          <Box
-                            className={styles.deleteIcon}
+                          <IconButton
+                            height={'32px'}
+                            width={'32px'}
+                            variant={'outline'}
+                            aria-label={'button'}
+                            bg={'#FFF'}
                             ml={3}
-                            cursor={'pointer'}
+                            _hover={{
+                              color: 'red.600',
+                              bg: 'rgba(17, 24, 36, 0.05)'
+                            }}
+                            icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
                             onClick={() => removeConfigMaps(index)}
-                          >
-                            <MyIcon name="delete" w={'16px'} h={'16px'} />
-                          </Box>
+                          />
                         </Flex>
                       ))}
                     </Box>
@@ -1129,10 +1143,18 @@ const Form = ({
                               </Box>
                             </Box>
                           </Flex>
-                          <Box
-                            className={styles.deleteIcon}
+                          <IconButton
+                            height={'32px'}
+                            width={'32px'}
+                            aria-label={'button'}
+                            variant={'outline'}
+                            bg={'#FFF'}
                             ml={3}
-                            cursor={'pointer'}
+                            icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
+                            _hover={{
+                              color: 'red.600',
+                              bg: 'rgba(17, 24, 36, 0.05)'
+                            }}
                             onClick={() => {
                               if (storeList.length === 1) {
                                 toast({
@@ -1143,9 +1165,7 @@ const Form = ({
                                 removeStoreList(index);
                               }
                             }}
-                          >
-                            <MyIcon name="delete" w={'16px'} h={'16px'} />
-                          </Box>
+                          />
                         </Flex>
                       ))}
                     </Box>

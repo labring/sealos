@@ -64,6 +64,14 @@ export default function DissolveTeam({
   return (
     <>
       <Button
+        height={'32px'}
+        variant={'outline'}
+        _hover={{
+          color: 'red.600',
+          bg: 'rgba(17, 24, 36, 0.05)'
+        }}
+        {...props}
+        leftIcon={<DeleteIcon boxSize={'16px'} />}
         onClick={() => {
           if (session?.user?.ns_uid === ns_uid) {
             return toast({
@@ -72,17 +80,6 @@ export default function DissolveTeam({
           }
           onOpen();
         }}
-        borderRadius="4px"
-        border="1px solid #DEE0E2"
-        background="#F4F6F8"
-        fontSize={'12px'}
-        fontWeight={'500'}
-        h="auto"
-        py="7px"
-        px="16px"
-        {...props}
-        iconSpacing={'4px'}
-        leftIcon={<DeleteIcon boxSize={'16px'} color={'grayModern.600'} />}
       >
         {t('Dissolve Team')}
       </Button>

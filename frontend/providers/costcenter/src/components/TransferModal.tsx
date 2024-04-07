@@ -159,10 +159,10 @@ const TransferModal = forwardRef(
         <ModalOverlay />
 
         <ModalContent maxW="500px">
-          <ModalHeader px={'24px'} pt={'24px'} pb={'18px'}>
+          <ModalHeader px={'24px'} pt={'24px'} pb={'18px'} bg={'white'} border={'none'}>
             {t('Transfer Amount')}
           </ModalHeader>
-          <ModalCloseButton top={'24px'} right={'24px'} />
+          <ModalCloseButton top={'16px'} right={'24px'} />
           <Flex
             pointerEvents={mutation.isLoading ? 'none' : 'auto'}
             pt="4px"

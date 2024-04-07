@@ -3,20 +3,11 @@ import { colors as ThemeColors } from '../colors';
 
 export const Button = defineStyleConfig({
   sizes: {
-    primary: {
-      width: '215px'
-    },
     sm: {
-      width: '75px',
-      height: '32px'
+      px: '14px'
     },
     md: {
-      width: '100px',
-      height: '36px'
-    },
-    lg: {
-      width: '180px',
-      height: '36px'
+      px: '16px'
     }
   },
   variants: {
@@ -91,6 +82,8 @@ export const Button = defineStyleConfig({
       borderColor: 'grayModern.250',
       boxShadow: ThemeColors.buttonBoxShadow,
       color: 'grayModern.600',
+      minW: '16px',
+      minH: '16px',
       _hover: {
         opacity: '0.9',
         bg: 'rgba(33, 155, 244, 0.05)',
@@ -103,7 +96,6 @@ export const Button = defineStyleConfig({
     }
   },
   defaultProps: {
-    size: 'md',
     variant: 'solid'
   }
 });
