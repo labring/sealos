@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HStack, Input, useNumberInput, IconButton } from '@chakra-ui/react';
+import { HStack, Input, useNumberInput, IconButton, InputProps } from '@chakra-ui/react';
 import { AddIcon, MinusIcon } from '@chakra-ui/icons';
 import { MyTooltip } from '../MyTooltip';
 
@@ -11,7 +11,9 @@ export const RangeInput = ({
   max = Infinity,
   value,
   setVal,
-  hoverText
+  hoverText,
+  inputStyle,
+  isDisabled = false
 }: {
   w?: number;
   step?: number;
@@ -21,6 +23,8 @@ export const RangeInput = ({
   value: number | '';
   setVal: (val: number) => void;
   hoverText?: string;
+  inputStyle?: InputProps;
+  isDisabled?: boolean;
 }) => {
   const { getInputProps, getIncrementButtonProps, getDecrementButtonProps } = useNumberInput({
     focusInputOnChange: false,
@@ -68,6 +72,7 @@ export const RangeInput = ({
           textAlign={'center'}
           fontSize={'lg'}
           fontWeight={'bold'}
+          {...inputStyle}
           {...input}
         />
         <IconButton
