@@ -39,7 +39,7 @@ Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以
 
 ## 🚀 在 Sealos 上快速部署分布式应用
 
-[在线使用](https://hzh.sealos.run/)
+[在线使用](https://cloud.sealos.run)
 
 * [在 Sealos 上 30 秒内轻松部署 Nginx](https://sealos.run/docs/quick-start/use-app-launchpad)
 * [在 Sealos 上 30 秒启动 mysql/pgsql/mongo 高可用数据库](https://sealos.run/docs/quick-start/use-database)
