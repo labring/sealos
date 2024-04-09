@@ -100,7 +100,8 @@ function gen_cockroachdbUri() {
     STATEFULSET_NAME="sealos-cockroachdb"
 
     while : ; do
-        if kubectl get statefulset NAME -n NAMESPACE >/dev/null 2>&1; then
+        if kubectl get statefulset $STATEFULSET_NAME -n $NAMESPACE >/dev/null 2>&1; then
+            echo "cockroachdb statefulset is created."
             break
         else
             sleep 10
