@@ -124,11 +124,11 @@ export default memo(function UserCard() {
           <Flex alignItems="center" alignSelf={'center'} gap="10px" mt={'20px !important'}>
             {transferEnabled && (
               <Button
+                variant={'unstyled'}
                 w="78px"
                 h="32px"
                 bg={'white'}
                 color="black"
-                _hover={{ bg: '' }}
                 onClick={(e) => {
                   e.preventDefault();
                   transferRef?.current!.onOpen();
@@ -139,11 +139,11 @@ export default memo(function UserCard() {
             )}
             {rechargeEnabled && (
               <Button
+                variant={'unstyled'}
                 w="78px"
                 h="32px"
                 bg={'white'}
                 color="black"
-                _hover={{ bg: '' }}
                 onClick={(e) => {
                   e.preventDefault();
                   rechargeRef?.current!.onOpen();

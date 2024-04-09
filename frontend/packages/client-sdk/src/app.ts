@@ -15,7 +15,7 @@ class ClientSDK {
   private commonConfig = {
     appKey: '',
     clientLocation: '',
-    success: true
+    success: false
   };
   private userSession: SessionV1 | undefined;
   private readonly callback = new Map<string, (data: MasterReplyMessageType) => void>();

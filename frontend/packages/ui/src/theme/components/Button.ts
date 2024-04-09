@@ -3,12 +3,14 @@ import { colors as ThemeColors } from '../colors';
 
 export const Button = defineStyleConfig({
   sizes: {
+    xs: {},
     sm: {
-      px: '14px'
+      fontSize: '12px'
     },
     md: {
-      px: '16px'
-    }
+      fontSize: '14px'
+    },
+    lg: {}
   },
   variants: {
     primary: {
@@ -48,7 +50,6 @@ export const Button = defineStyleConfig({
       bg: ThemeColors.grayModern[900],
       color: '#FFF',
       borderRadius: 'md',
-      fontSize: '14px',
       fontWeight: 500,
       boxShadow: ThemeColors.buttonBoxShadow,
       _hover: {
@@ -76,7 +77,6 @@ export const Button = defineStyleConfig({
     outline: {
       bg: '#FFF',
       borderRadius: 'md',
-      fontSize: '14px',
       fontWeight: 500,
       border: '1px solid',
       borderColor: 'grayModern.250',
@@ -96,6 +96,7 @@ export const Button = defineStyleConfig({
     }
   },
   defaultProps: {
-    variant: 'solid'
+    variant: 'solid',
+    size: 'md'
   }
 });

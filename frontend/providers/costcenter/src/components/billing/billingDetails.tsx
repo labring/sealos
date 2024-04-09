@@ -60,6 +60,7 @@ export default function BillingDetails({
   return (
     <>
       <Button
+        variant={'unstyled'}
         gap={'8px'}
         px={'8px'}
         py="7px"

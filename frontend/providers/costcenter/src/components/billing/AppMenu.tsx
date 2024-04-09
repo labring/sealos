@@ -36,6 +36,7 @@ export default function AppMenu({
       <Popover onClose={onClose} onOpen={onOpen} isOpen={isOpen}>
         <PopoverTrigger>
           <Button
+            variant={'unstyled'}
             w="110px"
             h="32px"
             fontStyle="normal"
@@ -67,6 +68,7 @@ export default function AppMenu({
         >
           {appList.map((v, idx) => (
             <Button
+              variant={'unstyled'}
               key={v}
               {...(idx === appIdx
                 ? {

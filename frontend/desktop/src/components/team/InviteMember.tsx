@@ -92,6 +92,7 @@ export default function InviteMember({
     <>
       {[UserRole.Manager, UserRole.Owner].includes(ownRole) ? (
         <Button
+          size={'sm'}
           variant={'outline'}
           height={'32px'}
           {...props}
