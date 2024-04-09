@@ -40,7 +40,7 @@ export default function NamespaceMenu({
       <Popover>
         <PopoverTrigger>
           <Button
-            variant={'unstyled'}
+            variant={'white-bg-icon'}
             w="110px"
             h="32px"
             fontStyle="normal"
