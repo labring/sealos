@@ -29,7 +29,7 @@ export default function () {
     setCloudUrl(
       window.location.hostname === 'sealos.io'
         ? 'https://cloud.sealos.io'
-        : 'https://cloud.sealos.top'
+        : 'https://cloud.sealos.run'
     );
 
     return () => {

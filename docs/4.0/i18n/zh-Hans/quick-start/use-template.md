@@ -8,7 +8,7 @@ sidebar_position: 1
 
 ## 1. 选择模板
 
-首先在 [Sealos](https://cloud.sealos.top) 桌面环境中打开「模板市场」。
+首先在 [Sealos](https://cloud.sealos.run) 桌面环境中打开「模板市场」。
 
 ![](./images/templates.jpg)
 

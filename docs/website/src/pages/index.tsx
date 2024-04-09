@@ -14,7 +14,7 @@ import './index.scss';
 import Head from '@docusaurus/Head';
 
 const Home = () => {
-  const { screenWidth, cloudUrl, currentLanguage } = useWindow();
+  const { screenWidth, currentLanguage } = useWindow();
   const isPc = useMemo(() => screenWidth > PC_MIN_WIDTH, [screenWidth]);
 
   useEffect(() => {
