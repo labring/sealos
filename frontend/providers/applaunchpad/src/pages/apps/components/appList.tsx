@@ -197,6 +197,7 @@ const AppList = ({
           <Flex>
             <Button
               mr={5}
+              height={'32px'}
               size={'sm'}
               fontSize={'base'}
               bg={'grayModern.150'}
@@ -276,6 +277,12 @@ const AppList = ({
                       </Box>
                     </>
                   ),
+                  menuItemStyle: {
+                    _hover: {
+                      color: 'red.600',
+                      bg: 'rgba(17, 24, 36, 0.05)'
+                    }
+                  },
                   onClick: () => setDelAppName(item.name)
                 }
               ]}

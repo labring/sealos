@@ -38,7 +38,7 @@ export const MySlider = ({
           key={item.value}
           value={i}
           mt={3}
-          fontSize={'sm'}
+          fontSize={'11px'}
           transform={'translateX(-50%)'}
           whiteSpace={'nowrap'}
           {...(activeVal === item.value

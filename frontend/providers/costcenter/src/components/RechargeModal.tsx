@@ -338,10 +338,10 @@ const RechargeModal = forwardRef(
           {!detail ? (
             complete === 0 ? (
               <>
-                <ModalHeader px={'24px'} pt={'24px'} pb={'18px'}>
+                <ModalHeader px={'24px'} pt={'24px'} pb={'18px'} bg={'white'} border={'none'}>
                   {t('Recharge Amount')}
                 </ModalHeader>
-                <ModalCloseButton top={'24px'} right={'24px'} />
+                <ModalCloseButton top={'16px'} right={'24px'} />
                 <Flex
                   pointerEvents={complete === 0 ? 'auto' : 'none'}
                   pt="4px"

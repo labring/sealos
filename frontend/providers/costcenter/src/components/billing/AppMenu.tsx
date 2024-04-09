@@ -36,6 +36,7 @@ export default function AppMenu({
       <Popover onClose={onClose} onOpen={onOpen} isOpen={isOpen}>
         <PopoverTrigger>
           <Button
+            variant={'white-bg-icon'}
             w="110px"
             h="32px"
             fontStyle="normal"
@@ -67,6 +68,7 @@ export default function AppMenu({
         >
           {appList.map((v, idx) => (
             <Button
+              variant={'white-bg-icon'}
               key={v}
               {...(idx === appIdx
                 ? {
@@ -89,6 +91,9 @@ export default function AppMenu({
                 setApp(idx === 0 ? '' : appList[idx]);
                 onClose();
               }}
+              // _hover={{
+              //   bg: ''
+              // }}
             >
               {v}
             </Button>

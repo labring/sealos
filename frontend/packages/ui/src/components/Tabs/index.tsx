@@ -15,7 +15,7 @@ export const Tabs = ({ list, size = 'md', activeId, onChange, ...props }: Props)
     switch (size) {
       case 'sm':
         return {
-          fontSize: 'xs',
+          fontSize: 'base',
           outP: '3px',
           inlineP: '4px'
         };

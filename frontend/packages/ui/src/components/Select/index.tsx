@@ -70,7 +70,7 @@ const MySelect = (
           }}
           {...(isOpen
             ? {
-                boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                // boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
                 borderColor: 'brightBlue.600',
                 bg: '#FFF'
               }

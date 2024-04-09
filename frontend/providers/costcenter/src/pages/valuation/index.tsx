@@ -65,6 +65,7 @@ function CycleMenu({
       <Popover>
         <PopoverTrigger>
           <Button
+            variant={'white-bg-icon'}
             w="110px"
             h="32px"
             fontStyle="normal"
@@ -96,6 +97,7 @@ function CycleMenu({
         >
           {CYCLE.map((v, idx) => (
             <Button
+              variant={'white-bg-icon'}
               key={v}
               {...(idx === cycleIdx
                 ? {

@@ -92,17 +92,12 @@ export default function InviteMember({
     <>
       {[UserRole.Manager, UserRole.Owner].includes(ownRole) ? (
         <Button
-          onClick={onOpen}
-          borderRadius="4px"
-          border="1px solid #DEE0E2"
-          background="#F4F6F8"
-          fontSize={'12px'}
-          fontWeight={'500'}
-          h="auto"
-          py="7px"
-          px="16px"
-          leftIcon={<GroupAddIcon boxSize={'16px'} color={'grayModern.600'} />}
+          size={'sm'}
+          variant={'outline'}
+          height={'32px'}
           {...props}
+          leftIcon={<GroupAddIcon boxSize={'16px'} />}
+          onClick={onOpen}
         >
           {t('Invite Member')}
         </Button>
@@ -118,8 +113,10 @@ export default function InviteMember({
           backdropFilter="blur(150px)"
           p="24px"
         >
-          <ModalCloseButton right={'24px'} top="24px" p="0" />
-          <ModalHeader p="0">{t('Invite Member')}</ModalHeader>
+          <ModalCloseButton right={'24px'} top="16px" p="0" />
+          <ModalHeader bg={'white'} border={'none'} p="0">
+            {t('Invite Member')}
+          </ModalHeader>
           {mutation.isLoading ? (
             <Spinner mx="auto" />
           ) : (
