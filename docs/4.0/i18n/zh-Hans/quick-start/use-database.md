@@ -10,7 +10,7 @@ sidebar_position: 4
 
 ## 快速安装 MySQL
 
-1. 在 [Sealos](https://cloud.sealos.top) 桌面环境中打开数据库。
+1. 在 [Sealos](https://cloud.sealos.run) 桌面环境中打开数据库。
 
 ![](./images/database-launch.jpg)
 

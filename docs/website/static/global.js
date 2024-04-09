@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-  // console.log('Handle a tag interception', 111)
+  console.log('Handle a tag interception', 111)
   const parentElement = document.body
   parentElement.addEventListener("click", function (event) {
     if (event.target.tagName === "A") {
