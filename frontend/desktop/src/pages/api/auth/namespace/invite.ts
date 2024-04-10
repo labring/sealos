@@ -1,6 +1,5 @@
 import { jsonRes } from '@/services/backend/response';
 import { bindingRole } from '@/services/backend/team';
-import { INVITE_LIMIT } from '@/types/api';
 import { UserRole } from '@/types/team';
 import { isUserRole, roleToUserRole, vaildManage } from '@/utils/tools';
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -8,6 +7,8 @@ import { globalPrisma, prisma } from '@/services/backend/db/init';
 import { validate } from 'uuid';
 import { JoinStatus } from 'prisma/region/generated/client';
 import { verifyAccessToken } from '@/services/backend/auth';
+import { getTeamInviteLimit } from '@/services/enable';
+const TEAM_INVITE_LIMIT = getTeamInviteLimit();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -57,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!vaild) return jsonRes(res, { code: 403, message: 'you are not manager' });
     if (queryResults.length === 0)
       return jsonRes(res, { code: 404, message: 'there are not user in the namespace ' });
-    if (queryResults.length >= INVITE_LIMIT)
+    if (queryResults.length >= TEAM_INVITE_LIMIT)
       return jsonRes(res, { code: 403, message: 'the invited users are too many' });
 
     const tItem = queryResults.find((item) => item.userCr.uid === targetRegionUser.uid);

@@ -86,7 +86,7 @@ export async function signInByPassword({ id, password }: { id: string; password:
 async function signUp({
   provider,
   id,
-  name,
+  name: nickname,
   avatar_url
 }: {
   provider: ProviderType;
@@ -99,9 +99,9 @@ async function signUp({
     const name = nanoid(10);
     user = await globalPrisma.user.create({
       data: {
-        name,
+        name: name,
         id: name,
-        nickname: name,
+        nickname: nickname,
         avatarUri: avatar_url,
         oauthProvider: {
           create: {

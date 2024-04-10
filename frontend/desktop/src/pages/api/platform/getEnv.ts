@@ -9,7 +9,8 @@ import {
   enableWechatRecharge,
   enableLicense,
   enableRecharge,
-  enableOpenWechat
+  enableOpenWechat,
+  enableOAuth2
 } from '@/services/enable';
 import { SystemEnv } from '@/types';
 
@@ -34,6 +35,10 @@ export default async function handler(_: NextApiRequest, res: NextApiResponse) {
   const rechargeEnabled = enableRecharge();
   const guideEnabled = process.env.GUIDE_ENABLED === 'true';
   const openWechatEnabled = enableOpenWechat();
+  const oauth2_client_id = process.env.OAUTH2_CLIENT_ID || '';
+  const oauth2_auth_url = process.env.OAUTH2_AUTH_URL || '';
+  const needOAuth2 = enableOAuth2();
+
   return jsonRes<SystemEnv>(res, {
     data: {
       SEALOS_CLOUD_DOMAIN: process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io',
@@ -56,7 +61,10 @@ export default async function handler(_: NextApiRequest, res: NextApiResponse) {
       licenseEnabled,
       guideEnabled,
       openWechatEnabled,
-      cf_sitekey
+      cf_sitekey,
+      oauth2_client_id,
+      oauth2_auth_url,
+      needOAuth2
     }
   });
 }

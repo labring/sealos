@@ -3,5 +3,3 @@ export type ApiResp<T = any> = {
   message?: string;
   data?: T;
 };
-export const INVITE_LIMIT = 5;
-export const TEAM_LIMIT = 5;

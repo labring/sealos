@@ -1,7 +1,7 @@
 import { useGlobalStore } from '@/stores/global';
 import useSessionStore from '@/stores/session';
 import { OauthProvider } from '@/types/user';
-import { Button, Flex, Icon } from '@chakra-ui/react';
+import { Button, Image, Flex, Icon, Center } from '@chakra-ui/react';
 import { GithubIcon, GoogleIcon, WechatIcon } from '@sealos/ui';
 import { useRouter } from 'next/router';
 import { MouseEventHandler } from 'react';
@@ -16,7 +16,10 @@ const AuthList = () => {
     google_client_id = '',
     callback_url = '',
     // https://sealos.io/siginIn
-    oauth_proxy = ''
+    oauth_proxy = '',
+    oauth2_client_id,
+    oauth2_auth_url,
+    needOAuth2 = false
   } = systemEnv ?? {};
   const oauthLogin = async ({ url, provider }: { url: string; provider?: OauthProvider }) => {
     setProvider(provider);
@@ -100,6 +103,29 @@ const AuthList = () => {
           });
       },
       need: needGoogle
+    },
+    {
+      icon: () => (
+        <Center>
+          <Image alt="logo" width={'20px'} src="logo.svg"></Image>
+        </Center>
+      ),
+      cb: (e) => {
+        e.preventDefault();
+        const state = generateState();
+        if (oauth_proxy)
+          oauthProxyLogin({
+            provider: 'oauth2',
+            state,
+            id: oauth2_client_id
+          });
+        else
+          oauthLogin({
+            provider: 'oauth2',
+            url: `${oauth2_auth_url}?client_id=${oauth2_client_id}&redirect_uri=${callback_url}&response_type=code&state=${state}`
+          });
+      },
+      need: needOAuth2
     }
   ];
 
