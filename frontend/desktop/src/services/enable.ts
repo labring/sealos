@@ -36,8 +36,13 @@ export const enableWechatRecharge = () => process.env['WECHAT_ENABLED'] === 'tru
 export const enableLicense = () => {
   return process.env.LICENSE_ENABLED === 'true';
 };
+
 export const getTeamLimit = () => parseInt(process.env['TEAM_LIMIT'] || '') || 50;
+
+export const getTeamInviteLimit = () => parseInt(process.env['TEAM_INVITE_LIMIT'] || '') || 50;
+
 export const getRegionUid = () => process.env['REGION_UID'] || '';
+
 export const enablePersistImage = () =>
   !!process.env.OS_URL &&
   !!process.env.OS_BUCKET_NAME &&
