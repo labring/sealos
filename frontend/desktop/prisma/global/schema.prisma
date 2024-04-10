@@ -107,4 +107,5 @@ enum ProviderType {
   WECHAT
   GOOGLE
   PASSWORD
+  OAUTH2
 }

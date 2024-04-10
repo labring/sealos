@@ -24,7 +24,7 @@ const Callback: NextPage = () => {
     let isProxy: boolean = false;
     (async () => {
       try {
-        if (!provider || !['github', 'wechat', 'google'].includes(provider))
+        if (!provider || !['github', 'wechat', 'google', 'oauth2'].includes(provider))
           throw new Error('provider error');
         const { code, state } = router.query;
         if (!isString(code) || !isString(state)) throw new Error('failed to get code and state');

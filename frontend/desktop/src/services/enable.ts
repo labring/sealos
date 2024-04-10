@@ -45,3 +45,10 @@ export const enablePersistImage = () =>
   !!process.env.OS_ACCESS_KEY &&
   !!process.env.OS_SECRET_KEY &&
   process.env.PERSIST_AVATAR_ENABLED === 'true';
+
+export const enableOAuth2 = () =>
+  !!process.env.OAUTH2_CLIENT_ID &&
+  !!process.env.OAUTH2_CLIENT_SECRET &&
+  !!process.env.OAUTH2_AUTH_URL &&
+  !!process.env.OAUTH2_TOKEN_URL &&
+  !!process.env.OAUTH2_USERINFO_URL;

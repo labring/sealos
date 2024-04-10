@@ -30,6 +30,9 @@ export type LoginProps = {
   needGithub: boolean;
   needWechat: boolean;
   needGoogle: boolean;
+  oauth2_client_id: string;
+  oauth2_auth_url: string;
+  needOAuth2: boolean;
 };
 
 export type SystemEnv = {
