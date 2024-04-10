@@ -383,10 +383,12 @@ func (r *MonitorReconciler) getObjStorageUsed(user string, namedMap *map[string]
 	}
 	for i := range buckets {
 		size, count := objstorage.GetObjectStorageSize(r.ObjStorageClient, buckets[i])
-		if count == 0 {
+		if count == 0 || size == 0 {
 			continue
 		}
-		bytes, err := objstorage.GetObjectStorageFlow(r.PromURL, buckets[i], r.ObjectStorageInstance)
+		end := time.Now().Truncate(time.Minute)
+		// get the traffic of the last minute
+		bytes, err := objstorage.GetObjectStorageFlow(r.PromURL, buckets[i], r.ObjectStorageInstance, end.Add(-time.Minute), end)
 		if err != nil {
 			return fmt.Errorf("failed to get object storage user storage flow: %w", err)
 		}

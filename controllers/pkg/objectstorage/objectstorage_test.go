@@ -19,6 +19,7 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"time"
 )
 
 func TestGetUserObjectStorageFlow(t *testing.T) {
@@ -26,7 +27,8 @@ func TestGetUserObjectStorageFlow(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	bytes, err := GetUserObjectStorageFlow(cli, os.Getenv("PROM_URL"), os.Getenv("MINIO_USERNAME"), os.Getenv("MINIO_INSTANCE"))
+	start := time.Now().Truncate(time.Hour).Add(-time.Hour)
+	bytes, err := GetUserObjectStorageFlow(cli, os.Getenv("PROM_URL"), os.Getenv("MINIO_USERNAME"), os.Getenv("MINIO_INSTANCE"), start, start.Add(time.Hour))
 	if err != nil {
 		t.Error(err)
 	}
