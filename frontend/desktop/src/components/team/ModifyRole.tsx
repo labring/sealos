@@ -82,7 +82,9 @@ export default function ModifyRole({
           p="24px"
         >
           <ModalCloseButton right={'24px'} top="24px" p="0" />
-          <ModalHeader p="0">modify member</ModalHeader>
+          <ModalHeader bg={'white'} border={'none'} p="0">
+            modify member
+          </ModalHeader>
           {mutation.isLoading ? (
             <Spinner mx="auto" />
           ) : (
