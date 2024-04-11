@@ -40,6 +40,8 @@ spec:
               value: '{{ .transferEnabled }}'
             - name: RECHARGE_ENABLED
               value: '{{ .rechargeEnabled }}'
+            - name: BILLING_URI
+              value: 'http://account-service.account-system.svc:2333'
           resources:
             limits:
               cpu: 1000m
