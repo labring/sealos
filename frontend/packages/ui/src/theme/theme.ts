@@ -20,11 +20,12 @@ const _theme = {
     '2xl': '20px'
   },
   breakpoints: {
-    sm: '1024px',
-    md: '1280px',
-    lg: '1500px',
-    xl: '1800px',
-    '2xl': '2100px'
+    base: '0px',
+    sm: '640px',
+    md: '768px',
+    lg: '1024px',
+    xl: '1280px',
+    '2xl': '1536px'
   },
   fontWeights: {
     bold: 500
