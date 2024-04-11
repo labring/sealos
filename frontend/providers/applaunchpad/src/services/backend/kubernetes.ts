@@ -250,6 +250,7 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
     k8sNetworkingApp: kc.makeApiClient(k8s.NetworkingV1Api),
     k8sCustomObjects: kc.makeApiClient(k8s.CustomObjectsApi),
     metricsClient: new k8s.Metrics(kc),
+    k8sExec: new k8s.Exec(kc),
     kube_user,
     namespace,
     applyYamlList,
