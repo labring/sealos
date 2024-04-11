@@ -392,17 +392,16 @@ func (r *MonitorReconciler) getObjStorageUsed(user string, namedMap *map[string]
 		if err != nil {
 			return fmt.Errorf("failed to get object storage user storage flow: %w", err)
 		}
-		//If object storage traffic bytes is smaller than 0.1 MB, no record is recorded
-		if bytes < 100*1024 {
-			continue
-		}
 		objStorageNamed := resources.NewObjStorageResourceNamed(buckets[i])
 		(*namedMap)[objStorageNamed.String()] = objStorageNamed
 		if _, ok := (*resMap)[objStorageNamed.String()]; !ok {
 			(*resMap)[objStorageNamed.String()] = initResources()
 		}
 		(*resMap)[objStorageNamed.String()][corev1.ResourceStorage].Add(*resource.NewQuantity(size, resource.BinarySI))
-		(*resMap)[objStorageNamed.String()][resources.ResourceNetwork].Add(*resource.NewQuantity(bytes, resource.BinarySI))
+		//If object storage traffic bytes is smaller than 0.1 MB, no record is recorded
+		if bytes >= 100*1024 {
+			(*resMap)[objStorageNamed.String()][resources.ResourceNetwork].Add(*resource.NewQuantity(bytes, resource.BinarySI))
+		}
 	}
 	return nil
 }
