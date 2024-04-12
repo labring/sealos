@@ -32,16 +32,16 @@ export const useDBStore = create<State>()(
       dbList: [],
       setDBList: async () => {
         const res = await getMyDBList();
-        // try {
-        //   for (const db of res) {
-        //     if (db.status.value === 'Updating') {
-        //       const isDiskOverflow = await getDiskOverflowStatus(db.name, db.dbType);
-        //       db.isDiskSpaceOverflow = isDiskOverflow;
-        //     }
-        //   }
-        // } catch (error) {}
+        try {
+          for (const db of res) {
+            if (db.status.value === 'Updating') {
+              const isDiskOverflow = await getDiskOverflowStatus(db.name, db.dbType);
+              db.isDiskSpaceOverflow = isDiskOverflow;
+            }
+          }
+        } catch (error) {}
         set((state) => {
-          state.dbList = res as DBListItemType[];
+          state.dbList = res;
         });
         return res;
       },

@@ -16,6 +16,14 @@ import yaml from 'js-yaml';
 import { getUserNamespace } from './user';
 import { V1StatefulSet } from '@kubernetes/client-node';
 
+/**
+ * Convert data for creating a database cluster to YAML configuration.
+ * Used for client display, server logic handles actual creation.
+ *
+ * @param data Data for creating the database cluster.
+ * @param backupInfo Optional backup data for database restoration.
+ * @returns Generated YAML configuration.
+ */
 export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType) => {
   const userNS = getUserNamespace();
   const resources = {
@@ -664,6 +672,14 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
   return map[data.dbType].map((item) => yaml.dump(item)).join('\n---\n');
 };
 
+/**
+ * Generates account info, potentially linked to a cluster via ownerId.
+ * Primarily server-side.
+ *
+ * @param data Data for account creation.
+ * @param ownerId Optional owner ID for cluster association.
+ * @returns Generated account info.
+ */
 export const json2Account = (data: DBEditType, ownerId?: string) => {
   const commonLabels = {
     [crLabelKey]: data.dbName,

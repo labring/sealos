@@ -14,7 +14,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       isEdit: boolean;
       backupInfo?: BackupItemType;
     };
-    console.log(req.body);
 
     const { k8sCustomObjects, namespace, applyYamlList, delYamlList } = await getK8s({
       kubeconfig: await authSession(req)
@@ -44,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const dbName = body.metadata.name;
 
     const updateAccountYaml = json2Account(dbForm, dbUid);
-    console.log(updateAccountYaml);
+
     await applyYamlList([updateAccountYaml], 'replace');
 
     jsonRes(res, {
