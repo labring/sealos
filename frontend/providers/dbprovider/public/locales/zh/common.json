@@ -266,5 +266,6 @@
   "Deleting": "删除中",
   "Backup Running": "备份中",
   "Backup Deleting": "删除中",
-  "DataBase": "数据库"
+  "DataBase": "数据库",
+  "Use Docs": "使用文档"
 }

@@ -150,7 +150,7 @@ const Header = ({
           isLoading={loading}
           variant={'base'}
           bg={'white'}
-          isDisabled={db.status.value === 'Updating'}
+          isDisabled={db.status.value === 'Updating' && !db.isDiskSpaceOverflow}
           onClick={() => {
             router.push(`/db/edit?name=${db.dbName}`);
           }}
