@@ -22,6 +22,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/common/model"
+
 	"github.com/minio/minio-go/v7"
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
@@ -55,8 +57,8 @@ func GetObjectStorageSize(client *minio.Client, bucket string) (int64, int64) {
 	return totalSize, objectsCount
 }
 
-func GetObjectStorageFlow(promURL, bucket, instance string) (int64, error) {
-	flow, err := QueryPrometheus(promURL, bucket, instance)
+func GetObjectStorageFlow(promURL, bucket, instance string, startTime, endTime time.Time) (int64, error) {
+	flow, err := QueryPrometheus(promURL, bucket, instance, startTime, endTime)
 	if err != nil {
 		return 0, fmt.Errorf("failed to query prometheus, bucket: %v, err: %v", bucket, err)
 	}
@@ -79,7 +81,7 @@ func GetUserObjectStorageSize(client *minio.Client, username string) (int64, int
 	return totalSize, objectsCount, nil
 }
 
-func GetUserObjectStorageFlow(client *minio.Client, promURL, username, instance string) (int64, error) {
+func GetUserObjectStorageFlow(client *minio.Client, promURL, username, instance string, startTime, endTime time.Time) (int64, error) {
 	buckets, err := ListUserObjectStorageBucket(client, username)
 	if err != nil {
 		return 0, fmt.Errorf("failed to list object storage buckets: %v", err)
@@ -87,7 +89,7 @@ func GetUserObjectStorageFlow(client *minio.Client, promURL, username, instance 
 
 	var totalFlow int64
 	for _, bucketName := range buckets {
-		flow, err := QueryPrometheus(promURL, bucketName, instance)
+		flow, err := QueryPrometheus(promURL, bucketName, instance, startTime, endTime)
 		if err != nil {
 			return 0, fmt.Errorf("failed to query prometheus, bucket: %v, err: %v", bucketName, err)
 		}
@@ -97,52 +99,68 @@ func GetUserObjectStorageFlow(client *minio.Client, promURL, username, instance 
 	return totalFlow, nil
 }
 
-func QueryPrometheus(host, bucketName, instance string) (int64, error) {
+const (
+	timeoutDuration = 5 * time.Second
+	timeFormat      = "2006-01-02 15:04:05"
+)
+
+var (
+	bytePattern = regexp.MustCompile(`\d+`)
+)
+
+func QueryPrometheus(host, bucketName, instance string, startTime, endTime time.Time) (int64, error) {
 	client, err := api.NewClient(api.Config{
 		Address: host,
 	})
 	if err != nil {
-		return 0, fmt.Errorf("failed to new prometheus client, host: %v, err: %v", host, err)
+		return 0, fmt.Errorf("failed to create Prometheus client: %w", err)
 	}
 
 	v1api := v1.NewAPI(client)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeoutDuration)
 	defer cancel()
 
-	rcvdQuery := "sum(minio_bucket_traffic_received_bytes{bucket=\"" + bucketName + "\", instance=\"" + instance + "\"})"
-	rcvdResult, rcvdWarnings, err := v1api.Query(ctx, rcvdQuery, time.Now(), v1.WithTimeout(5*time.Second))
+	rcvdQuery := fmt.Sprintf("sum(minio_bucket_traffic_received_bytes{bucket=\"%s\", instance=\"%s\"})", bucketName, instance)
+	rcvdValues, err := queryPrometheus(ctx, v1api, rcvdQuery, startTime, endTime)
 	if err != nil {
-		return 0, fmt.Errorf("failed to query prometheus, query: %v, err: %v", rcvdQuery, err)
+		return 0, fmt.Errorf("failed to query Prometheus: %w", err)
 	}
 
-	if len(rcvdWarnings) > 0 {
-		return 0, fmt.Errorf("there are warnings: %v", rcvdWarnings)
-	}
-
-	sentQuery := "sum(minio_bucket_traffic_sent_bytes{bucket=\"" + bucketName + "\", instance=\"" + instance + "\"})"
-	sentResult, sentWarnings, err := v1api.Query(ctx, sentQuery, time.Now(), v1.WithTimeout(5*time.Second))
+	sentQuery := fmt.Sprintf("sum(minio_bucket_traffic_sent_bytes{bucket=\"%s\", instance=\"%s\"})", bucketName, instance)
+	sentValues, err := queryPrometheus(ctx, v1api, sentQuery, startTime, endTime)
 	if err != nil {
-		return 0, fmt.Errorf("failed to query prometheus, query: %v, err: %v", sentQuery, err)
+		return 0, fmt.Errorf("failed to query Prometheus: %w", err)
 	}
 
-	if len(sentWarnings) > 0 {
-		return 0, fmt.Errorf("there are warnings: %v", sentWarnings)
-	}
+	receivedDiff := rcvdValues[1] - rcvdValues[0]
+	sentDiff := sentValues[1] - sentValues[0]
 
-	re := regexp.MustCompile(`\d+`)
-	rcvdStr := re.FindString(rcvdResult.String())
-	sentStr := re.FindString(sentResult.String())
+	fmt.Printf("bucket: %v, received bytes in duration: %v, sent bytes in duration: %v\n", bucketName, receivedDiff, sentDiff)
+	fmt.Printf("received bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n", startTime.Format(timeFormat), rcvdValues[0], endTime.Format(timeFormat), rcvdValues[1])
+	fmt.Printf("sent bytes: {startTime: {time: %v, value: %v}, endTime: {time: %v, value: %v}}\n", startTime.Format(timeFormat), sentValues[0], endTime.Format(timeFormat), sentValues[1])
 
-	rcvdBytes, err := strconv.ParseInt(rcvdStr, 10, 64)
+	return rcvdValues[1] + sentValues[1] - rcvdValues[0] - sentValues[0], nil
+}
+
+func queryPrometheus(ctx context.Context, api v1.API, query string, startTime, endTime time.Time) ([]int64, error) {
+	result1, _, err := api.Query(ctx, query, startTime, v1.WithTimeout(timeoutDuration))
 	if err != nil {
-		return 0, fmt.Errorf("failed to parse rcvdStr %s to int64: %v", rcvdStr, err)
+		return nil, err
 	}
-	sentBytes, err := strconv.ParseInt(sentStr, 10, 64)
+
+	result2, _, err := api.Query(ctx, query, endTime, v1.WithTimeout(timeoutDuration))
 	if err != nil {
-		return 0, fmt.Errorf("failed to parse sentStr %s to int64: %v", sentStr, err)
+		return nil, err
 	}
 
-	fmt.Printf("received bytes: %d, send bytes: %d\n", rcvdBytes, sentBytes)
+	val1, val2 := extractValues(result1, result2)
+	return []int64{val1, val2}, nil
+}
 
-	return rcvdBytes + sentBytes, nil
+func extractValues(result1, result2 model.Value) (int64, int64) {
+	rcvdStr1 := bytePattern.FindString(result1.String())
+	rcvdStr2 := bytePattern.FindString(result2.String())
+	val1, _ := strconv.ParseInt(rcvdStr1, 10, 64)
+	val2, _ := strconv.ParseInt(rcvdStr2, 10, 64)
+	return val1, val2
 }
