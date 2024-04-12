@@ -46,6 +46,18 @@ func ListUserObjectStorageBucket(client *minio.Client, username string) ([]strin
 	return expectBuckets, nil
 }
 
+func ListAllObjectStorageBucket(client *minio.Client) ([]string, error) {
+	buckets, err := client.ListBuckets(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	var allBuckets []string
+	for _, bucket := range buckets {
+		allBuckets = append(allBuckets, bucket.Name)
+	}
+	return allBuckets, nil
+}
+
 func GetObjectStorageSize(client *minio.Client, bucket string) (int64, int64) {
 	objects := client.ListObjects(context.Background(), bucket, minio.ListObjectsOptions{
 		Recursive: true,
