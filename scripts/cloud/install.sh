@@ -550,6 +550,9 @@ EOF
     # TODO use sealos run to install cockroachdb-operator
     sealos run "${image_registry}/${image_repository}/cockroach:latest"
 
+    get_prompt "installing_monitoring"
+    sealos run "${image_registry}/${image_repository}/victoria-metrics-k8s-stack:v${victoria_metrics_k8s_stack_version#v:-1.96.0}"
+
     get_prompt "ingress_installation"
     sealos run ${image_registry}/${image_repository}/ingress-nginx:v${ingress_nginx_version#v:-1.9.4} --config-file $CLOUD_DIR/ingress-nginx-config.yaml
 
@@ -561,11 +564,9 @@ EOF
 
     kbcli addon enable snapshot-controller
 
-    get_prompt "installing_monitoring"
-    sealos run "${image_registry}/${image_repository}/victoria-metrics-k8s-stack:v${victoria_metrics_k8s_stack_version#v:-1.96.0}"
     kubectl apply -f $CLOUD_DIR/vm-secret.yaml
     kubectl patch vmagent -n vm victoria-metrics-k8s-stack --type merge -p '{"spec":{"additionalScrapeConfigs":{"key":"prometheus-additional.yaml","name":"additional-scrape-configs"}}}'
-    kubectl rollout restart deploy -n vm vmagent-victoria-metrics-k8s-stack
+    kubectl rollout restart deploy -n vm vmagent-victoria-metrics-k8s-stack || true
 
     get_prompt "patching_ingress"
     kubectl patch cm -n ingress-nginx ingress-nginx-controller --patch '{"data":{"allow-snippet-annotations":"true","annotation-value-word-blocklist":"load_module,lua_package,_by_lua,location,root,proxy_pass,serviceaccount"}}'
