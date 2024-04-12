@@ -132,7 +132,7 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 
 func (r *MonitorReconciler) StartReconciler(ctx context.Context) error {
 	r.startPeriodicReconcile()
-	if r.TrafficClient != nil {
+	if r.TrafficClient != nil || r.ObjStorageClient != nil {
 		r.startMonitorTraffic()
 	}
 	<-ctx.Done()
@@ -398,10 +398,12 @@ func (r *MonitorReconciler) getObjStorageUsed(user string, namedMap *map[string]
 }
 
 func (r *MonitorReconciler) MonitorTrafficUsed(startTime, endTime time.Time) error {
-	logger.Info("start getPodTrafficUsed", "startTime", startTime.Format(time.RFC3339), "endTime", endTime.Format(time.RFC3339))
+	logger.Info("start getTrafficUsed", "startTime", startTime.Format(time.RFC3339), "endTime", endTime.Format(time.RFC3339))
 	execTime := time.Now().UTC()
-	if err := r.monitorPodTrafficUsed(startTime, endTime); err != nil {
-		r.Logger.Error(err, "failed to monitor pod traffic used")
+	if r.TrafficClient != nil {
+		if err := r.monitorPodTrafficUsed(startTime, endTime); err != nil {
+			r.Logger.Error(err, "failed to monitor pod traffic used")
+		}
 	}
 	if r.ObjStorageClient != nil {
 		if err := r.monitorObjectStorageTrafficUsed(startTime, endTime); err != nil {
