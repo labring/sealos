@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math/big"
 	"net"
+	"sort"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -105,6 +106,9 @@ func ListLocalHostAddrs() (*[]net.Addr, error) {
 		logger.Warn("net.Interfaces failed, err:", err.Error())
 		return nil, err
 	}
+	sort.Slice(netInterfaces, func(i, j int) bool {
+		return netInterfaces[i].Index < netInterfaces[j].Index
+	})
 	var allAddrs []net.Addr
 	for i := 0; i < len(netInterfaces); i++ {
 		if (netInterfaces[i].Flags & net.FlagUp) == 0 {
