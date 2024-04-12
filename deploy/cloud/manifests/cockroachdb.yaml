@@ -23,4 +23,4 @@ spec:
   tlsEnabled: true
   image:
     name: docker.io/cockroachdb/cockroach:v23.1.11
-  nodes: 1
+  nodes: 3
