@@ -1,7 +1,7 @@
 import { PassThrough, Readable, Writable } from 'stream';
 import * as k8s from '@kubernetes/client-node';
 
-type File = {
+export type TFile = {
   name: string;
   path: string;
   dir: string;
@@ -32,19 +32,21 @@ export class KubeFileSystem {
     stdout: Writable | null = null
   ) {
     return new Promise<string>((resolve, reject) => {
-      const stdout = new PassThrough();
       const stderr = new PassThrough();
+
+      let chunks = Buffer.alloc(0);
+      if (!stdout) {
+        stdout = new PassThrough();
+        stdout.on('data', (chunk) => {
+          chunks = Buffer.concat([chunks, chunk]);
+        });
+      }
 
       const free = () => {
         stderr.removeAllListeners();
-        stdout.removeAllListeners();
+        stdout!.removeAllListeners();
       };
 
-      let chunks = Buffer.alloc(0);
-
-      stdout.on('data', (chunk) => {
-        chunks = Buffer.concat([chunks, chunk]);
-      });
       stdout.on('end', () => {
         free();
         resolve(chunks.toString());
@@ -101,9 +103,9 @@ export class KubeFileSystem {
     }
     const lines: string[] = output.split('\n').filter((v) => v.length > 3);
 
-    const directories: File[] = [];
-    const files: File[] = [];
-    const symlinks: File[] = [];
+    const directories: TFile[] = [];
+    const files: TFile[] = [];
+    const symlinks: TFile[] = [];
 
     lines.forEach((line) => {
       const parts = line.split('"');
@@ -112,7 +114,7 @@ export class KubeFileSystem {
       if (name === '.' || name === '..') return;
 
       const attrs = parts[0].split(' ').filter((v) => !!v);
-      const file: File = {
+      const file: TFile = {
         name: name,
         path: (path !== '/' ? path : '') + '/' + name,
         dir: path,
@@ -226,18 +228,27 @@ export class KubeFileSystem {
     return await this.execCommand(namespace, podName, containerName, ['rm', '-rf', path]);
   }
 
-  async cat({
+  async download({
     namespace,
     podName,
     containerName,
-    path
+    path,
+    stdout
   }: {
     namespace: string;
     podName: string;
     containerName: string;
     path: string;
+    stdout: Writable;
   }) {
-    return await this.execCommand(namespace, podName, containerName, ['cat', path]);
+    return await this.execCommand(
+      namespace,
+      podName,
+      containerName,
+      ['dd', `if=${path}`, 'status=noxfer'],
+      null,
+      stdout
+    );
   }
 
   async mkdir({
@@ -266,5 +277,41 @@ export class KubeFileSystem {
     path: string;
   }) {
     return await this.execCommand(namespace, podName, containerName, ['touch', path]);
+  }
+
+  async upload({
+    namespace,
+    podName,
+    containerName,
+    path,
+    file
+  }: {
+    namespace: string;
+    podName: string;
+    containerName: string;
+    path: string;
+    file: Readable;
+  }) {
+    return await this.execCommand(
+      namespace,
+      podName,
+      containerName,
+      ['dd', `of=${path}`, 'status=none', 'bs=32767'],
+      file
+    );
+  }
+
+  async md5sum({
+    namespace,
+    podName,
+    containerName,
+    path
+  }: {
+    namespace: string;
+    podName: string;
+    containerName: string;
+    path: string;
+  }) {
+    return await this.execCommand(namespace, podName, containerName, ['md5sum', path]);
   }
 }
