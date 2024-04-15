@@ -111,12 +111,12 @@ export class KubeFileSystem {
       const parts = line.split('"');
       const name = parts[1];
 
-      if (name === '.' || name === '..') return;
+      if (!name || name === '.' || name === '..') return;
 
       const attrs = parts[0].split(' ').filter((v) => !!v);
       const file: TFile = {
         name: name,
-        path: (path !== '/' ? path : '') + '/' + name,
+        path: (name.startsWith('/') ? '' : path + '/') + name,
         dir: path,
         kind: line[0],
         attr: attrs[0],
@@ -245,7 +245,7 @@ export class KubeFileSystem {
       namespace,
       podName,
       containerName,
-      ['dd', `if=${path}`, 'status=noxfer'],
+      ['dd', `if=${path}`, 'status=none'],
       null,
       stdout
     );
