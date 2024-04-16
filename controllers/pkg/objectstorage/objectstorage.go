@@ -22,6 +22,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+
 	"github.com/prometheus/common/model"
 
 	"github.com/minio/minio-go/v7"
@@ -42,6 +44,18 @@ func ListUserObjectStorageBucket(client *minio.Client, username string) ([]strin
 		}
 	}
 	return expectBuckets, nil
+}
+
+func ListAllObjectStorageBucket(client *minio.Client) ([]string, error) {
+	buckets, err := client.ListBuckets(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	var allBuckets []string
+	for _, bucket := range buckets {
+		allBuckets = append(allBuckets, bucket.Name)
+	}
+	return allBuckets, nil
 }
 
 func GetObjectStorageSize(client *minio.Client, bucket string) (int64, int64) {
@@ -99,9 +113,11 @@ func GetUserObjectStorageFlow(client *minio.Client, promURL, username, instance 
 	return totalFlow, nil
 }
 
+var timeoutDuration = time.Duration(env.GetInt64EnvWithDefault(EnvPromQueryObsTimeoutSecEnv, 10)) * time.Second
+
 const (
-	timeoutDuration = 5 * time.Second
-	timeFormat      = "2006-01-02 15:04:05"
+	EnvPromQueryObsTimeoutSecEnv = "PROM_QUERY_OBS_TIMEOUT_SEC"
+	timeFormat                   = "2006-01-02 15:04:05"
 )
 
 var (

@@ -13,7 +13,6 @@ export const getDBVersionMap = () => GET<DBVersionMapType>('/api/platform/getVer
 
 export const getUserQuota = () =>
   GET<{
-    balance: number;
     quota: UserQuotaItemType[];
   }>('/api/platform/getQuota');
 

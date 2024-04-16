@@ -3,11 +3,10 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { handleAxiosStream } from '@/services/handleStream';
 import { ApiResp } from '@/services/kubernet';
-import { MonitorDBResult } from '@/types/monitor';
-import { convertBytes } from '@/utils/tools';
+import { AdapterChartDataType, MonitorChartDataResult, MonitorDBResult } from '@/types/monitor';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-const AdapterChartData = {
+const AdapterChartData: AdapterChartDataType = {
   disk: (data: MonitorDBResult) => {
     const temp = data?.data?.result;
     let XTimePoint: number[] = [];
@@ -66,7 +65,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
 
     const { dbName, dbType, queryKey, start, end, step } = req.query;
-
     const endTime = Date.now(); // 当前时间的时间戳
     const startTime = endTime - 60 * 60 * 1000; // 前向推进1个小时的时间戳
 
@@ -75,22 +73,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       app: dbName,
       type: dbType,
       namespace: namespace,
-      start: startTime / 1000,
-      end: endTime / 1000,
+      start: start ? Number(start) : startTime / 1000,
+      end: end ? Number(end) : endTime / 1000,
       step: '1m'
     };
-    console.log(params, 'getMonitorData');
 
-    const result = await handleAxiosStream(
+    const result: MonitorChartDataResult = await handleAxiosStream(
       {
         url: '/q',
         params: params
       },
       kubeconfig
-    ).then((res) =>
+    ).then((res) => {
       // @ts-ignore
-      AdapterChartData[queryKey] ? AdapterChartData[queryKey](res as MonitorDBResult) : res
-    );
+      return AdapterChartData[queryKey] ? AdapterChartData[queryKey](res as MonitorDBResult) : res;
+    });
 
     jsonRes(res, {
       code: 200,

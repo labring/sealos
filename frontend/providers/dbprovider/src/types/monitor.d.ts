@@ -68,3 +68,15 @@ export type MonitorChartList = ChartTemplateProps & {
   monitorType: string;
   isShowDB?: string[];
 };
+
+export type MonitorChartDataResult = {
+  xData: number[];
+  yData: {
+    name: string | undefined;
+    data: number[];
+  }[];
+};
+
+export type AdapterChartDataType = {
+  [key: string]: (data: MonitorDBResult) => MonitorChartDataResult;
+};

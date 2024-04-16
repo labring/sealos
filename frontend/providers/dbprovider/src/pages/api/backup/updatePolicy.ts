@@ -1,3 +1,4 @@
+import { BACKUP_REPO_DEFAULT_KEY } from '@/constants/backup';
 import { DBTypeEnum } from '@/constants/db';
 import { authSession } from '@/services/backend/auth';
 import { K8sApi, K8sApiDefault, getK8s } from '@/services/backend/kubernetes';
@@ -48,7 +49,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         items: BackupRepoCRItemType[];
       };
     };
-    const backupRepoName = backupRepos?.body?.items?.[0]?.metadata?.name;
+
+    const defaultRepoItem = backupRepos?.body?.items?.find(
+      (item) => item.metadata.annotations[BACKUP_REPO_DEFAULT_KEY] === 'true'
+    );
+
+    const backupRepoName = defaultRepoItem?.metadata?.name;
 
     if (!backupRepoName) {
       throw new Error('Missing backup repository');
