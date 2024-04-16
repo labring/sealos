@@ -21,6 +21,7 @@ export default function TypeMenu({
     <Popover isOpen={isOpen} onClose={onClose} onOpen={onOpen}>
       <PopoverTrigger>
         <Button
+          variant={'white-bg-icon'}
           w="110px"
           h="32px"
           fontStyle="normal"
@@ -52,6 +53,7 @@ export default function TypeMenu({
       >
         {LIST_TYPE.filter((x) => optional.includes(x.value)).map((v) => (
           <Button
+            variant={'white-bg-icon'}
             key={v.value}
             color={v.value === selectType ? '#0884DD' : '#5A646E'}
             h="30px"

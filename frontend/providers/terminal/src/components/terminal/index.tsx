@@ -5,7 +5,7 @@ import { nanoid } from 'nanoid';
 import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
 import styles from './index.module.scss';
-import useSessionStore from '@/stores/session';
+import useSessionStore from '@/store/session';
 
 type Terminal = {
   id: string;
@@ -18,7 +18,7 @@ function Terminal({ url, site }: { url: string; site: string }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { query } = router;
   const session = useSessionStore((s) => s.session);
-  const nsid = session.user.nsid;
+  const nsid = session?.user?.nsid;
   const [tabContents, setTabContents] = useState<Terminal[]>([
     {
       id: tabId,

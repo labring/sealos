@@ -39,10 +39,10 @@ Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以
 
 ## 🚀 在 Sealos 上快速部署分布式应用
 
-[在线使用](https://cloud.sealos.top)
+[在线使用](https://cloud.sealos.run)
 
-* [在 Sealos 上 30 秒内轻松部署 Nginx](https://sealos.run/docs/quick-start/app-deployments/use-app-launchpad)
-* [在 Sealos 上 30 秒启动 mysql/pgsql/mongo 高可用数据库](https://sealos.run/docs/quick-start/app-deployments/install-db-with-database)
+* [在 Sealos 上 30 秒内轻松部署 Nginx](https://sealos.run/docs/quick-start/use-app-launchpad)
+* [在 Sealos 上 30 秒启动 mysql/pgsql/mongo 高可用数据库](https://sealos.run/docs/quick-start/use-database)
 * [在 Sealos 上 运行 WordPress](https://sealos.run/docs/examples/blog-platform/install-wordpress)
 * [在 Sealos 上 运行 Uptime Kuma 拨测系统](https://sealos.run/docs/examples/dial-testing-system/install-uptime-kuma)
 * [在 Sealos 上 运行低代码平台](https://sealos.run/docs/category/low-code-platform)

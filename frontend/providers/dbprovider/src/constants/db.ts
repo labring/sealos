@@ -229,7 +229,8 @@ export const defaultDBDetail: DBDetailType = {
   id: '',
   createTime: '2022/1/22',
   status: dbStatusMap.Creating,
-  conditions: []
+  conditions: [],
+  isDiskSpaceOverflow: false
 };
 
 export const defaultPod: PodDetailType = {

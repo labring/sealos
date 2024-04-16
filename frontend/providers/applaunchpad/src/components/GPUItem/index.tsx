@@ -21,12 +21,12 @@ const GPUItem = ({ gpu }: { gpu?: GpuType }) => {
       {gpuAlias && (
         <>
           <Box>{gpuAlias}</Box>
-          <Box mx={1} color={'myGray.400'}>
+          <Box mx={1} color={'grayModern.500'}>
             /
           </Box>
         </>
       )}
-      <Box color={!!gpu?.amount ? 'myGray.600' : 'myGray.400'}>
+      <Box color={!!gpu?.amount ? 'myGray.600' : 'grayModern.500'}>
         {!!gpuAlias ? gpu?.amount : 0}
 
         {t('Card')}

@@ -104,22 +104,26 @@ const Header = ({
 
   return (
     <Flex h={'86px'} alignItems={'center'}>
-      <Button variant={'unstyled'} onClick={() => router.replace('/apps')} lineHeight={1}>
+      <Button
+        width={'36px'}
+        height={'36px'}
+        variant={'unstyled'}
+        onClick={() => router.replace('/apps')}
+        lineHeight={1}
+      >
         <MyIcon name="arrowLeft" />
       </Button>
-      <Box ml={5} mr={3} fontSize={'3xl'} fontWeight={'bold'}>
+      <Box ml={'4px'} mr={3} fontSize={'3xl'} fontWeight={'bold'}>
         {appName}
       </Box>
-      <AppStatusTag status={appStatus} isPause={isPause} showBorder />
+      <AppStatusTag status={appStatus} isPause={isPause} showBorder={false} />
       {!isLargeScreen && (
         <Box mx={4}>
           <Button
-            flex={1}
-            h={'40px'}
-            borderColor={'myGray.200'}
+            width={'96px'}
+            height={'40px'}
             leftIcon={<MyIcon name="detail" w="16px" h="16px" />}
-            variant={'base'}
-            bg={'white'}
+            variant={'outline'}
             onClick={() => setShowSlider(true)}
           >
             {t('Details')}
@@ -131,26 +135,24 @@ const Header = ({
       {/* btns */}
       {isPause ? (
         <Button
+          width={'96px'}
+          variant={'outline'}
           mr={5}
           h={'40px'}
-          borderColor={'myGray.200'}
-          leftIcon={<MyIcon name="continue" w={'14px'} />}
+          leftIcon={<MyIcon name="continue" w={'20px'} fill={'#485264'} />}
           isLoading={loading}
-          variant={'base'}
-          bg={'white'}
           onClick={handleStartApp}
         >
           {t('Continue')}
         </Button>
       ) : (
         <Button
+          width={'96px'}
+          variant={'outline'}
           mr={5}
           h={'40px'}
-          borderColor={'myGray.200'}
-          leftIcon={<MyIcon name="pause" w={'14px'} />}
+          leftIcon={<MyIcon name="pause" w={'20px'} fill={'#485264'} />}
           isLoading={loading}
-          variant={'base'}
-          bg={'white'}
           onClick={onOpenPause(handlePauseApp)}
         >
           {t('Pause')}
@@ -162,11 +164,10 @@ const Header = ({
           _focusVisible={{ boxShadow: '' }}
           mr={5}
           h={'40px'}
-          borderColor={'myGray.200'}
-          leftIcon={<MyIcon name={'change'} w={'14px'} />}
+          width={'96px'}
+          variant={'outline'}
+          leftIcon={<MyIcon name={'change'} w={'20px'} fill={'#485264'} />}
           isLoading={loading}
-          variant={'base'}
-          bg={'white'}
           onClick={() => {
             router.push(`/app/edit?name=${appName}`);
           }}
@@ -179,10 +180,9 @@ const Header = ({
         <Button
           mr={5}
           h={'40px'}
-          borderColor={'myGray.200'}
-          variant={'base'}
-          bg={'white'}
-          leftIcon={<MyIcon name="restart" w={'16px'} h={'16px'} />}
+          width={'96px'}
+          variant={'outline'}
+          leftIcon={<MyIcon name="restart" w={'20px'} fill={'#485264'} />}
           onClick={openRestartConfirm(handleRestartApp)}
           isLoading={loading}
         >
@@ -191,10 +191,9 @@ const Header = ({
       )}
       <Button
         h={'40px'}
-        borderColor={'myGray.200'}
-        leftIcon={<MyIcon name="delete" w={'14px'} h={'14px'} />}
-        variant={'base'}
-        bg={'white'}
+        width={'96px'}
+        variant={'outline'}
+        leftIcon={<MyIcon name="delete" w={'20px'} fill={'#485264'} />}
         _hover={{
           color: '#FF324A'
         }}

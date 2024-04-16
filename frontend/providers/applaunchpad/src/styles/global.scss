@@ -1,21 +1,24 @@
 .table-cross {
-  border-radius: 2px;
+  border-radius: 6px;
   overflow: hidden;
   table-layout: fixed;
   width: 100%;
-  background-color: #fbfbfc;
 
   th {
     border: 1px solid transparent;
     text-align: left;
-    padding: 8px;
+    padding: 8px 16px;
     user-select: all;
-    font-weight: normal;
-    color: #5a646e;
+    font-weight: 500;
+    color: #485264;
   }
 
-  tr:nth-child(even) {
-    background: #f4f6f8;
+  thead tr {
+    background: #f4f4f7;
+  }
+
+  tbody tr:nth-child(odd) {
+    background: #fafafc;
   }
 }
 

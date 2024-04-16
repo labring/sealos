@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -131,7 +132,7 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 
 func (r *MonitorReconciler) StartReconciler(ctx context.Context) error {
 	r.startPeriodicReconcile()
-	if r.TrafficClient != nil {
+	if r.TrafficClient != nil || r.ObjStorageClient != nil {
 		r.startMonitorTraffic()
 	}
 	<-ctx.Done()
@@ -191,14 +192,14 @@ func (r *MonitorReconciler) startMonitorTraffic() {
 		startTime, endTime := time.Now().UTC(), time.Now().Truncate(time.Hour).Add(1*time.Hour).UTC()
 		waitNextHour()
 		ticker := time.NewTicker(1 * time.Hour)
-		if err := r.MonitorPodTrafficUsed(startTime, endTime); err != nil {
+		if err := r.MonitorTrafficUsed(startTime, endTime); err != nil {
 			r.Logger.Error(err, "failed to monitor pod traffic used")
 		}
 		for {
 			select {
 			case <-ticker.C:
 				startTime, endTime = endTime, endTime.Add(1*time.Hour)
-				if err := r.MonitorPodTrafficUsed(startTime, endTime); err != nil {
+				if err := r.MonitorTrafficUsed(startTime, endTime); err != nil {
 					r.Logger.Error(err, "failed to monitor pod traffic used")
 					break
 				}
@@ -383,12 +384,8 @@ func (r *MonitorReconciler) getObjStorageUsed(user string, namedMap *map[string]
 	}
 	for i := range buckets {
 		size, count := objstorage.GetObjectStorageSize(r.ObjStorageClient, buckets[i])
-		if count == 0 {
+		if count == 0 || size <= 0 {
 			continue
-		}
-		bytes, err := objstorage.GetObjectStorageFlow(r.PromURL, buckets[i], r.ObjectStorageInstance)
-		if err != nil {
-			return fmt.Errorf("failed to get object storage user storage flow: %w", err)
 		}
 		objStorageNamed := resources.NewObjStorageResourceNamed(buckets[i])
 		(*namedMap)[objStorageNamed.String()] = objStorageNamed
@@ -396,18 +393,71 @@ func (r *MonitorReconciler) getObjStorageUsed(user string, namedMap *map[string]
 			(*resMap)[objStorageNamed.String()] = initResources()
 		}
 		(*resMap)[objStorageNamed.String()][corev1.ResourceStorage].Add(*resource.NewQuantity(size, resource.BinarySI))
-		(*resMap)[objStorageNamed.String()][resources.ResourceNetwork].Add(*resource.NewQuantity(bytes, resource.BinarySI))
 	}
 	return nil
 }
 
-func (r *MonitorReconciler) MonitorPodTrafficUsed(startTime, endTime time.Time) error {
-	logger.Info("start getPodTrafficUsed", "startTime", startTime.Format(time.RFC3339), "endTime", endTime.Format(time.RFC3339))
+func (r *MonitorReconciler) MonitorTrafficUsed(startTime, endTime time.Time) error {
+	logger.Info("start getTrafficUsed", "startTime", startTime.Format(time.RFC3339), "endTime", endTime.Format(time.RFC3339))
 	execTime := time.Now().UTC()
-	if err := r.monitorPodTrafficUsed(startTime, endTime); err != nil {
-		r.Logger.Error(err, "failed to monitor pod traffic used")
+	if r.TrafficClient != nil {
+		if err := r.monitorPodTrafficUsed(startTime, endTime); err != nil {
+			r.Logger.Error(err, "failed to monitor pod traffic used")
+		}
+	}
+	if r.ObjStorageClient != nil {
+		if err := r.monitorObjectStorageTrafficUsed(startTime, endTime); err != nil {
+			r.Logger.Error(err, "failed to monitor object storage traffic used")
+		}
 	}
 	r.Logger.Info("success to monitor pod traffic used", "startTime", startTime.Format(time.RFC3339), "endTime", endTime.Format(time.RFC3339), "execTime", time.Since(execTime).String())
+	return nil
+}
+
+func (r *MonitorReconciler) monitorObjectStorageTrafficUsed(startTime, endTime time.Time) error {
+	buckets, err := objstorage.ListAllObjectStorageBucket(r.ObjStorageClient)
+	if err != nil {
+		return fmt.Errorf("failed to list object storage buckets: %w", err)
+	}
+	r.Logger.Info("object storage buckets", "buckets len", len(buckets))
+	wg, _ := errgroup.WithContext(context.Background())
+	wg.SetLimit(10)
+	for i := range buckets {
+		bucket := buckets[i]
+		if !strings.Contains(bucket, "-") {
+			continue
+		}
+		wg.Go(func() error {
+			return r.handlerObjectStorageTrafficUsed(startTime, endTime, bucket)
+		})
+	}
+	return wg.Wait()
+}
+
+func (r *MonitorReconciler) handlerObjectStorageTrafficUsed(startTime, endTime time.Time, bucket string) error {
+	bytes, err := objstorage.GetObjectStorageFlow(r.PromURL, bucket, r.ObjectStorageInstance, startTime, endTime)
+	if err != nil {
+		return fmt.Errorf("failed to get object storage flow: %w", err)
+	}
+	unit := r.Properties.StringMap[resources.ResourceNetwork].Unit
+	used := int64(math.Ceil(float64(resource.NewQuantity(bytes, resource.BinarySI).MilliValue()) / float64(unit.MilliValue())))
+	if used <= 0 {
+		return nil
+	}
+
+	namespace := "ns-" + strings.SplitN(bucket, "-", 2)[0]
+	ro := resources.Monitor{
+		Category: namespace,
+		Name:     bucket,
+		Used:     map[uint8]int64{r.Properties.StringMap[resources.ResourceNetwork].Enum: used},
+		Time:     endTime.Add(-1 * time.Minute),
+		Type:     resources.AppType[resources.ObjectStorage],
+	}
+	r.Logger.Info("object storage traffic used", "monitor", ro)
+	err = r.DBClient.InsertMonitor(context.Background(), &ro)
+	if err != nil {
+		return fmt.Errorf("failed to insert monitor: %w", err)
+	}
 	return nil
 }
 

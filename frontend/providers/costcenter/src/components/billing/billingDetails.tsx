@@ -60,6 +60,7 @@ export default function BillingDetails({
   return (
     <>
       <Button
+        color={'grayModern.600'}
         gap={'8px'}
         px={'8px'}
         py="7px"

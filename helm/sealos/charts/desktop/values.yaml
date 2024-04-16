@@ -364,7 +364,7 @@ ingress:
   ## /* @param ingress.hostname Default host for the ingress record */
   ## Use desktop.domain instead
   #  hostname: cloud.local
-  ## @param ingress.ingressClassName IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)
+  ## @param ingress.ingressClassName IngressClass that will be used to implement the Ingress (Kubernetes 1.18+)
   ## This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster.
   ## ref: https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
   ##

@@ -100,9 +100,9 @@ export default function AppList({ showCarousel }: { showCarousel: boolean }) {
             <Grid
               justifyContent={'center'}
               w={'100%'}
-              gridTemplateColumns="repeat(auto-fill,minmax(344px,1fr))"
+              gridTemplateColumns="repeat(auto-fill,minmax(320px,1fr))"
               gridGap={'24px'}
-              minW={'960px'}
+              minW={'480px'}
             >
               {filterData?.map((item: TemplateType) => {
                 return (

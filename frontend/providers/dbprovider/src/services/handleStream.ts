@@ -1,7 +1,4 @@
-import { getUserKubeConfig } from '@/utils/user';
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import stream, { Transform } from 'stream';
-import { authSession } from './backend/auth';
+import { AxiosRequestConfig } from 'axios';
 
 export const handleAxiosStream = async (props: AxiosRequestConfig, kubeconfig: string) => {
   try {
@@ -19,7 +16,7 @@ export const handleAxiosStream = async (props: AxiosRequestConfig, kubeconfig: s
     );
     return response;
   } catch (error) {
-    console.log(error, '===monitor===');
+    console.log('===monitor===\n', error);
     throw error;
   }
 };

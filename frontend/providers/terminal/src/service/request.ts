@@ -1,6 +1,6 @@
 // http.ts
 import { ApiResp } from '@/interfaces/api';
-import useSessionStore from '@/stores/session';
+import { getUserKubeConfig } from '@/utils/user';
 import axios, { AxiosRequestConfig, AxiosResponse, RawAxiosRequestHeaders } from 'axios';
 
 const request = axios.create({
@@ -14,14 +14,9 @@ request.interceptors.request.use(
   (config: AxiosRequestConfig) => {
     // auto append service prefix
     let _headers: RawAxiosRequestHeaders = config.headers || {};
-    const session = useSessionStore.getState().session;
 
     if (config.url && config.url?.startsWith('/api/')) {
-      _headers['Authorization'] = encodeURIComponent(session?.kubeconfig || '');
-    }
-
-    if (process.env.NODE_ENV === 'development') {
-      _headers['Authorization'] = encodeURIComponent(process.env.NEXT_PUBLIC_MOCK_KUBECONFIG || '');
+      _headers['Authorization'] = encodeURIComponent(getUserKubeConfig());
     }
 
     if (!config.headers || config.headers['Content-Type'] === '') {

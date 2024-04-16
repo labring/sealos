@@ -1,6 +1,6 @@
 import Terminal from '@/components/terminal';
 import request from '@/service/request';
-import useSessionStore from '@/stores/session';
+import useSessionStore from '@/store/session';
 import { Box, Flex, Spinner, useToast } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
@@ -26,7 +26,9 @@ export default function Index(props: ServiceEnv) {
       try {
         const result = await sealosApp.getSession();
         setSession(result);
-      } catch (error) {}
+      } catch (error) {
+        console.log('App is not running in desktop');
+      }
     };
     initApp();
   }, [setSession]);

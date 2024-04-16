@@ -90,8 +90,10 @@ export default function RemoveMember({
           backdropFilter="blur(150px)"
           p="24px"
         >
-          <ModalCloseButton right={'24px'} top="24px" p="0" />
-          <ModalHeader p="0">{t('Warning')}</ModalHeader>
+          <ModalCloseButton right={'24px'} top="16px" p="0" />
+          <ModalHeader bg={'white'} border={'none'} p="0">
+            {t('Warning')}
+          </ModalHeader>
           {mutation.isLoading ? (
             <Spinner mx="auto" />
           ) : (

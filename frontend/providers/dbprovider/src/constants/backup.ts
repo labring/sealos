@@ -45,6 +45,7 @@ export const backupStatusMap: Record<`${BackupStatusEnum}`, BackupStatusMapType>
 export const BACKUP_TYPE_LABEL_KEY = 'backup-type';
 export const BACKUP_REMARK_LABEL_KEY = 'backup-remark';
 export const BACKUP_LABEL_KEY = 'kubeblocks.io/restore-from-backup';
+export const BACKUP_REPO_DEFAULT_KEY = 'dataprotection.kubeblocks.io/is-default-repo';
 
 export enum BackupTypeEnum {
   manual = 'manual',

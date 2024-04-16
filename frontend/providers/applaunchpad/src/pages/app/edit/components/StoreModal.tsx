@@ -21,7 +21,7 @@ import { useForm } from 'react-hook-form';
 import MyFormControl from '@/components/FormControl';
 import { useTranslation } from 'next-i18next';
 import { pathToNameFormat } from '@/utils/tools';
-import MyTooltip from '@/components/MyTooltip';
+import { MyTooltip } from '@sealos/ui';
 
 export type StoreType = {
   id?: string;
@@ -79,7 +79,9 @@ const StoreModal = ({
           <ModalCloseButton />
           <ModalBody>
             <FormControl mb={5} isInvalid={!!errors.value}>
-              <Box mb={1}>{t('capacity')} </Box>
+              <Box mb={'8px'} fontSize={'14px'} fontWeight={500} color={'grayModern.900'}>
+                {t('capacity')}
+              </Box>
               <MyTooltip label={`${t('Storage Range')}: ${minVal}~20 Gi`}>
                 <NumberInput max={20} min={minVal} step={1} position={'relative'}>
                   <Box
@@ -92,6 +94,16 @@ const StoreModal = ({
                     Gi
                   </Box>
                   <NumberInputField
+                    _hover={{
+                      borderColor: '#85CCFF',
+                      bg: '#F7F8FA'
+                    }}
+                    _focusVisible={{
+                      borderColor: '#219BF4',
+                      boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                      bg: '#FFF',
+                      color: '#111824'
+                    }}
                     {...register('value', {
                       required: t('Storage Value can not empty') || 'Storage Value can not empty',
                       min: {
@@ -114,8 +126,11 @@ const StoreModal = ({
               </MyTooltip>
             </FormControl>
             <MyFormControl showError errorText={errors.path?.message} pb={2}>
-              <Box mb={1}>{t('mount path')}</Box>
+              <Box mb={'8px'} fontSize={'14px'} fontWeight={500} color={'grayModern.900'}>
+                {t('mount path')}
+              </Box>
               <Input
+                width={'100%'}
                 placeholder="如：/data"
                 title={
                   isEditStore
@@ -144,7 +159,7 @@ const StoreModal = ({
           </ModalBody>
 
           <ModalFooter>
-            <Button w={'110px'} variant={'primary'} onClick={handleSubmit(successCb)}>
+            <Button w={'88px'} onClick={handleSubmit(successCb)}>
               {t('Confirm')}
             </Button>
           </ModalFooter>

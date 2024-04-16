@@ -109,13 +109,23 @@ const PriceBox = ({
   }, [cpu, gpu, memory, pods, storage, userSourcePrice]);
 
   return (
-    <Box>
-      <Box py={3} px={4} borderBottom={theme.borders.base}>
-        <strong>{t('AnticipatedPrice')}</strong> ({t('Perday')})
-      </Box>
+    <Box bg={'#FFF'} borderRadius={'md'} border={theme.borders.base}>
+      <Flex py={3} px={4} borderBottom={theme.borders.base} gap={'8px'}>
+        <Text color={'grayModern.900'} fontWeight={500}>
+          {t('AnticipatedPrice')}
+        </Text>
+        <Text color={'grayModern.500'}> ({t('Perday')})</Text>
+      </Flex>
       <Box py={3} px={4}>
         {priceList.map((item) => (
-          <Flex key={item.label} alignItems={'center'} _notFirst={{ mt: 3 }}>
+          <Flex
+            key={item.label}
+            alignItems={'center'}
+            _notFirst={{ mt: '12px' }}
+            fontSize={'12px'}
+            fontWeight={500}
+            color={'grayModern.600'}
+          >
             <Box
               flexShrink={0}
               bg={item.color}

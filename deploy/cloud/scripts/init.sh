@@ -100,7 +100,12 @@ function gen_cockroachdbUri() {
     STATEFULSET_NAME="sealos-cockroachdb"
 
     while : ; do
-        kubectl get statefulset $STATEFULSET_NAME -n $NAMESPACE >/dev/null 2>&1 && break
+        if kubectl get statefulset $STATEFULSET_NAME -n $NAMESPACE >/dev/null 2>&1; then
+            echo "cockroachdb statefulset is created."
+            break
+        else
+            sleep 10
+        fi
     done
 
     while : ; do
@@ -276,9 +281,11 @@ function sealos_run_frontend {
   --env cloudPort="$cloudPort" \
   --env certSecretName="wildcard-cert"
 
-
-  echo "run db monitoring"
+  echo "run database monitoring"
   sealos run tars/database-service.tar
+
+  echo "run launchpad monitoring"
+  sealos run tars/launchpad-service.tar
 }
 
 function resource_exists {

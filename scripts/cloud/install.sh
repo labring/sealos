@@ -4,7 +4,7 @@ set -e
 
 # Configurations
 CLOUD_DIR="/root/.sealos/cloud"
-SEALOS_VERSION="v5.0.0-beta4"
+SEALOS_VERSION="v5.0.0-beta5"
 cloud_version="latest"
 #mongodb_version="mongodb-5.0"
 #master_ips=
@@ -29,7 +29,7 @@ openebs_version=${openebs_version:-"3.10.0"}
 ingress_nginx_version=${ingress_nginx_version:-"1.9.4"}
 kubeblocks_version=${kubeblocks_version:-"0.8.2"}
 metrics_server_version=${metrics_server_version:-"0.6.4"}
-kube_prometheus_stack_version=${kube_prometheus_stack_version:-"0.70.0"}
+victoria_metrics_k8s_stack_version=${victoria_metrics_k8s_stack_version:-"1.96.0"}
 
 
 # Define English and Chinese prompts
@@ -255,8 +255,9 @@ init() {
     pull_image "kubeblocks-apecloud-mysql" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "kubeblocks-postgresql" "v${kubeblocks_version#v:-0.8.2}"
     pull_image "kubeblocks-mongodb" "v${kubeblocks_version#v:-0.8.2}"
+    pull_image "cockroach" "latest"
     pull_image "metrics-server" "v${metrics_server_version#v:-0.6.4}"
-    pull_image "kube-prometheus-stack" "v${kube_prometheus_stack_version#v:-0.63.0}"
+    pull_image "victoria-metrics-k8s-stack" "v${victoria_metrics_k8s_stack_version#v:-1.96.0}"
     pull_image "sealos-cloud" "${cloud_version}"
 }
 
@@ -377,200 +378,113 @@ spec:
 "
     echo "$ingress_config" > $CLOUD_DIR/ingress-nginx-config.yaml
 
-    kb_addon_prometheus_server_patch='
-data:
-  prometheus.yml: |
-    global:
-      evaluation_interval: 15s
-      scrape_interval: 15s
-      scrape_timeout: 10s
-    rule_files:
-    - /etc/config/recording_rules.yml
-    - /etc/config/alerting_rules.yml
-    - /etc/config/kubelet_alert_rules.yml
-    - /etc/config/mysql_alert_rules.yml
-    - /etc/config/postgresql_alert_rules.yml
-    - /etc/config/redis_alert_rules.yml
-    - /etc/config/kafka_alert_rules.yml
-    - /etc/config/mongodb_alert_rules.yml
-    scrape_configs:
-    - job_name: prometheus
-      static_configs:
-      - targets:
-        - localhost:9090
+    vm_secret='
+apiVersion: v1
+kind: Secret
+metadata:
+  name: additional-scrape-configs
+  namespace: vm
+stringData:
+  prometheus-additional.yaml: |
     - honor_labels: true
       job_name: kubeblocks-service
       kubernetes_sd_configs:
-      - role: endpoints
+        - role: endpoints
       relabel_configs:
-      - action: keep
-        regex: kubeblocks
-        source_labels:
-        - __meta_kubernetes_service_label_app_kubernetes_io_managed_by
-      - action: drop
-        regex: agamotto
-        source_labels:
-        - __meta_kubernetes_service_label_monitor_kubeblocks_io_managed_by
-      - action: keep
-        regex: true
-        source_labels:
-        - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_scrape
-      - action: replace
-        regex: (https?)
-        source_labels:
-        - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_scheme
-        target_label: __scheme__
-      - action: replace
-        regex: (.+)
-        source_labels:
-        - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_path
-        target_label: __metrics_path__
-      - action: replace
-        regex: (.+?)(?::\d+)?;(\d+)
-        replacement: $1:$2
-        source_labels:
-        - __address__
-        - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_port
-        target_label: __address__
-      - action: labelmap
-        regex: __meta_kubernetes_service_annotation_monitor_kubeblocks_io_param_(.+)
-        replacement: __param_$1
-      - action: labelmap
-        regex: __meta_kubernetes_service_label_(.+)
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_namespace
-        target_label: namespace
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_service_name
-        target_label: service
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_pod_node_name
-        target_label: node
-      - action: replace
-        source_labels:
-        - __meta_kubernetes_pod_name
-        target_label: pod
-      - action: drop
-        regex: Pending|Succeeded|Failed|Completed
-        source_labels:
-        - __meta_kubernetes_pod_phase
-    - bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-      job_name: kubernetes-apiservers
-      kubernetes_sd_configs:
-      - role: endpoints
-      relabel_configs:
-      - action: keep
-        regex: default;kubernetes;https
-        source_labels:
-        - __meta_kubernetes_namespace
-        - __meta_kubernetes_service_name
-        - __meta_kubernetes_endpoint_port_name
-      scheme: https
-      tls_config:
-        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        insecure_skip_verify: true
-    - bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-      job_name: kubernetes-nodes
-      kubernetes_sd_configs:
-      - role: node
-      relabel_configs:
-      - action: labelmap
-        regex: __meta_kubernetes_node_label_(.+)
-      - replacement: kubernetes.default.svc:443
-        target_label: __address__
-      - regex: (.+)
-        replacement: /api/v1/nodes/$1/proxy/metrics
-        source_labels:
-        - __meta_kubernetes_node_name
-        target_label: __metrics_path__
-      scheme: https
-      tls_config:
-        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        insecure_skip_verify: true
-    - bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-      job_name: kubernetes-nodes-cadvisor
-      kubernetes_sd_configs:
-      - role: node
-      relabel_configs:
-      - action: labelmap
-        regex: __meta_kubernetes_node_label_(.+)
-      - replacement: kubernetes.default.svc:443
-        target_label: __address__
-      - regex: (.+)
-        replacement: /api/v1/nodes/$1/proxy/metrics/cadvisor
-        source_labels:
-        - __meta_kubernetes_node_name
-        target_label: __metrics_path__
-      scheme: https
-      tls_config:
-        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        insecure_skip_verify: true
+        - action: keep
+          regex: kubeblocks
+          source_labels:
+            - __meta_kubernetes_service_label_app_kubernetes_io_managed_by
+        - action: drop
+          regex: agamotto
+          source_labels:
+            - __meta_kubernetes_service_label_monitor_kubeblocks_io_managed_by
+        - action: keep
+          regex: true
+          source_labels:
+            - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_scrape
+        - action: replace
+          regex: (https?)
+          source_labels:
+            - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_scheme
+          target_label: __scheme__
+        - action: replace
+          regex: (.+)
+          source_labels:
+            - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_path
+          target_label: __metrics_path__
+        - action: replace
+          regex: (.+?)(?::\d+)?;(\d+)
+          replacement: $1:$2
+          source_labels:
+            - __address__
+            - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_port
+          target_label: __address__
+        - action: labelmap
+          regex: __meta_kubernetes_service_annotation_monitor_kubeblocks_io_param_(.+)
+          replacement: __param_$1
+        - action: labelmap
+          regex: __meta_kubernetes_service_label_(.+)
+        - action: replace
+          source_labels:
+            - __meta_kubernetes_namespace
+          target_label: namespace
+        - action: replace
+          source_labels:
+            - __meta_kubernetes_service_name
+          target_label: service
+        - action: replace
+          source_labels:
+            - __meta_kubernetes_pod_node_name
+          target_label: node
+        - action: replace
+          source_labels:
+            - __meta_kubernetes_pod_name
+          target_label: pod
+        - action: drop
+          regex: Pending|Succeeded|Failed|Completed
+          source_labels:
+            - __meta_kubernetes_pod_phase
     - honor_labels: true
       job_name: kubeblocks-agamotto
       kubernetes_sd_configs:
-      - role: endpoints
+        - role: endpoints
       relabel_configs:
-      - action: keep
-        regex: agamotto
-        source_labels:
-        - __meta_kubernetes_service_label_monitor_kubeblocks_io_managed_by
-      - action: keep
-        regex: true
-        source_labels:
-        - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_scrape
-      - action: replace
-        regex: (https?)
-        source_labels:
-        - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_scheme
-        target_label: __scheme__
-      - action: replace
-        regex: (.+)
-        source_labels:
-        - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_path
-        target_label: __metrics_path__
-      - action: replace
-        regex: (.+?)(?::\d+)?;(\d+)
-        replacement: $1:$2
-        source_labels:
-        - __address__
-        - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_port
-        target_label: __address__
-      - action: labelmap
-        regex: __meta_kubernetes_service_annotation_monitor_kubeblocks_io_param_(.+)
-        replacement: __param_$1
-      - action: drop
-        regex: Pending|Succeeded|Failed|Completed
-        source_labels:
-        - __meta_kubernetes_pod_phase
-    alerting:
-      alertmanagers:
-      - kubernetes_sd_configs:
-          - role: pod
-        tls_config:
-          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-        relabel_configs:
-        - source_labels: [__meta_kubernetes_namespace]
-          regex: kb-system
-          action: keep
-        - source_labels: [__meta_kubernetes_pod_label_app]
-          regex: prometheus
-          action: keep
-        - source_labels: [__meta_kubernetes_pod_label_component]
-          regex: alertmanager
-          action: keep
-        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_probe]
-          regex: .*
-          action: keep
-        - source_labels: [__meta_kubernetes_pod_container_port_number]
-          regex: "9093"
-          action: keep
+        - action: keep
+          regex: agamotto
+          source_labels:
+            - __meta_kubernetes_service_label_monitor_kubeblocks_io_managed_by
+        - action: keep
+          regex: true
+          source_labels:
+            - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_scrape
+        - action: replace
+          regex: (https?)
+          source_labels:
+            - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_scheme
+          target_label: __scheme__
+        - action: replace
+          regex: (.+)
+          source_labels:
+            - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_path
+          target_label: __metrics_path__
+        - action: replace
+          regex: (.+?)(?::\d+)?;(\d+)
+          replacement: $1:$2
+          source_labels:
+            - __address__
+            - __meta_kubernetes_service_annotation_monitor_kubeblocks_io_port
+          target_label: __address__
+        - action: labelmap
+          regex: __meta_kubernetes_service_annotation_monitor_kubeblocks_io_param_(.+)
+          replacement: __param_$1
+        - action: drop
+          regex: Pending|Succeeded|Failed|Completed
+          source_labels:
+            - __meta_kubernetes_pod_phase
 '
-    echo "$kb_addon_prometheus_server_patch" > $CLOUD_DIR/kb-addon-prometheus-server-patch.yaml
 
+    echo "$vm_secret" > $CLOUD_DIR/vm-secret.yaml
 
     sealos_gen_cmd="sealos gen ${image_registry}/${image_repository}/kubernetes:v${kubernetes_version#v:-1.27.11}\
         ${master_ips:+--masters $master_ips}\
@@ -636,21 +550,23 @@ EOF
     # TODO use sealos run to install cockroachdb-operator
     sealos run "${image_registry}/${image_repository}/cockroach:latest"
 
+    get_prompt "installing_monitoring"
+    sealos run "${image_registry}/${image_repository}/victoria-metrics-k8s-stack:v${victoria_metrics_k8s_stack_version#v:-1.96.0}"
+
     get_prompt "ingress_installation"
     sealos run ${image_registry}/${image_repository}/ingress-nginx:v${ingress_nginx_version#v:-1.9.4} --config-file $CLOUD_DIR/ingress-nginx-config.yaml
 
-    sealos run ${image_registry}/${image_repository}/kubeblocks:v${kubeblocks_version#v:-0.8.2} \
-      ${image_registry}/${image_repository}/kubeblocks-apecloud-mysql:v${kubeblocks_version#v:-0.8.2} \
+    sealos run ${image_registry}/${image_repository}/kubeblocks:v${kubeblocks_version#v:-0.8.2}
+    sealos run ${image_registry}/${image_repository}/kubeblocks-apecloud-mysql:v${kubeblocks_version#v:-0.8.2} \
       ${image_registry}/${image_repository}/kubeblocks-postgresql:v${kubeblocks_version#v:-0.8.2} \
       ${image_registry}/${image_repository}/kubeblocks-mongodb:v${kubeblocks_version#v:-0.8.2} \
       ${image_registry}/${image_repository}/kubeblocks-redis:v${kubeblocks_version#v:-0.8.2}
 
-    kbcli addon enable prometheus
     kbcli addon enable snapshot-controller
 
-    get_prompt "installing_monitoring"
-    sealos run "${image_registry}/${image_repository}/kube-prometheus-stack:v${kube_prometheus_stack_version#v:-0.63.0}"
-    kubectl patch cm kb-addon-prometheus-server -n kb-system --patch-file $CLOUD_DIR/kb-addon-prometheus-server-patch.yaml
+    kubectl apply -f $CLOUD_DIR/vm-secret.yaml
+    kubectl patch vmagent -n vm victoria-metrics-k8s-stack --type merge -p '{"spec":{"additionalScrapeConfigs":{"key":"prometheus-additional.yaml","name":"additional-scrape-configs"}}}'
+    kubectl rollout restart deploy -n vm vmagent-victoria-metrics-k8s-stack || true
 
     get_prompt "patching_ingress"
     kubectl patch cm -n ingress-nginx ingress-nginx-controller --patch '{"data":{"allow-snippet-annotations":"true","annotation-value-word-blocklist":"load_module,lua_package,_by_lua,location,root,proxy_pass,serviceaccount"}}'

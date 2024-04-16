@@ -76,12 +76,12 @@ halo.security.initializer.superadminpassword=sealos
 
 数据库的链接格式（这里我们使用 postgresql 的格式）：
 
-| 链接方式    | 链接地址格式                                                 | spring.sql.init.platform |
-| ----------- | ------------------------------------------------------------ | ------------------------ |
-| PostgreSQL  | r2dbc:pool:postgresql://{HOST}:{PORT}/{DATABASE}             | postgresql               |
-| MySQL       | r2dbc:pool:mysql://{HOST}:{PORT}/{DATABASE}                  | mysql                    |
-| MariaDB     | r2dbc:pool:mariadb://{HOST}:{PORT}/{DATABASE}                | mysql                    |
-| H2 Database | r2dbc:h2:file:///${halo.work-dir}/db/halo-next?MODE=MySQL&DB_CLOSE_ON_EXIT=FALSE | h2                       |
+| 链接方式    | 链接地址格式                                                                       | spring.sql.init.platform |
+| ----------- | ---------------------------------------------------------------------------------- | ------------------------ |
+| PostgreSQL  | r2dbc:pool:postgresql://`{HOST}`:`{PORT}`/`{DATABASE}`                             | postgresql               |
+| MySQL       | r2dbc:pool:mysql://`{HOST}`:`{PORT}`/`{DATABASE}`                                  | mysql                    |
+| MariaDB     | r2dbc:pool:mariadb://`{HOST}`:`{PORT}`/`{DATABASE}`                                | mysql                    |
+| H2 Database | r2dbc:h2:file:///`${halo.work-dir}`/db/halo-next?MODE=MySQL&DB_CLOSE_ON_EXIT=FALSE | h2                       |
 
 ### 网络配置
 

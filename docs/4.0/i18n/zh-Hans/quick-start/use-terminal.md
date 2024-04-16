@@ -6,7 +6,7 @@ sidebar_position: 3
 
 熟悉 Kubernetes 和容器基础知识的用户可以选择使用「[终端](/guides/terminal/terminal.md)」命令行来部署应用。本文以 Nginx 为例，介绍如何使用终端来部署应用。
 
-首先在 [Sealos](https://cloud.sealos.top) 桌面环境中打开终端 App。
+首先在 [Sealos](https://cloud.sealos.run) 桌面环境中打开终端 App。
 
 ![](./images/app-launchpad-1.jpg)
 
@@ -134,7 +134,7 @@ metadata:
   name: nginx
 spec:
   rules:
-  - host: nginx.cloud.sealos.top
+  - host: nginx.cloud.sealos.run
     http:
       paths:
       - backend:
@@ -146,7 +146,7 @@ spec:
         pathType: Prefix
   tls:
   - hosts:
-    - nginx.cloud.sealos.top
+    - nginx.cloud.sealos.run
     secretName: wildcard-cloud-sealos-io-cert
 ```
 

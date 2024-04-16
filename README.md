@@ -1,14 +1,30 @@
 <h2 align="center">
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/4.0/img/sealos-left-dark.png" />
-  <source media="(prefers-color-scheme: light)" srcset="./docs/4.0/img/sealos-left.png" />
-  <img src="./docs/4.0/img/sealos-left.png" />
-</picture>
-
+  
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/4.0/img/sealos-left-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/4.0/img/sealos-left.png" />
+    <img src="./docs/4.0/img/sealos-left.png" />
+  </picture>
+  
 A Cloud Operating System designed for managing cloud-native applications
 
 </h2>
+
+<div align="center">
+<a
+    href="https://runacap.com/ross-index/annual-2023/"
+    target="_blank"
+    rel="noopener"
+>
+    <img
+        style="width: 260px; height: 56px"
+        src="https://runacap.com/wp-content/uploads/2024/03/Annual_ROSS_badge_black_2023.svg"
+        alt="ROSS Index - Fastest Growing Open-Source Startups | Runa Capital"
+        width="260"
+        height="56"
+    />
+</a>
+</div>
 
 <div align="center">
 
@@ -41,7 +57,7 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 [Quick Start](https://cloud.sealos.io) 
 
 * [Easily Deploy Nginx in 30 Seconds on Sealos](https://sealos.io/docs/quick-start/use-app-launchpad)
-* [Start a mysql/pgsql/mongo highly available database in 30 seconds on Sealos](https://sealos.io/docs/quick-start/install-db-with-database)
+* [Start a mysql/pgsql/mongo highly available database in 30 seconds on Sealos](https://sealos.io/docs/quick-start/use-database)
 * [Running WordPress on Sealos](https://sealos.io/docs/examples/blog-platform/install-wordpress)
 * [Running the Uptime Kuma dial test system on Sealos](https://docs.sealos.io/docs/examples/dial-testing-system/install-uptime-kuma)
 * [Running a low-code platform on Sealos](https://docs.sealos.io/docs/category/low-code-platform)

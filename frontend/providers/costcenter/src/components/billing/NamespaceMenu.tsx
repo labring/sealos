@@ -40,6 +40,7 @@ export default function NamespaceMenu({
       <Popover>
         <PopoverTrigger>
           <Button
+            variant={'white-bg-icon'}
             w="110px"
             h="32px"
             fontStyle="normal"
@@ -91,6 +92,9 @@ export default function NamespaceMenu({
               onClick={() => {
                 setNamespaceIdx(idx);
                 setNamespace(idx === 0 ? '' : v);
+              }}
+              _hover={{
+                bg: ''
               }}
             >
               {v}

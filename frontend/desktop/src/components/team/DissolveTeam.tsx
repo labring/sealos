@@ -64,6 +64,15 @@ export default function DissolveTeam({
   return (
     <>
       <Button
+        size={'sm'}
+        height={'32px'}
+        variant={'outline'}
+        _hover={{
+          color: 'red.600',
+          bg: 'rgba(17, 24, 36, 0.05)'
+        }}
+        {...props}
+        leftIcon={<DeleteIcon boxSize={'14px'} />}
         onClick={() => {
           if (session?.user?.ns_uid === ns_uid) {
             return toast({
@@ -72,17 +81,6 @@ export default function DissolveTeam({
           }
           onOpen();
         }}
-        borderRadius="4px"
-        border="1px solid #DEE0E2"
-        background="#F4F6F8"
-        fontSize={'12px'}
-        fontWeight={'500'}
-        h="auto"
-        py="7px"
-        px="16px"
-        {...props}
-        iconSpacing={'4px'}
-        leftIcon={<DeleteIcon boxSize={'16px'} color={'grayModern.600'} />}
       >
         {t('Dissolve Team')}
       </Button>
@@ -95,8 +93,10 @@ export default function DissolveTeam({
           backdropFilter="blur(150px)"
           p="24px"
         >
-          <ModalCloseButton right={'24px'} top="24px" p="0" />
-          <ModalHeader p="0">Warning</ModalHeader>
+          <ModalCloseButton right={'24px'} top="16px" p="0" />
+          <ModalHeader bg={'white'} border={'none'} p="0">
+            Warning
+          </ModalHeader>
           {mutation.isLoading ? (
             <Spinner mx="auto" />
           ) : (

@@ -42,7 +42,8 @@ export const useConfirm = ({ title = 'Warning', content }: { title?: string; con
 
               <AlertDialogFooter>
                 <Button
-                  colorScheme={'gray'}
+                  width={'88px'}
+                  variant={'outline'}
                   onClick={() => {
                     onClose();
                     typeof cancelCb.current === 'function' && cancelCb.current();
@@ -51,8 +52,8 @@ export const useConfirm = ({ title = 'Warning', content }: { title?: string; con
                   {t('Cancel')}
                 </Button>
                 <Button
+                  width={'88px'}
                   ml={3}
-                  variant={'primary'}
                   onClick={() => {
                     onClose();
                     typeof confirmCb.current === 'function' && confirmCb.current();

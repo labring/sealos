@@ -13,14 +13,16 @@ import { Session } from 'sealos-desktop-sdk/*';
 import * as k8s from '@kubernetes/client-node';
 import request from '@/__tests__/api/request';
 import { _setAuth, cleanDb, cleanK8s } from '@/__tests__/api/tools';
-import { INVITE_LIMIT } from '@/types';
 import { AccessTokenPayload } from '@/types/token';
 import { prisma } from '@/services/backend/db/init';
 import { jwtDecode } from 'jwt-decode';
+import { getTeamInviteLimit } from '@/services/enable';
 const createRequest = _createRequest(request);
 const inviteMemberRequest = _inviteMemberRequest(request);
 const verifyInviteRequest = _verifyInviteRequest(request);
 const listNamespaceRequest = _nsListRequest(request);
+const TEAM_INVITE_LIMIT = getTeamInviteLimit();
+
 describe('invite member', () => {
   let token1: string;
   let payload1: AccessTokenPayload;
@@ -175,7 +177,7 @@ describe('invite member', () => {
             role
           });
           console.log(i);
-          if (i < INVITE_LIMIT) {
+          if (i < TEAM_INVITE_LIMIT) {
             expect(inviteRes.code).toBe(200);
           } else {
             expect(inviteRes.code).toBe(403);

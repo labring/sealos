@@ -1,6 +1,6 @@
 import { useSystemConfigStore } from '@/store/config';
 import { SlideDataType } from '@/types/app';
-import { Box, Center, Flex, Text } from '@chakra-ui/react';
+import { Box, Center, Flex, Text, useBreakpointValue } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 import React, { useRef } from 'react';
 import 'swiper/css';
@@ -58,6 +58,7 @@ export default React.memo(function Banner() {
   const swiperRef = useRef<SwiperRef>(null);
   const { systemConfig } = useSystemConfigStore();
   const router = useRouter();
+  const isSmallScreen = useBreakpointValue({ base: true, xl: false });
 
   const handlePrev = () => {
     if (swiperRef.current) {
@@ -83,7 +84,7 @@ export default React.memo(function Banner() {
 
   return (
     <Box
-      minW={'960px'}
+      minW={'480px'}
       h="213px"
       mb="24px"
       position={'relative'}
@@ -111,19 +112,22 @@ export default React.memo(function Banner() {
           <SwiperSlide key={index}>
             <Flex w="full" h="213px" gap={'16px'} overflow={'hidden'}>
               <Card item={item} onClick={() => goDeploy(item.templateName)} />
-              <Card
-                item={systemConfig?.slideData[(index + 1) % systemConfig?.slideData.length]}
-                onClick={() =>
-                  goDeploy(
-                    (systemConfig?.slideData[(index + 1) % systemConfig?.slideData.length])
-                      .templateName
-                  )
-                }
-              />
+              {!isSmallScreen && (
+                <Card
+                  item={systemConfig?.slideData[(index + 1) % systemConfig?.slideData.length]}
+                  onClick={() =>
+                    goDeploy(
+                      (systemConfig?.slideData[(index + 1) % systemConfig?.slideData.length])
+                        .templateName
+                    )
+                  }
+                />
+              )}
             </Flex>
           </SwiperSlide>
         ))}
       </Swiper>
+
       <Box
         transition="opacity 0.3s"
         opacity={0}

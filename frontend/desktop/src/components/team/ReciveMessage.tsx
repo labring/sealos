@@ -100,8 +100,10 @@ export default function ReciveMessage({
           backdropFilter="blur(150px)"
           p="24px"
         >
-          <ModalCloseButton right={'24px'} top="24px" p="0" color={'#24282C'} />
-          <ModalHeader p="0">{t('Accept Invitation')}</ModalHeader>
+          <ModalCloseButton right={'24px'} top="16px" p="0" color={'#24282C'} />
+          <ModalHeader bg={'white'} border={'none'} p="0">
+            {t('Accept Invitation')}
+          </ModalHeader>
           {mutation.isLoading ? (
             <Spinner mx={'auto'} />
           ) : (
