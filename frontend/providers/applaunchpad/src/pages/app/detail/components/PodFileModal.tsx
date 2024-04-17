@@ -7,7 +7,7 @@ import {
 } from '@/api/kubeFile';
 import MyIcon from '@/components/Icon';
 import { useSelectFile } from '@/hooks/useSelectFile';
-import { MOCK_APP_DETAIL } from '@/mock/apps';
+import { MOCK_APP_DETAIL, MOCK_PODS } from '@/mock/apps';
 import { useAppStore } from '@/store/app';
 import type { PodDetailType } from '@/types/app';
 import { TFile } from '@/utils/kubeFileSystem';
@@ -51,22 +51,30 @@ import styles from '../index.module.scss';
 
 type HandleType = 'delete' | 'rename' | 'mkdir-file' | 'mkdir' | 'download';
 
-const PodFile = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+const PodFile = ({
+  isOpen,
+  onClose,
+  pod: podDetail = MOCK_PODS[0],
+  pods = [],
+  podAlias = '',
+  setPodDetail
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  pod: PodDetailType;
+  pods: { alias: string; podName: string }[];
+  podAlias: string;
+  setPodDetail: (name: string) => void;
+}) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const { message } = useMessage();
-  const { appDetail = MOCK_APP_DETAIL, appDetailPods } = useAppStore();
-  const [podDetail, setPodDetail] = useState<PodDetailType>(
-    appDetailPods[0] || {
-      podName: 'test'
-    }
-  );
+  const { appDetail = MOCK_APP_DETAIL } = useAppStore();
   const [storeDetail, setStoreDetail] = useState<{
     name: string;
     path: string;
     value: number;
   }>(appDetail.storeList[0] || { name: '/', path: '/', value: 10 });
-  console.log(podDetail, storeDetail, 111111);
 
   const [fileProgress, setFileProgress] = useState<number>(0);
   const [appName, setAppName] = useState(appDetail.appName);
@@ -213,8 +221,6 @@ const PodFile = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-      } else {
-        console.error('download failed');
       }
     } catch (error: any) {}
   };
@@ -227,7 +233,6 @@ const PodFile = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
   };
 
   const handleConfirm = async () => {
-    console.log(handle, newFileName);
     switch (handle) {
       case 'rename':
         await handleRename();
@@ -248,23 +253,10 @@ const PodFile = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
 
   const uploadFile = async (files: File[]) => {
     try {
-      console.log(files);
-      // const form = new FormData();
-      // files.forEach((file) => form.append('file', file, encodeURIComponent(file.name)));
-      // const uploadResults = await kubeFile_upload(
-      //   {
-      //     podName: podDetail.podName,
-      //     containerName: appName,
-      //     path: `${basePath}/test.txt`
-      //   },
-      //   form
-      // );
-
       const uploadPromises = files.map(async (file) => {
         const name = file.name;
         const form = new FormData();
         form.append('file', file, encodeURIComponent(file.name));
-        console.log(`${basePath}/${name}`);
         return await kubeFile_upload(
           {
             podName: podDetail.podName,
@@ -275,17 +267,13 @@ const PodFile = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
         );
       });
       const uploadResults = await Promise.allSettled(uploadPromises);
-      console.log(uploadResults);
       refetch();
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) {}
   };
 
   const createFolder = async () => {
     try {
       if (!newFileName) return;
-      console.log(newFileName, '1');
       await kubeFile_mkdir({
         podName: podDetail.podName,
         containerName: appName,
@@ -320,15 +308,15 @@ const PodFile = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
                     borderRadius={'md'}
                   >
                     <Flex alignItems={'center'}>
-                      <Box flex={1}>{podDetail.podName}</Box>
+                      <Box flex={1}>{podAlias}</Box>
                       <ChevronDownIcon ml={2} />
                     </Flex>
                   </MenuButton>
                 }
-                menuList={appDetailPods.map((item) => ({
+                menuList={pods.map((item) => ({
                   isActive: item.podName === podDetail.podName,
-                  child: <Box>{item.podName}</Box>,
-                  onClick: () => setPodDetail(item)
+                  child: <Box>{item.alias}</Box>,
+                  onClick: () => setPodDetail(item.podName)
                 }))}
               />
               {storeDetail && (

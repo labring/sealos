@@ -35,7 +35,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
 
     const result = await form.parse(req);
-
     jsonRes(res, { data: null });
   } catch (err: any) {
     jsonRes(res, {

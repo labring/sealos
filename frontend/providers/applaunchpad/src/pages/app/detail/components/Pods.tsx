@@ -47,6 +47,8 @@ const Pods = ({
   const { toast } = useToast();
   const [logsPodIndex, setLogsPodIndex] = useState<number>();
   const [detailPodIndex, setDetailPodIndex] = useState<number>();
+  const [detailFilePodIndex, setDetailFilePodIndex] = useState<number>();
+
   const { Loading } = useLoading();
   const { openConfirm: openConfirmRestart, ConfirmChild: RestartConfirmChild } = useConfirm({
     content: 'Please confirm to restart the Pod?'
@@ -223,7 +225,13 @@ const Pods = ({
           </MyTooltip>
           {appDetail.storeList?.length > 0 && (
             <MyTooltip offset={[0, 10]} label={t('File Management')}>
-              <Button variant={'square'} onClick={onOpenPodFile}>
+              <Button
+                variant={'square'}
+                onClick={() => {
+                  setDetailFilePodIndex(i);
+                  onOpenPodFile();
+                }}
+              >
                 <MyIcon name={'file'} w="18px" h="18px" fill={'#485264'} />
               </Button>
             </MyTooltip>
@@ -313,8 +321,20 @@ const Pods = ({
         />
       )}
 
-      {isOpenPodFile && appDetail.storeList?.length > 0 && (
-        <PodFileModal isOpen={isOpenPodFile} onClose={onClosePodFile} />
+      {isOpenPodFile && appDetail.storeList?.length > 0 && detailFilePodIndex !== undefined && (
+        <PodFileModal
+          isOpen={isOpenPodFile}
+          onClose={onClosePodFile}
+          pod={pods[detailFilePodIndex]}
+          podAlias={`${appName}-${detailFilePodIndex + 1}`}
+          pods={pods.map((item, i) => ({
+            alias: `${appName}-${i + 1}`,
+            podName: item.podName
+          }))}
+          setPodDetail={(e: string) =>
+            setDetailFilePodIndex(pods.findIndex((item) => item.podName === e))
+          }
+        />
       )}
       <RestartConfirmChild />
     </Box>
