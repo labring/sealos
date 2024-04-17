@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
 
     const kubefs = new KubeFileSystem(k8sExec);
-    const { containerName, path, podName } = req.body as {
+    const { containerName, path, podName } = req.query as {
       containerName: string;
       podName: string;
       path: string;
@@ -23,11 +23,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const form = formidable({
       fileWriteStreamHandler: () => {
         const pass = new PassThrough();
-        kubefs.upload({ namespace, podName, containerName, path, file: pass });
+        kubefs.upload({
+          namespace,
+          podName,
+          containerName,
+          path,
+          file: pass
+        });
         return pass;
       }
     });
-    await form.parse(req);
+
+    const result = await form.parse(req);
 
     jsonRes(res, { data: null });
   } catch (err: any) {
@@ -37,3 +44,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
   }
 }
+
+export const config = {
+  api: {
+    bodyParser: false
+  }
+};

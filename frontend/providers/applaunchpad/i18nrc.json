@@ -1,0 +1,8 @@
+{
+  "entry": "./public/locales/zh",
+  "entryLocale": "zh",
+  "output": "./public/locales",
+  "outputLocales": [
+    "en"
+  ]
+}

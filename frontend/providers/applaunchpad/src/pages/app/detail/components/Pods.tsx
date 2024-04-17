@@ -1,7 +1,6 @@
 import { restartPodByName } from '@/api/app';
 import MyIcon from '@/components/Icon';
 import { MyTooltip } from '@sealos/ui';
-
 import PodLineChart from '@/components/PodLineChart';
 import { PodStatusEnum } from '@/constants/app';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -21,15 +20,19 @@ import {
   Td,
   Th,
   Thead,
-  Tr
+  Tr,
+  useDisclosure
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import React, { useCallback, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { MOCK_APP_DETAIL } from '@/mock/apps';
+import { useAppStore } from '@/store/app';
 
 const LogsModal = dynamic(() => import('./LogsModal'));
 const DetailModel = dynamic(() => import('./PodDetailModal'));
+const PodFileModal = dynamic(() => import('./PodFileModal'));
 
 const Pods = ({
   pods = [],
@@ -48,6 +51,8 @@ const Pods = ({
   const { openConfirm: openConfirmRestart, ConfirmChild: RestartConfirmChild } = useConfirm({
     content: 'Please confirm to restart the Pod?'
   });
+  const { appDetail = MOCK_APP_DETAIL, appDetailPods } = useAppStore();
+  const { isOpen: isOpenPodFile, onOpen: onOpenPodFile, onClose: onClosePodFile } = useDisclosure();
 
   const handleRestartPod = useCallback(
     async (podName: string) => {
@@ -216,6 +221,13 @@ const Pods = ({
               <MyIcon name={'restart'} w="18px" h="18px" fill={'#485264'} />
             </Button>
           </MyTooltip>
+          {appDetail.storeList?.length > 0 && (
+            <MyTooltip offset={[0, 10]} label={t('File Management')}>
+              <Button variant={'square'} onClick={onOpenPodFile}>
+                <MyIcon name={'file'} w="18px" h="18px" fill={'#485264'} />
+              </Button>
+            </MyTooltip>
+          )}
         </Flex>
       )
     }
@@ -299,6 +311,10 @@ const Pods = ({
           }
           closeFn={() => setDetailPodIndex(undefined)}
         />
+      )}
+
+      {isOpenPodFile && appDetail.storeList?.length > 0 && (
+        <PodFileModal isOpen={isOpenPodFile} onClose={onClosePodFile} />
       )}
       <RestartConfirmChild />
     </Box>
