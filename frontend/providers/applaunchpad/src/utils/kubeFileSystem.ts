@@ -60,7 +60,7 @@ export class KubeFileSystem {
         reject(error.toString());
       });
 
-      this.k8sExec.exec(namespace, podName, containerName, command, stdout, stderr, stdin, false);
+      this.k8sExec.exec(namespace, podName, containerName, command, stdout, stderr, stdin, !!stdin);
     });
   }
 
