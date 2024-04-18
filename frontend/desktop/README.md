@@ -197,22 +197,23 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 - 登录功能的开关, 部署时要用`true`配置想要使用的登录方式。
 
-    ```
-    WECHAT_ENABLED=true
-    GITHUB_ENABLED=true
-    PASSWORD_ENABLED=true
-    SMS_ENABLED=true
-    RECHAGRE_ENABLED=true
-    ```
+  ```
+  WECHAT_ENABLED=true
+  GITHUB_ENABLED=true
+  PASSWORD_ENABLED=true
+  SMS_ENABLED=true
+  RECHAGRE_ENABLED=true
+  ```
 
 - 每个登陆要配置的变量
+
   - wechat
 
     ```
     WECHAT_CLIENT_ID=
     WECHAT_CLIENT_SECRET=
     WECHAT_ENABLED="true"
-    ```  
+    ```
 
   - github
 
@@ -238,15 +239,29 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
     ALI_TEMPLATE_CODE=
     SMS_ENABLED="true"
     ```
+
   - google
+
   ```
   GOOGLE_ENABLED="true"
   GOOGLE_CLIENT_ID=
   GOOGLE_CLIENT_SECRET=
   ```
-  - team
-  
+
+  - support standard oauth2
+
+  ```
+  OAUTH2_CLIENT_ID=
+  OAUTH2_CLIENT_SECRET=
+  OAUTH2_AUTH_URL=
+  OAUTH2_TOKEN_URL=
+  OAUTH2_USERINFO_URL=
+  ```
+
+  - number of teams and number of people in each team
+
   ```
   // default is '50'
     TEAM_LIMIT="50"
+    TEAM_INVITE_LIMIT="50"
   ```
