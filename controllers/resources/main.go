@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/minio/madmin-go/v3"
+
 	"github.com/labring/sealos/controllers/pkg/database/mongo"
 
 	"github.com/labring/sealos/controllers/pkg/database"
@@ -145,12 +147,13 @@ func main() {
 	}
 	reconciler.Properties = resources.DefaultPropertyTypeLS
 	const (
-		MinioEndpoint = "MINIO_ENDPOINT"
-		MinioAk       = "MINIO_AK"
-		MinioSk       = "MINIO_SK"
-		PromURL       = "PROM_URL"
+		MinioEndpoint    = "MINIO_ENDPOINT"
+		MinioAk          = "MINIO_AK"
+		MinioSk          = "MINIO_SK"
+		PromURL          = "PROM_URL"
+		MinioMetricsAddr = "MINIO_METRICS_ADDR"
 	)
-	if endpoint, ak, sk := os.Getenv(MinioEndpoint), os.Getenv(MinioAk), os.Getenv(MinioSk); endpoint != "" && ak != "" && sk != "" {
+	if endpoint, ak, sk, metricsAddr := os.Getenv(MinioEndpoint), os.Getenv(MinioAk), os.Getenv(MinioSk), os.Getenv(MinioMetricsAddr); endpoint != "" && ak != "" && sk != "" && metricsAddr != "" {
 		reconciler.Logger.Info("init minio client")
 		if reconciler.ObjStorageClient, err = objectstoragev1.NewOSClient(endpoint, ak, sk); err != nil {
 			reconciler.Logger.Error(err, "failed to new minio client")
@@ -161,13 +164,16 @@ func main() {
 			reconciler.Logger.Error(err, "failed to list minio buckets")
 			os.Exit(1)
 		}
-		if promURL := os.Getenv(PromURL); promURL == "" {
+		if reconciler.PromURL = os.Getenv(PromURL); reconciler.PromURL == "" {
 			reconciler.Logger.Info("prometheus url not found, please check env: PROM_URL")
-		} else {
-			reconciler.PromURL = promURL
+		}
+		reconciler.ObjStorageMetricsClient, err = madmin.NewMetricsClient(metricsAddr, ak, sk, true)
+		if err != nil {
+			reconciler.Logger.Error(err, "failed to new minio metrics client")
+			os.Exit(1)
 		}
 	} else {
-		reconciler.Logger.Info("minio info not found, please check env: MINIO_ENDPOINT, MINIO_AK, MINIO_SK")
+		reconciler.Logger.Info("minio info not found, please check env: MINIO_ENDPOINT, MINIO_AK, MINIO_SK, MINIO_METRICS_ADDR")
 	}
 	// timer creates tomorrow's timing table in advance to ensure that tomorrow's table exists
 	// Execute immediately and then every 24 hours.
