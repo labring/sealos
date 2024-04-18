@@ -38,13 +38,13 @@ func GetQuery(query *api.VMRequest) (string, error) {
 	var result string
 	switch query.Type {
 	case "cpu":
-		result = "sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{pod=~\"$pod.*\", namespace=\"$namespace\"}) by (pod) / sum(cluster:namespace:pod_cpu:active:kube_pod_container_resource_limits{pod=~\"$pod.*\", namespace=\"$namespace\"}) by (pod)"
+		result = "round(max by (pod) (rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\",pod=~\"$pod.*\"}[5m])) / on (pod) (max by (pod) (container_spec_cpu_quota{namespace=~\"$namespace\",pod=~\"$pod.*\"} / 100000)) ,0.01)"
 	case "memory":
-		result = "sum(container_memory_working_set_bytes{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\", pod=~\"$pod.*\", namespace=\"$namespace\",container!=\"\", image!=\"\"}) by (pod) / sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_limits{pod=~\"$pod.*\", namespace=\"$namespace\"}) by (pod)"
+		result = "round(max by (pod)(container_memory_usage_bytes{namespace=~\"$namespace\",pod=~\"$pod.*\"})/ on (pod) (max by (pod) (container_spec_memory_limit_bytes{namespace=~\"$namespace\",pod=~\"$pod.*\"})) ,0.01)"
 	case "average_cpu":
-		result = "sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{pod=~\"$pod.*\", namespace=\"$namespace\"}) / sum(cluster:namespace:pod_cpu:active:kube_pod_container_resource_limits{pod=~\"$pod.*\", namespace=\"$namespace\"})"
+		result = "avg(round(max by (pod) (rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\",pod=~\"$pod.*\"}[5m])) / on (pod) (max by (pod) (container_spec_cpu_quota{namespace=~\"$namespace\",pod=~\"$pod.*\"} / 100000)) ,0.01))"
 	case "average_memory":
-		result = "sum(container_memory_working_set_bytes{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\", pod=~\"$pod.*\", namespace=\"$namespace\",container!=\"\", image!=\"\"}) / sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_limits{pod=~\"$pod.*\", namespace=\"$namespace\"})"
+		result = "avg(round(max by (pod)(container_memory_usage_bytes{namespace=~\"$namespace\",pod=~\"$pod.*\"})/ on (pod) (max by (pod) (container_spec_memory_limit_bytes{namespace=~\"$namespace\",pod=~\"$pod.*\"})) ,0.01))"
 	default:
 		log.Println(query.Type)
 	}
