@@ -17,6 +17,7 @@ package objectstorage
 import (
 	"context"
 	"fmt"
+
 	"regexp"
 	"strconv"
 	"strings"
@@ -26,9 +27,11 @@ import (
 
 	"github.com/prometheus/common/model"
 
+	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7"
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"github.com/prometheus/prom2json"
 )
 
 func ListUserObjectStorageBucket(client *minio.Client, username string) ([]string, error) {
@@ -179,4 +182,69 @@ func extractValues(result1, result2 model.Value) (int64, int64) {
 	val1, _ := strconv.ParseInt(rcvdStr1, 10, 64)
 	val2, _ := strconv.ParseInt(rcvdStr2, 10, 64)
 	return val1, val2
+}
+
+type MetricData struct {
+	data map[string]int64
+}
+
+type ObjectStorageMetrics map[string]MetricData
+
+func queryObjectStorageMetrics(client *madmin.MetricsClient) (objectStorageMetrics ObjectStorageMetrics, err error) {
+	objectStorageMetrics = make(ObjectStorageMetrics)
+
+	bucketMetrics, err := client.BucketMetrics(context.TODO())
+	if err != nil {
+		fmt.Printf("failed to get bucket metrics")
+		return objectStorageMetrics, err
+	}
+
+	for _, bucketMetric := range bucketMetrics {
+		if isTargetMetric(bucketMetric.Name) {
+			metricData, exists := objectStorageMetrics[bucketMetric.Name]
+			if !exists {
+				metricData = MetricData{
+					data: make(map[string]int64),
+				}
+			}
+			for _, metrics := range bucketMetric.Metrics {
+				promMetrics := metrics.(prom2json.Metric)
+				floatValue, err := strconv.ParseFloat(promMetrics.Value, 64)
+				if err != nil {
+					fmt.Printf("failed to parse %s to float value\n", promMetrics.Value)
+					return objectStorageMetrics, err
+				}
+				intValue := int64(floatValue)
+				for k, v := range promMetrics.Labels {
+					if k == "bucket" {
+						user := SplitPrefix(v)
+						metricData.data[user] += intValue
+					}
+				}
+			}
+			objectStorageMetrics[bucketMetric.Name] = metricData
+		}
+	}
+
+	return objectStorageMetrics, err
+}
+
+func isTargetMetric(name string) bool {
+	targetMetrics := []string{
+		"minio_bucket_usage_total_bytes",
+	}
+	for _, target := range targetMetrics {
+		if name == target {
+			return true
+		}
+	}
+	return false
+}
+
+func SplitPrefix(input string) string {
+	index := strings.Index(input, "-")
+	if index == -1 {
+		return input
+	}
+	return input[:index]
 }
