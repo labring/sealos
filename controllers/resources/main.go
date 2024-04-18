@@ -153,7 +153,7 @@ func main() {
 		PromURL          = "PROM_URL"
 		MinioMetricsAddr = "MINIO_METRICS_ADDR"
 	)
-	if endpoint, ak, sk, mAddr := os.Getenv(MinioEndpoint), os.Getenv(MinioAk), os.Getenv(MinioSk), os.Getenv(MinioMetricsAddr); endpoint != "" && ak != "" && sk != "" && metricsAddr != "" {
+	if endpoint, ak, sk, mAddr := os.Getenv(MinioEndpoint), os.Getenv(MinioAk), os.Getenv(MinioSk), os.Getenv(MinioMetricsAddr); endpoint != "" && ak != "" && sk != "" && mAddr != "" {
 		reconciler.Logger.Info("init minio client")
 		if reconciler.ObjStorageClient, err = objectstoragev1.NewOSClient(endpoint, ak, sk); err != nil {
 			reconciler.Logger.Error(err, "failed to new minio client")
@@ -167,7 +167,7 @@ func main() {
 		if reconciler.PromURL = os.Getenv(PromURL); reconciler.PromURL == "" {
 			reconciler.Logger.Info("prometheus url not found, please check env: PROM_URL")
 		}
-		reconciler.ObjStorageMetricsClient, err = madmin.NewMetricsClient(mAddr, ak, sk, true)
+		reconciler.ObjStorageMetricsClient, err = madmin.NewMetricsClient(mAddr, ak, sk, false)
 		if err != nil {
 			reconciler.Logger.Error(err, "failed to new minio metrics client")
 			os.Exit(1)
