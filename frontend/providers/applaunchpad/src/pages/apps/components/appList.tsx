@@ -11,7 +11,7 @@ import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
 import { AppListItemType } from '@/types/app';
 import { getErrText } from '@/utils/tools';
-import { Box, Button, Center, Flex, MenuButton, useTheme } from '@chakra-ui/react';
+import { Box, Text, Button, Center, Flex, MenuButton, useTheme } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
@@ -143,6 +143,18 @@ const AppList = ({
           <Box h={'35px'} w={['120px', '130px', '140px']}>
             <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
               <PodLineChart type="blue" data={item.usedCpu} />
+              <Text
+                color={'#0077A9'}
+                fontSize={'sm'}
+                fontWeight={'bold'}
+                position={'absolute'}
+                right={'4px'}
+                bottom={'0px'}
+                pointerEvents={'none'}
+                textShadow="1px 1px 0 #FFF, -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF"
+              >
+                {item?.usedCpu?.yData[item?.usedCpu?.yData?.length - 1]}%
+              </Text>
             </Box>
           </Box>
         )
@@ -154,6 +166,18 @@ const AppList = ({
           <Box h={'35px'} w={['120px', '130px', '140px']}>
             <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
               <PodLineChart type="purple" data={item.usedMemory} />
+              <Text
+                color={'#6F5DD7'}
+                fontSize={'sm'}
+                fontWeight={'bold'}
+                position={'absolute'}
+                right={'4px'}
+                bottom={'0px'}
+                pointerEvents={'none'}
+                textShadow="1px 1px 0 #FFF, -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF"
+              >
+                {item?.usedMemory?.yData[item?.usedMemory?.yData?.length - 1]}%
+              </Text>
             </Box>
           </Box>
         )
