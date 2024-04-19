@@ -23,9 +23,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/utils/env"
+	"github.com/labring/sealos/controllers/pkg/objectstorage"
 
-	"github.com/minio/madmin-go/v3"
+	"github.com/labring/sealos/controllers/pkg/utils/env"
 
 	"github.com/labring/sealos/controllers/pkg/database/mongo"
 
@@ -172,7 +172,7 @@ func main() {
 			reconciler.Logger.Info("prometheus url not found, please check env: PROM_URL")
 		}
 		secure := env.GetBoolWithDefault(MinioMetricsAddrSecure, false)
-		reconciler.ObjStorageMetricsClient, err = madmin.NewMetricsClient(mAddr, ak, sk, secure)
+		reconciler.ObjStorageMetricsClient, err = objectstorage.NewMetricsClient(mAddr, ak, sk, secure)
 		if err != nil {
 			reconciler.Logger.Error(err, "failed to new minio metrics client")
 			os.Exit(1)

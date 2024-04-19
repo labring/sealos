@@ -25,8 +25,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/minio/madmin-go/v3"
-
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/controllers/pkg/utils/env"
@@ -76,7 +74,7 @@ type MonitorReconciler struct {
 	PromURL                 string
 	currentObjectMetrics    map[string]objstorage.MetricData
 	ObjStorageClient        *minio.Client
-	ObjStorageMetricsClient *madmin.MetricsClient
+	ObjStorageMetricsClient *objstorage.MetricsClient
 	ObjectStorageInstance   string
 }
 
