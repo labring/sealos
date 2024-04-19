@@ -399,7 +399,7 @@ func (r *MonitorReconciler) getObjStorageUsed(user string, namedMap *map[string]
 		return nil
 	}
 	if r.currentObjectMetrics == nil || r.currentObjectMetrics[user].Usage == nil {
-		return fmt.Errorf("current object metrics is nil")
+		return nil
 	}
 	for bucket, usage := range r.currentObjectMetrics[user].Usage {
 		if bucket == "" || usage <= 0 {
