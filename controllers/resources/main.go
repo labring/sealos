@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"time"
 
@@ -176,7 +177,7 @@ func main() {
 			reconciler.Logger.Error(err, "failed to new minio metrics client")
 			os.Exit(1)
 		}
-		reconciler.Logger.Info("init minio client with info (endpoint %s, metrics addr %s, metrics addr secure %v) success", endpoint, mAddr, secure)
+		reconciler.Logger.Info(fmt.Sprintf("init minio client with info (endpoint %s, metrics addr %s, metrics addr secure %v) success", endpoint, mAddr, secure))
 	} else {
 		reconciler.Logger.Info("minio info not found, please check env: MINIO_ENDPOINT, MINIO_AK, MINIO_SK, MINIO_METRICS_ADDR")
 	}
