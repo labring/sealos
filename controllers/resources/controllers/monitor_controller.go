@@ -268,6 +268,7 @@ func (r *MonitorReconciler) preMonitorResourceUsage() error {
 		return fmt.Errorf("failed to query object storage metrics: %w", err)
 	}
 	r.currentObjectMetrics = metrics
+	logger.Info("success query object storage resource usage", "time", time.Now().Format("2006-01-02 15:04:05"))
 	return nil
 }
 
@@ -389,13 +390,6 @@ func (r *MonitorReconciler) getResourceUsed(podResource map[corev1.ResourceName]
 }
 
 func (r *MonitorReconciler) getObjStorageUsed(user string, namedMap *map[string]*resources.ResourceNamed, resMap *map[string]map[corev1.ResourceName]*quantity) error {
-	buckets, err := objstorage.ListUserObjectStorageBucket(r.ObjStorageClient, user)
-	if err != nil {
-		return fmt.Errorf("failed to list object storage user %s storage size: %w", user, err)
-	}
-	if len(buckets) == 0 {
-		return nil
-	}
 	if r.currentObjectMetrics == nil || r.currentObjectMetrics[user].Usage == nil {
 		return nil
 	}
