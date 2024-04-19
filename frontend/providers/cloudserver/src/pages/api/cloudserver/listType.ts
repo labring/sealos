@@ -1,19 +1,15 @@
 import { verifyAccessToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
-import getCloudProvider from '@/services/cloudProvider';
 import { POST } from '@/services/requestLaf';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { userId } = await verifyAccessToken(req);
-    const cloudProvider = getCloudProvider();
+    await verifyAccessToken(req);
 
-    const { data } = await POST(
-      '/action/get-virtual-machine-type',
-      {
-        cloudProvider
-      },
+    const { data, error } = await POST(
+      '/action/get-virtual-machine-package',
+      {},
       {
         headers: {
           Authorization: req.headers.authorization
@@ -22,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
 
     return jsonRes(res, {
-      data: data
+      data: data || error
     });
   } catch (error) {
     jsonRes(res, { code: 500, error: error });

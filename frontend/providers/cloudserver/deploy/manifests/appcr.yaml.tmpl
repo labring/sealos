@@ -1,21 +1,19 @@
 apiVersion: app.sealos.io/v1
 kind: App
 metadata:
-  name: workorder
+  name: cloudserver
   namespace: app-system
 spec:
   data:
-    desc: workorder
+    desc: cloudserver
     url: "https://cloudserver.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
   icon: "https://cloudserver.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg"
   menuData:
     helpDropDown: false
     nameColor: text-black
-  name: workorder
+  name: cloudserver
   type: iframe
   displayType: normal
   i18n:
     zh:
-      name: 工单
-    zh-Hans:
-      name: 工单
+      name: 云主机

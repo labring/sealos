@@ -1,7 +1,7 @@
 import { UpdateStatusPayload } from '@/pages/api/cloudserver/updateStatus';
 import { POST } from '@/services/request';
 import adaptCloudServerListItem from '@/types/adapt';
-import { CloudServerType, EditForm, OperatingSystems } from '@/types/cloudserver';
+import { CloudServerPrice, CloudServerType, EditForm, OperatingSystems } from '@/types/cloudserver';
 import { CVMInstanceType } from '@/types/cloudserver';
 
 export const getCloudServerType = () => POST<CloudServerType[]>('/api/cloudserver/listType');
@@ -25,3 +25,6 @@ export const listCloudServer = (payload: { page: number; pageSize: number }) =>
       list: data?.list?.map(adaptCloudServerListItem)
     };
   });
+
+export const getCloudServerPrice = (payload: EditForm) =>
+  POST<CloudServerPrice>('/api/cloudserver/price', payload);

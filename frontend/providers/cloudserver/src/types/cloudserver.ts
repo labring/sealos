@@ -1,5 +1,4 @@
 export type EditForm = {
-  instanceType: string;
   system: string;
   systemImageId: string;
   systemDiskSize: number;
@@ -8,6 +7,8 @@ export type EditForm = {
   password: string;
   autoPassword: boolean;
   storages: StorageType[];
+  virtualMachinePackageFamily: string;
+  virtualMachinePackageName: string;
 };
 
 export type StorageType = {
@@ -18,11 +19,23 @@ export type StorageType = {
 };
 
 export type CloudServerType = {
-  CPU: number;
-  Memory: number;
-  GPU: number;
-  type: string;
+  cpu?: number;
+  memory?: number;
+  gpu?: number;
+  virtualMachinePackageFamily: string;
+  virtualMachinePackageName: string;
+  instancePrice: number;
+  diskPerG: number;
+  networkSpeedBoundary: number;
+  networkSpeedUnderSpeedBoundaryPerHour: number;
+  networkSpeedAboveSpeedBoundaryPerHour: number;
+  status: CloudServerStatus;
 };
+
+export enum CloudServerStatus {
+  Available = 'available',
+  Unavailable = 'unavailable'
+}
 
 export interface OperatingSystem {
   id: string;
@@ -105,3 +118,23 @@ export enum HandleEnum {
   Restart = 'Restart',
   Delete = 'Delete'
 }
+
+export type CloudServerPrice = {
+  instancePrice: number;
+  networkPrice: number;
+  diskPrice: number;
+};
+
+export type CreateCloudServerPayload = {
+  imageId: string;
+  systemDisk: number;
+  dataDisks: number[];
+  internetMaxBandwidthOut?: number;
+  loginPassword: string;
+  virtualMachinePackageFamily: string;
+  virtualMachinePackageName: string;
+  loginName: string;
+  metaData: {
+    [key: string]: any;
+  };
+};

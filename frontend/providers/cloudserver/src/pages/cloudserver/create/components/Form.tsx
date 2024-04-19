@@ -69,7 +69,9 @@ export default function Form({
   const { data: ServersData } = useQuery(['getCloudServerType'], getCloudServerType, {
     staleTime: 5 * 60 * 1000,
     onSuccess(data) {
-      formHook.setValue('instanceType', data[0].type);
+      if (data?.[0]) {
+        formHook.setValue('virtualMachinePackageName', data[0].virtualMachinePackageName);
+      }
     }
   });
 
@@ -103,25 +105,40 @@ export default function Form({
           return (
             <Flex alignItems={'center'} pl={4} gap={'12px'}>
               <Radio colorScheme={'grayModern'} isChecked={rowNumber === activeId}></Radio>
-              <Text>标准型-{rowNumber + 1}</Text>
+              <Text>{item.virtualMachinePackageName}</Text>
             </Flex>
           );
         }
       },
       {
         title: t('CPU'),
-        dataIndex: 'CPU',
-        key: 'CPU'
+        render: (item: CloudServerType) => {
+          return <Text>{item.cpu}C</Text>;
+        },
+        key: 'cpu'
       },
       {
         title: t('Memory'),
-        dataIndex: 'Memory',
-        key: 'Memory'
+        render: (item: CloudServerType) => {
+          return <Text>{item.memory}GB</Text>;
+        },
+        key: 'memory'
       },
       {
         title: t('GPU'),
-        dataIndex: 'GPU',
+        dataIndex: 'gpu',
         key: 'GPU'
+      },
+      {
+        title: t('Reference fee'),
+        key: 'instancePrice',
+        render: (item: CloudServerType) => {
+          return (
+            <Text color={'brightBlue.700'}>
+              {t('Reference fee tip', { price: item.instancePrice })}{' '}
+            </Text>
+          );
+        }
       }
     ],
     [t]
@@ -269,7 +286,8 @@ export default function Form({
                 data={ServersData}
                 openSelected
                 onRowClick={(item: CloudServerType) => {
-                  setValue('instanceType', item.type);
+                  setValue('virtualMachinePackageName', item.virtualMachinePackageName);
+                  setValue('virtualMachinePackageFamily', item.virtualMachinePackageFamily);
                 }}
               />
             ) : (
@@ -400,7 +418,7 @@ export default function Form({
               />
             </Flex>
             <Box fontSize={'base'} color={'grayModern.500'}>
-              注意：未分配独立公网IP，无法使用外网IP对外进行互相通信，服务器无法用于备案，请慎重选择。
+              {t('publicIpAssigned tips')}
             </Box>
           </Flex>
         </Flex>

@@ -12,7 +12,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const dataDisks = form.storages
       .filter(({ use }) => use === 'DataDisk')
       .flatMap(({ size, amount }) => Array(amount).fill(size));
-    console.log(dataDisks);
 
     const payload: CreateCloudServerPayload = {
       virtualMachinePackageFamily: form.virtualMachinePackageFamily,
@@ -30,17 +29,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       metaData: {}
     };
 
-    const { data } = await POST('/action/create', payload, {
+    const result = await POST('/action/get-price', payload, {
       headers: {
         Authorization: req.headers.authorization
       }
     });
 
     return jsonRes(res, {
-      data: data
+      data: result?.data
     });
   } catch (error) {
-    console.log(error);
     jsonRes(res, { code: 500, error: error });
   }
 }

@@ -1,6 +1,5 @@
 import { verifyAccessToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
-import getCloudProvider from '@/services/cloudProvider';
 import { POST } from '@/services/requestLaf';
 import { NextApiRequest, NextApiResponse } from 'next';
 
@@ -11,14 +10,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       page: number;
       pageSize: number;
     };
-    const cloudProvider = getCloudProvider();
 
-    const { data } = await POST(
+    const { data, error } = await POST(
       '/action/get-virtual-machine-detail-list',
       {
         page,
-        pageSize,
-        cloudProvider: cloudProvider
+        pageSize
       },
       {
         headers: {
@@ -28,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
 
     return jsonRes(res, {
-      data: data
+      data: data || error
     });
   } catch (error: any) {
     jsonRes(res, { code: 500, error: error });

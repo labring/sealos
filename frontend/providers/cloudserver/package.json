@@ -24,6 +24,7 @@
     "axios": "^1.5.1",
     "date-fns": "^2.30.0",
     "dayjs": "^1.11.10",
+    "decimal.js": "^10.4.3",
     "echarts": "^5.4.3",
     "framer-motion": "^10.16.4",
     "i18next": "^22.5.1",

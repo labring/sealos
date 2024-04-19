@@ -55,10 +55,6 @@ function App({ Component, pageProps }: AppProps) {
         const res = await sealosApp.getSession();
         if (res.token) {
           setToken(res.token);
-        } else {
-          if (process.env.NODE_ENV === 'development') {
-            setToken(process.env.NEXT_PUBLIC_MOCK_USER!);
-          }
         }
       } catch (err) {
         console.log('App is not running in desktop');

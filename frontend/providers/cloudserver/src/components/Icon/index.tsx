@@ -31,6 +31,7 @@ const map = {
   restore: require('./icons/restore.svg').default,
   download: require('./icons/download.svg').default,
   close: require('./icons/close.svg').default,
+  help: require('./icons/help.svg').default,
   link: require('./icons/link.svg').default
 };
 

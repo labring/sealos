@@ -31,21 +31,21 @@ metadata:
     higress.io/response-header-control-update: |
       Content-Security-Policy "default-src * blob: data: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; img-src * data: blob: resource: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource: *.baidu.com *.bdstatic.com https://js.stripe.com; frame-src 'self' *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} mailto: tel: weixin: mtt: *.baidu.com https://js.stripe.com; frame-ancestors 'self' https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} https://*.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
       X-Xss-Protection "1; mode=block"
-  name: workorder-frontend
-  namespace: workorder-frontend
+  name: cloudserver-frontend
+  namespace: cloudserver-frontend
 spec:
   rules:
-    - host: workorder.{{ .cloudDomain }}
+    - host: cloudserver.{{ .cloudDomain }}
       http:
         paths:
           - pathType: Prefix
             path: /
             backend:
               service:
-                name: workorder-frontend
+                name: cloudserver-frontend
                 port:
                   number: 3000
   tls:
     - hosts:
-        - workorder.{{ .cloudDomain }}
+        - cloudserver.{{ .cloudDomain }}
       secretName: {{ .certSecretName }}

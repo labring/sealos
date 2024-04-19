@@ -73,5 +73,15 @@
   "Password copied to clipboard": "密码已复制到剪切板",
   "Copy Failed": "复制失败",
   "Changing": "变更中",
-  "Restarting": "重启中"
+  "Restarting": "重启中",
+  "Reference fee": "参考费用",
+  "Reference fee tip": "{{price}}/小时",
+  "Configuration fee details": "配置费用明细",
+  "Instance": "实例",
+  "storage fees": "存储费用",
+  "Public network bandwidth": "公网带宽",
+  "Billing items": "计费项",
+  "price": "价格",
+  "publicIpAssigned tips": "注意：未分配独立公网IP，无法使用外网IP对外进行互相通信，服务器无法用于备案，请慎重选择。",
+  "Fee inquiry in progress": "费用查询中..."
 }

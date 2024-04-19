@@ -1,6 +1,5 @@
 import { verifyAccessToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
-import getCloudProvider from '@/services/cloudProvider';
 import { POST } from '@/services/requestLaf';
 import { HandleEnum } from '@/types/cloudserver';
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -14,7 +13,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     await verifyAccessToken(req);
     const { instanceName, handle } = req.body as UpdateStatusPayload;
-    const cloudProvider = getCloudProvider();
 
     const handleToUrlMap = {
       [HandleEnum.Start]: '/action/start',
@@ -36,7 +34,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data, error } = await POST(
       url,
       {
-        cloudProvider: cloudProvider,
         instanceName: instanceName
       },
       {

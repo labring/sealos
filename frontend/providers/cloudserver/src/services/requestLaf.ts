@@ -5,8 +5,12 @@ import axios, {
   InternalAxiosRequestConfig
 } from 'axios';
 
+/**
+ * token from app headers improtant
+ * ./request.ts
+ */
 const request = axios.create({
-  baseURL: 'https://y5qi4sa48d.hzh.sealos.run',
+  baseURL: process.env.LAF_BASE_URL,
   withCredentials: true,
   timeout: 60000
 });

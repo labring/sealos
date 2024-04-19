@@ -1,4 +1,4 @@
-import { createCloudServer } from '@/api/cloudserver';
+import { createCloudServer, getCloudServerPrice } from '@/api/cloudserver';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
@@ -13,6 +13,7 @@ import { useForm } from 'react-hook-form';
 import ErrorModal from './components/ErrorModal';
 import Form from './components/Form';
 import Header from './components/Header';
+import { useQuery } from '@tanstack/react-query';
 
 export default function EditOrder() {
   const [errorMessage, setErrorMessage] = useState('');
@@ -40,13 +41,20 @@ export default function EditOrder() {
           size: 50,
           amount: 1
         }
-      ]
+      ],
+      virtualMachinePackageFamily: 'A',
+      systemImageId: ''
     }
   });
 
   // watch form change, compute new yaml
-  formHook.watch((data) => {
+  formHook.watch((data: any) => {
     setForceUpdate(!forceUpdate);
+  });
+
+  const { data: prices } = useQuery(['getCloudServerPrice', forceUpdate], () => {
+    const temp = formHook.getValues();
+    return getCloudServerPrice(temp);
   });
 
   const submitSuccess = async (data: EditForm) => {
@@ -94,6 +102,7 @@ export default function EditOrder() {
       bg={'grayModern.100'}
     >
       <Header
+        prices={prices}
         title="New Server"
         applyCb={() =>
           formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)()
