@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+
 	"github.com/minio/madmin-go/v3"
 
 	"github.com/labring/sealos/controllers/pkg/database/mongo"
@@ -147,11 +149,12 @@ func main() {
 	}
 	reconciler.Properties = resources.DefaultPropertyTypeLS
 	const (
-		MinioEndpoint    = "MINIO_ENDPOINT"
-		MinioAk          = "MINIO_AK"
-		MinioSk          = "MINIO_SK"
-		PromURL          = "PROM_URL"
-		MinioMetricsAddr = "MINIO_METRICS_ADDR"
+		MinioEndpoint          = "MINIO_ENDPOINT"
+		MinioAk                = "MINIO_AK"
+		MinioSk                = "MINIO_SK"
+		PromURL                = "PROM_URL"
+		MinioMetricsAddr       = "MINIO_METRICS_ADDR"
+		MinioMetricsAddrSecure = "MINIO_METRICS_SECURE"
 	)
 	if endpoint, ak, sk, mAddr := os.Getenv(MinioEndpoint), os.Getenv(MinioAk), os.Getenv(MinioSk), os.Getenv(MinioMetricsAddr); endpoint != "" && ak != "" && sk != "" && mAddr != "" {
 		reconciler.Logger.Info("init minio client")
@@ -167,11 +170,13 @@ func main() {
 		if reconciler.PromURL = os.Getenv(PromURL); reconciler.PromURL == "" {
 			reconciler.Logger.Info("prometheus url not found, please check env: PROM_URL")
 		}
-		reconciler.ObjStorageMetricsClient, err = madmin.NewMetricsClient(mAddr, ak, sk, false)
+		secure := env.GetBoolWithDefault(MinioMetricsAddrSecure, false)
+		reconciler.ObjStorageMetricsClient, err = madmin.NewMetricsClient(mAddr, ak, sk, secure)
 		if err != nil {
 			reconciler.Logger.Error(err, "failed to new minio metrics client")
 			os.Exit(1)
 		}
+		reconciler.Logger.Info("init minio client with info (endpoint %s, metrics addr %s, metrics addr secure %v) success", endpoint, mAddr, secure)
 	} else {
 		reconciler.Logger.Info("minio info not found, please check env: MINIO_ENDPOINT, MINIO_AK, MINIO_SK, MINIO_METRICS_ADDR")
 	}
