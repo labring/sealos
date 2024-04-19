@@ -44,6 +44,8 @@ import (
 const (
 	EnvAccountDBName = "ACCOUNT_DB_NAME"
 	EnvTrafficDBName = "TRAFFIC_DB_NAME"
+	EnvCVMDBName     = "CVM_DB_NAME"
+	EnvCVMConn       = "CVM_DB_CONN"
 	EnvTrafficConn   = "TRAFFIC_CONN"
 )
 
@@ -51,6 +53,8 @@ const (
 	DefaultAccountDBName  = "sealos-resources"
 	DefaultTrafficDBName  = "sealos-networkmanager"
 	DefaultAuthDBName     = "sealos-auth"
+	DefaultCVMDBName      = "sealos-cvm"
+	DefaultCVMConn        = "cvm"
 	DefaultMeteringConn   = "metering"
 	DefaultMonitorConn    = "monitor"
 	DefaultBillingConn    = "billing"
@@ -73,6 +77,8 @@ type mongoDB struct {
 	AccountDB         string
 	TrafficDB         string
 	AuthDB            string
+	CvmDB             string
+	CvmConn           string
 	UserConn          string
 	MonitorConnPrefix string
 	MeteringConn      string
@@ -1011,6 +1017,7 @@ func NewMongoInterface(ctx context.Context, URL string) (database.Interface, err
 		Client:            client,
 		AccountDB:         env.GetEnvWithDefault(EnvAccountDBName, DefaultAccountDBName),
 		TrafficDB:         env.GetEnvWithDefault(EnvTrafficDBName, DefaultTrafficDBName),
+		CvmDB:             env.GetEnvWithDefault(EnvCVMDBName, DefaultCVMDBName),
 		AuthDB:            DefaultAuthDBName,
 		UserConn:          DefaultUserConn,
 		MeteringConn:      DefaultMeteringConn,
@@ -1019,5 +1026,6 @@ func NewMongoInterface(ctx context.Context, URL string) (database.Interface, err
 		PricesConn:        DefaultPricesConn,
 		PropertiesConn:    DefaultPropertiesConn,
 		TrafficConn:       env.GetEnvWithDefault(EnvTrafficConn, DefaultTrafficConn),
+		CvmConn:           env.GetEnvWithDefault(EnvCVMConn, DefaultCVMConn),
 	}, err
 }

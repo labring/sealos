@@ -160,6 +160,7 @@ const (
 	job
 	other
 	objectStorage
+	cvm
 )
 
 const (
@@ -169,14 +170,15 @@ const (
 	JOB           = "JOB"
 	OTHER         = "OTHER"
 	ObjectStorage = "OBJECT-STORAGE"
+	CVM           = "Cloud-Virtual-Machine"
 )
 
 var AppType = map[string]uint8{
-	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other, ObjectStorage: objectStorage,
+	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other, ObjectStorage: objectStorage, CVM: cvm,
 }
 
 var AppTypeReverse = map[uint8]string{
-	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER, objectStorage: ObjectStorage,
+	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER, objectStorage: ObjectStorage, cvm: CVM,
 }
 
 // resource consumption

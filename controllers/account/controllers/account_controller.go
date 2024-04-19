@@ -22,9 +22,12 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	gonanoid "github.com/matoous/go-nanoid/v2"
 
 	"gorm.io/gorm"
 
@@ -74,6 +77,7 @@ type AccountReconciler struct {
 	Logger                 logr.Logger
 	AccountSystemNamespace string
 	DBClient               database.Account
+	CVMDBClient            database.CVM
 	MongoDBURI             string
 	Activities             pkgtypes.Activities
 	DefaultDiscount        pkgtypes.RechargeDiscount
@@ -398,4 +402,55 @@ func getAmountWithDiscount(amount int64, discount pkgtypes.RechargeDiscount) int
 		}
 	}
 	return int64(math.Ceil(float64(amount) * r / 100))
+}
+
+func (r *AccountReconciler) BillingCVM() error {
+	cvms, err := r.CVMDBClient.GetPendingStateInstance(os.Getenv("LOCAL_REGION"))
+	if err != nil {
+		return fmt.Errorf("get pending state instance failed: %v", err)
+	}
+	for _, cvm := range cvms {
+		if cvm.State == pkgtypes.CVMBillingStateDone {
+			continue
+		}
+		userQueryOpts := pkgtypes.UserQueryOpts{ID: cvm.SealosUserID}
+		user, err := r.AccountV2.GetUserCr(&userQueryOpts)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				fmt.Println("user not found", userQueryOpts)
+				continue
+			}
+			return fmt.Errorf("get user failed: %v", err)
+		}
+		id, err := gonanoid.New(12)
+		if err != nil {
+			return fmt.Errorf("generate billing id error: %v", err)
+		}
+		billing := &resources.Billing{
+			OrderID:   id,
+			Type:      accountv1.Consumption,
+			Namespace: cvm.Namespace,
+			AppType:   resources.AppType[resources.CVM],
+			Amount:    int64(cvm.Amount * BaseUnit),
+			Owner:     user.CrName,
+			Time:      cvm.EndAt,
+			Status:    resources.Settled,
+		}
+		err = r.AccountV2.AddDeductionBalanceWithFunc(&pkgtypes.UserQueryOpts{UID: user.UserUID}, billing.Amount, func() error {
+			if saveErr := r.DBClient.SaveBillings(billing); saveErr != nil {
+				return fmt.Errorf("save billing failed: %v", saveErr)
+			}
+			return nil
+		}, func() error {
+			if saveErr := r.CVMDBClient.SetDoneStateInstance(cvm.ID); saveErr != nil {
+				return fmt.Errorf("set done state instance failed: %v", saveErr)
+			}
+			return nil
+		})
+		if err != nil {
+			return fmt.Errorf("add balance failed: %v", err)
+		}
+		fmt.Printf("billing cvm success %#+v\n", billing)
+	}
+	return nil
 }
