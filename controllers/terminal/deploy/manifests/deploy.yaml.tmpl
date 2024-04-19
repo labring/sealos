@@ -345,17 +345,16 @@ data:
     # if you are doing or is intended to do any operation such as perform cleanups
     # after the manager stops then its usage might be unsafe.
     # leaderElectionReleaseOnCancel: true
-kind: ConfigMap
-metadata:
-  name: terminal-controller-config
-  namespace: terminal-system
-data:
   config.yaml: |
     global:
       cloudDomain: {{ .cloudDomain }}
       cloudPort: {{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
     terminalController:
       ingressTlsSecretName: {{ .wildcardCertSecretName }}
+kind: ConfigMap
+metadata:
+  name: terminal-manager-config
+  namespace: terminal-system
 ---
 apiVersion: v1
 kind: Service
@@ -427,9 +426,9 @@ spec:
         image: ghcr.io/labring/sealos-terminal-controller:latest
         imagePullPolicy: Always
         volumeMounts:
-          - name: terminal-controller-volume
-            mountPath: /config.yaml
-            subPath: config.yaml
+        - name: terminal-manager-volume
+          mountPath: /config.yaml
+          subPath: config.yaml
         livenessProbe:
           httpGet:
             path: /healthz
@@ -473,6 +472,6 @@ spec:
                   - controller-manager
               topologyKey: "kubernetes.io/hostname"
       volumes:
-        - name: terminal-controller-volume
+        - name: terminal-manager-volume
           configMap:
-            name: terminal-controller-config
+            name: terminal-manager-config

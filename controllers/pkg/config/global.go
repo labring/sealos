@@ -5,17 +5,17 @@ import (
 	"io/ioutil"
 )
 
-type Config struct {
-	Global GlobalConfig `yaml:"global"`
+type Global struct {
+	CloudDomain    string `yaml:"cloudDomain"`
+	CloudPort      string `yaml:"cloudPort"`
+	RegionUid      string `yaml:"regionUid"`
+	CertSecretName string `yaml:"certSecretName"`
 }
 
-type GlobalConfig struct {
-	CloudDomain    string   `yaml:"cloudDomain"`
-	CloudPort      string   `yaml:"cloudPort"`
-	RegionUid      string   `yaml:"regionUid"`
-	CertSecretName string   `yaml:"certSecretName"`
-	Common         Common   `yaml:"common"`
-	Database       Database `yaml:"database"`
+type Kube struct {
+	Version       string `yaml:"version"`
+	ApiServerHost string `yaml:"apiServerHost"`
+	ApiServerPort string `yaml:"apiServerPort"`
 }
 
 type Common struct {

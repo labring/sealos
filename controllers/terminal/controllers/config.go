@@ -5,8 +5,8 @@ import (
 )
 
 type Config struct {
-	Global         config.GlobalConfig `yaml:"global"`
-	TerminalConfig TerminalConfig      `yaml:"terminalController"`
+	Global         config.Global  `yaml:"global"`
+	TerminalConfig TerminalConfig `yaml:"terminalController"`
 }
 
 type TerminalConfig struct {
