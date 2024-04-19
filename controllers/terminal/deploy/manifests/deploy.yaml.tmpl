@@ -347,8 +347,15 @@ data:
     # leaderElectionReleaseOnCancel: true
 kind: ConfigMap
 metadata:
-  name: terminal-manager-config
+  name: terminal-controller-config
   namespace: terminal-system
+data:
+  config.yaml: |
+    global:
+      cloudDomain: {{ .cloudDomain }}
+      cloudPort: {{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
+    terminalController:
+      ingressTlsSecretName: {{ .wildcardCertSecretName }}
 ---
 apiVersion: v1
 kind: Service
@@ -414,21 +421,15 @@ spec:
         - --health-probe-bind-address=:8081
         - --metrics-bind-address=127.0.0.1:8080
         - --leader-elect
+        - --config-file-path=/config.yaml
         command:
         - /manager
-        env:
-        - name: USER_NAMESPACE
-          value: {{ .userNamespace }}
-        - name: DOMAIN
-          value: {{ .cloudDomain }}
-        - name: PORT
-          value: '{{ .cloudPort }}'
-        - name: SECRET_NAME
-          value: {{ .wildcardCertSecretName }}
-        - name: SECRET_NAMESPACE
-          value: {{ .wildcardCertSecretNamespace }}
         image: ghcr.io/labring/sealos-terminal-controller:latest
         imagePullPolicy: Always
+        volumeMounts:
+          - name: terminal-controller-volume
+            mountPath: /config.yaml
+            subPath: config.yaml
         livenessProbe:
           httpGet:
             path: /healthz
@@ -471,3 +472,7 @@ spec:
                   values:
                   - controller-manager
               topologyKey: "kubernetes.io/hostname"
+      volumes:
+        - name: terminal-controller-volume
+          configMap:
+            name: terminal-controller-config
