@@ -27,6 +27,10 @@ import (
 	"strings"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"github.com/google/uuid"
+
 	gonanoid "github.com/matoous/go-nanoid/v2"
 
 	"gorm.io/gorm"
@@ -405,15 +409,25 @@ func getAmountWithDiscount(amount int64, discount pkgtypes.RechargeDiscount) int
 }
 
 func (r *AccountReconciler) BillingCVM() error {
-	cvms, err := r.CVMDBClient.GetPendingStateInstance(os.Getenv("LOCAL_REGION"))
+	cvmMap, err := r.CVMDBClient.GetPendingStateInstance(os.Getenv("LOCAL_REGION"))
 	if err != nil {
 		return fmt.Errorf("get pending state instance failed: %v", err)
 	}
-	for _, cvm := range cvms {
-		if cvm.State == pkgtypes.CVMBillingStateDone {
-			continue
+	for userInfo, cvms := range cvmMap {
+		fmt.Println("billing cvm", userInfo, cvms)
+		userUID, namespace := strings.Split(userInfo, "/")[0], strings.Split(userInfo, "/")[1]
+		appCosts := make([]resources.AppCost, len(cvms))
+		cvmTotalAmount := 0.0
+		cvmIDs := make([]primitive.ObjectID, len(cvms))
+		for i := range cvms {
+			appCosts[i] = resources.AppCost{
+				Amount: int64(cvms[i].Amount * BaseUnit),
+				Name:   cvms[i].InstanceName,
+			}
+			cvmTotalAmount += cvms[i].Amount
+			cvmIDs[i] = cvms[i].ID
 		}
-		userQueryOpts := pkgtypes.UserQueryOpts{ID: cvm.SealosUserID}
+		userQueryOpts := pkgtypes.UserQueryOpts{UID: uuid.MustParse(userUID)}
 		user, err := r.AccountV2.GetUserCr(&userQueryOpts)
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
@@ -428,12 +442,13 @@ func (r *AccountReconciler) BillingCVM() error {
 		}
 		billing := &resources.Billing{
 			OrderID:   id,
+			AppCosts:  appCosts,
 			Type:      accountv1.Consumption,
-			Namespace: cvm.Namespace,
+			Namespace: namespace,
 			AppType:   resources.AppType[resources.CVM],
-			Amount:    int64(cvm.Amount * BaseUnit),
+			Amount:    int64(cvmTotalAmount * BaseUnit),
 			Owner:     user.CrName,
-			Time:      cvm.EndAt,
+			Time:      time.Now().UTC(),
 			Status:    resources.Settled,
 		}
 		err = r.AccountV2.AddDeductionBalanceWithFunc(&pkgtypes.UserQueryOpts{UID: user.UserUID}, billing.Amount, func() error {
@@ -442,7 +457,7 @@ func (r *AccountReconciler) BillingCVM() error {
 			}
 			return nil
 		}, func() error {
-			if saveErr := r.CVMDBClient.SetDoneStateInstance(cvm.ID); saveErr != nil {
+			if saveErr := r.CVMDBClient.SetDoneStateInstance(cvmIDs...); saveErr != nil {
 				return fmt.Errorf("set done state instance failed: %v", saveErr)
 			}
 			return nil

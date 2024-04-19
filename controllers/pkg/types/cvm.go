@@ -22,13 +22,15 @@ import (
 
 // CVMBilling represents the billing information of a CloudVirtualMachine instance
 type CVMBilling struct {
-	ID        primitive.ObjectID `json:"_id" bson:"_id"`
-	Namespace string             `json:"namespace"`
+	ID           primitive.ObjectID `json:"_id" bson:"_id"`
+	InstanceName string             `json:"instanceName"`
+	Namespace    string             `json:"namespace"`
 	//VirtualMachinePackageId string           `json:"virtualMachinePackageId"`
 	StartAt time.Time `json:"startAt"`
 	EndAt   time.Time `json:"endAt"`
 	//CloudProvider           CvmCloudProvider `json:"cloudProvider"`
 	SealosUserID       string  `json:"sealosUserId"`
+	SealosUserUID      string  `json:"sealosUserUid"`
 	SealosRegionUID    string  `json:"sealosRegionUid"`
 	SealosRegionDomain string  `json:"sealosRegionDomain"`
 	Amount             float64 `json:"amount"`

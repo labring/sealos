@@ -39,8 +39,8 @@ type Interface interface {
 }
 
 type CVM interface {
-	GetPendingStateInstance(regionUID string) (ecs []types.CVMBilling, err error)
-	SetDoneStateInstance(instanceID primitive.ObjectID) error
+	GetPendingStateInstance(regionUID string) (cvmMap map[string][]types.CVMBilling, err error)
+	SetDoneStateInstance(instanceIDs ...primitive.ObjectID) error
 }
 
 type Account interface {

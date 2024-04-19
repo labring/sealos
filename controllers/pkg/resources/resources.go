@@ -170,7 +170,7 @@ const (
 	JOB           = "JOB"
 	OTHER         = "OTHER"
 	ObjectStorage = "OBJECT-STORAGE"
-	CVM           = "Cloud-Virtual-Machine"
+	CVM           = "Cloud-VM"
 )
 
 var AppType = map[string]uint8{

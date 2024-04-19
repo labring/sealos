@@ -26,7 +26,7 @@ import (
 	"github.com/labring/sealos/controllers/pkg/types"
 )
 
-func (m *mongoDB) GetPendingStateInstance(regionUID string) (ecs []types.CVMBilling, err error) {
+func (m *mongoDB) GetPendingStateInstance(regionUID string) (cvmMap map[string][]types.CVMBilling, err error) {
 	if regionUID == "" {
 		return nil, fmt.Errorf("region UID is empty")
 	}
@@ -43,18 +43,29 @@ func (m *mongoDB) GetPendingStateInstance(regionUID string) (ecs []types.CVMBill
 		return nil, fmt.Errorf("failed to find with filter: %v", err)
 	}
 	defer cur.Close(context.Background())
-	ecs = make([]types.CVMBilling, 0)
-	err = cur.All(context.Background(), &ecs)
+	cvm := make([]types.CVMBilling, 0)
+	cvmMap = make(map[string][]types.CVMBilling)
+	err = cur.All(context.Background(), &cvm)
 	if err != nil {
 		return nil, err
 	}
-	return ecs, nil
+	for i := range cvm {
+		userInfo := cvm[i].SealosUserUID + "/" + cvm[i].Namespace
+		if cvmMap[userInfo] == nil {
+			cvmMap[userInfo] = make([]types.CVMBilling, 0)
+		}
+		cvmMap[userInfo] = append(cvmMap[userInfo], cvm[i])
+	}
+	return cvmMap, nil
 }
 
-func (m *mongoDB) SetDoneStateInstance(instanceID primitive.ObjectID) error {
+func (m *mongoDB) SetDoneStateInstance(instanceIDs ...primitive.ObjectID) error {
+	if len(instanceIDs) == 0 {
+		return fmt.Errorf("instanceIDs is empty")
+	}
 	filter := bson.M{
 		"_id": bson.M{
-			"$eq": instanceID,
+			"$in": instanceIDs,
 		},
 	}
 	update := bson.M{
@@ -62,7 +73,7 @@ func (m *mongoDB) SetDoneStateInstance(instanceID primitive.ObjectID) error {
 			"state": types.CVMBillingStateDone,
 		},
 	}
-	_, err := m.getCVMCollection().UpdateOne(context.Background(), filter, update)
+	_, err := m.getCVMCollection().UpdateMany(context.Background(), filter, update)
 	if err != nil {
 		return fmt.Errorf("failed to update with filter: %v", err)
 	}

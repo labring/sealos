@@ -291,15 +291,18 @@ func main() {
 
 	go func() {
 		if cvmDBClient == nil {
+			setupLog.Info("CVM DB client is nil, skip billing cvm")
 			return
 		}
 		ticker := time.NewTicker(env.GetDurationEnvWithDefault("BILLING_CVM_INTERVAL", 10*time.Minute))
 		defer ticker.Stop()
 		for {
+			setupLog.Info("start billing cvm", "time", time.Now().Format(time.RFC3339))
 			err := accountReconciler.BillingCVM()
 			if err != nil {
 				setupLog.Error(err, "fail to run manager")
 			}
+			setupLog.Info("end billing cvm", "time", time.Now().Format(time.RFC3339))
 			<-ticker.C
 		}
 	}()
