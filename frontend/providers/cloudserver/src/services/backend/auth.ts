@@ -3,7 +3,7 @@ import { verify } from 'jsonwebtoken';
 import type { NextApiRequest } from 'next';
 import { ERROR_ENUM } from '../error';
 
-const appJwtSecret = (process.env.APP_JWT_SECRET as string) || '123456789';
+const appJwtSecret = (process.env.JWT_SECRET_APP as string) || '123456789';
 
 export const verifyAccessToken = async (req: NextApiRequest) => {
   if (!req.headers) return Promise.reject(ERROR_ENUM.unAuthorization);

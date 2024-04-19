@@ -427,7 +427,9 @@ export default function Form({
           <Flex alignItems={'center'} mb={'24px'}>
             <Flex fontSize={'md'} width={'120px'} alignItems={'center'} fontWeight={'bold'}>
               <Text>{t('BandWidth')}</Text>
-              <Text color={'grayModern.600'}>{t('Bandwidth by hour')}</Text>
+              <Text fontSize={'base'} color={'grayModern.600'}>
+                {t('Bandwidth by hour')}
+              </Text>
             </Flex>
             <RangeInput
               value={getValues('internetMaxBandWidthOut')}

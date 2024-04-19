@@ -39,6 +39,7 @@ spec:
           env:
             - name: LAF_BASE_URL
               value: {{ .lafBaseUrl }}
+            - name: JWT_SECRET_APP
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
