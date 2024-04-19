@@ -40,7 +40,13 @@ export const kubeFile_upload = (
   formData: FormData
 ) =>
   POST(`/api/kubeFileSystem/upload`, formData, {
-    params: payload
+    params: payload,
+    onUploadProgress(progressEvent) {
+      console.log(progressEvent);
+    },
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
   });
 
 export const kubeFile_mkdir = (payload: { containerName: string; podName: string; path: string }) =>

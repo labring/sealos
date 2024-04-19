@@ -1,10 +1,10 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
+import { ApiResp } from '@/services/kubernet';
 import { KubeFileSystem } from '@/utils/kubeFileSystem';
 import formidable from 'formidable';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { PassThrough } from 'stream';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
@@ -20,23 +20,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       path: string;
     };
 
-    const form = formidable({
-      fileWriteStreamHandler: () => {
-        const pass = new PassThrough();
-        kubefs.upload({
-          namespace,
-          podName,
-          containerName,
-          path,
-          file: pass
-        });
-        return pass;
-      }
+    let form: any;
+    let task = new Promise<string>((resolve) => {
+      form = formidable({
+        fileWriteStreamHandler: () => {
+          const pass = new PassThrough();
+          kubefs
+            .upload({
+              namespace,
+              podName,
+              containerName,
+              path,
+              file: pass
+            })
+            .then((res) => {
+              console.log(res, 222);
+              resolve(res);
+            })
+            .catch((err) => {
+              console.log(err, 111);
+            });
+          return pass;
+        }
+      });
     });
 
-    const result = await form.parse(req);
+    await form.parse(req);
+    await task;
+
     jsonRes(res, { data: null });
   } catch (err: any) {
+    console.log(err, 'err');
     jsonRes(res, {
       code: 500,
       error: err

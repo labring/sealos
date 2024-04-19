@@ -31,7 +31,7 @@ export class KubeFileSystem {
     stdin: Readable | null = null,
     stdout: Writable | null = null
   ) {
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<string>(async (resolve, reject) => {
       const stderr = new PassThrough();
 
       let chunks = Buffer.alloc(0);
@@ -44,23 +44,58 @@ export class KubeFileSystem {
 
       const free = () => {
         stderr.removeAllListeners();
-        stdout!.removeAllListeners();
+        stdout?.removeAllListeners();
+        stdin?.removeAllListeners();
       };
 
       stdout.on('end', () => {
+        console.log('1=', chunks.toString(), '=1');
         free();
         resolve(chunks.toString());
       });
       stdout.on('error', (error) => {
+        console.log(2, error);
         free();
         reject(error);
       });
       stderr.on('data', (error) => {
+        console.log(3, error);
         free();
         reject(error.toString());
       });
 
-      this.k8sExec.exec(namespace, podName, containerName, command, stdout, stderr, stdin, !!stdin);
+      const webSocket = await this.k8sExec.exec(
+        namespace,
+        podName,
+        containerName,
+        command,
+        stdout,
+        stderr,
+        stdin,
+        !!stdin,
+        (s) => {
+          console.log(s, 4);
+        }
+      );
+
+      if (stdin) {
+        stdin.on('data', (chunk) => {
+          console.log('Input:', chunk);
+        });
+        stdin.on('end', () => {
+          console.log('stdin is end');
+          free();
+          resolve('Success');
+        });
+      }
+
+      webSocket.on('close', () => {
+        console.log('WebSocket closed');
+      });
+
+      webSocket.on('error', (error) => {
+        console.log('WebSocket error:', error);
+      });
     });
   }
 
@@ -296,7 +331,7 @@ export class KubeFileSystem {
       namespace,
       podName,
       containerName,
-      ['dd', `of=${path}`, 'status=none', 'bs=32767'],
+      ['dd', `of=${path}`, 'status=none', 'bs=10M'],
       file
     );
   }

@@ -266,7 +266,7 @@ const PodFile = ({
           form
         );
       });
-      const uploadResults = await Promise.allSettled(uploadPromises);
+      const uploadResults = await Promise.all(uploadPromises);
       refetch();
     } catch (error) {}
   };
