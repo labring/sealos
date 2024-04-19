@@ -41,7 +41,9 @@ export function Buget() {
   return (
     <Flex direction={'column'} mb={'34px'}>
       <Flex alignItems={'center'} justify="space-between">
-        <Heading size="sm">{t('Income And Expense')}</Heading>
+        <Text color={'#747F88'} mb={'5px'}>
+          {t('Income And Expense')}
+        </Text>
       </Flex>
       <Flex mt="20px" justify={'space-evenly'} gap="6">
         {list.map((v) => (
