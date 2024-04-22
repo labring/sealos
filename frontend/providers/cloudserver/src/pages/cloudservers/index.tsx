@@ -81,7 +81,7 @@ function Home() {
       {!!data?.total && (
         <Pagination
           totalItems={data?.total || 0}
-          itemsPerPage={10}
+          itemsPerPage={pageSize}
           currentPage={page}
           setCurrentPage={setPage}
         />
