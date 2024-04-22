@@ -72,12 +72,7 @@ func NewMetricsClient(endpoint string, accessKeyID, secretAccessKey string, secu
 	if err != nil {
 		return nil, err
 	}
-
-	clnt, err := privateNewMetricsClient(endpointURL, jwtToken, secure)
-	if err != nil {
-		return nil, err
-	}
-	return clnt, nil
+	return privateNewMetricsClient(endpointURL, jwtToken, secure)
 }
 
 // BucketUsageTotalBytesMetrics - returns Bucket Metrics in Prometheus format
@@ -279,11 +274,7 @@ func getPrometheusToken(accessKey, secretKey string) (string, error) {
 		Issuer:    prometheusIssuer,
 	})
 
-	token, err := jwt.SignedString([]byte(secretKey))
-	if err != nil {
-		return "", err
-	}
-	return token, nil
+	return jwt.SignedString([]byte(secretKey))
 }
 
 func privateNewMetricsClient(endpointURL *url.URL, jwtToken string, secure bool) (*MetricsClient, error) {
@@ -338,10 +329,7 @@ func getEndpointURL(endpoint string, secure bool) (*url.URL, error) {
 	}
 
 	// Validate incoming endpoint URL.
-	if err := isValidEndpointURL(endpointURL.String()); err != nil {
-		return nil, err
-	}
-	return endpointURL, nil
+	return endpointURL, isValidEndpointURL(endpointURL.String())
 }
 
 // Verify if input endpoint URL is valid.
