@@ -9,25 +9,25 @@ import (
 type Global struct {
 	CloudDomain    string `yaml:"cloudDomain"`
 	CloudPort      string `yaml:"cloudPort"`
-	RegionUid      string `yaml:"regionUid"`
+	RegionUID      string `yaml:"regionUID"`
 	CertSecretName string `yaml:"certSecretName"`
 }
 
 type Kube struct {
 	Version       string `yaml:"version"`
-	ApiServerHost string `yaml:"apiServerHost"`
-	ApiServerPort string `yaml:"apiServerPort"`
+	APIServerHost string `yaml:"apiServerHost"`
+	APIServerPort string `yaml:"apiServerPort"`
 }
 
 type Common struct {
 	GuideEnabled string `yaml:"guideEnabled"`
-	ApiEnabled   string `yaml:"apiEnabled"`
+	APIEnabled   string `yaml:"apiEnabled"`
 }
 
 type Database struct {
-	MongodbUri             string `yaml:"mongodbUri"`
-	GlobalCockroachdbUri   string `yaml:"globalCockroachdbUri"`
-	RegionalCockroachdbUri string `yaml:"regionalCockroachdbUri"`
+	MongodbURI             string `yaml:"mongodbURI"`
+	GlobalCockroachdbURI   string `yaml:"globalCockroachdbURI"`
+	RegionalCockroachdbURI string `yaml:"regionalCockroachdbURI"`
 }
 
 func LoadConfig(path string, target interface{}) error {
