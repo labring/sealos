@@ -5,7 +5,7 @@ import (
 )
 
 type Config struct {
-	config.Global  `yaml:",inline"`
+	config.Global  `yaml:"global"`
 	TerminalConfig TerminalConfig `yaml:"terminalController"`
 }
 

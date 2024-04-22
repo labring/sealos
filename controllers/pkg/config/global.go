@@ -19,7 +19,7 @@ type Kube struct {
 }
 
 type Common struct {
-	GuildEnabled string `yaml:"guildEnabled"`
+	GuideEnabled string `yaml:"guideEnabled"`
 	ApiEnabled   string `yaml:"apiEnabled"`
 }
 
