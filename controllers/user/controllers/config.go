@@ -5,6 +5,6 @@ import (
 )
 
 type Config struct {
-	Global config.Global `yaml:"global"`
-	Kube   config.Kube   `yaml:"kube"`
+	config.Global `yaml:",inline"`
+	config.Kube   `yaml:"kube"`
 }
