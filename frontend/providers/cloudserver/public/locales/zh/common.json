@@ -84,5 +84,8 @@
   "price": "价格",
   "publicIpAssigned tips": "注意：未分配独立公网IP，无法使用外网IP对外进行互相通信，服务器无法用于备案，请慎重选择。",
   "Fee inquiry in progress": "费用查询中...",
-  "hour": "小时"
+  "hour": "小时",
+  "Reference fee disk tips": "{{price}}/GiB/小时",
+  "Reference fee network tips": "当公网带宽小于5 Mbps时，价格为{{price1}}/Mbps/小时；当公网带宽大于等于5 Mbps时，价格为{{price2}}/Mbps/小时。",
+  "Billing rules": "计费规则"
 }

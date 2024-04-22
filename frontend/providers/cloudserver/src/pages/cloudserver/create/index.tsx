@@ -3,9 +3,10 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
-import { EditForm } from '@/types/cloudserver';
+import { CloudServerType, EditForm } from '@/types/cloudserver';
 import { serviceSideProps } from '@/utils/i18n';
 import { Box, Flex } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useCallback, useState } from 'react';
@@ -13,7 +14,6 @@ import { useForm } from 'react-hook-form';
 import ErrorModal from './components/ErrorModal';
 import Form from './components/Form';
 import Header from './components/Header';
-import { useQuery } from '@tanstack/react-query';
 
 export default function EditOrder() {
   const [errorMessage, setErrorMessage] = useState('');
@@ -23,6 +23,7 @@ export default function EditOrder() {
   const router = useRouter();
   const [forceUpdate, setForceUpdate] = useState(false);
   const { lastRoute } = useGlobalStore();
+  const [instanceType, setInstanceType] = useState<CloudServerType>();
 
   const { openConfirm, ConfirmChild } = useConfirm({
     content: t('Are you sure to create a cloud host?')
@@ -102,6 +103,7 @@ export default function EditOrder() {
       bg={'grayModern.100'}
     >
       <Header
+        instanceType={instanceType}
         prices={prices}
         title="New Server"
         applyCb={() =>
@@ -110,7 +112,7 @@ export default function EditOrder() {
         applyBtnText="Submit"
       />
       <Flex h={'calc(100% - 126px)'} justifyContent={'center'} borderRadius={'4px'}>
-        <Form formHook={formHook} refresh={forceUpdate} />
+        <Form formHook={formHook} refresh={forceUpdate} setInstanceType={setInstanceType} />
       </Flex>
       <ConfirmChild />
       <Loading />

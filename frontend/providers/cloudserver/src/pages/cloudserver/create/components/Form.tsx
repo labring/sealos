@@ -7,22 +7,22 @@ import {
   Button,
   Divider,
   Flex,
+  FormControl,
   IconButton,
+  Image,
   Input,
   Radio,
   Skeleton,
   Stack,
   Switch,
   Text,
-  useTheme,
-  Image,
-  FormControl
+  useTheme
 } from '@chakra-ui/react';
 import { MySelect, RangeInput, Tabs } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';
-import { useEffect, useMemo, useState } from 'react';
+import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
 import { UseFormReturn, useFieldArray } from 'react-hook-form';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 4);
 const nanoidUpper = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ', 4);
@@ -33,7 +33,7 @@ const Label = ({
   w = 120,
   ...props
 }: {
-  children: string;
+  children: JSX.Element;
   w?: number | 'auto';
   [key: string]: any;
 }) => (
@@ -50,10 +50,14 @@ const Label = ({
 
 export default function Form({
   formHook,
-  refresh
+  refresh,
+
+  setInstanceType
 }: {
   formHook: UseFormReturn<EditForm, any>;
   refresh: boolean;
+
+  setInstanceType: Dispatch<SetStateAction<CloudServerType | undefined>>;
 }) {
   if (!formHook) return <></>;
   const [clientRender, setClientRender] = useState(false);
@@ -71,6 +75,7 @@ export default function Form({
     onSuccess(data) {
       if (data?.[0]) {
         formHook.setValue('virtualMachinePackageName', data[0].virtualMachinePackageName);
+        setInstanceType(data?.[0]);
       }
     }
   });
@@ -277,7 +282,9 @@ export default function Form({
       </Flex>
       <Box pt="24px" px="42px" pb="64px" flex={1} h="0" overflow={'auto'}>
         <Flex alignItems={'center'} mb={'24px'}>
-          <Label alignSelf={'self-start'}>{t('Type')}</Label>
+          <Label alignSelf={'self-start'}>
+            <Text>{t('Type')}</Text>
+          </Label>
           <Box flex={1}>
             {ServersData ? (
               <MyTable
@@ -288,6 +295,7 @@ export default function Form({
                 onRowClick={(item: CloudServerType) => {
                   setValue('virtualMachinePackageName', item.virtualMachinePackageName);
                   setValue('virtualMachinePackageFamily', item.virtualMachinePackageFamily);
+                  setInstanceType(item);
                 }}
               />
             ) : (
@@ -298,7 +306,9 @@ export default function Form({
           </Box>
         </Flex>
         <Flex alignItems={'center'} mb={'24px'} flex={1}>
-          <Label alignSelf={'self-start'}>{t('Image')}</Label>
+          <Label alignSelf={'self-start'}>
+            <Text>{t('Image')}</Text>
+          </Label>
           <Box>
             <Flex flexWrap={'wrap'} gap={'12px'}>
               {SystemImage &&
@@ -375,8 +385,10 @@ export default function Form({
           </Box>
         </Flex>
 
-        <Flex alignItems={'center'} mb={'24px'}>
-          <Label alignSelf={'self-start'}>{t('Storage')}</Label>
+        <Flex alignItems={'center'} mb={'24px'} position={'relative'}>
+          <Label alignSelf={'self-start'}>
+            <Text>{t('Storage')}</Text>
+          </Label>
           {clientRender && (
             <Box width={'100%'}>
               <MyTable
@@ -405,7 +417,9 @@ export default function Form({
         </Flex>
 
         <Flex alignItems={'center'} mb={'24px'}>
-          <Label alignSelf={'self-start'}>{t('Public IP')}</Label>
+          <Label alignSelf={'self-start'}>
+            <Text>{t('Public IP')}</Text>
+          </Label>
           <Flex flexDirection={'column'}>
             <Flex alignItems={'center'}>
               <Text mr={'12px'}>{t('Assign Public IP')}</Text>
@@ -459,7 +473,9 @@ export default function Form({
 
         <Box mb={'24px'}>
           <Flex alignItems={'center'}>
-            <Label>{t('Login Method')}</Label>
+            <Label>
+              <Text>{t('Login Method')}</Text>
+            </Label>
             <Tabs
               size={'sm'}
               list={[
