@@ -1,9 +1,8 @@
 package config
 
 import (
-	"io/ioutil"
-
 	"gopkg.in/yaml.v3"
+	"os"
 )
 
 type Global struct {
@@ -31,7 +30,7 @@ type Database struct {
 }
 
 func LoadConfig(path string, target interface{}) error {
-	configData, err := ioutil.ReadFile(path)
+	configData, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
