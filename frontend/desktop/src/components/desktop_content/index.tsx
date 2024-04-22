@@ -3,7 +3,7 @@ import MoreButton from '@/components/more_button';
 import UserMenu from '@/components/user_menu';
 import useDriver from '@/hooks/useDriver';
 import useAppStore from '@/stores/app';
-import { TApp } from '@/types';
+import { TApp, WindowSize } from '@/types';
 import { Box, Flex, Grid, GridItem, Image, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
@@ -54,17 +54,19 @@ export default function DesktopContent(props: any) {
       appKey,
       query = {},
       messageData = {},
-      pathname = '/'
+      pathname = '/',
+      appSize = 'maximize'
     }: {
       appKey: string;
       query?: Record<string, string>;
       messageData?: Record<string, any>;
       pathname: string;
+      appSize?: WindowSize;
     }) => {
       const app = apps.find((item) => item.key === appKey);
       const runningApp = runningInfo.find((item) => item.key === appKey);
       if (!app) return;
-      openApp(app, { query, pathname });
+      openApp(app, { query, pathname, appSize });
       if (runningApp) {
         setToHighestLayerById(runningApp.pid);
       }

@@ -178,7 +178,8 @@ const OrderList = ({ apps = [], refetchApps }: { apps: any[]; refetchApps: () =>
                       query: {
                         defaultCommand
                       },
-                      messageData: { type: 'new terminal', command: defaultCommand }
+                      messageData: { type: 'new terminal', command: defaultCommand },
+                      appSize: 'maxmin'
                     });
                   }
                 },
