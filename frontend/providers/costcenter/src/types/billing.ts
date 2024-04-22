@@ -75,6 +75,12 @@ export type RechargeBillingItem = {
   CreatedAt: string;
   Amount: number;
   Gift: number;
+  RegionUID: string;
+  RegionUserOwner: string;
+  Method: 'stripe';
+  TradeNO: 'number';
+  CodeURL: string;
+  InvoicedAt: boolean;
 };
 export type RechargeBillingData = {
   payment: RechargeBillingItem[];

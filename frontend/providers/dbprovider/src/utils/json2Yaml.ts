@@ -16,6 +16,14 @@ import yaml from 'js-yaml';
 import { getUserNamespace } from './user';
 import { V1StatefulSet } from '@kubernetes/client-node';
 
+/**
+ * Convert data for creating a database cluster to YAML configuration.
+ * Used for client display, server logic handles actual creation.
+ *
+ * @param data Data for creating the database cluster.
+ * @param backupInfo Optional backup data for database restoration.
+ * @returns Generated YAML configuration.
+ */
 export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType) => {
   const userNS = getUserNamespace();
   const resources = {
@@ -65,9 +73,9 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
         spec: {
           affinity: {
             nodeLabels: {},
-            podAntiAffinity: 'Preferred',
+            podAntiAffinity: 'Required',
             tenancy: 'SharedNode',
-            topologyKeys: []
+            topologyKeys: ['kubernetes.io/hostname']
           },
           clusterDefinitionRef: 'postgresql',
           clusterVersionRef: data.dbVersion,
@@ -111,9 +119,9 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
         spec: {
           affinity: {
             nodeLabels: {},
-            podAntiAffinity: 'Preferred',
+            podAntiAffinity: 'Required',
             tenancy: 'SharedNode',
-            topologyKeys: []
+            topologyKeys: ['kubernetes.io/hostname']
           },
           clusterDefinitionRef: 'apecloud-mysql',
           clusterVersionRef: data.dbVersion,
@@ -157,9 +165,9 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
         spec: {
           affinity: {
             nodeLabels: {},
-            podAntiAffinity: 'Preferred',
+            podAntiAffinity: 'Required',
             tenancy: 'SharedNode',
-            topologyKeys: []
+            topologyKeys: ['kubernetes.io/hostname']
           },
           clusterDefinitionRef: 'mongodb',
           clusterVersionRef: data.dbVersion,
@@ -200,9 +208,9 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
         spec: {
           affinity: {
             nodeLabels: {},
-            podAntiAffinity: 'Preferred',
+            podAntiAffinity: 'Required',
             tenancy: 'SharedNode',
-            topologyKeys: []
+            topologyKeys: ['kubernetes.io/hostname']
           },
           clusterDefinitionRef: 'redis',
           clusterVersionRef: data.dbVersion,
@@ -664,7 +672,15 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
   return map[data.dbType].map((item) => yaml.dump(item)).join('\n---\n');
 };
 
-export const json2Account = (data: DBEditType) => {
+/**
+ * Generates account info, potentially linked to a cluster via ownerId.
+ * Primarily server-side.
+ *
+ * @param data Data for account creation.
+ * @param ownerId Optional owner ID for cluster association.
+ * @returns Generated account info.
+ */
+export const json2Account = (data: DBEditType, ownerId?: string) => {
   const commonLabels = {
     [crLabelKey]: data.dbName,
     'app.kubernetes.io/instance': data.dbName,
@@ -678,6 +694,18 @@ export const json2Account = (data: DBEditType) => {
       labels: {
         ...commonLabels
       },
+      ...(ownerId && {
+        ownerReferences: [
+          {
+            apiVersion: 'apps.kubeblocks.io/v1alpha1',
+            blockOwnerDeletion: true,
+            controller: true,
+            kind: 'Cluster',
+            uid: ownerId,
+            name: data.dbName
+          }
+        ]
+      }),
       name: data.dbName
     }
   };
@@ -689,6 +717,18 @@ export const json2Account = (data: DBEditType) => {
       labels: {
         ...commonLabels
       },
+      ...(ownerId && {
+        ownerReferences: [
+          {
+            apiVersion: 'apps.kubeblocks.io/v1alpha1',
+            blockOwnerDeletion: true,
+            controller: true,
+            kind: 'Cluster',
+            uid: ownerId,
+            name: data.dbName
+          }
+        ]
+      }),
       name: data.dbName
     }
   };
@@ -700,6 +740,18 @@ export const json2Account = (data: DBEditType) => {
       labels: {
         ...commonLabels
       },
+      ...(ownerId && {
+        ownerReferences: [
+          {
+            apiVersion: 'apps.kubeblocks.io/v1alpha1',
+            blockOwnerDeletion: true,
+            controller: true,
+            kind: 'Cluster',
+            uid: ownerId,
+            name: data.dbName
+          }
+        ]
+      }),
       name: data.dbName
     },
     roleRef: {
@@ -710,45 +762,16 @@ export const json2Account = (data: DBEditType) => {
     subjects: [
       {
         kind: 'ServiceAccount',
-        name: data.dbName,
-        namespace: getUserNamespace()
+        name: data.dbName
       }
     ]
   };
 
   const baseRoleRules = [
     {
-      apiGroups: [''],
-      resources: ['events'],
-      verbs: ['create']
-    },
-    {
-      apiGroups: [''],
-      resources: ['configmaps'],
-      verbs: ['create', 'get', 'list', 'patch', 'update', 'watch', 'delete']
-    },
-    {
-      apiGroups: [''],
-      resources: ['endpoints'],
-      verbs: ['create', 'get', 'list', 'patch', 'update', 'watch', 'delete']
-    },
-    {
-      apiGroups: [''],
-      resources: ['pods'],
-      verbs: ['get', 'list', 'patch', 'update', 'watch']
-    }
-  ];
-
-  const BackupRoleRules = [
-    {
-      apiGroups: ['dataprotection.kubeblocks.io'],
-      resources: ['backups'],
-      verbs: ['create', 'get', 'list', 'patch', 'update', 'watch', 'delete']
-    },
-    {
-      apiGroups: ['dataprotection.kubeblocks.io'],
-      resources: ['backups/status'],
-      verbs: ['create', 'get', 'list', 'patch', 'update', 'watch', 'delete']
+      apiGroups: ['*'],
+      resources: ['*'],
+      verbs: ['*']
     }
   ];
 
@@ -756,64 +779,16 @@ export const json2Account = (data: DBEditType) => {
     commonBase,
     {
       ...dbRolesBase,
-      rules: [...baseRoleRules, ...BackupRoleRules]
+      rules: baseRoleRules
     },
     dbRoleBindingBase
   ];
 
   const map = {
     [DBTypeEnum.postgresql]: pgAccountTemplate,
-    [DBTypeEnum.mysql]: [
-      commonBase,
-      {
-        ...dbRolesBase,
-        rules: [
-          {
-            apiGroups: [''],
-            resources: ['events'],
-            verbs: ['create']
-          },
-          ...BackupRoleRules
-        ]
-      },
-      dbRoleBindingBase
-    ],
-    [DBTypeEnum.mongodb]: [
-      commonBase,
-      {
-        ...dbRolesBase,
-        rules: [
-          {
-            apiGroups: ['apps.kubeblocks.io'],
-            resources: ['clusters'],
-            verbs: ['get', 'list']
-          },
-          {
-            apiGroups: ['apps.kubeblocks.io'],
-            resources: ['clusters/status'],
-            verbs: ['get']
-          },
-          ...baseRoleRules,
-          ...BackupRoleRules
-        ]
-      },
-      dbRoleBindingBase
-    ],
-    [DBTypeEnum.redis]: [
-      commonBase,
-      {
-        ...dbRolesBase,
-        rules: [
-          {
-            apiGroups: [''],
-            resources: ['events'],
-            verbs: ['create']
-          },
-          ...BackupRoleRules
-        ]
-      },
-      dbRoleBindingBase
-    ],
+    [DBTypeEnum.mysql]: pgAccountTemplate,
+    [DBTypeEnum.mongodb]: pgAccountTemplate,
+    [DBTypeEnum.redis]: pgAccountTemplate,
     [DBTypeEnum.kafka]: pgAccountTemplate,
     [DBTypeEnum.qdrant]: pgAccountTemplate,
     [DBTypeEnum.nebula]: pgAccountTemplate,

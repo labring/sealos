@@ -21,6 +21,5 @@ spec:
       cpu: 1000m
       memory: 2Gi
   tlsEnabled: true
-  image:
-    name: docker.io/cockroachdb/cockroach:v23.1.11
+  cockroachDBVersion: v23.1.11
   nodes: 3

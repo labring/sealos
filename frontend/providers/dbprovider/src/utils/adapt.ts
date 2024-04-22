@@ -3,6 +3,7 @@ import { MigrationRemark, dbStatusMap } from '@/constants/db';
 import type { AutoBackupFormType, BackupCRItemType } from '@/types/backup';
 import type { KbPgClusterType, KubeBlockBackupPolicyType } from '@/types/cluster';
 import type { DBDetailType, DBEditType, DBListItemType, PodDetailType, PodEvent } from '@/types/db';
+import { InternetMigrationCR, MigrateItemType } from '@/types/migrate';
 import {
   convertCronTime,
   cpuFormatToM,
@@ -11,12 +12,9 @@ import {
   memoryFormatToMi,
   storageFormatToNum
 } from '@/utils/tools';
-import type { CoreV1EventList, V1Pod, V1Service } from '@kubernetes/client-node';
+import type { CoreV1EventList, V1Pod } from '@kubernetes/client-node';
 import dayjs from 'dayjs';
 import type { BackupItemType } from '../types/db';
-import { InternetMigrationCR, MigrateForm, MigrateItemType } from '@/types/migrate';
-import { SecretResponse } from '@/pages/api/getSecretByName';
-import { getMigratePodList } from '@/api/migrate';
 
 export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
   // compute store amount
@@ -34,7 +32,8 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
     storage:
       db.spec?.componentSpecs?.[0]?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage ||
       '-',
-    conditions: db?.status?.conditions || []
+    conditions: db?.status?.conditions || [],
+    isDiskSpaceOverflow: false
   };
 };
 
@@ -55,7 +54,8 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
     storage: storageFormatToNum(
       db.spec?.componentSpecs?.[0]?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage
     ),
-    conditions: db?.status?.conditions || []
+    conditions: db?.status?.conditions || [],
+    isDiskSpaceOverflow: false
   };
 };
 

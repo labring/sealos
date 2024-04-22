@@ -51,6 +51,7 @@ export interface DBListItemType {
   memory: number;
   storage: string;
   conditions: DBConditionItemType[];
+  isDiskSpaceOverflow: boolean;
 }
 
 export interface DBEditType {
@@ -68,6 +69,7 @@ export interface DBDetailType extends DBEditType {
   createTime: string;
   status: DBStatusMapType;
   conditions: DBConditionItemType[];
+  isDiskSpaceOverflow: boolean;
 }
 
 export interface DBConditionItemType {

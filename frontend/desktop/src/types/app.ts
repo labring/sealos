@@ -72,6 +72,7 @@ export type TOSState = {
       query?: Record<string, string>;
       raw?: string;
       pathname?: string;
+      appSize?: WindowSize;
     }
   ): Promise<void>;
   // close app

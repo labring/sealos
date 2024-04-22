@@ -6,7 +6,8 @@
   "src": "./src",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "next dev"
+    "dev": "next dev",
+    "build": "echo \"build @sealos/ui\""
   },
   "keywords": [],
   "author": "",

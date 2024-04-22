@@ -32,7 +32,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import QuotaBox from './QuotaBox';
+import QuotaBox from '@/components/QuotaBox';
 
 enum MigrateStatusEnum {
   Prepare = 'Prepare',
@@ -199,7 +199,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
     <Box h={'100%'} position={'relative'} px="26px" pb="40px">
       <Flex borderRadius={'4px'} border={'1px solid #EAEBF0'} h="100%">
         <Box flex={'0 1 256px'} borderRight={'1px solid #EAEBF0'}>
-          <QuotaBox />
+          <QuotaBox titleStyle={{ pt: '36px' }} />
           {/* {db && (
             <PriceBox
               components={[

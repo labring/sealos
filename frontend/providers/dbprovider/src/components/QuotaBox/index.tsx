@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
-import { Box, Flex, useTheme, Progress, css, Text } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
-import { useTranslation } from 'next-i18next';
 import MyTooltip from '@/components/MyTooltip';
 import { useUserStore } from '@/store/user';
+import { Box, BoxProps, Flex, Progress, css } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'next-i18next';
+import { useMemo } from 'react';
 
 const sourceMap = {
   cpu: {
@@ -24,36 +24,34 @@ const sourceMap = {
   }
 };
 
-const QuotaBox = () => {
+const QuotaBox = ({ titleStyle }: { titleStyle?: BoxProps }) => {
   const { t } = useTranslation();
   const { userQuota, loadUserQuota } = useUserStore();
   useQuery(['getUserQuota'], loadUserQuota);
 
   const quotaList = useMemo(() => {
     if (!userQuota) return [];
+
     return userQuota
-      .map((item) => ({
-        ...item,
-        tip: `${t('common.Total')}: ${`${item.limit} ${sourceMap[item.type]?.unit}`}
-${t('common.Used')}: ${`${item.used} ${sourceMap[item.type]?.unit}`}
-${t('common.Surplus')}: ${`${item.limit - item.used} ${sourceMap[item.type]?.unit}`}
-`,
-        color: sourceMap[item.type]?.color
-      }))
-      .filter((item) => item.limit > 0);
+      .filter((item) => item.limit > 0)
+      .map((item) => {
+        const { limit, used, type } = item;
+        const unit = sourceMap[type]?.unit;
+        const color = sourceMap[type]?.color;
+        const tip = `${t('common.Total')}: ${limit} ${unit}
+${t('common.Used')}: ${used.toFixed(2)} ${unit}
+${t('common.Surplus')}: ${(limit - used).toFixed(2)} ${unit}`;
+
+        return { ...item, tip, color };
+      });
   }, [userQuota, t]);
 
   return userQuota.length === 0 ? null : (
-    <Box
-      h="50%"
-      //  borderBottom={'1px solid #EAEBF0'}
-      px="28px"
-      pt="36px"
-    >
-      <Text color={'#485058'} fontWeight={500} fontSize={'14px'}>
+    <Box>
+      <Box py={3} px={4} color={'#485058'} fontWeight={500} fontSize={'14px'} {...titleStyle}>
         {t('app.Resource Quota')}
-      </Text>
-      <Box mt="20px">
+      </Box>
+      <Box py={3} px={4}>
         {quotaList.map((item) => (
           <MyTooltip key={item.type} label={item.tip} placement={'top-end'} lineHeight={1.7}>
             <Flex alignItems={'center'} mt="16px">

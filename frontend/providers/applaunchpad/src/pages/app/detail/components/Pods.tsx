@@ -12,6 +12,7 @@ import { QuestionOutlineIcon } from '@chakra-ui/icons';
 import {
   Box,
   Button,
+  Text,
   Center,
   Flex,
   Table,
@@ -127,8 +128,22 @@ const Pods = ({
       title: 'Cpu',
       key: 'cpu',
       render: (item: PodDetailType) => (
-        <Box h={'45px'} w={'120px'}>
-          <PodLineChart type="green" data={item.usedCpu} />
+        <Box h={'45px'} w={'120px'} position={'relative'}>
+          <Box h={'45px'} w={'120px'} position={'absolute'}>
+            <PodLineChart type="green" data={item.usedCpu} />
+            <Box
+              color={'#00A9A6'}
+              fontSize={'sm'}
+              fontWeight={'bold'}
+              position={'absolute'}
+              right={'4px'}
+              bottom={'0px'}
+              pointerEvents={'none'}
+              textShadow="1px 1px 0 #FFF, -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF"
+            >
+              {item?.usedCpu?.yData[item?.usedCpu?.yData?.length - 1]}%
+            </Box>
+          </Box>
         </Box>
       )
     },
@@ -136,8 +151,22 @@ const Pods = ({
       title: 'Memory',
       key: 'memory',
       render: (item: PodDetailType) => (
-        <Box h={'45px'} w={'120px'}>
-          <PodLineChart type="deepBlue" data={item.usedMemory} />
+        <Box h={'45px'} w={'120px'} position={'relative'}>
+          <Box h={'45px'} w={'120px'} position={'absolute'}>
+            <PodLineChart type="deepBlue" data={item.usedMemory} />
+            <Text
+              color={'#3293EC'}
+              fontSize={'sm'}
+              fontWeight={'bold'}
+              position={'absolute'}
+              right={'4px'}
+              bottom={'0px'}
+              pointerEvents={'none'}
+              textShadow="1px 1px 0 #FFF, -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF"
+            >
+              {item?.usedMemory?.yData[item?.usedMemory?.yData?.length - 1]}%
+            </Text>
+          </Box>
         </Box>
       )
     },

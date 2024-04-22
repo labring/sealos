@@ -101,8 +101,8 @@ Sealos 需要使用证书来保证通信安全，默认在您不提供证书的�
 使用 nip.io 作为 Sealos 的域名非常简单，只需在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash 
-$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta4/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
-  --cloud-version=v5.0.0-beta4 \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta5/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+  --cloud-version=v5.0.0-beta5 \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://mirror.ghproxy.com
 ```
@@ -145,8 +145,8 @@ cloud.example.io   A   192.168.1.10
 然后在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash
-$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta4/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
-  --cloud-version=v5.0.0-beta4 \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta5/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+  --cloud-version=v5.0.0-beta5 \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://mirror.ghproxy.com \
   --cloud-domain=<your_domain> \
@@ -172,8 +172,8 @@ cloud.example.io   A   192.168.1.10
 然后在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash
-$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta4/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
-  --cloud-version=v5.0.0-beta4 \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta5/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+  --cloud-version=v5.0.0-beta5 \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://mirror.ghproxy.com \
   --cloud-domain=<your_domain>
@@ -231,8 +231,8 @@ $ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring
 然后在第一个 Master 节点上执行以下命令，并根据提示输入参数：
 
 ```bash
-$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta4/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
-  --cloud-version=v5.0.0-beta4 \
+$ curl -sfL https://mirror.ghproxy.com/https://raw.githubusercontent.com/labring/sealos/v5.0.0-beta5/scripts/cloud/install.sh -o /tmp/install.sh && bash /tmp/install.sh \
+  --cloud-version=v5.0.0-beta5 \
   --image-registry=registry.cn-shanghai.aliyuncs.com --zh \
   --proxy-prefix=https://mirror.ghproxy.com \
   --cloud-domain=<your_domain>

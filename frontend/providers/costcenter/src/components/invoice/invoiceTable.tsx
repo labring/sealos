@@ -2,9 +2,10 @@ import { InvoiceTableHeaders } from '@/constants/billing';
 import { Checkbox, Flex, Table, TableContainer, Tbody, Td, Th, Thead, Tr } from '@chakra-ui/react';
 import { format } from 'date-fns';
 import { useTranslation } from 'next-i18next';
-import { ReqGenInvoice } from '@/types';
+import { RechargeBillingItem, ReqGenInvoice } from '@/types';
 import CurrencySymbol from '../CurrencySymbol';
 import useEnvStore from '@/stores/env';
+import { formatMoney } from '@/utils/format';
 
 export function InvoiceTable({
   data,
@@ -13,7 +14,7 @@ export function InvoiceTable({
 }: {
   data: ReqGenInvoice['billings'];
   selectbillings: ReqGenInvoice['billings'];
-  onSelect?: (type: boolean, item: ReqGenInvoice['billings'][0]) => void;
+  onSelect?: (type: boolean, item: RechargeBillingItem) => void;
 }) {
   const { t } = useTranslation();
   const needSelect = !!onSelect;
@@ -37,7 +38,11 @@ export function InvoiceTable({
               >
                 <Flex display={'flex'}>
                   {t(item)}
-                  {item !== 'Order Number' && <CurrencySymbol type={currency} />}
+                  {item === 'True Amount' && (
+                    <>
+                      (<CurrencySymbol type={currency} />)
+                    </>
+                  )}
                 </Flex>
               </Th>
             ))}
@@ -45,12 +50,12 @@ export function InvoiceTable({
         </Thead>
         <Tbody>
           {data.map((item) => (
-            <Tr key={item.order_id} fontSize={'12px'}>
+            <Tr key={item.ID} fontSize={'12px'}>
               <Td>
                 <Flex align={'center'}>
                   {needSelect && (
                     <Checkbox
-                      isChecked={selectbillings.map((b) => b.order_id).includes(item.order_id)}
+                      isChecked={selectbillings.map((b) => b.ID).includes(item.ID)}
                       onChange={(v) => {
                         onSelect(v.target.checked, item);
                       }}
@@ -59,11 +64,11 @@ export function InvoiceTable({
                       h="12px"
                     />
                   )}
-                  {item.order_id}
+                  {item.ID}
                 </Flex>
               </Td>
-              <Td>{format(item.createdTime, 'MM-dd HH:mm')}</Td>
-              <Td color={'#219BF4'}>{item.amount}</Td>
+              <Td>{format(new Date(item.CreatedAt), 'MM-dd HH:mm')}</Td>
+              <Td color={'#219BF4'}>{item.Amount}</Td>
             </Tr>
           ))}
         </Tbody>

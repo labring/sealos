@@ -19,9 +19,9 @@ export const useUserStore = create<State>()(
       userQuota: [],
       loadUserQuota: async () => {
         const response = await getUserQuota();
+
         set((state) => {
           state.userQuota = response.quota;
-          state.balance = response.balance;
         });
         return null;
       },

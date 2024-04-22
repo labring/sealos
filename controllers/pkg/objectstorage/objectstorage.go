@@ -17,13 +17,19 @@ package objectstorage
 import (
 	"context"
 	"fmt"
+
+	"github.com/prometheus/prom2json"
+
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+
 	"github.com/prometheus/common/model"
 
+	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7"
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
@@ -42,6 +48,18 @@ func ListUserObjectStorageBucket(client *minio.Client, username string) ([]strin
 		}
 	}
 	return expectBuckets, nil
+}
+
+func ListAllObjectStorageBucket(client *minio.Client) ([]string, error) {
+	buckets, err := client.ListBuckets(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	var allBuckets []string
+	for _, bucket := range buckets {
+		allBuckets = append(allBuckets, bucket.Name)
+	}
+	return allBuckets, nil
 }
 
 func GetObjectStorageSize(client *minio.Client, bucket string) (int64, int64) {
@@ -99,9 +117,11 @@ func GetUserObjectStorageFlow(client *minio.Client, promURL, username, instance 
 	return totalFlow, nil
 }
 
+var timeoutDuration = time.Duration(env.GetInt64EnvWithDefault(EnvPromQueryObsTimeoutSecEnv, 10)) * time.Second
+
 const (
-	timeoutDuration = 5 * time.Second
-	timeFormat      = "2006-01-02 15:04:05"
+	EnvPromQueryObsTimeoutSecEnv = "PROM_QUERY_OBS_TIMEOUT_SEC"
+	timeFormat                   = "2006-01-02 15:04:05"
 )
 
 var (
@@ -163,4 +183,61 @@ func extractValues(result1, result2 model.Value) (int64, int64) {
 	val1, _ := strconv.ParseInt(rcvdStr1, 10, 64)
 	val2, _ := strconv.ParseInt(rcvdStr2, 10, 64)
 	return val1, val2
+}
+
+type MetricData struct {
+	// key: bucket name, value: usage
+	Usage map[string]int64
+}
+
+type Metrics map[string]MetricData
+
+func QueryUserUsage(client *madmin.MetricsClient) (Metrics, error) {
+	obMetrics := make(Metrics)
+	bucketMetrics, err := client.BucketMetrics(context.TODO())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get bucket metrics: %w", err)
+	}
+	for _, bucketMetric := range bucketMetrics {
+		if !isUsageBytesTargetMetric(bucketMetric.Name) {
+			continue
+		}
+		for _, metrics := range bucketMetric.Metrics {
+			promMetrics := metrics.(prom2json.Metric)
+			floatValue, err := strconv.ParseFloat(promMetrics.Value, 64)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse %s to float value", promMetrics.Value)
+			}
+			intValue := int64(floatValue)
+			if bucket := promMetrics.Labels["bucket"]; bucket != "" {
+				user := getUserWithBucket(bucket)
+				metricData, exists := obMetrics[user]
+				if !exists {
+					metricData = MetricData{
+						Usage: make(map[string]int64),
+					}
+				}
+				metricData.Usage[bucket] += intValue
+				obMetrics[user] = metricData
+			}
+		}
+	}
+
+	return obMetrics, err
+}
+
+func isUsageBytesTargetMetric(name string) bool {
+	targetMetrics := []string{
+		"minio_bucket_usage_total_bytes",
+	}
+	for _, target := range targetMetrics {
+		if name == target {
+			return true
+		}
+	}
+	return false
+}
+
+func getUserWithBucket(bucket string) string {
+	return strings.Split(bucket, "-")[0]
 }
