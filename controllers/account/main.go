@@ -300,7 +300,7 @@ func main() {
 			setupLog.Info("start billing cvm", "time", time.Now().Format(time.RFC3339))
 			err := accountReconciler.BillingCVM()
 			if err != nil {
-				setupLog.Error(err, "fail to run manager")
+				setupLog.Error(err, "fail to billing cvm")
 			}
 			setupLog.Info("end billing cvm", "time", time.Now().Format(time.RFC3339))
 			<-ticker.C

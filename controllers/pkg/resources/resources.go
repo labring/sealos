@@ -108,6 +108,7 @@ type Billing struct {
 	Payment *Payment `json:"payment" bson:"payment,omitempty"`
 	// if type = Transfer, then transfer is not nil
 	Transfer *Transfer `json:"transfer" bson:"transfer,omitempty"`
+	Detail   string    `json:"detail" bson:"detail,omitempty"`
 }
 
 type Payment struct {

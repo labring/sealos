@@ -419,6 +419,7 @@ func (r *AccountReconciler) BillingCVM() error {
 		appCosts := make([]resources.AppCost, len(cvms))
 		cvmTotalAmount := 0.0
 		cvmIDs := make([]primitive.ObjectID, len(cvms))
+		cvmIDsDetail := make([]string, 0)
 		for i := range cvms {
 			appCosts[i] = resources.AppCost{
 				Amount: int64(cvms[i].Amount * BaseUnit),
@@ -426,6 +427,7 @@ func (r *AccountReconciler) BillingCVM() error {
 			}
 			cvmTotalAmount += cvms[i].Amount
 			cvmIDs[i] = cvms[i].ID
+			cvmIDsDetail = append(cvmIDsDetail, cvms[i].ID.String())
 		}
 		userQueryOpts := pkgtypes.UserQueryOpts{UID: uuid.MustParse(userUID)}
 		user, err := r.AccountV2.GetUserCr(&userQueryOpts)
@@ -450,6 +452,7 @@ func (r *AccountReconciler) BillingCVM() error {
 			Owner:     user.CrName,
 			Time:      time.Now().UTC(),
 			Status:    resources.Settled,
+			Detail:    "{" + strings.Join(cvmIDsDetail, ",") + "}",
 		}
 		err = r.AccountV2.AddDeductionBalanceWithFunc(&pkgtypes.UserQueryOpts{UID: user.UserUID}, billing.Amount, func() error {
 			if saveErr := r.DBClient.SaveBillings(billing); saveErr != nil {
