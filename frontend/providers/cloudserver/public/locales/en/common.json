@@ -76,6 +76,7 @@
   "capacity": "Capacity",
   "close cloud server tip": "Please note that storage will still be charged when the server is shut down. Please confirm!",
   "delete cloud server tip": "Are you sure to delete this cloud host?",
+  "hour": "hour",
   "price": "Price",
   "publicIpAssigned tips": "Note: Without a dedicated public IP assigned, external communication using a public IP is not possible. The server cannot be used for record filing. Please choose carefully.",
   "ssh port": "SSH port",

@@ -83,5 +83,6 @@
   "Billing items": "计费项",
   "price": "价格",
   "publicIpAssigned tips": "注意：未分配独立公网IP，无法使用外网IP对外进行互相通信，服务器无法用于备案，请慎重选择。",
-  "Fee inquiry in progress": "费用查询中..."
+  "Fee inquiry in progress": "费用查询中...",
+  "hour": "小时"
 }

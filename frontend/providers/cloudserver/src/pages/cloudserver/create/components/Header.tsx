@@ -90,7 +90,7 @@ const Header = ({
                   >
                     <Text fontSize={'base'}>{t('Instance')}</Text>
                     <Text fontWeight={'bold'} color={'brightBlue.600'}>
-                      ¥{prices?.instancePrice}
+                      ¥{prices?.instancePrice}/{t('hour')}
                     </Text>
                   </Flex>
                   <Flex
@@ -105,13 +105,13 @@ const Header = ({
                   >
                     <Text fontSize={'base'}>{t('storage fees')}</Text>
                     <Text fontWeight={'bold'} color={'brightBlue.600'}>
-                      ¥{prices?.diskPrice}
+                      ¥{prices?.diskPrice}/{t('hour')}
                     </Text>
                   </Flex>
                   <Flex {...priceItemStyle}>
                     <Text fontSize={'base'}>{t('Public network bandwidth')}</Text>
                     <Text fontWeight={'bold'} color={'brightBlue.600'}>
-                      ¥{prices?.networkPrice}
+                      ¥{prices?.networkPrice}/{t('hour')}
                     </Text>
                   </Flex>
                 </Flex>
