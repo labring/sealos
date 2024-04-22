@@ -73,7 +73,7 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
         spec: {
           affinity: {
             nodeLabels: {},
-            podAntiAffinity: 'Required',
+            podAntiAffinity: 'Preferred',
             tenancy: 'SharedNode',
             topologyKeys: ['kubernetes.io/hostname']
           },
@@ -119,7 +119,7 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
         spec: {
           affinity: {
             nodeLabels: {},
-            podAntiAffinity: 'Required',
+            podAntiAffinity: 'Preferred',
             tenancy: 'SharedNode',
             topologyKeys: ['kubernetes.io/hostname']
           },
@@ -165,7 +165,7 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
         spec: {
           affinity: {
             nodeLabels: {},
-            podAntiAffinity: 'Required',
+            podAntiAffinity: 'Preferred',
             tenancy: 'SharedNode',
             topologyKeys: ['kubernetes.io/hostname']
           },
@@ -208,7 +208,7 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
         spec: {
           affinity: {
             nodeLabels: {},
-            podAntiAffinity: 'Required',
+            podAntiAffinity: 'Preferred',
             tenancy: 'SharedNode',
             topologyKeys: ['kubernetes.io/hostname']
           },
