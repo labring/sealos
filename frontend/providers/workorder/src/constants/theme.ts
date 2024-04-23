@@ -237,14 +237,7 @@ export const theme = extendTheme({
       }
     }
   },
-  breakpoints: {
-    sm: '1024px',
-    md: '1280px',
-    lg: '1500px',
-    xl: '1800px',
-    '2xl': '2100px'
-  },
-  fontSizes: {
+  Sizes: {
     xs: '10px',
     sm: '12px',
     md: '14px',
