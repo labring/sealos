@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Box, Grid } from '@chakra-ui/react';
+import { Box, Grid, useBreakpointValue } from '@chakra-ui/react';
 import type { GridProps } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 
@@ -13,6 +13,7 @@ interface Props extends GridProps {
 
 const Tabs = ({ list, size = 'md', activeId, onChange, ...props }: Props) => {
   const { t } = useTranslation();
+  const pxValue = useBreakpointValue({ base: '14px', lg: '24px' });
 
   const sizeMap = useMemo(() => {
     switch (size) {
@@ -58,7 +59,7 @@ const Tabs = ({ list, size = 'md', activeId, onChange, ...props }: Props) => {
           position={'relative'}
           textAlign={'center'}
           zIndex={1}
-          px="30px"
+          px={pxValue}
           _before={{
             content: '""',
             position: 'absolute',
