@@ -100,9 +100,13 @@ func (m *mongoDB) Disconnect(ctx context.Context) error {
 }
 
 func (m *mongoDB) GetBillingLastUpdateTime(owner string, _type common.Type) (bool, time.Time, error) {
+	// skip cvm billing time
 	filter := bson.M{
 		"owner": owner,
 		"type":  _type,
+		"app_type": bson.M{
+			"$ne": resources.AppType[resources.CVM],
+		},
 	}
 	findOneOptions := options.FindOne().SetSort(bson.D{primitive.E{Key: "time", Value: -1}})
 	var result bson.M
