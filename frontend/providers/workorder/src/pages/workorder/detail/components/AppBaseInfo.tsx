@@ -1,13 +1,19 @@
 import { getFileUrl } from '@/api/platform';
+import { findUserById } from '@/api/user';
 import { FileImgs } from '@/components/FileSelect';
 import MyIcon from '@/components/Icon';
+import useSessionStore from '@/store/session';
 import { WorkOrderDB } from '@/types/workorder';
+import { useCopyData } from '@/utils/tools';
 import { Box, Flex, Icon, Tag, Text } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 
 const AppBaseInfo = ({ app }: { app: WorkOrderDB }) => {
   const { t } = useTranslation();
+  const { copyData } = useCopyData();
+  const { session } = useSessionStore();
 
   const appendixs = useMemo(() => {
     if (!app?.appendix) return [];
@@ -24,6 +30,14 @@ const AppBaseInfo = ({ app }: { app: WorkOrderDB }) => {
     const fileUrl = await getFileUrl({ fileName: name });
     window.open(fileUrl);
   };
+
+  const { data: userInfo } = useQuery(
+    ['findUserById'],
+    () => findUserById({ userId: app?.userId || '' }),
+    {
+      enabled: !!app?.userId
+    }
+  );
 
   return (
     <Box p="24px" flexDirection={'column'} fontSize={'12px'} color={'#5A646E'} fontWeight={500}>
@@ -114,6 +128,40 @@ const AppBaseInfo = ({ app }: { app: WorkOrderDB }) => {
           <Text color={'#24282C'}>{app?.description} </Text>
         </Flex>
       </Box>
+
+      {session?.user?.isAdmin && (
+        <Box mt="24px">
+          <Flex gap={'8px'} alignItems={'center'}>
+            <Icon
+              xmlns="http://www.w3.org/2000/svg"
+              width="16px"
+              height="16px"
+              viewBox="0 0 16 16"
+              fill="#7B838B"
+            >
+              <g mask="url(#mask0_31_17130)">
+                <path d="M4.66667 11.3333H9.33333V10H4.66667V11.3333ZM4.66667 8.66667H11.3333V7.33333H4.66667V8.66667ZM4.66667 6H11.3333V4.66667H4.66667V6ZM3.33333 14C2.96667 14 2.65278 13.8694 2.39167 13.6083C2.13056 13.3472 2 13.0333 2 12.6667V3.33333C2 2.96667 2.13056 2.65278 2.39167 2.39167C2.65278 2.13056 2.96667 2 3.33333 2H12.6667C13.0333 2 13.3472 2.13056 13.6083 2.39167C13.8694 2.65278 14 2.96667 14 3.33333V12.6667C14 13.0333 13.8694 13.3472 13.6083 13.6083C13.3472 13.8694 13.0333 14 12.6667 14H3.33333ZM3.33333 12.6667H12.6667V3.33333H3.33333V12.6667Z" />
+              </g>
+            </Icon>
+            <Text>{t('user info')}</Text>
+          </Flex>
+          <Flex
+            mt="12px"
+            p={'16px'}
+            borderRadius={'4px'}
+            bg="#F8FAFB"
+            flexDirection={'column'}
+            color={'#24282C'}
+            gap={'4px'}
+            cursor={'pointer'}
+          >
+            <Box onClick={() => copyData(userInfo?.userId || '')}>userId: {userInfo?.userId}</Box>
+            <Box onClick={() => copyData(userInfo?.regionUid || '')}>
+              regionUid: {userInfo?.regionUid}
+            </Box>
+          </Flex>
+        </Box>
+      )}
     </Box>
   );
 };

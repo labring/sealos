@@ -13,7 +13,7 @@ interface Props extends GridProps {
 
 const Tabs = ({ list, size = 'md', activeId, onChange, ...props }: Props) => {
   const { t } = useTranslation();
-  const pxValue = useBreakpointValue({ base: '14px', lg: '24px' });
+  const pxValue = useBreakpointValue({ base: '14px', lg: '20px' });
 
   const sizeMap = useMemo(() => {
     switch (size) {

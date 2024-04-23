@@ -40,5 +40,6 @@
   "File upload failed": "文件上传失败",
   "Pending": "待处理",
   "Submit Error": "提交错误",
-  "Deleted": "已删除"
+  "Deleted": "已删除",
+  "user info": "用户信息"
 }

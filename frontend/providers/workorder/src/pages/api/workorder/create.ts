@@ -25,7 +25,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       createTime: new Date(),
       description,
       status: WorkOrderStatus.Pending,
-      appendix
+      appendix,
+      manualHandling: {
+        isManuallyHandled: false
+      }
     };
 
     await createOrder({ order: payload });

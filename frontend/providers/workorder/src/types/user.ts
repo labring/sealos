@@ -6,14 +6,15 @@ export type DesktopTokenPayload = {
   workspaceId: string;
   userUid: string;
   userId: string;
+  iat: number;
+  exp: number;
 };
 
-export type UserDB = DesktopTokenPayload & {
+export type UserDB = Omit<DesktopTokenPayload, 'iat' | 'exp'> & {
   isAdmin: boolean;
 };
 
-export type AppTokenPayload = {
-  userId: string;
+export type AppTokenPayload = Omit<DesktopTokenPayload, 'iat' | 'exp'> & {
   isAdmin: boolean;
 };
 

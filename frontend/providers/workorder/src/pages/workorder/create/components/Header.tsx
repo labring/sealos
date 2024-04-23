@@ -21,7 +21,7 @@ const Header = ({
     <Flex w={'100%'} px={10} h={'86px'} alignItems={'center'}>
       <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace(lastRoute)}>
         <MyIcon name="arrowLeft" />
-        <Box ml={6} fontWeight={'bold'} color={'black'} fontSize={'3xl'}>
+        <Box ml={6} fontWeight={'bold'} color={'black'} fontSize={'20px'}>
           {t(title)}
         </Box>
       </Flex>

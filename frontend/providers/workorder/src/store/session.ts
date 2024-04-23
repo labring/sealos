@@ -1,4 +1,4 @@
-import { AuthByDesktopSession } from '@/api/platform';
+import { AuthByDesktopSession } from '@/api/user';
 import { AppSession } from '@/types/user';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';

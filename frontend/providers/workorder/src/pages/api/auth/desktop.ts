@@ -3,6 +3,7 @@ import { jsonRes } from '@/services/backend/response';
 import { createUser, getUserById } from '@/services/db/user';
 import { AppSession } from '@/types/user';
 import { NextApiRequest, NextApiResponse } from 'next';
+import { omit } from 'lodash';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -14,33 +15,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message: 'verify desktop token error'
       });
     }
+    const newPayload = omit(payload, ['iat', 'exp']);
 
-    const existingUser = await getUserById(payload.userId);
+    const existingUser = await getUserById(newPayload.userId);
 
     if (existingUser) {
-      const token = generateAccessToken({
-        userId: existingUser.userId,
-        isAdmin: existingUser.isAdmin
-      });
+      const token = generateAccessToken(existingUser);
       return jsonRes<AppSession>(res, {
         code: 200,
         data: {
           token: token,
-          user: {
-            userId: existingUser.userId,
-            isAdmin: existingUser.isAdmin
-          }
+          user: existingUser
         }
       });
     }
 
     await createUser({
-      ...payload,
+      ...newPayload,
       isAdmin: false
     });
 
     const accessToken = generateAccessToken({
-      userId: payload.userId,
+      ...newPayload,
       isAdmin: false
     });
 
@@ -49,7 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: {
         token: accessToken,
         user: {
-          userId: payload.userId,
+          ...newPayload,
           isAdmin: false
         }
       }

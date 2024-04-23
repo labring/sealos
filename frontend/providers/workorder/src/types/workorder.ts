@@ -12,6 +12,10 @@ export type WorkOrderDB = {
   status: WorkOrderStatus;
   dialogs?: WorkOrderDialog[];
   appendix?: string[];
+  manualHandling: {
+    isManuallyHandled: boolean;
+    handlingTime?: Date;
+  };
 };
 
 export type WorkOrderDialog = {

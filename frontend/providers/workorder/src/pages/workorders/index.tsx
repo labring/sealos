@@ -45,7 +45,7 @@ function Home() {
         endTime
       }),
     {
-      // refetchInterval: 3000,
+      refetchInterval: 6000,
       onSettled() {
         setInitialized(true);
       }
@@ -65,7 +65,7 @@ function Home() {
         <Box mr={4} p={2} bg={'#FEFEFE'} borderRadius={'4px'} border={'1px solid #DEE0E2'}>
           <Image alt="logo" src="/logo.svg" w="24px" h="24px"></Image>
         </Box>
-        <Box fontSize={'2xl'} color={'black'}>
+        <Box fontSize={'18px'} color={'black'} fontWeight={'bold'}>
           {t('Order List')}
         </Box>
         <Box ml={3} color={'gray.500'}>
@@ -131,6 +131,7 @@ function Home() {
           {t('Question Type')}
         </Text>
         <MySelect
+          fontSize={'12px'}
           width={'110px'}
           height={'32px'}
           value={orderType}

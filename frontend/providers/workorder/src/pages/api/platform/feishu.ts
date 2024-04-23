@@ -13,7 +13,7 @@ export type FeishuNotificationParams = {
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const userForm = req.body as FeishuNotificationParams;
-    const { userId } = await verifyAccessToken(req);
+    const { userId, regionUid } = await verifyAccessToken(req);
     const feishuUrl = process.env.ADMIN_FEISHU_URL;
     const feishuCallBackUrl = process.env.ADMIN_FEISHU_CALLBACK_URL;
 
@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         elements: [
           {
             tag: 'markdown',
-            content: `**用户ID:** ${userId}\n所属分类: ${userForm.type}\n描述信息: ${userForm.description}`
+            content: `**用户ID:** ${userId}\n**可用区ID:** ${regionUid}\n所属分类: ${userForm.type}\n描述信息: ${userForm.description}`
           },
           {
             tag: 'action',

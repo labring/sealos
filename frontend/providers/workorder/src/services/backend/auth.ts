@@ -2,6 +2,7 @@ import { AppTokenPayload, DesktopTokenPayload } from '@/types/user';
 import { verify, sign } from 'jsonwebtoken';
 import type { NextApiRequest } from 'next';
 import { ERROR_ENUM } from '../error';
+import { reject } from 'lodash';
 
 const desktopJwtSecret = (process.env.JWT_SECRET_DESKTOP_TO_APP as string) || '123456789';
 const appJwtSecret = (process.env.JWT_SECRET_SELF as string) || '123456789';
@@ -13,15 +14,13 @@ export const verifyAccessToken = async (req: NextApiRequest) => {
   return verifyAppToken(authorization);
 };
 
-export const verifyDesktopToken: (token: string) => Promise<DesktopTokenPayload | null> = (token) =>
+export const verifyDesktopToken: (token: string) => Promise<DesktopTokenPayload> = (token) =>
   new Promise((resolve) => {
     verify(token, desktopJwtSecret, (err, payload) => {
       if (err) {
-        console.log(err);
-        resolve(null);
+        reject(err);
       } else if (!payload) {
-        console.log('payload is null');
-        resolve(null);
+        reject('payload is null');
       } else {
         resolve(payload as DesktopTokenPayload);
       }

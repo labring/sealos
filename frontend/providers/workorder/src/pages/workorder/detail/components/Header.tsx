@@ -51,7 +51,7 @@ const Header = ({
     <Flex w={'100%'} h={'86px'} alignItems={'center'}>
       <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace(lastRoute)}>
         <MyIcon name="arrowLeft" />
-        <Box ml={6} fontWeight={'bold'} color={'black'} fontSize={'3xl'} mr="16px">
+        <Box ml={6} fontWeight={'bold'} color={'black'} fontSize={'20px'} mr="16px">
           {t('Order Detail')}
         </Box>
         {app?.status && <AppStatusTag status={app?.status} showBorder={false} />}
