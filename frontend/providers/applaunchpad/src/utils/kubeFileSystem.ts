@@ -1,5 +1,6 @@
 import { PassThrough, Readable, Writable } from 'stream';
 import * as k8s from '@kubernetes/client-node';
+import { Base64Encode } from 'base64-stream';
 
 export type TFile = {
   name: string;
@@ -49,17 +50,14 @@ export class KubeFileSystem {
       };
 
       stdout.on('end', () => {
-        console.log('1=', chunks.toString(), '=1');
         free();
         resolve(chunks.toString());
       });
       stdout.on('error', (error) => {
-        console.log(2, error);
         free();
         reject(error);
       });
       stderr.on('data', (error) => {
-        console.log(3, error);
         free();
         reject(error.toString());
       });
@@ -72,30 +70,15 @@ export class KubeFileSystem {
         stdout,
         stderr,
         stdin,
-        !!stdin,
-        (s) => {
-          console.log(s, 4);
-        }
+        !!stdin
       );
 
       if (stdin) {
-        stdin.on('data', (chunk) => {
-          console.log('Input:', chunk);
-        });
         stdin.on('end', () => {
-          console.log('stdin is end');
           free();
           resolve('Success');
         });
       }
-
-      webSocket.on('close', () => {
-        console.log('WebSocket closed');
-      });
-
-      webSocket.on('error', (error) => {
-        console.log('WebSocket error:', error);
-      });
     });
   }
 
@@ -280,7 +263,7 @@ export class KubeFileSystem {
       namespace,
       podName,
       containerName,
-      ['dd', `if=${path}`, 'status=none'],
+      ['dd', `if="${path}"`, 'status=none'],
       null,
       stdout
     );
@@ -331,8 +314,12 @@ export class KubeFileSystem {
       namespace,
       podName,
       containerName,
-      ['dd', `of=${path}`, 'status=none', 'bs=10M'],
-      file
+      [
+        'sh',
+        '-c',
+        `dd of="${path}.tmp" status=none bs=32767 && base64 -d "${path}.tmp" > "${path}"`
+      ],
+      file.pipe(new Base64Encode({ lineLength: 76 }))
     );
   }
 

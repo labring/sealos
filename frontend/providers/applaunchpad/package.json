@@ -25,6 +25,7 @@
     "@tanstack/react-query": "^4.35.3",
     "ansi_up": "^5.2.1",
     "axios": "^1.5.1",
+    "base64-stream": "^1.0.0",
     "dayjs": "^1.11.10",
     "dns": "^0.2.2",
     "echarts": "^5.4.3",
@@ -55,6 +56,7 @@
   },
   "devDependencies": {
     "@svgr/webpack": "^6.5.1",
+    "@types/base64-stream": "^1.0.5",
     "@types/formidable": "^3.4.5",
     "@types/js-cookie": "^3.0.4",
     "@types/js-yaml": "^4.0.6",
