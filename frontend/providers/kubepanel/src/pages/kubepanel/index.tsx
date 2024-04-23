@@ -12,6 +12,7 @@ import { CreateResourceModal } from '@/components/common/action/create-resource-
 import { PlusOutlined } from '@ant-design/icons';
 import SecretOverviewPage from './kube-object/config/secret/secret';
 import IngressOverviewPage from './kube-object/network/ingress/ingress';
+import ServiceOverviewPage from './kube-object/network/service/service';
 
 const switchPage = (key: SideNavItemKey): React.ReactNode => {
   switch (key) {
@@ -31,6 +32,8 @@ const switchPage = (key: SideNavItemKey): React.ReactNode => {
       return <SecretOverviewPage />;
     case SideNavItemKey.Ingress:
       return <IngressOverviewPage />;
+    case SideNavItemKey.Service:
+      return <ServiceOverviewPage />;  
     default:
       return <OverviewPage />;
   }

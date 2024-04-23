@@ -6,3 +6,4 @@ export * from './k8s/volume-claim.store';
 export * from './k8s/ingress.store';
 export * from './k8s/secret.store';
 export * from './k8s/kube.store';
+export * from './k8s/service.store';

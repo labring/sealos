@@ -18,7 +18,8 @@ export enum SideNavItemKey {
   PersistentVolumeClaim = 'volume-claim',
   StatefulSet = 'stateful-set',
   Secret = 'secret',
-  Ingress = 'ingress'
+  Ingress = 'ingress',
+  Service = 'service'
 }
 
 function getItem(
@@ -48,7 +49,10 @@ const items: MenuProps['items'] = [
     getItem('Config Maps', SideNavItemKey.ConfigMap),
     getItem('Secrets', SideNavItemKey.Secret)
   ]),
-  getItem('Network', 'network', <GatewayOutlined />, [getItem('Ingress', SideNavItemKey.Ingress)]),
+  getItem('Network', 'network', <GatewayOutlined />, [
+    getItem('Ingress', SideNavItemKey.Ingress),
+    getItem('Service', SideNavItemKey.Service)
+  ]),
   getItem('Storage', 'storage', <DatabaseOutlined />, [
     getItem('Persistent Volume Claims', SideNavItemKey.PersistentVolumeClaim)
   ])
