@@ -1,0 +1,17 @@
+global:
+  cloudDomain: 127.0.0.1.nip.io
+  cloudPort: ""
+common:
+  guideEnabled: "false"
+  apiEnabled: "false"
+launchpad:
+  ingressTlsSecretName: wildcard-cert
+  eventAnalyze:
+    enabled: "false"
+  components:
+    monitor:
+      url: http://launchpad-monitor.sealos.svc.cluster.local:8428
+  appResourceFormSliderConfig:
+    default:
+      cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000]
+      memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]

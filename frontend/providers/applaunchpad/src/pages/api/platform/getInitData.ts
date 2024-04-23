@@ -1,11 +1,11 @@
-import type {NextApiRequest, NextApiResponse} from 'next';
-import {jsonRes} from '@/services/backend/response';
-import type {FormSliderListType} from '@/types';
-import {readFileSync} from 'fs';
-import {Coin, defaultSliderKey} from '@/constants/app';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { jsonRes } from '@/services/backend/response';
+import type { AppConfigType, FormSliderListType } from '@/types';
+import { readFileSync } from 'fs';
+import { Coin } from '@/constants/app';
 import * as yaml from 'js-yaml';
 
-
+// todo make response type to be more specific and clear.
 export type Response = {
   SEALOS_DOMAIN: string;
   DOMAIN_PORT: string;
@@ -15,39 +15,56 @@ export type Response = {
   CURRENCY: Coin;
 };
 
-export const defaultVal = {
-  [defaultSliderKey]: {
-    cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000],
-    memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+export const defaultAppConfig: AppConfigType = {
+  global: {
+    cloudDomain: 'cloud.sealos.io',
+    cloudPort: ''
+  },
+  common: {
+    guideEnabled: false,
+    apiEnabled: false
+  },
+  launchpad: {
+    ingressTlsSecretName: 'wildcard-cert',
+    eventAnalyze: {
+      enabled: false
+    },
+    components: {
+      monitor: {
+        url: 'http://launchpad-monitor.sealos.svc.cluster.local:8428'
+      }
+    },
+    appResourceFormSliderConfig: {
+      default: {
+        cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000],
+        memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+      }
+    }
   }
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    if (!global.FormSliderListConfig) {
+    if (!global.AppConfig) {
       const filename =
-        process.env.NODE_ENV === 'development'
-          ? 'data/form_slider_config.yaml'
-          : '/app/data/form_slider_config.yaml';
-
+        process.env.NODE_ENV === 'development' ? 'data/config.yaml' : '/app/data/config.yaml';
       const res: any = yaml.load(readFileSync(filename, 'utf-8'));
       console.log(res);
-
-      global.FormSliderListConfig = res;
+      global.AppConfig = res;
     }
   } catch (error) {
     console.log('error: /api/platform/getInitData', error);
-
-    global.FormSliderListConfig = defaultVal;
+    global.AppConfig = defaultAppConfig;
   }
   jsonRes<Response>(res, {
     data: {
-      SEALOS_DOMAIN: process.env.SEALOS_DOMAIN || 'cloud.sealos.io',
-      DOMAIN_PORT: process.env.DOMAIN_PORT || '',
-      INGRESS_SECRET: process.env.INGRESS_SECRET || 'wildcard-cert',
-      SHOW_EVENT_ANALYZE: !!process.env.FASTGPT_KEY,
-      FORM_SLIDER_LIST_CONFIG: global.FormSliderListConfig,
-      CURRENCY: (process.env['CURRENCY'] || Coin.shellCoin) as Coin
+      SEALOS_DOMAIN: global.AppConfig.global.cloudDomain,
+      DOMAIN_PORT: global.AppConfig.global.cloudPort?.toString() || '',
+      INGRESS_SECRET: global.AppConfig.launchpad.ingressTlsSecretName,
+      // todo: add eventAnalyze configs in config.yaml and codes in types/index.d.ts
+      SHOW_EVENT_ANALYZE: global.AppConfig.launchpad.eventAnalyze.enabled,
+      FORM_SLIDER_LIST_CONFIG: global.AppConfig.launchpad.appResourceFormSliderConfig,
+      CURRENCY: Coin.shellCoin
     }
   });
 }
