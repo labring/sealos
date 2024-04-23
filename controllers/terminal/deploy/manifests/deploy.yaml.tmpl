@@ -350,7 +350,7 @@ data:
       cloudDomain: {{ .cloudDomain }}
       cloudPort: {{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
     terminalController:
-      ingressTlsSecretName: {{ .wildcardCertSecretName }}
+      ingressTLSSecretName: {{ .wildcardCertSecretName }}
 kind: ConfigMap
 metadata:
   name: terminal-manager-config

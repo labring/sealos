@@ -176,8 +176,5 @@ func setConfigToEnv(cfg controllers.Config) error {
 	if err := os.Setenv("SEALOS_CLOUD_HOST", cfg.Global.CloudDomain); err != nil {
 		return err
 	}
-	if err := os.Setenv("APISERVER_PORT", cfg.Kube.ApiServerPort); err != nil {
-		return err
-	}
-	return nil
+	return os.Setenv("APISERVER_PORT", cfg.Kube.APIServerPort)
 }

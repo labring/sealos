@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/jaevor/go-nanoid"
@@ -370,38 +369,6 @@ func isExpired(terminal *terminalv1.Terminal) bool {
 
 	duration, _ := time.ParseDuration(terminal.Spec.Keepalived)
 	return lastUpdateTime.Add(duration).Before(time.Now())
-}
-
-func getDomain() string {
-	domain := os.Getenv("DOMAIN")
-	if domain == "" {
-		return DefaultDomain
-	}
-	return domain
-}
-
-func getPort() string {
-	port := os.Getenv("PORT")
-	if port == "" {
-		return DefaultPort
-	}
-	return port
-}
-
-func getSecretName() string {
-	secretName := os.Getenv("SECRET_NAME")
-	if secretName == "" {
-		return DefaultSecretName
-	}
-	return secretName
-}
-
-func getSecretNamespace() string {
-	secretNamespace := os.Getenv("SECRET_NAMESPACE")
-	if secretNamespace == "" {
-		return DefaultSecretNamespace
-	}
-	return secretNamespace
 }
 
 func (r *TerminalReconciler) getPort() string {

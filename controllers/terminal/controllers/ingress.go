@@ -78,7 +78,7 @@ func (r *TerminalReconciler) createNginxIngress(terminal *terminalv1.Terminal, h
 
 	tls := networkingv1.IngressTLS{
 		Hosts:      []string{host},
-		SecretName: r.CtrConfig.TerminalConfig.IngressTlsSecretName,
+		SecretName: r.CtrConfig.TerminalConfig.IngressTLSSecretName,
 	}
 
 	ingress := &networkingv1.Ingress{
