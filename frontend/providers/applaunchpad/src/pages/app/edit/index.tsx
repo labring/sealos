@@ -1,11 +1,10 @@
 import { postDeployApp, putApp } from '@/api/app';
 import { updateDesktopGuide } from '@/api/platform';
-import { noGpuSliderKey } from '@/constants/app';
+import { defaultSliderKey } from '@/constants/app';
 import { defaultEditVal, editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
 import useDriver from '@/hooks/useDriver';
 import { useLoading } from '@/hooks/useLoading';
-import { useToast } from '@/hooks/useToast';
 import { useAppStore } from '@/store/app';
 import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
@@ -234,8 +233,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       if (!appName) {
         const defaultApp = {
           ...defaultEditVal,
-          cpu: formSliderListConfig[noGpuSliderKey].cpu[0],
-          memory: formSliderListConfig[noGpuSliderKey].memory[0]
+          cpu: formSliderListConfig[defaultSliderKey].cpu[0],
+          memory: formSliderListConfig[defaultSliderKey].memory[0]
         };
         setAlready(true);
         setYamlList([

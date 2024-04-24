@@ -17,8 +17,42 @@ export type FormSliderListType = Record<
   }
 >;
 
+export type AppConfigType = {
+  cloud: {
+    domain: string;
+    port?: string;
+  };
+  common: {
+    guideEnabled: boolean;
+    apiEnabled: boolean;
+  };
+  launchpad: {
+    ingressTlsSecretName: string;
+    eventAnalyze: {
+      enabled: boolean;
+      fastGPTKey?: string;
+    };
+    components: {
+      monitor: {
+        url: string;
+      };
+    };
+    appResourceFormSliderConfig: {
+      default: {
+        cpu: number[];
+        memory: number[];
+      };
+      // todo: add gpu appResourceFormSliderConfig config.yaml and codes here
+      // gpu?: {
+      //   cpu: number[];
+      //   memory: number[];
+      // };
+    };
+  };
+};
+
 declare global {
-  var FormSliderListConfig: FormSliderListType;
+  var AppConfig: AppConfigType;
   var logger: WstLogger;
 }
 

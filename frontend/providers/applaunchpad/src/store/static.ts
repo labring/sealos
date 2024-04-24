@@ -34,9 +34,9 @@ export const loadInitData = async () => {
 // server side method
 export const serverLoadInitData = () => {
   try {
-    SEALOS_DOMAIN = process.env.SEALOS_DOMAIN || 'cloud.sealos.io';
-    DOMAIN_PORT = process.env.DOMAIN_PORT || '';
-    INGRESS_SECRET = process.env.INGRESS_SECRET || 'wildcard-cert';
-    SHOW_EVENT_ANALYZE = !!process.env.FASTGPT_KEY;
+    SEALOS_DOMAIN = global.AppConfig.cloud.domain || 'cloud.sealos.io';
+    DOMAIN_PORT = global.AppConfig.cloud.port || '';
+    INGRESS_SECRET = global.AppConfig.cloud.domain || 'wildcard-cert';
+    SHOW_EVENT_ANALYZE = global.AppConfig.launchpad.eventAnalyze.enabled;
   } catch (error) {}
 };

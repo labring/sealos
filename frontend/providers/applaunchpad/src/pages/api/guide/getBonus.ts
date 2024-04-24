@@ -6,7 +6,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    if (process.env.GUIDE_ENABLED !== 'true') return jsonRes(res, { data: null });
+    if (global.AppConfig.common.guideEnabled) return jsonRes(res, { data: null });
     const { k8sCore, namespace } = await getK8s({
       kubeconfig: await authSession(req.headers)
     });

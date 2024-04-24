@@ -76,7 +76,7 @@ export const ProtocolList = [
   { value: 'WS', label: 'wss://' }
 ];
 
-export const noGpuSliderKey = 'NoGpu';
+export const defaultSliderKey = 'default';
 export const pauseKey = 'deploy.cloud.sealos.io/pause';
 export const maxReplicasKey = 'deploy.cloud.sealos.io/maxReplicas';
 export const minReplicasKey = 'deploy.cloud.sealos.io/minReplicas';
