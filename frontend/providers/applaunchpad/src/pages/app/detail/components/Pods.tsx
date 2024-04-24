@@ -137,9 +137,9 @@ const Pods = ({
       render: (item: PodDetailType) => (
         <Box h={'45px'} w={'120px'} position={'relative'}>
           <Box h={'45px'} w={'120px'} position={'absolute'}>
-            <PodLineChart type="green" data={item.usedCpu} />
+            <PodLineChart type="blue" data={item.usedCpu} />
             <Box
-              color={'#00A9A6'}
+              color={'#0077A9'}
               fontSize={'sm'}
               fontWeight={'bold'}
               position={'absolute'}
@@ -160,9 +160,9 @@ const Pods = ({
       render: (item: PodDetailType) => (
         <Box h={'45px'} w={'120px'} position={'relative'}>
           <Box h={'45px'} w={'120px'} position={'absolute'}>
-            <PodLineChart type="deepBlue" data={item.usedMemory} />
+            <PodLineChart type="purple" data={item.usedMemory} />
             <Text
-              color={'#3293EC'}
+              color={'#6F5DD7'}
               fontSize={'sm'}
               fontWeight={'bold'}
               position={'absolute'}
