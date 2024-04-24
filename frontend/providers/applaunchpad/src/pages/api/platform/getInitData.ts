@@ -27,7 +27,8 @@ export const defaultAppConfig: AppConfigType = {
   launchpad: {
     ingressTlsSecretName: 'wildcard-cert',
     eventAnalyze: {
-      enabled: false
+      enabled: false,
+      fastGPTKey: ''
     },
     components: {
       monitor: {
@@ -47,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     if (!global.AppConfig) {
       const filename =
-        process.env.NODE_ENV === 'development' ? 'data/config.yaml' : '/app/data/config.yaml';
+        process.env.NODE_ENV === 'development' ? 'data/config.yaml.local' : '/app/data/config.yaml';
       const res: any = yaml.load(readFileSync(filename, 'utf-8'));
       console.log(res);
       global.AppConfig = res;
@@ -61,7 +62,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       SEALOS_DOMAIN: global.AppConfig.global.cloudDomain,
       DOMAIN_PORT: global.AppConfig.global.cloudPort?.toString() || '',
       INGRESS_SECRET: global.AppConfig.launchpad.ingressTlsSecretName,
-      // todo: add eventAnalyze configs in config.yaml and codes in types/index.d.ts
       SHOW_EVENT_ANALYZE: global.AppConfig.launchpad.eventAnalyze.enabled,
       FORM_SLIDER_LIST_CONFIG: global.AppConfig.launchpad.appResourceFormSliderConfig,
       CURRENCY: Coin.shellCoin

@@ -8,6 +8,7 @@ launchpad:
   ingressTlsSecretName: wildcard-cert
   eventAnalyze:
     enabled: "false"
+    fastGPTKey: ""
   components:
     monitor:
       url: http://launchpad-monitor.sealos.svc.cluster.local:8428

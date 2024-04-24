@@ -20,8 +20,9 @@ data:
       apiEnabled: "{{ .apiEnabled }}"
     launchpad:
       ingressTlsSecretName: {{ .ingressTlsSecretName }}
-        eventAnalyze:
-          enabled: "false"
+      eventAnalyze:
+        enabled: "false"
+        fastGPTKey: ""
       components:
         monitor:
           url: {{ .monitorUrl }}
