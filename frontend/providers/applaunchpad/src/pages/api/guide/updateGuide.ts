@@ -18,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     if (!activityType || !phase || !phasePage)
       return jsonRes(res, { code: 400, message: 'Bad Request: Invalid parameters' });
     const kubeconfig = await authSession(req.headers);
-    const domain = global.AppConfig.global.cloudDomain;
+    const domain = global.AppConfig.cloud.domain;
 
     const payload = {
       activityType,

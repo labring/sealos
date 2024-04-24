@@ -16,9 +16,9 @@ export type Response = {
 };
 
 export const defaultAppConfig: AppConfigType = {
-  global: {
-    cloudDomain: 'cloud.sealos.io',
-    cloudPort: ''
+  cloud: {
+    domain: 'cloud.sealos.io',
+    port: ''
   },
   common: {
     guideEnabled: false,
@@ -59,8 +59,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
   jsonRes<Response>(res, {
     data: {
-      SEALOS_DOMAIN: global.AppConfig.global.cloudDomain,
-      DOMAIN_PORT: global.AppConfig.global.cloudPort?.toString() || '',
+      SEALOS_DOMAIN: global.AppConfig.cloud.domain,
+      DOMAIN_PORT: global.AppConfig.cloud.port?.toString() || '',
       INGRESS_SECRET: global.AppConfig.launchpad.ingressTlsSecretName,
       SHOW_EVENT_ANALYZE: global.AppConfig.launchpad.eventAnalyze.enabled,
       FORM_SLIDER_LIST_CONFIG: global.AppConfig.launchpad.appResourceFormSliderConfig,

@@ -34,9 +34,9 @@ export const loadInitData = async () => {
 // server side method
 export const serverLoadInitData = () => {
   try {
-    SEALOS_DOMAIN = global.AppConfig.global.cloudDomain || 'cloud.sealos.io';
-    DOMAIN_PORT = global.AppConfig.global.cloudPort || '';
-    INGRESS_SECRET = global.AppConfig.global.cloudDomain || 'wildcard-cert';
+    SEALOS_DOMAIN = global.AppConfig.cloud.domain || 'cloud.sealos.io';
+    DOMAIN_PORT = global.AppConfig.cloud.port || '';
+    INGRESS_SECRET = global.AppConfig.cloud.domain || 'wildcard-cert';
     SHOW_EVENT_ANALYZE = global.AppConfig.launchpad.eventAnalyze.enabled;
   } catch (error) {}
 };

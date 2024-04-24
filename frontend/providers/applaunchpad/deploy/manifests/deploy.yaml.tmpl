@@ -12,9 +12,9 @@ metadata:
   namespace: applaunchpad-frontend
 data:
   config.yaml: |-
-    global:
-      cloudDomain: {{ .cloudDomain }}
-      cloudPort: {{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
+    cloud:
+      domain: {{ .cloudDomain }}
+      port: {{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
     common:
       guideEnabled: "{{ .guideEnabled }}"
       apiEnabled: "{{ .apiEnabled }}"

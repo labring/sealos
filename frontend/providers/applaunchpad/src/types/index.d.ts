@@ -18,9 +18,9 @@ export type FormSliderListType = Record<
 >;
 
 export type AppConfigType = {
-  global: {
-    cloudDomain: string;
-    cloudPort?: string;
+  cloud: {
+    domain: string;
+    port?: string;
   };
   common: {
     guideEnabled: boolean;

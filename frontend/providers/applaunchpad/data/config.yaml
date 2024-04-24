@@ -1,6 +1,6 @@
-global:
-  cloudDomain: 127.0.0.1.nip.io
-  cloudPort: ""
+cloud:
+  domain: 127.0.0.1.nip.io
+  port: ""
 common:
   guideEnabled: "false"
   apiEnabled: "false"
