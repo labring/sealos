@@ -73,5 +73,10 @@ const ApiBaseParamsRecord: Record<KubeObjectKind, KubeApiUrlParams> = {
     apiPrefix: 'api',
     apiVersion: 'v1',
     resource: 'events'
+  },
+  [KubeObjectKind.Service]: {
+    apiPrefix: 'api',
+    apiVersion: 'v1',
+    resource: 'services'
   }
 };
