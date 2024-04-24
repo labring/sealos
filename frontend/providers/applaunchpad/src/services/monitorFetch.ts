@@ -9,7 +9,9 @@ export const monitorFetch = async (props: AxiosRequestConfig, kubeconfig: string
       Authorization: encodeURIComponent(kubeconfig)
     }
   };
-  const doMain = global.AppConfig.launchpad.components.monitor.url || '';
+  const doMain =
+    global.AppConfig.launchpad.components.monitor.url ||
+    'http://launchpad-monitor.sealos.svc.cluster.local:8428';
 
   try {
     const response = await fetch(`${doMain}${url}?${queryString}`, requestOptions);
