@@ -15,6 +15,7 @@
 package objectstorage
 
 import (
+	"fmt"
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 	"os"
 	"strconv"
@@ -44,5 +45,19 @@ func ConvertBytes(bytes int64) string {
 		return strconv.FormatFloat(float64(bytes)/1024/1024, 'f', 2, 64) + "MB"
 	} else {
 		return strconv.FormatFloat(float64(bytes)/1024/1024/1024, 'f', 2, 64) + "GB"
+	}
+}
+
+func TestQueryUserUsage(t *testing.T) {
+	obClient, err := NewMetricsClient("objectstorageapi.192.168.0.55.nip.io", "username", "passw0rd", false)
+	if err != nil {
+		t.Error(err)
+	}
+	metrics, err := QueryUserUsage(obClient)
+	if err != nil {
+		t.Error(err)
+	}
+	for _, metric := range metrics {
+		fmt.Println(metric)
 	}
 }
