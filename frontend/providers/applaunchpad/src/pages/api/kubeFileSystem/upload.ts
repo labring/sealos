@@ -34,7 +34,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               file: pass
             })
             .then((res) => {
-              console.log(res, 222);
               resolve(res);
             })
             .catch((err) => {

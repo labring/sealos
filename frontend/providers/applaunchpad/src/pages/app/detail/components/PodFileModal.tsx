@@ -90,6 +90,7 @@ const PodFile = ({
   const [currentFile, setCurrentFile] = useState<TFile>();
   const [showHidden, setShowHidden] = useState(false);
   const [searchValue, setSearchValue] = useState('');
+  const [isUploadLoading, setIsUploadLoading] = useState(false);
 
   const { File, onOpen: openUploadFile } = useSelectFile({
     fileType: '*',
@@ -253,6 +254,7 @@ const PodFile = ({
 
   const uploadFile = async (files: File[]) => {
     try {
+      setIsUploadLoading(true);
       const uploadPromises = files.map(async (file) => {
         const name = file.name;
         const form = new FormData();
@@ -266,7 +268,8 @@ const PodFile = ({
           form
         );
       });
-      const uploadResults = await Promise.all(uploadPromises);
+      await Promise.all(uploadPromises);
+      setIsUploadLoading(false);
       refetch();
     } catch (error) {}
   };
@@ -420,6 +423,7 @@ const PodFile = ({
                     {t('Create Folder')}
                   </Button>
                   <Button
+                    isLoading={isUploadLoading}
                     size={'sm'}
                     variant={'outline'}
                     height={'32px'}

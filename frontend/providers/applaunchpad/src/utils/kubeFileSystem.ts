@@ -62,16 +62,7 @@ export class KubeFileSystem {
         reject(error.toString());
       });
 
-      const webSocket = await this.k8sExec.exec(
-        namespace,
-        podName,
-        containerName,
-        command,
-        stdout,
-        stderr,
-        stdin,
-        !!stdin
-      );
+      this.k8sExec.exec(namespace, podName, containerName, command, stdout, stderr, stdin, !!stdin);
 
       if (stdin) {
         stdin.on('end', () => {
@@ -263,7 +254,7 @@ export class KubeFileSystem {
       namespace,
       podName,
       containerName,
-      ['dd', `if="${path}"`, 'status=none'],
+      ['dd', `if=${path}`, 'status=none'],
       null,
       stdout
     );
@@ -310,17 +301,19 @@ export class KubeFileSystem {
     path: string;
     file: Readable;
   }) {
-    return await this.execCommand(
+    await this.execCommand(
       namespace,
       podName,
       containerName,
-      [
-        'sh',
-        '-c',
-        `dd of="${path}.tmp" status=none bs=32767 && base64 -d "${path}.tmp" > "${path}"`
-      ],
+      ['sh', '-c', `dd of=${path}.tmp status=none bs=32767`],
       file.pipe(new Base64Encode({ lineLength: 76 }))
     );
+
+    return await this.execCommand(namespace, podName, containerName, [
+      'sh',
+      '-c',
+      `base64 -d ${path}.tmp > ${path} && rm -rf ${path}.tmp`
+    ]);
   }
 
   async md5sum({

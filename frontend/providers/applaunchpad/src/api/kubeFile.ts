@@ -1,5 +1,6 @@
 import { POST } from '@/services/request';
 import { TFile } from '@/utils/kubeFileSystem';
+import { AxiosProgressEvent } from 'axios';
 
 export const kubeFile_ls = (payload: {
   containerName: string;
@@ -37,13 +38,12 @@ export const kubeFile_upload = (
     podName: string;
     path: string;
   },
-  formData: FormData
+  formData: FormData,
+  onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
 ) =>
   POST(`/api/kubeFileSystem/upload`, formData, {
     params: payload,
-    onUploadProgress(progressEvent) {
-      console.log(progressEvent);
-    },
+    onUploadProgress,
     headers: {
       'Content-Type': 'multipart/form-data'
     }
