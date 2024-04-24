@@ -95,9 +95,34 @@ func (c *Cockroach) CreateRegion(region *types.Region) error {
 	return nil
 }
 
-func (c *Cockroach) GetUserCr(ops *types.UserQueryOpts) (*types.RegionUserCr, error) {
+func (c *Cockroach) GetUser(ops *types.UserQueryOpts) (*types.User, error) {
 	if err := checkOps(ops); err != nil {
 		return nil, err
+	}
+	queryUser := &types.User{}
+	if ops.UID != uuid.Nil {
+		queryUser.UID = ops.UID
+	}
+	if ops.ID != "" {
+		queryUser.ID = ops.ID
+	}
+	var user types.User
+	if err := c.DB.Where(queryUser).First(&user).Error; err != nil {
+		return nil, fmt.Errorf("failed to get user: %v", err)
+	}
+	return &user, nil
+}
+
+func (c *Cockroach) GetUserCr(ops *types.UserQueryOpts) (*types.RegionUserCr, error) {
+	if ops.UID == uuid.Nil && ops.Owner == "" {
+		if ops.ID == "" {
+			return nil, fmt.Errorf("empty query opts")
+		}
+		user, err := c.GetUser(ops)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user: %v", err)
+		}
+		ops.UID = user.UID
 	}
 	query := &types.RegionUserCr{
 		CrName: ops.Owner,
@@ -131,7 +156,7 @@ func (c *Cockroach) GetUserUID(ops *types.UserQueryOpts) (uuid.UUID, error) {
 }
 
 func checkOps(ops *types.UserQueryOpts) error {
-	if ops.Owner == "" && ops.UID == uuid.Nil {
+	if ops.Owner == "" && ops.UID == uuid.Nil && ops.ID == "" {
 		return fmt.Errorf("empty query opts")
 	}
 	return nil
@@ -301,6 +326,18 @@ func (c *Cockroach) ReduceDeductionBalance(ops *types.UserQueryOpts, amount int6
 func (c *Cockroach) AddDeductionBalance(ops *types.UserQueryOpts, amount int64) error {
 	return c.DB.Transaction(func(tx *gorm.DB) error {
 		return c.updateBalance(tx, ops, amount, true, true)
+	})
+}
+
+func (c *Cockroach) AddDeductionBalanceWithFunc(ops *types.UserQueryOpts, amount int64, preDo, postDo func() error) error {
+	return c.DB.Transaction(func(tx *gorm.DB) error {
+		if err := preDo(); err != nil {
+			return err
+		}
+		if err := c.updateBalance(tx, ops, amount, true, true); err != nil {
+			return err
+		}
+		return postDo()
 	})
 }
 
