@@ -14,7 +14,7 @@ import styles from './index.module.scss';
 import { useQuery } from '@tanstack/react-query';
 import { getGlobalNotification } from '@/api/platform';
 import { useMessage } from '@sealos/ui';
-import { BackgroundImageUrl, ImageFallBackUrl } from '@/stores/config';
+import { useConfigStore } from '@/stores/config';
 const TimeComponent = dynamic(() => import('./time'), {
   ssr: false
 });
@@ -22,6 +22,8 @@ const TimeComponent = dynamic(() => import('./time'), {
 export default function DesktopContent(props: any) {
   const { t, i18n } = useTranslation();
   const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
+  const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
+  const logo = useConfigStore().layoutConfig?.logo;
   const renderApps = apps.filter((item: TApp) => item?.displayType === 'normal');
   const [maxItems, setMaxItems] = useState(10);
   const { message } = useMessage();
@@ -109,7 +111,7 @@ export default function DesktopContent(props: any) {
     <Box
       id="desktop"
       className={styles.desktop}
-      backgroundImage={`url(${BackgroundImageUrl})`}
+      backgroundImage={`url(${backgroundImage || '/images/bg-blue.jpg'})`}
       backgroundRepeat={'no-repeat'}
       backgroundSize={'cover'}
     >
@@ -166,7 +168,7 @@ export default function DesktopContent(props: any) {
                     width="100%"
                     height="100%"
                     src={item?.icon}
-                    fallbackSrc={ImageFallBackUrl}
+                    fallbackSrc={logo || '/images/logo.svg'}
                     draggable={false}
                     alt="user avator"
                   />

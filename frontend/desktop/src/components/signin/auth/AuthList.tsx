@@ -103,7 +103,11 @@ const AuthList = () => {
     {
       icon: () => (
         <Center>
-          <Image alt="logo" width={'20px'} src="logo.svg"></Image>
+          <Image
+            alt="logo"
+            width={'20px'}
+            src={useConfigStore().layoutConfig?.logo || '/images/logo.svg'}
+          ></Image>
         </Center>
       ),
       cb: (e) => {

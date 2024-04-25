@@ -41,13 +41,13 @@ export default function SigninComponent() {
   let protocol_data: Parameters<typeof useProtocol>[0];
   if (['zh', 'zh-Hans'].includes(i18n.language))
     protocol_data = {
-      service_protocol: conf.layoutConfig?.protocol.serviceProtocol.zh as string,
-      private_protocol: conf.layoutConfig?.protocol.privateProtocol.zh as string
+      service_protocol: conf.layoutConfig?.protocol?.serviceProtocol.zh as string,
+      private_protocol: conf.layoutConfig?.protocol?.privateProtocol.zh as string
     };
   else
     protocol_data = {
-      service_protocol: conf.layoutConfig?.protocol.serviceProtocol.en as string,
-      private_protocol: conf.layoutConfig?.protocol.privateProtocol.en as string
+      service_protocol: conf.layoutConfig?.protocol?.serviceProtocol.en as string,
+      private_protocol: conf.layoutConfig?.protocol?.privateProtocol.en as string
     };
   const { Protocol, isAgree, setIsInvalid } = useProtocol(protocol_data!);
   const { WechatComponent, login: wechatSubmit } = useWechat();

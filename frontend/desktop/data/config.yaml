@@ -24,7 +24,7 @@ desktop:
     common:
       githubStarEnabled: "false"
   auth:
-    callbackURL: "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/callback"
+    callbackURL: "http://localhost:3000/callback"
     jwt:
       internal: "{{ .jwtInternal }}"
       regional: "{{ .jwtRegional }}"

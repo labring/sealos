@@ -19,6 +19,8 @@ import RemoveMember from './RemoveMember';
 import Abdication from './Abdication';
 import ModifyRole from './ModifyRole';
 import { useTranslation } from 'react-i18next';
+import { useConfigStore } from '@/stores/config';
+
 export default function UserTable({
   users = [],
   isTeam,
@@ -78,7 +80,7 @@ export default function UserTable({
                   <Image
                     alt="avatar"
                     src={user.avatarUrl}
-                    fallbackSrc={'/logo.svg'}
+                    fallbackSrc={useConfigStore().layoutConfig?.logo || '/images/logo.svg'}
                     w="20px"
                     h="20px"
                     mr="8px"

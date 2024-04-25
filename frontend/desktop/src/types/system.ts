@@ -44,9 +44,9 @@ export type LayoutConfigType = {
   title: string;
   logo: string;
   backgroundImage: string;
-  cfSiteKey?: string;
-  protocol: ProtocolConfigType;
   meta: MetaConfigType;
+  cfSiteKey?: string;
+  protocol?: ProtocolConfigType;
   common: {
     githubStarEnabled: boolean;
   };
@@ -136,7 +136,7 @@ export const DefaultCloudConfig: CloudConfigType = {
 
 export const DefaultLayoutConfig: LayoutConfigType = {
   title: 'Sealos Cloud',
-  logo: 'logo.svg',
+  logo: '/images/logo.svg',
   backgroundImage: '/images/bg-blue.svg',
   protocol: {
     serviceProtocol: {

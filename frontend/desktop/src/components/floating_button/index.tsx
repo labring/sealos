@@ -7,7 +7,7 @@ import Iconfont from '../iconfont';
 import styles from './index.module.scss';
 import homeIcon from 'public/icons/home.svg';
 import { APPTYPE } from '@/types';
-import { ImageFallBackUrl } from '@/stores/config';
+import { useConfigStore } from '@/stores/config';
 
 enum Suction {
   None,
@@ -245,7 +245,7 @@ export default function Index(props: any) {
                       >
                         <Image
                           src={item?.icon}
-                          fallbackSrc={ImageFallBackUrl}
+                          fallbackSrc={useConfigStore().layoutConfig?.logo || '/images/logo.svg'}
                           alt={item?.name}
                           w="24px"
                           h="24px"

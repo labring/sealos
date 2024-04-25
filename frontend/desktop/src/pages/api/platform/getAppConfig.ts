@@ -13,7 +13,7 @@ import { getLayoutConfig } from '@/pages/api/platform/getLayoutConfig';
 import { getCommonConfig } from '@/pages/api/platform/getCommonConfig';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const config = await getAuthConfig();
+  const config = await getAppConfig();
   jsonRes(res, {
     data: config,
     code: 200
@@ -38,12 +38,12 @@ function genResConfig(
 
 export async function getAppConfig(): Promise<AppConfigType> {
   try {
-    return genResConfig(
-      await getCloudConfig(),
-      await getAuthConfig(),
-      await getCommonConfig(),
-      await getLayoutConfig()
-    );
+    const cloudConf = await getCloudConfig();
+    const authConf = await getAuthConfig();
+    const commonConf = await getCommonConfig();
+    const layoutConf = await getLayoutConfig();
+    console.log(layoutConf);
+    return genResConfig(cloudConf, authConf, commonConf, layoutConf);
   } catch (error) {
     console.log('-getAppConfig-', error);
     return {} as AppConfigType;

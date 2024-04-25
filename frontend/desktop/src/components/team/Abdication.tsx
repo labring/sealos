@@ -25,6 +25,7 @@ import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
 import { useTranslation } from 'next-i18next';
 import { ExchangeIcon, ExpanMoreIcon } from '@sealos/ui';
+import { useConfigStore } from '@/stores/config';
 
 export default function Abdication({
   ns_uid,
@@ -113,7 +114,7 @@ export default function Abdication({
                     <Image
                       alt="avatar"
                       src={targetUser.avatar}
-                      fallbackSrc={'/logo.svg'}
+                      fallbackSrc={useConfigStore().layoutConfig?.logo || '/images/logo.svg'}
                       boxSize={'24px'}
                       borderRadius={'50%'}
                       mr="8px"
@@ -141,7 +142,7 @@ export default function Abdication({
                       <Image
                         alt="logo"
                         src={user.avatarUrl}
-                        fallbackSrc={'/logo.svg'}
+                        fallbackSrc={useConfigStore().layoutConfig?.logo || '/images/logo.svg'}
                         boxSize={'24px'}
                         borderRadius={'50%'}
                         mr="8px"

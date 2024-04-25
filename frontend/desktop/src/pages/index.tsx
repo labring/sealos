@@ -87,7 +87,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     if (bd_vid) {
       sessionStorage.setItem('bd_vid', bd_vid as string);
     }
-  });
+  }, []);
 
   return (
     <Box position={'relative'} overflow={'hidden'} w="100vw" h="100vh">
@@ -95,7 +95,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
         <title>{layoutConfig?.meta.title}</title>
         <meta name="description" content={layoutConfig?.meta.description} />
       </Head>
-      {layoutConfig?.meta.scripts.map((item, i) => {
+      {layoutConfig?.meta.scripts?.map((item, i) => {
         return <Script key={i} {...item} />;
       })}
       <MoreAppsContext.Provider value={{ showMoreApps, setShowMoreApps }}>
