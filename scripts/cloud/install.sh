@@ -64,7 +64,7 @@ PROMPTS_EN=(
     ["cilium_requirement"]="Using Cilium as the network plugin, the host system must meet the following requirements:
 1. Hosts with AMD64 or AArch64 architecture;
 2. Linux kernel> = 4.19.57 or equivalent version (e.g., 4.18 on RHEL8)."
-    ["mongo_avx_requirement"]="MongoDB 5.0 version depends on a CPU that supports the AVX instruction set. The current environment does not support AVX, so it has been switched to MongoDB 4.0 version. For more information, see: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
+    ["mongo_avx_requirement"]="MongoDB 5.0 version depends on a CPU that supports the AVX instruction set. The current environment does not support AVX, so it has been switched to MongoDB 4.4 version. For more information, see: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
     ["usage"]="Usage: $0 [options]=[value] [options]=[value] ...
 
 Options:
@@ -125,7 +125,7 @@ PROMPTS_CN=(
     ["cilium_requirement"]="正在使用 Cilium 作为网络插件, 主机系统必须满足以下要求:
 1.具有AMD64或AArch64架构的主机;
 2.Linux内核> = 4.19.57或等效版本 (例如, 在RHEL8上为4.18)."
-    ["mongo_avx_requirement"]="MongoDB 5.0版本依赖支持 AVX 指令集的 CPU, 当前环境不支持 AVX, 已切换为 MongoDB 4.0版本, 更多信息查看: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
+    ["mongo_avx_requirement"]="MongoDB 5.0版本依赖支持 AVX 指令集的 CPU, 当前环境不支持 AVX, 已切换为 MongoDB 4.4版本, 更多信息查看: https://www.mongodb.com/docs/v5.0/administration/production-notes/"
     ["usage"]="Usage: $0 [options]=[value] [options]=[value] ...
 
 Options:
@@ -202,13 +202,13 @@ set_language() {
   fi
 }
 
-#TODO mongo 5.0 need avx support, if not support, change to 4.0
+#TODO mongo 5.0 need avx support, if not support, change to 4.4
 setMongoVersion() {
   set +e
   grep avx /proc/cpuinfo > /dev/null 2>&1
   if [ $? -ne 0 ]; then
     get_prompt "mongo_avx_requirement"
-    mongodb_version="mongodb-4.0"
+    mongodb_version="mongodb-4.4"
   fi
   set -e
 }
