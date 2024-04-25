@@ -36,7 +36,63 @@ metadata:
   namespace: sealos
 data:
   config.yaml: |-
-    addr: :3000
+    cloud:
+      domain: "{{ .cloudDomain }}"
+      port: "{{ .cloudPort }}"
+      regionUID: "{{ .regionUID }}"
+      certSecretName: "{{ .certSecretName }}"
+    common:
+      guideEnabled: "{{ .guideEnabled }}"
+      apiEnabled: "{{ .apiEnabled }}"
+    database:
+      mongodbURI: "{{ .mongodbURI }}"
+      globalCockroachdbURI: "{{ .globalCockroachdbURI }}"
+      regionalCockroachdbURI: "{{ .regionalCockroachdbURI }}"
+    desktop:
+      layout:
+        title: "Sealos Cloud"
+        logo: ""
+        backgroundImage: ""
+        meta:
+          title: "Sealos Cloud"
+          description: "Sealos Cloud"
+          keywords: "Sealos Cloud"
+        common:
+          githubStarEnabled: "false"
+      login: # or auth?
+        password:
+          enabled: "{{ .passwordEnabled }}"
+          salt: "{{ .passwordSalt }}"
+        github:
+          enabled: "{{ .githubEnabled }}"
+          clientId: "{{ .githubClientID }}"
+          clientSecret: "{{ .githubClientSecret }}"
+        wechat:
+          enabled: "{{ .wechatEnabled }}"
+          clientId: "{{ .wechatClientID }}"
+          clientSecret: "{{ .wechatClientSecret }}"
+        sms:
+          ali:
+            enabled: "{{ .smsEnabled }}"
+            endpoint: "{{ .aliSmsEndpoint }}"
+            signName: "{{ .aliSmsSignName }}"
+            accessKeyId: "{{ .aliAccessKeyID }}"
+            accessKeySecret: "{{ .aliAccessKeySecret }}"
+        oauth2:
+          enabled: "{{ .oauth2Enabled }}"
+          callbackURL: "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/callback"
+          clientId: "{{ .oauth2ClientId }}"
+          clientSecret: "{{ .oauth2ClientSecret }}"
+          authURL: "{{ .oauth2AuthURL }}"
+          tokenURL: "{{ .oauth2TokenURL }}"
+          userInfoURL: "{{ .oauth2UserInfoURL }}"
+      jwt:
+        internal: "{{ .jwtInternal }}"
+        regional: "{{ .jwtRegional }}"
+        global: "{{ .jwtGlobal }}"
+      components:
+        billingService:
+          uri: "{{ .billingURI }}"
   config.json: |-
     {
       "scripts": [],

@@ -22,18 +22,15 @@ import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useMemo, useState } from 'react';
 import useAppStore from '@/stores/app';
-import { ApiResp, Region } from '@/types';
+import { ApiResp } from '@/types';
 import { formatMoney } from '@/utils/format';
 import TeamCenter from '@/components/team/TeamCenter';
 import NsList from '@/components/team/NsList';
 import { nsListRequest, switchRequest } from '@/api/namespace';
 import { NSType } from '@/types/team';
 import PasswordModify from './PasswordModify';
-import { useGlobalStore } from '@/stores/global';
 import { CopyIcon, DownloadIcon, LogoutIcon, RightArrowIcon } from '@sealos/ui';
-import { ImageFallBackUrl } from '@/stores/config';
-import { jwtDecode } from 'jwt-decode';
-import { AccessTokenPayload } from '@/types/token';
+import { useConfigStore } from '@/stores/config';
 import { sessionConfig } from '@/utils/sessionConfig';
 
 const NsMenu = () => {
@@ -119,7 +116,9 @@ const NsMenu = () => {
 };
 export default function Account({ disclosure }: { disclosure: UseDisclosureReturn }) {
   const [showId, setShowId] = useState(true);
-  const { needPassword, rechargeEnabled } = useGlobalStore((state) => state.systemEnv);
+  const passwordEnabled = useConfigStore().authConfig?.idp?.password?.enabled;
+  const rechargeEnabled = useConfigStore().commonConfig?.rechargeEnabled;
+  const logo = useConfigStore().layoutConfig?.logo;
   const router = useRouter();
   const { copyData } = useCopyData();
   const openApp = useAppStore((s) => s.openApp);
@@ -191,7 +190,7 @@ export default function Account({ disclosure }: { disclosure: UseDisclosureRetur
             height={'80px'}
             borderRadius="full"
             src={user?.avatar}
-            fallbackSrc={ImageFallBackUrl}
+            fallbackSrc={logo}
             alt="user avator"
           />
           <Text color={'#24282C'} fontSize={'20px'} fontWeight={600}>
@@ -231,7 +230,7 @@ export default function Account({ disclosure }: { disclosure: UseDisclosureRetur
                 <Text>{t('Manage Team')}</Text>
                 <TeamCenter mr="0" />
               </Flex>
-              {needPassword && (
+              {passwordEnabled && (
                 <Flex
                   justify={'space-between'}
                   alignItems={'center'}

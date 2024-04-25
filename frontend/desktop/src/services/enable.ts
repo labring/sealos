@@ -21,14 +21,14 @@ export const enableGoogle = () =>
   process.env.GOOGLE_ENABLED === 'true' &&
   !!process.env.GOOGLE_CLIENT_ID &&
   !!process.env.GOOGLE_CLIENT_SECRET;
-export const enableRecharge = () => {
-  return process.env.RECHARGE_ENABLED === 'true';
-};
 export const enableOpenWechat = () =>
   !!process.env.PBULIC_WECHAT_APP_ID && !!process.env.PBULIC_WECHAT_APP_SECRET;
 export const enableSignUp = () => process.env.SIGN_UP_ENABLED === 'true';
 export const enableApi = () => process.env.API_ENABLED === 'true';
 // costcenter
+export const enableRecharge = () => {
+  return process.env.RECHARGE_ENABLED === 'true';
+};
 export const enableStripe = () =>
   process.env['STRIPE_ENABLED'] === 'true' && !!process.env['STRIPE_PUB'];
 export const enableWechatRecharge = () => process.env['WECHAT_ENABLED'] === 'true';
