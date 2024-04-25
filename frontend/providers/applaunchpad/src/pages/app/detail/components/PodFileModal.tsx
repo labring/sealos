@@ -575,7 +575,7 @@ const PodFile = ({
               width={'88px'}
               variant={'outline'}
               onClick={() => {
-                onClose();
+                onInternalClose();
               }}
             >
               {t('Cancel')}

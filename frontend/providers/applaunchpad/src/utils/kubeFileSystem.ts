@@ -62,7 +62,16 @@ export class KubeFileSystem {
         reject(error.toString());
       });
 
-      this.k8sExec.exec(namespace, podName, containerName, command, stdout, stderr, stdin, !!stdin);
+      await this.k8sExec.exec(
+        namespace,
+        podName,
+        containerName,
+        command,
+        stdout,
+        stderr,
+        stdin,
+        !!stdin
+      );
 
       if (stdin) {
         stdin.on('end', () => {
