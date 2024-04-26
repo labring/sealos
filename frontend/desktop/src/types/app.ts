@@ -76,6 +76,7 @@ export type TOSState = {
   ): Promise<void>;
   // close app
   closeAppById: (pid: number) => void;
+  closeAppAll: () => void;
   // get current runningApp
   currentApp: () => AppInfo | undefined;
   switchAppById: (pid: number) => void;

@@ -6,8 +6,9 @@ import LangSelectSimple from '../LangSelect/simple';
 import Iconfont from '../iconfont';
 import GithubComponent from './github';
 import { ImageFallBackUrl, useSystemConfigStore } from '@/stores/config';
-import { ReactElement, useState } from 'react';
+import { ReactElement, useCallback, useState } from 'react';
 import RegionToggle from '@/components/region/RegionToggle';
+import WorkspaceToggle from '@/components/team/WorkspaceToggle';
 
 enum UserMenuKeys {
   LangSelect,
@@ -23,6 +24,7 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
 
   const { systemConfig } = useSystemConfigStore();
   const userInfo = useSessionStore((state) => state.session);
+  const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
   const {
     userMenuStyleProps = {
       alignItems: 'center',
@@ -53,13 +55,7 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
         <Iconfont iconName="icon-notifications" width={20} height={20} color="#24282C"></Iconfont>
       ),
       click: () => showDisclosure.onOpen(),
-      content: (
-        <Notification
-          key={'notification'}
-          disclosure={showDisclosure}
-          onAmount={(amount) => setNotificationAmount(amount)}
-        />
-      )
+      content: <Notification key={'notification'} disclosure={showDisclosure} onAmount={onAmount} />
     },
     {
       key: UserMenuKeys.Account,
@@ -80,6 +76,7 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
   return (
     <Flex {...userMenuStyleProps}>
       <RegionToggle />
+      <WorkspaceToggle />
       <LangSelectSimple {...baseItemStyle} />
       {systemConfig?.showGithubStar && <GithubComponent {...baseItemStyle} />}
       {buttonList.map((item) => (

@@ -2,7 +2,6 @@ import {
   Box,
   Flex,
   Text,
-  Image,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -17,7 +16,6 @@ import {
   VStack,
   Circle
 } from '@chakra-ui/react';
-import NsList from './NsList';
 import { useEffect, useState } from 'react';
 import CreateTeam from './CreateTeam';
 import DissolveTeam from './DissolveTeam';
@@ -34,6 +32,7 @@ import { nsListRequest, reciveMessageRequest, teamDetailsRequest } from '@/api/n
 import { useTranslation } from 'react-i18next';
 import { CopyIcon, ListIcon, SettingIcon, StorageIcon } from '@sealos/ui';
 import { GetUserDefaultNameSpace } from '@/services/backend/kubernetes/user';
+import NsListItem from '@/components/team/NsListItem';
 
 export default function TeamCenter(props: ButtonProps) {
   const session = useSessionStore((s) => s.session);
@@ -104,14 +103,13 @@ export default function TeamCenter(props: ButtonProps) {
     <>
       <IconButton
         onClick={() => {
-          // 清理消息过滤
           setMessageFilter([]);
           onOpen();
         }}
         variant={'white-bg-icon'}
         p="4px"
         ml="auto"
-        icon={<SettingIcon boxSize={'20px'} color={'#219BF4'} />}
+        icon={<SettingIcon boxSize={'16px'} color={'#219BF4'} />}
         aria-label={'open team center'}
         {...props}
       />
@@ -134,7 +132,6 @@ export default function TeamCenter(props: ButtonProps) {
                     message={message}
                     key={message.ns_uid}
                     CloseTipHandler={(ns_uid) => {
-                      // 纳入被过滤的消息
                       setMessageFilter([...messageFilter, ns_uid]);
                     }}
                   />
@@ -157,15 +154,25 @@ export default function TeamCenter(props: ButtonProps) {
               </Flex>
               <Box overflow={'scroll'} h="0" flex="1" px="16px">
                 {namespaces && namespaces.length > 0 ? (
-                  <NsList
-                    displayPoint={false}
-                    selected_ns_uid={ns_uid}
-                    click={(ns) => {
-                      setNs_uid(ns.uid);
-                      setNsid(ns.id);
-                    }}
-                    namespaces={namespaces || []}
-                  />
+                  namespaces.map((ns) => {
+                    return (
+                      <NsListItem
+                        key={ns.uid}
+                        width={'full'}
+                        onClick={() => {
+                          setNs_uid(ns.uid);
+                          setNsid(ns.id);
+                        }}
+                        p={'7.5px 9px'}
+                        fontSize={'14px'}
+                        displayPoint={false}
+                        id={ns.uid}
+                        isPrivate={ns.nstype === NSType.Private}
+                        isSelected={ns.uid === ns_uid}
+                        teamName={ns.teamName}
+                      />
+                    );
+                  })
                 ) : (
                   <Center w="full" h="full">
                     <Text color={'grayModern.600'} fontSize={'12px'}>
@@ -267,7 +274,7 @@ export default function TeamCenter(props: ButtonProps) {
                     </Box>
                   </Stack>
                 </>
-              ) : (
+              ) : namespaces.length === 0 ? (
                 <Center w="full" flex={'1'}>
                   <VStack gap={'20px'}>
                     <Circle size={'48px'} border={'0.5px dashed'} borderColor={'grayModern.400'}>
@@ -279,7 +286,7 @@ export default function TeamCenter(props: ButtonProps) {
                     <CreateTeam textButton />
                   </VStack>
                 </Center>
-              )}
+              ) : null}
             </VStack>
           </ModalBody>
         </ModalContent>

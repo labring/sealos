@@ -1,13 +1,10 @@
-import {
-  CRDMeta,
-  K8sApi,
-  ListCRD,
-  switchKubeconfigNamespace
-} from '@/services/backend/kubernetes/user';
+import { CRDMeta, K8sApi, ListCRD } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAccessToken } from '@/services/backend/auth';
 import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
+
+import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const payload = await verifyAccessToken(req.headers);

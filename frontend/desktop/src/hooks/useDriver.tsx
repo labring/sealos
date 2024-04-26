@@ -49,7 +49,6 @@ export default function useDriver({ openDesktopApp }: { openDesktopApp: any }) {
 
   const { systemEnv } = useGlobalStore();
   const handleSkipGuide = () => {
-    console.log('handleSkipGuide');
     setShowGuide(false);
     updateDesktopGuide().catch((err) => {
       console.log(err);

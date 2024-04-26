@@ -11,8 +11,8 @@ import { K8sApiDefault } from './kubernetes/admin';
 import { ApplyYaml } from './kubernetes/user';
 import { prisma } from '@/services/backend/db/init';
 import { JoinStatus, Role } from 'prisma/region/generated/client';
+import { UserRoleToRole } from '@/utils/tools';
 
-const UserRoleToRole = (role: UserRole): Role => [Role.OWNER, Role.MANAGER, Role.DEVELOPER][role];
 const _applyRoleRequest =
   (kc: KubeConfig, nsid: string) =>
   (action: 'Grant' | 'Deprive' | 'Update', types: watchEventType[]) =>
