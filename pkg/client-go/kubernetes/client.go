@@ -17,8 +17,6 @@ package kubernetes
 import (
 	"path/filepath"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 
 	"k8s.io/client-go/discovery"
@@ -65,11 +63,9 @@ func newKubernetesClient(kubeconfig, apiserver string, insecure bool) (Client, e
 		config.TLSClientConfig.CAFile = ""
 		config.TLSClientConfig.CAData = nil
 		config.TLSClientConfig.Insecure = true
-		//logger.Info("insecure mode, skip verify apiserver certificate", config.TLSClientConfig)
 	}
-	logger.Info("kubernetes client config", config.TLSClientConfig)
-	var k kubernetesClient
 
+	var k kubernetesClient
 	k8s, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err
