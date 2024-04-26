@@ -1,4 +1,4 @@
-import { deleteFileByName, getFileUrl, uploadFile } from '@/api/platform';
+import { FeishuNotification, deleteFileByName, getFileUrl, uploadFile } from '@/api/platform';
 import { updateWorkOrderDialogById } from '@/api/workorder';
 import MyIcon from '@/components/Icon';
 import { useSelectFile } from '@/hooks/useSelectFile';
@@ -7,11 +7,32 @@ import useSessionStore from '@/store/session';
 import { WorkOrderDB, WorkOrderDialog } from '@/types/workorder';
 import { isURL } from '@/utils/file';
 import { formatTime } from '@/utils/tools';
-import { Box, Button, Center, Flex, Icon, Image, Spinner, Text, Textarea } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Center,
+  Flex,
+  Icon,
+  Image,
+  Spinner,
+  Text,
+  Textarea,
+  keyframes
+} from '@chakra-ui/react';
 import { fetchEventSource } from '@fortaine/fetch-event-source';
 import { throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+
+const statusAnimation = keyframes`
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.11;
+  }
+`;
 
 const CommandTip = () => {
   return (
@@ -65,17 +86,20 @@ const CommandTip = () => {
 
 const AppMainInfo = ({
   app,
-  refetchWorkOrder
+  refetchWorkOrder,
+  isManuallyHandled
 }: {
   app: WorkOrderDB;
   refetchWorkOrder: () => void;
+  isManuallyHandled: boolean;
 }) => {
   const textareaMinH = '50px';
   const { session } = useSessionStore();
   const { t } = useTranslation();
   const [text, setText] = useState('');
   const { toast } = useToast();
-  const [dialogs, setDialogs] = useState(app.dialogs || []);
+  const [dialogs, setDialogs] = useState(app?.dialogs || []);
+  const [isChatLoading, setIsChatLoading] = useState(false);
   const messageBoxRef = useRef<HTMLDivElement>(null);
   const TextareaDom = useRef<HTMLTextAreaElement>(null);
   const [uploadedFiles, setUploadedFiles] = useState<
@@ -123,6 +147,13 @@ const AppMainInfo = ({
     if (!session) return;
     const promises: Promise<any>[] = [];
     const temps: WorkOrderDialog[] = [];
+    if (isChatLoading) {
+      toast({
+        status: 'info',
+        title: t('Chatting...please wait for the end')
+      });
+      return;
+    }
     try {
       if (uploadedFiles) {
         uploadedFiles.forEach((i) => {
@@ -160,13 +191,15 @@ const AppMainInfo = ({
         );
         setText('');
       }
-      console.log(temps);
+
       setDialogs((v) => [...v, ...temps]);
       await Promise.all(promises);
-      await triggerRobotReply();
+      if (text !== '') {
+        await triggerRobotReply();
+      }
     } catch (error) {
       console.log(error);
-      toast({ title: '网络异常' });
+      toast({ title: t('network anomaly'), status: 'error' });
       setDialogs((v) => v.slice(0, v.length - temps.length));
       setText('');
       setUploadedFiles(undefined);
@@ -175,6 +208,8 @@ const AppMainInfo = ({
 
   const triggerRobotReply = async () => {
     let temp = '';
+    let count = 0;
+
     try {
       if (!app.manualHandling.isManuallyHandled && !session?.user?.isAdmin) {
         await fetchEventSource('/api/ai/fastgpt', {
@@ -186,13 +221,19 @@ const AppMainInfo = ({
           body: JSON.stringify({
             orderId: app.orderId
           }),
+          openWhenHidden: true,
           onmessage: async ({ event, data }) => {
             if (data === '[DONE]') {
+              setIsChatLoading(false);
               return;
             }
+
             const json = JSON.parse(data);
+            if (event === 'flowNodeStatus') {
+              setIsChatLoading(true);
+            }
             const text = json?.choices?.[0]?.delta?.content || '';
-            temp += text;
+            temp += count === 0 ? text.trim() : text;
 
             if (temp && temp !== '') {
               const updatedLastDialog = {
@@ -213,6 +254,7 @@ const AppMainInfo = ({
             }
           }
         });
+
         await updateWorkOrderDialogById({
           orderId: app.orderId,
           content: temp,
@@ -224,9 +266,29 @@ const AppMainInfo = ({
     }
   };
 
+  const handleTransferToHuman = async () => {
+    try {
+      await FeishuNotification({
+        type: app.type,
+        description: app.description,
+        orderId: app.orderId,
+        switchToManual: true
+      });
+      toast({
+        title: t('Notification SwitchToManual Tips'),
+        status: 'success'
+      });
+    } catch (error) {
+      toast({
+        title: t('network anomaly'),
+        status: 'error'
+      });
+    }
+    refetchWorkOrder();
+  };
+
   const scrollToBottom = useRef(
     throttle(() => {
-      console.log('sroll');
       const boxElement = messageBoxRef.current;
       if (boxElement) {
         requestAnimationFrame(() => {
@@ -239,6 +301,18 @@ const AppMainInfo = ({
   useLayoutEffect(() => {
     scrollToBottom();
   }, [dialogs, scrollToBottom]);
+
+  useEffect(() => {
+    if (app?.dialogs?.length === 1) {
+      triggerRobotReply();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isManuallyHandled && app?.dialogs) {
+      setDialogs(app?.dialogs);
+    }
+  }, [app?.dialogs, isManuallyHandled]);
 
   return (
     <>
@@ -291,7 +365,7 @@ const AppMainInfo = ({
                       name={
                         item.isAdmin ? 'sealosAvator' : item.isAIBot ? 'robot' : 'defaultAvator'
                       }
-                      color={item.isAdmin ? '' : item.isAIBot ? '#219BF4' : ''}
+                      color={'#219BF4'}
                     />
                   </Center>
 
@@ -302,6 +376,16 @@ const AppMainInfo = ({
                           <Text>Sealos 支持</Text>
                           <Text color={'#7B838B'}>ID:{item.userId}</Text>
                         </Flex>
+                      ) : item.isAIBot && isChatLoading ? (
+                        <Box
+                          animation={
+                            isChatLoading && index === dialogs.length - 1
+                              ? `${statusAnimation} 0.8s linear infinite alternate`
+                              : ''
+                          }
+                        >
+                          Robot
+                        </Box>
                       ) : (
                         item.userId
                       )}
@@ -316,6 +400,19 @@ const AppMainInfo = ({
                         </Box>
                       )}
                     </Box>
+                    {item.isAIBot &&
+                      index === dialogs?.length - 1 &&
+                      !item.isAdmin &&
+                      !app?.manualHandling?.isManuallyHandled && (
+                        <Button
+                          h="28px"
+                          onClick={handleTransferToHuman}
+                          fontSize={'12px'}
+                          mt={'4px'}
+                        >
+                          {t('Switch to manual')}
+                        </Button>
+                      )}
                   </Box>
                 </Flex>
               </Box>

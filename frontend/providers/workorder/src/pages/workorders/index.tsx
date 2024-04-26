@@ -72,15 +72,17 @@ function Home() {
           ({data?.totalCount})
         </Box>
         <Box flex={1}></Box>
-        <Button
-          variant={'primary'}
-          w="156px"
-          h="42px"
-          leftIcon={<MyIcon name={'plus'} w={'12px'} />}
-          onClick={() => router.push('/workorder/create')}
-        >
-          {t('New Order')}
-        </Button>
+        {!user?.isAdmin && (
+          <Button
+            variant={'primary'}
+            w="156px"
+            h="42px"
+            leftIcon={<MyIcon name={'plus'} w={'12px'} />}
+            onClick={() => router.push('/workorder/create')}
+          >
+            {t('New Order')}
+          </Button>
+        )}
       </Flex>
 
       <Flex

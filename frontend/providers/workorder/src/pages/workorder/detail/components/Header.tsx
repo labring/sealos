@@ -49,7 +49,7 @@ const Header = ({
 
   return (
     <Flex w={'100%'} h={'86px'} alignItems={'center'}>
-      <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace(lastRoute)}>
+      <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace('/workorders')}>
         <MyIcon name="arrowLeft" />
         <Box ml={6} fontWeight={'bold'} color={'black'} fontSize={'20px'} mr="16px">
           {t('Order Detail')}

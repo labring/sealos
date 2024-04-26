@@ -16,6 +16,7 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
   const { screenWidth } = useGlobalStore();
   const { Loading } = useLoading();
   const isLargeScreen = useMemo(() => screenWidth > 1100, [screenWidth]);
+  const [isManuallyHandled, setIsManuallyHandled] = useState(false);
 
   const { data: workOrderDetail, refetch: refetchWorkOrder } = useQuery(
     ['getWorkOrderById', orderId],
@@ -24,7 +25,10 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
         orderId
       }),
     {
-      // refetchInterval: 10 * 1000
+      refetchInterval: isManuallyHandled ? 60 * 1000 : false,
+      onSuccess(data) {
+        setIsManuallyHandled(data?.manualHandling?.isManuallyHandled || false);
+      }
     }
   );
 
@@ -74,8 +78,12 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
           borderRadius={'md'}
           flexDirection={'column'}
         >
-          {workOrderDetail ? (
-            <AppMainInfo app={workOrderDetail} refetchWorkOrder={refetchWorkOrder} />
+          {workOrderDetail && workOrderDetail.dialogs?.length ? (
+            <AppMainInfo
+              app={workOrderDetail}
+              refetchWorkOrder={refetchWorkOrder}
+              isManuallyHandled
+            />
           ) : (
             <Loading loading={true} fixed={false} />
           )}

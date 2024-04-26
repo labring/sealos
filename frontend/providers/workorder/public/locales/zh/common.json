@@ -41,5 +41,15 @@
   "Pending": "待处理",
   "Submit Error": "提交错误",
   "Deleted": "已删除",
-  "user info": "用户信息"
+  "user info": "用户信息",
+  "Switch to manual": "转人工客服",
+  "network anomaly": "网络异常",
+  "Notification SwitchToManual Tips": "请求成功发送，请耐心等待。",
+  "Chatting": {
+    "": {
+      "": {
+        "please wait for the end": "正在聊天中...请等待结束"
+      }
+    }
+  }
 }

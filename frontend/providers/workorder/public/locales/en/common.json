@@ -16,6 +16,7 @@
   "Name": "Name",
   "New Order": "New Order",
   "None": "None",
+  "Notification SwitchToManual Tips": "The request was sent successfully, please wait patiently.",
   "Operation": "Operation",
   "Order Conversation": "Order Conversation",
   "Order Detail": "Order Detail",
@@ -32,6 +33,7 @@
   "Status": "Status",
   "Submit Error": "Submit Error",
   "Submit Order": "Submit Order",
+  "Switch to manual": "Switch to manual",
   "Total": "Total",
   "Type": "Type",
   "Upload File": "Upload File",
@@ -41,5 +43,13 @@
     "Upload Success": "File uploaded successfully",
     "Uploading": "Uploading file, Progress: {{percent}}%"
   },
-  "user info": "User Info"
+  "network anomaly": "Network anomaly",
+  "user info": "User Info",
+  "Chatting": {
+    "": {
+      "": {
+        "please wait for the end": "Chatting...please wait for the end"
+      }
+    }
+  }
 }

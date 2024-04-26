@@ -73,7 +73,7 @@ export default function EditOrder() {
         status: 'success',
         title: 'success'
       });
-      router.push(lastRoute);
+      router.push(`/workorder/detail?orderId=${res.orderId}`);
     } catch (error) {
       console.error(error);
       setErrorMessage(JSON.stringify(error));
