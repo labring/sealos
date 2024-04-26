@@ -56,7 +56,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       if (!unbindingResult) throw new Error('fail to unbinding');
     }
-
     jsonRes(res, {
       code: 200,
       message: 'Successfully'

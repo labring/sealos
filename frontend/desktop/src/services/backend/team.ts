@@ -192,7 +192,7 @@ export const modifyBinding = async ({
   });
 };
 
-// 拒绝邀请 === 解绑
+// reject Invitation
 export const unbindingRole = async ({
   userCrUid,
   workspaceUid
@@ -209,7 +209,7 @@ export const unbindingRole = async ({
     }
   });
 };
-// 接受邀请
+// accept Invitation
 export const acceptInvite = async ({
   userCrUid,
   workspaceUid

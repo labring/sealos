@@ -110,6 +110,7 @@ const Callback: NextPage = () => {
           alignItems={'center'}
           bgColor={'grayModern.900'}
           color={'white'}
+          gap={'8px'}
         >
           {' '}
           <Image boxSize={'34px'} borderRadius="full" src={ImageFallBackUrl} alt="logo" />
@@ -142,7 +143,7 @@ const Callback: NextPage = () => {
               {t('Accept Invitation')}
             </Button>
           </VStack>
-        ) : (
+        ) : infoResp.isError ? (
           <VStack alignItems={'center'} gap={'40px'} flex={1} justifyContent={'center'}>
             <Text fontSize={'30px'} fontWeight={'600'}>
               {t('Invalid invitation link')}
@@ -151,7 +152,7 @@ const Callback: NextPage = () => {
               {t('Redirecting to homepage in 3 seconds')}
             </Text>
           </VStack>
-        )}
+        ) : null}
       </VStack>
     </Flex>
   );

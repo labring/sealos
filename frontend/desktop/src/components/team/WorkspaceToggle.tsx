@@ -56,21 +56,25 @@ export default function WorkspaceToggle() {
     switchTeam({ uid: defaultNamespace.uid });
   }
   return (
-    <HStack
-      position={'relative'}
-      borderRadius={'10px'}
-      p={'8px 12px'}
-      justifyContent={'space-between'}
-      background={'rgba(244, 246, 248, 0.7)'}
-      boxShadow={'0px 1px 2px rgba(0, 0, 0, 0.2)'}
-      fontSize={'13px'}
-      color={'#152539'}
-      fontWeight={'500'}
-      minW={'166px'}
-      onClick={() => disclosure.onOpen()}
-    >
-      <Text>{namespace?.nstype === NSType.Private ? t('Default Team') : namespace?.teamName}</Text>
-      <ExchangeIcon />
+    <HStack position={'relative'}>
+      <HStack
+        borderRadius={'10px'}
+        p={'8px 12px'}
+        justifyContent={'space-between'}
+        background={'rgba(244, 246, 248, 0.6)'}
+        boxShadow={'0px 1px 2px rgba(0, 0, 0, 0.2)'}
+        fontSize={'13px'}
+        color={'#152539'}
+        fontWeight={'500'}
+        minW={'166px'}
+        backdropFilter={'blur(8px)'}
+        onClick={() => disclosure.onOpen()}
+      >
+        <Text>
+          {namespace?.nstype === NSType.Private ? t('Default Team') : namespace?.teamName}
+        </Text>
+        <ExchangeIcon />
+      </HStack>
       {disclosure.isOpen ? (
         <>
           <Box
@@ -88,7 +92,7 @@ export default function WorkspaceToggle() {
               bg="rgba(255, 255, 255, 0.8)"
               boxShadow={'0px 1px 2px rgba(0, 0, 0, 0.2)'}
               position={'absolute'}
-              top="48px"
+              top="43px"
               right={0}
               left={0}
               cursor={'initial'}
@@ -97,16 +101,8 @@ export default function WorkspaceToggle() {
               backdropFilter={'blur(150px)'}
             >
               <VStack gap={0} alignItems={'stretch'}>
-                <HStack
-                  gap={'8px'}
-                  alignItems={'center'}
-                  borderBottom={'1px solid #0000001A'}
-                  p={'4px 6px'}
-                >
-                  <TeamCenter mx={'0'} boxSize={'16px'} />
-                  <Text>{t('Manage Team')}</Text>
-                </HStack>
-                <Divider color={'#0000000D'} my={'4px'} />
+                <TeamCenter />
+                <Divider bgColor={'rgba(0, 0, 0, 0.1)'} my={'4px'} h={'1px'} />
                 {namespaces.map((ns) => {
                   return (
                     <NsListItem

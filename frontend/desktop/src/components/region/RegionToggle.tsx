@@ -43,21 +43,27 @@ export default function RegionToggle() {
     <>
       {regionList?.length > 1 && (
         <HStack
+          // fix for blur
           position={'relative'}
-          borderRadius={'10px'}
-          p={'8px 12px'}
-          gap={'20px'}
-          background={'rgba(244, 246, 248, 0.7)'}
-          boxShadow={'0px 1px 2px rgba(0, 0, 0, 0.2)'}
-          fontSize={'14px'}
-          color={'#152539'}
-          fontWeight={'500'}
-          onClick={() => disclosure.onOpen()}
         >
-          <Text>
-            {providerT(curRegion?.location || '')} {curRegion?.description?.serial}
-          </Text>
-          <ExchangeIcon />
+          <HStack
+            borderRadius={'10px'}
+            p={'8px 12px'}
+            gap={'20px'}
+            background={'rgba(244, 246, 248, 0.6)'}
+            boxShadow={'0px 1px 2px rgba(0, 0, 0, 0.2)'}
+            fontSize={'14px'}
+            color={'#152539'}
+            fontWeight={'500'}
+            backdropFilter={'blur(8px)'}
+            onClick={() => disclosure.onOpen()}
+          >
+            <Text>
+              {providerT(curRegion?.location || '')} {curRegion?.description?.serial}
+            </Text>
+            <ExchangeIcon />
+          </HStack>
+
           {disclosure.isOpen ? (
             <>
               <Box
@@ -75,7 +81,7 @@ export default function RegionToggle() {
                   bg="rgba(255, 255, 255, 0.8)"
                   boxShadow={'0px 1px 2px rgba(0, 0, 0, 0.2)'}
                   position={'absolute'}
-                  top="48px"
+                  top="43px"
                   right={0}
                   cursor={'initial'}
                   borderRadius={'8px'}

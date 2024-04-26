@@ -7,7 +7,6 @@ import { generateAccessToken, generateAppToken, verifyAccessToken } from '@/serv
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    console.time();
     const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'token verify error' });
     const { ns_uid } = req.body as {

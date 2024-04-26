@@ -19,7 +19,7 @@ import {
   HStack,
   useToast
 } from '@chakra-ui/react';
-import { useState } from 'react';
+import { MouseEventHandler, useState } from 'react';
 import { ROLE_LIST, UserRole } from '@/types/team';
 import useSessionStore from '@/stores/session';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -32,10 +32,12 @@ import { useCopyData } from '@/hooks/useCopyData';
 
 export default function InviteMember({
   ns_uid,
+  workspaceName,
   ownRole,
   ...props
 }: ButtonProps & {
   ns_uid: string;
+  workspaceName: string;
   ownRole: UserRole;
 }) {
   const { onOpen, isOpen, onClose } = useDisclosure();
@@ -62,40 +64,32 @@ export default function InviteMember({
   });
   const canManage = vaildManage(ownRole);
   const { t } = useTranslation();
-  // const submit = () => {
-  //   let trim_to = userId.trim();
-  //   if (!trim_to || trim_to.length !== 10) {
-  //     toast({
-  //       status: 'error',
-  //       title: t('Invalid User ID'),
-  //       isClosable: true,
-  //       position: 'top'
-  //     });
-  //     return;
-  //   }
-  //   const tk8s_username = trim_to.startsWith('ns-') ? trim_to.replace('ns-', '') : trim_to;
-  //   if (tk8s_username === k8s_username) {
-  //     toast({
-  //       status: 'error',
-  //       title: t('The invited user must be others'),
-  //       isClosable: true,
-  //       position: 'top'
-  //     });
-  //     return;
-  //   }
-  //   mutation.mutate({
-  //     ns_uid,
-  //     targetUserId: trim_to,
-  //     role
-  //   });
-  // };
   const { copyData } = useCopyData();
   const getLinkCode = useMutation({
     mutationFn: getInviteCodeRequest,
-    mutationKey: [session?.user.ns_uid]
+    mutationKey: [session?.user.ns_uid],
+    onError() {
+      toast({
+        status: 'error',
+        title: t('Failed to generate invitation link'),
+        isClosable: true,
+        position: 'top'
+      });
+    }
   });
+
   const generateLink = (code: string) => {
     return window.location.origin + encodeURI(`/WorkspaceInvite/?code=${code}`);
+  };
+  const handleGenLink: MouseEventHandler<HTMLButtonElement> = async (e) => {
+    e.preventDefault();
+    const data = await getLinkCode.mutateAsync({
+      ns_uid,
+      role
+    });
+    const code = data.data?.code!;
+    const link = generateLink(code);
+    await copyData(link);
   };
   return (
     <>
@@ -130,15 +124,11 @@ export default function InviteMember({
             <Spinner mx="auto" />
           ) : (
             <ModalBody h="100%" w="100%" p="0" mt="22px">
-              {/*<CustomInput*/}
-              {/*  onChange={(e) => {*/}
-              {/*    e.preventDefault();*/}
-              {/*    setUserId(e.target.value);*/}
-              {/*  }}*/}
-              {/*  placeholder={t('private team ID of user') || ''}*/}
-              {/*  value={userId}*/}
-              {/*/>*/}
-              <Text>邀请成员至 工作空间名称</Text>
+              <Text>
+                {t('Invite members to workspace', {
+                  workspace: workspaceName
+                })}
+              </Text>
               <HStack gap={'8px'} justifyContent={'stretch'}>
                 <Menu>
                   <MenuButton
@@ -189,18 +179,9 @@ export default function InviteMember({
                     opacity: '0.8'
                   }}
                   isDisabled={getLinkCode.isLoading}
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    const data = await getLinkCode.mutateAsync({
-                      ns_uid,
-                      role
-                    });
-                    const code = data.data?.code!;
-                    const link = generateLink(code);
-                    await copyData(link);
-                  }}
+                  onClick={handleGenLink}
                 >
-                  {t('Generate Link')}
+                  {t('Generate invitation link')}
                 </Button>
               </HStack>
             </ModalBody>

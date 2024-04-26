@@ -19,10 +19,10 @@ const NsListItem = ({
   return (
     <Flex
       align={'center'}
-      p="4px 6px"
+      p="6px 4px"
       mb="2px"
       position={'relative'}
-      borderRadius="2px"
+      borderRadius="4px"
       onClick={(e) => {
         e.preventDefault();
         queryClient.invalidateQueries({ queryKey: ['teamList'] });

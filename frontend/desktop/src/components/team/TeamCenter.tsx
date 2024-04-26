@@ -14,7 +14,9 @@ import {
   ButtonProps,
   Center,
   VStack,
-  Circle
+  Circle,
+  HStack,
+  StackProps
 } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 import CreateTeam from './CreateTeam';
@@ -34,7 +36,7 @@ import { CopyIcon, ListIcon, SettingIcon, StorageIcon } from '@sealos/ui';
 import { GetUserDefaultNameSpace } from '@/services/backend/kubernetes/user';
 import NsListItem from '@/components/team/NsListItem';
 
-export default function TeamCenter(props: ButtonProps) {
+export default function TeamCenter(props: StackProps) {
   const session = useSessionStore((s) => s.session);
   const { t } = useTranslation();
   const user = session?.user;
@@ -101,18 +103,26 @@ export default function TeamCenter(props: ButtonProps) {
   }, [_namespaces, ns_uid]);
   return (
     <>
-      <IconButton
+      <HStack
+        gap={'8px'}
+        alignItems={'center'}
+        // borderBottom={'1px solid #0000001A'}
+        p={'6px 4px'}
+        cursor={'pointer'}
+        borderRadius={'4px'}
         onClick={() => {
           setMessageFilter([]);
           onOpen();
         }}
-        variant={'white-bg-icon'}
-        p="4px"
-        ml="auto"
-        icon={<SettingIcon boxSize={'16px'} color={'#219BF4'} />}
-        aria-label={'open team center'}
         {...props}
-      />
+        _hover={{
+          bgColor: 'rgba(0, 0, 0, 0.03)'
+        }}
+      >
+        <SettingIcon boxSize={'16px'} color={'grayModern.600'} />
+        <Text>{t('Manage Team')}</Text>
+      </HStack>
+
       <Modal isOpen={isOpen} onClose={onClose} isCentered closeOnOverlayClick={false}>
         <ModalOverlay />
         <ModalContent
@@ -265,6 +275,7 @@ export default function TeamCenter(props: ButtonProps) {
                           <InviteMember
                             ownRole={curTeamUser?.role ?? UserRole.Developer}
                             ns_uid={ns_uid}
+                            workspaceName={namespace.teamName}
                             ml="auto"
                           />
                         )}

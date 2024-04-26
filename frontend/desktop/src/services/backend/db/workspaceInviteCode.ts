@@ -13,7 +13,7 @@ type TWorkspace_invite_link = {
 async function connectToUserCollection() {
   const client = await connectToDatabase();
   const collection = client.db().collection<TWorkspace_invite_link>('workspace_invite_links');
-  await collection.createIndex({ createdAt: 1 }, { expireAfterSeconds: 60 * 5 });
+  await collection.createIndex({ createdAt: 1 }, { expireAfterSeconds: 60 * 30 });
   await collection.createIndex({ code: 1 }, { unique: true });
   return collection;
 }

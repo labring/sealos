@@ -30,7 +30,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           workspaceUid: linkResults.workspaceUid,
           userCrUid: {
             in: [linkResults.inviterCrUid, payload.userCrUid]
-          }
+          },
+          status: JoinStatus.IN_WORKSPACE
         },
         include: {
           workspace: true,

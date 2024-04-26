@@ -44,7 +44,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const tItem = queryResults.find((item) => item.userCr.uid === targetUserCrUid);
     // for inviting state,
     if (!tItem) return jsonRes(res, { code: 404, message: 'target user is not in namespace' });
-    const vaild = vaildManage(roleToUserRole(own.role))(roleToUserRole(tItem.role), true);
+    const vaild = vaildManage(roleToUserRole(own.role))(
+      roleToUserRole(tItem.role),
+      tItem.userCrUid === payload.userCrUid
+    );
     if (!vaild) return jsonRes(res, { code: 403, message: 'you are not manager' });
     let unbinding_result = null;
     if (JoinStatus.INVITED === tItem.status) {

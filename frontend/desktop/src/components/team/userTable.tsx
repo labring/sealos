@@ -19,6 +19,7 @@ import RemoveMember from './RemoveMember';
 import Abdication from './Abdication';
 import ModifyRole from './ModifyRole';
 import { useTranslation } from 'react-i18next';
+
 export default function UserTable({
   users = [],
   isTeam,
@@ -108,7 +109,9 @@ export default function UserTable({
               </Td>
               <Td py="5px">
                 {isTeam &&
-                  (userCrUid && canManage(user.role, true) && otherWorkspaceUsers.length !== 0 ? (
+                  (userCrUid &&
+                  canManage(user.role, user.crUid === userCrUid) &&
+                  otherWorkspaceUsers.length !== 0 ? (
                     user.role === UserRole.Owner ? (
                       <Abdication ns_uid={ns_uid} users={otherWorkspaceUsers} />
                     ) : userCrUid !== user.uid ? (
