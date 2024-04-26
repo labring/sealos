@@ -54,6 +54,8 @@ export default function Index(props: any) {
     ...runningInfo
   ];
 
+  const logo = useConfigStore().layoutConfig?.logo;
+
   const [degree, contentSkewDegree, contentRotateDegree] = useMemo(() => {
     const len = apps?.length < 6 ? 6 : apps?.length > 8 ? 8 : apps?.length;
     const temp: number = 360 / len;
@@ -82,7 +84,6 @@ export default function Index(props: any) {
     return `rotate(${temp}deg)`;
   };
 
-  const logo = useConfigStore().layoutConfig?.logo;
   // drag boundary calculation
   const handleDragBoundary: DraggableEventHandler = (e, position) => {
     try {
