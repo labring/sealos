@@ -32,6 +32,7 @@ const AuthList = () => {
     target.searchParams.append('oauthProxyProvider', provider);
     router.replace(target.toString());
   };
+  const logo = useConfigStore().layoutConfig?.logo;
 
   const { generateState, setProvider } = useSessionStore();
   const authList: { icon: typeof Icon; cb: MouseEventHandler; need: boolean }[] = [
@@ -103,11 +104,7 @@ const AuthList = () => {
     {
       icon: () => (
         <Center>
-          <Image
-            alt="logo"
-            width={'20px'}
-            src={useConfigStore().layoutConfig?.logo || '/images/logo.svg'}
-          ></Image>
+          <Image alt="logo" width={'20px'} src={logo || '/logo.svg'}></Image>
         </Center>
       ),
       cb: (e) => {

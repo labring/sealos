@@ -1,8 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 
-const clientId = process.env.GITHUB_CLIENT_ID!;
-const clientSecret = process.env.GITHUB_CLIENT_SECRET!;
+const clientId = global.AppConfig?.desktop.auth.idp.github?.clientID!;
+const clientSecret = global.AppConfig?.desktop.auth.idp.github?.clientSecret!;
 import { TgithubToken, TgithubUser } from '@/types/user';
 
 import { enableGithub } from '@/services/enable';

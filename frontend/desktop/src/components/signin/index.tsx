@@ -216,13 +216,13 @@ export default function SigninComponent() {
           {tabIndex !== LoginType.WeChat && (
             <>
               <Protocol />
-              {!!conf.layoutConfig?.cfSiteKey && (
+              {!!conf.commonConfig?.cfSiteKey && (
                 <Turnstile
                   options={{
                     size: 'invisible'
                   }}
                   ref={turnstileRef}
-                  siteKey={conf.layoutConfig?.cfSiteKey}
+                  siteKey={conf.commonConfig?.cfSiteKey}
                 />
               )}
               <Button

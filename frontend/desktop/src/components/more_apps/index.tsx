@@ -19,6 +19,7 @@ export default function Index() {
   const endIndex = startIndex + itemsPerPage;
   const paginatedApps = apps?.slice(startIndex, endIndex);
   const totalPages = Math.ceil((apps?.length || 0) / itemsPerPage);
+  const logo = useConfigStore().layoutConfig?.logo;
 
   const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
     e.preventDefault();
@@ -104,7 +105,7 @@ export default function Index() {
                     width="100%"
                     height="100%"
                     src={item?.icon}
-                    fallbackSrc={useConfigStore().layoutConfig?.logo || '/images/logo.svg'}
+                    fallbackSrc={logo || '/logo.svg'}
                     draggable={false}
                     alt="user avator"
                   />

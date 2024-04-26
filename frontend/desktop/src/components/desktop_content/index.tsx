@@ -168,7 +168,7 @@ export default function DesktopContent(props: any) {
                     width="100%"
                     height="100%"
                     src={item?.icon}
-                    fallbackSrc={logo || '/images/logo.svg'}
+                    fallbackSrc={logo || '/logo.svg'}
                     draggable={false}
                     alt="user avator"
                   />

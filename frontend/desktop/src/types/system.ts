@@ -9,6 +9,7 @@ export type CommonConfigType = {
   guideEnabled: boolean;
   apiEnabled: boolean;
   rechargeEnabled: boolean;
+  cfSiteKey?: string;
 };
 
 export type DatabaseConfigType = {
@@ -45,7 +46,7 @@ export type LayoutConfigType = {
   logo: string;
   backgroundImage: string;
   meta: MetaConfigType;
-  cfSiteKey?: string;
+
   protocol?: ProtocolConfigType;
   common: {
     githubStarEnabled: boolean;
@@ -81,6 +82,7 @@ export type AuthConfigType = {
       ali?: {
         enabled: boolean;
         endpoint: string;
+        templateCode: string;
         signName: string;
         accessKeyID: string;
         accessKeySecret?: string;
@@ -124,7 +126,8 @@ export type AppConfigType = {
 export const DefaultCommonConfig: CommonConfigType = {
   guideEnabled: false,
   apiEnabled: false,
-  rechargeEnabled: false
+  rechargeEnabled: false,
+  cfSiteKey: ''
 };
 
 export const DefaultCloudConfig: CloudConfigType = {
@@ -136,7 +139,7 @@ export const DefaultCloudConfig: CloudConfigType = {
 
 export const DefaultLayoutConfig: LayoutConfigType = {
   title: 'Sealos Cloud',
-  logo: '/images/logo.svg',
+  logo: '/logo.svg',
   backgroundImage: '/images/bg-blue.svg',
   protocol: {
     serviceProtocol: {

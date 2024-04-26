@@ -35,6 +35,7 @@ export default function Abdication({
   users: TeamUserDto[];
   ns_uid: string;
 } & ButtonProps) {
+  const logo = useConfigStore().layoutConfig?.logo;
   const { t } = useTranslation();
   const { onOpen, isOpen, onClose } = useDisclosure();
   const queryClient = useQueryClient();
@@ -114,7 +115,7 @@ export default function Abdication({
                     <Image
                       alt="avatar"
                       src={targetUser.avatar}
-                      fallbackSrc={useConfigStore().layoutConfig?.logo || '/images/logo.svg'}
+                      fallbackSrc={logo || '/logo.svg'}
                       boxSize={'24px'}
                       borderRadius={'50%'}
                       mr="8px"
@@ -142,7 +143,7 @@ export default function Abdication({
                       <Image
                         alt="logo"
                         src={user.avatarUrl}
-                        fallbackSrc={useConfigStore().layoutConfig?.logo || '/images/logo.svg'}
+                        fallbackSrc={logo || '/logo.svg'}
                         boxSize={'24px'}
                         borderRadius={'50%'}
                         mr="8px"

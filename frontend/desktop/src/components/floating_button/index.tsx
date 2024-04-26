@@ -82,6 +82,7 @@ export default function Index(props: any) {
     return `rotate(${temp}deg)`;
   };
 
+  const logo = useConfigStore().layoutConfig?.logo;
   // drag boundary calculation
   const handleDragBoundary: DraggableEventHandler = (e, position) => {
     try {
@@ -245,7 +246,7 @@ export default function Index(props: any) {
                       >
                         <Image
                           src={item?.icon}
-                          fallbackSrc={useConfigStore().layoutConfig?.logo || '/images/logo.svg'}
+                          fallbackSrc={logo || '/logo.svg'}
                           alt={item?.name}
                           w="24px"
                           h="24px"

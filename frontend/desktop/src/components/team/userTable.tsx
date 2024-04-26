@@ -80,7 +80,7 @@ export default function UserTable({
                   <Image
                     alt="avatar"
                     src={user.avatarUrl}
-                    fallbackSrc={useConfigStore().layoutConfig?.logo || '/images/logo.svg'}
+                    fallbackSrc={'/logo.svg'}
                     w="20px"
                     h="20px"
                     mr="8px"
