@@ -23,6 +23,7 @@ export type WorkOrderDialog = {
   content: string;
   userId: string;
   isAdmin: boolean;
+  isAIBot: boolean;
 };
 
 export enum WorkOrderType {

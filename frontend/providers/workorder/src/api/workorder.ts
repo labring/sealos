@@ -23,5 +23,8 @@ export const delWorkOrderById = (payload: { orderId: string }) =>
 export const updateWorkOrderById = (payload: { updates: Partial<WorkOrderDB>; orderId: string }) =>
   POST('/api/workorder/update', payload);
 
-export const updateWorkOrderDialogById = (payload: { orderId: string; content: string }) =>
-  POST('/api/workorder/updateDialog', payload);
+export const updateWorkOrderDialogById = (payload: {
+  orderId: string;
+  content: string;
+  isRobot?: boolean;
+}) => POST('/api/workorder/updateDialog', payload);

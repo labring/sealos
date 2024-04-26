@@ -8,9 +8,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { userId, isAdmin } = await verifyAccessToken(req);
 
-    const { orderId, content } = req.body as {
+    const {
+      orderId,
+      content,
+      isRobot = false
+    } = req.body as {
       orderId: string;
       content: string;
+      isRobot: boolean;
     };
 
     // If the admin replies, it is being processed.
@@ -18,7 +23,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await updateOrder({
         orderId,
         userId: userId,
-        updates: { status: WorkOrderStatus.Processing }
+        updates: {
+          status: WorkOrderStatus.Processing,
+          manualHandling: { isManuallyHandled: true, handlingTime: new Date() }
+        }
       });
     }
 
@@ -26,10 +34,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       orderId,
       userId: userId,
       dialog: {
-        userId: userId,
+        userId: isRobot ? 'robot' : userId,
         time: new Date(),
         content: content,
-        isAdmin: isAdmin
+        isAdmin: isAdmin,
+        isAIBot: isRobot
       }
     });
 

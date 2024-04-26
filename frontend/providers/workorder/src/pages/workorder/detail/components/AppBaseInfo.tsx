@@ -35,7 +35,7 @@ const AppBaseInfo = ({ app }: { app: WorkOrderDB }) => {
     ['findUserById'],
     () => findUserById({ userId: app?.userId || '' }),
     {
-      enabled: !!app?.userId
+      enabled: !!app?.userId && session?.user?.isAdmin
     }
   );
 

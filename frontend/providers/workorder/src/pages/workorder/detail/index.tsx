@@ -24,7 +24,7 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
         orderId
       }),
     {
-      refetchInterval: 10 * 1000
+      // refetchInterval: 10 * 1000
     }
   );
 

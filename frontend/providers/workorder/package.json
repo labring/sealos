@@ -16,6 +16,7 @@
     "@chakra-ui/system": "^2.6.1",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
+    "@fortaine/fetch-event-source": "^3.0.6",
     "@kubernetes/client-node": "^0.18.1",
     "@next/font": "13.1.6",
     "@tanstack/react-query": "^4.35.3",

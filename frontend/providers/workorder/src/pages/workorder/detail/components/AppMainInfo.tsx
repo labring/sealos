@@ -1,24 +1,17 @@
 import { deleteFileByName, getFileUrl, uploadFile } from '@/api/platform';
 import { updateWorkOrderDialogById } from '@/api/workorder';
+import MyIcon from '@/components/Icon';
 import { useSelectFile } from '@/hooks/useSelectFile';
 import { useToast } from '@/hooks/useToast';
-import { WorkOrderDB } from '@/types/workorder';
+import useSessionStore from '@/store/session';
+import { WorkOrderDB, WorkOrderDialog } from '@/types/workorder';
 import { isURL } from '@/utils/file';
 import { formatTime } from '@/utils/tools';
-import {
-  Avatar,
-  Box,
-  Button,
-  Center,
-  Flex,
-  Icon,
-  Image,
-  Spinner,
-  Text,
-  Textarea
-} from '@chakra-ui/react';
+import { Box, Button, Center, Flex, Icon, Image, Spinner, Text, Textarea } from '@chakra-ui/react';
+import { fetchEventSource } from '@fortaine/fetch-event-source';
+import { throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 
 const CommandTip = () => {
   return (
@@ -77,9 +70,12 @@ const AppMainInfo = ({
   app: WorkOrderDB;
   refetchWorkOrder: () => void;
 }) => {
+  const textareaMinH = '50px';
+  const { session } = useSessionStore();
   const { t } = useTranslation();
   const [text, setText] = useState('');
   const { toast } = useToast();
+  const [dialogs, setDialogs] = useState(app.dialogs || []);
   const messageBoxRef = useRef<HTMLDivElement>(null);
   const TextareaDom = useRef<HTMLTextAreaElement>(null);
   const [uploadedFiles, setUploadedFiles] = useState<
@@ -89,8 +85,6 @@ const AppMainInfo = ({
       fileUrl: string;
     }[]
   >();
-
-  const textareaMinH = '50px';
 
   const { File, onOpen } = useSelectFile({
     fileType: 'image/*',
@@ -126,39 +120,125 @@ const AppMainInfo = ({
   };
 
   const handleSend = async () => {
+    if (!session) return;
+    const promises: Promise<any>[] = [];
+    const temps: WorkOrderDialog[] = [];
     try {
       if (uploadedFiles) {
-        uploadedFiles?.map(async (i) => {
-          await updateWorkOrderDialogById({
-            orderId: app.orderId,
-            content: i.fileUrl
-          });
+        uploadedFiles.forEach((i) => {
+          const temp: WorkOrderDialog = {
+            time: new Date(),
+            content: i.fileUrl,
+            userId: session?.user?.userId,
+            isAdmin: session?.user?.isAdmin,
+            isAIBot: false
+          };
+          temps.push(temp);
+          promises.push(
+            updateWorkOrderDialogById({
+              orderId: app.orderId,
+              content: temp.content
+            })
+          );
         });
         setUploadedFiles(undefined);
       }
       if (text !== '') {
+        const temp: WorkOrderDialog = {
+          time: new Date(),
+          content: text,
+          userId: session?.user?.userId,
+          isAdmin: session?.user?.isAdmin,
+          isAIBot: false
+        };
+        temps.push(temp);
+        promises.push(
+          updateWorkOrderDialogById({
+            orderId: app.orderId,
+            content: temp.content
+          })
+        );
+        setText('');
+      }
+      console.log(temps);
+      setDialogs((v) => [...v, ...temps]);
+      await Promise.all(promises);
+      await triggerRobotReply();
+    } catch (error) {
+      console.log(error);
+      toast({ title: '网络异常' });
+      setDialogs((v) => v.slice(0, v.length - temps.length));
+      setText('');
+      setUploadedFiles(undefined);
+    }
+  };
+
+  const triggerRobotReply = async () => {
+    let temp = '';
+    try {
+      if (!app.manualHandling.isManuallyHandled && !session?.user?.isAdmin) {
+        await fetchEventSource('/api/ai/fastgpt', {
+          method: 'POST',
+          headers: {
+            Authorization: useSessionStore.getState()?.session?.token || '',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            orderId: app.orderId
+          }),
+          onmessage: async ({ event, data }) => {
+            if (data === '[DONE]') {
+              return;
+            }
+            const json = JSON.parse(data);
+            const text = json?.choices?.[0]?.delta?.content || '';
+            temp += text;
+
+            if (temp && temp !== '') {
+              const updatedLastDialog = {
+                time: new Date(),
+                userId: 'robot',
+                isAdmin: false,
+                isAIBot: true,
+                content: temp
+              };
+              setDialogs((prevDialogs) => {
+                const lastDialog = prevDialogs[prevDialogs.length - 1];
+                if (lastDialog && lastDialog.userId === 'robot') {
+                  return [...prevDialogs.slice(0, -1), updatedLastDialog];
+                } else {
+                  return [...prevDialogs, updatedLastDialog];
+                }
+              });
+            }
+          }
+        });
         await updateWorkOrderDialogById({
           orderId: app.orderId,
-          content: text
+          content: temp,
+          isRobot: true
         });
-        setText('');
       }
     } catch (error) {
       console.log(error);
     }
-    refetchWorkOrder();
   };
 
-  const scrollToBottom = () => {
-    const boxElement = messageBoxRef.current;
-    if (boxElement) {
-      boxElement.scrollTop = boxElement.scrollHeight;
-    }
-  };
+  const scrollToBottom = useRef(
+    throttle(() => {
+      console.log('sroll');
+      const boxElement = messageBoxRef.current;
+      if (boxElement) {
+        requestAnimationFrame(() => {
+          boxElement.scrollTop = boxElement.scrollHeight;
+        });
+      }
+    }, 1000)
+  ).current;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     scrollToBottom();
-  }, [app?.dialogs?.length]);
+  }, [dialogs, scrollToBottom]);
 
   return (
     <>
@@ -166,6 +246,7 @@ const AppMainInfo = ({
         {t('Order Conversation')}
       </Text>
       <Box
+        id="messageBoxRef"
         ref={messageBoxRef}
         pl="71px"
         pr="64px"
@@ -177,13 +258,13 @@ const AppMainInfo = ({
         overflow={'auto'}
         scrollBehavior={'smooth'}
       >
-        {app?.dialogs &&
-          app?.dialogs?.map((item, index) => {
+        {dialogs &&
+          dialogs?.map((item, index) => {
             return (
               <Box key={item.time.toString() + index}>
                 {index === 0 ||
-                (app?.dialogs?.[index - 1] &&
-                  new Date(app?.dialogs[index - 1].time).getTime() <
+                (dialogs?.[index - 1] &&
+                  new Date(dialogs[index - 1].time).getTime() <
                     new Date(item.time).getTime() - 5 * 60 * 1000) ? (
                   <Flex
                     fontSize={'12px'}
@@ -195,11 +276,22 @@ const AppMainInfo = ({
                   </Flex>
                 ) : null}
                 <Flex w="100%" gap="16px" mb="16px">
-                  <Center w={'36px'} h={'36px'}>
-                    <Avatar
-                      w={item.isAdmin ? '36px' : '28px'}
-                      h={item.isAdmin ? '36px' : '28px'}
-                      src={item.isAdmin ? '/icons/sealos-avator.svg' : ''}
+                  <Center
+                    border={'1px solid #fdfdfe'}
+                    w={'36px'}
+                    h={'36px'}
+                    bg={'#f2f5f7'}
+                    borderRadius={'full'}
+                    filter={
+                      'drop-shadow(0px 0px 1px rgba(121, 141, 159, 0.25)) drop-shadow(0px 2px 4px rgba(161, 167, 179, 0.25))'
+                    }
+                  >
+                    <MyIcon
+                      width={'24px'}
+                      name={
+                        item.isAdmin ? 'sealosAvator' : item.isAIBot ? 'robot' : 'defaultAvator'
+                      }
+                      color={item.isAdmin ? '' : item.isAIBot ? '#219BF4' : ''}
                     />
                   </Center>
 
@@ -329,7 +421,7 @@ const AppMainInfo = ({
             e.target.style.height = `${e.target.scrollHeight}px`;
           }}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
               e.preventDefault();
               handleSend();
             }
@@ -358,7 +450,13 @@ const AppMainInfo = ({
               fill="#7B838B"
             />
           </Icon>
-          <Button variant={'primary'} w="71px" h="28px" borderRadius={'4px'} onClick={handleSend}>
+          <Button
+            variant={'primary'}
+            w="71px"
+            h="28px"
+            borderRadius={'4px'}
+            onClick={() => handleSend()}
+          >
             {t('Send')}
           </Button>
         </Flex>

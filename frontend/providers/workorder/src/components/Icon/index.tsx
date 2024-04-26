@@ -31,6 +31,9 @@ const map = {
   restore: require('./icons/restore.svg').default,
   download: require('./icons/download.svg').default,
   close: require('./icons/close.svg').default,
+  robot: require('./icons/robot.svg').default,
+  sealosAvator: require('./icons/sealosAvator.svg').default,
+  defaultAvator: require('./icons/defaultAvator.svg').default,
   link: require('./icons/link.svg').default
 };
 
