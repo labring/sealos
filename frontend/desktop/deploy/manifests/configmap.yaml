@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: desktop-frontend-config
+  namespace: sealos
+data:
+  config.yaml : |
+    cloud:
+      domain: "127.0.0.1.nip.io"
+      port: ""
+      regionUID: "thisiaregionuid"
+      certSecretName: "wildcard-cert"
+    common:
+      guideEnabled: "false"
+      apiEnabled: "false"
+      rechargeEnabled: "false"
+      cfSiteKey: ""
+    database:
+      mongodbUri: "thisismongodburi"
+      globalCockroachdbURI: "thisisglobalcockroachdburi"
+      regionalCockroachdbURI: "thisisregionalcockroachdburi"
+    desktop:
+      layout:
+        title: "Sealos Cloud"
+        logo: "/logo.png"
+        backgroundImage: "/images/bg-blue.svg"
+        meta:
+          title: "Sealos Cloud"
+          description: "Sealos Cloud"
+          keywords: "Sealos Cloud"
+          scripts: []
+        common:
+          githubStarEnabled: "false"
+      auth:
+        proxyAddress: ""
+        callbackURL: "https://127.0.0.1.nip.io/callback"
+        signUpEnabled: "true"
+        baiduToken: ""
+        invite:
+          enabled: "false"
+        jwt:
+          internal: "thisisinternaljwt"
+          regional: "thisisregionaljwt"
+          global: "thisisglobaljwt"
+        idp:
+          password:
+            enabled: "true"
+            salt: "thisispasswordsalt"
