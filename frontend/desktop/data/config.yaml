@@ -9,7 +9,7 @@ common:
   rechargeEnabled: "false"
   cfSiteKey: ""
 database:
-  mongodbUri: "thisismongodburi"
+  mongodbURI: "thisismongodburi"
   globalCockroachdbURI: "thisisglobalcockroachdburi"
   regionalCockroachdbURI: "thisisregionalcockroachdburi"
 desktop:
