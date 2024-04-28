@@ -44,12 +44,7 @@
   "user info": "用户信息",
   "Switch to manual": "转人工客服",
   "network anomaly": "网络异常",
-  "Notification SwitchToManual Tips": "请求成功发送，请耐心等待。",
-  "Chatting": {
-    "": {
-      "": {
-        "please wait for the end": "正在聊天中...请等待结束"
-      }
-    }
-  }
+  "Notification SwitchToManual Tips": "已转人工处理，请耐心等待。",
+  "please wait for the end": "正在聊天中...请等待结束",
+  "Request exceeds limit": "请求超出限制"
 }

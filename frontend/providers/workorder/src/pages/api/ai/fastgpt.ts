@@ -2,9 +2,9 @@ import { verifyAccessToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { getOrderByOrderIdAndUserId } from '@/services/db/workorder';
 import type { NextApiRequest, NextApiResponse } from 'next';
-
 const fastgpt_url = process.env.FASTGPT_API_URL;
 const fastgpt_key = process.env.FASTGPT_API_KEY;
+const fastgpt_limit = parseInt(process.env.FASTGPT_API_LIMIT || '10');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -17,8 +17,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       orderId,
       userId: userId
     });
-
     if (!result || result?.manualHandling.isManuallyHandled) return;
+
+    const robotMessages =
+      result?.dialogs?.filter((dialog) => !dialog.isAdmin && dialog.userId === 'robot') || [];
 
     const userMessages = result?.dialogs
       ?.filter((dialog) => !dialog.isAdmin && dialog.userId === userId)
@@ -40,6 +42,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader('Content-Type', 'text/event-stream;charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('X-Accel-Buffering', 'no');
+
+    if (robotMessages.length > fastgpt_limit) {
+      const message = 'If the call limit is exceeded, please transfer it to manual processing.';
+      const eventStream = `event: [LIMIT]\ndata: ${message}\n\n`;
+      res.setHeader('Content-Length', Buffer.byteLength(eventStream, 'utf-8'));
+      res.write(eventStream);
+      res.end();
+      return;
+    }
 
     const response = await fetch(fastgpt_url, {
       method: 'POST',

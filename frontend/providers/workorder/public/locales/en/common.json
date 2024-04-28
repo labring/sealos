@@ -29,6 +29,7 @@
   "Processing": "Processing",
   "Prompt": "Prompt",
   "Question Type": "Question Type",
+  "Request exceeds limit": "Request exceeds limit",
   "Send": "Send",
   "Status": "Status",
   "Submit Error": "Submit Error",
@@ -44,12 +45,6 @@
     "Uploading": "Uploading file, Progress: {{percent}}%"
   },
   "network anomaly": "Network anomaly",
-  "user info": "User Info",
-  "Chatting": {
-    "": {
-      "": {
-        "please wait for the end": "Chatting...please wait for the end"
-      }
-    }
-  }
+  "please wait for the end": "Chatting in progress... Please wait for it to finish",
+  "user info": "User Info"
 }

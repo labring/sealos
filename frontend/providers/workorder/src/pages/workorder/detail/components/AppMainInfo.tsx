@@ -150,10 +150,11 @@ const AppMainInfo = ({
     if (isChatLoading) {
       toast({
         status: 'info',
-        title: t('Chatting...please wait for the end')
+        title: t('please wait for the end')
       });
       return;
     }
+    setIsChatLoading(true);
     try {
       if (uploadedFiles) {
         uploadedFiles.forEach((i) => {
@@ -204,6 +205,7 @@ const AppMainInfo = ({
       setText('');
       setUploadedFiles(undefined);
     }
+    setIsChatLoading(false);
   };
 
   const triggerRobotReply = async () => {
@@ -224,14 +226,16 @@ const AppMainInfo = ({
           openWhenHidden: true,
           onmessage: async ({ event, data }) => {
             if (data === '[DONE]') {
-              setIsChatLoading(false);
+              return;
+            }
+            if (event === '[LIMIT]') {
+              toast({ status: 'error', title: t('Request exceeds limit') });
+              handleTransferToHuman();
               return;
             }
 
             const json = JSON.parse(data);
-            if (event === 'flowNodeStatus') {
-              setIsChatLoading(true);
-            }
+
             const text = json?.choices?.[0]?.delta?.content || '';
             temp += count === 0 ? text.trim() : text;
 
@@ -252,14 +256,19 @@ const AppMainInfo = ({
                 }
               });
             }
+          },
+          onerror(err) {
+            console.log(err);
           }
         });
 
-        await updateWorkOrderDialogById({
-          orderId: app.orderId,
-          content: temp,
-          isRobot: true
-        });
+        if (temp !== '') {
+          await updateWorkOrderDialogById({
+            orderId: app.orderId,
+            content: temp,
+            isRobot: true
+          });
+        }
       }
     } catch (error) {
       console.log(error);

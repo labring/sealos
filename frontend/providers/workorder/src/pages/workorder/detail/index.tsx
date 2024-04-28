@@ -5,10 +5,11 @@ import { serviceSideProps } from '@/utils/i18n';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import AppBaseInfo from './components/AppBaseInfo';
 import AppMainInfo from './components/AppMainInfo';
 import Header from './components/Header';
+import { WorkOrderDB } from '@/types/workorder';
 
 export default function OrderDetail({ orderId }: { orderId: string }) {
   const { t } = useTranslation();
@@ -16,18 +17,30 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
   const { screenWidth } = useGlobalStore();
   const { Loading } = useLoading();
   const isLargeScreen = useMemo(() => screenWidth > 1100, [screenWidth]);
-  const [isManuallyHandled, setIsManuallyHandled] = useState(false);
+
+  const [isHandled, setIsHandled] = useState(false);
+  const [interval, setInterval] = useState(5 * 1000);
+  const prevDataRef = useRef<WorkOrderDB | null>(null);
 
   const { data: workOrderDetail, refetch: refetchWorkOrder } = useQuery(
     ['getWorkOrderById', orderId],
-    () =>
-      getWorkOrderById({
-        orderId
-      }),
+    () => getWorkOrderById({ orderId }),
     {
-      refetchInterval: isManuallyHandled ? 60 * 1000 : false,
+      refetchInterval: isHandled ? interval : false,
       onSuccess(data) {
-        setIsManuallyHandled(data?.manualHandling?.isManuallyHandled || false);
+        setIsHandled(data?.manualHandling?.isManuallyHandled || false);
+        if (isHandled) {
+          const currDialogsLen = data?.dialogs?.length;
+          const prevDialogsLen = prevDataRef.current?.dialogs?.length;
+
+          if (!prevDataRef.current || currDialogsLen !== prevDialogsLen) {
+            setInterval(5 * 1000);
+          } else {
+            const newInterval = Math.min(interval + 5 * 1000, 60 * 1000);
+            setInterval(newInterval);
+          }
+          prevDataRef.current = data;
+        }
       }
     }
   );
