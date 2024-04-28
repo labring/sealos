@@ -23,6 +23,18 @@ export const OrderTypeList: {
   {
     id: WorkOrderType.CronJob,
     label: 'cronjob'
+  },
+  {
+    id: WorkOrderType.CloudServer,
+    label: 'cloudserver'
+  },
+  {
+    id: WorkOrderType.ObjectStorage,
+    label: 'objectstorage'
+  },
+  {
+    id: WorkOrderType.FunctionServer,
+    label: 'functionserver'
   }
 ];
 

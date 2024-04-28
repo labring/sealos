@@ -33,6 +33,10 @@ export enum WorkOrderType {
   CostCenter = 'costcenter',
   CronJob = 'cronjob',
   Template = 'template',
+  Cronjob = 'cronjob',
+  CloudServer = 'cloudserver',
+  ObjectStorage = 'objectstorage',
+  FunctionServer = 'functionserver',
   Other = 'other'
 }
 
