@@ -1,0 +1,83 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-service-account
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-service-account-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: admin-service-account
+  namespace: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sealos-applaunchpad-deployment
+  namespace: default
+  labels:
+    app: sealos-applaunchpad
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sealos-applaunchpad
+  template:
+    metadata:
+      labels:
+        app: sealos-applaunchpad
+    spec:
+      serviceAccountName: admin-service-account
+      containers:
+      - name: sealos-applaunchpad
+        image: luanshaotong/sealos-applaunchpad:dev
+        env:
+        - name: SEALOS_DOMAIN
+          value: FLAG_SEALOS_DOMAIN
+        - name: MONITOR_URL
+          value: http://launchpad-monitor.sealos.svc.cluster.local:8428
+        ports:
+        - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sealos-applaunchpad-service
+  namespace: default
+spec:
+  selector:
+    app: sealos-applaunchpad
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+      nodePort: 32293
+  type: NodePort
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sealos-applaunchpad-ingress
+  namespace: default
+  annotations:
+    # 使用nginx作为ingress时，可以添加nginx特定的注解
+    # nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /sealos-applaunchpad
+        pathType: Prefix
+        backend:
+          service:
+            name: sealos-applaunchpad-service
+            port:
+              number: 80
