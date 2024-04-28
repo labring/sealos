@@ -45,6 +45,7 @@ function Home() {
         endTime
       }),
     {
+      enabled: !!user,
       refetchInterval: 6000,
       onSettled() {
         setInitialized(true);
